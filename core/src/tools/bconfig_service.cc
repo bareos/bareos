@@ -617,6 +617,57 @@ constexpr std::array<std::string_view, directordaemon::Num_ACL>
        "PoolACL",  "CommandACL",      "FileSetACL", "CatalogACL",
        "WhereACL", "PluginOptionsACL"};
 
+struct DirectorPoolContentSpec {
+  std::optional<std::string> description{};
+  std::optional<std::string> pool_type{};
+  std::optional<std::string> label_format{};
+  std::optional<std::string> cleaning_prefix{};
+  std::optional<std::string> label_type{};
+  std::optional<uint32_t> maximum_volumes{};
+  std::optional<uint32_t> maximum_volume_jobs{};
+  std::optional<uint32_t> maximum_volume_files{};
+  std::optional<uint64_t> maximum_volume_bytes{};
+  std::optional<uint64_t> volume_retention{};
+  std::optional<uint64_t> volume_use_duration{};
+  std::optional<uint64_t> migration_time{};
+  std::optional<uint64_t> migration_high_bytes{};
+  std::optional<uint64_t> migration_low_bytes{};
+  std::optional<std::string> next_pool{};
+  std::vector<std::string> storages{};
+  std::optional<bool> use_catalog{};
+  std::optional<bool> catalog_files{};
+  std::optional<bool> purge_oldest_volume{};
+  std::optional<std::string> action_on_purge{};
+  std::optional<bool> recycle_oldest_volume{};
+  std::optional<bool> recycle_current_volume{};
+  std::optional<bool> auto_prune{};
+  std::optional<bool> recycle{};
+  std::optional<std::string> recycle_pool{};
+  std::optional<std::string> scratch_pool{};
+  std::optional<std::string> catalog{};
+  std::optional<uint64_t> file_retention{};
+  std::optional<uint64_t> job_retention{};
+  std::optional<uint32_t> minimum_block_size{};
+  std::optional<uint32_t> maximum_block_size{};
+};
+
+struct DirectorCatalogContentSpec {
+  std::optional<std::string> description{};
+  std::optional<std::string> db_address{};
+  std::optional<uint32_t> db_port{};
+  std::optional<std::string> db_socket{};
+  std::optional<std::string> db_password{};
+  std::optional<std::string> db_user{};
+  std::optional<std::string> db_name{};
+  std::optional<bool> reconnect{};
+  std::optional<bool> exit_on_fatal{};
+  std::optional<uint32_t> min_connections{};
+  std::optional<uint32_t> max_connections{};
+  std::optional<uint32_t> inc_connections{};
+  std::optional<uint32_t> idle_timeout{};
+  std::optional<uint32_t> validate_timeout{};
+};
+
 std::string BuildDirectorClientResourceContent(std::string_view client_name,
                                                std::string_view address,
                                                std::string_view password,
@@ -669,6 +720,52 @@ std::string JoinDirectiveValues(const std::vector<std::string>& values)
     rendered << RenderBareosDirectiveValue(values[index]);
   }
   return rendered.str();
+}
+
+std::string RenderBareosBool(bool value) { return value ? "yes" : "no"; }
+
+void AppendQuotedDirective(std::ostringstream& content,
+                           std::string_view name,
+                           const std::optional<std::string>& value)
+{
+  if (!value) { return; }
+  content << "  " << name << " = " << QuoteBareosString(*value) << "\n";
+}
+
+void AppendBareosDirective(std::ostringstream& content,
+                           std::string_view name,
+                           const std::optional<std::string>& value)
+{
+  if (!value) { return; }
+  content << "  " << name << " = " << RenderBareosDirectiveValue(*value)
+          << "\n";
+}
+
+template <typename Integer>
+void AppendIntegerDirective(std::ostringstream& content,
+                            std::string_view name,
+                            const std::optional<Integer>& value)
+{
+  if (!value) { return; }
+  content << "  " << name << " = " << *value << "\n";
+}
+
+void AppendBoolDirective(std::ostringstream& content,
+                         std::string_view name,
+                         const std::optional<bool>& value)
+{
+  if (!value) { return; }
+  content << "  " << name << " = " << RenderBareosBool(*value) << "\n";
+}
+
+void AppendRepeatedBareosDirective(std::ostringstream& content,
+                                   std::string_view name,
+                                   const std::vector<std::string>& values)
+{
+  for (const auto& value : values) {
+    content << "  " << name << " = " << RenderBareosDirectiveValue(value)
+            << "\n";
+  }
 }
 
 std::string BuildDirectorConsoleResourceContent(
@@ -733,6 +830,82 @@ std::string BuildDirectorProfileResourceContent(
     content << "  " << kDirectorAclDirectiveNames[index] << " = "
             << JoinDirectiveValues(acl[index]) << "\n";
   }
+  content << "}\n";
+  return content.str();
+}
+
+std::string BuildDirectorPoolResourceContent(
+    std::string_view pool_name,
+    const DirectorPoolContentSpec& spec)
+{
+  std::ostringstream content;
+  content << "Pool {\n"
+          << "  Name = " << QuoteBareosString(pool_name) << "\n";
+  AppendQuotedDirective(content, "Description", spec.description);
+  AppendBareosDirective(content, "PoolType", spec.pool_type);
+  AppendQuotedDirective(content, "LabelFormat", spec.label_format);
+  AppendBareosDirective(content, "LabelType", spec.label_type);
+  AppendQuotedDirective(content, "CleaningPrefix", spec.cleaning_prefix);
+  AppendBoolDirective(content, "UseCatalog", spec.use_catalog);
+  AppendBoolDirective(content, "PurgeOldestVolume", spec.purge_oldest_volume);
+  AppendBareosDirective(content, "ActionOnPurge", spec.action_on_purge);
+  AppendBoolDirective(content, "RecycleOldestVolume",
+                      spec.recycle_oldest_volume);
+  AppendBoolDirective(content, "RecycleCurrentVolume",
+                      spec.recycle_current_volume);
+  AppendIntegerDirective(content, "MaximumVolumes", spec.maximum_volumes);
+  AppendIntegerDirective(content, "MaximumVolumeJobs",
+                         spec.maximum_volume_jobs);
+  AppendIntegerDirective(content, "MaximumVolumeFiles",
+                         spec.maximum_volume_files);
+  AppendIntegerDirective(content, "MaximumVolumeBytes",
+                         spec.maximum_volume_bytes);
+  AppendBoolDirective(content, "CatalogFiles", spec.catalog_files);
+  AppendIntegerDirective(content, "VolumeRetention", spec.volume_retention);
+  AppendIntegerDirective(content, "VolumeUseDuration",
+                         spec.volume_use_duration);
+  AppendIntegerDirective(content, "MigrationTime", spec.migration_time);
+  AppendIntegerDirective(content, "MigrationHighBytes",
+                         spec.migration_high_bytes);
+  AppendIntegerDirective(content, "MigrationLowBytes",
+                         spec.migration_low_bytes);
+  AppendBareosDirective(content, "NextPool", spec.next_pool);
+  AppendRepeatedBareosDirective(content, "Storage", spec.storages);
+  AppendBoolDirective(content, "AutoPrune", spec.auto_prune);
+  AppendBoolDirective(content, "Recycle", spec.recycle);
+  AppendBareosDirective(content, "RecyclePool", spec.recycle_pool);
+  AppendBareosDirective(content, "ScratchPool", spec.scratch_pool);
+  AppendBareosDirective(content, "Catalog", spec.catalog);
+  AppendIntegerDirective(content, "FileRetention", spec.file_retention);
+  AppendIntegerDirective(content, "JobRetention", spec.job_retention);
+  AppendIntegerDirective(content, "MinimumBlockSize", spec.minimum_block_size);
+  AppendIntegerDirective(content, "MaximumBlockSize", spec.maximum_block_size);
+  content << "}\n";
+  return content.str();
+}
+
+std::string BuildDirectorCatalogResourceContent(
+    std::string_view catalog_name,
+    const DirectorCatalogContentSpec& spec)
+{
+  std::ostringstream content;
+  content << "Catalog {\n"
+          << "  Name = " << QuoteBareosString(catalog_name) << "\n";
+  AppendQuotedDirective(content, "Description", spec.description);
+  AppendQuotedDirective(content, "DbAddress", spec.db_address);
+  AppendIntegerDirective(content, "DbPort", spec.db_port);
+  AppendQuotedDirective(content, "DbSocket", spec.db_socket);
+  content << "  DbPassword = "
+          << QuoteBareosString(spec.db_password.value_or("")) << "\n";
+  AppendQuotedDirective(content, "DbUser", spec.db_user);
+  AppendQuotedDirective(content, "DbName", spec.db_name);
+  AppendBoolDirective(content, "Reconnect", spec.reconnect);
+  AppendBoolDirective(content, "ExitOnFatal", spec.exit_on_fatal);
+  AppendIntegerDirective(content, "MinConnections", spec.min_connections);
+  AppendIntegerDirective(content, "MaxConnections", spec.max_connections);
+  AppendIntegerDirective(content, "IncConnections", spec.inc_connections);
+  AppendIntegerDirective(content, "IdleTimeout", spec.idle_timeout);
+  AppendIntegerDirective(content, "ValidateTimeout", spec.validate_timeout);
   content << "}\n";
   return content.str();
 }
@@ -808,6 +981,20 @@ std::string DefaultDirectorProfileDescription(std::string_view profile_name,
                                               std::string_view director_name)
 {
   return "Managed profile resource for " + std::string{profile_name}
+         + " in director " + std::string{director_name};
+}
+
+std::string DefaultDirectorPoolDescription(std::string_view pool_name,
+                                           std::string_view director_name)
+{
+  return "Managed pool resource for " + std::string{pool_name} + " in director "
+         + std::string{director_name};
+}
+
+std::string DefaultDirectorCatalogDescription(std::string_view catalog_name,
+                                              std::string_view director_name)
+{
+  return "Managed catalog resource for " + std::string{catalog_name}
          + " in director " + std::string{director_name};
 }
 
@@ -1006,6 +1193,20 @@ struct DirectorProfileWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> description{};
   std::array<std::vector<std::string>, directordaemon::Num_ACL> acl{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct DirectorPoolWriteContext {
+  std::filesystem::path file_path{};
+  DirectorPoolContentSpec content{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct DirectorCatalogWriteContext {
+  std::filesystem::path file_path{};
+  DirectorCatalogContentSpec content{};
   bool exists{false};
   bool is_standalone_file{false};
 };
@@ -1223,6 +1424,61 @@ std::vector<std::string> CopyProfileNames(
   return names;
 }
 
+std::vector<std::string> CopyStorageNames(
+    alist<directordaemon::StorageResource*>* storages)
+{
+  std::vector<std::string> names;
+  if (!storages) { return names; }
+
+  names.reserve(storages->size());
+  for (auto* storage : storages) {
+    if (storage && storage->resource_name_) {
+      names.emplace_back(storage->resource_name_);
+    }
+  }
+  return names;
+}
+
+template <typename Resource>
+std::optional<std::string> CopyResourceName(const Resource* resource)
+{
+  if (!resource || !resource->resource_name_
+      || resource->resource_name_[0] == '\0') {
+    return std::nullopt;
+  }
+
+  return std::string{resource->resource_name_};
+}
+
+OperationResult<std::string> RenderPoolLabelTypeForConfig(int32_t label_type)
+{
+  switch (label_type) {
+    case B_BAREOS_LABEL:
+      return {.value = std::string{}};
+    case B_ANSI_LABEL:
+      return {.value = std::string{"ansi"}};
+    case B_IBM_LABEL:
+      return {.value = std::string{"ibm"}};
+    default:
+      return {.error = "unsupported director pool LabelType value "
+                       + std::to_string(label_type) + "."};
+  }
+}
+
+OperationResult<std::string> RenderPoolActionOnPurgeForConfig(
+    uint32_t action_on_purge)
+{
+  switch (action_on_purge) {
+    case ON_PURGE_NONE:
+      return {.value = std::string{}};
+    case ON_PURGE_TRUNCATE:
+      return {.value = std::string{"Truncate"}};
+    default:
+      return {.error = "unsupported director pool ActionOnPurge value "
+                       + std::to_string(action_on_purge) + "."};
+  }
+}
+
 OperationResult<DirectorConsoleWriteContext> LoadDirectorConsoleWriteContext(
     const DeploymentConfigRecord& director_config,
     std::string_view console_name)
@@ -1421,6 +1677,240 @@ OperationResult<DirectorProfileWriteContext> LoadDirectorProfileWriteContext(
         = per_file != resources_per_file.end() && per_file->second == 1;
     if (!context.is_standalone_file) {
       return {.error = "director profile '" + std::string{profile_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<DirectorPoolWriteContext> LoadDirectorPoolWriteContext(
+    const DeploymentConfigRecord& director_config,
+    std::string_view pool_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorPoolWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "pool"
+                   / (std::string{pool_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_POOL, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(directordaemon::R_POOL, resource)) {
+    auto* pool = dynamic_cast<directordaemon::PoolResource*>(resource);
+    if (!pool) { continue; }
+    if (auto source = pool->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_POOL, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(directordaemon::R_POOL, resource)) {
+    auto* pool = dynamic_cast<directordaemon::PoolResource*>(resource);
+    if (!pool || !pool->resource_name_ || pool->resource_name_ != pool_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (pool->description_ && pool->description_[0] != '\0') {
+      context.content.description = std::string{pool->description_};
+    }
+    if (pool->pool_type && pool->pool_type[0] != '\0') {
+      context.content.pool_type = std::string{pool->pool_type};
+    }
+    if (pool->label_format && pool->label_format[0] != '\0') {
+      context.content.label_format = std::string{pool->label_format};
+    }
+    if (pool->cleaning_prefix && pool->cleaning_prefix[0] != '\0') {
+      context.content.cleaning_prefix = std::string{pool->cleaning_prefix};
+    }
+    if (pool->max_volumes != 0) {
+      context.content.maximum_volumes = pool->max_volumes;
+    }
+    if (pool->MaxVolJobs != 0) {
+      context.content.maximum_volume_jobs = pool->MaxVolJobs;
+    }
+    if (pool->MaxVolFiles != 0) {
+      context.content.maximum_volume_files = pool->MaxVolFiles;
+    }
+    if (pool->MaxVolBytes != 0) {
+      context.content.maximum_volume_bytes = pool->MaxVolBytes;
+    }
+    if (pool->VolRetention != 0) {
+      context.content.volume_retention = pool->VolRetention;
+    }
+    if (pool->VolUseDuration != 0) {
+      context.content.volume_use_duration = pool->VolUseDuration;
+    }
+    if (pool->MigrationTime != 0) {
+      context.content.migration_time = pool->MigrationTime;
+    }
+    if (pool->MigrationHighBytes != 0) {
+      context.content.migration_high_bytes = pool->MigrationHighBytes;
+    }
+    if (pool->MigrationLowBytes != 0) {
+      context.content.migration_low_bytes = pool->MigrationLowBytes;
+    }
+    context.content.use_catalog = pool->use_catalog;
+    context.content.catalog_files = pool->catalog_files;
+    context.content.purge_oldest_volume = pool->purge_oldest_volume;
+    context.content.recycle_oldest_volume = pool->recycle_oldest_volume;
+    context.content.recycle_current_volume = pool->recycle_current_volume;
+    context.content.auto_prune = pool->AutoPrune;
+    context.content.recycle = pool->Recycle;
+    if (pool->FileRetention != 0) {
+      context.content.file_retention = pool->FileRetention;
+    }
+    if (pool->JobRetention != 0) {
+      context.content.job_retention = pool->JobRetention;
+    }
+    if (pool->MinBlocksize != 0) {
+      context.content.minimum_block_size = pool->MinBlocksize;
+    }
+    if (pool->MaxBlocksize != 0) {
+      context.content.maximum_block_size = pool->MaxBlocksize;
+    }
+    context.content.next_pool = CopyResourceName(pool->NextPool);
+    context.content.storages = CopyStorageNames(pool->storage);
+    context.content.recycle_pool = CopyResourceName(pool->RecyclePool);
+    context.content.scratch_pool = CopyResourceName(pool->ScratchPool);
+    context.content.catalog = CopyResourceName(pool->catalog);
+
+    auto label_type = RenderPoolLabelTypeForConfig(pool->LabelType);
+    if (!label_type) { return {.error = label_type.error}; }
+    if (!label_type.value->empty()) {
+      context.content.label_type = std::move(*label_type.value);
+    }
+
+    auto action_on_purge
+        = RenderPoolActionOnPurgeForConfig(pool->action_on_purge);
+    if (!action_on_purge) { return {.error = action_on_purge.error}; }
+    if (!action_on_purge.value->empty()) {
+      context.content.action_on_purge = std::move(*action_on_purge.value);
+    }
+
+    auto source = pool->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director pool '" + std::string{pool_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director pool '" + std::string{pool_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<DirectorCatalogWriteContext> LoadDirectorCatalogWriteContext(
+    const DeploymentConfigRecord& director_config,
+    std::string_view catalog_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorCatalogWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "catalog"
+                   / (std::string{catalog_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_CATALOG, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_CATALOG, resource)) {
+    auto* catalog = dynamic_cast<directordaemon::CatalogResource*>(resource);
+    if (!catalog) { continue; }
+    if (auto source = catalog->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_CATALOG, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_CATALOG, resource)) {
+    auto* catalog = dynamic_cast<directordaemon::CatalogResource*>(resource);
+    if (!catalog || !catalog->resource_name_
+        || catalog->resource_name_ != catalog_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (catalog->description_ && catalog->description_[0] != '\0') {
+      context.content.description = std::string{catalog->description_};
+    }
+    if (catalog->db_address && catalog->db_address[0] != '\0') {
+      context.content.db_address = std::string{catalog->db_address};
+    }
+    if (catalog->db_port != 0) { context.content.db_port = catalog->db_port; }
+    if (catalog->db_socket && catalog->db_socket[0] != '\0') {
+      context.content.db_socket = std::string{catalog->db_socket};
+    }
+    if (catalog->db_user && catalog->db_user[0] != '\0') {
+      context.content.db_user = std::string{catalog->db_user};
+    }
+    if (catalog->db_name && catalog->db_name[0] != '\0') {
+      context.content.db_name = std::string{catalog->db_name};
+    }
+    context.content.reconnect = catalog->try_reconnect;
+    context.content.exit_on_fatal = catalog->exit_on_fatal;
+    if (catalog->pooling_min_connections != 0) {
+      context.content.min_connections = catalog->pooling_min_connections;
+    }
+    if (catalog->pooling_max_connections != 0) {
+      context.content.max_connections = catalog->pooling_max_connections;
+    }
+    if (catalog->pooling_increment_connections != 0) {
+      context.content.inc_connections = catalog->pooling_increment_connections;
+    }
+    if (catalog->pooling_idle_timeout != 0) {
+      context.content.idle_timeout = catalog->pooling_idle_timeout;
+    }
+    if (catalog->pooling_validate_timeout != 0) {
+      context.content.validate_timeout = catalog->pooling_validate_timeout;
+    }
+
+    auto rendered_password = RenderPasswordForConfig(
+        catalog->db_password, "director-side catalog password for '"
+                                  + std::string{catalog_name} + "'");
+    if (!rendered_password) { return {.error = rendered_password.error}; }
+    context.content.db_password = *rendered_password.value;
+
+    auto source = catalog->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director catalog '" + std::string{catalog_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director catalog '" + std::string{catalog_name}
                        + "' is not stored in a standalone file yet."};
     }
     return {.value = std::move(context)};
@@ -3739,6 +4229,330 @@ ServiceState::DeleteDirectorProfileResource(std::string_view deployment_id,
   }
 
   DebugLog("deleted director profile resource '" + std::string{profile_name}
+           + "' from director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertDirectorPoolResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view pool_name,
+    const DirectorPoolResourceSpec& spec) const
+{
+  DebugLog("upserting director pool resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', pool '" + std::string{pool_name}
+           + "'");
+  if (!IsSafePathSegment(pool_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "pool and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorPoolWriteContext(*director_config.value, pool_name);
+  if (!context) { return {.error = context.error}; }
+
+  auto content = context.value->content;
+  content.description
+      = spec.description
+            ? *spec.description
+            : content.description.value_or(
+                  DefaultDirectorPoolDescription(pool_name, director_name));
+  content.pool_type
+      = spec.pool_type ? *spec.pool_type : content.pool_type.value_or("Backup");
+  if (spec.label_format) {
+    content.label_format = *spec.label_format;
+  } else if (!context.value->exists && !content.label_format) {
+    content.label_format = std::nullopt;
+  }
+  if (spec.maximum_volumes) { content.maximum_volumes = *spec.maximum_volumes; }
+  if (spec.maximum_volume_bytes) {
+    content.maximum_volume_bytes = *spec.maximum_volume_bytes;
+  }
+  if (spec.volume_retention) {
+    content.volume_retention = *spec.volume_retention;
+  }
+  if (spec.auto_prune) { content.auto_prune = *spec.auto_prune; }
+  if (spec.recycle) { content.recycle = *spec.recycle; }
+
+  const auto rendered = BuildDirectorPoolResourceContent(pool_name, content);
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "pool";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director pool directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write director pool resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director pool file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("director pool update for '" + std::string{pool_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director pool parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director pool update ", loaded.messages)};
+  }
+
+  DebugLog("updated director pool resource '" + std::string{pool_name}
+           + "' in director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteDirectorPoolResource(std::string_view deployment_id,
+                                         std::string_view director_name,
+                                         std::string_view pool_name) const
+{
+  DebugLog("deleting director pool resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', pool '" + std::string{pool_name}
+           + "'");
+  if (!IsSafePathSegment(pool_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "pool and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorPoolWriteContext(*director_config.value, pool_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director '" + std::string{director_name}
+                     + "' does not define pool '" + std::string{pool_name}
+                     + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             director_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director pool parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director pool delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted director pool resource '" + std::string{pool_name}
+           + "' from director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertDirectorCatalogResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view catalog_name,
+    const DirectorCatalogResourceSpec& spec) const
+{
+  DebugLog("upserting director catalog resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', catalog '"
+           + std::string{catalog_name} + "'");
+  if (!IsSafePathSegment(catalog_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "catalog and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorCatalogWriteContext(*director_config.value, catalog_name);
+  if (!context) { return {.error = context.error}; }
+
+  auto content = context.value->content;
+  content.description
+      = spec.description
+            ? *spec.description
+            : content.description.value_or(DefaultDirectorCatalogDescription(
+                  catalog_name, director_name));
+  if (spec.db_address) { content.db_address = *spec.db_address; }
+  if (spec.db_port) { content.db_port = *spec.db_port; }
+  if (spec.db_socket) { content.db_socket = *spec.db_socket; }
+  if (spec.db_password) { content.db_password = *spec.db_password; }
+  if (spec.db_user) { content.db_user = *spec.db_user; }
+  if (spec.db_name) { content.db_name = *spec.db_name; }
+  if (spec.reconnect) { content.reconnect = *spec.reconnect; }
+  if (spec.exit_on_fatal) { content.exit_on_fatal = *spec.exit_on_fatal; }
+  if (spec.min_connections) { content.min_connections = *spec.min_connections; }
+  if (spec.max_connections) { content.max_connections = *spec.max_connections; }
+  if (spec.inc_connections) { content.inc_connections = *spec.inc_connections; }
+  if (spec.idle_timeout) { content.idle_timeout = *spec.idle_timeout; }
+  if (spec.validate_timeout) {
+    content.validate_timeout = *spec.validate_timeout;
+  }
+
+  if (!content.db_user || content.db_user->empty()) {
+    return {.error = "director catalog '" + std::string{catalog_name}
+                     + "' must define DbUser."};
+  }
+  if (!content.db_name || content.db_name->empty()) {
+    return {.error = "director catalog '" + std::string{catalog_name}
+                     + "' must define DbName."};
+  }
+  if (!content.db_password) { content.db_password = std::string{}; }
+
+  const auto rendered
+      = BuildDirectorCatalogResourceContent(catalog_name, content);
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "catalog";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director catalog directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write director catalog resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director catalog file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("director catalog update for '" + std::string{catalog_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director catalog parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director catalog update ", loaded.messages)};
+  }
+
+  DebugLog("updated director catalog resource '" + std::string{catalog_name}
+           + "' in director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteDirectorCatalogResource(std::string_view deployment_id,
+                                            std::string_view director_name,
+                                            std::string_view catalog_name) const
+{
+  DebugLog("deleting director catalog resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', catalog '"
+           + std::string{catalog_name} + "'");
+  if (!IsSafePathSegment(catalog_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "catalog and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorCatalogWriteContext(*director_config.value, catalog_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director '" + std::string{director_name}
+                     + "' does not define catalog '" + std::string{catalog_name}
+                     + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             director_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director catalog parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director catalog delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted director catalog resource '" + std::string{catalog_name}
            + "' from director '" + std::string{director_name} + "'");
   return {.value = *director_config.value};
 }

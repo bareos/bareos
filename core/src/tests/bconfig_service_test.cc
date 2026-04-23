@@ -1460,6 +1460,445 @@ TEST(BconfigService, RejectsDirectorProfileDeletesForSharedFiles)
   EXPECT_TRUE(std::filesystem::exists(shared_path));
 }
 
+TEST(BconfigService, UpsertsDirectorPoolResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorPoolResource(
+      "prod", "bareos-dir", "managed-pool",
+      {.pool_type = std::string{"Scratch"},
+       .label_format = std::string{"Managed-"},
+       .maximum_volumes = 7,
+       .maximum_volume_bytes = 123456,
+       .volume_retention = 86400,
+       .auto_prune = true,
+       .recycle = false,
+       .description = std::string{"Managed pool"}});
+  ASSERT_TRUE(created) << created.error;
+  EXPECT_EQ(created.value->name, "bareos-dir");
+
+  const auto pool_path
+      = created.value->path / "bareos-dir.d/pool/managed-pool.conf";
+  const auto created_text = ReadTextFile(pool_path);
+  EXPECT_NE(created_text.find("Name = \"managed-pool\""), std::string::npos);
+  EXPECT_NE(created_text.find("Description = \"Managed pool\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("PoolType = Scratch"), std::string::npos);
+  EXPECT_NE(created_text.find("LabelFormat = \"Managed-\""), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumVolumes = 7"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumVolumeBytes = 123456"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("VolumeRetention = 86400"), std::string::npos);
+  EXPECT_NE(created_text.find("AutoPrune = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("Recycle = no"), std::string::npos);
+
+  auto updated = state.UpsertDirectorPoolResource(
+      "prod", "bareos-dir", "Full",
+      {.description = std::string{"Updated full pool"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text
+      = ReadTextFile(updated.value->path / "bareos-dir.d/pool/Full.conf");
+  EXPECT_NE(updated_text.find("Description = \"Updated full pool\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("PoolType = Backup"), std::string::npos);
+  EXPECT_NE(updated_text.find("Recycle = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("AutoPrune = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("VolumeRetention = 31536000"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumVolumeBytes = 53687091200"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumVolumes = 100"), std::string::npos);
+  EXPECT_NE(updated_text.find("LabelFormat = \"Full-\""), std::string::npos);
+}
+
+TEST(BconfigService, RejectsDirectorPoolUpdatesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto pool_directory
+      = RepositoryLayout::DirectorsDirectory(repo_path.path())
+        / "bareos-dir/bareos-dir.d/pool";
+  const auto original_path = pool_directory / "Full.conf";
+  const auto shared_path = pool_directory / "shared.conf";
+  const auto original_text = ReadTextFile(original_path);
+  WriteTextFile(shared_path,
+                original_text
+                    + "\nPool {\n"
+                      "  Name = \"OtherPool\"\n"
+                      "  PoolType = Backup\n"
+                      "}\n");
+  std::filesystem::remove(original_path);
+
+  auto rejected = state.UpsertDirectorPoolResource(
+      "prod", "bareos-dir", "Full",
+      {.description = std::string{"Updated full pool"}});
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+}
+
+TEST(BconfigService, DeletesDirectorPoolResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorPoolResource(
+      "prod", "bareos-dir", "managed-pool",
+      {.pool_type = std::string{"Scratch"},
+       .description = std::string{"Managed pool"}});
+  ASSERT_TRUE(created) << created.error;
+
+  const auto pool_path
+      = created.value->path / "bareos-dir.d/pool/managed-pool.conf";
+  ASSERT_TRUE(std::filesystem::exists(pool_path));
+
+  auto deleted
+      = state.DeleteDirectorPoolResource("prod", "bareos-dir", "managed-pool");
+  ASSERT_TRUE(deleted) << deleted.error;
+  EXPECT_FALSE(std::filesystem::exists(pool_path));
+}
+
+TEST(BconfigService, RejectsDirectorPoolDeletesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto pool_directory
+      = RepositoryLayout::DirectorsDirectory(repo_path.path())
+        / "bareos-dir/bareos-dir.d/pool";
+  const auto original_path = pool_directory / "Full.conf";
+  const auto shared_path = pool_directory / "shared.conf";
+  const auto original_text = ReadTextFile(original_path);
+  WriteTextFile(shared_path,
+                original_text
+                    + "\nPool {\n"
+                      "  Name = \"OtherPool\"\n"
+                      "  PoolType = Backup\n"
+                      "}\n");
+  std::filesystem::remove(original_path);
+
+  auto rejected
+      = state.DeleteDirectorPoolResource("prod", "bareos-dir", "Full");
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+}
+
+TEST(BconfigService, UpsertsDirectorCatalogResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorCatalogResource(
+      "prod", "bareos-dir", "ManagedCatalog",
+      {.db_address = std::string{"127.0.0.1"},
+       .db_port = 5432,
+       .db_password = std::string{"secret"},
+       .db_user = std::string{"bareos"},
+       .db_name = std::string{"bareos_catalog"},
+       .reconnect = true,
+       .exit_on_fatal = false,
+       .description = std::string{"Managed catalog"}});
+  ASSERT_TRUE(created) << created.error;
+  EXPECT_EQ(created.value->name, "bareos-dir");
+
+  const auto catalog_path
+      = created.value->path / "bareos-dir.d/catalog/ManagedCatalog.conf";
+  const auto created_text = ReadTextFile(catalog_path);
+  EXPECT_NE(created_text.find("Name = \"ManagedCatalog\""), std::string::npos);
+  EXPECT_NE(created_text.find("Description = \"Managed catalog\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("DbAddress = \"127.0.0.1\""), std::string::npos);
+  EXPECT_NE(created_text.find("DbPort = 5432"), std::string::npos);
+  EXPECT_NE(created_text.find("DbPassword = \"secret\""), std::string::npos);
+  EXPECT_NE(created_text.find("DbUser = \"bareos\""), std::string::npos);
+  EXPECT_NE(created_text.find("DbName = \"bareos_catalog\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("Reconnect = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("ExitOnFatal = no"), std::string::npos);
+
+  auto updated = state.UpsertDirectorCatalogResource(
+      "prod", "bareos-dir", "MyCatalog",
+      {.description = std::string{"Updated catalog"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(
+      updated.value->path / "bareos-dir.d/catalog/MyCatalog.conf");
+  EXPECT_NE(updated_text.find("Description = \"Updated catalog\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("DbUser = \"regress\""), std::string::npos);
+  EXPECT_NE(updated_text.find("DbName = \"regress_backup_bareos_test\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("DbPassword = \"\""), std::string::npos);
+}
+
+TEST(BconfigService, RejectsDirectorCatalogUpdatesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto catalog_directory
+      = RepositoryLayout::DirectorsDirectory(repo_path.path())
+        / "bareos-dir/bareos-dir.d/catalog";
+  const auto original_path = catalog_directory / "MyCatalog.conf";
+  const auto shared_path = catalog_directory / "shared.conf";
+  const auto original_text = ReadTextFile(original_path);
+  WriteTextFile(shared_path,
+                original_text
+                    + "\nCatalog {\n"
+                      "  Name = \"OtherCatalog\"\n"
+                      "  DbUser = \"other\"\n"
+                      "  DbName = \"other\"\n"
+                      "}\n");
+  std::filesystem::remove(original_path);
+
+  auto rejected = state.UpsertDirectorCatalogResource(
+      "prod", "bareos-dir", "MyCatalog",
+      {.description = std::string{"Updated catalog"}});
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+}
+
+TEST(BconfigService, DeletesDirectorCatalogResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorCatalogResource(
+      "prod", "bareos-dir", "ManagedCatalog",
+      {.db_user = std::string{"bareos"},
+       .db_name = std::string{"bareos_catalog"},
+       .description = std::string{"Managed catalog"}});
+  ASSERT_TRUE(created) << created.error;
+
+  const auto catalog_path
+      = created.value->path / "bareos-dir.d/catalog/ManagedCatalog.conf";
+  ASSERT_TRUE(std::filesystem::exists(catalog_path));
+
+  auto deleted = state.DeleteDirectorCatalogResource("prod", "bareos-dir",
+                                                     "ManagedCatalog");
+  ASSERT_TRUE(deleted) << deleted.error;
+  EXPECT_FALSE(std::filesystem::exists(catalog_path));
+}
+
+TEST(BconfigService, RejectsDirectorCatalogDeletesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto catalog_directory
+      = RepositoryLayout::DirectorsDirectory(repo_path.path())
+        / "bareos-dir/bareos-dir.d/catalog";
+  const auto original_path = catalog_directory / "MyCatalog.conf";
+  const auto shared_path = catalog_directory / "shared.conf";
+  const auto original_text = ReadTextFile(original_path);
+  WriteTextFile(shared_path,
+                original_text
+                    + "\nCatalog {\n"
+                      "  Name = \"OtherCatalog\"\n"
+                      "  DbUser = \"other\"\n"
+                      "  DbName = \"other\"\n"
+                      "}\n");
+  std::filesystem::remove(original_path);
+
+  auto rejected
+      = state.DeleteDirectorCatalogResource("prod", "bareos-dir", "MyCatalog");
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+}
+
 TEST(BconfigService, UpsertsDirectorStorageResources)
 {
   ScopedDirectory source_root{MakeTempPath()};

@@ -141,6 +141,34 @@ struct DirectorProfileResourceSpec {
   std::optional<std::string> description{};
 };
 
+struct DirectorPoolResourceSpec {
+  std::optional<std::string> pool_type{};
+  std::optional<std::string> label_format{};
+  std::optional<uint32_t> maximum_volumes{};
+  std::optional<uint64_t> maximum_volume_bytes{};
+  std::optional<uint64_t> volume_retention{};
+  std::optional<bool> auto_prune{};
+  std::optional<bool> recycle{};
+  std::optional<std::string> description{};
+};
+
+struct DirectorCatalogResourceSpec {
+  std::optional<std::string> db_address{};
+  std::optional<uint32_t> db_port{};
+  std::optional<std::string> db_socket{};
+  std::optional<std::string> db_password{};
+  std::optional<std::string> db_user{};
+  std::optional<std::string> db_name{};
+  std::optional<bool> reconnect{};
+  std::optional<bool> exit_on_fatal{};
+  std::optional<uint32_t> min_connections{};
+  std::optional<uint32_t> max_connections{};
+  std::optional<uint32_t> inc_connections{};
+  std::optional<uint32_t> idle_timeout{};
+  std::optional<uint32_t> validate_timeout{};
+  std::optional<std::string> description{};
+};
+
 struct JobSpec {
   std::string type{};
   std::optional<std::string> deployment_id{};
@@ -263,6 +291,24 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view director_name,
       std::string_view profile_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorPoolResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view pool_name,
+      const DirectorPoolResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteDirectorPoolResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view pool_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorCatalogResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view catalog_name,
+      const DirectorCatalogResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteDirectorCatalogResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view catalog_name) const;
   OperationResult<std::vector<DeploymentImportRecord>> ListDeploymentImports(
       std::string_view deployment_id) const;
   OperationResult<DeploymentGitStatusRecord> GetDeploymentGitStatus(

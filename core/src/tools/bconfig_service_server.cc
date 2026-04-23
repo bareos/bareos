@@ -40,6 +40,7 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <set>
 #include <source_location>
@@ -106,6 +107,34 @@ struct DirectorProfileRequestSpec {
   std::optional<std::string> description{};
 };
 
+struct DirectorPoolRequestSpec {
+  std::optional<std::string> pool_type{};
+  std::optional<std::string> label_format{};
+  std::optional<uint32_t> maximum_volumes{};
+  std::optional<uint64_t> maximum_volume_bytes{};
+  std::optional<uint64_t> volume_retention{};
+  std::optional<bool> auto_prune{};
+  std::optional<bool> recycle{};
+  std::optional<std::string> description{};
+};
+
+struct DirectorCatalogRequestSpec {
+  std::optional<std::string> db_address{};
+  std::optional<uint32_t> db_port{};
+  std::optional<std::string> db_socket{};
+  std::optional<std::string> db_password{};
+  std::optional<std::string> db_user{};
+  std::optional<std::string> db_name{};
+  std::optional<bool> reconnect{};
+  std::optional<bool> exit_on_fatal{};
+  std::optional<uint32_t> min_connections{};
+  std::optional<uint32_t> max_connections{};
+  std::optional<uint32_t> inc_connections{};
+  std::optional<uint32_t> idle_timeout{};
+  std::optional<uint32_t> validate_timeout{};
+  std::optional<std::string> description{};
+};
+
 std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
     std::string_view body,
     std::string& error);
@@ -122,6 +151,12 @@ std::optional<DirectorUserRequestSpec> ParseDirectorUserRequest(
     std::string_view body,
     std::string& error);
 std::optional<DirectorProfileRequestSpec> ParseDirectorProfileRequest(
+    std::string_view body,
+    std::string& error);
+std::optional<DirectorPoolRequestSpec> ParseDirectorPoolRequest(
+    std::string_view body,
+    std::string& error);
+std::optional<DirectorCatalogRequestSpec> ParseDirectorCatalogRequest(
     std::string_view body,
     std::string& error);
 
@@ -694,6 +729,139 @@ const char* kTestUiHtmlTemplate = R"HTML(
         </button>
         <button type="button" id="director-profile-delete-button">
           DELETE /v1/deployments/{id}/directors/{director}/profiles/{profile}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert director pool resource</h2>
+      <form id="director-pool-form">
+        <label for="director-pool-deployment-id">Deployment ID</label>
+        <input id="director-pool-deployment-id" name="deployment_id" value="prod">
+
+        <label for="director-pool-director-name">Director name</label>
+        <input id="director-pool-director-name" name="director_name" value="bareos-dir">
+
+        <label for="director-pool-pool-name">Pool name</label>
+        <input id="director-pool-pool-name" name="pool_name" value="managed-pool">
+
+        <label for="director-pool-pool-type">Pool type</label>
+        <input id="director-pool-pool-type" name="pool_type" value="Backup">
+
+        <label for="director-pool-label-format">Label format</label>
+        <input id="director-pool-label-format" name="label_format"
+               placeholder="Managed-">
+
+        <label for="director-pool-maximum-volumes">Maximum volumes</label>
+        <input id="director-pool-maximum-volumes" name="maximum_volumes"
+               type="number" min="0">
+
+        <label for="director-pool-maximum-volume-bytes">Maximum volume bytes</label>
+        <input id="director-pool-maximum-volume-bytes"
+               name="maximum_volume_bytes" type="number" min="0">
+
+        <label for="director-pool-volume-retention">Volume retention (seconds)</label>
+        <input id="director-pool-volume-retention" name="volume_retention"
+               type="number" min="0">
+
+        <label class="checkbox-label" for="director-pool-auto-prune">
+          <input id="director-pool-auto-prune" name="auto_prune"
+                 type="checkbox">
+          Auto prune
+        </label>
+
+        <label class="checkbox-label" for="director-pool-recycle">
+          <input id="director-pool-recycle" name="recycle" type="checkbox">
+          Recycle
+        </label>
+
+        <label for="director-pool-description">Description</label>
+        <input id="director-pool-description" name="description"
+               placeholder="Managed pool resource">
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/directors/{director}/pools/{pool}
+        </button>
+        <button type="button" id="director-pool-delete-button">
+          DELETE /v1/deployments/{id}/directors/{director}/pools/{pool}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert director catalog resource</h2>
+      <form id="director-catalog-form">
+        <label for="director-catalog-deployment-id">Deployment ID</label>
+        <input id="director-catalog-deployment-id" name="deployment_id" value="prod">
+
+        <label for="director-catalog-director-name">Director name</label>
+        <input id="director-catalog-director-name" name="director_name" value="bareos-dir">
+
+        <label for="director-catalog-catalog-name">Catalog name</label>
+        <input id="director-catalog-catalog-name" name="catalog_name" value="managed-catalog">
+
+        <label for="director-catalog-db-name">DbName</label>
+        <input id="director-catalog-db-name" name="db_name"
+               value="bareos_catalog">
+
+        <label for="director-catalog-db-user">DbUser</label>
+        <input id="director-catalog-db-user" name="db_user" value="bareos">
+
+        <label for="director-catalog-db-password">DbPassword</label>
+        <input id="director-catalog-db-password" name="db_password"
+               placeholder="cleartext or [md5]hash">
+
+        <label for="director-catalog-db-address">DbAddress</label>
+        <input id="director-catalog-db-address" name="db_address"
+               placeholder="localhost">
+
+        <label for="director-catalog-db-port">DbPort</label>
+        <input id="director-catalog-db-port" name="db_port" type="number" min="0">
+
+        <label for="director-catalog-db-socket">DbSocket</label>
+        <input id="director-catalog-db-socket" name="db_socket">
+
+        <label class="checkbox-label" for="director-catalog-reconnect">
+          <input id="director-catalog-reconnect" name="reconnect"
+                 type="checkbox" checked>
+          Reconnect
+        </label>
+
+        <label class="checkbox-label" for="director-catalog-exit-on-fatal">
+          <input id="director-catalog-exit-on-fatal" name="exit_on_fatal"
+                 type="checkbox">
+          Exit on fatal
+        </label>
+
+        <label for="director-catalog-min-connections">MinConnections</label>
+        <input id="director-catalog-min-connections" name="min_connections"
+               type="number" min="0">
+
+        <label for="director-catalog-max-connections">MaxConnections</label>
+        <input id="director-catalog-max-connections" name="max_connections"
+               type="number" min="0">
+
+        <label for="director-catalog-inc-connections">IncConnections</label>
+        <input id="director-catalog-inc-connections" name="inc_connections"
+               type="number" min="0">
+
+        <label for="director-catalog-idle-timeout">IdleTimeout</label>
+        <input id="director-catalog-idle-timeout" name="idle_timeout"
+               type="number" min="0">
+
+        <label for="director-catalog-validate-timeout">ValidateTimeout</label>
+        <input id="director-catalog-validate-timeout" name="validate_timeout"
+               type="number" min="0">
+
+        <label for="director-catalog-description">Description</label>
+        <input id="director-catalog-description" name="description"
+               placeholder="Managed catalog resource">
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/directors/{director}/catalogs/{catalog}
+        </button>
+        <button type="button" id="director-catalog-delete-button">
+          DELETE /v1/deployments/{id}/directors/{director}/catalogs/{catalog}
         </button>
       </form>
     </section>
@@ -1633,6 +1801,168 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const { response } = await request(
           'DELETE',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/profiles/${encodeURIComponent(profileName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-pool-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const poolName = String(form.get('pool_name') ?? '').trim();
+        const payload = {
+          pool_type: String(form.get('pool_type') ?? '').trim(),
+          label_format: String(form.get('label_format') ?? '').trim(),
+          maximum_volumes: String(form.get('maximum_volumes') ?? '').trim(),
+          maximum_volume_bytes: String(form.get('maximum_volume_bytes') ?? '').trim(),
+          volume_retention: String(form.get('volume_retention') ?? '').trim(),
+          auto_prune: document.getElementById('director-pool-auto-prune').checked,
+          recycle: document.getElementById('director-pool-recycle').checked,
+          description: String(form.get('description') ?? '').trim(),
+        };
+        if (!payload.pool_type) {
+          delete payload.pool_type;
+        }
+        if (!payload.label_format) {
+          delete payload.label_format;
+        }
+        if (!payload.maximum_volumes) {
+          delete payload.maximum_volumes;
+        } else {
+          payload.maximum_volumes = Number(payload.maximum_volumes);
+        }
+        if (!payload.maximum_volume_bytes) {
+          delete payload.maximum_volume_bytes;
+        } else {
+          payload.maximum_volume_bytes = Number(payload.maximum_volume_bytes);
+        }
+        if (!payload.volume_retention) {
+          delete payload.volume_retention;
+        } else {
+          payload.volume_retention = Number(payload.volume_retention);
+        }
+        if (!payload.description) {
+          delete payload.description;
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/pools/${encodeURIComponent(poolName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-pool-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('director-pool-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const poolName = String(form.get('pool_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/pools/${encodeURIComponent(poolName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-catalog-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const catalogName = String(form.get('catalog_name') ?? '').trim();
+        const payload = {
+          db_address: String(form.get('db_address') ?? '').trim(),
+          db_port: String(form.get('db_port') ?? '').trim(),
+          db_socket: String(form.get('db_socket') ?? '').trim(),
+          db_password: String(form.get('db_password') ?? '').trim(),
+          db_user: String(form.get('db_user') ?? '').trim(),
+          db_name: String(form.get('db_name') ?? '').trim(),
+          reconnect: document.getElementById('director-catalog-reconnect').checked,
+          exit_on_fatal: document.getElementById('director-catalog-exit-on-fatal').checked,
+          min_connections: String(form.get('min_connections') ?? '').trim(),
+          max_connections: String(form.get('max_connections') ?? '').trim(),
+          inc_connections: String(form.get('inc_connections') ?? '').trim(),
+          idle_timeout: String(form.get('idle_timeout') ?? '').trim(),
+          validate_timeout: String(form.get('validate_timeout') ?? '').trim(),
+          description: String(form.get('description') ?? '').trim(),
+        };
+        if (!payload.db_address) {
+          delete payload.db_address;
+        }
+        if (!payload.db_port) {
+          delete payload.db_port;
+        } else {
+          payload.db_port = Number(payload.db_port);
+        }
+        if (!payload.db_socket) {
+          delete payload.db_socket;
+        }
+        if (!payload.db_password) {
+          delete payload.db_password;
+        }
+        if (!payload.db_user) {
+          delete payload.db_user;
+        }
+        if (!payload.db_name) {
+          delete payload.db_name;
+        }
+        if (!payload.min_connections) {
+          delete payload.min_connections;
+        } else {
+          payload.min_connections = Number(payload.min_connections);
+        }
+        if (!payload.max_connections) {
+          delete payload.max_connections;
+        } else {
+          payload.max_connections = Number(payload.max_connections);
+        }
+        if (!payload.inc_connections) {
+          delete payload.inc_connections;
+        } else {
+          payload.inc_connections = Number(payload.inc_connections);
+        }
+        if (!payload.idle_timeout) {
+          delete payload.idle_timeout;
+        } else {
+          payload.idle_timeout = Number(payload.idle_timeout);
+        }
+        if (!payload.validate_timeout) {
+          delete payload.validate_timeout;
+        } else {
+          payload.validate_timeout = Number(payload.validate_timeout);
+        }
+        if (!payload.description) {
+          delete payload.description;
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/catalogs/${encodeURIComponent(catalogName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-catalog-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('director-catalog-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const catalogName = String(form.get('catalog_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/catalogs/${encodeURIComponent(catalogName)}`);
         if (response.ok) {
           document.getElementById('deployment-inspect-id').value = deploymentId;
           await loadDeploymentContents(deploymentId);
@@ -2931,6 +3261,194 @@ http::response<http::string_body> HandleDeploymentDirectorProfileDeleteRequest(
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
+http::response<http::string_body> HandleDeploymentDirectorPoolPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view pool_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorPoolRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  DirectorPoolResourceSpec resource_spec{
+      .pool_type = spec->pool_type,
+      .label_format = spec->label_format,
+      .maximum_volumes = spec->maximum_volumes,
+      .maximum_volume_bytes = spec->maximum_volume_bytes,
+      .volume_retention = spec->volume_retention,
+      .auto_prune = spec->auto_prune,
+      .recycle = spec->recycle,
+      .description = spec->description,
+  };
+  auto result = state.UpsertDirectorPoolResource(deployment_id, director_name,
+                                                 pool_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "pool_name",
+                      json_string(std::string{pool_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorPoolDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view pool_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteDirectorPoolResource(deployment_id, director_name,
+                                                 pool_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "pool_name",
+                      json_string(std::string{pool_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorCatalogPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view catalog_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorCatalogRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  DirectorCatalogResourceSpec resource_spec{
+      .db_address = spec->db_address,
+      .db_port = spec->db_port,
+      .db_socket = spec->db_socket,
+      .db_password = spec->db_password,
+      .db_user = spec->db_user,
+      .db_name = spec->db_name,
+      .reconnect = spec->reconnect,
+      .exit_on_fatal = spec->exit_on_fatal,
+      .min_connections = spec->min_connections,
+      .max_connections = spec->max_connections,
+      .inc_connections = spec->inc_connections,
+      .idle_timeout = spec->idle_timeout,
+      .validate_timeout = spec->validate_timeout,
+      .description = spec->description,
+  };
+  auto result = state.UpsertDirectorCatalogResource(
+      deployment_id, director_name, catalog_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "catalog_name",
+                      json_string(std::string{catalog_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorCatalogDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view catalog_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteDirectorCatalogResource(
+      deployment_id, director_name, catalog_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "catalog_name",
+                      json_string(std::string{catalog_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
 http::response<http::string_body> HandleDeploymentGitStatusRequest(
     ServiceState& state,
     std::string_view deployment_id)
@@ -3358,6 +3876,226 @@ std::optional<DirectorProfileRequestSpec> ParseDirectorProfileRequest(
   return spec;
 }
 
+std::optional<DirectorPoolRequestSpec> ParseDirectorPoolRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* pool_type = json_object_get(root.get(), "pool_type");
+  auto* label_format = json_object_get(root.get(), "label_format");
+  auto* maximum_volumes = json_object_get(root.get(), "maximum_volumes");
+  auto* maximum_volume_bytes
+      = json_object_get(root.get(), "maximum_volume_bytes");
+  auto* volume_retention = json_object_get(root.get(), "volume_retention");
+  auto* auto_prune = json_object_get(root.get(), "auto_prune");
+  auto* recycle = json_object_get(root.get(), "recycle");
+  auto* description = json_object_get(root.get(), "description");
+
+  if (pool_type && !json_is_null(pool_type) && !json_is_string(pool_type)) {
+    error = "field 'pool_type' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (label_format && !json_is_null(label_format)
+      && !json_is_string(label_format)) {
+    error = "field 'label_format' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (maximum_volumes && !json_is_null(maximum_volumes)
+      && !json_is_integer(maximum_volumes)) {
+    error = "field 'maximum_volumes' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (maximum_volume_bytes && !json_is_null(maximum_volume_bytes)
+      && !json_is_integer(maximum_volume_bytes)) {
+    error = "field 'maximum_volume_bytes' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (volume_retention && !json_is_null(volume_retention)
+      && !json_is_integer(volume_retention)) {
+    error = "field 'volume_retention' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (auto_prune && !json_is_null(auto_prune) && !json_is_boolean(auto_prune)) {
+    error = "field 'auto_prune' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (recycle && !json_is_null(recycle) && !json_is_boolean(recycle)) {
+    error = "field 'recycle' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (description && !json_is_null(description)
+      && !json_is_string(description)) {
+    error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+
+  DirectorPoolRequestSpec spec{};
+  if (pool_type && json_is_string(pool_type)) {
+    spec.pool_type = std::string{json_string_value(pool_type)};
+  }
+  if (label_format && json_is_string(label_format)) {
+    spec.label_format = std::string{json_string_value(label_format)};
+  }
+  if (maximum_volumes && json_is_integer(maximum_volumes)) {
+    const auto value = json_integer_value(maximum_volumes);
+    if (value < 0 || value > std::numeric_limits<uint32_t>::max()) {
+      error = "field 'maximum_volumes' must be between 0 and 4294967295.";
+      return std::nullopt;
+    }
+    spec.maximum_volumes = static_cast<uint32_t>(value);
+  }
+  if (maximum_volume_bytes && json_is_integer(maximum_volume_bytes)) {
+    const auto value = json_integer_value(maximum_volume_bytes);
+    if (value < 0) {
+      error = "field 'maximum_volume_bytes' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.maximum_volume_bytes = static_cast<uint64_t>(value);
+  }
+  if (volume_retention && json_is_integer(volume_retention)) {
+    const auto value = json_integer_value(volume_retention);
+    if (value < 0) {
+      error = "field 'volume_retention' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.volume_retention = static_cast<uint64_t>(value);
+  }
+  if (auto_prune && json_is_boolean(auto_prune)) {
+    spec.auto_prune = json_is_true(auto_prune);
+  }
+  if (recycle && json_is_boolean(recycle)) {
+    spec.recycle = json_is_true(recycle);
+  }
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  return spec;
+}
+
+std::optional<DirectorCatalogRequestSpec> ParseDirectorCatalogRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* db_address = json_object_get(root.get(), "db_address");
+  auto* db_port = json_object_get(root.get(), "db_port");
+  auto* db_socket = json_object_get(root.get(), "db_socket");
+  auto* db_password = json_object_get(root.get(), "db_password");
+  auto* db_user = json_object_get(root.get(), "db_user");
+  auto* db_name = json_object_get(root.get(), "db_name");
+  auto* reconnect = json_object_get(root.get(), "reconnect");
+  auto* exit_on_fatal = json_object_get(root.get(), "exit_on_fatal");
+  auto* min_connections = json_object_get(root.get(), "min_connections");
+  auto* max_connections = json_object_get(root.get(), "max_connections");
+  auto* inc_connections = json_object_get(root.get(), "inc_connections");
+  auto* idle_timeout = json_object_get(root.get(), "idle_timeout");
+  auto* validate_timeout = json_object_get(root.get(), "validate_timeout");
+  auto* description = json_object_get(root.get(), "description");
+
+  auto require_string = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_string(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a string when provided.";
+      return false;
+    }
+    return true;
+  };
+  auto require_integer = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_integer(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an integer when provided.";
+      return false;
+    }
+    return true;
+  };
+  auto require_boolean = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_boolean(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a boolean when provided.";
+      return false;
+    }
+    return true;
+  };
+
+  if (!require_string(db_address, "db_address")
+      || !require_integer(db_port, "db_port")
+      || !require_string(db_socket, "db_socket")
+      || !require_string(db_password, "db_password")
+      || !require_string(db_user, "db_user")
+      || !require_string(db_name, "db_name")
+      || !require_boolean(reconnect, "reconnect")
+      || !require_boolean(exit_on_fatal, "exit_on_fatal")
+      || !require_integer(min_connections, "min_connections")
+      || !require_integer(max_connections, "max_connections")
+      || !require_integer(inc_connections, "inc_connections")
+      || !require_integer(idle_timeout, "idle_timeout")
+      || !require_integer(validate_timeout, "validate_timeout")
+      || !require_string(description, "description")) {
+    return std::nullopt;
+  }
+
+  auto parse_u32 = [&error](json_t* value, const char* field,
+                            std::optional<uint32_t>& out) -> bool {
+    if (!value || !json_is_integer(value)) { return true; }
+    const auto raw = json_integer_value(value);
+    if (raw < 0 || raw > std::numeric_limits<uint32_t>::max()) {
+      error = std::string{"field '"} + field
+              + "' must be between 0 and 4294967295.";
+      return false;
+    }
+    out = static_cast<uint32_t>(raw);
+    return true;
+  };
+
+  DirectorCatalogRequestSpec spec{};
+  if (db_address && json_is_string(db_address)) {
+    spec.db_address = std::string{json_string_value(db_address)};
+  }
+  if (!parse_u32(db_port, "db_port", spec.db_port)
+      || !parse_u32(min_connections, "min_connections", spec.min_connections)
+      || !parse_u32(max_connections, "max_connections", spec.max_connections)
+      || !parse_u32(inc_connections, "inc_connections", spec.inc_connections)
+      || !parse_u32(idle_timeout, "idle_timeout", spec.idle_timeout)
+      || !parse_u32(validate_timeout, "validate_timeout",
+                    spec.validate_timeout)) {
+    return std::nullopt;
+  }
+  if (db_socket && json_is_string(db_socket)) {
+    spec.db_socket = std::string{json_string_value(db_socket)};
+  }
+  if (db_password && json_is_string(db_password)) {
+    spec.db_password = std::string{json_string_value(db_password)};
+  }
+  if (db_user && json_is_string(db_user)) {
+    spec.db_user = std::string{json_string_value(db_user)};
+  }
+  if (db_name && json_is_string(db_name)) {
+    spec.db_name = std::string{json_string_value(db_name)};
+  }
+  if (reconnect && json_is_boolean(reconnect)) {
+    spec.reconnect = json_is_true(reconnect);
+  }
+  if (exit_on_fatal && json_is_boolean(exit_on_fatal)) {
+    spec.exit_on_fatal = json_is_true(exit_on_fatal);
+  }
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  return spec;
+}
+
 http::response<http::string_body> HandleDeploymentsRequest(
     ServiceState& state,
     const http::request<http::string_body>& request,
@@ -3487,6 +4225,29 @@ http::response<http::string_body> HandleDeploymentsRequest(
       && path_parts[5] == "profiles"
       && request.method() == http::verb::delete_) {
     return HandleDeploymentDirectorProfileDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "pools" && request.method() == http::verb::put) {
+    return HandleDeploymentDirectorPoolPutRequest(state, request, path_parts[2],
+                                                  path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "pools" && request.method() == http::verb::delete_) {
+    return HandleDeploymentDirectorPoolDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "catalogs" && request.method() == http::verb::put) {
+    return HandleDeploymentDirectorCatalogPutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "catalogs"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentDirectorCatalogDeleteRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
