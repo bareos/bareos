@@ -135,6 +135,12 @@ struct DirectorCatalogRequestSpec {
   std::optional<std::string> description{};
 };
 
+struct DirectorScheduleRequestSpec {
+  std::optional<std::string> description{};
+  std::optional<bool> enabled{};
+  std::optional<std::vector<std::string>> run_entries{};
+};
+
 std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
     std::string_view body,
     std::string& error);
@@ -157,6 +163,9 @@ std::optional<DirectorPoolRequestSpec> ParseDirectorPoolRequest(
     std::string_view body,
     std::string& error);
 std::optional<DirectorCatalogRequestSpec> ParseDirectorCatalogRequest(
+    std::string_view body,
+    std::string& error);
+std::optional<DirectorScheduleRequestSpec> ParseDirectorScheduleRequest(
     std::string_view body,
     std::string& error);
 
@@ -251,7 +260,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
       margin-top: 0.75rem;
       margin-bottom: 0.25rem;
     }
-    input, select, button {
+    input, select, button, textarea {
       width: 100%;
       box-sizing: border-box;
       padding: 0.55rem 0.7rem;
@@ -862,6 +871,42 @@ const char* kTestUiHtmlTemplate = R"HTML(
         </button>
         <button type="button" id="director-catalog-delete-button">
           DELETE /v1/deployments/{id}/directors/{director}/catalogs/{catalog}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert director schedule resource</h2>
+      <form id="director-schedule-form">
+        <label for="director-schedule-deployment-id">Deployment ID</label>
+        <input id="director-schedule-deployment-id" name="deployment_id" value="prod">
+
+        <label for="director-schedule-director-name">Director name</label>
+        <input id="director-schedule-director-name" name="director_name" value="bareos-dir">
+
+        <label for="director-schedule-schedule-name">Schedule name</label>
+        <input id="director-schedule-schedule-name" name="schedule_name" value="managed-schedule">
+
+        <label for="director-schedule-description">Description</label>
+        <input id="director-schedule-description" name="description"
+               placeholder="Managed schedule resource">
+
+        <label class="checkbox-label" for="director-schedule-enabled">
+          <input id="director-schedule-enabled" name="enabled"
+                 type="checkbox" checked>
+          Enabled
+        </label>
+
+        <label for="director-schedule-runs">Run entries</label>
+        <textarea id="director-schedule-runs" name="run_entries"
+                  rows="4"
+                  placeholder="Level=Full monthly 1st sat at 21:00"></textarea>
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/directors/{director}/schedules/{schedule}
+        </button>
+        <button type="button" id="director-schedule-delete-button">
+          DELETE /v1/deployments/{id}/directors/{director}/schedules/{schedule}
         </button>
       </form>
     </section>
@@ -1963,6 +2008,53 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const { response } = await request(
           'DELETE',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/catalogs/${encodeURIComponent(catalogName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-schedule-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const scheduleName = String(form.get('schedule_name') ?? '').trim();
+        const rawRuns = String(form.get('run_entries') ?? '');
+        const runEntries = rawRuns.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const payload = {
+          description: String(form.get('description') ?? '').trim(),
+          enabled: document.getElementById('director-schedule-enabled').checked,
+          run_entries: runEntries,
+        };
+        if (!payload.description) {
+          delete payload.description;
+        }
+        if (payload.run_entries.length === 0) {
+          delete payload.run_entries;
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/schedules/${encodeURIComponent(scheduleName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-schedule-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('director-schedule-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const scheduleName = String(form.get('schedule_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/schedules/${encodeURIComponent(scheduleName)}`);
         if (response.ok) {
           document.getElementById('deployment-inspect-id').value = deploymentId;
           await loadDeploymentContents(deploymentId);
@@ -3449,6 +3541,92 @@ http::response<http::string_body> HandleDeploymentDirectorCatalogDeleteRequest(
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
+http::response<http::string_body> HandleDeploymentDirectorSchedulePutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view schedule_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorScheduleRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  DirectorScheduleResourceSpec resource_spec{
+      .description = spec->description,
+      .enabled = spec->enabled,
+      .run_entries = spec->run_entries,
+  };
+  auto result = state.UpsertDirectorScheduleResource(
+      deployment_id, director_name, schedule_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "schedule_name",
+                      json_string(std::string{schedule_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorScheduleDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view schedule_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteDirectorScheduleResource(
+      deployment_id, director_name, schedule_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "schedule_name",
+                      json_string(std::string{schedule_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
 http::response<http::string_body> HandleDeploymentGitStatusRequest(
     ServiceState& state,
     std::string_view deployment_id)
@@ -4096,6 +4274,58 @@ std::optional<DirectorCatalogRequestSpec> ParseDirectorCatalogRequest(
   return spec;
 }
 
+std::optional<DirectorScheduleRequestSpec> ParseDirectorScheduleRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* description = json_object_get(root.get(), "description");
+  auto* enabled = json_object_get(root.get(), "enabled");
+  auto* run_entries = json_object_get(root.get(), "run_entries");
+  if (description && !json_is_null(description)
+      && !json_is_string(description)) {
+    error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (enabled && !json_is_null(enabled) && !json_is_boolean(enabled)) {
+    error = "field 'enabled' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (run_entries && !json_is_null(run_entries)
+      && !json_is_array(run_entries)) {
+    error = "field 'run_entries' must be an array of strings when provided.";
+    return std::nullopt;
+  }
+
+  DirectorScheduleRequestSpec spec{};
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  if (enabled && json_is_boolean(enabled)) {
+    spec.enabled = json_is_true(enabled);
+  }
+  if (run_entries && json_is_array(run_entries)) {
+    std::vector<std::string> entries;
+    entries.reserve(json_array_size(run_entries));
+    for (size_t index = 0; index < json_array_size(run_entries); ++index) {
+      auto* entry = json_array_get(run_entries, index);
+      if (!json_is_string(entry)) {
+        error = "field 'run_entries' must contain only strings.";
+        return std::nullopt;
+      }
+      entries.emplace_back(json_string_value(entry));
+    }
+    spec.run_entries = std::move(entries);
+  }
+  return spec;
+}
+
 http::response<http::string_body> HandleDeploymentsRequest(
     ServiceState& state,
     const http::request<http::string_body>& request,
@@ -4248,6 +4478,18 @@ http::response<http::string_body> HandleDeploymentsRequest(
       && path_parts[5] == "catalogs"
       && request.method() == http::verb::delete_) {
     return HandleDeploymentDirectorCatalogDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "schedules" && request.method() == http::verb::put) {
+    return HandleDeploymentDirectorSchedulePutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "schedules"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentDirectorScheduleDeleteRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 

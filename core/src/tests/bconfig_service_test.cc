@@ -1899,6 +1899,210 @@ TEST(BconfigService, RejectsDirectorCatalogDeletesForSharedFiles)
   EXPECT_TRUE(std::filesystem::exists(shared_path));
 }
 
+TEST(BconfigService, UpsertsDirectorScheduleResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorScheduleResource(
+      "prod", "bareos-dir", "ManagedSchedule",
+      {.description = std::string{"Managed schedule"},
+       .enabled = true,
+       .run_entries
+       = std::vector<std::string>{"Level=Full monthly 1st sat at 21:00"}});
+  ASSERT_TRUE(created) << created.error;
+  EXPECT_EQ(created.value->name, "bareos-dir");
+
+  const auto schedule_path
+      = created.value->path / "bareos-dir.d/schedule/ManagedSchedule.conf";
+  const auto created_text = ReadTextFile(schedule_path);
+  EXPECT_NE(created_text.find("Name = \"ManagedSchedule\""), std::string::npos);
+  EXPECT_NE(created_text.find("Description = \"Managed schedule\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("Enabled = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("Run = Level=Full monthly 1st sat at 21:00"),
+            std::string::npos);
+
+  auto updated = state.UpsertDirectorScheduleResource(
+      "prod", "bareos-dir", "Odd Weeks",
+      {.description = std::string{"Updated odd weeks"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(
+      updated.value->path / "bareos-dir.d/schedule/OddWeeks.conf");
+  EXPECT_NE(updated_text.find("Description = \"Updated odd weeks\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Enabled = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("Run = w01/w02 sun at 23:10"), std::string::npos);
+}
+
+TEST(BconfigService, RejectsDirectorScheduleUpdatesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto schedule_directory
+      = RepositoryLayout::DirectorsDirectory(repo_path.path())
+        / "bareos-dir/bareos-dir.d/schedule";
+  const auto original_path = schedule_directory / "OddWeeks.conf";
+  const auto shared_path = schedule_directory / "shared.conf";
+  const auto original_text = ReadTextFile(original_path);
+  WriteTextFile(shared_path,
+                original_text
+                    + "\nSchedule {\n"
+                      "  Name = \"OtherSchedule\"\n"
+                      "  Run = daily at 20:00\n"
+                      "}\n");
+  std::filesystem::remove(original_path);
+
+  auto rejected = state.UpsertDirectorScheduleResource(
+      "prod", "bareos-dir", "Odd Weeks",
+      {.description = std::string{"Updated odd weeks"}});
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+}
+
+TEST(BconfigService, DeletesDirectorScheduleResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorScheduleResource(
+      "prod", "bareos-dir", "ManagedSchedule",
+      {.run_entries = std::vector<std::string>{"daily at 20:00"}});
+  ASSERT_TRUE(created) << created.error;
+
+  const auto schedule_path
+      = created.value->path / "bareos-dir.d/schedule/ManagedSchedule.conf";
+  ASSERT_TRUE(std::filesystem::exists(schedule_path));
+
+  auto deleted = state.DeleteDirectorScheduleResource("prod", "bareos-dir",
+                                                      "ManagedSchedule");
+  ASSERT_TRUE(deleted) << deleted.error;
+  EXPECT_FALSE(std::filesystem::exists(schedule_path));
+}
+
+TEST(BconfigService, RejectsDirectorScheduleDeletesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto schedule_directory
+      = RepositoryLayout::DirectorsDirectory(repo_path.path())
+        / "bareos-dir/bareos-dir.d/schedule";
+  const auto original_path = schedule_directory / "OddWeeks.conf";
+  const auto shared_path = schedule_directory / "shared.conf";
+  const auto original_text = ReadTextFile(original_path);
+  WriteTextFile(shared_path,
+                original_text
+                    + "\nSchedule {\n"
+                      "  Name = \"OtherSchedule\"\n"
+                      "  Run = daily at 20:00\n"
+                      "}\n");
+  std::filesystem::remove(original_path);
+
+  auto rejected
+      = state.DeleteDirectorScheduleResource("prod", "bareos-dir", "Odd Weeks");
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+}
+
 TEST(BconfigService, UpsertsDirectorStorageResources)
 {
   ScopedDirectory source_root{MakeTempPath()};

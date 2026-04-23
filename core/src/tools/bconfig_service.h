@@ -169,6 +169,12 @@ struct DirectorCatalogResourceSpec {
   std::optional<std::string> description{};
 };
 
+struct DirectorScheduleResourceSpec {
+  std::optional<std::string> description{};
+  std::optional<bool> enabled{};
+  std::optional<std::vector<std::string>> run_entries{};
+};
+
 struct JobSpec {
   std::string type{};
   std::optional<std::string> deployment_id{};
@@ -309,6 +315,15 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view director_name,
       std::string_view catalog_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorScheduleResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view schedule_name,
+      const DirectorScheduleResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteDirectorScheduleResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view schedule_name) const;
   OperationResult<std::vector<DeploymentImportRecord>> ListDeploymentImports(
       std::string_view deployment_id) const;
   OperationResult<DeploymentGitStatusRecord> GetDeploymentGitStatus(

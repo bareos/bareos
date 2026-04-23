@@ -668,6 +668,12 @@ struct DirectorCatalogContentSpec {
   std::optional<uint32_t> validate_timeout{};
 };
 
+struct DirectorScheduleContentSpec {
+  std::optional<std::string> description{};
+  bool enabled{true};
+  std::vector<std::string> run_entries{};
+};
+
 std::string BuildDirectorClientResourceContent(std::string_view client_name,
                                                std::string_view address,
                                                std::string_view password,
@@ -910,6 +916,22 @@ std::string BuildDirectorCatalogResourceContent(
   return content.str();
 }
 
+std::string BuildDirectorScheduleResourceContent(
+    std::string_view schedule_name,
+    const DirectorScheduleContentSpec& spec)
+{
+  std::ostringstream content;
+  content << "Schedule {\n"
+          << "  Name = " << QuoteBareosString(schedule_name) << "\n";
+  AppendQuotedDirective(content, "Description", spec.description);
+  content << "  Enabled = " << RenderBareosBool(spec.enabled) << "\n";
+  for (const auto& entry : spec.run_entries) {
+    content << "  Run = " << entry << "\n";
+  }
+  content << "}\n";
+  return content.str();
+}
+
 std::string BuildStorageDaemonDirectorResourceContent(
     std::string_view director_name,
     std::string_view password,
@@ -995,6 +1017,13 @@ std::string DefaultDirectorCatalogDescription(std::string_view catalog_name,
                                               std::string_view director_name)
 {
   return "Managed catalog resource for " + std::string{catalog_name}
+         + " in director " + std::string{director_name};
+}
+
+std::string DefaultDirectorScheduleDescription(std::string_view schedule_name,
+                                               std::string_view director_name)
+{
+  return "Managed schedule resource for " + std::string{schedule_name}
          + " in director " + std::string{director_name};
 }
 
@@ -1207,6 +1236,13 @@ struct DirectorPoolWriteContext {
 struct DirectorCatalogWriteContext {
   std::filesystem::path file_path{};
   DirectorCatalogContentSpec content{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct DirectorScheduleWriteContext {
+  std::filesystem::path file_path{};
+  DirectorScheduleContentSpec content{};
   bool exists{false};
   bool is_standalone_file{false};
 };
@@ -1437,6 +1473,41 @@ std::vector<std::string> CopyStorageNames(
     }
   }
   return names;
+}
+
+std::string TrimAsciiWhitespace(std::string_view value)
+{
+  size_t begin = 0;
+  while (begin < value.size()
+         && std::isspace(static_cast<unsigned char>(value[begin]))) {
+    ++begin;
+  }
+  size_t end = value.size();
+  while (end > begin
+         && std::isspace(static_cast<unsigned char>(value[end - 1]))) {
+    --end;
+  }
+  return std::string{value.substr(begin, end - begin)};
+}
+
+OperationResult<std::vector<std::string>> ExtractScheduleRunEntries(
+    const std::filesystem::path& file_path)
+{
+  auto file = ReadFile(file_path);
+  if (!file) { return {.error = file.error}; }
+
+  std::vector<std::string> entries;
+  std::istringstream stream{*file.value};
+  std::string line;
+  while (std::getline(stream, line)) {
+    const auto trimmed = TrimAsciiWhitespace(line);
+    if (trimmed.rfind("Run", 0) != 0) { continue; }
+    const auto equals = trimmed.find('=');
+    if (equals == std::string::npos) { continue; }
+    auto value = TrimAsciiWhitespace(trimmed.substr(equals + 1));
+    if (!value.empty()) { entries.push_back(std::move(value)); }
+  }
+  return {.value = std::move(entries)};
 }
 
 template <typename Resource>
@@ -1913,6 +1984,74 @@ OperationResult<DirectorCatalogWriteContext> LoadDirectorCatalogWriteContext(
       return {.error = "director catalog '" + std::string{catalog_name}
                        + "' is not stored in a standalone file yet."};
     }
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<DirectorScheduleWriteContext> LoadDirectorScheduleWriteContext(
+    const DeploymentConfigRecord& director_config,
+    std::string_view schedule_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorScheduleWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "schedule"
+                   / (std::string{schedule_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_SCHEDULE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_SCHEDULE, resource)) {
+    auto* schedule = dynamic_cast<directordaemon::ScheduleResource*>(resource);
+    if (!schedule) { continue; }
+    if (auto source = schedule->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_SCHEDULE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_SCHEDULE, resource)) {
+    auto* schedule = dynamic_cast<directordaemon::ScheduleResource*>(resource);
+    if (!schedule || !schedule->resource_name_
+        || schedule->resource_name_ != schedule_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (schedule->description_ && schedule->description_[0] != '\0') {
+      context.content.description = std::string{schedule->description_};
+    }
+    context.content.enabled = schedule->enabled;
+
+    auto source = schedule->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director schedule '" + std::string{schedule_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director schedule '" + std::string{schedule_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+
+    auto runs = ExtractScheduleRunEntries(context.file_path);
+    if (!runs) { return {.error = runs.error}; }
+    context.content.run_entries = std::move(*runs.value);
     return {.value = std::move(context)};
   }
 
@@ -4553,6 +4692,151 @@ ServiceState::DeleteDirectorCatalogResource(std::string_view deployment_id,
   }
 
   DebugLog("deleted director catalog resource '" + std::string{catalog_name}
+           + "' from director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertDirectorScheduleResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view schedule_name,
+    const DirectorScheduleResourceSpec& spec) const
+{
+  DebugLog("upserting director schedule resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', schedule '"
+           + std::string{schedule_name} + "'");
+  if (!IsSafePathSegment(schedule_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "schedule and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorScheduleWriteContext(*director_config.value, schedule_name);
+  if (!context) { return {.error = context.error}; }
+
+  auto content = context.value->content;
+  content.description
+      = spec.description
+            ? *spec.description
+            : content.description.value_or(DefaultDirectorScheduleDescription(
+                  schedule_name, director_name));
+  if (spec.enabled) { content.enabled = *spec.enabled; }
+  if (spec.run_entries) { content.run_entries = *spec.run_entries; }
+
+  const auto rendered
+      = BuildDirectorScheduleResourceContent(schedule_name, content);
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "schedule";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director schedule directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write director schedule resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director schedule file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("director schedule update for '" + std::string{schedule_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director schedule parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director schedule update ", loaded.messages)};
+  }
+
+  DebugLog("updated director schedule resource '" + std::string{schedule_name}
+           + "' in director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteDirectorScheduleResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view schedule_name) const
+{
+  DebugLog("deleting director schedule resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', schedule '"
+           + std::string{schedule_name} + "'");
+  if (!IsSafePathSegment(schedule_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "schedule and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorScheduleWriteContext(*director_config.value, schedule_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director '" + std::string{director_name}
+                     + "' does not define schedule '"
+                     + std::string{schedule_name} + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             director_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director schedule parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director schedule delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted director schedule resource '" + std::string{schedule_name}
            + "' from director '" + std::string{director_name} + "'");
   return {.value = *director_config.value};
 }
