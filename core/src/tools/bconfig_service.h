@@ -107,6 +107,7 @@ struct DeploymentConfigRecord {
 
 struct ClientDirectorStubSpec {
   std::optional<std::string> description{};
+  std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> monitor{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
 };

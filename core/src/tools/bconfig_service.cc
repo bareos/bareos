@@ -608,6 +608,8 @@ std::string BuildClientDirectorStubContent(
     std::string_view director_name,
     std::string_view password,
     std::string_view description,
+    const std::optional<bool>& connection_from_director_to_client
+    = std::nullopt,
     const std::optional<bool>& monitor = std::nullopt,
     const std::optional<uint64_t>& maximum_bandwidth_per_job = std::nullopt)
 {
@@ -616,6 +618,8 @@ std::string BuildClientDirectorStubContent(
           << "  Name = " << QuoteBareosString(director_name) << "\n"
           << "  Password = " << QuoteBareosString(password) << "\n"
           << "  Description = " << QuoteBareosString(description) << "\n";
+  AppendBoolDirective(content, "ConnectionFromDirectorToClient",
+                      connection_from_director_to_client);
   AppendBoolDirective(content, "Monitor", monitor);
   AppendIntegerDirective(content, "MaximumBandwidthPerJob",
                          maximum_bandwidth_per_job);
@@ -1882,6 +1886,7 @@ struct ClientMessagesWriteContext {
 struct ClientDirectorStubWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> description{};
+  std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> monitor{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
   bool exists{false};
@@ -4787,6 +4792,10 @@ LoadClientDirectorStubWriteContext(const std::filesystem::path& client_root,
     if (director->description_ && director->description_[0] != '\0') {
       context.description = std::string{director->description_};
     }
+    if (HasMemberSource(*director, {"ConnectionFromDirectorToClient"})) {
+      context.connection_from_director_to_client
+          = director->conn_from_dir_to_fd;
+    }
     if (HasMemberSource(*director, {"Monitor"})) {
       context.monitor = director->monitor;
     }
@@ -5547,14 +5556,18 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
                                : context.value->description.value_or(
                                      DefaultClientDirectorStubDescription(
                                          client_name, director_name));
+  const auto connection_from_director_to_client
+      = spec.connection_from_director_to_client
+            ? spec.connection_from_director_to_client
+            : context.value->connection_from_director_to_client;
   const auto monitor = spec.monitor ? spec.monitor : context.value->monitor;
   const auto maximum_bandwidth_per_job
       = spec.maximum_bandwidth_per_job
             ? spec.maximum_bandwidth_per_job
             : context.value->maximum_bandwidth_per_job;
   const auto stub_content = BuildClientDirectorStubContent(
-      director_name, *password.value, description, monitor,
-      maximum_bandwidth_per_job);
+      director_name, *password.value, description,
+      connection_from_director_to_client, monitor, maximum_bandwidth_per_job);
 
   std::error_code error_code;
   std::filesystem::create_directories(stub_directory, error_code);
