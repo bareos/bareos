@@ -30,6 +30,28 @@ find_program(VIRTRESIZE virt-resize)
 # We use LZMA compression in our tests
 find_program(LZMA lzma)
 
+if(NOT ENABLE_INCUS_PLUGIN)
+  create_systemtest(
+    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT "no incus plugin"
+  )
+  return()
+endif()
+
+if(NOT TARGET python3-fd)
+  create_systemtest(
+    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT "no python plugin"
+  )
+  return()
+endif()
+
+set(Python3_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
+if(Python3_VERSION VERSION_LESS "3.13")
+  create_systemtest(
+    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT "python < 3.13"
+  )
+  return()
+endif()
+
 if(DEFINED ENV{BUILDID})
   message("have buildid $ENV{BUILDID}")
 else()
@@ -41,12 +63,10 @@ if(INCUS
    AND LZMA
    AND QEMUIMG
    AND VIRTRESIZE
-   AND TARGET python3-fd
-   AND ENABLE_INCUS_PLUGIN
 )
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-  # create_systemtest( ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
-  # "disabled as not all requirements were met" )
+  create_systemtest(
+    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT "necessary tools missing"
+  )
 endif()
