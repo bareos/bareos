@@ -631,6 +631,12 @@ std::string BuildClientDirectorStubContent(
     const std::optional<std::string>& tls_cipher_suites = std::nullopt,
     const std::optional<std::string>& tls_dh_file = std::nullopt,
     const std::optional<std::string>& tls_protocol = std::nullopt,
+    const std::optional<std::string>& tls_ca_certificate_file = std::nullopt,
+    const std::optional<std::string>& tls_ca_certificate_dir = std::nullopt,
+    const std::optional<std::string>& tls_certificate_revocation_list
+    = std::nullopt,
+    const std::optional<std::string>& tls_certificate = std::nullopt,
+    const std::optional<std::string>& tls_key = std::nullopt,
     const std::optional<bool>& connection_from_director_to_client
     = std::nullopt,
     const std::optional<bool>& connection_from_client_to_director
@@ -661,6 +667,13 @@ std::string BuildClientDirectorStubContent(
   AppendQuotedDirective(content, "TlsCipherSuites", tls_cipher_suites);
   AppendQuotedDirective(content, "TlsDhFile", tls_dh_file);
   AppendQuotedDirective(content, "TlsProtocol", tls_protocol);
+  AppendQuotedDirective(content, "TlsCaCertificateFile",
+                        tls_ca_certificate_file);
+  AppendQuotedDirective(content, "TlsCaCertificateDir", tls_ca_certificate_dir);
+  AppendQuotedDirective(content, "TlsCertificateRevocationList",
+                        tls_certificate_revocation_list);
+  AppendQuotedDirective(content, "TlsCertificate", tls_certificate);
+  AppendQuotedDirective(content, "TlsKey", tls_key);
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
                       connection_from_director_to_client);
   AppendBoolDirective(content, "ConnectionFromClientToDirector",
@@ -1943,6 +1956,11 @@ struct ClientDirectorStubWriteContext {
   std::optional<std::string> tls_cipher_suites{};
   std::optional<std::string> tls_dh_file{};
   std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};
@@ -4893,6 +4911,26 @@ LoadClientDirectorStubWriteContext(const std::filesystem::path& client_root,
         && !director->protocol_.empty()) {
       context.tls_protocol = director->protocol_;
     }
+    if (HasMemberSource(*director, {"TlsCaCertificateFile"})
+        && !director->tls_cert_.ca_certfile_.empty()) {
+      context.tls_ca_certificate_file = director->tls_cert_.ca_certfile_;
+    }
+    if (HasMemberSource(*director, {"TlsCaCertificateDir"})
+        && !director->tls_cert_.ca_certdir_.empty()) {
+      context.tls_ca_certificate_dir = director->tls_cert_.ca_certdir_;
+    }
+    if (HasMemberSource(*director, {"TlsCertificateRevocationList"})
+        && !director->tls_cert_.crlfile_.empty()) {
+      context.tls_certificate_revocation_list = director->tls_cert_.crlfile_;
+    }
+    if (HasMemberSource(*director, {"TlsCertificate"})
+        && !director->tls_cert_.certfile_.empty()) {
+      context.tls_certificate = director->tls_cert_.certfile_;
+    }
+    if (HasMemberSource(*director, {"TlsKey"})
+        && !director->tls_cert_.keyfile_.empty()) {
+      context.tls_key = director->tls_cert_.keyfile_;
+    }
     if (HasMemberSource(*director, {"ConnectionFromDirectorToClient"})) {
       context.connection_from_director_to_client
           = director->conn_from_dir_to_fd;
@@ -5689,6 +5727,20 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
       = spec.tls_dh_file ? spec.tls_dh_file : context.value->tls_dh_file;
   const auto tls_protocol
       = spec.tls_protocol ? spec.tls_protocol : context.value->tls_protocol;
+  const auto tls_ca_certificate_file
+      = spec.tls_ca_certificate_file ? spec.tls_ca_certificate_file
+                                     : context.value->tls_ca_certificate_file;
+  const auto tls_ca_certificate_dir
+      = spec.tls_ca_certificate_dir ? spec.tls_ca_certificate_dir
+                                    : context.value->tls_ca_certificate_dir;
+  const auto tls_certificate_revocation_list
+      = spec.tls_certificate_revocation_list
+            ? spec.tls_certificate_revocation_list
+            : context.value->tls_certificate_revocation_list;
+  const auto tls_certificate = spec.tls_certificate
+                                   ? spec.tls_certificate
+                                   : context.value->tls_certificate;
+  const auto tls_key = spec.tls_key ? spec.tls_key : context.value->tls_key;
   const auto connection_from_director_to_client
       = spec.connection_from_director_to_client
             ? spec.connection_from_director_to_client
@@ -5706,7 +5758,9 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
       director_name, *password.value, description, address, port,
       allowed_script_dirs, allowed_job_commands, tls_authenticate, tls_enable,
       tls_require, tls_verify_peer, tls_cipher_list, tls_cipher_suites,
-      tls_dh_file, tls_protocol, connection_from_director_to_client,
+      tls_dh_file, tls_protocol, tls_ca_certificate_file,
+      tls_ca_certificate_dir, tls_certificate_revocation_list, tls_certificate,
+      tls_key, connection_from_director_to_client,
       connection_from_client_to_director, monitor, maximum_bandwidth_per_job);
 
   std::error_code error_code;

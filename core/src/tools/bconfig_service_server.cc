@@ -85,6 +85,11 @@ struct ClientDirectorStubRequestSpec {
   std::optional<std::string> tls_cipher_suites{};
   std::optional<std::string> tls_dh_file{};
   std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};
@@ -785,6 +790,29 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="client-stub-tls-protocol">TLS protocol</label>
         <input id="client-stub-tls-protocol" name="tls_protocol"
                placeholder="MinProtocol = TLSv1.2">
+
+        <label for="client-stub-tls-ca-certificate-file">TLS CA certificate file</label>
+        <input id="client-stub-tls-ca-certificate-file"
+               name="tls_ca_certificate_file"
+               placeholder="/etc/bareos/ca.pem">
+
+        <label for="client-stub-tls-ca-certificate-dir">TLS CA certificate dir</label>
+        <input id="client-stub-tls-ca-certificate-dir"
+               name="tls_ca_certificate_dir"
+               placeholder="/etc/ssl/certs">
+
+        <label for="client-stub-tls-certificate-revocation-list">TLS certificate revocation list</label>
+        <input id="client-stub-tls-certificate-revocation-list"
+               name="tls_certificate_revocation_list"
+               placeholder="/etc/bareos/crl.pem">
+
+        <label for="client-stub-tls-certificate">TLS certificate</label>
+        <input id="client-stub-tls-certificate" name="tls_certificate"
+               placeholder="/etc/bareos/client.crt">
+
+        <label for="client-stub-tls-key">TLS key</label>
+        <input id="client-stub-tls-key" name="tls_key"
+               placeholder="/etc/bareos/client.key">
 
         <label class="checkbox-label" for="client-stub-connection-from-director-to-client">
           <input id="client-stub-connection-from-director-to-client"
@@ -2827,6 +2855,14 @@ const char* kTestUiHtmlTemplate = R"HTML(
           tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
           tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
           tls_protocol: String(form.get('tls_protocol') ?? '').trim(),
+          tls_ca_certificate_file: String(
+            form.get('tls_ca_certificate_file') ?? '').trim(),
+          tls_ca_certificate_dir: String(
+            form.get('tls_ca_certificate_dir') ?? '').trim(),
+          tls_certificate_revocation_list: String(
+            form.get('tls_certificate_revocation_list') ?? '').trim(),
+          tls_certificate: String(form.get('tls_certificate') ?? '').trim(),
+          tls_key: String(form.get('tls_key') ?? '').trim(),
           connection_from_director_to_client: document.getElementById(
             'client-stub-connection-from-director-to-client').checked,
           connection_from_client_to_director: document.getElementById(
@@ -2863,6 +2899,21 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.tls_protocol) {
           delete payload.tls_protocol;
+        }
+        if (!payload.tls_ca_certificate_file) {
+          delete payload.tls_ca_certificate_file;
+        }
+        if (!payload.tls_ca_certificate_dir) {
+          delete payload.tls_ca_certificate_dir;
+        }
+        if (!payload.tls_certificate_revocation_list) {
+          delete payload.tls_certificate_revocation_list;
+        }
+        if (!payload.tls_certificate) {
+          delete payload.tls_certificate;
+        }
+        if (!payload.tls_key) {
+          delete payload.tls_key;
         }
         if (!payload.maximum_bandwidth_per_job) {
           delete payload.maximum_bandwidth_per_job;
@@ -5124,6 +5175,11 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
       .tls_cipher_suites = spec->tls_cipher_suites,
       .tls_dh_file = spec->tls_dh_file,
       .tls_protocol = spec->tls_protocol,
+      .tls_ca_certificate_file = spec->tls_ca_certificate_file,
+      .tls_ca_certificate_dir = spec->tls_ca_certificate_dir,
+      .tls_certificate_revocation_list = spec->tls_certificate_revocation_list,
+      .tls_certificate = spec->tls_certificate,
+      .tls_key = spec->tls_key,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -6961,6 +7017,14 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   auto* tls_cipher_suites = json_object_get(root.get(), "tls_cipher_suites");
   auto* tls_dh_file = json_object_get(root.get(), "tls_dh_file");
   auto* tls_protocol = json_object_get(root.get(), "tls_protocol");
+  auto* tls_ca_certificate_file
+      = json_object_get(root.get(), "tls_ca_certificate_file");
+  auto* tls_ca_certificate_dir
+      = json_object_get(root.get(), "tls_ca_certificate_dir");
+  auto* tls_certificate_revocation_list
+      = json_object_get(root.get(), "tls_certificate_revocation_list");
+  auto* tls_certificate = json_object_get(root.get(), "tls_certificate");
+  auto* tls_key = json_object_get(root.get(), "tls_key");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -7042,6 +7106,33 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
     error = "field 'tls_protocol' must be a string when provided.";
     return std::nullopt;
   }
+  if (tls_ca_certificate_file && !json_is_null(tls_ca_certificate_file)
+      && !json_is_string(tls_ca_certificate_file)) {
+    error = "field 'tls_ca_certificate_file' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (tls_ca_certificate_dir && !json_is_null(tls_ca_certificate_dir)
+      && !json_is_string(tls_ca_certificate_dir)) {
+    error = "field 'tls_ca_certificate_dir' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (tls_certificate_revocation_list
+      && !json_is_null(tls_certificate_revocation_list)
+      && !json_is_string(tls_certificate_revocation_list)) {
+    error
+        = "field 'tls_certificate_revocation_list' must be a string when "
+          "provided.";
+    return std::nullopt;
+  }
+  if (tls_certificate && !json_is_null(tls_certificate)
+      && !json_is_string(tls_certificate)) {
+    error = "field 'tls_certificate' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (tls_key && !json_is_null(tls_key) && !json_is_string(tls_key)) {
+    error = "field 'tls_key' must be a string when provided.";
+    return std::nullopt;
+  }
   if (connection_from_director_to_client
       && !json_is_null(connection_from_director_to_client)
       && !json_is_boolean(connection_from_director_to_client)) {
@@ -7119,6 +7210,25 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   }
   if (tls_protocol && json_is_string(tls_protocol)) {
     spec.tls_protocol = std::string{json_string_value(tls_protocol)};
+  }
+  if (tls_ca_certificate_file && json_is_string(tls_ca_certificate_file)) {
+    spec.tls_ca_certificate_file
+        = std::string{json_string_value(tls_ca_certificate_file)};
+  }
+  if (tls_ca_certificate_dir && json_is_string(tls_ca_certificate_dir)) {
+    spec.tls_ca_certificate_dir
+        = std::string{json_string_value(tls_ca_certificate_dir)};
+  }
+  if (tls_certificate_revocation_list
+      && json_is_string(tls_certificate_revocation_list)) {
+    spec.tls_certificate_revocation_list
+        = std::string{json_string_value(tls_certificate_revocation_list)};
+  }
+  if (tls_certificate && json_is_string(tls_certificate)) {
+    spec.tls_certificate = std::string{json_string_value(tls_certificate)};
+  }
+  if (tls_key && json_is_string(tls_key)) {
+    spec.tls_key = std::string{json_string_value(tls_key)};
   }
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {
