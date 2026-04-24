@@ -1049,6 +1049,8 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   auto created = state.UpsertClientDirectorStub(
       "prod", "bareos-fd", "bareos-dir",
       {.description = std::string{"Initial stub"},
+       .address = std::string{"127.0.0.1"},
+       .port = 9101,
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = false,
        .monitor = true,
@@ -1065,6 +1067,8 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   EXPECT_NE(created_text.find("Password = \"[md5]"), std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Initial stub\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("Address = 127.0.0.1"), std::string::npos);
+  EXPECT_NE(created_text.find("Port = 9101"), std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = no"),
@@ -1085,6 +1089,8 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   EXPECT_NE(updated_text.find("Password = \"[md5]"), std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated stub\""),
             std::string::npos);
+  EXPECT_NE(updated_text.find("Address = 127.0.0.1"), std::string::npos);
+  EXPECT_NE(updated_text.find("Port = 9101"), std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = no"),

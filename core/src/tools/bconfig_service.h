@@ -107,6 +107,8 @@ struct DeploymentConfigRecord {
 
 struct ClientDirectorStubSpec {
   std::optional<std::string> description{};
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};

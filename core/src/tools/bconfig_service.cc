@@ -603,11 +603,16 @@ template <typename Integer>
 void AppendIntegerDirective(std::ostringstream& content,
                             std::string_view name,
                             const std::optional<Integer>& value);
+void AppendBareosDirective(std::ostringstream& content,
+                           std::string_view name,
+                           const std::optional<std::string>& value);
 
 std::string BuildClientDirectorStubContent(
     std::string_view director_name,
     std::string_view password,
     std::string_view description,
+    const std::optional<std::string>& address = std::nullopt,
+    const std::optional<uint16_t>& port = std::nullopt,
     const std::optional<bool>& connection_from_director_to_client
     = std::nullopt,
     const std::optional<bool>& connection_from_client_to_director
@@ -620,6 +625,8 @@ std::string BuildClientDirectorStubContent(
           << "  Name = " << QuoteBareosString(director_name) << "\n"
           << "  Password = " << QuoteBareosString(password) << "\n"
           << "  Description = " << QuoteBareosString(description) << "\n";
+  AppendBareosDirective(content, "Address", address);
+  AppendIntegerDirective(content, "Port", port);
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
                       connection_from_director_to_client);
   AppendBoolDirective(content, "ConnectionFromClientToDirector",
@@ -1890,6 +1897,8 @@ struct ClientMessagesWriteContext {
 struct ClientDirectorStubWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> description{};
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};
@@ -4797,6 +4806,14 @@ LoadClientDirectorStubWriteContext(const std::filesystem::path& client_root,
     if (director->description_ && director->description_[0] != '\0') {
       context.description = std::string{director->description_};
     }
+    if (HasMemberSource(*director, {"Address"}) && director->address
+        && director->address[0] != '\0') {
+      context.address = std::string{director->address};
+    }
+    if (HasMemberSource(*director, {"Port"}) && director->port > 0
+        && director->port <= 65535) {
+      context.port = static_cast<uint16_t>(director->port);
+    }
     if (HasMemberSource(*director, {"ConnectionFromDirectorToClient"})) {
       context.connection_from_director_to_client
           = director->conn_from_dir_to_fd;
@@ -5565,6 +5582,8 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
                                : context.value->description.value_or(
                                      DefaultClientDirectorStubDescription(
                                          client_name, director_name));
+  const auto address = spec.address ? spec.address : context.value->address;
+  const auto port = spec.port ? spec.port : context.value->port;
   const auto connection_from_director_to_client
       = spec.connection_from_director_to_client
             ? spec.connection_from_director_to_client
@@ -5579,7 +5598,7 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
             ? spec.maximum_bandwidth_per_job
             : context.value->maximum_bandwidth_per_job;
   const auto stub_content = BuildClientDirectorStubContent(
-      director_name, *password.value, description,
+      director_name, *password.value, description, address, port,
       connection_from_director_to_client, connection_from_client_to_director,
       monitor, maximum_bandwidth_per_job);
 

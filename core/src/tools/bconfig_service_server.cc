@@ -73,6 +73,8 @@ struct InspectRequestSpec {
 
 struct ClientDirectorStubRequestSpec {
   std::optional<std::string> description{};
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};
@@ -719,6 +721,14 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="client-stub-description">Description</label>
         <input id="client-stub-description" name="description"
                placeholder="Managed director stub for client">
+
+        <label for="client-stub-address">Address</label>
+        <input id="client-stub-address" name="address"
+               placeholder="bareos-dir.example.invalid">
+
+        <label for="client-stub-port">Port</label>
+        <input id="client-stub-port" name="port" type="number" min="1" max="65535"
+               placeholder="9101">
 
         <label class="checkbox-label" for="client-stub-connection-from-director-to-client">
           <input id="client-stub-connection-from-director-to-client"
@@ -2739,6 +2749,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const directorName = String(form.get('director_name') ?? '').trim();
         const payload = {
           description: String(form.get('description') ?? '').trim(),
+          address: String(form.get('address') ?? '').trim(),
+          port: String(form.get('port') ?? '').trim(),
           connection_from_director_to_client: document.getElementById(
             'client-stub-connection-from-director-to-client').checked,
           connection_from_client_to_director: document.getElementById(
@@ -2749,6 +2761,14 @@ const char* kTestUiHtmlTemplate = R"HTML(
         };
         if (!payload.description) {
           delete payload.description;
+        }
+        if (!payload.address) {
+          delete payload.address;
+        }
+        if (!payload.port) {
+          delete payload.port;
+        } else {
+          payload.port = Number.parseInt(payload.port, 10);
         }
         if (!payload.maximum_bandwidth_per_job) {
           delete payload.maximum_bandwidth_per_job;
@@ -4998,6 +5018,8 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
 
   ClientDirectorStubSpec stub_spec{
       .description = spec->description,
+      .address = spec->address,
+      .port = spec->port,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -6821,6 +6843,8 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   }
 
   auto* description = json_object_get(root.get(), "description");
+  auto* address = json_object_get(root.get(), "address");
+  auto* port = json_object_get(root.get(), "port");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -6831,6 +6855,14 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   if (description && !json_is_null(description)
       && !json_is_string(description)) {
     error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (address && !json_is_null(address) && !json_is_string(address)) {
+    error = "field 'address' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (port && !json_is_null(port) && !json_is_integer(port)) {
+    error = "field 'port' must be an integer when provided.";
     return std::nullopt;
   }
   if (connection_from_director_to_client
@@ -6863,6 +6895,17 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   ClientDirectorStubRequestSpec spec{};
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
+  }
+  if (address && json_is_string(address)) {
+    spec.address = std::string{json_string_value(address)};
+  }
+  if (port && json_is_integer(port)) {
+    const auto value = json_integer_value(port);
+    if (value <= 0 || value > 65535) {
+      error = "field 'port' must be between 1 and 65535.";
+      return std::nullopt;
+    }
+    spec.port = static_cast<uint16_t>(value);
   }
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {
