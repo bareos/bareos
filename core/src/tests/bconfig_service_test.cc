@@ -768,6 +768,9 @@ TEST(BconfigService, UpsertsClientDaemonResources)
       "prod", "backup-bareos-test-fd",
       {.address = std::string{"client.example.com"},
        .port = 42102,
+       .maximum_concurrent_jobs = 42,
+       .absolute_job_timeout = 900,
+       .allow_bandwidth_bursting = true,
        .sd_connect_timeout = 1800,
        .heartbeat_interval = 60,
        .maximum_network_buffer_size = 1048576,
@@ -788,6 +791,10 @@ TEST(BconfigService, UpsertsClientDaemonResources)
   EXPECT_NE(updated_text.find("Address = client.example.com"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Port = 42102"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 42"), std::string::npos);
+  EXPECT_NE(updated_text.find("AbsoluteJobTimeout = 900"), std::string::npos);
+  EXPECT_NE(updated_text.find("AllowBandwidthBursting = yes"),
+            std::string::npos);
   EXPECT_NE(updated_text.find("SdConnectTimeout = 1800"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 60"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumNetworkBufferSize = 1048576"),
@@ -3743,6 +3750,11 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
       "prod", "bareos-sd",
       {.address = std::string{"storage.example.com"},
        .port = 42103,
+       .maximum_concurrent_jobs = 84,
+       .absolute_job_timeout = 1200,
+       .allow_bandwidth_bursting = false,
+       .collect_device_statistics = true,
+       .collect_job_statistics = false,
        .sd_connect_timeout = 1800,
        .fd_connect_timeout = 5400,
        .heartbeat_interval = 120,
@@ -3765,6 +3777,13 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
   EXPECT_NE(updated_text.find("Address = storage.example.com"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Port = 42103"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 84"), std::string::npos);
+  EXPECT_NE(updated_text.find("AbsoluteJobTimeout = 1200"), std::string::npos);
+  EXPECT_NE(updated_text.find("AllowBandwidthBursting = no"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("CollectDeviceStatistics = yes"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("CollectJobStatistics = no"), std::string::npos);
   EXPECT_NE(updated_text.find("SdConnectTimeout = 1800"), std::string::npos);
   EXPECT_NE(updated_text.find("FdConnectTimeout = 5400"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 120"), std::string::npos);

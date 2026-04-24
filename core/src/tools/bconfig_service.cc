@@ -677,6 +677,11 @@ struct DirectorMessagesContentSpec {
 struct StorageDaemonContentSpec {
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
+  std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<uint32_t> absolute_job_timeout{};
+  std::optional<bool> allow_bandwidth_bursting{};
+  std::optional<bool> collect_device_statistics{};
+  std::optional<bool> collect_job_statistics{};
   std::optional<uint64_t> sd_connect_timeout{};
   std::optional<uint64_t> fd_connect_timeout{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -1153,6 +1158,16 @@ std::string BuildStorageDaemonResourceContent(
           << "  Name = " << QuoteBareosString(storage_name) << "\n";
   AppendBareosDirective(content, "Address", spec.address);
   AppendIntegerDirective(content, "Port", spec.port);
+  AppendIntegerDirective(content, "MaximumConcurrentJobs",
+                         spec.maximum_concurrent_jobs);
+  AppendIntegerDirective(content, "AbsoluteJobTimeout",
+                         spec.absolute_job_timeout);
+  AppendBoolDirective(content, "AllowBandwidthBursting",
+                      spec.allow_bandwidth_bursting);
+  AppendBoolDirective(content, "CollectDeviceStatistics",
+                      spec.collect_device_statistics);
+  AppendBoolDirective(content, "CollectJobStatistics",
+                      spec.collect_job_statistics);
   AppendIntegerDirective(content, "SdConnectTimeout", spec.sd_connect_timeout);
   AppendIntegerDirective(content, "FdConnectTimeout", spec.fd_connect_timeout);
   AppendIntegerDirective(content, "HeartbeatInterval", spec.heartbeat_interval);
@@ -1180,6 +1195,12 @@ std::string BuildClientDaemonResourceContent(
           << "  Name = " << QuoteBareosString(client_name) << "\n";
   AppendBareosDirective(content, "Address", spec.address);
   AppendIntegerDirective(content, "Port", spec.port);
+  AppendIntegerDirective(content, "MaximumConcurrentJobs",
+                         spec.maximum_concurrent_jobs);
+  AppendIntegerDirective(content, "AbsoluteJobTimeout",
+                         spec.absolute_job_timeout);
+  AppendBoolDirective(content, "AllowBandwidthBursting",
+                      spec.allow_bandwidth_bursting);
   AppendIntegerDirective(content, "SdConnectTimeout", spec.sd_connect_timeout);
   AppendIntegerDirective(content, "HeartbeatInterval", spec.heartbeat_interval);
   AppendIntegerDirective(content, "MaximumNetworkBufferSize",
@@ -2850,6 +2871,15 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
       const auto port = GetFirstPortHostOrder(client->FDaddrs);
       if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
     }
+    if (HasMemberSource(*client, {"MaximumConcurrentJobs"})) {
+      context.content.maximum_concurrent_jobs = client->MaxConcurrentJobs;
+    }
+    if (HasMemberSource(*client, {"AbsoluteJobTimeout"})) {
+      context.content.absolute_job_timeout = client->jcr_watchdog_time;
+    }
+    if (HasMemberSource(*client, {"AllowBandwidthBursting"})) {
+      context.content.allow_bandwidth_bursting = client->allow_bw_bursting;
+    }
     if (HasMemberSource(*client, {"HeartbeatInterval"})) {
       context.content.heartbeat_interval
           = static_cast<uint64_t>(client->heartbeat_interval);
@@ -2951,6 +2981,21 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     if (has_port_source) {
       const auto port = GetFirstPortHostOrder(storage->SDaddrs);
       if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
+    }
+    if (HasMemberSource(*storage, {"MaximumConcurrentJobs"})) {
+      context.content.maximum_concurrent_jobs = storage->MaxConcurrentJobs;
+    }
+    if (HasMemberSource(*storage, {"AbsoluteJobTimeout"})) {
+      context.content.absolute_job_timeout = storage->jcr_watchdog_time;
+    }
+    if (HasMemberSource(*storage, {"AllowBandwidthBursting"})) {
+      context.content.allow_bandwidth_bursting = storage->allow_bw_bursting;
+    }
+    if (HasMemberSource(*storage, {"CollectDeviceStatistics"})) {
+      context.content.collect_device_statistics = storage->collect_dev_stats;
+    }
+    if (HasMemberSource(*storage, {"CollectJobStatistics"})) {
+      context.content.collect_job_statistics = storage->collect_job_stats;
     }
     if (HasMemberSource(*storage, {"HeartbeatInterval"})) {
       context.content.heartbeat_interval
@@ -5127,6 +5172,15 @@ ServiceState::UpsertClientDaemonResource(
   auto content = context.value->content;
   if (spec.address) { content.address = spec.address; }
   if (spec.port) { content.port = spec.port; }
+  if (spec.maximum_concurrent_jobs) {
+    content.maximum_concurrent_jobs = spec.maximum_concurrent_jobs;
+  }
+  if (spec.absolute_job_timeout) {
+    content.absolute_job_timeout = spec.absolute_job_timeout;
+  }
+  if (spec.allow_bandwidth_bursting) {
+    content.allow_bandwidth_bursting = spec.allow_bandwidth_bursting;
+  }
   if (spec.sd_connect_timeout) {
     content.sd_connect_timeout = spec.sd_connect_timeout;
   }
@@ -7913,6 +7967,21 @@ ServiceState::UpsertStorageDaemonResource(
   auto content = context.value->content;
   if (spec.address) { content.address = spec.address; }
   if (spec.port) { content.port = spec.port; }
+  if (spec.maximum_concurrent_jobs) {
+    content.maximum_concurrent_jobs = spec.maximum_concurrent_jobs;
+  }
+  if (spec.absolute_job_timeout) {
+    content.absolute_job_timeout = spec.absolute_job_timeout;
+  }
+  if (spec.allow_bandwidth_bursting) {
+    content.allow_bandwidth_bursting = spec.allow_bandwidth_bursting;
+  }
+  if (spec.collect_device_statistics) {
+    content.collect_device_statistics = spec.collect_device_statistics;
+  }
+  if (spec.collect_job_statistics) {
+    content.collect_job_statistics = spec.collect_job_statistics;
+  }
   if (spec.sd_connect_timeout) {
     content.sd_connect_timeout = spec.sd_connect_timeout;
   }

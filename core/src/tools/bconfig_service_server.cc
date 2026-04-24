@@ -155,6 +155,11 @@ struct StorageDeviceRequestSpec {
 struct StorageDaemonRequestSpec {
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
+  std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<uint32_t> absolute_job_timeout{};
+  std::optional<bool> allow_bandwidth_bursting{};
+  std::optional<bool> collect_device_statistics{};
+  std::optional<bool> collect_job_statistics{};
   std::optional<uint64_t> sd_connect_timeout{};
   std::optional<uint64_t> fd_connect_timeout{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -687,6 +692,24 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="client-daemon-port">Port</label>
         <input id="client-daemon-port" name="port" type="number"
                min="1" max="65535" placeholder="9102">
+
+        <label for="client-daemon-maximum-concurrent-jobs">Maximum concurrent jobs</label>
+        <input id="client-daemon-maximum-concurrent-jobs"
+               name="maximum_concurrent_jobs" type="number" min="0"
+               placeholder="1000">
+
+        <label for="client-daemon-absolute-job-timeout">Absolute job timeout</label>
+        <input id="client-daemon-absolute-job-timeout"
+               name="absolute_job_timeout" type="number" min="0"
+               placeholder="0">
+
+        <label for="client-daemon-allow-bandwidth-bursting">Allow bandwidth bursting</label>
+        <select id="client-daemon-allow-bandwidth-bursting"
+                name="allow_bandwidth_bursting">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="client-daemon-sd-connect-timeout">Storage connect timeout</label>
         <input id="client-daemon-sd-connect-timeout"
@@ -1386,6 +1409,40 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="storage-daemon-port">Port</label>
         <input id="storage-daemon-port" name="port" type="number"
                min="1" max="65535" placeholder="9103">
+
+        <label for="storage-daemon-maximum-concurrent-jobs">Maximum concurrent jobs</label>
+        <input id="storage-daemon-maximum-concurrent-jobs"
+               name="maximum_concurrent_jobs" type="number" min="0"
+               placeholder="1000">
+
+        <label for="storage-daemon-absolute-job-timeout">Absolute job timeout</label>
+        <input id="storage-daemon-absolute-job-timeout"
+               name="absolute_job_timeout" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-daemon-allow-bandwidth-bursting">Allow bandwidth bursting</label>
+        <select id="storage-daemon-allow-bandwidth-bursting"
+                name="allow_bandwidth_bursting">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-daemon-collect-device-statistics">Collect device statistics</label>
+        <select id="storage-daemon-collect-device-statistics"
+                name="collect_device_statistics">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-daemon-collect-job-statistics">Collect job statistics</label>
+        <select id="storage-daemon-collect-job-statistics"
+                name="collect_job_statistics">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="storage-daemon-sd-connect-timeout">Storage connect timeout</label>
         <input id="storage-daemon-sd-connect-timeout"
@@ -2249,6 +2306,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const payload = {
           address: String(form.get('address') ?? '').trim(),
           port: String(form.get('port') ?? '').trim(),
+          maximum_concurrent_jobs: String(form.get('maximum_concurrent_jobs') ?? '').trim(),
+          absolute_job_timeout: String(form.get('absolute_job_timeout') ?? '').trim(),
+          allow_bandwidth_bursting: String(form.get('allow_bandwidth_bursting') ?? '').trim(),
           sd_connect_timeout: String(form.get('sd_connect_timeout') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
           maximum_network_buffer_size: String(form.get('maximum_network_buffer_size') ?? '').trim(),
@@ -2260,6 +2320,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         };
         if (!payload.address) { delete payload.address; }
         if (!payload.port) { delete payload.port; } else { payload.port = Number(payload.port); }
+        if (!payload.maximum_concurrent_jobs) { delete payload.maximum_concurrent_jobs; } else { payload.maximum_concurrent_jobs = Number(payload.maximum_concurrent_jobs); }
+        if (!payload.absolute_job_timeout) { delete payload.absolute_job_timeout; } else { payload.absolute_job_timeout = Number(payload.absolute_job_timeout); }
+        if (!payload.allow_bandwidth_bursting) { delete payload.allow_bandwidth_bursting; } else { payload.allow_bandwidth_bursting = payload.allow_bandwidth_bursting === 'true'; }
         if (!payload.sd_connect_timeout) { delete payload.sd_connect_timeout; } else { payload.sd_connect_timeout = Number(payload.sd_connect_timeout); }
         if (!payload.heartbeat_interval) { delete payload.heartbeat_interval; } else { payload.heartbeat_interval = Number(payload.heartbeat_interval); }
         if (!payload.maximum_network_buffer_size) { delete payload.maximum_network_buffer_size; } else { payload.maximum_network_buffer_size = Number(payload.maximum_network_buffer_size); }
@@ -3111,6 +3174,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const payload = {
           address: String(form.get('address') ?? '').trim(),
           port: String(form.get('port') ?? '').trim(),
+          maximum_concurrent_jobs: String(form.get('maximum_concurrent_jobs') ?? '').trim(),
+          absolute_job_timeout: String(form.get('absolute_job_timeout') ?? '').trim(),
+          allow_bandwidth_bursting: String(form.get('allow_bandwidth_bursting') ?? '').trim(),
+          collect_device_statistics: String(form.get('collect_device_statistics') ?? '').trim(),
+          collect_job_statistics: String(form.get('collect_job_statistics') ?? '').trim(),
           sd_connect_timeout: String(form.get('sd_connect_timeout') ?? '').trim(),
           fd_connect_timeout: String(form.get('fd_connect_timeout') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
@@ -3125,6 +3193,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         };
         if (!payload.address) { delete payload.address; }
         if (!payload.port) { delete payload.port; } else { payload.port = Number(payload.port); }
+        if (!payload.maximum_concurrent_jobs) { delete payload.maximum_concurrent_jobs; } else { payload.maximum_concurrent_jobs = Number(payload.maximum_concurrent_jobs); }
+        if (!payload.absolute_job_timeout) { delete payload.absolute_job_timeout; } else { payload.absolute_job_timeout = Number(payload.absolute_job_timeout); }
+        if (!payload.allow_bandwidth_bursting) { delete payload.allow_bandwidth_bursting; } else { payload.allow_bandwidth_bursting = payload.allow_bandwidth_bursting === 'true'; }
+        if (!payload.collect_device_statistics) { delete payload.collect_device_statistics; } else { payload.collect_device_statistics = payload.collect_device_statistics === 'true'; }
+        if (!payload.collect_job_statistics) { delete payload.collect_job_statistics; } else { payload.collect_job_statistics = payload.collect_job_statistics === 'true'; }
         if (!payload.sd_connect_timeout) { delete payload.sd_connect_timeout; } else { payload.sd_connect_timeout = Number(payload.sd_connect_timeout); }
         if (!payload.fd_connect_timeout) { delete payload.fd_connect_timeout; } else { payload.fd_connect_timeout = Number(payload.fd_connect_timeout); }
         if (!payload.heartbeat_interval) { delete payload.heartbeat_interval; } else { payload.heartbeat_interval = Number(payload.heartbeat_interval); }
@@ -4073,6 +4146,9 @@ http::response<http::string_body> HandleDeploymentClientDaemonPutRequest(
   ClientDaemonResourceSpec resource_spec{
       .address = spec->address,
       .port = spec->port,
+      .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
+      .absolute_job_timeout = spec->absolute_job_timeout,
+      .allow_bandwidth_bursting = spec->allow_bandwidth_bursting,
       .sd_connect_timeout = spec->sd_connect_timeout,
       .heartbeat_interval = spec->heartbeat_interval,
       .maximum_network_buffer_size = spec->maximum_network_buffer_size,
@@ -4296,6 +4372,11 @@ http::response<http::string_body> HandleDeploymentStorageDaemonPutRequest(
   StorageDaemonResourceSpec resource_spec{
       .address = spec->address,
       .port = spec->port,
+      .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
+      .absolute_job_timeout = spec->absolute_job_timeout,
+      .allow_bandwidth_bursting = spec->allow_bandwidth_bursting,
+      .collect_device_statistics = spec->collect_device_statistics,
+      .collect_job_statistics = spec->collect_job_statistics,
       .sd_connect_timeout = spec->sd_connect_timeout,
       .fd_connect_timeout = spec->fd_connect_timeout,
       .heartbeat_interval = spec->heartbeat_interval,
@@ -6627,6 +6708,16 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
 
   auto* address = json_object_get(root.get(), "address");
   auto* port = json_object_get(root.get(), "port");
+  auto* maximum_concurrent_jobs
+      = json_object_get(root.get(), "maximum_concurrent_jobs");
+  auto* absolute_job_timeout
+      = json_object_get(root.get(), "absolute_job_timeout");
+  auto* allow_bandwidth_bursting
+      = json_object_get(root.get(), "allow_bandwidth_bursting");
+  auto* collect_device_statistics
+      = json_object_get(root.get(), "collect_device_statistics");
+  auto* collect_job_statistics
+      = json_object_get(root.get(), "collect_job_statistics");
   auto* sd_connect_timeout = json_object_get(root.get(), "sd_connect_timeout");
   auto* fd_connect_timeout = json_object_get(root.get(), "fd_connect_timeout");
   auto* heartbeat_interval = json_object_get(root.get(), "heartbeat_interval");
@@ -6651,6 +6742,16 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   };
   if (!require_string(address, "address")
       || (port && !json_is_null(port) && !json_is_integer(port))
+      || (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
+          && !json_is_integer(maximum_concurrent_jobs))
+      || (absolute_job_timeout && !json_is_null(absolute_job_timeout)
+          && !json_is_integer(absolute_job_timeout))
+      || (allow_bandwidth_bursting && !json_is_null(allow_bandwidth_bursting)
+          && !json_is_boolean(allow_bandwidth_bursting))
+      || (collect_device_statistics && !json_is_null(collect_device_statistics)
+          && !json_is_boolean(collect_device_statistics))
+      || (collect_job_statistics && !json_is_null(collect_job_statistics)
+          && !json_is_boolean(collect_job_statistics))
       || (sd_connect_timeout && !json_is_null(sd_connect_timeout)
           && !json_is_integer(sd_connect_timeout))
       || (fd_connect_timeout && !json_is_null(fd_connect_timeout)
@@ -6671,6 +6772,27 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
       || !require_string(messages, "messages")) {
     if (port && !json_is_null(port) && !json_is_integer(port)) {
       error = "field 'port' must be an integer when provided.";
+    } else if (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
+               && !json_is_integer(maximum_concurrent_jobs)) {
+      error
+          = "field 'maximum_concurrent_jobs' must be an integer when provided.";
+    } else if (absolute_job_timeout && !json_is_null(absolute_job_timeout)
+               && !json_is_integer(absolute_job_timeout)) {
+      error = "field 'absolute_job_timeout' must be an integer when provided.";
+    } else if (allow_bandwidth_bursting
+               && !json_is_null(allow_bandwidth_bursting)
+               && !json_is_boolean(allow_bandwidth_bursting)) {
+      error
+          = "field 'allow_bandwidth_bursting' must be a boolean when provided.";
+    } else if (collect_device_statistics
+               && !json_is_null(collect_device_statistics)
+               && !json_is_boolean(collect_device_statistics)) {
+      error
+          = "field 'collect_device_statistics' must be a boolean when "
+            "provided.";
+    } else if (collect_job_statistics && !json_is_null(collect_job_statistics)
+               && !json_is_boolean(collect_job_statistics)) {
+      error = "field 'collect_job_statistics' must be a boolean when provided.";
     } else if (sd_connect_timeout && !json_is_null(sd_connect_timeout)
                && !json_is_integer(sd_connect_timeout)) {
       error = "field 'sd_connect_timeout' must be an integer when provided.";
@@ -6708,6 +6830,31 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
     }
     spec.port = static_cast<uint16_t>(value);
   }
+  auto parse_u32 = [&error](json_t* value, const char* field,
+                            std::optional<uint32_t>& target) -> bool {
+    if (!value || !json_is_integer(value)) { return true; }
+    const auto raw = json_integer_value(value);
+    if (raw < 0 || raw > std::numeric_limits<uint32_t>::max()) {
+      error = std::string{"field '"} + field + "' must be between 0 and "
+              + std::to_string(std::numeric_limits<uint32_t>::max()) + ".";
+      return false;
+    }
+    target = static_cast<uint32_t>(raw);
+    return true;
+  };
+  if (!parse_u32(maximum_concurrent_jobs, "maximum_concurrent_jobs",
+                 spec.maximum_concurrent_jobs)
+      || !parse_u32(absolute_job_timeout, "absolute_job_timeout",
+                    spec.absolute_job_timeout)) {
+    return std::nullopt;
+  }
+  auto parse_bool = [](json_t* value, std::optional<bool>& target) {
+    if (!value || !json_is_boolean(value)) { return; }
+    target = json_is_true(value);
+  };
+  parse_bool(allow_bandwidth_bursting, spec.allow_bandwidth_bursting);
+  parse_bool(collect_device_statistics, spec.collect_device_statistics);
+  parse_bool(collect_job_statistics, spec.collect_job_statistics);
   auto parse_non_negative_u64
       = [&error](json_t* value, const char* field,
                  std::optional<uint64_t>& target) -> bool {

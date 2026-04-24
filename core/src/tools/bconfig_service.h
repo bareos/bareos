@@ -117,6 +117,9 @@ struct ClientMessagesResourceSpec {
 struct ClientDaemonResourceSpec {
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
+  std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<uint32_t> absolute_job_timeout{};
+  std::optional<bool> allow_bandwidth_bursting{};
   std::optional<uint64_t> sd_connect_timeout{};
   std::optional<uint64_t> heartbeat_interval{};
   std::optional<uint32_t> maximum_network_buffer_size{};
@@ -280,6 +283,11 @@ struct StorageDeviceResourceSpec {
 struct StorageDaemonResourceSpec {
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
+  std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<uint32_t> absolute_job_timeout{};
+  std::optional<bool> allow_bandwidth_bursting{};
+  std::optional<bool> collect_device_statistics{};
+  std::optional<bool> collect_job_statistics{};
   std::optional<uint64_t> sd_connect_timeout{};
   std::optional<uint64_t> fd_connect_timeout{};
   std::optional<uint64_t> heartbeat_interval{};
