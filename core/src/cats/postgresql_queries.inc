@@ -525,7 +525,7 @@ LIMIT 1
 )SQL",
 
 /* 0038_create_temp_basefile */
-R"SQL(CREATE TEMPORARY TABLE basefile%)SQL" PRId64 R"SQL( ( Path TEXT, Name TEXT)
+R"SQL(CREATE TEMPORARY TABLE basefile%)SQL" PRIu64 R"SQL( ( Path TEXT, Name TEXT)
 )SQL",
 
 /* 0039_create_temp_new_basefile */
