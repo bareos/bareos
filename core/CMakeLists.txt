@@ -184,6 +184,13 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat")
     endif()
 
+    check_cxx_compiler_flag(
+      -Wformat-signedness compiler_format_signedness_security
+    )
+    if(${compiler_format_signedness_security})
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat-signedness")
+    endif()
+
     # make format-security issues a compiler-error
     check_cxx_compiler_flag(
       -Werror=format-security compiler_error_format_security

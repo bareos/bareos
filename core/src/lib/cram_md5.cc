@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -92,21 +92,23 @@ bool CramMd5Handshake::CramMd5Challenge()
        own_qualified_name_bashed_spaces_.c_str());
 
   if (bs_->IsBnetDumpEnabled()) {
-    Dmsg2(debuglevel_, "send: auth cram-md5 %s ssl=%d qualified-name=%s\n",
+    Dmsg2(debuglevel_,
+          "send: auth cram-md5 %s ssl=%" PRIu32 " qualified-name=%s\n",
           chal.c_str(), local_tls_policy_, own_qualified_name_.c_str());
 
-    if (!bs_->fsend("auth cram-md5 %s ssl=%d qualified-name=%s\n", chal.c_str(),
-                    local_tls_policy_, own_qualified_name_.c_str())) {
+    if (!bs_->fsend("auth cram-md5 %s ssl=%" PRIu32 " qualified-name=%s\n",
+                    chal.c_str(), local_tls_policy_,
+                    own_qualified_name_.c_str())) {
       Dmsg1(debuglevel_, "Bnet send challenge comm error. ERR=%s\n",
             bs_->bstrerror());
       result = HandshakeResult::NETWORK_ERROR;
       return false;
     }
   } else {  // network dump disabled
-    Dmsg2(debuglevel_, "send: auth cram-md5 %s ssl=%d\n", chal.c_str(),
+    Dmsg2(debuglevel_, "send: auth cram-md5 %s ssl=%" PRIu32 "\n", chal.c_str(),
           local_tls_policy_);
 
-    if (!bs_->fsend("auth cram-md5 %s ssl=%d\n", chal.c_str(),
+    if (!bs_->fsend("auth cram-md5 %s ssl=%" PRIu32 "\n", chal.c_str(),
                     local_tls_policy_)) {
       Dmsg1(debuglevel_, "Bnet send challenge comm error. ERR=%s\n",
             bs_->bstrerror());
