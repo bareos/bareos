@@ -73,6 +73,7 @@ struct InspectRequestSpec {
 
 struct ClientDirectorStubRequestSpec {
   std::optional<std::string> description{};
+  std::optional<bool> monitor{};
 };
 
 struct DirectorClientRequestSpec {
@@ -715,6 +716,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="client-stub-description">Description</label>
         <input id="client-stub-description" name="description"
                placeholder="Managed director stub for client">
+
+        <label class="checkbox-label" for="client-stub-monitor">
+          <input id="client-stub-monitor" name="monitor" type="checkbox">
+          Monitor
+        </label>
 
         <button type="submit">
           PUT /v1/deployments/{id}/clients/{client}/directors/{director}
@@ -2713,6 +2719,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const directorName = String(form.get('director_name') ?? '').trim();
         const payload = {
           description: String(form.get('description') ?? '').trim(),
+          monitor: document.getElementById('client-stub-monitor').checked,
         };
         if (!payload.description) {
           delete payload.description;
@@ -4959,6 +4966,7 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
 
   ClientDirectorStubSpec stub_spec{
       .description = spec->description,
+      .monitor = spec->monitor,
   };
   auto result = state.UpsertClientDirectorStub(deployment_id, client_name,
                                                director_name, stub_spec);
@@ -6776,15 +6784,23 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   }
 
   auto* description = json_object_get(root.get(), "description");
+  auto* monitor = json_object_get(root.get(), "monitor");
   if (description && !json_is_null(description)
       && !json_is_string(description)) {
     error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (monitor && !json_is_null(monitor) && !json_is_boolean(monitor)) {
+    error = "field 'monitor' must be a boolean when provided.";
     return std::nullopt;
   }
 
   ClientDirectorStubRequestSpec spec{};
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
+  }
+  if (monitor && json_is_boolean(monitor)) {
+    spec.monitor = json_is_true(monitor);
   }
   return spec;
 }

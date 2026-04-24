@@ -107,6 +107,7 @@ struct DeploymentConfigRecord {
 
 struct ClientDirectorStubSpec {
   std::optional<std::string> description{};
+  std::optional<bool> monitor{};
 };
 
 struct ClientMessagesResourceSpec {

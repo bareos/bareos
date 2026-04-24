@@ -596,17 +596,23 @@ std::string QuoteBareosString(std::string_view value)
 
 bool IsSafePathSegment(std::string_view value);
 bool IsSafeBareosToken(std::string_view value);
+void AppendBoolDirective(std::ostringstream& content,
+                         std::string_view name,
+                         const std::optional<bool>& value);
 
 std::string BuildClientDirectorStubContent(std::string_view director_name,
                                            std::string_view password,
-                                           std::string_view description)
+                                           std::string_view description,
+                                           const std::optional<bool>& monitor
+                                           = std::nullopt)
 {
   std::ostringstream content;
   content << "Director {\n"
           << "  Name = " << QuoteBareosString(director_name) << "\n"
           << "  Password = " << QuoteBareosString(password) << "\n"
-          << "  Description = " << QuoteBareosString(description) << "\n"
-          << "}\n";
+          << "  Description = " << QuoteBareosString(description) << "\n";
+  AppendBoolDirective(content, "Monitor", monitor);
+  content << "}\n";
   return content.str();
 }
 
@@ -1862,6 +1868,14 @@ struct DirectorMessagesWriteContext {
 struct ClientMessagesWriteContext {
   std::filesystem::path file_path{};
   DirectorMessagesContentSpec content{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct ClientDirectorStubWriteContext {
+  std::filesystem::path file_path{};
+  std::optional<std::string> description{};
+  std::optional<bool> monitor{};
   bool exists{false};
   bool is_standalone_file{false};
 };
@@ -4718,6 +4732,72 @@ OperationResult<std::string> LoadClientPasswordFromDirectorConfig(
                    + "'."};
 }
 
+OperationResult<ClientDirectorStubWriteContext>
+LoadClientDirectorStubWriteContext(const std::filesystem::path& client_root,
+                                   std::string_view director_name)
+{
+  ClientDirectorStubWriteContext context{
+      .file_path = client_root / "bareos-fd.d" / "director"
+                   / (std::string{director_name} + ".conf")};
+  if (!std::filesystem::exists(client_root / "bareos-fd.d")) {
+    return {.value = std::move(context)};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kClient,
+                                    client_root.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure("client config parser initialization ",
+                                        loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("client config ", loaded.messages)};
+  }
+
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(filedaemon::R_DIRECTOR, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(filedaemon::R_DIRECTOR, resource)) {
+    auto* director = dynamic_cast<filedaemon::DirectorResource*>(resource);
+    if (!director) { continue; }
+    if (auto source = director->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(filedaemon::R_DIRECTOR, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(filedaemon::R_DIRECTOR, resource)) {
+    auto* director = dynamic_cast<filedaemon::DirectorResource*>(resource);
+    if (!director || !director->resource_name_
+        || director->resource_name_ != director_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (director->description_ && director->description_[0] != '\0') {
+      context.description = std::string{director->description_};
+    }
+    if (HasMemberSource(*director, {"Monitor"})) {
+      context.monitor = director->monitor;
+    }
+
+    auto source = director->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "client director '" + std::string{director_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
 std::optional<std::string> WriteGeneratedClientDirectorStub(
     const std::filesystem::path& client_root,
     std::string_view director_name,
@@ -5431,9 +5511,16 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
 
   const auto client_root
       = RepositoryLayout::ClientsDirectory(repository_path) / client_name;
-  const auto stub_directory = client_root / "bareos-fd.d" / "director";
-  const auto stub_path
-      = stub_directory / (std::string{director_name} + ".conf");
+  auto context = LoadClientDirectorStubWriteContext(client_root, director_name);
+  if (!context) { return {.error = context.error}; }
+  if (context.value->exists && !context.value->is_standalone_file) {
+    return {.error = "client director '" + std::string{director_name}
+                     + "' for client '" + std::string{client_name}
+                     + "' is not stored in a standalone file yet."};
+  }
+
+  const auto stub_path = context.value->file_path;
+  const auto stub_directory = stub_path.parent_path();
   const bool client_root_existed = std::filesystem::exists(client_root);
   const bool stub_existed = std::filesystem::exists(stub_path);
 
@@ -5444,12 +5531,14 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
     original_content = std::move(*existing.value);
   }
 
-  const auto description
-      = spec.description && !spec.description->empty()
-            ? *spec.description
-            : DefaultClientDirectorStubDescription(client_name, director_name);
+  const auto description = spec.description
+                               ? *spec.description
+                               : context.value->description.value_or(
+                                     DefaultClientDirectorStubDescription(
+                                         client_name, director_name));
+  const auto monitor = spec.monitor ? spec.monitor : context.value->monitor;
   const auto stub_content = BuildClientDirectorStubContent(
-      director_name, *password.value, description);
+      director_name, *password.value, description, monitor);
 
   std::error_code error_code;
   std::filesystem::create_directories(stub_directory, error_code);
@@ -5515,8 +5604,15 @@ ServiceState::DeleteClientDirectorStub(std::string_view deployment_id,
 
   const auto client_root
       = RepositoryLayout::ClientsDirectory(repository_path) / client_name;
-  const auto stub_path = client_root / "bareos-fd.d" / "director"
-                         / (std::string{director_name} + ".conf");
+  auto context = LoadClientDirectorStubWriteContext(client_root, director_name);
+  if (!context) { return {.error = context.error}; }
+  if (context.value->exists && !context.value->is_standalone_file) {
+    return {.error = "client director '" + std::string{director_name}
+                     + "' for client '" + std::string{client_name}
+                     + "' is not stored in a standalone file yet."};
+  }
+
+  const auto stub_path = context.value->file_path;
   if (!std::filesystem::exists(stub_path)) {
     return {.error = "client '" + std::string{client_name}
                      + "' does not define director '"

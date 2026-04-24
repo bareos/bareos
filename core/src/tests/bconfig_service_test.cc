@@ -1048,7 +1048,7 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
 
   auto created = state.UpsertClientDirectorStub(
       "prod", "bareos-fd", "bareos-dir",
-      {.description = std::string{"Initial stub"}});
+      {.description = std::string{"Initial stub"}, .monitor = true});
   ASSERT_TRUE(created);
   EXPECT_EQ(created.value->name, "bareos-fd");
 
@@ -1061,6 +1061,7 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   EXPECT_NE(created_text.find("Password = \"[md5]"), std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Initial stub\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("Monitor = yes"), std::string::npos);
 
   auto updated = state.UpsertClientDirectorStub(
       "prod", "bareos-fd", "bareos-dir",
@@ -1074,6 +1075,7 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   EXPECT_NE(updated_text.find("Password = \"[md5]"), std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated stub\""),
             std::string::npos);
+  EXPECT_NE(updated_text.find("Monitor = yes"), std::string::npos);
 
   auto rejected = state.UpsertClientDirectorStub("prod", "missing-client",
                                                  "bareos-dir", {});
