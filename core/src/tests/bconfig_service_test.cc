@@ -477,6 +477,85 @@ TEST(BconfigService, ImportsDetectedComponentTreesFromConfigRoot)
             diff_preview.value->untracked_files.end());
 }
 
+TEST(BconfigService, ImportsConsoleRootsIntoStandaloneFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  WriteTextFile(source_root.path() / "bconsole.conf",
+                "#\n"
+                "# Bareos User Agent (or Console) Configuration File\n"
+                "#\n"
+                "\n"
+                "Console {\n"
+                "  Name = admin\n"
+                "  Description = \"Imported Console\"\n"
+                "  Password = \"secret\"\n"
+                "  Director = bareos-dir\n"
+                "}\n"
+                "\n"
+                "Director {\n"
+                "  Name = bareos-dir\n"
+                "  Description = \"Imported Director\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto imported_root
+      = RepositoryLayout::ConsolesDirectory(repo_path.path()) / "admin";
+  const auto root_config = imported_root / "bconsole.conf";
+  const auto console_config = imported_root / "bconsole.d/console/admin.conf";
+  const auto director_config
+      = imported_root / "bconsole.d/director/bareos-dir.conf";
+  ASSERT_TRUE(std::filesystem::exists(root_config));
+  ASSERT_TRUE(std::filesystem::exists(console_config));
+  ASSERT_TRUE(std::filesystem::exists(director_config));
+
+  const auto root_text = ReadTextFile(root_config);
+  EXPECT_EQ(root_text.find("Console {"), std::string::npos);
+  EXPECT_EQ(root_text.find("Director {"), std::string::npos);
+
+  const auto console_text = ReadTextFile(console_config);
+  EXPECT_NE(console_text.find("Name = \"admin\""), std::string::npos);
+  EXPECT_NE(console_text.find("bareos-dir"), std::string::npos);
+
+  const auto director_text = ReadTextFile(director_config);
+  EXPECT_NE(director_text.find("Name = \"bareos-dir\""), std::string::npos);
+
+  auto imports = state.ListDeploymentImports("prod");
+  ASSERT_TRUE(imports);
+  ASSERT_EQ(imports.value->size(), 1u);
+  EXPECT_EQ(imports.value->at(0).component, "console");
+  EXPECT_EQ(imports.value->at(0).resource_name, "admin");
+  EXPECT_EQ(imports.value->at(0).destination_path, "consoles/admin");
+
+  auto validate_job = state.CreateJob({.type = "validate_deployment_repo",
+                                       .deployment_id = std::string{"prod"}});
+  ASSERT_TRUE(validate_job);
+  auto validated = WaitForJobTerminal(state, validate_job.value->id);
+  ASSERT_TRUE(validated.has_value());
+  EXPECT_EQ(validated->status, JobStatus::kSucceeded);
+  EXPECT_NE(std::find(validated->logs.begin(), validated->logs.end(),
+                      "validated console 'admin'"),
+            validated->logs.end());
+}
+
 TEST(BconfigService, ListsAndFindsDeploymentClientConfigs)
 {
   ScopedDirectory source_root{MakeTempPath()};

@@ -22,6 +22,9 @@
 #include "tools/bconfig_service.h"
 #include "tools/bconfig_lib.h"
 
+#ifdef BCONFIG_HAVE_CONSOLE
+#  include "console/console_conf.h"
+#endif
 #include "dird/dird_conf.h"
 #include "filed/filed_conf.h"
 #include "include/bareos.h"
@@ -30,6 +33,8 @@
 #include "lib/address_conf.h"
 #include "lib/bpipe.h"
 #include "lib/message.h"
+#include "lib/output_formatter.h"
+#include "lib/output_formatter_resource.h"
 #include "lib/thread_specific_data.h"
 #include "stored/stored_conf.h"
 
@@ -383,12 +388,27 @@ std::filesystem::path ComponentConfigDirectoryName(bconfig::Component component)
       return "bareos-fd.d";
 #ifdef BCONFIG_HAVE_CONSOLE
     case bconfig::Component::kConsole:
-      return {};
+      return "bconsole.d";
 #endif
 #ifdef BCONFIG_HAVE_TRAYMONITOR
     case bconfig::Component::kTrayMonitor:
       return {};
 #endif
+  }
+
+  return {};
+}
+
+std::filesystem::path ComponentDefaultConfigFilename(
+    bconfig::Component component)
+{
+  switch (component) {
+#ifdef BCONFIG_HAVE_CONSOLE
+    case bconfig::Component::kConsole:
+      return console::default_config_filename;
+#endif
+    default:
+      break;
   }
 
   return {};
@@ -454,8 +474,13 @@ void AppendParseMessages(std::vector<std::string>& logs,
 
 std::vector<bconfig::Component> SupportedImportComponents()
 {
-  return {bconfig::Component::kDirector, bconfig::Component::kStorage,
-          bconfig::Component::kClient};
+  std::vector<bconfig::Component> components{bconfig::Component::kDirector,
+                                             bconfig::Component::kStorage,
+                                             bconfig::Component::kClient};
+#ifdef BCONFIG_HAVE_CONSOLE
+  components.push_back(bconfig::Component::kConsole);
+#endif
+  return components;
 }
 
 std::optional<std::filesystem::path> ResolveImportRoot(
@@ -481,6 +506,11 @@ std::optional<std::filesystem::path> ResolveImportRoot(
         && normalized.filename() == config_directory_name) {
       return normalized.parent_path();
     }
+
+    const auto config_filename = ComponentDefaultConfigFilename(component);
+    if (!config_filename.empty() && normalized.filename() == config_filename) {
+      return normalized.parent_path();
+    }
   }
 
   return normalized;
@@ -490,6 +520,15 @@ std::optional<std::filesystem::path> FindComponentConfigDirectory(
     bconfig::Component component,
     const std::filesystem::path& source_root)
 {
+#ifdef BCONFIG_HAVE_CONSOLE
+  if (component == bconfig::Component::kConsole) {
+    const auto root_config
+        = source_root / ComponentDefaultConfigFilename(component);
+    if (std::filesystem::is_regular_file(root_config)) { return source_root; }
+    return std::nullopt;
+  }
+#endif
+
   const auto config_directory_name = ComponentConfigDirectoryName(component);
   if (config_directory_name.empty()) { return std::nullopt; }
 
@@ -509,16 +548,28 @@ std::vector<DeploymentConfigRecord> DiscoverDeploymentConfigRoots(
   for (const auto component : SupportedImportComponents()) {
     const auto bucket = ComponentBucketDirectory(repository_root, component);
     const auto config_directory_name = ComponentConfigDirectoryName(component);
-    if (bucket.empty() || config_directory_name.empty()
-        || !std::filesystem::is_directory(bucket)) {
-      continue;
-    }
+    if (bucket.empty() || !std::filesystem::is_directory(bucket)) { continue; }
 
     for (const auto& entry : std::filesystem::directory_iterator(bucket)) {
       if (!entry.is_directory()) { continue; }
-      if (!std::filesystem::is_directory(entry.path()
-                                         / config_directory_name)) {
-        continue;
+
+#ifdef BCONFIG_HAVE_CONSOLE
+      if (component == bconfig::Component::kConsole) {
+        const auto root_config
+            = entry.path() / ComponentDefaultConfigFilename(component);
+        if (!std::filesystem::is_regular_file(root_config)
+            || !std::filesystem::is_directory(entry.path()
+                                              / config_directory_name)) {
+          continue;
+        }
+      } else
+#endif
+      {
+        if (config_directory_name.empty()
+            || !std::filesystem::is_directory(entry.path()
+                                              / config_directory_name)) {
+          continue;
+        }
       }
 
       configs.push_back(DeploymentConfigRecord{
@@ -574,6 +625,100 @@ std::optional<std::string> CopyDirectoryTree(
 
   return std::nullopt;
 }
+
+struct StringOutputBuffer {
+  std::string content{};
+};
+
+bool AppendOutputBuffer(void* context, const char* fmt, ...)
+{
+  auto* buffer = static_cast<StringOutputBuffer*>(context);
+  if (!buffer) { return false; }
+
+  PoolMem rendered;
+  va_list arguments;
+  va_start(arguments, fmt);
+  rendered.Bvsprintf(fmt, arguments);
+  va_end(arguments);
+  buffer->content.append(rendered.c_str());
+  return true;
+}
+
+std::string RenderParsedResource(BareosResource& resource,
+                                 ConfigurationParser& parser)
+{
+  StringOutputBuffer output;
+  OutputFormatter formatter(&AppendOutputBuffer, &output, nullptr, nullptr);
+  OutputFormatterResource formatter_resource(&formatter);
+  resource.PrintConfig(formatter_resource, parser, false, false);
+  formatter.FinalizeResult(true);
+  return output.content;
+}
+
+#ifdef BCONFIG_HAVE_CONSOLE
+std::optional<std::string> WriteImportedConsoleConfig(
+    const std::filesystem::path& target_root,
+    bconfig::LoadedConfig& loaded)
+{
+  constexpr std::string_view kConsoleRootHeader
+      = "#\n# Bareos User Agent (or Console) Configuration File\n#\n";
+
+  std::error_code error_code;
+  const auto console_directory = target_root / "bconsole.d/console";
+  const auto director_directory = target_root / "bconsole.d/director";
+  std::filesystem::create_directories(console_directory, error_code);
+  if (error_code) {
+    return "failed to create directory '" + console_directory.string()
+           + "': " + error_code.message();
+  }
+
+  std::filesystem::create_directories(director_directory, error_code);
+  if (error_code) {
+    return "failed to create directory '" + director_directory.string()
+           + "': " + error_code.message();
+  }
+
+  const auto root_config_path
+      = target_root
+        / ComponentDefaultConfigFilename(bconfig::Component::kConsole);
+  if (!WriteFile(root_config_path, std::string{kConsoleRootHeader})) {
+    return "failed to write file '" + root_config_path.string() + "'.";
+  }
+
+  for (auto* resource = loaded.parser->GetNextRes(console::R_CONSOLE, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(console::R_CONSOLE, resource)) {
+    if (!resource->resource_name_) {
+      return "console import encountered a Console resource without a name.";
+    }
+
+    const auto target_path
+        = console_directory / (std::string{resource->resource_name_} + ".conf");
+    if (!WriteFile(target_path,
+                   RenderParsedResource(*resource, *loaded.parser))) {
+      return "failed to write file '" + target_path.string() + "'.";
+    }
+  }
+
+  for (auto* resource = loaded.parser->GetNextRes(console::R_DIRECTOR, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(console::R_DIRECTOR, resource)) {
+    if (!resource->resource_name_) {
+      return "console import encountered a Director resource without a name.";
+    }
+
+    const auto target_path
+        = director_directory
+          / (std::string{resource->resource_name_} + ".conf");
+    if (!WriteFile(target_path,
+                   RenderParsedResource(*resource, *loaded.parser))) {
+      return "failed to write file '" + target_path.string() + "'.";
+    }
+  }
+
+  return std::nullopt;
+}
+#endif
 
 void RemoveTreeQuietly(const std::filesystem::path& path)
 {
@@ -5345,13 +5490,23 @@ OperationResult<ImportedComponent> ImportComponentIntoDeployment(
 
   const auto temp_root = target_bucket / (*resource_name + ".tmp-import");
   RemoveTreeQuietly(temp_root);
-  const auto temp_config_directory
-      = temp_root / ComponentConfigDirectoryName(component);
-  if (auto error
-      = CopyDirectoryTree(*source_config_directory, temp_config_directory);
-      error) {
-    RemoveTreeQuietly(temp_root);
-    return {.error = *error};
+#ifdef BCONFIG_HAVE_CONSOLE
+  if (component == bconfig::Component::kConsole) {
+    if (auto error = WriteImportedConsoleConfig(temp_root, loaded); error) {
+      RemoveTreeQuietly(temp_root);
+      return {.error = *error};
+    }
+  } else
+#endif
+  {
+    const auto temp_config_directory
+        = temp_root / ComponentConfigDirectoryName(component);
+    if (auto error
+        = CopyDirectoryTree(*source_config_directory, temp_config_directory);
+        error) {
+      RemoveTreeQuietly(temp_root);
+      return {.error = *error};
+    }
   }
 
   auto imported = bconfig::LoadConfig(component, temp_root.string(), true);
