@@ -30,7 +30,7 @@ ConfigurationParser* my_config = nullptr;
 StorageResource* me;
 char* configfile;
 
-bool init_done = false;
+std::atomic<bool> init_done = false;
 uint32_t vol_session_time;
 
 static std::mutex mutex_;

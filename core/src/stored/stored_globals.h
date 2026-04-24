@@ -24,6 +24,8 @@
 #ifndef BAREOS_STORED_STORED_GLOBALS_H_
 #define BAREOS_STORED_STORED_GLOBALS_H_
 
+#include <atomic>
+
 #include "include/bareos.h"
 
 class ConfigurationParser;
@@ -37,7 +39,7 @@ BAREOS_IMPORT StorageResource* me;
 
 BAREOS_IMPORT char* configfile;
 
-BAREOS_IMPORT bool init_done;
+BAREOS_IMPORT std::atomic<bool> init_done;
 BAREOS_IMPORT uint32_t vol_session_time;
 BAREOS_IMPORT uint32_t NewVolSessionId();
 

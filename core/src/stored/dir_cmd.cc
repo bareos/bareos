@@ -179,6 +179,7 @@ struct s_sd_dir_cmds {
   const char* cmd;
   bool (*func)(JobControlRecord* jcr);
   bool monitoraccess; /* set if monitors can access this cmd */
+  bool wait_for_device_initialization;
 };
 
 /**
@@ -189,34 +190,34 @@ struct s_sd_dir_cmds {
  */
 static struct s_sd_dir_cmds cmds[] = {
     // { "action_on_purge",  ActionOnPurgeCmd, false },
-    {"autochanger", ChangerCmd, false},
-    {"bootstrap", BootstrapCmd, false},
-    {"cancel", CancelCmd, false},
-    {"finish", FinishCmd, false}, /**< End of backup */
-    {"JobId=", job_cmd, false},   /**< Start Job */
-    {"label", LabelCmd, false},   /**< Label a tape */
-    {"listen", ListenCmd, false}, /**< Listen for an incoming Storage Job */
-    {"mount", MountCmd, false},
+    {"autochanger", ChangerCmd, false, true},
+    {"bootstrap", BootstrapCmd, false, true},
+    {"cancel", CancelCmd, false, true},
+    {"finish", FinishCmd, false, true}, /**< End of backup */
+    {"JobId=", job_cmd, false, true},   /**< Start Job */
+    {"label", LabelCmd, false, true},   /**< Label a tape */
+    {"listen", ListenCmd, false, true}, /**< Listen for an incoming Storage Job */
+    {"mount", MountCmd, false, true},
     {"nextrun", nextRunCmd,
-     false}, /**< Prepare for next backup/restore part of same Job */
-    {"passive", PassiveCmd, false},
-    {"pluginoptions", PluginoptionsCmd, false},
-    {"readlabel", ReadlabelCmd, false},
-    {"relabel", RelabelCmd, false}, /**< Relabel a tape */
-    {"release", ReleaseCmd, false},
-    {"resolve", ResolveCmd, false},
-    {"replicate", ReplicateCmd, false}, /**< Replicate data to an external SD */
-    {"run", RunCmd, false},             /**< Start of Job */
-    {"getSecureEraseCmd", SecureerasereqCmd, false},
-    {"setbandwidth=", SetbandwidthCmd, false},
-    {"setdebug=", SetdebugCmd, false},  /**< Set debug level */
-    {"setdevice", SetdeviceCmd, false}, /**< Set device parameter */
-    {"stats", StatsCmd, false},
-    {"status", StatusCmd, true},
-    {".status", DotstatusCmd, true},
-    {"unmount", UnmountCmd, false},
-    {"use storage=", use_cmd, false},
-    {NULL, NULL, false} /**< list terminator */
+     false, true}, /**< Prepare for next backup/restore part of same Job */
+    {"passive", PassiveCmd, false, true},
+    {"pluginoptions", PluginoptionsCmd, false, true},
+    {"readlabel", ReadlabelCmd, false, true},
+    {"relabel", RelabelCmd, false, true}, /**< Relabel a tape */
+    {"release", ReleaseCmd, false, true},
+    {"resolve", ResolveCmd, false, false},
+    {"replicate", ReplicateCmd, false, true}, /**< Replicate data to an external SD */
+    {"run", RunCmd, false, true},             /**< Start of Job */
+    {"getSecureEraseCmd", SecureerasereqCmd, false, false},
+    {"setbandwidth=", SetbandwidthCmd, false, true},
+    {"setdebug=", SetdebugCmd, false, false},  /**< Set debug level */
+    {"setdevice", SetdeviceCmd, false, true},  /**< Set device parameter */
+    {"stats", StatsCmd, false, false},
+    {"status", StatusCmd, true, false},
+    {".status", DotstatusCmd, true, false},
+    {"unmount", UnmountCmd, false, true},
+    {"use storage=", use_cmd, false, true},
+    {NULL, NULL, false, false} /**< list terminator */
 };
 
 static inline bool AreMaxConcurrentJobsExceeded()
@@ -289,9 +290,6 @@ void* HandleDirectorConnection(BareosSocket* dir)
 
     Dmsg1(199, "<dird: %s", dir->msg);
 
-    // Ensure that device initialization is complete
-    while (!init_done) { Bmicrosleep(1, 0); }
-
     found = false;
     for (i = 0; cmds[i].cmd; i++) {
       if (bstrncmp(cmds[i].cmd, dir->msg, strlen(cmds[i].cmd))) {
@@ -300,6 +298,11 @@ void* HandleDirectorConnection(BareosSocket* dir)
           dir->fsend(invalid_cmd);
           dir->signal(BNET_EOD);
           break;
+        }
+        if (cmds[i].wait_for_device_initialization) {
+          while (!init_done.load(std::memory_order_acquire)) {
+            Bmicrosleep(1, 0);
+          }
         }
         Dmsg1(200, "Do command: %s\n", cmds[i].cmd);
         if (!cmds[i].func(jcr)) { /* do command */

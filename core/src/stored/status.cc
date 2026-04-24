@@ -207,6 +207,14 @@ static void ListDevices(JobControlRecord* jcr,
     sp->send(msg, len);
   }
 
+  if (!init_done.load(std::memory_order_acquire)) {
+    len = Mmsg(msg,
+               T_("Storage daemon device initialization is still running; "
+                  "tape open/rewind may still be in progress.\n"));
+    sp->send(msg, len);
+    return;
+  }
+
   foreach_res (changer, R_AUTOCHANGER) {
     // See if we need to list this autochanger.
     if (devicenames
@@ -351,6 +359,14 @@ static void ListVolumes(StatusPacket* sp, const char* devicenames)
 {
   int len;
   PoolMem msg(PM_MESSAGE);
+
+  if (!init_done.load(std::memory_order_acquire)) {
+    len = Mmsg(msg,
+               T_("Volume status is unavailable while device initialization "
+                  "is still running.\n"));
+    sp->send(msg, len);
+    return;
+  }
 
   foreach_vol ([&](auto* vol) {
     Device* dev = vol->dev;

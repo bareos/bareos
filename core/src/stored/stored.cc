@@ -549,7 +549,7 @@ extern "C" void* device_initialization(void*)
     jcr->sd_impl->dcr = nullptr;
   }
   FreeJcr(jcr);
-  init_done = true;
+  init_done.store(true, std::memory_order_release);
   return nullptr;
 }
 
