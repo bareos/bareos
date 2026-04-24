@@ -143,6 +143,7 @@ struct DirectorMessagesRequestSpec {
 struct StorageDirectorRequestSpec {
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<bool> monitor{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
 };
 
@@ -1926,6 +1927,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="storage-director-description">Description</label>
         <input id="storage-director-description" name="description"
                placeholder="Managed storage-daemon director resource">
+
+        <label class="checkbox-label" for="storage-director-monitor">
+          <input id="storage-director-monitor" name="monitor" type="checkbox">
+          Monitor
+        </label>
 
         <label for="storage-director-maximum-bandwidth-per-job">Maximum bandwidth per job</label>
         <input id="storage-director-maximum-bandwidth-per-job"
@@ -3856,6 +3862,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const payload = {
           password: String(form.get('password') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
+          monitor: document.getElementById('storage-director-monitor').checked,
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
         };
@@ -5185,6 +5192,7 @@ http::response<http::string_body> HandleDeploymentStorageDirectorPutRequest(
   StorageDirectorResourceSpec resource_spec{
       .password = spec->password,
       .description = spec->description,
+      .monitor = spec->monitor,
       .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
   };
   auto result = state.UpsertStorageDirectorResource(
@@ -7347,6 +7355,7 @@ std::optional<StorageDirectorRequestSpec> ParseStorageDirectorRequest(
 
   auto* password = json_object_get(root.get(), "password");
   auto* description = json_object_get(root.get(), "description");
+  auto* monitor = json_object_get(root.get(), "monitor");
   auto* maximum_bandwidth_per_job
       = json_object_get(root.get(), "maximum_bandwidth_per_job");
   if (password && !json_is_null(password) && !json_is_string(password)) {
@@ -7356,6 +7365,10 @@ std::optional<StorageDirectorRequestSpec> ParseStorageDirectorRequest(
   if (description && !json_is_null(description)
       && !json_is_string(description)) {
     error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (monitor && !json_is_null(monitor) && !json_is_boolean(monitor)) {
+    error = "field 'monitor' must be a boolean when provided.";
     return std::nullopt;
   }
   if (maximum_bandwidth_per_job && !json_is_null(maximum_bandwidth_per_job)
@@ -7371,6 +7384,9 @@ std::optional<StorageDirectorRequestSpec> ParseStorageDirectorRequest(
   }
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
+  }
+  if (monitor && json_is_boolean(monitor)) {
+    spec.monitor = json_is_true(monitor);
   }
   if (maximum_bandwidth_per_job && json_is_integer(maximum_bandwidth_per_job)) {
     const auto value = json_integer_value(maximum_bandwidth_per_job);

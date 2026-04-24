@@ -1499,6 +1499,7 @@ std::string BuildStorageDaemonDirectorResourceContent(
     std::string_view director_name,
     std::string_view password,
     std::string_view description,
+    const std::optional<bool>& monitor = std::nullopt,
     const std::optional<uint64_t>& maximum_bandwidth_per_job = std::nullopt)
 {
   std::ostringstream content;
@@ -1506,6 +1507,7 @@ std::string BuildStorageDaemonDirectorResourceContent(
           << "  Name = " << QuoteBareosString(director_name) << "\n"
           << "  Description = " << QuoteBareosString(description) << "\n"
           << "  Password = " << QuoteBareosString(password) << "\n";
+  AppendBoolDirective(content, "Monitor", monitor);
   AppendIntegerDirective(content, "MaximumBandwidthPerJob",
                          maximum_bandwidth_per_job);
   content << "}\n";
@@ -1924,6 +1926,7 @@ struct StorageDaemonDirectorWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<bool> monitor{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
   bool exists{false};
   bool is_standalone_file{false};
@@ -4091,6 +4094,9 @@ LoadStorageDaemonDirectorWriteContext(
                                  + std::string{director_name} + "'");
     if (!rendered_password) { return {.error = rendered_password.error}; }
     context.password = *rendered_password.value;
+    if (HasMemberSource(*director, {"Monitor"})) {
+      context.monitor = director->monitor;
+    }
     if (HasMemberSource(*director, {"MaximumBandwidthPerJob"})) {
       context.maximum_bandwidth_per_job = director->max_bandwidth_per_job;
     }
@@ -4391,11 +4397,15 @@ OperationResult<std::monostate> SyncStorageDaemonConfig(
   const auto director_description
       = director_context.value->description.value_or(
           DefaultStorageDaemonDirectorDescription(director_name, storage_name));
+  const auto director_monitor = director_context.value->monitor;
+  const auto director_maximum_bandwidth_per_job
+      = director_context.value->maximum_bandwidth_per_job;
   const auto device_description = device_context.value->description.value_or(
       DefaultStorageDaemonDeviceDescription(device_name, storage_name));
 
   const auto director_content = BuildStorageDaemonDirectorResourceContent(
-      director_name, password, director_description);
+      director_name, password, director_description, director_monitor,
+      director_maximum_bandwidth_per_job);
   const auto device_content = BuildStorageDaemonDeviceResourceContent(
       device_name, media_type, *archive_device, *device_type,
       device_description);
@@ -8185,12 +8195,14 @@ ServiceState::UpsertStorageDirectorResource(
                                : context.value->description.value_or(
                                      DefaultStorageDaemonDirectorDescription(
                                          director_name, storage_name));
+  const auto monitor = spec.monitor ? spec.monitor : context.value->monitor;
   const auto maximum_bandwidth_per_job
       = spec.maximum_bandwidth_per_job
             ? spec.maximum_bandwidth_per_job
             : context.value->maximum_bandwidth_per_job;
   const auto rendered = BuildStorageDaemonDirectorResourceContent(
-      director_name, *password, description, maximum_bandwidth_per_job);
+      director_name, *password, description, monitor,
+      maximum_bandwidth_per_job);
   const auto resource_directory
       = storage_config.value->path / "bareos-sd.d" / "director";
   const bool file_existed = std::filesystem::exists(context.value->file_path);
