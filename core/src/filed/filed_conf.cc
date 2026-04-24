@@ -179,7 +179,7 @@ static void StoreCipher(lexer* lc, const ResourceItem* item, int index, int)
     }
   }
   if (i != 0) {
-    scan_err1(lc, T_("Expected a Crypto Cipher option, got: %s"), lc->str);
+    scan_err(lc, T_("Expected a Crypto Cipher option, got: %s"), lc->str);
   }
   ScanToEol(lc);
   item->SetPresent();

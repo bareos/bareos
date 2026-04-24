@@ -276,8 +276,8 @@ static void StoreAuthenticationType(lexer* lc,
     }
   }
   if (i != 0) {
-    scan_err1(lc, T_("Expected a Authentication Type keyword, got: %s"),
-              lc->str);
+    scan_err(lc, T_("Expected a Authentication Type keyword, got: %s"),
+             lc->str);
   }
   ScanToEol(lc);
   item->SetPresent();
@@ -322,10 +322,10 @@ static void StoreMaxblocksize(lexer* lc,
 {
   my_config->StoreResource(CFG_TYPE_SIZE32, lc, item, index, pass);
   if (GetItemVariable<uint32_t>(*item) > MAX_BLOCK_LENGTH) {
-    scan_err2(lc,
-              T_("Maximum Block Size configured value %u is greater than "
-                 "allowed maximum: %u"),
-              GetItemVariable<uint32_t>(*item), MAX_BLOCK_LENGTH);
+    scan_err(lc,
+             T_("Maximum Block Size configured value %u is greater than "
+                "allowed maximum: %u"),
+             GetItemVariable<uint32_t>(*item), MAX_BLOCK_LENGTH);
   }
 }
 
@@ -346,7 +346,7 @@ static void StoreIoDirection(lexer* lc,
     }
   }
   if (i != 0) {
-    scan_err1(lc, T_("Expected a IO direction keyword, got: %s"), lc->str);
+    scan_err(lc, T_("Expected a IO direction keyword, got: %s"), lc->str);
   }
   ScanToEol(lc);
   item->SetPresent();
@@ -371,8 +371,8 @@ static void StoreCompressionalgorithm(lexer* lc,
     }
   }
   if (i != 0) {
-    scan_err1(lc, T_("Expected a Compression algorithm keyword, got: %s"),
-              lc->str);
+    scan_err(lc, T_("Expected a Compression algorithm keyword, got: %s"),
+             lc->str);
   }
   ScanToEol(lc);
   item->SetPresent();
