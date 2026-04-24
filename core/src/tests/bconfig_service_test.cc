@@ -1051,6 +1051,11 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
       {.description = std::string{"Initial stub"},
        .address = std::string{"127.0.0.1"},
        .port = 9101,
+       .allowed_script_dirs
+       = std::vector<std::string>{"/usr/lib/bareos/scripts",
+                                  "/opt/bareos/hooks"},
+       .allowed_job_commands = std::vector<std::string>{"run-before-job-client",
+                                                        "run-after-job-client"},
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = false,
        .monitor = true,
@@ -1069,6 +1074,14 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
             std::string::npos);
   EXPECT_NE(created_text.find("Address = 127.0.0.1"), std::string::npos);
   EXPECT_NE(created_text.find("Port = 9101"), std::string::npos);
+  EXPECT_NE(created_text.find("AllowedScriptDir = \"/usr/lib/bareos/scripts\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("AllowedScriptDir = \"/opt/bareos/hooks\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("AllowedJobCommand = \"run-before-job-client\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("AllowedJobCommand = \"run-after-job-client\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = no"),
@@ -1091,6 +1104,14 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
             std::string::npos);
   EXPECT_NE(updated_text.find("Address = 127.0.0.1"), std::string::npos);
   EXPECT_NE(updated_text.find("Port = 9101"), std::string::npos);
+  EXPECT_NE(updated_text.find("AllowedScriptDir = \"/usr/lib/bareos/scripts\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("AllowedScriptDir = \"/opt/bareos/hooks\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("AllowedJobCommand = \"run-before-job-client\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("AllowedJobCommand = \"run-after-job-client\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = no"),

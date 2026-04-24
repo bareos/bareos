@@ -75,6 +75,8 @@ struct ClientDirectorStubRequestSpec {
   std::optional<std::string> description{};
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
+  std::optional<std::vector<std::string>> allowed_script_dirs{};
+  std::optional<std::vector<std::string>> allowed_job_commands{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};
@@ -729,6 +731,14 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="client-stub-port">Port</label>
         <input id="client-stub-port" name="port" type="number" min="1" max="65535"
                placeholder="9101">
+
+        <label for="client-stub-allowed-script-dirs">Allowed script dirs</label>
+        <textarea id="client-stub-allowed-script-dirs" name="allowed_script_dirs"
+                  rows="3" placeholder="/usr/lib/bareos/scripts"></textarea>
+
+        <label for="client-stub-allowed-job-commands">Allowed job commands</label>
+        <textarea id="client-stub-allowed-job-commands" name="allowed_job_commands"
+                  rows="3" placeholder="run-before-job-client"></textarea>
 
         <label class="checkbox-label" for="client-stub-connection-from-director-to-client">
           <input id="client-stub-connection-from-director-to-client"
@@ -2747,10 +2757,20 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const clientName = String(form.get('client_name') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
+        const rawAllowedScriptDirs = String(form.get('allowed_script_dirs') ?? '');
+        const allowedScriptDirs = rawAllowedScriptDirs.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const rawAllowedJobCommands = String(form.get('allowed_job_commands') ?? '');
+        const allowedJobCommands = rawAllowedJobCommands.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
         const payload = {
           description: String(form.get('description') ?? '').trim(),
           address: String(form.get('address') ?? '').trim(),
           port: String(form.get('port') ?? '').trim(),
+          allowed_script_dirs: allowedScriptDirs,
+          allowed_job_commands: allowedJobCommands,
           connection_from_director_to_client: document.getElementById(
             'client-stub-connection-from-director-to-client').checked,
           connection_from_client_to_director: document.getElementById(
@@ -2769,6 +2789,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
           delete payload.port;
         } else {
           payload.port = Number.parseInt(payload.port, 10);
+        }
+        if (payload.allowed_script_dirs.length === 0) {
+          delete payload.allowed_script_dirs;
+        }
+        if (payload.allowed_job_commands.length === 0) {
+          delete payload.allowed_job_commands;
         }
         if (!payload.maximum_bandwidth_per_job) {
           delete payload.maximum_bandwidth_per_job;
@@ -5020,6 +5046,8 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
       .description = spec->description,
       .address = spec->address,
       .port = spec->port,
+      .allowed_script_dirs = spec->allowed_script_dirs,
+      .allowed_job_commands = spec->allowed_job_commands,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -6845,6 +6873,10 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   auto* description = json_object_get(root.get(), "description");
   auto* address = json_object_get(root.get(), "address");
   auto* port = json_object_get(root.get(), "port");
+  auto* allowed_script_dirs
+      = json_object_get(root.get(), "allowed_script_dirs");
+  auto* allowed_job_commands
+      = json_object_get(root.get(), "allowed_job_commands");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -6852,6 +6884,22 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   auto* monitor = json_object_get(root.get(), "monitor");
   auto* maximum_bandwidth_per_job
       = json_object_get(root.get(), "maximum_bandwidth_per_job");
+  auto require_string_array = [&error](json_t* value, const char* field) {
+    if (!value || json_is_null(value)) { return true; }
+    if (!json_is_array(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an array of strings when provided.";
+      return false;
+    }
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      if (!json_is_string(json_array_get(value, index))) {
+        error = std::string{"field '"} + field
+                + "' must be an array of strings when provided.";
+        return false;
+      }
+    }
+    return true;
+  };
   if (description && !json_is_null(description)
       && !json_is_string(description)) {
     error = "field 'description' must be a string when provided.";
@@ -6863,6 +6911,12 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   }
   if (port && !json_is_null(port) && !json_is_integer(port)) {
     error = "field 'port' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (!require_string_array(allowed_script_dirs, "allowed_script_dirs")) {
+    return std::nullopt;
+  }
+  if (!require_string_array(allowed_job_commands, "allowed_job_commands")) {
     return std::nullopt;
   }
   if (connection_from_director_to_client
@@ -6893,6 +6947,16 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   }
 
   ClientDirectorStubRequestSpec spec{};
+  auto parse_string_array
+      = [](json_t* value) -> std::optional<std::vector<std::string>> {
+    if (!value || !json_is_array(value)) { return std::nullopt; }
+    std::vector<std::string> result;
+    result.reserve(json_array_size(value));
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      result.emplace_back(json_string_value(json_array_get(value, index)));
+    }
+    return result;
+  };
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
   }
@@ -6907,6 +6971,8 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
     }
     spec.port = static_cast<uint16_t>(value);
   }
+  spec.allowed_script_dirs = parse_string_array(allowed_script_dirs);
+  spec.allowed_job_commands = parse_string_array(allowed_job_commands);
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {
     spec.connection_from_director_to_client

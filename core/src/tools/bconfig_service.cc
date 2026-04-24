@@ -606,6 +606,9 @@ void AppendIntegerDirective(std::ostringstream& content,
 void AppendBareosDirective(std::ostringstream& content,
                            std::string_view name,
                            const std::optional<std::string>& value);
+void AppendRepeatedQuotedDirective(std::ostringstream& content,
+                                   std::string_view name,
+                                   const std::vector<std::string>& values);
 
 std::string BuildClientDirectorStubContent(
     std::string_view director_name,
@@ -613,6 +616,10 @@ std::string BuildClientDirectorStubContent(
     std::string_view description,
     const std::optional<std::string>& address = std::nullopt,
     const std::optional<uint16_t>& port = std::nullopt,
+    const std::optional<std::vector<std::string>>& allowed_script_dirs
+    = std::nullopt,
+    const std::optional<std::vector<std::string>>& allowed_job_commands
+    = std::nullopt,
     const std::optional<bool>& connection_from_director_to_client
     = std::nullopt,
     const std::optional<bool>& connection_from_client_to_director
@@ -627,6 +634,14 @@ std::string BuildClientDirectorStubContent(
           << "  Description = " << QuoteBareosString(description) << "\n";
   AppendBareosDirective(content, "Address", address);
   AppendIntegerDirective(content, "Port", port);
+  if (allowed_script_dirs) {
+    AppendRepeatedQuotedDirective(content, "AllowedScriptDir",
+                                  *allowed_script_dirs);
+  }
+  if (allowed_job_commands) {
+    AppendRepeatedQuotedDirective(content, "AllowedJobCommand",
+                                  *allowed_job_commands);
+  }
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
                       connection_from_director_to_client);
   AppendBoolDirective(content, "ConnectionFromClientToDirector",
@@ -1899,6 +1914,8 @@ struct ClientDirectorStubWriteContext {
   std::optional<std::string> description{};
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
+  std::optional<std::vector<std::string>> allowed_script_dirs{};
+  std::optional<std::vector<std::string>> allowed_job_commands{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};
@@ -4814,6 +4831,13 @@ LoadClientDirectorStubWriteContext(const std::filesystem::path& client_root,
         && director->port <= 65535) {
       context.port = static_cast<uint16_t>(director->port);
     }
+    if (HasMemberSource(*director, {"AllowedScriptDir"})) {
+      context.allowed_script_dirs
+          = CopyAclValues(director->allowed_script_dirs);
+    }
+    if (HasMemberSource(*director, {"AllowedJobCommand"})) {
+      context.allowed_job_commands = CopyAclValues(director->allowed_job_cmds);
+    }
     if (HasMemberSource(*director, {"ConnectionFromDirectorToClient"})) {
       context.connection_from_director_to_client
           = director->conn_from_dir_to_fd;
@@ -5584,6 +5608,12 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
                                          client_name, director_name));
   const auto address = spec.address ? spec.address : context.value->address;
   const auto port = spec.port ? spec.port : context.value->port;
+  const auto allowed_script_dirs = spec.allowed_script_dirs
+                                       ? spec.allowed_script_dirs
+                                       : context.value->allowed_script_dirs;
+  const auto allowed_job_commands = spec.allowed_job_commands
+                                        ? spec.allowed_job_commands
+                                        : context.value->allowed_job_commands;
   const auto connection_from_director_to_client
       = spec.connection_from_director_to_client
             ? spec.connection_from_director_to_client
@@ -5599,6 +5629,7 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
             : context.value->maximum_bandwidth_per_job;
   const auto stub_content = BuildClientDirectorStubContent(
       director_name, *password.value, description, address, port,
+      allowed_script_dirs, allowed_job_commands,
       connection_from_director_to_client, connection_from_client_to_director,
       monitor, maximum_bandwidth_per_job);
 
