@@ -160,29 +160,6 @@ void scan_warn(const char* file, int line, lexer* lc, const char* msg, ...);
     _temp_lex_->scan_error(__FILE__, __LINE__, _temp_lex_,   \
                            (msg)__VA_OPT__(, ) __VA_ARGS__); \
   } while (0)
-#define scan_err0(lc, msg) scan_err((lc), (msg))
-#define scan_err1(lc, msg, a1) scan_err((lc), (msg), a1)
-#define scan_err2(lc, msg, a1, a2) scan_err((lc), (msg), a1, a2)
-#define scan_err3(lc, msg, a1, a2, a3) scan_err((lc), (msg), a1, a2, a3)
-#define scan_err4(lc, msg, a1, a2, a3, a4) scan_err((lc), (msg), a1, a2, a3, a4)
-#define scan_err5(lc, msg, a1, a2, a3, a4, a5) \
-  scan_err((lc), (msg), a1, a2, a3, a4, a5)
-#define scan_err6(lc, msg, a1, a2, a3, a4, a5, a6) \
-  scan_err((lc), (msg), a1, a2, a3, a4, a5, a6)
-
-// Lexical scanning warnings in parsing conf files
-#define scan_warn0(lc, msg) scan_warn(__FILE__, __LINE__, (lc), msg)
-#define scan_warn1(lc, msg, a1) scan_warn(__FILE__, __LINE__, (lc), msg, a1)
-#define scan_warn2(lc, msg, a1, a2) \
-  scan_warn(__FILE__, __LINE__, (lc), msg, a1, a2)
-#define scan_warn3(lc, msg, a1, a2, a3) \
-  scan_warn(__FILE__, __LINE__, (lc), msg, a1, a2, a3)
-#define scan_warn4(lc, msg, a1, a2, a3, a4) \
-  scan_warn(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4)
-#define scan_warn5(lc, msg, a1, a2, a3, a4, a5) \
-  scan_warn(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4, a5)
-#define scan_warn6(lc, msg, a1, a2, a3, a4, a5, a6) \
-  scan_warn(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4, a5, a6)
 
 void ScanToEol(lexer* lc);
 int ScanToNextNotEol(lexer* lc);
