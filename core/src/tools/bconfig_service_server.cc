@@ -155,11 +155,35 @@ struct StorageDeviceRequestSpec {
 struct StorageDaemonRequestSpec {
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
+  std::optional<bool> just_in_time_reservation{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<uint32_t> maximum_workers_per_job{};
   std::optional<uint32_t> absolute_job_timeout{};
   std::optional<bool> allow_bandwidth_bursting{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
+  std::optional<bool> pki_signatures{};
+  std::optional<bool> pki_encryption{};
+  std::optional<std::string> pki_key_pair{};
+  std::optional<bool> always_use_lmdb{};
+  std::optional<uint32_t> lmdb_threshold{};
+  std::optional<bool> ndmp_enable{};
+  std::optional<bool> ndmp_snooping{};
+  std::optional<uint32_t> ndmp_log_level{};
+  std::optional<bool> autoxflate_on_replication{};
   std::optional<bool> collect_device_statistics{};
   std::optional<bool> collect_job_statistics{};
+  std::optional<uint32_t> statistics_collect_interval{};
+  std::optional<bool> device_reserve_by_media_type{};
+  std::optional<bool> file_device_concurrent_read{};
+  std::optional<std::string> ver_id{};
+  std::optional<std::string> log_timestamp_format{};
+  std::optional<uint64_t> maximum_bandwidth_per_job{};
+  std::optional<std::string> secure_erase_command{};
+  std::optional<std::string> grpc_module{};
+  std::optional<bool> enable_ktls{};
   std::optional<uint64_t> sd_connect_timeout{};
   std::optional<uint64_t> fd_connect_timeout{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -698,6 +722,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
                name="maximum_concurrent_jobs" type="number" min="0"
                placeholder="1000">
 
+        <label for="client-daemon-maximum-workers-per-job">Maximum workers per job</label>
+        <input id="client-daemon-maximum-workers-per-job"
+               name="maximum_workers_per_job" type="number" min="0"
+               placeholder="2">
+
         <label for="client-daemon-absolute-job-timeout">Absolute job timeout</label>
         <input id="client-daemon-absolute-job-timeout"
                name="absolute_job_timeout" type="number" min="0"
@@ -706,6 +735,92 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="client-daemon-allow-bandwidth-bursting">Allow bandwidth bursting</label>
         <select id="client-daemon-allow-bandwidth-bursting"
                 name="allow_bandwidth_bursting">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="client-daemon-tls-authenticate">TLS authenticate only</label>
+        <select id="client-daemon-tls-authenticate" name="tls_authenticate">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="client-daemon-tls-enable">TLS enabled</label>
+        <select id="client-daemon-tls-enable" name="tls_enable">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="client-daemon-tls-require">TLS required</label>
+        <select id="client-daemon-tls-require" name="tls_require">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="client-daemon-tls-verify-peer">TLS verify peer</label>
+        <select id="client-daemon-tls-verify-peer" name="tls_verify_peer">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="client-daemon-pki-signatures">PKI signatures</label>
+        <select id="client-daemon-pki-signatures" name="pki_signatures">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="client-daemon-pki-encryption">PKI encryption</label>
+        <select id="client-daemon-pki-encryption" name="pki_encryption">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="client-daemon-pki-key-pair">PKI key pair</label>
+        <input id="client-daemon-pki-key-pair" name="pki_key_pair"
+               placeholder="/etc/bareos/client.pem">
+
+        <label for="client-daemon-always-use-lmdb">Always use LMDB</label>
+        <select id="client-daemon-always-use-lmdb" name="always_use_lmdb">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="client-daemon-lmdb-threshold">LMDB threshold</label>
+        <input id="client-daemon-lmdb-threshold" name="lmdb_threshold"
+               type="number" min="0" placeholder="0">
+
+        <label for="client-daemon-ver-id">VerId</label>
+        <input id="client-daemon-ver-id" name="ver_id"
+               placeholder="bareos-fd-custom">
+
+        <label for="client-daemon-log-timestamp-format">Log timestamp format</label>
+        <input id="client-daemon-log-timestamp-format"
+               name="log_timestamp_format" placeholder="%d-%b %H:%M">
+
+        <label for="client-daemon-maximum-bandwidth-per-job">Maximum bandwidth per job</label>
+        <input id="client-daemon-maximum-bandwidth-per-job"
+               name="maximum_bandwidth_per_job" type="number" min="0"
+               placeholder="0">
+
+        <label for="client-daemon-secure-erase-command">Secure erase command</label>
+        <input id="client-daemon-secure-erase-command"
+               name="secure_erase_command"
+               placeholder="/usr/bin/shred -n 3 -u">
+
+        <label for="client-daemon-grpc-module">gRPC module</label>
+        <input id="client-daemon-grpc-module" name="grpc_module"
+               placeholder="bareos-grpc-fd-plugin-bridge">
+
+        <label for="client-daemon-enable-ktls">Enable kTLS</label>
+        <select id="client-daemon-enable-ktls" name="enable_ktls">
           <option value="">Keep existing</option>
           <option value="true">Yes</option>
           <option value="false">No</option>
@@ -1420,6 +1535,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
                name="absolute_job_timeout" type="number" min="0"
                placeholder="0">
 
+        <label for="storage-daemon-statistics-collect-interval">Statistics collect interval</label>
+        <input id="storage-daemon-statistics-collect-interval"
+               name="statistics_collect_interval" type="number" min="0"
+               placeholder="0">
+
         <label for="storage-daemon-allow-bandwidth-bursting">Allow bandwidth bursting</label>
         <select id="storage-daemon-allow-bandwidth-bursting"
                 name="allow_bandwidth_bursting">
@@ -1443,6 +1563,109 @@ const char* kTestUiHtmlTemplate = R"HTML(
           <option value="true">Yes</option>
           <option value="false">No</option>
         </select>
+
+        <label for="storage-daemon-device-reserve-by-media-type">Device reserve by media type</label>
+        <select id="storage-daemon-device-reserve-by-media-type"
+                name="device_reserve_by_media_type">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-daemon-autoxflate-on-replication">AutoXFlate on replication</label>
+        <select id="storage-daemon-autoxflate-on-replication"
+                name="autoxflate_on_replication">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-daemon-file-device-concurrent-read">File device concurrent read</label>
+        <select id="storage-daemon-file-device-concurrent-read"
+                name="file_device_concurrent_read">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-daemon-ver-id">VerId</label>
+        <input id="storage-daemon-ver-id" name="ver_id"
+               placeholder="bareos-sd-custom">
+
+        <label for="storage-daemon-log-timestamp-format">Log timestamp format</label>
+        <input id="storage-daemon-log-timestamp-format"
+               name="log_timestamp_format" placeholder="%d-%b %H:%M">
+
+        <label for="storage-daemon-maximum-bandwidth-per-job">Maximum bandwidth per job</label>
+        <input id="storage-daemon-maximum-bandwidth-per-job"
+               name="maximum_bandwidth_per_job" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-daemon-secure-erase-command">Secure erase command</label>
+        <input id="storage-daemon-secure-erase-command"
+               name="secure_erase_command"
+               placeholder="/usr/bin/shred -n 3 -u">
+
+        <label for="storage-daemon-enable-ktls">Enable kTLS</label>
+        <select id="storage-daemon-enable-ktls" name="enable_ktls">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-daemon-tls-authenticate">TLS authenticate only</label>
+        <select id="storage-daemon-tls-authenticate" name="tls_authenticate">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-daemon-tls-enable">TLS enabled</label>
+        <select id="storage-daemon-tls-enable" name="tls_enable">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-daemon-tls-require">TLS required</label>
+        <select id="storage-daemon-tls-require" name="tls_require">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-daemon-tls-verify-peer">TLS verify peer</label>
+        <select id="storage-daemon-tls-verify-peer" name="tls_verify_peer">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-daemon-just-in-time-reservation">Just in time reservation</label>
+        <select id="storage-daemon-just-in-time-reservation"
+                name="just_in_time_reservation">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-daemon-ndmp-enable">NDMP enabled</label>
+        <select id="storage-daemon-ndmp-enable" name="ndmp_enable">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-daemon-ndmp-snooping">NDMP snooping</label>
+        <select id="storage-daemon-ndmp-snooping" name="ndmp_snooping">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-daemon-ndmp-log-level">NDMP log level</label>
+        <input id="storage-daemon-ndmp-log-level" name="ndmp_log_level"
+               type="number" min="0" placeholder="4">
 
         <label for="storage-daemon-sd-connect-timeout">Storage connect timeout</label>
         <input id="storage-daemon-sd-connect-timeout"
@@ -2307,8 +2530,24 @@ const char* kTestUiHtmlTemplate = R"HTML(
           address: String(form.get('address') ?? '').trim(),
           port: String(form.get('port') ?? '').trim(),
           maximum_concurrent_jobs: String(form.get('maximum_concurrent_jobs') ?? '').trim(),
+          maximum_workers_per_job: String(form.get('maximum_workers_per_job') ?? '').trim(),
           absolute_job_timeout: String(form.get('absolute_job_timeout') ?? '').trim(),
           allow_bandwidth_bursting: String(form.get('allow_bandwidth_bursting') ?? '').trim(),
+          tls_authenticate: String(form.get('tls_authenticate') ?? '').trim(),
+          tls_enable: String(form.get('tls_enable') ?? '').trim(),
+          tls_require: String(form.get('tls_require') ?? '').trim(),
+          tls_verify_peer: String(form.get('tls_verify_peer') ?? '').trim(),
+          pki_signatures: String(form.get('pki_signatures') ?? '').trim(),
+          pki_encryption: String(form.get('pki_encryption') ?? '').trim(),
+          pki_key_pair: String(form.get('pki_key_pair') ?? '').trim(),
+          always_use_lmdb: String(form.get('always_use_lmdb') ?? '').trim(),
+          lmdb_threshold: String(form.get('lmdb_threshold') ?? '').trim(),
+          ver_id: String(form.get('ver_id') ?? '').trim(),
+          log_timestamp_format: String(form.get('log_timestamp_format') ?? '').trim(),
+          maximum_bandwidth_per_job: String(form.get('maximum_bandwidth_per_job') ?? '').trim(),
+          secure_erase_command: String(form.get('secure_erase_command') ?? '').trim(),
+          grpc_module: String(form.get('grpc_module') ?? '').trim(),
+          enable_ktls: String(form.get('enable_ktls') ?? '').trim(),
           sd_connect_timeout: String(form.get('sd_connect_timeout') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
           maximum_network_buffer_size: String(form.get('maximum_network_buffer_size') ?? '').trim(),
@@ -2321,8 +2560,24 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.address) { delete payload.address; }
         if (!payload.port) { delete payload.port; } else { payload.port = Number(payload.port); }
         if (!payload.maximum_concurrent_jobs) { delete payload.maximum_concurrent_jobs; } else { payload.maximum_concurrent_jobs = Number(payload.maximum_concurrent_jobs); }
+        if (!payload.maximum_workers_per_job) { delete payload.maximum_workers_per_job; } else { payload.maximum_workers_per_job = Number(payload.maximum_workers_per_job); }
         if (!payload.absolute_job_timeout) { delete payload.absolute_job_timeout; } else { payload.absolute_job_timeout = Number(payload.absolute_job_timeout); }
         if (!payload.allow_bandwidth_bursting) { delete payload.allow_bandwidth_bursting; } else { payload.allow_bandwidth_bursting = payload.allow_bandwidth_bursting === 'true'; }
+        if (!payload.tls_authenticate) { delete payload.tls_authenticate; } else { payload.tls_authenticate = payload.tls_authenticate === 'true'; }
+        if (!payload.tls_enable) { delete payload.tls_enable; } else { payload.tls_enable = payload.tls_enable === 'true'; }
+        if (!payload.tls_require) { delete payload.tls_require; } else { payload.tls_require = payload.tls_require === 'true'; }
+        if (!payload.tls_verify_peer) { delete payload.tls_verify_peer; } else { payload.tls_verify_peer = payload.tls_verify_peer === 'true'; }
+        if (!payload.pki_signatures) { delete payload.pki_signatures; } else { payload.pki_signatures = payload.pki_signatures === 'true'; }
+        if (!payload.pki_encryption) { delete payload.pki_encryption; } else { payload.pki_encryption = payload.pki_encryption === 'true'; }
+        if (!payload.pki_key_pair) { delete payload.pki_key_pair; }
+        if (!payload.always_use_lmdb) { delete payload.always_use_lmdb; } else { payload.always_use_lmdb = payload.always_use_lmdb === 'true'; }
+        if (!payload.lmdb_threshold) { delete payload.lmdb_threshold; } else { payload.lmdb_threshold = Number(payload.lmdb_threshold); }
+        if (!payload.ver_id) { delete payload.ver_id; }
+        if (!payload.log_timestamp_format) { delete payload.log_timestamp_format; }
+        if (!payload.maximum_bandwidth_per_job) { delete payload.maximum_bandwidth_per_job; } else { payload.maximum_bandwidth_per_job = Number(payload.maximum_bandwidth_per_job); }
+        if (!payload.secure_erase_command) { delete payload.secure_erase_command; }
+        if (!payload.grpc_module) { delete payload.grpc_module; }
+        if (!payload.enable_ktls) { delete payload.enable_ktls; } else { payload.enable_ktls = payload.enable_ktls === 'true'; }
         if (!payload.sd_connect_timeout) { delete payload.sd_connect_timeout; } else { payload.sd_connect_timeout = Number(payload.sd_connect_timeout); }
         if (!payload.heartbeat_interval) { delete payload.heartbeat_interval; } else { payload.heartbeat_interval = Number(payload.heartbeat_interval); }
         if (!payload.maximum_network_buffer_size) { delete payload.maximum_network_buffer_size; } else { payload.maximum_network_buffer_size = Number(payload.maximum_network_buffer_size); }
@@ -3174,11 +3429,28 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const payload = {
           address: String(form.get('address') ?? '').trim(),
           port: String(form.get('port') ?? '').trim(),
+          just_in_time_reservation: String(form.get('just_in_time_reservation') ?? '').trim(),
           maximum_concurrent_jobs: String(form.get('maximum_concurrent_jobs') ?? '').trim(),
           absolute_job_timeout: String(form.get('absolute_job_timeout') ?? '').trim(),
+          statistics_collect_interval: String(form.get('statistics_collect_interval') ?? '').trim(),
           allow_bandwidth_bursting: String(form.get('allow_bandwidth_bursting') ?? '').trim(),
+          tls_authenticate: String(form.get('tls_authenticate') ?? '').trim(),
+          tls_enable: String(form.get('tls_enable') ?? '').trim(),
+          tls_require: String(form.get('tls_require') ?? '').trim(),
+          tls_verify_peer: String(form.get('tls_verify_peer') ?? '').trim(),
+          ndmp_enable: String(form.get('ndmp_enable') ?? '').trim(),
+          ndmp_snooping: String(form.get('ndmp_snooping') ?? '').trim(),
+          ndmp_log_level: String(form.get('ndmp_log_level') ?? '').trim(),
+          autoxflate_on_replication: String(form.get('autoxflate_on_replication') ?? '').trim(),
           collect_device_statistics: String(form.get('collect_device_statistics') ?? '').trim(),
           collect_job_statistics: String(form.get('collect_job_statistics') ?? '').trim(),
+          device_reserve_by_media_type: String(form.get('device_reserve_by_media_type') ?? '').trim(),
+          file_device_concurrent_read: String(form.get('file_device_concurrent_read') ?? '').trim(),
+          ver_id: String(form.get('ver_id') ?? '').trim(),
+          log_timestamp_format: String(form.get('log_timestamp_format') ?? '').trim(),
+          maximum_bandwidth_per_job: String(form.get('maximum_bandwidth_per_job') ?? '').trim(),
+          secure_erase_command: String(form.get('secure_erase_command') ?? '').trim(),
+          enable_ktls: String(form.get('enable_ktls') ?? '').trim(),
           sd_connect_timeout: String(form.get('sd_connect_timeout') ?? '').trim(),
           fd_connect_timeout: String(form.get('fd_connect_timeout') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
@@ -3193,11 +3465,28 @@ const char* kTestUiHtmlTemplate = R"HTML(
         };
         if (!payload.address) { delete payload.address; }
         if (!payload.port) { delete payload.port; } else { payload.port = Number(payload.port); }
+        if (!payload.just_in_time_reservation) { delete payload.just_in_time_reservation; } else { payload.just_in_time_reservation = payload.just_in_time_reservation === 'true'; }
         if (!payload.maximum_concurrent_jobs) { delete payload.maximum_concurrent_jobs; } else { payload.maximum_concurrent_jobs = Number(payload.maximum_concurrent_jobs); }
         if (!payload.absolute_job_timeout) { delete payload.absolute_job_timeout; } else { payload.absolute_job_timeout = Number(payload.absolute_job_timeout); }
+        if (!payload.statistics_collect_interval) { delete payload.statistics_collect_interval; } else { payload.statistics_collect_interval = Number(payload.statistics_collect_interval); }
         if (!payload.allow_bandwidth_bursting) { delete payload.allow_bandwidth_bursting; } else { payload.allow_bandwidth_bursting = payload.allow_bandwidth_bursting === 'true'; }
+        if (!payload.tls_authenticate) { delete payload.tls_authenticate; } else { payload.tls_authenticate = payload.tls_authenticate === 'true'; }
+        if (!payload.tls_enable) { delete payload.tls_enable; } else { payload.tls_enable = payload.tls_enable === 'true'; }
+        if (!payload.tls_require) { delete payload.tls_require; } else { payload.tls_require = payload.tls_require === 'true'; }
+        if (!payload.tls_verify_peer) { delete payload.tls_verify_peer; } else { payload.tls_verify_peer = payload.tls_verify_peer === 'true'; }
+        if (!payload.ndmp_enable) { delete payload.ndmp_enable; } else { payload.ndmp_enable = payload.ndmp_enable === 'true'; }
+        if (!payload.ndmp_snooping) { delete payload.ndmp_snooping; } else { payload.ndmp_snooping = payload.ndmp_snooping === 'true'; }
+        if (!payload.ndmp_log_level) { delete payload.ndmp_log_level; } else { payload.ndmp_log_level = Number(payload.ndmp_log_level); }
+        if (!payload.autoxflate_on_replication) { delete payload.autoxflate_on_replication; } else { payload.autoxflate_on_replication = payload.autoxflate_on_replication === 'true'; }
         if (!payload.collect_device_statistics) { delete payload.collect_device_statistics; } else { payload.collect_device_statistics = payload.collect_device_statistics === 'true'; }
         if (!payload.collect_job_statistics) { delete payload.collect_job_statistics; } else { payload.collect_job_statistics = payload.collect_job_statistics === 'true'; }
+        if (!payload.device_reserve_by_media_type) { delete payload.device_reserve_by_media_type; } else { payload.device_reserve_by_media_type = payload.device_reserve_by_media_type === 'true'; }
+        if (!payload.file_device_concurrent_read) { delete payload.file_device_concurrent_read; } else { payload.file_device_concurrent_read = payload.file_device_concurrent_read === 'true'; }
+        if (!payload.ver_id) { delete payload.ver_id; }
+        if (!payload.log_timestamp_format) { delete payload.log_timestamp_format; }
+        if (!payload.maximum_bandwidth_per_job) { delete payload.maximum_bandwidth_per_job; } else { payload.maximum_bandwidth_per_job = Number(payload.maximum_bandwidth_per_job); }
+        if (!payload.secure_erase_command) { delete payload.secure_erase_command; }
+        if (!payload.enable_ktls) { delete payload.enable_ktls; } else { payload.enable_ktls = payload.enable_ktls === 'true'; }
         if (!payload.sd_connect_timeout) { delete payload.sd_connect_timeout; } else { payload.sd_connect_timeout = Number(payload.sd_connect_timeout); }
         if (!payload.fd_connect_timeout) { delete payload.fd_connect_timeout; } else { payload.fd_connect_timeout = Number(payload.fd_connect_timeout); }
         if (!payload.heartbeat_interval) { delete payload.heartbeat_interval; } else { payload.heartbeat_interval = Number(payload.heartbeat_interval); }
@@ -4147,8 +4436,24 @@ http::response<http::string_body> HandleDeploymentClientDaemonPutRequest(
       .address = spec->address,
       .port = spec->port,
       .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
+      .maximum_workers_per_job = spec->maximum_workers_per_job,
       .absolute_job_timeout = spec->absolute_job_timeout,
       .allow_bandwidth_bursting = spec->allow_bandwidth_bursting,
+      .tls_authenticate = spec->tls_authenticate,
+      .tls_enable = spec->tls_enable,
+      .tls_require = spec->tls_require,
+      .tls_verify_peer = spec->tls_verify_peer,
+      .pki_signatures = spec->pki_signatures,
+      .pki_encryption = spec->pki_encryption,
+      .pki_key_pair = spec->pki_key_pair,
+      .always_use_lmdb = spec->always_use_lmdb,
+      .lmdb_threshold = spec->lmdb_threshold,
+      .ver_id = spec->ver_id,
+      .log_timestamp_format = spec->log_timestamp_format,
+      .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
+      .secure_erase_command = spec->secure_erase_command,
+      .grpc_module = spec->grpc_module,
+      .enable_ktls = spec->enable_ktls,
       .sd_connect_timeout = spec->sd_connect_timeout,
       .heartbeat_interval = spec->heartbeat_interval,
       .maximum_network_buffer_size = spec->maximum_network_buffer_size,
@@ -4372,11 +4677,28 @@ http::response<http::string_body> HandleDeploymentStorageDaemonPutRequest(
   StorageDaemonResourceSpec resource_spec{
       .address = spec->address,
       .port = spec->port,
+      .just_in_time_reservation = spec->just_in_time_reservation,
       .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
       .absolute_job_timeout = spec->absolute_job_timeout,
       .allow_bandwidth_bursting = spec->allow_bandwidth_bursting,
+      .tls_authenticate = spec->tls_authenticate,
+      .tls_enable = spec->tls_enable,
+      .tls_require = spec->tls_require,
+      .tls_verify_peer = spec->tls_verify_peer,
+      .ndmp_enable = spec->ndmp_enable,
+      .ndmp_snooping = spec->ndmp_snooping,
+      .ndmp_log_level = spec->ndmp_log_level,
+      .autoxflate_on_replication = spec->autoxflate_on_replication,
       .collect_device_statistics = spec->collect_device_statistics,
       .collect_job_statistics = spec->collect_job_statistics,
+      .statistics_collect_interval = spec->statistics_collect_interval,
+      .device_reserve_by_media_type = spec->device_reserve_by_media_type,
+      .file_device_concurrent_read = spec->file_device_concurrent_read,
+      .ver_id = spec->ver_id,
+      .log_timestamp_format = spec->log_timestamp_format,
+      .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
+      .secure_erase_command = spec->secure_erase_command,
+      .enable_ktls = spec->enable_ktls,
       .sd_connect_timeout = spec->sd_connect_timeout,
       .fd_connect_timeout = spec->fd_connect_timeout,
       .heartbeat_interval = spec->heartbeat_interval,
@@ -6708,16 +7030,49 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
 
   auto* address = json_object_get(root.get(), "address");
   auto* port = json_object_get(root.get(), "port");
+  auto* just_in_time_reservation
+      = json_object_get(root.get(), "just_in_time_reservation");
   auto* maximum_concurrent_jobs
       = json_object_get(root.get(), "maximum_concurrent_jobs");
+  auto* maximum_workers_per_job
+      = json_object_get(root.get(), "maximum_workers_per_job");
   auto* absolute_job_timeout
       = json_object_get(root.get(), "absolute_job_timeout");
+  auto* tls_authenticate = json_object_get(root.get(), "tls_authenticate");
+  auto* tls_enable = json_object_get(root.get(), "tls_enable");
+  auto* tls_require = json_object_get(root.get(), "tls_require");
+  auto* tls_verify_peer = json_object_get(root.get(), "tls_verify_peer");
+  auto* pki_signatures = json_object_get(root.get(), "pki_signatures");
+  auto* pki_encryption = json_object_get(root.get(), "pki_encryption");
+  auto* pki_key_pair = json_object_get(root.get(), "pki_key_pair");
+  auto* always_use_lmdb = json_object_get(root.get(), "always_use_lmdb");
+  auto* lmdb_threshold = json_object_get(root.get(), "lmdb_threshold");
+  auto* ver_id = json_object_get(root.get(), "ver_id");
+  auto* log_timestamp_format
+      = json_object_get(root.get(), "log_timestamp_format");
+  auto* maximum_bandwidth_per_job
+      = json_object_get(root.get(), "maximum_bandwidth_per_job");
+  auto* secure_erase_command
+      = json_object_get(root.get(), "secure_erase_command");
+  auto* grpc_module = json_object_get(root.get(), "grpc_module");
+  auto* enable_ktls = json_object_get(root.get(), "enable_ktls");
+  auto* statistics_collect_interval
+      = json_object_get(root.get(), "statistics_collect_interval");
   auto* allow_bandwidth_bursting
       = json_object_get(root.get(), "allow_bandwidth_bursting");
+  auto* ndmp_enable = json_object_get(root.get(), "ndmp_enable");
+  auto* ndmp_snooping = json_object_get(root.get(), "ndmp_snooping");
+  auto* ndmp_log_level = json_object_get(root.get(), "ndmp_log_level");
+  auto* autoxflate_on_replication
+      = json_object_get(root.get(), "autoxflate_on_replication");
   auto* collect_device_statistics
       = json_object_get(root.get(), "collect_device_statistics");
   auto* collect_job_statistics
       = json_object_get(root.get(), "collect_job_statistics");
+  auto* device_reserve_by_media_type
+      = json_object_get(root.get(), "device_reserve_by_media_type");
+  auto* file_device_concurrent_read
+      = json_object_get(root.get(), "file_device_concurrent_read");
   auto* sd_connect_timeout = json_object_get(root.get(), "sd_connect_timeout");
   auto* fd_connect_timeout = json_object_get(root.get(), "fd_connect_timeout");
   auto* heartbeat_interval = json_object_get(root.get(), "heartbeat_interval");
@@ -6744,14 +7099,60 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
       || (port && !json_is_null(port) && !json_is_integer(port))
       || (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
           && !json_is_integer(maximum_concurrent_jobs))
+      || (maximum_workers_per_job && !json_is_null(maximum_workers_per_job)
+          && !json_is_integer(maximum_workers_per_job))
       || (absolute_job_timeout && !json_is_null(absolute_job_timeout)
           && !json_is_integer(absolute_job_timeout))
+      || (lmdb_threshold && !json_is_null(lmdb_threshold)
+          && !json_is_integer(lmdb_threshold))
+      || (maximum_bandwidth_per_job && !json_is_null(maximum_bandwidth_per_job)
+          && !json_is_integer(maximum_bandwidth_per_job))
+      || !require_string(secure_erase_command, "secure_erase_command")
+      || !require_string(grpc_module, "grpc_module")
+      || !require_string(pki_key_pair, "pki_key_pair")
+      || (statistics_collect_interval
+          && !json_is_null(statistics_collect_interval)
+          && !json_is_integer(statistics_collect_interval))
+      || !require_string(ver_id, "ver_id")
+      || !require_string(log_timestamp_format, "log_timestamp_format")
+      || (just_in_time_reservation && !json_is_null(just_in_time_reservation)
+          && !json_is_boolean(just_in_time_reservation))
+      || (tls_authenticate && !json_is_null(tls_authenticate)
+          && !json_is_boolean(tls_authenticate))
+      || (tls_enable && !json_is_null(tls_enable)
+          && !json_is_boolean(tls_enable))
+      || (tls_require && !json_is_null(tls_require)
+          && !json_is_boolean(tls_require))
+      || (tls_verify_peer && !json_is_null(tls_verify_peer)
+          && !json_is_boolean(tls_verify_peer))
+      || (enable_ktls && !json_is_null(enable_ktls)
+          && !json_is_boolean(enable_ktls))
       || (allow_bandwidth_bursting && !json_is_null(allow_bandwidth_bursting)
           && !json_is_boolean(allow_bandwidth_bursting))
+      || (pki_signatures && !json_is_null(pki_signatures)
+          && !json_is_boolean(pki_signatures))
+      || (pki_encryption && !json_is_null(pki_encryption)
+          && !json_is_boolean(pki_encryption))
+      || (ndmp_enable && !json_is_null(ndmp_enable)
+          && !json_is_boolean(ndmp_enable))
+      || (ndmp_snooping && !json_is_null(ndmp_snooping)
+          && !json_is_boolean(ndmp_snooping))
+      || (ndmp_log_level && !json_is_null(ndmp_log_level)
+          && !json_is_integer(ndmp_log_level))
+      || (always_use_lmdb && !json_is_null(always_use_lmdb)
+          && !json_is_boolean(always_use_lmdb))
+      || (autoxflate_on_replication && !json_is_null(autoxflate_on_replication)
+          && !json_is_boolean(autoxflate_on_replication))
       || (collect_device_statistics && !json_is_null(collect_device_statistics)
           && !json_is_boolean(collect_device_statistics))
       || (collect_job_statistics && !json_is_null(collect_job_statistics)
           && !json_is_boolean(collect_job_statistics))
+      || (device_reserve_by_media_type
+          && !json_is_null(device_reserve_by_media_type)
+          && !json_is_boolean(device_reserve_by_media_type))
+      || (file_device_concurrent_read
+          && !json_is_null(file_device_concurrent_read)
+          && !json_is_boolean(file_device_concurrent_read))
       || (sd_connect_timeout && !json_is_null(sd_connect_timeout)
           && !json_is_integer(sd_connect_timeout))
       || (fd_connect_timeout && !json_is_null(fd_connect_timeout)
@@ -6776,14 +7177,77 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
                && !json_is_integer(maximum_concurrent_jobs)) {
       error
           = "field 'maximum_concurrent_jobs' must be an integer when provided.";
+    } else if (maximum_workers_per_job && !json_is_null(maximum_workers_per_job)
+               && !json_is_integer(maximum_workers_per_job)) {
+      error
+          = "field 'maximum_workers_per_job' must be an integer when provided.";
     } else if (absolute_job_timeout && !json_is_null(absolute_job_timeout)
                && !json_is_integer(absolute_job_timeout)) {
       error = "field 'absolute_job_timeout' must be an integer when provided.";
+    } else if (lmdb_threshold && !json_is_null(lmdb_threshold)
+               && !json_is_integer(lmdb_threshold)) {
+      error = "field 'lmdb_threshold' must be an integer when provided.";
+    } else if (maximum_bandwidth_per_job
+               && !json_is_null(maximum_bandwidth_per_job)
+               && !json_is_integer(maximum_bandwidth_per_job)) {
+      error
+          = "field 'maximum_bandwidth_per_job' must be an integer when "
+            "provided.";
+    } else if (just_in_time_reservation
+               && !json_is_null(just_in_time_reservation)
+               && !json_is_boolean(just_in_time_reservation)) {
+      error
+          = "field 'just_in_time_reservation' must be a boolean when provided.";
+    } else if (tls_authenticate && !json_is_null(tls_authenticate)
+               && !json_is_boolean(tls_authenticate)) {
+      error = "field 'tls_authenticate' must be a boolean when provided.";
+    } else if (tls_enable && !json_is_null(tls_enable)
+               && !json_is_boolean(tls_enable)) {
+      error = "field 'tls_enable' must be a boolean when provided.";
+    } else if (tls_require && !json_is_null(tls_require)
+               && !json_is_boolean(tls_require)) {
+      error = "field 'tls_require' must be a boolean when provided.";
+    } else if (tls_verify_peer && !json_is_null(tls_verify_peer)
+               && !json_is_boolean(tls_verify_peer)) {
+      error = "field 'tls_verify_peer' must be a boolean when provided.";
+    } else if (enable_ktls && !json_is_null(enable_ktls)
+               && !json_is_boolean(enable_ktls)) {
+      error = "field 'enable_ktls' must be a boolean when provided.";
+    } else if (statistics_collect_interval
+               && !json_is_null(statistics_collect_interval)
+               && !json_is_integer(statistics_collect_interval)) {
+      error
+          = "field 'statistics_collect_interval' must be an integer when "
+            "provided.";
     } else if (allow_bandwidth_bursting
                && !json_is_null(allow_bandwidth_bursting)
                && !json_is_boolean(allow_bandwidth_bursting)) {
       error
           = "field 'allow_bandwidth_bursting' must be a boolean when provided.";
+    } else if (pki_signatures && !json_is_null(pki_signatures)
+               && !json_is_boolean(pki_signatures)) {
+      error = "field 'pki_signatures' must be a boolean when provided.";
+    } else if (pki_encryption && !json_is_null(pki_encryption)
+               && !json_is_boolean(pki_encryption)) {
+      error = "field 'pki_encryption' must be a boolean when provided.";
+    } else if (ndmp_enable && !json_is_null(ndmp_enable)
+               && !json_is_boolean(ndmp_enable)) {
+      error = "field 'ndmp_enable' must be a boolean when provided.";
+    } else if (ndmp_snooping && !json_is_null(ndmp_snooping)
+               && !json_is_boolean(ndmp_snooping)) {
+      error = "field 'ndmp_snooping' must be a boolean when provided.";
+    } else if (ndmp_log_level && !json_is_null(ndmp_log_level)
+               && !json_is_integer(ndmp_log_level)) {
+      error = "field 'ndmp_log_level' must be an integer when provided.";
+    } else if (always_use_lmdb && !json_is_null(always_use_lmdb)
+               && !json_is_boolean(always_use_lmdb)) {
+      error = "field 'always_use_lmdb' must be a boolean when provided.";
+    } else if (autoxflate_on_replication
+               && !json_is_null(autoxflate_on_replication)
+               && !json_is_boolean(autoxflate_on_replication)) {
+      error
+          = "field 'autoxflate_on_replication' must be a boolean when "
+            "provided.";
     } else if (collect_device_statistics
                && !json_is_null(collect_device_statistics)
                && !json_is_boolean(collect_device_statistics)) {
@@ -6793,6 +7257,18 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
     } else if (collect_job_statistics && !json_is_null(collect_job_statistics)
                && !json_is_boolean(collect_job_statistics)) {
       error = "field 'collect_job_statistics' must be a boolean when provided.";
+    } else if (device_reserve_by_media_type
+               && !json_is_null(device_reserve_by_media_type)
+               && !json_is_boolean(device_reserve_by_media_type)) {
+      error
+          = "field 'device_reserve_by_media_type' must be a boolean when "
+            "provided.";
+    } else if (file_device_concurrent_read
+               && !json_is_null(file_device_concurrent_read)
+               && !json_is_boolean(file_device_concurrent_read)) {
+      error
+          = "field 'file_device_concurrent_read' must be a boolean when "
+            "provided.";
     } else if (sd_connect_timeout && !json_is_null(sd_connect_timeout)
                && !json_is_integer(sd_connect_timeout)) {
       error = "field 'sd_connect_timeout' must be an integer when provided.";
@@ -6844,17 +7320,54 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   };
   if (!parse_u32(maximum_concurrent_jobs, "maximum_concurrent_jobs",
                  spec.maximum_concurrent_jobs)
+      || !parse_u32(maximum_workers_per_job, "maximum_workers_per_job",
+                    spec.maximum_workers_per_job)
       || !parse_u32(absolute_job_timeout, "absolute_job_timeout",
-                    spec.absolute_job_timeout)) {
+                    spec.absolute_job_timeout)
+      || !parse_u32(lmdb_threshold, "lmdb_threshold", spec.lmdb_threshold)
+      || !parse_u32(ndmp_log_level, "ndmp_log_level", spec.ndmp_log_level)
+      || !parse_u32(statistics_collect_interval, "statistics_collect_interval",
+                    spec.statistics_collect_interval)) {
     return std::nullopt;
+  }
+  if (ver_id && json_is_string(ver_id)) {
+    spec.ver_id = std::string{json_string_value(ver_id)};
+  }
+  if (log_timestamp_format && json_is_string(log_timestamp_format)) {
+    spec.log_timestamp_format
+        = std::string{json_string_value(log_timestamp_format)};
+  }
+  if (secure_erase_command && json_is_string(secure_erase_command)) {
+    spec.secure_erase_command
+        = std::string{json_string_value(secure_erase_command)};
+  }
+  if (grpc_module && json_is_string(grpc_module)) {
+    spec.grpc_module = std::string{json_string_value(grpc_module)};
+  }
+  if (pki_key_pair && json_is_string(pki_key_pair)) {
+    spec.pki_key_pair = std::string{json_string_value(pki_key_pair)};
   }
   auto parse_bool = [](json_t* value, std::optional<bool>& target) {
     if (!value || !json_is_boolean(value)) { return; }
     target = json_is_true(value);
   };
+  parse_bool(just_in_time_reservation, spec.just_in_time_reservation);
+  parse_bool(tls_authenticate, spec.tls_authenticate);
+  parse_bool(tls_enable, spec.tls_enable);
+  parse_bool(tls_require, spec.tls_require);
+  parse_bool(tls_verify_peer, spec.tls_verify_peer);
+  parse_bool(enable_ktls, spec.enable_ktls);
   parse_bool(allow_bandwidth_bursting, spec.allow_bandwidth_bursting);
+  parse_bool(pki_signatures, spec.pki_signatures);
+  parse_bool(pki_encryption, spec.pki_encryption);
+  parse_bool(ndmp_enable, spec.ndmp_enable);
+  parse_bool(ndmp_snooping, spec.ndmp_snooping);
+  parse_bool(always_use_lmdb, spec.always_use_lmdb);
+  parse_bool(autoxflate_on_replication, spec.autoxflate_on_replication);
   parse_bool(collect_device_statistics, spec.collect_device_statistics);
   parse_bool(collect_job_statistics, spec.collect_job_statistics);
+  parse_bool(device_reserve_by_media_type, spec.device_reserve_by_media_type);
+  parse_bool(file_device_concurrent_read, spec.file_device_concurrent_read);
   auto parse_non_negative_u64
       = [&error](json_t* value, const char* field,
                  std::optional<uint64_t>& target) -> bool {
@@ -6867,6 +7380,11 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
     target = static_cast<uint64_t>(raw);
     return true;
   };
+  if (!parse_non_negative_u64(maximum_bandwidth_per_job,
+                              "maximum_bandwidth_per_job",
+                              spec.maximum_bandwidth_per_job)) {
+    return std::nullopt;
+  }
   if (!parse_non_negative_u64(sd_connect_timeout, "sd_connect_timeout",
                               spec.sd_connect_timeout)
       || !parse_non_negative_u64(fd_connect_timeout, "fd_connect_timeout",

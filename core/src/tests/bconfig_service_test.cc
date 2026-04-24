@@ -769,8 +769,24 @@ TEST(BconfigService, UpsertsClientDaemonResources)
       {.address = std::string{"client.example.com"},
        .port = 42102,
        .maximum_concurrent_jobs = 42,
+       .maximum_workers_per_job = 3,
        .absolute_job_timeout = 900,
        .allow_bandwidth_bursting = true,
+       .tls_authenticate = false,
+       .tls_enable = true,
+       .tls_require = false,
+       .tls_verify_peer = true,
+       .pki_signatures = true,
+       .pki_encryption = false,
+       .pki_key_pair = std::string{"/etc/bareos/client.pem"},
+       .always_use_lmdb = false,
+       .lmdb_threshold = 17,
+       .ver_id = std::string{"client-ver"},
+       .log_timestamp_format = std::string{"%Y-%m-%d %H:%M:%S"},
+       .maximum_bandwidth_per_job = 2048,
+       .secure_erase_command = std::string{"/usr/bin/shred -n 3 -u"},
+       .grpc_module = std::string{"grpc-fd-module"},
+       .enable_ktls = true,
        .sd_connect_timeout = 1800,
        .heartbeat_interval = 60,
        .maximum_network_buffer_size = 1048576,
@@ -792,9 +808,31 @@ TEST(BconfigService, UpsertsClientDaemonResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("Port = 42102"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 42"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumWorkersPerJob = 3"), std::string::npos);
   EXPECT_NE(updated_text.find("AbsoluteJobTimeout = 900"), std::string::npos);
   EXPECT_NE(updated_text.find("AllowBandwidthBursting = yes"),
             std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAuthenticate = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsRequire = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsVerifyPeer = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("PkiSignatures = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("PkiEncryption = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("PkiKeyPair = \"/etc/bareos/client.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("AlwaysUseLmdb = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("LmdbThreshold = 17"), std::string::npos);
+  EXPECT_NE(updated_text.find("VerId = \"client-ver\""), std::string::npos);
+  EXPECT_NE(updated_text.find("LogTimestampFormat = \"%Y-%m-%d %H:%M:%S\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 2048"),
+            std::string::npos);
+  EXPECT_NE(
+      updated_text.find("SecureEraseCommand = \"/usr/bin/shred -n 3 -u\""),
+      std::string::npos);
+  EXPECT_NE(updated_text.find("GrpcModule = \"grpc-fd-module\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("EnableKtls = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("SdConnectTimeout = 1800"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 60"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumNetworkBufferSize = 1048576"),
@@ -3750,11 +3788,28 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
       "prod", "bareos-sd",
       {.address = std::string{"storage.example.com"},
        .port = 42103,
+       .just_in_time_reservation = true,
        .maximum_concurrent_jobs = 84,
        .absolute_job_timeout = 1200,
        .allow_bandwidth_bursting = false,
+       .tls_authenticate = true,
+       .tls_enable = true,
+       .tls_require = false,
+       .tls_verify_peer = false,
+       .ndmp_enable = true,
+       .ndmp_snooping = false,
+       .ndmp_log_level = 6,
+       .autoxflate_on_replication = true,
        .collect_device_statistics = true,
        .collect_job_statistics = false,
+       .statistics_collect_interval = 15,
+       .device_reserve_by_media_type = true,
+       .file_device_concurrent_read = false,
+       .ver_id = std::string{"storage-ver"},
+       .log_timestamp_format = std::string{"%d-%b %H:%M"},
+       .maximum_bandwidth_per_job = 4096,
+       .secure_erase_command = std::string{"/usr/bin/wipefs --all"},
+       .enable_ktls = false,
        .sd_connect_timeout = 1800,
        .fd_connect_timeout = 5400,
        .heartbeat_interval = 120,
@@ -3777,13 +3832,38 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
   EXPECT_NE(updated_text.find("Address = storage.example.com"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Port = 42103"), std::string::npos);
+  EXPECT_NE(updated_text.find("JustInTimeReservation = yes"),
+            std::string::npos);
   EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 84"), std::string::npos);
   EXPECT_NE(updated_text.find("AbsoluteJobTimeout = 1200"), std::string::npos);
   EXPECT_NE(updated_text.find("AllowBandwidthBursting = no"),
             std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAuthenticate = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsRequire = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsVerifyPeer = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("NdmpEnable = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("NdmpSnooping = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("NdmpLogLevel = 6"), std::string::npos);
+  EXPECT_NE(updated_text.find("AutoXFlateOnReplication = yes"),
+            std::string::npos);
   EXPECT_NE(updated_text.find("CollectDeviceStatistics = yes"),
             std::string::npos);
   EXPECT_NE(updated_text.find("CollectJobStatistics = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("StatisticsCollectInterval = 15"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("DeviceReserveByMediaType = yes"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("FileDeviceConcurrentRead = no"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("VerId = \"storage-ver\""), std::string::npos);
+  EXPECT_NE(updated_text.find("LogTimestampFormat = \"%d-%b %H:%M\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 4096"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("SecureEraseCommand = \"/usr/bin/wipefs --all\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("EnableKtls = no"), std::string::npos);
   EXPECT_NE(updated_text.find("SdConnectTimeout = 1800"), std::string::npos);
   EXPECT_NE(updated_text.find("FdConnectTimeout = 5400"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 120"), std::string::npos);

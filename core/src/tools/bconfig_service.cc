@@ -677,11 +677,35 @@ struct DirectorMessagesContentSpec {
 struct StorageDaemonContentSpec {
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
+  std::optional<bool> just_in_time_reservation{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<uint32_t> maximum_workers_per_job{};
   std::optional<uint32_t> absolute_job_timeout{};
   std::optional<bool> allow_bandwidth_bursting{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
+  std::optional<bool> pki_signatures{};
+  std::optional<bool> pki_encryption{};
+  std::optional<std::string> pki_key_pair{};
+  std::optional<bool> always_use_lmdb{};
+  std::optional<uint32_t> lmdb_threshold{};
+  std::optional<bool> ndmp_enable{};
+  std::optional<bool> ndmp_snooping{};
+  std::optional<uint32_t> ndmp_log_level{};
+  std::optional<bool> autoxflate_on_replication{};
   std::optional<bool> collect_device_statistics{};
   std::optional<bool> collect_job_statistics{};
+  std::optional<uint32_t> statistics_collect_interval{};
+  std::optional<bool> device_reserve_by_media_type{};
+  std::optional<bool> file_device_concurrent_read{};
+  std::optional<std::string> ver_id{};
+  std::optional<std::string> log_timestamp_format{};
+  std::optional<uint64_t> maximum_bandwidth_per_job{};
+  std::optional<std::string> secure_erase_command{};
+  std::optional<std::string> grpc_module{};
+  std::optional<bool> enable_ktls{};
   std::optional<uint64_t> sd_connect_timeout{};
   std::optional<uint64_t> fd_connect_timeout{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -1158,16 +1182,41 @@ std::string BuildStorageDaemonResourceContent(
           << "  Name = " << QuoteBareosString(storage_name) << "\n";
   AppendBareosDirective(content, "Address", spec.address);
   AppendIntegerDirective(content, "Port", spec.port);
+  AppendBoolDirective(content, "JustInTimeReservation",
+                      spec.just_in_time_reservation);
   AppendIntegerDirective(content, "MaximumConcurrentJobs",
                          spec.maximum_concurrent_jobs);
   AppendIntegerDirective(content, "AbsoluteJobTimeout",
                          spec.absolute_job_timeout);
   AppendBoolDirective(content, "AllowBandwidthBursting",
                       spec.allow_bandwidth_bursting);
+  AppendBoolDirective(content, "TlsAuthenticate", spec.tls_authenticate);
+  AppendBoolDirective(content, "TlsEnable", spec.tls_enable);
+  AppendBoolDirective(content, "TlsRequire", spec.tls_require);
+  AppendBoolDirective(content, "TlsVerifyPeer", spec.tls_verify_peer);
+  AppendBoolDirective(content, "NdmpEnable", spec.ndmp_enable);
+  AppendBoolDirective(content, "NdmpSnooping", spec.ndmp_snooping);
+  AppendIntegerDirective(content, "NdmpLogLevel", spec.ndmp_log_level);
+  AppendBoolDirective(content, "AutoXFlateOnReplication",
+                      spec.autoxflate_on_replication);
   AppendBoolDirective(content, "CollectDeviceStatistics",
                       spec.collect_device_statistics);
   AppendBoolDirective(content, "CollectJobStatistics",
                       spec.collect_job_statistics);
+  AppendIntegerDirective(content, "StatisticsCollectInterval",
+                         spec.statistics_collect_interval);
+  AppendBoolDirective(content, "DeviceReserveByMediaType",
+                      spec.device_reserve_by_media_type);
+  AppendBoolDirective(content, "FileDeviceConcurrentRead",
+                      spec.file_device_concurrent_read);
+  AppendQuotedDirective(content, "VerId", spec.ver_id);
+  AppendQuotedDirective(content, "LogTimestampFormat",
+                        spec.log_timestamp_format);
+  AppendIntegerDirective(content, "MaximumBandwidthPerJob",
+                         spec.maximum_bandwidth_per_job);
+  AppendQuotedDirective(content, "SecureEraseCommand",
+                        spec.secure_erase_command);
+  AppendBoolDirective(content, "EnableKtls", spec.enable_ktls);
   AppendIntegerDirective(content, "SdConnectTimeout", spec.sd_connect_timeout);
   AppendIntegerDirective(content, "FdConnectTimeout", spec.fd_connect_timeout);
   AppendIntegerDirective(content, "HeartbeatInterval", spec.heartbeat_interval);
@@ -1197,10 +1246,30 @@ std::string BuildClientDaemonResourceContent(
   AppendIntegerDirective(content, "Port", spec.port);
   AppendIntegerDirective(content, "MaximumConcurrentJobs",
                          spec.maximum_concurrent_jobs);
+  AppendIntegerDirective(content, "MaximumWorkersPerJob",
+                         spec.maximum_workers_per_job);
   AppendIntegerDirective(content, "AbsoluteJobTimeout",
                          spec.absolute_job_timeout);
   AppendBoolDirective(content, "AllowBandwidthBursting",
                       spec.allow_bandwidth_bursting);
+  AppendBoolDirective(content, "TlsAuthenticate", spec.tls_authenticate);
+  AppendBoolDirective(content, "TlsEnable", spec.tls_enable);
+  AppendBoolDirective(content, "TlsRequire", spec.tls_require);
+  AppendBoolDirective(content, "TlsVerifyPeer", spec.tls_verify_peer);
+  AppendBoolDirective(content, "PkiSignatures", spec.pki_signatures);
+  AppendBoolDirective(content, "PkiEncryption", spec.pki_encryption);
+  AppendQuotedDirective(content, "PkiKeyPair", spec.pki_key_pair);
+  AppendBoolDirective(content, "AlwaysUseLmdb", spec.always_use_lmdb);
+  AppendIntegerDirective(content, "LmdbThreshold", spec.lmdb_threshold);
+  AppendQuotedDirective(content, "VerId", spec.ver_id);
+  AppendQuotedDirective(content, "LogTimestampFormat",
+                        spec.log_timestamp_format);
+  AppendIntegerDirective(content, "MaximumBandwidthPerJob",
+                         spec.maximum_bandwidth_per_job);
+  AppendQuotedDirective(content, "SecureEraseCommand",
+                        spec.secure_erase_command);
+  AppendQuotedDirective(content, "GrpcModule", spec.grpc_module);
+  AppendBoolDirective(content, "EnableKtls", spec.enable_ktls);
   AppendIntegerDirective(content, "SdConnectTimeout", spec.sd_connect_timeout);
   AppendIntegerDirective(content, "HeartbeatInterval", spec.heartbeat_interval);
   AppendIntegerDirective(content, "MaximumNetworkBufferSize",
@@ -2874,11 +2943,63 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
     if (HasMemberSource(*client, {"MaximumConcurrentJobs"})) {
       context.content.maximum_concurrent_jobs = client->MaxConcurrentJobs;
     }
+    if (HasMemberSource(*client, {"MaximumWorkersPerJob"})) {
+      context.content.maximum_workers_per_job = client->MaxWorkersPerJob;
+    }
     if (HasMemberSource(*client, {"AbsoluteJobTimeout"})) {
       context.content.absolute_job_timeout = client->jcr_watchdog_time;
     }
     if (HasMemberSource(*client, {"AllowBandwidthBursting"})) {
       context.content.allow_bandwidth_bursting = client->allow_bw_bursting;
+    }
+    if (HasMemberSource(*client, {"TlsAuthenticate"})) {
+      context.content.tls_authenticate = client->authenticate_;
+    }
+    if (HasMemberSource(*client, {"TlsEnable"})) {
+      context.content.tls_enable = client->tls_enable_;
+    }
+    if (HasMemberSource(*client, {"TlsRequire"})) {
+      context.content.tls_require = client->tls_require_;
+    }
+    if (HasMemberSource(*client, {"TlsVerifyPeer"})) {
+      context.content.tls_verify_peer = client->tls_cert_.verify_peer_;
+    }
+    if (HasMemberSource(*client, {"PkiSignatures"})) {
+      context.content.pki_signatures = client->pki_sign;
+    }
+    if (HasMemberSource(*client, {"PkiEncryption"})) {
+      context.content.pki_encryption = client->pki_encrypt;
+    }
+    if (client->pki_keypair_file && client->pki_keypair_file[0] != '\0') {
+      context.content.pki_key_pair = std::string{client->pki_keypair_file};
+    }
+    if (HasMemberSource(*client, {"AlwaysUseLmdb"})) {
+      context.content.always_use_lmdb = client->always_use_lmdb;
+    }
+    if (HasMemberSource(*client, {"LmdbThreshold"})) {
+      context.content.lmdb_threshold = client->lmdb_threshold;
+    }
+    if (client->verid && client->verid[0] != '\0') {
+      context.content.ver_id = std::string{client->verid};
+    }
+    if (client->log_timestamp_format
+        && client->log_timestamp_format[0] != '\0') {
+      context.content.log_timestamp_format
+          = std::string{client->log_timestamp_format};
+    }
+    if (HasMemberSource(*client, {"MaximumBandwidthPerJob"})) {
+      context.content.maximum_bandwidth_per_job = client->max_bandwidth_per_job;
+    }
+    if (client->secure_erase_cmdline
+        && client->secure_erase_cmdline[0] != '\0') {
+      context.content.secure_erase_command
+          = std::string{client->secure_erase_cmdline};
+    }
+    if (!client->grpc_module.empty()) {
+      context.content.grpc_module = client->grpc_module;
+    }
+    if (HasMemberSource(*client, {"EnableKtls"})) {
+      context.content.enable_ktls = client->enable_ktls;
     }
     if (HasMemberSource(*client, {"HeartbeatInterval"})) {
       context.content.heartbeat_interval
@@ -2982,6 +3103,10 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
       const auto port = GetFirstPortHostOrder(storage->SDaddrs);
       if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
     }
+    if (HasMemberSource(*storage, {"JustInTimeReservation"})) {
+      context.content.just_in_time_reservation
+          = storage->just_in_time_reservation;
+    }
     if (HasMemberSource(*storage, {"MaximumConcurrentJobs"})) {
       context.content.maximum_concurrent_jobs = storage->MaxConcurrentJobs;
     }
@@ -2991,11 +3116,68 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     if (HasMemberSource(*storage, {"AllowBandwidthBursting"})) {
       context.content.allow_bandwidth_bursting = storage->allow_bw_bursting;
     }
+    if (HasMemberSource(*storage, {"TlsAuthenticate"})) {
+      context.content.tls_authenticate = storage->authenticate_;
+    }
+    if (HasMemberSource(*storage, {"TlsEnable"})) {
+      context.content.tls_enable = storage->tls_enable_;
+    }
+    if (HasMemberSource(*storage, {"TlsRequire"})) {
+      context.content.tls_require = storage->tls_require_;
+    }
+    if (HasMemberSource(*storage, {"TlsVerifyPeer"})) {
+      context.content.tls_verify_peer = storage->tls_cert_.verify_peer_;
+    }
+    if (HasMemberSource(*storage, {"NdmpEnable"})) {
+      context.content.ndmp_enable = storage->ndmp_enable;
+    }
+    if (HasMemberSource(*storage, {"NdmpSnooping"})) {
+      context.content.ndmp_snooping = storage->ndmp_snooping;
+    }
+    if (HasMemberSource(*storage, {"NdmpLogLevel"})) {
+      context.content.ndmp_log_level = storage->ndmploglevel;
+    }
+    if (HasMemberSource(*storage, {"AutoXFlateOnReplication"})) {
+      context.content.autoxflate_on_replication
+          = storage->autoxflateonreplication;
+    }
     if (HasMemberSource(*storage, {"CollectDeviceStatistics"})) {
       context.content.collect_device_statistics = storage->collect_dev_stats;
     }
     if (HasMemberSource(*storage, {"CollectJobStatistics"})) {
       context.content.collect_job_statistics = storage->collect_job_stats;
+    }
+    if (HasMemberSource(*storage, {"StatisticsCollectInterval"})) {
+      context.content.statistics_collect_interval
+          = storage->stats_collect_interval;
+    }
+    if (HasMemberSource(*storage, {"DeviceReserveByMediaType"})) {
+      context.content.device_reserve_by_media_type
+          = storage->device_reserve_by_mediatype;
+    }
+    if (HasMemberSource(*storage, {"FileDeviceConcurrentRead"})) {
+      context.content.file_device_concurrent_read
+          = storage->filedevice_concurrent_read;
+    }
+    if (storage->verid && storage->verid[0] != '\0') {
+      context.content.ver_id = std::string{storage->verid};
+    }
+    if (storage->log_timestamp_format
+        && storage->log_timestamp_format[0] != '\0') {
+      context.content.log_timestamp_format
+          = std::string{storage->log_timestamp_format};
+    }
+    if (HasMemberSource(*storage, {"MaximumBandwidthPerJob"})) {
+      context.content.maximum_bandwidth_per_job
+          = storage->max_bandwidth_per_job;
+    }
+    if (storage->secure_erase_cmdline
+        && storage->secure_erase_cmdline[0] != '\0') {
+      context.content.secure_erase_command
+          = std::string{storage->secure_erase_cmdline};
+    }
+    if (HasMemberSource(*storage, {"EnableKtls"})) {
+      context.content.enable_ktls = storage->enable_ktls;
     }
     if (HasMemberSource(*storage, {"HeartbeatInterval"})) {
       context.content.heartbeat_interval
@@ -5175,12 +5357,38 @@ ServiceState::UpsertClientDaemonResource(
   if (spec.maximum_concurrent_jobs) {
     content.maximum_concurrent_jobs = spec.maximum_concurrent_jobs;
   }
+  if (spec.maximum_workers_per_job) {
+    content.maximum_workers_per_job = spec.maximum_workers_per_job;
+  }
   if (spec.absolute_job_timeout) {
     content.absolute_job_timeout = spec.absolute_job_timeout;
   }
   if (spec.allow_bandwidth_bursting) {
     content.allow_bandwidth_bursting = spec.allow_bandwidth_bursting;
   }
+  if (spec.tls_authenticate) {
+    content.tls_authenticate = spec.tls_authenticate;
+  }
+  if (spec.tls_enable) { content.tls_enable = spec.tls_enable; }
+  if (spec.tls_require) { content.tls_require = spec.tls_require; }
+  if (spec.tls_verify_peer) { content.tls_verify_peer = spec.tls_verify_peer; }
+  if (spec.pki_signatures) { content.pki_signatures = spec.pki_signatures; }
+  if (spec.pki_encryption) { content.pki_encryption = spec.pki_encryption; }
+  if (spec.pki_key_pair) { content.pki_key_pair = spec.pki_key_pair; }
+  if (spec.always_use_lmdb) { content.always_use_lmdb = spec.always_use_lmdb; }
+  if (spec.lmdb_threshold) { content.lmdb_threshold = spec.lmdb_threshold; }
+  if (spec.ver_id) { content.ver_id = spec.ver_id; }
+  if (spec.log_timestamp_format) {
+    content.log_timestamp_format = spec.log_timestamp_format;
+  }
+  if (spec.maximum_bandwidth_per_job) {
+    content.maximum_bandwidth_per_job = spec.maximum_bandwidth_per_job;
+  }
+  if (spec.secure_erase_command) {
+    content.secure_erase_command = spec.secure_erase_command;
+  }
+  if (spec.grpc_module) { content.grpc_module = spec.grpc_module; }
+  if (spec.enable_ktls) { content.enable_ktls = spec.enable_ktls; }
   if (spec.sd_connect_timeout) {
     content.sd_connect_timeout = spec.sd_connect_timeout;
   }
@@ -7967,6 +8175,9 @@ ServiceState::UpsertStorageDaemonResource(
   auto content = context.value->content;
   if (spec.address) { content.address = spec.address; }
   if (spec.port) { content.port = spec.port; }
+  if (spec.just_in_time_reservation) {
+    content.just_in_time_reservation = spec.just_in_time_reservation;
+  }
   if (spec.maximum_concurrent_jobs) {
     content.maximum_concurrent_jobs = spec.maximum_concurrent_jobs;
   }
@@ -7976,12 +8187,44 @@ ServiceState::UpsertStorageDaemonResource(
   if (spec.allow_bandwidth_bursting) {
     content.allow_bandwidth_bursting = spec.allow_bandwidth_bursting;
   }
+  if (spec.tls_authenticate) {
+    content.tls_authenticate = spec.tls_authenticate;
+  }
+  if (spec.tls_enable) { content.tls_enable = spec.tls_enable; }
+  if (spec.tls_require) { content.tls_require = spec.tls_require; }
+  if (spec.tls_verify_peer) { content.tls_verify_peer = spec.tls_verify_peer; }
+  if (spec.ndmp_enable) { content.ndmp_enable = spec.ndmp_enable; }
+  if (spec.ndmp_snooping) { content.ndmp_snooping = spec.ndmp_snooping; }
+  if (spec.ndmp_log_level) { content.ndmp_log_level = spec.ndmp_log_level; }
+  if (spec.autoxflate_on_replication) {
+    content.autoxflate_on_replication = spec.autoxflate_on_replication;
+  }
   if (spec.collect_device_statistics) {
     content.collect_device_statistics = spec.collect_device_statistics;
   }
   if (spec.collect_job_statistics) {
     content.collect_job_statistics = spec.collect_job_statistics;
   }
+  if (spec.statistics_collect_interval) {
+    content.statistics_collect_interval = spec.statistics_collect_interval;
+  }
+  if (spec.device_reserve_by_media_type) {
+    content.device_reserve_by_media_type = spec.device_reserve_by_media_type;
+  }
+  if (spec.file_device_concurrent_read) {
+    content.file_device_concurrent_read = spec.file_device_concurrent_read;
+  }
+  if (spec.ver_id) { content.ver_id = spec.ver_id; }
+  if (spec.log_timestamp_format) {
+    content.log_timestamp_format = spec.log_timestamp_format;
+  }
+  if (spec.maximum_bandwidth_per_job) {
+    content.maximum_bandwidth_per_job = spec.maximum_bandwidth_per_job;
+  }
+  if (spec.secure_erase_command) {
+    content.secure_erase_command = spec.secure_erase_command;
+  }
+  if (spec.enable_ktls) { content.enable_ktls = spec.enable_ktls; }
   if (spec.sd_connect_timeout) {
     content.sd_connect_timeout = spec.sd_connect_timeout;
   }
