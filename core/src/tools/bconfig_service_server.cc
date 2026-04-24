@@ -77,6 +77,10 @@ struct ClientDirectorStubRequestSpec {
   std::optional<uint16_t> port{};
   std::optional<std::vector<std::string>> allowed_script_dirs{};
   std::optional<std::vector<std::string>> allowed_job_commands{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};
@@ -739,6 +743,28 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="client-stub-allowed-job-commands">Allowed job commands</label>
         <textarea id="client-stub-allowed-job-commands" name="allowed_job_commands"
                   rows="3" placeholder="run-before-job-client"></textarea>
+
+        <label class="checkbox-label" for="client-stub-tls-authenticate">
+          <input id="client-stub-tls-authenticate" name="tls_authenticate"
+                 type="checkbox">
+          TLS authenticate
+        </label>
+
+        <label class="checkbox-label" for="client-stub-tls-enable">
+          <input id="client-stub-tls-enable" name="tls_enable" type="checkbox">
+          TLS enable
+        </label>
+
+        <label class="checkbox-label" for="client-stub-tls-require">
+          <input id="client-stub-tls-require" name="tls_require" type="checkbox">
+          TLS require
+        </label>
+
+        <label class="checkbox-label" for="client-stub-tls-verify-peer">
+          <input id="client-stub-tls-verify-peer" name="tls_verify_peer"
+                 type="checkbox">
+          TLS verify peer
+        </label>
 
         <label class="checkbox-label" for="client-stub-connection-from-director-to-client">
           <input id="client-stub-connection-from-director-to-client"
@@ -2771,6 +2797,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
           port: String(form.get('port') ?? '').trim(),
           allowed_script_dirs: allowedScriptDirs,
           allowed_job_commands: allowedJobCommands,
+          tls_authenticate: document.getElementById(
+            'client-stub-tls-authenticate').checked,
+          tls_enable: document.getElementById('client-stub-tls-enable').checked,
+          tls_require: document.getElementById('client-stub-tls-require').checked,
+          tls_verify_peer: document.getElementById(
+            'client-stub-tls-verify-peer').checked,
           connection_from_director_to_client: document.getElementById(
             'client-stub-connection-from-director-to-client').checked,
           connection_from_client_to_director: document.getElementById(
@@ -5048,6 +5080,10 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
       .port = spec->port,
       .allowed_script_dirs = spec->allowed_script_dirs,
       .allowed_job_commands = spec->allowed_job_commands,
+      .tls_authenticate = spec->tls_authenticate,
+      .tls_enable = spec->tls_enable,
+      .tls_require = spec->tls_require,
+      .tls_verify_peer = spec->tls_verify_peer,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -6877,6 +6913,10 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
       = json_object_get(root.get(), "allowed_script_dirs");
   auto* allowed_job_commands
       = json_object_get(root.get(), "allowed_job_commands");
+  auto* tls_authenticate = json_object_get(root.get(), "tls_authenticate");
+  auto* tls_enable = json_object_get(root.get(), "tls_enable");
+  auto* tls_require = json_object_get(root.get(), "tls_require");
+  auto* tls_verify_peer = json_object_get(root.get(), "tls_verify_peer");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -6917,6 +6957,25 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
     return std::nullopt;
   }
   if (!require_string_array(allowed_job_commands, "allowed_job_commands")) {
+    return std::nullopt;
+  }
+  if (tls_authenticate && !json_is_null(tls_authenticate)
+      && !json_is_boolean(tls_authenticate)) {
+    error = "field 'tls_authenticate' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (tls_enable && !json_is_null(tls_enable) && !json_is_boolean(tls_enable)) {
+    error = "field 'tls_enable' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (tls_require && !json_is_null(tls_require)
+      && !json_is_boolean(tls_require)) {
+    error = "field 'tls_require' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (tls_verify_peer && !json_is_null(tls_verify_peer)
+      && !json_is_boolean(tls_verify_peer)) {
+    error = "field 'tls_verify_peer' must be a boolean when provided.";
     return std::nullopt;
   }
   if (connection_from_director_to_client
@@ -6973,6 +7032,18 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   }
   spec.allowed_script_dirs = parse_string_array(allowed_script_dirs);
   spec.allowed_job_commands = parse_string_array(allowed_job_commands);
+  if (tls_authenticate && json_is_boolean(tls_authenticate)) {
+    spec.tls_authenticate = json_is_true(tls_authenticate);
+  }
+  if (tls_enable && json_is_boolean(tls_enable)) {
+    spec.tls_enable = json_is_true(tls_enable);
+  }
+  if (tls_require && json_is_boolean(tls_require)) {
+    spec.tls_require = json_is_true(tls_require);
+  }
+  if (tls_verify_peer && json_is_boolean(tls_verify_peer)) {
+    spec.tls_verify_peer = json_is_true(tls_verify_peer);
+  }
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {
     spec.connection_from_director_to_client

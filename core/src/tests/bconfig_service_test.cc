@@ -1056,6 +1056,10 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
                                   "/opt/bareos/hooks"},
        .allowed_job_commands = std::vector<std::string>{"run-before-job-client",
                                                         "run-after-job-client"},
+       .tls_authenticate = true,
+       .tls_enable = true,
+       .tls_require = true,
+       .tls_verify_peer = true,
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = false,
        .monitor = true,
@@ -1082,6 +1086,10 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
             std::string::npos);
   EXPECT_NE(created_text.find("AllowedJobCommand = \"run-after-job-client\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("TlsAuthenticate = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsRequire = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsVerifyPeer = yes"), std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = no"),
@@ -1112,6 +1120,10 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
             std::string::npos);
   EXPECT_NE(updated_text.find("AllowedJobCommand = \"run-after-job-client\""),
             std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAuthenticate = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsRequire = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsVerifyPeer = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = no"),

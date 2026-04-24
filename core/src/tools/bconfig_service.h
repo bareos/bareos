@@ -111,6 +111,10 @@ struct ClientDirectorStubSpec {
   std::optional<uint16_t> port{};
   std::optional<std::vector<std::string>> allowed_script_dirs{};
   std::optional<std::vector<std::string>> allowed_job_commands{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};

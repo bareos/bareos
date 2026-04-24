@@ -620,6 +620,10 @@ std::string BuildClientDirectorStubContent(
     = std::nullopt,
     const std::optional<std::vector<std::string>>& allowed_job_commands
     = std::nullopt,
+    const std::optional<bool>& tls_authenticate = std::nullopt,
+    const std::optional<bool>& tls_enable = std::nullopt,
+    const std::optional<bool>& tls_require = std::nullopt,
+    const std::optional<bool>& tls_verify_peer = std::nullopt,
     const std::optional<bool>& connection_from_director_to_client
     = std::nullopt,
     const std::optional<bool>& connection_from_client_to_director
@@ -642,6 +646,10 @@ std::string BuildClientDirectorStubContent(
     AppendRepeatedQuotedDirective(content, "AllowedJobCommand",
                                   *allowed_job_commands);
   }
+  AppendBoolDirective(content, "TlsAuthenticate", tls_authenticate);
+  AppendBoolDirective(content, "TlsEnable", tls_enable);
+  AppendBoolDirective(content, "TlsRequire", tls_require);
+  AppendBoolDirective(content, "TlsVerifyPeer", tls_verify_peer);
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
                       connection_from_director_to_client);
   AppendBoolDirective(content, "ConnectionFromClientToDirector",
@@ -1916,6 +1924,10 @@ struct ClientDirectorStubWriteContext {
   std::optional<uint16_t> port{};
   std::optional<std::vector<std::string>> allowed_script_dirs{};
   std::optional<std::vector<std::string>> allowed_job_commands{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};
@@ -4838,6 +4850,18 @@ LoadClientDirectorStubWriteContext(const std::filesystem::path& client_root,
     if (HasMemberSource(*director, {"AllowedJobCommand"})) {
       context.allowed_job_commands = CopyAclValues(director->allowed_job_cmds);
     }
+    if (HasMemberSource(*director, {"TlsAuthenticate"})) {
+      context.tls_authenticate = director->authenticate_;
+    }
+    if (HasMemberSource(*director, {"TlsEnable"})) {
+      context.tls_enable = director->tls_enable_;
+    }
+    if (HasMemberSource(*director, {"TlsRequire"})) {
+      context.tls_require = director->tls_require_;
+    }
+    if (HasMemberSource(*director, {"TlsVerifyPeer"})) {
+      context.tls_verify_peer = director->tls_cert_.verify_peer_;
+    }
     if (HasMemberSource(*director, {"ConnectionFromDirectorToClient"})) {
       context.connection_from_director_to_client
           = director->conn_from_dir_to_fd;
@@ -5614,6 +5638,16 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
   const auto allowed_job_commands = spec.allowed_job_commands
                                         ? spec.allowed_job_commands
                                         : context.value->allowed_job_commands;
+  const auto tls_authenticate = spec.tls_authenticate
+                                    ? spec.tls_authenticate
+                                    : context.value->tls_authenticate;
+  const auto tls_enable
+      = spec.tls_enable ? spec.tls_enable : context.value->tls_enable;
+  const auto tls_require
+      = spec.tls_require ? spec.tls_require : context.value->tls_require;
+  const auto tls_verify_peer = spec.tls_verify_peer
+                                   ? spec.tls_verify_peer
+                                   : context.value->tls_verify_peer;
   const auto connection_from_director_to_client
       = spec.connection_from_director_to_client
             ? spec.connection_from_director_to_client
@@ -5629,9 +5663,9 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
             : context.value->maximum_bandwidth_per_job;
   const auto stub_content = BuildClientDirectorStubContent(
       director_name, *password.value, description, address, port,
-      allowed_script_dirs, allowed_job_commands,
-      connection_from_director_to_client, connection_from_client_to_director,
-      monitor, maximum_bandwidth_per_job);
+      allowed_script_dirs, allowed_job_commands, tls_authenticate, tls_enable,
+      tls_require, tls_verify_peer, connection_from_director_to_client,
+      connection_from_client_to_director, monitor, maximum_bandwidth_per_job);
 
   std::error_code error_code;
   std::filesystem::create_directories(stub_directory, error_code);
