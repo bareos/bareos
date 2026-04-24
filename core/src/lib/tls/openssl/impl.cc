@@ -537,6 +537,8 @@ TlsOpenSsl::TlsOpenSsl()
 
   if (!openssl_conf_ctx_) {
     OpensslPostErrors(M_FATAL, T_("Error initializing SSL conf context"));
+    SSL_CTX_free(openssl_ctx_);
+    openssl_ctx_ = nullptr;
     return;
   }
 
