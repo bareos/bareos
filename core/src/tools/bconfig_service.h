@@ -124,6 +124,7 @@ struct ClientDirectorStubSpec {
   std::optional<std::string> tls_certificate_revocation_list{};
   std::optional<std::string> tls_certificate{};
   std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};

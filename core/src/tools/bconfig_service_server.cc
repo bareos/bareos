@@ -90,6 +90,7 @@ struct ClientDirectorStubRequestSpec {
   std::optional<std::string> tls_certificate_revocation_list{};
   std::optional<std::string> tls_certificate{};
   std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};
@@ -813,6 +814,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="client-stub-tls-key">TLS key</label>
         <input id="client-stub-tls-key" name="tls_key"
                placeholder="/etc/bareos/client.key">
+
+        <label for="client-stub-tls-allowed-cn">TLS allowed CN</label>
+        <textarea id="client-stub-tls-allowed-cn" name="tls_allowed_cn"
+                  rows="3" placeholder="bareos-dir.example.invalid"></textarea>
 
         <label class="checkbox-label" for="client-stub-connection-from-director-to-client">
           <input id="client-stub-connection-from-director-to-client"
@@ -2839,6 +2844,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const allowedJobCommands = rawAllowedJobCommands.split('\n')
           .map((line) => line.trim())
           .filter((line) => line.length > 0);
+        const rawTlsAllowedCn = String(form.get('tls_allowed_cn') ?? '');
+        const tlsAllowedCn = rawTlsAllowedCn.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
         const payload = {
           description: String(form.get('description') ?? '').trim(),
           address: String(form.get('address') ?? '').trim(),
@@ -2863,6 +2872,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
             form.get('tls_certificate_revocation_list') ?? '').trim(),
           tls_certificate: String(form.get('tls_certificate') ?? '').trim(),
           tls_key: String(form.get('tls_key') ?? '').trim(),
+          tls_allowed_cn: tlsAllowedCn,
           connection_from_director_to_client: document.getElementById(
             'client-stub-connection-from-director-to-client').checked,
           connection_from_client_to_director: document.getElementById(
@@ -2914,6 +2924,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.tls_key) {
           delete payload.tls_key;
+        }
+        if (payload.tls_allowed_cn.length === 0) {
+          delete payload.tls_allowed_cn;
         }
         if (!payload.maximum_bandwidth_per_job) {
           delete payload.maximum_bandwidth_per_job;
@@ -5180,6 +5193,7 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
       .tls_certificate_revocation_list = spec->tls_certificate_revocation_list,
       .tls_certificate = spec->tls_certificate,
       .tls_key = spec->tls_key,
+      .tls_allowed_cn = spec->tls_allowed_cn,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -7025,6 +7039,7 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
       = json_object_get(root.get(), "tls_certificate_revocation_list");
   auto* tls_certificate = json_object_get(root.get(), "tls_certificate");
   auto* tls_key = json_object_get(root.get(), "tls_key");
+  auto* tls_allowed_cn = json_object_get(root.get(), "tls_allowed_cn");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -7133,6 +7148,9 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
     error = "field 'tls_key' must be a string when provided.";
     return std::nullopt;
   }
+  if (!require_string_array(tls_allowed_cn, "tls_allowed_cn")) {
+    return std::nullopt;
+  }
   if (connection_from_director_to_client
       && !json_is_null(connection_from_director_to_client)
       && !json_is_boolean(connection_from_director_to_client)) {
@@ -7230,6 +7248,7 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   if (tls_key && json_is_string(tls_key)) {
     spec.tls_key = std::string{json_string_value(tls_key)};
   }
+  spec.tls_allowed_cn = parse_string_array(tls_allowed_cn);
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {
     spec.connection_from_director_to_client
