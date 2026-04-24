@@ -74,6 +74,7 @@ struct InspectRequestSpec {
 struct ClientDirectorStubRequestSpec {
   std::optional<std::string> description{};
   std::optional<bool> monitor{};
+  std::optional<uint64_t> maximum_bandwidth_per_job{};
 };
 
 struct DirectorClientRequestSpec {
@@ -721,6 +722,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
           <input id="client-stub-monitor" name="monitor" type="checkbox">
           Monitor
         </label>
+
+        <label for="client-stub-maximum-bandwidth-per-job">Maximum bandwidth per job</label>
+        <input id="client-stub-maximum-bandwidth-per-job"
+               name="maximum_bandwidth_per_job" type="number" min="0"
+               placeholder="0">
 
         <button type="submit">
           PUT /v1/deployments/{id}/clients/{client}/directors/{director}
@@ -2720,9 +2726,17 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const payload = {
           description: String(form.get('description') ?? '').trim(),
           monitor: document.getElementById('client-stub-monitor').checked,
+          maximum_bandwidth_per_job: String(
+            form.get('maximum_bandwidth_per_job') ?? '').trim(),
         };
         if (!payload.description) {
           delete payload.description;
+        }
+        if (!payload.maximum_bandwidth_per_job) {
+          delete payload.maximum_bandwidth_per_job;
+        } else {
+          payload.maximum_bandwidth_per_job
+            = Number.parseInt(payload.maximum_bandwidth_per_job, 10);
         }
         const { response } = await request(
           'PUT',
@@ -4967,6 +4981,7 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
   ClientDirectorStubSpec stub_spec{
       .description = spec->description,
       .monitor = spec->monitor,
+      .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
   };
   auto result = state.UpsertClientDirectorStub(deployment_id, client_name,
                                                director_name, stub_spec);
@@ -6785,6 +6800,8 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
 
   auto* description = json_object_get(root.get(), "description");
   auto* monitor = json_object_get(root.get(), "monitor");
+  auto* maximum_bandwidth_per_job
+      = json_object_get(root.get(), "maximum_bandwidth_per_job");
   if (description && !json_is_null(description)
       && !json_is_string(description)) {
     error = "field 'description' must be a string when provided.";
@@ -6794,6 +6811,12 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
     error = "field 'monitor' must be a boolean when provided.";
     return std::nullopt;
   }
+  if (maximum_bandwidth_per_job && !json_is_null(maximum_bandwidth_per_job)
+      && !json_is_integer(maximum_bandwidth_per_job)) {
+    error
+        = "field 'maximum_bandwidth_per_job' must be an integer when provided.";
+    return std::nullopt;
+  }
 
   ClientDirectorStubRequestSpec spec{};
   if (description && json_is_string(description)) {
@@ -6801,6 +6824,14 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   }
   if (monitor && json_is_boolean(monitor)) {
     spec.monitor = json_is_true(monitor);
+  }
+  if (maximum_bandwidth_per_job && json_is_integer(maximum_bandwidth_per_job)) {
+    const auto value = json_integer_value(maximum_bandwidth_per_job);
+    if (value < 0) {
+      error = "field 'maximum_bandwidth_per_job' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.maximum_bandwidth_per_job = static_cast<uint64_t>(value);
   }
   return spec;
 }

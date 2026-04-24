@@ -599,12 +599,17 @@ bool IsSafeBareosToken(std::string_view value);
 void AppendBoolDirective(std::ostringstream& content,
                          std::string_view name,
                          const std::optional<bool>& value);
+template <typename Integer>
+void AppendIntegerDirective(std::ostringstream& content,
+                            std::string_view name,
+                            const std::optional<Integer>& value);
 
-std::string BuildClientDirectorStubContent(std::string_view director_name,
-                                           std::string_view password,
-                                           std::string_view description,
-                                           const std::optional<bool>& monitor
-                                           = std::nullopt)
+std::string BuildClientDirectorStubContent(
+    std::string_view director_name,
+    std::string_view password,
+    std::string_view description,
+    const std::optional<bool>& monitor = std::nullopt,
+    const std::optional<uint64_t>& maximum_bandwidth_per_job = std::nullopt)
 {
   std::ostringstream content;
   content << "Director {\n"
@@ -612,6 +617,8 @@ std::string BuildClientDirectorStubContent(std::string_view director_name,
           << "  Password = " << QuoteBareosString(password) << "\n"
           << "  Description = " << QuoteBareosString(description) << "\n";
   AppendBoolDirective(content, "Monitor", monitor);
+  AppendIntegerDirective(content, "MaximumBandwidthPerJob",
+                         maximum_bandwidth_per_job);
   content << "}\n";
   return content.str();
 }
@@ -1876,6 +1883,7 @@ struct ClientDirectorStubWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> description{};
   std::optional<bool> monitor{};
+  std::optional<uint64_t> maximum_bandwidth_per_job{};
   bool exists{false};
   bool is_standalone_file{false};
 };
@@ -4782,6 +4790,9 @@ LoadClientDirectorStubWriteContext(const std::filesystem::path& client_root,
     if (HasMemberSource(*director, {"Monitor"})) {
       context.monitor = director->monitor;
     }
+    if (HasMemberSource(*director, {"MaximumBandwidthPerJob"})) {
+      context.maximum_bandwidth_per_job = director->max_bandwidth_per_job;
+    }
 
     auto source = director->GetDefinitionSource();
     if (!source || source->file.empty()) {
@@ -5537,8 +5548,13 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
                                      DefaultClientDirectorStubDescription(
                                          client_name, director_name));
   const auto monitor = spec.monitor ? spec.monitor : context.value->monitor;
+  const auto maximum_bandwidth_per_job
+      = spec.maximum_bandwidth_per_job
+            ? spec.maximum_bandwidth_per_job
+            : context.value->maximum_bandwidth_per_job;
   const auto stub_content = BuildClientDirectorStubContent(
-      director_name, *password.value, description, monitor);
+      director_name, *password.value, description, monitor,
+      maximum_bandwidth_per_job);
 
   std::error_code error_code;
   std::filesystem::create_directories(stub_directory, error_code);

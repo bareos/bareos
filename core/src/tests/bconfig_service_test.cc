@@ -1048,7 +1048,9 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
 
   auto created = state.UpsertClientDirectorStub(
       "prod", "bareos-fd", "bareos-dir",
-      {.description = std::string{"Initial stub"}, .monitor = true});
+      {.description = std::string{"Initial stub"},
+       .monitor = true,
+       .maximum_bandwidth_per_job = 2048});
   ASSERT_TRUE(created);
   EXPECT_EQ(created.value->name, "bareos-fd");
 
@@ -1062,6 +1064,8 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   EXPECT_NE(created_text.find("Description = \"Initial stub\""),
             std::string::npos);
   EXPECT_NE(created_text.find("Monitor = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumBandwidthPerJob = 2048"),
+            std::string::npos);
 
   auto updated = state.UpsertClientDirectorStub(
       "prod", "bareos-fd", "bareos-dir",
@@ -1076,6 +1080,8 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   EXPECT_NE(updated_text.find("Description = \"Updated stub\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Monitor = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 2048"),
+            std::string::npos);
 
   auto rejected = state.UpsertClientDirectorStub("prod", "missing-client",
                                                  "bareos-dir", {});
