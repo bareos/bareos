@@ -4101,7 +4101,8 @@ TEST(BconfigService, UpsertsStorageDirectorResources)
   auto created = state.UpsertStorageDirectorResource(
       "prod", "bareos-sd", "ManagedDirector",
       {.password = std::string{"[md5]0123456789abcdef0123456789abcdef"},
-       .description = std::string{"Managed storage director"}});
+       .description = std::string{"Managed storage director"},
+       .maximum_bandwidth_per_job = 2048});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-sd");
 
@@ -4115,6 +4116,8 @@ TEST(BconfigService, UpsertsStorageDirectorResources)
   EXPECT_NE(
       created_text.find("Password = \"[md5]0123456789abcdef0123456789abcdef\""),
       std::string::npos);
+  EXPECT_NE(created_text.find("MaximumBandwidthPerJob = 2048"),
+            std::string::npos);
 
   const auto ownership_path = RepositoryLayout::OwnershipPath(repo_path.path());
   const auto ownership_text = ReadTextFile(ownership_path);
@@ -4125,7 +4128,8 @@ TEST(BconfigService, UpsertsStorageDirectorResources)
   auto updated = state.UpsertStorageDirectorResource(
       "prod", "bareos-sd", "bareos-dir",
       {.password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
-       .description = std::string{"Updated storage director"}});
+       .description = std::string{"Updated storage director"},
+       .maximum_bandwidth_per_job = 4096});
   ASSERT_TRUE(updated) << updated.error;
 
   const auto updated_text = ReadTextFile(
@@ -4135,6 +4139,8 @@ TEST(BconfigService, UpsertsStorageDirectorResources)
   EXPECT_NE(
       updated_text.find("Password = \"[md5]abcdef0123456789abcdef0123456789\""),
       std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 4096"),
+            std::string::npos);
 
   const auto updated_ownership_text = ReadTextFile(ownership_path);
   EXPECT_NE(updated_ownership_text.find(

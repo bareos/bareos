@@ -1498,14 +1498,17 @@ std::string BuildClientDaemonResourceContent(
 std::string BuildStorageDaemonDirectorResourceContent(
     std::string_view director_name,
     std::string_view password,
-    std::string_view description)
+    std::string_view description,
+    const std::optional<uint64_t>& maximum_bandwidth_per_job = std::nullopt)
 {
   std::ostringstream content;
   content << "Director {\n"
           << "  Name = " << QuoteBareosString(director_name) << "\n"
           << "  Description = " << QuoteBareosString(description) << "\n"
-          << "  Password = " << QuoteBareosString(password) << "\n"
-          << "}\n";
+          << "  Password = " << QuoteBareosString(password) << "\n";
+  AppendIntegerDirective(content, "MaximumBandwidthPerJob",
+                         maximum_bandwidth_per_job);
+  content << "}\n";
   return content.str();
 }
 
@@ -1921,6 +1924,7 @@ struct StorageDaemonDirectorWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<uint64_t> maximum_bandwidth_per_job{};
   bool exists{false};
   bool is_standalone_file{false};
   bool is_managed{false};
@@ -3144,13 +3148,6 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
     const bool has_source_address_source
         = HasMemberSource(*client, {"SourceAddress", "FdSourceAddress"});
     const bool has_port_source = HasMemberSource(*client, {"Port", "FdPort"});
-    if (has_source_address_source && client->FDsrc_addr
-        && client->FDsrc_addr->size() > 1) {
-      return {
-          .error
-          = "client daemon resource '" + client_config.name
-            + "' uses multiple source addresses, which are not managed yet."};
-    }
     if (has_addresses_source) {
       context.content.addresses = CopyAddressEntries(client->FDaddrs);
     } else if (has_address_source) {
@@ -3159,6 +3156,13 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
     if (!has_addresses_source && has_port_source) {
       const auto port = GetFirstPortHostOrder(client->FDaddrs);
       if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
+    }
+    if (has_source_address_source && client->FDsrc_addr
+        && client->FDsrc_addr->size() > 1) {
+      return {
+          .error
+          = "client daemon resource '" + client_config.name
+            + "' uses multiple source addresses, which are not managed yet."};
     }
     if (has_source_address_source) {
       context.content.source_address = CopyFirstAddress(client->FDsrc_addr);
@@ -3381,13 +3385,6 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     const bool has_ndmp_address_source
         = HasMemberSource(*storage, {"NdmpAddress"});
     const bool has_ndmp_port_source = HasMemberSource(*storage, {"NdmpPort"});
-    if (has_source_address_source && storage->SDsrc_addr
-        && storage->SDsrc_addr->size() > 1) {
-      return {
-          .error
-          = "storage-daemon storage resource '" + storage_config.name
-            + "' uses multiple source addresses, which are not managed yet."};
-    }
     if (!has_ndmp_addresses_source && has_ndmp_address_source
         && storage->NDMPaddrs && storage->NDMPaddrs->size() > 1) {
       return {.error
@@ -3402,6 +3399,13 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     if (!has_addresses_source && has_port_source) {
       const auto port = GetFirstPortHostOrder(storage->SDaddrs);
       if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
+    }
+    if (has_source_address_source && storage->SDsrc_addr
+        && storage->SDsrc_addr->size() > 1) {
+      return {
+          .error
+          = "storage-daemon storage resource '" + storage_config.name
+            + "' uses multiple source addresses, which are not managed yet."};
     }
     if (has_source_address_source) {
       context.content.source_address = CopyFirstAddress(storage->SDsrc_addr);
@@ -4087,6 +4091,9 @@ LoadStorageDaemonDirectorWriteContext(
                                  + std::string{director_name} + "'");
     if (!rendered_password) { return {.error = rendered_password.error}; }
     context.password = *rendered_password.value;
+    if (HasMemberSource(*director, {"MaximumBandwidthPerJob"})) {
+      context.maximum_bandwidth_per_job = director->max_bandwidth_per_job;
+    }
 
     auto source = director->GetDefinitionSource();
     if (!source || source->file.empty()) {
@@ -8178,8 +8185,12 @@ ServiceState::UpsertStorageDirectorResource(
                                : context.value->description.value_or(
                                      DefaultStorageDaemonDirectorDescription(
                                          director_name, storage_name));
+  const auto maximum_bandwidth_per_job
+      = spec.maximum_bandwidth_per_job
+            ? spec.maximum_bandwidth_per_job
+            : context.value->maximum_bandwidth_per_job;
   const auto rendered = BuildStorageDaemonDirectorResourceContent(
-      director_name, *password, description);
+      director_name, *password, description, maximum_bandwidth_per_job);
   const auto resource_directory
       = storage_config.value->path / "bareos-sd.d" / "director";
   const bool file_existed = std::filesystem::exists(context.value->file_path);

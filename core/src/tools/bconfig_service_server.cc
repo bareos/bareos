@@ -143,6 +143,7 @@ struct DirectorMessagesRequestSpec {
 struct StorageDirectorRequestSpec {
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<uint64_t> maximum_bandwidth_per_job{};
 };
 
 struct StorageDeviceRequestSpec {
@@ -1925,6 +1926,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="storage-director-description">Description</label>
         <input id="storage-director-description" name="description"
                placeholder="Managed storage-daemon director resource">
+
+        <label for="storage-director-maximum-bandwidth-per-job">Maximum bandwidth per job</label>
+        <input id="storage-director-maximum-bandwidth-per-job"
+               name="maximum_bandwidth_per_job" type="number" min="0"
+               placeholder="0">
 
         <button type="submit">
           PUT /v1/deployments/{id}/storages/{storage}/directors/{director}
@@ -3850,9 +3856,17 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const payload = {
           password: String(form.get('password') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
+          maximum_bandwidth_per_job: String(
+            form.get('maximum_bandwidth_per_job') ?? '').trim(),
         };
         if (!payload.password) { delete payload.password; }
         if (!payload.description) { delete payload.description; }
+        if (!payload.maximum_bandwidth_per_job) {
+          delete payload.maximum_bandwidth_per_job;
+        } else {
+          payload.maximum_bandwidth_per_job
+            = Number.parseInt(payload.maximum_bandwidth_per_job, 10);
+        }
         const { response } = await request(
           'PUT',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/storages/${encodeURIComponent(storageName)}/directors/${encodeURIComponent(directorName)}`,
@@ -5171,6 +5185,7 @@ http::response<http::string_body> HandleDeploymentStorageDirectorPutRequest(
   StorageDirectorResourceSpec resource_spec{
       .password = spec->password,
       .description = spec->description,
+      .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
   };
   auto result = state.UpsertStorageDirectorResource(
       deployment_id, storage_name, director_name, resource_spec);
@@ -7332,6 +7347,8 @@ std::optional<StorageDirectorRequestSpec> ParseStorageDirectorRequest(
 
   auto* password = json_object_get(root.get(), "password");
   auto* description = json_object_get(root.get(), "description");
+  auto* maximum_bandwidth_per_job
+      = json_object_get(root.get(), "maximum_bandwidth_per_job");
   if (password && !json_is_null(password) && !json_is_string(password)) {
     error = "field 'password' must be a string when provided.";
     return std::nullopt;
@@ -7341,6 +7358,12 @@ std::optional<StorageDirectorRequestSpec> ParseStorageDirectorRequest(
     error = "field 'description' must be a string when provided.";
     return std::nullopt;
   }
+  if (maximum_bandwidth_per_job && !json_is_null(maximum_bandwidth_per_job)
+      && !json_is_integer(maximum_bandwidth_per_job)) {
+    error
+        = "field 'maximum_bandwidth_per_job' must be an integer when provided.";
+    return std::nullopt;
+  }
 
   StorageDirectorRequestSpec spec{};
   if (password && json_is_string(password)) {
@@ -7348,6 +7371,14 @@ std::optional<StorageDirectorRequestSpec> ParseStorageDirectorRequest(
   }
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
+  }
+  if (maximum_bandwidth_per_job && json_is_integer(maximum_bandwidth_per_job)) {
+    const auto value = json_integer_value(maximum_bandwidth_per_job);
+    if (value < 0) {
+      error = "field 'maximum_bandwidth_per_job' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.maximum_bandwidth_per_job = static_cast<uint64_t>(value);
   }
   return spec;
 }

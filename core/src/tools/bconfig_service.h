@@ -305,6 +305,7 @@ struct StorageMessagesResourceSpec {
 struct StorageDirectorResourceSpec {
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<uint64_t> maximum_bandwidth_per_job{};
 };
 
 struct StorageDeviceResourceSpec {
