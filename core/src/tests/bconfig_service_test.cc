@@ -1050,6 +1050,7 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
       "prod", "bareos-fd", "bareos-dir",
       {.description = std::string{"Initial stub"},
        .connection_from_director_to_client = false,
+       .connection_from_client_to_director = false,
        .monitor = true,
        .maximum_bandwidth_per_job = 2048});
   ASSERT_TRUE(created);
@@ -1065,6 +1066,8 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   EXPECT_NE(created_text.find("Description = \"Initial stub\""),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("ConnectionFromClientToDirector = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("Monitor = yes"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumBandwidthPerJob = 2048"),
@@ -1083,6 +1086,8 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   EXPECT_NE(updated_text.find("Description = \"Updated stub\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Monitor = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 2048"),

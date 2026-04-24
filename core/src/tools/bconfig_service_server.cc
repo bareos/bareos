@@ -74,6 +74,7 @@ struct InspectRequestSpec {
 struct ClientDirectorStubRequestSpec {
   std::optional<std::string> description{};
   std::optional<bool> connection_from_director_to_client{};
+  std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
 };
@@ -723,6 +724,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
           <input id="client-stub-connection-from-director-to-client"
                  name="connection_from_director_to_client" type="checkbox">
           Connection from director to client
+        </label>
+
+        <label class="checkbox-label" for="client-stub-connection-from-client-to-director">
+          <input id="client-stub-connection-from-client-to-director"
+                 name="connection_from_client_to_director" type="checkbox">
+          Connection from client to director
         </label>
 
         <label class="checkbox-label" for="client-stub-monitor">
@@ -2734,6 +2741,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
           description: String(form.get('description') ?? '').trim(),
           connection_from_director_to_client: document.getElementById(
             'client-stub-connection-from-director-to-client').checked,
+          connection_from_client_to_director: document.getElementById(
+            'client-stub-connection-from-client-to-director').checked,
           monitor: document.getElementById('client-stub-monitor').checked,
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
@@ -4991,6 +5000,8 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
       .description = spec->description,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
+      .connection_from_client_to_director
+      = spec->connection_from_client_to_director,
       .monitor = spec->monitor,
       .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
   };
@@ -6812,6 +6823,8 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   auto* description = json_object_get(root.get(), "description");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
+  auto* connection_from_client_to_director
+      = json_object_get(root.get(), "connection_from_client_to_director");
   auto* monitor = json_object_get(root.get(), "monitor");
   auto* maximum_bandwidth_per_job
       = json_object_get(root.get(), "maximum_bandwidth_per_job");
@@ -6825,6 +6838,14 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
       && !json_is_boolean(connection_from_director_to_client)) {
     error
         = "field 'connection_from_director_to_client' must be a boolean when "
+          "provided.";
+    return std::nullopt;
+  }
+  if (connection_from_client_to_director
+      && !json_is_null(connection_from_client_to_director)
+      && !json_is_boolean(connection_from_client_to_director)) {
+    error
+        = "field 'connection_from_client_to_director' must be a boolean when "
           "provided.";
     return std::nullopt;
   }
@@ -6847,6 +6868,11 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
       && json_is_boolean(connection_from_director_to_client)) {
     spec.connection_from_director_to_client
         = json_is_true(connection_from_director_to_client);
+  }
+  if (connection_from_client_to_director
+      && json_is_boolean(connection_from_client_to_director)) {
+    spec.connection_from_client_to_director
+        = json_is_true(connection_from_client_to_director);
   }
   if (monitor && json_is_boolean(monitor)) {
     spec.monitor = json_is_true(monitor);
