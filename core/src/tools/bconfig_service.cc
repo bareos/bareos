@@ -23,9 +23,11 @@
 #include "tools/bconfig_lib.h"
 
 #include "dird/dird_conf.h"
+#include "filed/filed_conf.h"
 #include "include/bareos.h"
 #include "include/job_level.h"
 #include "include/job_types.h"
+#include "lib/address_conf.h"
 #include "lib/bpipe.h"
 #include "lib/message.h"
 #include "lib/thread_specific_data.h"
@@ -673,6 +675,14 @@ struct DirectorMessagesContentSpec {
 };
 
 struct StorageDaemonContentSpec {
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
+  std::optional<uint64_t> sd_connect_timeout{};
+  std::optional<uint64_t> fd_connect_timeout{};
+  std::optional<uint64_t> heartbeat_interval{};
+  std::optional<uint64_t> checkpoint_interval{};
+  std::optional<uint64_t> client_connect_wait{};
+  std::optional<uint32_t> maximum_network_buffer_size{};
   std::optional<std::string> description{};
   std::optional<std::string> working_directory{};
   std::optional<std::string> plugin_directory{};
@@ -824,6 +834,26 @@ void AppendRepeatedBareosDirective(std::ostringstream& content,
     content << "  " << name << " = " << RenderBareosDirectiveValue(value)
             << "\n";
   }
+}
+
+bool HasMemberSource(const BareosResource& resource,
+                     std::initializer_list<const char*> member_names)
+{
+  for (const auto* member_name : member_names) {
+    if (resource.GetMemberSource(member_name)) { return true; }
+  }
+  return false;
+}
+
+std::optional<std::string> CopyFirstAddress(dlist<IPADDR>* addrs)
+{
+  if (!addrs || addrs->size() == 0) { return std::nullopt; }
+
+  auto* address = static_cast<IPADDR*>(addrs->first());
+  if (!address) { return std::nullopt; }
+
+  char buffer[1024];
+  return std::string{address->build_address_str(buffer, sizeof(buffer), false)};
 }
 
 std::string BuildDirectorConsoleResourceContent(
@@ -1121,6 +1151,39 @@ std::string BuildStorageDaemonResourceContent(
   std::ostringstream content;
   content << "Storage {\n"
           << "  Name = " << QuoteBareosString(storage_name) << "\n";
+  AppendBareosDirective(content, "Address", spec.address);
+  AppendIntegerDirective(content, "Port", spec.port);
+  AppendIntegerDirective(content, "SdConnectTimeout", spec.sd_connect_timeout);
+  AppendIntegerDirective(content, "FdConnectTimeout", spec.fd_connect_timeout);
+  AppendIntegerDirective(content, "HeartbeatInterval", spec.heartbeat_interval);
+  AppendIntegerDirective(content, "CheckpointInterval",
+                         spec.checkpoint_interval);
+  AppendIntegerDirective(content, "ClientConnectWait",
+                         spec.client_connect_wait);
+  AppendIntegerDirective(content, "MaximumNetworkBufferSize",
+                         spec.maximum_network_buffer_size);
+  AppendQuotedDirective(content, "Description", spec.description);
+  AppendQuotedDirective(content, "WorkingDirectory", spec.working_directory);
+  AppendQuotedDirective(content, "PluginDirectory", spec.plugin_directory);
+  AppendQuotedDirective(content, "ScriptsDirectory", spec.scripts_directory);
+  AppendBareosDirective(content, "Messages", spec.messages);
+  content << "}\n";
+  return content.str();
+}
+
+std::string BuildClientDaemonResourceContent(
+    std::string_view client_name,
+    const StorageDaemonContentSpec& spec)
+{
+  std::ostringstream content;
+  content << "Client {\n"
+          << "  Name = " << QuoteBareosString(client_name) << "\n";
+  AppendBareosDirective(content, "Address", spec.address);
+  AppendIntegerDirective(content, "Port", spec.port);
+  AppendIntegerDirective(content, "SdConnectTimeout", spec.sd_connect_timeout);
+  AppendIntegerDirective(content, "HeartbeatInterval", spec.heartbeat_interval);
+  AppendIntegerDirective(content, "MaximumNetworkBufferSize",
+                         spec.maximum_network_buffer_size);
   AppendQuotedDirective(content, "Description", spec.description);
   AppendQuotedDirective(content, "WorkingDirectory", spec.working_directory);
   AppendQuotedDirective(content, "PluginDirectory", spec.plugin_directory);
@@ -1489,9 +1552,23 @@ struct DirectorMessagesWriteContext {
   bool is_standalone_file{false};
 };
 
+struct ClientMessagesWriteContext {
+  std::filesystem::path file_path{};
+  DirectorMessagesContentSpec content{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
 struct StorageMessagesWriteContext {
   std::filesystem::path file_path{};
   DirectorMessagesContentSpec content{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct ClientDaemonWriteContext {
+  std::filesystem::path file_path{};
+  StorageDaemonContentSpec content{};
   bool exists{false};
   bool is_standalone_file{false};
 };
@@ -2581,6 +2658,74 @@ OperationResult<DirectorMessagesWriteContext> LoadDirectorMessagesWriteContext(
   return {.value = std::move(context)};
 }
 
+OperationResult<ClientMessagesWriteContext> LoadClientMessagesWriteContext(
+    const DeploymentConfigRecord& client_config,
+    std::string_view messages_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kClient,
+                                    client_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure("client config parser initialization ",
+                                        loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("client config ", loaded.messages)};
+  }
+
+  ClientMessagesWriteContext context{
+      .file_path = client_config.path / "bareos-fd.d" / "messages"
+                   / (std::string{messages_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource = loaded.parser->GetNextRes(filedaemon::R_MSGS, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(filedaemon::R_MSGS, resource)) {
+    auto* messages = dynamic_cast<MessagesResource*>(resource);
+    if (!messages) { continue; }
+    if (auto source = messages->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource = loaded.parser->GetNextRes(filedaemon::R_MSGS, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(filedaemon::R_MSGS, resource)) {
+    auto* messages = dynamic_cast<MessagesResource*>(resource);
+    if (!messages || !messages->resource_name_
+        || messages->resource_name_ != messages_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (messages->description_ && messages->description_[0] != '\0') {
+      context.content.description = std::string{messages->description_};
+    }
+
+    auto source = messages->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "client messages '" + std::string{messages_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "client messages '" + std::string{messages_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+
+    static const std::set<std::string> kControlledMessagesDirectives{
+        "Name", "Description"};
+    auto entries = ExtractTopLevelResourceEntries(
+        context.file_path, "Messages", kControlledMessagesDirectives);
+    if (!entries) { return {.error = entries.error}; }
+    context.content.entries = std::move(*entries.value);
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
 OperationResult<StorageMessagesWriteContext> LoadStorageMessagesWriteContext(
     const DeploymentConfigRecord& storage_config,
     std::string_view messages_name)
@@ -2651,6 +2796,107 @@ OperationResult<StorageMessagesWriteContext> LoadStorageMessagesWriteContext(
   return {.value = std::move(context)};
 }
 
+OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
+    const DeploymentConfigRecord& client_config)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kClient,
+                                    client_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure("client config parser initialization ",
+                                        loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("client config ", loaded.messages)};
+  }
+
+  ClientDaemonWriteContext context{
+      .file_path = client_config.path / "bareos-fd.d" / "client"
+                   / (client_config.name + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(filedaemon::R_CLIENT, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(filedaemon::R_CLIENT, resource)) {
+    auto* client = dynamic_cast<filedaemon::ClientResource*>(resource);
+    if (!client) { continue; }
+    if (auto source = client->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(filedaemon::R_CLIENT, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(filedaemon::R_CLIENT, resource)) {
+    auto* client = dynamic_cast<filedaemon::ClientResource*>(resource);
+    if (!client || !client->resource_name_
+        || client->resource_name_ != client_config.name) {
+      continue;
+    }
+
+    context.exists = true;
+    const bool has_address_source = HasMemberSource(
+        *client, {"Address", "Addresses", "FdAddress", "FdAddresses"});
+    const bool has_port_source = HasMemberSource(*client, {"Port", "FdPort"});
+    if (has_address_source && client->FDaddrs && client->FDaddrs->size() > 1) {
+      return {.error
+              = "client daemon resource '" + client_config.name
+                + "' uses multiple addresses, which are not managed yet."};
+    }
+    if (has_address_source) {
+      context.content.address = CopyFirstAddress(client->FDaddrs);
+    }
+    if (has_port_source) {
+      const auto port = GetFirstPortHostOrder(client->FDaddrs);
+      if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
+    }
+    if (HasMemberSource(*client, {"HeartbeatInterval"})) {
+      context.content.heartbeat_interval
+          = static_cast<uint64_t>(client->heartbeat_interval);
+    }
+    if (HasMemberSource(*client, {"SdConnectTimeout"})) {
+      context.content.sd_connect_timeout
+          = static_cast<uint64_t>(client->SDConnectTimeout);
+    }
+    if (HasMemberSource(*client, {"MaximumNetworkBufferSize"})) {
+      context.content.maximum_network_buffer_size
+          = client->max_network_buffer_size;
+    }
+    if (client->description_ && client->description_[0] != '\0') {
+      context.content.description = std::string{client->description_};
+    }
+    if (client->working_directory && client->working_directory[0] != '\0') {
+      context.content.working_directory
+          = std::string{client->working_directory};
+    }
+    if (client->plugin_directory && client->plugin_directory[0] != '\0') {
+      context.content.plugin_directory = std::string{client->plugin_directory};
+    }
+    if (client->scripts_directory && client->scripts_directory[0] != '\0') {
+      context.content.scripts_directory
+          = std::string{client->scripts_directory};
+    }
+    context.content.messages = CopyResourceName(client->messages);
+
+    auto source = client->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "client daemon resource '" + client_config.name
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "client daemon resource '" + client_config.name
+                       + "' is not stored in a standalone file yet."};
+    }
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
 OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     const DeploymentConfigRecord& storage_config)
 {
@@ -2690,6 +2936,46 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     }
 
     context.exists = true;
+    const bool has_address_source = HasMemberSource(
+        *storage, {"Address", "Addresses", "SdAddress", "SdAddresses"});
+    const bool has_port_source = HasMemberSource(*storage, {"Port", "SdPort"});
+    if (has_address_source && storage->SDaddrs
+        && storage->SDaddrs->size() > 1) {
+      return {.error
+              = "storage-daemon storage resource '" + storage_config.name
+                + "' uses multiple addresses, which are not managed yet."};
+    }
+    if (has_address_source) {
+      context.content.address = CopyFirstAddress(storage->SDaddrs);
+    }
+    if (has_port_source) {
+      const auto port = GetFirstPortHostOrder(storage->SDaddrs);
+      if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
+    }
+    if (HasMemberSource(*storage, {"HeartbeatInterval"})) {
+      context.content.heartbeat_interval
+          = static_cast<uint64_t>(storage->heartbeat_interval);
+    }
+    if (HasMemberSource(*storage, {"SdConnectTimeout"})) {
+      context.content.sd_connect_timeout
+          = static_cast<uint64_t>(storage->SDConnectTimeout);
+    }
+    if (HasMemberSource(*storage, {"FdConnectTimeout"})) {
+      context.content.fd_connect_timeout
+          = static_cast<uint64_t>(storage->FDConnectTimeout);
+    }
+    if (HasMemberSource(*storage, {"CheckpointInterval"})) {
+      context.content.checkpoint_interval
+          = static_cast<uint64_t>(storage->checkpoint_interval);
+    }
+    if (HasMemberSource(*storage, {"ClientConnectWait"})) {
+      context.content.client_connect_wait
+          = static_cast<uint64_t>(storage->client_wait);
+    }
+    if (HasMemberSource(*storage, {"MaximumNetworkBufferSize"})) {
+      context.content.maximum_network_buffer_size
+          = storage->max_network_buffer_size;
+    }
     if (storage->description_ && storage->description_[0] != '\0') {
       context.content.description = std::string{storage->description_};
     }
@@ -3634,7 +3920,7 @@ OperationResult<std::monostate> SyncStorageDaemonConfig(
   return {.value = std::monostate{}};
 }
 
-OperationResult<std::monostate> DeleteClientDirectorStub(
+OperationResult<std::monostate> DeleteClientDirectorStubFile(
     const std::filesystem::path& repository_root,
     std::string_view client_name,
     std::string_view director_name)
@@ -4611,6 +4897,308 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
                                    .path = client_root}};
 }
 
+OperationResult<std::optional<DeploymentConfigRecord>>
+ServiceState::DeleteClientDirectorStub(std::string_view deployment_id,
+                                       std::string_view client_name,
+                                       std::string_view director_name) const
+{
+  DebugLog("deleting client stub for deployment '" + std::string{deployment_id}
+           + "', client '" + std::string{client_name} + "', director '"
+           + std::string{director_name} + "'");
+  if (!IsSafePathSegment(client_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "client and director names must be safe path segments."};
+  }
+
+  std::filesystem::path repository_path;
+  {
+    std::lock_guard guard{mutex_};
+    auto it = deployments_.find(std::string{deployment_id});
+    if (it == deployments_.end()) { return {.error = "deployment not found."}; }
+    repository_path = it->second.repository_path;
+  }
+
+  const auto client_root
+      = RepositoryLayout::ClientsDirectory(repository_path) / client_name;
+  const auto stub_path = client_root / "bareos-fd.d" / "director"
+                         / (std::string{director_name} + ".conf");
+  if (!std::filesystem::exists(stub_path)) {
+    return {.error = "client '" + std::string{client_name}
+                     + "' does not define director '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto deleted = DeleteClientDirectorStubFile(repository_path, client_name,
+                                              director_name);
+  if (!deleted) { return {.error = deleted.error}; }
+
+  if (!std::filesystem::exists(client_root / "bareos-fd.d")) {
+    DebugLog("deleted client stub '" + std::string{director_name}
+             + "' from client '" + std::string{client_name}
+             + "' and removed the now-empty client config root");
+    return {.value = std::optional<DeploymentConfigRecord>{}};
+  }
+
+  DebugLog("deleted client stub '" + std::string{director_name}
+           + "' from client '" + std::string{client_name} + "'");
+  return {.value
+          = DeploymentConfigRecord{.component = bconfig::Component::kClient,
+                                   .name = std::string{client_name},
+                                   .path = client_root}};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertClientMessagesResource(
+    std::string_view deployment_id,
+    std::string_view client_name,
+    std::string_view messages_name,
+    const ClientMessagesResourceSpec& spec) const
+{
+  DebugLog("upserting client messages resource for deployment '"
+           + std::string{deployment_id} + "', client '"
+           + std::string{client_name} + "', messages '"
+           + std::string{messages_name} + "'");
+  if (!IsSafePathSegment(client_name) || !IsSafePathSegment(messages_name)) {
+    return {.error = "client and messages names must be safe path segments."};
+  }
+
+  auto client_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kClient, client_name);
+  if (!client_config) {
+    return {.error = "client config not found for '" + std::string{client_name}
+                     + "'."};
+  }
+
+  auto context
+      = LoadClientMessagesWriteContext(*client_config.value, messages_name);
+  if (!context) { return {.error = context.error}; }
+
+  auto content = context.value->content;
+  content.description = spec.description
+                            ? *spec.description
+                            : content.description.value_or(
+                                  "Managed client messages resource for "
+                                  + std::string{messages_name} + " in client "
+                                  + std::string{client_name});
+  if (spec.entries) { content.entries = *spec.entries; }
+
+  const auto rendered
+      = BuildDirectorMessagesResourceContent(messages_name, content);
+  const auto resource_directory
+      = client_config.value->path / "bareos-fd.d" / "messages";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create client messages directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write client messages resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote client messages file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kClient,
+                                    client_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("client messages update for '" + std::string{messages_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          client_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "client messages parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("client messages update ", loaded.messages)};
+  }
+
+  DebugLog("updated client messages resource '" + std::string{messages_name}
+           + "' in client '" + std::string{client_name} + "'");
+  return {.value = *client_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteClientMessagesResource(std::string_view deployment_id,
+                                           std::string_view client_name,
+                                           std::string_view messages_name) const
+{
+  DebugLog("deleting client messages resource for deployment '"
+           + std::string{deployment_id} + "', client '"
+           + std::string{client_name} + "', messages '"
+           + std::string{messages_name} + "'");
+  if (!IsSafePathSegment(client_name) || !IsSafePathSegment(messages_name)) {
+    return {.error = "client and messages names must be safe path segments."};
+  }
+
+  auto client_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kClient, client_name);
+  if (!client_config) {
+    return {.error = "client config not found for '" + std::string{client_name}
+                     + "'."};
+  }
+
+  auto context
+      = LoadClientMessagesWriteContext(*client_config.value, messages_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "client '" + std::string{client_name}
+                     + "' does not define messages '"
+                     + std::string{messages_name} + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             client_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kClient,
+                                    client_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "client messages parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("client messages delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted client messages resource '" + std::string{messages_name}
+           + "' from client '" + std::string{client_name} + "'");
+  return {.value = *client_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertClientDaemonResource(
+    std::string_view deployment_id,
+    std::string_view client_name,
+    const ClientDaemonResourceSpec& spec) const
+{
+  DebugLog("upserting client daemon resource for deployment '"
+           + std::string{deployment_id} + "', client '"
+           + std::string{client_name} + "'");
+  if (!IsSafePathSegment(client_name)) {
+    return {.error = "client name must be a safe path segment."};
+  }
+  if (spec.address && !IsSafeBareosToken(*spec.address)) {
+    return {.error
+            = "client daemon address must be a bare Bareos token "
+              "without whitespace or quotes."};
+  }
+  if (spec.port && *spec.port == 0) {
+    return {.error = "client daemon port must be greater than zero."};
+  }
+  auto client_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kClient, client_name);
+  if (!client_config) {
+    return {.error = "client config not found for '" + std::string{client_name}
+                     + "'."};
+  }
+
+  auto context = LoadClientDaemonWriteContext(*client_config.value);
+  if (!context) { return {.error = context.error}; }
+  if (context.value->exists && !context.value->is_standalone_file) {
+    return {.error = "client daemon resource '" + std::string{client_name}
+                     + "' is not stored in a standalone file yet."};
+  }
+
+  auto content = context.value->content;
+  if (spec.address) { content.address = spec.address; }
+  if (spec.port) { content.port = spec.port; }
+  if (spec.sd_connect_timeout) {
+    content.sd_connect_timeout = spec.sd_connect_timeout;
+  }
+  if (spec.heartbeat_interval) {
+    content.heartbeat_interval = spec.heartbeat_interval;
+  }
+  if (spec.maximum_network_buffer_size) {
+    content.maximum_network_buffer_size = spec.maximum_network_buffer_size;
+  }
+  if (spec.description) { content.description = spec.description; }
+  if (spec.working_directory) {
+    content.working_directory = spec.working_directory;
+  }
+  if (spec.plugin_directory) {
+    content.plugin_directory = spec.plugin_directory;
+  }
+  if (spec.scripts_directory) {
+    content.scripts_directory = spec.scripts_directory;
+  }
+  if (spec.messages) { content.messages = spec.messages; }
+
+  const auto rendered = BuildClientDaemonResourceContent(client_name, content);
+  const auto resource_directory
+      = client_config.value->path / "bareos-fd.d" / "client";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create client daemon directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write client daemon resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote client daemon file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kClient,
+                                    client_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("client daemon update for '" + std::string{client_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          client_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "client daemon parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("client daemon update ", loaded.messages)};
+  }
+
+  DebugLog("updated client daemon resource '" + std::string{client_name} + "'");
+  return {.value = *client_config.value};
+}
+
 OperationResult<DeploymentConfigRecord>
 ServiceState::UpsertDirectorClientResource(
     std::string_view deployment_id,
@@ -4966,8 +5554,8 @@ ServiceState::DeleteDirectorClientResource(std::string_view deployment_id,
     }
   }
 
-  auto deleted_stub
-      = DeleteClientDirectorStub(repository_path, client_name, director_name);
+  auto deleted_stub = DeleteClientDirectorStubFile(repository_path, client_name,
+                                                   director_name);
   if (!deleted_stub) {
     auto rollback_error
         = RestoreDeletedFile(context.value->file_path, *original_content.value);
@@ -7299,7 +7887,14 @@ ServiceState::UpsertStorageDaemonResource(
   if (!IsSafePathSegment(storage_name)) {
     return {.error = "storage name must be a safe path segment."};
   }
-
+  if (spec.address && !IsSafeBareosToken(*spec.address)) {
+    return {.error
+            = "storage-daemon address must be a bare Bareos token "
+              "without whitespace or quotes."};
+  }
+  if (spec.port && *spec.port == 0) {
+    return {.error = "storage-daemon port must be greater than zero."};
+  }
   auto storage_config = GetDeploymentConfig(
       deployment_id, bconfig::Component::kStorage, storage_name);
   if (!storage_config) {
@@ -7316,6 +7911,26 @@ ServiceState::UpsertStorageDaemonResource(
   }
 
   auto content = context.value->content;
+  if (spec.address) { content.address = spec.address; }
+  if (spec.port) { content.port = spec.port; }
+  if (spec.sd_connect_timeout) {
+    content.sd_connect_timeout = spec.sd_connect_timeout;
+  }
+  if (spec.fd_connect_timeout) {
+    content.fd_connect_timeout = spec.fd_connect_timeout;
+  }
+  if (spec.heartbeat_interval) {
+    content.heartbeat_interval = spec.heartbeat_interval;
+  }
+  if (spec.checkpoint_interval) {
+    content.checkpoint_interval = spec.checkpoint_interval;
+  }
+  if (spec.client_connect_wait) {
+    content.client_connect_wait = spec.client_connect_wait;
+  }
+  if (spec.maximum_network_buffer_size) {
+    content.maximum_network_buffer_size = spec.maximum_network_buffer_size;
+  }
   if (spec.description) { content.description = spec.description; }
   if (spec.working_directory) {
     content.working_directory = spec.working_directory;

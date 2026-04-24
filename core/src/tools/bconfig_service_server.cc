@@ -153,6 +153,14 @@ struct StorageDeviceRequestSpec {
 };
 
 struct StorageDaemonRequestSpec {
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
+  std::optional<uint64_t> sd_connect_timeout{};
+  std::optional<uint64_t> fd_connect_timeout{};
+  std::optional<uint64_t> heartbeat_interval{};
+  std::optional<uint64_t> checkpoint_interval{};
+  std::optional<uint64_t> client_connect_wait{};
+  std::optional<uint32_t> maximum_network_buffer_size{};
   std::optional<std::string> description{};
   std::optional<std::string> working_directory{};
   std::optional<std::string> plugin_directory{};
@@ -655,6 +663,97 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <button type="submit">
           PUT /v1/deployments/{id}/clients/{client}/directors/{director}
+        </button>
+        <button type="button" id="client-stub-delete-button">
+          DELETE /v1/deployments/{id}/clients/{client}/directors/{director}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert client daemon resource</h2>
+      <form id="client-daemon-form">
+        <label for="client-daemon-deployment-id">Deployment ID</label>
+        <input id="client-daemon-deployment-id" name="deployment_id" value="prod">
+
+        <label for="client-daemon-client-name">Client name</label>
+        <input id="client-daemon-client-name" name="client_name"
+               value="backup-bareos-test-fd">
+
+        <label for="client-daemon-address">Address</label>
+        <input id="client-daemon-address" name="address"
+               placeholder="client.example.com">
+
+        <label for="client-daemon-port">Port</label>
+        <input id="client-daemon-port" name="port" type="number"
+               min="1" max="65535" placeholder="9102">
+
+        <label for="client-daemon-sd-connect-timeout">Storage connect timeout</label>
+        <input id="client-daemon-sd-connect-timeout"
+               name="sd_connect_timeout" type="number" min="0"
+               placeholder="1800">
+
+        <label for="client-daemon-heartbeat-interval">Heartbeat interval</label>
+        <input id="client-daemon-heartbeat-interval" name="heartbeat_interval"
+               type="number" min="0" placeholder="0">
+
+        <label for="client-daemon-maximum-network-buffer-size">Maximum network buffer size</label>
+        <input id="client-daemon-maximum-network-buffer-size"
+               name="maximum_network_buffer_size" type="number" min="0"
+               placeholder="0">
+
+        <label for="client-daemon-description">Description</label>
+        <input id="client-daemon-description" name="description"
+               placeholder="Managed client daemon resource">
+
+        <label for="client-daemon-working-directory">Working directory</label>
+        <input id="client-daemon-working-directory" name="working_directory"
+               placeholder="/var/lib/bareos/client">
+
+        <label for="client-daemon-plugin-directory">Plugin directory</label>
+        <input id="client-daemon-plugin-directory" name="plugin_directory"
+               placeholder="/usr/lib/bareos/plugins">
+
+        <label for="client-daemon-scripts-directory">Scripts directory</label>
+        <input id="client-daemon-scripts-directory" name="scripts_directory"
+               placeholder="/usr/lib/bareos/scripts">
+
+        <label for="client-daemon-messages">Messages</label>
+        <input id="client-daemon-messages" name="messages" placeholder="Standard">
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/clients/{client}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert client messages resource</h2>
+      <form id="client-messages-form">
+        <label for="client-messages-deployment-id">Deployment ID</label>
+        <input id="client-messages-deployment-id" name="deployment_id" value="prod">
+
+        <label for="client-messages-client-name">Client name</label>
+        <input id="client-messages-client-name" name="client_name"
+               value="backup-bareos-test-fd">
+
+        <label for="client-messages-messages-name">Messages name</label>
+        <input id="client-messages-messages-name" name="messages_name" value="ManagedMessages">
+
+        <label for="client-messages-description">Description</label>
+        <input id="client-messages-description" name="description"
+               placeholder="Managed client messages resource">
+
+        <label for="client-messages-entries">Message entries</label>
+        <textarea id="client-messages-entries" name="entries"
+                  rows="4"
+                  placeholder="Director = bareos-dir = all"></textarea>
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/clients/{client}/messages/{messages}
+        </button>
+        <button type="button" id="client-messages-delete-button">
+          DELETE /v1/deployments/{id}/clients/{client}/messages/{messages}
         </button>
       </form>
     </section>
@@ -1279,6 +1378,43 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="storage-daemon-storage-name">Storage name</label>
         <input id="storage-daemon-storage-name" name="storage_name" value="bareos-sd">
+
+        <label for="storage-daemon-address">Address</label>
+        <input id="storage-daemon-address" name="address"
+               placeholder="storage.example.com">
+
+        <label for="storage-daemon-port">Port</label>
+        <input id="storage-daemon-port" name="port" type="number"
+               min="1" max="65535" placeholder="9103">
+
+        <label for="storage-daemon-sd-connect-timeout">Storage connect timeout</label>
+        <input id="storage-daemon-sd-connect-timeout"
+               name="sd_connect_timeout" type="number" min="0"
+               placeholder="1800">
+
+        <label for="storage-daemon-fd-connect-timeout">Client connect timeout</label>
+        <input id="storage-daemon-fd-connect-timeout"
+               name="fd_connect_timeout" type="number" min="0"
+               placeholder="1800">
+
+        <label for="storage-daemon-heartbeat-interval">Heartbeat interval</label>
+        <input id="storage-daemon-heartbeat-interval" name="heartbeat_interval"
+               type="number" min="0" placeholder="0">
+
+        <label for="storage-daemon-checkpoint-interval">Checkpoint interval</label>
+        <input id="storage-daemon-checkpoint-interval"
+               name="checkpoint_interval" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-daemon-client-connect-wait">Client connect wait</label>
+        <input id="storage-daemon-client-connect-wait"
+               name="client_connect_wait" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-daemon-maximum-network-buffer-size">Maximum network buffer size</label>
+        <input id="storage-daemon-maximum-network-buffer-size"
+               name="maximum_network_buffer_size" type="number" min="0"
+               placeholder="0">
 
         <label for="storage-daemon-description">Description</label>
         <input id="storage-daemon-description" name="description"
@@ -2088,6 +2224,101 @@ const char* kTestUiHtmlTemplate = R"HTML(
           await loadDeploymentContents(deploymentId);
         }
       });
+    document.getElementById('client-stub-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('client-stub-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const clientName = String(form.get('client_name') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/clients/${encodeURIComponent(clientName)}/directors/${encodeURIComponent(directorName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('client-daemon-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const clientName = String(form.get('client_name') ?? '').trim();
+        const payload = {
+          address: String(form.get('address') ?? '').trim(),
+          port: String(form.get('port') ?? '').trim(),
+          sd_connect_timeout: String(form.get('sd_connect_timeout') ?? '').trim(),
+          heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
+          maximum_network_buffer_size: String(form.get('maximum_network_buffer_size') ?? '').trim(),
+          description: String(form.get('description') ?? '').trim(),
+          working_directory: String(form.get('working_directory') ?? '').trim(),
+          plugin_directory: String(form.get('plugin_directory') ?? '').trim(),
+          scripts_directory: String(form.get('scripts_directory') ?? '').trim(),
+          messages: String(form.get('messages') ?? '').trim(),
+        };
+        if (!payload.address) { delete payload.address; }
+        if (!payload.port) { delete payload.port; } else { payload.port = Number(payload.port); }
+        if (!payload.sd_connect_timeout) { delete payload.sd_connect_timeout; } else { payload.sd_connect_timeout = Number(payload.sd_connect_timeout); }
+        if (!payload.heartbeat_interval) { delete payload.heartbeat_interval; } else { payload.heartbeat_interval = Number(payload.heartbeat_interval); }
+        if (!payload.maximum_network_buffer_size) { delete payload.maximum_network_buffer_size; } else { payload.maximum_network_buffer_size = Number(payload.maximum_network_buffer_size); }
+        if (!payload.description) { delete payload.description; }
+        if (!payload.working_directory) { delete payload.working_directory; }
+        if (!payload.plugin_directory) { delete payload.plugin_directory; }
+        if (!payload.scripts_directory) { delete payload.scripts_directory; }
+        if (!payload.messages) { delete payload.messages; }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/clients/${encodeURIComponent(clientName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('client-messages-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const clientName = String(form.get('client_name') ?? '').trim();
+        const messagesName = String(form.get('messages_name') ?? '').trim();
+        const rawEntries = String(form.get('entries') ?? '');
+        const entries = rawEntries.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const payload = {
+          description: String(form.get('description') ?? '').trim(),
+          entries,
+        };
+        if (!payload.description) { delete payload.description; }
+        if (payload.entries.length === 0) { delete payload.entries; }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/clients/${encodeURIComponent(clientName)}/messages/${encodeURIComponent(messagesName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('client-messages-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('client-messages-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const clientName = String(form.get('client_name') ?? '').trim();
+        const messagesName = String(form.get('messages_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/clients/${encodeURIComponent(clientName)}/messages/${encodeURIComponent(messagesName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
     document.getElementById('director-client-form').addEventListener(
       'submit',
       async (event) => {
@@ -2878,12 +3109,28 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const storageName = String(form.get('storage_name') ?? '').trim();
         const payload = {
+          address: String(form.get('address') ?? '').trim(),
+          port: String(form.get('port') ?? '').trim(),
+          sd_connect_timeout: String(form.get('sd_connect_timeout') ?? '').trim(),
+          fd_connect_timeout: String(form.get('fd_connect_timeout') ?? '').trim(),
+          heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
+          checkpoint_interval: String(form.get('checkpoint_interval') ?? '').trim(),
+          client_connect_wait: String(form.get('client_connect_wait') ?? '').trim(),
+          maximum_network_buffer_size: String(form.get('maximum_network_buffer_size') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
           working_directory: String(form.get('working_directory') ?? '').trim(),
           plugin_directory: String(form.get('plugin_directory') ?? '').trim(),
           scripts_directory: String(form.get('scripts_directory') ?? '').trim(),
           messages: String(form.get('messages') ?? '').trim(),
         };
+        if (!payload.address) { delete payload.address; }
+        if (!payload.port) { delete payload.port; } else { payload.port = Number(payload.port); }
+        if (!payload.sd_connect_timeout) { delete payload.sd_connect_timeout; } else { payload.sd_connect_timeout = Number(payload.sd_connect_timeout); }
+        if (!payload.fd_connect_timeout) { delete payload.fd_connect_timeout; } else { payload.fd_connect_timeout = Number(payload.fd_connect_timeout); }
+        if (!payload.heartbeat_interval) { delete payload.heartbeat_interval; } else { payload.heartbeat_interval = Number(payload.heartbeat_interval); }
+        if (!payload.checkpoint_interval) { delete payload.checkpoint_interval; } else { payload.checkpoint_interval = Number(payload.checkpoint_interval); }
+        if (!payload.client_connect_wait) { delete payload.client_connect_wait; } else { payload.client_connect_wait = Number(payload.client_connect_wait); }
+        if (!payload.maximum_network_buffer_size) { delete payload.maximum_network_buffer_size; } else { payload.maximum_network_buffer_size = Number(payload.maximum_network_buffer_size); }
         if (!payload.description) { delete payload.description; }
         if (!payload.working_directory) { delete payload.working_directory; }
         if (!payload.plugin_directory) { delete payload.plugin_directory; }
@@ -3808,6 +4055,140 @@ http::response<http::string_body> HandleDeploymentClientRequest(
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
+http::response<http::string_body> HandleDeploymentClientDaemonPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view client_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseStorageDaemonRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  ClientDaemonResourceSpec resource_spec{
+      .address = spec->address,
+      .port = spec->port,
+      .sd_connect_timeout = spec->sd_connect_timeout,
+      .heartbeat_interval = spec->heartbeat_interval,
+      .maximum_network_buffer_size = spec->maximum_network_buffer_size,
+      .description = spec->description,
+      .working_directory = spec->working_directory,
+      .plugin_directory = spec->plugin_directory,
+      .scripts_directory = spec->scripts_directory,
+      .messages = spec->messages,
+  };
+  auto result = state.UpsertClientDaemonResource(deployment_id, client_name,
+                                                 resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto client_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request, DumpJson(client_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "client_name",
+                      json_string(std::string{client_name}.c_str()));
+  json_object_set(root.get(), "client", client_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentClientMessagesPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view client_name,
+    std::string_view messages_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorMessagesRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  ClientMessagesResourceSpec resource_spec{
+      .description = spec->description,
+      .entries = spec->entries,
+  };
+  auto result = state.UpsertClientMessagesResource(
+      deployment_id, client_name, messages_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto client_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request, DumpJson(client_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "client_name",
+                      json_string(std::string{client_name}.c_str()));
+  json_object_set_new(root.get(), "messages_name",
+                      json_string(std::string{messages_name}.c_str()));
+  json_object_set(root.get(), "client", client_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentClientMessagesDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view client_name,
+    std::string_view messages_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteClientMessagesResource(deployment_id, client_name,
+                                                   messages_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto client_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request, DumpJson(client_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "client_name",
+                      json_string(std::string{client_name}.c_str()));
+  json_object_set_new(root.get(), "messages_name",
+                      json_string(std::string{messages_name}.c_str()));
+  json_object_set(root.get(), "client", client_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
 http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
     ServiceState& state,
     const http::request<http::string_body>& request,
@@ -3851,6 +4232,52 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
+http::response<http::string_body>
+HandleDeploymentClientDirectorStubDeleteRequest(ServiceState& state,
+                                                std::string_view deployment_id,
+                                                std::string_view client_name,
+                                                std::string_view director_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteClientDirectorStub(deployment_id, client_name,
+                                               director_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "client_name",
+                      json_string(std::string{client_name}.c_str()));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "deleted", json_true());
+  json_object_set_new(root.get(), "client_removed",
+                      result.value->has_value() ? json_false() : json_true());
+
+  if (result.value->has_value()) {
+    bool parser_initialized = false;
+    auto client_json
+        = BuildDeploymentConfigDocument(**result.value, parser_initialized);
+    if (!parser_initialized) {
+      return JsonResponse(http::status::bad_request,
+                          DumpJson(client_json.get()));
+    }
+    json_object_set(root.get(), "client", client_json.get());
+  } else {
+    json_object_set_new(root.get(), "client", json_null());
+  }
+
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
 http::response<http::string_body> HandleDeploymentStorageDaemonPutRequest(
     ServiceState& state,
     const http::request<http::string_body>& request,
@@ -3867,6 +4294,14 @@ http::response<http::string_body> HandleDeploymentStorageDaemonPutRequest(
   if (!spec) { return ErrorResponse(http::status::bad_request, error); }
 
   StorageDaemonResourceSpec resource_spec{
+      .address = spec->address,
+      .port = spec->port,
+      .sd_connect_timeout = spec->sd_connect_timeout,
+      .fd_connect_timeout = spec->fd_connect_timeout,
+      .heartbeat_interval = spec->heartbeat_interval,
+      .checkpoint_interval = spec->checkpoint_interval,
+      .client_connect_wait = spec->client_connect_wait,
+      .maximum_network_buffer_size = spec->maximum_network_buffer_size,
       .description = spec->description,
       .working_directory = spec->working_directory,
       .plugin_directory = spec->plugin_directory,
@@ -6190,6 +6625,17 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
     return std::nullopt;
   }
 
+  auto* address = json_object_get(root.get(), "address");
+  auto* port = json_object_get(root.get(), "port");
+  auto* sd_connect_timeout = json_object_get(root.get(), "sd_connect_timeout");
+  auto* fd_connect_timeout = json_object_get(root.get(), "fd_connect_timeout");
+  auto* heartbeat_interval = json_object_get(root.get(), "heartbeat_interval");
+  auto* checkpoint_interval
+      = json_object_get(root.get(), "checkpoint_interval");
+  auto* client_connect_wait
+      = json_object_get(root.get(), "client_connect_wait");
+  auto* maximum_network_buffer_size
+      = json_object_get(root.get(), "maximum_network_buffer_size");
   auto* description = json_object_get(root.get(), "description");
   auto* working_directory = json_object_get(root.get(), "working_directory");
   auto* plugin_directory = json_object_get(root.get(), "plugin_directory");
@@ -6203,15 +6649,100 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
     }
     return true;
   };
-  if (!require_string(description, "description")
+  if (!require_string(address, "address")
+      || (port && !json_is_null(port) && !json_is_integer(port))
+      || (sd_connect_timeout && !json_is_null(sd_connect_timeout)
+          && !json_is_integer(sd_connect_timeout))
+      || (fd_connect_timeout && !json_is_null(fd_connect_timeout)
+          && !json_is_integer(fd_connect_timeout))
+      || (heartbeat_interval && !json_is_null(heartbeat_interval)
+          && !json_is_integer(heartbeat_interval))
+      || (checkpoint_interval && !json_is_null(checkpoint_interval)
+          && !json_is_integer(checkpoint_interval))
+      || (client_connect_wait && !json_is_null(client_connect_wait)
+          && !json_is_integer(client_connect_wait))
+      || (maximum_network_buffer_size
+          && !json_is_null(maximum_network_buffer_size)
+          && !json_is_integer(maximum_network_buffer_size))
+      || !require_string(description, "description")
       || !require_string(working_directory, "working_directory")
       || !require_string(plugin_directory, "plugin_directory")
       || !require_string(scripts_directory, "scripts_directory")
       || !require_string(messages, "messages")) {
+    if (port && !json_is_null(port) && !json_is_integer(port)) {
+      error = "field 'port' must be an integer when provided.";
+    } else if (sd_connect_timeout && !json_is_null(sd_connect_timeout)
+               && !json_is_integer(sd_connect_timeout)) {
+      error = "field 'sd_connect_timeout' must be an integer when provided.";
+    } else if (fd_connect_timeout && !json_is_null(fd_connect_timeout)
+               && !json_is_integer(fd_connect_timeout)) {
+      error = "field 'fd_connect_timeout' must be an integer when provided.";
+    } else if (heartbeat_interval && !json_is_null(heartbeat_interval)
+               && !json_is_integer(heartbeat_interval)) {
+      error = "field 'heartbeat_interval' must be an integer when provided.";
+    } else if (checkpoint_interval && !json_is_null(checkpoint_interval)
+               && !json_is_integer(checkpoint_interval)) {
+      error = "field 'checkpoint_interval' must be an integer when provided.";
+    } else if (client_connect_wait && !json_is_null(client_connect_wait)
+               && !json_is_integer(client_connect_wait)) {
+      error = "field 'client_connect_wait' must be an integer when provided.";
+    } else if (maximum_network_buffer_size
+               && !json_is_null(maximum_network_buffer_size)
+               && !json_is_integer(maximum_network_buffer_size)) {
+      error
+          = "field 'maximum_network_buffer_size' must be an integer when "
+            "provided.";
+    }
     return std::nullopt;
   }
 
   StorageDaemonRequestSpec spec{};
+  if (address && json_is_string(address)) {
+    spec.address = std::string{json_string_value(address)};
+  }
+  if (port && json_is_integer(port)) {
+    const auto value = json_integer_value(port);
+    if (value <= 0 || value > 65535) {
+      error = "field 'port' must be between 1 and 65535.";
+      return std::nullopt;
+    }
+    spec.port = static_cast<uint16_t>(value);
+  }
+  auto parse_non_negative_u64
+      = [&error](json_t* value, const char* field,
+                 std::optional<uint64_t>& target) -> bool {
+    if (!value || !json_is_integer(value)) { return true; }
+    const auto raw = json_integer_value(value);
+    if (raw < 0) {
+      error = std::string{"field '"} + field + "' must be non-negative.";
+      return false;
+    }
+    target = static_cast<uint64_t>(raw);
+    return true;
+  };
+  if (!parse_non_negative_u64(sd_connect_timeout, "sd_connect_timeout",
+                              spec.sd_connect_timeout)
+      || !parse_non_negative_u64(fd_connect_timeout, "fd_connect_timeout",
+                                 spec.fd_connect_timeout)
+      || !parse_non_negative_u64(heartbeat_interval, "heartbeat_interval",
+                                 spec.heartbeat_interval)
+      || !parse_non_negative_u64(checkpoint_interval, "checkpoint_interval",
+                                 spec.checkpoint_interval)
+      || !parse_non_negative_u64(client_connect_wait, "client_connect_wait",
+                                 spec.client_connect_wait)) {
+    return std::nullopt;
+  }
+  if (maximum_network_buffer_size
+      && json_is_integer(maximum_network_buffer_size)) {
+    const auto value = json_integer_value(maximum_network_buffer_size);
+    if (value < 0 || value > std::numeric_limits<uint32_t>::max()) {
+      error
+          = "field 'maximum_network_buffer_size' must be between 0 and "
+            "4294967295.";
+      return std::nullopt;
+    }
+    spec.maximum_network_buffer_size = static_cast<uint32_t>(value);
+  }
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
   }
@@ -6626,6 +7157,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
     return HandleDeploymentClientRequest(state, path_parts[2], path_parts[4]);
   }
 
+  if (path_parts.size() == 5 && path_parts[3] == "clients"
+      && request.method() == http::verb::put) {
+    return HandleDeploymentClientDaemonPutRequest(state, request, path_parts[2],
+                                                  path_parts[4]);
+  }
+
   if (path_parts.size() == 5 && path_parts[3] == "storages"
       && request.method() == http::verb::put) {
     return HandleDeploymentStorageDaemonPutRequest(
@@ -6633,9 +7170,27 @@ http::response<http::string_body> HandleDeploymentsRequest(
   }
 
   if (path_parts.size() == 7 && path_parts[3] == "clients"
+      && path_parts[5] == "messages" && request.method() == http::verb::put) {
+    return HandleDeploymentClientMessagesPutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "clients"
+      && path_parts[5] == "messages"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentClientMessagesDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "clients"
       && path_parts[5] == "directors" && request.method() == http::verb::put) {
     return HandleDeploymentClientDirectorStubPutRequest(
         state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "clients"
+      && path_parts[5] == "directors"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentClientDirectorStubDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
   if (path_parts.size() == 7 && path_parts[3] == "storages"

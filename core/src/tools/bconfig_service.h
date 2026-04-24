@@ -109,6 +109,24 @@ struct ClientDirectorStubSpec {
   std::optional<std::string> description{};
 };
 
+struct ClientMessagesResourceSpec {
+  std::optional<std::string> description{};
+  std::optional<std::vector<std::string>> entries{};
+};
+
+struct ClientDaemonResourceSpec {
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
+  std::optional<uint64_t> sd_connect_timeout{};
+  std::optional<uint64_t> heartbeat_interval{};
+  std::optional<uint32_t> maximum_network_buffer_size{};
+  std::optional<std::string> description{};
+  std::optional<std::string> working_directory{};
+  std::optional<std::string> plugin_directory{};
+  std::optional<std::string> scripts_directory{};
+  std::optional<std::string> messages{};
+};
+
 struct DirectorClientResourceSpec {
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
@@ -260,6 +278,14 @@ struct StorageDeviceResourceSpec {
 };
 
 struct StorageDaemonResourceSpec {
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
+  std::optional<uint64_t> sd_connect_timeout{};
+  std::optional<uint64_t> fd_connect_timeout{};
+  std::optional<uint64_t> heartbeat_interval{};
+  std::optional<uint64_t> checkpoint_interval{};
+  std::optional<uint64_t> client_connect_wait{};
+  std::optional<uint32_t> maximum_network_buffer_size{};
   std::optional<std::string> description{};
   std::optional<std::string> working_directory{};
   std::optional<std::string> plugin_directory{};
@@ -344,6 +370,23 @@ class ServiceState {
       std::string_view client_name,
       std::string_view director_name,
       const ClientDirectorStubSpec& spec) const;
+  OperationResult<std::optional<DeploymentConfigRecord>>
+  DeleteClientDirectorStub(std::string_view deployment_id,
+                           std::string_view client_name,
+                           std::string_view director_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertClientMessagesResource(
+      std::string_view deployment_id,
+      std::string_view client_name,
+      std::string_view messages_name,
+      const ClientMessagesResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteClientMessagesResource(
+      std::string_view deployment_id,
+      std::string_view client_name,
+      std::string_view messages_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertClientDaemonResource(
+      std::string_view deployment_id,
+      std::string_view client_name,
+      const ClientDaemonResourceSpec& spec) const;
   OperationResult<DeploymentConfigRecord> UpsertDirectorClientResource(
       std::string_view deployment_id,
       std::string_view director_name,
