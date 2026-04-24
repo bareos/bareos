@@ -116,6 +116,7 @@ struct ClientMessagesResourceSpec {
 
 struct ClientDaemonResourceSpec {
   std::optional<std::string> address{};
+  std::optional<std::vector<std::string>> addresses{};
   std::optional<std::string> source_address{};
   std::optional<uint16_t> port{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -135,9 +136,13 @@ struct ClientDaemonResourceSpec {
   std::optional<std::string> tls_certificate_revocation_list{};
   std::optional<std::string> tls_certificate{};
   std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
   std::optional<bool> pki_signatures{};
   std::optional<bool> pki_encryption{};
   std::optional<std::string> pki_key_pair{};
+  std::optional<std::vector<std::string>> pki_signers{};
+  std::optional<std::vector<std::string>> pki_master_keys{};
+  std::optional<std::string> pki_cipher{};
   std::optional<bool> always_use_lmdb{};
   std::optional<uint32_t> lmdb_threshold{};
   std::optional<std::string> ver_id{};
@@ -152,6 +157,9 @@ struct ClientDaemonResourceSpec {
   std::optional<std::string> description{};
   std::optional<std::string> working_directory{};
   std::optional<std::string> plugin_directory{};
+  std::optional<std::vector<std::string>> plugin_names{};
+  std::optional<std::vector<std::string>> allowed_script_dirs{};
+  std::optional<std::vector<std::string>> allowed_job_commands{};
   std::optional<std::string> scripts_directory{};
   std::optional<std::string> messages{};
 };
@@ -308,6 +316,7 @@ struct StorageDeviceResourceSpec {
 
 struct StorageDaemonResourceSpec {
   std::optional<std::string> address{};
+  std::optional<std::vector<std::string>> addresses{};
   std::optional<std::string> source_address{};
   std::optional<uint16_t> port{};
   std::optional<bool> just_in_time_reservation{};
@@ -327,9 +336,13 @@ struct StorageDaemonResourceSpec {
   std::optional<std::string> tls_certificate_revocation_list{};
   std::optional<std::string> tls_certificate{};
   std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
   std::optional<bool> ndmp_enable{};
   std::optional<bool> ndmp_snooping{};
   std::optional<uint32_t> ndmp_log_level{};
+  std::optional<std::string> ndmp_address{};
+  std::optional<uint16_t> ndmp_port{};
+  std::optional<std::vector<std::string>> ndmp_addresses{};
   std::optional<bool> autoxflate_on_replication{};
   std::optional<bool> collect_device_statistics{};
   std::optional<bool> collect_job_statistics{};
@@ -350,6 +363,10 @@ struct StorageDaemonResourceSpec {
   std::optional<std::string> description{};
   std::optional<std::string> working_directory{};
   std::optional<std::string> plugin_directory{};
+  std::optional<std::vector<std::string>> plugin_names{};
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  std::optional<std::vector<std::string>> backend_directories{};
+#endif
   std::optional<std::string> scripts_directory{};
   std::optional<std::string> messages{};
 };

@@ -612,6 +612,34 @@ std::string BuildClientDirectorStubContent(std::string_view director_name,
 
 constexpr uint16_t kDefaultFileDaemonPort = 9102;
 constexpr uint16_t kDefaultStorageDaemonPort = 9103;
+
+constexpr std::pair<std::string_view, crypto_cipher_t> kPkiCipherNames[] = {
+    {"blowfish", CRYPTO_CIPHER_BLOWFISH_CBC},
+    {"3des", CRYPTO_CIPHER_3DES_CBC},
+    {"aes128", CRYPTO_CIPHER_AES_128_CBC},
+    {"aes192", CRYPTO_CIPHER_AES_192_CBC},
+    {"aes256", CRYPTO_CIPHER_AES_256_CBC},
+    {"camellia128", CRYPTO_CIPHER_CAMELLIA_128_CBC},
+    {"camellia192", CRYPTO_CIPHER_CAMELLIA_192_CBC},
+    {"camellia256", CRYPTO_CIPHER_CAMELLIA_256_CBC},
+    {"aes128hmacsha1", CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1},
+    {"aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1},
+};
+
+std::optional<std::string_view> RenderPkiCipherToken(crypto_cipher_t cipher)
+{
+  for (const auto& [name, value] : kPkiCipherNames) {
+    if (value == cipher) { return name; }
+  }
+  return std::nullopt;
+}
+
+bool IsSupportedPkiCipherToken(std::string_view token)
+{
+  return std::any_of(
+      std::begin(kPkiCipherNames), std::end(kPkiCipherNames),
+      [token](const auto& entry) { return entry.first == token; });
+}
 constexpr std::array<std::string_view, directordaemon::Num_ACL>
     kDirectorAclDirectiveNames
     = {"JobACL",   "ClientACL",       "StorageACL", "ScheduleACL",
@@ -676,6 +704,7 @@ struct DirectorMessagesContentSpec {
 
 struct StorageDaemonContentSpec {
   std::optional<std::string> address{};
+  std::vector<std::string> addresses{};
   std::optional<std::string> source_address{};
   std::optional<uint16_t> port{};
   std::optional<bool> just_in_time_reservation{};
@@ -696,14 +725,21 @@ struct StorageDaemonContentSpec {
   std::optional<std::string> tls_certificate_revocation_list{};
   std::optional<std::string> tls_certificate{};
   std::optional<std::string> tls_key{};
+  std::vector<std::string> tls_allowed_cn{};
   std::optional<bool> pki_signatures{};
   std::optional<bool> pki_encryption{};
   std::optional<std::string> pki_key_pair{};
+  std::vector<std::string> pki_signers{};
+  std::vector<std::string> pki_master_keys{};
+  std::optional<std::string> pki_cipher{};
   std::optional<bool> always_use_lmdb{};
   std::optional<uint32_t> lmdb_threshold{};
   std::optional<bool> ndmp_enable{};
   std::optional<bool> ndmp_snooping{};
   std::optional<uint32_t> ndmp_log_level{};
+  std::optional<std::string> ndmp_address{};
+  std::optional<uint16_t> ndmp_port{};
+  std::vector<std::string> ndmp_addresses{};
   std::optional<bool> autoxflate_on_replication{};
   std::optional<bool> collect_device_statistics{};
   std::optional<bool> collect_job_statistics{};
@@ -725,6 +761,12 @@ struct StorageDaemonContentSpec {
   std::optional<std::string> description{};
   std::optional<std::string> working_directory{};
   std::optional<std::string> plugin_directory{};
+  std::vector<std::string> plugin_names{};
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  std::vector<std::string> backend_directories{};
+#endif
+  std::vector<std::string> allowed_script_dirs{};
+  std::vector<std::string> allowed_job_commands{};
   std::optional<std::string> scripts_directory{};
   std::optional<std::string> messages{};
 };
@@ -873,6 +915,97 @@ void AppendRepeatedBareosDirective(std::ostringstream& content,
     content << "  " << name << " = " << RenderBareosDirectiveValue(value)
             << "\n";
   }
+}
+
+void AppendRepeatedQuotedDirective(std::ostringstream& content,
+                                   std::string_view name,
+                                   const std::vector<std::string>& values)
+{
+  for (const auto& value : values) {
+    content << "  " << name << " = " << QuoteBareosString(value) << "\n";
+  }
+}
+
+std::vector<std::string> CopyAddressEntries(dlist<IPADDR>* addrs)
+{
+  std::vector<std::string> values;
+  if (!addrs) { return values; }
+
+  IPADDR* addr;
+  foreach_dlist (addr, addrs) {
+    char buffer[1024];
+    std::string entry{addr->build_address_str(buffer, sizeof(buffer), true)};
+    if (!entry.empty() && entry.back() == ' ') { entry.pop_back(); }
+    values.emplace_back(std::move(entry));
+  }
+  return values;
+}
+
+struct AddressEntrySpec {
+  std::string family{};
+  std::string address{};
+  uint16_t port{};
+};
+
+std::optional<AddressEntrySpec> ParseAddressEntry(std::string_view value)
+{
+  constexpr std::string_view prefix = "host[";
+  if (!value.starts_with(prefix) || value.size() <= prefix.size()
+      || value.back() != ']') {
+    return std::nullopt;
+  }
+
+  const auto inner
+      = value.substr(prefix.size(), value.size() - prefix.size() - 1);
+  const auto first = inner.find(';');
+  const auto second
+      = inner.find(';', first == std::string_view::npos ? first : first + 1);
+  if (first == std::string_view::npos || second == std::string_view::npos
+      || inner.find(';', second + 1) != std::string_view::npos) {
+    return std::nullopt;
+  }
+
+  const auto family = inner.substr(0, first);
+  const auto address = inner.substr(first + 1, second - first - 1);
+  const auto port_text = inner.substr(second + 1);
+  if ((family != "ipv4" && family != "ipv6") || address.empty()
+      || port_text.empty()) {
+    return std::nullopt;
+  }
+
+  uint32_t port = 0;
+  for (const char ch : port_text) {
+    if (ch < '0' || ch > '9') { return std::nullopt; }
+    port = port * 10 + static_cast<uint32_t>(ch - '0');
+    if (port > 65535) { return std::nullopt; }
+  }
+  if (port == 0) { return std::nullopt; }
+
+  return AddressEntrySpec{std::string{family}, std::string{address},
+                          static_cast<uint16_t>(port)};
+}
+
+bool AppendAddressBlock(std::ostringstream& content,
+                        std::string_view name,
+                        const std::vector<std::string>& values,
+                        std::string& error)
+{
+  if (values.empty()) { return true; }
+
+  content << "  " << name << " = {\n";
+  for (const auto& value : values) {
+    auto parsed = ParseAddressEntry(value);
+    if (!parsed) {
+      error = std::string{name}
+              + " entries must use host[ipv4;addr;port] or "
+                "host[ipv6;addr;port].";
+      return false;
+    }
+    content << "    " << parsed->family << " = { addr = " << parsed->address
+            << " ; port = " << parsed->port << " }\n";
+  }
+  content << "  }\n";
+  return true;
 }
 
 bool HasMemberSource(const BareosResource& resource,
@@ -1185,14 +1318,22 @@ std::string BuildDirectorMessagesResourceContent(
 
 std::string BuildStorageDaemonResourceContent(
     std::string_view storage_name,
-    const StorageDaemonContentSpec& spec)
+    const StorageDaemonContentSpec& spec,
+    std::string* error = nullptr)
 {
+  std::string local_error;
+  if (!error) { error = &local_error; }
   std::ostringstream content;
   content << "Storage {\n"
           << "  Name = " << QuoteBareosString(storage_name) << "\n";
-  AppendBareosDirective(content, "Address", spec.address);
+  if (!AppendAddressBlock(content, "Addresses", spec.addresses, *error)) {
+    return {};
+  }
+  if (spec.addresses.empty()) {
+    AppendBareosDirective(content, "Address", spec.address);
+    AppendIntegerDirective(content, "Port", spec.port);
+  }
   AppendBareosDirective(content, "SourceAddress", spec.source_address);
-  AppendIntegerDirective(content, "Port", spec.port);
   AppendBoolDirective(content, "JustInTimeReservation",
                       spec.just_in_time_reservation);
   AppendIntegerDirective(content, "MaximumConcurrentJobs",
@@ -1217,9 +1358,18 @@ std::string BuildStorageDaemonResourceContent(
                         spec.tls_certificate_revocation_list);
   AppendQuotedDirective(content, "TlsCertificate", spec.tls_certificate);
   AppendQuotedDirective(content, "TlsKey", spec.tls_key);
+  AppendRepeatedQuotedDirective(content, "TlsAllowedCn", spec.tls_allowed_cn);
   AppendBoolDirective(content, "NdmpEnable", spec.ndmp_enable);
   AppendBoolDirective(content, "NdmpSnooping", spec.ndmp_snooping);
   AppendIntegerDirective(content, "NdmpLogLevel", spec.ndmp_log_level);
+  if (!AppendAddressBlock(content, "NdmpAddresses", spec.ndmp_addresses,
+                          *error)) {
+    return {};
+  }
+  if (spec.ndmp_addresses.empty()) {
+    AppendBareosDirective(content, "NdmpAddress", spec.ndmp_address);
+    AppendIntegerDirective(content, "NdmpPort", spec.ndmp_port);
+  }
   AppendBoolDirective(content, "AutoXFlateOnReplication",
                       spec.autoxflate_on_replication);
   AppendBoolDirective(content, "CollectDeviceStatistics",
@@ -1252,6 +1402,15 @@ std::string BuildStorageDaemonResourceContent(
   AppendQuotedDirective(content, "Description", spec.description);
   AppendQuotedDirective(content, "WorkingDirectory", spec.working_directory);
   AppendQuotedDirective(content, "PluginDirectory", spec.plugin_directory);
+  AppendRepeatedBareosDirective(content, "PluginNames", spec.plugin_names);
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  AppendRepeatedQuotedDirective(content, "BackendDirectory",
+                                spec.backend_directories);
+#endif
+  AppendRepeatedQuotedDirective(content, "AllowedScriptDir",
+                                spec.allowed_script_dirs);
+  AppendRepeatedQuotedDirective(content, "AllowedJobCommand",
+                                spec.allowed_job_commands);
   AppendQuotedDirective(content, "ScriptsDirectory", spec.scripts_directory);
   AppendBareosDirective(content, "Messages", spec.messages);
   content << "}\n";
@@ -1260,14 +1419,22 @@ std::string BuildStorageDaemonResourceContent(
 
 std::string BuildClientDaemonResourceContent(
     std::string_view client_name,
-    const StorageDaemonContentSpec& spec)
+    const StorageDaemonContentSpec& spec,
+    std::string* error = nullptr)
 {
+  std::string local_error;
+  if (!error) { error = &local_error; }
   std::ostringstream content;
   content << "Client {\n"
           << "  Name = " << QuoteBareosString(client_name) << "\n";
-  AppendBareosDirective(content, "Address", spec.address);
+  if (!AppendAddressBlock(content, "Addresses", spec.addresses, *error)) {
+    return {};
+  }
+  if (spec.addresses.empty()) {
+    AppendBareosDirective(content, "Address", spec.address);
+    AppendIntegerDirective(content, "Port", spec.port);
+  }
   AppendBareosDirective(content, "SourceAddress", spec.source_address);
-  AppendIntegerDirective(content, "Port", spec.port);
   AppendIntegerDirective(content, "MaximumConcurrentJobs",
                          spec.maximum_concurrent_jobs);
   AppendIntegerDirective(content, "MaximumWorkersPerJob",
@@ -1292,9 +1459,13 @@ std::string BuildClientDaemonResourceContent(
                         spec.tls_certificate_revocation_list);
   AppendQuotedDirective(content, "TlsCertificate", spec.tls_certificate);
   AppendQuotedDirective(content, "TlsKey", spec.tls_key);
+  AppendRepeatedQuotedDirective(content, "TlsAllowedCn", spec.tls_allowed_cn);
   AppendBoolDirective(content, "PkiSignatures", spec.pki_signatures);
   AppendBoolDirective(content, "PkiEncryption", spec.pki_encryption);
   AppendQuotedDirective(content, "PkiKeyPair", spec.pki_key_pair);
+  AppendRepeatedQuotedDirective(content, "PkiSigner", spec.pki_signers);
+  AppendRepeatedQuotedDirective(content, "PkiMasterKey", spec.pki_master_keys);
+  AppendBareosDirective(content, "PkiCipher", spec.pki_cipher);
   AppendBoolDirective(content, "AlwaysUseLmdb", spec.always_use_lmdb);
   AppendIntegerDirective(content, "LmdbThreshold", spec.lmdb_threshold);
   AppendQuotedDirective(content, "VerId", spec.ver_id);
@@ -1313,6 +1484,11 @@ std::string BuildClientDaemonResourceContent(
   AppendQuotedDirective(content, "Description", spec.description);
   AppendQuotedDirective(content, "WorkingDirectory", spec.working_directory);
   AppendQuotedDirective(content, "PluginDirectory", spec.plugin_directory);
+  AppendRepeatedBareosDirective(content, "PluginNames", spec.plugin_names);
+  AppendRepeatedQuotedDirective(content, "AllowedScriptDir",
+                                spec.allowed_script_dirs);
+  AppendRepeatedQuotedDirective(content, "AllowedJobCommand",
+                                spec.allowed_job_commands);
   AppendQuotedDirective(content, "ScriptsDirectory", spec.scripts_directory);
   AppendBareosDirective(content, "Messages", spec.messages);
   content << "}\n";
@@ -2961,16 +3137,13 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
     }
 
     context.exists = true;
-    const bool has_address_source = HasMemberSource(
-        *client, {"Address", "Addresses", "FdAddress", "FdAddresses"});
+    const bool has_addresses_source
+        = HasMemberSource(*client, {"Addresses", "FdAddresses"});
+    const bool has_address_source
+        = HasMemberSource(*client, {"Address", "FdAddress"});
     const bool has_source_address_source
         = HasMemberSource(*client, {"SourceAddress", "FdSourceAddress"});
     const bool has_port_source = HasMemberSource(*client, {"Port", "FdPort"});
-    if (has_address_source && client->FDaddrs && client->FDaddrs->size() > 1) {
-      return {.error
-              = "client daemon resource '" + client_config.name
-                + "' uses multiple addresses, which are not managed yet."};
-    }
     if (has_source_address_source && client->FDsrc_addr
         && client->FDsrc_addr->size() > 1) {
       return {
@@ -2978,15 +3151,17 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
           = "client daemon resource '" + client_config.name
             + "' uses multiple source addresses, which are not managed yet."};
     }
-    if (has_address_source) {
+    if (has_addresses_source) {
+      context.content.addresses = CopyAddressEntries(client->FDaddrs);
+    } else if (has_address_source) {
       context.content.address = CopyFirstAddress(client->FDaddrs);
+    }
+    if (!has_addresses_source && has_port_source) {
+      const auto port = GetFirstPortHostOrder(client->FDaddrs);
+      if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
     }
     if (has_source_address_source) {
       context.content.source_address = CopyFirstAddress(client->FDsrc_addr);
-    }
-    if (has_port_source) {
-      const auto port = GetFirstPortHostOrder(client->FDaddrs);
-      if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
     }
     if (HasMemberSource(*client, {"MaximumConcurrentJobs"})) {
       context.content.maximum_concurrent_jobs = client->MaxConcurrentJobs;
@@ -3040,6 +3215,10 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
     if (!client->tls_cert_.keyfile_.empty()) {
       context.content.tls_key = client->tls_cert_.keyfile_;
     }
+    if (HasMemberSource(*client, {"TlsAllowedCn"})) {
+      context.content.tls_allowed_cn
+          = client->tls_cert_.allowed_certificate_common_names_;
+    }
     if (HasMemberSource(*client, {"PkiSignatures"})) {
       context.content.pki_signatures = client->pki_sign;
     }
@@ -3048,6 +3227,22 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
     }
     if (client->pki_keypair_file && client->pki_keypair_file[0] != '\0') {
       context.content.pki_key_pair = std::string{client->pki_keypair_file};
+    }
+    if (HasMemberSource(*client, {"PkiSigner"})) {
+      context.content.pki_signers
+          = CopyAclValues(client->pki_signing_key_files);
+    }
+    if (HasMemberSource(*client, {"PkiMasterKey"})) {
+      context.content.pki_master_keys
+          = CopyAclValues(client->pki_master_key_files);
+    }
+    if (HasMemberSource(*client, {"PkiCipher"})) {
+      auto pki_cipher = RenderPkiCipherToken(client->pki_cipher);
+      if (!pki_cipher) {
+        return {.error = "client daemon resource '" + client_config.name
+                         + "' uses an unsupported PKI cipher value."};
+      }
+      context.content.pki_cipher = std::string{*pki_cipher};
     }
     if (HasMemberSource(*client, {"AlwaysUseLmdb"})) {
       context.content.always_use_lmdb = client->always_use_lmdb;
@@ -3098,6 +3293,17 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
     }
     if (client->plugin_directory && client->plugin_directory[0] != '\0') {
       context.content.plugin_directory = std::string{client->plugin_directory};
+    }
+    if (HasMemberSource(*client, {"PluginNames"})) {
+      context.content.plugin_names = CopyAclValues(client->plugin_names);
+    }
+    if (HasMemberSource(*client, {"AllowedScriptDir"})) {
+      context.content.allowed_script_dirs
+          = CopyAclValues(client->allowed_script_dirs);
+    }
+    if (HasMemberSource(*client, {"AllowedJobCommand"})) {
+      context.content.allowed_job_commands
+          = CopyAclValues(client->allowed_job_cmds);
     }
     if (client->scripts_directory && client->scripts_directory[0] != '\0') {
       context.content.scripts_directory
@@ -3163,17 +3369,18 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     }
 
     context.exists = true;
-    const bool has_address_source = HasMemberSource(
-        *storage, {"Address", "Addresses", "SdAddress", "SdAddresses"});
+    const bool has_addresses_source
+        = HasMemberSource(*storage, {"Addresses", "SdAddresses"});
+    const bool has_address_source
+        = HasMemberSource(*storage, {"Address", "SdAddress"});
     const bool has_source_address_source
         = HasMemberSource(*storage, {"SourceAddress", "SdSourceAddress"});
     const bool has_port_source = HasMemberSource(*storage, {"Port", "SdPort"});
-    if (has_address_source && storage->SDaddrs
-        && storage->SDaddrs->size() > 1) {
-      return {.error
-              = "storage-daemon storage resource '" + storage_config.name
-                + "' uses multiple addresses, which are not managed yet."};
-    }
+    const bool has_ndmp_addresses_source
+        = HasMemberSource(*storage, {"NdmpAddresses"});
+    const bool has_ndmp_address_source
+        = HasMemberSource(*storage, {"NdmpAddress"});
+    const bool has_ndmp_port_source = HasMemberSource(*storage, {"NdmpPort"});
     if (has_source_address_source && storage->SDsrc_addr
         && storage->SDsrc_addr->size() > 1) {
       return {
@@ -3181,15 +3388,32 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
           = "storage-daemon storage resource '" + storage_config.name
             + "' uses multiple source addresses, which are not managed yet."};
     }
-    if (has_address_source) {
+    if (!has_ndmp_addresses_source && has_ndmp_address_source
+        && storage->NDMPaddrs && storage->NDMPaddrs->size() > 1) {
+      return {.error
+              = "storage-daemon storage resource '" + storage_config.name
+                + "' uses multiple NDMP addresses, which are not managed yet."};
+    }
+    if (has_addresses_source) {
+      context.content.addresses = CopyAddressEntries(storage->SDaddrs);
+    } else if (has_address_source) {
       context.content.address = CopyFirstAddress(storage->SDaddrs);
+    }
+    if (!has_addresses_source && has_port_source) {
+      const auto port = GetFirstPortHostOrder(storage->SDaddrs);
+      if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
     }
     if (has_source_address_source) {
       context.content.source_address = CopyFirstAddress(storage->SDsrc_addr);
     }
-    if (has_port_source) {
-      const auto port = GetFirstPortHostOrder(storage->SDaddrs);
-      if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
+    if (has_ndmp_addresses_source) {
+      context.content.ndmp_addresses = CopyAddressEntries(storage->NDMPaddrs);
+    } else if (has_ndmp_address_source) {
+      context.content.ndmp_address = CopyFirstAddress(storage->NDMPaddrs);
+    }
+    if (has_ndmp_port_source) {
+      const auto port = GetFirstPortHostOrder(storage->NDMPaddrs);
+      if (port > 0) { context.content.ndmp_port = static_cast<uint16_t>(port); }
     }
     if (HasMemberSource(*storage, {"JustInTimeReservation"})) {
       context.content.just_in_time_reservation
@@ -3243,6 +3467,10 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     }
     if (!storage->tls_cert_.keyfile_.empty()) {
       context.content.tls_key = storage->tls_cert_.keyfile_;
+    }
+    if (HasMemberSource(*storage, {"TlsAllowedCn"})) {
+      context.content.tls_allowed_cn
+          = storage->tls_cert_.allowed_certificate_common_names_;
     }
     if (HasMemberSource(*storage, {"NdmpEnable"})) {
       context.content.ndmp_enable = storage->ndmp_enable;
@@ -3329,6 +3557,14 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     if (storage->plugin_directory && storage->plugin_directory[0] != '\0') {
       context.content.plugin_directory = std::string{storage->plugin_directory};
     }
+    if (HasMemberSource(*storage, {"PluginNames"})) {
+      context.content.plugin_names = CopyAclValues(storage->plugin_names);
+    }
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+    if (HasMemberSource(*storage, {"BackendDirectory"})) {
+      context.content.backend_directories = storage->backend_directories;
+    }
+#endif
     if (storage->scripts_directory && storage->scripts_directory[0] != '\0') {
       context.content.scripts_directory
           = std::string{storage->scripts_directory};
@@ -5455,6 +5691,11 @@ ServiceState::UpsertClientDaemonResource(
             = "client daemon source_address must be a bare Bareos token "
               "without whitespace or quotes."};
   }
+  if (spec.pki_cipher && !IsSupportedPkiCipherToken(*spec.pki_cipher)) {
+    return {.error
+            = "client daemon pki_cipher must be one of the supported filed "
+              "PKI cipher tokens."};
+  }
   if (spec.port && *spec.port == 0) {
     return {.error = "client daemon port must be greater than zero."};
   }
@@ -5474,8 +5715,16 @@ ServiceState::UpsertClientDaemonResource(
 
   auto content = context.value->content;
   if (spec.address) { content.address = spec.address; }
+  if (spec.addresses) {
+    content.addresses = *spec.addresses;
+    content.address.reset();
+    content.port.reset();
+  }
   if (spec.source_address) { content.source_address = spec.source_address; }
-  if (spec.port) { content.port = spec.port; }
+  if (spec.port) {
+    content.port = spec.port;
+    content.addresses.clear();
+  }
   if (spec.maximum_concurrent_jobs) {
     content.maximum_concurrent_jobs = spec.maximum_concurrent_jobs;
   }
@@ -5512,9 +5761,13 @@ ServiceState::UpsertClientDaemonResource(
   }
   if (spec.tls_certificate) { content.tls_certificate = spec.tls_certificate; }
   if (spec.tls_key) { content.tls_key = spec.tls_key; }
+  if (spec.tls_allowed_cn) { content.tls_allowed_cn = *spec.tls_allowed_cn; }
   if (spec.pki_signatures) { content.pki_signatures = spec.pki_signatures; }
   if (spec.pki_encryption) { content.pki_encryption = spec.pki_encryption; }
   if (spec.pki_key_pair) { content.pki_key_pair = spec.pki_key_pair; }
+  if (spec.pki_signers) { content.pki_signers = *spec.pki_signers; }
+  if (spec.pki_master_keys) { content.pki_master_keys = *spec.pki_master_keys; }
+  if (spec.pki_cipher) { content.pki_cipher = spec.pki_cipher; }
   if (spec.always_use_lmdb) { content.always_use_lmdb = spec.always_use_lmdb; }
   if (spec.lmdb_threshold) { content.lmdb_threshold = spec.lmdb_threshold; }
   if (spec.ver_id) { content.ver_id = spec.ver_id; }
@@ -5545,12 +5798,22 @@ ServiceState::UpsertClientDaemonResource(
   if (spec.plugin_directory) {
     content.plugin_directory = spec.plugin_directory;
   }
+  if (spec.plugin_names) { content.plugin_names = *spec.plugin_names; }
+  if (spec.allowed_script_dirs) {
+    content.allowed_script_dirs = *spec.allowed_script_dirs;
+  }
+  if (spec.allowed_job_commands) {
+    content.allowed_job_commands = *spec.allowed_job_commands;
+  }
   if (spec.scripts_directory) {
     content.scripts_directory = spec.scripts_directory;
   }
   if (spec.messages) { content.messages = spec.messages; }
 
-  const auto rendered = BuildClientDaemonResourceContent(client_name, content);
+  std::string render_error;
+  const auto rendered
+      = BuildClientDaemonResourceContent(client_name, content, &render_error);
+  if (rendered.empty()) { return {.error = std::move(render_error)}; }
   const auto resource_directory
       = client_config.value->path / "bareos-fd.d" / "client";
   const bool file_existed = std::filesystem::exists(context.value->file_path);
@@ -8299,8 +8562,16 @@ ServiceState::UpsertStorageDaemonResource(
             = "storage-daemon source_address must be a bare Bareos token "
               "without whitespace or quotes."};
   }
+  if (spec.ndmp_address && !IsSafeBareosToken(*spec.ndmp_address)) {
+    return {.error
+            = "storage-daemon ndmp_address must be a bare Bareos token "
+              "without whitespace or quotes."};
+  }
   if (spec.port && *spec.port == 0) {
     return {.error = "storage-daemon port must be greater than zero."};
+  }
+  if (spec.ndmp_port && *spec.ndmp_port == 0) {
+    return {.error = "storage-daemon ndmp_port must be greater than zero."};
   }
   auto storage_config = GetDeploymentConfig(
       deployment_id, bconfig::Component::kStorage, storage_name);
@@ -8319,8 +8590,16 @@ ServiceState::UpsertStorageDaemonResource(
 
   auto content = context.value->content;
   if (spec.address) { content.address = spec.address; }
+  if (spec.addresses) {
+    content.addresses = *spec.addresses;
+    content.address.reset();
+    content.port.reset();
+  }
   if (spec.source_address) { content.source_address = spec.source_address; }
-  if (spec.port) { content.port = spec.port; }
+  if (spec.port) {
+    content.port = spec.port;
+    content.addresses.clear();
+  }
   if (spec.just_in_time_reservation) {
     content.just_in_time_reservation = spec.just_in_time_reservation;
   }
@@ -8357,9 +8636,19 @@ ServiceState::UpsertStorageDaemonResource(
   }
   if (spec.tls_certificate) { content.tls_certificate = spec.tls_certificate; }
   if (spec.tls_key) { content.tls_key = spec.tls_key; }
+  if (spec.tls_allowed_cn) { content.tls_allowed_cn = *spec.tls_allowed_cn; }
   if (spec.ndmp_enable) { content.ndmp_enable = spec.ndmp_enable; }
   if (spec.ndmp_snooping) { content.ndmp_snooping = spec.ndmp_snooping; }
   if (spec.ndmp_log_level) { content.ndmp_log_level = spec.ndmp_log_level; }
+  if (spec.ndmp_addresses) {
+    content.ndmp_addresses = *spec.ndmp_addresses;
+    content.ndmp_address.reset();
+    content.ndmp_port.reset();
+  } else if (spec.ndmp_address || spec.ndmp_port) {
+    content.ndmp_addresses.clear();
+  }
+  if (spec.ndmp_address) { content.ndmp_address = spec.ndmp_address; }
+  if (spec.ndmp_port) { content.ndmp_port = spec.ndmp_port; }
   if (spec.autoxflate_on_replication) {
     content.autoxflate_on_replication = spec.autoxflate_on_replication;
   }
@@ -8414,13 +8703,21 @@ ServiceState::UpsertStorageDaemonResource(
   if (spec.plugin_directory) {
     content.plugin_directory = spec.plugin_directory;
   }
+  if (spec.plugin_names) { content.plugin_names = *spec.plugin_names; }
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  if (spec.backend_directories) {
+    content.backend_directories = *spec.backend_directories;
+  }
+#endif
   if (spec.scripts_directory) {
     content.scripts_directory = spec.scripts_directory;
   }
   if (spec.messages) { content.messages = spec.messages; }
 
+  std::string render_error;
   const auto rendered
-      = BuildStorageDaemonResourceContent(storage_name, content);
+      = BuildStorageDaemonResourceContent(storage_name, content, &render_error);
+  if (!render_error.empty()) { return {.error = render_error}; }
   const auto resource_directory
       = storage_config.value->path / "bareos-sd.d" / "storage";
   const bool file_existed = std::filesystem::exists(context.value->file_path);

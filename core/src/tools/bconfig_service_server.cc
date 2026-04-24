@@ -154,6 +154,7 @@ struct StorageDeviceRequestSpec {
 
 struct StorageDaemonRequestSpec {
   std::optional<std::string> address{};
+  std::optional<std::vector<std::string>> addresses{};
   std::optional<std::string> source_address{};
   std::optional<uint16_t> port{};
   std::optional<bool> just_in_time_reservation{};
@@ -174,14 +175,21 @@ struct StorageDaemonRequestSpec {
   std::optional<std::string> tls_certificate_revocation_list{};
   std::optional<std::string> tls_certificate{};
   std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
   std::optional<bool> pki_signatures{};
   std::optional<bool> pki_encryption{};
   std::optional<std::string> pki_key_pair{};
+  std::optional<std::vector<std::string>> pki_signers{};
+  std::optional<std::vector<std::string>> pki_master_keys{};
+  std::optional<std::string> pki_cipher{};
   std::optional<bool> always_use_lmdb{};
   std::optional<uint32_t> lmdb_threshold{};
   std::optional<bool> ndmp_enable{};
   std::optional<bool> ndmp_snooping{};
   std::optional<uint32_t> ndmp_log_level{};
+  std::optional<std::string> ndmp_address{};
+  std::optional<uint16_t> ndmp_port{};
+  std::optional<std::vector<std::string>> ndmp_addresses{};
   std::optional<bool> autoxflate_on_replication{};
   std::optional<bool> collect_device_statistics{};
   std::optional<bool> collect_job_statistics{};
@@ -203,6 +211,12 @@ struct StorageDaemonRequestSpec {
   std::optional<std::string> description{};
   std::optional<std::string> working_directory{};
   std::optional<std::string> plugin_directory{};
+  std::optional<std::vector<std::string>> plugin_names{};
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  std::optional<std::vector<std::string>> backend_directories{};
+#endif
+  std::optional<std::vector<std::string>> allowed_script_dirs{};
+  std::optional<std::vector<std::string>> allowed_job_commands{};
   std::optional<std::string> scripts_directory{};
   std::optional<std::string> messages{};
 };
@@ -723,6 +737,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="client-daemon-address" name="address"
                placeholder="client.example.com">
 
+        <label for="client-daemon-addresses">Addresses</label>
+        <textarea id="client-daemon-addresses" name="addresses"
+                  rows="3"
+                  placeholder="host[ipv4;192.0.2.10;9102]&#10;host[ipv6;::1;9102]"></textarea>
+
         <label for="client-daemon-source-address">SourceAddress</label>
         <input id="client-daemon-source-address" name="source_address"
                placeholder="192.0.2.10">
@@ -823,6 +842,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="client-daemon-tls-key" name="tls_key"
                placeholder="/etc/bareos/client.key">
 
+        <label for="client-daemon-tls-allowed-cn">TLS allowed CNs</label>
+        <textarea id="client-daemon-tls-allowed-cn" name="tls_allowed_cn"
+                  rows="3"
+                  placeholder="client-cn-1&#10;client-cn-2"></textarea>
+
         <label for="client-daemon-pki-signatures">PKI signatures</label>
         <select id="client-daemon-pki-signatures" name="pki_signatures">
           <option value="">Keep existing</option>
@@ -840,6 +864,20 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="client-daemon-pki-key-pair">PKI key pair</label>
         <input id="client-daemon-pki-key-pair" name="pki_key_pair"
                placeholder="/etc/bareos/client.pem">
+
+        <label for="client-daemon-pki-signers">PKI signer paths</label>
+        <textarea id="client-daemon-pki-signers" name="pki_signers"
+                  rows="3"
+                  placeholder="/etc/bareos/signer1.pem&#10;/etc/bareos/signer2.pem"></textarea>
+
+        <label for="client-daemon-pki-master-keys">PKI master key paths</label>
+        <textarea id="client-daemon-pki-master-keys" name="pki_master_keys"
+                  rows="3"
+                  placeholder="/etc/bareos/recipient1.pem&#10;/etc/bareos/recipient2.pem"></textarea>
+
+        <label for="client-daemon-pki-cipher">PKI cipher</label>
+        <input id="client-daemon-pki-cipher" name="pki_cipher"
+               placeholder="aes256">
 
         <label for="client-daemon-always-use-lmdb">Always use LMDB</label>
         <select id="client-daemon-always-use-lmdb" name="always_use_lmdb">
@@ -906,6 +944,21 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="client-daemon-plugin-directory">Plugin directory</label>
         <input id="client-daemon-plugin-directory" name="plugin_directory"
                placeholder="/usr/lib/bareos/plugins">
+
+        <label for="client-daemon-plugin-names">Plugin names</label>
+        <textarea id="client-daemon-plugin-names" name="plugin_names"
+                  rows="3"
+                  placeholder="python&#10;grpc"></textarea>
+
+        <label for="client-daemon-allowed-script-dirs">Allowed script dirs</label>
+        <textarea id="client-daemon-allowed-script-dirs"
+                  name="allowed_script_dirs" rows="3"
+                  placeholder="/usr/lib/bareos/scripts&#10;/opt/bareos/scripts"></textarea>
+
+        <label for="client-daemon-allowed-job-commands">Allowed job commands</label>
+        <textarea id="client-daemon-allowed-job-commands"
+                  name="allowed_job_commands" rows="3"
+                  placeholder="RunBeforeJob&#10;Estimate listing"></textarea>
 
         <label for="client-daemon-scripts-directory">Scripts directory</label>
         <input id="client-daemon-scripts-directory" name="scripts_directory"
@@ -1576,6 +1629,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="storage-daemon-address" name="address"
                placeholder="storage.example.com">
 
+        <label for="storage-daemon-addresses">Addresses</label>
+        <textarea id="storage-daemon-addresses" name="addresses"
+                  rows="3"
+                  placeholder="host[ipv4;192.0.2.20;9103]&#10;host[ipv6;::1;9103]"></textarea>
+
         <label for="storage-daemon-source-address">SourceAddress</label>
         <input id="storage-daemon-source-address" name="source_address"
                placeholder="192.0.2.20">
@@ -1741,6 +1799,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="storage-daemon-tls-key" name="tls_key"
                placeholder="/etc/bareos/storage.key">
 
+        <label for="storage-daemon-tls-allowed-cn">TLS allowed CNs</label>
+        <textarea id="storage-daemon-tls-allowed-cn" name="tls_allowed_cn"
+                  rows="3"
+                  placeholder="storage-cn-1&#10;storage-cn-2"></textarea>
+
         <label for="storage-daemon-just-in-time-reservation">Just in time reservation</label>
         <select id="storage-daemon-just-in-time-reservation"
                 name="just_in_time_reservation">
@@ -1766,6 +1829,19 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="storage-daemon-ndmp-log-level">NDMP log level</label>
         <input id="storage-daemon-ndmp-log-level" name="ndmp_log_level"
                type="number" min="0" placeholder="4">
+
+        <label for="storage-daemon-ndmp-address">NDMP address</label>
+        <input id="storage-daemon-ndmp-address" name="ndmp_address"
+               placeholder="192.0.2.30">
+
+        <label for="storage-daemon-ndmp-port">NDMP port</label>
+        <input id="storage-daemon-ndmp-port" name="ndmp_port" type="number"
+               min="1" max="65535" placeholder="10000">
+
+        <label for="storage-daemon-ndmp-addresses">NDMP addresses</label>
+        <textarea id="storage-daemon-ndmp-addresses" name="ndmp_addresses"
+                  rows="3"
+                  placeholder="host[ipv4;192.0.2.30;10001]&#10;host[ipv6;::1;10001]"></textarea>
 
         <label for="storage-daemon-sd-connect-timeout">Storage connect timeout</label>
         <input id="storage-daemon-sd-connect-timeout"
@@ -1808,6 +1884,15 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="storage-daemon-plugin-directory" name="plugin_directory"
                placeholder="/usr/lib/bareos/plugins">
 
+        <label for="storage-daemon-plugin-names">Plugin names</label>
+        <textarea id="storage-daemon-plugin-names" name="plugin_names"
+                  rows="3"
+                  placeholder="autochanger&#10;python"></textarea>
+
+        <label for="storage-daemon-backend-directories">Backend directories</label>
+        <textarea id="storage-daemon-backend-directories"
+                  name="backend_directories" rows="3"
+                  placeholder="/usr/lib/bareos/backends&#10;/opt/bareos/backends"></textarea>
         <label for="storage-daemon-scripts-directory">Scripts directory</label>
         <input id="storage-daemon-scripts-directory" name="scripts_directory"
                placeholder="/usr/lib/bareos/scripts">
@@ -2041,6 +2126,17 @@ const char* kTestUiHtmlTemplate = R"HTML(
       return new Promise((resolve) => setTimeout(resolve, milliseconds));
     }
 
+    function buildServiceUrl(url) {
+      if (!String(url).startsWith('/')) { return String(url); }
+
+      const pathname = window.location.pathname.replace(/\/+$/, '');
+      if (pathname === '' || pathname === '/ui') { return String(url); }
+      if (pathname.endsWith('/ui')) {
+        return pathname.slice(0, -3) + String(url);
+      }
+      return String(url);
+    }
+
     async function request(method, url, body) {
       const options = { method, headers: {} };
       if (body !== undefined) {
@@ -2048,8 +2144,22 @@ const char* kTestUiHtmlTemplate = R"HTML(
         options.body = JSON.stringify(body);
       }
 
-      const response = await fetch(url, options);
-      const text = await response.text();
+      const candidates = [];
+      const preferredUrl = buildServiceUrl(url);
+      candidates.push(preferredUrl);
+      if (preferredUrl !== String(url)) { candidates.push(String(url)); }
+
+      let requestUrl = candidates[0];
+      let response = null;
+      let text = '';
+      for (const candidate of candidates) {
+        requestUrl = candidate;
+        response = await fetch(candidate, options);
+        text = await response.text();
+        if (!(response.status === 404 && text.includes('"route not found."'))) {
+          break;
+        }
+      }
       let payload = text;
 
       try {
@@ -2057,7 +2167,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
       } catch (_) {}
 
       responsePanel.textContent =
-        `${method} ${url}\nHTTP ${response.status}\n\n${payload}`;
+        `${method} ${requestUrl}\nHTTP ${response.status}\n\n${payload}`;
 
       return { response, text, payload };
     }
@@ -2626,8 +2736,37 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const form = new FormData(event.target);
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const clientName = String(form.get('client_name') ?? '').trim();
+        const rawAddresses = String(form.get('addresses') ?? '');
+        const addresses = rawAddresses.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const rawTlsAllowedCn = String(form.get('tls_allowed_cn') ?? '');
+        const tlsAllowedCn = rawTlsAllowedCn.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const rawPkiSigners = String(form.get('pki_signers') ?? '');
+        const pkiSigners = rawPkiSigners.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const rawPkiMasterKeys = String(form.get('pki_master_keys') ?? '');
+        const pkiMasterKeys = rawPkiMasterKeys.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const rawPluginNames = String(form.get('plugin_names') ?? '');
+        const pluginNames = rawPluginNames.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const rawAllowedScriptDirs = String(form.get('allowed_script_dirs') ?? '');
+        const allowedScriptDirs = rawAllowedScriptDirs.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const rawAllowedJobCommands = String(form.get('allowed_job_commands') ?? '');
+        const allowedJobCommands = rawAllowedJobCommands.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
         const payload = {
           address: String(form.get('address') ?? '').trim(),
+          addresses: addresses,
           source_address: String(form.get('source_address') ?? '').trim(),
           port: String(form.get('port') ?? '').trim(),
           maximum_concurrent_jobs: String(form.get('maximum_concurrent_jobs') ?? '').trim(),
@@ -2647,9 +2786,13 @@ const char* kTestUiHtmlTemplate = R"HTML(
           tls_certificate_revocation_list: String(form.get('tls_certificate_revocation_list') ?? '').trim(),
           tls_certificate: String(form.get('tls_certificate') ?? '').trim(),
           tls_key: String(form.get('tls_key') ?? '').trim(),
+          tls_allowed_cn: tlsAllowedCn,
           pki_signatures: String(form.get('pki_signatures') ?? '').trim(),
           pki_encryption: String(form.get('pki_encryption') ?? '').trim(),
           pki_key_pair: String(form.get('pki_key_pair') ?? '').trim(),
+          pki_signers: pkiSigners,
+          pki_master_keys: pkiMasterKeys,
+          pki_cipher: String(form.get('pki_cipher') ?? '').trim(),
           always_use_lmdb: String(form.get('always_use_lmdb') ?? '').trim(),
           lmdb_threshold: String(form.get('lmdb_threshold') ?? '').trim(),
           ver_id: String(form.get('ver_id') ?? '').trim(),
@@ -2664,10 +2807,14 @@ const char* kTestUiHtmlTemplate = R"HTML(
           description: String(form.get('description') ?? '').trim(),
           working_directory: String(form.get('working_directory') ?? '').trim(),
           plugin_directory: String(form.get('plugin_directory') ?? '').trim(),
+          plugin_names: pluginNames,
+          allowed_script_dirs: allowedScriptDirs,
+          allowed_job_commands: allowedJobCommands,
           scripts_directory: String(form.get('scripts_directory') ?? '').trim(),
           messages: String(form.get('messages') ?? '').trim(),
         };
         if (!payload.address) { delete payload.address; }
+        if (payload.addresses.length === 0) { delete payload.addresses; }
         if (!payload.source_address) { delete payload.source_address; }
         if (!payload.port) { delete payload.port; } else { payload.port = Number(payload.port); }
         if (!payload.maximum_concurrent_jobs) { delete payload.maximum_concurrent_jobs; } else { payload.maximum_concurrent_jobs = Number(payload.maximum_concurrent_jobs); }
@@ -2687,9 +2834,13 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.tls_certificate_revocation_list) { delete payload.tls_certificate_revocation_list; }
         if (!payload.tls_certificate) { delete payload.tls_certificate; }
         if (!payload.tls_key) { delete payload.tls_key; }
+        if (payload.tls_allowed_cn.length === 0) { delete payload.tls_allowed_cn; }
         if (!payload.pki_signatures) { delete payload.pki_signatures; } else { payload.pki_signatures = payload.pki_signatures === 'true'; }
         if (!payload.pki_encryption) { delete payload.pki_encryption; } else { payload.pki_encryption = payload.pki_encryption === 'true'; }
         if (!payload.pki_key_pair) { delete payload.pki_key_pair; }
+        if (payload.pki_signers.length === 0) { delete payload.pki_signers; }
+        if (payload.pki_master_keys.length === 0) { delete payload.pki_master_keys; }
+        if (!payload.pki_cipher) { delete payload.pki_cipher; }
         if (!payload.always_use_lmdb) { delete payload.always_use_lmdb; } else { payload.always_use_lmdb = payload.always_use_lmdb === 'true'; }
         if (!payload.lmdb_threshold) { delete payload.lmdb_threshold; } else { payload.lmdb_threshold = Number(payload.lmdb_threshold); }
         if (!payload.ver_id) { delete payload.ver_id; }
@@ -2704,6 +2855,13 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.description) { delete payload.description; }
         if (!payload.working_directory) { delete payload.working_directory; }
         if (!payload.plugin_directory) { delete payload.plugin_directory; }
+        if (payload.plugin_names.length === 0) { delete payload.plugin_names; }
+        if (payload.allowed_script_dirs.length === 0) {
+          delete payload.allowed_script_dirs;
+        }
+        if (payload.allowed_job_commands.length === 0) {
+          delete payload.allowed_job_commands;
+        }
         if (!payload.scripts_directory) { delete payload.scripts_directory; }
         if (!payload.messages) { delete payload.messages; }
         const { response } = await request(
@@ -3546,8 +3704,29 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const form = new FormData(event.target);
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const storageName = String(form.get('storage_name') ?? '').trim();
+        const rawAddresses = String(form.get('addresses') ?? '');
+        const addresses = rawAddresses.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const rawTlsAllowedCn = String(form.get('tls_allowed_cn') ?? '');
+        const tlsAllowedCn = rawTlsAllowedCn.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const rawPluginNames = String(form.get('plugin_names') ?? '');
+        const pluginNames = rawPluginNames.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const rawNdmpAddresses = String(form.get('ndmp_addresses') ?? '');
+        const ndmpAddresses = rawNdmpAddresses.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const rawBackendDirectories = String(form.get('backend_directories') ?? '');
+        const backendDirectories = rawBackendDirectories.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
         const payload = {
           address: String(form.get('address') ?? '').trim(),
+          addresses: addresses,
           source_address: String(form.get('source_address') ?? '').trim(),
           port: String(form.get('port') ?? '').trim(),
           just_in_time_reservation: String(form.get('just_in_time_reservation') ?? '').trim(),
@@ -3568,9 +3747,13 @@ const char* kTestUiHtmlTemplate = R"HTML(
           tls_certificate_revocation_list: String(form.get('tls_certificate_revocation_list') ?? '').trim(),
           tls_certificate: String(form.get('tls_certificate') ?? '').trim(),
           tls_key: String(form.get('tls_key') ?? '').trim(),
+          tls_allowed_cn: tlsAllowedCn,
           ndmp_enable: String(form.get('ndmp_enable') ?? '').trim(),
           ndmp_snooping: String(form.get('ndmp_snooping') ?? '').trim(),
           ndmp_log_level: String(form.get('ndmp_log_level') ?? '').trim(),
+          ndmp_address: String(form.get('ndmp_address') ?? '').trim(),
+          ndmp_port: String(form.get('ndmp_port') ?? '').trim(),
+          ndmp_addresses: ndmpAddresses,
           autoxflate_on_replication: String(form.get('autoxflate_on_replication') ?? '').trim(),
           collect_device_statistics: String(form.get('collect_device_statistics') ?? '').trim(),
           collect_job_statistics: String(form.get('collect_job_statistics') ?? '').trim(),
@@ -3590,10 +3773,13 @@ const char* kTestUiHtmlTemplate = R"HTML(
           description: String(form.get('description') ?? '').trim(),
           working_directory: String(form.get('working_directory') ?? '').trim(),
           plugin_directory: String(form.get('plugin_directory') ?? '').trim(),
+          plugin_names: pluginNames,
+          backend_directories: backendDirectories,
           scripts_directory: String(form.get('scripts_directory') ?? '').trim(),
           messages: String(form.get('messages') ?? '').trim(),
         };
         if (!payload.address) { delete payload.address; }
+        if (payload.addresses.length === 0) { delete payload.addresses; }
         if (!payload.source_address) { delete payload.source_address; }
         if (!payload.port) { delete payload.port; } else { payload.port = Number(payload.port); }
         if (!payload.just_in_time_reservation) { delete payload.just_in_time_reservation; } else { payload.just_in_time_reservation = payload.just_in_time_reservation === 'true'; }
@@ -3614,9 +3800,13 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.tls_certificate_revocation_list) { delete payload.tls_certificate_revocation_list; }
         if (!payload.tls_certificate) { delete payload.tls_certificate; }
         if (!payload.tls_key) { delete payload.tls_key; }
+        if (payload.tls_allowed_cn.length === 0) { delete payload.tls_allowed_cn; }
         if (!payload.ndmp_enable) { delete payload.ndmp_enable; } else { payload.ndmp_enable = payload.ndmp_enable === 'true'; }
         if (!payload.ndmp_snooping) { delete payload.ndmp_snooping; } else { payload.ndmp_snooping = payload.ndmp_snooping === 'true'; }
         if (!payload.ndmp_log_level) { delete payload.ndmp_log_level; } else { payload.ndmp_log_level = Number(payload.ndmp_log_level); }
+        if (!payload.ndmp_address) { delete payload.ndmp_address; }
+        if (!payload.ndmp_port) { delete payload.ndmp_port; } else { payload.ndmp_port = Number(payload.ndmp_port); }
+        if (payload.ndmp_addresses.length === 0) { delete payload.ndmp_addresses; }
         if (!payload.autoxflate_on_replication) { delete payload.autoxflate_on_replication; } else { payload.autoxflate_on_replication = payload.autoxflate_on_replication === 'true'; }
         if (!payload.collect_device_statistics) { delete payload.collect_device_statistics; } else { payload.collect_device_statistics = payload.collect_device_statistics === 'true'; }
         if (!payload.collect_job_statistics) { delete payload.collect_job_statistics; } else { payload.collect_job_statistics = payload.collect_job_statistics === 'true'; }
@@ -3636,6 +3826,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.description) { delete payload.description; }
         if (!payload.working_directory) { delete payload.working_directory; }
         if (!payload.plugin_directory) { delete payload.plugin_directory; }
+        if (payload.plugin_names.length === 0) { delete payload.plugin_names; }
+        if (payload.backend_directories.length === 0) { delete payload.backend_directories; }
         if (!payload.scripts_directory) { delete payload.scripts_directory; }
         if (!payload.messages) { delete payload.messages; }
         const { response } = await request(
@@ -4574,6 +4766,7 @@ http::response<http::string_body> HandleDeploymentClientDaemonPutRequest(
 
   ClientDaemonResourceSpec resource_spec{
       .address = spec->address,
+      .addresses = spec->addresses,
       .source_address = spec->source_address,
       .port = spec->port,
       .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
@@ -4593,9 +4786,13 @@ http::response<http::string_body> HandleDeploymentClientDaemonPutRequest(
       .tls_certificate_revocation_list = spec->tls_certificate_revocation_list,
       .tls_certificate = spec->tls_certificate,
       .tls_key = spec->tls_key,
+      .tls_allowed_cn = spec->tls_allowed_cn,
       .pki_signatures = spec->pki_signatures,
       .pki_encryption = spec->pki_encryption,
       .pki_key_pair = spec->pki_key_pair,
+      .pki_signers = spec->pki_signers,
+      .pki_master_keys = spec->pki_master_keys,
+      .pki_cipher = spec->pki_cipher,
       .always_use_lmdb = spec->always_use_lmdb,
       .lmdb_threshold = spec->lmdb_threshold,
       .ver_id = spec->ver_id,
@@ -4610,6 +4807,9 @@ http::response<http::string_body> HandleDeploymentClientDaemonPutRequest(
       .description = spec->description,
       .working_directory = spec->working_directory,
       .plugin_directory = spec->plugin_directory,
+      .plugin_names = spec->plugin_names,
+      .allowed_script_dirs = spec->allowed_script_dirs,
+      .allowed_job_commands = spec->allowed_job_commands,
       .scripts_directory = spec->scripts_directory,
       .messages = spec->messages,
   };
@@ -4826,6 +5026,7 @@ http::response<http::string_body> HandleDeploymentStorageDaemonPutRequest(
 
   StorageDaemonResourceSpec resource_spec{
       .address = spec->address,
+      .addresses = spec->addresses,
       .source_address = spec->source_address,
       .port = spec->port,
       .just_in_time_reservation = spec->just_in_time_reservation,
@@ -4845,9 +5046,13 @@ http::response<http::string_body> HandleDeploymentStorageDaemonPutRequest(
       .tls_certificate_revocation_list = spec->tls_certificate_revocation_list,
       .tls_certificate = spec->tls_certificate,
       .tls_key = spec->tls_key,
+      .tls_allowed_cn = spec->tls_allowed_cn,
       .ndmp_enable = spec->ndmp_enable,
       .ndmp_snooping = spec->ndmp_snooping,
       .ndmp_log_level = spec->ndmp_log_level,
+      .ndmp_address = spec->ndmp_address,
+      .ndmp_port = spec->ndmp_port,
+      .ndmp_addresses = spec->ndmp_addresses,
       .autoxflate_on_replication = spec->autoxflate_on_replication,
       .collect_device_statistics = spec->collect_device_statistics,
       .collect_job_statistics = spec->collect_job_statistics,
@@ -4868,6 +5073,10 @@ http::response<http::string_body> HandleDeploymentStorageDaemonPutRequest(
       .description = spec->description,
       .working_directory = spec->working_directory,
       .plugin_directory = spec->plugin_directory,
+      .plugin_names = spec->plugin_names,
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+      .backend_directories = spec->backend_directories,
+#endif
       .scripts_directory = spec->scripts_directory,
       .messages = spec->messages,
   };
@@ -6419,6 +6628,18 @@ std::vector<std::string_view> SplitPath(std::string_view target)
   return parts;
 }
 
+std::vector<std::string_view> StripRoutePrefix(
+    const std::vector<std::string_view>& path_parts)
+{
+  for (size_t index = 0; index < path_parts.size(); ++index) {
+    if (path_parts[index] == "v1" || path_parts[index] == "ui") {
+      return {path_parts.begin() + static_cast<std::ptrdiff_t>(index),
+              path_parts.end()};
+    }
+  }
+  return path_parts;
+}
+
 std::optional<DeploymentSpec> ParseDeploymentSpec(std::string_view body,
                                                   std::string& error)
 {
@@ -7189,6 +7410,7 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   }
 
   auto* address = json_object_get(root.get(), "address");
+  auto* addresses = json_object_get(root.get(), "addresses");
   auto* port = json_object_get(root.get(), "port");
   auto* just_in_time_reservation
       = json_object_get(root.get(), "just_in_time_reservation");
@@ -7215,9 +7437,13 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
       = json_object_get(root.get(), "tls_certificate_revocation_list");
   auto* tls_certificate = json_object_get(root.get(), "tls_certificate");
   auto* tls_key = json_object_get(root.get(), "tls_key");
+  auto* tls_allowed_cn = json_object_get(root.get(), "tls_allowed_cn");
   auto* pki_signatures = json_object_get(root.get(), "pki_signatures");
   auto* pki_encryption = json_object_get(root.get(), "pki_encryption");
   auto* pki_key_pair = json_object_get(root.get(), "pki_key_pair");
+  auto* pki_signers = json_object_get(root.get(), "pki_signers");
+  auto* pki_master_keys = json_object_get(root.get(), "pki_master_keys");
+  auto* pki_cipher = json_object_get(root.get(), "pki_cipher");
   auto* always_use_lmdb = json_object_get(root.get(), "always_use_lmdb");
   auto* lmdb_threshold = json_object_get(root.get(), "lmdb_threshold");
   auto* ver_id = json_object_get(root.get(), "ver_id");
@@ -7236,6 +7462,9 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   auto* ndmp_enable = json_object_get(root.get(), "ndmp_enable");
   auto* ndmp_snooping = json_object_get(root.get(), "ndmp_snooping");
   auto* ndmp_log_level = json_object_get(root.get(), "ndmp_log_level");
+  auto* ndmp_address = json_object_get(root.get(), "ndmp_address");
+  auto* ndmp_port = json_object_get(root.get(), "ndmp_port");
+  auto* ndmp_addresses = json_object_get(root.get(), "ndmp_addresses");
   auto* autoxflate_on_replication
       = json_object_get(root.get(), "autoxflate_on_replication");
   auto* collect_device_statistics
@@ -7258,6 +7487,15 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   auto* description = json_object_get(root.get(), "description");
   auto* working_directory = json_object_get(root.get(), "working_directory");
   auto* plugin_directory = json_object_get(root.get(), "plugin_directory");
+  auto* plugin_names = json_object_get(root.get(), "plugin_names");
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  auto* backend_directories
+      = json_object_get(root.get(), "backend_directories");
+#endif
+  auto* allowed_script_dirs
+      = json_object_get(root.get(), "allowed_script_dirs");
+  auto* allowed_job_commands
+      = json_object_get(root.get(), "allowed_job_commands");
   auto* scripts_directory = json_object_get(root.get(), "scripts_directory");
   auto* messages = json_object_get(root.get(), "messages");
   auto require_string = [&error](json_t* value, const char* field) {
@@ -7268,7 +7506,24 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
     }
     return true;
   };
+  auto require_string_array = [&error](json_t* value, const char* field) {
+    if (!value || json_is_null(value)) { return true; }
+    if (!json_is_array(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an array of strings when provided.";
+      return false;
+    }
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      if (!json_is_string(json_array_get(value, index))) {
+        error = std::string{"field '"} + field
+                + "' must be an array of strings when provided.";
+        return false;
+      }
+    }
+    return true;
+  };
   if (!require_string(address, "address")
+      || !require_string_array(addresses, "addresses")
       || !require_string(source_address, "source_address")
       || (port && !json_is_null(port) && !json_is_integer(port))
       || (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
@@ -7293,7 +7548,11 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
                          "tls_certificate_revocation_list")
       || !require_string(tls_certificate, "tls_certificate")
       || !require_string(tls_key, "tls_key")
+      || !require_string_array(tls_allowed_cn, "tls_allowed_cn")
       || !require_string(pki_key_pair, "pki_key_pair")
+      || !require_string_array(pki_signers, "pki_signers")
+      || !require_string_array(pki_master_keys, "pki_master_keys")
+      || !require_string(pki_cipher, "pki_cipher")
       || (statistics_collect_interval
           && !json_is_null(statistics_collect_interval)
           && !json_is_integer(statistics_collect_interval))
@@ -7323,6 +7582,9 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
           && !json_is_boolean(ndmp_snooping))
       || (ndmp_log_level && !json_is_null(ndmp_log_level)
           && !json_is_integer(ndmp_log_level))
+      || !require_string(ndmp_address, "ndmp_address")
+      || !require_string_array(ndmp_addresses, "ndmp_addresses")
+      || (ndmp_port && !json_is_null(ndmp_port) && !json_is_integer(ndmp_port))
       || (always_use_lmdb && !json_is_null(always_use_lmdb)
           && !json_is_boolean(always_use_lmdb))
       || (autoxflate_on_replication && !json_is_null(autoxflate_on_replication)
@@ -7353,6 +7615,12 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
       || !require_string(description, "description")
       || !require_string(working_directory, "working_directory")
       || !require_string(plugin_directory, "plugin_directory")
+      || !require_string_array(plugin_names, "plugin_names")
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+      || !require_string_array(backend_directories, "backend_directories")
+#endif
+      || !require_string_array(allowed_script_dirs, "allowed_script_dirs")
+      || !require_string_array(allowed_job_commands, "allowed_job_commands")
       || !require_string(scripts_directory, "scripts_directory")
       || !require_string(messages, "messages")) {
     if (port && !json_is_null(port) && !json_is_integer(port)) {
@@ -7423,6 +7691,9 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
     } else if (ndmp_log_level && !json_is_null(ndmp_log_level)
                && !json_is_integer(ndmp_log_level)) {
       error = "field 'ndmp_log_level' must be an integer when provided.";
+    } else if (ndmp_port && !json_is_null(ndmp_port)
+               && !json_is_integer(ndmp_port)) {
+      error = "field 'ndmp_port' must be an integer when provided.";
     } else if (always_use_lmdb && !json_is_null(always_use_lmdb)
                && !json_is_boolean(always_use_lmdb)) {
       error = "field 'always_use_lmdb' must be a boolean when provided.";
@@ -7479,9 +7750,20 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   }
 
   StorageDaemonRequestSpec spec{};
+  auto parse_string_array
+      = [](json_t* value) -> std::optional<std::vector<std::string>> {
+    if (!value || !json_is_array(value)) { return std::nullopt; }
+    std::vector<std::string> result;
+    result.reserve(json_array_size(value));
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      result.emplace_back(json_string_value(json_array_get(value, index)));
+    }
+    return result;
+  };
   if (address && json_is_string(address)) {
     spec.address = std::string{json_string_value(address)};
   }
+  spec.addresses = parse_string_array(addresses);
   if (source_address && json_is_string(source_address)) {
     spec.source_address = std::string{json_string_value(source_address)};
   }
@@ -7492,6 +7774,14 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
       return std::nullopt;
     }
     spec.port = static_cast<uint16_t>(value);
+  }
+  if (ndmp_port && json_is_integer(ndmp_port)) {
+    const auto value = json_integer_value(ndmp_port);
+    if (value <= 0 || value > 65535) {
+      error = "field 'ndmp_port' must be between 1 and 65535.";
+      return std::nullopt;
+    }
+    spec.ndmp_port = static_cast<uint16_t>(value);
   }
   auto parse_u32 = [&error](json_t* value, const char* field,
                             std::optional<uint32_t>& target) -> bool {
@@ -7562,9 +7852,19 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   if (tls_key && json_is_string(tls_key)) {
     spec.tls_key = std::string{json_string_value(tls_key)};
   }
+  spec.tls_allowed_cn = parse_string_array(tls_allowed_cn);
   if (pki_key_pair && json_is_string(pki_key_pair)) {
     spec.pki_key_pair = std::string{json_string_value(pki_key_pair)};
   }
+  spec.pki_signers = parse_string_array(pki_signers);
+  spec.pki_master_keys = parse_string_array(pki_master_keys);
+  if (pki_cipher && json_is_string(pki_cipher)) {
+    spec.pki_cipher = std::string{json_string_value(pki_cipher)};
+  }
+  if (ndmp_address && json_is_string(ndmp_address)) {
+    spec.ndmp_address = std::string{json_string_value(ndmp_address)};
+  }
+  spec.ndmp_addresses = parse_string_array(ndmp_addresses);
   auto parse_bool = [](json_t* value, std::optional<bool>& target) {
     if (!value || !json_is_boolean(value)) { return; }
     target = json_is_true(value);
@@ -7635,6 +7935,12 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   if (plugin_directory && json_is_string(plugin_directory)) {
     spec.plugin_directory = std::string{json_string_value(plugin_directory)};
   }
+  spec.plugin_names = parse_string_array(plugin_names);
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  spec.backend_directories = parse_string_array(backend_directories);
+#endif
+  spec.allowed_script_dirs = parse_string_array(allowed_script_dirs);
+  spec.allowed_job_commands = parse_string_array(allowed_job_commands);
   if (scripts_directory && json_is_string(scripts_directory)) {
     spec.scripts_directory = std::string{json_string_value(scripts_directory)};
   }
@@ -8334,11 +8640,12 @@ http::response<http::string_body> HandleRequest(
            + std::string{request.target()});
   const auto target
       = std::string_view{request.target().data(), request.target().size()};
-  const auto path_parts = SplitPath(
+  const auto raw_path_parts = SplitPath(
       std::string_view{request.target().data(), request.target().size()});
+  const auto path_parts = StripRoutePrefix(raw_path_parts);
 
   if (request.method() == http::verb::get
-      && (target == "/" || target == "/ui" || target == "/ui/")) {
+      && (target == "/" || (path_parts.size() == 1 && path_parts[0] == "ui"))) {
     return HtmlResponse(http::status::ok, BuildTestUiHtml());
   }
 

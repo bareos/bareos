@@ -766,9 +766,9 @@ TEST(BconfigService, UpsertsClientDaemonResources)
 
   auto updated = state.UpsertClientDaemonResource(
       "prod", "backup-bareos-test-fd",
-      {.address = std::string{"client.example.com"},
+      {.addresses = std::vector<std::string>{"host[ipv4;192.0.2.10;42102]",
+                                             "host[ipv6;::1;42102]"},
        .source_address = std::string{"192.0.2.10"},
-       .port = 42102,
        .maximum_concurrent_jobs = 42,
        .maximum_workers_per_job = 3,
        .absolute_job_timeout = 900,
@@ -786,9 +786,16 @@ TEST(BconfigService, UpsertsClientDaemonResources)
        .tls_certificate_revocation_list = std::string{"/etc/bareos/crl.pem"},
        .tls_certificate = std::string{"/etc/bareos/client.crt"},
        .tls_key = std::string{"/etc/bareos/client.key"},
+       .tls_allowed_cn = std::vector<std::string>{"client-cn-1", "client-cn-2"},
        .pki_signatures = true,
        .pki_encryption = false,
        .pki_key_pair = std::string{"/etc/bareos/client.pem"},
+       .pki_signers = std::vector<std::string>{"/etc/bareos/signer1.pem",
+                                               "/etc/bareos/signer2.pem"},
+       .pki_master_keys
+       = std::vector<std::string>{"/etc/bareos/recipient1.pem",
+                                  "/etc/bareos/recipient2.pem"},
+       .pki_cipher = std::string{"aes256"},
        .always_use_lmdb = false,
        .lmdb_threshold = 17,
        .ver_id = std::string{"client-ver"},
@@ -803,6 +810,12 @@ TEST(BconfigService, UpsertsClientDaemonResources)
        .description = std::string{"Managed client daemon"},
        .working_directory = std::string{"/var/lib/bareos/client"},
        .plugin_directory = std::string{"/usr/lib/bareos/plugins"},
+       .plugin_names = std::vector<std::string>{"python", "grpc"},
+       .allowed_script_dirs
+       = std::vector<std::string>{"/usr/lib/bareos/scripts",
+                                  "/opt/bareos/scripts"},
+       .allowed_job_commands
+       = std::vector<std::string>{"RunBeforeJob", "Estimate listing"},
        .scripts_directory = std::string{"/usr/lib/bareos/scripts"},
        .messages = std::string{"Standard"}});
   ASSERT_TRUE(updated) << updated.error;
@@ -814,10 +827,12 @@ TEST(BconfigService, UpsertsClientDaemonResources)
   EXPECT_NE(updated_text.find("Client {"), std::string::npos);
   EXPECT_NE(updated_text.find("Name = \"backup-bareos-test-fd\""),
             std::string::npos);
-  EXPECT_NE(updated_text.find("Address = client.example.com"),
+  EXPECT_NE(updated_text.find("Addresses = {"), std::string::npos);
+  EXPECT_NE(updated_text.find("ipv4 = { addr = 192.0.2.10 ; port = 42102 }"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("ipv6 = { addr = ::1 ; port = 42102 }"),
             std::string::npos);
   EXPECT_NE(updated_text.find("SourceAddress = 192.0.2.10"), std::string::npos);
-  EXPECT_NE(updated_text.find("Port = 42102"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 42"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumWorkersPerJob = 3"), std::string::npos);
   EXPECT_NE(updated_text.find("AbsoluteJobTimeout = 900"), std::string::npos);
@@ -847,10 +862,23 @@ TEST(BconfigService, UpsertsClientDaemonResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("TlsKey = \"/etc/bareos/client.key\""),
             std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = \"client-cn-1\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = \"client-cn-2\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("PkiSignatures = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("PkiEncryption = no"), std::string::npos);
   EXPECT_NE(updated_text.find("PkiKeyPair = \"/etc/bareos/client.pem\""),
             std::string::npos);
+  EXPECT_NE(updated_text.find("PkiSigner = \"/etc/bareos/signer1.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("PkiSigner = \"/etc/bareos/signer2.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("PkiMasterKey = \"/etc/bareos/recipient1.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("PkiMasterKey = \"/etc/bareos/recipient2.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("PkiCipher = aes256"), std::string::npos);
   EXPECT_NE(updated_text.find("AlwaysUseLmdb = no"), std::string::npos);
   EXPECT_NE(updated_text.find("LmdbThreshold = 17"), std::string::npos);
   EXPECT_NE(updated_text.find("VerId = \"client-ver\""), std::string::npos);
@@ -873,6 +901,16 @@ TEST(BconfigService, UpsertsClientDaemonResources)
   EXPECT_NE(updated_text.find("WorkingDirectory = \"/var/lib/bareos/client\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("PluginDirectory = \"/usr/lib/bareos/plugins\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("PluginNames = python"), std::string::npos);
+  EXPECT_NE(updated_text.find("PluginNames = grpc"), std::string::npos);
+  EXPECT_NE(updated_text.find("AllowedScriptDir = \"/usr/lib/bareos/scripts\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("AllowedScriptDir = \"/opt/bareos/scripts\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("AllowedJobCommand = \"RunBeforeJob\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("AllowedJobCommand = \"Estimate listing\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("ScriptsDirectory = \"/usr/lib/bareos/scripts\""),
             std::string::npos);
@@ -3817,9 +3855,9 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
 
   auto updated = state.UpsertStorageDaemonResource(
       "prod", "bareos-sd",
-      {.address = std::string{"storage.example.com"},
+      {.addresses = std::vector<std::string>{"host[ipv4;192.0.2.20;42103]",
+                                             "host[ipv6;::1;42103]"},
        .source_address = std::string{"192.0.2.20"},
-       .port = 42103,
        .just_in_time_reservation = true,
        .maximum_concurrent_jobs = 84,
        .absolute_job_timeout = 1200,
@@ -3837,9 +3875,13 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
        .tls_certificate_revocation_list = std::string{"/etc/bareos/crl.pem"},
        .tls_certificate = std::string{"/etc/bareos/storage.crt"},
        .tls_key = std::string{"/etc/bareos/storage.key"},
+       .tls_allowed_cn
+       = std::vector<std::string>{"storage-cn-1", "storage-cn-2"},
        .ndmp_enable = true,
        .ndmp_snooping = false,
        .ndmp_log_level = 6,
+       .ndmp_addresses = std::vector<std::string>{"host[ipv4;192.0.2.30;10001]",
+                                                  "host[ipv6;::1;10001]"},
        .autoxflate_on_replication = true,
        .collect_device_statistics = true,
        .collect_job_statistics = false,
@@ -3860,6 +3902,12 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
        .description = std::string{"Managed storage daemon"},
        .working_directory = std::string{"/var/lib/bareos/storage"},
        .plugin_directory = std::string{"/usr/lib/bareos/plugins"},
+       .plugin_names = std::vector<std::string>{"autochanger", "python"},
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+       .backend_directories
+       = std::vector<std::string>{"/usr/lib/bareos/backends",
+                                  "/opt/bareos/backends"},
+#endif
        .scripts_directory = std::string{"/usr/lib/bareos/scripts"},
        .messages = std::string{"Standard"}});
   ASSERT_TRUE(updated) << updated.error;
@@ -3870,10 +3918,12 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
   const auto updated_text = ReadTextFile(storage_path);
   EXPECT_NE(updated_text.find("Storage {"), std::string::npos);
   EXPECT_NE(updated_text.find("Name = \"bareos-sd\""), std::string::npos);
-  EXPECT_NE(updated_text.find("Address = storage.example.com"),
+  EXPECT_NE(updated_text.find("Addresses = {"), std::string::npos);
+  EXPECT_NE(updated_text.find("ipv4 = { addr = 192.0.2.20 ; port = 42103 }"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("ipv6 = { addr = ::1 ; port = 42103 }"),
             std::string::npos);
   EXPECT_NE(updated_text.find("SourceAddress = 192.0.2.20"), std::string::npos);
-  EXPECT_NE(updated_text.find("Port = 42103"), std::string::npos);
   EXPECT_NE(updated_text.find("JustInTimeReservation = yes"),
             std::string::npos);
   EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 84"), std::string::npos);
@@ -3904,9 +3954,18 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("TlsKey = \"/etc/bareos/storage.key\""),
             std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = \"storage-cn-1\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = \"storage-cn-2\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("NdmpEnable = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpSnooping = no"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpLogLevel = 6"), std::string::npos);
+  EXPECT_NE(updated_text.find("NdmpAddresses = {"), std::string::npos);
+  EXPECT_NE(updated_text.find("ipv4 = { addr = 192.0.2.30 ; port = 10001 }"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("ipv6 = { addr = ::1 ; port = 10001 }"),
+            std::string::npos);
   EXPECT_NE(updated_text.find("AutoXFlateOnReplication = yes"),
             std::string::npos);
   EXPECT_NE(updated_text.find("CollectDeviceStatistics = yes"),
@@ -3939,6 +3998,15 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("PluginDirectory = \"/usr/lib/bareos/plugins\""),
             std::string::npos);
+  EXPECT_NE(updated_text.find("PluginNames = autochanger"), std::string::npos);
+  EXPECT_NE(updated_text.find("PluginNames = python"), std::string::npos);
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  EXPECT_NE(
+      updated_text.find("BackendDirectory = \"/usr/lib/bareos/backends\""),
+      std::string::npos);
+  EXPECT_NE(updated_text.find("BackendDirectory = \"/opt/bareos/backends\""),
+            std::string::npos);
+#endif
   EXPECT_NE(updated_text.find("ScriptsDirectory = \"/usr/lib/bareos/scripts\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Messages = Standard"), std::string::npos);
