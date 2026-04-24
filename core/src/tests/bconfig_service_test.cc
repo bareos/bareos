@@ -767,6 +767,7 @@ TEST(BconfigService, UpsertsClientDaemonResources)
   auto updated = state.UpsertClientDaemonResource(
       "prod", "backup-bareos-test-fd",
       {.address = std::string{"client.example.com"},
+       .source_address = std::string{"192.0.2.10"},
        .port = 42102,
        .maximum_concurrent_jobs = 42,
        .maximum_workers_per_job = 3,
@@ -776,6 +777,15 @@ TEST(BconfigService, UpsertsClientDaemonResources)
        .tls_enable = true,
        .tls_require = false,
        .tls_verify_peer = true,
+       .tls_cipher_list = std::string{"ECDHE-RSA-AES256-GCM-SHA384"},
+       .tls_cipher_suites = std::string{"TLS_AES_256_GCM_SHA384"},
+       .tls_dh_file = std::string{"/etc/bareos/dh4096.pem"},
+       .tls_protocol = std::string{"MinProtocol = TLSv1.2"},
+       .tls_ca_certificate_file = std::string{"/etc/bareos/ca.crt"},
+       .tls_ca_certificate_dir = std::string{"/etc/ssl/certs"},
+       .tls_certificate_revocation_list = std::string{"/etc/bareos/crl.pem"},
+       .tls_certificate = std::string{"/etc/bareos/client.crt"},
+       .tls_key = std::string{"/etc/bareos/client.key"},
        .pki_signatures = true,
        .pki_encryption = false,
        .pki_key_pair = std::string{"/etc/bareos/client.pem"},
@@ -806,6 +816,7 @@ TEST(BconfigService, UpsertsClientDaemonResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("Address = client.example.com"),
             std::string::npos);
+  EXPECT_NE(updated_text.find("SourceAddress = 192.0.2.10"), std::string::npos);
   EXPECT_NE(updated_text.find("Port = 42102"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 42"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumWorkersPerJob = 3"), std::string::npos);
@@ -816,6 +827,26 @@ TEST(BconfigService, UpsertsClientDaemonResources)
   EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsRequire = no"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsVerifyPeer = yes"), std::string::npos);
+  EXPECT_NE(
+      updated_text.find("TlsCipherList = \"ECDHE-RSA-AES256-GCM-SHA384\""),
+      std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherSuites = \"TLS_AES_256_GCM_SHA384\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsDhFile = \"/etc/bareos/dh4096.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsProtocol = \"MinProtocol = TLSv1.2\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCaCertificateFile = \"/etc/bareos/ca.crt\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCaCertificateDir = \"/etc/ssl/certs\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find(
+                "TlsCertificateRevocationList = \"/etc/bareos/crl.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCertificate = \"/etc/bareos/client.crt\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsKey = \"/etc/bareos/client.key\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("PkiSignatures = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("PkiEncryption = no"), std::string::npos);
   EXPECT_NE(updated_text.find("PkiKeyPair = \"/etc/bareos/client.pem\""),
@@ -3787,6 +3818,7 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
   auto updated = state.UpsertStorageDaemonResource(
       "prod", "bareos-sd",
       {.address = std::string{"storage.example.com"},
+       .source_address = std::string{"192.0.2.20"},
        .port = 42103,
        .just_in_time_reservation = true,
        .maximum_concurrent_jobs = 84,
@@ -3796,6 +3828,15 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
        .tls_enable = true,
        .tls_require = false,
        .tls_verify_peer = false,
+       .tls_cipher_list = std::string{"ECDHE-RSA-AES256-GCM-SHA384"},
+       .tls_cipher_suites = std::string{"TLS_AES_256_GCM_SHA384"},
+       .tls_dh_file = std::string{"/etc/bareos/dh4096.pem"},
+       .tls_protocol = std::string{"MinProtocol = TLSv1.2"},
+       .tls_ca_certificate_file = std::string{"/etc/bareos/ca.crt"},
+       .tls_ca_certificate_dir = std::string{"/etc/ssl/certs"},
+       .tls_certificate_revocation_list = std::string{"/etc/bareos/crl.pem"},
+       .tls_certificate = std::string{"/etc/bareos/storage.crt"},
+       .tls_key = std::string{"/etc/bareos/storage.key"},
        .ndmp_enable = true,
        .ndmp_snooping = false,
        .ndmp_log_level = 6,
@@ -3831,6 +3872,7 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
   EXPECT_NE(updated_text.find("Name = \"bareos-sd\""), std::string::npos);
   EXPECT_NE(updated_text.find("Address = storage.example.com"),
             std::string::npos);
+  EXPECT_NE(updated_text.find("SourceAddress = 192.0.2.20"), std::string::npos);
   EXPECT_NE(updated_text.find("Port = 42103"), std::string::npos);
   EXPECT_NE(updated_text.find("JustInTimeReservation = yes"),
             std::string::npos);
@@ -3842,6 +3884,26 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
   EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsRequire = no"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsVerifyPeer = no"), std::string::npos);
+  EXPECT_NE(
+      updated_text.find("TlsCipherList = \"ECDHE-RSA-AES256-GCM-SHA384\""),
+      std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherSuites = \"TLS_AES_256_GCM_SHA384\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsDhFile = \"/etc/bareos/dh4096.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsProtocol = \"MinProtocol = TLSv1.2\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCaCertificateFile = \"/etc/bareos/ca.crt\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCaCertificateDir = \"/etc/ssl/certs\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find(
+                "TlsCertificateRevocationList = \"/etc/bareos/crl.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCertificate = \"/etc/bareos/storage.crt\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsKey = \"/etc/bareos/storage.key\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("NdmpEnable = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpSnooping = no"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpLogLevel = 6"), std::string::npos);

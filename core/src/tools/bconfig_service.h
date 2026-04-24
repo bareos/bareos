@@ -116,6 +116,7 @@ struct ClientMessagesResourceSpec {
 
 struct ClientDaemonResourceSpec {
   std::optional<std::string> address{};
+  std::optional<std::string> source_address{};
   std::optional<uint16_t> port{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
   std::optional<uint32_t> maximum_workers_per_job{};
@@ -125,6 +126,15 @@ struct ClientDaemonResourceSpec {
   std::optional<bool> tls_enable{};
   std::optional<bool> tls_require{};
   std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
   std::optional<bool> pki_signatures{};
   std::optional<bool> pki_encryption{};
   std::optional<std::string> pki_key_pair{};
@@ -298,6 +308,7 @@ struct StorageDeviceResourceSpec {
 
 struct StorageDaemonResourceSpec {
   std::optional<std::string> address{};
+  std::optional<std::string> source_address{};
   std::optional<uint16_t> port{};
   std::optional<bool> just_in_time_reservation{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -307,6 +318,15 @@ struct StorageDaemonResourceSpec {
   std::optional<bool> tls_enable{};
   std::optional<bool> tls_require{};
   std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
   std::optional<bool> ndmp_enable{};
   std::optional<bool> ndmp_snooping{};
   std::optional<uint32_t> ndmp_log_level{};

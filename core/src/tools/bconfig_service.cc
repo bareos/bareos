@@ -676,6 +676,7 @@ struct DirectorMessagesContentSpec {
 
 struct StorageDaemonContentSpec {
   std::optional<std::string> address{};
+  std::optional<std::string> source_address{};
   std::optional<uint16_t> port{};
   std::optional<bool> just_in_time_reservation{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -686,6 +687,15 @@ struct StorageDaemonContentSpec {
   std::optional<bool> tls_enable{};
   std::optional<bool> tls_require{};
   std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
   std::optional<bool> pki_signatures{};
   std::optional<bool> pki_encryption{};
   std::optional<std::string> pki_key_pair{};
@@ -1181,6 +1191,7 @@ std::string BuildStorageDaemonResourceContent(
   content << "Storage {\n"
           << "  Name = " << QuoteBareosString(storage_name) << "\n";
   AppendBareosDirective(content, "Address", spec.address);
+  AppendBareosDirective(content, "SourceAddress", spec.source_address);
   AppendIntegerDirective(content, "Port", spec.port);
   AppendBoolDirective(content, "JustInTimeReservation",
                       spec.just_in_time_reservation);
@@ -1194,6 +1205,18 @@ std::string BuildStorageDaemonResourceContent(
   AppendBoolDirective(content, "TlsEnable", spec.tls_enable);
   AppendBoolDirective(content, "TlsRequire", spec.tls_require);
   AppendBoolDirective(content, "TlsVerifyPeer", spec.tls_verify_peer);
+  AppendQuotedDirective(content, "TlsCipherList", spec.tls_cipher_list);
+  AppendQuotedDirective(content, "TlsCipherSuites", spec.tls_cipher_suites);
+  AppendQuotedDirective(content, "TlsDhFile", spec.tls_dh_file);
+  AppendQuotedDirective(content, "TlsProtocol", spec.tls_protocol);
+  AppendQuotedDirective(content, "TlsCaCertificateFile",
+                        spec.tls_ca_certificate_file);
+  AppendQuotedDirective(content, "TlsCaCertificateDir",
+                        spec.tls_ca_certificate_dir);
+  AppendQuotedDirective(content, "TlsCertificateRevocationList",
+                        spec.tls_certificate_revocation_list);
+  AppendQuotedDirective(content, "TlsCertificate", spec.tls_certificate);
+  AppendQuotedDirective(content, "TlsKey", spec.tls_key);
   AppendBoolDirective(content, "NdmpEnable", spec.ndmp_enable);
   AppendBoolDirective(content, "NdmpSnooping", spec.ndmp_snooping);
   AppendIntegerDirective(content, "NdmpLogLevel", spec.ndmp_log_level);
@@ -1243,6 +1266,7 @@ std::string BuildClientDaemonResourceContent(
   content << "Client {\n"
           << "  Name = " << QuoteBareosString(client_name) << "\n";
   AppendBareosDirective(content, "Address", spec.address);
+  AppendBareosDirective(content, "SourceAddress", spec.source_address);
   AppendIntegerDirective(content, "Port", spec.port);
   AppendIntegerDirective(content, "MaximumConcurrentJobs",
                          spec.maximum_concurrent_jobs);
@@ -1256,6 +1280,18 @@ std::string BuildClientDaemonResourceContent(
   AppendBoolDirective(content, "TlsEnable", spec.tls_enable);
   AppendBoolDirective(content, "TlsRequire", spec.tls_require);
   AppendBoolDirective(content, "TlsVerifyPeer", spec.tls_verify_peer);
+  AppendQuotedDirective(content, "TlsCipherList", spec.tls_cipher_list);
+  AppendQuotedDirective(content, "TlsCipherSuites", spec.tls_cipher_suites);
+  AppendQuotedDirective(content, "TlsDhFile", spec.tls_dh_file);
+  AppendQuotedDirective(content, "TlsProtocol", spec.tls_protocol);
+  AppendQuotedDirective(content, "TlsCaCertificateFile",
+                        spec.tls_ca_certificate_file);
+  AppendQuotedDirective(content, "TlsCaCertificateDir",
+                        spec.tls_ca_certificate_dir);
+  AppendQuotedDirective(content, "TlsCertificateRevocationList",
+                        spec.tls_certificate_revocation_list);
+  AppendQuotedDirective(content, "TlsCertificate", spec.tls_certificate);
+  AppendQuotedDirective(content, "TlsKey", spec.tls_key);
   AppendBoolDirective(content, "PkiSignatures", spec.pki_signatures);
   AppendBoolDirective(content, "PkiEncryption", spec.pki_encryption);
   AppendQuotedDirective(content, "PkiKeyPair", spec.pki_key_pair);
@@ -2927,14 +2963,26 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
     context.exists = true;
     const bool has_address_source = HasMemberSource(
         *client, {"Address", "Addresses", "FdAddress", "FdAddresses"});
+    const bool has_source_address_source
+        = HasMemberSource(*client, {"SourceAddress", "FdSourceAddress"});
     const bool has_port_source = HasMemberSource(*client, {"Port", "FdPort"});
     if (has_address_source && client->FDaddrs && client->FDaddrs->size() > 1) {
       return {.error
               = "client daemon resource '" + client_config.name
                 + "' uses multiple addresses, which are not managed yet."};
     }
+    if (has_source_address_source && client->FDsrc_addr
+        && client->FDsrc_addr->size() > 1) {
+      return {
+          .error
+          = "client daemon resource '" + client_config.name
+            + "' uses multiple source addresses, which are not managed yet."};
+    }
     if (has_address_source) {
       context.content.address = CopyFirstAddress(client->FDaddrs);
+    }
+    if (has_source_address_source) {
+      context.content.source_address = CopyFirstAddress(client->FDsrc_addr);
     }
     if (has_port_source) {
       const auto port = GetFirstPortHostOrder(client->FDaddrs);
@@ -2963,6 +3011,34 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
     }
     if (HasMemberSource(*client, {"TlsVerifyPeer"})) {
       context.content.tls_verify_peer = client->tls_cert_.verify_peer_;
+    }
+    if (!client->cipherlist_.empty()) {
+      context.content.tls_cipher_list = client->cipherlist_;
+    }
+    if (!client->ciphersuites_.empty()) {
+      context.content.tls_cipher_suites = client->ciphersuites_;
+    }
+    if (!client->tls_cert_.dhfile_.empty()) {
+      context.content.tls_dh_file = client->tls_cert_.dhfile_;
+    }
+    if (!client->protocol_.empty()) {
+      context.content.tls_protocol = client->protocol_;
+    }
+    if (!client->tls_cert_.ca_certfile_.empty()) {
+      context.content.tls_ca_certificate_file = client->tls_cert_.ca_certfile_;
+    }
+    if (!client->tls_cert_.ca_certdir_.empty()) {
+      context.content.tls_ca_certificate_dir = client->tls_cert_.ca_certdir_;
+    }
+    if (!client->tls_cert_.crlfile_.empty()) {
+      context.content.tls_certificate_revocation_list
+          = client->tls_cert_.crlfile_;
+    }
+    if (!client->tls_cert_.certfile_.empty()) {
+      context.content.tls_certificate = client->tls_cert_.certfile_;
+    }
+    if (!client->tls_cert_.keyfile_.empty()) {
+      context.content.tls_key = client->tls_cert_.keyfile_;
     }
     if (HasMemberSource(*client, {"PkiSignatures"})) {
       context.content.pki_signatures = client->pki_sign;
@@ -3089,6 +3165,8 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     context.exists = true;
     const bool has_address_source = HasMemberSource(
         *storage, {"Address", "Addresses", "SdAddress", "SdAddresses"});
+    const bool has_source_address_source
+        = HasMemberSource(*storage, {"SourceAddress", "SdSourceAddress"});
     const bool has_port_source = HasMemberSource(*storage, {"Port", "SdPort"});
     if (has_address_source && storage->SDaddrs
         && storage->SDaddrs->size() > 1) {
@@ -3096,8 +3174,18 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
               = "storage-daemon storage resource '" + storage_config.name
                 + "' uses multiple addresses, which are not managed yet."};
     }
+    if (has_source_address_source && storage->SDsrc_addr
+        && storage->SDsrc_addr->size() > 1) {
+      return {
+          .error
+          = "storage-daemon storage resource '" + storage_config.name
+            + "' uses multiple source addresses, which are not managed yet."};
+    }
     if (has_address_source) {
       context.content.address = CopyFirstAddress(storage->SDaddrs);
+    }
+    if (has_source_address_source) {
+      context.content.source_address = CopyFirstAddress(storage->SDsrc_addr);
     }
     if (has_port_source) {
       const auto port = GetFirstPortHostOrder(storage->SDaddrs);
@@ -3127,6 +3215,34 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     }
     if (HasMemberSource(*storage, {"TlsVerifyPeer"})) {
       context.content.tls_verify_peer = storage->tls_cert_.verify_peer_;
+    }
+    if (!storage->cipherlist_.empty()) {
+      context.content.tls_cipher_list = storage->cipherlist_;
+    }
+    if (!storage->ciphersuites_.empty()) {
+      context.content.tls_cipher_suites = storage->ciphersuites_;
+    }
+    if (!storage->tls_cert_.dhfile_.empty()) {
+      context.content.tls_dh_file = storage->tls_cert_.dhfile_;
+    }
+    if (!storage->protocol_.empty()) {
+      context.content.tls_protocol = storage->protocol_;
+    }
+    if (!storage->tls_cert_.ca_certfile_.empty()) {
+      context.content.tls_ca_certificate_file = storage->tls_cert_.ca_certfile_;
+    }
+    if (!storage->tls_cert_.ca_certdir_.empty()) {
+      context.content.tls_ca_certificate_dir = storage->tls_cert_.ca_certdir_;
+    }
+    if (!storage->tls_cert_.crlfile_.empty()) {
+      context.content.tls_certificate_revocation_list
+          = storage->tls_cert_.crlfile_;
+    }
+    if (!storage->tls_cert_.certfile_.empty()) {
+      context.content.tls_certificate = storage->tls_cert_.certfile_;
+    }
+    if (!storage->tls_cert_.keyfile_.empty()) {
+      context.content.tls_key = storage->tls_cert_.keyfile_;
     }
     if (HasMemberSource(*storage, {"NdmpEnable"})) {
       context.content.ndmp_enable = storage->ndmp_enable;
@@ -5334,6 +5450,11 @@ ServiceState::UpsertClientDaemonResource(
             = "client daemon address must be a bare Bareos token "
               "without whitespace or quotes."};
   }
+  if (spec.source_address && !IsSafeBareosToken(*spec.source_address)) {
+    return {.error
+            = "client daemon source_address must be a bare Bareos token "
+              "without whitespace or quotes."};
+  }
   if (spec.port && *spec.port == 0) {
     return {.error = "client daemon port must be greater than zero."};
   }
@@ -5353,6 +5474,7 @@ ServiceState::UpsertClientDaemonResource(
 
   auto content = context.value->content;
   if (spec.address) { content.address = spec.address; }
+  if (spec.source_address) { content.source_address = spec.source_address; }
   if (spec.port) { content.port = spec.port; }
   if (spec.maximum_concurrent_jobs) {
     content.maximum_concurrent_jobs = spec.maximum_concurrent_jobs;
@@ -5372,6 +5494,24 @@ ServiceState::UpsertClientDaemonResource(
   if (spec.tls_enable) { content.tls_enable = spec.tls_enable; }
   if (spec.tls_require) { content.tls_require = spec.tls_require; }
   if (spec.tls_verify_peer) { content.tls_verify_peer = spec.tls_verify_peer; }
+  if (spec.tls_cipher_list) { content.tls_cipher_list = spec.tls_cipher_list; }
+  if (spec.tls_cipher_suites) {
+    content.tls_cipher_suites = spec.tls_cipher_suites;
+  }
+  if (spec.tls_dh_file) { content.tls_dh_file = spec.tls_dh_file; }
+  if (spec.tls_protocol) { content.tls_protocol = spec.tls_protocol; }
+  if (spec.tls_ca_certificate_file) {
+    content.tls_ca_certificate_file = spec.tls_ca_certificate_file;
+  }
+  if (spec.tls_ca_certificate_dir) {
+    content.tls_ca_certificate_dir = spec.tls_ca_certificate_dir;
+  }
+  if (spec.tls_certificate_revocation_list) {
+    content.tls_certificate_revocation_list
+        = spec.tls_certificate_revocation_list;
+  }
+  if (spec.tls_certificate) { content.tls_certificate = spec.tls_certificate; }
+  if (spec.tls_key) { content.tls_key = spec.tls_key; }
   if (spec.pki_signatures) { content.pki_signatures = spec.pki_signatures; }
   if (spec.pki_encryption) { content.pki_encryption = spec.pki_encryption; }
   if (spec.pki_key_pair) { content.pki_key_pair = spec.pki_key_pair; }
@@ -8154,6 +8294,11 @@ ServiceState::UpsertStorageDaemonResource(
             = "storage-daemon address must be a bare Bareos token "
               "without whitespace or quotes."};
   }
+  if (spec.source_address && !IsSafeBareosToken(*spec.source_address)) {
+    return {.error
+            = "storage-daemon source_address must be a bare Bareos token "
+              "without whitespace or quotes."};
+  }
   if (spec.port && *spec.port == 0) {
     return {.error = "storage-daemon port must be greater than zero."};
   }
@@ -8174,6 +8319,7 @@ ServiceState::UpsertStorageDaemonResource(
 
   auto content = context.value->content;
   if (spec.address) { content.address = spec.address; }
+  if (spec.source_address) { content.source_address = spec.source_address; }
   if (spec.port) { content.port = spec.port; }
   if (spec.just_in_time_reservation) {
     content.just_in_time_reservation = spec.just_in_time_reservation;
@@ -8193,6 +8339,24 @@ ServiceState::UpsertStorageDaemonResource(
   if (spec.tls_enable) { content.tls_enable = spec.tls_enable; }
   if (spec.tls_require) { content.tls_require = spec.tls_require; }
   if (spec.tls_verify_peer) { content.tls_verify_peer = spec.tls_verify_peer; }
+  if (spec.tls_cipher_list) { content.tls_cipher_list = spec.tls_cipher_list; }
+  if (spec.tls_cipher_suites) {
+    content.tls_cipher_suites = spec.tls_cipher_suites;
+  }
+  if (spec.tls_dh_file) { content.tls_dh_file = spec.tls_dh_file; }
+  if (spec.tls_protocol) { content.tls_protocol = spec.tls_protocol; }
+  if (spec.tls_ca_certificate_file) {
+    content.tls_ca_certificate_file = spec.tls_ca_certificate_file;
+  }
+  if (spec.tls_ca_certificate_dir) {
+    content.tls_ca_certificate_dir = spec.tls_ca_certificate_dir;
+  }
+  if (spec.tls_certificate_revocation_list) {
+    content.tls_certificate_revocation_list
+        = spec.tls_certificate_revocation_list;
+  }
+  if (spec.tls_certificate) { content.tls_certificate = spec.tls_certificate; }
+  if (spec.tls_key) { content.tls_key = spec.tls_key; }
   if (spec.ndmp_enable) { content.ndmp_enable = spec.ndmp_enable; }
   if (spec.ndmp_snooping) { content.ndmp_snooping = spec.ndmp_snooping; }
   if (spec.ndmp_log_level) { content.ndmp_log_level = spec.ndmp_log_level; }

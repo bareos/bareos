@@ -154,6 +154,7 @@ struct StorageDeviceRequestSpec {
 
 struct StorageDaemonRequestSpec {
   std::optional<std::string> address{};
+  std::optional<std::string> source_address{};
   std::optional<uint16_t> port{};
   std::optional<bool> just_in_time_reservation{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -164,6 +165,15 @@ struct StorageDaemonRequestSpec {
   std::optional<bool> tls_enable{};
   std::optional<bool> tls_require{};
   std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
   std::optional<bool> pki_signatures{};
   std::optional<bool> pki_encryption{};
   std::optional<std::string> pki_key_pair{};
@@ -713,6 +723,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="client-daemon-address" name="address"
                placeholder="client.example.com">
 
+        <label for="client-daemon-source-address">SourceAddress</label>
+        <input id="client-daemon-source-address" name="source_address"
+               placeholder="192.0.2.10">
+
         <label for="client-daemon-port">Port</label>
         <input id="client-daemon-port" name="port" type="number"
                min="1" max="65535" placeholder="9102">
@@ -767,6 +781,47 @@ const char* kTestUiHtmlTemplate = R"HTML(
           <option value="true">Yes</option>
           <option value="false">No</option>
         </select>
+
+        <label for="client-daemon-tls-cipher-list">TLS cipher list</label>
+        <input id="client-daemon-tls-cipher-list" name="tls_cipher_list"
+               placeholder="ECDHE-RSA-AES256-GCM-SHA384">
+
+        <label for="client-daemon-tls-cipher-suites">TLS cipher suites</label>
+        <input id="client-daemon-tls-cipher-suites"
+               name="tls_cipher_suites"
+               placeholder="TLS_AES_256_GCM_SHA384">
+
+        <label for="client-daemon-tls-dh-file">TLS DH file</label>
+        <input id="client-daemon-tls-dh-file" name="tls_dh_file"
+               placeholder="/etc/bareos/dh4096.pem">
+
+        <label for="client-daemon-tls-protocol">TLS protocol</label>
+        <input id="client-daemon-tls-protocol" name="tls_protocol"
+               placeholder="MinProtocol = TLSv1.2">
+
+        <label for="client-daemon-tls-ca-certificate-file">TLS CA certificate file</label>
+        <input id="client-daemon-tls-ca-certificate-file"
+               name="tls_ca_certificate_file"
+               placeholder="/etc/bareos/ca.crt">
+
+        <label for="client-daemon-tls-ca-certificate-dir">TLS CA certificate dir</label>
+        <input id="client-daemon-tls-ca-certificate-dir"
+               name="tls_ca_certificate_dir"
+               placeholder="/etc/ssl/certs">
+
+        <label for="client-daemon-tls-certificate-revocation-list">TLS certificate revocation list</label>
+        <input id="client-daemon-tls-certificate-revocation-list"
+               name="tls_certificate_revocation_list"
+               placeholder="/etc/bareos/crl.pem">
+
+        <label for="client-daemon-tls-certificate">TLS certificate</label>
+        <input id="client-daemon-tls-certificate"
+               name="tls_certificate"
+               placeholder="/etc/bareos/client.crt">
+
+        <label for="client-daemon-tls-key">TLS key</label>
+        <input id="client-daemon-tls-key" name="tls_key"
+               placeholder="/etc/bareos/client.key">
 
         <label for="client-daemon-pki-signatures">PKI signatures</label>
         <select id="client-daemon-pki-signatures" name="pki_signatures">
@@ -1521,6 +1576,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="storage-daemon-address" name="address"
                placeholder="storage.example.com">
 
+        <label for="storage-daemon-source-address">SourceAddress</label>
+        <input id="storage-daemon-source-address" name="source_address"
+               placeholder="192.0.2.20">
+
         <label for="storage-daemon-port">Port</label>
         <input id="storage-daemon-port" name="port" type="number"
                min="1" max="65535" placeholder="9103">
@@ -1640,6 +1699,47 @@ const char* kTestUiHtmlTemplate = R"HTML(
           <option value="true">Yes</option>
           <option value="false">No</option>
         </select>
+
+        <label for="storage-daemon-tls-cipher-list">TLS cipher list</label>
+        <input id="storage-daemon-tls-cipher-list" name="tls_cipher_list"
+               placeholder="ECDHE-RSA-AES256-GCM-SHA384">
+
+        <label for="storage-daemon-tls-cipher-suites">TLS cipher suites</label>
+        <input id="storage-daemon-tls-cipher-suites"
+               name="tls_cipher_suites"
+               placeholder="TLS_AES_256_GCM_SHA384">
+
+        <label for="storage-daemon-tls-dh-file">TLS DH file</label>
+        <input id="storage-daemon-tls-dh-file" name="tls_dh_file"
+               placeholder="/etc/bareos/dh4096.pem">
+
+        <label for="storage-daemon-tls-protocol">TLS protocol</label>
+        <input id="storage-daemon-tls-protocol" name="tls_protocol"
+               placeholder="MinProtocol = TLSv1.2">
+
+        <label for="storage-daemon-tls-ca-certificate-file">TLS CA certificate file</label>
+        <input id="storage-daemon-tls-ca-certificate-file"
+               name="tls_ca_certificate_file"
+               placeholder="/etc/bareos/ca.crt">
+
+        <label for="storage-daemon-tls-ca-certificate-dir">TLS CA certificate dir</label>
+        <input id="storage-daemon-tls-ca-certificate-dir"
+               name="tls_ca_certificate_dir"
+               placeholder="/etc/ssl/certs">
+
+        <label for="storage-daemon-tls-certificate-revocation-list">TLS certificate revocation list</label>
+        <input id="storage-daemon-tls-certificate-revocation-list"
+               name="tls_certificate_revocation_list"
+               placeholder="/etc/bareos/crl.pem">
+
+        <label for="storage-daemon-tls-certificate">TLS certificate</label>
+        <input id="storage-daemon-tls-certificate"
+               name="tls_certificate"
+               placeholder="/etc/bareos/storage.crt">
+
+        <label for="storage-daemon-tls-key">TLS key</label>
+        <input id="storage-daemon-tls-key" name="tls_key"
+               placeholder="/etc/bareos/storage.key">
 
         <label for="storage-daemon-just-in-time-reservation">Just in time reservation</label>
         <select id="storage-daemon-just-in-time-reservation"
@@ -2528,6 +2628,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const clientName = String(form.get('client_name') ?? '').trim();
         const payload = {
           address: String(form.get('address') ?? '').trim(),
+          source_address: String(form.get('source_address') ?? '').trim(),
           port: String(form.get('port') ?? '').trim(),
           maximum_concurrent_jobs: String(form.get('maximum_concurrent_jobs') ?? '').trim(),
           maximum_workers_per_job: String(form.get('maximum_workers_per_job') ?? '').trim(),
@@ -2537,6 +2638,15 @@ const char* kTestUiHtmlTemplate = R"HTML(
           tls_enable: String(form.get('tls_enable') ?? '').trim(),
           tls_require: String(form.get('tls_require') ?? '').trim(),
           tls_verify_peer: String(form.get('tls_verify_peer') ?? '').trim(),
+          tls_cipher_list: String(form.get('tls_cipher_list') ?? '').trim(),
+          tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
+          tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
+          tls_protocol: String(form.get('tls_protocol') ?? '').trim(),
+          tls_ca_certificate_file: String(form.get('tls_ca_certificate_file') ?? '').trim(),
+          tls_ca_certificate_dir: String(form.get('tls_ca_certificate_dir') ?? '').trim(),
+          tls_certificate_revocation_list: String(form.get('tls_certificate_revocation_list') ?? '').trim(),
+          tls_certificate: String(form.get('tls_certificate') ?? '').trim(),
+          tls_key: String(form.get('tls_key') ?? '').trim(),
           pki_signatures: String(form.get('pki_signatures') ?? '').trim(),
           pki_encryption: String(form.get('pki_encryption') ?? '').trim(),
           pki_key_pair: String(form.get('pki_key_pair') ?? '').trim(),
@@ -2558,6 +2668,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           messages: String(form.get('messages') ?? '').trim(),
         };
         if (!payload.address) { delete payload.address; }
+        if (!payload.source_address) { delete payload.source_address; }
         if (!payload.port) { delete payload.port; } else { payload.port = Number(payload.port); }
         if (!payload.maximum_concurrent_jobs) { delete payload.maximum_concurrent_jobs; } else { payload.maximum_concurrent_jobs = Number(payload.maximum_concurrent_jobs); }
         if (!payload.maximum_workers_per_job) { delete payload.maximum_workers_per_job; } else { payload.maximum_workers_per_job = Number(payload.maximum_workers_per_job); }
@@ -2567,6 +2678,15 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.tls_enable) { delete payload.tls_enable; } else { payload.tls_enable = payload.tls_enable === 'true'; }
         if (!payload.tls_require) { delete payload.tls_require; } else { payload.tls_require = payload.tls_require === 'true'; }
         if (!payload.tls_verify_peer) { delete payload.tls_verify_peer; } else { payload.tls_verify_peer = payload.tls_verify_peer === 'true'; }
+        if (!payload.tls_cipher_list) { delete payload.tls_cipher_list; }
+        if (!payload.tls_cipher_suites) { delete payload.tls_cipher_suites; }
+        if (!payload.tls_dh_file) { delete payload.tls_dh_file; }
+        if (!payload.tls_protocol) { delete payload.tls_protocol; }
+        if (!payload.tls_ca_certificate_file) { delete payload.tls_ca_certificate_file; }
+        if (!payload.tls_ca_certificate_dir) { delete payload.tls_ca_certificate_dir; }
+        if (!payload.tls_certificate_revocation_list) { delete payload.tls_certificate_revocation_list; }
+        if (!payload.tls_certificate) { delete payload.tls_certificate; }
+        if (!payload.tls_key) { delete payload.tls_key; }
         if (!payload.pki_signatures) { delete payload.pki_signatures; } else { payload.pki_signatures = payload.pki_signatures === 'true'; }
         if (!payload.pki_encryption) { delete payload.pki_encryption; } else { payload.pki_encryption = payload.pki_encryption === 'true'; }
         if (!payload.pki_key_pair) { delete payload.pki_key_pair; }
@@ -3428,6 +3548,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const storageName = String(form.get('storage_name') ?? '').trim();
         const payload = {
           address: String(form.get('address') ?? '').trim(),
+          source_address: String(form.get('source_address') ?? '').trim(),
           port: String(form.get('port') ?? '').trim(),
           just_in_time_reservation: String(form.get('just_in_time_reservation') ?? '').trim(),
           maximum_concurrent_jobs: String(form.get('maximum_concurrent_jobs') ?? '').trim(),
@@ -3438,6 +3559,15 @@ const char* kTestUiHtmlTemplate = R"HTML(
           tls_enable: String(form.get('tls_enable') ?? '').trim(),
           tls_require: String(form.get('tls_require') ?? '').trim(),
           tls_verify_peer: String(form.get('tls_verify_peer') ?? '').trim(),
+          tls_cipher_list: String(form.get('tls_cipher_list') ?? '').trim(),
+          tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
+          tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
+          tls_protocol: String(form.get('tls_protocol') ?? '').trim(),
+          tls_ca_certificate_file: String(form.get('tls_ca_certificate_file') ?? '').trim(),
+          tls_ca_certificate_dir: String(form.get('tls_ca_certificate_dir') ?? '').trim(),
+          tls_certificate_revocation_list: String(form.get('tls_certificate_revocation_list') ?? '').trim(),
+          tls_certificate: String(form.get('tls_certificate') ?? '').trim(),
+          tls_key: String(form.get('tls_key') ?? '').trim(),
           ndmp_enable: String(form.get('ndmp_enable') ?? '').trim(),
           ndmp_snooping: String(form.get('ndmp_snooping') ?? '').trim(),
           ndmp_log_level: String(form.get('ndmp_log_level') ?? '').trim(),
@@ -3464,6 +3594,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           messages: String(form.get('messages') ?? '').trim(),
         };
         if (!payload.address) { delete payload.address; }
+        if (!payload.source_address) { delete payload.source_address; }
         if (!payload.port) { delete payload.port; } else { payload.port = Number(payload.port); }
         if (!payload.just_in_time_reservation) { delete payload.just_in_time_reservation; } else { payload.just_in_time_reservation = payload.just_in_time_reservation === 'true'; }
         if (!payload.maximum_concurrent_jobs) { delete payload.maximum_concurrent_jobs; } else { payload.maximum_concurrent_jobs = Number(payload.maximum_concurrent_jobs); }
@@ -3474,6 +3605,15 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.tls_enable) { delete payload.tls_enable; } else { payload.tls_enable = payload.tls_enable === 'true'; }
         if (!payload.tls_require) { delete payload.tls_require; } else { payload.tls_require = payload.tls_require === 'true'; }
         if (!payload.tls_verify_peer) { delete payload.tls_verify_peer; } else { payload.tls_verify_peer = payload.tls_verify_peer === 'true'; }
+        if (!payload.tls_cipher_list) { delete payload.tls_cipher_list; }
+        if (!payload.tls_cipher_suites) { delete payload.tls_cipher_suites; }
+        if (!payload.tls_dh_file) { delete payload.tls_dh_file; }
+        if (!payload.tls_protocol) { delete payload.tls_protocol; }
+        if (!payload.tls_ca_certificate_file) { delete payload.tls_ca_certificate_file; }
+        if (!payload.tls_ca_certificate_dir) { delete payload.tls_ca_certificate_dir; }
+        if (!payload.tls_certificate_revocation_list) { delete payload.tls_certificate_revocation_list; }
+        if (!payload.tls_certificate) { delete payload.tls_certificate; }
+        if (!payload.tls_key) { delete payload.tls_key; }
         if (!payload.ndmp_enable) { delete payload.ndmp_enable; } else { payload.ndmp_enable = payload.ndmp_enable === 'true'; }
         if (!payload.ndmp_snooping) { delete payload.ndmp_snooping; } else { payload.ndmp_snooping = payload.ndmp_snooping === 'true'; }
         if (!payload.ndmp_log_level) { delete payload.ndmp_log_level; } else { payload.ndmp_log_level = Number(payload.ndmp_log_level); }
@@ -4434,6 +4574,7 @@ http::response<http::string_body> HandleDeploymentClientDaemonPutRequest(
 
   ClientDaemonResourceSpec resource_spec{
       .address = spec->address,
+      .source_address = spec->source_address,
       .port = spec->port,
       .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
       .maximum_workers_per_job = spec->maximum_workers_per_job,
@@ -4443,6 +4584,15 @@ http::response<http::string_body> HandleDeploymentClientDaemonPutRequest(
       .tls_enable = spec->tls_enable,
       .tls_require = spec->tls_require,
       .tls_verify_peer = spec->tls_verify_peer,
+      .tls_cipher_list = spec->tls_cipher_list,
+      .tls_cipher_suites = spec->tls_cipher_suites,
+      .tls_dh_file = spec->tls_dh_file,
+      .tls_protocol = spec->tls_protocol,
+      .tls_ca_certificate_file = spec->tls_ca_certificate_file,
+      .tls_ca_certificate_dir = spec->tls_ca_certificate_dir,
+      .tls_certificate_revocation_list = spec->tls_certificate_revocation_list,
+      .tls_certificate = spec->tls_certificate,
+      .tls_key = spec->tls_key,
       .pki_signatures = spec->pki_signatures,
       .pki_encryption = spec->pki_encryption,
       .pki_key_pair = spec->pki_key_pair,
@@ -4676,6 +4826,7 @@ http::response<http::string_body> HandleDeploymentStorageDaemonPutRequest(
 
   StorageDaemonResourceSpec resource_spec{
       .address = spec->address,
+      .source_address = spec->source_address,
       .port = spec->port,
       .just_in_time_reservation = spec->just_in_time_reservation,
       .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
@@ -4685,6 +4836,15 @@ http::response<http::string_body> HandleDeploymentStorageDaemonPutRequest(
       .tls_enable = spec->tls_enable,
       .tls_require = spec->tls_require,
       .tls_verify_peer = spec->tls_verify_peer,
+      .tls_cipher_list = spec->tls_cipher_list,
+      .tls_cipher_suites = spec->tls_cipher_suites,
+      .tls_dh_file = spec->tls_dh_file,
+      .tls_protocol = spec->tls_protocol,
+      .tls_ca_certificate_file = spec->tls_ca_certificate_file,
+      .tls_ca_certificate_dir = spec->tls_ca_certificate_dir,
+      .tls_certificate_revocation_list = spec->tls_certificate_revocation_list,
+      .tls_certificate = spec->tls_certificate,
+      .tls_key = spec->tls_key,
       .ndmp_enable = spec->ndmp_enable,
       .ndmp_snooping = spec->ndmp_snooping,
       .ndmp_log_level = spec->ndmp_log_level,
@@ -7038,10 +7198,23 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
       = json_object_get(root.get(), "maximum_workers_per_job");
   auto* absolute_job_timeout
       = json_object_get(root.get(), "absolute_job_timeout");
+  auto* source_address = json_object_get(root.get(), "source_address");
   auto* tls_authenticate = json_object_get(root.get(), "tls_authenticate");
   auto* tls_enable = json_object_get(root.get(), "tls_enable");
   auto* tls_require = json_object_get(root.get(), "tls_require");
   auto* tls_verify_peer = json_object_get(root.get(), "tls_verify_peer");
+  auto* tls_cipher_list = json_object_get(root.get(), "tls_cipher_list");
+  auto* tls_cipher_suites = json_object_get(root.get(), "tls_cipher_suites");
+  auto* tls_dh_file = json_object_get(root.get(), "tls_dh_file");
+  auto* tls_protocol = json_object_get(root.get(), "tls_protocol");
+  auto* tls_ca_certificate_file
+      = json_object_get(root.get(), "tls_ca_certificate_file");
+  auto* tls_ca_certificate_dir
+      = json_object_get(root.get(), "tls_ca_certificate_dir");
+  auto* tls_certificate_revocation_list
+      = json_object_get(root.get(), "tls_certificate_revocation_list");
+  auto* tls_certificate = json_object_get(root.get(), "tls_certificate");
+  auto* tls_key = json_object_get(root.get(), "tls_key");
   auto* pki_signatures = json_object_get(root.get(), "pki_signatures");
   auto* pki_encryption = json_object_get(root.get(), "pki_encryption");
   auto* pki_key_pair = json_object_get(root.get(), "pki_key_pair");
@@ -7096,6 +7269,7 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
     return true;
   };
   if (!require_string(address, "address")
+      || !require_string(source_address, "source_address")
       || (port && !json_is_null(port) && !json_is_integer(port))
       || (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
           && !json_is_integer(maximum_concurrent_jobs))
@@ -7109,6 +7283,16 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
           && !json_is_integer(maximum_bandwidth_per_job))
       || !require_string(secure_erase_command, "secure_erase_command")
       || !require_string(grpc_module, "grpc_module")
+      || !require_string(tls_cipher_list, "tls_cipher_list")
+      || !require_string(tls_cipher_suites, "tls_cipher_suites")
+      || !require_string(tls_dh_file, "tls_dh_file")
+      || !require_string(tls_protocol, "tls_protocol")
+      || !require_string(tls_ca_certificate_file, "tls_ca_certificate_file")
+      || !require_string(tls_ca_certificate_dir, "tls_ca_certificate_dir")
+      || !require_string(tls_certificate_revocation_list,
+                         "tls_certificate_revocation_list")
+      || !require_string(tls_certificate, "tls_certificate")
+      || !require_string(tls_key, "tls_key")
       || !require_string(pki_key_pair, "pki_key_pair")
       || (statistics_collect_interval
           && !json_is_null(statistics_collect_interval)
@@ -7298,6 +7482,9 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   if (address && json_is_string(address)) {
     spec.address = std::string{json_string_value(address)};
   }
+  if (source_address && json_is_string(source_address)) {
+    spec.source_address = std::string{json_string_value(source_address)};
+  }
   if (port && json_is_integer(port)) {
     const auto value = json_integer_value(port);
     if (value <= 0 || value > 65535) {
@@ -7343,6 +7530,37 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   }
   if (grpc_module && json_is_string(grpc_module)) {
     spec.grpc_module = std::string{json_string_value(grpc_module)};
+  }
+  if (tls_cipher_list && json_is_string(tls_cipher_list)) {
+    spec.tls_cipher_list = std::string{json_string_value(tls_cipher_list)};
+  }
+  if (tls_cipher_suites && json_is_string(tls_cipher_suites)) {
+    spec.tls_cipher_suites = std::string{json_string_value(tls_cipher_suites)};
+  }
+  if (tls_dh_file && json_is_string(tls_dh_file)) {
+    spec.tls_dh_file = std::string{json_string_value(tls_dh_file)};
+  }
+  if (tls_protocol && json_is_string(tls_protocol)) {
+    spec.tls_protocol = std::string{json_string_value(tls_protocol)};
+  }
+  if (tls_ca_certificate_file && json_is_string(tls_ca_certificate_file)) {
+    spec.tls_ca_certificate_file
+        = std::string{json_string_value(tls_ca_certificate_file)};
+  }
+  if (tls_ca_certificate_dir && json_is_string(tls_ca_certificate_dir)) {
+    spec.tls_ca_certificate_dir
+        = std::string{json_string_value(tls_ca_certificate_dir)};
+  }
+  if (tls_certificate_revocation_list
+      && json_is_string(tls_certificate_revocation_list)) {
+    spec.tls_certificate_revocation_list
+        = std::string{json_string_value(tls_certificate_revocation_list)};
+  }
+  if (tls_certificate && json_is_string(tls_certificate)) {
+    spec.tls_certificate = std::string{json_string_value(tls_certificate)};
+  }
+  if (tls_key && json_is_string(tls_key)) {
+    spec.tls_key = std::string{json_string_value(tls_key)};
   }
   if (pki_key_pair && json_is_string(pki_key_pair)) {
     spec.pki_key_pair = std::string{json_string_value(pki_key_pair)};
