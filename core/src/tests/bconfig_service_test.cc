@@ -1060,6 +1060,10 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
        .tls_enable = true,
        .tls_require = true,
        .tls_verify_peer = true,
+       .tls_cipher_list = std::string{"DEFAULT:@SECLEVEL=2"},
+       .tls_cipher_suites = std::string{"TLS_AES_256_GCM_SHA384"},
+       .tls_dh_file = std::string{"/etc/bareos/dh4096.pem"},
+       .tls_protocol = std::string{"MinProtocol = TLSv1.2"},
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = false,
        .monitor = true,
@@ -1090,6 +1094,14 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   EXPECT_NE(created_text.find("TlsEnable = yes"), std::string::npos);
   EXPECT_NE(created_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_NE(created_text.find("TlsVerifyPeer = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsCipherList = \"DEFAULT:@SECLEVEL=2\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsCipherSuites = \"TLS_AES_256_GCM_SHA384\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsDhFile = \"/etc/bareos/dh4096.pem\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsProtocol = \"MinProtocol = TLSv1.2\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = no"),
@@ -1124,6 +1136,14 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsVerifyPeer = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherList = \"DEFAULT:@SECLEVEL=2\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherSuites = \"TLS_AES_256_GCM_SHA384\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsDhFile = \"/etc/bareos/dh4096.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsProtocol = \"MinProtocol = TLSv1.2\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = no"),

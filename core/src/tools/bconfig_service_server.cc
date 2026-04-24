@@ -81,6 +81,10 @@ struct ClientDirectorStubRequestSpec {
   std::optional<bool> tls_enable{};
   std::optional<bool> tls_require{};
   std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};
@@ -765,6 +769,22 @@ const char* kTestUiHtmlTemplate = R"HTML(
                  type="checkbox">
           TLS verify peer
         </label>
+
+        <label for="client-stub-tls-cipher-list">TLS cipher list</label>
+        <input id="client-stub-tls-cipher-list" name="tls_cipher_list"
+               placeholder="DEFAULT:@SECLEVEL=2">
+
+        <label for="client-stub-tls-cipher-suites">TLS cipher suites</label>
+        <input id="client-stub-tls-cipher-suites" name="tls_cipher_suites"
+               placeholder="TLS_AES_256_GCM_SHA384">
+
+        <label for="client-stub-tls-dh-file">TLS DH file</label>
+        <input id="client-stub-tls-dh-file" name="tls_dh_file"
+               placeholder="/etc/bareos/dh4096.pem">
+
+        <label for="client-stub-tls-protocol">TLS protocol</label>
+        <input id="client-stub-tls-protocol" name="tls_protocol"
+               placeholder="MinProtocol = TLSv1.2">
 
         <label class="checkbox-label" for="client-stub-connection-from-director-to-client">
           <input id="client-stub-connection-from-director-to-client"
@@ -2803,6 +2823,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
           tls_require: document.getElementById('client-stub-tls-require').checked,
           tls_verify_peer: document.getElementById(
             'client-stub-tls-verify-peer').checked,
+          tls_cipher_list: String(form.get('tls_cipher_list') ?? '').trim(),
+          tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
+          tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
+          tls_protocol: String(form.get('tls_protocol') ?? '').trim(),
           connection_from_director_to_client: document.getElementById(
             'client-stub-connection-from-director-to-client').checked,
           connection_from_client_to_director: document.getElementById(
@@ -2827,6 +2851,18 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (payload.allowed_job_commands.length === 0) {
           delete payload.allowed_job_commands;
+        }
+        if (!payload.tls_cipher_list) {
+          delete payload.tls_cipher_list;
+        }
+        if (!payload.tls_cipher_suites) {
+          delete payload.tls_cipher_suites;
+        }
+        if (!payload.tls_dh_file) {
+          delete payload.tls_dh_file;
+        }
+        if (!payload.tls_protocol) {
+          delete payload.tls_protocol;
         }
         if (!payload.maximum_bandwidth_per_job) {
           delete payload.maximum_bandwidth_per_job;
@@ -5084,6 +5120,10 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
       .tls_enable = spec->tls_enable,
       .tls_require = spec->tls_require,
       .tls_verify_peer = spec->tls_verify_peer,
+      .tls_cipher_list = spec->tls_cipher_list,
+      .tls_cipher_suites = spec->tls_cipher_suites,
+      .tls_dh_file = spec->tls_dh_file,
+      .tls_protocol = spec->tls_protocol,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -6917,6 +6957,10 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   auto* tls_enable = json_object_get(root.get(), "tls_enable");
   auto* tls_require = json_object_get(root.get(), "tls_require");
   auto* tls_verify_peer = json_object_get(root.get(), "tls_verify_peer");
+  auto* tls_cipher_list = json_object_get(root.get(), "tls_cipher_list");
+  auto* tls_cipher_suites = json_object_get(root.get(), "tls_cipher_suites");
+  auto* tls_dh_file = json_object_get(root.get(), "tls_dh_file");
+  auto* tls_protocol = json_object_get(root.get(), "tls_protocol");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -6976,6 +7020,26 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   if (tls_verify_peer && !json_is_null(tls_verify_peer)
       && !json_is_boolean(tls_verify_peer)) {
     error = "field 'tls_verify_peer' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (tls_cipher_list && !json_is_null(tls_cipher_list)
+      && !json_is_string(tls_cipher_list)) {
+    error = "field 'tls_cipher_list' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (tls_cipher_suites && !json_is_null(tls_cipher_suites)
+      && !json_is_string(tls_cipher_suites)) {
+    error = "field 'tls_cipher_suites' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (tls_dh_file && !json_is_null(tls_dh_file)
+      && !json_is_string(tls_dh_file)) {
+    error = "field 'tls_dh_file' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (tls_protocol && !json_is_null(tls_protocol)
+      && !json_is_string(tls_protocol)) {
+    error = "field 'tls_protocol' must be a string when provided.";
     return std::nullopt;
   }
   if (connection_from_director_to_client
@@ -7043,6 +7107,18 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   }
   if (tls_verify_peer && json_is_boolean(tls_verify_peer)) {
     spec.tls_verify_peer = json_is_true(tls_verify_peer);
+  }
+  if (tls_cipher_list && json_is_string(tls_cipher_list)) {
+    spec.tls_cipher_list = std::string{json_string_value(tls_cipher_list)};
+  }
+  if (tls_cipher_suites && json_is_string(tls_cipher_suites)) {
+    spec.tls_cipher_suites = std::string{json_string_value(tls_cipher_suites)};
+  }
+  if (tls_dh_file && json_is_string(tls_dh_file)) {
+    spec.tls_dh_file = std::string{json_string_value(tls_dh_file)};
+  }
+  if (tls_protocol && json_is_string(tls_protocol)) {
+    spec.tls_protocol = std::string{json_string_value(tls_protocol)};
   }
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {

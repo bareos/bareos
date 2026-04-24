@@ -606,6 +606,9 @@ void AppendIntegerDirective(std::ostringstream& content,
 void AppendBareosDirective(std::ostringstream& content,
                            std::string_view name,
                            const std::optional<std::string>& value);
+void AppendQuotedDirective(std::ostringstream& content,
+                           std::string_view name,
+                           const std::optional<std::string>& value);
 void AppendRepeatedQuotedDirective(std::ostringstream& content,
                                    std::string_view name,
                                    const std::vector<std::string>& values);
@@ -624,6 +627,10 @@ std::string BuildClientDirectorStubContent(
     const std::optional<bool>& tls_enable = std::nullopt,
     const std::optional<bool>& tls_require = std::nullopt,
     const std::optional<bool>& tls_verify_peer = std::nullopt,
+    const std::optional<std::string>& tls_cipher_list = std::nullopt,
+    const std::optional<std::string>& tls_cipher_suites = std::nullopt,
+    const std::optional<std::string>& tls_dh_file = std::nullopt,
+    const std::optional<std::string>& tls_protocol = std::nullopt,
     const std::optional<bool>& connection_from_director_to_client
     = std::nullopt,
     const std::optional<bool>& connection_from_client_to_director
@@ -650,6 +657,10 @@ std::string BuildClientDirectorStubContent(
   AppendBoolDirective(content, "TlsEnable", tls_enable);
   AppendBoolDirective(content, "TlsRequire", tls_require);
   AppendBoolDirective(content, "TlsVerifyPeer", tls_verify_peer);
+  AppendQuotedDirective(content, "TlsCipherList", tls_cipher_list);
+  AppendQuotedDirective(content, "TlsCipherSuites", tls_cipher_suites);
+  AppendQuotedDirective(content, "TlsDhFile", tls_dh_file);
+  AppendQuotedDirective(content, "TlsProtocol", tls_protocol);
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
                       connection_from_director_to_client);
   AppendBoolDirective(content, "ConnectionFromClientToDirector",
@@ -1928,6 +1939,10 @@ struct ClientDirectorStubWriteContext {
   std::optional<bool> tls_enable{};
   std::optional<bool> tls_require{};
   std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<bool> monitor{};
@@ -4862,6 +4877,22 @@ LoadClientDirectorStubWriteContext(const std::filesystem::path& client_root,
     if (HasMemberSource(*director, {"TlsVerifyPeer"})) {
       context.tls_verify_peer = director->tls_cert_.verify_peer_;
     }
+    if (HasMemberSource(*director, {"TlsCipherList"})
+        && !director->cipherlist_.empty()) {
+      context.tls_cipher_list = director->cipherlist_;
+    }
+    if (HasMemberSource(*director, {"TlsCipherSuites"})
+        && !director->ciphersuites_.empty()) {
+      context.tls_cipher_suites = director->ciphersuites_;
+    }
+    if (HasMemberSource(*director, {"TlsDhFile"})
+        && !director->tls_cert_.dhfile_.empty()) {
+      context.tls_dh_file = director->tls_cert_.dhfile_;
+    }
+    if (HasMemberSource(*director, {"TlsProtocol"})
+        && !director->protocol_.empty()) {
+      context.tls_protocol = director->protocol_;
+    }
     if (HasMemberSource(*director, {"ConnectionFromDirectorToClient"})) {
       context.connection_from_director_to_client
           = director->conn_from_dir_to_fd;
@@ -5648,6 +5679,16 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
   const auto tls_verify_peer = spec.tls_verify_peer
                                    ? spec.tls_verify_peer
                                    : context.value->tls_verify_peer;
+  const auto tls_cipher_list = spec.tls_cipher_list
+                                   ? spec.tls_cipher_list
+                                   : context.value->tls_cipher_list;
+  const auto tls_cipher_suites = spec.tls_cipher_suites
+                                     ? spec.tls_cipher_suites
+                                     : context.value->tls_cipher_suites;
+  const auto tls_dh_file
+      = spec.tls_dh_file ? spec.tls_dh_file : context.value->tls_dh_file;
+  const auto tls_protocol
+      = spec.tls_protocol ? spec.tls_protocol : context.value->tls_protocol;
   const auto connection_from_director_to_client
       = spec.connection_from_director_to_client
             ? spec.connection_from_director_to_client
@@ -5664,7 +5705,8 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
   const auto stub_content = BuildClientDirectorStubContent(
       director_name, *password.value, description, address, port,
       allowed_script_dirs, allowed_job_commands, tls_authenticate, tls_enable,
-      tls_require, tls_verify_peer, connection_from_director_to_client,
+      tls_require, tls_verify_peer, tls_cipher_list, tls_cipher_suites,
+      tls_dh_file, tls_protocol, connection_from_director_to_client,
       connection_from_client_to_director, monitor, maximum_bandwidth_per_job);
 
   std::error_code error_code;
