@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -95,8 +95,8 @@ int CreateFile(JobControlRecord* jcr,
   }
 
   new_mode = attr->statp.st_mode;
-  Dmsg3(200, "type=%d newmode=%04o file=%s\n", attr->type, (new_mode & ~S_IFMT),
-        attr->ofname);
+  Dmsg3(200, "type=%d newmode=%04o file=%s\n", attr->type,
+        static_cast<unsigned int>(new_mode & ~S_IFMT), attr->ofname);
   parent_mode = S_IWUSR | S_IXUSR | new_mode;
   gid = attr->statp.st_gid;
   uid = attr->statp.st_uid;
@@ -436,8 +436,8 @@ int CreateFile(JobControlRecord* jcr,
       [[fallthrough]];
     case FT_DIRBEGIN:
     case FT_DIREND:
-      Dmsg2(200, "Make dir mode=%04o dir=%s\n", (new_mode & ~S_IFMT),
-            attr->ofname);
+      Dmsg2(200, "Make dir mode=%04o dir=%s\n",
+            static_cast<unsigned int>(new_mode & ~S_IFMT), attr->ofname);
       if (!makepath(attr, attr->ofname, new_mode, parent_mode, uid, gid, 0)) {
         return CF_ERROR;
       }
