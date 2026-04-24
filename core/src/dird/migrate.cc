@@ -68,7 +68,8 @@ namespace directordaemon {
 
 /* Commands sent to other storage daemon */
 inline constexpr const char replicatecmd[]
-    = "replicate JobId=%d Job=%s address=%s port=%d ssl=%d Authorization=%s\n";
+    = "replicate JobId=%u Job=%s address=%s port=%" PRIu32
+      " ssl=%" PRIu32 " Authorization=%s\n";
 
 // Get Job names in Pool
 inline constexpr const char sql_job[]
@@ -454,7 +455,8 @@ static int UniqueDbidHandler(void* ctx, int, char** row)
   }
 
   AddUniqueId(ids, row[0]);
-  Dmsg3(dbglevel, "dbid_hdlr count=%d Ids=%p %s\n", ids->count, ids->list,
+  Dmsg3(dbglevel, "dbid_hdlr count=%" PRIu32 " Ids=%p %s\n", ids->count,
+        ids->list,
         ids->list);
   return 0;
 }
@@ -542,7 +544,8 @@ static bool find_mediaid_then_jobids(JobControlRecord* jcr,
          jcr->get_ActionName());
     return true;  // Not an error
   } else if (ids->count != 1) {
-    Jmsg(jcr, M_FATAL, 0, T_("SQL error. Expected 1 MediaId got %d\n"),
+    Jmsg(jcr, M_FATAL, 0,
+         T_("SQL error. Expected 1 MediaId got %" PRIu32 "\n"),
          ids->count);
     return false;
   }
@@ -691,7 +694,7 @@ static bool regex_find_jobids(JobControlRecord* jcr,
   ok = true;
 
 bail_out:
-  Dmsg2(dbglevel, "Count=%d Jobids=%s\n", ids->count, ids->list);
+  Dmsg2(dbglevel, "Count=%" PRIu32 " Jobids=%s\n", ids->count, ids->list);
   foreach_dlist (item, item_chain) { free(item->item); }
   delete item_chain;
   return ok;
@@ -801,7 +804,7 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
       }
 
       pool_bytes = ctx.value;
-      Dmsg2(dbglevel, "highbytes=%" PRIu64 " pool=%" PRIu64 "\n",
+      Dmsg2(dbglevel, "highbytes=%" PRIu64 " pool=%" PRId64 "\n",
             jcr->dir_impl->res.rpool->MigrationHighBytes, pool_bytes);
 
       if (pool_bytes < (int64_t)jcr->dir_impl->res.rpool->MigrationHighBytes) {
@@ -831,7 +834,7 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
         goto bail_out;
       }
 
-      Dmsg2(dbglevel, "Pool Occupancy ids=%d MediaIds=%s\n", ids.count,
+      Dmsg2(dbglevel, "Pool Occupancy ids=%" PRIu32 " MediaIds=%s\n", ids.count,
             ids.list);
 
       if (!FindJobidsFromMediaidList(jcr, &ids, "Volume")) { goto bail_out; }
@@ -881,7 +884,8 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
       // Transfer jids to ids, where the jobs list is expected
       ids.count = jids.count;
       PmStrcpy(ids.list, jids.list);
-      Dmsg2(dbglevel, "Pool Occupancy ids=%d JobIds=%s\n", ids.count, ids.list);
+      Dmsg2(dbglevel, "Pool Occupancy ids=%" PRIu32 " JobIds=%s\n", ids.count,
+            ids.list);
       break;
     }
     case MT_POOL_TIME: {
@@ -908,7 +912,8 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
         goto bail_out;
       }
 
-      Dmsg2(dbglevel, "PoolTime ids=%d JobIds=%s\n", ids.count, ids.list);
+      Dmsg2(dbglevel, "PoolTime ids=%" PRIu32 " JobIds=%s\n", ids.count,
+            ids.list);
       break;
     }
     case MT_POOL_UNCOPIED_JOBS:
@@ -930,7 +935,8 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
        ids.count, (ids.count < 2) ? T_(" was") : T_("s were"),
        jcr->get_ActionName(true), ids.list);
 
-  Dmsg2(dbglevel, "Before loop count=%d ids=%s\n", ids.count, ids.list);
+  Dmsg2(dbglevel, "Before loop count=%" PRIu32 " ids=%s\n", ids.count,
+        ids.list);
 
   // Note: to not over load the system, limit the number of new jobs started.
   if (jcr->dir_impl->res.job->MaxConcurrentCopies) {
@@ -1027,7 +1033,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
     {
       JobDbRecord jr{};
       jr.JobId = jcr->dir_impl->MigrateJobId;
-      Dmsg1(dbglevel, "Previous jobid=%d\n", jr.JobId);
+      Dmsg1(dbglevel, "Previous jobid=%" PRIu32 "\n", jr.JobId);
 
       if (DbLocker _{jcr->db}; !jcr->db->GetJobRecord(jcr, &jr)) {
         Jmsg(jcr, M_FATAL, 0,
@@ -1043,7 +1049,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
 
     Jmsg(jcr, M_INFO, 0, T_("%s using JobId=%s Job=%s\n"),
          jcr->get_OperationName(), edit_int64(prev_jr.JobId, ed1), prev_jr.Job);
-    Dmsg4(dbglevel, "%s JobId=%d  using JobId=%s Job=%s\n",
+    Dmsg4(dbglevel, "%s JobId=%" PRIu32 "  using JobId=%s Job=%s\n",
           jcr->get_OperationName(), jcr->JobId, edit_int64(prev_jr.JobId, ed1),
           prev_jr.Job);
 
@@ -1569,10 +1575,10 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
             "  SD Bytes Written:       %s (%sB)\n"
             "  Rate:                   %.1f KB/s\n"
             "  Volume name(s):         %s\n"
-            "  Volume Session Id:      %d\n"
-            "  Volume Session Time:    %d\n"
+            "  Volume Session Id:      %" PRIu32 "\n"
+            "  Volume Session Time:    %" PRIu32 "\n"
             "  Last Volume Bytes:      %s (%sB)\n"
-            "  SD Errors:              %d\n"
+            "  SD Errors:              %" PRIu32 "\n"
             "  SD termination status:  %s\n"
             "  Bareos binary info:     %s\n"
             "  Job triggered by:       %s\n"
@@ -1664,7 +1670,8 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
 
     // use the PriorJobId field to store the migrated jobid in order to keep
     // track of it
-    Mmsg(query, "UPDATE Job SET priorjobid='%s' WHERE JobId=%d", new_jobid,
+    Mmsg(query, "UPDATE Job SET priorjobid='%s' WHERE JobId=%" PRIu32,
+         new_jobid,
          jcr->JobId);
     jcr->db->SqlQuery(query.c_str());
 

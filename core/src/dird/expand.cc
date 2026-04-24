@@ -105,7 +105,7 @@ static int job_item(JobControlRecord* jcr,
       str = job_type_to_str(jcr->getJobType());
       break;
     case 5: /* JobId */
-      Bsnprintf(buf, sizeof(buf), "%d", jcr->JobId);
+      Bsnprintf(buf, sizeof(buf), "%" PRIu32, jcr->JobId);
       str = buf;
       break;
     case 6: /* Client */

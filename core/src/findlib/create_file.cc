@@ -311,7 +311,8 @@ int CreateFile(JobControlRecord* jcr,
               Qmsg1(jcr, M_ERROR, 0, T_("bpkt already open filedes=%d\n"),
                     Bgetfd(bfd));
             }
-            Dmsg2(400, "open %s flags=%08o\n", attr->ofname, flags);
+            Dmsg2(400, "open %s flags=%08o\n", attr->ofname,
+                  static_cast<unsigned int>(flags));
             if ((bopen(bfd, attr->ofname, flags, 0, 0)) < 0) {
               BErrNo be;
               be.SetErrno(bfd->BErrNo);

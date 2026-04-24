@@ -1969,7 +1969,8 @@ static PyObject* PyStatPacket_repr(PyStatPacket* self)
        ", uid=%" PRIu32 ", gid=%" PRIu32 ", rdev=%" PRIu32 ", size=%" PRIu64
        ", atime=%lld, mtime=%lld, ctime=%lld, blksize=%" PRIu32
        ", blocks=%" PRIu64 ")",
-       self->dev, self->ino, (self->mode & ~S_IFMT), self->nlink, self->uid,
+       self->dev, self->ino, static_cast<unsigned int>(self->mode & ~S_IFMT),
+       self->nlink, self->uid,
        self->gid, self->rdev, self->size, static_cast<long long>(self->atime),
        static_cast<long long>(self->mtime), static_cast<long long>(self->ctime),
        self->blksize, self->blocks);
@@ -2216,7 +2217,8 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
        ", mode=%04o, buf=\"%s\", fname=\"%s\", status=%" PRId32
        ", io_errno=%" PRId32 ", lerror=%" PRId32 ", whence=%" PRId32
        ", offset=%" PRId64 ", win32=%d, filedes=%d)",
-       self->func, self->count, self->flags, (self->mode & ~S_IFMT),
+       self->func, self->count, self->flags,
+       static_cast<unsigned int>(self->mode & ~S_IFMT),
        PyGetByteArrayValue(self->buf), self->fname, self->status,
        self->io_errno, self->lerror, self->whence, self->offset, self->win32,
        self->filedes);

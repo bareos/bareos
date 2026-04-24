@@ -55,7 +55,8 @@ inline constexpr const char jobcmd[]
     = "JobId=%s job=%s job_name=%s client_name=%s "
       "type=%d level=%d FileSet=%s NoAttr=%d SpoolAttr=%d FileSetMD5=%s "
       "SpoolData=%d PreferMountedVols=%d SpoolSize=%s "
-      "rerunning=%d VolSessionId=%d VolSessionTime=%d Quota=%" PRIu64
+      "rerunning=%d VolSessionId=%" PRIu32 " VolSessionTime=%" PRIu32
+      " Quota=%" PRIu64
       " "
       "Protocol=%d BackupFormat=%s\n";
 inline constexpr const char use_storage[]
@@ -448,7 +449,7 @@ extern "C" void MsgThreadCleanup(void* arg)
   pthread_cond_broadcast(
       &jcr->dir_impl->nextrun_ready);    /* wakeup any waiting threads */
   jcr->dir_impl->term_wait.notify_all(); /* wakeup any waiting threads */
-  Dmsg2(100, "=== End msg_thread. JobId=%d usecnt=%d\n", jcr->JobId,
+  Dmsg2(100, "=== End msg_thread. JobId=%" PRIu32 " usecnt=%d\n", jcr->JobId,
         jcr->UseCount());
   jcr->db->ThreadCleanup(); /* remove thread specific data */
   FreeJcr(jcr);             /* release jcr */

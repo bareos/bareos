@@ -627,11 +627,12 @@ static bool add_cmd(UaContext* ua, const char*)
 
   if (!GetPoolDbr(ua, &pr)) { return true; }
 
-  Dmsg4(120, "id=%d Num=%d Max=%d type=%s\n", pr.PoolId, pr.NumVols, pr.MaxVols,
-        pr.PoolType);
+  Dmsg4(120, "id=%" PRIdbid " Num=%" PRIu32 " Max=%" PRIu32 " type=%s\n",
+        pr.PoolId, pr.NumVols, pr.MaxVols, pr.PoolType);
 
   while (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
-    ua->WarningMsg(T_("Pool already has maximum volumes=%d\n"), pr.MaxVols);
+    ua->WarningMsg(T_("Pool already has maximum volumes=%" PRIu32 "\n"),
+                   pr.MaxVols);
     if (!GetPint(ua, T_("Enter new maximum (zero for unlimited): "))) {
       return true;
     }
@@ -856,7 +857,8 @@ static inline bool SetbwlimitFiled(UaContext* ua,
   ua->jcr->max_bandwidth = limit;
 
   // Try to connect for 15 seconds
-  ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
+  ua->SendMsg(T_("Connecting to Client %s at %s:%" PRIu32 "\n"),
+              client->resource_name_,
               client->address, client->FDport);
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
@@ -905,7 +907,7 @@ static inline bool setbwlimit_stored(UaContext* ua,
   ua->jcr->max_bandwidth = limit;
 
   // Try to connect for 15 seconds
-  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
+  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
               store->resource_name_, store->address, store->SDport);
 
   if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
@@ -1138,7 +1140,7 @@ static void DoStorageSetdebug(UaContext* ua,
   SetWstorage(jcr, &lstore);
 
   // Try connecting for up to 15 seconds
-  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
+  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
               store->resource_name_, store->address, store->SDport);
 
   if (!ConnectToStorageDaemon(jcr, 1, 15, false)) {
@@ -1192,7 +1194,8 @@ static void DoClientSetdebug(UaContext* ua,
   ua->jcr->dir_impl->res.client = client;
 
   // Try to connect for 15 seconds
-  ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
+  ua->SendMsg(T_("Connecting to Client %s at %s:%" PRIu32 "\n"),
+              client->resource_name_,
               client->address, client->FDport);
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
@@ -1261,7 +1264,7 @@ static void AllStorageSetdebug(UaContext* ua,
       }
       if (!is_duplicate_address) {
         storages_with_unique_address.push_back(storage_in_config);
-        Dmsg2(140, "Stuffing: %s:%d\n", storage_in_config->address,
+        Dmsg2(140, "Stuffing: %s:%" PRIu32 "\n", storage_in_config->address,
               storage_in_config->SDport);
       }
     }
@@ -1316,7 +1319,7 @@ static void AllClientSetdebug(UaContext* ua,
       }
       if (!is_duplicate_address) {
         clients_with_unique_address.push_back(client_in_config);
-        Dmsg2(140, "Stuffing: %s:%d\n", client_in_config->address,
+        Dmsg2(140, "Stuffing: %s:%" PRIu32 "\n", client_in_config->address,
               client_in_config->FDport);
       }
     }
@@ -1577,7 +1580,7 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
   SetWstorage(ua->jcr, &lstore);
 
   // Try connecting for up to 15 seconds
-  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
+  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
               store->resource_name_, store->address, store->SDport);
 
   if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
@@ -1897,7 +1900,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
 
   GetLevelSinceTime(jcr);
 
-  ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"),
+  ua->SendMsg(T_("Connecting to Client %s at %s:%" PRIu32 "\n"),
               jcr->dir_impl->res.client->resource_name_,
               jcr->dir_impl->res.client->address,
               jcr->dir_impl->res.client->FDport);
@@ -2419,7 +2422,8 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok)
        * ask the user for confirmation. */
       if ((!ua->batch) && ((j2 - j1) > 25)) {
         Bsnprintf(buf, sizeof(buf),
-                  T_("Are you sure you want to delete %d JobIds ? (yes/no): "),
+                  T_("Are you sure you want to delete %" PRIu32
+                     " JobIds ? (yes/no): "),
                   j2 - j1);
         if (!GetYesno(ua, buf) || !ua->pint32_val) { return true; }
       }

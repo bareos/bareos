@@ -1396,7 +1396,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     if (OK) {
       for (tree_node* node = FirstTreeNode(tree.root); node;
            node = NextTreeNode(node)) {
-        Dmsg2(400, "FI=%" PRIu32 " node=%p\n", node->FileIndex, node);
+        Dmsg2(400, "FI=%" PRId32 " node=%p\n", node->FileIndex, node);
         if (node->extract) {
           Dmsg3(400, "JobId=%" PRIu32 " type=%d FI=%" PRId32 "\n", node->JobId,
                 to_underlying(node->type), node->FileIndex);

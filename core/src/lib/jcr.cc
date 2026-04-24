@@ -631,8 +631,11 @@ TlsPolicy JcrGetTlsPolicy(const char* unified_job_name)
   foreach_jcr (jcr) {
     if (bstrcmp(jcr->Job, unified_job_name)) {
       policy = jcr->sd_tls_policy;
-      Dmsg4(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s TlsPolicy=%d\n",
-            jcr->JobId, jcr->UseCount(), jcr->Job, policy);
+      Dmsg4(debuglevel,
+            "Inc get_jcr jid=%" PRIu32 " UseCount=%d Job=%s TlsPolicy=%"
+            PRIu32 "\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job,
+            static_cast<uint32_t>(policy));
       break;
     }
   }

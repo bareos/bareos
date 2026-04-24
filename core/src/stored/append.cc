@@ -549,7 +549,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
           = content2.data.addr(); /* use message buffer */
 
       Dmsg4(850,
-            "before writ_rec FI=%" PRIu32 " SessId=%" PRIu32
+            "before writ_rec FI=%d SessId=%" PRIu32
             " Strm=%s len=%" PRIu32 "\n",
             jcr->sd_impl->dcr->rec->FileIndex,
             jcr->sd_impl->dcr->rec->VolSessionId,

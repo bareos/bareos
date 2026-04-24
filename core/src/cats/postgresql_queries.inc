@@ -806,8 +806,8 @@ WHERE File.Name = '%s'
   AND Client.Name = '%s'
   %s
 ORDER BY File.FileId
-LIMIT %d
-OFFSET %d
+LIMIT %u
+OFFSET %u
 )SQL",
 
 /* 0064_bvfs_lsdirs_4 */
@@ -815,8 +815,8 @@ R"SQL(%s
 UNION
 %s
 ORDER BY Path ASC,JobId DESC
-LIMIT %d
-OFFSET %d
+LIMIT %u
+OFFSET %u
 )SQL",
 
 /* 0065_bvfs_clear_cache_0 */
@@ -1112,7 +1112,7 @@ FROM (
   SELECT
     COALESCE(SUM(count), 0) AS count_units,
     CEIL(COALESCE(SUM(size_gb)/1000, 0.0)) AS size_units,
-    %d AS configured_units
+    %u AS configured_units
   FROM client_aggregated
 ) t
 )SQL",

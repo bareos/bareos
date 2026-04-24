@@ -798,7 +798,7 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
           break;
         case 'i': /* JobId */
           if (jcr) {
-            Bsnprintf(add, sizeof(add), "%d", jcr->JobId);
+            Bsnprintf(add, sizeof(add), "%" PRIu32, jcr->JobId);
             str = add;
           } else {
             str = T_("*None*");

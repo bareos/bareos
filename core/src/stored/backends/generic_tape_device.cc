@@ -109,8 +109,8 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
           BErrNo be;
           dev_errno = errno;
           Dmsg5(100, "Open error on %s omode=%s oflags=%x errno=%d: ERR=%s\n",
-                prt_name, dev_mode_to_str(omode), oflags, errno,
-                be.bstrerror());
+                prt_name, dev_mode_to_str(omode),
+                static_cast<unsigned int>(oflags), errno, be.bstrerror());
           break;
         }
         dev_errno = 0;
@@ -255,7 +255,8 @@ bool generic_tape_device::eod(DeviceControlRecord* dcr)
     // If BSF worked and fileno is known (not -1), set file
     os_file = GetOsTapeFile();
     if (os_file >= 0) {
-      Dmsg2(100, "BSFATEOF adjust file from %d to %d\n", file, os_file);
+      Dmsg2(100, "BSFATEOF adjust file from %" PRIu32 " to %" PRId32 "\n", file,
+            os_file);
       file = os_file;
     } else {
       file++; /* wing it -- not correct on all OSes */
@@ -263,7 +264,7 @@ bool generic_tape_device::eod(DeviceControlRecord* dcr)
   } else {
     UpdatePos(dcr); /* update position */
   }
-  Dmsg1(200, "EOD dev->file=%d\n", file);
+  Dmsg1(200, "EOD dev->file=%" PRIu32 "\n", file);
 
   return ok;
 }
@@ -496,7 +497,7 @@ bool generic_tape_device::fsf(int num)
         }
       }
       if (status == 0) { /* EOF */
-        Dmsg1(100, "End of File mark from read. File=%d\n", file + 1);
+        Dmsg1(100, "End of File mark from read. File=%" PRIu32 "\n", file + 1);
         // Two reads of zero means end of tape
         if (AtEof()) {
           SetEot();
@@ -544,7 +545,7 @@ bool generic_tape_device::fsf(int num)
   Dmsg1(200, "Return %d from FSF\n", status);
   if (AtEof()) { Dmsg0(200, "ST_EOF set on exit FSF\n"); }
   if (AtEot()) { Dmsg0(200, "ST_EOT set on exit FSF\n"); }
-  Dmsg1(200, "Return from FSF file=%d\n", file);
+  Dmsg1(200, "Return from FSF file=%" PRIu32 "\n", file);
 
   return status == 0;
 }
@@ -634,7 +635,8 @@ bool generic_tape_device::fsr(int num)
     clrerror(mt_com.mt_op);
     Dmsg1(100, "FSF fail: ERR=%s\n", be.bstrerror());
     if (DevGetOsPos(this, &mt_stat)) {
-      Dmsg4(100, "Adjust from %d:%d to %d:%d\n", file, block_num,
+      Dmsg4(100, "Adjust from %" PRIu32 ":%" PRIu32 " to %d:%d\n", file,
+            block_num,
             mt_stat.mt_fileno, mt_stat.mt_blkno);
       file = mt_stat.mt_fileno;
       block_num = mt_stat.mt_blkno;
@@ -1153,7 +1155,7 @@ char* generic_tape_device::StatusDev()
 
   SetBit(BMT_TAPE, status);
   Pmsg0(-20, T_(" Bareos status:"));
-  Pmsg2(-20, T_(" file=%d block=%d\n"), file, block_num);
+  Pmsg2(-20, T_(" file=%" PRIu32 " block=%" PRIu32 "\n"), file, block_num);
   if (d_ioctl(fd, MTIOCGET, (char*)&mt_stat) < 0) {
     BErrNo be;
 
@@ -1272,26 +1274,28 @@ bool generic_tape_device::Reposition(DeviceControlRecord* dcr,
   }
 
   if (rfile > file) {
-    Dmsg1(100, "fsf %d\n", rfile - file);
+    Dmsg1(100, "fsf %" PRIu32 "\n", rfile - file);
     if (!fsf(rfile - file)) {
       Dmsg1(100, "fsf failed! ERR=%s\n", bstrerror());
       return false;
     }
-    Dmsg2(100, "wanted_file=%d at_file=%d\n", rfile, file);
+    Dmsg2(100, "wanted_file=%" PRIu32 " at_file=%" PRIu32 "\n", rfile, file);
   }
 
   if (rblock < block_num) {
-    Dmsg2(100, "wanted_blk=%d at_blk=%d\n", rblock, block_num);
+    Dmsg2(100, "wanted_blk=%" PRIu32 " at_blk=%" PRIu32 "\n", rblock,
+          block_num);
     Dmsg0(100, "bsf 1\n");
     bsf(1);
     Dmsg0(100, "fsf 1\n");
     fsf(1);
-    Dmsg2(100, "wanted_blk=%d at_blk=%d\n", rblock, block_num);
+    Dmsg2(100, "wanted_blk=%" PRIu32 " at_blk=%" PRIu32 "\n", rblock,
+          block_num);
   }
 
   if (HasCap(CAP_POSITIONBLOCKS) && rblock > block_num) {
     // Ignore errors as Bareos can read to the correct block.
-    Dmsg1(100, "fsr %d\n", rblock - block_num);
+    Dmsg1(100, "fsr %" PRIu32 "\n", rblock - block_num);
     return fsr(rblock - block_num);
   } else {
     while (rblock > block_num) {
@@ -1303,7 +1307,8 @@ bool generic_tape_device::Reposition(DeviceControlRecord* dcr,
               be.bstrerror());
         return false;
       }
-      Dmsg2(300, "moving forward wanted_blk=%d at_blk=%d\n", rblock, block_num);
+      Dmsg2(300, "moving forward wanted_blk=%" PRIu32 " at_blk=%" PRIu32 "\n",
+            rblock, block_num);
     }
   }
 

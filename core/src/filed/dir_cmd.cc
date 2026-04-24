@@ -603,7 +603,7 @@ bool StartConnectToDirectorThreads()
               "is missing.\n",
               dir_res->resource_name_);
       } else {
-        Dmsg3(120, "Connecting to Director \"%s\", address %s:%d.\n",
+        Dmsg3(120, "Connecting to Director \"%s\", address %s:%" PRIu32 ".\n",
               dir_res->resource_name_, dir_res->address, dir_res->port);
         thread = (pthread_t*)malloc(sizeof(pthread_t));
         if ((pthread_create_result
@@ -724,7 +724,7 @@ static bool SetauthorizationCmd(JobControlRecord* jcr)
   }
 
   SetStorageAuthKeyAndTlsPolicy(jcr, sd_auth_key.c_str(), jcr->sd_tls_policy);
-  Dmsg2(120, "JobId=%d Auth=%s\n", jcr->JobId, jcr->sd_auth_key);
+  Dmsg2(120, "JobId=%" PRIu32 " Auth=%s\n", jcr->JobId, jcr->sd_auth_key);
 
   return dir->fsend(OkAuthorization);
 }
@@ -866,9 +866,9 @@ static bool job_cmd(JobControlRecord* jcr)
             : command.tls_policy_;
 
   SetStorageAuthKeyAndTlsPolicy(jcr, command.sd_auth_key_, tls_policy);
-  Dmsg3(120, "JobId=%d Auth=%s TlsPolicy=%d\n", jcr->JobId, jcr->sd_auth_key,
-        tls_policy);
-  Mmsg(jcr->errmsg, "JobId=%d Job=%s", jcr->JobId, jcr->Job);
+  Dmsg3(120, "JobId=%" PRIu32 " Auth=%s TlsPolicy=%u\n", jcr->JobId,
+        jcr->sd_auth_key, static_cast<unsigned int>(tls_policy));
+  Mmsg(jcr->errmsg, "JobId=%" PRIu32 " Job=%s", jcr->JobId, jcr->Job);
   NewPlugins(jcr); /* instantiate plugins for this jcr */
   GeneratePluginEvent(jcr, bEventJobStart, (void*)jcr->errmsg);
 
@@ -1175,7 +1175,7 @@ static bool BootstrapCmd(JobControlRecord* jcr)
   FreeBootstrap(jcr);
   lock_mutex(bsr_mutex);
   bsr_uniq++;
-  Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory,
+  Mmsg(fname, "%s/%s.%s.%" PRIu32 ".bootstrap", me->working_directory,
        me->resource_name_, jcr->Job, bsr_uniq);
   unlock_mutex(bsr_mutex);
   Dmsg1(400, "bootstrap=%s\n", fname);
@@ -1375,7 +1375,7 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
   Dmsg0(5, "set sd auth key\n");
 
   jcr->sd_tls_policy = policy;
-  Dmsg1(5, "set sd ssl_policy to %d\n", policy);
+  Dmsg1(5, "set sd ssl_policy to %u\n", static_cast<unsigned int>(policy));
 }
 
 // Get address of storage daemon from Director
@@ -1403,8 +1403,8 @@ static bool StorageCmd(JobControlRecord* jcr)
 
   SetStorageAuthKeyAndTlsPolicy(jcr, sd_auth_key.c_str(), tls_policy);
 
-  Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port,
-        tls_policy);
+  Dmsg3(110, "Open storage: %s:%d ssl=%u\n", stored_addr, stored_port,
+        static_cast<unsigned int>(tls_policy));
 
   storage_daemon_socket->SetSourceAddress(me->FDsrc_addr);
 
@@ -2267,7 +2267,7 @@ static bool OpenSdReadSession(JobControlRecord* jcr)
         "\n",
         jcr->VolSessionId, jcr->VolSessionTime, jcr->fd_impl->StartFile,
         jcr->fd_impl->EndFile);
-  Dmsg2(120, "JobId=%d vol=%s\n", jcr->JobId, "DummyVolume");
+  Dmsg2(120, "JobId=%" PRIu32 " vol=%s\n", jcr->JobId, "DummyVolume");
   // Open Read Session with Storage daemon
   sd->fsend(read_open, "DummyVolume", jcr->VolSessionId, jcr->VolSessionTime,
             jcr->fd_impl->StartFile, jcr->fd_impl->EndFile,

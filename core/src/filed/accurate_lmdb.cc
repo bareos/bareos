@@ -98,7 +98,7 @@ bool BareosAccurateFilelistLmdb::init()
       goto bail_out;
     }
 
-    Mmsg(lmdb_name_, "%s/.accurate_lmdb.%d", me->working_directory,
+    Mmsg(lmdb_name_, "%s/.accurate_lmdb.%" PRIu32, me->working_directory,
          jcr_->JobId);
     result = mdb_env_open(env, lmdb_name_,
                           MDB_NOSUBDIR | MDB_NOLOCK | MDB_NOSYNC, 0600);

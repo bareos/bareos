@@ -388,7 +388,7 @@ result<std::size_t> ThreadlocalCompress(uint32_t algo,
   }
 
   PoolMem errmsg;
-  Mmsg(errmsg, "Unknown compression algorithm: %d", algo);
+  Mmsg(errmsg, "Unknown compression algorithm: %" PRIu32, algo);
   return errmsg;
 }
 
@@ -947,7 +947,8 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
     stream.avail_out = (uInt)jcr->compress.inflate_buffer_size;
   }
 
-  Dmsg2(400, "Comp_len=%d message_length=%d\n", stream.avail_in, *length);
+  Dmsg2(400, "Comp_len=%u message_length=%" PRIu32 "\n", stream.avail_in,
+        *length);
 
   if ((zstat = fastlzlibDecompressInit(&stream)) != Z_OK) { goto cleanup; }
 
@@ -992,7 +993,9 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
 
   *data = jcr->compress.inflate_buffer;
   *length = stream.total_out;
-  Dmsg2(400, "Write uncompressed %d bytes, total before write=%s\n", *length,
+  Dmsg2(400, "Write uncompressed %" PRIu32
+              " bytes, total before write=%s\n",
+        *length,
         edit_uint64(jcr->JobBytes, ec1));
   fastlzlibDecompressEnd(&stream);
 
@@ -1032,7 +1035,8 @@ bool DecompressData(JobControlRecord* jcr,
       unser_uint16(comp_version);
       UnserEnd(*data, sizeof(comp_stream_header));
       Dmsg4(400,
-            "Compressed data stream found: magic=0x%x, len=%d, level=%d, "
+            "Compressed data stream found: magic=0x%x, len=%" PRIu32
+            ", level=%d, "
             "ver=0x%x\n",
             comp_magic, comp_len, comp_level, comp_version);
 
@@ -1047,8 +1051,8 @@ bool DecompressData(JobControlRecord* jcr,
       // Size check
       if (comp_len + sizeof(comp_stream_header) != *length) {
         Qmsg(jcr, M_ERROR, 0,
-             T_("Compressed header size error. comp_len=%d, "
-                "message_length=%d\n"),
+             T_("Compressed header size error. comp_len=%" PRIu32 ", "
+                "message_length=%" PRIu32 "\n"),
              comp_len, *length);
         return false;
       }

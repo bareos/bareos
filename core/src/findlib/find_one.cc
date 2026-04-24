@@ -447,7 +447,8 @@ static inline int process_hardlink(JobControlRecord* jcr,
     *done = false;
   } else if (bstrcmp(hl.name.c_str(), fname)) {
     // If we have already backed up the hard linked file don't do it again
-    Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl.FileIndex, fname);
+    Dmsg2(400, "== Name identical skip FI=%" PRIu32 " file=%s\n", hl.FileIndex,
+          fname);
     *done = true;
     rtn_stat = 1; /* ignore */
   } else {
@@ -461,8 +462,8 @@ static inline int process_hardlink(JobControlRecord* jcr,
     ff_pkt->digest_len = hl.digest.size();
 
     rtn_stat = HandleFile(jcr, ff_pkt, top_level);
-    Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex,
-          hl.FileIndex, hl.name.c_str());
+    Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%" PRIu32 " file=%s\n",
+          ff_pkt->FileIndex, hl.FileIndex, hl.name.c_str());
     *done = true;
   }
 

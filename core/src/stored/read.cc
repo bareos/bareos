@@ -116,7 +116,8 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
   if (rec->FileIndex < 0) { return true; }
 
-  Dmsg5(400, "Send to FD: SessId=%u SessTim=%u FI=%s Strm=%s, len=%d\n",
+  Dmsg5(400,
+        "Send to FD: SessId=%u SessTim=%u FI=%s Strm=%s, len=%" PRIu32 "\n",
         rec->VolSessionId, rec->VolSessionTime,
         FI_to_ascii(ec1, rec->FileIndex),
         stream_to_ascii(ec2, rec->Stream, rec->FileIndex), rec->data_len);

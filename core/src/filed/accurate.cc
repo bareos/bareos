@@ -222,7 +222,9 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
         break;
       case 'n': /** Number of links */
         if (statc.st_nlink != ff_pkt->statp.st_nlink) {
-          Dmsg3(debuglevel - 1, "%s      st_nlink differ. Cat: %d File: %d\n",
+          Dmsg3(debuglevel - 1,
+                "%s      st_nlink differ. Cat: %" PRIu32 " File: %" PRIu32
+                "\n",
                 fname, (uint32_t)statc.st_nlink,
                 (uint32_t)ff_pkt->statp.st_nlink);
           status = true;

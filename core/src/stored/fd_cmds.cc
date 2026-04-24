@@ -385,7 +385,7 @@ static bool ReadOpenSession(JobControlRecord* jcr)
       return false;
     }
     Dmsg4(100,
-          "ReadOpenSession got: JobId=%" PRIu32 " Vol=%s VolSessId=%" PRId32
+          "ReadOpenSession got: JobId=%" PRIu32 " Vol=%s VolSessId=%" PRIu32
           " VolSessT=%" PRIu32 "\n",
           jcr->JobId, jcr->sd_impl->read_dcr->VolumeName,
           jcr->sd_impl->read_session.read_VolSessionId,

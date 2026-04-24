@@ -1131,13 +1131,13 @@ std::string FormatPrompts(const UaContext* ua,
                           const int window_width,
                           const int min_lines_threshold)
 {
-  unsigned int max_prompt_length = 1;
+  int max_prompt_length = 1;
 
   const int max_prompt_index_length = std::to_string(ua->num_prompts).length();
 
   for (int i = 1; i < ua->num_prompts; i++) {
-    if (strlen(ua->prompt[i]) > max_prompt_length) {
-      max_prompt_length = strlen(ua->prompt[i]);
+    if (static_cast<int>(strlen(ua->prompt[i])) > max_prompt_length) {
+      max_prompt_length = static_cast<int>(strlen(ua->prompt[i]));
     }
   }
 
@@ -1735,7 +1735,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         }
 
         InsertSelectedJobid(selected_jobids, jcr->JobId);
-        ua->SendMsg(T_("Selected Job %d for cancelling\n"), jcr->JobId);
+        ua->SendMsg(T_("Selected Job %" PRIu32 " for cancelling\n"),
+                    jcr->JobId);
       }
       endeach_jcr(jcr);
 

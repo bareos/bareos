@@ -572,7 +572,8 @@ bool StatsCmd(JobControlRecord* jcr)
 
       if (!have_jcr_for_jobid(job_stats->JobId)) {
         lock_mutex(mutex);
-        Dmsg1(200, "Removing jobid %d from job_statistics\n", job_stats->JobId);
+        Dmsg1(200, "Removing jobid %" PRIu32 " from job_statistics\n",
+              job_stats->JobId);
         job_statistics->remove(job_stats);
         unlock_mutex(mutex);
       }

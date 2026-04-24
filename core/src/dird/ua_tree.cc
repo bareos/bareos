@@ -786,7 +786,8 @@ static inline void ls_output(guid_list* guid,
 
   if (dot_cmd) {
     encode_time(statp->st_mtime, time_str);
-    Mmsg(buf, "%s,%d,%d(%s),%d(%s),%s,%s,%c,%s", mode_str,
+    Mmsg(buf, "%s,%" PRIu32 ",%" PRIu32 "(%s),%" PRIu32 "(%s),%s,%s,%c,%s",
+         mode_str,
          (uint32_t)statp->st_nlink, (uint32_t)statp->st_uid,
          guid->uid_to_name(statp->st_uid, en1, sizeof(en1)),
          (uint32_t)statp->st_gid,
@@ -804,7 +805,10 @@ static inline void ls_output(guid_list* guid,
     // Display most recent time
     encode_time(time, time_str);
 
-    Mmsg(buf, "%s  %2d %d (%-.8s) %d (%-.8s)  %12.12s  %s %c %s", mode_str,
+    Mmsg(buf,
+         "%s  %2" PRIu32 " %" PRIu32 " (%-.8s) %" PRIu32
+         " (%-.8s)  %12.12s  %s %c %s",
+         mode_str,
          (uint32_t)statp->st_nlink, (uint32_t)statp->st_uid,
          guid->uid_to_name(statp->st_uid, en1, sizeof(en1)),
          (uint32_t)statp->st_gid,

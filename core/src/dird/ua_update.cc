@@ -315,7 +315,8 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
   }
   mr->Slot = atoi(val);
   if ((pr.MaxVols > 0 && mr->Slot > (int)pr.MaxVols) || mr->Slot < 0) {
-    ua->ErrorMsg(T_("Invalid slot, it must be between 0 and MaxVols=%d\n"),
+    ua->ErrorMsg(T_("Invalid slot, it must be between 0 and MaxVols=%" PRIu32
+                    "\n"),
                  pr.MaxVols);
     return;
   }
@@ -468,7 +469,8 @@ static void UpdateAllVols(UaContext* ua)
   for (i = 0; i < num_pools; i++) {
     pr.PoolId = ids[i];
     if (DbLocker _{ua->db}; !ua->db->GetPoolRecord(ua->jcr, &pr)) {
-      ua->WarningMsg(T_("Updating all pools, but skipped PoolId=%d. ERR=%s\n"),
+      ua->WarningMsg(
+          T_("Updating all pools, but skipped PoolId=%" PRIdbid ". ERR=%s\n"),
                      pr.PoolId, ua->db->strerror());
       continue;
     }
@@ -775,12 +777,13 @@ static bool UpdateVolume(UaContext* ua)
           }
         }
         query = GetPoolMemory(PM_MESSAGE);
-        Mmsg(query, "UPDATE Media SET VolFiles=%u WHERE MediaId=%s", VolFiles,
+        Mmsg(query, "UPDATE Media SET VolFiles=%" PRId32 " WHERE MediaId=%s",
+             VolFiles,
              edit_int64(mr.MediaId, ed1));
         if (!ua->db->SqlQuery(query)) {
           ua->ErrorMsg("%s", ua->db->strerror());
         } else {
-          ua->InfoMsg(T_("New Volume Files is: %u\n"), VolFiles);
+          ua->InfoMsg(T_("New Volume Files is: %" PRId32 "\n"), VolFiles);
         }
         FreePoolMemory(query);
         break;
@@ -1096,14 +1099,16 @@ static void UpdateSlots(UaContext* ua)
     }
     SetStorageidInMr(store.store, &mr);
 
-    Dmsg4(100, "Before make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+    Dmsg4(100, "Before make unique: Vol=%s slot=%d inchanger=%d sid=%"
+                   PRIdbid "\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
     {
       DbLocker _{ua->db};
       // Set InChanger to zero for this Slot
       ua->db->MakeInchangerUnique(ua->jcr, &mr);
     }
-    Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+    Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%"
+                   PRIdbid "\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
 
     if (!vl->VolName) {
@@ -1116,10 +1121,12 @@ static void UpdateSlots(UaContext* ua)
 
     {
       DbLocker _{ua->db};
-      Dmsg4(100, "Before get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
+      Dmsg4(100, "Before get MR: Vol=%s slot=%d inchanger=%d sid=%"
+                     PRIdbid "\n",
             mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
       if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
-        Dmsg4(100, "After get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
+        Dmsg4(100, "After get MR: Vol=%s slot=%d inchanger=%d sid=%"
+                       PRIdbid "\n",
               mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
         // If Slot, Inchanger, and StorageId have changed, update the Media
         // record
@@ -1219,14 +1226,16 @@ void UpdateSlotsFromVolList(UaContext* ua,
     }
     SetStorageidInMr(store, &mr);
 
-    Dmsg4(100, "Before make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+    Dmsg4(100, "Before make unique: Vol=%s slot=%d inchanger=%d sid=%"
+                   PRIdbid "\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
     {
       DbLocker _{ua->db};
       // Set InChanger to zero for this Slot
       ua->db->MakeInchangerUnique(ua->jcr, &mr);
     }
-    Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+    Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%"
+                   PRIdbid "\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
 
     // See if there is anything in the slot.
@@ -1246,10 +1255,12 @@ void UpdateSlotsFromVolList(UaContext* ua,
      * the database and perform an update if needed. */
     {
       DbLocker _{ua->db};
-      Dmsg4(100, "Before get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
+      Dmsg4(100, "Before get MR: Vol=%s slot=%d inchanger=%d sid=%" PRIdbid
+                     "\n",
             mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
       if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
-        Dmsg4(100, "After get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
+        Dmsg4(100, "After get MR: Vol=%s slot=%d inchanger=%d sid=%" PRIdbid
+                       "\n",
               mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
         /* If Slot, Inchanger, and StorageId have changed, update the Media
          * record
@@ -1314,14 +1325,16 @@ void UpdateInchangerForExport(UaContext* ua,
     }
     SetStorageidInMr(store, &mr);
 
-    Dmsg4(100, "Before make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+    Dmsg4(100, "Before make unique: Vol=%s slot=%d inchanger=%d sid=%"
+                   PRIdbid "\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
     DbLocker _{ua->db};
 
     // Set InChanger to zero for this Slot
     ua->db->MakeInchangerUnique(ua->jcr, &mr);
 
-    Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+    Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%"
+                   PRIdbid "\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
   }
   return;

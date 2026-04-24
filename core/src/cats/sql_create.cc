@@ -121,7 +121,7 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
        jm->FirstIndex, jm->LastIndex,
        jm->StartFile, jm->EndFile,
        jm->StartBlock, jm->EndBlock,
-       count,
+       static_cast<uint32_t>(count),
        jm->JobBytes);
   /* clang-format on */
 
@@ -183,7 +183,7 @@ bool BareosDb::CreatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
        "AcceptAnyVolume,AutoPrune,Recycle,VolRetention,VolUseDuration,"
        "MaxVolJobs,MaxVolFiles,MaxVolBytes,PoolType,LabelType,LabelFormat,"
        "RecyclePoolId,ScratchPoolId,ActionOnPurge,MinBlocksize,MaxBlocksize) "
-       "VALUES ('%s',%u,%u,%d,%d,%d,%d,%d,%s,%s,%u,%u,%s,'%s',%d,'%s',%s,%s,%d,%d,%d)",
+       "VALUES ('%s',%u,%u,%d,%d,%d,%d,%d,%s,%s,%u,%u,%s,'%s',%d,'%s',%s,%s,%u,%u,%u)",
        esc_poolname,
        pr->NumVols, pr->MaxVols,
        pr->UseOnce, pr->UseCatalog,
@@ -421,7 +421,7 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        "ScratchPoolId,RecyclePoolId,Enabled,ActionOnPurge,EncryptionKey,"
        "MinBlocksize,MaxBlocksize,VolFiles) "
        "VALUES ('%s','%s',0,%u,%s,%s,%d,%s,%s,%u,%u,'%s',%d,%s,%d,%s,%s,0,0,%d,%s,"
-       "%s,%s,%s,%s,%d,%d,'%s',%d,%d,%d)",
+       "%s,%s,%s,%s,%d,%u,'%s',%u,%u,%u)",
        esc_medianame,
        esc_mtype, mr->PoolId,
        edit_uint64(mr->MaxVolBytes,ed1),
@@ -462,8 +462,8 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
       bstrutime(dt, sizeof(dt), mr->LabelDate);
       Mmsg(cmd,
            "UPDATE Media SET LabelDate='%s' "
-           "WHERE MediaId=%d",
-           dt, mr->MediaId);
+            "WHERE MediaId=%" PRIdbid,
+            dt, mr->MediaId);
       retval = UpdateDb(jcr, cmd) > 0;
     }
     /* Make sure that if InChanger is non-zero any other identical slot
@@ -781,12 +781,12 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
 
   DbLocker _{jcr->db_batch};
 
-  Dmsg1(50, "db_create_file_record changes=%u\n", changes);
+  Dmsg1(50, "db_create_file_record changes=%d\n", changes);
 
   jcr->setJobStatus(JS_AttrInserting);
 
   Jmsg(jcr, M_INFO, 0,
-       "Insert of attributes batch table with %u entries start\n",
+       "Insert of attributes batch table with %d entries start\n",
        jcr->db_batch->changes);
 
   if (!jcr->db_batch->SqlBatchEndFileTable(jcr, NULL)) {
@@ -979,7 +979,9 @@ bool BareosDb::CreateAttributesRecord(JobControlRecord* jcr,
   }
   if (!(ar->Stream == STREAM_UNIX_ATTRIBUTES
         || ar->Stream == STREAM_UNIX_ATTRIBUTES_EX)) {
-    Mmsg1(errmsg, T_("Attempt to put non-attributes into catalog. Stream=%d\n"),
+    Mmsg1(errmsg,
+          T_("Attempt to put non-attributes into catalog. Stream=%" PRIu32
+             "\n"),
           ar->Stream);
     Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
     return false;
@@ -1095,7 +1097,7 @@ bool BareosDb::CreateBaseFileList(JobControlRecord* jcr, const char* jobids)
   if (!SqlQuery(cmd)) { return false; }
 
   FillQuery<SQL_QUERY::select_recent_version>(buf, jobids);
-  FillQuery<SQL_QUERY::create_temp_new_basefile>(cmd, (uint64_t)jcr->JobId,
+  FillQuery<SQL_QUERY::create_temp_new_basefile>(cmd, (int64_t)jcr->JobId,
                                                  buf.c_str());
 
   return SqlQuery(cmd);
@@ -1133,10 +1135,11 @@ bool BareosDb::CreateRestoreObjectRecord(JobControlRecord* jcr,
        "INSERT INTO RestoreObject (ObjectName,PluginName,RestoreObject,"
        "ObjectLength,ObjectFullLength,ObjectIndex,ObjectType,"
        "ObjectCompression,FileIndex,JobId) "
-       "VALUES ('%s','%s','%s',%d,%d,%d,%d,%d,%d,%u)",
-       esc_name, esc_plug_name, esc_obj,
-       ro->object_len, ro->object_full_len, ro->object_index,
-       ro->FileType, ro->object_compression, ro->FileIndex, ro->JobId);
+       "VALUES ('%s','%s','%s',%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32
+       ",%d,%" PRIu32 ",%" PRIu32 ")",
+        esc_name, esc_plug_name, esc_obj,
+        ro->object_len, ro->object_full_len, ro->object_index,
+        ro->FileType, ro->object_compression, ro->FileIndex, ro->JobId);
   /* clang-format on */
 
   ro->RestoreObjectId = SqlInsertAutokeyRecord(cmd, NT_("RestoreObject"));

@@ -924,7 +924,8 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
     if (dbg_timestamp) {
       mtime = GetCurrentBtime();
       usecs = mtime % 1000000;
-      Mmsg(buf, "%s.%06d ", bstrftimes(ed1, sizeof(ed1), BtimeToUtime(mtime)),
+      Mmsg(buf, "%s.%06" PRIu32 " ",
+           bstrftimes(ed1, sizeof(ed1), BtimeToUtime(mtime)),
            usecs);
       pt_out(buf.c_str());
     }

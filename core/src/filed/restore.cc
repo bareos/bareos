@@ -472,7 +472,8 @@ void DoRestore(JobControlRecord* jcr)
     }
     /* Strip off new stream high bits */
     rctx.stream = rctx.full_stream & STREAMMASK_TYPE;
-    Dmsg5(150, "Got hdr: Files=%d FilInx=%d size=%d Stream=%d, %s.\n",
+    Dmsg5(150, "Got hdr: Files=%" PRIu32 " FilInx=%d size=%" PRIu32
+               " Stream=%d, %s.\n",
           jcr->JobFiles, file_index, rctx.size, rctx.stream,
           stream_to_ascii(rctx.stream));
 
@@ -483,9 +484,10 @@ void DoRestore(JobControlRecord* jcr)
       goto bail_out;
     }
     if (rctx.size != (uint32_t)sd->message_length) {
-      Jmsg2(jcr, M_FATAL, 0, T_("Actual data size %d not same as header %d\n"),
+      Jmsg2(jcr, M_FATAL, 0,
+            T_("Actual data size %d not same as header %" PRIu32 "\n"),
             sd->message_length, rctx.size);
-      Dmsg2(50, "Actual data size %d not same as header %d\n",
+      Dmsg2(50, "Actual data size %d not same as header %" PRIu32 "\n",
             sd->message_length, rctx.size);
       goto bail_out;
     }
@@ -1028,7 +1030,7 @@ ok_out:
 #endif
 
   // First output the statistics.
-  Dmsg2(10, "End Do Restore. Files=%d Bytes=%s\n", jcr->JobFiles,
+  Dmsg2(10, "End Do Restore. Files=%" PRIu32 " Bytes=%s\n", jcr->JobFiles,
         edit_uint64(jcr->JobBytes, ec1));
   if (have_acl && jcr->fd_impl->acl_data->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
@@ -1244,7 +1246,7 @@ int32_t ExtractData(JobControlRecord* jcr,
   if (BitIsSet(FO_ENCRYPT, flags)) {
     // Move any remaining data to start of buffer
     if (cipher_ctx->buf_len > 0) {
-      Dmsg1(130, "Moving %u buffered bytes to start of buffer\n",
+      Dmsg1(130, "Moving %d buffered bytes to start of buffer\n",
             cipher_ctx->buf_len);
       memmove(cipher_ctx->buf, &cipher_ctx->buf[cipher_ctx->packet_len],
               cipher_ctx->buf_len);
@@ -1269,7 +1271,7 @@ static bool ClosePreviousStream(JobControlRecord* jcr, r_ctx& rctx)
     if (rctx.size > 0 && !IsBopen(&rctx.bfd)) {
       Jmsg0(rctx.jcr, M_ERROR, 0,
             T_("Logic error: output file should be open\n"));
-      Dmsg2(000, "=== logic error size=%d bopen=%d\n", rctx.size,
+      Dmsg2(000, "=== logic error size=%" PRIu32 " bopen=%d\n", rctx.size,
             IsBopen(&rctx.bfd));
     }
 

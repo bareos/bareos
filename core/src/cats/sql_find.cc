@@ -361,7 +361,7 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
   jr->JobId = str_to_int64(row[0]);
   SqlFreeResult();
 
-  Dmsg1(100, "db_get_last_jobid: got JobId=%d\n", jr->JobId);
+  Dmsg1(100, "db_get_last_jobid: got JobId=%" PRIu32 "\n", jr->JobId);
   if (jr->JobId <= 0) {
     Mmsg1(errmsg, T_("No Job found for: %s\n"), cmd);
     return false;

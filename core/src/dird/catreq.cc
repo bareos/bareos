@@ -80,7 +80,8 @@ inline constexpr const char OK_media[]
       " MaxVolBytes=%s VolCapacityBytes=%s VolStatus=%s Slot=%d"
       " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
       " VolWriteTime=%s EndFile=%u EndBlock=%u LabelType=%d"
-      " MediaId=%s EncryptionKey=%s MinBlocksize=%d MaxBlocksize=%d\n";
+      " MediaId=%s EncryptionKey=%s MinBlocksize=%" PRIu32
+      " MaxBlocksize=%" PRIu32 "\n";
 inline constexpr const char OK_create[] = "1000 OK CreateJobMedia\n";
 inline constexpr const char OK_delete[] = "1000 OK DeleteNullJobmediaRecords\n";
 
@@ -355,7 +356,9 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       jm.JobId = jcr->JobId;
     }
     jm.MediaId = MediaId;
-    Dmsg6(400, "create_jobmedia JobId=%d MediaId=%d SF=%d EF=%d FI=%d LI=%d\n",
+    Dmsg6(400,
+          "create_jobmedia JobId=%" PRIu32 " MediaId=%" PRIdbid
+          " SF=%" PRIu32 " EF=%" PRIu32 " FI=%" PRIu32 " LI=%" PRIu32 "\n",
           jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex,
           jm.LastIndex);
     DbLocker _{jcr->db};
@@ -486,7 +489,9 @@ static void UpdateAttribute(JobControlRecord* jcr,
    *   Binary Object data */
 
   Dmsg1(400, "UpdCat msg=%s\n", msg);
-  Dmsg5(400, "UpdCat VolSessId=%d VolSessT=%d FI=%d Strm=%d reclen=%d\n",
+  Dmsg5(400,
+        "UpdCat VolSessId=%" PRIu32 " VolSessT=%" PRIu32 " FI=%" PRIu32
+        " Strm=%d reclen=%" PRIu32 "\n",
         VolSessionId, VolSessionTime, FileIndex, Stream, reclen);
 
   jcr->dir_impl->SDJobBytes
@@ -496,7 +501,8 @@ static void UpdateAttribute(JobControlRecord* jcr,
     case STREAM_UNIX_ATTRIBUTES:
     case STREAM_UNIX_ATTRIBUTES_EX:
       if (jcr->cached_attribute) {
-        Dmsg2(400, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname);
+        Dmsg2(400, "Cached attr. Stream=%" PRIu32 " fname=%s\n", ar->Stream,
+              ar->fname);
         if (DbLocker _{jcr->db}; !jcr->db->CreateAttributesRecord(jcr, ar)) {
           Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error: ERR=%s"),
                 jcr->db->strerror());
@@ -599,7 +605,8 @@ static void UpdateAttribute(JobControlRecord* jcr,
           = 0; /* add zero for those who attempt printing */
 
       Dmsg7(100,
-            "oname=%s stream=%d FT=%d FI=%d JobId=%d, obj_len=%d\nobj=\"%s\"\n",
+            "oname=%s stream=%" PRIu32 " FT=%" PRIu32 " FI=%" PRIu32
+            " JobId=%" PRIu32 ", obj_len=%" PRIu32 "\nobj=\"%s\"\n",
             ro.object_name, ro.Stream, ro.FileType, ro.FileIndex, ro.JobId,
             ro.object_len, ro.object);
 
@@ -614,7 +621,9 @@ static void UpdateAttribute(JobControlRecord* jcr,
       if (CryptoDigestStreamType(Stream) != CRYPTO_DIGEST_NONE) {
         fname = p;
         if (ar->FileIndex != FileIndex) {
-          Jmsg3(jcr, M_WARNING, 0, T_("%s not same File=%d as attributes=%d\n"),
+          Jmsg3(jcr, M_WARNING, 0,
+                T_("%s not same File=%" PRIu32 " as attributes=%" PRIu32
+                   "\n"),
                 stream_to_ascii(Stream), FileIndex, ar->FileIndex);
         } else {
           // Update digest in catalog
@@ -659,7 +668,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
             ar->Digest = digestbuf;
             ar->DigestType = type;
 
-            Dmsg2(400, "Cached attr with digest. Stream=%d fname=%s\n",
+            Dmsg2(400, "Cached attr with digest. Stream=%" PRIu32 " fname=%s\n",
                   ar->Stream, ar->fname);
 
             // Update BaseFile table

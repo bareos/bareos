@@ -344,7 +344,8 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
      * with another Volume, we will not come here. */
     UnbashSpaces(dir->msg);
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg(jcr, M_FATAL, 0, T_("Device reservation failed for JobId=%d: %s\n"),
+    Jmsg(jcr, M_FATAL, 0,
+         T_("Device reservation failed for JobId=%" PRIu32 ": %s\n"),
          jcr->JobId, jcr->errmsg);
     dir->fsend(NO_device, dev_name.c_str());
     Dmsg1(debuglevel, ">dird: %s", dir->msg);
@@ -923,7 +924,8 @@ static bool IsMaxJobsOk(DeviceControlRecord* dcr)
   Device* dev = dcr->dev;
   JobControlRecord* jcr = dcr->jcr;
 
-  Dmsg5(debuglevel, "MaxJobs=%d Jobs=%d reserves=%d Status=%s Vol=%s\n",
+  Dmsg5(debuglevel,
+        "MaxJobs=%" PRIu32 " Jobs=%" PRIu32 " reserves=%d Status=%s Vol=%s\n",
         dcr->VolCatInfo.VolCatMaxJobs, dcr->VolCatInfo.VolCatJobs,
         dev->NumReserved(), dcr->VolCatInfo.VolCatStatus, dcr->VolumeName);
 
@@ -1086,8 +1088,9 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
   if (dev->CanAppend() || dev->num_writers > 0) {
     return IsPoolOk(dcr);
   } else {
-    Pmsg1(000, T_("Logic error!!!! JobId=%u Should not get here.\n"),
-          (int)jcr->JobId);
+    Pmsg1(000, T_("Logic error!!!! JobId=%" PRIu32
+                  " Should not get here.\n"),
+          jcr->JobId);
     Mmsg(jcr->errmsg,
          T_("3910 JobId=%u Logic error!!!! drive %s Should not get here.\n"),
          jcr->JobId, dev->print_name());

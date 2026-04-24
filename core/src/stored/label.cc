@@ -185,7 +185,8 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
    * make sure we have the right Volume. */
   if (dcr->dev->VolHdr.VerNum != BareosTapeVersion) {
     Mmsg(jcr->errmsg,
-         T_("Volume on %s has wrong Bareos version. Wanted %d got %d\n"),
+         T_("Volume on %s has wrong Bareos version. Wanted %d got %" PRIu32
+            "\n"),
          dcr->dev->print_name(), BareosTapeVersion, dcr->dev->VolHdr.VerNum);
     Dmsg1(130, "VOL_VERSION_ERROR: %s", jcr->errmsg);
     status = VOL_VERSION_ERROR;
@@ -196,8 +197,10 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
    * a Bareos volume label (VOL_LABEL) */
   if (dcr->dev->VolHdr.LabelType != PRE_LABEL
       && dcr->dev->VolHdr.LabelType != VOL_LABEL) {
-    Mmsg(jcr->errmsg, T_("Volume on %s has bad Bareos label type: %x\n"),
-         dcr->dev->print_name(), dcr->dev->VolHdr.LabelType);
+    Mmsg(jcr->errmsg,
+         T_("Volume on %s has bad Bareos label type: %" PRIx32 "\n"),
+         dcr->dev->print_name(),
+         static_cast<uint32_t>(dcr->dev->VolHdr.LabelType));
     Dmsg1(130, "%s", jcr->errmsg);
     if (!dcr->dev->poll && jcr->sd_impl->label_errors++ > 100) {
       Jmsg(jcr, M_FATAL, 0, T_("Too many tries: %s"), jcr->errmsg);
@@ -305,7 +308,8 @@ static bool WriteVolumeLabelToBlock(DeviceControlRecord* dcr)
           dev->print_name());
     return false;
   } else {
-    Dmsg2(130, "Wrote label of %d bytes to block. Vol=%s\n", rec.data_len,
+    Dmsg2(130, "Wrote label of %" PRIu32 " bytes to block. Vol=%s\n",
+          rec.data_len,
           dcr->VolumeName);
   }
   FreePoolMemory(rec.data);
@@ -407,7 +411,7 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
     FreeRecord(rec);
     goto bail_out;
   } else {
-    Dmsg2(130, "Wrote label of %d bytes to %s\n", rec->data_len,
+    Dmsg2(130, "Wrote label of %" PRIu32 " bytes to %s\n", rec->data_len,
           dev->print_name());
     FreeRecord(rec);
   }
@@ -508,7 +512,7 @@ static void CreateVolumeLabelRecord(DeviceControlRecord* dcr,
   rec->VolSessionTime = jcr->VolSessionTime;
   rec->Stream = jcr->sd_impl->NumWriteVolumes;
   rec->maskedStream = jcr->sd_impl->NumWriteVolumes;
-  Dmsg2(150, "Created Vol label rec: FI=%s len=%d\n",
+  Dmsg2(150, "Created Vol label rec: FI=%s len=%" PRIu32 "\n",
         FI_to_ascii(buf, rec->FileIndex), rec->data_len);
 }
 
@@ -648,8 +652,9 @@ bool WriteSessionLabel(DeviceControlRecord* dcr, int label)
   }
 
   Dmsg6(150,
-        "Write sesson_label record JobId=%d FI=%s SessId=%d Strm=%s len=%d "
-        "remainder=%d\n",
+        "Write sesson_label record JobId=%" PRIu32 " FI=%s SessId=%" PRIu32
+        " Strm=%s len=%" PRIu32
+        " remainder=%" PRIu32 "\n",
         jcr->JobId, FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
         stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len,
         rec->remainder);
@@ -677,7 +682,7 @@ bool UnserVolumeLabel(Device* dev, DeviceRecord* rec)
 
   if (rec->FileIndex != VOL_LABEL && rec->FileIndex != PRE_LABEL) {
     Mmsg3(dev->errmsg,
-          T_("Expecting Volume Label, got FI=%s Stream=%s len=%d\n"),
+          T_("Expecting Volume Label, got FI=%s Stream=%s len=%" PRIu32 "\n"),
           FI_to_ascii(buf1, rec->FileIndex),
           stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
     if (!forge_on) { return false; }
@@ -803,13 +808,13 @@ void DumpVolumeLabel(Device* dev)
   Pmsg11(-1,
          T_("\nVolume Label:\n"
             "Id                : %s"
-            "VerNo             : %d\n"
-            "VolName           : %s\n"
-            "PrevVolName       : %s\n"
-            "VolFile           : %d\n"
-            "LabelType         : %s\n"
-            "LabelSize         : %d\n"
-            "PoolName          : %s\n"
+             "VerNo             : %" PRIu32 "\n"
+             "VolName           : %s\n"
+             "PrevVolName       : %s\n"
+             "VolFile           : %" PRIu32 "\n"
+             "LabelType         : %s\n"
+             "LabelSize         : %" PRIu32 "\n"
+             "PoolName          : %s\n"
             "MediaType         : %s\n"
             "PoolType          : %s\n"
             "HostName          : %s\n"
@@ -839,10 +844,10 @@ static void DumpSessionLabel(DeviceRecord* rec, const char* type)
   dbl = debug_level;
   debug_level = 1;
   Pmsg7(-1,
-        T_("\n%s Record:\n"
-           "JobId             : %d\n"
-           "VerNum            : %d\n"
-           "PoolName          : %s\n"
+           T_("\n%s Record:\n"
+              "JobId             : %" PRIu32 "\n"
+              "VerNum            : %" PRIu32 "\n"
+              "PoolName          : %s\n"
            "PoolType          : %s\n"
            "JobName           : %s\n"
            "ClientName        : %s\n"
@@ -857,7 +862,8 @@ static void DumpSessionLabel(DeviceRecord* rec, const char* type)
              "JobType           : %c\n"
              "JobLevel          : %c\n"
              ""),
-          label.Job, label.FileSetName, label.JobType, label.JobLevel);
+           label.Job, label.FileSetName, static_cast<int>(label.JobType),
+           static_cast<int>(label.JobLevel));
   }
 
   if (rec->FileIndex == EOS_LABEL) {
@@ -877,7 +883,8 @@ static void DumpSessionLabel(DeviceRecord* rec, const char* type)
           edit_uint64_with_commas(label.EndBlock, ec4),
           edit_uint64_with_commas(label.StartFile, ec5),
           edit_uint64_with_commas(label.EndFile, ec6),
-          edit_uint64_with_commas(label.JobErrors, ec7), label.JobStatus);
+          edit_uint64_with_commas(label.JobErrors, ec7),
+          static_cast<int>(label.JobStatus));
   }
   // make sure this volume wasn't written by bacula 1.26 or earlier
   ASSERT(label.VerNum >= 11);
@@ -937,20 +944,20 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
         break;
       case EOM_LABEL:
         Pmsg7(-1,
-              T_("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d "
-                 "DataLen=%d\n"),
-              type, dev->file, dev->block_num, rec->VolSessionId,
-              rec->VolSessionTime, rec->Stream, rec->data_len);
+               T_("%s Record: File:blk=%u:%u SessId=%" PRIu32
+                  " SessTime=%" PRIu32 " JobId=%d DataLen=%" PRIu32 "\n"),
+               type, dev->file, dev->block_num, rec->VolSessionId,
+               rec->VolSessionTime, rec->Stream, rec->data_len);
         break;
       case EOT_LABEL:
         Pmsg0(-1, T_("End of physical tape.\n"));
         break;
       default:
         Pmsg7(-1,
-              T_("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d "
-                 "DataLen=%d\n"),
-              type, dev->file, dev->block_num, rec->VolSessionId,
-              rec->VolSessionTime, rec->Stream, rec->data_len);
+               T_("%s Record: File:blk=%u:%u SessId=%" PRIu32
+                  " SessTime=%" PRIu32 " JobId=%d DataLen=%" PRIu32 "\n"),
+               type, dev->file, dev->block_num, rec->VolSessionId,
+               rec->VolSessionTime, rec->Stream, rec->data_len);
         break;
     }
   } else {
@@ -961,36 +968,40 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
         UnserSessionLabel(&label, rec);
         bstrftimes(dt, sizeof(dt), BtimeToUtime(label.write_btime));
         Pmsg6(-1,
-              T_("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d\n"),
+              T_("%s Record: File:blk=%u:%u SessId=%" PRIu32
+                  " SessTime=%" PRIu32 " JobId=%" PRIu32 "\n"),
               type, dev->file, dev->block_num, rec->VolSessionId,
               rec->VolSessionTime, label.JobId);
         Pmsg4(-1, T_("   Job=%s Date=%s Level=%c Type=%c\n"), label.Job, dt,
-              label.JobLevel, label.JobType);
+              static_cast<int>(label.JobLevel),
+              static_cast<int>(label.JobType));
         break;
       case EOS_LABEL:
         char ed1[30], ed2[30];
         UnserSessionLabel(&label, rec);
         bstrftimes(dt, sizeof(dt), BtimeToUtime(label.write_btime));
         Pmsg6(-1,
-              T_("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d\n"),
+              T_("%s Record: File:blk=%u:%u SessId=%" PRIu32
+                  " SessTime=%" PRIu32 " JobId=%" PRIu32 "\n"),
               type, dev->file, dev->block_num, rec->VolSessionId,
               rec->VolSessionTime, label.JobId);
         Pmsg7(
             -1,
-            T_("   Job=%s Date=%s Level=%c Type=%c Files=%s Bytes=%s Errors=%d "
-               "Status=%c\n"),
-            label.Job, dt, label.JobLevel, label.JobType,
+             T_("   Job=%s Date=%s Level=%c Type=%c Files=%s Bytes=%s Errors=%"
+                PRIu32 " Status=%c\n"),
+            label.Job, dt, static_cast<int>(label.JobLevel),
+            static_cast<int>(label.JobType),
             edit_uint64_with_commas(label.JobFiles, ed1),
             edit_uint64_with_commas(label.JobBytes, ed2), label.JobErrors,
-            (char)label.JobStatus);
+            static_cast<int>(label.JobStatus));
         break;
       case EOM_LABEL:
       case PRE_LABEL:
       case VOL_LABEL:
       default:
         Pmsg7(-1,
-              T_("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d "
-                 "DataLen=%d\n"),
+              T_("%s Record: File:blk=%u:%u SessId=%" PRIu32
+                 " SessTime=%" PRIu32 " JobId=%d DataLen=%" PRIu32 "\n"),
               type, dev->file, dev->block_num, rec->VolSessionId,
               rec->VolSessionTime, rec->Stream, rec->data_len);
         break;

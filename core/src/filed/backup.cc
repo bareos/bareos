@@ -822,7 +822,8 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
   // Check if original file has a digest, and send it
   if (ff_pkt->type == FT_LNKSAVED && ff_pkt->digest) {
-    Dmsg2(300, "Link %s digest %d\n", ff_pkt->fname, ff_pkt->digest_len);
+    Dmsg2(300, "Link %s digest %" PRIu32 "\n", ff_pkt->fname,
+          ff_pkt->digest_len);
     sd->fsend("%" PRIu32 " %" PRId32 " 0", jcr->JobFiles,
               ff_pkt->digest_stream);
 
@@ -1513,7 +1514,7 @@ static int send_data(JobControlRecord* jcr,
     Jmsg(jcr, M_ERROR, 0, T_("Read error on file %s. ERR=%s\n"), ff_pkt->fname,
          be.bstrerror(ff_pkt->bfd.BErrNo));
     if (jcr->JobErrors++ > 1000) { /* insanity check */
-      Jmsg(jcr, M_FATAL, 0, T_("Too many errors. JobErrors=%d.\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("Too many errors. JobErrors=%" PRIu32 ".\n"),
            jcr->JobErrors);
     }
   } else if (BitIsSet(FO_ENCRYPT, ff_pkt->flags)) {
@@ -1675,9 +1676,9 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
     case FT_JUNCTION:
     case FT_LNK:
     case FT_LNKSAVED:
-      Dmsg3(300, "Link %d %s to %s\n", jcr->JobFiles, ff_pkt->fname,
+      Dmsg3(300, "Link %" PRIu32 " %s to %s\n", jcr->JobFiles, ff_pkt->fname,
             ff_pkt->link_or_dir);
-      status = sd->fsend("%" PRIu32 " %d %s%c%s%c%s%c%s%c%u%c", jcr->JobFiles,
+      status = sd->fsend("%" PRIu32 " %d %s%c%s%c%s%c%s%c%d%c", jcr->JobFiles,
                          ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0,
                          ff_pkt->link_or_dir, 0, attribsEx, 0,
                          ff_pkt->delta_seq, 0);
@@ -1685,7 +1686,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
     case FT_DIREND:
     case FT_REPARSE:
       /* Here link is the canonical filename (i.e. with trailing slash) */
-      status = sd->fsend("%" PRIu32 " %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
+      status = sd->fsend("%" PRIu32 " %d %s%c%s%c%c%s%c%d%c", jcr->JobFiles,
                          ff_pkt->type, ff_pkt->link_or_dir, 0, attribs.c_str(),
                          0, 0, attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
@@ -1712,7 +1713,8 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
       }
 
       sd->message_length = Mmsg(
-          sd->msg, "%d %d %d %d %d %d %s%c%s%c", jcr->JobFiles, ff_pkt->type,
+          sd->msg, "%" PRIu32 " %d %d %d %d %d %s%c%s%c", jcr->JobFiles,
+          ff_pkt->type,
           ff_pkt->object_index, comp_len, ff_pkt->object_len,
           ff_pkt->object_compression, ff_pkt->fname, 0, ff_pkt->object_name, 0);
       sd->msg = CheckPoolMemorySize(sd->msg, sd->message_length + comp_len + 2);
@@ -1731,7 +1733,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
                          attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
     default:
-      status = sd->fsend("%" PRIu32 " %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
+      status = sd->fsend("%" PRIu32 " %d %s%c%s%c%c%s%c%d%c", jcr->JobFiles,
                          ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0, 0,
                          attribsEx, 0, ff_pkt->delta_seq, 0);
       break;

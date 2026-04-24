@@ -523,7 +523,8 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
 
   event.eventType = eventType;
 
-  Dmsg2(debuglevel, "plugin_ctx=%p JobId=%d event=%d\n", plugin_ctx_list,
+  Dmsg2(debuglevel, "plugin_ctx=%p JobId=%" PRIu32 " event=%d\n",
+        plugin_ctx_list,
         jcr->JobId, eventType);
 
   /* Pass event to every plugin that has requested this event type (except if
@@ -592,7 +593,8 @@ bool PluginCheckFile(JobControlRecord* jcr, char* fname)
   }
 
   plugin_ctx_list = jcr->plugin_ctx_list;
-  Dmsg2(debuglevel, "plugin_ctx=%p JobId=%d\n", jcr->plugin_ctx_list,
+  Dmsg2(debuglevel, "plugin_ctx=%p JobId=%" PRIu32 "\n",
+        jcr->plugin_ctx_list,
         jcr->JobId);
 
   // Pass event to every plugin
@@ -940,8 +942,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
               Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex,
                     hl.name.c_str());
             } else if (bstrcmp(hl.name.c_str(), sp.fname)) {
-              Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl.FileIndex,
-                    fname.c_str());
+              Dmsg2(400, "== Name identical skip FI=%" PRIu32 " file=%s\n",
+                    hl.FileIndex, fname.c_str());
               ff_pkt->no_read = true;
             } else {
               ff_pkt->link_or_dir = hl.name.data();
@@ -951,7 +953,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
               ff_pkt->digest_stream = hl.digest_stream;
               ff_pkt->digest_len = hl.digest.size();
 
-              Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n",
+              Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%" PRIu32 " file=%s\n",
                     ff_pkt->FileIndex, hl.FileIndex, hl.name.c_str());
 
               ff_pkt->no_read = true;
@@ -1750,7 +1752,7 @@ static void DumpFdPlugin(Plugin* plugin, FILE* fp)
   info = (PluginInformation*)plugin->plugin_information;
   if (!info) { return; }
 
-  fprintf(fp, "\tversion=%d\n", info->version);
+  fprintf(fp, "\tversion=%" PRIu32 "\n", info->version);
   fprintf(fp, "\tdate=%s\n", NPRTB(info->plugin_date));
   fprintf(fp, "\tmagic=%s\n", NPRTB(info->plugin_magic));
   fprintf(fp, "\tauthor=%s\n", NPRTB(info->plugin_author));
@@ -1837,10 +1839,14 @@ static bool IsPluginCompatible(Plugin* plugin)
   }
   if (info->version != FD_PLUGIN_INTERFACE_VERSION) {
     Jmsg(NULL, M_ERROR, 0,
-         T_("Plugin version incorrect. Plugin=%s wanted=%d got=%d\n"),
-         plugin->file, FD_PLUGIN_INTERFACE_VERSION, info->version);
-    Dmsg3(50, "Plugin version incorrect. Plugin=%s wanted=%d got=%d\n",
-          plugin->file, FD_PLUGIN_INTERFACE_VERSION, info->version);
+         T_("Plugin version incorrect. Plugin=%s wanted=%u got=%" PRIu32
+            "\n"),
+         plugin->file, static_cast<unsigned int>(FD_PLUGIN_INTERFACE_VERSION),
+         info->version);
+    Dmsg3(50, "Plugin version incorrect. Plugin=%s wanted=%u got=%" PRIu32
+              "\n",
+          plugin->file, static_cast<unsigned int>(FD_PLUGIN_INTERFACE_VERSION),
+          info->version);
     return false;
   }
   if (!Bstrcasecmp(info->plugin_license, "Bareos AGPLv3")
@@ -1907,7 +1913,7 @@ void NewPlugins(JobControlRecord* jcr)
   }
 
   jcr->plugin_ctx_list = new alist<PluginContext*>(10, owned_by_alist);
-  Dmsg2(debuglevel, "Instantiate plugin_ctx=%p JobId=%d\n",
+  Dmsg2(debuglevel, "Instantiate plugin_ctx=%p JobId=%" PRIu32 "\n",
         jcr->plugin_ctx_list, jcr->JobId);
 
   int i{};
@@ -1922,7 +1928,7 @@ void FreePlugins(JobControlRecord* jcr)
 {
   if (!fd_plugin_list || !jcr->plugin_ctx_list) { return; }
 
-  Dmsg2(debuglevel, "Free instance fd-plugin_ctx_list=%p JobId=%d\n",
+  Dmsg2(debuglevel, "Free instance fd-plugin_ctx_list=%p JobId=%" PRIu32 "\n",
         jcr->plugin_ctx_list, jcr->JobId);
   for (auto* ctx : jcr->plugin_ctx_list) {
     // Free the plugin instance
@@ -1945,7 +1951,8 @@ static int MyPluginBopen(BareosFilePacket* bfd,
   io_pkt io;
   JobControlRecord* jcr = bfd->jcr;
 
-  Dmsg1(debuglevel, "plugin_bopen flags=%08o\n", flags);
+  Dmsg1(debuglevel, "plugin_bopen flags=%08o\n",
+        static_cast<unsigned int>(flags));
   if (!jcr->plugin_ctx) { return 0; }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
@@ -2239,7 +2246,8 @@ static bRC bareosGetValue(PluginContext* ctx, bVariable var, void* value)
     switch (var) {
       case bVarJobId:
         *((int*)value) = jcr->JobId;
-        Dmsg1(debuglevel, "fd-plugin: return bVarJobId=%d\n", jcr->JobId);
+        Dmsg1(debuglevel, "fd-plugin: return bVarJobId=%" PRIu32 "\n",
+              jcr->JobId);
         break;
       case bVarLevel:
         *((int*)value) = jcr->getJobLevel();

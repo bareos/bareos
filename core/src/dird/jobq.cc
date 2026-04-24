@@ -178,7 +178,7 @@ extern "C" void* sched_wait(void* arg)
 
   // Check every 30 seconds if canceled
   while (wtime > 0) {
-    Dmsg3(2300, "Waiting on sched time, jobid=%d secs=%lld use=%d\n",
+    Dmsg3(2300, "Waiting on sched time, jobid=%" PRIu32 " secs=%lld use=%d\n",
           jcr->JobId, static_cast<long long>(wtime), jcr->UseCount());
     if (wtime > 30) { wtime = 30; }
     Bmicrosleep(wtime, 0);
@@ -206,7 +206,8 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   pthread_t id;
   wait_pkt* sched_pkt;
 
-  Dmsg3(2300, "JobqAdd jobid=%d jcr=%p UseCount=%d\n", jcr->JobId, jcr,
+  Dmsg3(2300, "JobqAdd jobid=%" PRIu32 " jcr=%p UseCount=%d\n", jcr->JobId,
+        jcr,
         jcr->UseCount());
   if (jq->valid != JOBQ_VALID) {
     Jmsg0(jcr, M_ERROR, 0, "Jobq_add queue not initialized.\n");
@@ -214,7 +215,8 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   }
 
   jcr->IncUseCount(); /* mark jcr in use by us */
-  Dmsg3(2300, "JobqAdd jobid=%d jcr=%p UseCount=%d\n", jcr->JobId, jcr,
+  Dmsg3(2300, "JobqAdd jobid=%" PRIu32 " jcr=%p UseCount=%d\n", jcr->JobId,
+        jcr,
         jcr->UseCount());
   if (!jcr->IsJobCanceled() && wtime > 0) {
     sched_pkt = (wait_pkt*)malloc(sizeof(wait_pkt));
@@ -242,15 +244,18 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   if (jcr->IsJobCanceled()) {
     // Add job to ready queue so that it is canceled quickly
     jq->ready_jobs->prepend(item);
-    Dmsg1(2300, "Prepended job=%d to ready queue\n", jcr->JobId);
+    Dmsg1(2300, "Prepended job=%" PRIu32 " to ready queue\n", jcr->JobId);
   } else {
     // Add this job to the wait queue in priority sorted order
     foreach_dlist (li, jq->waiting_jobs) {
-      Dmsg2(2300, "waiting item jobid=%d priority=%d\n", li->jcr->JobId,
+      Dmsg2(2300, "waiting item jobid=%" PRIu32 " priority=%d\n",
+            li->jcr->JobId,
             li->jcr->JobPriority);
       if (li->jcr->JobPriority > jcr->JobPriority) {
         jq->waiting_jobs->InsertBefore(item, li);
-        Dmsg2(2300, "InsertBefore jobid=%d before waiting job=%d\n",
+        Dmsg2(2300,
+              "InsertBefore jobid=%" PRIu32 " before waiting job=%" PRIu32
+              "\n",
               li->jcr->JobId, jcr->JobId);
         inserted = true;
         break;
@@ -260,7 +265,8 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
     // If not jobs in wait queue, append it
     if (!inserted) {
       jq->waiting_jobs->append(item);
-      Dmsg1(2300, "Appended item jobid=%d to waiting queue\n", jcr->JobId);
+      Dmsg1(2300, "Appended item jobid=%" PRIu32 " to waiting queue\n",
+            jcr->JobId);
     }
   }
 
@@ -285,7 +291,7 @@ int JobqRemove(jobq_t* jq, JobControlRecord* jcr)
   bool found = false;
   jobq_item_t* item;
 
-  Dmsg2(2300, "JobqRemove jobid=%d jcr=%p\n", jcr->JobId, jcr);
+  Dmsg2(2300, "JobqRemove jobid=%" PRIu32 " jcr=%p\n", jcr->JobId, jcr);
   if (jq->valid != JOBQ_VALID) { return EINVAL; }
 
   lock_mutex(jq->mutex);
@@ -297,16 +303,16 @@ int JobqRemove(jobq_t* jq, JobControlRecord* jcr)
   }
   if (!found) {
     unlock_mutex(jq->mutex);
-    Dmsg2(2300, "JobqRemove jobid=%d jcr=%p not in wait queue\n", jcr->JobId,
-          jcr);
+    Dmsg2(2300, "JobqRemove jobid=%" PRIu32 " jcr=%p not in wait queue\n",
+          jcr->JobId, jcr);
     return EINVAL;
   }
 
   // Move item to be the first on the list
   jq->waiting_jobs->remove(item);
   jq->ready_jobs->prepend(item);
-  Dmsg2(2300, "JobqRemove jobid=%d jcr=%p moved to ready queue\n", jcr->JobId,
-        jcr);
+  Dmsg2(2300, "JobqRemove jobid=%" PRIu32 " jcr=%p moved to ready queue\n",
+        jcr->JobId, jcr);
 
   status = StartServer(jq);
 
@@ -402,13 +408,14 @@ extern "C" void* jobq_server(void* arg)
       // Attach jcr to this thread while we run the job
       jcr->SetKillable(true);
       SetJcrInThreadSpecificData(jcr);
-      Dmsg1(2300, "Took jobid=%d from ready and appended to run\n", jcr->JobId);
+      Dmsg1(2300, "Took jobid=%" PRIu32 " from ready and appended to run\n",
+            jcr->JobId);
 
       // Release job queue lock
       unlock_mutex(jq->mutex);
 
       // Call user's routine here
-      Dmsg3(2300, "Calling user engine for jobid=%d use=%d stat=%c\n",
+      Dmsg3(2300, "Calling user engine for jobid=%" PRIu32 " use=%d stat=%c\n",
             jcr->JobId, jcr->UseCount(), jcr->getJobStatus());
       jq->engine(je->jcr);
 
@@ -416,7 +423,8 @@ extern "C" void* jobq_server(void* arg)
       RemoveJcrFromThreadSpecificData(je->jcr);
       je->jcr->SetKillable(false);
 
-      Dmsg2(2300, "Back from user engine jobid=%d use=%d.\n", jcr->JobId,
+      Dmsg2(2300, "Back from user engine jobid=%" PRIu32 " use=%d.\n",
+            jcr->JobId,
             jcr->UseCount());
 
       // Reacquire job queue lock
@@ -438,7 +446,8 @@ extern "C" void* jobq_server(void* arg)
       if (RescheduleJob(jcr, jq, je)) { continue; /* go look for more work */ }
 
       // Clean up and release old jcr
-      Dmsg2(2300, "====== Termination job=%d use_cnt=%d\n", jcr->JobId,
+      Dmsg2(2300, "====== Termination job=%" PRIu32 " use_cnt=%d\n",
+            jcr->JobId,
             jcr->UseCount());
       jcr->dir_impl->SDJobStatus = 0;
       unlock_mutex(jq->mutex); /* release internal lock */
@@ -456,12 +465,14 @@ extern "C" void* jobq_server(void* arg)
       jobq_item_t* re = (jobq_item_t*)jq->running_jobs->first();
       if (re) {
         Priority = re->jcr->JobPriority;
-        Dmsg2(2300, "JobId %d is running. Look for pri=%d\n", re->jcr->JobId,
+        Dmsg2(2300, "JobId %" PRIu32 " is running. Look for pri=%d\n",
+              re->jcr->JobId,
               Priority);
         running_allow_mix = true;
 
         for (; re;) {
-          Dmsg2(2300, "JobId %d is also running with %s\n", re->jcr->JobId,
+          Dmsg2(2300, "JobId %" PRIu32 " is also running with %s\n",
+                re->jcr->JobId,
                 re->jcr->allow_mixed_priority ? "mix" : "no mix");
           if (!re->jcr->allow_mixed_priority) {
             running_allow_mix = false;
@@ -483,8 +494,9 @@ extern "C" void* jobq_server(void* arg)
         JobControlRecord* jcr = je->jcr;
         jobq_item_t* jn = (jobq_item_t*)jq->waiting_jobs->next(je);
 
-        Dmsg4(2300, "Examining Job=%d JobPri=%d want Pri=%d (%s)\n", jcr->JobId,
-              jcr->JobPriority, Priority,
+        Dmsg4(2300,
+              "Examining Job=%" PRIu32 " JobPri=%d want Pri=%d (%s)\n",
+              jcr->JobId, jcr->JobPriority, Priority,
               jcr->allow_mixed_priority ? "mix" : "no mix");
 
         // Take only jobs of correct Priority
@@ -508,7 +520,7 @@ extern "C" void* jobq_server(void* arg)
          * job was canceled.  Once it is "run", it will quickly Terminate. */
         jq->waiting_jobs->remove(je);
         jq->ready_jobs->append(je);
-        Dmsg1(2300, "moved JobId=%d from wait to ready queue\n",
+        Dmsg1(2300, "moved JobId=%" PRIu32 " from wait to ready queue\n",
               je->jcr->JobId);
         je = jn; /* Point to next waiting job */
       } /* end for loop */
@@ -619,7 +631,8 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
      * JobControlRecord */
     if (jcr->JobBytes == 0) {
       UpdateJobEnd(jcr, JS_WaitStartTime);
-      Dmsg2(2300, "Requeue job=%d use=%d\n", jcr->JobId, jcr->UseCount());
+      Dmsg2(2300, "Requeue job=%" PRIu32 " use=%d\n", jcr->JobId,
+            jcr->UseCount());
       unlock_mutex(jq->mutex);
       jcr->dir_impl->jr.RealEndTime = 0;
       JobqAdd(jq, jcr); /* queue the job to run again */

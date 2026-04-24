@@ -61,9 +61,9 @@ namespace {
 /* Commands sent to File daemon */
 inline constexpr const char backupcmd[] = "backup FileIndex=%" PRIu32 "\n";
 inline constexpr const char storaddrcmd[]
-    = "storage address=%s port=%d ssl=%d\n";
+    = "storage address=%s port=%" PRIu32 " ssl=%u\n";
 inline constexpr const char passiveclientcmd[]
-    = "passive client address=%s port=%d ssl=%d\n";
+    = "passive client address=%s port=%" PRIu32 " ssl=%u\n";
 
 /* Responses received from File daemon */
 inline constexpr const char OKbackup[] = "2000 OK backup\n";
@@ -432,7 +432,7 @@ static bool ConfigureTlsRequirementsPassiveClient(JobControlRecord* jcr)
                                             : TlsPolicy::kBnetTlsNone;
     }
 
-    Dmsg1(200, "Tls Policy for active client is: %d\n", tls_policy);
+    Dmsg1(200, "Tls Policy for active client is: %u\n", tls_policy);
 
     connection_target_address = StorageAddressToContact(client, store);
 
@@ -454,7 +454,7 @@ static bool ConfigureTlsRequirementsPassiveClient(JobControlRecord* jcr)
       tls_policy = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
                                              : TlsPolicy::kBnetTlsNone;
     }
-    Dmsg1(200, "Tls Policy for passive client is: %d\n", tls_policy);
+    Dmsg1(200, "Tls Policy for passive client is: %u\n", tls_policy);
 
     connection_target_address = ClientAddressToContact(client, store);
 
@@ -506,7 +506,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
        jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
-  Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->dir_impl->jr.JobId,
+  Dmsg2(100, "JobId=%" PRIu32 " JobLevel=%c\n", jcr->dir_impl->jr.JobId,
         jcr->dir_impl->jr.JobLevel);
   if (DbLocker _{jcr->db};
       !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
@@ -543,7 +543,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
     TerminateBackupWithError(jcr);
     return false;
   }
-  Dmsg1(120, "jobid: %d: connected\n", jcr->JobId);
+  Dmsg1(120, "jobid: %" PRIu32 ": connected\n", jcr->JobId);
   SendJobInfoToFileDaemon(jcr);
 
   if (jcr->passive_client && jcr->dir_impl->FDVersion < FD_VERSION_51) {
@@ -883,7 +883,8 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
         fprintf(fd, "VolSessionTime=%u\n", jcr->VolSessionTime);
         fprintf(fd, "VolAddr=%s-%s\n", edit_uint64(VolParams[i].StartAddr, ed1),
                 edit_uint64(VolParams[i].EndAddr, ed2));
-        fprintf(fd, "FileIndex=%d-%d\n", VolParams[i].FirstIndex,
+        fprintf(fd, "FileIndex=%" PRIu32 "-%" PRIu32 "\n",
+                VolParams[i].FirstIndex,
                 VolParams[i].LastIndex);
       }
       if (VolParams) { free(VolParams); }
@@ -1086,7 +1087,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
    default:
       if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
          Mmsg(daemon_status, T_(
-              "  SD Errors:              %d\n"
+               "  SD Errors:              %" PRIu32 "\n"
               "  SD termination status:  %s\n"
               "  Accurate:               %s\n"),
            jcr->dir_impl->SDErrors,
@@ -1122,8 +1123,8 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
          }
 
          Mmsg(daemon_status, T_(
-              "  Non-fatal FD errors:    %d\n"
-              "  SD Errors:              %d\n"
+               "  Non-fatal FD errors:    %" PRIu32 "\n"
+               "  SD Errors:              %" PRIu32 "\n"
               "  FD termination status:  %s\n"
               "  SD termination status:  %s\n"),
            jcr->JobErrors,
@@ -1151,7 +1152,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
 
    Jmsg(jcr, msg_type, 0, T_("%s %s %s (%s):\n"
         "  OS Information:         %s\n"
-        "  JobId:                  %d\n"
+        "  JobId:                  %" PRIu32 "\n"
         "  Job:                    %s\n"
         "%s"
         "  Client:                 \"%s\" %s\n"
@@ -1170,8 +1171,8 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         "  Rate:                   %.1f KB/s\n"
         "%s"                                         /* Client options */
         "  Volume name(s):         %s\n"
-        "  Volume Session Id:      %d\n"
-        "  Volume Session Time:    %d\n"
+        "  Volume Session Id:      %" PRIu32 "\n"
+        "  Volume Session Time:    %" PRIu32 "\n"
         "  Last Volume Bytes:      %s (%sB)\n"
         "%s"                                        /* Daemon status info */
         "%s"                                        /* SecureErase status */

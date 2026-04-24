@@ -116,7 +116,7 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
     heart_beat = me->heartbeat_interval;
   }
 
-  Dmsg2(100, "bNetConnect to Storage daemon %s:%d\n", store->address,
+  Dmsg2(100, "bNetConnect to Storage daemon %s:%" PRIu32 "\n", store->address,
         store->SDport);
   std::unique_ptr<BareosSocket> sd(new BareosSocketTCP);
   if (!sd) { return false; }
@@ -172,7 +172,8 @@ BareosSocket* open_sd_bsock(UaContext* ua)
   }
 
   if (!ua->jcr->store_bsock) {
-    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d ...\n"),
+    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32
+                   " ...\n"),
                 store->resource_name_, store->address, store->SDport);
     /* the next call will set ua->jcr->store_bsock */
     if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
@@ -698,7 +699,7 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   SetWstorage(ua->jcr, &lstore);
 
   if (!ua->api) {
-    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
+    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
                 store->resource_name_, store->address, store->SDport);
   }
 

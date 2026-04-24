@@ -180,7 +180,7 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
       "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,"
       "VolSessionId=%u,"
       "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
-      "RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE JobId=%s",
+      "RealEndTime='%s',PriorJobId=%s,HasBase=%d,PurgedFiles=%d WHERE JobId=%s",
       (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,
       edit_uint64(jr->JobBytes, ed1), edit_uint64(jr->ReadBytes, ed4),
       jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
@@ -248,14 +248,14 @@ bool BareosDb::UpdatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
   Mmsg(cmd, "SELECT count(*) from Media WHERE PoolId=%s",
        edit_int64(pr->PoolId, ed4));
   pr->NumVols = GetSqlRecordMax(jcr);
-  Dmsg1(400, "NumVols=%d\n", pr->NumVols);
+  Dmsg1(400, "NumVols=%" PRIu32 "\n", pr->NumVols);
 
   Mmsg(cmd,
        "UPDATE Pool SET NumVols=%u,MaxVols=%u,UseOnce=%d,UseCatalog=%d,"
        "AcceptAnyVolume=%d,VolRetention='%s',VolUseDuration='%s',"
        "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,Recycle=%d,"
        "AutoPrune=%d,LabelType=%d,LabelFormat='%s',RecyclePoolId=%s,"
-       "ScratchPoolId=%s,ActionOnPurge=%d,MinBlockSize=%d,MaxBlockSize=%d "
+       "ScratchPoolId=%s,ActionOnPurge=%u,MinBlockSize=%u,MaxBlockSize=%u "
        "WHERE PoolId=%s",
        pr->NumVols, pr->MaxVols, pr->UseOnce, pr->UseCatalog,
        pr->AcceptAnyVolume, edit_uint64(pr->VolRetention, ed1),
@@ -341,9 +341,9 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        "VolWrites=%u,MaxVolBytes=%s,VolStatus='%s',"
        "Slot=%d,InChanger=%d,VolReadTime=%s,VolWriteTime=%s,"
        "LabelType=%d,StorageId=%s,PoolId=%s,VolRetention=%s,VolUseDuration=%s,"
-       "MaxVolJobs=%d,MaxVolFiles=%d,Enabled=%d,LocationId=%s,"
-       "ScratchPoolId=%s,RecyclePoolId=%s,RecycleCount=%d,Recycle=%d,"
-       "ActionOnPurge=%d,"
+       "MaxVolJobs=%u,MaxVolFiles=%u,Enabled=%d,LocationId=%s,"
+       "ScratchPoolId=%s,RecyclePoolId=%s,RecycleCount=%u,Recycle=%d,"
+       "ActionOnPurge=%u,"
        "MinBlocksize=%u,MaxBlocksize=%u "
        "WHERE VolumeName='%s'",
        mr->VolJobs, mr->VolFiles, mr->VolBlocks, edit_uint64(mr->VolBytes, ed1),
@@ -384,9 +384,9 @@ bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
     EscapeString(jcr, esc, mr->VolumeName, strlen(mr->VolumeName));
     Mmsg(cmd,
          "UPDATE Media SET "
-         "ActionOnPurge=%d,Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
+         "ActionOnPurge=%u,Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
          "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s,"
-         "MinBlocksize=%d,MaxBlocksize=%d "
+         "MinBlocksize=%u,MaxBlocksize=%u "
          "WHERE VolumeName='%s'",
          mr->ActionOnPurge, mr->Recycle, edit_uint64(mr->VolRetention, ed1),
          edit_uint64(mr->VolUseDuration, ed2), mr->MaxVolJobs, mr->MaxVolFiles,
@@ -395,9 +395,9 @@ bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
   } else {
     Mmsg(cmd,
          "UPDATE Media SET "
-         "ActionOnPurge=%d,Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
+         "ActionOnPurge=%u,Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
          "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s,"
-         "MinBlocksize=%d,MaxBlocksize=%d "
+         "MinBlocksize=%u,MaxBlocksize=%u "
          "WHERE PoolId=%s",
          mr->ActionOnPurge, mr->Recycle, edit_uint64(mr->VolRetention, ed1),
          edit_uint64(mr->VolUseDuration, ed2), mr->MaxVolJobs, mr->MaxVolFiles,

@@ -139,7 +139,8 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
              T_("%s: considering jobs older than %s for consolidation.\n"),
              job->resource_name_, sdt);
         Dmsg4(10,
-              T_("%s: considering jobs with ClientId %d and FilesetId %d older "
+              T_("%s: considering jobs with ClientId %" PRIdbid
+                 " and FilesetId %" PRIdbid " older "
                  "than %s for consolidation.\n"),
               job->resource_name_, jcr->dir_impl->jr.ClientId,
               jcr->dir_impl->jr.FileSetId, sdt);
@@ -299,7 +300,8 @@ bool DoConsolidate(JobControlRecord* jcr)
   jcr->dir_impl->IgnoreDuplicateJobChecking = true;
 
   // Print Job Start message
-  Jmsg(jcr, M_INFO, 0, T_("Start Consolidate JobId %d, Job=%s\n"), jcr->JobId,
+  Jmsg(jcr, M_INFO, 0, T_("Start Consolidate JobId %" PRIu32 ", Job=%s\n"),
+       jcr->JobId,
        jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
@@ -358,8 +360,8 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
 
   Jmsg(jcr, msg_type, 0,
        T_("BAREOS %s (%s): %s\n"
-          "  JobId:                  %d\n"
-          "  Job:                    %s\n"
+           "  JobId:                  %" PRIu32 "\n"
+           "  Job:                    %s\n"
           "  Scheduled time:         %s\n"
           "  Start time:             %s\n"
           "  End time:               %s\n"

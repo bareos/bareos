@@ -490,7 +490,7 @@ static bool CancelCmd(JobControlRecord* cjcr)
   oldStatus = jcr->getJobStatus();
   jcr->setJobStatusWithPriorityCheck(status);
 
-  Dmsg2(800, "Cancel JobId=%d %p\n", jcr->JobId, jcr);
+  Dmsg2(800, "Cancel JobId=%" PRIu32 " %p\n", jcr->JobId, jcr);
   if (!jcr->authenticated
       && (oldStatus == JS_WaitFD || oldStatus == JS_WaitSD)) {
     jcr->sd_impl->job_start_wait.notify_one(); /* wake waiting thread */
@@ -499,12 +499,12 @@ static bool CancelCmd(JobControlRecord* cjcr)
   if (jcr->file_bsock) {
     jcr->file_bsock->SetTerminated();
     jcr->file_bsock->SetTimedOut();
-    Dmsg2(800, "Term bsock jid=%d %p\n", jcr->JobId, jcr);
+    Dmsg2(800, "Term bsock jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
   } else {
     if (oldStatus != JS_WaitSD) {
       // Still waiting for FD to connect, release it
       jcr->sd_impl->job_start_wait.notify_one(); /* wake waiting job */
-      Dmsg2(800, "Signal FD connect jid=%d %p\n", jcr->JobId, jcr);
+      Dmsg2(800, "Signal FD connect jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
     }
   }
 
@@ -1278,7 +1278,7 @@ static inline bool GetBootstrapFile(JobControlRecord* jcr, BareosSocket* sock)
   }
   lock_mutex(bsr_mutex);
   bsr_uniq++;
-  Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory,
+  Mmsg(fname, "%s/%s.%s.%" PRIu32 ".bootstrap", me->working_directory,
        me->resource_name_, jcr->Job, bsr_uniq);
   unlock_mutex(bsr_mutex);
   Dmsg1(400, "bootstrap=%s\n", fname);
@@ -1561,7 +1561,7 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
   Dmsg0(5, "set sd auth key\n");
 
   jcr->sd_tls_policy = policy;
-  Dmsg1(5, "set sd ssl_policy to %d\n", policy);
+  Dmsg1(5, "set sd ssl_policy to %u\n", policy);
 }
 
 // Listen for incoming replication session from other SD.
@@ -1626,7 +1626,7 @@ static bool ReplicateCmd(JobControlRecord* jcr)
 
   SetStorageAuthKeyAndTlsPolicy(jcr, sd_auth_key.c_str(), tls_policy);
 
-  Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port,
+  Dmsg3(110, "Open storage: %s:%d ssl=%u\n", stored_addr, stored_port,
         tls_policy);
 
   storage_daemon_socket->SetSourceAddress(me->SDsrc_addr);
@@ -1728,7 +1728,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  Dmsg3(110, "PassiveClientCmd: %s:%d ssl=%d\n", filed_addr, filed_port,
+  Dmsg3(110, "PassiveClientCmd: %s:%d ssl=%u\n", filed_addr, filed_port,
         tls_policy);
 
   jcr->passive_client = true;

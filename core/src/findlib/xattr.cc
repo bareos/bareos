@@ -207,10 +207,12 @@ static bool SerializeXattrStream(JobControlRecord*,
       SerBytes(current_xattr->value, current_xattr->value_length);
 
       Dmsg3(100, "Backup xattr named %.*s, value %.*s\n",
-            current_xattr->name_length, current_xattr->name,
-            current_xattr->value_length, current_xattr->value);
+            static_cast<int>(current_xattr->name_length), current_xattr->name,
+            static_cast<int>(current_xattr->value_length),
+            current_xattr->value);
     } else {
-      Dmsg1(100, "Backup empty xattr named %.*s\n", current_xattr->name_length,
+      Dmsg1(100, "Backup empty xattr named %.*s\n",
+            static_cast<int>(current_xattr->name_length),
             current_xattr->name);
     }
   }
@@ -280,12 +282,14 @@ BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
       UnserBytes(current_xattr->value, current_xattr->value_length);
 
       Dmsg3(100, "Restoring xattr named %.*s, value %.*s\n",
-            current_xattr->name_length, current_xattr->name,
-            current_xattr->value_length, current_xattr->value);
+            static_cast<int>(current_xattr->name_length), current_xattr->name,
+            static_cast<int>(current_xattr->value_length),
+            current_xattr->value);
     } else {
       current_xattr->value = NULL;
       Dmsg1(100, "Restoring empty xattr named %.*s\n",
-            current_xattr->name_length, current_xattr->name);
+            static_cast<int>(current_xattr->name_length),
+            current_xattr->name);
     }
 
     xattr_value_list->append(current_xattr);

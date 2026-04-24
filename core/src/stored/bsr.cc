@@ -373,11 +373,15 @@ bool IsThisBsrDone(BootStrapRecord*, DeviceRecord* rec)
   if (rbsr->count && rbsr->found >= rbsr->count) {
     rbsr->done = true;
     rbsr->root->Reposition = true;
-    Dmsg2(dbglevel, "is_end_this_bsr set Reposition=1 count=%d found=%d\n",
+    Dmsg2(dbglevel,
+          "is_end_this_bsr set Reposition=1 count=%" PRIu32
+          " found=%" PRIu32 "\n",
           rbsr->count, rbsr->found);
     return true;
   }
-  Dmsg2(dbglevel, "is_end_this_bsr not done count=%d found=%d\n", rbsr->count,
+  Dmsg2(dbglevel, "is_end_this_bsr not done count=%" PRIu32
+                  " found=%" PRIu32 "\n",
+        rbsr->count,
         rbsr->found);
   return false;
 }

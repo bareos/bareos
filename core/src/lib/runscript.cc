@@ -291,10 +291,10 @@ void RunScript::Debug() const
   Dmsg0(200, T_(" --> RunScript\n"));
   Dmsg1(200, T_("  --> Command=%s\n"), NSTDPRNT(command));
   Dmsg1(200, T_("  --> Target=%s\n"), NSTDPRNT(target));
-  Dmsg1(200, T_("  --> RunOnSuccess=%u\n"), on_success);
-  Dmsg1(200, T_("  --> RunOnFailure=%u\n"), on_failure);
-  Dmsg1(200, T_("  --> FailJobOnError=%u\n"), fail_on_error);
-  Dmsg1(200, T_("  --> RunWhen=%u\n"), when);
+  Dmsg1(200, T_("  --> RunOnSuccess=%d\n"), on_success);
+  Dmsg1(200, T_("  --> RunOnFailure=%d\n"), on_failure);
+  Dmsg1(200, T_("  --> FailJobOnError=%d\n"), fail_on_error);
+  Dmsg1(200, T_("  --> RunWhen=%d\n"), when);
 }
 
 void RunScript::SetJobCodeCallback(job_code_callback_t arg_job_code_callback)

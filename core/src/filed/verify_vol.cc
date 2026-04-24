@@ -101,7 +101,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
       Jmsg1(jcr, M_FATAL, 0, T_("Record header scan error: %s\n"), sd->msg);
       goto bail_out;
     }
-    Dmsg2(30, "Got hdr: FilInx=%d Stream=%d.\n", file_index, stream);
+    Dmsg2(30, "Got hdr: FilInx=%" PRIu32 " Stream=%d.\n", file_index, stream);
 
     // Now we expect the Stream Data
     if (BgetMsg(sd) < 0) {
@@ -110,7 +110,8 @@ void DoVerifyVolume(JobControlRecord* jcr)
       goto bail_out;
     }
     if (size != ((uint32_t)sd->message_length)) {
-      Jmsg2(jcr, M_FATAL, 0, T_("Actual data size %d not same as header %d\n"),
+      Jmsg2(jcr, M_FATAL, 0,
+            T_("Actual data size %d not same as header %" PRIu32 "\n"),
             sd->message_length, size);
       goto bail_out;
     }
@@ -147,7 +148,8 @@ void DoVerifyVolume(JobControlRecord* jcr)
           Dmsg0(0, "\nError scanning header\n");
           goto bail_out;
         }
-        Dmsg2(30, "Got Attr: FilInx=%d type=%d\n", record_file_index, type);
+        Dmsg2(30, "Got Attr: FilInx=%" PRIu32 " type=%d\n", record_file_index,
+              type);
         ap = sd->msg;
         while (*ap++ != ' ') /* skip record file index */
           ;
@@ -185,9 +187,10 @@ void DoVerifyVolume(JobControlRecord* jcr)
          * For a directory, link is the same as fname, but with trailing
          * slash. For a linked file, link is the link. */
         /* Send file attributes to Director */
-        Dmsg2(200, "send Attributes inx=%d fname=%s\n", jcr->JobFiles, fname);
+        Dmsg2(200, "send Attributes inx=%" PRIu32 " fname=%s\n", jcr->JobFiles,
+              fname);
         if (type == FT_LNK || type == FT_LNKSAVED) {
-          status = dir->fsend("%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
+          status = dir->fsend("%" PRIu32 " %d %s %s%c%s%c%s%c", jcr->JobFiles,
                               STREAM_UNIX_ATTRIBUTES, "pinsug5", fname, 0, ap,
                               0, lname, 0);
           /* for a deleted record, we set fileindex=0 */
@@ -195,7 +198,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
           status = dir->fsend("%d %d %s %s%c%s%c%c", 0, STREAM_UNIX_ATTRIBUTES,
                               "pinsug5", fname, 0, ap, 0, 0);
         } else {
-          status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
+          status = dir->fsend("%" PRIu32 " %d %s %s%c%s%c%c", jcr->JobFiles,
                               STREAM_UNIX_ATTRIBUTES, "pinsug5", fname, 0, ap,
                               0, 0);
         }
@@ -212,8 +215,9 @@ void DoVerifyVolume(JobControlRecord* jcr)
       case STREAM_MD5_DIGEST:
         BinToBase64(digest, sizeof(digest), (char*)sd->msg,
                     CRYPTO_DIGEST_MD5_SIZE, true);
-        Dmsg2(400, "send inx=%d MD5=%s\n", jcr->JobFiles, digest);
-        dir->fsend("%d %d %s *MD5-%d*", jcr->JobFiles, STREAM_MD5_DIGEST,
+        Dmsg2(400, "send inx=%" PRIu32 " MD5=%s\n", jcr->JobFiles, digest);
+        dir->fsend("%" PRIu32 " %d %s *MD5-%" PRIu32 "*", jcr->JobFiles,
+                   STREAM_MD5_DIGEST,
                    digest, jcr->JobFiles);
         Dmsg2(20, "filed>dir: MD5 len=%d: msg=%s\n", dir->message_length,
               dir->msg);
@@ -222,8 +226,9 @@ void DoVerifyVolume(JobControlRecord* jcr)
       case STREAM_SHA1_DIGEST:
         BinToBase64(digest, sizeof(digest), (char*)sd->msg,
                     CRYPTO_DIGEST_SHA1_SIZE, true);
-        Dmsg2(400, "send inx=%d SHA1=%s\n", jcr->JobFiles, digest);
-        dir->fsend("%d %d %s *SHA1-%d*", jcr->JobFiles, STREAM_SHA1_DIGEST,
+        Dmsg2(400, "send inx=%" PRIu32 " SHA1=%s\n", jcr->JobFiles, digest);
+        dir->fsend("%" PRIu32 " %d %s *SHA1-%" PRIu32 "*", jcr->JobFiles,
+                   STREAM_SHA1_DIGEST,
                    digest, jcr->JobFiles);
         Dmsg2(20, "filed>dir: SHA1 len=%d: msg=%s\n", dir->message_length,
               dir->msg);
@@ -232,8 +237,9 @@ void DoVerifyVolume(JobControlRecord* jcr)
       case STREAM_SHA256_DIGEST:
         BinToBase64(digest, sizeof(digest), (char*)sd->msg,
                     CRYPTO_DIGEST_SHA256_SIZE, true);
-        Dmsg2(400, "send inx=%d SHA256=%s\n", jcr->JobFiles, digest);
-        dir->fsend("%d %d %s *SHA256-%d*", jcr->JobFiles, STREAM_SHA256_DIGEST,
+        Dmsg2(400, "send inx=%" PRIu32 " SHA256=%s\n", jcr->JobFiles, digest);
+        dir->fsend("%" PRIu32 " %d %s *SHA256-%" PRIu32 "*", jcr->JobFiles,
+                   STREAM_SHA256_DIGEST,
                    digest, jcr->JobFiles);
         Dmsg2(20, "filed>dir: SHA256 len=%d: msg=%s\n", dir->message_length,
               dir->msg);
@@ -242,8 +248,9 @@ void DoVerifyVolume(JobControlRecord* jcr)
       case STREAM_SHA512_DIGEST:
         BinToBase64(digest, sizeof(digest), (char*)sd->msg,
                     CRYPTO_DIGEST_SHA512_SIZE, true);
-        Dmsg2(400, "send inx=%d SHA512=%s\n", jcr->JobFiles, digest);
-        dir->fsend("%d %d %s *SHA512-%d*", jcr->JobFiles, STREAM_SHA512_DIGEST,
+        Dmsg2(400, "send inx=%" PRIu32 " SHA512=%s\n", jcr->JobFiles, digest);
+        dir->fsend("%" PRIu32 " %d %s *SHA512-%" PRIu32 "*", jcr->JobFiles,
+                   STREAM_SHA512_DIGEST,
                    digest, jcr->JobFiles);
         Dmsg2(20, "filed>dir: SHA512 len=%d: msg=%s\n", dir->message_length,
               dir->msg);
@@ -252,8 +259,9 @@ void DoVerifyVolume(JobControlRecord* jcr)
       case STREAM_XXH128_DIGEST:
         BinToBase64(digest, sizeof(digest), (char*)sd->msg,
                     CRYPTO_DIGEST_XXH128_SIZE, true);
-        Dmsg2(400, "send inx=%d XXH128=%s\n", jcr->JobFiles, digest);
-        dir->fsend("%d %d %s *XXH128-%d*", jcr->JobFiles, STREAM_XXH128_DIGEST,
+        Dmsg2(400, "send inx=%" PRIu32 " XXH128=%s\n", jcr->JobFiles, digest);
+        dir->fsend("%" PRIu32 " %d %s *XXH128-%" PRIu32 "*", jcr->JobFiles,
+                   STREAM_XXH128_DIGEST,
                    digest, jcr->JobFiles);
         Dmsg2(20, "filed>dir: XXH128 len=%d: msg=%s\n", dir->message_length,
               dir->msg);
@@ -265,9 +273,11 @@ void DoVerifyVolume(JobControlRecord* jcr)
         jcr->fd_impl->num_files_examined++;
       }
 
-        Dmsg2(400, "send inx=%d STREAM_RESTORE_OBJECT-%d\n", jcr->JobFiles,
+        Dmsg2(400, "send inx=%" PRIu32 " STREAM_RESTORE_OBJECT-%d\n",
+              jcr->JobFiles,
               STREAM_RESTORE_OBJECT);
-        dir->fsend("%d %d %s %s%c%c%c", jcr->JobFiles, STREAM_RESTORE_OBJECT,
+        dir->fsend("%" PRIu32 " %d %s %s%c%c%c", jcr->JobFiles,
+                   STREAM_RESTORE_OBJECT,
                    "ReStOrEObJeCt", fname, 0, 0, 0);
         break;
 

@@ -823,7 +823,7 @@ bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr)
         // Check if destination pool size is ok
         if (newpr.MaxVols > 0 && newpr.NumVols >= newpr.MaxVols) {
           ua->ErrorMsg(T_("Unable move recycled Volume in full "
-                          "Pool \"%s\" MaxVols=%d\n"),
+                          "Pool \"%s\" MaxVols=%" PRIu32 "\n"),
                        newpr.Name, newpr.MaxVols);
 
         } else { /* move media */

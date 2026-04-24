@@ -605,13 +605,13 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
             // Job record already exists in DB
             update_db = false; /* don't change db in CreateJobRecord */
             if (g_verbose) {
-              Pmsg1(000, T_("SOS_LABEL: Found Job record for JobId: %d\n"),
+              Pmsg1(000, T_("SOS_LABEL: Found Job record for JobId: %u\n"),
                     jr.JobId);
             }
           } else {
             // Must create a Job record in DB
             if (!update_db) {
-              Pmsg1(000, T_("SOS_LABEL: Job record not found for JobId: %d\n"),
+              Pmsg1(000, T_("SOS_LABEL: Job record not found for JobId: %u\n"),
                     jr.JobId);
             }
           }
@@ -641,7 +641,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
            * any, no new ones need be created.  This may occur if File
            * Retention has expired before Job Retention, or if the volume
            * has already been bscan'd */
-          Mmsg(sql_buffer, "SELECT count(*) from JobMedia where JobId=%d",
+          Mmsg(sql_buffer, "SELECT count(*) from JobMedia where JobId=%u",
                jr.JobId);
           db->SqlQuery(sql_buffer.c_str(), db_int64_handler, &jmr_count);
           if (jmr_count.value > 0) {
@@ -652,21 +652,21 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
           if (rec->VolSessionId != jr.VolSessionId) {
             Pmsg3(000,
-                  T_("SOS_LABEL: VolSessId mismatch for JobId=%u. DB=%d "
-                     "Vol=%d\n"),
+                  T_("SOS_LABEL: VolSessId mismatch for JobId=%u. DB=%" PRIu32
+                     " Vol=%" PRIu32 "\n"),
                   jr.JobId, jr.VolSessionId, rec->VolSessionId);
             return true; /* ignore error */
           }
           if (rec->VolSessionTime != jr.VolSessionTime) {
             Pmsg3(000,
-                  T_("SOS_LABEL: VolSessTime mismatch for JobId=%u. DB=%d "
-                     "Vol=%d\n"),
+                  T_("SOS_LABEL: VolSessTime mismatch for JobId=%u. DB=%" PRIu32
+                     " Vol=%" PRIu32 "\n"),
                   jr.JobId, jr.VolSessionTime, rec->VolSessionTime);
             return true; /* ignore error */
           }
           if (jr.PoolId != pr.PoolId) {
             Pmsg3(000,
-                  T_("SOS_LABEL: PoolId mismatch for JobId=%u. DB=%d Vol=%d\n"),
+                  T_("SOS_LABEL: PoolId mismatch for JobId=%u. DB=%u Vol=%u\n"),
                   jr.JobId, jr.PoolId, pr.PoolId);
             return true; /* ignore error */
           }
@@ -690,7 +690,8 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           mjcr = get_jcr_by_session(rec->VolSessionId, rec->VolSessionTime);
           if (!mjcr) {
             Pmsg2(000,
-                  T_("Could not find SessId=%d SessTime=%d for EOS record.\n"),
+                  T_("Could not find SessId=%" PRIu32 " SessTime=%" PRIu32
+                     " for EOS record.\n"),
                   rec->VolSessionId, rec->VolSessionTime);
             break;
           }
@@ -753,7 +754,9 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
   mjcr = get_jcr_by_session(rec->VolSessionId, rec->VolSessionTime);
   if (!mjcr) {
     if (mr.VolJobs > 0) {
-      Pmsg2(000, T_("Could not find Job for SessId=%d SessTime=%d record.\n"),
+      Pmsg2(000,
+            T_("Could not find Job for SessId=%" PRIu32 " SessTime=%" PRIu32
+               " record.\n"),
             rec->VolSessionId, rec->VolSessionTime);
     } else {
       ignored_msgs++;
@@ -967,8 +970,8 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
       break;
 
     default:
-      Pmsg2(0, T_("Unknown stream type!!! stream=%d len=%i\n"), rec->Stream,
-            rec->data_len);
+      Pmsg2(0, T_("Unknown stream type!!! stream=%d len=%" PRIu32 "\n"),
+            rec->Stream, rec->data_len);
       break;
   }
 
@@ -1255,7 +1258,8 @@ static bool UpdateJobRecord(BareosDb* t_db,
 
   mjcr = get_jcr_by_session(rec->VolSessionId, rec->VolSessionTime);
   if (!mjcr) {
-    Pmsg2(000, T_("Could not find SessId=%d SessTime=%d for EOS record.\n"),
+    Pmsg2(000, T_("Could not find SessId=%" PRIu32 " SessTime=%" PRIu32
+                  " for EOS record.\n"),
           rec->VolSessionId, rec->VolSessionTime);
     return false;
   }
@@ -1329,7 +1333,7 @@ static bool UpdateJobRecord(BareosDb* t_db,
     bstrftime(edt, sizeof(edt), mjcr->end_time);
     Pmsg15(000,
            T_("%s\n"
-              "JobId:                  %d\n"
+               "JobId:                  %u\n"
               "Job:                    %s\n"
               "FileSet:                %s\n"
               "Backup Level:           %s\n"
@@ -1338,8 +1342,8 @@ static bool UpdateJobRecord(BareosDb* t_db,
               "End time:               %s\n"
               "Files Written:          %s\n"
               "Bytes Written:          %s\n"
-              "Volume Session Id:      %d\n"
-              "Volume Session Time:    %d\n"
+               "Volume Session Id:      %" PRIu32 "\n"
+               "Volume Session Time:    %" PRIu32 "\n"
               "Last Volume Bytes:      %s\n"
               "Bareos binary info:     %s\n"
               "Termination:            %s\n\n"),
@@ -1381,7 +1385,7 @@ static bool CreateJobmediaRecord(BareosDb* t_db, JobControlRecord* mjcr)
     return false;
   }
   if (g_verbose) {
-    Pmsg2(000, T_("Created JobMedia record JobId %d, MediaId %d\n"), jmr.JobId,
+    Pmsg2(000, T_("Created JobMedia record JobId %u, MediaId %u\n"), jmr.JobId,
           jmr.MediaId);
   }
 
@@ -1400,7 +1404,8 @@ static bool UpdateDigestRecord(BareosDb* t_db,
   if (!mjcr) {
     if (mr.VolJobs > 0) {
       Pmsg2(000,
-            T_("Could not find SessId=%d SessTime=%d for MD5/SHA1 record.\n"),
+            T_("Could not find SessId=%" PRIu32 " SessTime=%" PRIu32
+               " for MD5/SHA1 record.\n"),
             rec->VolSessionId, rec->VolSessionTime);
     } else {
       ignored_msgs++;

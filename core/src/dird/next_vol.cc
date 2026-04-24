@@ -191,7 +191,7 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
       }
     }
 
-    Dmsg2(debuglevel, "VolJobs=%d FirstWritten=%lld\n", mr->VolJobs,
+    Dmsg2(debuglevel, "VolJobs=%" PRIu32 " FirstWritten=%lld\n", mr->VolJobs,
           static_cast<long long>(mr->FirstWritten));
     if (ok) {
       // If we can use the volume, check if it is expired
@@ -239,8 +239,8 @@ bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr)
       Jmsg(jcr, M_INFO, 0,
            T_("Max Volume jobs=%s exceeded. Marking Volume \"%s\" as Used.\n"),
            edit_uint64_with_commas(mr->MaxVolJobs, ed1), mr->VolumeName);
-      Dmsg3(debuglevel, "MaxVolJobs=%d JobId=%d Vol=%s\n", mr->MaxVolJobs,
-            (uint32_t)jcr->JobId, mr->VolumeName);
+      Dmsg3(debuglevel, "MaxVolJobs=%" PRIu32 " JobId=%" PRIu32 " Vol=%s\n",
+            mr->MaxVolJobs, jcr->JobId, mr->VolumeName);
       bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
       expired = true;
     } else if (mr->MaxVolFiles > 0 && mr->MaxVolFiles <= mr->VolFiles) {
@@ -426,7 +426,8 @@ bool GetScratchVolume(JobControlRecord* jcr,
       // Make sure there is room for another volume
       if (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
         Jmsg(jcr, M_WARNING, 0,
-             T_("Unable add Scratch Volume, Pool \"%s\" full MaxVols=%d\n"),
+             T_("Unable add Scratch Volume, Pool \"%s\" full MaxVols=%" PRIu32
+                "\n"),
              jcr->dir_impl->res.pool->resource_name_, pr.MaxVols);
         goto bail_out;
       }

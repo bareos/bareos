@@ -110,7 +110,8 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
 
   if (dev->num_writers > 0) {
     Jmsg2(jcr, M_FATAL, 0,
-          T_("Acquire read: num_writers=%d not zero. Job %d canceled.\n"),
+          T_("Acquire read: num_writers=%d not zero. Job %" PRIu32
+             " canceled.\n"),
           dev->num_writers, jcr->JobId);
     goto get_out;
   }
@@ -455,7 +456,8 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
   dev->num_writers++; /* we are now a writer */
   if (jcr->sd_impl->NumWriteVolumes == 0) { jcr->sd_impl->NumWriteVolumes = 1; }
   dev->VolCatInfo.VolCatJobs++; /* increment number of jobs on vol */
-  Dmsg4(100, "=== nwriters=%d nres=%d vcatjob=%d dev=%s\n", dev->num_writers,
+  Dmsg4(100, "=== nwriters=%d nres=%d vcatjob=%" PRIu32 " dev=%s\n",
+        dev->num_writers,
         dev->NumReserved(), dev->VolCatInfo.VolCatJobs, dev->print_name());
   dcr->DirUpdateVolumeInfo(
       is_labeloperation::False); /* send Volume info to Director */

@@ -134,7 +134,7 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
       query.bsprintf("%s FROM Pool WHERE Name='%s'", select.c_str(),
                      escaped_pool_name);
     } else if (pdbr->PoolId > 0) {
-      query.bsprintf("%s FROM Pool WHERE poolid=%d", select.c_str(),
+      query.bsprintf("%s FROM Pool WHERE poolid=%" PRIdbid, select.c_str(),
                      pdbr->PoolId);
     } else {
       query.bsprintf("%s FROM Pool ORDER BY PoolId", select.c_str());
@@ -145,7 +145,7 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
       query.bsprintf("%s FROM Pool WHERE Name='%s'", select.c_str(),
                      escaped_pool_name);
     } else if (pdbr->PoolId > 0) {
-      query.bsprintf("%s FROM Pool WHERE poolid=%d", select.c_str(),
+      query.bsprintf("%s FROM Pool WHERE poolid=%" PRIdbid, select.c_str(),
                      pdbr->PoolId);
     } else {
       query.bsprintf("%s FROM Pool ORDER BY PoolId", select.c_str());

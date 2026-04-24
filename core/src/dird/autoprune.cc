@@ -92,7 +92,7 @@ void PruneVolumes(JobControlRecord* jcr,
   PoolMem query(PM_MESSAGE);
   char ed1[50], ed2[100], ed3[50];
 
-  Dmsg1(100, "Prune volumes PoolId=%d\n", jcr->dir_impl->jr.PoolId);
+  Dmsg1(100, "Prune volumes PoolId=%" PRIdbid "\n", jcr->dir_impl->jr.PoolId);
   if (!jcr->dir_impl->res.job->PruneVolumes
       && !jcr->dir_impl->res.pool->AutoPrune) {
     Dmsg0(100, "AutoPrune not set in Pool.\n");

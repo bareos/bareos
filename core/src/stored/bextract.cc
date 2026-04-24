@@ -653,12 +653,15 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
         if (DecompressData(jcr, attr->ofname, rec->maskedStream, &wbuf, &wsize,
                            false)) {
-          Dmsg2(100, "Write uncompressed %d bytes, total before write=%ld\n",
+          Dmsg2(100,
+                "Write uncompressed %" PRIu32
+                " bytes, total before write=%ld\n",
                 wsize, total);
           StoreData(&g_bfd, wbuf, wsize);
           total += wsize;
           fileAddr += wsize;
-          Dmsg2(100, "Compress len=%d uncompressed=%d\n", rec->data_len, wsize);
+          Dmsg2(100, "Compress len=%" PRIu32 " uncompressed=%" PRIu32 "\n",
+                rec->data_len, wsize);
         } else {
           extract = false;
           return false;

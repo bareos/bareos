@@ -87,7 +87,8 @@ static inline bool LookupDevice(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  Dmsg3(200, "Deviceid of \"%s\" on StorageId %d is %d\n", dr.Name,
+  Dmsg3(200, "Deviceid of \"%s\" on StorageId %" PRIdbid " is %" PRIdbid "\n",
+        dr.Name,
         dr.StorageId, dr.DeviceId);
 
   bstrncpy(cached_device.device_name, device_name,

@@ -824,8 +824,8 @@ static void ComputeFields(int num_fields,
     fields[fidx].type = PQftype(result, fidx);
     fields[fidx].flags = 0;
     Dmsg4(500,
-          "ComputeFields finds field '%s' has length='%d' type='%d' and "
-          "IsNull=%d\n",
+          "ComputeFields finds field '%s' has length='%d' type='%" PRIu32
+          "' and IsNull=%" PRIu32 "\n",
           fields[fidx].name, fields[fidx].max_length, fields[fidx].type,
           fields[fidx].flags);
   }
