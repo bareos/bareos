@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -129,7 +129,8 @@ loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   bareos_core_functions
       = lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
-  Dmsg2(debuglevel, "scsicrypto-sd: Loaded: size=%d version=%d\n",
+  Dmsg2(debuglevel,
+        "scsicrypto-sd: Loaded: size=%" PRIu32 " version=%" PRIu32 "\n",
         bareos_core_functions->size, bareos_core_functions->version);
   *plugin_information = &pluginInfo; /* return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
@@ -235,7 +236,8 @@ static bRC handlePluginEvent(PluginContext*, bSdEvent* event, void* value)
     case bSdEventVolumeStatus:
       return send_volume_encryption_status(value);
     default:
-      Dmsg1(debuglevel, "scsicrypto-sd: Unknown event %d\n", event->eventType);
+      Dmsg1(debuglevel, "scsicrypto-sd: Unknown event %" PRIu32 "\n",
+            event->eventType);
       return bRC_Error;
   }
 

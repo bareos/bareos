@@ -480,8 +480,8 @@ void* htableImpl::first()
   while (!walkptr && walk_index < buckets) {
     walkptr = table[walk_index++]; /* go to next bucket */
     if (walkptr) {
-      Dmsg3(debuglevel, "first new walkptr=%p next=%p inx=%d\n", walkptr,
-            walkptr->next, walk_index - 1);
+      Dmsg3(debuglevel, "first new walkptr=%p next=%p inx=%" PRIu32 "\n",
+            walkptr, walkptr->next, walk_index - 1);
     }
   }
 

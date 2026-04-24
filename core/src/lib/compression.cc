@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -641,8 +641,8 @@ static bool compress_with_zlib(JobControlRecord* jcr,
     return false;
   }
 
-  Dmsg2(400, "GZIP compressed len=%d uncompressed len=%d\n", *compress_len,
-        rsize);
+  Dmsg2(400, "GZIP compressed len=%" PRIu32 " uncompressed len=%" PRIu32 "\n",
+        *compress_len, rsize);
 
   return true;
 }
@@ -671,8 +671,8 @@ static bool compress_with_lzo(JobControlRecord* jcr,
     return false;
   }
 
-  Dmsg2(400, "LZO compressed len=%d uncompressed len=%d\n", *compress_len,
-        rsize);
+  Dmsg2(400, "LZO compressed len=%" PRIu32 " uncompressed len=%" PRIu32 "\n",
+        *compress_len, rsize);
 
   return true;
 }
@@ -713,8 +713,8 @@ static bool compress_with_fastlz(JobControlRecord* jcr,
     return false;
   }
 
-  Dmsg2(400, "FASTLZ compressed len=%d uncompressed len=%d\n", *compress_len,
-        rsize);
+  Dmsg2(400, "FASTLZ compressed len=%" PRIu32 " uncompressed len=%" PRIu32 "\n",
+        *compress_len, rsize);
 
   return true;
 }
@@ -798,7 +798,7 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
     real_compress_len = *length;
   }
 
-  Dmsg2(400, "Comp_len=%llu message_length=%d\n",
+  Dmsg2(400, "Comp_len=%llu message_length=%" PRIu32 "\n",
         static_cast<long long unsigned>(compress_len), *length);
 
   while ((status = uncompress((Byte*)wbuf, &compress_len, (const Byte*)cbuf,
@@ -818,7 +818,7 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
       wbuf = jcr->compress.inflate_buffer;
       compress_len = jcr->compress.inflate_buffer_size;
     }
-    Dmsg2(400, "Comp_len=%llu message_length=%d\n",
+    Dmsg2(400, "Comp_len=%llu message_length=%" PRIu32 "\n",
           static_cast<long long unsigned>(compress_len), *length);
   }
 

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -276,12 +276,12 @@ void RwlCheckWriterIsMe(brwlock_t* rwl, libbareos::source_location loc)
   if (!is_ok || !is_locked || !is_me) {
     Emsg1(
         M_ERROR, 0,
-        T_("Rwl Check failed %s %s:%d => { ok = %s, locked = %s, me = %s }\n"),
+        T_("Rwl Check failed %s %s:%u => { ok = %s, locked = %s, me = %s }\n"),
         function, file, line, as_string(is_ok), as_string(is_locked),
         as_string(is_me));
     Pmsg1(
         000,
-        T_("Rwl Check failed %s %s:%d => { ok = %s, locked = %s, me = %s }\n"),
+        T_("Rwl Check failed %s %s:%u => { ok = %s, locked = %s, me = %s }\n"),
         function, file, line, as_string(is_ok), as_string(is_locked),
         as_string(is_me));
   }

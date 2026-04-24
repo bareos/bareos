@@ -347,7 +347,7 @@ static void JcrCleanup(JobControlRecord* jcr)
   DequeueMessages(jcr);
   CallJobEndCallbacks(jcr);
 
-  Dmsg1(debuglevel, "End job=%d\n", jcr->JobId);
+  Dmsg1(debuglevel, "End job=%" PRIu32 "\n", jcr->JobId);
 
   switch (jcr->getJobType()) {
     case JT_BACKUP:
@@ -385,12 +385,13 @@ static bool RunJcrGarbageCollector(JobControlRecord* jcr)
   LockJcrChain();
   jcr->DecUseCount(); /* decrement use count */
   if (jcr->UseCount() < 0) {
-    Jmsg2(jcr, M_ERROR, 0, T_("JobControlRecord UseCount=%d JobId=%d\n"),
+    Jmsg2(jcr, M_ERROR, 0,
+          T_("JobControlRecord UseCount=%d JobId=%" PRIu32 "\n"),
           jcr->UseCount(), jcr->JobId);
   }
   if (jcr->JobId > 0) {
-    Dmsg3(debuglevel, "Dec FreeJcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
-          jcr->UseCount(), jcr->Job);
+    Dmsg3(debuglevel, "Dec FreeJcr jid=%" PRIu32 " UseCount=%d Job=%s\n",
+          jcr->JobId, jcr->UseCount(), jcr->Job);
   }
   if (jcr->UseCount() > 0) { /* if in use */
     UnlockJcrChain();
@@ -408,8 +409,8 @@ static bool RunJcrGarbageCollector(JobControlRecord* jcr)
 // Global routine to free a jcr
 void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
 {
-  Dmsg3(debuglevel, "Enter FreeJcr jid=%u from %s:%d\n", jcr->JobId, file,
-        line);
+  Dmsg3(debuglevel, "Enter FreeJcr jid=%" PRIu32 " from %s:%d\n", jcr->JobId,
+        file, line);
 
   if (RunJcrGarbageCollector(jcr)) {
     std::destroy_at(jcr);
@@ -436,10 +437,10 @@ void JobControlRecord::MyThreadSendSignal(int sig)
   std::unique_lock l(mutex_);
 
   if (IsKillable() && !pthread_equal(my_thread_id, pthread_self())) {
-    Dmsg1(800, "Send kill to jid=%d\n", JobId);
+    Dmsg1(800, "Send kill to jid=%" PRIu32 "\n", JobId);
     pthread_kill(my_thread_id, sig);
   } else if (!IsKillable()) {
-    Dmsg1(10, "Warning, can't send kill to jid=%d\n", JobId);
+    Dmsg1(10, "Warning, can't send kill to jid=%" PRIu32 "\n", JobId);
   }
 }
 

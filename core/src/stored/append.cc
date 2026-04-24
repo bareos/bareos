@@ -548,7 +548,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       jcr->sd_impl->dcr->rec->data
           = content2.data.addr(); /* use message buffer */
 
-      Dmsg4(850, "before writ_rec FI=%d SessId=%d Strm=%s len=%d\n",
+      Dmsg4(850,
+            "before writ_rec FI=%" PRIu32 " SessId=%" PRIu32
+            " Strm=%s len=%" PRIu32 "\n",
             jcr->sd_impl->dcr->rec->FileIndex,
             jcr->sd_impl->dcr->rec->VolSessionId,
             stream_to_ascii(buf1, jcr->sd_impl->dcr->rec->Stream,
@@ -689,7 +691,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     Jmsg(jcr, M_INFO, 0,
          "Because no backup data was received, no device was reserved. As such "
          "no Session Labels were written for this job.\n");
-    Dmsg0(50, "No data for job %d => no data written.\n", jcr->JobId);
+    Dmsg0(50, "No data for job %" PRIu32 " => no data written.\n", jcr->JobId);
   }
 
   if (!DeleteNullJobmediaRecords(jcr)) {

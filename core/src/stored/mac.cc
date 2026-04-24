@@ -50,11 +50,12 @@
 namespace {
 // Responses sent to the Director
 inline constexpr const char Job_end[]
-    = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+    = "3099 Job %s end JobStatus=%d JobFiles=%" PRIu32
+      " JobBytes=%s JobErrors=%" PRIu32 "\n";
 
 // Responses received from Storage Daemon
 inline constexpr const char OK_start_replicate[]
-    = "3000 OK start replicate ticket = %d\n";
+    = "3000 OK start replicate ticket = %" PRIu32 "\n";
 inline constexpr const char OK_replicate[] = "3000 OK replicate data\n";
 inline constexpr const char OK_end_replicate[] = "3000 OK end replicate\n";
 inline constexpr const char OK_data[] = "3000 OK data\n";
@@ -201,7 +202,9 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr,
   rec->VolSessionId = jcr->VolSessionId;
   rec->VolSessionTime = jcr->VolSessionTime;
 
-  Dmsg5(200, "before write JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
+  Dmsg5(200,
+        "before write JobId=%" PRIu32 " FI=%s SessId=%" PRIu32
+        " Strm=%s len=%" PRIu32 "\n",
         jcr->JobId, FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
         stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
 

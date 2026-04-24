@@ -83,7 +83,8 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
       BErrNo be;
       dev_errno = errno;
       Dmsg5(100, "Open error on %s omode=%s oflags=%x errno=%d: ERR=%s\n",
-            prt_name, dev_mode_to_str(omode), oflags, errno, be.bstrerror());
+            prt_name, dev_mode_to_str(omode), static_cast<unsigned int>(oflags),
+            errno, be.bstrerror());
     } else {
       // Tape open, now rewind it
       Dmsg0(100, "Rewind after open\n");

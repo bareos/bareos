@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,7 +54,7 @@ bool RecentJobResultsList::ImportFromFile(std::ifstream& file)
   try {
     file.read(reinterpret_cast<char*>(&num), sizeof(num));
 
-    Dmsg1(100, "Read num_items=%d\n", num);
+    Dmsg1(100, "Read num_items=%" PRIu32 "\n", num);
     if (num > 4 * max_count_recent_job_results) { /* sanity check */
       return false;
     }

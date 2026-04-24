@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,7 +63,8 @@ inline constexpr const char OK_nextrun[] = "3000 OK Job Authorization=%s\n";
 inline constexpr const char BAD_job[]
     = "3915 Bad Job command. stat=%d CMD: %s\n";
 inline constexpr const char Job_end[]
-    = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+    = "3099 Job %s end JobStatus=%d JobFiles=%" PRIu32
+      " JobBytes=%s JobErrors=%" PRIu32 "\n";
 
 /**
  * Director requests us to start a job

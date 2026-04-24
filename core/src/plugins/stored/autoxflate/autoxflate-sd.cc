@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -248,7 +248,8 @@ static bRC handlePluginEvent(PluginContext* ctx, bSdEvent* event, void* value)
       return handleJobEnd(ctx);
   }
 
-  Dmsg(ctx, debuglevel, "autoxflate-sd: Unknown event %d\n", event->eventType);
+  Dmsg(ctx, debuglevel, "autoxflate-sd: Unknown event %" PRIu32 "\n",
+       event->eventType);
   return bRC_Error;
 }
 
