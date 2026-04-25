@@ -21,8 +21,10 @@
 
 #define BUILD_PLUGIN
 
+#include <chrono>
 #include <cinttypes>
 #include <ctime>
+#include <thread>
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
 
@@ -36,6 +38,8 @@ namespace filedaemon {
 namespace {
 CoreFunctions* bareos = NULL;
 thread_local std::size_t num_messages = 0;
+constexpr std::size_t kMaxMessages = 300;
+constexpr auto kMessageDelay = std::chrono::milliseconds(100);
 
 #define Jmsg(ctx, type, fmt, ...)                                           \
   bareos->JobMessage((ctx), __FILE__, __LINE__, (type), std::time(nullptr), \
@@ -58,8 +62,9 @@ bRC setPluginValue(PluginContext*, pVariable, void*) { return bRC_OK; }
 bRC handlePluginEvent(PluginContext*, bEvent*, void*) { return bRC_OK; }
 bRC startBackupFile(PluginContext* ctx, save_pkt*)
 {
-  if (num_messages < 50'000) {
+  if (num_messages < kMaxMessages) {
     Jmsg(ctx, M_INFO, "I am spamming (%" PRIuz ")\n", num_messages++);
+    std::this_thread::sleep_for(kMessageDelay);
     return bRC_Skip;
   }
 
