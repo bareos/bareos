@@ -1154,10 +1154,45 @@ std::vector<std::string> CopyAddressEntries(dlist<IPADDR>* addrs)
 
   IPADDR* addr;
   foreach_dlist (addr, addrs) {
-    char buffer[1024];
-    std::string entry{addr->build_address_str(buffer, sizeof(buffer), true)};
-    if (!entry.empty() && entry.back() == ' ') { entry.pop_back(); }
-    values.emplace_back(std::move(entry));
+    char address[1024];
+    const auto family = addr->GetFamily() == AF_INET    ? "ipv4"
+                        : addr->GetFamily() == AF_INET6 ? "ipv6"
+                                                        : nullptr;
+    if (!family) { continue; }
+
+    std::ostringstream entry;
+    entry << "host[" << family << ";"
+          << addr->GetAddress(address, sizeof(address));
+    if (const auto port = addr->GetPortHostOrder(); port > 0) {
+      entry << ";" << port;
+    }
+    entry << "]";
+    values.emplace_back(entry.str());
+  }
+  return values;
+}
+
+std::vector<std::string> CopyAddressEntries(dlist<IPADDR>* addrs, uint16_t port)
+{
+  auto values = CopyAddressEntries(addrs);
+  if (port == 0) { return values; }
+
+  for (auto& value : values) {
+    constexpr std::string_view prefix = "host[";
+    if (!value.starts_with(prefix) || value.empty() || value.back() != ']') {
+      continue;
+    }
+
+    const auto inner = std::string_view{value}.substr(
+        prefix.size(), value.size() - prefix.size() - 1);
+    const auto first = inner.find(';');
+    const auto second
+        = inner.find(';', first == std::string_view::npos ? first : first + 1);
+    if (first == std::string_view::npos || second != std::string_view::npos) {
+      continue;
+    }
+
+    value.insert(value.size() - 1, ";" + std::to_string(port));
   }
   return values;
 }
@@ -1238,6 +1273,50 @@ bool HasMemberSource(const BareosResource& resource,
   return false;
 }
 
+std::optional<uint16_t> LoadIntegerMemberSourceValue(
+    const BareosResource& resource,
+    std::initializer_list<const char*> member_names)
+{
+  const BareosResource::SourceLocation* source = nullptr;
+  for (const auto* member_name : member_names) {
+    source = resource.GetMemberSource(member_name);
+    if (source) { break; }
+  }
+  if (!source || source->file.empty() || source->line <= 0) {
+    return std::nullopt;
+  }
+
+  std::ifstream input(source->file);
+  if (!input) { return std::nullopt; }
+
+  std::string line;
+  for (int current_line = 1; current_line <= source->line; ++current_line) {
+    if (!std::getline(input, line)) { return std::nullopt; }
+  }
+
+  const auto equals = line.find('=');
+  if (equals == std::string::npos) { return std::nullopt; }
+
+  size_t pos = equals + 1;
+  while (pos < line.size()
+         && std::isspace(static_cast<unsigned char>(line[pos]))) {
+    ++pos;
+  }
+
+  uint32_t value = 0;
+  bool found_digit = false;
+  while (pos < line.size()
+         && std::isdigit(static_cast<unsigned char>(line[pos]))) {
+    found_digit = true;
+    value = value * 10 + static_cast<uint32_t>(line[pos] - '0');
+    if (value > 65535) { return std::nullopt; }
+    ++pos;
+  }
+
+  if (!found_digit || value == 0) { return std::nullopt; }
+  return static_cast<uint16_t>(value);
+}
+
 std::optional<std::string> CopyFirstAddress(dlist<IPADDR>* addrs)
 {
   if (!addrs || addrs->size() == 0) { return std::nullopt; }
@@ -1246,7 +1325,7 @@ std::optional<std::string> CopyFirstAddress(dlist<IPADDR>* addrs)
   if (!address) { return std::nullopt; }
 
   char buffer[1024];
-  return std::string{address->build_address_str(buffer, sizeof(buffer), false)};
+  return std::string{address->GetAddress(buffer, sizeof(buffer))};
 }
 
 std::string BuildDirectorConsoleResourceContent(
@@ -4528,12 +4607,6 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     const bool has_ndmp_address_source
         = HasMemberSource(*storage, {"NdmpAddress"});
     const bool has_ndmp_port_source = HasMemberSource(*storage, {"NdmpPort"});
-    if (!has_ndmp_addresses_source && has_ndmp_address_source
-        && storage->NDMPaddrs && storage->NDMPaddrs->size() > 1) {
-      return {.error
-              = "storage-daemon storage resource '" + storage_config.name
-                + "' uses multiple NDMP addresses, which are not managed yet."};
-    }
     if (has_addresses_source) {
       context.content.addresses = CopyAddressEntries(storage->SDaddrs);
     } else if (has_address_source) {
@@ -4553,14 +4626,24 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     if (has_source_address_source) {
       context.content.source_address = CopyFirstAddress(storage->SDsrc_addr);
     }
-    if (has_ndmp_addresses_source) {
-      context.content.ndmp_addresses = CopyAddressEntries(storage->NDMPaddrs);
-    } else if (has_ndmp_address_source) {
-      context.content.ndmp_address = CopyFirstAddress(storage->NDMPaddrs);
-    }
+    uint16_t ndmp_port = 0;
     if (has_ndmp_port_source) {
       const auto port = GetFirstPortHostOrder(storage->NDMPaddrs);
-      if (port > 0) { context.content.ndmp_port = static_cast<uint16_t>(port); }
+      if (port > 0) {
+        ndmp_port = static_cast<uint16_t>(port);
+      } else if (auto parsed_port
+                 = LoadIntegerMemberSourceValue(*storage, {"NdmpPort"})) {
+        ndmp_port = *parsed_port;
+      }
+      if (ndmp_port > 0) { context.content.ndmp_port = ndmp_port; }
+    }
+    if (has_ndmp_addresses_source
+        || (has_ndmp_address_source && storage->NDMPaddrs
+            && storage->NDMPaddrs->size() > 1)) {
+      context.content.ndmp_addresses
+          = CopyAddressEntries(storage->NDMPaddrs, ndmp_port);
+    } else if (has_ndmp_address_source) {
+      context.content.ndmp_address = CopyFirstAddress(storage->NDMPaddrs);
     }
     if (HasMemberSource(*storage, {"JustInTimeReservation"})) {
       context.content.just_in_time_reservation

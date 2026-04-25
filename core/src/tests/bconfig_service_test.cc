@@ -5601,6 +5601,55 @@ TEST(BconfigService, RejectsStorageDaemonUpdatesForSharedFiles)
   EXPECT_TRUE(std::filesystem::exists(shared_path));
 }
 
+TEST(BconfigService, UpsertsStorageDaemonResourcesWithScalarNdmpAddress)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-sd.d",
+                        source_root.path() / "bareos-sd.d",
+                        std::filesystem::copy_options::recursive);
+  WriteTextFile(source_root.path() / "bareos-sd.d/storage/bareos-sd.conf",
+                "Storage {\n"
+                "  Name = \"bareos-sd\"\n"
+                "  NdmpAddress = 192.0.2.30\n"
+                "  NdmpPort = 10001\n"
+                "  Description = \"Imported storage daemon\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertStorageDaemonResource(
+      "prod", "bareos-sd",
+      {.description = std::string{"Updated storage daemon"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto storage_path
+      = updated.value->path / "bareos-sd.d/storage/bareos-sd.conf";
+  const auto updated_text = ReadTextFile(storage_path);
+  EXPECT_NE(updated_text.find("Description = \"Updated storage daemon\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("NdmpAddress = 192.0.2.30"), std::string::npos);
+  EXPECT_NE(updated_text.find("NdmpPort = 10001"), std::string::npos);
+}
+
 TEST(BconfigService, UpsertsStorageDirectorResources)
 {
   ScopedDirectory source_root{MakeTempPath()};
