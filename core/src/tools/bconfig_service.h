@@ -140,6 +140,7 @@ struct ClientDaemonResourceSpec {
   std::optional<std::string> address{};
   std::optional<std::vector<std::string>> addresses{};
   std::optional<std::string> source_address{};
+  std::optional<std::vector<std::string>> source_addresses{};
   std::optional<uint16_t> port{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
   std::optional<uint32_t> maximum_workers_per_job{};
@@ -190,6 +191,7 @@ struct DirectorDaemonResourceSpec {
   std::optional<std::string> address{};
   std::optional<std::vector<std::string>> addresses{};
   std::optional<std::string> source_address{};
+  std::optional<std::vector<std::string>> source_addresses{};
   std::optional<uint16_t> port{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
   std::optional<uint32_t> absolute_job_timeout{};
@@ -438,6 +440,7 @@ struct StorageDaemonResourceSpec {
   std::optional<std::string> address{};
   std::optional<std::vector<std::string>> addresses{};
   std::optional<std::string> source_address{};
+  std::optional<std::vector<std::string>> source_addresses{};
   std::optional<uint16_t> port{};
   std::optional<bool> just_in_time_reservation{};
   std::optional<uint32_t> maximum_concurrent_jobs{};

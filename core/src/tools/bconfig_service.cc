@@ -927,6 +927,7 @@ struct StorageDaemonContentSpec {
   std::optional<std::string> address{};
   std::vector<std::string> addresses{};
   std::optional<std::string> source_address{};
+  std::vector<std::string> source_addresses{};
   std::optional<uint16_t> port{};
   std::optional<bool> just_in_time_reservation{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -1193,6 +1194,19 @@ std::vector<std::string> CopyAddressEntries(dlist<IPADDR>* addrs, uint16_t port)
     }
 
     value.insert(value.size() - 1, ";" + std::to_string(port));
+  }
+  return values;
+}
+
+std::vector<std::string> CopyAddressValues(dlist<IPADDR>* addrs)
+{
+  std::vector<std::string> values;
+  if (!addrs) { return values; }
+
+  IPADDR* addr;
+  foreach_dlist (addr, addrs) {
+    char address[1024];
+    values.emplace_back(addr->GetAddress(address, sizeof(address)));
   }
   return values;
 }
@@ -1748,7 +1762,12 @@ std::string BuildStorageDaemonResourceContent(
     AppendBareosDirective(content, "Address", spec.address);
     AppendIntegerDirective(content, "Port", spec.port);
   }
-  AppendBareosDirective(content, "SourceAddress", spec.source_address);
+  if (spec.source_addresses.empty()) {
+    AppendBareosDirective(content, "SourceAddress", spec.source_address);
+  } else {
+    AppendRepeatedBareosDirective(content, "SourceAddress",
+                                  spec.source_addresses);
+  }
   AppendBoolDirective(content, "JustInTimeReservation",
                       spec.just_in_time_reservation);
   AppendIntegerDirective(content, "MaximumConcurrentJobs",
@@ -1849,7 +1868,12 @@ std::string BuildClientDaemonResourceContent(
     AppendBareosDirective(content, "Address", spec.address);
     AppendIntegerDirective(content, "Port", spec.port);
   }
-  AppendBareosDirective(content, "SourceAddress", spec.source_address);
+  if (spec.source_addresses.empty()) {
+    AppendBareosDirective(content, "SourceAddress", spec.source_address);
+  } else {
+    AppendRepeatedBareosDirective(content, "SourceAddress",
+                                  spec.source_addresses);
+  }
   AppendIntegerDirective(content, "MaximumConcurrentJobs",
                          spec.maximum_concurrent_jobs);
   AppendIntegerDirective(content, "MaximumWorkersPerJob",
@@ -1929,7 +1953,12 @@ std::string BuildDirectorDaemonResourceContent(
     AppendBareosDirective(content, "Address", spec.address);
     AppendIntegerDirective(content, "Port", spec.port);
   }
-  AppendBareosDirective(content, "SourceAddress", spec.source_address);
+  if (spec.source_addresses.empty()) {
+    AppendBareosDirective(content, "SourceAddress", spec.source_address);
+  } else {
+    AppendRepeatedBareosDirective(content, "SourceAddress",
+                                  spec.source_addresses);
+  }
   AppendIntegerDirective(content, "MaximumConcurrentJobs",
                          spec.maximum_concurrent_jobs);
   AppendIntegerDirective(content, "AbsoluteJobTimeout",
@@ -2234,11 +2263,7 @@ OperationResult<std::vector<std::string>> ExtractAutochangerDeviceNames(
   }
   for (auto* device_resource : autochanger.device_resources) {
     if (!device_resource) { continue; }
-    if (device_resource->multiplied_device_resource) {
-      return {.error = "storage-daemon autochanger '"
-                       + std::string{autochanger_name}
-                       + "' uses counted devices, which are not managed yet."};
-    }
+    if (device_resource->multiplied_device_resource) { continue; }
     if (!device_resource->resource_name_
         || device_resource->resource_name_[0] == '\0') {
       return {.error = "storage-daemon autochanger '"
@@ -2246,11 +2271,7 @@ OperationResult<std::vector<std::string>> ExtractAutochangerDeviceNames(
                        + "' references a device without a name."};
     }
     std::string device_name{device_resource->resource_name_};
-    if (!device_name.empty() && device_name[0] == '$') {
-      return {.error = "storage-daemon autochanger '"
-                       + std::string{autochanger_name}
-                       + "' uses counted devices, which are not managed yet."};
-    }
+    if (!device_name.empty() && device_name[0] == '$') { continue; }
     if (seen.insert(device_name).second) {
       device_names.emplace_back(std::move(device_name));
     }
@@ -3153,6 +3174,118 @@ OperationResult<std::vector<std::string>> ExtractNamedTopLevelResourceEntries(
     return {.error = "unterminated preserved resource block in '"
                      + file_path.string() + "'."};
   }
+  return {.error = "resource '" + std::string{resource_name}
+                   + "' not found in '" + file_path.string() + "'."};
+}
+
+OperationResult<std::vector<std::string>> ExtractTopLevelDirectiveValues(
+    const std::filesystem::path& file_path,
+    std::string_view resource_keyword,
+    const std::set<std::string>& directive_names)
+{
+  auto file = ReadFile(file_path);
+  if (!file) { return {.error = file.error}; }
+
+  std::vector<std::string> values;
+  std::istringstream stream{*file.value};
+  std::string line;
+  bool in_resource = false;
+  int resource_depth = 0;
+
+  while (std::getline(stream, line)) {
+    const auto trimmed = TrimAsciiWhitespace(line);
+    const int brace_delta = CountBraces(line);
+
+    if (!in_resource) {
+      if (trimmed.rfind(resource_keyword, 0) == 0
+          && trimmed.find('{') != std::string::npos) {
+        in_resource = true;
+        resource_depth = brace_delta;
+      }
+      continue;
+    }
+
+    if (resource_depth == 1 && !trimmed.empty() && trimmed[0] != '#') {
+      const auto equals = trimmed.find('=');
+      const auto open_brace = trimmed.find('{');
+      if (equals != std::string::npos
+          && (open_brace == std::string::npos || equals < open_brace)) {
+        const auto name = NormalizeDirectiveName(
+            TrimAsciiWhitespace(trimmed.substr(0, equals)));
+        if (directive_names.contains(name)) {
+          values.emplace_back(UnquoteBareosString(
+              TrimAsciiWhitespace(trimmed.substr(equals + 1))));
+        }
+      }
+    }
+
+    resource_depth += brace_delta;
+    if (resource_depth <= 0) { return {.value = std::move(values)}; }
+  }
+
+  return {.value = std::move(values)};
+}
+
+OperationResult<std::vector<std::string>> ExtractNamedTopLevelDirectiveValues(
+    const std::filesystem::path& file_path,
+    std::string_view resource_keyword,
+    std::string_view resource_name,
+    const std::set<std::string>& directive_names)
+{
+  auto file = ReadFile(file_path);
+  if (!file) { return {.error = file.error}; }
+
+  std::istringstream stream{*file.value};
+  std::string line;
+  bool in_resource = false;
+  int resource_depth = 0;
+  std::optional<std::string> current_name;
+  std::vector<std::string> values;
+
+  while (std::getline(stream, line)) {
+    const auto trimmed = TrimAsciiWhitespace(line);
+    const int brace_delta = CountBraces(line);
+
+    if (!in_resource) {
+      if (trimmed.rfind(resource_keyword, 0) == 0
+          && trimmed.find('{') != std::string::npos) {
+        in_resource = true;
+        resource_depth = brace_delta;
+        current_name.reset();
+        values.clear();
+      }
+      continue;
+    }
+
+    if (resource_depth == 1) {
+      if (auto parsed_name = ParseTopLevelDirectiveValue(line, "Name")) {
+        current_name = std::move(*parsed_name);
+      }
+      if (!trimmed.empty() && trimmed[0] != '#') {
+        const auto equals = trimmed.find('=');
+        const auto open_brace = trimmed.find('{');
+        if (equals != std::string::npos
+            && (open_brace == std::string::npos || equals < open_brace)
+            && current_name && *current_name == resource_name) {
+          const auto name = NormalizeDirectiveName(
+              TrimAsciiWhitespace(trimmed.substr(0, equals)));
+          if (directive_names.contains(name)) {
+            values.emplace_back(UnquoteBareosString(
+                TrimAsciiWhitespace(trimmed.substr(equals + 1))));
+          }
+        }
+      }
+    }
+
+    resource_depth += brace_delta;
+    if (resource_depth <= 0) {
+      if (current_name && *current_name == resource_name) {
+        return {.value = std::move(values)};
+      }
+      in_resource = false;
+    }
+  }
+
   return {.error = "resource '" + std::string{resource_name}
                    + "' not found in '" + file_path.string() + "'."};
 }
@@ -4508,15 +4641,13 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
       const auto port = GetFirstPortHostOrder(client->FDaddrs);
       if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
     }
-    if (has_source_address_source && client->FDsrc_addr
-        && client->FDsrc_addr->size() > 1) {
-      return {
-          .error
-          = "client daemon resource '" + client_config.name
-            + "' uses multiple source addresses, which are not managed yet."};
-    }
     if (has_source_address_source) {
-      context.content.source_address = CopyFirstAddress(client->FDsrc_addr);
+      if (client->FDsrc_addr && client->FDsrc_addr->size() > 1) {
+        context.content.source_addresses
+            = CopyAddressValues(client->FDsrc_addr);
+      } else {
+        context.content.source_address = CopyFirstAddress(client->FDsrc_addr);
+      }
     }
     if (HasMemberSource(*client, {"MaximumConcurrentJobs"})) {
       context.content.maximum_concurrent_jobs = client->MaxConcurrentJobs;
@@ -4675,6 +4806,31 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
+    if (has_source_address_source) {
+      static const std::set<std::string> kSourceAddressDirectives{
+          "SourceAddress", "FdSourceAddress"};
+      auto raw_source_addresses
+          = context.is_standalone_file
+                ? ExtractTopLevelDirectiveValues(context.file_path, "Client",
+                                                 kSourceAddressDirectives)
+                : ExtractNamedTopLevelDirectiveValues(
+                      context.file_path, "Client", client_config.name,
+                      kSourceAddressDirectives);
+      if (!raw_source_addresses) {
+        return {.error = raw_source_addresses.error};
+      }
+      if (!raw_source_addresses.value->empty()) {
+        context.content.source_address.reset();
+        context.content.source_addresses.clear();
+        if (raw_source_addresses.value->size() > 1) {
+          context.content.source_addresses
+              = std::move(*raw_source_addresses.value);
+        } else {
+          context.content.source_address
+              = std::move(raw_source_addresses.value->front());
+        }
+      }
+    }
     return {.value = std::move(context)};
   }
 
@@ -4734,14 +4890,14 @@ OperationResult<DirectorDaemonWriteContext> LoadDirectorDaemonWriteContext(
       const auto port = GetFirstPortHostOrder(director->DIRaddrs);
       if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
     }
-    if (has_source_address_source && director->DIRsrc_addr
-        && director->DIRsrc_addr->size() > 1) {
-      return {.error = "director daemon resource '" + director_config.name
-                       + "' uses multiple source addresses, which are not "
-                         "managed yet."};
-    }
     if (has_source_address_source) {
-      context.content.source_address = CopyFirstAddress(director->DIRsrc_addr);
+      if (director->DIRsrc_addr && director->DIRsrc_addr->size() > 1) {
+        context.content.source_addresses
+            = CopyAddressValues(director->DIRsrc_addr);
+      } else {
+        context.content.source_address
+            = CopyFirstAddress(director->DIRsrc_addr);
+      }
     }
     if (director->password_.value && director->password_.value[0] != '\0') {
       context.password = std::string{director->password_.value};
@@ -4854,6 +5010,31 @@ OperationResult<DirectorDaemonWriteContext> LoadDirectorDaemonWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
+    if (has_source_address_source) {
+      static const std::set<std::string> kSourceAddressDirectives{
+          "SourceAddress"};
+      auto raw_source_addresses
+          = context.is_standalone_file
+                ? ExtractTopLevelDirectiveValues(context.file_path, "Director",
+                                                 kSourceAddressDirectives)
+                : ExtractNamedTopLevelDirectiveValues(
+                      context.file_path, "Director", director_config.name,
+                      kSourceAddressDirectives);
+      if (!raw_source_addresses) {
+        return {.error = raw_source_addresses.error};
+      }
+      if (!raw_source_addresses.value->empty()) {
+        context.content.source_address.reset();
+        context.content.source_addresses.clear();
+        if (raw_source_addresses.value->size() > 1) {
+          context.content.source_addresses
+              = std::move(*raw_source_addresses.value);
+        } else {
+          context.content.source_address
+              = std::move(raw_source_addresses.value->front());
+        }
+      }
+    }
     return {.value = std::move(context)};
   }
 
@@ -4920,15 +5101,13 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
       const auto port = GetFirstPortHostOrder(storage->SDaddrs);
       if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
     }
-    if (has_source_address_source && storage->SDsrc_addr
-        && storage->SDsrc_addr->size() > 1) {
-      return {
-          .error
-          = "storage-daemon storage resource '" + storage_config.name
-            + "' uses multiple source addresses, which are not managed yet."};
-    }
     if (has_source_address_source) {
-      context.content.source_address = CopyFirstAddress(storage->SDsrc_addr);
+      if (storage->SDsrc_addr && storage->SDsrc_addr->size() > 1) {
+        context.content.source_addresses
+            = CopyAddressValues(storage->SDsrc_addr);
+      } else {
+        context.content.source_address = CopyFirstAddress(storage->SDsrc_addr);
+      }
     }
     uint16_t ndmp_port = 0;
     if (has_ndmp_port_source) {
@@ -5114,6 +5293,31 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
+    if (has_source_address_source) {
+      static const std::set<std::string> kSourceAddressDirectives{
+          "SourceAddress", "SdSourceAddress"};
+      auto raw_source_addresses
+          = context.is_standalone_file
+                ? ExtractTopLevelDirectiveValues(context.file_path, "Storage",
+                                                 kSourceAddressDirectives)
+                : ExtractNamedTopLevelDirectiveValues(
+                      context.file_path, "Storage", storage_config.name,
+                      kSourceAddressDirectives);
+      if (!raw_source_addresses) {
+        return {.error = raw_source_addresses.error};
+      }
+      if (!raw_source_addresses.value->empty()) {
+        context.content.source_address.reset();
+        context.content.source_addresses.clear();
+        if (raw_source_addresses.value->size() > 1) {
+          context.content.source_addresses
+              = std::move(*raw_source_addresses.value);
+        } else {
+          context.content.source_address
+              = std::move(raw_source_addresses.value->front());
+        }
+      }
+    }
     return {.value = std::move(context)};
   }
 
@@ -5861,6 +6065,18 @@ LoadStorageAutochangerWriteContext(const DeploymentConfigRecord& storage_config,
         = per_file != resources_per_file.end() && per_file->second == 1;
     context.is_managed
         = IsManagedPath(managed_paths, repository_root, context.file_path);
+    static const std::set<std::string> kAutochangerDeviceDirectives{"Device"};
+    auto raw_devices
+        = context.is_standalone_file
+              ? ExtractTopLevelDirectiveValues(context.file_path, "Autochanger",
+                                               kAutochangerDeviceDirectives)
+              : ExtractNamedTopLevelDirectiveValues(
+                    context.file_path, "Autochanger", autochanger_name,
+                    kAutochangerDeviceDirectives);
+    if (!raw_devices) { return {.error = raw_devices.error}; }
+    if (!raw_devices.value->empty()) {
+      context.devices = std::move(*raw_devices.value);
+    }
     return {.value = std::move(context)};
   }
 
@@ -7655,6 +7871,15 @@ ServiceState::UpsertClientDaemonResource(
             = "client daemon source_address must be a bare Bareos token "
               "without whitespace or quotes."};
   }
+  if (spec.source_addresses) {
+    for (const auto& value : *spec.source_addresses) {
+      if (!IsSafeBareosToken(value)) {
+        return {.error
+                = "client daemon source_addresses entries must be bare "
+                  "Bareos tokens without whitespace or quotes."};
+      }
+    }
+  }
   if (spec.pki_cipher && !IsSupportedPkiCipherToken(*spec.pki_cipher)) {
     return {.error
             = "client daemon pki_cipher must be one of the supported filed "
@@ -7680,7 +7905,13 @@ ServiceState::UpsertClientDaemonResource(
     content.address.reset();
     content.port.reset();
   }
-  if (spec.source_address) { content.source_address = spec.source_address; }
+  if (spec.source_addresses) {
+    content.source_addresses = *spec.source_addresses;
+    content.source_address.reset();
+  } else if (spec.source_address) {
+    content.source_address = spec.source_address;
+    content.source_addresses.clear();
+  }
   if (spec.port) {
     content.port = spec.port;
     content.addresses.clear();
@@ -7853,6 +8084,15 @@ ServiceState::UpsertDirectorDaemonResource(
             = "director daemon source_address must be a bare Bareos token "
               "without whitespace or quotes."};
   }
+  if (spec.source_addresses) {
+    for (const auto& value : *spec.source_addresses) {
+      if (!IsSafeBareosToken(value)) {
+        return {.error
+                = "director daemon source_addresses entries must be bare "
+                  "Bareos tokens without whitespace or quotes."};
+      }
+    }
+  }
   if (spec.port && *spec.port == 0) {
     return {.error = "director daemon port must be greater than zero."};
   }
@@ -7881,7 +8121,13 @@ ServiceState::UpsertDirectorDaemonResource(
     content.address.reset();
     content.port.reset();
   }
-  if (spec.source_address) { content.source_address = spec.source_address; }
+  if (spec.source_addresses) {
+    content.source_addresses = *spec.source_addresses;
+    content.source_address.reset();
+  } else if (spec.source_address) {
+    content.source_address = spec.source_address;
+    content.source_addresses.clear();
+  }
   if (spec.port) {
     content.port = spec.port;
     content.addresses.clear();
@@ -11804,6 +12050,15 @@ ServiceState::UpsertStorageDaemonResource(
             = "storage-daemon source_address must be a bare Bareos token "
               "without whitespace or quotes."};
   }
+  if (spec.source_addresses) {
+    for (const auto& value : *spec.source_addresses) {
+      if (!IsSafeBareosToken(value)) {
+        return {.error
+                = "storage-daemon source_addresses entries must be bare "
+                  "Bareos tokens without whitespace or quotes."};
+      }
+    }
+  }
   if (spec.ndmp_address && !IsSafeBareosToken(*spec.ndmp_address)) {
     return {.error
             = "storage-daemon ndmp_address must be a bare Bareos token "
@@ -11832,7 +12087,13 @@ ServiceState::UpsertStorageDaemonResource(
     content.address.reset();
     content.port.reset();
   }
-  if (spec.source_address) { content.source_address = spec.source_address; }
+  if (spec.source_addresses) {
+    content.source_addresses = *spec.source_addresses;
+    content.source_address.reset();
+  } else if (spec.source_address) {
+    content.source_address = spec.source_address;
+    content.source_addresses.clear();
+  }
   if (spec.port) {
     content.port = spec.port;
     content.addresses.clear();

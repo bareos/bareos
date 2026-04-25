@@ -240,6 +240,7 @@ struct StorageDaemonRequestSpec {
   std::optional<std::string> address{};
   std::optional<std::vector<std::string>> addresses{};
   std::optional<std::string> source_address{};
+  std::optional<std::vector<std::string>> source_addresses{};
   std::optional<uint16_t> port{};
   std::optional<bool> just_in_time_reservation{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -944,6 +945,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="client-daemon-source-address">SourceAddress</label>
         <input id="client-daemon-source-address" name="source_address"
                placeholder="192.0.2.10">
+
+        <label for="client-daemon-source-addresses">Source addresses</label>
+        <textarea id="client-daemon-source-addresses" name="source_addresses"
+                  rows="3"
+                  placeholder="192.0.2.10&#10;198.51.100.10"></textarea>
 
         <label for="client-daemon-port">Port</label>
         <input id="client-daemon-port" name="port" type="number"
@@ -1837,6 +1843,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="storage-daemon-source-address" name="source_address"
                placeholder="192.0.2.20">
 
+        <label for="storage-daemon-source-addresses">Source addresses</label>
+        <textarea id="storage-daemon-source-addresses" name="source_addresses"
+                  rows="3"
+                  placeholder="192.0.2.20&#10;198.51.100.20"></textarea>
+
         <label for="storage-daemon-port">Port</label>
         <input id="storage-daemon-port" name="port" type="number"
                min="1" max="65535" placeholder="9103">
@@ -2117,6 +2128,15 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-daemon-address">Address</label>
         <input id="director-daemon-address" name="address"
                placeholder="director.example.com">
+
+        <label for="director-daemon-source-address">SourceAddress</label>
+        <input id="director-daemon-source-address" name="source_address"
+               placeholder="192.0.2.44">
+
+        <label for="director-daemon-source-addresses">Source addresses</label>
+        <textarea id="director-daemon-source-addresses" name="source_addresses"
+                  rows="3"
+                  placeholder="192.0.2.44&#10;198.51.100.44"></textarea>
 
         <label for="director-daemon-port">Port</label>
         <input id="director-daemon-port" name="port" type="number"
@@ -3390,6 +3410,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const addresses = rawAddresses.split('\n')
           .map((line) => line.trim())
           .filter((line) => line.length > 0);
+        const rawSourceAddresses = String(form.get('source_addresses') ?? '');
+        const sourceAddresses = rawSourceAddresses.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
         const rawTlsAllowedCn = String(form.get('tls_allowed_cn') ?? '');
         const tlsAllowedCn = rawTlsAllowedCn.split('\n')
           .map((line) => line.trim())
@@ -3418,6 +3442,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           address: String(form.get('address') ?? '').trim(),
           addresses: addresses,
           source_address: String(form.get('source_address') ?? '').trim(),
+          source_addresses: sourceAddresses,
           port: String(form.get('port') ?? '').trim(),
           maximum_concurrent_jobs: String(form.get('maximum_concurrent_jobs') ?? '').trim(),
           maximum_workers_per_job: String(form.get('maximum_workers_per_job') ?? '').trim(),
@@ -3466,6 +3491,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.address) { delete payload.address; }
         if (payload.addresses.length === 0) { delete payload.addresses; }
         if (!payload.source_address) { delete payload.source_address; }
+        if (payload.source_addresses.length === 0) {
+          delete payload.source_addresses;
+        }
         if (!payload.port) { delete payload.port; } else { payload.port = Number(payload.port); }
         if (!payload.maximum_concurrent_jobs) { delete payload.maximum_concurrent_jobs; } else { payload.maximum_concurrent_jobs = Number(payload.maximum_concurrent_jobs); }
         if (!payload.maximum_workers_per_job) { delete payload.maximum_workers_per_job; } else { payload.maximum_workers_per_job = Number(payload.maximum_workers_per_job); }
@@ -4358,6 +4386,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const addresses = rawAddresses.split('\n')
           .map((line) => line.trim())
           .filter((line) => line.length > 0);
+        const rawSourceAddresses = String(form.get('source_addresses') ?? '');
+        const sourceAddresses = rawSourceAddresses.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
         const rawTlsAllowedCn = String(form.get('tls_allowed_cn') ?? '');
         const tlsAllowedCn = rawTlsAllowedCn.split('\n')
           .map((line) => line.trim())
@@ -4378,6 +4410,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           address: String(form.get('address') ?? '').trim(),
           addresses: addresses,
           source_address: String(form.get('source_address') ?? '').trim(),
+          source_addresses: sourceAddresses,
           port: String(form.get('port') ?? '').trim(),
           just_in_time_reservation: String(form.get('just_in_time_reservation') ?? '').trim(),
           maximum_concurrent_jobs: String(form.get('maximum_concurrent_jobs') ?? '').trim(),
@@ -4431,6 +4464,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.address) { delete payload.address; }
         if (payload.addresses.length === 0) { delete payload.addresses; }
         if (!payload.source_address) { delete payload.source_address; }
+        if (payload.source_addresses.length === 0) {
+          delete payload.source_addresses;
+        }
         if (!payload.port) { delete payload.port; } else { payload.port = Number(payload.port); }
         if (!payload.just_in_time_reservation) { delete payload.just_in_time_reservation; } else { payload.just_in_time_reservation = payload.just_in_time_reservation === 'true'; }
         if (!payload.maximum_concurrent_jobs) { delete payload.maximum_concurrent_jobs; } else { payload.maximum_concurrent_jobs = Number(payload.maximum_concurrent_jobs); }
@@ -4496,8 +4532,14 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const form = new FormData(event.target);
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
+        const rawSourceAddresses = String(form.get('source_addresses') ?? '');
+        const sourceAddresses = rawSourceAddresses.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
         const payload = {
           address: String(form.get('address') ?? '').trim(),
+          source_address: String(form.get('source_address') ?? '').trim(),
+          source_addresses: sourceAddresses,
           port: String(form.get('port') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
           working_directory: String(form.get('working_directory') ?? '').trim(),
@@ -4506,6 +4548,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
           messages: String(form.get('messages') ?? '').trim(),
         };
         if (!payload.address) { delete payload.address; }
+        if (!payload.source_address) { delete payload.source_address; }
+        if (payload.source_addresses.length === 0) {
+          delete payload.source_addresses;
+        }
         if (!payload.port) {
           delete payload.port;
         } else {
@@ -5711,6 +5757,7 @@ http::response<http::string_body> HandleDeploymentClientDaemonPutRequest(
       .address = spec->address,
       .addresses = spec->addresses,
       .source_address = spec->source_address,
+      .source_addresses = spec->source_addresses,
       .port = spec->port,
       .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
       .maximum_workers_per_job = spec->maximum_workers_per_job,
@@ -5799,6 +5846,7 @@ http::response<http::string_body> HandleDeploymentDirectorDaemonPutRequest(
       .address = spec->address,
       .addresses = spec->addresses,
       .source_address = spec->source_address,
+      .source_addresses = spec->source_addresses,
       .port = spec->port,
       .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
       .absolute_job_timeout = spec->absolute_job_timeout,
@@ -6070,6 +6118,7 @@ http::response<http::string_body> HandleDeploymentStorageDaemonPutRequest(
       .address = spec->address,
       .addresses = spec->addresses,
       .source_address = spec->source_address,
+      .source_addresses = spec->source_addresses,
       .port = spec->port,
       .just_in_time_reservation = spec->just_in_time_reservation,
       .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
@@ -9632,6 +9681,7 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   auto* absolute_job_timeout
       = json_object_get(root.get(), "absolute_job_timeout");
   auto* source_address = json_object_get(root.get(), "source_address");
+  auto* source_addresses = json_object_get(root.get(), "source_addresses");
   auto* tls_authenticate = json_object_get(root.get(), "tls_authenticate");
   auto* tls_enable = json_object_get(root.get(), "tls_enable");
   auto* tls_require = json_object_get(root.get(), "tls_require");
@@ -9736,6 +9786,7 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   if (!require_string(address, "address")
       || !require_string_array(addresses, "addresses")
       || !require_string(source_address, "source_address")
+      || !require_string_array(source_addresses, "source_addresses")
       || (port && !json_is_null(port) && !json_is_integer(port))
       || (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
           && !json_is_integer(maximum_concurrent_jobs))
@@ -9978,6 +10029,7 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   if (source_address && json_is_string(source_address)) {
     spec.source_address = std::string{json_string_value(source_address)};
   }
+  spec.source_addresses = parse_string_array(source_addresses);
   if (port && json_is_integer(port)) {
     const auto value = json_integer_value(port);
     if (value <= 0 || value > 65535) {

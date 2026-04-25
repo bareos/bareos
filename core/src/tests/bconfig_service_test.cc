@@ -2223,6 +2223,59 @@ TEST(BconfigService, UpsertsClientDaemonResourcesInSharedFiles)
   EXPECT_NE(shared_text.find("Name = \"OtherClient\""), std::string::npos);
 }
 
+TEST(BconfigService, UpsertsClientDaemonResourcesWithMultipleSourceAddresses)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-fd.d",
+                        source_root.path() / "bareos-fd.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto client_path
+      = RepositoryLayout::ClientsDirectory(repo_path.path())
+        / "backup-bareos-test-fd/bareos-fd.d/client/myself.conf";
+  const auto original_text = ReadTextFile(client_path);
+  const auto closing = original_text.rfind("}\n");
+  ASSERT_NE(closing, std::string::npos);
+  WriteTextFile(client_path,
+                original_text.substr(0, closing)
+                    + "  SourceAddress = 192.0.2.10\n"
+                      "  SourceAddress = 198.51.100.10\n"
+                      "}\n");
+
+  auto updated = state.UpsertClientDaemonResource(
+      "prod", "backup-bareos-test-fd",
+      {.description = std::string{"Updated client daemon"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(client_path);
+  EXPECT_NE(updated_text.find("Description = \"Updated client daemon\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("SourceAddress = 192.0.2.10"), std::string::npos);
+  EXPECT_NE(updated_text.find("SourceAddress = 198.51.100.10"),
+            std::string::npos);
+}
+
 TEST(BconfigService, UpsertsDirectorDaemonResources)
 {
   ScopedDirectory source_root{MakeTempPath()};
@@ -2254,6 +2307,8 @@ TEST(BconfigService, UpsertsDirectorDaemonResources)
   auto updated = state.UpsertDirectorDaemonResource(
       "prod", "bareos-dir",
       {.address = std::string{"192.0.2.44"},
+       .source_addresses
+       = std::vector<std::string>{"192.0.2.54", "198.51.100.54"},
        .port = 19101,
        .maximum_concurrent_jobs = 23,
        .absolute_job_timeout = 3600,
@@ -2294,6 +2349,9 @@ TEST(BconfigService, UpsertsDirectorDaemonResources)
   EXPECT_NE(updated_text.find("Name = \"bareos-dir\""), std::string::npos);
   EXPECT_NE(updated_text.find("Password = "), std::string::npos);
   EXPECT_NE(updated_text.find("Address = 192.0.2.44"), std::string::npos);
+  EXPECT_NE(updated_text.find("SourceAddress = 192.0.2.54"), std::string::npos);
+  EXPECT_NE(updated_text.find("SourceAddress = 198.51.100.54"),
+            std::string::npos);
   EXPECT_NE(updated_text.find("Port = 19101"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 23"), std::string::npos);
   EXPECT_NE(updated_text.find("AbsoluteJobTimeout = 3600"), std::string::npos);
@@ -2399,6 +2457,59 @@ TEST(BconfigService, UpsertsDirectorDaemonResourcesInSharedFiles)
   EXPECT_NE(shared_text.find("Description = \"Managed director\""),
             std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherDirector\""), std::string::npos);
+}
+
+TEST(BconfigService, UpsertsDirectorDaemonResourcesWithMultipleSourceAddresses)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto director_path
+      = RepositoryLayout::DirectorsDirectory(repo_path.path())
+        / "bareos-dir/bareos-dir.d/director/bareos-dir.conf";
+  const auto original_text = ReadTextFile(director_path);
+  const auto closing = original_text.rfind("}\n");
+  ASSERT_NE(closing, std::string::npos);
+  WriteTextFile(director_path,
+                original_text.substr(0, closing)
+                    + "  SourceAddress = 192.0.2.44\n"
+                      "  SourceAddress = 198.51.100.44\n"
+                      "}\n");
+
+  auto updated = state.UpsertDirectorDaemonResource(
+      "prod", "bareos-dir",
+      {.description = std::string{"Updated director daemon"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(director_path);
+  EXPECT_NE(updated_text.find("Description = \"Updated director daemon\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("SourceAddress = 192.0.2.44"), std::string::npos);
+  EXPECT_NE(updated_text.find("SourceAddress = 198.51.100.44"),
+            std::string::npos);
 }
 
 TEST(BconfigService, GeneratesClientStubsForDirectorOnlyImports)
@@ -5794,6 +5905,63 @@ TEST(BconfigService, UpsertsStorageDaemonResourcesInSharedFiles)
   EXPECT_NE(shared_text.find("Name = \"OtherStorage\""), std::string::npos);
 }
 
+TEST(BconfigService, UpsertsStorageDaemonResourcesWithMultipleSourceAddresses)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-sd.d",
+                        source_root.path() / "bareos-sd.d",
+                        std::filesystem::copy_options::recursive);
+  WriteTextFile(source_root.path() / "bareos-sd.d/storage/bareos-sd.conf",
+                "Storage {\n"
+                "  Name = \"bareos-sd\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto storage_path
+      = RepositoryLayout::StoragesDirectory(repo_path.path())
+        / "bareos-sd/bareos-sd.d/storage/bareos-sd.conf";
+  const auto original_text = ReadTextFile(storage_path);
+  const auto closing = original_text.rfind("}\n");
+  ASSERT_NE(closing, std::string::npos);
+  WriteTextFile(storage_path,
+                original_text.substr(0, closing)
+                    + "  SourceAddress = 192.0.2.20\n"
+                      "  SourceAddress = 198.51.100.20\n"
+                      "}\n");
+
+  auto updated = state.UpsertStorageDaemonResource(
+      "prod", "bareos-sd",
+      {.description = std::string{"Updated storage daemon"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(storage_path);
+  EXPECT_NE(updated_text.find("Description = \"Updated storage daemon\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("SourceAddress = 192.0.2.20"), std::string::npos);
+  EXPECT_NE(updated_text.find("SourceAddress = 198.51.100.20"),
+            std::string::npos);
+}
+
 TEST(BconfigService, UpsertsStorageDaemonResourcesWithScalarNdmpAddress)
 {
   ScopedDirectory source_root{MakeTempPath()};
@@ -6806,6 +6974,155 @@ TEST(BconfigService, UpsertsStorageAutochangerResourcesInSharedFiles)
   EXPECT_NE(shared_text.find("Changer Device = \"/dev/default-changer\""),
             std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"Other\""), std::string::npos);
+}
+
+TEST(BconfigService, UpsertsStorageAutochangerResourcesWithCountedDevices)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-sd.d",
+                        source_root.path() / "bareos-sd.d",
+                        std::filesystem::copy_options::recursive);
+  std::filesystem::create_directories(source_root.path()
+                                      / "bareos-sd.d/autochanger");
+  std::filesystem::create_directories(source_root.path()
+                                      / "bareos-sd.d/device");
+  WriteTextFile(source_root.path() / "bareos-sd.d/storage/bareos-sd.conf",
+                "Storage {\n"
+                "  Name = \"bareos-sd\"\n"
+                "}\n");
+  WriteTextFile(
+      source_root.path() / "bareos-sd.d/autochanger/CountedAutochanger.conf",
+      "Autochanger {\n"
+      "  Name = \"CountedAutochanger\"\n"
+      "  Device = MultipliedDeviceResource\n"
+      "  Changer Device = \"/dev/counting-changer\"\n"
+      "  Changer Command = \"/usr/lib/bareos/counting-changer\"\n"
+      "  Description = \"Imported counted autochanger\"\n"
+      "}\n");
+  WriteTextFile(
+      source_root.path() / "bareos-sd.d/device/MultipliedDeviceResource.conf",
+      "Device {\n"
+      "  Name = \"MultipliedDeviceResource\"\n"
+      "  Media Type = File\n"
+      "  Archive Device = \"/var/lib/bareos/storage/volumes\"\n"
+      "  Device Type = File\n"
+      "  LabelMedia = yes\n"
+      "  Random Access = yes\n"
+      "  AutomaticMount = yes\n"
+      "  RemovableMedia = no\n"
+      "  AlwaysOpen = no\n"
+      "  Count = 5\n"
+      "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertStorageAutochangerResource(
+      "prod", "bareos-sd", "CountedAutochanger",
+      {.description = std::string{"Updated counted autochanger"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(
+      updated.value->path / "bareos-sd.d/autochanger/CountedAutochanger.conf");
+  EXPECT_NE(updated_text.find("Device = MultipliedDeviceResource"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated counted autochanger\""),
+            std::string::npos);
+}
+
+TEST(BconfigService, UpsertsSharedStorageAutochangerResourcesWithCountedDevices)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-sd.d",
+                        source_root.path() / "bareos-sd.d",
+                        std::filesystem::copy_options::recursive);
+  std::filesystem::create_directories(source_root.path()
+                                      / "bareos-sd.d/autochanger");
+  std::filesystem::create_directories(source_root.path()
+                                      / "bareos-sd.d/device");
+  WriteTextFile(source_root.path() / "bareos-sd.d/storage/bareos-sd.conf",
+                "Storage {\n"
+                "  Name = \"bareos-sd\"\n"
+                "}\n");
+  WriteTextFile(source_root.path() / "bareos-sd.d/autochanger/shared.conf",
+                "Autochanger {\n"
+                "  Name = \"CountedAutochanger\"\n"
+                "  Device = MultipliedDeviceResource\n"
+                "  Changer Device = \"/dev/counting-changer\"\n"
+                "  Changer Command = \"/usr/lib/bareos/counting-changer\"\n"
+                "  Description = \"Imported counted autochanger\"\n"
+                "}\n"
+                "\n"
+                "Autochanger {\n"
+                "  Name = \"Other\"\n"
+                "  Device = FileStorage\n"
+                "}\n");
+  WriteTextFile(
+      source_root.path() / "bareos-sd.d/device/MultipliedDeviceResource.conf",
+      "Device {\n"
+      "  Name = \"MultipliedDeviceResource\"\n"
+      "  Media Type = File\n"
+      "  Archive Device = \"/var/lib/bareos/storage/volumes\"\n"
+      "  Device Type = File\n"
+      "  LabelMedia = yes\n"
+      "  Random Access = yes\n"
+      "  AutomaticMount = yes\n"
+      "  RemovableMedia = no\n"
+      "  AlwaysOpen = no\n"
+      "  Count = 5\n"
+      "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertStorageAutochangerResource(
+      "prod", "bareos-sd", "CountedAutochanger",
+      {.description = std::string{"Updated counted autochanger"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(
+      updated.value->path / "bareos-sd.d/autochanger/shared.conf");
+  EXPECT_NE(updated_text.find("Device = MultipliedDeviceResource"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated counted autochanger\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Name = \"Other\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesStorageAutochangerResources)
