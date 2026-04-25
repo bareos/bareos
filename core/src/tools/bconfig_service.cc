@@ -4038,10 +4038,6 @@ OperationResult<DirectorProfileWriteContext> LoadDirectorProfileWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "director profile '" + std::string{profile_name}
-                       + "' is not stored in a standalone file yet."};
-    }
     return {.value = std::move(context)};
   }
 
@@ -4173,10 +4169,6 @@ OperationResult<DirectorPoolWriteContext> LoadDirectorPoolWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "director pool '" + std::string{pool_name}
-                       + "' is not stored in a standalone file yet."};
-    }
     return {.value = std::move(context)};
   }
 
@@ -5443,10 +5435,6 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "director job '" + std::string{job_name}
-                       + "' is not stored in a standalone file yet."};
-    }
 
     static const std::set<std::string> kControlledJobDirectives{
         "Name",
@@ -5471,8 +5459,13 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
         "Where",
         "Priority",
         "Enabled"};
-    auto passthrough = ExtractTopLevelResourceEntries(context.file_path, "Job",
-                                                      kControlledJobDirectives);
+    auto passthrough
+        = context.is_standalone_file
+              ? ExtractTopLevelResourceEntries(context.file_path, "Job",
+                                               kControlledJobDirectives)
+              : ExtractNamedTopLevelResourceEntries(context.file_path, "Job",
+                                                    job_name,
+                                                    kControlledJobDirectives);
     if (!passthrough) { return {.error = passthrough.error}; }
     context.content.passthrough_entries = std::move(*passthrough.value);
     return {.value = std::move(context)};
@@ -5564,10 +5557,6 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "director jobdefs '" + std::string{jobdefs_name}
-                       + "' is not stored in a standalone file yet."};
-    }
 
     static const std::set<std::string> kControlledJobDefsDirectives{
         "Name",
@@ -5592,8 +5581,13 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
         "Where",
         "Priority",
         "Enabled"};
-    auto passthrough = ExtractTopLevelResourceEntries(
-        context.file_path, "JobDefs", kControlledJobDefsDirectives);
+    auto passthrough
+        = context.is_standalone_file
+              ? ExtractTopLevelResourceEntries(context.file_path, "JobDefs",
+                                               kControlledJobDefsDirectives)
+              : ExtractNamedTopLevelResourceEntries(
+                    context.file_path, "JobDefs", jobdefs_name,
+                    kControlledJobDefsDirectives);
     if (!passthrough) { return {.error = passthrough.error}; }
     context.content.passthrough_entries = std::move(*passthrough.value);
     return {.value = std::move(context)};
@@ -9175,7 +9169,14 @@ ServiceState::UpsertDirectorProfileResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, content)) {
+  std::string file_content = content;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Profile", profile_name, content);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write director profile resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -9240,10 +9241,21 @@ ServiceState::DeleteDirectorProfileResource(std::string_view deployment_id,
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             director_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               director_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Profile", profile_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error
+              = "failed to update shared director profile resource file '"
+                + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
@@ -9332,7 +9344,14 @@ ServiceState::UpsertDirectorPoolResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(context.value->file_path,
+                                                  "Pool", pool_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write director pool resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -9397,10 +9416,20 @@ ServiceState::DeleteDirectorPoolResource(std::string_view deployment_id,
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             director_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               director_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Pool", pool_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error = "failed to update shared director pool resource file '"
+                       + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
@@ -10324,7 +10353,14 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertDirectorJobResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(context.value->file_path,
+                                                  "Job", job_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write director job resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -10388,10 +10424,20 @@ OperationResult<DeploymentConfigRecord> ServiceState::DeleteDirectorJobResource(
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             director_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               director_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Job", job_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error = "failed to update shared director job resource file '"
+                       + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
@@ -10492,7 +10538,14 @@ ServiceState::UpsertDirectorJobDefsResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "JobDefs", jobdefs_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write director jobdefs resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -10557,10 +10610,21 @@ ServiceState::DeleteDirectorJobDefsResource(std::string_view deployment_id,
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             director_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               director_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "JobDefs", jobdefs_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error
+              = "failed to update shared director jobdefs resource file '"
+                + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
