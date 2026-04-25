@@ -110,6 +110,7 @@ struct DirectorStorageRequestSpec {
   std::optional<std::string> password{};
   std::optional<std::string> device{};
   std::optional<std::string> media_type{};
+  std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> archive_device{};
   std::optional<std::string> device_type{};
   std::optional<std::string> description{};
@@ -1268,6 +1269,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="director-storage-media-type">Media Type</label>
         <input id="director-storage-media-type" name="media_type" value="File">
+
+        <label for="director-storage-maximum-bandwidth-per-job">Maximum bandwidth per job</label>
+        <input id="director-storage-maximum-bandwidth-per-job"
+               name="maximum_bandwidth_per_job" type="number" min="0"
+               placeholder="0">
 
         <label for="director-storage-archive-device">Archive Device</label>
         <input id="director-storage-archive-device" name="archive_device"
@@ -3655,6 +3661,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
           password: String(form.get('password') ?? '').trim(),
           device: String(form.get('device') ?? '').trim(),
           media_type: String(form.get('media_type') ?? '').trim(),
+          maximum_bandwidth_per_job: String(
+            form.get('maximum_bandwidth_per_job') ?? '').trim(),
           archive_device: String(form.get('archive_device') ?? '').trim(),
           device_type: String(form.get('device_type') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
@@ -3675,6 +3683,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.media_type) {
           delete payload.media_type;
+        }
+        if (!payload.maximum_bandwidth_per_job) {
+          delete payload.maximum_bandwidth_per_job;
+        } else {
+          payload.maximum_bandwidth_per_job
+            = Number.parseInt(payload.maximum_bandwidth_per_job, 10);
         }
         if (!payload.archive_device) {
           delete payload.archive_device;
@@ -6769,6 +6783,7 @@ http::response<http::string_body> HandleDeploymentDirectorStoragePutRequest(
       .password = spec->password,
       .device = spec->device,
       .media_type = spec->media_type,
+      .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
       .archive_device = spec->archive_device,
       .device_type = spec->device_type,
       .description = spec->description,
@@ -8554,6 +8569,8 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   auto* password = json_object_get(root.get(), "password");
   auto* device = json_object_get(root.get(), "device");
   auto* media_type = json_object_get(root.get(), "media_type");
+  auto* maximum_bandwidth_per_job
+      = json_object_get(root.get(), "maximum_bandwidth_per_job");
   auto* archive_device = json_object_get(root.get(), "archive_device");
   auto* device_type = json_object_get(root.get(), "device_type");
   auto* description = json_object_get(root.get(), "description");
@@ -8576,6 +8593,13 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   }
   if (media_type && !json_is_null(media_type) && !json_is_string(media_type)) {
     error = "field 'media_type' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (maximum_bandwidth_per_job && !json_is_null(maximum_bandwidth_per_job)
+      && !json_is_integer(maximum_bandwidth_per_job)) {
+    error
+        = "field 'maximum_bandwidth_per_job' must be an integer when "
+          "provided.";
     return std::nullopt;
   }
   if (archive_device && !json_is_null(archive_device)
@@ -8614,6 +8638,14 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   }
   if (media_type && json_is_string(media_type)) {
     spec.media_type = std::string{json_string_value(media_type)};
+  }
+  if (maximum_bandwidth_per_job && json_is_integer(maximum_bandwidth_per_job)) {
+    const auto value = json_integer_value(maximum_bandwidth_per_job);
+    if (value < 0) {
+      error = "field 'maximum_bandwidth_per_job' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.maximum_bandwidth_per_job = static_cast<uint64_t>(value);
   }
   if (archive_device && json_is_string(archive_device)) {
     spec.archive_device = std::string{json_string_value(archive_device)};

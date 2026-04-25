@@ -2855,6 +2855,57 @@ TEST(BconfigService, UpsertsClientDirectorStubsInSharedFiles)
   EXPECT_NE(shared_text.find("Name = \"other-dir\""), std::string::npos);
 }
 
+TEST(BconfigService, UpsertsClientDirectorStubsPreserveLargeImportedPort)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto stub_path = RepositoryLayout::ClientsDirectory(repo_path.path())
+                         / "bareos-fd/bareos-fd.d/director/bareos-dir.conf";
+  WriteTextFile(stub_path,
+                "Director {\n"
+                "  Name = \"bareos-dir\"\n"
+                "  Password = \"[md5]abcdef0123456789abcdef0123456789\"\n"
+                "  Description = \"Imported stub\"\n"
+                "  Address = localhost\n"
+                "  Port = 70000\n"
+                "}\n");
+
+  auto updated = state.UpsertClientDirectorStub(
+      "prod", "bareos-fd", "bareos-dir",
+      {.description = std::string{"Updated imported stub"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(stub_path);
+  EXPECT_NE(updated_text.find("Address = localhost"), std::string::npos);
+  EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated imported stub\""),
+            std::string::npos);
+}
+
 TEST(BconfigService, DeletesClientDirectorStubs)
 {
   ScopedDirectory source_root{MakeTempPath()};
@@ -3100,6 +3151,55 @@ TEST(BconfigService, UpsertsDirectorClientResources)
       std::string::npos);
   EXPECT_NE(updated_text.find("Port = 9102"), std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Managed by service\""),
+            std::string::npos);
+}
+
+TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+  WriteTextFile(source_root.path() / "bareos-dir.d/client/bareos-fd.conf",
+                "Client {\n"
+                "  Name = \"bareos-fd\"\n"
+                "  Description = \"Imported client\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "  Port = 70000\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertDirectorClientResource(
+      "prod", "bareos-dir", "bareos-fd",
+      {.description = std::string{"Updated imported client"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(
+      updated.value->path / "bareos-dir.d/client/bareos-fd.conf");
+  EXPECT_NE(updated_text.find("Address = localhost"), std::string::npos);
+  EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated imported client\""),
             std::string::npos);
 }
 
@@ -7501,6 +7601,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
        .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
        .device = std::string{"FileStorage"},
        .media_type = std::string{"File"},
+       .maximum_bandwidth_per_job = 2048,
        .description = std::string{"Managed storage"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-dir");
@@ -7516,6 +7617,8 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
   EXPECT_NE(created_text.find("Device = FileStorage"), std::string::npos);
   EXPECT_NE(created_text.find("Media Type = File"), std::string::npos);
   EXPECT_NE(created_text.find("Port = 9103"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumBandwidthPerJob = 2048"),
+            std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed storage\""),
             std::string::npos);
 
@@ -7533,7 +7636,63 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
   EXPECT_NE(updated_text.find("Device = FileStorage"), std::string::npos);
   EXPECT_NE(updated_text.find("Media Type = File"), std::string::npos);
   EXPECT_NE(updated_text.find("Port = 9103"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 2048"),
+            std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Managed storage\""),
+            std::string::npos);
+}
+
+TEST(BconfigService, UpsertsDirectorStorageResourcesPreserveLargeImportedPort)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+  WriteTextFile(source_root.path() / "bareos-dir.d/storage/File.conf",
+                "Storage {\n"
+                "  Name = \"File\"\n"
+                "  Description = \"Imported storage\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "  Device = FileStorage\n"
+                "  Media Type = File\n"
+                "  Port = 70000\n"
+                "  MaximumBandwidthPerJob = 8192\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertDirectorStorageResource(
+      "prod", "bareos-dir", "File",
+      {.description = std::string{"Updated imported storage"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text
+      = ReadTextFile(updated.value->path / "bareos-dir.d/storage/File.conf");
+  EXPECT_NE(updated_text.find("Address = localhost"), std::string::npos);
+  EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 8192"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated imported storage\""),
             std::string::npos);
 }
 
@@ -7954,6 +8113,7 @@ TEST(BconfigService, SyncsDirectorStorageResourcesIntoStorageDaemonFiles)
        .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
        .device = std::string{"FileManagedDevice"},
        .media_type = std::string{"File"},
+       .maximum_bandwidth_per_job = 4096,
        .archive_device = std::string{"/tmp/bareos-storage"},
        .device_type = std::string{"file"},
        .description = std::string{"Managed storage"}});
@@ -7970,6 +8130,8 @@ TEST(BconfigService, SyncsDirectorStorageResourcesIntoStorageDaemonFiles)
   EXPECT_NE(director_text.find("Name = \"bareos-dir\""), std::string::npos);
   EXPECT_NE(director_text.find(
                 "Password = \"[md5]abcdef0123456789abcdef0123456789\""),
+            std::string::npos);
+  EXPECT_NE(director_text.find("MaximumBandwidthPerJob = 4096"),
             std::string::npos);
 
   const auto device_text = ReadTextFile(device_sync_path);

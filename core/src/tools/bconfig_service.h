@@ -237,6 +237,7 @@ struct DirectorStorageResourceSpec {
   std::optional<std::string> password{};
   std::optional<std::string> device{};
   std::optional<std::string> media_type{};
+  std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> archive_device{};
   std::optional<std::string> device_type{};
   std::optional<std::string> description{};

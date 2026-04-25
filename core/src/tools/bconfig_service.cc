@@ -767,7 +767,7 @@ std::string BuildClientDirectorStubContent(
     std::string_view password,
     std::string_view description,
     const std::optional<std::string>& address = std::nullopt,
-    const std::optional<uint16_t>& port = std::nullopt,
+    const std::optional<uint32_t>& port = std::nullopt,
     const std::optional<std::vector<std::string>>& allowed_script_dirs
     = std::nullopt,
     const std::optional<std::vector<std::string>>& allowed_job_commands
@@ -1050,7 +1050,7 @@ struct DirectorJobContentSpec {
 std::string BuildDirectorClientResourceContent(std::string_view client_name,
                                                std::string_view address,
                                                std::string_view password,
-                                               uint16_t port,
+                                               uint32_t port,
                                                std::string_view description)
 {
   std::ostringstream content;
@@ -1070,7 +1070,8 @@ std::string BuildDirectorStorageResourceContent(
     std::string_view password,
     const std::vector<std::string>& devices,
     std::string_view media_type,
-    uint16_t port,
+    uint32_t port,
+    const std::optional<uint64_t>& maximum_bandwidth_per_job,
     std::string_view description)
 {
   std::ostringstream content;
@@ -1081,8 +1082,10 @@ std::string BuildDirectorStorageResourceContent(
           << "  Password = " << QuoteBareosString(password) << "\n";
   AppendRepeatedBareosDirective(content, "Device", devices);
   content << "  Media Type = " << media_type << "\n"
-          << "  Port = " << port << "\n"
-          << "}\n";
+          << "  Port = " << port << "\n";
+  AppendIntegerDirective(content, "MaximumBandwidthPerJob",
+                         maximum_bandwidth_per_job);
+  content << "}\n";
   return content.str();
 }
 
@@ -2423,7 +2426,7 @@ std::string FormatParseFailure(std::string_view prefix,
 struct DirectorClientWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> address{};
-  std::optional<uint16_t> port{};
+  std::optional<uint32_t> port{};
   std::optional<std::string> password{};
   std::optional<std::string> description{};
   bool exists{false};
@@ -2433,11 +2436,12 @@ struct DirectorClientWriteContext {
 struct DirectorStorageWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> address{};
-  std::optional<uint16_t> port{};
+  std::optional<uint32_t> port{};
   std::optional<std::string> password{};
   std::optional<std::string> device{};
   std::vector<std::string> devices{};
   std::optional<std::string> media_type{};
+  std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> description{};
   bool exists{false};
   bool is_standalone_file{false};
@@ -2601,7 +2605,7 @@ struct ClientDirectorStubWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> description{};
   std::optional<std::string> address{};
-  std::optional<uint16_t> port{};
+  std::optional<uint32_t> port{};
   std::optional<std::vector<std::string>> allowed_script_dirs{};
   std::optional<std::vector<std::string>> allowed_job_commands{};
   std::optional<bool> tls_authenticate{};
@@ -2781,9 +2785,7 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
     if (client->address && client->address[0] != '\0') {
       context.address = std::string{client->address};
     }
-    if (client->FDport != 0) {
-      context.port = static_cast<uint16_t>(client->FDport);
-    }
+    if (client->FDport != 0) { context.port = client->FDport; }
     if (client->description_ && client->description_[0] != '\0') {
       context.description = std::string{client->description_};
     }
@@ -2851,11 +2853,17 @@ OperationResult<DirectorStorageWriteContext> LoadDirectorStorageWriteContext(
     if (storage->address && storage->address[0] != '\0') {
       context.address = std::string{storage->address};
     }
-    if (storage->SDport != 0) {
-      context.port = static_cast<uint16_t>(storage->SDport);
-    }
+    if (storage->SDport != 0) { context.port = storage->SDport; }
     if (storage->description_ && storage->description_[0] != '\0') {
       context.description = std::string{storage->description_};
+    }
+    if (HasMemberSource(*storage, {"MaximumBandwidthPerJob"})) {
+      if (storage->max_bandwidth < 0) {
+        return {.error = "director storage '" + std::string{storage_name}
+                         + "' has a negative MaximumBandwidthPerJob."};
+      }
+      context.maximum_bandwidth_per_job
+          = static_cast<uint64_t>(storage->max_bandwidth);
     }
     if (storage->media_type && storage->media_type[0] != '\0') {
       context.media_type = std::string{storage->media_type};
@@ -6234,6 +6242,7 @@ OperationResult<std::monostate> SyncStorageDaemonConfig(
     std::string_view password,
     std::string_view device_name,
     std::string_view media_type,
+    const std::optional<uint64_t>& maximum_bandwidth_per_job_spec,
     const std::optional<std::string>& archive_device_spec,
     const std::optional<std::string>& device_type_spec)
 {
@@ -6299,7 +6308,9 @@ OperationResult<std::monostate> SyncStorageDaemonConfig(
           DefaultStorageDaemonDirectorDescription(director_name, storage_name));
   const auto director_monitor = director_context.value->monitor;
   const auto director_maximum_bandwidth_per_job
-      = director_context.value->maximum_bandwidth_per_job;
+      = maximum_bandwidth_per_job_spec
+            ? maximum_bandwidth_per_job_spec
+            : director_context.value->maximum_bandwidth_per_job;
   const auto device_description = device_context.value->description.value_or(
       DefaultStorageDaemonDeviceDescription(device_name, storage_name));
 
@@ -6669,9 +6680,8 @@ LoadClientDirectorStubWriteContext(const std::filesystem::path& client_root,
         && director->address[0] != '\0') {
       context.address = std::string{director->address};
     }
-    if (HasMemberSource(*director, {"Port"}) && director->port > 0
-        && director->port <= 65535) {
-      context.port = static_cast<uint16_t>(director->port);
+    if (HasMemberSource(*director, {"Port"}) && director->port > 0) {
+      context.port = director->port;
     }
     if (HasMemberSource(*director, {"AllowedScriptDir"})) {
       context.allowed_script_dirs
@@ -7506,7 +7516,8 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
                                      DefaultClientDirectorStubDescription(
                                          client_name, director_name));
   const auto address = spec.address ? spec.address : context.value->address;
-  const auto port = spec.port ? spec.port : context.value->port;
+  const auto port
+      = spec.port ? std::optional<uint32_t>{*spec.port} : context.value->port;
   const auto allowed_script_dirs = spec.allowed_script_dirs
                                        ? spec.allowed_script_dirs
                                        : context.value->allowed_script_dirs;
@@ -8311,9 +8322,11 @@ ServiceState::UpsertDirectorClientResource(
               "client resource."};
   }
 
-  const auto port = spec.port.value_or(
-      context.value->port.value_or(kDefaultFileDaemonPort));
-  if (port == 0) {
+  const auto port
+      = spec.port ? std::optional<uint32_t>{*spec.port} : context.value->port;
+  const auto effective_port
+      = port.value_or(static_cast<uint32_t>(kDefaultFileDaemonPort));
+  if (effective_port == 0) {
     return {.error = "director client port must be greater than zero."};
   }
 
@@ -8323,7 +8336,7 @@ ServiceState::UpsertDirectorClientResource(
             : context.value->description.value_or(
                   DefaultDirectorClientDescription(client_name, director_name));
   const auto content = BuildDirectorClientResourceContent(
-      client_name, *address, *password, port, description);
+      client_name, *address, *password, effective_port, description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "client";
@@ -8487,9 +8500,11 @@ ServiceState::UpsertDirectorStorageResource(
               "without whitespace or quotes."};
   }
 
-  const auto port = spec.port.value_or(
-      context.value->port.value_or(kDefaultStorageDaemonPort));
-  if (port == 0) {
+  const auto port
+      = spec.port ? std::optional<uint32_t>{*spec.port} : context.value->port;
+  const auto effective_port
+      = port.value_or(static_cast<uint32_t>(kDefaultStorageDaemonPort));
+  if (effective_port == 0) {
     return {.error = "director storage port must be greater than zero."};
   }
 
@@ -8498,6 +8513,10 @@ ServiceState::UpsertDirectorStorageResource(
                                : context.value->description.value_or(
                                      DefaultDirectorStorageDescription(
                                          storage_name, director_name));
+  const auto maximum_bandwidth_per_job
+      = spec.maximum_bandwidth_per_job
+            ? spec.maximum_bandwidth_per_job
+            : context.value->maximum_bandwidth_per_job;
   if (devices.size() != 1 && (spec.archive_device || spec.device_type)) {
     return {
         .error
@@ -8505,8 +8524,8 @@ ServiceState::UpsertDirectorStorageResource(
           "or device_type requires exactly one Device."};
   }
   const auto content = BuildDirectorStorageResourceContent(
-      storage_name, *address, *password, devices, *media_type, port,
-      description);
+      storage_name, *address, *password, devices, *media_type, effective_port,
+      maximum_bandwidth_per_job, description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "storage";
@@ -8568,8 +8587,8 @@ ServiceState::UpsertDirectorStorageResource(
   if (devices.size() == 1) {
     auto synced_storage = SyncStorageDaemonConfig(
         *this, deployment_id, director_name, storage_name, *context.value,
-        *password, devices.front(), *media_type, spec.archive_device,
-        spec.device_type);
+        *password, devices.front(), *media_type, maximum_bandwidth_per_job,
+        spec.archive_device, spec.device_type);
     if (!synced_storage) {
       DebugLog("director storage update for '" + std::string{storage_name}
                + "' failed storage-daemon synchronization and will be rolled "
