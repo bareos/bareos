@@ -237,14 +237,14 @@
         "WorkingDirectory": {
           "datatype": "DIRECTORY",
           "code": 0,
-          "default_value": "/usr/local/var/lib/bareos",
+          "default_value": "/var/lib/bareos",
           "platform_specific": true,
           "equals": true
         },
         "BackendDirectory": {
           "datatype": "DIRECTORY_LIST",
           "code": 0,
-          "default_value": "/usr/local/lib64/bareos/backends",
+          "default_value": "/usr/lib64/bareos/backends",
           "platform_specific": true,
           "equals": true,
           "description": "This is the directory where the storage daemon will look for dynamic backends (file, tape, etc.) when it needs to load them."
@@ -270,7 +270,7 @@
         "ScriptsDirectory": {
           "datatype": "DIRECTORY",
           "code": 0,
-          "default_value": "/usr/local/lib/bareos/scripts",
+          "default_value": "/usr/lib/bareos/scripts",
           "platform_specific": true,
           "equals": true,
           "description": "Path to directory containing script files"
