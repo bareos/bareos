@@ -146,11 +146,22 @@ bool GetTapealertFlags(int fd, const char* device_name, uint64_t* flags)
 
   // Walk over all tape alert parameters.
   cnt = 0;
-  while (cnt < tapealert_length) {
+  if (tapealert_length > static_cast<int>(sizeof(cmd_page.log_parameters))) {
+    tapealert_length = sizeof(cmd_page.log_parameters);
+  }
+
+  while (cnt + static_cast<int>(sizeof(TAPEALERT_PARAMETER) - 1)
+         <= tapealert_length) {
     uint16_t result_index;
     TAPEALERT_PARAMETER* ta_param;
+    int parameter_size;
 
     ta_param = (TAPEALERT_PARAMETER*)&cmd_page.log_parameters[cnt];
+    parameter_size
+        = static_cast<int>(sizeof(TAPEALERT_PARAMETER) - 1 + ta_param->parameter_length);
+    if (parameter_size <= 0 || cnt + parameter_size > tapealert_length) {
+      break;
+    }
     result_index
         = (ta_param->parameter_code[0] << 8) + ta_param->parameter_code[1];
     if (result_index > 0 && result_index < MAX_TAPE_ALERTS) {
@@ -166,10 +177,10 @@ bool GetTapealertFlags(int fd, const char* device_name, uint64_t* flags)
       }
     }
 
-    cnt += ((sizeof(TAPEALERT_PARAMETER) - 1) + ta_param->parameter_length);
+    cnt += parameter_size;
   }
 
-  return false;
+  return true;
 }
 #else
 bool GetTapealertFlags(int, const char*, uint64_t* flags)

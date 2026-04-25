@@ -33,6 +33,7 @@
 #include "stored/device_control_record.h"
 #include "stored/stored_jcr_impl.h"
 #include "stored/spool.h"
+#include "stored/scsi_changer.h"
 #include "stored/status.h"
 #include "lib/status_packet.h"
 #include "lib/edit.h"
@@ -187,6 +188,16 @@ static void get_device_specific_status(DeviceResource* device_resource,
   if (device_resource && device_resource->dev
       && device_resource->dev->DeviceStatus(&dst)) {
     if (dst.status_length > 0) { sp->send(dst.status, dst.status_length); }
+  }
+
+  auto native_scsi_status = FormatNativeScsiDiagnosticStatus(
+      device_resource ? device_resource->changer_command : nullptr,
+      device_resource ? device_resource->changer_name : nullptr,
+      device_resource ? device_resource->diag_device_name : nullptr,
+      device_resource ? device_resource->archive_device_string : nullptr,
+      device_resource ? device_resource->drive_tapealert_enabled : false);
+  if (!native_scsi_status.empty()) {
+    sp->send(native_scsi_status.c_str(), native_scsi_status.size());
   }
   FreePoolMemory(dst.status);
 }

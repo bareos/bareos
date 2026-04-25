@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,9 +18,21 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_PLUGINS_STORED_SCSITAPEALERT_SCSITAPEALERT_SD_H_
-#define BAREOS_PLUGINS_STORED_SCSITAPEALERT_SCSITAPEALERT_SD_H_
 
-#include "lib/scsi_tapealert_flags.h"
+#ifndef BAREOS_STORED_DRIVE_TAPEALERT_MONITOR_H_
+#define BAREOS_STORED_DRIVE_TAPEALERT_MONITOR_H_
 
-#endif  // BAREOS_PLUGINS_STORED_SCSITAPEALERT_SCSITAPEALERT_SD_H_
+#include "stored/sd_plugins.h"
+
+class JobControlRecord;
+
+namespace storagedaemon {
+
+bool IsDriveTapealertPollingEvent(bSdEventType event_type);
+void HandleDriveTapealertEvent(::JobControlRecord* jcr,
+                               bSdEventType event_type,
+                               void* value);
+
+}  // namespace storagedaemon
+
+#endif  // BAREOS_STORED_DRIVE_TAPEALERT_MONITOR_H_

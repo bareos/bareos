@@ -31,6 +31,7 @@
 #include "stored/stored_globals.h"
 #include "stored/autochanger.h"
 #include "stored/device_control_record.h"
+#include "stored/scsi_changer.h"
 #include "stored/wait.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
@@ -187,6 +188,8 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
     uint32_t timeout = dcr->device_resource->max_changer_wait;
     int status;
     slot_number_t loaded_slot;
+    bool native_scsi
+        = IsNativeScsiChangerCommand(dcr->device_resource->changer_command);
 
     // Attempt to load the Volume
     loaded_slot = GetAutochangerLoadedSlot(dcr);
@@ -215,14 +218,18 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
             dcr->dev->print_name());
       Jmsg(jcr, M_INFO, 0,
            T_("3304 Issuing autochanger \"load slot %hd, drive %hd\" "
-              "command.\n"),
+               "command.\n"),
            wanted_slot, drive);
       dcr->VolCatInfo.Slot = wanted_slot; /* slot to be loaded */
-      changer = edit_device_codes(
-          dcr, changer, dcr->device_resource->changer_command, "load");
-      dcr->dev->close(dcr);
-      Dmsg1(200, "Run program=%s\n", changer);
-      status = RunProgramFullOutput(changer, timeout, results.addr());
+      if (native_scsi) {
+        status = NativeScsiLoadSlot(dcr, wanted_slot) ? 0 : -1;
+      } else {
+        changer = edit_device_codes(
+            dcr, changer, dcr->device_resource->changer_command, "load");
+        dcr->dev->close(dcr);
+        Dmsg1(200, "Run program=%s\n", changer);
+        status = RunProgramFullOutput(changer, timeout, results.addr());
+      }
       if (status == 0) {
         Jmsg(jcr, M_INFO, 0,
              T_("3305 Autochanger \"load slot %hd, drive %hd\", status is "
@@ -239,12 +246,13 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
         BErrNo be;
         be.SetErrno(status);
         std::string tmp(results.c_str());
-        if (tmp.find("Source Element Address") != std::string::npos
+        if (!native_scsi && tmp.find("Source Element Address") != std::string::npos
             && tmp.find("is Empty") != std::string::npos) {
           rtn_stat = -3; /* medium not found in slot */
         } else {
           rtn_stat = -1; /* hard error */
         }
+        if (native_scsi) { ReportNativeScsiChangerDiagnostics(dcr); }
         Dmsg3(100, "load slot %hd, drive %hd, bad stats=%s.\n", wanted_slot,
               drive, be.bstrerror());
         Jmsg(jcr, rtn_stat == -3 ? M_ERROR : M_FATAL, 0,
@@ -281,6 +289,7 @@ bail_out:
  */
 slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
 {
+  bool native_scsi;
   int status;
   POOLMEM* changer;
   JobControlRecord* jcr = dcr->jcr;
@@ -299,6 +308,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
 
   // Virtual disk autochanger
   if (dcr->device_resource->changer_command[0] == 0) { return 1; }
+  native_scsi = IsNativeScsiChangerCommand(dcr->device_resource->changer_command);
 
   /* Only lock the changer if the lock_set is false e.g. changer not locked by
    * calling function. */
@@ -315,15 +325,20 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
   }
 
   changer = GetPoolMemory(PM_FNAME);
-  changer = edit_device_codes(dcr, changer,
-                              dcr->device_resource->changer_command, "loaded");
-  Dmsg1(100, "Run program=%s\n", changer);
-  status = RunProgramFullOutput(changer, timeout, results.addr());
-  Dmsg3(100, "run_prog: %s stat=%d result=%s\n", changer, status,
-        results.c_str());
+  if (native_scsi) {
+    loaded_slot = NativeScsiGetLoadedSlot(dcr);
+    status = (loaded_slot == kInvalidSlotNumber) ? -1 : 0;
+  } else {
+    changer = edit_device_codes(dcr, changer,
+                                dcr->device_resource->changer_command, "loaded");
+    Dmsg1(100, "Run program=%s\n", changer);
+    status = RunProgramFullOutput(changer, timeout, results.addr());
+    Dmsg3(100, "run_prog: %s stat=%d result=%s\n", changer, status,
+          results.c_str());
+    if (status == 0) { loaded_slot = str_to_uint16(results.c_str()); }
+  }
 
   if (status == 0) {
-    loaded_slot = str_to_uint16(results.c_str());
     if (IsSlotNumberValid(loaded_slot)) {
       // Suppress info when polling
       if (!dev->poll && debug_level >= 1) {
@@ -346,6 +361,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
   } else {
     BErrNo be;
     be.SetErrno(status);
+    if (native_scsi) { ReportNativeScsiChangerDiagnostics(dcr); }
     Jmsg(jcr, M_INFO, 0,
          T_("3991 Bad autochanger \"loaded? drive %hd\" command: "
             "ERR=%s.\nResults=%s\n"),
@@ -418,6 +434,7 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
 {
   Device* dev = dcr->dev;
   JobControlRecord* jcr = dcr->jcr;
+  bool native_scsi;
   slot_number_t slot;
   uint32_t timeout = dcr->device_resource->max_changer_wait;
   bool retval = true;
@@ -434,6 +451,7 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
     dev->ClearUnload();
     return true;
   }
+  native_scsi = IsNativeScsiChangerCommand(dcr->device_resource->changer_command);
 
   /* Only lock the changer if the lock_set is false e.g. changer not locked by
    * calling function. */
@@ -456,16 +474,21 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
          loaded_slot, dev->drive);
     slot = dcr->VolCatInfo.Slot;
     dcr->VolCatInfo.Slot = loaded_slot;
-    changer = edit_device_codes(
-        dcr, changer, dcr->device_resource->changer_command, "unload");
-    dev->close(dcr);
-    Dmsg1(100, "Run program=%s\n", changer);
-    status = RunProgramFullOutput(changer, timeout, results.addr());
+    if (native_scsi) {
+      status = NativeScsiUnloadSlot(dcr, loaded_slot) ? 0 : -1;
+    } else {
+      changer = edit_device_codes(
+          dcr, changer, dcr->device_resource->changer_command, "unload");
+      dev->close(dcr);
+      Dmsg1(100, "Run program=%s\n", changer);
+      status = RunProgramFullOutput(changer, timeout, results.addr());
+    }
     dcr->VolCatInfo.Slot = slot;
     if (status != 0) {
       BErrNo be;
 
       be.SetErrno(status);
+      if (native_scsi) { ReportNativeScsiChangerDiagnostics(dcr); }
       Jmsg(jcr, M_INFO, 0,
            T_("3995 Bad autochanger \"unload slot %hd, drive %hd\": "
               "ERR=%s\nResults=%s\n"),
@@ -571,6 +594,7 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
 // Unconditionally unload a specified drive
 bool UnloadDev(DeviceControlRecord* dcr, Device* dev, bool lock_set)
 {
+  bool native_scsi;
   int status;
   Device* save_dev;
   bool retval = true;
@@ -580,6 +604,7 @@ bool UnloadDev(DeviceControlRecord* dcr, Device* dev, bool lock_set)
   AutochangerResource* changer = dcr->dev->device_resource->changer_res;
 
   if (!changer) { return false; }
+  native_scsi = IsNativeScsiChangerCommand(dcr->device_resource->changer_command);
 
   save_dev = dcr->dev; /* save dcr device */
   dcr->SetDev(dev);    /* temporarily point dcr at other device */
@@ -619,20 +644,25 @@ bool UnloadDev(DeviceControlRecord* dcr, Device* dev, bool lock_set)
   Dmsg2(100, "Issuing autochanger \"unload slot %hd, drive %hd\" command.\n",
         dev->GetSlot(), dev->drive);
 
-  ChangerCmd = edit_device_codes(
-      dcr, ChangerCmd, dcr->device_resource->changer_command, "unload");
-  dev->close(dcr);
+  if (native_scsi) {
+    status = NativeScsiUnloadDrive(dcr, dev) ? 0 : -1;
+  } else {
+    ChangerCmd = edit_device_codes(
+        dcr, ChangerCmd, dcr->device_resource->changer_command, "unload");
+    dev->close(dcr);
 
-  Dmsg2(200, "close dev=%s reserve=%d\n", dev->print_name(),
-        dev->NumReserved());
-  Dmsg1(100, "Run program=%s\n", ChangerCmd);
+    Dmsg2(200, "close dev=%s reserve=%d\n", dev->print_name(),
+          dev->NumReserved());
+    Dmsg1(100, "Run program=%s\n", ChangerCmd);
 
-  status = RunProgramFullOutput(ChangerCmd, timeout, results.addr());
+    status = RunProgramFullOutput(ChangerCmd, timeout, results.addr());
+  }
   dcr->VolCatInfo.Slot = save_slot;
   dcr->SetDev(save_dev);
   if (status != 0) {
     BErrNo be;
     be.SetErrno(status);
+    if (native_scsi) { ReportNativeScsiChangerDiagnostics(dcr); }
     Jmsg(jcr, M_INFO, 0,
          T_("3997 Bad autochanger \"unload slot %hd, drive %hd\": ERR=%s.\n"),
          dev->GetSlot(), dev->drive, be.bstrerror());
@@ -666,6 +696,7 @@ bool AutochangerCmd(DeviceControlRecord* dcr,
                     const char* cmd)
 {
   Device* dev = dcr->dev;
+  bool native_scsi;
   uint32_t timeout = dcr->device_resource->max_changer_wait;
   POOLMEM* changer;
   Bpipe* bpipe;
@@ -689,6 +720,7 @@ bool AutochangerCmd(DeviceControlRecord* dcr,
     Dmsg1(100, "drives=%d\n", drives);
     return true;
   }
+  native_scsi = IsNativeScsiChangerCommand(dcr->device_resource->changer_command);
 
   // If listing, reprobe changer
   if (bstrcmp(cmd, "list") || bstrcmp(cmd, "listall")) {
@@ -698,9 +730,16 @@ bool AutochangerCmd(DeviceControlRecord* dcr,
 
   changer = GetPoolMemory(PM_FNAME);
   LockChanger(dcr);
+  dir->fsend(T_("3306 Issuing autochanger \"%s\" command.\n"), cmd);
+
+  if (native_scsi) {
+    auto ok = NativeScsiAutochangerCmd(dcr, dir, cmd);
+    if (!ok) { ReportNativeScsiChangerDiagnostics(dcr); }
+    goto bail_out;
+  }
+
   changer = edit_device_codes(dcr, changer,
                               dcr->device_resource->changer_command, cmd);
-  dir->fsend(T_("3306 Issuing autochanger \"%s\" command.\n"), cmd);
 
   // Now issue the command
 retry_changercmd:
@@ -763,6 +802,7 @@ bool AutochangerTransferCmd(DeviceControlRecord* dcr,
                             slot_number_t dst_slot)
 {
   Device* dev = dcr->dev;
+  bool native_scsi;
   uint32_t timeout = dcr->device_resource->max_changer_wait;
   POOLMEM* changer;
   Bpipe* bpipe;
@@ -775,9 +815,16 @@ bool AutochangerTransferCmd(DeviceControlRecord* dcr,
                dev->print_name());
     return false;
   }
+  native_scsi = IsNativeScsiChangerCommand(dcr->device_resource->changer_command);
 
   changer = GetPoolMemory(PM_FNAME);
   LockChanger(dcr);
+  if (native_scsi) {
+    auto ok
+        = NativeScsiAutochangerTransferCmd(dcr, dir, src_slot, dst_slot);
+    if (!ok) { ReportNativeScsiChangerDiagnostics(dcr); }
+    goto bail_out;
+  }
   changer = transfer_edit_device_codes(dcr, changer,
                                        dcr->device_resource->changer_command,
                                        "transfer", src_slot, dst_slot);

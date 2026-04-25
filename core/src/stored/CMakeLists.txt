@@ -48,33 +48,35 @@ endif()
 
 add_library(bareossd SHARED)
 add_library(Bareos::LibSD ALIAS bareossd)
-target_sources(
+  target_sources(
   bareossd
   PRIVATE acquire.cc
-          ansi_label.cc
-          askdir.cc
-          autochanger.cc
-          autochanger_resource.cc
-          block.cc
-          bsr.cc
-          butil.cc
-          crc32/crc32.cc
-          dev.cc
-          device.cc
-          device_control_record.cc
-          device_resource.cc
-          ebcdic.cc
-          label.cc
-          lock.cc
-          mount.cc
-          read_record.cc
-          record.cc
-          reserve.cc
-          scan.cc
-          sd_device_control_record.cc
-          sd_plugins.cc
-          sd_stats.cc
-          spool.cc
+           ansi_label.cc
+           askdir.cc
+           autochanger.cc
+           autochanger_resource.cc
+           block.cc
+           bsr.cc
+           butil.cc
+           crc32/crc32.cc
+           dev.cc
+           device.cc
+           device_control_record.cc
+           device_resource.cc
+           drive_tapealert_monitor.cc
+           ebcdic.cc
+           label.cc
+           lock.cc
+           mount.cc
+           read_record.cc
+           record.cc
+           reserve.cc
+           scsi_changer.cc
+           scan.cc
+           sd_device_control_record.cc
+           sd_plugins.cc
+           sd_stats.cc
+           spool.cc
           stored_globals.cc
           stored_conf.cc
           vol_mgr.cc
