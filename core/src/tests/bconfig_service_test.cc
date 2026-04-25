@@ -3114,6 +3114,10 @@ TEST(BconfigService, UpsertsDirectorClientResources)
       "prod", "bareos-dir", "client1-fd",
       {.address = std::string{"client1-fd.example.com"},
        .password = std::string{"[md5]0123456789abcdef0123456789abcdef"},
+       .connection_from_director_to_client = false,
+       .connection_from_client_to_director = true,
+       .heartbeat_interval = 60,
+       .maximum_bandwidth_per_job = 2048,
        .description = std::string{"Managed by service"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-dir");
@@ -3128,6 +3132,13 @@ TEST(BconfigService, UpsertsDirectorClientResources)
       created_text.find("Password = \"[md5]0123456789abcdef0123456789abcdef\""),
       std::string::npos);
   EXPECT_NE(created_text.find("Port = 9102"), std::string::npos);
+  EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("ConnectionFromClientToDirector = yes"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("HeartbeatInterval = 60"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumBandwidthPerJob = 2048"),
+            std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed by service\""),
             std::string::npos);
 
@@ -3137,6 +3148,11 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(
       stub_text.find("Password = \"[md5]0123456789abcdef0123456789abcdef\""),
       std::string::npos);
+  EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
+            std::string::npos);
+  EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
+            std::string::npos);
+  EXPECT_NE(stub_text.find("MaximumBandwidthPerJob = 2048"), std::string::npos);
 
   auto updated = state.UpsertDirectorClientResource(
       "prod", "bareos-dir", "client1-fd",
@@ -3150,7 +3166,22 @@ TEST(BconfigService, UpsertsDirectorClientResources)
       updated_text.find("Password = \"[md5]0123456789abcdef0123456789abcdef\""),
       std::string::npos);
   EXPECT_NE(updated_text.find("Port = 9102"), std::string::npos);
+  EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("HeartbeatInterval = 60"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 2048"),
+            std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Managed by service\""),
+            std::string::npos);
+
+  const auto updated_stub_text = ReadTextFile(stub_path);
+  EXPECT_NE(updated_stub_text.find("ConnectionFromDirectorToClient = no"),
+            std::string::npos);
+  EXPECT_NE(updated_stub_text.find("ConnectionFromClientToDirector = yes"),
+            std::string::npos);
+  EXPECT_NE(updated_stub_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
 }
 
@@ -3179,6 +3210,10 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
                 "  Address = localhost\n"
                 "  Password = \"secret\"\n"
                 "  Port = 70000\n"
+                "  ConnectionFromDirectorToClient = no\n"
+                "  ConnectionFromClientToDirector = yes\n"
+                "  HeartbeatInterval = 45\n"
+                "  MaximumBandwidthPerJob = 8192\n"
                 "}\n");
 
   auto import_job
@@ -3199,8 +3234,24 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
       updated.value->path / "bareos-dir.d/client/bareos-fd.conf");
   EXPECT_NE(updated_text.find("Address = localhost"), std::string::npos);
   EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);
+  EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("HeartbeatInterval = 45"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 8192"),
+            std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated imported client\""),
             std::string::npos);
+
+  const auto stub_path = RepositoryLayout::ClientsDirectory(repo_path.path())
+                         / "bareos-fd/bareos-fd.d/director/bareos-dir.conf";
+  const auto stub_text = ReadTextFile(stub_path);
+  EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
+            std::string::npos);
+  EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
+            std::string::npos);
+  EXPECT_NE(stub_text.find("MaximumBandwidthPerJob = 8192"), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorClientResourcesInSharedFiles)
@@ -7601,6 +7652,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
        .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
        .device = std::string{"FileStorage"},
        .media_type = std::string{"File"},
+       .heartbeat_interval = 60,
        .maximum_bandwidth_per_job = 2048,
        .description = std::string{"Managed storage"}});
   ASSERT_TRUE(created) << created.error;
@@ -7617,6 +7669,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
   EXPECT_NE(created_text.find("Device = FileStorage"), std::string::npos);
   EXPECT_NE(created_text.find("Media Type = File"), std::string::npos);
   EXPECT_NE(created_text.find("Port = 9103"), std::string::npos);
+  EXPECT_NE(created_text.find("HeartbeatInterval = 60"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed storage\""),
@@ -7636,6 +7689,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
   EXPECT_NE(updated_text.find("Device = FileStorage"), std::string::npos);
   EXPECT_NE(updated_text.find("Media Type = File"), std::string::npos);
   EXPECT_NE(updated_text.find("Port = 9103"), std::string::npos);
+  EXPECT_NE(updated_text.find("HeartbeatInterval = 60"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Managed storage\""),
@@ -7669,6 +7723,7 @@ TEST(BconfigService, UpsertsDirectorStorageResourcesPreserveLargeImportedPort)
                 "  Device = FileStorage\n"
                 "  Media Type = File\n"
                 "  Port = 70000\n"
+                "  HeartbeatInterval = 45\n"
                 "  MaximumBandwidthPerJob = 8192\n"
                 "}\n");
 
@@ -7690,6 +7745,7 @@ TEST(BconfigService, UpsertsDirectorStorageResourcesPreserveLargeImportedPort)
       = ReadTextFile(updated.value->path / "bareos-dir.d/storage/File.conf");
   EXPECT_NE(updated_text.find("Address = localhost"), std::string::npos);
   EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);
+  EXPECT_NE(updated_text.find("HeartbeatInterval = 45"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 8192"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated imported storage\""),
@@ -8113,6 +8169,7 @@ TEST(BconfigService, SyncsDirectorStorageResourcesIntoStorageDaemonFiles)
        .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
        .device = std::string{"FileManagedDevice"},
        .media_type = std::string{"File"},
+       .heartbeat_interval = 60,
        .maximum_bandwidth_per_job = 4096,
        .archive_device = std::string{"/tmp/bareos-storage"},
        .device_type = std::string{"file"},

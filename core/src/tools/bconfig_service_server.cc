@@ -101,6 +101,10 @@ struct DirectorClientRequestSpec {
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
   std::optional<std::string> password{};
+  std::optional<bool> connection_from_director_to_client{};
+  std::optional<bool> connection_from_client_to_director{};
+  std::optional<uint64_t> heartbeat_interval{};
+  std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> description{};
 };
 
@@ -110,6 +114,7 @@ struct DirectorStorageRequestSpec {
   std::optional<std::string> password{};
   std::optional<std::string> device{};
   std::optional<std::string> media_type{};
+  std::optional<uint64_t> heartbeat_interval{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> archive_device{};
   std::optional<std::string> device_type{};
@@ -1229,6 +1234,27 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-client-password" name="password"
                placeholder="cleartext or [md5]hash">
 
+        <label class="checkbox-label" for="director-client-connection-from-director-to-client">
+          <input id="director-client-connection-from-director-to-client"
+                 name="connection_from_director_to_client" type="checkbox">
+          Connection from director to client
+        </label>
+
+        <label class="checkbox-label" for="director-client-connection-from-client-to-director">
+          <input id="director-client-connection-from-client-to-director"
+                 name="connection_from_client_to_director" type="checkbox">
+          Connection from client to director
+        </label>
+
+        <label for="director-client-maximum-bandwidth-per-job">Maximum bandwidth per job</label>
+        <input id="director-client-maximum-bandwidth-per-job"
+               name="maximum_bandwidth_per_job" type="number" min="0"
+               placeholder="0">
+
+        <label for="director-client-heartbeat-interval">Heartbeat interval</label>
+        <input id="director-client-heartbeat-interval" name="heartbeat_interval"
+               type="number" min="0" placeholder="0">
+
         <label for="director-client-description">Description</label>
         <input id="director-client-description" name="description"
                placeholder="Managed client resource">
@@ -1274,6 +1300,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-storage-maximum-bandwidth-per-job"
                name="maximum_bandwidth_per_job" type="number" min="0"
                placeholder="0">
+
+        <label for="director-storage-heartbeat-interval">Heartbeat interval</label>
+        <input id="director-storage-heartbeat-interval" name="heartbeat_interval"
+               type="number" min="0" placeholder="0">
 
         <label for="director-storage-archive-device">Archive Device</label>
         <input id="director-storage-archive-device" name="archive_device"
@@ -3320,13 +3350,13 @@ const char* kTestUiHtmlTemplate = R"HTML(
           tls_certificate: String(form.get('tls_certificate') ?? '').trim(),
           tls_key: String(form.get('tls_key') ?? '').trim(),
           tls_allowed_cn: tlsAllowedCn,
-          connection_from_director_to_client: document.getElementById(
-            'client-stub-connection-from-director-to-client').checked,
-          connection_from_client_to_director: document.getElementById(
-            'client-stub-connection-from-client-to-director').checked,
-          monitor: document.getElementById('client-stub-monitor').checked,
-          maximum_bandwidth_per_job: String(
-            form.get('maximum_bandwidth_per_job') ?? '').trim(),
+           connection_from_director_to_client: document.getElementById(
+             'client-stub-connection-from-director-to-client').checked,
+           connection_from_client_to_director: document.getElementById(
+             'client-stub-connection-from-client-to-director').checked,
+           monitor: document.getElementById('client-stub-monitor').checked,
+           maximum_bandwidth_per_job: String(
+             form.get('maximum_bandwidth_per_job') ?? '').trim(),
         };
         if (!payload.description) {
           delete payload.description;
@@ -3610,6 +3640,13 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const payload = {
           address: String(form.get('address') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
+          connection_from_director_to_client: document.getElementById(
+            'director-client-connection-from-director-to-client').checked,
+          connection_from_client_to_director: document.getElementById(
+            'director-client-connection-from-client-to-director').checked,
+          maximum_bandwidth_per_job: String(
+            form.get('maximum_bandwidth_per_job') ?? '').trim(),
+          heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
         };
         if (!payload.address) {
@@ -3617,6 +3654,17 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.password) {
           delete payload.password;
+        }
+        if (!payload.maximum_bandwidth_per_job) {
+          delete payload.maximum_bandwidth_per_job;
+        } else {
+          payload.maximum_bandwidth_per_job
+            = Number.parseInt(payload.maximum_bandwidth_per_job, 10);
+        }
+        if (!payload.heartbeat_interval) {
+          delete payload.heartbeat_interval;
+        } else {
+          payload.heartbeat_interval = Number.parseInt(payload.heartbeat_interval, 10);
         }
         if (!payload.description) {
           delete payload.description;
@@ -3663,6 +3711,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           media_type: String(form.get('media_type') ?? '').trim(),
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
+          heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
           archive_device: String(form.get('archive_device') ?? '').trim(),
           device_type: String(form.get('device_type') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
@@ -3689,6 +3738,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         } else {
           payload.maximum_bandwidth_per_job
             = Number.parseInt(payload.maximum_bandwidth_per_job, 10);
+        }
+        if (!payload.heartbeat_interval) {
+          delete payload.heartbeat_interval;
+        } else {
+          payload.heartbeat_interval = Number.parseInt(payload.heartbeat_interval, 10);
         }
         if (!payload.archive_device) {
           delete payload.archive_device;
@@ -6664,6 +6718,12 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .address = spec->address,
       .port = spec->port,
       .password = spec->password,
+      .connection_from_director_to_client
+      = spec->connection_from_director_to_client,
+      .connection_from_client_to_director
+      = spec->connection_from_client_to_director,
+      .heartbeat_interval = spec->heartbeat_interval,
+      .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
       .description = spec->description,
   };
   auto result = state.UpsertDirectorClientResource(deployment_id, director_name,
@@ -6783,6 +6843,7 @@ http::response<http::string_body> HandleDeploymentDirectorStoragePutRequest(
       .password = spec->password,
       .device = spec->device,
       .media_type = spec->media_type,
+      .heartbeat_interval = spec->heartbeat_interval,
       .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
       .archive_device = spec->archive_device,
       .device_type = spec->device_type,
@@ -8512,6 +8573,13 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* address = json_object_get(root.get(), "address");
   auto* port = json_object_get(root.get(), "port");
   auto* password = json_object_get(root.get(), "password");
+  auto* connection_from_director_to_client
+      = json_object_get(root.get(), "connection_from_director_to_client");
+  auto* connection_from_client_to_director
+      = json_object_get(root.get(), "connection_from_client_to_director");
+  auto* heartbeat_interval = json_object_get(root.get(), "heartbeat_interval");
+  auto* maximum_bandwidth_per_job
+      = json_object_get(root.get(), "maximum_bandwidth_per_job");
   auto* description = json_object_get(root.get(), "description");
 
   if (address && !json_is_null(address) && !json_is_string(address)) {
@@ -8524,6 +8592,34 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (password && !json_is_null(password) && !json_is_string(password)) {
     error = "field 'password' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (connection_from_director_to_client
+      && !json_is_null(connection_from_director_to_client)
+      && !json_is_boolean(connection_from_director_to_client)) {
+    error
+        = "field 'connection_from_director_to_client' must be a boolean when "
+          "provided.";
+    return std::nullopt;
+  }
+  if (connection_from_client_to_director
+      && !json_is_null(connection_from_client_to_director)
+      && !json_is_boolean(connection_from_client_to_director)) {
+    error
+        = "field 'connection_from_client_to_director' must be a boolean when "
+          "provided.";
+    return std::nullopt;
+  }
+  if (heartbeat_interval && !json_is_null(heartbeat_interval)
+      && !json_is_integer(heartbeat_interval)) {
+    error = "field 'heartbeat_interval' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (maximum_bandwidth_per_job && !json_is_null(maximum_bandwidth_per_job)
+      && !json_is_integer(maximum_bandwidth_per_job)) {
+    error
+        = "field 'maximum_bandwidth_per_job' must be an integer when "
+          "provided.";
     return std::nullopt;
   }
   if (description && !json_is_null(description)
@@ -8547,6 +8643,32 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (password && json_is_string(password)) {
     spec.password = std::string{json_string_value(password)};
   }
+  if (connection_from_director_to_client
+      && json_is_boolean(connection_from_director_to_client)) {
+    spec.connection_from_director_to_client
+        = json_is_true(connection_from_director_to_client);
+  }
+  if (connection_from_client_to_director
+      && json_is_boolean(connection_from_client_to_director)) {
+    spec.connection_from_client_to_director
+        = json_is_true(connection_from_client_to_director);
+  }
+  if (heartbeat_interval && json_is_integer(heartbeat_interval)) {
+    const auto value = json_integer_value(heartbeat_interval);
+    if (value < 0) {
+      error = "field 'heartbeat_interval' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.heartbeat_interval = static_cast<uint64_t>(value);
+  }
+  if (maximum_bandwidth_per_job && json_is_integer(maximum_bandwidth_per_job)) {
+    const auto value = json_integer_value(maximum_bandwidth_per_job);
+    if (value < 0) {
+      error = "field 'maximum_bandwidth_per_job' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.maximum_bandwidth_per_job = static_cast<uint64_t>(value);
+  }
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
   }
@@ -8569,6 +8691,7 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   auto* password = json_object_get(root.get(), "password");
   auto* device = json_object_get(root.get(), "device");
   auto* media_type = json_object_get(root.get(), "media_type");
+  auto* heartbeat_interval = json_object_get(root.get(), "heartbeat_interval");
   auto* maximum_bandwidth_per_job
       = json_object_get(root.get(), "maximum_bandwidth_per_job");
   auto* archive_device = json_object_get(root.get(), "archive_device");
@@ -8593,6 +8716,11 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   }
   if (media_type && !json_is_null(media_type) && !json_is_string(media_type)) {
     error = "field 'media_type' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (heartbeat_interval && !json_is_null(heartbeat_interval)
+      && !json_is_integer(heartbeat_interval)) {
+    error = "field 'heartbeat_interval' must be an integer when provided.";
     return std::nullopt;
   }
   if (maximum_bandwidth_per_job && !json_is_null(maximum_bandwidth_per_job)
@@ -8638,6 +8766,14 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   }
   if (media_type && json_is_string(media_type)) {
     spec.media_type = std::string{json_string_value(media_type)};
+  }
+  if (heartbeat_interval && json_is_integer(heartbeat_interval)) {
+    const auto value = json_integer_value(heartbeat_interval);
+    if (value < 0) {
+      error = "field 'heartbeat_interval' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.heartbeat_interval = static_cast<uint64_t>(value);
   }
   if (maximum_bandwidth_per_job && json_is_integer(maximum_bandwidth_per_job)) {
     const auto value = json_integer_value(maximum_bandwidth_per_job);

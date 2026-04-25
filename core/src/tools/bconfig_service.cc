@@ -1047,11 +1047,16 @@ struct DirectorJobContentSpec {
   std::vector<std::string> passthrough_entries{};
 };
 
-std::string BuildDirectorClientResourceContent(std::string_view client_name,
-                                               std::string_view address,
-                                               std::string_view password,
-                                               uint32_t port,
-                                               std::string_view description)
+std::string BuildDirectorClientResourceContent(
+    std::string_view client_name,
+    std::string_view address,
+    std::string_view password,
+    uint32_t port,
+    const std::optional<bool>& connection_from_director_to_client,
+    const std::optional<bool>& connection_from_client_to_director,
+    const std::optional<uint64_t>& heartbeat_interval,
+    const std::optional<uint64_t>& maximum_bandwidth_per_job,
+    std::string_view description)
 {
   std::ostringstream content;
   content << "Client {\n"
@@ -1059,8 +1064,15 @@ std::string BuildDirectorClientResourceContent(std::string_view client_name,
           << "  Description = " << QuoteBareosString(description) << "\n"
           << "  Address = " << address << "\n"
           << "  Password = " << QuoteBareosString(password) << "\n"
-          << "  Port = " << port << "\n"
-          << "}\n";
+          << "  Port = " << port << "\n";
+  AppendBoolDirective(content, "ConnectionFromDirectorToClient",
+                      connection_from_director_to_client);
+  AppendBoolDirective(content, "ConnectionFromClientToDirector",
+                      connection_from_client_to_director);
+  AppendIntegerDirective(content, "HeartbeatInterval", heartbeat_interval);
+  AppendIntegerDirective(content, "MaximumBandwidthPerJob",
+                         maximum_bandwidth_per_job);
+  content << "}\n";
   return content.str();
 }
 
@@ -1071,6 +1083,7 @@ std::string BuildDirectorStorageResourceContent(
     const std::vector<std::string>& devices,
     std::string_view media_type,
     uint32_t port,
+    const std::optional<uint64_t>& heartbeat_interval,
     const std::optional<uint64_t>& maximum_bandwidth_per_job,
     std::string_view description)
 {
@@ -1083,6 +1096,7 @@ std::string BuildDirectorStorageResourceContent(
   AppendRepeatedBareosDirective(content, "Device", devices);
   content << "  Media Type = " << media_type << "\n"
           << "  Port = " << port << "\n";
+  AppendIntegerDirective(content, "HeartbeatInterval", heartbeat_interval);
   AppendIntegerDirective(content, "MaximumBandwidthPerJob",
                          maximum_bandwidth_per_job);
   content << "}\n";
@@ -2428,6 +2442,10 @@ struct DirectorClientWriteContext {
   std::optional<std::string> address{};
   std::optional<uint32_t> port{};
   std::optional<std::string> password{};
+  std::optional<bool> connection_from_director_to_client{};
+  std::optional<bool> connection_from_client_to_director{};
+  std::optional<uint64_t> heartbeat_interval{};
+  std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> description{};
   bool exists{false};
   bool is_standalone_file{false};
@@ -2441,6 +2459,7 @@ struct DirectorStorageWriteContext {
   std::optional<std::string> device{};
   std::vector<std::string> devices{};
   std::optional<std::string> media_type{};
+  std::optional<uint64_t> heartbeat_interval{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> description{};
   bool exists{false};
@@ -2786,6 +2805,24 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
       context.address = std::string{client->address};
     }
     if (client->FDport != 0) { context.port = client->FDport; }
+    if (HasMemberSource(*client, {"ConnectionFromDirectorToClient"})) {
+      context.connection_from_director_to_client = client->conn_from_dir_to_fd;
+    }
+    if (HasMemberSource(*client, {"ConnectionFromClientToDirector"})) {
+      context.connection_from_client_to_director = client->conn_from_fd_to_dir;
+    }
+    if (HasMemberSource(*client, {"HeartbeatInterval"})) {
+      context.heartbeat_interval
+          = static_cast<uint64_t>(client->heartbeat_interval);
+    }
+    if (HasMemberSource(*client, {"MaximumBandwidthPerJob"})) {
+      if (client->max_bandwidth < 0) {
+        return {.error = "director client '" + std::string{client_name}
+                         + "' has a negative MaximumBandwidthPerJob."};
+      }
+      context.maximum_bandwidth_per_job
+          = static_cast<uint64_t>(client->max_bandwidth);
+    }
     if (client->description_ && client->description_[0] != '\0') {
       context.description = std::string{client->description_};
     }
@@ -2854,6 +2891,10 @@ OperationResult<DirectorStorageWriteContext> LoadDirectorStorageWriteContext(
       context.address = std::string{storage->address};
     }
     if (storage->SDport != 0) { context.port = storage->SDport; }
+    if (HasMemberSource(*storage, {"HeartbeatInterval"})) {
+      context.heartbeat_interval
+          = static_cast<uint64_t>(storage->heartbeat_interval);
+    }
     if (storage->description_ && storage->description_[0] != '\0') {
       context.description = std::string{storage->description_};
     }
@@ -8329,6 +8370,21 @@ ServiceState::UpsertDirectorClientResource(
   if (effective_port == 0) {
     return {.error = "director client port must be greater than zero."};
   }
+  const auto heartbeat_interval = spec.heartbeat_interval
+                                      ? spec.heartbeat_interval
+                                      : context.value->heartbeat_interval;
+  const auto connection_from_director_to_client
+      = spec.connection_from_director_to_client
+            ? spec.connection_from_director_to_client
+            : context.value->connection_from_director_to_client;
+  const auto connection_from_client_to_director
+      = spec.connection_from_client_to_director
+            ? spec.connection_from_client_to_director
+            : context.value->connection_from_client_to_director;
+  const auto maximum_bandwidth_per_job
+      = spec.maximum_bandwidth_per_job
+            ? spec.maximum_bandwidth_per_job
+            : context.value->maximum_bandwidth_per_job;
 
   const auto description
       = spec.description
@@ -8336,7 +8392,9 @@ ServiceState::UpsertDirectorClientResource(
             : context.value->description.value_or(
                   DefaultDirectorClientDescription(client_name, director_name));
   const auto content = BuildDirectorClientResourceContent(
-      client_name, *address, *password, effective_port, description);
+      client_name, *address, *password, effective_port,
+      connection_from_director_to_client, connection_from_client_to_director,
+      heartbeat_interval, maximum_bandwidth_per_job, description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "client";
@@ -8394,8 +8452,11 @@ ServiceState::UpsertDirectorClientResource(
     }
   }
 
-  auto synced_stub
-      = UpsertClientDirectorStub(deployment_id, client_name, director_name, {});
+  auto synced_stub = UpsertClientDirectorStub(
+      deployment_id, client_name, director_name,
+      {.connection_from_director_to_client = connection_from_director_to_client,
+       .connection_from_client_to_director = connection_from_client_to_director,
+       .maximum_bandwidth_per_job = maximum_bandwidth_per_job});
   if (!synced_stub) {
     DebugLog("director client update for '" + std::string{client_name}
              + "' failed stub synchronization and will be rolled back");
@@ -8508,6 +8569,9 @@ ServiceState::UpsertDirectorStorageResource(
     return {.error = "director storage port must be greater than zero."};
   }
 
+  const auto heartbeat_interval = spec.heartbeat_interval
+                                      ? spec.heartbeat_interval
+                                      : context.value->heartbeat_interval;
   const auto description = spec.description
                                ? *spec.description
                                : context.value->description.value_or(
@@ -8525,7 +8589,7 @@ ServiceState::UpsertDirectorStorageResource(
   }
   const auto content = BuildDirectorStorageResourceContent(
       storage_name, *address, *password, devices, *media_type, effective_port,
-      maximum_bandwidth_per_job, description);
+      heartbeat_interval, maximum_bandwidth_per_job, description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "storage";
