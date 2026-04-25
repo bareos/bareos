@@ -228,6 +228,8 @@ struct DirectorClientResourceSpec {
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
   std::optional<std::string> password{};
+  std::optional<bool> enabled{};
+  std::optional<bool> passive{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -241,6 +243,7 @@ struct DirectorStorageResourceSpec {
   std::optional<std::string> password{};
   std::optional<std::string> device{};
   std::optional<std::string> media_type{};
+  std::optional<bool> enabled{};
   std::optional<uint64_t> heartbeat_interval{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> archive_device{};

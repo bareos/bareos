@@ -3114,6 +3114,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
       "prod", "bareos-dir", "client1-fd",
       {.address = std::string{"client1-fd.example.com"},
        .password = std::string{"[md5]0123456789abcdef0123456789abcdef"},
+       .enabled = false,
+       .passive = true,
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = true,
        .heartbeat_interval = 60,
@@ -3132,6 +3134,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
       created_text.find("Password = \"[md5]0123456789abcdef0123456789abcdef\""),
       std::string::npos);
   EXPECT_NE(created_text.find("Port = 9102"), std::string::npos);
+  EXPECT_NE(created_text.find("Enabled = no"), std::string::npos);
+  EXPECT_NE(created_text.find("Passive = yes"), std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = yes"),
@@ -3148,6 +3152,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(
       stub_text.find("Password = \"[md5]0123456789abcdef0123456789abcdef\""),
       std::string::npos);
+  EXPECT_EQ(stub_text.find("Passive = yes"), std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
@@ -3166,6 +3171,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
       updated_text.find("Password = \"[md5]0123456789abcdef0123456789abcdef\""),
       std::string::npos);
   EXPECT_NE(updated_text.find("Port = 9102"), std::string::npos);
+  EXPECT_NE(updated_text.find("Enabled = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("Passive = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
@@ -3210,6 +3217,8 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
                 "  Address = localhost\n"
                 "  Password = \"secret\"\n"
                 "  Port = 70000\n"
+                "  Enabled = no\n"
+                "  Passive = yes\n"
                 "  ConnectionFromDirectorToClient = no\n"
                 "  ConnectionFromClientToDirector = yes\n"
                 "  HeartbeatInterval = 45\n"
@@ -3234,6 +3243,8 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
       updated.value->path / "bareos-dir.d/client/bareos-fd.conf");
   EXPECT_NE(updated_text.find("Address = localhost"), std::string::npos);
   EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);
+  EXPECT_NE(updated_text.find("Enabled = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("Passive = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
@@ -3247,6 +3258,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   const auto stub_path = RepositoryLayout::ClientsDirectory(repo_path.path())
                          / "bareos-fd/bareos-fd.d/director/bareos-dir.conf";
   const auto stub_text = ReadTextFile(stub_path);
+  EXPECT_EQ(stub_text.find("Passive = yes"), std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
@@ -7652,6 +7664,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
        .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
        .device = std::string{"FileStorage"},
        .media_type = std::string{"File"},
+       .enabled = false,
        .heartbeat_interval = 60,
        .maximum_bandwidth_per_job = 2048,
        .description = std::string{"Managed storage"}});
@@ -7669,6 +7682,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
   EXPECT_NE(created_text.find("Device = FileStorage"), std::string::npos);
   EXPECT_NE(created_text.find("Media Type = File"), std::string::npos);
   EXPECT_NE(created_text.find("Port = 9103"), std::string::npos);
+  EXPECT_NE(created_text.find("Enabled = no"), std::string::npos);
   EXPECT_NE(created_text.find("HeartbeatInterval = 60"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
@@ -7689,6 +7703,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
   EXPECT_NE(updated_text.find("Device = FileStorage"), std::string::npos);
   EXPECT_NE(updated_text.find("Media Type = File"), std::string::npos);
   EXPECT_NE(updated_text.find("Port = 9103"), std::string::npos);
+  EXPECT_NE(updated_text.find("Enabled = no"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 60"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
@@ -7723,6 +7738,7 @@ TEST(BconfigService, UpsertsDirectorStorageResourcesPreserveLargeImportedPort)
                 "  Device = FileStorage\n"
                 "  Media Type = File\n"
                 "  Port = 70000\n"
+                "  Enabled = no\n"
                 "  HeartbeatInterval = 45\n"
                 "  MaximumBandwidthPerJob = 8192\n"
                 "}\n");
@@ -7745,6 +7761,7 @@ TEST(BconfigService, UpsertsDirectorStorageResourcesPreserveLargeImportedPort)
       = ReadTextFile(updated.value->path / "bareos-dir.d/storage/File.conf");
   EXPECT_NE(updated_text.find("Address = localhost"), std::string::npos);
   EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);
+  EXPECT_NE(updated_text.find("Enabled = no"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 45"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 8192"),
             std::string::npos);

@@ -101,6 +101,8 @@ struct DirectorClientRequestSpec {
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
   std::optional<std::string> password{};
+  std::optional<bool> enabled{};
+  std::optional<bool> passive{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -114,6 +116,7 @@ struct DirectorStorageRequestSpec {
   std::optional<std::string> password{};
   std::optional<std::string> device{};
   std::optional<std::string> media_type{};
+  std::optional<bool> enabled{};
   std::optional<uint64_t> heartbeat_interval{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> archive_device{};
@@ -1234,6 +1237,16 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-client-password" name="password"
                placeholder="cleartext or [md5]hash">
 
+        <label class="checkbox-label" for="director-client-enabled">
+          <input id="director-client-enabled" name="enabled" type="checkbox" checked>
+          Enabled
+        </label>
+
+        <label class="checkbox-label" for="director-client-passive">
+          <input id="director-client-passive" name="passive" type="checkbox">
+          Passive
+        </label>
+
         <label class="checkbox-label" for="director-client-connection-from-director-to-client">
           <input id="director-client-connection-from-director-to-client"
                  name="connection_from_director_to_client" type="checkbox">
@@ -1295,6 +1308,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="director-storage-media-type">Media Type</label>
         <input id="director-storage-media-type" name="media_type" value="File">
+
+        <label class="checkbox-label" for="director-storage-enabled">
+          <input id="director-storage-enabled" name="enabled" type="checkbox" checked>
+          Enabled
+        </label>
 
         <label for="director-storage-maximum-bandwidth-per-job">Maximum bandwidth per job</label>
         <input id="director-storage-maximum-bandwidth-per-job"
@@ -3640,6 +3658,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const payload = {
           address: String(form.get('address') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
+          enabled: document.getElementById('director-client-enabled').checked,
+          passive: document.getElementById('director-client-passive').checked,
           connection_from_director_to_client: document.getElementById(
             'director-client-connection-from-director-to-client').checked,
           connection_from_client_to_director: document.getElementById(
@@ -3709,6 +3729,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           password: String(form.get('password') ?? '').trim(),
           device: String(form.get('device') ?? '').trim(),
           media_type: String(form.get('media_type') ?? '').trim(),
+          enabled: document.getElementById('director-storage-enabled').checked,
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
@@ -6718,6 +6739,8 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .address = spec->address,
       .port = spec->port,
       .password = spec->password,
+      .enabled = spec->enabled,
+      .passive = spec->passive,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -6843,6 +6866,7 @@ http::response<http::string_body> HandleDeploymentDirectorStoragePutRequest(
       .password = spec->password,
       .device = spec->device,
       .media_type = spec->media_type,
+      .enabled = spec->enabled,
       .heartbeat_interval = spec->heartbeat_interval,
       .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
       .archive_device = spec->archive_device,
@@ -8573,6 +8597,8 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* address = json_object_get(root.get(), "address");
   auto* port = json_object_get(root.get(), "port");
   auto* password = json_object_get(root.get(), "password");
+  auto* enabled = json_object_get(root.get(), "enabled");
+  auto* passive = json_object_get(root.get(), "passive");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -8592,6 +8618,14 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (password && !json_is_null(password) && !json_is_string(password)) {
     error = "field 'password' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (enabled && !json_is_null(enabled) && !json_is_boolean(enabled)) {
+    error = "field 'enabled' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (passive && !json_is_null(passive) && !json_is_boolean(passive)) {
+    error = "field 'passive' must be a boolean when provided.";
     return std::nullopt;
   }
   if (connection_from_director_to_client
@@ -8643,6 +8677,12 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (password && json_is_string(password)) {
     spec.password = std::string{json_string_value(password)};
   }
+  if (enabled && json_is_boolean(enabled)) {
+    spec.enabled = json_is_true(enabled);
+  }
+  if (passive && json_is_boolean(passive)) {
+    spec.passive = json_is_true(passive);
+  }
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {
     spec.connection_from_director_to_client
@@ -8691,6 +8731,7 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   auto* password = json_object_get(root.get(), "password");
   auto* device = json_object_get(root.get(), "device");
   auto* media_type = json_object_get(root.get(), "media_type");
+  auto* enabled = json_object_get(root.get(), "enabled");
   auto* heartbeat_interval = json_object_get(root.get(), "heartbeat_interval");
   auto* maximum_bandwidth_per_job
       = json_object_get(root.get(), "maximum_bandwidth_per_job");
@@ -8716,6 +8757,10 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   }
   if (media_type && !json_is_null(media_type) && !json_is_string(media_type)) {
     error = "field 'media_type' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (enabled && !json_is_null(enabled) && !json_is_boolean(enabled)) {
+    error = "field 'enabled' must be a boolean when provided.";
     return std::nullopt;
   }
   if (heartbeat_interval && !json_is_null(heartbeat_interval)
@@ -8766,6 +8811,9 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   }
   if (media_type && json_is_string(media_type)) {
     spec.media_type = std::string{json_string_value(media_type)};
+  }
+  if (enabled && json_is_boolean(enabled)) {
+    spec.enabled = json_is_true(enabled);
   }
   if (heartbeat_interval && json_is_integer(heartbeat_interval)) {
     const auto value = json_integer_value(heartbeat_interval);
