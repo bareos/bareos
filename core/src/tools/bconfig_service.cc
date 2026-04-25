@@ -28,9 +28,11 @@
 #include "dird/dird_conf.h"
 #include "filed/filed_conf.h"
 #include "include/bareos.h"
+#include "include/auth_types.h"
 #include "include/job_level.h"
 #include "include/job_types.h"
 #include "lib/address_conf.h"
+#include "lib/alist.h"
 #include "lib/bpipe.h"
 #include "lib/message.h"
 #include "lib/output_formatter.h"
@@ -388,7 +390,7 @@ std::filesystem::path ComponentConfigDirectoryName(bconfig::Component component)
       return "bareos-fd.d";
 #ifdef BCONFIG_HAVE_CONSOLE
     case bconfig::Component::kConsole:
-      return "bconsole.d";
+      return {};
 #endif
 #ifdef BCONFIG_HAVE_TRAYMONITOR
     case bconfig::Component::kTrayMonitor:
@@ -557,11 +559,7 @@ std::vector<DeploymentConfigRecord> DiscoverDeploymentConfigRoots(
       if (component == bconfig::Component::kConsole) {
         const auto root_config
             = entry.path() / ComponentDefaultConfigFilename(component);
-        if (!std::filesystem::is_regular_file(root_config)
-            || !std::filesystem::is_directory(entry.path()
-                                              / config_directory_name)) {
-          continue;
-        }
+        if (!std::filesystem::is_regular_file(root_config)) { continue; }
       } else
 #endif
       {
@@ -656,34 +654,34 @@ std::string RenderParsedResource(BareosResource& resource,
 }
 
 #ifdef BCONFIG_HAVE_CONSOLE
+std::string BuildConsoleConfigFileContent(
+    const std::vector<std::string>& director_resources,
+    const std::vector<std::string>& console_resources)
+{
+  std::ostringstream content;
+  content << "#\n"
+          << "# Bareos User Agent (or Console) Configuration File\n"
+          << "#\n\n";
+  for (const auto& director : director_resources) { content << director; }
+  for (const auto& configured_console : console_resources) {
+    content << configured_console;
+  }
+  return content.str();
+}
+
 std::optional<std::string> WriteImportedConsoleConfig(
     const std::filesystem::path& target_root,
     bconfig::LoadedConfig& loaded)
 {
-  constexpr std::string_view kConsoleRootHeader
-      = "#\n# Bareos User Agent (or Console) Configuration File\n#\n";
-
   std::error_code error_code;
-  const auto console_directory = target_root / "bconsole.d/console";
-  const auto director_directory = target_root / "bconsole.d/director";
-  std::filesystem::create_directories(console_directory, error_code);
+  std::filesystem::create_directories(target_root, error_code);
   if (error_code) {
-    return "failed to create directory '" + console_directory.string()
+    return "failed to create directory '" + target_root.string()
            + "': " + error_code.message();
   }
 
-  std::filesystem::create_directories(director_directory, error_code);
-  if (error_code) {
-    return "failed to create directory '" + director_directory.string()
-           + "': " + error_code.message();
-  }
-
-  const auto root_config_path
-      = target_root
-        / ComponentDefaultConfigFilename(bconfig::Component::kConsole);
-  if (!WriteFile(root_config_path, std::string{kConsoleRootHeader})) {
-    return "failed to write file '" + root_config_path.string() + "'.";
-  }
+  std::vector<std::string> director_resources;
+  std::vector<std::string> console_resources;
 
   for (auto* resource = loaded.parser->GetNextRes(console::R_CONSOLE, nullptr);
        resource != nullptr;
@@ -691,13 +689,8 @@ std::optional<std::string> WriteImportedConsoleConfig(
     if (!resource->resource_name_) {
       return "console import encountered a Console resource without a name.";
     }
-
-    const auto target_path
-        = console_directory / (std::string{resource->resource_name_} + ".conf");
-    if (!WriteFile(target_path,
-                   RenderParsedResource(*resource, *loaded.parser))) {
-      return "failed to write file '" + target_path.string() + "'.";
-    }
+    console_resources.emplace_back(
+        RenderParsedResource(*resource, *loaded.parser));
   }
 
   for (auto* resource = loaded.parser->GetNextRes(console::R_DIRECTOR, nullptr);
@@ -706,14 +699,17 @@ std::optional<std::string> WriteImportedConsoleConfig(
     if (!resource->resource_name_) {
       return "console import encountered a Director resource without a name.";
     }
+    director_resources.emplace_back(
+        RenderParsedResource(*resource, *loaded.parser));
+  }
 
-    const auto target_path
-        = director_directory
-          / (std::string{resource->resource_name_} + ".conf");
-    if (!WriteFile(target_path,
-                   RenderParsedResource(*resource, *loaded.parser))) {
-      return "failed to write file '" + target_path.string() + "'.";
-    }
+  const auto root_config_path
+      = target_root
+        / ComponentDefaultConfigFilename(bconfig::Component::kConsole);
+  if (!WriteFile(root_config_path,
+                 BuildConsoleConfigFileContent(director_resources,
+                                               console_resources))) {
+    return "failed to write file '" + root_config_path.string() + "'.";
   }
 
   return std::nullopt;
@@ -1279,6 +1275,42 @@ std::string BuildDirectorConsoleResourceContent(
   return content.str();
 }
 
+std::string BuildConsoleConsoleResourceContent(std::string_view console_name,
+                                               std::string_view director_name,
+                                               std::string_view password,
+                                               std::string_view description)
+{
+  std::ostringstream content;
+  content << "Console {\n"
+          << "  Name = " << QuoteBareosString(console_name) << "\n"
+          << "  Description = " << QuoteBareosString(description) << "\n"
+          << "  Password = " << QuoteBareosString(password) << "\n"
+          << "  Director = " << RenderBareosDirectiveValue(director_name)
+          << "\n"
+          << "}\n";
+  return content.str();
+}
+
+std::string BuildConsoleDirectorResourceContent(
+    std::string_view director_name,
+    std::string_view address,
+    const std::optional<uint16_t>& port,
+    const std::optional<std::string>& password,
+    std::string_view description)
+{
+  std::ostringstream content;
+  content << "Director {\n"
+          << "  Name = " << QuoteBareosString(director_name) << "\n"
+          << "  Description = " << QuoteBareosString(description) << "\n"
+          << "  Address = " << RenderBareosDirectiveValue(address) << "\n";
+  if (port) { content << "  Port = " << *port << "\n"; }
+  if (password && !password->empty()) {
+    content << "  Password = " << QuoteBareosString(*password) << "\n";
+  }
+  content << "}\n";
+  return content.str();
+}
+
 std::string BuildDirectorUserResourceContent(
     std::string_view user_name,
     std::string_view description,
@@ -1720,6 +1752,66 @@ std::string BuildClientDaemonResourceContent(
   return content.str();
 }
 
+std::string BuildDirectorDaemonResourceContent(
+    std::string_view director_name,
+    std::string_view password,
+    const StorageDaemonContentSpec& spec,
+    std::string* error = nullptr)
+{
+  std::string local_error;
+  if (!error) { error = &local_error; }
+  std::ostringstream content;
+  content << "Director {\n"
+          << "  Name = " << QuoteBareosString(director_name) << "\n"
+          << "  Password = " << QuoteBareosString(password) << "\n";
+  if (!AppendAddressBlock(content, "Addresses", spec.addresses, *error)) {
+    return {};
+  }
+  if (spec.addresses.empty()) {
+    AppendBareosDirective(content, "Address", spec.address);
+    AppendIntegerDirective(content, "Port", spec.port);
+  }
+  AppendBareosDirective(content, "SourceAddress", spec.source_address);
+  AppendIntegerDirective(content, "MaximumConcurrentJobs",
+                         spec.maximum_concurrent_jobs);
+  AppendIntegerDirective(content, "AbsoluteJobTimeout",
+                         spec.absolute_job_timeout);
+  AppendBoolDirective(content, "TlsAuthenticate", spec.tls_authenticate);
+  AppendBoolDirective(content, "TlsEnable", spec.tls_enable);
+  AppendBoolDirective(content, "TlsRequire", spec.tls_require);
+  AppendBoolDirective(content, "TlsVerifyPeer", spec.tls_verify_peer);
+  AppendQuotedDirective(content, "TlsCipherList", spec.tls_cipher_list);
+  AppendQuotedDirective(content, "TlsCipherSuites", spec.tls_cipher_suites);
+  AppendQuotedDirective(content, "TlsDhFile", spec.tls_dh_file);
+  AppendQuotedDirective(content, "TlsProtocol", spec.tls_protocol);
+  AppendQuotedDirective(content, "TlsCaCertificateFile",
+                        spec.tls_ca_certificate_file);
+  AppendQuotedDirective(content, "TlsCaCertificateDir",
+                        spec.tls_ca_certificate_dir);
+  AppendQuotedDirective(content, "TlsCertificateRevocationList",
+                        spec.tls_certificate_revocation_list);
+  AppendQuotedDirective(content, "TlsCertificate", spec.tls_certificate);
+  AppendQuotedDirective(content, "TlsKey", spec.tls_key);
+  AppendRepeatedQuotedDirective(content, "TlsAllowedCn", spec.tls_allowed_cn);
+  AppendQuotedDirective(content, "VerId", spec.ver_id);
+  AppendQuotedDirective(content, "LogTimestampFormat",
+                        spec.log_timestamp_format);
+  AppendQuotedDirective(content, "SecureEraseCommand",
+                        spec.secure_erase_command);
+  AppendBoolDirective(content, "EnableKtls", spec.enable_ktls);
+  AppendIntegerDirective(content, "FdConnectTimeout", spec.fd_connect_timeout);
+  AppendIntegerDirective(content, "SdConnectTimeout", spec.sd_connect_timeout);
+  AppendIntegerDirective(content, "HeartbeatInterval", spec.heartbeat_interval);
+  AppendQuotedDirective(content, "Description", spec.description);
+  AppendQuotedDirective(content, "WorkingDirectory", spec.working_directory);
+  AppendQuotedDirective(content, "PluginDirectory", spec.plugin_directory);
+  AppendRepeatedBareosDirective(content, "PluginNames", spec.plugin_names);
+  AppendQuotedDirective(content, "ScriptsDirectory", spec.scripts_directory);
+  AppendBareosDirective(content, "Messages", spec.messages);
+  content << "}\n";
+  return content.str();
+}
+
 std::string BuildStorageDaemonDirectorResourceContent(
     std::string_view director_name,
     std::string_view password,
@@ -1757,6 +1849,45 @@ std::string BuildStorageDaemonDeviceResourceContent(
   return content.str();
 }
 
+std::string BuildStorageDaemonNdmpResourceContent(std::string_view ndmp_name,
+                                                  std::string_view username,
+                                                  std::string_view password,
+                                                  std::string_view auth_type,
+                                                  uint32_t log_level)
+{
+  std::ostringstream content;
+  content << "Ndmp {\n"
+          << "  Name = " << QuoteBareosString(ndmp_name) << "\n"
+          << "  Username = " << QuoteBareosString(username) << "\n"
+          << "  Password = " << QuoteBareosString(password) << "\n"
+          << "  AuthType = " << auth_type << "\n"
+          << "  LogLevel = " << log_level << "\n"
+          << "}\n";
+  return content.str();
+}
+
+std::string BuildStorageDaemonAutochangerResourceContent(
+    std::string_view autochanger_name,
+    const std::vector<std::string>& devices,
+    std::string_view changer_device,
+    std::string_view changer_command,
+    std::string_view description)
+{
+  std::ostringstream content;
+  content << "Autochanger {\n"
+          << "  Name = " << QuoteBareosString(autochanger_name) << "\n"
+          << "  Description = " << QuoteBareosString(description) << "\n";
+  AppendRepeatedBareosDirective(content, "Device", devices);
+  AppendQuotedDirective(
+      content, "Changer Device",
+      std::optional<std::string>{std::string{changer_device}});
+  AppendQuotedDirective(
+      content, "Changer Command",
+      std::optional<std::string>{std::string{changer_command}});
+  content << "}\n";
+  return content.str();
+}
+
 std::string DefaultClientDirectorStubDescription(std::string_view client_name,
                                                  std::string_view director_name)
 {
@@ -1783,6 +1914,22 @@ std::string DefaultDirectorConsoleDescription(std::string_view console_name,
 {
   return "Managed console resource for " + std::string{console_name}
          + " in director " + std::string{director_name};
+}
+
+std::string DefaultConsoleConsoleDescription(
+    std::string_view console_name,
+    std::string_view console_config_name)
+{
+  return "Managed bconsole resource for " + std::string{console_name}
+         + " in console config " + std::string{console_config_name};
+}
+
+std::string DefaultConsoleDirectorDescription(
+    std::string_view director_name,
+    std::string_view console_config_name)
+{
+  return "Managed bconsole director resource for " + std::string{director_name}
+         + " in console config " + std::string{console_config_name};
 }
 
 std::string DefaultDirectorUserDescription(std::string_view user_name,
@@ -1879,6 +2026,78 @@ std::string DefaultStorageDaemonDeviceDescription(std::string_view device_name,
   return "Managed storage-daemon device resource for "
          + std::string{device_name} + " synced from storage "
          + std::string{storage_name};
+}
+
+std::string DefaultStorageDaemonAutochangerDescription(
+    std::string_view autochanger_name,
+    std::string_view storage_name)
+{
+  return "Managed storage-daemon autochanger resource for "
+         + std::string{autochanger_name} + " in storage "
+         + std::string{storage_name};
+}
+
+OperationResult<std::string> NormalizeStorageNdmpAuthType(
+    std::string_view auth_type)
+{
+  std::string normalized;
+  normalized.reserve(auth_type.size());
+  std::transform(auth_type.begin(), auth_type.end(),
+                 std::back_inserter(normalized),
+                 [](unsigned char c) { return std::tolower(c); });
+  if (normalized == "none") { return {.value = std::string{"None"}}; }
+  if (normalized == "clear") { return {.value = std::string{"Clear"}}; }
+  if (normalized == "md5") { return {.value = std::string{"MD5"}}; }
+  return {.error = "field 'auth_type' must be one of None, Clear, or MD5."};
+}
+
+std::string RenderStorageNdmpAuthType(uint32_t auth_type)
+{
+  switch (auth_type) {
+    case AT_NONE:
+      return "None";
+    case AT_CLEAR:
+      return "Clear";
+    case AT_MD5:
+      return "MD5";
+    default:
+      return "None";
+  }
+}
+
+OperationResult<std::vector<std::string>> ExtractAutochangerDeviceNames(
+    const storagedaemon::AutochangerResource& autochanger,
+    std::string_view autochanger_name)
+{
+  std::vector<std::string> device_names;
+  std::unordered_set<std::string> seen;
+  if (!autochanger.device_resources) {
+    return {.value = std::move(device_names)};
+  }
+  for (auto* device_resource : autochanger.device_resources) {
+    if (!device_resource) { continue; }
+    if (device_resource->multiplied_device_resource) {
+      return {.error = "storage-daemon autochanger '"
+                       + std::string{autochanger_name}
+                       + "' uses counted devices, which are not managed yet."};
+    }
+    if (!device_resource->resource_name_
+        || device_resource->resource_name_[0] == '\0') {
+      return {.error = "storage-daemon autochanger '"
+                       + std::string{autochanger_name}
+                       + "' references a device without a name."};
+    }
+    std::string device_name{device_resource->resource_name_};
+    if (!device_name.empty() && device_name[0] == '$') {
+      return {.error = "storage-daemon autochanger '"
+                       + std::string{autochanger_name}
+                       + "' uses counted devices, which are not managed yet."};
+    }
+    if (seen.insert(device_name).second) {
+      device_names.emplace_back(std::move(device_name));
+    }
+  }
+  return {.value = std::move(device_names)};
 }
 
 OperationResult<std::string> RenderPasswordForConfig(const s_password& password,
@@ -2046,6 +2265,71 @@ struct DirectorConsoleWriteContext {
   bool is_standalone_file{false};
 };
 
+struct ConsoleConsoleWriteContext {
+  std::filesystem::path file_path{};
+  std::optional<std::string> director{};
+  std::optional<std::string> password{};
+  std::optional<std::string> description{};
+  std::vector<std::string> director_resources{};
+  std::vector<std::string> console_resources_before{};
+  std::vector<std::string> console_resources_after{};
+  bool exists{false};
+};
+
+std::string BuildRewrittenConsoleConfigContent(
+    const ConsoleConsoleWriteContext& context,
+    const std::optional<std::string>& managed_console_resource)
+{
+  std::vector<std::string> console_resources;
+  console_resources.reserve(context.console_resources_before.size()
+                            + context.console_resources_after.size()
+                            + (managed_console_resource ? 1u : 0u));
+  console_resources.insert(console_resources.end(),
+                           context.console_resources_before.begin(),
+                           context.console_resources_before.end());
+  if (managed_console_resource) {
+    console_resources.emplace_back(*managed_console_resource);
+  }
+  console_resources.insert(console_resources.end(),
+                           context.console_resources_after.begin(),
+                           context.console_resources_after.end());
+  return BuildConsoleConfigFileContent(context.director_resources,
+                                       console_resources);
+}
+
+struct ConsoleDirectorWriteContext {
+  std::filesystem::path file_path{};
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
+  std::optional<std::string> password{};
+  std::optional<std::string> description{};
+  std::vector<std::string> director_resources_before{};
+  std::vector<std::string> director_resources_after{};
+  std::vector<std::string> console_resources{};
+  bool exists{false};
+};
+
+std::string BuildRewrittenConsoleConfigContent(
+    const ConsoleDirectorWriteContext& context,
+    const std::optional<std::string>& managed_director_resource)
+{
+  std::vector<std::string> director_resources;
+  director_resources.reserve(context.director_resources_before.size()
+                             + context.director_resources_after.size()
+                             + (managed_director_resource ? 1u : 0u));
+  director_resources.insert(director_resources.end(),
+                            context.director_resources_before.begin(),
+                            context.director_resources_before.end());
+  if (managed_director_resource) {
+    director_resources.emplace_back(*managed_director_resource);
+  }
+  director_resources.insert(director_resources.end(),
+                            context.director_resources_after.begin(),
+                            context.director_resources_after.end());
+  return BuildConsoleConfigFileContent(director_resources,
+                                       context.console_resources);
+}
+
 struct DirectorUserWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> description{};
@@ -2134,6 +2418,14 @@ struct ClientDaemonWriteContext {
   bool is_standalone_file{false};
 };
 
+struct DirectorDaemonWriteContext {
+  std::filesystem::path file_path{};
+  std::optional<std::string> password{};
+  StorageDaemonContentSpec content{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
 struct StorageDaemonWriteContext {
   std::filesystem::path file_path{};
   StorageDaemonContentSpec content{};
@@ -2192,6 +2484,28 @@ struct StorageDaemonDeviceWriteContext {
   std::optional<std::string> media_type{};
   std::optional<std::string> archive_device{};
   std::optional<std::string> device_type{};
+  std::optional<std::string> description{};
+  bool exists{false};
+  bool is_standalone_file{false};
+  bool is_managed{false};
+};
+
+struct StorageNdmpWriteContext {
+  std::filesystem::path file_path{};
+  std::optional<std::string> username{};
+  std::optional<std::string> password{};
+  std::optional<std::string> auth_type{};
+  std::optional<uint32_t> log_level{};
+  bool exists{false};
+  bool is_standalone_file{false};
+  bool is_managed{false};
+};
+
+struct StorageAutochangerWriteContext {
+  std::filesystem::path file_path{};
+  std::optional<std::vector<std::string>> devices{};
+  std::optional<std::string> changer_device{};
+  std::optional<std::string> changer_command{};
   std::optional<std::string> description{};
   bool exists{false};
   bool is_standalone_file{false};
@@ -2780,6 +3094,206 @@ OperationResult<DirectorConsoleWriteContext> LoadDirectorConsoleWriteContext(
                        + "' is not stored in a standalone file yet."};
     }
     return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<ConsoleConsoleWriteContext> LoadConsoleConsoleWriteContext(
+    const DeploymentConfigRecord& console_config,
+    std::string_view console_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kConsole,
+                                    console_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure("console config parser initialization ",
+                                        loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("console config ", loaded.messages)};
+  }
+
+  ConsoleConsoleWriteContext context{
+      .file_path
+      = console_config.path
+        / ComponentDefaultConfigFilename(bconfig::Component::kConsole)};
+  for (auto* resource = loaded.parser->GetNextRes(console::R_DIRECTOR, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(console::R_DIRECTOR, resource)) {
+    auto* configured_director
+        = dynamic_cast<console::DirectorResource*>(resource);
+    if (!configured_director) { continue; }
+    context.director_resources.emplace_back(
+        RenderParsedResource(*configured_director, *loaded.parser));
+  }
+
+  bool seen_target = false;
+  for (auto* resource = loaded.parser->GetNextRes(console::R_CONSOLE, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(console::R_CONSOLE, resource)) {
+    auto* configured_console
+        = dynamic_cast<console::ConsoleResource*>(resource);
+    if (!configured_console) { continue; }
+    if (!configured_console->resource_name_
+        || configured_console->resource_name_ != console_name) {
+      auto rendered = RenderParsedResource(*configured_console, *loaded.parser);
+      if (seen_target) {
+        context.console_resources_after.emplace_back(std::move(rendered));
+      } else {
+        context.console_resources_before.emplace_back(std::move(rendered));
+      }
+      continue;
+    }
+
+    seen_target = true;
+    context.exists = true;
+    if (configured_console->description_
+        && configured_console->description_[0] != '\0') {
+      context.description = std::string{configured_console->description_};
+    }
+    auto rendered_password = RenderPasswordForConfig(
+        configured_console->password_,
+        "console password for '" + std::string{console_name} + "'");
+    if (!rendered_password) { return {.error = rendered_password.error}; }
+    context.password = *rendered_password.value;
+    if (HasMemberSource(*configured_console, {"Director"})
+        && configured_console->director
+        && configured_console->director->resource_name_) {
+      context.director
+          = std::string{configured_console->director->resource_name_};
+    }
+
+    auto unsupported_field_error
+        = [&](std::initializer_list<const char*> names,
+              std::string_view field) -> std::optional<std::string> {
+      if (!HasMemberSource(*configured_console, names)) { return std::nullopt; }
+      return "console resource '" + std::string{console_name}
+             + "' uses unsupported field '" + std::string{field}
+             + "', which is not managed yet.";
+    };
+    for (const auto& unsupported :
+         {unsupported_field_error({"RcFile"}, "RcFile"),
+          unsupported_field_error({"HistoryFile"}, "HistoryFile"),
+          unsupported_field_error({"HistoryLength"}, "HistoryLength"),
+          unsupported_field_error({"HeartbeatInterval"}, "HeartbeatInterval"),
+          unsupported_field_error({"TlsAuthenticate"}, "TlsAuthenticate"),
+          unsupported_field_error({"TlsEnable"}, "TlsEnable"),
+          unsupported_field_error({"TlsRequire"}, "TlsRequire"),
+          unsupported_field_error({"TlsVerifyPeer"}, "TlsVerifyPeer"),
+          unsupported_field_error({"TlsCipherList"}, "TlsCipherList"),
+          unsupported_field_error({"TlsCipherSuites"}, "TlsCipherSuites"),
+          unsupported_field_error({"TlsDhFile"}, "TlsDhFile"),
+          unsupported_field_error({"TlsProtocol"}, "TlsProtocol"),
+          unsupported_field_error({"TlsCaCertificateFile"},
+                                  "TlsCaCertificateFile"),
+          unsupported_field_error({"TlsCaCertificateDir"},
+                                  "TlsCaCertificateDir"),
+          unsupported_field_error({"TlsCertificateRevocationList"},
+                                  "TlsCertificateRevocationList"),
+          unsupported_field_error({"TlsCertificate"}, "TlsCertificate"),
+          unsupported_field_error({"TlsKey"}, "TlsKey"),
+          unsupported_field_error({"TlsAllowedCn"}, "TlsAllowedCn")}) {
+      if (unsupported) { return {.error = *unsupported}; }
+    }
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<ConsoleDirectorWriteContext> LoadConsoleDirectorWriteContext(
+    const DeploymentConfigRecord& console_config,
+    std::string_view director_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kConsole,
+                                    console_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure("console config parser initialization ",
+                                        loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("console config ", loaded.messages)};
+  }
+
+  ConsoleDirectorWriteContext context{
+      .file_path
+      = console_config.path
+        / ComponentDefaultConfigFilename(bconfig::Component::kConsole)};
+  for (auto* resource = loaded.parser->GetNextRes(console::R_CONSOLE, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(console::R_CONSOLE, resource)) {
+    auto* configured_console
+        = dynamic_cast<console::ConsoleResource*>(resource);
+    if (!configured_console) { continue; }
+    context.console_resources.emplace_back(
+        RenderParsedResource(*configured_console, *loaded.parser));
+  }
+
+  bool seen_target = false;
+  for (auto* resource = loaded.parser->GetNextRes(console::R_DIRECTOR, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(console::R_DIRECTOR, resource)) {
+    auto* configured_director
+        = dynamic_cast<console::DirectorResource*>(resource);
+    if (!configured_director) { continue; }
+    if (!configured_director->resource_name_
+        || configured_director->resource_name_ != director_name) {
+      auto rendered
+          = RenderParsedResource(*configured_director, *loaded.parser);
+      if (seen_target) {
+        context.director_resources_after.emplace_back(std::move(rendered));
+      } else {
+        context.director_resources_before.emplace_back(std::move(rendered));
+      }
+      continue;
+    }
+
+    seen_target = true;
+    context.exists = true;
+    if (configured_director->address
+        && configured_director->address[0] != '\0') {
+      context.address = std::string{configured_director->address};
+    }
+    if (HasMemberSource(*configured_director, {"Port", "DirPort"})) {
+      const auto parsed_port = configured_director->DIRport;
+      if (parsed_port > std::numeric_limits<uint16_t>::max()) {
+        return {.error = "console director '" + std::string{director_name}
+                         + "' has unsupported port value."};
+      }
+      context.port = static_cast<uint16_t>(parsed_port);
+    }
+    if (HasMemberSource(*configured_director, {"Password"})) {
+      auto rendered_password = RenderPasswordForConfig(
+          configured_director->password_,
+          "console director password for '" + std::string{director_name} + "'");
+      if (!rendered_password) { return {.error = rendered_password.error}; }
+      if (!rendered_password.value->empty()) {
+        context.password = *rendered_password.value;
+      }
+    }
+    if (configured_director->description_
+        && configured_director->description_[0] != '\0') {
+      context.description = std::string{configured_director->description_};
+    }
+
+    auto unsupported_field_error
+        = [&](std::initializer_list<const char*> names,
+              std::string_view field) -> std::optional<std::string> {
+      if (!HasMemberSource(*configured_director, names)) {
+        return std::nullopt;
+      }
+      return "console director '" + std::string{director_name}
+             + "' uses unsupported field '" + std::string{field}
+             + "' for managed updates.";
+    };
+    for (const auto* field :
+         {"HeartbeatInterval", "TlsAuthenticate", "TlsEnable", "TlsRequire",
+          "TlsVerifyPeer", "TlsCipherList", "TlsCipherSuites", "TlsDhFile",
+          "TlsProtocol", "TlsCaCertificateFile", "TlsCaCertificateDir",
+          "TlsCertificateRevocationList", "TlsCertificate", "TlsKey",
+          "TlsAllowedCn"}) {
+      auto error = unsupported_field_error({field}, field);
+      if (error) { return {.error = *error}; }
+    }
   }
 
   return {.value = std::move(context)};
@@ -3583,6 +4097,189 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
         = per_file != resources_per_file.end() && per_file->second == 1;
     if (!context.is_standalone_file) {
       return {.error = "client daemon resource '" + client_config.name
+                       + "' is not stored in a standalone file yet."};
+    }
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<DirectorDaemonWriteContext> LoadDirectorDaemonWriteContext(
+    const DeploymentConfigRecord& director_config)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorDaemonWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "director"
+                   / (director_config.name + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_DIRECTOR, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_DIRECTOR, resource)) {
+    auto* director = dynamic_cast<directordaemon::DirectorResource*>(resource);
+    if (!director) { continue; }
+    if (auto source = director->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_DIRECTOR, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_DIRECTOR, resource)) {
+    auto* director = dynamic_cast<directordaemon::DirectorResource*>(resource);
+    if (!director || !director->resource_name_
+        || director->resource_name_ != director_config.name) {
+      continue;
+    }
+
+    context.exists = true;
+    const bool has_addresses_source = HasMemberSource(*director, {"Addresses"});
+    const bool has_address_source = HasMemberSource(*director, {"Address"});
+    const bool has_source_address_source
+        = HasMemberSource(*director, {"SourceAddress"});
+    const bool has_port_source = HasMemberSource(*director, {"Port"});
+    if (has_addresses_source) {
+      context.content.addresses = CopyAddressEntries(director->DIRaddrs);
+    } else if (has_address_source) {
+      context.content.address = CopyFirstAddress(director->DIRaddrs);
+    }
+    if (!has_addresses_source && has_port_source) {
+      const auto port = GetFirstPortHostOrder(director->DIRaddrs);
+      if (port > 0) { context.content.port = static_cast<uint16_t>(port); }
+    }
+    if (has_source_address_source && director->DIRsrc_addr
+        && director->DIRsrc_addr->size() > 1) {
+      return {.error = "director daemon resource '" + director_config.name
+                       + "' uses multiple source addresses, which are not "
+                         "managed yet."};
+    }
+    if (has_source_address_source) {
+      context.content.source_address = CopyFirstAddress(director->DIRsrc_addr);
+    }
+    if (director->password_.value && director->password_.value[0] != '\0') {
+      context.password = std::string{director->password_.value};
+    }
+    if (HasMemberSource(*director, {"MaximumConcurrentJobs"})) {
+      context.content.maximum_concurrent_jobs = director->MaxConcurrentJobs;
+    }
+    if (HasMemberSource(*director, {"AbsoluteJobTimeout"})) {
+      context.content.absolute_job_timeout = director->jcr_watchdog_time;
+    }
+    if (HasMemberSource(*director, {"TlsAuthenticate"})) {
+      context.content.tls_authenticate = director->authenticate_;
+    }
+    if (HasMemberSource(*director, {"TlsEnable"})) {
+      context.content.tls_enable = director->tls_enable_;
+    }
+    if (HasMemberSource(*director, {"TlsRequire"})) {
+      context.content.tls_require = director->tls_require_;
+    }
+    if (HasMemberSource(*director, {"TlsVerifyPeer"})) {
+      context.content.tls_verify_peer = director->tls_cert_.verify_peer_;
+    }
+    if (!director->cipherlist_.empty()) {
+      context.content.tls_cipher_list = director->cipherlist_;
+    }
+    if (!director->ciphersuites_.empty()) {
+      context.content.tls_cipher_suites = director->ciphersuites_;
+    }
+    if (!director->tls_cert_.dhfile_.empty()) {
+      context.content.tls_dh_file = director->tls_cert_.dhfile_;
+    }
+    if (!director->protocol_.empty()) {
+      context.content.tls_protocol = director->protocol_;
+    }
+    if (!director->tls_cert_.ca_certfile_.empty()) {
+      context.content.tls_ca_certificate_file
+          = director->tls_cert_.ca_certfile_;
+    }
+    if (!director->tls_cert_.ca_certdir_.empty()) {
+      context.content.tls_ca_certificate_dir = director->tls_cert_.ca_certdir_;
+    }
+    if (!director->tls_cert_.crlfile_.empty()) {
+      context.content.tls_certificate_revocation_list
+          = director->tls_cert_.crlfile_;
+    }
+    if (!director->tls_cert_.certfile_.empty()) {
+      context.content.tls_certificate = director->tls_cert_.certfile_;
+    }
+    if (!director->tls_cert_.keyfile_.empty()) {
+      context.content.tls_key = director->tls_cert_.keyfile_;
+    }
+    if (HasMemberSource(*director, {"TlsAllowedCn"})) {
+      context.content.tls_allowed_cn
+          = director->tls_cert_.allowed_certificate_common_names_;
+    }
+    if (director->verid && director->verid[0] != '\0') {
+      context.content.ver_id = std::string{director->verid};
+    }
+    if (director->log_timestamp_format
+        && director->log_timestamp_format[0] != '\0') {
+      context.content.log_timestamp_format
+          = std::string{director->log_timestamp_format};
+    }
+    if (director->secure_erase_cmdline
+        && director->secure_erase_cmdline[0] != '\0') {
+      context.content.secure_erase_command
+          = std::string{director->secure_erase_cmdline};
+    }
+    if (HasMemberSource(*director, {"EnableKtls"})) {
+      context.content.enable_ktls = director->enable_ktls;
+    }
+    if (HasMemberSource(*director, {"FdConnectTimeout"})) {
+      context.content.fd_connect_timeout
+          = static_cast<uint64_t>(director->FDConnectTimeout);
+    }
+    if (HasMemberSource(*director, {"SdConnectTimeout"})) {
+      context.content.sd_connect_timeout
+          = static_cast<uint64_t>(director->SDConnectTimeout);
+    }
+    if (HasMemberSource(*director, {"HeartbeatInterval"})) {
+      context.content.heartbeat_interval
+          = static_cast<uint64_t>(director->heartbeat_interval);
+    }
+    if (director->description_ && director->description_[0] != '\0') {
+      context.content.description = std::string{director->description_};
+    }
+    if (director->working_directory && director->working_directory[0] != '\0') {
+      context.content.working_directory
+          = std::string{director->working_directory};
+    }
+    if (director->plugin_directory && director->plugin_directory[0] != '\0') {
+      context.content.plugin_directory
+          = std::string{director->plugin_directory};
+    }
+    if (HasMemberSource(*director, {"PluginNames"})) {
+      context.content.plugin_names = CopyAclValues(director->plugin_names);
+    }
+    if (director->scripts_directory && director->scripts_directory[0] != '\0') {
+      context.content.scripts_directory
+          = std::string{director->scripts_directory};
+    }
+    context.content.messages = CopyResourceName(director->messages);
+
+    auto source = director->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director daemon resource '" + director_config.name
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director daemon resource '" + director_config.name
                        + "' is not stored in a standalone file yet."};
     }
     return {.value = std::move(context)};
@@ -4433,6 +5130,158 @@ LoadStorageDaemonDeviceWriteContext(
     auto source = device->GetDefinitionSource();
     if (!source || source->file.empty()) {
       return {.error = "storage-daemon device '" + std::string{device_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    context.is_managed
+        = IsManagedPath(managed_paths, repository_root, context.file_path);
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<StorageNdmpWriteContext> LoadStorageNdmpWriteContext(
+    const DeploymentConfigRecord& storage_config,
+    std::string_view ndmp_name,
+    const std::set<std::string>& managed_paths)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure("storage config parser initialization ",
+                                        loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("storage config ", loaded.messages)};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.path);
+  StorageNdmpWriteContext context{.file_path
+                                  = storage_config.path / "bareos-sd.d" / "ndmp"
+                                    / (std::string{ndmp_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(storagedaemon::R_NDMP, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(storagedaemon::R_NDMP, resource)) {
+    auto* ndmp = dynamic_cast<storagedaemon::NdmpResource*>(resource);
+    if (!ndmp) { continue; }
+    if (auto source = ndmp->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(storagedaemon::R_NDMP, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(storagedaemon::R_NDMP, resource)) {
+    auto* ndmp = dynamic_cast<storagedaemon::NdmpResource*>(resource);
+    if (!ndmp || !ndmp->resource_name_ || ndmp->resource_name_ != ndmp_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (ndmp->username && ndmp->username[0] != '\0') {
+      context.username = std::string{ndmp->username};
+    }
+    auto rendered_password = RenderPasswordForConfig(
+        ndmp->password,
+        "storage-daemon NDMP password for '" + std::string{ndmp_name} + "'");
+    if (!rendered_password) { return {.error = rendered_password.error}; }
+    context.password = *rendered_password.value;
+    if (HasMemberSource(*ndmp, {"AuthType"})) {
+      context.auth_type = RenderStorageNdmpAuthType(ndmp->AuthType);
+    }
+    if (HasMemberSource(*ndmp, {"LogLevel"})) {
+      context.log_level = ndmp->LogLevel;
+    }
+
+    auto source = ndmp->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "storage-daemon NDMP resource '" + std::string{ndmp_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    context.is_managed
+        = IsManagedPath(managed_paths, repository_root, context.file_path);
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<StorageAutochangerWriteContext>
+LoadStorageAutochangerWriteContext(const DeploymentConfigRecord& storage_config,
+                                   std::string_view autochanger_name,
+                                   const std::set<std::string>& managed_paths)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure("storage config parser initialization ",
+                                        loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("storage config ", loaded.messages)};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.path);
+  StorageAutochangerWriteContext context{
+      .file_path = storage_config.path / "bareos-sd.d" / "autochanger"
+                   / (std::string{autochanger_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(storagedaemon::R_AUTOCHANGER, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                storagedaemon::R_AUTOCHANGER, resource)) {
+    auto* autochanger
+        = dynamic_cast<storagedaemon::AutochangerResource*>(resource);
+    if (!autochanger) { continue; }
+    if (auto source = autochanger->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(storagedaemon::R_AUTOCHANGER, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                storagedaemon::R_AUTOCHANGER, resource)) {
+    auto* autochanger
+        = dynamic_cast<storagedaemon::AutochangerResource*>(resource);
+    if (!autochanger || !autochanger->resource_name_
+        || autochanger->resource_name_ != autochanger_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (autochanger->description_ && autochanger->description_[0] != '\0') {
+      context.description = std::string{autochanger->description_};
+    }
+    auto extracted_devices
+        = ExtractAutochangerDeviceNames(*autochanger, autochanger_name);
+    if (!extracted_devices) { return {.error = extracted_devices.error}; }
+    context.devices = *extracted_devices.value;
+    if (autochanger->changer_name && autochanger->changer_name[0] != '\0') {
+      context.changer_device = std::string{autochanger->changer_name};
+    }
+    if (autochanger->changer_command
+        && autochanger->changer_command[0] != '\0') {
+      context.changer_command = std::string{autochanger->changer_command};
+    }
+
+    auto source = autochanger->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "storage-daemon autochanger '"
+                       + std::string{autochanger_name}
                        + "' has no definition source."};
     }
     context.file_path = source->file;
@@ -6369,6 +7218,181 @@ ServiceState::UpsertClientDaemonResource(
 }
 
 OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertDirectorDaemonResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    const DirectorDaemonResourceSpec& spec) const
+{
+  DebugLog("upserting director daemon resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "'");
+  if (!IsSafePathSegment(director_name)) {
+    return {.error = "director name must be a safe path segment."};
+  }
+  if (spec.address && !IsSafeBareosToken(*spec.address)) {
+    return {.error
+            = "director daemon address must be a bare Bareos token without "
+              "whitespace or quotes."};
+  }
+  if (spec.source_address && !IsSafeBareosToken(*spec.source_address)) {
+    return {.error
+            = "director daemon source_address must be a bare Bareos token "
+              "without whitespace or quotes."};
+  }
+  if (spec.port && *spec.port == 0) {
+    return {.error = "director daemon port must be greater than zero."};
+  }
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context = LoadDirectorDaemonWriteContext(*director_config.value);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director daemon resource '" + std::string{director_name}
+                     + "' was not found."};
+  }
+  if (!context.value->password || context.value->password->empty()) {
+    return {.error = "director daemon resource '" + std::string{director_name}
+                     + "' does not expose a managed password value."};
+  }
+  if (!context.value->is_standalone_file) {
+    return {.error = "director daemon resource '" + std::string{director_name}
+                     + "' is not stored in a standalone file yet."};
+  }
+
+  auto content = context.value->content;
+  if (spec.address) { content.address = spec.address; }
+  if (spec.addresses) {
+    content.addresses = *spec.addresses;
+    content.address.reset();
+    content.port.reset();
+  }
+  if (spec.source_address) { content.source_address = spec.source_address; }
+  if (spec.port) {
+    content.port = spec.port;
+    content.addresses.clear();
+  }
+  if (spec.maximum_concurrent_jobs) {
+    content.maximum_concurrent_jobs = spec.maximum_concurrent_jobs;
+  }
+  if (spec.absolute_job_timeout) {
+    content.absolute_job_timeout = spec.absolute_job_timeout;
+  }
+  if (spec.tls_authenticate) {
+    content.tls_authenticate = spec.tls_authenticate;
+  }
+  if (spec.tls_enable) { content.tls_enable = spec.tls_enable; }
+  if (spec.tls_require) { content.tls_require = spec.tls_require; }
+  if (spec.tls_verify_peer) { content.tls_verify_peer = spec.tls_verify_peer; }
+  if (spec.tls_cipher_list) { content.tls_cipher_list = spec.tls_cipher_list; }
+  if (spec.tls_cipher_suites) {
+    content.tls_cipher_suites = spec.tls_cipher_suites;
+  }
+  if (spec.tls_dh_file) { content.tls_dh_file = spec.tls_dh_file; }
+  if (spec.tls_protocol) { content.tls_protocol = spec.tls_protocol; }
+  if (spec.tls_ca_certificate_file) {
+    content.tls_ca_certificate_file = spec.tls_ca_certificate_file;
+  }
+  if (spec.tls_ca_certificate_dir) {
+    content.tls_ca_certificate_dir = spec.tls_ca_certificate_dir;
+  }
+  if (spec.tls_certificate_revocation_list) {
+    content.tls_certificate_revocation_list
+        = spec.tls_certificate_revocation_list;
+  }
+  if (spec.tls_certificate) { content.tls_certificate = spec.tls_certificate; }
+  if (spec.tls_key) { content.tls_key = spec.tls_key; }
+  if (spec.tls_allowed_cn) { content.tls_allowed_cn = *spec.tls_allowed_cn; }
+  if (spec.ver_id) { content.ver_id = spec.ver_id; }
+  if (spec.log_timestamp_format) {
+    content.log_timestamp_format = spec.log_timestamp_format;
+  }
+  if (spec.secure_erase_command) {
+    content.secure_erase_command = spec.secure_erase_command;
+  }
+  if (spec.enable_ktls) { content.enable_ktls = spec.enable_ktls; }
+  if (spec.fd_connect_timeout) {
+    content.fd_connect_timeout = spec.fd_connect_timeout;
+  }
+  if (spec.sd_connect_timeout) {
+    content.sd_connect_timeout = spec.sd_connect_timeout;
+  }
+  if (spec.heartbeat_interval) {
+    content.heartbeat_interval = spec.heartbeat_interval;
+  }
+  if (spec.description) { content.description = spec.description; }
+  if (spec.working_directory) {
+    content.working_directory = spec.working_directory;
+  }
+  if (spec.plugin_directory) {
+    content.plugin_directory = spec.plugin_directory;
+  }
+  if (spec.plugin_names) { content.plugin_names = *spec.plugin_names; }
+  if (spec.scripts_directory) {
+    content.scripts_directory = spec.scripts_directory;
+  }
+  if (spec.messages) { content.messages = spec.messages; }
+
+  std::string render_error;
+  const auto rendered = BuildDirectorDaemonResourceContent(
+      director_name, *context.value->password, content, &render_error);
+  if (rendered.empty()) { return {.error = std::move(render_error)}; }
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "director";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director daemon directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write director daemon resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director daemon file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("director daemon update for '" + std::string{director_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director daemon parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director daemon update ", loaded.messages)};
+  }
+
+  DebugLog("updated director daemon resource '" + std::string{director_name}
+           + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
 ServiceState::UpsertDirectorClientResource(
     std::string_view deployment_id,
     std::string_view director_name,
@@ -6957,6 +7981,284 @@ ServiceState::DeleteDirectorConsoleResource(std::string_view deployment_id,
   DebugLog("deleted director console resource '" + std::string{console_name}
            + "' from director '" + std::string{director_name} + "'");
   return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertConsoleConsoleResource(
+    std::string_view deployment_id,
+    std::string_view console_config_name,
+    std::string_view console_name,
+    const ConsoleConsoleResourceSpec& spec) const
+{
+  DebugLog("upserting console resource for deployment '"
+           + std::string{deployment_id} + "', console config '"
+           + std::string{console_config_name} + "', console '"
+           + std::string{console_name} + "'");
+  if (!IsSafePathSegment(console_config_name)
+      || !IsSafePathSegment(console_name)) {
+    return {.error
+            = "console config and console names must be safe path "
+              "segments."};
+  }
+
+  auto console_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kConsole, console_config_name);
+  if (!console_config) {
+    return {.error = "console config not found for '"
+                     + std::string{console_config_name} + "'."};
+  }
+
+  auto context
+      = LoadConsoleConsoleWriteContext(*console_config.value, console_name);
+  if (!context) { return {.error = context.error}; }
+
+  const auto director
+      = spec.director ? *spec.director : context.value->director;
+  if (!director || director->empty()) {
+    return {.error
+            = "field 'director' is required when creating a console resource."};
+  }
+
+  const auto password
+      = spec.password ? *spec.password : context.value->password;
+  if (!password || password->empty()) {
+    return {.error
+            = "field 'password' is required when creating a console resource."};
+  }
+
+  const auto description = spec.description
+                               ? *spec.description
+                               : context.value->description.value_or(
+                                     DefaultConsoleConsoleDescription(
+                                         console_name, console_config_name));
+  const auto managed_resource = BuildConsoleConsoleResourceContent(
+      console_name, *director, *password, description);
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+
+  const auto rewritten_content
+      = BuildRewrittenConsoleConfigContent(*context.value, managed_resource);
+  if (!WriteFile(context.value->file_path, rewritten_content)) {
+    return {.error = "failed to write console resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kConsole,
+                                    console_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error = RestoreClientStubFile(context.value->file_path,
+                                                *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure("console parser initialization ",
+                                          loaded.messages)};
+    }
+    return {.error = FormatParseFailure("console update ", loaded.messages)};
+  }
+
+  DebugLog("updated console resource '" + std::string{console_name}
+           + "' in console config '" + std::string{console_config_name} + "'");
+  return {.value = *console_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteConsoleConsoleResource(std::string_view deployment_id,
+                                           std::string_view console_config_name,
+                                           std::string_view console_name) const
+{
+  DebugLog("deleting console resource for deployment '"
+           + std::string{deployment_id} + "', console config '"
+           + std::string{console_config_name} + "', console '"
+           + std::string{console_name} + "'");
+  if (!IsSafePathSegment(console_config_name)
+      || !IsSafePathSegment(console_name)) {
+    return {.error
+            = "console config and console names must be safe path "
+              "segments."};
+  }
+
+  auto console_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kConsole, console_config_name);
+  if (!console_config) {
+    return {.error = "console config not found for '"
+                     + std::string{console_config_name} + "'."};
+  }
+
+  auto context
+      = LoadConsoleConsoleWriteContext(*console_config.value, console_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "console config '" + std::string{console_config_name}
+                     + "' does not define console '" + std::string{console_name}
+                     + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+
+  const auto rewritten_content
+      = BuildRewrittenConsoleConfigContent(*context.value, std::nullopt);
+  if (!WriteFile(context.value->file_path, rewritten_content)) {
+    return {.error = "failed to write console config '"
+                     + context.value->file_path.string() + "'."};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kConsole,
+                                    console_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error = RestoreClientStubFile(context.value->file_path,
+                                                *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure("console parser initialization ",
+                                          loaded.messages)};
+    }
+    return {.error = FormatParseFailure("console delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted console resource '" + std::string{console_name}
+           + "' from console config '" + std::string{console_config_name}
+           + "'");
+  return {.value = *console_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertConsoleDirectorResource(
+    std::string_view deployment_id,
+    std::string_view console_config_name,
+    std::string_view director_name,
+    const ConsoleDirectorResourceSpec& spec) const
+{
+  DebugLog("upserting console director resource for deployment '"
+           + std::string{deployment_id} + "', console config '"
+           + std::string{console_config_name} + "', director '"
+           + std::string{director_name} + "'");
+  if (!IsSafePathSegment(console_config_name)
+      || !IsSafePathSegment(director_name)) {
+    return {.error
+            = "console config and director names must be safe path "
+              "segments."};
+  }
+
+  auto console_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kConsole, console_config_name);
+  if (!console_config) {
+    return {.error = "console config not found for '"
+                     + std::string{console_config_name} + "'."};
+  }
+
+  auto context
+      = LoadConsoleDirectorWriteContext(*console_config.value, director_name);
+  if (!context) { return {.error = context.error}; }
+
+  const auto address = spec.address ? *spec.address : context.value->address;
+  if (!address || address->empty()) {
+    return {.error
+            = "field 'address' is required when creating a console director "
+              "resource."};
+  }
+
+  const auto password = spec.password ? spec.password : context.value->password;
+  const auto port = spec.port ? spec.port : context.value->port;
+  const auto description = spec.description
+                               ? *spec.description
+                               : context.value->description.value_or(
+                                     DefaultConsoleDirectorDescription(
+                                         director_name, console_config_name));
+  const auto managed_resource = BuildConsoleDirectorResourceContent(
+      director_name, *address, port, password, description);
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+
+  const auto rewritten_content
+      = BuildRewrittenConsoleConfigContent(*context.value, managed_resource);
+  if (!WriteFile(context.value->file_path, rewritten_content)) {
+    return {.error = "failed to write console config '"
+                     + context.value->file_path.string() + "'."};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kConsole,
+                                    console_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error = RestoreClientStubFile(context.value->file_path,
+                                                *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure("console parser initialization ",
+                                          loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("console director update ", loaded.messages)};
+  }
+
+  DebugLog("updated console director resource '" + std::string{director_name}
+           + "' in console config '" + std::string{console_config_name} + "'");
+  return {.value = *console_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteConsoleDirectorResource(
+    std::string_view deployment_id,
+    std::string_view console_config_name,
+    std::string_view director_name) const
+{
+  DebugLog("deleting console director resource for deployment '"
+           + std::string{deployment_id} + "', console config '"
+           + std::string{console_config_name} + "', director '"
+           + std::string{director_name} + "'");
+  if (!IsSafePathSegment(console_config_name)
+      || !IsSafePathSegment(director_name)) {
+    return {.error
+            = "console config and director names must be safe path "
+              "segments."};
+  }
+
+  auto console_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kConsole, console_config_name);
+  if (!console_config) {
+    return {.error = "console config not found for '"
+                     + std::string{console_config_name} + "'."};
+  }
+
+  auto context
+      = LoadConsoleDirectorWriteContext(*console_config.value, director_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "console config '" + std::string{console_config_name}
+                     + "' does not define director '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+
+  const auto rewritten_content
+      = BuildRewrittenConsoleConfigContent(*context.value, std::nullopt);
+  if (!WriteFile(context.value->file_path, rewritten_content)) {
+    return {.error = "failed to write console config '"
+                     + context.value->file_path.string() + "'."};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kConsole,
+                                    console_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error = RestoreClientStubFile(context.value->file_path,
+                                                *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure("console parser initialization ",
+                                          loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("console director delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted console director resource '" + std::string{director_name}
+           + "' from console config '" + std::string{console_config_name}
+           + "'");
+  return {.value = *console_config.value};
 }
 
 OperationResult<DeploymentConfigRecord>
@@ -9047,6 +10349,432 @@ ServiceState::DeleteStorageDeviceResource(std::string_view deployment_id,
 
   DebugLog("deleted storage-daemon device resource '" + std::string{device_name}
            + "' from storage '" + std::string{storage_name} + "'");
+  return {.value = *storage_config.value};
+}
+
+OperationResult<DeploymentConfigRecord> ServiceState::UpsertStorageNdmpResource(
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view ndmp_name,
+    const StorageNdmpResourceSpec& spec) const
+{
+  DebugLog("upserting storage-daemon NDMP resource for deployment '"
+           + std::string{deployment_id} + "', storage '"
+           + std::string{storage_name} + "', ndmp '" + std::string{ndmp_name}
+           + "'");
+  if (!IsSafePathSegment(storage_name) || !IsSafePathSegment(ndmp_name)) {
+    return {.error = "storage and NDMP names must be safe path segments."};
+  }
+
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.value->path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto context = LoadStorageNdmpWriteContext(*storage_config.value, ndmp_name,
+                                             *managed_paths.value);
+  if (!context) { return {.error = context.error}; }
+  if (context.value->exists && !context.value->is_standalone_file) {
+    return {.error = "storage-daemon NDMP resource '" + std::string{ndmp_name}
+                     + "' is not stored in a standalone file yet."};
+  }
+
+  const auto username
+      = spec.username ? *spec.username : context.value->username;
+  if (!username || username->empty()) {
+    return {.error
+            = "field 'username' is required for storage-daemon NDMP "
+              "resources."};
+  }
+  const auto password
+      = spec.password ? *spec.password : context.value->password;
+  if (!password || password->empty()) {
+    return {.error
+            = "field 'password' is required for storage-daemon NDMP "
+              "resources."};
+  }
+  const auto auth_type_raw
+      = spec.auth_type ? *spec.auth_type
+                       : context.value->auth_type.value_or(std::string{"None"});
+  auto auth_type = NormalizeStorageNdmpAuthType(auth_type_raw);
+  if (!auth_type) { return {.error = auth_type.error}; }
+  const auto log_level
+      = spec.log_level ? *spec.log_level : context.value->log_level.value_or(4);
+
+  const auto rendered = BuildStorageDaemonNdmpResourceContent(
+      ndmp_name, *username, *password, *auth_type.value, log_level);
+  const auto resource_directory
+      = storage_config.value->path / "bareos-sd.d" / "ndmp";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create storage-daemon NDMP directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write storage-daemon NDMP resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote storage-daemon NDMP file '"
+           + context.value->file_path.string() + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("storage-daemon NDMP update for '" + std::string{ndmp_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          storage_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error
+              = FormatParseFailure("storage-daemon NDMP parser initialization ",
+                                   loaded.messages)};
+    }
+    return {.error = FormatParseFailure("storage-daemon NDMP update ",
+                                        loaded.messages)};
+  }
+
+  auto updated_managed_paths = *managed_paths.value;
+  SetManagedPath(updated_managed_paths, repository_root,
+                 context.value->file_path);
+  if (auto error = WriteManagedPaths(repository_root, updated_managed_paths);
+      error) {
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          storage_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = *error};
+  }
+
+  DebugLog("updated storage-daemon NDMP resource '" + std::string{ndmp_name}
+           + "' in storage '" + std::string{storage_name} + "'");
+  return {.value = *storage_config.value};
+}
+
+OperationResult<DeploymentConfigRecord> ServiceState::DeleteStorageNdmpResource(
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view ndmp_name) const
+{
+  DebugLog("deleting storage-daemon NDMP resource for deployment '"
+           + std::string{deployment_id} + "', storage '"
+           + std::string{storage_name} + "', ndmp '" + std::string{ndmp_name}
+           + "'");
+  if (!IsSafePathSegment(storage_name) || !IsSafePathSegment(ndmp_name)) {
+    return {.error = "storage and NDMP names must be safe path segments."};
+  }
+
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.value->path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto context = LoadStorageNdmpWriteContext(*storage_config.value, ndmp_name,
+                                             *managed_paths.value);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "storage '" + std::string{storage_name}
+                     + "' does not define NDMP resource '"
+                     + std::string{ndmp_name} + "'."};
+  }
+  if (!context.value->is_standalone_file) {
+    return {.error = "storage-daemon NDMP resource '" + std::string{ndmp_name}
+                     + "' is not stored in a standalone file yet."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             storage_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error
+              = FormatParseFailure("storage-daemon NDMP parser initialization ",
+                                   loaded.messages)};
+    }
+    return {.error = FormatParseFailure("storage-daemon NDMP delete ",
+                                        loaded.messages)};
+  }
+
+  auto updated_managed_paths = *managed_paths.value;
+  RemoveManagedPath(updated_managed_paths, repository_root,
+                    context.value->file_path);
+  if (auto error = WriteManagedPaths(repository_root, updated_managed_paths);
+      error) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = *error};
+  }
+
+  DebugLog("deleted storage-daemon NDMP resource '" + std::string{ndmp_name}
+           + "' from storage '" + std::string{storage_name} + "'");
+  return {.value = *storage_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertStorageAutochangerResource(
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view autochanger_name,
+    const StorageAutochangerResourceSpec& spec) const
+{
+  DebugLog("upserting storage-daemon autochanger resource for deployment '"
+           + std::string{deployment_id} + "', storage '"
+           + std::string{storage_name} + "', autochanger '"
+           + std::string{autochanger_name} + "'");
+  if (!IsSafePathSegment(storage_name)
+      || !IsSafePathSegment(autochanger_name)) {
+    return {.error
+            = "storage and autochanger names must be safe path segments."};
+  }
+
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.value->path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto context = LoadStorageAutochangerWriteContext(
+      *storage_config.value, autochanger_name, *managed_paths.value);
+  if (!context) { return {.error = context.error}; }
+  if (context.value->exists && !context.value->is_standalone_file) {
+    return {.error = "storage-daemon autochanger '"
+                     + std::string{autochanger_name}
+                     + "' is not stored in a standalone file yet."};
+  }
+
+  const auto devices = spec.devices ? *spec.devices : context.value->devices;
+  if (!devices || devices->empty()) {
+    return {.error
+            = "field 'devices' must contain at least one storage-daemon device "
+              "resource name."};
+  }
+  const auto changer_device = spec.changer_device
+                                  ? *spec.changer_device
+                                  : context.value->changer_device;
+  if (!changer_device || changer_device->empty()) {
+    return {.error
+            = "field 'changer_device' is required for storage-daemon "
+              "autochanger resources."};
+  }
+  const auto changer_command = spec.changer_command
+                                   ? *spec.changer_command
+                                   : context.value->changer_command;
+  if (!changer_command || changer_command->empty()) {
+    return {.error
+            = "field 'changer_command' is required for storage-daemon "
+              "autochanger resources."};
+  }
+  const auto description = spec.description
+                               ? *spec.description
+                               : context.value->description.value_or(
+                                     DefaultStorageDaemonAutochangerDescription(
+                                         autochanger_name, storage_name));
+
+  const auto rendered = BuildStorageDaemonAutochangerResourceContent(
+      autochanger_name, *devices, *changer_device, *changer_command,
+      description);
+  const auto resource_directory
+      = storage_config.value->path / "bareos-sd.d" / "autochanger";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create storage-daemon autochanger directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write storage-daemon autochanger resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote storage-daemon autochanger file '"
+           + context.value->file_path.string() + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("storage-daemon autochanger update for '"
+             + std::string{autochanger_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          storage_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "storage-daemon autochanger parser initialization ",
+                  loaded.messages)};
+    }
+    return {.error = FormatParseFailure("storage-daemon autochanger update ",
+                                        loaded.messages)};
+  }
+
+  auto updated_managed_paths = *managed_paths.value;
+  SetManagedPath(updated_managed_paths, repository_root,
+                 context.value->file_path);
+  if (auto error = WriteManagedPaths(repository_root, updated_managed_paths);
+      error) {
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          storage_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = *error};
+  }
+
+  DebugLog("updated storage-daemon autochanger resource '"
+           + std::string{autochanger_name} + "' in storage '"
+           + std::string{storage_name} + "'");
+  return {.value = *storage_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteStorageAutochangerResource(
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view autochanger_name) const
+{
+  DebugLog("deleting storage-daemon autochanger resource for deployment '"
+           + std::string{deployment_id} + "', storage '"
+           + std::string{storage_name} + "', autochanger '"
+           + std::string{autochanger_name} + "'");
+  if (!IsSafePathSegment(storage_name)
+      || !IsSafePathSegment(autochanger_name)) {
+    return {.error
+            = "storage and autochanger names must be safe path segments."};
+  }
+
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.value->path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto context = LoadStorageAutochangerWriteContext(
+      *storage_config.value, autochanger_name, *managed_paths.value);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "storage '" + std::string{storage_name}
+                     + "' does not define autochanger '"
+                     + std::string{autochanger_name} + "'."};
+  }
+  if (!context.value->is_standalone_file) {
+    return {.error = "storage-daemon autochanger '"
+                     + std::string{autochanger_name}
+                     + "' is not stored in a standalone file yet."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             storage_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "storage-daemon autochanger parser initialization ",
+                  loaded.messages)};
+    }
+    return {.error = FormatParseFailure("storage-daemon autochanger delete ",
+                                        loaded.messages)};
+  }
+
+  auto updated_managed_paths = *managed_paths.value;
+  RemoveManagedPath(updated_managed_paths, repository_root,
+                    context.value->file_path);
+  if (auto error = WriteManagedPaths(repository_root, updated_managed_paths);
+      error) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = *error};
+  }
+
+  DebugLog("deleted storage-daemon autochanger resource '"
+           + std::string{autochanger_name} + "' from storage '"
+           + std::string{storage_name} + "'");
   return {.value = *storage_config.value};
 }
 

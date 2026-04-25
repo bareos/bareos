@@ -186,6 +186,42 @@ struct ClientDaemonResourceSpec {
   std::optional<std::string> messages{};
 };
 
+struct DirectorDaemonResourceSpec {
+  std::optional<std::string> address{};
+  std::optional<std::vector<std::string>> addresses{};
+  std::optional<std::string> source_address{};
+  std::optional<uint16_t> port{};
+  std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<uint32_t> absolute_job_timeout{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
+  std::optional<std::string> ver_id{};
+  std::optional<std::string> log_timestamp_format{};
+  std::optional<std::string> secure_erase_command{};
+  std::optional<bool> enable_ktls{};
+  std::optional<uint64_t> fd_connect_timeout{};
+  std::optional<uint64_t> sd_connect_timeout{};
+  std::optional<uint64_t> heartbeat_interval{};
+  std::optional<std::string> description{};
+  std::optional<std::string> working_directory{};
+  std::optional<std::string> plugin_directory{};
+  std::optional<std::vector<std::string>> plugin_names{};
+  std::optional<std::string> scripts_directory{};
+  std::optional<std::string> messages{};
+};
+
 struct DirectorClientResourceSpec {
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
@@ -208,6 +244,19 @@ struct DirectorConsoleResourceSpec {
   std::optional<std::string> password{};
   std::optional<std::string> description{};
   std::optional<bool> use_pam_authentication{};
+};
+
+struct ConsoleConsoleResourceSpec {
+  std::optional<std::string> director{};
+  std::optional<std::string> password{};
+  std::optional<std::string> description{};
+};
+
+struct ConsoleDirectorResourceSpec {
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
+  std::optional<std::string> password{};
+  std::optional<std::string> description{};
 };
 
 struct DirectorUserResourceSpec {
@@ -335,6 +384,20 @@ struct StorageDeviceResourceSpec {
   std::optional<std::string> media_type{};
   std::optional<std::string> archive_device{};
   std::optional<std::string> device_type{};
+  std::optional<std::string> description{};
+};
+
+struct StorageNdmpResourceSpec {
+  std::optional<std::string> username{};
+  std::optional<std::string> password{};
+  std::optional<std::string> auth_type{};
+  std::optional<uint32_t> log_level{};
+};
+
+struct StorageAutochangerResourceSpec {
+  std::optional<std::vector<std::string>> devices{};
+  std::optional<std::string> changer_device{};
+  std::optional<std::string> changer_command{};
   std::optional<std::string> description{};
 };
 
@@ -489,6 +552,10 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view client_name,
       const ClientDaemonResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorDaemonResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      const DirectorDaemonResourceSpec& spec) const;
   OperationResult<DeploymentConfigRecord> UpsertDirectorClientResource(
       std::string_view deployment_id,
       std::string_view director_name,
@@ -516,6 +583,24 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view director_name,
       std::string_view console_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertConsoleConsoleResource(
+      std::string_view deployment_id,
+      std::string_view console_config_name,
+      std::string_view console_name,
+      const ConsoleConsoleResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteConsoleConsoleResource(
+      std::string_view deployment_id,
+      std::string_view console_config_name,
+      std::string_view console_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertConsoleDirectorResource(
+      std::string_view deployment_id,
+      std::string_view console_config_name,
+      std::string_view director_name,
+      const ConsoleDirectorResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteConsoleDirectorResource(
+      std::string_view deployment_id,
+      std::string_view console_config_name,
+      std::string_view director_name) const;
   OperationResult<DeploymentConfigRecord> UpsertDirectorUserResource(
       std::string_view deployment_id,
       std::string_view director_name,
@@ -633,6 +718,24 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view storage_name,
       std::string_view device_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertStorageNdmpResource(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      std::string_view ndmp_name,
+      const StorageNdmpResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteStorageNdmpResource(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      std::string_view ndmp_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertStorageAutochangerResource(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      std::string_view autochanger_name,
+      const StorageAutochangerResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteStorageAutochangerResource(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      std::string_view autochanger_name) const;
   OperationResult<DeploymentConfigRecord> UpsertStorageDaemonResource(
       std::string_view deployment_id,
       std::string_view storage_name,
