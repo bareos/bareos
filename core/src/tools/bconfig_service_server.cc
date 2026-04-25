@@ -125,6 +125,13 @@ struct ConsoleConsoleRequestSpec {
   std::optional<std::string> director{};
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<std::string> history_file{};
+  std::optional<uint32_t> history_length{};
+  std::optional<uint64_t> heartbeat_interval{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
 };
 
 struct ConsoleDirectorRequestSpec {
@@ -132,6 +139,11 @@ struct ConsoleDirectorRequestSpec {
   std::optional<uint16_t> port{};
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<uint64_t> heartbeat_interval{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
 };
 
 struct DirectorUserRequestSpec {
@@ -2315,6 +2327,46 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="console-console-description" name="description"
                placeholder="Managed bconsole resource">
 
+        <label for="console-console-history-file">History file</label>
+        <input id="console-console-history-file" name="history_file"
+               placeholder="~/.bareos_history">
+
+        <label for="console-console-history-length">History length</label>
+        <input id="console-console-history-length" name="history_length"
+               type="number" min="0" placeholder="100">
+
+        <label for="console-console-heartbeat-interval">Heartbeat interval</label>
+        <input id="console-console-heartbeat-interval" name="heartbeat_interval"
+               type="number" min="0" placeholder="0">
+
+        <label for="console-console-tls-authenticate">TLS authenticate only</label>
+        <select id="console-console-tls-authenticate" name="tls_authenticate">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="console-console-tls-enable">TLS enabled</label>
+        <select id="console-console-tls-enable" name="tls_enable">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="console-console-tls-require">TLS required</label>
+        <select id="console-console-tls-require" name="tls_require">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="console-console-tls-verify-peer">TLS verify peer</label>
+        <select id="console-console-tls-verify-peer" name="tls_verify_peer">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
         <button type="submit">
           PUT /v1/deployments/{id}/consoles/{console}/consoles/{resource}
         </button>
@@ -2350,6 +2402,39 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="console-director-description">Description</label>
         <input id="console-director-description" name="description"
                placeholder="Managed bconsole director resource">
+
+        <label for="console-director-heartbeat-interval">Heartbeat interval</label>
+        <input id="console-director-heartbeat-interval"
+               name="heartbeat_interval" type="number" min="0"
+               placeholder="0">
+
+        <label for="console-director-tls-authenticate">TLS authenticate only</label>
+        <select id="console-director-tls-authenticate" name="tls_authenticate">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="console-director-tls-enable">TLS enabled</label>
+        <select id="console-director-tls-enable" name="tls_enable">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="console-director-tls-require">TLS required</label>
+        <select id="console-director-tls-require" name="tls_require">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="console-director-tls-verify-peer">TLS verify peer</label>
+        <select id="console-director-tls-verify-peer" name="tls_verify_peer">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <button type="submit">
           PUT /v1/deployments/{id}/consoles/{console}/directors/{director}
@@ -4554,14 +4639,30 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const consoleConfigName = String(form.get('console_config_name') ?? '').trim();
         const consoleName = String(form.get('console_name') ?? '').trim();
+        const rawHistoryLength = String(form.get('history_length') ?? '').trim();
+        const rawHeartbeatInterval = String(form.get('heartbeat_interval') ?? '').trim();
         const payload = {
           director: String(form.get('director') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
+          history_file: String(form.get('history_file') ?? '').trim(),
+          tls_authenticate: String(form.get('tls_authenticate') ?? '').trim(),
+          tls_enable: String(form.get('tls_enable') ?? '').trim(),
+          tls_require: String(form.get('tls_require') ?? '').trim(),
+          tls_verify_peer: String(form.get('tls_verify_peer') ?? '').trim(),
         };
         if (!payload.director) { delete payload.director; }
         if (!payload.password) { delete payload.password; }
         if (!payload.description) { delete payload.description; }
+        if (!payload.history_file) { delete payload.history_file; }
+        if (rawHistoryLength) { payload.history_length = Number(rawHistoryLength); }
+        if (rawHeartbeatInterval) {
+          payload.heartbeat_interval = Number(rawHeartbeatInterval);
+        }
+        if (!payload.tls_authenticate) { delete payload.tls_authenticate; } else { payload.tls_authenticate = payload.tls_authenticate === 'true'; }
+        if (!payload.tls_enable) { delete payload.tls_enable; } else { payload.tls_enable = payload.tls_enable === 'true'; }
+        if (!payload.tls_require) { delete payload.tls_require; } else { payload.tls_require = payload.tls_require === 'true'; }
+        if (!payload.tls_verify_peer) { delete payload.tls_verify_peer; } else { payload.tls_verify_peer = payload.tls_verify_peer === 'true'; }
         const { response } = await request(
           'PUT',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/consoles/${encodeURIComponent(consoleConfigName)}/consoles/${encodeURIComponent(consoleName)}`,
@@ -4595,15 +4696,27 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const consoleConfigName = String(form.get('console_config_name') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
         const rawPort = String(form.get('port') ?? '').trim();
+        const rawHeartbeatInterval = String(form.get('heartbeat_interval') ?? '').trim();
         const payload = {
           address: String(form.get('address') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
+          tls_authenticate: String(form.get('tls_authenticate') ?? '').trim(),
+          tls_enable: String(form.get('tls_enable') ?? '').trim(),
+          tls_require: String(form.get('tls_require') ?? '').trim(),
+          tls_verify_peer: String(form.get('tls_verify_peer') ?? '').trim(),
         };
         if (!payload.address) { delete payload.address; }
         if (!payload.password) { delete payload.password; }
         if (!payload.description) { delete payload.description; }
         if (rawPort) { payload.port = Number(rawPort); }
+        if (rawHeartbeatInterval) {
+          payload.heartbeat_interval = Number(rawHeartbeatInterval);
+        }
+        if (!payload.tls_authenticate) { delete payload.tls_authenticate; } else { payload.tls_authenticate = payload.tls_authenticate === 'true'; }
+        if (!payload.tls_enable) { delete payload.tls_enable; } else { payload.tls_enable = payload.tls_enable === 'true'; }
+        if (!payload.tls_require) { delete payload.tls_require; } else { payload.tls_require = payload.tls_require === 'true'; }
+        if (!payload.tls_verify_peer) { delete payload.tls_verify_peer; } else { payload.tls_verify_peer = payload.tls_verify_peer === 'true'; }
         const { response } = await request(
           'PUT',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/consoles/${encodeURIComponent(consoleConfigName)}/directors/${encodeURIComponent(directorName)}`,
@@ -6619,6 +6732,13 @@ http::response<http::string_body> HandleDeploymentConsoleConsolePutRequest(
       .director = spec->director,
       .password = spec->password,
       .description = spec->description,
+      .history_file = spec->history_file,
+      .history_length = spec->history_length,
+      .heartbeat_interval = spec->heartbeat_interval,
+      .tls_authenticate = spec->tls_authenticate,
+      .tls_enable = spec->tls_enable,
+      .tls_require = spec->tls_require,
+      .tls_verify_peer = spec->tls_verify_peer,
   };
   auto result = state.UpsertConsoleConsoleResource(
       deployment_id, console_config_name, console_name, resource_spec);
@@ -6706,6 +6826,11 @@ http::response<http::string_body> HandleDeploymentConsoleDirectorPutRequest(
       .port = spec->port,
       .password = spec->password,
       .description = spec->description,
+      .heartbeat_interval = spec->heartbeat_interval,
+      .tls_authenticate = spec->tls_authenticate,
+      .tls_enable = spec->tls_enable,
+      .tls_require = spec->tls_require,
+      .tls_verify_peer = spec->tls_verify_peer,
   };
   auto result = state.UpsertConsoleDirectorResource(
       deployment_id, console_config_name, director_name, resource_spec);
@@ -8327,6 +8452,13 @@ std::optional<ConsoleConsoleRequestSpec> ParseConsoleConsoleRequest(
   auto* director = json_object_get(root.get(), "director");
   auto* password = json_object_get(root.get(), "password");
   auto* description = json_object_get(root.get(), "description");
+  auto* history_file = json_object_get(root.get(), "history_file");
+  auto* history_length = json_object_get(root.get(), "history_length");
+  auto* heartbeat_interval = json_object_get(root.get(), "heartbeat_interval");
+  auto* tls_authenticate = json_object_get(root.get(), "tls_authenticate");
+  auto* tls_enable = json_object_get(root.get(), "tls_enable");
+  auto* tls_require = json_object_get(root.get(), "tls_require");
+  auto* tls_verify_peer = json_object_get(root.get(), "tls_verify_peer");
 
   if (director && !json_is_null(director) && !json_is_string(director)) {
     error = "field 'director' must be a string when provided.";
@@ -8341,6 +8473,35 @@ std::optional<ConsoleConsoleRequestSpec> ParseConsoleConsoleRequest(
     error = "field 'description' must be a string when provided.";
     return std::nullopt;
   }
+  if (history_file && !json_is_null(history_file)
+      && !json_is_string(history_file)) {
+    error = "field 'history_file' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (history_length && !json_is_null(history_length)
+      && !json_is_integer(history_length)) {
+    error = "field 'history_length' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (heartbeat_interval && !json_is_null(heartbeat_interval)
+      && !json_is_integer(heartbeat_interval)) {
+    error = "field 'heartbeat_interval' must be an integer when provided.";
+    return std::nullopt;
+  }
+  auto require_bool = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_boolean(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a boolean when provided.";
+      return false;
+    }
+    return true;
+  };
+  if (!require_bool(tls_authenticate, "tls_authenticate")
+      || !require_bool(tls_enable, "tls_enable")
+      || !require_bool(tls_require, "tls_require")
+      || !require_bool(tls_verify_peer, "tls_verify_peer")) {
+    return std::nullopt;
+  }
 
   ConsoleConsoleRequestSpec spec{};
   if (director && json_is_string(director)) {
@@ -8351,6 +8512,37 @@ std::optional<ConsoleConsoleRequestSpec> ParseConsoleConsoleRequest(
   }
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
+  }
+  if (history_file && json_is_string(history_file)) {
+    spec.history_file = std::string{json_string_value(history_file)};
+  }
+  if (history_length && json_is_integer(history_length)) {
+    const auto value = json_integer_value(history_length);
+    if (value < 0) {
+      error = "field 'history_length' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.history_length = static_cast<uint32_t>(value);
+  }
+  if (heartbeat_interval && json_is_integer(heartbeat_interval)) {
+    const auto value = json_integer_value(heartbeat_interval);
+    if (value < 0) {
+      error = "field 'heartbeat_interval' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.heartbeat_interval = static_cast<uint64_t>(value);
+  }
+  if (tls_authenticate && json_is_boolean(tls_authenticate)) {
+    spec.tls_authenticate = json_is_true(tls_authenticate);
+  }
+  if (tls_enable && json_is_boolean(tls_enable)) {
+    spec.tls_enable = json_is_true(tls_enable);
+  }
+  if (tls_require && json_is_boolean(tls_require)) {
+    spec.tls_require = json_is_true(tls_require);
+  }
+  if (tls_verify_peer && json_is_boolean(tls_verify_peer)) {
+    spec.tls_verify_peer = json_is_true(tls_verify_peer);
   }
   return spec;
 }
@@ -8370,6 +8562,11 @@ std::optional<ConsoleDirectorRequestSpec> ParseConsoleDirectorRequest(
   auto* port = json_object_get(root.get(), "port");
   auto* password = json_object_get(root.get(), "password");
   auto* description = json_object_get(root.get(), "description");
+  auto* heartbeat_interval = json_object_get(root.get(), "heartbeat_interval");
+  auto* tls_authenticate = json_object_get(root.get(), "tls_authenticate");
+  auto* tls_enable = json_object_get(root.get(), "tls_enable");
+  auto* tls_require = json_object_get(root.get(), "tls_require");
+  auto* tls_verify_peer = json_object_get(root.get(), "tls_verify_peer");
 
   if (address && !json_is_null(address) && !json_is_string(address)) {
     error = "field 'address' must be a string when provided.";
@@ -8395,6 +8592,25 @@ std::optional<ConsoleDirectorRequestSpec> ParseConsoleDirectorRequest(
     error = "field 'description' must be a string when provided.";
     return std::nullopt;
   }
+  if (heartbeat_interval && !json_is_null(heartbeat_interval)
+      && !json_is_integer(heartbeat_interval)) {
+    error = "field 'heartbeat_interval' must be an integer when provided.";
+    return std::nullopt;
+  }
+  auto require_bool = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_boolean(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a boolean when provided.";
+      return false;
+    }
+    return true;
+  };
+  if (!require_bool(tls_authenticate, "tls_authenticate")
+      || !require_bool(tls_enable, "tls_enable")
+      || !require_bool(tls_require, "tls_require")
+      || !require_bool(tls_verify_peer, "tls_verify_peer")) {
+    return std::nullopt;
+  }
 
   ConsoleDirectorRequestSpec spec{};
   if (address && json_is_string(address)) {
@@ -8408,6 +8624,26 @@ std::optional<ConsoleDirectorRequestSpec> ParseConsoleDirectorRequest(
   }
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
+  }
+  if (heartbeat_interval && json_is_integer(heartbeat_interval)) {
+    const auto value = json_integer_value(heartbeat_interval);
+    if (value < 0) {
+      error = "field 'heartbeat_interval' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.heartbeat_interval = static_cast<uint64_t>(value);
+  }
+  if (tls_authenticate && json_is_boolean(tls_authenticate)) {
+    spec.tls_authenticate = json_is_true(tls_authenticate);
+  }
+  if (tls_enable && json_is_boolean(tls_enable)) {
+    spec.tls_enable = json_is_true(tls_enable);
+  }
+  if (tls_require && json_is_boolean(tls_require)) {
+    spec.tls_require = json_is_true(tls_require);
+  }
+  if (tls_verify_peer && json_is_boolean(tls_verify_peer)) {
+    spec.tls_verify_peer = json_is_true(tls_verify_peer);
   }
   return spec;
 }

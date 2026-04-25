@@ -1275,10 +1275,18 @@ std::string BuildDirectorConsoleResourceContent(
   return content.str();
 }
 
-std::string BuildConsoleConsoleResourceContent(std::string_view console_name,
-                                               std::string_view director_name,
-                                               std::string_view password,
-                                               std::string_view description)
+std::string BuildConsoleConsoleResourceContent(
+    std::string_view console_name,
+    std::string_view director_name,
+    std::string_view password,
+    std::string_view description,
+    const std::optional<std::string>& history_file = std::nullopt,
+    const std::optional<uint32_t>& history_length = std::nullopt,
+    const std::optional<uint64_t>& heartbeat_interval = std::nullopt,
+    const std::optional<bool>& tls_authenticate = std::nullopt,
+    const std::optional<bool>& tls_enable = std::nullopt,
+    const std::optional<bool>& tls_require = std::nullopt,
+    const std::optional<bool>& tls_verify_peer = std::nullopt)
 {
   std::ostringstream content;
   content << "Console {\n"
@@ -1286,8 +1294,15 @@ std::string BuildConsoleConsoleResourceContent(std::string_view console_name,
           << "  Description = " << QuoteBareosString(description) << "\n"
           << "  Password = " << QuoteBareosString(password) << "\n"
           << "  Director = " << RenderBareosDirectiveValue(director_name)
-          << "\n"
-          << "}\n";
+          << "\n";
+  AppendQuotedDirective(content, "HistoryFile", history_file);
+  AppendIntegerDirective(content, "HistoryLength", history_length);
+  AppendIntegerDirective(content, "HeartbeatInterval", heartbeat_interval);
+  AppendBoolDirective(content, "TlsAuthenticate", tls_authenticate);
+  AppendBoolDirective(content, "TlsEnable", tls_enable);
+  AppendBoolDirective(content, "TlsRequire", tls_require);
+  AppendBoolDirective(content, "TlsVerifyPeer", tls_verify_peer);
+  content << "}\n";
   return content.str();
 }
 
@@ -1296,7 +1311,12 @@ std::string BuildConsoleDirectorResourceContent(
     std::string_view address,
     const std::optional<uint16_t>& port,
     const std::optional<std::string>& password,
-    std::string_view description)
+    std::string_view description,
+    const std::optional<uint64_t>& heartbeat_interval = std::nullopt,
+    const std::optional<bool>& tls_authenticate = std::nullopt,
+    const std::optional<bool>& tls_enable = std::nullopt,
+    const std::optional<bool>& tls_require = std::nullopt,
+    const std::optional<bool>& tls_verify_peer = std::nullopt)
 {
   std::ostringstream content;
   content << "Director {\n"
@@ -1307,6 +1327,11 @@ std::string BuildConsoleDirectorResourceContent(
   if (password && !password->empty()) {
     content << "  Password = " << QuoteBareosString(*password) << "\n";
   }
+  AppendIntegerDirective(content, "HeartbeatInterval", heartbeat_interval);
+  AppendBoolDirective(content, "TlsAuthenticate", tls_authenticate);
+  AppendBoolDirective(content, "TlsEnable", tls_enable);
+  AppendBoolDirective(content, "TlsRequire", tls_require);
+  AppendBoolDirective(content, "TlsVerifyPeer", tls_verify_peer);
   content << "}\n";
   return content.str();
 }
@@ -2270,6 +2295,13 @@ struct ConsoleConsoleWriteContext {
   std::optional<std::string> director{};
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<std::string> history_file{};
+  std::optional<uint32_t> history_length{};
+  std::optional<uint64_t> heartbeat_interval{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
   std::vector<std::string> director_resources{};
   std::vector<std::string> console_resources_before{};
   std::vector<std::string> console_resources_after{};
@@ -2303,6 +2335,11 @@ struct ConsoleDirectorWriteContext {
   std::optional<uint16_t> port{};
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<uint64_t> heartbeat_interval{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
   std::vector<std::string> director_resources_before{};
   std::vector<std::string> director_resources_after{};
   std::vector<std::string> console_resources{};
@@ -3162,6 +3199,29 @@ OperationResult<ConsoleConsoleWriteContext> LoadConsoleConsoleWriteContext(
       context.director
           = std::string{configured_console->director->resource_name_};
     }
+    if (configured_console->history_file
+        && configured_console->history_file[0] != '\0') {
+      context.history_file = std::string{configured_console->history_file};
+    }
+    if (HasMemberSource(*configured_console, {"HistoryLength"})) {
+      context.history_length = configured_console->history_length;
+    }
+    if (HasMemberSource(*configured_console, {"HeartbeatInterval"})) {
+      context.heartbeat_interval
+          = static_cast<uint64_t>(configured_console->heartbeat_interval);
+    }
+    if (HasMemberSource(*configured_console, {"TlsAuthenticate"})) {
+      context.tls_authenticate = configured_console->authenticate_;
+    }
+    if (HasMemberSource(*configured_console, {"TlsEnable"})) {
+      context.tls_enable = configured_console->tls_enable_;
+    }
+    if (HasMemberSource(*configured_console, {"TlsRequire"})) {
+      context.tls_require = configured_console->tls_require_;
+    }
+    if (HasMemberSource(*configured_console, {"TlsVerifyPeer"})) {
+      context.tls_verify_peer = configured_console->tls_cert_.verify_peer_;
+    }
 
     auto unsupported_field_error
         = [&](std::initializer_list<const char*> names,
@@ -3173,13 +3233,6 @@ OperationResult<ConsoleConsoleWriteContext> LoadConsoleConsoleWriteContext(
     };
     for (const auto& unsupported :
          {unsupported_field_error({"RcFile"}, "RcFile"),
-          unsupported_field_error({"HistoryFile"}, "HistoryFile"),
-          unsupported_field_error({"HistoryLength"}, "HistoryLength"),
-          unsupported_field_error({"HeartbeatInterval"}, "HeartbeatInterval"),
-          unsupported_field_error({"TlsAuthenticate"}, "TlsAuthenticate"),
-          unsupported_field_error({"TlsEnable"}, "TlsEnable"),
-          unsupported_field_error({"TlsRequire"}, "TlsRequire"),
-          unsupported_field_error({"TlsVerifyPeer"}, "TlsVerifyPeer"),
           unsupported_field_error({"TlsCipherList"}, "TlsCipherList"),
           unsupported_field_error({"TlsCipherSuites"}, "TlsCipherSuites"),
           unsupported_field_error({"TlsDhFile"}, "TlsDhFile"),
@@ -3274,6 +3327,22 @@ OperationResult<ConsoleDirectorWriteContext> LoadConsoleDirectorWriteContext(
         && configured_director->description_[0] != '\0') {
       context.description = std::string{configured_director->description_};
     }
+    if (HasMemberSource(*configured_director, {"HeartbeatInterval"})) {
+      context.heartbeat_interval
+          = static_cast<uint64_t>(configured_director->heartbeat_interval);
+    }
+    if (HasMemberSource(*configured_director, {"TlsAuthenticate"})) {
+      context.tls_authenticate = configured_director->authenticate_;
+    }
+    if (HasMemberSource(*configured_director, {"TlsEnable"})) {
+      context.tls_enable = configured_director->tls_enable_;
+    }
+    if (HasMemberSource(*configured_director, {"TlsRequire"})) {
+      context.tls_require = configured_director->tls_require_;
+    }
+    if (HasMemberSource(*configured_director, {"TlsVerifyPeer"})) {
+      context.tls_verify_peer = configured_director->tls_cert_.verify_peer_;
+    }
 
     auto unsupported_field_error
         = [&](std::initializer_list<const char*> names,
@@ -3286,9 +3355,8 @@ OperationResult<ConsoleDirectorWriteContext> LoadConsoleDirectorWriteContext(
              + "' for managed updates.";
     };
     for (const auto* field :
-         {"HeartbeatInterval", "TlsAuthenticate", "TlsEnable", "TlsRequire",
-          "TlsVerifyPeer", "TlsCipherList", "TlsCipherSuites", "TlsDhFile",
-          "TlsProtocol", "TlsCaCertificateFile", "TlsCaCertificateDir",
+         {"TlsCipherList", "TlsCipherSuites", "TlsDhFile", "TlsProtocol",
+          "TlsCaCertificateFile", "TlsCaCertificateDir",
           "TlsCertificateRevocationList", "TlsCertificate", "TlsKey",
           "TlsAllowedCn"}) {
       auto error = unsupported_field_error({field}, field);
@@ -8031,8 +8099,28 @@ ServiceState::UpsertConsoleConsoleResource(
                                : context.value->description.value_or(
                                      DefaultConsoleConsoleDescription(
                                          console_name, console_config_name));
+  const auto history_file
+      = spec.history_file ? spec.history_file : context.value->history_file;
+  const auto history_length = spec.history_length
+                                  ? spec.history_length
+                                  : context.value->history_length;
+  const auto heartbeat_interval = spec.heartbeat_interval
+                                      ? spec.heartbeat_interval
+                                      : context.value->heartbeat_interval;
+  const auto tls_authenticate = spec.tls_authenticate
+                                    ? spec.tls_authenticate
+                                    : context.value->tls_authenticate;
+  const auto tls_enable
+      = spec.tls_enable ? spec.tls_enable : context.value->tls_enable;
+  const auto tls_require
+      = spec.tls_require ? spec.tls_require : context.value->tls_require;
+  const auto tls_verify_peer = spec.tls_verify_peer
+                                   ? spec.tls_verify_peer
+                                   : context.value->tls_verify_peer;
   const auto managed_resource = BuildConsoleConsoleResourceContent(
-      console_name, *director, *password, description);
+      console_name, *director, *password, description, history_file,
+      history_length, heartbeat_interval, tls_authenticate, tls_enable,
+      tls_require, tls_verify_peer);
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
@@ -8166,8 +8254,22 @@ ServiceState::UpsertConsoleDirectorResource(
                                : context.value->description.value_or(
                                      DefaultConsoleDirectorDescription(
                                          director_name, console_config_name));
+  const auto heartbeat_interval = spec.heartbeat_interval
+                                      ? spec.heartbeat_interval
+                                      : context.value->heartbeat_interval;
+  const auto tls_authenticate = spec.tls_authenticate
+                                    ? spec.tls_authenticate
+                                    : context.value->tls_authenticate;
+  const auto tls_enable
+      = spec.tls_enable ? spec.tls_enable : context.value->tls_enable;
+  const auto tls_require
+      = spec.tls_require ? spec.tls_require : context.value->tls_require;
+  const auto tls_verify_peer = spec.tls_verify_peer
+                                   ? spec.tls_verify_peer
+                                   : context.value->tls_verify_peer;
   const auto managed_resource = BuildConsoleDirectorResourceContent(
-      director_name, *address, port, password, description);
+      director_name, *address, port, password, description, heartbeat_interval,
+      tls_authenticate, tls_enable, tls_require, tls_verify_peer);
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }

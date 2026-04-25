@@ -580,7 +580,14 @@ TEST(BconfigService, UpsertsConsoleComponentConsoleResources)
       "prod", "admin", "managed-console",
       {.director = std::string{"bareos-dir"},
        .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
-       .description = std::string{"Managed bconsole resource"}});
+       .description = std::string{"Managed bconsole resource"},
+       .history_file = std::string{"/var/lib/bareos/managed.history"},
+       .history_length = 123,
+       .heartbeat_interval = 33,
+       .tls_authenticate = false,
+       .tls_enable = true,
+       .tls_require = false,
+       .tls_verify_peer = true});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "admin");
 
@@ -592,6 +599,15 @@ TEST(BconfigService, UpsertsConsoleComponentConsoleResources)
       std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed bconsole resource\""),
             std::string::npos);
+  EXPECT_NE(
+      created_text.find("HistoryFile = \"/var/lib/bareos/managed.history\""),
+      std::string::npos);
+  EXPECT_NE(created_text.find("HistoryLength = 123"), std::string::npos);
+  EXPECT_NE(created_text.find("HeartbeatInterval = 33"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsAuthenticate = no"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsRequire = no"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsVerifyPeer = yes"), std::string::npos);
 
   auto updated = state.UpsertConsoleConsoleResource(
       "prod", "admin", "admin",
@@ -604,6 +620,129 @@ TEST(BconfigService, UpsertsConsoleComponentConsoleResources)
   EXPECT_NE(updated_text.find("Password = "), std::string::npos);
   EXPECT_NE(updated_text.find("Director = bareos-dir"), std::string::npos);
   EXPECT_NE(updated_text.find("Name = \"managed-console\""), std::string::npos);
+}
+
+TEST(BconfigService, UpsertsConsoleComponentConsoleHistoryFields)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  WriteTextFile(source_root.path() / "bconsole.conf",
+                "#\n"
+                "# Bareos User Agent (or Console) Configuration File\n"
+                "#\n"
+                "\n"
+                "Console {\n"
+                "  Name = admin\n"
+                "  Description = \"Imported Console\"\n"
+                "  Password = \"secret\"\n"
+                "  Director = bareos-dir\n"
+                "  HistoryFile = \"/var/lib/bareos/admin.history\"\n"
+                "  HistoryLength = 250\n"
+                "  HeartbeatInterval = 45\n"
+                "}\n"
+                "\n"
+                "Director {\n"
+                "  Name = bareos-dir\n"
+                "  Description = \"Imported Director\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertConsoleConsoleResource(
+      "prod", "admin", "admin",
+      {.description = std::string{"Updated imported console"},
+       .history_file = std::string{"/var/lib/bareos/admin.updated.history"},
+       .history_length = 500,
+       .heartbeat_interval = 90});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(updated.value->path / "bconsole.conf");
+  EXPECT_NE(updated_text.find("Description = \"Updated imported console\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find(
+                "HistoryFile = \"/var/lib/bareos/admin.updated.history\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("HistoryLength = 500"), std::string::npos);
+  EXPECT_NE(updated_text.find("HeartbeatInterval = 90"), std::string::npos);
+}
+
+TEST(BconfigService, UpsertsConsoleComponentConsoleTlsBooleans)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  WriteTextFile(source_root.path() / "bconsole.conf",
+                "#\n"
+                "# Bareos User Agent (or Console) Configuration File\n"
+                "#\n"
+                "\n"
+                "Console {\n"
+                "  Name = admin\n"
+                "  Description = \"Imported Console\"\n"
+                "  Password = \"secret\"\n"
+                "  Director = bareos-dir\n"
+                "  TlsAuthenticate = yes\n"
+                "  TlsEnable = no\n"
+                "  TlsRequire = yes\n"
+                "  TlsVerifyPeer = no\n"
+                "}\n"
+                "\n"
+                "Director {\n"
+                "  Name = bareos-dir\n"
+                "  Description = \"Imported Director\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertConsoleConsoleResource(
+      "prod", "admin", "admin",
+      {.description = std::string{"Updated imported console"},
+       .tls_authenticate = false,
+       .tls_enable = true,
+       .tls_require = false,
+       .tls_verify_peer = true});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(updated.value->path / "bconsole.conf");
+  EXPECT_NE(updated_text.find("Description = \"Updated imported console\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAuthenticate = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsRequire = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsVerifyPeer = yes"), std::string::npos);
 }
 
 TEST(BconfigService,
@@ -760,7 +899,12 @@ TEST(BconfigService, UpsertsConsoleComponentDirectorResources)
       {.address = std::string{"localhost"},
        .port = 9101,
        .password = std::string{"managed_password"},
-       .description = std::string{"Managed bconsole director"}});
+       .description = std::string{"Managed bconsole director"},
+       .heartbeat_interval = 25,
+       .tls_authenticate = false,
+       .tls_enable = true,
+       .tls_require = false,
+       .tls_verify_peer = true});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "admin");
 
@@ -772,6 +916,11 @@ TEST(BconfigService, UpsertsConsoleComponentDirectorResources)
             std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed bconsole director\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("HeartbeatInterval = 25"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsAuthenticate = no"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsRequire = no"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsVerifyPeer = yes"), std::string::npos);
 
   auto updated = state.UpsertConsoleDirectorResource(
       "prod", "admin", "bareos-dir",
@@ -787,6 +936,127 @@ TEST(BconfigService, UpsertsConsoleComponentDirectorResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("Name = \"managed-dir\""), std::string::npos);
   EXPECT_NE(updated_text.find("Name = \"admin\""), std::string::npos);
+}
+
+TEST(BconfigService, UpsertsConsoleComponentDirectorHeartbeatInterval)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  WriteTextFile(source_root.path() / "bconsole.conf",
+                "#\n"
+                "# Bareos User Agent (or Console) Configuration File\n"
+                "#\n"
+                "\n"
+                "Console {\n"
+                "  Name = admin\n"
+                "  Description = \"Imported Console\"\n"
+                "  Password = \"secret\"\n"
+                "  Director = bareos-dir\n"
+                "}\n"
+                "\n"
+                "Director {\n"
+                "  Name = bareos-dir\n"
+                "  Description = \"Imported Director\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "  HeartbeatInterval = 45\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertConsoleDirectorResource(
+      "prod", "admin", "bareos-dir",
+      {.address = std::string{"director.example.test"},
+       .description = std::string{"Updated imported director"},
+       .heartbeat_interval = 90});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(updated.value->path / "bconsole.conf");
+  EXPECT_NE(updated_text.find("Address = director.example.test"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("HeartbeatInterval = 90"), std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated imported director\""),
+            std::string::npos);
+}
+
+TEST(BconfigService, UpsertsConsoleComponentDirectorTlsBooleans)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  WriteTextFile(source_root.path() / "bconsole.conf",
+                "#\n"
+                "# Bareos User Agent (or Console) Configuration File\n"
+                "#\n"
+                "\n"
+                "Console {\n"
+                "  Name = admin\n"
+                "  Description = \"Imported Console\"\n"
+                "  Password = \"secret\"\n"
+                "  Director = bareos-dir\n"
+                "}\n"
+                "\n"
+                "Director {\n"
+                "  Name = bareos-dir\n"
+                "  Description = \"Imported Director\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "  TlsAuthenticate = yes\n"
+                "  TlsEnable = no\n"
+                "  TlsRequire = yes\n"
+                "  TlsVerifyPeer = no\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertConsoleDirectorResource(
+      "prod", "admin", "bareos-dir",
+      {.address = std::string{"director.example.test"},
+       .description = std::string{"Updated imported director"},
+       .tls_authenticate = false,
+       .tls_enable = true,
+       .tls_require = false,
+       .tls_verify_peer = true});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(updated.value->path / "bconsole.conf");
+  EXPECT_NE(updated_text.find("Address = director.example.test"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated imported director\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAuthenticate = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsRequire = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsVerifyPeer = yes"), std::string::npos);
 }
 
 TEST(BconfigService,

@@ -250,6 +250,13 @@ struct ConsoleConsoleResourceSpec {
   std::optional<std::string> director{};
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<std::string> history_file{};
+  std::optional<uint32_t> history_length{};
+  std::optional<uint64_t> heartbeat_interval{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
 };
 
 struct ConsoleDirectorResourceSpec {
@@ -257,6 +264,11 @@ struct ConsoleDirectorResourceSpec {
   std::optional<uint16_t> port{};
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<uint64_t> heartbeat_interval{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
 };
 
 struct DirectorUserResourceSpec {
