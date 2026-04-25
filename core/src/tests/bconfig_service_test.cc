@@ -7633,6 +7633,126 @@ TEST(BconfigService, UpsertsDirectorStorageResourcesInSharedFiles)
   EXPECT_NE(shared_text.find("Name = File2"), std::string::npos);
 }
 
+TEST(BconfigService, UpsertsDirectorStorageResourcesWithMultipleDevices)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+  WriteTextFile(source_root.path() / "bareos-dir.d/storage/MultiDevice.conf",
+                "Storage {\n"
+                "  Name = \"MultiDevice\"\n"
+                "  Description = \"Imported storage\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "  Device = FileStorage\n"
+                "  Device = FileStorage2\n"
+                "  Media Type = File\n"
+                "  Port = 9103\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertDirectorStorageResource(
+      "prod", "bareos-dir", "MultiDevice",
+      {.address = std::string{"storage.example.com"},
+       .description = std::string{"Updated storage"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(
+      updated.value->path / "bareos-dir.d/storage/MultiDevice.conf");
+  EXPECT_NE(updated_text.find("Address = storage.example.com"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated storage\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Device = FileStorage"), std::string::npos);
+  EXPECT_NE(updated_text.find("Device = FileStorage2"), std::string::npos);
+}
+
+TEST(BconfigService, UpsertsSharedDirectorStorageResourcesWithMultipleDevices)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+  WriteTextFile(source_root.path() / "bareos-dir.d/storage/shared-multi.conf",
+                "Storage {\n"
+                "  Name = \"MultiDevice\"\n"
+                "  Description = \"Imported storage\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "  Device = FileStorage\n"
+                "  Device = FileStorage2\n"
+                "  Media Type = File\n"
+                "  Port = 9103\n"
+                "}\n"
+                "\n"
+                "Storage {\n"
+                "  Name = \"Other\"\n"
+                "  Address = other.example.test\n"
+                "  Password = \"other-secret\"\n"
+                "  Device = OtherDevice\n"
+                "  Media Type = File\n"
+                "  Port = 9103\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertDirectorStorageResource(
+      "prod", "bareos-dir", "MultiDevice",
+      {.address = std::string{"storage.example.com"},
+       .description = std::string{"Updated storage"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(
+      updated.value->path / "bareos-dir.d/storage/shared-multi.conf");
+  EXPECT_NE(updated_text.find("Address = storage.example.com"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated storage\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Device = FileStorage"), std::string::npos);
+  EXPECT_NE(updated_text.find("Device = FileStorage2"), std::string::npos);
+  EXPECT_NE(updated_text.find("Name = \"Other\""), std::string::npos);
+}
+
 TEST(BconfigService, DeletesDirectorStorageResources)
 {
   ScopedDirectory source_root{MakeTempPath()};

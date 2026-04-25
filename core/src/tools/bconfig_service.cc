@@ -750,9 +750,17 @@ void AppendBareosDirective(std::ostringstream& content,
 void AppendQuotedDirective(std::ostringstream& content,
                            std::string_view name,
                            const std::optional<std::string>& value);
+void AppendRepeatedBareosDirective(std::ostringstream& content,
+                                   std::string_view name,
+                                   const std::vector<std::string>& values);
 void AppendRepeatedQuotedDirective(std::ostringstream& content,
                                    std::string_view name,
                                    const std::vector<std::string>& values);
+OperationResult<std::vector<std::string>> ExtractNamedTopLevelDirectiveValues(
+    const std::filesystem::path& file_path,
+    std::string_view resource_keyword,
+    std::string_view resource_name,
+    const std::set<std::string>& directive_names);
 
 std::string BuildClientDirectorStubContent(
     std::string_view director_name,
@@ -1056,22 +1064,23 @@ std::string BuildDirectorClientResourceContent(std::string_view client_name,
   return content.str();
 }
 
-std::string BuildDirectorStorageResourceContent(std::string_view storage_name,
-                                                std::string_view address,
-                                                std::string_view password,
-                                                std::string_view device,
-                                                std::string_view media_type,
-                                                uint16_t port,
-                                                std::string_view description)
+std::string BuildDirectorStorageResourceContent(
+    std::string_view storage_name,
+    std::string_view address,
+    std::string_view password,
+    const std::vector<std::string>& devices,
+    std::string_view media_type,
+    uint16_t port,
+    std::string_view description)
 {
   std::ostringstream content;
   content << "Storage {\n"
           << "  Name = " << QuoteBareosString(storage_name) << "\n"
           << "  Description = " << QuoteBareosString(description) << "\n"
           << "  Address = " << address << "\n"
-          << "  Password = " << QuoteBareosString(password) << "\n"
-          << "  Device = " << device << "\n"
-          << "  Media Type = " << media_type << "\n"
+          << "  Password = " << QuoteBareosString(password) << "\n";
+  AppendRepeatedBareosDirective(content, "Device", devices);
+  content << "  Media Type = " << media_type << "\n"
           << "  Port = " << port << "\n"
           << "}\n";
   return content.str();
@@ -2427,6 +2436,7 @@ struct DirectorStorageWriteContext {
   std::optional<uint16_t> port{};
   std::optional<std::string> password{};
   std::optional<std::string> device{};
+  std::vector<std::string> devices{};
   std::optional<std::string> media_type{};
   std::optional<std::string> description{};
   bool exists{false};
@@ -2850,16 +2860,6 @@ OperationResult<DirectorStorageWriteContext> LoadDirectorStorageWriteContext(
     if (storage->media_type && storage->media_type[0] != '\0') {
       context.media_type = std::string{storage->media_type};
     }
-    if (storage->devices.size() != 1) {
-      return {.error = "director storage '" + std::string{storage_name}
-                       + "' must have exactly one Device to be managed."};
-    }
-    if (storage->devices.front().name.empty()) {
-      return {.error = "director storage '" + std::string{storage_name}
-                       + "' has an empty Device value."};
-    }
-    context.device = storage->devices.front().name;
-
     auto rendered_password = RenderPasswordForConfig(
         storage->password_, "director-side storage password for '"
                                 + std::string{storage_name} + "'");
@@ -2875,6 +2875,21 @@ OperationResult<DirectorStorageWriteContext> LoadDirectorStorageWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
+    static const std::set<std::string> kDeviceDirectives{"Device"};
+    auto raw_devices = ExtractNamedTopLevelDirectiveValues(
+        context.file_path, "Storage", storage_name, kDeviceDirectives);
+    if (!raw_devices) { return {.error = raw_devices.error}; }
+    if (!raw_devices.value->empty()) {
+      context.devices = *raw_devices.value;
+      context.device = raw_devices.value->front();
+    } else if (!storage->devices.empty()) {
+      if (storage->devices.front().name.empty()) {
+        return {.error = "director storage '" + std::string{storage_name}
+                         + "' has an empty Device value."};
+      }
+      context.device = storage->devices.front().name;
+      context.devices = std::vector<std::string>{storage->devices.front().name};
+    }
     return {.value = std::move(context)};
   }
 
@@ -8439,18 +8454,29 @@ ServiceState::UpsertDirectorStorageResource(
               "storage resource."};
   }
 
-  const auto device
-      = spec.device ? *spec.device
-                    : context.value->device.value_or(std::string{storage_name});
-  if (device.empty()) {
+  const auto devices = [&]() {
+    if (spec.device) { return std::vector<std::string>{*spec.device}; }
+    if (!context.value->devices.empty()) { return context.value->devices; }
+    if (context.value->device) {
+      return std::vector<std::string>{*context.value->device};
+    }
+    return std::vector<std::string>{std::string{storage_name}};
+  }();
+  if (devices.empty()) {
     return {.error
             = "field 'device' is required when creating a director "
               "storage resource."};
   }
-  if (!IsSafeBareosToken(device)) {
-    return {.error
-            = "director storage device must be a bare Bareos token "
-              "without whitespace or quotes."};
+  for (const auto& device : devices) {
+    if (device.empty()) {
+      return {.error = "director storage '" + std::string{storage_name}
+                       + "' has an empty Device value."};
+    }
+    if (!IsSafeBareosToken(device)) {
+      return {.error
+              = "director storage device must be a bare Bareos token "
+                "without whitespace or quotes."};
+    }
   }
 
   const auto media_type
@@ -8477,8 +8503,14 @@ ServiceState::UpsertDirectorStorageResource(
                                : context.value->description.value_or(
                                      DefaultDirectorStorageDescription(
                                          storage_name, director_name));
+  if (devices.size() != 1 && (spec.archive_device || spec.device_type)) {
+    return {
+        .error
+        = "automatic storage-daemon sync for director storage archive_device "
+          "or device_type requires exactly one Device."};
+  }
   const auto content = BuildDirectorStorageResourceContent(
-      storage_name, *address, *password, device, *media_type, port,
+      storage_name, *address, *password, devices, *media_type, port,
       description);
 
   const auto resource_directory
@@ -8538,23 +8570,26 @@ ServiceState::UpsertDirectorStorageResource(
     }
   }
 
-  auto synced_storage = SyncStorageDaemonConfig(
-      *this, deployment_id, director_name, storage_name, *context.value,
-      *password, device, *media_type, spec.archive_device, spec.device_type);
-  if (!synced_storage) {
-    DebugLog("director storage update for '" + std::string{storage_name}
-             + "' failed storage-daemon synchronization and will be rolled "
-               "back");
-    std::optional<std::string> rollback_error;
-    if (file_existed) {
-      rollback_error
-          = RestoreClientStubFile(context.value->file_path, original_content);
-    } else {
-      rollback_error = CleanupCreatedFile(context.value->file_path,
-                                          director_config.value->path);
+  if (devices.size() == 1) {
+    auto synced_storage = SyncStorageDaemonConfig(
+        *this, deployment_id, director_name, storage_name, *context.value,
+        *password, devices.front(), *media_type, spec.archive_device,
+        spec.device_type);
+    if (!synced_storage) {
+      DebugLog("director storage update for '" + std::string{storage_name}
+               + "' failed storage-daemon synchronization and will be rolled "
+                 "back");
+      std::optional<std::string> rollback_error;
+      if (file_existed) {
+        rollback_error
+            = RestoreClientStubFile(context.value->file_path, original_content);
+      } else {
+        rollback_error = CleanupCreatedFile(context.value->file_path,
+                                            director_config.value->path);
+      }
+      if (rollback_error) { return {.error = *rollback_error}; }
+      return {.error = synced_storage.error};
     }
-    if (rollback_error) { return {.error = *rollback_error}; }
-    return {.error = synced_storage.error};
   }
 
   DebugLog("updated director storage resource '" + std::string{storage_name}
