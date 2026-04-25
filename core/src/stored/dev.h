@@ -440,6 +440,7 @@ public:
   // Tape specific operations.
   virtual bool offline() { return true; }
   virtual bool weof(int) { return true; }
+  virtual bool weof_immediate(int num) { return weof(num); }
   virtual bool fsf(int) { return true; }
   virtual bool bsf(int) { return false; }
   virtual bool fsr(int) { return false; }

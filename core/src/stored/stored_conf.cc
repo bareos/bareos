@@ -200,6 +200,7 @@ static const ResourceItem dev_items[] = {
   { "UnmountCommand", CFG_TYPE_STRNAME, ITEM(res_dev, unmount_command), {}},
   { "LabelType", CFG_TYPE_LABEL, ITEM(res_dev, label_type), {config::DeprecatedSince{23, 0, 0}}},
   { "NoRewindOnClose", CFG_TYPE_BOOL, ITEM(res_dev, norewindonclose), {config::DefaultValue{"true"}}},
+  { "MaximumFileSizeImmediateFilemark", CFG_TYPE_BOOL, ITEM(res_dev, max_file_size_immediate_filemark), {config::DefaultValue{"true"}, config::Description{"If enabled, filemarks written when MaximumFileSize is reached use the tape driver's immediate/non-blocking mode when supported. Set to no to keep the previous blocking behavior."}}},
   { "DriveTapeAlertEnabled", CFG_TYPE_BOOL, ITEM(res_dev, drive_tapealert_enabled), {}},
   { "DriveCryptoEnabled", CFG_TYPE_BOOL, ITEM(res_dev, drive_crypto_enabled), {}},
   { "QueryCryptoStatus", CFG_TYPE_BOOL, ITEM(res_dev, query_crypto_status), {}},

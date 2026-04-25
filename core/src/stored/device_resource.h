@@ -52,6 +52,8 @@ class DeviceResource : public BareosResource {
       IODirection::READ_WRITE}; /**< Allowed access mode(s) for reservation */
   bool autoselect{true};        /**< Automatically select from AutoChanger */
   bool norewindonclose{true};   /**< Don't rewind tape drive on close */
+  bool max_file_size_immediate_filemark{
+      true}; /**< Use immediate mode for MaximumFileSize rollover filemarks */
   bool drive_tapealert_enabled{false}; /**< Enable Tape Alert monitoring */
   bool drive_crypto_enabled{false};    /**< Enable hardware crypto */
   bool query_crypto_status{false};     /**< Query device for crypto status */

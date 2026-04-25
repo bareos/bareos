@@ -32,6 +32,16 @@
 
 namespace storagedaemon {
 
+inline bool UseImmediateWriteFilemarkOperation(bool immediate_requested)
+{
+#if defined(MTWEOFI)
+  return immediate_requested;
+#else
+  static_cast<void>(immediate_requested);
+  return false;
+#endif
+}
+
 class generic_tape_device : public Device {
  public:
   generic_tape_device() = default;
@@ -47,6 +57,7 @@ class generic_tape_device : public Device {
   virtual void SetAteot() override;
   virtual bool offline() override;
   virtual bool weof(int num) override;
+  virtual bool weof_immediate(int num) override;
   virtual bool fsf(int num) override;
   virtual bool bsf(int num) override;
   virtual bool fsr(int num) override;
@@ -75,6 +86,7 @@ class generic_tape_device : public Device {
   virtual bool d_truncate(DeviceControlRecord* dcr) override;
 
  private:
+  bool DoWeof(int num, bool immediate);
   bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout);
   void OsClrError();
   void HandleError(int func);
