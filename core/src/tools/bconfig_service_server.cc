@@ -125,6 +125,7 @@ struct ConsoleConsoleRequestSpec {
   std::optional<std::string> director{};
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<std::string> rc_file{};
   std::optional<std::string> history_file{};
   std::optional<uint32_t> history_length{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -2343,11 +2344,15 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="console-console-password" name="password"
                placeholder="cleartext or [md5]hash">
 
-        <label for="console-console-description">Description</label>
-        <input id="console-console-description" name="description"
-               placeholder="Managed bconsole resource">
+         <label for="console-console-description">Description</label>
+         <input id="console-console-description" name="description"
+                placeholder="Managed bconsole resource">
 
-        <label for="console-console-history-file">History file</label>
+         <label for="console-console-rc-file">RC file</label>
+         <input id="console-console-rc-file" name="rc_file"
+                placeholder="~/.bconsolerc">
+
+         <label for="console-console-history-file">History file</label>
         <input id="console-console-history-file" name="history_file"
                placeholder="~/.bareos_history">
 
@@ -4757,6 +4762,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           director: String(form.get('director') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
+          rc_file: String(form.get('rc_file') ?? '').trim(),
           history_file: String(form.get('history_file') ?? '').trim(),
           tls_authenticate: String(form.get('tls_authenticate') ?? '').trim(),
           tls_enable: String(form.get('tls_enable') ?? '').trim(),
@@ -4776,6 +4782,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.director) { delete payload.director; }
         if (!payload.password) { delete payload.password; }
         if (!payload.description) { delete payload.description; }
+        if (!payload.rc_file) { delete payload.rc_file; }
         if (!payload.history_file) { delete payload.history_file; }
         if (!payload.tls_cipher_list) { delete payload.tls_cipher_list; }
         if (!payload.tls_cipher_suites) { delete payload.tls_cipher_suites; }
@@ -6888,6 +6895,7 @@ http::response<http::string_body> HandleDeploymentConsoleConsolePutRequest(
       .director = spec->director,
       .password = spec->password,
       .description = spec->description,
+      .rc_file = spec->rc_file,
       .history_file = spec->history_file,
       .history_length = spec->history_length,
       .heartbeat_interval = spec->heartbeat_interval,
@@ -6895,6 +6903,16 @@ http::response<http::string_body> HandleDeploymentConsoleConsolePutRequest(
       .tls_enable = spec->tls_enable,
       .tls_require = spec->tls_require,
       .tls_verify_peer = spec->tls_verify_peer,
+      .tls_cipher_list = spec->tls_cipher_list,
+      .tls_cipher_suites = spec->tls_cipher_suites,
+      .tls_dh_file = spec->tls_dh_file,
+      .tls_protocol = spec->tls_protocol,
+      .tls_ca_certificate_file = spec->tls_ca_certificate_file,
+      .tls_ca_certificate_dir = spec->tls_ca_certificate_dir,
+      .tls_certificate_revocation_list = spec->tls_certificate_revocation_list,
+      .tls_certificate = spec->tls_certificate,
+      .tls_key = spec->tls_key,
+      .tls_allowed_cn = spec->tls_allowed_cn,
   };
   auto result = state.UpsertConsoleConsoleResource(
       deployment_id, console_config_name, console_name, resource_spec);
@@ -6987,6 +7005,16 @@ http::response<http::string_body> HandleDeploymentConsoleDirectorPutRequest(
       .tls_enable = spec->tls_enable,
       .tls_require = spec->tls_require,
       .tls_verify_peer = spec->tls_verify_peer,
+      .tls_cipher_list = spec->tls_cipher_list,
+      .tls_cipher_suites = spec->tls_cipher_suites,
+      .tls_dh_file = spec->tls_dh_file,
+      .tls_protocol = spec->tls_protocol,
+      .tls_ca_certificate_file = spec->tls_ca_certificate_file,
+      .tls_ca_certificate_dir = spec->tls_ca_certificate_dir,
+      .tls_certificate_revocation_list = spec->tls_certificate_revocation_list,
+      .tls_certificate = spec->tls_certificate,
+      .tls_key = spec->tls_key,
+      .tls_allowed_cn = spec->tls_allowed_cn,
   };
   auto result = state.UpsertConsoleDirectorResource(
       deployment_id, console_config_name, director_name, resource_spec);
@@ -8608,6 +8636,7 @@ std::optional<ConsoleConsoleRequestSpec> ParseConsoleConsoleRequest(
   auto* director = json_object_get(root.get(), "director");
   auto* password = json_object_get(root.get(), "password");
   auto* description = json_object_get(root.get(), "description");
+  auto* rc_file = json_object_get(root.get(), "rc_file");
   auto* history_file = json_object_get(root.get(), "history_file");
   auto* history_length = json_object_get(root.get(), "history_length");
   auto* heartbeat_interval = json_object_get(root.get(), "heartbeat_interval");
@@ -8640,6 +8669,10 @@ std::optional<ConsoleConsoleRequestSpec> ParseConsoleConsoleRequest(
   if (description && !json_is_null(description)
       && !json_is_string(description)) {
     error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (rc_file && !json_is_null(rc_file) && !json_is_string(rc_file)) {
+    error = "field 'rc_file' must be a string when provided.";
     return std::nullopt;
   }
   if (history_file && !json_is_null(history_file)
@@ -8718,6 +8751,9 @@ std::optional<ConsoleConsoleRequestSpec> ParseConsoleConsoleRequest(
   }
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
+  }
+  if (rc_file && json_is_string(rc_file)) {
+    spec.rc_file = std::string{json_string_value(rc_file)};
   }
   if (history_file && json_is_string(history_file)) {
     spec.history_file = std::string{json_string_value(history_file)};

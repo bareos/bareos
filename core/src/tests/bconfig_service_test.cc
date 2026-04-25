@@ -581,6 +581,7 @@ TEST(BconfigService, UpsertsConsoleComponentConsoleResources)
       {.director = std::string{"bareos-dir"},
        .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
        .description = std::string{"Managed bconsole resource"},
+       .rc_file = std::string{"/var/lib/bareos/managed.rc"},
        .history_file = std::string{"/var/lib/bareos/managed.history"},
        .history_length = 123,
        .heartbeat_interval = 33,
@@ -609,6 +610,8 @@ TEST(BconfigService, UpsertsConsoleComponentConsoleResources)
       created_text.find("Password = \"[md5]abcdef0123456789abcdef0123456789\""),
       std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed bconsole resource\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("RcFile = \"/var/lib/bareos/managed.rc\""),
             std::string::npos);
   EXPECT_NE(
       created_text.find("HistoryFile = \"/var/lib/bareos/managed.history\""),
@@ -716,6 +719,60 @@ TEST(BconfigService, UpsertsConsoleComponentConsoleHistoryFields)
             std::string::npos);
   EXPECT_NE(updated_text.find("HistoryLength = 500"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 90"), std::string::npos);
+}
+
+TEST(BconfigService, UpsertsConsoleComponentConsoleRcFile)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  WriteTextFile(source_root.path() / "bconsole.conf",
+                "#\n"
+                "# Bareos User Agent (or Console) Configuration File\n"
+                "#\n"
+                "\n"
+                "Console {\n"
+                "  Name = admin\n"
+                "  Description = \"Imported Console\"\n"
+                "  Password = \"secret\"\n"
+                "  Director = bareos-dir\n"
+                "  RcFile = \"/var/lib/bareos/admin.rc\"\n"
+                "}\n"
+                "\n"
+                "Director {\n"
+                "  Name = bareos-dir\n"
+                "  Description = \"Imported Director\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertConsoleConsoleResource(
+      "prod", "admin", "admin",
+      {.description = std::string{"Updated imported console"},
+       .rc_file = std::string{"/var/lib/bareos/admin.updated.rc"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(updated.value->path / "bconsole.conf");
+  EXPECT_NE(updated_text.find("Description = \"Updated imported console\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("RcFile = \"/var/lib/bareos/admin.updated.rc\""),
+            std::string::npos);
 }
 
 TEST(BconfigService, UpsertsConsoleComponentConsoleTlsBooleans)

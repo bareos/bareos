@@ -250,6 +250,7 @@ struct ConsoleConsoleResourceSpec {
   std::optional<std::string> director{};
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<std::string> rc_file{};
   std::optional<std::string> history_file{};
   std::optional<uint32_t> history_length{};
   std::optional<uint64_t> heartbeat_interval{};

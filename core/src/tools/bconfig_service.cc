@@ -1280,6 +1280,7 @@ std::string BuildConsoleConsoleResourceContent(
     std::string_view director_name,
     std::string_view password,
     std::string_view description,
+    const std::optional<std::string>& rc_file = std::nullopt,
     const std::optional<std::string>& history_file = std::nullopt,
     const std::optional<uint32_t>& history_length = std::nullopt,
     const std::optional<uint64_t>& heartbeat_interval = std::nullopt,
@@ -1307,6 +1308,7 @@ std::string BuildConsoleConsoleResourceContent(
           << "  Password = " << QuoteBareosString(password) << "\n"
           << "  Director = " << RenderBareosDirectiveValue(director_name)
           << "\n";
+  AppendQuotedDirective(content, "RcFile", rc_file);
   AppendQuotedDirective(content, "HistoryFile", history_file);
   AppendIntegerDirective(content, "HistoryLength", history_length);
   AppendIntegerDirective(content, "HeartbeatInterval", heartbeat_interval);
@@ -2347,6 +2349,7 @@ struct ConsoleConsoleWriteContext {
   std::optional<std::string> director{};
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<std::string> rc_file{};
   std::optional<std::string> history_file{};
   std::optional<uint32_t> history_length{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -3271,6 +3274,11 @@ OperationResult<ConsoleConsoleWriteContext> LoadConsoleConsoleWriteContext(
       context.director
           = std::string{configured_console->director->resource_name_};
     }
+    if (HasMemberSource(*configured_console, {"RcFile"})
+        && configured_console->rc_file
+        && configured_console->rc_file[0] != '\0') {
+      context.rc_file = std::string{configured_console->rc_file};
+    }
     if (configured_console->history_file
         && configured_console->history_file[0] != '\0') {
       context.history_file = std::string{configured_console->history_file};
@@ -3336,12 +3344,6 @@ OperationResult<ConsoleConsoleWriteContext> LoadConsoleConsoleWriteContext(
     if (HasMemberSource(*configured_console, {"TlsAllowedCn"})) {
       context.tls_allowed_cn
           = configured_console->tls_cert_.allowed_certificate_common_names_;
-    }
-
-    if (HasMemberSource(*configured_console, {"RcFile"})) {
-      return {.error = "console resource '" + std::string{console_name}
-                       + "' uses unsupported field 'RcFile', which is not "
-                         "managed yet."};
     }
   }
 
@@ -8218,6 +8220,7 @@ ServiceState::UpsertConsoleConsoleResource(
                                : context.value->description.value_or(
                                      DefaultConsoleConsoleDescription(
                                          console_name, console_config_name));
+  const auto rc_file = spec.rc_file ? spec.rc_file : context.value->rc_file;
   const auto history_file
       = spec.history_file ? spec.history_file : context.value->history_file;
   const auto history_length = spec.history_length
@@ -8264,7 +8267,7 @@ ServiceState::UpsertConsoleConsoleResource(
                                   ? spec.tls_allowed_cn
                                   : context.value->tls_allowed_cn;
   const auto managed_resource = BuildConsoleConsoleResourceContent(
-      console_name, *director, *password, description, history_file,
+      console_name, *director, *password, description, rc_file, history_file,
       history_length, heartbeat_interval, tls_authenticate, tls_enable,
       tls_require, tls_verify_peer, tls_cipher_list, tls_cipher_suites,
       tls_dh_file, tls_protocol, tls_ca_certificate_file,
