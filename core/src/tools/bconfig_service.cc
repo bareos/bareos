@@ -4675,10 +4675,6 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "client daemon resource '" + client_config.name
-                       + "' is not stored in a standalone file yet."};
-    }
     return {.value = std::move(context)};
   }
 
@@ -4858,10 +4854,6 @@ OperationResult<DirectorDaemonWriteContext> LoadDirectorDaemonWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "director daemon resource '" + director_config.name
-                       + "' is not stored in a standalone file yet."};
-    }
     return {.value = std::move(context)};
   }
 
@@ -5122,10 +5114,6 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "storage-daemon storage resource '" + storage_config.name
-                       + "' is not stored in a standalone file yet."};
-    }
     return {.value = std::move(context)};
   }
 
@@ -7273,11 +7261,6 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
       = RepositoryLayout::ClientsDirectory(repository_path) / client_name;
   auto context = LoadClientDirectorStubWriteContext(client_root, director_name);
   if (!context) { return {.error = context.error}; }
-  if (context.value->exists && !context.value->is_standalone_file) {
-    return {.error = "client director '" + std::string{director_name}
-                     + "' for client '" + std::string{client_name}
-                     + "' is not stored in a standalone file yet."};
-  }
 
   const auto stub_path = context.value->file_path;
   const auto stub_directory = stub_path.parent_path();
@@ -7369,7 +7352,14 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
     return {.error = "failed to create stub directory '"
                      + stub_directory.string() + "': " + error_code.message()};
   }
-  if (!WriteFile(stub_path, stub_content)) {
+  std::string file_content = std::string{stub_content};
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(stub_path, "Director",
+                                                  director_name, stub_content);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(stub_path, file_content)) {
     return {.error
             = "failed to write client stub '" + stub_path.string() + "'."};
   }
@@ -7429,11 +7419,6 @@ ServiceState::DeleteClientDirectorStub(std::string_view deployment_id,
       = RepositoryLayout::ClientsDirectory(repository_path) / client_name;
   auto context = LoadClientDirectorStubWriteContext(client_root, director_name);
   if (!context) { return {.error = context.error}; }
-  if (context.value->exists && !context.value->is_standalone_file) {
-    return {.error = "client director '" + std::string{director_name}
-                     + "' for client '" + std::string{client_name}
-                     + "' is not stored in a standalone file yet."};
-  }
 
   const auto stub_path = context.value->file_path;
   if (!std::filesystem::exists(stub_path)) {
@@ -7442,9 +7427,35 @@ ServiceState::DeleteClientDirectorStub(std::string_view deployment_id,
                      + std::string{director_name} + "'."};
   }
 
-  auto deleted = DeleteClientDirectorStubFile(repository_path, client_name,
-                                              director_name);
-  if (!deleted) { return {.error = deleted.error}; }
+  if (context.value->is_standalone_file) {
+    auto deleted = DeleteClientDirectorStubFile(repository_path, client_name,
+                                                director_name);
+    if (!deleted) { return {.error = deleted.error}; }
+  } else {
+    auto original_content = ReadFile(stub_path);
+    if (!original_content) { return {.error = original_content.error}; }
+    auto rewritten = RewriteNamedTopLevelResource(stub_path, "Director",
+                                                  director_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(stub_path, *rewritten.value)) {
+      return {.error = "failed to update shared client stub '"
+                       + stub_path.string() + "'."};
+    }
+
+    auto loaded = bconfig::LoadConfig(bconfig::Component::kClient,
+                                      client_root.string(), true);
+    if (!loaded.parser || !loaded.parse_ok) {
+      auto rollback_error
+          = RestoreDeletedFile(stub_path, *original_content.value);
+      if (rollback_error) { return {.error = *rollback_error}; }
+      if (!loaded.parser) {
+        return {.error = FormatParseFailure(
+                    "client stub parser initialization ", loaded.messages)};
+      }
+      return {.error
+              = FormatParseFailure("client stub delete ", loaded.messages)};
+    }
+  }
 
   if (!std::filesystem::exists(client_root / "bareos-fd.d")) {
     DebugLog("deleted client stub '" + std::string{director_name}
@@ -7661,10 +7672,6 @@ ServiceState::UpsertClientDaemonResource(
 
   auto context = LoadClientDaemonWriteContext(*client_config.value);
   if (!context) { return {.error = context.error}; }
-  if (context.value->exists && !context.value->is_standalone_file) {
-    return {.error = "client daemon resource '" + std::string{client_name}
-                     + "' is not stored in a standalone file yet."};
-  }
 
   auto content = context.value->content;
   if (spec.address) { content.address = spec.address; }
@@ -7784,7 +7791,14 @@ ServiceState::UpsertClientDaemonResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Client", client_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write client daemon resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -7858,10 +7872,6 @@ ServiceState::UpsertDirectorDaemonResource(
   if (!context.value->password || context.value->password->empty()) {
     return {.error = "director daemon resource '" + std::string{director_name}
                      + "' does not expose a managed password value."};
-  }
-  if (!context.value->is_standalone_file) {
-    return {.error = "director daemon resource '" + std::string{director_name}
-                     + "' is not stored in a standalone file yet."};
   }
 
   auto content = context.value->content;
@@ -7958,7 +7968,14 @@ ServiceState::UpsertDirectorDaemonResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (!context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Director", director_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write director daemon resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -11126,10 +11143,6 @@ ServiceState::UpsertStorageDeviceResource(
   auto context = LoadStorageDaemonDeviceWriteContext(
       *storage_config.value, device_name, *managed_paths.value);
   if (!context) { return {.error = context.error}; }
-  if (context.value->exists && !context.value->is_standalone_file) {
-    return {.error = "storage-daemon device '" + std::string{device_name}
-                     + "' is not stored in a standalone file yet."};
-  }
 
   const auto media_type
       = spec.media_type ? *spec.media_type : context.value->media_type;
@@ -11178,7 +11191,14 @@ ServiceState::UpsertStorageDeviceResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Device", device_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write storage-daemon device resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -11263,17 +11283,25 @@ ServiceState::DeleteStorageDeviceResource(std::string_view deployment_id,
                      + "' does not define device '" + std::string{device_name}
                      + "'."};
   }
-  if (!context.value->is_standalone_file) {
-    return {.error = "storage-daemon device '" + std::string{device_name}
-                     + "' is not stored in a standalone file yet."};
-  }
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             storage_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               storage_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Device", device_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error
+              = "failed to update shared storage-daemon device resource "
+                "file '"
+                + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
@@ -11336,10 +11364,6 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertStorageNdmpResource(
   auto context = LoadStorageNdmpWriteContext(*storage_config.value, ndmp_name,
                                              *managed_paths.value);
   if (!context) { return {.error = context.error}; }
-  if (context.value->exists && !context.value->is_standalone_file) {
-    return {.error = "storage-daemon NDMP resource '" + std::string{ndmp_name}
-                     + "' is not stored in a standalone file yet."};
-  }
 
   const auto username
       = spec.username ? *spec.username : context.value->username;
@@ -11382,7 +11406,14 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertStorageNdmpResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(context.value->file_path,
+                                                  "Ndmp", ndmp_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write storage-daemon NDMP resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -11467,17 +11498,25 @@ OperationResult<DeploymentConfigRecord> ServiceState::DeleteStorageNdmpResource(
                      + "' does not define NDMP resource '"
                      + std::string{ndmp_name} + "'."};
   }
-  if (!context.value->is_standalone_file) {
-    return {.error = "storage-daemon NDMP resource '" + std::string{ndmp_name}
-                     + "' is not stored in a standalone file yet."};
-  }
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             storage_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               storage_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Ndmp", ndmp_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error
+              = "failed to update shared storage-daemon NDMP resource "
+                "file '"
+                + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
@@ -11543,11 +11582,6 @@ ServiceState::UpsertStorageAutochangerResource(
   auto context = LoadStorageAutochangerWriteContext(
       *storage_config.value, autochanger_name, *managed_paths.value);
   if (!context) { return {.error = context.error}; }
-  if (context.value->exists && !context.value->is_standalone_file) {
-    return {.error = "storage-daemon autochanger '"
-                     + std::string{autochanger_name}
-                     + "' is not stored in a standalone file yet."};
-  }
 
   const auto devices = spec.devices ? *spec.devices : context.value->devices;
   if (!devices || devices->empty()) {
@@ -11597,7 +11631,14 @@ ServiceState::UpsertStorageAutochangerResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Autochanger", autochanger_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write storage-daemon autochanger resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -11687,18 +11728,26 @@ ServiceState::DeleteStorageAutochangerResource(
                      + "' does not define autochanger '"
                      + std::string{autochanger_name} + "'."};
   }
-  if (!context.value->is_standalone_file) {
-    return {.error = "storage-daemon autochanger '"
-                     + std::string{autochanger_name}
-                     + "' is not stored in a standalone file yet."};
-  }
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             storage_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               storage_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten
+        = RewriteNamedTopLevelResource(context.value->file_path, "Autochanger",
+                                       autochanger_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error
+              = "failed to update shared storage-daemon autochanger resource "
+                "file '"
+                + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
@@ -11775,11 +11824,6 @@ ServiceState::UpsertStorageDaemonResource(
 
   auto context = LoadStorageDaemonWriteContext(*storage_config.value);
   if (!context) { return {.error = context.error}; }
-  if (context.value->exists && !context.value->is_standalone_file) {
-    return {.error = "storage-daemon storage resource '"
-                     + std::string{storage_name}
-                     + "' is not stored in a standalone file yet."};
-  }
 
   auto content = context.value->content;
   if (spec.address) { content.address = spec.address; }
@@ -11928,7 +11972,14 @@ ServiceState::UpsertStorageDaemonResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Storage", storage_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write storage-daemon storage resource '"
                      + context.value->file_path.string() + "'."};
   }

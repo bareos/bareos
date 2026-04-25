@@ -307,11 +307,11 @@ TEST(BconfigService, ValidatesImportedDeploymentConfigs)
   const auto source_fixture_root = FindFixtureRoot();
   ASSERT_FALSE(source_fixture_root.empty());
   std::filesystem::create_directories(source_root.path());
-  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
-                        source_root.path() / "bareos-dir.d",
-                        std::filesystem::copy_options::recursive);
   std::filesystem::copy(source_fixture_root / "bareos-fd.d",
                         source_root.path() / "bareos-fd.d",
+                        std::filesystem::copy_options::recursive);
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
                         std::filesystem::copy_options::recursive);
 
   auto import_job
@@ -2170,7 +2170,7 @@ TEST(BconfigService, UpsertsClientDaemonResources)
   EXPECT_NE(updated_text.find("Messages = Standard"), std::string::npos);
 }
 
-TEST(BconfigService, RejectsClientDaemonUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsClientDaemonResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -2211,13 +2211,16 @@ TEST(BconfigService, RejectsClientDaemonUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertClientDaemonResource(
+  auto updated = state.UpsertClientDaemonResource(
       "prod", "backup-bareos-test-fd",
       {.description = std::string{"Managed client daemon"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Managed client daemon\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherClient\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorDaemonResources)
@@ -2345,7 +2348,7 @@ TEST(BconfigService, UpsertsDirectorDaemonResources)
   EXPECT_NE(updated_text.find("Messages = Standard"), std::string::npos);
 }
 
-TEST(BconfigService, RejectsDirectorDaemonUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsDirectorDaemonResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -2387,12 +2390,15 @@ TEST(BconfigService, RejectsDirectorDaemonUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertDirectorDaemonResource(
+  auto updated = state.UpsertDirectorDaemonResource(
       "prod", "bareos-dir", {.description = std::string{"Managed director"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Managed director\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherDirector\""), std::string::npos);
 }
 
 TEST(BconfigService, GeneratesClientStubsForDirectorOnlyImports)
@@ -2631,6 +2637,60 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   EXPECT_EQ(reverted_text, updated_text);
 }
 
+TEST(BconfigService, UpsertsClientDirectorStubsInSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto stub_directory
+      = RepositoryLayout::ClientsDirectory(repo_path.path())
+        / "bareos-fd/bareos-fd.d/director";
+  const auto original_path = stub_directory / "bareos-dir.conf";
+  const auto shared_path = stub_directory / "shared.conf";
+  const auto original_text = ReadTextFile(original_path);
+  WriteTextFile(shared_path,
+                original_text
+                    + "\nDirector {\n"
+                      "  Name = \"other-dir\"\n"
+                      "  Password = \"other-password\"\n"
+                      "}\n");
+  std::filesystem::remove(original_path);
+
+  auto updated = state.UpsertClientDirectorStub(
+      "prod", "bareos-fd", "bareos-dir",
+      {.description = std::string{"Updated shared stub"}});
+  ASSERT_TRUE(updated) << updated.error;
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Updated shared stub\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"other-dir\""), std::string::npos);
+}
+
 TEST(BconfigService, DeletesClientDirectorStubs)
 {
   ScopedDirectory source_root{MakeTempPath()};
@@ -2673,6 +2733,59 @@ TEST(BconfigService, DeletesClientDirectorStubs)
   auto client = state.GetDeploymentConfig("prod", bconfig::Component::kClient,
                                           "backup-bareos-test-fd");
   ASSERT_TRUE(client);
+}
+
+TEST(BconfigService, DeletesClientDirectorStubsFromSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-fd.d",
+                        source_root.path() / "bareos-fd.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto stub_directory
+      = RepositoryLayout::ClientsDirectory(repo_path.path())
+        / "backup-bareos-test-fd/bareos-fd.d/director";
+  const auto original_path = stub_directory / "bareos-dir.conf";
+  const auto shared_path = stub_directory / "shared.conf";
+  const auto original_text = ReadTextFile(original_path);
+  WriteTextFile(shared_path,
+                original_text
+                    + "\nDirector {\n"
+                      "  Name = \"other-dir\"\n"
+                      "  Password = \"other-password\"\n"
+                      "}\n");
+  std::filesystem::remove(original_path);
+
+  auto deleted = state.DeleteClientDirectorStub("prod", "backup-bareos-test-fd",
+                                                "other-dir");
+  ASSERT_TRUE(deleted) << deleted.error;
+  ASSERT_TRUE(deleted.value->has_value());
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Name = bareos-dir"), std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"other-dir\""), std::string::npos);
 }
 
 TEST(BconfigService, RejectsMissingClientDirectorStubDeletes)
@@ -5624,7 +5737,7 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
   EXPECT_NE(updated_text.find("Messages = Standard"), std::string::npos);
 }
 
-TEST(BconfigService, RejectsStorageDaemonUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsStorageDaemonResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -5669,13 +5782,16 @@ TEST(BconfigService, RejectsStorageDaemonUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertStorageDaemonResource(
+  auto updated = state.UpsertStorageDaemonResource(
       "prod", "bareos-sd",
       {.description = std::string{"Managed storage daemon"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Managed storage daemon\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherStorage\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsStorageDaemonResourcesWithScalarNdmpAddress)
@@ -6069,7 +6185,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
             std::string::npos);
 }
 
-TEST(BconfigService, RejectsStorageDeviceUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsStorageDeviceResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -6117,13 +6233,16 @@ TEST(BconfigService, RejectsStorageDeviceUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertStorageDeviceResource(
+  auto updated = state.UpsertStorageDeviceResource(
       "prod", "bareos-sd", "FileStorage",
       {.archive_device = std::string{"/tmp/updated-storage"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Archive Device = /tmp/updated-storage"),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherDevice\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesStorageDeviceResources)
@@ -6186,7 +6305,7 @@ TEST(BconfigService, DeletesStorageDeviceResources)
             std::string::npos);
 }
 
-TEST(BconfigService, RejectsStorageDeviceDeletesForSharedFiles)
+TEST(BconfigService, DeletesStorageDeviceResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -6234,12 +6353,14 @@ TEST(BconfigService, RejectsStorageDeviceDeletesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected
-      = state.DeleteStorageDeviceResource("prod", "bareos-sd", "FileStorage");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted
+      = state.DeleteStorageDeviceResource("prod", "bareos-sd", "OtherDevice");
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Name = FileStorage"), std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"OtherDevice\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsStorageNdmpResources)
@@ -6337,7 +6458,7 @@ TEST(BconfigService, UpsertsStorageNdmpResources)
             std::string::npos);
 }
 
-TEST(BconfigService, RejectsStorageNdmpUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsStorageNdmpResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -6391,13 +6512,15 @@ TEST(BconfigService, RejectsStorageNdmpUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertStorageNdmpResource(
+  auto updated = state.UpsertStorageNdmpResource(
       "prod", "bareos-sd", "DefaultNdmp",
       {.username = std::string{"updated-user"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Username = \"updated-user\""), std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherNdmp\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesStorageNdmpResources)
@@ -6459,7 +6582,7 @@ TEST(BconfigService, DeletesStorageNdmpResources)
             std::string::npos);
 }
 
-TEST(BconfigService, RejectsStorageNdmpDeletesForSharedFiles)
+TEST(BconfigService, DeletesStorageNdmpResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -6513,12 +6636,15 @@ TEST(BconfigService, RejectsStorageNdmpDeletesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected
-      = state.DeleteStorageNdmpResource("prod", "bareos-sd", "DefaultNdmp");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted
+      = state.DeleteStorageNdmpResource("prod", "bareos-sd", "OtherNdmp");
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Username = \"imported-user\""),
+            std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"OtherNdmp\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsStorageAutochangerResources)
@@ -6615,7 +6741,7 @@ TEST(BconfigService, UpsertsStorageAutochangerResources)
             std::string::npos);
 }
 
-TEST(BconfigService, RejectsStorageAutochangerUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsStorageAutochangerResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -6670,13 +6796,16 @@ TEST(BconfigService, RejectsStorageAutochangerUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertStorageAutochangerResource(
+  auto updated = state.UpsertStorageAutochangerResource(
       "prod", "bareos-sd", "Default",
       {.devices = std::vector<std::string>{"FileStorage"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Changer Device = \"/dev/default-changer\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"Other\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesStorageAutochangerResources)
@@ -6742,7 +6871,7 @@ TEST(BconfigService, DeletesStorageAutochangerResources)
       std::string::npos);
 }
 
-TEST(BconfigService, RejectsStorageAutochangerDeletesForSharedFiles)
+TEST(BconfigService, DeletesStorageAutochangerResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -6797,12 +6926,14 @@ TEST(BconfigService, RejectsStorageAutochangerDeletesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected
-      = state.DeleteStorageAutochangerResource("prod", "bareos-sd", "Default");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted
+      = state.DeleteStorageAutochangerResource("prod", "bareos-sd", "Other");
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Device = FileStorage"), std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"Other\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsStorageMessagesResourcesInSharedFiles)
