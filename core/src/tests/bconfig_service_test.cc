@@ -4078,7 +4078,7 @@ TEST(BconfigService, UpsertsDirectorScheduleResources)
   EXPECT_NE(updated_text.find("Run = w01/w02 sun at 23:10"), std::string::npos);
 }
 
-TEST(BconfigService, RejectsDirectorScheduleUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsDirectorScheduleResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -4120,13 +4120,16 @@ TEST(BconfigService, RejectsDirectorScheduleUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertDirectorScheduleResource(
+  auto updated = state.UpsertDirectorScheduleResource(
       "prod", "bareos-dir", "Odd Weeks",
       {.description = std::string{"Updated odd weeks"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Updated odd weeks\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherSchedule\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesDirectorScheduleResources)
@@ -4172,7 +4175,7 @@ TEST(BconfigService, DeletesDirectorScheduleResources)
   EXPECT_FALSE(std::filesystem::exists(schedule_path));
 }
 
-TEST(BconfigService, RejectsDirectorScheduleDeletesForSharedFiles)
+TEST(BconfigService, DeletesDirectorScheduleResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -4214,12 +4217,14 @@ TEST(BconfigService, RejectsDirectorScheduleDeletesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected
-      = state.DeleteDirectorScheduleResource("prod", "bareos-dir", "Odd Weeks");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted = state.DeleteDirectorScheduleResource("prod", "bareos-dir",
+                                                      "OtherSchedule");
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Run = w01/w02 sun at 23:10"), std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"OtherSchedule\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorCounterResources)

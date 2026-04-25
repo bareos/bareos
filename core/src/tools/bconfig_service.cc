@@ -3327,6 +3327,65 @@ OperationResult<std::vector<std::string>> ExtractScheduleRunEntries(
   return {.value = std::move(entries)};
 }
 
+OperationResult<std::vector<std::string>> ExtractNamedScheduleRunEntries(
+    const std::filesystem::path& file_path,
+    std::string_view schedule_name)
+{
+  auto file = ReadFile(file_path);
+  if (!file) { return {.error = file.error}; }
+
+  std::vector<std::string> entries;
+  std::istringstream stream{*file.value};
+  std::string line;
+  bool in_resource = false;
+  int resource_depth = 0;
+  std::optional<std::string> current_name;
+
+  while (std::getline(stream, line)) {
+    const auto trimmed = TrimAsciiWhitespace(line);
+    const int brace_delta = CountBraces(line);
+
+    if (!in_resource) {
+      if (trimmed.rfind("Schedule", 0) == 0
+          && trimmed.find('{') != std::string::npos) {
+        in_resource = true;
+        resource_depth = brace_delta;
+        current_name.reset();
+      }
+      continue;
+    }
+
+    if (resource_depth == 1) {
+      if (auto parsed_name = ParseTopLevelDirectiveValue(line, "Name")) {
+        current_name = std::move(*parsed_name);
+      }
+      if (current_name && *current_name == schedule_name
+          && trimmed.rfind("Run", 0) == 0) {
+        const auto equals = trimmed.find('=');
+        if (equals != std::string::npos) {
+          auto value = TrimAsciiWhitespace(trimmed.substr(equals + 1));
+          if (!value.empty()) { entries.push_back(std::move(value)); }
+        }
+      }
+    }
+
+    resource_depth += brace_delta;
+    if (resource_depth <= 0) {
+      if (current_name && *current_name == schedule_name) {
+        return {.value = std::move(entries)};
+      }
+      in_resource = false;
+    }
+  }
+
+  if (in_resource) {
+    return {.error
+            = "unterminated Schedule block in '" + file_path.string() + "'."};
+  }
+  return {.error = "schedule '" + std::string{schedule_name}
+                   + "' not found in '" + file_path.string() + "'."};
+}
+
 OperationResult<std::vector<std::string>> ExtractResourceBlocks(
     const std::filesystem::path& file_path,
     std::string_view block_name)
@@ -5064,12 +5123,10 @@ OperationResult<DirectorScheduleWriteContext> LoadDirectorScheduleWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "director schedule '" + std::string{schedule_name}
-                       + "' is not stored in a standalone file yet."};
-    }
-
-    auto runs = ExtractScheduleRunEntries(context.file_path);
+    auto runs = context.is_standalone_file
+                    ? ExtractScheduleRunEntries(context.file_path)
+                    : ExtractNamedScheduleRunEntries(context.file_path,
+                                                     schedule_name);
     if (!runs) { return {.error = runs.error}; }
     context.content.run_entries = std::move(*runs.value);
     return {.value = std::move(context)};
@@ -9654,7 +9711,14 @@ ServiceState::UpsertDirectorScheduleResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Schedule", schedule_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write director schedule resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -9720,10 +9784,21 @@ ServiceState::DeleteDirectorScheduleResource(
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             director_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               director_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Schedule", schedule_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error
+              = "failed to update shared director schedule resource file '"
+                + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
