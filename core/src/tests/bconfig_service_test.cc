@@ -4287,7 +4287,7 @@ TEST(BconfigService, UpsertsDirectorCounterResources)
   EXPECT_NE(updated_text.find("Catalog = MyCatalog"), std::string::npos);
 }
 
-TEST(BconfigService, RejectsDirectorCounterUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsDirectorCounterResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -4331,13 +4331,16 @@ TEST(BconfigService, RejectsDirectorCounterUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertDirectorCounterResource(
+  auto updated = state.UpsertDirectorCounterResource(
       "prod", "bareos-dir", "ExistingCounter",
       {.description = std::string{"Updated counter"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Updated counter\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherCounter\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesDirectorCounterResources)
@@ -4383,7 +4386,7 @@ TEST(BconfigService, DeletesDirectorCounterResources)
   EXPECT_FALSE(std::filesystem::exists(counter_path));
 }
 
-TEST(BconfigService, RejectsDirectorCounterDeletesForSharedFiles)
+TEST(BconfigService, DeletesDirectorCounterResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -4427,12 +4430,15 @@ TEST(BconfigService, RejectsDirectorCounterDeletesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.DeleteDirectorCounterResource("prod", "bareos-dir",
-                                                      "ExistingCounter");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted = state.DeleteDirectorCounterResource("prod", "bareos-dir",
+                                                     "OtherCounter");
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Existing counter\""),
+            std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"OtherCounter\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorFilesetResources)
