@@ -4528,7 +4528,7 @@ TEST(BconfigService, UpsertsDirectorFilesetResources)
             std::string::npos);
 }
 
-TEST(BconfigService, RejectsDirectorFilesetUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsDirectorFilesetResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -4572,13 +4572,16 @@ TEST(BconfigService, RejectsDirectorFilesetUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertDirectorFilesetResource(
+  auto updated = state.UpsertDirectorFilesetResource(
       "prod", "bareos-dir", "LinuxAll",
       {.description = std::string{"Updated LinuxAll fileset"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Updated LinuxAll fileset\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherFileSet\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesDirectorFilesetResources)
@@ -4627,7 +4630,7 @@ TEST(BconfigService, DeletesDirectorFilesetResources)
   EXPECT_FALSE(std::filesystem::exists(fileset_path));
 }
 
-TEST(BconfigService, RejectsDirectorFilesetDeletesForSharedFiles)
+TEST(BconfigService, DeletesDirectorFilesetResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -4671,12 +4674,14 @@ TEST(BconfigService, RejectsDirectorFilesetDeletesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected
-      = state.DeleteDirectorFilesetResource("prod", "bareos-dir", "LinuxAll");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted = state.DeleteDirectorFilesetResource("prod", "bareos-dir",
+                                                     "OtherFileSet");
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Signature = XXH128"), std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"OtherFileSet\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorJobResources)

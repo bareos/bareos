@@ -3434,6 +3434,97 @@ OperationResult<std::vector<std::string>> ExtractResourceBlocks(
   return {.value = std::move(blocks)};
 }
 
+OperationResult<std::vector<std::string>> ExtractNamedResourceBlocks(
+    const std::filesystem::path& file_path,
+    std::string_view resource_keyword,
+    std::string_view resource_name,
+    std::string_view block_name)
+{
+  auto file = ReadFile(file_path);
+  if (!file) { return {.error = file.error}; }
+
+  std::vector<std::string> blocks;
+  std::istringstream stream{*file.value};
+  std::string line;
+  bool in_resource = false;
+  int resource_depth = 0;
+  std::optional<std::string> current_name;
+  bool capturing_block = false;
+  int block_depth = 0;
+  std::ostringstream current_block;
+
+  while (std::getline(stream, line)) {
+    const auto trimmed = TrimAsciiWhitespace(line);
+    const int brace_delta = CountBraces(line);
+
+    if (!in_resource) {
+      if (trimmed.rfind(resource_keyword, 0) == 0
+          && trimmed.find('{') != std::string::npos) {
+        in_resource = true;
+        resource_depth = brace_delta;
+        current_name.reset();
+      }
+      continue;
+    }
+
+    if (capturing_block) {
+      current_block << line << "\n";
+      block_depth += brace_delta;
+      resource_depth += brace_delta;
+      if (block_depth <= 0) {
+        blocks.push_back(current_block.str());
+        current_block.str({});
+        current_block.clear();
+        capturing_block = false;
+      }
+      if (resource_depth <= 0) {
+        if (current_name && *current_name == resource_name) {
+          return {.value = std::move(blocks)};
+        }
+        in_resource = false;
+      }
+      continue;
+    }
+
+    if (resource_depth == 1) {
+      if (auto parsed_name = ParseTopLevelDirectiveValue(line, "Name")) {
+        current_name = std::move(*parsed_name);
+      }
+      if (current_name && *current_name == resource_name
+          && trimmed.rfind(block_name, 0) == 0
+          && trimmed.find('{') != std::string::npos) {
+        current_block << line << "\n";
+        block_depth = brace_delta;
+        capturing_block = block_depth > 0;
+        if (!capturing_block) {
+          blocks.push_back(current_block.str());
+          current_block.str({});
+          current_block.clear();
+        }
+      }
+    }
+
+    resource_depth += brace_delta;
+    if (resource_depth <= 0) {
+      if (current_name && *current_name == resource_name) {
+        return {.value = std::move(blocks)};
+      }
+      in_resource = false;
+    }
+  }
+
+  if (capturing_block) {
+    return {.error = "unterminated " + std::string{block_name} + " block in '"
+                     + file_path.string() + "'."};
+  }
+  if (in_resource) {
+    return {.error = "unterminated " + std::string{resource_keyword}
+                     + " block in '" + file_path.string() + "'."};
+  }
+  return {.error = "resource '" + std::string{resource_name}
+                   + "' not found in '" + file_path.string() + "'."};
+}
+
 template <typename Resource>
 std::optional<std::string> CopyResourceName(const Resource* resource)
 {
@@ -5253,16 +5344,19 @@ OperationResult<DirectorFilesetWriteContext> LoadDirectorFilesetWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "director fileset '" + std::string{fileset_name}
-                       + "' is not stored in a standalone file yet."};
-    }
-
-    auto include_blocks = ExtractResourceBlocks(context.file_path, "Include");
+    auto include_blocks
+        = context.is_standalone_file
+              ? ExtractResourceBlocks(context.file_path, "Include")
+              : ExtractNamedResourceBlocks(context.file_path, "FileSet",
+                                           fileset_name, "Include");
     if (!include_blocks) { return {.error = include_blocks.error}; }
     context.content.include_blocks = std::move(*include_blocks.value);
 
-    auto exclude_blocks = ExtractResourceBlocks(context.file_path, "Exclude");
+    auto exclude_blocks
+        = context.is_standalone_file
+              ? ExtractResourceBlocks(context.file_path, "Exclude")
+              : ExtractNamedResourceBlocks(context.file_path, "FileSet",
+                                           fileset_name, "Exclude");
     if (!exclude_blocks) { return {.error = exclude_blocks.error}; }
     context.content.exclude_blocks = std::move(*exclude_blocks.value);
     return {.value = std::move(context)};
@@ -10046,7 +10140,14 @@ ServiceState::UpsertDirectorFilesetResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "FileSet", fileset_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write director fileset resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -10111,10 +10212,21 @@ ServiceState::DeleteDirectorFilesetResource(std::string_view deployment_id,
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             director_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               director_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "FileSet", fileset_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error
+              = "failed to update shared director fileset resource file '"
+                + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
