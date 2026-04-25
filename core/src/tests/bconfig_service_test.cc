@@ -1838,7 +1838,7 @@ TEST(BconfigService, UpsertsClientMessagesResources)
       std::string::npos);
 }
 
-TEST(BconfigService, RejectsClientMessagesUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsClientMessagesResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -1880,13 +1880,16 @@ TEST(BconfigService, RejectsClientMessagesUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertClientMessagesResource(
+  auto updated = state.UpsertClientMessagesResource(
       "prod", "backup-bareos-test-fd", "Standard",
       {.description = std::string{"Updated client messages"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Updated client messages\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherMessages\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesClientMessagesResources)
@@ -1932,7 +1935,7 @@ TEST(BconfigService, DeletesClientMessagesResources)
   EXPECT_FALSE(std::filesystem::exists(messages_path));
 }
 
-TEST(BconfigService, RejectsClientMessagesDeletesForSharedFiles)
+TEST(BconfigService, DeletesClientMessagesResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -1974,12 +1977,16 @@ TEST(BconfigService, RejectsClientMessagesDeletesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.DeleteClientMessagesResource(
-      "prod", "backup-bareos-test-fd", "Standard");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted = state.DeleteClientMessagesResource(
+      "prod", "backup-bareos-test-fd", "OtherMessages");
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(
+      shared_text.find("Director = bareos-dir = all, !skipped, !restored"),
+      std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"OtherMessages\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsClientDaemonResources)
@@ -5149,7 +5156,7 @@ TEST(BconfigService, UpsertsDirectorMessagesResources)
   EXPECT_NE(updated_text.find("append = "), std::string::npos);
 }
 
-TEST(BconfigService, RejectsDirectorMessagesUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsDirectorMessagesResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -5191,13 +5198,16 @@ TEST(BconfigService, RejectsDirectorMessagesUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertDirectorMessagesResource(
+  auto updated = state.UpsertDirectorMessagesResource(
       "prod", "bareos-dir", "Standard",
       {.description = std::string{"Updated standard messages"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Updated standard messages\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherMessages\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesDirectorMessagesResources)
@@ -5244,7 +5254,7 @@ TEST(BconfigService, DeletesDirectorMessagesResources)
   EXPECT_FALSE(std::filesystem::exists(messages_path));
 }
 
-TEST(BconfigService, RejectsDirectorMessagesDeletesForSharedFiles)
+TEST(BconfigService, DeletesDirectorMessagesResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -5286,12 +5296,15 @@ TEST(BconfigService, RejectsDirectorMessagesDeletesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected
-      = state.DeleteDirectorMessagesResource("prod", "bareos-dir", "Standard");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted = state.DeleteDirectorMessagesResource("prod", "bareos-dir",
+                                                      "OtherMessages");
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("console = all, !skipped, !saved, !audit"),
+            std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"OtherMessages\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsStorageMessagesResources)
@@ -6722,7 +6735,7 @@ TEST(BconfigService, RejectsStorageAutochangerDeletesForSharedFiles)
   EXPECT_TRUE(std::filesystem::exists(shared_path));
 }
 
-TEST(BconfigService, RejectsStorageMessagesUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsStorageMessagesResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -6768,13 +6781,16 @@ TEST(BconfigService, RejectsStorageMessagesUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertStorageMessagesResource(
+  auto updated = state.UpsertStorageMessagesResource(
       "prod", "bareos-sd", "Standard",
       {.description = std::string{"Updated storage messages"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Updated storage messages\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherMessages\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesStorageMessagesResources)
@@ -6824,7 +6840,7 @@ TEST(BconfigService, DeletesStorageMessagesResources)
   EXPECT_FALSE(std::filesystem::exists(messages_path));
 }
 
-TEST(BconfigService, RejectsStorageMessagesDeletesForSharedFiles)
+TEST(BconfigService, DeletesStorageMessagesResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -6870,12 +6886,14 @@ TEST(BconfigService, RejectsStorageMessagesDeletesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected
-      = state.DeleteStorageMessagesResource("prod", "bareos-sd", "Standard");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted = state.DeleteStorageMessagesResource("prod", "bareos-sd",
+                                                     "OtherMessages");
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Director = bareos-dir = all"), std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"OtherMessages\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorStorageResources)

@@ -2937,6 +2937,33 @@ std::string NormalizeDirectiveName(std::string_view value)
   return normalized;
 }
 
+std::string UnquoteBareosString(std::string_view value)
+{
+  if (value.size() >= 2
+      && ((value.front() == '"' && value.back() == '"')
+          || (value.front() == '\'' && value.back() == '\''))) {
+    return std::string{value.substr(1, value.size() - 2)};
+  }
+  return std::string{value};
+}
+
+std::optional<std::string> ParseTopLevelDirectiveValue(std::string_view line,
+                                                       std::string_view name)
+{
+  const auto trimmed = TrimAsciiWhitespace(line);
+  if (trimmed.empty() || trimmed[0] == '#') { return std::nullopt; }
+
+  const auto equals = trimmed.find('=');
+  if (equals == std::string::npos) { return std::nullopt; }
+
+  const auto directive
+      = NormalizeDirectiveName(TrimAsciiWhitespace(trimmed.substr(0, equals)));
+  if (directive != NormalizeDirectiveName(name)) { return std::nullopt; }
+
+  return UnquoteBareosString(
+      TrimAsciiWhitespace(trimmed.substr(equals + 1, std::string_view::npos)));
+}
+
 int CountBraces(std::string_view value)
 {
   int depth = 0;
@@ -3031,6 +3058,178 @@ OperationResult<std::vector<std::string>> ExtractTopLevelResourceEntries(
                      + file_path.string() + "'."};
   }
   return {.value = std::move(entries)};
+}
+
+OperationResult<std::vector<std::string>> ExtractNamedTopLevelResourceEntries(
+    const std::filesystem::path& file_path,
+    std::string_view resource_keyword,
+    std::string_view resource_name,
+    const std::set<std::string>& controlled_directives)
+{
+  auto file = ReadFile(file_path);
+  if (!file) { return {.error = file.error}; }
+
+  std::istringstream stream{*file.value};
+  std::string line;
+  bool in_resource = false;
+  int resource_depth = 0;
+  bool capturing_entry = false;
+  int entry_depth = 0;
+  std::ostringstream entry;
+  std::vector<std::string> entries;
+  std::optional<std::string> current_name;
+
+  while (std::getline(stream, line)) {
+    const auto trimmed = TrimAsciiWhitespace(line);
+    const int brace_delta = CountBraces(line);
+
+    if (!in_resource) {
+      if (trimmed.rfind(resource_keyword, 0) == 0
+          && trimmed.find('{') != std::string::npos) {
+        in_resource = true;
+        resource_depth = brace_delta;
+        capturing_entry = false;
+        entry_depth = 0;
+        entry.str({});
+        entry.clear();
+        entries.clear();
+        current_name.reset();
+      }
+      continue;
+    }
+
+    if (capturing_entry) {
+      entry << line << "\n";
+      entry_depth += brace_delta;
+      resource_depth += brace_delta;
+      if (entry_depth <= 0) {
+        entries.push_back(entry.str());
+        entry.str({});
+        entry.clear();
+        capturing_entry = false;
+      }
+      if (resource_depth <= 0) {
+        if (current_name && *current_name == resource_name) {
+          return {.value = std::move(entries)};
+        }
+        in_resource = false;
+      }
+      continue;
+    }
+
+    if (resource_depth == 1) {
+      if (auto parsed_name = ParseTopLevelDirectiveValue(line, "Name")) {
+        current_name = std::move(*parsed_name);
+      }
+      if (!trimmed.empty() && trimmed[0] != '#') {
+        const auto equals = trimmed.find('=');
+        const auto open_brace = trimmed.find('{');
+        if (open_brace != std::string::npos
+            && (equals == std::string::npos || open_brace < equals)) {
+          const auto name = NormalizeDirectiveName(
+              TrimAsciiWhitespace(trimmed.substr(0, open_brace)));
+          if (!controlled_directives.contains(name)) {
+            entry << line << "\n";
+            entry_depth = brace_delta;
+            capturing_entry = entry_depth > 0;
+            if (!capturing_entry) {
+              entries.push_back(entry.str());
+              entry.str({});
+              entry.clear();
+            }
+          }
+        } else if (equals != std::string::npos) {
+          const auto name = NormalizeDirectiveName(
+              TrimAsciiWhitespace(trimmed.substr(0, equals)));
+          if (!controlled_directives.contains(name)) {
+            entries.push_back(line + "\n");
+          }
+        }
+      }
+    }
+
+    resource_depth += brace_delta;
+    if (resource_depth <= 0) {
+      if (current_name && *current_name == resource_name) {
+        return {.value = std::move(entries)};
+      }
+      in_resource = false;
+    }
+  }
+
+  if (capturing_entry) {
+    return {.error = "unterminated preserved resource block in '"
+                     + file_path.string() + "'."};
+  }
+  return {.error = "resource '" + std::string{resource_name}
+                   + "' not found in '" + file_path.string() + "'."};
+}
+
+OperationResult<std::string> RewriteNamedTopLevelResource(
+    const std::filesystem::path& file_path,
+    std::string_view resource_keyword,
+    std::string_view resource_name,
+    const std::optional<std::string>& replacement)
+{
+  auto file = ReadFile(file_path);
+  if (!file) { return {.error = file.error}; }
+
+  std::istringstream stream{*file.value};
+  std::ostringstream rewritten;
+  std::ostringstream block;
+  std::string line;
+  bool in_resource = false;
+  int resource_depth = 0;
+  std::optional<std::string> current_name;
+  bool replaced = false;
+
+  while (std::getline(stream, line)) {
+    const auto trimmed = TrimAsciiWhitespace(line);
+    const int brace_delta = CountBraces(line);
+
+    if (!in_resource) {
+      if (trimmed.rfind(resource_keyword, 0) == 0
+          && trimmed.find('{') != std::string::npos) {
+        in_resource = true;
+        resource_depth = brace_delta;
+        current_name.reset();
+        block.str({});
+        block.clear();
+        block << line << "\n";
+        continue;
+      }
+      rewritten << line << "\n";
+      continue;
+    }
+
+    block << line << "\n";
+    if (resource_depth == 1) {
+      if (auto parsed_name = ParseTopLevelDirectiveValue(line, "Name")) {
+        current_name = std::move(*parsed_name);
+      }
+    }
+
+    resource_depth += brace_delta;
+    if (resource_depth <= 0) {
+      if (!replaced && current_name && *current_name == resource_name) {
+        if (replacement) { rewritten << *replacement; }
+        replaced = true;
+      } else {
+        rewritten << block.str();
+      }
+      in_resource = false;
+    }
+  }
+
+  if (in_resource) {
+    return {.error
+            = "unterminated resource block in '" + file_path.string() + "'."};
+  }
+  if (!replaced) {
+    return {.error = "resource '" + std::string{resource_name}
+                     + "' not found in '" + file_path.string() + "'."};
+  }
+  return {.value = rewritten.str()};
 }
 
 OperationResult<std::string> RenderJobTypeForConfig(uint32_t job_type)
@@ -3986,15 +4185,12 @@ OperationResult<DirectorMessagesWriteContext> LoadDirectorMessagesWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "director messages '" + std::string{messages_name}
-                       + "' is not stored in a standalone file yet."};
-    }
 
     static const std::set<std::string> kControlledMessagesDirectives{
         "Name", "Description"};
-    auto entries = ExtractTopLevelResourceEntries(
-        context.file_path, "Messages", kControlledMessagesDirectives);
+    auto entries = ExtractNamedTopLevelResourceEntries(
+        context.file_path, "Messages", messages_name,
+        kControlledMessagesDirectives);
     if (!entries) { return {.error = entries.error}; }
     context.content.entries = std::move(*entries.value);
     return {.value = std::move(context)};
@@ -4054,15 +4250,12 @@ OperationResult<ClientMessagesWriteContext> LoadClientMessagesWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "client messages '" + std::string{messages_name}
-                       + "' is not stored in a standalone file yet."};
-    }
 
     static const std::set<std::string> kControlledMessagesDirectives{
         "Name", "Description"};
-    auto entries = ExtractTopLevelResourceEntries(
-        context.file_path, "Messages", kControlledMessagesDirectives);
+    auto entries = ExtractNamedTopLevelResourceEntries(
+        context.file_path, "Messages", messages_name,
+        kControlledMessagesDirectives);
     if (!entries) { return {.error = entries.error}; }
     context.content.entries = std::move(*entries.value);
     return {.value = std::move(context)};
@@ -4124,15 +4317,12 @@ OperationResult<StorageMessagesWriteContext> LoadStorageMessagesWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "storage-daemon messages '" + std::string{messages_name}
-                       + "' is not stored in a standalone file yet."};
-    }
 
     static const std::set<std::string> kControlledMessagesDirectives{
         "Name", "Description"};
-    auto entries = ExtractTopLevelResourceEntries(
-        context.file_path, "Messages", kControlledMessagesDirectives);
+    auto entries = ExtractNamedTopLevelResourceEntries(
+        context.file_path, "Messages", messages_name,
+        kControlledMessagesDirectives);
     if (!entries) { return {.error = entries.error}; }
     context.content.entries = std::move(*entries.value);
     return {.value = std::move(context)};
@@ -7204,7 +7394,14 @@ ServiceState::UpsertClientMessagesResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Messages", messages_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write client messages resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -7269,10 +7466,20 @@ ServiceState::DeleteClientMessagesResource(std::string_view deployment_id,
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             client_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               client_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Messages", messages_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error = "failed to update shared client messages resource file '"
+                       + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kClient,
@@ -9288,7 +9495,14 @@ ServiceState::UpsertDirectorMessagesResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Messages", messages_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write director messages resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -9354,10 +9568,21 @@ ServiceState::DeleteDirectorMessagesResource(
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             director_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               director_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Messages", messages_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error
+              = "failed to update shared director messages resource file '"
+                + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
@@ -10209,7 +10434,14 @@ ServiceState::UpsertStorageMessagesResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Messages", messages_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write storage-daemon messages resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -10277,10 +10509,22 @@ ServiceState::DeleteStorageMessagesResource(
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             storage_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               storage_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Messages", messages_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {
+          .error
+          = "failed to update shared storage-daemon messages resource file '"
+            + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
