@@ -1439,7 +1439,7 @@ std::string BuildConsoleConsoleResourceContent(
 std::string BuildConsoleDirectorResourceContent(
     std::string_view director_name,
     std::string_view address,
-    const std::optional<uint16_t>& port,
+    const std::optional<uint32_t>& port,
     const std::optional<std::string>& password,
     std::string_view description,
     const std::optional<uint64_t>& heartbeat_interval = std::nullopt,
@@ -2507,7 +2507,7 @@ std::string BuildRewrittenConsoleConfigContent(
 struct ConsoleDirectorWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> address{};
-  std::optional<uint16_t> port{};
+  std::optional<uint32_t> port{};
   std::optional<std::string> password{};
   std::optional<std::string> description{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -3968,12 +3968,7 @@ OperationResult<ConsoleDirectorWriteContext> LoadConsoleDirectorWriteContext(
       context.address = std::string{configured_director->address};
     }
     if (HasMemberSource(*configured_director, {"Port", "DirPort"})) {
-      const auto parsed_port = configured_director->DIRport;
-      if (parsed_port > std::numeric_limits<uint16_t>::max()) {
-        return {.error = "console director '" + std::string{director_name}
-                         + "' has unsupported port value."};
-      }
-      context.port = static_cast<uint16_t>(parsed_port);
+      context.port = configured_director->DIRport;
     }
     if (HasMemberSource(*configured_director, {"Password"})) {
       auto rendered_password = RenderPasswordForConfig(
@@ -9162,7 +9157,8 @@ ServiceState::UpsertConsoleDirectorResource(
   }
 
   const auto password = spec.password ? spec.password : context.value->password;
-  const auto port = spec.port ? spec.port : context.value->port;
+  const auto port
+      = spec.port ? std::optional<uint32_t>{*spec.port} : context.value->port;
   const auto description = spec.description
                                ? *spec.description
                                : context.value->description.value_or(

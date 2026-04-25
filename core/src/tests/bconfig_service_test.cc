@@ -1320,6 +1320,59 @@ TEST(BconfigService, UpsertsConsoleComponentDirectorHeartbeatInterval)
             std::string::npos);
 }
 
+TEST(BconfigService, UpsertsConsoleComponentDirectorPreservesLargeImportedPort)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  WriteTextFile(source_root.path() / "bconsole.conf",
+                "#\n"
+                "# Bareos User Agent (or Console) Configuration File\n"
+                "#\n"
+                "\n"
+                "Console {\n"
+                "  Name = admin\n"
+                "  Description = \"Imported Console\"\n"
+                "  Password = \"secret\"\n"
+                "  Director = bareos-dir\n"
+                "}\n"
+                "\n"
+                "Director {\n"
+                "  Name = bareos-dir\n"
+                "  Description = \"Imported Director\"\n"
+                "  Address = localhost\n"
+                "  Port = 70000\n"
+                "  Password = \"secret\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertConsoleDirectorResource(
+      "prod", "admin", "bareos-dir",
+      {.description = std::string{"Updated imported director"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(updated.value->path / "bconsole.conf");
+  EXPECT_NE(updated_text.find("Address = localhost"), std::string::npos);
+  EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated imported director\""),
+            std::string::npos);
+}
+
 TEST(BconfigService, UpsertsConsoleComponentDirectorTlsBooleans)
 {
   ScopedDirectory source_root{MakeTempPath()};
