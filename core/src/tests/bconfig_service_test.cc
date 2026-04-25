@@ -3023,7 +3023,7 @@ TEST(BconfigService, UpsertsDirectorConsoleResources)
   EXPECT_NE(updated_text.find("JobACL = *all*"), std::string::npos);
 }
 
-TEST(BconfigService, RejectsDirectorConsoleUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsDirectorConsoleResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -3065,13 +3065,16 @@ TEST(BconfigService, RejectsDirectorConsoleUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertDirectorConsoleResource(
+  auto updated = state.UpsertDirectorConsoleResource(
       "prod", "bareos-dir", "bareos-mon",
       {.description = std::string{"Updated restricted console"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Updated restricted console\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"other-console\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesDirectorConsoleResources)
@@ -3117,7 +3120,7 @@ TEST(BconfigService, DeletesDirectorConsoleResources)
   EXPECT_FALSE(std::filesystem::exists(console_path));
 }
 
-TEST(BconfigService, RejectsDirectorConsoleDeletesForSharedFiles)
+TEST(BconfigService, DeletesDirectorConsoleResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -3159,12 +3162,15 @@ TEST(BconfigService, RejectsDirectorConsoleDeletesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected
-      = state.DeleteDirectorConsoleResource("prod", "bareos-dir", "bareos-mon");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted = state.DeleteDirectorConsoleResource("prod", "bareos-dir",
+                                                     "other-console");
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("CommandACL = status, .status"),
+            std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"other-console\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorUserResources)
@@ -3229,7 +3235,7 @@ TEST(BconfigService, UpsertsDirectorUserResources)
   EXPECT_NE(updated_text.find("Profile = operator"), std::string::npos);
 }
 
-TEST(BconfigService, RejectsDirectorUserUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsDirectorUserResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -3275,13 +3281,16 @@ TEST(BconfigService, RejectsDirectorUserUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertDirectorUserResource(
+  auto updated = state.UpsertDirectorUserResource(
       "prod", "bareos-dir", "operator-user",
       {.description = std::string{"Updated operator user"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Updated operator user\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"other-user\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesDirectorUserResources)
@@ -3327,7 +3336,7 @@ TEST(BconfigService, DeletesDirectorUserResources)
   EXPECT_FALSE(std::filesystem::exists(user_path));
 }
 
-TEST(BconfigService, RejectsDirectorUserDeletesForSharedFiles)
+TEST(BconfigService, DeletesDirectorUserResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -3373,12 +3382,14 @@ TEST(BconfigService, RejectsDirectorUserDeletesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected
-      = state.DeleteDirectorUserResource("prod", "bareos-dir", "operator-user");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted
+      = state.DeleteDirectorUserResource("prod", "bareos-dir", "other-user");
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Name = \"operator-user\""), std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"other-user\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorProfileResources)
@@ -3880,7 +3891,7 @@ TEST(BconfigService, UpsertsDirectorCatalogResources)
   EXPECT_NE(updated_text.find("DbPassword = \"\""), std::string::npos);
 }
 
-TEST(BconfigService, RejectsDirectorCatalogUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsDirectorCatalogResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -3923,13 +3934,16 @@ TEST(BconfigService, RejectsDirectorCatalogUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertDirectorCatalogResource(
+  auto updated = state.UpsertDirectorCatalogResource(
       "prod", "bareos-dir", "MyCatalog",
       {.description = std::string{"Updated catalog"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Description = \"Updated catalog\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherCatalog\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesDirectorCatalogResources)
@@ -3977,7 +3991,7 @@ TEST(BconfigService, DeletesDirectorCatalogResources)
   EXPECT_FALSE(std::filesystem::exists(catalog_path));
 }
 
-TEST(BconfigService, RejectsDirectorCatalogDeletesForSharedFiles)
+TEST(BconfigService, DeletesDirectorCatalogResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -4020,12 +4034,14 @@ TEST(BconfigService, RejectsDirectorCatalogDeletesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected
+  auto deleted
       = state.DeleteDirectorCatalogResource("prod", "bareos-dir", "MyCatalog");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_EQ(shared_text.find("Name = \"MyCatalog\""), std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherCatalog\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorScheduleResources)

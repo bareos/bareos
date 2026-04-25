@@ -3629,10 +3629,6 @@ OperationResult<DirectorConsoleWriteContext> LoadDirectorConsoleWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "director console '" + std::string{console_name}
-                       + "' is not stored in a standalone file yet."};
-    }
     return {.value = std::move(context)};
   }
 
@@ -3972,10 +3968,6 @@ OperationResult<DirectorUserWriteContext> LoadDirectorUserWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "director user '" + std::string{user_name}
-                       + "' is not stored in a standalone file yet."};
-    }
     return {.value = std::move(context)};
   }
 
@@ -4264,10 +4256,6 @@ OperationResult<DirectorCatalogWriteContext> LoadDirectorCatalogWriteContext(
     auto per_file = resources_per_file.find(source->file);
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
-    if (!context.is_standalone_file) {
-      return {.error = "director catalog '" + std::string{catalog_name}
-                       + "' is not stored in a standalone file yet."};
-    }
     return {.value = std::move(context)};
   }
 
@@ -8513,7 +8501,14 @@ ServiceState::UpsertDirectorConsoleResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, content)) {
+  std::string file_content = content;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Console", console_name, content);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write director console resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -8578,10 +8573,21 @@ ServiceState::DeleteDirectorConsoleResource(std::string_view deployment_id,
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             director_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               director_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Console", console_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error
+              = "failed to update shared director console resource file '"
+                + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
@@ -9028,7 +9034,14 @@ ServiceState::UpsertDirectorUserResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, content)) {
+  std::string file_content = content;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(context.value->file_path,
+                                                  "User", user_name, content);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write director user resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -9093,10 +9106,20 @@ ServiceState::DeleteDirectorUserResource(std::string_view deployment_id,
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             director_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               director_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "User", user_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error = "failed to update shared director user resource file '"
+                       + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
@@ -9528,7 +9551,14 @@ ServiceState::UpsertDirectorCatalogResource(
                      + resource_directory.string()
                      + "': " + error_code.message()};
   }
-  if (!WriteFile(context.value->file_path, rendered)) {
+  std::string file_content = rendered;
+  if (context.value->exists && !context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Catalog", catalog_name, rendered);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    file_content = std::move(*rewritten.value);
+  }
+  if (!WriteFile(context.value->file_path, file_content)) {
     return {.error = "failed to write director catalog resource '"
                      + context.value->file_path.string() + "'."};
   }
@@ -9593,10 +9623,21 @@ ServiceState::DeleteDirectorCatalogResource(std::string_view deployment_id,
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
-  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
-                                             director_config.value->path);
-      error) {
-    return {.error = *error};
+  if (context.value->is_standalone_file) {
+    if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                               director_config.value->path);
+        error) {
+      return {.error = *error};
+    }
+  } else {
+    auto rewritten = RewriteNamedTopLevelResource(
+        context.value->file_path, "Catalog", catalog_name, std::nullopt);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    if (!WriteFile(context.value->file_path, *rewritten.value)) {
+      return {.error
+              = "failed to update shared director catalog resource file '"
+                + context.value->file_path.string() + "'."};
+    }
   }
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
