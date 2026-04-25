@@ -2826,7 +2826,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
             std::string::npos);
 }
 
-TEST(BconfigService, RejectsDirectorClientUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsDirectorClientResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -2861,13 +2861,15 @@ TEST(BconfigService, RejectsDirectorClientUpdatesForSharedFiles)
   const auto shared_path = client_directory / "shared.conf";
   std::filesystem::rename(original_path, shared_path);
 
-  auto rejected = state.UpsertDirectorClientResource(
+  auto updated = state.UpsertDirectorClientResource(
       "prod", "bareos-dir", "bareos-fd",
       {.address = std::string{"bareos-fd-alt.example.com"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Address = bareos-fd-alt.example.com"),
+            std::string::npos);
 }
 
 TEST(BconfigService, DeletesDirectorClientResources)
@@ -2918,7 +2920,7 @@ TEST(BconfigService, DeletesDirectorClientResources)
   EXPECT_FALSE(std::filesystem::exists(stub_path));
 }
 
-TEST(BconfigService, RejectsDirectorClientDeletesForSharedFiles)
+TEST(BconfigService, DeletesDirectorClientResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -2951,14 +2953,24 @@ TEST(BconfigService, RejectsDirectorClientDeletesForSharedFiles)
         / "bareos-dir/bareos-dir.d/client";
   const auto original_path = client_directory / "bareos-fd.conf";
   const auto shared_path = client_directory / "shared.conf";
-  std::filesystem::rename(original_path, shared_path);
+  const auto original_text = ReadTextFile(original_path);
+  WriteTextFile(shared_path,
+                original_text
+                    + "\nClient {\n"
+                      "  Name = \"other-client\"\n"
+                      "  Address = other-client.example.com\n"
+                      "  Password = \"other_password\"\n"
+                      "}\n");
+  std::filesystem::remove(original_path);
 
-  auto rejected
-      = state.DeleteDirectorClientResource("prod", "bareos-dir", "bareos-fd");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted = state.DeleteDirectorClientResource("prod", "bareos-dir",
+                                                    "other-client");
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Name = bareos-fd"), std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"other-client\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorConsoleResources)
@@ -5804,7 +5816,7 @@ TEST(BconfigService, UpsertsStorageDirectorResources)
             std::string::npos);
 }
 
-TEST(BconfigService, RejectsStorageDirectorUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsStorageDirectorResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -5850,13 +5862,17 @@ TEST(BconfigService, RejectsStorageDirectorUpdatesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected = state.UpsertStorageDirectorResource(
+  auto updated = state.UpsertStorageDirectorResource(
       "prod", "bareos-sd", "bareos-dir",
       {.password = std::string{"[md5]abcdef0123456789abcdef0123456789"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(
+      shared_text.find("Password = \"[md5]abcdef0123456789abcdef0123456789\""),
+      std::string::npos);
+  EXPECT_NE(shared_text.find("Name = \"OtherDirector\""), std::string::npos);
 }
 
 TEST(BconfigService, DeletesStorageDirectorResources)
@@ -5917,7 +5933,7 @@ TEST(BconfigService, DeletesStorageDirectorResources)
             std::string::npos);
 }
 
-TEST(BconfigService, RejectsStorageDirectorDeletesForSharedFiles)
+TEST(BconfigService, DeletesStorageDirectorResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -5963,12 +5979,14 @@ TEST(BconfigService, RejectsStorageDirectorDeletesForSharedFiles)
                       "}\n");
   std::filesystem::remove(original_path);
 
-  auto rejected
-      = state.DeleteStorageDirectorResource("prod", "bareos-sd", "bareos-dir");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted = state.DeleteStorageDirectorResource("prod", "bareos-sd",
+                                                     "OtherDirector");
+  ASSERT_TRUE(deleted) << deleted.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
+  const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(shared_text.find("Name = bareos-dir"), std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = \"OtherDirector\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsStorageDeviceResources)
@@ -7127,7 +7145,7 @@ TEST(BconfigService, DefaultsNewDirectorStorageDeviceToStorageName)
                                       / "bareos-sd.d/device/FileManaged.conf"));
 }
 
-TEST(BconfigService, RejectsDirectorStorageUpdatesForSharedFiles)
+TEST(BconfigService, UpsertsDirectorStorageResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -7155,11 +7173,16 @@ TEST(BconfigService, RejectsDirectorStorageUpdatesForSharedFiles)
   ASSERT_TRUE(imported.has_value());
   ASSERT_EQ(imported->status, JobStatus::kSucceeded);
 
-  auto rejected = state.UpsertDirectorStorageResource(
+  auto updated = state.UpsertDirectorStorageResource(
       "prod", "bareos-dir", "File",
       {.address = std::string{"storage-alt.example.com"}});
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  ASSERT_TRUE(updated) << updated.error;
+  const auto shared_text
+      = ReadTextFile(RepositoryLayout::DirectorsDirectory(repo_path.path())
+                     / "bareos-dir/bareos-dir.d/storage/File.conf");
+  EXPECT_NE(shared_text.find("Address = storage-alt.example.com"),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("Name = File2"), std::string::npos);
 }
 
 TEST(BconfigService, DeletesDirectorStorageResources)
@@ -7234,7 +7257,7 @@ TEST(BconfigService, DeletesDirectorStorageResources)
             std::string::npos);
 }
 
-TEST(BconfigService, RejectsDirectorStorageDeletesForSharedFiles)
+TEST(BconfigService, DeletesDirectorStorageResourcesFromSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
@@ -7262,10 +7285,14 @@ TEST(BconfigService, RejectsDirectorStorageDeletesForSharedFiles)
   ASSERT_TRUE(imported.has_value());
   ASSERT_EQ(imported->status, JobStatus::kSucceeded);
 
-  auto rejected
-      = state.DeleteDirectorStorageResource("prod", "bareos-dir", "File");
-  ASSERT_FALSE(rejected);
-  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  auto deleted
+      = state.DeleteDirectorStorageResource("prod", "bareos-dir", "File2");
+  ASSERT_TRUE(deleted) << deleted.error;
+  const auto shared_text
+      = ReadTextFile(RepositoryLayout::DirectorsDirectory(repo_path.path())
+                     / "bareos-dir/bareos-dir.d/storage/File.conf");
+  EXPECT_NE(shared_text.find("Name = File"), std::string::npos);
+  EXPECT_EQ(shared_text.find("Name = File2"), std::string::npos);
 }
 
 TEST(BconfigService, SyncsDirectorStorageResourcesIntoStorageDaemonFiles)
