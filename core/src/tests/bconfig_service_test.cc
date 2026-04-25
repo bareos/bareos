@@ -587,7 +587,18 @@ TEST(BconfigService, UpsertsConsoleComponentConsoleResources)
        .tls_authenticate = false,
        .tls_enable = true,
        .tls_require = false,
-       .tls_verify_peer = true});
+       .tls_verify_peer = true,
+       .tls_cipher_list = std::string{"DEFAULT:@SECLEVEL=2"},
+       .tls_cipher_suites = std::string{"TLS_AES_256_GCM_SHA384"},
+       .tls_dh_file = std::string{"/etc/bareos/console-dh.pem"},
+       .tls_protocol = std::string{"+TLSv1.2:+TLSv1.3"},
+       .tls_ca_certificate_file = std::string{"/etc/bareos/ca.pem"},
+       .tls_ca_certificate_dir = std::string{"/etc/ssl/certs"},
+       .tls_certificate_revocation_list = std::string{"/etc/bareos/crl.pem"},
+       .tls_certificate = std::string{"/etc/bareos/console-cert.pem"},
+       .tls_key = std::string{"/etc/bareos/console-key.pem"},
+       .tls_allowed_cn = std::vector<std::string>{"console.example.test",
+                                                  "director.example.test"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "admin");
 
@@ -608,6 +619,30 @@ TEST(BconfigService, UpsertsConsoleComponentConsoleResources)
   EXPECT_NE(created_text.find("TlsEnable = yes"), std::string::npos);
   EXPECT_NE(created_text.find("TlsRequire = no"), std::string::npos);
   EXPECT_NE(created_text.find("TlsVerifyPeer = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsCipherList = \"DEFAULT:@SECLEVEL=2\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsCipherSuites = \"TLS_AES_256_GCM_SHA384\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsDhFile = \"/etc/bareos/console-dh.pem\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsProtocol = \"+TLSv1.2:+TLSv1.3\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsCaCertificateFile = \"/etc/bareos/ca.pem\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsCaCertificateDir = \"/etc/ssl/certs\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find(
+                "TlsCertificateRevocationList = \"/etc/bareos/crl.pem\""),
+            std::string::npos);
+  EXPECT_NE(
+      created_text.find("TlsCertificate = \"/etc/bareos/console-cert.pem\""),
+      std::string::npos);
+  EXPECT_NE(created_text.find("TlsKey = \"/etc/bareos/console-key.pem\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsAllowedCn = \"console.example.test\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsAllowedCn = \"director.example.test\""),
+            std::string::npos);
 
   auto updated = state.UpsertConsoleConsoleResource(
       "prod", "admin", "admin",
@@ -743,6 +778,205 @@ TEST(BconfigService, UpsertsConsoleComponentConsoleTlsBooleans)
   EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsRequire = no"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsVerifyPeer = yes"), std::string::npos);
+}
+
+TEST(BconfigService, UpsertsConsoleComponentConsoleTlsStrings)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  WriteTextFile(source_root.path() / "bconsole.conf",
+                "#\n"
+                "# Bareos User Agent (or Console) Configuration File\n"
+                "#\n"
+                "\n"
+                "Console {\n"
+                "  Name = admin\n"
+                "  Description = \"Imported Console\"\n"
+                "  Password = \"secret\"\n"
+                "  Director = bareos-dir\n"
+                "  TlsCipherList = \"DEFAULT\"\n"
+                "  TlsCipherSuites = \"TLS_AES_128_GCM_SHA256\"\n"
+                "  TlsDhFile = \"/etc/bareos/old-console-dh.pem\"\n"
+                "  TlsProtocol = \"+TLSv1.2\"\n"
+                "}\n"
+                "\n"
+                "Director {\n"
+                "  Name = bareos-dir\n"
+                "  Description = \"Imported Director\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertConsoleConsoleResource(
+      "prod", "admin", "admin",
+      {.description = std::string{"Updated imported console"},
+       .tls_cipher_list = std::string{"DEFAULT:@SECLEVEL=2"},
+       .tls_cipher_suites = std::string{"TLS_AES_256_GCM_SHA384"},
+       .tls_dh_file = std::string{"/etc/bareos/new-console-dh.pem"},
+       .tls_protocol = std::string{"+TLSv1.2:+TLSv1.3"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(updated.value->path / "bconsole.conf");
+  EXPECT_NE(updated_text.find("Description = \"Updated imported console\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherList = \"DEFAULT:@SECLEVEL=2\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherSuites = \"TLS_AES_256_GCM_SHA384\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsDhFile = \"/etc/bareos/new-console-dh.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsProtocol = \"+TLSv1.2:+TLSv1.3\""),
+            std::string::npos);
+}
+
+TEST(BconfigService, UpsertsConsoleComponentConsoleTlsCertificatePaths)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  WriteTextFile(source_root.path() / "bconsole.conf",
+                "#\n"
+                "# Bareos User Agent (or Console) Configuration File\n"
+                "#\n"
+                "\n"
+                "Console {\n"
+                "  Name = admin\n"
+                "  Description = \"Imported Console\"\n"
+                "  Password = \"secret\"\n"
+                "  Director = bareos-dir\n"
+                "  TlsCaCertificateFile = \"/etc/bareos/old-ca.pem\"\n"
+                "  TlsCaCertificateDir = \"/etc/old-ssl/certs\"\n"
+                "  TlsCertificateRevocationList = \"/etc/bareos/old-crl.pem\"\n"
+                "  TlsCertificate = \"/etc/bareos/old-console-cert.pem\"\n"
+                "  TlsKey = \"/etc/bareos/old-console-key.pem\"\n"
+                "}\n"
+                "\n"
+                "Director {\n"
+                "  Name = bareos-dir\n"
+                "  Description = \"Imported Director\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertConsoleConsoleResource(
+      "prod", "admin", "admin",
+      {.description = std::string{"Updated imported console"},
+       .tls_ca_certificate_file = std::string{"/etc/bareos/new-ca.pem"},
+       .tls_ca_certificate_dir = std::string{"/etc/ssl/certs"},
+       .tls_certificate_revocation_list
+       = std::string{"/etc/bareos/new-crl.pem"},
+       .tls_certificate = std::string{"/etc/bareos/new-console-cert.pem"},
+       .tls_key = std::string{"/etc/bareos/new-console-key.pem"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(updated.value->path / "bconsole.conf");
+  EXPECT_NE(updated_text.find("Description = \"Updated imported console\""),
+            std::string::npos);
+  EXPECT_NE(
+      updated_text.find("TlsCaCertificateFile = \"/etc/bareos/new-ca.pem\""),
+      std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCaCertificateDir = \"/etc/ssl/certs\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find(
+                "TlsCertificateRevocationList = \"/etc/bareos/new-crl.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find(
+                "TlsCertificate = \"/etc/bareos/new-console-cert.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsKey = \"/etc/bareos/new-console-key.pem\""),
+            std::string::npos);
+}
+
+TEST(BconfigService, UpsertsConsoleComponentConsoleTlsAllowedCn)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  WriteTextFile(source_root.path() / "bconsole.conf",
+                "#\n"
+                "# Bareos User Agent (or Console) Configuration File\n"
+                "#\n"
+                "\n"
+                "Console {\n"
+                "  Name = admin\n"
+                "  Description = \"Imported Console\"\n"
+                "  Password = \"secret\"\n"
+                "  Director = bareos-dir\n"
+                "  TlsAllowedCn = \"old-console.example.test\"\n"
+                "}\n"
+                "\n"
+                "Director {\n"
+                "  Name = bareos-dir\n"
+                "  Description = \"Imported Director\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertConsoleConsoleResource(
+      "prod", "admin", "admin",
+      {.description = std::string{"Updated imported console"},
+       .tls_allowed_cn = std::vector<std::string>{"console.example.test",
+                                                  "director.example.test"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(updated.value->path / "bconsole.conf");
+  EXPECT_NE(updated_text.find("Description = \"Updated imported console\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = \"console.example.test\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = \"director.example.test\""),
+            std::string::npos);
+  EXPECT_EQ(updated_text.find("TlsAllowedCn = \"old-console.example.test\""),
+            std::string::npos);
 }
 
 TEST(BconfigService,
@@ -904,7 +1138,18 @@ TEST(BconfigService, UpsertsConsoleComponentDirectorResources)
        .tls_authenticate = false,
        .tls_enable = true,
        .tls_require = false,
-       .tls_verify_peer = true});
+       .tls_verify_peer = true,
+       .tls_cipher_list = std::string{"DEFAULT:@SECLEVEL=2"},
+       .tls_cipher_suites = std::string{"TLS_AES_256_GCM_SHA384"},
+       .tls_dh_file = std::string{"/etc/bareos/director-dh.pem"},
+       .tls_protocol = std::string{"+TLSv1.2:+TLSv1.3"},
+       .tls_ca_certificate_file = std::string{"/etc/bareos/ca.pem"},
+       .tls_ca_certificate_dir = std::string{"/etc/ssl/certs"},
+       .tls_certificate_revocation_list = std::string{"/etc/bareos/crl.pem"},
+       .tls_certificate = std::string{"/etc/bareos/director-cert.pem"},
+       .tls_key = std::string{"/etc/bareos/director-key.pem"},
+       .tls_allowed_cn = std::vector<std::string>{"director.example.test",
+                                                  "backup.example.test"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "admin");
 
@@ -921,6 +1166,30 @@ TEST(BconfigService, UpsertsConsoleComponentDirectorResources)
   EXPECT_NE(created_text.find("TlsEnable = yes"), std::string::npos);
   EXPECT_NE(created_text.find("TlsRequire = no"), std::string::npos);
   EXPECT_NE(created_text.find("TlsVerifyPeer = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsCipherList = \"DEFAULT:@SECLEVEL=2\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsCipherSuites = \"TLS_AES_256_GCM_SHA384\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsDhFile = \"/etc/bareos/director-dh.pem\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsProtocol = \"+TLSv1.2:+TLSv1.3\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsCaCertificateFile = \"/etc/bareos/ca.pem\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsCaCertificateDir = \"/etc/ssl/certs\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find(
+                "TlsCertificateRevocationList = \"/etc/bareos/crl.pem\""),
+            std::string::npos);
+  EXPECT_NE(
+      created_text.find("TlsCertificate = \"/etc/bareos/director-cert.pem\""),
+      std::string::npos);
+  EXPECT_NE(created_text.find("TlsKey = \"/etc/bareos/director-key.pem\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsAllowedCn = \"director.example.test\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsAllowedCn = \"backup.example.test\""),
+            std::string::npos);
 
   auto updated = state.UpsertConsoleDirectorResource(
       "prod", "admin", "bareos-dir",
@@ -1057,6 +1326,215 @@ TEST(BconfigService, UpsertsConsoleComponentDirectorTlsBooleans)
   EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsRequire = no"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsVerifyPeer = yes"), std::string::npos);
+}
+
+TEST(BconfigService, UpsertsConsoleComponentDirectorTlsStrings)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  WriteTextFile(source_root.path() / "bconsole.conf",
+                "#\n"
+                "# Bareos User Agent (or Console) Configuration File\n"
+                "#\n"
+                "\n"
+                "Console {\n"
+                "  Name = admin\n"
+                "  Description = \"Imported Console\"\n"
+                "  Password = \"secret\"\n"
+                "  Director = bareos-dir\n"
+                "}\n"
+                "\n"
+                "Director {\n"
+                "  Name = bareos-dir\n"
+                "  Description = \"Imported Director\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "  TlsCipherList = \"DEFAULT\"\n"
+                "  TlsCipherSuites = \"TLS_AES_128_GCM_SHA256\"\n"
+                "  TlsDhFile = \"/etc/bareos/old-director-dh.pem\"\n"
+                "  TlsProtocol = \"+TLSv1.2\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertConsoleDirectorResource(
+      "prod", "admin", "bareos-dir",
+      {.address = std::string{"director.example.test"},
+       .description = std::string{"Updated imported director"},
+       .tls_cipher_list = std::string{"DEFAULT:@SECLEVEL=2"},
+       .tls_cipher_suites = std::string{"TLS_AES_256_GCM_SHA384"},
+       .tls_dh_file = std::string{"/etc/bareos/new-director-dh.pem"},
+       .tls_protocol = std::string{"+TLSv1.2:+TLSv1.3"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(updated.value->path / "bconsole.conf");
+  EXPECT_NE(updated_text.find("Address = director.example.test"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated imported director\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherList = \"DEFAULT:@SECLEVEL=2\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherSuites = \"TLS_AES_256_GCM_SHA384\""),
+            std::string::npos);
+  EXPECT_NE(
+      updated_text.find("TlsDhFile = \"/etc/bareos/new-director-dh.pem\""),
+      std::string::npos);
+  EXPECT_NE(updated_text.find("TlsProtocol = \"+TLSv1.2:+TLSv1.3\""),
+            std::string::npos);
+}
+
+TEST(BconfigService, UpsertsConsoleComponentDirectorTlsCertificatePaths)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  WriteTextFile(source_root.path() / "bconsole.conf",
+                "#\n"
+                "# Bareos User Agent (or Console) Configuration File\n"
+                "#\n"
+                "\n"
+                "Console {\n"
+                "  Name = admin\n"
+                "  Description = \"Imported Console\"\n"
+                "  Password = \"secret\"\n"
+                "  Director = bareos-dir\n"
+                "}\n"
+                "\n"
+                "Director {\n"
+                "  Name = bareos-dir\n"
+                "  Description = \"Imported Director\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "  TlsCaCertificateFile = \"/etc/bareos/old-ca.pem\"\n"
+                "  TlsCaCertificateDir = \"/etc/old-ssl/certs\"\n"
+                "  TlsCertificateRevocationList = \"/etc/bareos/old-crl.pem\"\n"
+                "  TlsCertificate = \"/etc/bareos/old-director-cert.pem\"\n"
+                "  TlsKey = \"/etc/bareos/old-director-key.pem\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertConsoleDirectorResource(
+      "prod", "admin", "bareos-dir",
+      {.address = std::string{"director.example.test"},
+       .description = std::string{"Updated imported director"},
+       .tls_ca_certificate_file = std::string{"/etc/bareos/new-ca.pem"},
+       .tls_ca_certificate_dir = std::string{"/etc/ssl/certs"},
+       .tls_certificate_revocation_list
+       = std::string{"/etc/bareos/new-crl.pem"},
+       .tls_certificate = std::string{"/etc/bareos/new-director-cert.pem"},
+       .tls_key = std::string{"/etc/bareos/new-director-key.pem"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(updated.value->path / "bconsole.conf");
+  EXPECT_NE(updated_text.find("Address = director.example.test"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated imported director\""),
+            std::string::npos);
+  EXPECT_NE(
+      updated_text.find("TlsCaCertificateFile = \"/etc/bareos/new-ca.pem\""),
+      std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCaCertificateDir = \"/etc/ssl/certs\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find(
+                "TlsCertificateRevocationList = \"/etc/bareos/new-crl.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find(
+                "TlsCertificate = \"/etc/bareos/new-director-cert.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsKey = \"/etc/bareos/new-director-key.pem\""),
+            std::string::npos);
+}
+
+TEST(BconfigService, UpsertsConsoleComponentDirectorTlsAllowedCn)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  WriteTextFile(source_root.path() / "bconsole.conf",
+                "#\n"
+                "# Bareos User Agent (or Console) Configuration File\n"
+                "#\n"
+                "\n"
+                "Console {\n"
+                "  Name = admin\n"
+                "  Description = \"Imported Console\"\n"
+                "  Password = \"secret\"\n"
+                "  Director = bareos-dir\n"
+                "}\n"
+                "\n"
+                "Director {\n"
+                "  Name = bareos-dir\n"
+                "  Description = \"Imported Director\"\n"
+                "  Address = localhost\n"
+                "  Password = \"secret\"\n"
+                "  TlsAllowedCn = \"old-director.example.test\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto updated = state.UpsertConsoleDirectorResource(
+      "prod", "admin", "bareos-dir",
+      {.address = std::string{"director.example.test"},
+       .description = std::string{"Updated imported director"},
+       .tls_allowed_cn = std::vector<std::string>{"director.example.test",
+                                                  "backup.example.test"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(updated.value->path / "bconsole.conf");
+  EXPECT_NE(updated_text.find("Address = director.example.test"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated imported director\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = \"director.example.test\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = \"backup.example.test\""),
+            std::string::npos);
+  EXPECT_EQ(updated_text.find("TlsAllowedCn = \"old-director.example.test\""),
+            std::string::npos);
 }
 
 TEST(BconfigService,

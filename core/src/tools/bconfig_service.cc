@@ -1286,7 +1286,19 @@ std::string BuildConsoleConsoleResourceContent(
     const std::optional<bool>& tls_authenticate = std::nullopt,
     const std::optional<bool>& tls_enable = std::nullopt,
     const std::optional<bool>& tls_require = std::nullopt,
-    const std::optional<bool>& tls_verify_peer = std::nullopt)
+    const std::optional<bool>& tls_verify_peer = std::nullopt,
+    const std::optional<std::string>& tls_cipher_list = std::nullopt,
+    const std::optional<std::string>& tls_cipher_suites = std::nullopt,
+    const std::optional<std::string>& tls_dh_file = std::nullopt,
+    const std::optional<std::string>& tls_protocol = std::nullopt,
+    const std::optional<std::string>& tls_ca_certificate_file = std::nullopt,
+    const std::optional<std::string>& tls_ca_certificate_dir = std::nullopt,
+    const std::optional<std::string>& tls_certificate_revocation_list
+    = std::nullopt,
+    const std::optional<std::string>& tls_certificate = std::nullopt,
+    const std::optional<std::string>& tls_key = std::nullopt,
+    const std::optional<std::vector<std::string>>& tls_allowed_cn
+    = std::nullopt)
 {
   std::ostringstream content;
   content << "Console {\n"
@@ -1302,6 +1314,20 @@ std::string BuildConsoleConsoleResourceContent(
   AppendBoolDirective(content, "TlsEnable", tls_enable);
   AppendBoolDirective(content, "TlsRequire", tls_require);
   AppendBoolDirective(content, "TlsVerifyPeer", tls_verify_peer);
+  AppendQuotedDirective(content, "TlsCipherList", tls_cipher_list);
+  AppendQuotedDirective(content, "TlsCipherSuites", tls_cipher_suites);
+  AppendQuotedDirective(content, "TlsDhFile", tls_dh_file);
+  AppendQuotedDirective(content, "TlsProtocol", tls_protocol);
+  AppendQuotedDirective(content, "TlsCaCertificateFile",
+                        tls_ca_certificate_file);
+  AppendQuotedDirective(content, "TlsCaCertificateDir", tls_ca_certificate_dir);
+  AppendQuotedDirective(content, "TlsCertificateRevocationList",
+                        tls_certificate_revocation_list);
+  AppendQuotedDirective(content, "TlsCertificate", tls_certificate);
+  AppendQuotedDirective(content, "TlsKey", tls_key);
+  if (tls_allowed_cn) {
+    AppendRepeatedQuotedDirective(content, "TlsAllowedCn", *tls_allowed_cn);
+  }
   content << "}\n";
   return content.str();
 }
@@ -1316,7 +1342,19 @@ std::string BuildConsoleDirectorResourceContent(
     const std::optional<bool>& tls_authenticate = std::nullopt,
     const std::optional<bool>& tls_enable = std::nullopt,
     const std::optional<bool>& tls_require = std::nullopt,
-    const std::optional<bool>& tls_verify_peer = std::nullopt)
+    const std::optional<bool>& tls_verify_peer = std::nullopt,
+    const std::optional<std::string>& tls_cipher_list = std::nullopt,
+    const std::optional<std::string>& tls_cipher_suites = std::nullopt,
+    const std::optional<std::string>& tls_dh_file = std::nullopt,
+    const std::optional<std::string>& tls_protocol = std::nullopt,
+    const std::optional<std::string>& tls_ca_certificate_file = std::nullopt,
+    const std::optional<std::string>& tls_ca_certificate_dir = std::nullopt,
+    const std::optional<std::string>& tls_certificate_revocation_list
+    = std::nullopt,
+    const std::optional<std::string>& tls_certificate = std::nullopt,
+    const std::optional<std::string>& tls_key = std::nullopt,
+    const std::optional<std::vector<std::string>>& tls_allowed_cn
+    = std::nullopt)
 {
   std::ostringstream content;
   content << "Director {\n"
@@ -1332,6 +1370,20 @@ std::string BuildConsoleDirectorResourceContent(
   AppendBoolDirective(content, "TlsEnable", tls_enable);
   AppendBoolDirective(content, "TlsRequire", tls_require);
   AppendBoolDirective(content, "TlsVerifyPeer", tls_verify_peer);
+  AppendQuotedDirective(content, "TlsCipherList", tls_cipher_list);
+  AppendQuotedDirective(content, "TlsCipherSuites", tls_cipher_suites);
+  AppendQuotedDirective(content, "TlsDhFile", tls_dh_file);
+  AppendQuotedDirective(content, "TlsProtocol", tls_protocol);
+  AppendQuotedDirective(content, "TlsCaCertificateFile",
+                        tls_ca_certificate_file);
+  AppendQuotedDirective(content, "TlsCaCertificateDir", tls_ca_certificate_dir);
+  AppendQuotedDirective(content, "TlsCertificateRevocationList",
+                        tls_certificate_revocation_list);
+  AppendQuotedDirective(content, "TlsCertificate", tls_certificate);
+  AppendQuotedDirective(content, "TlsKey", tls_key);
+  if (tls_allowed_cn) {
+    AppendRepeatedQuotedDirective(content, "TlsAllowedCn", *tls_allowed_cn);
+  }
   content << "}\n";
   return content.str();
 }
@@ -2302,6 +2354,16 @@ struct ConsoleConsoleWriteContext {
   std::optional<bool> tls_enable{};
   std::optional<bool> tls_require{};
   std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
   std::vector<std::string> director_resources{};
   std::vector<std::string> console_resources_before{};
   std::vector<std::string> console_resources_after{};
@@ -2340,6 +2402,16 @@ struct ConsoleDirectorWriteContext {
   std::optional<bool> tls_enable{};
   std::optional<bool> tls_require{};
   std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
   std::vector<std::string> director_resources_before{};
   std::vector<std::string> director_resources_after{};
   std::vector<std::string> console_resources{};
@@ -3222,31 +3294,54 @@ OperationResult<ConsoleConsoleWriteContext> LoadConsoleConsoleWriteContext(
     if (HasMemberSource(*configured_console, {"TlsVerifyPeer"})) {
       context.tls_verify_peer = configured_console->tls_cert_.verify_peer_;
     }
+    if (HasMemberSource(*configured_console, {"TlsCipherList"})
+        && !configured_console->cipherlist_.empty()) {
+      context.tls_cipher_list = configured_console->cipherlist_;
+    }
+    if (HasMemberSource(*configured_console, {"TlsCipherSuites"})
+        && !configured_console->ciphersuites_.empty()) {
+      context.tls_cipher_suites = configured_console->ciphersuites_;
+    }
+    if (HasMemberSource(*configured_console, {"TlsDhFile"})
+        && !configured_console->tls_cert_.dhfile_.empty()) {
+      context.tls_dh_file = configured_console->tls_cert_.dhfile_;
+    }
+    if (HasMemberSource(*configured_console, {"TlsProtocol"})
+        && !configured_console->protocol_.empty()) {
+      context.tls_protocol = configured_console->protocol_;
+    }
+    if (HasMemberSource(*configured_console, {"TlsCaCertificateFile"})
+        && !configured_console->tls_cert_.ca_certfile_.empty()) {
+      context.tls_ca_certificate_file
+          = configured_console->tls_cert_.ca_certfile_;
+    }
+    if (HasMemberSource(*configured_console, {"TlsCaCertificateDir"})
+        && !configured_console->tls_cert_.ca_certdir_.empty()) {
+      context.tls_ca_certificate_dir
+          = configured_console->tls_cert_.ca_certdir_;
+    }
+    if (HasMemberSource(*configured_console, {"TlsCertificateRevocationList"})
+        && !configured_console->tls_cert_.crlfile_.empty()) {
+      context.tls_certificate_revocation_list
+          = configured_console->tls_cert_.crlfile_;
+    }
+    if (HasMemberSource(*configured_console, {"TlsCertificate"})
+        && !configured_console->tls_cert_.certfile_.empty()) {
+      context.tls_certificate = configured_console->tls_cert_.certfile_;
+    }
+    if (HasMemberSource(*configured_console, {"TlsKey"})
+        && !configured_console->tls_cert_.keyfile_.empty()) {
+      context.tls_key = configured_console->tls_cert_.keyfile_;
+    }
+    if (HasMemberSource(*configured_console, {"TlsAllowedCn"})) {
+      context.tls_allowed_cn
+          = configured_console->tls_cert_.allowed_certificate_common_names_;
+    }
 
-    auto unsupported_field_error
-        = [&](std::initializer_list<const char*> names,
-              std::string_view field) -> std::optional<std::string> {
-      if (!HasMemberSource(*configured_console, names)) { return std::nullopt; }
-      return "console resource '" + std::string{console_name}
-             + "' uses unsupported field '" + std::string{field}
-             + "', which is not managed yet.";
-    };
-    for (const auto& unsupported :
-         {unsupported_field_error({"RcFile"}, "RcFile"),
-          unsupported_field_error({"TlsCipherList"}, "TlsCipherList"),
-          unsupported_field_error({"TlsCipherSuites"}, "TlsCipherSuites"),
-          unsupported_field_error({"TlsDhFile"}, "TlsDhFile"),
-          unsupported_field_error({"TlsProtocol"}, "TlsProtocol"),
-          unsupported_field_error({"TlsCaCertificateFile"},
-                                  "TlsCaCertificateFile"),
-          unsupported_field_error({"TlsCaCertificateDir"},
-                                  "TlsCaCertificateDir"),
-          unsupported_field_error({"TlsCertificateRevocationList"},
-                                  "TlsCertificateRevocationList"),
-          unsupported_field_error({"TlsCertificate"}, "TlsCertificate"),
-          unsupported_field_error({"TlsKey"}, "TlsKey"),
-          unsupported_field_error({"TlsAllowedCn"}, "TlsAllowedCn")}) {
-      if (unsupported) { return {.error = *unsupported}; }
+    if (HasMemberSource(*configured_console, {"RcFile"})) {
+      return {.error = "console resource '" + std::string{console_name}
+                       + "' uses unsupported field 'RcFile', which is not "
+                         "managed yet."};
     }
   }
 
@@ -3343,24 +3438,48 @@ OperationResult<ConsoleDirectorWriteContext> LoadConsoleDirectorWriteContext(
     if (HasMemberSource(*configured_director, {"TlsVerifyPeer"})) {
       context.tls_verify_peer = configured_director->tls_cert_.verify_peer_;
     }
-
-    auto unsupported_field_error
-        = [&](std::initializer_list<const char*> names,
-              std::string_view field) -> std::optional<std::string> {
-      if (!HasMemberSource(*configured_director, names)) {
-        return std::nullopt;
-      }
-      return "console director '" + std::string{director_name}
-             + "' uses unsupported field '" + std::string{field}
-             + "' for managed updates.";
-    };
-    for (const auto* field :
-         {"TlsCipherList", "TlsCipherSuites", "TlsDhFile", "TlsProtocol",
-          "TlsCaCertificateFile", "TlsCaCertificateDir",
-          "TlsCertificateRevocationList", "TlsCertificate", "TlsKey",
-          "TlsAllowedCn"}) {
-      auto error = unsupported_field_error({field}, field);
-      if (error) { return {.error = *error}; }
+    if (HasMemberSource(*configured_director, {"TlsCipherList"})
+        && !configured_director->cipherlist_.empty()) {
+      context.tls_cipher_list = configured_director->cipherlist_;
+    }
+    if (HasMemberSource(*configured_director, {"TlsCipherSuites"})
+        && !configured_director->ciphersuites_.empty()) {
+      context.tls_cipher_suites = configured_director->ciphersuites_;
+    }
+    if (HasMemberSource(*configured_director, {"TlsDhFile"})
+        && !configured_director->tls_cert_.dhfile_.empty()) {
+      context.tls_dh_file = configured_director->tls_cert_.dhfile_;
+    }
+    if (HasMemberSource(*configured_director, {"TlsProtocol"})
+        && !configured_director->protocol_.empty()) {
+      context.tls_protocol = configured_director->protocol_;
+    }
+    if (HasMemberSource(*configured_director, {"TlsCaCertificateFile"})
+        && !configured_director->tls_cert_.ca_certfile_.empty()) {
+      context.tls_ca_certificate_file
+          = configured_director->tls_cert_.ca_certfile_;
+    }
+    if (HasMemberSource(*configured_director, {"TlsCaCertificateDir"})
+        && !configured_director->tls_cert_.ca_certdir_.empty()) {
+      context.tls_ca_certificate_dir
+          = configured_director->tls_cert_.ca_certdir_;
+    }
+    if (HasMemberSource(*configured_director, {"TlsCertificateRevocationList"})
+        && !configured_director->tls_cert_.crlfile_.empty()) {
+      context.tls_certificate_revocation_list
+          = configured_director->tls_cert_.crlfile_;
+    }
+    if (HasMemberSource(*configured_director, {"TlsCertificate"})
+        && !configured_director->tls_cert_.certfile_.empty()) {
+      context.tls_certificate = configured_director->tls_cert_.certfile_;
+    }
+    if (HasMemberSource(*configured_director, {"TlsKey"})
+        && !configured_director->tls_cert_.keyfile_.empty()) {
+      context.tls_key = configured_director->tls_cert_.keyfile_;
+    }
+    if (HasMemberSource(*configured_director, {"TlsAllowedCn"})) {
+      context.tls_allowed_cn
+          = configured_director->tls_cert_.allowed_certificate_common_names_;
     }
   }
 
@@ -8117,10 +8236,40 @@ ServiceState::UpsertConsoleConsoleResource(
   const auto tls_verify_peer = spec.tls_verify_peer
                                    ? spec.tls_verify_peer
                                    : context.value->tls_verify_peer;
+  const auto tls_cipher_list = spec.tls_cipher_list
+                                   ? spec.tls_cipher_list
+                                   : context.value->tls_cipher_list;
+  const auto tls_cipher_suites = spec.tls_cipher_suites
+                                     ? spec.tls_cipher_suites
+                                     : context.value->tls_cipher_suites;
+  const auto tls_dh_file
+      = spec.tls_dh_file ? spec.tls_dh_file : context.value->tls_dh_file;
+  const auto tls_protocol
+      = spec.tls_protocol ? spec.tls_protocol : context.value->tls_protocol;
+  const auto tls_ca_certificate_file
+      = spec.tls_ca_certificate_file ? spec.tls_ca_certificate_file
+                                     : context.value->tls_ca_certificate_file;
+  const auto tls_ca_certificate_dir
+      = spec.tls_ca_certificate_dir ? spec.tls_ca_certificate_dir
+                                    : context.value->tls_ca_certificate_dir;
+  const auto tls_certificate_revocation_list
+      = spec.tls_certificate_revocation_list
+            ? spec.tls_certificate_revocation_list
+            : context.value->tls_certificate_revocation_list;
+  const auto tls_certificate = spec.tls_certificate
+                                   ? spec.tls_certificate
+                                   : context.value->tls_certificate;
+  const auto tls_key = spec.tls_key ? spec.tls_key : context.value->tls_key;
+  const auto tls_allowed_cn = spec.tls_allowed_cn
+                                  ? spec.tls_allowed_cn
+                                  : context.value->tls_allowed_cn;
   const auto managed_resource = BuildConsoleConsoleResourceContent(
       console_name, *director, *password, description, history_file,
       history_length, heartbeat_interval, tls_authenticate, tls_enable,
-      tls_require, tls_verify_peer);
+      tls_require, tls_verify_peer, tls_cipher_list, tls_cipher_suites,
+      tls_dh_file, tls_protocol, tls_ca_certificate_file,
+      tls_ca_certificate_dir, tls_certificate_revocation_list, tls_certificate,
+      tls_key, tls_allowed_cn);
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
@@ -8267,9 +8416,40 @@ ServiceState::UpsertConsoleDirectorResource(
   const auto tls_verify_peer = spec.tls_verify_peer
                                    ? spec.tls_verify_peer
                                    : context.value->tls_verify_peer;
+  const auto tls_cipher_list = spec.tls_cipher_list
+                                   ? spec.tls_cipher_list
+                                   : context.value->tls_cipher_list;
+  const auto tls_cipher_suites = spec.tls_cipher_suites
+                                     ? spec.tls_cipher_suites
+                                     : context.value->tls_cipher_suites;
+  const auto tls_dh_file
+      = spec.tls_dh_file ? spec.tls_dh_file : context.value->tls_dh_file;
+  const auto tls_protocol
+      = spec.tls_protocol ? spec.tls_protocol : context.value->tls_protocol;
+  const auto tls_ca_certificate_file
+      = spec.tls_ca_certificate_file ? spec.tls_ca_certificate_file
+                                     : context.value->tls_ca_certificate_file;
+  const auto tls_ca_certificate_dir
+      = spec.tls_ca_certificate_dir ? spec.tls_ca_certificate_dir
+                                    : context.value->tls_ca_certificate_dir;
+  const auto tls_certificate_revocation_list
+      = spec.tls_certificate_revocation_list
+            ? spec.tls_certificate_revocation_list
+            : context.value->tls_certificate_revocation_list;
+  const auto tls_certificate = spec.tls_certificate
+                                   ? spec.tls_certificate
+                                   : context.value->tls_certificate;
+  const auto tls_key = spec.tls_key ? spec.tls_key : context.value->tls_key;
+  const auto tls_allowed_cn = spec.tls_allowed_cn
+                                  ? spec.tls_allowed_cn
+                                  : context.value->tls_allowed_cn;
   const auto managed_resource = BuildConsoleDirectorResourceContent(
       director_name, *address, port, password, description, heartbeat_interval,
-      tls_authenticate, tls_enable, tls_require, tls_verify_peer);
+      tls_authenticate, tls_enable, tls_require, tls_verify_peer,
+      tls_cipher_list, tls_cipher_suites, tls_dh_file, tls_protocol,
+      tls_ca_certificate_file, tls_ca_certificate_dir,
+      tls_certificate_revocation_list, tls_certificate, tls_key,
+      tls_allowed_cn);
 
   auto original_content = ReadFile(context.value->file_path);
   if (!original_content) { return {.error = original_content.error}; }
