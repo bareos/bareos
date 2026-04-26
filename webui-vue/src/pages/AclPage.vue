@@ -4,7 +4,7 @@
       <div class="col-12">
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>User Command ACL</span>
+              <span>{{ t('User Command ACL') }}</span>
             <q-space />
             <q-btn
               flat
@@ -27,15 +27,15 @@
                   {{ auth.user?.director ?? 'director' }}
                 </q-chip>
                 <q-chip dense square color="positive" text-color="white" icon="check_circle">
-                  {{ acl.allowedCount }} allowed
+                  {{ acl.allowedCount }} {{ t('allowed') }}
                 </q-chip>
                 <q-chip dense square color="negative" text-color="white" icon="block">
-                  {{ acl.deniedCount }} denied
+                  {{ acl.deniedCount }} {{ t('denied') }}
                 </q-chip>
               </div>
               <div class="text-caption text-grey-7 q-mt-sm">
-                Permissions come directly from the Director's <code>.help</code>
-                response for the current console.
+                {{ t("Permissions come directly from the Director's") }} <code>.help</code>
+                {{ t('response for the current console.') }}
               </div>
             </div>
 
@@ -46,8 +46,8 @@
                 outlined
                 clearable
                 debounce="150"
-                label="Filter commands"
-                hint="Search by command, description, or arguments"
+                :label="t('Filter commands')"
+                :hint="t('Search by command, description, or arguments')"
               >
                 <template #prepend>
                   <q-icon name="search" />
@@ -69,13 +69,13 @@
             </div>
 
             <q-banner v-if="acl.error" dense rounded class="bg-negative text-white q-mb-md">
-              Could not load command permissions: {{ acl.error }}
+              {{ t('Could not load command permissions') }}: {{ acl.error }}
             </q-banner>
 
             <q-inner-loading :showing="acl.loading" />
 
             <div v-if="!acl.loading && !filteredCommands.length" class="text-grey-7 q-pa-md">
-              No commands match the current filter.
+              {{ t('No commands match the current filter.') }}
             </div>
 
             <div v-else class="column q-gutter-md">
@@ -106,7 +106,7 @@
                         <code>{{ item.command }}</code>
                       </q-item-label>
                       <q-item-label caption class="text-grey-8">
-                        {{ item.description || 'No description provided.' }}
+                         {{ item.description || t('No description provided.') }}
                       </q-item-label>
                       <q-item-label
                         v-if="item.arguments"
@@ -123,7 +123,7 @@
                         :color="item.permission ? 'positive' : 'grey-6'"
                         text-color="white"
                       >
-                        {{ item.permission ? 'Allowed' : 'Denied' }}
+                         {{ item.permission ? t('Allowed') : t('Denied') }}
                       </q-chip>
                     </q-item-section>
                   </q-item>
@@ -139,6 +139,7 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useDirectorAclStore } from '../stores/directorAcl.js'
@@ -147,14 +148,15 @@ import { normaliseDirectorCommandPermissions } from '../composables/useDirectorF
 const auth = useAuthStore()
 const director = useDirectorStore()
 const acl = useDirectorAclStore()
+const { t } = useI18n()
 
 const search = ref('')
 const filter = ref('all')
-const filterOptions = [
-  { label: 'All', value: 'all' },
-  { label: 'Allowed', value: 'allowed' },
-  { label: 'Denied', value: 'denied' },
-]
+const filterOptions = computed(() => [
+  { label: t('All'), value: 'all' },
+  { label: t('Allowed'), value: 'allowed' },
+  { label: t('Denied'), value: 'denied' },
+])
 
 const filteredCommands = computed(() => {
   const needle = search.value.trim().toLowerCase()
@@ -174,10 +176,10 @@ const filteredCommands = computed(() => {
 })
 
 const commandGroups = computed(() => (
-  ['Commands', 'Dot commands', 'BVFS']
+  [t('Commands'), t('Dot commands'), 'BVFS']
     .map(name => ({
       name,
-      items: filteredCommands.value.filter(item => item.category === name),
+      items: filteredCommands.value.filter(item => t(item.category) === name),
     }))
     .filter(group => group.items.length > 0)
 ))

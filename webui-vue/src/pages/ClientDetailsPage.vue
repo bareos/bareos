@@ -1,10 +1,10 @@
 <template>
   <q-page class="q-pa-md">
-    <q-inner-loading :showing="loading" label="Loading client…" />
+    <q-inner-loading :showing="loading" :label="t('Loading client…')" />
     <div v-if="error" class="text-negative q-pa-md">{{ error }}</div>
     <template v-else-if="!loading">
     <div class="row items-center q-mb-md">
-      <q-btn flat icon="arrow_back" label="Back to Clients" :to="{ name: 'clients' }" no-caps class="q-mr-md" />
+      <q-btn flat icon="arrow_back" :label="t('Back to Clients')" :to="{ name: 'clients' }" no-caps class="q-mr-md" />
       <q-icon v-if="client" :name="osIcon(client)" :color="osColor(client)" size="28px" class="q-mr-sm" />
       <div class="text-h6">{{ client?.name }}</div>
       <q-badge v-if="client?.version" color="grey-6" :label="'v' + client.version" class="q-ml-sm text-mono" />
@@ -12,7 +12,7 @@
     <div v-if="client" class="row q-col-gutter-md">
       <div class="col-12 col-md-6">
         <q-card flat bordered class="bareos-panel q-mb-md">
-          <q-card-section class="panel-header">Client Details</q-card-section>
+          <q-card-section class="panel-header">{{ t('Client Details') }}</q-card-section>
           <q-card-section>
             <q-list dense separator>
               <q-item v-for="row in details" :key="row.label">
@@ -32,7 +32,7 @@
       <div class="col-12 col-md-6">
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>Recent Jobs</span>
+            <span>{{ t('Recent Jobs') }}</span>
             <q-space />
           </q-card-section>
           <q-card-section class="q-pa-none">
@@ -78,7 +78,7 @@
         </q-card>
       </div>
     </div>
-    <div v-else class="text-grey text-center q-pa-xl">Client not found.</div>
+    <div v-else class="text-grey text-center q-pa-xl">{{ t('Client not found.') }}</div>
     </template>
   </q-page>
 </template>
@@ -86,6 +86,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { formatBytes, timeAgo } from '../mock/index.js'
 import {
   directorCollection,
@@ -102,6 +103,7 @@ const route         = useRoute()
 const director      = useDirectorStore()
 const settings      = useSettingsStore()
 const fmtBytes      = formatBytes
+const { t } = useI18n()
 
 const loading    = ref(true)
 const clientData = ref(null)
@@ -153,25 +155,25 @@ const details = computed(() => {
   if (!client.value) return []
   const c = client.value
   return [
-    { label: 'OS',             value: osLabel(c.os) + (c.osInfo ? ` — ${c.osInfo}` : ''),
+    { label: t('OS'),          value: osLabel(c.os) + (c.osInfo ? ` — ${c.osInfo}` : ''),
       icon: osIcon(c), iconColor: osColor(c) },
-    { label: 'Architecture',   value: c.arch      || '—' },
-    { label: 'Version',        value: c.version   || '—' },
-    { label: 'Build Date',     value: c.buildDate || '—' },
-    { label: 'Address',        value: c.address   || '—' },
-    { label: 'Port',           value: c.port      || '—' },
-    { label: 'Status',         value: c.enabled   ? 'Enabled' : 'Disabled' },
-    { label: 'File Retention', value: c.fileretention || '—' },
-    { label: 'Job Retention',  value: c.jobretention  || '—' },
+    { label: t('Architecture'), value: c.arch      || '—' },
+    { label: t('Version'),      value: c.version   || '—' },
+    { label: t('Build Date'),   value: c.buildDate || '—' },
+    { label: t('Address'),      value: c.address   || '—' },
+    { label: t('Port'),         value: c.port      || '—' },
+    { label: t('Status'),       value: c.enabled   ? t('Enabled') : t('Disabled') },
+    { label: t('File Retention'), value: c.fileretention || '—' },
+    { label: t('Job Retention'),  value: c.jobretention  || '—' },
   ]
 })
 
-const jobCols = [
-  { name: 'id',        label: 'ID',     field: 'id',        align: 'right' },
-  { name: 'name',      label: 'Job',    field: 'name',      align: 'left'  },
-  { name: 'level',     label: 'Level',  field: 'level',     align: 'center'},
-  { name: 'starttime', label: 'Start',  field: 'starttime', align: 'left'  },
-  { name: 'bytes',     label: 'Bytes',  field: 'bytes',     align: 'right' },
-  { name: 'status',    label: 'Status', field: 'status',    align: 'center'},
-]
+const jobCols = computed(() => [
+  { name: 'id',        label: t('ID'),     field: 'id',        align: 'right' },
+  { name: 'name',      label: t('Job'),    field: 'name',      align: 'left'  },
+  { name: 'level',     label: t('Level'),  field: 'level',     align: 'center'},
+  { name: 'starttime', label: t('Start'),  field: 'starttime', align: 'left'  },
+  { name: 'bytes',     label: t('Bytes'),  field: 'bytes',     align: 'right' },
+  { name: 'status',    label: t('Status'), field: 'status',    align: 'center'},
+])
 </script>

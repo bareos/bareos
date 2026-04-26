@@ -32,5 +32,7 @@ describe('webui translations', () => {
   it('falls back to the English msgid for Vue-only labels', () => {
     expect(translate('de_DE', 'Advanced connection settings')).toBe('Advanced connection settings')
     expect(translate('de_DE', 'Cancel failed: {message}', { message: 'boom' })).toBe('Cancel failed: boom')
+    expect(translate('de_DE', 'encrypt newly labeled volumes')).toBe('encrypt newly labeled volumes')
+    expect(translate('de_DE', 'Encryption key stored in catalog')).toBe('Encryption key stored in catalog')
   })
 })

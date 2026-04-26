@@ -15,13 +15,14 @@
       size="xs"
       color="amber-8"
     >
-      <q-tooltip>Encryption key stored in catalog</q-tooltip>
+      <q-tooltip>{{ t('Encryption key stored in catalog') }}</q-tooltip>
     </q-icon>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { volumeHasEncryptionKey } from '../utils/volumes.js'
 
 const props = defineProps({
@@ -39,5 +40,6 @@ const props = defineProps({
   },
 })
 
+const { t } = useI18n()
 const hasEncryptionKey = computed(() => volumeHasEncryptionKey(props.volume))
 </script>

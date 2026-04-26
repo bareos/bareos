@@ -1,7 +1,7 @@
 <template>
   <q-page class="q-pa-md">
     <q-card flat bordered class="bareos-panel">
-      <q-card-section class="panel-header">Restore Files</q-card-section>
+      <q-card-section class="panel-header">{{ t('Restore Files') }}</q-card-section>
       <q-card-section>
 
         <!-- Source + Destination -->
@@ -10,31 +10,31 @@
           <!-- Source -->
           <div class="col-12 col-md-6">
             <q-card flat bordered>
-              <q-card-section class="text-subtitle2 q-pb-xs">Source</q-card-section>
+              <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Source') }}</q-card-section>
               <q-card-section class="q-pt-none q-gutter-sm">
                 <q-select
                   v-model="form.client"
                   :options="clientOptions"
-                  label="Backup Client"
+                  :label="t('Backup Client')"
                   outlined dense emit-value map-options
                   :loading="loadingClients"
-                  hint="Select a client to browse its backups"
+                  :hint="t('Select a client to browse its backups')"
                   @update:model-value="onClientChange"
                 />
                 <q-select
                   v-model="form.jobid"
                   :options="backupOptions"
-                  label="Backup Job"
+                  :label="t('Backup Job')"
                   outlined dense emit-value map-options
                   :loading="loadingBackups"
                   :disable="!form.client || loadingBackups"
                   no-error-icon
-                  hint="Select a completed backup job"
+                  :hint="t('Select a completed backup job')"
                   @update:model-value="initBrowser"
                 />
                 <q-checkbox
                   v-model="form.mergeJobsets"
-                  label="Include related jobs (Full + Incremental/Differential)"
+                  :label="t('Include related jobs (Full + Incremental/Differential)')"
                   dense
                 />
               </q-card-section>
@@ -44,32 +44,32 @@
           <!-- Destination -->
           <div class="col-12 col-md-6">
             <q-card flat bordered>
-              <q-card-section class="text-subtitle2 q-pb-xs">Destination</q-card-section>
+              <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Destination') }}</q-card-section>
               <q-card-section class="q-pt-none q-gutter-sm">
                 <q-select
                   v-model="form.restoreclient"
                   :options="clientOptions"
-                  label="Restore to Client"
+                  :label="t('Restore to Client')"
                   outlined dense emit-value map-options
                   :loading="loadingClients"
                 />
                 <q-select
                   v-model="form.restorejob"
                   :options="restoreJobOptions"
-                  label="Restore Job"
+                  :label="t('Restore Job')"
                   outlined dense emit-value map-options
                   :loading="loadingRestoreJobs"
                 />
                 <q-input
                   v-model="form.where"
-                  label="Restore to (Where)"
+                  :label="t('Restore to (Where)')"
                   outlined dense
                   placeholder="/ or /tmp/bareos-restores"
                 />
                 <q-select
                   v-model="form.replace"
                   :options="replaceOptions"
-                  label="Replace Policy"
+                  :label="t('Replace Policy')"
                   outlined dense emit-value map-options
                 />
               </q-card-section>
@@ -81,10 +81,10 @@
         <q-card flat bordered class="q-mb-md">
           <q-card-section class="panel-header q-py-xs q-px-md">
             <div class="row items-center justify-between">
-              <span class="text-body2">Browse Files</span>
+                <span class="text-body2">{{ t('Browse Files') }}</span>
               <div class="row items-center q-gutter-sm">
                 <span v-if="selectedFiles.size || selectedDirs.size" class="text-caption text-grey-5">
-                  {{ selectedFiles.size }} file(s), {{ selectedDirs.size }} folder(s) selected
+                  {{ t('{files} file(s), {folders} folder(s) selected', { files: selectedFiles.size, folders: selectedDirs.size }) }}
                 </span>
                 <q-btn
                   flat dense round size="sm"
@@ -95,8 +95,8 @@
                 >
                   <q-tooltip>{{
                     versionCheckEnabled
-                      ? 'Version check enabled – click to disable (improves performance)'
-                      : 'Version check disabled – click to enable'
+                      ? t('Version check enabled – click to disable (improves performance)')
+                      : t('Version check disabled – click to enable')
                   }}</q-tooltip>
                 </q-btn>
                 <q-spinner v-if="loadingBrowser && !browserReady" size="20px" color="primary" />
@@ -206,11 +206,11 @@
               <template v-if="browserError">
                 <q-icon name="error_outline" size="48px" color="negative" /><br />
                 <div class="text-caption text-negative q-mt-sm q-mb-md">{{ browserError }}</div>
-                <q-btn flat dense color="primary" label="Retry" icon="refresh" @click="initBrowser" :loading="loadingBrowser" />
+                <q-btn flat dense color="primary" :label="t('Retry')" icon="refresh" @click="initBrowser" :loading="loadingBrowser" />
               </template>
               <template v-else>
                 <q-icon name="folder_open" size="48px" /><br />
-                <span class="text-caption q-mt-sm">Select a client and backup job above to browse files</span>
+                <span class="text-caption q-mt-sm">{{ t('Select a client and backup job above to browse files') }}</span>
               </template>
             </div>
           </template>
@@ -219,15 +219,15 @@
         <!-- Action row -->
         <div class="row items-center q-gutter-sm">
           <q-btn
-            color="primary" label="Restore" icon="restore"
+            color="primary" :label="t('Restore')" icon="restore"
             :disable="!canRestore"
             :loading="loadingRestore"
             @click="doRestore"
           />
-          <q-btn flat label="Reset" @click="resetAll" />
+          <q-btn flat :label="t('Reset')" @click="resetAll" />
           <q-space />
           <span v-if="!canRestore && form.jobid" class="text-caption text-grey-6">
-            Select at least one file or folder to restore
+            {{ t('Select at least one file or folder to restore') }}
           </span>
         </div>
 
@@ -244,7 +244,7 @@
           {{ restoreResult.message }}
           <template v-if="restoreResult.jobid" #action>
             <router-link :to="`/jobs/${restoreResult.jobid}`" class="text-white">
-              View Job {{ restoreResult.jobid }}
+              {{ t('View Job') }} {{ restoreResult.jobid }}
             </router-link>
           </template>
         </q-banner>
@@ -257,7 +257,7 @@
   <q-dialog v-model="versionsDialog.open" max-width="700px">
     <q-card style="min-width:500px;max-width:700px">
       <q-card-section class="panel-header row items-center">
-        <span>Versions of {{ versionsDialog.fname }}</span>
+        <span>{{ t('Versions of') }} {{ versionsDialog.fname }}</span>
         <q-space />
         <q-btn flat round dense icon="close" color="white" v-close-popup />
       </q-card-section>
@@ -298,9 +298,9 @@
         </q-table>
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" v-close-popup />
+        <q-btn flat :label="t('Cancel')" v-close-popup />
         <q-btn
-          color="primary" label="Use this version"
+          color="primary" :label="t('Use this version')"
           :disable="versionsDialog.selectedFileId === null"
           @click="applyVersion"
           v-close-popup
@@ -313,12 +313,14 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { directorCollection } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import { formatBytes } from '../mock/index.js'
 
 const director = useDirectorStore()
 const route    = useRoute()
+const { t } = useI18n()
 
 // ── Form state ──────────────────────────────────────────────────────────────
 const form = ref({
@@ -331,12 +333,12 @@ const form = ref({
   mergeJobsets:  true,
 })
 
-const replaceOptions = [
-  { label: 'Always',  value: 'Always' },
-  { label: 'If Newer',value: 'IfNewer' },
-  { label: 'If Older',value: 'IfOlder' },
-  { label: 'Never',   value: 'Never' },
-]
+const replaceOptions = computed(() => [
+  { label: t('Always'), value: 'Always' },
+  { label: t('If Newer'), value: 'IfNewer' },
+  { label: t('If Older'), value: 'IfOlder' },
+  { label: t('Never'), value: 'Never' },
+])
 
 // ── Clients ─────────────────────────────────────────────────────────────────
 const clients        = ref([])
@@ -435,16 +437,16 @@ const currentEntries = ref([])
 const selectedFiles = ref(new Map())  // key = FileId
 const selectedDirs  = ref(new Map())  // key = PathId
 
-const browserCols = [
-  { name: 'sel',   label: '',         field: 'sel',   align: 'center', style: 'width:36px' },
-  { name: 'icon',  label: '',         field: 'isDir', align: 'center', style: 'width:28px' },
-  { name: 'name',  label: 'Name',     field: 'name',  align: 'left',   sortable: true },
-  { name: 'mode',  label: 'Mode',     field: 'mode',  align: 'left',   style: 'width:90px' },
-  { name: 'user',  label: 'User',     field: 'user',  align: 'left',   style: 'width:80px' },
-  { name: 'group', label: 'Group',    field: 'group', align: 'left',   style: 'width:80px' },
-  { name: 'size',  label: 'Size',     field: 'size',  align: 'right',  style: 'width:90px' },
-  { name: 'mtime', label: 'Modified', field: 'mtime', align: 'left',   style: 'width:160px' },
-]
+const browserCols = computed(() => [
+  { name: 'sel',   label: '',            field: 'sel',   align: 'center', style: 'width:36px' },
+  { name: 'icon',  label: '',            field: 'isDir', align: 'center', style: 'width:28px' },
+  { name: 'name',  label: t('Name'),     field: 'name',  align: 'left',   sortable: true },
+  { name: 'mode',  label: t('Mode'),     field: 'mode',  align: 'left',   style: 'width:90px' },
+  { name: 'user',  label: t('User'),     field: 'user',  align: 'left',   style: 'width:80px' },
+  { name: 'group', label: t('Group'),    field: 'group', align: 'left',   style: 'width:80px' },
+  { name: 'size',  label: t('Size'),     field: 'size',  align: 'right',  style: 'width:90px' },
+  { name: 'mtime', label: t('Modified'), field: 'mtime', align: 'left',   style: 'width:160px' },
+])
 
 async function initBrowser() {
   if (!form.value.jobid) return
@@ -474,7 +476,7 @@ async function initBrowser() {
     await fetchDir(null)
     browserReady.value = true
   } catch (e) {
-    browserError.value = e.message || 'Failed to load file tree'
+    browserError.value = e.message || t('Failed to load file tree')
   } finally {
     loadingBrowser.value = false
   }

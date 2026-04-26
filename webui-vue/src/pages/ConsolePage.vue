@@ -2,12 +2,12 @@
   <q-page class="q-pa-md">
     <q-card flat bordered class="bareos-panel" :style="isPopup ? 'max-width:100%' : 'max-width:960px'">
       <q-card-section class="panel-header row items-center">
-        <span>Bareos Console</span>
+        <span>{{ t('Bareos Console') }}</span>
         <q-space />
-        <q-chip dense square :color="statusColor" text-color="white" :label="consoleStatus" class="q-mr-sm" style="font-size:0.72rem" />
-        <q-btn v-if="!isPopup" flat round dense icon="open_in_new" color="white" title="Open in new window" @click="popOut" />
-        <q-btn v-if="isPopup"  flat round dense icon="close"       color="white" title="Close window"       @click="closePopup" />
-        <q-btn flat round dense icon="delete_sweep" color="white" title="Clear" @click="clearOutput" />
+        <q-chip dense square :color="statusColor" text-color="white" :label="consoleStatusLabel" class="q-mr-sm" style="font-size:0.72rem" />
+        <q-btn v-if="!isPopup" flat round dense icon="open_in_new" color="white" :title="t('Open in new window')" @click="popOut" />
+        <q-btn v-if="isPopup"  flat round dense icon="close"       color="white" :title="t('Close window')"       @click="closePopup" />
+        <q-btn flat round dense icon="delete_sweep" color="white" :title="t('Clear')" @click="clearOutput" />
       </q-card-section>
 
       <!-- terminal area — click to focus, then type -->
@@ -47,12 +47,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute }          from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore }     from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 
 const auth     = useAuthStore()
 const director = useDirectorStore()
 const route    = useRoute()
+const { t } = useI18n()
 
 const isPopup = computed(() => route.name === 'console-popup')
 
@@ -97,6 +99,12 @@ const statusColor = computed(() => ({
   connected: 'positive', connecting: 'warning',
   error: 'negative', disconnected: 'grey',
 }[consoleStatus.value] ?? 'grey'))
+const consoleStatusLabel = computed(() => ({
+  connected: t('Connected'),
+  connecting: t('Connecting'),
+  error: t('Error'),
+  disconnected: t('Disconnected'),
+}[consoleStatus.value] ?? consoleStatus.value))
 
 const quickCmds = ['status director', 'list jobs', 'list clients', 'list volumes', 'list pools', 'messages', 'help', 'version']
 
@@ -117,7 +125,7 @@ async function scrollBottom() {
 
 function clearOutput() {
   output.value = []
-  appendInfo('Console cleared.')
+  appendInfo(t('Console cleared.'))
 }
 
 function focusConsole() {
@@ -140,12 +148,12 @@ function connectRaw() {
 
   const creds = auth.getCredentials()
   if (!creds) {
-    appendErr('Not logged in — cannot open console.')
+    appendErr(t('Not logged in — cannot open console.'))
     return
   }
 
   consoleStatus.value = 'connecting'
-  appendInfo('Connecting to director…')
+  appendInfo(t('Connecting to director…'))
 
   rawWs = new WebSocket(WS_URL)
 
@@ -166,13 +174,13 @@ function connectRaw() {
 
     if (msg.type === 'auth_ok') {
       consoleStatus.value = 'connected'
-      appendInfo(`Connected to ${msg.director} — type 'help' for commands, click here to type.`)
+      appendInfo(t('Connected to {director} — type \'help\' for commands, click here to type.', { director: msg.director }))
       scrollBottom()
       return
     }
     if (msg.type === 'auth_error') {
       consoleStatus.value = 'error'
-      appendErr(`Authentication error: ${msg.message}`)
+      appendErr(`${t('Authentication error')}: ${msg.message}`)
       scrollBottom()
       return
     }
@@ -208,7 +216,7 @@ function connectRaw() {
 
   rawWs.onerror = () => {
     consoleStatus.value = 'error'
-    appendErr(`Cannot connect to proxy at ${WS_URL}`)
+      appendErr(t('Cannot connect to proxy at {url}', { url: WS_URL }))
     scrollBottom()
     rejectAll('WebSocket error')
   }
@@ -216,7 +224,7 @@ function connectRaw() {
   rawWs.onclose = () => {
     if (consoleStatus.value !== 'disconnected') {
       consoleStatus.value = 'disconnected'
-      appendInfo('Console disconnected.')
+      appendInfo(t('Console disconnected.'))
       scrollBottom()
     }
     rejectAll('WebSocket closed')
@@ -244,7 +252,7 @@ function send() {
   cmd.value = ''
 
   if (!rawWs || rawWs.readyState !== WebSocket.OPEN) {
-    appendErr('Not connected to director.')
+    appendErr(t('Not connected to director.'))
     scrollBottom()
     return
   }
@@ -253,7 +261,7 @@ function send() {
   const timer = setTimeout(() => {
     if (pendingCmds.has(id)) {
       pendingCmds.delete(id)
-      appendErr('Command timed out.')
+      appendErr(t('Command timed out.'))
       scrollBottom()
     }
   }, 30_000)
@@ -266,13 +274,13 @@ function quickSend(c) {
   output.value.push({ text: `${currentPrompt.value}${c}`, cls: 'console-cmd' })
   cmd.value = ''
   if (!rawWs || rawWs.readyState !== WebSocket.OPEN) {
-    appendErr('Not connected to director.')
+    appendErr(t('Not connected to director.'))
     scrollBottom()
     return
   }
   const id = String(++cmdSeq)
   const timer = setTimeout(() => {
-    pendingCmds.has(id) && (pendingCmds.delete(id), appendErr('Command timed out.'), scrollBottom())
+    pendingCmds.has(id) && (pendingCmds.delete(id), appendErr(t('Command timed out.')), scrollBottom())
   }, 30_000)
   pendingCmds.set(id, { timer })
   rawWs.send(JSON.stringify({ type: 'command', id, command: c }))
@@ -338,7 +346,7 @@ function onKeyDown(event) {
 
 // ── lifecycle ─────────────────────────────────────────────────────────────────
 onMounted(() => {
-  appendInfo('Bareos WebUI Console  —  click here to type, ↑/↓ for history, Ctrl+L to clear')
+  appendInfo(t('Bareos WebUI Console — click here to type, ↑/↓ for history, Ctrl+L to clear'))
   connectRaw()
 })
 

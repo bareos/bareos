@@ -21,7 +21,7 @@
 <template>
   <q-page class="q-pa-md">
     <!-- Back -->
-    <q-btn flat no-caps icon="arrow_back" label="Volumes" class="q-mb-md"
+    <q-btn flat no-caps icon="arrow_back" :label="t('Volumes')" class="q-mb-md"
            :to="{ name: 'storages', query: { tab: 'volumes' } }" />
 
     <!-- Loading / error -->
@@ -40,24 +40,24 @@
               name="vpn_key"
               color="amber-8"
             >
-              <q-tooltip>Encryption key stored in catalog</q-tooltip>
+              <q-tooltip>{{ t('Encryption key stored in catalog') }}</q-tooltip>
             </q-icon>
           </div>
           <div class="row q-gutter-xs q-mt-xs">
             <q-badge :color="statusColor(vol.volstatus)" :label="vol.volstatus" />
             <q-badge :color="vol.enabled !== '0' && vol.enabled !== false ? 'positive' : 'grey'">
-              {{ vol.enabled !== '0' && vol.enabled !== false ? 'Enabled' : 'Disabled' }}
+               {{ vol.enabled !== '0' && vol.enabled !== false ? t('Enabled') : t('Disabled') }}
             </q-badge>
             <q-badge v-if="vol.inchanger === '1' || vol.inchanger === true"
-                     color="teal" label="In Changer" />
+                     color="teal" :label="t('In Changer')" />
           </div>
         </div>
         <q-space />
         <!-- Status change -->
-        <q-btn flat dense icon="edit" label="Set Status" color="primary">
+         <q-btn flat dense icon="edit" :label="t('Set Status')" color="primary">
           <q-menu anchor="bottom right" self="top right" auto-close>
             <q-list dense style="min-width:130px">
-              <q-item-label header class="text-caption">Set status</q-item-label>
+              <q-item-label header class="text-caption">{{ t('Set status') }}</q-item-label>
               <q-item v-for="s in volStatuses" :key="s" clickable
                       :active="vol.volstatus === s"
                       @click="setVolStatus(s)">
@@ -82,7 +82,7 @@
         <!-- Left: details -->
         <div class="col-12 col-md-5">
           <q-card flat bordered class="bareos-panel q-mb-md">
-            <q-card-section class="panel-header">Volume Properties</q-card-section>
+            <q-card-section class="panel-header">{{ t('Volume Properties') }}</q-card-section>
             <q-card-section class="q-pa-none">
               <q-list dense separator>
                 <q-item v-for="row in detailRows" :key="row.label">
@@ -101,12 +101,12 @@
 
           <!-- Gauges card -->
           <q-card flat bordered class="bareos-panel">
-            <q-card-section class="panel-header">Usage</q-card-section>
+            <q-card-section class="panel-header">{{ t('Usage') }}</q-card-section>
             <q-card-section>
               <!-- Used bytes gauge -->
               <div class="q-mb-md">
                 <div class="row justify-between text-caption text-grey-6 q-mb-xs">
-                  <span>Used Bytes</span>
+                  <span>{{ t('Used Bytes') }}</span>
                   <span>{{ formatBytes(vol.volbytes) }}
                     <template v-if="Number(vol.maxvolbytes) > 0">
                       / {{ formatBytes(vol.maxvolbytes) }}
@@ -123,7 +123,7 @@
               <!-- Retention gauge -->
               <div class="q-mb-md">
                 <div class="row justify-between text-caption text-grey-6 q-mb-xs">
-                  <span>Retention</span>
+                  <span>{{ t('Retention') }}</span>
                   <span>{{ formatDuration(vol.volretention) }}</span>
                 </div>
                 <q-linear-progress
@@ -136,7 +136,7 @@
               <!-- Vol jobs / max jobs -->
               <div v-if="Number(vol.maxvoljobs) > 0">
                 <div class="row justify-between text-caption text-grey-6 q-mb-xs">
-                  <span>Jobs on Volume</span>
+                  <span>{{ t('Jobs on Volume') }}</span>
                   <span>{{ vol.voljobs }} / {{ vol.maxvoljobs }}</span>
                 </div>
                 <q-linear-progress
@@ -149,8 +149,8 @@
               <!-- Job usage breakdown -->
               <div v-if="jobUsageSegments.length" class="q-mt-md">
                 <div class="row justify-between text-caption text-grey-6 q-mb-xs">
-                  <span>Space by Job</span>
-                  <span>{{ jobUsageSegments.length }} job{{ jobUsageSegments.length !== 1 ? 's' : '' }}</span>
+                  <span>{{ t('Space by Job') }}</span>
+                  <span>{{ t('{count} job(s)', { count: jobUsageSegments.length }) }}</span>
                 </div>
                 <!-- stacked bar -->
                 <div style="height:14px; display:flex; overflow:hidden; background:#e0e0e0; border-radius:4px">
@@ -188,7 +188,7 @@
                     </span>
                   </div>
                   <div v-if="jobUsageSegments.length > 8" class="text-caption text-grey-5">
-                    + {{ jobUsageSegments.length - 8 }} more jobs
+                     + {{ t('{count} more jobs', { count: jobUsageSegments.length - 8 }) }}
                   </div>
                 </div>
               </div>
@@ -200,7 +200,7 @@
         <div class="col-12 col-md-7">
           <q-card flat bordered class="bareos-panel">
             <q-card-section class="panel-header row items-center">
-              <span>Jobs using this Volume ({{ jobs.length }})</span>
+               <span>{{ t('Jobs using this Volume') }} ({{ jobs.length }})</span>
               <q-space />
               <q-spinner v-if="jobsLoading" size="18px" />
             </q-card-section>
@@ -236,6 +236,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useDirectorStore } from '../stores/director.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
@@ -244,6 +245,7 @@ import { volumeHasEncryptionKey } from '../utils/volumes.js'
 const route      = useRoute()
 const director   = useDirectorStore()
 const volumeName = route.params.name
+const { t } = useI18n()
 
 const vol         = ref(null)
 const jobs        = ref([])
@@ -327,34 +329,34 @@ const detailRows = computed(() => {
   if (!vol.value) return []
   const v = vol.value
   return [
-    { label: 'Media ID',       value: v.mediaid ?? v.mediaId ?? '—' },
-    { label: 'Pool',           value: v.pool ?? v.Pool ?? '—',
+    { label: t('Media ID'),    value: v.mediaid ?? v.mediaId ?? '—' },
+    { label: t('Pool'),        value: v.pool ?? v.Pool ?? '—',
       link: v.pool ? { name: 'pool-details', params: { name: v.pool } } : null },
-    { label: 'Storage',        value: v.storage ?? v.storagename ?? '—' },
-    { label: 'Media Type',     value: v.mediatype ?? v.MediaType ?? '—' },
-    { label: 'Encryption Key', value: hasEncryptionKey.value ? 'Present' : '—' },
-    { label: 'Slot',           value: v.slot ?? '0' },
-    { label: 'Label Date',     value: v.labeldate ?? '—' },
-    { label: 'First Written',  value: v.firstwritten ?? '—' },
-    { label: 'Last Written',   value: v.lastwritten ?? '—' },
-    { label: 'Jobs on Vol',    value: `${v.voljobs ?? 0}${Number(v.maxvoljobs) > 0 ? ` / ${v.maxvoljobs}` : ''}` },
-    { label: 'Files on Vol',   value: v.volfiles ?? '0' },
-    { label: 'Blocks on Vol',  value: v.volblocks ?? '0' },
-    { label: 'Vol Writes',     value: v.volwrites ?? '0' },
-    { label: 'Vol Reads',      value: v.volreads ?? '0' },
-    { label: 'Read Time',      value: v.volreadtime ? formatDuration(v.volreadtime) : '—' },
-    { label: 'Write Time',     value: v.volwritetime ? formatDuration(v.volwritetime) : '—' },
-    { label: 'Used Bytes',     value: formatBytes(v.volbytes) },
-    { label: 'Max Bytes',      value: Number(v.maxvolbytes) > 0 ? formatBytes(v.maxvolbytes) : '∞' },
-    { label: 'Retention',      value: formatDuration(v.volretention) },
-    { label: 'Use Duration',   value: Number(v.voluseduration) > 0 ? formatDuration(v.voluseduration) : '—' },
-    { label: 'Max Jobs/Vol',   value: Number(v.maxvoljobs) > 0 ? v.maxvoljobs : '∞' },
-    { label: 'Max Files/Vol',  value: Number(v.maxvolfiles) > 0 ? v.maxvolfiles : '∞' },
-    { label: 'Recycle',        value: v.recycle === '1' ? 'Yes' : 'No' },
-    { label: 'Auto Prune',     value: v.autoprune === '1' ? 'Yes' : 'No' },
-    { label: 'Recycle Count',  value: v.recyclecount ?? '0' },
-    { label: 'Comment',        value: v.comment || '—' },
-  ].filter(r => r.value !== '—' || r.label === 'Storage' || r.label === 'Comment')
+    { label: t('Storage'),     value: v.storage ?? v.storagename ?? '—' },
+    { label: t('Media Type'),  value: v.mediatype ?? v.MediaType ?? '—' },
+    { label: t('Encryption Key'), value: hasEncryptionKey.value ? t('Present') : '—' },
+    { label: t('Slot'),        value: v.slot ?? '0' },
+    { label: t('Label Date'),  value: v.labeldate ?? '—' },
+    { label: t('First Written'), value: v.firstwritten ?? '—' },
+    { label: t('Last Written'),  value: v.lastwritten ?? '—' },
+    { label: t('Jobs on Vol'), value: `${v.voljobs ?? 0}${Number(v.maxvoljobs) > 0 ? ` / ${v.maxvoljobs}` : ''}` },
+    { label: t('Files on Vol'), value: v.volfiles ?? '0' },
+    { label: t('Blocks on Vol'), value: v.volblocks ?? '0' },
+    { label: t('Vol Writes'), value: v.volwrites ?? '0' },
+    { label: t('Vol Reads'), value: v.volreads ?? '0' },
+    { label: t('Read Time'), value: v.volreadtime ? formatDuration(v.volreadtime) : '—' },
+    { label: t('Write Time'), value: v.volwritetime ? formatDuration(v.volwritetime) : '—' },
+    { label: t('Used Bytes'), value: formatBytes(v.volbytes) },
+    { label: t('Max Bytes'), value: Number(v.maxvolbytes) > 0 ? formatBytes(v.maxvolbytes) : '∞' },
+    { label: t('Retention'), value: formatDuration(v.volretention) },
+    { label: t('Use Duration'), value: Number(v.voluseduration) > 0 ? formatDuration(v.voluseduration) : '—' },
+    { label: t('Max Jobs/Vol'), value: Number(v.maxvoljobs) > 0 ? v.maxvoljobs : '∞' },
+    { label: t('Max Files/Vol'), value: Number(v.maxvolfiles) > 0 ? v.maxvolfiles : '∞' },
+    { label: t('Recycle'), value: v.recycle === '1' ? t('Yes') : t('No') },
+    { label: t('Auto Prune'), value: v.autoprune === '1' ? t('Yes') : t('No') },
+    { label: t('Recycle Count'), value: v.recyclecount ?? '0' },
+    { label: t('Comment'), value: v.comment || '—' },
+  ].filter(r => r.value !== '—' || r.label === t('Storage') || r.label === t('Comment'))
 })
 
 // ── Volume status ─────────────────────────────────────────────────────────────
@@ -367,7 +369,7 @@ async function setVolStatus(newStatus) {
       `update volume=${quoteDirectorString(volumeName)} volstatus=${quoteDirectorString(newStatus)}`
     )
     if (vol.value) vol.value.volstatus = newStatus
-    statusMsg.value = { show: true, ok: true, text: `Status set to ${newStatus}` }
+    statusMsg.value = { show: true, ok: true, text: t('Status set to {status}', { status: newStatus }) }
     setTimeout(() => { statusMsg.value.show = false }, 4000)
   } catch (e) {
     statusMsg.value = { show: true, ok: false, text: e.message }
@@ -406,15 +408,15 @@ const jobUsageSegments = computed(() => {
   })
 })
 
-const jobCols = [
-  { name: 'jobid',      label: 'ID',        field: 'jobid',      align: 'right',  sortable: true },
-  { name: 'name',       label: 'Job Name',  field: 'name',       align: 'left',   sortable: true },
-  { name: 'client',     label: 'Client',    field: 'client',     align: 'left',   sortable: true },
-  { name: 'level',      label: 'Level',     field: 'level',      align: 'center' },
-  { name: 'starttime',  label: 'Start',     field: 'starttime',  align: 'left',   sortable: true },
-  { name: 'jobstatus',  label: 'Status',    field: 'jobstatus',  align: 'center', sortable: true },
-  { name: 'jobbytes',   label: 'Bytes',     field: 'jobbytes',   align: 'right',  sortable: true },
-]
+const jobCols = computed(() => [
+  { name: 'jobid',      label: t('ID'),       field: 'jobid',      align: 'right',  sortable: true },
+  { name: 'name',       label: t('Job Name'), field: 'name',       align: 'left',   sortable: true },
+  { name: 'client',     label: t('Client'),   field: 'client',     align: 'left',   sortable: true },
+  { name: 'level',      label: t('Level'),    field: 'level',      align: 'center' },
+  { name: 'starttime',  label: t('Start'),    field: 'starttime',  align: 'left',   sortable: true },
+  { name: 'jobstatus',  label: t('Status'),   field: 'jobstatus',  align: 'center', sortable: true },
+  { name: 'jobbytes',   label: t('Bytes'),    field: 'jobbytes',   align: 'right',  sortable: true },
+])
 
 // ── Color helpers ─────────────────────────────────────────────────────────────
 

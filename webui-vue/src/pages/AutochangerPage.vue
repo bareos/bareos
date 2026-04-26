@@ -22,10 +22,10 @@
 <template>
   <component :is="embedded ? 'div' : 'q-page'" class="q-pa-md">
     <q-tabs v-if="!embedded" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-route-tab label="Devices"      no-caps :to="{ path: '/storages' }" />
-      <q-route-tab label="Pools"        no-caps :to="{ path: '/storages', query: { tab: 'pools' } }" />
-      <q-route-tab label="Volumes"      no-caps :to="{ path: '/storages', query: { tab: 'volumes' } }" />
-      <q-route-tab label="Autochangers" no-caps :to="{ path: '/storages', query: { tab: 'autochangers' } }" />
+      <q-route-tab :label="t('Devices')"      no-caps :to="{ path: '/storages' }" />
+      <q-route-tab :label="t('Pools')"        no-caps :to="{ path: '/storages', query: { tab: 'pools' } }" />
+      <q-route-tab :label="t('Volumes')"      no-caps :to="{ path: '/storages', query: { tab: 'volumes' } }" />
+      <q-route-tab :label="t('Autochangers')" no-caps :to="{ path: '/storages', query: { tab: 'autochangers' } }" />
     </q-tabs>
 
     <!-- ── Toolbar ─────────────────────────────────────────── -->
@@ -37,7 +37,7 @@
         option-value="name"
         emit-value
         map-options
-        label="Autochanger"
+        :label="t('Autochanger')"
         outlined
         dense
         style="min-width:200px"
@@ -45,25 +45,25 @@
         @update:model-value="loadSlots"
       />
 
-      <q-btn flat round dense icon="refresh" title="Refresh"
+      <q-btn flat round dense icon="refresh" :title="t('Refresh')"
              :loading="slotsLoading" @click="loadSlots" />
 
       <q-space />
 
-      <q-btn outline color="primary" icon="sync_alt" label="Update Slots"
+      <q-btn outline color="primary" icon="sync_alt" :label="t('Update Slots')"
              :disable="!selectedStorage" @click="doUpdateSlots" />
 
-      <q-btn outline color="primary" icon="label" label="Label Barcodes"
+      <q-btn outline color="primary" icon="label" :label="t('Label barcodes')"
              :disable="!selectedStorage" @click="labelDialog = true" />
 
-      <q-btn outline color="primary" icon="monitor_heart" label="Status"
+      <q-btn outline color="primary" icon="monitor_heart" :label="t('Status')"
              :disable="!selectedStorage" @click="showStatus" />
     </div>
 
     <!-- No autochanger storages -->
     <q-banner v-if="!storagesLoading && autochangerStorages.length === 0"
               class="bg-warning text-white q-mb-md" rounded>
-      No autochanger storages configured.
+      {{ t('No autochanger storages configured.') }}
     </q-banner>
 
     <!-- ── Slot Tables ────────────────────────────────────── -->
@@ -72,7 +72,7 @@
       <!-- Storage Slots (left, wide) -->
       <div class="col-12 col-md-8">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">{{ storageSlots.length }} Storage Slots</q-card-section>
+          <q-card-section class="panel-header">{{ t('{count} Storage Slots', { count: storageSlots.length }) }}</q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
               :rows="storageSlots"
@@ -101,7 +101,7 @@
                       style="cursor:grab"
                       @dragstart="onSlotDragStart($event, props.row)">
                   <q-icon name="drag_indicator" color="grey-6" />
-                  <q-tooltip>Drag to a drive to mount</q-tooltip>
+                  <q-tooltip>{{ t('Drag to a drive to mount') }}</q-tooltip>
                 </q-td>
                 <q-td v-else :props="props" />
               </template>
@@ -114,12 +114,12 @@
                   <q-badge
                     v-if="slotInDriveMap[props.row.slotnr] != null"
                     color="blue"
-                    :label="`in Drive ${slotInDriveMap[props.row.slotnr]}`" />
+                    :label="t('in Drive {drive}', { drive: slotInDriveMap[props.row.slotnr] })" />
                   <q-badge v-else
                            :color="props.value === 'full' ? 'green' : 'grey'"
                            :label="props.value" />
                   <span v-if="dragOverSlot === props.row.slotnr"
-                        class="q-ml-sm text-caption text-grey-6">drop to move</span>
+                        class="q-ml-sm text-caption text-grey-6">{{ t('drop to move') }}</span>
                 </q-td>
               </template>
               <template #body-cell-mr_volname="props">
@@ -130,7 +130,7 @@
                       :volume="volumeDetailsByName[props.value]"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
-                           class="q-ml-xs" title="Copy volume name"
+                           class="q-ml-xs" :title="t('Copy volume name')"
                            @click.stop="copyName(props.value)" />
                   </template>
                 </q-td>
@@ -141,7 +141,7 @@
                     <q-badge v-if="props.value && props.value !== '?'"
                              :color="volStatusColor(props.value)"
                              :label="props.value" />
-                    <q-badge v-else color="grey" label="not in catalog" />
+                    <q-badge v-else color="grey" :label="t('not in catalog')" />
                   </span>
                 </q-td>
               </template>
@@ -153,9 +153,9 @@
                     class="text-primary"
                   >{{ props.value }}</router-link>
                   <q-btn v-else-if="props.row.content === 'full'"
-                         flat dense size="sm" icon="label" label="Label"
+                         flat dense size="sm" icon="label" :label="t('Label')"
                          color="primary" no-caps
-                         title="Label this volume into a pool"
+                         :title="t('Label this volume into a pool')"
                          @click="openSlotLabelDialog(props.row.slotnr)" />
                 </q-td>
               </template>
@@ -163,13 +163,13 @@
                 <q-td :props="props" class="text-right">
                   <template v-if="props.row.content === 'full' && slotInDriveMap[props.row.slotnr] == null">
                     <q-btn flat round dense size="sm" icon="play_circle"
-                           title="Mount to drive"
+                           :title="t('Mount to drive')"
                            @click="openSlotMountDialog(props.row.slotnr)" />
                     <q-btn flat round dense size="sm" icon="swap_horiz"
-                           title="Transfer to slot"
+                           :title="t('Transfer to slot')"
                            @click="openTransferDialog(props.row.slotnr)" />
                     <q-btn flat round dense size="sm" icon="upload"
-                           title="Export"
+                           :title="t('Export')"
                            @click="doExport(props.row.slotnr)" />
                   </template>
                 </q-td>
@@ -184,7 +184,7 @@
 
         <!-- Drives -->
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">{{ drives.length }} Drives</q-card-section>
+          <q-card-section class="panel-header">{{ t('{count} Drives', { count: drives.length }) }}</q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
               :rows="drives"
@@ -212,7 +212,7 @@
                   <q-badge :color="props.value === 'full' ? 'green' : 'grey'"
                            :label="props.value" />
                   <span v-if="dragOverDrive === props.row.slotnr && props.row.content === 'empty'"
-                        class="q-ml-sm text-caption text-grey-6">drop to mount</span>
+                        class="q-ml-sm text-caption text-grey-6">{{ t('drop to mount') }}</span>
                 </q-td>
               </template>
               <template #body-cell-volname="props">
@@ -223,7 +223,7 @@
                       :volume="volumeDetailsByName[props.value]"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
-                           class="q-ml-xs" title="Copy volume name"
+                           class="q-ml-xs" :title="t('Copy volume name')"
                            @click.stop="copyName(props.value)" />
                   </template>
                 </q-td>
@@ -232,11 +232,11 @@
                 <q-td :props="props" class="text-right">
                   <q-btn v-if="props.row.content === 'full'"
                          flat round dense size="sm" icon="eject"
-                         title="Release"
+                         :title="t('Release')"
                          @click="doRelease(props.row.slotnr)" />
                   <q-btn v-else
                          flat round dense size="sm" icon="play_circle"
-                         title="Mount"
+                         :title="t('Mount')"
                          @click="openMountDialog(props.row.slotnr)" />
                 </q-td>
               </template>
@@ -247,9 +247,9 @@
         <!-- Import/Export Slots -->
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center no-wrap">
-            <span class="col">{{ importSlots.length }} Import/Export Slots</span>
+            <span class="col">{{ t('{count} Import/Export Slots', { count: importSlots.length }) }}</span>
             <q-btn flat round dense size="sm" icon="download"
-                   title="Import all" @click="doImportAll" />
+                   :title="t('Import all')" @click="doImportAll" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
@@ -283,7 +283,7 @@
                       :volume="volumeDetailsByName[props.value]"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
-                           class="q-ml-xs" title="Copy volume name"
+                           class="q-ml-xs" :title="t('Copy volume name')"
                            @click.stop="copyName(props.value)" />
                   </template>
                 </q-td>
@@ -292,7 +292,7 @@
                 <q-td :props="props" class="text-right">
                   <q-btn v-if="props.row.content === 'full'"
                          flat round dense size="sm" icon="download"
-                         title="Import"
+                         :title="t('Import')"
                          @click="doImport(props.row.slotnr)" />
                 </q-td>
               </template>
@@ -308,29 +308,29 @@
     <q-dialog v-model="labelDialog">
       <q-card style="min-width:360px">
         <q-card-section class="row items-center q-pb-none">
-          <span class="text-h6">Label Barcodes</span>
+          <span class="text-h6">{{ t('Label barcodes') }}</span>
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-select v-model="labelForm.pool"
                     :options="poolNames"
-                    label="Pool" outlined dense />
+                    :label="t('Pool')" outlined dense />
           <q-input v-model="labelForm.drive"
-                   label="Drive (number)" outlined dense type="number"
+                   :label="t('Drive (number)')" outlined dense type="number"
                    :min="0" />
           <q-input v-model="labelForm.slots"
                    label='Slots (e.g. "1-10" or leave blank)'
                    outlined dense />
           <q-checkbox
             v-model="labelForm.encrypted"
-            label="encrypt newly labeled volumes"
+            :label="t('encrypt newly labeled volumes')"
             dense
           />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat label="Cancel" v-close-popup />
-          <q-btn color="primary" label="Label" :disable="!labelForm.pool" @click="doLabelBarcodes" />
+          <q-btn flat :label="t('Cancel')" v-close-popup />
+          <q-btn color="primary" :label="t('Label')" :disable="!labelForm.pool" @click="doLabelBarcodes" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -339,21 +339,21 @@
     <q-dialog v-model="mountDialog">
       <q-card style="min-width:300px">
         <q-card-section class="row items-center q-pb-none">
-          <span class="text-h6">Mount Tape</span>
+          <span class="text-h6">{{ t('Mount Tape') }}</span>
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-input v-model="mountForm.slot"
-                   label="Slot number" outlined dense type="number"
+                   :label="t('Slot number')" outlined dense type="number"
                    :min="1" :readonly="mountForm.slotFixed" />
           <q-input v-model="mountForm.drive"
-                   label="Drive number" outlined dense type="number"
+                   :label="t('Drive number')" outlined dense type="number"
                    :min="0" :readonly="mountForm.driveFixed" />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat label="Cancel" v-close-popup />
-          <q-btn color="primary" label="Mount" @click="doMount" />
+          <q-btn flat :label="t('Cancel')" v-close-popup />
+          <q-btn color="primary" :label="t('Mount')" @click="doMount" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -362,19 +362,19 @@
     <q-dialog v-model="transferDialog">
       <q-card style="min-width:320px">
         <q-card-section class="row items-center q-pb-none">
-          <span class="text-h6">Transfer from Slot {{ transferForm.srcSlot }}</span>
+          <span class="text-h6">{{ t('Transfer from Slot {slot}', { slot: transferForm.srcSlot }) }}</span>
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-select v-model="transferForm.dstSlot"
                     :options="emptySlotOptions"
-                    label="Destination Slot" outlined dense
+                    :label="t('Destination Slot')" outlined dense
                     emit-value map-options />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat label="Cancel" v-close-popup />
-          <q-btn color="primary" label="Transfer"
+          <q-btn flat :label="t('Cancel')" v-close-popup />
+          <q-btn color="primary" :label="t('Transfer')"
                  :disable="transferForm.dstSlot == null"
                  @click="doTransfer" />
         </q-card-actions>
@@ -385,26 +385,26 @@
     <q-dialog v-model="slotLabelDialog">
       <q-card style="min-width:360px">
         <q-card-section class="row items-center q-pb-none">
-          <span class="text-h6">Label Slot {{ slotLabelForm.slot }}</span>
+          <span class="text-h6">{{ t('Label Slot {slot}', { slot: slotLabelForm.slot }) }}</span>
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-select v-model="slotLabelForm.pool"
                     :options="poolNames"
-                    label="Pool" outlined dense />
+                    :label="t('Pool')" outlined dense />
           <q-input v-model="slotLabelForm.drive"
-                   label="Drive (number)" outlined dense type="number"
+                   :label="t('Drive (number)')" outlined dense type="number"
                    :min="0" />
           <q-checkbox
             v-model="slotLabelForm.encrypted"
-            label="encrypt newly labeled volumes"
+            :label="t('encrypt newly labeled volumes')"
             dense
           />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat label="Cancel" v-close-popup />
-          <q-btn color="primary" label="Label" :disable="!slotLabelForm.pool"
+          <q-btn flat :label="t('Cancel')" v-close-popup />
+          <q-btn color="primary" :label="t('Label')" :disable="!slotLabelForm.pool"
                  @click="doSlotLabel" />
         </q-card-actions>
       </q-card>
@@ -424,7 +424,7 @@
           </q-scroll-area>
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat label="Close" v-close-popup />
+          <q-btn flat :label="t('Close')" v-close-popup />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -433,6 +433,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useDirectorStore } from '../stores/director.js'
 import { useQuasar } from 'quasar'
 import { directorCollection } from '../composables/useDirectorFetch.js'
@@ -448,6 +449,7 @@ defineProps({
 
 const director = useDirectorStore()
 const $q = useQuasar()
+const { t } = useI18n()
 
 // ── State ───────────────────────────────────────────────────
 
@@ -754,7 +756,7 @@ async function doLabelBarcodes() {
     slots,
     encrypted,
   })
-  await runCmd('Label Barcodes', cmd)
+  await runCmd(t('Label barcodes'), cmd)
   await loadSlots()
 }
 

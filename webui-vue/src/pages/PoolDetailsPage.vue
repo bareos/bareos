@@ -1,7 +1,7 @@
 <template>
   <q-page class="q-pa-md">
     <!-- Back -->
-    <q-btn flat no-caps icon="arrow_back" label="Pools" class="q-mb-md"
+    <q-btn flat no-caps icon="arrow_back" :label="t('Pools')" class="q-mb-md"
            :to="{ name: 'storages', query: { tab: 'pools' } }" />
 
     <!-- Loading / error -->
@@ -16,7 +16,7 @@
           <div class="text-h5">{{ pool.name }}</div>
           <q-badge :color="poolTypeColor(pool.pooltype)" class="q-mt-xs">{{ pool.pooltype }}</q-badge>
           <q-badge :color="pool.enabled !== '0' ? 'positive' : 'grey'" class="q-mt-xs q-ml-xs">
-            {{ pool.enabled !== '0' ? 'Enabled' : 'Disabled' }}
+            {{ pool.enabled !== '0' ? t('Enabled') : t('Disabled') }}
           </q-badge>
         </div>
       </div>
@@ -25,7 +25,7 @@
         <!-- Details card -->
         <div class="col-12 col-md-5">
           <q-card flat bordered class="bareos-panel">
-            <q-card-section class="panel-header">Details</q-card-section>
+            <q-card-section class="panel-header">{{ t('Details') }}</q-card-section>
             <q-card-section class="q-pa-none">
               <q-list dense separator>
                 <q-item v-for="row in detailRows" :key="row.label">
@@ -41,7 +41,7 @@
         <div class="col-12 col-md-7">
           <q-card flat bordered class="bareos-panel">
             <q-card-section class="panel-header row items-center">
-              <span>Volumes ({{ volumes.length }})</span>
+              <span>{{ t('Volumes') }} ({{ volumes.length }})</span>
             </q-card-section>
             <q-card-section class="q-pa-none">
               <q-table :rows="volumes" :columns="volumeCols" row-key="volumename"
@@ -104,6 +104,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { normaliseVolume } from '../composables/useDirectorFetch.js'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 import { useDirectorStore } from '../stores/director.js'
@@ -112,6 +113,7 @@ import { formatBytes, formatDuration } from '../mock/index.js'
 const route     = useRoute()
 const director  = useDirectorStore()
 const poolName  = route.params.name
+const { t } = useI18n()
 
 const pool    = ref(null)
 const volumes = ref([])
@@ -147,32 +149,32 @@ const detailRows = computed(() => {
   if (!pool.value) return []
   const p = pool.value
   return [
-    { label: 'Pool ID',           value: p.poolid },
-    { label: 'Label Format',      value: p.labelformat || '—' },
-    { label: 'Volumes',           value: `${p.numvols ?? 0} / ${p.maxvols ?? '∞'}` },
-    { label: 'Vol Retention',     value: formatDuration(p.volretention) },
-    { label: 'Vol Use Duration',  value: p.voluseduration > 0 ? formatDuration(p.voluseduration) : '—' },
-    { label: 'Max Jobs/Vol',      value: p.maxvoljobs > 0 ? p.maxvoljobs : '∞' },
-    { label: 'Max Bytes/Vol',     value: p.maxvolbytes > 0 ? formatBytes(p.maxvolbytes) : '∞' },
-    { label: 'Auto Prune',        value: p.autoprune === '1' ? 'Yes' : 'No' },
-    { label: 'Recycle',           value: p.recycle === '1' ? 'Yes' : 'No' },
-    { label: 'Use Once',          value: p.useonce === '1' ? 'Yes' : 'No' },
-    { label: 'Accept Any Volume', value: p.acceptanyvolume === '1' ? 'Yes' : 'No' },
-    { label: 'Scratch Pool ID',   value: p.scratchpoolid > 0 ? p.scratchpoolid : '—' },
-    { label: 'Recycle Pool ID',   value: p.recyclepoolid > 0 ? p.recyclepoolid : '—' },
+    { label: t('Pool ID'),           value: p.poolid },
+    { label: t('Label Format'),      value: p.labelformat || '—' },
+    { label: t('Volumes'),           value: `${p.numvols ?? 0} / ${p.maxvols ?? '∞'}` },
+    { label: t('Vol Retention'),     value: formatDuration(p.volretention) },
+    { label: t('Vol Use Duration'),  value: p.voluseduration > 0 ? formatDuration(p.voluseduration) : '—' },
+    { label: t('Max Jobs/Vol'),      value: p.maxvoljobs > 0 ? p.maxvoljobs : '∞' },
+    { label: t('Max Bytes/Vol'),     value: p.maxvolbytes > 0 ? formatBytes(p.maxvolbytes) : '∞' },
+    { label: t('Auto Prune'),        value: p.autoprune === '1' ? t('Yes') : t('No') },
+    { label: t('Recycle'),           value: p.recycle === '1' ? t('Yes') : t('No') },
+    { label: t('Use Once'),          value: p.useonce === '1' ? t('Yes') : t('No') },
+    { label: t('Accept Any Volume'), value: p.acceptanyvolume === '1' ? t('Yes') : t('No') },
+    { label: t('Scratch Pool ID'),   value: p.scratchpoolid > 0 ? p.scratchpoolid : '—' },
+    { label: t('Recycle Pool ID'),   value: p.recyclepoolid > 0 ? p.recyclepoolid : '—' },
   ]
 })
 
-const volumeCols = [
-  { name: 'volumename',  label: 'Volume',       field: 'volumename',  align: 'left',   sortable: true },
-  { name: 'volstatus',   label: 'Status',        field: 'volstatus',   align: 'center', sortable: true },
-  { name: 'volbytes',    label: 'Used',          field: 'volbytes',    align: 'right',  sortable: true },
-  { name: 'maxvolbytes', label: 'Max Bytes',     field: 'maxvolbytes', align: 'right',  sortable: true },
-  { name: 'volretention',label: 'Retention',     field: 'volretention',align: 'left',   sortable: true },
-  { name: 'lastwritten', label: 'Last Written',  field: 'lastwritten', align: 'left',   sortable: true },
-  { name: 'inchanger',   label: 'In Changer',    field: 'inchanger',   align: 'center' },
-  { name: 'storage',     label: 'Storage',       field: 'storage',     align: 'left'   },
-]
+const volumeCols = computed(() => [
+  { name: 'volumename',  label: t('Volume'),       field: 'volumename',  align: 'left',   sortable: true },
+  { name: 'volstatus',   label: t('Status'),       field: 'volstatus',   align: 'center', sortable: true },
+  { name: 'volbytes',    label: t('Used'),         field: 'volbytes',    align: 'right',  sortable: true },
+  { name: 'maxvolbytes', label: t('Max Bytes'),    field: 'maxvolbytes', align: 'right',  sortable: true },
+  { name: 'volretention',label: t('Retention'),    field: 'volretention',align: 'left',   sortable: true },
+  { name: 'lastwritten', label: t('Last Written'), field: 'lastwritten', align: 'left',   sortable: true },
+  { name: 'inchanger',   label: t('In Changer'),   field: 'inchanger',   align: 'center' },
+  { name: 'storage',     label: t('Storage'),      field: 'storage',     align: 'left'   },
+])
 
 const maxVolBytes = computed(() =>
   Math.max(1, ...volumes.value.map(v => Number(v.volbytes) || 0))

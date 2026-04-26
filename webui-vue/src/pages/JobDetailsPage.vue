@@ -1,15 +1,15 @@
 <template>
   <q-page class="q-pa-md">
-    <q-inner-loading :showing="loading" label="Loading job…" />
+    <q-inner-loading :showing="loading" :label="t('Loading job…')" />
     <div v-if="error" class="text-negative q-pa-md">{{ error }}</div>
 
     <div v-else-if="!loading && job">
       <!-- Header row -->
       <div class="row items-center q-mb-md">
-        <q-btn flat icon="arrow_back" label="Back to Jobs" :to="{ name: 'jobs' }" no-caps class="q-mr-md" />
+        <q-btn flat icon="arrow_back" :label="t('Back to Jobs')" :to="{ name: 'jobs' }" no-caps class="q-mr-md" />
         <div class="text-h6">Job #{{ job.id }} — {{ job.name }}</div>
         <q-space />
-        <q-spinner v-if="isRunning" color="primary" size="18px" class="q-mr-sm" title="Auto-refreshing…" />
+        <q-spinner v-if="isRunning" color="primary" size="18px" class="q-mr-sm" :title="t('Auto-refreshing…')" />
         <JobStatusBadge :status="job.status" />
       </div>
 
@@ -18,7 +18,7 @@
         <!-- Summary -->
         <div class="col-12 col-md-6">
           <q-card flat bordered class="bareos-panel">
-            <q-card-section class="panel-header">Job Summary</q-card-section>
+            <q-card-section class="panel-header">{{ t('Job Summary') }}</q-card-section>
             <q-card-section>
               <q-list dense separator>
                 <q-item v-for="row in summaryRows" :key="row.label">
@@ -45,18 +45,18 @@
 
           <!-- Actions -->
           <q-card flat bordered class="bareos-panel">
-            <q-card-section class="panel-header">Actions</q-card-section>
+            <q-card-section class="panel-header">{{ t('Actions') }}</q-card-section>
             <q-card-section class="q-gutter-sm">
-              <q-btn icon="restart_alt" label="Rerun Job" color="primary" no-caps
+              <q-btn icon="restart_alt" :label="t('Rerun Job')" color="primary" no-caps
                      :loading="rerunLoading" @click="confirmRerun" />
-              <q-btn v-if="isRunning" icon="cancel" label="Cancel Job" color="negative" no-caps
+              <q-btn v-if="isRunning" icon="cancel" :label="t('Cancel Job')" color="negative" no-caps
                      :loading="cancelLoading" @click="confirmCancel" />
             </q-card-section>
           </q-card>
 
           <!-- Volumes used -->
           <q-card flat bordered class="bareos-panel">
-            <q-card-section class="panel-header">Volumes Used</q-card-section>
+            <q-card-section class="panel-header">{{ t('Volumes Used') }}</q-card-section>
             <q-card-section class="q-pa-none">
               <q-table
                 :rows="volumes"
@@ -65,7 +65,7 @@
                 dense flat
                 hide-bottom
                 :pagination="{ rowsPerPage: 0 }"
-                no-data-label="No volumes recorded."
+                :no-data-label="t('No volumes recorded.')"
               >
                 <template #body-cell-volumename="props">
                   <q-td :props="props">
@@ -77,7 +77,7 @@
                   <q-th :props="props">
                     {{ props.col.label }}
                     <q-icon name="help_outline" size="xs" class="q-ml-xs text-grey-5">
-                      <q-tooltip>Catalog index of the first file written to this volume for this job. Used internally by Bareos to locate and restore files.</q-tooltip>
+                      <q-tooltip>{{ t('Catalog index of the first file written to this volume for this job. Used internally by Bareos to locate and restore files.') }}</q-tooltip>
                     </q-icon>
                   </q-th>
                 </template>
@@ -85,7 +85,7 @@
                   <q-th :props="props">
                     {{ props.col.label }}
                     <q-icon name="help_outline" size="xs" class="q-ml-xs text-grey-5">
-                      <q-tooltip>Catalog index of the last file written to this volume for this job. The range first–last covers all files stored on this volume for this job.</q-tooltip>
+                      <q-tooltip>{{ t('Catalog index of the last file written to this volume for this job. The range first–last covers all files stored on this volume for this job.') }}</q-tooltip>
                     </q-icon>
                   </q-th>
                 </template>
@@ -99,17 +99,17 @@
         <div class="col-12">
           <q-card flat bordered class="bareos-panel">
             <q-card-section class="panel-header row items-center">
-              <span>Job Log</span>
+                <span>{{ t('Job Log') }}</span>
               <q-space />
               <q-btn flat round dense icon="content_copy" size="sm" color="white"
-                     title="Copy log" @click="copyLog" />
+                     :title="t('Copy log')" @click="copyLog" />
             </q-card-section>
             <q-card-section class="q-pa-none">
               <div v-if="highlightedLines.length" class="job-log q-pa-md" ref="logContainer">
                 <div v-for="(line, i) in highlightedLines" :key="i"
                      :class="['log-line', `log-line--${line.type}`]">{{ line.text }}</div>
               </div>
-              <div v-else class="text-grey text-caption q-pa-md">No log entries found.</div>
+               <div v-else class="text-grey text-caption q-pa-md">{{ t('No log entries found.') }}</div>
             </q-card-section>
           </q-card>
         </div>
@@ -117,7 +117,7 @@
       </div>
     </div>
 
-    <div v-else-if="!loading" class="text-center q-pa-xl text-grey">Job not found.</div>
+    <div v-else-if="!loading" class="text-center q-pa-xl text-grey">{{ t('Job not found.') }}</div>
   </q-page>
 </template>
 
@@ -125,6 +125,7 @@
 import { ref, computed, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
+import { useI18n } from 'vue-i18n'
 import { jobLevelMap, formatBytes, formatSpeed } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -140,6 +141,7 @@ const router   = useRouter()
 const $q       = useQuasar()
 const director = useDirectorStore()
 const settings = useSettingsStore()
+const { t } = useI18n()
 
 const currentJobId = computed(() => route.params.id)
 
@@ -174,7 +176,7 @@ async function loadJob() {
     const entry = Array.isArray(raw?.jobs) ? raw.jobs[0] : (raw?.jobs ?? raw)
     jobData.value = entry ? normaliseJob(entry) : null
   } else {
-    error.value = jobRes.reason?.message ?? 'Failed to load job'
+    error.value = jobRes.reason?.message ?? t('Failed to load job')
   }
 
   if (logRes.status === 'fulfilled') {
@@ -232,7 +234,7 @@ watch(currentJobId, async () => {
 // ── computed ──────────────────────────────────────────────────────────────────
 const job = computed(() => jobData.value)
 
-const volumeCols = [
+const volumeCols = computed(() => [
   { name: 'volumename', label: 'Volume',
     field: 'volumename', align: 'left', sortable: true,
     headerClasses: 'text-weight-bold' },
@@ -242,24 +244,28 @@ const volumeCols = [
   { name: 'lastindex',  label: 'Last File Index',
     field: 'lastindex',  align: 'right', sortable: true,
     headerTitle: 'Catalog index of the last file written to this volume for this job' },
-]
+].map((col) => ({
+  ...col,
+  label: t(col.label),
+  headerTitle: col.headerTitle ? t(col.headerTitle) : col.headerTitle,
+})))
 
 const summaryRows = computed(() => {
   if (!job.value) return []
   const j = job.value
   return [
-    { label: 'Job ID',     value: j.id },
-    { label: 'Job Name',   value: j.name },
-    { label: 'Client',     value: j.client },
-    { label: 'Type',       value: j.type  || '—', type: j.type  || null },
-    { label: 'Level',      value: jobLevelMap[j.level] || j.level || '—', level: j.level || null },
-    { label: 'Start Time', value: j.starttime || '—' },
-    { label: 'End Time',   value: j.endtime   || '—' },
-    { label: 'Duration',   value: j.duration  || '—' },
-    { label: 'Files',      value: formatNumber(j.files, settings.locale) },
-    { label: 'Bytes',      value: formatBytes(j.bytes) },
-    { label: 'Speed',      value: formatSpeed(j.bytes, j.duration) },
-    { label: 'Errors',     value: j.errors },
+    { label: t('Job ID'),     value: j.id },
+    { label: t('Job Name'),   value: j.name },
+    { label: t('Client'),     value: j.client },
+    { label: t('Type'),       value: j.type  || '—', type: j.type  || null },
+    { label: t('Level'),      value: jobLevelMap[j.level] || j.level || '—', level: j.level || null },
+    { label: t('Start Time'), value: j.starttime || '—' },
+    { label: t('End Time'),   value: j.endtime   || '—' },
+    { label: t('Duration'),   value: j.duration  || '—' },
+    { label: t('Files'),      value: formatNumber(j.files, settings.locale) },
+    { label: t('Bytes'),      value: formatBytes(j.bytes) },
+    { label: t('Speed'),      value: formatSpeed(j.bytes, j.duration) },
+    { label: t('Errors'),     value: j.errors },
   ]
 })
 
@@ -304,10 +310,10 @@ onUnmounted(stopPolling)
 // ── actions ───────────────────────────────────────────────────────────────────
 function confirmRerun() {
   $q.dialog({
-    title: 'Rerun Job',
-    message: `Rerun job ${job.value.name} (ID ${job.value.id})?`,
-    ok:     { label: 'Rerun', color: 'primary', flat: true },
-    cancel: { label: 'Cancel', flat: true },
+    title: t('Rerun Job'),
+    message: t('Rerun job {name} (ID {id})?', { name: job.value.name, id: job.value.id }),
+    ok:     { label: t('Rerun'), color: 'primary', flat: true },
+    cancel: { label: t('Cancel'), flat: true },
   }).onOk(doRerun)
 }
 
@@ -316,10 +322,10 @@ async function doRerun() {
   try {
     const res   = await director.call(`rerun jobid=${currentJobId.value} yes`)
     const newId = res?.run?.jobid ?? res?.jobid ?? null
-    $q.notify({ type: 'positive', message: `Job restarted${newId ? ` as ID ${newId}` : ''}.` })
+    $q.notify({ type: 'positive', message: newId ? t('Job restarted as ID {id}.', { id: newId }) : t('Job restarted.') })
     if (newId) router.push({ name: 'job-details', params: { id: newId } })
   } catch (e) {
-    $q.notify({ type: 'negative', message: `Rerun failed: ${e.message}` })
+    $q.notify({ type: 'negative', message: `${t('Rerun failed')}: ${e.message}` })
   } finally {
     rerunLoading.value = false
   }
@@ -327,10 +333,10 @@ async function doRerun() {
 
 function confirmCancel() {
   $q.dialog({
-    title: 'Cancel Job',
-    message: `Cancel job ${job.value.name} (ID ${job.value.id})?`,
-    ok:     { label: 'Cancel Job', color: 'negative', flat: true },
-    cancel: { label: 'Keep Running', flat: true },
+    title: t('Cancel Job'),
+    message: t('Cancel job {name} (ID {id})?', { name: job.value.name, id: job.value.id }),
+    ok:     { label: t('Cancel Job'), color: 'negative', flat: true },
+    cancel: { label: t('Keep Running'), flat: true },
   }).onOk(doCancel)
 }
 
@@ -338,10 +344,10 @@ async function doCancel() {
   cancelLoading.value = true
   try {
     await director.call(`cancel jobid=${currentJobId.value} yes`)
-    $q.notify({ type: 'positive', message: `Job ${currentJobId.value} cancelled.` })
+    $q.notify({ type: 'positive', message: t('Job {id} cancelled.', { id: currentJobId.value }) })
     await loadJob()
   } catch (e) {
-    $q.notify({ type: 'negative', message: `Cancel failed: ${e.message}` })
+    $q.notify({ type: 'negative', message: `${t('Cancel failed')}: ${e.message}` })
   } finally {
     cancelLoading.value = false
   }
@@ -349,7 +355,7 @@ async function doCancel() {
 
 function copyLog() {
   navigator.clipboard?.writeText(jobLog.value)
-  $q.notify({ message: 'Log copied to clipboard', color: 'positive', icon: 'check', timeout: 1500 })
+  $q.notify({ message: t('Log copied to clipboard'), color: 'positive', icon: 'check', timeout: 1500 })
 }
 </script>
 

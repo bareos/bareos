@@ -1,11 +1,11 @@
 <template>
   <q-page class="q-pa-md">
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-tab name="list"     label="Show"     no-caps />
-      <q-tab name="actions"  label="Actions"  no-caps data-testid="jobs-tab-actions" />
-      <q-tab name="run"      label="Run"      no-caps data-testid="jobs-tab-run" />
-      <q-tab name="rerun"    label="Rerun"    no-caps />
-      <q-tab name="timeline" label="Timeline" no-caps />
+      <q-tab name="list"     :label="t('Show')"     no-caps />
+      <q-tab name="actions"  :label="t('Actions')"  no-caps data-testid="jobs-tab-actions" />
+      <q-tab name="run"      :label="t('Run')"      no-caps data-testid="jobs-tab-run" />
+      <q-tab name="rerun"    :label="t('Rerun')"    no-caps />
+      <q-tab name="timeline" :label="t('Timeline')" no-caps />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated swipeable>
@@ -14,9 +14,9 @@
       <q-tab-panel name="list" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>Job List</span>
+            <span>{{ t('Job List') }}</span>
             <q-space />
-            <q-input v-model="search" dense outlined placeholder="Search…" class="q-mr-sm" style="width:200px" clearable>
+            <q-input v-model="search" dense outlined :placeholder="t('Search…')" class="q-mr-sm" style="width:200px" clearable>
               <template #prepend><q-icon name="search" /></template>
             </q-input>
             <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ countdown }}s</span>
@@ -27,7 +27,7 @@
             <div v-if="statusFilter" class="q-px-md q-pt-sm">
               <q-chip removable color="primary" text-color="white" icon="filter_list"
                       @remove="statusFilter = ''" class="q-mb-xs">
-                Status: {{ jobStatusMap[statusFilter]?.label ?? statusFilter }}
+                {{ t('Status') }}: {{ jobStatusMap[statusFilter]?.label ?? statusFilter }}
               </q-chip>
             </div>
             <q-table
@@ -114,7 +114,7 @@
                 <q-td :props="props" class="text-right" style="min-width:80px">
                   <div>{{ props.value || '—' }}
                     <q-tooltip v-if="props.row.endtime">
-                      Ended: {{ props.row.endtime }}
+                       {{ t('Ended') }}: {{ props.row.endtime }}
                     </q-tooltip>
                   </div>
                   <q-linear-progress
@@ -139,16 +139,16 @@
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center" style="white-space:nowrap">
-                  <q-btn flat round dense size="sm" icon="restart_alt" title="Rerun"
+                   <q-btn flat round dense size="sm" icon="restart_alt" :title="t('Rerun')"
                          @click="confirmRerun(props.row)" class="q-mr-xs" />
                   <q-btn v-if="isRunning(props.row.status)"
-                         flat round dense size="sm" icon="cancel" color="negative" title="Cancel"
+                         flat round dense size="sm" icon="cancel" color="negative" :title="t('Cancel')"
                          @click="confirmCancel(props.row)" class="q-mr-xs" />
                   <q-btn flat round dense size="sm" icon="restore" color="teal"
-                         title="Restore this job"
+                         :title="t('Restore this job')"
                          :to="{ name: 'restore', query: { client: props.row.client, jobid: props.row.id } }"
                          class="q-mr-xs" />
-                  <q-btn flat round dense size="sm" icon="info" title="Details"
+                   <q-btn flat round dense size="sm" icon="info" :title="t('Details')"
                          :to="{ name: 'job-details', params: { id: props.row.id } }" />
                 </q-td>
               </template>
@@ -163,7 +163,7 @@
         <!-- Enable / Disable jobs -->
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>Enable / Disable Jobs</span>
+             <span>{{ t('Enable / Disable Jobs') }}</span>
             <q-space />
             <q-btn flat round dense icon="refresh" color="white" @click="loadJobDefs" />
           </q-card-section>
@@ -181,23 +181,23 @@
                   <q-chip dense square
                     :color="props.value ? 'positive' : 'grey'"
                     text-color="white"
-                    :label="props.value ? 'enabled' : 'disabled'"
+                    :label="props.value ? t('enabled') : t('disabled')"
                     style="font-size:0.7rem" />
                 </q-td>
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center" style="white-space:nowrap">
                   <q-btn flat dense no-caps size="sm" icon="play_arrow" color="positive"
-                         label="Enable"  class="q-mr-xs"
+                         :label="t('Enable')"  class="q-mr-xs"
                          :disable="props.row.enabled"
                          @click="enableJob(props.row.name)" />
                   <q-btn flat dense no-caps size="sm" icon="pause" color="warning"
-                         label="Disable" class="q-mr-xs"
+                         :label="t('Disable')" class="q-mr-xs"
                          :disable="!props.row.enabled"
                          @click="disableJob(props.row.name)" />
                    <q-btn flat dense no-caps size="sm" icon="send" color="primary"
                           :data-testid="`jobdef-run-${props.row.name}`"
-                          label="Run"
+                          :label="t('Run')"
                           @click="runThisJob(props.row.name)" />
                 </q-td>
               </template>
@@ -209,21 +209,21 @@
       <!-- ── RUN ───────────────────────────────────────────────────────────── -->
       <q-tab-panel name="run">
         <q-card flat bordered class="bareos-panel" style="max-width:640px">
-          <q-card-section class="panel-header">Run Job</q-card-section>
+          <q-card-section class="panel-header">{{ t('Run Job') }}</q-card-section>
           <q-card-section>
             <q-form @submit.prevent="runJob" class="q-gutter-md">
-               <q-select v-model="runForm.job"     data-testid="run-job-field" :options="dotJobs"     label="Job *"     outlined dense
+               <q-select v-model="runForm.job"     data-testid="run-job-field" :options="dotJobs"     :label="t('Job *')"     outlined dense
                          @update:model-value="onJobSelected" />
-              <q-select v-model="runForm.client"  :options="dotClients"  label="Client"    outlined dense clearable />
-              <q-select v-model="runForm.fileset" :options="dotFilesets" label="Fileset"   outlined dense clearable />
-              <q-select v-model="runForm.pool"    :options="dotPools"    label="Pool"      outlined dense clearable />
-              <q-select v-model="runForm.storage" :options="dotStorages" label="Storage"   outlined dense clearable />
-              <q-select v-model="runForm.level"   :options="levels"      label="Level"     outlined dense />
-              <q-input  v-model="runForm.when"                           label="When (optional)" outlined dense
-                        placeholder="YYYY-MM-DD HH:MM:SS" />
-              <q-input  v-model.number="runForm.priority" type="number" label="Priority" outlined dense style="max-width:140px" />
+              <q-select v-model="runForm.client"  :options="dotClients"  :label="t('Client')"    outlined dense clearable />
+              <q-select v-model="runForm.fileset" :options="dotFilesets" :label="t('Fileset')"   outlined dense clearable />
+              <q-select v-model="runForm.pool"    :options="dotPools"    :label="t('Pool')"      outlined dense clearable />
+              <q-select v-model="runForm.storage" :options="dotStorages" :label="t('Storage')"   outlined dense clearable />
+              <q-select v-model="runForm.level"   :options="levels"      :label="t('Level')"     outlined dense />
+              <q-input  v-model="runForm.when"                           :label="t('When (optional)')" outlined dense
+                        :placeholder="t('YYYY-MM-DD HH:MM:SS')" />
+              <q-input  v-model.number="runForm.priority" type="number" :label="t('Priority')" outlined dense style="max-width:140px" />
               <div>
-                 <q-btn data-testid="run-job-submit" type="submit" color="primary" label="Run Job" icon="play_arrow"
+                 <q-btn data-testid="run-job-submit" type="submit" color="primary" :label="t('Run Job')" icon="play_arrow"
                         no-caps :loading="runLoading" :disable="!runForm.job" />
               </div>
             </q-form>
@@ -237,9 +237,9 @@
         <!-- Completed jobs table -->
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>Completed Jobs</span>
+             <span>{{ t('Completed Jobs') }}</span>
             <q-space />
-            <q-input v-model="rerunSearch" dense outlined placeholder="Search…" class="q-mr-sm"
+            <q-input v-model="rerunSearch" dense outlined :placeholder="t('Search…')" class="q-mr-sm"
                      style="width:200px" clearable>
               <template #prepend><q-icon name="search" /></template>
             </q-input>
@@ -293,7 +293,7 @@
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center">
-                  <q-btn flat round dense size="sm" icon="restart_alt" color="primary" title="Rerun"
+                   <q-btn flat round dense size="sm" icon="restart_alt" color="primary" :title="t('Rerun')"
                          @click="confirmRerun(props.row)" />
                 </q-td>
               </template>
@@ -303,14 +303,14 @@
 
         <!-- Manual ID fallback -->
         <q-card flat bordered class="bareos-panel" style="max-width:400px">
-          <q-card-section class="panel-header">Rerun by Job ID</q-card-section>
+          <q-card-section class="panel-header">{{ t('Rerun by Job ID') }}</q-card-section>
           <q-card-section>
             <q-form @submit.prevent="submitRerun" class="q-gutter-md">
-              <q-input v-model="rerunJobId" label="Job ID *" outlined dense
+              <q-input v-model="rerunJobId" :label="t('Job ID *')" outlined dense
                        type="number" style="max-width:180px"
-                       hint="Enter the ID of any completed job" />
+                       :hint="t('Enter the ID of any completed job')" />
               <div>
-                <q-btn type="submit" color="primary" label="Rerun" icon="restart_alt"
+                <q-btn type="submit" color="primary" :label="t('Rerun')" icon="restart_alt"
                        no-caps :loading="rerunLoading" :disable="!rerunJobId" />
               </div>
             </q-form>
@@ -331,6 +331,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
+import { useI18n } from 'vue-i18n'
 import { jobStatusMap, formatBytes, formatSpeed, parseDurationSecs, timeAgo } from '../mock/index.js'
 import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -346,6 +347,7 @@ const router   = useRouter()
 const $q       = useQuasar()
 const director = useDirectorStore()
 const settings = useSettingsStore()
+const { t } = useI18n()
 const tab          = ref(route.query.action || 'list')
 const search       = ref(route.query.search || '')
 const statusFilter = ref(route.query.status || '')
@@ -450,7 +452,7 @@ function isRunning(status) {
 }
 
 // ── columns ───────────────────────────────────────────────────────────────────
-const columns = [
+const columns = computed(() => [
   { name: 'id',        label: 'ID',       field: 'id',        align: 'right',  sortable: true, style: 'width:60px' },
   { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left',   sortable: true },
@@ -465,17 +467,17 @@ const columns = [
   { name: 'errors',    label: 'Errors',   field: 'errors',    align: 'center'  },
   { name: 'status',    label: 'Status',   field: 'status',    align: 'center', sortable: true },
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:100px' },
-]
+].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
 
-const runningColumns = [
+const runningColumns = computed(() => [
   { name: 'id',        label: 'ID',       field: 'id',        align: 'right',  sortable: true },
   { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left'    },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left'    },
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:90px' },
-]
+].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
 
-const rerunColumns = [
+const rerunColumns = computed(() => [
   { name: 'id',        label: 'ID',       field: 'id',        align: 'right',  sortable: true, style: 'width:60px' },
   { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left',   sortable: true },
@@ -485,14 +487,14 @@ const rerunColumns = [
   { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right'   },
   { name: 'status',    label: 'Status',   field: 'status',    align: 'center', sortable: true },
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:60px' },
-]
+].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
 
-const defsColumns = [
+const defsColumns = computed(() => [
   { name: 'name',    label: 'Job Name', field: 'name',    align: 'left',   sortable: true },
   { name: 'type',    label: 'Type',     field: 'type',    align: 'center'  },
   { name: 'enabled', label: 'Status',   field: 'enabled', align: 'center'  },
   { name: 'actions', label: '',         field: 'actions', align: 'center', style: 'width:220px' },
-]
+].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
 
 // ── job definitions (for enable/disable) ──────────────────────────────────────
 const jobDefs       = ref([])
@@ -512,7 +514,7 @@ async function loadJobDefs() {
       enabled: j.enabled !== false,   // treat undefined as enabled
     })).sort((a, b) => a.name.localeCompare(b.name))
   } catch (e) {
-    $q.notify({ type: 'negative', message: `Could not load job definitions: ${e.message}` })
+    $q.notify({ type: 'negative', message: `${t('Could not load job definitions')}: ${e.message}` })
   } finally {
     loadingDefs.value = false
   }

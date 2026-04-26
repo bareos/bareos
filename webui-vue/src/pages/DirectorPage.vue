@@ -1,10 +1,10 @@
 <template>
   <q-page class="q-pa-md">
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-tab name="status"       label="Status"       no-caps />
-      <q-tab name="messages"     label="Messages"     no-caps />
-      <q-tab name="catalog"      label="Catalog Maintenance" no-caps />
-      <q-tab name="subscription" label="Subscription" no-caps />
+      <q-tab name="status"       :label="t('Status')"       no-caps />
+      <q-tab name="messages"     :label="t('Messages')"     no-caps />
+      <q-tab name="catalog"      :label="t('Catalog Maintenance')" no-caps />
+      <q-tab name="subscription" :label="t('Subscription')" no-caps />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated swipeable>
@@ -19,7 +19,7 @@
             <div class="col-12">
               <q-card flat bordered class="bareos-panel">
                 <q-card-section class="panel-header row items-center">
-                  <span>Director Info</span>
+                  <span>{{ t('Director Info') }}</span>
                   <q-space />
                   <q-chip v-if="statusHeader.config_warnings != null"
                           dense square clickable
@@ -28,8 +28,8 @@
                           text-color="white"
                           class="q-mr-sm"
                           @click="showConfigStatus">
-                    {{ statusHeader.config_warnings ? 'Config Warning' : 'Config OK' }}
-                    <q-tooltip>Click to show configuration status</q-tooltip>
+                    {{ statusHeader.config_warnings ? t('Config Warning') : t('Config OK') }}
+                    <q-tooltip>{{ t('Click to show configuration status') }}</q-tooltip>
                   </q-chip>
                   <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ statusCountdown }}s</span>
                   <q-btn flat round dense icon="refresh" color="white"
@@ -86,10 +86,10 @@
             <!-- Scheduled Jobs card -->
             <div class="col-12">
               <q-card flat bordered class="bareos-panel">
-                <q-card-section class="panel-header">Scheduled Jobs</q-card-section>
+                <q-card-section class="panel-header">{{ t('Scheduled Jobs') }}</q-card-section>
                 <q-card-section class="q-pa-none">
                   <div v-if="!scheduledJobs.length" class="q-pa-md text-grey">
-                    No scheduled jobs.
+                    {{ t('No scheduled jobs.') }}
                   </div>
                   <q-table v-else flat dense
                     :rows="scheduledJobs"
@@ -139,10 +139,10 @@
             <!-- Running Jobs card -->
             <div class="col-12">
               <q-card flat bordered class="bareos-panel">
-                <q-card-section class="panel-header">Running Jobs</q-card-section>
+                <q-card-section class="panel-header">{{ t('Running Jobs') }}</q-card-section>
                 <q-card-section class="q-pa-none">
                   <div v-if="!runningJobs.length" class="q-pa-md text-grey">
-                    No jobs running.
+                    {{ t('No jobs running.') }}
                   </div>
                   <q-table v-else flat dense
                     :rows="runningJobs"
@@ -217,10 +217,10 @@
             <!-- Terminated Jobs card -->
             <div class="col-12">
               <q-card flat bordered class="bareos-panel">
-                <q-card-section class="panel-header">Terminated Jobs</q-card-section>
+                <q-card-section class="panel-header">{{ t('Terminated Jobs') }}</q-card-section>
                 <q-card-section class="q-pa-none">
                   <div v-if="!terminatedJobs.length" class="q-pa-md text-grey">
-                    No terminated jobs.
+                    {{ t('No terminated jobs.') }}
                   </div>
                   <q-table v-else flat dense
                     :rows="terminatedJobs"
@@ -294,7 +294,7 @@
       <q-tab-panel name="messages" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>Director Messages</span>
+            <span>{{ t('Director Messages') }}</span>
             <q-space />
             <q-select v-model="messagesLimit" :options="[50,100,250,500]" dense outlined dark
                       style="width:80px" class="q-mr-sm" />
@@ -303,7 +303,7 @@
           <q-card-section class="q-pa-none">
             <q-inner-loading :showing="messagesLoading" />
             <div v-if="messagesError" class="q-pa-md text-negative">{{ messagesError }}</div>
-            <div v-else-if="!logEntries.length && !messagesLoading" class="q-pa-md text-grey">(no messages)</div>
+            <div v-else-if="!logEntries.length && !messagesLoading" class="q-pa-md text-grey">{{ t('(no messages)') }}</div>
             <div v-else class="terminal-output">
               <template v-for="item in logEntries" :key="item.logid">
                 <span class="terminal-line">{{ item.time }} {{ item.logtext }}</span>
@@ -318,7 +318,7 @@
         <div class="row q-col-gutter-md">
           <div class="col-12" v-if="catalogAclError">
             <q-banner dense rounded class="bg-negative text-white">
-              Could not determine catalog-maintenance permissions: {{ catalogAclError }}
+              {{ t('Could not determine catalog-maintenance permissions') }}: {{ catalogAclError }}
             </q-banner>
           </div>
 
@@ -327,8 +327,8 @@
               <template #avatar>
                 <q-icon name="lock" color="warning" />
               </template>
-              Catalog maintenance actions are disabled for this console because
-              the required Command ACL does not allow
+              {{ t('Catalog maintenance actions are disabled for this console because') }}
+              {{ t('the required Command ACL does not allow') }}
               {{ catalogAclNotice }}.
             </q-banner>
           </div>
@@ -337,7 +337,7 @@
           <div class="col-12">
             <q-card flat bordered class="bareos-panel">
               <q-card-section class="panel-header row items-center">
-                <span>Jobs With No Data</span>
+                <span>{{ t('Jobs With No Data') }}</span>
                 <q-space />
                 <q-btn flat round dense icon="refresh" color="white"
                        @click="loadEmptyJobs" :loading="emptyJobsLoading" />
@@ -348,12 +348,11 @@
                 <template v-else>
                   <div class="q-pa-sm row items-center q-gutter-sm">
                     <span class="text-caption text-grey-6">
-                      {{ emptyJobs.length }} job{{ emptyJobs.length !== 1 ? 's' : '' }} with
-                      0 files and 0 bytes found
+                      {{ t('{count} job(s) with 0 files and 0 bytes found', { count: emptyJobs.length }) }}
                     </span>
                     <q-space />
                     <span v-if="!canDeleteEmptyJobs" class="text-caption text-grey-6">
-                      Delete is unavailable because the ACL forbids the
+                      {{ t('Delete is unavailable because the ACL forbids the') }}
                       <code>delete</code> command.
                     </span>
                     <q-btn
@@ -373,7 +372,7 @@
                     selection="multiple"
                     v-model:selected="selectedEmptyJobs"
                     :pagination="{ rowsPerPage: 20 }"
-                    no-data-label="No empty jobs found"
+                    :no-data-label="t('No empty jobs found')"
                   >
                     <template #body-cell-id="props">
                       <q-td :props="props">
@@ -403,11 +402,11 @@
           <!-- Prune -->
           <div class="col-12 col-md-6">
             <q-card flat bordered class="bareos-panel">
-              <q-card-section class="panel-header">Prune Expired Records</q-card-section>
+              <q-card-section class="panel-header">{{ t('Prune Expired Records') }}</q-card-section>
               <q-card-section>
                 <p class="text-body2 q-mb-md">
-                  Remove catalog records that have exceeded their retention period.
-                  This does not delete any data from storage volumes.
+                  {{ t('Remove catalog records that have exceeded their retention period.') }}
+                  {{ t('This does not delete any data from storage volumes.') }}
                 </p>
                 <div class="row q-gutter-sm">
                     <q-btn
@@ -421,7 +420,7 @@
                     />
                   </div>
                 <div v-if="!canPruneCatalog" class="text-caption text-grey-6 q-mt-sm">
-                  Prune is unavailable because the ACL forbids the
+                  {{ t('Prune is unavailable because the ACL forbids the') }}
                   <code>prune</code> command.
                 </div>
                 <div v-if="pruneResults.length" class="q-mt-md column q-gutter-xs">
@@ -442,7 +441,7 @@
       <q-tab-panel name="subscription" class="q-pa-none">
         <q-card flat bordered class="bareos-panel" style="max-width:800px">
           <q-card-section class="panel-header row items-center">
-            <span>Subscription</span>
+            <span>{{ t('Subscription') }}</span>
             <q-space />
             <q-btn flat round dense icon="refresh" color="white"
                    @click="refreshSubscription" :loading="subscriptionLoading" />
@@ -455,23 +454,23 @@
 
               <!-- Download buttons: 2×2 grid (normal / anonymized) × (PDF / JSON) -->
               <div class="row q-gutter-sm q-mb-md q-mt-md">
-                <q-btn color="primary" label="Download PDF" icon="picture_as_pdf"
+                <q-btn color="primary" :label="t('Download PDF')" icon="picture_as_pdf"
                        no-caps :loading="pdfLoading"
                        @click="printSubscription(false)" />
-                <q-btn color="secondary" label="Download JSON" icon="download"
+                <q-btn color="secondary" :label="t('Download JSON')" icon="download"
                        no-caps :loading="downloadLoading"
                        @click="downloadSubscription(false)" />
-                <q-btn color="primary" label="Download Anonymized PDF"
+                <q-btn color="primary" :label="t('Download Anonymized PDF')"
                        icon="picture_as_pdf"
                        no-caps :loading="pdfAnonLoading"
                        @click="printSubscription(true)" />
-                <q-btn color="secondary" label="Download Anonymized JSON"
+                <q-btn color="secondary" :label="t('Download Anonymized JSON')"
                        icon="download"
                        no-caps :loading="downloadAnonLoading"
                        @click="downloadSubscription(true)" />
               </div>
 
-              <q-btn color="primary" label="Get Official Support" icon="open_in_new"
+               <q-btn color="primary" :label="t('Get Official Support')" icon="open_in_new"
                      href="https://www.bareos.com/subscription/" target="_blank" no-caps />
             </template>
           </q-card-section>
@@ -484,14 +483,14 @@
   <q-dialog v-model="configStatusDlg.open">
     <q-card style="min-width:640px; max-width:90vw">
       <q-card-section class="panel-header row items-center q-py-sm">
-        <span>Configuration Status</span>
+        <span>{{ t('Configuration Status') }}</span>
         <q-space />
         <q-btn flat round dense icon="close" color="white" v-close-popup />
       </q-card-section>
       <q-card-section class="q-pa-none">
         <q-inner-loading :showing="configStatusDlg.loading" />
         <pre v-if="configStatusDlg.text" class="config-status-output">{{ configStatusDlg.text }}</pre>
-        <div v-else-if="!configStatusDlg.loading" class="text-grey q-pa-md text-center">No output</div>
+        <div v-else-if="!configStatusDlg.loading" class="text-grey q-pa-md text-center">{{ t('No output') }}</div>
       </q-card-section>
     </q-card>
   </q-dialog>
@@ -506,6 +505,7 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useDirectorStore } from '../stores/director.js'
 import { useDirectorAclStore } from '../stores/directorAcl.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -530,6 +530,7 @@ const tab = ref('status')
 const director = useDirectorStore()
 const acl = useDirectorAclStore()
 const settings  = useSettingsStore()
+const { t } = useI18n()
 
 // ── Status ───────────────────────────────────────────────────────────────────
 const statusLoading = ref(false)
@@ -612,7 +613,7 @@ function levelCode(v) { return LEVEL_CODE[v] ?? null }
 function typeCode(v)  { return TYPE_CODE[v]  ?? null }
 function isWaiting(status) { return typeof status === 'string' && status.includes('is waiting') }
 
-const scheduledJobCols = [
+const scheduledJobCols = computed(() => [
   { name: 'name',      label: 'Job',       field: 'name',      align: 'left' },
   { name: 'level',     label: 'Level',     field: 'level',     align: 'left' },
   { name: 'type',      label: 'Type',      field: 'type',      align: 'left' },
@@ -621,8 +622,8 @@ const scheduledJobCols = [
   { name: 'volume',    label: 'Volume',    field: 'volume',    align: 'left' },
   { name: 'pool',      label: 'Pool',      field: 'pool',      align: 'left' },
   { name: 'storage',   label: 'Storage',   field: 'storage',   align: 'left' },
-]
-const runningJobCols = [
+].map((col) => ({ ...col, label: t(col.label) })))
+const runningJobCols = computed(() => [
   { name: 'jobid',      label: 'JobId',      field: 'jobid',      align: 'right' },
   { name: 'name',       label: 'Job',        field: 'name',       align: 'left' },
   { name: 'level',      label: 'Level',      field: 'level',      align: 'left' },
@@ -631,8 +632,8 @@ const runningJobCols = [
   { name: 'files',      label: 'Files',      field: 'files',      align: 'right' },
   { name: 'bytes',      label: 'Bytes',      field: 'bytes',      align: 'right' },
   { name: 'status',     label: 'Status',     field: 'status',     align: 'left' },
-]
-const terminatedJobCols = [
+].map((col) => ({ ...col, label: t(col.label) })))
+const terminatedJobCols = computed(() => [
   { name: 'jobid',    label: 'JobId',    field: 'jobid',    align: 'right' },
   { name: 'name',     label: 'Job',      field: 'name',     align: 'left' },
   { name: 'level',    label: 'Level',    field: 'level',    align: 'left' },
@@ -641,7 +642,7 @@ const terminatedJobCols = [
   { name: 'files',    label: 'Files',    field: 'files',    align: 'right' },
   { name: 'bytes',    label: 'Bytes',    field: 'bytes',    align: 'right' },
   { name: 'status',   label: 'Status',   field: 'status',   align: 'left' },
-]
+].map((col) => ({ ...col, label: t(col.label) })))
 
 // ── Messages ─────────────────────────────────────────────────────────────────
 const messagesLoading = ref(false)
@@ -754,8 +755,8 @@ const canDeleteEmptyJobs = computed(() => (
 ))
 const deleteSelectedLabel = computed(() => (
   selectedEmptyJobs.value.length
-    ? `Delete ${selectedEmptyJobs.value.length} selected`
-    : 'Delete selected'
+    ? t('Delete {count} selected', { count: selectedEmptyJobs.value.length })
+    : t('Delete selected')
 ))
 const deleteActionDisabled = computed(() => (
   !canDeleteEmptyJobs.value
@@ -775,7 +776,7 @@ const catalogAclNotice = computed(() => {
   return missing.map(cmd => `"${cmd}"`).join(' and ')
 })
 
-const emptyJobCols = [
+const emptyJobCols = computed(() => [
   { name: 'id',        label: 'ID',       field: 'id',
     align: 'right', sortable: true },
   { name: 'name',      label: 'Job Name', field: 'name',
@@ -788,7 +789,7 @@ const emptyJobCols = [
     align: 'left',  sortable: true },
   { name: 'status',    label: 'Status',   field: 'status',
     align: 'center' },
-]
+].map((col) => ({ ...col, label: t(col.label) })))
 
 async function loadEmptyJobs() {
   emptyJobsLoading.value  = true
@@ -815,7 +816,7 @@ async function deleteSelected() {
   const ids = selectedEmptyJobs.value.map(j => j.id).join(',')
   try {
     await director.call(`delete jobid=${ids}`)
-    deleteResult.value = { ok: true, msg: `Deleted job(s) ${ids}.` }
+    deleteResult.value = { ok: true, msg: t('Deleted job(s) {ids}.', { ids }) }
     const deleted = new Set(selectedEmptyJobs.value.map(j => j.id))
     emptyJobs.value         = emptyJobs.value.filter(j => !deleted.has(j.id))
     selectedEmptyJobs.value = []
@@ -827,16 +828,16 @@ async function deleteSelected() {
 }
 
 // ── Prune ─────────────────────────────────────────────────────────────────────
-const pruneActions = [
-  { cmd: 'prune jobs yes',   label: 'Prune Jobs',
+const pruneActions = computed(() => [
+  { cmd: 'prune jobs yes',   label: t('Prune Jobs'),
     icon: 'work_off' },
-  { cmd: 'prune files yes',  label: 'Prune File Records',
+  { cmd: 'prune files yes',  label: t('Prune File Records'),
     icon: 'folder_off' },
-  { cmd: 'prune stats yes',  label: 'Prune Statistics',
+  { cmd: 'prune stats yes',  label: t('Prune Statistics'),
     icon: 'bar_chart_off' },
-]
+])
 const pruneLoading = ref(
-  Object.fromEntries(pruneActions.map(p => [p.cmd, false]))
+  Object.fromEntries(pruneActions.value.map(p => [p.cmd, false]))
 )
 const pruneResults = ref([])
 
@@ -846,10 +847,10 @@ async function runPrune(cmd) {
   try {
     await director.call(cmd)
     pruneResults.value.push({ ok: true,
-      msg: `✓ "${cmd}" completed.` })
+      msg: t('"{cmd}" completed.', { cmd }) })
   } catch (e) {
     pruneResults.value.push({ ok: false,
-      msg: `✗ "${cmd}": ${e.message}` })
+      msg: `${cmd}: ${e.message}` })
   } finally {
     pruneLoading.value[cmd] = false
   }
@@ -864,7 +865,7 @@ async function showConfigStatus() {
   try {
     configStatusDlg.value.text = await director.rawCall('status configuration')
   } catch (e) {
-    configStatusDlg.value.text = `Error: ${e.message ?? e}`
+    configStatusDlg.value.text = `${t('Error')}: ${e.message ?? e}`
   } finally {
     configStatusDlg.value.loading = false
   }

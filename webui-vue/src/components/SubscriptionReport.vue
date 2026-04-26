@@ -2,40 +2,40 @@
   <div class="subscription-report">
     <!-- Print-only header -->
     <div class="subscription-print-header">
-      <div class="subscription-print-title">Bareos Subscription Status Report</div>
-      <div v-if="anonymized" class="subscription-print-anon">ANONYMIZED REPORT</div>
-      <div class="subscription-print-date">Generated: {{ generatedAt }}</div>
+      <div class="subscription-print-title">{{ t('Bareos Subscription Status Report') }}</div>
+      <div v-if="anonymized" class="subscription-print-anon">{{ t('ANONYMIZED REPORT') }}</div>
+      <div class="subscription-print-date">{{ t('Generated') }}: {{ generatedAt }}</div>
     </div>
 
     <!-- Meta info -->
     <table class="sub-meta-table q-mb-md">
       <tbody>
-        <tr><th>Version</th>     <td>{{ data.version }}</td></tr>
-        <tr><th>OS</th>          <td>{{ data.os }}</td></tr>
-        <tr><th>Binary Info</th> <td>{{ data['binary-info'] }}</td></tr>
-        <tr><th>Report Time</th> <td>{{ data['report-time'] }}</td></tr>
+        <tr><th>{{ t('Version') }}</th>     <td>{{ data.version }}</td></tr>
+        <tr><th>{{ t('OS') }}</th>          <td>{{ data.os }}</td></tr>
+        <tr><th>{{ t('Binary Info') }}</th> <td>{{ data['binary-info'] }}</td></tr>
+        <tr><th>{{ t('Report Time') }}</th> <td>{{ data['report-time'] }}</td></tr>
       </tbody>
     </table>
 
     <!-- Unit Summary -->
     <template v-if="data['unit-summary']">
-      <div class="text-h6 q-mb-sm q-mt-sm">Unit Summary</div>
+      <div class="text-h6 q-mb-sm q-mt-sm">{{ t('Unit Summary') }}</div>
       <div class="sub-summary-card q-mb-md">
         <div class="sub-summary-stats">
           <div class="sub-summary-stat">
             <div class="sub-summary-value">{{ data['unit-summary'].used }}</div>
-            <div class="sub-summary-label">Used</div>
+            <div class="sub-summary-label">{{ t('Used') }}</div>
           </div>
           <div class="sub-summary-stat">
             <div class="sub-summary-value">{{ data['unit-summary'].configured }}</div>
-            <div class="sub-summary-label">Configured</div>
+            <div class="sub-summary-label">{{ t('Configured') }}</div>
           </div>
           <div class="sub-summary-stat">
             <div class="sub-summary-value"
                  :class="Number(data['unit-summary'].remaining) < 0 ? 'text-negative' : 'text-positive'">
               {{ data['unit-summary'].remaining }}
             </div>
-            <div class="sub-summary-label">Remaining</div>
+            <div class="sub-summary-label">{{ t('Remaining') }}</div>
           </div>
         </div>
         <div class="sub-summary-mode">
@@ -46,13 +46,13 @@
 
     <!-- Per-client detail -->
     <template v-if="data['unit-clients']?.length">
-      <div class="text-h6 q-mb-xs q-mt-sm">Units by Client</div>
+      <div class="text-h6 q-mb-xs q-mt-sm">{{ t('Units by Client') }}</div>
       <table class="sub-table sub-table--full q-mb-md">
         <thead>
           <tr>
-            <th>Client</th>
-            <th class="text-right">Count</th>
-            <th class="text-right">Size (GB)</th>
+            <th>{{ t('Client') }}</th>
+            <th class="text-right">{{ t('Count') }}</th>
+            <th class="text-right">{{ t('Size (GB)') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -68,13 +68,13 @@
 
     <!-- Per-plugin detail -->
     <template v-if="data['unit-plugins']?.length">
-      <div class="text-h6 q-mb-xs q-mt-sm">Units by Plugin</div>
+      <div class="text-h6 q-mb-xs q-mt-sm">{{ t('Units by Plugin') }}</div>
       <table class="sub-table sub-table--full q-mb-md">
         <thead>
           <tr>
-            <th>Plugin</th>
-            <th class="text-right">Count</th>
-            <th class="text-right">Size (GB)</th>
+            <th>{{ t('Plugin') }}</th>
+            <th class="text-right">{{ t('Count') }}</th>
+            <th class="text-right">{{ t('Size (GB)') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -90,14 +90,14 @@
 
     <!-- Full detail -->
     <template v-if="data['unit-detail']?.length">
-      <div class="text-h6 q-mb-xs q-mt-sm">Full Detail</div>
+      <div class="text-h6 q-mb-xs q-mt-sm">{{ t('Full Detail') }}</div>
       <table class="sub-table sub-table--full q-mb-md">
         <thead>
           <tr>
-            <th>Client</th>
-            <th>Plugin</th>
-            <th class="text-right">Count</th>
-            <th class="text-right">Size (GB)</th>
+            <th>{{ t('Client') }}</th>
+            <th>{{ t('Plugin') }}</th>
+            <th class="text-right">{{ t('Count') }}</th>
+            <th class="text-right">{{ t('Size (GB)') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -114,13 +114,14 @@
 
     <!-- Checksum -->
     <div class="text-caption text-grey q-mb-md">
-      Checksum: {{ data.checksum }}
+      {{ t('Checksum') }}: {{ data.checksum }}
     </div>
   </div>
 </template>
 
 <script setup>
 import { useSettingsStore } from '../stores/settings.js'
+import { useI18n } from 'vue-i18n'
 import { formatLocalDateTime, formatNumber } from '../utils/locales.js'
 
 const props = defineProps({
@@ -129,6 +130,7 @@ const props = defineProps({
 })
 
 const settings = useSettingsStore()
+const { t } = useI18n()
 const generatedAt = formatLocalDateTime(new Date(), settings.locale)
 
 function fmtGB(gbStr) {

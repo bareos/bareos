@@ -1,8 +1,8 @@
 <template>
   <q-page class="q-pa-md">
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-tab name="list"     label="Show"     no-caps />
-      <q-tab name="timeline" label="Timeline" no-caps />
+      <q-tab name="list"     :label="t('Show')"     no-caps />
+      <q-tab name="timeline" :label="t('Timeline')" no-caps />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated swipeable>
@@ -10,7 +10,7 @@
       <q-tab-panel name="list" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>Client List</span>
+            <span>{{ t('Client List') }}</span>
             <q-space />
             <q-btn flat round dense icon="refresh" color="white" @click="refresh" />
           </q-card-section>
@@ -56,7 +56,7 @@
               </template>
               <template #body-cell-enabled="props">
                 <q-td :props="props" class="text-center">
-                  <q-badge :color="props.value ? 'positive' : 'negative'" :label="props.value ? 'Enabled' : 'Disabled'" />
+                    <q-badge :color="props.value ? 'positive' : 'negative'" :label="props.value ? t('Enabled') : t('Disabled')" />
                 </q-td>
               </template>
               <template #body-cell-actions="props">
@@ -64,10 +64,10 @@
                    <q-btn flat round dense size="sm"
                           :icon="props.row.enabled ? 'pause' : 'play_arrow'"
                           :color="props.row.enabled ? 'warning' : 'positive'"
-                          :title="props.row.enabled ? 'Disable' : 'Enable'"
+                          :title="props.row.enabled ? t('Disable') : t('Enable')"
                           :loading="toggling === props.row.name"
                           @click="toggleEnabled(props.row)" />
-                   <q-btn flat round dense size="sm" icon="info" title="Status"
+                   <q-btn flat round dense size="sm" icon="info" :title="t('Status')"
                           :data-testid="`client-status-${props.row.name}`"
                           @click="showStatus(props.row.name)" />
                 </q-td>
@@ -87,14 +87,14 @@
     <q-dialog v-model="statusDialog.open">
       <q-card style="min-width:600px; max-width:90vw">
         <q-card-section class="panel-header row items-center q-py-sm">
-          <span>Status: {{ statusDialog.client }}</span>
+          <span>{{ t('Status') }}: {{ statusDialog.client }}</span>
           <q-space />
           <q-btn flat round dense icon="close" color="white" v-close-popup />
         </q-card-section>
         <q-card-section class="q-pa-none">
           <q-inner-loading :showing="statusDialog.loading" />
           <pre v-if="statusDialog.text" data-testid="client-status-output" class="client-status-output">{{ statusDialog.text }}</pre>
-          <div v-else-if="!statusDialog.loading" class="text-grey q-pa-md text-center">No output</div>
+          <div v-else-if="!statusDialog.loading" class="text-grey q-pa-md text-center">{{ t('No output') }}</div>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -103,6 +103,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   directorCollection,
   normaliseClient,
@@ -115,6 +116,7 @@ import JobTimeline from '../components/JobTimeline.vue'
 const tab = ref('list')
 const director = useDirectorStore()
 const releaseInfo = useReleaseInfoStore()
+const { t } = useI18n()
 
 const rawClients = ref([])
 const loading    = ref(false)
@@ -122,7 +124,7 @@ const error      = ref(null)
 
 async function refresh() {
   if (!director.isConnected) {
-    error.value = 'Not connected to director'
+    error.value = t('Not connected to director')
     return
   }
   loading.value = true
@@ -175,13 +177,13 @@ function clientVersionTooltip(client) {
   return info.package_update_info || client.uname || ''
 }
 
-const columns = [
-  { name: 'name',    label: 'Name',    field: 'name',    align: 'left',   sortable: true },
-  { name: 'os',      label: 'OS',      field: 'os',      align: 'left'    },
-  { name: 'version', label: 'Version', field: 'version', align: 'left',   sortable: true },
-  { name: 'enabled', label: 'Status',  field: 'enabled', align: 'center'  },
-  { name: 'actions', label: '',        field: 'actions', align: 'center',  style: 'width:80px' },
-]
+const columns = computed(() => [
+  { name: 'name',    label: t('Name'),    field: 'name',    align: 'left',   sortable: true },
+  { name: 'os',      label: t('OS'),      field: 'os',      align: 'left'    },
+  { name: 'version', label: t('Version'), field: 'version', align: 'left',   sortable: true },
+  { name: 'enabled', label: t('Status'),  field: 'enabled', align: 'center'  },
+  { name: 'actions', label: '',           field: 'actions', align: 'center',  style: 'width:80px' },
+])
 
 // ── Enable / Disable toggle ───────────────────────────────────────────────────
 
@@ -210,7 +212,7 @@ async function showStatus(name) {
     const result = await director.rawCall(`status client=${name}`)
     statusDialog.value.text = result
   } catch (e) {
-    statusDialog.value.text = `Error: ${e.message ?? e}`
+    statusDialog.value.text = `${t('Error')}: ${e.message ?? e}`
   } finally {
     statusDialog.value.loading = false
   }

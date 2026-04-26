@@ -1,7 +1,7 @@
 <template>
   <q-page class="q-pa-md">
     <q-card flat bordered class="bareos-panel">
-      <q-card-section class="panel-header">Filesets</q-card-section>
+      <q-card-section class="panel-header">{{ t('Filesets') }}</q-card-section>
       <q-card-section class="q-pa-none">
         <q-table
           :rows="filesets"
@@ -31,15 +31,15 @@
               <q-td colspan="100%" class="q-pa-md">
                 <div class="row q-col-gutter-md text-caption">
                   <div class="col-12 col-md-4" v-if="props.row.include.length">
-                    <div class="text-weight-bold q-mb-xs">Include</div>
+                    <div class="text-weight-bold q-mb-xs">{{ t('Include') }}</div>
                     <div v-for="p in props.row.include" :key="p" class="q-ml-sm text-mono">{{ p }}</div>
                   </div>
                   <div class="col-12 col-md-4" v-if="props.row.exclude.length">
-                    <div class="text-weight-bold q-mb-xs">Exclude</div>
+                    <div class="text-weight-bold q-mb-xs">{{ t('Exclude') }}</div>
                     <div v-for="p in props.row.exclude" :key="p" class="q-ml-sm text-mono">{{ p }}</div>
                   </div>
                   <div class="col-12 col-md-4" v-if="props.row.options">
-                    <div class="text-weight-bold q-mb-xs">Options</div>
+                    <div class="text-weight-bold q-mb-xs">{{ t('Options') }}</div>
                     <div class="q-ml-sm text-mono">{{ props.row.options }}</div>
                   </div>
                 </div>
@@ -54,10 +54,12 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { directorCollection, useDirectorFetch } from '../composables/useDirectorFetch.js'
 
 // "list filesets" returns {filesets:[{filesetid, fileset, md5, createtime}]}
 const { data: rawFilesets, loading, error, refresh } = useDirectorFetch('list filesets', 'filesets')
+const { t } = useI18n()
 
 const filesets = computed(() => directorCollection(rawFilesets.value).map(f => ({
   name:        f.fileset ?? f.name ?? '',
@@ -69,9 +71,9 @@ const filesets = computed(() => directorCollection(rawFilesets.value).map(f => (
   options:     f.options     ?? '',
 })))
 
-const columns = [
-  { name: 'name',       label: 'Name',        field: 'name',       align: 'left', sortable: true },
-  { name: 'createtime', label: 'Created',      field: 'createtime', align: 'left' },
-  { name: 'md5',        label: 'Config Hash',  field: 'md5',        align: 'left' },
-]
+const columns = computed(() => [
+  { name: 'name',       label: t('Name'),        field: 'name',       align: 'left', sortable: true },
+  { name: 'createtime', label: t('Created'),     field: 'createtime', align: 'left' },
+  { name: 'md5',        label: t('Config Hash'), field: 'md5',        align: 'left' },
+])
 </script>

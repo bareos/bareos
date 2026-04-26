@@ -24,11 +24,11 @@
         <!-- Treemap: stored bytes per job name -->
         <q-card flat bordered class="bareos-panel q-mb-md">
           <q-card-section class="panel-header row items-center">
-            <span>Stored Data per Job (treemap)</span>
+            <span>{{ t('Stored Data per Job (treemap)') }}</span>
             <q-space />
             <q-btn-toggle v-model="treemapMode" flat no-caps dense
               text-color="grey-4" toggle-color="white"
-              :options="[{label:'Bytes',value:'bytes'},{label:'Files',value:'files'}]" />
+              :options="[{label:t('Bytes'),value:'bytes'},{label:t('Files'),value:'files'}]" />
           </q-card-section>
           <q-card-section class="q-pa-sm">
             <div ref="treemapEl" style="position:relative;width:100%;height:280px;overflow:hidden">
@@ -46,7 +46,7 @@
                 </div>
               </div>
               <div v-if="!treemapTiles.length" class="flex flex-center text-grey" style="height:100%">
-                <span>No data</span>
+                 <span>{{ t('No data') }}</span>
               </div>
             </div>
           </q-card-section>
@@ -54,7 +54,7 @@
 
         <!-- Job status breakdown table -->
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">Job Status Breakdown</q-card-section>
+          <q-card-section class="panel-header">{{ t('Job Status Breakdown') }}</q-card-section>
           <q-card-section class="q-pa-none">
             <q-table :rows="statusRows" :columns="statusCols" row-key="label"
                      dense flat hide-bottom :pagination="{rowsPerPage:0}">
@@ -80,7 +80,7 @@
 
         <!-- Per-client bytes bar chart -->
         <q-card flat bordered class="bareos-panel q-mb-md">
-          <q-card-section class="panel-header">Bytes per Client</q-card-section>
+          <q-card-section class="panel-header">{{ t('Bytes per Client') }}</q-card-section>
           <q-card-section class="q-pa-sm q-gutter-xs">
             <div v-for="c in clientBytes" :key="c.name" class="q-mb-xs">
               <div class="row items-center q-mb-xs" style="gap:4px">
@@ -90,13 +90,13 @@
                 <span class="text-caption text-grey-6" style="width:60px;text-align:right">{{ fmtBytes(c.bytes) }}</span>
               </div>
             </div>
-            <div v-if="!clientBytes.length" class="text-grey text-caption text-center q-py-md">No data</div>
+            <div v-if="!clientBytes.length" class="text-grey text-caption text-center q-py-md">{{ t('No data') }}</div>
           </q-card-section>
         </q-card>
 
         <!-- Job level distribution -->
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">Job Level Distribution</q-card-section>
+          <q-card-section class="panel-header">{{ t('Job Level Distribution') }}</q-card-section>
           <q-card-section class="q-pa-sm">
             <div v-for="l in levelDist" :key="l.label" class="q-mb-sm">
               <div class="row items-center q-mb-xs" style="gap:6px">
@@ -116,6 +116,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { formatBytes } from '../mock/index.js'
 import {
   directorCollection,
@@ -127,6 +128,7 @@ import { formatNumber } from '../utils/locales.js'
 
 const fmtBytes = formatBytes
 const settings = useSettingsStore()
+const { t } = useI18n()
 const treemapMode = ref('bytes')
 const treemapEl   = ref(null)
 const treemapW    = ref(600)
@@ -143,12 +145,12 @@ const totalJobs = computed(() => jobs.value.length || 1)
 const overallStats = computed(() => {
   const j = jobs.value
   return [
-    { label: 'Total Jobs',  value: j.length,                                                  color: 'primary'  },
-    { label: 'Successful',  value: j.filter(x => x.status === 'T').length,                    color: 'positive' },
-    { label: 'Warning',     value: j.filter(x => x.status === 'W').length,                    color: 'warning'  },
-    { label: 'Failed',      value: j.filter(x => x.status === 'f' || x.status === 'E').length,color: 'negative' },
-    { label: 'Total Bytes', value: fmtBytes(j.reduce((a, x) => a + x.bytes, 0)),              color: 'blue-7'   },
-    { label: 'Total Files', value: formatNumber(j.reduce((a, x) => a + x.files, 0), settings.locale), color: 'teal-7'   },
+    { label: t('Total Jobs'),  value: j.length,                                                  color: 'primary'  },
+    { label: t('Successful'),  value: j.filter(x => x.status === 'T').length,                    color: 'positive' },
+    { label: t('Warning'),     value: j.filter(x => x.status === 'W').length,                    color: 'warning'  },
+    { label: t('Failed'),      value: j.filter(x => x.status === 'f' || x.status === 'E').length,color: 'negative' },
+    { label: t('Total Bytes'), value: fmtBytes(j.reduce((a, x) => a + x.bytes, 0)),              color: 'blue-7'   },
+    { label: t('Total Files'), value: formatNumber(j.reduce((a, x) => a + x.files, 0), settings.locale), color: 'teal-7'   },
   ]
 })
 
@@ -157,11 +159,11 @@ const statusRows = computed(() => {
   const j = jobs.value
   const count = (code) => j.filter(x => x.status === code).length
   return [
-    { label: 'Successful', color: 'positive', count: count('T') },
-    { label: 'Warning',    color: 'warning',  count: count('W') },
-    { label: 'Failed',     color: 'negative', count: count('f') + count('E') },
-    { label: 'Canceled',   color: 'grey',     count: count('A') },
-    { label: 'Running',    color: 'info',     count: count('R') },
+    { label: t('Successful'), color: 'positive', count: count('T') },
+    { label: t('Warning'),    color: 'warning',  count: count('W') },
+    { label: t('Failed'),     color: 'negative', count: count('f') + count('E') },
+    { label: t('Canceled'),   color: 'grey',     count: count('A') },
+    { label: t('Running'),    color: 'info',     count: count('R') },
   ]
 })
 const maxStatusCount = computed(() =>
@@ -171,7 +173,7 @@ const statusCols = [
   { name: 'label', label: 'Status', field: 'label', align: 'left',  style: 'width:100px' },
   { name: 'bar',   label: '',       field: 'bar',   align: 'left'  },
   { name: 'count', label: '#',      field: 'count', align: 'right', style: 'width:50px'  },
-]
+].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label }))
 
 // ── per-client bytes ──────────────────────────────────────────────────────────
 const clientBytes = computed(() => {
@@ -196,9 +198,9 @@ const levelDist = computed(() => {
   const j = jobs.value
   const count = (code) => j.filter(x => x.level === code).length
   return [
-    { label: 'Full',          color: 'primary',  count: count('F') },
-    { label: 'Incremental',   color: 'teal',     count: count('I') },
-    { label: 'Differential',  color: 'purple',   count: count('D') },
+    { label: t('Full'),          color: 'primary',  count: count('F') },
+    { label: t('Incremental'),   color: 'teal',     count: count('I') },
+    { label: t('Differential'),  color: 'purple',   count: count('D') },
   ]
 })
 

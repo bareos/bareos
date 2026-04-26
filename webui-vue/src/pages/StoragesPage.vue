@@ -2,17 +2,17 @@
   <q-page class="q-pa-md">
     <!-- Tab bar: Devices | Pools | Volumes | Autochangers -->
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-route-tab name="storages" label="Devices"      no-caps :to="{ path: '/storages' }" />
-      <q-route-tab name="pools"    label="Pools"        no-caps :to="{ path: '/storages', query: { tab: 'pools' } }" />
-      <q-route-tab name="volumes"  label="Volumes"      no-caps :to="{ path: '/storages', query: { tab: 'volumes' } }" />
-      <q-route-tab name="autochangers" label="Autochangers" no-caps :to="{ path: '/storages', query: { tab: 'autochangers' } }" />
+      <q-route-tab name="storages" :label="t('Devices')"      no-caps :to="{ path: '/storages' }" />
+      <q-route-tab name="pools"    :label="t('Pools')"        no-caps :to="{ path: '/storages', query: { tab: 'pools' } }" />
+      <q-route-tab name="volumes"  :label="t('Volumes')"      no-caps :to="{ path: '/storages', query: { tab: 'volumes' } }" />
+      <q-route-tab name="autochangers" :label="t('Autochangers')" no-caps :to="{ path: '/storages', query: { tab: 'autochangers' } }" />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated swipeable>
       <!-- DEVICES -->
       <q-tab-panel name="storages" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">Storage Devices</q-card-section>
+          <q-card-section class="panel-header">{{ t('Storage Devices') }}</q-card-section>
           <q-card-section class="q-pa-none">
             <q-table :rows="storages" :columns="storageCols" row-key="name" dense flat :pagination="{ rowsPerPage: 15 }">
               <template #body-cell-autochanger="props">
@@ -28,7 +28,7 @@
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center">
                   <q-btn flat round dense size="sm" icon="monitor_heart"
-                         title="Storage Status"
+                         :title="t('Storage Status')"
                          @click="showStorageStatus(props.row.name)" />
                 </q-td>
               </template>
@@ -40,7 +40,7 @@
       <!-- POOLS -->
       <q-tab-panel name="pools" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">Pools</q-card-section>
+          <q-card-section class="panel-header">{{ t('Pools') }}</q-card-section>
           <q-card-section class="q-pa-none">
             <q-table :rows="pools" :columns="poolCols" row-key="name" dense flat :pagination="{ rowsPerPage: 15 }">
               <template #body-cell-name="props">
@@ -127,9 +127,9 @@
       <q-tab-panel name="volumes" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>Volumes</span>
+              <span>{{ t('Volumes') }}</span>
             <q-space />
-            <q-input v-model="volSearch" dense outlined placeholder="Search…" style="width:200px" clearable>
+            <q-input v-model="volSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable>
               <template #prepend><q-icon name="search" /></template>
             </q-input>
           </q-card-section>
@@ -190,10 +190,10 @@
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center">
-                  <q-btn flat round dense size="sm" icon="edit" title="Change status">
+                  <q-btn flat round dense size="sm" icon="edit" :title="t('Change status')">
                     <q-menu anchor="bottom right" self="top right" auto-close>
                       <q-list dense style="min-width:130px">
-                        <q-item-label header class="text-caption">Set status</q-item-label>
+                        <q-item-label header class="text-caption">{{ t('Set status') }}</q-item-label>
                         <q-item
                           v-for="s in volStatuses" :key="s"
                           clickable
@@ -237,7 +237,7 @@
     <q-dialog v-model="storageStatusDlg.open">
       <q-card style="min-width:600px;max-width:90vw">
         <q-card-section class="panel-header row items-center">
-          <span>Status: {{ storageStatusDlg.name }}</span>
+          <span>{{ t('Status') }}: {{ storageStatusDlg.name }}</span>
           <q-space />
           <q-btn flat round dense icon="refresh" color="white"
                  @click="reloadStorageStatus(storageStatusDlg.name)"
@@ -256,6 +256,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import {
   directorCollection,
@@ -273,6 +274,7 @@ import VolumeNameLink from '../components/VolumeNameLink.vue'
 const route    = useRoute()
 const router   = useRouter()
 const director = useDirectorStore()
+const { t } = useI18n()
 const validTabs = new Set(['storages', 'pools', 'volumes', 'autochangers'])
 function normaliseTab(value) {
   return validTabs.has(value) ? value : 'storages'
@@ -367,29 +369,29 @@ const maxVolRetention = computed(() => maxOf(volumes.value, 'retention'))
 function volBytesGauge(val) { return (Number(val) || 0) / maxVolBytes.value }
 function volGauge(val, max)  { return (Number(val) || 0) / (max || 1) }
 
-const poolCols = [
-  { name: 'name',         label: 'Name',          field: 'name',         align: 'left',  sortable: true },
-  { name: 'pooltype',     label: 'Type',          field: 'pooltype',     align: 'left'   },
-  { name: 'numvols',      label: 'Volumes',       field: 'numvols',      align: 'right', sortable: true },
-  { name: 'maxvols',      label: 'Max Volumes',   field: 'maxvols',      align: 'right'  },
-  { name: 'totalbytes',   label: 'Total Data',    field: 'totalbytes',   align: 'right', sortable: true },
-  { name: 'volretention', label: 'Retention',     field: 'volretention', align: 'left'   },
-  { name: 'maxvoljobs',   label: 'Max Jobs/Vol',  field: 'maxvoljobs',   align: 'right'  },
-  { name: 'maxvolbytes',  label: 'Max Bytes/Vol', field: 'maxvolbytes',  align: 'right'  },
-]
-const volumeCols = [
-  { name: 'volumename',  label: 'Volume Name',  field: 'volumename',  align: 'left',  sortable: true },
-  { name: 'pool',        label: 'Pool',         field: 'pool',        align: 'left',  sortable: true },
-  { name: 'storage',     label: 'Storage',      field: 'storage',     align: 'left'   },
-  { name: 'mediatype',   label: 'Media Type',   field: 'mediatype',   align: 'left'   },
-  { name: 'lastwritten', label: 'Last Written', field: 'lastwritten', align: 'left',  sortable: true },
-  { name: 'volstatus',   label: 'Status',       field: 'volstatus',   align: 'center', sortable: true },
-  { name: 'inchanger',   label: 'In Changer',   field: 'inchanger',   align: 'center' },
-  { name: 'retention',   label: 'Retention',    field: 'retention',   align: 'left'   },
-  { name: 'maxvolbytes', label: 'Max Bytes',    field: 'maxvolbytes', align: 'right'  },
-  { name: 'volbytes',    label: 'Used Bytes',   field: 'volbytes',    align: 'right'  },
-  { name: 'actions',     label: '',             field: 'actions',     align: 'center', style: 'width:40px' },
-]
+const poolCols = computed(() => [
+  { name: 'name',         label: t('Name'),          field: 'name',         align: 'left',  sortable: true },
+  { name: 'pooltype',     label: t('Type'),          field: 'pooltype',     align: 'left'   },
+  { name: 'numvols',      label: t('Volumes'),       field: 'numvols',      align: 'right', sortable: true },
+  { name: 'maxvols',      label: t('Max Volumes'),   field: 'maxvols',      align: 'right'  },
+  { name: 'totalbytes',   label: t('Total Data'),    field: 'totalbytes',   align: 'right', sortable: true },
+  { name: 'volretention', label: t('Retention'),     field: 'volretention', align: 'left'   },
+  { name: 'maxvoljobs',   label: t('Max Jobs/Vol'),  field: 'maxvoljobs',   align: 'right'  },
+  { name: 'maxvolbytes',  label: t('Max Bytes/Vol'), field: 'maxvolbytes',  align: 'right'  },
+])
+const volumeCols = computed(() => [
+  { name: 'volumename',  label: t('Volume Name'),  field: 'volumename',  align: 'left',  sortable: true },
+  { name: 'pool',        label: t('Pool'),         field: 'pool',        align: 'left',  sortable: true },
+  { name: 'storage',     label: t('Storage'),      field: 'storage',     align: 'left'   },
+  { name: 'mediatype',   label: t('Media Type'),   field: 'mediatype',   align: 'left'   },
+  { name: 'lastwritten', label: t('Last Written'), field: 'lastwritten', align: 'left',  sortable: true },
+  { name: 'volstatus',   label: t('Status'),       field: 'volstatus',   align: 'center', sortable: true },
+  { name: 'inchanger',   label: t('In Changer'),   field: 'inchanger',   align: 'center' },
+  { name: 'retention',   label: t('Retention'),    field: 'retention',   align: 'left'   },
+  { name: 'maxvolbytes', label: t('Max Bytes'),    field: 'maxvolbytes', align: 'right'  },
+  { name: 'volbytes',    label: t('Used Bytes'),   field: 'volbytes',    align: 'right'  },
+  { name: 'actions',     label: '',                field: 'actions',     align: 'center', style: 'width:40px' },
+])
 
 const volStatuses = ['Append', 'Full', 'Used', 'Purged', 'Recycled', 'Read-Only', 'Error', 'Cleaning']
 
@@ -409,14 +411,14 @@ async function setVolStatus(vol, newStatus) {
     statusMsg.value = { show: true, ok: false, text: e.message }
   }
 }
-const storageCols = [
-  { name: 'name',        label: 'Name',        field: 'name',        align: 'left',  sortable: true },
-  { name: 'address',     label: 'Address',     field: 'address',     align: 'left'   },
-  { name: 'mediatype',   label: 'Media Type',  field: 'mediatype',   align: 'left'   },
-  { name: 'autochanger', label: 'Autochanger', field: 'autochanger', align: 'center' },
-  { name: 'enabled',     label: 'Status',      field: 'enabled',     align: 'center' },
-  { name: 'actions',     label: '',            field: 'actions',     align: 'center', style: 'width:80px' },
-]
+const storageCols = computed(() => [
+  { name: 'name',        label: t('Name'),        field: 'name',        align: 'left',  sortable: true },
+  { name: 'address',     label: t('Address'),     field: 'address',     align: 'left'   },
+  { name: 'mediatype',   label: t('Media Type'),  field: 'mediatype',   align: 'left'   },
+  { name: 'autochanger', label: t('Autochanger'), field: 'autochanger', align: 'center' },
+  { name: 'enabled',     label: t('Status'),      field: 'enabled',     align: 'center' },
+  { name: 'actions',     label: '',               field: 'actions',     align: 'center', style: 'width:80px' },
+])
 
 function statusColor(s) {
   return { Full: 'warning', Append: 'positive', Recycled: 'grey', Error: 'negative',

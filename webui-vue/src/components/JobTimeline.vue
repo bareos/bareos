@@ -1,12 +1,12 @@
 <template>
   <q-card flat bordered class="bareos-panel">
     <q-card-section class="panel-header row items-center">
-      <span>Job Timeline</span>
+      <span>{{ t('Job Timeline') }}</span>
       <q-space />
       <q-btn-toggle
         v-model="tlDays"
         dense unelevated no-caps
-        :options="[{label:'24h',value:1},{label:'7 days',value:7},{label:'30 days',value:30}]"
+        :options="timelineRangeOptions"
         text-color="grey-8" toggle-color="primary" color="white"
         class="q-mr-sm bg-white"
         style="border-radius:4px"
@@ -29,7 +29,7 @@
       </div>
       <div v-else-if="tlError" class="text-negative q-py-md">{{ tlError }}</div>
       <div v-else-if="!tlRows.length" class="text-grey text-center q-py-xl">
-        No jobs in this period.
+        {{ t('No jobs in this period.') }}
       </div>
       <div v-else ref="svgContainer" class="tl-container" @mouseleave="hideTooltip">
         <svg :width="svgW" :height="svgH">
@@ -115,14 +115,14 @@
       <div v-if="tlTooltip.visible" class="tl-tooltip"
            :style="`left:${tlTooltip.x}px; top:${tlTooltip.y}px`">
         <div class="text-weight-bold q-mb-xs">{{ tlTooltip.job.name }}</div>
-        <div>Client: {{ tlTooltip.job.client }}</div>
-        <div>ID: {{ tlTooltip.job.id }}</div>
-        <div>Status: {{ jobStatusMap[tlTooltip.job.status]?.label ?? tlTooltip.job.status }}</div>
-        <div>Start: {{ tlTooltip.job.starttime }}</div>
-        <div v-if="tlTooltip.job.endtime">End: {{ tlTooltip.job.endtime }}</div>
-        <div>Duration: {{ tlTooltip.job.duration || '—' }}</div>
-        <div>Files: {{ formatNumber(tlTooltip.job.files ?? 0, settings.locale) }}</div>
-        <div>Bytes: {{ fmtBytes(tlTooltip.job.bytes ?? 0) }}</div>
+        <div>{{ t('Client') }}: {{ tlTooltip.job.client }}</div>
+        <div>{{ t('ID') }}: {{ tlTooltip.job.id }}</div>
+        <div>{{ t('Status') }}: {{ translatedJobStatusMap[tlTooltip.job.status]?.label ?? tlTooltip.job.status }}</div>
+        <div>{{ t('Start') }}: {{ tlTooltip.job.starttime }}</div>
+        <div v-if="tlTooltip.job.endtime">{{ t('End') }}: {{ tlTooltip.job.endtime }}</div>
+        <div>{{ t('Duration') }}: {{ tlTooltip.job.duration || '—' }}</div>
+        <div>{{ t('Files') }}: {{ formatNumber(tlTooltip.job.files ?? 0, settings.locale) }}</div>
+        <div>{{ t('Bytes') }}: {{ fmtBytes(tlTooltip.job.bytes ?? 0) }}</div>
       </div>
     </q-card-section>
   </q-card>
@@ -132,6 +132,7 @@
 import { ref, computed, reactive, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
+import { useI18n } from 'vue-i18n'
 import { jobStatusMap, formatBytes } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -143,6 +144,7 @@ const router  = useRouter()
 const director = useDirectorStore()
 const settings = useSettingsStore()
 const fmtBytes = formatBytes
+const { t } = useI18n()
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 const TL_CLIENT_W = 110
@@ -161,6 +163,17 @@ const containerW   = ref(700)
 let _tlResizeObs   = null
 
 const tlTooltip = reactive({ visible: false, x: 0, y: 0, job: null })
+const timelineRangeOptions = computed(() => [
+  { label: '24h', value: 1 },
+  { label: t('7 days'), value: 7 },
+  { label: t('30 days'), value: 30 },
+])
+const translatedJobStatusMap = computed(() => Object.fromEntries(
+  Object.entries(jobStatusMap).map(([key, info]) => [
+    key,
+    { ...info, label: info?.label ? t(info.label) : info?.label },
+  ]),
+))
 
 // ── Computed geometry ─────────────────────────────────────────────────────────
 const tlStart  = computed(() => Date.now() - tlDays.value * 24 * 3600 * 1000)

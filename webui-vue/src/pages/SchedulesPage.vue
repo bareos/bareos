@@ -1,8 +1,8 @@
 <template>
   <q-page class="q-pa-md">
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-tab name="status" label="Status"  no-caps />
-      <q-tab name="show"   label="Show"    no-caps />
+      <q-tab name="status" :label="t('Status')"  no-caps />
+      <q-tab name="show"   :label="t('Show')"    no-caps />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated swipeable>
@@ -11,7 +11,7 @@
       <q-tab-panel name="show" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>Schedules</span>
+            <span>{{ t('Schedules') }}</span>
             <q-space />
             <q-btn flat round dense icon="refresh" color="white" @click="refreshSchedules" />
           </q-card-section>
@@ -22,7 +22,7 @@
               <template #body-cell-enabled="props">
                 <q-td :props="props" class="text-center">
                   <q-badge :color="props.value ? 'positive' : 'negative'"
-                           :label="props.value ? 'Enabled' : 'Disabled'" />
+                           :label="props.value ? t('Enabled') : t('Disabled')" />
                 </q-td>
               </template>
               <template #body-cell-run="props">
@@ -36,7 +36,7 @@
                   <q-btn flat round dense size="sm"
                          :icon="props.row.enabled ? 'pause' : 'play_arrow'"
                          :color="props.row.enabled ? 'warning' : 'positive'"
-                         :title="props.row.enabled ? 'Disable' : 'Enable'"
+                          :title="props.row.enabled ? t('Disable') : t('Enable')"
                          :loading="togglingName === props.row.name"
                          @click="toggleSchedule(props.row)" />
                 </q-td>
@@ -52,7 +52,7 @@
         <!-- Scheduler Jobs: which schedules trigger which jobs -->
         <q-card flat bordered class="bareos-panel q-mb-md">
           <q-card-section class="panel-header">
-            <span>Scheduler Jobs</span>
+            <span>{{ t('Scheduler Jobs') }}</span>
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table :rows="scheduleJobRows" :columns="scheduleJobCols"
@@ -66,12 +66,12 @@
                       <q-btn flat round dense size="sm"
                              :icon="props.row.schedEnabled ? 'pause' : 'play_arrow'"
                              :color="props.row.schedEnabled ? 'warning' : 'positive'"
-                             :title="props.row.schedEnabled ? 'Disable schedule' : 'Enable schedule'"
+                             :title="props.row.schedEnabled ? t('Disable schedule') : t('Enable schedule')"
                              :loading="togglingName === props.row.schedule"
                              @click="toggleSchedule({ name: props.row.schedule, enabled: props.row.schedEnabled })" />
                       <span class="text-weight-bold">{{ props.row.schedule }}</span>
                       <q-badge :color="props.row.schedEnabled ? 'positive' : 'negative'"
-                               :label="props.row.schedEnabled ? 'Enabled' : 'Disabled'" />
+                               :label="props.row.schedEnabled ? t('Enabled') : t('Disabled')" />
                     </div>
                   </q-td>
                 </q-tr>
@@ -82,15 +82,15 @@
                       <q-btn flat round dense size="sm"
                              :icon="props.row.jobEnabled ? 'pause' : 'play_arrow'"
                              :color="props.row.jobEnabled ? 'warning' : 'positive'"
-                             :title="props.row.jobEnabled ? 'Disable job' : 'Enable job'"
+                             :title="props.row.jobEnabled ? t('Disable job') : t('Enable job')"
                              :loading="togglingJob === props.row.job"
                              @click="toggleJob(props.row)" />
                       <span>{{ props.row.job }}</span>
                       <q-badge v-if="props.row.jobEnabled !== null"
                                :color="props.row.jobEnabled ? 'positive' : 'negative'"
-                               :label="props.row.jobEnabled ? 'Enabled' : 'Disabled'" />
+                               :label="props.row.jobEnabled ? t('Enabled') : t('Disabled')" />
                     </div>
-                    <span v-else class="text-grey-5">no jobs configured</span>
+                    <span v-else class="text-grey-5">{{ t('no jobs configured') }}</span>
                   </q-td>
                 </q-tr>
               </template>
@@ -101,17 +101,17 @@
         <!-- Scheduler Preview: Calendar (month or week view) -->
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>Scheduler Preview</span>
+            <span>{{ t('Scheduler Preview') }}</span>
             <q-space />
             <q-btn-toggle v-model="viewMode" dense flat unelevated
-                          :options="[{label:'Month',value:'month'},{label:'Week',value:'week'}]"
+                          :options="viewModeOptions"
                           color="white" text-color="white"
                           toggle-color="primary" toggle-text-color="white"
                           class="q-mr-sm" />
             <q-btn flat round dense icon="chevron_left"  color="white" @click="prevPeriod" />
             <span class="text-white q-mx-sm" style="min-width:160px;text-align:center">{{ periodLabel }}</span>
             <q-btn flat round dense icon="chevron_right" color="white" @click="nextPeriod" />
-            <q-btn flat round dense icon="today" color="white" class="q-ml-sm" title="Go to today" @click="goToday" />
+            <q-btn flat round dense icon="today" color="white" class="q-ml-sm" :title="t('Go to today')" @click="goToday" />
           </q-card-section>
           <q-card-section v-if="statusError" class="q-pa-none">
             <q-banner dense class="bg-negative text-white">{{ statusError }}</q-banner>
@@ -119,7 +119,7 @@
           <!-- Schedule filter checkboxes -->
           <q-card-section v-if="allScheduleNames.length" class="q-pb-none">
             <div class="row items-center q-gutter-sm">
-              <span class="text-caption text-grey-7">Show schedules:</span>
+              <span class="text-caption text-grey-7">{{ t('Show schedules:') }}</span>
               <q-checkbox
                 v-for="name in allScheduleNames" :key="name"
                 v-model="visibleScheduleNames"
@@ -150,10 +150,10 @@
                   <q-tooltip max-width="260px">
                     <div class="text-weight-bold q-mb-xs">{{ run.schedule }}</div>
                     <div>{{ run.datetime }}</div>
-                    <div v-if="run.level">Level: {{ run.level }}</div>
-                    <div v-if="run.pool">Pool: {{ run.pool }}</div>
-                    <div v-if="run.storage">Storage: {{ run.storage }}</div>
-                    <div v-if="run.priority">Priority: {{ run.priority }}</div>
+                      <div v-if="run.level">{{ t('Level') }}: {{ run.level }}</div>
+                      <div v-if="run.pool">{{ t('Pool') }}: {{ run.pool }}</div>
+                      <div v-if="run.storage">{{ t('Storage') }}: {{ run.storage }}</div>
+                      <div v-if="run.priority">{{ t('Priority') }}: {{ run.priority }}</div>
                   </q-tooltip>
                 </div>
               </div>
@@ -171,9 +171,11 @@
 import { ref, computed, watch } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
 import { useQuasar } from 'quasar'
+import { useI18n } from 'vue-i18n'
 
 const director = useDirectorStore()
 const $q = useQuasar()
+const { t } = useI18n()
 
 const tab = ref('status')
 
@@ -206,19 +208,19 @@ const schedules = computed(() =>
   }))
 )
 
-const schedCols = [
-  { name: 'name',    label: 'Name',    field: 'name',    align: 'left', sortable: true },
-  { name: 'enabled', label: 'Status',  field: 'enabled', align: 'center' },
-  { name: 'run',     label: 'Run Directives', field: 'run', align: 'left' },
-  { name: 'actions', label: '',        field: 'actions', align: 'center', style: 'width:60px' },
-]
+const schedCols = computed(() => [
+  { name: 'name',    label: t('Name'),           field: 'name',    align: 'left', sortable: true },
+  { name: 'enabled', label: t('Status'),         field: 'enabled', align: 'center' },
+  { name: 'run',     label: t('Run Directives'), field: 'run',     align: 'left' },
+  { name: 'actions', label: '',                  field: 'actions', align: 'center', style: 'width:60px' },
+])
 
 async function toggleSchedule(row) {
   const action = row.enabled ? 'disable' : 'enable'
   togglingName.value = row.name
   try {
     await director.call(`${action} schedule=${row.name}`)
-    $q.notify({ type: 'positive', message: `Schedule "${row.name}" ${action}d` })
+    $q.notify({ type: 'positive', message: t('Schedule "{name}" {action}d', { name: row.name, action }) })
     await Promise.all([refreshSchedules(), refreshStatus()])
   } catch (e) {
     $q.notify({ type: 'negative', message: e.message })
@@ -234,7 +236,7 @@ async function toggleJob(row) {
   togglingJob.value = row.job
   try {
     await director.call(`${action} job=${row.job}`)
-    $q.notify({ type: 'positive', message: `Job "${row.job}" ${action}d` })
+    $q.notify({ type: 'positive', message: t('Job "{name}" {action}d', { name: row.job, action }) })
     await refreshStatus()
   } catch (e) {
     $q.notify({ type: 'negative', message: e.message })
@@ -295,28 +297,32 @@ const apiDaysRange = computed(() => {
   return { from, to }
 })
 
-const MONTH_NAMES = ['January','February','March','April','May','June',
-                     'July','August','September','October','November','December']
-const DAY_ABBR = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+const MONTH_NAMES = computed(() => [
+  t('January'), t('February'), t('March'), t('April'), t('May'), t('June'),
+  t('July'), t('August'), t('September'), t('October'), t('November'), t('December'),
+])
+const DAY_ABBR = computed(() => [
+  t('Mon'), t('Tue'), t('Wed'), t('Thu'), t('Fri'), t('Sat'), t('Sun'),
+])
 
 const periodLabel = computed(() => {
   if (viewMode.value === 'month') {
     const y = viewAnchor.value.getFullYear()
     const m = viewAnchor.value.getMonth()
-    return `${MONTH_NAMES[m]} ${y}`
+    return `${MONTH_NAMES.value[m]} ${y}`
   } else {
     const mon = new Date(viewAnchor.value)
     const sun = new Date(mon)
     sun.setDate(sun.getDate() + 6)
-    const fmt = d => `${String(d.getDate()).padStart(2,'0')} ${MONTH_NAMES[d.getMonth()].slice(0,3)}`
+    const fmt = d => `${String(d.getDate()).padStart(2,'0')} ${MONTH_NAMES.value[d.getMonth()].slice(0,3)}`
     return `${fmt(mon)} – ${fmt(sun)} ${sun.getFullYear()}`
   }
 })
 
 // Column headers: for month view just Mon–Sun; for week view include the date.
 const calendarHeaders = computed(() => {
-  if (viewMode.value === 'month') return DAY_ABBR
-  return DAY_ABBR.map((d, i) => {
+  if (viewMode.value === 'month') return DAY_ABBR.value
+  return DAY_ABBR.value.map((d, i) => {
     const day = new Date(viewAnchor.value)
     day.setDate(day.getDate() + i)
     return `${d} ${day.getDate()}`
@@ -414,9 +420,13 @@ const scheduleJobRows = computed(() => {
   return rows
 })
 
-const scheduleJobCols = [
-  { name: 'job', label: 'Job', field: 'job', align: 'left', headerStyle: 'padding-left: 48px' },
-]
+const scheduleJobCols = computed(() => [
+  { name: 'job', label: t('Job'), field: 'job', align: 'left', headerStyle: 'padding-left: 48px' },
+])
+const viewModeOptions = computed(() => [
+  { label: t('Month'), value: 'month' },
+  { label: t('Week'), value: 'week' },
+])
 
 // ── Schedule visibility filter for calendar ────────────────────────────────
 const allScheduleNames = computed(() =>
@@ -463,7 +473,7 @@ const calendarCells = computed(() => {
   const todayStr  = makeDateStr(today.getFullYear(), today.getMonth(), today.getDate())
 
   if (viewMode.value === 'week') {
-    return DAY_ABBR.map((_, i) => {
+    return DAY_ABBR.value.map((_, i) => {
       const day = new Date(viewAnchor.value)
       day.setDate(day.getDate() + i)
       const dateStr = makeDateStr(day.getFullYear(), day.getMonth(), day.getDate())
