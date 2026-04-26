@@ -794,6 +794,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
       {.media_type = std::string{"File"},
        .archive_device = std::string{"/tmp/managed-storage"},
        .device_type = std::string{"file"},
+       .access_mode = std::string{"readonly"},
        .device_options = std::string{"Block Size = 64k"},
        .diagnostic_device = std::string{"/tmp/managed-storage.diag"},
        .auto_select = false,
@@ -804,6 +805,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
        .maximum_open_wait = 302,
        .maximum_open_volumes = 4,
        .volume_poll_interval = 303,
+       .maximum_rewind_wait = 304,
        .label_block_size = 64513,
        .minimum_block_size = 4096,
        .maximum_block_size = 1048577,
@@ -821,6 +823,8 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
        .drive_tape_alert_enabled = true,
        .drive_crypto_enabled = true,
        .query_crypto_status = true,
+       .auto_deflate = std::string{"writeonly"},
+       .auto_inflate = std::string{"in"},
        .collect_statistics = false,
        .eof_on_error_is_eot = true,
        .description = std::string{"Managed storage device"}});
@@ -838,6 +842,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(created_text.find("Archive Device = /tmp/managed-storage"),
             std::string::npos);
   EXPECT_NE(created_text.find("Device Type = \"file\""), std::string::npos);
+  EXPECT_NE(created_text.find("AccessMode = read"), std::string::npos);
   EXPECT_NE(created_text.find("DeviceOptions = \"Block Size = 64k\""),
             std::string::npos);
   EXPECT_NE(
@@ -855,6 +860,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(created_text.find("MaximumOpenWait = 302"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumOpenVolumes = 4"), std::string::npos);
   EXPECT_NE(created_text.find("VolumePollInterval = 303"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumRewindWait = 304"), std::string::npos);
   EXPECT_NE(created_text.find("LabelBlockSize = 64513"), std::string::npos);
   EXPECT_NE(created_text.find("MinimumBlockSize = 4096"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumBlockSize = 1048577"), std::string::npos);
@@ -880,6 +886,8 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
             std::string::npos);
   EXPECT_NE(created_text.find("DriveCryptoEnabled = yes"), std::string::npos);
   EXPECT_NE(created_text.find("QueryCryptoStatus = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("AutoDeflate = write"), std::string::npos);
+  EXPECT_NE(created_text.find("AutoInflate = read"), std::string::npos);
   EXPECT_NE(created_text.find("CollectStatistics = no"), std::string::npos);
   EXPECT_NE(created_text.find("EofOnErrorIsEot = yes"), std::string::npos);
 
@@ -903,6 +911,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(updated_text.find("Archive Device = /tmp/updated-storage"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Device Type = \"file\""), std::string::npos);
+  EXPECT_NE(updated_text.find("AccessMode = read"), std::string::npos);
   EXPECT_NE(updated_text.find("DeviceOptions = \"Block Size = 64k\""),
             std::string::npos);
   EXPECT_NE(
@@ -920,6 +929,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(updated_text.find("MaximumOpenWait = 302"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumOpenVolumes = 4"), std::string::npos);
   EXPECT_NE(updated_text.find("VolumePollInterval = 303"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumRewindWait = 304"), std::string::npos);
   EXPECT_NE(updated_text.find("LabelBlockSize = 64513"), std::string::npos);
   EXPECT_NE(updated_text.find("MinimumBlockSize = 4096"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBlockSize = 1048577"), std::string::npos);
@@ -945,6 +955,8 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("DriveCryptoEnabled = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("QueryCryptoStatus = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("AutoDeflate = write"), std::string::npos);
+  EXPECT_NE(updated_text.find("AutoInflate = read"), std::string::npos);
   EXPECT_NE(updated_text.find("CollectStatistics = no"), std::string::npos);
   EXPECT_NE(updated_text.find("EofOnErrorIsEot = yes"), std::string::npos);
 
@@ -992,8 +1004,16 @@ TEST(BconfigService, UpsertsStorageDeviceResourcesInSharedFiles)
   const auto original_path = device_directory / "FileStorage.conf";
   const auto shared_path = device_directory / "shared.conf";
   const auto original_text = ReadTextFile(original_path);
+  auto shared_base_text = original_text;
+  const auto original_brace = shared_base_text.rfind("}\n");
+  ASSERT_NE(original_brace, std::string::npos);
+  shared_base_text.insert(original_brace,
+                          "  accessmode = writeonly\n"
+                          "  maximumrewindwait = 305\n"
+                          "  autodeflate = both\n"
+                          "  autoinflate = readonly\n");
   WriteTextFile(shared_path,
-                original_text
+                shared_base_text
                     + "\nDevice {\n"
                       "  Name = \"OtherDevice\"\n"
                       "  Media Type = File\n"
@@ -1011,6 +1031,10 @@ TEST(BconfigService, UpsertsStorageDeviceResourcesInSharedFiles)
   const auto shared_text = ReadTextFile(shared_path);
   EXPECT_NE(shared_text.find("Archive Device = /tmp/updated-storage"),
             std::string::npos);
+  EXPECT_NE(shared_text.find("AccessMode = write"), std::string::npos);
+  EXPECT_NE(shared_text.find("MaximumRewindWait = 305"), std::string::npos);
+  EXPECT_NE(shared_text.find("AutoDeflate = readwrite"), std::string::npos);
+  EXPECT_NE(shared_text.find("AutoInflate = read"), std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherDevice\""), std::string::npos);
 }
 

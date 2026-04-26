@@ -742,6 +742,7 @@ struct StorageDeviceResourceSpec {
   std::optional<std::string> media_type{};
   std::optional<std::string> archive_device{};
   std::optional<std::string> device_type{};
+  std::optional<std::string> access_mode{};
   std::optional<std::string> device_options{};
   std::optional<std::string> diagnostic_device{};
   std::optional<bool> auto_select{};
@@ -752,6 +753,7 @@ struct StorageDeviceResourceSpec {
   std::optional<uint64_t> maximum_open_wait{};
   std::optional<uint32_t> maximum_open_volumes{};
   std::optional<uint64_t> volume_poll_interval{};
+  std::optional<uint64_t> maximum_rewind_wait{};
   std::optional<uint32_t> label_block_size{};
   std::optional<uint32_t> minimum_block_size{};
   std::optional<uint32_t> maximum_block_size{};
@@ -769,6 +771,8 @@ struct StorageDeviceResourceSpec {
   std::optional<bool> drive_tape_alert_enabled{};
   std::optional<bool> drive_crypto_enabled{};
   std::optional<bool> query_crypto_status{};
+  std::optional<std::string> auto_deflate{};
+  std::optional<std::string> auto_inflate{};
   std::optional<bool> collect_statistics{};
   std::optional<bool> eof_on_error_is_eot{};
   std::optional<std::string> description{};

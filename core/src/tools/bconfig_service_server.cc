@@ -300,6 +300,7 @@ struct StorageDeviceRequestSpec {
   std::optional<std::string> media_type{};
   std::optional<std::string> archive_device{};
   std::optional<std::string> device_type{};
+  std::optional<std::string> access_mode{};
   std::optional<std::string> device_options{};
   std::optional<std::string> diagnostic_device{};
   std::optional<bool> auto_select{};
@@ -310,6 +311,7 @@ struct StorageDeviceRequestSpec {
   std::optional<uint64_t> maximum_open_wait{};
   std::optional<uint32_t> maximum_open_volumes{};
   std::optional<uint64_t> volume_poll_interval{};
+  std::optional<uint64_t> maximum_rewind_wait{};
   std::optional<uint32_t> label_block_size{};
   std::optional<uint32_t> minimum_block_size{};
   std::optional<uint32_t> maximum_block_size{};
@@ -327,6 +329,8 @@ struct StorageDeviceRequestSpec {
   std::optional<bool> drive_tape_alert_enabled{};
   std::optional<bool> drive_crypto_enabled{};
   std::optional<bool> query_crypto_status{};
+  std::optional<std::string> auto_deflate{};
+  std::optional<std::string> auto_inflate{};
   std::optional<bool> collect_statistics{};
   std::optional<bool> eof_on_error_is_eot{};
   std::optional<std::string> description{};
@@ -6936,6 +6940,7 @@ http::response<http::string_body> HandleDeploymentStorageDevicePutRequest(
       .media_type = spec->media_type,
       .archive_device = spec->archive_device,
       .device_type = spec->device_type,
+      .access_mode = spec->access_mode,
       .device_options = spec->device_options,
       .diagnostic_device = spec->diagnostic_device,
       .auto_select = spec->auto_select,
@@ -6946,6 +6951,7 @@ http::response<http::string_body> HandleDeploymentStorageDevicePutRequest(
       .maximum_open_wait = spec->maximum_open_wait,
       .maximum_open_volumes = spec->maximum_open_volumes,
       .volume_poll_interval = spec->volume_poll_interval,
+      .maximum_rewind_wait = spec->maximum_rewind_wait,
       .label_block_size = spec->label_block_size,
       .minimum_block_size = spec->minimum_block_size,
       .maximum_block_size = spec->maximum_block_size,
@@ -6963,6 +6969,8 @@ http::response<http::string_body> HandleDeploymentStorageDevicePutRequest(
       .drive_tape_alert_enabled = spec->drive_tape_alert_enabled,
       .drive_crypto_enabled = spec->drive_crypto_enabled,
       .query_crypto_status = spec->query_crypto_status,
+      .auto_deflate = spec->auto_deflate,
+      .auto_inflate = spec->auto_inflate,
       .collect_statistics = spec->collect_statistics,
       .eof_on_error_is_eot = spec->eof_on_error_is_eot,
       .description = spec->description,
@@ -11060,6 +11068,7 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   auto* media_type = json_object_get(root.get(), "media_type");
   auto* archive_device = json_object_get(root.get(), "archive_device");
   auto* device_type = json_object_get(root.get(), "device_type");
+  auto* access_mode = json_object_get(root.get(), "access_mode");
   auto* device_options = json_object_get(root.get(), "device_options");
   auto* diagnostic_device = json_object_get(root.get(), "diagnostic_device");
   auto* auto_select = json_object_get(root.get(), "auto_select");
@@ -11073,6 +11082,8 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
       = json_object_get(root.get(), "maximum_open_volumes");
   auto* volume_poll_interval
       = json_object_get(root.get(), "volume_poll_interval");
+  auto* maximum_rewind_wait
+      = json_object_get(root.get(), "maximum_rewind_wait");
   auto* label_block_size = json_object_get(root.get(), "label_block_size");
   auto* minimum_block_size = json_object_get(root.get(), "minimum_block_size");
   auto* maximum_block_size = json_object_get(root.get(), "maximum_block_size");
@@ -11095,6 +11106,8 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
       = json_object_get(root.get(), "drive_crypto_enabled");
   auto* query_crypto_status
       = json_object_get(root.get(), "query_crypto_status");
+  auto* auto_deflate = json_object_get(root.get(), "auto_deflate");
+  auto* auto_inflate = json_object_get(root.get(), "auto_inflate");
   auto* collect_statistics = json_object_get(root.get(), "collect_statistics");
   auto* eof_on_error_is_eot
       = json_object_get(root.get(), "eof_on_error_is_eot");
@@ -11126,6 +11139,7 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   if (!require_string(media_type, "media_type")
       || !require_string(archive_device, "archive_device")
       || !require_string(device_type, "device_type")
+      || !require_string(access_mode, "access_mode")
       || !require_string(device_options, "device_options")
       || !require_string(diagnostic_device, "diagnostic_device")
       || !require_string(changer_device, "changer_device")
@@ -11135,6 +11149,8 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
       || !require_string(mount_point, "mount_point")
       || !require_string(mount_command, "mount_command")
       || !require_string(unmount_command, "unmount_command")
+      || !require_string(auto_deflate, "auto_deflate")
+      || !require_string(auto_inflate, "auto_inflate")
       || !require_string(description, "description")) {
     return std::nullopt;
   }
@@ -11149,6 +11165,7 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
       || !require_integer(maximum_open_wait, "maximum_open_wait")
       || !require_integer(maximum_open_volumes, "maximum_open_volumes")
       || !require_integer(volume_poll_interval, "volume_poll_interval")
+      || !require_integer(maximum_rewind_wait, "maximum_rewind_wait")
       || !require_integer(label_block_size, "label_block_size")
       || !require_integer(minimum_block_size, "minimum_block_size")
       || !require_integer(maximum_block_size, "maximum_block_size")
@@ -11206,6 +11223,9 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   if (device_type && json_is_string(device_type)) {
     spec.device_type = std::string{json_string_value(device_type)};
   }
+  if (access_mode && json_is_string(access_mode)) {
+    spec.access_mode = std::string{json_string_value(access_mode)};
+  }
   if (device_options && json_is_string(device_options)) {
     spec.device_options = std::string{json_string_value(device_options)};
   }
@@ -11232,6 +11252,8 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
                      spec.maximum_open_volumes)
       || !assign_u64(volume_poll_interval, "volume_poll_interval",
                      spec.volume_poll_interval)
+      || !assign_u64(maximum_rewind_wait, "maximum_rewind_wait",
+                     spec.maximum_rewind_wait)
       || !assign_u32(label_block_size, "label_block_size",
                      spec.label_block_size)
       || !assign_u32(minimum_block_size, "minimum_block_size",
@@ -11273,6 +11295,12 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   }
   if (query_crypto_status && json_is_boolean(query_crypto_status)) {
     spec.query_crypto_status = json_is_true(query_crypto_status);
+  }
+  if (auto_deflate && json_is_string(auto_deflate)) {
+    spec.auto_deflate = std::string{json_string_value(auto_deflate)};
+  }
+  if (auto_inflate && json_is_string(auto_inflate)) {
+    spec.auto_inflate = std::string{json_string_value(auto_inflate)};
   }
   if (collect_statistics && json_is_boolean(collect_statistics)) {
     spec.collect_statistics = json_is_true(collect_statistics);

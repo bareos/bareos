@@ -2556,6 +2556,7 @@ std::string BuildStorageDaemonDeviceResourceContent(
     std::string_view media_type,
     std::string_view archive_device,
     std::string_view device_type,
+    const std::optional<std::string>& access_mode,
     const std::optional<std::string>& device_options,
     const std::optional<std::string>& diagnostic_device,
     const std::optional<bool>& auto_select,
@@ -2566,6 +2567,7 @@ std::string BuildStorageDaemonDeviceResourceContent(
     const std::optional<uint64_t>& maximum_open_wait,
     const std::optional<uint32_t>& maximum_open_volumes,
     const std::optional<uint64_t>& volume_poll_interval,
+    const std::optional<uint64_t>& maximum_rewind_wait,
     const std::optional<uint32_t>& label_block_size,
     const std::optional<uint32_t>& minimum_block_size,
     const std::optional<uint32_t>& maximum_block_size,
@@ -2583,6 +2585,8 @@ std::string BuildStorageDaemonDeviceResourceContent(
     const std::optional<bool>& drive_tape_alert_enabled,
     const std::optional<bool>& drive_crypto_enabled,
     const std::optional<bool>& query_crypto_status,
+    const std::optional<std::string>& auto_deflate,
+    const std::optional<std::string>& auto_inflate,
     const std::optional<bool>& collect_statistics,
     const std::optional<bool>& eof_on_error_is_eot,
     std::string_view description)
@@ -2594,6 +2598,7 @@ std::string BuildStorageDaemonDeviceResourceContent(
           << "  Media Type = " << media_type << "\n"
           << "  Device Type = " << QuoteBareosString(device_type) << "\n"
           << "  Archive Device = " << archive_device << "\n";
+  AppendBareosDirective(content, "AccessMode", access_mode);
   AppendQuotedDirective(content, "DeviceOptions", device_options);
   AppendQuotedDirective(content, "DiagnosticDevice", diagnostic_device);
   AppendBoolDirective(content, "AutoSelect", auto_select);
@@ -2604,6 +2609,7 @@ std::string BuildStorageDaemonDeviceResourceContent(
   AppendIntegerDirective(content, "MaximumOpenWait", maximum_open_wait);
   AppendIntegerDirective(content, "MaximumOpenVolumes", maximum_open_volumes);
   AppendIntegerDirective(content, "VolumePollInterval", volume_poll_interval);
+  AppendIntegerDirective(content, "MaximumRewindWait", maximum_rewind_wait);
   AppendIntegerDirective(content, "LabelBlockSize", label_block_size);
   AppendIntegerDirective(content, "MinimumBlockSize", minimum_block_size);
   AppendIntegerDirective(content, "MaximumBlockSize", maximum_block_size);
@@ -2624,6 +2630,8 @@ std::string BuildStorageDaemonDeviceResourceContent(
                       drive_tape_alert_enabled);
   AppendBoolDirective(content, "DriveCryptoEnabled", drive_crypto_enabled);
   AppendBoolDirective(content, "QueryCryptoStatus", query_crypto_status);
+  AppendBareosDirective(content, "AutoDeflate", auto_deflate);
+  AppendBareosDirective(content, "AutoInflate", auto_inflate);
   AppendBoolDirective(content, "CollectStatistics", collect_statistics);
   AppendBoolDirective(content, "EofOnErrorIsEot", eof_on_error_is_eot);
   content << "}\n";
@@ -2992,6 +3000,40 @@ std::string RenderDirectorJobSelectionType(uint32_t selection_type)
       return "Job";
     case MT_SQLQUERY:
       return "SqlQuery";
+    default:
+      return "Unknown";
+  }
+}
+
+OperationResult<std::string> NormalizeStorageDeviceIoDirection(
+    std::string_view value)
+{
+  std::string normalized{value};
+  std::transform(normalized.begin(), normalized.end(), normalized.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  if (normalized == "in" || normalized == "read" || normalized == "readonly") {
+    return {.value = std::string{"read"}};
+  }
+  if (normalized == "out" || normalized == "write"
+      || normalized == "writeonly") {
+    return {.value = std::string{"write"}};
+  }
+  if (normalized == "both" || normalized == "readwrite") {
+    return {.value = std::string{"readwrite"}};
+  }
+  return {.error = "unsupported storage device io direction value '"
+                   + std::string{value} + "'."};
+}
+
+std::string RenderStorageDeviceIoDirection(storagedaemon::IODirection value)
+{
+  switch (value) {
+    case storagedaemon::IODirection::READ:
+      return "read";
+    case storagedaemon::IODirection::WRITE:
+      return "write";
+    case storagedaemon::IODirection::READ_WRITE:
+      return "readwrite";
     default:
       return "Unknown";
   }
@@ -3551,6 +3593,7 @@ struct StorageDaemonDeviceWriteContext {
   std::optional<std::string> media_type{};
   std::optional<std::string> archive_device{};
   std::optional<std::string> device_type{};
+  std::optional<std::string> access_mode{};
   std::optional<std::string> device_options{};
   std::optional<std::string> diagnostic_device{};
   std::optional<bool> auto_select{};
@@ -3561,6 +3604,7 @@ struct StorageDaemonDeviceWriteContext {
   std::optional<uint64_t> maximum_open_wait{};
   std::optional<uint32_t> maximum_open_volumes{};
   std::optional<uint64_t> volume_poll_interval{};
+  std::optional<uint64_t> maximum_rewind_wait{};
   std::optional<uint32_t> label_block_size{};
   std::optional<uint32_t> minimum_block_size{};
   std::optional<uint32_t> maximum_block_size{};
@@ -3578,6 +3622,8 @@ struct StorageDaemonDeviceWriteContext {
   std::optional<bool> drive_tape_alert_enabled{};
   std::optional<bool> drive_crypto_enabled{};
   std::optional<bool> query_crypto_status{};
+  std::optional<std::string> auto_deflate{};
+  std::optional<std::string> auto_inflate{};
   std::optional<bool> collect_statistics{};
   std::optional<bool> eof_on_error_is_eot{};
   std::optional<std::string> description{};
@@ -7945,6 +7991,15 @@ LoadStorageDaemonDeviceWriteContext(
     if (!device->device_type.empty()) {
       context.device_type = std::string{device->device_type};
     }
+    if (HasMemberSource(*device, {"AccessMode"})) {
+      const auto access_mode
+          = RenderStorageDeviceIoDirection(device->access_mode);
+      if (access_mode == "Unknown") {
+        return {.error = "storage-daemon device '" + std::string{device_name}
+                         + "' has an unsupported AccessMode value."};
+      }
+      context.access_mode = access_mode;
+    }
     if (device->device_options && device->device_options[0] != '\0') {
       context.device_options = std::string{device->device_options};
     }
@@ -7976,6 +8031,10 @@ LoadStorageDaemonDeviceWriteContext(
     if (HasMemberSource(*device, {"VolumePollInterval"})) {
       context.volume_poll_interval
           = static_cast<uint64_t>(device->vol_poll_interval);
+    }
+    if (HasMemberSource(*device, {"MaximumRewindWait"})) {
+      context.maximum_rewind_wait
+          = static_cast<uint64_t>(device->max_rewind_wait);
     }
     if (HasMemberSource(*device, {"LabelBlockSize"})) {
       context.label_block_size = device->label_block_size;
@@ -8045,6 +8104,24 @@ LoadStorageDaemonDeviceWriteContext(
     }
     if (HasMemberSource(*device, {"QueryCryptoStatus"})) {
       context.query_crypto_status = device->query_crypto_status;
+    }
+    if (HasMemberSource(*device, {"AutoDeflate"})) {
+      const auto auto_deflate
+          = RenderStorageDeviceIoDirection(device->autodeflate);
+      if (auto_deflate == "Unknown") {
+        return {.error = "storage-daemon device '" + std::string{device_name}
+                         + "' has an unsupported AutoDeflate value."};
+      }
+      context.auto_deflate = auto_deflate;
+    }
+    if (HasMemberSource(*device, {"AutoInflate"})) {
+      const auto auto_inflate
+          = RenderStorageDeviceIoDirection(device->autoinflate);
+      if (auto_inflate == "Unknown") {
+        return {.error = "storage-daemon device '" + std::string{device_name}
+                         + "' has an unsupported AutoInflate value."};
+      }
+      context.auto_inflate = auto_inflate;
     }
     if (HasMemberSource(*device, {"CollectStatistics"})) {
       context.collect_statistics = device->collectstats;
@@ -8455,7 +8532,7 @@ OperationResult<std::monostate> SyncStorageDaemonConfig(
       director_maximum_bandwidth_per_job);
   const auto device_content = BuildStorageDaemonDeviceResourceContent(
       device_name, media_type, *archive_device, *device_type,
-      device_context.value->device_options,
+      device_context.value->access_mode, device_context.value->device_options,
       device_context.value->diagnostic_device,
       device_context.value->auto_select, device_context.value->changer_device,
       device_context.value->changer_command,
@@ -8464,6 +8541,7 @@ OperationResult<std::monostate> SyncStorageDaemonConfig(
       device_context.value->maximum_open_wait,
       device_context.value->maximum_open_volumes,
       device_context.value->volume_poll_interval,
+      device_context.value->maximum_rewind_wait,
       device_context.value->label_block_size,
       device_context.value->minimum_block_size,
       device_context.value->maximum_block_size,
@@ -8480,6 +8558,7 @@ OperationResult<std::monostate> SyncStorageDaemonConfig(
       device_context.value->drive_tape_alert_enabled,
       device_context.value->drive_crypto_enabled,
       device_context.value->query_crypto_status,
+      device_context.value->auto_deflate, device_context.value->auto_inflate,
       device_context.value->collect_statistics,
       device_context.value->eof_on_error_is_eot, device_description);
 
@@ -14389,6 +14468,16 @@ ServiceState::UpsertStorageDeviceResource(
             = "field 'device_type' is required for storage-daemon "
               "device resources."};
   }
+  auto access_mode
+      = spec.access_mode ? spec.access_mode : context.value->access_mode;
+  if (access_mode) {
+    auto normalized_access_mode
+        = NormalizeStorageDeviceIoDirection(*access_mode);
+    if (!normalized_access_mode) {
+      return {.error = normalized_access_mode.error};
+    }
+    access_mode = *normalized_access_mode.value;
+  }
 
   const auto device_options = spec.device_options
                                   ? spec.device_options
@@ -14418,6 +14507,9 @@ ServiceState::UpsertStorageDeviceResource(
   const auto volume_poll_interval = spec.volume_poll_interval
                                         ? spec.volume_poll_interval
                                         : context.value->volume_poll_interval;
+  const auto maximum_rewind_wait = spec.maximum_rewind_wait
+                                       ? spec.maximum_rewind_wait
+                                       : context.value->maximum_rewind_wait;
   const auto label_block_size = spec.label_block_size
                                     ? spec.label_block_size
                                     : context.value->label_block_size;
@@ -14466,6 +14558,26 @@ ServiceState::UpsertStorageDeviceResource(
   const auto query_crypto_status = spec.query_crypto_status
                                        ? spec.query_crypto_status
                                        : context.value->query_crypto_status;
+  auto auto_deflate
+      = spec.auto_deflate ? spec.auto_deflate : context.value->auto_deflate;
+  if (auto_deflate) {
+    auto normalized_auto_deflate
+        = NormalizeStorageDeviceIoDirection(*auto_deflate);
+    if (!normalized_auto_deflate) {
+      return {.error = normalized_auto_deflate.error};
+    }
+    auto_deflate = *normalized_auto_deflate.value;
+  }
+  auto auto_inflate
+      = spec.auto_inflate ? spec.auto_inflate : context.value->auto_inflate;
+  if (auto_inflate) {
+    auto normalized_auto_inflate
+        = NormalizeStorageDeviceIoDirection(*auto_inflate);
+    if (!normalized_auto_inflate) {
+      return {.error = normalized_auto_inflate.error};
+    }
+    auto_inflate = *normalized_auto_inflate.value;
+  }
   const auto collect_statistics = spec.collect_statistics
                                       ? spec.collect_statistics
                                       : context.value->collect_statistics;
@@ -14478,16 +14590,17 @@ ServiceState::UpsertStorageDeviceResource(
                                      DefaultStorageDaemonDeviceDescription(
                                          device_name, storage_name));
   const auto rendered = BuildStorageDaemonDeviceResourceContent(
-      device_name, *media_type, *archive_device, *device_type, device_options,
-      diagnostic_device, auto_select, changer_device, changer_command,
-      alert_command, maximum_changer_wait, maximum_open_wait,
-      maximum_open_volumes, volume_poll_interval, label_block_size,
-      minimum_block_size, maximum_block_size, maximum_file_size,
-      volume_capacity, maximum_concurrent_jobs, spool_directory,
-      maximum_spool_size, maximum_job_spool_size, drive_index, mount_point,
-      mount_command, unmount_command, no_rewind_on_close,
+      device_name, *media_type, *archive_device, *device_type, access_mode,
+      device_options, diagnostic_device, auto_select, changer_device,
+      changer_command, alert_command, maximum_changer_wait, maximum_open_wait,
+      maximum_open_volumes, volume_poll_interval, maximum_rewind_wait,
+      label_block_size, minimum_block_size, maximum_block_size,
+      maximum_file_size, volume_capacity, maximum_concurrent_jobs,
+      spool_directory, maximum_spool_size, maximum_job_spool_size, drive_index,
+      mount_point, mount_command, unmount_command, no_rewind_on_close,
       drive_tape_alert_enabled, drive_crypto_enabled, query_crypto_status,
-      collect_statistics, eof_on_error_is_eot, description);
+      auto_deflate, auto_inflate, collect_statistics, eof_on_error_is_eot,
+      description);
   const auto resource_directory
       = storage_config.value->path / "bareos-sd.d" / "device";
   const bool file_existed = std::filesystem::exists(context.value->file_path);
