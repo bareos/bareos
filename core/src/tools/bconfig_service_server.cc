@@ -116,6 +116,7 @@ struct DirectorClientRequestSpec {
   std::optional<bool> ndmp_use_lmdb{};
   std::optional<bool> auto_prune{};
   std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -1342,6 +1343,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
           <input id="director-client-tls-authenticate" name="tls_authenticate"
                  type="checkbox">
           TlsAuthenticate
+        </label>
+
+        <label class="checkbox-label" for="director-client-tls-enable">
+          <input id="director-client-tls-enable" name="tls_enable"
+                 type="checkbox">
+          TlsEnable
         </label>
 
         <label for="director-client-maximum-concurrent-jobs">MaximumConcurrentJobs</label>
@@ -3782,6 +3789,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
             'director-client-auto-prune').checked,
           tls_authenticate: document.getElementById(
             'director-client-tls-authenticate').checked,
+          tls_enable: document.getElementById(
+            'director-client-tls-enable').checked,
           maximum_concurrent_jobs: String(
             form.get('maximum_concurrent_jobs') ?? '').trim(),
           maximum_bandwidth_per_job: String(
@@ -6933,6 +6942,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .ndmp_use_lmdb = spec->ndmp_use_lmdb,
       .auto_prune = spec->auto_prune,
       .tls_authenticate = spec->tls_authenticate,
+      .tls_enable = spec->tls_enable,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -8810,6 +8820,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* ndmp_use_lmdb = json_object_get(root.get(), "ndmp_use_lmdb");
   auto* auto_prune = json_object_get(root.get(), "auto_prune");
   auto* tls_authenticate = json_object_get(root.get(), "tls_authenticate");
+  auto* tls_enable = json_object_get(root.get(), "tls_enable");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -8902,6 +8913,10 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (tls_authenticate && !json_is_null(tls_authenticate)
       && !json_is_boolean(tls_authenticate)) {
     error = "field 'tls_authenticate' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (tls_enable && !json_is_null(tls_enable) && !json_is_boolean(tls_enable)) {
+    error = "field 'tls_enable' must be a boolean when provided.";
     return std::nullopt;
   }
   if (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
@@ -9036,6 +9051,9 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (tls_authenticate && json_is_boolean(tls_authenticate)) {
     spec.tls_authenticate = json_is_true(tls_authenticate);
+  }
+  if (tls_enable && json_is_boolean(tls_enable)) {
+    spec.tls_enable = json_is_true(tls_enable);
   }
   if (maximum_concurrent_jobs && json_is_integer(maximum_concurrent_jobs)) {
     const auto value = json_integer_value(maximum_concurrent_jobs);
