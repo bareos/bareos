@@ -7423,14 +7423,27 @@ http::response<http::string_body> HandleDeploymentClientDaemonPutRequest(
       || spec->maximum_console_connections || spec->password
       || spec->statistics_retention || spec->key_encryption_key
       || spec->ndmp_namelist_fhinfo_set_zero_for_invalid_uquad || spec->auditing
-      || spec->audit_events) {
+      || spec->audit_events || spec->just_in_time_reservation
+      || spec->ndmp_enable || spec->ndmp_snooping || spec->ndmp_log_level
+      || spec->ndmp_address || spec->ndmp_port || spec->ndmp_addresses
+      || spec->autoxflate_on_replication || spec->collect_device_statistics
+      || spec->collect_job_statistics || spec->statistics_collect_interval
+      || spec->device_reserve_by_media_type || spec->file_device_concurrent_read
+      || spec->fd_connect_timeout || spec->checkpoint_interval
+      || spec->client_connect_wait
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+      || spec->backend_directories
+#endif
+  ) {
     return ErrorResponse(
         http::status::bad_request,
         "client-daemon singleton updates do not support query_file, "
         "subscriptions, maximum_console_connections, password, "
         "statistics_retention, key_encryption_key, "
-        "ndmp_namelist_fhinfo_set_zero_for_invalid_uquad, auditing, or "
-        "audit_events.");
+        "ndmp_namelist_fhinfo_set_zero_for_invalid_uquad, auditing, "
+        "audit_events, storage-only reservation and NDMP fields, "
+        "statistics_collect_interval, fd_connect_timeout, "
+        "checkpoint_interval, client_connect_wait, or backend_directories.");
   }
 
   ClientDaemonResourceSpec resource_spec{
@@ -7521,6 +7534,32 @@ http::response<http::string_body> HandleDeploymentDirectorDaemonPutRequest(
   std::string error;
   auto spec = ParseStorageDaemonRequest(request.body(), error);
   if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+  if (spec->just_in_time_reservation || spec->maximum_workers_per_job
+      || spec->allow_bandwidth_bursting || spec->pki_signatures
+      || spec->pki_encryption || spec->pki_key_pair || spec->pki_signers
+      || spec->pki_master_keys || spec->pki_cipher || spec->always_use_lmdb
+      || spec->lmdb_threshold || spec->maximum_bandwidth_per_job
+      || spec->grpc_module || spec->ndmp_enable || spec->ndmp_address
+      || spec->ndmp_port || spec->ndmp_addresses
+      || spec->autoxflate_on_replication || spec->collect_device_statistics
+      || spec->collect_job_statistics || spec->device_reserve_by_media_type
+      || spec->file_device_concurrent_read || spec->checkpoint_interval
+      || spec->client_connect_wait || spec->maximum_network_buffer_size
+      || spec->allowed_script_dirs || spec->allowed_job_commands
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+      || spec->backend_directories
+#endif
+  ) {
+    return ErrorResponse(
+        http::status::bad_request,
+        "director-daemon singleton updates do not support "
+        "storage-only reservation, PKI, LMDB, maximum_bandwidth_per_job, "
+        "grpc_module, storage NDMP address/device fields, "
+        "device-statistics fields, checkpoint_interval, "
+        "client_connect_wait, maximum_network_buffer_size, "
+        "allowed_script_dirs, allowed_job_commands, or "
+        "backend_directories.");
+  }
 
   DirectorDaemonResourceSpec resource_spec{
       .address = spec->address,
