@@ -133,6 +133,9 @@ struct ClientDirectorStubSpec {
 
 struct ClientMessagesResourceSpec {
   std::optional<std::string> description{};
+  std::optional<std::string> mail_command{};
+  std::optional<std::string> operator_command{};
+  std::optional<std::string> timestamp_format{};
   std::optional<std::vector<std::string>> entries{};
 };
 
@@ -481,6 +484,9 @@ struct DirectorCatalogResourceSpec {
 
 struct DirectorMessagesResourceSpec {
   std::optional<std::string> description{};
+  std::optional<std::string> mail_command{};
+  std::optional<std::string> operator_command{};
+  std::optional<std::string> timestamp_format{};
   std::optional<std::vector<std::string>> entries{};
 };
 
@@ -668,6 +674,9 @@ struct DirectorJobDefsResourceSpec {
 
 struct StorageMessagesResourceSpec {
   std::optional<std::string> description{};
+  std::optional<std::string> mail_command{};
+  std::optional<std::string> operator_command{};
+  std::optional<std::string> timestamp_format{};
   std::optional<std::vector<std::string>> entries{};
 };
 

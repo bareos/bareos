@@ -2703,6 +2703,9 @@ TEST(BconfigService, UpsertsDirectorMessagesResources)
   auto created = state.UpsertDirectorMessagesResource(
       "prod", "bareos-dir", "ManagedMessages",
       {.description = std::string{"Managed messages"},
+       .mail_command = std::string{"/usr/lib/bareos/mail-managed %r"},
+       .operator_command = std::string{"/usr/lib/bareos/operator-managed %r"},
+       .timestamp_format = std::string{"%Y-%m-%d %H:%M:%S"},
        .entries = std::vector<std::string>{
            "  console = all, !skipped, !saved, !audit"}});
   ASSERT_TRUE(created) << created.error;
@@ -2715,20 +2718,38 @@ TEST(BconfigService, UpsertsDirectorMessagesResources)
   EXPECT_NE(created_text.find("Name = \"ManagedMessages\""), std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed messages\""),
             std::string::npos);
+  EXPECT_NE(
+      created_text.find("MailCommand = \"/usr/lib/bareos/mail-managed %r\""),
+      std::string::npos);
+  EXPECT_NE(created_text.find(
+                "OperatorCommand = \"/usr/lib/bareos/operator-managed %r\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TimestampFormat = \"%Y-%m-%d %H:%M:%S\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("console = all, !skipped, !saved, !audit"),
             std::string::npos);
+
+  const auto standard_path
+      = created.value->path / "bareos-dir.d/messages/Standard.conf";
+  auto standard_text = ReadTextFile(standard_path);
+  auto standard_brace = standard_text.rfind("}\n");
+  ASSERT_NE(standard_brace, std::string::npos);
+  standard_text.insert(standard_brace,
+                       "  timestampformat = \"%Y-%m-%d %H:%M:%S\"\n");
+  WriteTextFile(standard_path, standard_text);
 
   auto updated = state.UpsertDirectorMessagesResource(
       "prod", "bareos-dir", "Standard",
       {.description = std::string{"Updated standard messages"}});
   ASSERT_TRUE(updated) << updated.error;
 
-  const auto updated_text = ReadTextFile(
-      updated.value->path / "bareos-dir.d/messages/Standard.conf");
+  const auto updated_text = ReadTextFile(standard_path);
   EXPECT_NE(updated_text.find("Description = \"Updated standard messages\""),
             std::string::npos);
-  EXPECT_NE(updated_text.find("operatorcommand = "), std::string::npos);
-  EXPECT_NE(updated_text.find("mailcommand = "), std::string::npos);
+  EXPECT_NE(updated_text.find("OperatorCommand = "), std::string::npos);
+  EXPECT_NE(updated_text.find("MailCommand = "), std::string::npos);
+  EXPECT_NE(updated_text.find("TimestampFormat = \"%Y-%m-%d %H:%M:%S\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("append = "), std::string::npos);
 }
 

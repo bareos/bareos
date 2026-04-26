@@ -271,6 +271,9 @@ struct DirectorCatalogRequestSpec {
 
 struct DirectorMessagesRequestSpec {
   std::optional<std::string> description{};
+  std::optional<std::string> mail_command{};
+  std::optional<std::string> operator_command{};
+  std::optional<std::string> timestamp_format{};
   std::optional<std::vector<std::string>> entries{};
 };
 
@@ -6462,6 +6465,9 @@ http::response<http::string_body> HandleDeploymentClientMessagesPutRequest(
 
   ClientMessagesResourceSpec resource_spec{
       .description = spec->description,
+      .mail_command = spec->mail_command,
+      .operator_command = spec->operator_command,
+      .timestamp_format = spec->timestamp_format,
       .entries = spec->entries,
   };
   auto result = state.UpsertClientMessagesResource(
@@ -6755,6 +6761,9 @@ http::response<http::string_body> HandleDeploymentStorageMessagesPutRequest(
 
   StorageMessagesResourceSpec resource_spec{
       .description = spec->description,
+      .mail_command = spec->mail_command,
+      .operator_command = spec->operator_command,
+      .timestamp_format = spec->timestamp_format,
       .entries = spec->entries,
   };
   auto result = state.UpsertStorageMessagesResource(
@@ -8142,6 +8151,9 @@ http::response<http::string_body> HandleDeploymentDirectorMessagesPutRequest(
 
   DirectorMessagesResourceSpec resource_spec{
       .description = spec->description,
+      .mail_command = spec->mail_command,
+      .operator_command = spec->operator_command,
+      .timestamp_format = spec->timestamp_format,
       .entries = spec->entries,
   };
   auto result = state.UpsertDirectorMessagesResource(
@@ -10819,10 +10831,28 @@ std::optional<DirectorMessagesRequestSpec> ParseDirectorMessagesRequest(
   }
 
   auto* description = json_object_get(root.get(), "description");
+  auto* mail_command = json_object_get(root.get(), "mail_command");
+  auto* operator_command = json_object_get(root.get(), "operator_command");
+  auto* timestamp_format = json_object_get(root.get(), "timestamp_format");
   auto* entries = json_object_get(root.get(), "entries");
   if (description && !json_is_null(description)
       && !json_is_string(description)) {
     error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (mail_command && !json_is_null(mail_command)
+      && !json_is_string(mail_command)) {
+    error = "field 'mail_command' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (operator_command && !json_is_null(operator_command)
+      && !json_is_string(operator_command)) {
+    error = "field 'operator_command' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (timestamp_format && !json_is_null(timestamp_format)
+      && !json_is_string(timestamp_format)) {
+    error = "field 'timestamp_format' must be a string when provided.";
     return std::nullopt;
   }
   if (entries && !json_is_null(entries) && !json_is_array(entries)) {
@@ -10833,6 +10863,15 @@ std::optional<DirectorMessagesRequestSpec> ParseDirectorMessagesRequest(
   DirectorMessagesRequestSpec spec{};
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
+  }
+  if (mail_command && json_is_string(mail_command)) {
+    spec.mail_command = std::string{json_string_value(mail_command)};
+  }
+  if (operator_command && json_is_string(operator_command)) {
+    spec.operator_command = std::string{json_string_value(operator_command)};
+  }
+  if (timestamp_format && json_is_string(timestamp_format)) {
+    spec.timestamp_format = std::string{json_string_value(timestamp_format)};
   }
   if (entries && json_is_array(entries)) {
     std::vector<std::string> parsed_entries;

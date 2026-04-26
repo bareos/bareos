@@ -943,6 +943,9 @@ struct DirectorCatalogContentSpec {
 
 struct DirectorMessagesContentSpec {
   std::optional<std::string> description{};
+  std::optional<std::string> mail_command{};
+  std::optional<std::string> operator_command{};
+  std::optional<std::string> timestamp_format{};
   std::vector<std::string> entries{};
 };
 
@@ -2175,6 +2178,9 @@ std::string BuildDirectorMessagesResourceContent(
   content << "Messages {\n"
           << "  Name = " << QuoteBareosString(messages_name) << "\n";
   AppendQuotedDirective(content, "Description", spec.description);
+  AppendQuotedDirective(content, "MailCommand", spec.mail_command);
+  AppendQuotedDirective(content, "OperatorCommand", spec.operator_command);
+  AppendQuotedDirective(content, "TimestampFormat", spec.timestamp_format);
   for (const auto& entry : spec.entries) {
     content << entry;
     if (entry.empty() || entry.back() != '\n') { content << "\n"; }
@@ -5569,6 +5575,15 @@ OperationResult<DirectorMessagesWriteContext> LoadDirectorMessagesWriteContext(
     if (messages->description_ && messages->description_[0] != '\0') {
       context.content.description = std::string{messages->description_};
     }
+    if (!messages->mail_cmd_.empty()) {
+      context.content.mail_command = messages->mail_cmd_;
+    }
+    if (!messages->operator_cmd_.empty()) {
+      context.content.operator_command = messages->operator_cmd_;
+    }
+    if (!messages->timestamp_format_.empty()) {
+      context.content.timestamp_format = messages->timestamp_format_;
+    }
 
     auto source = messages->GetDefinitionSource();
     if (!source || source->file.empty()) {
@@ -5581,7 +5596,8 @@ OperationResult<DirectorMessagesWriteContext> LoadDirectorMessagesWriteContext(
         = per_file != resources_per_file.end() && per_file->second == 1;
 
     static const std::set<std::string> kControlledMessagesDirectives{
-        "Name", "Description"};
+        "Name", "Description", "MailCommand", "OperatorCommand",
+        "TimestampFormat"};
     auto entries = ExtractNamedTopLevelResourceEntries(
         context.file_path, "Messages", messages_name,
         kControlledMessagesDirectives);
@@ -5634,6 +5650,15 @@ OperationResult<ClientMessagesWriteContext> LoadClientMessagesWriteContext(
     if (messages->description_ && messages->description_[0] != '\0') {
       context.content.description = std::string{messages->description_};
     }
+    if (!messages->mail_cmd_.empty()) {
+      context.content.mail_command = messages->mail_cmd_;
+    }
+    if (!messages->operator_cmd_.empty()) {
+      context.content.operator_command = messages->operator_cmd_;
+    }
+    if (!messages->timestamp_format_.empty()) {
+      context.content.timestamp_format = messages->timestamp_format_;
+    }
 
     auto source = messages->GetDefinitionSource();
     if (!source || source->file.empty()) {
@@ -5646,7 +5671,8 @@ OperationResult<ClientMessagesWriteContext> LoadClientMessagesWriteContext(
         = per_file != resources_per_file.end() && per_file->second == 1;
 
     static const std::set<std::string> kControlledMessagesDirectives{
-        "Name", "Description"};
+        "Name", "Description", "MailCommand", "OperatorCommand",
+        "TimestampFormat"};
     auto entries = ExtractNamedTopLevelResourceEntries(
         context.file_path, "Messages", messages_name,
         kControlledMessagesDirectives);
@@ -5701,6 +5727,15 @@ OperationResult<StorageMessagesWriteContext> LoadStorageMessagesWriteContext(
     if (messages->description_ && messages->description_[0] != '\0') {
       context.content.description = std::string{messages->description_};
     }
+    if (!messages->mail_cmd_.empty()) {
+      context.content.mail_command = messages->mail_cmd_;
+    }
+    if (!messages->operator_cmd_.empty()) {
+      context.content.operator_command = messages->operator_cmd_;
+    }
+    if (!messages->timestamp_format_.empty()) {
+      context.content.timestamp_format = messages->timestamp_format_;
+    }
 
     auto source = messages->GetDefinitionSource();
     if (!source || source->file.empty()) {
@@ -5713,7 +5748,8 @@ OperationResult<StorageMessagesWriteContext> LoadStorageMessagesWriteContext(
         = per_file != resources_per_file.end() && per_file->second == 1;
 
     static const std::set<std::string> kControlledMessagesDirectives{
-        "Name", "Description"};
+        "Name", "Description", "MailCommand", "OperatorCommand",
+        "TimestampFormat"};
     auto entries = ExtractNamedTopLevelResourceEntries(
         context.file_path, "Messages", messages_name,
         kControlledMessagesDirectives);
@@ -9690,6 +9726,13 @@ ServiceState::UpsertClientMessagesResource(
                                   "Managed client messages resource for "
                                   + std::string{messages_name} + " in client "
                                   + std::string{client_name});
+  if (spec.mail_command) { content.mail_command = *spec.mail_command; }
+  if (spec.operator_command) {
+    content.operator_command = *spec.operator_command;
+  }
+  if (spec.timestamp_format) {
+    content.timestamp_format = *spec.timestamp_format;
+  }
   if (spec.entries) { content.entries = *spec.entries; }
 
   const auto rendered
@@ -12323,6 +12366,13 @@ ServiceState::UpsertDirectorMessagesResource(
             ? *spec.description
             : content.description.value_or(DefaultDirectorMessagesDescription(
                   messages_name, director_name));
+  if (spec.mail_command) { content.mail_command = *spec.mail_command; }
+  if (spec.operator_command) {
+    content.operator_command = *spec.operator_command;
+  }
+  if (spec.timestamp_format) {
+    content.timestamp_format = *spec.timestamp_format;
+  }
   if (spec.entries) { content.entries = *spec.entries; }
 
   const auto rendered
@@ -13647,6 +13697,13 @@ ServiceState::UpsertStorageMessagesResource(
                             : content.description.value_or(
                                   DefaultStorageDaemonMessagesDescription(
                                       messages_name, storage_name));
+  if (spec.mail_command) { content.mail_command = *spec.mail_command; }
+  if (spec.operator_command) {
+    content.operator_command = *spec.operator_command;
+  }
+  if (spec.timestamp_format) {
+    content.timestamp_format = *spec.timestamp_format;
+  }
   if (spec.entries) { content.entries = *spec.entries; }
 
   const auto rendered

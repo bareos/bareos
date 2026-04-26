@@ -109,6 +109,9 @@ TEST(BconfigService, UpsertsClientMessagesResources)
   auto created = state.UpsertClientMessagesResource(
       "prod", "backup-bareos-test-fd", "ManagedMessages",
       {.description = std::string{"Managed client messages"},
+       .mail_command = std::string{"/usr/lib/bareos/client-mail %r"},
+       .operator_command = std::string{"/usr/lib/bareos/client-operator %r"},
+       .timestamp_format = std::string{"%H:%M:%S"},
        .entries
        = std::vector<std::string>{"  Director = bareos-dir = all, !skipped"}});
   ASSERT_TRUE(created) << created.error;
@@ -121,17 +124,44 @@ TEST(BconfigService, UpsertsClientMessagesResources)
   EXPECT_NE(created_text.find("Name = \"ManagedMessages\""), std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed client messages\""),
             std::string::npos);
+  EXPECT_NE(
+      created_text.find("MailCommand = \"/usr/lib/bareos/client-mail %r\""),
+      std::string::npos);
+  EXPECT_NE(created_text.find("OperatorCommand = "
+                              "\"/usr/lib/bareos/client-operator %r\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TimestampFormat = \"%H:%M:%S\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("Director = bareos-dir = all, !skipped"),
             std::string::npos);
+
+  const auto standard_path
+      = created.value->path / "bareos-fd.d/messages/Standard.conf";
+  auto standard_text = ReadTextFile(standard_path);
+  auto standard_brace = standard_text.rfind("}\n");
+  ASSERT_NE(standard_brace, std::string::npos);
+  standard_text.insert(standard_brace,
+                       "  mailcommand = \"/usr/lib/bareos/client-mail %r\"\n"
+                       "  operatorcommand = "
+                       "\"/usr/lib/bareos/client-operator %r\"\n"
+                       "  timestampformat = \"%H:%M:%S\"\n");
+  WriteTextFile(standard_path, standard_text);
 
   auto updated = state.UpsertClientMessagesResource(
       "prod", "backup-bareos-test-fd", "Standard",
       {.description = std::string{"Updated client messages"}});
   ASSERT_TRUE(updated) << updated.error;
 
-  const auto updated_text = ReadTextFile(
-      updated.value->path / "bareos-fd.d/messages/Standard.conf");
+  const auto updated_text = ReadTextFile(standard_path);
   EXPECT_NE(updated_text.find("Description = \"Updated client messages\""),
+            std::string::npos);
+  EXPECT_NE(
+      updated_text.find("MailCommand = \"/usr/lib/bareos/client-mail %r\""),
+      std::string::npos);
+  EXPECT_NE(updated_text.find("OperatorCommand = "
+                              "\"/usr/lib/bareos/client-operator %r\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TimestampFormat = \"%H:%M:%S\""),
             std::string::npos);
   EXPECT_NE(
       updated_text.find("Director = bareos-dir = all, !skipped, !restored"),
