@@ -104,6 +104,7 @@ struct DirectorClientRequestSpec {
   std::optional<std::string> password{};
   std::optional<bool> enabled{};
   std::optional<bool> passive{};
+  std::optional<bool> strict_quotas{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -1252,6 +1253,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label class="checkbox-label" for="director-client-passive">
           <input id="director-client-passive" name="passive" type="checkbox">
           Passive
+        </label>
+
+        <label class="checkbox-label" for="director-client-strict-quotas">
+          <input id="director-client-strict-quotas" name="strict_quotas"
+                 type="checkbox">
+          StrictQuotas
         </label>
 
         <label class="checkbox-label" for="director-client-connection-from-director-to-client">
@@ -3682,6 +3689,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
           password: String(form.get('password') ?? '').trim(),
           enabled: document.getElementById('director-client-enabled').checked,
           passive: document.getElementById('director-client-passive').checked,
+          strict_quotas:
+            document.getElementById('director-client-strict-quotas').checked,
           connection_from_director_to_client: document.getElementById(
             'director-client-connection-from-director-to-client').checked,
           connection_from_client_to_director: document.getElementById(
@@ -6781,6 +6790,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .password = spec->password,
       .enabled = spec->enabled,
       .passive = spec->passive,
+      .strict_quotas = spec->strict_quotas,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -8652,6 +8662,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* password = json_object_get(root.get(), "password");
   auto* enabled = json_object_get(root.get(), "enabled");
   auto* passive = json_object_get(root.get(), "passive");
+  auto* strict_quotas = json_object_get(root.get(), "strict_quotas");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -8684,6 +8695,11 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (passive && !json_is_null(passive) && !json_is_boolean(passive)) {
     error = "field 'passive' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (strict_quotas && !json_is_null(strict_quotas)
+      && !json_is_boolean(strict_quotas)) {
+    error = "field 'strict_quotas' must be a boolean when provided.";
     return std::nullopt;
   }
   if (connection_from_director_to_client
@@ -8740,6 +8756,9 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (passive && json_is_boolean(passive)) {
     spec.passive = json_is_true(passive);
+  }
+  if (strict_quotas && json_is_boolean(strict_quotas)) {
+    spec.strict_quotas = json_is_true(strict_quotas);
   }
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {

@@ -1055,6 +1055,7 @@ std::string BuildDirectorClientResourceContent(
     uint32_t port,
     const std::optional<bool>& enabled,
     const std::optional<bool>& passive,
+    const std::optional<bool>& strict_quotas,
     const std::optional<bool>& connection_from_director_to_client,
     const std::optional<bool>& connection_from_client_to_director,
     const std::optional<uint64_t>& heartbeat_interval,
@@ -1071,6 +1072,7 @@ std::string BuildDirectorClientResourceContent(
   AppendBareosDirective(content, "LanAddress", lan_address);
   AppendBoolDirective(content, "Enabled", enabled);
   AppendBoolDirective(content, "Passive", passive);
+  AppendBoolDirective(content, "StrictQuotas", strict_quotas);
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
                       connection_from_director_to_client);
   AppendBoolDirective(content, "ConnectionFromClientToDirector",
@@ -2459,6 +2461,7 @@ struct DirectorClientWriteContext {
   std::optional<std::string> password{};
   std::optional<bool> enabled{};
   std::optional<bool> passive{};
+  std::optional<bool> strict_quotas{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -2834,6 +2837,9 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
     }
     if (HasMemberSource(*client, {"Passive"})) {
       context.passive = client->passive;
+    }
+    if (HasMemberSource(*client, {"StrictQuotas"})) {
+      context.strict_quotas = client->StrictQuotas;
     }
     if (HasMemberSource(*client, {"ConnectionFromDirectorToClient"})) {
       context.connection_from_director_to_client = client->conn_from_dir_to_fd;
@@ -8428,6 +8434,8 @@ ServiceState::UpsertDirectorClientResource(
             : context.value->connection_from_client_to_director;
   const auto enabled = spec.enabled ? spec.enabled : context.value->enabled;
   const auto passive = spec.passive ? spec.passive : context.value->passive;
+  const auto strict_quotas
+      = spec.strict_quotas ? spec.strict_quotas : context.value->strict_quotas;
   const auto maximum_bandwidth_per_job
       = spec.maximum_bandwidth_per_job
             ? spec.maximum_bandwidth_per_job
@@ -8440,7 +8448,7 @@ ServiceState::UpsertDirectorClientResource(
                   DefaultDirectorClientDescription(client_name, director_name));
   const auto content = BuildDirectorClientResourceContent(
       client_name, *address, lan_address, *password, effective_port, enabled,
-      passive, connection_from_director_to_client,
+      passive, strict_quotas, connection_from_director_to_client,
       connection_from_client_to_director, heartbeat_interval,
       maximum_bandwidth_per_job, description);
 
