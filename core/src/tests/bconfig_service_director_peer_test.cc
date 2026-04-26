@@ -80,6 +80,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
        .tls_ca_certificate_file = std::string{"/etc/bareos/ca.pem"},
        .tls_ca_certificate_dir = std::string{"/etc/ssl/certs"},
        .tls_certificate_revocation_list = std::string{"/etc/bareos/crl.pem"},
+       .tls_certificate = std::string{"/etc/bareos/client.crt"},
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = true,
        .maximum_concurrent_jobs = 9,
@@ -133,6 +134,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(created_text.find("TlsCertificateRevocationList = "
                               "\"/etc/bareos/crl.pem\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("TlsCertificate = \"/etc/bareos/client.crt\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = yes"),
@@ -181,6 +184,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
             std::string::npos);
   EXPECT_EQ(stub_text.find("TlsCertificateRevocationList = "
                            "\"/etc/bareos/crl.pem\""),
+            std::string::npos);
+  EXPECT_EQ(stub_text.find("TlsCertificate = \"/etc/bareos/client.crt\""),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
@@ -234,6 +239,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("TlsCertificateRevocationList = "
                               "\"/etc/bareos/crl.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCertificate = \"/etc/bareos/client.crt\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
@@ -306,6 +313,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
       "  TlsCaCertificateFile = \"/etc/bareos/import-ca.pem\"\n"
       "  TlsCaCertificateDir = \"/etc/bareos/ca-dir\"\n"
       "  TlsCertificateRevocationList = \"/etc/bareos/import-crl.pem\"\n"
+      "  TlsCertificate = \"/etc/bareos/import-client.crt\"\n"
       "  ConnectionFromDirectorToClient = no\n"
       "  ConnectionFromClientToDirector = yes\n"
       "  MaximumConcurrentJobs = 4\n"
@@ -365,6 +373,9 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
             std::string::npos);
   EXPECT_NE(updated_text.find("TlsCertificateRevocationList = "
                               "\"/etc/bareos/import-crl.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCertificate = "
+                              "\"/etc/bareos/import-client.crt\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
