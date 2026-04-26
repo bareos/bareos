@@ -2291,6 +2291,35 @@ std::string BuildStorageDaemonDeviceResourceContent(
     std::string_view media_type,
     std::string_view archive_device,
     std::string_view device_type,
+    const std::optional<std::string>& device_options,
+    const std::optional<std::string>& diagnostic_device,
+    const std::optional<bool>& auto_select,
+    const std::optional<std::string>& changer_device,
+    const std::optional<std::string>& changer_command,
+    const std::optional<std::string>& alert_command,
+    const std::optional<uint64_t>& maximum_changer_wait,
+    const std::optional<uint64_t>& maximum_open_wait,
+    const std::optional<uint32_t>& maximum_open_volumes,
+    const std::optional<uint64_t>& volume_poll_interval,
+    const std::optional<uint32_t>& label_block_size,
+    const std::optional<uint32_t>& minimum_block_size,
+    const std::optional<uint32_t>& maximum_block_size,
+    const std::optional<uint64_t>& maximum_file_size,
+    const std::optional<uint64_t>& volume_capacity,
+    const std::optional<uint32_t>& maximum_concurrent_jobs,
+    const std::optional<std::string>& spool_directory,
+    const std::optional<uint64_t>& maximum_spool_size,
+    const std::optional<uint64_t>& maximum_job_spool_size,
+    const std::optional<uint16_t>& drive_index,
+    const std::optional<std::string>& mount_point,
+    const std::optional<std::string>& mount_command,
+    const std::optional<std::string>& unmount_command,
+    const std::optional<bool>& no_rewind_on_close,
+    const std::optional<bool>& drive_tape_alert_enabled,
+    const std::optional<bool>& drive_crypto_enabled,
+    const std::optional<bool>& query_crypto_status,
+    const std::optional<bool>& collect_statistics,
+    const std::optional<bool>& eof_on_error_is_eot,
     std::string_view description)
 {
   std::ostringstream content;
@@ -2299,8 +2328,40 @@ std::string BuildStorageDaemonDeviceResourceContent(
           << "  Description = " << QuoteBareosString(description) << "\n"
           << "  Media Type = " << media_type << "\n"
           << "  Device Type = " << QuoteBareosString(device_type) << "\n"
-          << "  Archive Device = " << archive_device << "\n"
-          << "}\n";
+          << "  Archive Device = " << archive_device << "\n";
+  AppendQuotedDirective(content, "DeviceOptions", device_options);
+  AppendQuotedDirective(content, "DiagnosticDevice", diagnostic_device);
+  AppendBoolDirective(content, "AutoSelect", auto_select);
+  AppendQuotedDirective(content, "ChangerDevice", changer_device);
+  AppendQuotedDirective(content, "ChangerCommand", changer_command);
+  AppendQuotedDirective(content, "AlertCommand", alert_command);
+  AppendIntegerDirective(content, "MaximumChangerWait", maximum_changer_wait);
+  AppendIntegerDirective(content, "MaximumOpenWait", maximum_open_wait);
+  AppendIntegerDirective(content, "MaximumOpenVolumes", maximum_open_volumes);
+  AppendIntegerDirective(content, "VolumePollInterval", volume_poll_interval);
+  AppendIntegerDirective(content, "LabelBlockSize", label_block_size);
+  AppendIntegerDirective(content, "MinimumBlockSize", minimum_block_size);
+  AppendIntegerDirective(content, "MaximumBlockSize", maximum_block_size);
+  AppendIntegerDirective(content, "MaximumFileSize", maximum_file_size);
+  AppendIntegerDirective(content, "VolumeCapacity", volume_capacity);
+  AppendIntegerDirective(content, "MaximumConcurrentJobs",
+                         maximum_concurrent_jobs);
+  AppendQuotedDirective(content, "SpoolDirectory", spool_directory);
+  AppendIntegerDirective(content, "MaximumSpoolSize", maximum_spool_size);
+  AppendIntegerDirective(content, "MaximumJobSpoolSize",
+                         maximum_job_spool_size);
+  AppendIntegerDirective(content, "DriveIndex", drive_index);
+  AppendQuotedDirective(content, "MountPoint", mount_point);
+  AppendQuotedDirective(content, "MountCommand", mount_command);
+  AppendQuotedDirective(content, "UnmountCommand", unmount_command);
+  AppendBoolDirective(content, "NoRewindOnClose", no_rewind_on_close);
+  AppendBoolDirective(content, "DriveTapeAlertEnabled",
+                      drive_tape_alert_enabled);
+  AppendBoolDirective(content, "DriveCryptoEnabled", drive_crypto_enabled);
+  AppendBoolDirective(content, "QueryCryptoStatus", query_crypto_status);
+  AppendBoolDirective(content, "CollectStatistics", collect_statistics);
+  AppendBoolDirective(content, "EofOnErrorIsEot", eof_on_error_is_eot);
+  content << "}\n";
   return content.str();
 }
 
@@ -3102,6 +3163,35 @@ struct StorageDaemonDeviceWriteContext {
   std::optional<std::string> media_type{};
   std::optional<std::string> archive_device{};
   std::optional<std::string> device_type{};
+  std::optional<std::string> device_options{};
+  std::optional<std::string> diagnostic_device{};
+  std::optional<bool> auto_select{};
+  std::optional<std::string> changer_device{};
+  std::optional<std::string> changer_command{};
+  std::optional<std::string> alert_command{};
+  std::optional<uint64_t> maximum_changer_wait{};
+  std::optional<uint64_t> maximum_open_wait{};
+  std::optional<uint32_t> maximum_open_volumes{};
+  std::optional<uint64_t> volume_poll_interval{};
+  std::optional<uint32_t> label_block_size{};
+  std::optional<uint32_t> minimum_block_size{};
+  std::optional<uint32_t> maximum_block_size{};
+  std::optional<uint64_t> maximum_file_size{};
+  std::optional<uint64_t> volume_capacity{};
+  std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<std::string> spool_directory{};
+  std::optional<uint64_t> maximum_spool_size{};
+  std::optional<uint64_t> maximum_job_spool_size{};
+  std::optional<uint16_t> drive_index{};
+  std::optional<std::string> mount_point{};
+  std::optional<std::string> mount_command{};
+  std::optional<std::string> unmount_command{};
+  std::optional<bool> no_rewind_on_close{};
+  std::optional<bool> drive_tape_alert_enabled{};
+  std::optional<bool> drive_crypto_enabled{};
+  std::optional<bool> query_crypto_status{};
+  std::optional<bool> collect_statistics{};
+  std::optional<bool> eof_on_error_is_eot{};
   std::optional<std::string> description{};
   bool exists{false};
   bool is_standalone_file{false};
@@ -6710,6 +6800,113 @@ LoadStorageDaemonDeviceWriteContext(
     if (!device->device_type.empty()) {
       context.device_type = std::string{device->device_type};
     }
+    if (device->device_options && device->device_options[0] != '\0') {
+      context.device_options = std::string{device->device_options};
+    }
+    if (device->diag_device_name && device->diag_device_name[0] != '\0') {
+      context.diagnostic_device = std::string{device->diag_device_name};
+    }
+    if (HasMemberSource(*device, {"AutoSelect"})) {
+      context.auto_select = device->autoselect;
+    }
+    if (device->changer_name && device->changer_name[0] != '\0') {
+      context.changer_device = std::string{device->changer_name};
+    }
+    if (device->changer_command && device->changer_command[0] != '\0') {
+      context.changer_command = std::string{device->changer_command};
+    }
+    if (device->alert_command && device->alert_command[0] != '\0') {
+      context.alert_command = std::string{device->alert_command};
+    }
+    if (HasMemberSource(*device, {"MaximumChangerWait"})) {
+      context.maximum_changer_wait
+          = static_cast<uint64_t>(device->max_changer_wait);
+    }
+    if (HasMemberSource(*device, {"MaximumOpenWait"})) {
+      context.maximum_open_wait = static_cast<uint64_t>(device->max_open_wait);
+    }
+    if (HasMemberSource(*device, {"MaximumOpenVolumes"})) {
+      context.maximum_open_volumes = device->max_open_vols;
+    }
+    if (HasMemberSource(*device, {"VolumePollInterval"})) {
+      context.volume_poll_interval
+          = static_cast<uint64_t>(device->vol_poll_interval);
+    }
+    if (HasMemberSource(*device, {"LabelBlockSize"})) {
+      context.label_block_size = device->label_block_size;
+    }
+    if (HasMemberSource(*device, {"MinimumBlockSize"})) {
+      context.minimum_block_size = device->min_block_size;
+    }
+    if (HasMemberSource(*device, {"MaximumBlockSize"})) {
+      context.maximum_block_size = device->max_block_size;
+    }
+    if (HasMemberSource(*device, {"MaximumFileSize"})) {
+      if (device->max_file_size < 0) {
+        return {.error = "storage-daemon device '" + std::string{device_name}
+                         + "' has a negative MaximumFileSize."};
+      }
+      context.maximum_file_size = static_cast<uint64_t>(device->max_file_size);
+    }
+    if (HasMemberSource(*device, {"VolumeCapacity"})) {
+      if (device->volume_capacity < 0) {
+        return {.error = "storage-daemon device '" + std::string{device_name}
+                         + "' has a negative VolumeCapacity."};
+      }
+      context.volume_capacity = static_cast<uint64_t>(device->volume_capacity);
+    }
+    if (HasMemberSource(*device, {"MaximumConcurrentJobs"})) {
+      context.maximum_concurrent_jobs = device->max_concurrent_jobs;
+    }
+    if (device->spool_directory && device->spool_directory[0] != '\0') {
+      context.spool_directory = std::string{device->spool_directory};
+    }
+    if (HasMemberSource(*device, {"MaximumSpoolSize"})) {
+      if (device->max_spool_size < 0) {
+        return {.error = "storage-daemon device '" + std::string{device_name}
+                         + "' has a negative MaximumSpoolSize."};
+      }
+      context.maximum_spool_size
+          = static_cast<uint64_t>(device->max_spool_size);
+    }
+    if (HasMemberSource(*device, {"MaximumJobSpoolSize"})) {
+      if (device->max_job_spool_size < 0) {
+        return {.error = "storage-daemon device '" + std::string{device_name}
+                         + "' has a negative MaximumJobSpoolSize."};
+      }
+      context.maximum_job_spool_size
+          = static_cast<uint64_t>(device->max_job_spool_size);
+    }
+    if (HasMemberSource(*device, {"DriveIndex"})) {
+      context.drive_index = device->drive_index;
+    }
+    if (device->mount_point && device->mount_point[0] != '\0') {
+      context.mount_point = std::string{device->mount_point};
+    }
+    if (device->mount_command && device->mount_command[0] != '\0') {
+      context.mount_command = std::string{device->mount_command};
+    }
+    if (device->unmount_command && device->unmount_command[0] != '\0') {
+      context.unmount_command = std::string{device->unmount_command};
+    }
+    if (HasMemberSource(*device, {"NoRewindOnClose"})) {
+      context.no_rewind_on_close = device->norewindonclose;
+    }
+    if (HasMemberSource(*device, {"DriveTapeAlertEnabled"})) {
+      context.drive_tape_alert_enabled = device->drive_tapealert_enabled;
+    }
+    if (HasMemberSource(*device, {"DriveCryptoEnabled"})) {
+      context.drive_crypto_enabled = device->drive_crypto_enabled;
+    }
+    if (HasMemberSource(*device, {"QueryCryptoStatus"})) {
+      context.query_crypto_status = device->query_crypto_status;
+    }
+    if (HasMemberSource(*device, {"CollectStatistics"})) {
+      context.collect_statistics = device->collectstats;
+    }
+    if (HasMemberSource(*device, {"EofOnErrorIsEot"})) {
+      context.eof_on_error_is_eot = device->eof_on_error_is_eot;
+    }
 
     auto source = device->GetDefinitionSource();
     if (!source || source->file.empty()) {
@@ -7113,7 +7310,33 @@ OperationResult<std::monostate> SyncStorageDaemonConfig(
       director_maximum_bandwidth_per_job);
   const auto device_content = BuildStorageDaemonDeviceResourceContent(
       device_name, media_type, *archive_device, *device_type,
-      device_description);
+      device_context.value->device_options,
+      device_context.value->diagnostic_device,
+      device_context.value->auto_select, device_context.value->changer_device,
+      device_context.value->changer_command,
+      device_context.value->alert_command,
+      device_context.value->maximum_changer_wait,
+      device_context.value->maximum_open_wait,
+      device_context.value->maximum_open_volumes,
+      device_context.value->volume_poll_interval,
+      device_context.value->label_block_size,
+      device_context.value->minimum_block_size,
+      device_context.value->maximum_block_size,
+      device_context.value->maximum_file_size,
+      device_context.value->volume_capacity,
+      device_context.value->maximum_concurrent_jobs,
+      device_context.value->spool_directory,
+      device_context.value->maximum_spool_size,
+      device_context.value->maximum_job_spool_size,
+      device_context.value->drive_index, device_context.value->mount_point,
+      device_context.value->mount_command,
+      device_context.value->unmount_command,
+      device_context.value->no_rewind_on_close,
+      device_context.value->drive_tape_alert_enabled,
+      device_context.value->drive_crypto_enabled,
+      device_context.value->query_crypto_status,
+      device_context.value->collect_statistics,
+      device_context.value->eof_on_error_is_eot, device_description);
 
   const auto director_directory
       = target.value->value().storage_config.path / "bareos-sd.d" / "director";
@@ -12602,13 +12825,104 @@ ServiceState::UpsertStorageDeviceResource(
               "device resources."};
   }
 
+  const auto device_options = spec.device_options
+                                  ? spec.device_options
+                                  : context.value->device_options;
+  const auto diagnostic_device = spec.diagnostic_device
+                                     ? spec.diagnostic_device
+                                     : context.value->diagnostic_device;
+  const auto auto_select
+      = spec.auto_select ? spec.auto_select : context.value->auto_select;
+  const auto changer_device = spec.changer_device
+                                  ? spec.changer_device
+                                  : context.value->changer_device;
+  const auto changer_command = spec.changer_command
+                                   ? spec.changer_command
+                                   : context.value->changer_command;
+  const auto alert_command
+      = spec.alert_command ? spec.alert_command : context.value->alert_command;
+  const auto maximum_changer_wait = spec.maximum_changer_wait
+                                        ? spec.maximum_changer_wait
+                                        : context.value->maximum_changer_wait;
+  const auto maximum_open_wait = spec.maximum_open_wait
+                                     ? spec.maximum_open_wait
+                                     : context.value->maximum_open_wait;
+  const auto maximum_open_volumes = spec.maximum_open_volumes
+                                        ? spec.maximum_open_volumes
+                                        : context.value->maximum_open_volumes;
+  const auto volume_poll_interval = spec.volume_poll_interval
+                                        ? spec.volume_poll_interval
+                                        : context.value->volume_poll_interval;
+  const auto label_block_size = spec.label_block_size
+                                    ? spec.label_block_size
+                                    : context.value->label_block_size;
+  const auto minimum_block_size = spec.minimum_block_size
+                                      ? spec.minimum_block_size
+                                      : context.value->minimum_block_size;
+  const auto maximum_block_size = spec.maximum_block_size
+                                      ? spec.maximum_block_size
+                                      : context.value->maximum_block_size;
+  const auto maximum_file_size = spec.maximum_file_size
+                                     ? spec.maximum_file_size
+                                     : context.value->maximum_file_size;
+  const auto volume_capacity = spec.volume_capacity
+                                   ? spec.volume_capacity
+                                   : context.value->volume_capacity;
+  const auto maximum_concurrent_jobs
+      = spec.maximum_concurrent_jobs ? spec.maximum_concurrent_jobs
+                                     : context.value->maximum_concurrent_jobs;
+  const auto spool_directory = spec.spool_directory
+                                   ? spec.spool_directory
+                                   : context.value->spool_directory;
+  const auto maximum_spool_size = spec.maximum_spool_size
+                                      ? spec.maximum_spool_size
+                                      : context.value->maximum_spool_size;
+  const auto maximum_job_spool_size
+      = spec.maximum_job_spool_size ? spec.maximum_job_spool_size
+                                    : context.value->maximum_job_spool_size;
+  const auto drive_index
+      = spec.drive_index ? spec.drive_index : context.value->drive_index;
+  const auto mount_point
+      = spec.mount_point ? spec.mount_point : context.value->mount_point;
+  const auto mount_command
+      = spec.mount_command ? spec.mount_command : context.value->mount_command;
+  const auto unmount_command = spec.unmount_command
+                                   ? spec.unmount_command
+                                   : context.value->unmount_command;
+  const auto no_rewind_on_close = spec.no_rewind_on_close
+                                      ? spec.no_rewind_on_close
+                                      : context.value->no_rewind_on_close;
+  const auto drive_tape_alert_enabled
+      = spec.drive_tape_alert_enabled ? spec.drive_tape_alert_enabled
+                                      : context.value->drive_tape_alert_enabled;
+  const auto drive_crypto_enabled = spec.drive_crypto_enabled
+                                        ? spec.drive_crypto_enabled
+                                        : context.value->drive_crypto_enabled;
+  const auto query_crypto_status = spec.query_crypto_status
+                                       ? spec.query_crypto_status
+                                       : context.value->query_crypto_status;
+  const auto collect_statistics = spec.collect_statistics
+                                      ? spec.collect_statistics
+                                      : context.value->collect_statistics;
+  const auto eof_on_error_is_eot = spec.eof_on_error_is_eot
+                                       ? spec.eof_on_error_is_eot
+                                       : context.value->eof_on_error_is_eot;
   const auto description = spec.description
                                ? *spec.description
                                : context.value->description.value_or(
                                      DefaultStorageDaemonDeviceDescription(
                                          device_name, storage_name));
   const auto rendered = BuildStorageDaemonDeviceResourceContent(
-      device_name, *media_type, *archive_device, *device_type, description);
+      device_name, *media_type, *archive_device, *device_type, device_options,
+      diagnostic_device, auto_select, changer_device, changer_command,
+      alert_command, maximum_changer_wait, maximum_open_wait,
+      maximum_open_volumes, volume_poll_interval, label_block_size,
+      minimum_block_size, maximum_block_size, maximum_file_size,
+      volume_capacity, maximum_concurrent_jobs, spool_directory,
+      maximum_spool_size, maximum_job_spool_size, drive_index, mount_point,
+      mount_command, unmount_command, no_rewind_on_close,
+      drive_tape_alert_enabled, drive_crypto_enabled, query_crypto_status,
+      collect_statistics, eof_on_error_is_eot, description);
   const auto resource_directory
       = storage_config.value->path / "bareos-sd.d" / "device";
   const bool file_existed = std::filesystem::exists(context.value->file_path);

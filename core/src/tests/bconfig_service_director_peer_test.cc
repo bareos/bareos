@@ -1324,6 +1324,19 @@ TEST(BconfigService, SyncsDirectorStorageResourcesIntoStorageDaemonFiles)
   const auto device_sync_path
       = storage_root / "bareos-sd.d/device/FileManagedDevice.conf";
 
+  auto updated_device = state.UpsertStorageDeviceResource(
+      "prod", "bareos-sd", "FileManagedDevice",
+      {.device_options = std::string{"Block Size = 32k"},
+       .maximum_open_wait = 305,
+       .collect_statistics = false,
+       .description = std::string{"Managed synced device"}});
+  ASSERT_TRUE(updated_device) << updated_device.error;
+
+  auto updated_storage = state.UpsertDirectorStorageResource(
+      "prod", "bareos-dir", "FileManaged",
+      {.address = std::string{"storage.example.com"}});
+  ASSERT_TRUE(updated_storage) << updated_storage.error;
+
   const auto director_text = ReadTextFile(director_sync_path);
   EXPECT_NE(director_text.find("Name = \"bareos-dir\""), std::string::npos);
   EXPECT_NE(director_text.find(
@@ -1339,6 +1352,12 @@ TEST(BconfigService, SyncsDirectorStorageResourcesIntoStorageDaemonFiles)
   EXPECT_NE(device_text.find("Archive Device = /tmp/bareos-storage"),
             std::string::npos);
   EXPECT_NE(device_text.find("Device Type = \"file\""), std::string::npos);
+  EXPECT_NE(device_text.find("DeviceOptions = \"Block Size = 32k\""),
+            std::string::npos);
+  EXPECT_NE(device_text.find("MaximumOpenWait = 305"), std::string::npos);
+  EXPECT_NE(device_text.find("CollectStatistics = no"), std::string::npos);
+  EXPECT_NE(device_text.find("Description = \"Managed synced device\""),
+            std::string::npos);
 
   const auto ownership_text
       = ReadTextFile(RepositoryLayout::OwnershipPath(repo_path.path()));

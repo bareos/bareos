@@ -262,6 +262,35 @@ struct StorageDeviceRequestSpec {
   std::optional<std::string> media_type{};
   std::optional<std::string> archive_device{};
   std::optional<std::string> device_type{};
+  std::optional<std::string> device_options{};
+  std::optional<std::string> diagnostic_device{};
+  std::optional<bool> auto_select{};
+  std::optional<std::string> changer_device{};
+  std::optional<std::string> changer_command{};
+  std::optional<std::string> alert_command{};
+  std::optional<uint64_t> maximum_changer_wait{};
+  std::optional<uint64_t> maximum_open_wait{};
+  std::optional<uint32_t> maximum_open_volumes{};
+  std::optional<uint64_t> volume_poll_interval{};
+  std::optional<uint32_t> label_block_size{};
+  std::optional<uint32_t> minimum_block_size{};
+  std::optional<uint32_t> maximum_block_size{};
+  std::optional<uint64_t> maximum_file_size{};
+  std::optional<uint64_t> volume_capacity{};
+  std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<std::string> spool_directory{};
+  std::optional<uint64_t> maximum_spool_size{};
+  std::optional<uint64_t> maximum_job_spool_size{};
+  std::optional<uint16_t> drive_index{};
+  std::optional<std::string> mount_point{};
+  std::optional<std::string> mount_command{};
+  std::optional<std::string> unmount_command{};
+  std::optional<bool> no_rewind_on_close{};
+  std::optional<bool> drive_tape_alert_enabled{};
+  std::optional<bool> drive_crypto_enabled{};
+  std::optional<bool> query_crypto_status{};
+  std::optional<bool> collect_statistics{};
+  std::optional<bool> eof_on_error_is_eot{};
   std::optional<std::string> description{};
 };
 
@@ -6782,6 +6811,35 @@ http::response<http::string_body> HandleDeploymentStorageDevicePutRequest(
       .media_type = spec->media_type,
       .archive_device = spec->archive_device,
       .device_type = spec->device_type,
+      .device_options = spec->device_options,
+      .diagnostic_device = spec->diagnostic_device,
+      .auto_select = spec->auto_select,
+      .changer_device = spec->changer_device,
+      .changer_command = spec->changer_command,
+      .alert_command = spec->alert_command,
+      .maximum_changer_wait = spec->maximum_changer_wait,
+      .maximum_open_wait = spec->maximum_open_wait,
+      .maximum_open_volumes = spec->maximum_open_volumes,
+      .volume_poll_interval = spec->volume_poll_interval,
+      .label_block_size = spec->label_block_size,
+      .minimum_block_size = spec->minimum_block_size,
+      .maximum_block_size = spec->maximum_block_size,
+      .maximum_file_size = spec->maximum_file_size,
+      .volume_capacity = spec->volume_capacity,
+      .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
+      .spool_directory = spec->spool_directory,
+      .maximum_spool_size = spec->maximum_spool_size,
+      .maximum_job_spool_size = spec->maximum_job_spool_size,
+      .drive_index = spec->drive_index,
+      .mount_point = spec->mount_point,
+      .mount_command = spec->mount_command,
+      .unmount_command = spec->unmount_command,
+      .no_rewind_on_close = spec->no_rewind_on_close,
+      .drive_tape_alert_enabled = spec->drive_tape_alert_enabled,
+      .drive_crypto_enabled = spec->drive_crypto_enabled,
+      .query_crypto_status = spec->query_crypto_status,
+      .collect_statistics = spec->collect_statistics,
+      .eof_on_error_is_eot = spec->eof_on_error_is_eot,
       .description = spec->description,
   };
   auto result = state.UpsertStorageDeviceResource(deployment_id, storage_name,
@@ -10477,6 +10535,44 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   auto* media_type = json_object_get(root.get(), "media_type");
   auto* archive_device = json_object_get(root.get(), "archive_device");
   auto* device_type = json_object_get(root.get(), "device_type");
+  auto* device_options = json_object_get(root.get(), "device_options");
+  auto* diagnostic_device = json_object_get(root.get(), "diagnostic_device");
+  auto* auto_select = json_object_get(root.get(), "auto_select");
+  auto* changer_device = json_object_get(root.get(), "changer_device");
+  auto* changer_command = json_object_get(root.get(), "changer_command");
+  auto* alert_command = json_object_get(root.get(), "alert_command");
+  auto* maximum_changer_wait
+      = json_object_get(root.get(), "maximum_changer_wait");
+  auto* maximum_open_wait = json_object_get(root.get(), "maximum_open_wait");
+  auto* maximum_open_volumes
+      = json_object_get(root.get(), "maximum_open_volumes");
+  auto* volume_poll_interval
+      = json_object_get(root.get(), "volume_poll_interval");
+  auto* label_block_size = json_object_get(root.get(), "label_block_size");
+  auto* minimum_block_size = json_object_get(root.get(), "minimum_block_size");
+  auto* maximum_block_size = json_object_get(root.get(), "maximum_block_size");
+  auto* maximum_file_size = json_object_get(root.get(), "maximum_file_size");
+  auto* volume_capacity = json_object_get(root.get(), "volume_capacity");
+  auto* maximum_concurrent_jobs
+      = json_object_get(root.get(), "maximum_concurrent_jobs");
+  auto* spool_directory = json_object_get(root.get(), "spool_directory");
+  auto* maximum_spool_size = json_object_get(root.get(), "maximum_spool_size");
+  auto* maximum_job_spool_size
+      = json_object_get(root.get(), "maximum_job_spool_size");
+  auto* drive_index = json_object_get(root.get(), "drive_index");
+  auto* mount_point = json_object_get(root.get(), "mount_point");
+  auto* mount_command = json_object_get(root.get(), "mount_command");
+  auto* unmount_command = json_object_get(root.get(), "unmount_command");
+  auto* no_rewind_on_close = json_object_get(root.get(), "no_rewind_on_close");
+  auto* drive_tape_alert_enabled
+      = json_object_get(root.get(), "drive_tape_alert_enabled");
+  auto* drive_crypto_enabled
+      = json_object_get(root.get(), "drive_crypto_enabled");
+  auto* query_crypto_status
+      = json_object_get(root.get(), "query_crypto_status");
+  auto* collect_statistics = json_object_get(root.get(), "collect_statistics");
+  auto* eof_on_error_is_eot
+      = json_object_get(root.get(), "eof_on_error_is_eot");
   auto* description = json_object_get(root.get(), "description");
   auto require_string = [&error](json_t* value, const char* field) {
     if (value && !json_is_null(value) && !json_is_string(value)) {
@@ -10486,14 +10582,96 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
     }
     return true;
   };
+  auto require_bool = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_boolean(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a boolean when provided.";
+      return false;
+    }
+    return true;
+  };
+  auto require_integer = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_integer(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an integer when provided.";
+      return false;
+    }
+    return true;
+  };
   if (!require_string(media_type, "media_type")
       || !require_string(archive_device, "archive_device")
       || !require_string(device_type, "device_type")
+      || !require_string(device_options, "device_options")
+      || !require_string(diagnostic_device, "diagnostic_device")
+      || !require_string(changer_device, "changer_device")
+      || !require_string(changer_command, "changer_command")
+      || !require_string(alert_command, "alert_command")
+      || !require_string(spool_directory, "spool_directory")
+      || !require_string(mount_point, "mount_point")
+      || !require_string(mount_command, "mount_command")
+      || !require_string(unmount_command, "unmount_command")
       || !require_string(description, "description")) {
+    return std::nullopt;
+  }
+  if (!require_bool(auto_select, "auto_select")
+      || !require_bool(no_rewind_on_close, "no_rewind_on_close")
+      || !require_bool(drive_tape_alert_enabled, "drive_tape_alert_enabled")
+      || !require_bool(drive_crypto_enabled, "drive_crypto_enabled")
+      || !require_bool(query_crypto_status, "query_crypto_status")
+      || !require_bool(collect_statistics, "collect_statistics")
+      || !require_bool(eof_on_error_is_eot, "eof_on_error_is_eot")
+      || !require_integer(maximum_changer_wait, "maximum_changer_wait")
+      || !require_integer(maximum_open_wait, "maximum_open_wait")
+      || !require_integer(maximum_open_volumes, "maximum_open_volumes")
+      || !require_integer(volume_poll_interval, "volume_poll_interval")
+      || !require_integer(label_block_size, "label_block_size")
+      || !require_integer(minimum_block_size, "minimum_block_size")
+      || !require_integer(maximum_block_size, "maximum_block_size")
+      || !require_integer(maximum_file_size, "maximum_file_size")
+      || !require_integer(volume_capacity, "volume_capacity")
+      || !require_integer(maximum_concurrent_jobs, "maximum_concurrent_jobs")
+      || !require_integer(maximum_spool_size, "maximum_spool_size")
+      || !require_integer(maximum_job_spool_size, "maximum_job_spool_size")
+      || !require_integer(drive_index, "drive_index")) {
     return std::nullopt;
   }
 
   StorageDeviceRequestSpec spec{};
+  auto assign_u64 = [&error](json_t* value, const char* field,
+                             std::optional<uint64_t>& target) -> bool {
+    if (!value || !json_is_integer(value)) { return true; }
+    const auto raw = json_integer_value(value);
+    if (raw < 0) {
+      error = std::string{"field '"} + field + "' must be non-negative.";
+      return false;
+    }
+    target = static_cast<uint64_t>(raw);
+    return true;
+  };
+  auto assign_u32 = [&error](json_t* value, const char* field,
+                             std::optional<uint32_t>& target) -> bool {
+    if (!value || !json_is_integer(value)) { return true; }
+    const auto raw = json_integer_value(value);
+    if (raw < 0 || raw > std::numeric_limits<uint32_t>::max()) {
+      error = std::string{"field '"} + field
+              + "' must fit in an unsigned 32-bit integer.";
+      return false;
+    }
+    target = static_cast<uint32_t>(raw);
+    return true;
+  };
+  auto assign_u16 = [&error](json_t* value, const char* field,
+                             std::optional<uint16_t>& target) -> bool {
+    if (!value || !json_is_integer(value)) { return true; }
+    const auto raw = json_integer_value(value);
+    if (raw < 0 || raw > std::numeric_limits<uint16_t>::max()) {
+      error = std::string{"field '"} + field
+              + "' must fit in an unsigned 16-bit integer.";
+      return false;
+    }
+    target = static_cast<uint16_t>(raw);
+    return true;
+  };
   if (media_type && json_is_string(media_type)) {
     spec.media_type = std::string{json_string_value(media_type)};
   }
@@ -10502,6 +10680,80 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   }
   if (device_type && json_is_string(device_type)) {
     spec.device_type = std::string{json_string_value(device_type)};
+  }
+  if (device_options && json_is_string(device_options)) {
+    spec.device_options = std::string{json_string_value(device_options)};
+  }
+  if (diagnostic_device && json_is_string(diagnostic_device)) {
+    spec.diagnostic_device = std::string{json_string_value(diagnostic_device)};
+  }
+  if (auto_select && json_is_boolean(auto_select)) {
+    spec.auto_select = json_is_true(auto_select);
+  }
+  if (changer_device && json_is_string(changer_device)) {
+    spec.changer_device = std::string{json_string_value(changer_device)};
+  }
+  if (changer_command && json_is_string(changer_command)) {
+    spec.changer_command = std::string{json_string_value(changer_command)};
+  }
+  if (alert_command && json_is_string(alert_command)) {
+    spec.alert_command = std::string{json_string_value(alert_command)};
+  }
+  if (!assign_u64(maximum_changer_wait, "maximum_changer_wait",
+                  spec.maximum_changer_wait)
+      || !assign_u64(maximum_open_wait, "maximum_open_wait",
+                     spec.maximum_open_wait)
+      || !assign_u32(maximum_open_volumes, "maximum_open_volumes",
+                     spec.maximum_open_volumes)
+      || !assign_u64(volume_poll_interval, "volume_poll_interval",
+                     spec.volume_poll_interval)
+      || !assign_u32(label_block_size, "label_block_size",
+                     spec.label_block_size)
+      || !assign_u32(minimum_block_size, "minimum_block_size",
+                     spec.minimum_block_size)
+      || !assign_u32(maximum_block_size, "maximum_block_size",
+                     spec.maximum_block_size)
+      || !assign_u64(maximum_file_size, "maximum_file_size",
+                     spec.maximum_file_size)
+      || !assign_u64(volume_capacity, "volume_capacity", spec.volume_capacity)
+      || !assign_u32(maximum_concurrent_jobs, "maximum_concurrent_jobs",
+                     spec.maximum_concurrent_jobs)
+      || !assign_u64(maximum_spool_size, "maximum_spool_size",
+                     spec.maximum_spool_size)
+      || !assign_u64(maximum_job_spool_size, "maximum_job_spool_size",
+                     spec.maximum_job_spool_size)
+      || !assign_u16(drive_index, "drive_index", spec.drive_index)) {
+    return std::nullopt;
+  }
+  if (spool_directory && json_is_string(spool_directory)) {
+    spec.spool_directory = std::string{json_string_value(spool_directory)};
+  }
+  if (mount_point && json_is_string(mount_point)) {
+    spec.mount_point = std::string{json_string_value(mount_point)};
+  }
+  if (mount_command && json_is_string(mount_command)) {
+    spec.mount_command = std::string{json_string_value(mount_command)};
+  }
+  if (unmount_command && json_is_string(unmount_command)) {
+    spec.unmount_command = std::string{json_string_value(unmount_command)};
+  }
+  if (no_rewind_on_close && json_is_boolean(no_rewind_on_close)) {
+    spec.no_rewind_on_close = json_is_true(no_rewind_on_close);
+  }
+  if (drive_tape_alert_enabled && json_is_boolean(drive_tape_alert_enabled)) {
+    spec.drive_tape_alert_enabled = json_is_true(drive_tape_alert_enabled);
+  }
+  if (drive_crypto_enabled && json_is_boolean(drive_crypto_enabled)) {
+    spec.drive_crypto_enabled = json_is_true(drive_crypto_enabled);
+  }
+  if (query_crypto_status && json_is_boolean(query_crypto_status)) {
+    spec.query_crypto_status = json_is_true(query_crypto_status);
+  }
+  if (collect_statistics && json_is_boolean(collect_statistics)) {
+    spec.collect_statistics = json_is_true(collect_statistics);
+  }
+  if (eof_on_error_is_eot && json_is_boolean(eof_on_error_is_eot)) {
+    spec.eof_on_error_is_eot = json_is_true(eof_on_error_is_eot);
   }
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};

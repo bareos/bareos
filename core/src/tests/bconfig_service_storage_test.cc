@@ -757,6 +757,35 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
       {.media_type = std::string{"File"},
        .archive_device = std::string{"/tmp/managed-storage"},
        .device_type = std::string{"file"},
+       .device_options = std::string{"Block Size = 64k"},
+       .diagnostic_device = std::string{"/tmp/managed-storage.diag"},
+       .auto_select = false,
+       .changer_device = std::string{"/dev/sg0"},
+       .changer_command = std::string{"/usr/lib/bareos/mtx-changer %c %o"},
+       .alert_command = std::string{"/usr/lib/bareos/alert.sh"},
+       .maximum_changer_wait = 301,
+       .maximum_open_wait = 302,
+       .maximum_open_volumes = 4,
+       .volume_poll_interval = 303,
+       .label_block_size = 64513,
+       .minimum_block_size = 4096,
+       .maximum_block_size = 1048577,
+       .maximum_file_size = 1000000001,
+       .volume_capacity = 2000000002,
+       .maximum_concurrent_jobs = 5,
+       .spool_directory = std::string{"/var/spool/bareos"},
+       .maximum_spool_size = 3000000003,
+       .maximum_job_spool_size = 4000000004,
+       .drive_index = 2,
+       .mount_point = std::string{"/mnt/tape"},
+       .mount_command = std::string{"/usr/bin/mount /mnt/tape"},
+       .unmount_command = std::string{"/usr/bin/umount /mnt/tape"},
+       .no_rewind_on_close = false,
+       .drive_tape_alert_enabled = true,
+       .drive_crypto_enabled = true,
+       .query_crypto_status = true,
+       .collect_statistics = false,
+       .eof_on_error_is_eot = true,
        .description = std::string{"Managed storage device"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-sd");
@@ -772,6 +801,50 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(created_text.find("Archive Device = /tmp/managed-storage"),
             std::string::npos);
   EXPECT_NE(created_text.find("Device Type = \"file\""), std::string::npos);
+  EXPECT_NE(created_text.find("DeviceOptions = \"Block Size = 64k\""),
+            std::string::npos);
+  EXPECT_NE(
+      created_text.find("DiagnosticDevice = \"/tmp/managed-storage.diag\""),
+      std::string::npos);
+  EXPECT_NE(created_text.find("AutoSelect = no"), std::string::npos);
+  EXPECT_NE(created_text.find("ChangerDevice = \"/dev/sg0\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find(
+                "ChangerCommand = \"/usr/lib/bareos/mtx-changer %c %o\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("AlertCommand = \"/usr/lib/bareos/alert.sh\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("MaximumChangerWait = 301"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumOpenWait = 302"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumOpenVolumes = 4"), std::string::npos);
+  EXPECT_NE(created_text.find("VolumePollInterval = 303"), std::string::npos);
+  EXPECT_NE(created_text.find("LabelBlockSize = 64513"), std::string::npos);
+  EXPECT_NE(created_text.find("MinimumBlockSize = 4096"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumBlockSize = 1048577"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumFileSize = 1000000001"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("VolumeCapacity = 2000000002"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("MaximumConcurrentJobs = 5"), std::string::npos);
+  EXPECT_NE(created_text.find("SpoolDirectory = \"/var/spool/bareos\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("MaximumSpoolSize = 3000000003"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("MaximumJobSpoolSize = 4000000004"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("DriveIndex = 2"), std::string::npos);
+  EXPECT_NE(created_text.find("MountPoint = \"/mnt/tape\""), std::string::npos);
+  EXPECT_NE(created_text.find("MountCommand = \"/usr/bin/mount /mnt/tape\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("UnmountCommand = \"/usr/bin/umount /mnt/tape\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("NoRewindOnClose = no"), std::string::npos);
+  EXPECT_NE(created_text.find("DriveTapeAlertEnabled = yes"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("DriveCryptoEnabled = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("QueryCryptoStatus = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("CollectStatistics = no"), std::string::npos);
+  EXPECT_NE(created_text.find("EofOnErrorIsEot = yes"), std::string::npos);
 
   const auto ownership_path = RepositoryLayout::OwnershipPath(repo_path.path());
   const auto ownership_text = ReadTextFile(ownership_path);
@@ -780,23 +853,67 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
             std::string::npos);
 
   auto updated = state.UpsertStorageDeviceResource(
-      "prod", "bareos-sd", "FileStorage",
+      "prod", "bareos-sd", "ManagedDevice",
       {.archive_device = std::string{"/tmp/updated-storage"},
        .description = std::string{"Updated storage device"}});
   ASSERT_TRUE(updated) << updated.error;
 
   const auto updated_text = ReadTextFile(
-      updated.value->path / "bareos-sd.d/device/FileStorage.conf");
+      updated.value->path / "bareos-sd.d/device/ManagedDevice.conf");
   EXPECT_NE(updated_text.find("Description = \"Updated storage device\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Media Type = File"), std::string::npos);
   EXPECT_NE(updated_text.find("Archive Device = /tmp/updated-storage"),
             std::string::npos);
-  EXPECT_NE(updated_text.find("Device Type = \"File\""), std::string::npos);
+  EXPECT_NE(updated_text.find("Device Type = \"file\""), std::string::npos);
+  EXPECT_NE(updated_text.find("DeviceOptions = \"Block Size = 64k\""),
+            std::string::npos);
+  EXPECT_NE(
+      updated_text.find("DiagnosticDevice = \"/tmp/managed-storage.diag\""),
+      std::string::npos);
+  EXPECT_NE(updated_text.find("AutoSelect = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("ChangerDevice = \"/dev/sg0\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find(
+                "ChangerCommand = \"/usr/lib/bareos/mtx-changer %c %o\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("AlertCommand = \"/usr/lib/bareos/alert.sh\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumChangerWait = 301"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumOpenWait = 302"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumOpenVolumes = 4"), std::string::npos);
+  EXPECT_NE(updated_text.find("VolumePollInterval = 303"), std::string::npos);
+  EXPECT_NE(updated_text.find("LabelBlockSize = 64513"), std::string::npos);
+  EXPECT_NE(updated_text.find("MinimumBlockSize = 4096"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumBlockSize = 1048577"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumFileSize = 1000000001"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("VolumeCapacity = 2000000002"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 5"), std::string::npos);
+  EXPECT_NE(updated_text.find("SpoolDirectory = \"/var/spool/bareos\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumSpoolSize = 3000000003"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumJobSpoolSize = 4000000004"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("DriveIndex = 2"), std::string::npos);
+  EXPECT_NE(updated_text.find("MountPoint = \"/mnt/tape\""), std::string::npos);
+  EXPECT_NE(updated_text.find("MountCommand = \"/usr/bin/mount /mnt/tape\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("UnmountCommand = \"/usr/bin/umount /mnt/tape\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("NoRewindOnClose = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("DriveTapeAlertEnabled = yes"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("DriveCryptoEnabled = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("QueryCryptoStatus = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("CollectStatistics = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("EofOnErrorIsEot = yes"), std::string::npos);
 
   const auto updated_ownership_text = ReadTextFile(ownership_path);
   EXPECT_NE(updated_ownership_text.find(
-                "storages/bareos-sd/bareos-sd.d/device/FileStorage.conf"),
+                "storages/bareos-sd/bareos-sd.d/device/ManagedDevice.conf"),
             std::string::npos);
 }
 
