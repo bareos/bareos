@@ -192,7 +192,7 @@ static struct s_sd_dir_cmds cmds[] = {
     // { "action_on_purge",  ActionOnPurgeCmd, false },
     {"autochanger", ChangerCmd, false, true},
     {"bootstrap", BootstrapCmd, false, true},
-    {"cancel", CancelCmd, false, true},
+    {"cancel", CancelCmd, false, false}, /**< Does not require devices */
     {"finish", FinishCmd, false, true}, /**< End of backup */
     {"JobId=", job_cmd, false, true},   /**< Start Job */
     {"label", LabelCmd, false, true},   /**< Label a tape */
@@ -211,7 +211,8 @@ static struct s_sd_dir_cmds cmds[] = {
      true},                       /**< Replicate data to an external SD */
     {"run", RunCmd, false, true}, /**< Start of Job */
     {"getSecureEraseCmd", SecureerasereqCmd, false, false},
-    {"setbandwidth=", SetbandwidthCmd, false, true},
+    {"setbandwidth=", SetbandwidthCmd, false,
+     false}, /**< Does not require devices */
     {"setdebug=", SetdebugCmd, false, false}, /**< Set debug level */
     {"setdevice", SetdeviceCmd, false, true}, /**< Set device parameter */
     {"stats", StatsCmd, false, false},
