@@ -124,6 +124,7 @@ struct DirectorClientRequestSpec {
   std::optional<std::string> tls_dh_file{};
   std::optional<std::string> tls_protocol{};
   std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -1390,6 +1391,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-client-tls-ca-certificate-file"
                name="tls_ca_certificate_file"
                placeholder="/etc/bareos/ca.pem">
+
+        <label for="director-client-tls-ca-certificate-dir">TlsCaCertificateDir</label>
+        <input id="director-client-tls-ca-certificate-dir"
+               name="tls_ca_certificate_dir"
+               placeholder="/etc/ssl/certs">
 
         <label for="director-client-maximum-concurrent-jobs">MaximumConcurrentJobs</label>
         <input id="director-client-maximum-concurrent-jobs"
@@ -3841,6 +3847,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
           tls_protocol: String(form.get('tls_protocol') ?? '').trim(),
           tls_ca_certificate_file: String(
             form.get('tls_ca_certificate_file') ?? '').trim(),
+          tls_ca_certificate_dir: String(
+            form.get('tls_ca_certificate_dir') ?? '').trim(),
           maximum_concurrent_jobs: String(
             form.get('maximum_concurrent_jobs') ?? '').trim(),
           maximum_bandwidth_per_job: String(
@@ -3871,6 +3879,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.tls_ca_certificate_file) {
           delete payload.tls_ca_certificate_file;
+        }
+        if (!payload.tls_ca_certificate_dir) {
+          delete payload.tls_ca_certificate_dir;
         }
         if (!payload.maximum_bandwidth_per_job) {
           delete payload.maximum_bandwidth_per_job;
@@ -7015,6 +7026,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .tls_dh_file = spec->tls_dh_file,
       .tls_protocol = spec->tls_protocol,
       .tls_ca_certificate_file = spec->tls_ca_certificate_file,
+      .tls_ca_certificate_dir = spec->tls_ca_certificate_dir,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -8901,6 +8913,8 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* tls_protocol = json_object_get(root.get(), "tls_protocol");
   auto* tls_ca_certificate_file
       = json_object_get(root.get(), "tls_ca_certificate_file");
+  auto* tls_ca_certificate_dir
+      = json_object_get(root.get(), "tls_ca_certificate_dir");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -9032,6 +9046,11 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (tls_ca_certificate_file && !json_is_null(tls_ca_certificate_file)
       && !json_is_string(tls_ca_certificate_file)) {
     error = "field 'tls_ca_certificate_file' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (tls_ca_certificate_dir && !json_is_null(tls_ca_certificate_dir)
+      && !json_is_string(tls_ca_certificate_dir)) {
+    error = "field 'tls_ca_certificate_dir' must be a string when provided.";
     return std::nullopt;
   }
   if (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
@@ -9191,6 +9210,10 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (tls_ca_certificate_file && json_is_string(tls_ca_certificate_file)) {
     spec.tls_ca_certificate_file
         = std::string{json_string_value(tls_ca_certificate_file)};
+  }
+  if (tls_ca_certificate_dir && json_is_string(tls_ca_certificate_dir)) {
+    spec.tls_ca_certificate_dir
+        = std::string{json_string_value(tls_ca_certificate_dir)};
   }
   if (maximum_concurrent_jobs && json_is_integer(maximum_concurrent_jobs)) {
     const auto value = json_integer_value(maximum_concurrent_jobs);
