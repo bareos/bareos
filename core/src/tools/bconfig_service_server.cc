@@ -1128,27 +1128,33 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <textarea id="client-stub-allowed-job-commands" name="allowed_job_commands"
                   rows="3" placeholder="run-before-job-client"></textarea>
 
-        <label class="checkbox-label" for="client-stub-tls-authenticate">
-          <input id="client-stub-tls-authenticate" name="tls_authenticate"
-                 type="checkbox">
-          TLS authenticate
-        </label>
+        <label for="client-stub-tls-authenticate">TlsAuthenticate</label>
+        <select id="client-stub-tls-authenticate" name="tls_authenticate">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="client-stub-tls-enable">
-          <input id="client-stub-tls-enable" name="tls_enable" type="checkbox">
-          TLS enable
-        </label>
+        <label for="client-stub-tls-enable">TlsEnable</label>
+        <select id="client-stub-tls-enable" name="tls_enable">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="client-stub-tls-require">
-          <input id="client-stub-tls-require" name="tls_require" type="checkbox">
-          TLS require
-        </label>
+        <label for="client-stub-tls-require">TlsRequire</label>
+        <select id="client-stub-tls-require" name="tls_require">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="client-stub-tls-verify-peer">
-          <input id="client-stub-tls-verify-peer" name="tls_verify_peer"
-                 type="checkbox">
-          TLS verify peer
-        </label>
+        <label for="client-stub-tls-verify-peer">TlsVerifyPeer</label>
+        <select id="client-stub-tls-verify-peer" name="tls_verify_peer">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="client-stub-tls-cipher-list">TLS cipher list</label>
         <input id="client-stub-tls-cipher-list" name="tls_cipher_list"
@@ -1193,22 +1199,28 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <textarea id="client-stub-tls-allowed-cn" name="tls_allowed_cn"
                   rows="3" placeholder="bareos-dir.example.invalid"></textarea>
 
-        <label class="checkbox-label" for="client-stub-connection-from-director-to-client">
-          <input id="client-stub-connection-from-director-to-client"
-                 name="connection_from_director_to_client" type="checkbox">
-          Connection from director to client
-        </label>
+        <label for="client-stub-connection-from-director-to-client">ConnectionFromDirectorToClient</label>
+        <select id="client-stub-connection-from-director-to-client"
+                name="connection_from_director_to_client">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="client-stub-connection-from-client-to-director">
-          <input id="client-stub-connection-from-client-to-director"
-                 name="connection_from_client_to_director" type="checkbox">
-          Connection from client to director
-        </label>
+        <label for="client-stub-connection-from-client-to-director">ConnectionFromClientToDirector</label>
+        <select id="client-stub-connection-from-client-to-director"
+                name="connection_from_client_to_director">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="client-stub-monitor">
-          <input id="client-stub-monitor" name="monitor" type="checkbox">
-          Monitor
-        </label>
+        <label for="client-stub-monitor">Monitor</label>
+        <select id="client-stub-monitor" name="monitor">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="client-stub-maximum-bandwidth-per-job">Maximum bandwidth per job</label>
         <input id="client-stub-maximum-bandwidth-per-job"
@@ -3835,27 +3847,35 @@ const char* kTestUiHtmlTemplate = R"HTML(
                name="absolute_job_timeout" type="number" min="0"
                placeholder="0">
 
-        <label class="checkbox-label" for="director-daemon-tls-authenticate">
-          <input id="director-daemon-tls-authenticate"
-                 name="tls_authenticate" type="checkbox">
-          TLS authenticate
-        </label>
+        <label for="director-daemon-tls-authenticate">TlsAuthenticate</label>
+        <select id="director-daemon-tls-authenticate"
+                name="tls_authenticate">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-daemon-tls-enable">
-          <input id="director-daemon-tls-enable" name="tls_enable" type="checkbox">
-          TLS enable
-        </label>
+        <label for="director-daemon-tls-enable">TlsEnable</label>
+        <select id="director-daemon-tls-enable" name="tls_enable">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-daemon-tls-require">
-          <input id="director-daemon-tls-require" name="tls_require" type="checkbox">
-          TLS require
-        </label>
+        <label for="director-daemon-tls-require">TlsRequire</label>
+        <select id="director-daemon-tls-require" name="tls_require">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-daemon-tls-verify-peer">
-          <input id="director-daemon-tls-verify-peer"
-                 name="tls_verify_peer" type="checkbox">
-          TLS verify peer
-        </label>
+        <label for="director-daemon-tls-verify-peer">TlsVerifyPeer</label>
+        <select id="director-daemon-tls-verify-peer"
+                name="tls_verify_peer">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-daemon-tls-cipher-list">TLS cipher list</label>
         <input id="director-daemon-tls-cipher-list" name="tls_cipher_list"
@@ -3914,10 +3934,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
                name="secure_erase_command"
                placeholder="/usr/bin/shred -n 3 -u">
 
-        <label class="checkbox-label" for="director-daemon-enable-ktls">
-          <input id="director-daemon-enable-ktls" name="enable_ktls" type="checkbox">
-          Enable kTLS
-        </label>
+        <label for="director-daemon-enable-ktls">EnableKtls</label>
+        <select id="director-daemon-enable-ktls" name="enable_ktls">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-daemon-fd-connect-timeout">FD connect timeout</label>
         <input id="director-daemon-fd-connect-timeout"
@@ -3952,28 +3974,31 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-daemon-key-encryption-key"
                name="key_encryption_key" placeholder="managed-key">
 
-        <label class="checkbox-label" for="director-daemon-ndmp-snooping">
-          <input id="director-daemon-ndmp-snooping"
-                 name="ndmp_snooping" type="checkbox">
-          NDMP snooping
-        </label>
+        <label for="director-daemon-ndmp-snooping">NdmpSnooping</label>
+        <select id="director-daemon-ndmp-snooping" name="ndmp_snooping">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-daemon-ndmp-log-level">NDMP log level</label>
         <input id="director-daemon-ndmp-log-level" name="ndmp_log_level"
                type="number" min="0" placeholder="4">
 
-        <label class="checkbox-label"
-               for="director-daemon-ndmp-namelist-fhinfo-set-zero-for-invalid-uquad">
-          <input id="director-daemon-ndmp-namelist-fhinfo-set-zero-for-invalid-uquad"
-                 name="ndmp_namelist_fhinfo_set_zero_for_invalid_uquad"
-                 type="checkbox">
-          NDMP namelist fhinfo zero for invalid uquad
-        </label>
+        <label for="director-daemon-ndmp-namelist-fhinfo-set-zero-for-invalid-uquad">NdmpNamelistFhinfoSetZeroForInvalidUquad</label>
+        <select id="director-daemon-ndmp-namelist-fhinfo-set-zero-for-invalid-uquad"
+                name="ndmp_namelist_fhinfo_set_zero_for_invalid_uquad">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-daemon-auditing">
-          <input id="director-daemon-auditing" name="auditing" type="checkbox">
-          Auditing
-        </label>
+        <label for="director-daemon-auditing">Auditing</label>
+        <select id="director-daemon-auditing" name="auditing">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-daemon-audit-events">Audit events</label>
         <textarea id="director-daemon-audit-events" name="audit_events"
@@ -5634,12 +5659,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
           port: String(form.get('port') ?? '').trim(),
           allowed_script_dirs: allowedScriptDirs,
           allowed_job_commands: allowedJobCommands,
-          tls_authenticate: document.getElementById(
-            'client-stub-tls-authenticate').checked,
-          tls_enable: document.getElementById('client-stub-tls-enable').checked,
-          tls_require: document.getElementById('client-stub-tls-require').checked,
-          tls_verify_peer: document.getElementById(
-            'client-stub-tls-verify-peer').checked,
+          tls_authenticate: String(form.get('tls_authenticate') ?? '').trim(),
+          tls_enable: String(form.get('tls_enable') ?? '').trim(),
+          tls_require: String(form.get('tls_require') ?? '').trim(),
+          tls_verify_peer: String(form.get('tls_verify_peer') ?? '').trim(),
           tls_cipher_list: String(form.get('tls_cipher_list') ?? '').trim(),
           tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
           tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
@@ -5653,13 +5676,13 @@ const char* kTestUiHtmlTemplate = R"HTML(
           tls_certificate: String(form.get('tls_certificate') ?? '').trim(),
           tls_key: String(form.get('tls_key') ?? '').trim(),
           tls_allowed_cn: tlsAllowedCn,
-           connection_from_director_to_client: document.getElementById(
-             'client-stub-connection-from-director-to-client').checked,
-           connection_from_client_to_director: document.getElementById(
-             'client-stub-connection-from-client-to-director').checked,
-           monitor: document.getElementById('client-stub-monitor').checked,
-           maximum_bandwidth_per_job: String(
-             form.get('maximum_bandwidth_per_job') ?? '').trim(),
+          connection_from_director_to_client: String(
+            form.get('connection_from_director_to_client') ?? '').trim(),
+          connection_from_client_to_director: String(
+            form.get('connection_from_client_to_director') ?? '').trim(),
+          monitor: String(form.get('monitor') ?? '').trim(),
+          maximum_bandwidth_per_job: String(
+            form.get('maximum_bandwidth_per_job') ?? '').trim(),
         };
         if (!payload.description) {
           delete payload.description;
@@ -5677,6 +5700,26 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (payload.allowed_job_commands.length === 0) {
           delete payload.allowed_job_commands;
+        }
+        if (!payload.tls_authenticate) {
+          delete payload.tls_authenticate;
+        } else {
+          payload.tls_authenticate = payload.tls_authenticate === 'true';
+        }
+        if (!payload.tls_enable) {
+          delete payload.tls_enable;
+        } else {
+          payload.tls_enable = payload.tls_enable === 'true';
+        }
+        if (!payload.tls_require) {
+          delete payload.tls_require;
+        } else {
+          payload.tls_require = payload.tls_require === 'true';
+        }
+        if (!payload.tls_verify_peer) {
+          delete payload.tls_verify_peer;
+        } else {
+          payload.tls_verify_peer = payload.tls_verify_peer === 'true';
         }
         if (!payload.tls_cipher_list) {
           delete payload.tls_cipher_list;
@@ -5707,6 +5750,23 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (payload.tls_allowed_cn.length === 0) {
           delete payload.tls_allowed_cn;
+        }
+        if (!payload.connection_from_director_to_client) {
+          delete payload.connection_from_director_to_client;
+        } else {
+          payload.connection_from_director_to_client
+            = payload.connection_from_director_to_client === 'true';
+        }
+        if (!payload.connection_from_client_to_director) {
+          delete payload.connection_from_client_to_director;
+        } else {
+          payload.connection_from_client_to_director
+            = payload.connection_from_client_to_director === 'true';
+        }
+        if (!payload.monitor) {
+          delete payload.monitor;
+        } else {
+          payload.monitor = payload.monitor === 'true';
         }
         if (!payload.maximum_bandwidth_per_job) {
           delete payload.maximum_bandwidth_per_job;
@@ -7521,10 +7581,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
           maximum_console_connections: String(form.get('maximum_console_connections') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
           absolute_job_timeout: String(form.get('absolute_job_timeout') ?? '').trim(),
-          tls_authenticate: document.getElementById('director-daemon-tls-authenticate').checked,
-          tls_enable: document.getElementById('director-daemon-tls-enable').checked,
-          tls_require: document.getElementById('director-daemon-tls-require').checked,
-          tls_verify_peer: document.getElementById('director-daemon-tls-verify-peer').checked,
+          tls_authenticate: String(form.get('tls_authenticate') ?? '').trim(),
+          tls_enable: String(form.get('tls_enable') ?? '').trim(),
+          tls_require: String(form.get('tls_require') ?? '').trim(),
+          tls_verify_peer: String(form.get('tls_verify_peer') ?? '').trim(),
           tls_cipher_list: String(form.get('tls_cipher_list') ?? '').trim(),
           tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
           tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
@@ -7541,7 +7601,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           ver_id: String(form.get('ver_id') ?? '').trim(),
           log_timestamp_format: String(form.get('log_timestamp_format') ?? '').trim(),
           secure_erase_command: String(form.get('secure_erase_command') ?? '').trim(),
-          enable_ktls: document.getElementById('director-daemon-enable-ktls').checked,
+          enable_ktls: String(form.get('enable_ktls') ?? '').trim(),
           fd_connect_timeout: String(form.get('fd_connect_timeout') ?? '').trim(),
           sd_connect_timeout: String(form.get('sd_connect_timeout') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
@@ -7550,11 +7610,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
             form.get('statistics_collect_interval') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
           key_encryption_key: String(form.get('key_encryption_key') ?? '').trim(),
-          ndmp_snooping: document.getElementById('director-daemon-ndmp-snooping').checked,
+          ndmp_snooping: String(form.get('ndmp_snooping') ?? '').trim(),
           ndmp_log_level: String(form.get('ndmp_log_level') ?? '').trim(),
-          ndmp_namelist_fhinfo_set_zero_for_invalid_uquad: document.getElementById(
-            'director-daemon-ndmp-namelist-fhinfo-set-zero-for-invalid-uquad').checked,
-          auditing: document.getElementById('director-daemon-auditing').checked,
+          ndmp_namelist_fhinfo_set_zero_for_invalid_uquad: String(
+            form.get('ndmp_namelist_fhinfo_set_zero_for_invalid_uquad')
+              ?? '').trim(),
+          auditing: String(form.get('auditing') ?? '').trim(),
           audit_events: auditEvents,
           working_directory: String(form.get('working_directory') ?? '').trim(),
           plugin_directory: String(form.get('plugin_directory') ?? '').trim(),
@@ -7596,6 +7657,26 @@ const char* kTestUiHtmlTemplate = R"HTML(
         } else {
           payload.absolute_job_timeout = Number(payload.absolute_job_timeout);
         }
+        if (!payload.tls_authenticate) {
+          delete payload.tls_authenticate;
+        } else {
+          payload.tls_authenticate = payload.tls_authenticate === 'true';
+        }
+        if (!payload.tls_enable) {
+          delete payload.tls_enable;
+        } else {
+          payload.tls_enable = payload.tls_enable === 'true';
+        }
+        if (!payload.tls_require) {
+          delete payload.tls_require;
+        } else {
+          payload.tls_require = payload.tls_require === 'true';
+        }
+        if (!payload.tls_verify_peer) {
+          delete payload.tls_verify_peer;
+        } else {
+          payload.tls_verify_peer = payload.tls_verify_peer === 'true';
+        }
         if (!payload.tls_cipher_list) { delete payload.tls_cipher_list; }
         if (!payload.tls_cipher_suites) { delete payload.tls_cipher_suites; }
         if (!payload.tls_dh_file) { delete payload.tls_dh_file; }
@@ -7615,6 +7696,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.ver_id) { delete payload.ver_id; }
         if (!payload.log_timestamp_format) { delete payload.log_timestamp_format; }
         if (!payload.secure_erase_command) { delete payload.secure_erase_command; }
+        if (!payload.enable_ktls) {
+          delete payload.enable_ktls;
+        } else {
+          payload.enable_ktls = payload.enable_ktls === 'true';
+        }
         if (!payload.fd_connect_timeout) {
           delete payload.fd_connect_timeout;
         } else {
@@ -7643,10 +7729,26 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.description) { delete payload.description; }
         if (!payload.key_encryption_key) { delete payload.key_encryption_key; }
+        if (!payload.ndmp_snooping) {
+          delete payload.ndmp_snooping;
+        } else {
+          payload.ndmp_snooping = payload.ndmp_snooping === 'true';
+        }
         if (!payload.ndmp_log_level) {
           delete payload.ndmp_log_level;
         } else {
           payload.ndmp_log_level = Number(payload.ndmp_log_level);
+        }
+        if (!payload.ndmp_namelist_fhinfo_set_zero_for_invalid_uquad) {
+          delete payload.ndmp_namelist_fhinfo_set_zero_for_invalid_uquad;
+        } else {
+          payload.ndmp_namelist_fhinfo_set_zero_for_invalid_uquad
+            = payload.ndmp_namelist_fhinfo_set_zero_for_invalid_uquad === 'true';
+        }
+        if (!payload.auditing) {
+          delete payload.auditing;
+        } else {
+          payload.auditing = payload.auditing === 'true';
         }
         if (payload.audit_events.length === 0) { delete payload.audit_events; }
         if (!payload.working_directory) { delete payload.working_directory; }
