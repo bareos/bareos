@@ -4282,14 +4282,16 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="storage-device-device-name" name="device_name" value="ManagedDevice">
 
         <label for="storage-device-media-type">Media type</label>
-        <input id="storage-device-media-type" name="media_type" value="File">
+        <input id="storage-device-media-type" name="media_type"
+               placeholder="File">
 
         <label for="storage-device-archive-device">Archive device</label>
         <input id="storage-device-archive-device" name="archive_device"
-               value="/tmp/bareos-storage">
+               placeholder="/tmp/bareos-storage">
 
         <label for="storage-device-device-type">Device type</label>
-        <input id="storage-device-device-type" name="device_type" value="file">
+        <input id="storage-device-device-type" name="device_type"
+               placeholder="file">
 
         <label for="storage-device-access-mode">AccessMode</label>
         <input id="storage-device-access-mode" name="access_mode"
@@ -4765,14 +4767,16 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="storage-ndmp-name" name="ndmp_name" value="ManagedNdmp">
 
         <label for="storage-ndmp-username">Username</label>
-        <input id="storage-ndmp-username" name="username" value="ndmp-user">
+        <input id="storage-ndmp-username" name="username"
+               placeholder="ndmp-user">
 
         <label for="storage-ndmp-password">Password</label>
         <input id="storage-ndmp-password" name="password"
                placeholder="cleartext or [md5]hash">
 
         <label for="storage-ndmp-auth-type">Auth type</label>
-        <input id="storage-ndmp-auth-type" name="auth_type" value="MD5">
+        <input id="storage-ndmp-auth-type" name="auth_type"
+               placeholder="MD5">
 
         <label for="storage-ndmp-log-level">Log level</label>
         <input id="storage-ndmp-log-level" name="log_level" type="number" min="0"
@@ -4810,11 +4814,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="storage-autochanger-changer-device">Changer device</label>
         <input id="storage-autochanger-changer-device" name="changer_device"
-               value="/dev/null">
+               placeholder="/dev/null">
 
         <label for="storage-autochanger-changer-command">Changer command</label>
         <input id="storage-autochanger-changer-command" name="changer_command"
-               value="/usr/lib/bareos/mtx-changer %c %o %S %a %d">
+               placeholder="/usr/lib/bareos/mtx-changer %c %o %S %a %d">
 
         <label for="storage-autochanger-description">Description</label>
         <input id="storage-autochanger-description" name="description"
