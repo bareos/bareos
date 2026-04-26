@@ -1083,6 +1083,7 @@ std::string BuildDirectorClientResourceContent(
 std::string BuildDirectorStorageResourceContent(
     std::string_view storage_name,
     std::string_view address,
+    const std::optional<std::string>& lan_address,
     std::string_view password,
     const std::vector<std::string>& devices,
     std::string_view media_type,
@@ -1100,6 +1101,7 @@ std::string BuildDirectorStorageResourceContent(
           << "  Description = " << QuoteBareosString(description) << "\n"
           << "  Address = " << address << "\n"
           << "  Password = " << QuoteBareosString(password) << "\n";
+  AppendBareosDirective(content, "LanAddress", lan_address);
   AppendRepeatedBareosDirective(content, "Device", devices);
   content << "  Media Type = " << media_type << "\n"
           << "  Port = " << port << "\n";
@@ -2466,6 +2468,7 @@ struct DirectorClientWriteContext {
 struct DirectorStorageWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> address{};
+  std::optional<std::string> lan_address{};
   std::optional<uint32_t> port{};
   std::optional<std::string> password{};
   std::optional<std::string> device{};
@@ -2910,6 +2913,9 @@ OperationResult<DirectorStorageWriteContext> LoadDirectorStorageWriteContext(
     context.exists = true;
     if (storage->address && storage->address[0] != '\0') {
       context.address = std::string{storage->address};
+    }
+    if (storage->lanaddress && storage->lanaddress[0] != '\0') {
+      context.lan_address = std::string{storage->lanaddress};
     }
     if (storage->SDport != 0) { context.port = storage->SDport; }
     if (HasMemberSource(*storage, {"Enabled"})) {
@@ -8602,6 +8608,8 @@ ServiceState::UpsertDirectorStorageResource(
     return {.error = "director storage port must be greater than zero."};
   }
 
+  const auto lan_address
+      = spec.lan_address ? spec.lan_address : context.value->lan_address;
   const auto heartbeat_interval = spec.heartbeat_interval
                                       ? spec.heartbeat_interval
                                       : context.value->heartbeat_interval;
@@ -8628,9 +8636,9 @@ ServiceState::UpsertDirectorStorageResource(
           "or device_type requires exactly one Device."};
   }
   const auto content = BuildDirectorStorageResourceContent(
-      storage_name, *address, *password, devices, *media_type, effective_port,
-      enabled, allow_compression, heartbeat_interval, cache_status_interval,
-      maximum_bandwidth_per_job, description);
+      storage_name, *address, lan_address, *password, devices, *media_type,
+      effective_port, enabled, allow_compression, heartbeat_interval,
+      cache_status_interval, maximum_bandwidth_per_job, description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "storage";

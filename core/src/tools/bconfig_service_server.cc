@@ -112,6 +112,7 @@ struct DirectorClientRequestSpec {
 
 struct DirectorStorageRequestSpec {
   std::optional<std::string> address{};
+  std::optional<std::string> lan_address{};
   std::optional<uint16_t> port{};
   std::optional<std::string> password{};
   std::optional<std::string> device{};
@@ -1297,6 +1298,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="director-storage-address">Address</label>
         <input id="director-storage-address" name="address" value="localhost">
+
+        <label for="director-storage-lan-address">LanAddress</label>
+        <input id="director-storage-lan-address" name="lan_address">
 
         <label for="director-storage-port">Port</label>
         <input id="director-storage-port" name="port" type="number" min="1" max="65535" value="9103">
@@ -3738,6 +3742,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const storageName = String(form.get('storage_name') ?? '').trim();
         const payload = {
           address: String(form.get('address') ?? '').trim(),
+          lan_address: String(form.get('lan_address') ?? '').trim(),
           port: String(form.get('port') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
           device: String(form.get('device') ?? '').trim(),
@@ -3756,6 +3761,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         };
         if (!payload.address) {
           delete payload.address;
+        }
+        if (!payload.lan_address) {
+          delete payload.lan_address;
         }
         if (!payload.port) {
           delete payload.port;
@@ -6885,6 +6893,7 @@ http::response<http::string_body> HandleDeploymentDirectorStoragePutRequest(
 
   DirectorStorageResourceSpec resource_spec{
       .address = spec->address,
+      .lan_address = spec->lan_address,
       .port = spec->port,
       .password = spec->password,
       .device = spec->device,
@@ -8353,6 +8362,7 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
 
   auto* description = json_object_get(root.get(), "description");
   auto* address = json_object_get(root.get(), "address");
+  auto* lan_address = json_object_get(root.get(), "lan_address");
   auto* port = json_object_get(root.get(), "port");
   auto* allowed_script_dirs
       = json_object_get(root.get(), "allowed_script_dirs");
@@ -8405,6 +8415,11 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   }
   if (address && !json_is_null(address) && !json_is_string(address)) {
     error = "field 'address' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (lan_address && !json_is_null(lan_address)
+      && !json_is_string(lan_address)) {
+    error = "field 'lan_address' must be a string when provided.";
     return std::nullopt;
   }
   if (port && !json_is_null(port) && !json_is_integer(port)) {
@@ -8620,6 +8635,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
 
   auto* address = json_object_get(root.get(), "address");
+  auto* lan_address = json_object_get(root.get(), "lan_address");
   auto* port = json_object_get(root.get(), "port");
   auto* password = json_object_get(root.get(), "password");
   auto* enabled = json_object_get(root.get(), "enabled");
@@ -8635,6 +8651,11 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
 
   if (address && !json_is_null(address) && !json_is_string(address)) {
     error = "field 'address' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (lan_address && !json_is_null(lan_address)
+      && !json_is_string(lan_address)) {
+    error = "field 'lan_address' must be a string when provided.";
     return std::nullopt;
   }
   if (port && !json_is_null(port) && !json_is_integer(port)) {
@@ -8752,6 +8773,7 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   }
 
   auto* address = json_object_get(root.get(), "address");
+  auto* lan_address = json_object_get(root.get(), "lan_address");
   auto* port = json_object_get(root.get(), "port");
   auto* password = json_object_get(root.get(), "password");
   auto* device = json_object_get(root.get(), "device");
@@ -8769,6 +8791,11 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
 
   if (address && !json_is_null(address) && !json_is_string(address)) {
     error = "field 'address' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (lan_address && !json_is_null(lan_address)
+      && !json_is_string(lan_address)) {
+    error = "field 'lan_address' must be a string when provided.";
     return std::nullopt;
   }
   if (port && !json_is_null(port) && !json_is_integer(port)) {
@@ -8832,6 +8859,9 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   DirectorStorageRequestSpec spec{};
   if (address && json_is_string(address)) {
     spec.address = std::string{json_string_value(address)};
+  }
+  if (lan_address && json_is_string(lan_address)) {
+    spec.lan_address = std::string{json_string_value(lan_address)};
   }
   if (port && json_is_integer(port)) {
     const auto value = json_integer_value(port);

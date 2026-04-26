@@ -7661,6 +7661,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
   auto created = state.UpsertDirectorStorageResource(
       "prod", "bareos-dir", "FileManaged",
       {.address = std::string{"localhost"},
+       .lan_address = std::string{"storage-lan.example.com"},
        .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
        .device = std::string{"FileStorage"},
        .media_type = std::string{"File"},
@@ -7678,6 +7679,8 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
   const auto created_text = ReadTextFile(storage_path);
   EXPECT_NE(created_text.find("Name = \"FileManaged\""), std::string::npos);
   EXPECT_NE(created_text.find("Address = localhost"), std::string::npos);
+  EXPECT_NE(created_text.find("LanAddress = storage-lan.example.com"),
+            std::string::npos);
   EXPECT_NE(
       created_text.find("Password = \"[md5]abcdef0123456789abcdef0123456789\""),
       std::string::npos);
@@ -7700,6 +7703,8 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
 
   const auto updated_text = ReadTextFile(storage_path);
   EXPECT_NE(updated_text.find("Address = storage.example.com"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("LanAddress = storage-lan.example.com"),
             std::string::npos);
   EXPECT_NE(
       updated_text.find("Password = \"[md5]abcdef0123456789abcdef0123456789\""),
@@ -7740,6 +7745,7 @@ TEST(BconfigService, UpsertsDirectorStorageResourcesPreserveLargeImportedPort)
                 "  Name = \"File\"\n"
                 "  Description = \"Imported storage\"\n"
                 "  Address = localhost\n"
+                "  LanAddress = imported-storage-lan.example.com\n"
                 "  Password = \"secret\"\n"
                 "  Device = FileStorage\n"
                 "  Media Type = File\n"
@@ -7768,6 +7774,8 @@ TEST(BconfigService, UpsertsDirectorStorageResourcesPreserveLargeImportedPort)
   const auto updated_text
       = ReadTextFile(updated.value->path / "bareos-dir.d/storage/File.conf");
   EXPECT_NE(updated_text.find("Address = localhost"), std::string::npos);
+  EXPECT_NE(updated_text.find("LanAddress = imported-storage-lan.example.com"),
+            std::string::npos);
   EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);
   EXPECT_NE(updated_text.find("Enabled = no"), std::string::npos);
   EXPECT_NE(updated_text.find("AllowCompression = no"), std::string::npos);
@@ -7825,6 +7833,7 @@ TEST(BconfigService,
   auto created = state.UpsertDirectorStorageResource(
       "prod", "bareos-dir", "FileManaged",
       {.address = std::string{"localhost"},
+       .lan_address = std::string{"storage-lan.example.com"},
        .password = std::string{"sd_password"},
        .device = std::string{"FileStorage"},
        .media_type = std::string{"File"},

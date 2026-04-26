@@ -239,6 +239,7 @@ struct DirectorClientResourceSpec {
 
 struct DirectorStorageResourceSpec {
   std::optional<std::string> address{};
+  std::optional<std::string> lan_address{};
   std::optional<uint16_t> port{};
   std::optional<std::string> password{};
   std::optional<std::string> device{};
