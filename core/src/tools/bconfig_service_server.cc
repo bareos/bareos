@@ -185,7 +185,32 @@ struct DirectorStorageRequestSpec {
 struct DirectorConsoleRequestSpec {
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<std::vector<std::string>> job_acl{};
+  std::optional<std::vector<std::string>> client_acl{};
+  std::optional<std::vector<std::string>> storage_acl{};
+  std::optional<std::vector<std::string>> schedule_acl{};
+  std::optional<std::vector<std::string>> pool_acl{};
+  std::optional<std::vector<std::string>> command_acl{};
+  std::optional<std::vector<std::string>> fileset_acl{};
+  std::optional<std::vector<std::string>> catalog_acl{};
+  std::optional<std::vector<std::string>> where_acl{};
+  std::optional<std::vector<std::string>> plugin_options_acl{};
+  std::optional<std::vector<std::string>> profiles{};
   std::optional<bool> use_pam_authentication{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
 };
 
 struct ConsoleConsoleRequestSpec {
@@ -1871,6 +1896,119 @@ const char* kTestUiHtmlTemplate = R"HTML(
                  type="checkbox">
           Use PAM authentication
         </label>
+
+        <label for="director-console-job-acl">Job ACL</label>
+        <textarea id="director-console-job-acl" name="job_acl"
+                  placeholder="ManagedJob&#10;RestoreJob"></textarea>
+
+        <label for="director-console-client-acl">Client ACL</label>
+        <textarea id="director-console-client-acl" name="client_acl"
+                  placeholder="bareos-fd"></textarea>
+
+        <label for="director-console-storage-acl">Storage ACL</label>
+        <textarea id="director-console-storage-acl" name="storage_acl"
+                  placeholder="FileStorage"></textarea>
+
+        <label for="director-console-schedule-acl">Schedule ACL</label>
+        <textarea id="director-console-schedule-acl" name="schedule_acl"
+                  placeholder="WeeklyCycle"></textarea>
+
+        <label for="director-console-pool-acl">Pool ACL</label>
+        <textarea id="director-console-pool-acl" name="pool_acl"
+                  placeholder="Full"></textarea>
+
+        <label for="director-console-command-acl">Command ACL</label>
+        <textarea id="director-console-command-acl" name="command_acl"
+                  placeholder="status&#10;.status&#10;show"></textarea>
+
+        <label for="director-console-fileset-acl">FileSet ACL</label>
+        <textarea id="director-console-fileset-acl" name="fileset_acl"
+                  placeholder="LinuxAll"></textarea>
+
+        <label for="director-console-catalog-acl">Catalog ACL</label>
+        <textarea id="director-console-catalog-acl" name="catalog_acl"
+                  placeholder="MyCatalog"></textarea>
+
+        <label for="director-console-where-acl">Where ACL</label>
+        <textarea id="director-console-where-acl" name="where_acl"
+                  placeholder="/tmp/restore"></textarea>
+
+        <label for="director-console-plugin-options-acl">PluginOptions ACL</label>
+        <textarea id="director-console-plugin-options-acl"
+                  name="plugin_options_acl"
+                  placeholder="python:module_path"></textarea>
+
+        <label for="director-console-profiles">Profiles</label>
+        <textarea id="director-console-profiles" name="profiles"
+                  placeholder="operator"></textarea>
+
+        <label class="checkbox-label" for="director-console-tls-authenticate">
+          <input id="director-console-tls-authenticate"
+                 name="tls_authenticate" type="checkbox">
+          TLS authenticate
+        </label>
+
+        <label class="checkbox-label" for="director-console-tls-enable">
+          <input id="director-console-tls-enable"
+                 name="tls_enable" type="checkbox">
+          TLS enable
+        </label>
+
+        <label class="checkbox-label" for="director-console-tls-require">
+          <input id="director-console-tls-require"
+                 name="tls_require" type="checkbox">
+          TLS require
+        </label>
+
+        <label class="checkbox-label" for="director-console-tls-verify-peer">
+          <input id="director-console-tls-verify-peer"
+                 name="tls_verify_peer" type="checkbox">
+          TLS verify peer
+        </label>
+
+        <label for="director-console-tls-cipher-list">TLS cipher list</label>
+        <input id="director-console-tls-cipher-list" name="tls_cipher_list"
+               placeholder="HIGH">
+
+        <label for="director-console-tls-cipher-suites">TLS cipher suites</label>
+        <input id="director-console-tls-cipher-suites"
+               name="tls_cipher_suites"
+               placeholder="TLS_AES_256_GCM_SHA384">
+
+        <label for="director-console-tls-dh-file">TLS DH file</label>
+        <input id="director-console-tls-dh-file" name="tls_dh_file"
+               placeholder="/etc/bareos/dh4096.pem">
+
+        <label for="director-console-tls-protocol">TLS protocol</label>
+        <input id="director-console-tls-protocol" name="tls_protocol"
+               placeholder="+TLSv1.2:+TLSv1.3">
+
+        <label for="director-console-tls-ca-certificate-file">TLS CA certificate file</label>
+        <input id="director-console-tls-ca-certificate-file"
+               name="tls_ca_certificate_file"
+               placeholder="/etc/bareos/ca.pem">
+
+        <label for="director-console-tls-ca-certificate-dir">TLS CA certificate dir</label>
+        <input id="director-console-tls-ca-certificate-dir"
+               name="tls_ca_certificate_dir"
+               placeholder="/etc/ssl/certs">
+
+        <label for="director-console-tls-certificate-revocation-list">TLS certificate revocation list</label>
+        <input id="director-console-tls-certificate-revocation-list"
+               name="tls_certificate_revocation_list"
+               placeholder="/etc/bareos/crl.pem">
+
+        <label for="director-console-tls-certificate">TLS certificate</label>
+        <input id="director-console-tls-certificate" name="tls_certificate"
+               placeholder="/etc/bareos/console-cert.pem">
+
+        <label for="director-console-tls-key">TLS key</label>
+        <input id="director-console-tls-key" name="tls_key"
+               placeholder="/etc/bareos/console-key.pem">
+
+        <label for="director-console-tls-allowed-cn">TLS allowed CNs</label>
+        <textarea id="director-console-tls-allowed-cn" name="tls_allowed_cn"
+                  placeholder="backup-dir.example.test&#10;operator.example.test"></textarea>
 
         <button type="submit">
           PUT /v1/deployments/{id}/directors/{director}/consoles/{console}
@@ -4642,16 +4780,83 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
         const consoleName = String(form.get('console_name') ?? '').trim();
+        const parseLines = (name) => String(form.get(name) ?? '')
+          .split(/\r?\n/)
+          .map((value) => value.trim())
+          .filter((value) => value.length > 0);
         const payload = {
           password: String(form.get('password') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
+          job_acl: parseLines('job_acl'),
+          client_acl: parseLines('client_acl'),
+          storage_acl: parseLines('storage_acl'),
+          schedule_acl: parseLines('schedule_acl'),
+          pool_acl: parseLines('pool_acl'),
+          command_acl: parseLines('command_acl'),
+          fileset_acl: parseLines('fileset_acl'),
+          catalog_acl: parseLines('catalog_acl'),
+          where_acl: parseLines('where_acl'),
+          plugin_options_acl: parseLines('plugin_options_acl'),
+          profiles: parseLines('profiles'),
           use_pam_authentication: document.getElementById('director-console-use-pam').checked,
+          tls_authenticate: document.getElementById(
+            'director-console-tls-authenticate').checked,
+          tls_enable: document.getElementById(
+            'director-console-tls-enable').checked,
+          tls_require: document.getElementById(
+            'director-console-tls-require').checked,
+          tls_verify_peer: document.getElementById(
+            'director-console-tls-verify-peer').checked,
+          tls_cipher_list: String(form.get('tls_cipher_list') ?? '').trim(),
+          tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
+          tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
+          tls_protocol: String(form.get('tls_protocol') ?? '').trim(),
+          tls_ca_certificate_file: String(
+            form.get('tls_ca_certificate_file') ?? '').trim(),
+          tls_ca_certificate_dir: String(
+            form.get('tls_ca_certificate_dir') ?? '').trim(),
+          tls_certificate_revocation_list: String(
+            form.get('tls_certificate_revocation_list') ?? '').trim(),
+          tls_certificate: String(form.get('tls_certificate') ?? '').trim(),
+          tls_key: String(form.get('tls_key') ?? '').trim(),
+          tls_allowed_cn: parseLines('tls_allowed_cn'),
         };
         if (!payload.password) {
           delete payload.password;
         }
         if (!payload.description) {
           delete payload.description;
+        }
+        if (payload.job_acl.length === 0) { delete payload.job_acl; }
+        if (payload.client_acl.length === 0) { delete payload.client_acl; }
+        if (payload.storage_acl.length === 0) { delete payload.storage_acl; }
+        if (payload.schedule_acl.length === 0) { delete payload.schedule_acl; }
+        if (payload.pool_acl.length === 0) { delete payload.pool_acl; }
+        if (payload.command_acl.length === 0) { delete payload.command_acl; }
+        if (payload.fileset_acl.length === 0) { delete payload.fileset_acl; }
+        if (payload.catalog_acl.length === 0) { delete payload.catalog_acl; }
+        if (payload.where_acl.length === 0) { delete payload.where_acl; }
+        if (payload.plugin_options_acl.length === 0) {
+          delete payload.plugin_options_acl;
+        }
+        if (payload.profiles.length === 0) { delete payload.profiles; }
+        if (!payload.tls_cipher_list) { delete payload.tls_cipher_list; }
+        if (!payload.tls_cipher_suites) { delete payload.tls_cipher_suites; }
+        if (!payload.tls_dh_file) { delete payload.tls_dh_file; }
+        if (!payload.tls_protocol) { delete payload.tls_protocol; }
+        if (!payload.tls_ca_certificate_file) {
+          delete payload.tls_ca_certificate_file;
+        }
+        if (!payload.tls_ca_certificate_dir) {
+          delete payload.tls_ca_certificate_dir;
+        }
+        if (!payload.tls_certificate_revocation_list) {
+          delete payload.tls_certificate_revocation_list;
+        }
+        if (!payload.tls_certificate) { delete payload.tls_certificate; }
+        if (!payload.tls_key) { delete payload.tls_key; }
+        if (payload.tls_allowed_cn.length === 0) {
+          delete payload.tls_allowed_cn;
         }
         const { response } = await request(
           'PUT',
@@ -7987,7 +8192,32 @@ http::response<http::string_body> HandleDeploymentDirectorConsolePutRequest(
   DirectorConsoleResourceSpec resource_spec{
       .password = spec->password,
       .description = spec->description,
+      .job_acl = spec->job_acl,
+      .client_acl = spec->client_acl,
+      .storage_acl = spec->storage_acl,
+      .schedule_acl = spec->schedule_acl,
+      .pool_acl = spec->pool_acl,
+      .command_acl = spec->command_acl,
+      .fileset_acl = spec->fileset_acl,
+      .catalog_acl = spec->catalog_acl,
+      .where_acl = spec->where_acl,
+      .plugin_options_acl = spec->plugin_options_acl,
+      .profiles = spec->profiles,
       .use_pam_authentication = spec->use_pam_authentication,
+      .tls_authenticate = spec->tls_authenticate,
+      .tls_enable = spec->tls_enable,
+      .tls_require = spec->tls_require,
+      .tls_verify_peer = spec->tls_verify_peer,
+      .tls_cipher_list = spec->tls_cipher_list,
+      .tls_cipher_suites = spec->tls_cipher_suites,
+      .tls_dh_file = spec->tls_dh_file,
+      .tls_protocol = spec->tls_protocol,
+      .tls_ca_certificate_file = spec->tls_ca_certificate_file,
+      .tls_ca_certificate_dir = spec->tls_ca_certificate_dir,
+      .tls_certificate_revocation_list = spec->tls_certificate_revocation_list,
+      .tls_certificate = spec->tls_certificate,
+      .tls_key = spec->tls_key,
+      .tls_allowed_cn = spec->tls_allowed_cn,
   };
   auto result = state.UpsertDirectorConsoleResource(
       deployment_id, director_name, console_name, resource_spec);
@@ -10603,8 +10833,36 @@ std::optional<DirectorConsoleRequestSpec> ParseDirectorConsoleRequest(
 
   auto* password = json_object_get(root.get(), "password");
   auto* description = json_object_get(root.get(), "description");
+  auto* job_acl = json_object_get(root.get(), "job_acl");
+  auto* client_acl = json_object_get(root.get(), "client_acl");
+  auto* storage_acl = json_object_get(root.get(), "storage_acl");
+  auto* schedule_acl = json_object_get(root.get(), "schedule_acl");
+  auto* pool_acl = json_object_get(root.get(), "pool_acl");
+  auto* command_acl = json_object_get(root.get(), "command_acl");
+  auto* fileset_acl = json_object_get(root.get(), "fileset_acl");
+  auto* catalog_acl = json_object_get(root.get(), "catalog_acl");
+  auto* where_acl = json_object_get(root.get(), "where_acl");
+  auto* plugin_options_acl = json_object_get(root.get(), "plugin_options_acl");
+  auto* profiles = json_object_get(root.get(), "profiles");
   auto* use_pam_authentication
       = json_object_get(root.get(), "use_pam_authentication");
+  auto* tls_authenticate = json_object_get(root.get(), "tls_authenticate");
+  auto* tls_enable = json_object_get(root.get(), "tls_enable");
+  auto* tls_require = json_object_get(root.get(), "tls_require");
+  auto* tls_verify_peer = json_object_get(root.get(), "tls_verify_peer");
+  auto* tls_cipher_list = json_object_get(root.get(), "tls_cipher_list");
+  auto* tls_cipher_suites = json_object_get(root.get(), "tls_cipher_suites");
+  auto* tls_dh_file = json_object_get(root.get(), "tls_dh_file");
+  auto* tls_protocol = json_object_get(root.get(), "tls_protocol");
+  auto* tls_ca_certificate_file
+      = json_object_get(root.get(), "tls_ca_certificate_file");
+  auto* tls_ca_certificate_dir
+      = json_object_get(root.get(), "tls_ca_certificate_dir");
+  auto* tls_certificate_revocation_list
+      = json_object_get(root.get(), "tls_certificate_revocation_list");
+  auto* tls_certificate = json_object_get(root.get(), "tls_certificate");
+  auto* tls_key = json_object_get(root.get(), "tls_key");
+  auto* tls_allowed_cn = json_object_get(root.get(), "tls_allowed_cn");
 
   if (password && !json_is_null(password) && !json_is_string(password)) {
     error = "field 'password' must be a string when provided.";
@@ -10620,6 +10878,78 @@ std::optional<DirectorConsoleRequestSpec> ParseDirectorConsoleRequest(
     error = "field 'use_pam_authentication' must be a boolean when provided.";
     return std::nullopt;
   }
+  auto require_string = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_string(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a string when provided.";
+      return false;
+    }
+    return true;
+  };
+  auto require_bool = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_boolean(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a boolean when provided.";
+      return false;
+    }
+    return true;
+  };
+  auto require_string_array = [&error](json_t* value, const char* field) {
+    if (!value || json_is_null(value)) { return true; }
+    if (!json_is_array(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an array of strings when provided.";
+      return false;
+    }
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      if (!json_is_string(json_array_get(value, index))) {
+        error = std::string{"field '"} + field
+                + "' must be an array of strings when provided.";
+        return false;
+      }
+    }
+    return true;
+  };
+  if (!require_string_array(job_acl, "job_acl")
+      || !require_string_array(client_acl, "client_acl")
+      || !require_string_array(storage_acl, "storage_acl")
+      || !require_string_array(schedule_acl, "schedule_acl")
+      || !require_string_array(pool_acl, "pool_acl")
+      || !require_string_array(command_acl, "command_acl")
+      || !require_string_array(fileset_acl, "fileset_acl")
+      || !require_string_array(catalog_acl, "catalog_acl")
+      || !require_string_array(where_acl, "where_acl")
+      || !require_string_array(plugin_options_acl, "plugin_options_acl")
+      || !require_string_array(profiles, "profiles")
+      || !require_string(tls_cipher_list, "tls_cipher_list")
+      || !require_string(tls_cipher_suites, "tls_cipher_suites")
+      || !require_string(tls_dh_file, "tls_dh_file")
+      || !require_string(tls_protocol, "tls_protocol")
+      || !require_string(tls_ca_certificate_file, "tls_ca_certificate_file")
+      || !require_string(tls_ca_certificate_dir, "tls_ca_certificate_dir")
+      || !require_string(tls_certificate_revocation_list,
+                         "tls_certificate_revocation_list")
+      || !require_string(tls_certificate, "tls_certificate")
+      || !require_string(tls_key, "tls_key")
+      || !require_string_array(tls_allowed_cn, "tls_allowed_cn")) {
+    return std::nullopt;
+  }
+  if (!require_bool(tls_authenticate, "tls_authenticate")
+      || !require_bool(tls_enable, "tls_enable")
+      || !require_bool(tls_require, "tls_require")
+      || !require_bool(tls_verify_peer, "tls_verify_peer")) {
+    return std::nullopt;
+  }
+  auto parse_string_array
+      = [](json_t* value) -> std::optional<std::vector<std::string>> {
+    if (!value || !json_is_array(value)) { return std::nullopt; }
+    std::vector<std::string> result;
+    result.reserve(json_array_size(value));
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      result.emplace_back(json_string_value(json_array_get(value, index)));
+    }
+    return result;
+  };
 
   DirectorConsoleRequestSpec spec{};
   if (password && json_is_string(password)) {
@@ -10631,6 +10961,61 @@ std::optional<DirectorConsoleRequestSpec> ParseDirectorConsoleRequest(
   if (use_pam_authentication && json_is_boolean(use_pam_authentication)) {
     spec.use_pam_authentication = json_is_true(use_pam_authentication);
   }
+  spec.job_acl = parse_string_array(job_acl);
+  spec.client_acl = parse_string_array(client_acl);
+  spec.storage_acl = parse_string_array(storage_acl);
+  spec.schedule_acl = parse_string_array(schedule_acl);
+  spec.pool_acl = parse_string_array(pool_acl);
+  spec.command_acl = parse_string_array(command_acl);
+  spec.fileset_acl = parse_string_array(fileset_acl);
+  spec.catalog_acl = parse_string_array(catalog_acl);
+  spec.where_acl = parse_string_array(where_acl);
+  spec.plugin_options_acl = parse_string_array(plugin_options_acl);
+  spec.profiles = parse_string_array(profiles);
+  if (tls_authenticate && json_is_boolean(tls_authenticate)) {
+    spec.tls_authenticate = json_is_true(tls_authenticate);
+  }
+  if (tls_enable && json_is_boolean(tls_enable)) {
+    spec.tls_enable = json_is_true(tls_enable);
+  }
+  if (tls_require && json_is_boolean(tls_require)) {
+    spec.tls_require = json_is_true(tls_require);
+  }
+  if (tls_verify_peer && json_is_boolean(tls_verify_peer)) {
+    spec.tls_verify_peer = json_is_true(tls_verify_peer);
+  }
+  if (tls_cipher_list && json_is_string(tls_cipher_list)) {
+    spec.tls_cipher_list = std::string{json_string_value(tls_cipher_list)};
+  }
+  if (tls_cipher_suites && json_is_string(tls_cipher_suites)) {
+    spec.tls_cipher_suites = std::string{json_string_value(tls_cipher_suites)};
+  }
+  if (tls_dh_file && json_is_string(tls_dh_file)) {
+    spec.tls_dh_file = std::string{json_string_value(tls_dh_file)};
+  }
+  if (tls_protocol && json_is_string(tls_protocol)) {
+    spec.tls_protocol = std::string{json_string_value(tls_protocol)};
+  }
+  if (tls_ca_certificate_file && json_is_string(tls_ca_certificate_file)) {
+    spec.tls_ca_certificate_file
+        = std::string{json_string_value(tls_ca_certificate_file)};
+  }
+  if (tls_ca_certificate_dir && json_is_string(tls_ca_certificate_dir)) {
+    spec.tls_ca_certificate_dir
+        = std::string{json_string_value(tls_ca_certificate_dir)};
+  }
+  if (tls_certificate_revocation_list
+      && json_is_string(tls_certificate_revocation_list)) {
+    spec.tls_certificate_revocation_list
+        = std::string{json_string_value(tls_certificate_revocation_list)};
+  }
+  if (tls_certificate && json_is_string(tls_certificate)) {
+    spec.tls_certificate = std::string{json_string_value(tls_certificate)};
+  }
+  if (tls_key && json_is_string(tls_key)) {
+    spec.tls_key = std::string{json_string_value(tls_key)};
+  }
+  spec.tls_allowed_cn = parse_string_array(tls_allowed_cn);
   return spec;
 }
 
