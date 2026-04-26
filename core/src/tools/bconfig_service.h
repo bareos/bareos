@@ -237,6 +237,7 @@ struct DirectorClientResourceSpec {
   std::optional<uint64_t> hard_quota{};
   std::optional<uint64_t> soft_quota_grace_period{};
   std::optional<uint32_t> ndmp_log_level{};
+  std::optional<uint32_t> ndmp_block_size{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint64_t> heartbeat_interval{};
