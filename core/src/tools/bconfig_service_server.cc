@@ -102,6 +102,7 @@ struct DirectorClientRequestSpec {
   std::optional<std::string> lan_address{};
   std::optional<uint16_t> port{};
   std::optional<std::string> protocol{};
+  std::optional<std::string> auth_type{};
   std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<bool> enabled{};
@@ -1271,6 +1272,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-client-protocol">Protocol</label>
         <input id="director-client-protocol" name="protocol"
                placeholder="Native">
+
+        <label for="director-client-auth-type">AuthType</label>
+        <input id="director-client-auth-type" name="auth_type"
+               placeholder="None">
 
         <label for="director-client-username">Username</label>
         <input id="director-client-username" name="username"
@@ -3847,6 +3852,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           address: String(form.get('address') ?? '').trim(),
           lan_address: String(form.get('lan_address') ?? '').trim(),
           protocol: String(form.get('protocol') ?? '').trim(),
+          auth_type: String(form.get('auth_type') ?? '').trim(),
           username: String(form.get('username') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
           enabled: document.getElementById('director-client-enabled').checked,
@@ -3907,6 +3913,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.protocol) {
           delete payload.protocol;
+        }
+        if (!payload.auth_type) {
+          delete payload.auth_type;
         }
         if (!payload.username) {
           delete payload.username;
@@ -7065,6 +7074,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .lan_address = spec->lan_address,
       .port = spec->port,
       .protocol = spec->protocol,
+      .auth_type = spec->auth_type,
       .username = spec->username,
       .password = spec->password,
       .enabled = spec->enabled,
@@ -8955,6 +8965,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* lan_address = json_object_get(root.get(), "lan_address");
   auto* port = json_object_get(root.get(), "port");
   auto* protocol = json_object_get(root.get(), "protocol");
+  auto* auth_type = json_object_get(root.get(), "auth_type");
   auto* username = json_object_get(root.get(), "username");
   auto* password = json_object_get(root.get(), "password");
   auto* enabled = json_object_get(root.get(), "enabled");
@@ -9031,6 +9042,10 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (protocol && !json_is_null(protocol) && !json_is_string(protocol)) {
     error = "field 'protocol' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (auth_type && !json_is_null(auth_type) && !json_is_string(auth_type)) {
+    error = "field 'auth_type' must be a string when provided.";
     return std::nullopt;
   }
   if (username && !json_is_null(username) && !json_is_string(username)) {
@@ -9234,6 +9249,9 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (protocol && json_is_string(protocol)) {
     spec.protocol = std::string{json_string_value(protocol)};
+  }
+  if (auth_type && json_is_string(auth_type)) {
+    spec.auth_type = std::string{json_string_value(auth_type)};
   }
   if (username && json_is_string(username)) {
     spec.username = std::string{json_string_value(username)};

@@ -56,6 +56,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
       {.address = std::string{"client1-fd.example.com"},
        .lan_address = std::string{"client1-fd-lan.example.com"},
        .protocol = std::string{"NDMPV4"},
+       .auth_type = std::string{"MD5"},
        .username = std::string{"managed-user"},
        .password = std::string{"[md5]0123456789abcdef0123456789abcdef"},
        .enabled = false,
@@ -104,6 +105,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(created_text.find("LanAddress = client1-fd-lan.example.com"),
             std::string::npos);
   EXPECT_NE(created_text.find("Protocol = NDMPV4"), std::string::npos);
+  EXPECT_NE(created_text.find("AuthType = MD5"), std::string::npos);
   EXPECT_NE(created_text.find("Username = \"managed-user\""),
             std::string::npos);
   EXPECT_NE(
@@ -170,6 +172,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_EQ(stub_text.find("LanAddress = client1-fd-lan.example.com"),
             std::string::npos);
   EXPECT_EQ(stub_text.find("Protocol = NDMPV4"), std::string::npos);
+  EXPECT_EQ(stub_text.find("AuthType = MD5"), std::string::npos);
   EXPECT_EQ(stub_text.find("Username = \"managed-user\""), std::string::npos);
   EXPECT_EQ(stub_text.find("Passive = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("StrictQuotas = yes"), std::string::npos);
@@ -227,6 +230,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(updated_text.find("LanAddress = client1-fd-lan.example.com"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Protocol = NDMPV4"), std::string::npos);
+  EXPECT_NE(updated_text.find("AuthType = MD5"), std::string::npos);
   EXPECT_NE(updated_text.find("Username = \"managed-user\""),
             std::string::npos);
   EXPECT_NE(
@@ -319,6 +323,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
       "  Address = localhost\n"
       "  LanAddress = imported-client-lan.example.com\n"
       "  Protocol = NDMPV3\n"
+      "  AuthType = Clear\n"
       "  Username = \"imported-user\"\n"
       "  Password = \"secret\"\n"
       "  Port = 70000\n"
@@ -377,6 +382,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_NE(updated_text.find("LanAddress = imported-client-lan.example.com"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Protocol = NDMPV3"), std::string::npos);
+  EXPECT_NE(updated_text.find("AuthType = Clear"), std::string::npos);
   EXPECT_NE(updated_text.find("Username = \"imported-user\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);

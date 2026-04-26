@@ -1053,6 +1053,7 @@ std::string BuildDirectorClientResourceContent(
     std::string_view address,
     const std::optional<std::string>& lan_address,
     const std::optional<std::string>& protocol,
+    const std::optional<std::string>& auth_type,
     const std::optional<std::string>& username,
     std::string_view password,
     uint32_t port,
@@ -1097,6 +1098,7 @@ std::string BuildDirectorClientResourceContent(
           << "  Address = " << address << "\n";
   AppendBareosDirective(content, "LanAddress", lan_address);
   AppendBareosDirective(content, "Protocol", protocol);
+  AppendBareosDirective(content, "AuthType", auth_type);
   content << "  Password = " << QuoteBareosString(password) << "\n"
           << "  Port = " << port << "\n";
   AppendQuotedDirective(content, "Username", username);
@@ -2328,8 +2330,7 @@ std::string DefaultStorageDaemonAutochangerDescription(
          + std::string{storage_name};
 }
 
-OperationResult<std::string> NormalizeStorageNdmpAuthType(
-    std::string_view auth_type)
+OperationResult<std::string> NormalizeAuthType(std::string_view auth_type)
 {
   std::string normalized;
   normalized.reserve(auth_type.size());
@@ -2375,7 +2376,7 @@ std::string RenderDirectorClientProtocol(uint32_t protocol)
   }
 }
 
-std::string RenderStorageNdmpAuthType(uint32_t auth_type)
+std::string RenderAuthType(uint32_t auth_type)
 {
   switch (auth_type) {
     case AT_NONE:
@@ -2554,6 +2555,7 @@ struct DirectorClientWriteContext {
   std::optional<std::string> lan_address{};
   std::optional<uint32_t> port{};
   std::optional<std::string> protocol{};
+  std::optional<std::string> auth_type{};
   std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<bool> enabled{};
@@ -2961,6 +2963,14 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
                          + "' has an unsupported Protocol value."};
       }
       context.protocol = protocol;
+    }
+    if (HasMemberSource(*client, {"AuthType"})) {
+      const auto auth_type = RenderAuthType(client->AuthType);
+      if (auth_type == "Unknown") {
+        return {.error = "director client '" + std::string{client_name}
+                         + "' has an unsupported AuthType value."};
+      }
+      context.auth_type = auth_type;
     }
     if (client->username && client->username[0] != '\0') {
       context.username = std::string{client->username};
@@ -6297,7 +6307,7 @@ OperationResult<StorageNdmpWriteContext> LoadStorageNdmpWriteContext(
     if (!rendered_password) { return {.error = rendered_password.error}; }
     context.password = *rendered_password.value;
     if (HasMemberSource(*ndmp, {"AuthType"})) {
-      context.auth_type = RenderStorageNdmpAuthType(ndmp->AuthType);
+      context.auth_type = RenderAuthType(ndmp->AuthType);
     }
     if (HasMemberSource(*ndmp, {"LogLevel"})) {
       context.log_level = ndmp->LogLevel;
@@ -8630,6 +8640,12 @@ ServiceState::UpsertDirectorClientResource(
     if (!normalized_protocol) { return {.error = normalized_protocol.error}; }
     protocol = *normalized_protocol.value;
   }
+  std::optional<std::string> auth_type = context.value->auth_type;
+  if (spec.auth_type) {
+    auto normalized_auth_type = NormalizeAuthType(*spec.auth_type);
+    if (!normalized_auth_type) { return {.error = normalized_auth_type.error}; }
+    auth_type = *normalized_auth_type.value;
+  }
   const auto username = spec.username ? spec.username : context.value->username;
 
   const auto password
@@ -8739,8 +8755,8 @@ ServiceState::UpsertDirectorClientResource(
             : context.value->description.value_or(
                   DefaultDirectorClientDescription(client_name, director_name));
   const auto content = BuildDirectorClientResourceContent(
-      client_name, *address, lan_address, protocol, username, *password,
-      effective_port, enabled, passive, strict_quotas,
+      client_name, *address, lan_address, protocol, auth_type, username,
+      *password, effective_port, enabled, passive, strict_quotas,
       quota_include_failed_jobs, soft_quota, hard_quota,
       soft_quota_grace_period, file_retention, job_retention, ndmp_log_level,
       ndmp_block_size, ndmp_use_lmdb, auto_prune, tls_authenticate, tls_enable,
@@ -12107,7 +12123,7 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertStorageNdmpResource(
   const auto auth_type_raw
       = spec.auth_type ? *spec.auth_type
                        : context.value->auth_type.value_or(std::string{"None"});
-  auto auth_type = NormalizeStorageNdmpAuthType(auth_type_raw);
+  auto auth_type = NormalizeAuthType(auth_type_raw);
   if (!auth_type) { return {.error = auth_type.error}; }
   const auto log_level
       = spec.log_level ? *spec.log_level : context.value->log_level.value_or(4);

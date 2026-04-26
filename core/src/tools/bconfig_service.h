@@ -229,6 +229,7 @@ struct DirectorClientResourceSpec {
   std::optional<std::string> lan_address{};
   std::optional<uint16_t> port{};
   std::optional<std::string> protocol{};
+  std::optional<std::string> auth_type{};
   std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<bool> enabled{};
