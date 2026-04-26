@@ -442,7 +442,44 @@ struct DirectorJobRequestSpec {
   std::optional<std::string> catalog{};
   std::optional<std::string> jobdefs{};
   std::optional<std::string> where{};
+  std::optional<uint64_t> maximum_bandwidth{};
+  std::optional<uint64_t> max_run_sched_time{};
+  std::optional<uint64_t> max_run_time{};
+  std::optional<uint64_t> full_max_runtime{};
+  std::optional<uint64_t> incremental_max_runtime{};
+  std::optional<uint64_t> differential_max_runtime{};
+  std::optional<uint64_t> max_wait_time{};
+  std::optional<uint64_t> max_start_delay{};
+  std::optional<uint64_t> max_full_interval{};
+  std::optional<uint64_t> max_virtual_full_interval{};
+  std::optional<uint64_t> max_diff_interval{};
+  std::optional<bool> prefix_links{};
+  std::optional<bool> prune_jobs{};
+  std::optional<bool> prune_files{};
+  std::optional<bool> prune_volumes{};
+  std::optional<bool> purge_migration_job{};
+  std::optional<bool> spool_attributes{};
+  std::optional<bool> spool_data{};
+  std::optional<uint64_t> spool_size{};
+  std::optional<bool> rerun_failed_levels{};
+  std::optional<bool> prefer_mounted_volumes{};
+  std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<bool> reschedule_on_error{};
+  std::optional<uint64_t> reschedule_interval{};
+  std::optional<uint32_t> reschedule_times{};
   std::optional<int32_t> priority{};
+  std::optional<bool> allow_mixed_priority{};
+  std::optional<bool> accurate{};
+  std::optional<bool> allow_duplicate_jobs{};
+  std::optional<bool> allow_higher_duplicates{};
+  std::optional<bool> cancel_lower_level_duplicates{};
+  std::optional<bool> cancel_queued_duplicates{};
+  std::optional<bool> cancel_running_duplicates{};
+  std::optional<bool> save_file_history{};
+  std::optional<uint64_t> file_history_size{};
+  std::optional<uint32_t> max_concurrent_copies{};
+  std::optional<bool> always_incremental{};
+  std::optional<uint64_t> always_incremental_job_retention{};
   std::optional<bool> enabled{};
 };
 
@@ -8449,7 +8486,45 @@ http::response<http::string_body> HandleDeploymentDirectorJobPutRequest(
       .catalog = spec->catalog,
       .jobdefs = spec->jobdefs,
       .where = spec->where,
+      .maximum_bandwidth = spec->maximum_bandwidth,
+      .max_run_sched_time = spec->max_run_sched_time,
+      .max_run_time = spec->max_run_time,
+      .full_max_runtime = spec->full_max_runtime,
+      .incremental_max_runtime = spec->incremental_max_runtime,
+      .differential_max_runtime = spec->differential_max_runtime,
+      .max_wait_time = spec->max_wait_time,
+      .max_start_delay = spec->max_start_delay,
+      .max_full_interval = spec->max_full_interval,
+      .max_virtual_full_interval = spec->max_virtual_full_interval,
+      .max_diff_interval = spec->max_diff_interval,
+      .prefix_links = spec->prefix_links,
+      .prune_jobs = spec->prune_jobs,
+      .prune_files = spec->prune_files,
+      .prune_volumes = spec->prune_volumes,
+      .purge_migration_job = spec->purge_migration_job,
+      .spool_attributes = spec->spool_attributes,
+      .spool_data = spec->spool_data,
+      .spool_size = spec->spool_size,
+      .rerun_failed_levels = spec->rerun_failed_levels,
+      .prefer_mounted_volumes = spec->prefer_mounted_volumes,
+      .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
+      .reschedule_on_error = spec->reschedule_on_error,
+      .reschedule_interval = spec->reschedule_interval,
+      .reschedule_times = spec->reschedule_times,
       .priority = spec->priority,
+      .allow_mixed_priority = spec->allow_mixed_priority,
+      .accurate = spec->accurate,
+      .allow_duplicate_jobs = spec->allow_duplicate_jobs,
+      .allow_higher_duplicates = spec->allow_higher_duplicates,
+      .cancel_lower_level_duplicates = spec->cancel_lower_level_duplicates,
+      .cancel_queued_duplicates = spec->cancel_queued_duplicates,
+      .cancel_running_duplicates = spec->cancel_running_duplicates,
+      .save_file_history = spec->save_file_history,
+      .file_history_size = spec->file_history_size,
+      .max_concurrent_copies = spec->max_concurrent_copies,
+      .always_incremental = spec->always_incremental,
+      .always_incremental_job_retention
+      = spec->always_incremental_job_retention,
       .enabled = spec->enabled,
   };
   auto result = state.UpsertDirectorJobResource(deployment_id, director_name,
@@ -8552,7 +8627,45 @@ http::response<http::string_body> HandleDeploymentDirectorJobDefsPutRequest(
       .catalog = spec->catalog,
       .jobdefs = spec->jobdefs,
       .where = spec->where,
+      .maximum_bandwidth = spec->maximum_bandwidth,
+      .max_run_sched_time = spec->max_run_sched_time,
+      .max_run_time = spec->max_run_time,
+      .full_max_runtime = spec->full_max_runtime,
+      .incremental_max_runtime = spec->incremental_max_runtime,
+      .differential_max_runtime = spec->differential_max_runtime,
+      .max_wait_time = spec->max_wait_time,
+      .max_start_delay = spec->max_start_delay,
+      .max_full_interval = spec->max_full_interval,
+      .max_virtual_full_interval = spec->max_virtual_full_interval,
+      .max_diff_interval = spec->max_diff_interval,
+      .prefix_links = spec->prefix_links,
+      .prune_jobs = spec->prune_jobs,
+      .prune_files = spec->prune_files,
+      .prune_volumes = spec->prune_volumes,
+      .purge_migration_job = spec->purge_migration_job,
+      .spool_attributes = spec->spool_attributes,
+      .spool_data = spec->spool_data,
+      .spool_size = spec->spool_size,
+      .rerun_failed_levels = spec->rerun_failed_levels,
+      .prefer_mounted_volumes = spec->prefer_mounted_volumes,
+      .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
+      .reschedule_on_error = spec->reschedule_on_error,
+      .reschedule_interval = spec->reschedule_interval,
+      .reschedule_times = spec->reschedule_times,
       .priority = spec->priority,
+      .allow_mixed_priority = spec->allow_mixed_priority,
+      .accurate = spec->accurate,
+      .allow_duplicate_jobs = spec->allow_duplicate_jobs,
+      .allow_higher_duplicates = spec->allow_higher_duplicates,
+      .cancel_lower_level_duplicates = spec->cancel_lower_level_duplicates,
+      .cancel_queued_duplicates = spec->cancel_queued_duplicates,
+      .cancel_running_duplicates = spec->cancel_running_duplicates,
+      .save_file_history = spec->save_file_history,
+      .file_history_size = spec->file_history_size,
+      .max_concurrent_copies = spec->max_concurrent_copies,
+      .always_incremental = spec->always_incremental,
+      .always_incremental_job_retention
+      = spec->always_incremental_job_retention,
       .enabled = spec->enabled,
   };
   auto result = state.UpsertDirectorJobDefsResource(
@@ -11832,7 +11945,61 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   auto* catalog = json_object_get(root.get(), "catalog");
   auto* jobdefs = json_object_get(root.get(), "jobdefs");
   auto* where = json_object_get(root.get(), "where");
+  auto* maximum_bandwidth = json_object_get(root.get(), "maximum_bandwidth");
+  auto* max_run_sched_time = json_object_get(root.get(), "max_run_sched_time");
+  auto* max_run_time = json_object_get(root.get(), "max_run_time");
+  auto* full_max_runtime = json_object_get(root.get(), "full_max_runtime");
+  auto* incremental_max_runtime
+      = json_object_get(root.get(), "incremental_max_runtime");
+  auto* differential_max_runtime
+      = json_object_get(root.get(), "differential_max_runtime");
+  auto* max_wait_time = json_object_get(root.get(), "max_wait_time");
+  auto* max_start_delay = json_object_get(root.get(), "max_start_delay");
+  auto* max_full_interval = json_object_get(root.get(), "max_full_interval");
+  auto* max_virtual_full_interval
+      = json_object_get(root.get(), "max_virtual_full_interval");
+  auto* max_diff_interval = json_object_get(root.get(), "max_diff_interval");
+  auto* prefix_links = json_object_get(root.get(), "prefix_links");
+  auto* prune_jobs = json_object_get(root.get(), "prune_jobs");
+  auto* prune_files = json_object_get(root.get(), "prune_files");
+  auto* prune_volumes = json_object_get(root.get(), "prune_volumes");
+  auto* purge_migration_job
+      = json_object_get(root.get(), "purge_migration_job");
+  auto* spool_attributes = json_object_get(root.get(), "spool_attributes");
+  auto* spool_data = json_object_get(root.get(), "spool_data");
+  auto* spool_size = json_object_get(root.get(), "spool_size");
+  auto* rerun_failed_levels
+      = json_object_get(root.get(), "rerun_failed_levels");
+  auto* prefer_mounted_volumes
+      = json_object_get(root.get(), "prefer_mounted_volumes");
+  auto* maximum_concurrent_jobs
+      = json_object_get(root.get(), "maximum_concurrent_jobs");
+  auto* reschedule_on_error
+      = json_object_get(root.get(), "reschedule_on_error");
+  auto* reschedule_interval
+      = json_object_get(root.get(), "reschedule_interval");
+  auto* reschedule_times = json_object_get(root.get(), "reschedule_times");
   auto* priority = json_object_get(root.get(), "priority");
+  auto* allow_mixed_priority
+      = json_object_get(root.get(), "allow_mixed_priority");
+  auto* accurate = json_object_get(root.get(), "accurate");
+  auto* allow_duplicate_jobs
+      = json_object_get(root.get(), "allow_duplicate_jobs");
+  auto* allow_higher_duplicates
+      = json_object_get(root.get(), "allow_higher_duplicates");
+  auto* cancel_lower_level_duplicates
+      = json_object_get(root.get(), "cancel_lower_level_duplicates");
+  auto* cancel_queued_duplicates
+      = json_object_get(root.get(), "cancel_queued_duplicates");
+  auto* cancel_running_duplicates
+      = json_object_get(root.get(), "cancel_running_duplicates");
+  auto* save_file_history = json_object_get(root.get(), "save_file_history");
+  auto* file_history_size = json_object_get(root.get(), "file_history_size");
+  auto* max_concurrent_copies
+      = json_object_get(root.get(), "max_concurrent_copies");
+  auto* always_incremental = json_object_get(root.get(), "always_incremental");
+  auto* always_incremental_job_retention
+      = json_object_get(root.get(), "always_incremental_job_retention");
   auto* enabled = json_object_get(root.get(), "enabled");
 
   auto require_string = [&error](json_t* value, const char* field) -> bool {
@@ -11890,7 +12057,48 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
       || !require_string(verify_job, "verify_job")
       || !require_string(catalog, "catalog")
       || !require_string(jobdefs, "jobdefs") || !require_string(where, "where")
+      || !require_integer(maximum_bandwidth, "maximum_bandwidth")
+      || !require_integer(max_run_sched_time, "max_run_sched_time")
+      || !require_integer(max_run_time, "max_run_time")
+      || !require_integer(full_max_runtime, "full_max_runtime")
+      || !require_integer(incremental_max_runtime, "incremental_max_runtime")
+      || !require_integer(differential_max_runtime, "differential_max_runtime")
+      || !require_integer(max_wait_time, "max_wait_time")
+      || !require_integer(max_start_delay, "max_start_delay")
+      || !require_integer(max_full_interval, "max_full_interval")
+      || !require_integer(max_virtual_full_interval,
+                          "max_virtual_full_interval")
+      || !require_integer(max_diff_interval, "max_diff_interval")
+      || !require_boolean(prefix_links, "prefix_links")
+      || !require_boolean(prune_jobs, "prune_jobs")
+      || !require_boolean(prune_files, "prune_files")
+      || !require_boolean(prune_volumes, "prune_volumes")
+      || !require_boolean(purge_migration_job, "purge_migration_job")
+      || !require_boolean(spool_attributes, "spool_attributes")
+      || !require_boolean(spool_data, "spool_data")
+      || !require_integer(spool_size, "spool_size")
+      || !require_boolean(rerun_failed_levels, "rerun_failed_levels")
+      || !require_boolean(prefer_mounted_volumes, "prefer_mounted_volumes")
+      || !require_integer(maximum_concurrent_jobs, "maximum_concurrent_jobs")
+      || !require_boolean(reschedule_on_error, "reschedule_on_error")
+      || !require_integer(reschedule_interval, "reschedule_interval")
+      || !require_integer(reschedule_times, "reschedule_times")
       || !require_integer(priority, "priority")
+      || !require_boolean(allow_mixed_priority, "allow_mixed_priority")
+      || !require_boolean(accurate, "accurate")
+      || !require_boolean(allow_duplicate_jobs, "allow_duplicate_jobs")
+      || !require_boolean(allow_higher_duplicates, "allow_higher_duplicates")
+      || !require_boolean(cancel_lower_level_duplicates,
+                          "cancel_lower_level_duplicates")
+      || !require_boolean(cancel_queued_duplicates, "cancel_queued_duplicates")
+      || !require_boolean(cancel_running_duplicates,
+                          "cancel_running_duplicates")
+      || !require_boolean(save_file_history, "save_file_history")
+      || !require_integer(file_history_size, "file_history_size")
+      || !require_integer(max_concurrent_copies, "max_concurrent_copies")
+      || !require_boolean(always_incremental, "always_incremental")
+      || !require_integer(always_incremental_job_retention,
+                          "always_incremental_job_retention")
       || !require_boolean(enabled, "enabled")) {
     return std::nullopt;
   }
@@ -11904,6 +12112,29 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
       result.emplace_back(json_string_value(json_array_get(value, index)));
     }
     return result;
+  };
+  auto parse_uint64 = [&error](json_t* value, const char* field,
+                               std::optional<uint64_t>& target) {
+    if (!value || !json_is_integer(value)) { return true; }
+    const auto raw = json_integer_value(value);
+    if (raw < 0) {
+      error = std::string{"field '"} + field + "' must be non-negative.";
+      return false;
+    }
+    target = static_cast<uint64_t>(raw);
+    return true;
+  };
+  auto parse_uint32 = [&error](json_t* value, const char* field,
+                               std::optional<uint32_t>& target) {
+    if (!value || !json_is_integer(value)) { return true; }
+    const auto raw = json_integer_value(value);
+    if (raw < 0 || raw > std::numeric_limits<uint32_t>::max()) {
+      error = std::string{"field '"} + field
+              + "' must be between 0 and 4294967295.";
+      return false;
+    }
+    target = static_cast<uint32_t>(raw);
+    return true;
   };
 
   DirectorJobRequestSpec spec{};
@@ -11962,6 +12193,41 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   if (where && json_is_string(where)) {
     spec.where = std::string{json_string_value(where)};
   }
+  if (!parse_uint64(maximum_bandwidth, "maximum_bandwidth",
+                    spec.maximum_bandwidth)
+      || !parse_uint64(max_run_sched_time, "max_run_sched_time",
+                       spec.max_run_sched_time)
+      || !parse_uint64(max_run_time, "max_run_time", spec.max_run_time)
+      || !parse_uint64(full_max_runtime, "full_max_runtime",
+                       spec.full_max_runtime)
+      || !parse_uint64(incremental_max_runtime, "incremental_max_runtime",
+                       spec.incremental_max_runtime)
+      || !parse_uint64(differential_max_runtime, "differential_max_runtime",
+                       spec.differential_max_runtime)
+      || !parse_uint64(max_wait_time, "max_wait_time", spec.max_wait_time)
+      || !parse_uint64(max_start_delay, "max_start_delay", spec.max_start_delay)
+      || !parse_uint64(max_full_interval, "max_full_interval",
+                       spec.max_full_interval)
+      || !parse_uint64(max_virtual_full_interval, "max_virtual_full_interval",
+                       spec.max_virtual_full_interval)
+      || !parse_uint64(max_diff_interval, "max_diff_interval",
+                       spec.max_diff_interval)
+      || !parse_uint64(spool_size, "spool_size", spec.spool_size)
+      || !parse_uint32(maximum_concurrent_jobs, "maximum_concurrent_jobs",
+                       spec.maximum_concurrent_jobs)
+      || !parse_uint64(reschedule_interval, "reschedule_interval",
+                       spec.reschedule_interval)
+      || !parse_uint32(reschedule_times, "reschedule_times",
+                       spec.reschedule_times)
+      || !parse_uint64(file_history_size, "file_history_size",
+                       spec.file_history_size)
+      || !parse_uint32(max_concurrent_copies, "max_concurrent_copies",
+                       spec.max_concurrent_copies)
+      || !parse_uint64(always_incremental_job_retention,
+                       "always_incremental_job_retention",
+                       spec.always_incremental_job_retention)) {
+    return std::nullopt;
+  }
   if (priority && json_is_integer(priority)) {
     const auto raw = json_integer_value(priority);
     if (raw < std::numeric_limits<int32_t>::min()
@@ -11973,6 +12239,65 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   }
   if (enabled && json_is_boolean(enabled)) {
     spec.enabled = json_is_true(enabled);
+  }
+  if (prefix_links && json_is_boolean(prefix_links)) {
+    spec.prefix_links = json_is_true(prefix_links);
+  }
+  if (prune_jobs && json_is_boolean(prune_jobs)) {
+    spec.prune_jobs = json_is_true(prune_jobs);
+  }
+  if (prune_files && json_is_boolean(prune_files)) {
+    spec.prune_files = json_is_true(prune_files);
+  }
+  if (prune_volumes && json_is_boolean(prune_volumes)) {
+    spec.prune_volumes = json_is_true(prune_volumes);
+  }
+  if (purge_migration_job && json_is_boolean(purge_migration_job)) {
+    spec.purge_migration_job = json_is_true(purge_migration_job);
+  }
+  if (spool_attributes && json_is_boolean(spool_attributes)) {
+    spec.spool_attributes = json_is_true(spool_attributes);
+  }
+  if (spool_data && json_is_boolean(spool_data)) {
+    spec.spool_data = json_is_true(spool_data);
+  }
+  if (rerun_failed_levels && json_is_boolean(rerun_failed_levels)) {
+    spec.rerun_failed_levels = json_is_true(rerun_failed_levels);
+  }
+  if (prefer_mounted_volumes && json_is_boolean(prefer_mounted_volumes)) {
+    spec.prefer_mounted_volumes = json_is_true(prefer_mounted_volumes);
+  }
+  if (reschedule_on_error && json_is_boolean(reschedule_on_error)) {
+    spec.reschedule_on_error = json_is_true(reschedule_on_error);
+  }
+  if (allow_mixed_priority && json_is_boolean(allow_mixed_priority)) {
+    spec.allow_mixed_priority = json_is_true(allow_mixed_priority);
+  }
+  if (accurate && json_is_boolean(accurate)) {
+    spec.accurate = json_is_true(accurate);
+  }
+  if (allow_duplicate_jobs && json_is_boolean(allow_duplicate_jobs)) {
+    spec.allow_duplicate_jobs = json_is_true(allow_duplicate_jobs);
+  }
+  if (allow_higher_duplicates && json_is_boolean(allow_higher_duplicates)) {
+    spec.allow_higher_duplicates = json_is_true(allow_higher_duplicates);
+  }
+  if (cancel_lower_level_duplicates
+      && json_is_boolean(cancel_lower_level_duplicates)) {
+    spec.cancel_lower_level_duplicates
+        = json_is_true(cancel_lower_level_duplicates);
+  }
+  if (cancel_queued_duplicates && json_is_boolean(cancel_queued_duplicates)) {
+    spec.cancel_queued_duplicates = json_is_true(cancel_queued_duplicates);
+  }
+  if (cancel_running_duplicates && json_is_boolean(cancel_running_duplicates)) {
+    spec.cancel_running_duplicates = json_is_true(cancel_running_duplicates);
+  }
+  if (save_file_history && json_is_boolean(save_file_history)) {
+    spec.save_file_history = json_is_true(save_file_history);
+  }
+  if (always_incremental && json_is_boolean(always_incremental)) {
+    spec.always_incremental = json_is_true(always_incremental);
   }
   return spec;
 }

@@ -1063,7 +1063,44 @@ struct DirectorJobContentSpec {
   std::optional<std::string> catalog{};
   std::optional<std::string> jobdefs{};
   std::optional<std::string> where{};
+  std::optional<uint64_t> maximum_bandwidth{};
+  std::optional<uint64_t> max_run_sched_time{};
+  std::optional<uint64_t> max_run_time{};
+  std::optional<uint64_t> full_max_runtime{};
+  std::optional<uint64_t> incremental_max_runtime{};
+  std::optional<uint64_t> differential_max_runtime{};
+  std::optional<uint64_t> max_wait_time{};
+  std::optional<uint64_t> max_start_delay{};
+  std::optional<uint64_t> max_full_interval{};
+  std::optional<uint64_t> max_virtual_full_interval{};
+  std::optional<uint64_t> max_diff_interval{};
+  std::optional<bool> prefix_links{};
+  std::optional<bool> prune_jobs{};
+  std::optional<bool> prune_files{};
+  std::optional<bool> prune_volumes{};
+  std::optional<bool> purge_migration_job{};
+  std::optional<bool> spool_attributes{};
+  std::optional<bool> spool_data{};
+  std::optional<uint64_t> spool_size{};
+  std::optional<bool> rerun_failed_levels{};
+  std::optional<bool> prefer_mounted_volumes{};
+  std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<bool> reschedule_on_error{};
+  std::optional<uint64_t> reschedule_interval{};
+  std::optional<uint32_t> reschedule_times{};
   std::optional<int32_t> priority{};
+  std::optional<bool> allow_mixed_priority{};
+  std::optional<bool> accurate{};
+  std::optional<bool> allow_duplicate_jobs{};
+  std::optional<bool> allow_higher_duplicates{};
+  std::optional<bool> cancel_lower_level_duplicates{};
+  std::optional<bool> cancel_queued_duplicates{};
+  std::optional<bool> cancel_running_duplicates{};
+  std::optional<bool> save_file_history{};
+  std::optional<uint64_t> file_history_size{};
+  std::optional<uint32_t> max_concurrent_copies{};
+  std::optional<bool> always_incremental{};
+  std::optional<uint64_t> always_incremental_job_retention{};
   std::optional<bool> enabled{};
   std::vector<std::string> passthrough_entries{};
 };
@@ -1898,7 +1935,56 @@ std::string BuildDirectorJobResourceContent(std::string_view job_name,
   AppendBareosDirective(content, "Catalog", spec.catalog);
   AppendBareosDirective(content, "JobDefs", spec.jobdefs);
   AppendBareosDirective(content, "Where", spec.where);
+  AppendIntegerDirective(content, "MaximumBandwidth", spec.maximum_bandwidth);
+  AppendIntegerDirective(content, "MaxRunSchedTime", spec.max_run_sched_time);
+  AppendIntegerDirective(content, "MaxRunTime", spec.max_run_time);
+  AppendIntegerDirective(content, "FullMaxRuntime", spec.full_max_runtime);
+  AppendIntegerDirective(content, "IncrementalMaxRuntime",
+                         spec.incremental_max_runtime);
+  AppendIntegerDirective(content, "DifferentialMaxRuntime",
+                         spec.differential_max_runtime);
+  AppendIntegerDirective(content, "MaxWaitTime", spec.max_wait_time);
+  AppendIntegerDirective(content, "MaxStartDelay", spec.max_start_delay);
+  AppendIntegerDirective(content, "MaxFullInterval", spec.max_full_interval);
+  AppendIntegerDirective(content, "MaxVirtualFullInterval",
+                         spec.max_virtual_full_interval);
+  AppendIntegerDirective(content, "MaxDiffInterval", spec.max_diff_interval);
+  AppendBoolDirective(content, "PrefixLinks", spec.prefix_links);
+  AppendBoolDirective(content, "PruneJobs", spec.prune_jobs);
+  AppendBoolDirective(content, "PruneFiles", spec.prune_files);
+  AppendBoolDirective(content, "PruneVolumes", spec.prune_volumes);
+  AppendBoolDirective(content, "PurgeMigrationJob", spec.purge_migration_job);
+  AppendBoolDirective(content, "SpoolAttributes", spec.spool_attributes);
+  AppendBoolDirective(content, "SpoolData", spec.spool_data);
+  AppendIntegerDirective(content, "SpoolSize", spec.spool_size);
+  AppendBoolDirective(content, "RerunFailedLevels", spec.rerun_failed_levels);
+  AppendBoolDirective(content, "PreferMountedVolumes",
+                      spec.prefer_mounted_volumes);
+  AppendIntegerDirective(content, "MaximumConcurrentJobs",
+                         spec.maximum_concurrent_jobs);
+  AppendBoolDirective(content, "RescheduleOnError", spec.reschedule_on_error);
+  AppendIntegerDirective(content, "RescheduleInterval",
+                         spec.reschedule_interval);
+  AppendIntegerDirective(content, "RescheduleTimes", spec.reschedule_times);
   AppendIntegerDirective(content, "Priority", spec.priority);
+  AppendBoolDirective(content, "AllowMixedPriority", spec.allow_mixed_priority);
+  AppendBoolDirective(content, "Accurate", spec.accurate);
+  AppendBoolDirective(content, "AllowDuplicateJobs", spec.allow_duplicate_jobs);
+  AppendBoolDirective(content, "AllowHigherDuplicates",
+                      spec.allow_higher_duplicates);
+  AppendBoolDirective(content, "CancelLowerLevelDuplicates",
+                      spec.cancel_lower_level_duplicates);
+  AppendBoolDirective(content, "CancelQueuedDuplicates",
+                      spec.cancel_queued_duplicates);
+  AppendBoolDirective(content, "CancelRunningDuplicates",
+                      spec.cancel_running_duplicates);
+  AppendBoolDirective(content, "SaveFileHistory", spec.save_file_history);
+  AppendIntegerDirective(content, "FileHistorySize", spec.file_history_size);
+  AppendIntegerDirective(content, "MaxConcurrentCopies",
+                         spec.max_concurrent_copies);
+  AppendBoolDirective(content, "AlwaysIncremental", spec.always_incremental);
+  AppendIntegerDirective(content, "AlwaysIncrementalJobRetention",
+                         spec.always_incremental_job_retention);
   AppendBoolDirective(content, "Enabled", spec.enabled);
   for (const auto& entry : spec.passthrough_entries) {
     content << entry;
@@ -1936,7 +2022,56 @@ std::string BuildDirectorJobDefsResourceContent(
   AppendBareosDirective(content, "Catalog", spec.catalog);
   AppendBareosDirective(content, "JobDefs", spec.jobdefs);
   AppendBareosDirective(content, "Where", spec.where);
+  AppendIntegerDirective(content, "MaximumBandwidth", spec.maximum_bandwidth);
+  AppendIntegerDirective(content, "MaxRunSchedTime", spec.max_run_sched_time);
+  AppendIntegerDirective(content, "MaxRunTime", spec.max_run_time);
+  AppendIntegerDirective(content, "FullMaxRuntime", spec.full_max_runtime);
+  AppendIntegerDirective(content, "IncrementalMaxRuntime",
+                         spec.incremental_max_runtime);
+  AppendIntegerDirective(content, "DifferentialMaxRuntime",
+                         spec.differential_max_runtime);
+  AppendIntegerDirective(content, "MaxWaitTime", spec.max_wait_time);
+  AppendIntegerDirective(content, "MaxStartDelay", spec.max_start_delay);
+  AppendIntegerDirective(content, "MaxFullInterval", spec.max_full_interval);
+  AppendIntegerDirective(content, "MaxVirtualFullInterval",
+                         spec.max_virtual_full_interval);
+  AppendIntegerDirective(content, "MaxDiffInterval", spec.max_diff_interval);
+  AppendBoolDirective(content, "PrefixLinks", spec.prefix_links);
+  AppendBoolDirective(content, "PruneJobs", spec.prune_jobs);
+  AppendBoolDirective(content, "PruneFiles", spec.prune_files);
+  AppendBoolDirective(content, "PruneVolumes", spec.prune_volumes);
+  AppendBoolDirective(content, "PurgeMigrationJob", spec.purge_migration_job);
+  AppendBoolDirective(content, "SpoolAttributes", spec.spool_attributes);
+  AppendBoolDirective(content, "SpoolData", spec.spool_data);
+  AppendIntegerDirective(content, "SpoolSize", spec.spool_size);
+  AppendBoolDirective(content, "RerunFailedLevels", spec.rerun_failed_levels);
+  AppendBoolDirective(content, "PreferMountedVolumes",
+                      spec.prefer_mounted_volumes);
+  AppendIntegerDirective(content, "MaximumConcurrentJobs",
+                         spec.maximum_concurrent_jobs);
+  AppendBoolDirective(content, "RescheduleOnError", spec.reschedule_on_error);
+  AppendIntegerDirective(content, "RescheduleInterval",
+                         spec.reschedule_interval);
+  AppendIntegerDirective(content, "RescheduleTimes", spec.reschedule_times);
   AppendIntegerDirective(content, "Priority", spec.priority);
+  AppendBoolDirective(content, "AllowMixedPriority", spec.allow_mixed_priority);
+  AppendBoolDirective(content, "Accurate", spec.accurate);
+  AppendBoolDirective(content, "AllowDuplicateJobs", spec.allow_duplicate_jobs);
+  AppendBoolDirective(content, "AllowHigherDuplicates",
+                      spec.allow_higher_duplicates);
+  AppendBoolDirective(content, "CancelLowerLevelDuplicates",
+                      spec.cancel_lower_level_duplicates);
+  AppendBoolDirective(content, "CancelQueuedDuplicates",
+                      spec.cancel_queued_duplicates);
+  AppendBoolDirective(content, "CancelRunningDuplicates",
+                      spec.cancel_running_duplicates);
+  AppendBoolDirective(content, "SaveFileHistory", spec.save_file_history);
+  AppendIntegerDirective(content, "FileHistorySize", spec.file_history_size);
+  AppendIntegerDirective(content, "MaxConcurrentCopies",
+                         spec.max_concurrent_copies);
+  AppendBoolDirective(content, "AlwaysIncremental", spec.always_incremental);
+  AppendIntegerDirective(content, "AlwaysIncrementalJobRetention",
+                         spec.always_incremental_job_retention);
   AppendBoolDirective(content, "Enabled", spec.enabled);
   for (const auto& entry : spec.passthrough_entries) {
     content << entry;
@@ -6432,7 +6567,144 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
     if (job->RestoreWhere && job->RestoreWhere[0] != '\0') {
       context.content.where = std::string{job->RestoreWhere};
     }
+    if (HasMemberSource(*job, {"MaximumBandwidth"})) {
+      if (job->max_bandwidth < 0) {
+        return {.error = "director job '" + std::string{job_name}
+                         + "' has negative MaximumBandwidth."};
+      }
+      context.content.maximum_bandwidth = job->max_bandwidth;
+    }
+    if (HasMemberSource(*job, {"MaxRunSchedTime"})) {
+      context.content.max_run_sched_time = job->MaxRunSchedTime;
+    }
+    if (HasMemberSource(*job, {"MaxRunTime"})) {
+      context.content.max_run_time = job->MaxRunTime;
+    }
+    if (HasMemberSource(*job, {"FullMaxRuntime"})) {
+      context.content.full_max_runtime = job->FullMaxRunTime;
+    }
+    if (HasMemberSource(*job, {"IncrementalMaxRuntime"})) {
+      context.content.incremental_max_runtime = job->IncMaxRunTime;
+    }
+    if (HasMemberSource(*job, {"DifferentialMaxRuntime"})) {
+      context.content.differential_max_runtime = job->DiffMaxRunTime;
+    }
+    if (HasMemberSource(*job, {"MaxWaitTime"})) {
+      context.content.max_wait_time = job->MaxWaitTime;
+    }
+    if (HasMemberSource(*job, {"MaxStartDelay"})) {
+      context.content.max_start_delay = job->MaxStartDelay;
+    }
+    if (HasMemberSource(*job, {"MaxFullInterval"})) {
+      context.content.max_full_interval = job->MaxFullInterval;
+    }
+    if (HasMemberSource(*job, {"MaxVirtualFullInterval"})) {
+      context.content.max_virtual_full_interval = job->MaxVFullInterval;
+    }
+    if (HasMemberSource(*job, {"MaxDiffInterval"})) {
+      context.content.max_diff_interval = job->MaxDiffInterval;
+    }
+    if (HasMemberSource(*job, {"PrefixLinks"})) {
+      context.content.prefix_links = job->PrefixLinks;
+    }
+    if (HasMemberSource(*job, {"PruneJobs"})) {
+      context.content.prune_jobs = job->PruneJobs;
+    }
+    if (HasMemberSource(*job, {"PruneFiles"})) {
+      context.content.prune_files = job->PruneFiles;
+    }
+    if (HasMemberSource(*job, {"PruneVolumes"})) {
+      context.content.prune_volumes = job->PruneVolumes;
+    }
+    if (HasMemberSource(*job, {"PurgeMigrationJob"})) {
+      context.content.purge_migration_job = job->PurgeMigrateJob;
+    }
+    if (HasMemberSource(*job, {"SpoolAttributes"})) {
+      context.content.spool_attributes = job->SpoolAttributes;
+    }
+    if (HasMemberSource(*job, {"SpoolData"})) {
+      context.content.spool_data = job->spool_data;
+    }
+    if (HasMemberSource(*job, {"SpoolSize"})) {
+      if (job->spool_size < 0) {
+        return {.error = "director job '" + std::string{job_name}
+                         + "' has negative SpoolSize."};
+      }
+      context.content.spool_size = job->spool_size;
+    }
+    if (HasMemberSource(*job, {"RerunFailedLevels"})) {
+      context.content.rerun_failed_levels = job->rerun_failed_levels;
+    }
+    if (HasMemberSource(*job, {"PreferMountedVolumes"})) {
+      context.content.prefer_mounted_volumes = job->PreferMountedVolumes;
+    }
+    if (HasMemberSource(*job, {"MaximumConcurrentJobs"})) {
+      if (job->MaxConcurrentJobs < 0) {
+        return {.error = "director job '" + std::string{job_name}
+                         + "' has negative MaximumConcurrentJobs."};
+      }
+      context.content.maximum_concurrent_jobs = job->MaxConcurrentJobs;
+    }
+    if (HasMemberSource(*job, {"RescheduleOnError"})) {
+      context.content.reschedule_on_error = job->RescheduleOnError;
+    }
+    if (HasMemberSource(*job, {"RescheduleInterval"})) {
+      context.content.reschedule_interval = job->RescheduleInterval;
+    }
+    if (HasMemberSource(*job, {"RescheduleTimes"})) {
+      if (job->RescheduleTimes < 0) {
+        return {.error = "director job '" + std::string{job_name}
+                         + "' has negative RescheduleTimes."};
+      }
+      context.content.reschedule_times = job->RescheduleTimes;
+    }
     if (job->Priority != 0) { context.content.priority = job->Priority; }
+    if (HasMemberSource(*job, {"AllowMixedPriority"})) {
+      context.content.allow_mixed_priority = job->allow_mixed_priority;
+    }
+    if (HasMemberSource(*job, {"Accurate"})) {
+      context.content.accurate = job->accurate;
+    }
+    if (HasMemberSource(*job, {"AllowDuplicateJobs"})) {
+      context.content.allow_duplicate_jobs = job->AllowDuplicateJobs;
+    }
+    if (HasMemberSource(*job, {"AllowHigherDuplicates"})) {
+      context.content.allow_higher_duplicates = job->AllowHigherDuplicates;
+    }
+    if (HasMemberSource(*job, {"CancelLowerLevelDuplicates"})) {
+      context.content.cancel_lower_level_duplicates
+          = job->CancelLowerLevelDuplicates;
+    }
+    if (HasMemberSource(*job, {"CancelQueuedDuplicates"})) {
+      context.content.cancel_queued_duplicates = job->CancelQueuedDuplicates;
+    }
+    if (HasMemberSource(*job, {"CancelRunningDuplicates"})) {
+      context.content.cancel_running_duplicates = job->CancelRunningDuplicates;
+    }
+    if (HasMemberSource(*job, {"SaveFileHistory"})) {
+      context.content.save_file_history = job->SaveFileHist;
+    }
+    if (HasMemberSource(*job, {"FileHistorySize"})) {
+      if (job->FileHistSize < 0) {
+        return {.error = "director job '" + std::string{job_name}
+                         + "' has negative FileHistorySize."};
+      }
+      context.content.file_history_size = job->FileHistSize;
+    }
+    if (HasMemberSource(*job, {"MaxConcurrentCopies"})) {
+      if (job->MaxConcurrentCopies < 0) {
+        return {.error = "director job '" + std::string{job_name}
+                         + "' has negative MaxConcurrentCopies."};
+      }
+      context.content.max_concurrent_copies = job->MaxConcurrentCopies;
+    }
+    if (HasMemberSource(*job, {"AlwaysIncremental"})) {
+      context.content.always_incremental = job->AlwaysIncremental;
+    }
+    if (HasMemberSource(*job, {"AlwaysIncrementalJobRetention"})) {
+      context.content.always_incremental_job_retention
+          = job->AlwaysIncrementalJobRetention;
+    }
     context.content.enabled = job->enabled;
 
     auto source = job->GetDefinitionSource();
@@ -6466,7 +6738,44 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
         "Catalog",
         "JobDefs",
         "Where",
+        "MaximumBandwidth",
+        "MaxRunSchedTime",
+        "MaxRunTime",
+        "FullMaxRuntime",
+        "IncrementalMaxRuntime",
+        "DifferentialMaxRuntime",
+        "MaxWaitTime",
+        "MaxStartDelay",
+        "MaxFullInterval",
+        "MaxVirtualFullInterval",
+        "MaxDiffInterval",
+        "PrefixLinks",
+        "PruneJobs",
+        "PruneFiles",
+        "PruneVolumes",
+        "PurgeMigrationJob",
+        "SpoolAttributes",
+        "SpoolData",
+        "SpoolSize",
+        "RerunFailedLevels",
+        "PreferMountedVolumes",
+        "MaximumConcurrentJobs",
+        "RescheduleOnError",
+        "RescheduleInterval",
+        "RescheduleTimes",
         "Priority",
+        "AllowMixedPriority",
+        "Accurate",
+        "AllowDuplicateJobs",
+        "AllowHigherDuplicates",
+        "CancelLowerLevelDuplicates",
+        "CancelQueuedDuplicates",
+        "CancelRunningDuplicates",
+        "SaveFileHistory",
+        "FileHistorySize",
+        "MaxConcurrentCopies",
+        "AlwaysIncremental",
+        "AlwaysIncrementalJobRetention",
         "Enabled"};
     auto passthrough
         = context.is_standalone_file
@@ -6552,8 +6861,147 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
     if (jobdefs->RestoreWhere && jobdefs->RestoreWhere[0] != '\0') {
       context.content.where = std::string{jobdefs->RestoreWhere};
     }
+    if (HasMemberSource(*jobdefs, {"MaximumBandwidth"})) {
+      if (jobdefs->max_bandwidth < 0) {
+        return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                         + "' has negative MaximumBandwidth."};
+      }
+      context.content.maximum_bandwidth = jobdefs->max_bandwidth;
+    }
+    if (HasMemberSource(*jobdefs, {"MaxRunSchedTime"})) {
+      context.content.max_run_sched_time = jobdefs->MaxRunSchedTime;
+    }
+    if (HasMemberSource(*jobdefs, {"MaxRunTime"})) {
+      context.content.max_run_time = jobdefs->MaxRunTime;
+    }
+    if (HasMemberSource(*jobdefs, {"FullMaxRuntime"})) {
+      context.content.full_max_runtime = jobdefs->FullMaxRunTime;
+    }
+    if (HasMemberSource(*jobdefs, {"IncrementalMaxRuntime"})) {
+      context.content.incremental_max_runtime = jobdefs->IncMaxRunTime;
+    }
+    if (HasMemberSource(*jobdefs, {"DifferentialMaxRuntime"})) {
+      context.content.differential_max_runtime = jobdefs->DiffMaxRunTime;
+    }
+    if (HasMemberSource(*jobdefs, {"MaxWaitTime"})) {
+      context.content.max_wait_time = jobdefs->MaxWaitTime;
+    }
+    if (HasMemberSource(*jobdefs, {"MaxStartDelay"})) {
+      context.content.max_start_delay = jobdefs->MaxStartDelay;
+    }
+    if (HasMemberSource(*jobdefs, {"MaxFullInterval"})) {
+      context.content.max_full_interval = jobdefs->MaxFullInterval;
+    }
+    if (HasMemberSource(*jobdefs, {"MaxVirtualFullInterval"})) {
+      context.content.max_virtual_full_interval = jobdefs->MaxVFullInterval;
+    }
+    if (HasMemberSource(*jobdefs, {"MaxDiffInterval"})) {
+      context.content.max_diff_interval = jobdefs->MaxDiffInterval;
+    }
+    if (HasMemberSource(*jobdefs, {"PrefixLinks"})) {
+      context.content.prefix_links = jobdefs->PrefixLinks;
+    }
+    if (HasMemberSource(*jobdefs, {"PruneJobs"})) {
+      context.content.prune_jobs = jobdefs->PruneJobs;
+    }
+    if (HasMemberSource(*jobdefs, {"PruneFiles"})) {
+      context.content.prune_files = jobdefs->PruneFiles;
+    }
+    if (HasMemberSource(*jobdefs, {"PruneVolumes"})) {
+      context.content.prune_volumes = jobdefs->PruneVolumes;
+    }
+    if (HasMemberSource(*jobdefs, {"PurgeMigrationJob"})) {
+      context.content.purge_migration_job = jobdefs->PurgeMigrateJob;
+    }
+    if (HasMemberSource(*jobdefs, {"SpoolAttributes"})) {
+      context.content.spool_attributes = jobdefs->SpoolAttributes;
+    }
+    if (HasMemberSource(*jobdefs, {"SpoolData"})) {
+      context.content.spool_data = jobdefs->spool_data;
+    }
+    if (HasMemberSource(*jobdefs, {"SpoolSize"})) {
+      if (jobdefs->spool_size < 0) {
+        return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                         + "' has negative SpoolSize."};
+      }
+      context.content.spool_size = jobdefs->spool_size;
+    }
+    if (HasMemberSource(*jobdefs, {"RerunFailedLevels"})) {
+      context.content.rerun_failed_levels = jobdefs->rerun_failed_levels;
+    }
+    if (HasMemberSource(*jobdefs, {"PreferMountedVolumes"})) {
+      context.content.prefer_mounted_volumes = jobdefs->PreferMountedVolumes;
+    }
+    if (HasMemberSource(*jobdefs, {"MaximumConcurrentJobs"})) {
+      if (jobdefs->MaxConcurrentJobs < 0) {
+        return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                         + "' has negative MaximumConcurrentJobs."};
+      }
+      context.content.maximum_concurrent_jobs = jobdefs->MaxConcurrentJobs;
+    }
+    if (HasMemberSource(*jobdefs, {"RescheduleOnError"})) {
+      context.content.reschedule_on_error = jobdefs->RescheduleOnError;
+    }
+    if (HasMemberSource(*jobdefs, {"RescheduleInterval"})) {
+      context.content.reschedule_interval = jobdefs->RescheduleInterval;
+    }
+    if (HasMemberSource(*jobdefs, {"RescheduleTimes"})) {
+      if (jobdefs->RescheduleTimes < 0) {
+        return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                         + "' has negative RescheduleTimes."};
+      }
+      context.content.reschedule_times = jobdefs->RescheduleTimes;
+    }
     if (jobdefs->Priority != 0) {
       context.content.priority = jobdefs->Priority;
+    }
+    if (HasMemberSource(*jobdefs, {"AllowMixedPriority"})) {
+      context.content.allow_mixed_priority = jobdefs->allow_mixed_priority;
+    }
+    if (HasMemberSource(*jobdefs, {"Accurate"})) {
+      context.content.accurate = jobdefs->accurate;
+    }
+    if (HasMemberSource(*jobdefs, {"AllowDuplicateJobs"})) {
+      context.content.allow_duplicate_jobs = jobdefs->AllowDuplicateJobs;
+    }
+    if (HasMemberSource(*jobdefs, {"AllowHigherDuplicates"})) {
+      context.content.allow_higher_duplicates = jobdefs->AllowHigherDuplicates;
+    }
+    if (HasMemberSource(*jobdefs, {"CancelLowerLevelDuplicates"})) {
+      context.content.cancel_lower_level_duplicates
+          = jobdefs->CancelLowerLevelDuplicates;
+    }
+    if (HasMemberSource(*jobdefs, {"CancelQueuedDuplicates"})) {
+      context.content.cancel_queued_duplicates
+          = jobdefs->CancelQueuedDuplicates;
+    }
+    if (HasMemberSource(*jobdefs, {"CancelRunningDuplicates"})) {
+      context.content.cancel_running_duplicates
+          = jobdefs->CancelRunningDuplicates;
+    }
+    if (HasMemberSource(*jobdefs, {"SaveFileHistory"})) {
+      context.content.save_file_history = jobdefs->SaveFileHist;
+    }
+    if (HasMemberSource(*jobdefs, {"FileHistorySize"})) {
+      if (jobdefs->FileHistSize < 0) {
+        return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                         + "' has negative FileHistorySize."};
+      }
+      context.content.file_history_size = jobdefs->FileHistSize;
+    }
+    if (HasMemberSource(*jobdefs, {"MaxConcurrentCopies"})) {
+      if (jobdefs->MaxConcurrentCopies < 0) {
+        return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                         + "' has negative MaxConcurrentCopies."};
+      }
+      context.content.max_concurrent_copies = jobdefs->MaxConcurrentCopies;
+    }
+    if (HasMemberSource(*jobdefs, {"AlwaysIncremental"})) {
+      context.content.always_incremental = jobdefs->AlwaysIncremental;
+    }
+    if (HasMemberSource(*jobdefs, {"AlwaysIncrementalJobRetention"})) {
+      context.content.always_incremental_job_retention
+          = jobdefs->AlwaysIncrementalJobRetention;
     }
     context.content.enabled = jobdefs->enabled;
 
@@ -6588,7 +7036,44 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
         "Catalog",
         "JobDefs",
         "Where",
+        "MaximumBandwidth",
+        "MaxRunSchedTime",
+        "MaxRunTime",
+        "FullMaxRuntime",
+        "IncrementalMaxRuntime",
+        "DifferentialMaxRuntime",
+        "MaxWaitTime",
+        "MaxStartDelay",
+        "MaxFullInterval",
+        "MaxVirtualFullInterval",
+        "MaxDiffInterval",
+        "PrefixLinks",
+        "PruneJobs",
+        "PruneFiles",
+        "PruneVolumes",
+        "PurgeMigrationJob",
+        "SpoolAttributes",
+        "SpoolData",
+        "SpoolSize",
+        "RerunFailedLevels",
+        "PreferMountedVolumes",
+        "MaximumConcurrentJobs",
+        "RescheduleOnError",
+        "RescheduleInterval",
+        "RescheduleTimes",
         "Priority",
+        "AllowMixedPriority",
+        "Accurate",
+        "AllowDuplicateJobs",
+        "AllowHigherDuplicates",
+        "CancelLowerLevelDuplicates",
+        "CancelQueuedDuplicates",
+        "CancelRunningDuplicates",
+        "SaveFileHistory",
+        "FileHistorySize",
+        "MaxConcurrentCopies",
+        "AlwaysIncremental",
+        "AlwaysIncrementalJobRetention",
         "Enabled"};
     auto passthrough
         = context.is_standalone_file
@@ -12074,7 +12559,99 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertDirectorJobResource(
   if (spec.catalog) { content.catalog = *spec.catalog; }
   if (spec.jobdefs) { content.jobdefs = *spec.jobdefs; }
   if (spec.where) { content.where = *spec.where; }
+  if (spec.maximum_bandwidth) {
+    content.maximum_bandwidth = *spec.maximum_bandwidth;
+  }
+  if (spec.max_run_sched_time) {
+    content.max_run_sched_time = *spec.max_run_sched_time;
+  }
+  if (spec.max_run_time) { content.max_run_time = *spec.max_run_time; }
+  if (spec.full_max_runtime) {
+    content.full_max_runtime = *spec.full_max_runtime;
+  }
+  if (spec.incremental_max_runtime) {
+    content.incremental_max_runtime = *spec.incremental_max_runtime;
+  }
+  if (spec.differential_max_runtime) {
+    content.differential_max_runtime = *spec.differential_max_runtime;
+  }
+  if (spec.max_wait_time) { content.max_wait_time = *spec.max_wait_time; }
+  if (spec.max_start_delay) { content.max_start_delay = *spec.max_start_delay; }
+  if (spec.max_full_interval) {
+    content.max_full_interval = *spec.max_full_interval;
+  }
+  if (spec.max_virtual_full_interval) {
+    content.max_virtual_full_interval = *spec.max_virtual_full_interval;
+  }
+  if (spec.max_diff_interval) {
+    content.max_diff_interval = *spec.max_diff_interval;
+  }
+  if (spec.prefix_links) { content.prefix_links = *spec.prefix_links; }
+  if (spec.prune_jobs) { content.prune_jobs = *spec.prune_jobs; }
+  if (spec.prune_files) { content.prune_files = *spec.prune_files; }
+  if (spec.prune_volumes) { content.prune_volumes = *spec.prune_volumes; }
+  if (spec.purge_migration_job) {
+    content.purge_migration_job = *spec.purge_migration_job;
+  }
+  if (spec.spool_attributes) {
+    content.spool_attributes = *spec.spool_attributes;
+  }
+  if (spec.spool_data) { content.spool_data = *spec.spool_data; }
+  if (spec.spool_size) { content.spool_size = *spec.spool_size; }
+  if (spec.rerun_failed_levels) {
+    content.rerun_failed_levels = *spec.rerun_failed_levels;
+  }
+  if (spec.prefer_mounted_volumes) {
+    content.prefer_mounted_volumes = *spec.prefer_mounted_volumes;
+  }
+  if (spec.maximum_concurrent_jobs) {
+    content.maximum_concurrent_jobs = *spec.maximum_concurrent_jobs;
+  }
+  if (spec.reschedule_on_error) {
+    content.reschedule_on_error = *spec.reschedule_on_error;
+  }
+  if (spec.reschedule_interval) {
+    content.reschedule_interval = *spec.reschedule_interval;
+  }
+  if (spec.reschedule_times) {
+    content.reschedule_times = *spec.reschedule_times;
+  }
   if (spec.priority) { content.priority = *spec.priority; }
+  if (spec.allow_mixed_priority) {
+    content.allow_mixed_priority = *spec.allow_mixed_priority;
+  }
+  if (spec.accurate) { content.accurate = *spec.accurate; }
+  if (spec.allow_duplicate_jobs) {
+    content.allow_duplicate_jobs = *spec.allow_duplicate_jobs;
+  }
+  if (spec.allow_higher_duplicates) {
+    content.allow_higher_duplicates = *spec.allow_higher_duplicates;
+  }
+  if (spec.cancel_lower_level_duplicates) {
+    content.cancel_lower_level_duplicates = *spec.cancel_lower_level_duplicates;
+  }
+  if (spec.cancel_queued_duplicates) {
+    content.cancel_queued_duplicates = *spec.cancel_queued_duplicates;
+  }
+  if (spec.cancel_running_duplicates) {
+    content.cancel_running_duplicates = *spec.cancel_running_duplicates;
+  }
+  if (spec.save_file_history) {
+    content.save_file_history = *spec.save_file_history;
+  }
+  if (spec.file_history_size) {
+    content.file_history_size = *spec.file_history_size;
+  }
+  if (spec.max_concurrent_copies) {
+    content.max_concurrent_copies = *spec.max_concurrent_copies;
+  }
+  if (spec.always_incremental) {
+    content.always_incremental = *spec.always_incremental;
+  }
+  if (spec.always_incremental_job_retention) {
+    content.always_incremental_job_retention
+        = *spec.always_incremental_job_retention;
+  }
   if (spec.enabled) { content.enabled = *spec.enabled; }
 
   const auto rendered = BuildDirectorJobResourceContent(job_name, content);
@@ -12258,7 +12835,99 @@ ServiceState::UpsertDirectorJobDefsResource(
   if (spec.catalog) { content.catalog = *spec.catalog; }
   if (spec.jobdefs) { content.jobdefs = *spec.jobdefs; }
   if (spec.where) { content.where = *spec.where; }
+  if (spec.maximum_bandwidth) {
+    content.maximum_bandwidth = *spec.maximum_bandwidth;
+  }
+  if (spec.max_run_sched_time) {
+    content.max_run_sched_time = *spec.max_run_sched_time;
+  }
+  if (spec.max_run_time) { content.max_run_time = *spec.max_run_time; }
+  if (spec.full_max_runtime) {
+    content.full_max_runtime = *spec.full_max_runtime;
+  }
+  if (spec.incremental_max_runtime) {
+    content.incremental_max_runtime = *spec.incremental_max_runtime;
+  }
+  if (spec.differential_max_runtime) {
+    content.differential_max_runtime = *spec.differential_max_runtime;
+  }
+  if (spec.max_wait_time) { content.max_wait_time = *spec.max_wait_time; }
+  if (spec.max_start_delay) { content.max_start_delay = *spec.max_start_delay; }
+  if (spec.max_full_interval) {
+    content.max_full_interval = *spec.max_full_interval;
+  }
+  if (spec.max_virtual_full_interval) {
+    content.max_virtual_full_interval = *spec.max_virtual_full_interval;
+  }
+  if (spec.max_diff_interval) {
+    content.max_diff_interval = *spec.max_diff_interval;
+  }
+  if (spec.prefix_links) { content.prefix_links = *spec.prefix_links; }
+  if (spec.prune_jobs) { content.prune_jobs = *spec.prune_jobs; }
+  if (spec.prune_files) { content.prune_files = *spec.prune_files; }
+  if (spec.prune_volumes) { content.prune_volumes = *spec.prune_volumes; }
+  if (spec.purge_migration_job) {
+    content.purge_migration_job = *spec.purge_migration_job;
+  }
+  if (spec.spool_attributes) {
+    content.spool_attributes = *spec.spool_attributes;
+  }
+  if (spec.spool_data) { content.spool_data = *spec.spool_data; }
+  if (spec.spool_size) { content.spool_size = *spec.spool_size; }
+  if (spec.rerun_failed_levels) {
+    content.rerun_failed_levels = *spec.rerun_failed_levels;
+  }
+  if (spec.prefer_mounted_volumes) {
+    content.prefer_mounted_volumes = *spec.prefer_mounted_volumes;
+  }
+  if (spec.maximum_concurrent_jobs) {
+    content.maximum_concurrent_jobs = *spec.maximum_concurrent_jobs;
+  }
+  if (spec.reschedule_on_error) {
+    content.reschedule_on_error = *spec.reschedule_on_error;
+  }
+  if (spec.reschedule_interval) {
+    content.reschedule_interval = *spec.reschedule_interval;
+  }
+  if (spec.reschedule_times) {
+    content.reschedule_times = *spec.reschedule_times;
+  }
   if (spec.priority) { content.priority = *spec.priority; }
+  if (spec.allow_mixed_priority) {
+    content.allow_mixed_priority = *spec.allow_mixed_priority;
+  }
+  if (spec.accurate) { content.accurate = *spec.accurate; }
+  if (spec.allow_duplicate_jobs) {
+    content.allow_duplicate_jobs = *spec.allow_duplicate_jobs;
+  }
+  if (spec.allow_higher_duplicates) {
+    content.allow_higher_duplicates = *spec.allow_higher_duplicates;
+  }
+  if (spec.cancel_lower_level_duplicates) {
+    content.cancel_lower_level_duplicates = *spec.cancel_lower_level_duplicates;
+  }
+  if (spec.cancel_queued_duplicates) {
+    content.cancel_queued_duplicates = *spec.cancel_queued_duplicates;
+  }
+  if (spec.cancel_running_duplicates) {
+    content.cancel_running_duplicates = *spec.cancel_running_duplicates;
+  }
+  if (spec.save_file_history) {
+    content.save_file_history = *spec.save_file_history;
+  }
+  if (spec.file_history_size) {
+    content.file_history_size = *spec.file_history_size;
+  }
+  if (spec.max_concurrent_copies) {
+    content.max_concurrent_copies = *spec.max_concurrent_copies;
+  }
+  if (spec.always_incremental) {
+    content.always_incremental = *spec.always_incremental;
+  }
+  if (spec.always_incremental_job_retention) {
+    content.always_incremental_job_retention
+        = *spec.always_incremental_job_retention;
+  }
   if (spec.enabled) { content.enabled = *spec.enabled; }
 
   const auto rendered

@@ -1947,6 +1947,27 @@ TEST(BconfigService, UpsertsDirectorJobResources)
       {.description = std::string{"Managed job"},
        .client = std::string{"bareos-fd"},
        .jobdefs = std::string{"DefaultJob"},
+       .maximum_bandwidth = 12345,
+       .max_run_sched_time = 60,
+       .max_run_time = 120,
+       .max_full_interval = 3600,
+       .prefix_links = true,
+       .prune_jobs = true,
+       .spool_attributes = true,
+       .spool_data = false,
+       .spool_size = 45678,
+       .maximum_concurrent_jobs = 3,
+       .reschedule_on_error = true,
+       .reschedule_interval = 300,
+       .reschedule_times = 4,
+       .allow_mixed_priority = true,
+       .accurate = true,
+       .allow_duplicate_jobs = false,
+       .save_file_history = true,
+       .file_history_size = 98765,
+       .max_concurrent_copies = 5,
+       .always_incremental = true,
+       .always_incremental_job_retention = 7200,
        .enabled = true});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-dir");
@@ -1959,7 +1980,59 @@ TEST(BconfigService, UpsertsDirectorJobResources)
             std::string::npos);
   EXPECT_NE(created_text.find("JobDefs = DefaultJob"), std::string::npos);
   EXPECT_NE(created_text.find("Client = bareos-fd"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumBandwidth = 12345"), std::string::npos);
+  EXPECT_NE(created_text.find("MaxRunSchedTime = 60"), std::string::npos);
+  EXPECT_NE(created_text.find("MaxRunTime = 120"), std::string::npos);
+  EXPECT_NE(created_text.find("MaxFullInterval = 3600"), std::string::npos);
+  EXPECT_NE(created_text.find("PrefixLinks = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("PruneJobs = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("SpoolAttributes = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("SpoolData = no"), std::string::npos);
+  EXPECT_NE(created_text.find("SpoolSize = 45678"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumConcurrentJobs = 3"), std::string::npos);
+  EXPECT_NE(created_text.find("RescheduleOnError = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("RescheduleInterval = 300"), std::string::npos);
+  EXPECT_NE(created_text.find("RescheduleTimes = 4"), std::string::npos);
+  EXPECT_NE(created_text.find("AllowMixedPriority = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("Accurate = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("AllowDuplicateJobs = no"), std::string::npos);
+  EXPECT_NE(created_text.find("SaveFileHistory = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("FileHistorySize = 98765"), std::string::npos);
+  EXPECT_NE(created_text.find("MaxConcurrentCopies = 5"), std::string::npos);
+  EXPECT_NE(created_text.find("AlwaysIncremental = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("AlwaysIncrementalJobRetention = 7200"),
+            std::string::npos);
   EXPECT_NE(created_text.find("Enabled = yes"), std::string::npos);
+
+  const auto backup_catalog_path
+      = created.value->path / "bareos-dir.d/job/BackupCatalog.conf";
+  auto backup_catalog_text = ReadTextFile(backup_catalog_path);
+  const std::string backup_catalog_insertion
+      = "  MaximumBandwidth = 23456\n"
+        "  MaxRunSchedTime = 90\n"
+        "  MaxRunTime = 180\n"
+        "  MaxFullInterval = 5400\n"
+        "  PrefixLinks = yes\n"
+        "  PruneJobs = yes\n"
+        "  SpoolAttributes = yes\n"
+        "  SpoolData = no\n"
+        "  SpoolSize = 65432\n"
+        "  MaximumConcurrentJobs = 6\n"
+        "  RescheduleOnError = yes\n"
+        "  RescheduleInterval = 600\n"
+        "  RescheduleTimes = 7\n"
+        "  AllowMixedPriority = yes\n"
+        "  Accurate = yes\n"
+        "  AllowDuplicateJobs = no\n"
+        "  SaveFileHistory = yes\n"
+        "  FileHistorySize = 87654\n"
+        "  MaxConcurrentCopies = 8\n"
+        "  AlwaysIncremental = yes\n"
+        "  AlwaysIncrementalJobRetention = 14400\n";
+  auto backup_catalog_brace = backup_catalog_text.rfind("}\n");
+  ASSERT_NE(backup_catalog_brace, std::string::npos);
+  backup_catalog_text.insert(backup_catalog_brace, backup_catalog_insertion);
+  WriteTextFile(backup_catalog_path, backup_catalog_text);
 
   auto updated = state.UpsertDirectorJobResource(
       "prod", "bareos-dir", "BackupCatalog",
@@ -1978,6 +2051,28 @@ TEST(BconfigService, UpsertsDirectorJobResources)
                 "RunAfterJob  = \"/tmp/scripts/delete_catalog_backup\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Write Bootstrap = "), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumBandwidth = 23456"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaxRunSchedTime = 90"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaxRunTime = 180"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaxFullInterval = 5400"), std::string::npos);
+  EXPECT_NE(updated_text.find("PrefixLinks = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("PruneJobs = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("SpoolAttributes = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("SpoolData = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("SpoolSize = 65432"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 6"), std::string::npos);
+  EXPECT_NE(updated_text.find("RescheduleOnError = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("RescheduleInterval = 600"), std::string::npos);
+  EXPECT_NE(updated_text.find("RescheduleTimes = 7"), std::string::npos);
+  EXPECT_NE(updated_text.find("AllowMixedPriority = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("Accurate = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("AllowDuplicateJobs = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("SaveFileHistory = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("FileHistorySize = 87654"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaxConcurrentCopies = 8"), std::string::npos);
+  EXPECT_NE(updated_text.find("AlwaysIncremental = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("AlwaysIncrementalJobRetention = 14400"),
+            std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorJobResourcesInSharedFiles)
@@ -2169,6 +2264,27 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
        .client = std::string{"bareos-fd"},
        .fileset = std::string{"SelfTest"},
        .schedule = std::string{"WeeklyCycle"},
+       .maximum_bandwidth = 23456,
+       .max_run_sched_time = 75,
+       .max_run_time = 150,
+       .max_full_interval = 4200,
+       .prefix_links = true,
+       .prune_jobs = true,
+       .spool_attributes = true,
+       .spool_data = false,
+       .spool_size = 56789,
+       .maximum_concurrent_jobs = 4,
+       .reschedule_on_error = true,
+       .reschedule_interval = 450,
+       .reschedule_times = 5,
+       .allow_mixed_priority = true,
+       .accurate = true,
+       .allow_duplicate_jobs = false,
+       .save_file_history = true,
+       .file_history_size = 87654,
+       .max_concurrent_copies = 6,
+       .always_incremental = true,
+       .always_incremental_job_retention = 10800,
        .enabled = true});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-dir");
@@ -2182,7 +2298,59 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
             std::string::npos);
   EXPECT_NE(created_text.find("Type = Backup"), std::string::npos);
   EXPECT_NE(created_text.find("Client = bareos-fd"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumBandwidth = 23456"), std::string::npos);
+  EXPECT_NE(created_text.find("MaxRunSchedTime = 75"), std::string::npos);
+  EXPECT_NE(created_text.find("MaxRunTime = 150"), std::string::npos);
+  EXPECT_NE(created_text.find("MaxFullInterval = 4200"), std::string::npos);
+  EXPECT_NE(created_text.find("PrefixLinks = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("PruneJobs = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("SpoolAttributes = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("SpoolData = no"), std::string::npos);
+  EXPECT_NE(created_text.find("SpoolSize = 56789"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumConcurrentJobs = 4"), std::string::npos);
+  EXPECT_NE(created_text.find("RescheduleOnError = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("RescheduleInterval = 450"), std::string::npos);
+  EXPECT_NE(created_text.find("RescheduleTimes = 5"), std::string::npos);
+  EXPECT_NE(created_text.find("AllowMixedPriority = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("Accurate = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("AllowDuplicateJobs = no"), std::string::npos);
+  EXPECT_NE(created_text.find("SaveFileHistory = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("FileHistorySize = 87654"), std::string::npos);
+  EXPECT_NE(created_text.find("MaxConcurrentCopies = 6"), std::string::npos);
+  EXPECT_NE(created_text.find("AlwaysIncremental = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("AlwaysIncrementalJobRetention = 10800"),
+            std::string::npos);
   EXPECT_NE(created_text.find("Enabled = yes"), std::string::npos);
+
+  const auto default_jobdefs_path
+      = created.value->path / "bareos-dir.d/jobdefs/DefaultJob.conf";
+  auto default_jobdefs_text = ReadTextFile(default_jobdefs_path);
+  const std::string default_jobdefs_insertion
+      = "  MaximumBandwidth = 34567\n"
+        "  MaxRunSchedTime = 95\n"
+        "  MaxRunTime = 210\n"
+        "  MaxFullInterval = 6300\n"
+        "  PrefixLinks = yes\n"
+        "  PruneJobs = yes\n"
+        "  SpoolAttributes = yes\n"
+        "  SpoolData = no\n"
+        "  SpoolSize = 76543\n"
+        "  MaximumConcurrentJobs = 7\n"
+        "  RescheduleOnError = yes\n"
+        "  RescheduleInterval = 900\n"
+        "  RescheduleTimes = 8\n"
+        "  AllowMixedPriority = yes\n"
+        "  Accurate = yes\n"
+        "  AllowDuplicateJobs = no\n"
+        "  SaveFileHistory = yes\n"
+        "  FileHistorySize = 76543\n"
+        "  MaxConcurrentCopies = 9\n"
+        "  AlwaysIncremental = yes\n"
+        "  AlwaysIncrementalJobRetention = 21600\n";
+  auto default_jobdefs_brace = default_jobdefs_text.rfind("}\n");
+  ASSERT_NE(default_jobdefs_brace, std::string::npos);
+  default_jobdefs_text.insert(default_jobdefs_brace, default_jobdefs_insertion);
+  WriteTextFile(default_jobdefs_path, default_jobdefs_text);
 
   auto updated = state.UpsertDirectorJobDefsResource(
       "prod", "bareos-dir", "DefaultJob",
@@ -2198,6 +2366,28 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
   EXPECT_NE(updated_text.find("DifferentialBackupPool = Differential"),
             std::string::npos);
   EXPECT_NE(updated_text.find("IncrementalBackupPool = Incremental"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumBandwidth = 34567"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaxRunSchedTime = 95"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaxRunTime = 210"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaxFullInterval = 6300"), std::string::npos);
+  EXPECT_NE(updated_text.find("PrefixLinks = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("PruneJobs = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("SpoolAttributes = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("SpoolData = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("SpoolSize = 76543"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 7"), std::string::npos);
+  EXPECT_NE(updated_text.find("RescheduleOnError = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("RescheduleInterval = 900"), std::string::npos);
+  EXPECT_NE(updated_text.find("RescheduleTimes = 8"), std::string::npos);
+  EXPECT_NE(updated_text.find("AllowMixedPriority = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("Accurate = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("AllowDuplicateJobs = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("SaveFileHistory = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("FileHistorySize = 76543"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaxConcurrentCopies = 9"), std::string::npos);
+  EXPECT_NE(updated_text.find("AlwaysIncremental = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("AlwaysIncrementalJobRetention = 21600"),
             std::string::npos);
 }
 
