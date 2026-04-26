@@ -496,6 +496,7 @@ struct DirectorJobRequestSpec {
   std::optional<std::vector<std::string>> run_after_failed_job_entries{};
   std::optional<std::vector<std::string>> client_run_before_job_entries{};
   std::optional<std::vector<std::string>> client_run_after_job_entries{};
+  std::optional<std::vector<std::string>> runscript_blocks{};
   std::optional<std::string> where{};
   std::optional<std::string> replace{};
   std::optional<std::string> regex_where{};
@@ -8642,6 +8643,7 @@ http::response<http::string_body> HandleDeploymentDirectorJobPutRequest(
       .run_after_failed_job_entries = spec->run_after_failed_job_entries,
       .client_run_before_job_entries = spec->client_run_before_job_entries,
       .client_run_after_job_entries = spec->client_run_after_job_entries,
+      .runscript_blocks = spec->runscript_blocks,
       .where = spec->where,
       .replace = spec->replace,
       .regex_where = spec->regex_where,
@@ -8809,6 +8811,7 @@ http::response<http::string_body> HandleDeploymentDirectorJobDefsPutRequest(
       .run_after_failed_job_entries = spec->run_after_failed_job_entries,
       .client_run_before_job_entries = spec->client_run_before_job_entries,
       .client_run_after_job_entries = spec->client_run_after_job_entries,
+      .runscript_blocks = spec->runscript_blocks,
       .where = spec->where,
       .replace = spec->replace,
       .regex_where = spec->regex_where,
@@ -12408,6 +12411,7 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
       = json_object_get(root.get(), "client_run_before_job_entries");
   auto* client_run_after_job_entries
       = json_object_get(root.get(), "client_run_after_job_entries");
+  auto* runscript_blocks = json_object_get(root.get(), "runscript_blocks");
   auto* where = json_object_get(root.get(), "where");
   auto* replace = json_object_get(root.get(), "replace");
   auto* regex_where = json_object_get(root.get(), "regex_where");
@@ -12554,6 +12558,7 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
                                "client_run_before_job_entries")
       || !require_string_array(client_run_after_job_entries,
                                "client_run_after_job_entries")
+      || !require_string_array(runscript_blocks, "runscript_blocks")
       || !require_string(where, "where") || !require_string(replace, "replace")
       || !require_string(regex_where, "regex_where")
       || !require_string(strip_prefix, "strip_prefix")
@@ -12722,6 +12727,7 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
       = parse_string_array(client_run_before_job_entries);
   spec.client_run_after_job_entries
       = parse_string_array(client_run_after_job_entries);
+  spec.runscript_blocks = parse_string_array(runscript_blocks);
   if (where && json_is_string(where)) {
     spec.where = std::string{json_string_value(where)};
   }

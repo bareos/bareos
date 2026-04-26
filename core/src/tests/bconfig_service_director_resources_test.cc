@@ -1960,6 +1960,12 @@ TEST(BconfigService, UpsertsDirectorJobResources)
        = std::vector<std::string>{"/usr/lib/bareos/scripts/client-before"},
        .client_run_after_job_entries
        = std::vector<std::string>{"/usr/lib/bareos/scripts/client-after"},
+       .runscript_blocks
+       = std::vector<std::string>{"  RunScript {\n"
+                                  "    Console = \"status dir\"\n"
+                                  "    RunsWhen = After\n"
+                                  "    RunsOnFailure = yes\n"
+                                  "  }\n"},
        .replace = std::string{"ifolder"},
        .write_bootstrap = std::string{"/tmp/managed-job.bsr"},
        .maximum_bandwidth = 12345,
@@ -2023,6 +2029,12 @@ TEST(BconfigService, UpsertsDirectorJobResources)
   EXPECT_NE(created_text.find(
                 "ClientRunAfterJob = \"/usr/lib/bareos/scripts/client-after\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("RunScript {\n"
+                              "    Console = \"status dir\"\n"
+                              "    RunsWhen = After\n"
+                              "    RunsOnFailure = yes\n"
+                              "  }"),
+            std::string::npos);
   EXPECT_NE(created_text.find("Replace = IfOlder"), std::string::npos);
   EXPECT_NE(created_text.find("WriteBootstrap = \"/tmp/managed-job.bsr\""),
             std::string::npos);
@@ -2079,6 +2091,11 @@ TEST(BconfigService, UpsertsDirectorJobResources)
         "\"/tmp/scripts/client_prepare_catalog_backup\"\n"
         "  ClientRunAfterJob = "
         "\"/tmp/scripts/client_finalize_catalog_backup\"\n"
+        "  RunScript {\n"
+        "    Console = \"llist jobid=1\"\n"
+        "    RunsWhen = After\n"
+        "    RunsOnFailure = yes\n"
+        "  }\n"
         "  Replace = Never\n"
         "  FdPluginOptions = \"fd=imported\"\n"
         "  SdPluginOptions = \"sd=imported\"\n"
@@ -2145,6 +2162,12 @@ TEST(BconfigService, UpsertsDirectorJobResources)
       updated_text.find("ClientRunAfterJob = "
                         "\"/tmp/scripts/client_finalize_catalog_backup\""),
       std::string::npos);
+  EXPECT_NE(updated_text.find("RunScript {\n"
+                              "    Console = \"llist jobid=1\"\n"
+                              "    RunsWhen = After\n"
+                              "    RunsOnFailure = yes\n"
+                              "  }\n"),
+            std::string::npos);
   EXPECT_NE(updated_text.find("Replace = Never"), std::string::npos);
   EXPECT_NE(updated_text.find("FdPluginOptions = \"fd=imported\""),
             std::string::npos);
@@ -2226,7 +2249,11 @@ TEST(BconfigService, UpsertsDirectorJobResourcesInSharedFiles)
                        "  clientrunbeforejob = "
                        "\"/tmp/scripts/shared-client-before\"\n"
                        "  clientrunafterjob = "
-                       "\"/tmp/scripts/shared-client-after\"\n");
+                       "\"/tmp/scripts/shared-client-after\"\n"
+                       "  runscript {\n"
+                       "    console = \"status dir\"\n"
+                       "    runswhen = after\n"
+                       "  }\n");
   WriteTextFile(shared_path,
                 original_text
                     + "\nJob {\n"
@@ -2253,6 +2280,11 @@ TEST(BconfigService, UpsertsDirectorJobResourcesInSharedFiles)
             std::string::npos);
   EXPECT_NE(shared_text.find(
                 "ClientRunAfterJob = \"/tmp/scripts/shared-client-after\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("runscript {\n"
+                             "    console = \"status dir\"\n"
+                             "    runswhen = after\n"
+                             "  }\n"),
             std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherJob\""), std::string::npos);
 }
@@ -2404,6 +2436,12 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
            std::string>{"/usr/lib/bareos/scripts/jobdefs-client-before"},
        .client_run_after_job_entries = std::vector<
            std::string>{"/usr/lib/bareos/scripts/jobdefs-client-after"},
+       .runscript_blocks
+       = std::vector<std::string>{"  RunScript {\n"
+                                  "    Command = \"/bin/true\"\n"
+                                  "    Target = bareos-fd\n"
+                                  "    RunsWhen = Before\n"
+                                  "  }\n"},
        .replace = std::string{"ifolder"},
        .write_bootstrap = std::string{"/tmp/managed-jobdefs.bsr"},
        .maximum_bandwidth = 23456,
@@ -2470,6 +2508,12 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
       created_text.find("ClientRunAfterJob = "
                         "\"/usr/lib/bareos/scripts/jobdefs-client-after\""),
       std::string::npos);
+  EXPECT_NE(created_text.find("RunScript {\n"
+                              "    Command = \"/bin/true\"\n"
+                              "    Target = bareos-fd\n"
+                              "    RunsWhen = Before\n"
+                              "  }\n"),
+            std::string::npos);
   EXPECT_NE(created_text.find("Replace = IfOlder"), std::string::npos);
   EXPECT_NE(created_text.find("WriteBootstrap = \"/tmp/managed-jobdefs.bsr\""),
             std::string::npos);
@@ -2523,6 +2567,10 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
         "  RunAfterFailedJob = \"/tmp/scripts/report_jobdefs_failure\"\n"
         "  ClientRunBeforeJob = \"/tmp/scripts/jobdefs_client_prepare\"\n"
         "  ClientRunAfterJob = \"/tmp/scripts/jobdefs_client_cleanup\"\n"
+        "  RunScript {\n"
+        "    Command = \"/usr/lib/bareos/scripts/jobdefs-run\"\n"
+        "    RunsWhen = After\n"
+        "  }\n"
         "  Replace = Never\n"
         "  FdPluginOptions = \"fd=imported-defs\"\n"
         "  SdPluginOptions = \"sd=imported-defs\"\n"
@@ -2590,6 +2638,12 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
             std::string::npos);
   EXPECT_NE(updated_text.find(
                 "ClientRunAfterJob = \"/tmp/scripts/jobdefs_client_cleanup\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("RunScript {\n"
+                              "    Command = "
+                              "\"/usr/lib/bareos/scripts/jobdefs-run\"\n"
+                              "    RunsWhen = After\n"
+                              "  }\n"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Replace = Never"), std::string::npos);
   EXPECT_NE(updated_text.find("FdPluginOptions = \"fd=imported-defs\""),
@@ -2672,7 +2726,11 @@ TEST(BconfigService, UpsertsDirectorJobDefsResourcesInSharedFiles)
                        "  clientrunbeforejob = "
                        "\"/tmp/scripts/shared-jobdefs-client-before\"\n"
                        "  clientrunafterjob = "
-                       "\"/tmp/scripts/shared-jobdefs-client-after\"\n");
+                       "\"/tmp/scripts/shared-jobdefs-client-after\"\n"
+                       "  runscript {\n"
+                       "    command = \"/bin/true\"\n"
+                       "    runswhen = before\n"
+                       "  }\n");
   WriteTextFile(shared_path,
                 original_text
                     + "\nJobDefs {\n"
@@ -2698,6 +2756,11 @@ TEST(BconfigService, UpsertsDirectorJobDefsResourcesInSharedFiles)
             std::string::npos);
   EXPECT_NE(shared_text.find("ClientRunAfterJob = "
                              "\"/tmp/scripts/shared-jobdefs-client-after\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("runscript {\n"
+                             "    command = \"/bin/true\"\n"
+                             "    runswhen = before\n"
+                             "  }\n"),
             std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherJobDefs\""), std::string::npos);
 }

@@ -1091,6 +1091,7 @@ struct DirectorJobContentSpec {
   std::vector<std::string> run_after_failed_job_entries{};
   std::vector<std::string> client_run_before_job_entries{};
   std::vector<std::string> client_run_after_job_entries{};
+  std::vector<std::string> runscript_blocks{};
   std::optional<std::string> where{};
   std::optional<std::string> replace{};
   std::optional<std::string> regex_where{};
@@ -2004,6 +2005,10 @@ std::string BuildDirectorJobResourceContent(std::string_view job_name,
                                 spec.client_run_before_job_entries);
   AppendRepeatedQuotedDirective(content, "ClientRunAfterJob",
                                 spec.client_run_after_job_entries);
+  for (const auto& block : spec.runscript_blocks) {
+    content << block;
+    if (block.empty() || block.back() != '\n') { content << "\n"; }
+  }
   AppendBareosDirective(content, "Where", spec.where);
   AppendBareosDirective(content, "Replace", spec.replace);
   AppendQuotedDirective(content, "RegexWhere", spec.regex_where);
@@ -2133,6 +2138,10 @@ std::string BuildDirectorJobDefsResourceContent(
                                 spec.client_run_before_job_entries);
   AppendRepeatedQuotedDirective(content, "ClientRunAfterJob",
                                 spec.client_run_after_job_entries);
+  for (const auto& block : spec.runscript_blocks) {
+    content << block;
+    if (block.empty() || block.back() != '\n') { content << "\n"; }
+  }
   AppendBareosDirective(content, "Where", spec.where);
   AppendBareosDirective(content, "Replace", spec.replace);
   AppendQuotedDirective(content, "RegexWhere", spec.regex_where);
@@ -4630,6 +4639,23 @@ OperationResult<std::vector<std::string>> ExtractNamedTopLevelDirectiveValues(
 
   return {.error = "resource '" + std::string{resource_name}
                    + "' not found in '" + file_path.string() + "'."};
+}
+
+bool IsNamedTopLevelBlockEntry(std::string_view entry, std::string_view name)
+{
+  const auto trimmed = TrimAsciiWhitespace(entry);
+  if (trimmed.empty() || trimmed[0] == '#') { return false; }
+
+  const auto equals = trimmed.find('=');
+  const auto open_brace = trimmed.find('{');
+  if (open_brace == std::string::npos
+      || (equals != std::string::npos && equals < open_brace)) {
+    return false;
+  }
+
+  return NormalizeDirectiveLookupName(
+             TrimAsciiWhitespace(trimmed.substr(0, open_brace)))
+         == NormalizeDirectiveLookupName(name);
 }
 
 std::optional<std::string> PopulateMessagesDirectiveEntries(
@@ -7573,7 +7599,13 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
                                                     job_name,
                                                     kControlledJobDirectives);
     if (!passthrough) { return {.error = passthrough.error}; }
-    context.content.passthrough_entries = std::move(*passthrough.value);
+    for (auto& entry : *passthrough.value) {
+      if (IsNamedTopLevelBlockEntry(entry, "RunScript")) {
+        context.content.runscript_blocks.push_back(std::move(entry));
+      } else {
+        context.content.passthrough_entries.push_back(std::move(entry));
+      }
+    }
     return {.value = std::move(context)};
   }
 
@@ -8058,7 +8090,13 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
                     context.file_path, "JobDefs", jobdefs_name,
                     kControlledJobDefsDirectives);
     if (!passthrough) { return {.error = passthrough.error}; }
-    context.content.passthrough_entries = std::move(*passthrough.value);
+    for (auto& entry : *passthrough.value) {
+      if (IsNamedTopLevelBlockEntry(entry, "RunScript")) {
+        context.content.runscript_blocks.push_back(std::move(entry));
+      } else {
+        context.content.passthrough_entries.push_back(std::move(entry));
+      }
+    }
     return {.value = std::move(context)};
   }
 
@@ -13787,6 +13825,9 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertDirectorJobResource(
   if (spec.client_run_after_job_entries) {
     content.client_run_after_job_entries = *spec.client_run_after_job_entries;
   }
+  if (spec.runscript_blocks) {
+    content.runscript_blocks = *spec.runscript_blocks;
+  }
   if (spec.where) { content.where = *spec.where; }
   if (spec.replace) {
     auto normalized_replace = NormalizeDirectorJobReplace(*spec.replace);
@@ -14133,6 +14174,9 @@ ServiceState::UpsertDirectorJobDefsResource(
   }
   if (spec.client_run_after_job_entries) {
     content.client_run_after_job_entries = *spec.client_run_after_job_entries;
+  }
+  if (spec.runscript_blocks) {
+    content.runscript_blocks = *spec.runscript_blocks;
   }
   if (spec.where) { content.where = *spec.where; }
   if (spec.replace) {
