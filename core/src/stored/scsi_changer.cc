@@ -316,7 +316,13 @@ std::optional<std::vector<ScsiChangerElementStatus>> ReadStatuses(
     return std::nullopt;
   }
 
-  if (elements.size() < number_of_elements) { return std::nullopt; }
+  if (elements.size() < number_of_elements) {
+    Dmsg3(100,
+          "Native SCSI changer: requested %u element statuses for type 0x%x, "
+          "got %zu\n",
+          static_cast<unsigned>(number_of_elements),
+          static_cast<unsigned>(element_type), elements.size());
+  }
 
   return elements;
 }
