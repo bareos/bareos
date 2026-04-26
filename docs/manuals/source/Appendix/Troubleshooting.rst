@@ -385,8 +385,9 @@ Please consider the following information when testing tape speed:
    committed to tape. If you need the previous blocking behavior, set
    :config:option:`sd/device/MaximumFileSizeImmediateFilemark = no`\ .
    After upgrading older Bareos installations, set this option to ``no`` if
-   your tape backend or operating procedures depend on waiting for each
-   rollover file-mark to be fully committed before the write path continues.
+   your tape backend overrides ``weof_immediate()`` or your operating
+   procedures depend on waiting for each rollover file-mark to be fully
+   committed before the write path continues.
    Modern tape drives have internal buffers of 1 GiB and more and a write speed of 400MB/s.
    With :config:option:`sd/device/MaximumFileSize = 200G`, such a tape drive will write a file mark
    every 512 seconds or roughly 9 minutes.
