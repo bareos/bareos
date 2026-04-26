@@ -647,6 +647,35 @@ bool TlsOpenSsl::init()
                   " specified as a verification store\n"));
   }
 
+  if (!crlfile_.empty()) {
+    std::lock_guard<std::mutex> lg(file_access_mutex_);
+    X509_STORE* store = SSL_CTX_get_cert_store(openssl_ctx_);
+    if (!store) {
+      OpensslPostErrors(M_FATAL,
+                        T_("Error getting certificate verification store"));
+      return false;
+    }
+
+    X509_LOOKUP* lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
+    if (!lookup) {
+      OpensslPostErrors(M_FATAL, T_("Error creating CRL lookup handler"));
+      return false;
+    }
+
+    if (X509_load_crl_file(lookup, crlfile_.c_str(), X509_FILETYPE_PEM) <= 0) {
+      OpensslPostErrors(M_FATAL,
+                        T_("Error loading certificate revocation list"));
+      return false;
+    }
+
+    if (!X509_STORE_set_flags(store,
+                              X509_V_FLAG_CRL_CHECK
+                                  | X509_V_FLAG_CRL_CHECK_ALL)) {
+      OpensslPostErrors(M_FATAL, T_("Error enabling CRL verification"));
+      return false;
+    }
+  }
+
   if (!certfile_.empty()) {
     std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!SSL_CTX_use_certificate_chain_file(openssl_ctx_, certfile_.c_str())) {
