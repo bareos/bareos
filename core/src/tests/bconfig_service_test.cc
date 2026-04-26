@@ -7665,6 +7665,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
        .device = std::string{"FileStorage"},
        .media_type = std::string{"File"},
        .enabled = false,
+       .allow_compression = false,
        .heartbeat_interval = 60,
        .maximum_bandwidth_per_job = 2048,
        .description = std::string{"Managed storage"}});
@@ -7683,6 +7684,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
   EXPECT_NE(created_text.find("Media Type = File"), std::string::npos);
   EXPECT_NE(created_text.find("Port = 9103"), std::string::npos);
   EXPECT_NE(created_text.find("Enabled = no"), std::string::npos);
+  EXPECT_NE(created_text.find("AllowCompression = no"), std::string::npos);
   EXPECT_NE(created_text.find("HeartbeatInterval = 60"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
@@ -7704,6 +7706,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
   EXPECT_NE(updated_text.find("Media Type = File"), std::string::npos);
   EXPECT_NE(updated_text.find("Port = 9103"), std::string::npos);
   EXPECT_NE(updated_text.find("Enabled = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("AllowCompression = no"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 60"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
@@ -7739,6 +7742,7 @@ TEST(BconfigService, UpsertsDirectorStorageResourcesPreserveLargeImportedPort)
                 "  Media Type = File\n"
                 "  Port = 70000\n"
                 "  Enabled = no\n"
+                "  AllowCompression = no\n"
                 "  HeartbeatInterval = 45\n"
                 "  MaximumBandwidthPerJob = 8192\n"
                 "}\n");
@@ -7762,6 +7766,7 @@ TEST(BconfigService, UpsertsDirectorStorageResourcesPreserveLargeImportedPort)
   EXPECT_NE(updated_text.find("Address = localhost"), std::string::npos);
   EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);
   EXPECT_NE(updated_text.find("Enabled = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("AllowCompression = no"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 45"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 8192"),
             std::string::npos);
@@ -7817,7 +7822,8 @@ TEST(BconfigService,
       {.address = std::string{"localhost"},
        .password = std::string{"sd_password"},
        .device = std::string{"FileStorage"},
-       .media_type = std::string{"File"}});
+       .media_type = std::string{"File"},
+       .allow_compression = false});
   ASSERT_TRUE(created) << created.error;
 
   EXPECT_EQ(ReadTextFile(storage_root / "bareos-sd.d/director/bareos-dir.conf"),

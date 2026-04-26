@@ -1088,6 +1088,7 @@ std::string BuildDirectorStorageResourceContent(
     std::string_view media_type,
     uint32_t port,
     const std::optional<bool>& enabled,
+    const std::optional<bool>& allow_compression,
     const std::optional<uint64_t>& heartbeat_interval,
     const std::optional<uint64_t>& maximum_bandwidth_per_job,
     std::string_view description)
@@ -1102,6 +1103,7 @@ std::string BuildDirectorStorageResourceContent(
   content << "  Media Type = " << media_type << "\n"
           << "  Port = " << port << "\n";
   AppendBoolDirective(content, "Enabled", enabled);
+  AppendBoolDirective(content, "AllowCompression", allow_compression);
   AppendIntegerDirective(content, "HeartbeatInterval", heartbeat_interval);
   AppendIntegerDirective(content, "MaximumBandwidthPerJob",
                          maximum_bandwidth_per_job);
@@ -2468,6 +2470,7 @@ struct DirectorStorageWriteContext {
   std::vector<std::string> devices{};
   std::optional<std::string> media_type{};
   std::optional<bool> enabled{};
+  std::optional<bool> allow_compression{};
   std::optional<uint64_t> heartbeat_interval{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> description{};
@@ -2908,6 +2911,9 @@ OperationResult<DirectorStorageWriteContext> LoadDirectorStorageWriteContext(
     if (storage->SDport != 0) { context.port = storage->SDport; }
     if (HasMemberSource(*storage, {"Enabled"})) {
       context.enabled = storage->enabled;
+    }
+    if (HasMemberSource(*storage, {"AllowCompression"})) {
+      context.allow_compression = storage->AllowCompress;
     }
     if (HasMemberSource(*storage, {"HeartbeatInterval"})) {
       context.heartbeat_interval
@@ -8593,6 +8599,9 @@ ServiceState::UpsertDirectorStorageResource(
                                       ? spec.heartbeat_interval
                                       : context.value->heartbeat_interval;
   const auto enabled = spec.enabled ? spec.enabled : context.value->enabled;
+  const auto allow_compression = spec.allow_compression
+                                     ? spec.allow_compression
+                                     : context.value->allow_compression;
   const auto description = spec.description
                                ? *spec.description
                                : context.value->description.value_or(
@@ -8610,7 +8619,8 @@ ServiceState::UpsertDirectorStorageResource(
   }
   const auto content = BuildDirectorStorageResourceContent(
       storage_name, *address, *password, devices, *media_type, effective_port,
-      enabled, heartbeat_interval, maximum_bandwidth_per_job, description);
+      enabled, allow_compression, heartbeat_interval, maximum_bandwidth_per_job,
+      description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "storage";

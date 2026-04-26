@@ -117,6 +117,7 @@ struct DirectorStorageRequestSpec {
   std::optional<std::string> device{};
   std::optional<std::string> media_type{};
   std::optional<bool> enabled{};
+  std::optional<bool> allow_compression{};
   std::optional<uint64_t> heartbeat_interval{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> archive_device{};
@@ -1312,6 +1313,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label class="checkbox-label" for="director-storage-enabled">
           <input id="director-storage-enabled" name="enabled" type="checkbox" checked>
           Enabled
+        </label>
+
+        <label class="checkbox-label" for="director-storage-allow-compression">
+          <input id="director-storage-allow-compression" name="allow_compression"
+                 type="checkbox" checked>
+          AllowCompression
         </label>
 
         <label for="director-storage-maximum-bandwidth-per-job">Maximum bandwidth per job</label>
@@ -3730,6 +3737,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
           device: String(form.get('device') ?? '').trim(),
           media_type: String(form.get('media_type') ?? '').trim(),
           enabled: document.getElementById('director-storage-enabled').checked,
+          allow_compression:
+            document.getElementById('director-storage-allow-compression').checked,
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
@@ -6867,6 +6876,7 @@ http::response<http::string_body> HandleDeploymentDirectorStoragePutRequest(
       .device = spec->device,
       .media_type = spec->media_type,
       .enabled = spec->enabled,
+      .allow_compression = spec->allow_compression,
       .heartbeat_interval = spec->heartbeat_interval,
       .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
       .archive_device = spec->archive_device,
@@ -8732,6 +8742,7 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   auto* device = json_object_get(root.get(), "device");
   auto* media_type = json_object_get(root.get(), "media_type");
   auto* enabled = json_object_get(root.get(), "enabled");
+  auto* allow_compression = json_object_get(root.get(), "allow_compression");
   auto* heartbeat_interval = json_object_get(root.get(), "heartbeat_interval");
   auto* maximum_bandwidth_per_job
       = json_object_get(root.get(), "maximum_bandwidth_per_job");
@@ -8761,6 +8772,11 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   }
   if (enabled && !json_is_null(enabled) && !json_is_boolean(enabled)) {
     error = "field 'enabled' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (allow_compression && !json_is_null(allow_compression)
+      && !json_is_boolean(allow_compression)) {
+    error = "field 'allow_compression' must be a boolean when provided.";
     return std::nullopt;
   }
   if (heartbeat_interval && !json_is_null(heartbeat_interval)
@@ -8814,6 +8830,9 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   }
   if (enabled && json_is_boolean(enabled)) {
     spec.enabled = json_is_true(enabled);
+  }
+  if (allow_compression && json_is_boolean(allow_compression)) {
+    spec.allow_compression = json_is_true(allow_compression);
   }
   if (heartbeat_interval && json_is_integer(heartbeat_interval)) {
     const auto value = json_integer_value(heartbeat_interval);
