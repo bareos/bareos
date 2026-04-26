@@ -295,6 +295,21 @@ struct StorageDirectorRequestSpec {
   std::optional<std::string> description{};
   std::optional<bool> monitor{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
+  std::optional<std::string> key_encryption_key{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
 };
 
 struct StorageDeviceRequestSpec {
@@ -2607,6 +2622,78 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="storage-director-maximum-bandwidth-per-job"
                name="maximum_bandwidth_per_job" type="number" min="0"
                placeholder="0">
+
+        <label for="storage-director-key-encryption-key">Key encryption key</label>
+        <input id="storage-director-key-encryption-key"
+               name="key_encryption_key"
+               placeholder="managed-key">
+
+        <label class="checkbox-label" for="storage-director-tls-authenticate">
+          <input id="storage-director-tls-authenticate"
+                 name="tls_authenticate" type="checkbox">
+          TLS authenticate
+        </label>
+
+        <label class="checkbox-label" for="storage-director-tls-enable">
+          <input id="storage-director-tls-enable"
+                 name="tls_enable" type="checkbox">
+          TLS enable
+        </label>
+
+        <label class="checkbox-label" for="storage-director-tls-require">
+          <input id="storage-director-tls-require"
+                 name="tls_require" type="checkbox">
+          TLS require
+        </label>
+
+        <label class="checkbox-label" for="storage-director-tls-verify-peer">
+          <input id="storage-director-tls-verify-peer"
+                 name="tls_verify_peer" type="checkbox">
+          TLS verify peer
+        </label>
+
+        <label for="storage-director-tls-cipher-list">TLS cipher list</label>
+        <input id="storage-director-tls-cipher-list" name="tls_cipher_list"
+               placeholder="HIGH">
+
+        <label for="storage-director-tls-cipher-suites">TLS cipher suites</label>
+        <input id="storage-director-tls-cipher-suites" name="tls_cipher_suites"
+               placeholder="TLS_AES_256_GCM_SHA384">
+
+        <label for="storage-director-tls-dh-file">TLS DH file</label>
+        <input id="storage-director-tls-dh-file" name="tls_dh_file"
+               placeholder="/etc/bareos/dh4096.pem">
+
+        <label for="storage-director-tls-protocol">TLS protocol</label>
+        <input id="storage-director-tls-protocol" name="tls_protocol"
+               placeholder="+TLSv1.2:+TLSv1.3">
+
+        <label for="storage-director-tls-ca-certificate-file">TLS CA certificate file</label>
+        <input id="storage-director-tls-ca-certificate-file"
+               name="tls_ca_certificate_file"
+               placeholder="/etc/bareos/ca.pem">
+
+        <label for="storage-director-tls-ca-certificate-dir">TLS CA certificate dir</label>
+        <input id="storage-director-tls-ca-certificate-dir"
+               name="tls_ca_certificate_dir"
+               placeholder="/etc/ssl/certs">
+
+        <label for="storage-director-tls-certificate-revocation-list">TLS certificate revocation list</label>
+        <input id="storage-director-tls-certificate-revocation-list"
+               name="tls_certificate_revocation_list"
+               placeholder="/etc/bareos/crl.pem">
+
+        <label for="storage-director-tls-certificate">TLS certificate</label>
+        <input id="storage-director-tls-certificate" name="tls_certificate"
+               placeholder="/etc/bareos/director-cert.pem">
+
+        <label for="storage-director-tls-key">TLS key</label>
+        <input id="storage-director-tls-key" name="tls_key"
+               placeholder="/etc/bareos/director-key.pem">
+
+        <label for="storage-director-tls-allowed-cn">TLS allowed CNs</label>
+        <textarea id="storage-director-tls-allowed-cn" name="tls_allowed_cn"
+                  placeholder="director.example.test&#10;backup.example.test"></textarea>
 
         <button type="submit">
           PUT /v1/deployments/{id}/storages/{storage}/directors/{director}
@@ -5173,12 +5260,40 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const storageName = String(form.get('storage_name') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
+        const rawTlsAllowedCn = String(form.get('tls_allowed_cn') ?? '');
+        const tlsAllowedCn = rawTlsAllowedCn
+          .split(/\r?\n/)
+          .map((value) => value.trim())
+          .filter((value) => value.length > 0);
         const payload = {
           password: String(form.get('password') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
           monitor: document.getElementById('storage-director-monitor').checked,
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
+          key_encryption_key: String(
+            form.get('key_encryption_key') ?? '').trim(),
+          tls_authenticate: document.getElementById(
+            'storage-director-tls-authenticate').checked,
+          tls_enable: document.getElementById(
+            'storage-director-tls-enable').checked,
+          tls_require: document.getElementById(
+            'storage-director-tls-require').checked,
+          tls_verify_peer: document.getElementById(
+            'storage-director-tls-verify-peer').checked,
+          tls_cipher_list: String(form.get('tls_cipher_list') ?? '').trim(),
+          tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
+          tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
+          tls_protocol: String(form.get('tls_protocol') ?? '').trim(),
+          tls_ca_certificate_file: String(
+            form.get('tls_ca_certificate_file') ?? '').trim(),
+          tls_ca_certificate_dir: String(
+            form.get('tls_ca_certificate_dir') ?? '').trim(),
+          tls_certificate_revocation_list: String(
+            form.get('tls_certificate_revocation_list') ?? '').trim(),
+          tls_certificate: String(form.get('tls_certificate') ?? '').trim(),
+          tls_key: String(form.get('tls_key') ?? '').trim(),
+          tls_allowed_cn: tlsAllowedCn,
         };
         if (!payload.password) { delete payload.password; }
         if (!payload.description) { delete payload.description; }
@@ -5187,6 +5302,25 @@ const char* kTestUiHtmlTemplate = R"HTML(
         } else {
           payload.maximum_bandwidth_per_job
             = Number.parseInt(payload.maximum_bandwidth_per_job, 10);
+        }
+        if (!payload.key_encryption_key) { delete payload.key_encryption_key; }
+        if (!payload.tls_cipher_list) { delete payload.tls_cipher_list; }
+        if (!payload.tls_cipher_suites) { delete payload.tls_cipher_suites; }
+        if (!payload.tls_dh_file) { delete payload.tls_dh_file; }
+        if (!payload.tls_protocol) { delete payload.tls_protocol; }
+        if (!payload.tls_ca_certificate_file) {
+          delete payload.tls_ca_certificate_file;
+        }
+        if (!payload.tls_ca_certificate_dir) {
+          delete payload.tls_ca_certificate_dir;
+        }
+        if (!payload.tls_certificate_revocation_list) {
+          delete payload.tls_certificate_revocation_list;
+        }
+        if (!payload.tls_certificate) { delete payload.tls_certificate; }
+        if (!payload.tls_key) { delete payload.tls_key; }
+        if (payload.tls_allowed_cn.length === 0) {
+          delete payload.tls_allowed_cn;
         }
         const { response } = await request(
           'PUT',
@@ -6889,6 +7023,21 @@ http::response<http::string_body> HandleDeploymentStorageDirectorPutRequest(
       .description = spec->description,
       .monitor = spec->monitor,
       .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
+      .key_encryption_key = spec->key_encryption_key,
+      .tls_authenticate = spec->tls_authenticate,
+      .tls_enable = spec->tls_enable,
+      .tls_require = spec->tls_require,
+      .tls_verify_peer = spec->tls_verify_peer,
+      .tls_cipher_list = spec->tls_cipher_list,
+      .tls_cipher_suites = spec->tls_cipher_suites,
+      .tls_dh_file = spec->tls_dh_file,
+      .tls_protocol = spec->tls_protocol,
+      .tls_ca_certificate_file = spec->tls_ca_certificate_file,
+      .tls_ca_certificate_dir = spec->tls_ca_certificate_dir,
+      .tls_certificate_revocation_list = spec->tls_certificate_revocation_list,
+      .tls_certificate = spec->tls_certificate,
+      .tls_key = spec->tls_key,
+      .tls_allowed_cn = spec->tls_allowed_cn,
   };
   auto result = state.UpsertStorageDirectorResource(
       deployment_id, storage_name, director_name, resource_spec);
@@ -11095,6 +11244,24 @@ std::optional<StorageDirectorRequestSpec> ParseStorageDirectorRequest(
   auto* monitor = json_object_get(root.get(), "monitor");
   auto* maximum_bandwidth_per_job
       = json_object_get(root.get(), "maximum_bandwidth_per_job");
+  auto* key_encryption_key = json_object_get(root.get(), "key_encryption_key");
+  auto* tls_authenticate = json_object_get(root.get(), "tls_authenticate");
+  auto* tls_enable = json_object_get(root.get(), "tls_enable");
+  auto* tls_require = json_object_get(root.get(), "tls_require");
+  auto* tls_verify_peer = json_object_get(root.get(), "tls_verify_peer");
+  auto* tls_cipher_list = json_object_get(root.get(), "tls_cipher_list");
+  auto* tls_cipher_suites = json_object_get(root.get(), "tls_cipher_suites");
+  auto* tls_dh_file = json_object_get(root.get(), "tls_dh_file");
+  auto* tls_protocol = json_object_get(root.get(), "tls_protocol");
+  auto* tls_ca_certificate_file
+      = json_object_get(root.get(), "tls_ca_certificate_file");
+  auto* tls_ca_certificate_dir
+      = json_object_get(root.get(), "tls_ca_certificate_dir");
+  auto* tls_certificate_revocation_list
+      = json_object_get(root.get(), "tls_certificate_revocation_list");
+  auto* tls_certificate = json_object_get(root.get(), "tls_certificate");
+  auto* tls_key = json_object_get(root.get(), "tls_key");
+  auto* tls_allowed_cn = json_object_get(root.get(), "tls_allowed_cn");
   if (password && !json_is_null(password) && !json_is_string(password)) {
     error = "field 'password' must be a string when provided.";
     return std::nullopt;
@@ -11112,6 +11279,56 @@ std::optional<StorageDirectorRequestSpec> ParseStorageDirectorRequest(
       && !json_is_integer(maximum_bandwidth_per_job)) {
     error
         = "field 'maximum_bandwidth_per_job' must be an integer when provided.";
+    return std::nullopt;
+  }
+  auto require_string = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_string(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a string when provided.";
+      return false;
+    }
+    return true;
+  };
+  auto require_bool = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_boolean(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a boolean when provided.";
+      return false;
+    }
+    return true;
+  };
+  auto require_string_array = [&error](json_t* value, const char* field) {
+    if (!value || json_is_null(value)) { return true; }
+    if (!json_is_array(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an array of strings when provided.";
+      return false;
+    }
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      if (!json_is_string(json_array_get(value, index))) {
+        error = std::string{"field '"} + field
+                + "' must be an array of strings when provided.";
+        return false;
+      }
+    }
+    return true;
+  };
+  if (!require_string(key_encryption_key, "key_encryption_key")
+      || !require_bool(tls_authenticate, "tls_authenticate")
+      || !require_bool(tls_enable, "tls_enable")
+      || !require_bool(tls_require, "tls_require")
+      || !require_bool(tls_verify_peer, "tls_verify_peer")
+      || !require_string(tls_cipher_list, "tls_cipher_list")
+      || !require_string(tls_cipher_suites, "tls_cipher_suites")
+      || !require_string(tls_dh_file, "tls_dh_file")
+      || !require_string(tls_protocol, "tls_protocol")
+      || !require_string(tls_ca_certificate_file, "tls_ca_certificate_file")
+      || !require_string(tls_ca_certificate_dir, "tls_ca_certificate_dir")
+      || !require_string(tls_certificate_revocation_list,
+                         "tls_certificate_revocation_list")
+      || !require_string(tls_certificate, "tls_certificate")
+      || !require_string(tls_key, "tls_key")
+      || !require_string_array(tls_allowed_cn, "tls_allowed_cn")) {
     return std::nullopt;
   }
 
@@ -11132,6 +11349,62 @@ std::optional<StorageDirectorRequestSpec> ParseStorageDirectorRequest(
       return std::nullopt;
     }
     spec.maximum_bandwidth_per_job = static_cast<uint64_t>(value);
+  }
+  if (key_encryption_key && json_is_string(key_encryption_key)) {
+    spec.key_encryption_key
+        = std::string{json_string_value(key_encryption_key)};
+  }
+  if (tls_authenticate && json_is_boolean(tls_authenticate)) {
+    spec.tls_authenticate = json_is_true(tls_authenticate);
+  }
+  if (tls_enable && json_is_boolean(tls_enable)) {
+    spec.tls_enable = json_is_true(tls_enable);
+  }
+  if (tls_require && json_is_boolean(tls_require)) {
+    spec.tls_require = json_is_true(tls_require);
+  }
+  if (tls_verify_peer && json_is_boolean(tls_verify_peer)) {
+    spec.tls_verify_peer = json_is_true(tls_verify_peer);
+  }
+  if (tls_cipher_list && json_is_string(tls_cipher_list)) {
+    spec.tls_cipher_list = std::string{json_string_value(tls_cipher_list)};
+  }
+  if (tls_cipher_suites && json_is_string(tls_cipher_suites)) {
+    spec.tls_cipher_suites = std::string{json_string_value(tls_cipher_suites)};
+  }
+  if (tls_dh_file && json_is_string(tls_dh_file)) {
+    spec.tls_dh_file = std::string{json_string_value(tls_dh_file)};
+  }
+  if (tls_protocol && json_is_string(tls_protocol)) {
+    spec.tls_protocol = std::string{json_string_value(tls_protocol)};
+  }
+  if (tls_ca_certificate_file && json_is_string(tls_ca_certificate_file)) {
+    spec.tls_ca_certificate_file
+        = std::string{json_string_value(tls_ca_certificate_file)};
+  }
+  if (tls_ca_certificate_dir && json_is_string(tls_ca_certificate_dir)) {
+    spec.tls_ca_certificate_dir
+        = std::string{json_string_value(tls_ca_certificate_dir)};
+  }
+  if (tls_certificate_revocation_list
+      && json_is_string(tls_certificate_revocation_list)) {
+    spec.tls_certificate_revocation_list
+        = std::string{json_string_value(tls_certificate_revocation_list)};
+  }
+  if (tls_certificate && json_is_string(tls_certificate)) {
+    spec.tls_certificate = std::string{json_string_value(tls_certificate)};
+  }
+  if (tls_key && json_is_string(tls_key)) {
+    spec.tls_key = std::string{json_string_value(tls_key)};
+  }
+  if (tls_allowed_cn && json_is_array(tls_allowed_cn)) {
+    std::vector<std::string> values;
+    values.reserve(json_array_size(tls_allowed_cn));
+    for (size_t index = 0; index < json_array_size(tls_allowed_cn); ++index) {
+      values.emplace_back(
+          json_string_value(json_array_get(tls_allowed_cn, index)));
+    }
+    spec.tls_allowed_cn = std::move(values);
   }
   return spec;
 }
