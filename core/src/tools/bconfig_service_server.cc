@@ -304,6 +304,28 @@ struct StorageDeviceRequestSpec {
   std::optional<std::string> access_mode{};
   std::optional<std::string> device_options{};
   std::optional<std::string> diagnostic_device{};
+  std::optional<bool> hardware_end_of_file{};
+  std::optional<bool> hardware_end_of_medium{};
+  std::optional<bool> backward_space_record{};
+  std::optional<bool> backward_space_file{};
+  std::optional<bool> bsf_at_eom{};
+  std::optional<bool> two_eof{};
+  std::optional<bool> forward_space_record{};
+  std::optional<bool> forward_space_file{};
+  std::optional<bool> fast_forward_space_file{};
+  std::optional<bool> removable_media{};
+  std::optional<bool> random_access{};
+  std::optional<bool> automatic_mount{};
+  std::optional<bool> label_media{};
+  std::optional<bool> always_open{};
+  std::optional<bool> autochanger{};
+  std::optional<bool> close_on_poll{};
+  std::optional<bool> block_positioning{};
+  std::optional<bool> use_mtiocget{};
+  std::optional<bool> check_labels{};
+  std::optional<bool> requires_mount{};
+  std::optional<bool> offline_on_unmount{};
+  std::optional<bool> block_checksum{};
   std::optional<bool> auto_select{};
   std::optional<std::string> changer_device{};
   std::optional<std::string> changer_command{};
@@ -6954,6 +6976,28 @@ http::response<http::string_body> HandleDeploymentStorageDevicePutRequest(
       .access_mode = spec->access_mode,
       .device_options = spec->device_options,
       .diagnostic_device = spec->diagnostic_device,
+      .hardware_end_of_file = spec->hardware_end_of_file,
+      .hardware_end_of_medium = spec->hardware_end_of_medium,
+      .backward_space_record = spec->backward_space_record,
+      .backward_space_file = spec->backward_space_file,
+      .bsf_at_eom = spec->bsf_at_eom,
+      .two_eof = spec->two_eof,
+      .forward_space_record = spec->forward_space_record,
+      .forward_space_file = spec->forward_space_file,
+      .fast_forward_space_file = spec->fast_forward_space_file,
+      .removable_media = spec->removable_media,
+      .random_access = spec->random_access,
+      .automatic_mount = spec->automatic_mount,
+      .label_media = spec->label_media,
+      .always_open = spec->always_open,
+      .autochanger = spec->autochanger,
+      .close_on_poll = spec->close_on_poll,
+      .block_positioning = spec->block_positioning,
+      .use_mtiocget = spec->use_mtiocget,
+      .check_labels = spec->check_labels,
+      .requires_mount = spec->requires_mount,
+      .offline_on_unmount = spec->offline_on_unmount,
+      .block_checksum = spec->block_checksum,
       .auto_select = spec->auto_select,
       .changer_device = spec->changer_device,
       .changer_command = spec->changer_command,
@@ -11104,6 +11148,34 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   auto* access_mode = json_object_get(root.get(), "access_mode");
   auto* device_options = json_object_get(root.get(), "device_options");
   auto* diagnostic_device = json_object_get(root.get(), "diagnostic_device");
+  auto* hardware_end_of_file
+      = json_object_get(root.get(), "hardware_end_of_file");
+  auto* hardware_end_of_medium
+      = json_object_get(root.get(), "hardware_end_of_medium");
+  auto* backward_space_record
+      = json_object_get(root.get(), "backward_space_record");
+  auto* backward_space_file
+      = json_object_get(root.get(), "backward_space_file");
+  auto* bsf_at_eom = json_object_get(root.get(), "bsf_at_eom");
+  auto* two_eof = json_object_get(root.get(), "two_eof");
+  auto* forward_space_record
+      = json_object_get(root.get(), "forward_space_record");
+  auto* forward_space_file = json_object_get(root.get(), "forward_space_file");
+  auto* fast_forward_space_file
+      = json_object_get(root.get(), "fast_forward_space_file");
+  auto* removable_media = json_object_get(root.get(), "removable_media");
+  auto* random_access = json_object_get(root.get(), "random_access");
+  auto* automatic_mount = json_object_get(root.get(), "automatic_mount");
+  auto* label_media = json_object_get(root.get(), "label_media");
+  auto* always_open = json_object_get(root.get(), "always_open");
+  auto* autochanger = json_object_get(root.get(), "autochanger");
+  auto* close_on_poll = json_object_get(root.get(), "close_on_poll");
+  auto* block_positioning = json_object_get(root.get(), "block_positioning");
+  auto* use_mtiocget = json_object_get(root.get(), "use_mtiocget");
+  auto* check_labels = json_object_get(root.get(), "check_labels");
+  auto* requires_mount = json_object_get(root.get(), "requires_mount");
+  auto* offline_on_unmount = json_object_get(root.get(), "offline_on_unmount");
+  auto* block_checksum = json_object_get(root.get(), "block_checksum");
   auto* auto_select = json_object_get(root.get(), "auto_select");
   auto* changer_device = json_object_get(root.get(), "changer_device");
   auto* changer_command = json_object_get(root.get(), "changer_command");
@@ -11195,7 +11267,29 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
       || !require_string(description, "description")) {
     return std::nullopt;
   }
-  if (!require_bool(auto_select, "auto_select")
+  if (!require_bool(hardware_end_of_file, "hardware_end_of_file")
+      || !require_bool(hardware_end_of_medium, "hardware_end_of_medium")
+      || !require_bool(backward_space_record, "backward_space_record")
+      || !require_bool(backward_space_file, "backward_space_file")
+      || !require_bool(bsf_at_eom, "bsf_at_eom")
+      || !require_bool(two_eof, "two_eof")
+      || !require_bool(forward_space_record, "forward_space_record")
+      || !require_bool(forward_space_file, "forward_space_file")
+      || !require_bool(fast_forward_space_file, "fast_forward_space_file")
+      || !require_bool(removable_media, "removable_media")
+      || !require_bool(random_access, "random_access")
+      || !require_bool(automatic_mount, "automatic_mount")
+      || !require_bool(label_media, "label_media")
+      || !require_bool(always_open, "always_open")
+      || !require_bool(autochanger, "autochanger")
+      || !require_bool(close_on_poll, "close_on_poll")
+      || !require_bool(block_positioning, "block_positioning")
+      || !require_bool(use_mtiocget, "use_mtiocget")
+      || !require_bool(check_labels, "check_labels")
+      || !require_bool(requires_mount, "requires_mount")
+      || !require_bool(offline_on_unmount, "offline_on_unmount")
+      || !require_bool(block_checksum, "block_checksum")
+      || !require_bool(auto_select, "auto_select")
       || !require_bool(no_rewind_on_close, "no_rewind_on_close")
       || !require_bool(drive_tape_alert_enabled, "drive_tape_alert_enabled")
       || !require_bool(drive_crypto_enabled, "drive_crypto_enabled")
@@ -11275,6 +11369,72 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   }
   if (diagnostic_device && json_is_string(diagnostic_device)) {
     spec.diagnostic_device = std::string{json_string_value(diagnostic_device)};
+  }
+  if (hardware_end_of_file && json_is_boolean(hardware_end_of_file)) {
+    spec.hardware_end_of_file = json_is_true(hardware_end_of_file);
+  }
+  if (hardware_end_of_medium && json_is_boolean(hardware_end_of_medium)) {
+    spec.hardware_end_of_medium = json_is_true(hardware_end_of_medium);
+  }
+  if (backward_space_record && json_is_boolean(backward_space_record)) {
+    spec.backward_space_record = json_is_true(backward_space_record);
+  }
+  if (backward_space_file && json_is_boolean(backward_space_file)) {
+    spec.backward_space_file = json_is_true(backward_space_file);
+  }
+  if (bsf_at_eom && json_is_boolean(bsf_at_eom)) {
+    spec.bsf_at_eom = json_is_true(bsf_at_eom);
+  }
+  if (two_eof && json_is_boolean(two_eof)) {
+    spec.two_eof = json_is_true(two_eof);
+  }
+  if (forward_space_record && json_is_boolean(forward_space_record)) {
+    spec.forward_space_record = json_is_true(forward_space_record);
+  }
+  if (forward_space_file && json_is_boolean(forward_space_file)) {
+    spec.forward_space_file = json_is_true(forward_space_file);
+  }
+  if (fast_forward_space_file && json_is_boolean(fast_forward_space_file)) {
+    spec.fast_forward_space_file = json_is_true(fast_forward_space_file);
+  }
+  if (removable_media && json_is_boolean(removable_media)) {
+    spec.removable_media = json_is_true(removable_media);
+  }
+  if (random_access && json_is_boolean(random_access)) {
+    spec.random_access = json_is_true(random_access);
+  }
+  if (automatic_mount && json_is_boolean(automatic_mount)) {
+    spec.automatic_mount = json_is_true(automatic_mount);
+  }
+  if (label_media && json_is_boolean(label_media)) {
+    spec.label_media = json_is_true(label_media);
+  }
+  if (always_open && json_is_boolean(always_open)) {
+    spec.always_open = json_is_true(always_open);
+  }
+  if (autochanger && json_is_boolean(autochanger)) {
+    spec.autochanger = json_is_true(autochanger);
+  }
+  if (close_on_poll && json_is_boolean(close_on_poll)) {
+    spec.close_on_poll = json_is_true(close_on_poll);
+  }
+  if (block_positioning && json_is_boolean(block_positioning)) {
+    spec.block_positioning = json_is_true(block_positioning);
+  }
+  if (use_mtiocget && json_is_boolean(use_mtiocget)) {
+    spec.use_mtiocget = json_is_true(use_mtiocget);
+  }
+  if (check_labels && json_is_boolean(check_labels)) {
+    spec.check_labels = json_is_true(check_labels);
+  }
+  if (requires_mount && json_is_boolean(requires_mount)) {
+    spec.requires_mount = json_is_true(requires_mount);
+  }
+  if (offline_on_unmount && json_is_boolean(offline_on_unmount)) {
+    spec.offline_on_unmount = json_is_true(offline_on_unmount);
+  }
+  if (block_checksum && json_is_boolean(block_checksum)) {
+    spec.block_checksum = json_is_true(block_checksum);
   }
   if (auto_select && json_is_boolean(auto_select)) {
     spec.auto_select = json_is_true(auto_select);

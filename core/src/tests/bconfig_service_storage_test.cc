@@ -797,6 +797,28 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
        .access_mode = std::string{"readonly"},
        .device_options = std::string{"Block Size = 64k"},
        .diagnostic_device = std::string{"/tmp/managed-storage.diag"},
+       .hardware_end_of_file = false,
+       .hardware_end_of_medium = false,
+       .backward_space_record = false,
+       .backward_space_file = false,
+       .bsf_at_eom = true,
+       .two_eof = true,
+       .forward_space_record = false,
+       .forward_space_file = false,
+       .fast_forward_space_file = false,
+       .removable_media = false,
+       .random_access = true,
+       .automatic_mount = true,
+       .label_media = true,
+       .always_open = false,
+       .autochanger = true,
+       .close_on_poll = true,
+       .block_positioning = false,
+       .use_mtiocget = false,
+       .check_labels = true,
+       .requires_mount = true,
+       .offline_on_unmount = true,
+       .block_checksum = false,
        .auto_select = false,
        .changer_device = std::string{"/dev/sg0"},
        .changer_command = std::string{"/usr/lib/bareos/mtx-changer %c %o"},
@@ -852,6 +874,28 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(
       created_text.find("DiagnosticDevice = \"/tmp/managed-storage.diag\""),
       std::string::npos);
+  EXPECT_NE(created_text.find("HardwareEndOfFile = no"), std::string::npos);
+  EXPECT_NE(created_text.find("HardwareEndOfMedium = no"), std::string::npos);
+  EXPECT_NE(created_text.find("BackwardSpaceRecord = no"), std::string::npos);
+  EXPECT_NE(created_text.find("BackwardSpaceFile = no"), std::string::npos);
+  EXPECT_NE(created_text.find("BsfAtEom = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TwoEof = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("ForwardSpaceRecord = no"), std::string::npos);
+  EXPECT_NE(created_text.find("ForwardSpaceFile = no"), std::string::npos);
+  EXPECT_NE(created_text.find("FastForwardSpaceFile = no"), std::string::npos);
+  EXPECT_NE(created_text.find("RemovableMedia = no"), std::string::npos);
+  EXPECT_NE(created_text.find("RandomAccess = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("AutomaticMount = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("LabelMedia = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("AlwaysOpen = no"), std::string::npos);
+  EXPECT_NE(created_text.find("Autochanger = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("CloseOnPoll = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("BlockPositioning = no"), std::string::npos);
+  EXPECT_NE(created_text.find("UseMtiocget = no"), std::string::npos);
+  EXPECT_NE(created_text.find("CheckLabels = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("RequiresMount = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("OfflineOnUnmount = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("BlockChecksum = no"), std::string::npos);
   EXPECT_NE(created_text.find("AutoSelect = no"), std::string::npos);
   EXPECT_NE(created_text.find("ChangerDevice = \"/dev/sg0\""),
             std::string::npos);
@@ -927,6 +971,28 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(
       updated_text.find("DiagnosticDevice = \"/tmp/managed-storage.diag\""),
       std::string::npos);
+  EXPECT_NE(updated_text.find("HardwareEndOfFile = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("HardwareEndOfMedium = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("BackwardSpaceRecord = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("BackwardSpaceFile = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("BsfAtEom = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TwoEof = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("ForwardSpaceRecord = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("ForwardSpaceFile = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("FastForwardSpaceFile = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("RemovableMedia = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("RandomAccess = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("AutomaticMount = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("LabelMedia = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("AlwaysOpen = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("Autochanger = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("CloseOnPoll = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("BlockPositioning = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("UseMtiocget = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("CheckLabels = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("RequiresMount = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("OfflineOnUnmount = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("BlockChecksum = no"), std::string::npos);
   EXPECT_NE(updated_text.find("AutoSelect = no"), std::string::npos);
   EXPECT_NE(updated_text.find("ChangerDevice = \"/dev/sg0\""),
             std::string::npos);
@@ -1025,6 +1091,10 @@ TEST(BconfigService, UpsertsStorageDeviceResourcesInSharedFiles)
   ASSERT_NE(original_brace, std::string::npos);
   shared_base_text.insert(original_brace,
                           "  accessmode = writeonly\n"
+                          "  hardwareendoffile = no\n"
+                          "  randomaccess = yes\n"
+                          "  autochanger = yes\n"
+                          "  checklabels = yes\n"
                           "  maximumnetworkbuffersize = 2097152\n"
                           "  maximumrewindwait = 305\n"
                           "  autodeflate = both\n"
@@ -1052,6 +1122,10 @@ TEST(BconfigService, UpsertsStorageDeviceResourcesInSharedFiles)
   EXPECT_NE(shared_text.find("Archive Device = /tmp/updated-storage"),
             std::string::npos);
   EXPECT_NE(shared_text.find("AccessMode = write"), std::string::npos);
+  EXPECT_NE(shared_text.find("HardwareEndOfFile = no"), std::string::npos);
+  EXPECT_NE(shared_text.find("RandomAccess = yes"), std::string::npos);
+  EXPECT_NE(shared_text.find("Autochanger = yes"), std::string::npos);
+  EXPECT_NE(shared_text.find("CheckLabels = yes"), std::string::npos);
   EXPECT_NE(shared_text.find("MaximumNetworkBufferSize = 2097152"),
             std::string::npos);
   EXPECT_NE(shared_text.find("MaximumRewindWait = 305"), std::string::npos);

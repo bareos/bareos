@@ -2585,6 +2585,28 @@ std::string BuildStorageDaemonDeviceResourceContent(
     const std::optional<std::string>& access_mode,
     const std::optional<std::string>& device_options,
     const std::optional<std::string>& diagnostic_device,
+    const std::optional<bool>& hardware_end_of_file,
+    const std::optional<bool>& hardware_end_of_medium,
+    const std::optional<bool>& backward_space_record,
+    const std::optional<bool>& backward_space_file,
+    const std::optional<bool>& bsf_at_eom,
+    const std::optional<bool>& two_eof,
+    const std::optional<bool>& forward_space_record,
+    const std::optional<bool>& forward_space_file,
+    const std::optional<bool>& fast_forward_space_file,
+    const std::optional<bool>& removable_media,
+    const std::optional<bool>& random_access,
+    const std::optional<bool>& automatic_mount,
+    const std::optional<bool>& label_media,
+    const std::optional<bool>& always_open,
+    const std::optional<bool>& autochanger,
+    const std::optional<bool>& close_on_poll,
+    const std::optional<bool>& block_positioning,
+    const std::optional<bool>& use_mtiocget,
+    const std::optional<bool>& check_labels,
+    const std::optional<bool>& requires_mount,
+    const std::optional<bool>& offline_on_unmount,
+    const std::optional<bool>& block_checksum,
     const std::optional<bool>& auto_select,
     const std::optional<std::string>& changer_device,
     const std::optional<std::string>& changer_command,
@@ -2631,6 +2653,28 @@ std::string BuildStorageDaemonDeviceResourceContent(
   AppendBareosDirective(content, "AccessMode", access_mode);
   AppendQuotedDirective(content, "DeviceOptions", device_options);
   AppendQuotedDirective(content, "DiagnosticDevice", diagnostic_device);
+  AppendBoolDirective(content, "HardwareEndOfFile", hardware_end_of_file);
+  AppendBoolDirective(content, "HardwareEndOfMedium", hardware_end_of_medium);
+  AppendBoolDirective(content, "BackwardSpaceRecord", backward_space_record);
+  AppendBoolDirective(content, "BackwardSpaceFile", backward_space_file);
+  AppendBoolDirective(content, "BsfAtEom", bsf_at_eom);
+  AppendBoolDirective(content, "TwoEof", two_eof);
+  AppendBoolDirective(content, "ForwardSpaceRecord", forward_space_record);
+  AppendBoolDirective(content, "ForwardSpaceFile", forward_space_file);
+  AppendBoolDirective(content, "FastForwardSpaceFile", fast_forward_space_file);
+  AppendBoolDirective(content, "RemovableMedia", removable_media);
+  AppendBoolDirective(content, "RandomAccess", random_access);
+  AppendBoolDirective(content, "AutomaticMount", automatic_mount);
+  AppendBoolDirective(content, "LabelMedia", label_media);
+  AppendBoolDirective(content, "AlwaysOpen", always_open);
+  AppendBoolDirective(content, "Autochanger", autochanger);
+  AppendBoolDirective(content, "CloseOnPoll", close_on_poll);
+  AppendBoolDirective(content, "BlockPositioning", block_positioning);
+  AppendBoolDirective(content, "UseMtiocget", use_mtiocget);
+  AppendBoolDirective(content, "CheckLabels", check_labels);
+  AppendBoolDirective(content, "RequiresMount", requires_mount);
+  AppendBoolDirective(content, "OfflineOnUnmount", offline_on_unmount);
+  AppendBoolDirective(content, "BlockChecksum", block_checksum);
   AppendBoolDirective(content, "AutoSelect", auto_select);
   AppendQuotedDirective(content, "ChangerDevice", changer_device);
   AppendQuotedDirective(content, "ChangerCommand", changer_command);
@@ -3665,6 +3709,28 @@ struct StorageDaemonDeviceWriteContext {
   std::optional<std::string> access_mode{};
   std::optional<std::string> device_options{};
   std::optional<std::string> diagnostic_device{};
+  std::optional<bool> hardware_end_of_file{};
+  std::optional<bool> hardware_end_of_medium{};
+  std::optional<bool> backward_space_record{};
+  std::optional<bool> backward_space_file{};
+  std::optional<bool> bsf_at_eom{};
+  std::optional<bool> two_eof{};
+  std::optional<bool> forward_space_record{};
+  std::optional<bool> forward_space_file{};
+  std::optional<bool> fast_forward_space_file{};
+  std::optional<bool> removable_media{};
+  std::optional<bool> random_access{};
+  std::optional<bool> automatic_mount{};
+  std::optional<bool> label_media{};
+  std::optional<bool> always_open{};
+  std::optional<bool> autochanger{};
+  std::optional<bool> close_on_poll{};
+  std::optional<bool> block_positioning{};
+  std::optional<bool> use_mtiocget{};
+  std::optional<bool> check_labels{};
+  std::optional<bool> requires_mount{};
+  std::optional<bool> offline_on_unmount{};
+  std::optional<bool> block_checksum{};
   std::optional<bool> auto_select{};
   std::optional<std::string> changer_device{};
   std::optional<std::string> changer_command{};
@@ -8206,6 +8272,93 @@ LoadStorageDaemonDeviceWriteContext(
     if (device->diag_device_name && device->diag_device_name[0] != '\0') {
       context.diagnostic_device = std::string{device->diag_device_name};
     }
+    if (HasMemberSource(*device, {"HardwareEndOfFile"})) {
+      context.hardware_end_of_file
+          = BitIsSet(storagedaemon::CAP_EOF, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"HardwareEndOfMedium"})) {
+      context.hardware_end_of_medium
+          = BitIsSet(storagedaemon::CAP_EOM, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"BackwardSpaceRecord"})) {
+      context.backward_space_record
+          = BitIsSet(storagedaemon::CAP_BSR, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"BackwardSpaceFile"})) {
+      context.backward_space_file
+          = BitIsSet(storagedaemon::CAP_BSF, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"BsfAtEom"})) {
+      context.bsf_at_eom
+          = BitIsSet(storagedaemon::CAP_BSFATEOM, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"TwoEof"})) {
+      context.two_eof = BitIsSet(storagedaemon::CAP_TWOEOF, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"ForwardSpaceRecord"})) {
+      context.forward_space_record
+          = BitIsSet(storagedaemon::CAP_FSR, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"ForwardSpaceFile"})) {
+      context.forward_space_file
+          = BitIsSet(storagedaemon::CAP_FSF, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"FastForwardSpaceFile"})) {
+      context.fast_forward_space_file
+          = BitIsSet(storagedaemon::CAP_FASTFSF, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"RemovableMedia"})) {
+      context.removable_media
+          = BitIsSet(storagedaemon::CAP_REM, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"RandomAccess"})) {
+      context.random_access
+          = BitIsSet(storagedaemon::CAP_RACCESS, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"AutomaticMount"})) {
+      context.automatic_mount
+          = BitIsSet(storagedaemon::CAP_AUTOMOUNT, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"LabelMedia"})) {
+      context.label_media
+          = BitIsSet(storagedaemon::CAP_LABEL, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"AlwaysOpen"})) {
+      context.always_open
+          = BitIsSet(storagedaemon::CAP_ALWAYSOPEN, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"Autochanger"})) {
+      context.autochanger = BitIsSet(storagedaemon::CAP_ATTACHED_TO_AUTOCHANGER,
+                                     device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"CloseOnPoll"})) {
+      context.close_on_poll
+          = BitIsSet(storagedaemon::CAP_CLOSEONPOLL, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"BlockPositioning"})) {
+      context.block_positioning
+          = BitIsSet(storagedaemon::CAP_POSITIONBLOCKS, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"UseMtiocget"})) {
+      context.use_mtiocget
+          = BitIsSet(storagedaemon::CAP_MTIOCGET, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"CheckLabels"})) {
+      context.check_labels
+          = BitIsSet(storagedaemon::CAP_CHECKLABELS, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"RequiresMount"})) {
+      context.requires_mount
+          = BitIsSet(storagedaemon::CAP_REQMOUNT, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"OfflineOnUnmount"})) {
+      context.offline_on_unmount
+          = BitIsSet(storagedaemon::CAP_OFFLINEUNMOUNT, device->cap_bits);
+    }
+    if (HasMemberSource(*device, {"BlockChecksum"})) {
+      context.block_checksum
+          = BitIsSet(storagedaemon::CAP_BLOCKCHECKSUM, device->cap_bits);
+    }
     if (HasMemberSource(*device, {"AutoSelect"})) {
       context.auto_select = device->autoselect;
     }
@@ -8760,7 +8913,25 @@ OperationResult<std::monostate> SyncStorageDaemonConfig(
       device_name, media_type, *archive_device, *device_type,
       device_context.value->access_mode, device_context.value->device_options,
       device_context.value->diagnostic_device,
-      device_context.value->auto_select, device_context.value->changer_device,
+      device_context.value->hardware_end_of_file,
+      device_context.value->hardware_end_of_medium,
+      device_context.value->backward_space_record,
+      device_context.value->backward_space_file,
+      device_context.value->bsf_at_eom, device_context.value->two_eof,
+      device_context.value->forward_space_record,
+      device_context.value->forward_space_file,
+      device_context.value->fast_forward_space_file,
+      device_context.value->removable_media,
+      device_context.value->random_access,
+      device_context.value->automatic_mount, device_context.value->label_media,
+      device_context.value->always_open, device_context.value->autochanger,
+      device_context.value->close_on_poll,
+      device_context.value->block_positioning,
+      device_context.value->use_mtiocget, device_context.value->check_labels,
+      device_context.value->requires_mount,
+      device_context.value->offline_on_unmount,
+      device_context.value->block_checksum, device_context.value->auto_select,
+      device_context.value->changer_device,
       device_context.value->changer_command,
       device_context.value->alert_command,
       device_context.value->maximum_changer_wait,
@@ -14753,6 +14924,62 @@ ServiceState::UpsertStorageDeviceResource(
   const auto diagnostic_device = spec.diagnostic_device
                                      ? spec.diagnostic_device
                                      : context.value->diagnostic_device;
+  const auto hardware_end_of_file = spec.hardware_end_of_file
+                                        ? spec.hardware_end_of_file
+                                        : context.value->hardware_end_of_file;
+  const auto hardware_end_of_medium
+      = spec.hardware_end_of_medium ? spec.hardware_end_of_medium
+                                    : context.value->hardware_end_of_medium;
+  const auto backward_space_record = spec.backward_space_record
+                                         ? spec.backward_space_record
+                                         : context.value->backward_space_record;
+  const auto backward_space_file = spec.backward_space_file
+                                       ? spec.backward_space_file
+                                       : context.value->backward_space_file;
+  const auto bsf_at_eom
+      = spec.bsf_at_eom ? spec.bsf_at_eom : context.value->bsf_at_eom;
+  const auto two_eof = spec.two_eof ? spec.two_eof : context.value->two_eof;
+  const auto forward_space_record = spec.forward_space_record
+                                        ? spec.forward_space_record
+                                        : context.value->forward_space_record;
+  const auto forward_space_file = spec.forward_space_file
+                                      ? spec.forward_space_file
+                                      : context.value->forward_space_file;
+  const auto fast_forward_space_file
+      = spec.fast_forward_space_file ? spec.fast_forward_space_file
+                                     : context.value->fast_forward_space_file;
+  const auto removable_media = spec.removable_media
+                                   ? spec.removable_media
+                                   : context.value->removable_media;
+  const auto random_access
+      = spec.random_access ? spec.random_access : context.value->random_access;
+  const auto automatic_mount = spec.automatic_mount
+                                   ? spec.automatic_mount
+                                   : context.value->automatic_mount;
+  const auto label_media
+      = spec.label_media ? spec.label_media : context.value->label_media;
+  const auto always_open
+      = spec.always_open ? spec.always_open : context.value->always_open;
+  const auto autochanger
+      = spec.autochanger ? spec.autochanger : context.value->autochanger;
+  const auto close_on_poll
+      = spec.close_on_poll ? spec.close_on_poll : context.value->close_on_poll;
+  const auto block_positioning = spec.block_positioning
+                                     ? spec.block_positioning
+                                     : context.value->block_positioning;
+  const auto use_mtiocget
+      = spec.use_mtiocget ? spec.use_mtiocget : context.value->use_mtiocget;
+  const auto check_labels
+      = spec.check_labels ? spec.check_labels : context.value->check_labels;
+  const auto requires_mount = spec.requires_mount
+                                  ? spec.requires_mount
+                                  : context.value->requires_mount;
+  const auto offline_on_unmount = spec.offline_on_unmount
+                                      ? spec.offline_on_unmount
+                                      : context.value->offline_on_unmount;
+  const auto block_checksum = spec.block_checksum
+                                  ? spec.block_checksum
+                                  : context.value->block_checksum;
   const auto auto_select
       = spec.auto_select ? spec.auto_select : context.value->auto_select;
   const auto changer_device = spec.changer_device
@@ -14879,8 +15106,14 @@ ServiceState::UpsertStorageDeviceResource(
                                          device_name, storage_name));
   const auto rendered = BuildStorageDaemonDeviceResourceContent(
       device_name, *media_type, *archive_device, *device_type, access_mode,
-      device_options, diagnostic_device, auto_select, changer_device,
-      changer_command, alert_command, maximum_changer_wait, maximum_open_wait,
+      device_options, diagnostic_device, hardware_end_of_file,
+      hardware_end_of_medium, backward_space_record, backward_space_file,
+      bsf_at_eom, two_eof, forward_space_record, forward_space_file,
+      fast_forward_space_file, removable_media, random_access, automatic_mount,
+      label_media, always_open, autochanger, close_on_poll, block_positioning,
+      use_mtiocget, check_labels, requires_mount, offline_on_unmount,
+      block_checksum, auto_select, changer_device, changer_command,
+      alert_command, maximum_changer_wait, maximum_open_wait,
       maximum_open_volumes, maximum_network_buffer_size, volume_poll_interval,
       maximum_rewind_wait, label_block_size, minimum_block_size,
       maximum_block_size, maximum_file_size, volume_capacity,
