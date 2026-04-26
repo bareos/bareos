@@ -396,11 +396,6 @@ uint16_t DriveToElementAddress(
   return static_cast<uint16_t>(assignment.dte_addr + dev->drive_index);
 }
 
-std::string FormatBarcode(const std::string& barcode)
-{
-  return barcode.empty() ? std::string{"E"} : std::string{"F:"} + barcode;
-}
-
 bool MoveMediumWithRetry(DeviceControlRecord* dcr,
                          const ScsiChangerElementAddressAssignment& assignment,
                          uint16_t source,
@@ -804,15 +799,17 @@ bool NativeScsiAutochangerCmd(DeviceControlRecord* dcr,
         case kElementTypeStorage: {
           auto slot = ElementAddressToSlot(*assignment, element.element_address,
                                            element.element_type_code);
-          SendListLine(dir, "S:" + std::to_string(slot) + ":"
-                                + FormatBarcode(element.primary_volume_tag));
+          SendListLine(dir, "S:" + std::to_string(slot)
+                                + (element.full ? ":F:" : ":E")
+                                + element.primary_volume_tag);
           break;
         }
         case kElementTypeImportExport: {
           auto slot = ElementAddressToSlot(*assignment, element.element_address,
                                            element.element_type_code);
-          SendListLine(dir, "I:" + std::to_string(slot) + ":"
-                                + FormatBarcode(element.primary_volume_tag));
+          SendListLine(dir, "I:" + std::to_string(slot)
+                                + (element.full ? ":F:" : ":E")
+                                + element.primary_volume_tag);
           break;
         }
         default:
