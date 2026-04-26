@@ -30,6 +30,7 @@
 #include "include/bareos.h"
 #include "include/auth_protocol_types.h"
 #include "include/auth_types.h"
+#include "include/ch.h"
 #include "include/job_level.h"
 #include "include/job_types.h"
 #include "include/migration_selection_types.h"
@@ -2586,6 +2587,8 @@ std::string BuildStorageDaemonDeviceResourceContent(
     const std::optional<bool>& drive_crypto_enabled,
     const std::optional<bool>& query_crypto_status,
     const std::optional<std::string>& auto_deflate,
+    const std::optional<std::string>& auto_deflate_algorithm,
+    const std::optional<uint16_t>& auto_deflate_level,
     const std::optional<std::string>& auto_inflate,
     const std::optional<bool>& collect_statistics,
     const std::optional<bool>& eof_on_error_is_eot,
@@ -2631,6 +2634,9 @@ std::string BuildStorageDaemonDeviceResourceContent(
   AppendBoolDirective(content, "DriveCryptoEnabled", drive_crypto_enabled);
   AppendBoolDirective(content, "QueryCryptoStatus", query_crypto_status);
   AppendBareosDirective(content, "AutoDeflate", auto_deflate);
+  AppendBareosDirective(content, "AutoDeflateAlgorithm",
+                        auto_deflate_algorithm);
+  AppendIntegerDirective(content, "AutoDeflateLevel", auto_deflate_level);
   AppendBareosDirective(content, "AutoInflate", auto_inflate);
   AppendBoolDirective(content, "CollectStatistics", collect_statistics);
   AppendBoolDirective(content, "EofOnErrorIsEot", eof_on_error_is_eot);
@@ -3034,6 +3040,38 @@ std::string RenderStorageDeviceIoDirection(storagedaemon::IODirection value)
       return "write";
     case storagedaemon::IODirection::READ_WRITE:
       return "readwrite";
+    default:
+      return "Unknown";
+  }
+}
+
+OperationResult<std::string> NormalizeStorageDeviceCompressionAlgorithm(
+    std::string_view value)
+{
+  std::string normalized{value};
+  std::transform(normalized.begin(), normalized.end(), normalized.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  if (normalized == "gzip" || normalized == "lzo" || normalized == "lzfast"
+      || normalized == "lz4" || normalized == "lz4hc") {
+    return {.value = normalized};
+  }
+  return {.error = "unsupported storage device compression algorithm value '"
+                   + std::string{value} + "'."};
+}
+
+std::string RenderStorageDeviceCompressionAlgorithm(uint32_t value)
+{
+  switch (value) {
+    case COMPRESS_GZIP:
+      return "gzip";
+    case COMPRESS_LZO1X:
+      return "lzo";
+    case COMPRESS_FZFZ:
+      return "lzfast";
+    case COMPRESS_FZ4L:
+      return "lz4";
+    case COMPRESS_FZ4H:
+      return "lz4hc";
     default:
       return "Unknown";
   }
@@ -3623,6 +3661,8 @@ struct StorageDaemonDeviceWriteContext {
   std::optional<bool> drive_crypto_enabled{};
   std::optional<bool> query_crypto_status{};
   std::optional<std::string> auto_deflate{};
+  std::optional<std::string> auto_deflate_algorithm{};
+  std::optional<uint16_t> auto_deflate_level{};
   std::optional<std::string> auto_inflate{};
   std::optional<bool> collect_statistics{};
   std::optional<bool> eof_on_error_is_eot{};
@@ -8114,6 +8154,19 @@ LoadStorageDaemonDeviceWriteContext(
       }
       context.auto_deflate = auto_deflate;
     }
+    if (HasMemberSource(*device, {"AutoDeflateAlgorithm"})) {
+      const auto auto_deflate_algorithm
+          = RenderStorageDeviceCompressionAlgorithm(
+              device->autodeflate_algorithm);
+      if (auto_deflate_algorithm == "Unknown") {
+        return {.error = "storage-daemon device '" + std::string{device_name}
+                         + "' has an unsupported AutoDeflateAlgorithm value."};
+      }
+      context.auto_deflate_algorithm = auto_deflate_algorithm;
+    }
+    if (HasMemberSource(*device, {"AutoDeflateLevel"})) {
+      context.auto_deflate_level = device->autodeflate_level;
+    }
     if (HasMemberSource(*device, {"AutoInflate"})) {
       const auto auto_inflate
           = RenderStorageDeviceIoDirection(device->autoinflate);
@@ -8558,7 +8611,10 @@ OperationResult<std::monostate> SyncStorageDaemonConfig(
       device_context.value->drive_tape_alert_enabled,
       device_context.value->drive_crypto_enabled,
       device_context.value->query_crypto_status,
-      device_context.value->auto_deflate, device_context.value->auto_inflate,
+      device_context.value->auto_deflate,
+      device_context.value->auto_deflate_algorithm,
+      device_context.value->auto_deflate_level,
+      device_context.value->auto_inflate,
       device_context.value->collect_statistics,
       device_context.value->eof_on_error_is_eot, device_description);
 
@@ -14568,6 +14624,20 @@ ServiceState::UpsertStorageDeviceResource(
     }
     auto_deflate = *normalized_auto_deflate.value;
   }
+  auto auto_deflate_algorithm = spec.auto_deflate_algorithm
+                                    ? spec.auto_deflate_algorithm
+                                    : context.value->auto_deflate_algorithm;
+  if (auto_deflate_algorithm) {
+    auto normalized_auto_deflate_algorithm
+        = NormalizeStorageDeviceCompressionAlgorithm(*auto_deflate_algorithm);
+    if (!normalized_auto_deflate_algorithm) {
+      return {.error = normalized_auto_deflate_algorithm.error};
+    }
+    auto_deflate_algorithm = *normalized_auto_deflate_algorithm.value;
+  }
+  const auto auto_deflate_level = spec.auto_deflate_level
+                                      ? spec.auto_deflate_level
+                                      : context.value->auto_deflate_level;
   auto auto_inflate
       = spec.auto_inflate ? spec.auto_inflate : context.value->auto_inflate;
   if (auto_inflate) {
@@ -14599,8 +14669,8 @@ ServiceState::UpsertStorageDeviceResource(
       spool_directory, maximum_spool_size, maximum_job_spool_size, drive_index,
       mount_point, mount_command, unmount_command, no_rewind_on_close,
       drive_tape_alert_enabled, drive_crypto_enabled, query_crypto_status,
-      auto_deflate, auto_inflate, collect_statistics, eof_on_error_is_eot,
-      description);
+      auto_deflate, auto_deflate_algorithm, auto_deflate_level, auto_inflate,
+      collect_statistics, eof_on_error_is_eot, description);
   const auto resource_directory
       = storage_config.value->path / "bareos-sd.d" / "device";
   const bool file_existed = std::filesystem::exists(context.value->file_path);

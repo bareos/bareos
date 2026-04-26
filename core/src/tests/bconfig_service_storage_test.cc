@@ -824,6 +824,8 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
        .drive_crypto_enabled = true,
        .query_crypto_status = true,
        .auto_deflate = std::string{"writeonly"},
+       .auto_deflate_algorithm = std::string{"lz4hc"},
+       .auto_deflate_level = 7,
        .auto_inflate = std::string{"in"},
        .collect_statistics = false,
        .eof_on_error_is_eot = true,
@@ -887,6 +889,9 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(created_text.find("DriveCryptoEnabled = yes"), std::string::npos);
   EXPECT_NE(created_text.find("QueryCryptoStatus = yes"), std::string::npos);
   EXPECT_NE(created_text.find("AutoDeflate = write"), std::string::npos);
+  EXPECT_NE(created_text.find("AutoDeflateAlgorithm = lz4hc"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("AutoDeflateLevel = 7"), std::string::npos);
   EXPECT_NE(created_text.find("AutoInflate = read"), std::string::npos);
   EXPECT_NE(created_text.find("CollectStatistics = no"), std::string::npos);
   EXPECT_NE(created_text.find("EofOnErrorIsEot = yes"), std::string::npos);
@@ -956,6 +961,9 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(updated_text.find("DriveCryptoEnabled = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("QueryCryptoStatus = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("AutoDeflate = write"), std::string::npos);
+  EXPECT_NE(updated_text.find("AutoDeflateAlgorithm = lz4hc"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("AutoDeflateLevel = 7"), std::string::npos);
   EXPECT_NE(updated_text.find("AutoInflate = read"), std::string::npos);
   EXPECT_NE(updated_text.find("CollectStatistics = no"), std::string::npos);
   EXPECT_NE(updated_text.find("EofOnErrorIsEot = yes"), std::string::npos);
@@ -1011,6 +1019,8 @@ TEST(BconfigService, UpsertsStorageDeviceResourcesInSharedFiles)
                           "  accessmode = writeonly\n"
                           "  maximumrewindwait = 305\n"
                           "  autodeflate = both\n"
+                          "  autodeflatealgorithm = lz4\n"
+                          "  autodeflatelevel = 6\n"
                           "  autoinflate = readonly\n");
   WriteTextFile(shared_path,
                 shared_base_text
@@ -1034,6 +1044,8 @@ TEST(BconfigService, UpsertsStorageDeviceResourcesInSharedFiles)
   EXPECT_NE(shared_text.find("AccessMode = write"), std::string::npos);
   EXPECT_NE(shared_text.find("MaximumRewindWait = 305"), std::string::npos);
   EXPECT_NE(shared_text.find("AutoDeflate = readwrite"), std::string::npos);
+  EXPECT_NE(shared_text.find("AutoDeflateAlgorithm = lz4"), std::string::npos);
+  EXPECT_NE(shared_text.find("AutoDeflateLevel = 6"), std::string::npos);
   EXPECT_NE(shared_text.find("AutoInflate = read"), std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherDevice\""), std::string::npos);
 }

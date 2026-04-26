@@ -772,6 +772,8 @@ struct StorageDeviceResourceSpec {
   std::optional<bool> drive_crypto_enabled{};
   std::optional<bool> query_crypto_status{};
   std::optional<std::string> auto_deflate{};
+  std::optional<std::string> auto_deflate_algorithm{};
+  std::optional<uint16_t> auto_deflate_level{};
   std::optional<std::string> auto_inflate{};
   std::optional<bool> collect_statistics{};
   std::optional<bool> eof_on_error_is_eot{};

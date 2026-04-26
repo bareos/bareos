@@ -330,6 +330,8 @@ struct StorageDeviceRequestSpec {
   std::optional<bool> drive_crypto_enabled{};
   std::optional<bool> query_crypto_status{};
   std::optional<std::string> auto_deflate{};
+  std::optional<std::string> auto_deflate_algorithm{};
+  std::optional<uint16_t> auto_deflate_level{};
   std::optional<std::string> auto_inflate{};
   std::optional<bool> collect_statistics{};
   std::optional<bool> eof_on_error_is_eot{};
@@ -6970,6 +6972,8 @@ http::response<http::string_body> HandleDeploymentStorageDevicePutRequest(
       .drive_crypto_enabled = spec->drive_crypto_enabled,
       .query_crypto_status = spec->query_crypto_status,
       .auto_deflate = spec->auto_deflate,
+      .auto_deflate_algorithm = spec->auto_deflate_algorithm,
+      .auto_deflate_level = spec->auto_deflate_level,
       .auto_inflate = spec->auto_inflate,
       .collect_statistics = spec->collect_statistics,
       .eof_on_error_is_eot = spec->eof_on_error_is_eot,
@@ -11107,6 +11111,9 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   auto* query_crypto_status
       = json_object_get(root.get(), "query_crypto_status");
   auto* auto_deflate = json_object_get(root.get(), "auto_deflate");
+  auto* auto_deflate_algorithm
+      = json_object_get(root.get(), "auto_deflate_algorithm");
+  auto* auto_deflate_level = json_object_get(root.get(), "auto_deflate_level");
   auto* auto_inflate = json_object_get(root.get(), "auto_inflate");
   auto* collect_statistics = json_object_get(root.get(), "collect_statistics");
   auto* eof_on_error_is_eot
@@ -11150,6 +11157,7 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
       || !require_string(mount_command, "mount_command")
       || !require_string(unmount_command, "unmount_command")
       || !require_string(auto_deflate, "auto_deflate")
+      || !require_string(auto_deflate_algorithm, "auto_deflate_algorithm")
       || !require_string(auto_inflate, "auto_inflate")
       || !require_string(description, "description")) {
     return std::nullopt;
@@ -11174,7 +11182,8 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
       || !require_integer(maximum_concurrent_jobs, "maximum_concurrent_jobs")
       || !require_integer(maximum_spool_size, "maximum_spool_size")
       || !require_integer(maximum_job_spool_size, "maximum_job_spool_size")
-      || !require_integer(drive_index, "drive_index")) {
+      || !require_integer(drive_index, "drive_index")
+      || !require_integer(auto_deflate_level, "auto_deflate_level")) {
     return std::nullopt;
   }
 
@@ -11298,6 +11307,14 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   }
   if (auto_deflate && json_is_string(auto_deflate)) {
     spec.auto_deflate = std::string{json_string_value(auto_deflate)};
+  }
+  if (auto_deflate_algorithm && json_is_string(auto_deflate_algorithm)) {
+    spec.auto_deflate_algorithm
+        = std::string{json_string_value(auto_deflate_algorithm)};
+  }
+  if (!assign_u16(auto_deflate_level, "auto_deflate_level",
+                  spec.auto_deflate_level)) {
+    return std::nullopt;
   }
   if (auto_inflate && json_is_string(auto_inflate)) {
     spec.auto_inflate = std::string{json_string_value(auto_inflate)};
