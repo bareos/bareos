@@ -7667,6 +7667,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
        .enabled = false,
        .allow_compression = false,
        .heartbeat_interval = 60,
+       .cache_status_interval = 90,
        .maximum_bandwidth_per_job = 2048,
        .description = std::string{"Managed storage"}});
   ASSERT_TRUE(created) << created.error;
@@ -7686,6 +7687,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
   EXPECT_NE(created_text.find("Enabled = no"), std::string::npos);
   EXPECT_NE(created_text.find("AllowCompression = no"), std::string::npos);
   EXPECT_NE(created_text.find("HeartbeatInterval = 60"), std::string::npos);
+  EXPECT_NE(created_text.find("CacheStatusInterval = 90"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed storage\""),
@@ -7708,6 +7710,7 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
   EXPECT_NE(updated_text.find("Enabled = no"), std::string::npos);
   EXPECT_NE(updated_text.find("AllowCompression = no"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 60"), std::string::npos);
+  EXPECT_NE(updated_text.find("CacheStatusInterval = 90"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Managed storage\""),
@@ -7744,6 +7747,7 @@ TEST(BconfigService, UpsertsDirectorStorageResourcesPreserveLargeImportedPort)
                 "  Enabled = no\n"
                 "  AllowCompression = no\n"
                 "  HeartbeatInterval = 45\n"
+                "  CacheStatusInterval = 75\n"
                 "  MaximumBandwidthPerJob = 8192\n"
                 "}\n");
 
@@ -7768,6 +7772,7 @@ TEST(BconfigService, UpsertsDirectorStorageResourcesPreserveLargeImportedPort)
   EXPECT_NE(updated_text.find("Enabled = no"), std::string::npos);
   EXPECT_NE(updated_text.find("AllowCompression = no"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 45"), std::string::npos);
+  EXPECT_NE(updated_text.find("CacheStatusInterval = 75"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 8192"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated imported storage\""),
@@ -7823,7 +7828,8 @@ TEST(BconfigService,
        .password = std::string{"sd_password"},
        .device = std::string{"FileStorage"},
        .media_type = std::string{"File"},
-       .allow_compression = false});
+       .allow_compression = false,
+       .cache_status_interval = 120});
   ASSERT_TRUE(created) << created.error;
 
   EXPECT_EQ(ReadTextFile(storage_root / "bareos-sd.d/director/bareos-dir.conf"),

@@ -1090,6 +1090,7 @@ std::string BuildDirectorStorageResourceContent(
     const std::optional<bool>& enabled,
     const std::optional<bool>& allow_compression,
     const std::optional<uint64_t>& heartbeat_interval,
+    const std::optional<uint64_t>& cache_status_interval,
     const std::optional<uint64_t>& maximum_bandwidth_per_job,
     std::string_view description)
 {
@@ -1105,6 +1106,7 @@ std::string BuildDirectorStorageResourceContent(
   AppendBoolDirective(content, "Enabled", enabled);
   AppendBoolDirective(content, "AllowCompression", allow_compression);
   AppendIntegerDirective(content, "HeartbeatInterval", heartbeat_interval);
+  AppendIntegerDirective(content, "CacheStatusInterval", cache_status_interval);
   AppendIntegerDirective(content, "MaximumBandwidthPerJob",
                          maximum_bandwidth_per_job);
   content << "}\n";
@@ -2472,6 +2474,7 @@ struct DirectorStorageWriteContext {
   std::optional<bool> enabled{};
   std::optional<bool> allow_compression{};
   std::optional<uint64_t> heartbeat_interval{};
+  std::optional<uint64_t> cache_status_interval{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> description{};
   bool exists{false};
@@ -2918,6 +2921,10 @@ OperationResult<DirectorStorageWriteContext> LoadDirectorStorageWriteContext(
     if (HasMemberSource(*storage, {"HeartbeatInterval"})) {
       context.heartbeat_interval
           = static_cast<uint64_t>(storage->heartbeat_interval);
+    }
+    if (HasMemberSource(*storage, {"CacheStatusInterval"})) {
+      context.cache_status_interval
+          = static_cast<uint64_t>(storage->cache_status_interval);
     }
     if (storage->description_ && storage->description_[0] != '\0') {
       context.description = std::string{storage->description_};
@@ -8598,6 +8605,9 @@ ServiceState::UpsertDirectorStorageResource(
   const auto heartbeat_interval = spec.heartbeat_interval
                                       ? spec.heartbeat_interval
                                       : context.value->heartbeat_interval;
+  const auto cache_status_interval = spec.cache_status_interval
+                                         ? spec.cache_status_interval
+                                         : context.value->cache_status_interval;
   const auto enabled = spec.enabled ? spec.enabled : context.value->enabled;
   const auto allow_compression = spec.allow_compression
                                      ? spec.allow_compression
@@ -8619,8 +8629,8 @@ ServiceState::UpsertDirectorStorageResource(
   }
   const auto content = BuildDirectorStorageResourceContent(
       storage_name, *address, *password, devices, *media_type, effective_port,
-      enabled, allow_compression, heartbeat_interval, maximum_bandwidth_per_job,
-      description);
+      enabled, allow_compression, heartbeat_interval, cache_status_interval,
+      maximum_bandwidth_per_job, description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "storage";

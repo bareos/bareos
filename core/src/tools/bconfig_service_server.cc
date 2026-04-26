@@ -119,6 +119,7 @@ struct DirectorStorageRequestSpec {
   std::optional<bool> enabled{};
   std::optional<bool> allow_compression{};
   std::optional<uint64_t> heartbeat_interval{};
+  std::optional<uint64_t> cache_status_interval{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> archive_device{};
   std::optional<std::string> device_type{};
@@ -1329,6 +1330,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-storage-heartbeat-interval">Heartbeat interval</label>
         <input id="director-storage-heartbeat-interval" name="heartbeat_interval"
                type="number" min="0" placeholder="0">
+
+        <label for="director-storage-cache-status-interval">Cache status interval</label>
+        <input id="director-storage-cache-status-interval"
+               name="cache_status_interval" type="number" min="0"
+               placeholder="0">
 
         <label for="director-storage-archive-device">Archive Device</label>
         <input id="director-storage-archive-device" name="archive_device"
@@ -3742,6 +3748,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
+          cache_status_interval: String(
+            form.get('cache_status_interval') ?? '').trim(),
           archive_device: String(form.get('archive_device') ?? '').trim(),
           device_type: String(form.get('device_type') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
@@ -3773,6 +3781,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
           delete payload.heartbeat_interval;
         } else {
           payload.heartbeat_interval = Number.parseInt(payload.heartbeat_interval, 10);
+        }
+        if (!payload.cache_status_interval) {
+          delete payload.cache_status_interval;
+        } else {
+          payload.cache_status_interval
+            = Number.parseInt(payload.cache_status_interval, 10);
         }
         if (!payload.archive_device) {
           delete payload.archive_device;
@@ -6878,6 +6892,7 @@ http::response<http::string_body> HandleDeploymentDirectorStoragePutRequest(
       .enabled = spec->enabled,
       .allow_compression = spec->allow_compression,
       .heartbeat_interval = spec->heartbeat_interval,
+      .cache_status_interval = spec->cache_status_interval,
       .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
       .archive_device = spec->archive_device,
       .device_type = spec->device_type,
@@ -8744,6 +8759,8 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   auto* enabled = json_object_get(root.get(), "enabled");
   auto* allow_compression = json_object_get(root.get(), "allow_compression");
   auto* heartbeat_interval = json_object_get(root.get(), "heartbeat_interval");
+  auto* cache_status_interval
+      = json_object_get(root.get(), "cache_status_interval");
   auto* maximum_bandwidth_per_job
       = json_object_get(root.get(), "maximum_bandwidth_per_job");
   auto* archive_device = json_object_get(root.get(), "archive_device");
@@ -8782,6 +8799,11 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   if (heartbeat_interval && !json_is_null(heartbeat_interval)
       && !json_is_integer(heartbeat_interval)) {
     error = "field 'heartbeat_interval' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (cache_status_interval && !json_is_null(cache_status_interval)
+      && !json_is_integer(cache_status_interval)) {
+    error = "field 'cache_status_interval' must be an integer when provided.";
     return std::nullopt;
   }
   if (maximum_bandwidth_per_job && !json_is_null(maximum_bandwidth_per_job)
@@ -8841,6 +8863,14 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
       return std::nullopt;
     }
     spec.heartbeat_interval = static_cast<uint64_t>(value);
+  }
+  if (cache_status_interval && json_is_integer(cache_status_interval)) {
+    const auto value = json_integer_value(cache_status_interval);
+    if (value < 0) {
+      error = "field 'cache_status_interval' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.cache_status_interval = static_cast<uint64_t>(value);
   }
   if (maximum_bandwidth_per_job && json_is_integer(maximum_bandwidth_per_job)) {
     const auto value = json_integer_value(maximum_bandwidth_per_job);

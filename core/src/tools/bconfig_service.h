@@ -246,6 +246,7 @@ struct DirectorStorageResourceSpec {
   std::optional<bool> enabled{};
   std::optional<bool> allow_compression{};
   std::optional<uint64_t> heartbeat_interval{};
+  std::optional<uint64_t> cache_status_interval{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> archive_device{};
   std::optional<std::string> device_type{};
