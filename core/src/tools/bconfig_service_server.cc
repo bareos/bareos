@@ -2321,7 +2321,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-pool-pool-name" name="pool_name" value="managed-pool">
 
         <label for="director-pool-pool-type">Pool type</label>
-        <input id="director-pool-pool-type" name="pool_type" value="Backup">
+        <input id="director-pool-pool-type" name="pool_type"
+               placeholder="Backup">
 
         <label for="director-pool-label-format">Label format</label>
         <input id="director-pool-label-format" name="label_format"
@@ -2490,10 +2491,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="director-catalog-db-name">DbName</label>
         <input id="director-catalog-db-name" name="db_name"
-               value="bareos_catalog">
+               placeholder="bareos_catalog">
 
         <label for="director-catalog-db-user">DbUser</label>
-        <input id="director-catalog-db-user" name="db_user" value="bareos">
+        <input id="director-catalog-db-user" name="db_user"
+               placeholder="bareos">
 
         <label for="director-catalog-db-password">DbPassword</label>
         <input id="director-catalog-db-password" name="db_password"
@@ -4846,7 +4848,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="console-console-name" name="console_name" value="managed-console">
 
         <label for="console-console-director">Director resource</label>
-        <input id="console-console-director" name="director" value="bareos-dir">
+        <input id="console-console-director" name="director"
+               placeholder="bareos-dir">
 
         <label for="console-console-password">Password</label>
         <input id="console-console-password" name="password"
@@ -4966,7 +4969,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="console-director-name" name="director_name" value="managed-dir">
 
         <label for="console-director-address">Address</label>
-        <input id="console-director-address" name="address" value="localhost">
+        <input id="console-director-address" name="address"
+               placeholder="localhost">
 
         <label for="console-director-port">Port</label>
         <input id="console-director-port" name="port" type="number" min="1" max="65535"
