@@ -109,6 +109,7 @@ struct DirectorClientRequestSpec {
   std::optional<uint64_t> soft_quota{};
   std::optional<uint64_t> hard_quota{};
   std::optional<uint64_t> soft_quota_grace_period{};
+  std::optional<uint32_t> ndmp_log_level{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -1301,6 +1302,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-client-soft-quota-grace-period"
                name="soft_quota_grace_period" type="number" min="0"
                placeholder="0">
+
+        <label for="director-client-ndmp-log-level">NdmpLogLevel</label>
+        <input id="director-client-ndmp-log-level" name="ndmp_log_level"
+               type="number" min="0" placeholder="0">
 
         <label for="director-client-heartbeat-interval">Heartbeat interval</label>
         <input id="director-client-heartbeat-interval" name="heartbeat_interval"
@@ -3725,6 +3730,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           hard_quota: String(form.get('hard_quota') ?? '').trim(),
           soft_quota_grace_period: String(
             form.get('soft_quota_grace_period') ?? '').trim(),
+          ndmp_log_level: String(form.get('ndmp_log_level') ?? '').trim(),
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
@@ -3760,6 +3766,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         } else {
           payload.soft_quota_grace_period
             = Number.parseInt(payload.soft_quota_grace_period, 10);
+        }
+        if (!payload.ndmp_log_level) {
+          delete payload.ndmp_log_level;
+        } else {
+          payload.ndmp_log_level = Number.parseInt(payload.ndmp_log_level, 10);
         }
         if (!payload.heartbeat_interval) {
           delete payload.heartbeat_interval;
@@ -6841,6 +6852,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .soft_quota = spec->soft_quota,
       .hard_quota = spec->hard_quota,
       .soft_quota_grace_period = spec->soft_quota_grace_period,
+      .ndmp_log_level = spec->ndmp_log_level,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -8710,6 +8722,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* hard_quota = json_object_get(root.get(), "hard_quota");
   auto* soft_quota_grace_period
       = json_object_get(root.get(), "soft_quota_grace_period");
+  auto* ndmp_log_level = json_object_get(root.get(), "ndmp_log_level");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -8766,6 +8779,11 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (soft_quota_grace_period && !json_is_null(soft_quota_grace_period)
       && !json_is_integer(soft_quota_grace_period)) {
     error = "field 'soft_quota_grace_period' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (ndmp_log_level && !json_is_null(ndmp_log_level)
+      && !json_is_integer(ndmp_log_level)) {
+    error = "field 'ndmp_log_level' must be an integer when provided.";
     return std::nullopt;
   }
   if (connection_from_director_to_client
@@ -8852,6 +8870,15 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
       return std::nullopt;
     }
     spec.soft_quota_grace_period = static_cast<uint64_t>(value);
+  }
+  if (ndmp_log_level && json_is_integer(ndmp_log_level)) {
+    const auto value = json_integer_value(ndmp_log_level);
+    if (value < 0 || value > std::numeric_limits<uint32_t>::max()) {
+      error = "field 'ndmp_log_level' must be between 0 and "
+              + std::to_string(std::numeric_limits<uint32_t>::max()) + ".";
+      return std::nullopt;
+    }
+    spec.ndmp_log_level = static_cast<uint32_t>(value);
   }
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {
