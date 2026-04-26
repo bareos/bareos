@@ -1119,6 +1119,10 @@ struct DirectorJobContentSpec {
   std::optional<uint32_t> max_concurrent_copies{};
   std::optional<bool> always_incremental{};
   std::optional<uint64_t> always_incremental_job_retention{};
+  std::optional<uint32_t> always_incremental_keep_number{};
+  std::optional<uint64_t> always_incremental_max_full_age{};
+  std::optional<uint32_t> max_full_consolidations{};
+  std::optional<uint64_t> run_on_incoming_connect_interval{};
   std::optional<bool> enabled{};
   std::vector<std::string> passthrough_entries{};
 };
@@ -2027,6 +2031,14 @@ std::string BuildDirectorJobResourceContent(std::string_view job_name,
   AppendBoolDirective(content, "AlwaysIncremental", spec.always_incremental);
   AppendIntegerDirective(content, "AlwaysIncrementalJobRetention",
                          spec.always_incremental_job_retention);
+  AppendIntegerDirective(content, "AlwaysIncrementalKeepNumber",
+                         spec.always_incremental_keep_number);
+  AppendIntegerDirective(content, "AlwaysIncrementalMaxFullAge",
+                         spec.always_incremental_max_full_age);
+  AppendIntegerDirective(content, "MaxFullConsolidations",
+                         spec.max_full_consolidations);
+  AppendIntegerDirective(content, "RunOnIncomingConnectInterval",
+                         spec.run_on_incoming_connect_interval);
   AppendBoolDirective(content, "Enabled", spec.enabled);
   for (const auto& entry : spec.passthrough_entries) {
     content << entry;
@@ -2138,6 +2150,14 @@ std::string BuildDirectorJobDefsResourceContent(
   AppendBoolDirective(content, "AlwaysIncremental", spec.always_incremental);
   AppendIntegerDirective(content, "AlwaysIncrementalJobRetention",
                          spec.always_incremental_job_retention);
+  AppendIntegerDirective(content, "AlwaysIncrementalKeepNumber",
+                         spec.always_incremental_keep_number);
+  AppendIntegerDirective(content, "AlwaysIncrementalMaxFullAge",
+                         spec.always_incremental_max_full_age);
+  AppendIntegerDirective(content, "MaxFullConsolidations",
+                         spec.max_full_consolidations);
+  AppendIntegerDirective(content, "RunOnIncomingConnectInterval",
+                         spec.run_on_incoming_connect_interval);
   AppendBoolDirective(content, "Enabled", spec.enabled);
   for (const auto& entry : spec.passthrough_entries) {
     content << entry;
@@ -6967,6 +6987,29 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
       context.content.always_incremental_job_retention
           = job->AlwaysIncrementalJobRetention;
     }
+    if (HasMemberSource(*job, {"AlwaysIncrementalKeepNumber"})) {
+      if (job->AlwaysIncrementalKeepNumber < 0) {
+        return {.error = "director job '" + std::string{job_name}
+                         + "' has negative AlwaysIncrementalKeepNumber."};
+      }
+      context.content.always_incremental_keep_number
+          = job->AlwaysIncrementalKeepNumber;
+    }
+    if (HasMemberSource(*job, {"AlwaysIncrementalMaxFullAge"})) {
+      context.content.always_incremental_max_full_age
+          = job->AlwaysIncrementalMaxFullAge;
+    }
+    if (HasMemberSource(*job, {"MaxFullConsolidations"})) {
+      if (job->MaxFullConsolidations < 0) {
+        return {.error = "director job '" + std::string{job_name}
+                         + "' has negative MaxFullConsolidations."};
+      }
+      context.content.max_full_consolidations = job->MaxFullConsolidations;
+    }
+    if (HasMemberSource(*job, {"RunOnIncomingConnectInterval"})) {
+      context.content.run_on_incoming_connect_interval
+          = job->RunOnIncomingConnectInterval;
+    }
     context.content.enabled = job->enabled;
 
     auto source = job->GetDefinitionSource();
@@ -7054,6 +7097,10 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
         "MaxConcurrentCopies",
         "AlwaysIncremental",
         "AlwaysIncrementalJobRetention",
+        "AlwaysIncrementalKeepNumber",
+        "AlwaysIncrementalMaxFullAge",
+        "MaxFullConsolidations",
+        "RunOnIncomingConnectInterval",
         "Enabled"};
     auto passthrough
         = context.is_standalone_file
@@ -7359,6 +7406,29 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
       context.content.always_incremental_job_retention
           = jobdefs->AlwaysIncrementalJobRetention;
     }
+    if (HasMemberSource(*jobdefs, {"AlwaysIncrementalKeepNumber"})) {
+      if (jobdefs->AlwaysIncrementalKeepNumber < 0) {
+        return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                         + "' has negative AlwaysIncrementalKeepNumber."};
+      }
+      context.content.always_incremental_keep_number
+          = jobdefs->AlwaysIncrementalKeepNumber;
+    }
+    if (HasMemberSource(*jobdefs, {"AlwaysIncrementalMaxFullAge"})) {
+      context.content.always_incremental_max_full_age
+          = jobdefs->AlwaysIncrementalMaxFullAge;
+    }
+    if (HasMemberSource(*jobdefs, {"MaxFullConsolidations"})) {
+      if (jobdefs->MaxFullConsolidations < 0) {
+        return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                         + "' has negative MaxFullConsolidations."};
+      }
+      context.content.max_full_consolidations = jobdefs->MaxFullConsolidations;
+    }
+    if (HasMemberSource(*jobdefs, {"RunOnIncomingConnectInterval"})) {
+      context.content.run_on_incoming_connect_interval
+          = jobdefs->RunOnIncomingConnectInterval;
+    }
     context.content.enabled = jobdefs->enabled;
 
     auto source = jobdefs->GetDefinitionSource();
@@ -7446,6 +7516,10 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
         "MaxConcurrentCopies",
         "AlwaysIncremental",
         "AlwaysIncrementalJobRetention",
+        "AlwaysIncrementalKeepNumber",
+        "AlwaysIncrementalMaxFullAge",
+        "MaxFullConsolidations",
+        "RunOnIncomingConnectInterval",
         "Enabled"};
     auto passthrough
         = context.is_standalone_file
@@ -13065,6 +13139,21 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertDirectorJobResource(
     content.always_incremental_job_retention
         = *spec.always_incremental_job_retention;
   }
+  if (spec.always_incremental_keep_number) {
+    content.always_incremental_keep_number
+        = *spec.always_incremental_keep_number;
+  }
+  if (spec.always_incremental_max_full_age) {
+    content.always_incremental_max_full_age
+        = *spec.always_incremental_max_full_age;
+  }
+  if (spec.max_full_consolidations) {
+    content.max_full_consolidations = *spec.max_full_consolidations;
+  }
+  if (spec.run_on_incoming_connect_interval) {
+    content.run_on_incoming_connect_interval
+        = *spec.run_on_incoming_connect_interval;
+  }
   if (spec.enabled) { content.enabled = *spec.enabled; }
 
   const auto rendered = BuildDirectorJobResourceContent(job_name, content);
@@ -13381,6 +13470,21 @@ ServiceState::UpsertDirectorJobDefsResource(
   if (spec.always_incremental_job_retention) {
     content.always_incremental_job_retention
         = *spec.always_incremental_job_retention;
+  }
+  if (spec.always_incremental_keep_number) {
+    content.always_incremental_keep_number
+        = *spec.always_incremental_keep_number;
+  }
+  if (spec.always_incremental_max_full_age) {
+    content.always_incremental_max_full_age
+        = *spec.always_incremental_max_full_age;
+  }
+  if (spec.max_full_consolidations) {
+    content.max_full_consolidations = *spec.max_full_consolidations;
+  }
+  if (spec.run_on_incoming_connect_interval) {
+    content.run_on_incoming_connect_interval
+        = *spec.run_on_incoming_connect_interval;
   }
   if (spec.enabled) { content.enabled = *spec.enabled; }
 

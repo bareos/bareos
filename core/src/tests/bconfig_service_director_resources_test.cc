@@ -1977,6 +1977,10 @@ TEST(BconfigService, UpsertsDirectorJobResources)
        .max_concurrent_copies = 5,
        .always_incremental = true,
        .always_incremental_job_retention = 7200,
+       .always_incremental_keep_number = 11,
+       .always_incremental_max_full_age = 86400,
+       .max_full_consolidations = 12,
+       .run_on_incoming_connect_interval = 1800,
        .enabled = true});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-dir");
@@ -2025,6 +2029,13 @@ TEST(BconfigService, UpsertsDirectorJobResources)
   EXPECT_NE(created_text.find("AlwaysIncremental = yes"), std::string::npos);
   EXPECT_NE(created_text.find("AlwaysIncrementalJobRetention = 7200"),
             std::string::npos);
+  EXPECT_NE(created_text.find("AlwaysIncrementalKeepNumber = 11"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("AlwaysIncrementalMaxFullAge = 86400"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("MaxFullConsolidations = 12"), std::string::npos);
+  EXPECT_NE(created_text.find("RunOnIncomingConnectInterval = 1800"),
+            std::string::npos);
   EXPECT_NE(created_text.find("Enabled = yes"), std::string::npos);
 
   const auto backup_catalog_path
@@ -2059,7 +2070,11 @@ TEST(BconfigService, UpsertsDirectorJobResources)
         "  FileHistorySize = 87654\n"
         "  MaxConcurrentCopies = 8\n"
         "  AlwaysIncremental = yes\n"
-        "  AlwaysIncrementalJobRetention = 14400\n";
+        "  AlwaysIncrementalJobRetention = 14400\n"
+        "  AlwaysIncrementalKeepNumber = 21\n"
+        "  AlwaysIncrementalMaxFullAge = 172800\n"
+        "  MaxFullConsolidations = 22\n"
+        "  RunOnIncomingConnectInterval = 3600\n";
   auto backup_catalog_brace = backup_catalog_text.rfind("}\n");
   ASSERT_NE(backup_catalog_brace, std::string::npos);
   backup_catalog_text.insert(backup_catalog_brace, backup_catalog_insertion);
@@ -2115,6 +2130,13 @@ TEST(BconfigService, UpsertsDirectorJobResources)
   EXPECT_NE(updated_text.find("MaxConcurrentCopies = 8"), std::string::npos);
   EXPECT_NE(updated_text.find("AlwaysIncremental = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("AlwaysIncrementalJobRetention = 14400"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("AlwaysIncrementalKeepNumber = 21"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("AlwaysIncrementalMaxFullAge = 172800"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("MaxFullConsolidations = 22"), std::string::npos);
+  EXPECT_NE(updated_text.find("RunOnIncomingConnectInterval = 3600"),
             std::string::npos);
 }
 
@@ -2337,6 +2359,10 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
        .max_concurrent_copies = 6,
        .always_incremental = true,
        .always_incremental_job_retention = 10800,
+       .always_incremental_keep_number = 13,
+       .always_incremental_max_full_age = 90000,
+       .max_full_consolidations = 14,
+       .run_on_incoming_connect_interval = 2400,
        .enabled = true});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-dir");
@@ -2386,6 +2412,13 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
   EXPECT_NE(created_text.find("AlwaysIncremental = yes"), std::string::npos);
   EXPECT_NE(created_text.find("AlwaysIncrementalJobRetention = 10800"),
             std::string::npos);
+  EXPECT_NE(created_text.find("AlwaysIncrementalKeepNumber = 13"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("AlwaysIncrementalMaxFullAge = 90000"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("MaxFullConsolidations = 14"), std::string::npos);
+  EXPECT_NE(created_text.find("RunOnIncomingConnectInterval = 2400"),
+            std::string::npos);
   EXPECT_NE(created_text.find("Enabled = yes"), std::string::npos);
 
   const auto default_jobdefs_path
@@ -2420,7 +2453,11 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
         "  FileHistorySize = 76543\n"
         "  MaxConcurrentCopies = 9\n"
         "  AlwaysIncremental = yes\n"
-        "  AlwaysIncrementalJobRetention = 21600\n";
+        "  AlwaysIncrementalJobRetention = 21600\n"
+        "  AlwaysIncrementalKeepNumber = 23\n"
+        "  AlwaysIncrementalMaxFullAge = 180000\n"
+        "  MaxFullConsolidations = 24\n"
+        "  RunOnIncomingConnectInterval = 4800\n";
   auto default_jobdefs_brace = default_jobdefs_text.rfind("}\n");
   ASSERT_NE(default_jobdefs_brace, std::string::npos);
   default_jobdefs_text.insert(default_jobdefs_brace, default_jobdefs_insertion);
@@ -2474,6 +2511,13 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
   EXPECT_NE(updated_text.find("MaxConcurrentCopies = 9"), std::string::npos);
   EXPECT_NE(updated_text.find("AlwaysIncremental = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("AlwaysIncrementalJobRetention = 21600"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("AlwaysIncrementalKeepNumber = 23"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("AlwaysIncrementalMaxFullAge = 180000"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("MaxFullConsolidations = 24"), std::string::npos);
+  EXPECT_NE(updated_text.find("RunOnIncomingConnectInterval = 4800"),
             std::string::npos);
 }
 

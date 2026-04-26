@@ -579,6 +579,10 @@ struct DirectorJobResourceSpec {
   std::optional<uint32_t> max_concurrent_copies{};
   std::optional<bool> always_incremental{};
   std::optional<uint64_t> always_incremental_job_retention{};
+  std::optional<uint32_t> always_incremental_keep_number{};
+  std::optional<uint64_t> always_incremental_max_full_age{};
+  std::optional<uint32_t> max_full_consolidations{};
+  std::optional<uint64_t> run_on_incoming_connect_interval{};
   std::optional<bool> enabled{};
 };
 
@@ -655,6 +659,10 @@ struct DirectorJobDefsResourceSpec {
   std::optional<uint32_t> max_concurrent_copies{};
   std::optional<bool> always_incremental{};
   std::optional<uint64_t> always_incremental_job_retention{};
+  std::optional<uint32_t> always_incremental_keep_number{};
+  std::optional<uint64_t> always_incremental_max_full_age{};
+  std::optional<uint32_t> max_full_consolidations{};
+  std::optional<uint64_t> run_on_incoming_connect_interval{};
   std::optional<bool> enabled{};
 };
 

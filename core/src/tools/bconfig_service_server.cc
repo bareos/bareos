@@ -496,6 +496,10 @@ struct DirectorJobRequestSpec {
   std::optional<uint32_t> max_concurrent_copies{};
   std::optional<bool> always_incremental{};
   std::optional<uint64_t> always_incremental_job_retention{};
+  std::optional<uint32_t> always_incremental_keep_number{};
+  std::optional<uint64_t> always_incremental_max_full_age{};
+  std::optional<uint32_t> max_full_consolidations{};
+  std::optional<uint64_t> run_on_incoming_connect_interval{};
   std::optional<bool> enabled{};
 };
 
@@ -8557,6 +8561,11 @@ http::response<http::string_body> HandleDeploymentDirectorJobPutRequest(
       .always_incremental = spec->always_incremental,
       .always_incremental_job_retention
       = spec->always_incremental_job_retention,
+      .always_incremental_keep_number = spec->always_incremental_keep_number,
+      .always_incremental_max_full_age = spec->always_incremental_max_full_age,
+      .max_full_consolidations = spec->max_full_consolidations,
+      .run_on_incoming_connect_interval
+      = spec->run_on_incoming_connect_interval,
       .enabled = spec->enabled,
   };
   auto result = state.UpsertDirectorJobResource(deployment_id, director_name,
@@ -8714,6 +8723,11 @@ http::response<http::string_body> HandleDeploymentDirectorJobDefsPutRequest(
       .always_incremental = spec->always_incremental,
       .always_incremental_job_retention
       = spec->always_incremental_job_retention,
+      .always_incremental_keep_number = spec->always_incremental_keep_number,
+      .always_incremental_max_full_age = spec->always_incremental_max_full_age,
+      .max_full_consolidations = spec->max_full_consolidations,
+      .run_on_incoming_connect_interval
+      = spec->run_on_incoming_connect_interval,
       .enabled = spec->enabled,
   };
   auto result = state.UpsertDirectorJobDefsResource(
@@ -12064,6 +12078,14 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   auto* always_incremental = json_object_get(root.get(), "always_incremental");
   auto* always_incremental_job_retention
       = json_object_get(root.get(), "always_incremental_job_retention");
+  auto* always_incremental_keep_number
+      = json_object_get(root.get(), "always_incremental_keep_number");
+  auto* always_incremental_max_full_age
+      = json_object_get(root.get(), "always_incremental_max_full_age");
+  auto* max_full_consolidations
+      = json_object_get(root.get(), "max_full_consolidations");
+  auto* run_on_incoming_connect_interval
+      = json_object_get(root.get(), "run_on_incoming_connect_interval");
   auto* enabled = json_object_get(root.get(), "enabled");
 
   auto require_string = [&error](json_t* value, const char* field) -> bool {
@@ -12180,6 +12202,13 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
       || !require_boolean(always_incremental, "always_incremental")
       || !require_integer(always_incremental_job_retention,
                           "always_incremental_job_retention")
+      || !require_integer(always_incremental_keep_number,
+                          "always_incremental_keep_number")
+      || !require_integer(always_incremental_max_full_age,
+                          "always_incremental_max_full_age")
+      || !require_integer(max_full_consolidations, "max_full_consolidations")
+      || !require_integer(run_on_incoming_connect_interval,
+                          "run_on_incoming_connect_interval")
       || !require_boolean(enabled, "enabled")) {
     return std::nullopt;
   }
@@ -12337,7 +12366,18 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
                        spec.max_concurrent_copies)
       || !parse_uint64(always_incremental_job_retention,
                        "always_incremental_job_retention",
-                       spec.always_incremental_job_retention)) {
+                       spec.always_incremental_job_retention)
+      || !parse_uint32(always_incremental_keep_number,
+                       "always_incremental_keep_number",
+                       spec.always_incremental_keep_number)
+      || !parse_uint64(always_incremental_max_full_age,
+                       "always_incremental_max_full_age",
+                       spec.always_incremental_max_full_age)
+      || !parse_uint32(max_full_consolidations, "max_full_consolidations",
+                       spec.max_full_consolidations)
+      || !parse_uint64(run_on_incoming_connect_interval,
+                       "run_on_incoming_connect_interval",
+                       spec.run_on_incoming_connect_interval)) {
     return std::nullopt;
   }
   if (priority && json_is_integer(priority)) {
