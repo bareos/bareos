@@ -111,6 +111,7 @@ struct DirectorClientRequestSpec {
   std::optional<uint64_t> soft_quota_grace_period{};
   std::optional<uint32_t> ndmp_log_level{};
   std::optional<uint32_t> ndmp_block_size{};
+  std::optional<bool> ndmp_use_lmdb{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -1311,6 +1312,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-client-ndmp-block-size">NdmpBlockSize</label>
         <input id="director-client-ndmp-block-size" name="ndmp_block_size"
                type="number" min="0" placeholder="0">
+
+        <label class="checkbox-label" for="director-client-ndmp-use-lmdb">
+          <input id="director-client-ndmp-use-lmdb" name="ndmp_use_lmdb"
+                 type="checkbox" checked>
+          NdmpUseLmdb
+        </label>
 
         <label for="director-client-heartbeat-interval">Heartbeat interval</label>
         <input id="director-client-heartbeat-interval" name="heartbeat_interval"
@@ -3737,6 +3744,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
             form.get('soft_quota_grace_period') ?? '').trim(),
           ndmp_log_level: String(form.get('ndmp_log_level') ?? '').trim(),
           ndmp_block_size: String(form.get('ndmp_block_size') ?? '').trim(),
+          ndmp_use_lmdb: document.getElementById(
+            'director-client-ndmp-use-lmdb').checked,
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
@@ -6865,6 +6874,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .soft_quota_grace_period = spec->soft_quota_grace_period,
       .ndmp_log_level = spec->ndmp_log_level,
       .ndmp_block_size = spec->ndmp_block_size,
+      .ndmp_use_lmdb = spec->ndmp_use_lmdb,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -8736,6 +8746,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
       = json_object_get(root.get(), "soft_quota_grace_period");
   auto* ndmp_log_level = json_object_get(root.get(), "ndmp_log_level");
   auto* ndmp_block_size = json_object_get(root.get(), "ndmp_block_size");
+  auto* ndmp_use_lmdb = json_object_get(root.get(), "ndmp_use_lmdb");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -8802,6 +8813,11 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (ndmp_block_size && !json_is_null(ndmp_block_size)
       && !json_is_integer(ndmp_block_size)) {
     error = "field 'ndmp_block_size' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (ndmp_use_lmdb && !json_is_null(ndmp_use_lmdb)
+      && !json_is_boolean(ndmp_use_lmdb)) {
+    error = "field 'ndmp_use_lmdb' must be a boolean when provided.";
     return std::nullopt;
   }
   if (connection_from_director_to_client
@@ -8906,6 +8922,9 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
       return std::nullopt;
     }
     spec.ndmp_block_size = static_cast<uint32_t>(value);
+  }
+  if (ndmp_use_lmdb && json_is_boolean(ndmp_use_lmdb)) {
+    spec.ndmp_use_lmdb = json_is_true(ndmp_use_lmdb);
   }
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {
