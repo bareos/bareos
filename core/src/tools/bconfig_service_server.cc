@@ -471,9 +471,13 @@ struct StorageDaemonRequestSpec {
   std::optional<std::string> source_address{};
   std::optional<std::vector<std::string>> source_addresses{};
   std::optional<uint16_t> port{};
+  std::optional<std::string> query_file{};
+  std::optional<uint32_t> subscriptions{};
   std::optional<bool> just_in_time_reservation{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
   std::optional<uint32_t> maximum_workers_per_job{};
+  std::optional<uint32_t> maximum_console_connections{};
+  std::optional<std::string> password{};
   std::optional<uint32_t> absolute_job_timeout{};
   std::optional<bool> allow_bandwidth_bursting{};
   std::optional<bool> tls_authenticate{};
@@ -519,10 +523,15 @@ struct StorageDaemonRequestSpec {
   std::optional<uint64_t> sd_connect_timeout{};
   std::optional<uint64_t> fd_connect_timeout{};
   std::optional<uint64_t> heartbeat_interval{};
+  std::optional<uint64_t> statistics_retention{};
   std::optional<uint64_t> checkpoint_interval{};
   std::optional<uint64_t> client_connect_wait{};
   std::optional<uint32_t> maximum_network_buffer_size{};
   std::optional<std::string> description{};
+  std::optional<std::string> key_encryption_key{};
+  std::optional<bool> ndmp_namelist_fhinfo_set_zero_for_invalid_uquad{};
+  std::optional<bool> auditing{};
+  std::optional<std::vector<std::string>> audit_events{};
   std::optional<std::string> working_directory{};
   std::optional<std::string> plugin_directory{};
   std::optional<std::vector<std::string>> plugin_names{};
@@ -2946,9 +2955,14 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-daemon-address" name="address"
                placeholder="director.example.com">
 
+        <label for="director-daemon-addresses">Addresses</label>
+        <textarea id="director-daemon-addresses" name="addresses"
+                  rows="3"
+                  placeholder="host[ipv4;192.0.2.44;9101]&#10;host[ipv6;::1;9101]"></textarea>
+
         <label for="director-daemon-source-address">SourceAddress</label>
         <input id="director-daemon-source-address" name="source_address"
-               placeholder="192.0.2.44">
+                placeholder="192.0.2.44">
 
         <label for="director-daemon-source-addresses">Source addresses</label>
         <textarea id="director-daemon-source-addresses" name="source_addresses"
@@ -2957,11 +2971,178 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="director-daemon-port">Port</label>
         <input id="director-daemon-port" name="port" type="number"
-               min="1" max="65535" placeholder="9101">
+                min="1" max="65535" placeholder="9101">
+
+        <label for="director-daemon-query-file">QueryFile</label>
+        <input id="director-daemon-query-file" name="query_file"
+               placeholder="/tmp/scripts/query.sql">
+
+        <label for="director-daemon-subscriptions">Subscriptions</label>
+        <input id="director-daemon-subscriptions" name="subscriptions"
+               type="number" min="0" placeholder="0">
+
+        <label for="director-daemon-maximum-concurrent-jobs">Maximum concurrent jobs</label>
+        <input id="director-daemon-maximum-concurrent-jobs"
+               name="maximum_concurrent_jobs" type="number" min="0"
+               placeholder="10">
+
+        <label for="director-daemon-maximum-console-connections">Maximum console connections</label>
+        <input id="director-daemon-maximum-console-connections"
+               name="maximum_console_connections" type="number" min="0"
+               placeholder="0">
+
+        <label for="director-daemon-password">Password</label>
+        <input id="director-daemon-password" name="password"
+               placeholder="[md5]supersecret">
+
+        <label for="director-daemon-absolute-job-timeout">Absolute job timeout</label>
+        <input id="director-daemon-absolute-job-timeout"
+               name="absolute_job_timeout" type="number" min="0"
+               placeholder="0">
+
+        <label class="checkbox-label" for="director-daemon-tls-authenticate">
+          <input id="director-daemon-tls-authenticate"
+                 name="tls_authenticate" type="checkbox">
+          TLS authenticate
+        </label>
+
+        <label class="checkbox-label" for="director-daemon-tls-enable">
+          <input id="director-daemon-tls-enable" name="tls_enable" type="checkbox">
+          TLS enable
+        </label>
+
+        <label class="checkbox-label" for="director-daemon-tls-require">
+          <input id="director-daemon-tls-require" name="tls_require" type="checkbox">
+          TLS require
+        </label>
+
+        <label class="checkbox-label" for="director-daemon-tls-verify-peer">
+          <input id="director-daemon-tls-verify-peer"
+                 name="tls_verify_peer" type="checkbox">
+          TLS verify peer
+        </label>
+
+        <label for="director-daemon-tls-cipher-list">TLS cipher list</label>
+        <input id="director-daemon-tls-cipher-list" name="tls_cipher_list"
+               placeholder="HIGH">
+
+        <label for="director-daemon-tls-cipher-suites">TLS cipher suites</label>
+        <input id="director-daemon-tls-cipher-suites" name="tls_cipher_suites"
+               placeholder="TLS_AES_256_GCM_SHA384">
+
+        <label for="director-daemon-tls-dh-file">TLS DH file</label>
+        <input id="director-daemon-tls-dh-file" name="tls_dh_file"
+               placeholder="/etc/bareos/dh4096.pem">
+
+        <label for="director-daemon-tls-protocol">TLS protocol</label>
+        <input id="director-daemon-tls-protocol" name="tls_protocol"
+               placeholder="+TLSv1.2:+TLSv1.3">
+
+        <label for="director-daemon-tls-ca-certificate-file">TLS CA certificate file</label>
+        <input id="director-daemon-tls-ca-certificate-file"
+               name="tls_ca_certificate_file"
+               placeholder="/etc/bareos/ca.pem">
+
+        <label for="director-daemon-tls-ca-certificate-dir">TLS CA certificate dir</label>
+        <input id="director-daemon-tls-ca-certificate-dir"
+               name="tls_ca_certificate_dir"
+               placeholder="/etc/ssl/certs">
+
+        <label for="director-daemon-tls-certificate-revocation-list">TLS certificate revocation list</label>
+        <input id="director-daemon-tls-certificate-revocation-list"
+               name="tls_certificate_revocation_list"
+               placeholder="/etc/bareos/crl.pem">
+
+        <label for="director-daemon-tls-certificate">TLS certificate</label>
+        <input id="director-daemon-tls-certificate" name="tls_certificate"
+               placeholder="/etc/bareos/director-cert.pem">
+
+        <label for="director-daemon-tls-key">TLS key</label>
+        <input id="director-daemon-tls-key" name="tls_key"
+               placeholder="/etc/bareos/director-key.pem">
+
+        <label for="director-daemon-tls-allowed-cn">TLS allowed CNs</label>
+        <textarea id="director-daemon-tls-allowed-cn" name="tls_allowed_cn"
+                  rows="3"
+                  placeholder="director.example.test&#10;backup.example.test"></textarea>
+
+        <label for="director-daemon-ver-id">VerId</label>
+        <input id="director-daemon-ver-id" name="ver_id"
+               placeholder="bareos-dir-custom">
+
+        <label for="director-daemon-log-timestamp-format">Log timestamp format</label>
+        <input id="director-daemon-log-timestamp-format"
+               name="log_timestamp_format" placeholder="%d-%b %H:%M">
+
+        <label for="director-daemon-secure-erase-command">Secure erase command</label>
+        <input id="director-daemon-secure-erase-command"
+               name="secure_erase_command"
+               placeholder="/usr/bin/shred -n 3 -u">
+
+        <label class="checkbox-label" for="director-daemon-enable-ktls">
+          <input id="director-daemon-enable-ktls" name="enable_ktls" type="checkbox">
+          Enable kTLS
+        </label>
+
+        <label for="director-daemon-fd-connect-timeout">FD connect timeout</label>
+        <input id="director-daemon-fd-connect-timeout"
+               name="fd_connect_timeout" type="number" min="0"
+               placeholder="1800">
+
+        <label for="director-daemon-sd-connect-timeout">SD connect timeout</label>
+        <input id="director-daemon-sd-connect-timeout"
+               name="sd_connect_timeout" type="number" min="0"
+               placeholder="1800">
+
+        <label for="director-daemon-heartbeat-interval">Heartbeat interval</label>
+        <input id="director-daemon-heartbeat-interval"
+               name="heartbeat_interval" type="number" min="0"
+               placeholder="0">
+
+        <label for="director-daemon-statistics-retention">Statistics retention</label>
+        <input id="director-daemon-statistics-retention"
+               name="statistics_retention" type="number" min="0"
+               placeholder="0">
+
+        <label for="director-daemon-statistics-collect-interval">Statistics collect interval</label>
+        <input id="director-daemon-statistics-collect-interval"
+               name="statistics_collect_interval" type="number" min="0"
+               placeholder="0">
 
         <label for="director-daemon-description">Description</label>
         <input id="director-daemon-description" name="description"
                placeholder="Managed director daemon resource">
+
+        <label for="director-daemon-key-encryption-key">Key encryption key</label>
+        <input id="director-daemon-key-encryption-key"
+               name="key_encryption_key" placeholder="managed-key">
+
+        <label class="checkbox-label" for="director-daemon-ndmp-snooping">
+          <input id="director-daemon-ndmp-snooping"
+                 name="ndmp_snooping" type="checkbox">
+          NDMP snooping
+        </label>
+
+        <label for="director-daemon-ndmp-log-level">NDMP log level</label>
+        <input id="director-daemon-ndmp-log-level" name="ndmp_log_level"
+               type="number" min="0" placeholder="4">
+
+        <label class="checkbox-label"
+               for="director-daemon-ndmp-namelist-fhinfo-set-zero-for-invalid-uquad">
+          <input id="director-daemon-ndmp-namelist-fhinfo-set-zero-for-invalid-uquad"
+                 name="ndmp_namelist_fhinfo_set_zero_for_invalid_uquad"
+                 type="checkbox">
+          NDMP namelist fhinfo zero for invalid uquad
+        </label>
+
+        <label class="checkbox-label" for="director-daemon-auditing">
+          <input id="director-daemon-auditing" name="auditing" type="checkbox">
+          Auditing
+        </label>
+
+        <label for="director-daemon-audit-events">Audit events</label>
+        <textarea id="director-daemon-audit-events" name="audit_events"
+                  rows="3" placeholder="all&#10;jobstart&#10;jobend"></textarea>
 
         <label for="director-daemon-working-directory">Working directory</label>
         <input id="director-daemon-working-directory" name="working_directory"
@@ -2970,6 +3151,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-daemon-plugin-directory">Plugin directory</label>
         <input id="director-daemon-plugin-directory" name="plugin_directory"
                placeholder="/usr/lib/bareos/plugins">
+
+        <label for="director-daemon-plugin-names">Plugin names</label>
+        <textarea id="director-daemon-plugin-names" name="plugin_names"
+                  rows="3" placeholder="python&#10;grpc"></textarea>
 
         <label for="director-daemon-scripts-directory">Scripts directory</label>
         <input id="director-daemon-scripts-directory" name="scripts_directory"
@@ -5830,22 +6015,81 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const form = new FormData(event.target);
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
+        const rawAddresses = String(form.get('addresses') ?? '');
+        const addresses = rawAddresses.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
         const rawSourceAddresses = String(form.get('source_addresses') ?? '');
         const sourceAddresses = rawSourceAddresses.split('\n')
           .map((line) => line.trim())
           .filter((line) => line.length > 0);
+        const rawTlsAllowedCn = String(form.get('tls_allowed_cn') ?? '');
+        const tlsAllowedCn = rawTlsAllowedCn.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const rawAuditEvents = String(form.get('audit_events') ?? '');
+        const auditEvents = rawAuditEvents.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const rawPluginNames = String(form.get('plugin_names') ?? '');
+        const pluginNames = rawPluginNames.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
         const payload = {
           address: String(form.get('address') ?? '').trim(),
+          addresses: addresses,
           source_address: String(form.get('source_address') ?? '').trim(),
           source_addresses: sourceAddresses,
           port: String(form.get('port') ?? '').trim(),
+          query_file: String(form.get('query_file') ?? '').trim(),
+          subscriptions: String(form.get('subscriptions') ?? '').trim(),
+          maximum_concurrent_jobs: String(form.get('maximum_concurrent_jobs') ?? '').trim(),
+          maximum_console_connections: String(form.get('maximum_console_connections') ?? '').trim(),
+          password: String(form.get('password') ?? '').trim(),
+          absolute_job_timeout: String(form.get('absolute_job_timeout') ?? '').trim(),
+          tls_authenticate: document.getElementById('director-daemon-tls-authenticate').checked,
+          tls_enable: document.getElementById('director-daemon-tls-enable').checked,
+          tls_require: document.getElementById('director-daemon-tls-require').checked,
+          tls_verify_peer: document.getElementById('director-daemon-tls-verify-peer').checked,
+          tls_cipher_list: String(form.get('tls_cipher_list') ?? '').trim(),
+          tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
+          tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
+          tls_protocol: String(form.get('tls_protocol') ?? '').trim(),
+          tls_ca_certificate_file: String(
+            form.get('tls_ca_certificate_file') ?? '').trim(),
+          tls_ca_certificate_dir: String(
+            form.get('tls_ca_certificate_dir') ?? '').trim(),
+          tls_certificate_revocation_list: String(
+            form.get('tls_certificate_revocation_list') ?? '').trim(),
+          tls_certificate: String(form.get('tls_certificate') ?? '').trim(),
+          tls_key: String(form.get('tls_key') ?? '').trim(),
+          tls_allowed_cn: tlsAllowedCn,
+          ver_id: String(form.get('ver_id') ?? '').trim(),
+          log_timestamp_format: String(form.get('log_timestamp_format') ?? '').trim(),
+          secure_erase_command: String(form.get('secure_erase_command') ?? '').trim(),
+          enable_ktls: document.getElementById('director-daemon-enable-ktls').checked,
+          fd_connect_timeout: String(form.get('fd_connect_timeout') ?? '').trim(),
+          sd_connect_timeout: String(form.get('sd_connect_timeout') ?? '').trim(),
+          heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
+          statistics_retention: String(form.get('statistics_retention') ?? '').trim(),
+          statistics_collect_interval: String(
+            form.get('statistics_collect_interval') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
+          key_encryption_key: String(form.get('key_encryption_key') ?? '').trim(),
+          ndmp_snooping: document.getElementById('director-daemon-ndmp-snooping').checked,
+          ndmp_log_level: String(form.get('ndmp_log_level') ?? '').trim(),
+          ndmp_namelist_fhinfo_set_zero_for_invalid_uquad: document.getElementById(
+            'director-daemon-ndmp-namelist-fhinfo-set-zero-for-invalid-uquad').checked,
+          auditing: document.getElementById('director-daemon-auditing').checked,
+          audit_events: auditEvents,
           working_directory: String(form.get('working_directory') ?? '').trim(),
           plugin_directory: String(form.get('plugin_directory') ?? '').trim(),
+          plugin_names: pluginNames,
           scripts_directory: String(form.get('scripts_directory') ?? '').trim(),
           messages: String(form.get('messages') ?? '').trim(),
         };
         if (!payload.address) { delete payload.address; }
+        if (payload.addresses.length === 0) { delete payload.addresses; }
         if (!payload.source_address) { delete payload.source_address; }
         if (payload.source_addresses.length === 0) {
           delete payload.source_addresses;
@@ -5855,9 +6099,85 @@ const char* kTestUiHtmlTemplate = R"HTML(
         } else {
           payload.port = Number(payload.port);
         }
+        if (!payload.query_file) { delete payload.query_file; }
+        if (!payload.subscriptions) {
+          delete payload.subscriptions;
+        } else {
+          payload.subscriptions = Number(payload.subscriptions);
+        }
+        if (!payload.maximum_concurrent_jobs) {
+          delete payload.maximum_concurrent_jobs;
+        } else {
+          payload.maximum_concurrent_jobs = Number(payload.maximum_concurrent_jobs);
+        }
+        if (!payload.maximum_console_connections) {
+          delete payload.maximum_console_connections;
+        } else {
+          payload.maximum_console_connections
+            = Number(payload.maximum_console_connections);
+        }
+        if (!payload.password) { delete payload.password; }
+        if (!payload.absolute_job_timeout) {
+          delete payload.absolute_job_timeout;
+        } else {
+          payload.absolute_job_timeout = Number(payload.absolute_job_timeout);
+        }
+        if (!payload.tls_cipher_list) { delete payload.tls_cipher_list; }
+        if (!payload.tls_cipher_suites) { delete payload.tls_cipher_suites; }
+        if (!payload.tls_dh_file) { delete payload.tls_dh_file; }
+        if (!payload.tls_protocol) { delete payload.tls_protocol; }
+        if (!payload.tls_ca_certificate_file) {
+          delete payload.tls_ca_certificate_file;
+        }
+        if (!payload.tls_ca_certificate_dir) {
+          delete payload.tls_ca_certificate_dir;
+        }
+        if (!payload.tls_certificate_revocation_list) {
+          delete payload.tls_certificate_revocation_list;
+        }
+        if (!payload.tls_certificate) { delete payload.tls_certificate; }
+        if (!payload.tls_key) { delete payload.tls_key; }
+        if (payload.tls_allowed_cn.length === 0) { delete payload.tls_allowed_cn; }
+        if (!payload.ver_id) { delete payload.ver_id; }
+        if (!payload.log_timestamp_format) { delete payload.log_timestamp_format; }
+        if (!payload.secure_erase_command) { delete payload.secure_erase_command; }
+        if (!payload.fd_connect_timeout) {
+          delete payload.fd_connect_timeout;
+        } else {
+          payload.fd_connect_timeout = Number(payload.fd_connect_timeout);
+        }
+        if (!payload.sd_connect_timeout) {
+          delete payload.sd_connect_timeout;
+        } else {
+          payload.sd_connect_timeout = Number(payload.sd_connect_timeout);
+        }
+        if (!payload.heartbeat_interval) {
+          delete payload.heartbeat_interval;
+        } else {
+          payload.heartbeat_interval = Number(payload.heartbeat_interval);
+        }
+        if (!payload.statistics_retention) {
+          delete payload.statistics_retention;
+        } else {
+          payload.statistics_retention = Number(payload.statistics_retention);
+        }
+        if (!payload.statistics_collect_interval) {
+          delete payload.statistics_collect_interval;
+        } else {
+          payload.statistics_collect_interval
+            = Number(payload.statistics_collect_interval);
+        }
         if (!payload.description) { delete payload.description; }
+        if (!payload.key_encryption_key) { delete payload.key_encryption_key; }
+        if (!payload.ndmp_log_level) {
+          delete payload.ndmp_log_level;
+        } else {
+          payload.ndmp_log_level = Number(payload.ndmp_log_level);
+        }
+        if (payload.audit_events.length === 0) { delete payload.audit_events; }
         if (!payload.working_directory) { delete payload.working_directory; }
         if (!payload.plugin_directory) { delete payload.plugin_directory; }
+        if (payload.plugin_names.length === 0) { delete payload.plugin_names; }
         if (!payload.scripts_directory) { delete payload.scripts_directory; }
         if (!payload.messages) { delete payload.messages; }
         const { response } = await request(
@@ -7099,6 +7419,19 @@ http::response<http::string_body> HandleDeploymentClientDaemonPutRequest(
   std::string error;
   auto spec = ParseStorageDaemonRequest(request.body(), error);
   if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+  if (spec->query_file || spec->subscriptions
+      || spec->maximum_console_connections || spec->password
+      || spec->statistics_retention || spec->key_encryption_key
+      || spec->ndmp_namelist_fhinfo_set_zero_for_invalid_uquad || spec->auditing
+      || spec->audit_events) {
+    return ErrorResponse(
+        http::status::bad_request,
+        "client-daemon singleton updates do not support query_file, "
+        "subscriptions, maximum_console_connections, password, "
+        "statistics_retention, key_encryption_key, "
+        "ndmp_namelist_fhinfo_set_zero_for_invalid_uquad, auditing, or "
+        "audit_events.");
+  }
 
   ClientDaemonResourceSpec resource_spec{
       .address = spec->address,
@@ -7195,7 +7528,11 @@ http::response<http::string_body> HandleDeploymentDirectorDaemonPutRequest(
       .source_address = spec->source_address,
       .source_addresses = spec->source_addresses,
       .port = spec->port,
+      .query_file = spec->query_file,
+      .subscriptions = spec->subscriptions,
       .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
+      .maximum_console_connections = spec->maximum_console_connections,
+      .password = spec->password,
       .absolute_job_timeout = spec->absolute_job_timeout,
       .tls_authenticate = spec->tls_authenticate,
       .tls_enable = spec->tls_enable,
@@ -7218,7 +7555,16 @@ http::response<http::string_body> HandleDeploymentDirectorDaemonPutRequest(
       .fd_connect_timeout = spec->fd_connect_timeout,
       .sd_connect_timeout = spec->sd_connect_timeout,
       .heartbeat_interval = spec->heartbeat_interval,
+      .statistics_retention = spec->statistics_retention,
+      .statistics_collect_interval = spec->statistics_collect_interval,
       .description = spec->description,
+      .key_encryption_key = spec->key_encryption_key,
+      .ndmp_snooping = spec->ndmp_snooping,
+      .ndmp_log_level = spec->ndmp_log_level,
+      .ndmp_namelist_fhinfo_set_zero_for_invalid_uquad
+      = spec->ndmp_namelist_fhinfo_set_zero_for_invalid_uquad,
+      .auditing = spec->auditing,
+      .audit_events = spec->audit_events,
       .working_directory = spec->working_directory,
       .plugin_directory = spec->plugin_directory,
       .plugin_names = spec->plugin_names,
@@ -7480,12 +7826,20 @@ http::response<http::string_body> HandleDeploymentStorageDaemonPutRequest(
       || spec->pki_encryption || spec->pki_key_pair || spec->pki_signers
       || spec->pki_master_keys || spec->pki_cipher || spec->always_use_lmdb
       || spec->lmdb_threshold || spec->grpc_module || spec->allowed_script_dirs
-      || spec->allowed_job_commands) {
+      || spec->allowed_job_commands || spec->query_file || spec->subscriptions
+      || spec->maximum_console_connections || spec->password
+      || spec->statistics_retention || spec->key_encryption_key
+      || spec->ndmp_namelist_fhinfo_set_zero_for_invalid_uquad || spec->auditing
+      || spec->audit_events) {
     return ErrorResponse(
         http::status::bad_request,
         "storage-daemon singleton updates do not support "
         "maximum_workers_per_job, PKI, always_use_lmdb, lmdb_threshold, "
-        "grpc_module, allowed_script_dirs, or allowed_job_commands.");
+        "grpc_module, allowed_script_dirs, allowed_job_commands, "
+        "query_file, subscriptions, maximum_console_connections, password, "
+        "statistics_retention, key_encryption_key, "
+        "ndmp_namelist_fhinfo_set_zero_for_invalid_uquad, auditing, or "
+        "audit_events.");
   }
 
   StorageDaemonResourceSpec resource_spec{
@@ -13102,12 +13456,17 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   auto* address = json_object_get(root.get(), "address");
   auto* addresses = json_object_get(root.get(), "addresses");
   auto* port = json_object_get(root.get(), "port");
+  auto* query_file = json_object_get(root.get(), "query_file");
+  auto* subscriptions = json_object_get(root.get(), "subscriptions");
   auto* just_in_time_reservation
       = json_object_get(root.get(), "just_in_time_reservation");
   auto* maximum_concurrent_jobs
       = json_object_get(root.get(), "maximum_concurrent_jobs");
   auto* maximum_workers_per_job
       = json_object_get(root.get(), "maximum_workers_per_job");
+  auto* maximum_console_connections
+      = json_object_get(root.get(), "maximum_console_connections");
+  auto* password = json_object_get(root.get(), "password");
   auto* absolute_job_timeout
       = json_object_get(root.get(), "absolute_job_timeout");
   auto* source_address = json_object_get(root.get(), "source_address");
@@ -13148,6 +13507,8 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   auto* enable_ktls = json_object_get(root.get(), "enable_ktls");
   auto* statistics_collect_interval
       = json_object_get(root.get(), "statistics_collect_interval");
+  auto* statistics_retention
+      = json_object_get(root.get(), "statistics_retention");
   auto* allow_bandwidth_bursting
       = json_object_get(root.get(), "allow_bandwidth_bursting");
   auto* ndmp_enable = json_object_get(root.get(), "ndmp_enable");
@@ -13176,6 +13537,11 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   auto* maximum_network_buffer_size
       = json_object_get(root.get(), "maximum_network_buffer_size");
   auto* description = json_object_get(root.get(), "description");
+  auto* key_encryption_key = json_object_get(root.get(), "key_encryption_key");
+  auto* ndmp_namelist_fhinfo_set_zero_for_invalid_uquad = json_object_get(
+      root.get(), "ndmp_namelist_fhinfo_set_zero_for_invalid_uquad");
+  auto* auditing = json_object_get(root.get(), "auditing");
+  auto* audit_events = json_object_get(root.get(), "audit_events");
   auto* working_directory = json_object_get(root.get(), "working_directory");
   auto* plugin_directory = json_object_get(root.get(), "plugin_directory");
   auto* plugin_names = json_object_get(root.get(), "plugin_names");
@@ -13215,13 +13581,20 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   };
   if (!require_string(address, "address")
       || !require_string_array(addresses, "addresses")
+      || !require_string(query_file, "query_file")
       || !require_string(source_address, "source_address")
       || !require_string_array(source_addresses, "source_addresses")
       || (port && !json_is_null(port) && !json_is_integer(port))
+      || (subscriptions && !json_is_null(subscriptions)
+          && !json_is_integer(subscriptions))
       || (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
           && !json_is_integer(maximum_concurrent_jobs))
       || (maximum_workers_per_job && !json_is_null(maximum_workers_per_job)
           && !json_is_integer(maximum_workers_per_job))
+      || (maximum_console_connections
+          && !json_is_null(maximum_console_connections)
+          && !json_is_integer(maximum_console_connections))
+      || !require_string(password, "password")
       || (absolute_job_timeout && !json_is_null(absolute_job_timeout)
           && !json_is_integer(absolute_job_timeout))
       || (lmdb_threshold && !json_is_null(lmdb_threshold)
@@ -13262,6 +13635,8 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
           && !json_is_boolean(tls_verify_peer))
       || (enable_ktls && !json_is_null(enable_ktls)
           && !json_is_boolean(enable_ktls))
+      || (statistics_retention && !json_is_null(statistics_retention)
+          && !json_is_integer(statistics_retention))
       || (allow_bandwidth_bursting && !json_is_null(allow_bandwidth_bursting)
           && !json_is_boolean(allow_bandwidth_bursting))
       || (pki_signatures && !json_is_null(pki_signatures)
@@ -13291,6 +13666,10 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
       || (file_device_concurrent_read
           && !json_is_null(file_device_concurrent_read)
           && !json_is_boolean(file_device_concurrent_read))
+      || (ndmp_namelist_fhinfo_set_zero_for_invalid_uquad
+          && !json_is_null(ndmp_namelist_fhinfo_set_zero_for_invalid_uquad)
+          && !json_is_boolean(ndmp_namelist_fhinfo_set_zero_for_invalid_uquad))
+      || (auditing && !json_is_null(auditing) && !json_is_boolean(auditing))
       || (sd_connect_timeout && !json_is_null(sd_connect_timeout)
           && !json_is_integer(sd_connect_timeout))
       || (fd_connect_timeout && !json_is_null(fd_connect_timeout)
@@ -13305,6 +13684,8 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
           && !json_is_null(maximum_network_buffer_size)
           && !json_is_integer(maximum_network_buffer_size))
       || !require_string(description, "description")
+      || !require_string(key_encryption_key, "key_encryption_key")
+      || !require_string_array(audit_events, "audit_events")
       || !require_string(working_directory, "working_directory")
       || !require_string(plugin_directory, "plugin_directory")
       || !require_string_array(plugin_names, "plugin_names")
@@ -13317,6 +13698,9 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
       || !require_string(messages, "messages")) {
     if (port && !json_is_null(port) && !json_is_integer(port)) {
       error = "field 'port' must be an integer when provided.";
+    } else if (subscriptions && !json_is_null(subscriptions)
+               && !json_is_integer(subscriptions)) {
+      error = "field 'subscriptions' must be an integer when provided.";
     } else if (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
                && !json_is_integer(maximum_concurrent_jobs)) {
       error
@@ -13325,6 +13709,12 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
                && !json_is_integer(maximum_workers_per_job)) {
       error
           = "field 'maximum_workers_per_job' must be an integer when provided.";
+    } else if (maximum_console_connections
+               && !json_is_null(maximum_console_connections)
+               && !json_is_integer(maximum_console_connections)) {
+      error
+          = "field 'maximum_console_connections' must be an integer when "
+            "provided.";
     } else if (absolute_job_timeout && !json_is_null(absolute_job_timeout)
                && !json_is_integer(absolute_job_timeout)) {
       error = "field 'absolute_job_timeout' must be an integer when provided.";
@@ -13357,6 +13747,9 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
     } else if (enable_ktls && !json_is_null(enable_ktls)
                && !json_is_boolean(enable_ktls)) {
       error = "field 'enable_ktls' must be a boolean when provided.";
+    } else if (statistics_retention && !json_is_null(statistics_retention)
+               && !json_is_integer(statistics_retention)) {
+      error = "field 'statistics_retention' must be an integer when provided.";
     } else if (statistics_collect_interval
                && !json_is_null(statistics_collect_interval)
                && !json_is_integer(statistics_collect_interval)) {
@@ -13416,6 +13809,16 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
       error
           = "field 'file_device_concurrent_read' must be a boolean when "
             "provided.";
+    } else if (ndmp_namelist_fhinfo_set_zero_for_invalid_uquad
+               && !json_is_null(ndmp_namelist_fhinfo_set_zero_for_invalid_uquad)
+               && !json_is_boolean(
+                   ndmp_namelist_fhinfo_set_zero_for_invalid_uquad)) {
+      error
+          = "field 'ndmp_namelist_fhinfo_set_zero_for_invalid_uquad' must be a "
+            "boolean when provided.";
+    } else if (auditing && !json_is_null(auditing)
+               && !json_is_boolean(auditing)) {
+      error = "field 'auditing' must be a boolean when provided.";
     } else if (sd_connect_timeout && !json_is_null(sd_connect_timeout)
                && !json_is_integer(sd_connect_timeout)) {
       error = "field 'sd_connect_timeout' must be an integer when provided.";
@@ -13456,6 +13859,9 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
     spec.address = std::string{json_string_value(address)};
   }
   spec.addresses = parse_string_array(addresses);
+  if (query_file && json_is_string(query_file)) {
+    spec.query_file = std::string{json_string_value(query_file)};
+  }
   if (source_address && json_is_string(source_address)) {
     spec.source_address = std::string{json_string_value(source_address)};
   }
@@ -13488,10 +13894,13 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
     target = static_cast<uint32_t>(raw);
     return true;
   };
-  if (!parse_u32(maximum_concurrent_jobs, "maximum_concurrent_jobs",
-                 spec.maximum_concurrent_jobs)
+  if (!parse_u32(subscriptions, "subscriptions", spec.subscriptions)
+      || !parse_u32(maximum_concurrent_jobs, "maximum_concurrent_jobs",
+                    spec.maximum_concurrent_jobs)
       || !parse_u32(maximum_workers_per_job, "maximum_workers_per_job",
                     spec.maximum_workers_per_job)
+      || !parse_u32(maximum_console_connections, "maximum_console_connections",
+                    spec.maximum_console_connections)
       || !parse_u32(absolute_job_timeout, "absolute_job_timeout",
                     spec.absolute_job_timeout)
       || !parse_u32(lmdb_threshold, "lmdb_threshold", spec.lmdb_threshold)
@@ -13546,6 +13955,9 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
     spec.tls_key = std::string{json_string_value(tls_key)};
   }
   spec.tls_allowed_cn = parse_string_array(tls_allowed_cn);
+  if (password && json_is_string(password)) {
+    spec.password = std::string{json_string_value(password)};
+  }
   if (pki_key_pair && json_is_string(pki_key_pair)) {
     spec.pki_key_pair = std::string{json_string_value(pki_key_pair)};
   }
@@ -13579,6 +13991,9 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   parse_bool(collect_job_statistics, spec.collect_job_statistics);
   parse_bool(device_reserve_by_media_type, spec.device_reserve_by_media_type);
   parse_bool(file_device_concurrent_read, spec.file_device_concurrent_read);
+  parse_bool(ndmp_namelist_fhinfo_set_zero_for_invalid_uquad,
+             spec.ndmp_namelist_fhinfo_set_zero_for_invalid_uquad);
+  parse_bool(auditing, spec.auditing);
   auto parse_non_negative_u64
       = [&error](json_t* value, const char* field,
                  std::optional<uint64_t>& target) -> bool {
@@ -13602,6 +14017,8 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
                                  spec.fd_connect_timeout)
       || !parse_non_negative_u64(heartbeat_interval, "heartbeat_interval",
                                  spec.heartbeat_interval)
+      || !parse_non_negative_u64(statistics_retention, "statistics_retention",
+                                 spec.statistics_retention)
       || !parse_non_negative_u64(checkpoint_interval, "checkpoint_interval",
                                  spec.checkpoint_interval)
       || !parse_non_negative_u64(client_connect_wait, "client_connect_wait",
@@ -13622,6 +14039,11 @@ std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
   }
+  if (key_encryption_key && json_is_string(key_encryption_key)) {
+    spec.key_encryption_key
+        = std::string{json_string_value(key_encryption_key)};
+  }
+  spec.audit_events = parse_string_array(audit_events);
   if (working_directory && json_is_string(working_directory)) {
     spec.working_directory = std::string{json_string_value(working_directory)};
   }
