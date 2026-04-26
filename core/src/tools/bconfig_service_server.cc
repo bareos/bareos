@@ -427,6 +427,7 @@ struct DirectorJobRequestSpec {
   std::optional<std::string> description{};
   std::optional<std::string> type{};
   std::optional<std::string> backup_format{};
+  std::optional<std::string> protocol{};
   std::optional<std::string> level{};
   std::optional<std::string> messages{};
   std::optional<std::vector<std::string>> storages{};
@@ -444,6 +445,7 @@ struct DirectorJobRequestSpec {
   std::optional<std::string> jobdefs{};
   std::optional<std::vector<std::string>> run_entries{};
   std::optional<std::string> where{};
+  std::optional<std::string> replace{};
   std::optional<std::string> regex_where{};
   std::optional<std::string> strip_prefix{};
   std::optional<std::string> add_prefix{};
@@ -478,6 +480,7 @@ struct DirectorJobRequestSpec {
   std::optional<uint32_t> reschedule_times{};
   std::optional<int32_t> priority{};
   std::optional<bool> allow_mixed_priority{};
+  std::optional<std::string> selection_type{};
   std::optional<std::string> selection_pattern{};
   std::optional<bool> accurate{};
   std::optional<bool> allow_duplicate_jobs{};
@@ -8484,6 +8487,7 @@ http::response<http::string_body> HandleDeploymentDirectorJobPutRequest(
       .description = spec->description,
       .type = spec->type,
       .backup_format = spec->backup_format,
+      .protocol = spec->protocol,
       .level = spec->level,
       .messages = spec->messages,
       .storages = spec->storages,
@@ -8501,6 +8505,7 @@ http::response<http::string_body> HandleDeploymentDirectorJobPutRequest(
       .jobdefs = spec->jobdefs,
       .run_entries = spec->run_entries,
       .where = spec->where,
+      .replace = spec->replace,
       .regex_where = spec->regex_where,
       .strip_prefix = spec->strip_prefix,
       .add_prefix = spec->add_prefix,
@@ -8535,6 +8540,7 @@ http::response<http::string_body> HandleDeploymentDirectorJobPutRequest(
       .reschedule_times = spec->reschedule_times,
       .priority = spec->priority,
       .allow_mixed_priority = spec->allow_mixed_priority,
+      .selection_type = spec->selection_type,
       .selection_pattern = spec->selection_pattern,
       .accurate = spec->accurate,
       .allow_duplicate_jobs = spec->allow_duplicate_jobs,
@@ -8638,6 +8644,7 @@ http::response<http::string_body> HandleDeploymentDirectorJobDefsPutRequest(
       .description = spec->description,
       .type = spec->type,
       .backup_format = spec->backup_format,
+      .protocol = spec->protocol,
       .level = spec->level,
       .messages = spec->messages,
       .storages = spec->storages,
@@ -8655,6 +8662,7 @@ http::response<http::string_body> HandleDeploymentDirectorJobDefsPutRequest(
       .jobdefs = spec->jobdefs,
       .run_entries = spec->run_entries,
       .where = spec->where,
+      .replace = spec->replace,
       .regex_where = spec->regex_where,
       .strip_prefix = spec->strip_prefix,
       .add_prefix = spec->add_prefix,
@@ -8689,6 +8697,7 @@ http::response<http::string_body> HandleDeploymentDirectorJobDefsPutRequest(
       .reschedule_times = spec->reschedule_times,
       .priority = spec->priority,
       .allow_mixed_priority = spec->allow_mixed_priority,
+      .selection_type = spec->selection_type,
       .selection_pattern = spec->selection_pattern,
       .accurate = spec->accurate,
       .allow_duplicate_jobs = spec->allow_duplicate_jobs,
@@ -11966,6 +11975,7 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   auto* description = json_object_get(root.get(), "description");
   auto* type = json_object_get(root.get(), "type");
   auto* backup_format = json_object_get(root.get(), "backup_format");
+  auto* protocol = json_object_get(root.get(), "protocol");
   auto* level = json_object_get(root.get(), "level");
   auto* messages = json_object_get(root.get(), "messages");
   auto* storages = json_object_get(root.get(), "storages");
@@ -11986,6 +11996,7 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   auto* jobdefs = json_object_get(root.get(), "jobdefs");
   auto* run_entries = json_object_get(root.get(), "run_entries");
   auto* where = json_object_get(root.get(), "where");
+  auto* replace = json_object_get(root.get(), "replace");
   auto* regex_where = json_object_get(root.get(), "regex_where");
   auto* strip_prefix = json_object_get(root.get(), "strip_prefix");
   auto* add_prefix = json_object_get(root.get(), "add_prefix");
@@ -12030,6 +12041,7 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   auto* priority = json_object_get(root.get(), "priority");
   auto* allow_mixed_priority
       = json_object_get(root.get(), "allow_mixed_priority");
+  auto* selection_type = json_object_get(root.get(), "selection_type");
   auto* selection_pattern = json_object_get(root.get(), "selection_pattern");
   auto* accurate = json_object_get(root.get(), "accurate");
   auto* allow_duplicate_jobs
@@ -12096,6 +12108,7 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   if (!require_string(description, "description")
       || !require_string(type, "type")
       || !require_string(backup_format, "backup_format")
+      || !require_string(protocol, "protocol")
       || !require_string(level, "level")
       || !require_string(messages, "messages")
       || !require_string_array(storages, "storages")
@@ -12112,7 +12125,7 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
       || !require_string(catalog, "catalog")
       || !require_string(jobdefs, "jobdefs")
       || !require_string_array(run_entries, "run_entries")
-      || !require_string(where, "where")
+      || !require_string(where, "where") || !require_string(replace, "replace")
       || !require_string(regex_where, "regex_where")
       || !require_string(strip_prefix, "strip_prefix")
       || !require_string(add_prefix, "add_prefix")
@@ -12148,6 +12161,7 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
       || !require_integer(reschedule_times, "reschedule_times")
       || !require_integer(priority, "priority")
       || !require_boolean(allow_mixed_priority, "allow_mixed_priority")
+      || !require_string(selection_type, "selection_type")
       || !require_string(selection_pattern, "selection_pattern")
       || !require_boolean(accurate, "accurate")
       || !require_boolean(allow_duplicate_jobs, "allow_duplicate_jobs")
@@ -12214,6 +12228,9 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   if (backup_format && json_is_string(backup_format)) {
     spec.backup_format = std::string{json_string_value(backup_format)};
   }
+  if (protocol && json_is_string(protocol)) {
+    spec.protocol = std::string{json_string_value(protocol)};
+  }
   if (level && json_is_string(level)) {
     spec.level = std::string{json_string_value(level)};
   }
@@ -12263,6 +12280,9 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   spec.run_entries = parse_string_array(run_entries);
   if (where && json_is_string(where)) {
     spec.where = std::string{json_string_value(where)};
+  }
+  if (replace && json_is_string(replace)) {
+    spec.replace = std::string{json_string_value(replace)};
   }
   if (regex_where && json_is_string(regex_where)) {
     spec.regex_where = std::string{json_string_value(regex_where)};
@@ -12364,6 +12384,9 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   }
   if (allow_mixed_priority && json_is_boolean(allow_mixed_priority)) {
     spec.allow_mixed_priority = json_is_true(allow_mixed_priority);
+  }
+  if (selection_type && json_is_string(selection_type)) {
+    spec.selection_type = std::string{json_string_value(selection_type)};
   }
   if (selection_pattern && json_is_string(selection_pattern)) {
     spec.selection_pattern = std::string{json_string_value(selection_pattern)};

@@ -510,6 +510,7 @@ struct DirectorJobResourceSpec {
   std::optional<std::string> description{};
   std::optional<std::string> type{};
   std::optional<std::string> backup_format{};
+  std::optional<std::string> protocol{};
   std::optional<std::string> level{};
   std::optional<std::string> messages{};
   std::optional<std::vector<std::string>> storages{};
@@ -527,6 +528,7 @@ struct DirectorJobResourceSpec {
   std::optional<std::string> jobdefs{};
   std::optional<std::vector<std::string>> run_entries{};
   std::optional<std::string> where{};
+  std::optional<std::string> replace{};
   std::optional<std::string> regex_where{};
   std::optional<std::string> strip_prefix{};
   std::optional<std::string> add_prefix{};
@@ -561,6 +563,7 @@ struct DirectorJobResourceSpec {
   std::optional<uint32_t> reschedule_times{};
   std::optional<int32_t> priority{};
   std::optional<bool> allow_mixed_priority{};
+  std::optional<std::string> selection_type{};
   std::optional<std::string> selection_pattern{};
   std::optional<bool> accurate{};
   std::optional<bool> allow_duplicate_jobs{};
@@ -583,6 +586,7 @@ struct DirectorJobDefsResourceSpec {
   std::optional<std::string> description{};
   std::optional<std::string> type{};
   std::optional<std::string> backup_format{};
+  std::optional<std::string> protocol{};
   std::optional<std::string> level{};
   std::optional<std::string> messages{};
   std::optional<std::vector<std::string>> storages{};
@@ -600,6 +604,7 @@ struct DirectorJobDefsResourceSpec {
   std::optional<std::string> jobdefs{};
   std::optional<std::vector<std::string>> run_entries{};
   std::optional<std::string> where{};
+  std::optional<std::string> replace{};
   std::optional<std::string> regex_where{};
   std::optional<std::string> strip_prefix{};
   std::optional<std::string> add_prefix{};
@@ -634,6 +639,7 @@ struct DirectorJobDefsResourceSpec {
   std::optional<uint32_t> reschedule_times{};
   std::optional<int32_t> priority{};
   std::optional<bool> allow_mixed_priority{};
+  std::optional<std::string> selection_type{};
   std::optional<std::string> selection_pattern{};
   std::optional<bool> accurate{};
   std::optional<bool> allow_duplicate_jobs{};

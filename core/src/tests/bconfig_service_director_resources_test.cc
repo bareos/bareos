@@ -1946,9 +1946,11 @@ TEST(BconfigService, UpsertsDirectorJobResources)
       "prod", "bareos-dir", "ManagedJob",
       {.description = std::string{"Managed job"},
        .backup_format = std::string{"Portable"},
+       .protocol = std::string{"ndmp"},
        .client = std::string{"bareos-fd"},
        .jobdefs = std::string{"DefaultJob"},
        .run_entries = std::vector<std::string>{"catalog-backup"},
+       .replace = std::string{"ifolder"},
        .write_bootstrap = std::string{"/tmp/managed-job.bsr"},
        .maximum_bandwidth = 12345,
        .max_run_sched_time = 60,
@@ -1964,6 +1966,7 @@ TEST(BconfigService, UpsertsDirectorJobResources)
        .reschedule_interval = 300,
        .reschedule_times = 4,
        .allow_mixed_priority = true,
+       .selection_type = std::string{"pooltime"},
        .accurate = true,
        .allow_duplicate_jobs = false,
        .save_file_history = true,
@@ -1986,9 +1989,11 @@ TEST(BconfigService, UpsertsDirectorJobResources)
             std::string::npos);
   EXPECT_NE(created_text.find("BackupFormat = \"Portable\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("Protocol = NDMP_BAREOS"), std::string::npos);
   EXPECT_NE(created_text.find("JobDefs = DefaultJob"), std::string::npos);
   EXPECT_NE(created_text.find("Client = bareos-fd"), std::string::npos);
   EXPECT_NE(created_text.find("Run = catalog-backup"), std::string::npos);
+  EXPECT_NE(created_text.find("Replace = IfOlder"), std::string::npos);
   EXPECT_NE(created_text.find("WriteBootstrap = \"/tmp/managed-job.bsr\""),
             std::string::npos);
   EXPECT_NE(created_text.find("MaximumBandwidth = 12345"), std::string::npos);
@@ -2005,6 +2010,7 @@ TEST(BconfigService, UpsertsDirectorJobResources)
   EXPECT_NE(created_text.find("RescheduleInterval = 300"), std::string::npos);
   EXPECT_NE(created_text.find("RescheduleTimes = 4"), std::string::npos);
   EXPECT_NE(created_text.find("AllowMixedPriority = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("SelectionType = PoolTime"), std::string::npos);
   EXPECT_NE(created_text.find("Accurate = yes"), std::string::npos);
   EXPECT_NE(created_text.find("AllowDuplicateJobs = no"), std::string::npos);
   EXPECT_NE(created_text.find("SaveFileHistory = yes"), std::string::npos);
@@ -2026,7 +2032,9 @@ TEST(BconfigService, UpsertsDirectorJobResources)
   auto backup_catalog_text = ReadTextFile(backup_catalog_path);
   const std::string backup_catalog_insertion
       = "  BackupFormat = \"Portable\"\n"
+        "  Protocol = NDMP_NATIVE\n"
         "  Run = backup-catalog-now\n"
+        "  Replace = Never\n"
         "  FdPluginOptions = \"fd=imported\"\n"
         "  SdPluginOptions = \"sd=imported\"\n"
         "  DirPluginOptions = \"dir=imported\"\n"
@@ -2044,6 +2052,7 @@ TEST(BconfigService, UpsertsDirectorJobResources)
         "  RescheduleInterval = 600\n"
         "  RescheduleTimes = 7\n"
         "  AllowMixedPriority = yes\n"
+        "  SelectionType = Volume\n"
         "  Accurate = yes\n"
         "  AllowDuplicateJobs = no\n"
         "  SaveFileHistory = yes\n"
@@ -2075,7 +2084,9 @@ TEST(BconfigService, UpsertsDirectorJobResources)
   EXPECT_NE(updated_text.find("WriteBootstrap = "), std::string::npos);
   EXPECT_NE(updated_text.find("BackupFormat = \"Portable\""),
             std::string::npos);
+  EXPECT_NE(updated_text.find("Protocol = NDMP_NATIVE"), std::string::npos);
   EXPECT_NE(updated_text.find("Run = backup-catalog-now"), std::string::npos);
+  EXPECT_NE(updated_text.find("Replace = Never"), std::string::npos);
   EXPECT_NE(updated_text.find("FdPluginOptions = \"fd=imported\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("SdPluginOptions = \"sd=imported\""),
@@ -2096,6 +2107,7 @@ TEST(BconfigService, UpsertsDirectorJobResources)
   EXPECT_NE(updated_text.find("RescheduleInterval = 600"), std::string::npos);
   EXPECT_NE(updated_text.find("RescheduleTimes = 7"), std::string::npos);
   EXPECT_NE(updated_text.find("AllowMixedPriority = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("SelectionType = Volume"), std::string::npos);
   EXPECT_NE(updated_text.find("Accurate = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("AllowDuplicateJobs = no"), std::string::npos);
   EXPECT_NE(updated_text.find("SaveFileHistory = yes"), std::string::npos);
@@ -2291,12 +2303,14 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
       {.description = std::string{"Managed jobdefs"},
        .type = std::string{"Backup"},
        .backup_format = std::string{"Portable"},
+       .protocol = std::string{"ndmp"},
        .messages = std::string{"Standard"},
        .pool = std::string{"Incremental"},
        .client = std::string{"bareos-fd"},
        .fileset = std::string{"SelfTest"},
        .schedule = std::string{"WeeklyCycle"},
        .run_entries = std::vector<std::string>{"managed-jobdefs-run"},
+       .replace = std::string{"ifolder"},
        .write_bootstrap = std::string{"/tmp/managed-jobdefs.bsr"},
        .maximum_bandwidth = 23456,
        .max_run_sched_time = 75,
@@ -2312,6 +2326,7 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
        .reschedule_interval = 450,
        .reschedule_times = 5,
        .allow_mixed_priority = true,
+       .selection_type = std::string{"pooltime"},
        .accurate = true,
        .allow_duplicate_jobs = false,
        .save_file_history = true,
@@ -2336,8 +2351,10 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
   EXPECT_NE(created_text.find("Type = Backup"), std::string::npos);
   EXPECT_NE(created_text.find("BackupFormat = \"Portable\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("Protocol = NDMP_BAREOS"), std::string::npos);
   EXPECT_NE(created_text.find("Client = bareos-fd"), std::string::npos);
   EXPECT_NE(created_text.find("Run = managed-jobdefs-run"), std::string::npos);
+  EXPECT_NE(created_text.find("Replace = IfOlder"), std::string::npos);
   EXPECT_NE(created_text.find("WriteBootstrap = \"/tmp/managed-jobdefs.bsr\""),
             std::string::npos);
   EXPECT_NE(created_text.find("MaximumBandwidth = 23456"), std::string::npos);
@@ -2354,6 +2371,7 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
   EXPECT_NE(created_text.find("RescheduleInterval = 450"), std::string::npos);
   EXPECT_NE(created_text.find("RescheduleTimes = 5"), std::string::npos);
   EXPECT_NE(created_text.find("AllowMixedPriority = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("SelectionType = PoolTime"), std::string::npos);
   EXPECT_NE(created_text.find("Accurate = yes"), std::string::npos);
   EXPECT_NE(created_text.find("AllowDuplicateJobs = no"), std::string::npos);
   EXPECT_NE(created_text.find("SaveFileHistory = yes"), std::string::npos);
@@ -2375,7 +2393,9 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
   auto default_jobdefs_text = ReadTextFile(default_jobdefs_path);
   const std::string default_jobdefs_insertion
       = "  BackupFormat = \"Portable\"\n"
+        "  Protocol = NDMP_NATIVE\n"
         "  Run = imported-jobdefs-run\n"
+        "  Replace = Never\n"
         "  FdPluginOptions = \"fd=imported-defs\"\n"
         "  SdPluginOptions = \"sd=imported-defs\"\n"
         "  DirPluginOptions = \"dir=imported-defs\"\n"
@@ -2393,6 +2413,7 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
         "  RescheduleInterval = 900\n"
         "  RescheduleTimes = 8\n"
         "  AllowMixedPriority = yes\n"
+        "  SelectionType = Volume\n"
         "  Accurate = yes\n"
         "  AllowDuplicateJobs = no\n"
         "  SaveFileHistory = yes\n"
@@ -2422,7 +2443,9 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("BackupFormat = \"Portable\""),
             std::string::npos);
+  EXPECT_NE(updated_text.find("Protocol = NDMP_NATIVE"), std::string::npos);
   EXPECT_NE(updated_text.find("Run = imported-jobdefs-run"), std::string::npos);
+  EXPECT_NE(updated_text.find("Replace = Never"), std::string::npos);
   EXPECT_NE(updated_text.find("FdPluginOptions = \"fd=imported-defs\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("SdPluginOptions = \"sd=imported-defs\""),
@@ -2443,6 +2466,7 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
   EXPECT_NE(updated_text.find("RescheduleInterval = 900"), std::string::npos);
   EXPECT_NE(updated_text.find("RescheduleTimes = 8"), std::string::npos);
   EXPECT_NE(updated_text.find("AllowMixedPriority = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("SelectionType = Volume"), std::string::npos);
   EXPECT_NE(updated_text.find("Accurate = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("AllowDuplicateJobs = no"), std::string::npos);
   EXPECT_NE(updated_text.find("SaveFileHistory = yes"), std::string::npos);

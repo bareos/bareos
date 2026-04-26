@@ -32,6 +32,8 @@
 #include "include/auth_types.h"
 #include "include/job_level.h"
 #include "include/job_types.h"
+#include "include/migration_selection_types.h"
+#include "include/protocol_types.h"
 #include "lib/address_conf.h"
 #include "lib/alist.h"
 #include "lib/bpipe.h"
@@ -1048,6 +1050,7 @@ struct DirectorJobContentSpec {
   std::optional<std::string> description{};
   std::optional<std::string> type{};
   std::optional<std::string> backup_format{};
+  std::optional<std::string> protocol{};
   std::optional<std::string> level{};
   std::optional<std::string> messages{};
   std::vector<std::string> storages{};
@@ -1065,6 +1068,7 @@ struct DirectorJobContentSpec {
   std::optional<std::string> jobdefs{};
   std::vector<std::string> run_entries{};
   std::optional<std::string> where{};
+  std::optional<std::string> replace{};
   std::optional<std::string> regex_where{};
   std::optional<std::string> strip_prefix{};
   std::optional<std::string> add_prefix{};
@@ -1099,6 +1103,7 @@ struct DirectorJobContentSpec {
   std::optional<uint32_t> reschedule_times{};
   std::optional<int32_t> priority{};
   std::optional<bool> allow_mixed_priority{};
+  std::optional<std::string> selection_type{};
   std::optional<std::string> selection_pattern{};
   std::optional<bool> accurate{};
   std::optional<bool> allow_duplicate_jobs{};
@@ -1930,6 +1935,7 @@ std::string BuildDirectorJobResourceContent(std::string_view job_name,
   AppendQuotedDirective(content, "Description", spec.description);
   AppendBareosDirective(content, "Type", spec.type);
   AppendQuotedDirective(content, "BackupFormat", spec.backup_format);
+  AppendBareosDirective(content, "Protocol", spec.protocol);
   AppendBareosDirective(content, "Level", spec.level);
   AppendBareosDirective(content, "Messages", spec.messages);
   AppendRepeatedBareosDirective(content, "Storage", spec.storages);
@@ -1952,6 +1958,7 @@ std::string BuildDirectorJobResourceContent(std::string_view job_name,
     content << "  Run = " << entry << "\n";
   }
   AppendBareosDirective(content, "Where", spec.where);
+  AppendBareosDirective(content, "Replace", spec.replace);
   AppendQuotedDirective(content, "RegexWhere", spec.regex_where);
   AppendQuotedDirective(content, "StripPrefix", spec.strip_prefix);
   AppendQuotedDirective(content, "AddPrefix", spec.add_prefix);
@@ -1992,6 +1999,7 @@ std::string BuildDirectorJobResourceContent(std::string_view job_name,
   AppendIntegerDirective(content, "RescheduleTimes", spec.reschedule_times);
   AppendIntegerDirective(content, "Priority", spec.priority);
   AppendBoolDirective(content, "AllowMixedPriority", spec.allow_mixed_priority);
+  AppendBareosDirective(content, "SelectionType", spec.selection_type);
   AppendQuotedDirective(content, "SelectionPattern", spec.selection_pattern);
   AppendBoolDirective(content, "Accurate", spec.accurate);
   AppendBoolDirective(content, "AllowDuplicateJobs", spec.allow_duplicate_jobs);
@@ -2038,6 +2046,7 @@ std::string BuildDirectorJobDefsResourceContent(
   AppendQuotedDirective(content, "Description", spec.description);
   AppendBareosDirective(content, "Type", spec.type);
   AppendQuotedDirective(content, "BackupFormat", spec.backup_format);
+  AppendBareosDirective(content, "Protocol", spec.protocol);
   AppendBareosDirective(content, "Level", spec.level);
   AppendBareosDirective(content, "Messages", spec.messages);
   AppendRepeatedBareosDirective(content, "Storage", spec.storages);
@@ -2060,6 +2069,7 @@ std::string BuildDirectorJobDefsResourceContent(
     content << "  Run = " << entry << "\n";
   }
   AppendBareosDirective(content, "Where", spec.where);
+  AppendBareosDirective(content, "Replace", spec.replace);
   AppendQuotedDirective(content, "RegexWhere", spec.regex_where);
   AppendQuotedDirective(content, "StripPrefix", spec.strip_prefix);
   AppendQuotedDirective(content, "AddPrefix", spec.add_prefix);
@@ -2100,6 +2110,7 @@ std::string BuildDirectorJobDefsResourceContent(
   AppendIntegerDirective(content, "RescheduleTimes", spec.reschedule_times);
   AppendIntegerDirective(content, "Priority", spec.priority);
   AppendBoolDirective(content, "AllowMixedPriority", spec.allow_mixed_priority);
+  AppendBareosDirective(content, "SelectionType", spec.selection_type);
   AppendQuotedDirective(content, "SelectionPattern", spec.selection_pattern);
   AppendBoolDirective(content, "Accurate", spec.accurate);
   AppendBoolDirective(content, "AllowDuplicateJobs", spec.allow_duplicate_jobs);
@@ -2783,6 +2794,73 @@ OperationResult<std::string> NormalizeDirectorClientProtocol(
             "NDMPV4."};
 }
 
+OperationResult<std::string> NormalizeDirectorJobProtocol(
+    std::string_view protocol)
+{
+  std::string normalized;
+  normalized.reserve(protocol.size());
+  std::transform(protocol.begin(), protocol.end(),
+                 std::back_inserter(normalized),
+                 [](unsigned char c) { return std::tolower(c); });
+  if (normalized == "native") { return {.value = std::string{"Native"}}; }
+  if (normalized == "ndmp" || normalized == "ndmp_bareos") {
+    return {.value = std::string{"NDMP_BAREOS"}};
+  }
+  if (normalized == "ndmp_native") {
+    return {.value = std::string{"NDMP_NATIVE"}};
+  }
+  return {.error
+          = "field 'protocol' must be one of Native, NDMP_BAREOS, NDMP, or "
+            "NDMP_NATIVE."};
+}
+
+OperationResult<std::string> NormalizeDirectorJobReplace(
+    std::string_view replace)
+{
+  std::string normalized;
+  normalized.reserve(replace.size());
+  std::transform(replace.begin(), replace.end(), std::back_inserter(normalized),
+                 [](unsigned char c) { return std::tolower(c); });
+  if (normalized == "always") { return {.value = std::string{"Always"}}; }
+  if (normalized == "ifnewer") { return {.value = std::string{"IfNewer"}}; }
+  if (normalized == "ifolder") { return {.value = std::string{"IfOlder"}}; }
+  if (normalized == "never") { return {.value = std::string{"Never"}}; }
+  return {.error
+          = "field 'replace' must be one of Always, IfNewer, IfOlder, or "
+            "Never."};
+}
+
+OperationResult<std::string> NormalizeDirectorJobSelectionType(
+    std::string_view selection_type)
+{
+  std::string normalized;
+  normalized.reserve(selection_type.size());
+  std::transform(selection_type.begin(), selection_type.end(),
+                 std::back_inserter(normalized),
+                 [](unsigned char c) { return std::tolower(c); });
+  if (normalized == "smallestvolume") {
+    return {.value = std::string{"SmallestVolume"}};
+  }
+  if (normalized == "oldestvolume") {
+    return {.value = std::string{"OldestVolume"}};
+  }
+  if (normalized == "pooloccupancy") {
+    return {.value = std::string{"PoolOccupancy"}};
+  }
+  if (normalized == "pooltime") { return {.value = std::string{"PoolTime"}}; }
+  if (normalized == "pooluncopiedjobs") {
+    return {.value = std::string{"PoolUncopiedJobs"}};
+  }
+  if (normalized == "client") { return {.value = std::string{"Client"}}; }
+  if (normalized == "volume") { return {.value = std::string{"Volume"}}; }
+  if (normalized == "job") { return {.value = std::string{"Job"}}; }
+  if (normalized == "sqlquery") { return {.value = std::string{"SqlQuery"}}; }
+  return {.error
+          = "field 'selection_type' must be one of SmallestVolume, "
+            "OldestVolume, PoolOccupancy, PoolTime, PoolUncopiedJobs, "
+            "Client, Volume, Job, or SqlQuery."};
+}
+
 std::string RenderDirectorClientProtocol(uint32_t protocol)
 {
   switch (protocol) {
@@ -2794,6 +2872,62 @@ std::string RenderDirectorClientProtocol(uint32_t protocol)
       return "NDMPV3";
     case APT_NDMPV4:
       return "NDMPV4";
+    default:
+      return "Unknown";
+  }
+}
+
+std::string RenderDirectorJobProtocol(uint32_t protocol)
+{
+  switch (protocol) {
+    case PT_NATIVE:
+      return "Native";
+    case PT_NDMP_BAREOS:
+      return "NDMP_BAREOS";
+    case PT_NDMP_NATIVE:
+      return "NDMP_NATIVE";
+    default:
+      return "Unknown";
+  }
+}
+
+std::string RenderDirectorJobReplace(uint32_t replace)
+{
+  switch (replace) {
+    case REPLACE_ALWAYS:
+      return "Always";
+    case REPLACE_IFNEWER:
+      return "IfNewer";
+    case REPLACE_IFOLDER:
+      return "IfOlder";
+    case REPLACE_NEVER:
+      return "Never";
+    default:
+      return "Unknown";
+  }
+}
+
+std::string RenderDirectorJobSelectionType(uint32_t selection_type)
+{
+  switch (selection_type) {
+    case MT_SMALLEST_VOL:
+      return "SmallestVolume";
+    case MT_OLDEST_VOL:
+      return "OldestVolume";
+    case MT_POOL_OCCUPANCY:
+      return "PoolOccupancy";
+    case MT_POOL_TIME:
+      return "PoolTime";
+    case MT_POOL_UNCOPIED_JOBS:
+      return "PoolUncopiedJobs";
+    case MT_CLIENT:
+      return "Client";
+    case MT_VOLUME:
+      return "Volume";
+    case MT_JOB:
+      return "Job";
+    case MT_SQLQUERY:
+      return "SqlQuery";
     default:
       return "Unknown";
   }
@@ -6608,6 +6742,14 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
         && job->backup_format[0] != '\0') {
       context.content.backup_format = std::string{job->backup_format};
     }
+    if (HasMemberSource(*job, {"Protocol"})) {
+      const auto protocol = RenderDirectorJobProtocol(job->Protocol);
+      if (protocol == "Unknown") {
+        return {.error = "director job '" + std::string{job_name}
+                         + "' has an unsupported Protocol value."};
+      }
+      context.content.protocol = protocol;
+    }
     context.content.messages = CopyResourceName(job->messages);
     context.content.storages = CopyStorageNames(job->storage);
     context.content.pool = CopyResourceName(job->pool);
@@ -6628,6 +6770,14 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
     }
     if (job->RestoreWhere && job->RestoreWhere[0] != '\0') {
       context.content.where = std::string{job->RestoreWhere};
+    }
+    if (HasMemberSource(*job, {"Replace"})) {
+      const auto replace = RenderDirectorJobReplace(job->replace);
+      if (replace == "Unknown") {
+        return {.error = "director job '" + std::string{job_name}
+                         + "' has an unsupported Replace value."};
+      }
+      context.content.replace = replace;
     }
     if (HasMemberSource(*job, {"RegexWhere"}) && job->RegexWhere
         && job->RegexWhere[0] != '\0') {
@@ -6752,6 +6902,15 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
     if (HasMemberSource(*job, {"AllowMixedPriority"})) {
       context.content.allow_mixed_priority = job->allow_mixed_priority;
     }
+    if (HasMemberSource(*job, {"SelectionType"})) {
+      const auto selection_type
+          = RenderDirectorJobSelectionType(job->selection_type);
+      if (selection_type == "Unknown") {
+        return {.error = "director job '" + std::string{job_name}
+                         + "' has an unsupported SelectionType value."};
+      }
+      context.content.selection_type = selection_type;
+    }
     if (HasMemberSource(*job, {"SelectionPattern"}) && job->selection_pattern
         && job->selection_pattern[0] != '\0') {
       context.content.selection_pattern = std::string{job->selection_pattern};
@@ -6825,6 +6984,7 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
         "Description",
         "Type",
         "BackupFormat",
+        "Protocol",
         "Level",
         "Messages",
         "Storage",
@@ -6843,6 +7003,7 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
         "JobDefs",
         "Run",
         "Where",
+        "Replace",
         "RegexWhere",
         "StripPrefix",
         "AddPrefix",
@@ -6877,6 +7038,7 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
         "RescheduleTimes",
         "Priority",
         "AllowMixedPriority",
+        "SelectionType",
         "SelectionPattern",
         "Accurate",
         "AllowDuplicateJobs",
@@ -6961,6 +7123,14 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
         && jobdefs->backup_format[0] != '\0') {
       context.content.backup_format = std::string{jobdefs->backup_format};
     }
+    if (HasMemberSource(*jobdefs, {"Protocol"})) {
+      const auto protocol = RenderDirectorJobProtocol(jobdefs->Protocol);
+      if (protocol == "Unknown") {
+        return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                         + "' has an unsupported Protocol value."};
+      }
+      context.content.protocol = protocol;
+    }
     context.content.messages = CopyResourceName(jobdefs->messages);
     context.content.storages = CopyStorageNames(jobdefs->storage);
     context.content.pool = CopyResourceName(jobdefs->pool);
@@ -6983,6 +7153,14 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
     }
     if (jobdefs->RestoreWhere && jobdefs->RestoreWhere[0] != '\0') {
       context.content.where = std::string{jobdefs->RestoreWhere};
+    }
+    if (HasMemberSource(*jobdefs, {"Replace"})) {
+      const auto replace = RenderDirectorJobReplace(jobdefs->replace);
+      if (replace == "Unknown") {
+        return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                         + "' has an unsupported Replace value."};
+      }
+      context.content.replace = replace;
     }
     if (HasMemberSource(*jobdefs, {"RegexWhere"}) && jobdefs->RegexWhere
         && jobdefs->RegexWhere[0] != '\0') {
@@ -7109,6 +7287,15 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
     if (HasMemberSource(*jobdefs, {"AllowMixedPriority"})) {
       context.content.allow_mixed_priority = jobdefs->allow_mixed_priority;
     }
+    if (HasMemberSource(*jobdefs, {"SelectionType"})) {
+      const auto selection_type
+          = RenderDirectorJobSelectionType(jobdefs->selection_type);
+      if (selection_type == "Unknown") {
+        return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                         + "' has an unsupported SelectionType value."};
+      }
+      context.content.selection_type = selection_type;
+    }
     if (HasMemberSource(*jobdefs, {"SelectionPattern"})
         && jobdefs->selection_pattern
         && jobdefs->selection_pattern[0] != '\0') {
@@ -7189,6 +7376,7 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
         "Description",
         "Type",
         "BackupFormat",
+        "Protocol",
         "Level",
         "Messages",
         "Storage",
@@ -7207,6 +7395,7 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
         "JobDefs",
         "Run",
         "Where",
+        "Replace",
         "RegexWhere",
         "StripPrefix",
         "AddPrefix",
@@ -7241,6 +7430,7 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
         "RescheduleTimes",
         "Priority",
         "AllowMixedPriority",
+        "SelectionType",
         "SelectionPattern",
         "Accurate",
         "AllowDuplicateJobs",
@@ -12718,6 +12908,11 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertDirectorJobResource(
                   DefaultDirectorJobDescription(job_name, director_name));
   if (spec.type) { content.type = *spec.type; }
   if (spec.backup_format) { content.backup_format = *spec.backup_format; }
+  if (spec.protocol) {
+    auto normalized_protocol = NormalizeDirectorJobProtocol(*spec.protocol);
+    if (!normalized_protocol) { return {.error = normalized_protocol.error}; }
+    content.protocol = *normalized_protocol.value;
+  }
   if (spec.level) { content.level = *spec.level; }
   if (spec.messages) { content.messages = *spec.messages; }
   if (spec.storages) { content.storages = *spec.storages; }
@@ -12743,6 +12938,11 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertDirectorJobResource(
   if (spec.jobdefs) { content.jobdefs = *spec.jobdefs; }
   if (spec.run_entries) { content.run_entries = *spec.run_entries; }
   if (spec.where) { content.where = *spec.where; }
+  if (spec.replace) {
+    auto normalized_replace = NormalizeDirectorJobReplace(*spec.replace);
+    if (!normalized_replace) { return {.error = normalized_replace.error}; }
+    content.replace = *normalized_replace.value;
+  }
   if (spec.regex_where) { content.regex_where = *spec.regex_where; }
   if (spec.strip_prefix) { content.strip_prefix = *spec.strip_prefix; }
   if (spec.add_prefix) { content.add_prefix = *spec.add_prefix; }
@@ -12812,6 +13012,14 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertDirectorJobResource(
   if (spec.priority) { content.priority = *spec.priority; }
   if (spec.allow_mixed_priority) {
     content.allow_mixed_priority = *spec.allow_mixed_priority;
+  }
+  if (spec.selection_type) {
+    auto normalized_selection_type
+        = NormalizeDirectorJobSelectionType(*spec.selection_type);
+    if (!normalized_selection_type) {
+      return {.error = normalized_selection_type.error};
+    }
+    content.selection_type = *normalized_selection_type.value;
   }
   if (spec.selection_pattern) {
     content.selection_pattern = *spec.selection_pattern;
@@ -13017,6 +13225,11 @@ ServiceState::UpsertDirectorJobDefsResource(
                   jobdefs_name, director_name));
   if (spec.type) { content.type = *spec.type; }
   if (spec.backup_format) { content.backup_format = *spec.backup_format; }
+  if (spec.protocol) {
+    auto normalized_protocol = NormalizeDirectorJobProtocol(*spec.protocol);
+    if (!normalized_protocol) { return {.error = normalized_protocol.error}; }
+    content.protocol = *normalized_protocol.value;
+  }
   if (spec.level) { content.level = *spec.level; }
   if (spec.messages) { content.messages = *spec.messages; }
   if (spec.storages) { content.storages = *spec.storages; }
@@ -13042,6 +13255,11 @@ ServiceState::UpsertDirectorJobDefsResource(
   if (spec.jobdefs) { content.jobdefs = *spec.jobdefs; }
   if (spec.run_entries) { content.run_entries = *spec.run_entries; }
   if (spec.where) { content.where = *spec.where; }
+  if (spec.replace) {
+    auto normalized_replace = NormalizeDirectorJobReplace(*spec.replace);
+    if (!normalized_replace) { return {.error = normalized_replace.error}; }
+    content.replace = *normalized_replace.value;
+  }
   if (spec.regex_where) { content.regex_where = *spec.regex_where; }
   if (spec.strip_prefix) { content.strip_prefix = *spec.strip_prefix; }
   if (spec.add_prefix) { content.add_prefix = *spec.add_prefix; }
@@ -13111,6 +13329,14 @@ ServiceState::UpsertDirectorJobDefsResource(
   if (spec.priority) { content.priority = *spec.priority; }
   if (spec.allow_mixed_priority) {
     content.allow_mixed_priority = *spec.allow_mixed_priority;
+  }
+  if (spec.selection_type) {
+    auto normalized_selection_type
+        = NormalizeDirectorJobSelectionType(*spec.selection_type);
+    if (!normalized_selection_type) {
+      return {.error = normalized_selection_type.error};
+    }
+    content.selection_type = *normalized_selection_type.value;
   }
   if (spec.selection_pattern) {
     content.selection_pattern = *spec.selection_pattern;
