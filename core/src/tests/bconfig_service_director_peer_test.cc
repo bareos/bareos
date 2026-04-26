@@ -663,14 +663,38 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
       "prod", "bareos-dir", "FileManaged",
       {.address = std::string{"localhost"},
        .lan_address = std::string{"storage-lan.example.com"},
+       .protocol = std::string{"NDMPV4"},
+       .auth_type = std::string{"Clear"},
+       .username = std::string{"ndmp-user"},
        .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
        .device = std::string{"FileStorage"},
        .media_type = std::string{"File"},
+       .autochanger = true,
        .enabled = false,
        .allow_compression = false,
        .heartbeat_interval = 60,
        .cache_status_interval = 90,
+       .maximum_concurrent_jobs = 11,
+       .maximum_concurrent_read_jobs = 3,
+       .paired_storage = std::string{"File"},
        .maximum_bandwidth_per_job = 2048,
+       .collect_statistics = true,
+       .ndmp_changer_device = std::string{"changer0"},
+       .tls_authenticate = false,
+       .tls_enable = true,
+       .tls_require = false,
+       .tls_verify_peer = true,
+       .tls_cipher_list = std::string{"ECDHE-RSA-AES256-GCM-SHA384"},
+       .tls_cipher_suites = std::string{"TLS_AES_256_GCM_SHA384"},
+       .tls_dh_file = std::string{"/etc/bareos/dh4096.pem"},
+       .tls_protocol = std::string{"MinProtocol = TLSv1.2"},
+       .tls_ca_certificate_file = std::string{"/etc/bareos/ca.crt"},
+       .tls_ca_certificate_dir = std::string{"/etc/ssl/certs"},
+       .tls_certificate_revocation_list = std::string{"/etc/bareos/crl.pem"},
+       .tls_certificate = std::string{"/etc/bareos/storage.crt"},
+       .tls_key = std::string{"/etc/bareos/storage.key"},
+       .tls_allowed_cn
+       = std::vector<std::string>{"storage-cn-1", "storage-cn-2"},
        .description = std::string{"Managed storage"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-dir");
@@ -682,17 +706,56 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
   EXPECT_NE(created_text.find("Address = localhost"), std::string::npos);
   EXPECT_NE(created_text.find("LanAddress = storage-lan.example.com"),
             std::string::npos);
+  EXPECT_NE(created_text.find("Protocol = NDMPV4"), std::string::npos);
+  EXPECT_NE(created_text.find("AuthType = Clear"), std::string::npos);
+  EXPECT_NE(created_text.find("Username = \"ndmp-user\""), std::string::npos);
   EXPECT_NE(
       created_text.find("Password = \"[md5]abcdef0123456789abcdef0123456789\""),
       std::string::npos);
   EXPECT_NE(created_text.find("Device = FileStorage"), std::string::npos);
   EXPECT_NE(created_text.find("Media Type = File"), std::string::npos);
   EXPECT_NE(created_text.find("Port = 9103"), std::string::npos);
+  EXPECT_NE(created_text.find("AutoChanger = yes"), std::string::npos);
   EXPECT_NE(created_text.find("Enabled = no"), std::string::npos);
   EXPECT_NE(created_text.find("AllowCompression = no"), std::string::npos);
   EXPECT_NE(created_text.find("HeartbeatInterval = 60"), std::string::npos);
   EXPECT_NE(created_text.find("CacheStatusInterval = 90"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumConcurrentJobs = 11"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumConcurrentReadJobs = 3"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("PairedStorage = File"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumBandwidthPerJob = 2048"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("CollectStatistics = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("NdmpChangerDevice = changer0"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsAuthenticate = no"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsRequire = no"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsVerifyPeer = yes"), std::string::npos);
+  EXPECT_NE(
+      created_text.find("TlsCipherList = \"ECDHE-RSA-AES256-GCM-SHA384\""),
+      std::string::npos);
+  EXPECT_NE(created_text.find("TlsCipherSuites = \"TLS_AES_256_GCM_SHA384\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsDhFile = \"/etc/bareos/dh4096.pem\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsProtocol = \"MinProtocol = TLSv1.2\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsCaCertificateFile = \"/etc/bareos/ca.crt\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsCaCertificateDir = \"/etc/ssl/certs\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find(
+                "TlsCertificateRevocationList = \"/etc/bareos/crl.pem\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsCertificate = \"/etc/bareos/storage.crt\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsKey = \"/etc/bareos/storage.key\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsAllowedCn = \"storage-cn-1\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsAllowedCn = \"storage-cn-2\""),
             std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed storage\""),
             std::string::npos);
@@ -707,17 +770,56 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("LanAddress = storage-lan.example.com"),
             std::string::npos);
+  EXPECT_NE(updated_text.find("Protocol = NDMPV4"), std::string::npos);
+  EXPECT_NE(updated_text.find("AuthType = Clear"), std::string::npos);
+  EXPECT_NE(updated_text.find("Username = \"ndmp-user\""), std::string::npos);
   EXPECT_NE(
       updated_text.find("Password = \"[md5]abcdef0123456789abcdef0123456789\""),
       std::string::npos);
   EXPECT_NE(updated_text.find("Device = FileStorage"), std::string::npos);
   EXPECT_NE(updated_text.find("Media Type = File"), std::string::npos);
   EXPECT_NE(updated_text.find("Port = 9103"), std::string::npos);
+  EXPECT_NE(updated_text.find("AutoChanger = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("Enabled = no"), std::string::npos);
   EXPECT_NE(updated_text.find("AllowCompression = no"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 60"), std::string::npos);
   EXPECT_NE(updated_text.find("CacheStatusInterval = 90"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 11"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumConcurrentReadJobs = 3"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("PairedStorage = File"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 2048"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("CollectStatistics = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("NdmpChangerDevice = changer0"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAuthenticate = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsRequire = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsVerifyPeer = yes"), std::string::npos);
+  EXPECT_NE(
+      updated_text.find("TlsCipherList = \"ECDHE-RSA-AES256-GCM-SHA384\""),
+      std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherSuites = \"TLS_AES_256_GCM_SHA384\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsDhFile = \"/etc/bareos/dh4096.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsProtocol = \"MinProtocol = TLSv1.2\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCaCertificateFile = \"/etc/bareos/ca.crt\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCaCertificateDir = \"/etc/ssl/certs\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find(
+                "TlsCertificateRevocationList = \"/etc/bareos/crl.pem\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCertificate = \"/etc/bareos/storage.crt\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsKey = \"/etc/bareos/storage.key\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = \"storage-cn-1\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = \"storage-cn-2\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Managed storage\""),
             std::string::npos);

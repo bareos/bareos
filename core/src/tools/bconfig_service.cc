@@ -950,8 +950,11 @@ struct StorageDaemonContentSpec {
   std::optional<std::string> source_address{};
   std::vector<std::string> source_addresses{};
   std::optional<uint16_t> port{};
+  std::optional<std::string> query_file{};
+  std::optional<uint32_t> subscriptions{};
   std::optional<bool> just_in_time_reservation{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<uint32_t> maximum_console_connections{};
   std::optional<uint32_t> maximum_workers_per_job{};
   std::optional<uint32_t> absolute_job_timeout{};
   std::optional<bool> allow_bandwidth_bursting{};
@@ -998,10 +1001,15 @@ struct StorageDaemonContentSpec {
   std::optional<uint64_t> sd_connect_timeout{};
   std::optional<uint64_t> fd_connect_timeout{};
   std::optional<uint64_t> heartbeat_interval{};
+  std::optional<uint64_t> statistics_retention{};
+  std::optional<bool> ndmp_namelist_fhinfo_set_zero_for_invalid_uquad{};
   std::optional<uint64_t> checkpoint_interval{};
   std::optional<uint64_t> client_connect_wait{};
   std::optional<uint32_t> maximum_network_buffer_size{};
   std::optional<std::string> description{};
+  std::optional<std::string> key_encryption_key{};
+  std::optional<bool> auditing{};
+  std::vector<std::string> audit_events{};
   std::optional<std::string> working_directory{};
   std::optional<std::string> plugin_directory{};
   std::vector<std::string> plugin_names{};
@@ -1166,33 +1174,85 @@ std::string BuildDirectorStorageResourceContent(
     std::string_view storage_name,
     std::string_view address,
     const std::optional<std::string>& lan_address,
+    const std::optional<std::string>& protocol,
+    const std::optional<std::string>& auth_type,
+    const std::optional<std::string>& username,
     std::string_view password,
     const std::vector<std::string>& devices,
     std::string_view media_type,
     uint32_t port,
+    const std::optional<bool>& autochanger,
     const std::optional<bool>& enabled,
     const std::optional<bool>& allow_compression,
     const std::optional<uint64_t>& heartbeat_interval,
     const std::optional<uint64_t>& cache_status_interval,
+    const std::optional<uint32_t>& maximum_concurrent_jobs,
+    const std::optional<uint32_t>& maximum_concurrent_read_jobs,
+    const std::optional<std::string>& paired_storage,
     const std::optional<uint64_t>& maximum_bandwidth_per_job,
+    const std::optional<bool>& collect_statistics,
+    const std::optional<std::string>& ndmp_changer_device,
+    const std::optional<bool>& tls_authenticate,
+    const std::optional<bool>& tls_enable,
+    const std::optional<bool>& tls_require,
+    const std::optional<bool>& tls_verify_peer,
+    const std::optional<std::string>& tls_cipher_list,
+    const std::optional<std::string>& tls_cipher_suites,
+    const std::optional<std::string>& tls_dh_file,
+    const std::optional<std::string>& tls_protocol,
+    const std::optional<std::string>& tls_ca_certificate_file,
+    const std::optional<std::string>& tls_ca_certificate_dir,
+    const std::optional<std::string>& tls_certificate_revocation_list,
+    const std::optional<std::string>& tls_certificate,
+    const std::optional<std::string>& tls_key,
+    const std::optional<std::vector<std::string>>& tls_allowed_cn,
     std::string_view description)
 {
   std::ostringstream content;
   content << "Storage {\n"
           << "  Name = " << QuoteBareosString(storage_name) << "\n"
           << "  Description = " << QuoteBareosString(description) << "\n"
-          << "  Address = " << address << "\n"
-          << "  Password = " << QuoteBareosString(password) << "\n";
+          << "  Address = " << address << "\n";
+  AppendBareosDirective(content, "Protocol", protocol);
+  AppendBareosDirective(content, "AuthType", auth_type);
   AppendBareosDirective(content, "LanAddress", lan_address);
+  AppendQuotedDirective(content, "Username", username);
+  content << "  Password = " << QuoteBareosString(password) << "\n";
   AppendRepeatedBareosDirective(content, "Device", devices);
   content << "  Media Type = " << media_type << "\n"
           << "  Port = " << port << "\n";
+  AppendBoolDirective(content, "AutoChanger", autochanger);
   AppendBoolDirective(content, "Enabled", enabled);
   AppendBoolDirective(content, "AllowCompression", allow_compression);
   AppendIntegerDirective(content, "HeartbeatInterval", heartbeat_interval);
   AppendIntegerDirective(content, "CacheStatusInterval", cache_status_interval);
+  AppendIntegerDirective(content, "MaximumConcurrentJobs",
+                         maximum_concurrent_jobs);
+  AppendIntegerDirective(content, "MaximumConcurrentReadJobs",
+                         maximum_concurrent_read_jobs);
+  AppendBareosDirective(content, "PairedStorage", paired_storage);
   AppendIntegerDirective(content, "MaximumBandwidthPerJob",
                          maximum_bandwidth_per_job);
+  AppendBoolDirective(content, "CollectStatistics", collect_statistics);
+  AppendBareosDirective(content, "NdmpChangerDevice", ndmp_changer_device);
+  AppendBoolDirective(content, "TlsAuthenticate", tls_authenticate);
+  AppendBoolDirective(content, "TlsEnable", tls_enable);
+  AppendBoolDirective(content, "TlsRequire", tls_require);
+  AppendBoolDirective(content, "TlsVerifyPeer", tls_verify_peer);
+  AppendQuotedDirective(content, "TlsCipherList", tls_cipher_list);
+  AppendQuotedDirective(content, "TlsCipherSuites", tls_cipher_suites);
+  AppendQuotedDirective(content, "TlsDhFile", tls_dh_file);
+  AppendQuotedDirective(content, "TlsProtocol", tls_protocol);
+  AppendQuotedDirective(content, "TlsCaCertificateFile",
+                        tls_ca_certificate_file);
+  AppendQuotedDirective(content, "TlsCaCertificateDir", tls_ca_certificate_dir);
+  AppendQuotedDirective(content, "TlsCertificateRevocationList",
+                        tls_certificate_revocation_list);
+  AppendQuotedDirective(content, "TlsCertificate", tls_certificate);
+  AppendQuotedDirective(content, "TlsKey", tls_key);
+  if (tls_allowed_cn) {
+    AppendRepeatedQuotedDirective(content, "TlsAllowedCn", *tls_allowed_cn);
+  }
   content << "}\n";
   return content.str();
 }
@@ -2116,8 +2176,12 @@ std::string BuildDirectorDaemonResourceContent(
     AppendRepeatedBareosDirective(content, "SourceAddress",
                                   spec.source_addresses);
   }
+  AppendQuotedDirective(content, "QueryFile", spec.query_file);
+  AppendIntegerDirective(content, "Subscriptions", spec.subscriptions);
   AppendIntegerDirective(content, "MaximumConcurrentJobs",
                          spec.maximum_concurrent_jobs);
+  AppendIntegerDirective(content, "MaximumConsoleConnections",
+                         spec.maximum_console_connections);
   AppendIntegerDirective(content, "AbsoluteJobTimeout",
                          spec.absolute_job_timeout);
   AppendBoolDirective(content, "TlsAuthenticate", spec.tls_authenticate);
@@ -2146,7 +2210,18 @@ std::string BuildDirectorDaemonResourceContent(
   AppendIntegerDirective(content, "FdConnectTimeout", spec.fd_connect_timeout);
   AppendIntegerDirective(content, "SdConnectTimeout", spec.sd_connect_timeout);
   AppendIntegerDirective(content, "HeartbeatInterval", spec.heartbeat_interval);
+  AppendIntegerDirective(content, "StatisticsRetention",
+                         spec.statistics_retention);
+  AppendIntegerDirective(content, "StatisticsCollectInterval",
+                         spec.statistics_collect_interval);
   AppendQuotedDirective(content, "Description", spec.description);
+  AppendQuotedDirective(content, "KeyEncryptionKey", spec.key_encryption_key);
+  AppendBoolDirective(content, "NdmpSnooping", spec.ndmp_snooping);
+  AppendIntegerDirective(content, "NdmpLogLevel", spec.ndmp_log_level);
+  AppendBoolDirective(content, "NdmpNamelistFhinfoSetZeroForInvalidUquad",
+                      spec.ndmp_namelist_fhinfo_set_zero_for_invalid_uquad);
+  AppendBoolDirective(content, "Auditing", spec.auditing);
+  AppendRepeatedBareosDirective(content, "AuditEvents", spec.audit_events);
   AppendQuotedDirective(content, "WorkingDirectory", spec.working_directory);
   AppendQuotedDirective(content, "PluginDirectory", spec.plugin_directory);
   AppendRepeatedBareosDirective(content, "PluginNames", spec.plugin_names);
@@ -2698,15 +2773,38 @@ struct DirectorStorageWriteContext {
   std::optional<std::string> address{};
   std::optional<std::string> lan_address{};
   std::optional<uint32_t> port{};
+  std::optional<std::string> protocol{};
+  std::optional<std::string> auth_type{};
+  std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<std::string> device{};
   std::vector<std::string> devices{};
   std::optional<std::string> media_type{};
+  std::optional<bool> autochanger{};
   std::optional<bool> enabled{};
   std::optional<bool> allow_compression{};
   std::optional<uint64_t> heartbeat_interval{};
   std::optional<uint64_t> cache_status_interval{};
+  std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<uint32_t> maximum_concurrent_read_jobs{};
+  std::optional<std::string> paired_storage{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
+  std::optional<bool> collect_statistics{};
+  std::optional<std::string> ndmp_changer_device{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
   std::optional<std::string> description{};
   bool exists{false};
   bool is_standalone_file{false};
@@ -3290,6 +3388,28 @@ OperationResult<DirectorStorageWriteContext> LoadDirectorStorageWriteContext(
       context.lan_address = std::string{storage->lanaddress};
     }
     if (storage->SDport != 0) { context.port = storage->SDport; }
+    if (HasMemberSource(*storage, {"Protocol"})) {
+      const auto protocol = RenderDirectorClientProtocol(storage->Protocol);
+      if (protocol == "Unknown") {
+        return {.error = "director storage '" + std::string{storage_name}
+                         + "' has an unsupported Protocol value."};
+      }
+      context.protocol = protocol;
+    }
+    if (HasMemberSource(*storage, {"AuthType"})) {
+      const auto auth_type = RenderAuthType(storage->AuthType);
+      if (auth_type == "Unknown") {
+        return {.error = "director storage '" + std::string{storage_name}
+                         + "' has an unsupported AuthType value."};
+      }
+      context.auth_type = auth_type;
+    }
+    if (storage->username && storage->username[0] != '\0') {
+      context.username = std::string{storage->username};
+    }
+    if (HasMemberSource(*storage, {"AutoChanger"})) {
+      context.autochanger = storage->autochanger;
+    }
     if (HasMemberSource(*storage, {"Enabled"})) {
       context.enabled = storage->enabled;
     }
@@ -3304,6 +3424,15 @@ OperationResult<DirectorStorageWriteContext> LoadDirectorStorageWriteContext(
       context.cache_status_interval
           = static_cast<uint64_t>(storage->cache_status_interval);
     }
+    if (HasMemberSource(*storage, {"MaximumConcurrentJobs"})) {
+      context.maximum_concurrent_jobs = storage->MaxConcurrentJobs;
+    }
+    if (HasMemberSource(*storage, {"MaximumConcurrentReadJobs"})) {
+      context.maximum_concurrent_read_jobs = storage->MaxConcurrentReadJobs;
+    }
+    if (HasMemberSource(*storage, {"PairedStorage"})) {
+      context.paired_storage = CopyResourceName(storage->paired_storage);
+    }
     if (storage->description_ && storage->description_[0] != '\0') {
       context.description = std::string{storage->description_};
     }
@@ -3314,6 +3443,56 @@ OperationResult<DirectorStorageWriteContext> LoadDirectorStorageWriteContext(
       }
       context.maximum_bandwidth_per_job
           = static_cast<uint64_t>(storage->max_bandwidth);
+    }
+    if (HasMemberSource(*storage, {"CollectStatistics"})) {
+      context.collect_statistics = storage->collectstats;
+    }
+    if (storage->ndmp_changer_device
+        && storage->ndmp_changer_device[0] != '\0') {
+      context.ndmp_changer_device = std::string{storage->ndmp_changer_device};
+    }
+    if (HasMemberSource(*storage, {"TlsAuthenticate"})) {
+      context.tls_authenticate = storage->authenticate_;
+    }
+    if (HasMemberSource(*storage, {"TlsEnable"})) {
+      context.tls_enable = storage->tls_enable_;
+    }
+    if (HasMemberSource(*storage, {"TlsRequire"})) {
+      context.tls_require = storage->tls_require_;
+    }
+    if (HasMemberSource(*storage, {"TlsVerifyPeer"})) {
+      context.tls_verify_peer = storage->tls_cert_.verify_peer_;
+    }
+    if (!storage->cipherlist_.empty()) {
+      context.tls_cipher_list = storage->cipherlist_;
+    }
+    if (!storage->ciphersuites_.empty()) {
+      context.tls_cipher_suites = storage->ciphersuites_;
+    }
+    if (!storage->tls_cert_.dhfile_.empty()) {
+      context.tls_dh_file = storage->tls_cert_.dhfile_;
+    }
+    if (!storage->protocol_.empty()) {
+      context.tls_protocol = storage->protocol_;
+    }
+    if (!storage->tls_cert_.ca_certfile_.empty()) {
+      context.tls_ca_certificate_file = storage->tls_cert_.ca_certfile_;
+    }
+    if (!storage->tls_cert_.ca_certdir_.empty()) {
+      context.tls_ca_certificate_dir = storage->tls_cert_.ca_certdir_;
+    }
+    if (!storage->tls_cert_.crlfile_.empty()) {
+      context.tls_certificate_revocation_list = storage->tls_cert_.crlfile_;
+    }
+    if (!storage->tls_cert_.certfile_.empty()) {
+      context.tls_certificate = storage->tls_cert_.certfile_;
+    }
+    if (!storage->tls_cert_.keyfile_.empty()) {
+      context.tls_key = storage->tls_cert_.keyfile_;
+    }
+    if (HasMemberSource(*storage, {"TlsAllowedCn"})) {
+      context.tls_allowed_cn
+          = storage->tls_cert_.allowed_certificate_common_names_;
     }
     if (storage->media_type && storage->media_type[0] != '\0') {
       context.media_type = std::string{storage->media_type};
@@ -5426,8 +5605,18 @@ OperationResult<DirectorDaemonWriteContext> LoadDirectorDaemonWriteContext(
     if (director->password_.value && director->password_.value[0] != '\0') {
       context.password = std::string{director->password_.value};
     }
+    if (director->query_file && director->query_file[0] != '\0') {
+      context.content.query_file = std::string{director->query_file};
+    }
+    if (HasMemberSource(*director, {"Subscriptions"})) {
+      context.content.subscriptions = director->subscriptions;
+    }
     if (HasMemberSource(*director, {"MaximumConcurrentJobs"})) {
       context.content.maximum_concurrent_jobs = director->MaxConcurrentJobs;
+    }
+    if (HasMemberSource(*director, {"MaximumConsoleConnections"})) {
+      context.content.maximum_console_connections
+          = director->MaxConsoleConnections;
     }
     if (HasMemberSource(*director, {"AbsoluteJobTimeout"})) {
       context.content.absolute_job_timeout = director->jcr_watchdog_time;
@@ -5505,8 +5694,42 @@ OperationResult<DirectorDaemonWriteContext> LoadDirectorDaemonWriteContext(
       context.content.heartbeat_interval
           = static_cast<uint64_t>(director->heartbeat_interval);
     }
+    if (HasMemberSource(*director, {"StatisticsRetention"})) {
+      context.content.statistics_retention
+          = static_cast<uint64_t>(director->stats_retention);
+    }
+    if (HasMemberSource(*director, {"StatisticsCollectInterval"})) {
+      context.content.statistics_collect_interval
+          = director->stats_collect_interval;
+    }
     if (director->description_ && director->description_[0] != '\0') {
       context.content.description = std::string{director->description_};
+    }
+    if (HasMemberSource(*director, {"KeyEncryptionKey"})) {
+      auto rendered_key = RenderPasswordForConfig(
+          director->keyencrkey, "director daemon key encryption key for '"
+                                    + director_config.name + "'");
+      if (!rendered_key) { return {.error = rendered_key.error}; }
+      if (!rendered_key.value->empty()) {
+        context.content.key_encryption_key = *rendered_key.value;
+      }
+    }
+    if (HasMemberSource(*director, {"NdmpSnooping"})) {
+      context.content.ndmp_snooping = director->ndmp_snooping;
+    }
+    if (HasMemberSource(*director, {"NdmpLogLevel"})) {
+      context.content.ndmp_log_level = director->ndmp_loglevel;
+    }
+    if (HasMemberSource(*director,
+                        {"NdmpNamelistFhinfoSetZeroForInvalidUquad"})) {
+      context.content.ndmp_namelist_fhinfo_set_zero_for_invalid_uquad
+          = director->ndmp_fhinfo_set_zero_for_invalid_u_quad;
+    }
+    if (HasMemberSource(*director, {"Auditing"})) {
+      context.content.auditing = director->auditing;
+    }
+    if (HasMemberSource(*director, {"AuditEvents"})) {
+      context.content.audit_events = CopyAclValues(director->audit_events);
     }
     if (director->working_directory && director->working_directory[0] != '\0') {
       context.content.working_directory
@@ -8701,7 +8924,8 @@ ServiceState::UpsertDirectorDaemonResource(
     return {.error = "director daemon resource '" + std::string{director_name}
                      + "' was not found."};
   }
-  if (!context.value->password || context.value->password->empty()) {
+  auto password = spec.password ? spec.password : context.value->password;
+  if (!password || password->empty()) {
     return {.error = "director daemon resource '" + std::string{director_name}
                      + "' does not expose a managed password value."};
   }
@@ -8724,8 +8948,13 @@ ServiceState::UpsertDirectorDaemonResource(
     content.port = spec.port;
     content.addresses.clear();
   }
+  if (spec.query_file) { content.query_file = spec.query_file; }
+  if (spec.subscriptions) { content.subscriptions = spec.subscriptions; }
   if (spec.maximum_concurrent_jobs) {
     content.maximum_concurrent_jobs = spec.maximum_concurrent_jobs;
+  }
+  if (spec.maximum_console_connections) {
+    content.maximum_console_connections = spec.maximum_console_connections;
   }
   if (spec.absolute_job_timeout) {
     content.absolute_job_timeout = spec.absolute_job_timeout;
@@ -8772,7 +9001,24 @@ ServiceState::UpsertDirectorDaemonResource(
   if (spec.heartbeat_interval) {
     content.heartbeat_interval = spec.heartbeat_interval;
   }
+  if (spec.statistics_retention) {
+    content.statistics_retention = spec.statistics_retention;
+  }
+  if (spec.statistics_collect_interval) {
+    content.statistics_collect_interval = spec.statistics_collect_interval;
+  }
   if (spec.description) { content.description = spec.description; }
+  if (spec.key_encryption_key) {
+    content.key_encryption_key = spec.key_encryption_key;
+  }
+  if (spec.ndmp_snooping) { content.ndmp_snooping = spec.ndmp_snooping; }
+  if (spec.ndmp_log_level) { content.ndmp_log_level = spec.ndmp_log_level; }
+  if (spec.ndmp_namelist_fhinfo_set_zero_for_invalid_uquad) {
+    content.ndmp_namelist_fhinfo_set_zero_for_invalid_uquad
+        = spec.ndmp_namelist_fhinfo_set_zero_for_invalid_uquad;
+  }
+  if (spec.auditing) { content.auditing = spec.auditing; }
+  if (spec.audit_events) { content.audit_events = *spec.audit_events; }
   if (spec.working_directory) {
     content.working_directory = spec.working_directory;
   }
@@ -8787,7 +9033,7 @@ ServiceState::UpsertDirectorDaemonResource(
 
   std::string render_error;
   const auto rendered = BuildDirectorDaemonResourceContent(
-      director_name, *context.value->password, content, &render_error);
+      director_name, *password, content, &render_error);
   if (rendered.empty()) { return {.error = std::move(render_error)}; }
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "director";
@@ -9193,14 +9439,39 @@ ServiceState::UpsertDirectorStorageResource(
     return {.error = "director storage port must be greater than zero."};
   }
 
+  std::optional<std::string> protocol = context.value->protocol;
+  if (spec.protocol) {
+    auto normalized_protocol = NormalizeDirectorClientProtocol(*spec.protocol);
+    if (!normalized_protocol) { return {.error = normalized_protocol.error}; }
+    protocol = *normalized_protocol.value;
+  }
+  std::optional<std::string> auth_type = context.value->auth_type;
+  if (spec.auth_type) {
+    auto normalized_auth_type = NormalizeAuthType(*spec.auth_type);
+    if (!normalized_auth_type) { return {.error = normalized_auth_type.error}; }
+    auth_type = *normalized_auth_type.value;
+  }
   const auto lan_address
       = spec.lan_address ? spec.lan_address : context.value->lan_address;
+  const auto username = spec.username ? spec.username : context.value->username;
+  const auto autochanger
+      = spec.autochanger ? spec.autochanger : context.value->autochanger;
   const auto heartbeat_interval = spec.heartbeat_interval
                                       ? spec.heartbeat_interval
                                       : context.value->heartbeat_interval;
   const auto cache_status_interval = spec.cache_status_interval
                                          ? spec.cache_status_interval
                                          : context.value->cache_status_interval;
+  const auto maximum_concurrent_jobs
+      = spec.maximum_concurrent_jobs ? spec.maximum_concurrent_jobs
+                                     : context.value->maximum_concurrent_jobs;
+  const auto maximum_concurrent_read_jobs
+      = spec.maximum_concurrent_read_jobs
+            ? spec.maximum_concurrent_read_jobs
+            : context.value->maximum_concurrent_read_jobs;
+  const auto paired_storage = spec.paired_storage
+                                  ? spec.paired_storage
+                                  : context.value->paired_storage;
   const auto enabled = spec.enabled ? spec.enabled : context.value->enabled;
   const auto allow_compression = spec.allow_compression
                                      ? spec.allow_compression
@@ -9214,16 +9485,76 @@ ServiceState::UpsertDirectorStorageResource(
       = spec.maximum_bandwidth_per_job
             ? spec.maximum_bandwidth_per_job
             : context.value->maximum_bandwidth_per_job;
+  const auto collect_statistics = spec.collect_statistics
+                                      ? spec.collect_statistics
+                                      : context.value->collect_statistics;
+  const auto ndmp_changer_device = spec.ndmp_changer_device
+                                       ? spec.ndmp_changer_device
+                                       : context.value->ndmp_changer_device;
+  const auto tls_authenticate = spec.tls_authenticate
+                                    ? spec.tls_authenticate
+                                    : context.value->tls_authenticate;
+  const auto tls_enable
+      = spec.tls_enable ? spec.tls_enable : context.value->tls_enable;
+  const auto tls_require
+      = spec.tls_require ? spec.tls_require : context.value->tls_require;
+  const auto tls_verify_peer = spec.tls_verify_peer
+                                   ? spec.tls_verify_peer
+                                   : context.value->tls_verify_peer;
+  const auto tls_cipher_list = spec.tls_cipher_list
+                                   ? spec.tls_cipher_list
+                                   : context.value->tls_cipher_list;
+  const auto tls_cipher_suites = spec.tls_cipher_suites
+                                     ? spec.tls_cipher_suites
+                                     : context.value->tls_cipher_suites;
+  const auto tls_dh_file
+      = spec.tls_dh_file ? spec.tls_dh_file : context.value->tls_dh_file;
+  const auto tls_protocol
+      = spec.tls_protocol ? spec.tls_protocol : context.value->tls_protocol;
+  const auto tls_ca_certificate_file
+      = spec.tls_ca_certificate_file ? spec.tls_ca_certificate_file
+                                     : context.value->tls_ca_certificate_file;
+  const auto tls_ca_certificate_dir
+      = spec.tls_ca_certificate_dir ? spec.tls_ca_certificate_dir
+                                    : context.value->tls_ca_certificate_dir;
+  const auto tls_certificate_revocation_list
+      = spec.tls_certificate_revocation_list
+            ? spec.tls_certificate_revocation_list
+            : context.value->tls_certificate_revocation_list;
+  const auto tls_certificate = spec.tls_certificate
+                                   ? spec.tls_certificate
+                                   : context.value->tls_certificate;
+  const auto tls_key = spec.tls_key ? spec.tls_key : context.value->tls_key;
+  const auto tls_allowed_cn = spec.tls_allowed_cn
+                                  ? spec.tls_allowed_cn
+                                  : context.value->tls_allowed_cn;
   if (devices.size() != 1 && (spec.archive_device || spec.device_type)) {
     return {
         .error
         = "automatic storage-daemon sync for director storage archive_device "
           "or device_type requires exactly one Device."};
   }
+  if (paired_storage && !IsSafeBareosToken(*paired_storage)) {
+    return {.error
+            = "director storage paired_storage must be a bare Bareos "
+              "token without whitespace or quotes."};
+  }
+  if (ndmp_changer_device && !IsSafeBareosToken(*ndmp_changer_device)) {
+    return {.error
+            = "director storage ndmp_changer_device must be a bare "
+              "Bareos token without whitespace or quotes."};
+  }
   const auto content = BuildDirectorStorageResourceContent(
-      storage_name, *address, lan_address, *password, devices, *media_type,
-      effective_port, enabled, allow_compression, heartbeat_interval,
-      cache_status_interval, maximum_bandwidth_per_job, description);
+      storage_name, *address, lan_address, protocol, auth_type, username,
+      *password, devices, *media_type, effective_port, autochanger, enabled,
+      allow_compression, heartbeat_interval, cache_status_interval,
+      maximum_concurrent_jobs, maximum_concurrent_read_jobs, paired_storage,
+      maximum_bandwidth_per_job, collect_statistics, ndmp_changer_device,
+      tls_authenticate, tls_enable, tls_require, tls_verify_peer,
+      tls_cipher_list, tls_cipher_suites, tls_dh_file, tls_protocol,
+      tls_ca_certificate_file, tls_ca_certificate_dir,
+      tls_certificate_revocation_list, tls_certificate, tls_key, tls_allowed_cn,
+      description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "storage";

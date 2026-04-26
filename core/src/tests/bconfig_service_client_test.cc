@@ -660,7 +660,11 @@ TEST(BconfigService, UpsertsDirectorDaemonResources)
        .source_addresses
        = std::vector<std::string>{"192.0.2.54", "198.51.100.54"},
        .port = 19101,
+       .query_file = std::string{"/etc/bareos/query.sql"},
+       .subscriptions = 7,
        .maximum_concurrent_jobs = 23,
+       .maximum_console_connections = 31,
+       .password = std::string{"updated-director-password"},
        .absolute_job_timeout = 3600,
        .tls_authenticate = false,
        .tls_enable = true,
@@ -684,7 +688,15 @@ TEST(BconfigService, UpsertsDirectorDaemonResources)
        .fd_connect_timeout = 300,
        .sd_connect_timeout = 1800,
        .heartbeat_interval = 60,
+       .statistics_retention = 86400,
+       .statistics_collect_interval = 42,
        .description = std::string{"Managed director daemon"},
+       .key_encryption_key = std::string{"director-kek"},
+       .ndmp_snooping = true,
+       .ndmp_log_level = 6,
+       .ndmp_namelist_fhinfo_set_zero_for_invalid_uquad = true,
+       .auditing = true,
+       .audit_events = std::vector<std::string>{"item01", "item02"},
        .working_directory = std::string{"/var/lib/bareos/director"},
        .plugin_directory = std::string{"/usr/lib/bareos/plugins"},
        .plugin_names = std::vector<std::string>{"python"},
@@ -703,7 +715,14 @@ TEST(BconfigService, UpsertsDirectorDaemonResources)
   EXPECT_NE(updated_text.find("SourceAddress = 198.51.100.54"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Port = 19101"), std::string::npos);
+  EXPECT_NE(updated_text.find("QueryFile = \"/etc/bareos/query.sql\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Subscriptions = 7"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 23"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumConsoleConnections = 31"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Password = \"updated-director-password\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("AbsoluteJobTimeout = 3600"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsAuthenticate = no"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
@@ -743,8 +762,21 @@ TEST(BconfigService, UpsertsDirectorDaemonResources)
   EXPECT_NE(updated_text.find("FdConnectTimeout = 300"), std::string::npos);
   EXPECT_NE(updated_text.find("SdConnectTimeout = 1800"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 60"), std::string::npos);
+  EXPECT_NE(updated_text.find("StatisticsRetention = 86400"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("StatisticsCollectInterval = 42"),
+            std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Managed director daemon\""),
             std::string::npos);
+  EXPECT_NE(updated_text.find("KeyEncryptionKey = \"director-kek\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("NdmpSnooping = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("NdmpLogLevel = 6"), std::string::npos);
+  EXPECT_NE(updated_text.find("NdmpNamelistFhinfoSetZeroForInvalidUquad = yes"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Auditing = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("AuditEvents = item01"), std::string::npos);
+  EXPECT_NE(updated_text.find("AuditEvents = item02"), std::string::npos);
   EXPECT_NE(
       updated_text.find("WorkingDirectory = \"/var/lib/bareos/director\""),
       std::string::npos);
