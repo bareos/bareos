@@ -235,6 +235,7 @@ struct DirectorClientResourceSpec {
   std::optional<bool> quota_include_failed_jobs{};
   std::optional<uint64_t> soft_quota{};
   std::optional<uint64_t> hard_quota{};
+  std::optional<uint64_t> soft_quota_grace_period{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint64_t> heartbeat_interval{};

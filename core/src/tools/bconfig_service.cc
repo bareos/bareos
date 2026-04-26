@@ -1059,6 +1059,7 @@ std::string BuildDirectorClientResourceContent(
     const std::optional<bool>& quota_include_failed_jobs,
     const std::optional<uint64_t>& soft_quota,
     const std::optional<uint64_t>& hard_quota,
+    const std::optional<uint64_t>& soft_quota_grace_period,
     const std::optional<bool>& connection_from_director_to_client,
     const std::optional<bool>& connection_from_client_to_director,
     const std::optional<uint64_t>& heartbeat_interval,
@@ -1080,6 +1081,8 @@ std::string BuildDirectorClientResourceContent(
                       quota_include_failed_jobs);
   AppendIntegerDirective(content, "SoftQuota", soft_quota);
   AppendIntegerDirective(content, "HardQuota", hard_quota);
+  AppendIntegerDirective(content, "SoftQuotaGracePeriod",
+                         soft_quota_grace_period);
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
                       connection_from_director_to_client);
   AppendBoolDirective(content, "ConnectionFromClientToDirector",
@@ -2472,6 +2475,7 @@ struct DirectorClientWriteContext {
   std::optional<bool> quota_include_failed_jobs{};
   std::optional<uint64_t> soft_quota{};
   std::optional<uint64_t> hard_quota{};
+  std::optional<uint64_t> soft_quota_grace_period{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -2859,6 +2863,10 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
     }
     if (HasMemberSource(*client, {"HardQuota"})) {
       context.hard_quota = client->HardQuota;
+    }
+    if (HasMemberSource(*client, {"SoftQuotaGracePeriod"})) {
+      context.soft_quota_grace_period
+          = static_cast<uint64_t>(client->SoftQuotaGracePeriod);
     }
     if (HasMemberSource(*client, {"ConnectionFromDirectorToClient"})) {
       context.connection_from_director_to_client = client->conn_from_dir_to_fd;
@@ -8463,6 +8471,9 @@ ServiceState::UpsertDirectorClientResource(
       = spec.soft_quota ? spec.soft_quota : context.value->soft_quota;
   const auto hard_quota
       = spec.hard_quota ? spec.hard_quota : context.value->hard_quota;
+  const auto soft_quota_grace_period
+      = spec.soft_quota_grace_period ? spec.soft_quota_grace_period
+                                     : context.value->soft_quota_grace_period;
   const auto maximum_bandwidth_per_job
       = spec.maximum_bandwidth_per_job
             ? spec.maximum_bandwidth_per_job
@@ -8476,8 +8487,9 @@ ServiceState::UpsertDirectorClientResource(
   const auto content = BuildDirectorClientResourceContent(
       client_name, *address, lan_address, *password, effective_port, enabled,
       passive, strict_quotas, quota_include_failed_jobs, soft_quota, hard_quota,
-      connection_from_director_to_client, connection_from_client_to_director,
-      heartbeat_interval, maximum_bandwidth_per_job, description);
+      soft_quota_grace_period, connection_from_director_to_client,
+      connection_from_client_to_director, heartbeat_interval,
+      maximum_bandwidth_per_job, description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "client";
