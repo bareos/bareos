@@ -529,7 +529,28 @@ target_compile_definitions(
 )
 
 bareos_add_test(
-  bconfig_service_test LINK_LIBRARIES bconfig_service_core GTest::gtest_main
+  bconfig_service_client_test LINK_LIBRARIES bconfig_service_core
+                                             GTest::gtest_main
+)
+bareos_add_test(
+  bconfig_service_console_test LINK_LIBRARIES bconfig_service_core
+                                              GTest::gtest_main
+)
+bareos_add_test(
+  bconfig_service_deployment_test LINK_LIBRARIES bconfig_service_core
+                                                 GTest::gtest_main
+)
+bareos_add_test(
+  bconfig_service_director_peer_test LINK_LIBRARIES bconfig_service_core
+                                                    GTest::gtest_main
+)
+bareos_add_test(
+  bconfig_service_director_resources_test LINK_LIBRARIES bconfig_service_core
+                                                         GTest::gtest_main
+)
+bareos_add_test(
+  bconfig_service_storage_test LINK_LIBRARIES bconfig_service_core
+                                              GTest::gtest_main
 )
 
 if(ENABLE_BARRI)

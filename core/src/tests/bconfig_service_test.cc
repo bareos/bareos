@@ -31,17 +31,45 @@
 #include <fstream>
 #include <thread>
 
+#if HAVE_WIN32
+#  include <process.h>
+#else
+#  include <unistd.h>
+#endif
+
 namespace bconfig::service {
 namespace {
 
-std::filesystem::path MakeTempPath()
+#if !defined(BCONFIG_SERVICE_TEST_DEPLOYMENT)            \
+    && !defined(BCONFIG_SERVICE_TEST_CONSOLE)            \
+    && !defined(BCONFIG_SERVICE_TEST_CLIENT)             \
+    && !defined(BCONFIG_SERVICE_TEST_DIRECTOR_PEER)      \
+    && !defined(BCONFIG_SERVICE_TEST_DIRECTOR_RESOURCES) \
+    && !defined(BCONFIG_SERVICE_TEST_STORAGE)
+#  define BCONFIG_SERVICE_TEST_DEPLOYMENT 1
+#  define BCONFIG_SERVICE_TEST_CONSOLE 1
+#  define BCONFIG_SERVICE_TEST_CLIENT 1
+#  define BCONFIG_SERVICE_TEST_DIRECTOR_PEER 1
+#  define BCONFIG_SERVICE_TEST_DIRECTOR_RESOURCES 1
+#  define BCONFIG_SERVICE_TEST_STORAGE 1
+#endif
+
+[[maybe_unused]] std::filesystem::path MakeTempPath()
 {
   static std::atomic<uint64_t> counter{0};
+  const auto unique_suffix = std::to_string(static_cast<unsigned long long>(
+      std::chrono::steady_clock::now().time_since_epoch().count()));
+#if HAVE_WIN32
+  const auto process_id = std::to_string(static_cast<unsigned>(_getpid()));
+#else
+  const auto process_id = std::to_string(static_cast<unsigned>(getpid()));
+#endif
   return std::filesystem::temp_directory_path()
-         / ("bconfig-service-test-" + std::to_string(++counter));
+         / ("bconfig-service-test-" + process_id + "-"
+            + std::to_string(++counter) + "-" + unique_suffix);
 }
 
-class ScopedDirectory {
+class [[maybe_unused]] ScopedDirectory {
  public:
   explicit ScopedDirectory(std::filesystem::path path) : path_{std::move(path)}
   {
@@ -55,7 +83,7 @@ class ScopedDirectory {
   std::filesystem::path path_;
 };
 
-class ScopedEnvironmentVariable {
+class [[maybe_unused]] ScopedEnvironmentVariable {
  public:
   ScopedEnvironmentVariable(const char* name, const std::string& value)
       : name_{name}
@@ -93,7 +121,7 @@ class ScopedEnvironmentVariable {
   bool had_previous_value_{false};
 };
 
-std::filesystem::path FindFixtureRoot()
+[[maybe_unused]] std::filesystem::path FindFixtureRoot()
 {
   auto cursor = std::filesystem::current_path();
   for (;;) {
@@ -115,7 +143,7 @@ std::filesystem::path FindFixtureRoot()
   return {};
 }
 
-std::string ReadTextFile(const std::filesystem::path& path)
+[[maybe_unused]] std::string ReadTextFile(const std::filesystem::path& path)
 {
   std::ifstream file{path};
   EXPECT_TRUE(file.good());
@@ -123,7 +151,8 @@ std::string ReadTextFile(const std::filesystem::path& path)
                      std::istreambuf_iterator<char>());
 }
 
-void WriteTextFile(const std::filesystem::path& path, std::string_view content)
+[[maybe_unused]] void WriteTextFile(const std::filesystem::path& path,
+                                    std::string_view content)
 {
   std::filesystem::create_directories(path.parent_path());
   std::ofstream file{path};
@@ -132,7 +161,8 @@ void WriteTextFile(const std::filesystem::path& path, std::string_view content)
   ASSERT_TRUE(file.good());
 }
 
-void AddCounterFixtures(const std::filesystem::path& source_root)
+[[maybe_unused]] void AddCounterFixtures(
+    const std::filesystem::path& source_root)
 {
   WriteTextFile(source_root / "bareos-dir.d/counter/WrapSeed.conf",
                 "Counter {\n"
@@ -151,7 +181,8 @@ void AddCounterFixtures(const std::filesystem::path& source_root)
                 "}\n");
 }
 
-void AddConsoleImportFixture(const std::filesystem::path& source_root)
+[[maybe_unused]] void AddConsoleImportFixture(
+    const std::filesystem::path& source_root)
 {
   WriteTextFile(source_root / "bconsole.conf",
                 "#\n"
@@ -173,8 +204,9 @@ void AddConsoleImportFixture(const std::filesystem::path& source_root)
                 "}\n");
 }
 
-std::optional<JobRecord> WaitForJobTerminal(ServiceState& state,
-                                            std::string_view id)
+[[maybe_unused]] std::optional<JobRecord> WaitForJobTerminal(
+    ServiceState& state,
+    std::string_view id)
 {
   for (int attempt = 0; attempt < 100; ++attempt) {
     auto job = state.GetJob(id);
@@ -189,6 +221,7 @@ std::optional<JobRecord> WaitForJobTerminal(ServiceState& state,
   return state.GetJob(id);
 }
 
+#if BCONFIG_SERVICE_TEST_DEPLOYMENT
 TEST(BconfigService, CreatesDeploymentScaffold)
 {
   ScopedDirectory repo_path{MakeTempPath()};
@@ -498,7 +531,9 @@ TEST(BconfigService, ImportsDetectedComponentTreesFromConfigRoot)
                       "clients/bareos-fd/bareos-fd.d/director/bareos-dir.conf"),
             diff_preview.value->untracked_files.end());
 }
+#endif
 
+#if BCONFIG_SERVICE_TEST_CONSOLE
 TEST(BconfigService, ImportsConsoleRootsIntoSingleConfigFile)
 {
   ScopedDirectory source_root{MakeTempPath()};
@@ -1775,7 +1810,9 @@ TEST(BconfigService,
   EXPECT_NE(deleted_text.find("Name = \"bareos-dir\""), std::string::npos);
   EXPECT_NE(deleted_text.find("Name = \"admin\""), std::string::npos);
 }
+#endif
 
+#if BCONFIG_SERVICE_TEST_CLIENT
 TEST(BconfigService, ListsAndFindsDeploymentClientConfigs)
 {
   ScopedDirectory source_root{MakeTempPath()};
@@ -3081,7 +3118,9 @@ TEST(BconfigService, DeletesGeneratedClientDirectorStubs)
                                           "bareos-fd");
   ASSERT_FALSE(client);
 }
+#endif
 
+#if BCONFIG_SERVICE_TEST_DIRECTOR_PEER
 TEST(BconfigService, UpsertsDirectorClientResources)
 {
   ScopedDirectory source_root{MakeTempPath()};
@@ -3412,7 +3451,9 @@ TEST(BconfigService, DeletesDirectorClientResourcesFromSharedFiles)
   EXPECT_NE(shared_text.find("Name = bareos-fd"), std::string::npos);
   EXPECT_EQ(shared_text.find("Name = \"other-client\""), std::string::npos);
 }
+#endif
 
+#if BCONFIG_SERVICE_TEST_DIRECTOR_RESOURCES
 TEST(BconfigService, UpsertsDirectorConsoleResources)
 {
   ScopedDirectory source_root{MakeTempPath()};
@@ -5810,7 +5851,9 @@ TEST(BconfigService, DeletesDirectorMessagesResourcesFromSharedFiles)
             std::string::npos);
   EXPECT_EQ(shared_text.find("Name = \"OtherMessages\""), std::string::npos);
 }
+#endif
 
+#if BCONFIG_SERVICE_TEST_STORAGE
 TEST(BconfigService, UpsertsStorageMessagesResources)
 {
   ScopedDirectory source_root{MakeTempPath()};
@@ -5955,11 +5998,11 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
        .working_directory = std::string{"/var/lib/bareos/storage"},
        .plugin_directory = std::string{"/usr/lib/bareos/plugins"},
        .plugin_names = std::vector<std::string>{"autochanger", "python"},
-#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+#  if defined(HAVE_DYNAMIC_SD_BACKENDS)
        .backend_directories
        = std::vector<std::string>{"/usr/lib/bareos/backends",
                                   "/opt/bareos/backends"},
-#endif
+#  endif
        .scripts_directory = std::string{"/usr/lib/bareos/scripts"},
        .messages = std::string{"Standard"}});
   ASSERT_TRUE(updated) << updated.error;
@@ -6052,13 +6095,13 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("PluginNames = autochanger"), std::string::npos);
   EXPECT_NE(updated_text.find("PluginNames = python"), std::string::npos);
-#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+#  if defined(HAVE_DYNAMIC_SD_BACKENDS)
   EXPECT_NE(
       updated_text.find("BackendDirectory = \"/usr/lib/bareos/backends\""),
       std::string::npos);
   EXPECT_NE(updated_text.find("BackendDirectory = \"/opt/bareos/backends\""),
             std::string::npos);
-#endif
+#  endif
   EXPECT_NE(updated_text.find("ScriptsDirectory = \"/usr/lib/bareos/scripts\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Messages = Standard"), std::string::npos);
@@ -7629,7 +7672,9 @@ TEST(BconfigService, DeletesStorageMessagesResourcesFromSharedFiles)
   EXPECT_NE(shared_text.find("Director = bareos-dir = all"), std::string::npos);
   EXPECT_EQ(shared_text.find("Name = \"OtherMessages\""), std::string::npos);
 }
+#endif
 
+#if BCONFIG_SERVICE_TEST_DIRECTOR_PEER
 TEST(BconfigService, UpsertsDirectorStorageResources)
 {
   ScopedDirectory source_root{MakeTempPath()};
@@ -8246,7 +8291,9 @@ TEST(BconfigService, SyncsDirectorStorageResourcesIntoStorageDaemonFiles)
                                 "FileManagedDevice.conf"),
             std::string::npos);
 }
+#endif
 
+#if BCONFIG_SERVICE_TEST_DEPLOYMENT
 TEST(BconfigService, CommitsDeploymentRepositoryChanges)
 {
   ScopedDirectory source_root{MakeTempPath()};
@@ -8308,6 +8355,7 @@ TEST(BconfigService, CommitsDeploymentRepositoryChanges)
   EXPECT_TRUE(diff_preview.value->diff.empty());
   EXPECT_TRUE(diff_preview.value->untracked_files.empty());
 }
+#endif
 
 }  // namespace
 }  // namespace bconfig::service
