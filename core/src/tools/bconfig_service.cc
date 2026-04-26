@@ -846,33 +846,6 @@ std::string BuildClientDirectorStubContent(
 constexpr uint16_t kDefaultFileDaemonPort = 9102;
 constexpr uint16_t kDefaultStorageDaemonPort = 9103;
 
-constexpr std::pair<std::string_view, crypto_cipher_t> kPkiCipherNames[] = {
-    {"blowfish", CRYPTO_CIPHER_BLOWFISH_CBC},
-    {"3des", CRYPTO_CIPHER_3DES_CBC},
-    {"aes128", CRYPTO_CIPHER_AES_128_CBC},
-    {"aes192", CRYPTO_CIPHER_AES_192_CBC},
-    {"aes256", CRYPTO_CIPHER_AES_256_CBC},
-    {"camellia128", CRYPTO_CIPHER_CAMELLIA_128_CBC},
-    {"camellia192", CRYPTO_CIPHER_CAMELLIA_192_CBC},
-    {"camellia256", CRYPTO_CIPHER_CAMELLIA_256_CBC},
-    {"aes128hmacsha1", CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1},
-    {"aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1},
-};
-
-std::optional<std::string_view> RenderPkiCipherToken(crypto_cipher_t cipher)
-{
-  for (const auto& [name, value] : kPkiCipherNames) {
-    if (value == cipher) { return name; }
-  }
-  return std::nullopt;
-}
-
-bool IsSupportedPkiCipherToken(std::string_view token)
-{
-  return std::any_of(
-      std::begin(kPkiCipherNames), std::end(kPkiCipherNames),
-      [token](const auto& entry) { return entry.first == token; });
-}
 constexpr std::array<std::string_view, directordaemon::Num_ACL>
     kDirectorAclDirectiveNames
     = {"JobACL",   "ClientACL",       "StorageACL", "ScheduleACL",
@@ -5069,12 +5042,10 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
           = CopyAclValues(client->pki_master_key_files);
     }
     if (HasMemberSource(*client, {"PkiCipher"})) {
-      auto pki_cipher = RenderPkiCipherToken(client->pki_cipher);
-      if (!pki_cipher) {
-        return {.error = "client daemon resource '" + client_config.name
-                         + "' uses an unsupported PKI cipher value."};
+      if (client->pki_cipher_config_name && client->pki_cipher_config_name[0]) {
+        context.content.pki_cipher
+            = std::string{client->pki_cipher_config_name};
       }
-      context.content.pki_cipher = std::string{*pki_cipher};
     }
     if (HasMemberSource(*client, {"AlwaysUseLmdb"})) {
       context.content.always_use_lmdb = client->always_use_lmdb;
@@ -8229,10 +8200,10 @@ ServiceState::UpsertClientDaemonResource(
       }
     }
   }
-  if (spec.pki_cipher && !IsSupportedPkiCipherToken(*spec.pki_cipher)) {
+  if (spec.pki_cipher && !IsSafeBareosToken(*spec.pki_cipher)) {
     return {.error
-            = "client daemon pki_cipher must be one of the supported filed "
-              "PKI cipher tokens."};
+            = "client daemon pki_cipher must be a bare Bareos token without "
+              "whitespace or quotes."};
   }
   if (spec.port && *spec.port == 0) {
     return {.error = "client daemon port must be greater than zero."};

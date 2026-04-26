@@ -576,6 +576,56 @@ TEST(BconfigService, UpsertsClientDaemonResourcesWithMultipleSourceAddresses)
             std::string::npos);
 }
 
+TEST(BconfigService, UpsertsClientDaemonResourcesPreserveUnknownPkiCipher)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-fd.d",
+                        source_root.path() / "bareos-fd.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto client_path
+      = RepositoryLayout::ClientsDirectory(repo_path.path())
+        / "backup-bareos-test-fd/bareos-fd.d/client/myself.conf";
+  const auto original_text = ReadTextFile(client_path);
+  const auto closing = original_text.rfind("}\n");
+  ASSERT_NE(closing, std::string::npos);
+  WriteTextFile(client_path,
+                original_text.substr(0, closing)
+                    + "  PkiCipher = legacycipher\n"
+                      "}\n");
+
+  auto updated = state.UpsertClientDaemonResource(
+      "prod", "backup-bareos-test-fd",
+      {.description = std::string{"Updated client daemon"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(client_path);
+  EXPECT_NE(updated_text.find("Description = \"Updated client daemon\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("PkiCipher = legacycipher"), std::string::npos);
+}
+
 TEST(BconfigService, UpsertsDirectorDaemonResources)
 {
   ScopedDirectory source_root{MakeTempPath()};

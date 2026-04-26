@@ -165,21 +165,38 @@ static struct s_kw CryptoCiphers[]
        {"aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1},
        {NULL, 0}};
 
+static const char* LookupCryptoCipherName(crypto_cipher_t cipher)
+{
+  for (int i = 0; CryptoCiphers[i].name; i++) {
+    if (CryptoCiphers[i].token == cipher) { return CryptoCiphers[i].name; }
+  }
+
+  return nullptr;
+}
+
 static void StoreCipher(lexer* lc, const ResourceItem* item, int index, int)
 {
-  int i;
+  auto* client = dynamic_cast<ClientResource*>(*item->allocated_resource);
+  if (!client) {
+    scan_err0(lc, T_("PkiCipher is only supported in Client resources."));
+    return;
+  }
+
   LexGetToken(lc, BCT_NAME);
+  if (client->pki_cipher_config_name) {
+    free(client->pki_cipher_config_name);
+    client->pki_cipher_config_name = nullptr;
+  }
+  client->pki_cipher_config_name = strdup(lc->str);
+  client->pki_cipher = CRYPTO_CIPHER_NONE;
 
   // Scan Crypto Ciphers name.
-  for (i = 0; CryptoCiphers[i].name; i++) {
+  for (int i = 0; CryptoCiphers[i].name; i++) {
     if (Bstrcasecmp(lc->str, CryptoCiphers[i].name)) {
       SetItemVariable<uint32_t>(*item, CryptoCiphers[i].token);
-      i = 0;
+      client->pki_cipher = static_cast<crypto_cipher_t>(CryptoCiphers[i].token);
       break;
     }
-  }
-  if (i != 0) {
-    scan_err(lc, T_("Expected a Crypto Cipher option, got: %s"), lc->str);
   }
   ScanToEol(lc);
   item->SetPresent();
@@ -230,6 +247,33 @@ static void ParseConfigCb(lexer* lc,
   }
 }
 
+static void PrintConfigCb(const ResourceItem& item,
+                          OutputFormatterResource& send,
+                          bool,
+                          bool inherited,
+                          bool)
+{
+  switch (item.type) {
+    case CFG_TYPE_CIPHER: {
+      auto* client = dynamic_cast<ClientResource*>(*item.allocated_resource);
+      if (client && client->pki_cipher_config_name
+          && client->pki_cipher_config_name[0] != '\0') {
+        send.KeyString(item.name, client->pki_cipher_config_name, inherited);
+        return;
+      }
+
+      const auto* configured_name
+          = LookupCryptoCipherName(GetItemVariable<crypto_cipher_t>(item));
+      if (configured_name) {
+        send.KeyString(item.name, configured_name, inherited);
+      }
+      return;
+    }
+    default:
+      return;
+  }
+}
+
 static void ConfigBeforeCallback(ConfigurationParser& t_config)
 {
   std::map<int, std::string> map{{R_DIRECTOR, "R_DIRECTOR"},
@@ -245,10 +289,10 @@ static void ConfigReadyCallback(ConfigurationParser&) {}
 ConfigurationParser* InitFdConfig(const char* t_configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
-      t_configfile, InitResourceCb, ParseConfigCb, nullptr, exit_code, R_NUM,
-      resources, default_config_filename.c_str(), "bareos-fd.d",
-      ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
-      FreeResource);
+      t_configfile, InitResourceCb, ParseConfigCb, PrintConfigCb, exit_code,
+      R_NUM, resources,
+      default_config_filename.c_str(), "bareos-fd.d", ConfigBeforeCallback,
+      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_CLIENT; }
   return config;
 }
@@ -369,6 +413,7 @@ static void FreeResource(BareosResource* res, int type)
       if (p->pki_keypair_file) { free(p->pki_keypair_file); }
       if (p->pki_keypair) { CryptoKeypairFree(p->pki_keypair); }
       if (p->pki_signing_key_files) { delete p->pki_signing_key_files; }
+      if (p->pki_cipher_config_name) { free(p->pki_cipher_config_name); }
       if (p->pki_signers) {
         for (auto* keypair : p->pki_signers) { CryptoKeypairFree(keypair); }
         delete p->pki_signers;
@@ -450,6 +495,10 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
           p->plugin_names = res_client->plugin_names;
           p->pki_signing_key_files = res_client->pki_signing_key_files;
           p->pki_master_key_files = res_client->pki_master_key_files;
+          if (res_client->pki_cipher_config_name) {
+            free(res_client->pki_cipher_config_name);
+            res_client->pki_cipher_config_name = nullptr;
+          }
           p->pki_signers = res_client->pki_signers;
           p->pki_recipients = res_client->pki_recipients;
           p->messages = res_client->messages;
