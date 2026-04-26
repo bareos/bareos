@@ -77,6 +77,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
        .tls_cipher_suites = std::string{"TLS_AES_256_GCM_SHA384"},
        .tls_dh_file = std::string{"/etc/bareos/dh4096.pem"},
        .tls_protocol = std::string{"TLSv1.3"},
+       .tls_ca_certificate_file = std::string{"/etc/bareos/ca.pem"},
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = true,
        .maximum_concurrent_jobs = 9,
@@ -123,6 +124,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(created_text.find("TlsDhFile = \"/etc/bareos/dh4096.pem\""),
             std::string::npos);
   EXPECT_NE(created_text.find("TlsProtocol = \"TLSv1.3\""), std::string::npos);
+  EXPECT_NE(created_text.find("TlsCaCertificateFile = \"/etc/bareos/ca.pem\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = yes"),
@@ -165,6 +168,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_EQ(stub_text.find("TlsDhFile = \"/etc/bareos/dh4096.pem\""),
             std::string::npos);
   EXPECT_EQ(stub_text.find("TlsProtocol = \"TLSv1.3\""), std::string::npos);
+  EXPECT_EQ(stub_text.find("TlsCaCertificateFile = \"/etc/bareos/ca.pem\""),
+            std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
@@ -211,6 +216,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(updated_text.find("TlsDhFile = \"/etc/bareos/dh4096.pem\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("TlsProtocol = \"TLSv1.3\""), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCaCertificateFile = \"/etc/bareos/ca.pem\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
@@ -278,6 +285,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
                 "  TlsCipherSuites = \"TLS_AES_128_GCM_SHA256\"\n"
                 "  TlsDhFile = \"/etc/bareos/dh2048.pem\"\n"
                 "  TlsProtocol = \"TLSv1.2\"\n"
+                "  TlsCaCertificateFile = \"/etc/bareos/import-ca.pem\"\n"
                 "  ConnectionFromDirectorToClient = no\n"
                 "  ConnectionFromClientToDirector = yes\n"
                 "  MaximumConcurrentJobs = 4\n"
@@ -330,6 +338,9 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_NE(updated_text.find("TlsDhFile = \"/etc/bareos/dh2048.pem\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("TlsProtocol = \"TLSv1.2\""), std::string::npos);
+  EXPECT_NE(
+      updated_text.find("TlsCaCertificateFile = \"/etc/bareos/import-ca.pem\""),
+      std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
@@ -366,6 +377,9 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_EQ(stub_text.find("TlsDhFile = \"/etc/bareos/dh2048.pem\""),
             std::string::npos);
   EXPECT_EQ(stub_text.find("TlsProtocol = \"TLSv1.2\""), std::string::npos);
+  EXPECT_EQ(
+      stub_text.find("TlsCaCertificateFile = \"/etc/bareos/import-ca.pem\""),
+      std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),

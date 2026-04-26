@@ -1074,6 +1074,7 @@ std::string BuildDirectorClientResourceContent(
     const std::optional<std::string>& tls_cipher_suites,
     const std::optional<std::string>& tls_dh_file,
     const std::optional<std::string>& tls_protocol,
+    const std::optional<std::string>& tls_ca_certificate_file,
     const std::optional<bool>& connection_from_director_to_client,
     const std::optional<bool>& connection_from_client_to_director,
     const std::optional<uint32_t>& maximum_concurrent_jobs,
@@ -1112,6 +1113,8 @@ std::string BuildDirectorClientResourceContent(
   AppendQuotedDirective(content, "TlsCipherSuites", tls_cipher_suites);
   AppendQuotedDirective(content, "TlsDhFile", tls_dh_file);
   AppendQuotedDirective(content, "TlsProtocol", tls_protocol);
+  AppendQuotedDirective(content, "TlsCaCertificateFile",
+                        tls_ca_certificate_file);
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
                       connection_from_director_to_client);
   AppendBoolDirective(content, "ConnectionFromClientToDirector",
@@ -2521,6 +2524,7 @@ struct DirectorClientWriteContext {
   std::optional<std::string> tls_cipher_suites{};
   std::optional<std::string> tls_dh_file{};
   std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -2959,6 +2963,10 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
     if (HasMemberSource(*client, {"TlsProtocol"})
         && !client->protocol_.empty()) {
       context.tls_protocol = client->protocol_;
+    }
+    if (HasMemberSource(*client, {"TlsCaCertificateFile"})
+        && !client->tls_cert_.ca_certfile_.empty()) {
+      context.tls_ca_certificate_file = client->tls_cert_.ca_certfile_;
     }
     if (HasMemberSource(*client, {"ConnectionFromDirectorToClient"})) {
       context.connection_from_director_to_client = client->conn_from_dir_to_fd;
@@ -8604,6 +8612,9 @@ ServiceState::UpsertDirectorClientResource(
       = spec.tls_dh_file ? spec.tls_dh_file : context.value->tls_dh_file;
   const auto tls_protocol
       = spec.tls_protocol ? spec.tls_protocol : context.value->tls_protocol;
+  const auto tls_ca_certificate_file
+      = spec.tls_ca_certificate_file ? spec.tls_ca_certificate_file
+                                     : context.value->tls_ca_certificate_file;
   const auto maximum_concurrent_jobs
       = spec.maximum_concurrent_jobs ? spec.maximum_concurrent_jobs
                                      : context.value->maximum_concurrent_jobs;
@@ -8623,9 +8634,10 @@ ServiceState::UpsertDirectorClientResource(
       soft_quota_grace_period, file_retention, job_retention, ndmp_log_level,
       ndmp_block_size, ndmp_use_lmdb, auto_prune, tls_authenticate, tls_enable,
       tls_require, tls_verify_peer, tls_cipher_list, tls_cipher_suites,
-      tls_dh_file, tls_protocol, connection_from_director_to_client,
-      connection_from_client_to_director, maximum_concurrent_jobs,
-      heartbeat_interval, maximum_bandwidth_per_job, description);
+      tls_dh_file, tls_protocol, tls_ca_certificate_file,
+      connection_from_director_to_client, connection_from_client_to_director,
+      maximum_concurrent_jobs, heartbeat_interval, maximum_bandwidth_per_job,
+      description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "client";
