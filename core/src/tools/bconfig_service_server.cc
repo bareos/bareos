@@ -146,14 +146,37 @@ struct DirectorStorageRequestSpec {
   std::optional<std::string> address{};
   std::optional<std::string> lan_address{};
   std::optional<uint16_t> port{};
+  std::optional<std::string> protocol{};
+  std::optional<std::string> auth_type{};
+  std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<std::string> device{};
   std::optional<std::string> media_type{};
+  std::optional<bool> autochanger{};
   std::optional<bool> enabled{};
   std::optional<bool> allow_compression{};
   std::optional<uint64_t> heartbeat_interval{};
   std::optional<uint64_t> cache_status_interval{};
+  std::optional<uint32_t> maximum_concurrent_jobs{};
+  std::optional<uint32_t> maximum_concurrent_read_jobs{};
+  std::optional<std::string> paired_storage{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
+  std::optional<bool> collect_statistics{};
+  std::optional<std::string> ndmp_changer_device{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
   std::optional<std::string> archive_device{};
   std::optional<std::string> device_type{};
   std::optional<std::string> description{};
@@ -1659,6 +1682,18 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-storage-port">Port</label>
         <input id="director-storage-port" name="port" type="number" min="1" max="65535" value="9103">
 
+        <label for="director-storage-protocol">Protocol</label>
+        <input id="director-storage-protocol" name="protocol"
+               placeholder="NDMPV4">
+
+        <label for="director-storage-auth-type">AuthType</label>
+        <input id="director-storage-auth-type" name="auth_type"
+               placeholder="Clear">
+
+        <label for="director-storage-username">Username</label>
+        <input id="director-storage-username" name="username"
+               placeholder="ndmp-user">
+
         <label for="director-storage-password">Password</label>
         <input id="director-storage-password" name="password"
                placeholder="cleartext or [md5]hash">
@@ -1668,6 +1703,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="director-storage-media-type">Media Type</label>
         <input id="director-storage-media-type" name="media_type" value="File">
+
+        <label class="checkbox-label" for="director-storage-autochanger">
+          <input id="director-storage-autochanger" name="autochanger"
+                 type="checkbox">
+          AutoChanger
+        </label>
 
         <label class="checkbox-label" for="director-storage-enabled">
           <input id="director-storage-enabled" name="enabled" type="checkbox" checked>
@@ -1694,12 +1735,103 @@ const char* kTestUiHtmlTemplate = R"HTML(
                name="cache_status_interval" type="number" min="0"
                placeholder="0">
 
+        <label for="director-storage-maximum-concurrent-jobs">MaximumConcurrentJobs</label>
+        <input id="director-storage-maximum-concurrent-jobs"
+               name="maximum_concurrent_jobs" type="number" min="0"
+               placeholder="0">
+
+        <label for="director-storage-maximum-concurrent-read-jobs">MaximumConcurrentReadJobs</label>
+        <input id="director-storage-maximum-concurrent-read-jobs"
+               name="maximum_concurrent_read_jobs" type="number" min="0"
+               placeholder="0">
+
+        <label for="director-storage-paired-storage">PairedStorage</label>
+        <input id="director-storage-paired-storage" name="paired_storage"
+               placeholder="File">
+
         <label for="director-storage-archive-device">Archive Device</label>
         <input id="director-storage-archive-device" name="archive_device"
                value="/tmp/bareos-storage">
 
         <label for="director-storage-device-type">Device Type</label>
         <input id="director-storage-device-type" name="device_type" value="file">
+
+        <label class="checkbox-label" for="director-storage-collect-statistics">
+          <input id="director-storage-collect-statistics"
+                 name="collect_statistics" type="checkbox">
+          CollectStatistics
+        </label>
+
+        <label for="director-storage-ndmp-changer-device">NdmpChangerDevice</label>
+        <input id="director-storage-ndmp-changer-device"
+               name="ndmp_changer_device" placeholder="changer0">
+
+        <label class="checkbox-label" for="director-storage-tls-authenticate">
+          <input id="director-storage-tls-authenticate"
+                 name="tls_authenticate" type="checkbox">
+          TLS authenticate
+        </label>
+
+        <label class="checkbox-label" for="director-storage-tls-enable">
+          <input id="director-storage-tls-enable"
+                 name="tls_enable" type="checkbox">
+          TLS enable
+        </label>
+
+        <label class="checkbox-label" for="director-storage-tls-require">
+          <input id="director-storage-tls-require"
+                 name="tls_require" type="checkbox">
+          TLS require
+        </label>
+
+        <label class="checkbox-label" for="director-storage-tls-verify-peer">
+          <input id="director-storage-tls-verify-peer"
+                 name="tls_verify_peer" type="checkbox">
+          TLS verify peer
+        </label>
+
+        <label for="director-storage-tls-cipher-list">TLS cipher list</label>
+        <input id="director-storage-tls-cipher-list" name="tls_cipher_list"
+               placeholder="ECDHE-RSA-AES256-GCM-SHA384">
+
+        <label for="director-storage-tls-cipher-suites">TLS cipher suites</label>
+        <input id="director-storage-tls-cipher-suites" name="tls_cipher_suites"
+               placeholder="TLS_AES_256_GCM_SHA384">
+
+        <label for="director-storage-tls-dh-file">TLS DH file</label>
+        <input id="director-storage-tls-dh-file" name="tls_dh_file"
+               placeholder="/etc/bareos/dh4096.pem">
+
+        <label for="director-storage-tls-protocol">TLS protocol</label>
+        <input id="director-storage-tls-protocol" name="tls_protocol"
+               placeholder="MinProtocol = TLSv1.2">
+
+        <label for="director-storage-tls-ca-certificate-file">TLS CA certificate file</label>
+        <input id="director-storage-tls-ca-certificate-file"
+               name="tls_ca_certificate_file"
+               placeholder="/etc/bareos/ca.crt">
+
+        <label for="director-storage-tls-ca-certificate-dir">TLS CA certificate dir</label>
+        <input id="director-storage-tls-ca-certificate-dir"
+               name="tls_ca_certificate_dir"
+               placeholder="/etc/ssl/certs">
+
+        <label for="director-storage-tls-certificate-revocation-list">TLS certificate revocation list</label>
+        <input id="director-storage-tls-certificate-revocation-list"
+               name="tls_certificate_revocation_list"
+               placeholder="/etc/bareos/crl.pem">
+
+        <label for="director-storage-tls-certificate">TLS certificate</label>
+        <input id="director-storage-tls-certificate" name="tls_certificate"
+               placeholder="/etc/bareos/storage.crt">
+
+        <label for="director-storage-tls-key">TLS key</label>
+        <input id="director-storage-tls-key" name="tls_key"
+               placeholder="/etc/bareos/storage.key">
+
+        <label for="director-storage-tls-allowed-cn">TLS allowed CNs</label>
+        <textarea id="director-storage-tls-allowed-cn" name="tls_allowed_cn"
+                  placeholder="storage-cn-1&#10;storage-cn-2"></textarea>
 
         <label for="director-storage-description">Description</label>
         <input id="director-storage-description" name="description"
@@ -4301,13 +4433,22 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
         const storageName = String(form.get('storage_name') ?? '').trim();
+        const rawTlsAllowedCn = String(form.get('tls_allowed_cn') ?? '');
+        const tlsAllowedCn = rawTlsAllowedCn
+          .split(/\r?\n/)
+          .map((value) => value.trim())
+          .filter((value) => value.length > 0);
         const payload = {
           address: String(form.get('address') ?? '').trim(),
           lan_address: String(form.get('lan_address') ?? '').trim(),
           port: String(form.get('port') ?? '').trim(),
+          protocol: String(form.get('protocol') ?? '').trim(),
+          auth_type: String(form.get('auth_type') ?? '').trim(),
+          username: String(form.get('username') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
           device: String(form.get('device') ?? '').trim(),
           media_type: String(form.get('media_type') ?? '').trim(),
+          autochanger: document.getElementById('director-storage-autochanger').checked,
           enabled: document.getElementById('director-storage-enabled').checked,
           allow_compression:
             document.getElementById('director-storage-allow-compression').checked,
@@ -4316,8 +4457,38 @@ const char* kTestUiHtmlTemplate = R"HTML(
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
           cache_status_interval: String(
             form.get('cache_status_interval') ?? '').trim(),
+          maximum_concurrent_jobs: String(
+            form.get('maximum_concurrent_jobs') ?? '').trim(),
+          maximum_concurrent_read_jobs: String(
+            form.get('maximum_concurrent_read_jobs') ?? '').trim(),
+          paired_storage: String(form.get('paired_storage') ?? '').trim(),
           archive_device: String(form.get('archive_device') ?? '').trim(),
           device_type: String(form.get('device_type') ?? '').trim(),
+          collect_statistics: document.getElementById(
+            'director-storage-collect-statistics').checked,
+          ndmp_changer_device: String(
+            form.get('ndmp_changer_device') ?? '').trim(),
+          tls_authenticate: document.getElementById(
+            'director-storage-tls-authenticate').checked,
+          tls_enable: document.getElementById(
+            'director-storage-tls-enable').checked,
+          tls_require: document.getElementById(
+            'director-storage-tls-require').checked,
+          tls_verify_peer: document.getElementById(
+            'director-storage-tls-verify-peer').checked,
+          tls_cipher_list: String(form.get('tls_cipher_list') ?? '').trim(),
+          tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
+          tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
+          tls_protocol: String(form.get('tls_protocol') ?? '').trim(),
+          tls_ca_certificate_file: String(
+            form.get('tls_ca_certificate_file') ?? '').trim(),
+          tls_ca_certificate_dir: String(
+            form.get('tls_ca_certificate_dir') ?? '').trim(),
+          tls_certificate_revocation_list: String(
+            form.get('tls_certificate_revocation_list') ?? '').trim(),
+          tls_certificate: String(form.get('tls_certificate') ?? '').trim(),
+          tls_key: String(form.get('tls_key') ?? '').trim(),
+          tls_allowed_cn: tlsAllowedCn,
           description: String(form.get('description') ?? '').trim(),
         };
         if (!payload.address) {
@@ -4330,6 +4501,15 @@ const char* kTestUiHtmlTemplate = R"HTML(
           delete payload.port;
         } else {
           payload.port = Number(payload.port);
+        }
+        if (!payload.protocol) {
+          delete payload.protocol;
+        }
+        if (!payload.auth_type) {
+          delete payload.auth_type;
+        }
+        if (!payload.username) {
+          delete payload.username;
         }
         if (!payload.password) {
           delete payload.password;
@@ -4357,11 +4537,59 @@ const char* kTestUiHtmlTemplate = R"HTML(
           payload.cache_status_interval
             = Number.parseInt(payload.cache_status_interval, 10);
         }
+        if (!payload.maximum_concurrent_jobs) {
+          delete payload.maximum_concurrent_jobs;
+        } else {
+          payload.maximum_concurrent_jobs
+            = Number.parseInt(payload.maximum_concurrent_jobs, 10);
+        }
+        if (!payload.maximum_concurrent_read_jobs) {
+          delete payload.maximum_concurrent_read_jobs;
+        } else {
+          payload.maximum_concurrent_read_jobs
+            = Number.parseInt(payload.maximum_concurrent_read_jobs, 10);
+        }
+        if (!payload.paired_storage) {
+          delete payload.paired_storage;
+        }
         if (!payload.archive_device) {
           delete payload.archive_device;
         }
         if (!payload.device_type) {
           delete payload.device_type;
+        }
+        if (!payload.ndmp_changer_device) {
+          delete payload.ndmp_changer_device;
+        }
+        if (!payload.tls_cipher_list) {
+          delete payload.tls_cipher_list;
+        }
+        if (!payload.tls_cipher_suites) {
+          delete payload.tls_cipher_suites;
+        }
+        if (!payload.tls_dh_file) {
+          delete payload.tls_dh_file;
+        }
+        if (!payload.tls_protocol) {
+          delete payload.tls_protocol;
+        }
+        if (!payload.tls_ca_certificate_file) {
+          delete payload.tls_ca_certificate_file;
+        }
+        if (!payload.tls_ca_certificate_dir) {
+          delete payload.tls_ca_certificate_dir;
+        }
+        if (!payload.tls_certificate_revocation_list) {
+          delete payload.tls_certificate_revocation_list;
+        }
+        if (!payload.tls_certificate) {
+          delete payload.tls_certificate;
+        }
+        if (!payload.tls_key) {
+          delete payload.tls_key;
+        }
+        if (payload.tls_allowed_cn.length === 0) {
+          delete payload.tls_allowed_cn;
         }
         if (!payload.description) {
           delete payload.description;
@@ -7640,14 +7868,37 @@ http::response<http::string_body> HandleDeploymentDirectorStoragePutRequest(
       .address = spec->address,
       .lan_address = spec->lan_address,
       .port = spec->port,
+      .protocol = spec->protocol,
+      .auth_type = spec->auth_type,
+      .username = spec->username,
       .password = spec->password,
       .device = spec->device,
       .media_type = spec->media_type,
+      .autochanger = spec->autochanger,
       .enabled = spec->enabled,
       .allow_compression = spec->allow_compression,
       .heartbeat_interval = spec->heartbeat_interval,
       .cache_status_interval = spec->cache_status_interval,
+      .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
+      .maximum_concurrent_read_jobs = spec->maximum_concurrent_read_jobs,
+      .paired_storage = spec->paired_storage,
       .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
+      .collect_statistics = spec->collect_statistics,
+      .ndmp_changer_device = spec->ndmp_changer_device,
+      .tls_authenticate = spec->tls_authenticate,
+      .tls_enable = spec->tls_enable,
+      .tls_require = spec->tls_require,
+      .tls_verify_peer = spec->tls_verify_peer,
+      .tls_cipher_list = spec->tls_cipher_list,
+      .tls_cipher_suites = spec->tls_cipher_suites,
+      .tls_dh_file = spec->tls_dh_file,
+      .tls_protocol = spec->tls_protocol,
+      .tls_ca_certificate_file = spec->tls_ca_certificate_file,
+      .tls_ca_certificate_dir = spec->tls_ca_certificate_dir,
+      .tls_certificate_revocation_list = spec->tls_certificate_revocation_list,
+      .tls_certificate = spec->tls_certificate,
+      .tls_key = spec->tls_key,
+      .tls_allowed_cn = spec->tls_allowed_cn,
       .archive_device = spec->archive_device,
       .device_type = spec->device_type,
       .description = spec->description,
@@ -10030,52 +10281,123 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   auto* address = json_object_get(root.get(), "address");
   auto* lan_address = json_object_get(root.get(), "lan_address");
   auto* port = json_object_get(root.get(), "port");
+  auto* protocol = json_object_get(root.get(), "protocol");
+  auto* auth_type = json_object_get(root.get(), "auth_type");
+  auto* username = json_object_get(root.get(), "username");
   auto* password = json_object_get(root.get(), "password");
   auto* device = json_object_get(root.get(), "device");
   auto* media_type = json_object_get(root.get(), "media_type");
+  auto* autochanger = json_object_get(root.get(), "autochanger");
   auto* enabled = json_object_get(root.get(), "enabled");
   auto* allow_compression = json_object_get(root.get(), "allow_compression");
   auto* heartbeat_interval = json_object_get(root.get(), "heartbeat_interval");
   auto* cache_status_interval
       = json_object_get(root.get(), "cache_status_interval");
+  auto* maximum_concurrent_jobs
+      = json_object_get(root.get(), "maximum_concurrent_jobs");
+  auto* maximum_concurrent_read_jobs
+      = json_object_get(root.get(), "maximum_concurrent_read_jobs");
+  auto* paired_storage = json_object_get(root.get(), "paired_storage");
   auto* maximum_bandwidth_per_job
       = json_object_get(root.get(), "maximum_bandwidth_per_job");
+  auto* collect_statistics = json_object_get(root.get(), "collect_statistics");
+  auto* ndmp_changer_device
+      = json_object_get(root.get(), "ndmp_changer_device");
+  auto* tls_authenticate = json_object_get(root.get(), "tls_authenticate");
+  auto* tls_enable = json_object_get(root.get(), "tls_enable");
+  auto* tls_require = json_object_get(root.get(), "tls_require");
+  auto* tls_verify_peer = json_object_get(root.get(), "tls_verify_peer");
+  auto* tls_cipher_list = json_object_get(root.get(), "tls_cipher_list");
+  auto* tls_cipher_suites = json_object_get(root.get(), "tls_cipher_suites");
+  auto* tls_dh_file = json_object_get(root.get(), "tls_dh_file");
+  auto* tls_protocol = json_object_get(root.get(), "tls_protocol");
+  auto* tls_ca_certificate_file
+      = json_object_get(root.get(), "tls_ca_certificate_file");
+  auto* tls_ca_certificate_dir
+      = json_object_get(root.get(), "tls_ca_certificate_dir");
+  auto* tls_certificate_revocation_list
+      = json_object_get(root.get(), "tls_certificate_revocation_list");
+  auto* tls_certificate = json_object_get(root.get(), "tls_certificate");
+  auto* tls_key = json_object_get(root.get(), "tls_key");
+  auto* tls_allowed_cn = json_object_get(root.get(), "tls_allowed_cn");
   auto* archive_device = json_object_get(root.get(), "archive_device");
   auto* device_type = json_object_get(root.get(), "device_type");
   auto* description = json_object_get(root.get(), "description");
 
-  if (address && !json_is_null(address) && !json_is_string(address)) {
+  auto require_string = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_string(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a string when provided.";
+      return false;
+    }
+    return true;
+  };
+  auto require_bool = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_boolean(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a boolean when provided.";
+      return false;
+    }
+    return true;
+  };
+  auto require_string_array = [&error](json_t* value, const char* field) {
+    if (!value || json_is_null(value)) { return true; }
+    if (!json_is_array(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an array of strings when provided.";
+      return false;
+    }
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      if (!json_is_string(json_array_get(value, index))) {
+        error = std::string{"field '"} + field
+                + "' must be an array of strings when provided.";
+        return false;
+      }
+    }
+    return true;
+  };
+
+  if (!require_string(address, "address")) {
     error = "field 'address' must be a string when provided.";
     return std::nullopt;
   }
-  if (lan_address && !json_is_null(lan_address)
-      && !json_is_string(lan_address)) {
-    error = "field 'lan_address' must be a string when provided.";
+  if (!require_string(lan_address, "lan_address")
+      || !require_string(protocol, "protocol")
+      || !require_string(auth_type, "auth_type")
+      || !require_string(username, "username")
+      || !require_string(password, "password")
+      || !require_string(device, "device")
+      || !require_string(media_type, "media_type")
+      || !require_string(paired_storage, "paired_storage")
+      || !require_string(ndmp_changer_device, "ndmp_changer_device")
+      || !require_string(tls_cipher_list, "tls_cipher_list")
+      || !require_string(tls_cipher_suites, "tls_cipher_suites")
+      || !require_string(tls_dh_file, "tls_dh_file")
+      || !require_string(tls_protocol, "tls_protocol")
+      || !require_string(tls_ca_certificate_file, "tls_ca_certificate_file")
+      || !require_string(tls_ca_certificate_dir, "tls_ca_certificate_dir")
+      || !require_string(tls_certificate_revocation_list,
+                         "tls_certificate_revocation_list")
+      || !require_string(tls_certificate, "tls_certificate")
+      || !require_string(tls_key, "tls_key")
+      || !require_string(archive_device, "archive_device")
+      || !require_string(device_type, "device_type")
+      || !require_string(description, "description")
+      || !require_string_array(tls_allowed_cn, "tls_allowed_cn")) {
     return std::nullopt;
   }
   if (port && !json_is_null(port) && !json_is_integer(port)) {
     error = "field 'port' must be an integer when provided.";
     return std::nullopt;
   }
-  if (password && !json_is_null(password) && !json_is_string(password)) {
-    error = "field 'password' must be a string when provided.";
-    return std::nullopt;
-  }
-  if (device && !json_is_null(device) && !json_is_string(device)) {
-    error = "field 'device' must be a string when provided.";
-    return std::nullopt;
-  }
-  if (media_type && !json_is_null(media_type) && !json_is_string(media_type)) {
-    error = "field 'media_type' must be a string when provided.";
-    return std::nullopt;
-  }
-  if (enabled && !json_is_null(enabled) && !json_is_boolean(enabled)) {
-    error = "field 'enabled' must be a boolean when provided.";
-    return std::nullopt;
-  }
-  if (allow_compression && !json_is_null(allow_compression)
-      && !json_is_boolean(allow_compression)) {
-    error = "field 'allow_compression' must be a boolean when provided.";
+  if (!require_bool(autochanger, "autochanger")
+      || !require_bool(enabled, "enabled")
+      || !require_bool(allow_compression, "allow_compression")
+      || !require_bool(collect_statistics, "collect_statistics")
+      || !require_bool(tls_authenticate, "tls_authenticate")
+      || !require_bool(tls_enable, "tls_enable")
+      || !require_bool(tls_require, "tls_require")
+      || !require_bool(tls_verify_peer, "tls_verify_peer")) {
     return std::nullopt;
   }
   if (heartbeat_interval && !json_is_null(heartbeat_interval)
@@ -10095,19 +10417,17 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
           "provided.";
     return std::nullopt;
   }
-  if (archive_device && !json_is_null(archive_device)
-      && !json_is_string(archive_device)) {
-    error = "field 'archive_device' must be a string when provided.";
+  if (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
+      && !json_is_integer(maximum_concurrent_jobs)) {
+    error = "field 'maximum_concurrent_jobs' must be an integer when provided.";
     return std::nullopt;
   }
-  if (device_type && !json_is_null(device_type)
-      && !json_is_string(device_type)) {
-    error = "field 'device_type' must be a string when provided.";
-    return std::nullopt;
-  }
-  if (description && !json_is_null(description)
-      && !json_is_string(description)) {
-    error = "field 'description' must be a string when provided.";
+  if (maximum_concurrent_read_jobs
+      && !json_is_null(maximum_concurrent_read_jobs)
+      && !json_is_integer(maximum_concurrent_read_jobs)) {
+    error
+        = "field 'maximum_concurrent_read_jobs' must be an integer when "
+          "provided.";
     return std::nullopt;
   }
 
@@ -10126,6 +10446,15 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
     }
     spec.port = static_cast<uint16_t>(value);
   }
+  if (protocol && json_is_string(protocol)) {
+    spec.protocol = std::string{json_string_value(protocol)};
+  }
+  if (auth_type && json_is_string(auth_type)) {
+    spec.auth_type = std::string{json_string_value(auth_type)};
+  }
+  if (username && json_is_string(username)) {
+    spec.username = std::string{json_string_value(username)};
+  }
   if (password && json_is_string(password)) {
     spec.password = std::string{json_string_value(password)};
   }
@@ -10134,6 +10463,9 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   }
   if (media_type && json_is_string(media_type)) {
     spec.media_type = std::string{json_string_value(media_type)};
+  }
+  if (autochanger && json_is_boolean(autochanger)) {
+    spec.autochanger = json_is_true(autochanger);
   }
   if (enabled && json_is_boolean(enabled)) {
     spec.enabled = json_is_true(enabled);
@@ -10157,6 +10489,28 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
     }
     spec.cache_status_interval = static_cast<uint64_t>(value);
   }
+  if (maximum_concurrent_jobs && json_is_integer(maximum_concurrent_jobs)) {
+    const auto value = json_integer_value(maximum_concurrent_jobs);
+    if (value < 0 || value > std::numeric_limits<uint32_t>::max()) {
+      error = "field 'maximum_concurrent_jobs' must be between 0 and "
+              + std::to_string(std::numeric_limits<uint32_t>::max()) + ".";
+      return std::nullopt;
+    }
+    spec.maximum_concurrent_jobs = static_cast<uint32_t>(value);
+  }
+  if (maximum_concurrent_read_jobs
+      && json_is_integer(maximum_concurrent_read_jobs)) {
+    const auto value = json_integer_value(maximum_concurrent_read_jobs);
+    if (value < 0 || value > std::numeric_limits<uint32_t>::max()) {
+      error = "field 'maximum_concurrent_read_jobs' must be between 0 and "
+              + std::to_string(std::numeric_limits<uint32_t>::max()) + ".";
+      return std::nullopt;
+    }
+    spec.maximum_concurrent_read_jobs = static_cast<uint32_t>(value);
+  }
+  if (paired_storage && json_is_string(paired_storage)) {
+    spec.paired_storage = std::string{json_string_value(paired_storage)};
+  }
   if (maximum_bandwidth_per_job && json_is_integer(maximum_bandwidth_per_job)) {
     const auto value = json_integer_value(maximum_bandwidth_per_job);
     if (value < 0) {
@@ -10164,6 +10518,65 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
       return std::nullopt;
     }
     spec.maximum_bandwidth_per_job = static_cast<uint64_t>(value);
+  }
+  if (collect_statistics && json_is_boolean(collect_statistics)) {
+    spec.collect_statistics = json_is_true(collect_statistics);
+  }
+  if (ndmp_changer_device && json_is_string(ndmp_changer_device)) {
+    spec.ndmp_changer_device
+        = std::string{json_string_value(ndmp_changer_device)};
+  }
+  if (tls_authenticate && json_is_boolean(tls_authenticate)) {
+    spec.tls_authenticate = json_is_true(tls_authenticate);
+  }
+  if (tls_enable && json_is_boolean(tls_enable)) {
+    spec.tls_enable = json_is_true(tls_enable);
+  }
+  if (tls_require && json_is_boolean(tls_require)) {
+    spec.tls_require = json_is_true(tls_require);
+  }
+  if (tls_verify_peer && json_is_boolean(tls_verify_peer)) {
+    spec.tls_verify_peer = json_is_true(tls_verify_peer);
+  }
+  if (tls_cipher_list && json_is_string(tls_cipher_list)) {
+    spec.tls_cipher_list = std::string{json_string_value(tls_cipher_list)};
+  }
+  if (tls_cipher_suites && json_is_string(tls_cipher_suites)) {
+    spec.tls_cipher_suites = std::string{json_string_value(tls_cipher_suites)};
+  }
+  if (tls_dh_file && json_is_string(tls_dh_file)) {
+    spec.tls_dh_file = std::string{json_string_value(tls_dh_file)};
+  }
+  if (tls_protocol && json_is_string(tls_protocol)) {
+    spec.tls_protocol = std::string{json_string_value(tls_protocol)};
+  }
+  if (tls_ca_certificate_file && json_is_string(tls_ca_certificate_file)) {
+    spec.tls_ca_certificate_file
+        = std::string{json_string_value(tls_ca_certificate_file)};
+  }
+  if (tls_ca_certificate_dir && json_is_string(tls_ca_certificate_dir)) {
+    spec.tls_ca_certificate_dir
+        = std::string{json_string_value(tls_ca_certificate_dir)};
+  }
+  if (tls_certificate_revocation_list
+      && json_is_string(tls_certificate_revocation_list)) {
+    spec.tls_certificate_revocation_list
+        = std::string{json_string_value(tls_certificate_revocation_list)};
+  }
+  if (tls_certificate && json_is_string(tls_certificate)) {
+    spec.tls_certificate = std::string{json_string_value(tls_certificate)};
+  }
+  if (tls_key && json_is_string(tls_key)) {
+    spec.tls_key = std::string{json_string_value(tls_key)};
+  }
+  if (tls_allowed_cn && json_is_array(tls_allowed_cn)) {
+    std::vector<std::string> values;
+    values.reserve(json_array_size(tls_allowed_cn));
+    for (size_t index = 0; index < json_array_size(tls_allowed_cn); ++index) {
+      values.emplace_back(
+          json_string_value(json_array_get(tls_allowed_cn, index)));
+    }
+    spec.tls_allowed_cn = std::move(values);
   }
   if (archive_device && json_is_string(archive_device)) {
     spec.archive_device = std::string{json_string_value(archive_device)};
