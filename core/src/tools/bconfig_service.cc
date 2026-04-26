@@ -28,6 +28,7 @@
 #include "dird/dird_conf.h"
 #include "filed/filed_conf.h"
 #include "include/bareos.h"
+#include "include/auth_protocol_types.h"
 #include "include/auth_types.h"
 #include "include/job_level.h"
 #include "include/job_types.h"
@@ -1051,6 +1052,7 @@ std::string BuildDirectorClientResourceContent(
     std::string_view client_name,
     std::string_view address,
     const std::optional<std::string>& lan_address,
+    const std::optional<std::string>& protocol,
     const std::optional<std::string>& username,
     std::string_view password,
     uint32_t port,
@@ -1092,10 +1094,11 @@ std::string BuildDirectorClientResourceContent(
   content << "Client {\n"
           << "  Name = " << QuoteBareosString(client_name) << "\n"
           << "  Description = " << QuoteBareosString(description) << "\n"
-          << "  Address = " << address << "\n"
-          << "  Password = " << QuoteBareosString(password) << "\n"
-          << "  Port = " << port << "\n";
+          << "  Address = " << address << "\n";
   AppendBareosDirective(content, "LanAddress", lan_address);
+  AppendBareosDirective(content, "Protocol", protocol);
+  content << "  Password = " << QuoteBareosString(password) << "\n"
+          << "  Port = " << port << "\n";
   AppendQuotedDirective(content, "Username", username);
   AppendBoolDirective(content, "Enabled", enabled);
   AppendBoolDirective(content, "Passive", passive);
@@ -2339,6 +2342,39 @@ OperationResult<std::string> NormalizeStorageNdmpAuthType(
   return {.error = "field 'auth_type' must be one of None, Clear, or MD5."};
 }
 
+OperationResult<std::string> NormalizeDirectorClientProtocol(
+    std::string_view protocol)
+{
+  std::string normalized;
+  normalized.reserve(protocol.size());
+  std::transform(protocol.begin(), protocol.end(),
+                 std::back_inserter(normalized),
+                 [](unsigned char c) { return std::tolower(c); });
+  if (normalized == "native") { return {.value = std::string{"Native"}}; }
+  if (normalized == "ndmpv2") { return {.value = std::string{"NDMPV2"}}; }
+  if (normalized == "ndmpv3") { return {.value = std::string{"NDMPV3"}}; }
+  if (normalized == "ndmpv4") { return {.value = std::string{"NDMPV4"}}; }
+  return {.error
+          = "field 'protocol' must be one of Native, NDMPV2, NDMPV3, or "
+            "NDMPV4."};
+}
+
+std::string RenderDirectorClientProtocol(uint32_t protocol)
+{
+  switch (protocol) {
+    case APT_NATIVE:
+      return "Native";
+    case APT_NDMPV2:
+      return "NDMPV2";
+    case APT_NDMPV3:
+      return "NDMPV3";
+    case APT_NDMPV4:
+      return "NDMPV4";
+    default:
+      return "Unknown";
+  }
+}
+
 std::string RenderStorageNdmpAuthType(uint32_t auth_type)
 {
   switch (auth_type) {
@@ -2517,6 +2553,7 @@ struct DirectorClientWriteContext {
   std::optional<std::string> address{};
   std::optional<std::string> lan_address{};
   std::optional<uint32_t> port{};
+  std::optional<std::string> protocol{};
   std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<bool> enabled{};
@@ -2917,6 +2954,14 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
       context.lan_address = std::string{client->lanaddress};
     }
     if (client->FDport != 0) { context.port = client->FDport; }
+    if (HasMemberSource(*client, {"Protocol"})) {
+      const auto protocol = RenderDirectorClientProtocol(client->Protocol);
+      if (protocol == "Unknown") {
+        return {.error = "director client '" + std::string{client_name}
+                         + "' has an unsupported Protocol value."};
+      }
+      context.protocol = protocol;
+    }
     if (client->username && client->username[0] != '\0') {
       context.username = std::string{client->username};
     }
@@ -8579,6 +8624,12 @@ ServiceState::UpsertDirectorClientResource(
   }
   const auto lan_address
       = spec.lan_address ? spec.lan_address : context.value->lan_address;
+  std::optional<std::string> protocol = context.value->protocol;
+  if (spec.protocol) {
+    auto normalized_protocol = NormalizeDirectorClientProtocol(*spec.protocol);
+    if (!normalized_protocol) { return {.error = normalized_protocol.error}; }
+    protocol = *normalized_protocol.value;
+  }
   const auto username = spec.username ? spec.username : context.value->username;
 
   const auto password
@@ -8688,17 +8739,17 @@ ServiceState::UpsertDirectorClientResource(
             : context.value->description.value_or(
                   DefaultDirectorClientDescription(client_name, director_name));
   const auto content = BuildDirectorClientResourceContent(
-      client_name, *address, lan_address, username, *password, effective_port,
-      enabled, passive, strict_quotas, quota_include_failed_jobs, soft_quota,
-      hard_quota, soft_quota_grace_period, file_retention, job_retention,
-      ndmp_log_level, ndmp_block_size, ndmp_use_lmdb, auto_prune,
-      tls_authenticate, tls_enable, tls_require, tls_verify_peer,
-      tls_cipher_list, tls_cipher_suites, tls_dh_file, tls_protocol,
-      tls_ca_certificate_file, tls_ca_certificate_dir,
-      tls_certificate_revocation_list, tls_certificate, tls_key, tls_allowed_cn,
-      connection_from_director_to_client, connection_from_client_to_director,
-      maximum_concurrent_jobs, heartbeat_interval, maximum_bandwidth_per_job,
-      description);
+      client_name, *address, lan_address, protocol, username, *password,
+      effective_port, enabled, passive, strict_quotas,
+      quota_include_failed_jobs, soft_quota, hard_quota,
+      soft_quota_grace_period, file_retention, job_retention, ndmp_log_level,
+      ndmp_block_size, ndmp_use_lmdb, auto_prune, tls_authenticate, tls_enable,
+      tls_require, tls_verify_peer, tls_cipher_list, tls_cipher_suites,
+      tls_dh_file, tls_protocol, tls_ca_certificate_file,
+      tls_ca_certificate_dir, tls_certificate_revocation_list, tls_certificate,
+      tls_key, tls_allowed_cn, connection_from_director_to_client,
+      connection_from_client_to_director, maximum_concurrent_jobs,
+      heartbeat_interval, maximum_bandwidth_per_job, description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "client";
