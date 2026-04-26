@@ -182,6 +182,13 @@ TEST(BconfigService, UpsertsConsoleComponentConsoleResources)
   EXPECT_NE(updated_text.find("Password = "), std::string::npos);
   EXPECT_NE(updated_text.find("Director = bareos-dir"), std::string::npos);
   EXPECT_NE(updated_text.find("Name = \"managed-console\""), std::string::npos);
+
+  auto current = state.GetConsoleConsoleResourceSpec("prod", "admin", "admin");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->director, "bareos-dir");
+  EXPECT_EQ(current.value->description, "Updated imported console");
+  ASSERT_TRUE(current.value->password.has_value());
+  EXPECT_FALSE(current.value->password->empty());
 }
 
 TEST(BconfigService, UpsertsConsoleComponentConsoleHistoryFields)
@@ -786,6 +793,14 @@ TEST(BconfigService, UpsertsConsoleComponentDirectorResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("Name = \"managed-dir\""), std::string::npos);
   EXPECT_NE(updated_text.find("Name = \"admin\""), std::string::npos);
+
+  auto current
+      = state.GetConsoleDirectorResourceSpec("prod", "admin", "bareos-dir");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->address, "director.example.test");
+  EXPECT_EQ(current.value->description, "Updated imported director");
+  ASSERT_TRUE(current.value->password.has_value());
+  EXPECT_FALSE(current.value->password->empty());
 }
 
 TEST(BconfigService, UpsertsConsoleComponentDirectorHeartbeatInterval)

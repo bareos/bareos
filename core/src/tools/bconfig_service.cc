@@ -10403,6 +10403,62 @@ StorageDaemonResourceSpec ToStorageDaemonResourceSpec(
   return spec;
 }
 
+ConsoleConsoleResourceSpec ToConsoleConsoleResourceSpec(
+    const ConsoleConsoleWriteContext& context)
+{
+  ConsoleConsoleResourceSpec spec;
+  spec.director = context.director;
+  spec.password = context.password;
+  spec.description = context.description;
+  spec.rc_file = context.rc_file;
+  spec.history_file = context.history_file;
+  spec.history_length = context.history_length;
+  spec.heartbeat_interval = context.heartbeat_interval;
+  spec.tls_authenticate = context.tls_authenticate;
+  spec.tls_enable = context.tls_enable;
+  spec.tls_require = context.tls_require;
+  spec.tls_verify_peer = context.tls_verify_peer;
+  spec.tls_cipher_list = context.tls_cipher_list;
+  spec.tls_cipher_suites = context.tls_cipher_suites;
+  spec.tls_dh_file = context.tls_dh_file;
+  spec.tls_protocol = context.tls_protocol;
+  spec.tls_ca_certificate_file = context.tls_ca_certificate_file;
+  spec.tls_ca_certificate_dir = context.tls_ca_certificate_dir;
+  spec.tls_certificate_revocation_list
+      = context.tls_certificate_revocation_list;
+  spec.tls_certificate = context.tls_certificate;
+  spec.tls_key = context.tls_key;
+  spec.tls_allowed_cn = context.tls_allowed_cn;
+  return spec;
+}
+
+ConsoleDirectorResourceSpec ToConsoleDirectorResourceSpec(
+    const ConsoleDirectorWriteContext& context)
+{
+  ConsoleDirectorResourceSpec spec;
+  spec.address = context.address;
+  spec.port = ToOptionalUint16(context.port);
+  spec.password = context.password;
+  spec.description = context.description;
+  spec.heartbeat_interval = context.heartbeat_interval;
+  spec.tls_authenticate = context.tls_authenticate;
+  spec.tls_enable = context.tls_enable;
+  spec.tls_require = context.tls_require;
+  spec.tls_verify_peer = context.tls_verify_peer;
+  spec.tls_cipher_list = context.tls_cipher_list;
+  spec.tls_cipher_suites = context.tls_cipher_suites;
+  spec.tls_dh_file = context.tls_dh_file;
+  spec.tls_protocol = context.tls_protocol;
+  spec.tls_ca_certificate_file = context.tls_ca_certificate_file;
+  spec.tls_ca_certificate_dir = context.tls_ca_certificate_dir;
+  spec.tls_certificate_revocation_list
+      = context.tls_certificate_revocation_list;
+  spec.tls_certificate = context.tls_certificate;
+  spec.tls_key = context.tls_key;
+  spec.tls_allowed_cn = context.tls_allowed_cn;
+  return spec;
+}
+
 OperationResult<ClientDirectorStubSpec> ServiceState::GetClientDirectorStubSpec(
     std::string_view deployment_id,
     std::string_view client_name,
@@ -12501,6 +12557,54 @@ ServiceState::DeleteDirectorConsoleResource(std::string_view deployment_id,
   DebugLog("deleted director console resource '" + std::string{console_name}
            + "' from director '" + std::string{director_name} + "'");
   return {.value = *director_config.value};
+}
+
+OperationResult<ConsoleConsoleResourceSpec>
+ServiceState::GetConsoleConsoleResourceSpec(
+    std::string_view deployment_id,
+    std::string_view console_config_name,
+    std::string_view console_name) const
+{
+  auto console_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kConsole, console_config_name);
+  if (!console_config) {
+    return {.error = "console config not found for '"
+                     + std::string{console_config_name} + "'."};
+  }
+
+  auto context
+      = LoadConsoleConsoleWriteContext(*console_config.value, console_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "console resource '" + std::string{console_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToConsoleConsoleResourceSpec(*context.value)};
+}
+
+OperationResult<ConsoleDirectorResourceSpec>
+ServiceState::GetConsoleDirectorResourceSpec(
+    std::string_view deployment_id,
+    std::string_view console_config_name,
+    std::string_view director_name) const
+{
+  auto console_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kConsole, console_config_name);
+  if (!console_config) {
+    return {.error = "console config not found for '"
+                     + std::string{console_config_name} + "'."};
+  }
+
+  auto context
+      = LoadConsoleDirectorWriteContext(*console_config.value, director_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "console director '" + std::string{director_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToConsoleDirectorResourceSpec(*context.value)};
 }
 
 OperationResult<DeploymentConfigRecord>

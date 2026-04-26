@@ -1041,6 +1041,14 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view director_name,
       std::string_view console_name) const;
+  OperationResult<ConsoleConsoleResourceSpec> GetConsoleConsoleResourceSpec(
+      std::string_view deployment_id,
+      std::string_view console_config_name,
+      std::string_view console_name) const;
+  OperationResult<ConsoleDirectorResourceSpec> GetConsoleDirectorResourceSpec(
+      std::string_view deployment_id,
+      std::string_view console_config_name,
+      std::string_view director_name) const;
   OperationResult<DeploymentConfigRecord> UpsertConsoleConsoleResource(
       std::string_view deployment_id,
       std::string_view console_config_name,

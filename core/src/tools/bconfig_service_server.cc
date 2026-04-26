@@ -5335,6 +5335,30 @@ const char* kTestUiHtmlTemplate = R"HTML(
             `/v1/deployments/${encodedDeployment}/storages/${encodedConfig}/prefill`,
         };
       }
+      if (normalizedComponent === 'console' && normalizedType === 'console') {
+        return {
+          formId: 'console-console-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            console_config_name: String(configName ?? ''),
+            console_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/consoles/${encodedConfig}/consoles/${encodedResource}/prefill`,
+        };
+      }
+      if (normalizedComponent === 'console' && normalizedType === 'director') {
+        return {
+          formId: 'console-director-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            console_config_name: String(configName ?? ''),
+            director_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/consoles/${encodedConfig}/directors/${encodedResource}/prefill`,
+        };
+      }
       if (normalizedComponent === 'client' && normalizedType === 'director') {
         return {
           formId: 'client-stub-form',
@@ -9201,6 +9225,67 @@ json_t* StorageDaemonResourceSpecToJson(const StorageDaemonResourceSpec& spec)
   return object.release();
 }
 
+json_t* ConsoleConsoleResourceSpecToJson(const ConsoleConsoleResourceSpec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "director", spec.director);
+  SetOptionalString(object.get(), "password", spec.password);
+  SetOptionalString(object.get(), "description", spec.description);
+  SetOptionalString(object.get(), "rc_file", spec.rc_file);
+  SetOptionalString(object.get(), "history_file", spec.history_file);
+  SetOptionalInteger(object.get(), "history_length", spec.history_length);
+  SetOptionalInteger(object.get(), "heartbeat_interval",
+                     spec.heartbeat_interval);
+  SetOptionalBool(object.get(), "tls_authenticate", spec.tls_authenticate);
+  SetOptionalBool(object.get(), "tls_enable", spec.tls_enable);
+  SetOptionalBool(object.get(), "tls_require", spec.tls_require);
+  SetOptionalBool(object.get(), "tls_verify_peer", spec.tls_verify_peer);
+  SetOptionalString(object.get(), "tls_cipher_list", spec.tls_cipher_list);
+  SetOptionalString(object.get(), "tls_cipher_suites", spec.tls_cipher_suites);
+  SetOptionalString(object.get(), "tls_dh_file", spec.tls_dh_file);
+  SetOptionalString(object.get(), "tls_protocol", spec.tls_protocol);
+  SetOptionalString(object.get(), "tls_ca_certificate_file",
+                    spec.tls_ca_certificate_file);
+  SetOptionalString(object.get(), "tls_ca_certificate_dir",
+                    spec.tls_ca_certificate_dir);
+  SetOptionalString(object.get(), "tls_certificate_revocation_list",
+                    spec.tls_certificate_revocation_list);
+  SetOptionalString(object.get(), "tls_certificate", spec.tls_certificate);
+  SetOptionalString(object.get(), "tls_key", spec.tls_key);
+  SetOptionalStringArray(object.get(), "tls_allowed_cn", spec.tls_allowed_cn);
+  return object.release();
+}
+
+json_t* ConsoleDirectorResourceSpecToJson(
+    const ConsoleDirectorResourceSpec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "address", spec.address);
+  SetOptionalInteger(object.get(), "port", spec.port);
+  SetOptionalString(object.get(), "password", spec.password);
+  SetOptionalString(object.get(), "description", spec.description);
+  SetOptionalInteger(object.get(), "heartbeat_interval",
+                     spec.heartbeat_interval);
+  SetOptionalBool(object.get(), "tls_authenticate", spec.tls_authenticate);
+  SetOptionalBool(object.get(), "tls_enable", spec.tls_enable);
+  SetOptionalBool(object.get(), "tls_require", spec.tls_require);
+  SetOptionalBool(object.get(), "tls_verify_peer", spec.tls_verify_peer);
+  SetOptionalString(object.get(), "tls_cipher_list", spec.tls_cipher_list);
+  SetOptionalString(object.get(), "tls_cipher_suites", spec.tls_cipher_suites);
+  SetOptionalString(object.get(), "tls_dh_file", spec.tls_dh_file);
+  SetOptionalString(object.get(), "tls_protocol", spec.tls_protocol);
+  SetOptionalString(object.get(), "tls_ca_certificate_file",
+                    spec.tls_ca_certificate_file);
+  SetOptionalString(object.get(), "tls_ca_certificate_dir",
+                    spec.tls_ca_certificate_dir);
+  SetOptionalString(object.get(), "tls_certificate_revocation_list",
+                    spec.tls_certificate_revocation_list);
+  SetOptionalString(object.get(), "tls_certificate", spec.tls_certificate);
+  SetOptionalString(object.get(), "tls_key", spec.tls_key);
+  SetOptionalStringArray(object.get(), "tls_allowed_cn", spec.tls_allowed_cn);
+  return object.release();
+}
+
 json_t* ClientDirectorStubSpecToJson(const ClientDirectorStubSpec& spec)
 {
   auto object = MakeJson(json_object());
@@ -10168,6 +10253,56 @@ http::response<http::string_body> HandleStorageDirectorPrefillRequest(
                   json_array_get(deployment_json.get(), 0));
   json_object_set_new(root.get(), "spec",
                       StorageDirectorResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleConsoleConsolePrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view console_config_name,
+    std::string_view console_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetConsoleConsoleResourceSpec(
+      deployment_id, console_config_name, console_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      ConsoleConsoleResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleConsoleDirectorPrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view console_config_name,
+    std::string_view director_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetConsoleDirectorResourceSpec(
+      deployment_id, console_config_name, director_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      ConsoleDirectorResourceSpecToJson(*spec.value));
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
@@ -17737,6 +17872,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
+  if (path_parts.size() == 8 && path_parts[3] == "consoles"
+      && path_parts[5] == "consoles" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleConsoleConsolePrefillRequest(state, path_parts[2],
+                                              path_parts[4], path_parts[6]);
+  }
   if (path_parts.size() == 7 && path_parts[3] == "consoles"
       && path_parts[5] == "consoles" && request.method() == http::verb::put) {
     return HandleDeploymentConsoleConsolePutRequest(
@@ -17747,6 +17888,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
       && request.method() == http::verb::delete_) {
     return HandleDeploymentConsoleConsoleDeleteRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 8 && path_parts[3] == "consoles"
+      && path_parts[5] == "directors" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleConsoleDirectorPrefillRequest(state, path_parts[2],
+                                               path_parts[4], path_parts[6]);
   }
   if (path_parts.size() == 7 && path_parts[3] == "consoles"
       && path_parts[5] == "directors" && request.method() == http::verb::put) {
