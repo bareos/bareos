@@ -1073,6 +1073,7 @@ std::string BuildDirectorClientResourceContent(
     const std::optional<std::string>& tls_cipher_list,
     const std::optional<std::string>& tls_cipher_suites,
     const std::optional<std::string>& tls_dh_file,
+    const std::optional<std::string>& tls_protocol,
     const std::optional<bool>& connection_from_director_to_client,
     const std::optional<bool>& connection_from_client_to_director,
     const std::optional<uint32_t>& maximum_concurrent_jobs,
@@ -1110,6 +1111,7 @@ std::string BuildDirectorClientResourceContent(
   AppendQuotedDirective(content, "TlsCipherList", tls_cipher_list);
   AppendQuotedDirective(content, "TlsCipherSuites", tls_cipher_suites);
   AppendQuotedDirective(content, "TlsDhFile", tls_dh_file);
+  AppendQuotedDirective(content, "TlsProtocol", tls_protocol);
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
                       connection_from_director_to_client);
   AppendBoolDirective(content, "ConnectionFromClientToDirector",
@@ -2518,6 +2520,7 @@ struct DirectorClientWriteContext {
   std::optional<std::string> tls_cipher_list{};
   std::optional<std::string> tls_cipher_suites{};
   std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -2952,6 +2955,10 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
     if (HasMemberSource(*client, {"TlsDhFile"})
         && !client->tls_cert_.dhfile_.empty()) {
       context.tls_dh_file = client->tls_cert_.dhfile_;
+    }
+    if (HasMemberSource(*client, {"TlsProtocol"})
+        && !client->protocol_.empty()) {
+      context.tls_protocol = client->protocol_;
     }
     if (HasMemberSource(*client, {"ConnectionFromDirectorToClient"})) {
       context.connection_from_director_to_client = client->conn_from_dir_to_fd;
@@ -8595,6 +8602,8 @@ ServiceState::UpsertDirectorClientResource(
                                      : context.value->tls_cipher_suites;
   const auto tls_dh_file
       = spec.tls_dh_file ? spec.tls_dh_file : context.value->tls_dh_file;
+  const auto tls_protocol
+      = spec.tls_protocol ? spec.tls_protocol : context.value->tls_protocol;
   const auto maximum_concurrent_jobs
       = spec.maximum_concurrent_jobs ? spec.maximum_concurrent_jobs
                                      : context.value->maximum_concurrent_jobs;
@@ -8614,7 +8623,7 @@ ServiceState::UpsertDirectorClientResource(
       soft_quota_grace_period, file_retention, job_retention, ndmp_log_level,
       ndmp_block_size, ndmp_use_lmdb, auto_prune, tls_authenticate, tls_enable,
       tls_require, tls_verify_peer, tls_cipher_list, tls_cipher_suites,
-      tls_dh_file, connection_from_director_to_client,
+      tls_dh_file, tls_protocol, connection_from_director_to_client,
       connection_from_client_to_director, maximum_concurrent_jobs,
       heartbeat_interval, maximum_bandwidth_per_job, description);
 
