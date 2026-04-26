@@ -852,6 +852,40 @@ constexpr std::array<std::string_view, directordaemon::Num_ACL>
        "PoolACL",  "CommandACL",      "FileSetACL", "CatalogACL",
        "WhereACL", "PluginOptionsACL"};
 
+void ApplyDirectorAclOverrides(
+    std::array<std::vector<std::string>, directordaemon::Num_ACL>& acl,
+    const std::optional<std::vector<std::string>>& job_acl,
+    const std::optional<std::vector<std::string>>& client_acl,
+    const std::optional<std::vector<std::string>>& storage_acl,
+    const std::optional<std::vector<std::string>>& schedule_acl,
+    const std::optional<std::vector<std::string>>& pool_acl,
+    const std::optional<std::vector<std::string>>& command_acl,
+    const std::optional<std::vector<std::string>>& fileset_acl,
+    const std::optional<std::vector<std::string>>& catalog_acl,
+    const std::optional<std::vector<std::string>>& where_acl,
+    const std::optional<std::vector<std::string>>& plugin_options_acl)
+{
+  if (job_acl) { acl[directordaemon::Job_ACL] = *job_acl; }
+  if (client_acl) { acl[directordaemon::Client_ACL] = *client_acl; }
+  if (storage_acl) { acl[directordaemon::Storage_ACL] = *storage_acl; }
+  if (schedule_acl) { acl[directordaemon::Schedule_ACL] = *schedule_acl; }
+  if (pool_acl) { acl[directordaemon::Pool_ACL] = *pool_acl; }
+  if (command_acl) { acl[directordaemon::Command_ACL] = *command_acl; }
+  if (fileset_acl) { acl[directordaemon::FileSet_ACL] = *fileset_acl; }
+  if (catalog_acl) { acl[directordaemon::Catalog_ACL] = *catalog_acl; }
+  if (where_acl) { acl[directordaemon::Where_ACL] = *where_acl; }
+  if (plugin_options_acl) {
+    acl[directordaemon::PluginOptions_ACL] = *plugin_options_acl;
+  }
+}
+
+void ApplyDirectorProfileOverrides(
+    std::vector<std::string>& profiles,
+    const std::optional<std::vector<std::string>>& configured_profiles)
+{
+  if (configured_profiles) { profiles = *configured_profiles; }
+}
+
 struct DirectorPoolContentSpec {
   std::optional<std::string> description{};
   std::optional<std::string> pool_type{};
@@ -894,6 +928,8 @@ struct DirectorCatalogContentSpec {
   std::optional<std::string> db_password{};
   std::optional<std::string> db_user{};
   std::optional<std::string> db_name{};
+  std::optional<bool> multiple_connections{};
+  std::optional<bool> disable_batch_insert{};
   std::optional<bool> reconnect{};
   std::optional<bool> exit_on_fatal{};
   std::optional<uint32_t> min_connections{};
@@ -1432,7 +1468,23 @@ std::string BuildDirectorConsoleResourceContent(
     std::string_view description,
     bool use_pam_authentication,
     const std::array<std::vector<std::string>, directordaemon::Num_ACL>& acl,
-    const std::vector<std::string>& profiles)
+    const std::vector<std::string>& profiles,
+    const std::optional<bool>& tls_authenticate = std::nullopt,
+    const std::optional<bool>& tls_enable = std::nullopt,
+    const std::optional<bool>& tls_require = std::nullopt,
+    const std::optional<bool>& tls_verify_peer = std::nullopt,
+    const std::optional<std::string>& tls_cipher_list = std::nullopt,
+    const std::optional<std::string>& tls_cipher_suites = std::nullopt,
+    const std::optional<std::string>& tls_dh_file = std::nullopt,
+    const std::optional<std::string>& tls_protocol = std::nullopt,
+    const std::optional<std::string>& tls_ca_certificate_file = std::nullopt,
+    const std::optional<std::string>& tls_ca_certificate_dir = std::nullopt,
+    const std::optional<std::string>& tls_certificate_revocation_list
+    = std::nullopt,
+    const std::optional<std::string>& tls_certificate = std::nullopt,
+    const std::optional<std::string>& tls_key = std::nullopt,
+    const std::optional<std::vector<std::string>>& tls_allowed_cn
+    = std::nullopt)
 {
   std::ostringstream content;
   content << "Console {\n"
@@ -1448,6 +1500,24 @@ std::string BuildDirectorConsoleResourceContent(
     content << "  Profile = " << RenderBareosDirectiveValue(profile) << "\n";
   }
   if (use_pam_authentication) { content << "  UsePamAuthentication = yes\n"; }
+  AppendBoolDirective(content, "TlsAuthenticate", tls_authenticate);
+  AppendBoolDirective(content, "TlsEnable", tls_enable);
+  AppendBoolDirective(content, "TlsRequire", tls_require);
+  AppendBoolDirective(content, "TlsVerifyPeer", tls_verify_peer);
+  AppendQuotedDirective(content, "TlsCipherList", tls_cipher_list);
+  AppendQuotedDirective(content, "TlsCipherSuites", tls_cipher_suites);
+  AppendQuotedDirective(content, "TlsDhFile", tls_dh_file);
+  AppendQuotedDirective(content, "TlsProtocol", tls_protocol);
+  AppendQuotedDirective(content, "TlsCaCertificateFile",
+                        tls_ca_certificate_file);
+  AppendQuotedDirective(content, "TlsCaCertificateDir", tls_ca_certificate_dir);
+  AppendQuotedDirective(content, "TlsCertificateRevocationList",
+                        tls_certificate_revocation_list);
+  AppendQuotedDirective(content, "TlsCertificate", tls_certificate);
+  AppendQuotedDirective(content, "TlsKey", tls_key);
+  if (tls_allowed_cn) {
+    AppendRepeatedQuotedDirective(content, "TlsAllowedCn", *tls_allowed_cn);
+  }
   content << "}\n";
   return content.str();
 }
@@ -1672,6 +1742,9 @@ std::string BuildDirectorCatalogResourceContent(
           << QuoteBareosString(spec.db_password.value_or("")) << "\n";
   AppendQuotedDirective(content, "DbUser", spec.db_user);
   AppendQuotedDirective(content, "DbName", spec.db_name);
+  AppendBoolDirective(content, "MultipleConnections",
+                      spec.multiple_connections);
+  AppendBoolDirective(content, "DisableBatchInsert", spec.disable_batch_insert);
   AppendBoolDirective(content, "Reconnect", spec.reconnect);
   AppendBoolDirective(content, "ExitOnFatal", spec.exit_on_fatal);
   AppendIntegerDirective(content, "MinConnections", spec.min_connections);
@@ -2088,7 +2161,24 @@ std::string BuildStorageDaemonDirectorResourceContent(
     std::string_view password,
     std::string_view description,
     const std::optional<bool>& monitor = std::nullopt,
-    const std::optional<uint64_t>& maximum_bandwidth_per_job = std::nullopt)
+    const std::optional<uint64_t>& maximum_bandwidth_per_job = std::nullopt,
+    const std::optional<std::string>& key_encryption_key = std::nullopt,
+    const std::optional<bool>& tls_authenticate = std::nullopt,
+    const std::optional<bool>& tls_enable = std::nullopt,
+    const std::optional<bool>& tls_require = std::nullopt,
+    const std::optional<bool>& tls_verify_peer = std::nullopt,
+    const std::optional<std::string>& tls_cipher_list = std::nullopt,
+    const std::optional<std::string>& tls_cipher_suites = std::nullopt,
+    const std::optional<std::string>& tls_dh_file = std::nullopt,
+    const std::optional<std::string>& tls_protocol = std::nullopt,
+    const std::optional<std::string>& tls_ca_certificate_file = std::nullopt,
+    const std::optional<std::string>& tls_ca_certificate_dir = std::nullopt,
+    const std::optional<std::string>& tls_certificate_revocation_list
+    = std::nullopt,
+    const std::optional<std::string>& tls_certificate = std::nullopt,
+    const std::optional<std::string>& tls_key = std::nullopt,
+    const std::optional<std::vector<std::string>>& tls_allowed_cn
+    = std::nullopt)
 {
   std::ostringstream content;
   content << "Director {\n"
@@ -2098,6 +2188,25 @@ std::string BuildStorageDaemonDirectorResourceContent(
   AppendBoolDirective(content, "Monitor", monitor);
   AppendIntegerDirective(content, "MaximumBandwidthPerJob",
                          maximum_bandwidth_per_job);
+  AppendQuotedDirective(content, "KeyEncryptionKey", key_encryption_key);
+  AppendBoolDirective(content, "TlsAuthenticate", tls_authenticate);
+  AppendBoolDirective(content, "TlsEnable", tls_enable);
+  AppendBoolDirective(content, "TlsRequire", tls_require);
+  AppendBoolDirective(content, "TlsVerifyPeer", tls_verify_peer);
+  AppendQuotedDirective(content, "TlsCipherList", tls_cipher_list);
+  AppendQuotedDirective(content, "TlsCipherSuites", tls_cipher_suites);
+  AppendQuotedDirective(content, "TlsDhFile", tls_dh_file);
+  AppendQuotedDirective(content, "TlsProtocol", tls_protocol);
+  AppendQuotedDirective(content, "TlsCaCertificateFile",
+                        tls_ca_certificate_file);
+  AppendQuotedDirective(content, "TlsCaCertificateDir", tls_ca_certificate_dir);
+  AppendQuotedDirective(content, "TlsCertificateRevocationList",
+                        tls_certificate_revocation_list);
+  AppendQuotedDirective(content, "TlsCertificate", tls_certificate);
+  AppendQuotedDirective(content, "TlsKey", tls_key);
+  if (tls_allowed_cn) {
+    AppendRepeatedQuotedDirective(content, "TlsAllowedCn", *tls_allowed_cn);
+  }
   content << "}\n";
   return content.str();
 }
@@ -2120,16 +2229,19 @@ std::string BuildStorageDaemonDeviceResourceContent(
   return content.str();
 }
 
-std::string BuildStorageDaemonNdmpResourceContent(std::string_view ndmp_name,
-                                                  std::string_view username,
-                                                  std::string_view password,
-                                                  std::string_view auth_type,
-                                                  uint32_t log_level)
+std::string BuildStorageDaemonNdmpResourceContent(
+    std::string_view ndmp_name,
+    const std::optional<std::string>& description,
+    std::string_view username,
+    std::string_view password,
+    std::string_view auth_type,
+    uint32_t log_level)
 {
   std::ostringstream content;
   content << "Ndmp {\n"
-          << "  Name = " << QuoteBareosString(ndmp_name) << "\n"
-          << "  Username = " << QuoteBareosString(username) << "\n"
+          << "  Name = " << QuoteBareosString(ndmp_name) << "\n";
+  AppendQuotedDirective(content, "Description", description);
+  content << "  Username = " << QuoteBareosString(username) << "\n"
           << "  Password = " << QuoteBareosString(password) << "\n"
           << "  AuthType = " << auth_type << "\n"
           << "  LogLevel = " << log_level << "\n"
@@ -2289,6 +2401,13 @@ std::string DefaultStorageDaemonDirectorDescription(
   return "Managed storage-daemon director resource for "
          + std::string{director_name} + " synced from storage "
          + std::string{storage_name};
+}
+
+std::string DefaultStorageDaemonNdmpDescription(std::string_view ndmp_name,
+                                                std::string_view storage_name)
+{
+  return "Managed storage-daemon NDMP resource for " + std::string{ndmp_name}
+         + " in storage " + std::string{storage_name};
 }
 
 std::string DefaultStorageDaemonDeviceDescription(std::string_view device_name,
@@ -2600,6 +2719,20 @@ struct DirectorConsoleWriteContext {
   std::optional<bool> use_pam_authentication{};
   std::array<std::vector<std::string>, directordaemon::Num_ACL> acl{};
   std::vector<std::string> profiles{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
   bool exists{false};
   bool is_standalone_file{false};
 };
@@ -2846,6 +2979,21 @@ struct StorageDaemonDirectorWriteContext {
   std::optional<std::string> description{};
   std::optional<bool> monitor{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
+  std::optional<std::string> key_encryption_key{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
   bool exists{false};
   bool is_standalone_file{false};
   bool is_managed{false};
@@ -2864,6 +3012,7 @@ struct StorageDaemonDeviceWriteContext {
 
 struct StorageNdmpWriteContext {
   std::filesystem::path file_path{};
+  std::optional<std::string> description{};
   std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<std::string> auth_type{};
@@ -4063,6 +4212,58 @@ OperationResult<DirectorConsoleWriteContext> LoadDirectorConsoleWriteContext(
                                 + std::string{console_name} + "'");
     if (!rendered_password) { return {.error = rendered_password.error}; }
     context.password = *rendered_password.value;
+    if (HasMemberSource(*console, {"TlsAuthenticate"})) {
+      context.tls_authenticate = console->authenticate_;
+    }
+    if (HasMemberSource(*console, {"TlsEnable"})) {
+      context.tls_enable = console->tls_enable_;
+    }
+    if (HasMemberSource(*console, {"TlsRequire"})) {
+      context.tls_require = console->tls_require_;
+    }
+    if (HasMemberSource(*console, {"TlsVerifyPeer"})) {
+      context.tls_verify_peer = console->tls_cert_.verify_peer_;
+    }
+    if (HasMemberSource(*console, {"TlsCipherList"})
+        && !console->cipherlist_.empty()) {
+      context.tls_cipher_list = console->cipherlist_;
+    }
+    if (HasMemberSource(*console, {"TlsCipherSuites"})
+        && !console->ciphersuites_.empty()) {
+      context.tls_cipher_suites = console->ciphersuites_;
+    }
+    if (HasMemberSource(*console, {"TlsDhFile"})
+        && !console->tls_cert_.dhfile_.empty()) {
+      context.tls_dh_file = console->tls_cert_.dhfile_;
+    }
+    if (HasMemberSource(*console, {"TlsProtocol"})
+        && !console->protocol_.empty()) {
+      context.tls_protocol = console->protocol_;
+    }
+    if (HasMemberSource(*console, {"TlsCaCertificateFile"})
+        && !console->tls_cert_.ca_certfile_.empty()) {
+      context.tls_ca_certificate_file = console->tls_cert_.ca_certfile_;
+    }
+    if (HasMemberSource(*console, {"TlsCaCertificateDir"})
+        && !console->tls_cert_.ca_certdir_.empty()) {
+      context.tls_ca_certificate_dir = console->tls_cert_.ca_certdir_;
+    }
+    if (HasMemberSource(*console, {"TlsCertificateRevocationList"})
+        && !console->tls_cert_.crlfile_.empty()) {
+      context.tls_certificate_revocation_list = console->tls_cert_.crlfile_;
+    }
+    if (HasMemberSource(*console, {"TlsCertificate"})
+        && !console->tls_cert_.certfile_.empty()) {
+      context.tls_certificate = console->tls_cert_.certfile_;
+    }
+    if (HasMemberSource(*console, {"TlsKey"})
+        && !console->tls_cert_.keyfile_.empty()) {
+      context.tls_key = console->tls_cert_.keyfile_;
+    }
+    if (HasMemberSource(*console, {"TlsAllowedCn"})) {
+      context.tls_allowed_cn
+          = console->tls_cert_.allowed_certificate_common_names_;
+    }
 
     for (size_t index = 0; index < context.acl.size(); ++index) {
       context.acl[index] = CopyAclValues(console->user_acl.ACL_lists[index]);
@@ -4666,6 +4867,12 @@ OperationResult<DirectorCatalogWriteContext> LoadDirectorCatalogWriteContext(
     }
     if (catalog->db_name && catalog->db_name[0] != '\0') {
       context.content.db_name = std::string{catalog->db_name};
+    }
+    if (HasMemberSource(*catalog, {"MultipleConnections"})) {
+      context.content.multiple_connections = catalog->mult_db_connections != 0;
+    }
+    if (HasMemberSource(*catalog, {"DisableBatchInsert"})) {
+      context.content.disable_batch_insert = catalog->disable_batch_insert;
     }
     context.content.reconnect = catalog->try_reconnect;
     context.content.exit_on_fatal = catalog->exit_on_fatal;
@@ -6143,6 +6350,68 @@ LoadStorageDaemonDirectorWriteContext(
     if (HasMemberSource(*director, {"MaximumBandwidthPerJob"})) {
       context.maximum_bandwidth_per_job = director->max_bandwidth_per_job;
     }
+    if (HasMemberSource(*director, {"KeyEncryptionKey"})) {
+      auto rendered_key = RenderPasswordForConfig(
+          director->keyencrkey,
+          "storage-daemon director key encryption key for '"
+              + std::string{director_name} + "'");
+      if (!rendered_key) { return {.error = rendered_key.error}; }
+      if (!rendered_key.value->empty()) {
+        context.key_encryption_key = *rendered_key.value;
+      }
+    }
+    if (HasMemberSource(*director, {"TlsAuthenticate"})) {
+      context.tls_authenticate = director->authenticate_;
+    }
+    if (HasMemberSource(*director, {"TlsEnable"})) {
+      context.tls_enable = director->tls_enable_;
+    }
+    if (HasMemberSource(*director, {"TlsRequire"})) {
+      context.tls_require = director->tls_require_;
+    }
+    if (HasMemberSource(*director, {"TlsVerifyPeer"})) {
+      context.tls_verify_peer = director->tls_cert_.verify_peer_;
+    }
+    if (HasMemberSource(*director, {"TlsCipherList"})
+        && !director->cipherlist_.empty()) {
+      context.tls_cipher_list = director->cipherlist_;
+    }
+    if (HasMemberSource(*director, {"TlsCipherSuites"})
+        && !director->ciphersuites_.empty()) {
+      context.tls_cipher_suites = director->ciphersuites_;
+    }
+    if (HasMemberSource(*director, {"TlsDhFile"})
+        && !director->tls_cert_.dhfile_.empty()) {
+      context.tls_dh_file = director->tls_cert_.dhfile_;
+    }
+    if (HasMemberSource(*director, {"TlsProtocol"})
+        && !director->protocol_.empty()) {
+      context.tls_protocol = director->protocol_;
+    }
+    if (HasMemberSource(*director, {"TlsCaCertificateFile"})
+        && !director->tls_cert_.ca_certfile_.empty()) {
+      context.tls_ca_certificate_file = director->tls_cert_.ca_certfile_;
+    }
+    if (HasMemberSource(*director, {"TlsCaCertificateDir"})
+        && !director->tls_cert_.ca_certdir_.empty()) {
+      context.tls_ca_certificate_dir = director->tls_cert_.ca_certdir_;
+    }
+    if (HasMemberSource(*director, {"TlsCertificateRevocationList"})
+        && !director->tls_cert_.crlfile_.empty()) {
+      context.tls_certificate_revocation_list = director->tls_cert_.crlfile_;
+    }
+    if (HasMemberSource(*director, {"TlsCertificate"})
+        && !director->tls_cert_.certfile_.empty()) {
+      context.tls_certificate = director->tls_cert_.certfile_;
+    }
+    if (HasMemberSource(*director, {"TlsKey"})
+        && !director->tls_cert_.keyfile_.empty()) {
+      context.tls_key = director->tls_cert_.keyfile_;
+    }
+    if (HasMemberSource(*director, {"TlsAllowedCn"})) {
+      context.tls_allowed_cn
+          = director->tls_cert_.allowed_certificate_common_names_;
+    }
 
     auto source = director->GetDefinitionSource();
     if (!source || source->file.empty()) {
@@ -6278,6 +6547,9 @@ OperationResult<StorageNdmpWriteContext> LoadStorageNdmpWriteContext(
     }
 
     context.exists = true;
+    if (ndmp->description_ && ndmp->description_[0] != '\0') {
+      context.description = std::string{ndmp->description_};
+    }
     if (ndmp->username && ndmp->username[0] != '\0') {
       context.username = std::string{ndmp->username};
     }
@@ -9243,11 +9515,59 @@ ServiceState::UpsertDirectorConsoleResource(
                                : context.value->description.value_or(
                                      DefaultDirectorConsoleDescription(
                                          console_name, director_name));
+  auto acl = context.value->acl;
+  ApplyDirectorAclOverrides(
+      acl, spec.job_acl, spec.client_acl, spec.storage_acl, spec.schedule_acl,
+      spec.pool_acl, spec.command_acl, spec.fileset_acl, spec.catalog_acl,
+      spec.where_acl, spec.plugin_options_acl);
+  auto profiles = context.value->profiles;
+  ApplyDirectorProfileOverrides(profiles, spec.profiles);
   const auto use_pam_authentication = spec.use_pam_authentication.value_or(
       context.value->use_pam_authentication.value_or(false));
+  const auto tls_authenticate = spec.tls_authenticate
+                                    ? spec.tls_authenticate
+                                    : context.value->tls_authenticate;
+  const auto tls_enable
+      = spec.tls_enable ? spec.tls_enable : context.value->tls_enable;
+  const auto tls_require
+      = spec.tls_require ? spec.tls_require : context.value->tls_require;
+  const auto tls_verify_peer = spec.tls_verify_peer
+                                   ? spec.tls_verify_peer
+                                   : context.value->tls_verify_peer;
+  const auto tls_cipher_list = spec.tls_cipher_list
+                                   ? spec.tls_cipher_list
+                                   : context.value->tls_cipher_list;
+  const auto tls_cipher_suites = spec.tls_cipher_suites
+                                     ? spec.tls_cipher_suites
+                                     : context.value->tls_cipher_suites;
+  const auto tls_dh_file
+      = spec.tls_dh_file ? spec.tls_dh_file : context.value->tls_dh_file;
+  const auto tls_protocol
+      = spec.tls_protocol ? spec.tls_protocol : context.value->tls_protocol;
+  const auto tls_ca_certificate_file
+      = spec.tls_ca_certificate_file ? spec.tls_ca_certificate_file
+                                     : context.value->tls_ca_certificate_file;
+  const auto tls_ca_certificate_dir
+      = spec.tls_ca_certificate_dir ? spec.tls_ca_certificate_dir
+                                    : context.value->tls_ca_certificate_dir;
+  const auto tls_certificate_revocation_list
+      = spec.tls_certificate_revocation_list
+            ? spec.tls_certificate_revocation_list
+            : context.value->tls_certificate_revocation_list;
+  const auto tls_certificate = spec.tls_certificate
+                                   ? spec.tls_certificate
+                                   : context.value->tls_certificate;
+  const auto tls_key = spec.tls_key ? spec.tls_key : context.value->tls_key;
+  const auto tls_allowed_cn = spec.tls_allowed_cn
+                                  ? spec.tls_allowed_cn
+                                  : context.value->tls_allowed_cn;
   const auto content = BuildDirectorConsoleResourceContent(
-      console_name, *password, description, use_pam_authentication,
-      context.value->acl, context.value->profiles);
+      console_name, *password, description, use_pam_authentication, acl,
+      profiles, tls_authenticate, tls_enable, tls_require, tls_verify_peer,
+      tls_cipher_list, tls_cipher_suites, tls_dh_file, tls_protocol,
+      tls_ca_certificate_file, tls_ca_certificate_dir,
+      tls_certificate_revocation_list, tls_certificate, tls_key,
+      tls_allowed_cn);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "console";
@@ -9780,8 +10100,15 @@ ServiceState::UpsertDirectorUserResource(
             ? *spec.description
             : context.value->description.value_or(
                   DefaultDirectorUserDescription(user_name, director_name));
-  const auto content = BuildDirectorUserResourceContent(
-      user_name, description, context.value->acl, context.value->profiles);
+  auto acl = context.value->acl;
+  ApplyDirectorAclOverrides(
+      acl, spec.job_acl, spec.client_acl, spec.storage_acl, spec.schedule_acl,
+      spec.pool_acl, spec.command_acl, spec.fileset_acl, spec.catalog_acl,
+      spec.where_acl, spec.plugin_options_acl);
+  auto profiles = context.value->profiles;
+  ApplyDirectorProfileOverrides(profiles, spec.profiles);
+  const auto content
+      = BuildDirectorUserResourceContent(user_name, description, acl, profiles);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "user";
@@ -9938,8 +10265,13 @@ ServiceState::UpsertDirectorProfileResource(
                                : context.value->description.value_or(
                                      DefaultDirectorProfileDescription(
                                          profile_name, director_name));
-  const auto content = BuildDirectorProfileResourceContent(
-      profile_name, description, context.value->acl);
+  auto acl = context.value->acl;
+  ApplyDirectorAclOverrides(
+      acl, spec.job_acl, spec.client_acl, spec.storage_acl, spec.schedule_acl,
+      spec.pool_acl, spec.command_acl, spec.fileset_acl, spec.catalog_acl,
+      spec.where_acl, spec.plugin_options_acl);
+  const auto content
+      = BuildDirectorProfileResourceContent(profile_name, description, acl);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "profile";
@@ -10278,6 +10610,12 @@ ServiceState::UpsertDirectorCatalogResource(
   if (spec.db_password) { content.db_password = *spec.db_password; }
   if (spec.db_user) { content.db_user = *spec.db_user; }
   if (spec.db_name) { content.db_name = *spec.db_name; }
+  if (spec.multiple_connections) {
+    content.multiple_connections = *spec.multiple_connections;
+  }
+  if (spec.disable_batch_insert) {
+    content.disable_batch_insert = *spec.disable_batch_insert;
+  }
   if (spec.reconnect) { content.reconnect = *spec.reconnect; }
   if (spec.exit_on_fatal) { content.exit_on_fatal = *spec.exit_on_fatal; }
   if (spec.min_connections) { content.min_connections = *spec.min_connections; }
@@ -11669,9 +12007,53 @@ ServiceState::UpsertStorageDirectorResource(
       = spec.maximum_bandwidth_per_job
             ? spec.maximum_bandwidth_per_job
             : context.value->maximum_bandwidth_per_job;
+  const auto key_encryption_key = spec.key_encryption_key
+                                      ? spec.key_encryption_key
+                                      : context.value->key_encryption_key;
+  const auto tls_authenticate = spec.tls_authenticate
+                                    ? spec.tls_authenticate
+                                    : context.value->tls_authenticate;
+  const auto tls_enable
+      = spec.tls_enable ? spec.tls_enable : context.value->tls_enable;
+  const auto tls_require
+      = spec.tls_require ? spec.tls_require : context.value->tls_require;
+  const auto tls_verify_peer = spec.tls_verify_peer
+                                   ? spec.tls_verify_peer
+                                   : context.value->tls_verify_peer;
+  const auto tls_cipher_list = spec.tls_cipher_list
+                                   ? spec.tls_cipher_list
+                                   : context.value->tls_cipher_list;
+  const auto tls_cipher_suites = spec.tls_cipher_suites
+                                     ? spec.tls_cipher_suites
+                                     : context.value->tls_cipher_suites;
+  const auto tls_dh_file
+      = spec.tls_dh_file ? spec.tls_dh_file : context.value->tls_dh_file;
+  const auto tls_protocol
+      = spec.tls_protocol ? spec.tls_protocol : context.value->tls_protocol;
+  const auto tls_ca_certificate_file
+      = spec.tls_ca_certificate_file ? spec.tls_ca_certificate_file
+                                     : context.value->tls_ca_certificate_file;
+  const auto tls_ca_certificate_dir
+      = spec.tls_ca_certificate_dir ? spec.tls_ca_certificate_dir
+                                    : context.value->tls_ca_certificate_dir;
+  const auto tls_certificate_revocation_list
+      = spec.tls_certificate_revocation_list
+            ? spec.tls_certificate_revocation_list
+            : context.value->tls_certificate_revocation_list;
+  const auto tls_certificate = spec.tls_certificate
+                                   ? spec.tls_certificate
+                                   : context.value->tls_certificate;
+  const auto tls_key = spec.tls_key ? spec.tls_key : context.value->tls_key;
+  const auto tls_allowed_cn = spec.tls_allowed_cn
+                                  ? spec.tls_allowed_cn
+                                  : context.value->tls_allowed_cn;
   const auto rendered = BuildStorageDaemonDirectorResourceContent(
-      director_name, *password, description, monitor,
-      maximum_bandwidth_per_job);
+      director_name, *password, description, monitor, maximum_bandwidth_per_job,
+      key_encryption_key, tls_authenticate, tls_enable, tls_require,
+      tls_verify_peer, tls_cipher_list, tls_cipher_suites, tls_dh_file,
+      tls_protocol, tls_ca_certificate_file, tls_ca_certificate_dir,
+      tls_certificate_revocation_list, tls_certificate, tls_key,
+      tls_allowed_cn);
   const auto resource_directory
       = storage_config.value->path / "bareos-sd.d" / "director";
   const bool file_existed = std::filesystem::exists(context.value->file_path);
@@ -12087,6 +12469,11 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertStorageNdmpResource(
                                              *managed_paths.value);
   if (!context) { return {.error = context.error}; }
 
+  const auto description
+      = spec.description
+            ? *spec.description
+            : context.value->description.value_or(
+                  DefaultStorageDaemonNdmpDescription(ndmp_name, storage_name));
   const auto username
       = spec.username ? *spec.username : context.value->username;
   if (!username || username->empty()) {
@@ -12110,7 +12497,8 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertStorageNdmpResource(
       = spec.log_level ? *spec.log_level : context.value->log_level.value_or(4);
 
   const auto rendered = BuildStorageDaemonNdmpResourceContent(
-      ndmp_name, *username, *password, *auth_type.value, log_level);
+      ndmp_name, description, *username, *password, *auth_type.value,
+      log_level);
   const auto resource_directory
       = storage_config.value->path / "bareos-sd.d" / "ndmp";
   const bool file_existed = std::filesystem::exists(context.value->file_path);

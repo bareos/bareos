@@ -55,7 +55,13 @@ TEST(BconfigService, UpsertsDirectorConsoleResources)
       "prod", "bareos-dir", "managed-console",
       {.password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
        .description = std::string{"Managed console"},
-       .use_pam_authentication = true});
+       .job_acl = std::vector<std::string>{"ManagedJob"},
+       .profiles = std::vector<std::string>{"operator"},
+       .use_pam_authentication = true,
+       .tls_enable = true,
+       .tls_require = true,
+       .tls_cipher_list = std::string{"HIGH"},
+       .tls_allowed_cn = std::vector<std::string>{"backup-admin"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-dir");
 
@@ -68,11 +74,22 @@ TEST(BconfigService, UpsertsDirectorConsoleResources)
       std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed console\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("JobACL = ManagedJob"), std::string::npos);
+  EXPECT_NE(created_text.find("Profile = operator"), std::string::npos);
   EXPECT_NE(created_text.find("UsePamAuthentication = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsRequire = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsCipherList = \"HIGH\""), std::string::npos);
+  EXPECT_NE(created_text.find("TlsAllowedCn = \"backup-admin\""),
+            std::string::npos);
 
   auto updated = state.UpsertDirectorConsoleResource(
       "prod", "bareos-dir", "bareos-mon",
-      {.description = std::string{"Updated restricted console"}});
+      {.description = std::string{"Updated restricted console"},
+       .command_acl = std::vector<std::string>{"status", ".status", "show"},
+       .profiles = std::vector<std::string>{"operator"},
+       .tls_enable = false,
+       .tls_protocol = std::string{"TLSv1.2"}});
   ASSERT_TRUE(updated) << updated.error;
 
   const auto updated_text = ReadTextFile(
@@ -80,9 +97,11 @@ TEST(BconfigService, UpsertsDirectorConsoleResources)
   EXPECT_NE(updated_text.find("Description = \"Updated restricted console\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Password = "), std::string::npos);
-  EXPECT_NE(updated_text.find("CommandACL = status, .status"),
+  EXPECT_NE(updated_text.find("CommandACL = status, .status, show"),
             std::string::npos);
-  EXPECT_NE(updated_text.find("JobACL = *all*"), std::string::npos);
+  EXPECT_NE(updated_text.find("Profile = operator"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsEnable = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsProtocol = \"TLSv1.2\""), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorConsoleResourcesInSharedFiles)
@@ -272,7 +291,9 @@ TEST(BconfigService, UpsertsDirectorUserResources)
 
   auto created = state.UpsertDirectorUserResource(
       "prod", "bareos-dir", "managed-user",
-      {.description = std::string{"Managed user"}});
+      {.description = std::string{"Managed user"},
+       .command_acl = std::vector<std::string>{"status", ".status"},
+       .profiles = std::vector<std::string>{"operator"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-dir");
 
@@ -282,18 +303,22 @@ TEST(BconfigService, UpsertsDirectorUserResources)
   EXPECT_NE(created_text.find("Name = \"managed-user\""), std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed user\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("CommandACL = status, .status"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("Profile = operator"), std::string::npos);
 
   auto updated = state.UpsertDirectorUserResource(
       "prod", "bareos-dir", "operator-user",
-      {.description = std::string{"Updated operator user"}});
+      {.description = std::string{"Updated operator user"},
+       .command_acl = std::vector<std::string>{"list", "llist"},
+       .profiles = std::vector<std::string>{"operator"}});
   ASSERT_TRUE(updated) << updated.error;
 
   const auto updated_text = ReadTextFile(
       updated.value->path / "bareos-dir.d/user/operator-user.conf");
   EXPECT_NE(updated_text.find("Description = \"Updated operator user\""),
             std::string::npos);
-  EXPECT_NE(updated_text.find("CommandACL = status, .status"),
-            std::string::npos);
+  EXPECT_NE(updated_text.find("CommandACL = list, llist"), std::string::npos);
   EXPECT_NE(updated_text.find("Profile = operator"), std::string::npos);
 }
 
@@ -484,7 +509,9 @@ TEST(BconfigService, UpsertsDirectorProfileResources)
 
   auto created = state.UpsertDirectorProfileResource(
       "prod", "bareos-dir", "managed-profile",
-      {.description = std::string{"Managed profile"}});
+      {.description = std::string{"Managed profile"},
+       .command_acl = std::vector<std::string>{"status", ".status"},
+       .catalog_acl = std::vector<std::string>{"managed-catalog"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-dir");
 
@@ -494,20 +521,25 @@ TEST(BconfigService, UpsertsDirectorProfileResources)
   EXPECT_NE(created_text.find("Name = \"managed-profile\""), std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed profile\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("CommandACL = status, .status"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("CatalogACL = managed-catalog"),
+            std::string::npos);
 
   auto updated = state.UpsertDirectorProfileResource(
       "prod", "bareos-dir", "operator",
-      {.description = std::string{"Updated operator profile"}});
+      {.description = std::string{"Updated operator profile"},
+       .command_acl = std::vector<std::string>{"list", "llist"},
+       .catalog_acl = std::vector<std::string>{"operator-catalog"}});
   ASSERT_TRUE(updated) << updated.error;
 
   const auto updated_text = ReadTextFile(
       updated.value->path / "bareos-dir.d/profile/operator.conf");
   EXPECT_NE(updated_text.find("Description = \"Updated operator profile\""),
             std::string::npos);
-  EXPECT_NE(updated_text.find("CommandACL = !.bvfs_clear_cache, !.exit, !.sql"),
+  EXPECT_NE(updated_text.find("CommandACL = list, llist"), std::string::npos);
+  EXPECT_NE(updated_text.find("CatalogACL = operator-catalog"),
             std::string::npos);
-  EXPECT_NE(updated_text.find("*all*"), std::string::npos);
-  EXPECT_NE(updated_text.find("CatalogACL = *all*"), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorProfileResourcesInSharedFiles)
@@ -917,6 +949,8 @@ TEST(BconfigService, UpsertsDirectorCatalogResources)
        .db_password = std::string{"secret"},
        .db_user = std::string{"bareos"},
        .db_name = std::string{"bareos_catalog"},
+       .multiple_connections = true,
+       .disable_batch_insert = true,
        .reconnect = true,
        .exit_on_fatal = false,
        .description = std::string{"Managed catalog"}});
@@ -935,12 +969,16 @@ TEST(BconfigService, UpsertsDirectorCatalogResources)
   EXPECT_NE(created_text.find("DbUser = \"bareos\""), std::string::npos);
   EXPECT_NE(created_text.find("DbName = \"bareos_catalog\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("MultipleConnections = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("DisableBatchInsert = yes"), std::string::npos);
   EXPECT_NE(created_text.find("Reconnect = yes"), std::string::npos);
   EXPECT_NE(created_text.find("ExitOnFatal = no"), std::string::npos);
 
   auto updated = state.UpsertDirectorCatalogResource(
       "prod", "bareos-dir", "MyCatalog",
-      {.description = std::string{"Updated catalog"}});
+      {.multiple_connections = false,
+       .disable_batch_insert = true,
+       .description = std::string{"Updated catalog"}});
   ASSERT_TRUE(updated) << updated.error;
 
   const auto updated_text = ReadTextFile(
@@ -951,6 +989,8 @@ TEST(BconfigService, UpsertsDirectorCatalogResources)
   EXPECT_NE(updated_text.find("DbName = \"regress_backup_bareos_test\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("DbPassword = \"\""), std::string::npos);
+  EXPECT_NE(updated_text.find("MultipleConnections = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("DisableBatchInsert = yes"), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorCatalogResourcesInSharedFiles)

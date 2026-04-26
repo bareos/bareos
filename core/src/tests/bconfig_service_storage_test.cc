@@ -476,7 +476,12 @@ TEST(BconfigService, UpsertsStorageDirectorResources)
       {.password = std::string{"[md5]0123456789abcdef0123456789abcdef"},
        .description = std::string{"Managed storage director"},
        .monitor = true,
-       .maximum_bandwidth_per_job = 2048});
+       .maximum_bandwidth_per_job = 2048,
+       .key_encryption_key = std::string{"managed-key"},
+       .tls_enable = true,
+       .tls_require = true,
+       .tls_cipher_list = std::string{"HIGH"},
+       .tls_allowed_cn = std::vector<std::string>{"bareos-dir"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-sd");
 
@@ -493,6 +498,13 @@ TEST(BconfigService, UpsertsStorageDirectorResources)
   EXPECT_NE(created_text.find("Monitor = yes"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
+  EXPECT_NE(created_text.find("KeyEncryptionKey = \"managed-key\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsRequire = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsCipherList = \"HIGH\""), std::string::npos);
+  EXPECT_NE(created_text.find("TlsAllowedCn = \"bareos-dir\""),
+            std::string::npos);
 
   const auto ownership_path = RepositoryLayout::OwnershipPath(repo_path.path());
   const auto ownership_text = ReadTextFile(ownership_path);
@@ -505,7 +517,10 @@ TEST(BconfigService, UpsertsStorageDirectorResources)
       {.password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
        .description = std::string{"Updated storage director"},
        .monitor = false,
-       .maximum_bandwidth_per_job = 4096});
+       .maximum_bandwidth_per_job = 4096,
+       .key_encryption_key = std::string{"updated-key"},
+       .tls_enable = false,
+       .tls_protocol = std::string{"TLSv1.2"}});
   ASSERT_TRUE(updated) << updated.error;
 
   const auto updated_text = ReadTextFile(
@@ -518,6 +533,10 @@ TEST(BconfigService, UpsertsStorageDirectorResources)
   EXPECT_NE(updated_text.find("Monitor = no"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 4096"),
             std::string::npos);
+  EXPECT_NE(updated_text.find("KeyEncryptionKey = \"updated-key\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsEnable = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsProtocol = \"TLSv1.2\""), std::string::npos);
 
   const auto updated_ownership_text = ReadTextFile(ownership_path);
   EXPECT_NE(updated_ownership_text.find(
@@ -1002,7 +1021,8 @@ TEST(BconfigService, UpsertsStorageNdmpResources)
 
   auto created = state.UpsertStorageNdmpResource(
       "prod", "bareos-sd", "ManagedNdmp",
-      {.username = std::string{"managed-user"},
+      {.description = std::string{"Managed NDMP"},
+       .username = std::string{"managed-user"},
        .password = std::string{"[md5]0123456789abcdef0123456789abcdef"},
        .auth_type = std::string{"MD5"},
        .log_level = 9});
@@ -1014,6 +1034,8 @@ TEST(BconfigService, UpsertsStorageNdmpResources)
   const auto created_text = ReadTextFile(ndmp_path);
   EXPECT_NE(created_text.find("Ndmp {"), std::string::npos);
   EXPECT_NE(created_text.find("Name = \"ManagedNdmp\""), std::string::npos);
+  EXPECT_NE(created_text.find("Description = \"Managed NDMP\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("Username = \"managed-user\""),
             std::string::npos);
   EXPECT_NE(
@@ -1030,7 +1052,8 @@ TEST(BconfigService, UpsertsStorageNdmpResources)
 
   auto updated = state.UpsertStorageNdmpResource(
       "prod", "bareos-sd", "DefaultNdmp",
-      {.username = std::string{"updated-user"},
+      {.description = std::string{"Updated NDMP"},
+       .username = std::string{"updated-user"},
        .password = std::string{"updated-password"},
        .auth_type = std::string{"None"},
        .log_level = 3});
@@ -1039,6 +1062,8 @@ TEST(BconfigService, UpsertsStorageNdmpResources)
   const auto updated_text
       = ReadTextFile(updated.value->path / "bareos-sd.d/ndmp/DefaultNdmp.conf");
   EXPECT_NE(updated_text.find("Username = \"updated-user\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Updated NDMP\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Password = \"updated-password\""),
             std::string::npos);

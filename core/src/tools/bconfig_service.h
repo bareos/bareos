@@ -288,7 +288,32 @@ struct DirectorStorageResourceSpec {
 struct DirectorConsoleResourceSpec {
   std::optional<std::string> password{};
   std::optional<std::string> description{};
+  std::optional<std::vector<std::string>> job_acl{};
+  std::optional<std::vector<std::string>> client_acl{};
+  std::optional<std::vector<std::string>> storage_acl{};
+  std::optional<std::vector<std::string>> schedule_acl{};
+  std::optional<std::vector<std::string>> pool_acl{};
+  std::optional<std::vector<std::string>> command_acl{};
+  std::optional<std::vector<std::string>> fileset_acl{};
+  std::optional<std::vector<std::string>> catalog_acl{};
+  std::optional<std::vector<std::string>> where_acl{};
+  std::optional<std::vector<std::string>> plugin_options_acl{};
+  std::optional<std::vector<std::string>> profiles{};
   std::optional<bool> use_pam_authentication{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
 };
 
 struct ConsoleConsoleResourceSpec {
@@ -339,10 +364,31 @@ struct ConsoleDirectorResourceSpec {
 
 struct DirectorUserResourceSpec {
   std::optional<std::string> description{};
+  std::optional<std::vector<std::string>> job_acl{};
+  std::optional<std::vector<std::string>> client_acl{};
+  std::optional<std::vector<std::string>> storage_acl{};
+  std::optional<std::vector<std::string>> schedule_acl{};
+  std::optional<std::vector<std::string>> pool_acl{};
+  std::optional<std::vector<std::string>> command_acl{};
+  std::optional<std::vector<std::string>> fileset_acl{};
+  std::optional<std::vector<std::string>> catalog_acl{};
+  std::optional<std::vector<std::string>> where_acl{};
+  std::optional<std::vector<std::string>> plugin_options_acl{};
+  std::optional<std::vector<std::string>> profiles{};
 };
 
 struct DirectorProfileResourceSpec {
   std::optional<std::string> description{};
+  std::optional<std::vector<std::string>> job_acl{};
+  std::optional<std::vector<std::string>> client_acl{};
+  std::optional<std::vector<std::string>> storage_acl{};
+  std::optional<std::vector<std::string>> schedule_acl{};
+  std::optional<std::vector<std::string>> pool_acl{};
+  std::optional<std::vector<std::string>> command_acl{};
+  std::optional<std::vector<std::string>> fileset_acl{};
+  std::optional<std::vector<std::string>> catalog_acl{};
+  std::optional<std::vector<std::string>> where_acl{};
+  std::optional<std::vector<std::string>> plugin_options_acl{};
 };
 
 struct DirectorPoolResourceSpec {
@@ -363,6 +409,8 @@ struct DirectorCatalogResourceSpec {
   std::optional<std::string> db_password{};
   std::optional<std::string> db_user{};
   std::optional<std::string> db_name{};
+  std::optional<bool> multiple_connections{};
+  std::optional<bool> disable_batch_insert{};
   std::optional<bool> reconnect{};
   std::optional<bool> exit_on_fatal{};
   std::optional<uint32_t> min_connections{};
@@ -456,6 +504,21 @@ struct StorageDirectorResourceSpec {
   std::optional<std::string> description{};
   std::optional<bool> monitor{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
+  std::optional<std::string> key_encryption_key{};
+  std::optional<bool> tls_authenticate{};
+  std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
+  std::optional<std::string> tls_cipher_list{};
+  std::optional<std::string> tls_cipher_suites{};
+  std::optional<std::string> tls_dh_file{};
+  std::optional<std::string> tls_protocol{};
+  std::optional<std::string> tls_ca_certificate_file{};
+  std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
+  std::optional<std::string> tls_certificate{};
+  std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
 };
 
 struct StorageDeviceResourceSpec {
@@ -466,6 +529,7 @@ struct StorageDeviceResourceSpec {
 };
 
 struct StorageNdmpResourceSpec {
+  std::optional<std::string> description{};
   std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<std::string> auth_type{};
