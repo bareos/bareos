@@ -1602,6 +1602,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-client-lan-address">LanAddress</label>
         <input id="director-client-lan-address" name="lan_address">
 
+        <label for="director-client-port">Port</label>
+        <input id="director-client-port" name="port" type="number"
+               min="1" max="65535" placeholder="9102">
+
         <label for="director-client-protocol">Protocol</label>
         <input id="director-client-protocol" name="protocol"
                placeholder="Native">
@@ -6139,6 +6143,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const payload = {
           address: String(form.get('address') ?? '').trim(),
           lan_address: String(form.get('lan_address') ?? '').trim(),
+          port: String(form.get('port') ?? '').trim(),
           protocol: String(form.get('protocol') ?? '').trim(),
           auth_type: String(form.get('auth_type') ?? '').trim(),
           catalog: String(form.get('catalog') ?? '').trim(),
@@ -6192,6 +6197,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.lan_address) {
           delete payload.lan_address;
+        }
+        if (!payload.port) {
+          delete payload.port;
+        } else {
+          payload.port = Number(payload.port);
         }
         if (!payload.protocol) {
           delete payload.protocol;
