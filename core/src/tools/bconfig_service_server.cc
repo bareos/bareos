@@ -1986,11 +1986,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-console-description" name="description"
                placeholder="Managed console resource">
 
-        <label class="checkbox-label" for="director-console-use-pam">
-          <input id="director-console-use-pam" name="use_pam_authentication"
-                 type="checkbox">
-          Use PAM authentication
-        </label>
+        <label for="director-console-use-pam">UsePamAuthentication</label>
+        <select id="director-console-use-pam" name="use_pam_authentication">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-console-job-acl">Job ACL</label>
         <textarea id="director-console-job-acl" name="job_acl"
@@ -2037,29 +2038,35 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <textarea id="director-console-profiles" name="profiles"
                   placeholder="operator"></textarea>
 
-        <label class="checkbox-label" for="director-console-tls-authenticate">
-          <input id="director-console-tls-authenticate"
-                 name="tls_authenticate" type="checkbox">
-          TLS authenticate
-        </label>
+        <label for="director-console-tls-authenticate">TlsAuthenticate</label>
+        <select id="director-console-tls-authenticate"
+                name="tls_authenticate">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-console-tls-enable">
-          <input id="director-console-tls-enable"
-                 name="tls_enable" type="checkbox">
-          TLS enable
-        </label>
+        <label for="director-console-tls-enable">TlsEnable</label>
+        <select id="director-console-tls-enable" name="tls_enable">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-console-tls-require">
-          <input id="director-console-tls-require"
-                 name="tls_require" type="checkbox">
-          TLS require
-        </label>
+        <label for="director-console-tls-require">TlsRequire</label>
+        <select id="director-console-tls-require" name="tls_require">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-console-tls-verify-peer">
-          <input id="director-console-tls-verify-peer"
-                 name="tls_verify_peer" type="checkbox">
-          TLS verify peer
-        </label>
+        <label for="director-console-tls-verify-peer">TlsVerifyPeer</label>
+        <select id="director-console-tls-verify-peer"
+                name="tls_verify_peer">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-console-tls-cipher-list">TLS cipher list</label>
         <input id="director-console-tls-cipher-list" name="tls_cipher_list"
@@ -6348,15 +6355,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
           where_acl: parseLines('where_acl'),
           plugin_options_acl: parseLines('plugin_options_acl'),
           profiles: parseLines('profiles'),
-          use_pam_authentication: document.getElementById('director-console-use-pam').checked,
-          tls_authenticate: document.getElementById(
-            'director-console-tls-authenticate').checked,
-          tls_enable: document.getElementById(
-            'director-console-tls-enable').checked,
-          tls_require: document.getElementById(
-            'director-console-tls-require').checked,
-          tls_verify_peer: document.getElementById(
-            'director-console-tls-verify-peer').checked,
+          use_pam_authentication: String(
+            form.get('use_pam_authentication') ?? '').trim(),
+          tls_authenticate: String(form.get('tls_authenticate') ?? '').trim(),
+          tls_enable: String(form.get('tls_enable') ?? '').trim(),
+          tls_require: String(form.get('tls_require') ?? '').trim(),
+          tls_verify_peer: String(form.get('tls_verify_peer') ?? '').trim(),
           tls_cipher_list: String(form.get('tls_cipher_list') ?? '').trim(),
           tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
           tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
@@ -6390,6 +6394,31 @@ const char* kTestUiHtmlTemplate = R"HTML(
           delete payload.plugin_options_acl;
         }
         if (payload.profiles.length === 0) { delete payload.profiles; }
+        if (!payload.use_pam_authentication) {
+          delete payload.use_pam_authentication;
+        } else {
+          payload.use_pam_authentication = payload.use_pam_authentication === 'true';
+        }
+        if (!payload.tls_authenticate) {
+          delete payload.tls_authenticate;
+        } else {
+          payload.tls_authenticate = payload.tls_authenticate === 'true';
+        }
+        if (!payload.tls_enable) {
+          delete payload.tls_enable;
+        } else {
+          payload.tls_enable = payload.tls_enable === 'true';
+        }
+        if (!payload.tls_require) {
+          delete payload.tls_require;
+        } else {
+          payload.tls_require = payload.tls_require === 'true';
+        }
+        if (!payload.tls_verify_peer) {
+          delete payload.tls_verify_peer;
+        } else {
+          payload.tls_verify_peer = payload.tls_verify_peer === 'true';
+        }
         if (!payload.tls_cipher_list) { delete payload.tls_cipher_list; }
         if (!payload.tls_cipher_suites) { delete payload.tls_cipher_suites; }
         if (!payload.tls_dh_file) { delete payload.tls_dh_file; }
