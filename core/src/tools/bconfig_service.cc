@@ -759,6 +759,9 @@ void AppendRepeatedBareosDirective(std::ostringstream& content,
 void AppendRepeatedQuotedDirective(std::ostringstream& content,
                                    std::string_view name,
                                    const std::vector<std::string>& values);
+void AppendRepeatedRawDirective(std::ostringstream& content,
+                                std::string_view name,
+                                const std::vector<std::string>& values);
 OperationResult<std::vector<std::string>> ExtractNamedTopLevelDirectiveValues(
     const std::filesystem::path& file_path,
     std::string_view resource_keyword,
@@ -946,6 +949,18 @@ struct DirectorMessagesContentSpec {
   std::optional<std::string> mail_command{};
   std::optional<std::string> operator_command{};
   std::optional<std::string> timestamp_format{};
+  std::vector<std::string> syslog_entries{};
+  std::vector<std::string> mail_entries{};
+  std::vector<std::string> mail_on_error_entries{};
+  std::vector<std::string> mail_on_success_entries{};
+  std::vector<std::string> file_entries{};
+  std::vector<std::string> append_entries{};
+  std::vector<std::string> stdout_entries{};
+  std::vector<std::string> stderr_entries{};
+  std::vector<std::string> director_entries{};
+  std::vector<std::string> console_entries{};
+  std::vector<std::string> operator_entries{};
+  std::vector<std::string> catalog_entries{};
   std::vector<std::string> entries{};
 };
 
@@ -1387,6 +1402,15 @@ void AppendRepeatedQuotedDirective(std::ostringstream& content,
 {
   for (const auto& value : values) {
     content << "  " << name << " = " << QuoteBareosString(value) << "\n";
+  }
+}
+
+void AppendRepeatedRawDirective(std::ostringstream& content,
+                                std::string_view name,
+                                const std::vector<std::string>& values)
+{
+  for (const auto& value : values) {
+    content << "  " << name << " = " << value << "\n";
   }
 }
 
@@ -2181,6 +2205,20 @@ std::string BuildDirectorMessagesResourceContent(
   AppendQuotedDirective(content, "MailCommand", spec.mail_command);
   AppendQuotedDirective(content, "OperatorCommand", spec.operator_command);
   AppendQuotedDirective(content, "TimestampFormat", spec.timestamp_format);
+  AppendRepeatedRawDirective(content, "Syslog", spec.syslog_entries);
+  AppendRepeatedRawDirective(content, "Mail", spec.mail_entries);
+  AppendRepeatedRawDirective(content, "MailOnError",
+                             spec.mail_on_error_entries);
+  AppendRepeatedRawDirective(content, "MailOnSuccess",
+                             spec.mail_on_success_entries);
+  AppendRepeatedRawDirective(content, "File", spec.file_entries);
+  AppendRepeatedRawDirective(content, "Append", spec.append_entries);
+  AppendRepeatedRawDirective(content, "Stdout", spec.stdout_entries);
+  AppendRepeatedRawDirective(content, "Stderr", spec.stderr_entries);
+  AppendRepeatedRawDirective(content, "Director", spec.director_entries);
+  AppendRepeatedRawDirective(content, "Console", spec.console_entries);
+  AppendRepeatedRawDirective(content, "Operator", spec.operator_entries);
+  AppendRepeatedRawDirective(content, "Catalog", spec.catalog_entries);
   for (const auto& entry : spec.entries) {
     content << entry;
     if (entry.empty() || entry.back() != '\n') { content << "\n"; }
@@ -4042,6 +4080,14 @@ std::string NormalizeDirectiveName(std::string_view value)
   return normalized;
 }
 
+std::string NormalizeDirectiveLookupName(std::string_view value)
+{
+  auto normalized = NormalizeDirectiveName(value);
+  std::transform(normalized.begin(), normalized.end(), normalized.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  return normalized;
+}
+
 std::string UnquoteBareosString(std::string_view value)
 {
   if (value.size() >= 2
@@ -4098,6 +4144,10 @@ OperationResult<std::vector<std::string>> ExtractTopLevelResourceEntries(
   bool capturing_entry = false;
   int entry_depth = 0;
   std::ostringstream entry;
+  std::set<std::string> normalized_directives;
+  for (const auto& directive : controlled_directives) {
+    normalized_directives.insert(NormalizeDirectiveLookupName(directive));
+  }
 
   while (std::getline(stream, line)) {
     const auto trimmed = TrimAsciiWhitespace(line);
@@ -4132,9 +4182,9 @@ OperationResult<std::vector<std::string>> ExtractTopLevelResourceEntries(
         const auto open_brace = trimmed.find('{');
         if (open_brace != std::string::npos
             && (equals == std::string::npos || open_brace < equals)) {
-          const auto name = NormalizeDirectiveName(
+          const auto name = NormalizeDirectiveLookupName(
               TrimAsciiWhitespace(trimmed.substr(0, open_brace)));
-          if (!controlled_directives.contains(name)) {
+          if (!normalized_directives.contains(name)) {
             entry << line << "\n";
             entry_depth = brace_delta;
             capturing_entry = entry_depth > 0;
@@ -4145,9 +4195,9 @@ OperationResult<std::vector<std::string>> ExtractTopLevelResourceEntries(
             }
           }
         } else if (equals != std::string::npos) {
-          const auto name = NormalizeDirectiveName(
+          const auto name = NormalizeDirectiveLookupName(
               TrimAsciiWhitespace(trimmed.substr(0, equals)));
-          if (!controlled_directives.contains(name)) {
+          if (!normalized_directives.contains(name)) {
             entries.push_back(line + "\n");
           }
         }
@@ -4183,6 +4233,10 @@ OperationResult<std::vector<std::string>> ExtractNamedTopLevelResourceEntries(
   std::ostringstream entry;
   std::vector<std::string> entries;
   std::optional<std::string> current_name;
+  std::set<std::string> normalized_directives;
+  for (const auto& directive : controlled_directives) {
+    normalized_directives.insert(NormalizeDirectiveLookupName(directive));
+  }
 
   while (std::getline(stream, line)) {
     const auto trimmed = TrimAsciiWhitespace(line);
@@ -4231,9 +4285,9 @@ OperationResult<std::vector<std::string>> ExtractNamedTopLevelResourceEntries(
         const auto open_brace = trimmed.find('{');
         if (open_brace != std::string::npos
             && (equals == std::string::npos || open_brace < equals)) {
-          const auto name = NormalizeDirectiveName(
+          const auto name = NormalizeDirectiveLookupName(
               TrimAsciiWhitespace(trimmed.substr(0, open_brace)));
-          if (!controlled_directives.contains(name)) {
+          if (!normalized_directives.contains(name)) {
             entry << line << "\n";
             entry_depth = brace_delta;
             capturing_entry = entry_depth > 0;
@@ -4244,9 +4298,9 @@ OperationResult<std::vector<std::string>> ExtractNamedTopLevelResourceEntries(
             }
           }
         } else if (equals != std::string::npos) {
-          const auto name = NormalizeDirectiveName(
+          const auto name = NormalizeDirectiveLookupName(
               TrimAsciiWhitespace(trimmed.substr(0, equals)));
-          if (!controlled_directives.contains(name)) {
+          if (!normalized_directives.contains(name)) {
             entries.push_back(line + "\n");
           }
         }
@@ -4283,6 +4337,10 @@ OperationResult<std::vector<std::string>> ExtractTopLevelDirectiveValues(
   std::string line;
   bool in_resource = false;
   int resource_depth = 0;
+  std::set<std::string> normalized_directives;
+  for (const auto& directive : directive_names) {
+    normalized_directives.insert(NormalizeDirectiveLookupName(directive));
+  }
 
   while (std::getline(stream, line)) {
     const auto trimmed = TrimAsciiWhitespace(line);
@@ -4302,9 +4360,9 @@ OperationResult<std::vector<std::string>> ExtractTopLevelDirectiveValues(
       const auto open_brace = trimmed.find('{');
       if (equals != std::string::npos
           && (open_brace == std::string::npos || equals < open_brace)) {
-        const auto name = NormalizeDirectiveName(
+        const auto name = NormalizeDirectiveLookupName(
             TrimAsciiWhitespace(trimmed.substr(0, equals)));
-        if (directive_names.contains(name)) {
+        if (normalized_directives.contains(name)) {
           values.emplace_back(UnquoteBareosString(
               TrimAsciiWhitespace(trimmed.substr(equals + 1))));
         }
@@ -4333,6 +4391,10 @@ OperationResult<std::vector<std::string>> ExtractNamedTopLevelDirectiveValues(
   int resource_depth = 0;
   std::optional<std::string> current_name;
   std::vector<std::string> values;
+  std::set<std::string> normalized_directives;
+  for (const auto& directive : directive_names) {
+    normalized_directives.insert(NormalizeDirectiveLookupName(directive));
+  }
 
   while (std::getline(stream, line)) {
     const auto trimmed = TrimAsciiWhitespace(line);
@@ -4359,9 +4421,9 @@ OperationResult<std::vector<std::string>> ExtractNamedTopLevelDirectiveValues(
         if (equals != std::string::npos
             && (open_brace == std::string::npos || equals < open_brace)
             && current_name && *current_name == resource_name) {
-          const auto name = NormalizeDirectiveName(
+          const auto name = NormalizeDirectiveLookupName(
               TrimAsciiWhitespace(trimmed.substr(0, equals)));
-          if (directive_names.contains(name)) {
+          if (normalized_directives.contains(name)) {
             values.emplace_back(UnquoteBareosString(
                 TrimAsciiWhitespace(trimmed.substr(equals + 1))));
           }
@@ -4380,6 +4442,62 @@ OperationResult<std::vector<std::string>> ExtractNamedTopLevelDirectiveValues(
 
   return {.error = "resource '" + std::string{resource_name}
                    + "' not found in '" + file_path.string() + "'."};
+}
+
+std::optional<std::string> PopulateMessagesDirectiveEntries(
+    const std::filesystem::path& file_path,
+    std::string_view resource_name,
+    DirectorMessagesContentSpec& content)
+{
+  auto assign
+      = [&](std::string_view directive_name,
+            std::vector<std::string>& target) -> std::optional<std::string> {
+    auto values = ExtractNamedTopLevelDirectiveValues(
+        file_path, "Messages", resource_name, {std::string{directive_name}});
+    if (!values) { return values.error; }
+    target = std::move(*values.value);
+    return std::nullopt;
+  };
+
+  if (auto result = assign("Syslog", content.syslog_entries); result) {
+    return result;
+  }
+  if (auto result = assign("Mail", content.mail_entries); result) {
+    return result;
+  }
+  if (auto result = assign("MailOnError", content.mail_on_error_entries);
+      result) {
+    return result;
+  }
+  if (auto result = assign("MailOnSuccess", content.mail_on_success_entries);
+      result) {
+    return result;
+  }
+  if (auto result = assign("File", content.file_entries); result) {
+    return result;
+  }
+  if (auto result = assign("Append", content.append_entries); result) {
+    return result;
+  }
+  if (auto result = assign("Stdout", content.stdout_entries); result) {
+    return result;
+  }
+  if (auto result = assign("Stderr", content.stderr_entries); result) {
+    return result;
+  }
+  if (auto result = assign("Director", content.director_entries); result) {
+    return result;
+  }
+  if (auto result = assign("Console", content.console_entries); result) {
+    return result;
+  }
+  if (auto result = assign("Operator", content.operator_entries); result) {
+    return result;
+  }
+  if (auto result = assign("Catalog", content.catalog_entries); result) {
+    return result;
+  }
+  return std::nullopt;
 }
 
 OperationResult<std::string> RewriteNamedTopLevelResource(
@@ -5595,9 +5713,29 @@ OperationResult<DirectorMessagesWriteContext> LoadDirectorMessagesWriteContext(
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
 
+    if (auto directive_entries = PopulateMessagesDirectiveEntries(
+            context.file_path, messages_name, context.content);
+        directive_entries) {
+      return {.error = *directive_entries};
+    }
     static const std::set<std::string> kControlledMessagesDirectives{
-        "Name", "Description", "MailCommand", "OperatorCommand",
-        "TimestampFormat"};
+        "Name",
+        "Description",
+        "MailCommand",
+        "OperatorCommand",
+        "TimestampFormat",
+        "Syslog",
+        "Mail",
+        "MailOnError",
+        "MailOnSuccess",
+        "File",
+        "Append",
+        "Stdout",
+        "Stderr",
+        "Director",
+        "Console",
+        "Operator",
+        "Catalog"};
     auto entries = ExtractNamedTopLevelResourceEntries(
         context.file_path, "Messages", messages_name,
         kControlledMessagesDirectives);
@@ -5670,9 +5808,29 @@ OperationResult<ClientMessagesWriteContext> LoadClientMessagesWriteContext(
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
 
+    if (auto directive_entries = PopulateMessagesDirectiveEntries(
+            context.file_path, messages_name, context.content);
+        directive_entries) {
+      return {.error = *directive_entries};
+    }
     static const std::set<std::string> kControlledMessagesDirectives{
-        "Name", "Description", "MailCommand", "OperatorCommand",
-        "TimestampFormat"};
+        "Name",
+        "Description",
+        "MailCommand",
+        "OperatorCommand",
+        "TimestampFormat",
+        "Syslog",
+        "Mail",
+        "MailOnError",
+        "MailOnSuccess",
+        "File",
+        "Append",
+        "Stdout",
+        "Stderr",
+        "Director",
+        "Console",
+        "Operator",
+        "Catalog"};
     auto entries = ExtractNamedTopLevelResourceEntries(
         context.file_path, "Messages", messages_name,
         kControlledMessagesDirectives);
@@ -5747,9 +5905,29 @@ OperationResult<StorageMessagesWriteContext> LoadStorageMessagesWriteContext(
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
 
+    if (auto directive_entries = PopulateMessagesDirectiveEntries(
+            context.file_path, messages_name, context.content);
+        directive_entries) {
+      return {.error = *directive_entries};
+    }
     static const std::set<std::string> kControlledMessagesDirectives{
-        "Name", "Description", "MailCommand", "OperatorCommand",
-        "TimestampFormat"};
+        "Name",
+        "Description",
+        "MailCommand",
+        "OperatorCommand",
+        "TimestampFormat",
+        "Syslog",
+        "Mail",
+        "MailOnError",
+        "MailOnSuccess",
+        "File",
+        "Append",
+        "Stdout",
+        "Stderr",
+        "Director",
+        "Console",
+        "Operator",
+        "Catalog"};
     auto entries = ExtractNamedTopLevelResourceEntries(
         context.file_path, "Messages", messages_name,
         kControlledMessagesDirectives);
@@ -9733,6 +9911,26 @@ ServiceState::UpsertClientMessagesResource(
   if (spec.timestamp_format) {
     content.timestamp_format = *spec.timestamp_format;
   }
+  if (spec.syslog_entries) { content.syslog_entries = *spec.syslog_entries; }
+  if (spec.mail_entries) { content.mail_entries = *spec.mail_entries; }
+  if (spec.mail_on_error_entries) {
+    content.mail_on_error_entries = *spec.mail_on_error_entries;
+  }
+  if (spec.mail_on_success_entries) {
+    content.mail_on_success_entries = *spec.mail_on_success_entries;
+  }
+  if (spec.file_entries) { content.file_entries = *spec.file_entries; }
+  if (spec.append_entries) { content.append_entries = *spec.append_entries; }
+  if (spec.stdout_entries) { content.stdout_entries = *spec.stdout_entries; }
+  if (spec.stderr_entries) { content.stderr_entries = *spec.stderr_entries; }
+  if (spec.director_entries) {
+    content.director_entries = *spec.director_entries;
+  }
+  if (spec.console_entries) { content.console_entries = *spec.console_entries; }
+  if (spec.operator_entries) {
+    content.operator_entries = *spec.operator_entries;
+  }
+  if (spec.catalog_entries) { content.catalog_entries = *spec.catalog_entries; }
   if (spec.entries) { content.entries = *spec.entries; }
 
   const auto rendered
@@ -12373,6 +12571,26 @@ ServiceState::UpsertDirectorMessagesResource(
   if (spec.timestamp_format) {
     content.timestamp_format = *spec.timestamp_format;
   }
+  if (spec.syslog_entries) { content.syslog_entries = *spec.syslog_entries; }
+  if (spec.mail_entries) { content.mail_entries = *spec.mail_entries; }
+  if (spec.mail_on_error_entries) {
+    content.mail_on_error_entries = *spec.mail_on_error_entries;
+  }
+  if (spec.mail_on_success_entries) {
+    content.mail_on_success_entries = *spec.mail_on_success_entries;
+  }
+  if (spec.file_entries) { content.file_entries = *spec.file_entries; }
+  if (spec.append_entries) { content.append_entries = *spec.append_entries; }
+  if (spec.stdout_entries) { content.stdout_entries = *spec.stdout_entries; }
+  if (spec.stderr_entries) { content.stderr_entries = *spec.stderr_entries; }
+  if (spec.director_entries) {
+    content.director_entries = *spec.director_entries;
+  }
+  if (spec.console_entries) { content.console_entries = *spec.console_entries; }
+  if (spec.operator_entries) {
+    content.operator_entries = *spec.operator_entries;
+  }
+  if (spec.catalog_entries) { content.catalog_entries = *spec.catalog_entries; }
   if (spec.entries) { content.entries = *spec.entries; }
 
   const auto rendered
@@ -13704,6 +13922,26 @@ ServiceState::UpsertStorageMessagesResource(
   if (spec.timestamp_format) {
     content.timestamp_format = *spec.timestamp_format;
   }
+  if (spec.syslog_entries) { content.syslog_entries = *spec.syslog_entries; }
+  if (spec.mail_entries) { content.mail_entries = *spec.mail_entries; }
+  if (spec.mail_on_error_entries) {
+    content.mail_on_error_entries = *spec.mail_on_error_entries;
+  }
+  if (spec.mail_on_success_entries) {
+    content.mail_on_success_entries = *spec.mail_on_success_entries;
+  }
+  if (spec.file_entries) { content.file_entries = *spec.file_entries; }
+  if (spec.append_entries) { content.append_entries = *spec.append_entries; }
+  if (spec.stdout_entries) { content.stdout_entries = *spec.stdout_entries; }
+  if (spec.stderr_entries) { content.stderr_entries = *spec.stderr_entries; }
+  if (spec.director_entries) {
+    content.director_entries = *spec.director_entries;
+  }
+  if (spec.console_entries) { content.console_entries = *spec.console_entries; }
+  if (spec.operator_entries) {
+    content.operator_entries = *spec.operator_entries;
+  }
+  if (spec.catalog_entries) { content.catalog_entries = *spec.catalog_entries; }
   if (spec.entries) { content.entries = *spec.entries; }
 
   const auto rendered

@@ -112,8 +112,9 @@ TEST(BconfigService, UpsertsClientMessagesResources)
        .mail_command = std::string{"/usr/lib/bareos/client-mail %r"},
        .operator_command = std::string{"/usr/lib/bareos/client-operator %r"},
        .timestamp_format = std::string{"%H:%M:%S"},
-       .entries
-       = std::vector<std::string>{"  Director = bareos-dir = all, !skipped"}});
+       .stdout_entries = std::vector<std::string>{"all, !restored"},
+       .director_entries
+       = std::vector<std::string>{"bareos-dir = all, !skipped"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "backup-bareos-test-fd");
 
@@ -134,6 +135,7 @@ TEST(BconfigService, UpsertsClientMessagesResources)
             std::string::npos);
   EXPECT_NE(created_text.find("Director = bareos-dir = all, !skipped"),
             std::string::npos);
+  EXPECT_NE(created_text.find("Stdout = all, !restored"), std::string::npos);
 
   const auto standard_path
       = created.value->path / "bareos-fd.d/messages/Standard.conf";
@@ -144,7 +146,8 @@ TEST(BconfigService, UpsertsClientMessagesResources)
                        "  mailcommand = \"/usr/lib/bareos/client-mail %r\"\n"
                        "  operatorcommand = "
                        "\"/usr/lib/bareos/client-operator %r\"\n"
-                       "  timestampformat = \"%H:%M:%S\"\n");
+                       "  timestampformat = \"%H:%M:%S\"\n"
+                       "  stdout = all, !skipped\n");
   WriteTextFile(standard_path, standard_text);
 
   auto updated = state.UpsertClientMessagesResource(
@@ -166,6 +169,7 @@ TEST(BconfigService, UpsertsClientMessagesResources)
   EXPECT_NE(
       updated_text.find("Director = bareos-dir = all, !skipped, !restored"),
       std::string::npos);
+  EXPECT_NE(updated_text.find("Stdout = all, !skipped"), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsClientMessagesResourcesInSharedFiles)
@@ -219,6 +223,9 @@ TEST(BconfigService, UpsertsClientMessagesResourcesInSharedFiles)
   const auto shared_text = ReadTextFile(shared_path);
   EXPECT_NE(shared_text.find("Description = \"Updated client messages\""),
             std::string::npos);
+  EXPECT_NE(
+      shared_text.find("Director = bareos-dir = all, !skipped, !restored"),
+      std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherMessages\""), std::string::npos);
 }
 

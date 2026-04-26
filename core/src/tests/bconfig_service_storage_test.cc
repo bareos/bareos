@@ -61,7 +61,9 @@ TEST(BconfigService, UpsertsStorageMessagesResources)
        .mail_command = std::string{"/usr/lib/bareos/storage-mail %r"},
        .operator_command = std::string{"/usr/lib/bareos/storage-operator %r"},
        .timestamp_format = std::string{"%d-%b %H:%M"},
-       .entries = std::vector<std::string>{"  Director = bareos-dir = all"}});
+       .append_entries
+       = std::vector<std::string>{"\"/var/log/bareos/storage.log\" = all"},
+       .director_entries = std::vector<std::string>{"bareos-dir = all"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-sd");
 
@@ -82,6 +84,8 @@ TEST(BconfigService, UpsertsStorageMessagesResources)
             std::string::npos);
   EXPECT_NE(created_text.find("Director = bareos-dir = all"),
             std::string::npos);
+  EXPECT_NE(created_text.find("Append = \"/var/log/bareos/storage.log\" = all"),
+            std::string::npos);
 
   const auto standard_path
       = created.value->path / "bareos-sd.d/messages/Standard.conf";
@@ -92,7 +96,8 @@ TEST(BconfigService, UpsertsStorageMessagesResources)
                        "  mailcommand = \"/usr/lib/bareos/storage-mail %r\"\n"
                        "  operatorcommand = "
                        "\"/usr/lib/bareos/storage-operator %r\"\n"
-                       "  timestampformat = \"%d-%b %H:%M\"\n");
+                       "  timestampformat = \"%d-%b %H:%M\"\n"
+                       "  append = \"/var/log/bareos/storage.log\" = all\n");
   WriteTextFile(standard_path, standard_text);
 
   auto updated = state.UpsertStorageMessagesResource(
@@ -112,6 +117,8 @@ TEST(BconfigService, UpsertsStorageMessagesResources)
   EXPECT_NE(updated_text.find("TimestampFormat = \"%d-%b %H:%M\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Director = bareos-dir = all"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Append = \"/var/log/bareos/storage.log\" = all"),
             std::string::npos);
 }
 
@@ -1908,6 +1915,7 @@ TEST(BconfigService, UpsertsStorageMessagesResourcesInSharedFiles)
   const auto shared_text = ReadTextFile(shared_path);
   EXPECT_NE(shared_text.find("Description = \"Updated storage messages\""),
             std::string::npos);
+  EXPECT_NE(shared_text.find("Director = bareos-dir = all"), std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherMessages\""), std::string::npos);
 }
 

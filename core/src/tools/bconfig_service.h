@@ -136,6 +136,18 @@ struct ClientMessagesResourceSpec {
   std::optional<std::string> mail_command{};
   std::optional<std::string> operator_command{};
   std::optional<std::string> timestamp_format{};
+  std::optional<std::vector<std::string>> syslog_entries{};
+  std::optional<std::vector<std::string>> mail_entries{};
+  std::optional<std::vector<std::string>> mail_on_error_entries{};
+  std::optional<std::vector<std::string>> mail_on_success_entries{};
+  std::optional<std::vector<std::string>> file_entries{};
+  std::optional<std::vector<std::string>> append_entries{};
+  std::optional<std::vector<std::string>> stdout_entries{};
+  std::optional<std::vector<std::string>> stderr_entries{};
+  std::optional<std::vector<std::string>> director_entries{};
+  std::optional<std::vector<std::string>> console_entries{};
+  std::optional<std::vector<std::string>> operator_entries{};
+  std::optional<std::vector<std::string>> catalog_entries{};
   std::optional<std::vector<std::string>> entries{};
 };
 
@@ -487,6 +499,18 @@ struct DirectorMessagesResourceSpec {
   std::optional<std::string> mail_command{};
   std::optional<std::string> operator_command{};
   std::optional<std::string> timestamp_format{};
+  std::optional<std::vector<std::string>> syslog_entries{};
+  std::optional<std::vector<std::string>> mail_entries{};
+  std::optional<std::vector<std::string>> mail_on_error_entries{};
+  std::optional<std::vector<std::string>> mail_on_success_entries{};
+  std::optional<std::vector<std::string>> file_entries{};
+  std::optional<std::vector<std::string>> append_entries{};
+  std::optional<std::vector<std::string>> stdout_entries{};
+  std::optional<std::vector<std::string>> stderr_entries{};
+  std::optional<std::vector<std::string>> director_entries{};
+  std::optional<std::vector<std::string>> console_entries{};
+  std::optional<std::vector<std::string>> operator_entries{};
+  std::optional<std::vector<std::string>> catalog_entries{};
   std::optional<std::vector<std::string>> entries{};
 };
 
@@ -677,6 +701,18 @@ struct StorageMessagesResourceSpec {
   std::optional<std::string> mail_command{};
   std::optional<std::string> operator_command{};
   std::optional<std::string> timestamp_format{};
+  std::optional<std::vector<std::string>> syslog_entries{};
+  std::optional<std::vector<std::string>> mail_entries{};
+  std::optional<std::vector<std::string>> mail_on_error_entries{};
+  std::optional<std::vector<std::string>> mail_on_success_entries{};
+  std::optional<std::vector<std::string>> file_entries{};
+  std::optional<std::vector<std::string>> append_entries{};
+  std::optional<std::vector<std::string>> stdout_entries{};
+  std::optional<std::vector<std::string>> stderr_entries{};
+  std::optional<std::vector<std::string>> director_entries{};
+  std::optional<std::vector<std::string>> console_entries{};
+  std::optional<std::vector<std::string>> operator_entries{};
+  std::optional<std::vector<std::string>> catalog_entries{};
   std::optional<std::vector<std::string>> entries{};
 };
 

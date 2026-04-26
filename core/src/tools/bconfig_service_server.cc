@@ -274,6 +274,18 @@ struct DirectorMessagesRequestSpec {
   std::optional<std::string> mail_command{};
   std::optional<std::string> operator_command{};
   std::optional<std::string> timestamp_format{};
+  std::optional<std::vector<std::string>> syslog_entries{};
+  std::optional<std::vector<std::string>> mail_entries{};
+  std::optional<std::vector<std::string>> mail_on_error_entries{};
+  std::optional<std::vector<std::string>> mail_on_success_entries{};
+  std::optional<std::vector<std::string>> file_entries{};
+  std::optional<std::vector<std::string>> append_entries{};
+  std::optional<std::vector<std::string>> stdout_entries{};
+  std::optional<std::vector<std::string>> stderr_entries{};
+  std::optional<std::vector<std::string>> director_entries{};
+  std::optional<std::vector<std::string>> console_entries{};
+  std::optional<std::vector<std::string>> operator_entries{};
+  std::optional<std::vector<std::string>> catalog_entries{};
   std::optional<std::vector<std::string>> entries{};
 };
 
@@ -6468,6 +6480,18 @@ http::response<http::string_body> HandleDeploymentClientMessagesPutRequest(
       .mail_command = spec->mail_command,
       .operator_command = spec->operator_command,
       .timestamp_format = spec->timestamp_format,
+      .syslog_entries = spec->syslog_entries,
+      .mail_entries = spec->mail_entries,
+      .mail_on_error_entries = spec->mail_on_error_entries,
+      .mail_on_success_entries = spec->mail_on_success_entries,
+      .file_entries = spec->file_entries,
+      .append_entries = spec->append_entries,
+      .stdout_entries = spec->stdout_entries,
+      .stderr_entries = spec->stderr_entries,
+      .director_entries = spec->director_entries,
+      .console_entries = spec->console_entries,
+      .operator_entries = spec->operator_entries,
+      .catalog_entries = spec->catalog_entries,
       .entries = spec->entries,
   };
   auto result = state.UpsertClientMessagesResource(
@@ -6764,6 +6788,18 @@ http::response<http::string_body> HandleDeploymentStorageMessagesPutRequest(
       .mail_command = spec->mail_command,
       .operator_command = spec->operator_command,
       .timestamp_format = spec->timestamp_format,
+      .syslog_entries = spec->syslog_entries,
+      .mail_entries = spec->mail_entries,
+      .mail_on_error_entries = spec->mail_on_error_entries,
+      .mail_on_success_entries = spec->mail_on_success_entries,
+      .file_entries = spec->file_entries,
+      .append_entries = spec->append_entries,
+      .stdout_entries = spec->stdout_entries,
+      .stderr_entries = spec->stderr_entries,
+      .director_entries = spec->director_entries,
+      .console_entries = spec->console_entries,
+      .operator_entries = spec->operator_entries,
+      .catalog_entries = spec->catalog_entries,
       .entries = spec->entries,
   };
   auto result = state.UpsertStorageMessagesResource(
@@ -8154,6 +8190,18 @@ http::response<http::string_body> HandleDeploymentDirectorMessagesPutRequest(
       .mail_command = spec->mail_command,
       .operator_command = spec->operator_command,
       .timestamp_format = spec->timestamp_format,
+      .syslog_entries = spec->syslog_entries,
+      .mail_entries = spec->mail_entries,
+      .mail_on_error_entries = spec->mail_on_error_entries,
+      .mail_on_success_entries = spec->mail_on_success_entries,
+      .file_entries = spec->file_entries,
+      .append_entries = spec->append_entries,
+      .stdout_entries = spec->stdout_entries,
+      .stderr_entries = spec->stderr_entries,
+      .director_entries = spec->director_entries,
+      .console_entries = spec->console_entries,
+      .operator_entries = spec->operator_entries,
+      .catalog_entries = spec->catalog_entries,
       .entries = spec->entries,
   };
   auto result = state.UpsertDirectorMessagesResource(
@@ -10834,7 +10882,37 @@ std::optional<DirectorMessagesRequestSpec> ParseDirectorMessagesRequest(
   auto* mail_command = json_object_get(root.get(), "mail_command");
   auto* operator_command = json_object_get(root.get(), "operator_command");
   auto* timestamp_format = json_object_get(root.get(), "timestamp_format");
+  auto* syslog_entries = json_object_get(root.get(), "syslog_entries");
+  auto* mail_entries = json_object_get(root.get(), "mail_entries");
+  auto* mail_on_error_entries
+      = json_object_get(root.get(), "mail_on_error_entries");
+  auto* mail_on_success_entries
+      = json_object_get(root.get(), "mail_on_success_entries");
+  auto* file_entries = json_object_get(root.get(), "file_entries");
+  auto* append_entries = json_object_get(root.get(), "append_entries");
+  auto* stdout_entries = json_object_get(root.get(), "stdout_entries");
+  auto* stderr_entries = json_object_get(root.get(), "stderr_entries");
+  auto* director_entries = json_object_get(root.get(), "director_entries");
+  auto* console_entries = json_object_get(root.get(), "console_entries");
+  auto* operator_entries = json_object_get(root.get(), "operator_entries");
+  auto* catalog_entries = json_object_get(root.get(), "catalog_entries");
   auto* entries = json_object_get(root.get(), "entries");
+  auto require_string_array
+      = [&error](json_t* value, const char* field) -> bool {
+    if (!value || json_is_null(value)) { return true; }
+    if (!json_is_array(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an array of strings when provided.";
+      return false;
+    }
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      if (!json_is_string(json_array_get(value, index))) {
+        error = std::string{"field '"} + field + "' must contain only strings.";
+        return false;
+      }
+    }
+    return true;
+  };
   if (description && !json_is_null(description)
       && !json_is_string(description)) {
     error = "field 'description' must be a string when provided.";
@@ -10855,12 +10933,34 @@ std::optional<DirectorMessagesRequestSpec> ParseDirectorMessagesRequest(
     error = "field 'timestamp_format' must be a string when provided.";
     return std::nullopt;
   }
-  if (entries && !json_is_null(entries) && !json_is_array(entries)) {
-    error = "field 'entries' must be an array of strings when provided.";
+  if (!require_string_array(syslog_entries, "syslog_entries")
+      || !require_string_array(mail_entries, "mail_entries")
+      || !require_string_array(mail_on_error_entries, "mail_on_error_entries")
+      || !require_string_array(mail_on_success_entries,
+                               "mail_on_success_entries")
+      || !require_string_array(file_entries, "file_entries")
+      || !require_string_array(append_entries, "append_entries")
+      || !require_string_array(stdout_entries, "stdout_entries")
+      || !require_string_array(stderr_entries, "stderr_entries")
+      || !require_string_array(director_entries, "director_entries")
+      || !require_string_array(console_entries, "console_entries")
+      || !require_string_array(operator_entries, "operator_entries")
+      || !require_string_array(catalog_entries, "catalog_entries")
+      || !require_string_array(entries, "entries")) {
     return std::nullopt;
   }
 
   DirectorMessagesRequestSpec spec{};
+  auto parse_string_array
+      = [](json_t* value) -> std::optional<std::vector<std::string>> {
+    if (!value || !json_is_array(value)) { return std::nullopt; }
+    std::vector<std::string> parsed;
+    parsed.reserve(json_array_size(value));
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      parsed.emplace_back(json_string_value(json_array_get(value, index)));
+    }
+    return parsed;
+  };
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
   }
@@ -10873,19 +10973,19 @@ std::optional<DirectorMessagesRequestSpec> ParseDirectorMessagesRequest(
   if (timestamp_format && json_is_string(timestamp_format)) {
     spec.timestamp_format = std::string{json_string_value(timestamp_format)};
   }
-  if (entries && json_is_array(entries)) {
-    std::vector<std::string> parsed_entries;
-    parsed_entries.reserve(json_array_size(entries));
-    for (size_t index = 0; index < json_array_size(entries); ++index) {
-      auto* entry = json_array_get(entries, index);
-      if (!json_is_string(entry)) {
-        error = "field 'entries' must contain only strings.";
-        return std::nullopt;
-      }
-      parsed_entries.emplace_back(json_string_value(entry));
-    }
-    spec.entries = std::move(parsed_entries);
-  }
+  spec.syslog_entries = parse_string_array(syslog_entries);
+  spec.mail_entries = parse_string_array(mail_entries);
+  spec.mail_on_error_entries = parse_string_array(mail_on_error_entries);
+  spec.mail_on_success_entries = parse_string_array(mail_on_success_entries);
+  spec.file_entries = parse_string_array(file_entries);
+  spec.append_entries = parse_string_array(append_entries);
+  spec.stdout_entries = parse_string_array(stdout_entries);
+  spec.stderr_entries = parse_string_array(stderr_entries);
+  spec.director_entries = parse_string_array(director_entries);
+  spec.console_entries = parse_string_array(console_entries);
+  spec.operator_entries = parse_string_array(operator_entries);
+  spec.catalog_entries = parse_string_array(catalog_entries);
+  spec.entries = parse_string_array(entries);
   return spec;
 }
 

@@ -2706,8 +2706,9 @@ TEST(BconfigService, UpsertsDirectorMessagesResources)
        .mail_command = std::string{"/usr/lib/bareos/mail-managed %r"},
        .operator_command = std::string{"/usr/lib/bareos/operator-managed %r"},
        .timestamp_format = std::string{"%Y-%m-%d %H:%M:%S"},
-       .entries = std::vector<std::string>{
-           "  console = all, !skipped, !saved, !audit"}});
+       .syslog_entries = std::vector<std::string>{"mail = all, !skipped"},
+       .console_entries
+       = std::vector<std::string>{"all, !skipped, !saved, !audit"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-dir");
 
@@ -2726,7 +2727,9 @@ TEST(BconfigService, UpsertsDirectorMessagesResources)
             std::string::npos);
   EXPECT_NE(created_text.find("TimestampFormat = \"%Y-%m-%d %H:%M:%S\""),
             std::string::npos);
-  EXPECT_NE(created_text.find("console = all, !skipped, !saved, !audit"),
+  EXPECT_NE(created_text.find("Console = all, !skipped, !saved, !audit"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("Syslog = mail = all, !skipped"),
             std::string::npos);
 
   const auto standard_path
@@ -2735,7 +2738,8 @@ TEST(BconfigService, UpsertsDirectorMessagesResources)
   auto standard_brace = standard_text.rfind("}\n");
   ASSERT_NE(standard_brace, std::string::npos);
   standard_text.insert(standard_brace,
-                       "  timestampformat = \"%Y-%m-%d %H:%M:%S\"\n");
+                       "  timestampformat = \"%Y-%m-%d %H:%M:%S\"\n"
+                       "  syslog = mail = all, !skipped\n");
   WriteTextFile(standard_path, standard_text);
 
   auto updated = state.UpsertDirectorMessagesResource(
@@ -2750,7 +2754,9 @@ TEST(BconfigService, UpsertsDirectorMessagesResources)
   EXPECT_NE(updated_text.find("MailCommand = "), std::string::npos);
   EXPECT_NE(updated_text.find("TimestampFormat = \"%Y-%m-%d %H:%M:%S\""),
             std::string::npos);
-  EXPECT_NE(updated_text.find("append = "), std::string::npos);
+  EXPECT_NE(updated_text.find("Syslog = mail = all, !skipped"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Append = "), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorMessagesResourcesInSharedFiles)
@@ -2803,6 +2809,8 @@ TEST(BconfigService, UpsertsDirectorMessagesResourcesInSharedFiles)
   EXPECT_TRUE(std::filesystem::exists(shared_path));
   const auto shared_text = ReadTextFile(shared_path);
   EXPECT_NE(shared_text.find("Description = \"Updated standard messages\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("console = all, !skipped, !saved, !audit"),
             std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherMessages\""), std::string::npos);
 }
