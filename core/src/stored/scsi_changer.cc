@@ -795,7 +795,7 @@ bool NativeScsiAutochangerCmd(DeviceControlRecord* dcr,
                                   + element.primary_volume_tag);
           } else if (element.full) {
             SendListLine(dir, "D:" + std::to_string(drive) + ":F::"
-                                  + FormatBarcode(element.primary_volume_tag));
+                                  + element.primary_volume_tag);
           } else {
             SendListLine(dir, "D:" + std::to_string(drive) + ":E");
           }
