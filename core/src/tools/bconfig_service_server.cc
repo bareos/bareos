@@ -109,6 +109,7 @@ struct DirectorClientRequestSpec {
   std::optional<uint64_t> soft_quota{};
   std::optional<uint64_t> hard_quota{};
   std::optional<uint64_t> soft_quota_grace_period{};
+  std::optional<uint64_t> file_retention{};
   std::optional<uint32_t> ndmp_log_level{};
   std::optional<uint32_t> ndmp_block_size{};
   std::optional<bool> ndmp_use_lmdb{};
@@ -1306,6 +1307,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-client-soft-quota-grace-period"
                name="soft_quota_grace_period" type="number" min="0"
                placeholder="0">
+
+        <label for="director-client-file-retention">FileRetention</label>
+        <input id="director-client-file-retention" name="file_retention"
+               type="number" min="0" placeholder="0">
 
         <label for="director-client-ndmp-log-level">NdmpLogLevel</label>
         <input id="director-client-ndmp-log-level" name="ndmp_log_level"
@@ -3755,6 +3760,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           hard_quota: String(form.get('hard_quota') ?? '').trim(),
           soft_quota_grace_period: String(
             form.get('soft_quota_grace_period') ?? '').trim(),
+          file_retention: String(form.get('file_retention') ?? '').trim(),
           ndmp_log_level: String(form.get('ndmp_log_level') ?? '').trim(),
           ndmp_block_size: String(form.get('ndmp_block_size') ?? '').trim(),
           ndmp_use_lmdb: document.getElementById(
@@ -3798,6 +3804,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         } else {
           payload.soft_quota_grace_period
             = Number.parseInt(payload.soft_quota_grace_period, 10);
+        }
+        if (!payload.file_retention) {
+          delete payload.file_retention;
+        } else {
+          payload.file_retention = Number.parseInt(payload.file_retention, 10);
         }
         if (!payload.ndmp_log_level) {
           delete payload.ndmp_log_level;
@@ -6895,6 +6906,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .soft_quota = spec->soft_quota,
       .hard_quota = spec->hard_quota,
       .soft_quota_grace_period = spec->soft_quota_grace_period,
+      .file_retention = spec->file_retention,
       .ndmp_log_level = spec->ndmp_log_level,
       .ndmp_block_size = spec->ndmp_block_size,
       .ndmp_use_lmdb = spec->ndmp_use_lmdb,
@@ -8769,6 +8781,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* hard_quota = json_object_get(root.get(), "hard_quota");
   auto* soft_quota_grace_period
       = json_object_get(root.get(), "soft_quota_grace_period");
+  auto* file_retention = json_object_get(root.get(), "file_retention");
   auto* ndmp_log_level = json_object_get(root.get(), "ndmp_log_level");
   auto* ndmp_block_size = json_object_get(root.get(), "ndmp_block_size");
   auto* ndmp_use_lmdb = json_object_get(root.get(), "ndmp_use_lmdb");
@@ -8831,6 +8844,11 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (soft_quota_grace_period && !json_is_null(soft_quota_grace_period)
       && !json_is_integer(soft_quota_grace_period)) {
     error = "field 'soft_quota_grace_period' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (file_retention && !json_is_null(file_retention)
+      && !json_is_integer(file_retention)) {
+    error = "field 'file_retention' must be an integer when provided.";
     return std::nullopt;
   }
   if (ndmp_log_level && !json_is_null(ndmp_log_level)
@@ -8941,6 +8959,14 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
       return std::nullopt;
     }
     spec.soft_quota_grace_period = static_cast<uint64_t>(value);
+  }
+  if (file_retention && json_is_integer(file_retention)) {
+    const auto value = json_integer_value(file_retention);
+    if (value < 0) {
+      error = "field 'file_retention' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.file_retention = static_cast<uint64_t>(value);
   }
   if (ndmp_log_level && json_is_integer(ndmp_log_level)) {
     const auto value = json_integer_value(ndmp_log_level);

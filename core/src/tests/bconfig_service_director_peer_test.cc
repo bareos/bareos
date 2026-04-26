@@ -63,6 +63,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
        .soft_quota = 4096,
        .hard_quota = 8192,
        .soft_quota_grace_period = 120,
+       .file_retention = 3600,
        .ndmp_log_level = 7,
        .ndmp_block_size = 64512,
        .ndmp_use_lmdb = false,
@@ -96,6 +97,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(created_text.find("SoftQuota = 4096"), std::string::npos);
   EXPECT_NE(created_text.find("HardQuota = 8192"), std::string::npos);
   EXPECT_NE(created_text.find("SoftQuotaGracePeriod = 120"), std::string::npos);
+  EXPECT_NE(created_text.find("FileRetention = 3600"), std::string::npos);
   EXPECT_NE(created_text.find("NdmpLogLevel = 7"), std::string::npos);
   EXPECT_NE(created_text.find("NdmpBlockSize = 64512"), std::string::npos);
   EXPECT_NE(created_text.find("NdmpUseLmdb = no"), std::string::npos);
@@ -125,6 +127,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_EQ(stub_text.find("SoftQuota = 4096"), std::string::npos);
   EXPECT_EQ(stub_text.find("HardQuota = 8192"), std::string::npos);
   EXPECT_EQ(stub_text.find("SoftQuotaGracePeriod = 120"), std::string::npos);
+  EXPECT_EQ(stub_text.find("FileRetention = 3600"), std::string::npos);
   EXPECT_EQ(stub_text.find("NdmpLogLevel = 7"), std::string::npos);
   EXPECT_EQ(stub_text.find("NdmpBlockSize = 64512"), std::string::npos);
   EXPECT_EQ(stub_text.find("NdmpUseLmdb = no"), std::string::npos);
@@ -158,6 +161,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(updated_text.find("SoftQuota = 4096"), std::string::npos);
   EXPECT_NE(updated_text.find("HardQuota = 8192"), std::string::npos);
   EXPECT_NE(updated_text.find("SoftQuotaGracePeriod = 120"), std::string::npos);
+  EXPECT_NE(updated_text.find("FileRetention = 3600"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpLogLevel = 7"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpBlockSize = 64512"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpUseLmdb = no"), std::string::npos);
@@ -215,6 +219,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
                 "  SoftQuota = 16384\n"
                 "  HardQuota = 32768\n"
                 "  SoftQuotaGracePeriod = 240\n"
+                "  FileRetention = 7200\n"
                 "  NdmpLogLevel = 5\n"
                 "  NdmpBlockSize = 32768\n"
                 "  NdmpUseLmdb = no\n"
@@ -254,6 +259,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_NE(updated_text.find("SoftQuota = 16384"), std::string::npos);
   EXPECT_NE(updated_text.find("HardQuota = 32768"), std::string::npos);
   EXPECT_NE(updated_text.find("SoftQuotaGracePeriod = 240"), std::string::npos);
+  EXPECT_NE(updated_text.find("FileRetention = 7200"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpLogLevel = 5"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpBlockSize = 32768"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpUseLmdb = no"), std::string::npos);
@@ -278,6 +284,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_EQ(stub_text.find("SoftQuota = 16384"), std::string::npos);
   EXPECT_EQ(stub_text.find("HardQuota = 32768"), std::string::npos);
   EXPECT_EQ(stub_text.find("SoftQuotaGracePeriod = 240"), std::string::npos);
+  EXPECT_EQ(stub_text.find("FileRetention = 7200"), std::string::npos);
   EXPECT_EQ(stub_text.find("NdmpLogLevel = 5"), std::string::npos);
   EXPECT_EQ(stub_text.find("NdmpBlockSize = 32768"), std::string::npos);
   EXPECT_EQ(stub_text.find("NdmpUseLmdb = no"), std::string::npos);
