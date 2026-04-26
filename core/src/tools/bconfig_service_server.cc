@@ -7476,6 +7476,17 @@ http::response<http::string_body> HandleDeploymentStorageDaemonPutRequest(
   std::string error;
   auto spec = ParseStorageDaemonRequest(request.body(), error);
   if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+  if (spec->maximum_workers_per_job || spec->pki_signatures
+      || spec->pki_encryption || spec->pki_key_pair || spec->pki_signers
+      || spec->pki_master_keys || spec->pki_cipher || spec->always_use_lmdb
+      || spec->lmdb_threshold || spec->grpc_module || spec->allowed_script_dirs
+      || spec->allowed_job_commands) {
+    return ErrorResponse(
+        http::status::bad_request,
+        "storage-daemon singleton updates do not support "
+        "maximum_workers_per_job, PKI, always_use_lmdb, lmdb_threshold, "
+        "grpc_module, allowed_script_dirs, or allowed_job_commands.");
+  }
 
   StorageDaemonResourceSpec resource_spec{
       .address = spec->address,
