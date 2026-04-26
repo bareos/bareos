@@ -3303,6 +3303,362 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="storage-device-device-type">Device type</label>
         <input id="storage-device-device-type" name="device_type" value="file">
 
+        <label for="storage-device-access-mode">AccessMode</label>
+        <input id="storage-device-access-mode" name="access_mode"
+               placeholder="readonly">
+
+        <label for="storage-device-device-options">DeviceOptions</label>
+        <input id="storage-device-device-options" name="device_options"
+               placeholder="Block Size = 64k">
+
+        <label for="storage-device-diagnostic-device">DiagnosticDevice</label>
+        <input id="storage-device-diagnostic-device" name="diagnostic_device"
+               placeholder="/tmp/managed-storage.diag">
+
+        <label for="storage-device-hardware-end-of-file">HardwareEndOfFile</label>
+        <select id="storage-device-hardware-end-of-file"
+                name="hardware_end_of_file">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-hardware-end-of-medium">HardwareEndOfMedium</label>
+        <select id="storage-device-hardware-end-of-medium"
+                name="hardware_end_of_medium">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-backward-space-record">BackwardSpaceRecord</label>
+        <select id="storage-device-backward-space-record"
+                name="backward_space_record">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-backward-space-file">BackwardSpaceFile</label>
+        <select id="storage-device-backward-space-file"
+                name="backward_space_file">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-bsf-at-eom">BsfAtEom</label>
+        <select id="storage-device-bsf-at-eom" name="bsf_at_eom">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-two-eof">TwoEof</label>
+        <select id="storage-device-two-eof" name="two_eof">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-forward-space-record">ForwardSpaceRecord</label>
+        <select id="storage-device-forward-space-record"
+                name="forward_space_record">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-forward-space-file">ForwardSpaceFile</label>
+        <select id="storage-device-forward-space-file"
+                name="forward_space_file">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-fast-forward-space-file">FastForwardSpaceFile</label>
+        <select id="storage-device-fast-forward-space-file"
+                name="fast_forward_space_file">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-removable-media">RemovableMedia</label>
+        <select id="storage-device-removable-media" name="removable_media">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-random-access">RandomAccess</label>
+        <select id="storage-device-random-access" name="random_access">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-automatic-mount">AutomaticMount</label>
+        <select id="storage-device-automatic-mount" name="automatic_mount">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-label-media">LabelMedia</label>
+        <select id="storage-device-label-media" name="label_media">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-always-open">AlwaysOpen</label>
+        <select id="storage-device-always-open" name="always_open">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-autochanger">Autochanger</label>
+        <select id="storage-device-autochanger" name="autochanger">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-close-on-poll">CloseOnPoll</label>
+        <select id="storage-device-close-on-poll" name="close_on_poll">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-block-positioning">BlockPositioning</label>
+        <select id="storage-device-block-positioning" name="block_positioning">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-use-mtiocget">UseMtiocget</label>
+        <select id="storage-device-use-mtiocget" name="use_mtiocget">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-check-labels">CheckLabels</label>
+        <select id="storage-device-check-labels" name="check_labels">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-requires-mount">RequiresMount</label>
+        <select id="storage-device-requires-mount" name="requires_mount">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-offline-on-unmount">OfflineOnUnmount</label>
+        <select id="storage-device-offline-on-unmount"
+                name="offline_on_unmount">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-block-checksum">BlockChecksum</label>
+        <select id="storage-device-block-checksum" name="block_checksum">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-auto-select">AutoSelect</label>
+        <select id="storage-device-auto-select" name="auto_select">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-changer-device">ChangerDevice</label>
+        <input id="storage-device-changer-device" name="changer_device"
+               placeholder="/dev/sg0">
+
+        <label for="storage-device-changer-command">ChangerCommand</label>
+        <input id="storage-device-changer-command" name="changer_command"
+               placeholder="/usr/lib/bareos/mtx-changer %c %o">
+
+        <label for="storage-device-alert-command">AlertCommand</label>
+        <input id="storage-device-alert-command" name="alert_command"
+               placeholder="/usr/lib/bareos/alert.sh">
+
+        <label for="storage-device-maximum-changer-wait">MaximumChangerWait</label>
+        <input id="storage-device-maximum-changer-wait"
+               name="maximum_changer_wait" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-maximum-open-wait">MaximumOpenWait</label>
+        <input id="storage-device-maximum-open-wait"
+               name="maximum_open_wait" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-maximum-open-volumes">MaximumOpenVolumes</label>
+        <input id="storage-device-maximum-open-volumes"
+               name="maximum_open_volumes" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-maximum-network-buffer-size">MaximumNetworkBufferSize</label>
+        <input id="storage-device-maximum-network-buffer-size"
+               name="maximum_network_buffer_size" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-volume-poll-interval">VolumePollInterval</label>
+        <input id="storage-device-volume-poll-interval"
+               name="volume_poll_interval" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-maximum-rewind-wait">MaximumRewindWait</label>
+        <input id="storage-device-maximum-rewind-wait"
+               name="maximum_rewind_wait" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-label-block-size">LabelBlockSize</label>
+        <input id="storage-device-label-block-size"
+               name="label_block_size" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-minimum-block-size">MinimumBlockSize</label>
+        <input id="storage-device-minimum-block-size"
+               name="minimum_block_size" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-maximum-block-size">MaximumBlockSize</label>
+        <input id="storage-device-maximum-block-size"
+               name="maximum_block_size" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-maximum-file-size">MaximumFileSize</label>
+        <input id="storage-device-maximum-file-size"
+               name="maximum_file_size" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-volume-capacity">VolumeCapacity</label>
+        <input id="storage-device-volume-capacity"
+               name="volume_capacity" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-maximum-concurrent-jobs">MaximumConcurrentJobs</label>
+        <input id="storage-device-maximum-concurrent-jobs"
+               name="maximum_concurrent_jobs" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-spool-directory">SpoolDirectory</label>
+        <input id="storage-device-spool-directory" name="spool_directory"
+               placeholder="/var/spool/bareos">
+
+        <label for="storage-device-maximum-spool-size">MaximumSpoolSize</label>
+        <input id="storage-device-maximum-spool-size"
+               name="maximum_spool_size" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-maximum-job-spool-size">MaximumJobSpoolSize</label>
+        <input id="storage-device-maximum-job-spool-size"
+               name="maximum_job_spool_size" type="number" min="0"
+               placeholder="0">
+
+        <label for="storage-device-drive-index">DriveIndex</label>
+        <input id="storage-device-drive-index" name="drive_index"
+               type="number" min="0" max="65535" placeholder="0">
+
+        <label for="storage-device-mount-point">MountPoint</label>
+        <input id="storage-device-mount-point" name="mount_point"
+               placeholder="/mnt/tape">
+
+        <label for="storage-device-mount-command">MountCommand</label>
+        <input id="storage-device-mount-command" name="mount_command"
+               placeholder="/usr/bin/mount /mnt/tape">
+
+        <label for="storage-device-unmount-command">UnmountCommand</label>
+        <input id="storage-device-unmount-command" name="unmount_command"
+               placeholder="/usr/bin/umount /mnt/tape">
+
+        <label for="storage-device-label-type">LabelType</label>
+        <input id="storage-device-label-type" name="label_type"
+               placeholder="ibm">
+
+        <label for="storage-device-no-rewind-on-close">NoRewindOnClose</label>
+        <select id="storage-device-no-rewind-on-close"
+                name="no_rewind_on_close">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-drive-tape-alert-enabled">DriveTapeAlertEnabled</label>
+        <select id="storage-device-drive-tape-alert-enabled"
+                name="drive_tape_alert_enabled">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-drive-crypto-enabled">DriveCryptoEnabled</label>
+        <select id="storage-device-drive-crypto-enabled"
+                name="drive_crypto_enabled">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-query-crypto-status">QueryCryptoStatus</label>
+        <select id="storage-device-query-crypto-status"
+                name="query_crypto_status">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-auto-deflate">AutoDeflate</label>
+        <input id="storage-device-auto-deflate" name="auto_deflate"
+               placeholder="writeonly">
+
+        <label for="storage-device-auto-deflate-algorithm">AutoDeflateAlgorithm</label>
+        <input id="storage-device-auto-deflate-algorithm"
+               name="auto_deflate_algorithm" placeholder="lz4hc">
+
+        <label for="storage-device-auto-deflate-level">AutoDeflateLevel</label>
+        <input id="storage-device-auto-deflate-level"
+               name="auto_deflate_level" type="number" min="0" max="65535"
+               placeholder="0">
+
+        <label for="storage-device-auto-inflate">AutoInflate</label>
+        <input id="storage-device-auto-inflate" name="auto_inflate"
+               placeholder="in">
+
+        <label for="storage-device-collect-statistics">CollectStatistics</label>
+        <select id="storage-device-collect-statistics"
+                name="collect_statistics">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-eof-on-error-is-eot">EofOnErrorIsEot</label>
+        <select id="storage-device-eof-on-error-is-eot"
+                name="eof_on_error_is_eot">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="storage-device-count">Count</label>
+        <input id="storage-device-count" name="count" type="number" min="0"
+               placeholder="0">
+
         <label for="storage-device-description">Description</label>
         <input id="storage-device-description" name="description"
                placeholder="Managed storage-daemon device resource">
@@ -6291,16 +6647,91 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const storageName = String(form.get('storage_name') ?? '').trim();
         const deviceName = String(form.get('device_name') ?? '').trim();
-        const payload = {
-          media_type: String(form.get('media_type') ?? '').trim(),
-          archive_device: String(form.get('archive_device') ?? '').trim(),
-          device_type: String(form.get('device_type') ?? '').trim(),
-          description: String(form.get('description') ?? '').trim(),
-        };
-        if (!payload.media_type) { delete payload.media_type; }
-        if (!payload.archive_device) { delete payload.archive_device; }
-        if (!payload.device_type) { delete payload.device_type; }
-        if (!payload.description) { delete payload.description; }
+        const payload = {};
+        const stringFields = [
+          'media_type',
+          'archive_device',
+          'device_type',
+          'access_mode',
+          'device_options',
+          'diagnostic_device',
+          'changer_device',
+          'changer_command',
+          'alert_command',
+          'spool_directory',
+          'mount_point',
+          'mount_command',
+          'unmount_command',
+          'label_type',
+          'auto_deflate',
+          'auto_deflate_algorithm',
+          'auto_inflate',
+          'description',
+        ];
+        for (const field of stringFields) {
+          const value = String(form.get(field) ?? '').trim();
+          if (value) { payload[field] = value; }
+        }
+
+        const booleanFields = [
+          'hardware_end_of_file',
+          'hardware_end_of_medium',
+          'backward_space_record',
+          'backward_space_file',
+          'bsf_at_eom',
+          'two_eof',
+          'forward_space_record',
+          'forward_space_file',
+          'fast_forward_space_file',
+          'removable_media',
+          'random_access',
+          'automatic_mount',
+          'label_media',
+          'always_open',
+          'autochanger',
+          'close_on_poll',
+          'block_positioning',
+          'use_mtiocget',
+          'check_labels',
+          'requires_mount',
+          'offline_on_unmount',
+          'block_checksum',
+          'auto_select',
+          'no_rewind_on_close',
+          'drive_tape_alert_enabled',
+          'drive_crypto_enabled',
+          'query_crypto_status',
+          'collect_statistics',
+          'eof_on_error_is_eot',
+        ];
+        for (const field of booleanFields) {
+          const value = String(form.get(field) ?? '').trim();
+          if (value) { payload[field] = value === 'true'; }
+        }
+
+        const integerFields = [
+          'maximum_changer_wait',
+          'maximum_open_wait',
+          'maximum_open_volumes',
+          'maximum_network_buffer_size',
+          'volume_poll_interval',
+          'maximum_rewind_wait',
+          'label_block_size',
+          'minimum_block_size',
+          'maximum_block_size',
+          'maximum_file_size',
+          'volume_capacity',
+          'maximum_concurrent_jobs',
+          'maximum_spool_size',
+          'maximum_job_spool_size',
+          'drive_index',
+          'auto_deflate_level',
+          'count',
+        ];
+        for (const field of integerFields) {
+          const value = String(form.get(field) ?? '').trim();
+          if (value) { payload[field] = Number.parseInt(value, 10); }
+        }
         const { response } = await request(
           'PUT',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/storages/${encodeURIComponent(storageName)}/devices/${encodeURIComponent(deviceName)}`,
