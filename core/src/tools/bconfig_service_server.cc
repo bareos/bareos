@@ -1496,6 +1496,68 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="client-messages-description" name="description"
                placeholder="Managed client messages resource">
 
+        <label for="client-messages-mail-command">MailCommand</label>
+        <input id="client-messages-mail-command" name="mail_command"
+               placeholder="/usr/lib/bareos/mail-client %r">
+
+        <label for="client-messages-operator-command">OperatorCommand</label>
+        <input id="client-messages-operator-command" name="operator_command"
+               placeholder="/usr/lib/bareos/operator-client %r">
+
+        <label for="client-messages-timestamp-format">TimestampFormat</label>
+        <input id="client-messages-timestamp-format" name="timestamp_format"
+               placeholder="%Y-%m-%d %H:%M:%S">
+
+        <label for="client-messages-syslog-entries">Syslog entries</label>
+        <textarea id="client-messages-syslog-entries" name="syslog_entries"
+                  rows="2" placeholder="mail = all, !skipped"></textarea>
+
+        <label for="client-messages-mail-entries">Mail entries</label>
+        <textarea id="client-messages-mail-entries" name="mail_entries"
+                  rows="2" placeholder="ops@example.test = all"></textarea>
+
+        <label for="client-messages-mail-on-error-entries">MailOnError entries</label>
+        <textarea id="client-messages-mail-on-error-entries"
+                  name="mail_on_error_entries"
+                  rows="2" placeholder="ops@example.test = all"></textarea>
+
+        <label for="client-messages-mail-on-success-entries">MailOnSuccess entries</label>
+        <textarea id="client-messages-mail-on-success-entries"
+                  name="mail_on_success_entries"
+                  rows="2" placeholder="ops@example.test = all"></textarea>
+
+        <label for="client-messages-file-entries">File entries</label>
+        <textarea id="client-messages-file-entries" name="file_entries"
+                  rows="2" placeholder="\"/var/log/bareos/client.log\" = all"></textarea>
+
+        <label for="client-messages-append-entries">Append entries</label>
+        <textarea id="client-messages-append-entries" name="append_entries"
+                  rows="2" placeholder="\"/var/log/bareos/client.log\" = all"></textarea>
+
+        <label for="client-messages-stdout-entries">Stdout entries</label>
+        <textarea id="client-messages-stdout-entries" name="stdout_entries"
+                  rows="2" placeholder="all, !skipped"></textarea>
+
+        <label for="client-messages-stderr-entries">Stderr entries</label>
+        <textarea id="client-messages-stderr-entries" name="stderr_entries"
+                  rows="2" placeholder="all, !skipped"></textarea>
+
+        <label for="client-messages-director-entries">Director entries</label>
+        <textarea id="client-messages-director-entries" name="director_entries"
+                  rows="2" placeholder="bareos-dir = all"></textarea>
+
+        <label for="client-messages-console-entries">Console entries</label>
+        <textarea id="client-messages-console-entries" name="console_entries"
+                  rows="2" placeholder="all, !skipped"></textarea>
+
+        <label for="client-messages-operator-entries">Operator entries</label>
+        <textarea id="client-messages-operator-entries" name="operator_entries"
+                  rows="2" placeholder="all"></textarea>
+
+        <label for="client-messages-catalog-entries">Catalog entries</label>
+        <textarea id="client-messages-catalog-entries" name="catalog_entries"
+                  rows="2" placeholder="all"></textarea>
+
         <label for="client-messages-entries">Message entries</label>
         <textarea id="client-messages-entries" name="entries"
                   rows="4"
@@ -2384,6 +2446,69 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-messages-description">Description</label>
         <input id="director-messages-description" name="description"
                placeholder="Managed messages resource">
+
+        <label for="director-messages-mail-command">MailCommand</label>
+        <input id="director-messages-mail-command" name="mail_command"
+               placeholder="/usr/lib/bareos/mail-managed %r">
+
+        <label for="director-messages-operator-command">OperatorCommand</label>
+        <input id="director-messages-operator-command" name="operator_command"
+               placeholder="/usr/lib/bareos/operator-managed %r">
+
+        <label for="director-messages-timestamp-format">TimestampFormat</label>
+        <input id="director-messages-timestamp-format" name="timestamp_format"
+               placeholder="%Y-%m-%d %H:%M:%S">
+
+        <label for="director-messages-syslog-entries">Syslog entries</label>
+        <textarea id="director-messages-syslog-entries" name="syslog_entries"
+                  rows="2" placeholder="mail = all, !skipped"></textarea>
+
+        <label for="director-messages-mail-entries">Mail entries</label>
+        <textarea id="director-messages-mail-entries" name="mail_entries"
+                  rows="2" placeholder="ops@example.test = all"></textarea>
+
+        <label for="director-messages-mail-on-error-entries">MailOnError entries</label>
+        <textarea id="director-messages-mail-on-error-entries"
+                  name="mail_on_error_entries"
+                  rows="2" placeholder="ops@example.test = all"></textarea>
+
+        <label for="director-messages-mail-on-success-entries">MailOnSuccess entries</label>
+        <textarea id="director-messages-mail-on-success-entries"
+                  name="mail_on_success_entries"
+                  rows="2" placeholder="ops@example.test = all"></textarea>
+
+        <label for="director-messages-file-entries">File entries</label>
+        <textarea id="director-messages-file-entries" name="file_entries"
+                  rows="2" placeholder="\"/var/log/bareos/dir.log\" = all"></textarea>
+
+        <label for="director-messages-append-entries">Append entries</label>
+        <textarea id="director-messages-append-entries" name="append_entries"
+                  rows="2" placeholder="\"/var/log/bareos/dir.log\" = all"></textarea>
+
+        <label for="director-messages-stdout-entries">Stdout entries</label>
+        <textarea id="director-messages-stdout-entries" name="stdout_entries"
+                  rows="2" placeholder="all, !skipped"></textarea>
+
+        <label for="director-messages-stderr-entries">Stderr entries</label>
+        <textarea id="director-messages-stderr-entries" name="stderr_entries"
+                  rows="2" placeholder="all, !skipped"></textarea>
+
+        <label for="director-messages-director-entries">Director entries</label>
+        <textarea id="director-messages-director-entries" name="director_entries"
+                  rows="2" placeholder="bareos-dir = all"></textarea>
+
+        <label for="director-messages-console-entries">Console entries</label>
+        <textarea id="director-messages-console-entries" name="console_entries"
+                  rows="2"
+                  placeholder="all, !skipped, !saved, !audit"></textarea>
+
+        <label for="director-messages-operator-entries">Operator entries</label>
+        <textarea id="director-messages-operator-entries" name="operator_entries"
+                  rows="2" placeholder="all"></textarea>
+
+        <label for="director-messages-catalog-entries">Catalog entries</label>
+        <textarea id="director-messages-catalog-entries" name="catalog_entries"
+                  rows="2" placeholder="all"></textarea>
 
         <label for="director-messages-entries">Message entries</label>
         <textarea id="director-messages-entries" name="entries"
@@ -3687,6 +3812,68 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="storage-messages-description">Description</label>
         <input id="storage-messages-description" name="description"
                placeholder="Managed storage-daemon messages resource">
+
+        <label for="storage-messages-mail-command">MailCommand</label>
+        <input id="storage-messages-mail-command" name="mail_command"
+               placeholder="/usr/lib/bareos/mail-storage %r">
+
+        <label for="storage-messages-operator-command">OperatorCommand</label>
+        <input id="storage-messages-operator-command" name="operator_command"
+               placeholder="/usr/lib/bareos/operator-storage %r">
+
+        <label for="storage-messages-timestamp-format">TimestampFormat</label>
+        <input id="storage-messages-timestamp-format" name="timestamp_format"
+               placeholder="%Y-%m-%d %H:%M:%S">
+
+        <label for="storage-messages-syslog-entries">Syslog entries</label>
+        <textarea id="storage-messages-syslog-entries" name="syslog_entries"
+                  rows="2" placeholder="mail = all, !skipped"></textarea>
+
+        <label for="storage-messages-mail-entries">Mail entries</label>
+        <textarea id="storage-messages-mail-entries" name="mail_entries"
+                  rows="2" placeholder="ops@example.test = all"></textarea>
+
+        <label for="storage-messages-mail-on-error-entries">MailOnError entries</label>
+        <textarea id="storage-messages-mail-on-error-entries"
+                  name="mail_on_error_entries"
+                  rows="2" placeholder="ops@example.test = all"></textarea>
+
+        <label for="storage-messages-mail-on-success-entries">MailOnSuccess entries</label>
+        <textarea id="storage-messages-mail-on-success-entries"
+                  name="mail_on_success_entries"
+                  rows="2" placeholder="ops@example.test = all"></textarea>
+
+        <label for="storage-messages-file-entries">File entries</label>
+        <textarea id="storage-messages-file-entries" name="file_entries"
+                  rows="2" placeholder="\"/var/log/bareos/storage.log\" = all"></textarea>
+
+        <label for="storage-messages-append-entries">Append entries</label>
+        <textarea id="storage-messages-append-entries" name="append_entries"
+                  rows="2" placeholder="\"/var/log/bareos/storage.log\" = all"></textarea>
+
+        <label for="storage-messages-stdout-entries">Stdout entries</label>
+        <textarea id="storage-messages-stdout-entries" name="stdout_entries"
+                  rows="2" placeholder="all, !skipped"></textarea>
+
+        <label for="storage-messages-stderr-entries">Stderr entries</label>
+        <textarea id="storage-messages-stderr-entries" name="stderr_entries"
+                  rows="2" placeholder="all, !skipped"></textarea>
+
+        <label for="storage-messages-director-entries">Director entries</label>
+        <textarea id="storage-messages-director-entries" name="director_entries"
+                  rows="2" placeholder="bareos-dir = all"></textarea>
+
+        <label for="storage-messages-console-entries">Console entries</label>
+        <textarea id="storage-messages-console-entries" name="console_entries"
+                  rows="2" placeholder="all, !skipped"></textarea>
+
+        <label for="storage-messages-operator-entries">Operator entries</label>
+        <textarea id="storage-messages-operator-entries" name="operator_entries"
+                  rows="2" placeholder="all"></textarea>
+
+        <label for="storage-messages-catalog-entries">Catalog entries</label>
+        <textarea id="storage-messages-catalog-entries" name="catalog_entries"
+                  rows="2" placeholder="all"></textarea>
 
         <label for="storage-messages-entries">Message entries</label>
         <textarea id="storage-messages-entries" name="entries"
@@ -4993,16 +5180,38 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const clientName = String(form.get('client_name') ?? '').trim();
         const messagesName = String(form.get('messages_name') ?? '').trim();
-        const rawEntries = String(form.get('entries') ?? '');
-        const entries = rawEntries.split('\n')
-          .map((line) => line.trim())
-          .filter((line) => line.length > 0);
-        const payload = {
-          description: String(form.get('description') ?? '').trim(),
-          entries,
-        };
-        if (!payload.description) { delete payload.description; }
-        if (payload.entries.length === 0) { delete payload.entries; }
+        const payload = {};
+        const stringFields = [
+          'description',
+          'mail_command',
+          'operator_command',
+          'timestamp_format',
+        ];
+        for (const field of stringFields) {
+          const value = String(form.get(field) ?? '').trim();
+          if (value) { payload[field] = value; }
+        }
+        const arrayFields = [
+          'syslog_entries',
+          'mail_entries',
+          'mail_on_error_entries',
+          'mail_on_success_entries',
+          'file_entries',
+          'append_entries',
+          'stdout_entries',
+          'stderr_entries',
+          'director_entries',
+          'console_entries',
+          'operator_entries',
+          'catalog_entries',
+          'entries',
+        ];
+        for (const field of arrayFields) {
+          const values = String(form.get(field) ?? '').split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0);
+          if (values.length > 0) { payload[field] = values; }
+        }
         const { response } = await request(
           'PUT',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/clients/${encodeURIComponent(clientName)}/messages/${encodeURIComponent(messagesName)}`,
@@ -5853,19 +6062,37 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
         const messagesName = String(form.get('messages_name') ?? '').trim();
-        const rawEntries = String(form.get('entries') ?? '');
-        const entries = rawEntries.split('\n')
-          .map((line) => line.trim())
-          .filter((line) => line.length > 0);
-        const payload = {
-          description: String(form.get('description') ?? '').trim(),
-          entries,
-        };
-        if (!payload.description) {
-          delete payload.description;
+        const payload = {};
+        const stringFields = [
+          'description',
+          'mail_command',
+          'operator_command',
+          'timestamp_format',
+        ];
+        for (const field of stringFields) {
+          const value = String(form.get(field) ?? '').trim();
+          if (value) { payload[field] = value; }
         }
-        if (payload.entries.length === 0) {
-          delete payload.entries;
+        const arrayFields = [
+          'syslog_entries',
+          'mail_entries',
+          'mail_on_error_entries',
+          'mail_on_success_entries',
+          'file_entries',
+          'append_entries',
+          'stdout_entries',
+          'stderr_entries',
+          'director_entries',
+          'console_entries',
+          'operator_entries',
+          'catalog_entries',
+          'entries',
+        ];
+        for (const field of arrayFields) {
+          const values = String(form.get(field) ?? '').split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0);
+          if (values.length > 0) { payload[field] = values; }
         }
         const { response } = await request(
           'PUT',
@@ -6764,16 +6991,38 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const storageName = String(form.get('storage_name') ?? '').trim();
         const messagesName = String(form.get('messages_name') ?? '').trim();
-        const rawEntries = String(form.get('entries') ?? '');
-        const entries = rawEntries.split('\n')
-          .map((line) => line.trim())
-          .filter((line) => line.length > 0);
-        const payload = {
-          description: String(form.get('description') ?? '').trim(),
-          entries,
-        };
-        if (!payload.description) { delete payload.description; }
-        if (payload.entries.length === 0) { delete payload.entries; }
+        const payload = {};
+        const stringFields = [
+          'description',
+          'mail_command',
+          'operator_command',
+          'timestamp_format',
+        ];
+        for (const field of stringFields) {
+          const value = String(form.get(field) ?? '').trim();
+          if (value) { payload[field] = value; }
+        }
+        const arrayFields = [
+          'syslog_entries',
+          'mail_entries',
+          'mail_on_error_entries',
+          'mail_on_success_entries',
+          'file_entries',
+          'append_entries',
+          'stdout_entries',
+          'stderr_entries',
+          'director_entries',
+          'console_entries',
+          'operator_entries',
+          'catalog_entries',
+          'entries',
+        ];
+        for (const field of arrayFields) {
+          const values = String(form.get(field) ?? '').split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0);
+          if (values.length > 0) { payload[field] = values; }
+        }
         const { response } = await request(
           'PUT',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/storages/${encodeURIComponent(storageName)}/messages/${encodeURIComponent(messagesName)}`,
