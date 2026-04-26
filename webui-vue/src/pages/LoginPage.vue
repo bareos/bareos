@@ -30,13 +30,10 @@
               class="q-mb-sm"
               autocomplete="current-password"
             />
-            <q-select
+            <LanguageSelect
               v-model="locale"
               data-testid="login-language"
-              :options="availableLocales"
               :label="t('Language')"
-              outlined dense
-              emit-value map-options
               class="q-mb-md"
             />
 
@@ -114,7 +111,7 @@ import {
 } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { localeOptions } from '../utils/locales.js'
+import LanguageSelect from '../components/LanguageSelect.vue'
 import bareosLogo from '../assets/bareos-logo-small.png'
 
 const auth     = useAuthStore()
@@ -129,7 +126,6 @@ const directorRef = ref(DEFAULT_DIRECTOR_NAME)
 const username  = ref('admin')
 const password  = ref('')
 const locale    = ref(settings.locale)
-const availableLocales = localeOptions
 const loading   = ref(false)
 const errorMsg  = ref(null)
 

@@ -81,6 +81,24 @@ const BROWSER_TO_PHP_LOCALE = Object.freeze({
   'uk-ua': 'uk_UA',
 })
 
+const LOCALE_TO_FLAG = Object.freeze({
+  cn_CN: '🇨🇳',
+  cs_CZ: '🇨🇿',
+  nl_BE: '🇧🇪',
+  en_EN: '🇬🇧',
+  fr_FR: '🇫🇷',
+  de_DE: '🇩🇪',
+  hu_HU: '🇭🇺',
+  it_IT: '🇮🇹',
+  pl_PL: '🇵🇱',
+  pt_BR: '🇧🇷',
+  ru_RU: '🇷🇺',
+  sk_SK: '🇸🇰',
+  es_ES: '🇪🇸',
+  tr_TR: '🇹🇷',
+  uk_UA: '🇺🇦',
+})
+
 const DIRECTOR_MONTHS = Object.freeze({
   Jan: 0,
   Feb: 1,
@@ -96,7 +114,14 @@ const DIRECTOR_MONTHS = Object.freeze({
   Dec: 11,
 })
 
-export const localeOptions = WEBUI_LOCALES
+export function localeFlagEmoji(locale) {
+  return LOCALE_TO_FLAG[normalizeWebUiLocale(locale)] ?? '🏳️'
+}
+
+export const localeOptions = WEBUI_LOCALES.map((locale) => ({
+  ...locale,
+  flag: localeFlagEmoji(locale.value),
+}))
 
 export function normalizeWebUiLocale(locale) {
   if (typeof locale !== 'string' || locale.length === 0) {

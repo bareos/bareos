@@ -28,6 +28,8 @@ import {
   detectPreferredLocale,
   formatDirectorRelativeTime,
   formatSqlRelativeTime,
+  localeFlagEmoji,
+  localeOptions,
   localeToIntl,
   normalizeWebUiLocale,
 } from '../../src/utils/locales.js'
@@ -63,6 +65,15 @@ describe('webui locales', () => {
   it('detects the first supported browser language', () => {
     expect(detectPreferredLocale(['zz-ZZ', 'tr-TR', 'de-DE'])).toBe('tr_TR')
     expect(detectPreferredLocale(['zz-ZZ'])).toBe(DEFAULT_WEBUI_LOCALE)
+  })
+
+  it('decorates locale options with flag icons', () => {
+    expect(localeFlagEmoji('de-DE')).toBe('🇩🇪')
+    expect(localeOptions.find(({ value }) => value === 'pt_BR')).toMatchObject({
+      value: 'pt_BR',
+      label: 'Portuguese (BR)',
+      flag: '🇧🇷',
+    })
   })
 
   it('formats SQL and director timestamps with relative locale-aware text', () => {

@@ -19,13 +19,8 @@
           </q-item-section>
         </q-item>
         <div class="q-px-md q-pb-sm">
-          <q-select
+          <LanguageSelect
             v-model="settings.locale"
-            :options="availableLocales"
-            emit-value
-            map-options
-            outlined
-            dense
           />
         </div>
       </q-card-section>
@@ -111,12 +106,11 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
+import LanguageSelect from '../components/LanguageSelect.vue'
 import { useSettingsStore } from '../stores/settings.js'
-import { localeOptions } from '../utils/locales.js'
 
 const $q       = useQuasar()
 const settings = useSettingsStore()
-const availableLocales = localeOptions
 const { t } = useI18n()
 
 function applyDark(val) {
