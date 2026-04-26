@@ -30,8 +30,8 @@ Especially when updating the |dir| (together with the corresponding |sd|) it is 
 - If you use tape storage with :config:option:`sd/device/MaximumFileSize`, review
   the :config:option:`sd/device/MaximumFileSizeImmediateFilemark` setting before
   restarting the upgraded storage daemon. Bareos now uses non-blocking rollover
-  filemarks by default. This especially affects tape backends that override
-  ``weof_immediate()``; set
+  filemarks by default. This changes tape backends that override
+  ``weof_immediate()`` from ``weof(1)`` to ``weof_immediate(1)`` on upgrade; set
   :config:option:`sd/device/MaximumFileSizeImmediateFilemark = no` to keep the
   previous blocking behavior after upgrade.
 - Update your operating system to the latest security and patch level of the publisher.

@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 - stored: `MaximumFileSizeImmediateFilemark` now defaults to non-blocking
-  rollover filemarks for `MaximumFileSize`. Tape backends overriding
-  `weof_immediate()` now see that behavior on upgrade unless
+  rollover filemarks for `MaximumFileSize`, changing tape backends that
+  override `weof_immediate()` from `weof(1)` to `weof_immediate(1)` on upgrade unless
   `MaximumFileSizeImmediateFilemark = no` is set to keep the previous blocking
   behavior [PR #2634]
 
