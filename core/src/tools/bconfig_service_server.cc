@@ -2629,6 +2629,13 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-job-type">Type</label>
         <input id="director-job-type" name="type" placeholder="Backup">
 
+        <label for="director-job-backup-format">BackupFormat</label>
+        <input id="director-job-backup-format" name="backup_format"
+               placeholder="Native">
+
+        <label for="director-job-protocol">Protocol</label>
+        <input id="director-job-protocol" name="protocol" placeholder="Native">
+
         <label for="director-job-level">Level</label>
         <input id="director-job-level" name="level" placeholder="Incremental">
 
@@ -2682,13 +2689,319 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-job-where">Where</label>
         <input id="director-job-where" name="where">
 
+        <label for="director-job-replace">Replace</label>
+        <input id="director-job-replace" name="replace" placeholder="always">
+
+        <label for="director-job-regex-where">RegexWhere</label>
+        <input id="director-job-regex-where" name="regex_where">
+
+        <label for="director-job-strip-prefix">StripPrefix</label>
+        <input id="director-job-strip-prefix" name="strip_prefix">
+
+        <label for="director-job-add-prefix">AddPrefix</label>
+        <input id="director-job-add-prefix" name="add_prefix">
+
+        <label for="director-job-add-suffix">AddSuffix</label>
+        <input id="director-job-add-suffix" name="add_suffix">
+
+        <label for="director-job-bootstrap">Bootstrap</label>
+        <input id="director-job-bootstrap" name="bootstrap">
+
+        <label for="director-job-write-bootstrap">WriteBootstrap</label>
+        <input id="director-job-write-bootstrap" name="write_bootstrap">
+
+        <label for="director-job-write-verify-list">WriteVerifyList</label>
+        <input id="director-job-write-verify-list" name="write_verify_list">
+
+        <label for="director-job-run-entries">Run entries</label>
+        <textarea id="director-job-run-entries" name="run_entries" rows="3"
+                  placeholder="Level=Full monthly 1st sat at 21:00"></textarea>
+
+        <label for="director-job-run-before-job-entries">RunBeforeJob entries</label>
+        <textarea id="director-job-run-before-job-entries"
+                  name="run_before_job_entries" rows="2"
+                  placeholder="/usr/lib/bareos/scripts/pre-job.sh"></textarea>
+
+        <label for="director-job-run-after-job-entries">RunAfterJob entries</label>
+        <textarea id="director-job-run-after-job-entries"
+                  name="run_after_job_entries" rows="2"
+                  placeholder="/usr/lib/bareos/scripts/post-job.sh"></textarea>
+
+        <label for="director-job-run-after-failed-job-entries">RunAfterFailedJob entries</label>
+        <textarea id="director-job-run-after-failed-job-entries"
+                  name="run_after_failed_job_entries" rows="2"
+                  placeholder="/usr/lib/bareos/scripts/fail-job.sh"></textarea>
+
+        <label for="director-job-client-run-before-job-entries">ClientRunBeforeJob entries</label>
+        <textarea id="director-job-client-run-before-job-entries"
+                  name="client_run_before_job_entries" rows="2"
+                  placeholder="/usr/lib/bareos/scripts/client-pre.sh"></textarea>
+
+        <label for="director-job-client-run-after-job-entries">ClientRunAfterJob entries</label>
+        <textarea id="director-job-client-run-after-job-entries"
+                  name="client_run_after_job_entries" rows="2"
+                  placeholder="/usr/lib/bareos/scripts/client-post.sh"></textarea>
+
+        <label for="director-job-maximum-bandwidth">MaximumBandwidth</label>
+        <input id="director-job-maximum-bandwidth" name="maximum_bandwidth"
+               type="number">
+
+        <label for="director-job-max-run-sched-time">MaxRunSchedTime</label>
+        <input id="director-job-max-run-sched-time" name="max_run_sched_time"
+               type="number" min="0">
+
+        <label for="director-job-max-run-time">MaxRunTime</label>
+        <input id="director-job-max-run-time" name="max_run_time"
+               type="number" min="0">
+
+        <label for="director-job-full-max-runtime">FullMaxRunTime</label>
+        <input id="director-job-full-max-runtime" name="full_max_runtime"
+               type="number" min="0">
+
+        <label for="director-job-incremental-max-runtime">IncrementalMaxRunTime</label>
+        <input id="director-job-incremental-max-runtime"
+               name="incremental_max_runtime" type="number" min="0">
+
+        <label for="director-job-differential-max-runtime">DifferentialMaxRunTime</label>
+        <input id="director-job-differential-max-runtime"
+               name="differential_max_runtime" type="number" min="0">
+
+        <label for="director-job-max-wait-time">MaxWaitTime</label>
+        <input id="director-job-max-wait-time" name="max_wait_time"
+               type="number" min="0">
+
+        <label for="director-job-max-start-delay">MaxStartDelay</label>
+        <input id="director-job-max-start-delay" name="max_start_delay"
+               type="number" min="0">
+
+        <label for="director-job-max-full-interval">MaxFullInterval</label>
+        <input id="director-job-max-full-interval" name="max_full_interval"
+               type="number" min="0">
+
+        <label for="director-job-max-virtual-full-interval">MaxVirtualFullInterval</label>
+        <input id="director-job-max-virtual-full-interval"
+               name="max_virtual_full_interval" type="number" min="0">
+
+        <label for="director-job-max-diff-interval">MaxDiffInterval</label>
+        <input id="director-job-max-diff-interval" name="max_diff_interval"
+               type="number" min="0">
+
+        <label for="director-job-spool-size">SpoolSize</label>
+        <input id="director-job-spool-size" name="spool_size"
+               type="number" min="0">
+
+        <label for="director-job-maximum-concurrent-jobs">MaximumConcurrentJobs</label>
+        <input id="director-job-maximum-concurrent-jobs"
+               name="maximum_concurrent_jobs" type="number" min="0">
+
+        <label for="director-job-reschedule-interval">RescheduleInterval</label>
+        <input id="director-job-reschedule-interval" name="reschedule_interval"
+               type="number" min="0">
+
+        <label for="director-job-reschedule-times">RescheduleTimes</label>
+        <input id="director-job-reschedule-times" name="reschedule_times"
+               type="number" min="0">
+
         <label for="director-job-priority">Priority</label>
         <input id="director-job-priority" name="priority" type="number">
 
-        <label class="checkbox-label" for="director-job-enabled">
-          <input id="director-job-enabled" name="enabled" type="checkbox" checked>
-          Enabled
-        </label>
+        <label for="director-job-selection-type">SelectionType</label>
+        <input id="director-job-selection-type" name="selection_type"
+               placeholder="Matching">
+
+        <label for="director-job-selection-pattern">SelectionPattern</label>
+        <input id="director-job-selection-pattern" name="selection_pattern">
+
+        <label for="director-job-file-history-size">FileHistorySize</label>
+        <input id="director-job-file-history-size" name="file_history_size"
+               type="number" min="0">
+
+        <label for="director-job-fd-plugin-options">FdPluginOptions</label>
+        <textarea id="director-job-fd-plugin-options" name="fd_plugin_options"
+                  rows="2" placeholder="python:module_path=/opt/bareos"></textarea>
+
+        <label for="director-job-sd-plugin-options">SdPluginOptions</label>
+        <textarea id="director-job-sd-plugin-options" name="sd_plugin_options"
+                  rows="2" placeholder="compression=on"></textarea>
+
+        <label for="director-job-dir-plugin-options">DirPluginOptions</label>
+        <textarea id="director-job-dir-plugin-options" name="dir_plugin_options"
+                  rows="2" placeholder="audit=verbose"></textarea>
+
+        <label for="director-job-max-concurrent-copies">MaxConcurrentCopies</label>
+        <input id="director-job-max-concurrent-copies"
+               name="max_concurrent_copies" type="number" min="0">
+
+        <label for="director-job-always-incremental-job-retention">AlwaysIncrementalJobRetention</label>
+        <input id="director-job-always-incremental-job-retention"
+               name="always_incremental_job_retention" type="number" min="0">
+
+        <label for="director-job-always-incremental-keep-number">AlwaysIncrementalKeepNumber</label>
+        <input id="director-job-always-incremental-keep-number"
+               name="always_incremental_keep_number" type="number" min="0">
+
+        <label for="director-job-always-incremental-max-full-age">AlwaysIncrementalMaxFullAge</label>
+        <input id="director-job-always-incremental-max-full-age"
+               name="always_incremental_max_full_age" type="number" min="0">
+
+        <label for="director-job-max-full-consolidations">MaxFullConsolidations</label>
+        <input id="director-job-max-full-consolidations"
+               name="max_full_consolidations" type="number" min="0">
+
+        <label for="director-job-run-on-incoming-connect-interval">RunOnIncomingConnectInterval</label>
+        <input id="director-job-run-on-incoming-connect-interval"
+               name="run_on_incoming_connect_interval" type="number" min="0">
+
+        <label for="director-job-enabled">Enabled</label>
+        <select id="director-job-enabled" name="enabled">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-prefix-links">PrefixLinks</label>
+        <select id="director-job-prefix-links" name="prefix_links">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-prune-jobs">PruneJobs</label>
+        <select id="director-job-prune-jobs" name="prune_jobs">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-prune-files">PruneFiles</label>
+        <select id="director-job-prune-files" name="prune_files">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-prune-volumes">PruneVolumes</label>
+        <select id="director-job-prune-volumes" name="prune_volumes">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-purge-migration-job">PurgeMigrationJob</label>
+        <select id="director-job-purge-migration-job"
+                name="purge_migration_job">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-spool-attributes">SpoolAttributes</label>
+        <select id="director-job-spool-attributes" name="spool_attributes">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-spool-data">SpoolData</label>
+        <select id="director-job-spool-data" name="spool_data">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-rerun-failed-levels">RerunFailedLevels</label>
+        <select id="director-job-rerun-failed-levels"
+                name="rerun_failed_levels">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-prefer-mounted-volumes">PreferMountedVolumes</label>
+        <select id="director-job-prefer-mounted-volumes"
+                name="prefer_mounted_volumes">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-reschedule-on-error">RescheduleOnError</label>
+        <select id="director-job-reschedule-on-error"
+                name="reschedule_on_error">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-allow-mixed-priority">AllowMixedPriority</label>
+        <select id="director-job-allow-mixed-priority"
+                name="allow_mixed_priority">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-accurate">Accurate</label>
+        <select id="director-job-accurate" name="accurate">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-allow-duplicate-jobs">AllowDuplicateJobs</label>
+        <select id="director-job-allow-duplicate-jobs"
+                name="allow_duplicate_jobs">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-allow-higher-duplicates">AllowHigherDuplicates</label>
+        <select id="director-job-allow-higher-duplicates"
+                name="allow_higher_duplicates">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-cancel-lower-level-duplicates">CancelLowerLevelDuplicates</label>
+        <select id="director-job-cancel-lower-level-duplicates"
+                name="cancel_lower_level_duplicates">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-cancel-queued-duplicates">CancelQueuedDuplicates</label>
+        <select id="director-job-cancel-queued-duplicates"
+                name="cancel_queued_duplicates">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-cancel-running-duplicates">CancelRunningDuplicates</label>
+        <select id="director-job-cancel-running-duplicates"
+                name="cancel_running_duplicates">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-save-file-history">SaveFileHistory</label>
+        <select id="director-job-save-file-history" name="save_file_history">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-job-always-incremental">AlwaysIncremental</label>
+        <select id="director-job-always-incremental"
+                name="always_incremental">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <button type="submit">
           PUT /v1/deployments/{id}/directors/{director}/jobs/{job}
@@ -2717,6 +3030,14 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="director-jobdefs-type">Type</label>
         <input id="director-jobdefs-type" name="type" placeholder="Backup">
+
+        <label for="director-jobdefs-backup-format">BackupFormat</label>
+        <input id="director-jobdefs-backup-format" name="backup_format"
+               placeholder="Native">
+
+        <label for="director-jobdefs-protocol">Protocol</label>
+        <input id="director-jobdefs-protocol" name="protocol"
+               placeholder="Native">
 
         <label for="director-jobdefs-level">Level</label>
         <input id="director-jobdefs-level" name="level" placeholder="Incremental">
@@ -2755,13 +3076,343 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-jobdefs-catalog">Catalog</label>
         <input id="director-jobdefs-catalog" name="catalog" placeholder="MyCatalog">
 
+        <label for="director-jobdefs-verify-job">JobToVerify</label>
+        <input id="director-jobdefs-verify-job" name="verify_job">
+
+        <label for="director-jobdefs-jobdefs">JobDefs</label>
+        <input id="director-jobdefs-jobdefs" name="jobdefs"
+               placeholder="DefaultJob">
+
+        <label for="director-jobdefs-virtual-full-backup-pool">VirtualFullBackupPool</label>
+        <input id="director-jobdefs-virtual-full-backup-pool"
+               name="virtual_full_backup_pool">
+
+        <label for="director-jobdefs-next-pool">NextPool</label>
+        <input id="director-jobdefs-next-pool" name="next_pool">
+
+        <label for="director-jobdefs-where">Where</label>
+        <input id="director-jobdefs-where" name="where">
+
+        <label for="director-jobdefs-replace">Replace</label>
+        <input id="director-jobdefs-replace" name="replace"
+               placeholder="always">
+
+        <label for="director-jobdefs-regex-where">RegexWhere</label>
+        <input id="director-jobdefs-regex-where" name="regex_where">
+
+        <label for="director-jobdefs-strip-prefix">StripPrefix</label>
+        <input id="director-jobdefs-strip-prefix" name="strip_prefix">
+
+        <label for="director-jobdefs-add-prefix">AddPrefix</label>
+        <input id="director-jobdefs-add-prefix" name="add_prefix">
+
+        <label for="director-jobdefs-add-suffix">AddSuffix</label>
+        <input id="director-jobdefs-add-suffix" name="add_suffix">
+
+        <label for="director-jobdefs-bootstrap">Bootstrap</label>
+        <input id="director-jobdefs-bootstrap" name="bootstrap">
+
+        <label for="director-jobdefs-write-bootstrap">WriteBootstrap</label>
+        <input id="director-jobdefs-write-bootstrap" name="write_bootstrap">
+
+        <label for="director-jobdefs-write-verify-list">WriteVerifyList</label>
+        <input id="director-jobdefs-write-verify-list" name="write_verify_list">
+
+        <label for="director-jobdefs-run-entries">Run entries</label>
+        <textarea id="director-jobdefs-run-entries" name="run_entries" rows="3"
+                  placeholder="Level=Full monthly 1st sat at 21:00"></textarea>
+
+        <label for="director-jobdefs-run-before-job-entries">RunBeforeJob entries</label>
+        <textarea id="director-jobdefs-run-before-job-entries"
+                  name="run_before_job_entries" rows="2"
+                  placeholder="/usr/lib/bareos/scripts/pre-job.sh"></textarea>
+
+        <label for="director-jobdefs-run-after-job-entries">RunAfterJob entries</label>
+        <textarea id="director-jobdefs-run-after-job-entries"
+                  name="run_after_job_entries" rows="2"
+                  placeholder="/usr/lib/bareos/scripts/post-job.sh"></textarea>
+
+        <label for="director-jobdefs-run-after-failed-job-entries">RunAfterFailedJob entries</label>
+        <textarea id="director-jobdefs-run-after-failed-job-entries"
+                  name="run_after_failed_job_entries" rows="2"
+                  placeholder="/usr/lib/bareos/scripts/fail-job.sh"></textarea>
+
+        <label for="director-jobdefs-client-run-before-job-entries">ClientRunBeforeJob entries</label>
+        <textarea id="director-jobdefs-client-run-before-job-entries"
+                  name="client_run_before_job_entries" rows="2"
+                  placeholder="/usr/lib/bareos/scripts/client-pre.sh"></textarea>
+
+        <label for="director-jobdefs-client-run-after-job-entries">ClientRunAfterJob entries</label>
+        <textarea id="director-jobdefs-client-run-after-job-entries"
+                  name="client_run_after_job_entries" rows="2"
+                  placeholder="/usr/lib/bareos/scripts/client-post.sh"></textarea>
+
+        <label for="director-jobdefs-maximum-bandwidth">MaximumBandwidth</label>
+        <input id="director-jobdefs-maximum-bandwidth"
+               name="maximum_bandwidth" type="number">
+
+        <label for="director-jobdefs-max-run-sched-time">MaxRunSchedTime</label>
+        <input id="director-jobdefs-max-run-sched-time"
+               name="max_run_sched_time" type="number" min="0">
+
+        <label for="director-jobdefs-max-run-time">MaxRunTime</label>
+        <input id="director-jobdefs-max-run-time" name="max_run_time"
+               type="number" min="0">
+
+        <label for="director-jobdefs-full-max-runtime">FullMaxRunTime</label>
+        <input id="director-jobdefs-full-max-runtime" name="full_max_runtime"
+               type="number" min="0">
+
+        <label for="director-jobdefs-incremental-max-runtime">IncrementalMaxRunTime</label>
+        <input id="director-jobdefs-incremental-max-runtime"
+               name="incremental_max_runtime" type="number" min="0">
+
+        <label for="director-jobdefs-differential-max-runtime">DifferentialMaxRunTime</label>
+        <input id="director-jobdefs-differential-max-runtime"
+               name="differential_max_runtime" type="number" min="0">
+
+        <label for="director-jobdefs-max-wait-time">MaxWaitTime</label>
+        <input id="director-jobdefs-max-wait-time" name="max_wait_time"
+               type="number" min="0">
+
+        <label for="director-jobdefs-max-start-delay">MaxStartDelay</label>
+        <input id="director-jobdefs-max-start-delay" name="max_start_delay"
+               type="number" min="0">
+
+        <label for="director-jobdefs-max-full-interval">MaxFullInterval</label>
+        <input id="director-jobdefs-max-full-interval"
+               name="max_full_interval" type="number" min="0">
+
+        <label for="director-jobdefs-max-virtual-full-interval">MaxVirtualFullInterval</label>
+        <input id="director-jobdefs-max-virtual-full-interval"
+               name="max_virtual_full_interval" type="number" min="0">
+
+        <label for="director-jobdefs-max-diff-interval">MaxDiffInterval</label>
+        <input id="director-jobdefs-max-diff-interval" name="max_diff_interval"
+               type="number" min="0">
+
+        <label for="director-jobdefs-spool-size">SpoolSize</label>
+        <input id="director-jobdefs-spool-size" name="spool_size"
+               type="number" min="0">
+
+        <label for="director-jobdefs-maximum-concurrent-jobs">MaximumConcurrentJobs</label>
+        <input id="director-jobdefs-maximum-concurrent-jobs"
+               name="maximum_concurrent_jobs" type="number" min="0">
+
+        <label for="director-jobdefs-reschedule-interval">RescheduleInterval</label>
+        <input id="director-jobdefs-reschedule-interval"
+               name="reschedule_interval" type="number" min="0">
+
+        <label for="director-jobdefs-reschedule-times">RescheduleTimes</label>
+        <input id="director-jobdefs-reschedule-times" name="reschedule_times"
+               type="number" min="0">
+
         <label for="director-jobdefs-priority">Priority</label>
         <input id="director-jobdefs-priority" name="priority" type="number">
 
-        <label class="checkbox-label" for="director-jobdefs-enabled">
-          <input id="director-jobdefs-enabled" name="enabled" type="checkbox" checked>
-          Enabled
-        </label>
+        <label for="director-jobdefs-selection-type">SelectionType</label>
+        <input id="director-jobdefs-selection-type" name="selection_type"
+               placeholder="Matching">
+
+        <label for="director-jobdefs-selection-pattern">SelectionPattern</label>
+        <input id="director-jobdefs-selection-pattern"
+               name="selection_pattern">
+
+        <label for="director-jobdefs-file-history-size">FileHistorySize</label>
+        <input id="director-jobdefs-file-history-size"
+               name="file_history_size" type="number" min="0">
+
+        <label for="director-jobdefs-fd-plugin-options">FdPluginOptions</label>
+        <textarea id="director-jobdefs-fd-plugin-options"
+                  name="fd_plugin_options" rows="2"
+                  placeholder="python:module_path=/opt/bareos"></textarea>
+
+        <label for="director-jobdefs-sd-plugin-options">SdPluginOptions</label>
+        <textarea id="director-jobdefs-sd-plugin-options"
+                  name="sd_plugin_options" rows="2"
+                  placeholder="compression=on"></textarea>
+
+        <label for="director-jobdefs-dir-plugin-options">DirPluginOptions</label>
+        <textarea id="director-jobdefs-dir-plugin-options"
+                  name="dir_plugin_options" rows="2"
+                  placeholder="audit=verbose"></textarea>
+
+        <label for="director-jobdefs-max-concurrent-copies">MaxConcurrentCopies</label>
+        <input id="director-jobdefs-max-concurrent-copies"
+               name="max_concurrent_copies" type="number" min="0">
+
+        <label for="director-jobdefs-always-incremental-job-retention">AlwaysIncrementalJobRetention</label>
+        <input id="director-jobdefs-always-incremental-job-retention"
+               name="always_incremental_job_retention" type="number" min="0">
+
+        <label for="director-jobdefs-always-incremental-keep-number">AlwaysIncrementalKeepNumber</label>
+        <input id="director-jobdefs-always-incremental-keep-number"
+               name="always_incremental_keep_number" type="number" min="0">
+
+        <label for="director-jobdefs-always-incremental-max-full-age">AlwaysIncrementalMaxFullAge</label>
+        <input id="director-jobdefs-always-incremental-max-full-age"
+               name="always_incremental_max_full_age" type="number" min="0">
+
+        <label for="director-jobdefs-max-full-consolidations">MaxFullConsolidations</label>
+        <input id="director-jobdefs-max-full-consolidations"
+               name="max_full_consolidations" type="number" min="0">
+
+        <label for="director-jobdefs-run-on-incoming-connect-interval">RunOnIncomingConnectInterval</label>
+        <input id="director-jobdefs-run-on-incoming-connect-interval"
+               name="run_on_incoming_connect_interval" type="number" min="0">
+
+        <label for="director-jobdefs-enabled">Enabled</label>
+        <select id="director-jobdefs-enabled" name="enabled">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-prefix-links">PrefixLinks</label>
+        <select id="director-jobdefs-prefix-links" name="prefix_links">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-prune-jobs">PruneJobs</label>
+        <select id="director-jobdefs-prune-jobs" name="prune_jobs">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-prune-files">PruneFiles</label>
+        <select id="director-jobdefs-prune-files" name="prune_files">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-prune-volumes">PruneVolumes</label>
+        <select id="director-jobdefs-prune-volumes" name="prune_volumes">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-purge-migration-job">PurgeMigrationJob</label>
+        <select id="director-jobdefs-purge-migration-job"
+                name="purge_migration_job">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-spool-attributes">SpoolAttributes</label>
+        <select id="director-jobdefs-spool-attributes"
+                name="spool_attributes">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-spool-data">SpoolData</label>
+        <select id="director-jobdefs-spool-data" name="spool_data">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-rerun-failed-levels">RerunFailedLevels</label>
+        <select id="director-jobdefs-rerun-failed-levels"
+                name="rerun_failed_levels">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-prefer-mounted-volumes">PreferMountedVolumes</label>
+        <select id="director-jobdefs-prefer-mounted-volumes"
+                name="prefer_mounted_volumes">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-reschedule-on-error">RescheduleOnError</label>
+        <select id="director-jobdefs-reschedule-on-error"
+                name="reschedule_on_error">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-allow-mixed-priority">AllowMixedPriority</label>
+        <select id="director-jobdefs-allow-mixed-priority"
+                name="allow_mixed_priority">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-accurate">Accurate</label>
+        <select id="director-jobdefs-accurate" name="accurate">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-allow-duplicate-jobs">AllowDuplicateJobs</label>
+        <select id="director-jobdefs-allow-duplicate-jobs"
+                name="allow_duplicate_jobs">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-allow-higher-duplicates">AllowHigherDuplicates</label>
+        <select id="director-jobdefs-allow-higher-duplicates"
+                name="allow_higher_duplicates">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-cancel-lower-level-duplicates">CancelLowerLevelDuplicates</label>
+        <select id="director-jobdefs-cancel-lower-level-duplicates"
+                name="cancel_lower_level_duplicates">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-cancel-queued-duplicates">CancelQueuedDuplicates</label>
+        <select id="director-jobdefs-cancel-queued-duplicates"
+                name="cancel_queued_duplicates">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-cancel-running-duplicates">CancelRunningDuplicates</label>
+        <select id="director-jobdefs-cancel-running-duplicates"
+                name="cancel_running_duplicates">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-save-file-history">SaveFileHistory</label>
+        <select id="director-jobdefs-save-file-history"
+                name="save_file_history">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-jobdefs-always-incremental">AlwaysIncremental</label>
+        <select id="director-jobdefs-always-incremental"
+                name="always_incremental">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <button type="submit">
           PUT /v1/deployments/{id}/directors/{director}/jobdefs/{jobdefs}
@@ -6274,6 +6925,118 @@ const char* kTestUiHtmlTemplate = R"HTML(
           await loadDeploymentContents(deploymentId);
         }
       });
+    const buildDirectorJobPayload = (form) => {
+      const payload = {};
+      const stringFields = [
+        'description',
+        'type',
+        'backup_format',
+        'protocol',
+        'level',
+        'messages',
+        'pool',
+        'full_backup_pool',
+        'virtual_full_backup_pool',
+        'incremental_backup_pool',
+        'differential_backup_pool',
+        'next_pool',
+        'client',
+        'fileset',
+        'schedule',
+        'verify_job',
+        'catalog',
+        'jobdefs',
+        'where',
+        'replace',
+        'regex_where',
+        'strip_prefix',
+        'add_prefix',
+        'add_suffix',
+        'bootstrap',
+        'write_bootstrap',
+        'write_verify_list',
+        'selection_type',
+        'selection_pattern',
+      ];
+      for (const field of stringFields) {
+        const value = String(form.get(field) ?? '').trim();
+        if (value) { payload[field] = value; }
+      }
+      const integerFields = [
+        'maximum_bandwidth',
+        'max_run_sched_time',
+        'max_run_time',
+        'full_max_runtime',
+        'incremental_max_runtime',
+        'differential_max_runtime',
+        'max_wait_time',
+        'max_start_delay',
+        'max_full_interval',
+        'max_virtual_full_interval',
+        'max_diff_interval',
+        'spool_size',
+        'maximum_concurrent_jobs',
+        'reschedule_interval',
+        'reschedule_times',
+        'priority',
+        'file_history_size',
+        'max_concurrent_copies',
+        'always_incremental_job_retention',
+        'always_incremental_keep_number',
+        'always_incremental_max_full_age',
+        'max_full_consolidations',
+        'run_on_incoming_connect_interval',
+      ];
+      for (const field of integerFields) {
+        const value = String(form.get(field) ?? '').trim();
+        if (value) { payload[field] = Number.parseInt(value, 10); }
+      }
+      const booleanFields = [
+        'enabled',
+        'prefix_links',
+        'prune_jobs',
+        'prune_files',
+        'prune_volumes',
+        'purge_migration_job',
+        'spool_attributes',
+        'spool_data',
+        'rerun_failed_levels',
+        'prefer_mounted_volumes',
+        'reschedule_on_error',
+        'allow_mixed_priority',
+        'accurate',
+        'allow_duplicate_jobs',
+        'allow_higher_duplicates',
+        'cancel_lower_level_duplicates',
+        'cancel_queued_duplicates',
+        'cancel_running_duplicates',
+        'save_file_history',
+        'always_incremental',
+      ];
+      for (const field of booleanFields) {
+        const value = String(form.get(field) ?? '').trim();
+        if (value) { payload[field] = value === 'true'; }
+      }
+      const arrayFields = [
+        'storages',
+        'run_entries',
+        'run_before_job_entries',
+        'run_after_job_entries',
+        'run_after_failed_job_entries',
+        'client_run_before_job_entries',
+        'client_run_after_job_entries',
+        'fd_plugin_options',
+        'sd_plugin_options',
+        'dir_plugin_options',
+      ];
+      for (const field of arrayFields) {
+        const values = String(form.get(field) ?? '').split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        if (values.length > 0) { payload[field] = values; }
+      }
+      return payload;
+    };
     document.getElementById('director-job-form').addEventListener(
       'submit',
       async (event) => {
@@ -6282,64 +7045,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
         const jobName = String(form.get('job_name') ?? '').trim();
-        const rawStorages = String(form.get('storages') ?? '');
-        const storages = rawStorages.split('\n')
-          .map((line) => line.trim())
-          .filter((line) => line.length > 0);
-        const payload = {
-          description: String(form.get('description') ?? '').trim(),
-          type: String(form.get('type') ?? '').trim(),
-          level: String(form.get('level') ?? '').trim(),
-          messages: String(form.get('messages') ?? '').trim(),
-          storages,
-          pool: String(form.get('pool') ?? '').trim(),
-          full_backup_pool: String(form.get('full_backup_pool') ?? '').trim(),
-          virtual_full_backup_pool:
-            String(form.get('virtual_full_backup_pool') ?? '').trim(),
-          incremental_backup_pool:
-            String(form.get('incremental_backup_pool') ?? '').trim(),
-          differential_backup_pool:
-            String(form.get('differential_backup_pool') ?? '').trim(),
-          next_pool: String(form.get('next_pool') ?? '').trim(),
-          client: String(form.get('client') ?? '').trim(),
-          fileset: String(form.get('fileset') ?? '').trim(),
-          schedule: String(form.get('schedule') ?? '').trim(),
-          verify_job: String(form.get('verify_job') ?? '').trim(),
-          catalog: String(form.get('catalog') ?? '').trim(),
-          jobdefs: String(form.get('jobdefs') ?? '').trim(),
-          where: String(form.get('where') ?? '').trim(),
-          priority: String(form.get('priority') ?? '').trim(),
-          enabled: document.getElementById('director-job-enabled').checked,
-        };
-        if (!payload.description) { delete payload.description; }
-        if (!payload.type) { delete payload.type; }
-        if (!payload.level) { delete payload.level; }
-        if (!payload.messages) { delete payload.messages; }
-        if (payload.storages.length === 0) { delete payload.storages; }
-        if (!payload.pool) { delete payload.pool; }
-        if (!payload.full_backup_pool) { delete payload.full_backup_pool; }
-        if (!payload.virtual_full_backup_pool) {
-          delete payload.virtual_full_backup_pool;
-        }
-        if (!payload.incremental_backup_pool) {
-          delete payload.incremental_backup_pool;
-        }
-        if (!payload.differential_backup_pool) {
-          delete payload.differential_backup_pool;
-        }
-        if (!payload.next_pool) { delete payload.next_pool; }
-        if (!payload.client) { delete payload.client; }
-        if (!payload.fileset) { delete payload.fileset; }
-        if (!payload.schedule) { delete payload.schedule; }
-        if (!payload.verify_job) { delete payload.verify_job; }
-        if (!payload.catalog) { delete payload.catalog; }
-        if (!payload.jobdefs) { delete payload.jobdefs; }
-        if (!payload.where) { delete payload.where; }
-        if (!payload.priority) {
-          delete payload.priority;
-        } else {
-          payload.priority = Number.parseInt(payload.priority, 10);
-        }
+        const payload = buildDirectorJobPayload(form);
         const { response } = await request(
           'PUT',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/jobs/${encodeURIComponent(jobName)}`,
@@ -6372,51 +7078,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
         const jobdefsName = String(form.get('jobdefs_name') ?? '').trim();
-        const rawStorages = String(form.get('storages') ?? '');
-        const storages = rawStorages.split('\n')
-          .map((line) => line.trim())
-          .filter((line) => line.length > 0);
-        const payload = {
-          description: String(form.get('description') ?? '').trim(),
-          type: String(form.get('type') ?? '').trim(),
-          level: String(form.get('level') ?? '').trim(),
-          messages: String(form.get('messages') ?? '').trim(),
-          storages,
-          pool: String(form.get('pool') ?? '').trim(),
-          full_backup_pool: String(form.get('full_backup_pool') ?? '').trim(),
-          incremental_backup_pool:
-            String(form.get('incremental_backup_pool') ?? '').trim(),
-          differential_backup_pool:
-            String(form.get('differential_backup_pool') ?? '').trim(),
-          client: String(form.get('client') ?? '').trim(),
-          fileset: String(form.get('fileset') ?? '').trim(),
-          schedule: String(form.get('schedule') ?? '').trim(),
-          catalog: String(form.get('catalog') ?? '').trim(),
-          priority: String(form.get('priority') ?? '').trim(),
-          enabled: document.getElementById('director-jobdefs-enabled').checked,
-        };
-        if (!payload.description) { delete payload.description; }
-        if (!payload.type) { delete payload.type; }
-        if (!payload.level) { delete payload.level; }
-        if (!payload.messages) { delete payload.messages; }
-        if (payload.storages.length === 0) { delete payload.storages; }
-        if (!payload.pool) { delete payload.pool; }
-        if (!payload.full_backup_pool) { delete payload.full_backup_pool; }
-        if (!payload.incremental_backup_pool) {
-          delete payload.incremental_backup_pool;
-        }
-        if (!payload.differential_backup_pool) {
-          delete payload.differential_backup_pool;
-        }
-        if (!payload.client) { delete payload.client; }
-        if (!payload.fileset) { delete payload.fileset; }
-        if (!payload.schedule) { delete payload.schedule; }
-        if (!payload.catalog) { delete payload.catalog; }
-        if (!payload.priority) {
-          delete payload.priority;
-        } else {
-          payload.priority = Number.parseInt(payload.priority, 10);
-        }
+        const payload = buildDirectorJobPayload(form);
         const { response } = await request(
           'PUT',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/jobdefs/${encodeURIComponent(jobdefsName)}`,
