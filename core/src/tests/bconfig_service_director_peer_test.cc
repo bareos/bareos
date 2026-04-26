@@ -68,6 +68,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
        .ndmp_use_lmdb = false,
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = true,
+       .maximum_concurrent_jobs = 9,
        .heartbeat_interval = 60,
        .maximum_bandwidth_per_job = 2048,
        .description = std::string{"Managed by service"}});
@@ -101,6 +102,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = yes"),
             std::string::npos);
+  EXPECT_NE(created_text.find("MaximumConcurrentJobs = 9"), std::string::npos);
   EXPECT_NE(created_text.find("HeartbeatInterval = 60"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
@@ -128,6 +130,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
             std::string::npos);
+  EXPECT_EQ(stub_text.find("MaximumConcurrentJobs = 9"), std::string::npos);
   EXPECT_NE(stub_text.find("MaximumBandwidthPerJob = 2048"), std::string::npos);
 
   auto updated = state.UpsertDirectorClientResource(
@@ -159,6 +162,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
             std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 9"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 60"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
@@ -212,6 +216,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
                 "  NdmpUseLmdb = no\n"
                 "  ConnectionFromDirectorToClient = no\n"
                 "  ConnectionFromClientToDirector = yes\n"
+                "  MaximumConcurrentJobs = 4\n"
                 "  HeartbeatInterval = 45\n"
                 "  MaximumBandwidthPerJob = 8192\n"
                 "}\n");
@@ -251,6 +256,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
             std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumConcurrentJobs = 4"), std::string::npos);
   EXPECT_NE(updated_text.find("HeartbeatInterval = 45"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 8192"),
             std::string::npos);
@@ -273,6 +279,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
             std::string::npos);
+  EXPECT_EQ(stub_text.find("MaximumConcurrentJobs = 4"), std::string::npos);
   EXPECT_NE(stub_text.find("MaximumBandwidthPerJob = 8192"), std::string::npos);
 }
 

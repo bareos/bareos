@@ -114,6 +114,7 @@ struct DirectorClientRequestSpec {
   std::optional<bool> ndmp_use_lmdb{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
+  std::optional<uint32_t> maximum_concurrent_jobs{};
   std::optional<uint64_t> heartbeat_interval{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> description{};
@@ -1318,6 +1319,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
                  type="checkbox" checked>
           NdmpUseLmdb
         </label>
+
+        <label for="director-client-maximum-concurrent-jobs">MaximumConcurrentJobs</label>
+        <input id="director-client-maximum-concurrent-jobs"
+               name="maximum_concurrent_jobs" type="number" min="0"
+               placeholder="0">
 
         <label for="director-client-heartbeat-interval">Heartbeat interval</label>
         <input id="director-client-heartbeat-interval" name="heartbeat_interval"
@@ -3746,6 +3752,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
           ndmp_block_size: String(form.get('ndmp_block_size') ?? '').trim(),
           ndmp_use_lmdb: document.getElementById(
             'director-client-ndmp-use-lmdb').checked,
+          maximum_concurrent_jobs: String(
+            form.get('maximum_concurrent_jobs') ?? '').trim(),
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
@@ -3791,6 +3799,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
           delete payload.ndmp_block_size;
         } else {
           payload.ndmp_block_size = Number.parseInt(payload.ndmp_block_size, 10);
+        }
+        if (!payload.maximum_concurrent_jobs) {
+          delete payload.maximum_concurrent_jobs;
+        } else {
+          payload.maximum_concurrent_jobs
+            = Number.parseInt(payload.maximum_concurrent_jobs, 10);
         }
         if (!payload.heartbeat_interval) {
           delete payload.heartbeat_interval;
@@ -6879,6 +6893,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
       = spec->connection_from_client_to_director,
+      .maximum_concurrent_jobs = spec->maximum_concurrent_jobs,
       .heartbeat_interval = spec->heartbeat_interval,
       .maximum_bandwidth_per_job = spec->maximum_bandwidth_per_job,
       .description = spec->description,
@@ -8751,6 +8766,8 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
       = json_object_get(root.get(), "connection_from_client_to_director");
+  auto* maximum_concurrent_jobs
+      = json_object_get(root.get(), "maximum_concurrent_jobs");
   auto* heartbeat_interval = json_object_get(root.get(), "heartbeat_interval");
   auto* maximum_bandwidth_per_job
       = json_object_get(root.get(), "maximum_bandwidth_per_job");
@@ -8818,6 +8835,11 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (ndmp_use_lmdb && !json_is_null(ndmp_use_lmdb)
       && !json_is_boolean(ndmp_use_lmdb)) {
     error = "field 'ndmp_use_lmdb' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
+      && !json_is_integer(maximum_concurrent_jobs)) {
+    error = "field 'maximum_concurrent_jobs' must be an integer when provided.";
     return std::nullopt;
   }
   if (connection_from_director_to_client
@@ -8925,6 +8947,15 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (ndmp_use_lmdb && json_is_boolean(ndmp_use_lmdb)) {
     spec.ndmp_use_lmdb = json_is_true(ndmp_use_lmdb);
+  }
+  if (maximum_concurrent_jobs && json_is_integer(maximum_concurrent_jobs)) {
+    const auto value = json_integer_value(maximum_concurrent_jobs);
+    if (value < 0 || value > std::numeric_limits<uint32_t>::max()) {
+      error = "field 'maximum_concurrent_jobs' must be between 0 and "
+              + std::to_string(std::numeric_limits<uint32_t>::max()) + ".";
+      return std::nullopt;
+    }
+    spec.maximum_concurrent_jobs = static_cast<uint32_t>(value);
   }
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {

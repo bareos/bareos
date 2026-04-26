@@ -241,6 +241,7 @@ struct DirectorClientResourceSpec {
   std::optional<bool> ndmp_use_lmdb{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
+  std::optional<uint32_t> maximum_concurrent_jobs{};
   std::optional<uint64_t> heartbeat_interval{};
   std::optional<uint64_t> maximum_bandwidth_per_job{};
   std::optional<std::string> description{};
