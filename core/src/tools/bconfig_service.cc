@@ -1063,6 +1063,7 @@ std::string BuildDirectorClientResourceContent(
     const std::optional<uint32_t>& ndmp_log_level,
     const std::optional<uint32_t>& ndmp_block_size,
     const std::optional<bool>& ndmp_use_lmdb,
+    const std::optional<bool>& auto_prune,
     const std::optional<bool>& connection_from_director_to_client,
     const std::optional<bool>& connection_from_client_to_director,
     const std::optional<uint32_t>& maximum_concurrent_jobs,
@@ -1090,6 +1091,7 @@ std::string BuildDirectorClientResourceContent(
   AppendIntegerDirective(content, "NdmpLogLevel", ndmp_log_level);
   AppendIntegerDirective(content, "NdmpBlockSize", ndmp_block_size);
   AppendBoolDirective(content, "NdmpUseLmdb", ndmp_use_lmdb);
+  AppendBoolDirective(content, "AutoPrune", auto_prune);
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
                       connection_from_director_to_client);
   AppendBoolDirective(content, "ConnectionFromClientToDirector",
@@ -2488,6 +2490,7 @@ struct DirectorClientWriteContext {
   std::optional<uint32_t> ndmp_log_level{};
   std::optional<uint32_t> ndmp_block_size{};
   std::optional<bool> ndmp_use_lmdb{};
+  std::optional<bool> auto_prune{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -2889,6 +2892,9 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
     }
     if (HasMemberSource(*client, {"NdmpUseLmdb"})) {
       context.ndmp_use_lmdb = client->ndmp_use_lmdb;
+    }
+    if (HasMemberSource(*client, {"AutoPrune"})) {
+      context.auto_prune = client->AutoPrune;
     }
     if (HasMemberSource(*client, {"ConnectionFromDirectorToClient"})) {
       context.connection_from_director_to_client = client->conn_from_dir_to_fd;
@@ -8507,6 +8513,8 @@ ServiceState::UpsertDirectorClientResource(
                                    : context.value->ndmp_block_size;
   const auto ndmp_use_lmdb
       = spec.ndmp_use_lmdb ? spec.ndmp_use_lmdb : context.value->ndmp_use_lmdb;
+  const auto auto_prune
+      = spec.auto_prune ? spec.auto_prune : context.value->auto_prune;
   const auto maximum_concurrent_jobs
       = spec.maximum_concurrent_jobs ? spec.maximum_concurrent_jobs
                                      : context.value->maximum_concurrent_jobs;
@@ -8524,9 +8532,9 @@ ServiceState::UpsertDirectorClientResource(
       client_name, *address, lan_address, *password, effective_port, enabled,
       passive, strict_quotas, quota_include_failed_jobs, soft_quota, hard_quota,
       soft_quota_grace_period, ndmp_log_level, ndmp_block_size, ndmp_use_lmdb,
-      connection_from_director_to_client, connection_from_client_to_director,
-      maximum_concurrent_jobs, heartbeat_interval, maximum_bandwidth_per_job,
-      description);
+      auto_prune, connection_from_director_to_client,
+      connection_from_client_to_director, maximum_concurrent_jobs,
+      heartbeat_interval, maximum_bandwidth_per_job, description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "client";

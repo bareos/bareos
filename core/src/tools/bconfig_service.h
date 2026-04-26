@@ -239,6 +239,7 @@ struct DirectorClientResourceSpec {
   std::optional<uint32_t> ndmp_log_level{};
   std::optional<uint32_t> ndmp_block_size{};
   std::optional<bool> ndmp_use_lmdb{};
+  std::optional<bool> auto_prune{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};

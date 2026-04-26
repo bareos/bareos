@@ -66,6 +66,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
        .ndmp_log_level = 7,
        .ndmp_block_size = 64512,
        .ndmp_use_lmdb = false,
+       .auto_prune = true,
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = true,
        .maximum_concurrent_jobs = 9,
@@ -98,6 +99,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(created_text.find("NdmpLogLevel = 7"), std::string::npos);
   EXPECT_NE(created_text.find("NdmpBlockSize = 64512"), std::string::npos);
   EXPECT_NE(created_text.find("NdmpUseLmdb = no"), std::string::npos);
+  EXPECT_NE(created_text.find("AutoPrune = yes"), std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = yes"),
@@ -126,6 +128,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_EQ(stub_text.find("NdmpLogLevel = 7"), std::string::npos);
   EXPECT_EQ(stub_text.find("NdmpBlockSize = 64512"), std::string::npos);
   EXPECT_EQ(stub_text.find("NdmpUseLmdb = no"), std::string::npos);
+  EXPECT_EQ(stub_text.find("AutoPrune = yes"), std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
@@ -158,6 +161,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(updated_text.find("NdmpLogLevel = 7"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpBlockSize = 64512"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpUseLmdb = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("AutoPrune = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
@@ -214,6 +218,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
                 "  NdmpLogLevel = 5\n"
                 "  NdmpBlockSize = 32768\n"
                 "  NdmpUseLmdb = no\n"
+                "  AutoPrune = yes\n"
                 "  ConnectionFromDirectorToClient = no\n"
                 "  ConnectionFromClientToDirector = yes\n"
                 "  MaximumConcurrentJobs = 4\n"
@@ -252,6 +257,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_NE(updated_text.find("NdmpLogLevel = 5"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpBlockSize = 32768"), std::string::npos);
   EXPECT_NE(updated_text.find("NdmpUseLmdb = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("AutoPrune = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
@@ -275,6 +281,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_EQ(stub_text.find("NdmpLogLevel = 5"), std::string::npos);
   EXPECT_EQ(stub_text.find("NdmpBlockSize = 32768"), std::string::npos);
   EXPECT_EQ(stub_text.find("NdmpUseLmdb = no"), std::string::npos);
+  EXPECT_EQ(stub_text.find("AutoPrune = yes"), std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),

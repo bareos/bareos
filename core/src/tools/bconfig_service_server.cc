@@ -112,6 +112,7 @@ struct DirectorClientRequestSpec {
   std::optional<uint32_t> ndmp_log_level{};
   std::optional<uint32_t> ndmp_block_size{};
   std::optional<bool> ndmp_use_lmdb{};
+  std::optional<bool> auto_prune{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -1318,6 +1319,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
           <input id="director-client-ndmp-use-lmdb" name="ndmp_use_lmdb"
                  type="checkbox" checked>
           NdmpUseLmdb
+        </label>
+
+        <label class="checkbox-label" for="director-client-auto-prune">
+          <input id="director-client-auto-prune" name="auto_prune"
+                 type="checkbox">
+          AutoPrune
         </label>
 
         <label for="director-client-maximum-concurrent-jobs">MaximumConcurrentJobs</label>
@@ -3752,6 +3759,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
           ndmp_block_size: String(form.get('ndmp_block_size') ?? '').trim(),
           ndmp_use_lmdb: document.getElementById(
             'director-client-ndmp-use-lmdb').checked,
+          auto_prune: document.getElementById(
+            'director-client-auto-prune').checked,
           maximum_concurrent_jobs: String(
             form.get('maximum_concurrent_jobs') ?? '').trim(),
           maximum_bandwidth_per_job: String(
@@ -6889,6 +6898,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .ndmp_log_level = spec->ndmp_log_level,
       .ndmp_block_size = spec->ndmp_block_size,
       .ndmp_use_lmdb = spec->ndmp_use_lmdb,
+      .auto_prune = spec->auto_prune,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -8762,6 +8772,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* ndmp_log_level = json_object_get(root.get(), "ndmp_log_level");
   auto* ndmp_block_size = json_object_get(root.get(), "ndmp_block_size");
   auto* ndmp_use_lmdb = json_object_get(root.get(), "ndmp_use_lmdb");
+  auto* auto_prune = json_object_get(root.get(), "auto_prune");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -8835,6 +8846,10 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (ndmp_use_lmdb && !json_is_null(ndmp_use_lmdb)
       && !json_is_boolean(ndmp_use_lmdb)) {
     error = "field 'ndmp_use_lmdb' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (auto_prune && !json_is_null(auto_prune) && !json_is_boolean(auto_prune)) {
+    error = "field 'auto_prune' must be a boolean when provided.";
     return std::nullopt;
   }
   if (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
@@ -8947,6 +8962,9 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (ndmp_use_lmdb && json_is_boolean(ndmp_use_lmdb)) {
     spec.ndmp_use_lmdb = json_is_true(ndmp_use_lmdb);
+  }
+  if (auto_prune && json_is_boolean(auto_prune)) {
+    spec.auto_prune = json_is_true(auto_prune);
   }
   if (maximum_concurrent_jobs && json_is_integer(maximum_concurrent_jobs)) {
     const auto value = json_integer_value(maximum_concurrent_jobs);
