@@ -244,6 +244,7 @@ struct DirectorClientResourceSpec {
   std::optional<bool> auto_prune{};
   std::optional<bool> tls_authenticate{};
   std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};

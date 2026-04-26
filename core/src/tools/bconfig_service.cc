@@ -1068,6 +1068,7 @@ std::string BuildDirectorClientResourceContent(
     const std::optional<bool>& auto_prune,
     const std::optional<bool>& tls_authenticate,
     const std::optional<bool>& tls_enable,
+    const std::optional<bool>& tls_require,
     const std::optional<bool>& connection_from_director_to_client,
     const std::optional<bool>& connection_from_client_to_director,
     const std::optional<uint32_t>& maximum_concurrent_jobs,
@@ -1100,6 +1101,7 @@ std::string BuildDirectorClientResourceContent(
   AppendBoolDirective(content, "AutoPrune", auto_prune);
   AppendBoolDirective(content, "TlsAuthenticate", tls_authenticate);
   AppendBoolDirective(content, "TlsEnable", tls_enable);
+  AppendBoolDirective(content, "TlsRequire", tls_require);
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
                       connection_from_director_to_client);
   AppendBoolDirective(content, "ConnectionFromClientToDirector",
@@ -2503,6 +2505,7 @@ struct DirectorClientWriteContext {
   std::optional<bool> auto_prune{};
   std::optional<bool> tls_authenticate{};
   std::optional<bool> tls_enable{};
+  std::optional<bool> tls_require{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -2919,6 +2922,9 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
     }
     if (HasMemberSource(*client, {"TlsEnable"})) {
       context.tls_enable = client->tls_enable_;
+    }
+    if (HasMemberSource(*client, {"TlsRequire"})) {
+      context.tls_require = client->tls_require_;
     }
     if (HasMemberSource(*client, {"ConnectionFromDirectorToClient"})) {
       context.connection_from_director_to_client = client->conn_from_dir_to_fd;
@@ -8549,6 +8555,8 @@ ServiceState::UpsertDirectorClientResource(
                                     : context.value->tls_authenticate;
   const auto tls_enable
       = spec.tls_enable ? spec.tls_enable : context.value->tls_enable;
+  const auto tls_require
+      = spec.tls_require ? spec.tls_require : context.value->tls_require;
   const auto maximum_concurrent_jobs
       = spec.maximum_concurrent_jobs ? spec.maximum_concurrent_jobs
                                      : context.value->maximum_concurrent_jobs;
@@ -8567,9 +8575,9 @@ ServiceState::UpsertDirectorClientResource(
       passive, strict_quotas, quota_include_failed_jobs, soft_quota, hard_quota,
       soft_quota_grace_period, file_retention, job_retention, ndmp_log_level,
       ndmp_block_size, ndmp_use_lmdb, auto_prune, tls_authenticate, tls_enable,
-      connection_from_director_to_client, connection_from_client_to_director,
-      maximum_concurrent_jobs, heartbeat_interval, maximum_bandwidth_per_job,
-      description);
+      tls_require, connection_from_director_to_client,
+      connection_from_client_to_director, maximum_concurrent_jobs,
+      heartbeat_interval, maximum_bandwidth_per_job, description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "client";

@@ -71,6 +71,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
        .auto_prune = true,
        .tls_authenticate = true,
        .tls_enable = true,
+       .tls_require = true,
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = true,
        .maximum_concurrent_jobs = 9,
@@ -108,6 +109,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(created_text.find("AutoPrune = yes"), std::string::npos);
   EXPECT_NE(created_text.find("TlsAuthenticate = yes"), std::string::npos);
   EXPECT_NE(created_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = yes"),
@@ -141,6 +143,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_EQ(stub_text.find("AutoPrune = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("TlsAuthenticate = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_EQ(stub_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
@@ -178,6 +181,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(updated_text.find("AutoPrune = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsAuthenticate = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
@@ -239,6 +243,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
                 "  AutoPrune = yes\n"
                 "  TlsAuthenticate = yes\n"
                 "  TlsEnable = yes\n"
+                "  TlsRequire = yes\n"
                 "  ConnectionFromDirectorToClient = no\n"
                 "  ConnectionFromClientToDirector = yes\n"
                 "  MaximumConcurrentJobs = 4\n"
@@ -282,6 +287,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_NE(updated_text.find("AutoPrune = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsAuthenticate = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
@@ -310,6 +316,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_EQ(stub_text.find("AutoPrune = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("TlsAuthenticate = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("TlsEnable = yes"), std::string::npos);
+  EXPECT_EQ(stub_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
