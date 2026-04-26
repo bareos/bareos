@@ -763,6 +763,9 @@ OperationResult<std::vector<std::string>> ExtractNamedTopLevelDirectiveValues(
     std::string_view resource_name,
     const std::set<std::string>& directive_names);
 
+template <typename Resource>
+std::optional<std::string> CopyResourceName(const Resource* resource);
+
 std::string BuildClientDirectorStubContent(
     std::string_view director_name,
     std::string_view password,
@@ -1054,6 +1057,7 @@ std::string BuildDirectorClientResourceContent(
     const std::optional<std::string>& lan_address,
     const std::optional<std::string>& protocol,
     const std::optional<std::string>& auth_type,
+    const std::optional<std::string>& catalog,
     const std::optional<std::string>& username,
     std::string_view password,
     uint32_t port,
@@ -1099,6 +1103,7 @@ std::string BuildDirectorClientResourceContent(
   AppendBareosDirective(content, "LanAddress", lan_address);
   AppendBareosDirective(content, "Protocol", protocol);
   AppendBareosDirective(content, "AuthType", auth_type);
+  AppendBareosDirective(content, "Catalog", catalog);
   content << "  Password = " << QuoteBareosString(password) << "\n"
           << "  Port = " << port << "\n";
   AppendQuotedDirective(content, "Username", username);
@@ -2556,6 +2561,7 @@ struct DirectorClientWriteContext {
   std::optional<uint32_t> port{};
   std::optional<std::string> protocol{};
   std::optional<std::string> auth_type{};
+  std::optional<std::string> catalog{};
   std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<bool> enabled{};
@@ -2971,6 +2977,9 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
                          + "' has an unsupported AuthType value."};
       }
       context.auth_type = auth_type;
+    }
+    if (HasMemberSource(*client, {"Catalog"})) {
+      context.catalog = CopyResourceName(client->catalog);
     }
     if (client->username && client->username[0] != '\0') {
       context.username = std::string{client->username};
@@ -8646,6 +8655,7 @@ ServiceState::UpsertDirectorClientResource(
     if (!normalized_auth_type) { return {.error = normalized_auth_type.error}; }
     auth_type = *normalized_auth_type.value;
   }
+  const auto catalog = spec.catalog ? spec.catalog : context.value->catalog;
   const auto username = spec.username ? spec.username : context.value->username;
 
   const auto password
@@ -8755,8 +8765,8 @@ ServiceState::UpsertDirectorClientResource(
             : context.value->description.value_or(
                   DefaultDirectorClientDescription(client_name, director_name));
   const auto content = BuildDirectorClientResourceContent(
-      client_name, *address, lan_address, protocol, auth_type, username,
-      *password, effective_port, enabled, passive, strict_quotas,
+      client_name, *address, lan_address, protocol, auth_type, catalog,
+      username, *password, effective_port, enabled, passive, strict_quotas,
       quota_include_failed_jobs, soft_quota, hard_quota,
       soft_quota_grace_period, file_retention, job_retention, ndmp_log_level,
       ndmp_block_size, ndmp_use_lmdb, auto_prune, tls_authenticate, tls_enable,

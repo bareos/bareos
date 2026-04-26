@@ -230,6 +230,7 @@ struct DirectorClientResourceSpec {
   std::optional<uint16_t> port{};
   std::optional<std::string> protocol{};
   std::optional<std::string> auth_type{};
+  std::optional<std::string> catalog{};
   std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<bool> enabled{};

@@ -103,6 +103,7 @@ struct DirectorClientRequestSpec {
   std::optional<uint16_t> port{};
   std::optional<std::string> protocol{};
   std::optional<std::string> auth_type{};
+  std::optional<std::string> catalog{};
   std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<bool> enabled{};
@@ -1276,6 +1277,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-client-auth-type">AuthType</label>
         <input id="director-client-auth-type" name="auth_type"
                placeholder="None">
+
+        <label for="director-client-catalog">Catalog</label>
+        <input id="director-client-catalog" name="catalog"
+               placeholder="MyCatalog">
 
         <label for="director-client-username">Username</label>
         <input id="director-client-username" name="username"
@@ -3853,6 +3858,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           lan_address: String(form.get('lan_address') ?? '').trim(),
           protocol: String(form.get('protocol') ?? '').trim(),
           auth_type: String(form.get('auth_type') ?? '').trim(),
+          catalog: String(form.get('catalog') ?? '').trim(),
           username: String(form.get('username') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
           enabled: document.getElementById('director-client-enabled').checked,
@@ -3916,6 +3922,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.auth_type) {
           delete payload.auth_type;
+        }
+        if (!payload.catalog) {
+          delete payload.catalog;
         }
         if (!payload.username) {
           delete payload.username;
@@ -7075,6 +7084,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .port = spec->port,
       .protocol = spec->protocol,
       .auth_type = spec->auth_type,
+      .catalog = spec->catalog,
       .username = spec->username,
       .password = spec->password,
       .enabled = spec->enabled,
@@ -8966,6 +8976,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* port = json_object_get(root.get(), "port");
   auto* protocol = json_object_get(root.get(), "protocol");
   auto* auth_type = json_object_get(root.get(), "auth_type");
+  auto* catalog = json_object_get(root.get(), "catalog");
   auto* username = json_object_get(root.get(), "username");
   auto* password = json_object_get(root.get(), "password");
   auto* enabled = json_object_get(root.get(), "enabled");
@@ -9046,6 +9057,10 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (auth_type && !json_is_null(auth_type) && !json_is_string(auth_type)) {
     error = "field 'auth_type' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (catalog && !json_is_null(catalog) && !json_is_string(catalog)) {
+    error = "field 'catalog' must be a string when provided.";
     return std::nullopt;
   }
   if (username && !json_is_null(username) && !json_is_string(username)) {
@@ -9252,6 +9267,9 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (auth_type && json_is_string(auth_type)) {
     spec.auth_type = std::string{json_string_value(auth_type)};
+  }
+  if (catalog && json_is_string(catalog)) {
+    spec.catalog = std::string{json_string_value(catalog)};
   }
   if (username && json_is_string(username)) {
     spec.username = std::string{json_string_value(username)};
