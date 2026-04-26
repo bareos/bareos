@@ -874,6 +874,20 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
   X509_NAME_ENTRY* neCN;
   ASN1_STRING* asn1CN;
   bool auth_success = false;
+  auto free_subject_alt_name_data
+      = [](const X509V3_EXT_METHOD* method, void* extstr,
+           STACK_OF(CONF_VALUE) * val) {
+          if (val) { sk_CONF_VALUE_pop_free(val, X509V3_conf_free); }
+
+          if (!extstr) { return; }
+
+          if (method->it) {
+            ASN1_item_free(reinterpret_cast<ASN1_VALUE*>(extstr),
+                           ASN1_ITEM_ptr(method->it));
+          } else if (method->ext_free) {
+            method->ext_free(extstr);
+          }
+        };
 
   if (!(cert = SSL_get_peer_certificate(openssl_))) {
     Qmsg1(jcr, M_ERROR, 0, T_("Peer %s failed to present a TLS certificate\n"),
@@ -892,9 +906,9 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
 
       if (bstrcmp(extname, "subjectAltName")) {
         const X509V3_EXT_METHOD* method;
-        STACK_OF(CONF_VALUE) * val;
+        STACK_OF(CONF_VALUE) * val = nullptr;
         CONF_VALUE* nval;
-        void* extstr = NULL;
+        void* extstr = nullptr;
         const unsigned char* ext_value_data;
 
         if (!(method = X509V3_EXT_get(ext))) { break; }
@@ -914,16 +928,23 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
 
         // Iterate through to find the dNSName field(s)
         val = method->i2v(method, extstr, NULL);
+        if (!val) {
+          free_subject_alt_name_data(method, extstr, val);
+          continue;
+        }
 
         for (j = 0; j < sk_CONF_VALUE_num(val); j++) {
           nval = sk_CONF_VALUE_value(val, j);
           if (bstrcmp(nval->name, "DNS")) {
             if (Bstrcasecmp(nval->value, host)) {
               auth_success = true;
-              goto success;
+              break;
             }
           }
         }
+
+        free_subject_alt_name_data(method, extstr, val);
+        if (auth_success) { goto success; }
       }
     }
   }
