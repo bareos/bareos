@@ -106,6 +106,7 @@ struct DirectorClientRequestSpec {
   std::optional<bool> passive{};
   std::optional<bool> strict_quotas{};
   std::optional<bool> quota_include_failed_jobs{};
+  std::optional<uint64_t> soft_quota{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -1285,6 +1286,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-client-maximum-bandwidth-per-job"
                name="maximum_bandwidth_per_job" type="number" min="0"
                placeholder="0">
+
+        <label for="director-client-soft-quota">SoftQuota</label>
+        <input id="director-client-soft-quota" name="soft_quota" type="number"
+               min="0" placeholder="0">
 
         <label for="director-client-heartbeat-interval">Heartbeat interval</label>
         <input id="director-client-heartbeat-interval" name="heartbeat_interval"
@@ -3705,6 +3710,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
             'director-client-connection-from-director-to-client').checked,
           connection_from_client_to_director: document.getElementById(
             'director-client-connection-from-client-to-director').checked,
+          soft_quota: String(form.get('soft_quota') ?? '').trim(),
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
@@ -3724,6 +3730,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         } else {
           payload.maximum_bandwidth_per_job
             = Number.parseInt(payload.maximum_bandwidth_per_job, 10);
+        }
+        if (!payload.soft_quota) {
+          delete payload.soft_quota;
+        } else {
+          payload.soft_quota = Number.parseInt(payload.soft_quota, 10);
         }
         if (!payload.heartbeat_interval) {
           delete payload.heartbeat_interval;
@@ -6802,6 +6813,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .passive = spec->passive,
       .strict_quotas = spec->strict_quotas,
       .quota_include_failed_jobs = spec->quota_include_failed_jobs,
+      .soft_quota = spec->soft_quota,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -8392,7 +8404,6 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
 
   auto* description = json_object_get(root.get(), "description");
   auto* address = json_object_get(root.get(), "address");
-  auto* lan_address = json_object_get(root.get(), "lan_address");
   auto* port = json_object_get(root.get(), "port");
   auto* allowed_script_dirs
       = json_object_get(root.get(), "allowed_script_dirs");
@@ -8445,11 +8456,6 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   }
   if (address && !json_is_null(address) && !json_is_string(address)) {
     error = "field 'address' must be a string when provided.";
-    return std::nullopt;
-  }
-  if (lan_address && !json_is_null(lan_address)
-      && !json_is_string(lan_address)) {
-    error = "field 'lan_address' must be a string when provided.";
     return std::nullopt;
   }
   if (port && !json_is_null(port) && !json_is_integer(port)) {
@@ -8575,9 +8581,6 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   if (address && json_is_string(address)) {
     spec.address = std::string{json_string_value(address)};
   }
-  if (lan_address && json_is_string(lan_address)) {
-    spec.lan_address = std::string{json_string_value(lan_address)};
-  }
   if (port && json_is_integer(port)) {
     const auto value = json_integer_value(port);
     if (value <= 0 || value > 65535) {
@@ -8676,6 +8679,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* strict_quotas = json_object_get(root.get(), "strict_quotas");
   auto* quota_include_failed_jobs
       = json_object_get(root.get(), "quota_include_failed_jobs");
+  auto* soft_quota = json_object_get(root.get(), "soft_quota");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -8719,6 +8723,10 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
       && !json_is_boolean(quota_include_failed_jobs)) {
     error
         = "field 'quota_include_failed_jobs' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (soft_quota && !json_is_null(soft_quota) && !json_is_integer(soft_quota)) {
+    error = "field 'soft_quota' must be an integer when provided.";
     return std::nullopt;
   }
   if (connection_from_director_to_client
@@ -8781,6 +8789,14 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (quota_include_failed_jobs && json_is_boolean(quota_include_failed_jobs)) {
     spec.quota_include_failed_jobs = json_is_true(quota_include_failed_jobs);
+  }
+  if (soft_quota && json_is_integer(soft_quota)) {
+    const auto value = json_integer_value(soft_quota);
+    if (value < 0) {
+      error = "field 'soft_quota' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.soft_quota = static_cast<uint64_t>(value);
   }
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {

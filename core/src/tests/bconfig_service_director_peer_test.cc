@@ -60,6 +60,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
        .passive = true,
        .strict_quotas = true,
        .quota_include_failed_jobs = false,
+       .soft_quota = 4096,
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = true,
        .heartbeat_interval = 60,
@@ -85,6 +86,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(created_text.find("StrictQuotas = yes"), std::string::npos);
   EXPECT_NE(created_text.find("QuotaIncludeFailedJobs = no"),
             std::string::npos);
+  EXPECT_NE(created_text.find("SoftQuota = 4096"), std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = yes"),
@@ -106,6 +108,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_EQ(stub_text.find("Passive = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("StrictQuotas = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("QuotaIncludeFailedJobs = no"), std::string::npos);
+  EXPECT_EQ(stub_text.find("SoftQuota = 4096"), std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
@@ -131,6 +134,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(updated_text.find("StrictQuotas = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("QuotaIncludeFailedJobs = no"),
             std::string::npos);
+  EXPECT_NE(updated_text.find("SoftQuota = 4096"), std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
@@ -180,6 +184,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
                 "  Passive = yes\n"
                 "  StrictQuotas = yes\n"
                 "  QuotaIncludeFailedJobs = no\n"
+                "  SoftQuota = 16384\n"
                 "  ConnectionFromDirectorToClient = no\n"
                 "  ConnectionFromClientToDirector = yes\n"
                 "  HeartbeatInterval = 45\n"
@@ -211,6 +216,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_NE(updated_text.find("StrictQuotas = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("QuotaIncludeFailedJobs = no"),
             std::string::npos);
+  EXPECT_NE(updated_text.find("SoftQuota = 16384"), std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
@@ -227,6 +233,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_EQ(stub_text.find("Passive = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("StrictQuotas = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("QuotaIncludeFailedJobs = no"), std::string::npos);
+  EXPECT_EQ(stub_text.find("SoftQuota = 16384"), std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
