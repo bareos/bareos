@@ -1359,6 +1359,8 @@ TEST(BconfigService, UpsertsDirectorScheduleResourcesInSharedFiles)
   const auto shared_text = ReadTextFile(shared_path);
   EXPECT_NE(shared_text.find("Description = \"Updated odd weeks\""),
             std::string::npos);
+  EXPECT_NE(shared_text.find("Enabled = yes"), std::string::npos);
+  EXPECT_NE(shared_text.find("Run = w01/w02 sun at 23:10"), std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherSchedule\""), std::string::npos);
 }
 
@@ -1575,6 +1577,8 @@ TEST(BconfigService, UpsertsDirectorCounterResourcesInSharedFiles)
   const auto shared_text = ReadTextFile(shared_path);
   EXPECT_NE(shared_text.find("Description = \"Updated counter\""),
             std::string::npos);
+  EXPECT_NE(shared_text.find("WrapCounter = WrapSeed"), std::string::npos);
+  EXPECT_NE(shared_text.find("Catalog = MyCatalog"), std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherCounter\""), std::string::npos);
 }
 
@@ -1810,6 +1814,12 @@ TEST(BconfigService, UpsertsDirectorFilesetResourcesInSharedFiles)
   EXPECT_TRUE(std::filesystem::exists(shared_path));
   const auto shared_text = ReadTextFile(shared_path);
   EXPECT_NE(shared_text.find("Description = \"Updated LinuxAll fileset\""),
+            std::string::npos);
+  EXPECT_NE(
+      shared_text.find("Include {\n    Options {\n      Signature = XXH128"),
+      std::string::npos);
+  EXPECT_NE(shared_text.find(
+                "Exclude {\n    File = /tmp/tests/backup-bareos-test/working"),
             std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherFileSet\""), std::string::npos);
 }
