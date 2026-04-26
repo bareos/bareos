@@ -99,6 +99,7 @@ struct ClientDirectorStubRequestSpec {
 
 struct DirectorClientRequestSpec {
   std::optional<std::string> address{};
+  std::optional<std::string> lan_address{};
   std::optional<uint16_t> port{};
   std::optional<std::string> password{};
   std::optional<bool> enabled{};
@@ -1235,6 +1236,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="director-client-address">Address</label>
         <input id="director-client-address" name="address" value="client1-fd.example.com">
+
+        <label for="director-client-lan-address">LanAddress</label>
+        <input id="director-client-lan-address" name="lan_address">
 
         <label for="director-client-password">Password</label>
         <input id="director-client-password" name="password"
@@ -3674,6 +3678,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const clientName = String(form.get('client_name') ?? '').trim();
         const payload = {
           address: String(form.get('address') ?? '').trim(),
+          lan_address: String(form.get('lan_address') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
           enabled: document.getElementById('director-client-enabled').checked,
           passive: document.getElementById('director-client-passive').checked,
@@ -3688,6 +3693,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         };
         if (!payload.address) {
           delete payload.address;
+        }
+        if (!payload.lan_address) {
+          delete payload.lan_address;
         }
         if (!payload.password) {
           delete payload.password;
@@ -6768,6 +6776,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
 
   DirectorClientResourceSpec resource_spec{
       .address = spec->address,
+      .lan_address = spec->lan_address,
       .port = spec->port,
       .password = spec->password,
       .enabled = spec->enabled,
@@ -8544,6 +8553,9 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   }
   if (address && json_is_string(address)) {
     spec.address = std::string{json_string_value(address)};
+  }
+  if (lan_address && json_is_string(lan_address)) {
+    spec.lan_address = std::string{json_string_value(lan_address)};
   }
   if (port && json_is_integer(port)) {
     const auto value = json_integer_value(port);

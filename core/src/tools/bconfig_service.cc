@@ -1050,6 +1050,7 @@ struct DirectorJobContentSpec {
 std::string BuildDirectorClientResourceContent(
     std::string_view client_name,
     std::string_view address,
+    const std::optional<std::string>& lan_address,
     std::string_view password,
     uint32_t port,
     const std::optional<bool>& enabled,
@@ -1067,6 +1068,7 @@ std::string BuildDirectorClientResourceContent(
           << "  Address = " << address << "\n"
           << "  Password = " << QuoteBareosString(password) << "\n"
           << "  Port = " << port << "\n";
+  AppendBareosDirective(content, "LanAddress", lan_address);
   AppendBoolDirective(content, "Enabled", enabled);
   AppendBoolDirective(content, "Passive", passive);
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
@@ -2452,6 +2454,7 @@ std::string FormatParseFailure(std::string_view prefix,
 struct DirectorClientWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> address{};
+  std::optional<std::string> lan_address{};
   std::optional<uint32_t> port{};
   std::optional<std::string> password{};
   std::optional<bool> enabled{};
@@ -2821,6 +2824,9 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
     context.exists = true;
     if (client->address && client->address[0] != '\0') {
       context.address = std::string{client->address};
+    }
+    if (client->lanaddress && client->lanaddress[0] != '\0') {
+      context.lan_address = std::string{client->lanaddress};
     }
     if (client->FDport != 0) { context.port = client->FDport; }
     if (HasMemberSource(*client, {"Enabled"})) {
@@ -8391,6 +8397,8 @@ ServiceState::UpsertDirectorClientResource(
             = "director client address must be a bare Bareos token "
               "without whitespace or quotes."};
   }
+  const auto lan_address
+      = spec.lan_address ? spec.lan_address : context.value->lan_address;
 
   const auto password
       = spec.password ? *spec.password : context.value->password;
@@ -8431,9 +8439,10 @@ ServiceState::UpsertDirectorClientResource(
             : context.value->description.value_or(
                   DefaultDirectorClientDescription(client_name, director_name));
   const auto content = BuildDirectorClientResourceContent(
-      client_name, *address, *password, effective_port, enabled, passive,
-      connection_from_director_to_client, connection_from_client_to_director,
-      heartbeat_interval, maximum_bandwidth_per_job, description);
+      client_name, *address, lan_address, *password, effective_port, enabled,
+      passive, connection_from_director_to_client,
+      connection_from_client_to_director, heartbeat_interval,
+      maximum_bandwidth_per_job, description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "client";

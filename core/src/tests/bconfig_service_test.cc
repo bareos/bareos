@@ -3152,6 +3152,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   auto created = state.UpsertDirectorClientResource(
       "prod", "bareos-dir", "client1-fd",
       {.address = std::string{"client1-fd.example.com"},
+       .lan_address = std::string{"client1-fd-lan.example.com"},
        .password = std::string{"[md5]0123456789abcdef0123456789abcdef"},
        .enabled = false,
        .passive = true,
@@ -3168,6 +3169,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   const auto created_text = ReadTextFile(director_client_path);
   EXPECT_NE(created_text.find("Name = \"client1-fd\""), std::string::npos);
   EXPECT_NE(created_text.find("Address = client1-fd.example.com"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("LanAddress = client1-fd-lan.example.com"),
             std::string::npos);
   EXPECT_NE(
       created_text.find("Password = \"[md5]0123456789abcdef0123456789abcdef\""),
@@ -3191,6 +3194,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(
       stub_text.find("Password = \"[md5]0123456789abcdef0123456789abcdef\""),
       std::string::npos);
+  EXPECT_EQ(stub_text.find("LanAddress = client1-fd-lan.example.com"),
+            std::string::npos);
   EXPECT_EQ(stub_text.find("Passive = yes"), std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
@@ -3205,6 +3210,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
 
   const auto updated_text = ReadTextFile(director_client_path);
   EXPECT_NE(updated_text.find("Address = client1-alt.example.com"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("LanAddress = client1-fd-lan.example.com"),
             std::string::npos);
   EXPECT_NE(
       updated_text.find("Password = \"[md5]0123456789abcdef0123456789abcdef\""),
@@ -3254,6 +3261,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
                 "  Name = \"bareos-fd\"\n"
                 "  Description = \"Imported client\"\n"
                 "  Address = localhost\n"
+                "  LanAddress = imported-client-lan.example.com\n"
                 "  Password = \"secret\"\n"
                 "  Port = 70000\n"
                 "  Enabled = no\n"
@@ -3281,6 +3289,8 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   const auto updated_text = ReadTextFile(
       updated.value->path / "bareos-dir.d/client/bareos-fd.conf");
   EXPECT_NE(updated_text.find("Address = localhost"), std::string::npos);
+  EXPECT_NE(updated_text.find("LanAddress = imported-client-lan.example.com"),
+            std::string::npos);
   EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);
   EXPECT_NE(updated_text.find("Enabled = no"), std::string::npos);
   EXPECT_NE(updated_text.find("Passive = yes"), std::string::npos);
