@@ -3510,6 +3510,7 @@ struct ClientMessagesWriteContext {
 struct ClientDirectorStubWriteContext {
   std::filesystem::path file_path{};
   std::optional<std::string> description{};
+  std::optional<std::string> password{};
   std::optional<std::string> address{};
   std::optional<uint32_t> port{};
   std::optional<std::vector<std::string>> allowed_script_dirs{};
@@ -8973,6 +8974,13 @@ LoadClientDirectorStubWriteContext(const std::filesystem::path& client_root,
     if (director->description_ && director->description_[0] != '\0') {
       context.description = std::string{director->description_};
     }
+    if (HasMemberSource(*director, {"Password"})) {
+      auto rendered_password = RenderPasswordForConfig(
+          director->password_,
+          "client director password for '" + std::string{director_name} + "'");
+      if (!rendered_password) { return {.error = rendered_password.error}; }
+      context.password = *rendered_password.value;
+    }
     if (HasMemberSource(*director, {"Address"}) && director->address
         && director->address[0] != '\0') {
       context.address = std::string{director->address};
@@ -9812,6 +9820,7 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
                                : context.value->description.value_or(
                                      DefaultClientDirectorStubDescription(
                                          client_name, director_name));
+  const auto stub_password = spec.password ? *spec.password : *password.value;
   const auto address = spec.address ? spec.address : context.value->address;
   const auto port
       = spec.port ? std::optional<uint32_t>{*spec.port} : context.value->port;
@@ -9872,7 +9881,7 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
             ? spec.maximum_bandwidth_per_job
             : context.value->maximum_bandwidth_per_job;
   const auto stub_content = BuildClientDirectorStubContent(
-      director_name, *password.value, description, address, port,
+      director_name, stub_password, description, address, port,
       allowed_script_dirs, allowed_job_commands, tls_authenticate, tls_enable,
       tls_require, tls_verify_peer, tls_cipher_list, tls_cipher_suites,
       tls_dh_file, tls_protocol, tls_ca_certificate_file,

@@ -1013,6 +1013,7 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   auto created = state.UpsertClientDirectorStub(
       "prod", "bareos-fd", "bareos-dir",
       {.description = std::string{"Initial stub"},
+       .password = std::string{"[md5]11111111111111111111111111111111"},
        .address = std::string{"127.0.0.1"},
        .port = 9101,
        .allowed_script_dirs
@@ -1048,7 +1049,9 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   ASSERT_TRUE(created_file.good());
   const std::string created_text((std::istreambuf_iterator<char>(created_file)),
                                  std::istreambuf_iterator<char>());
-  EXPECT_NE(created_text.find("Password = \"[md5]"), std::string::npos);
+  EXPECT_NE(
+      created_text.find("Password = \"[md5]11111111111111111111111111111111\""),
+      std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Initial stub\""),
             std::string::npos);
   EXPECT_NE(created_text.find("Address = 127.0.0.1"), std::string::npos);
@@ -1098,14 +1101,17 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
 
   auto updated = state.UpsertClientDirectorStub(
       "prod", "bareos-fd", "bareos-dir",
-      {.description = std::string{"Updated stub"}});
+      {.description = std::string{"Updated stub"},
+       .password = std::string{"[md5]22222222222222222222222222222222"}});
   ASSERT_TRUE(updated);
 
   std::ifstream updated_file{stub_path};
   ASSERT_TRUE(updated_file.good());
   const std::string updated_text((std::istreambuf_iterator<char>(updated_file)),
                                  std::istreambuf_iterator<char>());
-  EXPECT_NE(updated_text.find("Password = \"[md5]"), std::string::npos);
+  EXPECT_NE(
+      updated_text.find("Password = \"[md5]22222222222222222222222222222222\""),
+      std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated stub\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Address = 127.0.0.1"), std::string::npos);
@@ -1211,11 +1217,15 @@ TEST(BconfigService, UpsertsClientDirectorStubsInSharedFiles)
 
   auto updated = state.UpsertClientDirectorStub(
       "prod", "bareos-fd", "bareos-dir",
-      {.description = std::string{"Updated shared stub"}});
+      {.description = std::string{"Updated shared stub"},
+       .password = std::string{"[md5]33333333333333333333333333333333"}});
   ASSERT_TRUE(updated) << updated.error;
   EXPECT_FALSE(std::filesystem::exists(original_path));
   EXPECT_TRUE(std::filesystem::exists(shared_path));
   const auto shared_text = ReadTextFile(shared_path);
+  EXPECT_NE(
+      shared_text.find("Password = \"[md5]33333333333333333333333333333333\""),
+      std::string::npos);
   EXPECT_NE(shared_text.find("Description = \"Updated shared stub\""),
             std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"other-dir\""), std::string::npos);

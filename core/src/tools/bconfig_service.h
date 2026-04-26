@@ -107,6 +107,7 @@ struct DeploymentConfigRecord {
 
 struct ClientDirectorStubSpec {
   std::optional<std::string> description{};
+  std::optional<std::string> password{};
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
   std::optional<std::vector<std::string>> allowed_script_dirs{};

@@ -73,6 +73,7 @@ struct InspectRequestSpec {
 
 struct ClientDirectorStubRequestSpec {
   std::optional<std::string> description{};
+  std::optional<std::string> password{};
   std::optional<std::string> address{};
   std::optional<uint16_t> port{};
   std::optional<std::vector<std::string>> allowed_script_dirs{};
@@ -6581,6 +6582,7 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
 
   ClientDirectorStubSpec stub_spec{
       .description = spec->description,
+      .password = spec->password,
       .address = spec->address,
       .port = spec->port,
       .allowed_script_dirs = spec->allowed_script_dirs,
@@ -9055,6 +9057,7 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   }
 
   auto* description = json_object_get(root.get(), "description");
+  auto* password = json_object_get(root.get(), "password");
   auto* address = json_object_get(root.get(), "address");
   auto* port = json_object_get(root.get(), "port");
   auto* allowed_script_dirs
@@ -9104,6 +9107,10 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   if (description && !json_is_null(description)
       && !json_is_string(description)) {
     error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (password && !json_is_null(password) && !json_is_string(password)) {
+    error = "field 'password' must be a string when provided.";
     return std::nullopt;
   }
   if (address && !json_is_null(address) && !json_is_string(address)) {
@@ -9229,6 +9236,9 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
   };
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
+  }
+  if (password && json_is_string(password)) {
+    spec.password = std::string{json_string_value(password)};
   }
   if (address && json_is_string(address)) {
     spec.address = std::string{json_string_value(address)};
