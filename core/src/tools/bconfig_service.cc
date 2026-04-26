@@ -1051,6 +1051,7 @@ std::string BuildDirectorClientResourceContent(
     std::string_view client_name,
     std::string_view address,
     const std::optional<std::string>& lan_address,
+    const std::optional<std::string>& username,
     std::string_view password,
     uint32_t port,
     const std::optional<bool>& enabled,
@@ -1095,6 +1096,7 @@ std::string BuildDirectorClientResourceContent(
           << "  Password = " << QuoteBareosString(password) << "\n"
           << "  Port = " << port << "\n";
   AppendBareosDirective(content, "LanAddress", lan_address);
+  AppendQuotedDirective(content, "Username", username);
   AppendBoolDirective(content, "Enabled", enabled);
   AppendBoolDirective(content, "Passive", passive);
   AppendBoolDirective(content, "StrictQuotas", strict_quotas);
@@ -2515,6 +2517,7 @@ struct DirectorClientWriteContext {
   std::optional<std::string> address{};
   std::optional<std::string> lan_address{};
   std::optional<uint32_t> port{};
+  std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<bool> enabled{};
   std::optional<bool> passive{};
@@ -2914,6 +2917,9 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
       context.lan_address = std::string{client->lanaddress};
     }
     if (client->FDport != 0) { context.port = client->FDport; }
+    if (client->username && client->username[0] != '\0') {
+      context.username = std::string{client->username};
+    }
     if (HasMemberSource(*client, {"Enabled"})) {
       context.enabled = client->enabled;
     }
@@ -8573,6 +8579,7 @@ ServiceState::UpsertDirectorClientResource(
   }
   const auto lan_address
       = spec.lan_address ? spec.lan_address : context.value->lan_address;
+  const auto username = spec.username ? spec.username : context.value->username;
 
   const auto password
       = spec.password ? *spec.password : context.value->password;
@@ -8681,16 +8688,17 @@ ServiceState::UpsertDirectorClientResource(
             : context.value->description.value_or(
                   DefaultDirectorClientDescription(client_name, director_name));
   const auto content = BuildDirectorClientResourceContent(
-      client_name, *address, lan_address, *password, effective_port, enabled,
-      passive, strict_quotas, quota_include_failed_jobs, soft_quota, hard_quota,
-      soft_quota_grace_period, file_retention, job_retention, ndmp_log_level,
-      ndmp_block_size, ndmp_use_lmdb, auto_prune, tls_authenticate, tls_enable,
-      tls_require, tls_verify_peer, tls_cipher_list, tls_cipher_suites,
-      tls_dh_file, tls_protocol, tls_ca_certificate_file,
-      tls_ca_certificate_dir, tls_certificate_revocation_list, tls_certificate,
-      tls_key, tls_allowed_cn, connection_from_director_to_client,
-      connection_from_client_to_director, maximum_concurrent_jobs,
-      heartbeat_interval, maximum_bandwidth_per_job, description);
+      client_name, *address, lan_address, username, *password, effective_port,
+      enabled, passive, strict_quotas, quota_include_failed_jobs, soft_quota,
+      hard_quota, soft_quota_grace_period, file_retention, job_retention,
+      ndmp_log_level, ndmp_block_size, ndmp_use_lmdb, auto_prune,
+      tls_authenticate, tls_enable, tls_require, tls_verify_peer,
+      tls_cipher_list, tls_cipher_suites, tls_dh_file, tls_protocol,
+      tls_ca_certificate_file, tls_ca_certificate_dir,
+      tls_certificate_revocation_list, tls_certificate, tls_key, tls_allowed_cn,
+      connection_from_director_to_client, connection_from_client_to_director,
+      maximum_concurrent_jobs, heartbeat_interval, maximum_bandwidth_per_job,
+      description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "client";

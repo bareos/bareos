@@ -101,6 +101,7 @@ struct DirectorClientRequestSpec {
   std::optional<std::string> address{};
   std::optional<std::string> lan_address{};
   std::optional<uint16_t> port{};
+  std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<bool> enabled{};
   std::optional<bool> passive{};
@@ -1265,6 +1266,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="director-client-lan-address">LanAddress</label>
         <input id="director-client-lan-address" name="lan_address">
+
+        <label for="director-client-username">Username</label>
+        <input id="director-client-username" name="username"
+               placeholder="bareos">
 
         <label for="director-client-password">Password</label>
         <input id="director-client-password" name="password"
@@ -3836,6 +3841,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const payload = {
           address: String(form.get('address') ?? '').trim(),
           lan_address: String(form.get('lan_address') ?? '').trim(),
+          username: String(form.get('username') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
           enabled: document.getElementById('director-client-enabled').checked,
           passive: document.getElementById('director-client-passive').checked,
@@ -3892,6 +3898,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.lan_address) {
           delete payload.lan_address;
+        }
+        if (!payload.username) {
+          delete payload.username;
         }
         if (!payload.password) {
           delete payload.password;
@@ -7046,6 +7055,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .address = spec->address,
       .lan_address = spec->lan_address,
       .port = spec->port,
+      .username = spec->username,
       .password = spec->password,
       .enabled = spec->enabled,
       .passive = spec->passive,
@@ -8934,6 +8944,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* address = json_object_get(root.get(), "address");
   auto* lan_address = json_object_get(root.get(), "lan_address");
   auto* port = json_object_get(root.get(), "port");
+  auto* username = json_object_get(root.get(), "username");
   auto* password = json_object_get(root.get(), "password");
   auto* enabled = json_object_get(root.get(), "enabled");
   auto* passive = json_object_get(root.get(), "passive");
@@ -9005,6 +9016,10 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (port && !json_is_null(port) && !json_is_integer(port)) {
     error = "field 'port' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (username && !json_is_null(username) && !json_is_string(username)) {
+    error = "field 'username' must be a string when provided.";
     return std::nullopt;
   }
   if (password && !json_is_null(password) && !json_is_string(password)) {
@@ -9201,6 +9216,9 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
       return std::nullopt;
     }
     spec.port = static_cast<uint16_t>(value);
+  }
+  if (username && json_is_string(username)) {
+    spec.username = std::string{json_string_value(username)};
   }
   if (password && json_is_string(password)) {
     spec.password = std::string{json_string_value(password)};
