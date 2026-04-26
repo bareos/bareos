@@ -125,6 +125,7 @@ struct DirectorClientRequestSpec {
   std::optional<std::string> tls_protocol{};
   std::optional<std::string> tls_ca_certificate_file{};
   std::optional<std::string> tls_ca_certificate_dir{};
+  std::optional<std::string> tls_certificate_revocation_list{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -1396,6 +1397,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-client-tls-ca-certificate-dir"
                name="tls_ca_certificate_dir"
                placeholder="/etc/ssl/certs">
+
+        <label for="director-client-tls-certificate-revocation-list">TlsCertificateRevocationList</label>
+        <input id="director-client-tls-certificate-revocation-list"
+               name="tls_certificate_revocation_list"
+               placeholder="/etc/bareos/crl.pem">
 
         <label for="director-client-maximum-concurrent-jobs">MaximumConcurrentJobs</label>
         <input id="director-client-maximum-concurrent-jobs"
@@ -3849,6 +3855,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
             form.get('tls_ca_certificate_file') ?? '').trim(),
           tls_ca_certificate_dir: String(
             form.get('tls_ca_certificate_dir') ?? '').trim(),
+          tls_certificate_revocation_list: String(
+            form.get('tls_certificate_revocation_list') ?? '').trim(),
           maximum_concurrent_jobs: String(
             form.get('maximum_concurrent_jobs') ?? '').trim(),
           maximum_bandwidth_per_job: String(
@@ -3882,6 +3890,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.tls_ca_certificate_dir) {
           delete payload.tls_ca_certificate_dir;
+        }
+        if (!payload.tls_certificate_revocation_list) {
+          delete payload.tls_certificate_revocation_list;
         }
         if (!payload.maximum_bandwidth_per_job) {
           delete payload.maximum_bandwidth_per_job;
@@ -7027,6 +7038,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .tls_protocol = spec->tls_protocol,
       .tls_ca_certificate_file = spec->tls_ca_certificate_file,
       .tls_ca_certificate_dir = spec->tls_ca_certificate_dir,
+      .tls_certificate_revocation_list = spec->tls_certificate_revocation_list,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -8915,6 +8927,8 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
       = json_object_get(root.get(), "tls_ca_certificate_file");
   auto* tls_ca_certificate_dir
       = json_object_get(root.get(), "tls_ca_certificate_dir");
+  auto* tls_certificate_revocation_list
+      = json_object_get(root.get(), "tls_certificate_revocation_list");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -9051,6 +9065,14 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (tls_ca_certificate_dir && !json_is_null(tls_ca_certificate_dir)
       && !json_is_string(tls_ca_certificate_dir)) {
     error = "field 'tls_ca_certificate_dir' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (tls_certificate_revocation_list
+      && !json_is_null(tls_certificate_revocation_list)
+      && !json_is_string(tls_certificate_revocation_list)) {
+    error
+        = "field 'tls_certificate_revocation_list' must be a string when "
+          "provided.";
     return std::nullopt;
   }
   if (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
@@ -9214,6 +9236,11 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (tls_ca_certificate_dir && json_is_string(tls_ca_certificate_dir)) {
     spec.tls_ca_certificate_dir
         = std::string{json_string_value(tls_ca_certificate_dir)};
+  }
+  if (tls_certificate_revocation_list
+      && json_is_string(tls_certificate_revocation_list)) {
+    spec.tls_certificate_revocation_list
+        = std::string{json_string_value(tls_certificate_revocation_list)};
   }
   if (maximum_concurrent_jobs && json_is_integer(maximum_concurrent_jobs)) {
     const auto value = json_integer_value(maximum_concurrent_jobs);
