@@ -1047,6 +1047,7 @@ struct DirectorFilesetContentSpec {
 struct DirectorJobContentSpec {
   std::optional<std::string> description{};
   std::optional<std::string> type{};
+  std::optional<std::string> backup_format{};
   std::optional<std::string> level{};
   std::optional<std::string> messages{};
   std::vector<std::string> storages{};
@@ -1062,7 +1063,15 @@ struct DirectorJobContentSpec {
   std::optional<std::string> verify_job{};
   std::optional<std::string> catalog{};
   std::optional<std::string> jobdefs{};
+  std::vector<std::string> run_entries{};
   std::optional<std::string> where{};
+  std::optional<std::string> regex_where{};
+  std::optional<std::string> strip_prefix{};
+  std::optional<std::string> add_prefix{};
+  std::optional<std::string> add_suffix{};
+  std::optional<std::string> bootstrap{};
+  std::optional<std::string> write_bootstrap{};
+  std::optional<std::string> write_verify_list{};
   std::optional<uint64_t> maximum_bandwidth{};
   std::optional<uint64_t> max_run_sched_time{};
   std::optional<uint64_t> max_run_time{};
@@ -1090,6 +1099,7 @@ struct DirectorJobContentSpec {
   std::optional<uint32_t> reschedule_times{};
   std::optional<int32_t> priority{};
   std::optional<bool> allow_mixed_priority{};
+  std::optional<std::string> selection_pattern{};
   std::optional<bool> accurate{};
   std::optional<bool> allow_duplicate_jobs{};
   std::optional<bool> allow_higher_duplicates{};
@@ -1098,6 +1108,9 @@ struct DirectorJobContentSpec {
   std::optional<bool> cancel_running_duplicates{};
   std::optional<bool> save_file_history{};
   std::optional<uint64_t> file_history_size{};
+  std::vector<std::string> fd_plugin_options{};
+  std::vector<std::string> sd_plugin_options{};
+  std::vector<std::string> dir_plugin_options{};
   std::optional<uint32_t> max_concurrent_copies{};
   std::optional<bool> always_incremental{};
   std::optional<uint64_t> always_incremental_job_retention{};
@@ -1916,6 +1929,7 @@ std::string BuildDirectorJobResourceContent(std::string_view job_name,
           << "  Name = " << QuoteBareosString(job_name) << "\n";
   AppendQuotedDirective(content, "Description", spec.description);
   AppendBareosDirective(content, "Type", spec.type);
+  AppendQuotedDirective(content, "BackupFormat", spec.backup_format);
   AppendBareosDirective(content, "Level", spec.level);
   AppendBareosDirective(content, "Messages", spec.messages);
   AppendRepeatedBareosDirective(content, "Storage", spec.storages);
@@ -1934,7 +1948,17 @@ std::string BuildDirectorJobResourceContent(std::string_view job_name,
   AppendBareosDirective(content, "JobToVerify", spec.verify_job);
   AppendBareosDirective(content, "Catalog", spec.catalog);
   AppendBareosDirective(content, "JobDefs", spec.jobdefs);
+  for (const auto& entry : spec.run_entries) {
+    content << "  Run = " << entry << "\n";
+  }
   AppendBareosDirective(content, "Where", spec.where);
+  AppendQuotedDirective(content, "RegexWhere", spec.regex_where);
+  AppendQuotedDirective(content, "StripPrefix", spec.strip_prefix);
+  AppendQuotedDirective(content, "AddPrefix", spec.add_prefix);
+  AppendQuotedDirective(content, "AddSuffix", spec.add_suffix);
+  AppendQuotedDirective(content, "Bootstrap", spec.bootstrap);
+  AppendQuotedDirective(content, "WriteBootstrap", spec.write_bootstrap);
+  AppendQuotedDirective(content, "WriteVerifyList", spec.write_verify_list);
   AppendIntegerDirective(content, "MaximumBandwidth", spec.maximum_bandwidth);
   AppendIntegerDirective(content, "MaxRunSchedTime", spec.max_run_sched_time);
   AppendIntegerDirective(content, "MaxRunTime", spec.max_run_time);
@@ -1968,6 +1992,7 @@ std::string BuildDirectorJobResourceContent(std::string_view job_name,
   AppendIntegerDirective(content, "RescheduleTimes", spec.reschedule_times);
   AppendIntegerDirective(content, "Priority", spec.priority);
   AppendBoolDirective(content, "AllowMixedPriority", spec.allow_mixed_priority);
+  AppendQuotedDirective(content, "SelectionPattern", spec.selection_pattern);
   AppendBoolDirective(content, "Accurate", spec.accurate);
   AppendBoolDirective(content, "AllowDuplicateJobs", spec.allow_duplicate_jobs);
   AppendBoolDirective(content, "AllowHigherDuplicates",
@@ -1980,6 +2005,15 @@ std::string BuildDirectorJobResourceContent(std::string_view job_name,
                       spec.cancel_running_duplicates);
   AppendBoolDirective(content, "SaveFileHistory", spec.save_file_history);
   AppendIntegerDirective(content, "FileHistorySize", spec.file_history_size);
+  for (const auto& entry : spec.fd_plugin_options) {
+    content << "  FdPluginOptions = " << QuoteBareosString(entry) << "\n";
+  }
+  for (const auto& entry : spec.sd_plugin_options) {
+    content << "  SdPluginOptions = " << QuoteBareosString(entry) << "\n";
+  }
+  for (const auto& entry : spec.dir_plugin_options) {
+    content << "  DirPluginOptions = " << QuoteBareosString(entry) << "\n";
+  }
   AppendIntegerDirective(content, "MaxConcurrentCopies",
                          spec.max_concurrent_copies);
   AppendBoolDirective(content, "AlwaysIncremental", spec.always_incremental);
@@ -2003,6 +2037,7 @@ std::string BuildDirectorJobDefsResourceContent(
           << "  Name = " << QuoteBareosString(jobdefs_name) << "\n";
   AppendQuotedDirective(content, "Description", spec.description);
   AppendBareosDirective(content, "Type", spec.type);
+  AppendQuotedDirective(content, "BackupFormat", spec.backup_format);
   AppendBareosDirective(content, "Level", spec.level);
   AppendBareosDirective(content, "Messages", spec.messages);
   AppendRepeatedBareosDirective(content, "Storage", spec.storages);
@@ -2021,7 +2056,17 @@ std::string BuildDirectorJobDefsResourceContent(
   AppendBareosDirective(content, "JobToVerify", spec.verify_job);
   AppendBareosDirective(content, "Catalog", spec.catalog);
   AppendBareosDirective(content, "JobDefs", spec.jobdefs);
+  for (const auto& entry : spec.run_entries) {
+    content << "  Run = " << entry << "\n";
+  }
   AppendBareosDirective(content, "Where", spec.where);
+  AppendQuotedDirective(content, "RegexWhere", spec.regex_where);
+  AppendQuotedDirective(content, "StripPrefix", spec.strip_prefix);
+  AppendQuotedDirective(content, "AddPrefix", spec.add_prefix);
+  AppendQuotedDirective(content, "AddSuffix", spec.add_suffix);
+  AppendQuotedDirective(content, "Bootstrap", spec.bootstrap);
+  AppendQuotedDirective(content, "WriteBootstrap", spec.write_bootstrap);
+  AppendQuotedDirective(content, "WriteVerifyList", spec.write_verify_list);
   AppendIntegerDirective(content, "MaximumBandwidth", spec.maximum_bandwidth);
   AppendIntegerDirective(content, "MaxRunSchedTime", spec.max_run_sched_time);
   AppendIntegerDirective(content, "MaxRunTime", spec.max_run_time);
@@ -2055,6 +2100,7 @@ std::string BuildDirectorJobDefsResourceContent(
   AppendIntegerDirective(content, "RescheduleTimes", spec.reschedule_times);
   AppendIntegerDirective(content, "Priority", spec.priority);
   AppendBoolDirective(content, "AllowMixedPriority", spec.allow_mixed_priority);
+  AppendQuotedDirective(content, "SelectionPattern", spec.selection_pattern);
   AppendBoolDirective(content, "Accurate", spec.accurate);
   AppendBoolDirective(content, "AllowDuplicateJobs", spec.allow_duplicate_jobs);
   AppendBoolDirective(content, "AllowHigherDuplicates",
@@ -2067,6 +2113,15 @@ std::string BuildDirectorJobDefsResourceContent(
                       spec.cancel_running_duplicates);
   AppendBoolDirective(content, "SaveFileHistory", spec.save_file_history);
   AppendIntegerDirective(content, "FileHistorySize", spec.file_history_size);
+  for (const auto& entry : spec.fd_plugin_options) {
+    content << "  FdPluginOptions = " << QuoteBareosString(entry) << "\n";
+  }
+  for (const auto& entry : spec.sd_plugin_options) {
+    content << "  SdPluginOptions = " << QuoteBareosString(entry) << "\n";
+  }
+  for (const auto& entry : spec.dir_plugin_options) {
+    content << "  DirPluginOptions = " << QuoteBareosString(entry) << "\n";
+  }
   AppendIntegerDirective(content, "MaxConcurrentCopies",
                          spec.max_concurrent_copies);
   AppendBoolDirective(content, "AlwaysIncremental", spec.always_incremental);
@@ -6549,6 +6604,10 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
     auto level = RenderJobLevelForConfig(job->JobLevel, job->JobType);
     if (!level) { return {.error = level.error}; }
     if (!level.value->empty()) { context.content.level = *level.value; }
+    if (HasMemberSource(*job, {"BackupFormat"}) && job->backup_format
+        && job->backup_format[0] != '\0') {
+      context.content.backup_format = std::string{job->backup_format};
+    }
     context.content.messages = CopyResourceName(job->messages);
     context.content.storages = CopyStorageNames(job->storage);
     context.content.pool = CopyResourceName(job->pool);
@@ -6564,8 +6623,39 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
     context.content.verify_job = CopyResourceName(job->verify_job);
     context.content.catalog = CopyResourceName(job->catalog);
     context.content.jobdefs = CopyResourceName(job->jobdefs);
+    if (HasMemberSource(*job, {"Run"})) {
+      context.content.run_entries = CopyAclValues(job->run_cmds);
+    }
     if (job->RestoreWhere && job->RestoreWhere[0] != '\0') {
       context.content.where = std::string{job->RestoreWhere};
+    }
+    if (HasMemberSource(*job, {"RegexWhere"}) && job->RegexWhere
+        && job->RegexWhere[0] != '\0') {
+      context.content.regex_where = std::string{job->RegexWhere};
+    }
+    if (HasMemberSource(*job, {"StripPrefix"}) && job->strip_prefix
+        && job->strip_prefix[0] != '\0') {
+      context.content.strip_prefix = std::string{job->strip_prefix};
+    }
+    if (HasMemberSource(*job, {"AddPrefix"}) && job->add_prefix
+        && job->add_prefix[0] != '\0') {
+      context.content.add_prefix = std::string{job->add_prefix};
+    }
+    if (HasMemberSource(*job, {"AddSuffix"}) && job->add_suffix
+        && job->add_suffix[0] != '\0') {
+      context.content.add_suffix = std::string{job->add_suffix};
+    }
+    if (HasMemberSource(*job, {"Bootstrap"}) && job->RestoreBootstrap
+        && job->RestoreBootstrap[0] != '\0') {
+      context.content.bootstrap = std::string{job->RestoreBootstrap};
+    }
+    if (HasMemberSource(*job, {"WriteBootstrap"}) && job->WriteBootstrap
+        && job->WriteBootstrap[0] != '\0') {
+      context.content.write_bootstrap = std::string{job->WriteBootstrap};
+    }
+    if (HasMemberSource(*job, {"WriteVerifyList"}) && job->WriteVerifyList
+        && job->WriteVerifyList[0] != '\0') {
+      context.content.write_verify_list = std::string{job->WriteVerifyList};
     }
     if (HasMemberSource(*job, {"MaximumBandwidth"})) {
       if (job->max_bandwidth < 0) {
@@ -6662,6 +6752,10 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
     if (HasMemberSource(*job, {"AllowMixedPriority"})) {
       context.content.allow_mixed_priority = job->allow_mixed_priority;
     }
+    if (HasMemberSource(*job, {"SelectionPattern"}) && job->selection_pattern
+        && job->selection_pattern[0] != '\0') {
+      context.content.selection_pattern = std::string{job->selection_pattern};
+    }
     if (HasMemberSource(*job, {"Accurate"})) {
       context.content.accurate = job->accurate;
     }
@@ -6690,6 +6784,15 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
                          + "' has negative FileHistorySize."};
       }
       context.content.file_history_size = job->FileHistSize;
+    }
+    if (HasMemberSource(*job, {"FdPluginOptions"})) {
+      context.content.fd_plugin_options = CopyAclValues(job->FdPluginOptions);
+    }
+    if (HasMemberSource(*job, {"SdPluginOptions"})) {
+      context.content.sd_plugin_options = CopyAclValues(job->SdPluginOptions);
+    }
+    if (HasMemberSource(*job, {"DirPluginOptions"})) {
+      context.content.dir_plugin_options = CopyAclValues(job->DirPluginOptions);
     }
     if (HasMemberSource(*job, {"MaxConcurrentCopies"})) {
       if (job->MaxConcurrentCopies < 0) {
@@ -6721,6 +6824,7 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
         "Name",
         "Description",
         "Type",
+        "BackupFormat",
         "Level",
         "Messages",
         "Storage",
@@ -6737,7 +6841,15 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
         "VerifyJob",
         "Catalog",
         "JobDefs",
+        "Run",
         "Where",
+        "RegexWhere",
+        "StripPrefix",
+        "AddPrefix",
+        "AddSuffix",
+        "Bootstrap",
+        "WriteBootstrap",
+        "WriteVerifyList",
         "MaximumBandwidth",
         "MaxRunSchedTime",
         "MaxRunTime",
@@ -6765,6 +6877,7 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
         "RescheduleTimes",
         "Priority",
         "AllowMixedPriority",
+        "SelectionPattern",
         "Accurate",
         "AllowDuplicateJobs",
         "AllowHigherDuplicates",
@@ -6773,6 +6886,9 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
         "CancelRunningDuplicates",
         "SaveFileHistory",
         "FileHistorySize",
+        "FdPluginOptions",
+        "SdPluginOptions",
+        "DirPluginOptions",
         "MaxConcurrentCopies",
         "AlwaysIncremental",
         "AlwaysIncrementalJobRetention",
@@ -6841,6 +6957,10 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
     auto level = RenderJobLevelForConfig(jobdefs->JobLevel, jobdefs->JobType);
     if (!level) { return {.error = level.error}; }
     if (!level.value->empty()) { context.content.level = *level.value; }
+    if (HasMemberSource(*jobdefs, {"BackupFormat"}) && jobdefs->backup_format
+        && jobdefs->backup_format[0] != '\0') {
+      context.content.backup_format = std::string{jobdefs->backup_format};
+    }
     context.content.messages = CopyResourceName(jobdefs->messages);
     context.content.storages = CopyStorageNames(jobdefs->storage);
     context.content.pool = CopyResourceName(jobdefs->pool);
@@ -6858,8 +6978,39 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
     context.content.verify_job = CopyResourceName(jobdefs->verify_job);
     context.content.catalog = CopyResourceName(jobdefs->catalog);
     context.content.jobdefs = CopyResourceName(jobdefs->jobdefs);
+    if (HasMemberSource(*jobdefs, {"Run"})) {
+      context.content.run_entries = CopyAclValues(jobdefs->run_cmds);
+    }
     if (jobdefs->RestoreWhere && jobdefs->RestoreWhere[0] != '\0') {
       context.content.where = std::string{jobdefs->RestoreWhere};
+    }
+    if (HasMemberSource(*jobdefs, {"RegexWhere"}) && jobdefs->RegexWhere
+        && jobdefs->RegexWhere[0] != '\0') {
+      context.content.regex_where = std::string{jobdefs->RegexWhere};
+    }
+    if (HasMemberSource(*jobdefs, {"StripPrefix"}) && jobdefs->strip_prefix
+        && jobdefs->strip_prefix[0] != '\0') {
+      context.content.strip_prefix = std::string{jobdefs->strip_prefix};
+    }
+    if (HasMemberSource(*jobdefs, {"AddPrefix"}) && jobdefs->add_prefix
+        && jobdefs->add_prefix[0] != '\0') {
+      context.content.add_prefix = std::string{jobdefs->add_prefix};
+    }
+    if (HasMemberSource(*jobdefs, {"AddSuffix"}) && jobdefs->add_suffix
+        && jobdefs->add_suffix[0] != '\0') {
+      context.content.add_suffix = std::string{jobdefs->add_suffix};
+    }
+    if (HasMemberSource(*jobdefs, {"Bootstrap"}) && jobdefs->RestoreBootstrap
+        && jobdefs->RestoreBootstrap[0] != '\0') {
+      context.content.bootstrap = std::string{jobdefs->RestoreBootstrap};
+    }
+    if (HasMemberSource(*jobdefs, {"WriteBootstrap"}) && jobdefs->WriteBootstrap
+        && jobdefs->WriteBootstrap[0] != '\0') {
+      context.content.write_bootstrap = std::string{jobdefs->WriteBootstrap};
+    }
+    if (HasMemberSource(*jobdefs, {"WriteVerifyList"})
+        && jobdefs->WriteVerifyList && jobdefs->WriteVerifyList[0] != '\0') {
+      context.content.write_verify_list = std::string{jobdefs->WriteVerifyList};
     }
     if (HasMemberSource(*jobdefs, {"MaximumBandwidth"})) {
       if (jobdefs->max_bandwidth < 0) {
@@ -6958,6 +7109,12 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
     if (HasMemberSource(*jobdefs, {"AllowMixedPriority"})) {
       context.content.allow_mixed_priority = jobdefs->allow_mixed_priority;
     }
+    if (HasMemberSource(*jobdefs, {"SelectionPattern"})
+        && jobdefs->selection_pattern
+        && jobdefs->selection_pattern[0] != '\0') {
+      context.content.selection_pattern
+          = std::string{jobdefs->selection_pattern};
+    }
     if (HasMemberSource(*jobdefs, {"Accurate"})) {
       context.content.accurate = jobdefs->accurate;
     }
@@ -6989,6 +7146,18 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
       }
       context.content.file_history_size = jobdefs->FileHistSize;
     }
+    if (HasMemberSource(*jobdefs, {"FdPluginOptions"})) {
+      context.content.fd_plugin_options
+          = CopyAclValues(jobdefs->FdPluginOptions);
+    }
+    if (HasMemberSource(*jobdefs, {"SdPluginOptions"})) {
+      context.content.sd_plugin_options
+          = CopyAclValues(jobdefs->SdPluginOptions);
+    }
+    if (HasMemberSource(*jobdefs, {"DirPluginOptions"})) {
+      context.content.dir_plugin_options
+          = CopyAclValues(jobdefs->DirPluginOptions);
+    }
     if (HasMemberSource(*jobdefs, {"MaxConcurrentCopies"})) {
       if (jobdefs->MaxConcurrentCopies < 0) {
         return {.error = "director jobdefs '" + std::string{jobdefs_name}
@@ -7019,6 +7188,7 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
         "Name",
         "Description",
         "Type",
+        "BackupFormat",
         "Level",
         "Messages",
         "Storage",
@@ -7035,7 +7205,15 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
         "VerifyJob",
         "Catalog",
         "JobDefs",
+        "Run",
         "Where",
+        "RegexWhere",
+        "StripPrefix",
+        "AddPrefix",
+        "AddSuffix",
+        "Bootstrap",
+        "WriteBootstrap",
+        "WriteVerifyList",
         "MaximumBandwidth",
         "MaxRunSchedTime",
         "MaxRunTime",
@@ -7063,6 +7241,7 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
         "RescheduleTimes",
         "Priority",
         "AllowMixedPriority",
+        "SelectionPattern",
         "Accurate",
         "AllowDuplicateJobs",
         "AllowHigherDuplicates",
@@ -7071,6 +7250,9 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
         "CancelRunningDuplicates",
         "SaveFileHistory",
         "FileHistorySize",
+        "FdPluginOptions",
+        "SdPluginOptions",
+        "DirPluginOptions",
         "MaxConcurrentCopies",
         "AlwaysIncremental",
         "AlwaysIncrementalJobRetention",
@@ -12535,6 +12717,7 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertDirectorJobResource(
             : content.description.value_or(
                   DefaultDirectorJobDescription(job_name, director_name));
   if (spec.type) { content.type = *spec.type; }
+  if (spec.backup_format) { content.backup_format = *spec.backup_format; }
   if (spec.level) { content.level = *spec.level; }
   if (spec.messages) { content.messages = *spec.messages; }
   if (spec.storages) { content.storages = *spec.storages; }
@@ -12558,7 +12741,17 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertDirectorJobResource(
   if (spec.verify_job) { content.verify_job = *spec.verify_job; }
   if (spec.catalog) { content.catalog = *spec.catalog; }
   if (spec.jobdefs) { content.jobdefs = *spec.jobdefs; }
+  if (spec.run_entries) { content.run_entries = *spec.run_entries; }
   if (spec.where) { content.where = *spec.where; }
+  if (spec.regex_where) { content.regex_where = *spec.regex_where; }
+  if (spec.strip_prefix) { content.strip_prefix = *spec.strip_prefix; }
+  if (spec.add_prefix) { content.add_prefix = *spec.add_prefix; }
+  if (spec.add_suffix) { content.add_suffix = *spec.add_suffix; }
+  if (spec.bootstrap) { content.bootstrap = *spec.bootstrap; }
+  if (spec.write_bootstrap) { content.write_bootstrap = *spec.write_bootstrap; }
+  if (spec.write_verify_list) {
+    content.write_verify_list = *spec.write_verify_list;
+  }
   if (spec.maximum_bandwidth) {
     content.maximum_bandwidth = *spec.maximum_bandwidth;
   }
@@ -12620,6 +12813,9 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertDirectorJobResource(
   if (spec.allow_mixed_priority) {
     content.allow_mixed_priority = *spec.allow_mixed_priority;
   }
+  if (spec.selection_pattern) {
+    content.selection_pattern = *spec.selection_pattern;
+  }
   if (spec.accurate) { content.accurate = *spec.accurate; }
   if (spec.allow_duplicate_jobs) {
     content.allow_duplicate_jobs = *spec.allow_duplicate_jobs;
@@ -12641,6 +12837,15 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertDirectorJobResource(
   }
   if (spec.file_history_size) {
     content.file_history_size = *spec.file_history_size;
+  }
+  if (spec.fd_plugin_options) {
+    content.fd_plugin_options = *spec.fd_plugin_options;
+  }
+  if (spec.sd_plugin_options) {
+    content.sd_plugin_options = *spec.sd_plugin_options;
+  }
+  if (spec.dir_plugin_options) {
+    content.dir_plugin_options = *spec.dir_plugin_options;
   }
   if (spec.max_concurrent_copies) {
     content.max_concurrent_copies = *spec.max_concurrent_copies;
@@ -12811,6 +13016,7 @@ ServiceState::UpsertDirectorJobDefsResource(
             : content.description.value_or(DefaultDirectorJobDefsDescription(
                   jobdefs_name, director_name));
   if (spec.type) { content.type = *spec.type; }
+  if (spec.backup_format) { content.backup_format = *spec.backup_format; }
   if (spec.level) { content.level = *spec.level; }
   if (spec.messages) { content.messages = *spec.messages; }
   if (spec.storages) { content.storages = *spec.storages; }
@@ -12834,7 +13040,17 @@ ServiceState::UpsertDirectorJobDefsResource(
   if (spec.verify_job) { content.verify_job = *spec.verify_job; }
   if (spec.catalog) { content.catalog = *spec.catalog; }
   if (spec.jobdefs) { content.jobdefs = *spec.jobdefs; }
+  if (spec.run_entries) { content.run_entries = *spec.run_entries; }
   if (spec.where) { content.where = *spec.where; }
+  if (spec.regex_where) { content.regex_where = *spec.regex_where; }
+  if (spec.strip_prefix) { content.strip_prefix = *spec.strip_prefix; }
+  if (spec.add_prefix) { content.add_prefix = *spec.add_prefix; }
+  if (spec.add_suffix) { content.add_suffix = *spec.add_suffix; }
+  if (spec.bootstrap) { content.bootstrap = *spec.bootstrap; }
+  if (spec.write_bootstrap) { content.write_bootstrap = *spec.write_bootstrap; }
+  if (spec.write_verify_list) {
+    content.write_verify_list = *spec.write_verify_list;
+  }
   if (spec.maximum_bandwidth) {
     content.maximum_bandwidth = *spec.maximum_bandwidth;
   }
@@ -12896,6 +13112,9 @@ ServiceState::UpsertDirectorJobDefsResource(
   if (spec.allow_mixed_priority) {
     content.allow_mixed_priority = *spec.allow_mixed_priority;
   }
+  if (spec.selection_pattern) {
+    content.selection_pattern = *spec.selection_pattern;
+  }
   if (spec.accurate) { content.accurate = *spec.accurate; }
   if (spec.allow_duplicate_jobs) {
     content.allow_duplicate_jobs = *spec.allow_duplicate_jobs;
@@ -12917,6 +13136,15 @@ ServiceState::UpsertDirectorJobDefsResource(
   }
   if (spec.file_history_size) {
     content.file_history_size = *spec.file_history_size;
+  }
+  if (spec.fd_plugin_options) {
+    content.fd_plugin_options = *spec.fd_plugin_options;
+  }
+  if (spec.sd_plugin_options) {
+    content.sd_plugin_options = *spec.sd_plugin_options;
+  }
+  if (spec.dir_plugin_options) {
+    content.dir_plugin_options = *spec.dir_plugin_options;
   }
   if (spec.max_concurrent_copies) {
     content.max_concurrent_copies = *spec.max_concurrent_copies;

@@ -509,6 +509,7 @@ struct DirectorFilesetResourceSpec {
 struct DirectorJobResourceSpec {
   std::optional<std::string> description{};
   std::optional<std::string> type{};
+  std::optional<std::string> backup_format{};
   std::optional<std::string> level{};
   std::optional<std::string> messages{};
   std::optional<std::vector<std::string>> storages{};
@@ -524,7 +525,15 @@ struct DirectorJobResourceSpec {
   std::optional<std::string> verify_job{};
   std::optional<std::string> catalog{};
   std::optional<std::string> jobdefs{};
+  std::optional<std::vector<std::string>> run_entries{};
   std::optional<std::string> where{};
+  std::optional<std::string> regex_where{};
+  std::optional<std::string> strip_prefix{};
+  std::optional<std::string> add_prefix{};
+  std::optional<std::string> add_suffix{};
+  std::optional<std::string> bootstrap{};
+  std::optional<std::string> write_bootstrap{};
+  std::optional<std::string> write_verify_list{};
   std::optional<uint64_t> maximum_bandwidth{};
   std::optional<uint64_t> max_run_sched_time{};
   std::optional<uint64_t> max_run_time{};
@@ -552,6 +561,7 @@ struct DirectorJobResourceSpec {
   std::optional<uint32_t> reschedule_times{};
   std::optional<int32_t> priority{};
   std::optional<bool> allow_mixed_priority{};
+  std::optional<std::string> selection_pattern{};
   std::optional<bool> accurate{};
   std::optional<bool> allow_duplicate_jobs{};
   std::optional<bool> allow_higher_duplicates{};
@@ -560,6 +570,9 @@ struct DirectorJobResourceSpec {
   std::optional<bool> cancel_running_duplicates{};
   std::optional<bool> save_file_history{};
   std::optional<uint64_t> file_history_size{};
+  std::optional<std::vector<std::string>> fd_plugin_options{};
+  std::optional<std::vector<std::string>> sd_plugin_options{};
+  std::optional<std::vector<std::string>> dir_plugin_options{};
   std::optional<uint32_t> max_concurrent_copies{};
   std::optional<bool> always_incremental{};
   std::optional<uint64_t> always_incremental_job_retention{};
@@ -569,6 +582,7 @@ struct DirectorJobResourceSpec {
 struct DirectorJobDefsResourceSpec {
   std::optional<std::string> description{};
   std::optional<std::string> type{};
+  std::optional<std::string> backup_format{};
   std::optional<std::string> level{};
   std::optional<std::string> messages{};
   std::optional<std::vector<std::string>> storages{};
@@ -584,7 +598,15 @@ struct DirectorJobDefsResourceSpec {
   std::optional<std::string> verify_job{};
   std::optional<std::string> catalog{};
   std::optional<std::string> jobdefs{};
+  std::optional<std::vector<std::string>> run_entries{};
   std::optional<std::string> where{};
+  std::optional<std::string> regex_where{};
+  std::optional<std::string> strip_prefix{};
+  std::optional<std::string> add_prefix{};
+  std::optional<std::string> add_suffix{};
+  std::optional<std::string> bootstrap{};
+  std::optional<std::string> write_bootstrap{};
+  std::optional<std::string> write_verify_list{};
   std::optional<uint64_t> maximum_bandwidth{};
   std::optional<uint64_t> max_run_sched_time{};
   std::optional<uint64_t> max_run_time{};
@@ -612,6 +634,7 @@ struct DirectorJobDefsResourceSpec {
   std::optional<uint32_t> reschedule_times{};
   std::optional<int32_t> priority{};
   std::optional<bool> allow_mixed_priority{};
+  std::optional<std::string> selection_pattern{};
   std::optional<bool> accurate{};
   std::optional<bool> allow_duplicate_jobs{};
   std::optional<bool> allow_higher_duplicates{};
@@ -620,6 +643,9 @@ struct DirectorJobDefsResourceSpec {
   std::optional<bool> cancel_running_duplicates{};
   std::optional<bool> save_file_history{};
   std::optional<uint64_t> file_history_size{};
+  std::optional<std::vector<std::string>> fd_plugin_options{};
+  std::optional<std::vector<std::string>> sd_plugin_options{};
+  std::optional<std::vector<std::string>> dir_plugin_options{};
   std::optional<uint32_t> max_concurrent_copies{};
   std::optional<bool> always_incremental{};
   std::optional<uint64_t> always_incremental_job_retention{};

@@ -426,6 +426,7 @@ struct DirectorFilesetRequestSpec {
 struct DirectorJobRequestSpec {
   std::optional<std::string> description{};
   std::optional<std::string> type{};
+  std::optional<std::string> backup_format{};
   std::optional<std::string> level{};
   std::optional<std::string> messages{};
   std::optional<std::vector<std::string>> storages{};
@@ -441,7 +442,15 @@ struct DirectorJobRequestSpec {
   std::optional<std::string> verify_job{};
   std::optional<std::string> catalog{};
   std::optional<std::string> jobdefs{};
+  std::optional<std::vector<std::string>> run_entries{};
   std::optional<std::string> where{};
+  std::optional<std::string> regex_where{};
+  std::optional<std::string> strip_prefix{};
+  std::optional<std::string> add_prefix{};
+  std::optional<std::string> add_suffix{};
+  std::optional<std::string> bootstrap{};
+  std::optional<std::string> write_bootstrap{};
+  std::optional<std::string> write_verify_list{};
   std::optional<uint64_t> maximum_bandwidth{};
   std::optional<uint64_t> max_run_sched_time{};
   std::optional<uint64_t> max_run_time{};
@@ -469,6 +478,7 @@ struct DirectorJobRequestSpec {
   std::optional<uint32_t> reschedule_times{};
   std::optional<int32_t> priority{};
   std::optional<bool> allow_mixed_priority{};
+  std::optional<std::string> selection_pattern{};
   std::optional<bool> accurate{};
   std::optional<bool> allow_duplicate_jobs{};
   std::optional<bool> allow_higher_duplicates{};
@@ -477,6 +487,9 @@ struct DirectorJobRequestSpec {
   std::optional<bool> cancel_running_duplicates{};
   std::optional<bool> save_file_history{};
   std::optional<uint64_t> file_history_size{};
+  std::optional<std::vector<std::string>> fd_plugin_options{};
+  std::optional<std::vector<std::string>> sd_plugin_options{};
+  std::optional<std::vector<std::string>> dir_plugin_options{};
   std::optional<uint32_t> max_concurrent_copies{};
   std::optional<bool> always_incremental{};
   std::optional<uint64_t> always_incremental_job_retention{};
@@ -8470,6 +8483,7 @@ http::response<http::string_body> HandleDeploymentDirectorJobPutRequest(
   DirectorJobResourceSpec resource_spec{
       .description = spec->description,
       .type = spec->type,
+      .backup_format = spec->backup_format,
       .level = spec->level,
       .messages = spec->messages,
       .storages = spec->storages,
@@ -8485,7 +8499,15 @@ http::response<http::string_body> HandleDeploymentDirectorJobPutRequest(
       .verify_job = spec->verify_job,
       .catalog = spec->catalog,
       .jobdefs = spec->jobdefs,
+      .run_entries = spec->run_entries,
       .where = spec->where,
+      .regex_where = spec->regex_where,
+      .strip_prefix = spec->strip_prefix,
+      .add_prefix = spec->add_prefix,
+      .add_suffix = spec->add_suffix,
+      .bootstrap = spec->bootstrap,
+      .write_bootstrap = spec->write_bootstrap,
+      .write_verify_list = spec->write_verify_list,
       .maximum_bandwidth = spec->maximum_bandwidth,
       .max_run_sched_time = spec->max_run_sched_time,
       .max_run_time = spec->max_run_time,
@@ -8513,6 +8535,7 @@ http::response<http::string_body> HandleDeploymentDirectorJobPutRequest(
       .reschedule_times = spec->reschedule_times,
       .priority = spec->priority,
       .allow_mixed_priority = spec->allow_mixed_priority,
+      .selection_pattern = spec->selection_pattern,
       .accurate = spec->accurate,
       .allow_duplicate_jobs = spec->allow_duplicate_jobs,
       .allow_higher_duplicates = spec->allow_higher_duplicates,
@@ -8521,6 +8544,9 @@ http::response<http::string_body> HandleDeploymentDirectorJobPutRequest(
       .cancel_running_duplicates = spec->cancel_running_duplicates,
       .save_file_history = spec->save_file_history,
       .file_history_size = spec->file_history_size,
+      .fd_plugin_options = spec->fd_plugin_options,
+      .sd_plugin_options = spec->sd_plugin_options,
+      .dir_plugin_options = spec->dir_plugin_options,
       .max_concurrent_copies = spec->max_concurrent_copies,
       .always_incremental = spec->always_incremental,
       .always_incremental_job_retention
@@ -8611,6 +8637,7 @@ http::response<http::string_body> HandleDeploymentDirectorJobDefsPutRequest(
   DirectorJobDefsResourceSpec resource_spec{
       .description = spec->description,
       .type = spec->type,
+      .backup_format = spec->backup_format,
       .level = spec->level,
       .messages = spec->messages,
       .storages = spec->storages,
@@ -8626,7 +8653,15 @@ http::response<http::string_body> HandleDeploymentDirectorJobDefsPutRequest(
       .verify_job = spec->verify_job,
       .catalog = spec->catalog,
       .jobdefs = spec->jobdefs,
+      .run_entries = spec->run_entries,
       .where = spec->where,
+      .regex_where = spec->regex_where,
+      .strip_prefix = spec->strip_prefix,
+      .add_prefix = spec->add_prefix,
+      .add_suffix = spec->add_suffix,
+      .bootstrap = spec->bootstrap,
+      .write_bootstrap = spec->write_bootstrap,
+      .write_verify_list = spec->write_verify_list,
       .maximum_bandwidth = spec->maximum_bandwidth,
       .max_run_sched_time = spec->max_run_sched_time,
       .max_run_time = spec->max_run_time,
@@ -8654,6 +8689,7 @@ http::response<http::string_body> HandleDeploymentDirectorJobDefsPutRequest(
       .reschedule_times = spec->reschedule_times,
       .priority = spec->priority,
       .allow_mixed_priority = spec->allow_mixed_priority,
+      .selection_pattern = spec->selection_pattern,
       .accurate = spec->accurate,
       .allow_duplicate_jobs = spec->allow_duplicate_jobs,
       .allow_higher_duplicates = spec->allow_higher_duplicates,
@@ -8662,6 +8698,9 @@ http::response<http::string_body> HandleDeploymentDirectorJobDefsPutRequest(
       .cancel_running_duplicates = spec->cancel_running_duplicates,
       .save_file_history = spec->save_file_history,
       .file_history_size = spec->file_history_size,
+      .fd_plugin_options = spec->fd_plugin_options,
+      .sd_plugin_options = spec->sd_plugin_options,
+      .dir_plugin_options = spec->dir_plugin_options,
       .max_concurrent_copies = spec->max_concurrent_copies,
       .always_incremental = spec->always_incremental,
       .always_incremental_job_retention
@@ -11926,6 +11965,7 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
 
   auto* description = json_object_get(root.get(), "description");
   auto* type = json_object_get(root.get(), "type");
+  auto* backup_format = json_object_get(root.get(), "backup_format");
   auto* level = json_object_get(root.get(), "level");
   auto* messages = json_object_get(root.get(), "messages");
   auto* storages = json_object_get(root.get(), "storages");
@@ -11944,7 +11984,15 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   auto* verify_job = json_object_get(root.get(), "verify_job");
   auto* catalog = json_object_get(root.get(), "catalog");
   auto* jobdefs = json_object_get(root.get(), "jobdefs");
+  auto* run_entries = json_object_get(root.get(), "run_entries");
   auto* where = json_object_get(root.get(), "where");
+  auto* regex_where = json_object_get(root.get(), "regex_where");
+  auto* strip_prefix = json_object_get(root.get(), "strip_prefix");
+  auto* add_prefix = json_object_get(root.get(), "add_prefix");
+  auto* add_suffix = json_object_get(root.get(), "add_suffix");
+  auto* bootstrap = json_object_get(root.get(), "bootstrap");
+  auto* write_bootstrap = json_object_get(root.get(), "write_bootstrap");
+  auto* write_verify_list = json_object_get(root.get(), "write_verify_list");
   auto* maximum_bandwidth = json_object_get(root.get(), "maximum_bandwidth");
   auto* max_run_sched_time = json_object_get(root.get(), "max_run_sched_time");
   auto* max_run_time = json_object_get(root.get(), "max_run_time");
@@ -11982,6 +12030,7 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   auto* priority = json_object_get(root.get(), "priority");
   auto* allow_mixed_priority
       = json_object_get(root.get(), "allow_mixed_priority");
+  auto* selection_pattern = json_object_get(root.get(), "selection_pattern");
   auto* accurate = json_object_get(root.get(), "accurate");
   auto* allow_duplicate_jobs
       = json_object_get(root.get(), "allow_duplicate_jobs");
@@ -11995,6 +12044,9 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
       = json_object_get(root.get(), "cancel_running_duplicates");
   auto* save_file_history = json_object_get(root.get(), "save_file_history");
   auto* file_history_size = json_object_get(root.get(), "file_history_size");
+  auto* fd_plugin_options = json_object_get(root.get(), "fd_plugin_options");
+  auto* sd_plugin_options = json_object_get(root.get(), "sd_plugin_options");
+  auto* dir_plugin_options = json_object_get(root.get(), "dir_plugin_options");
   auto* max_concurrent_copies
       = json_object_get(root.get(), "max_concurrent_copies");
   auto* always_incremental = json_object_get(root.get(), "always_incremental");
@@ -12042,7 +12094,9 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   };
 
   if (!require_string(description, "description")
-      || !require_string(type, "type") || !require_string(level, "level")
+      || !require_string(type, "type")
+      || !require_string(backup_format, "backup_format")
+      || !require_string(level, "level")
       || !require_string(messages, "messages")
       || !require_string_array(storages, "storages")
       || !require_string(pool, "pool")
@@ -12056,7 +12110,16 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
       || !require_string(schedule, "schedule")
       || !require_string(verify_job, "verify_job")
       || !require_string(catalog, "catalog")
-      || !require_string(jobdefs, "jobdefs") || !require_string(where, "where")
+      || !require_string(jobdefs, "jobdefs")
+      || !require_string_array(run_entries, "run_entries")
+      || !require_string(where, "where")
+      || !require_string(regex_where, "regex_where")
+      || !require_string(strip_prefix, "strip_prefix")
+      || !require_string(add_prefix, "add_prefix")
+      || !require_string(add_suffix, "add_suffix")
+      || !require_string(bootstrap, "bootstrap")
+      || !require_string(write_bootstrap, "write_bootstrap")
+      || !require_string(write_verify_list, "write_verify_list")
       || !require_integer(maximum_bandwidth, "maximum_bandwidth")
       || !require_integer(max_run_sched_time, "max_run_sched_time")
       || !require_integer(max_run_time, "max_run_time")
@@ -12085,6 +12148,7 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
       || !require_integer(reschedule_times, "reschedule_times")
       || !require_integer(priority, "priority")
       || !require_boolean(allow_mixed_priority, "allow_mixed_priority")
+      || !require_string(selection_pattern, "selection_pattern")
       || !require_boolean(accurate, "accurate")
       || !require_boolean(allow_duplicate_jobs, "allow_duplicate_jobs")
       || !require_boolean(allow_higher_duplicates, "allow_higher_duplicates")
@@ -12095,6 +12159,9 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
                           "cancel_running_duplicates")
       || !require_boolean(save_file_history, "save_file_history")
       || !require_integer(file_history_size, "file_history_size")
+      || !require_string_array(fd_plugin_options, "fd_plugin_options")
+      || !require_string_array(sd_plugin_options, "sd_plugin_options")
+      || !require_string_array(dir_plugin_options, "dir_plugin_options")
       || !require_integer(max_concurrent_copies, "max_concurrent_copies")
       || !require_boolean(always_incremental, "always_incremental")
       || !require_integer(always_incremental_job_retention,
@@ -12144,6 +12211,9 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   if (type && json_is_string(type)) {
     spec.type = std::string{json_string_value(type)};
   }
+  if (backup_format && json_is_string(backup_format)) {
+    spec.backup_format = std::string{json_string_value(backup_format)};
+  }
   if (level && json_is_string(level)) {
     spec.level = std::string{json_string_value(level)};
   }
@@ -12190,8 +12260,30 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   if (jobdefs && json_is_string(jobdefs)) {
     spec.jobdefs = std::string{json_string_value(jobdefs)};
   }
+  spec.run_entries = parse_string_array(run_entries);
   if (where && json_is_string(where)) {
     spec.where = std::string{json_string_value(where)};
+  }
+  if (regex_where && json_is_string(regex_where)) {
+    spec.regex_where = std::string{json_string_value(regex_where)};
+  }
+  if (strip_prefix && json_is_string(strip_prefix)) {
+    spec.strip_prefix = std::string{json_string_value(strip_prefix)};
+  }
+  if (add_prefix && json_is_string(add_prefix)) {
+    spec.add_prefix = std::string{json_string_value(add_prefix)};
+  }
+  if (add_suffix && json_is_string(add_suffix)) {
+    spec.add_suffix = std::string{json_string_value(add_suffix)};
+  }
+  if (bootstrap && json_is_string(bootstrap)) {
+    spec.bootstrap = std::string{json_string_value(bootstrap)};
+  }
+  if (write_bootstrap && json_is_string(write_bootstrap)) {
+    spec.write_bootstrap = std::string{json_string_value(write_bootstrap)};
+  }
+  if (write_verify_list && json_is_string(write_verify_list)) {
+    spec.write_verify_list = std::string{json_string_value(write_verify_list)};
   }
   if (!parse_uint64(maximum_bandwidth, "maximum_bandwidth",
                     spec.maximum_bandwidth)
@@ -12273,6 +12365,9 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   if (allow_mixed_priority && json_is_boolean(allow_mixed_priority)) {
     spec.allow_mixed_priority = json_is_true(allow_mixed_priority);
   }
+  if (selection_pattern && json_is_string(selection_pattern)) {
+    spec.selection_pattern = std::string{json_string_value(selection_pattern)};
+  }
   if (accurate && json_is_boolean(accurate)) {
     spec.accurate = json_is_true(accurate);
   }
@@ -12299,6 +12394,9 @@ std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
   if (always_incremental && json_is_boolean(always_incremental)) {
     spec.always_incremental = json_is_true(always_incremental);
   }
+  spec.fd_plugin_options = parse_string_array(fd_plugin_options);
+  spec.sd_plugin_options = parse_string_array(sd_plugin_options);
+  spec.dir_plugin_options = parse_string_array(dir_plugin_options);
   return spec;
 }
 

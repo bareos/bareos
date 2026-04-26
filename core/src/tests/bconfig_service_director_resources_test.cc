@@ -1945,8 +1945,11 @@ TEST(BconfigService, UpsertsDirectorJobResources)
   auto created = state.UpsertDirectorJobResource(
       "prod", "bareos-dir", "ManagedJob",
       {.description = std::string{"Managed job"},
+       .backup_format = std::string{"Portable"},
        .client = std::string{"bareos-fd"},
        .jobdefs = std::string{"DefaultJob"},
+       .run_entries = std::vector<std::string>{"catalog-backup"},
+       .write_bootstrap = std::string{"/tmp/managed-job.bsr"},
        .maximum_bandwidth = 12345,
        .max_run_sched_time = 60,
        .max_run_time = 120,
@@ -1965,6 +1968,9 @@ TEST(BconfigService, UpsertsDirectorJobResources)
        .allow_duplicate_jobs = false,
        .save_file_history = true,
        .file_history_size = 98765,
+       .fd_plugin_options = std::vector<std::string>{"fd=one"},
+       .sd_plugin_options = std::vector<std::string>{"sd=two"},
+       .dir_plugin_options = std::vector<std::string>{"dir=three"},
        .max_concurrent_copies = 5,
        .always_incremental = true,
        .always_incremental_job_retention = 7200,
@@ -1978,8 +1984,13 @@ TEST(BconfigService, UpsertsDirectorJobResources)
   EXPECT_NE(created_text.find("Name = \"ManagedJob\""), std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed job\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("BackupFormat = \"Portable\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("JobDefs = DefaultJob"), std::string::npos);
   EXPECT_NE(created_text.find("Client = bareos-fd"), std::string::npos);
+  EXPECT_NE(created_text.find("Run = catalog-backup"), std::string::npos);
+  EXPECT_NE(created_text.find("WriteBootstrap = \"/tmp/managed-job.bsr\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("MaximumBandwidth = 12345"), std::string::npos);
   EXPECT_NE(created_text.find("MaxRunSchedTime = 60"), std::string::npos);
   EXPECT_NE(created_text.find("MaxRunTime = 120"), std::string::npos);
@@ -1998,6 +2009,12 @@ TEST(BconfigService, UpsertsDirectorJobResources)
   EXPECT_NE(created_text.find("AllowDuplicateJobs = no"), std::string::npos);
   EXPECT_NE(created_text.find("SaveFileHistory = yes"), std::string::npos);
   EXPECT_NE(created_text.find("FileHistorySize = 98765"), std::string::npos);
+  EXPECT_NE(created_text.find("FdPluginOptions = \"fd=one\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("SdPluginOptions = \"sd=two\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("DirPluginOptions = \"dir=three\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("MaxConcurrentCopies = 5"), std::string::npos);
   EXPECT_NE(created_text.find("AlwaysIncremental = yes"), std::string::npos);
   EXPECT_NE(created_text.find("AlwaysIncrementalJobRetention = 7200"),
@@ -2008,7 +2025,12 @@ TEST(BconfigService, UpsertsDirectorJobResources)
       = created.value->path / "bareos-dir.d/job/BackupCatalog.conf";
   auto backup_catalog_text = ReadTextFile(backup_catalog_path);
   const std::string backup_catalog_insertion
-      = "  MaximumBandwidth = 23456\n"
+      = "  BackupFormat = \"Portable\"\n"
+        "  Run = backup-catalog-now\n"
+        "  FdPluginOptions = \"fd=imported\"\n"
+        "  SdPluginOptions = \"sd=imported\"\n"
+        "  DirPluginOptions = \"dir=imported\"\n"
+        "  MaximumBandwidth = 23456\n"
         "  MaxRunSchedTime = 90\n"
         "  MaxRunTime = 180\n"
         "  MaxFullInterval = 5400\n"
@@ -2050,7 +2072,16 @@ TEST(BconfigService, UpsertsDirectorJobResources)
   EXPECT_NE(updated_text.find(
                 "RunAfterJob  = \"/tmp/scripts/delete_catalog_backup\""),
             std::string::npos);
-  EXPECT_NE(updated_text.find("Write Bootstrap = "), std::string::npos);
+  EXPECT_NE(updated_text.find("WriteBootstrap = "), std::string::npos);
+  EXPECT_NE(updated_text.find("BackupFormat = \"Portable\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Run = backup-catalog-now"), std::string::npos);
+  EXPECT_NE(updated_text.find("FdPluginOptions = \"fd=imported\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("SdPluginOptions = \"sd=imported\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("DirPluginOptions = \"dir=imported\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidth = 23456"), std::string::npos);
   EXPECT_NE(updated_text.find("MaxRunSchedTime = 90"), std::string::npos);
   EXPECT_NE(updated_text.find("MaxRunTime = 180"), std::string::npos);
@@ -2259,11 +2290,14 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
       "prod", "bareos-dir", "ManagedJobDefs",
       {.description = std::string{"Managed jobdefs"},
        .type = std::string{"Backup"},
+       .backup_format = std::string{"Portable"},
        .messages = std::string{"Standard"},
        .pool = std::string{"Incremental"},
        .client = std::string{"bareos-fd"},
        .fileset = std::string{"SelfTest"},
        .schedule = std::string{"WeeklyCycle"},
+       .run_entries = std::vector<std::string>{"managed-jobdefs-run"},
+       .write_bootstrap = std::string{"/tmp/managed-jobdefs.bsr"},
        .maximum_bandwidth = 23456,
        .max_run_sched_time = 75,
        .max_run_time = 150,
@@ -2282,6 +2316,9 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
        .allow_duplicate_jobs = false,
        .save_file_history = true,
        .file_history_size = 87654,
+       .fd_plugin_options = std::vector<std::string>{"fd=defs"},
+       .sd_plugin_options = std::vector<std::string>{"sd=defs"},
+       .dir_plugin_options = std::vector<std::string>{"dir=defs"},
        .max_concurrent_copies = 6,
        .always_incremental = true,
        .always_incremental_job_retention = 10800,
@@ -2297,7 +2334,12 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
   EXPECT_NE(created_text.find("Description = \"Managed jobdefs\""),
             std::string::npos);
   EXPECT_NE(created_text.find("Type = Backup"), std::string::npos);
+  EXPECT_NE(created_text.find("BackupFormat = \"Portable\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("Client = bareos-fd"), std::string::npos);
+  EXPECT_NE(created_text.find("Run = managed-jobdefs-run"), std::string::npos);
+  EXPECT_NE(created_text.find("WriteBootstrap = \"/tmp/managed-jobdefs.bsr\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("MaximumBandwidth = 23456"), std::string::npos);
   EXPECT_NE(created_text.find("MaxRunSchedTime = 75"), std::string::npos);
   EXPECT_NE(created_text.find("MaxRunTime = 150"), std::string::npos);
@@ -2316,6 +2358,12 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
   EXPECT_NE(created_text.find("AllowDuplicateJobs = no"), std::string::npos);
   EXPECT_NE(created_text.find("SaveFileHistory = yes"), std::string::npos);
   EXPECT_NE(created_text.find("FileHistorySize = 87654"), std::string::npos);
+  EXPECT_NE(created_text.find("FdPluginOptions = \"fd=defs\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("SdPluginOptions = \"sd=defs\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("DirPluginOptions = \"dir=defs\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("MaxConcurrentCopies = 6"), std::string::npos);
   EXPECT_NE(created_text.find("AlwaysIncremental = yes"), std::string::npos);
   EXPECT_NE(created_text.find("AlwaysIncrementalJobRetention = 10800"),
@@ -2326,7 +2374,12 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
       = created.value->path / "bareos-dir.d/jobdefs/DefaultJob.conf";
   auto default_jobdefs_text = ReadTextFile(default_jobdefs_path);
   const std::string default_jobdefs_insertion
-      = "  MaximumBandwidth = 34567\n"
+      = "  BackupFormat = \"Portable\"\n"
+        "  Run = imported-jobdefs-run\n"
+        "  FdPluginOptions = \"fd=imported-defs\"\n"
+        "  SdPluginOptions = \"sd=imported-defs\"\n"
+        "  DirPluginOptions = \"dir=imported-defs\"\n"
+        "  MaximumBandwidth = 34567\n"
         "  MaxRunSchedTime = 95\n"
         "  MaxRunTime = 210\n"
         "  MaxFullInterval = 6300\n"
@@ -2361,11 +2414,20 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
       updated.value->path / "bareos-dir.d/jobdefs/DefaultJob.conf");
   EXPECT_NE(updated_text.find("Description = \"Updated default jobdefs\""),
             std::string::npos);
-  EXPECT_NE(updated_text.find("Write Bootstrap = "), std::string::npos);
+  EXPECT_NE(updated_text.find("WriteBootstrap = "), std::string::npos);
   EXPECT_NE(updated_text.find("FullBackupPool = Full"), std::string::npos);
   EXPECT_NE(updated_text.find("DifferentialBackupPool = Differential"),
             std::string::npos);
   EXPECT_NE(updated_text.find("IncrementalBackupPool = Incremental"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("BackupFormat = \"Portable\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Run = imported-jobdefs-run"), std::string::npos);
+  EXPECT_NE(updated_text.find("FdPluginOptions = \"fd=imported-defs\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("SdPluginOptions = \"sd=imported-defs\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("DirPluginOptions = \"dir=imported-defs\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBandwidth = 34567"), std::string::npos);
   EXPECT_NE(updated_text.find("MaxRunSchedTime = 95"), std::string::npos);
