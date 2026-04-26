@@ -105,6 +105,7 @@ struct DirectorClientRequestSpec {
   std::optional<bool> enabled{};
   std::optional<bool> passive{};
   std::optional<bool> strict_quotas{};
+  std::optional<bool> quota_include_failed_jobs{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -1259,6 +1260,13 @@ const char* kTestUiHtmlTemplate = R"HTML(
           <input id="director-client-strict-quotas" name="strict_quotas"
                  type="checkbox">
           StrictQuotas
+        </label>
+
+        <label class="checkbox-label"
+               for="director-client-quota-include-failed-jobs">
+          <input id="director-client-quota-include-failed-jobs"
+                 name="quota_include_failed_jobs" type="checkbox" checked>
+          QuotaIncludeFailedJobs
         </label>
 
         <label class="checkbox-label" for="director-client-connection-from-director-to-client">
@@ -3691,6 +3699,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
           passive: document.getElementById('director-client-passive').checked,
           strict_quotas:
             document.getElementById('director-client-strict-quotas').checked,
+          quota_include_failed_jobs: document.getElementById(
+            'director-client-quota-include-failed-jobs').checked,
           connection_from_director_to_client: document.getElementById(
             'director-client-connection-from-director-to-client').checked,
           connection_from_client_to_director: document.getElementById(
@@ -6791,6 +6801,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .enabled = spec->enabled,
       .passive = spec->passive,
       .strict_quotas = spec->strict_quotas,
+      .quota_include_failed_jobs = spec->quota_include_failed_jobs,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -8663,6 +8674,8 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* enabled = json_object_get(root.get(), "enabled");
   auto* passive = json_object_get(root.get(), "passive");
   auto* strict_quotas = json_object_get(root.get(), "strict_quotas");
+  auto* quota_include_failed_jobs
+      = json_object_get(root.get(), "quota_include_failed_jobs");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -8700,6 +8713,12 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (strict_quotas && !json_is_null(strict_quotas)
       && !json_is_boolean(strict_quotas)) {
     error = "field 'strict_quotas' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (quota_include_failed_jobs && !json_is_null(quota_include_failed_jobs)
+      && !json_is_boolean(quota_include_failed_jobs)) {
+    error
+        = "field 'quota_include_failed_jobs' must be a boolean when provided.";
     return std::nullopt;
   }
   if (connection_from_director_to_client
@@ -8759,6 +8778,9 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (strict_quotas && json_is_boolean(strict_quotas)) {
     spec.strict_quotas = json_is_true(strict_quotas);
+  }
+  if (quota_include_failed_jobs && json_is_boolean(quota_include_failed_jobs)) {
+    spec.quota_include_failed_jobs = json_is_true(quota_include_failed_jobs);
   }
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {
