@@ -102,6 +102,7 @@ describe('director data normalisers', () => {
       pool: 'Full',
       storage: 'File',
       mediatype: 'File',
+      encryptionkey: '',
       volstatus: 'Full',
       volbytes: 42,
       volfiles: 3,

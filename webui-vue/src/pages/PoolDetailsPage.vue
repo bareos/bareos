@@ -48,9 +48,7 @@
                        dense flat :pagination="{ rowsPerPage: 10 }">
                 <template #body-cell-volumename="props">
                   <q-td :props="props">
-                    <router-link :to="{ name: 'volume-details', params: { name: props.value } }" class="text-primary">
-                      {{ props.value }}
-                    </router-link>
+                    <VolumeNameLink :name="props.value" :volume="props.row" />
                   </q-td>
                 </template>
                 <template #body-cell-volstatus="props">
@@ -90,8 +88,8 @@
                 </template>
                 <template #body-cell-inchanger="props">
                   <q-td :props="props" class="text-center">
-                    <q-icon :name="props.value === '1' ? 'check' : 'remove'"
-                            :color="props.value === '1' ? 'positive' : 'grey'" size="xs" />
+                    <q-icon :name="props.value ? 'check' : 'remove'"
+                            :color="props.value ? 'positive' : 'grey'" size="xs" />
                   </q-td>
                 </template>
               </q-table>
@@ -106,6 +104,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { normaliseVolume } from '../composables/useDirectorFetch.js'
+import VolumeNameLink from '../components/VolumeNameLink.vue'
 import { useDirectorStore } from '../stores/director.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 
@@ -127,7 +127,15 @@ onMounted(async () => {
     const pools = poolRes?.pools ?? []
     pool.value    = Array.isArray(pools) ? pools[0] : Object.values(pools)[0]
     const vols    = volRes?.volumes ?? []
-    volumes.value = Array.isArray(vols) ? vols : Object.values(vols).flat()
+    const volumeRows = Array.isArray(vols) ? vols : Object.values(vols).flat()
+    volumes.value = volumeRows.map((volume) => {
+      const normalized = normaliseVolume(volume)
+      return {
+        ...volume,
+        ...normalized,
+        volretention: volume.volretention ?? volume.VolRetention ?? normalized.retention,
+      }
+    })
   } catch (e) {
     error.value = e.message
   } finally {

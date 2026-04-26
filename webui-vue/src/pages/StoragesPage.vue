@@ -138,9 +138,7 @@
                      :filter="volSearch" :pagination="{ rowsPerPage: 15 }">
               <template #body-cell-volumename="props">
                 <q-td :props="props">
-                  <router-link :to="{ name: 'volume-details', params: { name: props.value } }" class="text-primary">
-                    {{ props.value }}
-                  </router-link>
+                  <VolumeNameLink :name="props.value" :volume="props.row" />
                 </q-td>
               </template>
               <template #body-cell-inchanger="props">
@@ -270,6 +268,7 @@ import { formatBytes, formatDuration } from '../mock/index.js'
 import BoolIcon from '../components/BoolIcon.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
 import PoolTypeBadge from '../components/PoolTypeBadge.vue'
+import VolumeNameLink from '../components/VolumeNameLink.vue'
 
 const route    = useRoute()
 const router   = useRouter()

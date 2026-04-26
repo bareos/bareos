@@ -125,10 +125,10 @@
               <template #body-cell-mr_volname="props">
                 <q-td :props="props">
                   <template v-if="props.value && props.value !== '?'">
-                    <router-link
-                      :to="{ name: 'volume-details', params: { name: props.value } }"
-                      class="text-primary"
-                    >{{ props.value }}</router-link>
+                    <VolumeNameLink
+                      :name="props.value"
+                      :volume="volumeDetailsByName[props.value]"
+                    />
                     <q-btn flat round dense size="xs" icon="content_copy"
                            class="q-ml-xs" title="Copy volume name"
                            @click.stop="copyName(props.value)" />
@@ -218,10 +218,10 @@
               <template #body-cell-volname="props">
                 <q-td :props="props">
                   <template v-if="props.value">
-                    <router-link
-                      :to="{ name: 'volume-details', params: { name: props.value } }"
-                      class="text-primary"
-                    >{{ props.value }}</router-link>
+                    <VolumeNameLink
+                      :name="props.value"
+                      :volume="volumeDetailsByName[props.value]"
+                    />
                     <q-btn flat round dense size="xs" icon="content_copy"
                            class="q-ml-xs" title="Copy volume name"
                            @click.stop="copyName(props.value)" />
@@ -278,10 +278,10 @@
               <template #body-cell-volname="props">
                 <q-td :props="props">
                   <template v-if="props.value">
-                    <router-link
-                      :to="{ name: 'volume-details', params: { name: props.value } }"
-                      class="text-primary"
-                    >{{ props.value }}</router-link>
+                    <VolumeNameLink
+                      :name="props.value"
+                      :volume="volumeDetailsByName[props.value]"
+                    />
                     <q-btn flat round dense size="xs" icon="content_copy"
                            class="q-ml-xs" title="Copy volume name"
                            @click.stop="copyName(props.value)" />
@@ -322,6 +322,11 @@
           <q-input v-model="labelForm.slots"
                    label='Slots (e.g. "1-10" or leave blank)'
                    outlined dense />
+          <q-checkbox
+            v-model="labelForm.encrypted"
+            label="encrypt newly labeled volumes"
+            dense
+          />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" v-close-popup />
@@ -391,6 +396,11 @@
           <q-input v-model="slotLabelForm.drive"
                    label="Drive (number)" outlined dense type="number"
                    :min="0" />
+          <q-checkbox
+            v-model="slotLabelForm.encrypted"
+            label="encrypt newly labeled volumes"
+            dense
+          />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" v-close-popup />
@@ -426,6 +436,8 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
 import { useQuasar } from 'quasar'
 import { directorCollection } from '../composables/useDirectorFetch.js'
+import { buildLabelBarcodesCommand } from '../utils/autochanger.js'
+import VolumeNameLink from '../components/VolumeNameLink.vue'
 
 defineProps({
   embedded: {
@@ -445,14 +457,15 @@ const selectedStorage = ref(null)
 
 const allSlots = ref([])
 const slotsLoading = ref(false)
+const volumeDetailsByName = ref({})
 
 const pools = ref([])
 
 const labelDialog = ref(false)
-const labelForm = ref({ pool: '', drive: 0, slots: '' })
+const labelForm = ref({ pool: '', drive: 0, slots: '', encrypted: false })
 
 const slotLabelDialog = ref(false)
-const slotLabelForm = ref({ slot: null, pool: '', drive: 0 })
+const slotLabelForm = ref({ slot: null, pool: '', drive: 0, encrypted: false })
 
 const mountDialog = ref(false)
 const mountForm = ref({ drive: 0, slot: '', slotFixed: false, driveFixed: false })
@@ -589,9 +602,33 @@ async function loadSlots() {
       `status storage="${selectedStorage.value}" slots`
     )
     allSlots.value = res?.contents ?? []
+
+    const volumeNames = [...new Set(
+      allSlots.value.flatMap(slot => [slot.volname, slot.mr_volname])
+        .filter(name => name && name !== '?')
+    )]
+    const volumeResults = await Promise.allSettled(
+      volumeNames.map(name =>
+        director.call(
+          `llist volume="${String(name).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+        )
+      )
+    )
+
+    volumeDetailsByName.value = volumeNames.reduce((acc, name, index) => {
+      const result = volumeResults[index]
+      if (result.status !== 'fulfilled') {
+        return acc
+      }
+
+      const raw = result.value?.volumes ?? result.value?.volume ?? null
+      acc[name] = Array.isArray(raw) ? (raw[0] ?? null) : raw
+      return acc
+    }, {})
   } catch (e) {
     console.error('Failed to load slots:', e)
     allSlots.value = []
+    volumeDetailsByName.value = {}
   } finally {
     slotsLoading.value = false
   }
@@ -709,26 +746,38 @@ async function doRelease(driveNr) {
 
 async function doLabelBarcodes() {
   labelDialog.value = false
-  const { pool, drive, slots } = labelForm.value
-  let cmd = `label barcodes storage="${selectedStorage.value}"`
-  if (pool) cmd += ` pool="${pool}"`
-  cmd += ` drive=${drive ?? 0}`
-  if (slots) cmd += ` slots=${slots}`
-  cmd += ' yes'
+  const { pool, drive, slots, encrypted } = labelForm.value
+  const cmd = buildLabelBarcodesCommand({
+    storage: selectedStorage.value,
+    pool,
+    drive,
+    slots,
+    encrypted,
+  })
   await runCmd('Label Barcodes', cmd)
   await loadSlots()
 }
 
 function openSlotLabelDialog(slotNr) {
-  slotLabelForm.value = { slot: slotNr, pool: poolNames.value[0] ?? '', drive: 0 }
+  slotLabelForm.value = {
+    slot: slotNr,
+    pool: poolNames.value[0] ?? '',
+    drive: 0,
+    encrypted: false,
+  }
   slotLabelDialog.value = true
 }
 
 async function doSlotLabel() {
   slotLabelDialog.value = false
-  const { slot, pool, drive } = slotLabelForm.value
-  const cmd = `label barcodes storage="${selectedStorage.value}"` +
-    ` pool="${pool}" drive=${drive ?? 0} slots=${slot} yes`
+  const { slot, pool, drive, encrypted } = slotLabelForm.value
+  const cmd = buildLabelBarcodesCommand({
+    storage: selectedStorage.value,
+    pool,
+    drive,
+    slots: slot,
+    encrypted,
+  })
   await runCmd(`Label Slot ${slot}`, cmd)
   await loadSlots()
 }

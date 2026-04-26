@@ -160,6 +160,7 @@ export function normaliseVolume(v) {
     pool:        v.pool        ?? v.Pool   ?? v.poolname ?? '',
     storage:     v.storage     ?? v.storagename ?? '',
     mediatype:   v.mediatype   ?? v.MediaType ?? '',
+    encryptionkey: v.encryptionkey ?? v.EncryptionKey ?? v.encrkey ?? v.EncrKey ?? '',
     volstatus:   v.volstatus   ?? v.VolStatus ?? v.status ?? '',
     volbytes:    Number(v.volbytes   ?? v.VolBytes ?? v.bytes ?? 0),
     volfiles:    Number(v.volfiles   ?? v.VolFiles ?? 0),

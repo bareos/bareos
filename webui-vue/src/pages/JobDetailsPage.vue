@@ -70,10 +70,7 @@
                 <template #body-cell-volumename="props">
                   <q-td :props="props">
                     <q-icon name="album" color="primary" size="xs" class="q-mr-xs" />
-                    <router-link
-                      :to="{ name: 'volume-details', params: { name: props.value } }"
-                      class="text-primary"
-                    >{{ props.value }}</router-link>
+                    <VolumeNameLink :name="props.value" :volume="props.row" />
                   </q-td>
                 </template>
                 <template #header-cell-firstindex="props">
@@ -136,6 +133,7 @@ import { formatNumber } from '../utils/locales.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
+import VolumeNameLink from '../components/VolumeNameLink.vue'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -151,6 +149,7 @@ const jobData       = ref(null)
 const logLines      = ref('')
 const logContainer  = ref(null)
 const volumes       = ref([])
+const volumeDetailsByName = ref({})
 const error         = ref(null)
 const rerunLoading  = ref(false)
 const cancelLoading = ref(false)
@@ -190,7 +189,29 @@ async function loadJob() {
   }
 
   if (mediaRes.status === 'fulfilled') {
-    volumes.value = mediaRes.value?.jobmedia ?? []
+    const mediaRows = mediaRes.value?.jobmedia ?? []
+    const volumeNames = [...new Set(
+      mediaRows.map(row => row.volumename).filter(Boolean)
+    )]
+    const volumeResults = await Promise.allSettled(
+      volumeNames.map(name => director.call(`llist volume=${quoteDirectorString(name)}`))
+    )
+
+    volumeDetailsByName.value = volumeNames.reduce((acc, name, index) => {
+      const result = volumeResults[index]
+      if (result.status !== 'fulfilled') {
+        return acc
+      }
+
+      const raw = result.value?.volumes ?? result.value?.volume ?? null
+      acc[name] = Array.isArray(raw) ? (raw[0] ?? null) : raw
+      return acc
+    }, {})
+
+    volumes.value = mediaRows.map(row => ({
+      ...volumeDetailsByName.value[row.volumename],
+      ...row,
+    }))
   }
 }
 
@@ -200,6 +221,7 @@ watch(currentJobId, async () => {
   jobData.value = null
   logLines.value = ''
   volumes.value = []
+  volumeDetailsByName.value = {}
   try {
     await loadJob()
   } finally {

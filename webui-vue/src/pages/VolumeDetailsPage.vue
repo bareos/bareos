@@ -33,7 +33,16 @@
       <div class="row items-center q-mb-md q-gutter-sm">
         <q-icon name="mdi-tape-drive" size="2rem" color="primary" />
         <div>
-          <div class="text-h5">{{ vol.volumename }}</div>
+          <div class="row items-center q-gutter-xs">
+            <div class="text-h5">{{ vol.volumename }}</div>
+            <q-icon
+              v-if="hasEncryptionKey"
+              name="vpn_key"
+              color="amber-8"
+            >
+              <q-tooltip>Encryption key stored in catalog</q-tooltip>
+            </q-icon>
+          </div>
           <div class="row q-gutter-xs q-mt-xs">
             <q-badge :color="statusColor(vol.volstatus)" :label="vol.volstatus" />
             <q-badge :color="vol.enabled !== '0' && vol.enabled !== false ? 'positive' : 'grey'">
@@ -230,6 +239,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDirectorStore } from '../stores/director.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
+import { volumeHasEncryptionKey } from '../utils/volumes.js'
 
 const route      = useRoute()
 const director   = useDirectorStore()
@@ -311,6 +321,8 @@ const retentionGauge = computed(() => {
   return Math.min(1, secs / ref)
 })
 
+const hasEncryptionKey = computed(() => volumeHasEncryptionKey(vol.value))
+
 const detailRows = computed(() => {
   if (!vol.value) return []
   const v = vol.value
@@ -320,6 +332,7 @@ const detailRows = computed(() => {
       link: v.pool ? { name: 'pool-details', params: { name: v.pool } } : null },
     { label: 'Storage',        value: v.storage ?? v.storagename ?? '—' },
     { label: 'Media Type',     value: v.mediatype ?? v.MediaType ?? '—' },
+    { label: 'Encryption Key', value: hasEncryptionKey.value ? 'Present' : '—' },
     { label: 'Slot',           value: v.slot ?? '0' },
     { label: 'Label Date',     value: v.labeldate ?? '—' },
     { label: 'First Written',  value: v.firstwritten ?? '—' },
