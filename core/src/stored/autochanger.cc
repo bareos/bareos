@@ -193,6 +193,15 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
 
     // Attempt to load the Volume
     loaded_slot = GetAutochangerLoadedSlot(dcr);
+    if (loaded_slot == kLoadedSlotUnknown && loaded_slot != wanted_slot) {
+      if (native_scsi) { ReportNativeScsiChangerDiagnostics(dcr); }
+      Jmsg(jcr, M_FATAL, 0,
+           T_("3992 Cannot load slot %hd into drive %hd because the drive "
+              "already contains media with an unknown source slot.\n"),
+           wanted_slot, drive);
+      rtn_stat = -1;
+      goto bail_out;
+    }
     if (loaded_slot != wanted_slot) {
       PoolMem results(PM_MESSAGE);
 
@@ -298,6 +307,8 @@ bail_out:
 
 /**
  * Returns: -1 if error from changer command
+ *          0 if drive is empty
+ *          kLoadedSlotUnknown if media is loaded but the source slot is unknown
  *          slot otherwise
  *
  * Note, this is safe to do without releasing the drive since it does not
@@ -365,6 +376,14 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
             drive, loaded_slot);
       }
       dev->SetSlotNumber(loaded_slot);
+    } else if (loaded_slot == kLoadedSlotUnknown) {
+      if (!dev->poll && debug_level >= 1) {
+        Jmsg(jcr, M_INFO, 0,
+             T_("3302 Autochanger \"loaded? drive %hd\", result: media loaded "
+                "with unknown source slot.\n"),
+             drive);
+      }
+      dev->InvalidateSlotNumber();
     } else {
       // Suppress info when polling
       if (!dev->poll && debug_level >= 1) {

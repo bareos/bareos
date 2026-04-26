@@ -651,7 +651,7 @@ slot_number_t NativeScsiGetLoadedSlot(DeviceControlRecord* dcr)
   for (const auto& element : *statuses) {
     if (element.element_address != drive_element_address) { continue; }
     if (!element.full) { return 0; }
-    if (!element.source_valid) { return kInvalidSlotNumber; }
+    if (!element.source_valid) { return kLoadedSlotUnknown; }
     return ElementAddressToSlot(*assignment, element.src_se_addr,
                                 kElementTypeStorage);
   }

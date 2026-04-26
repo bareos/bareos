@@ -76,6 +76,9 @@ enum class NativeScsiLoadResult
   kError
 };
 
+inline constexpr slot_number_t kLoadedSlotUnknown
+    = static_cast<slot_number_t>(kInvalidSlotNumber - 1);
+
 bool IsNativeScsiChangerCommand(const char* changer_command);
 bool ParseScsiChangerElementAddressAssignment(
     const uint8_t* data,
