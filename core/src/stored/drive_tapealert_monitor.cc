@@ -23,6 +23,7 @@
 
 #include "stored/drive_tapealert_monitor.h"
 
+#include <cinttypes>
 #include <ctime>
 
 #include "lib/scsi_tapealert.h"
@@ -51,10 +52,11 @@ void DispatchDriveTapealertMessages(::JobControlRecord* jcr,
         "Possible cause: %s\n";
 
   constexpr const char* print_msg
-      = "TapeAlert on device \"%s\" with volume \"%s\" from jobid %lu: "
+      = "TapeAlert on device \"%s\" with volume \"%s\" from jobid %" PRIu64
+        ": "
         "[%d] %s\n";
   constexpr const char* print_msg_novol
-      = "TapeAlert on device \"%s\" from jobid %lu: [%d] %s\n";
+      = "TapeAlert on device \"%s\" from jobid %" PRIu64 ": [%d] %s\n";
 
   const uint64_t jobid{jcr ? jcr->JobId : 0};
 
@@ -115,7 +117,6 @@ void HandleDriveTapealertEvent(::JobControlRecord* jcr,
   const char* resource_name = nullptr;
   std::string device_name;
   std::string volume_name;
-  int fd = -1;
 
   lock_mutex(dcr->mutex_);
   device_resource = GetTapealertDeviceResource(dcr);
@@ -126,7 +127,6 @@ void HandleDriveTapealertEvent(::JobControlRecord* jcr,
   }
 
   resource_name = device_resource->resource_name_;
-  fd = dcr->dev->fd;
   if (dcr->dev->archive_device_string
       && dcr->dev->archive_device_string[0] != '\0') {
     device_name = dcr->dev->archive_device_string;
@@ -146,7 +146,7 @@ void HandleDriveTapealertEvent(::JobControlRecord* jcr,
 
   Dmsg1(200, "sd: checking for tapealerts on device %s\n", device_name.c_str());
   lock_mutex(tapealert_operation_mutex);
-  bool success = GetTapealertFlags(fd, device_name.c_str(), &flags);
+  bool success = GetTapealertFlags(-1, device_name.c_str(), &flags);
   unlock_mutex(tapealert_operation_mutex);
   Dmsg1(200, "sd: tapealert check on device %s done\n", device_name.c_str());
 

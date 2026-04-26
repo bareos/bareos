@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - dirconfig: add subscription setting with comment [PR #2468]
-- stored: document `MaximumFileSizeImmediateFilemark = no` as upgrade fallback [PR #2634]
+- stored: `MaximumFileSizeImmediateFilemark` now defaults to non-blocking
+  rollover filemarks; set `MaximumFileSizeImmediateFilemark = no` after upgrade
+  to keep the previous blocking behavior [PR #2634]
 - hyper-v: fix restores with portable data [PR #2469]
 - table-formatter.js: Fix icon selection logic [PR #2479]
 - systemtests: tune for execution on Windows [PR #2501]

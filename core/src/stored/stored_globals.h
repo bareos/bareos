@@ -46,8 +46,6 @@ BAREOS_IMPORT uint32_t vol_session_time;
 BAREOS_IMPORT uint32_t NewVolSessionId();
 BAREOS_IMPORT void SignalDeviceInitializationComplete();
 BAREOS_IMPORT void WaitForDeviceInitialization();
-BAREOS_IMPORT void SignalDeviceInitializationComplete();
-BAREOS_IMPORT void WaitForDeviceInitialization();
 
 } /* namespace storagedaemon */
 

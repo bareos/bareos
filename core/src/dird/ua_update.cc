@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1046,6 +1046,7 @@ static void UpdateSlots(UaContext* ua)
 
   // Walk through the list updating the media records
   foreach_dlist (vl, vol_list->contents) {
+    if (vl->slot_type != slot_type_t::kSlotTypeStorage) { continue; }
     if (vl->bareos_slot_number > max_slots) {
       ua->WarningMsg(T_("Slot %d greater than max %d ignored.\n"),
                      vl->bareos_slot_number, max_slots);

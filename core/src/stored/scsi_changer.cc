@@ -386,6 +386,7 @@ uint16_t DriveToElementAddress(
     const ScsiChangerElementAddressAssignment& assignment,
     const Device* dev)
 {
+  if (!dev || dev->drive_index >= assignment.dte_count) { return 0; }
   return static_cast<uint16_t>(assignment.dte_addr + dev->drive_index);
 }
 
@@ -681,10 +682,10 @@ NativeScsiLoadResult NativeScsiLoadSlot(DeviceControlRecord* dcr,
 
   auto moved = MoveMediumWithRetry(dcr, *assignment, source, destination);
   if (moved) {
-    moved = WaitForDriveReady(dcr);
-    if (!moved) {
+    if (!WaitForDriveReady(dcr)) {
       ReportNativeScsiDriveDiagnostics(dcr);
       ReportNativeScsiChangerDiagnostics(dcr);
+      return NativeScsiLoadResult::kLoadedNotReady;
     }
   }
 
@@ -765,6 +766,11 @@ bool NativeScsiAutochangerCmd(DeviceControlRecord* dcr,
           SendListLine(dir,
                        std::to_string(slot) + ":" + element.primary_volume_tag);
         }
+      } else if (element.element_type_code == kElementTypeDrive) {
+        if (element.primary_volume_tag.empty()) { continue; }
+        auto drive = element.element_address - assignment->dte_addr;
+        SendListLine(dir, "D" + std::to_string(drive) + ":"
+                              + element.primary_volume_tag);
       }
     }
     return true;

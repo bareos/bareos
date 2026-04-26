@@ -71,6 +71,7 @@ struct ScsiChangerElementStatus {
 enum class NativeScsiLoadResult
 {
   kSuccess,
+  kLoadedNotReady,
   kSlotEmpty,
   kError
 };

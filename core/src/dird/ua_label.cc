@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -351,7 +351,8 @@ static void label_from_barcodes(UaContext* ua,
          "Slot  Volume\n"
          "==============\n"));
   foreach_dlist (vl, vol_list->contents) {
-    if (!vl->VolName || !BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
+    if (vl->slot_type != slot_type_t::kSlotTypeStorage || !vl->VolName
+        || !BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
       continue;
     }
     ua->SendMsg("%4d  %s\n", vl->bareos_slot_number, vl->VolName);
@@ -368,6 +369,7 @@ static void label_from_barcodes(UaContext* ua,
 
   // Fire off the label requests
   foreach_dlist (vl, vol_list->contents) {
+    if (vl->slot_type != slot_type_t::kSlotTypeStorage) { continue; }
     if (!vl->VolName || !BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
       continue;
     }

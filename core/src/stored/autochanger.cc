@@ -224,6 +224,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
       if (native_scsi) {
         switch (NativeScsiLoadSlot(dcr, wanted_slot)) {
           case NativeScsiLoadResult::kSuccess:
+          case NativeScsiLoadResult::kLoadedNotReady:
             status = 0;
             break;
           case NativeScsiLoadResult::kSlotEmpty:
@@ -839,6 +840,7 @@ bool AutochangerTransferCmd(DeviceControlRecord* dcr,
 
   changer = GetPoolMemory(PM_FNAME);
   LockChanger(dcr);
+  dir->fsend(T_("3306 Issuing autochanger transfer command.\n"));
   if (native_scsi) {
     auto ok = NativeScsiAutochangerTransferCmd(dcr, dir, src_slot, dst_slot);
     if (!ok) { ReportNativeScsiChangerDiagnostics(dcr); }
@@ -847,7 +849,6 @@ bool AutochangerTransferCmd(DeviceControlRecord* dcr,
   changer = transfer_edit_device_codes(dcr, changer,
                                        dcr->device_resource->changer_command,
                                        "transfer", src_slot, dst_slot);
-  dir->fsend(T_("3306 Issuing autochanger transfer command.\n"));
 
   // Now issue the command
   bpipe = OpenBpipe(changer, timeout, "r");
