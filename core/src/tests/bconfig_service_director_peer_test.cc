@@ -73,6 +73,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
        .tls_enable = true,
        .tls_require = true,
        .tls_verify_peer = true,
+       .tls_cipher_list = std::string{"HIGH:!aNULL"},
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = true,
        .maximum_concurrent_jobs = 9,
@@ -112,6 +113,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(created_text.find("TlsEnable = yes"), std::string::npos);
   EXPECT_NE(created_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_NE(created_text.find("TlsVerifyPeer = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("TlsCipherList = \"HIGH:!aNULL\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = yes"),
@@ -147,6 +150,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_EQ(stub_text.find("TlsEnable = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("TlsVerifyPeer = yes"), std::string::npos);
+  EXPECT_EQ(stub_text.find("TlsCipherList = \"HIGH:!aNULL\""),
+            std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
@@ -186,6 +191,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsVerifyPeer = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherList = \"HIGH:!aNULL\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
@@ -249,6 +256,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
                 "  TlsEnable = yes\n"
                 "  TlsRequire = yes\n"
                 "  TlsVerifyPeer = yes\n"
+                "  TlsCipherList = \"DEFAULT\"\n"
                 "  ConnectionFromDirectorToClient = no\n"
                 "  ConnectionFromClientToDirector = yes\n"
                 "  MaximumConcurrentJobs = 4\n"
@@ -294,6 +302,8 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_NE(updated_text.find("TlsEnable = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsVerifyPeer = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherList = \"DEFAULT\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
@@ -324,6 +334,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_EQ(stub_text.find("TlsEnable = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("TlsVerifyPeer = yes"), std::string::npos);
+  EXPECT_EQ(stub_text.find("TlsCipherList = \"DEFAULT\""), std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
