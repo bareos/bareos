@@ -1597,7 +1597,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-client-client-name" name="client_name" value="client1-fd">
 
         <label for="director-client-address">Address</label>
-        <input id="director-client-address" name="address" value="client1-fd.example.com">
+        <input id="director-client-address" name="address"
+               placeholder="client1-fd.example.com">
 
         <label for="director-client-lan-address">LanAddress</label>
         <input id="director-client-lan-address" name="lan_address">
@@ -1826,13 +1827,15 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-storage-storage-name" name="storage_name" value="FileManaged">
 
         <label for="director-storage-address">Address</label>
-        <input id="director-storage-address" name="address" value="localhost">
+        <input id="director-storage-address" name="address"
+               placeholder="localhost">
 
         <label for="director-storage-lan-address">LanAddress</label>
         <input id="director-storage-lan-address" name="lan_address">
 
         <label for="director-storage-port">Port</label>
-        <input id="director-storage-port" name="port" type="number" min="1" max="65535" value="9103">
+        <input id="director-storage-port" name="port" type="number"
+               min="1" max="65535" placeholder="9103">
 
         <label for="director-storage-protocol">Protocol</label>
         <input id="director-storage-protocol" name="protocol"
@@ -1851,10 +1854,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
                placeholder="cleartext or [md5]hash">
 
         <label for="director-storage-device">Device</label>
-        <input id="director-storage-device" name="device" value="FileManaged">
+        <input id="director-storage-device" name="device"
+               placeholder="FileManaged">
 
         <label for="director-storage-media-type">Media Type</label>
-        <input id="director-storage-media-type" name="media_type" value="File">
+        <input id="director-storage-media-type" name="media_type"
+               placeholder="File">
 
         <label for="director-storage-autochanger">AutoChanger</label>
         <select id="director-storage-autochanger" name="autochanger">
@@ -1908,10 +1913,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="director-storage-archive-device">Archive Device</label>
         <input id="director-storage-archive-device" name="archive_device"
-               value="/tmp/bareos-storage">
+               placeholder="/tmp/bareos-storage">
 
         <label for="director-storage-device-type">Device Type</label>
-        <input id="director-storage-device-type" name="device_type" value="file">
+        <input id="director-storage-device-type" name="device_type"
+               placeholder="file">
 
         <label for="director-storage-collect-statistics">CollectStatistics</label>
         <select id="director-storage-collect-statistics"
