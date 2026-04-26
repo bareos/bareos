@@ -82,7 +82,7 @@ static void OutputStatus(JobControlRecord* jcr,
   ListTerminatedJobs(sp);
   ListDevices(jcr, sp, devicenames);
 
-  if (!sp->api) {
+  if (!sp->api && init_done.load(std::memory_order_acquire)) {
     len = Mmsg(msg, T_("Used Volume status:\n"));
     sp->send(msg, len);
   }
@@ -219,10 +219,13 @@ static void ListDevices(JobControlRecord* jcr,
   }
 
   if (!init_done.load(std::memory_order_acquire)) {
-    len = Mmsg(msg,
-               T_("Storage daemon device initialization is still running; "
-                  "tape open/rewind may still be in progress.\n"));
+    len = Mmsg(msg, T_("Storage daemon device initialization is still running; "
+                       "tape open/rewind may still be in progress.\n"));
     sp->send(msg, len);
+    if (!sp->api) {
+      len = PmStrcpy(msg, "====\n\n");
+      sp->send(msg, len);
+    }
     return;
   }
 

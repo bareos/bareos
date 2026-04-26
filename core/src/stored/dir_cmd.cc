@@ -196,22 +196,24 @@ static struct s_sd_dir_cmds cmds[] = {
     {"finish", FinishCmd, false, true}, /**< End of backup */
     {"JobId=", job_cmd, false, true},   /**< Start Job */
     {"label", LabelCmd, false, true},   /**< Label a tape */
-    {"listen", ListenCmd, false, true}, /**< Listen for an incoming Storage Job */
+    {"listen", ListenCmd, false,
+     true}, /**< Listen for an incoming Storage Job */
     {"mount", MountCmd, false, true},
-    {"nextrun", nextRunCmd,
-     false, true}, /**< Prepare for next backup/restore part of same Job */
+    {"nextrun", nextRunCmd, false,
+     true}, /**< Prepare for next backup/restore part of same Job */
     {"passive", PassiveCmd, false, true},
     {"pluginoptions", PluginoptionsCmd, false, true},
     {"readlabel", ReadlabelCmd, false, true},
     {"relabel", RelabelCmd, false, true}, /**< Relabel a tape */
     {"release", ReleaseCmd, false, true},
     {"resolve", ResolveCmd, false, false},
-    {"replicate", ReplicateCmd, false, true}, /**< Replicate data to an external SD */
-    {"run", RunCmd, false, true},             /**< Start of Job */
+    {"replicate", ReplicateCmd, false,
+     true},                       /**< Replicate data to an external SD */
+    {"run", RunCmd, false, true}, /**< Start of Job */
     {"getSecureEraseCmd", SecureerasereqCmd, false, false},
     {"setbandwidth=", SetbandwidthCmd, false, true},
-    {"setdebug=", SetdebugCmd, false, false},  /**< Set debug level */
-    {"setdevice", SetdeviceCmd, false, true},  /**< Set device parameter */
+    {"setdebug=", SetdebugCmd, false, false}, /**< Set debug level */
+    {"setdevice", SetdeviceCmd, false, true}, /**< Set device parameter */
     {"stats", StatsCmd, false, false},
     {"status", StatusCmd, true, false},
     {".status", DotstatusCmd, true, false},
@@ -300,9 +302,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
           break;
         }
         if (cmds[i].wait_for_device_initialization) {
-          while (!init_done.load(std::memory_order_acquire)) {
-            Bmicrosleep(1, 0);
-          }
+          WaitForDeviceInitialization();
         }
         Dmsg1(200, "Do command: %s\n", cmds[i].cmd);
         if (!cmds[i].func(jcr)) { /* do command */

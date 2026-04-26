@@ -55,6 +55,11 @@ constexpr uint8_t kElementTypeImportExport = 3;
 constexpr uint8_t kElementTypeDrive = 4;
 
 constexpr std::size_t kVolumeTagLength = 36;
+constexpr std::size_t kElementStatusDescriptorLength = 12;
+constexpr std::size_t kElementStatusDescriptorLengthWithVolumeTag
+    = kElementStatusDescriptorLength + kVolumeTagLength;
+constexpr std::size_t kReadElementStatusSafetyMargin = 1024;
+constexpr std::size_t kScsiReadElementStatusMaxAllocation = 0x00ffffff;
 
 uint16_t Get2(const uint8_t* data)
 {
@@ -118,10 +123,11 @@ bool WaitForDriveReady(DeviceControlRecord* dcr)
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 
-  Jmsg(dcr->jcr, M_WARNING, 0,
-       T_("Native SCSI changer: drive %s did not become ready within %u seconds "
-          "after media move.\n"),
-       device_name, static_cast<unsigned>(timeout));
+  Jmsg(
+      dcr->jcr, M_WARNING, 0,
+      T_("Native SCSI changer: drive %s did not become ready within %u seconds "
+         "after media move.\n"),
+      device_name, static_cast<unsigned>(timeout));
   return false;
 }
 
@@ -136,8 +142,8 @@ bool ReadInquiry(const char* device_name, std::array<uint8_t, 96>& data)
                          data.size());
 }
 
-bool ReadElementAddressAssignmentPage(
-    const char* device_name, std::array<uint8_t, 255>& data)
+bool ReadElementAddressAssignmentPage(const char* device_name,
+                                      std::array<uint8_t, 255>& data)
 {
   std::array<uint8_t, 6> cdb{};
   cdb[0] = kScsiModeSense6;
@@ -217,16 +223,16 @@ bool PrepareDriveForMediumMove(DeviceControlRecord* dcr)
     ok = dev->offline();
     if (!ok) {
       Jmsg(dcr->jcr, M_WARNING, 0,
-           T_("Native SCSI changer: failed to offline drive %s before media "
-              "move: %s"),
+           T_("Native SCSI changer: failed to offline drive %s while preparing "
+              "for media move: %s"),
            dev->print_name(), NPRT(dev->print_errmsg()));
     }
   } else {
     ok = dev->close(dcr);
     if (!ok) {
       Jmsg(dcr->jcr, M_WARNING, 0,
-           T_("Native SCSI changer: failed to close drive %s before media move: "
-              "%s"),
+           T_("Native SCSI changer: failed to close drive %s while preparing "
+              "for media move: %s"),
            dev->print_name(), NPRT(dev->print_errmsg()));
     }
   }
@@ -242,8 +248,9 @@ void ReportNativeScsiDriveDiagnostics(DeviceControlRecord* dcr)
   for (const auto& device_name : devices) {
     std::array<uint8_t, 96> inquiry{};
     if (ReadInquiry(device_name.c_str(), inquiry)) {
-      Dmsg4(100, "Native SCSI drive inquiry: vendor=%s product=%s revision=%s "
-                 "device=%s\n",
+      Dmsg4(100,
+            "Native SCSI drive inquiry: vendor=%s product=%s revision=%s "
+            "device=%s\n",
             TrimAscii(inquiry.data() + 8, 8).c_str(),
             TrimAscii(inquiry.data() + 16, 16).c_str(),
             TrimAscii(inquiry.data() + 32, 4).c_str(), device_name.c_str());
@@ -279,7 +286,7 @@ std::optional<ScsiChangerElementAddressAssignment> ReadAssignment(
 
   if (!ReadElementAddressAssignmentPage(device_name, data)
       || !ParseScsiChangerElementAddressAssignment(data.data(), data.size(),
-                                                  assignment)) {
+                                                   assignment)) {
     return std::nullopt;
   }
 
@@ -292,19 +299,30 @@ std::optional<std::vector<ScsiChangerElementStatus>> ReadStatuses(
     uint16_t number_of_elements,
     bool with_volume_tags)
 {
-  std::vector<uint8_t> data(32768);
+  auto descriptor_length = with_volume_tags
+                               ? kElementStatusDescriptorLengthWithVolumeTag
+                               : kElementStatusDescriptorLength;
+  auto desired_size = std::min<std::size_t>(
+      kReadElementStatusSafetyMargin
+          + static_cast<std::size_t>(number_of_elements) * descriptor_length,
+      kScsiReadElementStatusMaxAllocation);
+  std::vector<uint8_t> data(desired_size);
   std::vector<ScsiChangerElementStatus> elements;
 
   if (!ReadElementStatus(device_name, element_type, number_of_elements,
                          with_volume_tags, data)
-      || !ParseScsiChangerElementStatusData(data.data(), data.size(), elements)) {
+      || !ParseScsiChangerElementStatusData(data.data(), data.size(),
+                                            elements)) {
     return std::nullopt;
   }
+
+  if (elements.size() < number_of_elements) { return std::nullopt; }
 
   return elements;
 }
 
-std::optional<std::vector<uint8_t>> ReadSupportedLogPages(const char* device_name)
+std::optional<std::vector<uint8_t>> ReadSupportedLogPages(
+    const char* device_name)
 {
   std::vector<uint8_t> data(256);
   std::vector<uint8_t> pages;
@@ -324,13 +342,17 @@ slot_number_t ElementAddressToSlot(
 {
   switch (element_type_code) {
     case kElementTypeStorage:
-      if (element_address >= assignment.se_addr) {
+      if (element_address >= assignment.se_addr
+          && element_address < static_cast<uint32_t>(assignment.se_addr)
+                                   + assignment.se_count) {
         return static_cast<slot_number_t>(element_address - assignment.se_addr
                                           + 1);
       }
       break;
     case kElementTypeImportExport:
-      if (element_address >= assignment.iee_addr) {
+      if (element_address >= assignment.iee_addr
+          && element_address < static_cast<uint32_t>(assignment.iee_addr)
+                                   + assignment.iee_count) {
         return static_cast<slot_number_t>(
             assignment.se_count + (element_address - assignment.iee_addr) + 1);
       }
@@ -342,8 +364,9 @@ slot_number_t ElementAddressToSlot(
   return kInvalidSlotNumber;
 }
 
-uint16_t SlotToElementAddress(const ScsiChangerElementAddressAssignment& assignment,
-                              slot_number_t slot)
+uint16_t SlotToElementAddress(
+    const ScsiChangerElementAddressAssignment& assignment,
+    slot_number_t slot)
 {
   if (!IsSlotNumberValid(slot)) { return 0; }
 
@@ -351,8 +374,7 @@ uint16_t SlotToElementAddress(const ScsiChangerElementAddressAssignment& assignm
     return static_cast<uint16_t>(assignment.se_addr + slot - 1);
   }
 
-  auto import_slot
-      = static_cast<uint16_t>(slot - assignment.se_count);
+  auto import_slot = static_cast<uint16_t>(slot - assignment.se_count);
   if (import_slot >= 1 && import_slot <= assignment.iee_count) {
     return static_cast<uint16_t>(assignment.iee_addr + import_slot - 1);
   }
@@ -360,8 +382,9 @@ uint16_t SlotToElementAddress(const ScsiChangerElementAddressAssignment& assignm
   return 0;
 }
 
-uint16_t DriveToElementAddress(const ScsiChangerElementAddressAssignment& assignment,
-                               const Device* dev)
+uint16_t DriveToElementAddress(
+    const ScsiChangerElementAddressAssignment& assignment,
+    const Device* dev)
 {
   return static_cast<uint16_t>(assignment.dte_addr + dev->drive_index);
 }
@@ -383,10 +406,11 @@ bool MoveMediumWithRetry(DeviceControlRecord* dcr,
       return true;
     }
 
-    Dmsg4(100,
-          "Native SCSI changer: MOVE MEDIUM with transport %u failed from %u to "
-          "%u on %s\n",
-          transport, source, destination, dcr->device_resource->changer_name);
+    Dmsg4(
+        100,
+        "Native SCSI changer: MOVE MEDIUM with transport %u failed from %u to "
+        "%u on %s\n",
+        transport, source, destination, dcr->device_resource->changer_name);
   }
 
   return false;
@@ -397,8 +421,9 @@ void SendListLine(BareosSocket* dir, const std::string& line)
   dir->fsend("%s\n", line.c_str());
 }
 
-void ReportElementExceptions(JobControlRecord* jcr,
-                             const std::vector<ScsiChangerElementStatus>& elements)
+void ReportElementExceptions(
+    JobControlRecord* jcr,
+    const std::vector<ScsiChangerElementStatus>& elements)
 {
   for (const auto& element : elements) {
     if (!element.except) { continue; }
@@ -443,7 +468,7 @@ bool ParseScsiChangerElementAddressAssignment(
     std::size_t size,
     ScsiChangerElementAddressAssignment& assignment)
 {
-  if (size < 22 || data[0] < 0x12) { return false; }
+  if (size < 22 || data[0] < 0x17) { return false; }
 
   const auto* page = data + 4;
   assignment.mte_addr = Get2(page + 2);
@@ -474,8 +499,8 @@ bool ParseScsiChangerElementStatusData(
     auto element_type = page[0];
     auto descriptor_length = Get2(page + 2);
     auto page_byte_count = Get3(page + 5);
-    auto page_end = std::min<std::size_t>(effective_size, offset + 8
-                                                              + page_byte_count);
+    auto page_end
+        = std::min<std::size_t>(effective_size, offset + 8 + page_byte_count);
     bool primary_volume_tag = (page[1] & 0x80) != 0;
     offset += 8;
 
@@ -584,7 +609,8 @@ std::string FormatNativeScsiDiagnosticStatus(const char* changer_command,
   if (native_changer) {
     status += T_("    Changer backend: native SCSI\n");
     if (changer_name && changer_name[0] != '\0') {
-      Bsnprintf(line, sizeof(line), T_("    Changer device: %s\n"), changer_name);
+      Bsnprintf(line, sizeof(line), T_("    Changer device: %s\n"),
+                changer_name);
       status += line;
     }
   }
@@ -610,8 +636,8 @@ slot_number_t NativeScsiGetLoadedSlot(DeviceControlRecord* dcr)
   auto assignment = ReadAssignment(dcr->device_resource->changer_name);
   if (!assignment) { return kInvalidSlotNumber; }
 
-  auto statuses = ReadStatuses(dcr->device_resource->changer_name, kElementTypeDrive,
-                               assignment->dte_count, true);
+  auto statuses = ReadStatuses(dcr->device_resource->changer_name,
+                               kElementTypeDrive, assignment->dte_count, true);
   if (!statuses) { return kInvalidSlotNumber; }
 
   auto drive_element_address = DriveToElementAddress(*assignment, dcr->dev);
@@ -626,16 +652,32 @@ slot_number_t NativeScsiGetLoadedSlot(DeviceControlRecord* dcr)
   return kInvalidSlotNumber;
 }
 
-bool NativeScsiLoadSlot(DeviceControlRecord* dcr, slot_number_t slot)
+NativeScsiLoadResult NativeScsiLoadSlot(DeviceControlRecord* dcr,
+                                        slot_number_t slot)
 {
   auto assignment = ReadAssignment(dcr->device_resource->changer_name);
-  if (!assignment) { return false; }
+  if (!assignment) { return NativeScsiLoadResult::kError; }
 
   auto source = SlotToElementAddress(*assignment, slot);
   auto destination = DriveToElementAddress(*assignment, dcr->dev);
-  if (source == 0 || destination == 0) { return false; }
+  if (source == 0 || destination == 0) { return NativeScsiLoadResult::kError; }
 
-  if (!PrepareDriveForMediumMove(dcr)) { return false; }
+  auto statuses = ReadStatuses(
+      dcr->device_resource->changer_name, kElementTypeAll,
+      static_cast<uint16_t>(assignment->mte_count + assignment->se_count
+                            + assignment->iee_count + assignment->dte_count),
+      true);
+  if (statuses) {
+    auto it = std::find_if(statuses->begin(), statuses->end(),
+                           [source](const auto& element) {
+                             return element.element_address == source;
+                           });
+    if (it != statuses->end() && !it->full) {
+      return NativeScsiLoadResult::kSlotEmpty;
+    }
+  }
+
+  if (!PrepareDriveForMediumMove(dcr)) { return NativeScsiLoadResult::kError; }
 
   auto moved = MoveMediumWithRetry(dcr, *assignment, source, destination);
   if (moved) {
@@ -646,7 +688,7 @@ bool NativeScsiLoadSlot(DeviceControlRecord* dcr, slot_number_t slot)
     }
   }
 
-  return moved;
+  return moved ? NativeScsiLoadResult::kSuccess : NativeScsiLoadResult::kError;
 }
 
 bool NativeScsiUnloadSlot(DeviceControlRecord* dcr, slot_number_t slot)
@@ -682,28 +724,28 @@ bool NativeScsiAutochangerCmd(DeviceControlRecord* dcr,
 {
   auto assignment = ReadAssignment(dcr->device_resource->changer_name);
   if (!assignment) {
-    dir->fsend(T_("3998 Native SCSI autochanger error: could not read element "
-                  "address assignment.\n"));
+    dir->fsend(
+        T_("3998 Native SCSI autochanger error: could not read element "
+           "address assignment.\n"));
     return false;
   }
 
-  auto statuses
-      = ReadStatuses(dcr->device_resource->changer_name, kElementTypeAll,
-                     static_cast<uint16_t>(assignment->mte_count
-                                           + assignment->se_count
-                                           + assignment->iee_count
-                                           + assignment->dte_count),
-                     true);
+  auto statuses = ReadStatuses(
+      dcr->device_resource->changer_name, kElementTypeAll,
+      static_cast<uint16_t>(assignment->mte_count + assignment->se_count
+                            + assignment->iee_count + assignment->dte_count),
+      true);
   if (!statuses) {
     dir->fsend(
-        T_("3998 Native SCSI autochanger error: could not read element status.\n"));
+        T_("3998 Native SCSI autochanger error: could not read element "
+           "status.\n"));
     return false;
   }
 
   ReportElementExceptions(dcr->jcr, *statuses);
 
   if (bstrcmp(cmd, "slots")) {
-    dir->fsend("slots=%hd", assignment->se_count + assignment->iee_count);
+    dir->fsend("slots=%hd\n", assignment->se_count + assignment->iee_count);
     return true;
   }
 
@@ -713,7 +755,8 @@ bool NativeScsiAutochangerCmd(DeviceControlRecord* dcr,
       if (element.element_type_code == kElementTypeStorage) {
         auto slot = ElementAddressToSlot(*assignment, element.element_address,
                                          element.element_type_code);
-        SendListLine(dir, std::to_string(slot) + ":" + element.primary_volume_tag);
+        SendListLine(dir,
+                     std::to_string(slot) + ":" + element.primary_volume_tag);
       } else if (element.element_type_code == kElementTypeDrive
                  && element.source_valid) {
         auto slot = ElementAddressToSlot(*assignment, element.src_se_addr,
@@ -735,9 +778,12 @@ bool NativeScsiAutochangerCmd(DeviceControlRecord* dcr,
           if (element.full && element.source_valid) {
             auto slot = ElementAddressToSlot(*assignment, element.src_se_addr,
                                              kElementTypeStorage);
-            SendListLine(dir, "D:" + std::to_string(drive) + ":F:"
-                                  + std::to_string(slot) + ":"
+            SendListLine(dir, "D:" + std::to_string(drive)
+                                  + ":F:" + std::to_string(slot) + ":"
                                   + element.primary_volume_tag);
+          } else if (element.full) {
+            SendListLine(dir, "D:" + std::to_string(drive) + ":F::"
+                                  + FormatBarcode(element.primary_volume_tag));
           } else {
             SendListLine(dir, "D:" + std::to_string(drive) + ":E");
           }
@@ -774,16 +820,18 @@ bool NativeScsiAutochangerTransferCmd(DeviceControlRecord* dcr,
 {
   auto assignment = ReadAssignment(dcr->device_resource->changer_name);
   if (!assignment) {
-    dir->fsend(T_("3998 Native SCSI autochanger error: could not read element "
-                  "address assignment.\n"));
+    dir->fsend(
+        T_("3998 Native SCSI autochanger error: could not read element "
+           "address assignment.\n"));
     return false;
   }
 
   auto source = SlotToElementAddress(*assignment, src_slot);
   auto destination = SlotToElementAddress(*assignment, dst_slot);
   if (source == 0 || destination == 0) {
-    dir->fsend(T_("3998 Native SCSI autochanger error: invalid slot for "
-                  "transfer.\n"));
+    dir->fsend(
+        T_("3998 Native SCSI autochanger error: invalid slot for "
+           "transfer.\n"));
     return false;
   }
 
@@ -804,8 +852,9 @@ void ReportNativeScsiChangerDiagnostics(DeviceControlRecord* dcr)
 
   std::array<uint8_t, 96> inquiry{};
   if (ReadInquiry(device_name, inquiry)) {
-    Dmsg4(100, "Native SCSI changer inquiry: vendor=%s product=%s revision=%s "
-               "device=%s\n",
+    Dmsg4(100,
+          "Native SCSI changer inquiry: vendor=%s product=%s revision=%s "
+          "device=%s\n",
           TrimAscii(inquiry.data() + 8, 8).c_str(),
           TrimAscii(inquiry.data() + 16, 16).c_str(),
           TrimAscii(inquiry.data() + 32, 4).c_str(), device_name);
@@ -819,13 +868,15 @@ void ReportNativeScsiChangerDiagnostics(DeviceControlRecord* dcr)
 
   auto supported_log_pages = ReadSupportedLogPages(device_name);
   if (supported_log_pages) {
-    Dmsg2(100, "Native SCSI changer diagnostic: supported LOG SENSE pages on %s: "
-               "%s\n",
+    Dmsg2(100,
+          "Native SCSI changer diagnostic: supported LOG SENSE pages on %s: "
+          "%s\n",
           device_name, FormatLogPages(*supported_log_pages).c_str());
   }
 
   uint64_t flags = 0;
-  if ((!supported_log_pages || HasLogPage(*supported_log_pages, kLogSenseTapeAlert))
+  if ((!supported_log_pages
+       || HasLogPage(*supported_log_pages, kLogSenseTapeAlert))
       && GetTapealertFlags(-1, device_name, &flags) && flags != 0) {
     Jmsg(dcr->jcr, M_WARNING, 0,
          T_("Native SCSI changer diagnostic: TapeAlert flags=0x%llx on %s\n"),
@@ -835,13 +886,11 @@ void ReportNativeScsiChangerDiagnostics(DeviceControlRecord* dcr)
   auto assignment = ReadAssignment(device_name);
   if (!assignment) { return; }
 
-  auto statuses
-      = ReadStatuses(device_name, kElementTypeAll,
-                     static_cast<uint16_t>(assignment->mte_count
-                                           + assignment->se_count
-                                           + assignment->iee_count
-                                           + assignment->dte_count),
-                     false);
+  auto statuses = ReadStatuses(
+      device_name, kElementTypeAll,
+      static_cast<uint16_t>(assignment->mte_count + assignment->se_count
+                            + assignment->iee_count + assignment->dte_count),
+      false);
   if (!statuses) { return; }
 
   ReportElementExceptions(dcr->jcr, *statuses);

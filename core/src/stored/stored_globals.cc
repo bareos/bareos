@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,10 +30,12 @@ ConfigurationParser* my_config = nullptr;
 StorageResource* me;
 char* configfile;
 
-std::atomic<bool> init_done = false;
+std::atomic<bool> init_done{false};
 uint32_t vol_session_time;
 
 static std::mutex mutex_;
+static std::mutex device_init_mutex_;
+static std::condition_variable device_init_cv_;
 static uint32_t vol_session_id_ = 0;
 
 uint32_t NewVolSessionId()
@@ -45,6 +47,24 @@ uint32_t NewVolSessionId()
   id = vol_session_id_;
   mutex_.unlock();
   return id;
+}
+
+void SignalDeviceInitializationComplete()
+{
+  {
+    std::lock_guard lock(device_init_mutex_);
+    init_done.store(true, std::memory_order_release);
+  }
+  device_init_cv_.notify_all();
+}
+
+void WaitForDeviceInitialization()
+{
+  if (init_done.load(std::memory_order_acquire)) { return; }
+
+  std::unique_lock lock(device_init_mutex_);
+  device_init_cv_.wait(
+      lock, []() { return init_done.load(std::memory_order_acquire); });
 }
 
 } /* namespace storagedaemon */

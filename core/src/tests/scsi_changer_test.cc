@@ -32,15 +32,15 @@ TEST(sd, NativeScsiChangerCommandSelector)
 {
   EXPECT_TRUE(IsNativeScsiChangerCommand("builtin:scsi"));
   EXPECT_FALSE(IsNativeScsiChangerCommand(""));
-  EXPECT_FALSE(IsNativeScsiChangerCommand("/usr/lib/bareos/scripts/mtx-changer"));
+  EXPECT_FALSE(
+      IsNativeScsiChangerCommand("/usr/lib/bareos/scripts/mtx-changer"));
 }
 
 TEST(sd, DriveDiagnosticDeviceCandidates)
 {
   EXPECT_EQ(GetDriveDiagnosticDeviceCandidates(nullptr, nullptr).size(), 0U);
 
-  auto archive_only
-      = GetDriveDiagnosticDeviceCandidates(nullptr, "/dev/nst0");
+  auto archive_only = GetDriveDiagnosticDeviceCandidates(nullptr, "/dev/nst0");
   ASSERT_EQ(archive_only.size(), 1U);
   EXPECT_EQ(archive_only[0], "/dev/nst0");
 
@@ -113,7 +113,7 @@ TEST(sd, DriveTapealertPollingEvents)
 TEST(sd, ParseScsiChangerElementAddressAssignment)
 {
   std::array<uint8_t, 24> page{};
-  page[0] = 0x12;
+  page[0] = 0x17;
   page[6] = 0x00;
   page[7] = 0x10;
   page[8] = 0x00;
@@ -132,8 +132,8 @@ TEST(sd, ParseScsiChangerElementAddressAssignment)
   page[21] = 0x02;
 
   ScsiChangerElementAddressAssignment assignment;
-  ASSERT_TRUE(
-      ParseScsiChangerElementAddressAssignment(page.data(), page.size(), assignment));
+  ASSERT_TRUE(ParseScsiChangerElementAddressAssignment(page.data(), page.size(),
+                                                       assignment));
   EXPECT_EQ(assignment.mte_addr, 0x0010);
   EXPECT_EQ(assignment.mte_count, 1);
   EXPECT_EQ(assignment.se_addr, 0x0020);
@@ -142,6 +142,16 @@ TEST(sd, ParseScsiChangerElementAddressAssignment)
   EXPECT_EQ(assignment.iee_count, 4);
   EXPECT_EQ(assignment.dte_addr, 0x0050);
   EXPECT_EQ(assignment.dte_count, 2);
+}
+
+TEST(sd, RejectShortScsiChangerElementAddressAssignment)
+{
+  std::array<uint8_t, 24> page{};
+  page[0] = 0x16;
+
+  ScsiChangerElementAddressAssignment assignment;
+  EXPECT_FALSE(ParseScsiChangerElementAddressAssignment(
+      page.data(), page.size(), assignment));
 }
 
 TEST(sd, ParseScsiChangerElementStatus)
@@ -169,7 +179,8 @@ TEST(sd, ParseScsiChangerElementStatus)
   data[27] = 0x23;
 
   std::vector<ScsiChangerElementStatus> elements;
-  ASSERT_TRUE(ParseScsiChangerElementStatusData(data.data(), data.size(), elements));
+  ASSERT_TRUE(
+      ParseScsiChangerElementStatusData(data.data(), data.size(), elements));
   ASSERT_EQ(elements.size(), 1U);
   EXPECT_EQ(elements[0].element_type_code, 0x04);
   EXPECT_EQ(elements[0].element_address, 0x0050);
@@ -211,7 +222,8 @@ TEST(sd, RejectTruncatedScsiLogSenseSupportedPages)
   data[6] = 0x2e;
 
   std::vector<uint8_t> pages;
-  EXPECT_FALSE(ParseScsiLogSenseSupportedPages(data.data(), data.size(), pages));
+  EXPECT_FALSE(
+      ParseScsiLogSenseSupportedPages(data.data(), data.size(), pages));
 }
 
 TEST(sd, RejectWrongScsiLogSensePage)
@@ -226,7 +238,8 @@ TEST(sd, RejectWrongScsiLogSensePage)
   data[7] = 0x3f;
 
   std::vector<uint8_t> pages;
-  EXPECT_FALSE(ParseScsiLogSenseSupportedPages(data.data(), data.size(), pages));
+  EXPECT_FALSE(
+      ParseScsiLogSenseSupportedPages(data.data(), data.size(), pages));
 }
 
 TEST(sd, ParseEmptyScsiChangerElementStatus)
@@ -234,6 +247,7 @@ TEST(sd, ParseEmptyScsiChangerElementStatus)
   std::array<uint8_t, 8> data{};
   std::vector<ScsiChangerElementStatus> elements;
 
-  ASSERT_TRUE(ParseScsiChangerElementStatusData(data.data(), data.size(), elements));
+  ASSERT_TRUE(
+      ParseScsiChangerElementStatusData(data.data(), data.size(), elements));
   EXPECT_TRUE(elements.empty());
 }

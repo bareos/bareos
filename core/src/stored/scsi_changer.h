@@ -68,6 +68,13 @@ struct ScsiChangerElementStatus {
   std::string primary_volume_tag{};
 };
 
+enum class NativeScsiLoadResult
+{
+  kSuccess,
+  kSlotEmpty,
+  kError
+};
+
 bool IsNativeScsiChangerCommand(const char* changer_command);
 bool ParseScsiChangerElementAddressAssignment(
     const uint8_t* data,
@@ -92,7 +99,8 @@ std::string FormatNativeScsiDiagnosticStatus(const char* changer_command,
                                              bool drive_tapealert_enabled);
 
 slot_number_t NativeScsiGetLoadedSlot(DeviceControlRecord* dcr);
-bool NativeScsiLoadSlot(DeviceControlRecord* dcr, slot_number_t slot);
+NativeScsiLoadResult NativeScsiLoadSlot(DeviceControlRecord* dcr,
+                                        slot_number_t slot);
 bool NativeScsiUnloadSlot(DeviceControlRecord* dcr, slot_number_t slot);
 bool NativeScsiUnloadDrive(DeviceControlRecord* dcr, Device* dev);
 bool NativeScsiAutochangerCmd(DeviceControlRecord* dcr,

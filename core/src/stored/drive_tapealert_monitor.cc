@@ -109,31 +109,53 @@ void HandleDriveTapealertEvent(::JobControlRecord* jcr,
   if (!jcr || !value || !IsDriveTapealertPollingEvent(event_type)) { return; }
 
   auto* dcr = static_cast<DeviceControlRecord*>(value);
-  if (!dcr || !dcr->dev) { return; }
+  if (!dcr) { return; }
 
-  auto* device_resource = GetTapealertDeviceResource(dcr);
-  if (!device_resource || !device_resource->drive_tapealert_enabled) { return; }
+  DeviceResource* device_resource = nullptr;
+  const char* resource_name = nullptr;
+  std::string device_name;
+  std::string volume_name;
+  int fd = -1;
 
-  const char* device_name = dcr->dev->archive_device_string;
-  if (!device_name || device_name[0] == '\0') {
+  lock_mutex(dcr->mutex_);
+  device_resource = GetTapealertDeviceResource(dcr);
+  if (!dcr->dev || !device_resource
+      || !device_resource->drive_tapealert_enabled) {
+    unlock_mutex(dcr->mutex_);
+    return;
+  }
+
+  resource_name = device_resource->resource_name_;
+  fd = dcr->dev->fd;
+  if (dcr->dev->archive_device_string
+      && dcr->dev->archive_device_string[0] != '\0') {
+    device_name = dcr->dev->archive_device_string;
+  } else if (device_resource->archive_device_string
+             && device_resource->archive_device_string[0] != '\0') {
     device_name = device_resource->archive_device_string;
   }
-  if (!device_name || device_name[0] == '\0') { return; }
+  if (const char* volume = dcr->dev->getVolCatName();
+      volume && volume[0] != '\0') {
+    volume_name = volume;
+  }
+  unlock_mutex(dcr->mutex_);
+
+  if (device_name.empty()) { return; }
 
   uint64_t flags = 0;
 
-  Dmsg1(200, "sd: checking for tapealerts on device %s\n", device_name);
+  Dmsg1(200, "sd: checking for tapealerts on device %s\n", device_name.c_str());
   lock_mutex(tapealert_operation_mutex);
-  bool success = GetTapealertFlags(dcr->dev->fd, device_name, &flags);
+  bool success = GetTapealertFlags(fd, device_name.c_str(), &flags);
   unlock_mutex(tapealert_operation_mutex);
-  Dmsg1(200, "sd: tapealert check on device %s done\n", device_name);
+  Dmsg1(200, "sd: tapealert check on device %s done\n", device_name.c_str());
 
   if (!success || flags == 0) { return; }
 
-  UpdateDeviceTapealert(device_resource->resource_name_, flags,
-                        static_cast<utime_t>(time(NULL)));
-  DispatchDriveTapealertMessages(jcr, device_resource->resource_name_,
-                                 dcr->dev->getVolCatName(), flags);
+  UpdateDeviceTapealert(resource_name, flags, static_cast<utime_t>(time(NULL)));
+  DispatchDriveTapealertMessages(
+      jcr, resource_name, volume_name.empty() ? nullptr : volume_name.c_str(),
+      flags);
 }
 
 }  // namespace storagedaemon
