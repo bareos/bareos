@@ -505,6 +505,31 @@ TEST(BconfigService, UpsertsClientDaemonResources)
   EXPECT_NE(updated_text.find("ScriptsDirectory = \"/usr/lib/bareos/scripts\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Messages = Standard"), std::string::npos);
+
+  auto current
+      = state.GetClientDaemonResourceSpec("prod", "backup-bareos-test-fd");
+  ASSERT_TRUE(current) << current.error;
+  ASSERT_TRUE(current.value->addresses.has_value());
+  EXPECT_EQ(*current.value->addresses,
+            (std::vector<std::string>{"host[ipv4;192.0.2.10;42102]",
+                                      "host[ipv6;::1;42102]"}));
+  EXPECT_EQ(current.value->source_address, "192.0.2.10");
+  EXPECT_EQ(current.value->tls_enable, true);
+  ASSERT_TRUE(current.value->tls_allowed_cn.has_value());
+  EXPECT_EQ(*current.value->tls_allowed_cn,
+            (std::vector<std::string>{"client-cn-1", "client-cn-2"}));
+  ASSERT_TRUE(current.value->pki_signers.has_value());
+  EXPECT_EQ(*current.value->pki_signers,
+            (std::vector<std::string>{"/etc/bareos/signer1.pem",
+                                      "/etc/bareos/signer2.pem"}));
+  ASSERT_TRUE(current.value->plugin_names.has_value());
+  EXPECT_EQ(*current.value->plugin_names,
+            (std::vector<std::string>{"python", "grpc"}));
+  ASSERT_TRUE(current.value->allowed_script_dirs.has_value());
+  EXPECT_EQ(*current.value->allowed_script_dirs,
+            (std::vector<std::string>{"/usr/lib/bareos/scripts",
+                                      "/opt/bareos/scripts"}));
+  EXPECT_EQ(current.value->messages, "Standard");
 }
 
 TEST(BconfigService, UpsertsClientDaemonResourcesInSharedFiles)
@@ -823,6 +848,25 @@ TEST(BconfigService, UpsertsDirectorDaemonResources)
   EXPECT_NE(updated_text.find("ScriptsDirectory = \"/usr/lib/bareos/scripts\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Messages = Standard"), std::string::npos);
+
+  auto current = state.GetDirectorDaemonResourceSpec("prod", "bareos-dir");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->address, "192.0.2.44");
+  ASSERT_TRUE(current.value->source_addresses.has_value());
+  EXPECT_EQ(*current.value->source_addresses,
+            (std::vector<std::string>{"192.0.2.54", "198.51.100.54"}));
+  ASSERT_TRUE(current.value->password.has_value());
+  EXPECT_FALSE(current.value->password->empty());
+  EXPECT_EQ(current.value->tls_protocol, "MinProtocol = TLSv1.2");
+  ASSERT_TRUE(current.value->tls_allowed_cn.has_value());
+  EXPECT_EQ(*current.value->tls_allowed_cn,
+            (std::vector<std::string>{"director-cn-1", "director-cn-2"}));
+  ASSERT_TRUE(current.value->audit_events.has_value());
+  EXPECT_EQ(*current.value->audit_events,
+            (std::vector<std::string>{"item01", "item02"}));
+  ASSERT_TRUE(current.value->plugin_names.has_value());
+  EXPECT_EQ(*current.value->plugin_names, (std::vector<std::string>{"python"}));
+  EXPECT_EQ(current.value->messages, "Standard");
 }
 
 TEST(BconfigService, UpsertsDirectorDaemonResourcesInSharedFiles)

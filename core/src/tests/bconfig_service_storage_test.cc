@@ -311,6 +311,31 @@ TEST(BconfigService, UpsertsStorageDaemonResources)
   EXPECT_NE(updated_text.find("ScriptsDirectory = \"/usr/lib/bareos/scripts\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Messages = Standard"), std::string::npos);
+
+  auto current = state.GetStorageDaemonResourceSpec("prod", "bareos-sd");
+  ASSERT_TRUE(current) << current.error;
+  ASSERT_TRUE(current.value->addresses.has_value());
+  EXPECT_EQ(*current.value->addresses,
+            (std::vector<std::string>{"host[ipv4;192.0.2.20;42103]",
+                                      "host[ipv6;::1;42103]"}));
+  EXPECT_EQ(current.value->just_in_time_reservation, true);
+  ASSERT_TRUE(current.value->tls_allowed_cn.has_value());
+  EXPECT_EQ(*current.value->tls_allowed_cn,
+            (std::vector<std::string>{"storage-cn-1", "storage-cn-2"}));
+  ASSERT_TRUE(current.value->ndmp_addresses.has_value());
+  EXPECT_EQ(*current.value->ndmp_addresses,
+            (std::vector<std::string>{"host[ipv4;192.0.2.30;10001]",
+                                      "host[ipv6;::1;10001]"}));
+  ASSERT_TRUE(current.value->plugin_names.has_value());
+  EXPECT_EQ(*current.value->plugin_names,
+            (std::vector<std::string>{"autochanger", "python"}));
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  ASSERT_TRUE(current.value->backend_directories.has_value());
+  EXPECT_EQ(*current.value->backend_directories,
+            (std::vector<std::string>{"/usr/lib/bareos/backends",
+                                      "/opt/bareos/backends"}));
+#endif
+  EXPECT_EQ(current.value->messages, "Standard");
 }
 
 TEST(BconfigService, UpsertsStorageDaemonResourcesInSharedFiles)

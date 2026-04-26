@@ -10218,6 +10218,191 @@ std::optional<uint16_t> ToOptionalUint16(const std::optional<uint32_t>& value)
   return static_cast<uint16_t>(*value);
 }
 
+std::optional<std::vector<std::string>> ToOptionalStringVector(
+    const std::vector<std::string>& value)
+{
+  if (value.empty()) { return std::nullopt; }
+  return value;
+}
+
+ClientDaemonResourceSpec ToClientDaemonResourceSpec(
+    const StorageDaemonContentSpec& content)
+{
+  ClientDaemonResourceSpec spec;
+  spec.address = content.address;
+  spec.addresses = ToOptionalStringVector(content.addresses);
+  spec.source_address = content.source_address;
+  spec.source_addresses = ToOptionalStringVector(content.source_addresses);
+  spec.port = content.port;
+  spec.maximum_concurrent_jobs = content.maximum_concurrent_jobs;
+  spec.maximum_workers_per_job = content.maximum_workers_per_job;
+  spec.absolute_job_timeout = content.absolute_job_timeout;
+  spec.allow_bandwidth_bursting = content.allow_bandwidth_bursting;
+  spec.tls_authenticate = content.tls_authenticate;
+  spec.tls_enable = content.tls_enable;
+  spec.tls_require = content.tls_require;
+  spec.tls_verify_peer = content.tls_verify_peer;
+  spec.tls_cipher_list = content.tls_cipher_list;
+  spec.tls_cipher_suites = content.tls_cipher_suites;
+  spec.tls_dh_file = content.tls_dh_file;
+  spec.tls_protocol = content.tls_protocol;
+  spec.tls_ca_certificate_file = content.tls_ca_certificate_file;
+  spec.tls_ca_certificate_dir = content.tls_ca_certificate_dir;
+  spec.tls_certificate_revocation_list
+      = content.tls_certificate_revocation_list;
+  spec.tls_certificate = content.tls_certificate;
+  spec.tls_key = content.tls_key;
+  spec.tls_allowed_cn = ToOptionalStringVector(content.tls_allowed_cn);
+  spec.pki_signatures = content.pki_signatures;
+  spec.pki_encryption = content.pki_encryption;
+  spec.pki_key_pair = content.pki_key_pair;
+  spec.pki_signers = ToOptionalStringVector(content.pki_signers);
+  spec.pki_master_keys = ToOptionalStringVector(content.pki_master_keys);
+  spec.pki_cipher = content.pki_cipher;
+  spec.always_use_lmdb = content.always_use_lmdb;
+  spec.lmdb_threshold = content.lmdb_threshold;
+  spec.ver_id = content.ver_id;
+  spec.log_timestamp_format = content.log_timestamp_format;
+  spec.maximum_bandwidth_per_job = content.maximum_bandwidth_per_job;
+  spec.secure_erase_command = content.secure_erase_command;
+  spec.grpc_module = content.grpc_module;
+  spec.enable_ktls = content.enable_ktls;
+  spec.sd_connect_timeout = content.sd_connect_timeout;
+  spec.heartbeat_interval = content.heartbeat_interval;
+  spec.maximum_network_buffer_size = content.maximum_network_buffer_size;
+  spec.description = content.description;
+  spec.working_directory = content.working_directory;
+  spec.plugin_directory = content.plugin_directory;
+  spec.plugin_names = ToOptionalStringVector(content.plugin_names);
+  spec.allowed_script_dirs
+      = ToOptionalStringVector(content.allowed_script_dirs);
+  spec.allowed_job_commands
+      = ToOptionalStringVector(content.allowed_job_commands);
+  spec.scripts_directory = content.scripts_directory;
+  spec.messages = content.messages;
+  return spec;
+}
+
+DirectorDaemonResourceSpec ToDirectorDaemonResourceSpec(
+    const std::optional<std::string>& password,
+    const StorageDaemonContentSpec& content)
+{
+  DirectorDaemonResourceSpec spec;
+  spec.address = content.address;
+  spec.addresses = ToOptionalStringVector(content.addresses);
+  spec.source_address = content.source_address;
+  spec.source_addresses = ToOptionalStringVector(content.source_addresses);
+  spec.port = content.port;
+  spec.query_file = content.query_file;
+  spec.subscriptions = content.subscriptions;
+  spec.maximum_concurrent_jobs = content.maximum_concurrent_jobs;
+  spec.maximum_console_connections = content.maximum_console_connections;
+  spec.password = password;
+  spec.absolute_job_timeout = content.absolute_job_timeout;
+  spec.tls_authenticate = content.tls_authenticate;
+  spec.tls_enable = content.tls_enable;
+  spec.tls_require = content.tls_require;
+  spec.tls_verify_peer = content.tls_verify_peer;
+  spec.tls_cipher_list = content.tls_cipher_list;
+  spec.tls_cipher_suites = content.tls_cipher_suites;
+  spec.tls_dh_file = content.tls_dh_file;
+  spec.tls_protocol = content.tls_protocol;
+  spec.tls_ca_certificate_file = content.tls_ca_certificate_file;
+  spec.tls_ca_certificate_dir = content.tls_ca_certificate_dir;
+  spec.tls_certificate_revocation_list
+      = content.tls_certificate_revocation_list;
+  spec.tls_certificate = content.tls_certificate;
+  spec.tls_key = content.tls_key;
+  spec.tls_allowed_cn = ToOptionalStringVector(content.tls_allowed_cn);
+  spec.ver_id = content.ver_id;
+  spec.log_timestamp_format = content.log_timestamp_format;
+  spec.secure_erase_command = content.secure_erase_command;
+  spec.enable_ktls = content.enable_ktls;
+  spec.fd_connect_timeout = content.fd_connect_timeout;
+  spec.sd_connect_timeout = content.sd_connect_timeout;
+  spec.heartbeat_interval = content.heartbeat_interval;
+  spec.statistics_retention = content.statistics_retention;
+  spec.statistics_collect_interval = content.statistics_collect_interval;
+  spec.description = content.description;
+  spec.key_encryption_key = content.key_encryption_key;
+  spec.ndmp_snooping = content.ndmp_snooping;
+  spec.ndmp_log_level = content.ndmp_log_level;
+  spec.ndmp_namelist_fhinfo_set_zero_for_invalid_uquad
+      = content.ndmp_namelist_fhinfo_set_zero_for_invalid_uquad;
+  spec.auditing = content.auditing;
+  spec.audit_events = ToOptionalStringVector(content.audit_events);
+  spec.working_directory = content.working_directory;
+  spec.plugin_directory = content.plugin_directory;
+  spec.plugin_names = ToOptionalStringVector(content.plugin_names);
+  spec.scripts_directory = content.scripts_directory;
+  spec.messages = content.messages;
+  return spec;
+}
+
+StorageDaemonResourceSpec ToStorageDaemonResourceSpec(
+    const StorageDaemonContentSpec& content)
+{
+  StorageDaemonResourceSpec spec;
+  spec.address = content.address;
+  spec.addresses = ToOptionalStringVector(content.addresses);
+  spec.source_address = content.source_address;
+  spec.source_addresses = ToOptionalStringVector(content.source_addresses);
+  spec.port = content.port;
+  spec.just_in_time_reservation = content.just_in_time_reservation;
+  spec.maximum_concurrent_jobs = content.maximum_concurrent_jobs;
+  spec.absolute_job_timeout = content.absolute_job_timeout;
+  spec.allow_bandwidth_bursting = content.allow_bandwidth_bursting;
+  spec.tls_authenticate = content.tls_authenticate;
+  spec.tls_enable = content.tls_enable;
+  spec.tls_require = content.tls_require;
+  spec.tls_verify_peer = content.tls_verify_peer;
+  spec.tls_cipher_list = content.tls_cipher_list;
+  spec.tls_cipher_suites = content.tls_cipher_suites;
+  spec.tls_dh_file = content.tls_dh_file;
+  spec.tls_protocol = content.tls_protocol;
+  spec.tls_ca_certificate_file = content.tls_ca_certificate_file;
+  spec.tls_ca_certificate_dir = content.tls_ca_certificate_dir;
+  spec.tls_certificate_revocation_list
+      = content.tls_certificate_revocation_list;
+  spec.tls_certificate = content.tls_certificate;
+  spec.tls_key = content.tls_key;
+  spec.tls_allowed_cn = ToOptionalStringVector(content.tls_allowed_cn);
+  spec.ndmp_enable = content.ndmp_enable;
+  spec.ndmp_snooping = content.ndmp_snooping;
+  spec.ndmp_log_level = content.ndmp_log_level;
+  spec.ndmp_address = content.ndmp_address;
+  spec.ndmp_port = content.ndmp_port;
+  spec.ndmp_addresses = ToOptionalStringVector(content.ndmp_addresses);
+  spec.autoxflate_on_replication = content.autoxflate_on_replication;
+  spec.collect_device_statistics = content.collect_device_statistics;
+  spec.collect_job_statistics = content.collect_job_statistics;
+  spec.statistics_collect_interval = content.statistics_collect_interval;
+  spec.device_reserve_by_media_type = content.device_reserve_by_media_type;
+  spec.file_device_concurrent_read = content.file_device_concurrent_read;
+  spec.ver_id = content.ver_id;
+  spec.log_timestamp_format = content.log_timestamp_format;
+  spec.maximum_bandwidth_per_job = content.maximum_bandwidth_per_job;
+  spec.secure_erase_command = content.secure_erase_command;
+  spec.enable_ktls = content.enable_ktls;
+  spec.sd_connect_timeout = content.sd_connect_timeout;
+  spec.fd_connect_timeout = content.fd_connect_timeout;
+  spec.heartbeat_interval = content.heartbeat_interval;
+  spec.checkpoint_interval = content.checkpoint_interval;
+  spec.client_connect_wait = content.client_connect_wait;
+  spec.maximum_network_buffer_size = content.maximum_network_buffer_size;
+  spec.description = content.description;
+  spec.working_directory = content.working_directory;
+  spec.plugin_directory = content.plugin_directory;
+  spec.plugin_names = ToOptionalStringVector(content.plugin_names);
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  spec.backend_directories
+      = ToOptionalStringVector(content.backend_directories);
+#endif
+  spec.scripts_directory = content.scripts_directory;
+  spec.messages = content.messages;
+  return spec;
+}
+
 OperationResult<ClientDirectorStubSpec> ServiceState::GetClientDirectorStubSpec(
     std::string_view deployment_id,
     std::string_view client_name,
@@ -10451,6 +10636,71 @@ ServiceState::GetStorageDirectorResourceSpec(
           .tls_key = context.value->tls_key,
           .tls_allowed_cn = context.value->tls_allowed_cn,
       }};
+}
+
+OperationResult<ClientDaemonResourceSpec>
+ServiceState::GetClientDaemonResourceSpec(std::string_view deployment_id,
+                                          std::string_view client_name) const
+{
+  auto client_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kClient, client_name);
+  if (!client_config) {
+    return {.error = "client config not found for '" + std::string{client_name}
+                     + "'."};
+  }
+
+  auto context = LoadClientDaemonWriteContext(*client_config.value);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "client-daemon resource '" + std::string{client_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToClientDaemonResourceSpec(context.value->content)};
+}
+
+OperationResult<DirectorDaemonResourceSpec>
+ServiceState::GetDirectorDaemonResourceSpec(
+    std::string_view deployment_id,
+    std::string_view director_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context = LoadDirectorDaemonWriteContext(*director_config.value);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director-daemon resource '" + std::string{director_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToDirectorDaemonResourceSpec(context.value->password,
+                                                context.value->content)};
+}
+
+OperationResult<StorageDaemonResourceSpec>
+ServiceState::GetStorageDaemonResourceSpec(std::string_view deployment_id,
+                                           std::string_view storage_name) const
+{
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  auto context = LoadStorageDaemonWriteContext(*storage_config.value);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "storage-daemon resource '" + std::string{storage_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToStorageDaemonResourceSpec(context.value->content)};
 }
 
 OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
