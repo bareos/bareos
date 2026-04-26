@@ -360,6 +360,7 @@ struct StorageDeviceRequestSpec {
   std::optional<std::string> auto_inflate{};
   std::optional<bool> collect_statistics{};
   std::optional<bool> eof_on_error_is_eot{};
+  std::optional<uint32_t> count{};
   std::optional<std::string> description{};
 };
 
@@ -7032,6 +7033,7 @@ http::response<http::string_body> HandleDeploymentStorageDevicePutRequest(
       .auto_inflate = spec->auto_inflate,
       .collect_statistics = spec->collect_statistics,
       .eof_on_error_is_eot = spec->eof_on_error_is_eot,
+      .count = spec->count,
       .description = spec->description,
   };
   auto result = state.UpsertStorageDeviceResource(deployment_id, storage_name,
@@ -11222,6 +11224,7 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   auto* collect_statistics = json_object_get(root.get(), "collect_statistics");
   auto* eof_on_error_is_eot
       = json_object_get(root.get(), "eof_on_error_is_eot");
+  auto* count = json_object_get(root.get(), "count");
   auto* description = json_object_get(root.get(), "description");
   auto require_string = [&error](json_t* value, const char* field) {
     if (value && !json_is_null(value) && !json_is_string(value)) {
@@ -11312,7 +11315,8 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
       || !require_integer(maximum_spool_size, "maximum_spool_size")
       || !require_integer(maximum_job_spool_size, "maximum_job_spool_size")
       || !require_integer(drive_index, "drive_index")
-      || !require_integer(auto_deflate_level, "auto_deflate_level")) {
+      || !require_integer(auto_deflate_level, "auto_deflate_level")
+      || !require_integer(count, "count")) {
     return std::nullopt;
   }
 
@@ -11475,7 +11479,8 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
                      spec.maximum_spool_size)
       || !assign_u64(maximum_job_spool_size, "maximum_job_spool_size",
                      spec.maximum_job_spool_size)
-      || !assign_u16(drive_index, "drive_index", spec.drive_index)) {
+      || !assign_u16(drive_index, "drive_index", spec.drive_index)
+      || !assign_u32(count, "count", spec.count)) {
     return std::nullopt;
   }
   if (spool_directory && json_is_string(spool_directory)) {

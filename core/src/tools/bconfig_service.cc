@@ -2641,6 +2641,7 @@ std::string BuildStorageDaemonDeviceResourceContent(
     const std::optional<std::string>& auto_inflate,
     const std::optional<bool>& collect_statistics,
     const std::optional<bool>& eof_on_error_is_eot,
+    const std::optional<uint32_t>& count,
     std::string_view description)
 {
   std::ostringstream content;
@@ -2714,6 +2715,7 @@ std::string BuildStorageDaemonDeviceResourceContent(
   AppendBareosDirective(content, "AutoInflate", auto_inflate);
   AppendBoolDirective(content, "CollectStatistics", collect_statistics);
   AppendBoolDirective(content, "EofOnErrorIsEot", eof_on_error_is_eot);
+  AppendIntegerDirective(content, "Count", count);
   content << "}\n";
   return content.str();
 }
@@ -3765,6 +3767,7 @@ struct StorageDaemonDeviceWriteContext {
   std::optional<std::string> auto_inflate{};
   std::optional<bool> collect_statistics{};
   std::optional<bool> eof_on_error_is_eot{};
+  std::optional<uint32_t> count{};
   std::optional<std::string> description{};
   bool exists{false};
   bool is_standalone_file{false};
@@ -8508,6 +8511,7 @@ LoadStorageDaemonDeviceWriteContext(
     if (HasMemberSource(*device, {"EofOnErrorIsEot"})) {
       context.eof_on_error_is_eot = device->eof_on_error_is_eot;
     }
+    if (HasMemberSource(*device, {"Count"})) { context.count = device->count; }
 
     auto source = device->GetDefinitionSource();
     if (!source || source->file.empty()) {
@@ -8961,7 +8965,8 @@ OperationResult<std::monostate> SyncStorageDaemonConfig(
       device_context.value->auto_deflate_level,
       device_context.value->auto_inflate,
       device_context.value->collect_statistics,
-      device_context.value->eof_on_error_is_eot, device_description);
+      device_context.value->eof_on_error_is_eot, device_context.value->count,
+      device_description);
 
   const auto director_directory
       = target.value->value().storage_config.path / "bareos-sd.d" / "director";
@@ -15099,6 +15104,7 @@ ServiceState::UpsertStorageDeviceResource(
   const auto eof_on_error_is_eot = spec.eof_on_error_is_eot
                                        ? spec.eof_on_error_is_eot
                                        : context.value->eof_on_error_is_eot;
+  const auto count = spec.count ? spec.count : context.value->count;
   const auto description = spec.description
                                ? *spec.description
                                : context.value->description.value_or(
@@ -15122,7 +15128,7 @@ ServiceState::UpsertStorageDeviceResource(
       unmount_command, label_type, no_rewind_on_close, drive_tape_alert_enabled,
       drive_crypto_enabled, query_crypto_status, auto_deflate,
       auto_deflate_algorithm, auto_deflate_level, auto_inflate,
-      collect_statistics, eof_on_error_is_eot, description);
+      collect_statistics, eof_on_error_is_eot, count, description);
   const auto resource_directory
       = storage_config.value->path / "bareos-sd.d" / "device";
   const bool file_existed = std::filesystem::exists(context.value->file_path);

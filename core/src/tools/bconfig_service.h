@@ -812,6 +812,7 @@ struct StorageDeviceResourceSpec {
   std::optional<std::string> auto_inflate{};
   std::optional<bool> collect_statistics{};
   std::optional<bool> eof_on_error_is_eot{};
+  std::optional<uint32_t> count{};
   std::optional<std::string> description{};
 };
 

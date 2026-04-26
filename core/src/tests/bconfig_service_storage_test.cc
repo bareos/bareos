@@ -853,6 +853,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
        .auto_inflate = std::string{"in"},
        .collect_statistics = false,
        .eof_on_error_is_eot = true,
+       .count = 5,
        .description = std::string{"Managed storage device"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-sd");
@@ -944,6 +945,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(created_text.find("AutoInflate = read"), std::string::npos);
   EXPECT_NE(created_text.find("CollectStatistics = no"), std::string::npos);
   EXPECT_NE(created_text.find("EofOnErrorIsEot = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("Count = 5"), std::string::npos);
 
   const auto ownership_path = RepositoryLayout::OwnershipPath(repo_path.path());
   const auto ownership_text = ReadTextFile(ownership_path);
@@ -1041,6 +1043,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(updated_text.find("AutoInflate = read"), std::string::npos);
   EXPECT_NE(updated_text.find("CollectStatistics = no"), std::string::npos);
   EXPECT_NE(updated_text.find("EofOnErrorIsEot = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("Count = 5"), std::string::npos);
 
   const auto updated_ownership_text = ReadTextFile(ownership_path);
   EXPECT_NE(updated_ownership_text.find(
@@ -1101,7 +1104,8 @@ TEST(BconfigService, UpsertsStorageDeviceResourcesInSharedFiles)
                           "  autodeflatealgorithm = lz4\n"
                           "  autodeflatelevel = 6\n"
                           "  autoinflate = readonly\n"
-                          "  labeltype = ansi\n");
+                          "  labeltype = ansi\n"
+                          "  count = 5\n");
   WriteTextFile(shared_path,
                 shared_base_text
                     + "\nDevice {\n"
@@ -1134,6 +1138,7 @@ TEST(BconfigService, UpsertsStorageDeviceResourcesInSharedFiles)
   EXPECT_NE(shared_text.find("AutoDeflateLevel = 6"), std::string::npos);
   EXPECT_NE(shared_text.find("AutoInflate = read"), std::string::npos);
   EXPECT_NE(shared_text.find("LabelType = ansi"), std::string::npos);
+  EXPECT_NE(shared_text.find("Count = 5"), std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherDevice\""), std::string::npos);
 }
 
