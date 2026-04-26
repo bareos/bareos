@@ -558,6 +558,11 @@ struct DirectorJobResourceSpec {
   std::optional<std::string> catalog{};
   std::optional<std::string> jobdefs{};
   std::optional<std::vector<std::string>> run_entries{};
+  std::optional<std::vector<std::string>> run_before_job_entries{};
+  std::optional<std::vector<std::string>> run_after_job_entries{};
+  std::optional<std::vector<std::string>> run_after_failed_job_entries{};
+  std::optional<std::vector<std::string>> client_run_before_job_entries{};
+  std::optional<std::vector<std::string>> client_run_after_job_entries{};
   std::optional<std::string> where{};
   std::optional<std::string> replace{};
   std::optional<std::string> regex_where{};
@@ -638,6 +643,11 @@ struct DirectorJobDefsResourceSpec {
   std::optional<std::string> catalog{};
   std::optional<std::string> jobdefs{};
   std::optional<std::vector<std::string>> run_entries{};
+  std::optional<std::vector<std::string>> run_before_job_entries{};
+  std::optional<std::vector<std::string>> run_after_job_entries{};
+  std::optional<std::vector<std::string>> run_after_failed_job_entries{};
+  std::optional<std::vector<std::string>> client_run_before_job_entries{};
+  std::optional<std::vector<std::string>> client_run_after_job_entries{};
   std::optional<std::string> where{};
   std::optional<std::string> replace{};
   std::optional<std::string> regex_where{};

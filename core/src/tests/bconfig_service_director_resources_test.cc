@@ -1950,6 +1950,16 @@ TEST(BconfigService, UpsertsDirectorJobResources)
        .client = std::string{"bareos-fd"},
        .jobdefs = std::string{"DefaultJob"},
        .run_entries = std::vector<std::string>{"catalog-backup"},
+       .run_before_job_entries
+       = std::vector<std::string>{"/usr/lib/bareos/scripts/job-before"},
+       .run_after_job_entries
+       = std::vector<std::string>{"/usr/lib/bareos/scripts/job-after"},
+       .run_after_failed_job_entries
+       = std::vector<std::string>{"/usr/lib/bareos/scripts/job-failed"},
+       .client_run_before_job_entries
+       = std::vector<std::string>{"/usr/lib/bareos/scripts/client-before"},
+       .client_run_after_job_entries
+       = std::vector<std::string>{"/usr/lib/bareos/scripts/client-after"},
        .replace = std::string{"ifolder"},
        .write_bootstrap = std::string{"/tmp/managed-job.bsr"},
        .maximum_bandwidth = 12345,
@@ -1997,6 +2007,22 @@ TEST(BconfigService, UpsertsDirectorJobResources)
   EXPECT_NE(created_text.find("JobDefs = DefaultJob"), std::string::npos);
   EXPECT_NE(created_text.find("Client = bareos-fd"), std::string::npos);
   EXPECT_NE(created_text.find("Run = catalog-backup"), std::string::npos);
+  EXPECT_NE(created_text.find(
+                "RunBeforeJob = \"/usr/lib/bareos/scripts/job-before\""),
+            std::string::npos);
+  EXPECT_NE(
+      created_text.find("RunAfterJob = \"/usr/lib/bareos/scripts/job-after\""),
+      std::string::npos);
+  EXPECT_NE(created_text.find(
+                "RunAfterFailedJob = \"/usr/lib/bareos/scripts/job-failed\""),
+            std::string::npos);
+  EXPECT_NE(
+      created_text.find(
+          "ClientRunBeforeJob = \"/usr/lib/bareos/scripts/client-before\""),
+      std::string::npos);
+  EXPECT_NE(created_text.find(
+                "ClientRunAfterJob = \"/usr/lib/bareos/scripts/client-after\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("Replace = IfOlder"), std::string::npos);
   EXPECT_NE(created_text.find("WriteBootstrap = \"/tmp/managed-job.bsr\""),
             std::string::npos);
@@ -2045,6 +2071,14 @@ TEST(BconfigService, UpsertsDirectorJobResources)
       = "  BackupFormat = \"Portable\"\n"
         "  Protocol = NDMP_NATIVE\n"
         "  Run = backup-catalog-now\n"
+        "  RunBeforeJob = \"/tmp/scripts/make_catalog_backup MyCatalog\"\n"
+        "  RunAfterJob = \"/tmp/scripts/delete_catalog_backup\"\n"
+        "  RunAfterFailedJob = "
+        "\"/tmp/scripts/report_catalog_backup_failure\"\n"
+        "  ClientRunBeforeJob = "
+        "\"/tmp/scripts/client_prepare_catalog_backup\"\n"
+        "  ClientRunAfterJob = "
+        "\"/tmp/scripts/client_finalize_catalog_backup\"\n"
         "  Replace = Never\n"
         "  FdPluginOptions = \"fd=imported\"\n"
         "  SdPluginOptions = \"sd=imported\"\n"
@@ -2093,14 +2127,24 @@ TEST(BconfigService, UpsertsDirectorJobResources)
       updated_text.find(
           "RunBeforeJob = \"/tmp/scripts/make_catalog_backup MyCatalog\""),
       std::string::npos);
-  EXPECT_NE(updated_text.find(
-                "RunAfterJob  = \"/tmp/scripts/delete_catalog_backup\""),
-            std::string::npos);
+  EXPECT_NE(
+      updated_text.find("RunAfterJob = \"/tmp/scripts/delete_catalog_backup\""),
+      std::string::npos);
   EXPECT_NE(updated_text.find("WriteBootstrap = "), std::string::npos);
   EXPECT_NE(updated_text.find("BackupFormat = \"Portable\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("Protocol = NDMP_NATIVE"), std::string::npos);
   EXPECT_NE(updated_text.find("Run = backup-catalog-now"), std::string::npos);
+  EXPECT_NE(updated_text.find("RunAfterFailedJob = "
+                              "\"/tmp/scripts/report_catalog_backup_failure\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("ClientRunBeforeJob = "
+                              "\"/tmp/scripts/client_prepare_catalog_backup\""),
+            std::string::npos);
+  EXPECT_NE(
+      updated_text.find("ClientRunAfterJob = "
+                        "\"/tmp/scripts/client_finalize_catalog_backup\""),
+      std::string::npos);
   EXPECT_NE(updated_text.find("Replace = Never"), std::string::npos);
   EXPECT_NE(updated_text.find("FdPluginOptions = \"fd=imported\""),
             std::string::npos);
@@ -2173,7 +2217,16 @@ TEST(BconfigService, UpsertsDirectorJobResourcesInSharedFiles)
         / "bareos-dir/bareos-dir.d/job";
   const auto original_path = job_directory / "BackupCatalog.conf";
   const auto shared_path = job_directory / "shared.conf";
-  const auto original_text = ReadTextFile(original_path);
+  auto original_text = ReadTextFile(original_path);
+  const auto original_brace = original_text.rfind("}\n");
+  ASSERT_NE(original_brace, std::string::npos);
+  original_text.insert(original_brace,
+                       "  runafterfailedjob = "
+                       "\"/tmp/scripts/shared-job-failed\"\n"
+                       "  clientrunbeforejob = "
+                       "\"/tmp/scripts/shared-client-before\"\n"
+                       "  clientrunafterjob = "
+                       "\"/tmp/scripts/shared-client-after\"\n");
   WriteTextFile(shared_path,
                 original_text
                     + "\nJob {\n"
@@ -2191,6 +2244,15 @@ TEST(BconfigService, UpsertsDirectorJobResourcesInSharedFiles)
   EXPECT_TRUE(std::filesystem::exists(shared_path));
   const auto shared_text = ReadTextFile(shared_path);
   EXPECT_NE(shared_text.find("Description = \"Updated backup catalog job\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find(
+                "RunAfterFailedJob = \"/tmp/scripts/shared-job-failed\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find(
+                "ClientRunBeforeJob = \"/tmp/scripts/shared-client-before\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find(
+                "ClientRunAfterJob = \"/tmp/scripts/shared-client-after\""),
             std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherJob\""), std::string::npos);
 }
@@ -2332,6 +2394,16 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
        .fileset = std::string{"SelfTest"},
        .schedule = std::string{"WeeklyCycle"},
        .run_entries = std::vector<std::string>{"managed-jobdefs-run"},
+       .run_before_job_entries
+       = std::vector<std::string>{"/usr/lib/bareos/scripts/jobdefs-before"},
+       .run_after_job_entries
+       = std::vector<std::string>{"/usr/lib/bareos/scripts/jobdefs-after"},
+       .run_after_failed_job_entries
+       = std::vector<std::string>{"/usr/lib/bareos/scripts/jobdefs-failed"},
+       .client_run_before_job_entries = std::vector<
+           std::string>{"/usr/lib/bareos/scripts/jobdefs-client-before"},
+       .client_run_after_job_entries = std::vector<
+           std::string>{"/usr/lib/bareos/scripts/jobdefs-client-after"},
        .replace = std::string{"ifolder"},
        .write_bootstrap = std::string{"/tmp/managed-jobdefs.bsr"},
        .maximum_bandwidth = 23456,
@@ -2380,6 +2452,24 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
   EXPECT_NE(created_text.find("Protocol = NDMP_BAREOS"), std::string::npos);
   EXPECT_NE(created_text.find("Client = bareos-fd"), std::string::npos);
   EXPECT_NE(created_text.find("Run = managed-jobdefs-run"), std::string::npos);
+  EXPECT_NE(created_text.find(
+                "RunBeforeJob = \"/usr/lib/bareos/scripts/jobdefs-before\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find(
+                "RunAfterJob = \"/usr/lib/bareos/scripts/jobdefs-after\""),
+            std::string::npos);
+  EXPECT_NE(
+      created_text.find(
+          "RunAfterFailedJob = \"/usr/lib/bareos/scripts/jobdefs-failed\""),
+      std::string::npos);
+  EXPECT_NE(
+      created_text.find("ClientRunBeforeJob = "
+                        "\"/usr/lib/bareos/scripts/jobdefs-client-before\""),
+      std::string::npos);
+  EXPECT_NE(
+      created_text.find("ClientRunAfterJob = "
+                        "\"/usr/lib/bareos/scripts/jobdefs-client-after\""),
+      std::string::npos);
   EXPECT_NE(created_text.find("Replace = IfOlder"), std::string::npos);
   EXPECT_NE(created_text.find("WriteBootstrap = \"/tmp/managed-jobdefs.bsr\""),
             std::string::npos);
@@ -2428,6 +2518,11 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
       = "  BackupFormat = \"Portable\"\n"
         "  Protocol = NDMP_NATIVE\n"
         "  Run = imported-jobdefs-run\n"
+        "  RunBeforeJob = \"/tmp/scripts/prepare_jobdefs\"\n"
+        "  RunAfterJob = \"/tmp/scripts/cleanup_jobdefs\"\n"
+        "  RunAfterFailedJob = \"/tmp/scripts/report_jobdefs_failure\"\n"
+        "  ClientRunBeforeJob = \"/tmp/scripts/jobdefs_client_prepare\"\n"
+        "  ClientRunAfterJob = \"/tmp/scripts/jobdefs_client_cleanup\"\n"
         "  Replace = Never\n"
         "  FdPluginOptions = \"fd=imported-defs\"\n"
         "  SdPluginOptions = \"sd=imported-defs\"\n"
@@ -2482,6 +2577,20 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("Protocol = NDMP_NATIVE"), std::string::npos);
   EXPECT_NE(updated_text.find("Run = imported-jobdefs-run"), std::string::npos);
+  EXPECT_NE(
+      updated_text.find("RunBeforeJob = \"/tmp/scripts/prepare_jobdefs\""),
+      std::string::npos);
+  EXPECT_NE(updated_text.find("RunAfterJob = \"/tmp/scripts/cleanup_jobdefs\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find(
+                "RunAfterFailedJob = \"/tmp/scripts/report_jobdefs_failure\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find(
+                "ClientRunBeforeJob = \"/tmp/scripts/jobdefs_client_prepare\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find(
+                "ClientRunAfterJob = \"/tmp/scripts/jobdefs_client_cleanup\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("Replace = Never"), std::string::npos);
   EXPECT_NE(updated_text.find("FdPluginOptions = \"fd=imported-defs\""),
             std::string::npos);
@@ -2554,7 +2663,16 @@ TEST(BconfigService, UpsertsDirectorJobDefsResourcesInSharedFiles)
         / "bareos-dir/bareos-dir.d/jobdefs";
   const auto original_path = jobdefs_directory / "DefaultJob.conf";
   const auto shared_path = jobdefs_directory / "shared.conf";
-  const auto original_text = ReadTextFile(original_path);
+  auto original_text = ReadTextFile(original_path);
+  const auto original_brace = original_text.rfind("}\n");
+  ASSERT_NE(original_brace, std::string::npos);
+  original_text.insert(original_brace,
+                       "  runafterfailedjob = "
+                       "\"/tmp/scripts/shared-jobdefs-failed\"\n"
+                       "  clientrunbeforejob = "
+                       "\"/tmp/scripts/shared-jobdefs-client-before\"\n"
+                       "  clientrunafterjob = "
+                       "\"/tmp/scripts/shared-jobdefs-client-after\"\n");
   WriteTextFile(shared_path,
                 original_text
                     + "\nJobDefs {\n"
@@ -2571,6 +2689,15 @@ TEST(BconfigService, UpsertsDirectorJobDefsResourcesInSharedFiles)
   EXPECT_TRUE(std::filesystem::exists(shared_path));
   const auto shared_text = ReadTextFile(shared_path);
   EXPECT_NE(shared_text.find("Description = \"Updated default jobdefs\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find(
+                "RunAfterFailedJob = \"/tmp/scripts/shared-jobdefs-failed\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("ClientRunBeforeJob = "
+                             "\"/tmp/scripts/shared-jobdefs-client-before\""),
+            std::string::npos);
+  EXPECT_NE(shared_text.find("ClientRunAfterJob = "
+                             "\"/tmp/scripts/shared-jobdefs-client-after\""),
             std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherJobDefs\""), std::string::npos);
 }

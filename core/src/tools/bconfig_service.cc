@@ -1086,6 +1086,11 @@ struct DirectorJobContentSpec {
   std::optional<std::string> catalog{};
   std::optional<std::string> jobdefs{};
   std::vector<std::string> run_entries{};
+  std::vector<std::string> run_before_job_entries{};
+  std::vector<std::string> run_after_job_entries{};
+  std::vector<std::string> run_after_failed_job_entries{};
+  std::vector<std::string> client_run_before_job_entries{};
+  std::vector<std::string> client_run_after_job_entries{};
   std::optional<std::string> where{};
   std::optional<std::string> replace{};
   std::optional<std::string> regex_where{};
@@ -1989,6 +1994,16 @@ std::string BuildDirectorJobResourceContent(std::string_view job_name,
   for (const auto& entry : spec.run_entries) {
     content << "  Run = " << entry << "\n";
   }
+  AppendRepeatedQuotedDirective(content, "RunBeforeJob",
+                                spec.run_before_job_entries);
+  AppendRepeatedQuotedDirective(content, "RunAfterJob",
+                                spec.run_after_job_entries);
+  AppendRepeatedQuotedDirective(content, "RunAfterFailedJob",
+                                spec.run_after_failed_job_entries);
+  AppendRepeatedQuotedDirective(content, "ClientRunBeforeJob",
+                                spec.client_run_before_job_entries);
+  AppendRepeatedQuotedDirective(content, "ClientRunAfterJob",
+                                spec.client_run_after_job_entries);
   AppendBareosDirective(content, "Where", spec.where);
   AppendBareosDirective(content, "Replace", spec.replace);
   AppendQuotedDirective(content, "RegexWhere", spec.regex_where);
@@ -2108,6 +2123,16 @@ std::string BuildDirectorJobDefsResourceContent(
   for (const auto& entry : spec.run_entries) {
     content << "  Run = " << entry << "\n";
   }
+  AppendRepeatedQuotedDirective(content, "RunBeforeJob",
+                                spec.run_before_job_entries);
+  AppendRepeatedQuotedDirective(content, "RunAfterJob",
+                                spec.run_after_job_entries);
+  AppendRepeatedQuotedDirective(content, "RunAfterFailedJob",
+                                spec.run_after_failed_job_entries);
+  AppendRepeatedQuotedDirective(content, "ClientRunBeforeJob",
+                                spec.client_run_before_job_entries);
+  AppendRepeatedQuotedDirective(content, "ClientRunAfterJob",
+                                spec.client_run_after_job_entries);
   AppendBareosDirective(content, "Where", spec.where);
   AppendBareosDirective(content, "Replace", spec.replace);
   AppendQuotedDirective(content, "RegexWhere", spec.regex_where);
@@ -7330,6 +7355,62 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
 
+    auto run_before_job_entries
+        = context.is_standalone_file
+              ? ExtractTopLevelDirectiveValues(context.file_path, "Job",
+                                               {"RunBeforeJob"})
+              : ExtractNamedTopLevelDirectiveValues(context.file_path, "Job",
+                                                    job_name, {"RunBeforeJob"});
+    if (!run_before_job_entries) {
+      return {.error = run_before_job_entries.error};
+    }
+    context.content.run_before_job_entries
+        = std::move(*run_before_job_entries.value);
+    auto run_after_job_entries
+        = context.is_standalone_file
+              ? ExtractTopLevelDirectiveValues(context.file_path, "Job",
+                                               {"RunAfterJob"})
+              : ExtractNamedTopLevelDirectiveValues(context.file_path, "Job",
+                                                    job_name, {"RunAfterJob"});
+    if (!run_after_job_entries) {
+      return {.error = run_after_job_entries.error};
+    }
+    context.content.run_after_job_entries
+        = std::move(*run_after_job_entries.value);
+    auto run_after_failed_job_entries
+        = context.is_standalone_file
+              ? ExtractTopLevelDirectiveValues(context.file_path, "Job",
+                                               {"RunAfterFailedJob"})
+              : ExtractNamedTopLevelDirectiveValues(
+                    context.file_path, "Job", job_name, {"RunAfterFailedJob"});
+    if (!run_after_failed_job_entries) {
+      return {.error = run_after_failed_job_entries.error};
+    }
+    context.content.run_after_failed_job_entries
+        = std::move(*run_after_failed_job_entries.value);
+    auto client_run_before_job_entries
+        = context.is_standalone_file
+              ? ExtractTopLevelDirectiveValues(context.file_path, "Job",
+                                               {"ClientRunBeforeJob"})
+              : ExtractNamedTopLevelDirectiveValues(
+                    context.file_path, "Job", job_name, {"ClientRunBeforeJob"});
+    if (!client_run_before_job_entries) {
+      return {.error = client_run_before_job_entries.error};
+    }
+    context.content.client_run_before_job_entries
+        = std::move(*client_run_before_job_entries.value);
+    auto client_run_after_job_entries
+        = context.is_standalone_file
+              ? ExtractTopLevelDirectiveValues(context.file_path, "Job",
+                                               {"ClientRunAfterJob"})
+              : ExtractNamedTopLevelDirectiveValues(
+                    context.file_path, "Job", job_name, {"ClientRunAfterJob"});
+    if (!client_run_after_job_entries) {
+      return {.error = client_run_after_job_entries.error};
+    }
+    context.content.client_run_after_job_entries
+        = std::move(*client_run_after_job_entries.value);
+
     static const std::set<std::string> kControlledJobDirectives{
         "Name",
         "Description",
@@ -7353,6 +7434,11 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
         "Catalog",
         "JobDefs",
         "Run",
+        "RunBeforeJob",
+        "RunAfterJob",
+        "RunAfterFailedJob",
+        "ClientRunBeforeJob",
+        "ClientRunAfterJob",
         "Where",
         "Replace",
         "RegexWhere",
@@ -7749,6 +7835,67 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
     context.is_standalone_file
         = per_file != resources_per_file.end() && per_file->second == 1;
 
+    auto run_before_job_entries
+        = context.is_standalone_file
+              ? ExtractTopLevelDirectiveValues(context.file_path, "JobDefs",
+                                               {"RunBeforeJob"})
+              : ExtractNamedTopLevelDirectiveValues(context.file_path,
+                                                    "JobDefs", jobdefs_name,
+                                                    {"RunBeforeJob"});
+    if (!run_before_job_entries) {
+      return {.error = run_before_job_entries.error};
+    }
+    context.content.run_before_job_entries
+        = std::move(*run_before_job_entries.value);
+    auto run_after_job_entries
+        = context.is_standalone_file
+              ? ExtractTopLevelDirectiveValues(context.file_path, "JobDefs",
+                                               {"RunAfterJob"})
+              : ExtractNamedTopLevelDirectiveValues(context.file_path,
+                                                    "JobDefs", jobdefs_name,
+                                                    {"RunAfterJob"});
+    if (!run_after_job_entries) {
+      return {.error = run_after_job_entries.error};
+    }
+    context.content.run_after_job_entries
+        = std::move(*run_after_job_entries.value);
+    auto run_after_failed_job_entries
+        = context.is_standalone_file
+              ? ExtractTopLevelDirectiveValues(context.file_path, "JobDefs",
+                                               {"RunAfterFailedJob"})
+              : ExtractNamedTopLevelDirectiveValues(context.file_path,
+                                                    "JobDefs", jobdefs_name,
+                                                    {"RunAfterFailedJob"});
+    if (!run_after_failed_job_entries) {
+      return {.error = run_after_failed_job_entries.error};
+    }
+    context.content.run_after_failed_job_entries
+        = std::move(*run_after_failed_job_entries.value);
+    auto client_run_before_job_entries
+        = context.is_standalone_file
+              ? ExtractTopLevelDirectiveValues(context.file_path, "JobDefs",
+                                               {"ClientRunBeforeJob"})
+              : ExtractNamedTopLevelDirectiveValues(context.file_path,
+                                                    "JobDefs", jobdefs_name,
+                                                    {"ClientRunBeforeJob"});
+    if (!client_run_before_job_entries) {
+      return {.error = client_run_before_job_entries.error};
+    }
+    context.content.client_run_before_job_entries
+        = std::move(*client_run_before_job_entries.value);
+    auto client_run_after_job_entries
+        = context.is_standalone_file
+              ? ExtractTopLevelDirectiveValues(context.file_path, "JobDefs",
+                                               {"ClientRunAfterJob"})
+              : ExtractNamedTopLevelDirectiveValues(context.file_path,
+                                                    "JobDefs", jobdefs_name,
+                                                    {"ClientRunAfterJob"});
+    if (!client_run_after_job_entries) {
+      return {.error = client_run_after_job_entries.error};
+    }
+    context.content.client_run_after_job_entries
+        = std::move(*client_run_after_job_entries.value);
+
     static const std::set<std::string> kControlledJobDefsDirectives{
         "Name",
         "Description",
@@ -7772,6 +7919,11 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
         "Catalog",
         "JobDefs",
         "Run",
+        "RunBeforeJob",
+        "RunAfterJob",
+        "RunAfterFailedJob",
+        "ClientRunBeforeJob",
+        "ClientRunAfterJob",
         "Where",
         "Replace",
         "RegexWhere",
@@ -13444,6 +13596,21 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertDirectorJobResource(
   if (spec.catalog) { content.catalog = *spec.catalog; }
   if (spec.jobdefs) { content.jobdefs = *spec.jobdefs; }
   if (spec.run_entries) { content.run_entries = *spec.run_entries; }
+  if (spec.run_before_job_entries) {
+    content.run_before_job_entries = *spec.run_before_job_entries;
+  }
+  if (spec.run_after_job_entries) {
+    content.run_after_job_entries = *spec.run_after_job_entries;
+  }
+  if (spec.run_after_failed_job_entries) {
+    content.run_after_failed_job_entries = *spec.run_after_failed_job_entries;
+  }
+  if (spec.client_run_before_job_entries) {
+    content.client_run_before_job_entries = *spec.client_run_before_job_entries;
+  }
+  if (spec.client_run_after_job_entries) {
+    content.client_run_after_job_entries = *spec.client_run_after_job_entries;
+  }
   if (spec.where) { content.where = *spec.where; }
   if (spec.replace) {
     auto normalized_replace = NormalizeDirectorJobReplace(*spec.replace);
@@ -13776,6 +13943,21 @@ ServiceState::UpsertDirectorJobDefsResource(
   if (spec.catalog) { content.catalog = *spec.catalog; }
   if (spec.jobdefs) { content.jobdefs = *spec.jobdefs; }
   if (spec.run_entries) { content.run_entries = *spec.run_entries; }
+  if (spec.run_before_job_entries) {
+    content.run_before_job_entries = *spec.run_before_job_entries;
+  }
+  if (spec.run_after_job_entries) {
+    content.run_after_job_entries = *spec.run_after_job_entries;
+  }
+  if (spec.run_after_failed_job_entries) {
+    content.run_after_failed_job_entries = *spec.run_after_failed_job_entries;
+  }
+  if (spec.client_run_before_job_entries) {
+    content.client_run_before_job_entries = *spec.client_run_before_job_entries;
+  }
+  if (spec.client_run_after_job_entries) {
+    content.client_run_after_job_entries = *spec.client_run_after_job_entries;
+  }
   if (spec.where) { content.where = *spec.where; }
   if (spec.replace) {
     auto normalized_replace = NormalizeDirectorJobReplace(*spec.replace);
