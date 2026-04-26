@@ -107,6 +107,7 @@ struct DirectorClientRequestSpec {
   std::optional<bool> strict_quotas{};
   std::optional<bool> quota_include_failed_jobs{};
   std::optional<uint64_t> soft_quota{};
+  std::optional<uint64_t> hard_quota{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint64_t> heartbeat_interval{};
@@ -1289,6 +1290,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="director-client-soft-quota">SoftQuota</label>
         <input id="director-client-soft-quota" name="soft_quota" type="number"
+               min="0" placeholder="0">
+
+        <label for="director-client-hard-quota">HardQuota</label>
+        <input id="director-client-hard-quota" name="hard_quota" type="number"
                min="0" placeholder="0">
 
         <label for="director-client-heartbeat-interval">Heartbeat interval</label>
@@ -3711,6 +3716,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           connection_from_client_to_director: document.getElementById(
             'director-client-connection-from-client-to-director').checked,
           soft_quota: String(form.get('soft_quota') ?? '').trim(),
+          hard_quota: String(form.get('hard_quota') ?? '').trim(),
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
@@ -3735,6 +3741,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
           delete payload.soft_quota;
         } else {
           payload.soft_quota = Number.parseInt(payload.soft_quota, 10);
+        }
+        if (!payload.hard_quota) {
+          delete payload.hard_quota;
+        } else {
+          payload.hard_quota = Number.parseInt(payload.hard_quota, 10);
         }
         if (!payload.heartbeat_interval) {
           delete payload.heartbeat_interval;
@@ -6814,6 +6825,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .strict_quotas = spec->strict_quotas,
       .quota_include_failed_jobs = spec->quota_include_failed_jobs,
       .soft_quota = spec->soft_quota,
+      .hard_quota = spec->hard_quota,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -8680,6 +8692,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* quota_include_failed_jobs
       = json_object_get(root.get(), "quota_include_failed_jobs");
   auto* soft_quota = json_object_get(root.get(), "soft_quota");
+  auto* hard_quota = json_object_get(root.get(), "hard_quota");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -8727,6 +8740,10 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (soft_quota && !json_is_null(soft_quota) && !json_is_integer(soft_quota)) {
     error = "field 'soft_quota' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (hard_quota && !json_is_null(hard_quota) && !json_is_integer(hard_quota)) {
+    error = "field 'hard_quota' must be an integer when provided.";
     return std::nullopt;
   }
   if (connection_from_director_to_client
@@ -8797,6 +8814,14 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
       return std::nullopt;
     }
     spec.soft_quota = static_cast<uint64_t>(value);
+  }
+  if (hard_quota && json_is_integer(hard_quota)) {
+    const auto value = json_integer_value(hard_quota);
+    if (value < 0) {
+      error = "field 'hard_quota' must be non-negative.";
+      return std::nullopt;
+    }
+    spec.hard_quota = static_cast<uint64_t>(value);
   }
   if (connection_from_director_to_client
       && json_is_boolean(connection_from_director_to_client)) {
