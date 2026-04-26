@@ -82,6 +82,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
        .tls_certificate_revocation_list = std::string{"/etc/bareos/crl.pem"},
        .tls_certificate = std::string{"/etc/bareos/client.crt"},
        .tls_key = std::string{"/etc/bareos/client.key"},
+       .tls_allowed_cn = std::vector<std::string>{"backup-dir.example.test",
+                                                  "backup-dir.internal"},
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = true,
        .maximum_concurrent_jobs = 9,
@@ -139,6 +141,10 @@ TEST(BconfigService, UpsertsDirectorClientResources)
             std::string::npos);
   EXPECT_NE(created_text.find("TlsKey = \"/etc/bareos/client.key\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("TlsAllowedCn = \"backup-dir.example.test\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("TlsAllowedCn = \"backup-dir.internal\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = yes"),
@@ -191,6 +197,10 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_EQ(stub_text.find("TlsCertificate = \"/etc/bareos/client.crt\""),
             std::string::npos);
   EXPECT_EQ(stub_text.find("TlsKey = \"/etc/bareos/client.key\""),
+            std::string::npos);
+  EXPECT_EQ(stub_text.find("TlsAllowedCn = \"backup-dir.example.test\""),
+            std::string::npos);
+  EXPECT_EQ(stub_text.find("TlsAllowedCn = \"backup-dir.internal\""),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
@@ -248,6 +258,10 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(updated_text.find("TlsCertificate = \"/etc/bareos/client.crt\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("TlsKey = \"/etc/bareos/client.key\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = \"backup-dir.example.test\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = \"backup-dir.internal\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
@@ -322,6 +336,8 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
       "  TlsCertificateRevocationList = \"/etc/bareos/import-crl.pem\"\n"
       "  TlsCertificate = \"/etc/bareos/import-client.crt\"\n"
       "  TlsKey = \"/etc/bareos/import-client.key\"\n"
+      "  TlsAllowedCn = \"import-backup-dir.example.test\"\n"
+      "  TlsAllowedCn = \"import-backup-dir.internal\"\n"
       "  ConnectionFromDirectorToClient = no\n"
       "  ConnectionFromClientToDirector = yes\n"
       "  MaximumConcurrentJobs = 4\n"
@@ -386,6 +402,12 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
                               "\"/etc/bareos/import-client.crt\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("TlsKey = \"/etc/bareos/import-client.key\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = "
+                              "\"import-backup-dir.example.test\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = "
+                              "\"import-backup-dir.internal\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);

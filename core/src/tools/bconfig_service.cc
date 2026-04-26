@@ -1079,6 +1079,7 @@ std::string BuildDirectorClientResourceContent(
     const std::optional<std::string>& tls_certificate_revocation_list,
     const std::optional<std::string>& tls_certificate,
     const std::optional<std::string>& tls_key,
+    const std::optional<std::vector<std::string>>& tls_allowed_cn,
     const std::optional<bool>& connection_from_director_to_client,
     const std::optional<bool>& connection_from_client_to_director,
     const std::optional<uint32_t>& maximum_concurrent_jobs,
@@ -1124,6 +1125,9 @@ std::string BuildDirectorClientResourceContent(
                         tls_certificate_revocation_list);
   AppendQuotedDirective(content, "TlsCertificate", tls_certificate);
   AppendQuotedDirective(content, "TlsKey", tls_key);
+  if (tls_allowed_cn) {
+    AppendRepeatedQuotedDirective(content, "TlsAllowedCn", *tls_allowed_cn);
+  }
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
                       connection_from_director_to_client);
   AppendBoolDirective(content, "ConnectionFromClientToDirector",
@@ -2538,6 +2542,7 @@ struct DirectorClientWriteContext {
   std::optional<std::string> tls_certificate_revocation_list{};
   std::optional<std::string> tls_certificate{};
   std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -2996,6 +3001,10 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
     if (HasMemberSource(*client, {"TlsKey"})
         && !client->tls_cert_.keyfile_.empty()) {
       context.tls_key = client->tls_cert_.keyfile_;
+    }
+    if (HasMemberSource(*client, {"TlsAllowedCn"})) {
+      context.tls_allowed_cn
+          = client->tls_cert_.allowed_certificate_common_names_;
     }
     if (HasMemberSource(*client, {"ConnectionFromDirectorToClient"})) {
       context.connection_from_director_to_client = client->conn_from_dir_to_fd;
@@ -8655,6 +8664,9 @@ ServiceState::UpsertDirectorClientResource(
                                    ? spec.tls_certificate
                                    : context.value->tls_certificate;
   const auto tls_key = spec.tls_key ? spec.tls_key : context.value->tls_key;
+  const auto tls_allowed_cn = spec.tls_allowed_cn
+                                  ? spec.tls_allowed_cn
+                                  : context.value->tls_allowed_cn;
   const auto maximum_concurrent_jobs
       = spec.maximum_concurrent_jobs ? spec.maximum_concurrent_jobs
                                      : context.value->maximum_concurrent_jobs;
@@ -8676,7 +8688,7 @@ ServiceState::UpsertDirectorClientResource(
       tls_require, tls_verify_peer, tls_cipher_list, tls_cipher_suites,
       tls_dh_file, tls_protocol, tls_ca_certificate_file,
       tls_ca_certificate_dir, tls_certificate_revocation_list, tls_certificate,
-      tls_key, connection_from_director_to_client,
+      tls_key, tls_allowed_cn, connection_from_director_to_client,
       connection_from_client_to_director, maximum_concurrent_jobs,
       heartbeat_interval, maximum_bandwidth_per_job, description);
 

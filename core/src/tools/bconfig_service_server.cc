@@ -128,6 +128,7 @@ struct DirectorClientRequestSpec {
   std::optional<std::string> tls_certificate_revocation_list{};
   std::optional<std::string> tls_certificate{};
   std::optional<std::string> tls_key{};
+  std::optional<std::vector<std::string>> tls_allowed_cn{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -1412,6 +1413,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-client-tls-key">TlsKey</label>
         <input id="director-client-tls-key" name="tls_key"
                placeholder="/etc/bareos/client.key">
+
+        <label for="director-client-tls-allowed-cn">TlsAllowedCn</label>
+        <textarea id="director-client-tls-allowed-cn" name="tls_allowed_cn"
+                  rows="3"
+                  placeholder="backup-dir.example.test&#10;backup-dir.internal"></textarea>
 
         <label for="director-client-maximum-concurrent-jobs">MaximumConcurrentJobs</label>
         <input id="director-client-maximum-concurrent-jobs"
@@ -3823,6 +3829,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
         const clientName = String(form.get('client_name') ?? '').trim();
+        const rawTlsAllowedCn = String(form.get('tls_allowed_cn') ?? '');
+        const tlsAllowedCn = rawTlsAllowedCn.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
         const payload = {
           address: String(form.get('address') ?? '').trim(),
           lan_address: String(form.get('lan_address') ?? '').trim(),
@@ -3869,6 +3879,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
             form.get('tls_certificate_revocation_list') ?? '').trim(),
           tls_certificate: String(form.get('tls_certificate') ?? '').trim(),
           tls_key: String(form.get('tls_key') ?? '').trim(),
+          tls_allowed_cn: tlsAllowedCn,
           maximum_concurrent_jobs: String(
             form.get('maximum_concurrent_jobs') ?? '').trim(),
           maximum_bandwidth_per_job: String(
@@ -3911,6 +3922,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.tls_key) {
           delete payload.tls_key;
+        }
+        if (payload.tls_allowed_cn.length === 0) {
+          delete payload.tls_allowed_cn;
         }
         if (!payload.maximum_bandwidth_per_job) {
           delete payload.maximum_bandwidth_per_job;
@@ -7059,6 +7073,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .tls_certificate_revocation_list = spec->tls_certificate_revocation_list,
       .tls_certificate = spec->tls_certificate,
       .tls_key = spec->tls_key,
+      .tls_allowed_cn = spec->tls_allowed_cn,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -8951,6 +8966,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
       = json_object_get(root.get(), "tls_certificate_revocation_list");
   auto* tls_certificate = json_object_get(root.get(), "tls_certificate");
   auto* tls_key = json_object_get(root.get(), "tls_key");
+  auto* tls_allowed_cn = json_object_get(root.get(), "tls_allowed_cn");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -8961,6 +8977,22 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* maximum_bandwidth_per_job
       = json_object_get(root.get(), "maximum_bandwidth_per_job");
   auto* description = json_object_get(root.get(), "description");
+  auto require_string_array = [&error](json_t* value, const char* field) {
+    if (!value || json_is_null(value)) { return true; }
+    if (!json_is_array(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an array of strings when provided.";
+      return false;
+    }
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      if (!json_is_string(json_array_get(value, index))) {
+        error = std::string{"field '"} + field
+                + "' must be an array of strings when provided.";
+        return false;
+      }
+    }
+    return true;
+  };
 
   if (address && !json_is_null(address) && !json_is_string(address)) {
     error = "field 'address' must be a string when provided.";
@@ -9106,6 +9138,9 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
     error = "field 'tls_key' must be a string when provided.";
     return std::nullopt;
   }
+  if (!require_string_array(tls_allowed_cn, "tls_allowed_cn")) {
+    return std::nullopt;
+  }
   if (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
       && !json_is_integer(maximum_concurrent_jobs)) {
     error = "field 'maximum_concurrent_jobs' must be an integer when provided.";
@@ -9146,6 +9181,16 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
 
   DirectorClientRequestSpec spec{};
+  auto parse_string_array
+      = [](json_t* value) -> std::optional<std::vector<std::string>> {
+    if (!value || !json_is_array(value)) { return std::nullopt; }
+    std::vector<std::string> result;
+    result.reserve(json_array_size(value));
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      result.emplace_back(json_string_value(json_array_get(value, index)));
+    }
+    return result;
+  };
   if (address && json_is_string(address)) {
     spec.address = std::string{json_string_value(address)};
   }
@@ -9279,6 +9324,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (tls_key && json_is_string(tls_key)) {
     spec.tls_key = std::string{json_string_value(tls_key)};
   }
+  spec.tls_allowed_cn = parse_string_array(tls_allowed_cn);
   if (maximum_concurrent_jobs && json_is_integer(maximum_concurrent_jobs)) {
     const auto value = json_integer_value(maximum_concurrent_jobs);
     if (value < 0 || value > std::numeric_limits<uint32_t>::max()) {
