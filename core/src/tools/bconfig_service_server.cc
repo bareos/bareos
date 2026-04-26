@@ -2742,6 +2742,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
                   name="client_run_after_job_entries" rows="2"
                   placeholder="/usr/lib/bareos/scripts/client-post.sh"></textarea>
 
+        <label for="director-job-runscript-blocks">RunScript blocks</label>
+        <textarea id="director-job-runscript-blocks" name="runscript_blocks"
+                  rows="8"
+                  placeholder="RunScript {&#10;  Console = &quot;status dir&quot;&#10;  RunsWhen = After&#10;  RunsOnFailure = yes&#10;}"></textarea>
+
         <label for="director-job-maximum-bandwidth">MaximumBandwidth</label>
         <input id="director-job-maximum-bandwidth" name="maximum_bandwidth"
                type="number">
@@ -3146,6 +3151,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <textarea id="director-jobdefs-client-run-after-job-entries"
                   name="client_run_after_job_entries" rows="2"
                   placeholder="/usr/lib/bareos/scripts/client-post.sh"></textarea>
+
+        <label for="director-jobdefs-runscript-blocks">RunScript blocks</label>
+        <textarea id="director-jobdefs-runscript-blocks"
+                  name="runscript_blocks" rows="8"
+                  placeholder="RunScript {&#10;  Console = &quot;status dir&quot;&#10;  RunsWhen = After&#10;  RunsOnFailure = yes&#10;}"></textarea>
 
         <label for="director-jobdefs-maximum-bandwidth">MaximumBandwidth</label>
         <input id="director-jobdefs-maximum-bandwidth"
@@ -7035,6 +7045,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
           .filter((line) => line.length > 0);
         if (values.length > 0) { payload[field] = values; }
       }
+      const runscriptBlocks = String(form.get('runscript_blocks') ?? '').trim();
+      if (runscriptBlocks) { payload.runscript_blocks = [runscriptBlocks]; }
       return payload;
     };
     document.getElementById('director-job-form').addEventListener(
