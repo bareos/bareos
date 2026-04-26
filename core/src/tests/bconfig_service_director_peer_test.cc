@@ -74,6 +74,7 @@ TEST(BconfigService, UpsertsDirectorClientResources)
        .tls_require = true,
        .tls_verify_peer = true,
        .tls_cipher_list = std::string{"HIGH:!aNULL"},
+       .tls_cipher_suites = std::string{"TLS_AES_256_GCM_SHA384"},
        .connection_from_director_to_client = false,
        .connection_from_client_to_director = true,
        .maximum_concurrent_jobs = 9,
@@ -115,6 +116,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(created_text.find("TlsVerifyPeer = yes"), std::string::npos);
   EXPECT_NE(created_text.find("TlsCipherList = \"HIGH:!aNULL\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("TlsCipherSuites = \"TLS_AES_256_GCM_SHA384\""),
+            std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(created_text.find("ConnectionFromClientToDirector = yes"),
@@ -151,6 +154,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_EQ(stub_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("TlsVerifyPeer = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("TlsCipherList = \"HIGH:!aNULL\""),
+            std::string::npos);
+  EXPECT_EQ(stub_text.find("TlsCipherSuites = \"TLS_AES_256_GCM_SHA384\""),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
@@ -192,6 +197,8 @@ TEST(BconfigService, UpsertsDirectorClientResources)
   EXPECT_NE(updated_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsVerifyPeer = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsCipherList = \"HIGH:!aNULL\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherSuites = \"TLS_AES_256_GCM_SHA384\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
@@ -257,6 +264,7 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
                 "  TlsRequire = yes\n"
                 "  TlsVerifyPeer = yes\n"
                 "  TlsCipherList = \"DEFAULT\"\n"
+                "  TlsCipherSuites = \"TLS_AES_128_GCM_SHA256\"\n"
                 "  ConnectionFromDirectorToClient = no\n"
                 "  ConnectionFromClientToDirector = yes\n"
                 "  MaximumConcurrentJobs = 4\n"
@@ -304,6 +312,8 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_NE(updated_text.find("TlsVerifyPeer = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsCipherList = \"DEFAULT\""),
             std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherSuites = \"TLS_AES_128_GCM_SHA256\""),
+            std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(updated_text.find("ConnectionFromClientToDirector = yes"),
@@ -335,6 +345,8 @@ TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
   EXPECT_EQ(stub_text.find("TlsRequire = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("TlsVerifyPeer = yes"), std::string::npos);
   EXPECT_EQ(stub_text.find("TlsCipherList = \"DEFAULT\""), std::string::npos);
+  EXPECT_EQ(stub_text.find("TlsCipherSuites = \"TLS_AES_128_GCM_SHA256\""),
+            std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromDirectorToClient = no"),
             std::string::npos);
   EXPECT_NE(stub_text.find("ConnectionFromClientToDirector = yes"),
