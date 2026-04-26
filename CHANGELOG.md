@@ -11,9 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 - stored: `MaximumFileSizeImmediateFilemark` now defaults to non-blocking
-  rollover filemarks for `MaximumFileSize`; set
-  `MaximumFileSizeImmediateFilemark = no` after upgrade to keep the previous
-  blocking behavior [PR #2634]
+  rollover filemarks for `MaximumFileSize`. Tape backends overriding
+  `weof_immediate()` now see that behavior on upgrade unless
+  `MaximumFileSizeImmediateFilemark = no` is set to keep the previous blocking
+  behavior [PR #2634]
 
 ### Changed
 - dirconfig: add subscription setting with comment [PR #2468]
