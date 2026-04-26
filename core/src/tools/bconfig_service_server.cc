@@ -261,10 +261,31 @@ struct ConsoleDirectorRequestSpec {
 
 struct DirectorUserRequestSpec {
   std::optional<std::string> description{};
+  std::optional<std::vector<std::string>> job_acl{};
+  std::optional<std::vector<std::string>> client_acl{};
+  std::optional<std::vector<std::string>> storage_acl{};
+  std::optional<std::vector<std::string>> schedule_acl{};
+  std::optional<std::vector<std::string>> pool_acl{};
+  std::optional<std::vector<std::string>> command_acl{};
+  std::optional<std::vector<std::string>> fileset_acl{};
+  std::optional<std::vector<std::string>> catalog_acl{};
+  std::optional<std::vector<std::string>> where_acl{};
+  std::optional<std::vector<std::string>> plugin_options_acl{};
+  std::optional<std::vector<std::string>> profiles{};
 };
 
 struct DirectorProfileRequestSpec {
   std::optional<std::string> description{};
+  std::optional<std::vector<std::string>> job_acl{};
+  std::optional<std::vector<std::string>> client_acl{};
+  std::optional<std::vector<std::string>> storage_acl{};
+  std::optional<std::vector<std::string>> schedule_acl{};
+  std::optional<std::vector<std::string>> pool_acl{};
+  std::optional<std::vector<std::string>> command_acl{};
+  std::optional<std::vector<std::string>> fileset_acl{};
+  std::optional<std::vector<std::string>> catalog_acl{};
+  std::optional<std::vector<std::string>> where_acl{};
+  std::optional<std::vector<std::string>> plugin_options_acl{};
 };
 
 struct DirectorPoolRequestSpec {
@@ -2035,6 +2056,51 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-user-description" name="description"
                placeholder="Managed user resource">
 
+        <label for="director-user-job-acl">Job ACL</label>
+        <textarea id="director-user-job-acl" name="job_acl"
+                  placeholder="ManagedJob&#10;RestoreJob"></textarea>
+
+        <label for="director-user-client-acl">Client ACL</label>
+        <textarea id="director-user-client-acl" name="client_acl"
+                  placeholder="bareos-fd"></textarea>
+
+        <label for="director-user-storage-acl">Storage ACL</label>
+        <textarea id="director-user-storage-acl" name="storage_acl"
+                  placeholder="FileStorage"></textarea>
+
+        <label for="director-user-schedule-acl">Schedule ACL</label>
+        <textarea id="director-user-schedule-acl" name="schedule_acl"
+                  placeholder="WeeklyCycle"></textarea>
+
+        <label for="director-user-pool-acl">Pool ACL</label>
+        <textarea id="director-user-pool-acl" name="pool_acl"
+                  placeholder="Full"></textarea>
+
+        <label for="director-user-command-acl">Command ACL</label>
+        <textarea id="director-user-command-acl" name="command_acl"
+                  placeholder="status&#10;.status&#10;show"></textarea>
+
+        <label for="director-user-fileset-acl">FileSet ACL</label>
+        <textarea id="director-user-fileset-acl" name="fileset_acl"
+                  placeholder="LinuxAll"></textarea>
+
+        <label for="director-user-catalog-acl">Catalog ACL</label>
+        <textarea id="director-user-catalog-acl" name="catalog_acl"
+                  placeholder="MyCatalog"></textarea>
+
+        <label for="director-user-where-acl">Where ACL</label>
+        <textarea id="director-user-where-acl" name="where_acl"
+                  placeholder="/tmp/restore"></textarea>
+
+        <label for="director-user-plugin-options-acl">PluginOptions ACL</label>
+        <textarea id="director-user-plugin-options-acl"
+                  name="plugin_options_acl"
+                  placeholder="python:module_path"></textarea>
+
+        <label for="director-user-profiles">Profiles</label>
+        <textarea id="director-user-profiles" name="profiles"
+                  placeholder="operator"></textarea>
+
         <button type="submit">
           PUT /v1/deployments/{id}/directors/{director}/users/{user}
         </button>
@@ -2059,6 +2125,47 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-profile-description">Description</label>
         <input id="director-profile-description" name="description"
                placeholder="Managed profile resource">
+
+        <label for="director-profile-job-acl">Job ACL</label>
+        <textarea id="director-profile-job-acl" name="job_acl"
+                  placeholder="ManagedJob&#10;RestoreJob"></textarea>
+
+        <label for="director-profile-client-acl">Client ACL</label>
+        <textarea id="director-profile-client-acl" name="client_acl"
+                  placeholder="bareos-fd"></textarea>
+
+        <label for="director-profile-storage-acl">Storage ACL</label>
+        <textarea id="director-profile-storage-acl" name="storage_acl"
+                  placeholder="FileStorage"></textarea>
+
+        <label for="director-profile-schedule-acl">Schedule ACL</label>
+        <textarea id="director-profile-schedule-acl" name="schedule_acl"
+                  placeholder="WeeklyCycle"></textarea>
+
+        <label for="director-profile-pool-acl">Pool ACL</label>
+        <textarea id="director-profile-pool-acl" name="pool_acl"
+                  placeholder="Full"></textarea>
+
+        <label for="director-profile-command-acl">Command ACL</label>
+        <textarea id="director-profile-command-acl" name="command_acl"
+                  placeholder="status&#10;.status&#10;show"></textarea>
+
+        <label for="director-profile-fileset-acl">FileSet ACL</label>
+        <textarea id="director-profile-fileset-acl" name="fileset_acl"
+                  placeholder="LinuxAll"></textarea>
+
+        <label for="director-profile-catalog-acl">Catalog ACL</label>
+        <textarea id="director-profile-catalog-acl" name="catalog_acl"
+                  placeholder="MyCatalog"></textarea>
+
+        <label for="director-profile-where-acl">Where ACL</label>
+        <textarea id="director-profile-where-acl" name="where_acl"
+                  placeholder="/tmp/restore"></textarea>
+
+        <label for="director-profile-plugin-options-acl">PluginOptions ACL</label>
+        <textarea id="director-profile-plugin-options-acl"
+                  name="plugin_options_acl"
+                  placeholder="python:module_path"></textarea>
 
         <button type="submit">
           PUT /v1/deployments/{id}/directors/{director}/profiles/{profile}
@@ -4890,12 +4997,40 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
         const userName = String(form.get('user_name') ?? '').trim();
+        const parseLines = (name) => String(form.get(name) ?? '')
+          .split(/\r?\n/)
+          .map((value) => value.trim())
+          .filter((value) => value.length > 0);
         const payload = {
           description: String(form.get('description') ?? '').trim(),
+          job_acl: parseLines('job_acl'),
+          client_acl: parseLines('client_acl'),
+          storage_acl: parseLines('storage_acl'),
+          schedule_acl: parseLines('schedule_acl'),
+          pool_acl: parseLines('pool_acl'),
+          command_acl: parseLines('command_acl'),
+          fileset_acl: parseLines('fileset_acl'),
+          catalog_acl: parseLines('catalog_acl'),
+          where_acl: parseLines('where_acl'),
+          plugin_options_acl: parseLines('plugin_options_acl'),
+          profiles: parseLines('profiles'),
         };
         if (!payload.description) {
           delete payload.description;
         }
+        if (payload.job_acl.length === 0) { delete payload.job_acl; }
+        if (payload.client_acl.length === 0) { delete payload.client_acl; }
+        if (payload.storage_acl.length === 0) { delete payload.storage_acl; }
+        if (payload.schedule_acl.length === 0) { delete payload.schedule_acl; }
+        if (payload.pool_acl.length === 0) { delete payload.pool_acl; }
+        if (payload.command_acl.length === 0) { delete payload.command_acl; }
+        if (payload.fileset_acl.length === 0) { delete payload.fileset_acl; }
+        if (payload.catalog_acl.length === 0) { delete payload.catalog_acl; }
+        if (payload.where_acl.length === 0) { delete payload.where_acl; }
+        if (payload.plugin_options_acl.length === 0) {
+          delete payload.plugin_options_acl;
+        }
+        if (payload.profiles.length === 0) { delete payload.profiles; }
         const { response } = await request(
           'PUT',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/users/${encodeURIComponent(userName)}`,
@@ -4928,11 +5063,37 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
         const profileName = String(form.get('profile_name') ?? '').trim();
+        const parseLines = (name) => String(form.get(name) ?? '')
+          .split(/\r?\n/)
+          .map((value) => value.trim())
+          .filter((value) => value.length > 0);
         const payload = {
           description: String(form.get('description') ?? '').trim(),
+          job_acl: parseLines('job_acl'),
+          client_acl: parseLines('client_acl'),
+          storage_acl: parseLines('storage_acl'),
+          schedule_acl: parseLines('schedule_acl'),
+          pool_acl: parseLines('pool_acl'),
+          command_acl: parseLines('command_acl'),
+          fileset_acl: parseLines('fileset_acl'),
+          catalog_acl: parseLines('catalog_acl'),
+          where_acl: parseLines('where_acl'),
+          plugin_options_acl: parseLines('plugin_options_acl'),
         };
         if (!payload.description) {
           delete payload.description;
+        }
+        if (payload.job_acl.length === 0) { delete payload.job_acl; }
+        if (payload.client_acl.length === 0) { delete payload.client_acl; }
+        if (payload.storage_acl.length === 0) { delete payload.storage_acl; }
+        if (payload.schedule_acl.length === 0) { delete payload.schedule_acl; }
+        if (payload.pool_acl.length === 0) { delete payload.pool_acl; }
+        if (payload.command_acl.length === 0) { delete payload.command_acl; }
+        if (payload.fileset_acl.length === 0) { delete payload.fileset_acl; }
+        if (payload.catalog_acl.length === 0) { delete payload.catalog_acl; }
+        if (payload.where_acl.length === 0) { delete payload.where_acl; }
+        if (payload.plugin_options_acl.length === 0) {
+          delete payload.plugin_options_acl;
         }
         const { response } = await request(
           'PUT',
@@ -8508,6 +8669,17 @@ http::response<http::string_body> HandleDeploymentDirectorUserPutRequest(
 
   DirectorUserResourceSpec resource_spec{
       .description = spec->description,
+      .job_acl = spec->job_acl,
+      .client_acl = spec->client_acl,
+      .storage_acl = spec->storage_acl,
+      .schedule_acl = spec->schedule_acl,
+      .pool_acl = spec->pool_acl,
+      .command_acl = spec->command_acl,
+      .fileset_acl = spec->fileset_acl,
+      .catalog_acl = spec->catalog_acl,
+      .where_acl = spec->where_acl,
+      .plugin_options_acl = spec->plugin_options_acl,
+      .profiles = spec->profiles,
   };
   auto result = state.UpsertDirectorUserResource(deployment_id, director_name,
                                                  user_name, resource_spec);
@@ -8592,6 +8764,16 @@ http::response<http::string_body> HandleDeploymentDirectorProfilePutRequest(
 
   DirectorProfileResourceSpec resource_spec{
       .description = spec->description,
+      .job_acl = spec->job_acl,
+      .client_acl = spec->client_acl,
+      .storage_acl = spec->storage_acl,
+      .schedule_acl = spec->schedule_acl,
+      .pool_acl = spec->pool_acl,
+      .command_acl = spec->command_acl,
+      .fileset_acl = spec->fileset_acl,
+      .catalog_acl = spec->catalog_acl,
+      .where_acl = spec->where_acl,
+      .plugin_options_acl = spec->plugin_options_acl,
   };
   auto result = state.UpsertDirectorProfileResource(
       deployment_id, director_name, profile_name, resource_spec);
@@ -11429,16 +11611,77 @@ std::optional<DirectorUserRequestSpec> ParseDirectorUserRequest(
   }
 
   auto* description = json_object_get(root.get(), "description");
+  auto* job_acl = json_object_get(root.get(), "job_acl");
+  auto* client_acl = json_object_get(root.get(), "client_acl");
+  auto* storage_acl = json_object_get(root.get(), "storage_acl");
+  auto* schedule_acl = json_object_get(root.get(), "schedule_acl");
+  auto* pool_acl = json_object_get(root.get(), "pool_acl");
+  auto* command_acl = json_object_get(root.get(), "command_acl");
+  auto* fileset_acl = json_object_get(root.get(), "fileset_acl");
+  auto* catalog_acl = json_object_get(root.get(), "catalog_acl");
+  auto* where_acl = json_object_get(root.get(), "where_acl");
+  auto* plugin_options_acl = json_object_get(root.get(), "plugin_options_acl");
+  auto* profiles = json_object_get(root.get(), "profiles");
   if (description && !json_is_null(description)
       && !json_is_string(description)) {
     error = "field 'description' must be a string when provided.";
     return std::nullopt;
   }
+  auto require_string_array = [&error](json_t* value, const char* field) {
+    if (!value || json_is_null(value)) { return true; }
+    if (!json_is_array(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an array of strings when provided.";
+      return false;
+    }
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      if (!json_is_string(json_array_get(value, index))) {
+        error = std::string{"field '"} + field
+                + "' must be an array of strings when provided.";
+        return false;
+      }
+    }
+    return true;
+  };
+  if (!require_string_array(job_acl, "job_acl")
+      || !require_string_array(client_acl, "client_acl")
+      || !require_string_array(storage_acl, "storage_acl")
+      || !require_string_array(schedule_acl, "schedule_acl")
+      || !require_string_array(pool_acl, "pool_acl")
+      || !require_string_array(command_acl, "command_acl")
+      || !require_string_array(fileset_acl, "fileset_acl")
+      || !require_string_array(catalog_acl, "catalog_acl")
+      || !require_string_array(where_acl, "where_acl")
+      || !require_string_array(plugin_options_acl, "plugin_options_acl")
+      || !require_string_array(profiles, "profiles")) {
+    return std::nullopt;
+  }
+  auto parse_string_array
+      = [](json_t* value) -> std::optional<std::vector<std::string>> {
+    if (!value || !json_is_array(value)) { return std::nullopt; }
+    std::vector<std::string> result;
+    result.reserve(json_array_size(value));
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      result.emplace_back(json_string_value(json_array_get(value, index)));
+    }
+    return result;
+  };
 
   DirectorUserRequestSpec spec{};
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
   }
+  spec.job_acl = parse_string_array(job_acl);
+  spec.client_acl = parse_string_array(client_acl);
+  spec.storage_acl = parse_string_array(storage_acl);
+  spec.schedule_acl = parse_string_array(schedule_acl);
+  spec.pool_acl = parse_string_array(pool_acl);
+  spec.command_acl = parse_string_array(command_acl);
+  spec.fileset_acl = parse_string_array(fileset_acl);
+  spec.catalog_acl = parse_string_array(catalog_acl);
+  spec.where_acl = parse_string_array(where_acl);
+  spec.plugin_options_acl = parse_string_array(plugin_options_acl);
+  spec.profiles = parse_string_array(profiles);
   return spec;
 }
 
@@ -11454,16 +11697,74 @@ std::optional<DirectorProfileRequestSpec> ParseDirectorProfileRequest(
   }
 
   auto* description = json_object_get(root.get(), "description");
+  auto* job_acl = json_object_get(root.get(), "job_acl");
+  auto* client_acl = json_object_get(root.get(), "client_acl");
+  auto* storage_acl = json_object_get(root.get(), "storage_acl");
+  auto* schedule_acl = json_object_get(root.get(), "schedule_acl");
+  auto* pool_acl = json_object_get(root.get(), "pool_acl");
+  auto* command_acl = json_object_get(root.get(), "command_acl");
+  auto* fileset_acl = json_object_get(root.get(), "fileset_acl");
+  auto* catalog_acl = json_object_get(root.get(), "catalog_acl");
+  auto* where_acl = json_object_get(root.get(), "where_acl");
+  auto* plugin_options_acl = json_object_get(root.get(), "plugin_options_acl");
   if (description && !json_is_null(description)
       && !json_is_string(description)) {
     error = "field 'description' must be a string when provided.";
     return std::nullopt;
   }
+  auto require_string_array = [&error](json_t* value, const char* field) {
+    if (!value || json_is_null(value)) { return true; }
+    if (!json_is_array(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an array of strings when provided.";
+      return false;
+    }
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      if (!json_is_string(json_array_get(value, index))) {
+        error = std::string{"field '"} + field
+                + "' must be an array of strings when provided.";
+        return false;
+      }
+    }
+    return true;
+  };
+  if (!require_string_array(job_acl, "job_acl")
+      || !require_string_array(client_acl, "client_acl")
+      || !require_string_array(storage_acl, "storage_acl")
+      || !require_string_array(schedule_acl, "schedule_acl")
+      || !require_string_array(pool_acl, "pool_acl")
+      || !require_string_array(command_acl, "command_acl")
+      || !require_string_array(fileset_acl, "fileset_acl")
+      || !require_string_array(catalog_acl, "catalog_acl")
+      || !require_string_array(where_acl, "where_acl")
+      || !require_string_array(plugin_options_acl, "plugin_options_acl")) {
+    return std::nullopt;
+  }
+  auto parse_string_array
+      = [](json_t* value) -> std::optional<std::vector<std::string>> {
+    if (!value || !json_is_array(value)) { return std::nullopt; }
+    std::vector<std::string> result;
+    result.reserve(json_array_size(value));
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      result.emplace_back(json_string_value(json_array_get(value, index)));
+    }
+    return result;
+  };
 
   DirectorProfileRequestSpec spec{};
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
   }
+  spec.job_acl = parse_string_array(job_acl);
+  spec.client_acl = parse_string_array(client_acl);
+  spec.storage_acl = parse_string_array(storage_acl);
+  spec.schedule_acl = parse_string_array(schedule_acl);
+  spec.pool_acl = parse_string_array(pool_acl);
+  spec.command_acl = parse_string_array(command_acl);
+  spec.fileset_acl = parse_string_array(fileset_acl);
+  spec.catalog_acl = parse_string_array(catalog_acl);
+  spec.where_acl = parse_string_array(where_acl);
+  spec.plugin_options_acl = parse_string_array(plugin_options_acl);
   return spec;
 }
 
