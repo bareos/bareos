@@ -329,6 +329,8 @@ struct DirectorCatalogRequestSpec {
   std::optional<std::string> db_password{};
   std::optional<std::string> db_user{};
   std::optional<std::string> db_name{};
+  std::optional<bool> multiple_connections{};
+  std::optional<bool> disable_batch_insert{};
   std::optional<bool> reconnect{};
   std::optional<bool> exit_on_fatal{};
   std::optional<uint32_t> min_connections{};
@@ -449,6 +451,7 @@ struct StorageDeviceRequestSpec {
 };
 
 struct StorageNdmpRequestSpec {
+  std::optional<std::string> description{};
   std::optional<std::string> username{};
   std::optional<std::string> password{};
   std::optional<std::string> auth_type{};
@@ -2264,6 +2267,18 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-catalog-db-socket">DbSocket</label>
         <input id="director-catalog-db-socket" name="db_socket">
 
+        <label class="checkbox-label" for="director-catalog-multiple-connections">
+          <input id="director-catalog-multiple-connections"
+                 name="multiple_connections" type="checkbox">
+          MultipleConnections
+        </label>
+
+        <label class="checkbox-label" for="director-catalog-disable-batch-insert">
+          <input id="director-catalog-disable-batch-insert"
+                 name="disable_batch_insert" type="checkbox">
+          DisableBatchInsert
+        </label>
+
         <label class="checkbox-label" for="director-catalog-reconnect">
           <input id="director-catalog-reconnect" name="reconnect"
                  type="checkbox" checked>
@@ -3171,6 +3186,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="storage-ndmp-log-level">Log level</label>
         <input id="storage-ndmp-log-level" name="log_level" type="number" min="0"
                placeholder="4">
+
+        <label for="storage-ndmp-description">Description</label>
+        <input id="storage-ndmp-description" name="description"
+               placeholder="Managed NDMP resource">
 
         <button type="submit">
           PUT /v1/deployments/{id}/storages/{storage}/ndmp/{ndmp}
@@ -5200,6 +5219,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
           db_password: String(form.get('db_password') ?? '').trim(),
           db_user: String(form.get('db_user') ?? '').trim(),
           db_name: String(form.get('db_name') ?? '').trim(),
+          multiple_connections: document.getElementById(
+            'director-catalog-multiple-connections').checked,
+          disable_batch_insert: document.getElementById(
+            'director-catalog-disable-batch-insert').checked,
           reconnect: document.getElementById('director-catalog-reconnect').checked,
           exit_on_fatal: document.getElementById('director-catalog-exit-on-fatal').checked,
           min_connections: String(form.get('min_connections') ?? '').trim(),
@@ -6034,10 +6057,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const ndmpName = String(form.get('ndmp_name') ?? '').trim();
         const rawLogLevel = String(form.get('log_level') ?? '').trim();
         const payload = {
+          description: String(form.get('description') ?? '').trim(),
           username: String(form.get('username') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
           auth_type: String(form.get('auth_type') ?? '').trim(),
         };
+        if (!payload.description) { delete payload.description; }
         if (!payload.username) { delete payload.username; }
         if (!payload.password) { delete payload.password; }
         if (!payload.auth_type) { delete payload.auth_type; }
@@ -7862,6 +7887,7 @@ http::response<http::string_body> HandleDeploymentStorageNdmpPutRequest(
   if (!spec) { return ErrorResponse(http::status::bad_request, error); }
 
   StorageNdmpResourceSpec resource_spec{
+      .description = spec->description,
       .username = spec->username,
       .password = spec->password,
       .auth_type = spec->auth_type,
@@ -8977,6 +9003,8 @@ http::response<http::string_body> HandleDeploymentDirectorCatalogPutRequest(
       .db_password = spec->db_password,
       .db_user = spec->db_user,
       .db_name = spec->db_name,
+      .multiple_connections = spec->multiple_connections,
+      .disable_batch_insert = spec->disable_batch_insert,
       .reconnect = spec->reconnect,
       .exit_on_fatal = spec->exit_on_fatal,
       .min_connections = spec->min_connections,
@@ -12052,6 +12080,10 @@ std::optional<DirectorCatalogRequestSpec> ParseDirectorCatalogRequest(
   auto* db_password = json_object_get(root.get(), "db_password");
   auto* db_user = json_object_get(root.get(), "db_user");
   auto* db_name = json_object_get(root.get(), "db_name");
+  auto* multiple_connections
+      = json_object_get(root.get(), "multiple_connections");
+  auto* disable_batch_insert
+      = json_object_get(root.get(), "disable_batch_insert");
   auto* reconnect = json_object_get(root.get(), "reconnect");
   auto* exit_on_fatal = json_object_get(root.get(), "exit_on_fatal");
   auto* min_connections = json_object_get(root.get(), "min_connections");
@@ -12092,6 +12124,8 @@ std::optional<DirectorCatalogRequestSpec> ParseDirectorCatalogRequest(
       || !require_string(db_password, "db_password")
       || !require_string(db_user, "db_user")
       || !require_string(db_name, "db_name")
+      || !require_boolean(multiple_connections, "multiple_connections")
+      || !require_boolean(disable_batch_insert, "disable_batch_insert")
       || !require_boolean(reconnect, "reconnect")
       || !require_boolean(exit_on_fatal, "exit_on_fatal")
       || !require_integer(min_connections, "min_connections")
@@ -12140,6 +12174,12 @@ std::optional<DirectorCatalogRequestSpec> ParseDirectorCatalogRequest(
   }
   if (db_name && json_is_string(db_name)) {
     spec.db_name = std::string{json_string_value(db_name)};
+  }
+  if (multiple_connections && json_is_boolean(multiple_connections)) {
+    spec.multiple_connections = json_is_true(multiple_connections);
+  }
+  if (disable_batch_insert && json_is_boolean(disable_batch_insert)) {
+    spec.disable_batch_insert = json_is_true(disable_batch_insert);
   }
   if (reconnect && json_is_boolean(reconnect)) {
     spec.reconnect = json_is_true(reconnect);
@@ -12926,6 +12966,7 @@ std::optional<StorageNdmpRequestSpec> ParseStorageNdmpRequest(
   auto* password = json_object_get(root.get(), "password");
   auto* auth_type = json_object_get(root.get(), "auth_type");
   auto* log_level = json_object_get(root.get(), "log_level");
+  auto* description = json_object_get(root.get(), "description");
   auto require_string = [&error](json_t* value, const char* field) {
     if (value && !json_is_null(value) && !json_is_string(value)) {
       error = std::string{"field '"} + field
@@ -12936,7 +12977,8 @@ std::optional<StorageNdmpRequestSpec> ParseStorageNdmpRequest(
   };
   if (!require_string(username, "username")
       || !require_string(password, "password")
-      || !require_string(auth_type, "auth_type")) {
+      || !require_string(auth_type, "auth_type")
+      || !require_string(description, "description")) {
     return std::nullopt;
   }
   if (log_level && !json_is_null(log_level) && !json_is_integer(log_level)) {
@@ -12945,6 +12987,9 @@ std::optional<StorageNdmpRequestSpec> ParseStorageNdmpRequest(
   }
 
   StorageNdmpRequestSpec spec{};
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
   if (username && json_is_string(username)) {
     spec.username = std::string{json_string_value(username)};
   }
