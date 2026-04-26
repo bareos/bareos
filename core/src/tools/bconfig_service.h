@@ -429,11 +429,34 @@ struct DirectorProfileResourceSpec {
 struct DirectorPoolResourceSpec {
   std::optional<std::string> pool_type{};
   std::optional<std::string> label_format{};
+  std::optional<std::string> cleaning_prefix{};
+  std::optional<std::string> label_type{};
   std::optional<uint32_t> maximum_volumes{};
+  std::optional<uint32_t> maximum_volume_jobs{};
+  std::optional<uint32_t> maximum_volume_files{};
   std::optional<uint64_t> maximum_volume_bytes{};
   std::optional<uint64_t> volume_retention{};
+  std::optional<uint64_t> volume_use_duration{};
+  std::optional<uint64_t> migration_time{};
+  std::optional<uint64_t> migration_high_bytes{};
+  std::optional<uint64_t> migration_low_bytes{};
+  std::optional<std::string> next_pool{};
+  std::optional<std::vector<std::string>> storages{};
+  std::optional<bool> use_catalog{};
+  std::optional<bool> catalog_files{};
+  std::optional<bool> purge_oldest_volume{};
+  std::optional<std::string> action_on_purge{};
+  std::optional<bool> recycle_oldest_volume{};
+  std::optional<bool> recycle_current_volume{};
   std::optional<bool> auto_prune{};
   std::optional<bool> recycle{};
+  std::optional<std::string> recycle_pool{};
+  std::optional<std::string> scratch_pool{};
+  std::optional<std::string> catalog{};
+  std::optional<uint64_t> file_retention{};
+  std::optional<uint64_t> job_retention{};
+  std::optional<uint32_t> minimum_block_size{};
+  std::optional<uint32_t> maximum_block_size{};
   std::optional<std::string> description{};
 };
 

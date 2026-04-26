@@ -721,11 +721,34 @@ TEST(BconfigService, UpsertsDirectorPoolResources)
       "prod", "bareos-dir", "managed-pool",
       {.pool_type = std::string{"Scratch"},
        .label_format = std::string{"Managed-"},
+       .cleaning_prefix = std::string{"Cleaner-"},
+       .label_type = std::string{"ansi"},
        .maximum_volumes = 7,
+       .maximum_volume_jobs = 8,
+       .maximum_volume_files = 9,
        .maximum_volume_bytes = 123456,
        .volume_retention = 86400,
+       .volume_use_duration = 43200,
+       .migration_time = 3600,
+       .migration_high_bytes = 654321,
+       .migration_low_bytes = 12345,
+       .next_pool = std::string{"Incremental"},
+       .storages = std::vector<std::string>{"File"},
+       .use_catalog = true,
+       .catalog_files = true,
+       .purge_oldest_volume = true,
+       .action_on_purge = std::string{"Truncate"},
+       .recycle_oldest_volume = true,
+       .recycle_current_volume = false,
        .auto_prune = true,
        .recycle = false,
+       .recycle_pool = std::string{"Scratch"},
+       .scratch_pool = std::string{"Scratch"},
+       .catalog = std::string{"MyCatalog"},
+       .file_retention = 172800,
+       .job_retention = 259200,
+       .minimum_block_size = 512,
+       .maximum_block_size = 4096,
        .description = std::string{"Managed pool"}});
   ASSERT_TRUE(created) << created.error;
   EXPECT_EQ(created.value->name, "bareos-dir");
@@ -738,20 +761,75 @@ TEST(BconfigService, UpsertsDirectorPoolResources)
             std::string::npos);
   EXPECT_NE(created_text.find("PoolType = Scratch"), std::string::npos);
   EXPECT_NE(created_text.find("LabelFormat = \"Managed-\""), std::string::npos);
+  EXPECT_NE(created_text.find("CleaningPrefix = \"Cleaner-\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("LabelType = ansi"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumVolumes = 7"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumVolumeJobs = 8"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumVolumeFiles = 9"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumVolumeBytes = 123456"),
             std::string::npos);
   EXPECT_NE(created_text.find("VolumeRetention = 86400"), std::string::npos);
+  EXPECT_NE(created_text.find("VolumeUseDuration = 43200"), std::string::npos);
+  EXPECT_NE(created_text.find("MigrationTime = 3600"), std::string::npos);
+  EXPECT_NE(created_text.find("MigrationHighBytes = 654321"),
+            std::string::npos);
+  EXPECT_NE(created_text.find("MigrationLowBytes = 12345"), std::string::npos);
+  EXPECT_NE(created_text.find("NextPool = Incremental"), std::string::npos);
+  EXPECT_NE(created_text.find("Storage = File"), std::string::npos);
+  EXPECT_NE(created_text.find("UseCatalog = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("CatalogFiles = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("PurgeOldestVolume = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("ActionOnPurge = Truncate"), std::string::npos);
+  EXPECT_NE(created_text.find("RecycleOldestVolume = yes"), std::string::npos);
+  EXPECT_NE(created_text.find("RecycleCurrentVolume = no"), std::string::npos);
   EXPECT_NE(created_text.find("AutoPrune = yes"), std::string::npos);
   EXPECT_NE(created_text.find("Recycle = no"), std::string::npos);
+  EXPECT_NE(created_text.find("RecyclePool = Scratch"), std::string::npos);
+  EXPECT_NE(created_text.find("ScratchPool = Scratch"), std::string::npos);
+  EXPECT_NE(created_text.find("Catalog = MyCatalog"), std::string::npos);
+  EXPECT_NE(created_text.find("FileRetention = 172800"), std::string::npos);
+  EXPECT_NE(created_text.find("JobRetention = 259200"), std::string::npos);
+  EXPECT_NE(created_text.find("MinimumBlockSize = 512"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumBlockSize = 4096"), std::string::npos);
+
+  const auto full_path = created.value->path / "bareos-dir.d/pool/Full.conf";
+  auto full_text = ReadTextFile(full_path);
+  const std::string insertion
+      = "  UseCatalog = yes\n"
+        "  CatalogFiles = yes\n"
+        "  PurgeOldestVolume = yes\n"
+        "  ActionOnPurge = Truncate\n"
+        "  RecycleOldestVolume = yes\n"
+        "  RecycleCurrentVolume = no\n"
+        "  MaximumVolumeJobs = 11\n"
+        "  MaximumVolumeFiles = 12\n"
+        "  VolumeUseDuration = 1800\n"
+        "  MigrationTime = 2700\n"
+        "  MigrationHighBytes = 2000\n"
+        "  MigrationLowBytes = 1000\n"
+        "  NextPool = Incremental\n"
+        "  Storage = File\n"
+        "  CleaningPrefix = \"clean-\"\n"
+        "  LabelType = ansi\n"
+        "  RecyclePool = Scratch\n"
+        "  ScratchPool = Scratch\n"
+        "  Catalog = MyCatalog\n"
+        "  FileRetention = 604800\n"
+        "  JobRetention = 1209600\n"
+        "  MinimumBlockSize = 1024\n"
+        "  MaximumBlockSize = 8192\n";
+  auto brace = full_text.rfind("}\n");
+  ASSERT_NE(brace, std::string::npos);
+  full_text.insert(brace, insertion);
+  WriteTextFile(full_path, full_text);
 
   auto updated = state.UpsertDirectorPoolResource(
       "prod", "bareos-dir", "Full",
       {.description = std::string{"Updated full pool"}});
   ASSERT_TRUE(updated) << updated.error;
 
-  const auto updated_text
-      = ReadTextFile(updated.value->path / "bareos-dir.d/pool/Full.conf");
+  const auto updated_text = ReadTextFile(full_path);
   EXPECT_NE(updated_text.find("Description = \"Updated full pool\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("PoolType = Backup"), std::string::npos);
@@ -762,6 +840,30 @@ TEST(BconfigService, UpsertsDirectorPoolResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("MaximumVolumes = 100"), std::string::npos);
   EXPECT_NE(updated_text.find("LabelFormat = \"Full-\""), std::string::npos);
+  EXPECT_NE(updated_text.find("UseCatalog = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("CatalogFiles = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("PurgeOldestVolume = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("ActionOnPurge = Truncate"), std::string::npos);
+  EXPECT_NE(updated_text.find("RecycleOldestVolume = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("RecycleCurrentVolume = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumVolumeJobs = 11"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumVolumeFiles = 12"), std::string::npos);
+  EXPECT_NE(updated_text.find("VolumeUseDuration = 1800"), std::string::npos);
+  EXPECT_NE(updated_text.find("MigrationTime = 2700"), std::string::npos);
+  EXPECT_NE(updated_text.find("MigrationHighBytes = 2000"), std::string::npos);
+  EXPECT_NE(updated_text.find("MigrationLowBytes = 1000"), std::string::npos);
+  EXPECT_NE(updated_text.find("NextPool = Incremental"), std::string::npos);
+  EXPECT_NE(updated_text.find("Storage = File"), std::string::npos);
+  EXPECT_NE(updated_text.find("CleaningPrefix = \"clean-\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("LabelType = ansi"), std::string::npos);
+  EXPECT_NE(updated_text.find("RecyclePool = Scratch"), std::string::npos);
+  EXPECT_NE(updated_text.find("ScratchPool = Scratch"), std::string::npos);
+  EXPECT_NE(updated_text.find("Catalog = MyCatalog"), std::string::npos);
+  EXPECT_NE(updated_text.find("FileRetention = 604800"), std::string::npos);
+  EXPECT_NE(updated_text.find("JobRetention = 1209600"), std::string::npos);
+  EXPECT_NE(updated_text.find("MinimumBlockSize = 1024"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumBlockSize = 8192"), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsDirectorPoolResourcesInSharedFiles)

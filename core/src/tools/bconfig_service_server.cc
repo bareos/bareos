@@ -221,11 +221,34 @@ struct DirectorProfileRequestSpec {
 struct DirectorPoolRequestSpec {
   std::optional<std::string> pool_type{};
   std::optional<std::string> label_format{};
+  std::optional<std::string> cleaning_prefix{};
+  std::optional<std::string> label_type{};
   std::optional<uint32_t> maximum_volumes{};
+  std::optional<uint32_t> maximum_volume_jobs{};
+  std::optional<uint32_t> maximum_volume_files{};
   std::optional<uint64_t> maximum_volume_bytes{};
   std::optional<uint64_t> volume_retention{};
+  std::optional<uint64_t> volume_use_duration{};
+  std::optional<uint64_t> migration_time{};
+  std::optional<uint64_t> migration_high_bytes{};
+  std::optional<uint64_t> migration_low_bytes{};
+  std::optional<std::string> next_pool{};
+  std::optional<std::vector<std::string>> storages{};
+  std::optional<bool> use_catalog{};
+  std::optional<bool> catalog_files{};
+  std::optional<bool> purge_oldest_volume{};
+  std::optional<std::string> action_on_purge{};
+  std::optional<bool> recycle_oldest_volume{};
+  std::optional<bool> recycle_current_volume{};
   std::optional<bool> auto_prune{};
   std::optional<bool> recycle{};
+  std::optional<std::string> recycle_pool{};
+  std::optional<std::string> scratch_pool{};
+  std::optional<std::string> catalog{};
+  std::optional<uint64_t> file_retention{};
+  std::optional<uint64_t> job_retention{};
+  std::optional<uint32_t> minimum_block_size{};
+  std::optional<uint32_t> maximum_block_size{};
   std::optional<std::string> description{};
 };
 
@@ -7852,11 +7875,34 @@ http::response<http::string_body> HandleDeploymentDirectorPoolPutRequest(
   DirectorPoolResourceSpec resource_spec{
       .pool_type = spec->pool_type,
       .label_format = spec->label_format,
+      .cleaning_prefix = spec->cleaning_prefix,
+      .label_type = spec->label_type,
       .maximum_volumes = spec->maximum_volumes,
+      .maximum_volume_jobs = spec->maximum_volume_jobs,
+      .maximum_volume_files = spec->maximum_volume_files,
       .maximum_volume_bytes = spec->maximum_volume_bytes,
       .volume_retention = spec->volume_retention,
+      .volume_use_duration = spec->volume_use_duration,
+      .migration_time = spec->migration_time,
+      .migration_high_bytes = spec->migration_high_bytes,
+      .migration_low_bytes = spec->migration_low_bytes,
+      .next_pool = spec->next_pool,
+      .storages = spec->storages,
+      .use_catalog = spec->use_catalog,
+      .catalog_files = spec->catalog_files,
+      .purge_oldest_volume = spec->purge_oldest_volume,
+      .action_on_purge = spec->action_on_purge,
+      .recycle_oldest_volume = spec->recycle_oldest_volume,
+      .recycle_current_volume = spec->recycle_current_volume,
       .auto_prune = spec->auto_prune,
       .recycle = spec->recycle,
+      .recycle_pool = spec->recycle_pool,
+      .scratch_pool = spec->scratch_pool,
+      .catalog = spec->catalog,
+      .file_retention = spec->file_retention,
+      .job_retention = spec->job_retention,
+      .minimum_block_size = spec->minimum_block_size,
+      .maximum_block_size = spec->maximum_block_size,
       .description = spec->description,
   };
   auto result = state.UpsertDirectorPoolResource(deployment_id, director_name,
@@ -10162,49 +10208,116 @@ std::optional<DirectorPoolRequestSpec> ParseDirectorPoolRequest(
 
   auto* pool_type = json_object_get(root.get(), "pool_type");
   auto* label_format = json_object_get(root.get(), "label_format");
+  auto* cleaning_prefix = json_object_get(root.get(), "cleaning_prefix");
+  auto* label_type = json_object_get(root.get(), "label_type");
   auto* maximum_volumes = json_object_get(root.get(), "maximum_volumes");
+  auto* maximum_volume_jobs
+      = json_object_get(root.get(), "maximum_volume_jobs");
+  auto* maximum_volume_files
+      = json_object_get(root.get(), "maximum_volume_files");
   auto* maximum_volume_bytes
       = json_object_get(root.get(), "maximum_volume_bytes");
   auto* volume_retention = json_object_get(root.get(), "volume_retention");
+  auto* volume_use_duration
+      = json_object_get(root.get(), "volume_use_duration");
+  auto* migration_time = json_object_get(root.get(), "migration_time");
+  auto* migration_high_bytes
+      = json_object_get(root.get(), "migration_high_bytes");
+  auto* migration_low_bytes
+      = json_object_get(root.get(), "migration_low_bytes");
+  auto* next_pool = json_object_get(root.get(), "next_pool");
+  auto* storages = json_object_get(root.get(), "storages");
+  auto* use_catalog = json_object_get(root.get(), "use_catalog");
+  auto* catalog_files = json_object_get(root.get(), "catalog_files");
+  auto* purge_oldest_volume
+      = json_object_get(root.get(), "purge_oldest_volume");
+  auto* action_on_purge = json_object_get(root.get(), "action_on_purge");
+  auto* recycle_oldest_volume
+      = json_object_get(root.get(), "recycle_oldest_volume");
+  auto* recycle_current_volume
+      = json_object_get(root.get(), "recycle_current_volume");
   auto* auto_prune = json_object_get(root.get(), "auto_prune");
   auto* recycle = json_object_get(root.get(), "recycle");
+  auto* recycle_pool = json_object_get(root.get(), "recycle_pool");
+  auto* scratch_pool = json_object_get(root.get(), "scratch_pool");
+  auto* catalog = json_object_get(root.get(), "catalog");
+  auto* file_retention = json_object_get(root.get(), "file_retention");
+  auto* job_retention = json_object_get(root.get(), "job_retention");
+  auto* minimum_block_size = json_object_get(root.get(), "minimum_block_size");
+  auto* maximum_block_size = json_object_get(root.get(), "maximum_block_size");
   auto* description = json_object_get(root.get(), "description");
 
-  if (pool_type && !json_is_null(pool_type) && !json_is_string(pool_type)) {
-    error = "field 'pool_type' must be a string when provided.";
-    return std::nullopt;
-  }
-  if (label_format && !json_is_null(label_format)
-      && !json_is_string(label_format)) {
-    error = "field 'label_format' must be a string when provided.";
-    return std::nullopt;
-  }
-  if (maximum_volumes && !json_is_null(maximum_volumes)
-      && !json_is_integer(maximum_volumes)) {
-    error = "field 'maximum_volumes' must be an integer when provided.";
-    return std::nullopt;
-  }
-  if (maximum_volume_bytes && !json_is_null(maximum_volume_bytes)
-      && !json_is_integer(maximum_volume_bytes)) {
-    error = "field 'maximum_volume_bytes' must be an integer when provided.";
-    return std::nullopt;
-  }
-  if (volume_retention && !json_is_null(volume_retention)
-      && !json_is_integer(volume_retention)) {
-    error = "field 'volume_retention' must be an integer when provided.";
-    return std::nullopt;
-  }
-  if (auto_prune && !json_is_null(auto_prune) && !json_is_boolean(auto_prune)) {
-    error = "field 'auto_prune' must be a boolean when provided.";
-    return std::nullopt;
-  }
-  if (recycle && !json_is_null(recycle) && !json_is_boolean(recycle)) {
-    error = "field 'recycle' must be a boolean when provided.";
-    return std::nullopt;
-  }
-  if (description && !json_is_null(description)
-      && !json_is_string(description)) {
-    error = "field 'description' must be a string when provided.";
+  auto require_string = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_string(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a string when provided.";
+      return false;
+    }
+    return true;
+  };
+  auto require_bool = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_boolean(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a boolean when provided.";
+      return false;
+    }
+    return true;
+  };
+  auto require_integer = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_integer(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an integer when provided.";
+      return false;
+    }
+    return true;
+  };
+  auto require_string_array = [&error](json_t* value, const char* field) {
+    if (!value || json_is_null(value)) { return true; }
+    if (!json_is_array(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an array of strings when provided.";
+      return false;
+    }
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      if (!json_is_string(json_array_get(value, index))) {
+        error = std::string{"field '"} + field
+                + "' must be an array of strings when provided.";
+        return false;
+      }
+    }
+    return true;
+  };
+  if (!require_string(pool_type, "pool_type")
+      || !require_string(label_format, "label_format")
+      || !require_string(cleaning_prefix, "cleaning_prefix")
+      || !require_string(label_type, "label_type")
+      || !require_integer(maximum_volumes, "maximum_volumes")
+      || !require_integer(maximum_volume_jobs, "maximum_volume_jobs")
+      || !require_integer(maximum_volume_files, "maximum_volume_files")
+      || !require_integer(maximum_volume_bytes, "maximum_volume_bytes")
+      || !require_integer(volume_retention, "volume_retention")
+      || !require_integer(volume_use_duration, "volume_use_duration")
+      || !require_integer(migration_time, "migration_time")
+      || !require_integer(migration_high_bytes, "migration_high_bytes")
+      || !require_integer(migration_low_bytes, "migration_low_bytes")
+      || !require_string(next_pool, "next_pool")
+      || !require_string_array(storages, "storages")
+      || !require_bool(use_catalog, "use_catalog")
+      || !require_bool(catalog_files, "catalog_files")
+      || !require_bool(purge_oldest_volume, "purge_oldest_volume")
+      || !require_string(action_on_purge, "action_on_purge")
+      || !require_bool(recycle_oldest_volume, "recycle_oldest_volume")
+      || !require_bool(recycle_current_volume, "recycle_current_volume")
+      || !require_bool(auto_prune, "auto_prune")
+      || !require_bool(recycle, "recycle")
+      || !require_string(recycle_pool, "recycle_pool")
+      || !require_string(scratch_pool, "scratch_pool")
+      || !require_string(catalog, "catalog")
+      || !require_integer(file_retention, "file_retention")
+      || !require_integer(job_retention, "job_retention")
+      || !require_integer(minimum_block_size, "minimum_block_size")
+      || !require_integer(maximum_block_size, "maximum_block_size")
+      || !require_string(description, "description")) {
     return std::nullopt;
   }
 
@@ -10215,6 +10328,12 @@ std::optional<DirectorPoolRequestSpec> ParseDirectorPoolRequest(
   if (label_format && json_is_string(label_format)) {
     spec.label_format = std::string{json_string_value(label_format)};
   }
+  if (cleaning_prefix && json_is_string(cleaning_prefix)) {
+    spec.cleaning_prefix = std::string{json_string_value(cleaning_prefix)};
+  }
+  if (label_type && json_is_string(label_type)) {
+    spec.label_type = std::string{json_string_value(label_type)};
+  }
   if (maximum_volumes && json_is_integer(maximum_volumes)) {
     const auto value = json_integer_value(maximum_volumes);
     if (value < 0 || value > std::numeric_limits<uint32_t>::max()) {
@@ -10222,6 +10341,22 @@ std::optional<DirectorPoolRequestSpec> ParseDirectorPoolRequest(
       return std::nullopt;
     }
     spec.maximum_volumes = static_cast<uint32_t>(value);
+  }
+  if (maximum_volume_jobs && json_is_integer(maximum_volume_jobs)) {
+    const auto value = json_integer_value(maximum_volume_jobs);
+    if (value < 0 || value > std::numeric_limits<uint32_t>::max()) {
+      error = "field 'maximum_volume_jobs' must be between 0 and 4294967295.";
+      return std::nullopt;
+    }
+    spec.maximum_volume_jobs = static_cast<uint32_t>(value);
+  }
+  if (maximum_volume_files && json_is_integer(maximum_volume_files)) {
+    const auto value = json_integer_value(maximum_volume_files);
+    if (value < 0 || value > std::numeric_limits<uint32_t>::max()) {
+      error = "field 'maximum_volume_files' must be between 0 and 4294967295.";
+      return std::nullopt;
+    }
+    spec.maximum_volume_files = static_cast<uint32_t>(value);
   }
   if (maximum_volume_bytes && json_is_integer(maximum_volume_bytes)) {
     const auto value = json_integer_value(maximum_volume_bytes);
@@ -10239,11 +10374,87 @@ std::optional<DirectorPoolRequestSpec> ParseDirectorPoolRequest(
     }
     spec.volume_retention = static_cast<uint64_t>(value);
   }
+  auto parse_uint64 = [&error](json_t* value, const char* field,
+                               std::optional<uint64_t>& target) {
+    if (!value || !json_is_integer(value)) { return true; }
+    const auto parsed = json_integer_value(value);
+    if (parsed < 0) {
+      error = std::string{"field '"} + field + "' must be non-negative.";
+      return false;
+    }
+    target = static_cast<uint64_t>(parsed);
+    return true;
+  };
+  auto parse_uint32 = [&error](json_t* value, const char* field,
+                               std::optional<uint32_t>& target) {
+    if (!value || !json_is_integer(value)) { return true; }
+    const auto parsed = json_integer_value(value);
+    if (parsed < 0 || parsed > std::numeric_limits<uint32_t>::max()) {
+      error = std::string{"field '"} + field
+              + "' must be between 0 and 4294967295.";
+      return false;
+    }
+    target = static_cast<uint32_t>(parsed);
+    return true;
+  };
+  if (!parse_uint64(volume_use_duration, "volume_use_duration",
+                    spec.volume_use_duration)
+      || !parse_uint64(migration_time, "migration_time", spec.migration_time)
+      || !parse_uint64(migration_high_bytes, "migration_high_bytes",
+                       spec.migration_high_bytes)
+      || !parse_uint64(migration_low_bytes, "migration_low_bytes",
+                       spec.migration_low_bytes)
+      || !parse_uint64(file_retention, "file_retention", spec.file_retention)
+      || !parse_uint64(job_retention, "job_retention", spec.job_retention)
+      || !parse_uint32(minimum_block_size, "minimum_block_size",
+                       spec.minimum_block_size)
+      || !parse_uint32(maximum_block_size, "maximum_block_size",
+                       spec.maximum_block_size)) {
+    return std::nullopt;
+  }
+  if (next_pool && json_is_string(next_pool)) {
+    spec.next_pool = std::string{json_string_value(next_pool)};
+  }
+  if (storages && json_is_array(storages)) {
+    std::vector<std::string> values;
+    values.reserve(json_array_size(storages));
+    for (size_t index = 0; index < json_array_size(storages); ++index) {
+      values.emplace_back(json_string_value(json_array_get(storages, index)));
+    }
+    spec.storages = std::move(values);
+  }
+  if (use_catalog && json_is_boolean(use_catalog)) {
+    spec.use_catalog = json_is_true(use_catalog);
+  }
+  if (catalog_files && json_is_boolean(catalog_files)) {
+    spec.catalog_files = json_is_true(catalog_files);
+  }
+  if (purge_oldest_volume && json_is_boolean(purge_oldest_volume)) {
+    spec.purge_oldest_volume = json_is_true(purge_oldest_volume);
+  }
+  if (action_on_purge && json_is_string(action_on_purge)) {
+    spec.action_on_purge = std::string{json_string_value(action_on_purge)};
+  }
+  if (recycle_oldest_volume && json_is_boolean(recycle_oldest_volume)) {
+    spec.recycle_oldest_volume = json_is_true(recycle_oldest_volume);
+  }
+  if (recycle_current_volume && json_is_boolean(recycle_current_volume)) {
+    spec.recycle_current_volume = json_is_true(recycle_current_volume);
+  }
   if (auto_prune && json_is_boolean(auto_prune)) {
     spec.auto_prune = json_is_true(auto_prune);
   }
   if (recycle && json_is_boolean(recycle)) {
     spec.recycle = json_is_true(recycle);
+  }
+  if (recycle_pool && json_is_string(recycle_pool)) {
+    spec.recycle_pool = std::string{json_string_value(recycle_pool)};
+  }
+  if (scratch_pool && json_is_string(scratch_pool)) {
+    spec.scratch_pool = std::string{json_string_value(scratch_pool)};
+  }
+  if (catalog && json_is_string(catalog)) {
+    spec.catalog = std::string{json_string_value(catalog)};
   }
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};

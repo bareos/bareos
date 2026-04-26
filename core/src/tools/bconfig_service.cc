@@ -10992,14 +10992,57 @@ ServiceState::UpsertDirectorPoolResource(
     content.label_format = std::nullopt;
   }
   if (spec.maximum_volumes) { content.maximum_volumes = *spec.maximum_volumes; }
+  if (spec.cleaning_prefix) { content.cleaning_prefix = *spec.cleaning_prefix; }
+  if (spec.label_type) { content.label_type = *spec.label_type; }
+  if (spec.maximum_volume_jobs) {
+    content.maximum_volume_jobs = *spec.maximum_volume_jobs;
+  }
+  if (spec.maximum_volume_files) {
+    content.maximum_volume_files = *spec.maximum_volume_files;
+  }
   if (spec.maximum_volume_bytes) {
     content.maximum_volume_bytes = *spec.maximum_volume_bytes;
   }
   if (spec.volume_retention) {
     content.volume_retention = *spec.volume_retention;
   }
+  if (spec.volume_use_duration) {
+    content.volume_use_duration = *spec.volume_use_duration;
+  }
+  if (spec.migration_time) { content.migration_time = *spec.migration_time; }
+  if (spec.migration_high_bytes) {
+    content.migration_high_bytes = *spec.migration_high_bytes;
+  }
+  if (spec.migration_low_bytes) {
+    content.migration_low_bytes = *spec.migration_low_bytes;
+  }
+  if (spec.next_pool) { content.next_pool = *spec.next_pool; }
+  if (spec.storages) { content.storages = *spec.storages; }
+  if (spec.use_catalog) { content.use_catalog = *spec.use_catalog; }
+  if (spec.catalog_files) { content.catalog_files = *spec.catalog_files; }
+  if (spec.purge_oldest_volume) {
+    content.purge_oldest_volume = *spec.purge_oldest_volume;
+  }
+  if (spec.action_on_purge) { content.action_on_purge = *spec.action_on_purge; }
+  if (spec.recycle_oldest_volume) {
+    content.recycle_oldest_volume = *spec.recycle_oldest_volume;
+  }
+  if (spec.recycle_current_volume) {
+    content.recycle_current_volume = *spec.recycle_current_volume;
+  }
   if (spec.auto_prune) { content.auto_prune = *spec.auto_prune; }
   if (spec.recycle) { content.recycle = *spec.recycle; }
+  if (spec.recycle_pool) { content.recycle_pool = *spec.recycle_pool; }
+  if (spec.scratch_pool) { content.scratch_pool = *spec.scratch_pool; }
+  if (spec.catalog) { content.catalog = *spec.catalog; }
+  if (spec.file_retention) { content.file_retention = *spec.file_retention; }
+  if (spec.job_retention) { content.job_retention = *spec.job_retention; }
+  if (spec.minimum_block_size) {
+    content.minimum_block_size = *spec.minimum_block_size;
+  }
+  if (spec.maximum_block_size) {
+    content.maximum_block_size = *spec.maximum_block_size;
+  }
 
   const auto rendered = BuildDirectorPoolResourceContent(pool_name, content);
   const auto resource_directory
