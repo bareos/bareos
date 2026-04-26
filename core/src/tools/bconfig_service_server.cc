@@ -118,6 +118,7 @@ struct DirectorClientRequestSpec {
   std::optional<bool> tls_authenticate{};
   std::optional<bool> tls_enable{};
   std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -1356,6 +1357,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
           <input id="director-client-tls-require" name="tls_require"
                  type="checkbox">
           TlsRequire
+        </label>
+
+        <label class="checkbox-label" for="director-client-tls-verify-peer">
+          <input id="director-client-tls-verify-peer" name="tls_verify_peer"
+                 type="checkbox">
+          TlsVerifyPeer
         </label>
 
         <label for="director-client-maximum-concurrent-jobs">MaximumConcurrentJobs</label>
@@ -3800,6 +3807,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
             'director-client-tls-enable').checked,
           tls_require: document.getElementById(
             'director-client-tls-require').checked,
+          tls_verify_peer: document.getElementById(
+            'director-client-tls-verify-peer').checked,
           maximum_concurrent_jobs: String(
             form.get('maximum_concurrent_jobs') ?? '').trim(),
           maximum_bandwidth_per_job: String(
@@ -6953,6 +6962,7 @@ http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
       .tls_authenticate = spec->tls_authenticate,
       .tls_enable = spec->tls_enable,
       .tls_require = spec->tls_require,
+      .tls_verify_peer = spec->tls_verify_peer,
       .connection_from_director_to_client
       = spec->connection_from_director_to_client,
       .connection_from_client_to_director
@@ -8832,6 +8842,7 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   auto* tls_authenticate = json_object_get(root.get(), "tls_authenticate");
   auto* tls_enable = json_object_get(root.get(), "tls_enable");
   auto* tls_require = json_object_get(root.get(), "tls_require");
+  auto* tls_verify_peer = json_object_get(root.get(), "tls_verify_peer");
   auto* connection_from_director_to_client
       = json_object_get(root.get(), "connection_from_director_to_client");
   auto* connection_from_client_to_director
@@ -8933,6 +8944,11 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   if (tls_require && !json_is_null(tls_require)
       && !json_is_boolean(tls_require)) {
     error = "field 'tls_require' must be a boolean when provided.";
+    return std::nullopt;
+  }
+  if (tls_verify_peer && !json_is_null(tls_verify_peer)
+      && !json_is_boolean(tls_verify_peer)) {
+    error = "field 'tls_verify_peer' must be a boolean when provided.";
     return std::nullopt;
   }
   if (maximum_concurrent_jobs && !json_is_null(maximum_concurrent_jobs)
@@ -9073,6 +9089,9 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
   }
   if (tls_require && json_is_boolean(tls_require)) {
     spec.tls_require = json_is_true(tls_require);
+  }
+  if (tls_verify_peer && json_is_boolean(tls_verify_peer)) {
+    spec.tls_verify_peer = json_is_true(tls_verify_peer);
   }
   if (maximum_concurrent_jobs && json_is_integer(maximum_concurrent_jobs)) {
     const auto value = json_integer_value(maximum_concurrent_jobs);

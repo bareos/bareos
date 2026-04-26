@@ -1069,6 +1069,7 @@ std::string BuildDirectorClientResourceContent(
     const std::optional<bool>& tls_authenticate,
     const std::optional<bool>& tls_enable,
     const std::optional<bool>& tls_require,
+    const std::optional<bool>& tls_verify_peer,
     const std::optional<bool>& connection_from_director_to_client,
     const std::optional<bool>& connection_from_client_to_director,
     const std::optional<uint32_t>& maximum_concurrent_jobs,
@@ -1102,6 +1103,7 @@ std::string BuildDirectorClientResourceContent(
   AppendBoolDirective(content, "TlsAuthenticate", tls_authenticate);
   AppendBoolDirective(content, "TlsEnable", tls_enable);
   AppendBoolDirective(content, "TlsRequire", tls_require);
+  AppendBoolDirective(content, "TlsVerifyPeer", tls_verify_peer);
   AppendBoolDirective(content, "ConnectionFromDirectorToClient",
                       connection_from_director_to_client);
   AppendBoolDirective(content, "ConnectionFromClientToDirector",
@@ -2506,6 +2508,7 @@ struct DirectorClientWriteContext {
   std::optional<bool> tls_authenticate{};
   std::optional<bool> tls_enable{};
   std::optional<bool> tls_require{};
+  std::optional<bool> tls_verify_peer{};
   std::optional<bool> connection_from_director_to_client{};
   std::optional<bool> connection_from_client_to_director{};
   std::optional<uint32_t> maximum_concurrent_jobs{};
@@ -2925,6 +2928,9 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
     }
     if (HasMemberSource(*client, {"TlsRequire"})) {
       context.tls_require = client->tls_require_;
+    }
+    if (HasMemberSource(*client, {"TlsVerifyPeer"})) {
+      context.tls_verify_peer = client->tls_cert_.verify_peer_;
     }
     if (HasMemberSource(*client, {"ConnectionFromDirectorToClient"})) {
       context.connection_from_director_to_client = client->conn_from_dir_to_fd;
@@ -8557,6 +8563,9 @@ ServiceState::UpsertDirectorClientResource(
       = spec.tls_enable ? spec.tls_enable : context.value->tls_enable;
   const auto tls_require
       = spec.tls_require ? spec.tls_require : context.value->tls_require;
+  const auto tls_verify_peer = spec.tls_verify_peer
+                                   ? spec.tls_verify_peer
+                                   : context.value->tls_verify_peer;
   const auto maximum_concurrent_jobs
       = spec.maximum_concurrent_jobs ? spec.maximum_concurrent_jobs
                                      : context.value->maximum_concurrent_jobs;
@@ -8575,7 +8584,7 @@ ServiceState::UpsertDirectorClientResource(
       passive, strict_quotas, quota_include_failed_jobs, soft_quota, hard_quota,
       soft_quota_grace_period, file_retention, job_retention, ndmp_log_level,
       ndmp_block_size, ndmp_use_lmdb, auto_prune, tls_authenticate, tls_enable,
-      tls_require, connection_from_director_to_client,
+      tls_require, tls_verify_peer, connection_from_director_to_client,
       connection_from_client_to_director, maximum_concurrent_jobs,
       heartbeat_interval, maximum_bandwidth_per_job, description);
 
