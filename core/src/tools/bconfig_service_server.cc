@@ -2932,7 +2932,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="director-job-maximum-bandwidth">MaximumBandwidth</label>
         <input id="director-job-maximum-bandwidth" name="maximum_bandwidth"
-               type="number">
+               type="number" min="0">
 
         <label for="director-job-max-run-sched-time">MaxRunSchedTime</label>
         <input id="director-job-max-run-sched-time" name="max_run_sched_time"
@@ -3342,7 +3342,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <label for="director-jobdefs-maximum-bandwidth">MaximumBandwidth</label>
         <input id="director-jobdefs-maximum-bandwidth"
-               name="maximum_bandwidth" type="number">
+               name="maximum_bandwidth" type="number" min="0">
 
         <label for="director-jobdefs-max-run-sched-time">MaxRunSchedTime</label>
         <input id="director-jobdefs-max-run-sched-time"
