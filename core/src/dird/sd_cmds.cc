@@ -341,14 +341,8 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
           field5 = nullptr;
         }
       } else {
-        field3 = strchr(field2, ':');
-        if (field3) {
-          *field3++ = '\0';
-          nr_fields = 3;
-        } else {
-          nr_fields = 2;
-          field3 = nullptr;
-        }
+        nr_fields = 2;
+        field3 = nullptr;
         field4 = nullptr;
         field5 = nullptr;
       }
