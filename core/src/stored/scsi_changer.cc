@@ -768,10 +768,12 @@ bool NativeScsiAutochangerCmd(DeviceControlRecord* dcr,
                        std::to_string(slot) + ":" + element.primary_volume_tag);
         }
       } else if (element.element_type_code == kElementTypeDrive) {
-        if (element.primary_volume_tag.empty()) { continue; }
         auto drive = element.element_address - assignment->dte_addr;
+        auto volume_name = element.primary_volume_tag.empty()
+                               ? std::string{"unknown-media"}
+                               : element.primary_volume_tag;
         SendListLine(dir, "D" + std::to_string(drive) + ":"
-                              + element.primary_volume_tag);
+                              + volume_name);
       }
     }
     return true;
