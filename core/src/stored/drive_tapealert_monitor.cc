@@ -30,6 +30,7 @@
 #include "lib/scsi_tapealert_flags.h"
 #include "stored/device_control_record.h"
 #include "stored/device_resource.h"
+#include "stored/scsi_changer.h"
 #include "stored/sd_stats.h"
 #include "stored/stored.h"
 
@@ -115,7 +116,8 @@ void HandleDriveTapealertEvent(::JobControlRecord* jcr,
 
   DeviceResource* device_resource = nullptr;
   const char* resource_name = nullptr;
-  std::string device_name;
+  std::string archive_device_name;
+  std::string diag_device_name;
   std::string volume_name;
 
   lock_mutex(dcr->mutex_);
@@ -129,10 +131,14 @@ void HandleDriveTapealertEvent(::JobControlRecord* jcr,
   resource_name = device_resource->resource_name_;
   if (dcr->dev->archive_device_string
       && dcr->dev->archive_device_string[0] != '\0') {
-    device_name = dcr->dev->archive_device_string;
+    archive_device_name = dcr->dev->archive_device_string;
   } else if (device_resource->archive_device_string
              && device_resource->archive_device_string[0] != '\0') {
-    device_name = device_resource->archive_device_string;
+    archive_device_name = device_resource->archive_device_string;
+  }
+  if (device_resource->diag_device_name
+      && device_resource->diag_device_name[0] != '\0') {
+    diag_device_name = device_resource->diag_device_name;
   }
   if (const char* volume = dcr->dev->getVolCatName();
       volume && volume[0] != '\0') {
@@ -140,15 +146,21 @@ void HandleDriveTapealertEvent(::JobControlRecord* jcr,
   }
   unlock_mutex(dcr->mutex_);
 
-  if (device_name.empty()) { return; }
+  auto devices = GetDriveDiagnosticDeviceCandidates(
+      diag_device_name.c_str(), archive_device_name.c_str());
+  if (devices.empty()) { return; }
 
   uint64_t flags = 0;
+  bool success = false;
 
-  Dmsg1(200, "sd: checking for tapealerts on device %s\n", device_name.c_str());
-  lock_mutex(tapealert_operation_mutex);
-  bool success = GetTapealertFlags(-1, device_name.c_str(), &flags);
-  unlock_mutex(tapealert_operation_mutex);
-  Dmsg1(200, "sd: tapealert check on device %s done\n", device_name.c_str());
+  for (const auto& device_name : devices) {
+    Dmsg1(200, "sd: checking for tapealerts on device %s\n", device_name.c_str());
+    lock_mutex(tapealert_operation_mutex);
+    success = GetTapealertFlags(-1, device_name.c_str(), &flags);
+    unlock_mutex(tapealert_operation_mutex);
+    Dmsg1(200, "sd: tapealert check on device %s done\n", device_name.c_str());
+    if (success && flags != 0) { break; }
+  }
 
   if (!success || flags == 0) { return; }
 
