@@ -20,7 +20,7 @@
    02110-1301, USA.
 */
 /*
- * tls_openssl.c TLS support functions when using OPENSSL backend.
+ * TLS support functions when using the OpenSSL backend.
  *
  * Author: Landon Fuller <landonf@threerings.net>
  */
