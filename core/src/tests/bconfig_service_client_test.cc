@@ -1159,6 +1159,45 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   EXPECT_NE(updated_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
 
+  auto current
+      = state.GetClientDirectorStubSpec("prod", "bareos-fd", "bareos-dir");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->description, "Updated stub");
+  EXPECT_EQ(current.value->password, "[md5]22222222222222222222222222222222");
+  EXPECT_EQ(current.value->address, "127.0.0.1");
+  ASSERT_TRUE(current.value->port.has_value());
+  EXPECT_EQ(*current.value->port, 9101);
+  ASSERT_TRUE(current.value->allowed_script_dirs.has_value());
+  EXPECT_EQ(*current.value->allowed_script_dirs,
+            (std::vector<std::string>{"/usr/lib/bareos/scripts",
+                                      "/opt/bareos/hooks"}));
+  ASSERT_TRUE(current.value->allowed_job_commands.has_value());
+  EXPECT_EQ(*current.value->allowed_job_commands,
+            (std::vector<std::string>{"run-before-job-client",
+                                      "run-after-job-client"}));
+  EXPECT_EQ(current.value->tls_authenticate, true);
+  EXPECT_EQ(current.value->tls_enable, true);
+  EXPECT_EQ(current.value->tls_require, true);
+  EXPECT_EQ(current.value->tls_verify_peer, true);
+  EXPECT_EQ(current.value->tls_cipher_list, "DEFAULT:@SECLEVEL=2");
+  EXPECT_EQ(current.value->tls_cipher_suites, "TLS_AES_256_GCM_SHA384");
+  EXPECT_EQ(current.value->tls_dh_file, "/etc/bareos/dh4096.pem");
+  EXPECT_EQ(current.value->tls_protocol, "MinProtocol = TLSv1.2");
+  EXPECT_EQ(current.value->tls_ca_certificate_file, "/etc/bareos/ca.pem");
+  EXPECT_EQ(current.value->tls_ca_certificate_dir, "/etc/ssl/certs");
+  EXPECT_EQ(current.value->tls_certificate_revocation_list,
+            "/etc/bareos/crl.pem");
+  EXPECT_EQ(current.value->tls_certificate, "/etc/bareos/client.crt");
+  EXPECT_EQ(current.value->tls_key, "/etc/bareos/client.key");
+  ASSERT_TRUE(current.value->tls_allowed_cn.has_value());
+  EXPECT_EQ(*current.value->tls_allowed_cn,
+            (std::vector<std::string>{"bareos-dir.example.invalid",
+                                      "backup-dir.internal"}));
+  EXPECT_EQ(current.value->connection_from_director_to_client, false);
+  EXPECT_EQ(current.value->connection_from_client_to_director, false);
+  EXPECT_EQ(current.value->monitor, true);
+  EXPECT_EQ(current.value->maximum_bandwidth_per_job, 2048);
+
   auto rejected = state.UpsertClientDirectorStub("prod", "missing-client",
                                                  "bareos-dir", {});
   ASSERT_FALSE(rejected);
@@ -1280,6 +1319,13 @@ TEST(BconfigService, UpsertsClientDirectorStubsPreserveLargeImportedPort)
   EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated imported stub\""),
             std::string::npos);
+
+  auto current
+      = state.GetClientDirectorStubSpec("prod", "bareos-fd", "bareos-dir");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->description, "Updated imported stub");
+  EXPECT_EQ(current.value->address, "localhost");
+  EXPECT_FALSE(current.value->port.has_value());
 }
 
 TEST(BconfigService, DeletesClientDirectorStubs)

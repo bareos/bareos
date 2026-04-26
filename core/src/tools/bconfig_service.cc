@@ -54,6 +54,7 @@
 #include <ctime>
 #include <fstream>
 #include <iomanip>
+#include <limits>
 #include <set>
 #include <source_location>
 #include <sstream>
@@ -4312,6 +4313,20 @@ std::optional<std::string> ParseTopLevelDirectiveValue(std::string_view line,
       TrimAsciiWhitespace(trimmed.substr(equals + 1, std::string_view::npos)));
 }
 
+std::optional<bool> ParseBareosBoolDirectiveValue(std::string_view value)
+{
+  auto normalized = NormalizeDirectiveLookupName(UnquoteBareosString(value));
+  if (normalized == "yes" || normalized == "true" || normalized == "on"
+      || normalized == "1") {
+    return true;
+  }
+  if (normalized == "no" || normalized == "false" || normalized == "off"
+      || normalized == "0") {
+    return false;
+  }
+  return std::nullopt;
+}
+
 int CountBraces(std::string_view value)
 {
   int depth = 0;
@@ -8235,6 +8250,50 @@ LoadStorageDaemonDirectorWriteContext(
         = per_file != resources_per_file.end() && per_file->second == 1;
     context.is_managed
         = IsManagedPath(managed_paths, repository_root, context.file_path);
+    if (!context.tls_require.has_value()) {
+      static const std::set<std::string> kTlsRequireDirective{"TlsRequire"};
+      auto raw_tls_require
+          = context.is_standalone_file
+                ? ExtractTopLevelDirectiveValues(context.file_path, "Director",
+                                                 kTlsRequireDirective)
+                : ExtractNamedTopLevelDirectiveValues(context.file_path,
+                                                      "Director", director_name,
+                                                      kTlsRequireDirective);
+      if (!raw_tls_require) { return {.error = raw_tls_require.error}; }
+      if (!raw_tls_require.value->empty()) {
+        context.tls_require
+            = ParseBareosBoolDirectiveValue(raw_tls_require.value->back());
+      }
+    }
+    if (!context.tls_cipher_list.has_value()) {
+      static const std::set<std::string> kTlsCipherListDirective{
+          "TlsCipherList"};
+      auto raw_tls_cipher_list
+          = context.is_standalone_file
+                ? ExtractTopLevelDirectiveValues(context.file_path, "Director",
+                                                 kTlsCipherListDirective)
+                : ExtractNamedTopLevelDirectiveValues(context.file_path,
+                                                      "Director", director_name,
+                                                      kTlsCipherListDirective);
+      if (!raw_tls_cipher_list) { return {.error = raw_tls_cipher_list.error}; }
+      if (!raw_tls_cipher_list.value->empty()) {
+        context.tls_cipher_list = raw_tls_cipher_list.value->back();
+      }
+    }
+    if (!context.tls_allowed_cn.has_value()) {
+      static const std::set<std::string> kTlsAllowedCnDirective{"TlsAllowedCn"};
+      auto raw_tls_allowed_cn
+          = context.is_standalone_file
+                ? ExtractTopLevelDirectiveValues(context.file_path, "Director",
+                                                 kTlsAllowedCnDirective)
+                : ExtractNamedTopLevelDirectiveValues(context.file_path,
+                                                      "Director", director_name,
+                                                      kTlsAllowedCnDirective);
+      if (!raw_tls_allowed_cn) { return {.error = raw_tls_allowed_cn.error}; }
+      if (!raw_tls_allowed_cn.value->empty()) {
+        context.tls_allowed_cn = std::move(*raw_tls_allowed_cn.value);
+      }
+    }
     return {.value = std::move(context)};
   }
 
@@ -10149,6 +10208,249 @@ OperationResult<DeploymentConfigRecord> ServiceState::GetDeploymentConfig(
   }
 
   return {.value = *it};
+}
+
+std::optional<uint16_t> ToOptionalUint16(const std::optional<uint32_t>& value)
+{
+  if (!value || *value > std::numeric_limits<uint16_t>::max()) {
+    return std::nullopt;
+  }
+  return static_cast<uint16_t>(*value);
+}
+
+OperationResult<ClientDirectorStubSpec> ServiceState::GetClientDirectorStubSpec(
+    std::string_view deployment_id,
+    std::string_view client_name,
+    std::string_view director_name) const
+{
+  auto client_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kClient, client_name);
+  if (!client_config) {
+    return {.error = "client config not found for '" + std::string{client_name}
+                     + "'."};
+  }
+
+  auto context = LoadClientDirectorStubWriteContext(client_config.value->path,
+                                                    director_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "client director '" + std::string{director_name}
+                     + "' not found."};
+  }
+
+  return {
+      .value = ClientDirectorStubSpec{
+          .description = context.value->description,
+          .password = context.value->password,
+          .address = context.value->address,
+          .port = ToOptionalUint16(context.value->port),
+          .allowed_script_dirs = context.value->allowed_script_dirs,
+          .allowed_job_commands = context.value->allowed_job_commands,
+          .tls_authenticate = context.value->tls_authenticate,
+          .tls_enable = context.value->tls_enable,
+          .tls_require = context.value->tls_require,
+          .tls_verify_peer = context.value->tls_verify_peer,
+          .tls_cipher_list = context.value->tls_cipher_list,
+          .tls_cipher_suites = context.value->tls_cipher_suites,
+          .tls_dh_file = context.value->tls_dh_file,
+          .tls_protocol = context.value->tls_protocol,
+          .tls_ca_certificate_file = context.value->tls_ca_certificate_file,
+          .tls_ca_certificate_dir = context.value->tls_ca_certificate_dir,
+          .tls_certificate_revocation_list
+          = context.value->tls_certificate_revocation_list,
+          .tls_certificate = context.value->tls_certificate,
+          .tls_key = context.value->tls_key,
+          .tls_allowed_cn = context.value->tls_allowed_cn,
+          .connection_from_director_to_client
+          = context.value->connection_from_director_to_client,
+          .connection_from_client_to_director
+          = context.value->connection_from_client_to_director,
+          .monitor = context.value->monitor,
+          .maximum_bandwidth_per_job = context.value->maximum_bandwidth_per_job,
+      }};
+}
+
+OperationResult<DirectorClientResourceSpec>
+ServiceState::GetDirectorClientResourceSpec(std::string_view deployment_id,
+                                            std::string_view director_name,
+                                            std::string_view client_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorClientWriteContext(*director_config.value, client_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error
+            = "director client '" + std::string{client_name} + "' not found."};
+  }
+
+  return {
+      .value = DirectorClientResourceSpec{
+          .address = context.value->address,
+          .lan_address = context.value->lan_address,
+          .port = ToOptionalUint16(context.value->port),
+          .protocol = context.value->protocol,
+          .auth_type = context.value->auth_type,
+          .catalog = context.value->catalog,
+          .username = context.value->username,
+          .password = context.value->password,
+          .enabled = context.value->enabled,
+          .passive = context.value->passive,
+          .strict_quotas = context.value->strict_quotas,
+          .quota_include_failed_jobs = context.value->quota_include_failed_jobs,
+          .soft_quota = context.value->soft_quota,
+          .hard_quota = context.value->hard_quota,
+          .soft_quota_grace_period = context.value->soft_quota_grace_period,
+          .file_retention = context.value->file_retention,
+          .job_retention = context.value->job_retention,
+          .ndmp_log_level = context.value->ndmp_log_level,
+          .ndmp_block_size = context.value->ndmp_block_size,
+          .ndmp_use_lmdb = context.value->ndmp_use_lmdb,
+          .auto_prune = context.value->auto_prune,
+          .tls_authenticate = context.value->tls_authenticate,
+          .tls_enable = context.value->tls_enable,
+          .tls_require = context.value->tls_require,
+          .tls_verify_peer = context.value->tls_verify_peer,
+          .tls_cipher_list = context.value->tls_cipher_list,
+          .tls_cipher_suites = context.value->tls_cipher_suites,
+          .tls_dh_file = context.value->tls_dh_file,
+          .tls_protocol = context.value->tls_protocol,
+          .tls_ca_certificate_file = context.value->tls_ca_certificate_file,
+          .tls_ca_certificate_dir = context.value->tls_ca_certificate_dir,
+          .tls_certificate_revocation_list
+          = context.value->tls_certificate_revocation_list,
+          .tls_certificate = context.value->tls_certificate,
+          .tls_key = context.value->tls_key,
+          .tls_allowed_cn = context.value->tls_allowed_cn,
+          .connection_from_director_to_client
+          = context.value->connection_from_director_to_client,
+          .connection_from_client_to_director
+          = context.value->connection_from_client_to_director,
+          .maximum_concurrent_jobs = context.value->maximum_concurrent_jobs,
+          .heartbeat_interval = context.value->heartbeat_interval,
+          .maximum_bandwidth_per_job = context.value->maximum_bandwidth_per_job,
+          .description = context.value->description,
+      }};
+}
+
+OperationResult<DirectorStorageResourceSpec>
+ServiceState::GetDirectorStorageResourceSpec(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view storage_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorStorageWriteContext(*director_config.value, storage_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director storage '" + std::string{storage_name}
+                     + "' not found."};
+  }
+
+  return {
+      .value = DirectorStorageResourceSpec{
+          .address = context.value->address,
+          .lan_address = context.value->lan_address,
+          .port = ToOptionalUint16(context.value->port),
+          .protocol = context.value->protocol,
+          .auth_type = context.value->auth_type,
+          .username = context.value->username,
+          .password = context.value->password,
+          .device = context.value->device,
+          .media_type = context.value->media_type,
+          .autochanger = context.value->autochanger,
+          .enabled = context.value->enabled,
+          .allow_compression = context.value->allow_compression,
+          .heartbeat_interval = context.value->heartbeat_interval,
+          .cache_status_interval = context.value->cache_status_interval,
+          .maximum_concurrent_jobs = context.value->maximum_concurrent_jobs,
+          .maximum_concurrent_read_jobs
+          = context.value->maximum_concurrent_read_jobs,
+          .paired_storage = context.value->paired_storage,
+          .maximum_bandwidth_per_job = context.value->maximum_bandwidth_per_job,
+          .collect_statistics = context.value->collect_statistics,
+          .ndmp_changer_device = context.value->ndmp_changer_device,
+          .tls_authenticate = context.value->tls_authenticate,
+          .tls_enable = context.value->tls_enable,
+          .tls_require = context.value->tls_require,
+          .tls_verify_peer = context.value->tls_verify_peer,
+          .tls_cipher_list = context.value->tls_cipher_list,
+          .tls_cipher_suites = context.value->tls_cipher_suites,
+          .tls_dh_file = context.value->tls_dh_file,
+          .tls_protocol = context.value->tls_protocol,
+          .tls_ca_certificate_file = context.value->tls_ca_certificate_file,
+          .tls_ca_certificate_dir = context.value->tls_ca_certificate_dir,
+          .tls_certificate_revocation_list
+          = context.value->tls_certificate_revocation_list,
+          .tls_certificate = context.value->tls_certificate,
+          .tls_key = context.value->tls_key,
+          .tls_allowed_cn = context.value->tls_allowed_cn,
+          .description = context.value->description,
+      }};
+}
+
+OperationResult<StorageDirectorResourceSpec>
+ServiceState::GetStorageDirectorResourceSpec(
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view director_name) const
+{
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.value->path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto context = LoadStorageDaemonDirectorWriteContext(
+      *storage_config.value, director_name, *managed_paths.value);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "storage-daemon director '" + std::string{director_name}
+                     + "' not found."};
+  }
+
+  return {
+      .value = StorageDirectorResourceSpec{
+          .password = context.value->password,
+          .description = context.value->description,
+          .monitor = context.value->monitor,
+          .maximum_bandwidth_per_job = context.value->maximum_bandwidth_per_job,
+          .key_encryption_key = context.value->key_encryption_key,
+          .tls_authenticate = context.value->tls_authenticate,
+          .tls_enable = context.value->tls_enable,
+          .tls_require = context.value->tls_require,
+          .tls_verify_peer = context.value->tls_verify_peer,
+          .tls_cipher_list = context.value->tls_cipher_list,
+          .tls_cipher_suites = context.value->tls_cipher_suites,
+          .tls_dh_file = context.value->tls_dh_file,
+          .tls_protocol = context.value->tls_protocol,
+          .tls_ca_certificate_file = context.value->tls_ca_certificate_file,
+          .tls_ca_certificate_dir = context.value->tls_ca_certificate_dir,
+          .tls_certificate_revocation_list
+          = context.value->tls_certificate_revocation_list,
+          .tls_certificate = context.value->tls_certificate,
+          .tls_key = context.value->tls_key,
+          .tls_allowed_cn = context.value->tls_allowed_cn,
+      }};
 }
 
 OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(

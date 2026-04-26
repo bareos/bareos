@@ -550,7 +550,7 @@ TEST(BconfigService, UpsertsStorageDirectorResources)
             std::string::npos);
 
   auto updated = state.UpsertStorageDirectorResource(
-      "prod", "bareos-sd", "bareos-dir",
+      "prod", "bareos-sd", "ManagedDirector",
       {.password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
        .description = std::string{"Updated storage director"},
        .monitor = false,
@@ -561,7 +561,7 @@ TEST(BconfigService, UpsertsStorageDirectorResources)
   ASSERT_TRUE(updated) << updated.error;
 
   const auto updated_text = ReadTextFile(
-      updated.value->path / "bareos-sd.d/director/bareos-dir.conf");
+      updated.value->path / "bareos-sd.d/director/ManagedDirector.conf");
   EXPECT_NE(updated_text.find("Description = \"Updated storage director\""),
             std::string::npos);
   EXPECT_NE(
@@ -573,14 +573,31 @@ TEST(BconfigService, UpsertsStorageDirectorResources)
   EXPECT_NE(updated_text.find("KeyEncryptionKey = \"updated-key\""),
             std::string::npos);
   EXPECT_NE(updated_text.find("TlsEnable = no"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsRequire = yes"), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsCipherList = \"HIGH\""), std::string::npos);
   EXPECT_NE(updated_text.find("TlsProtocol = \"TLSv1.2\""), std::string::npos);
+  EXPECT_NE(updated_text.find("TlsAllowedCn = \"bareos-dir\""),
+            std::string::npos);
+
+  auto current = state.GetStorageDirectorResourceSpec("prod", "bareos-sd",
+                                                      "ManagedDirector");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->password, "[md5]abcdef0123456789abcdef0123456789");
+  EXPECT_EQ(current.value->description, "Updated storage director");
+  EXPECT_EQ(current.value->monitor, false);
+  EXPECT_EQ(current.value->maximum_bandwidth_per_job, 4096);
+  EXPECT_EQ(current.value->key_encryption_key, "updated-key");
+  EXPECT_EQ(current.value->tls_enable, false);
+  EXPECT_EQ(current.value->tls_require, true);
+  EXPECT_EQ(current.value->tls_cipher_list, "HIGH");
+  EXPECT_EQ(current.value->tls_protocol, "TLSv1.2");
+  ASSERT_TRUE(current.value->tls_allowed_cn.has_value());
+  EXPECT_EQ(*current.value->tls_allowed_cn,
+            (std::vector<std::string>{"bareos-dir"}));
 
   const auto updated_ownership_text = ReadTextFile(ownership_path);
   EXPECT_NE(updated_ownership_text.find(
                 "storages/bareos-sd/bareos-sd.d/director/ManagedDirector.conf"),
-            std::string::npos);
-  EXPECT_NE(updated_ownership_text.find(
-                "storages/bareos-sd/bareos-sd.d/director/bareos-dir.conf"),
             std::string::npos);
 }
 

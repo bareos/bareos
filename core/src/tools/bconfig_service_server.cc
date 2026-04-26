@@ -5242,6 +5242,123 @@ const char* kTestUiHtmlTemplate = R"HTML(
       return { response, text, payload };
     }
 
+    function setPrefillControlValue(control, value) {
+      if (Array.isArray(value)) {
+        control.value = value.join('\n');
+      } else if (typeof value === 'boolean') {
+        control.value = value ? 'true' : 'false';
+      } else if (value === null || value === undefined) {
+        control.value = '';
+      } else {
+        control.value = String(value);
+      }
+    }
+
+    function applyFormPrefill(formId, identifiers, spec) {
+      const form = document.getElementById(formId);
+      if (!form) { return; }
+
+      for (const element of Array.from(form.elements)) {
+        if (!(element instanceof HTMLInputElement
+            || element instanceof HTMLTextAreaElement
+            || element instanceof HTMLSelectElement)) {
+          continue;
+        }
+        if (!element.name || element.type === 'submit' || element.type === 'button') {
+          continue;
+        }
+        if (Object.hasOwn(identifiers, element.name)) { continue; }
+        element.value = '';
+      }
+
+      for (const [name, value] of Object.entries(identifiers)) {
+        const element = form.elements.namedItem(name);
+        if (!element || element instanceof RadioNodeList) { continue; }
+        setPrefillControlValue(element, value);
+      }
+
+      for (const [name, value] of Object.entries(spec ?? {})) {
+        if (value === null || value === undefined) { continue; }
+        const element = form.elements.namedItem(name);
+        if (!element || element instanceof RadioNodeList) { continue; }
+        setPrefillControlValue(element, value);
+      }
+
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function buildPeerPrefillTarget(
+      deploymentId, component, configName, resourceType, resourceName
+    ) {
+      const normalizedComponent = String(component ?? '').toLowerCase();
+      const normalizedType = String(resourceType ?? '').toLowerCase();
+      const encodedDeployment = encodeURIComponent(String(deploymentId ?? ''));
+      const encodedConfig = encodeURIComponent(String(configName ?? ''));
+      const encodedResource = encodeURIComponent(String(resourceName ?? ''));
+
+      if (normalizedComponent === 'client' && normalizedType === 'director') {
+        return {
+          formId: 'client-stub-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            client_name: String(configName ?? ''),
+            director_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/clients/${encodedConfig}/directors/${encodedResource}/prefill`,
+        };
+      }
+      if (normalizedComponent === 'director' && normalizedType === 'client') {
+        return {
+          formId: 'director-client-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            director_name: String(configName ?? ''),
+            client_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/clients/${encodedResource}/prefill`,
+        };
+      }
+      if (normalizedComponent === 'director' && normalizedType === 'storage') {
+        return {
+          formId: 'director-storage-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            director_name: String(configName ?? ''),
+            storage_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/storages/${encodedResource}/prefill`,
+        };
+      }
+      if (normalizedComponent === 'storage' && normalizedType === 'director') {
+        return {
+          formId: 'storage-director-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            storage_name: String(configName ?? ''),
+            director_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/storages/${encodedConfig}/directors/${encodedResource}/prefill`,
+        };
+      }
+      return null;
+    }
+
+    async function loadPeerPrefill(formId, identifiers, endpoint) {
+      const { response, text } = await request('GET', endpoint);
+      if (!response.ok) { return; }
+
+      const payloadDocument = JSON.parse(text);
+      if (payloadDocument.deployment?.id) {
+        document.getElementById('deployment-inspect-id').value
+          = payloadDocument.deployment.id;
+      }
+      applyFormPrefill(formId, identifiers, payloadDocument.spec ?? {});
+    }
+
     function renderDeploymentContents(document) {
       const configs = document.configs ?? [];
       const deployment = document.deployment;
@@ -5262,6 +5379,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
           `<li>${escapeHtml(error)}</li>`
         ).join('');
         const resources = (config.resources ?? []).map((resource) => {
+          const prefillTarget = buildPeerPrefillTarget(
+            deployment.id, config.component, config.name, resource.type, resource.name
+          );
           const directives = (resource.directives ?? []).map((directive) =>
             `<li>${escapeHtml(directive.name)}</li>`
           ).join('');
@@ -5293,6 +5413,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
             ? `<p class="resource-meta"><strong>Source:</strong> <code>${escapeHtml(resource.source.file)}</code>:${resource.source.line}</p>`
             : '';
           const ownership = `<p class="resource-meta"><strong>Ownership:</strong> ${resource.managed ? 'service-managed' : 'imported-only'}</p>`;
+          const prefillButton = prefillTarget
+            ? `<p class="resource-meta"><button type="button" class="prefill-button"
+                 data-form-id="${escapeHtml(prefillTarget.formId)}"
+                 data-endpoint="${escapeHtml(prefillTarget.endpoint)}"
+                 data-identifiers="${escapeHtml(encodeURIComponent(JSON.stringify(prefillTarget.identifiers)))}">Prefill editor</button></p>`
+            : '';
           const nestedDetailsBlock = nestedDetails
             ? `<p class="resource-meta"><strong>Nested details</strong></p><ul class="detail-list">${nestedDetails}</ul>`
             : '';
@@ -5308,6 +5434,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
                 <summary><code>${escapeHtml(resource.type)}</code>: ${escapeHtml(resource.name)}</summary>
                 ${source}
                 ${ownership}
+                ${prefillButton}
                 <p class="resource-meta">
                   Directives: ${resource.directives?.length ?? 0};
                   Nested details: ${resource.nested_details?.length ?? 0};
@@ -5347,6 +5474,17 @@ const char* kTestUiHtmlTemplate = R"HTML(
         ${configs.length} config root(s) in
         <code>${escapeHtml(deployment.repository_path)}</code></p>
         <div class="config-list">${configItems}</div>`;
+
+      for (const button of deploymentContentsPanel.querySelectorAll('.prefill-button')) {
+        button.addEventListener('click', async () => {
+          const formId = String(button.dataset.formId ?? '');
+          const endpoint = String(button.dataset.endpoint ?? '');
+          const identifiers = JSON.parse(
+            decodeURIComponent(String(button.dataset.identifiers ?? ''))
+          );
+          await loadPeerPrefill(formId, identifiers, endpoint);
+        });
+      }
     }
 
     function renderDeploymentJobs(deploymentId, jobs) {
@@ -8748,6 +8886,237 @@ void AppendDeploymentImport(json_t* array, const DeploymentImportRecord& record)
   json_array_append_new(array, object.release());
 }
 
+void SetOptionalString(json_t* object,
+                       const char* key,
+                       const std::optional<std::string>& value)
+{
+  if (value) {
+    json_object_set_new(object, key, json_string(value->c_str()));
+  } else {
+    json_object_set_new(object, key, json_null());
+  }
+}
+
+void SetOptionalBool(json_t* object,
+                     const char* key,
+                     const std::optional<bool>& value)
+{
+  if (value) {
+    json_object_set_new(object, key, json_boolean(*value));
+  } else {
+    json_object_set_new(object, key, json_null());
+  }
+}
+
+template <typename Integer>
+void SetOptionalInteger(json_t* object,
+                        const char* key,
+                        const std::optional<Integer>& value)
+{
+  if (value) {
+    json_object_set_new(object, key,
+                        json_integer(static_cast<json_int_t>(*value)));
+  } else {
+    json_object_set_new(object, key, json_null());
+  }
+}
+
+void SetOptionalStringArray(
+    json_t* object,
+    const char* key,
+    const std::optional<std::vector<std::string>>& value)
+{
+  if (!value) {
+    json_object_set_new(object, key, json_null());
+    return;
+  }
+
+  auto array = MakeJson(json_array());
+  for (const auto& entry : *value) {
+    json_array_append_new(array.get(), json_string(entry.c_str()));
+  }
+  json_object_set_new(object, key, array.release());
+}
+
+json_t* ClientDirectorStubSpecToJson(const ClientDirectorStubSpec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "description", spec.description);
+  SetOptionalString(object.get(), "password", spec.password);
+  SetOptionalString(object.get(), "address", spec.address);
+  SetOptionalInteger(object.get(), "port", spec.port);
+  SetOptionalStringArray(object.get(), "allowed_script_dirs",
+                         spec.allowed_script_dirs);
+  SetOptionalStringArray(object.get(), "allowed_job_commands",
+                         spec.allowed_job_commands);
+  SetOptionalBool(object.get(), "tls_authenticate", spec.tls_authenticate);
+  SetOptionalBool(object.get(), "tls_enable", spec.tls_enable);
+  SetOptionalBool(object.get(), "tls_require", spec.tls_require);
+  SetOptionalBool(object.get(), "tls_verify_peer", spec.tls_verify_peer);
+  SetOptionalString(object.get(), "tls_cipher_list", spec.tls_cipher_list);
+  SetOptionalString(object.get(), "tls_cipher_suites", spec.tls_cipher_suites);
+  SetOptionalString(object.get(), "tls_dh_file", spec.tls_dh_file);
+  SetOptionalString(object.get(), "tls_protocol", spec.tls_protocol);
+  SetOptionalString(object.get(), "tls_ca_certificate_file",
+                    spec.tls_ca_certificate_file);
+  SetOptionalString(object.get(), "tls_ca_certificate_dir",
+                    spec.tls_ca_certificate_dir);
+  SetOptionalString(object.get(), "tls_certificate_revocation_list",
+                    spec.tls_certificate_revocation_list);
+  SetOptionalString(object.get(), "tls_certificate", spec.tls_certificate);
+  SetOptionalString(object.get(), "tls_key", spec.tls_key);
+  SetOptionalStringArray(object.get(), "tls_allowed_cn", spec.tls_allowed_cn);
+  SetOptionalBool(object.get(), "connection_from_director_to_client",
+                  spec.connection_from_director_to_client);
+  SetOptionalBool(object.get(), "connection_from_client_to_director",
+                  spec.connection_from_client_to_director);
+  SetOptionalBool(object.get(), "monitor", spec.monitor);
+  SetOptionalInteger(object.get(), "maximum_bandwidth_per_job",
+                     spec.maximum_bandwidth_per_job);
+  return object.release();
+}
+
+json_t* DirectorClientResourceSpecToJson(const DirectorClientResourceSpec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "address", spec.address);
+  SetOptionalString(object.get(), "lan_address", spec.lan_address);
+  SetOptionalInteger(object.get(), "port", spec.port);
+  SetOptionalString(object.get(), "protocol", spec.protocol);
+  SetOptionalString(object.get(), "auth_type", spec.auth_type);
+  SetOptionalString(object.get(), "catalog", spec.catalog);
+  SetOptionalString(object.get(), "username", spec.username);
+  SetOptionalString(object.get(), "password", spec.password);
+  SetOptionalBool(object.get(), "enabled", spec.enabled);
+  SetOptionalBool(object.get(), "passive", spec.passive);
+  SetOptionalBool(object.get(), "strict_quotas", spec.strict_quotas);
+  SetOptionalBool(object.get(), "quota_include_failed_jobs",
+                  spec.quota_include_failed_jobs);
+  SetOptionalInteger(object.get(), "soft_quota", spec.soft_quota);
+  SetOptionalInteger(object.get(), "hard_quota", spec.hard_quota);
+  SetOptionalInteger(object.get(), "soft_quota_grace_period",
+                     spec.soft_quota_grace_period);
+  SetOptionalInteger(object.get(), "file_retention", spec.file_retention);
+  SetOptionalInteger(object.get(), "job_retention", spec.job_retention);
+  SetOptionalInteger(object.get(), "ndmp_log_level", spec.ndmp_log_level);
+  SetOptionalInteger(object.get(), "ndmp_block_size", spec.ndmp_block_size);
+  SetOptionalBool(object.get(), "ndmp_use_lmdb", spec.ndmp_use_lmdb);
+  SetOptionalBool(object.get(), "auto_prune", spec.auto_prune);
+  SetOptionalBool(object.get(), "tls_authenticate", spec.tls_authenticate);
+  SetOptionalBool(object.get(), "tls_enable", spec.tls_enable);
+  SetOptionalBool(object.get(), "tls_require", spec.tls_require);
+  SetOptionalBool(object.get(), "tls_verify_peer", spec.tls_verify_peer);
+  SetOptionalString(object.get(), "tls_cipher_list", spec.tls_cipher_list);
+  SetOptionalString(object.get(), "tls_cipher_suites", spec.tls_cipher_suites);
+  SetOptionalString(object.get(), "tls_dh_file", spec.tls_dh_file);
+  SetOptionalString(object.get(), "tls_protocol", spec.tls_protocol);
+  SetOptionalString(object.get(), "tls_ca_certificate_file",
+                    spec.tls_ca_certificate_file);
+  SetOptionalString(object.get(), "tls_ca_certificate_dir",
+                    spec.tls_ca_certificate_dir);
+  SetOptionalString(object.get(), "tls_certificate_revocation_list",
+                    spec.tls_certificate_revocation_list);
+  SetOptionalString(object.get(), "tls_certificate", spec.tls_certificate);
+  SetOptionalString(object.get(), "tls_key", spec.tls_key);
+  SetOptionalStringArray(object.get(), "tls_allowed_cn", spec.tls_allowed_cn);
+  SetOptionalBool(object.get(), "connection_from_director_to_client",
+                  spec.connection_from_director_to_client);
+  SetOptionalBool(object.get(), "connection_from_client_to_director",
+                  spec.connection_from_client_to_director);
+  SetOptionalInteger(object.get(), "maximum_concurrent_jobs",
+                     spec.maximum_concurrent_jobs);
+  SetOptionalInteger(object.get(), "heartbeat_interval",
+                     spec.heartbeat_interval);
+  SetOptionalInteger(object.get(), "maximum_bandwidth_per_job",
+                     spec.maximum_bandwidth_per_job);
+  SetOptionalString(object.get(), "description", spec.description);
+  return object.release();
+}
+
+json_t* DirectorStorageResourceSpecToJson(
+    const DirectorStorageResourceSpec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "address", spec.address);
+  SetOptionalString(object.get(), "lan_address", spec.lan_address);
+  SetOptionalInteger(object.get(), "port", spec.port);
+  SetOptionalString(object.get(), "protocol", spec.protocol);
+  SetOptionalString(object.get(), "auth_type", spec.auth_type);
+  SetOptionalString(object.get(), "username", spec.username);
+  SetOptionalString(object.get(), "password", spec.password);
+  SetOptionalString(object.get(), "device", spec.device);
+  SetOptionalString(object.get(), "media_type", spec.media_type);
+  SetOptionalBool(object.get(), "autochanger", spec.autochanger);
+  SetOptionalBool(object.get(), "enabled", spec.enabled);
+  SetOptionalBool(object.get(), "allow_compression", spec.allow_compression);
+  SetOptionalInteger(object.get(), "heartbeat_interval",
+                     spec.heartbeat_interval);
+  SetOptionalInteger(object.get(), "cache_status_interval",
+                     spec.cache_status_interval);
+  SetOptionalInteger(object.get(), "maximum_concurrent_jobs",
+                     spec.maximum_concurrent_jobs);
+  SetOptionalInteger(object.get(), "maximum_concurrent_read_jobs",
+                     spec.maximum_concurrent_read_jobs);
+  SetOptionalString(object.get(), "paired_storage", spec.paired_storage);
+  SetOptionalInteger(object.get(), "maximum_bandwidth_per_job",
+                     spec.maximum_bandwidth_per_job);
+  SetOptionalBool(object.get(), "collect_statistics", spec.collect_statistics);
+  SetOptionalString(object.get(), "ndmp_changer_device",
+                    spec.ndmp_changer_device);
+  SetOptionalBool(object.get(), "tls_authenticate", spec.tls_authenticate);
+  SetOptionalBool(object.get(), "tls_enable", spec.tls_enable);
+  SetOptionalBool(object.get(), "tls_require", spec.tls_require);
+  SetOptionalBool(object.get(), "tls_verify_peer", spec.tls_verify_peer);
+  SetOptionalString(object.get(), "tls_cipher_list", spec.tls_cipher_list);
+  SetOptionalString(object.get(), "tls_cipher_suites", spec.tls_cipher_suites);
+  SetOptionalString(object.get(), "tls_dh_file", spec.tls_dh_file);
+  SetOptionalString(object.get(), "tls_protocol", spec.tls_protocol);
+  SetOptionalString(object.get(), "tls_ca_certificate_file",
+                    spec.tls_ca_certificate_file);
+  SetOptionalString(object.get(), "tls_ca_certificate_dir",
+                    spec.tls_ca_certificate_dir);
+  SetOptionalString(object.get(), "tls_certificate_revocation_list",
+                    spec.tls_certificate_revocation_list);
+  SetOptionalString(object.get(), "tls_certificate", spec.tls_certificate);
+  SetOptionalString(object.get(), "tls_key", spec.tls_key);
+  SetOptionalStringArray(object.get(), "tls_allowed_cn", spec.tls_allowed_cn);
+  SetOptionalString(object.get(), "archive_device", spec.archive_device);
+  SetOptionalString(object.get(), "device_type", spec.device_type);
+  SetOptionalString(object.get(), "description", spec.description);
+  return object.release();
+}
+
+json_t* StorageDirectorResourceSpecToJson(
+    const StorageDirectorResourceSpec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "password", spec.password);
+  SetOptionalString(object.get(), "description", spec.description);
+  SetOptionalBool(object.get(), "monitor", spec.monitor);
+  SetOptionalInteger(object.get(), "maximum_bandwidth_per_job",
+                     spec.maximum_bandwidth_per_job);
+  SetOptionalString(object.get(), "key_encryption_key",
+                    spec.key_encryption_key);
+  SetOptionalBool(object.get(), "tls_authenticate", spec.tls_authenticate);
+  SetOptionalBool(object.get(), "tls_enable", spec.tls_enable);
+  SetOptionalBool(object.get(), "tls_require", spec.tls_require);
+  SetOptionalBool(object.get(), "tls_verify_peer", spec.tls_verify_peer);
+  SetOptionalString(object.get(), "tls_cipher_list", spec.tls_cipher_list);
+  SetOptionalString(object.get(), "tls_cipher_suites", spec.tls_cipher_suites);
+  SetOptionalString(object.get(), "tls_dh_file", spec.tls_dh_file);
+  SetOptionalString(object.get(), "tls_protocol", spec.tls_protocol);
+  SetOptionalString(object.get(), "tls_ca_certificate_file",
+                    spec.tls_ca_certificate_file);
+  SetOptionalString(object.get(), "tls_ca_certificate_dir",
+                    spec.tls_ca_certificate_dir);
+  SetOptionalString(object.get(), "tls_certificate_revocation_list",
+                    spec.tls_certificate_revocation_list);
+  SetOptionalString(object.get(), "tls_certificate", spec.tls_certificate);
+  SetOptionalString(object.get(), "tls_key", spec.tls_key);
+  SetOptionalStringArray(object.get(), "tls_allowed_cn", spec.tls_allowed_cn);
+  return object.release();
+}
+
 void SetDeploymentGitStatus(json_t* object,
                             const DeploymentGitStatusRecord& status)
 {
@@ -9367,6 +9736,106 @@ http::response<http::string_body> HandleDeploymentClientRequest(
   json_object_set(root.get(), "deployment",
                   json_array_get(deployment_json.get(), 0));
   json_object_set(root.get(), "client", client_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleClientDirectorStubPrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view client_name,
+    std::string_view director_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetClientDirectorStubSpec(deployment_id, client_name,
+                                              director_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      ClientDirectorStubSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDirectorClientPrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view client_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetDirectorClientResourceSpec(deployment_id, director_name,
+                                                  client_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      DirectorClientResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDirectorStoragePrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view storage_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetDirectorStorageResourceSpec(deployment_id, director_name,
+                                                   storage_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      DirectorStorageResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleStorageDirectorPrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view director_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetStorageDirectorResourceSpec(deployment_id, storage_name,
+                                                   director_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      StorageDirectorResourceSpecToJson(*spec.value));
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
@@ -16836,9 +17305,16 @@ http::response<http::string_body> HandleDeploymentsRequest(
   }
 
   if (path_parts.size() == 7 && path_parts[3] == "clients"
-      && path_parts[5] == "directors" && request.method() == http::verb::put) {
+      && path_parts[5] == "directors" && path_parts[6] != "prefill"
+      && request.method() == http::verb::put) {
     return HandleDeploymentClientDirectorStubPutRequest(
         state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 8 && path_parts[3] == "clients"
+      && path_parts[5] == "directors" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleClientDirectorStubPrefillRequest(state, path_parts[2],
+                                                  path_parts[4], path_parts[6]);
   }
   if (path_parts.size() == 7 && path_parts[3] == "clients"
       && path_parts[5] == "directors"
@@ -16847,6 +17323,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
+  if (path_parts.size() == 8 && path_parts[3] == "storages"
+      && path_parts[5] == "directors" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleStorageDirectorPrefillRequest(state, path_parts[2],
+                                               path_parts[4], path_parts[6]);
+  }
   if (path_parts.size() == 7 && path_parts[3] == "storages"
       && path_parts[5] == "directors" && request.method() == http::verb::put) {
     return HandleDeploymentStorageDirectorPutRequest(
@@ -16928,6 +17410,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
+  if (path_parts.size() == 8 && path_parts[3] == "directors"
+      && path_parts[5] == "clients" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleDirectorClientPrefillRequest(state, path_parts[2],
+                                              path_parts[4], path_parts[6]);
+  }
   if (path_parts.size() == 7 && path_parts[3] == "directors"
       && path_parts[5] == "clients" && request.method() == http::verb::put) {
     return HandleDeploymentDirectorClientPutRequest(
@@ -16940,6 +17428,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
+  if (path_parts.size() == 8 && path_parts[3] == "directors"
+      && path_parts[5] == "storages" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleDirectorStoragePrefillRequest(state, path_parts[2],
+                                               path_parts[4], path_parts[6]);
+  }
   if (path_parts.size() == 7 && path_parts[3] == "directors"
       && path_parts[5] == "storages" && request.method() == http::verb::put) {
     return HandleDeploymentDirectorStoragePutRequest(

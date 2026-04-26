@@ -299,6 +299,56 @@ TEST(BconfigService, UpsertsDirectorClientResources)
             std::string::npos);
   EXPECT_NE(updated_stub_text.find("MaximumBandwidthPerJob = 2048"),
             std::string::npos);
+
+  auto current
+      = state.GetDirectorClientResourceSpec("prod", "bareos-dir", "client1-fd");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->address, "client1-alt.example.com");
+  EXPECT_EQ(current.value->lan_address, "client1-fd-lan.example.com");
+  ASSERT_TRUE(current.value->port.has_value());
+  EXPECT_EQ(*current.value->port, 9102);
+  EXPECT_EQ(current.value->protocol, "NDMPV4");
+  EXPECT_EQ(current.value->auth_type, "MD5");
+  EXPECT_EQ(current.value->catalog, "MyCatalog");
+  EXPECT_EQ(current.value->username, "managed-user");
+  EXPECT_EQ(current.value->password, "[md5]0123456789abcdef0123456789abcdef");
+  EXPECT_EQ(current.value->enabled, false);
+  EXPECT_EQ(current.value->passive, true);
+  EXPECT_EQ(current.value->strict_quotas, true);
+  EXPECT_EQ(current.value->quota_include_failed_jobs, false);
+  EXPECT_EQ(current.value->soft_quota, 4096);
+  EXPECT_EQ(current.value->hard_quota, 8192);
+  EXPECT_EQ(current.value->soft_quota_grace_period, 120);
+  EXPECT_EQ(current.value->file_retention, 3600);
+  EXPECT_EQ(current.value->job_retention, 7200);
+  EXPECT_EQ(current.value->ndmp_log_level, 7);
+  EXPECT_EQ(current.value->ndmp_block_size, 64512);
+  EXPECT_EQ(current.value->ndmp_use_lmdb, false);
+  EXPECT_EQ(current.value->auto_prune, true);
+  EXPECT_EQ(current.value->tls_authenticate, true);
+  EXPECT_EQ(current.value->tls_enable, true);
+  EXPECT_EQ(current.value->tls_require, true);
+  EXPECT_EQ(current.value->tls_verify_peer, true);
+  EXPECT_EQ(current.value->tls_cipher_list, "HIGH:!aNULL");
+  EXPECT_EQ(current.value->tls_cipher_suites, "TLS_AES_256_GCM_SHA384");
+  EXPECT_EQ(current.value->tls_dh_file, "/etc/bareos/dh4096.pem");
+  EXPECT_EQ(current.value->tls_protocol, "TLSv1.3");
+  EXPECT_EQ(current.value->tls_ca_certificate_file, "/etc/bareos/ca.pem");
+  EXPECT_EQ(current.value->tls_ca_certificate_dir, "/etc/ssl/certs");
+  EXPECT_EQ(current.value->tls_certificate_revocation_list,
+            "/etc/bareos/crl.pem");
+  EXPECT_EQ(current.value->tls_certificate, "/etc/bareos/client.crt");
+  EXPECT_EQ(current.value->tls_key, "/etc/bareos/client.key");
+  ASSERT_TRUE(current.value->tls_allowed_cn.has_value());
+  EXPECT_EQ(*current.value->tls_allowed_cn,
+            (std::vector<std::string>{"backup-dir.example.test",
+                                      "backup-dir.internal"}));
+  EXPECT_EQ(current.value->connection_from_director_to_client, false);
+  EXPECT_EQ(current.value->connection_from_client_to_director, true);
+  EXPECT_EQ(current.value->maximum_concurrent_jobs, 9);
+  EXPECT_EQ(current.value->heartbeat_interval, 60);
+  EXPECT_EQ(current.value->maximum_bandwidth_per_job, 2048);
+  EXPECT_EQ(current.value->description, "Managed by service");
 }
 
 TEST(BconfigService, UpsertsDirectorClientResourcesPreserveLargeImportedPort)
@@ -823,6 +873,49 @@ TEST(BconfigService, UpsertsDirectorStorageResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Managed storage\""),
             std::string::npos);
+
+  auto current = state.GetDirectorStorageResourceSpec("prod", "bareos-dir",
+                                                      "FileManaged");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->address, "storage.example.com");
+  EXPECT_EQ(current.value->lan_address, "storage-lan.example.com");
+  ASSERT_TRUE(current.value->port.has_value());
+  EXPECT_EQ(*current.value->port, 9103);
+  EXPECT_EQ(current.value->protocol, "NDMPV4");
+  EXPECT_EQ(current.value->auth_type, "Clear");
+  EXPECT_EQ(current.value->username, "ndmp-user");
+  EXPECT_EQ(current.value->password, "[md5]abcdef0123456789abcdef0123456789");
+  EXPECT_EQ(current.value->device, "FileStorage");
+  EXPECT_EQ(current.value->media_type, "File");
+  EXPECT_EQ(current.value->autochanger, true);
+  EXPECT_EQ(current.value->enabled, false);
+  EXPECT_EQ(current.value->allow_compression, false);
+  EXPECT_EQ(current.value->heartbeat_interval, 60);
+  EXPECT_EQ(current.value->cache_status_interval, 90);
+  EXPECT_EQ(current.value->maximum_concurrent_jobs, 11);
+  EXPECT_EQ(current.value->maximum_concurrent_read_jobs, 3);
+  EXPECT_EQ(current.value->paired_storage, "File");
+  EXPECT_EQ(current.value->maximum_bandwidth_per_job, 2048);
+  EXPECT_EQ(current.value->collect_statistics, true);
+  EXPECT_EQ(current.value->ndmp_changer_device, "changer0");
+  EXPECT_EQ(current.value->tls_authenticate, false);
+  EXPECT_EQ(current.value->tls_enable, true);
+  EXPECT_EQ(current.value->tls_require, false);
+  EXPECT_EQ(current.value->tls_verify_peer, true);
+  EXPECT_EQ(current.value->tls_cipher_list, "ECDHE-RSA-AES256-GCM-SHA384");
+  EXPECT_EQ(current.value->tls_cipher_suites, "TLS_AES_256_GCM_SHA384");
+  EXPECT_EQ(current.value->tls_dh_file, "/etc/bareos/dh4096.pem");
+  EXPECT_EQ(current.value->tls_protocol, "MinProtocol = TLSv1.2");
+  EXPECT_EQ(current.value->tls_ca_certificate_file, "/etc/bareos/ca.crt");
+  EXPECT_EQ(current.value->tls_ca_certificate_dir, "/etc/ssl/certs");
+  EXPECT_EQ(current.value->tls_certificate_revocation_list,
+            "/etc/bareos/crl.pem");
+  EXPECT_EQ(current.value->tls_certificate, "/etc/bareos/storage.crt");
+  EXPECT_EQ(current.value->tls_key, "/etc/bareos/storage.key");
+  ASSERT_TRUE(current.value->tls_allowed_cn.has_value());
+  EXPECT_EQ(*current.value->tls_allowed_cn,
+            (std::vector<std::string>{"storage-cn-1", "storage-cn-2"}));
+  EXPECT_EQ(current.value->description, "Managed storage");
 }
 
 TEST(BconfigService, UpsertsDirectorStorageResourcesPreserveLargeImportedPort)
@@ -888,6 +981,19 @@ TEST(BconfigService, UpsertsDirectorStorageResourcesPreserveLargeImportedPort)
             std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated imported storage\""),
             std::string::npos);
+
+  auto current
+      = state.GetDirectorStorageResourceSpec("prod", "bareos-dir", "File");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->address, "localhost");
+  EXPECT_EQ(current.value->lan_address, "imported-storage-lan.example.com");
+  EXPECT_FALSE(current.value->port.has_value());
+  EXPECT_EQ(current.value->enabled, false);
+  EXPECT_EQ(current.value->allow_compression, false);
+  EXPECT_EQ(current.value->heartbeat_interval, 45);
+  EXPECT_EQ(current.value->cache_status_interval, 75);
+  EXPECT_EQ(current.value->maximum_bandwidth_per_job, 8192);
+  EXPECT_EQ(current.value->description, "Updated imported storage");
 }
 
 TEST(BconfigService,

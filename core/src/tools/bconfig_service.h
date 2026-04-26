@@ -963,6 +963,22 @@ class ServiceState {
       std::string_view deployment_id,
       bconfig::Component component,
       std::string_view name) const;
+  OperationResult<ClientDirectorStubSpec> GetClientDirectorStubSpec(
+      std::string_view deployment_id,
+      std::string_view client_name,
+      std::string_view director_name) const;
+  OperationResult<DirectorClientResourceSpec> GetDirectorClientResourceSpec(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view client_name) const;
+  OperationResult<DirectorStorageResourceSpec> GetDirectorStorageResourceSpec(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view storage_name) const;
+  OperationResult<StorageDirectorResourceSpec> GetStorageDirectorResourceSpec(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      std::string_view director_name) const;
   OperationResult<DeploymentConfigRecord> UpsertClientDirectorStub(
       std::string_view deployment_id,
       std::string_view client_name,
