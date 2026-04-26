@@ -9,11 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add SUSE 15SP7 and 16.0 [PR #2505]
 - Add simple dependency generator for systemtest testrunners [PR #2484]
 
+### Breaking Changes
+- stored: `MaximumFileSizeImmediateFilemark` now defaults to non-blocking
+  rollover filemarks for `MaximumFileSize`; set
+  `MaximumFileSizeImmediateFilemark = no` after upgrade to keep the previous
+  blocking behavior [PR #2634]
+
 ### Changed
 - dirconfig: add subscription setting with comment [PR #2468]
-- stored: `MaximumFileSizeImmediateFilemark` now defaults to non-blocking
-  rollover filemarks; set `MaximumFileSizeImmediateFilemark = no` after upgrade
-  to keep the previous blocking behavior [PR #2634]
 - hyper-v: fix restores with portable data [PR #2469]
 - table-formatter.js: Fix icon selection logic [PR #2479]
 - systemtests: tune for execution on Windows [PR #2501]
