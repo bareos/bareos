@@ -1610,40 +1610,50 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-client-password" name="password"
                placeholder="cleartext or [md5]hash">
 
-        <label class="checkbox-label" for="director-client-enabled">
-          <input id="director-client-enabled" name="enabled" type="checkbox" checked>
-          Enabled
-        </label>
+        <label for="director-client-enabled">Enabled</label>
+        <select id="director-client-enabled" name="enabled">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-client-passive">
-          <input id="director-client-passive" name="passive" type="checkbox">
-          Passive
-        </label>
+        <label for="director-client-passive">Passive</label>
+        <select id="director-client-passive" name="passive">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-client-strict-quotas">
-          <input id="director-client-strict-quotas" name="strict_quotas"
-                 type="checkbox">
-          StrictQuotas
-        </label>
+        <label for="director-client-strict-quotas">StrictQuotas</label>
+        <select id="director-client-strict-quotas" name="strict_quotas">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label"
-               for="director-client-quota-include-failed-jobs">
-          <input id="director-client-quota-include-failed-jobs"
-                 name="quota_include_failed_jobs" type="checkbox" checked>
-          QuotaIncludeFailedJobs
-        </label>
+        <label for="director-client-quota-include-failed-jobs">QuotaIncludeFailedJobs</label>
+        <select id="director-client-quota-include-failed-jobs"
+                name="quota_include_failed_jobs">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-client-connection-from-director-to-client">
-          <input id="director-client-connection-from-director-to-client"
-                 name="connection_from_director_to_client" type="checkbox">
-          Connection from director to client
-        </label>
+        <label for="director-client-connection-from-director-to-client">ConnectionFromDirectorToClient</label>
+        <select id="director-client-connection-from-director-to-client"
+                name="connection_from_director_to_client">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-client-connection-from-client-to-director">
-          <input id="director-client-connection-from-client-to-director"
-                 name="connection_from_client_to_director" type="checkbox">
-          Connection from client to director
-        </label>
+        <label for="director-client-connection-from-client-to-director">ConnectionFromClientToDirector</label>
+        <select id="director-client-connection-from-client-to-director"
+                name="connection_from_client_to_director">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-client-maximum-bandwidth-per-job">Maximum bandwidth per job</label>
         <input id="director-client-maximum-bandwidth-per-job"
@@ -1679,41 +1689,47 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-client-ndmp-block-size" name="ndmp_block_size"
                type="number" min="0" placeholder="0">
 
-        <label class="checkbox-label" for="director-client-ndmp-use-lmdb">
-          <input id="director-client-ndmp-use-lmdb" name="ndmp_use_lmdb"
-                 type="checkbox" checked>
-          NdmpUseLmdb
-        </label>
+        <label for="director-client-ndmp-use-lmdb">NdmpUseLmdb</label>
+        <select id="director-client-ndmp-use-lmdb" name="ndmp_use_lmdb">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-client-auto-prune">
-          <input id="director-client-auto-prune" name="auto_prune"
-                 type="checkbox">
-          AutoPrune
-        </label>
+        <label for="director-client-auto-prune">AutoPrune</label>
+        <select id="director-client-auto-prune" name="auto_prune">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-client-tls-authenticate">
-          <input id="director-client-tls-authenticate" name="tls_authenticate"
-                 type="checkbox">
-          TlsAuthenticate
-        </label>
+        <label for="director-client-tls-authenticate">TlsAuthenticate</label>
+        <select id="director-client-tls-authenticate" name="tls_authenticate">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-client-tls-enable">
-          <input id="director-client-tls-enable" name="tls_enable"
-                 type="checkbox">
-          TlsEnable
-        </label>
+        <label for="director-client-tls-enable">TlsEnable</label>
+        <select id="director-client-tls-enable" name="tls_enable">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-client-tls-require">
-          <input id="director-client-tls-require" name="tls_require"
-                 type="checkbox">
-          TlsRequire
-        </label>
+        <label for="director-client-tls-require">TlsRequire</label>
+        <select id="director-client-tls-require" name="tls_require">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-client-tls-verify-peer">
-          <input id="director-client-tls-verify-peer" name="tls_verify_peer"
-                 type="checkbox">
-          TlsVerifyPeer
-        </label>
+        <label for="director-client-tls-verify-peer">TlsVerifyPeer</label>
+        <select id="director-client-tls-verify-peer" name="tls_verify_peer">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-client-tls-cipher-list">TlsCipherList</label>
         <input id="director-client-tls-cipher-list" name="tls_cipher_list"
@@ -1824,22 +1840,27 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-storage-media-type">Media Type</label>
         <input id="director-storage-media-type" name="media_type" value="File">
 
-        <label class="checkbox-label" for="director-storage-autochanger">
-          <input id="director-storage-autochanger" name="autochanger"
-                 type="checkbox">
-          AutoChanger
-        </label>
+        <label for="director-storage-autochanger">AutoChanger</label>
+        <select id="director-storage-autochanger" name="autochanger">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-storage-enabled">
-          <input id="director-storage-enabled" name="enabled" type="checkbox" checked>
-          Enabled
-        </label>
+        <label for="director-storage-enabled">Enabled</label>
+        <select id="director-storage-enabled" name="enabled">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-storage-allow-compression">
-          <input id="director-storage-allow-compression" name="allow_compression"
-                 type="checkbox" checked>
-          AllowCompression
-        </label>
+        <label for="director-storage-allow-compression">AllowCompression</label>
+        <select id="director-storage-allow-compression"
+                name="allow_compression">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-storage-maximum-bandwidth-per-job">Maximum bandwidth per job</label>
         <input id="director-storage-maximum-bandwidth-per-job"
@@ -1876,39 +1897,47 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-storage-device-type">Device Type</label>
         <input id="director-storage-device-type" name="device_type" value="file">
 
-        <label class="checkbox-label" for="director-storage-collect-statistics">
-          <input id="director-storage-collect-statistics"
-                 name="collect_statistics" type="checkbox">
-          CollectStatistics
-        </label>
+        <label for="director-storage-collect-statistics">CollectStatistics</label>
+        <select id="director-storage-collect-statistics"
+                name="collect_statistics">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-storage-ndmp-changer-device">NdmpChangerDevice</label>
         <input id="director-storage-ndmp-changer-device"
                name="ndmp_changer_device" placeholder="changer0">
 
-        <label class="checkbox-label" for="director-storage-tls-authenticate">
-          <input id="director-storage-tls-authenticate"
-                 name="tls_authenticate" type="checkbox">
-          TLS authenticate
-        </label>
+        <label for="director-storage-tls-authenticate">TlsAuthenticate</label>
+        <select id="director-storage-tls-authenticate"
+                name="tls_authenticate">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-storage-tls-enable">
-          <input id="director-storage-tls-enable"
-                 name="tls_enable" type="checkbox">
-          TLS enable
-        </label>
+        <label for="director-storage-tls-enable">TlsEnable</label>
+        <select id="director-storage-tls-enable" name="tls_enable">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-storage-tls-require">
-          <input id="director-storage-tls-require"
-                 name="tls_require" type="checkbox">
-          TLS require
-        </label>
+        <label for="director-storage-tls-require">TlsRequire</label>
+        <select id="director-storage-tls-require" name="tls_require">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-storage-tls-verify-peer">
-          <input id="director-storage-tls-verify-peer"
-                 name="tls_verify_peer" type="checkbox">
-          TLS verify peer
-        </label>
+        <label for="director-storage-tls-verify-peer">TlsVerifyPeer</label>
+        <select id="director-storage-tls-verify-peer"
+                name="tls_verify_peer">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-storage-tls-cipher-list">TLS cipher list</label>
         <input id="director-storage-tls-cipher-list" name="tls_cipher_list"
@@ -3996,10 +4025,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="storage-director-description" name="description"
                placeholder="Managed storage-daemon director resource">
 
-        <label class="checkbox-label" for="storage-director-monitor">
-          <input id="storage-director-monitor" name="monitor" type="checkbox">
-          Monitor
-        </label>
+        <label for="storage-director-monitor">Monitor</label>
+        <select id="storage-director-monitor" name="monitor">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="storage-director-maximum-bandwidth-per-job">Maximum bandwidth per job</label>
         <input id="storage-director-maximum-bandwidth-per-job"
@@ -4011,29 +4042,35 @@ const char* kTestUiHtmlTemplate = R"HTML(
                name="key_encryption_key"
                placeholder="managed-key">
 
-        <label class="checkbox-label" for="storage-director-tls-authenticate">
-          <input id="storage-director-tls-authenticate"
-                 name="tls_authenticate" type="checkbox">
-          TLS authenticate
-        </label>
+        <label for="storage-director-tls-authenticate">TlsAuthenticate</label>
+        <select id="storage-director-tls-authenticate"
+                name="tls_authenticate">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="storage-director-tls-enable">
-          <input id="storage-director-tls-enable"
-                 name="tls_enable" type="checkbox">
-          TLS enable
-        </label>
+        <label for="storage-director-tls-enable">TlsEnable</label>
+        <select id="storage-director-tls-enable" name="tls_enable">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="storage-director-tls-require">
-          <input id="storage-director-tls-require"
-                 name="tls_require" type="checkbox">
-          TLS require
-        </label>
+        <label for="storage-director-tls-require">TlsRequire</label>
+        <select id="storage-director-tls-require" name="tls_require">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="storage-director-tls-verify-peer">
-          <input id="storage-director-tls-verify-peer"
-                 name="tls_verify_peer" type="checkbox">
-          TLS verify peer
-        </label>
+        <label for="storage-director-tls-verify-peer">TlsVerifyPeer</label>
+        <select id="storage-director-tls-verify-peer"
+                name="tls_verify_peer">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="storage-director-tls-cipher-list">TLS cipher list</label>
         <input id="storage-director-tls-cipher-list" name="tls_cipher_list"
@@ -5937,16 +5974,15 @@ const char* kTestUiHtmlTemplate = R"HTML(
           catalog: String(form.get('catalog') ?? '').trim(),
           username: String(form.get('username') ?? '').trim(),
           password: String(form.get('password') ?? '').trim(),
-          enabled: document.getElementById('director-client-enabled').checked,
-          passive: document.getElementById('director-client-passive').checked,
-          strict_quotas:
-            document.getElementById('director-client-strict-quotas').checked,
-          quota_include_failed_jobs: document.getElementById(
-            'director-client-quota-include-failed-jobs').checked,
-          connection_from_director_to_client: document.getElementById(
-            'director-client-connection-from-director-to-client').checked,
-          connection_from_client_to_director: document.getElementById(
-            'director-client-connection-from-client-to-director').checked,
+          enabled: String(form.get('enabled') ?? '').trim(),
+          passive: String(form.get('passive') ?? '').trim(),
+          strict_quotas: String(form.get('strict_quotas') ?? '').trim(),
+          quota_include_failed_jobs: String(
+            form.get('quota_include_failed_jobs') ?? '').trim(),
+          connection_from_director_to_client: String(
+            form.get('connection_from_director_to_client') ?? '').trim(),
+          connection_from_client_to_director: String(
+            form.get('connection_from_client_to_director') ?? '').trim(),
           soft_quota: String(form.get('soft_quota') ?? '').trim(),
           hard_quota: String(form.get('hard_quota') ?? '').trim(),
           soft_quota_grace_period: String(
@@ -5955,18 +5991,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
           job_retention: String(form.get('job_retention') ?? '').trim(),
           ndmp_log_level: String(form.get('ndmp_log_level') ?? '').trim(),
           ndmp_block_size: String(form.get('ndmp_block_size') ?? '').trim(),
-          ndmp_use_lmdb: document.getElementById(
-            'director-client-ndmp-use-lmdb').checked,
-          auto_prune: document.getElementById(
-            'director-client-auto-prune').checked,
-          tls_authenticate: document.getElementById(
-            'director-client-tls-authenticate').checked,
-          tls_enable: document.getElementById(
-            'director-client-tls-enable').checked,
-          tls_require: document.getElementById(
-            'director-client-tls-require').checked,
-          tls_verify_peer: document.getElementById(
-            'director-client-tls-verify-peer').checked,
+          ndmp_use_lmdb: String(form.get('ndmp_use_lmdb') ?? '').trim(),
+          auto_prune: String(form.get('auto_prune') ?? '').trim(),
+          tls_authenticate: String(form.get('tls_authenticate') ?? '').trim(),
+          tls_enable: String(form.get('tls_enable') ?? '').trim(),
+          tls_require: String(form.get('tls_require') ?? '').trim(),
+          tls_verify_peer: String(form.get('tls_verify_peer') ?? '').trim(),
           tls_cipher_list: String(form.get('tls_cipher_list') ?? '').trim(),
           tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
           tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
@@ -6007,6 +6037,69 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.password) {
           delete payload.password;
+        }
+        if (!payload.enabled) {
+          delete payload.enabled;
+        } else {
+          payload.enabled = payload.enabled === 'true';
+        }
+        if (!payload.passive) {
+          delete payload.passive;
+        } else {
+          payload.passive = payload.passive === 'true';
+        }
+        if (!payload.strict_quotas) {
+          delete payload.strict_quotas;
+        } else {
+          payload.strict_quotas = payload.strict_quotas === 'true';
+        }
+        if (!payload.quota_include_failed_jobs) {
+          delete payload.quota_include_failed_jobs;
+        } else {
+          payload.quota_include_failed_jobs
+            = payload.quota_include_failed_jobs === 'true';
+        }
+        if (!payload.connection_from_director_to_client) {
+          delete payload.connection_from_director_to_client;
+        } else {
+          payload.connection_from_director_to_client
+            = payload.connection_from_director_to_client === 'true';
+        }
+        if (!payload.connection_from_client_to_director) {
+          delete payload.connection_from_client_to_director;
+        } else {
+          payload.connection_from_client_to_director
+            = payload.connection_from_client_to_director === 'true';
+        }
+        if (!payload.ndmp_use_lmdb) {
+          delete payload.ndmp_use_lmdb;
+        } else {
+          payload.ndmp_use_lmdb = payload.ndmp_use_lmdb === 'true';
+        }
+        if (!payload.auto_prune) {
+          delete payload.auto_prune;
+        } else {
+          payload.auto_prune = payload.auto_prune === 'true';
+        }
+        if (!payload.tls_authenticate) {
+          delete payload.tls_authenticate;
+        } else {
+          payload.tls_authenticate = payload.tls_authenticate === 'true';
+        }
+        if (!payload.tls_enable) {
+          delete payload.tls_enable;
+        } else {
+          payload.tls_enable = payload.tls_enable === 'true';
+        }
+        if (!payload.tls_require) {
+          delete payload.tls_require;
+        } else {
+          payload.tls_require = payload.tls_require === 'true';
+        }
+        if (!payload.tls_verify_peer) {
+          delete payload.tls_verify_peer;
+        } else {
+          payload.tls_verify_peer = payload.tls_verify_peer === 'true';
         }
         if (!payload.tls_cipher_list) {
           delete payload.tls_cipher_list;
@@ -6143,10 +6236,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
           password: String(form.get('password') ?? '').trim(),
           device: String(form.get('device') ?? '').trim(),
           media_type: String(form.get('media_type') ?? '').trim(),
-          autochanger: document.getElementById('director-storage-autochanger').checked,
-          enabled: document.getElementById('director-storage-enabled').checked,
-          allow_compression:
-            document.getElementById('director-storage-allow-compression').checked,
+          autochanger: String(form.get('autochanger') ?? '').trim(),
+          enabled: String(form.get('enabled') ?? '').trim(),
+          allow_compression: String(
+            form.get('allow_compression') ?? '').trim(),
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
           heartbeat_interval: String(form.get('heartbeat_interval') ?? '').trim(),
@@ -6159,18 +6252,14 @@ const char* kTestUiHtmlTemplate = R"HTML(
           paired_storage: String(form.get('paired_storage') ?? '').trim(),
           archive_device: String(form.get('archive_device') ?? '').trim(),
           device_type: String(form.get('device_type') ?? '').trim(),
-          collect_statistics: document.getElementById(
-            'director-storage-collect-statistics').checked,
+          collect_statistics: String(
+            form.get('collect_statistics') ?? '').trim(),
           ndmp_changer_device: String(
             form.get('ndmp_changer_device') ?? '').trim(),
-          tls_authenticate: document.getElementById(
-            'director-storage-tls-authenticate').checked,
-          tls_enable: document.getElementById(
-            'director-storage-tls-enable').checked,
-          tls_require: document.getElementById(
-            'director-storage-tls-require').checked,
-          tls_verify_peer: document.getElementById(
-            'director-storage-tls-verify-peer').checked,
+          tls_authenticate: String(form.get('tls_authenticate') ?? '').trim(),
+          tls_enable: String(form.get('tls_enable') ?? '').trim(),
+          tls_require: String(form.get('tls_require') ?? '').trim(),
+          tls_verify_peer: String(form.get('tls_verify_peer') ?? '').trim(),
           tls_cipher_list: String(form.get('tls_cipher_list') ?? '').trim(),
           tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
           tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
@@ -6215,6 +6304,21 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.media_type) {
           delete payload.media_type;
         }
+        if (!payload.autochanger) {
+          delete payload.autochanger;
+        } else {
+          payload.autochanger = payload.autochanger === 'true';
+        }
+        if (!payload.enabled) {
+          delete payload.enabled;
+        } else {
+          payload.enabled = payload.enabled === 'true';
+        }
+        if (!payload.allow_compression) {
+          delete payload.allow_compression;
+        } else {
+          payload.allow_compression = payload.allow_compression === 'true';
+        }
         if (!payload.maximum_bandwidth_per_job) {
           delete payload.maximum_bandwidth_per_job;
         } else {
@@ -6253,8 +6357,33 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.device_type) {
           delete payload.device_type;
         }
+        if (!payload.collect_statistics) {
+          delete payload.collect_statistics;
+        } else {
+          payload.collect_statistics = payload.collect_statistics === 'true';
+        }
         if (!payload.ndmp_changer_device) {
           delete payload.ndmp_changer_device;
+        }
+        if (!payload.tls_authenticate) {
+          delete payload.tls_authenticate;
+        } else {
+          payload.tls_authenticate = payload.tls_authenticate === 'true';
+        }
+        if (!payload.tls_enable) {
+          delete payload.tls_enable;
+        } else {
+          payload.tls_enable = payload.tls_enable === 'true';
+        }
+        if (!payload.tls_require) {
+          delete payload.tls_require;
+        } else {
+          payload.tls_require = payload.tls_require === 'true';
+        }
+        if (!payload.tls_verify_peer) {
+          delete payload.tls_verify_peer;
+        } else {
+          payload.tls_verify_peer = payload.tls_verify_peer === 'true';
         }
         if (!payload.tls_cipher_list) {
           delete payload.tls_cipher_list;
@@ -7550,19 +7679,15 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const payload = {
           password: String(form.get('password') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
-          monitor: document.getElementById('storage-director-monitor').checked,
+          monitor: String(form.get('monitor') ?? '').trim(),
           maximum_bandwidth_per_job: String(
             form.get('maximum_bandwidth_per_job') ?? '').trim(),
           key_encryption_key: String(
             form.get('key_encryption_key') ?? '').trim(),
-          tls_authenticate: document.getElementById(
-            'storage-director-tls-authenticate').checked,
-          tls_enable: document.getElementById(
-            'storage-director-tls-enable').checked,
-          tls_require: document.getElementById(
-            'storage-director-tls-require').checked,
-          tls_verify_peer: document.getElementById(
-            'storage-director-tls-verify-peer').checked,
+          tls_authenticate: String(form.get('tls_authenticate') ?? '').trim(),
+          tls_enable: String(form.get('tls_enable') ?? '').trim(),
+          tls_require: String(form.get('tls_require') ?? '').trim(),
+          tls_verify_peer: String(form.get('tls_verify_peer') ?? '').trim(),
           tls_cipher_list: String(form.get('tls_cipher_list') ?? '').trim(),
           tls_cipher_suites: String(form.get('tls_cipher_suites') ?? '').trim(),
           tls_dh_file: String(form.get('tls_dh_file') ?? '').trim(),
@@ -7579,6 +7704,11 @@ const char* kTestUiHtmlTemplate = R"HTML(
         };
         if (!payload.password) { delete payload.password; }
         if (!payload.description) { delete payload.description; }
+        if (!payload.monitor) {
+          delete payload.monitor;
+        } else {
+          payload.monitor = payload.monitor === 'true';
+        }
         if (!payload.maximum_bandwidth_per_job) {
           delete payload.maximum_bandwidth_per_job;
         } else {
@@ -7586,6 +7716,26 @@ const char* kTestUiHtmlTemplate = R"HTML(
             = Number.parseInt(payload.maximum_bandwidth_per_job, 10);
         }
         if (!payload.key_encryption_key) { delete payload.key_encryption_key; }
+        if (!payload.tls_authenticate) {
+          delete payload.tls_authenticate;
+        } else {
+          payload.tls_authenticate = payload.tls_authenticate === 'true';
+        }
+        if (!payload.tls_enable) {
+          delete payload.tls_enable;
+        } else {
+          payload.tls_enable = payload.tls_enable === 'true';
+        }
+        if (!payload.tls_require) {
+          delete payload.tls_require;
+        } else {
+          payload.tls_require = payload.tls_require === 'true';
+        }
+        if (!payload.tls_verify_peer) {
+          delete payload.tls_verify_peer;
+        } else {
+          payload.tls_verify_peer = payload.tls_verify_peer === 'true';
+        }
         if (!payload.tls_cipher_list) { delete payload.tls_cipher_list; }
         if (!payload.tls_cipher_suites) { delete payload.tls_cipher_suites; }
         if (!payload.tls_dh_file) { delete payload.tls_dh_file; }
