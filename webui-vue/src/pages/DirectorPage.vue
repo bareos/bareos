@@ -352,8 +352,7 @@
                     </span>
                     <q-space />
                     <span v-if="!canDeleteEmptyJobs" class="text-caption text-grey-6">
-                      {{ t('Delete is unavailable because the ACL forbids the') }}
-                      <code>delete</code> command.
+                      <span v-html="t('Delete is unavailable because the ACL forbids the <code>delete</code> command.')" />
                     </span>
                     <q-btn
                       color="negative" size="sm" no-caps unelevated
@@ -420,8 +419,7 @@
                     />
                   </div>
                 <div v-if="!canPruneCatalog" class="text-caption text-grey-6 q-mt-sm">
-                  {{ t('Prune is unavailable because the ACL forbids the') }}
-                  <code>prune</code> command.
+                  <span v-html="t('Prune is unavailable because the ACL forbids the <code>prune</code> command.')" />
                 </div>
                 <div v-if="pruneResults.length" class="q-mt-md column q-gutter-xs">
                   <q-banner

@@ -32,6 +32,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { localeOptions } from '../utils/locales.js'
 
 const props = defineProps({
@@ -41,16 +42,19 @@ const props = defineProps({
   },
   label: {
     type: String,
-    default: 'Language',
+    default: '',
   },
 })
 
 const emit = defineEmits(['update:modelValue'])
+const { t } = useI18n()
 
 const model = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value),
 })
+
+const label = computed(() => props.label || t('Language'))
 </script>
 
 <style scoped>

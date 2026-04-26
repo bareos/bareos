@@ -35,13 +35,13 @@
               <div v-for="tile in treemapTiles" :key="tile.name"
                    :style="tile.style"
                    style="position:absolute;overflow:hidden;box-sizing:border-box;border:2px solid white;border-radius:4px;cursor:default;transition:opacity .2s"
-                   :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${formatNumber(tile.files, settings.locale)} files`">
+                   :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${t('{count} files', { count: formatNumber(tile.files, settings.locale) })}`">
                 <div style="padding:4px 6px;height:100%;display:flex;flex-direction:column;justify-content:center">
                   <div class="text-white text-weight-bold" style="font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                     {{ tile.name }}
                   </div>
                   <div v-if="tile.h > 36" class="text-white" style="font-size:10px;opacity:.85">
-                    {{ treemapMode === 'bytes' ? fmtBytes(tile.bytes) : formatNumber(tile.files, settings.locale) + ' files' }}
+                    {{ treemapMode === 'bytes' ? fmtBytes(tile.bytes) : t('{count} files', { count: formatNumber(tile.files, settings.locale) }) }}
                   </div>
                 </div>
               </div>

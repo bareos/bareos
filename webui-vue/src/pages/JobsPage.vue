@@ -523,31 +523,31 @@ async function loadJobDefs() {
 // ── row-level actions ─────────────────────────────────────────────────────────
 function confirmCancel(job) {
   $q.dialog({
-    title: 'Cancel Job',
-    message: `Cancel job <b>${job.name}</b> (ID&nbsp;${job.id})?`,
+    title: t('Cancel Job'),
+    message: t('Cancel job <b>{name}</b> (ID&nbsp;{id})?', { name: job.name, id: job.id }),
     html: true,
-    ok:     { label: 'Cancel Job', color: 'negative', flat: true },
-    cancel: { label: 'Keep', flat: true },
+    ok:     { label: t('Cancel Job'), color: 'negative', flat: true },
+    cancel: { label: t('Keep running'), flat: true },
   }).onOk(() => doCancel(job))
 }
 
 async function doCancel(job) {
   try {
     await director.call(`cancel jobid=${job.id} yes`)
-    $q.notify({ type: 'positive', message: `Job ${job.id} cancelled.` })
+    $q.notify({ type: 'positive', message: t('Job {id} cancelled.', { id: job.id }) })
     refresh()
   } catch (e) {
-    $q.notify({ type: 'negative', message: `Cancel failed: ${e.message}` })
+    $q.notify({ type: 'negative', message: t('Cancel failed: {message}', { message: e.message }) })
   }
 }
 
 function confirmRerun(job) {
   $q.dialog({
-    title: 'Rerun Job',
-    message: `Rerun job <b>${job.name}</b> (ID&nbsp;${job.id})?`,
+    title: t('Rerun Job'),
+    message: t('Rerun job <b>{name}</b> (ID&nbsp;{id})?', { name: job.name, id: job.id }),
     html: true,
-    ok:     { label: 'Rerun', color: 'primary', flat: true },
-    cancel: { label: 'Cancel', flat: true },
+    ok:     { label: t('Rerun'), color: 'primary', flat: true },
+    cancel: { label: t('Cancel'), flat: true },
   }).onOk(() => doRerun(job.id))
 }
 
@@ -555,11 +555,11 @@ async function doRerun(jobId) {
   try {
     const res = await director.call(`rerun jobid=${jobId} yes`)
     const newId = res?.run?.jobid ?? res?.jobid ?? '?'
-    $q.notify({ type: 'positive', message: `Job restarted as ID ${newId}.` })
+    $q.notify({ type: 'positive', message: t('Job restarted as ID {id}.', { id: newId }) })
     tab.value = 'list'
     refresh()
   } catch (e) {
-    $q.notify({ type: 'negative', message: `Rerun failed: ${e.message}` })
+    $q.notify({ type: 'negative', message: t('Rerun failed: {message}', { message: e.message }) })
   }
 }
 
@@ -567,11 +567,11 @@ async function doRerun(jobId) {
 function cancelAll() {
   const n = runningJobs.value.length
   $q.dialog({
-    title: 'Cancel All Running Jobs',
-    message: `Cancel all <b>${n}</b> running job${n === 1 ? '' : 's'}?`,
+    title: t('Cancel All Running Jobs'),
+    message: t('Cancel all <b>{count}</b> running job(s)?', { count: n }),
     html: true,
-    ok:     { label: 'Cancel All', color: 'negative', flat: true },
-    cancel: { label: 'Keep', flat: true },
+    ok:     { label: t('Cancel all jobs'), color: 'negative', flat: true },
+    cancel: { label: t('Keep running'), flat: true },
   }).onOk(async () => {
     const results = await Promise.allSettled(
       runningJobs.value.map(j => director.call(`cancel jobid=${j.id} yes`))
