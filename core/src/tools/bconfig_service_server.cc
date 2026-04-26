@@ -2317,9 +2317,25 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-pool-label-format" name="label_format"
                placeholder="Managed-">
 
+        <label for="director-pool-cleaning-prefix">CleaningPrefix</label>
+        <input id="director-pool-cleaning-prefix" name="cleaning_prefix"
+               placeholder="Cleaner-">
+
+        <label for="director-pool-label-type">LabelType</label>
+        <input id="director-pool-label-type" name="label_type"
+               placeholder="ansi">
+
         <label for="director-pool-maximum-volumes">Maximum volumes</label>
         <input id="director-pool-maximum-volumes" name="maximum_volumes"
                type="number" min="0">
+
+        <label for="director-pool-maximum-volume-jobs">Maximum volume jobs</label>
+        <input id="director-pool-maximum-volume-jobs"
+               name="maximum_volume_jobs" type="number" min="0">
+
+        <label for="director-pool-maximum-volume-files">Maximum volume files</label>
+        <input id="director-pool-maximum-volume-files"
+               name="maximum_volume_files" type="number" min="0">
 
         <label for="director-pool-maximum-volume-bytes">Maximum volume bytes</label>
         <input id="director-pool-maximum-volume-bytes"
@@ -2328,6 +2344,72 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-pool-volume-retention">Volume retention (seconds)</label>
         <input id="director-pool-volume-retention" name="volume_retention"
                type="number" min="0">
+
+        <label for="director-pool-volume-use-duration">Volume use duration</label>
+        <input id="director-pool-volume-use-duration"
+               name="volume_use_duration" type="number" min="0">
+
+        <label for="director-pool-migration-time">Migration time</label>
+        <input id="director-pool-migration-time" name="migration_time"
+               type="number" min="0">
+
+        <label for="director-pool-migration-high-bytes">Migration high bytes</label>
+        <input id="director-pool-migration-high-bytes"
+               name="migration_high_bytes" type="number" min="0">
+
+        <label for="director-pool-migration-low-bytes">Migration low bytes</label>
+        <input id="director-pool-migration-low-bytes"
+               name="migration_low_bytes" type="number" min="0">
+
+        <label for="director-pool-next-pool">NextPool</label>
+        <input id="director-pool-next-pool" name="next_pool"
+               placeholder="Incremental">
+
+        <label for="director-pool-storages">Storages</label>
+        <textarea id="director-pool-storages" name="storages"
+                  rows="3" placeholder="File&#10;Tape"></textarea>
+
+        <label for="director-pool-use-catalog">UseCatalog</label>
+        <select id="director-pool-use-catalog" name="use_catalog">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-pool-catalog-files">CatalogFiles</label>
+        <select id="director-pool-catalog-files" name="catalog_files">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-pool-purge-oldest-volume">PurgeOldestVolume</label>
+        <select id="director-pool-purge-oldest-volume"
+                name="purge_oldest_volume">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-pool-action-on-purge">ActionOnPurge</label>
+        <input id="director-pool-action-on-purge" name="action_on_purge"
+               placeholder="Truncate">
+
+        <label for="director-pool-recycle-oldest-volume">RecycleOldestVolume</label>
+        <select id="director-pool-recycle-oldest-volume"
+                name="recycle_oldest_volume">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="director-pool-recycle-current-volume">RecycleCurrentVolume</label>
+        <select id="director-pool-recycle-current-volume"
+                name="recycle_current_volume">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-pool-auto-prune">AutoPrune</label>
         <select id="director-pool-auto-prune" name="auto_prune">
@@ -2342,6 +2424,34 @@ const char* kTestUiHtmlTemplate = R"HTML(
           <option value="true">Yes</option>
           <option value="false">No</option>
         </select>
+
+        <label for="director-pool-recycle-pool">RecyclePool</label>
+        <input id="director-pool-recycle-pool" name="recycle_pool"
+               placeholder="Scratch">
+
+        <label for="director-pool-scratch-pool">ScratchPool</label>
+        <input id="director-pool-scratch-pool" name="scratch_pool"
+               placeholder="Scratch">
+
+        <label for="director-pool-catalog">Catalog</label>
+        <input id="director-pool-catalog" name="catalog"
+               placeholder="MyCatalog">
+
+        <label for="director-pool-file-retention">FileRetention</label>
+        <input id="director-pool-file-retention" name="file_retention"
+               type="number" min="0">
+
+        <label for="director-pool-job-retention">JobRetention</label>
+        <input id="director-pool-job-retention" name="job_retention"
+               type="number" min="0">
+
+        <label for="director-pool-minimum-block-size">MinimumBlockSize</label>
+        <input id="director-pool-minimum-block-size" name="minimum_block_size"
+               type="number" min="0">
+
+        <label for="director-pool-maximum-block-size">MaximumBlockSize</label>
+        <input id="director-pool-maximum-block-size" name="maximum_block_size"
+               type="number" min="0">
 
         <label for="director-pool-description">Description</label>
         <input id="director-pool-description" name="description"
@@ -6788,14 +6898,50 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const deploymentId = String(form.get('deployment_id') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
         const poolName = String(form.get('pool_name') ?? '').trim();
+        const storages = String(form.get('storages') ?? '').split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
         const payload = {
           pool_type: String(form.get('pool_type') ?? '').trim(),
           label_format: String(form.get('label_format') ?? '').trim(),
+          cleaning_prefix: String(form.get('cleaning_prefix') ?? '').trim(),
+          label_type: String(form.get('label_type') ?? '').trim(),
           maximum_volumes: String(form.get('maximum_volumes') ?? '').trim(),
+          maximum_volume_jobs: String(
+            form.get('maximum_volume_jobs') ?? '').trim(),
+          maximum_volume_files: String(
+            form.get('maximum_volume_files') ?? '').trim(),
           maximum_volume_bytes: String(form.get('maximum_volume_bytes') ?? '').trim(),
           volume_retention: String(form.get('volume_retention') ?? '').trim(),
+          volume_use_duration: String(
+            form.get('volume_use_duration') ?? '').trim(),
+          migration_time: String(form.get('migration_time') ?? '').trim(),
+          migration_high_bytes: String(
+            form.get('migration_high_bytes') ?? '').trim(),
+          migration_low_bytes: String(
+            form.get('migration_low_bytes') ?? '').trim(),
+          next_pool: String(form.get('next_pool') ?? '').trim(),
+          storages: storages,
+          use_catalog: String(form.get('use_catalog') ?? '').trim(),
+          catalog_files: String(form.get('catalog_files') ?? '').trim(),
+          purge_oldest_volume: String(
+            form.get('purge_oldest_volume') ?? '').trim(),
+          action_on_purge: String(form.get('action_on_purge') ?? '').trim(),
+          recycle_oldest_volume: String(
+            form.get('recycle_oldest_volume') ?? '').trim(),
+          recycle_current_volume: String(
+            form.get('recycle_current_volume') ?? '').trim(),
           auto_prune: String(form.get('auto_prune') ?? '').trim(),
           recycle: String(form.get('recycle') ?? '').trim(),
+          recycle_pool: String(form.get('recycle_pool') ?? '').trim(),
+          scratch_pool: String(form.get('scratch_pool') ?? '').trim(),
+          catalog: String(form.get('catalog') ?? '').trim(),
+          file_retention: String(form.get('file_retention') ?? '').trim(),
+          job_retention: String(form.get('job_retention') ?? '').trim(),
+          minimum_block_size: String(
+            form.get('minimum_block_size') ?? '').trim(),
+          maximum_block_size: String(
+            form.get('maximum_block_size') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
         };
         if (!payload.pool_type) {
@@ -6804,10 +6950,26 @@ const char* kTestUiHtmlTemplate = R"HTML(
         if (!payload.label_format) {
           delete payload.label_format;
         }
+        if (!payload.cleaning_prefix) {
+          delete payload.cleaning_prefix;
+        }
+        if (!payload.label_type) {
+          delete payload.label_type;
+        }
         if (!payload.maximum_volumes) {
           delete payload.maximum_volumes;
         } else {
           payload.maximum_volumes = Number(payload.maximum_volumes);
+        }
+        if (!payload.maximum_volume_jobs) {
+          delete payload.maximum_volume_jobs;
+        } else {
+          payload.maximum_volume_jobs = Number(payload.maximum_volume_jobs);
+        }
+        if (!payload.maximum_volume_files) {
+          delete payload.maximum_volume_files;
+        } else {
+          payload.maximum_volume_files = Number(payload.maximum_volume_files);
         }
         if (!payload.maximum_volume_bytes) {
           delete payload.maximum_volume_bytes;
@@ -6819,6 +6981,62 @@ const char* kTestUiHtmlTemplate = R"HTML(
         } else {
           payload.volume_retention = Number(payload.volume_retention);
         }
+        if (!payload.volume_use_duration) {
+          delete payload.volume_use_duration;
+        } else {
+          payload.volume_use_duration = Number(payload.volume_use_duration);
+        }
+        if (!payload.migration_time) {
+          delete payload.migration_time;
+        } else {
+          payload.migration_time = Number(payload.migration_time);
+        }
+        if (!payload.migration_high_bytes) {
+          delete payload.migration_high_bytes;
+        } else {
+          payload.migration_high_bytes = Number(payload.migration_high_bytes);
+        }
+        if (!payload.migration_low_bytes) {
+          delete payload.migration_low_bytes;
+        } else {
+          payload.migration_low_bytes = Number(payload.migration_low_bytes);
+        }
+        if (!payload.next_pool) {
+          delete payload.next_pool;
+        }
+        if (payload.storages.length === 0) {
+          delete payload.storages;
+        }
+        if (!payload.use_catalog) {
+          delete payload.use_catalog;
+        } else {
+          payload.use_catalog = payload.use_catalog === 'true';
+        }
+        if (!payload.catalog_files) {
+          delete payload.catalog_files;
+        } else {
+          payload.catalog_files = payload.catalog_files === 'true';
+        }
+        if (!payload.purge_oldest_volume) {
+          delete payload.purge_oldest_volume;
+        } else {
+          payload.purge_oldest_volume = payload.purge_oldest_volume === 'true';
+        }
+        if (!payload.action_on_purge) {
+          delete payload.action_on_purge;
+        }
+        if (!payload.recycle_oldest_volume) {
+          delete payload.recycle_oldest_volume;
+        } else {
+          payload.recycle_oldest_volume
+            = payload.recycle_oldest_volume === 'true';
+        }
+        if (!payload.recycle_current_volume) {
+          delete payload.recycle_current_volume;
+        } else {
+          payload.recycle_current_volume
+            = payload.recycle_current_volume === 'true';
+        }
         if (!payload.auto_prune) {
           delete payload.auto_prune;
         } else {
@@ -6828,6 +7046,35 @@ const char* kTestUiHtmlTemplate = R"HTML(
           delete payload.recycle;
         } else {
           payload.recycle = payload.recycle === 'true';
+        }
+        if (!payload.recycle_pool) {
+          delete payload.recycle_pool;
+        }
+        if (!payload.scratch_pool) {
+          delete payload.scratch_pool;
+        }
+        if (!payload.catalog) {
+          delete payload.catalog;
+        }
+        if (!payload.file_retention) {
+          delete payload.file_retention;
+        } else {
+          payload.file_retention = Number(payload.file_retention);
+        }
+        if (!payload.job_retention) {
+          delete payload.job_retention;
+        } else {
+          payload.job_retention = Number(payload.job_retention);
+        }
+        if (!payload.minimum_block_size) {
+          delete payload.minimum_block_size;
+        } else {
+          payload.minimum_block_size = Number(payload.minimum_block_size);
+        }
+        if (!payload.maximum_block_size) {
+          delete payload.maximum_block_size;
+        } else {
+          payload.maximum_block_size = Number(payload.maximum_block_size);
         }
         if (!payload.description) {
           delete payload.description;
