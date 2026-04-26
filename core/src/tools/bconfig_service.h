@@ -753,6 +753,7 @@ struct StorageDeviceResourceSpec {
   std::optional<uint64_t> maximum_changer_wait{};
   std::optional<uint64_t> maximum_open_wait{};
   std::optional<uint32_t> maximum_open_volumes{};
+  std::optional<uint32_t> maximum_network_buffer_size{};
   std::optional<uint64_t> volume_poll_interval{};
   std::optional<uint64_t> maximum_rewind_wait{};
   std::optional<uint32_t> label_block_size{};
@@ -768,6 +769,7 @@ struct StorageDeviceResourceSpec {
   std::optional<std::string> mount_point{};
   std::optional<std::string> mount_command{};
   std::optional<std::string> unmount_command{};
+  std::optional<std::string> label_type{};
   std::optional<bool> no_rewind_on_close{};
   std::optional<bool> drive_tape_alert_enabled{};
   std::optional<bool> drive_crypto_enabled{};

@@ -804,6 +804,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
        .maximum_changer_wait = 301,
        .maximum_open_wait = 302,
        .maximum_open_volumes = 4,
+       .maximum_network_buffer_size = 1048576,
        .volume_poll_interval = 303,
        .maximum_rewind_wait = 304,
        .label_block_size = 64513,
@@ -819,6 +820,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
        .mount_point = std::string{"/mnt/tape"},
        .mount_command = std::string{"/usr/bin/mount /mnt/tape"},
        .unmount_command = std::string{"/usr/bin/umount /mnt/tape"},
+       .label_type = std::string{"ibm"},
        .no_rewind_on_close = false,
        .drive_tape_alert_enabled = true,
        .drive_crypto_enabled = true,
@@ -861,6 +863,8 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(created_text.find("MaximumChangerWait = 301"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumOpenWait = 302"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumOpenVolumes = 4"), std::string::npos);
+  EXPECT_NE(created_text.find("MaximumNetworkBufferSize = 1048576"),
+            std::string::npos);
   EXPECT_NE(created_text.find("VolumePollInterval = 303"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumRewindWait = 304"), std::string::npos);
   EXPECT_NE(created_text.find("LabelBlockSize = 64513"), std::string::npos);
@@ -883,6 +887,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
             std::string::npos);
   EXPECT_NE(created_text.find("UnmountCommand = \"/usr/bin/umount /mnt/tape\""),
             std::string::npos);
+  EXPECT_NE(created_text.find("LabelType = ibm"), std::string::npos);
   EXPECT_NE(created_text.find("NoRewindOnClose = no"), std::string::npos);
   EXPECT_NE(created_text.find("DriveTapeAlertEnabled = yes"),
             std::string::npos);
@@ -933,6 +938,8 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(updated_text.find("MaximumChangerWait = 301"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumOpenWait = 302"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumOpenVolumes = 4"), std::string::npos);
+  EXPECT_NE(updated_text.find("MaximumNetworkBufferSize = 1048576"),
+            std::string::npos);
   EXPECT_NE(updated_text.find("VolumePollInterval = 303"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumRewindWait = 304"), std::string::npos);
   EXPECT_NE(updated_text.find("LabelBlockSize = 64513"), std::string::npos);
@@ -955,6 +962,7 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("UnmountCommand = \"/usr/bin/umount /mnt/tape\""),
             std::string::npos);
+  EXPECT_NE(updated_text.find("LabelType = ibm"), std::string::npos);
   EXPECT_NE(updated_text.find("NoRewindOnClose = no"), std::string::npos);
   EXPECT_NE(updated_text.find("DriveTapeAlertEnabled = yes"),
             std::string::npos);
@@ -1017,11 +1025,13 @@ TEST(BconfigService, UpsertsStorageDeviceResourcesInSharedFiles)
   ASSERT_NE(original_brace, std::string::npos);
   shared_base_text.insert(original_brace,
                           "  accessmode = writeonly\n"
+                          "  maximumnetworkbuffersize = 2097152\n"
                           "  maximumrewindwait = 305\n"
                           "  autodeflate = both\n"
                           "  autodeflatealgorithm = lz4\n"
                           "  autodeflatelevel = 6\n"
-                          "  autoinflate = readonly\n");
+                          "  autoinflate = readonly\n"
+                          "  labeltype = ansi\n");
   WriteTextFile(shared_path,
                 shared_base_text
                     + "\nDevice {\n"
@@ -1042,11 +1052,14 @@ TEST(BconfigService, UpsertsStorageDeviceResourcesInSharedFiles)
   EXPECT_NE(shared_text.find("Archive Device = /tmp/updated-storage"),
             std::string::npos);
   EXPECT_NE(shared_text.find("AccessMode = write"), std::string::npos);
+  EXPECT_NE(shared_text.find("MaximumNetworkBufferSize = 2097152"),
+            std::string::npos);
   EXPECT_NE(shared_text.find("MaximumRewindWait = 305"), std::string::npos);
   EXPECT_NE(shared_text.find("AutoDeflate = readwrite"), std::string::npos);
   EXPECT_NE(shared_text.find("AutoDeflateAlgorithm = lz4"), std::string::npos);
   EXPECT_NE(shared_text.find("AutoDeflateLevel = 6"), std::string::npos);
   EXPECT_NE(shared_text.find("AutoInflate = read"), std::string::npos);
+  EXPECT_NE(shared_text.find("LabelType = ansi"), std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherDevice\""), std::string::npos);
 }
 

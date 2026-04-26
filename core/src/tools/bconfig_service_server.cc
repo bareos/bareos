@@ -311,6 +311,7 @@ struct StorageDeviceRequestSpec {
   std::optional<uint64_t> maximum_changer_wait{};
   std::optional<uint64_t> maximum_open_wait{};
   std::optional<uint32_t> maximum_open_volumes{};
+  std::optional<uint32_t> maximum_network_buffer_size{};
   std::optional<uint64_t> volume_poll_interval{};
   std::optional<uint64_t> maximum_rewind_wait{};
   std::optional<uint32_t> label_block_size{};
@@ -326,6 +327,7 @@ struct StorageDeviceRequestSpec {
   std::optional<std::string> mount_point{};
   std::optional<std::string> mount_command{};
   std::optional<std::string> unmount_command{};
+  std::optional<std::string> label_type{};
   std::optional<bool> no_rewind_on_close{};
   std::optional<bool> drive_tape_alert_enabled{};
   std::optional<bool> drive_crypto_enabled{};
@@ -6954,6 +6956,7 @@ http::response<http::string_body> HandleDeploymentStorageDevicePutRequest(
       .maximum_changer_wait = spec->maximum_changer_wait,
       .maximum_open_wait = spec->maximum_open_wait,
       .maximum_open_volumes = spec->maximum_open_volumes,
+      .maximum_network_buffer_size = spec->maximum_network_buffer_size,
       .volume_poll_interval = spec->volume_poll_interval,
       .maximum_rewind_wait = spec->maximum_rewind_wait,
       .label_block_size = spec->label_block_size,
@@ -6969,6 +6972,7 @@ http::response<http::string_body> HandleDeploymentStorageDevicePutRequest(
       .mount_point = spec->mount_point,
       .mount_command = spec->mount_command,
       .unmount_command = spec->unmount_command,
+      .label_type = spec->label_type,
       .no_rewind_on_close = spec->no_rewind_on_close,
       .drive_tape_alert_enabled = spec->drive_tape_alert_enabled,
       .drive_crypto_enabled = spec->drive_crypto_enabled,
@@ -11094,6 +11098,8 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   auto* maximum_open_wait = json_object_get(root.get(), "maximum_open_wait");
   auto* maximum_open_volumes
       = json_object_get(root.get(), "maximum_open_volumes");
+  auto* maximum_network_buffer_size
+      = json_object_get(root.get(), "maximum_network_buffer_size");
   auto* volume_poll_interval
       = json_object_get(root.get(), "volume_poll_interval");
   auto* maximum_rewind_wait
@@ -11113,6 +11119,7 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   auto* mount_point = json_object_get(root.get(), "mount_point");
   auto* mount_command = json_object_get(root.get(), "mount_command");
   auto* unmount_command = json_object_get(root.get(), "unmount_command");
+  auto* label_type = json_object_get(root.get(), "label_type");
   auto* no_rewind_on_close = json_object_get(root.get(), "no_rewind_on_close");
   auto* drive_tape_alert_enabled
       = json_object_get(root.get(), "drive_tape_alert_enabled");
@@ -11166,6 +11173,7 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
       || !require_string(mount_point, "mount_point")
       || !require_string(mount_command, "mount_command")
       || !require_string(unmount_command, "unmount_command")
+      || !require_string(label_type, "label_type")
       || !require_string(auto_deflate, "auto_deflate")
       || !require_string(auto_deflate_algorithm, "auto_deflate_algorithm")
       || !require_string(auto_inflate, "auto_inflate")
@@ -11182,6 +11190,8 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
       || !require_integer(maximum_changer_wait, "maximum_changer_wait")
       || !require_integer(maximum_open_wait, "maximum_open_wait")
       || !require_integer(maximum_open_volumes, "maximum_open_volumes")
+      || !require_integer(maximum_network_buffer_size,
+                          "maximum_network_buffer_size")
       || !require_integer(volume_poll_interval, "volume_poll_interval")
       || !require_integer(maximum_rewind_wait, "maximum_rewind_wait")
       || !require_integer(label_block_size, "label_block_size")
@@ -11269,6 +11279,8 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
                      spec.maximum_open_wait)
       || !assign_u32(maximum_open_volumes, "maximum_open_volumes",
                      spec.maximum_open_volumes)
+      || !assign_u32(maximum_network_buffer_size, "maximum_network_buffer_size",
+                     spec.maximum_network_buffer_size)
       || !assign_u64(volume_poll_interval, "volume_poll_interval",
                      spec.volume_poll_interval)
       || !assign_u64(maximum_rewind_wait, "maximum_rewind_wait",
@@ -11302,6 +11314,9 @@ std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
   }
   if (unmount_command && json_is_string(unmount_command)) {
     spec.unmount_command = std::string{json_string_value(unmount_command)};
+  }
+  if (label_type && json_is_string(label_type)) {
+    spec.label_type = std::string{json_string_value(label_type)};
   }
   if (no_rewind_on_close && json_is_boolean(no_rewind_on_close)) {
     spec.no_rewind_on_close = json_is_true(no_rewind_on_close);

@@ -2567,6 +2567,7 @@ std::string BuildStorageDaemonDeviceResourceContent(
     const std::optional<uint64_t>& maximum_changer_wait,
     const std::optional<uint64_t>& maximum_open_wait,
     const std::optional<uint32_t>& maximum_open_volumes,
+    const std::optional<uint32_t>& maximum_network_buffer_size,
     const std::optional<uint64_t>& volume_poll_interval,
     const std::optional<uint64_t>& maximum_rewind_wait,
     const std::optional<uint32_t>& label_block_size,
@@ -2582,6 +2583,7 @@ std::string BuildStorageDaemonDeviceResourceContent(
     const std::optional<std::string>& mount_point,
     const std::optional<std::string>& mount_command,
     const std::optional<std::string>& unmount_command,
+    const std::optional<std::string>& label_type,
     const std::optional<bool>& no_rewind_on_close,
     const std::optional<bool>& drive_tape_alert_enabled,
     const std::optional<bool>& drive_crypto_enabled,
@@ -2611,6 +2613,8 @@ std::string BuildStorageDaemonDeviceResourceContent(
   AppendIntegerDirective(content, "MaximumChangerWait", maximum_changer_wait);
   AppendIntegerDirective(content, "MaximumOpenWait", maximum_open_wait);
   AppendIntegerDirective(content, "MaximumOpenVolumes", maximum_open_volumes);
+  AppendIntegerDirective(content, "MaximumNetworkBufferSize",
+                         maximum_network_buffer_size);
   AppendIntegerDirective(content, "VolumePollInterval", volume_poll_interval);
   AppendIntegerDirective(content, "MaximumRewindWait", maximum_rewind_wait);
   AppendIntegerDirective(content, "LabelBlockSize", label_block_size);
@@ -2628,6 +2632,7 @@ std::string BuildStorageDaemonDeviceResourceContent(
   AppendQuotedDirective(content, "MountPoint", mount_point);
   AppendQuotedDirective(content, "MountCommand", mount_command);
   AppendQuotedDirective(content, "UnmountCommand", unmount_command);
+  AppendBareosDirective(content, "LabelType", label_type);
   AppendBoolDirective(content, "NoRewindOnClose", no_rewind_on_close);
   AppendBoolDirective(content, "DriveTapeAlertEnabled",
                       drive_tape_alert_enabled);
@@ -3642,6 +3647,7 @@ struct StorageDaemonDeviceWriteContext {
   std::optional<uint64_t> maximum_changer_wait{};
   std::optional<uint64_t> maximum_open_wait{};
   std::optional<uint32_t> maximum_open_volumes{};
+  std::optional<uint32_t> maximum_network_buffer_size{};
   std::optional<uint64_t> volume_poll_interval{};
   std::optional<uint64_t> maximum_rewind_wait{};
   std::optional<uint32_t> label_block_size{};
@@ -3657,6 +3663,7 @@ struct StorageDaemonDeviceWriteContext {
   std::optional<std::string> mount_point{};
   std::optional<std::string> mount_command{};
   std::optional<std::string> unmount_command{};
+  std::optional<std::string> label_type{};
   std::optional<bool> no_rewind_on_close{};
   std::optional<bool> drive_tape_alert_enabled{};
   std::optional<bool> drive_crypto_enabled{};
@@ -4958,7 +4965,7 @@ std::optional<std::string> CopyResourceName(const Resource* resource)
   return std::string{resource->resource_name_};
 }
 
-OperationResult<std::string> RenderPoolLabelTypeForConfig(int32_t label_type)
+OperationResult<std::string> RenderLabelTypeForConfig(int32_t label_type)
 {
   switch (label_type) {
     case B_BAREOS_LABEL:
@@ -4968,7 +4975,7 @@ OperationResult<std::string> RenderPoolLabelTypeForConfig(int32_t label_type)
     case B_IBM_LABEL:
       return {.value = std::string{"ibm"}};
     default:
-      return {.error = "unsupported director pool LabelType value "
+      return {.error = "unsupported LabelType value "
                        + std::to_string(label_type) + "."};
   }
 }
@@ -5608,7 +5615,7 @@ OperationResult<DirectorPoolWriteContext> LoadDirectorPoolWriteContext(
     context.content.scratch_pool = CopyResourceName(pool->ScratchPool);
     context.content.catalog = CopyResourceName(pool->catalog);
 
-    auto label_type = RenderPoolLabelTypeForConfig(pool->LabelType);
+    auto label_type = RenderLabelTypeForConfig(pool->LabelType);
     if (!label_type) { return {.error = label_type.error}; }
     if (!label_type.value->empty()) {
       context.content.label_type = std::move(*label_type.value);
@@ -8069,6 +8076,9 @@ LoadStorageDaemonDeviceWriteContext(
     if (HasMemberSource(*device, {"MaximumOpenVolumes"})) {
       context.maximum_open_volumes = device->max_open_vols;
     }
+    if (HasMemberSource(*device, {"MaximumNetworkBufferSize"})) {
+      context.maximum_network_buffer_size = device->max_network_buffer_size;
+    }
     if (HasMemberSource(*device, {"VolumePollInterval"})) {
       context.volume_poll_interval
           = static_cast<uint64_t>(device->vol_poll_interval);
@@ -8133,6 +8143,16 @@ LoadStorageDaemonDeviceWriteContext(
     }
     if (device->unmount_command && device->unmount_command[0] != '\0') {
       context.unmount_command = std::string{device->unmount_command};
+    }
+    if (HasMemberSource(*device, {"LabelType"})) {
+      auto label_type = RenderLabelTypeForConfig(device->label_type);
+      if (!label_type) {
+        return {.error = "storage-daemon device '" + std::string{device_name}
+                         + "' has an unsupported LabelType value."};
+      }
+      if (!label_type.value->empty()) {
+        context.label_type = std::move(*label_type.value);
+      }
     }
     if (HasMemberSource(*device, {"NoRewindOnClose"})) {
       context.no_rewind_on_close = device->norewindonclose;
@@ -8594,6 +8614,7 @@ OperationResult<std::monostate> SyncStorageDaemonConfig(
       device_context.value->maximum_changer_wait,
       device_context.value->maximum_open_wait,
       device_context.value->maximum_open_volumes,
+      device_context.value->maximum_network_buffer_size,
       device_context.value->volume_poll_interval,
       device_context.value->maximum_rewind_wait,
       device_context.value->label_block_size,
@@ -8607,7 +8628,7 @@ OperationResult<std::monostate> SyncStorageDaemonConfig(
       device_context.value->maximum_job_spool_size,
       device_context.value->drive_index, device_context.value->mount_point,
       device_context.value->mount_command,
-      device_context.value->unmount_command,
+      device_context.value->unmount_command, device_context.value->label_type,
       device_context.value->no_rewind_on_close,
       device_context.value->drive_tape_alert_enabled,
       device_context.value->drive_crypto_enabled,
@@ -14569,6 +14590,10 @@ ServiceState::UpsertStorageDeviceResource(
   const auto maximum_open_volumes = spec.maximum_open_volumes
                                         ? spec.maximum_open_volumes
                                         : context.value->maximum_open_volumes;
+  const auto maximum_network_buffer_size
+      = spec.maximum_network_buffer_size
+            ? spec.maximum_network_buffer_size
+            : context.value->maximum_network_buffer_size;
   const auto volume_poll_interval = spec.volume_poll_interval
                                         ? spec.volume_poll_interval
                                         : context.value->volume_poll_interval;
@@ -14611,6 +14636,8 @@ ServiceState::UpsertStorageDeviceResource(
   const auto unmount_command = spec.unmount_command
                                    ? spec.unmount_command
                                    : context.value->unmount_command;
+  const auto label_type
+      = spec.label_type ? spec.label_type : context.value->label_type;
   const auto no_rewind_on_close = spec.no_rewind_on_close
                                       ? spec.no_rewind_on_close
                                       : context.value->no_rewind_on_close;
@@ -14672,13 +14699,14 @@ ServiceState::UpsertStorageDeviceResource(
       device_name, *media_type, *archive_device, *device_type, access_mode,
       device_options, diagnostic_device, auto_select, changer_device,
       changer_command, alert_command, maximum_changer_wait, maximum_open_wait,
-      maximum_open_volumes, volume_poll_interval, maximum_rewind_wait,
-      label_block_size, minimum_block_size, maximum_block_size,
-      maximum_file_size, volume_capacity, maximum_concurrent_jobs,
-      spool_directory, maximum_spool_size, maximum_job_spool_size, drive_index,
-      mount_point, mount_command, unmount_command, no_rewind_on_close,
-      drive_tape_alert_enabled, drive_crypto_enabled, query_crypto_status,
-      auto_deflate, auto_deflate_algorithm, auto_deflate_level, auto_inflate,
+      maximum_open_volumes, maximum_network_buffer_size, volume_poll_interval,
+      maximum_rewind_wait, label_block_size, minimum_block_size,
+      maximum_block_size, maximum_file_size, volume_capacity,
+      maximum_concurrent_jobs, spool_directory, maximum_spool_size,
+      maximum_job_spool_size, drive_index, mount_point, mount_command,
+      unmount_command, label_type, no_rewind_on_close, drive_tape_alert_enabled,
+      drive_crypto_enabled, query_crypto_status, auto_deflate,
+      auto_deflate_algorithm, auto_deflate_level, auto_inflate,
       collect_statistics, eof_on_error_is_eot, description);
   const auto resource_directory
       = storage_config.value->path / "bareos-sd.d" / "device";
