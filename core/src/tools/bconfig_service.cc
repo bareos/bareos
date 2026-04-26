@@ -1061,6 +1061,7 @@ std::string BuildDirectorClientResourceContent(
     const std::optional<uint64_t>& hard_quota,
     const std::optional<uint64_t>& soft_quota_grace_period,
     const std::optional<uint64_t>& file_retention,
+    const std::optional<uint64_t>& job_retention,
     const std::optional<uint32_t>& ndmp_log_level,
     const std::optional<uint32_t>& ndmp_block_size,
     const std::optional<bool>& ndmp_use_lmdb,
@@ -1090,6 +1091,7 @@ std::string BuildDirectorClientResourceContent(
   AppendIntegerDirective(content, "SoftQuotaGracePeriod",
                          soft_quota_grace_period);
   AppendIntegerDirective(content, "FileRetention", file_retention);
+  AppendIntegerDirective(content, "JobRetention", job_retention);
   AppendIntegerDirective(content, "NdmpLogLevel", ndmp_log_level);
   AppendIntegerDirective(content, "NdmpBlockSize", ndmp_block_size);
   AppendBoolDirective(content, "NdmpUseLmdb", ndmp_use_lmdb);
@@ -2490,6 +2492,7 @@ struct DirectorClientWriteContext {
   std::optional<uint64_t> hard_quota{};
   std::optional<uint64_t> soft_quota_grace_period{};
   std::optional<uint64_t> file_retention{};
+  std::optional<uint64_t> job_retention{};
   std::optional<uint32_t> ndmp_log_level{};
   std::optional<uint32_t> ndmp_block_size{};
   std::optional<bool> ndmp_use_lmdb{};
@@ -2889,6 +2892,9 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
     }
     if (HasMemberSource(*client, {"FileRetention"})) {
       context.file_retention = client->FileRetention;
+    }
+    if (HasMemberSource(*client, {"JobRetention"})) {
+      context.job_retention = client->JobRetention;
     }
     if (HasMemberSource(*client, {"NdmpLogLevel"})) {
       context.ndmp_log_level = client->ndmp_loglevel;
@@ -8514,6 +8520,8 @@ ServiceState::UpsertDirectorClientResource(
   const auto file_retention = spec.file_retention
                                   ? spec.file_retention
                                   : context.value->file_retention;
+  const auto job_retention
+      = spec.job_retention ? spec.job_retention : context.value->job_retention;
   const auto ndmp_log_level = spec.ndmp_log_level
                                   ? spec.ndmp_log_level
                                   : context.value->ndmp_log_level;
@@ -8540,10 +8548,11 @@ ServiceState::UpsertDirectorClientResource(
   const auto content = BuildDirectorClientResourceContent(
       client_name, *address, lan_address, *password, effective_port, enabled,
       passive, strict_quotas, quota_include_failed_jobs, soft_quota, hard_quota,
-      soft_quota_grace_period, file_retention, ndmp_log_level, ndmp_block_size,
-      ndmp_use_lmdb, auto_prune, connection_from_director_to_client,
-      connection_from_client_to_director, maximum_concurrent_jobs,
-      heartbeat_interval, maximum_bandwidth_per_job, description);
+      soft_quota_grace_period, file_retention, job_retention, ndmp_log_level,
+      ndmp_block_size, ndmp_use_lmdb, auto_prune,
+      connection_from_director_to_client, connection_from_client_to_director,
+      maximum_concurrent_jobs, heartbeat_interval, maximum_bandwidth_per_job,
+      description);
 
   const auto resource_directory
       = director_config.value->path / "bareos-dir.d" / "client";

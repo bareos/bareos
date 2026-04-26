@@ -237,6 +237,7 @@ struct DirectorClientResourceSpec {
   std::optional<uint64_t> hard_quota{};
   std::optional<uint64_t> soft_quota_grace_period{};
   std::optional<uint64_t> file_retention{};
+  std::optional<uint64_t> job_retention{};
   std::optional<uint32_t> ndmp_log_level{};
   std::optional<uint32_t> ndmp_block_size{};
   std::optional<bool> ndmp_use_lmdb{};
