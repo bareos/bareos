@@ -2281,16 +2281,19 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-pool-volume-retention" name="volume_retention"
                type="number" min="0">
 
-        <label class="checkbox-label" for="director-pool-auto-prune">
-          <input id="director-pool-auto-prune" name="auto_prune"
-                 type="checkbox">
-          Auto prune
-        </label>
+        <label for="director-pool-auto-prune">AutoPrune</label>
+        <select id="director-pool-auto-prune" name="auto_prune">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-pool-recycle">
-          <input id="director-pool-recycle" name="recycle" type="checkbox">
-          Recycle
-        </label>
+        <label for="director-pool-recycle">Recycle</label>
+        <select id="director-pool-recycle" name="recycle">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-pool-description">Description</label>
         <input id="director-pool-description" name="description"
@@ -2338,29 +2341,35 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="director-catalog-db-socket">DbSocket</label>
         <input id="director-catalog-db-socket" name="db_socket">
 
-        <label class="checkbox-label" for="director-catalog-multiple-connections">
-          <input id="director-catalog-multiple-connections"
-                 name="multiple_connections" type="checkbox">
-          MultipleConnections
-        </label>
+        <label for="director-catalog-multiple-connections">MultipleConnections</label>
+        <select id="director-catalog-multiple-connections"
+                name="multiple_connections">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-catalog-disable-batch-insert">
-          <input id="director-catalog-disable-batch-insert"
-                 name="disable_batch_insert" type="checkbox">
-          DisableBatchInsert
-        </label>
+        <label for="director-catalog-disable-batch-insert">DisableBatchInsert</label>
+        <select id="director-catalog-disable-batch-insert"
+                name="disable_batch_insert">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-catalog-reconnect">
-          <input id="director-catalog-reconnect" name="reconnect"
-                 type="checkbox" checked>
-          Reconnect
-        </label>
+        <label for="director-catalog-reconnect">Reconnect</label>
+        <select id="director-catalog-reconnect" name="reconnect">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-catalog-exit-on-fatal">
-          <input id="director-catalog-exit-on-fatal" name="exit_on_fatal"
-                 type="checkbox">
-          Exit on fatal
-        </label>
+        <label for="director-catalog-exit-on-fatal">ExitOnFatal</label>
+        <select id="director-catalog-exit-on-fatal" name="exit_on_fatal">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-catalog-min-connections">MinConnections</label>
         <input id="director-catalog-min-connections" name="min_connections"
@@ -2411,11 +2420,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-schedule-description" name="description"
                placeholder="Managed schedule resource">
 
-        <label class="checkbox-label" for="director-schedule-enabled">
-          <input id="director-schedule-enabled" name="enabled"
-                 type="checkbox" checked>
-          Enabled
-        </label>
+        <label for="director-schedule-enabled">Enabled</label>
+        <select id="director-schedule-enabled" name="enabled">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-schedule-runs">Run entries</label>
         <textarea id="director-schedule-runs" name="run_entries"
@@ -2579,17 +2589,20 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <input id="director-fileset-description" name="description"
                placeholder="Managed fileset resource">
 
-        <label class="checkbox-label" for="director-fileset-ignore-fileset-changes">
-          <input id="director-fileset-ignore-fileset-changes"
-                 name="ignore_fileset_changes" type="checkbox">
-          IgnoreFileSetChanges
-        </label>
+        <label for="director-fileset-ignore-fileset-changes">IgnoreFileSetChanges</label>
+        <select id="director-fileset-ignore-fileset-changes"
+                name="ignore_fileset_changes">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
-        <label class="checkbox-label" for="director-fileset-enable-vss">
-          <input id="director-fileset-enable-vss"
-                 name="enable_vss" type="checkbox" checked>
-          EnableVSS
-        </label>
+        <label for="director-fileset-enable-vss">EnableVSS</label>
+        <select id="director-fileset-enable-vss" name="enable_vss">
+          <option value="">Keep existing</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
 
         <label for="director-fileset-include-blocks">Include blocks</label>
         <textarea id="director-fileset-include-blocks" name="include_blocks"
@@ -6563,8 +6576,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
           maximum_volumes: String(form.get('maximum_volumes') ?? '').trim(),
           maximum_volume_bytes: String(form.get('maximum_volume_bytes') ?? '').trim(),
           volume_retention: String(form.get('volume_retention') ?? '').trim(),
-          auto_prune: document.getElementById('director-pool-auto-prune').checked,
-          recycle: document.getElementById('director-pool-recycle').checked,
+          auto_prune: String(form.get('auto_prune') ?? '').trim(),
+          recycle: String(form.get('recycle') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
         };
         if (!payload.pool_type) {
@@ -6587,6 +6600,16 @@ const char* kTestUiHtmlTemplate = R"HTML(
           delete payload.volume_retention;
         } else {
           payload.volume_retention = Number(payload.volume_retention);
+        }
+        if (!payload.auto_prune) {
+          delete payload.auto_prune;
+        } else {
+          payload.auto_prune = payload.auto_prune === 'true';
+        }
+        if (!payload.recycle) {
+          delete payload.recycle;
+        } else {
+          payload.recycle = payload.recycle === 'true';
         }
         if (!payload.description) {
           delete payload.description;
@@ -6630,12 +6653,12 @@ const char* kTestUiHtmlTemplate = R"HTML(
           db_password: String(form.get('db_password') ?? '').trim(),
           db_user: String(form.get('db_user') ?? '').trim(),
           db_name: String(form.get('db_name') ?? '').trim(),
-          multiple_connections: document.getElementById(
-            'director-catalog-multiple-connections').checked,
-          disable_batch_insert: document.getElementById(
-            'director-catalog-disable-batch-insert').checked,
-          reconnect: document.getElementById('director-catalog-reconnect').checked,
-          exit_on_fatal: document.getElementById('director-catalog-exit-on-fatal').checked,
+          multiple_connections: String(
+            form.get('multiple_connections') ?? '').trim(),
+          disable_batch_insert: String(
+            form.get('disable_batch_insert') ?? '').trim(),
+          reconnect: String(form.get('reconnect') ?? '').trim(),
+          exit_on_fatal: String(form.get('exit_on_fatal') ?? '').trim(),
           min_connections: String(form.get('min_connections') ?? '').trim(),
           max_connections: String(form.get('max_connections') ?? '').trim(),
           inc_connections: String(form.get('inc_connections') ?? '').trim(),
@@ -6662,6 +6685,26 @@ const char* kTestUiHtmlTemplate = R"HTML(
         }
         if (!payload.db_name) {
           delete payload.db_name;
+        }
+        if (!payload.multiple_connections) {
+          delete payload.multiple_connections;
+        } else {
+          payload.multiple_connections = payload.multiple_connections === 'true';
+        }
+        if (!payload.disable_batch_insert) {
+          delete payload.disable_batch_insert;
+        } else {
+          payload.disable_batch_insert = payload.disable_batch_insert === 'true';
+        }
+        if (!payload.reconnect) {
+          delete payload.reconnect;
+        } else {
+          payload.reconnect = payload.reconnect === 'true';
+        }
+        if (!payload.exit_on_fatal) {
+          delete payload.exit_on_fatal;
+        } else {
+          payload.exit_on_fatal = payload.exit_on_fatal === 'true';
         }
         if (!payload.min_connections) {
           delete payload.min_connections;
@@ -6793,11 +6836,16 @@ const char* kTestUiHtmlTemplate = R"HTML(
           .filter((line) => line.length > 0);
         const payload = {
           description: String(form.get('description') ?? '').trim(),
-          enabled: document.getElementById('director-schedule-enabled').checked,
+          enabled: String(form.get('enabled') ?? '').trim(),
           run_entries: runEntries,
         };
         if (!payload.description) {
           delete payload.description;
+        }
+        if (!payload.enabled) {
+          delete payload.enabled;
+        } else {
+          payload.enabled = payload.enabled === 'true';
         }
         if (payload.run_entries.length === 0) {
           delete payload.run_entries;
@@ -6896,14 +6944,25 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const excludeText = String(form.get('exclude_blocks') ?? '').trim();
         const payload = {
           description: String(form.get('description') ?? '').trim(),
-          ignore_fileset_changes:
-            document.getElementById('director-fileset-ignore-fileset-changes').checked,
-          enable_vss: document.getElementById('director-fileset-enable-vss').checked,
+          ignore_fileset_changes: String(
+            form.get('ignore_fileset_changes') ?? '').trim(),
+          enable_vss: String(form.get('enable_vss') ?? '').trim(),
           include_blocks: includeText ? [includeText] : [],
           exclude_blocks: excludeText ? [excludeText] : [],
         };
         if (!payload.description) {
           delete payload.description;
+        }
+        if (!payload.ignore_fileset_changes) {
+          delete payload.ignore_fileset_changes;
+        } else {
+          payload.ignore_fileset_changes
+            = payload.ignore_fileset_changes === 'true';
+        }
+        if (!payload.enable_vss) {
+          delete payload.enable_vss;
+        } else {
+          payload.enable_vss = payload.enable_vss === 'true';
         }
         if (payload.include_blocks.length === 0) {
           delete payload.include_blocks;
