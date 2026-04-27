@@ -36,8 +36,8 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/generated/bareos-version.js.in
   ${CMAKE_CURRENT_BINARY_DIR}/bareos-version.js.tmp @ONLY
 )
-# Only overwrite bareos-version.js when the content changes, to avoid
-# making dist/index.html appear stale on every cmake run.
+# Only overwrite bareos-version.js when the content changes, to avoid making
+# dist/index.html appear stale on every cmake run.
 execute_process(
   COMMAND
     ${CMAKE_COMMAND} -E copy_if_different
@@ -46,14 +46,79 @@ execute_process(
 )
 
 set(WEBUI_VUE_SRC "${CMAKE_CURRENT_SOURCE_DIR}")
-set(WEBUI_VUE_DIST "${WEBUI_VUE_SRC}/dist")
+set(WEBUI_VUE_DIST "${CMAKE_CURRENT_BINARY_DIR}/dist")
+set(WEBUI_VUE_PACKAGE_JSON "${WEBUI_VUE_SRC}/package.json")
+set(WEBUI_VUE_PACKAGE_LOCK "${WEBUI_VUE_SRC}/package-lock.json")
+set(WEBUI_VUE_BUILD_STAMP "${CMAKE_CURRENT_BINARY_DIR}/webui-vue-build.stamp")
+set(WEBUI_VUE_AUDIT_STAMP "${CMAKE_CURRENT_BINARY_DIR}/webui-vue-audit.stamp")
+set(WEBUI_VUE_NPM_CI_STAMP "${CMAKE_CURRENT_BINARY_DIR}/webui-vue-npm-ci.stamp")
+set(WEBUI_VUE_NPM_MISSING_SCRIPT
+    "${CMAKE_CURRENT_BINARY_DIR}/webui-vue-npm-missing.cmake"
+)
 
-# dist/ is pre-built by developers and committed to the repository.
-# CMake does not run npm — just installs the committed dist/ files.
-# To update the frontend, run:
-#   cd webui-vue && npm install && npm run build
-# then commit the updated dist/.
-add_custom_target(bareos-webui-vue-build ALL)
+find_program(NPM_EXECUTABLE npm)
+file(
+  GENERATE
+  OUTPUT "${WEBUI_VUE_NPM_MISSING_SCRIPT}"
+  CONTENT
+    "message(FATAL_ERROR \"npm executable not found. Install npm and re-run CMake to use bareos-webui-vue-build.\")\n"
+)
+
+file(GLOB_RECURSE WEBUI_VUE_BUILD_INPUTS CONFIGURE_DEPENDS
+     "${WEBUI_VUE_SRC}/src/*" "${WEBUI_VUE_SRC}/public/*"
+     "${WEBUI_VUE_SRC}/scripts/*"
+)
+list(APPEND WEBUI_VUE_BUILD_INPUTS "${WEBUI_VUE_SRC}/index.html"
+     "${WEBUI_VUE_SRC}/vite.config.js" "${WEBUI_VUE_PACKAGE_JSON}"
+     "${WEBUI_VUE_PACKAGE_LOCK}"
+)
+
+# The standalone bareos-webui-vue-build target generates the installable bundle
+# in the build tree, keeping source-tree dist/ artifacts untracked.
+if(NPM_EXECUTABLE)
+  add_custom_command(
+    OUTPUT "${WEBUI_VUE_NPM_CI_STAMP}"
+    COMMAND ${CMAKE_COMMAND} -E chdir "${WEBUI_VUE_SRC}" "${NPM_EXECUTABLE}" ci
+    COMMAND ${CMAKE_COMMAND} -E touch "${WEBUI_VUE_NPM_CI_STAMP}"
+    DEPENDS "${WEBUI_VUE_PACKAGE_JSON}" "${WEBUI_VUE_PACKAGE_LOCK}"
+    COMMENT "Installing Bareos WebUI Vue npm dependencies"
+    USES_TERMINAL VERBATIM
+  )
+
+  add_custom_command(
+    OUTPUT "${WEBUI_VUE_AUDIT_STAMP}"
+    COMMAND ${CMAKE_COMMAND} -E chdir "${WEBUI_VUE_SRC}" "${NPM_EXECUTABLE}"
+            audit
+    COMMAND ${CMAKE_COMMAND} -E touch "${WEBUI_VUE_AUDIT_STAMP}"
+    DEPENDS "${WEBUI_VUE_NPM_CI_STAMP}" "${WEBUI_VUE_PACKAGE_JSON}"
+            "${WEBUI_VUE_PACKAGE_LOCK}"
+    COMMENT "Auditing Bareos WebUI Vue npm packages"
+    USES_TERMINAL VERBATIM
+  )
+
+  add_custom_command(
+    OUTPUT "${WEBUI_VUE_BUILD_STAMP}"
+    COMMAND ${CMAKE_COMMAND} -E rm -rf "${WEBUI_VUE_DIST}"
+    COMMAND ${CMAKE_COMMAND} -E chdir "${WEBUI_VUE_SRC}" "${NPM_EXECUTABLE}" run
+            build -- --outDir "${WEBUI_VUE_DIST}"
+    COMMAND ${CMAKE_COMMAND} -E touch "${WEBUI_VUE_BUILD_STAMP}"
+    DEPENDS "${WEBUI_VUE_AUDIT_STAMP}" ${WEBUI_VUE_BUILD_INPUTS}
+    COMMENT "Building Bareos WebUI Vue dist bundle"
+    USES_TERMINAL VERBATIM
+  )
+
+  add_custom_target(bareos-webui-vue-audit DEPENDS "${WEBUI_VUE_AUDIT_STAMP}")
+  add_custom_target(
+    bareos-webui-vue-build ALL DEPENDS "${WEBUI_VUE_BUILD_STAMP}"
+  )
+else()
+  add_custom_target(
+    bareos-webui-vue-audit
+    COMMAND ${CMAKE_COMMAND} -P "${WEBUI_VUE_NPM_MISSING_SCRIPT}"
+    VERBATIM
+  )
+  add_custom_target(bareos-webui-vue-build ALL DEPENDS bareos-webui-vue-audit)
+endif()
 
 install(
   DIRECTORY ${WEBUI_VUE_DIST}/

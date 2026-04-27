@@ -94,25 +94,19 @@ Before any PR is merged, these checks must pass locally:
 ## Vue WebUI (webui-vue)
 
 The `webui-vue/` directory contains a Vite/Vue SPA. Its compiled output is
-committed under `webui-vue/dist/` and served directly by Apache.
+generated under `cmake-build/webui-vue/dist/` and installed from there.
 
-**Always rebuild `dist/` before committing any change to `webui-vue/src/`
-or `webui-vue/vite.config.js`**, otherwise the deployed app will not reflect
-your changes:
+**Rebuild the Vue bundle before validating or installing changes to**
+`webui-vue/src/` **or** `webui-vue/vite.config.js`:
 
 ```bash
-cd webui-vue
-npm install   # only needed the first time or after package.json changes
-npm run build
-cd ..
-git add webui-vue/dist/
+cmake --build cmake-build --target bareos-webui-vue-build --parallel "$(nproc)"
 ```
 
-**Never run `npm run build` with `VITE_*` environment variables set**
-when producing the committed dist. The system tests temporarily
-rebuild dist/ with test-specific ports; always rebuild clean
-(no env overrides) before committing. `dist/.build-env` is a
-test-runner artefact and is listed in `.gitignore`.
+`webui-vue/dist/` is ignored and should not be committed. The system tests
+temporarily rebuild Vite output with test-specific ports in their own bundle
+directory. `dist/.build-env` is a test-runner artefact and is listed in
+`.gitignore`.
 
 ## Important Notes
 - **Warnings are errors**: The build uses `-Werror -Wall -Wextra`. Fix all compiler warnings.

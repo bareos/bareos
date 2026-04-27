@@ -55,7 +55,6 @@ function snapshot_webui_vue_sources()
   local output_file="$1"
   (
     cd "${CMAKE_SOURCE_DIR}"
-    find webui-vue/dist -type f -print0 | sort -z | xargs -0 sha256sum
     sha256sum webui-vue/src/generated/bareos-version.js
   ) >"${output_file}"
 }
@@ -114,8 +113,8 @@ if ! [ -x node_modules/.bin/playwright ] || ! [ -x node_modules/.bin/vitest ]; t
 fi
 
 VITE_DIRECTOR_WS_URL="ws://127.0.0.1:${proxy_port}" \
-VITE_DIRECTOR_HOST="127.0.0.1" \
-VITE_DIRECTOR_PORT="${BAREOS_DIRECTOR_PORT}" \
+  VITE_DIRECTOR_HOST="127.0.0.1" \
+  VITE_DIRECTOR_PORT="${BAREOS_DIRECTOR_PORT}" \
   "${NPM_EXECUTABLE}" exec vite build -- --outDir "${bundle_dir}" \
   >"${tmp}/webui-vue-build.out" 2>&1
 popd >/dev/null
@@ -159,7 +158,7 @@ fi
 
 snapshot_webui_vue_sources "${source_snapshot_after_file}"
 if ! cmp -s "${source_snapshot_file}" "${source_snapshot_after_file}"; then
-  set_error "webui-vue tests modified committed source artifacts under webui-vue/dist or src/generated/bareos-version.js"
+  set_error "webui-vue tests modified tracked source artifacts under webui-vue/src/generated/bareos-version.js"
 fi
 
 kill "${FRONTEND_PID}"
