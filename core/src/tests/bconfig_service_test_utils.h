@@ -19,11 +19,18 @@
    02110-1301, USA.
  */
 
-#ifndef BAREOS_CORE_SRC_TESTS_BCONFIG_SERVICE_TEST_UTILS_H_
-#define BAREOS_CORE_SRC_TESTS_BCONFIG_SERVICE_TEST_UTILS_H_
+#ifndef BAREOS_TESTS_BCONFIG_SERVICE_TEST_UTILS_H_
+#define BAREOS_TESTS_BCONFIG_SERVICE_TEST_UTILS_H_
 
 #include "tools/bconfig_service.h"
 
+#include <boost/asio/connect.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/address.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <jansson.h>
 #include <gtest/gtest.h>
 
 #include <algorithm>
@@ -32,16 +39,24 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <thread>
 
 #if HAVE_WIN32
 #  include <process.h>
 #else
+#  include <csignal>
+#  include <fcntl.h>
+#  include <sys/wait.h>
 #  include <unistd.h>
 #endif
 
 namespace bconfig::service {
 namespace {
+
+namespace net = boost::asio;
+namespace http = boost::beast::http;
+using tcp = net::ip::tcp;
 
 [[maybe_unused]] std::filesystem::path MakeTempPath()
 {
@@ -150,6 +165,147 @@ class [[maybe_unused]] ScopedEnvironmentVariable {
   ASSERT_TRUE(file.good());
 }
 
+struct [[maybe_unused]] HttpResponse {
+  unsigned status_code{};
+  std::string body{};
+};
+
+using JsonHandle = std::unique_ptr<json_t, decltype(&json_decref)>;
+
+[[maybe_unused]] JsonHandle ParseJson(std::string_view body)
+{
+  json_error_t error{};
+  return JsonHandle{json_loadb(body.data(), body.size(), 0, &error),
+                    &json_decref};
+}
+
+[[maybe_unused]] uint16_t FindUnusedTcpPort()
+{
+  net::io_context io_context;
+  tcp::acceptor acceptor{io_context, {net::ip::make_address("127.0.0.1"), 0}};
+  return acceptor.local_endpoint().port();
+}
+
+#if !HAVE_WIN32
+[[maybe_unused]] std::filesystem::path FindBuiltBconfigServiceBinary()
+{
+  const auto self = std::filesystem::canonical("/proc/self/exe");
+  return self.parent_path().parent_path() / "tools" / "bconfig-service";
+}
+
+class [[maybe_unused]] ScopedBconfigServiceServer {
+ public:
+  explicit ScopedBconfigServiceServer(const std::filesystem::path& state_dir)
+      : port_{FindUnusedTcpPort()}
+  {
+    const auto server_path = FindBuiltBconfigServiceBinary();
+    if (!std::filesystem::exists(server_path)) {
+      startup_error_
+          = "bconfig-service executable not found at " + server_path.string();
+      return;
+    }
+
+    child_pid_ = fork();
+    if (child_pid_ < 0) {
+      startup_error_ = "failed to fork bconfig-service test server";
+      return;
+    }
+
+    if (child_pid_ == 0) {
+      const auto null_fd = open("/dev/null", O_WRONLY);
+      if (null_fd >= 0) {
+        dup2(null_fd, STDOUT_FILENO);
+        dup2(null_fd, STDERR_FILENO);
+        close(null_fd);
+      }
+
+      const auto port = std::to_string(port_);
+      const auto state_dir_string = state_dir.string();
+      execl(server_path.c_str(), server_path.c_str(), "--address", "127.0.0.1",
+            "--port", port.c_str(), "--state-dir", state_dir_string.c_str(),
+            static_cast<char*>(nullptr));
+      _exit(127);
+    }
+
+    ready_ = WaitUntilReady();
+    if (!ready_ && startup_error_.empty()) {
+      startup_error_ = "bconfig-service test server did not become ready";
+    }
+  }
+
+  ~ScopedBconfigServiceServer()
+  {
+    if (child_pid_ <= 0) { return; }
+
+    kill(child_pid_, SIGTERM);
+
+    int status = 0;
+    for (int attempt = 0; attempt < 20; ++attempt) {
+      const auto waited = waitpid(child_pid_, &status, WNOHANG);
+      if (waited == child_pid_) { return; }
+      std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    }
+
+    kill(child_pid_, SIGKILL);
+    waitpid(child_pid_, &status, 0);
+  }
+
+  bool ready() const { return ready_; }
+  const std::string& startup_error() const { return startup_error_; }
+
+  HttpResponse Get(std::string_view target) const
+  {
+    net::io_context io_context;
+    tcp::resolver resolver{io_context};
+    tcp::socket socket{io_context};
+    const auto endpoints = resolver.resolve("127.0.0.1", std::to_string(port_));
+    net::connect(socket, endpoints);
+
+    http::request<http::empty_body> request{http::verb::get,
+                                            std::string{target}, 11};
+    request.set(http::field::host, "127.0.0.1");
+    request.set(http::field::user_agent, "bconfig-service-test");
+    http::write(socket, request);
+
+    boost::beast::flat_buffer buffer;
+    http::response<http::string_body> response;
+    http::read(socket, buffer, response);
+
+    boost::system::error_code error_code;
+    socket.shutdown(tcp::socket::shutdown_both, error_code);
+    return {.status_code = response.result_int(), .body = response.body()};
+  }
+
+ private:
+  bool WaitUntilReady()
+  {
+    for (int attempt = 0; attempt < 100; ++attempt) {
+      int status = 0;
+      const auto waited = waitpid(child_pid_, &status, WNOHANG);
+      if (waited == child_pid_) {
+        startup_error_ = "bconfig-service exited during startup";
+        return false;
+      }
+
+      try {
+        const auto response = Get("/v1/health");
+        if (response.status_code == 200) { return true; }
+      } catch (...) {
+      }
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    }
+
+    return false;
+  }
+
+  pid_t child_pid_{-1};
+  uint16_t port_{0};
+  bool ready_{false};
+  std::string startup_error_{};
+};
+#endif
+
 [[maybe_unused]] void AddCounterFixtures(
     const std::filesystem::path& source_root)
 {
@@ -213,4 +369,4 @@ class [[maybe_unused]] ScopedEnvironmentVariable {
 }  // namespace
 }  // namespace bconfig::service
 
-#endif  // BAREOS_CORE_SRC_TESTS_BCONFIG_SERVICE_TEST_UTILS_H_
+#endif  // BAREOS_TESTS_BCONFIG_SERVICE_TEST_UTILS_H_

@@ -1166,6 +1166,127 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
             std::string::npos);
 }
 
+TEST(BconfigService, ServesStoragePrefillRoutesOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP prefill route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory state_root{MakeTempPath()};
+
+  {
+    ServiceState state{state_root.path()};
+
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    const auto source_fixture_root = FindFixtureRoot();
+    ASSERT_FALSE(source_fixture_root.empty());
+    std::filesystem::create_directories(source_root.path());
+    std::filesystem::copy(source_fixture_root / "bareos-sd.d",
+                          source_root.path() / "bareos-sd.d",
+                          std::filesystem::copy_options::recursive);
+    WriteTextFile(source_root.path() / "bareos-sd.d/storage/bareos-sd.conf",
+                  "Storage {\n"
+                  "  Name = \"bareos-sd\"\n"
+                  "}\n");
+
+    auto import_job
+        = state.CreateJob({.type = "import_configuration",
+                           .deployment_id = std::string{"prod"},
+                           .source_path = source_root.path().string()});
+    ASSERT_TRUE(import_job);
+    auto imported = WaitForJobTerminal(state, import_job.value->id);
+    ASSERT_TRUE(imported.has_value());
+    ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+    auto daemon = state.UpsertStorageDaemonResource(
+        "prod", "bareos-sd",
+        {.sd_connect_timeout = 1800,
+         .description = std::string{"HTTP-managed storage daemon"},
+         .working_directory = std::string{"/var/lib/bareos/storage-http"},
+         .messages = std::string{"Standard"}});
+    ASSERT_TRUE(daemon) << daemon.error;
+
+    auto device = state.UpsertStorageDeviceResource(
+        "prod", "bareos-sd", "ManagedDevice",
+        {.media_type = std::string{"File"},
+         .archive_device = std::string{"/srv/bareos/storage-http"},
+         .device_type = std::string{"file"},
+         .auto_select = false,
+         .description = std::string{"HTTP-managed storage device"}});
+    ASSERT_TRUE(device) << device.error;
+  }
+
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto daemon_response
+      = server.Get("/v1/deployments/prod/storages/bareos-sd/prefill");
+  ASSERT_EQ(daemon_response.status_code, 200u) << daemon_response.body;
+  auto daemon_json = ParseJson(daemon_response.body);
+  ASSERT_NE(daemon_json.get(), nullptr) << daemon_response.body;
+  auto* daemon_deployment = json_object_get(daemon_json.get(), "deployment");
+  ASSERT_TRUE(json_is_object(daemon_deployment));
+  auto* daemon_deployment_id = json_object_get(daemon_deployment, "id");
+  ASSERT_TRUE(json_is_string(daemon_deployment_id));
+  EXPECT_STREQ(json_string_value(daemon_deployment_id), "prod");
+  auto* daemon_deployment_name = json_object_get(daemon_deployment, "name");
+  ASSERT_TRUE(json_is_string(daemon_deployment_name));
+  EXPECT_STREQ(json_string_value(daemon_deployment_name), "Production");
+  auto* daemon_spec = json_object_get(daemon_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(daemon_spec));
+  auto* daemon_description = json_object_get(daemon_spec, "description");
+  ASSERT_TRUE(json_is_string(daemon_description));
+  EXPECT_STREQ(json_string_value(daemon_description),
+               "HTTP-managed storage daemon");
+  auto* daemon_messages = json_object_get(daemon_spec, "messages");
+  ASSERT_TRUE(json_is_string(daemon_messages));
+  EXPECT_STREQ(json_string_value(daemon_messages), "Standard");
+  auto* daemon_timeout = json_object_get(daemon_spec, "sd_connect_timeout");
+  ASSERT_TRUE(json_is_integer(daemon_timeout));
+  EXPECT_EQ(json_integer_value(daemon_timeout), 1800);
+
+  const auto device_response = server.Get(
+      "/v1/deployments/prod/storages/bareos-sd/devices/ManagedDevice/prefill");
+  ASSERT_EQ(device_response.status_code, 200u) << device_response.body;
+  auto device_json = ParseJson(device_response.body);
+  ASSERT_NE(device_json.get(), nullptr) << device_response.body;
+  auto* device_spec = json_object_get(device_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(device_spec));
+  auto* device_media_type = json_object_get(device_spec, "media_type");
+  ASSERT_TRUE(json_is_string(device_media_type));
+  EXPECT_STREQ(json_string_value(device_media_type), "File");
+  auto* device_archive = json_object_get(device_spec, "archive_device");
+  ASSERT_TRUE(json_is_string(device_archive));
+  EXPECT_STREQ(json_string_value(device_archive), "/srv/bareos/storage-http");
+  auto* device_auto_select = json_object_get(device_spec, "auto_select");
+  ASSERT_TRUE(json_is_boolean(device_auto_select));
+  EXPECT_TRUE(json_is_false(device_auto_select));
+  auto* device_description = json_object_get(device_spec, "description");
+  ASSERT_TRUE(json_is_string(device_description));
+  EXPECT_STREQ(json_string_value(device_description),
+               "HTTP-managed storage device");
+
+  const auto missing_device_response = server.Get(
+      "/v1/deployments/prod/storages/bareos-sd/devices/MissingDevice/prefill");
+  EXPECT_EQ(missing_device_response.status_code, 400u);
+  EXPECT_NE(missing_device_response.body.find(
+                "storage-daemon device 'MissingDevice' not found."),
+            std::string::npos);
+
+  const auto missing_deployment_response
+      = server.Get("/v1/deployments/missing/storages/bareos-sd/prefill");
+  EXPECT_EQ(missing_deployment_response.status_code, 404u);
+  EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
+            std::string::npos);
+#endif
+}
+
 TEST(BconfigService, UpsertsStorageDeviceResourcesInSharedFiles)
 {
   ScopedDirectory source_root{MakeTempPath()};
