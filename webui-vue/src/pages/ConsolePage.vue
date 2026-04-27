@@ -94,6 +94,8 @@ function defaultWsUrl() {
   return `${proto}//${window.location.host}/ws`
 }
 const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultWsUrl()
+const RAW_CMD_TIMEOUT_MS = 300_000
+const COMPLETION_TIMEOUT_MS = 5_000
 
 const statusColor = computed(() => ({
   connected: 'positive', connecting: 'warning',
@@ -141,6 +143,17 @@ function rejectAll(reason) {
     }
   }
   pendingCmds.clear()
+}
+
+function startPendingTimer(id, timeoutMs, onTimeout) {
+  return setTimeout(() => {
+    if (!pendingCmds.has(id)) {
+      return
+    }
+
+    pendingCmds.delete(id)
+    onTimeout()
+  }, timeoutMs)
 }
 
 function connectRaw() {
@@ -258,13 +271,10 @@ function send() {
   }
 
   const id = String(++cmdSeq)
-  const timer = setTimeout(() => {
-    if (pendingCmds.has(id)) {
-      pendingCmds.delete(id)
-      appendErr(t('Command timed out.'))
-      scrollBottom()
-    }
-  }, 30_000)
+  const timer = startPendingTimer(id, RAW_CMD_TIMEOUT_MS, () => {
+    appendErr(t('Command timed out.'))
+    scrollBottom()
+  })
   pendingCmds.set(id, { timer })
   rawWs.send(JSON.stringify({ type: 'command', id, command: c }))
   scrollBottom()
@@ -279,9 +289,10 @@ function quickSend(c) {
     return
   }
   const id = String(++cmdSeq)
-  const timer = setTimeout(() => {
-    pendingCmds.has(id) && (pendingCmds.delete(id), appendErr(t('Command timed out.')), scrollBottom())
-  }, 30_000)
+  const timer = startPendingTimer(id, RAW_CMD_TIMEOUT_MS, () => {
+    appendErr(t('Command timed out.'))
+    scrollBottom()
+  })
   pendingCmds.set(id, { timer })
   rawWs.send(JSON.stringify({ type: 'command', id, command: c }))
   scrollBottom()
@@ -294,7 +305,7 @@ function sendTab() {
   const timer = setTimeout(() => {
     completionIds.delete(id)
     pendingCmds.delete(id)
-  }, 5_000)
+  }, COMPLETION_TIMEOUT_MS)
   completionIds.add(id)
   pendingCmds.set(id, { timer })
   rawWs.send(JSON.stringify({ type: 'command', id, command: cmd.value + '\t' }))

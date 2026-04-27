@@ -27,6 +27,7 @@ function defaultWsUrl() {
 }
 const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultWsUrl()
 const CMD_TIMEOUT_MS = 30_000
+const RAW_CMD_TIMEOUT_MS = 300_000
 const KEEPALIVE_INTERVAL_MS = 20_000
 const RECONNECT_DELAY_MS = 1_000
 
@@ -270,7 +271,7 @@ export const useDirectorStore = defineStore('director', () => {
       const timer = setTimeout(() => {
         sock.close()
         reject(new Error(`Raw command timed out: ${command}`))
-      }, CMD_TIMEOUT_MS)
+      }, RAW_CMD_TIMEOUT_MS)
 
       sock.onopen = () => {
         sock.send(JSON.stringify({

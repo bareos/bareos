@@ -193,4 +193,45 @@ describe('director store', () => {
       port: 9101,
     })
   })
+
+  it('allows raw commands to run longer than the normal command timeout', async () => {
+    const auth = useAuthStore()
+    const director = useDirectorStore()
+
+    auth.login('admin', 'bareos-dir', 'secret', 'dir.example.test', 19101)
+
+    const rawPromise = director.rawCall('messages')
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        director: 'bareos-dir',
+      }),
+    })
+
+    expect(JSON.parse(socket.sent[1])).toEqual({
+      type: 'command',
+      id: '1',
+      command: 'messages',
+    })
+
+    vi.advanceTimersByTime(30_000)
+
+    let settled = false
+    void rawPromise.then(() => { settled = true }).catch(() => { settled = true })
+    await Promise.resolve()
+    expect(settled).toBe(false)
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'done',
+        prompt: 'main',
+      }),
+    })
+
+    await expect(rawPromise).resolves.toBe('done')
+  })
 })
