@@ -3476,5 +3476,109 @@ TEST(BconfigService, DeletesDirectorMessagesResourcesFromSharedFiles)
   EXPECT_EQ(shared_text.find("Name = \"OtherMessages\""), std::string::npos);
 }
 
+TEST(BconfigService, ServesDirectorMessagesPrefillRouteOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP prefill route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory state_root{MakeTempPath()};
+
+  {
+    ServiceState state{state_root.path()};
+
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    const auto source_fixture_root = FindFixtureRoot();
+    ASSERT_FALSE(source_fixture_root.empty());
+    std::filesystem::create_directories(source_root.path());
+    std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                          source_root.path() / "bareos-dir.d",
+                          std::filesystem::copy_options::recursive);
+
+    auto import_job
+        = state.CreateJob({.type = "import_configuration",
+                           .deployment_id = std::string{"prod"},
+                           .source_path = source_root.path().string()});
+    ASSERT_TRUE(import_job);
+    auto imported = WaitForJobTerminal(state, import_job.value->id);
+    ASSERT_TRUE(imported.has_value());
+    ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+    auto messages = state.UpsertDirectorMessagesResource(
+        "prod", "bareos-dir", "ManagedMessages",
+        {.description = std::string{"HTTP-managed director messages"},
+         .mail_command = std::string{"/usr/lib/bareos/mail-http %r"},
+         .timestamp_format = std::string{"%Y-%m-%d %H:%M:%S"},
+         .syslog_entries = std::vector<std::string>{"mail = all, !skipped"},
+         .console_entries
+         = std::vector<std::string>{"all, !skipped, !saved, !audit"}});
+    ASSERT_TRUE(messages) << messages.error;
+  }
+
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto messages_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/messages/ManagedMessages/"
+      "prefill");
+  ASSERT_EQ(messages_response.status_code, 200u) << messages_response.body;
+  auto messages_json = ParseJson(messages_response.body);
+  ASSERT_NE(messages_json.get(), nullptr) << messages_response.body;
+  auto* messages_deployment
+      = json_object_get(messages_json.get(), "deployment");
+  ASSERT_TRUE(json_is_object(messages_deployment));
+  auto* messages_deployment_id = json_object_get(messages_deployment, "id");
+  ASSERT_TRUE(json_is_string(messages_deployment_id));
+  EXPECT_STREQ(json_string_value(messages_deployment_id), "prod");
+  auto* messages_deployment_name = json_object_get(messages_deployment, "name");
+  ASSERT_TRUE(json_is_string(messages_deployment_name));
+  EXPECT_STREQ(json_string_value(messages_deployment_name), "Production");
+  auto* messages_spec = json_object_get(messages_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(messages_spec));
+  auto* messages_description = json_object_get(messages_spec, "description");
+  ASSERT_TRUE(json_is_string(messages_description));
+  EXPECT_STREQ(json_string_value(messages_description),
+               "HTTP-managed director messages");
+  auto* messages_mail_command = json_object_get(messages_spec, "mail_command");
+  ASSERT_TRUE(json_is_string(messages_mail_command));
+  EXPECT_STREQ(json_string_value(messages_mail_command),
+               "/usr/lib/bareos/mail-http %r");
+  auto* messages_timestamp = json_object_get(messages_spec, "timestamp_format");
+  ASSERT_TRUE(json_is_string(messages_timestamp));
+  EXPECT_STREQ(json_string_value(messages_timestamp), "%Y-%m-%d %H:%M:%S");
+  auto* messages_syslog = json_object_get(messages_spec, "syslog_entries");
+  ASSERT_TRUE(json_is_array(messages_syslog));
+  ASSERT_EQ(json_array_size(messages_syslog), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(messages_syslog, 0)),
+               "mail = all, !skipped");
+  auto* messages_console = json_object_get(messages_spec, "console_entries");
+  ASSERT_TRUE(json_is_array(messages_console));
+  ASSERT_EQ(json_array_size(messages_console), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(messages_console, 0)),
+               "all, !skipped, !saved, !audit");
+
+  const auto missing_messages_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/messages/MissingMessages/"
+      "prefill");
+  EXPECT_EQ(missing_messages_response.status_code, 400u);
+  EXPECT_NE(missing_messages_response.body.find(
+                "director messages 'MissingMessages' not found."),
+            std::string::npos);
+
+  const auto missing_deployment_response = server.Get(
+      "/v1/deployments/missing/directors/bareos-dir/messages/ManagedMessages/"
+      "prefill");
+  EXPECT_EQ(missing_deployment_response.status_code, 404u);
+  EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
+            std::string::npos);
+#endif
+}
+
 }  // namespace
 }  // namespace bconfig::service
