@@ -1008,6 +1008,10 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view director_name,
       std::string_view profile_name) const;
+  OperationResult<DirectorPoolResourceSpec> GetDirectorPoolResourceSpec(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view pool_name) const;
   OperationResult<DirectorCatalogResourceSpec> GetDirectorCatalogResourceSpec(
       std::string_view deployment_id,
       std::string_view director_name,

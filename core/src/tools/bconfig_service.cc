@@ -10522,6 +10522,44 @@ DirectorProfileResourceSpec ToDirectorProfileResourceSpec(
   return spec;
 }
 
+DirectorPoolResourceSpec ToDirectorPoolResourceSpec(
+    const DirectorPoolContentSpec& content)
+{
+  DirectorPoolResourceSpec spec;
+  spec.pool_type = content.pool_type;
+  spec.label_format = content.label_format;
+  spec.cleaning_prefix = content.cleaning_prefix;
+  spec.label_type = content.label_type;
+  spec.maximum_volumes = content.maximum_volumes;
+  spec.maximum_volume_jobs = content.maximum_volume_jobs;
+  spec.maximum_volume_files = content.maximum_volume_files;
+  spec.maximum_volume_bytes = content.maximum_volume_bytes;
+  spec.volume_retention = content.volume_retention;
+  spec.volume_use_duration = content.volume_use_duration;
+  spec.migration_time = content.migration_time;
+  spec.migration_high_bytes = content.migration_high_bytes;
+  spec.migration_low_bytes = content.migration_low_bytes;
+  spec.next_pool = content.next_pool;
+  spec.storages = ToOptionalStringVector(content.storages);
+  spec.use_catalog = content.use_catalog;
+  spec.catalog_files = content.catalog_files;
+  spec.purge_oldest_volume = content.purge_oldest_volume;
+  spec.action_on_purge = content.action_on_purge;
+  spec.recycle_oldest_volume = content.recycle_oldest_volume;
+  spec.recycle_current_volume = content.recycle_current_volume;
+  spec.auto_prune = content.auto_prune;
+  spec.recycle = content.recycle;
+  spec.recycle_pool = content.recycle_pool;
+  spec.scratch_pool = content.scratch_pool;
+  spec.catalog = content.catalog;
+  spec.file_retention = content.file_retention;
+  spec.job_retention = content.job_retention;
+  spec.minimum_block_size = content.minimum_block_size;
+  spec.maximum_block_size = content.maximum_block_size;
+  spec.description = content.description;
+  return spec;
+}
+
 DirectorCatalogResourceSpec ToDirectorCatalogResourceSpec(
     const DirectorCatalogContentSpec& content)
 {
@@ -10977,6 +11015,29 @@ ServiceState::GetDirectorProfileResourceSpec(
   }
 
   return {.value = ToDirectorProfileResourceSpec(*context.value)};
+}
+
+OperationResult<DirectorPoolResourceSpec>
+ServiceState::GetDirectorPoolResourceSpec(std::string_view deployment_id,
+                                          std::string_view director_name,
+                                          std::string_view pool_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorPoolWriteContext(*director_config.value, pool_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error
+            = "director pool '" + std::string{pool_name} + "' not found."};
+  }
+
+  return {.value = ToDirectorPoolResourceSpec(context.value->content)};
 }
 
 OperationResult<DirectorCatalogResourceSpec>

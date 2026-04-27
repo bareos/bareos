@@ -837,6 +837,42 @@ TEST(BconfigService, UpsertsDirectorPoolResources)
   EXPECT_NE(created_text.find("MinimumBlockSize = 512"), std::string::npos);
   EXPECT_NE(created_text.find("MaximumBlockSize = 4096"), std::string::npos);
 
+  auto created_spec
+      = state.GetDirectorPoolResourceSpec("prod", "bareos-dir", "managed-pool");
+  ASSERT_TRUE(created_spec) << created_spec.error;
+  EXPECT_EQ(created_spec.value->pool_type, "Scratch");
+  EXPECT_EQ(created_spec.value->label_format, "Managed-");
+  EXPECT_EQ(created_spec.value->cleaning_prefix, "Cleaner-");
+  EXPECT_EQ(created_spec.value->label_type, "ansi");
+  EXPECT_EQ(created_spec.value->maximum_volumes, 7);
+  EXPECT_EQ(created_spec.value->maximum_volume_jobs, 8);
+  EXPECT_EQ(created_spec.value->maximum_volume_files, 9);
+  EXPECT_EQ(created_spec.value->maximum_volume_bytes, 123456);
+  EXPECT_EQ(created_spec.value->volume_retention, 86400);
+  EXPECT_EQ(created_spec.value->volume_use_duration, 43200);
+  EXPECT_EQ(created_spec.value->migration_time, 3600);
+  EXPECT_EQ(created_spec.value->migration_high_bytes, 654321);
+  EXPECT_EQ(created_spec.value->migration_low_bytes, 12345);
+  EXPECT_EQ(created_spec.value->next_pool, "Incremental");
+  ASSERT_TRUE(created_spec.value->storages.has_value());
+  EXPECT_EQ(*created_spec.value->storages, (std::vector<std::string>{"File"}));
+  EXPECT_EQ(created_spec.value->use_catalog, true);
+  EXPECT_EQ(created_spec.value->catalog_files, true);
+  EXPECT_EQ(created_spec.value->purge_oldest_volume, true);
+  EXPECT_EQ(created_spec.value->action_on_purge, "Truncate");
+  EXPECT_EQ(created_spec.value->recycle_oldest_volume, true);
+  EXPECT_EQ(created_spec.value->recycle_current_volume, false);
+  EXPECT_EQ(created_spec.value->auto_prune, true);
+  EXPECT_EQ(created_spec.value->recycle, false);
+  EXPECT_EQ(created_spec.value->recycle_pool, "Scratch");
+  EXPECT_EQ(created_spec.value->scratch_pool, "Scratch");
+  EXPECT_EQ(created_spec.value->catalog, "MyCatalog");
+  EXPECT_EQ(created_spec.value->file_retention, 172800);
+  EXPECT_EQ(created_spec.value->job_retention, 259200);
+  EXPECT_EQ(created_spec.value->minimum_block_size, 512);
+  EXPECT_EQ(created_spec.value->maximum_block_size, 4096);
+  EXPECT_EQ(created_spec.value->description, "Managed pool");
+
   const auto full_path = created.value->path / "bareos-dir.d/pool/Full.conf";
   auto full_text = ReadTextFile(full_path);
   const std::string insertion
@@ -908,6 +944,42 @@ TEST(BconfigService, UpsertsDirectorPoolResources)
   EXPECT_NE(updated_text.find("JobRetention = 1209600"), std::string::npos);
   EXPECT_NE(updated_text.find("MinimumBlockSize = 1024"), std::string::npos);
   EXPECT_NE(updated_text.find("MaximumBlockSize = 8192"), std::string::npos);
+
+  auto updated_spec
+      = state.GetDirectorPoolResourceSpec("prod", "bareos-dir", "Full");
+  ASSERT_TRUE(updated_spec) << updated_spec.error;
+  EXPECT_EQ(updated_spec.value->description, "Updated full pool");
+  EXPECT_EQ(updated_spec.value->pool_type, "Backup");
+  EXPECT_EQ(updated_spec.value->recycle, true);
+  EXPECT_EQ(updated_spec.value->auto_prune, true);
+  EXPECT_EQ(updated_spec.value->volume_retention, 31536000);
+  EXPECT_EQ(updated_spec.value->maximum_volume_bytes, 53687091200);
+  EXPECT_EQ(updated_spec.value->maximum_volumes, 100);
+  EXPECT_EQ(updated_spec.value->label_format, "Full-");
+  EXPECT_EQ(updated_spec.value->use_catalog, true);
+  EXPECT_EQ(updated_spec.value->catalog_files, true);
+  EXPECT_EQ(updated_spec.value->purge_oldest_volume, true);
+  EXPECT_EQ(updated_spec.value->action_on_purge, "Truncate");
+  EXPECT_EQ(updated_spec.value->recycle_oldest_volume, true);
+  EXPECT_EQ(updated_spec.value->recycle_current_volume, false);
+  EXPECT_EQ(updated_spec.value->maximum_volume_jobs, 11);
+  EXPECT_EQ(updated_spec.value->maximum_volume_files, 12);
+  EXPECT_EQ(updated_spec.value->volume_use_duration, 1800);
+  EXPECT_EQ(updated_spec.value->migration_time, 2700);
+  EXPECT_EQ(updated_spec.value->migration_high_bytes, 2000);
+  EXPECT_EQ(updated_spec.value->migration_low_bytes, 1000);
+  EXPECT_EQ(updated_spec.value->next_pool, "Incremental");
+  ASSERT_TRUE(updated_spec.value->storages.has_value());
+  EXPECT_EQ(*updated_spec.value->storages, (std::vector<std::string>{"File"}));
+  EXPECT_EQ(updated_spec.value->cleaning_prefix, "clean-");
+  EXPECT_EQ(updated_spec.value->label_type, "ansi");
+  EXPECT_EQ(updated_spec.value->recycle_pool, "Scratch");
+  EXPECT_EQ(updated_spec.value->scratch_pool, "Scratch");
+  EXPECT_EQ(updated_spec.value->catalog, "MyCatalog");
+  EXPECT_EQ(updated_spec.value->file_retention, 604800);
+  EXPECT_EQ(updated_spec.value->job_retention, 1209600);
+  EXPECT_EQ(updated_spec.value->minimum_block_size, 1024);
+  EXPECT_EQ(updated_spec.value->maximum_block_size, 8192);
 }
 
 TEST(BconfigService, UpsertsDirectorPoolResourcesInSharedFiles)

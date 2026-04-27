@@ -5443,6 +5443,18 @@ const char* kTestUiHtmlTemplate = R"HTML(
             `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/profiles/${encodedResource}/prefill`,
         };
       }
+      if (normalizedComponent === 'director' && normalizedType === 'pool') {
+        return {
+          formId: 'director-pool-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            director_name: String(configName ?? ''),
+            pool_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/pools/${encodedResource}/prefill`,
+        };
+      }
       if (normalizedComponent === 'director' && normalizedType === 'catalog') {
         return {
           formId: 'director-catalog-form',
@@ -9428,6 +9440,54 @@ json_t* DirectorProfileResourceSpecToJson(
   return DirectorAclResourceSpecToJson(spec);
 }
 
+json_t* DirectorPoolResourceSpecToJson(const DirectorPoolResourceSpec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "pool_type", spec.pool_type);
+  SetOptionalString(object.get(), "label_format", spec.label_format);
+  SetOptionalString(object.get(), "cleaning_prefix", spec.cleaning_prefix);
+  SetOptionalString(object.get(), "label_type", spec.label_type);
+  SetOptionalInteger(object.get(), "maximum_volumes", spec.maximum_volumes);
+  SetOptionalInteger(object.get(), "maximum_volume_jobs",
+                     spec.maximum_volume_jobs);
+  SetOptionalInteger(object.get(), "maximum_volume_files",
+                     spec.maximum_volume_files);
+  SetOptionalInteger(object.get(), "maximum_volume_bytes",
+                     spec.maximum_volume_bytes);
+  SetOptionalInteger(object.get(), "volume_retention", spec.volume_retention);
+  SetOptionalInteger(object.get(), "volume_use_duration",
+                     spec.volume_use_duration);
+  SetOptionalInteger(object.get(), "migration_time", spec.migration_time);
+  SetOptionalInteger(object.get(), "migration_high_bytes",
+                     spec.migration_high_bytes);
+  SetOptionalInteger(object.get(), "migration_low_bytes",
+                     spec.migration_low_bytes);
+  SetOptionalString(object.get(), "next_pool", spec.next_pool);
+  SetOptionalStringArray(object.get(), "storages", spec.storages);
+  SetOptionalBool(object.get(), "use_catalog", spec.use_catalog);
+  SetOptionalBool(object.get(), "catalog_files", spec.catalog_files);
+  SetOptionalBool(object.get(), "purge_oldest_volume",
+                  spec.purge_oldest_volume);
+  SetOptionalString(object.get(), "action_on_purge", spec.action_on_purge);
+  SetOptionalBool(object.get(), "recycle_oldest_volume",
+                  spec.recycle_oldest_volume);
+  SetOptionalBool(object.get(), "recycle_current_volume",
+                  spec.recycle_current_volume);
+  SetOptionalBool(object.get(), "auto_prune", spec.auto_prune);
+  SetOptionalBool(object.get(), "recycle", spec.recycle);
+  SetOptionalString(object.get(), "recycle_pool", spec.recycle_pool);
+  SetOptionalString(object.get(), "scratch_pool", spec.scratch_pool);
+  SetOptionalString(object.get(), "catalog", spec.catalog);
+  SetOptionalInteger(object.get(), "file_retention", spec.file_retention);
+  SetOptionalInteger(object.get(), "job_retention", spec.job_retention);
+  SetOptionalInteger(object.get(), "minimum_block_size",
+                     spec.minimum_block_size);
+  SetOptionalInteger(object.get(), "maximum_block_size",
+                     spec.maximum_block_size);
+  SetOptionalString(object.get(), "description", spec.description);
+  return object.release();
+}
+
 json_t* DirectorCatalogResourceSpecToJson(
     const DirectorCatalogResourceSpec& spec)
 {
@@ -10632,6 +10692,31 @@ http::response<http::string_body> HandleDirectorCatalogPrefillRequest(
                   json_array_get(deployment_json.get(), 0));
   json_object_set_new(root.get(), "spec",
                       DirectorCatalogResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDirectorPoolPrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view pool_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetDirectorPoolResourceSpec(deployment_id, director_name,
+                                                pool_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      DirectorPoolResourceSpecToJson(*spec.value));
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
@@ -18361,6 +18446,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
       && path_parts[5] == "pools" && request.method() == http::verb::put) {
     return HandleDeploymentDirectorPoolPutRequest(state, request, path_parts[2],
                                                   path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 8 && path_parts[3] == "directors"
+      && path_parts[5] == "pools" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleDirectorPoolPrefillRequest(state, path_parts[2], path_parts[4],
+                                            path_parts[6]);
   }
   if (path_parts.size() == 7 && path_parts[3] == "directors"
       && path_parts[5] == "pools" && request.method() == http::verb::delete_) {
