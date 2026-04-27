@@ -4008,5 +4008,124 @@ TEST(BconfigService, ServesDirectorPoolPrefillRouteOverHttp)
 #endif
 }
 
+TEST(BconfigService, ServesDirectorCatalogPrefillRouteOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP prefill route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory state_root{MakeTempPath()};
+
+  {
+    ServiceState state{state_root.path()};
+
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    const auto source_fixture_root = FindFixtureRoot();
+    ASSERT_FALSE(source_fixture_root.empty());
+    std::filesystem::create_directories(source_root.path());
+    std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                          source_root.path() / "bareos-dir.d",
+                          std::filesystem::copy_options::recursive);
+
+    auto import_job
+        = state.CreateJob({.type = "import_configuration",
+                           .deployment_id = std::string{"prod"},
+                           .source_path = source_root.path().string()});
+    ASSERT_TRUE(import_job);
+    auto imported = WaitForJobTerminal(state, import_job.value->id);
+    ASSERT_TRUE(imported.has_value());
+    ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+    auto catalog = state.UpsertDirectorCatalogResource(
+        "prod", "bareos-dir", "ManagedCatalog",
+        {.db_address = std::string{"127.0.0.1"},
+         .db_port = 5432,
+         .db_password = std::string{"secret"},
+         .db_user = std::string{"bareos"},
+         .db_name = std::string{"bareos_catalog"},
+         .multiple_connections = true,
+         .disable_batch_insert = true,
+         .reconnect = true,
+         .exit_on_fatal = false,
+         .description = std::string{"HTTP-managed director catalog"}});
+    ASSERT_TRUE(catalog) << catalog.error;
+  }
+
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto catalog_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/catalogs/ManagedCatalog/"
+      "prefill");
+  ASSERT_EQ(catalog_response.status_code, 200u) << catalog_response.body;
+  auto catalog_json = ParseJson(catalog_response.body);
+  ASSERT_NE(catalog_json.get(), nullptr) << catalog_response.body;
+  auto* catalog_deployment = json_object_get(catalog_json.get(), "deployment");
+  ASSERT_TRUE(json_is_object(catalog_deployment));
+  auto* catalog_deployment_id = json_object_get(catalog_deployment, "id");
+  ASSERT_TRUE(json_is_string(catalog_deployment_id));
+  EXPECT_STREQ(json_string_value(catalog_deployment_id), "prod");
+  auto* catalog_deployment_name = json_object_get(catalog_deployment, "name");
+  ASSERT_TRUE(json_is_string(catalog_deployment_name));
+  EXPECT_STREQ(json_string_value(catalog_deployment_name), "Production");
+  auto* catalog_spec = json_object_get(catalog_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(catalog_spec));
+  auto* catalog_description = json_object_get(catalog_spec, "description");
+  ASSERT_TRUE(json_is_string(catalog_description));
+  EXPECT_STREQ(json_string_value(catalog_description),
+               "HTTP-managed director catalog");
+  auto* catalog_db_address = json_object_get(catalog_spec, "db_address");
+  ASSERT_TRUE(json_is_string(catalog_db_address));
+  EXPECT_STREQ(json_string_value(catalog_db_address), "127.0.0.1");
+  auto* catalog_db_port = json_object_get(catalog_spec, "db_port");
+  ASSERT_TRUE(json_is_integer(catalog_db_port));
+  EXPECT_EQ(json_integer_value(catalog_db_port), 5432);
+  auto* catalog_db_password = json_object_get(catalog_spec, "db_password");
+  ASSERT_TRUE(json_is_string(catalog_db_password));
+  EXPECT_STREQ(json_string_value(catalog_db_password), "secret");
+  auto* catalog_db_user = json_object_get(catalog_spec, "db_user");
+  ASSERT_TRUE(json_is_string(catalog_db_user));
+  EXPECT_STREQ(json_string_value(catalog_db_user), "bareos");
+  auto* catalog_db_name = json_object_get(catalog_spec, "db_name");
+  ASSERT_TRUE(json_is_string(catalog_db_name));
+  EXPECT_STREQ(json_string_value(catalog_db_name), "bareos_catalog");
+  auto* catalog_multiple_connections
+      = json_object_get(catalog_spec, "multiple_connections");
+  ASSERT_TRUE(json_is_boolean(catalog_multiple_connections));
+  EXPECT_TRUE(json_is_true(catalog_multiple_connections));
+  auto* catalog_disable_batch_insert
+      = json_object_get(catalog_spec, "disable_batch_insert");
+  ASSERT_TRUE(json_is_boolean(catalog_disable_batch_insert));
+  EXPECT_TRUE(json_is_true(catalog_disable_batch_insert));
+  auto* catalog_reconnect = json_object_get(catalog_spec, "reconnect");
+  ASSERT_TRUE(json_is_boolean(catalog_reconnect));
+  EXPECT_TRUE(json_is_true(catalog_reconnect));
+  auto* catalog_exit_on_fatal = json_object_get(catalog_spec, "exit_on_fatal");
+  ASSERT_TRUE(json_is_boolean(catalog_exit_on_fatal));
+  EXPECT_TRUE(json_is_false(catalog_exit_on_fatal));
+
+  const auto missing_catalog_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/catalogs/MissingCatalog/"
+      "prefill");
+  EXPECT_EQ(missing_catalog_response.status_code, 400u);
+  EXPECT_NE(missing_catalog_response.body.find(
+                "director catalog 'MissingCatalog' not found."),
+            std::string::npos);
+
+  const auto missing_deployment_response = server.Get(
+      "/v1/deployments/missing/directors/bareos-dir/catalogs/ManagedCatalog/"
+      "prefill");
+  EXPECT_EQ(missing_deployment_response.status_code, 404u);
+  EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
+            std::string::npos);
+#endif
+}
+
 }  // namespace
 }  // namespace bconfig::service
