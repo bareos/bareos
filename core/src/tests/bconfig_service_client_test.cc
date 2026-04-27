@@ -1458,6 +1458,20 @@ TEST(BconfigService, ServesClientPrefillRoutesOverHttp)
   ScopedBconfigServiceServer server{state_root.path()};
   ASSERT_TRUE(server.ready()) << server.startup_error();
 
+  const auto find_field = [](json_t* fields, const char* name) -> json_t* {
+    size_t index = 0;
+    json_t* field = nullptr;
+    json_array_foreach(fields, index, field)
+    {
+      auto* field_name = json_object_get(field, "name");
+      if (json_is_string(field_name)
+          && std::string_view{json_string_value(field_name)} == name) {
+        return field;
+      }
+    }
+    return nullptr;
+  };
+
   const auto daemon_response
       = server.Get("/v1/deployments/prod/clients/bareos-fd/prefill");
   ASSERT_EQ(daemon_response.status_code, 200u) << daemon_response.body;
@@ -1495,6 +1509,35 @@ TEST(BconfigService, ServesClientPrefillRoutesOverHttp)
   ASSERT_EQ(json_array_size(daemon_job_commands), 2u);
   EXPECT_STREQ(json_string_value(json_array_get(daemon_job_commands, 1)),
                "Estimate listing");
+  auto* daemon_editor = json_object_get(daemon_json.get(), "editor");
+  ASSERT_TRUE(json_is_object(daemon_editor));
+  auto* daemon_editor_component = json_object_get(daemon_editor, "component");
+  ASSERT_TRUE(json_is_string(daemon_editor_component));
+  EXPECT_STREQ(json_string_value(daemon_editor_component), "client");
+  auto* daemon_editor_resource = json_object_get(daemon_editor, "resource_type");
+  ASSERT_TRUE(json_is_string(daemon_editor_resource));
+  EXPECT_STREQ(json_string_value(daemon_editor_resource), "Client");
+  auto* daemon_fields = json_object_get(daemon_editor, "fields");
+  ASSERT_TRUE(json_is_array(daemon_fields));
+  auto* description_field = find_field(daemon_fields, "description");
+  ASSERT_NE(description_field, nullptr);
+  auto* description_visibility = json_object_get(description_field, "visibility");
+  ASSERT_TRUE(json_is_string(description_visibility));
+  EXPECT_STREQ(json_string_value(description_visibility), "simple");
+  auto* description_explicit = json_object_get(description_field, "explicitly_set");
+  ASSERT_TRUE(json_is_boolean(description_explicit));
+  EXPECT_TRUE(json_is_true(description_explicit));
+  auto* tls_field = find_field(daemon_fields, "tls_authenticate");
+  ASSERT_NE(tls_field, nullptr);
+  auto* tls_group = json_object_get(tls_field, "group");
+  ASSERT_TRUE(json_is_string(tls_group));
+  EXPECT_STREQ(json_string_value(tls_group), "security");
+  auto* tls_visibility = json_object_get(tls_field, "visibility");
+  ASSERT_TRUE(json_is_string(tls_visibility));
+  EXPECT_STREQ(json_string_value(tls_visibility), "advanced");
+  auto* tls_explicit = json_object_get(tls_field, "explicitly_set");
+  ASSERT_TRUE(json_is_boolean(tls_explicit));
+  EXPECT_TRUE(json_is_false(tls_explicit));
 
   const auto messages_response = server.Get(
       "/v1/deployments/prod/clients/bareos-fd/messages/ManagedMessages/"
@@ -1563,6 +1606,80 @@ TEST(BconfigService, ServesClientPrefillRoutesOverHttp)
   EXPECT_EQ(missing_deployment_response.status_code, 404u);
   EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
             std::string::npos);
+#endif
+}
+
+TEST(BconfigService, ServesSchemaEditorMetadataOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP schema route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory state_root{MakeTempPath()};
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto find_resource = [](json_t* resources,
+                                const char* name) -> json_t* {
+    size_t index = 0;
+    json_t* resource = nullptr;
+    json_array_foreach(resources, index, resource)
+    {
+      auto* resource_name = json_object_get(resource, "name");
+      if (json_is_string(resource_name)
+          && std::string_view{json_string_value(resource_name)} == name) {
+        return resource;
+      }
+    }
+    return nullptr;
+  };
+  const auto find_directive = [](json_t* directives,
+                                 const char* name) -> json_t* {
+    size_t index = 0;
+    json_t* directive = nullptr;
+    json_array_foreach(directives, index, directive)
+    {
+      auto* directive_name = json_object_get(directive, "name");
+      if (json_is_string(directive_name)
+          && std::string_view{json_string_value(directive_name)} == name) {
+        return directive;
+      }
+    }
+    return nullptr;
+  };
+
+  const auto response = server.Get("/v1/schema/client");
+  ASSERT_EQ(response.status_code, 200u) << response.body;
+  auto schema_json = ParseJson(response.body);
+  ASSERT_NE(schema_json.get(), nullptr) << response.body;
+  auto* resources = json_object_get(schema_json.get(), "resources");
+  ASSERT_TRUE(json_is_array(resources));
+  auto* client_resource = find_resource(resources, "Client");
+  ASSERT_NE(client_resource, nullptr);
+  auto* client_directives = json_object_get(client_resource, "directives");
+  ASSERT_TRUE(json_is_array(client_directives));
+
+  auto* tls_authenticate = find_directive(client_directives, "TlsAuthenticate");
+  ASSERT_NE(tls_authenticate, nullptr);
+  auto* tls_api_name = json_object_get(tls_authenticate, "api_name");
+  ASSERT_TRUE(json_is_string(tls_api_name));
+  EXPECT_STREQ(json_string_value(tls_api_name), "tls_authenticate");
+  auto* tls_group = json_object_get(tls_authenticate, "editor_group");
+  ASSERT_TRUE(json_is_string(tls_group));
+  EXPECT_STREQ(json_string_value(tls_group), "security");
+  auto* tls_visibility
+      = json_object_get(tls_authenticate, "editor_visibility");
+  ASSERT_TRUE(json_is_string(tls_visibility));
+  EXPECT_STREQ(json_string_value(tls_visibility), "advanced");
+
+  auto* description = find_directive(client_directives, "Description");
+  ASSERT_NE(description, nullptr);
+  auto* description_api_name = json_object_get(description, "api_name");
+  ASSERT_TRUE(json_is_string(description_api_name));
+  EXPECT_STREQ(json_string_value(description_api_name), "description");
+  auto* description_visibility
+      = json_object_get(description, "editor_visibility");
+  ASSERT_TRUE(json_is_string(description_visibility));
+  EXPECT_STREQ(json_string_value(description_visibility), "simple");
 #endif
 }
 

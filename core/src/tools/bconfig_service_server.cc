@@ -28,6 +28,7 @@
 #include "lib/message.h"
 #include "lib/thread_specific_data.h"
 
+#include <algorithm>
 #include <boost/asio/ip/address.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
@@ -36,6 +37,7 @@
 #include <jansson.h>
 
 #include <chrono>
+#include <array>
 #include <cstring>
 #include <ctime>
 #include <iomanip>
@@ -5207,11 +5209,17 @@ const char* kTestUiHtmlTemplate = R"HTML(
       return String(url);
     }
 
-    async function request(method, url, body) {
-      const options = { method, headers: {} };
+    function renderResponse(method, requestUrl, status, payload) {
+      responsePanel.textContent =
+        `${method} ${requestUrl}\nHTTP ${status}\n\n${payload}`;
+    }
+
+    async function request(method, url, body, options = {}) {
+      const showResponse = options.showResponse !== false;
+      const requestOptions = { method, headers: {} };
       if (body !== undefined) {
-        options.headers['Content-Type'] = 'application/json';
-        options.body = JSON.stringify(body);
+        requestOptions.headers['Content-Type'] = 'application/json';
+        requestOptions.body = JSON.stringify(body);
       }
 
       const candidates = [];
@@ -5224,7 +5232,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
       let text = '';
       for (const candidate of candidates) {
         requestUrl = candidate;
-        response = await fetch(candidate, options);
+        response = await fetch(candidate, requestOptions);
         text = await response.text();
         if (!(response.status === 404 && text.includes('"route not found."'))) {
           break;
@@ -5236,8 +5244,9 @@ const char* kTestUiHtmlTemplate = R"HTML(
         payload = JSON.stringify(JSON.parse(text), null, 2);
       } catch (_) {}
 
-      responsePanel.textContent =
-        `${method} ${requestUrl}\nHTTP ${response.status}\n\n${payload}`;
+      if (showResponse) {
+        renderResponse(method, requestUrl, response.status, payload);
+      }
 
       return { response, text, payload };
     }
@@ -5845,7 +5854,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
         return;
       }
 
-      const { response, text } = await request('GET', '/v1/jobs');
+      const { response, text } = await request(
+        'GET', '/v1/jobs', undefined, { showResponse: false });
       if (!response.ok) {
         deploymentJobsPanel.innerHTML =
           '<p class="contents-empty">Could not load deployment jobs.</p>';
@@ -5868,7 +5878,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
       }
 
       const { response, text } = await request(
-        'GET', `/v1/deployments/${deploymentId}/imports`);
+        'GET',
+        `/v1/deployments/${deploymentId}/imports`,
+        undefined,
+        { showResponse: false });
       if (!response.ok) {
         deploymentImportsPanel.innerHTML =
           '<p class="contents-empty">Could not load deployment imports.</p>';
@@ -5890,7 +5903,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
       }
 
       const { response, text } = await request(
-        'GET', `/v1/deployments/${deploymentId}/clients`);
+        'GET',
+        `/v1/deployments/${deploymentId}/clients`,
+        undefined,
+        { showResponse: false });
       if (!response.ok) {
         deploymentClientsPanel.innerHTML =
           '<p class="contents-empty">Could not load deployment clients.</p>';
@@ -5938,7 +5954,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
       }
 
       const { response, text } = await request(
-        'GET', `/v1/deployments/${deploymentId}/git-status`);
+        'GET',
+        `/v1/deployments/${deploymentId}/git-status`,
+        undefined,
+        { showResponse: false });
       if (!response.ok) {
         deploymentGitStatusPanel.innerHTML =
           '<p class="contents-empty">Could not load deployment git status.</p>';
@@ -5987,7 +6006,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
       }
 
       const { response, text } = await request(
-        'GET', `/v1/deployments/${deploymentId}/diff`);
+        'GET',
+        `/v1/deployments/${deploymentId}/diff`,
+        undefined,
+        { showResponse: false });
       if (!response.ok) {
         deploymentDiffPreviewPanel.innerHTML =
           '<p class="contents-empty">Could not load deployment diff preview.</p>';
@@ -5998,7 +6020,8 @@ const char* kTestUiHtmlTemplate = R"HTML(
       renderDeploymentDiffPreview(deploymentId, document.diff_preview ?? {});
     }
 
-    async function loadDeploymentContents(deploymentId) {
+    async function loadDeploymentContents(deploymentId, options = {}) {
+      const showResponse = options.showResponse !== false;
       if (!deploymentId) {
         deploymentContentsPanel.innerHTML =
           '<p class="contents-empty">Enter a deployment ID first.</p>';
@@ -6006,7 +6029,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
       }
 
       const { response, text } = await request(
-        'GET', `/v1/deployments/${deploymentId}/inspect`);
+        'GET',
+        `/v1/deployments/${deploymentId}/inspect`,
+        undefined,
+        { showResponse });
       if (!response.ok) {
         deploymentContentsPanel.innerHTML =
           `<p class="contents-empty">Could not load deployment contents.</p>`;
@@ -6037,14 +6063,18 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
       for (let attempt = 0; attempt < 30; ++attempt) {
         await sleep(1000);
-        const { response, text } = await request('GET', `/v1/jobs/${jobId}`);
+        const { response, text } = await request(
+          'GET',
+          `/v1/jobs/${jobId}`,
+          undefined,
+          { showResponse: false });
         if (!response.ok) { return; }
 
         const document = JSON.parse(text);
         const status = document.job?.status;
         if (status === 'succeeded' || status === 'failed') {
           if (deploymentId) {
-            await loadDeploymentContents(deploymentId);
+            await loadDeploymentContents(deploymentId, { showResponse: false });
           }
           return;
         }
@@ -6074,7 +6104,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
         document.getElementById('deployment-inspect-id').value = payload.id;
         document.getElementById('client-stub-deployment-id').value = payload.id;
         await request('POST', '/v1/deployments', payload);
-        await loadDeploymentContents(payload.id);
+        await loadDeploymentContents(payload.id, { showResponse: false });
       });
 
     document.getElementById('job-form').addEventListener(
@@ -9194,6 +9224,457 @@ void SetOptionalStringArray(
   json_object_set_new(object, key, array.release());
 }
 
+std::string TrimAsciiWhitespace(std::string_view value)
+{
+  std::size_t begin = 0;
+  std::size_t end = value.size();
+  while (begin < end
+         && std::isspace(static_cast<unsigned char>(value[begin]))) {
+    ++begin;
+  }
+  while (end > begin
+         && std::isspace(static_cast<unsigned char>(value[end - 1]))) {
+    --end;
+  }
+  return std::string{value.substr(begin, end - begin)};
+}
+
+std::string LowerAscii(std::string_view value)
+{
+  std::string lowered;
+  lowered.reserve(value.size());
+  for (const char character : value) {
+    lowered.push_back(std::tolower(static_cast<unsigned char>(character)));
+  }
+  return lowered;
+}
+
+std::string BareosNameToSnakeCase(std::string_view value)
+{
+  std::string result;
+  result.reserve(value.size() + 8);
+  std::size_t current_token_length = 0;
+  for (std::size_t index = 0; index < value.size(); ++index) {
+    const unsigned char character = value[index];
+    if (!std::isalnum(character)) {
+      if (!result.empty() && result.back() != '_') { result.push_back('_'); }
+      current_token_length = 0;
+      continue;
+    }
+
+    bool split_before = false;
+    if (index > 0) {
+      const unsigned char previous = value[index - 1];
+      if (std::isalnum(previous) && std::isupper(character)) {
+        if (std::islower(previous) || std::isdigit(previous)) {
+          split_before = true;
+        } else if (std::isupper(previous) && index + 1 < value.size()
+                   && std::islower(
+                       static_cast<unsigned char>(value[index + 1]))
+                   && current_token_length > 1) {
+          split_before = true;
+        }
+      }
+    }
+
+    if (split_before && !result.empty() && result.back() != '_') {
+      result.push_back('_');
+      current_token_length = 0;
+    }
+    result.push_back(std::tolower(character));
+    ++current_token_length;
+  }
+
+  if (!result.empty() && result.back() == '_') { result.pop_back(); }
+  return result;
+}
+
+std::string DirectiveApiName(
+    bconfig::Component component,
+    std::string_view resource_type,
+    std::string_view directive_name)
+{
+  const auto component_name = std::string{bconfig::ComponentToString(component)};
+  const auto resource = std::string{resource_type};
+  const auto directive = std::string{directive_name};
+
+  if (resource == "Messages") {
+    if (directive == "Syslog") { return "syslog_entries"; }
+    if (directive == "Mail") { return "mail_entries"; }
+    if (directive == "MailOnError") { return "mail_on_error_entries"; }
+    if (directive == "MailOnSuccess") { return "mail_on_success_entries"; }
+    if (directive == "File") { return "file_entries"; }
+    if (directive == "Append") { return "append_entries"; }
+    if (directive == "Stdout") { return "stdout_entries"; }
+    if (directive == "Stderr") { return "stderr_entries"; }
+    if (directive == "Director") { return "director_entries"; }
+    if (directive == "Console") { return "console_entries"; }
+    if (directive == "Operator") { return "operator_entries"; }
+    if (directive == "Catalog") { return "catalog_entries"; }
+  }
+
+  if (component_name == "client" && resource == "Client") {
+    if (directive == "AllowedScriptDir") { return "allowed_script_dirs"; }
+    if (directive == "AllowedJobCommand") { return "allowed_job_commands"; }
+  }
+  if (component_name == "client" && resource == "Director") {
+    if (directive == "AllowedScriptDir") { return "allowed_script_dirs"; }
+    if (directive == "AllowedJobCommand") { return "allowed_job_commands"; }
+  }
+  if (component_name == "director" && resource == "Pool"
+      && directive == "Storage") {
+    return "storages";
+  }
+  if (component_name == "director" && resource == "FileSet") {
+    if (directive == "Include") { return "include_blocks"; }
+    if (directive == "Exclude") { return "exclude_blocks"; }
+  }
+  if (component_name == "director"
+      && (resource == "Job" || resource == "JobDefs")) {
+    if (directive == "Storage") { return "storages"; }
+    if (directive == "Run") { return "run_entries"; }
+    if (directive == "RunBeforeJob") { return "run_before_job_entries"; }
+    if (directive == "RunAfterJob") { return "run_after_job_entries"; }
+    if (directive == "RunAfterFailedJob") {
+      return "run_after_failed_job_entries";
+    }
+    if (directive == "ClientRunBeforeJob") {
+      return "client_run_before_job_entries";
+    }
+    if (directive == "ClientRunAfterJob") {
+      return "client_run_after_job_entries";
+    }
+    if (directive == "RunScript") { return "runscript_blocks"; }
+  }
+  if (component_name == "storage" && resource == "Autochanger"
+      && directive == "Device") {
+    return "devices";
+  }
+
+  return BareosNameToSnakeCase(directive_name);
+}
+
+std::string DetermineEditorGroup(std::string_view field_name)
+{
+  if (field_name.starts_with("tls_") || field_name.starts_with("pki_")
+      || field_name == "password" || field_name == "key_encryption_key") {
+    return "security";
+  }
+  if (field_name.starts_with("ndmp_")) { return "ndmp"; }
+  if (field_name.starts_with("plugin_") || field_name == "grpc_module"
+      || field_name.ends_with("_plugin_options")) {
+    return "plugins";
+  }
+  if (field_name == "address" || field_name == "addresses"
+      || field_name == "source_address" || field_name == "source_addresses"
+      || field_name == "port" || field_name == "heartbeat_interval"
+      || field_name == "sd_connect_timeout"
+      || field_name == "fd_connect_timeout"
+      || field_name == "client_connect_wait"
+      || field_name == "connection_from_director_to_client"
+      || field_name == "connection_from_client_to_director") {
+    return "connection";
+  }
+  if (field_name == "working_directory" || field_name == "plugin_directory"
+      || field_name == "scripts_directory" || field_name == "query_file"
+      || field_name == "archive_device" || field_name == "changer_device"
+      || field_name == "diagnostic_device" || field_name == "history_file"
+      || field_name == "rc_file" || field_name == "db_socket") {
+    return "paths";
+  }
+  if (field_name.starts_with("db_") || field_name == "catalog"
+      || field_name == "catalogs") {
+    return "catalog";
+  }
+  if (field_name == "messages" || field_name == "mail_command"
+      || field_name == "operator_command"
+      || field_name == "timestamp_format" || field_name == "entries"
+      || field_name.ends_with("_entries")) {
+    return "messages";
+  }
+  if (field_name == "client" || field_name == "director"
+      || field_name == "storage" || field_name == "storages"
+      || field_name == "console" || field_name == "pool"
+      || field_name == "schedule" || field_name == "fileset"
+      || field_name == "jobdefs" || field_name == "device"
+      || field_name == "devices" || field_name == "media_type"
+      || field_name == "paired_storage") {
+    return "relationships";
+  }
+  if (field_name == "include_blocks" || field_name == "exclude_blocks"
+      || field_name == "where" || field_name == "replace"
+      || field_name == "regex_where" || field_name == "strip_prefix"
+      || field_name == "add_prefix" || field_name == "add_suffix") {
+    return "selection";
+  }
+  if (field_name == "run_entries" || field_name.ends_with("_job_entries")
+      || field_name == "runscript_blocks") {
+    return "execution";
+  }
+  if (field_name == "type" || field_name == "level" || field_name == "enabled"
+      || field_name == "description" || field_name == "monitor"
+      || field_name == "pool_type" || field_name == "label_format") {
+    return "general";
+  }
+  if (field_name.starts_with("statistics_") || field_name == "collect_statistics"
+      || field_name == "collect_device_statistics"
+      || field_name == "collect_job_statistics" || field_name == "auditing"
+      || field_name.starts_with("audit_") || field_name == "ver_id"
+      || field_name == "log_timestamp_format") {
+    return "observability";
+  }
+  if (field_name.starts_with("maximum_") || field_name.starts_with("minimum_")
+      || field_name.ends_with("_timeout") || field_name.ends_with("_retention")
+      || field_name.ends_with("_interval") || field_name.ends_with("_bytes")
+      || field_name.ends_with("_jobs") || field_name.ends_with("_files")
+      || field_name.ends_with("_duration") || field_name.ends_with("_size")
+      || field_name == "priority") {
+    return "limits";
+  }
+  return "advanced";
+}
+
+bool IsSimpleEditorField(std::string_view field_name, bool required)
+{
+  if (required) { return true; }
+  static const std::array<std::string_view, 34> kSimpleFields{
+      "description",
+      "enabled",
+      "address",
+      "addresses",
+      "source_address",
+      "source_addresses",
+      "port",
+      "password",
+      "messages",
+      "working_directory",
+      "query_file",
+      "director",
+      "client",
+      "storage",
+      "storages",
+      "console",
+      "catalog",
+      "pool",
+      "schedule",
+      "fileset",
+      "jobdefs",
+      "device",
+      "devices",
+      "media_type",
+      "archive_device",
+      "db_name",
+      "db_user",
+      "db_password",
+      "db_address",
+      "db_port",
+      "pool_type",
+      "label_format",
+      "include_blocks",
+      "exclude_blocks",
+  };
+  if (std::find(kSimpleFields.begin(), kSimpleFields.end(), field_name)
+      != kSimpleFields.end()) {
+    return true;
+  }
+
+  const auto group = DetermineEditorGroup(field_name);
+  return group == "general" || group == "connection" || group == "paths"
+         || group == "catalog" || group == "messages"
+         || group == "relationships" || group == "selection";
+}
+
+JsonPtr ParsedDefaultValueJson(
+    const std::optional<std::string>& default_value)
+{
+  if (!default_value) { return MakeJson(json_null()); }
+
+  const auto trimmed = TrimAsciiWhitespace(*default_value);
+  const auto lowered = LowerAscii(trimmed);
+  if (lowered == "yes" || lowered == "true" || lowered == "on") {
+    return MakeJson(json_true());
+  }
+  if (lowered == "no" || lowered == "false" || lowered == "off") {
+    return MakeJson(json_false());
+  }
+
+  char* end = nullptr;
+  const auto numeric = std::strtoll(trimmed.c_str(), &end, 10);
+  if (end != trimmed.c_str() && end && *end == '\0') {
+    return MakeJson(json_integer(numeric));
+  }
+
+  if (trimmed.size() >= 2
+      && ((trimmed.front() == '"' && trimmed.back() == '"')
+          || (trimmed.front() == '\'' && trimmed.back() == '\''))) {
+    const auto unquoted = trimmed.substr(1, trimmed.size() - 2);
+    return MakeJson(json_string(unquoted.c_str()));
+  }
+
+  return MakeJson(json_string(trimmed.c_str()));
+}
+
+const bconfig::ResourceSchemaEntry* FindResourceSchema(
+    const std::vector<bconfig::ResourceSchemaEntry>& resources,
+    std::string_view resource_type)
+{
+  auto iterator = std::find_if(resources.begin(), resources.end(),
+                               [resource_type](const auto& resource) {
+                                 return resource.name == resource_type;
+                               });
+  if (iterator == resources.end()) { return nullptr; }
+  return &*iterator;
+}
+
+JsonPtr BuildEditorFieldJson(std::string_view api_name,
+                             const bconfig::DirectiveSchemaEntry* directive,
+                             json_t* value)
+{
+  auto object = MakeJson(json_object());
+  json_object_set_new(object.get(), "name",
+                      json_stringn(api_name.data(), api_name.size()));
+
+  if (directive) {
+    json_object_set_new(object.get(), "directive_name",
+                        json_string(directive->name.c_str()));
+    json_object_set_new(object.get(), "datatype",
+                        json_string(directive->datatype.c_str()));
+    json_object_set_new(object.get(), "required",
+                        json_boolean(directive->required));
+    json_object_set_new(object.get(), "deprecated",
+                        json_boolean(directive->deprecated));
+    if (directive->description) {
+      json_object_set_new(object.get(), "description",
+                          json_string(directive->description->c_str()));
+    } else {
+      json_object_set_new(object.get(), "description", json_null());
+    }
+    if (directive->default_value) {
+      json_object_set_new(object.get(), "default_value_text",
+                          json_string(directive->default_value->c_str()));
+    } else {
+      json_object_set_new(object.get(), "default_value_text", json_null());
+    }
+  } else {
+    json_object_set_new(object.get(), "directive_name", json_null());
+    json_object_set_new(object.get(), "datatype", json_null());
+    json_object_set_new(object.get(), "required", json_false());
+    json_object_set_new(object.get(), "deprecated", json_false());
+    json_object_set_new(object.get(), "description", json_null());
+    json_object_set_new(object.get(), "default_value_text", json_null());
+  }
+
+  const bool required = directive ? directive->required : false;
+  const auto group = DetermineEditorGroup(api_name);
+  const bool simple = IsSimpleEditorField(api_name, required);
+  json_object_set_new(object.get(), "group", json_string(group.c_str()));
+  json_object_set_new(object.get(), "visibility",
+                      json_string(simple ? "simple" : "advanced"));
+
+  auto default_value = ParsedDefaultValueJson(
+      directive ? directive->default_value : std::nullopt);
+  const bool has_default = directive && directive->default_value.has_value();
+  json_object_set_new(object.get(), "default_value",
+                      json_deep_copy(default_value.get()));
+  json_object_set_new(object.get(), "has_default", json_boolean(has_default));
+
+  const bool explicitly_set = value && !json_is_null(value);
+  json_object_set_new(object.get(), "explicitly_set",
+                      json_boolean(explicitly_set));
+  if (value && !json_is_null(value)) {
+    json_object_set_new(object.get(), "value", json_deep_copy(value));
+  } else {
+    json_object_set_new(object.get(), "value", json_null());
+  }
+
+  bool matches_default = false;
+  if (has_default) {
+    if (!explicitly_set) {
+      matches_default = true;
+    } else {
+      matches_default = json_equal(value, default_value.get());
+    }
+  }
+  json_object_set_new(object.get(), "matches_default",
+                      json_boolean(matches_default));
+
+  if (explicitly_set) {
+    json_object_set_new(object.get(), "effective_value", json_deep_copy(value));
+  } else if (has_default) {
+    json_object_set_new(object.get(), "effective_value",
+                        json_deep_copy(default_value.get()));
+  } else {
+    json_object_set_new(object.get(), "effective_value", json_null());
+  }
+
+  return object;
+}
+
+JsonPtr BuildEditorMetadataJson(bconfig::Component component,
+                                std::string_view resource_type,
+                                json_t* spec)
+{
+  auto root = MakeJson(json_object());
+  auto fields = MakeJson(json_array());
+  json_object_set_new(root.get(), "component",
+                      json_string(bconfig::ComponentToString(component)));
+  json_object_set_new(root.get(), "resource_type",
+                      json_string(std::string{resource_type}.c_str()));
+
+  std::set<std::string> matched_fields;
+  auto loaded = bconfig::LoadConfig(component, "", false);
+  if (loaded.parser) {
+    const auto resources = bconfig::CollectSchema(*loaded.parser);
+    if (const auto* resource = FindResourceSchema(resources, resource_type);
+        resource) {
+      for (const auto& directive : resource->directives) {
+        auto api_name = DirectiveApiName(component, resource_type,
+                                         directive.name);
+        matched_fields.insert(api_name);
+        auto* current_value
+            = spec ? json_object_get(spec, api_name.c_str()) : nullptr;
+        json_array_append_new(
+            fields.get(),
+            BuildEditorFieldJson(api_name, &directive, current_value).release());
+      }
+    }
+  }
+
+  if (spec && json_is_object(spec)) {
+    void* iterator = json_object_iter(spec);
+    while (iterator) {
+      const char* key = json_object_iter_key(iterator);
+      auto* value = json_object_iter_value(iterator);
+      if (matched_fields.find(key) == matched_fields.end()) {
+        json_array_append_new(
+            fields.get(), BuildEditorFieldJson(key, nullptr, value).release());
+      }
+      iterator = json_object_iter_next(spec, iterator);
+    }
+  }
+
+  json_object_set_new(root.get(), "fields", fields.release());
+  return root;
+}
+
+http::response<http::string_body> PrefillResponse(
+    const DeploymentRecord& deployment,
+    bconfig::Component component,
+    std::string_view resource_type,
+    JsonPtr spec_json)
+{
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set(root.get(), "spec", spec_json.get());
+  auto editor
+      = BuildEditorMetadataJson(component, resource_type, spec_json.get());
+  json_object_set_new(root.get(), "editor", editor.release());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
 json_t* ClientDaemonResourceSpecToJson(const ClientDaemonResourceSpec& spec)
 {
   auto object = MakeJson(json_object());
@@ -10543,6 +11024,19 @@ http::response<http::string_body> HandleSchemaRequest(
       } else {
         json_object_set_new(directive_json.get(), "description", json_null());
       }
+      const auto api_name
+          = DirectiveApiName(*component, resource.name, directive.name);
+      const auto group = DetermineEditorGroup(api_name);
+      const bool simple = IsSimpleEditorField(api_name, directive.required);
+      auto editor_default = ParsedDefaultValueJson(directive.default_value);
+      json_object_set_new(directive_json.get(), "api_name",
+                          json_string(api_name.c_str()));
+      json_object_set_new(directive_json.get(), "editor_group",
+                          json_string(group.c_str()));
+      json_object_set_new(directive_json.get(), "editor_visibility",
+                          json_string(simple ? "simple" : "advanced"));
+      json_object_set_new(directive_json.get(), "editor_default",
+                          editor_default.release());
       json_array_append_new(directives.get(), directive_json.release());
     }
     json_object_set_new(resource_json.get(), "directives",
@@ -10724,15 +11218,8 @@ http::response<http::string_body> HandleClientDaemonPrefillRequest(
 
   auto spec = state.GetClientDaemonResourceSpec(deployment_id, client_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      ClientDaemonResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kClient, "Client",
+                         MakeJson(ClientDaemonResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorDaemonPrefillRequest(
@@ -10747,15 +11234,9 @@ http::response<http::string_body> HandleDirectorDaemonPrefillRequest(
 
   auto spec = state.GetDirectorDaemonResourceSpec(deployment_id, director_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      DirectorDaemonResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Director",
+                         MakeJson(
+                             DirectorDaemonResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleStorageDaemonPrefillRequest(
@@ -10770,15 +11251,8 @@ http::response<http::string_body> HandleStorageDaemonPrefillRequest(
 
   auto spec = state.GetStorageDaemonResourceSpec(deployment_id, storage_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      StorageDaemonResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kStorage, "Storage",
+                         MakeJson(StorageDaemonResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleClientDirectorStubPrefillRequest(
@@ -10795,15 +11269,8 @@ http::response<http::string_body> HandleClientDirectorStubPrefillRequest(
   auto spec = state.GetClientDirectorStubSpec(deployment_id, client_name,
                                               director_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      ClientDirectorStubSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kClient, "Director",
+                         MakeJson(ClientDirectorStubSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorClientPrefillRequest(
@@ -10820,15 +11287,8 @@ http::response<http::string_body> HandleDirectorClientPrefillRequest(
   auto spec = state.GetDirectorClientResourceSpec(deployment_id, director_name,
                                                   client_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      DirectorClientResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Client",
+                         MakeJson(DirectorClientResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorStoragePrefillRequest(
@@ -10845,15 +11305,9 @@ http::response<http::string_body> HandleDirectorStoragePrefillRequest(
   auto spec = state.GetDirectorStorageResourceSpec(deployment_id, director_name,
                                                    storage_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      DirectorStorageResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Storage",
+                         MakeJson(
+                             DirectorStorageResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorConsolePrefillRequest(
@@ -10870,15 +11324,9 @@ http::response<http::string_body> HandleDirectorConsolePrefillRequest(
   auto spec = state.GetDirectorConsoleResourceSpec(deployment_id, director_name,
                                                    console_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      DirectorConsoleResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Console",
+                         MakeJson(
+                             DirectorConsoleResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleStorageDirectorPrefillRequest(
@@ -10895,15 +11343,9 @@ http::response<http::string_body> HandleStorageDirectorPrefillRequest(
   auto spec = state.GetStorageDirectorResourceSpec(deployment_id, storage_name,
                                                    director_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      StorageDirectorResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kStorage, "Director",
+                         MakeJson(
+                             StorageDirectorResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleConsoleConsolePrefillRequest(
@@ -10920,15 +11362,9 @@ http::response<http::string_body> HandleConsoleConsolePrefillRequest(
   auto spec = state.GetConsoleConsoleResourceSpec(
       deployment_id, console_config_name, console_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      ConsoleConsoleResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kConsole, "Console",
+                         MakeJson(
+                             ConsoleConsoleResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleConsoleDirectorPrefillRequest(
@@ -10945,15 +11381,9 @@ http::response<http::string_body> HandleConsoleDirectorPrefillRequest(
   auto spec = state.GetConsoleDirectorResourceSpec(
       deployment_id, console_config_name, director_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      ConsoleDirectorResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kConsole, "Director",
+                         MakeJson(
+                             ConsoleDirectorResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleClientMessagesPrefillRequest(
@@ -10970,15 +11400,8 @@ http::response<http::string_body> HandleClientMessagesPrefillRequest(
   auto spec = state.GetClientMessagesResourceSpec(deployment_id, client_name,
                                                   messages_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      MessagesResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kClient, "Messages",
+                         MakeJson(MessagesResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorMessagesPrefillRequest(
@@ -10995,15 +11418,8 @@ http::response<http::string_body> HandleDirectorMessagesPrefillRequest(
   auto spec = state.GetDirectorMessagesResourceSpec(
       deployment_id, director_name, messages_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      MessagesResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Messages",
+                         MakeJson(MessagesResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleStorageMessagesPrefillRequest(
@@ -11020,15 +11436,8 @@ http::response<http::string_body> HandleStorageMessagesPrefillRequest(
   auto spec = state.GetStorageMessagesResourceSpec(deployment_id, storage_name,
                                                    messages_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      MessagesResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kStorage, "Messages",
+                         MakeJson(MessagesResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleStorageDevicePrefillRequest(
@@ -11045,15 +11454,8 @@ http::response<http::string_body> HandleStorageDevicePrefillRequest(
   auto spec = state.GetStorageDeviceResourceSpec(deployment_id, storage_name,
                                                  device_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      StorageDeviceResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kStorage, "Device",
+                         MakeJson(StorageDeviceResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleStorageNdmpPrefillRequest(
@@ -11070,15 +11472,8 @@ http::response<http::string_body> HandleStorageNdmpPrefillRequest(
   auto spec = state.GetStorageNdmpResourceSpec(deployment_id, storage_name,
                                                ndmp_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      StorageNdmpResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kStorage, "Ndmp",
+                         MakeJson(StorageNdmpResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleStorageAutochangerPrefillRequest(
@@ -11095,15 +11490,10 @@ http::response<http::string_body> HandleStorageAutochangerPrefillRequest(
   auto spec = state.GetStorageAutochangerResourceSpec(
       deployment_id, storage_name, autochanger_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      StorageAutochangerResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kStorage,
+                         "Autochanger",
+                         MakeJson(
+                             StorageAutochangerResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorUserPrefillRequest(
@@ -11120,15 +11510,8 @@ http::response<http::string_body> HandleDirectorUserPrefillRequest(
   auto spec = state.GetDirectorUserResourceSpec(deployment_id, director_name,
                                                 user_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      DirectorUserResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector, "User",
+                         MakeJson(DirectorUserResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorProfilePrefillRequest(
@@ -11145,15 +11528,9 @@ http::response<http::string_body> HandleDirectorProfilePrefillRequest(
   auto spec = state.GetDirectorProfileResourceSpec(deployment_id, director_name,
                                                    profile_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      DirectorProfileResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Profile",
+                         MakeJson(
+                             DirectorProfileResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorCatalogPrefillRequest(
@@ -11170,15 +11547,9 @@ http::response<http::string_body> HandleDirectorCatalogPrefillRequest(
   auto spec = state.GetDirectorCatalogResourceSpec(deployment_id, director_name,
                                                    catalog_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      DirectorCatalogResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Catalog",
+                         MakeJson(
+                             DirectorCatalogResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorPoolPrefillRequest(
@@ -11195,15 +11566,8 @@ http::response<http::string_body> HandleDirectorPoolPrefillRequest(
   auto spec = state.GetDirectorPoolResourceSpec(deployment_id, director_name,
                                                 pool_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      DirectorPoolResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Pool",
+                         MakeJson(DirectorPoolResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorSchedulePrefillRequest(
@@ -11220,15 +11584,10 @@ http::response<http::string_body> HandleDirectorSchedulePrefillRequest(
   auto spec = state.GetDirectorScheduleResourceSpec(
       deployment_id, director_name, schedule_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      DirectorScheduleResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector,
+                         "Schedule",
+                         MakeJson(
+                             DirectorScheduleResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorCounterPrefillRequest(
@@ -11245,15 +11604,9 @@ http::response<http::string_body> HandleDirectorCounterPrefillRequest(
   auto spec = state.GetDirectorCounterResourceSpec(deployment_id, director_name,
                                                    counter_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      DirectorCounterResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Counter",
+                         MakeJson(
+                             DirectorCounterResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorFilesetPrefillRequest(
@@ -11270,15 +11623,9 @@ http::response<http::string_body> HandleDirectorFilesetPrefillRequest(
   auto spec = state.GetDirectorFilesetResourceSpec(deployment_id, director_name,
                                                    fileset_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      DirectorFilesetResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector, "FileSet",
+                         MakeJson(
+                             DirectorFilesetResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorJobPrefillRequest(
@@ -11295,15 +11642,9 @@ http::response<http::string_body> HandleDirectorJobPrefillRequest(
   auto spec = state.GetDirectorJobResourceSpec(deployment_id, director_name,
                                                job_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      DirectorJobLikeResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Job",
+                         MakeJson(
+                             DirectorJobLikeResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorJobDefsPrefillRequest(
@@ -11320,15 +11661,9 @@ http::response<http::string_body> HandleDirectorJobDefsPrefillRequest(
   auto spec = state.GetDirectorJobDefsResourceSpec(deployment_id, director_name,
                                                    jobdefs_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-
-  auto root = MakeJson(json_object());
-  auto deployment_json = MakeJson(json_array());
-  AppendDeployment(deployment_json.get(), *deployment);
-  json_object_set(root.get(), "deployment",
-                  json_array_get(deployment_json.get(), 0));
-  json_object_set_new(root.get(), "spec",
-                      DirectorJobLikeResourceSpecToJson(*spec.value));
-  return JsonResponse(http::status::ok, DumpJson(root.get()));
+  return PrefillResponse(*deployment, bconfig::Component::kDirector, "JobDefs",
+                         MakeJson(
+                             DirectorJobLikeResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDeploymentClientDaemonPutRequest(
