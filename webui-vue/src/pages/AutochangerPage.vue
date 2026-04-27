@@ -72,7 +72,9 @@
       <!-- Storage Slots (left, wide) -->
       <div class="col-12 col-md-8">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">{{ t('{count} Storage Slots', { count: storageSlots.length }) }}</q-card-section>
+          <q-card-section class="panel-header">
+            {{ formatCountLabel(storageSlots.length, t('Slots')) }}
+          </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
               :rows="storageSlots"
@@ -184,7 +186,9 @@
 
         <!-- Drives -->
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">{{ t('{count} Drives', { count: drives.length }) }}</q-card-section>
+          <q-card-section class="panel-header">
+            {{ formatCountLabel(drives.length, t('Drives')) }}
+          </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
               :rows="drives"
@@ -247,7 +251,9 @@
         <!-- Import/Export Slots -->
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center no-wrap">
-            <span class="col">{{ t('{count} Import/Export Slots', { count: importSlots.length }) }}</span>
+            <span class="col">
+              {{ formatCountLabel(importSlots.length, t('Import/Export Slots')) }}
+            </span>
             <q-btn flat round dense size="sm" icon="download"
                    :title="t('Import all')" @click="doImportAll" />
           </q-card-section>
@@ -565,6 +571,10 @@ function volStatusColor(status) {
     case 'recycle': return 'teal'
     default:        return 'primary'
   }
+}
+
+function formatCountLabel(count, label) {
+  return `${count} ${label}`
 }
 
 // ── Data Loading ──────────────────────────────────────────────
