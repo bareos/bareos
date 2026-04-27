@@ -1388,6 +1388,184 @@ TEST(BconfigService, UpsertsClientDirectorStubsPreserveLargeImportedPort)
   EXPECT_FALSE(current.value->port.has_value());
 }
 
+TEST(BconfigService, ServesClientPrefillRoutesOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP prefill route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory state_root{MakeTempPath()};
+
+  {
+    ServiceState state{state_root.path()};
+
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    const auto source_fixture_root = FindFixtureRoot();
+    ASSERT_FALSE(source_fixture_root.empty());
+    std::filesystem::create_directories(source_root.path());
+    std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                          source_root.path() / "bareos-dir.d",
+                          std::filesystem::copy_options::recursive);
+
+    auto import_job
+        = state.CreateJob({.type = "import_configuration",
+                           .deployment_id = std::string{"prod"},
+                           .source_path = source_root.path().string()});
+    ASSERT_TRUE(import_job);
+    auto imported = WaitForJobTerminal(state, import_job.value->id);
+    ASSERT_TRUE(imported.has_value());
+    ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+    auto messages = state.UpsertClientMessagesResource(
+        "prod", "bareos-fd", "ManagedMessages",
+        {.description = std::string{"HTTP-managed client messages"},
+         .stdout_entries = std::vector<std::string>{"all, !restored"},
+         .director_entries
+         = std::vector<std::string>{"bareos-dir = all, !skipped"}});
+    ASSERT_TRUE(messages) << messages.error;
+
+    auto daemon = state.UpsertClientDaemonResource(
+        "prod", "bareos-fd",
+        {.addresses = std::vector<std::string>{"host[ipv4;192.0.2.10;42102]",
+                                               "host[ipv6;::1;42102]"},
+         .allow_bandwidth_bursting = true,
+         .description = std::string{"HTTP-managed client daemon"},
+         .allowed_job_commands
+         = std::vector<std::string>{"RunBeforeJob", "Estimate listing"},
+         .messages = std::string{"ManagedMessages"}});
+    ASSERT_TRUE(daemon) << daemon.error;
+
+    auto director = state.UpsertClientDirectorStub(
+        "prod", "bareos-fd", "bareos-dir",
+        {.description = std::string{"HTTP-managed client director"},
+         .password = std::string{"[md5]44444444444444444444444444444444"},
+         .address = std::string{"127.0.0.1"},
+         .port = 9101,
+         .allowed_script_dirs
+         = std::vector<std::string>{"/usr/lib/bareos/scripts",
+                                    "/opt/bareos/hooks"},
+         .monitor = true,
+         .maximum_bandwidth_per_job = 2048});
+    ASSERT_TRUE(director) << director.error;
+  }
+
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto daemon_response
+      = server.Get("/v1/deployments/prod/clients/bareos-fd/prefill");
+  ASSERT_EQ(daemon_response.status_code, 200u) << daemon_response.body;
+  auto daemon_json = ParseJson(daemon_response.body);
+  ASSERT_NE(daemon_json.get(), nullptr) << daemon_response.body;
+  auto* daemon_deployment = json_object_get(daemon_json.get(), "deployment");
+  ASSERT_TRUE(json_is_object(daemon_deployment));
+  auto* daemon_deployment_id = json_object_get(daemon_deployment, "id");
+  ASSERT_TRUE(json_is_string(daemon_deployment_id));
+  EXPECT_STREQ(json_string_value(daemon_deployment_id), "prod");
+  auto* daemon_deployment_name = json_object_get(daemon_deployment, "name");
+  ASSERT_TRUE(json_is_string(daemon_deployment_name));
+  EXPECT_STREQ(json_string_value(daemon_deployment_name), "Production");
+  auto* daemon_spec = json_object_get(daemon_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(daemon_spec));
+  auto* daemon_description = json_object_get(daemon_spec, "description");
+  ASSERT_TRUE(json_is_string(daemon_description));
+  EXPECT_STREQ(json_string_value(daemon_description),
+               "HTTP-managed client daemon");
+  auto* daemon_messages = json_object_get(daemon_spec, "messages");
+  ASSERT_TRUE(json_is_string(daemon_messages));
+  EXPECT_STREQ(json_string_value(daemon_messages), "ManagedMessages");
+  auto* daemon_allow_burst
+      = json_object_get(daemon_spec, "allow_bandwidth_bursting");
+  ASSERT_TRUE(json_is_boolean(daemon_allow_burst));
+  EXPECT_TRUE(json_is_true(daemon_allow_burst));
+  auto* daemon_addresses = json_object_get(daemon_spec, "addresses");
+  ASSERT_TRUE(json_is_array(daemon_addresses));
+  ASSERT_EQ(json_array_size(daemon_addresses), 2u);
+  EXPECT_STREQ(json_string_value(json_array_get(daemon_addresses, 0)),
+               "host[ipv4;192.0.2.10;42102]");
+  auto* daemon_job_commands
+      = json_object_get(daemon_spec, "allowed_job_commands");
+  ASSERT_TRUE(json_is_array(daemon_job_commands));
+  ASSERT_EQ(json_array_size(daemon_job_commands), 2u);
+  EXPECT_STREQ(json_string_value(json_array_get(daemon_job_commands, 1)),
+               "Estimate listing");
+
+  const auto messages_response = server.Get(
+      "/v1/deployments/prod/clients/bareos-fd/messages/ManagedMessages/"
+      "prefill");
+  ASSERT_EQ(messages_response.status_code, 200u) << messages_response.body;
+  auto messages_json = ParseJson(messages_response.body);
+  ASSERT_NE(messages_json.get(), nullptr) << messages_response.body;
+  auto* messages_spec = json_object_get(messages_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(messages_spec));
+  auto* messages_description = json_object_get(messages_spec, "description");
+  ASSERT_TRUE(json_is_string(messages_description));
+  EXPECT_STREQ(json_string_value(messages_description),
+               "HTTP-managed client messages");
+  auto* messages_stdout = json_object_get(messages_spec, "stdout_entries");
+  ASSERT_TRUE(json_is_array(messages_stdout));
+  ASSERT_EQ(json_array_size(messages_stdout), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(messages_stdout, 0)),
+               "all, !restored");
+  auto* messages_directors = json_object_get(messages_spec, "director_entries");
+  ASSERT_TRUE(json_is_array(messages_directors));
+  ASSERT_EQ(json_array_size(messages_directors), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(messages_directors, 0)),
+               "bareos-dir = all, !skipped");
+
+  const auto director_response = server.Get(
+      "/v1/deployments/prod/clients/bareos-fd/directors/bareos-dir/prefill");
+  ASSERT_EQ(director_response.status_code, 200u) << director_response.body;
+  auto director_json = ParseJson(director_response.body);
+  ASSERT_NE(director_json.get(), nullptr) << director_response.body;
+  auto* director_spec = json_object_get(director_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(director_spec));
+  auto* director_description = json_object_get(director_spec, "description");
+  ASSERT_TRUE(json_is_string(director_description));
+  EXPECT_STREQ(json_string_value(director_description),
+               "HTTP-managed client director");
+  auto* director_address = json_object_get(director_spec, "address");
+  ASSERT_TRUE(json_is_string(director_address));
+  EXPECT_STREQ(json_string_value(director_address), "127.0.0.1");
+  auto* director_port = json_object_get(director_spec, "port");
+  ASSERT_TRUE(json_is_integer(director_port));
+  EXPECT_EQ(json_integer_value(director_port), 9101);
+  auto* director_script_dirs
+      = json_object_get(director_spec, "allowed_script_dirs");
+  ASSERT_TRUE(json_is_array(director_script_dirs));
+  ASSERT_EQ(json_array_size(director_script_dirs), 2u);
+  EXPECT_STREQ(json_string_value(json_array_get(director_script_dirs, 0)),
+               "/usr/lib/bareos/scripts");
+  auto* director_monitor = json_object_get(director_spec, "monitor");
+  ASSERT_TRUE(json_is_boolean(director_monitor));
+  EXPECT_TRUE(json_is_true(director_monitor));
+  auto* director_bandwidth
+      = json_object_get(director_spec, "maximum_bandwidth_per_job");
+  ASSERT_TRUE(json_is_integer(director_bandwidth));
+  EXPECT_EQ(json_integer_value(director_bandwidth), 2048);
+
+  const auto missing_director_response = server.Get(
+      "/v1/deployments/prod/clients/bareos-fd/directors/MissingDirector/"
+      "prefill");
+  EXPECT_EQ(missing_director_response.status_code, 400u);
+  EXPECT_NE(missing_director_response.body.find(
+                "client director 'MissingDirector' not found."),
+            std::string::npos);
+
+  const auto missing_deployment_response
+      = server.Get("/v1/deployments/missing/clients/bareos-fd/prefill");
+  EXPECT_EQ(missing_deployment_response.status_code, 404u);
+  EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
+            std::string::npos);
+#endif
+}
+
 TEST(BconfigService, DeletesClientDirectorStubs)
 {
   ScopedDirectory source_root{MakeTempPath()};
