@@ -462,8 +462,8 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
       bstrutime(dt, sizeof(dt), mr->LabelDate);
       Mmsg(cmd,
            "UPDATE Media SET LabelDate='%s' "
-            "WHERE MediaId=%" PRIdbid,
-            dt, mr->MediaId);
+           "WHERE MediaId=%" PRIdbid,
+           dt, mr->MediaId);
       retval = UpdateDb(jcr, cmd) > 0;
     }
     /* Make sure that if InChanger is non-zero any other identical slot
@@ -979,10 +979,10 @@ bool BareosDb::CreateAttributesRecord(JobControlRecord* jcr,
   }
   if (!(ar->Stream == STREAM_UNIX_ATTRIBUTES
         || ar->Stream == STREAM_UNIX_ATTRIBUTES_EX)) {
-    Mmsg1(errmsg,
-          T_("Attempt to put non-attributes into catalog. Stream=%" PRIu32
-             "\n"),
-          ar->Stream);
+    Mmsg1(
+        errmsg,
+        T_("Attempt to put non-attributes into catalog. Stream=%" PRIu32 "\n"),
+        ar->Stream);
     Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
     return false;
   }
@@ -1135,7 +1135,7 @@ bool BareosDb::CreateRestoreObjectRecord(JobControlRecord* jcr,
        "INSERT INTO RestoreObject (ObjectName,PluginName,RestoreObject,"
        "ObjectLength,ObjectFullLength,ObjectIndex,ObjectType,"
        "ObjectCompression,FileIndex,JobId) "
-       "VALUES ('%s','%s','%s',%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32
+       "VALUES ('%s','%s','%s',%" PRIu32 ",%" PRIu32 ",%" PRIi32 ",%" PRIu32
        ",%d,%" PRIu32 ",%" PRIu32 ")",
         esc_name, esc_plug_name, esc_obj,
         ro->object_len, ro->object_full_len, ro->object_index,

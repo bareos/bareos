@@ -213,7 +213,7 @@ struct RestoreObjectDbRecord {
   char* plugin_name = nullptr;
   uint32_t object_len = 0;
   uint32_t object_full_len = 0;
-  uint32_t object_index = 0;
+  int32_t object_index = 0;
   int32_t object_compression = 0;
   uint32_t FileIndex = 0;
   uint32_t Stream = 0;
