@@ -4436,5 +4436,135 @@ TEST(BconfigService, ServesDirectorFilesetPrefillRouteOverHttp)
 #endif
 }
 
+TEST(BconfigService, ServesDirectorJobDefsPrefillRouteOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP prefill route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory state_root{MakeTempPath()};
+
+  {
+    ServiceState state{state_root.path()};
+
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    const auto source_fixture_root = FindFixtureRoot();
+    ASSERT_FALSE(source_fixture_root.empty());
+    std::filesystem::create_directories(source_root.path());
+    std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                          source_root.path() / "bareos-dir.d",
+                          std::filesystem::copy_options::recursive);
+
+    auto import_job
+        = state.CreateJob({.type = "import_configuration",
+                           .deployment_id = std::string{"prod"},
+                           .source_path = source_root.path().string()});
+    ASSERT_TRUE(import_job);
+    auto imported = WaitForJobTerminal(state, import_job.value->id);
+    ASSERT_TRUE(imported.has_value());
+    ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+    auto jobdefs = state.UpsertDirectorJobDefsResource(
+        "prod", "bareos-dir", "ManagedJobDefs",
+        {.description = std::string{"HTTP-managed director jobdefs"},
+         .type = std::string{"Backup"},
+         .backup_format = std::string{"Portable"},
+         .protocol = std::string{"ndmp"},
+         .client = std::string{"bareos-fd"},
+         .fileset = std::string{"SelfTest"},
+         .run_entries = std::vector<std::string>{"managed-jobdefs-run"},
+         .run_before_job_entries
+         = std::vector<std::string>{"/usr/lib/bareos/scripts/jobdefs-before"},
+         .write_bootstrap = std::string{"/tmp/http-managed-jobdefs.bsr"},
+         .maximum_concurrent_jobs = 4,
+         .enabled = false});
+    ASSERT_TRUE(jobdefs) << jobdefs.error;
+  }
+
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto jobdefs_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/jobdefs/ManagedJobDefs/"
+      "prefill");
+  ASSERT_EQ(jobdefs_response.status_code, 200u) << jobdefs_response.body;
+  auto jobdefs_json = ParseJson(jobdefs_response.body);
+  ASSERT_NE(jobdefs_json.get(), nullptr) << jobdefs_response.body;
+  auto* jobdefs_deployment = json_object_get(jobdefs_json.get(), "deployment");
+  ASSERT_TRUE(json_is_object(jobdefs_deployment));
+  auto* jobdefs_deployment_id = json_object_get(jobdefs_deployment, "id");
+  ASSERT_TRUE(json_is_string(jobdefs_deployment_id));
+  EXPECT_STREQ(json_string_value(jobdefs_deployment_id), "prod");
+  auto* jobdefs_deployment_name = json_object_get(jobdefs_deployment, "name");
+  ASSERT_TRUE(json_is_string(jobdefs_deployment_name));
+  EXPECT_STREQ(json_string_value(jobdefs_deployment_name), "Production");
+  auto* jobdefs_spec = json_object_get(jobdefs_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(jobdefs_spec));
+  auto* jobdefs_description = json_object_get(jobdefs_spec, "description");
+  ASSERT_TRUE(json_is_string(jobdefs_description));
+  EXPECT_STREQ(json_string_value(jobdefs_description),
+               "HTTP-managed director jobdefs");
+  auto* jobdefs_type = json_object_get(jobdefs_spec, "type");
+  ASSERT_TRUE(json_is_string(jobdefs_type));
+  EXPECT_STREQ(json_string_value(jobdefs_type), "Backup");
+  auto* jobdefs_backup_format = json_object_get(jobdefs_spec, "backup_format");
+  ASSERT_TRUE(json_is_string(jobdefs_backup_format));
+  EXPECT_STREQ(json_string_value(jobdefs_backup_format), "Portable");
+  auto* jobdefs_protocol = json_object_get(jobdefs_spec, "protocol");
+  ASSERT_TRUE(json_is_string(jobdefs_protocol));
+  EXPECT_STREQ(json_string_value(jobdefs_protocol), "NDMP_BAREOS");
+  auto* jobdefs_client = json_object_get(jobdefs_spec, "client");
+  ASSERT_TRUE(json_is_string(jobdefs_client));
+  EXPECT_STREQ(json_string_value(jobdefs_client), "bareos-fd");
+  auto* jobdefs_fileset = json_object_get(jobdefs_spec, "fileset");
+  ASSERT_TRUE(json_is_string(jobdefs_fileset));
+  EXPECT_STREQ(json_string_value(jobdefs_fileset), "SelfTest");
+  auto* jobdefs_runs = json_object_get(jobdefs_spec, "run_entries");
+  ASSERT_TRUE(json_is_array(jobdefs_runs));
+  ASSERT_EQ(json_array_size(jobdefs_runs), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(jobdefs_runs, 0)),
+               "managed-jobdefs-run");
+  auto* jobdefs_run_before
+      = json_object_get(jobdefs_spec, "run_before_job_entries");
+  ASSERT_TRUE(json_is_array(jobdefs_run_before));
+  ASSERT_EQ(json_array_size(jobdefs_run_before), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(jobdefs_run_before, 0)),
+               "/usr/lib/bareos/scripts/jobdefs-before");
+  auto* jobdefs_write_bootstrap
+      = json_object_get(jobdefs_spec, "write_bootstrap");
+  ASSERT_TRUE(json_is_string(jobdefs_write_bootstrap));
+  EXPECT_STREQ(json_string_value(jobdefs_write_bootstrap),
+               "/tmp/http-managed-jobdefs.bsr");
+  auto* jobdefs_maximum_concurrent_jobs
+      = json_object_get(jobdefs_spec, "maximum_concurrent_jobs");
+  ASSERT_TRUE(json_is_integer(jobdefs_maximum_concurrent_jobs));
+  EXPECT_EQ(json_integer_value(jobdefs_maximum_concurrent_jobs), 4);
+  auto* jobdefs_enabled = json_object_get(jobdefs_spec, "enabled");
+  ASSERT_TRUE(json_is_boolean(jobdefs_enabled));
+  EXPECT_TRUE(json_is_false(jobdefs_enabled));
+
+  const auto missing_jobdefs_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/jobdefs/MissingJobDefs/"
+      "prefill");
+  EXPECT_EQ(missing_jobdefs_response.status_code, 400u);
+  EXPECT_NE(missing_jobdefs_response.body.find(
+                "director jobdefs 'MissingJobDefs' not found."),
+            std::string::npos);
+
+  const auto missing_deployment_response = server.Get(
+      "/v1/deployments/missing/directors/bareos-dir/jobdefs/ManagedJobDefs/"
+      "prefill");
+  EXPECT_EQ(missing_deployment_response.status_code, 404u);
+  EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
+            std::string::npos);
+#endif
+}
+
 }  // namespace
 }  // namespace bconfig::service
