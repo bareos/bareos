@@ -646,7 +646,8 @@ Group:         Productivity/Archiving/Backup
 %description webui-proxy
 %{dscr}
 
-This package contains the Bareos WebUI WebSocket proxy.
+This package contains the Bareos WebUI WebSocket proxy and optional
+bconfig-service HTTP forwarding support.
 %endif
 
 %if 0%{?contrib}

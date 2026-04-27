@@ -6,5 +6,5 @@ Description: Backup Archiving Recovery Open Sourced - WebUI WebSocket proxy
  data across a network of computers of different kinds.
  .
  This package provides bareos-webui-proxy, a C++ daemon that proxies
- WebSocket connections between the Bareos WebUI and the Bareos Director
- using the CRAM-MD5 authentication protocol.
+ WebSocket connections between the Bareos WebUI and the Bareos Director and
+ optionally forwards HTTP requests to bconfig-service for configuration APIs.

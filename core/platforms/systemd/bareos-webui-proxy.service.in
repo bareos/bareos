@@ -13,6 +13,7 @@ StartLimitIntervalSec=1d
 Type=simple
 User=nobody
 # Configuration via INI config file
+EnvironmentFile=-/etc/default/bareos-webui-proxy
 ExecStart=@sbindir@/bareos-webui-proxy --config @confdir@/bareos-webui-proxy.ini
 # Restart on failure, wait 30 seconds
 Restart=on-failure
