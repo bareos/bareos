@@ -3704,5 +3704,102 @@ TEST(BconfigService, ServesDirectorConsolePrefillRouteOverHttp)
 #endif
 }
 
+TEST(BconfigService, ServesDirectorUserPrefillRouteOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP prefill route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory state_root{MakeTempPath()};
+
+  {
+    ServiceState state{state_root.path()};
+
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    const auto source_fixture_root = FindFixtureRoot();
+    ASSERT_FALSE(source_fixture_root.empty());
+    std::filesystem::create_directories(source_root.path());
+    std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                          source_root.path() / "bareos-dir.d",
+                          std::filesystem::copy_options::recursive);
+
+    auto import_job
+        = state.CreateJob({.type = "import_configuration",
+                           .deployment_id = std::string{"prod"},
+                           .source_path = source_root.path().string()});
+    ASSERT_TRUE(import_job);
+    auto imported = WaitForJobTerminal(state, import_job.value->id);
+    ASSERT_TRUE(imported.has_value());
+    ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+    auto user = state.UpsertDirectorUserResource(
+        "prod", "bareos-dir", "ManagedUser",
+        {.description = std::string{"HTTP-managed director user"},
+         .job_acl = std::vector<std::string>{"ManagedJob", "NightlyJob"},
+         .command_acl = std::vector<std::string>{"status", ".status"},
+         .profiles = std::vector<std::string>{"operator"}});
+    ASSERT_TRUE(user) << user.error;
+  }
+
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto user_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/users/ManagedUser/prefill");
+  ASSERT_EQ(user_response.status_code, 200u) << user_response.body;
+  auto user_json = ParseJson(user_response.body);
+  ASSERT_NE(user_json.get(), nullptr) << user_response.body;
+  auto* user_deployment = json_object_get(user_json.get(), "deployment");
+  ASSERT_TRUE(json_is_object(user_deployment));
+  auto* user_deployment_id = json_object_get(user_deployment, "id");
+  ASSERT_TRUE(json_is_string(user_deployment_id));
+  EXPECT_STREQ(json_string_value(user_deployment_id), "prod");
+  auto* user_deployment_name = json_object_get(user_deployment, "name");
+  ASSERT_TRUE(json_is_string(user_deployment_name));
+  EXPECT_STREQ(json_string_value(user_deployment_name), "Production");
+  auto* user_spec = json_object_get(user_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(user_spec));
+  auto* user_description = json_object_get(user_spec, "description");
+  ASSERT_TRUE(json_is_string(user_description));
+  EXPECT_STREQ(json_string_value(user_description),
+               "HTTP-managed director user");
+  auto* user_job_acl = json_object_get(user_spec, "job_acl");
+  ASSERT_TRUE(json_is_array(user_job_acl));
+  ASSERT_EQ(json_array_size(user_job_acl), 2u);
+  EXPECT_STREQ(json_string_value(json_array_get(user_job_acl, 0)),
+               "ManagedJob");
+  EXPECT_STREQ(json_string_value(json_array_get(user_job_acl, 1)),
+               "NightlyJob");
+  auto* user_command_acl = json_object_get(user_spec, "command_acl");
+  ASSERT_TRUE(json_is_array(user_command_acl));
+  ASSERT_EQ(json_array_size(user_command_acl), 2u);
+  EXPECT_STREQ(json_string_value(json_array_get(user_command_acl, 1)),
+               ".status");
+  auto* user_profiles = json_object_get(user_spec, "profiles");
+  ASSERT_TRUE(json_is_array(user_profiles));
+  ASSERT_EQ(json_array_size(user_profiles), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(user_profiles, 0)), "operator");
+
+  const auto missing_user_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/users/MissingUser/prefill");
+  EXPECT_EQ(missing_user_response.status_code, 400u);
+  EXPECT_NE(
+      missing_user_response.body.find("director user 'MissingUser' not found."),
+      std::string::npos);
+
+  const auto missing_deployment_response = server.Get(
+      "/v1/deployments/missing/directors/bareos-dir/users/ManagedUser/prefill");
+  EXPECT_EQ(missing_deployment_response.status_code, 404u);
+  EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
+            std::string::npos);
+#endif
+}
+
 }  // namespace
 }  // namespace bconfig::service
