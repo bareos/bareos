@@ -4127,5 +4127,101 @@ TEST(BconfigService, ServesDirectorCatalogPrefillRouteOverHttp)
 #endif
 }
 
+TEST(BconfigService, ServesDirectorSchedulePrefillRouteOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP prefill route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory state_root{MakeTempPath()};
+
+  {
+    ServiceState state{state_root.path()};
+
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    const auto source_fixture_root = FindFixtureRoot();
+    ASSERT_FALSE(source_fixture_root.empty());
+    std::filesystem::create_directories(source_root.path());
+    std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                          source_root.path() / "bareos-dir.d",
+                          std::filesystem::copy_options::recursive);
+
+    auto import_job
+        = state.CreateJob({.type = "import_configuration",
+                           .deployment_id = std::string{"prod"},
+                           .source_path = source_root.path().string()});
+    ASSERT_TRUE(import_job);
+    auto imported = WaitForJobTerminal(state, import_job.value->id);
+    ASSERT_TRUE(imported.has_value());
+    ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+    auto schedule = state.UpsertDirectorScheduleResource(
+        "prod", "bareos-dir", "ManagedSchedule",
+        {.description = std::string{"HTTP-managed director schedule"},
+         .enabled = false,
+         .run_entries
+         = std::vector<std::string>{"Level=Full monthly 1st sat at 21:00",
+                                    "Level=Incremental mon-fri at 21:00"}});
+    ASSERT_TRUE(schedule) << schedule.error;
+  }
+
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto schedule_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/schedules/ManagedSchedule/"
+      "prefill");
+  ASSERT_EQ(schedule_response.status_code, 200u) << schedule_response.body;
+  auto schedule_json = ParseJson(schedule_response.body);
+  ASSERT_NE(schedule_json.get(), nullptr) << schedule_response.body;
+  auto* schedule_deployment
+      = json_object_get(schedule_json.get(), "deployment");
+  ASSERT_TRUE(json_is_object(schedule_deployment));
+  auto* schedule_deployment_id = json_object_get(schedule_deployment, "id");
+  ASSERT_TRUE(json_is_string(schedule_deployment_id));
+  EXPECT_STREQ(json_string_value(schedule_deployment_id), "prod");
+  auto* schedule_deployment_name = json_object_get(schedule_deployment, "name");
+  ASSERT_TRUE(json_is_string(schedule_deployment_name));
+  EXPECT_STREQ(json_string_value(schedule_deployment_name), "Production");
+  auto* schedule_spec = json_object_get(schedule_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(schedule_spec));
+  auto* schedule_description = json_object_get(schedule_spec, "description");
+  ASSERT_TRUE(json_is_string(schedule_description));
+  EXPECT_STREQ(json_string_value(schedule_description),
+               "HTTP-managed director schedule");
+  auto* schedule_enabled = json_object_get(schedule_spec, "enabled");
+  ASSERT_TRUE(json_is_boolean(schedule_enabled));
+  EXPECT_TRUE(json_is_false(schedule_enabled));
+  auto* schedule_run_entries = json_object_get(schedule_spec, "run_entries");
+  ASSERT_TRUE(json_is_array(schedule_run_entries));
+  ASSERT_EQ(json_array_size(schedule_run_entries), 2u);
+  EXPECT_STREQ(json_string_value(json_array_get(schedule_run_entries, 0)),
+               "Level=Full monthly 1st sat at 21:00");
+  EXPECT_STREQ(json_string_value(json_array_get(schedule_run_entries, 1)),
+               "Level=Incremental mon-fri at 21:00");
+
+  const auto missing_schedule_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/schedules/MissingSchedule/"
+      "prefill");
+  EXPECT_EQ(missing_schedule_response.status_code, 400u);
+  EXPECT_NE(missing_schedule_response.body.find(
+                "director schedule 'MissingSchedule' not found."),
+            std::string::npos);
+
+  const auto missing_deployment_response = server.Get(
+      "/v1/deployments/missing/directors/bareos-dir/schedules/ManagedSchedule/"
+      "prefill");
+  EXPECT_EQ(missing_deployment_response.status_code, 404u);
+  EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
+            std::string::npos);
+#endif
+}
+
 }  // namespace
 }  // namespace bconfig::service
