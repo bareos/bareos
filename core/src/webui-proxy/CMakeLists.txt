@@ -12,9 +12,10 @@ cmake_minimum_required(VERSION 3.17)
 find_package(Threads REQUIRED)
 find_package(Jansson REQUIRED)
 
-set(PROXY_SOURCES main.cc bareos_base64.cc director_connection.cc
-                  "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc"
-                  proxy_session.cc proxy_server.cc
+set(PROXY_SOURCES
+    main.cc bareos_base64.cc director_connection.cc
+    "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc" proxy_session.cc
+    proxy_server.cc
 )
 
 add_executable(bareos-webui-proxy ${PROXY_SOURCES})

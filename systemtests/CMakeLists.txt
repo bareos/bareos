@@ -469,13 +469,14 @@ endif()
 # webui: end
 #
 
-set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS
-    admin-smoke
-    testuser-smoke
-    testuser-tls-psk-smoke
+set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS admin-smoke testuser-smoke
+                                         testuser-tls-psk-smoke
 )
 
-if(NODE AND NPM AND GOOGLE_CHROME)
+if(NODE
+   AND NPM
+   AND GOOGLE_CHROME
+)
   set(ENABLE_WEBUI_VUE_PLAYWRIGHT_TEST TRUE)
   message(STATUS "OK: all requirements for webui-vue browser tests were met.")
 else()
@@ -525,9 +526,7 @@ else()
     configurefilestosystemtest(
       "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
     )
-    configurefilestosystemtest(
-      "systemtests" "tests/${TEST_NAME}" "*" @ONLY ""
-    )
+    configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
     configurefilestosystemtest(
       "systemtests" "tests/${TEST_NAME}" "testrunner" @ONLY
       "tests/webui-vue-common"

@@ -356,12 +356,13 @@ void ListDirStatusHeader(UaContext* ua)
     ua->send->ObjectKeyValue("release_date", kBareosVersionStrings.Date,
                              "%s\n");
     ua->send->ObjectKeyValue("os", kBareosVersionStrings.GetOsInfo(), "%s\n");
-    ua->send->ObjectKeyValue("binary_info",
-                             kBareosVersionStrings.BinaryInfo, "%s\n");
+    ua->send->ObjectKeyValue("binary_info", kBareosVersionStrings.BinaryInfo,
+                             "%s\n");
     ua->send->ObjectKeyValue("daemon_started", dt, "%s\n");
-    ua->send->ObjectKeyValue("jobs_run", (uint64_t)NumJobsRun(), "%" PRIuz "\n");
+    ua->send->ObjectKeyValue("jobs_run", (uint64_t)NumJobsRun(),
+                             "%" PRIuz "\n");
     ua->send->ObjectKeyValueSignedInt("jobs_running", (int64_t)JobCount(),
-                                     "%d\n");
+                                      "%d\n");
     ua->send->ObjectKeyValueBool("config_warnings", my_config->HasWarnings());
     ua->send->ObjectEnd("header");
   } else {
@@ -374,8 +375,7 @@ void ListDirStatusHeader(UaContext* ua)
                 dt, NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
 
     if (me->secure_erase_cmdline) {
-      ua->SendMsg(T_(" secure erase command='%s'\n"),
-                  me->secure_erase_cmdline);
+      ua->SendMsg(T_(" secure erase command='%s'\n"), me->secure_erase_cmdline);
     }
 
     len = ListDirPlugins(msg);
@@ -1429,26 +1429,23 @@ static void ListRunningJobs(UaContext* ua)
       ua->send->ObjectKeyValue("jobid", (uint64_t)jcr->JobId, "%llu\n");
       ua->send->ObjectKeyValue("name", jcr->Job, "%s\n");
       ua->send->ObjectKeyValue("level", level, "%s\n");
-      ua->send->ObjectKeyValue("type",
-                               job_type_to_str(jcr->getJobType()), "%s\n");
+      ua->send->ObjectKeyValue("type", job_type_to_str(jcr->getJobType()),
+                               "%s\n");
       ua->send->ObjectKeyValue("status", msg, "%s\n");
       ua->send->ObjectKeyValue("start_time", dt, "%s\n");
-      ua->send->ObjectKeyValue("files",
-                               (uint64_t)jcr->JobFiles, "%llu\n");
-      ua->send->ObjectKeyValue("bytes",
-                               (uint64_t)jcr->JobBytes, "%llu\n");
+      ua->send->ObjectKeyValue("files", (uint64_t)jcr->JobFiles, "%llu\n");
+      ua->send->ObjectKeyValue("bytes", (uint64_t)jcr->JobBytes, "%llu\n");
       if (*jcr->comment) {
         ua->send->ObjectKeyValue("comment", jcr->comment, "%s\n");
       }
       ua->send->ObjectEnd();
     } else if (ua->api) {
       BashSpaces(jcr->comment);
-      ua->SendMsg(T_("%6d\t%-6s\t%-20s\t%s\t%s\n"), jcr->JobId, level,
-                  jcr->Job, msg, jcr->comment);
+      ua->SendMsg(T_("%6d\t%-6s\t%-20s\t%s\t%s\n"), jcr->JobId, level, jcr->Job,
+                  msg, jcr->comment);
       UnbashSpaces(jcr->comment);
     } else {
-      ua->SendMsg(T_("%6d %-6s  %-20s %s\n"), jcr->JobId, level, jcr->Job,
-                  msg);
+      ua->SendMsg(T_("%6d %-6s  %-20s %s\n"), jcr->JobId, level, jcr->Job, msg);
       /* Display comments if any */
       if (*jcr->comment) {
         ua->SendMsg(T_("               %-30s\n"), jcr->comment);
@@ -1476,7 +1473,10 @@ static void ListTerminatedJobs(UaContext* ua)
 
   if (RecentJobResultsList::IsEmpty()) {
     if (!ua->api) ua->SendMsg(T_("No Terminated Jobs.\n"));
-    if (ua->api == API_MODE_JSON) { ua->send->ArrayStart("terminated"); ua->send->ArrayEnd("terminated"); }
+    if (ua->api == API_MODE_JSON) {
+      ua->send->ArrayStart("terminated");
+      ua->send->ArrayEnd("terminated");
+    }
     return;
   }
   if (!ua->api) {
@@ -1552,8 +1552,8 @@ static void ListTerminatedJobs(UaContext* ua)
       ua->send->ObjectKeyValue("finished", dt, "%s\n");
       ua->send->ObjectEnd();
     } else if (ua->api) {
-      ua->SendMsg(T_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
-                  level, edit_uint64_with_commas(je.JobFiles, b1),
+      ua->SendMsg(T_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId, level,
+                  edit_uint64_with_commas(je.JobFiles, b1),
                   edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
                   JobName);
     } else {

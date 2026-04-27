@@ -148,8 +148,7 @@ unsigned int TlsPskClientCallback(SSL* ssl,
     return 0;
   }
 
-  std::memcpy(identity, tls_psk_identity.c_str(),
-              tls_psk_identity.size() + 1);
+  std::memcpy(identity, tls_psk_identity.c_str(), tls_psk_identity.size() + 1);
   std::memcpy(psk, tls_psk_secret.data(), tls_psk_secret.size());
   return static_cast<unsigned int>(tls_psk_secret.size());
 }
@@ -224,9 +223,7 @@ bool DirectorConnection::HasPendingInput() const
   if (ssl_ && SSL_pending(ssl_) > 0) { return true; }
   if (fd_ < 0) { return false; }
 
-  struct pollfd pfd {
-    fd_, POLLIN, 0
-  };
+  struct pollfd pfd{fd_, POLLIN, 0};
   int rc = poll(&pfd, 1, 0);
   return rc > 0 && (pfd.revents & POLLIN);
 }
@@ -494,8 +491,7 @@ void DirectorConnection::ConnectTlsPsk(const DirectorConfig& cfg)
                              + GetOpenSslError());
   }
 
-  SSL_CTX_set_ex_data(ssl_ctx_, GetDirectorConnectionSslCtxExDataIndex(),
-                      this);
+  SSL_CTX_set_ex_data(ssl_ctx_, GetDirectorConnectionSslCtxExDataIndex(), this);
   SSL_CTX_set_psk_client_callback(ssl_ctx_, TlsPskClientCallback);
 
   ssl_ = SSL_new(ssl_ctx_);
@@ -515,8 +511,7 @@ void DirectorConnection::ConnectTlsPsk(const DirectorConfig& cfg)
     int rc = SSL_connect(ssl_);
     if (rc == 1) { break; }
     int ssl_error = SSL_get_error(ssl_, rc);
-    if (ssl_error == SSL_ERROR_WANT_READ
-        || ssl_error == SSL_ERROR_WANT_WRITE) {
+    if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
       continue;
     }
     throw std::runtime_error("Director: TLS-PSK handshake failed: "

@@ -68,10 +68,7 @@ bool IsTransientAcceptError(int err)
 
 }  // namespace
 
-void ProxyServer::Stop()
-{
-  stop_requested_ = 1;
-}
+void ProxyServer::Stop() { stop_requested_ = 1; }
 
 void ProxyServer::CleanupSockets()
 {

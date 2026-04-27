@@ -75,9 +75,8 @@ static bool EnvBoolOr(const char* var, bool def)
   if (!val) { return def; }
 
   const std::string value{val};
-  return value == "1" || value == "true" || value == "TRUE"
-         || value == "yes" || value == "YES" || value == "on"
-         || value == "ON";
+  return value == "1" || value == "true" || value == "TRUE" || value == "yes"
+         || value == "YES" || value == "on" || value == "ON";
 }
 
 int main(int argc, char* argv[])
@@ -88,8 +87,8 @@ int main(int argc, char* argv[])
   cfg.director.host = EnvOr("BAREOS_DIRECTOR_HOST", "localhost");
   cfg.director.port = EnvIntOr("BAREOS_DIRECTOR_PORT", 9101);
   cfg.director.name = EnvOr("BAREOS_DIRECTOR_NAME", "bareos-dir");
-  cfg.director.tls_psk_disable = EnvBoolOr("BAREOS_DIRECTOR_DISABLE_TLS_PSK",
-                                           false);
+  cfg.director.tls_psk_disable
+      = EnvBoolOr("BAREOS_DIRECTOR_DISABLE_TLS_PSK", false);
 
   CLI::App app{"Bareos Director WebSocket Proxy"};
   app.add_option("--ws-host", cfg.bind_host,
