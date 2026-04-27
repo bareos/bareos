@@ -461,19 +461,17 @@ void DoRestore(JobControlRecord* jcr)
     rctx.prev_stream = rctx.stream;
 
     // First we expect a Stream Record Header
-    if (sscanf(sd->msg,
-               "rechdr %" SCNu32 " %" SCNu32 " %" SCNd32 " %" SCNd32
-               " %" SCNu32,
-               &VolSessionId, &VolSessionTime, &file_index, &rctx.full_stream,
-               &rctx.size)
+    if (sscanf(sd->msg, "rechdr %lu %lu %ld %ld %lu", &VolSessionId,
+               &VolSessionTime, &file_index, &rctx.full_stream, &rctx.size)
         != 5) {
       Jmsg1(jcr, M_FATAL, 0, T_("Record header scan error: %s\n"), sd->msg);
       goto bail_out;
     }
     /* Strip off new stream high bits */
     rctx.stream = rctx.full_stream & STREAMMASK_TYPE;
-    Dmsg5(150, "Got hdr: Files=%" PRIu32 " FilInx=%d size=%" PRIu32
-               " Stream=%d, %s.\n",
+    Dmsg5(150,
+          "Got hdr: Files=%" PRIu32 " FilInx=%d size=%" PRIu32
+          " Stream=%d, %s.\n",
           jcr->JobFiles, file_index, rctx.size, rctx.stream,
           stream_to_ascii(rctx.stream));
 

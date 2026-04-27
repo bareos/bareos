@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -93,10 +93,8 @@ void DoVerifyVolume(JobControlRecord* jcr)
   // Get a record from the Storage daemon
   while (BgetMsg(sd) >= 0 && !jcr->IsJobCanceled()) {
     // First we expect a Stream Record Header
-    if (sscanf(sd->msg,
-               "rechdr %" SCNu32 " %" SCNu32 " %" SCNd32 " %" SCNd32
-               " %" SCNu32,
-               &VolSessionId, &VolSessionTime, &file_index, &stream, &size)
+    if (sscanf(sd->msg, "rechdr %lu %lu %lu %ld %lu", &VolSessionId,
+               &VolSessionTime, &file_index, &stream, &size)
         != 5) {
       Jmsg1(jcr, M_FATAL, 0, T_("Record header scan error: %s\n"), sd->msg);
       goto bail_out;
@@ -217,8 +215,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
                     CRYPTO_DIGEST_MD5_SIZE, true);
         Dmsg2(400, "send inx=%" PRIu32 " MD5=%s\n", jcr->JobFiles, digest);
         dir->fsend("%" PRIu32 " %d %s *MD5-%" PRIu32 "*", jcr->JobFiles,
-                   STREAM_MD5_DIGEST,
-                   digest, jcr->JobFiles);
+                   STREAM_MD5_DIGEST, digest, jcr->JobFiles);
         Dmsg2(20, "filed>dir: MD5 len=%d: msg=%s\n", dir->message_length,
               dir->msg);
         break;
@@ -228,8 +225,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
                     CRYPTO_DIGEST_SHA1_SIZE, true);
         Dmsg2(400, "send inx=%" PRIu32 " SHA1=%s\n", jcr->JobFiles, digest);
         dir->fsend("%" PRIu32 " %d %s *SHA1-%" PRIu32 "*", jcr->JobFiles,
-                   STREAM_SHA1_DIGEST,
-                   digest, jcr->JobFiles);
+                   STREAM_SHA1_DIGEST, digest, jcr->JobFiles);
         Dmsg2(20, "filed>dir: SHA1 len=%d: msg=%s\n", dir->message_length,
               dir->msg);
         break;
@@ -239,8 +235,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
                     CRYPTO_DIGEST_SHA256_SIZE, true);
         Dmsg2(400, "send inx=%" PRIu32 " SHA256=%s\n", jcr->JobFiles, digest);
         dir->fsend("%" PRIu32 " %d %s *SHA256-%" PRIu32 "*", jcr->JobFiles,
-                   STREAM_SHA256_DIGEST,
-                   digest, jcr->JobFiles);
+                   STREAM_SHA256_DIGEST, digest, jcr->JobFiles);
         Dmsg2(20, "filed>dir: SHA256 len=%d: msg=%s\n", dir->message_length,
               dir->msg);
         break;
@@ -250,8 +245,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
                     CRYPTO_DIGEST_SHA512_SIZE, true);
         Dmsg2(400, "send inx=%" PRIu32 " SHA512=%s\n", jcr->JobFiles, digest);
         dir->fsend("%" PRIu32 " %d %s *SHA512-%" PRIu32 "*", jcr->JobFiles,
-                   STREAM_SHA512_DIGEST,
-                   digest, jcr->JobFiles);
+                   STREAM_SHA512_DIGEST, digest, jcr->JobFiles);
         Dmsg2(20, "filed>dir: SHA512 len=%d: msg=%s\n", dir->message_length,
               dir->msg);
         break;
@@ -261,8 +255,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
                     CRYPTO_DIGEST_XXH128_SIZE, true);
         Dmsg2(400, "send inx=%" PRIu32 " XXH128=%s\n", jcr->JobFiles, digest);
         dir->fsend("%" PRIu32 " %d %s *XXH128-%" PRIu32 "*", jcr->JobFiles,
-                   STREAM_XXH128_DIGEST,
-                   digest, jcr->JobFiles);
+                   STREAM_XXH128_DIGEST, digest, jcr->JobFiles);
         Dmsg2(20, "filed>dir: XXH128 len=%d: msg=%s\n", dir->message_length,
               dir->msg);
         break;
@@ -274,11 +267,9 @@ void DoVerifyVolume(JobControlRecord* jcr)
       }
 
         Dmsg2(400, "send inx=%" PRIu32 " STREAM_RESTORE_OBJECT-%d\n",
-              jcr->JobFiles,
-              STREAM_RESTORE_OBJECT);
+              jcr->JobFiles, STREAM_RESTORE_OBJECT);
         dir->fsend("%" PRIu32 " %d %s %s%c%c%c", jcr->JobFiles,
-                   STREAM_RESTORE_OBJECT,
-                   "ReStOrEObJeCt", fname, 0, 0, 0);
+                   STREAM_RESTORE_OBJECT, "ReStOrEObJeCt", fname, 0, 0, 0);
         break;
 
       /* Ignore everything else */
