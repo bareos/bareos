@@ -594,6 +594,92 @@ std::vector<DeploymentConfigRecord> DiscoverDeploymentConfigRoots(
   return configs;
 }
 
+std::filesystem::path DeploymentConfigRootPath(
+    const std::filesystem::path& repository_root,
+    bconfig::Component component,
+    std::string_view name)
+{
+  return ComponentBucketDirectory(repository_root, component)
+         / std::string{name};
+}
+
+bool HasManagedConfigFiles(const DeploymentConfigRecord& config)
+{
+#ifdef BCONFIG_HAVE_CONSOLE
+  if (config.component == bconfig::Component::kConsole) {
+    return std::filesystem::is_regular_file(
+        config.path / ComponentDefaultConfigFilename(config.component));
+  }
+#endif
+
+  const auto config_directory_name = ComponentConfigDirectoryName(config.component);
+  if (config_directory_name.empty()) { return false; }
+
+  const auto config_directory = config.path / config_directory_name;
+  if (!std::filesystem::is_directory(config_directory)) { return false; }
+
+  for (const auto& entry :
+       std::filesystem::recursive_directory_iterator(config_directory)) {
+    if (!entry.is_regular_file()) { continue; }
+    if (entry.path().extension() == ".conf") { return true; }
+  }
+
+  return false;
+}
+
+OperationResult<DeploymentConfigRecord> EnsureDeploymentConfigRoot(
+    const ServiceState& state,
+    std::string_view deployment_id,
+    bconfig::Component component,
+    std::string_view name)
+{
+  auto existing = state.GetDeploymentConfig(deployment_id, component, name);
+  if (existing) { return existing; }
+  if (existing.error != "deployment config not found.") {
+    return {.error = existing.error};
+  }
+
+  const auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) { return {.error = "deployment not found."}; }
+
+  const auto config_root
+      = DeploymentConfigRootPath(deployment->repository_path, component, name);
+  std::error_code error_code;
+  std::filesystem::create_directories(config_root, error_code);
+  if (error_code) {
+    return {.error = "failed to create deployment config root '"
+                     + config_root.string() + "': " + error_code.message()};
+  }
+
+#ifdef BCONFIG_HAVE_CONSOLE
+  if (component == bconfig::Component::kConsole) {
+    const auto config_file
+        = config_root / ComponentDefaultConfigFilename(component);
+    if (!std::filesystem::exists(config_file) && !WriteFile(config_file, "")) {
+      return {.error = "failed to write console config root '"
+                       + config_file.string() + "'."};
+    }
+  } else
+#endif
+  {
+    const auto config_directory_name = ComponentConfigDirectoryName(component);
+    if (config_directory_name.empty()) {
+      return {.error = "unsupported component for deployment config root."};
+    }
+    std::filesystem::create_directories(config_root / config_directory_name,
+                                        error_code);
+    if (error_code) {
+      return {.error = "failed to create deployment config directory '"
+                       + (config_root / config_directory_name).string()
+                       + "': " + error_code.message()};
+    }
+  }
+
+  return {.value = DeploymentConfigRecord{.component = component,
+                                          .name = std::string{name},
+                                          .path = config_root}};
+}
+
 std::optional<std::string> DetectPrimaryResourceName(
     bconfig::Component component,
     bconfig::LoadedConfig& loaded)
@@ -5883,6 +5969,14 @@ OperationResult<DirectorMessagesWriteContext> LoadDirectorMessagesWriteContext(
     const DeploymentConfigRecord& director_config,
     std::string_view messages_name)
 {
+  DirectorMessagesWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "messages"
+                   / (std::string{messages_name} + ".conf"),
+      .is_standalone_file = true};
+  if (!HasManagedConfigFiles(director_config)) {
+    return {.value = std::move(context)};
+  }
+
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
                                     director_config.path.string(), true);
   if (!loaded.parser) {
@@ -5893,9 +5987,6 @@ OperationResult<DirectorMessagesWriteContext> LoadDirectorMessagesWriteContext(
     return {.error = FormatParseFailure("director config ", loaded.messages)};
   }
 
-  DirectorMessagesWriteContext context{
-      .file_path = director_config.path / "bareos-dir.d" / "messages"
-                   / (std::string{messages_name} + ".conf")};
   std::unordered_map<std::string, size_t> resources_per_file;
   for (auto* resource
        = loaded.parser->GetNextRes(directordaemon::R_MSGS, nullptr);
@@ -5980,6 +6071,14 @@ OperationResult<ClientMessagesWriteContext> LoadClientMessagesWriteContext(
     const DeploymentConfigRecord& client_config,
     std::string_view messages_name)
 {
+  ClientMessagesWriteContext context{
+      .file_path = client_config.path / "bareos-fd.d" / "messages"
+                   / (std::string{messages_name} + ".conf"),
+      .is_standalone_file = true};
+  if (!HasManagedConfigFiles(client_config)) {
+    return {.value = std::move(context)};
+  }
+
   auto loaded = bconfig::LoadConfig(bconfig::Component::kClient,
                                     client_config.path.string(), true);
   if (!loaded.parser) {
@@ -5990,9 +6089,6 @@ OperationResult<ClientMessagesWriteContext> LoadClientMessagesWriteContext(
     return {.error = FormatParseFailure("client config ", loaded.messages)};
   }
 
-  ClientMessagesWriteContext context{
-      .file_path = client_config.path / "bareos-fd.d" / "messages"
-                   / (std::string{messages_name} + ".conf")};
   std::unordered_map<std::string, size_t> resources_per_file;
   for (auto* resource = loaded.parser->GetNextRes(filedaemon::R_MSGS, nullptr);
        resource != nullptr;
@@ -6075,6 +6171,14 @@ OperationResult<StorageMessagesWriteContext> LoadStorageMessagesWriteContext(
     const DeploymentConfigRecord& storage_config,
     std::string_view messages_name)
 {
+  StorageMessagesWriteContext context{
+      .file_path = storage_config.path / "bareos-sd.d" / "messages"
+                   / (std::string{messages_name} + ".conf"),
+      .is_standalone_file = true};
+  if (!HasManagedConfigFiles(storage_config)) {
+    return {.value = std::move(context)};
+  }
+
   auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
                                     storage_config.path.string(), true);
   if (!loaded.parser) {
@@ -6085,9 +6189,6 @@ OperationResult<StorageMessagesWriteContext> LoadStorageMessagesWriteContext(
     return {.error = FormatParseFailure("storage config ", loaded.messages)};
   }
 
-  StorageMessagesWriteContext context{
-      .file_path = storage_config.path / "bareos-sd.d" / "messages"
-                   / (std::string{messages_name} + ".conf")};
   std::unordered_map<std::string, size_t> resources_per_file;
   for (auto* resource
        = loaded.parser->GetNextRes(storagedaemon::R_MSGS, nullptr);
@@ -6171,6 +6272,14 @@ OperationResult<StorageMessagesWriteContext> LoadStorageMessagesWriteContext(
 OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
     const DeploymentConfigRecord& client_config)
 {
+  ClientDaemonWriteContext context{
+      .file_path = client_config.path / "bareos-fd.d" / "client"
+                   / (client_config.name + ".conf"),
+      .is_standalone_file = true};
+  if (!HasManagedConfigFiles(client_config)) {
+    return {.value = std::move(context)};
+  }
+
   auto loaded = bconfig::LoadConfig(bconfig::Component::kClient,
                                     client_config.path.string(), true);
   if (!loaded.parser) {
@@ -6181,9 +6290,6 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
     return {.error = FormatParseFailure("client config ", loaded.messages)};
   }
 
-  ClientDaemonWriteContext context{
-      .file_path = client_config.path / "bareos-fd.d" / "client"
-                   / (client_config.name + ".conf")};
   std::unordered_map<std::string, size_t> resources_per_file;
   for (auto* resource
        = loaded.parser->GetNextRes(filedaemon::R_CLIENT, nullptr);
@@ -6420,6 +6526,14 @@ OperationResult<ClientDaemonWriteContext> LoadClientDaemonWriteContext(
 OperationResult<DirectorDaemonWriteContext> LoadDirectorDaemonWriteContext(
     const DeploymentConfigRecord& director_config)
 {
+  DirectorDaemonWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "director"
+                   / (director_config.name + ".conf"),
+      .is_standalone_file = true};
+  if (!HasManagedConfigFiles(director_config)) {
+    return {.value = std::move(context)};
+  }
+
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
                                     director_config.path.string(), true);
   if (!loaded.parser) {
@@ -6430,9 +6544,6 @@ OperationResult<DirectorDaemonWriteContext> LoadDirectorDaemonWriteContext(
     return {.error = FormatParseFailure("director config ", loaded.messages)};
   }
 
-  DirectorDaemonWriteContext context{
-      .file_path = director_config.path / "bareos-dir.d" / "director"
-                   / (director_config.name + ".conf")};
   std::unordered_map<std::string, size_t> resources_per_file;
   for (auto* resource
        = loaded.parser->GetNextRes(directordaemon::R_DIRECTOR, nullptr);
@@ -6668,6 +6779,14 @@ OperationResult<DirectorDaemonWriteContext> LoadDirectorDaemonWriteContext(
 OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     const DeploymentConfigRecord& storage_config)
 {
+  StorageDaemonWriteContext context{
+      .file_path = storage_config.path / "bareos-sd.d" / "storage"
+                   / (storage_config.name + ".conf"),
+      .is_standalone_file = true};
+  if (!HasManagedConfigFiles(storage_config)) {
+    return {.value = std::move(context)};
+  }
+
   auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
                                     storage_config.path.string(), true);
   if (!loaded.parser) {
@@ -6678,9 +6797,6 @@ OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
     return {.error = FormatParseFailure("storage config ", loaded.messages)};
   }
 
-  StorageDaemonWriteContext context{
-      .file_path = storage_config.path / "bareos-sd.d" / "storage"
-                   / (storage_config.name + ".conf")};
   std::unordered_map<std::string, size_t> resources_per_file;
   for (auto* resource
        = loaded.parser->GetNextRes(storagedaemon::R_STORAGE, nullptr);
@@ -10799,11 +10915,10 @@ OperationResult<ClientDirectorStubSpec> ServiceState::GetClientDirectorStubSpec(
     std::string_view client_name,
     std::string_view director_name) const
 {
-  auto client_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kClient, client_name);
+  auto client_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kClient, client_name);
   if (!client_config) {
-    return {.error = "client config not found for '" + std::string{client_name}
-                     + "'."};
+    return {.error = client_config.error};
   }
 
   auto context = LoadClientDirectorStubWriteContext(client_config.value->path,
@@ -10851,11 +10966,10 @@ ServiceState::GetDirectorClientResourceSpec(std::string_view deployment_id,
                                             std::string_view director_name,
                                             std::string_view client_name) const
 {
-  auto director_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kDirector, director_name);
+  auto director_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kDirector, director_name);
   if (!director_config) {
-    return {.error = "director config not found for '"
-                     + std::string{director_name} + "'."};
+    return {.error = director_config.error};
   }
 
   auto context
@@ -10921,11 +11035,10 @@ ServiceState::GetDirectorStorageResourceSpec(
     std::string_view director_name,
     std::string_view storage_name) const
 {
-  auto director_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kDirector, director_name);
+  auto director_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kDirector, director_name);
   if (!director_config) {
-    return {.error = "director config not found for '"
-                     + std::string{director_name} + "'."};
+    return {.error = director_config.error};
   }
 
   auto context
@@ -10984,11 +11097,10 @@ ServiceState::GetDirectorConsoleResourceSpec(
     std::string_view director_name,
     std::string_view console_name) const
 {
-  auto director_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kDirector, director_name);
+  auto director_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kDirector, director_name);
   if (!director_config) {
-    return {.error = "director config not found for '"
-                     + std::string{director_name} + "'."};
+    return {.error = director_config.error};
   }
 
   auto context
@@ -11029,11 +11141,10 @@ ServiceState::GetStorageDirectorResourceSpec(
     std::string_view storage_name,
     std::string_view director_name) const
 {
-  auto storage_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kStorage, storage_name);
+  auto storage_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kStorage, storage_name);
   if (!storage_config) {
-    return {.error = "storage config not found for '"
-                     + std::string{storage_name} + "'."};
+    return {.error = storage_config.error};
   }
 
   const auto repository_root
@@ -11079,11 +11190,10 @@ ServiceState::GetStorageDeviceResourceSpec(std::string_view deployment_id,
                                            std::string_view storage_name,
                                            std::string_view device_name) const
 {
-  auto storage_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kStorage, storage_name);
+  auto storage_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kStorage, storage_name);
   if (!storage_config) {
-    return {.error = "storage config not found for '"
-                     + std::string{storage_name} + "'."};
+    return {.error = storage_config.error};
   }
 
   const auto repository_root
@@ -11163,11 +11273,10 @@ OperationResult<ClientDaemonResourceSpec>
 ServiceState::GetClientDaemonResourceSpec(std::string_view deployment_id,
                                           std::string_view client_name) const
 {
-  auto client_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kClient, client_name);
+  auto client_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kClient, client_name);
   if (!client_config) {
-    return {.error = "client config not found for '" + std::string{client_name}
-                     + "'."};
+    return {.error = client_config.error};
   }
 
   auto context = LoadClientDaemonWriteContext(*client_config.value);
@@ -11185,11 +11294,10 @@ ServiceState::GetDirectorDaemonResourceSpec(
     std::string_view deployment_id,
     std::string_view director_name) const
 {
-  auto director_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kDirector, director_name);
+  auto director_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kDirector, director_name);
   if (!director_config) {
-    return {.error = "director config not found for '"
-                     + std::string{director_name} + "'."};
+    return {.error = director_config.error};
   }
 
   auto context = LoadDirectorDaemonWriteContext(*director_config.value);
@@ -11230,11 +11338,10 @@ ServiceState::GetClientMessagesResourceSpec(
     std::string_view client_name,
     std::string_view messages_name) const
 {
-  auto client_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kClient, client_name);
+  auto client_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kClient, client_name);
   if (!client_config) {
-    return {.error = "client config not found for '" + std::string{client_name}
-                     + "'."};
+    return {.error = client_config.error};
   }
 
   auto context
@@ -11255,11 +11362,10 @@ ServiceState::GetDirectorMessagesResourceSpec(
     std::string_view director_name,
     std::string_view messages_name) const
 {
-  auto director_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kDirector, director_name);
+  auto director_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kDirector, director_name);
   if (!director_config) {
-    return {.error = "director config not found for '"
-                     + std::string{director_name} + "'."};
+    return {.error = director_config.error};
   }
 
   auto context
@@ -11280,11 +11386,10 @@ ServiceState::GetStorageMessagesResourceSpec(
     std::string_view storage_name,
     std::string_view messages_name) const
 {
-  auto storage_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kStorage, storage_name);
+  auto storage_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kStorage, storage_name);
   if (!storage_config) {
-    return {.error = "storage config not found for '"
-                     + std::string{storage_name} + "'."};
+    return {.error = storage_config.error};
   }
 
   auto context
@@ -11304,11 +11409,10 @@ ServiceState::GetDirectorUserResourceSpec(std::string_view deployment_id,
                                           std::string_view director_name,
                                           std::string_view user_name) const
 {
-  auto director_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kDirector, director_name);
+  auto director_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kDirector, director_name);
   if (!director_config) {
-    return {.error = "director config not found for '"
-                     + std::string{director_name} + "'."};
+    return {.error = director_config.error};
   }
 
   auto context
@@ -11782,11 +11886,10 @@ ServiceState::UpsertClientMessagesResource(
     return {.error = "client and messages names must be safe path segments."};
   }
 
-  auto client_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kClient, client_name);
+  auto client_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kClient, client_name);
   if (!client_config) {
-    return {.error = "client config not found for '" + std::string{client_name}
-                     + "'."};
+    return {.error = client_config.error};
   }
 
   auto context
@@ -12202,19 +12305,14 @@ ServiceState::UpsertDirectorDaemonResource(
   if (spec.port && *spec.port == 0) {
     return {.error = "director daemon port must be greater than zero."};
   }
-  auto director_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kDirector, director_name);
+  auto director_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kDirector, director_name);
   if (!director_config) {
-    return {.error = "director config not found for '"
-                     + std::string{director_name} + "'."};
+    return {.error = director_config.error};
   }
 
   auto context = LoadDirectorDaemonWriteContext(*director_config.value);
   if (!context) { return {.error = context.error}; }
-  if (!context.value->exists) {
-    return {.error = "director daemon resource '" + std::string{director_name}
-                     + "' was not found."};
-  }
   auto password = spec.password ? spec.password : context.value->password;
   if (!password || password->empty()) {
     return {.error = "director daemon resource '" + std::string{director_name}
@@ -12344,7 +12442,7 @@ ServiceState::UpsertDirectorDaemonResource(
                      + "': " + error_code.message()};
   }
   std::string file_content = rendered;
-  if (!context.value->is_standalone_file) {
+  if (context.value->exists && !context.value->is_standalone_file) {
     auto rewritten = RewriteNamedTopLevelResource(
         context.value->file_path, "Director", director_name, rendered);
     if (!rewritten) { return {.error = rewritten.error}; }
@@ -13322,11 +13420,10 @@ ServiceState::GetConsoleConsoleResourceSpec(
     std::string_view console_config_name,
     std::string_view console_name) const
 {
-  auto console_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kConsole, console_config_name);
+  auto console_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kConsole, console_config_name);
   if (!console_config) {
-    return {.error = "console config not found for '"
-                     + std::string{console_config_name} + "'."};
+    return {.error = console_config.error};
   }
 
   auto context
@@ -13346,11 +13443,10 @@ ServiceState::GetConsoleDirectorResourceSpec(
     std::string_view console_config_name,
     std::string_view director_name) const
 {
-  auto console_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kConsole, console_config_name);
+  auto console_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kConsole, console_config_name);
   if (!console_config) {
-    return {.error = "console config not found for '"
-                     + std::string{console_config_name} + "'."};
+    return {.error = console_config.error};
   }
 
   auto context
@@ -13382,11 +13478,10 @@ ServiceState::UpsertConsoleConsoleResource(
               "segments."};
   }
 
-  auto console_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kConsole, console_config_name);
+  auto console_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kConsole, console_config_name);
   if (!console_config) {
-    return {.error = "console config not found for '"
-                     + std::string{console_config_name} + "'."};
+    return {.error = console_config.error};
   }
 
   auto context
@@ -13510,11 +13605,10 @@ ServiceState::DeleteConsoleConsoleResource(std::string_view deployment_id,
               "segments."};
   }
 
-  auto console_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kConsole, console_config_name);
+  auto console_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kConsole, console_config_name);
   if (!console_config) {
-    return {.error = "console config not found for '"
-                     + std::string{console_config_name} + "'."};
+    return {.error = console_config.error};
   }
 
   auto context
@@ -13573,11 +13667,10 @@ ServiceState::UpsertConsoleDirectorResource(
               "segments."};
   }
 
-  auto console_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kConsole, console_config_name);
+  auto console_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kConsole, console_config_name);
   if (!console_config) {
-    return {.error = "console config not found for '"
-                     + std::string{console_config_name} + "'."};
+    return {.error = console_config.error};
   }
 
   auto context
@@ -13693,11 +13786,10 @@ ServiceState::DeleteConsoleDirectorResource(
               "segments."};
   }
 
-  auto console_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kConsole, console_config_name);
+  auto console_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kConsole, console_config_name);
   if (!console_config) {
-    return {.error = "console config not found for '"
-                     + std::string{console_config_name} + "'."};
+    return {.error = console_config.error};
   }
 
   auto context
@@ -13754,11 +13846,10 @@ ServiceState::UpsertDirectorUserResource(
     return {.error = "user and director names must be safe path segments."};
   }
 
-  auto director_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kDirector, director_name);
+  auto director_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kDirector, director_name);
   if (!director_config) {
-    return {.error = "director config not found for '"
-                     + std::string{director_name} + "'."};
+    return {.error = director_config.error};
   }
 
   auto context
@@ -13851,11 +13942,10 @@ ServiceState::DeleteDirectorUserResource(std::string_view deployment_id,
     return {.error = "user and director names must be safe path segments."};
   }
 
-  auto director_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kDirector, director_name);
+  auto director_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kDirector, director_name);
   if (!director_config) {
-    return {.error = "director config not found for '"
-                     + std::string{director_name} + "'."};
+    return {.error = director_config.error};
   }
 
   auto context
@@ -14491,11 +14581,10 @@ ServiceState::UpsertDirectorMessagesResource(
     return {.error = "messages and director names must be safe path segments."};
   }
 
-  auto director_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kDirector, director_name);
+  auto director_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kDirector, director_name);
   if (!director_config) {
-    return {.error = "director config not found for '"
-                     + std::string{director_name} + "'."};
+    return {.error = director_config.error};
   }
 
   auto context
@@ -15878,11 +15967,10 @@ ServiceState::UpsertStorageMessagesResource(
     return {.error = "messages and storage names must be safe path segments."};
   }
 
-  auto storage_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kStorage, storage_name);
+  auto storage_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kStorage, storage_name);
   if (!storage_config) {
-    return {.error = "storage config not found for '"
-                     + std::string{storage_name} + "'."};
+    return {.error = storage_config.error};
   }
 
   auto context
@@ -16000,11 +16088,10 @@ ServiceState::DeleteStorageMessagesResource(
     return {.error = "messages and storage names must be safe path segments."};
   }
 
-  auto storage_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kStorage, storage_name);
+  auto storage_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kStorage, storage_name);
   if (!storage_config) {
-    return {.error = "storage config not found for '"
-                     + std::string{storage_name} + "'."};
+    return {.error = storage_config.error};
   }
 
   auto context
@@ -16072,11 +16159,10 @@ ServiceState::UpsertStorageDirectorResource(
     return {.error = "storage and director names must be safe path segments."};
   }
 
-  auto storage_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kStorage, storage_name);
+  auto storage_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kStorage, storage_name);
   if (!storage_config) {
-    return {.error = "storage config not found for '"
-                     + std::string{storage_name} + "'."};
+    return {.error = storage_config.error};
   }
 
   const auto repository_root
@@ -17242,11 +17328,10 @@ ServiceState::UpsertStorageDaemonResource(
   if (spec.ndmp_port && *spec.ndmp_port == 0) {
     return {.error = "storage-daemon ndmp_port must be greater than zero."};
   }
-  auto storage_config = GetDeploymentConfig(
-      deployment_id, bconfig::Component::kStorage, storage_name);
+  auto storage_config = EnsureDeploymentConfigRoot(
+      *this, deployment_id, bconfig::Component::kStorage, storage_name);
   if (!storage_config) {
-    return {.error = "storage config not found for '"
-                     + std::string{storage_name} + "'."};
+    return {.error = storage_config.error};
   }
 
   auto context = LoadStorageDaemonWriteContext(*storage_config.value);

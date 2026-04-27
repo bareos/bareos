@@ -72,6 +72,82 @@ TEST(BconfigService, CreatesDeploymentScaffold)
   EXPECT_TRUE(diff_preview.value->untracked_files.empty());
 }
 
+TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
+{
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  auto director_messages = state.UpsertDirectorMessagesResource(
+      "prod", "bareos-dir", "Daemon",
+      {.description = std::string{"Managed daemon messages"},
+       .console_entries = std::vector<std::string>{"all"}});
+  ASSERT_TRUE(director_messages) << director_messages.error;
+
+  auto director = state.UpsertDirectorDaemonResource(
+      "prod", "bareos-dir",
+      {.address = std::string{"127.0.0.1"},
+       .port = 9101,
+       .password = std::string{"director-secret"},
+       .working_directory = std::string{"/var/lib/bareos"},
+       .messages = std::string{"Daemon"}});
+  ASSERT_TRUE(director) << director.error;
+
+  auto storage_messages = state.UpsertStorageMessagesResource(
+      "prod", "bareos-sd", "Standard",
+      {.description = std::string{"Managed storage messages"},
+       .director_entries = std::vector<std::string>{"bareos-dir = all"}});
+  ASSERT_TRUE(storage_messages) << storage_messages.error;
+
+  auto storage = state.UpsertStorageDaemonResource(
+      "prod", "bareos-sd",
+      {.address = std::string{"127.0.0.1"},
+       .port = 9103,
+       .working_directory = std::string{"/var/lib/bareos/storage"},
+       .messages = std::string{"Standard"}});
+  ASSERT_TRUE(storage) << storage.error;
+
+  auto client_messages = state.UpsertClientMessagesResource(
+      "prod", "bareos-fd", "Standard",
+      {.description = std::string{"Managed client messages"},
+       .director_entries
+       = std::vector<std::string>{"bareos-dir = all, !skipped, !restored"}});
+  ASSERT_TRUE(client_messages) << client_messages.error;
+
+  auto client = state.UpsertClientDaemonResource(
+      "prod", "bareos-fd",
+      {.address = std::string{"127.0.0.1"},
+       .port = 9102,
+       .working_directory = std::string{"/var/lib/bareos"},
+       .messages = std::string{"Standard"}});
+  ASSERT_TRUE(client) << client.error;
+
+  auto console_director = state.UpsertConsoleDirectorResource(
+      "prod", "admin", "bareos-dir",
+      {.address = std::string{"127.0.0.1"},
+       .port = 9101,
+       .password = std::string{"console-secret"}});
+  ASSERT_TRUE(console_director) << console_director.error;
+
+  auto console_resource = state.UpsertConsoleConsoleResource(
+      "prod", "admin", "admin",
+      {.director = std::string{"bareos-dir"},
+       .password = std::string{"console-secret"}});
+  ASSERT_TRUE(console_resource) << console_resource.error;
+
+  auto validate_job = state.CreateJob({.type = "validate_deployment_repo",
+                                       .deployment_id = std::string{"prod"}});
+  ASSERT_TRUE(validate_job);
+  auto validated = WaitForJobTerminal(state, validate_job.value->id);
+  ASSERT_TRUE(validated.has_value());
+  EXPECT_EQ(validated->status, JobStatus::kSucceeded);
+}
+
 TEST(BconfigService, RejectsDuplicateDeploymentIds)
 {
   ScopedDirectory repo_path_a{MakeTempPath()};
