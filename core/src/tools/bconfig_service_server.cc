@@ -5419,6 +5419,54 @@ const char* kTestUiHtmlTemplate = R"HTML(
             `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/messages/${encodedResource}/prefill`,
         };
       }
+      if (normalizedComponent === 'director' && normalizedType === 'user') {
+        return {
+          formId: 'director-user-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            director_name: String(configName ?? ''),
+            user_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/users/${encodedResource}/prefill`,
+        };
+      }
+      if (normalizedComponent === 'director' && normalizedType === 'profile') {
+        return {
+          formId: 'director-profile-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            director_name: String(configName ?? ''),
+            profile_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/profiles/${encodedResource}/prefill`,
+        };
+      }
+      if (normalizedComponent === 'director' && normalizedType === 'catalog') {
+        return {
+          formId: 'director-catalog-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            director_name: String(configName ?? ''),
+            catalog_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/catalogs/${encodedResource}/prefill`,
+        };
+      }
+      if (normalizedComponent === 'director' && normalizedType === 'counter') {
+        return {
+          formId: 'director-counter-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            director_name: String(configName ?? ''),
+            counter_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/counters/${encodedResource}/prefill`,
+        };
+      }
       if (normalizedComponent === 'storage' && normalizedType === 'director') {
         return {
           formId: 'storage-director-form',
@@ -9349,6 +9397,74 @@ template <typename Spec> json_t* MessagesResourceSpecToJson(const Spec& spec)
   return object.release();
 }
 
+template <typename Spec> json_t* DirectorAclResourceSpecToJson(const Spec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "description", spec.description);
+  SetOptionalStringArray(object.get(), "job_acl", spec.job_acl);
+  SetOptionalStringArray(object.get(), "client_acl", spec.client_acl);
+  SetOptionalStringArray(object.get(), "storage_acl", spec.storage_acl);
+  SetOptionalStringArray(object.get(), "schedule_acl", spec.schedule_acl);
+  SetOptionalStringArray(object.get(), "pool_acl", spec.pool_acl);
+  SetOptionalStringArray(object.get(), "command_acl", spec.command_acl);
+  SetOptionalStringArray(object.get(), "fileset_acl", spec.fileset_acl);
+  SetOptionalStringArray(object.get(), "catalog_acl", spec.catalog_acl);
+  SetOptionalStringArray(object.get(), "where_acl", spec.where_acl);
+  SetOptionalStringArray(object.get(), "plugin_options_acl",
+                         spec.plugin_options_acl);
+  return object.release();
+}
+
+json_t* DirectorUserResourceSpecToJson(const DirectorUserResourceSpec& spec)
+{
+  auto object = MakeJson(DirectorAclResourceSpecToJson(spec));
+  SetOptionalStringArray(object.get(), "profiles", spec.profiles);
+  return object.release();
+}
+
+json_t* DirectorProfileResourceSpecToJson(
+    const DirectorProfileResourceSpec& spec)
+{
+  return DirectorAclResourceSpecToJson(spec);
+}
+
+json_t* DirectorCatalogResourceSpecToJson(
+    const DirectorCatalogResourceSpec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "db_address", spec.db_address);
+  SetOptionalInteger(object.get(), "db_port", spec.db_port);
+  SetOptionalString(object.get(), "db_socket", spec.db_socket);
+  SetOptionalString(object.get(), "db_password", spec.db_password);
+  SetOptionalString(object.get(), "db_user", spec.db_user);
+  SetOptionalString(object.get(), "db_name", spec.db_name);
+  SetOptionalBool(object.get(), "multiple_connections",
+                  spec.multiple_connections);
+  SetOptionalBool(object.get(), "disable_batch_insert",
+                  spec.disable_batch_insert);
+  SetOptionalBool(object.get(), "reconnect", spec.reconnect);
+  SetOptionalBool(object.get(), "exit_on_fatal", spec.exit_on_fatal);
+  SetOptionalInteger(object.get(), "min_connections", spec.min_connections);
+  SetOptionalInteger(object.get(), "max_connections", spec.max_connections);
+  SetOptionalInteger(object.get(), "inc_connections", spec.inc_connections);
+  SetOptionalInteger(object.get(), "idle_timeout", spec.idle_timeout);
+  SetOptionalInteger(object.get(), "validate_timeout", spec.validate_timeout);
+  SetOptionalString(object.get(), "description", spec.description);
+  return object.release();
+}
+
+json_t* DirectorCounterResourceSpecToJson(
+    const DirectorCounterResourceSpec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalInteger(object.get(), "minimum", spec.minimum);
+  SetOptionalInteger(object.get(), "maximum", spec.maximum);
+  SetOptionalString(object.get(), "wrap_counter", spec.wrap_counter);
+  SetOptionalString(object.get(), "catalog", spec.catalog);
+  SetOptionalString(object.get(), "description", spec.description);
+  return object.release();
+}
+
 json_t* ClientDirectorStubSpecToJson(const ClientDirectorStubSpec& spec)
 {
   auto object = MakeJson(json_object());
@@ -10441,6 +10557,106 @@ http::response<http::string_body> HandleStorageMessagesPrefillRequest(
                   json_array_get(deployment_json.get(), 0));
   json_object_set_new(root.get(), "spec",
                       MessagesResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDirectorUserPrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view user_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetDirectorUserResourceSpec(deployment_id, director_name,
+                                                user_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      DirectorUserResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDirectorProfilePrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view profile_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetDirectorProfileResourceSpec(deployment_id, director_name,
+                                                   profile_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      DirectorProfileResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDirectorCatalogPrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view catalog_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetDirectorCatalogResourceSpec(deployment_id, director_name,
+                                                   catalog_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      DirectorCatalogResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDirectorCounterPrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view counter_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetDirectorCounterResourceSpec(deployment_id, director_name,
+                                                   counter_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      DirectorCounterResourceSpecToJson(*spec.value));
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
@@ -18106,6 +18322,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
+  if (path_parts.size() == 8 && path_parts[3] == "directors"
+      && path_parts[5] == "users" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleDirectorUserPrefillRequest(state, path_parts[2], path_parts[4],
+                                            path_parts[6]);
+  }
   if (path_parts.size() == 7 && path_parts[3] == "directors"
       && path_parts[5] == "users" && request.method() == http::verb::put) {
     return HandleDeploymentDirectorUserPutRequest(state, request, path_parts[2],
@@ -18117,6 +18339,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
+  if (path_parts.size() == 8 && path_parts[3] == "directors"
+      && path_parts[5] == "profiles" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleDirectorProfilePrefillRequest(state, path_parts[2],
+                                               path_parts[4], path_parts[6]);
+  }
   if (path_parts.size() == 7 && path_parts[3] == "directors"
       && path_parts[5] == "profiles" && request.method() == http::verb::put) {
     return HandleDeploymentDirectorProfilePutRequest(
@@ -18140,6 +18368,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
+  if (path_parts.size() == 8 && path_parts[3] == "directors"
+      && path_parts[5] == "catalogs" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleDirectorCatalogPrefillRequest(state, path_parts[2],
+                                               path_parts[4], path_parts[6]);
+  }
   if (path_parts.size() == 7 && path_parts[3] == "directors"
       && path_parts[5] == "catalogs" && request.method() == http::verb::put) {
     return HandleDeploymentDirectorCatalogPutRequest(
@@ -18183,6 +18417,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
+  if (path_parts.size() == 8 && path_parts[3] == "directors"
+      && path_parts[5] == "counters" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleDirectorCounterPrefillRequest(state, path_parts[2],
+                                               path_parts[4], path_parts[6]);
+  }
   if (path_parts.size() == 7 && path_parts[3] == "directors"
       && path_parts[5] == "counters" && request.method() == http::verb::put) {
     return HandleDeploymentDirectorCounterPutRequest(

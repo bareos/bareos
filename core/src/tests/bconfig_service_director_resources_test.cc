@@ -307,6 +307,17 @@ TEST(BconfigService, UpsertsDirectorUserResources)
             std::string::npos);
   EXPECT_NE(created_text.find("Profile = operator"), std::string::npos);
 
+  auto created_spec
+      = state.GetDirectorUserResourceSpec("prod", "bareos-dir", "managed-user");
+  ASSERT_TRUE(created_spec) << created_spec.error;
+  EXPECT_EQ(created_spec.value->description, "Managed user");
+  ASSERT_TRUE(created_spec.value->command_acl);
+  EXPECT_EQ(*created_spec.value->command_acl,
+            (std::vector<std::string>{"status", ".status"}));
+  ASSERT_TRUE(created_spec.value->profiles);
+  EXPECT_EQ(*created_spec.value->profiles,
+            (std::vector<std::string>{"operator"}));
+
   auto updated = state.UpsertDirectorUserResource(
       "prod", "bareos-dir", "operator-user",
       {.description = std::string{"Updated operator user"},
@@ -320,6 +331,17 @@ TEST(BconfigService, UpsertsDirectorUserResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("CommandACL = list, llist"), std::string::npos);
   EXPECT_NE(updated_text.find("Profile = operator"), std::string::npos);
+
+  auto updated_spec = state.GetDirectorUserResourceSpec("prod", "bareos-dir",
+                                                        "operator-user");
+  ASSERT_TRUE(updated_spec) << updated_spec.error;
+  EXPECT_EQ(updated_spec.value->description, "Updated operator user");
+  ASSERT_TRUE(updated_spec.value->command_acl);
+  EXPECT_EQ(*updated_spec.value->command_acl,
+            (std::vector<std::string>{"list", "llist"}));
+  ASSERT_TRUE(updated_spec.value->profiles);
+  EXPECT_EQ(*updated_spec.value->profiles,
+            (std::vector<std::string>{"operator"}));
 }
 
 TEST(BconfigService, UpsertsDirectorUserResourcesInSharedFiles)
@@ -526,6 +548,17 @@ TEST(BconfigService, UpsertsDirectorProfileResources)
   EXPECT_NE(created_text.find("CatalogACL = managed-catalog"),
             std::string::npos);
 
+  auto created_spec = state.GetDirectorProfileResourceSpec("prod", "bareos-dir",
+                                                           "managed-profile");
+  ASSERT_TRUE(created_spec) << created_spec.error;
+  EXPECT_EQ(created_spec.value->description, "Managed profile");
+  ASSERT_TRUE(created_spec.value->command_acl);
+  EXPECT_EQ(*created_spec.value->command_acl,
+            (std::vector<std::string>{"status", ".status"}));
+  ASSERT_TRUE(created_spec.value->catalog_acl);
+  EXPECT_EQ(*created_spec.value->catalog_acl,
+            (std::vector<std::string>{"managed-catalog"}));
+
   auto updated = state.UpsertDirectorProfileResource(
       "prod", "bareos-dir", "operator",
       {.description = std::string{"Updated operator profile"},
@@ -540,6 +573,17 @@ TEST(BconfigService, UpsertsDirectorProfileResources)
   EXPECT_NE(updated_text.find("CommandACL = list, llist"), std::string::npos);
   EXPECT_NE(updated_text.find("CatalogACL = operator-catalog"),
             std::string::npos);
+
+  auto updated_spec
+      = state.GetDirectorProfileResourceSpec("prod", "bareos-dir", "operator");
+  ASSERT_TRUE(updated_spec) << updated_spec.error;
+  EXPECT_EQ(updated_spec.value->description, "Updated operator profile");
+  ASSERT_TRUE(updated_spec.value->command_acl);
+  EXPECT_EQ(*updated_spec.value->command_acl,
+            (std::vector<std::string>{"list", "llist"}));
+  ASSERT_TRUE(updated_spec.value->catalog_acl);
+  EXPECT_EQ(*updated_spec.value->catalog_acl,
+            (std::vector<std::string>{"operator-catalog"}));
 }
 
 TEST(BconfigService, UpsertsDirectorProfileResourcesInSharedFiles)
@@ -1076,6 +1120,20 @@ TEST(BconfigService, UpsertsDirectorCatalogResources)
   EXPECT_NE(created_text.find("Reconnect = yes"), std::string::npos);
   EXPECT_NE(created_text.find("ExitOnFatal = no"), std::string::npos);
 
+  auto created_spec = state.GetDirectorCatalogResourceSpec("prod", "bareos-dir",
+                                                           "ManagedCatalog");
+  ASSERT_TRUE(created_spec) << created_spec.error;
+  EXPECT_EQ(created_spec.value->db_address, "127.0.0.1");
+  EXPECT_EQ(created_spec.value->db_port, 5432);
+  EXPECT_EQ(created_spec.value->db_password, "secret");
+  EXPECT_EQ(created_spec.value->db_user, "bareos");
+  EXPECT_EQ(created_spec.value->db_name, "bareos_catalog");
+  EXPECT_EQ(created_spec.value->multiple_connections, true);
+  EXPECT_EQ(created_spec.value->disable_batch_insert, true);
+  EXPECT_EQ(created_spec.value->reconnect, true);
+  EXPECT_EQ(created_spec.value->exit_on_fatal, false);
+  EXPECT_EQ(created_spec.value->description, "Managed catalog");
+
   auto updated = state.UpsertDirectorCatalogResource(
       "prod", "bareos-dir", "MyCatalog",
       {.multiple_connections = false,
@@ -1093,6 +1151,16 @@ TEST(BconfigService, UpsertsDirectorCatalogResources)
   EXPECT_NE(updated_text.find("DbPassword = \"\""), std::string::npos);
   EXPECT_NE(updated_text.find("MultipleConnections = no"), std::string::npos);
   EXPECT_NE(updated_text.find("DisableBatchInsert = yes"), std::string::npos);
+
+  auto updated_spec
+      = state.GetDirectorCatalogResourceSpec("prod", "bareos-dir", "MyCatalog");
+  ASSERT_TRUE(updated_spec) << updated_spec.error;
+  EXPECT_EQ(updated_spec.value->db_user, "regress");
+  EXPECT_EQ(updated_spec.value->db_name, "regress_backup_bareos_test");
+  EXPECT_TRUE(updated_spec.value->db_password.has_value());
+  EXPECT_EQ(updated_spec.value->multiple_connections, false);
+  EXPECT_EQ(updated_spec.value->disable_batch_insert, true);
+  EXPECT_EQ(updated_spec.value->description, "Updated catalog");
 }
 
 TEST(BconfigService, UpsertsDirectorCatalogResourcesInSharedFiles)
@@ -1509,6 +1577,15 @@ TEST(BconfigService, UpsertsDirectorCounterResources)
   EXPECT_NE(created_text.find("WrapCounter = WrapSeed"), std::string::npos);
   EXPECT_NE(created_text.find("Catalog = MyCatalog"), std::string::npos);
 
+  auto created_spec = state.GetDirectorCounterResourceSpec("prod", "bareos-dir",
+                                                           "ManagedCounter");
+  ASSERT_TRUE(created_spec) << created_spec.error;
+  EXPECT_EQ(created_spec.value->minimum, 10);
+  EXPECT_EQ(created_spec.value->maximum, 50);
+  EXPECT_EQ(created_spec.value->wrap_counter, "WrapSeed");
+  EXPECT_EQ(created_spec.value->catalog, "MyCatalog");
+  EXPECT_EQ(created_spec.value->description, "Managed counter");
+
   auto updated = state.UpsertDirectorCounterResource(
       "prod", "bareos-dir", "ExistingCounter",
       {.description = std::string{"Updated counter"}});
@@ -1522,6 +1599,15 @@ TEST(BconfigService, UpsertsDirectorCounterResources)
   EXPECT_NE(updated_text.find("Maximum = 99"), std::string::npos);
   EXPECT_NE(updated_text.find("WrapCounter = WrapSeed"), std::string::npos);
   EXPECT_NE(updated_text.find("Catalog = MyCatalog"), std::string::npos);
+
+  auto updated_spec = state.GetDirectorCounterResourceSpec("prod", "bareos-dir",
+                                                           "ExistingCounter");
+  ASSERT_TRUE(updated_spec) << updated_spec.error;
+  EXPECT_EQ(updated_spec.value->minimum, 7);
+  EXPECT_EQ(updated_spec.value->maximum, 99);
+  EXPECT_EQ(updated_spec.value->wrap_counter, "WrapSeed");
+  EXPECT_EQ(updated_spec.value->catalog, "MyCatalog");
+  EXPECT_EQ(updated_spec.value->description, "Updated counter");
 }
 
 TEST(BconfigService, UpsertsDirectorCounterResourcesInSharedFiles)

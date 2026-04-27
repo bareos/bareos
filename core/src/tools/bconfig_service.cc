@@ -10485,6 +10485,78 @@ Spec ToMessagesResourceSpec(const DirectorMessagesContentSpec& content)
   return spec;
 }
 
+template <typename Spec>
+void FillDirectorAclSpec(
+    Spec& spec,
+    const std::array<std::vector<std::string>, directordaemon::Num_ACL>& acl)
+{
+  spec.job_acl = ToOptionalStringVector(acl[directordaemon::Job_ACL]);
+  spec.client_acl = ToOptionalStringVector(acl[directordaemon::Client_ACL]);
+  spec.storage_acl = ToOptionalStringVector(acl[directordaemon::Storage_ACL]);
+  spec.schedule_acl = ToOptionalStringVector(acl[directordaemon::Schedule_ACL]);
+  spec.pool_acl = ToOptionalStringVector(acl[directordaemon::Pool_ACL]);
+  spec.command_acl = ToOptionalStringVector(acl[directordaemon::Command_ACL]);
+  spec.fileset_acl = ToOptionalStringVector(acl[directordaemon::FileSet_ACL]);
+  spec.catalog_acl = ToOptionalStringVector(acl[directordaemon::Catalog_ACL]);
+  spec.where_acl = ToOptionalStringVector(acl[directordaemon::Where_ACL]);
+  spec.plugin_options_acl
+      = ToOptionalStringVector(acl[directordaemon::PluginOptions_ACL]);
+}
+
+DirectorUserResourceSpec ToDirectorUserResourceSpec(
+    const DirectorUserWriteContext& context)
+{
+  DirectorUserResourceSpec spec;
+  spec.description = context.description;
+  FillDirectorAclSpec(spec, context.acl);
+  spec.profiles = ToOptionalStringVector(context.profiles);
+  return spec;
+}
+
+DirectorProfileResourceSpec ToDirectorProfileResourceSpec(
+    const DirectorProfileWriteContext& context)
+{
+  DirectorProfileResourceSpec spec;
+  spec.description = context.description;
+  FillDirectorAclSpec(spec, context.acl);
+  return spec;
+}
+
+DirectorCatalogResourceSpec ToDirectorCatalogResourceSpec(
+    const DirectorCatalogContentSpec& content)
+{
+  DirectorCatalogResourceSpec spec;
+  spec.db_address = content.db_address;
+  spec.db_port = content.db_port;
+  spec.db_socket = content.db_socket;
+  spec.db_password = content.db_password;
+  spec.db_user = content.db_user;
+  spec.db_name = content.db_name;
+  spec.multiple_connections = content.multiple_connections;
+  spec.disable_batch_insert = content.disable_batch_insert;
+  spec.reconnect = content.reconnect;
+  spec.exit_on_fatal = content.exit_on_fatal;
+  spec.min_connections = content.min_connections;
+  spec.max_connections = content.max_connections;
+  spec.inc_connections = content.inc_connections;
+  spec.idle_timeout = content.idle_timeout;
+  spec.validate_timeout = content.validate_timeout;
+  spec.description = content.description;
+  return spec;
+}
+
+DirectorCounterResourceSpec ToDirectorCounterResourceSpec(
+    const DirectorCounterContentSpec& content)
+{
+  DirectorCounterResourceSpec spec;
+  spec.minimum = content.minimum;
+  spec.maximum = content.maximum;
+  spec.wrap_counter = content.wrap_counter;
+  spec.catalog = content.catalog;
+  spec.description = content.description;
+  return spec;
+}
+
 OperationResult<ClientDirectorStubSpec> ServiceState::GetClientDirectorStubSpec(
     std::string_view deployment_id,
     std::string_view client_name,
@@ -10858,6 +10930,101 @@ ServiceState::GetStorageMessagesResourceSpec(
 
   return {.value = ToMessagesResourceSpec<StorageMessagesResourceSpec>(
               context.value->content)};
+}
+
+OperationResult<DirectorUserResourceSpec>
+ServiceState::GetDirectorUserResourceSpec(std::string_view deployment_id,
+                                          std::string_view director_name,
+                                          std::string_view user_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorUserWriteContext(*director_config.value, user_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error
+            = "director user '" + std::string{user_name} + "' not found."};
+  }
+
+  return {.value = ToDirectorUserResourceSpec(*context.value)};
+}
+
+OperationResult<DirectorProfileResourceSpec>
+ServiceState::GetDirectorProfileResourceSpec(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view profile_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorProfileWriteContext(*director_config.value, profile_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director profile '" + std::string{profile_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToDirectorProfileResourceSpec(*context.value)};
+}
+
+OperationResult<DirectorCatalogResourceSpec>
+ServiceState::GetDirectorCatalogResourceSpec(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view catalog_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorCatalogWriteContext(*director_config.value, catalog_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director catalog '" + std::string{catalog_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToDirectorCatalogResourceSpec(context.value->content)};
+}
+
+OperationResult<DirectorCounterResourceSpec>
+ServiceState::GetDirectorCounterResourceSpec(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view counter_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorCounterWriteContext(*director_config.value, counter_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director counter '" + std::string{counter_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToDirectorCounterResourceSpec(context.value->content)};
 }
 
 OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
