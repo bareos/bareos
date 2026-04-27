@@ -1766,6 +1766,15 @@ TEST(BconfigService, UpsertsStorageAutochangerResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated autochanger\""),
             std::string::npos);
+
+  auto current
+      = state.GetStorageAutochangerResourceSpec("prod", "bareos-sd", "Default");
+  ASSERT_TRUE(current) << current.error;
+  ASSERT_TRUE(current.value->devices.has_value());
+  EXPECT_EQ(*current.value->devices, (std::vector<std::string>{"FileStorage"}));
+  EXPECT_EQ(current.value->changer_device, "/dev/updated-changer");
+  EXPECT_EQ(current.value->changer_command, "/usr/lib/bareos/updated-changer");
+  EXPECT_EQ(current.value->description, "Updated autochanger");
 }
 
 TEST(BconfigService, UpsertsStorageAutochangerResourcesInSharedFiles)
@@ -1905,6 +1914,16 @@ TEST(BconfigService, UpsertsStorageAutochangerResourcesWithCountedDevices)
             std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated counted autochanger\""),
             std::string::npos);
+
+  auto current = state.GetStorageAutochangerResourceSpec("prod", "bareos-sd",
+                                                         "CountedAutochanger");
+  ASSERT_TRUE(current) << current.error;
+  ASSERT_TRUE(current.value->devices.has_value());
+  EXPECT_EQ(*current.value->devices,
+            (std::vector<std::string>{"MultipliedDeviceResource"}));
+  EXPECT_EQ(current.value->changer_device, "/dev/counting-changer");
+  EXPECT_EQ(current.value->changer_command, "/usr/lib/bareos/counting-changer");
+  EXPECT_EQ(current.value->description, "Updated counted autochanger");
 }
 
 TEST(BconfigService, UpsertsSharedStorageAutochangerResourcesWithCountedDevices)

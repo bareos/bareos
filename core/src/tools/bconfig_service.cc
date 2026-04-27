@@ -10486,6 +10486,17 @@ StorageNdmpResourceSpec ToStorageNdmpResourceSpec(
   return spec;
 }
 
+StorageAutochangerResourceSpec ToStorageAutochangerResourceSpec(
+    const StorageAutochangerWriteContext& context)
+{
+  StorageAutochangerResourceSpec spec;
+  spec.devices = context.devices;
+  spec.changer_device = context.changer_device;
+  spec.changer_command = context.changer_command;
+  spec.description = context.description;
+  return spec;
+}
+
 ConsoleConsoleResourceSpec ToConsoleConsoleResourceSpec(
     const ConsoleConsoleWriteContext& context)
 {
@@ -10967,6 +10978,35 @@ ServiceState::GetStorageNdmpResourceSpec(std::string_view deployment_id,
   }
 
   return {.value = ToStorageNdmpResourceSpec(*context.value)};
+}
+
+OperationResult<StorageAutochangerResourceSpec>
+ServiceState::GetStorageAutochangerResourceSpec(
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view autochanger_name) const
+{
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.value->path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto context = LoadStorageAutochangerWriteContext(
+      *storage_config.value, autochanger_name, *managed_paths.value);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "storage-daemon autochanger '"
+                     + std::string{autochanger_name} + "' not found."};
+  }
+
+  return {.value = ToStorageAutochangerResourceSpec(*context.value)};
 }
 
 OperationResult<ClientDaemonResourceSpec>
