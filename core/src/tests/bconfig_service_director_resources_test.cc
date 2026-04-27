@@ -102,6 +102,22 @@ TEST(BconfigService, UpsertsDirectorConsoleResources)
   EXPECT_NE(updated_text.find("Profile = operator"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsEnable = no"), std::string::npos);
   EXPECT_NE(updated_text.find("TlsProtocol = \"TLSv1.2\""), std::string::npos);
+
+  auto current = state.GetDirectorConsoleResourceSpec("prod", "bareos-dir",
+                                                      "bareos-mon");
+  ASSERT_TRUE(current) << current.error;
+  ASSERT_TRUE(current.value->password.has_value());
+  EXPECT_TRUE(current.value->password->starts_with("[md5]"));
+  EXPECT_EQ(current.value->description, "Updated restricted console");
+  ASSERT_TRUE(current.value->job_acl.has_value());
+  EXPECT_EQ(*current.value->job_acl, (std::vector<std::string>{"*all*"}));
+  ASSERT_TRUE(current.value->command_acl.has_value());
+  EXPECT_EQ(*current.value->command_acl,
+            (std::vector<std::string>{"status", ".status", "show"}));
+  ASSERT_TRUE(current.value->profiles.has_value());
+  EXPECT_EQ(*current.value->profiles, (std::vector<std::string>{"operator"}));
+  EXPECT_EQ(current.value->tls_enable, false);
+  EXPECT_EQ(current.value->tls_protocol, "TLSv1.2");
 }
 
 TEST(BconfigService, UpsertsDirectorConsoleResourcesInSharedFiles)

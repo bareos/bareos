@@ -975,6 +975,10 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view director_name,
       std::string_view storage_name) const;
+  OperationResult<DirectorConsoleResourceSpec> GetDirectorConsoleResourceSpec(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view console_name) const;
   OperationResult<StorageDirectorResourceSpec> GetStorageDirectorResourceSpec(
       std::string_view deployment_id,
       std::string_view storage_name,

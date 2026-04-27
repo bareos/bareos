@@ -10873,6 +10873,51 @@ ServiceState::GetDirectorStorageResourceSpec(
       }};
 }
 
+OperationResult<DirectorConsoleResourceSpec>
+ServiceState::GetDirectorConsoleResourceSpec(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view console_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorConsoleWriteContext(*director_config.value, console_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director console '" + std::string{console_name}
+                     + "' not found."};
+  }
+
+  DirectorConsoleResourceSpec spec;
+  spec.password = context.value->password;
+  spec.description = context.value->description;
+  FillDirectorAclSpec(spec, context.value->acl);
+  spec.profiles = ToOptionalStringVector(context.value->profiles);
+  spec.use_pam_authentication = context.value->use_pam_authentication;
+  spec.tls_authenticate = context.value->tls_authenticate;
+  spec.tls_enable = context.value->tls_enable;
+  spec.tls_require = context.value->tls_require;
+  spec.tls_verify_peer = context.value->tls_verify_peer;
+  spec.tls_cipher_list = context.value->tls_cipher_list;
+  spec.tls_cipher_suites = context.value->tls_cipher_suites;
+  spec.tls_dh_file = context.value->tls_dh_file;
+  spec.tls_protocol = context.value->tls_protocol;
+  spec.tls_ca_certificate_file = context.value->tls_ca_certificate_file;
+  spec.tls_ca_certificate_dir = context.value->tls_ca_certificate_dir;
+  spec.tls_certificate_revocation_list
+      = context.value->tls_certificate_revocation_list;
+  spec.tls_certificate = context.value->tls_certificate;
+  spec.tls_key = context.value->tls_key;
+  spec.tls_allowed_cn = context.value->tls_allowed_cn;
+  return {.value = std::move(spec)};
+}
+
 OperationResult<StorageDirectorResourceSpec>
 ServiceState::GetStorageDirectorResourceSpec(
     std::string_view deployment_id,
