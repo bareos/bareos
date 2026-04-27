@@ -29,6 +29,8 @@
 #  include <unistd.h>
 #endif
 
+#include <sstream>
+
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/filetypes.h"
@@ -47,9 +49,10 @@ static const int debuglevel = 150;
 #define PLUGIN_VERSION "2"
 #define PLUGIN_DESCRIPTION "Bareos Pipe File Daemon Plugin"
 #define PLUGIN_USAGE                                                   \
-  "bpipe:file=<filepath>:reader=<readprogram>:writer=<writeprogram>\n" \
+  "bpipe:file=<filepath>:reader=<readprogram>:writer=<writeprogram>[:usesuffix=true|false]\n" \
   " readprogram runs on backup and its stdout is saved\n"              \
   " writeprogram runs on restore and gets restored data into stdin\n"  \
+  " usesuffix add unique suffix to filepath (optional)\n" \
   " the data is internally stored as filepath (e.g. mybackup/backup1)"
 
 /* Forward referenced functions */
@@ -107,33 +110,11 @@ struct plugin_ctx {
   char* fname;          /* Filename to "backup/restore" */
   char* reader;         /* Reader program for backup */
   char* writer;         /* Writer program for backup */
-  char* autosuffix;     /* append unique suffix to fname */
+  bool  usesuffix;     /* append unique suffix to fname */
 
   char where[512];
   int replace;
 };
-
-// This defines the arguments that the plugin parser understands.
-enum plugin_argument_type
-{
-  argument_none = 0,
-  argument_file,
-  argument_reader,
-  argument_writer,
-  argument_auto,
-};
-
-struct plugin_argument {
-  const char* name;
-  enum plugin_argument_type type;
-  int cmp_length;
-};
-
-static plugin_argument plugin_arguments[] = {{"file=", argument_file, 4},
-                                             {"reader=", argument_reader, 6},
-                                             {"writer=", argument_writer, 6},
-                                             {"autosuffix=", argument_auto, 10},
-                                             {NULL, argument_none, 0}};
 
 #ifdef __cplusplus
 extern "C" {
@@ -268,8 +249,7 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
   p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
   if (!p_ctx) { return bRC_Error; }
 
-  if(p_ctx->autosuffix != NULL
-    && BoolString(std::string(p_ctx->autosuffix)).get<bool>()) { set_unique_name(ctx); }
+  if(p_ctx->usesuffix) { set_unique_name(ctx); }
 
   now = time(NULL);
   sp->fname = p_ctx->fname;
@@ -558,7 +538,7 @@ static inline void StripBackSlashes(char* value)
 }
 
 // Only set destination to value when it has no previous setting.
-static inline void SetStringIfNull(char** destination, char* value)
+static inline void SetStringIfNull(char** destination, const char* value)
 {
   if (!*destination) {
     *destination = strdup(value);
@@ -567,7 +547,7 @@ static inline void SetStringIfNull(char** destination, char* value)
 }
 
 // Always set destination to value and clean any previous one.
-static inline void SetString(char** destination, char* value)
+static inline void SetString(char** destination, const char* value)
 {
   if (*destination) { free(*destination); }
 
@@ -609,6 +589,47 @@ static void set_unique_name(PluginContext* ctx) {
   p_ctx->fname = strdup(new_fname);
 }
 
+// duplicated from core/src/plugins/include/python_plugins_common.inc
+static inline bool ParseBoolean(const char* argument_value)
+{
+  if (Bstrcasecmp(argument_value, "yes")
+      || Bstrcasecmp(argument_value, "true")) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+static bRC parse_single_option(std::string& key, std::string& value, plugin_ctx* p_ctx) {
+  const char *c_str = value.c_str();
+
+  if (key == "file") {
+    SetString(&p_ctx->fname, c_str);
+  } else if (key == "reader") {
+    SetString(&p_ctx->reader, c_str);
+  } else if (key == "writer") {
+    SetString(&p_ctx->writer, c_str);
+  } else if (key == "usesuffix") {
+    p_ctx->usesuffix = ParseBoolean(c_str);
+  }
+  else {
+    return bRC_Error;
+  }
+
+  return bRC_OK;
+}
+
+static void log_config_error(PluginContext *ctx, std::string& key, std::string& value) {
+  Jmsg(ctx, M_FATAL,
+       "bpipe-fd: Illegal argument %s with value %s in plugin "
+       "definition\n",
+       key.c_str(), value.c_str());
+  Dmsg(ctx, debuglevel,
+       "bpipe-fd: Illegal argument %s with value %s in plugin "
+       "definition\n",
+       key.c_str(), value.c_str());
+}
+
 /**
  * Parse the plugin definition passed in.
  *
@@ -616,205 +637,38 @@ static void set_unique_name(PluginContext* ctx) {
  *
  * bpipe:file=<filepath>:read=<readprogram>:write=<writeprogram>
  */
-static bRC parse_plugin_definition(PluginContext* ctx, void* value)
+static bRC parse_plugin_definition(PluginContext* ctx, void* plugindef)
 {
-  int i, cnt;
-  char *plugin_definition, *bp, *argument, *argument_value;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
-  bool keep_existing;
-  bool compatible = true;
 
-  if (!p_ctx || !value) { return bRC_Error; }
+  if (!p_ctx || !plugindef) { return bRC_Error; }
 
-  keep_existing = (p_ctx->plugin_options) ? true : false;
+  std::istringstream input((char *) plugindef);
 
-  /* Parse the plugin definition.
-   * Make a private copy of the whole string. */
-  plugin_definition = strdup((char*)value);
+  std::string part;
 
-  bp = strchr(plugin_definition, ':');
-  if (!bp) {
-    Jmsg(ctx, M_FATAL, "bpipe-fd: Illegal plugin definition %s\n",
-         plugin_definition);
-    Dmsg(ctx, debuglevel, "bpipe-fd: Illegal plugin definition %s\n",
-         plugin_definition);
-    goto bail_out;
-  }
+  // skip first token which is always the plugin name
+  std::getline(input, part, ':');
 
-  // Skip the first ':'
-  bp++;
+  for (; std::getline(input, part, ':');) {
+    std::istringstream partin(part);
+    std::string key, value;
 
-  // See if we are parsing a new plugin definition e.g. one with keywords.
-  argument = bp;
-  while (argument) {
-    if (strlen(argument) == 0) { break; }
+    std::getline(partin, key, '=');
+    std::getline(partin, value);
 
-    for (i = 0; plugin_arguments[i].name; i++) {
-      if (bstrncasecmp(argument, plugin_arguments[i].name,
-                       strlen(plugin_arguments[i].name))) {
-        compatible = false;
-        break;
-      }
+    if (key.empty()) {
+        log_config_error(ctx, key, value);
+        return bRC_Error;
     }
 
-    if (!plugin_arguments[i].name && !compatible) {
-      // Parsing something fishy ? e.g. partly with known keywords.
-      Jmsg(ctx, M_FATAL,
-           "bpipe-fd: Found mixing of old and new syntax, please fix your "
-           "plugin definition (%s)\n",
-           plugin_definition);
-      Dmsg(ctx, debuglevel,
-           "bpipe-fd: Found mixing of old and new syntax, please fix your "
-           "plugin definition (%s)\n",
-           plugin_definition);
-      goto bail_out;
+    if (parse_single_option(key, value, p_ctx) != bRC_OK) {
+        log_config_error(ctx, key, value);
+        return bRC_Error;
     }
-
-    argument = strchr(argument, ':');
-    if (argument) { argument++; }
   }
 
-  /* Start processing the definition, if compatible is left set we are
-   * pretending that we are parsing a plugin definition in the old syntax and
-   * hope for the best. */
-  cnt = 1;
-  while (bp) {
-    if (strlen(bp) == 0) { break; }
-
-    argument = bp;
-    if (compatible) {
-      char** str_destination = NULL;
-
-      // See if there are more arguments and setup for the next run.
-      do {
-        bp = strchr(bp, ':');
-        if (bp) {
-          if (*(bp - 1) != '\\') {
-            *bp++ = '\0';
-            break;
-          } else {
-            bp++;
-          }
-        }
-      } while (bp);
-
-      // See which field this is in the argument string.
-      switch (cnt) {
-        case 1:
-          str_destination = &p_ctx->fname;
-          break;
-        case 2:
-          str_destination = &p_ctx->reader;
-          break;
-        case 3:
-          str_destination = &p_ctx->writer;
-          break;
-        default:
-          break;
-      }
-
-      if (str_destination) {
-        if (keep_existing) {
-          // Keep the first value, ignore any next setting.
-          SetStringIfNull(str_destination, argument);
-        } else {
-          // Overwrite any existing value.
-          SetString(str_destination, argument);
-        }
-      }
-    } else {
-      /* Each argument is in the form:
-       *    <argument> = <argument_value>
-       *
-       * So we setup the right pointers here, argument to the beginning
-       * of the argument, argument_value to the beginning of the argument_value.
-       */
-      argument_value = strchr(bp, '=');
-      *argument_value++ = '\0';
-
-      // See if there are more arguments and setup for the next run.
-      bp = argument_value;
-      do {
-        bp = strchr(bp, ':');
-        if (bp) {
-          if (*(bp - 1) != '\\') {
-            *bp++ = '\0';
-            break;
-          } else {
-            bp++;
-          }
-        }
-      } while (bp);
-
-      for (i = 0; plugin_arguments[i].name; i++) {
-        if (bstrncasecmp(argument, plugin_arguments[i].name,
-                         plugin_arguments[i].cmp_length)) {
-          char** str_destination = NULL;
-
-          switch (plugin_arguments[i].type) {
-            case argument_file:
-              if (!PathContainsDirectory(argument_value)) {
-                Jmsg(ctx, M_FATAL,
-                     "bpipe-fd: file argument (%s) must contain a directory "
-                     "structure. Please fix your plugin definition\n",
-                     argument_value);
-                Dmsg(ctx, debuglevel,
-                     "bpipe-fd: file argument (%s) must contain a directory "
-                     "structure. Please fix your plugin definition\n",
-                     argument_value);
-                goto bail_out;
-              }
-              str_destination = &p_ctx->fname;
-              break;
-            case argument_reader:
-              str_destination = &p_ctx->reader;
-              break;
-            case argument_writer:
-              str_destination = &p_ctx->writer;
-              break;
-            case argument_auto:
-              str_destination = &p_ctx->autosuffix;
-            default:
-              break;
-          }
-
-          if (str_destination) {
-            if (keep_existing) {
-              // Keep the first value, ignore any next setting.
-              SetStringIfNull(str_destination, argument_value);
-            } else {
-              // Overwrite any existing value.
-              SetString(str_destination, argument_value);
-            }
-          }
-
-          // When we have a match break the loop.
-          break;
-        }
-      }
-
-      // Got an invalid keyword ?
-      if (!plugin_arguments[i].name) {
-        Jmsg(ctx, M_FATAL,
-             "bpipe-fd: Illegal argument %s with value %s in plugin "
-             "definition\n",
-             argument, argument_value);
-        Dmsg(ctx, debuglevel,
-             "bpipe-fd: Illegal argument %s with value %s in plugin "
-             "definition\n",
-             argument, argument_value);
-        goto bail_out;
-      }
-    }
-    cnt++;
-  }
-
-  free(plugin_definition);
   return bRC_OK;
-
-bail_out:
-  free(plugin_definition);
-  return bRC_Error;
 }
 
 static bRC plugin_has_all_arguments(PluginContext* ctx)
