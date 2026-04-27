@@ -60,7 +60,7 @@ endif()
 
 if(INCUS
    AND GUESTFISH
-   AND LZMA
+   # AND LZMA
    AND QEMUIMG
    AND VIRTRESIZE
 )
