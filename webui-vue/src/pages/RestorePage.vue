@@ -203,10 +203,14 @@
           </template>
           <template v-else>
             <div class="text-center text-grey q-py-xl">
-              <template v-if="browserError">
+              <template v-if="browserPlaceholder === 'error'">
                 <q-icon name="error_outline" size="48px" color="negative" /><br />
                 <div class="text-caption text-negative q-mt-sm q-mb-md">{{ browserError }}</div>
                 <q-btn flat dense color="primary" :label="t('Retry')" icon="refresh" @click="initBrowser" :loading="loadingBrowser" />
+              </template>
+              <template v-else-if="browserPlaceholder === 'loading'">
+                <q-spinner size="48px" color="primary" /><br />
+                <span class="text-caption q-mt-sm">{{ t('Loading file list...') }}</span>
               </template>
               <template v-else>
                 <q-icon name="folder_open" size="48px" /><br />
@@ -317,6 +321,7 @@ import { useI18n } from 'vue-i18n'
 import { directorCollection } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import { formatBytes } from '../mock/index.js'
+import { getRestoreBrowserPlaceholder } from '../utils/restore.js'
 
 const director = useDirectorStore()
 const route    = useRoute()
@@ -432,6 +437,11 @@ const navStack = ref([{ label: '/', pathId: null }])
 
 // Current directory contents: mixed dirs + files
 const currentEntries = ref([])
+const browserPlaceholder = computed(() => getRestoreBrowserPlaceholder({
+  browserError: browserError.value,
+  loadingBrowser: loadingBrowser.value,
+  hasSelectedJob: !!form.value.jobid,
+}))
 
 // Selection: Map<key, {FileId or PathId, name, isDir}>
 const selectedFiles = ref(new Map())  // key = FileId
