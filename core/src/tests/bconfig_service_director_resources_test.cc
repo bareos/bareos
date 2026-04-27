@@ -4223,5 +4223,103 @@ TEST(BconfigService, ServesDirectorSchedulePrefillRouteOverHttp)
 #endif
 }
 
+TEST(BconfigService, ServesDirectorCounterPrefillRouteOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP prefill route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory state_root{MakeTempPath()};
+
+  {
+    ServiceState state{state_root.path()};
+
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    const auto source_fixture_root = FindFixtureRoot();
+    ASSERT_FALSE(source_fixture_root.empty());
+    std::filesystem::create_directories(source_root.path());
+    std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                          source_root.path() / "bareos-dir.d",
+                          std::filesystem::copy_options::recursive);
+    AddCounterFixtures(source_root.path());
+
+    auto import_job
+        = state.CreateJob({.type = "import_configuration",
+                           .deployment_id = std::string{"prod"},
+                           .source_path = source_root.path().string()});
+    ASSERT_TRUE(import_job);
+    auto imported = WaitForJobTerminal(state, import_job.value->id);
+    ASSERT_TRUE(imported.has_value());
+    ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+    auto counter = state.UpsertDirectorCounterResource(
+        "prod", "bareos-dir", "ManagedCounter",
+        {.minimum = 10,
+         .maximum = 50,
+         .wrap_counter = std::string{"WrapSeed"},
+         .catalog = std::string{"MyCatalog"},
+         .description = std::string{"HTTP-managed director counter"}});
+    ASSERT_TRUE(counter) << counter.error;
+  }
+
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto counter_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/counters/ManagedCounter/"
+      "prefill");
+  ASSERT_EQ(counter_response.status_code, 200u) << counter_response.body;
+  auto counter_json = ParseJson(counter_response.body);
+  ASSERT_NE(counter_json.get(), nullptr) << counter_response.body;
+  auto* counter_deployment = json_object_get(counter_json.get(), "deployment");
+  ASSERT_TRUE(json_is_object(counter_deployment));
+  auto* counter_deployment_id = json_object_get(counter_deployment, "id");
+  ASSERT_TRUE(json_is_string(counter_deployment_id));
+  EXPECT_STREQ(json_string_value(counter_deployment_id), "prod");
+  auto* counter_deployment_name = json_object_get(counter_deployment, "name");
+  ASSERT_TRUE(json_is_string(counter_deployment_name));
+  EXPECT_STREQ(json_string_value(counter_deployment_name), "Production");
+  auto* counter_spec = json_object_get(counter_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(counter_spec));
+  auto* counter_minimum = json_object_get(counter_spec, "minimum");
+  ASSERT_TRUE(json_is_integer(counter_minimum));
+  EXPECT_EQ(json_integer_value(counter_minimum), 10);
+  auto* counter_maximum = json_object_get(counter_spec, "maximum");
+  ASSERT_TRUE(json_is_integer(counter_maximum));
+  EXPECT_EQ(json_integer_value(counter_maximum), 50);
+  auto* counter_wrap = json_object_get(counter_spec, "wrap_counter");
+  ASSERT_TRUE(json_is_string(counter_wrap));
+  EXPECT_STREQ(json_string_value(counter_wrap), "WrapSeed");
+  auto* counter_catalog = json_object_get(counter_spec, "catalog");
+  ASSERT_TRUE(json_is_string(counter_catalog));
+  EXPECT_STREQ(json_string_value(counter_catalog), "MyCatalog");
+  auto* counter_description = json_object_get(counter_spec, "description");
+  ASSERT_TRUE(json_is_string(counter_description));
+  EXPECT_STREQ(json_string_value(counter_description),
+               "HTTP-managed director counter");
+
+  const auto missing_counter_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/counters/MissingCounter/"
+      "prefill");
+  EXPECT_EQ(missing_counter_response.status_code, 400u);
+  EXPECT_NE(missing_counter_response.body.find(
+                "director counter 'MissingCounter' not found."),
+            std::string::npos);
+
+  const auto missing_deployment_response = server.Get(
+      "/v1/deployments/missing/directors/bareos-dir/counters/ManagedCounter/"
+      "prefill");
+  EXPECT_EQ(missing_deployment_response.status_code, 404u);
+  EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
+            std::string::npos);
+#endif
+}
+
 }  // namespace
 }  // namespace bconfig::service
