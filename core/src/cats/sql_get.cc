@@ -128,8 +128,9 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
          "File.Name='%s'",
          edit_int64(fdbr->JobId, ed1), edit_int64(fdbr->PathId, ed2), esc_name);
   }
-  Dmsg3(450, "Get_file_record JobId=%u Filename=%s PathId=%u\n", fdbr->JobId,
-        esc_name, fdbr->PathId);
+  Dmsg3(450,
+        "Get_file_record JobId=%" PRIdbid " Filename=%s PathId=%" PRIdbid "\n",
+        fdbr->JobId, esc_name, fdbr->PathId);
 
   Dmsg1(100, "Query=%s\n", cmd);
 
@@ -346,7 +347,7 @@ int BareosDb::GetJobVolumeNames(JobControlRecord* jcr,
     num_rows = SqlNumRows();
     Dmsg1(130, "Num rows=%d\n", num_rows);
     if (num_rows <= 0) {
-        Mmsg1(errmsg, T_("No volumes found for JobId=%" PRIu32 "\n"), JobId);
+      Mmsg1(errmsg, T_("No volumes found for JobId=%" PRIu32 "\n"), JobId);
       retval = 0;
     } else {
       retval = num_rows;
@@ -653,8 +654,8 @@ bool BareosDb::GetPoolRecord(JobControlRecord* jcr, PoolDbRecord* pdbr)
     Mmsg(cmd, "SELECT count(*) from Media WHERE PoolId=%s",
          edit_int64(pdbr->PoolId, ed1));
     NumVols = GetSqlRecordMax(jcr);
-    Dmsg2(400, "Actual NumVols=%" PRIu32 " Pool NumVols=%" PRIu32 "\n",
-          NumVols, pdbr->NumVols);
+    Dmsg2(400, "Actual NumVols=%" PRIu32 " Pool NumVols=%" PRIu32 "\n", NumVols,
+          pdbr->NumVols);
     if (NumVols != pdbr->NumVols) {
       pdbr->NumVols = NumVols;
       ok = UpdatePoolRecord(jcr, pdbr);

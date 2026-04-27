@@ -132,7 +132,7 @@ void* handle_stored_connection(BareosSocket* sd, char* job_name)
     Jmsg(jcr, M_FATAL, 0, T_("Unable to authenticate Storage daemon\n"));
   } else {
     *jcr->sd_impl->client_available.lock() = true;
-    Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,
+    Dmsg2(50, "OK Authentication jid=%" PRIu32 " Job %s\n", jcr->JobId,
           jcr->Job);
   }
 

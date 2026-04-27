@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2014-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -88,8 +88,7 @@ static inline bool LookupDevice(JobControlRecord* jcr,
   }
 
   Dmsg3(200, "Deviceid of \"%s\" on StorageId %" PRIdbid " is %" PRIdbid "\n",
-        dr.Name,
-        dr.StorageId, dr.DeviceId);
+        dr.Name, dr.StorageId, dr.DeviceId);
 
   bstrncpy(cached_device.device_name, device_name,
            sizeof(cached_device.device_name));
@@ -203,17 +202,25 @@ extern "C" void* statistics_thread(void*)
             PoolMem DevName(PM_NAME);
             DeviceStatisticsDbRecord dsr;
 
-            if (sscanf(sd->msg, DevStats, &dsr.SampleTime, DevName.c_str(),
+            int64_t sample_time = 0;
+            uint32_t num_waiting = 0;
+            uint32_t num_writers = 0;
+            DBId_t media_id = 0;
+            if (sscanf(sd->msg, DevStats, &sample_time, DevName.c_str(),
                        &dsr.ReadBytes, &dsr.WriteBytes, &dsr.SpoolSize,
-                       &dsr.NumWaiting, &dsr.NumWriters, &dsr.ReadTime,
-                       &dsr.WriteTime, &dsr.MediaId, &dsr.VolCatBytes,
+                       &num_waiting, &num_writers, &dsr.ReadTime,
+                       &dsr.WriteTime, &media_id, &dsr.VolCatBytes,
                        &dsr.VolCatFiles, &dsr.VolCatBlocks)
                 == 13) {
+              dsr.SampleTime = static_cast<time_t>(sample_time);
+              dsr.NumWaiting = num_waiting;
+              dsr.NumWriters = num_writers;
+              dsr.MediaId = media_id;
               Dmsg5(200,
-                    "New Devstats [%lld]: Device=%s Read=%" PRIu64
+                    "New Devstats [%" PRId64 "]: Device=%s Read=%" PRIu64
                     ", Write=%" PRIu64 ", SpoolSize=%" PRIu64 ",\n",
-                    static_cast<long long>(dsr.SampleTime), DevName.c_str(),
-                    dsr.ReadBytes, dsr.WriteBytes, dsr.SpoolSize);
+                    sample_time, DevName.c_str(), dsr.ReadBytes, dsr.WriteBytes,
+                    dsr.SpoolSize);
               Dmsg4(200,
                     "NumWaiting=%" PRIu32 ", NumWriters=%" PRIu32
                     ", ReadTime=%" PRIu64 ", WriteTime=%" PRIu64 ",\n",
@@ -238,14 +245,17 @@ extern "C" void* statistics_thread(void*)
             PoolMem DevName(PM_NAME);
             TapealertStatsDbRecord tsr;
 
-            if (sscanf(sd->msg, TapeAlerts, &tsr.SampleTime, DevName.c_str(),
+            int64_t sample_time = 0;
+            if (sscanf(sd->msg, TapeAlerts, &sample_time, DevName.c_str(),
                        &tsr.AlertFlags)
                 == 3) {
+              tsr.SampleTime = static_cast<time_t>(sample_time);
               UnbashSpaces(DevName);
 
-              Dmsg3(200, "New stats [%lld]: Device %s TapeAlert %" PRIu64 "\n",
-                    static_cast<long long>(tsr.SampleTime), DevName.c_str(),
-                    tsr.AlertFlags);
+              Dmsg3(200,
+                    "New stats [%" PRId64 "]: Device %s TapeAlert %" PRIu64
+                    "\n",
+                    sample_time, DevName.c_str(), tsr.AlertFlags);
 
               if (!LookupDevice(jcr, DevName.c_str(), StorageId,
                                 &tsr.DeviceId)) {
@@ -260,16 +270,23 @@ extern "C" void* statistics_thread(void*)
             PoolMem DevName(PM_NAME);
             JobStatisticsDbRecord jsr;
 
-            if (sscanf(sd->msg, JobStats, &jsr.SampleTime, &jsr.JobId,
-                       &jsr.JobFiles, &jsr.JobBytes, DevName.c_str())
+            int64_t sample_time = 0;
+            JobId_t job_id = 0;
+            uint32_t job_files = 0;
+            if (sscanf(sd->msg, JobStats, &sample_time, &job_id, &job_files,
+                       &jsr.JobBytes, DevName.c_str())
                 == 5) {
+              jsr.SampleTime = static_cast<time_t>(sample_time);
+              jsr.JobId = job_id;
+              jsr.JobFiles = job_files;
               UnbashSpaces(DevName);
 
               Dmsg5(200,
-                    "New Jobstats [%lld]: JobId %u, JobFiles %" PRIu32
-                    ", JobBytes %" PRIu64 ", DevName %s\n",
-                    static_cast<long long>(jsr.SampleTime), jsr.JobId,
-                    jsr.JobFiles, jsr.JobBytes, DevName.c_str());
+                    "New Jobstats [%" PRId64 "]: JobId %" PRIu32
+                    ", JobFiles %" PRIu32 ", JobBytes %" PRIu64
+                    ", DevName %s\n",
+                    sample_time, jsr.JobId, jsr.JobFiles, jsr.JobBytes,
+                    DevName.c_str());
 
               if (!LookupDevice(jcr, DevName.c_str(), StorageId,
                                 &jsr.DeviceId)) {

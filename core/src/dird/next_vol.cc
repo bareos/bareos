@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -78,8 +78,8 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
 
   bstrncpy(mr->MediaType, store->media_type, sizeof(mr->MediaType));
   Dmsg3(debuglevel,
-        "find_next_vol_for_append: JobId=%u PoolId=%d, MediaType=%s\n",
-        (uint32_t)jcr->JobId, (int)mr->PoolId, mr->MediaType);
+        "find_next_vol_for_append: JobId=%" PRIu32 " PoolId=%d, MediaType=%s\n",
+        jcr->JobId, (int)mr->PoolId, mr->MediaType);
 
   /* If we are using an Autochanger, restrict Volume search to the Autochanger
    * on the first pass */
@@ -109,8 +109,8 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
       // 3. Try finding a recycled volume
       ok = FindRecycledVolume(jcr, InChanger, mr, store, unwanted_volumes);
       SetStorageidInMr(store, mr);
-      Dmsg2(debuglevel, "FindRecycledVolume ok=%d FW=%lld\n", ok,
-            static_cast<long long>(mr->FirstWritten));
+      Dmsg2(debuglevel, "FindRecycledVolume ok=%d FW=%" PRItime "\n", ok,
+            mr->FirstWritten);
       if (!ok) {
         // 4. Try recycling any purged volume
         ok = RecycleOldestPurgedVolume(jcr, InChanger, mr, store,
@@ -191,8 +191,8 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
       }
     }
 
-    Dmsg2(debuglevel, "VolJobs=%" PRIu32 " FirstWritten=%lld\n", mr->VolJobs,
-          static_cast<long long>(mr->FirstWritten));
+    Dmsg2(debuglevel, "VolJobs=%" PRIu32 " FirstWritten=%" PRItime "\n",
+          mr->VolJobs, mr->FirstWritten);
     if (ok) {
       // If we can use the volume, check if it is expired
       if (bstrcmp(mr->VolStatus, "Append") && HasVolumeExpired(jcr, mr)) {

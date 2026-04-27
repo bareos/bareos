@@ -428,7 +428,7 @@ static inline void add_out_of_order_metadata(NIS* nis,
 
   Dmsg2(100,
         "bndmp_fhdb_mem_add_dir: Added out of order metadata entry for node "
-        "%llu with parent %llu\n",
+        "%" PRIu64 " with parent %" PRIu64 "\n",
         node, dir_node);
 }
 
@@ -446,7 +446,9 @@ extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog* ixlog,
   if (nis->save_filehist) {
     N_TREE_ROOT* fhdb_root;
 
-    Dmsg3(100, "bndmp_fhdb_mem_add_dir: New filename ==> %s [%llu] - [%llu]\n",
+    Dmsg3(100,
+          "bndmp_fhdb_mem_add_dir: New filename ==> %s [%" PRIu64
+          "] - [%" PRIu64 "]\n",
           raw_name, dir_node, node);
 
     fhdb_root = ((struct fhdb_state_mem*)nis->fhdb_state)->fhdb_root;
@@ -486,7 +488,8 @@ static N_TREE_NODE* insert_metadata_parent_node(MetadataTable* meta_data,
   OOO_MD* md_entry;
 
   Dmsg1(100,
-        "bndmp_fhdb_mem_add_dir: Inserting node for parent %llu into tree\n",
+        "bndmp_fhdb_mem_add_dir: Inserting node for parent %" PRIu64
+        " into tree\n",
         dir_node);
 
   // lookup the dir_node
@@ -536,7 +539,8 @@ static inline bool ProcessOutOfOrderMetadata(MetadataTable* meta_data,
     // Already visited ?
     if (!md_entry->nt_node) { continue; }
 
-    Dmsg1(100, "bndmp_fhdb_mem_add_dir: Inserting node for %llu into tree\n",
+    Dmsg1(100,
+          "bndmp_fhdb_mem_add_dir: Inserting node for %" PRIu64 " into tree\n",
           md_entry->nt_node->inode);
 
     // See if this entry is in the cached parent.
@@ -590,7 +594,7 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog* ixlog,
     MetadataTable* meta_data
         = ((struct fhdb_state_mem*)nis->fhdb_state)->out_of_order_metadata;
 
-    Dmsg1(100, "bndmp_fhdb_mem_add_node: New node [%llu]\n", node);
+    Dmsg1(100, "bndmp_fhdb_mem_add_node: New node [%" PRIu64 "]\n", node);
 
     fhdb_root = ((struct fhdb_state_mem*)nis->fhdb_state)->fhdb_root;
     if (!fhdb_root) {
@@ -617,7 +621,7 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog* ixlog,
     if (!wanted_node) {
       Jmsg(nis->jcr, M_FATAL, 0,
            T_("NDMP protocol error, FHDB add_node request for unknown node "
-              "%llu.\n"),
+              "%" PRIu64 ".\n"),
            node);
       return 1;
     }
@@ -651,7 +655,7 @@ extern "C" int bndmp_fhdb_mem_add_dirnode_root(struct ndmlog* ixlog,
     N_TREE_ROOT* fhdb_root;
     struct fhdb_state_mem* fhdb_state;
 
-    Dmsg1(100, "bndmp_fhdb_mem_add_dirnode_root: New root node [%llu]\n",
+    Dmsg1(100, "bndmp_fhdb_mem_add_dirnode_root: New root node [%" PRIu64 "]\n",
           root_node);
 
     fhdb_state = ((struct fhdb_state_mem*)nis->fhdb_state);

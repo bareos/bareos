@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -189,7 +189,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
        edit_uint64(jcr->JobId, ed1), jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
-  Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->dir_impl->jr.JobId,
+  Dmsg2(100, "JobId=%" PRIu32 " JobLevel=%c\n", jcr->dir_impl->jr.JobId,
         jcr->dir_impl->jr.JobLevel);
   if (DbLocker _{jcr->db};
       !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
@@ -318,7 +318,8 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   if (ndmca_control_agent(&ndmp_sess) != 0) { goto cleanup; }
 
   if (!unreserve_ndmp_tapedevice_for_job(store, jcr)) {
-    Jmsg(jcr, M_ERROR, 0, "could not free ndmp tape device %s from job %d",
+    Jmsg(jcr, M_ERROR, 0,
+         "could not free ndmp tape device %s from job %" PRIu32,
          ndmp_job.tape_device, jcr->JobId);
   }
 
@@ -365,7 +366,8 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
 cleanup:
 
   if (!unreserve_ndmp_tapedevice_for_job(store, jcr)) {
-    Jmsg(jcr, M_ERROR, 0, "could not free ndmp tape device %s from job %d",
+    Jmsg(jcr, M_ERROR, 0,
+         "could not free ndmp tape device %s from job %" PRIu32,
          ndmp_job.tape_device, jcr->JobId);
   }
 
@@ -474,7 +476,8 @@ static inline bool extract_post_backup_stats_ndmp_native(
       Jmsg(jcr, M_INFO, 0, T_("Logical slot is : %d\n"), media->slot_addr);
       Jmsg(jcr, M_INFO, 0, T_("label           : %s\n"), media->label);
       Jmsg(jcr, M_INFO, 0, T_("index           : %d\n"), media->index);
-      Jmsg(jcr, M_INFO, 0, T_("n_bytes         : %lld\n"), media->n_bytes);
+      Jmsg(jcr, M_INFO, 0, T_("n_bytes         : %" PRIu64 "\n"),
+           media->n_bytes);
       Jmsg(jcr, M_INFO, 0, T_("begin_offset    : %u\n"), media->begin_offset);
       Jmsg(jcr, M_INFO, 0, T_("end_offset      : %u\n"), media->end_offset);
 #  endif

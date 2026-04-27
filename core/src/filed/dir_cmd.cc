@@ -1017,8 +1017,9 @@ static bool RestoreObjectCmd(JobControlRecord* jcr)
   UnbashSpaces(rop.plugin_name);
 
   Dmsg7(100,
-        "Recv object: JobId=%u objlen=%d full_len=%d objinx=%d objtype=%d "
-        "FI=%d plugin_name=%s\n",
+        "Recv object: JobId=%" PRIu32 " objlen=%" PRId32 " full_len=%" PRId32
+        " objinx=%" PRId32 " objtype=%" PRId32 " FI=%" PRId32
+        " plugin_name=%s\n",
         rop.JobId, rop.object_len, rop.object_full_len, rop.object_index,
         rop.object_type, FileIndex, rop.plugin_name);
 

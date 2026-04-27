@@ -50,10 +50,7 @@ static const int debuglevel = 500;
 
 // htable (Hash Table) class.
 
-static inline long long unsigned cast(std::uint64_t x)
-{
-  return static_cast<long long unsigned>(x);
-}
+static inline std::uint64_t cast(std::uint64_t x) { return x; }
 
 /*
  * Create hash of key, stored in hash then
@@ -68,7 +65,7 @@ void htableImpl::HashIndex(char* key)
 
   // Multiply by large prime number, take top bits, mask for remainder.
   index = ((hash * 1103515249) >> rshift) & mask;
-  Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%" PRIu32 "\n",
+  Dmsg2(debuglevel, "Leave HashIndex hash=0x%" PRIx64 " index=%" PRIu32 "\n",
         cast(hash), index);
 }
 
@@ -78,7 +75,7 @@ void htableImpl::HashIndex(uint32_t key)
 
   // Multiply by large prime number, take top bits, mask for remainder.
   index = ((hash * 1103515249) >> rshift) & mask;
-  Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%" PRIu32 "\n",
+  Dmsg2(debuglevel, "Leave HashIndex hash=0x%" PRIx64 " index=%" PRIu32 "\n",
         cast(hash), index);
 }
 
@@ -88,7 +85,7 @@ void htableImpl::HashIndex(uint64_t key)
 
   // Multiply by large prime number, take top bits, mask for remainder.
   index = ((hash * 1103515249) >> rshift) & mask;
-  Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%" PRIu32 "\n",
+  Dmsg2(debuglevel, "Leave HashIndex hash=0x%" PRIx64 " index=%" PRIu32 "\n",
         cast(hash), index);
 }
 
@@ -101,7 +98,7 @@ void htableImpl::HashIndex(uint8_t* key, uint32_t keylen)
 
   // Multiply by large prime number, take top bits, mask for remainder.
   index = ((hash * 1103515249) >> rshift) & mask;
-  Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%" PRIu32 "\n",
+  Dmsg2(debuglevel, "Leave HashIndex hash=0x%" PRIx64 " index=%" PRIu32 "\n",
         cast(hash), index);
 }
 
@@ -246,8 +243,8 @@ bool htableImpl::insert(char* key, void* item)
   if (lookup(key)) { return false; /* Already exists */ }
 
   ASSERT(index < buckets);
-  Dmsg2(debuglevel, "Insert: hash=0x%llx index=%" PRIu32 "\n", cast(hash),
-        index);
+  Dmsg2(debuglevel, "Insert: hash=0x%" PRIx64 " index=%" PRIu32 "\n",
+        cast(hash), index);
   hp = (hlink*)(((char*)item) + loffset);
 
   Dmsg4(debuglevel,
@@ -261,8 +258,8 @@ bool htableImpl::insert(char* key, void* item)
   hp->key_len = 0;
   table[index] = hp;
 
-  Dmsg3(debuglevel, "Insert hp->next=%p hp->hash=0x%llx hp->key=%s\n", hp->next,
-        cast(hp->hash), hp->key.char_key);
+  Dmsg3(debuglevel, "Insert hp->next=%p hp->hash=0x%" PRIx64 " hp->key=%s\n",
+        hp->next, cast(hp->hash), hp->key.char_key);
 
   if (++num_items >= max_items) {
     Dmsg2(debuglevel, "num_items=%" PRIu32 " max_items=%" PRIu32 "\n",
@@ -284,8 +281,8 @@ bool htableImpl::insert(uint32_t key, void* item)
   if (lookup(key)) { return false; /* Already exists */ }
 
   ASSERT(index < buckets);
-  Dmsg2(debuglevel, "Insert: hash=0x%llx index=%" PRIu32 "\n", cast(hash),
-        index);
+  Dmsg2(debuglevel, "Insert: hash=0x%" PRIx64 " index=%" PRIu32 "\n",
+        cast(hash), index);
   hp = (hlink*)(((char*)item) + loffset);
 
   Dmsg4(debuglevel,
@@ -299,7 +296,8 @@ bool htableImpl::insert(uint32_t key, void* item)
   hp->key_len = 0;
   table[index] = hp;
 
-  Dmsg3(debuglevel, "Insert hp->next=%p hp->hash=0x%llx hp->key=%" PRIu32 "\n",
+  Dmsg3(debuglevel,
+        "Insert hp->next=%p hp->hash=0x%" PRIx64 " hp->key=%" PRIu32 "\n",
         hp->next, cast(hp->hash), hp->key.uint32_key);
 
   if (++num_items >= max_items) {
@@ -323,8 +321,8 @@ bool htableImpl::insert(uint64_t key, void* item)
   if (lookup(key)) { return false; /* Already exists */ }
 
   ASSERT(index < buckets);
-  Dmsg2(debuglevel, "Insert: hash=0x%llx index=%" PRIu32 "\n", cast(hash),
-        index);
+  Dmsg2(debuglevel, "Insert: hash=0x%" PRIx64 " index=%" PRIu32 "\n",
+        cast(hash), index);
   hp = (hlink*)(((char*)item) + loffset);
 
   Dmsg4(debuglevel,
@@ -338,7 +336,8 @@ bool htableImpl::insert(uint64_t key, void* item)
   hp->key_len = 0;
   table[index] = hp;
 
-  Dmsg3(debuglevel, "Insert hp->next=%p hp->hash=0x%llx hp->key=%" PRIu64 "\n",
+  Dmsg3(debuglevel,
+        "Insert hp->next=%p hp->hash=0x%" PRIx64 " hp->key=%" PRIu64 "\n",
         hp->next, cast(hp->hash), hp->key.uint64_key);
 
   if (++num_items >= max_items) {
@@ -362,8 +361,8 @@ bool htableImpl::insert(uint8_t* key, uint32_t key_len, void* item)
   if (lookup(key, key_len)) { return false; /* Already exists */ }
 
   ASSERT(index < buckets);
-  Dmsg2(debuglevel, "Insert: hash=0x%llx index=%" PRIu32 "\n", cast(hash),
-        index);
+  Dmsg2(debuglevel, "Insert: hash=0x%" PRIx64 " index=%" PRIu32 "\n",
+        cast(hash), index);
   hp = (hlink*)(((char*)item) + loffset);
 
   Dmsg4(debuglevel,
@@ -377,7 +376,7 @@ bool htableImpl::insert(uint8_t* key, uint32_t key_len, void* item)
   hp->key_len = key_len;
   table[index] = hp;
 
-  Dmsg2(debuglevel, "Insert hp->next=%p hp->hash=0x%llx\n", hp->next,
+  Dmsg2(debuglevel, "Insert hp->next=%p hp->hash=0x%" PRIx64 "\n", hp->next,
         cast(hp->hash));
 
   if (++num_items >= max_items) {

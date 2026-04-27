@@ -295,8 +295,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   char esc_medianame[MAX_ESCAPE_NAME_LENGTH];
   char esc_status[MAX_ESCAPE_NAME_LENGTH];
 
-  Dmsg1(100, "update_media: FirstWritten=%lld\n",
-        static_cast<long long>(mr->FirstWritten));
+  Dmsg1(100, "update_media: FirstWritten=%" PRItime "\n", mr->FirstWritten);
   DbLocker _{this};
   EscapeString(jcr, esc_medianame, mr->VolumeName, strlen(mr->VolumeName));
   EscapeString(jcr, esc_status, mr->VolStatus, strlen(mr->VolStatus));
@@ -310,7 +309,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
          "WHERE VolumeName='%s'",
          dt, esc_medianame);
     UpdateDb(jcr, cmd);
-    Dmsg1(400, "Firstwritten=%lld\n", static_cast<long long>(mr->FirstWritten));
+    Dmsg1(400, "Firstwritten=%" PRItime "\n", mr->FirstWritten);
   }
 
   /* Label just done? */

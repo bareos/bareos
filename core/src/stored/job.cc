@@ -109,8 +109,9 @@ bool job_cmd(JobControlRecord* jcr)
   jcr->rerunning = (rerunning) ? true : false;
   jcr->setJobProtocol(protocol);
 
-  Dmsg4(100, "rerunning=%d VolSesId=%" PRIu32 " VolSesTime=%" PRIu32
-              " Protocol=%d\n",
+  Dmsg4(100,
+        "rerunning=%d VolSesId=%" PRIu32 " VolSesTime=%" PRIu32
+        " Protocol=%d\n",
         jcr->rerunning, jcr->VolSessionId, jcr->VolSessionTime,
         jcr->getJobProtocol());
   /* Since this job could be rescheduled, we
@@ -123,7 +124,7 @@ bool job_cmd(JobControlRecord* jcr)
     FreeJcr(ojcr);
   }
   jcr->JobId = JobId;
-  Dmsg2(800, "Start JobId=%d %p\n", JobId, jcr);
+  Dmsg2(800, "Start JobId=%" PRId32 " %p\n", JobId, jcr);
   /* If job rescheduled because previous was incomplete,
    * the Resched flag is set and VolSessionId and VolSessionTime
    * are given to us (same as restarted job). */
@@ -167,7 +168,7 @@ bool job_cmd(JobControlRecord* jcr)
   jcr->sd_auth_key = strdup(auth_key);
   dir->fsend(OK_job, jcr->VolSessionId, jcr->VolSessionTime, auth_key);
   memset(auth_key, 0, sizeof(auth_key));
-  Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);
+  Dmsg2(50, ">dird jid=%" PRIu32 ": %s", jcr->JobId, dir->msg);
 
   DispatchNewPluginOptions(jcr);
   GeneratePluginEvent(jcr, bSdEventJobStart, (void*)"JobStart");
@@ -278,7 +279,7 @@ bool nextRunCmd(JobControlRecord* jcr)
       jcr->sd_auth_key = strdup(auth_key);
       dir->fsend(OK_nextrun, auth_key);
       memset(auth_key, 0, sizeof(auth_key));
-      Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);
+      Dmsg2(50, ">dird jid=%" PRIu32 ": %s", jcr->JobId, dir->msg);
 
       WaitFD(jcr);
 
@@ -368,7 +369,7 @@ bool FinishCmd(JobControlRecord* jcr)
 void StoredFreeJcr(JobControlRecord* jcr)
 {
   Dmsg0(200, "Start stored FreeJcr\n");
-  Dmsg2(800, "End Job JobId=%u %p\n", jcr->JobId, jcr);
+  Dmsg2(800, "End Job JobId=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
   if (jcr->dir_bsock) {
     Dmsg2(800, "Send Terminate jid=%" PRIu32 " %p\n", jcr->JobId, jcr);

@@ -398,8 +398,8 @@ static bool RunJcrGarbageCollector(JobControlRecord* jcr)
     return false;
   }
   if (jcr->JobId > 0) {
-    Dmsg3(debuglevel, "remove jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
-          jcr->UseCount(), jcr->Job);
+    Dmsg3(debuglevel, "remove jcr jid=%" PRIu32 " UseCount=%d Job=%s\n",
+          jcr->JobId, jcr->UseCount(), jcr->Job);
   }
   RemoveJcr(jcr); /* remove Jcr from chain */
   UnlockJcrChain();
@@ -458,8 +458,8 @@ JobControlRecord* get_jcr_by_id(uint32_t JobId)
   foreach_jcr (jcr) {
     if (jcr->JobId == JobId) {
       jcr->IncUseCount();
-      Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
-            jcr->UseCount(), jcr->Job);
+      Dmsg3(debuglevel, "Inc get_jcr jid=%" PRIu32 " UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
       break;
     }
   }
@@ -539,8 +539,8 @@ JobControlRecord* get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime)
   foreach_jcr (jcr) {
     if (jcr->VolSessionId == SessionId && jcr->VolSessionTime == SessionTime) {
       jcr->IncUseCount();
-      Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
-            jcr->UseCount(), jcr->Job);
+      Dmsg3(debuglevel, "Inc get_jcr jid=%" PRIu32 " UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
       break;
     }
   }
@@ -567,8 +567,8 @@ JobControlRecord* get_jcr_by_partial_name(char* Job)
   foreach_jcr (jcr) {
     if (bstrncmp(Job, jcr->Job, len)) {
       jcr->IncUseCount();
-      Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
-            jcr->UseCount(), jcr->Job);
+      Dmsg3(debuglevel, "Inc get_jcr jid=%" PRIu32 " UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
       break;
     }
   }
@@ -592,8 +592,8 @@ JobControlRecord* get_jcr_by_full_name(char* Job)
   foreach_jcr (jcr) {
     if (bstrcmp(jcr->Job, Job)) {
       jcr->IncUseCount();
-      Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
-            jcr->UseCount(), jcr->Job);
+      Dmsg3(debuglevel, "Inc get_jcr jid=%" PRIu32 " UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
       break;
     }
   }
@@ -611,8 +611,8 @@ const char* JcrGetAuthenticateKey(const char* unified_job_name)
   foreach_jcr (jcr) {
     if (bstrcmp(jcr->Job, unified_job_name)) {
       auth_key = jcr->sd_auth_key;
-      Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
-            jcr->UseCount(), jcr->Job);
+      Dmsg3(debuglevel, "Inc get_jcr jid=%" PRIu32 " UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
       break;
     }
   }
@@ -632,8 +632,8 @@ TlsPolicy JcrGetTlsPolicy(const char* unified_job_name)
     if (bstrcmp(jcr->Job, unified_job_name)) {
       policy = jcr->sd_tls_policy;
       Dmsg4(debuglevel,
-            "Inc get_jcr jid=%" PRIu32 " UseCount=%d Job=%s TlsPolicy=%"
-            PRIu32 "\n",
+            "Inc get_jcr jid=%" PRIu32 " UseCount=%d Job=%s TlsPolicy=%" PRIu32
+            "\n",
             jcr->JobId, jcr->UseCount(), jcr->Job,
             static_cast<uint32_t>(policy));
       break;
@@ -803,7 +803,7 @@ JobControlRecord* jcr_walk_start()
   if (jcr) {
     jcr->IncUseCount();
     if (jcr->JobId > 0) {
-      Dmsg3(debuglevel, "Inc walk_start jid=%u UseCount=%d Job=%s\n",
+      Dmsg3(debuglevel, "Inc walk_start jid=%" PRIu32 " UseCount=%d Job=%s\n",
             jcr->JobId, jcr->UseCount(), jcr->Job);
     }
   }
@@ -821,8 +821,8 @@ JobControlRecord* jcr_walk_next(JobControlRecord* prev_jcr)
   if (jcr) {
     jcr->IncUseCount();
     if (jcr->JobId > 0) {
-      Dmsg3(debuglevel, "Inc walk_next jid=%u UseCount=%d Job=%s\n", jcr->JobId,
-            jcr->UseCount(), jcr->Job);
+      Dmsg3(debuglevel, "Inc walk_next jid=%" PRIu32 " UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
     }
   }
   UnlockJcrChain();
@@ -835,8 +835,8 @@ void JcrWalkEnd(JobControlRecord* jcr)
 {
   if (jcr) {
     if (jcr->JobId > 0) {
-      Dmsg3(debuglevel, "Free walk_end jid=%u UseCount=%d Job=%s\n", jcr->JobId,
-            jcr->UseCount(), jcr->Job);
+      Dmsg3(debuglevel, "Free walk_end jid=%" PRIu32 " UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
     }
     FreeJcr(jcr);
   }
@@ -918,9 +918,9 @@ static void TimeoutConnection(JobControlRecord* jcr,
     bs->timer_start = 0; /* turn off timer */
     bs->SetTimedOut();
     Qmsg(jcr, M_ERROR, 0,
-         T_("Watchdog sending kill after %lld secs to thread stalled reading "
-            "Storage daemon.\n"),
-         static_cast<long long>(current - timer_start));
+         T_("Watchdog sending kill after %" PRItime
+            " secs to thread stalled reading Storage daemon.\n"),
+         current - timer_start);
     jcr->MyThreadSendSignal(kTimeoutSignal);
   }
 }
@@ -935,7 +935,8 @@ static void JcrTimeoutCheck(watchdog_t* /* self */)
    * blocked for more than specified max time.
    */
   foreach_jcr (jcr) {
-    Dmsg2(debuglevel, "JcrTimeoutCheck JobId=%u jcr=%p\n", jcr->JobId, jcr);
+    Dmsg2(debuglevel, "JcrTimeoutCheck JobId=%" PRIu32 " jcr=%p\n", jcr->JobId,
+          jcr);
     if (jcr->JobId == 0) { continue; }
     if (auto* bs = jcr->store_bsock) {
       TimeoutConnection(jcr, bs, watchdog_time, watch_dog_timeout);
@@ -1028,10 +1029,11 @@ void DbgPrintJcr(FILE* fp)
   for (JobControlRecord* jcr
        = (JobControlRecord*)job_control_record_chain->first();
        jcr; jcr = (JobControlRecord*)job_control_record_chain->next(jcr)) {
-    fprintf(
-        fp, "threadid=%s killable=%d JobId=%d JobStatus=%c jcr=%p name=%s\n",
-        edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)), jcr->IsKillable(),
-        (int)jcr->JobId, jcr->getJobStatus(), jcr, jcr->Job);
+    fprintf(fp,
+            "threadid=%s killable=%d JobId=%" PRIu32
+            " JobStatus=%c jcr=%p name=%s\n",
+            edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)),
+            jcr->IsKillable(), jcr->JobId, jcr->getJobStatus(), jcr, jcr->Job);
     fprintf(fp, "\tUseCount=%i\n", jcr->UseCount());
     fprintf(fp, "\tJobType=%c JobLevel=%c\n", jcr->getJobType(),
             jcr->getJobLevel());

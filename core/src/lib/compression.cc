@@ -295,8 +295,8 @@ class lzo_compressor {
       return PoolMem{error->c_str()};
     }
 
-    Dmsg2(400, "LZO compressed len=%llu uncompressed len=%" PRIuz "\n",
-          static_cast<long long unsigned>(len), size);
+    Dmsg2(400, "LZO compressed len=%" PRIuz " uncompressed len=%" PRIuz "\n",
+          static_cast<std::size_t>(len), size);
 
     return len;
   }
@@ -798,8 +798,8 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
     real_compress_len = *length;
   }
 
-  Dmsg2(400, "Comp_len=%llu message_length=%" PRIu32 "\n",
-        static_cast<long long unsigned>(compress_len), *length);
+  Dmsg2(400, "Comp_len=%" PRIuz " message_length=%" PRIu32 "\n",
+        static_cast<std::size_t>(compress_len), *length);
 
   while ((status = uncompress((Byte*)wbuf, &compress_len, (const Byte*)cbuf,
                               (uLong)real_compress_len))
@@ -818,8 +818,8 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
       wbuf = jcr->compress.inflate_buffer;
       compress_len = jcr->compress.inflate_buffer_size;
     }
-    Dmsg2(400, "Comp_len=%llu message_length=%" PRIu32 "\n",
-          static_cast<long long unsigned>(compress_len), *length);
+    Dmsg2(400, "Comp_len=%" PRIuz " message_length=%" PRIu32 "\n",
+          static_cast<std::size_t>(compress_len), *length);
   }
 
   if (status != Z_OK) {
@@ -837,8 +837,9 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
   *data = jcr->compress.inflate_buffer;
   *length = compress_len;
 
-  Dmsg2(400, "Write uncompressed %llu bytes, total before write=%" PRIu64 "\n",
-        static_cast<long long unsigned>(compress_len), jcr->JobBytes);
+  Dmsg2(400,
+        "Write uncompressed %" PRIuz " bytes, total before write=%" PRIu64 "\n",
+        static_cast<std::size_t>(compress_len), jcr->JobBytes);
 
   return true;
 }
@@ -867,8 +868,8 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
   }
 
   real_compress_len = *length - sizeof(comp_stream_header);
-  Dmsg2(400, "Comp_len=%llu message_length=%" PRIu32 "\n",
-        static_cast<long long unsigned>(compress_len), *length);
+  Dmsg2(400, "Comp_len=%" PRIuz " message_length=%" PRIu32 "\n",
+        static_cast<std::size_t>(compress_len), *length);
   while ((status = lzo1x_decompress_safe(cbuf, real_compress_len, wbuf,
                                          &compress_len, NULL))
          == LZO_E_OUTPUT_OVERRUN) {
@@ -886,8 +887,8 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
       compress_len = jcr->compress.inflate_buffer_size;
       wbuf = (unsigned char*)jcr->compress.inflate_buffer;
     }
-    Dmsg2(400, "Comp_len=%llu message_length=%" PRIu32 "\n",
-          static_cast<long long unsigned>(compress_len), *length);
+    Dmsg2(400, "Comp_len=%" PRIuz " message_length=%" PRIu32 "\n",
+          static_cast<std::size_t>(compress_len), *length);
   }
 
   if (status != LZO_E_OK) {
@@ -905,8 +906,9 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
   *data = jcr->compress.inflate_buffer;
   *length = compress_len;
 
-  Dmsg2(400, "Write uncompressed %llu bytes, total before write=%" PRIu64 "\n",
-        static_cast<long long unsigned>(compress_len), jcr->JobBytes);
+  Dmsg2(400,
+        "Write uncompressed %" PRIuz " bytes, total before write=%" PRIu64 "\n",
+        static_cast<std::size_t>(compress_len), jcr->JobBytes);
 
   return true;
 }
@@ -993,10 +995,8 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
 
   *data = jcr->compress.inflate_buffer;
   *length = stream.total_out;
-  Dmsg2(400, "Write uncompressed %" PRIu32
-              " bytes, total before write=%s\n",
-        *length,
-        edit_uint64(jcr->JobBytes, ec1));
+  Dmsg2(400, "Write uncompressed %" PRIu32 " bytes, total before write=%s\n",
+        *length, edit_uint64(jcr->JobBytes, ec1));
   fastlzlibDecompressEnd(&stream);
 
   return true;

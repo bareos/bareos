@@ -255,8 +255,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       mr.LabelDate = jcr->start_time;
       mr.set_label_date = true;
       if (mr.InitialWrite == 0) { mr.InitialWrite = jcr->start_time; }
-      Dmsg2(400, "label=%d labeldate=%lld\n", label,
-            static_cast<long long int>(mr.LabelDate));
+      Dmsg2(400, "label=%d labeldate=%" PRItime "\n", label, mr.LabelDate);
     } else {
       // Sanity check for VolFiles to be increasing
       if (sdmr.VolFiles < mr.VolFiles) {
@@ -357,8 +356,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     }
     jm.MediaId = MediaId;
     Dmsg6(400,
-          "create_jobmedia JobId=%" PRIu32 " MediaId=%" PRIdbid
-          " SF=%" PRIu32 " EF=%" PRIu32 " FI=%" PRIu32 " LI=%" PRIu32 "\n",
+          "create_jobmedia JobId=%" PRIu32 " MediaId=%" PRIdbid " SF=%" PRIu32
+          " EF=%" PRIu32 " FI=%" PRIu32 " LI=%" PRIu32 "\n",
           jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex,
           jm.LastIndex);
     DbLocker _{jcr->db};
@@ -622,8 +621,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
         fname = p;
         if (ar->FileIndex != FileIndex) {
           Jmsg3(jcr, M_WARNING, 0,
-                T_("%s not same File=%" PRIu32 " as attributes=%" PRIu32
-                   "\n"),
+                T_("%s not same File=%" PRIu32 " as attributes=%" PRIu32 "\n"),
                 stream_to_ascii(Stream), FileIndex, ar->FileIndex);
         } else {
           // Update digest in catalog

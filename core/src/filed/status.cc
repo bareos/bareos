@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
 
    This program is Free Software; you can redistribute it and/or
@@ -169,7 +169,7 @@ static void ListRunningJobsPlain(StatusPacket* sp)
   foreach_jcr (njcr) {
     bstrftime_nc(dt, sizeof(dt), njcr->start_time);
     if (njcr->JobId > 0) {
-      len = Mmsg(msg, T_("JobId %u Job %s is running.\n"), njcr->JobId,
+      len = Mmsg(msg, T_("JobId %" PRIu32 " Job %s is running.\n"), njcr->JobId,
                  njcr->Job);
       sp->send(msg, len);
 #ifdef WIN32_VSS
@@ -252,7 +252,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
     if (njcr->JobId == 0) {
       len = Mmsg(msg, "DirectorConnected=%s\n", dt);
     } else {
-      len = Mmsg(msg, "JobId=%u\n Job=%s\n", njcr->JobId, njcr->Job);
+      len = Mmsg(msg, "JobId=%" PRIu32 "\n Job=%s\n", njcr->JobId, njcr->Job);
       sp->send(msg, len);
 #ifdef WIN32_VSS
       len = Mmsg(msg, " VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n",

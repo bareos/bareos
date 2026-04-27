@@ -925,8 +925,7 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
       mtime = GetCurrentBtime();
       usecs = mtime % 1000000;
       Mmsg(buf, "%s.%06" PRIu32 " ",
-           bstrftimes(ed1, sizeof(ed1), BtimeToUtime(mtime)),
-           usecs);
+           bstrftimes(ed1, sizeof(ed1), BtimeToUtime(mtime)), usecs);
       pt_out(buf.c_str());
     }
 
@@ -1233,23 +1232,24 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
       Mmsg(buf, T_("%s Configuration error\n"), my_name);
       break;
     case M_FATAL:
-      Mmsg(buf, T_("%s JobId %u: Fatal error: "), my_name, JobId);
+      Mmsg(buf, T_("%s JobId %" PRIu32 ": Fatal error: "), my_name, JobId);
       if (jcr) { jcr->setJobStatusWithPriorityCheck(JS_FatalError); }
       if (jcr && jcr->JobErrors == 0) { jcr->JobErrors = 1; }
       break;
     case M_ERROR:
-      Mmsg(buf, T_("%s JobId %u: Error: "), my_name, JobId);
+      Mmsg(buf, T_("%s JobId %" PRIu32 ": Error: "), my_name, JobId);
       if (jcr) { jcr->JobErrors++; }
       break;
     case M_WARNING:
-      Mmsg(buf, T_("%s JobId %u: Warning: "), my_name, JobId);
+      Mmsg(buf, T_("%s JobId %" PRIu32 ": Warning: "), my_name, JobId);
       if (jcr) { jcr->JobWarnings++; }
       break;
     case M_SECURITY:
-      Mmsg(buf, T_("%s JobId %u: Security violation: "), my_name, JobId);
+      Mmsg(buf, T_("%s JobId %" PRIu32 ": Security violation: "), my_name,
+           JobId);
       break;
     default:
-      Mmsg(buf, "%s JobId %u: ", my_name, JobId);
+      Mmsg(buf, "%s JobId %" PRIu32 ": ", my_name, JobId);
       break;
   }
 

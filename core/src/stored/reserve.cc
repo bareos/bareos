@@ -794,7 +794,8 @@ static bool ReserveDeviceForRead(DeviceControlRecord* dcr)
     Dmsg1(debuglevel, "Device %s is BLOCKED due to user unmount.\n",
           dev->print_name());
     Mmsg(jcr->errmsg,
-         T_("3601 JobId=%u device %s is BLOCKED due to user unmount.\n"),
+         T_("3601 JobId=%" PRIu32
+            " device %s is BLOCKED due to user unmount.\n"),
          jcr->JobId, dev->print_name());
     QueueReserveMessage(jcr);
     goto bail_out;
@@ -806,7 +807,8 @@ static bool ReserveDeviceForRead(DeviceControlRecord* dcr)
           dev->print_name(), BitIsSet(ST_READREADY, dev->state) ? 1 : 0,
           dev->num_writers, dev->NumReserved());
     Mmsg(jcr->errmsg,
-         T_("3602 JobId=%u device %s is busy (already reading/writing).\n"),
+         T_("3602 JobId=%" PRIu32
+            " device %s is busy (already reading/writing).\n"),
          jcr->JobId, dev->print_name());
     QueueReserveMessage(jcr);
     goto bail_out;
@@ -856,7 +858,7 @@ static bool ReserveDeviceForAppend(DeviceControlRecord* dcr,
 
   // If device is being read, we cannot write it
   if (dev->CanRead()) {
-    Mmsg(jcr->errmsg, T_("3603 JobId=%u device %s is busy reading.\n"),
+    Mmsg(jcr->errmsg, T_("3603 JobId=%" PRIu32 " device %s is busy reading.\n"),
          jcr->JobId, dev->print_name());
     Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
     QueueReserveMessage(jcr);
@@ -866,7 +868,8 @@ static bool ReserveDeviceForAppend(DeviceControlRecord* dcr,
   // If device is unmounted, we are out of luck
   if (dev->IsDeviceUnmounted()) {
     Mmsg(jcr->errmsg,
-         T_("3604 JobId=%u device %s is BLOCKED due to user unmount.\n"),
+         T_("3604 JobId=%" PRIu32
+            " device %s is BLOCKED due to user unmount.\n"),
          jcr->JobId, dev->print_name());
     Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
     QueueReserveMessage(jcr);
@@ -909,10 +912,11 @@ static int IsPoolOk(DeviceControlRecord* dcr)
   } else {
     /* Drive Pool not suitable for us */
     Mmsg(jcr->errmsg,
-         T_("3608 JobId=%u wants Pool=\"%s\" but have Pool=\"%s\" nreserve=%d "
+         T_("3608 JobId=%" PRIu32
+            " wants Pool=\"%s\" but have Pool=\"%s\" nreserve=%d "
             "on drive %s.\n"),
-         (uint32_t)jcr->JobId, dcr->pool_name, dev->pool_name,
-         dev->NumReserved(), dev->print_name());
+         jcr->JobId, dcr->pool_name, dev->pool_name, dev->NumReserved(),
+         dev->print_name());
     Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
     QueueReserveMessage(jcr);
   }
@@ -935,8 +939,9 @@ static bool IsMaxJobsOk(DeviceControlRecord* dcr)
              <= (uint32_t)(dev->num_writers + dev->NumReserved())) {
     // Max Concurrent Jobs depassed or already reserved
     Mmsg(jcr->errmsg,
-         T_("3609 JobId=%u Max concurrent jobs exceeded on drive %s.\n"),
-         (uint32_t)jcr->JobId, dev->print_name());
+         T_("3609 JobId=%" PRIu32
+            " Max concurrent jobs exceeded on drive %s.\n"),
+         jcr->JobId, dev->print_name());
     Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
     QueueReserveMessage(jcr);
     return false;
@@ -947,8 +952,8 @@ static bool IsMaxJobsOk(DeviceControlRecord* dcr)
              <= (dcr->VolCatInfo.VolCatJobs + dev->NumReserved())) {
     // Max Job Vols depassed or already reserved
     Mmsg(jcr->errmsg,
-         T_("3610 JobId=%u Volume max jobs exceeded on drive %s.\n"),
-         (uint32_t)jcr->JobId, dev->print_name());
+         T_("3610 JobId=%" PRIu32 " Volume max jobs exceeded on drive %s.\n"),
+         jcr->JobId, dev->print_name());
     Dmsg1(debuglevel, "reserve dev failed: %s", jcr->errmsg);
     QueueReserveMessage(jcr);
     return false; /* wait */
@@ -998,7 +1003,8 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
               dev->num_writers + dev->NumReserved());
       }
       Mmsg(jcr->errmsg,
-           T_("3605 JobId=%u wants free drive but device %s is busy.\n"),
+           T_("3605 JobId=%" PRIu32
+              " wants free drive but device %s is busy.\n"),
            jcr->JobId, dev->print_name());
       Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
       QueueReserveMessage(jcr);
@@ -1008,7 +1014,8 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
     // Check for prefer mounted volumes
     if (rctx.PreferMountedVols && !dev->vol && dev->IsTape()) {
       Mmsg(jcr->errmsg,
-           T_("3606 JobId=%u prefers mounted drives, but drive %s has no "
+           T_("3606 JobId=%" PRIu32
+              " prefers mounted drives, but drive %s has no "
               "Volume.\n"),
            jcr->JobId, dev->print_name());
       Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
@@ -1032,7 +1039,8 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
            || (dev->vol && bstrcmp(dev->vol->vol_name, rctx.VolumeName));
       if (!ok) {
         Mmsg(jcr->errmsg,
-             T_("3607 JobId=%u wants Vol=\"%s\" drive has Vol=\"%s\" on drive "
+             T_("3607 JobId=%" PRIu32
+                " wants Vol=\"%s\" drive has Vol=\"%s\" on drive "
                 "%s.\n"),
              jcr->JobId, rctx.VolumeName, dev->VolHdr.VolumeName,
              dev->print_name());
@@ -1088,11 +1096,11 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
   if (dev->CanAppend() || dev->num_writers > 0) {
     return IsPoolOk(dcr);
   } else {
-    Pmsg1(000, T_("Logic error!!!! JobId=%" PRIu32
-                  " Should not get here.\n"),
+    Pmsg1(000, T_("Logic error!!!! JobId=%" PRIu32 " Should not get here.\n"),
           jcr->JobId);
     Mmsg(jcr->errmsg,
-         T_("3910 JobId=%u Logic error!!!! drive %s Should not get here.\n"),
+         T_("3910 JobId=%" PRIu32
+            " Logic error!!!! drive %s Should not get here.\n"),
          jcr->JobId, dev->print_name());
     QueueReserveMessage(jcr);
     Jmsg0(jcr, M_FATAL, 0, T_("Logic error!!!! Should not get here.\n"));

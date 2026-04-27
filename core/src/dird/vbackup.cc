@@ -126,7 +126,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
   const char* storage_source;
 
   if (!GetOrCreateFilesetRecord(jcr)) {
-    Dmsg1(dbglevel, "JobId=%d no FileSet\n", (int)jcr->JobId);
+    Dmsg1(dbglevel, "JobId=%" PRIu32 " no FileSet\n", jcr->JobId);
     return false;
   }
 
@@ -137,7 +137,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
   jcr->dir_impl->jr.PoolId
       = GetOrCreatePoolRecord(jcr, jcr->dir_impl->res.pool->resource_name_);
   if (jcr->dir_impl->jr.PoolId == 0) {
-    Dmsg1(dbglevel, "JobId=%d no PoolId\n", (int)jcr->JobId);
+    Dmsg1(dbglevel, "JobId=%" PRIu32 " no PoolId\n", jcr->JobId);
     Jmsg(jcr, M_FATAL, 0, T_("Could not get or create a Pool record.\n"));
     return false;
   }

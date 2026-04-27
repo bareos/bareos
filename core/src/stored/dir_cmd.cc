@@ -512,16 +512,14 @@ static bool CancelCmd(JobControlRecord* cjcr)
   if (jcr->sd_impl->dcr && jcr->sd_impl->dcr->dev
       && jcr->sd_impl->dcr->dev->waiting_for_mount()) {
     pthread_cond_broadcast(&jcr->sd_impl->dcr->dev->wait_next_vol);
-    Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
-          (uint32_t)jcr->JobId);
+    Dmsg1(100, "JobId=%" PRIu32 " broadcast wait_device_release\n", jcr->JobId);
     ReleaseDeviceCond();
   }
 
   if (jcr->sd_impl->read_dcr && jcr->sd_impl->read_dcr->dev
       && jcr->sd_impl->read_dcr->dev->waiting_for_mount()) {
     pthread_cond_broadcast(&jcr->sd_impl->read_dcr->dev->wait_next_vol);
-    Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
-          (uint32_t)jcr->JobId);
+    Dmsg1(100, "JobId=%" PRIu32 " broadcast wait_device_release\n", jcr->JobId);
     ReleaseDeviceCond();
   }
 
@@ -968,8 +966,8 @@ static bool MountCmd(JobControlRecord* jcr)
                      (slot > 0) ? T_("Specified slot ignored. ") : "",
                      dev->print_name());
           pthread_cond_broadcast(&dev->wait_next_vol);
-          Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
-                (uint32_t)dcr->jcr->JobId);
+          Dmsg1(100, "JobId=%" PRIu32 " broadcast wait_device_release\n",
+                dcr->jcr->JobId);
           ReleaseDeviceCond();
           break;
 
@@ -1014,8 +1012,8 @@ static bool MountCmd(JobControlRecord* jcr)
                 dev->print_name());
           }
           pthread_cond_broadcast(&dev->wait_next_vol);
-          Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
-                (uint32_t)dcr->jcr->JobId);
+          Dmsg1(100, "JobId=%" PRIu32 " broadcast wait_device_release\n",
+                dcr->jcr->JobId);
           ReleaseDeviceCond();
           break;
 
@@ -1077,8 +1075,8 @@ static bool MountCmd(JobControlRecord* jcr)
             dir->fsend(T_("3906 File device %s is always mounted.\n"),
                        dev->print_name());
             pthread_cond_broadcast(&dev->wait_next_vol);
-            Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
-                  (uint32_t)dcr->jcr->JobId);
+            Dmsg1(100, "JobId=%" PRIu32 " broadcast wait_device_release\n",
+                  dcr->jcr->JobId);
             ReleaseDeviceCond();
           }
           break;

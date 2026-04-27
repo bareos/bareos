@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -82,8 +82,8 @@ static inline void StartNewConsolidationJob(const JobResource* consolidate_job,
     Jmsg(jcr, M_ERROR, 0, T_("Could not start %s job.\n"),
          jcr->get_OperationName());
   } else {
-    Jmsg(jcr, M_INFO, 0, T_("%s JobId %d started.\n"), jcr->get_OperationName(),
-         (int)jobid);
+    Jmsg(jcr, M_INFO, 0, T_("%s JobId %" PRIu32 " started.\n"),
+         jcr->get_OperationName(), jobid);
   }
 
   FreeUaContext(ua);
@@ -112,12 +112,13 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
       jcr->dir_impl->jr.StartTime = 0;
 
       if (!GetOrCreateFilesetRecord(jcr)) {
-        Jmsg(jcr, M_FATAL, 0, T_("JobId=%d no FileSet\n"), (int)jcr->JobId);
+        Jmsg(jcr, M_FATAL, 0, T_("JobId=%" PRIu32 " no FileSet\n"), jcr->JobId);
         return false;
       }
 
       if (!GetOrCreateClientRecord(jcr)) {
-        Jmsg(jcr, M_FATAL, 0, T_("JobId=%d no ClientId\n"), (int)jcr->JobId);
+        Jmsg(jcr, M_FATAL, 0, T_("JobId=%" PRIu32 " no ClientId\n"),
+             jcr->JobId);
         return false;
       }
 
@@ -301,8 +302,7 @@ bool DoConsolidate(JobControlRecord* jcr)
 
   // Print Job Start message
   Jmsg(jcr, M_INFO, 0, T_("Start Consolidate JobId %" PRIu32 ", Job=%s\n"),
-       jcr->JobId,
-       jcr->Job);
+       jcr->JobId, jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
@@ -360,8 +360,8 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
 
   Jmsg(jcr, msg_type, 0,
        T_("BAREOS %s (%s): %s\n"
-           "  JobId:                  %" PRIu32 "\n"
-           "  Job:                    %s\n"
+          "  JobId:                  %" PRIu32 "\n"
+          "  Job:                    %s\n"
           "  Scheduled time:         %s\n"
           "  Start time:             %s\n"
           "  End time:               %s\n"

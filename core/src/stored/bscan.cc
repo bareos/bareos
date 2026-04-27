@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -367,7 +367,7 @@ static bool BscanMountNextReadVolume(DeviceControlRecord* dcr)
   Dmsg1(100, "Walk attached jcrs. Volume=%s\n", my_dev->getVolCatName());
   for (auto mdcr : my_dev->attached_dcrs) {
     JobControlRecord* mjcr = mdcr->jcr;
-    Dmsg1(000, "========== JobId=%u ========\n", mjcr->JobId);
+    Dmsg1(000, "========== JobId=%" PRIu32 " ========\n", mjcr->JobId);
     if (mjcr->JobId == 0) { continue; }
     if (g_verbose) {
       Pmsg1(000, T_("Create JobMedia for Job %s\n"), mjcr->Job);
@@ -641,7 +641,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
            * any, no new ones need be created.  This may occur if File
            * Retention has expired before Job Retention, or if the volume
            * has already been bscan'd */
-          Mmsg(sql_buffer, "SELECT count(*) from JobMedia where JobId=%u",
+          Mmsg(sql_buffer, "SELECT count(*) from JobMedia where JobId=%" PRIu32,
                jr.JobId);
           db->SqlQuery(sql_buffer.c_str(), db_int64_handler, &jmr_count);
           if (jmr_count.value > 0) {
@@ -652,21 +652,22 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
           if (rec->VolSessionId != jr.VolSessionId) {
             Pmsg3(000,
-                  T_("SOS_LABEL: VolSessId mismatch for JobId=%u. DB=%" PRIu32
-                     " Vol=%" PRIu32 "\n"),
+                  T_("SOS_LABEL: VolSessId mismatch for JobId=%" PRIu32
+                     ". DB=%" PRIu32 " Vol=%" PRIu32 "\n"),
                   jr.JobId, jr.VolSessionId, rec->VolSessionId);
             return true; /* ignore error */
           }
           if (rec->VolSessionTime != jr.VolSessionTime) {
             Pmsg3(000,
-                  T_("SOS_LABEL: VolSessTime mismatch for JobId=%u. DB=%" PRIu32
-                     " Vol=%" PRIu32 "\n"),
+                  T_("SOS_LABEL: VolSessTime mismatch for JobId=%" PRIu32
+                     ". DB=%" PRIu32 " Vol=%" PRIu32 "\n"),
                   jr.JobId, jr.VolSessionTime, rec->VolSessionTime);
             return true; /* ignore error */
           }
           if (jr.PoolId != pr.PoolId) {
             Pmsg3(000,
-                  T_("SOS_LABEL: PoolId mismatch for JobId=%u. DB=%u Vol=%u\n"),
+                  T_("SOS_LABEL: PoolId mismatch for JobId=%" PRIu32
+                     ". DB=%" PRIdbid " Vol=%" PRIdbid "\n"),
                   jr.JobId, jr.PoolId, pr.PoolId);
             return true; /* ignore error */
           }
@@ -1241,7 +1242,9 @@ static JobControlRecord* CreateJobRecord(BareosDb* t_db,
     return mjcr;
   }
 
-  Pmsg2(000, T_("Created new JobId=%u record for original JobId=%u\n"),
+  Pmsg2(000,
+        T_("Created new JobId=%" PRIu32 " record for original JobId=%" PRIu32
+           "\n"),
         t_jr->JobId, t_label->JobId);
   mjcr->JobId = t_jr->JobId; /* set new JobId */
 
@@ -1258,8 +1261,9 @@ static bool UpdateJobRecord(BareosDb* t_db,
 
   mjcr = get_jcr_by_session(rec->VolSessionId, rec->VolSessionTime);
   if (!mjcr) {
-    Pmsg2(000, T_("Could not find SessId=%" PRIu32 " SessTime=%" PRIu32
-                  " for EOS record.\n"),
+    Pmsg2(000,
+          T_("Could not find SessId=%" PRIu32 " SessTime=%" PRIu32
+             " for EOS record.\n"),
           rec->VolSessionId, rec->VolSessionTime);
     return false;
   }
@@ -1290,15 +1294,15 @@ static bool UpdateJobRecord(BareosDb* t_db,
   }
 
   if (DbLocker _{t_db}; !t_db->UpdateJobEndRecord(bjcr, t_jr)) {
-    Pmsg2(0, T_("Could not update JobId=%u record. ERR=%s\n"), t_jr->JobId,
-          t_db->strerror());
+    Pmsg2(0, T_("Could not update JobId=%" PRIu32 " record. ERR=%s\n"),
+          t_jr->JobId, t_db->strerror());
     FreeJcr(mjcr);
     return false;
   }
 
   if (g_verbose) {
     Pmsg3(000,
-          T_("Updated Job termination record for JobId=%u Level=%s "
+          T_("Updated Job termination record for JobId=%" PRIu32 " Level=%s "
              "TermStat=%c\n"),
           t_jr->JobId, job_level_to_str(mjcr->getJobLevel()), t_jr->JobStatus);
   }
@@ -1333,7 +1337,7 @@ static bool UpdateJobRecord(BareosDb* t_db,
     bstrftime(edt, sizeof(edt), mjcr->end_time);
     Pmsg15(000,
            T_("%s\n"
-               "JobId:                  %u\n"
+              "JobId:                  %u\n"
               "Job:                    %s\n"
               "FileSet:                %s\n"
               "Backup Level:           %s\n"
@@ -1342,8 +1346,8 @@ static bool UpdateJobRecord(BareosDb* t_db,
               "End time:               %s\n"
               "Files Written:          %s\n"
               "Bytes Written:          %s\n"
-               "Volume Session Id:      %" PRIu32 "\n"
-               "Volume Session Time:    %" PRIu32 "\n"
+              "Volume Session Id:      %" PRIu32 "\n"
+              "Volume Session Time:    %" PRIu32 "\n"
               "Last Volume Bytes:      %s\n"
               "Bareos binary info:     %s\n"
               "Termination:            %s\n\n"),

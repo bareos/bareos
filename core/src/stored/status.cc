@@ -51,7 +51,7 @@ inline constexpr const char dotstatuscmd[] = ".status %127s\n";
 
 inline constexpr const char OKdotstatus[] = "3000 OK .status\n";
 inline constexpr const char DotStatusJob[]
-    = "JobId=%u JobStatus=%c JobErrors=%u\n";
+    = "JobId=%" PRIu32 " JobStatus=%c JobErrors=%" PRIu32 "\n";
 
 /* Forward referenced functions */
 static void SendBlockedStatus(Device* dev, StatusPacket* sp);
@@ -384,10 +384,12 @@ static void ListVolumes(StatusPacket* sp, const char* devicenames)
       len = Mmsg(msg, "Read volume: %s on device %s\n", vol->vol_name,
                  dev->print_name());
       sp->send(msg, len);
-      len = Mmsg(msg,
-                 "    Reader=%d writers=%d reserves=%d volinuse=%d JobId=%u\n",
-                 dev->CanRead() ? 1 : 0, dev->num_writers, dev->NumReserved(),
-                 vol->IsInUse(), vol->GetJobid());
+      len = Mmsg(
+          msg,
+          "    Reader=%d writers=%d reserves=%d volinuse=%d JobId=%" PRIu32
+          "\n",
+          dev->CanRead() ? 1 : 0, dev->num_writers, dev->NumReserved(),
+          vol->IsInUse(), vol->GetJobid());
       sp->send(msg, len);
     } else {
       len = Mmsg(msg, "Read Volume: %s no device. volinuse= %d\n",
@@ -660,7 +662,8 @@ static void ListRunningJobs(StatusPacket* sp)
       for (int i = 0; i < 3; i++) {
         if ((p = strrchr(JobName, '.')) != NULL) { *p = 0; }
       }
-      len = Mmsg(msg, T_("JobId=%" PRIu32 " Level=%s Type=%s Name=%s Status=%s\n"),
+      len = Mmsg(msg,
+                 T_("JobId=%" PRIu32 " Level=%s Type=%s Name=%s Status=%s\n"),
                  jcr->JobId, job_level_to_str(jcr->getJobLevel()),
                  job_type_to_str(jcr->getJobType()), JobName,
                  JobstatusToAscii(jcr->getJobStatus()).c_str());

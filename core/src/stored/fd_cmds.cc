@@ -142,7 +142,7 @@ void* HandleFiledConnection(BareosSocket* fd, char* job_name)
     utime_t now;
 
     *jcr->sd_impl->client_available.lock() = true;
-    Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,
+    Dmsg2(50, "OK Authentication jid=%" PRIu32 " Job %s\n", jcr->JobId,
           jcr->Job);
 
     // Update the initial Job Statistics.

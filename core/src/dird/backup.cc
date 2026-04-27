@@ -502,8 +502,8 @@ static bool ConfigureMessageThread(JobControlRecord* jcr)
  */
 bool DoNativeBackup(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_INFO, 0, T_("Start Backup JobId %u, Job=%s\n"), jcr->JobId,
-       jcr->Job);
+  Jmsg(jcr, M_INFO, 0, T_("Start Backup JobId %" PRIu32 ", Job=%s\n"),
+       jcr->JobId, jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
   Dmsg2(100, "JobId=%" PRIu32 " JobLevel=%c\n", jcr->dir_impl->jr.JobId,
@@ -884,8 +884,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
         fprintf(fd, "VolAddr=%s-%s\n", edit_uint64(VolParams[i].StartAddr, ed1),
                 edit_uint64(VolParams[i].EndAddr, ed2));
         fprintf(fd, "FileIndex=%" PRIu32 "-%" PRIu32 "\n",
-                VolParams[i].FirstIndex,
-                VolParams[i].LastIndex);
+                VolParams[i].FirstIndex, VolParams[i].LastIndex);
       }
       if (VolParams) { free(VolParams); }
       if (got_pipe) {

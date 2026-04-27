@@ -757,8 +757,7 @@ static void JobMonitorWatchdog(watchdog_t* self)
     }
 
     if (cancel) {
-      Dmsg3(800, "Cancelling JobControlRecord %p jobid %" PRIu32 " (%s)\n",
-            jcr,
+      Dmsg3(800, "Cancelling JobControlRecord %p jobid %" PRIu32 " (%s)\n", jcr,
             jcr->JobId, jcr->Job);
       UaContext* ua = new_ua_context(jcr);
       ua->jcr = control_jcr;
@@ -813,9 +812,9 @@ static bool JobCheckMaxruntime(JobControlRecord* jcr)
   }
   run_time = watchdog_time - jcr->start_time;
   Dmsg7(200,
-        "check_maxruntime %" PRId64 "-%lld=%" PRId64 " >= %" PRId64 "|%" PRId64
-        "|%" PRId64 "|%" PRId64 "\n",
-        watchdog_time, static_cast<long long>(jcr->start_time), run_time,
+        "check_maxruntime %" PRId64 "-%" PRId64 "=%" PRId64 " >= %" PRId64
+        "|%" PRId64 "|%" PRId64 "|%" PRId64 "\n",
+        watchdog_time, static_cast<int64_t>(jcr->start_time), run_time,
         job->MaxRunTime, job->FullMaxRunTime, job->IncMaxRunTime,
         job->DiffMaxRunTime);
 
@@ -1015,13 +1014,13 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
         // Zap current job
         jcr->setJobStatusWithPriorityCheck(JS_Canceled);
         Jmsg(jcr, M_FATAL, 0,
-             T_("JobId %" PRIu32 " already running. Duplicate job not allowed.\n"),
+             T_("JobId %" PRIu32
+                " already running. Duplicate job not allowed.\n"),
              djcr->JobId);
         Dmsg2(800, "Cancel me %p JobId=%" PRIu32 "\n", jcr, jcr->JobId);
       }
       Dmsg4(800,
-            "curJobId=%" PRIu32 " use_cnt=%d dupJobId=%" PRIu32
-            " use_cnt=%d\n",
+            "curJobId=%" PRIu32 " use_cnt=%d dupJobId=%" PRIu32 " use_cnt=%d\n",
             jcr->JobId, jcr->UseCount(), djcr->JobId, djcr->UseCount());
       break; /* did our work, get out of foreach loop */
     }
@@ -1522,7 +1521,7 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
   for (p = jcr->Job; *p; p++) {
     if (*p == ' ') { *p = '_'; }
   }
-  Dmsg2(100, "JobId=%u created Job=%s\n", jcr->JobId, jcr->Job);
+  Dmsg2(100, "JobId=%" PRIu32 " created Job=%s\n", jcr->JobId, jcr->Job);
 }
 
 // Called directly from job rescheduling

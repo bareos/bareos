@@ -368,7 +368,7 @@ static var_rc_t lookup_var(var_t* ctx,
   }
 
   buf.check_size(p - val);
-  Dmsg2(100, "val=%s len=%lld\n", val, static_cast<long long>(p - val));
+  Dmsg2(100, "val=%s len=%" PRIiz "\n", val, p - val);
 
   // Make a copy of item, and pass it back
   v = (char*)malloc(p - val + 1);
