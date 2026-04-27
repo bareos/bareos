@@ -100,6 +100,10 @@ generated under `cmake-build/webui-vue/dist/` and installed from there.
 `webui-vue/src/` **or** `webui-vue/vite.config.js`:
 
 ```bash
+# build directly in the source tree
+cmake -P webui-vue/build-dist.cmake
+
+# or build the installable bundle in the CMake build tree
 cmake --build cmake-build --target bareos-webui-vue-build --parallel "$(nproc)"
 ```
 

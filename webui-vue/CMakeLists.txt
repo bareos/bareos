@@ -49,6 +49,7 @@ set(WEBUI_VUE_SRC "${CMAKE_CURRENT_SOURCE_DIR}")
 set(WEBUI_VUE_DIST "${CMAKE_CURRENT_BINARY_DIR}/dist")
 set(WEBUI_VUE_PACKAGE_JSON "${WEBUI_VUE_SRC}/package.json")
 set(WEBUI_VUE_PACKAGE_LOCK "${WEBUI_VUE_SRC}/package-lock.json")
+set(WEBUI_VUE_BUILD_SCRIPT "${WEBUI_VUE_SRC}/build-dist.cmake")
 set(WEBUI_VUE_BUILD_STAMP "${CMAKE_CURRENT_BINARY_DIR}/webui-vue-build.stamp")
 set(WEBUI_VUE_AUDIT_STAMP "${CMAKE_CURRENT_BINARY_DIR}/webui-vue-audit.stamp")
 set(WEBUI_VUE_NPM_CI_STAMP "${CMAKE_CURRENT_BINARY_DIR}/webui-vue-npm-ci.stamp")
@@ -69,8 +70,8 @@ file(GLOB_RECURSE WEBUI_VUE_BUILD_INPUTS CONFIGURE_DEPENDS
      "${WEBUI_VUE_SRC}/scripts/*"
 )
 list(APPEND WEBUI_VUE_BUILD_INPUTS "${WEBUI_VUE_SRC}/index.html"
-     "${WEBUI_VUE_SRC}/vite.config.js" "${WEBUI_VUE_PACKAGE_JSON}"
-     "${WEBUI_VUE_PACKAGE_LOCK}"
+     "${WEBUI_VUE_SRC}/vite.config.js" "${WEBUI_VUE_BUILD_SCRIPT}"
+     "${WEBUI_VUE_PACKAGE_JSON}" "${WEBUI_VUE_PACKAGE_LOCK}"
 )
 
 # The standalone bareos-webui-vue-build target generates the installable bundle
@@ -98,9 +99,8 @@ if(NPM_EXECUTABLE)
 
   add_custom_command(
     OUTPUT "${WEBUI_VUE_BUILD_STAMP}"
-    COMMAND ${CMAKE_COMMAND} -E rm -rf "${WEBUI_VUE_DIST}"
-    COMMAND ${CMAKE_COMMAND} -E chdir "${WEBUI_VUE_SRC}" "${NPM_EXECUTABLE}" run
-            build -- --outDir "${WEBUI_VUE_DIST}"
+    COMMAND ${CMAKE_COMMAND} -DDIST_DIR="${WEBUI_VUE_DIST}"
+            -DNPM_EXECUTABLE="${NPM_EXECUTABLE}" -P "${WEBUI_VUE_BUILD_SCRIPT}"
     COMMAND ${CMAKE_COMMAND} -E touch "${WEBUI_VUE_BUILD_STAMP}"
     DEPENDS "${WEBUI_VUE_AUDIT_STAMP}" ${WEBUI_VUE_BUILD_INPUTS}
     COMMENT "Building Bareos WebUI Vue dist bundle"
