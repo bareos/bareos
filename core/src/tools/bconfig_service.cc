@@ -10403,6 +10403,77 @@ StorageDaemonResourceSpec ToStorageDaemonResourceSpec(
   return spec;
 }
 
+StorageDeviceResourceSpec ToStorageDeviceResourceSpec(
+    const StorageDaemonDeviceWriteContext& context)
+{
+  StorageDeviceResourceSpec spec;
+  spec.media_type = context.media_type;
+  spec.archive_device = context.archive_device;
+  spec.device_type = context.device_type;
+  spec.access_mode = context.access_mode;
+  spec.device_options = context.device_options;
+  spec.diagnostic_device = context.diagnostic_device;
+  spec.hardware_end_of_file = context.hardware_end_of_file;
+  spec.hardware_end_of_medium = context.hardware_end_of_medium;
+  spec.backward_space_record = context.backward_space_record;
+  spec.backward_space_file = context.backward_space_file;
+  spec.bsf_at_eom = context.bsf_at_eom;
+  spec.two_eof = context.two_eof;
+  spec.forward_space_record = context.forward_space_record;
+  spec.forward_space_file = context.forward_space_file;
+  spec.fast_forward_space_file = context.fast_forward_space_file;
+  spec.removable_media = context.removable_media;
+  spec.random_access = context.random_access;
+  spec.automatic_mount = context.automatic_mount;
+  spec.label_media = context.label_media;
+  spec.always_open = context.always_open;
+  spec.autochanger = context.autochanger;
+  spec.close_on_poll = context.close_on_poll;
+  spec.block_positioning = context.block_positioning;
+  spec.use_mtiocget = context.use_mtiocget;
+  spec.check_labels = context.check_labels;
+  spec.requires_mount = context.requires_mount;
+  spec.offline_on_unmount = context.offline_on_unmount;
+  spec.block_checksum = context.block_checksum;
+  spec.auto_select = context.auto_select;
+  spec.changer_device = context.changer_device;
+  spec.changer_command = context.changer_command;
+  spec.alert_command = context.alert_command;
+  spec.maximum_changer_wait = context.maximum_changer_wait;
+  spec.maximum_open_wait = context.maximum_open_wait;
+  spec.maximum_open_volumes = context.maximum_open_volumes;
+  spec.maximum_network_buffer_size = context.maximum_network_buffer_size;
+  spec.volume_poll_interval = context.volume_poll_interval;
+  spec.maximum_rewind_wait = context.maximum_rewind_wait;
+  spec.label_block_size = context.label_block_size;
+  spec.minimum_block_size = context.minimum_block_size;
+  spec.maximum_block_size = context.maximum_block_size;
+  spec.maximum_file_size = context.maximum_file_size;
+  spec.volume_capacity = context.volume_capacity;
+  spec.maximum_concurrent_jobs = context.maximum_concurrent_jobs;
+  spec.spool_directory = context.spool_directory;
+  spec.maximum_spool_size = context.maximum_spool_size;
+  spec.maximum_job_spool_size = context.maximum_job_spool_size;
+  spec.drive_index = context.drive_index;
+  spec.mount_point = context.mount_point;
+  spec.mount_command = context.mount_command;
+  spec.unmount_command = context.unmount_command;
+  spec.label_type = context.label_type;
+  spec.no_rewind_on_close = context.no_rewind_on_close;
+  spec.drive_tape_alert_enabled = context.drive_tape_alert_enabled;
+  spec.drive_crypto_enabled = context.drive_crypto_enabled;
+  spec.query_crypto_status = context.query_crypto_status;
+  spec.auto_deflate = context.auto_deflate;
+  spec.auto_deflate_algorithm = context.auto_deflate_algorithm;
+  spec.auto_deflate_level = context.auto_deflate_level;
+  spec.auto_inflate = context.auto_inflate;
+  spec.collect_statistics = context.collect_statistics;
+  spec.eof_on_error_is_eot = context.eof_on_error_is_eot;
+  spec.count = context.count;
+  spec.description = context.description;
+  return spec;
+}
+
 ConsoleConsoleResourceSpec ToConsoleConsoleResourceSpec(
     const ConsoleConsoleWriteContext& context)
 {
@@ -10828,6 +10899,34 @@ ServiceState::GetStorageDirectorResourceSpec(
           .tls_key = context.value->tls_key,
           .tls_allowed_cn = context.value->tls_allowed_cn,
       }};
+}
+
+OperationResult<StorageDeviceResourceSpec>
+ServiceState::GetStorageDeviceResourceSpec(std::string_view deployment_id,
+                                           std::string_view storage_name,
+                                           std::string_view device_name) const
+{
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.value->path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto context = LoadStorageDaemonDeviceWriteContext(
+      *storage_config.value, device_name, *managed_paths.value);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "storage-daemon device '" + std::string{device_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToStorageDeviceResourceSpec(*context.value)};
 }
 
 OperationResult<ClientDaemonResourceSpec>

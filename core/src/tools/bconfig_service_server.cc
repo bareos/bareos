@@ -5479,6 +5479,18 @@ const char* kTestUiHtmlTemplate = R"HTML(
             `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/counters/${encodedResource}/prefill`,
         };
       }
+      if (normalizedComponent === 'storage' && normalizedType === 'device') {
+        return {
+          formId: 'storage-device-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            storage_name: String(configName ?? ''),
+            device_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/storages/${encodedConfig}/devices/${encodedResource}/prefill`,
+        };
+      }
       if (normalizedComponent === 'storage' && normalizedType === 'director') {
         return {
           formId: 'storage-director-form',
@@ -9704,6 +9716,98 @@ json_t* StorageDirectorResourceSpecToJson(
   return object.release();
 }
 
+json_t* StorageDeviceResourceSpecToJson(const StorageDeviceResourceSpec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "media_type", spec.media_type);
+  SetOptionalString(object.get(), "archive_device", spec.archive_device);
+  SetOptionalString(object.get(), "device_type", spec.device_type);
+  SetOptionalString(object.get(), "access_mode", spec.access_mode);
+  SetOptionalString(object.get(), "device_options", spec.device_options);
+  SetOptionalString(object.get(), "diagnostic_device", spec.diagnostic_device);
+  SetOptionalBool(object.get(), "hardware_end_of_file",
+                  spec.hardware_end_of_file);
+  SetOptionalBool(object.get(), "hardware_end_of_medium",
+                  spec.hardware_end_of_medium);
+  SetOptionalBool(object.get(), "backward_space_record",
+                  spec.backward_space_record);
+  SetOptionalBool(object.get(), "backward_space_file",
+                  spec.backward_space_file);
+  SetOptionalBool(object.get(), "bsf_at_eom", spec.bsf_at_eom);
+  SetOptionalBool(object.get(), "two_eof", spec.two_eof);
+  SetOptionalBool(object.get(), "forward_space_record",
+                  spec.forward_space_record);
+  SetOptionalBool(object.get(), "forward_space_file", spec.forward_space_file);
+  SetOptionalBool(object.get(), "fast_forward_space_file",
+                  spec.fast_forward_space_file);
+  SetOptionalBool(object.get(), "removable_media", spec.removable_media);
+  SetOptionalBool(object.get(), "random_access", spec.random_access);
+  SetOptionalBool(object.get(), "automatic_mount", spec.automatic_mount);
+  SetOptionalBool(object.get(), "label_media", spec.label_media);
+  SetOptionalBool(object.get(), "always_open", spec.always_open);
+  SetOptionalBool(object.get(), "autochanger", spec.autochanger);
+  SetOptionalBool(object.get(), "close_on_poll", spec.close_on_poll);
+  SetOptionalBool(object.get(), "block_positioning", spec.block_positioning);
+  SetOptionalBool(object.get(), "use_mtiocget", spec.use_mtiocget);
+  SetOptionalBool(object.get(), "check_labels", spec.check_labels);
+  SetOptionalBool(object.get(), "requires_mount", spec.requires_mount);
+  SetOptionalBool(object.get(), "offline_on_unmount", spec.offline_on_unmount);
+  SetOptionalBool(object.get(), "block_checksum", spec.block_checksum);
+  SetOptionalBool(object.get(), "auto_select", spec.auto_select);
+  SetOptionalString(object.get(), "changer_device", spec.changer_device);
+  SetOptionalString(object.get(), "changer_command", spec.changer_command);
+  SetOptionalString(object.get(), "alert_command", spec.alert_command);
+  SetOptionalInteger(object.get(), "maximum_changer_wait",
+                     spec.maximum_changer_wait);
+  SetOptionalInteger(object.get(), "maximum_open_wait", spec.maximum_open_wait);
+  SetOptionalInteger(object.get(), "maximum_open_volumes",
+                     spec.maximum_open_volumes);
+  SetOptionalInteger(object.get(), "maximum_network_buffer_size",
+                     spec.maximum_network_buffer_size);
+  SetOptionalInteger(object.get(), "volume_poll_interval",
+                     spec.volume_poll_interval);
+  SetOptionalInteger(object.get(), "maximum_rewind_wait",
+                     spec.maximum_rewind_wait);
+  SetOptionalInteger(object.get(), "label_block_size", spec.label_block_size);
+  SetOptionalInteger(object.get(), "minimum_block_size",
+                     spec.minimum_block_size);
+  SetOptionalInteger(object.get(), "maximum_block_size",
+                     spec.maximum_block_size);
+  SetOptionalInteger(object.get(), "maximum_file_size", spec.maximum_file_size);
+  SetOptionalInteger(object.get(), "volume_capacity", spec.volume_capacity);
+  SetOptionalInteger(object.get(), "maximum_concurrent_jobs",
+                     spec.maximum_concurrent_jobs);
+  SetOptionalString(object.get(), "spool_directory", spec.spool_directory);
+  SetOptionalInteger(object.get(), "maximum_spool_size",
+                     spec.maximum_spool_size);
+  SetOptionalInteger(object.get(), "maximum_job_spool_size",
+                     spec.maximum_job_spool_size);
+  SetOptionalInteger(object.get(), "drive_index", spec.drive_index);
+  SetOptionalString(object.get(), "mount_point", spec.mount_point);
+  SetOptionalString(object.get(), "mount_command", spec.mount_command);
+  SetOptionalString(object.get(), "unmount_command", spec.unmount_command);
+  SetOptionalString(object.get(), "label_type", spec.label_type);
+  SetOptionalBool(object.get(), "no_rewind_on_close", spec.no_rewind_on_close);
+  SetOptionalBool(object.get(), "drive_tape_alert_enabled",
+                  spec.drive_tape_alert_enabled);
+  SetOptionalBool(object.get(), "drive_crypto_enabled",
+                  spec.drive_crypto_enabled);
+  SetOptionalBool(object.get(), "query_crypto_status",
+                  spec.query_crypto_status);
+  SetOptionalString(object.get(), "auto_deflate", spec.auto_deflate);
+  SetOptionalString(object.get(), "auto_deflate_algorithm",
+                    spec.auto_deflate_algorithm);
+  SetOptionalInteger(object.get(), "auto_deflate_level",
+                     spec.auto_deflate_level);
+  SetOptionalString(object.get(), "auto_inflate", spec.auto_inflate);
+  SetOptionalBool(object.get(), "collect_statistics", spec.collect_statistics);
+  SetOptionalBool(object.get(), "eof_on_error_is_eot",
+                  spec.eof_on_error_is_eot);
+  SetOptionalInteger(object.get(), "count", spec.count);
+  SetOptionalString(object.get(), "description", spec.description);
+  return object.release();
+}
+
 void SetDeploymentGitStatus(json_t* object,
                             const DeploymentGitStatusRecord& status)
 {
@@ -10617,6 +10721,31 @@ http::response<http::string_body> HandleStorageMessagesPrefillRequest(
                   json_array_get(deployment_json.get(), 0));
   json_object_set_new(root.get(), "spec",
                       MessagesResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleStorageDevicePrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view device_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetStorageDeviceResourceSpec(deployment_id, storage_name,
+                                                 device_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      StorageDeviceResourceSpecToJson(*spec.value));
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
@@ -18253,6 +18382,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
+  if (path_parts.size() == 8 && path_parts[3] == "storages"
+      && path_parts[5] == "devices" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleStorageDevicePrefillRequest(state, path_parts[2],
+                                             path_parts[4], path_parts[6]);
+  }
   if (path_parts.size() == 8 && path_parts[3] == "storages"
       && path_parts[5] == "directors" && path_parts[7] == "prefill"
       && request.method() == http::verb::get) {

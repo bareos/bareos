@@ -1103,6 +1103,63 @@ TEST(BconfigService, UpsertsStorageDeviceResources)
   EXPECT_NE(updated_text.find("EofOnErrorIsEot = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("Count = 5"), std::string::npos);
 
+  auto current = state.GetStorageDeviceResourceSpec("prod", "bareos-sd",
+                                                    "ManagedDevice");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->media_type, "File");
+  EXPECT_EQ(current.value->archive_device, "/tmp/updated-storage");
+  EXPECT_EQ(current.value->device_type, "file");
+  EXPECT_EQ(current.value->access_mode, "read");
+  EXPECT_EQ(current.value->device_options, "Block Size = 64k");
+  EXPECT_EQ(current.value->diagnostic_device, "/tmp/managed-storage.diag");
+  EXPECT_EQ(current.value->hardware_end_of_file, false);
+  EXPECT_EQ(current.value->hardware_end_of_medium, false);
+  EXPECT_EQ(current.value->bsf_at_eom, true);
+  EXPECT_EQ(current.value->two_eof, true);
+  EXPECT_EQ(current.value->random_access, true);
+  EXPECT_EQ(current.value->automatic_mount, true);
+  EXPECT_EQ(current.value->label_media, true);
+  EXPECT_EQ(current.value->autochanger, true);
+  EXPECT_EQ(current.value->close_on_poll, true);
+  EXPECT_EQ(current.value->check_labels, true);
+  EXPECT_EQ(current.value->requires_mount, true);
+  EXPECT_EQ(current.value->offline_on_unmount, true);
+  EXPECT_EQ(current.value->changer_device, "/dev/sg0");
+  EXPECT_EQ(current.value->changer_command,
+            "/usr/lib/bareos/mtx-changer %c %o");
+  EXPECT_EQ(current.value->alert_command, "/usr/lib/bareos/alert.sh");
+  EXPECT_EQ(current.value->maximum_changer_wait, 301);
+  EXPECT_EQ(current.value->maximum_open_wait, 302);
+  EXPECT_EQ(current.value->maximum_open_volumes, 4);
+  EXPECT_EQ(current.value->maximum_network_buffer_size, 1048576);
+  EXPECT_EQ(current.value->volume_poll_interval, 303);
+  EXPECT_EQ(current.value->maximum_rewind_wait, 304);
+  EXPECT_EQ(current.value->label_block_size, 64513);
+  EXPECT_EQ(current.value->minimum_block_size, 4096);
+  EXPECT_EQ(current.value->maximum_block_size, 1048577);
+  EXPECT_EQ(current.value->maximum_file_size, 1000000001);
+  EXPECT_EQ(current.value->volume_capacity, 2000000002);
+  EXPECT_EQ(current.value->maximum_concurrent_jobs, 5);
+  EXPECT_EQ(current.value->spool_directory, "/var/spool/bareos");
+  EXPECT_EQ(current.value->maximum_spool_size, 3000000003);
+  EXPECT_EQ(current.value->maximum_job_spool_size, 4000000004);
+  EXPECT_EQ(current.value->drive_index, 2);
+  EXPECT_EQ(current.value->mount_point, "/mnt/tape");
+  EXPECT_EQ(current.value->mount_command, "/usr/bin/mount /mnt/tape");
+  EXPECT_EQ(current.value->unmount_command, "/usr/bin/umount /mnt/tape");
+  EXPECT_EQ(current.value->label_type, "ibm");
+  EXPECT_EQ(current.value->drive_tape_alert_enabled, true);
+  EXPECT_EQ(current.value->drive_crypto_enabled, true);
+  EXPECT_EQ(current.value->query_crypto_status, true);
+  EXPECT_EQ(current.value->auto_deflate, "write");
+  EXPECT_EQ(current.value->auto_deflate_algorithm, "lz4hc");
+  EXPECT_EQ(current.value->auto_deflate_level, 7);
+  EXPECT_EQ(current.value->auto_inflate, "read");
+  EXPECT_EQ(current.value->collect_statistics, false);
+  EXPECT_EQ(current.value->eof_on_error_is_eot, true);
+  EXPECT_EQ(current.value->count, 5);
+  EXPECT_EQ(current.value->description, "Updated storage device");
+
   const auto updated_ownership_text = ReadTextFile(ownership_path);
   EXPECT_NE(updated_ownership_text.find(
                 "storages/bareos-sd/bareos-sd.d/device/ManagedDevice.conf"),
