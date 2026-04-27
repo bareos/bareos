@@ -3801,5 +3801,100 @@ TEST(BconfigService, ServesDirectorUserPrefillRouteOverHttp)
 #endif
 }
 
+TEST(BconfigService, ServesDirectorProfilePrefillRouteOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP prefill route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory state_root{MakeTempPath()};
+
+  {
+    ServiceState state{state_root.path()};
+
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    const auto source_fixture_root = FindFixtureRoot();
+    ASSERT_FALSE(source_fixture_root.empty());
+    std::filesystem::create_directories(source_root.path());
+    std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                          source_root.path() / "bareos-dir.d",
+                          std::filesystem::copy_options::recursive);
+
+    auto import_job
+        = state.CreateJob({.type = "import_configuration",
+                           .deployment_id = std::string{"prod"},
+                           .source_path = source_root.path().string()});
+    ASSERT_TRUE(import_job);
+    auto imported = WaitForJobTerminal(state, import_job.value->id);
+    ASSERT_TRUE(imported.has_value());
+    ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+    auto profile = state.UpsertDirectorProfileResource(
+        "prod", "bareos-dir", "ManagedProfile",
+        {.description = std::string{"HTTP-managed director profile"},
+         .command_acl = std::vector<std::string>{"status", ".status"},
+         .catalog_acl = std::vector<std::string>{"managed-catalog"}});
+    ASSERT_TRUE(profile) << profile.error;
+  }
+
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto profile_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/profiles/ManagedProfile/"
+      "prefill");
+  ASSERT_EQ(profile_response.status_code, 200u) << profile_response.body;
+  auto profile_json = ParseJson(profile_response.body);
+  ASSERT_NE(profile_json.get(), nullptr) << profile_response.body;
+  auto* profile_deployment = json_object_get(profile_json.get(), "deployment");
+  ASSERT_TRUE(json_is_object(profile_deployment));
+  auto* profile_deployment_id = json_object_get(profile_deployment, "id");
+  ASSERT_TRUE(json_is_string(profile_deployment_id));
+  EXPECT_STREQ(json_string_value(profile_deployment_id), "prod");
+  auto* profile_deployment_name = json_object_get(profile_deployment, "name");
+  ASSERT_TRUE(json_is_string(profile_deployment_name));
+  EXPECT_STREQ(json_string_value(profile_deployment_name), "Production");
+  auto* profile_spec = json_object_get(profile_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(profile_spec));
+  auto* profile_description = json_object_get(profile_spec, "description");
+  ASSERT_TRUE(json_is_string(profile_description));
+  EXPECT_STREQ(json_string_value(profile_description),
+               "HTTP-managed director profile");
+  auto* profile_command_acl = json_object_get(profile_spec, "command_acl");
+  ASSERT_TRUE(json_is_array(profile_command_acl));
+  ASSERT_EQ(json_array_size(profile_command_acl), 2u);
+  EXPECT_STREQ(json_string_value(json_array_get(profile_command_acl, 0)),
+               "status");
+  EXPECT_STREQ(json_string_value(json_array_get(profile_command_acl, 1)),
+               ".status");
+  auto* profile_catalog_acl = json_object_get(profile_spec, "catalog_acl");
+  ASSERT_TRUE(json_is_array(profile_catalog_acl));
+  ASSERT_EQ(json_array_size(profile_catalog_acl), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(profile_catalog_acl, 0)),
+               "managed-catalog");
+
+  const auto missing_profile_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/profiles/MissingProfile/"
+      "prefill");
+  EXPECT_EQ(missing_profile_response.status_code, 400u);
+  EXPECT_NE(missing_profile_response.body.find(
+                "director profile 'MissingProfile' not found."),
+            std::string::npos);
+
+  const auto missing_deployment_response = server.Get(
+      "/v1/deployments/missing/directors/bareos-dir/profiles/ManagedProfile/"
+      "prefill");
+  EXPECT_EQ(missing_deployment_response.status_code, 404u);
+  EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
+            std::string::npos);
+#endif
+}
+
 }  // namespace
 }  // namespace bconfig::service
