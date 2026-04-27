@@ -1044,6 +1044,10 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view director_name,
       std::string_view fileset_name) const;
+  OperationResult<DirectorJobResourceSpec> GetDirectorJobResourceSpec(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view job_name) const;
   OperationResult<DirectorJobDefsResourceSpec> GetDirectorJobDefsResourceSpec(
       std::string_view deployment_id,
       std::string_view director_name,

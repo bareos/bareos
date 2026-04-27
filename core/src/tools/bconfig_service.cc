@@ -11469,6 +11469,28 @@ ServiceState::GetDirectorFilesetResourceSpec(
   return {.value = ToDirectorFilesetResourceSpec(context.value->content)};
 }
 
+OperationResult<DirectorJobResourceSpec>
+ServiceState::GetDirectorJobResourceSpec(std::string_view deployment_id,
+                                         std::string_view director_name,
+                                         std::string_view job_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context = LoadDirectorJobWriteContext(*director_config.value, job_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director job '" + std::string{job_name} + "' not found."};
+  }
+
+  return {.value = ToDirectorJobLikeResourceSpec<DirectorJobResourceSpec>(
+              context.value->content)};
+}
+
 OperationResult<DirectorJobDefsResourceSpec>
 ServiceState::GetDirectorJobDefsResourceSpec(
     std::string_view deployment_id,

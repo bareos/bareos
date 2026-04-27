@@ -2367,6 +2367,24 @@ TEST(BconfigService, UpsertsDirectorJobResources)
             std::string::npos);
   EXPECT_NE(created_text.find("Enabled = yes"), std::string::npos);
 
+  auto created_spec
+      = state.GetDirectorJobResourceSpec("prod", "bareos-dir", "ManagedJob");
+  ASSERT_TRUE(created_spec) << created_spec.error;
+  EXPECT_EQ(created_spec.value->description, "Managed job");
+  EXPECT_EQ(created_spec.value->protocol, "NDMP_BAREOS");
+  EXPECT_EQ(created_spec.value->jobdefs, "DefaultJob");
+  ASSERT_TRUE(created_spec.value->run_before_job_entries);
+  EXPECT_EQ(*created_spec.value->run_before_job_entries,
+            (std::vector<std::string>{"/usr/lib/bareos/scripts/job-before"}));
+  ASSERT_TRUE(created_spec.value->runscript_blocks);
+  EXPECT_EQ(created_spec.value->runscript_blocks->size(), 1U);
+  EXPECT_EQ(created_spec.value->replace, "IfOlder");
+  EXPECT_EQ(created_spec.value->maximum_concurrent_jobs, 3);
+  ASSERT_TRUE(created_spec.value->fd_plugin_options);
+  EXPECT_EQ(*created_spec.value->fd_plugin_options,
+            (std::vector<std::string>{"fd=one"}));
+  EXPECT_EQ(created_spec.value->always_incremental, true);
+
   const auto backup_catalog_path
       = created.value->path / "bareos-dir.d/job/BackupCatalog.conf";
   auto backup_catalog_text = ReadTextFile(backup_catalog_path);
@@ -2496,6 +2514,25 @@ TEST(BconfigService, UpsertsDirectorJobResources)
   EXPECT_NE(updated_text.find("MaxFullConsolidations = 22"), std::string::npos);
   EXPECT_NE(updated_text.find("RunOnIncomingConnectInterval = 3600"),
             std::string::npos);
+
+  auto updated_spec
+      = state.GetDirectorJobResourceSpec("prod", "bareos-dir", "BackupCatalog");
+  ASSERT_TRUE(updated_spec) << updated_spec.error;
+  EXPECT_EQ(updated_spec.value->description, "Updated backup catalog job");
+  EXPECT_EQ(updated_spec.value->backup_format, "Portable");
+  EXPECT_EQ(updated_spec.value->protocol, "NDMP_NATIVE");
+  ASSERT_TRUE(updated_spec.value->run_after_failed_job_entries);
+  EXPECT_EQ(
+      *updated_spec.value->run_after_failed_job_entries,
+      (std::vector<std::string>{"/tmp/scripts/report_catalog_backup_failure"}));
+  ASSERT_TRUE(updated_spec.value->runscript_blocks);
+  EXPECT_EQ(updated_spec.value->runscript_blocks->size(), 1U);
+  EXPECT_EQ(updated_spec.value->replace, "Never");
+  EXPECT_EQ(updated_spec.value->selection_type, "Volume");
+  ASSERT_TRUE(updated_spec.value->dir_plugin_options);
+  EXPECT_EQ(*updated_spec.value->dir_plugin_options,
+            (std::vector<std::string>{"dir=imported"}));
+  EXPECT_EQ(updated_spec.value->max_concurrent_copies, 8);
 }
 
 TEST(BconfigService, UpsertsDirectorJobResourcesInSharedFiles)
