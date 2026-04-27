@@ -3580,5 +3580,129 @@ TEST(BconfigService, ServesDirectorMessagesPrefillRouteOverHttp)
 #endif
 }
 
+TEST(BconfigService, ServesDirectorConsolePrefillRouteOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP prefill route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory state_root{MakeTempPath()};
+
+  {
+    ServiceState state{state_root.path()};
+
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    const auto source_fixture_root = FindFixtureRoot();
+    ASSERT_FALSE(source_fixture_root.empty());
+    std::filesystem::create_directories(source_root.path());
+    std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                          source_root.path() / "bareos-dir.d",
+                          std::filesystem::copy_options::recursive);
+
+    auto import_job
+        = state.CreateJob({.type = "import_configuration",
+                           .deployment_id = std::string{"prod"},
+                           .source_path = source_root.path().string()});
+    ASSERT_TRUE(import_job);
+    auto imported = WaitForJobTerminal(state, import_job.value->id);
+    ASSERT_TRUE(imported.has_value());
+    ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+    auto console = state.UpsertDirectorConsoleResource(
+        "prod", "bareos-dir", "ManagedConsole",
+        {.password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
+         .description = std::string{"HTTP-managed director console"},
+         .job_acl = std::vector<std::string>{"ManagedJob"},
+         .command_acl = std::vector<std::string>{"status", ".status", "show"},
+         .profiles = std::vector<std::string>{"operator"},
+         .use_pam_authentication = true,
+         .tls_enable = true,
+         .tls_require = true,
+         .tls_cipher_list = std::string{"HIGH"},
+         .tls_allowed_cn = std::vector<std::string>{"backup-admin"}});
+    ASSERT_TRUE(console) << console.error;
+  }
+
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto console_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/consoles/ManagedConsole/"
+      "prefill");
+  ASSERT_EQ(console_response.status_code, 200u) << console_response.body;
+  auto console_json = ParseJson(console_response.body);
+  ASSERT_NE(console_json.get(), nullptr) << console_response.body;
+  auto* console_deployment = json_object_get(console_json.get(), "deployment");
+  ASSERT_TRUE(json_is_object(console_deployment));
+  auto* console_deployment_id = json_object_get(console_deployment, "id");
+  ASSERT_TRUE(json_is_string(console_deployment_id));
+  EXPECT_STREQ(json_string_value(console_deployment_id), "prod");
+  auto* console_deployment_name = json_object_get(console_deployment, "name");
+  ASSERT_TRUE(json_is_string(console_deployment_name));
+  EXPECT_STREQ(json_string_value(console_deployment_name), "Production");
+  auto* console_spec = json_object_get(console_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(console_spec));
+  auto* console_description = json_object_get(console_spec, "description");
+  ASSERT_TRUE(json_is_string(console_description));
+  EXPECT_STREQ(json_string_value(console_description),
+               "HTTP-managed director console");
+  auto* console_job_acl = json_object_get(console_spec, "job_acl");
+  ASSERT_TRUE(json_is_array(console_job_acl));
+  ASSERT_EQ(json_array_size(console_job_acl), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(console_job_acl, 0)),
+               "ManagedJob");
+  auto* console_command_acl = json_object_get(console_spec, "command_acl");
+  ASSERT_TRUE(json_is_array(console_command_acl));
+  ASSERT_EQ(json_array_size(console_command_acl), 3u);
+  EXPECT_STREQ(json_string_value(json_array_get(console_command_acl, 1)),
+               ".status");
+  auto* console_profiles = json_object_get(console_spec, "profiles");
+  ASSERT_TRUE(json_is_array(console_profiles));
+  ASSERT_EQ(json_array_size(console_profiles), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(console_profiles, 0)),
+               "operator");
+  auto* console_use_pam
+      = json_object_get(console_spec, "use_pam_authentication");
+  ASSERT_TRUE(json_is_boolean(console_use_pam));
+  EXPECT_TRUE(json_is_true(console_use_pam));
+  auto* console_tls_enable = json_object_get(console_spec, "tls_enable");
+  ASSERT_TRUE(json_is_boolean(console_tls_enable));
+  EXPECT_TRUE(json_is_true(console_tls_enable));
+  auto* console_tls_require = json_object_get(console_spec, "tls_require");
+  ASSERT_TRUE(json_is_boolean(console_tls_require));
+  EXPECT_TRUE(json_is_true(console_tls_require));
+  auto* console_tls_cipher = json_object_get(console_spec, "tls_cipher_list");
+  ASSERT_TRUE(json_is_string(console_tls_cipher));
+  EXPECT_STREQ(json_string_value(console_tls_cipher), "HIGH");
+  auto* console_tls_allowed_cn
+      = json_object_get(console_spec, "tls_allowed_cn");
+  ASSERT_TRUE(json_is_array(console_tls_allowed_cn));
+  ASSERT_EQ(json_array_size(console_tls_allowed_cn), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(console_tls_allowed_cn, 0)),
+               "backup-admin");
+
+  const auto missing_console_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/consoles/MissingConsole/"
+      "prefill");
+  EXPECT_EQ(missing_console_response.status_code, 400u);
+  EXPECT_NE(missing_console_response.body.find(
+                "director console 'MissingConsole' not found."),
+            std::string::npos);
+
+  const auto missing_deployment_response = server.Get(
+      "/v1/deployments/missing/directors/bareos-dir/consoles/ManagedConsole/"
+      "prefill");
+  EXPECT_EQ(missing_deployment_response.status_code, 404u);
+  EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
+            std::string::npos);
+#endif
+}
+
 }  // namespace
 }  // namespace bconfig::service
