@@ -4321,5 +4321,120 @@ TEST(BconfigService, ServesDirectorCounterPrefillRouteOverHttp)
 #endif
 }
 
+TEST(BconfigService, ServesDirectorFilesetPrefillRouteOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP prefill route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory state_root{MakeTempPath()};
+
+  {
+    ServiceState state{state_root.path()};
+
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    const auto source_fixture_root = FindFixtureRoot();
+    ASSERT_FALSE(source_fixture_root.empty());
+    std::filesystem::create_directories(source_root.path());
+    std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                          source_root.path() / "bareos-dir.d",
+                          std::filesystem::copy_options::recursive);
+
+    auto import_job
+        = state.CreateJob({.type = "import_configuration",
+                           .deployment_id = std::string{"prod"},
+                           .source_path = source_root.path().string()});
+    ASSERT_TRUE(import_job);
+    auto imported = WaitForJobTerminal(state, import_job.value->id);
+    ASSERT_TRUE(imported.has_value());
+    ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+    auto fileset = state.UpsertDirectorFilesetResource(
+        "prod", "bareos-dir", "ManagedFileSet",
+        {.description = std::string{"HTTP-managed director fileset"},
+         .ignore_fileset_changes = true,
+         .enable_vss = false,
+         .include_blocks = std::vector<
+             std::string>{"  Include {\n"
+                          "    Options {\n"
+                          "      Signature = XXH128\n"
+                          "    }\n"
+                          "    File = /tmp/tests/backup-bareos-test/tmp\n"
+                          "  }\n"},
+         .exclude_blocks = std::vector<std::string>{
+             "  Exclude {\n"
+             "    File = /tmp/tests/backup-bareos-test/tmp/cache\n"
+             "  }\n"}});
+    ASSERT_TRUE(fileset) << fileset.error;
+  }
+
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto fileset_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/filesets/ManagedFileSet/"
+      "prefill");
+  ASSERT_EQ(fileset_response.status_code, 200u) << fileset_response.body;
+  auto fileset_json = ParseJson(fileset_response.body);
+  ASSERT_NE(fileset_json.get(), nullptr) << fileset_response.body;
+  auto* fileset_deployment = json_object_get(fileset_json.get(), "deployment");
+  ASSERT_TRUE(json_is_object(fileset_deployment));
+  auto* fileset_deployment_id = json_object_get(fileset_deployment, "id");
+  ASSERT_TRUE(json_is_string(fileset_deployment_id));
+  EXPECT_STREQ(json_string_value(fileset_deployment_id), "prod");
+  auto* fileset_deployment_name = json_object_get(fileset_deployment, "name");
+  ASSERT_TRUE(json_is_string(fileset_deployment_name));
+  EXPECT_STREQ(json_string_value(fileset_deployment_name), "Production");
+  auto* fileset_spec = json_object_get(fileset_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(fileset_spec));
+  auto* fileset_description = json_object_get(fileset_spec, "description");
+  ASSERT_TRUE(json_is_string(fileset_description));
+  EXPECT_STREQ(json_string_value(fileset_description),
+               "HTTP-managed director fileset");
+  auto* fileset_ignore
+      = json_object_get(fileset_spec, "ignore_fileset_changes");
+  ASSERT_TRUE(json_is_boolean(fileset_ignore));
+  EXPECT_TRUE(json_is_true(fileset_ignore));
+  auto* fileset_enable_vss = json_object_get(fileset_spec, "enable_vss");
+  ASSERT_TRUE(json_is_boolean(fileset_enable_vss));
+  EXPECT_TRUE(json_is_false(fileset_enable_vss));
+  auto* fileset_includes = json_object_get(fileset_spec, "include_blocks");
+  ASSERT_TRUE(json_is_array(fileset_includes));
+  ASSERT_EQ(json_array_size(fileset_includes), 1u);
+  EXPECT_NE(
+      std::string{json_string_value(json_array_get(fileset_includes, 0))}.find(
+          "Signature = XXH128"),
+      std::string::npos);
+  auto* fileset_excludes = json_object_get(fileset_spec, "exclude_blocks");
+  ASSERT_TRUE(json_is_array(fileset_excludes));
+  ASSERT_EQ(json_array_size(fileset_excludes), 1u);
+  EXPECT_NE(
+      std::string{json_string_value(json_array_get(fileset_excludes, 0))}.find(
+          "/tmp/tests/backup-bareos-test/tmp/cache"),
+      std::string::npos);
+
+  const auto missing_fileset_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/filesets/MissingFileSet/"
+      "prefill");
+  EXPECT_EQ(missing_fileset_response.status_code, 400u);
+  EXPECT_NE(missing_fileset_response.body.find(
+                "director fileset 'MissingFileSet' not found."),
+            std::string::npos);
+
+  const auto missing_deployment_response = server.Get(
+      "/v1/deployments/missing/directors/bareos-dir/filesets/ManagedFileSet/"
+      "prefill");
+  EXPECT_EQ(missing_deployment_response.status_code, 404u);
+  EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
+            std::string::npos);
+#endif
+}
+
 }  // namespace
 }  // namespace bconfig::service
