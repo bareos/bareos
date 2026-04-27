@@ -5335,6 +5335,18 @@ const char* kTestUiHtmlTemplate = R"HTML(
             `/v1/deployments/${encodedDeployment}/storages/${encodedConfig}/prefill`,
         };
       }
+      if (normalizedComponent === 'storage' && normalizedType === 'ndmp') {
+        return {
+          formId: 'storage-ndmp-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            storage_name: String(configName ?? ''),
+            ndmp_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/storages/${encodedConfig}/ndmp/${encodedResource}/prefill`,
+        };
+      }
       if (normalizedComponent === 'console' && normalizedType === 'console') {
         return {
           formId: 'console-console-form',
@@ -9808,6 +9820,17 @@ json_t* StorageDeviceResourceSpecToJson(const StorageDeviceResourceSpec& spec)
   return object.release();
 }
 
+json_t* StorageNdmpResourceSpecToJson(const StorageNdmpResourceSpec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "description", spec.description);
+  SetOptionalString(object.get(), "username", spec.username);
+  SetOptionalString(object.get(), "password", spec.password);
+  SetOptionalString(object.get(), "auth_type", spec.auth_type);
+  SetOptionalInteger(object.get(), "log_level", spec.log_level);
+  return object.release();
+}
+
 void SetDeploymentGitStatus(json_t* object,
                             const DeploymentGitStatusRecord& status)
 {
@@ -10746,6 +10769,31 @@ http::response<http::string_body> HandleStorageDevicePrefillRequest(
                   json_array_get(deployment_json.get(), 0));
   json_object_set_new(root.get(), "spec",
                       StorageDeviceResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleStorageNdmpPrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view ndmp_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetStorageNdmpResourceSpec(deployment_id, storage_name,
+                                               ndmp_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      StorageNdmpResourceSpecToJson(*spec.value));
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
@@ -18433,6 +18481,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
       && path_parts[5] == "ndmp" && request.method() == http::verb::put) {
     return HandleDeploymentStorageNdmpPutRequest(state, request, path_parts[2],
                                                  path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 8 && path_parts[3] == "storages"
+      && path_parts[5] == "ndmp" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleStorageNdmpPrefillRequest(state, path_parts[2], path_parts[4],
+                                           path_parts[6]);
   }
   if (path_parts.size() == 7 && path_parts[3] == "storages"
       && path_parts[5] == "ndmp" && request.method() == http::verb::delete_) {

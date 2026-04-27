@@ -983,6 +983,10 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view storage_name,
       std::string_view device_name) const;
+  OperationResult<StorageNdmpResourceSpec> GetStorageNdmpResourceSpec(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      std::string_view ndmp_name) const;
   OperationResult<ClientDaemonResourceSpec> GetClientDaemonResourceSpec(
       std::string_view deployment_id,
       std::string_view client_name) const;

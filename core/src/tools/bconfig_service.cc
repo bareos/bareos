@@ -10474,6 +10474,18 @@ StorageDeviceResourceSpec ToStorageDeviceResourceSpec(
   return spec;
 }
 
+StorageNdmpResourceSpec ToStorageNdmpResourceSpec(
+    const StorageNdmpWriteContext& context)
+{
+  StorageNdmpResourceSpec spec;
+  spec.description = context.description;
+  spec.username = context.username;
+  spec.password = context.password;
+  spec.auth_type = context.auth_type;
+  spec.log_level = context.log_level;
+  return spec;
+}
+
 ConsoleConsoleResourceSpec ToConsoleConsoleResourceSpec(
     const ConsoleConsoleWriteContext& context)
 {
@@ -10927,6 +10939,34 @@ ServiceState::GetStorageDeviceResourceSpec(std::string_view deployment_id,
   }
 
   return {.value = ToStorageDeviceResourceSpec(*context.value)};
+}
+
+OperationResult<StorageNdmpResourceSpec>
+ServiceState::GetStorageNdmpResourceSpec(std::string_view deployment_id,
+                                         std::string_view storage_name,
+                                         std::string_view ndmp_name) const
+{
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.value->path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto context = LoadStorageNdmpWriteContext(*storage_config.value, ndmp_name,
+                                             *managed_paths.value);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "storage-daemon NDMP resource '" + std::string{ndmp_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToStorageNdmpResourceSpec(*context.value)};
 }
 
 OperationResult<ClientDaemonResourceSpec>

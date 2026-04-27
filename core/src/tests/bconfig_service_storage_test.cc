@@ -1467,6 +1467,15 @@ TEST(BconfigService, UpsertsStorageNdmpResources)
   EXPECT_NE(updated_text.find("AuthType = None"), std::string::npos);
   EXPECT_NE(updated_text.find("LogLevel = 3"), std::string::npos);
 
+  auto current
+      = state.GetStorageNdmpResourceSpec("prod", "bareos-sd", "DefaultNdmp");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->description, "Updated NDMP");
+  EXPECT_EQ(current.value->username, "updated-user");
+  EXPECT_EQ(current.value->password, "updated-password");
+  EXPECT_EQ(current.value->auth_type, "None");
+  EXPECT_EQ(current.value->log_level, 3u);
+
   const auto updated_ownership_text = ReadTextFile(ownership_path);
   EXPECT_NE(updated_ownership_text.find(
                 "storages/bareos-sd/bareos-sd.d/ndmp/ManagedNdmp.conf"),
