@@ -5359,6 +5359,18 @@ const char* kTestUiHtmlTemplate = R"HTML(
             `/v1/deployments/${encodedDeployment}/consoles/${encodedConfig}/directors/${encodedResource}/prefill`,
         };
       }
+      if (normalizedComponent === 'client' && normalizedType === 'messages') {
+        return {
+          formId: 'client-messages-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            client_name: String(configName ?? ''),
+            messages_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/clients/${encodedConfig}/messages/${encodedResource}/prefill`,
+        };
+      }
       if (normalizedComponent === 'client' && normalizedType === 'director') {
         return {
           formId: 'client-stub-form',
@@ -5395,6 +5407,18 @@ const char* kTestUiHtmlTemplate = R"HTML(
             `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/storages/${encodedResource}/prefill`,
         };
       }
+      if (normalizedComponent === 'director' && normalizedType === 'messages') {
+        return {
+          formId: 'director-messages-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            director_name: String(configName ?? ''),
+            messages_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/messages/${encodedResource}/prefill`,
+        };
+      }
       if (normalizedComponent === 'storage' && normalizedType === 'director') {
         return {
           formId: 'storage-director-form',
@@ -5405,6 +5429,18 @@ const char* kTestUiHtmlTemplate = R"HTML(
           },
           endpoint:
             `/v1/deployments/${encodedDeployment}/storages/${encodedConfig}/directors/${encodedResource}/prefill`,
+        };
+      }
+      if (normalizedComponent === 'storage' && normalizedType === 'messages') {
+        return {
+          formId: 'storage-messages-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            storage_name: String(configName ?? ''),
+            messages_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/storages/${encodedConfig}/messages/${encodedResource}/prefill`,
         };
       }
       return null;
@@ -9286,6 +9322,33 @@ json_t* ConsoleDirectorResourceSpecToJson(
   return object.release();
 }
 
+template <typename Spec> json_t* MessagesResourceSpecToJson(const Spec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "description", spec.description);
+  SetOptionalString(object.get(), "mail_command", spec.mail_command);
+  SetOptionalString(object.get(), "operator_command", spec.operator_command);
+  SetOptionalString(object.get(), "timestamp_format", spec.timestamp_format);
+  SetOptionalStringArray(object.get(), "syslog_entries", spec.syslog_entries);
+  SetOptionalStringArray(object.get(), "mail_entries", spec.mail_entries);
+  SetOptionalStringArray(object.get(), "mail_on_error_entries",
+                         spec.mail_on_error_entries);
+  SetOptionalStringArray(object.get(), "mail_on_success_entries",
+                         spec.mail_on_success_entries);
+  SetOptionalStringArray(object.get(), "file_entries", spec.file_entries);
+  SetOptionalStringArray(object.get(), "append_entries", spec.append_entries);
+  SetOptionalStringArray(object.get(), "stdout_entries", spec.stdout_entries);
+  SetOptionalStringArray(object.get(), "stderr_entries", spec.stderr_entries);
+  SetOptionalStringArray(object.get(), "director_entries",
+                         spec.director_entries);
+  SetOptionalStringArray(object.get(), "console_entries", spec.console_entries);
+  SetOptionalStringArray(object.get(), "operator_entries",
+                         spec.operator_entries);
+  SetOptionalStringArray(object.get(), "catalog_entries", spec.catalog_entries);
+  SetOptionalStringArray(object.get(), "entries", spec.entries);
+  return object.release();
+}
+
 json_t* ClientDirectorStubSpecToJson(const ClientDirectorStubSpec& spec)
 {
   auto object = MakeJson(json_object());
@@ -10303,6 +10366,81 @@ http::response<http::string_body> HandleConsoleDirectorPrefillRequest(
                   json_array_get(deployment_json.get(), 0));
   json_object_set_new(root.get(), "spec",
                       ConsoleDirectorResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleClientMessagesPrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view client_name,
+    std::string_view messages_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetClientMessagesResourceSpec(deployment_id, client_name,
+                                                  messages_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      MessagesResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDirectorMessagesPrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view messages_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetDirectorMessagesResourceSpec(
+      deployment_id, director_name, messages_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      MessagesResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleStorageMessagesPrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view messages_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetStorageMessagesResourceSpec(deployment_id, storage_name,
+                                                   messages_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      MessagesResourceSpecToJson(*spec.value));
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
@@ -17777,6 +17915,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
         state, request, path_parts[2], path_parts[4]);
   }
 
+  if (path_parts.size() == 8 && path_parts[3] == "clients"
+      && path_parts[5] == "messages" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleClientMessagesPrefillRequest(state, path_parts[2],
+                                              path_parts[4], path_parts[6]);
+  }
   if (path_parts.size() == 7 && path_parts[3] == "clients"
       && path_parts[5] == "messages" && request.method() == http::verb::put) {
     return HandleDeploymentClientMessagesPutRequest(
@@ -17870,6 +18014,13 @@ http::response<http::string_body> HandleDeploymentsRequest(
       && request.method() == http::verb::delete_) {
     return HandleDeploymentStorageAutochangerDeleteRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 8 && path_parts[3] == "storages"
+      && path_parts[5] == "messages" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleStorageMessagesPrefillRequest(state, path_parts[2],
+                                               path_parts[4], path_parts[6]);
   }
 
   if (path_parts.size() == 8 && path_parts[3] == "consoles"
@@ -18011,6 +18162,13 @@ http::response<http::string_body> HandleDeploymentsRequest(
       && request.method() == http::verb::delete_) {
     return HandleDeploymentDirectorMessagesDeleteRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 8 && path_parts[3] == "directors"
+      && path_parts[5] == "messages" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleDirectorMessagesPrefillRequest(state, path_parts[2],
+                                                path_parts[4], path_parts[6]);
   }
 
   if (path_parts.size() == 7 && path_parts[3] == "directors"

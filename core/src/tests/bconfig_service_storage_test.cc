@@ -120,6 +120,22 @@ TEST(BconfigService, UpsertsStorageMessagesResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("Append = \"/var/log/bareos/storage.log\" = all"),
             std::string::npos);
+
+  auto current
+      = state.GetStorageMessagesResourceSpec("prod", "bareos-sd", "Standard");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->description, "Updated storage messages");
+  EXPECT_EQ(current.value->mail_command, "/usr/lib/bareos/storage-mail %r");
+  EXPECT_EQ(current.value->operator_command,
+            "/usr/lib/bareos/storage-operator %r");
+  EXPECT_EQ(current.value->timestamp_format, "%d-%b %H:%M");
+  ASSERT_TRUE(current.value->append_entries.has_value());
+  EXPECT_EQ(
+      *current.value->append_entries,
+      (std::vector<std::string>{"\"/var/log/bareos/storage.log\" = all"}));
+  ASSERT_TRUE(current.value->director_entries.has_value());
+  EXPECT_EQ(*current.value->director_entries,
+            (std::vector<std::string>{"bareos-dir = all"}));
 }
 
 TEST(BconfigService, UpsertsStorageDaemonResources)

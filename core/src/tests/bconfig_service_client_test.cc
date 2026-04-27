@@ -170,6 +170,22 @@ TEST(BconfigService, UpsertsClientMessagesResources)
       updated_text.find("Director = bareos-dir = all, !skipped, !restored"),
       std::string::npos);
   EXPECT_NE(updated_text.find("Stdout = all, !skipped"), std::string::npos);
+
+  auto current = state.GetClientMessagesResourceSpec(
+      "prod", "backup-bareos-test-fd", "Standard");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->description, "Updated client messages");
+  EXPECT_EQ(current.value->mail_command, "/usr/lib/bareos/client-mail %r");
+  EXPECT_EQ(current.value->operator_command,
+            "/usr/lib/bareos/client-operator %r");
+  EXPECT_EQ(current.value->timestamp_format, "%H:%M:%S");
+  ASSERT_TRUE(current.value->director_entries.has_value());
+  EXPECT_EQ(
+      *current.value->director_entries,
+      (std::vector<std::string>{"bareos-dir = all, !skipped, !restored"}));
+  ASSERT_TRUE(current.value->stdout_entries.has_value());
+  EXPECT_EQ(*current.value->stdout_entries,
+            (std::vector<std::string>{"all, !skipped"}));
 }
 
 TEST(BconfigService, UpsertsClientMessagesResourcesInSharedFiles)

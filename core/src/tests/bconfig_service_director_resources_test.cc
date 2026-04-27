@@ -2957,6 +2957,15 @@ TEST(BconfigService, UpsertsDirectorMessagesResources)
   EXPECT_NE(updated_text.find("Syslog = mail = all, !skipped"),
             std::string::npos);
   EXPECT_NE(updated_text.find("Append = "), std::string::npos);
+
+  auto current
+      = state.GetDirectorMessagesResourceSpec("prod", "bareos-dir", "Standard");
+  ASSERT_TRUE(current) << current.error;
+  EXPECT_EQ(current.value->description, "Updated standard messages");
+  EXPECT_EQ(current.value->timestamp_format, "%Y-%m-%d %H:%M:%S");
+  ASSERT_TRUE(current.value->syslog_entries.has_value());
+  EXPECT_EQ(*current.value->syslog_entries,
+            (std::vector<std::string>{"mail = all, !skipped"}));
 }
 
 TEST(BconfigService, UpsertsDirectorMessagesResourcesInSharedFiles)

@@ -988,6 +988,18 @@ class ServiceState {
   OperationResult<StorageDaemonResourceSpec> GetStorageDaemonResourceSpec(
       std::string_view deployment_id,
       std::string_view storage_name) const;
+  OperationResult<ClientMessagesResourceSpec> GetClientMessagesResourceSpec(
+      std::string_view deployment_id,
+      std::string_view client_name,
+      std::string_view messages_name) const;
+  OperationResult<DirectorMessagesResourceSpec> GetDirectorMessagesResourceSpec(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view messages_name) const;
+  OperationResult<StorageMessagesResourceSpec> GetStorageMessagesResourceSpec(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      std::string_view messages_name) const;
   OperationResult<DeploymentConfigRecord> UpsertClientDirectorStub(
       std::string_view deployment_id,
       std::string_view client_name,

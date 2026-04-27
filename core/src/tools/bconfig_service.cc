@@ -10459,6 +10459,32 @@ ConsoleDirectorResourceSpec ToConsoleDirectorResourceSpec(
   return spec;
 }
 
+template <typename Spec>
+Spec ToMessagesResourceSpec(const DirectorMessagesContentSpec& content)
+{
+  Spec spec;
+  spec.description = content.description;
+  spec.mail_command = content.mail_command;
+  spec.operator_command = content.operator_command;
+  spec.timestamp_format = content.timestamp_format;
+  spec.syslog_entries = ToOptionalStringVector(content.syslog_entries);
+  spec.mail_entries = ToOptionalStringVector(content.mail_entries);
+  spec.mail_on_error_entries
+      = ToOptionalStringVector(content.mail_on_error_entries);
+  spec.mail_on_success_entries
+      = ToOptionalStringVector(content.mail_on_success_entries);
+  spec.file_entries = ToOptionalStringVector(content.file_entries);
+  spec.append_entries = ToOptionalStringVector(content.append_entries);
+  spec.stdout_entries = ToOptionalStringVector(content.stdout_entries);
+  spec.stderr_entries = ToOptionalStringVector(content.stderr_entries);
+  spec.director_entries = ToOptionalStringVector(content.director_entries);
+  spec.console_entries = ToOptionalStringVector(content.console_entries);
+  spec.operator_entries = ToOptionalStringVector(content.operator_entries);
+  spec.catalog_entries = ToOptionalStringVector(content.catalog_entries);
+  spec.entries = ToOptionalStringVector(content.entries);
+  return spec;
+}
+
 OperationResult<ClientDirectorStubSpec> ServiceState::GetClientDirectorStubSpec(
     std::string_view deployment_id,
     std::string_view client_name,
@@ -10757,6 +10783,81 @@ ServiceState::GetStorageDaemonResourceSpec(std::string_view deployment_id,
   }
 
   return {.value = ToStorageDaemonResourceSpec(context.value->content)};
+}
+
+OperationResult<ClientMessagesResourceSpec>
+ServiceState::GetClientMessagesResourceSpec(
+    std::string_view deployment_id,
+    std::string_view client_name,
+    std::string_view messages_name) const
+{
+  auto client_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kClient, client_name);
+  if (!client_config) {
+    return {.error = "client config not found for '" + std::string{client_name}
+                     + "'."};
+  }
+
+  auto context
+      = LoadClientMessagesWriteContext(*client_config.value, messages_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "client messages '" + std::string{messages_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToMessagesResourceSpec<ClientMessagesResourceSpec>(
+              context.value->content)};
+}
+
+OperationResult<DirectorMessagesResourceSpec>
+ServiceState::GetDirectorMessagesResourceSpec(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view messages_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorMessagesWriteContext(*director_config.value, messages_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director messages '" + std::string{messages_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToMessagesResourceSpec<DirectorMessagesResourceSpec>(
+              context.value->content)};
+}
+
+OperationResult<StorageMessagesResourceSpec>
+ServiceState::GetStorageMessagesResourceSpec(
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view messages_name) const
+{
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  auto context
+      = LoadStorageMessagesWriteContext(*storage_config.value, messages_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "storage messages '" + std::string{messages_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToMessagesResourceSpec<StorageMessagesResourceSpec>(
+              context.value->content)};
 }
 
 OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
