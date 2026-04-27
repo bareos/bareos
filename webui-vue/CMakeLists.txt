@@ -75,7 +75,8 @@ list(APPEND WEBUI_VUE_BUILD_INPUTS "${WEBUI_VUE_SRC}/index.html"
 )
 
 # The standalone bareos-webui-vue-build target generates the installable bundle
-# in the build tree, keeping source-tree dist/ artifacts untracked.
+# in the build tree, keeping source-tree dist/ artifacts untracked. Keep it
+# opt-in so generic CMake builds do not require npm to be installed.
 if(NPM_EXECUTABLE)
   add_custom_command(
     OUTPUT "${WEBUI_VUE_NPM_CI_STAMP}"
@@ -99,8 +100,8 @@ if(NPM_EXECUTABLE)
 
   add_custom_command(
     OUTPUT "${WEBUI_VUE_BUILD_STAMP}"
-    COMMAND ${CMAKE_COMMAND} -DDIST_DIR="${WEBUI_VUE_DIST}"
-            -DNPM_EXECUTABLE="${NPM_EXECUTABLE}" -P "${WEBUI_VUE_BUILD_SCRIPT}"
+    COMMAND ${CMAKE_COMMAND} -DDIST_DIR="${WEBUI_VUE_DIST}" -P
+            "${WEBUI_VUE_BUILD_SCRIPT}"
     COMMAND ${CMAKE_COMMAND} -E touch "${WEBUI_VUE_BUILD_STAMP}"
     DEPENDS "${WEBUI_VUE_AUDIT_STAMP}" ${WEBUI_VUE_BUILD_INPUTS}
     COMMENT "Building Bareos WebUI Vue dist bundle"
@@ -108,16 +109,14 @@ if(NPM_EXECUTABLE)
   )
 
   add_custom_target(bareos-webui-vue-audit DEPENDS "${WEBUI_VUE_AUDIT_STAMP}")
-  add_custom_target(
-    bareos-webui-vue-build ALL DEPENDS "${WEBUI_VUE_BUILD_STAMP}"
-  )
+  add_custom_target(bareos-webui-vue-build DEPENDS "${WEBUI_VUE_BUILD_STAMP}")
 else()
   add_custom_target(
     bareos-webui-vue-audit
     COMMAND ${CMAKE_COMMAND} -P "${WEBUI_VUE_NPM_MISSING_SCRIPT}"
     VERBATIM
   )
-  add_custom_target(bareos-webui-vue-build ALL DEPENDS bareos-webui-vue-audit)
+  add_custom_target(bareos-webui-vue-build DEPENDS bareos-webui-vue-audit)
 endif()
 
 install(
