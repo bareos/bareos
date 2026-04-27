@@ -26,6 +26,12 @@ import {
 } from '../../src/utils/volumes.js'
 
 describe('volume encryption helpers', () => {
+  it('detects an encryption key from the presence flag', () => {
+    expect(volumeHasEncryptionKey({ hasencryptionkey: '1' })).toBe(true)
+    expect(volumeHasEncryptionKey({ HasEncryptionKey: true })).toBe(true)
+    expect(volumeHasEncryptionKey({ hasencryptionkey: '0' })).toBe(false)
+  })
+
   it('detects catalog encryption keys with different field casings', () => {
     expect(volumeEncryptionKey({ EncryptionKey: 'abc123' })).toBe('abc123')
     expect(volumeEncryptionKey({ encryptionkey: 'xyz789' })).toBe('xyz789')

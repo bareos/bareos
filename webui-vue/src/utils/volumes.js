@@ -33,6 +33,26 @@ export function volumeEncryptionKey(volume) {
   ).trim()
 }
 
+function volumeHasEncryptionKeyFlag(volume) {
+  const flag = volume?.hasencryptionkey ?? volume?.HasEncryptionKey
+
+  if (typeof flag === 'boolean') {
+    return flag
+  }
+
+  if (typeof flag === 'number') {
+    return flag !== 0
+  }
+
+  if (typeof flag === 'string') {
+    const normalized = flag.trim().toLowerCase()
+    return normalized === '1' || normalized === 'true' || normalized === 'yes'
+  }
+
+  return false
+}
+
 export function volumeHasEncryptionKey(volume) {
-  return volumeEncryptionKey(volume).length > 0
+  return volumeHasEncryptionKeyFlag(volume)
+    || volumeEncryptionKey(volume).length > 0
 }

@@ -999,10 +999,14 @@ R"SQL(SELECT    Media.MediaId,
           Media.InitialWrite,
           Media.ScratchPoolId,
           (SELECT Name FROM Pool WHERE Pool.PoolId=Media.ScratchPoolId) AS ScratchPool,
-          Media.RecyclePoolId,
-          (SELECT Name FROM Pool WHERE Pool.PoolId=Media.RecyclePoolId) AS RecyclePool,
-          Media.Comment,
-          Storage.Name AS Storage
+           Media.RecyclePoolId,
+           (SELECT Name FROM Pool WHERE Pool.PoolId=Media.RecyclePoolId) AS RecyclePool,
+           CASE WHEN COALESCE(Media.EncryptionKey, '') = ''
+                THEN 0
+                ELSE 1
+           END AS HasEncryptionKey,
+           Media.Comment,
+           Storage.Name AS Storage
 FROM      Media
 LEFT JOIN Storage USING(StorageId)
 )SQL",
