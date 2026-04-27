@@ -10689,6 +10689,18 @@ DirectorCounterResourceSpec ToDirectorCounterResourceSpec(
   return spec;
 }
 
+DirectorFilesetResourceSpec ToDirectorFilesetResourceSpec(
+    const DirectorFilesetContentSpec& content)
+{
+  DirectorFilesetResourceSpec spec;
+  spec.description = content.description;
+  spec.ignore_fileset_changes = content.ignore_fileset_changes;
+  spec.enable_vss = content.enable_vss;
+  spec.include_blocks = ToOptionalStringVector(content.include_blocks);
+  spec.exclude_blocks = ToOptionalStringVector(content.exclude_blocks);
+  return spec;
+}
+
 OperationResult<ClientDirectorStubSpec> ServiceState::GetClientDirectorStubSpec(
     std::string_view deployment_id,
     std::string_view client_name,
@@ -11338,6 +11350,30 @@ ServiceState::GetDirectorCounterResourceSpec(
   }
 
   return {.value = ToDirectorCounterResourceSpec(context.value->content)};
+}
+
+OperationResult<DirectorFilesetResourceSpec>
+ServiceState::GetDirectorFilesetResourceSpec(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view fileset_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorFilesetWriteContext(*director_config.value, fileset_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director fileset '" + std::string{fileset_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToDirectorFilesetResourceSpec(context.value->content)};
 }
 
 OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(

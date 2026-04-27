@@ -1943,6 +1943,30 @@ TEST(BconfigService, UpsertsDirectorFilesetResources)
       created_text.find(
           "Exclude {\n    File = /tmp/tests/backup-bareos-test/tmp/cache"),
       std::string::npos);
+  auto created_spec = state.GetDirectorFilesetResourceSpec("prod", "bareos-dir",
+                                                           "ManagedFileSet");
+  ASSERT_TRUE(created_spec) << created_spec.error;
+  EXPECT_EQ(created_spec.value->description,
+            std::optional<std::string>{"Managed fileset"});
+  EXPECT_EQ(created_spec.value->ignore_fileset_changes,
+            std::optional<bool>{true});
+  EXPECT_EQ(created_spec.value->enable_vss, std::optional<bool>{false});
+  ASSERT_TRUE(created_spec.value->include_blocks.has_value());
+  EXPECT_EQ(*created_spec.value->include_blocks,
+            (std::vector<std::string>{"  Include {\n"
+                                      "    Options {\n"
+                                      "      Signature = XXH128\n"
+                                      "    }\n"
+                                      "    File = "
+                                      "/tmp/tests/backup-bareos-test/tmp\n"
+                                      "  }\n"}));
+  ASSERT_TRUE(created_spec.value->exclude_blocks.has_value());
+  EXPECT_EQ(
+      *created_spec.value->exclude_blocks,
+      (std::vector<std::string>{"  Exclude {\n"
+                                "    File = "
+                                "/tmp/tests/backup-bareos-test/tmp/cache\n"
+                                "  }\n"}));
 
   auto updated = state.UpsertDirectorFilesetResource(
       "prod", "bareos-dir", "LinuxAll",
@@ -1960,6 +1984,34 @@ TEST(BconfigService, UpsertsDirectorFilesetResources)
       std::string::npos);
   EXPECT_NE(updated_text.find(
                 "Exclude {\n    File = /tmp/tests/backup-bareos-test/working"),
+            std::string::npos);
+  auto updated_spec
+      = state.GetDirectorFilesetResourceSpec("prod", "bareos-dir", "LinuxAll");
+  ASSERT_TRUE(updated_spec) << updated_spec.error;
+  EXPECT_EQ(updated_spec.value->description,
+            std::optional<std::string>{"Updated LinuxAll fileset"});
+  EXPECT_EQ(updated_spec.value->ignore_fileset_changes,
+            std::optional<bool>{false});
+  EXPECT_EQ(updated_spec.value->enable_vss, std::optional<bool>{true});
+  ASSERT_TRUE(updated_spec.value->include_blocks.has_value());
+  ASSERT_EQ(updated_spec.value->include_blocks->size(), 1U);
+  EXPECT_TRUE(
+      updated_spec.value->include_blocks->front().starts_with("  Include {\n"));
+  EXPECT_NE(
+      updated_spec.value->include_blocks->front().find("Signature = XXH128"),
+      std::string::npos);
+  EXPECT_NE(updated_spec.value->include_blocks->front().find("FS Type = zfs"),
+            std::string::npos);
+  EXPECT_NE(updated_spec.value->include_blocks->front().find("File = /\n"),
+            std::string::npos);
+  ASSERT_TRUE(updated_spec.value->exclude_blocks.has_value());
+  ASSERT_EQ(updated_spec.value->exclude_blocks->size(), 1U);
+  EXPECT_TRUE(
+      updated_spec.value->exclude_blocks->front().starts_with("  Exclude {\n"));
+  EXPECT_NE(updated_spec.value->exclude_blocks->front().find(
+                "File = /tmp/tests/backup-bareos-test/working"),
+            std::string::npos);
+  EXPECT_NE(updated_spec.value->exclude_blocks->front().find("File = /.fsck"),
             std::string::npos);
 }
 
@@ -2023,6 +2075,34 @@ TEST(BconfigService, UpsertsDirectorFilesetResourcesInSharedFiles)
                 "Exclude {\n    File = /tmp/tests/backup-bareos-test/working"),
             std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherFileSet\""), std::string::npos);
+  auto updated_spec
+      = state.GetDirectorFilesetResourceSpec("prod", "bareos-dir", "LinuxAll");
+  ASSERT_TRUE(updated_spec) << updated_spec.error;
+  EXPECT_EQ(updated_spec.value->description,
+            std::optional<std::string>{"Updated LinuxAll fileset"});
+  EXPECT_EQ(updated_spec.value->ignore_fileset_changes,
+            std::optional<bool>{false});
+  EXPECT_EQ(updated_spec.value->enable_vss, std::optional<bool>{true});
+  ASSERT_TRUE(updated_spec.value->include_blocks.has_value());
+  ASSERT_EQ(updated_spec.value->include_blocks->size(), 1U);
+  EXPECT_TRUE(
+      updated_spec.value->include_blocks->front().starts_with("  Include {\n"));
+  EXPECT_NE(
+      updated_spec.value->include_blocks->front().find("Signature = XXH128"),
+      std::string::npos);
+  EXPECT_NE(updated_spec.value->include_blocks->front().find("FS Type = zfs"),
+            std::string::npos);
+  EXPECT_NE(updated_spec.value->include_blocks->front().find("File = /\n"),
+            std::string::npos);
+  ASSERT_TRUE(updated_spec.value->exclude_blocks.has_value());
+  ASSERT_EQ(updated_spec.value->exclude_blocks->size(), 1U);
+  EXPECT_TRUE(
+      updated_spec.value->exclude_blocks->front().starts_with("  Exclude {\n"));
+  EXPECT_NE(updated_spec.value->exclude_blocks->front().find(
+                "File = /tmp/tests/backup-bareos-test/working"),
+            std::string::npos);
+  EXPECT_NE(updated_spec.value->exclude_blocks->front().find("File = /.fsck"),
+            std::string::npos);
 }
 
 TEST(BconfigService, DeletesDirectorFilesetResources)
