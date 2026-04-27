@@ -1032,6 +1032,10 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view director_name,
       std::string_view catalog_name) const;
+  OperationResult<DirectorScheduleResourceSpec> GetDirectorScheduleResourceSpec(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view schedule_name) const;
   OperationResult<DirectorCounterResourceSpec> GetDirectorCounterResourceSpec(
       std::string_view deployment_id,
       std::string_view director_name,

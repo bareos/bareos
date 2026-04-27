@@ -11288,6 +11288,34 @@ ServiceState::GetDirectorCatalogResourceSpec(
   return {.value = ToDirectorCatalogResourceSpec(context.value->content)};
 }
 
+OperationResult<DirectorScheduleResourceSpec>
+ServiceState::GetDirectorScheduleResourceSpec(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view schedule_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorScheduleWriteContext(*director_config.value, schedule_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director schedule '" + std::string{schedule_name}
+                     + "' not found."};
+  }
+
+  return {.value = DirectorScheduleResourceSpec{
+              .description = context.value->content.description,
+              .enabled = context.value->content.enabled,
+              .run_entries = context.value->content.run_entries,
+          }};
+}
+
 OperationResult<DirectorCounterResourceSpec>
 ServiceState::GetDirectorCounterResourceSpec(
     std::string_view deployment_id,

@@ -5504,6 +5504,18 @@ const char* kTestUiHtmlTemplate = R"HTML(
             `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/catalogs/${encodedResource}/prefill`,
         };
       }
+      if (normalizedComponent === 'director' && normalizedType === 'schedule') {
+        return {
+          formId: 'director-schedule-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            director_name: String(configName ?? ''),
+            schedule_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/schedules/${encodedResource}/prefill`,
+        };
+      }
       if (normalizedComponent === 'director' && normalizedType === 'counter') {
         return {
           formId: 'director-counter-form',
@@ -9590,6 +9602,16 @@ json_t* DirectorCatalogResourceSpecToJson(
   return object.release();
 }
 
+json_t* DirectorScheduleResourceSpecToJson(
+    const DirectorScheduleResourceSpec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "description", spec.description);
+  SetOptionalBool(object.get(), "enabled", spec.enabled);
+  SetOptionalStringArray(object.get(), "run_entries", spec.run_entries);
+  return object.release();
+}
+
 json_t* DirectorCounterResourceSpecToJson(
     const DirectorCounterResourceSpec& spec)
 {
@@ -11008,6 +11030,31 @@ http::response<http::string_body> HandleDirectorPoolPrefillRequest(
                   json_array_get(deployment_json.get(), 0));
   json_object_set_new(root.get(), "spec",
                       DirectorPoolResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDirectorSchedulePrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view schedule_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetDirectorScheduleResourceSpec(
+      deployment_id, director_name, schedule_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      DirectorScheduleResourceSpecToJson(*spec.value));
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
@@ -18815,6 +18862,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
       && path_parts[5] == "schedules" && request.method() == http::verb::put) {
     return HandleDeploymentDirectorSchedulePutRequest(
         state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 8 && path_parts[3] == "directors"
+      && path_parts[5] == "schedules" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleDirectorSchedulePrefillRequest(state, path_parts[2],
+                                                path_parts[4], path_parts[6]);
   }
   if (path_parts.size() == 7 && path_parts[3] == "directors"
       && path_parts[5] == "schedules"

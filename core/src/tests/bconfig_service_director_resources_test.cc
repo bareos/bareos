@@ -1450,6 +1450,15 @@ TEST(BconfigService, UpsertsDirectorScheduleResources)
   EXPECT_NE(created_text.find("Enabled = yes"), std::string::npos);
   EXPECT_NE(created_text.find("Run = Level=Full monthly 1st sat at 21:00"),
             std::string::npos);
+  auto created_spec = state.GetDirectorScheduleResourceSpec(
+      "prod", "bareos-dir", "ManagedSchedule");
+  ASSERT_TRUE(created_spec) << created_spec.error;
+  EXPECT_EQ(created_spec.value->description,
+            std::optional<std::string>{"Managed schedule"});
+  EXPECT_EQ(created_spec.value->enabled, std::optional<bool>{true});
+  ASSERT_TRUE(created_spec.value->run_entries.has_value());
+  EXPECT_EQ(*created_spec.value->run_entries,
+            std::vector<std::string>{"Level=Full monthly 1st sat at 21:00"});
 
   auto updated = state.UpsertDirectorScheduleResource(
       "prod", "bareos-dir", "Odd Weeks",
@@ -1462,6 +1471,15 @@ TEST(BconfigService, UpsertsDirectorScheduleResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("Enabled = yes"), std::string::npos);
   EXPECT_NE(updated_text.find("Run = w01/w02 sun at 23:10"), std::string::npos);
+  auto updated_spec = state.GetDirectorScheduleResourceSpec(
+      "prod", "bareos-dir", "Odd Weeks");
+  ASSERT_TRUE(updated_spec) << updated_spec.error;
+  EXPECT_EQ(updated_spec.value->description,
+            std::optional<std::string>{"Updated odd weeks"});
+  EXPECT_EQ(updated_spec.value->enabled, std::optional<bool>{true});
+  ASSERT_TRUE(updated_spec.value->run_entries.has_value());
+  EXPECT_EQ(*updated_spec.value->run_entries,
+            std::vector<std::string>{"w01/w02 sun at 23:10"});
 }
 
 TEST(BconfigService, UpsertsDirectorScheduleResourcesInSharedFiles)
@@ -1518,6 +1536,15 @@ TEST(BconfigService, UpsertsDirectorScheduleResourcesInSharedFiles)
   EXPECT_NE(shared_text.find("Enabled = yes"), std::string::npos);
   EXPECT_NE(shared_text.find("Run = w01/w02 sun at 23:10"), std::string::npos);
   EXPECT_NE(shared_text.find("Name = \"OtherSchedule\""), std::string::npos);
+  auto updated_spec = state.GetDirectorScheduleResourceSpec(
+      "prod", "bareos-dir", "Odd Weeks");
+  ASSERT_TRUE(updated_spec) << updated_spec.error;
+  EXPECT_EQ(updated_spec.value->description,
+            std::optional<std::string>{"Updated odd weeks"});
+  EXPECT_EQ(updated_spec.value->enabled, std::optional<bool>{true});
+  ASSERT_TRUE(updated_spec.value->run_entries.has_value());
+  EXPECT_EQ(*updated_spec.value->run_entries,
+            std::vector<std::string>{"w01/w02 sun at 23:10"});
 }
 
 TEST(BconfigService, DeletesDirectorScheduleResources)
