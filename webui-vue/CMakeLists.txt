@@ -47,6 +47,7 @@ execute_process(
 
 set(WEBUI_VUE_SRC "${CMAKE_CURRENT_SOURCE_DIR}")
 set(WEBUI_VUE_DIST "${CMAKE_CURRENT_BINARY_DIR}/dist")
+set(WEBUI_VUE_SOURCE_DIST "${WEBUI_VUE_SRC}/dist")
 set(WEBUI_VUE_PACKAGE_JSON "${WEBUI_VUE_SRC}/package.json")
 set(WEBUI_VUE_PACKAGE_LOCK "${WEBUI_VUE_SRC}/package-lock.json")
 set(WEBUI_VUE_BUILD_SCRIPT "${WEBUI_VUE_SRC}/build-dist.cmake")
@@ -63,6 +64,26 @@ file(
   OUTPUT "${WEBUI_VUE_NPM_MISSING_SCRIPT}"
   CONTENT
     "message(FATAL_ERROR \"npm executable not found. Install npm and re-run CMake to use bareos-webui-vue-build.\")\n"
+)
+set(WEBUI_VUE_INSTALL_CODE_TEMPLATE
+    [=[
+if(EXISTS "@WEBUI_VUE_SOURCE_DIST@/index.html")
+  set(webui_vue_install_dist "@WEBUI_VUE_SOURCE_DIST@")
+elseif(EXISTS "@WEBUI_VUE_DIST@/index.html")
+  set(webui_vue_install_dist "@WEBUI_VUE_DIST@")
+else()
+  message(
+    FATAL_ERROR
+      "Bareos WebUI Vue dist not found in @WEBUI_VUE_SOURCE_DIST@ or @WEBUI_VUE_DIST@. Generate it with \"cmake -P webui-vue/build-dist.cmake\" or \"cmake --build <builddir> --target bareos-webui-vue-build\" before install."
+  )
+endif()
+file(INSTALL DESTINATION "@WEBUI_VUE_DIR@" TYPE DIRECTORY FILES
+             "${webui_vue_install_dist}/"
+)
+]=]
+)
+string(CONFIGURE "${WEBUI_VUE_INSTALL_CODE_TEMPLATE}" WEBUI_VUE_INSTALL_CODE
+       @ONLY
 )
 
 file(GLOB_RECURSE WEBUI_VUE_BUILD_INPUTS CONFIGURE_DEPENDS
@@ -100,7 +121,7 @@ if(NPM_EXECUTABLE)
 
   add_custom_command(
     OUTPUT "${WEBUI_VUE_BUILD_STAMP}"
-    COMMAND ${CMAKE_COMMAND} -DDIST_DIR="${WEBUI_VUE_DIST}" -P
+    COMMAND ${CMAKE_COMMAND} -DDIST_DIR=${WEBUI_VUE_DIST} -P
             "${WEBUI_VUE_BUILD_SCRIPT}"
     COMMAND ${CMAKE_COMMAND} -E touch "${WEBUI_VUE_BUILD_STAMP}"
     DEPENDS "${WEBUI_VUE_AUDIT_STAMP}" ${WEBUI_VUE_BUILD_INPUTS}
@@ -119,11 +140,7 @@ else()
   add_custom_target(bareos-webui-vue-build DEPENDS bareos-webui-vue-audit)
 endif()
 
-install(
-  DIRECTORY ${WEBUI_VUE_DIST}/
-  DESTINATION ${WEBUI_VUE_DIR}
-  COMPONENT webui-vue
-)
+install(CODE "${WEBUI_VUE_INSTALL_CODE}" COMPONENT webui-vue)
 
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui-vue.conf
