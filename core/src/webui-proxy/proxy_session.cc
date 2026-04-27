@@ -154,8 +154,8 @@ void RunProxySession(int fd,
     return;
   }
 
-  const char* director_transport = director.UsesTlsPsk() ? "TLS-PSK"
-                                                          : "cleartext";
+  const char* director_transport
+      = director.UsesTlsPsk() ? "TLS-PSK" : "cleartext";
 
   fprintf(stderr, "[proxy] %s director transport: %s\n", peer.c_str(),
           director_transport);
@@ -203,6 +203,11 @@ void RunProxySession(int fd,
     }
 
     const char* req_type = json_string_value(json_object_get(req, "type"));
+    if (req_type && std::string(req_type) == "ping") {
+      json_decref(req);
+      ws.SendText(JsonObject({{"type", "pong"}}));
+      continue;
+    }
     if (!req_type || std::string(req_type) != "command") {
       ws.SendText(JsonObject(
           {{"type", "error"}, {"message", "Expected type=command"}}));

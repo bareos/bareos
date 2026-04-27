@@ -19,8 +19,9 @@
    02110-1301, USA.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { useAuthStore } from '../../src/stores/auth.js'
 import { useDirectorStore } from '../../src/stores/director.js'
 
 class FakeWebSocket {
@@ -58,9 +59,15 @@ class FakeWebSocket {
 
 describe('director store', () => {
   beforeEach(() => {
+    sessionStorage.clear()
     setActivePinia(createPinia())
     FakeWebSocket.instances = []
     vi.stubGlobal('WebSocket', FakeWebSocket)
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('sends director host and port during websocket auth', () => {
@@ -108,6 +115,62 @@ describe('director store', () => {
 
     expect(director.status).toBe('connected')
     expect(director.transport).toBe('cleartext')
+  })
+
+  it('sends keepalive pings after authentication', () => {
+    const director = useDirectorStore()
+
+    director.connect({
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        transport: 'cleartext',
+      }),
+    })
+
+    vi.advanceTimersByTime(20_000)
+
+    expect(JSON.parse(socket.sent[1])).toEqual({ type: 'ping' })
+  })
+
+  it('reconnects automatically after an unexpected close', () => {
+    const auth = useAuthStore()
+    const director = useDirectorStore()
+
+    auth.login('admin', 'bareos-dir', 'secret', 'dir.example.test', 19101)
+    director.connect(auth.getCredentials())
+
+    const firstSocket = FakeWebSocket.instances[0]
+    firstSocket.open()
+    firstSocket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        transport: 'cleartext',
+      }),
+    })
+
+    firstSocket.close()
+    vi.advanceTimersByTime(1_000)
+
+    const secondSocket = FakeWebSocket.instances[1]
+    expect(secondSocket).toBeDefined()
+    secondSocket.open()
+
+    expect(JSON.parse(secondSocket.sent[0])).toEqual({
+      type: 'auth',
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+      host: 'dir.example.test',
+      port: 19101,
+    })
   })
 
   it('uses default director connection values when optional settings are omitted', () => {

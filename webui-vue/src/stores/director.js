@@ -27,6 +27,8 @@ function defaultWsUrl() {
 }
 const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultWsUrl()
 const CMD_TIMEOUT_MS = 30_000
+const KEEPALIVE_INTERVAL_MS = 20_000
+const RECONNECT_DELAY_MS = 1_000
 
 export const useDirectorStore = defineStore('director', () => {
   const ws       = ref(null)
@@ -40,11 +42,55 @@ export const useDirectorStore = defineStore('director', () => {
   // Map of command id → { resolve, reject, timer }
   const _pending = new Map()
   let _cmdId = 0
+  let _keepaliveTimer = null
+  let _reconnectTimer = null
+  let _manualDisconnect = false
+  let _hasAuthenticated = false
+  let _lastCredentials = null
 
   // ── internal helpers ────────────────────────────────────────────────────────
 
   function _send(obj) {
     ws.value?.send(JSON.stringify(obj))
+  }
+
+  function _clearKeepalive() {
+    if (_keepaliveTimer) {
+      clearInterval(_keepaliveTimer)
+      _keepaliveTimer = null
+    }
+  }
+
+  function _startKeepalive() {
+    _clearKeepalive()
+    _keepaliveTimer = setInterval(() => {
+      if (!ws.value || ws.value.readyState !== WebSocket.OPEN) {
+        _clearKeepalive()
+        return
+      }
+      _send({ type: 'ping' })
+    }, KEEPALIVE_INTERVAL_MS)
+  }
+
+  function _clearReconnect() {
+    if (_reconnectTimer) {
+      clearTimeout(_reconnectTimer)
+      _reconnectTimer = null
+    }
+  }
+
+  function _scheduleReconnect() {
+    const auth = useAuthStore()
+    const creds = auth.getCredentials() ?? _lastCredentials
+
+    if (!creds?.password || _reconnectTimer || !_hasAuthenticated || _manualDisconnect) {
+      return
+    }
+
+    _reconnectTimer = setTimeout(() => {
+      _reconnectTimer = null
+      connect(creds)
+    }, RECONNECT_DELAY_MS)
   }
 
   function _rejectAll(reason) {
@@ -63,6 +109,14 @@ export const useDirectorStore = defineStore('director', () => {
       status.value = 'connected'
       errorMsg.value = null
       transport.value = msg.transport ?? null
+      _hasAuthenticated = true
+      _startKeepalive()
+      _clearReconnect()
+      _manualDisconnect = false
+      return
+    }
+
+    if (msg.type === 'pong') {
       return
     }
 
@@ -70,6 +124,7 @@ export const useDirectorStore = defineStore('director', () => {
       status.value = 'error'
       errorMsg.value = msg.message ?? 'Authentication failed'
       transport.value = null
+      _clearKeepalive()
       ws.value?.close()
       return
     }
@@ -107,6 +162,16 @@ export const useDirectorStore = defineStore('director', () => {
       return
     }
 
+    _manualDisconnect = false
+    _lastCredentials = {
+      username: credentials.username,
+      password: credentials.password,
+      director: credentials.director ?? DEFAULT_DIRECTOR_NAME,
+      host: credentials.host ?? DEFAULT_DIRECTOR_HOST,
+      port: credentials.port ?? DEFAULT_DIRECTOR_PORT,
+    }
+    _clearReconnect()
+    _clearKeepalive()
     status.value = 'connecting'
     errorMsg.value = null
     transport.value = null
@@ -129,21 +194,29 @@ export const useDirectorStore = defineStore('director', () => {
     socket.onmessage = _onMessage
 
     socket.onerror = () => {
+      _clearKeepalive()
       status.value = 'error'
       errorMsg.value = `Cannot connect to proxy at ${WS_URL}`
       _rejectAll('WebSocket error')
     }
 
     socket.onclose = () => {
+      _clearKeepalive()
       if (status.value === 'connected' || status.value === 'authenticating') {
         status.value = 'disconnected'
       }
       _rejectAll('WebSocket closed')
+      if (!_manualDisconnect) {
+        _scheduleReconnect()
+      }
     }
   }
 
   /** Close the WebSocket and clean up. */
   function disconnect() {
+    _manualDisconnect = true
+    _clearReconnect()
+    _clearKeepalive()
     _rejectAll('Disconnected')
     ws.value?.close()
     ws.value = null
