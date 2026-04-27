@@ -3896,5 +3896,117 @@ TEST(BconfigService, ServesDirectorProfilePrefillRouteOverHttp)
 #endif
 }
 
+TEST(BconfigService, ServesDirectorPoolPrefillRouteOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP prefill route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory state_root{MakeTempPath()};
+
+  {
+    ServiceState state{state_root.path()};
+
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    const auto source_fixture_root = FindFixtureRoot();
+    ASSERT_FALSE(source_fixture_root.empty());
+    std::filesystem::create_directories(source_root.path());
+    std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                          source_root.path() / "bareos-dir.d",
+                          std::filesystem::copy_options::recursive);
+
+    auto import_job
+        = state.CreateJob({.type = "import_configuration",
+                           .deployment_id = std::string{"prod"},
+                           .source_path = source_root.path().string()});
+    ASSERT_TRUE(import_job);
+    auto imported = WaitForJobTerminal(state, import_job.value->id);
+    ASSERT_TRUE(imported.has_value());
+    ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+    auto pool = state.UpsertDirectorPoolResource(
+        "prod", "bareos-dir", "ManagedPool",
+        {.pool_type = std::string{"Scratch"},
+         .label_format = std::string{"Managed-"},
+         .maximum_volumes = 7,
+         .maximum_volume_bytes = 123456,
+         .storages = std::vector<std::string>{"File"},
+         .use_catalog = true,
+         .recycle = false,
+         .file_retention = 172800,
+         .description = std::string{"HTTP-managed director pool"}});
+    ASSERT_TRUE(pool) << pool.error;
+  }
+
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto pool_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/pools/ManagedPool/prefill");
+  ASSERT_EQ(pool_response.status_code, 200u) << pool_response.body;
+  auto pool_json = ParseJson(pool_response.body);
+  ASSERT_NE(pool_json.get(), nullptr) << pool_response.body;
+  auto* pool_deployment = json_object_get(pool_json.get(), "deployment");
+  ASSERT_TRUE(json_is_object(pool_deployment));
+  auto* pool_deployment_id = json_object_get(pool_deployment, "id");
+  ASSERT_TRUE(json_is_string(pool_deployment_id));
+  EXPECT_STREQ(json_string_value(pool_deployment_id), "prod");
+  auto* pool_deployment_name = json_object_get(pool_deployment, "name");
+  ASSERT_TRUE(json_is_string(pool_deployment_name));
+  EXPECT_STREQ(json_string_value(pool_deployment_name), "Production");
+  auto* pool_spec = json_object_get(pool_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(pool_spec));
+  auto* pool_description = json_object_get(pool_spec, "description");
+  ASSERT_TRUE(json_is_string(pool_description));
+  EXPECT_STREQ(json_string_value(pool_description),
+               "HTTP-managed director pool");
+  auto* pool_type = json_object_get(pool_spec, "pool_type");
+  ASSERT_TRUE(json_is_string(pool_type));
+  EXPECT_STREQ(json_string_value(pool_type), "Scratch");
+  auto* pool_label_format = json_object_get(pool_spec, "label_format");
+  ASSERT_TRUE(json_is_string(pool_label_format));
+  EXPECT_STREQ(json_string_value(pool_label_format), "Managed-");
+  auto* pool_maximum_volumes = json_object_get(pool_spec, "maximum_volumes");
+  ASSERT_TRUE(json_is_integer(pool_maximum_volumes));
+  EXPECT_EQ(json_integer_value(pool_maximum_volumes), 7);
+  auto* pool_maximum_volume_bytes
+      = json_object_get(pool_spec, "maximum_volume_bytes");
+  ASSERT_TRUE(json_is_integer(pool_maximum_volume_bytes));
+  EXPECT_EQ(json_integer_value(pool_maximum_volume_bytes), 123456);
+  auto* pool_storages = json_object_get(pool_spec, "storages");
+  ASSERT_TRUE(json_is_array(pool_storages));
+  ASSERT_EQ(json_array_size(pool_storages), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(pool_storages, 0)), "File");
+  auto* pool_use_catalog = json_object_get(pool_spec, "use_catalog");
+  ASSERT_TRUE(json_is_boolean(pool_use_catalog));
+  EXPECT_TRUE(json_is_true(pool_use_catalog));
+  auto* pool_recycle = json_object_get(pool_spec, "recycle");
+  ASSERT_TRUE(json_is_boolean(pool_recycle));
+  EXPECT_TRUE(json_is_false(pool_recycle));
+  auto* pool_file_retention = json_object_get(pool_spec, "file_retention");
+  ASSERT_TRUE(json_is_integer(pool_file_retention));
+  EXPECT_EQ(json_integer_value(pool_file_retention), 172800);
+
+  const auto missing_pool_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/pools/MissingPool/prefill");
+  EXPECT_EQ(missing_pool_response.status_code, 400u);
+  EXPECT_NE(
+      missing_pool_response.body.find("director pool 'MissingPool' not found."),
+      std::string::npos);
+
+  const auto missing_deployment_response = server.Get(
+      "/v1/deployments/missing/directors/bareos-dir/pools/ManagedPool/prefill");
+  EXPECT_EQ(missing_deployment_response.status_code, 404u);
+  EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
+            std::string::npos);
+#endif
+}
+
 }  // namespace
 }  // namespace bconfig::service
