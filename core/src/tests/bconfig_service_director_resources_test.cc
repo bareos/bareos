@@ -2846,6 +2846,25 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
             std::string::npos);
   EXPECT_NE(created_text.find("Enabled = yes"), std::string::npos);
 
+  auto created_spec = state.GetDirectorJobDefsResourceSpec("prod", "bareos-dir",
+                                                           "ManagedJobDefs");
+  ASSERT_TRUE(created_spec) << created_spec.error;
+  EXPECT_EQ(created_spec.value->description, "Managed jobdefs");
+  EXPECT_EQ(created_spec.value->type, "Backup");
+  EXPECT_EQ(created_spec.value->protocol, "NDMP_BAREOS");
+  ASSERT_TRUE(created_spec.value->run_before_job_entries);
+  EXPECT_EQ(
+      *created_spec.value->run_before_job_entries,
+      (std::vector<std::string>{"/usr/lib/bareos/scripts/jobdefs-before"}));
+  ASSERT_TRUE(created_spec.value->runscript_blocks);
+  EXPECT_EQ(created_spec.value->runscript_blocks->size(), 1U);
+  EXPECT_EQ(created_spec.value->replace, "IfOlder");
+  EXPECT_EQ(created_spec.value->maximum_concurrent_jobs, 4);
+  ASSERT_TRUE(created_spec.value->fd_plugin_options);
+  EXPECT_EQ(*created_spec.value->fd_plugin_options,
+            (std::vector<std::string>{"fd=defs"}));
+  EXPECT_EQ(created_spec.value->always_incremental, true);
+
   const auto default_jobdefs_path
       = created.value->path / "bareos-dir.d/jobdefs/DefaultJob.conf";
   auto default_jobdefs_text = ReadTextFile(default_jobdefs_path);
@@ -2973,6 +2992,24 @@ TEST(BconfigService, UpsertsDirectorJobDefsResources)
   EXPECT_NE(updated_text.find("MaxFullConsolidations = 24"), std::string::npos);
   EXPECT_NE(updated_text.find("RunOnIncomingConnectInterval = 4800"),
             std::string::npos);
+
+  auto updated_spec = state.GetDirectorJobDefsResourceSpec("prod", "bareos-dir",
+                                                           "DefaultJob");
+  ASSERT_TRUE(updated_spec) << updated_spec.error;
+  EXPECT_EQ(updated_spec.value->description, "Updated default jobdefs");
+  EXPECT_EQ(updated_spec.value->full_backup_pool, "Full");
+  EXPECT_EQ(updated_spec.value->differential_backup_pool, "Differential");
+  ASSERT_TRUE(updated_spec.value->run_after_failed_job_entries);
+  EXPECT_EQ(*updated_spec.value->run_after_failed_job_entries,
+            (std::vector<std::string>{"/tmp/scripts/report_jobdefs_failure"}));
+  ASSERT_TRUE(updated_spec.value->runscript_blocks);
+  EXPECT_EQ(updated_spec.value->runscript_blocks->size(), 1U);
+  EXPECT_EQ(updated_spec.value->replace, "Never");
+  EXPECT_EQ(updated_spec.value->selection_type, "Volume");
+  ASSERT_TRUE(updated_spec.value->dir_plugin_options);
+  EXPECT_EQ(*updated_spec.value->dir_plugin_options,
+            (std::vector<std::string>{"dir=imported-defs"}));
+  EXPECT_EQ(updated_spec.value->max_concurrent_copies, 9);
 }
 
 TEST(BconfigService, UpsertsDirectorJobDefsResourcesInSharedFiles)

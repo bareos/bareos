@@ -10701,6 +10701,99 @@ DirectorFilesetResourceSpec ToDirectorFilesetResourceSpec(
   return spec;
 }
 
+template <typename Spec>
+Spec ToDirectorJobLikeResourceSpec(const DirectorJobContentSpec& content)
+{
+  Spec spec;
+  spec.description = content.description;
+  spec.type = content.type;
+  spec.backup_format = content.backup_format;
+  spec.protocol = content.protocol;
+  spec.level = content.level;
+  spec.messages = content.messages;
+  spec.storages = content.storages;
+  spec.pool = content.pool;
+  spec.full_backup_pool = content.full_backup_pool;
+  spec.virtual_full_backup_pool = content.virtual_full_backup_pool;
+  spec.incremental_backup_pool = content.incremental_backup_pool;
+  spec.differential_backup_pool = content.differential_backup_pool;
+  spec.next_pool = content.next_pool;
+  spec.client = content.client;
+  spec.fileset = content.fileset;
+  spec.schedule = content.schedule;
+  spec.verify_job = content.verify_job;
+  spec.catalog = content.catalog;
+  spec.jobdefs = content.jobdefs;
+  spec.run_entries = content.run_entries;
+  spec.run_before_job_entries = content.run_before_job_entries;
+  spec.run_after_job_entries = content.run_after_job_entries;
+  spec.run_after_failed_job_entries = content.run_after_failed_job_entries;
+  spec.client_run_before_job_entries = content.client_run_before_job_entries;
+  spec.client_run_after_job_entries = content.client_run_after_job_entries;
+  spec.runscript_blocks = content.runscript_blocks;
+  spec.where = content.where;
+  spec.replace = content.replace;
+  spec.regex_where = content.regex_where;
+  spec.strip_prefix = content.strip_prefix;
+  spec.add_prefix = content.add_prefix;
+  spec.add_suffix = content.add_suffix;
+  spec.bootstrap = content.bootstrap;
+  spec.write_bootstrap = content.write_bootstrap;
+  spec.write_verify_list = content.write_verify_list;
+  spec.maximum_bandwidth = content.maximum_bandwidth;
+  spec.max_run_sched_time = content.max_run_sched_time;
+  spec.max_run_time = content.max_run_time;
+  spec.full_max_runtime = content.full_max_runtime;
+  spec.incremental_max_runtime = content.incremental_max_runtime;
+  spec.differential_max_runtime = content.differential_max_runtime;
+  spec.max_wait_time = content.max_wait_time;
+  spec.max_start_delay = content.max_start_delay;
+  spec.max_full_interval = content.max_full_interval;
+  spec.max_virtual_full_interval = content.max_virtual_full_interval;
+  spec.max_diff_interval = content.max_diff_interval;
+  spec.prefix_links = content.prefix_links;
+  spec.prune_jobs = content.prune_jobs;
+  spec.prune_files = content.prune_files;
+  spec.prune_volumes = content.prune_volumes;
+  spec.purge_migration_job = content.purge_migration_job;
+  spec.spool_attributes = content.spool_attributes;
+  spec.spool_data = content.spool_data;
+  spec.spool_size = content.spool_size;
+  spec.rerun_failed_levels = content.rerun_failed_levels;
+  spec.prefer_mounted_volumes = content.prefer_mounted_volumes;
+  spec.maximum_concurrent_jobs = content.maximum_concurrent_jobs;
+  spec.reschedule_on_error = content.reschedule_on_error;
+  spec.reschedule_interval = content.reschedule_interval;
+  spec.reschedule_times = content.reschedule_times;
+  spec.priority = content.priority;
+  spec.allow_mixed_priority = content.allow_mixed_priority;
+  spec.selection_type = content.selection_type;
+  spec.selection_pattern = content.selection_pattern;
+  spec.accurate = content.accurate;
+  spec.allow_duplicate_jobs = content.allow_duplicate_jobs;
+  spec.allow_higher_duplicates = content.allow_higher_duplicates;
+  spec.cancel_lower_level_duplicates = content.cancel_lower_level_duplicates;
+  spec.cancel_queued_duplicates = content.cancel_queued_duplicates;
+  spec.cancel_running_duplicates = content.cancel_running_duplicates;
+  spec.save_file_history = content.save_file_history;
+  spec.file_history_size = content.file_history_size;
+  spec.fd_plugin_options = content.fd_plugin_options;
+  spec.sd_plugin_options = content.sd_plugin_options;
+  spec.dir_plugin_options = content.dir_plugin_options;
+  spec.max_concurrent_copies = content.max_concurrent_copies;
+  spec.always_incremental = content.always_incremental;
+  spec.always_incremental_job_retention
+      = content.always_incremental_job_retention;
+  spec.always_incremental_keep_number = content.always_incremental_keep_number;
+  spec.always_incremental_max_full_age
+      = content.always_incremental_max_full_age;
+  spec.max_full_consolidations = content.max_full_consolidations;
+  spec.run_on_incoming_connect_interval
+      = content.run_on_incoming_connect_interval;
+  spec.enabled = content.enabled;
+  return spec;
+}
+
 OperationResult<ClientDirectorStubSpec> ServiceState::GetClientDirectorStubSpec(
     std::string_view deployment_id,
     std::string_view client_name,
@@ -11374,6 +11467,31 @@ ServiceState::GetDirectorFilesetResourceSpec(
   }
 
   return {.value = ToDirectorFilesetResourceSpec(context.value->content)};
+}
+
+OperationResult<DirectorJobDefsResourceSpec>
+ServiceState::GetDirectorJobDefsResourceSpec(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view jobdefs_name) const
+{
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorJobDefsWriteContext(*director_config.value, jobdefs_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                     + "' not found."};
+  }
+
+  return {.value = ToDirectorJobLikeResourceSpec<DirectorJobDefsResourceSpec>(
+              context.value->content)};
 }
 
 OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(

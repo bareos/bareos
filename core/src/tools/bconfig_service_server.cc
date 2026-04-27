@@ -5540,6 +5540,18 @@ const char* kTestUiHtmlTemplate = R"HTML(
             `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/filesets/${encodedResource}/prefill`,
         };
       }
+      if (normalizedComponent === 'director' && normalizedType === 'jobdefs') {
+        return {
+          formId: 'director-jobdefs-form',
+          identifiers: {
+            deployment_id: String(deploymentId ?? ''),
+            director_name: String(configName ?? ''),
+            jobdefs_name: String(resourceName ?? ''),
+          },
+          endpoint:
+            `/v1/deployments/${encodedDeployment}/directors/${encodedConfig}/jobdefs/${encodedResource}/prefill`,
+        };
+      }
       if (normalizedComponent === 'storage' && normalizedType === 'device') {
         return {
           formId: 'storage-device-form',
@@ -9649,6 +9661,130 @@ json_t* DirectorFilesetResourceSpecToJson(
   return object.release();
 }
 
+template <typename Spec>
+json_t* DirectorJobLikeResourceSpecToJson(const Spec& spec)
+{
+  auto object = MakeJson(json_object());
+  SetOptionalString(object.get(), "description", spec.description);
+  SetOptionalString(object.get(), "type", spec.type);
+  SetOptionalString(object.get(), "backup_format", spec.backup_format);
+  SetOptionalString(object.get(), "protocol", spec.protocol);
+  SetOptionalString(object.get(), "level", spec.level);
+  SetOptionalString(object.get(), "messages", spec.messages);
+  SetOptionalStringArray(object.get(), "storages", spec.storages);
+  SetOptionalString(object.get(), "pool", spec.pool);
+  SetOptionalString(object.get(), "full_backup_pool", spec.full_backup_pool);
+  SetOptionalString(object.get(), "virtual_full_backup_pool",
+                    spec.virtual_full_backup_pool);
+  SetOptionalString(object.get(), "incremental_backup_pool",
+                    spec.incremental_backup_pool);
+  SetOptionalString(object.get(), "differential_backup_pool",
+                    spec.differential_backup_pool);
+  SetOptionalString(object.get(), "next_pool", spec.next_pool);
+  SetOptionalString(object.get(), "client", spec.client);
+  SetOptionalString(object.get(), "fileset", spec.fileset);
+  SetOptionalString(object.get(), "schedule", spec.schedule);
+  SetOptionalString(object.get(), "verify_job", spec.verify_job);
+  SetOptionalString(object.get(), "catalog", spec.catalog);
+  SetOptionalString(object.get(), "jobdefs", spec.jobdefs);
+  SetOptionalStringArray(object.get(), "run_entries", spec.run_entries);
+  SetOptionalStringArray(object.get(), "run_before_job_entries",
+                         spec.run_before_job_entries);
+  SetOptionalStringArray(object.get(), "run_after_job_entries",
+                         spec.run_after_job_entries);
+  SetOptionalStringArray(object.get(), "run_after_failed_job_entries",
+                         spec.run_after_failed_job_entries);
+  SetOptionalStringArray(object.get(), "client_run_before_job_entries",
+                         spec.client_run_before_job_entries);
+  SetOptionalStringArray(object.get(), "client_run_after_job_entries",
+                         spec.client_run_after_job_entries);
+  SetOptionalStringArray(object.get(), "runscript_blocks",
+                         spec.runscript_blocks);
+  SetOptionalString(object.get(), "where", spec.where);
+  SetOptionalString(object.get(), "replace", spec.replace);
+  SetOptionalString(object.get(), "regex_where", spec.regex_where);
+  SetOptionalString(object.get(), "strip_prefix", spec.strip_prefix);
+  SetOptionalString(object.get(), "add_prefix", spec.add_prefix);
+  SetOptionalString(object.get(), "add_suffix", spec.add_suffix);
+  SetOptionalString(object.get(), "bootstrap", spec.bootstrap);
+  SetOptionalString(object.get(), "write_bootstrap", spec.write_bootstrap);
+  SetOptionalString(object.get(), "write_verify_list", spec.write_verify_list);
+  SetOptionalInteger(object.get(), "maximum_bandwidth", spec.maximum_bandwidth);
+  SetOptionalInteger(object.get(), "max_run_sched_time",
+                     spec.max_run_sched_time);
+  SetOptionalInteger(object.get(), "max_run_time", spec.max_run_time);
+  SetOptionalInteger(object.get(), "full_max_runtime", spec.full_max_runtime);
+  SetOptionalInteger(object.get(), "incremental_max_runtime",
+                     spec.incremental_max_runtime);
+  SetOptionalInteger(object.get(), "differential_max_runtime",
+                     spec.differential_max_runtime);
+  SetOptionalInteger(object.get(), "max_wait_time", spec.max_wait_time);
+  SetOptionalInteger(object.get(), "max_start_delay", spec.max_start_delay);
+  SetOptionalInteger(object.get(), "max_full_interval", spec.max_full_interval);
+  SetOptionalInteger(object.get(), "max_virtual_full_interval",
+                     spec.max_virtual_full_interval);
+  SetOptionalInteger(object.get(), "max_diff_interval", spec.max_diff_interval);
+  SetOptionalBool(object.get(), "prefix_links", spec.prefix_links);
+  SetOptionalBool(object.get(), "prune_jobs", spec.prune_jobs);
+  SetOptionalBool(object.get(), "prune_files", spec.prune_files);
+  SetOptionalBool(object.get(), "prune_volumes", spec.prune_volumes);
+  SetOptionalBool(object.get(), "purge_migration_job",
+                  spec.purge_migration_job);
+  SetOptionalBool(object.get(), "spool_attributes", spec.spool_attributes);
+  SetOptionalBool(object.get(), "spool_data", spec.spool_data);
+  SetOptionalInteger(object.get(), "spool_size", spec.spool_size);
+  SetOptionalBool(object.get(), "rerun_failed_levels",
+                  spec.rerun_failed_levels);
+  SetOptionalBool(object.get(), "prefer_mounted_volumes",
+                  spec.prefer_mounted_volumes);
+  SetOptionalInteger(object.get(), "maximum_concurrent_jobs",
+                     spec.maximum_concurrent_jobs);
+  SetOptionalBool(object.get(), "reschedule_on_error",
+                  spec.reschedule_on_error);
+  SetOptionalInteger(object.get(), "reschedule_interval",
+                     spec.reschedule_interval);
+  SetOptionalInteger(object.get(), "reschedule_times", spec.reschedule_times);
+  SetOptionalInteger(object.get(), "priority", spec.priority);
+  SetOptionalBool(object.get(), "allow_mixed_priority",
+                  spec.allow_mixed_priority);
+  SetOptionalString(object.get(), "selection_type", spec.selection_type);
+  SetOptionalString(object.get(), "selection_pattern", spec.selection_pattern);
+  SetOptionalBool(object.get(), "accurate", spec.accurate);
+  SetOptionalBool(object.get(), "allow_duplicate_jobs",
+                  spec.allow_duplicate_jobs);
+  SetOptionalBool(object.get(), "allow_higher_duplicates",
+                  spec.allow_higher_duplicates);
+  SetOptionalBool(object.get(), "cancel_lower_level_duplicates",
+                  spec.cancel_lower_level_duplicates);
+  SetOptionalBool(object.get(), "cancel_queued_duplicates",
+                  spec.cancel_queued_duplicates);
+  SetOptionalBool(object.get(), "cancel_running_duplicates",
+                  spec.cancel_running_duplicates);
+  SetOptionalBool(object.get(), "save_file_history", spec.save_file_history);
+  SetOptionalInteger(object.get(), "file_history_size", spec.file_history_size);
+  SetOptionalStringArray(object.get(), "fd_plugin_options",
+                         spec.fd_plugin_options);
+  SetOptionalStringArray(object.get(), "sd_plugin_options",
+                         spec.sd_plugin_options);
+  SetOptionalStringArray(object.get(), "dir_plugin_options",
+                         spec.dir_plugin_options);
+  SetOptionalInteger(object.get(), "max_concurrent_copies",
+                     spec.max_concurrent_copies);
+  SetOptionalBool(object.get(), "always_incremental", spec.always_incremental);
+  SetOptionalInteger(object.get(), "always_incremental_job_retention",
+                     spec.always_incremental_job_retention);
+  SetOptionalInteger(object.get(), "always_incremental_keep_number",
+                     spec.always_incremental_keep_number);
+  SetOptionalInteger(object.get(), "always_incremental_max_full_age",
+                     spec.always_incremental_max_full_age);
+  SetOptionalInteger(object.get(), "max_full_consolidations",
+                     spec.max_full_consolidations);
+  SetOptionalInteger(object.get(), "run_on_incoming_connect_interval",
+                     spec.run_on_incoming_connect_interval);
+  SetOptionalBool(object.get(), "enabled", spec.enabled);
+  return object.release();
+}
+
 json_t* ClientDirectorStubSpecToJson(const ClientDirectorStubSpec& spec)
 {
   auto object = MakeJson(json_object());
@@ -11130,6 +11266,31 @@ http::response<http::string_body> HandleDirectorFilesetPrefillRequest(
                   json_array_get(deployment_json.get(), 0));
   json_object_set_new(root.get(), "spec",
                       DirectorFilesetResourceSpecToJson(*spec.value));
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDirectorJobDefsPrefillRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view jobdefs_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto spec = state.GetDirectorJobDefsResourceSpec(deployment_id, director_name,
+                                                   jobdefs_name);
+  if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "spec",
+                      DirectorJobLikeResourceSpecToJson(*spec.value));
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
@@ -18977,6 +19138,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
       && path_parts[5] == "jobdefs" && request.method() == http::verb::put) {
     return HandleDeploymentDirectorJobDefsPutRequest(
         state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 8 && path_parts[3] == "directors"
+      && path_parts[5] == "jobdefs" && path_parts[7] == "prefill"
+      && request.method() == http::verb::get) {
+    return HandleDirectorJobDefsPrefillRequest(state, path_parts[2],
+                                               path_parts[4], path_parts[6]);
   }
   if (path_parts.size() == 7 && path_parts[3] == "directors"
       && path_parts[5] == "jobdefs"
