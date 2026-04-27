@@ -16,6 +16,18 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Job List') }}</span>
             <q-space />
+            <q-select
+              v-model="statusFilter"
+              dense
+              outlined
+              clearable
+              emit-value
+              map-options
+              :options="jobStatusOptions"
+              :label="t('Status')"
+              class="q-mr-sm"
+              style="width:200px"
+            />
             <q-input v-model="search" dense outlined :placeholder="t('Search…')" class="q-mr-sm" style="width:200px" clearable>
               <template #prepend><q-icon name="search" /></template>
             </q-input>
@@ -337,6 +349,7 @@ import { directorCollection, normaliseJob } from '../composables/useDirectorFetc
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatNumber } from '../utils/locales.js'
+import { normaliseJobStatusFilter, withJobsStatusFilterQuery } from '../utils/jobs.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
@@ -350,9 +363,13 @@ const settings = useSettingsStore()
 const { t } = useI18n()
 const tab          = ref(route.query.action || 'list')
 const search       = ref(route.query.search || '')
-const statusFilter = ref(route.query.status || '')
+const statusFilter = ref(normaliseJobStatusFilter(route.query.status))
 const fmtBytes  = formatBytes
 const fmtSpeed  = formatSpeed
+const jobStatusOptions = computed(() => Object.entries(jobStatusMap).map(([value, meta]) => ({
+  value,
+  label: t(meta.label),
+})))
 
 function quoteDirectorString(value) {
   return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
@@ -752,7 +769,18 @@ watch(() => director.isConnected, (connected) => {
   }
 })
 
-watch(statusFilter, () => {
+watch(() => route.query.status, (value) => {
+  const next = normaliseJobStatusFilter(value)
+  if (statusFilter.value !== next) {
+    statusFilter.value = next
+  }
+})
+
+watch(statusFilter, (next) => {
+  const query = withJobsStatusFilterQuery(route.query, next)
+  if (query.status !== route.query.status) {
+    router.replace({ path: route.path, query })
+  }
   pagination.value = { ...pagination.value, page: 1 }
   fetchPage()
 })
