@@ -1475,5 +1475,200 @@ TEST(BconfigService, SyncsDirectorStorageResourcesIntoStorageDaemonFiles)
             std::string::npos);
 }
 
+TEST(BconfigService, ServesDirectorPrefillRoutesOverHttp)
+{
+#if HAVE_WIN32
+  GTEST_SKIP() << "HTTP prefill route coverage is only implemented on POSIX.";
+#else
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory state_root{MakeTempPath()};
+
+  {
+    ServiceState state{state_root.path()};
+
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    const auto source_fixture_root = FindFixtureRoot();
+    ASSERT_FALSE(source_fixture_root.empty());
+    std::filesystem::create_directories(source_root.path());
+    std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                          source_root.path() / "bareos-dir.d",
+                          std::filesystem::copy_options::recursive);
+    WriteTextFile(source_root.path() / "bareos-sd.d/storage/bareos-sd.conf",
+                  "Storage {\n"
+                  "  Name = \"bareos-sd\"\n"
+                  "}\n");
+
+    auto import_job
+        = state.CreateJob({.type = "import_configuration",
+                           .deployment_id = std::string{"prod"},
+                           .source_path = source_root.path().string()});
+    ASSERT_TRUE(import_job);
+    auto imported = WaitForJobTerminal(state, import_job.value->id);
+    ASSERT_TRUE(imported.has_value());
+    ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+    auto daemon = state.UpsertDirectorDaemonResource(
+        "prod", "bareos-dir",
+        {.address = std::string{"192.0.2.44"},
+         .source_addresses
+         = std::vector<std::string>{"192.0.2.54", "198.51.100.54"},
+         .port = 19101,
+         .maximum_console_connections = 31,
+         .description = std::string{"HTTP-managed director daemon"},
+         .auditing = true,
+         .plugin_names = std::vector<std::string>{"python"},
+         .messages = std::string{"Standard"}});
+    ASSERT_TRUE(daemon) << daemon.error;
+
+    auto client = state.UpsertDirectorClientResource(
+        "prod", "bareos-dir", "http-client-fd",
+        {.address = std::string{"client-http.example.com"},
+         .port = 19102,
+         .catalog = std::string{"MyCatalog"},
+         .password = std::string{"[md5]0123456789abcdef0123456789abcdef"},
+         .connection_from_client_to_director = true,
+         .maximum_bandwidth_per_job = 2048,
+         .description = std::string{"HTTP-managed director client"}});
+    ASSERT_TRUE(client) << client.error;
+
+    auto storage = state.UpsertDirectorStorageResource(
+        "prod", "bareos-dir", "ManagedStorage",
+        {.address = std::string{"storage-http.example.com"},
+         .port = 19103,
+         .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
+         .device = std::string{"ManagedStorageDevice"},
+         .media_type = std::string{"File"},
+         .heartbeat_interval = 60,
+         .maximum_bandwidth_per_job = 4096,
+         .archive_device = std::string{"/srv/bareos/storage-http"},
+         .device_type = std::string{"file"},
+         .description = std::string{"HTTP-managed director storage"}});
+    ASSERT_TRUE(storage) << storage.error;
+  }
+
+  ScopedBconfigServiceServer server{state_root.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto daemon_response
+      = server.Get("/v1/deployments/prod/directors/bareos-dir/prefill");
+  ASSERT_EQ(daemon_response.status_code, 200u) << daemon_response.body;
+  auto daemon_json = ParseJson(daemon_response.body);
+  ASSERT_NE(daemon_json.get(), nullptr) << daemon_response.body;
+  auto* daemon_deployment = json_object_get(daemon_json.get(), "deployment");
+  ASSERT_TRUE(json_is_object(daemon_deployment));
+  auto* daemon_deployment_id = json_object_get(daemon_deployment, "id");
+  ASSERT_TRUE(json_is_string(daemon_deployment_id));
+  EXPECT_STREQ(json_string_value(daemon_deployment_id), "prod");
+  auto* daemon_deployment_name = json_object_get(daemon_deployment, "name");
+  ASSERT_TRUE(json_is_string(daemon_deployment_name));
+  EXPECT_STREQ(json_string_value(daemon_deployment_name), "Production");
+  auto* daemon_spec = json_object_get(daemon_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(daemon_spec));
+  auto* daemon_description = json_object_get(daemon_spec, "description");
+  ASSERT_TRUE(json_is_string(daemon_description));
+  EXPECT_STREQ(json_string_value(daemon_description),
+               "HTTP-managed director daemon");
+  auto* daemon_messages = json_object_get(daemon_spec, "messages");
+  ASSERT_TRUE(json_is_string(daemon_messages));
+  EXPECT_STREQ(json_string_value(daemon_messages), "Standard");
+  auto* daemon_port = json_object_get(daemon_spec, "port");
+  ASSERT_TRUE(json_is_integer(daemon_port));
+  EXPECT_EQ(json_integer_value(daemon_port), 19101);
+  auto* daemon_source_addresses
+      = json_object_get(daemon_spec, "source_addresses");
+  ASSERT_TRUE(json_is_array(daemon_source_addresses));
+  ASSERT_EQ(json_array_size(daemon_source_addresses), 2u);
+  EXPECT_STREQ(json_string_value(json_array_get(daemon_source_addresses, 1)),
+               "198.51.100.54");
+  auto* daemon_plugin_names = json_object_get(daemon_spec, "plugin_names");
+  ASSERT_TRUE(json_is_array(daemon_plugin_names));
+  ASSERT_EQ(json_array_size(daemon_plugin_names), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(daemon_plugin_names, 0)),
+               "python");
+  auto* daemon_auditing = json_object_get(daemon_spec, "auditing");
+  ASSERT_TRUE(json_is_boolean(daemon_auditing));
+  EXPECT_TRUE(json_is_true(daemon_auditing));
+
+  const auto client_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/clients/http-client-fd/"
+      "prefill");
+  ASSERT_EQ(client_response.status_code, 200u) << client_response.body;
+  auto client_json = ParseJson(client_response.body);
+  ASSERT_NE(client_json.get(), nullptr) << client_response.body;
+  auto* client_spec = json_object_get(client_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(client_spec));
+  auto* client_address = json_object_get(client_spec, "address");
+  ASSERT_TRUE(json_is_string(client_address));
+  EXPECT_STREQ(json_string_value(client_address), "client-http.example.com");
+  auto* client_catalog = json_object_get(client_spec, "catalog");
+  ASSERT_TRUE(json_is_string(client_catalog));
+  EXPECT_STREQ(json_string_value(client_catalog), "MyCatalog");
+  auto* client_port = json_object_get(client_spec, "port");
+  ASSERT_TRUE(json_is_integer(client_port));
+  EXPECT_EQ(json_integer_value(client_port), 19102);
+  auto* client_connection
+      = json_object_get(client_spec, "connection_from_client_to_director");
+  ASSERT_TRUE(json_is_boolean(client_connection));
+  EXPECT_TRUE(json_is_true(client_connection));
+  auto* client_bandwidth
+      = json_object_get(client_spec, "maximum_bandwidth_per_job");
+  ASSERT_TRUE(json_is_integer(client_bandwidth));
+  EXPECT_EQ(json_integer_value(client_bandwidth), 2048);
+  auto* client_description = json_object_get(client_spec, "description");
+  ASSERT_TRUE(json_is_string(client_description));
+  EXPECT_STREQ(json_string_value(client_description),
+               "HTTP-managed director client");
+
+  const auto storage_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/storages/ManagedStorage/"
+      "prefill");
+  ASSERT_EQ(storage_response.status_code, 200u) << storage_response.body;
+  auto storage_json = ParseJson(storage_response.body);
+  ASSERT_NE(storage_json.get(), nullptr) << storage_response.body;
+  auto* storage_spec = json_object_get(storage_json.get(), "spec");
+  ASSERT_TRUE(json_is_object(storage_spec));
+  auto* storage_address = json_object_get(storage_spec, "address");
+  ASSERT_TRUE(json_is_string(storage_address));
+  EXPECT_STREQ(json_string_value(storage_address), "storage-http.example.com");
+  auto* storage_device = json_object_get(storage_spec, "device");
+  ASSERT_TRUE(json_is_string(storage_device));
+  EXPECT_STREQ(json_string_value(storage_device), "ManagedStorageDevice");
+  auto* storage_port = json_object_get(storage_spec, "port");
+  ASSERT_TRUE(json_is_integer(storage_port));
+  EXPECT_EQ(json_integer_value(storage_port), 19103);
+  auto* storage_heartbeat = json_object_get(storage_spec, "heartbeat_interval");
+  ASSERT_TRUE(json_is_integer(storage_heartbeat));
+  EXPECT_EQ(json_integer_value(storage_heartbeat), 60);
+  auto* storage_bandwidth
+      = json_object_get(storage_spec, "maximum_bandwidth_per_job");
+  ASSERT_TRUE(json_is_integer(storage_bandwidth));
+  EXPECT_EQ(json_integer_value(storage_bandwidth), 4096);
+  auto* storage_description = json_object_get(storage_spec, "description");
+  ASSERT_TRUE(json_is_string(storage_description));
+  EXPECT_STREQ(json_string_value(storage_description),
+               "HTTP-managed director storage");
+
+  const auto missing_client_response = server.Get(
+      "/v1/deployments/prod/directors/bareos-dir/clients/MissingClient/"
+      "prefill");
+  EXPECT_EQ(missing_client_response.status_code, 400u);
+  EXPECT_NE(missing_client_response.body.find(
+                "director client 'MissingClient' not found."),
+            std::string::npos);
+
+  const auto missing_deployment_response
+      = server.Get("/v1/deployments/missing/directors/bareos-dir/prefill");
+  EXPECT_EQ(missing_deployment_response.status_code, 404u);
+  EXPECT_NE(missing_deployment_response.body.find("deployment not found."),
+            std::string::npos);
+#endif
+}
+
 }  // namespace
 }  // namespace bconfig::service
