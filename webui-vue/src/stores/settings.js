@@ -1,10 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import {
-  DEFAULT_DIRECTOR_HOST,
-  DEFAULT_DIRECTOR_NAME,
-  DEFAULT_DIRECTOR_PORT,
-} from './auth.js'
+import { DEFAULT_DIRECTOR_NAME } from './auth.js'
 import { setI18nLocale } from '../i18n/index.js'
 import {
   applyDocumentLocale,
@@ -19,9 +15,8 @@ const DEFAULTS = {
   darkMode: false,
   relativeTime: false,  // show timestamps as relative ("2 hours ago") or absolute
   locale: detectPreferredLocale(),
-  directorHost: DEFAULT_DIRECTOR_HOST,
+  loginUsername: 'admin',
   directorName: DEFAULT_DIRECTOR_NAME,
-  directorPort: DEFAULT_DIRECTOR_PORT,
 }
 
 function loadFromStorage() {
@@ -39,9 +34,8 @@ export const useSettingsStore = defineStore('settings', () => {
   const darkMode        = ref(saved.darkMode)
   const relativeTime    = ref(saved.relativeTime)
   const locale          = ref(normalizeWebUiLocale(saved.locale))
-  const directorHost    = ref(saved.directorHost)
+  const loginUsername   = ref(saved.loginUsername)
   const directorName    = ref(saved.directorName)
-  const directorPort    = ref(saved.directorPort)
 
   function save() {
     localStorage.setItem(LS_KEY, JSON.stringify({
@@ -49,9 +43,8 @@ export const useSettingsStore = defineStore('settings', () => {
       darkMode:        darkMode.value,
       relativeTime:    relativeTime.value,
       locale:          locale.value,
-      directorHost:    directorHost.value,
+      loginUsername:   loginUsername.value,
       directorName:    directorName.value,
-      directorPort:    directorPort.value,
     }))
   }
 
@@ -62,9 +55,8 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(refreshInterval, save)
   watch(darkMode, save)
   watch(relativeTime, save)
-  watch(directorHost, save)
+  watch(loginUsername, save)
   watch(directorName, save)
-  watch(directorPort, save)
   watch(locale, (value) => {
     applyDocumentLocale(value)
     setI18nLocale(value)
@@ -76,9 +68,8 @@ export const useSettingsStore = defineStore('settings', () => {
     darkMode,
     relativeTime,
     locale,
-    directorHost,
+    loginUsername,
     directorName,
-    directorPort,
     setLocale,
   }
 })

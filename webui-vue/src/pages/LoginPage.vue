@@ -46,30 +46,19 @@
               class="q-mb-md rounded-borders"
             >
               <div class="q-pt-sm">
-                <q-input
-                  v-model="host"
-                  data-testid="login-host"
-                  :label="t('Director Host')"
-                  outlined dense
-                  class="q-mb-sm"
-                  :placeholder="t('localhost')"
-                  autocomplete="off"
-                >
-                  <template #append>
-                    <q-input
-                      v-model.number="port"
-                      data-testid="login-port"
-                      dense borderless
-                      style="width:60px"
-                      type="number"
-                      :min="1" :max="65535"
-                    />
-                  </template>
-                </q-input>
-                <q-input
+                <q-select
+                  v-if="directorOptions.length > 0"
                   v-model="directorRef"
                   data-testid="login-director"
-                  :label="t('Director Name')"
+                  :options="directorOptions"
+                  :label="t('Director')"
+                  outlined dense
+                />
+                <q-input
+                  v-else
+                  v-model="directorRef"
+                  data-testid="login-director"
+                  :label="t('Director')"
                   outlined dense
                 />
               </div>
@@ -100,7 +89,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -117,23 +106,37 @@ const settings = useSettingsStore()
 const router   = useRouter()
 const { t } = useI18n()
 
-const host = computed({
-  get: () => settings.directorHost,
-  set: (value) => { settings.directorHost = value },
-})
-const port = computed({
-  get: () => settings.directorPort,
-  set: (value) => { settings.directorPort = value },
+const username = computed({
+  get: () => settings.loginUsername,
+  set: (value) => { settings.loginUsername = value },
 })
 const directorRef = computed({
   get: () => settings.directorName,
   set: (value) => { settings.directorName = value },
 })
-const username  = ref('admin')
 const password  = ref('')
 const locale    = ref(settings.locale)
 const loading   = ref(false)
 const errorMsg  = ref(null)
+const directorOptions = computed(() => {
+  const options = [...director.availableDirectors]
+  if (directorRef.value && !options.includes(directorRef.value)) {
+    options.unshift(directorRef.value)
+  }
+  return options
+})
+
+onMounted(async () => {
+  try {
+    const available = await director.fetchAvailableDirectors()
+    if (available.length > 0 && !available.includes(directorRef.value)) {
+      directorRef.value = available[0]
+    }
+  } catch {
+    // Leave the manual director input available when the proxy list is not
+    // reachable.
+  }
+})
 
 async function doLogin() {
   loading.value = true
@@ -144,8 +147,6 @@ async function doLogin() {
     username:  username.value,
     password:  password.value,
     director:  directorRef.value,
-    host:      host.value,
-    port:      port.value,
   })
 
   // Wait up to 8 s for auth result
@@ -167,7 +168,7 @@ async function doLogin() {
   }
 
   settings.setLocale(locale.value)
-  auth.login(username.value, directorRef.value, password.value, host.value, port.value)
+  auth.login(username.value, directorRef.value, password.value)
   loading.value = false
   router.push({ name: 'dashboard' })
 }

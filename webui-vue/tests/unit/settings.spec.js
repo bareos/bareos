@@ -30,36 +30,32 @@ describe('settings store', () => {
     setActivePinia(createPinia())
   })
 
-  it('persists advanced director connection settings in local storage', async () => {
+  it('persists the last username and selected director in local storage', async () => {
     const settings = useSettingsStore()
 
-    settings.directorHost = 'dir.example.test'
+    settings.loginUsername = 'alice'
     settings.directorName = 'prod-dir'
-    settings.directorPort = 19101
 
     await nextTick()
 
     expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
       expect.objectContaining({
-        directorHost: 'dir.example.test',
+        loginUsername: 'alice',
         directorName: 'prod-dir',
-        directorPort: 19101,
       })
     )
   })
 
-  it('restores advanced director connection settings from local storage', () => {
+  it('restores the last username and selected director from local storage', () => {
     localStorage.setItem('bareos_settings', JSON.stringify({
-      directorHost: 'dir.example.test',
+      loginUsername: 'alice',
       directorName: 'prod-dir',
-      directorPort: 19101,
     }))
 
     setActivePinia(createPinia())
     const settings = useSettingsStore()
 
-    expect(settings.directorHost).toBe('dir.example.test')
+    expect(settings.loginUsername).toBe('alice')
     expect(settings.directorName).toBe('prod-dir')
-    expect(settings.directorPort).toBe(19101)
   })
 })

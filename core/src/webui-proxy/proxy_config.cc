@@ -211,3 +211,11 @@ DirectorTargetConfig ResolveDirectorTarget(
 
   return it->second;
 }
+
+std::vector<std::string> GetAllowedDirectorIds(const ProxyConfig& cfg)
+{
+  std::vector<std::string> ids;
+  ids.reserve(cfg.allowed_directors.size());
+  for (const auto& [id, _] : cfg.allowed_directors) { ids.push_back(id); }
+  return ids;
+}

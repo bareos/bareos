@@ -70,15 +70,13 @@ describe('director store', () => {
     vi.useRealTimers()
   })
 
-  it('sends director host and port during websocket auth', () => {
+  it('sends the selected director during websocket auth', () => {
     const director = useDirectorStore()
 
     director.connect({
       username: 'admin',
       password: 'secret',
       director: 'bareos-dir',
-      host: 'dir.example.test',
-      port: 19101,
     })
 
     const socket = FakeWebSocket.instances[0]
@@ -90,9 +88,27 @@ describe('director store', () => {
       username: 'admin',
       password: 'secret',
       director: 'bareos-dir',
-      host: 'dir.example.test',
-      port: 19101,
     })
+  })
+
+  it('loads the available directors from the proxy', async () => {
+    const director = useDirectorStore()
+
+    const loading = director.fetchAvailableDirectors()
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+
+    expect(JSON.parse(socket.sent[0])).toEqual({ type: 'list_directors' })
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'director_list',
+        directors: ['bareos-dir', 'bareos-dir-2'],
+      }),
+    })
+
+    await expect(loading).resolves.toEqual(['bareos-dir', 'bareos-dir-2'])
+    expect(director.availableDirectors).toEqual(['bareos-dir', 'bareos-dir-2'])
   })
 
   it('stores director transport from auth_ok', () => {
@@ -144,7 +160,7 @@ describe('director store', () => {
     const auth = useAuthStore()
     const director = useDirectorStore()
 
-    auth.login('admin', 'bareos-dir', 'secret', 'dir.example.test', 19101)
+    auth.login('admin', 'bareos-dir', 'secret')
     director.connect(auth.getCredentials())
 
     const firstSocket = FakeWebSocket.instances[0]
@@ -168,8 +184,6 @@ describe('director store', () => {
       username: 'admin',
       password: 'secret',
       director: 'bareos-dir',
-      host: 'dir.example.test',
-      port: 19101,
     })
   })
 
@@ -189,8 +203,6 @@ describe('director store', () => {
       username: 'admin',
       password: 'secret',
       director: 'bareos-dir',
-      host: 'localhost',
-      port: 9101,
     })
   })
 
@@ -198,7 +210,7 @@ describe('director store', () => {
     const auth = useAuthStore()
     const director = useDirectorStore()
 
-    auth.login('admin', 'bareos-dir', 'secret', 'dir.example.test', 19101)
+    auth.login('admin', 'bareos-dir', 'secret')
 
     const rawPromise = director.rawCall('messages')
     const socket = FakeWebSocket.instances[0]

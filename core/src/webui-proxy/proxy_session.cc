@@ -50,6 +50,24 @@ static std::string JsonObject(
   return result;
 }
 
+static std::string JsonDirectorList(const ProxyConfig& config)
+{
+  json_t* obj = json_object();
+  json_t* directors = json_array();
+
+  json_object_set_new(obj, "type", json_string("director_list"));
+  for (const auto& id : GetAllowedDirectorIds(config)) {
+    json_array_append_new(directors, json_string(id.c_str()));
+  }
+  json_object_set_new(obj, "directors", directors);
+
+  char* raw = json_dumps(obj, JSON_COMPACT);
+  json_decref(obj);
+  std::string result(raw);
+  free(raw);
+  return result;
+}
+
 // ---------------------------------------------------------------------------
 // Session implementation
 // ---------------------------------------------------------------------------
@@ -96,9 +114,16 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   }
 
   const char* type = json_string_value(json_object_get(auth_msg, "type"));
+  if (type && std::string(type) == "list_directors") {
+    ws.SendText(JsonDirectorList(config));
+    json_decref(auth_msg);
+    return;
+  }
   if (!type || std::string(type) != "auth") {
     ws.SendText(JsonObject(
-        {{"type", "error"}, {"message", "First message must be type=auth"}}));
+        {{"type", "error"},
+         {"message",
+          "First message must be type=auth or type=list_directors"}}));
     json_decref(auth_msg);
     return;
   }

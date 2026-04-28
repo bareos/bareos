@@ -24,6 +24,7 @@
 #include <map>
 #include <optional>
 #include <string>
+#include <vector>
 
 struct DirectorTargetConfig {
   std::string host{"localhost"};
@@ -47,5 +48,7 @@ DirectorTargetConfig ResolveDirectorTarget(
     const std::optional<std::string>& requested_director,
     const std::optional<std::string>& requested_host,
     const std::optional<int>& requested_port);
+
+std::vector<std::string> GetAllowedDirectorIds(const ProxyConfig& cfg);
 
 #endif  // BAREOS_WEBUI_PROXY_PROXY_CONFIG_H_

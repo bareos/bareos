@@ -124,6 +124,21 @@ TEST(ProxyConfig, ResolvesAllowedDirectorById)
   EXPECT_EQ(target.name, "bareos-dir");
 }
 
+TEST(ProxyConfig, ListsAllowedDirectorIds)
+{
+  ProxyConfig cfg;
+  cfg.allowed_directors.emplace(
+      "prod",
+      DirectorTargetConfig{
+          .host = "prod.example.test", .port = 19101, .name = "bareos-dir"});
+  cfg.allowed_directors.emplace(
+      "dr", DirectorTargetConfig{
+                .host = "dr.example.test", .port = 29101, .name = "dr-dir"});
+
+  EXPECT_EQ(GetAllowedDirectorIds(cfg),
+            std::vector<std::string>({"dr", "prod"}));
+}
+
 TEST(ProxyConfig, ResolvesSingleConfiguredDirectorWithoutDefault)
 {
   ProxyConfig cfg;

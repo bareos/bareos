@@ -32,22 +32,18 @@ describe('auth store', () => {
   it('persists login credentials for reconnects', () => {
     const auth = useAuthStore()
 
-    auth.login('admin', 'bareos-dir', 'secret', '127.0.0.1', 9101)
+    auth.login('admin', 'bareos-dir', 'secret')
 
     expect(auth.isLoggedIn).toBe(true)
     expect(JSON.parse(sessionStorage.getItem('bareos_user'))).toEqual({
       username: 'admin',
       director: 'bareos-dir',
-      host: '127.0.0.1',
-      port: 9101,
     })
     expect(sessionStorage.getItem('bareos_pass')).toBe('secret')
     expect(auth.getCredentials()).toEqual({
       username: 'admin',
       password: 'secret',
       director: 'bareos-dir',
-      host: '127.0.0.1',
-      port: 9101,
     })
   })
 
@@ -59,22 +55,18 @@ describe('auth store', () => {
     expect(JSON.parse(sessionStorage.getItem('bareos_user'))).toEqual({
       username: 'admin',
       director: 'bareos-dir',
-      host: 'localhost',
-      port: 9101,
     })
     expect(auth.getCredentials()).toEqual({
       username: 'admin',
       password: 'secret',
       director: 'bareos-dir',
-      host: 'localhost',
-      port: 9101,
     })
   })
 
   it('clears the stored session on logout', () => {
     const auth = useAuthStore()
 
-    auth.login('admin', 'bareos-dir', 'secret', '127.0.0.1', 9101)
+    auth.login('admin', 'bareos-dir', 'secret')
     auth.logout()
 
     expect(auth.isLoggedIn).toBe(false)

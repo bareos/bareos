@@ -15,9 +15,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import {
-  DEFAULT_DIRECTOR_HOST,
   DEFAULT_DIRECTOR_NAME,
-  DEFAULT_DIRECTOR_PORT,
   useAuthStore,
 } from './auth.js'
 
@@ -28,6 +26,7 @@ function defaultWsUrl() {
 const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultWsUrl()
 const CMD_TIMEOUT_MS = 30_000
 const RAW_CMD_TIMEOUT_MS = 300_000
+const DIRECTOR_LIST_TIMEOUT_MS = 5_000
 const KEEPALIVE_INTERVAL_MS = 20_000
 const RECONNECT_DELAY_MS = 1_000
 
@@ -37,6 +36,7 @@ export const useDirectorStore = defineStore('director', () => {
   const status   = ref('disconnected')
   const errorMsg = ref(null)
   const transport = ref(null)
+  const availableDirectors = ref([])
 
   const isConnected = computed(() => status.value === 'connected')
 
@@ -143,6 +143,51 @@ export const useDirectorStore = defineStore('director', () => {
     }
   }
 
+  function fetchAvailableDirectors() {
+    return new Promise((resolve, reject) => {
+      const sock = new WebSocket(WS_URL)
+      const timer = setTimeout(() => {
+        sock.close()
+        reject(new Error('Timed out while loading directors'))
+      }, DIRECTOR_LIST_TIMEOUT_MS)
+
+      sock.onopen = () => {
+        sock.send(JSON.stringify({ type: 'list_directors' }))
+      }
+
+      sock.onmessage = (event) => {
+        let msg
+        try { msg = JSON.parse(event.data) } catch {
+          clearTimeout(timer)
+          sock.close()
+          reject(new Error('Invalid director list response'))
+          return
+        }
+
+        if (msg.type !== 'director_list' || !Array.isArray(msg.directors)) {
+          clearTimeout(timer)
+          sock.close()
+          reject(new Error(msg.message ?? 'Failed to load directors'))
+          return
+        }
+
+        availableDirectors.value = [...msg.directors]
+        clearTimeout(timer)
+        sock.close()
+        resolve(availableDirectors.value)
+      }
+
+      sock.onerror = () => {
+        clearTimeout(timer)
+        reject(new Error(`Cannot connect to proxy at ${WS_URL}`))
+      }
+
+      sock.onclose = () => {
+        clearTimeout(timer)
+      }
+    })
+  }
+
   // ── public API ──────────────────────────────────────────────────────────────
 
   /**
@@ -151,9 +196,7 @@ export const useDirectorStore = defineStore('director', () => {
    * @param {object} credentials
    * @param {string} credentials.username
    * @param {string} credentials.password
-   * @param {string} credentials.director  director resource name
-   * @param {string} [credentials.host]    director host (default: localhost)
-   * @param {number} [credentials.port]    director port (default: 9101)
+   * @param {string} credentials.director  configured director id
    */
   function connect(credentials) {
     if (ws.value
@@ -168,8 +211,6 @@ export const useDirectorStore = defineStore('director', () => {
       username: credentials.username,
       password: credentials.password,
       director: credentials.director ?? DEFAULT_DIRECTOR_NAME,
-      host: credentials.host ?? DEFAULT_DIRECTOR_HOST,
-      port: credentials.port ?? DEFAULT_DIRECTOR_PORT,
     }
     _clearReconnect()
     _clearKeepalive()
@@ -187,8 +228,6 @@ export const useDirectorStore = defineStore('director', () => {
         username:  credentials.username,
         password:  credentials.password,
         director:  credentials.director ?? DEFAULT_DIRECTOR_NAME,
-        host:      credentials.host ?? DEFAULT_DIRECTOR_HOST,
-        port:      credentials.port ?? DEFAULT_DIRECTOR_PORT,
       })
     }
 
@@ -279,8 +318,6 @@ export const useDirectorStore = defineStore('director', () => {
           username: creds.username,
           password: creds.password,
           director: creds.director ?? DEFAULT_DIRECTOR_NAME,
-          host:     creds.host ?? DEFAULT_DIRECTOR_HOST,
-          port:     creds.port ?? DEFAULT_DIRECTOR_PORT,
         }))
       }
 
@@ -318,6 +355,15 @@ export const useDirectorStore = defineStore('director', () => {
   }
 
   return {
-    status, errorMsg, transport, isConnected, connect, disconnect, call, rawCall,
+    status,
+    errorMsg,
+    transport,
+    availableDirectors,
+    isConnected,
+    connect,
+    disconnect,
+    fetchAvailableDirectors,
+    call,
+    rawCall,
   }
 })
