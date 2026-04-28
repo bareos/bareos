@@ -100,13 +100,10 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  DEFAULT_DIRECTOR_HOST,
-  DEFAULT_DIRECTOR_NAME,
-  DEFAULT_DIRECTOR_PORT,
   useAuthStore,
 } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -120,9 +117,18 @@ const settings = useSettingsStore()
 const router   = useRouter()
 const { t } = useI18n()
 
-const host      = ref(DEFAULT_DIRECTOR_HOST)
-const port      = ref(DEFAULT_DIRECTOR_PORT)
-const directorRef = ref(DEFAULT_DIRECTOR_NAME)
+const host = computed({
+  get: () => settings.directorHost,
+  set: (value) => { settings.directorHost = value },
+})
+const port = computed({
+  get: () => settings.directorPort,
+  set: (value) => { settings.directorPort = value },
+})
+const directorRef = computed({
+  get: () => settings.directorName,
+  set: (value) => { settings.directorName = value },
+})
 const username  = ref('admin')
 const password  = ref('')
 const locale    = ref(settings.locale)
