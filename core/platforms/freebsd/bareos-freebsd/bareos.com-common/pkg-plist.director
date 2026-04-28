@@ -27,6 +27,8 @@
 lib/bareos/scripts/delete_catalog_backup
 lib/bareos/scripts/make_catalog_backup
 sbin/bareos-dir
+sbin/bareos-webui-proxy
 share/man/man8/bareos-dir.8.gz
 share/man/man8/bareos.8.gz
+@sample %%ETCDIR%%/bareos-webui-proxy.ini.sample
 etc/rc.d/bareos-dir

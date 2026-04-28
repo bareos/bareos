@@ -1011,6 +1011,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files webui-proxy
 %defattr(-,root,root,-)
 %{_sbindir}/bareos-webui-proxy
+%config(noreplace) %{_sysconfdir}/bareos/bareos-webui-proxy.ini
 %{_unitdir}/bareos-webui-proxy.service
 %endif
 
