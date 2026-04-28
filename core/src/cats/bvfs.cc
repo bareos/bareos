@@ -134,6 +134,7 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
 {
   Dmsg0(dbglevel, "UpdatePathHierarchyCache()\n");
   bool retval = false;
+  int updated_rows = 0;
   uint32_t num;
   char jobid[50];
   edit_uint64(JobId, jobid);
@@ -141,26 +142,24 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
   DbLocker _{this};
   StartTransaction(jcr);
 
-  Mmsg(cmd, "SELECT 1 FROM Job WHERE JobId = %s AND HasCache=1", jobid);
+  /* Claim the cache build atomically so concurrent .bvfs_update runs cannot
+   * both start populating PathVisibility for the same JobId. */
+  Mmsg(cmd, "UPDATE Job SET HasCache=-1 WHERE JobId=%s AND HasCache=0", jobid);
+  updated_rows = UpdateDb(jcr, cmd);
+  if (updated_rows < 0) { goto bail_out; }
+  if (updated_rows == 0) {
+    Mmsg(cmd, "SELECT 1 FROM Job WHERE JobId = %s AND HasCache=1", jobid);
+    if (!QueryDb(jcr, cmd)) { goto bail_out; }
 
-  if (!QueryDb(jcr, cmd) || SqlNumRows() > 0) {
-    Dmsg1(dbglevel, "Already computed %d\n", (uint32_t)JobId);
-    retval = true;
+    if (SqlNumRows() > 0) {
+      Dmsg1(dbglevel, "Already computed %d\n", (uint32_t)JobId);
+      retval = true;
+    } else {
+      Dmsg1(dbglevel, "already in progress %d\n", (uint32_t)JobId);
+      retval = false;
+    }
     goto bail_out;
   }
-
-  /* prevent from DB lock waits when already in progress */
-  Mmsg(cmd, "SELECT 1 FROM Job WHERE JobId = %s AND HasCache=-1", jobid);
-
-  if (!QueryDb(jcr, cmd) || SqlNumRows() > 0) {
-    Dmsg1(dbglevel, "already in progress %d\n", (uint32_t)JobId);
-    retval = false;
-    goto bail_out;
-  }
-
-  /* set HasCache to -1 in Job (in progress) */
-  Mmsg(cmd, "UPDATE Job SET HasCache=-1 WHERE JobId=%s", jobid);
-  UpdateDb(jcr, cmd);
 
   /* need to COMMIT here to ensure that other concurrent .bvfs_update runs
    * see the current HasCache value. A new transaction must only be started
