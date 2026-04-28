@@ -20,108 +20,147 @@
  */
 #include "proxy_config.h"
 
+#include <algorithm>
+#include <cctype>
+#include <fstream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
-#include <jansson.h>
-
 namespace {
 
-std::optional<std::string> OptionalString(json_t* obj, const char* key)
+std::string Trim(std::string value)
 {
-  json_t* value = json_object_get(obj, key);
-  if (!value) { return std::nullopt; }
-  if (!json_is_string(value)) {
-    throw std::runtime_error(std::string("Proxy config: '") + key
-                             + "' must be a string");
-  }
-  return std::string(json_string_value(value));
+  auto is_space = [](unsigned char ch) { return std::isspace(ch) != 0; };
+  value.erase(value.begin(),
+              std::find_if_not(value.begin(), value.end(), is_space));
+  value.erase(std::find_if_not(value.rbegin(), value.rend(), is_space).base(),
+              value.end());
+  return value;
 }
 
-std::optional<int> OptionalInteger(json_t* obj, const char* key)
+std::string StripQuotes(std::string value)
 {
-  json_t* value = json_object_get(obj, key);
-  if (!value) { return std::nullopt; }
-  if (!json_is_integer(value)) {
-    throw std::runtime_error(std::string("Proxy config: '") + key
-                             + "' must be an integer");
+  value = Trim(std::move(value));
+  if (value.size() >= 2 && value.front() == '"' && value.back() == '"') {
+    return value.substr(1, value.size() - 2);
   }
-  return static_cast<int>(json_integer_value(value));
+  return value;
 }
 
-std::optional<bool> OptionalBool(json_t* obj, const char* key)
+bool ParseBool(const std::string& value, const std::string& key)
 {
-  json_t* value = json_object_get(obj, key);
-  if (!value) { return std::nullopt; }
-  if (!json_is_boolean(value)) {
-    throw std::runtime_error(std::string("Proxy config: '") + key
-                             + "' must be a boolean");
+  const std::string lower = [&]() {
+    std::string normalized = value;
+    std::transform(normalized.begin(), normalized.end(), normalized.begin(),
+                   [](unsigned char ch) { return std::tolower(ch); });
+    return normalized;
+  }();
+
+  if (lower == "true" || lower == "yes" || lower == "on" || lower == "1") {
+    return true;
   }
-  return json_is_true(value);
+  if (lower == "false" || lower == "no" || lower == "off" || lower == "0") {
+    return false;
+  }
+  throw std::runtime_error("Proxy config: '" + key + "' must be a boolean");
 }
 
-DirectorTargetConfig ParseDirectorConfig(json_t* obj,
-                                         const DirectorTargetConfig& defaults,
-                                         const std::string& fallback_name)
+int ParseInteger(const std::string& value, const std::string& key)
 {
-  if (!json_is_object(obj)) {
-    throw std::runtime_error("Proxy config: director entries must be objects");
+  try {
+    size_t pos = 0;
+    const int parsed = std::stoi(value, &pos, 10);
+    if (pos != value.size()) { throw std::invalid_argument("trailing"); }
+    return parsed;
+  } catch (...) {
+    throw std::runtime_error("Proxy config: '" + key + "' must be an integer");
   }
-
-  DirectorTargetConfig result = defaults;
-  if (auto host = OptionalString(obj, "host")) { result.host = *host; }
-  if (auto port = OptionalInteger(obj, "port")) { result.port = *port; }
-
-  if (auto name = OptionalString(obj, "director_name")) {
-    result.name = *name;
-  } else if (!fallback_name.empty()) {
-    result.name = fallback_name;
-  }
-
-  if (auto tls_psk_disable = OptionalBool(obj, "tls_psk_disable")) {
-    result.tls_psk_disable = *tls_psk_disable;
-  }
-  result.tls_psk_require = !result.tls_psk_disable;
-  return result;
 }
 
-void ApplyParsedProxyConfig(json_t* root, ProxyConfig& cfg)
+void ApplyProxySetting(ProxyConfig& cfg,
+                       const std::string& key,
+                       const std::string& value)
 {
-  if (!json_is_object(root)) {
-    throw std::runtime_error("Proxy config: root value must be an object");
+  if (key == "ws_host") {
+    cfg.bind_host = value;
+  } else if (key == "ws_port") {
+    cfg.port = ParseInteger(value, key);
+  } else {
+    throw std::runtime_error("Proxy config: unknown key in [listen]: '" + key
+                             + "'");
   }
+}
 
-  if (auto bind_host = OptionalString(root, "ws_host")) {
-    cfg.bind_host = *bind_host;
+void ApplyDirectorSetting(DirectorTargetConfig& cfg,
+                          const std::string& key,
+                          const std::string& value)
+{
+  if (key == "host") {
+    cfg.host = value;
+  } else if (key == "port") {
+    cfg.port = ParseInteger(value, key);
+  } else if (key == "director_name") {
+    cfg.name = value;
+  } else if (key == "tls_psk_disable") {
+    cfg.tls_psk_disable = ParseBool(value, key);
+  } else {
+    throw std::runtime_error("Proxy config: unknown director key '" + key
+                             + "'");
   }
-  if (auto port = OptionalInteger(root, "ws_port")) { cfg.port = *port; }
-  if (auto default_allowed = OptionalString(root, "default_allowed_director")) {
-    cfg.default_allowed_director = *default_allowed;
-  }
+  cfg.tls_psk_require = !cfg.tls_psk_disable;
+}
 
-  if (json_t* director = json_object_get(root, "director")) {
-    cfg.director = ParseDirectorConfig(director, cfg.director, cfg.director.name);
-  }
+void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
+{
+  std::istringstream input(ini);
+  std::string line;
+  std::string current_section;
+  size_t line_number = 0;
 
-  if (json_t* allowed = json_object_get(root, "allowed_directors")) {
-    if (!json_is_object(allowed)) {
-      throw std::runtime_error(
-          "Proxy config: 'allowed_directors' must be an object");
+  while (std::getline(input, line)) {
+    ++line_number;
+    const auto comment_pos = line.find_first_of("#;");
+    if (comment_pos != std::string::npos) {
+      line = line.substr(0, comment_pos);
+    }
+    line = Trim(std::move(line));
+    if (line.empty()) { continue; }
+
+    if (line.front() == '[' && line.back() == ']') {
+      current_section = Trim(line.substr(1, line.size() - 2));
+      continue;
     }
 
-    cfg.allowed_directors.clear();
-    const char* key = nullptr;
-    json_t* value = nullptr;
-    json_object_foreach (allowed, key, value) {
-      cfg.allowed_directors.emplace(
-          key, ParseDirectorConfig(value, cfg.director, key));
+    const auto eq_pos = line.find('=');
+    if (eq_pos == std::string::npos) {
+      throw std::runtime_error("Proxy config: invalid line "
+                               + std::to_string(line_number));
     }
+
+    const std::string key = Trim(line.substr(0, eq_pos));
+    const std::string value = StripQuotes(line.substr(eq_pos + 1));
+
+    if (current_section == "listen") {
+      ApplyProxySetting(cfg, key, value);
+      continue;
+    }
+    if (current_section.rfind("director:", 0) == 0) {
+      const std::string director_id = current_section.substr(9);
+      auto [it, inserted]
+          = cfg.allowed_directors.emplace(director_id, DirectorTargetConfig{});
+      if (inserted) { it->second.name = director_id; }
+      ApplyDirectorSetting(it->second, key, value);
+      continue;
+    }
+
+    throw std::runtime_error("Proxy config: unknown section '" + current_section
+                             + "'");
   }
 
-  if (!cfg.default_allowed_director.empty()
-      && !cfg.allowed_directors.contains(cfg.default_allowed_director)) {
-    throw std::runtime_error("Proxy config: 'default_allowed_director' does not "
-                             "match any configured allowed director");
+  if (cfg.allowed_directors.empty()) {
+    throw std::runtime_error(
+        "Proxy config: at least one [director:<id>] section is required");
   }
 }
 
@@ -129,40 +168,18 @@ void ApplyParsedProxyConfig(json_t* root, ProxyConfig& cfg)
 
 void LoadProxyConfigFile(const std::string& path, ProxyConfig& cfg)
 {
-  json_error_t error{};
-  json_t* root = json_load_file(path.c_str(), 0, &error);
-  if (!root) {
-    throw std::runtime_error("Proxy config: cannot load '" + path + "': "
-                             + error.text);
+  std::ifstream input(path);
+  if (!input) {
+    throw std::runtime_error("Proxy config: cannot load '" + path + "'");
   }
-
-  try {
-    ApplyParsedProxyConfig(root, cfg);
-  } catch (...) {
-    json_decref(root);
-    throw;
-  }
-
-  json_decref(root);
+  std::ostringstream contents;
+  contents << input.rdbuf();
+  ApplyParsedProxyConfig(contents.str(), cfg);
 }
 
-void LoadProxyConfigFromString(const std::string& json, ProxyConfig& cfg)
+void LoadProxyConfigFromString(const std::string& ini, ProxyConfig& cfg)
 {
-  json_error_t error{};
-  json_t* root = json_loads(json.c_str(), 0, &error);
-  if (!root) {
-    throw std::runtime_error("Proxy config: cannot parse JSON: "
-                             + std::string(error.text));
-  }
-
-  try {
-    ApplyParsedProxyConfig(root, cfg);
-  } catch (...) {
-    json_decref(root);
-    throw;
-  }
-
-  json_decref(root);
+  ApplyParsedProxyConfig(ini, cfg);
 }
 
 DirectorTargetConfig ResolveDirectorTarget(
@@ -176,20 +193,9 @@ DirectorTargetConfig ResolveDirectorTarget(
         "Proxy config: host and port overrides are not allowed");
   }
 
-  if (cfg.allowed_directors.empty()) {
-    if (requested_director && !requested_director->empty()
-        && *requested_director != cfg.director.name) {
-      throw std::runtime_error("Proxy config: director '" + *requested_director
-                               + "' is not allowed");
-    }
-    return cfg.director;
-  }
-
   std::string director_id;
   if (requested_director && !requested_director->empty()) {
     director_id = *requested_director;
-  } else if (!cfg.default_allowed_director.empty()) {
-    director_id = cfg.default_allowed_director;
   } else if (cfg.allowed_directors.size() == 1) {
     director_id = cfg.allowed_directors.begin()->first;
   } else {

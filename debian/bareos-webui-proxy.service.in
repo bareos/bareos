@@ -12,8 +12,8 @@ StartLimitIntervalSec=1d
 [Service]
 Type=simple
 User=nobody
-# Configuration via JSON config file
-ExecStart=@sbindir@/bareos-webui-proxy --config @confdir@/bareos-webui-proxy.json
+# Configuration via INI config file
+ExecStart=@sbindir@/bareos-webui-proxy --config @confdir@/bareos-webui-proxy.ini
 # Restart on failure, wait 30 seconds
 Restart=on-failure
 RestartSec=30

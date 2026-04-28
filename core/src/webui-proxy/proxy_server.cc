@@ -121,17 +121,8 @@ void ProxyServer::Run()
 
   fprintf(stderr, "[proxy] listening on ws://%s:%d (%zu socket(s))\n",
           cfg_.bind_host.c_str(), cfg_.port, listen_fds_.size());
-  if (cfg_.allowed_directors.empty()) {
-    fprintf(stderr, "[proxy] configured director: %s @ %s:%d\n",
-            cfg_.director.name.c_str(), cfg_.director.host.c_str(),
-            cfg_.director.port);
-  } else {
-    fprintf(stderr, "[proxy] allowed directors: %zu (default=%s)\n",
-            cfg_.allowed_directors.size(),
-            cfg_.default_allowed_director.empty()
-                ? "<none>"
-                : cfg_.default_allowed_director.c_str());
-  }
+  fprintf(stderr, "[proxy] allowed directors: %zu\n",
+          cfg_.allowed_directors.size());
 
   // Accept loop: poll all listen sockets, accept on whichever is ready.
   while (true) {

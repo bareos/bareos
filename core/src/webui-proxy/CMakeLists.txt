@@ -25,7 +25,7 @@ target_compile_features(bareos-webui-proxy PRIVATE cxx_std_20)
 target_compile_definitions(
   bareos-webui-proxy
   PRIVATE BAREOS_FULL_VERSION="${BAREOS_FULL_VERSION}"
-          WEBUI_PROXY_DEFAULT_CONFIG_PATH="${confdir}/bareos-webui-proxy.json"
+          WEBUI_PROXY_DEFAULT_CONFIG_PATH="${confdir}/bareos-webui-proxy.ini"
 )
 
 target_include_directories(
@@ -39,8 +39,8 @@ target_link_libraries(
 )
 
 configure_file(
-  bareos-webui-proxy.json.in
-  ${CMAKE_CURRENT_BINARY_DIR}/bareos-webui-proxy.json @ONLY
+  bareos-webui-proxy.ini.in ${CMAKE_CURRENT_BINARY_DIR}/bareos-webui-proxy.ini
+  @ONLY
 )
 
 install(
@@ -50,7 +50,7 @@ install(
 )
 
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-webui-proxy.json
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-webui-proxy.ini
   DESTINATION "${confdir}"
   COMPONENT webui
 )

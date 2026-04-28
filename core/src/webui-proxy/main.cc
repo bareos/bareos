@@ -22,7 +22,7 @@
  * @file
  * bareos-webui-proxy — C++ drop-in replacement for director_ws_proxy.py.
  *
- * Reads configuration from a JSON config file.
+ * Reads configuration from an INI config file.
  *
  * CLI flags:
  *   --config <path>

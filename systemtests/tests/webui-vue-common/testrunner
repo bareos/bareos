@@ -36,7 +36,7 @@ bundle_dir="${current_test_directory}/webui-vue-dist"
 proxy_log="${tmp}/webui-vue-proxy.out"
 frontend_log="${tmp}/webui-vue-frontend.out"
 playwright_log="${tmp}/webui-vue-playwright.out"
-proxy_config="${tmp}/bareos-webui-proxy.json"
+proxy_config="${tmp}/bareos-webui-proxy.ini"
 
 function wait_for_http()
 {
@@ -91,25 +91,15 @@ if [[ "${BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK}" = "1" ]]; then
 fi
 
 cat >"${proxy_config}" <<END_OF_PROXY_CONFIG
-{
-  "ws_host": "127.0.0.1",
-  "ws_port": ${proxy_port},
-  "director": {
-    "host": "127.0.0.1",
-    "port": ${BAREOS_DIRECTOR_PORT},
-    "director_name": "bareos-dir",
-    "tls_psk_disable": ${proxy_tls_psk_disable}
-  },
-  "default_allowed_director": "bareos-dir",
-  "allowed_directors": {
-    "bareos-dir": {
-      "host": "127.0.0.1",
-      "port": ${BAREOS_DIRECTOR_PORT},
-      "director_name": "bareos-dir",
-      "tls_psk_disable": ${proxy_tls_psk_disable}
-    }
-  }
-}
+[listen]
+ws_host = 127.0.0.1
+ws_port = ${proxy_port}
+
+[director:bareos-dir]
+host = 127.0.0.1
+port = ${BAREOS_DIRECTOR_PORT}
+director_name = bareos-dir
+tls_psk_disable = ${proxy_tls_psk_disable}
 END_OF_PROXY_CONFIG
 
 pushd "${CMAKE_SOURCE_DIR}/webui-vue" >/dev/null
