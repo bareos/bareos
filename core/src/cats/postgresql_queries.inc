@@ -957,7 +957,11 @@ ORDER BY Path ASC, JobId DESC
 /* 0076_list_volumes_select_0 */
 R"SQL(SELECT    MediaId,VolumeName,VolStatus,Enabled,
           VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,
-          MediaType,LastWritten,Name AS Storage
+          MediaType,LastWritten,Name AS Storage,
+          CASE WHEN COALESCE(Media.EncryptionKey, '') = ''
+               THEN 0
+               ELSE 1
+          END AS HasEncryptionKey
 FROM      Media
 LEFT JOIN Storage USING(StorageId)
 )SQL",
