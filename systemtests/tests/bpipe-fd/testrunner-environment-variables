@@ -17,7 +17,6 @@ export TestName
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
-
 # Windows debug: show environment vars
 if on_windows_host; then
   nssm get bareos_fd-bpipe-fd AppEnvironmentExtra
@@ -72,6 +71,8 @@ expected_output=(
   "BareosJobLevel" "F" "I" " "
   "BareosSinceTime" "0" "$desired_timestamp_of_since_time" "0"
   "BareosJobType" "B" "B" "R"
+  "BareosWhere"   "" "" "$RestoreDirectory"
+  "BareosReplace" " " " " "a"
   "my_env_variable" "still there" "still there" "still there"
 )
 
@@ -80,20 +81,30 @@ for ((i = 0; i < ${#expected_output[@]}; i += 4)); do
   readprogram_F_value="${expected_output[i + 1]}"
   readprogram_I_value="${expected_output[i + 2]}"
   writeprogram_value="${expected_output[i + 3]}"
+
+  if [ -n "${readprogram_F_value}" ]
+  then
   if ! grep -q "${key}='${readprogram_F_value}'" "$tmp/readprogram.F.env"; then
     echo "Environment variable '$key' is wrong in readprogram, expected '${readprogram_F_value}'."
     cat "$tmp/readprogram.F.env"
     exit 2
   fi
+  fi
+  if [ -n "${readprogram_I_value}" ]
+  then
   if ! grep -q "${key}='${readprogram_I_value}'" "$tmp/readprogram.I.env"; then
     echo "Environment variable '$key' is wrong in readprogram, expected '${readprogram_I_value}'."
     cat "$tmp/readprogram.I.env"
     exit 2
   fi
+  fi
+  if [ -n "${writeprogram_value}" ]
+  then
   if ! grep -q "${key}='${writeprogram_value}'" "$tmp/writeprogram.env"; then
     echo "Environment variable '$key' is wrong in writeprogram, expected '${writeprogram_value}'."
     cat "$tmp/writeprogram.env"
     exit 2
+  fi
   fi
 done
 
