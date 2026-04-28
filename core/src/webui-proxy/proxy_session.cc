@@ -121,6 +121,7 @@ void RunProxySession(int fd,
   cfg.host = jstr("host", defaults.host);
   cfg.port = jint("port", defaults.port);
   cfg.tls_psk_disable = defaults.tls_psk_disable;
+  cfg.tls_psk_require = defaults.tls_psk_require;
   std::string mode = jstr("mode", "json");
   cfg.json_mode = (mode != "raw");
 

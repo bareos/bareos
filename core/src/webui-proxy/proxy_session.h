@@ -35,6 +35,7 @@ struct DefaultDirectorConfig {
   int port{9101};
   std::string name;
   bool tls_psk_disable{false};
+  bool tls_psk_require{true};
 };
 
 /**

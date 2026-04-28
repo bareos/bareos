@@ -30,8 +30,9 @@
  *   BAREOS_DIRECTOR_NAME  director name       (default: bareos-dir)
  *   BAREOS_DIRECTOR_DISABLE_TLS_PSK  skip TLS-PSK and use cleartext only
  *
- * The proxy first tries the Director's TLS-PSK console path and falls back to
- * cleartext when that handshake is not accepted.
+ * The proxy requires the Director's TLS-PSK console path by default.
+ * Use BAREOS_DIRECTOR_DISABLE_TLS_PSK or --director-disable-tls-psk to opt
+ * into cleartext transport for older deployments.
  *
  * CLI flags (override env vars):
  *   --ws-host <addr>
@@ -89,6 +90,7 @@ int main(int argc, char* argv[])
   cfg.director.name = EnvOr("BAREOS_DIRECTOR_NAME", "bareos-dir");
   cfg.director.tls_psk_disable
       = EnvBoolOr("BAREOS_DIRECTOR_DISABLE_TLS_PSK", false);
+  cfg.director.tls_psk_require = !cfg.director.tls_psk_disable;
 
   CLI::App app{"Bareos Director WebSocket Proxy"};
   app.add_option("--ws-host", cfg.bind_host,
@@ -106,6 +108,7 @@ int main(int argc, char* argv[])
                "(env: BAREOS_DIRECTOR_DISABLE_TLS_PSK)");
 
   CLI11_PARSE(app, argc, argv);
+  cfg.director.tls_psk_require = !cfg.director.tls_psk_disable;
 
   std::signal(SIGINT, HandleSignal);
   std::signal(SIGTERM, HandleSignal);

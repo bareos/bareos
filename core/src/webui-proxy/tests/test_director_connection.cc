@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,12 +41,22 @@ TEST(DirectorConnection, UsesMd5HexPasswordAsTlsPsk)
             "5ebe2294ecd0e0f08eab7690d2a6ee69");
 }
 
-TEST(DirectorConfig, DoesNotRequireTlsPskByDefault)
+TEST(DirectorConfig, RequiresTlsPskByDefault)
 {
   DirectorConfig cfg;
 
   EXPECT_FALSE(cfg.tls_psk_disable);
-  EXPECT_FALSE(cfg.tls_psk_require);
+  EXPECT_TRUE(cfg.tls_psk_require);
+}
+
+TEST(DirectorConfig, DisableTlsPskOverridesRequiredDefault)
+{
+  DirectorConfig cfg;
+
+  cfg.tls_psk_disable = true;
+
+  EXPECT_TRUE(cfg.tls_psk_disable);
+  EXPECT_TRUE(cfg.tls_psk_require);
 }
 
 TEST(DirectorConnection, StartsWithoutTlsPskTransport)
