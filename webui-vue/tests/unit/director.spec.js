@@ -246,4 +246,44 @@ describe('director store', () => {
 
     await expect(rawPromise).resolves.toBe('done')
   })
+
+  it('streams raw command output chunks before the command completes', async () => {
+    const auth = useAuthStore()
+    const director = useDirectorStore()
+    const chunks = []
+
+    auth.login('admin', 'bareos-dir', 'secret')
+
+    const rawPromise = director.rawCall('messages', {
+      onChunk: (chunk) => chunks.push(chunk),
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        director: 'bareos-dir',
+      }),
+    })
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'part one\n',
+        prompt: 'more',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'part two\n',
+        prompt: 'main',
+      }),
+    })
+
+    await expect(rawPromise).resolves.toBe('part one\npart two\n')
+    expect(chunks).toEqual(['part one\n', 'part two\n'])
+  })
 })

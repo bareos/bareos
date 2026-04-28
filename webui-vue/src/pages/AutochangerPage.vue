@@ -51,13 +51,13 @@
       <q-space />
 
       <q-btn outline color="primary" icon="sync_alt" :label="t('Update Slots')"
-             :disable="!selectedStorage" @click="doUpdateSlots" />
+             :disable="!selectedStorage || commandRunning" @click="doUpdateSlots" />
 
       <q-btn outline color="primary" icon="label" :label="t('Label barcodes')"
-             :disable="!selectedStorage" @click="labelDialog = true" />
+             :disable="!selectedStorage || commandRunning" @click="labelDialog = true" />
 
       <q-btn outline color="primary" icon="monitor_heart" :label="t('Status')"
-             :disable="!selectedStorage" @click="showStatus" />
+             :disable="!selectedStorage || commandRunning" @click="showStatus" />
     </div>
 
     <!-- No autochanger storages -->
@@ -254,8 +254,8 @@
             <span class="col">
               {{ formatCountLabel(importSlots.length, t('Import/Export Slots')) }}
             </span>
-            <q-btn flat round dense size="sm" icon="download"
-                   :title="t('Import all')" @click="doImportAll" />
+             <q-btn flat round dense size="sm" icon="download"
+                   :title="t('Import all')" :disable="commandRunning" @click="doImportAll" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
@@ -296,10 +296,11 @@
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-right">
-                  <q-btn v-if="props.row.content === 'full'"
-                         flat round dense size="sm" icon="download"
-                         :title="t('Import')"
-                         @click="doImport(props.row.slotnr)" />
+                   <q-btn v-if="props.row.content === 'full'"
+                          flat round dense size="sm" icon="download"
+                          :title="t('Import')"
+                          :disable="commandRunning"
+                          @click="doImport(props.row.slotnr)" />
                 </q-td>
               </template>
             </q-table>
@@ -335,8 +336,11 @@
           />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat :label="t('Cancel')" v-close-popup />
-          <q-btn color="primary" :label="t('Label')" :disable="!labelForm.pool" @click="doLabelBarcodes" />
+           <q-btn flat :label="t('Cancel')" v-close-popup />
+           <q-btn color="primary" :label="t('Label')"
+                  :disable="!labelForm.pool || commandRunning"
+                  :loading="commandRunning"
+                  @click="doLabelBarcodes" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -358,8 +362,11 @@
                    :min="0" :readonly="mountForm.driveFixed" />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat :label="t('Cancel')" v-close-popup />
-          <q-btn color="primary" :label="t('Mount')" @click="doMount" />
+           <q-btn flat :label="t('Cancel')" v-close-popup />
+           <q-btn color="primary" :label="t('Mount')"
+                  :disable="commandRunning"
+                  :loading="commandRunning"
+                  @click="doMount" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -379,9 +386,10 @@
                     emit-value map-options />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat :label="t('Cancel')" v-close-popup />
-          <q-btn color="primary" :label="t('Transfer')"
-                 :disable="transferForm.dstSlot == null"
+           <q-btn flat :label="t('Cancel')" v-close-popup />
+           <q-btn color="primary" :label="t('Transfer')"
+                 :disable="transferForm.dstSlot == null || commandRunning"
+                 :loading="commandRunning"
                  @click="doTransfer" />
         </q-card-actions>
       </q-card>
@@ -409,36 +417,56 @@
           />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat :label="t('Cancel')" v-close-popup />
-          <q-btn color="primary" :label="t('Label')" :disable="!slotLabelForm.pool"
-                 @click="doSlotLabel" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+           <q-btn flat :label="t('Cancel')" v-close-popup />
+           <q-btn color="primary" :label="t('Label')" :disable="!slotLabelForm.pool"
+                  :loading="commandRunning"
+                  @click="doSlotLabel" />
+         </q-card-actions>
+       </q-card>
+     </q-dialog>
 
-    <!-- ── Result Dialog ─────────────────────────────────── -->
-    <q-dialog v-model="resultDialog">
-      <q-card style="min-width:480px; max-width:720px">
-        <q-card-section class="row items-center q-pb-none">
-          <span class="text-h6">{{ resultTitle }}</span>
-          <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
-        </q-card-section>
-        <q-card-section>
-          <q-scroll-area style="height:300px">
-            <pre class="text-caption" style="white-space:pre-wrap">{{ resultText }}</pre>
-          </q-scroll-area>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat :label="t('Close')" v-close-popup />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <q-card
+      v-if="commandLogVisible"
+      flat
+      bordered
+      class="bareos-panel q-mt-md"
+    >
+      <q-card-section class="row items-center q-pb-sm">
+        <div class="col">
+          <div class="text-subtitle1">{{ commandLogTitle || t('Command output') }}</div>
+          <div class="text-caption text-grey-7 command-log-command">{{ commandLogCommand }}</div>
+        </div>
+        <q-badge
+          v-if="commandRunning"
+          color="primary"
+          class="q-mr-sm"
+        >
+          <q-spinner size="14px" class="q-mr-xs" />
+          {{ t('Running') }}
+        </q-badge>
+        <q-badge v-else color="positive" class="q-mr-sm">{{ t('Completed') }}</q-badge>
+        <q-btn
+          flat
+          round
+          dense
+          icon="delete_sweep"
+          :disable="commandRunning"
+          :title="t('Clear')"
+          @click="clearCommandLog"
+        />
+      </q-card-section>
+      <q-separator />
+      <q-card-section class="q-pa-none">
+        <q-scroll-area ref="commandLogScroll" style="height:220px">
+          <pre class="command-log-text">{{ commandLogText }}</pre>
+        </q-scroll-area>
+      </q-card-section>
+    </q-card>
   </component>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDirectorStore } from '../stores/director.js'
 import { useQuasar } from 'quasar'
@@ -481,9 +509,12 @@ const mountForm = ref({ drive: 0, slot: '', slotFixed: false, driveFixed: false 
 const transferDialog = ref(false)
 const transferForm = ref({ srcSlot: null, dstSlot: null })
 
-const resultDialog = ref(false)
-const resultTitle = ref('')
-const resultText = ref('')
+const commandRunning = ref(false)
+const commandLogVisible = ref(false)
+const commandLogTitle = ref('')
+const commandLogCommand = ref('')
+const commandLogText = ref('')
+const commandLogScroll = ref(null)
 
 // drag-and-drop state
 const dragSlot = ref(null)      // slot row being dragged
@@ -649,11 +680,28 @@ async function loadSlots() {
 // ── Actions ───────────────────────────────────────────────────
 
 async function runCmd(title, cmd) {
+  if (commandRunning.value) return
+
+  commandLogTitle.value = title
+  commandLogCommand.value = cmd
+  commandLogText.value = `$ ${cmd}\n\n`
+  commandLogVisible.value = true
+  commandRunning.value = true
+  await scrollCommandLogToBottom()
+
   try {
-    const result = await director.rawCall(cmd)
-    showResult(title, result)
+    await director.rawCall(cmd, {
+      onChunk: (chunk) => {
+        if (!chunk) return
+        commandLogText.value += chunk
+        void scrollCommandLogToBottom()
+      },
+    })
   } catch (e) {
-    showResult(title, `Error: ${e.message}`)
+    commandLogText.value += `\nError: ${e.message}\n`
+    void scrollCommandLogToBottom()
+  } finally {
+    commandRunning.value = false
   }
 }
 
@@ -861,10 +909,16 @@ async function showStatus() {
   )
 }
 
-function showResult(title, text) {
-  resultTitle.value = title
-  resultText.value = typeof text === 'string' ? text : JSON.stringify(text, null, 2)
-  resultDialog.value = true
+function clearCommandLog() {
+  commandLogVisible.value = false
+  commandLogTitle.value = ''
+  commandLogCommand.value = ''
+  commandLogText.value = ''
+}
+
+async function scrollCommandLogToBottom() {
+  await nextTick()
+  commandLogScroll.value?.setScrollPosition('vertical', Number.MAX_SAFE_INTEGER, 0)
 }
 
 // ── Lifecycle ─────────────────────────────────────────────────
@@ -891,5 +945,16 @@ watch(() => director.status, async (s) => {
   background: rgba(var(--q-primary), 0.12);
   outline: 2px dashed var(--q-primary);
   outline-offset: -2px;
+}
+
+.command-log-command,
+.command-log-text {
+  font-family: monospace;
+}
+
+.command-log-text {
+  margin: 0;
+  padding: 16px;
+  white-space: pre-wrap;
 }
 </style>

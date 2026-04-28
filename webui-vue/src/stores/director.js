@@ -299,11 +299,12 @@ export const useDirectorStore = defineStore('director', () => {
    * @param {string} command  e.g. "messages"
    * @returns {Promise<string>}
    */
-  function rawCall(command) {
+  function rawCall(command, options = {}) {
     return new Promise((resolve, reject) => {
       const auth = useAuthStore()
       const creds = auth.getCredentials()
       if (!creds) { return reject(new Error('Not logged in')) }
+      const onChunk = typeof options.onChunk === 'function' ? options.onChunk : null
 
       const sock = new WebSocket(WS_URL)
       let cmdId = 1
@@ -336,6 +337,7 @@ export const useDirectorStore = defineStore('director', () => {
           reject(new Error(msg.message ?? 'Auth failed'))
         } else if (msg.type === 'raw_response' && msg.id === String(cmdId)) {
           accumulated += msg.text ?? ''
+          onChunk?.(msg.text ?? '', msg)
           // Accumulate until back at the main prompt
           if (!msg.prompt || msg.prompt === 'main') {
             clearTimeout(timer)
