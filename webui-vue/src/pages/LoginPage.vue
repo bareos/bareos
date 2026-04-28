@@ -30,39 +30,33 @@
               class="q-mb-sm"
               autocomplete="current-password"
             />
+            <q-select
+              v-if="hasAvailableDirectors"
+              v-model="directorRef"
+              data-testid="login-director"
+              :options="directorOptions"
+              option-label="label"
+              option-value="value"
+              emit-value
+              map-options
+              :label="t('Director')"
+              outlined dense
+              class="q-mb-sm"
+            />
+            <q-input
+              v-else
+              v-model="directorRef"
+              data-testid="login-director"
+              :label="t('Director')"
+              outlined dense
+              class="q-mb-sm"
+            />
             <LanguageSelect
               v-model="locale"
               data-testid="login-language"
               :label="t('Language')"
               class="q-mb-md"
             />
-
-            <q-expansion-item
-              data-testid="login-advanced"
-              :label="t('Advanced connection settings')"
-              icon="tune"
-              dense
-              header-class="text-primary"
-              class="q-mb-md rounded-borders"
-            >
-              <div class="q-pt-sm">
-                <q-select
-                  v-if="directorOptions.length > 0"
-                  v-model="directorRef"
-                  data-testid="login-director"
-                  :options="directorOptions"
-                  :label="t('Director')"
-                  outlined dense
-                />
-                <q-input
-                  v-else
-                  v-model="directorRef"
-                  data-testid="login-director"
-                  :label="t('Director')"
-                  outlined dense
-                />
-              </div>
-            </q-expansion-item>
 
             <q-banner v-if="errorMsg" data-testid="login-error" dense class="bg-negative text-white q-mb-md rounded-borders">
               <template #avatar><q-icon name="error" /></template>
@@ -118,12 +112,13 @@ const password  = ref('')
 const locale    = ref(settings.locale)
 const loading   = ref(false)
 const errorMsg  = ref(null)
+const hasAvailableDirectors = computed(() => director.availableDirectors.length > 0)
 const directorOptions = computed(() => {
   const options = [...director.availableDirectors]
   if (directorRef.value && !options.includes(directorRef.value)) {
     options.unshift(directorRef.value)
   }
-  return options
+  return options.map((value) => ({ label: value, value }))
 })
 
 onMounted(async () => {
