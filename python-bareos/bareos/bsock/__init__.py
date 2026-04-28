@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -146,7 +146,11 @@ Since Bareos >= 18.2.4, Bareos supports TLS-PSK (Transport-Layer-Security Pre-Sh
 
 Unfortunately the Python core module ``ssl`` does support TLS-PSK only with Python >= 3.13.
 For some older versions of Python,
-the extra module ``sslpsk`` (see https://github.com/drbild/sslpsk) offers limited support.
+the extra modules
+``sslpsk3`` (Python >= 3.7, see https://github.com/kuba2k2/sslpsk3)
+or
+``sslpsk`` (Python <= 3.9, see https://github.com/drbild/sslpsk)
+offers limited support.
 
 Fallback To Unencrypted Connections
 -----------------------------------
@@ -181,6 +185,15 @@ To enforce a encrypted connection, use the ``tls_psk_require=True`` parameter:
 
 
 In this case, an exception is raised, if the connection can not be established via TLS-PSK.
+
+sslpsk3
+-------
+
+The extra module `sslpsk3` (see https://github.com/kuba2k2/sslpsk3)
+is an extended fork of `sslpsk`
+and extends the core module `ssl` by TLS-PSK.
+
+It is installable via **pip**, see https://pypi.org/project/sslpsk3.
 
 sslpsk
 ------
