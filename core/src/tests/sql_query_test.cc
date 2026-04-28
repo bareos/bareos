@@ -21,6 +21,7 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
 #include <string_view>
 
 #include "cats/postgresql.h"
@@ -30,10 +31,14 @@ namespace {
 #if HAVE_POSTGRESQL
 constexpr std::string_view kHasEncryptionKeyColumn = "END AS HasEncryptionKey";
 
-BareosDbPostgresql CreateDb()
+using DbHandle = std::unique_ptr<BareosDb, void (*)(BareosDb*)>;
+
+DbHandle CreateDb()
 {
-  return BareosDbPostgresql(nullptr, "", "", "", nullptr, nullptr, 0, nullptr,
-                            false, false, false, false, false);
+  return DbHandle(
+      new BareosDbPostgresql(nullptr, "", "", "", nullptr, nullptr, 0, nullptr,
+                             false, false, false, false, false),
+      [](BareosDb* db) { db->CloseDatabase(nullptr); });
 }
 
 TEST(SqlQueryTest, VolumeQueriesAlwaysExposeHasEncryptionKey)
@@ -41,9 +46,9 @@ TEST(SqlQueryTest, VolumeQueriesAlwaysExposeHasEncryptionKey)
   auto db = CreateDb();
 
   const auto short_query = std::string_view(
-      db.get_predefined_query(BareosDb::SQL_QUERY::list_volumes_select_0));
-  const auto long_query = std::string_view(
-      db.get_predefined_query(BareosDb::SQL_QUERY::list_volumes_select_long_0));
+      db->get_predefined_query(BareosDb::SQL_QUERY::list_volumes_select_0));
+  const auto long_query = std::string_view(db->get_predefined_query(
+      BareosDb::SQL_QUERY::list_volumes_select_long_0));
 
   EXPECT_NE(short_query.find(kHasEncryptionKeyColumn), std::string_view::npos);
   EXPECT_NE(long_query.find(kHasEncryptionKeyColumn), std::string_view::npos);
