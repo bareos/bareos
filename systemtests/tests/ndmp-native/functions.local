@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,21 +19,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-set -e
-set -o pipefail
-set -u
-
-TestName="$(basename "$(pwd)")"
-export TestName
-
-#shellcheck source=../../environment.in
-. ./environment
-
-#shellcheck source=../../scripts/functions
-. "${BAREOS_SCRIPTS_DIR}"/functions
-"${BAREOS_SCRIPTS_DIR}"/cleanup
-
-# clear encryption configuration from tape drives
-for dev in "${TAPE_DEVICES0[@]}"; do
-  sbin/bscrypto-scsicrypto -c "$dev"
-done
+if [ -f "${BAREOS_SCRIPTS_DIR}"/functions-ndmp ]; then
+  source "$BAREOS_SCRIPTS_DIR"/functions-ndmp
+fi

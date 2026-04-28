@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# make sure that this is only included once
+# this allows the usage of "readonly" variables
+if [ -n "${ENVIRONMENT_INCLUDE_GUARD+x}" ]; then
+  return
+else
+  readonly ENVIRONMENT_INCLUDE_GUARD=1
+fi
+
 CMAKE_SOURCE_DIR=@CMAKE_SOURCE_DIR@
 CMAKE_BINARY_DIR=@CMAKE_BINARY_DIR@
 PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
@@ -171,6 +179,7 @@ NDMP_DATA_AGENT_ADDRESS=@ndmp_data_agent_address@
 export IGNORE_CONFIG_WARNINGS=@IGNORE_CONFIG_WARNINGS@
 export SQLCMD="@SQLCMD@"
 export PERL="@PERL@"
+export AWK="@AWK@"
 
 if [ -f environment.local ]; then
   source environment.local
