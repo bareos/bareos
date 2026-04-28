@@ -866,6 +866,9 @@ cmake  .. \
 %if 0%{?enable_grpc}
   -DENABLE_GRPC=yes \
 %endif
+%if 0%{?enable_incus}
+  -DENABLE_INCUS_PLUGIN=yes \
+%endif
   -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
   -DVERSION_STRING=%version
 %if 0%{?make_build:1}
