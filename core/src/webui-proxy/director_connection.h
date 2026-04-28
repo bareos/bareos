@@ -45,7 +45,9 @@
 #define BAREOS_WEBUI_PROXY_DIRECTOR_CONNECTION_H_
 
 #include <cstddef>
+#include <functional>
 #include <string>
+#include <string_view>
 
 struct ssl_ctx_st;
 struct ssl_st;
@@ -89,10 +91,13 @@ class DirectorConnection {
   /* Send a command and receive the complete response string.
    * In json_mode=true, the response is a JSON object.
    * In json_mode=false, the response is a raw text string.
+   * When @p on_data is provided, it is called for every positive-length data
+   * frame before the terminating prompt/signal is received.
    * The returned CallResult also carries the prompt type that terminated the
    * response so callers can update the UI prompt indicator.
    * Throws std::runtime_error on I/O error. */
-  CallResult Call(const std::string& command);
+  CallResult Call(const std::string& command,
+                  const std::function<void(std::string_view)>& on_data = {});
 
   /** Cleanly disconnect from the director. */
   void Disconnect();

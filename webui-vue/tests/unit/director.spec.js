@@ -64,8 +64,7 @@ describe('director store', () => {
     FakeWebSocket.instances = []
     vi.stubGlobal('WebSocket', FakeWebSocket)
     vi.useFakeTimers()
-  })
-
+})
   afterEach(() => {
     vi.useRealTimers()
   })
@@ -226,6 +225,7 @@ describe('director store', () => {
       type: 'command',
       id: '1',
       command: 'messages',
+      stream: true,
     })
 
     vi.advanceTimersByTime(30_000)

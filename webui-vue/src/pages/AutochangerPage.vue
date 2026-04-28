@@ -46,7 +46,7 @@
       />
 
       <q-btn flat round dense icon="refresh" :title="t('Refresh')"
-             :loading="slotsLoading" @click="loadSlots" />
+             :loading="slotsLoading" @click="manualRefresh" />
 
       <q-space />
 
@@ -116,7 +116,7 @@
                   <q-badge
                     v-if="slotInDriveMap[props.row.slotnr] != null"
                     color="blue"
-                    :label="t('in Drive {drive}', { drive: slotInDriveMap[props.row.slotnr] })" />
+                    :label="t('in drive {drive}', { drive: slotInDriveMap[props.row.slotnr] })" />
                   <q-badge v-else
                            :color="props.value === 'full' ? 'green' : 'grey'"
                            :label="props.value" />
@@ -466,9 +466,10 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
 import { useQuasar } from 'quasar'
 import { directorCollection } from '../composables/useDirectorFetch.js'
 import { buildLabelBarcodesCommand } from '../utils/autochanger.js'
@@ -482,6 +483,7 @@ defineProps({
 })
 
 const director = useDirectorStore()
+const settings = useSettingsStore()
 const $q = useQuasar()
 const { t } = useI18n()
 
@@ -515,6 +517,7 @@ const commandLogTitle = ref('')
 const commandLogCommand = ref('')
 const commandLogText = ref('')
 const commandLogScroll = ref(null)
+let _slotsTimer = null
 
 // drag-and-drop state
 const dragSlot = ref(null)      // slot row being dragged
@@ -675,6 +678,24 @@ async function loadSlots() {
   } finally {
     slotsLoading.value = false
   }
+}
+
+function startAutoRefresh() {
+  clearInterval(_slotsTimer)
+  _slotsTimer = setInterval(() => {
+    if (!selectedStorage.value || slotsLoading.value || commandRunning.value) return
+    void loadSlots()
+  }, settings.refreshInterval * 1000)
+}
+
+function stopAutoRefresh() {
+  clearInterval(_slotsTimer)
+  _slotsTimer = null
+}
+
+function manualRefresh() {
+  void loadSlots()
+  startAutoRefresh()
 }
 
 // ── Actions ───────────────────────────────────────────────────
@@ -929,6 +950,7 @@ onMounted(async () => {
   if (selectedStorage.value) {
     await loadSlots()
   }
+  startAutoRefresh()
 })
 
 watch(() => director.status, async (s) => {
@@ -936,7 +958,16 @@ watch(() => director.status, async (s) => {
     await loadStorages()
     await loadPools()
     if (selectedStorage.value) await loadSlots()
+    startAutoRefresh()
   }
+})
+
+watch(() => settings.refreshInterval, () => {
+  startAutoRefresh()
+})
+
+onUnmounted(() => {
+  stopAutoRefresh()
 })
 </script>
 

@@ -520,7 +520,9 @@ void DirectorConnection::ConnectTlsPsk(const DirectorConfig& cfg)
   tls_psk_active_ = true;
 }
 
-CallResult DirectorConnection::Call(const std::string& command)
+CallResult DirectorConnection::Call(
+    const std::string& command,
+    const std::function<void(std::string_view)>& on_data)
 {
   if (json_mode_) { DrainPendingInput(); }
   SendFrame(command + "\n");
@@ -586,6 +588,7 @@ CallResult DirectorConnection::Call(const std::string& command)
 
     std::string chunk(static_cast<size_t>(len), '\0');
     ReadAll(chunk.data(), static_cast<size_t>(len));
+    if (on_data) { on_data(chunk); }
     result.text += chunk;
   }
   return result;

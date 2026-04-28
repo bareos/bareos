@@ -329,7 +329,7 @@ export const useDirectorStore = defineStore('director', () => {
         try { msg = JSON.parse(event.data) } catch { return }
         if (msg.type === 'auth_ok') {
           sock.send(JSON.stringify({
-            type: 'command', id: String(cmdId), command,
+            type: 'command', id: String(cmdId), command, stream: true,
           }))
         } else if (msg.type === 'auth_error') {
           clearTimeout(timer)
