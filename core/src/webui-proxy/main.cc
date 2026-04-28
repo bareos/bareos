@@ -22,24 +22,10 @@
  * @file
  * bareos-webui-proxy — C++ drop-in replacement for director_ws_proxy.py.
  *
- * Reads configuration from the same environment variables as the Python proxy:
- *   WS_HOST               bind address        (default: localhost)
- *   WS_PORT               WebSocket port      (default: 8765)
- *   BAREOS_DIRECTOR_HOST  director hostname   (default: localhost)
- *   BAREOS_DIRECTOR_PORT  director port       (default: 9101)
- *   BAREOS_DIRECTOR_NAME  director name       (default: bareos-dir)
- *   BAREOS_DIRECTOR_DISABLE_TLS_PSK  skip TLS-PSK and use cleartext only
+ * Reads configuration from a JSON config file.
  *
- * The proxy requires the Director's TLS-PSK console path by default.
- * Use BAREOS_DIRECTOR_DISABLE_TLS_PSK or --director-disable-tls-psk to opt
- * into cleartext transport for older deployments.
- *
- * CLI flags (override env vars):
- *   --ws-host <addr>
- *   --ws-port <port>
- *   --director-host <addr>
- *   --director-port <port>
- *   --director-name <name>
+ * CLI flags:
+ *   --config <path>
  */
 
 #include "proxy_server.h"
@@ -47,7 +33,6 @@
 #include <CLI/CLI.hpp>
 #include <csignal>
 #include <cstdio>
-#include <cstdlib>
 #include <stdexcept>
 #include <string>
 
@@ -58,57 +43,18 @@ static void HandleSignal(int /*sig*/)
   if (g_server) { g_server->Stop(); }
 }
 
-static std::string EnvOr(const char* var, const char* def)
-{
-  const char* val = std::getenv(var);
-  return val ? val : def;
-}
-
-static int EnvIntOr(const char* var, int def)
-{
-  const char* val = std::getenv(var);
-  return val ? std::atoi(val) : def;
-}
-
-static bool EnvBoolOr(const char* var, bool def)
-{
-  const char* val = std::getenv(var);
-  if (!val) { return def; }
-
-  const std::string value{val};
-  return value == "1" || value == "true" || value == "TRUE" || value == "yes"
-         || value == "YES" || value == "on" || value == "ON";
-}
-
 int main(int argc, char* argv[])
 {
-  ServerConfig cfg;
-  cfg.bind_host = EnvOr("WS_HOST", "localhost");
-  cfg.port = EnvIntOr("WS_PORT", 8765);
-  cfg.director.host = EnvOr("BAREOS_DIRECTOR_HOST", "localhost");
-  cfg.director.port = EnvIntOr("BAREOS_DIRECTOR_PORT", 9101);
-  cfg.director.name = EnvOr("BAREOS_DIRECTOR_NAME", "bareos-dir");
-  cfg.director.tls_psk_disable
-      = EnvBoolOr("BAREOS_DIRECTOR_DISABLE_TLS_PSK", false);
-  cfg.director.tls_psk_require = !cfg.director.tls_psk_disable;
-
   CLI::App app{"Bareos Director WebSocket Proxy"};
-  app.add_option("--ws-host", cfg.bind_host,
-                 "Bind address (env: WS_HOST, default: localhost)");
-  app.add_option("--ws-port", cfg.port,
-                 "WebSocket port (env: WS_PORT, default: 8765)");
-  app.add_option("--director-host", cfg.director.host,
-                 "Director hostname (env: BAREOS_DIRECTOR_HOST)");
-  app.add_option("--director-port", cfg.director.port,
-                 "Director port (env: BAREOS_DIRECTOR_PORT, default: 9101)");
-  app.add_option("--director-name", cfg.director.name,
-                 "Director name (env: BAREOS_DIRECTOR_NAME)");
-  app.add_flag("--director-disable-tls-psk", cfg.director.tls_psk_disable,
-               "Skip TLS-PSK and use cleartext only "
-               "(env: BAREOS_DIRECTOR_DISABLE_TLS_PSK)");
+  std::string config_file = WEBUI_PROXY_DEFAULT_CONFIG_PATH;
+  app.add_option("--config", config_file,
+                 "Proxy config file (default: " WEBUI_PROXY_DEFAULT_CONFIG_PATH
+                 ")");
 
   CLI11_PARSE(app, argc, argv);
-  cfg.director.tls_psk_require = !cfg.director.tls_psk_disable;
+
+  ProxyConfig cfg;
+  LoadProxyConfigFile(config_file, cfg);
 
   std::signal(SIGINT, HandleSignal);
   std::signal(SIGTERM, HandleSignal);

@@ -28,15 +28,9 @@
 #ifndef BAREOS_WEBUI_PROXY_PROXY_SESSION_H_
 #define BAREOS_WEBUI_PROXY_PROXY_SESSION_H_
 
-#include <string>
+#include "proxy_config.h"
 
-struct DefaultDirectorConfig {
-  std::string host;
-  int port{9101};
-  std::string name;
-  bool tls_psk_disable{false};
-  bool tls_psk_require{true};
-};
+#include <string>
 
 /**
  * Handle one browser WebSocket connection until it closes.
@@ -45,6 +39,6 @@ struct DefaultDirectorConfig {
  */
 void RunProxySession(int fd,
                      const std::string& peer,
-                     const DefaultDirectorConfig& defaults);
+                     const ProxyConfig& config);
 
 #endif  // BAREOS_WEBUI_PROXY_PROXY_SESSION_H_

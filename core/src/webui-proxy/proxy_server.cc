@@ -121,9 +121,17 @@ void ProxyServer::Run()
 
   fprintf(stderr, "[proxy] listening on ws://%s:%d (%zu socket(s))\n",
           cfg_.bind_host.c_str(), cfg_.port, listen_fds_.size());
-  fprintf(stderr, "[proxy] default director: %s @ %s:%d\n",
-          cfg_.director.name.c_str(), cfg_.director.host.c_str(),
-          cfg_.director.port);
+  if (cfg_.allowed_directors.empty()) {
+    fprintf(stderr, "[proxy] configured director: %s @ %s:%d\n",
+            cfg_.director.name.c_str(), cfg_.director.host.c_str(),
+            cfg_.director.port);
+  } else {
+    fprintf(stderr, "[proxy] allowed directors: %zu (default=%s)\n",
+            cfg_.allowed_directors.size(),
+            cfg_.default_allowed_director.empty()
+                ? "<none>"
+                : cfg_.default_allowed_director.c_str());
+  }
 
   // Accept loop: poll all listen sockets, accept on whichever is ready.
   while (true) {
@@ -174,10 +182,10 @@ void ProxyServer::Run()
 
       // Move fd and defaults into a detached thread — thread owns the socket.
       int cfd = client_fd;
-      DefaultDirectorConfig dir = cfg_.director;
-      std::thread([cfd, peer, dir]() {
+      ProxyConfig cfg = cfg_;
+      std::thread([cfd, peer, cfg]() {
         try {
-          RunProxySession(cfd, peer, dir);
+          RunProxySession(cfd, peer, cfg);
         } catch (const std::exception& ex) {
           fprintf(stderr, "[proxy] %s session aborted: %s\n", peer.c_str(),
                   ex.what());

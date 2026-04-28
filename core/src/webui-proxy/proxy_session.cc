@@ -54,9 +54,7 @@ static std::string JsonObject(
 // Session implementation
 // ---------------------------------------------------------------------------
 
-void RunProxySession(int fd,
-                     const std::string& peer,
-                     const DefaultDirectorConfig& defaults)
+void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 {
   // RAII socket close
   struct FdGuard {
@@ -109,21 +107,38 @@ void RunProxySession(int fd,
     const char* v = json_string_value(json_object_get(auth_msg, key));
     return v ? v : def;
   };
-  auto jint = [&](const char* key, int def) -> int {
+  auto joptional = [&](const char* key) -> std::optional<std::string> {
+    const char* v = json_string_value(json_object_get(auth_msg, key));
+    return v ? std::optional<std::string>(v) : std::nullopt;
+  };
+  auto joptional_int = [&](const char* key) -> std::optional<int> {
     json_t* v = json_object_get(auth_msg, key);
-    return json_is_integer(v) ? static_cast<int>(json_integer_value(v)) : def;
+    if (!v) { return std::nullopt; }
+    return json_is_integer(v)
+               ? std::optional<int>(static_cast<int>(json_integer_value(v)))
+               : std::nullopt;
   };
 
   DirectorConfig cfg;
   cfg.username = jstr("username", "admin");
   cfg.password = jstr("password", "");
-  cfg.director_name = jstr("director", defaults.name);
-  cfg.host = jstr("host", defaults.host);
-  cfg.port = jint("port", defaults.port);
-  cfg.tls_psk_disable = defaults.tls_psk_disable;
-  cfg.tls_psk_require = defaults.tls_psk_require;
   std::string mode = jstr("mode", "json");
   cfg.json_mode = (mode != "raw");
+
+  try {
+    const auto target
+        = ResolveDirectorTarget(config, joptional("director"),
+                                joptional("host"), joptional_int("port"));
+    cfg.director_name = target.name;
+    cfg.host = target.host;
+    cfg.port = target.port;
+    cfg.tls_psk_disable = target.tls_psk_disable;
+    cfg.tls_psk_require = target.tls_psk_require;
+  } catch (const std::exception& ex) {
+    ws.SendText(JsonObject({{"type", "auth_error"}, {"message", ex.what()}}));
+    json_decref(auth_msg);
+    return;
+  }
 
   json_decref(auth_msg);
 

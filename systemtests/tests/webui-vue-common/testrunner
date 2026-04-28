@@ -36,17 +36,7 @@ bundle_dir="${current_test_directory}/webui-vue-dist"
 proxy_log="${tmp}/webui-vue-proxy.out"
 frontend_log="${tmp}/webui-vue-frontend.out"
 playwright_log="${tmp}/webui-vue-playwright.out"
-proxy_args=(
-  --ws-host 127.0.0.1
-  --ws-port "${proxy_port}"
-  --director-host 127.0.0.1
-  --director-port "${BAREOS_DIRECTOR_PORT}"
-  --director-name bareos-dir
-)
-
-if [[ "${BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK}" = "1" ]]; then
-  proxy_args+=(--director-disable-tls-psk)
-fi
+proxy_config="${tmp}/bareos-webui-proxy.json"
 
 function wait_for_http()
 {
@@ -95,6 +85,33 @@ END_OF_DATA
 run_bareos
 run_bconsole
 
+proxy_tls_psk_disable=false
+if [[ "${BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK}" = "1" ]]; then
+  proxy_tls_psk_disable=true
+fi
+
+cat >"${proxy_config}" <<END_OF_PROXY_CONFIG
+{
+  "ws_host": "127.0.0.1",
+  "ws_port": ${proxy_port},
+  "director": {
+    "host": "127.0.0.1",
+    "port": ${BAREOS_DIRECTOR_PORT},
+    "director_name": "bareos-dir",
+    "tls_psk_disable": ${proxy_tls_psk_disable}
+  },
+  "default_allowed_director": "bareos-dir",
+  "allowed_directors": {
+    "bareos-dir": {
+      "host": "127.0.0.1",
+      "port": ${BAREOS_DIRECTOR_PORT},
+      "director_name": "bareos-dir",
+      "tls_psk_disable": ${proxy_tls_psk_disable}
+    }
+  }
+}
+END_OF_PROXY_CONFIG
+
 pushd "${CMAKE_SOURCE_DIR}/webui-vue" >/dev/null
 if ! [ -x node_modules/.bin/playwright ] || ! [ -x node_modules/.bin/vitest ]; then
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 "${NPM_EXECUTABLE}" ci >"${tmp}/webui-vue-npm-ci.out" 2>&1
@@ -109,7 +126,7 @@ VITE_DIRECTOR_WS_URL="ws://127.0.0.1:${proxy_port}" \
   >"${tmp}/webui-vue-build.out" 2>&1
 popd >/dev/null
 
-"${BAREOS_WEBUI_PROXY_BINARY}" "${proxy_args[@]}" >"${proxy_log}" 2>&1 &
+"${BAREOS_WEBUI_PROXY_BINARY}" --config "${proxy_config}" >"${proxy_log}" 2>&1 &
 PROXY_PID=$!
 
 "${NODE_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/webui-vue/scripts/serve-spa.mjs" \

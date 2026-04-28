@@ -25,16 +25,10 @@
 #ifndef BAREOS_WEBUI_PROXY_PROXY_SERVER_H_
 #define BAREOS_WEBUI_PROXY_PROXY_SERVER_H_
 
-#include "proxy_session.h"
+#include "proxy_config.h"
 #include <csignal>
 #include <string>
 #include <vector>
-
-struct ServerConfig {
-  std::string bind_host{"localhost"};
-  int port{8765};
-  DefaultDirectorConfig director;
-};
 
 /**
  * Open a listen socket and block until Stop() is called or a fatal error
@@ -43,7 +37,7 @@ struct ServerConfig {
  */
 class ProxyServer {
  public:
-  explicit ProxyServer(const ServerConfig& cfg) : cfg_(cfg) {}
+  explicit ProxyServer(const ProxyConfig& cfg) : cfg_(cfg) {}
 
   /** Blocking: accept loop.  Returns when Stop() is called. */
   void Run();
@@ -52,7 +46,7 @@ class ProxyServer {
   void Stop();
 
  private:
-  ServerConfig cfg_;
+  ProxyConfig cfg_;
   // All listening sockets (one per address family for the bind host).
   // Populated by Run(); closed during Run() shutdown.
   std::vector<int> listen_fds_;
