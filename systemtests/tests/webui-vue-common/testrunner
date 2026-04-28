@@ -36,8 +36,6 @@ bundle_dir="${current_test_directory}/webui-vue-dist"
 proxy_log="${tmp}/webui-vue-proxy.out"
 frontend_log="${tmp}/webui-vue-frontend.out"
 playwright_log="${tmp}/webui-vue-playwright.out"
-source_snapshot_file="${tmp}/webui-vue-source-before.sha256"
-source_snapshot_after_file="${tmp}/webui-vue-source-after.sha256"
 proxy_args=(
   --ws-host 127.0.0.1
   --ws-port "${proxy_port}"
@@ -49,15 +47,6 @@ proxy_args=(
 if [[ "${BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK}" = "1" ]]; then
   proxy_args+=(--director-disable-tls-psk)
 fi
-
-function snapshot_webui_vue_sources()
-{
-  local output_file="$1"
-  (
-    cd "${CMAKE_SOURCE_DIR}"
-    sha256sum webui-vue/src/generated/bareos-version.js
-  ) >"${output_file}"
-}
 
 function wait_for_http()
 {
@@ -92,7 +81,6 @@ ${BAREOS_SCRIPTS_DIR}/setup
 setup_data
 
 start_test
-snapshot_webui_vue_sources "${source_snapshot_file}"
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
@@ -111,6 +99,8 @@ pushd "${CMAKE_SOURCE_DIR}/webui-vue" >/dev/null
 if ! [ -x node_modules/.bin/playwright ] || ! [ -x node_modules/.bin/vitest ]; then
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 "${NPM_EXECUTABLE}" ci >"${tmp}/webui-vue-npm-ci.out" 2>&1
 fi
+
+"${NPM_EXECUTABLE}" run generate:version >"${tmp}/webui-vue-generate-version.out" 2>&1
 
 VITE_DIRECTOR_WS_URL="ws://127.0.0.1:${proxy_port}" \
   VITE_DIRECTOR_HOST="127.0.0.1" \
@@ -154,11 +144,6 @@ if [[ -n "${BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT}" ]]; then
     "${proxy_log}" >/dev/null; then
     set_error "webui-vue proxy did not use expected director transport ${BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT}:\n$(cat "${proxy_log}")"
   fi
-fi
-
-snapshot_webui_vue_sources "${source_snapshot_after_file}"
-if ! cmp -s "${source_snapshot_file}" "${source_snapshot_after_file}"; then
-  set_error "webui-vue tests modified tracked source artifacts under webui-vue/src/generated/bareos-version.js"
 fi
 
 kill "${FRONTEND_PID}"

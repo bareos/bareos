@@ -4,11 +4,12 @@
   "description": "Bareos WebUI - Vue/Quasar frontend",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "env -u VITE_DIRECTOR_PORT -u VITE_DIRECTOR_HOST -u VITE_DIRECTOR_WS_URL vite build",
+    "generate:version": "node scripts/generate-bareos-version.mjs",
+    "dev": "npm run generate:version && vite",
+    "build": "npm run generate:version && env -u VITE_DIRECTOR_PORT -u VITE_DIRECTOR_HOST -u VITE_DIRECTOR_WS_URL vite build",
     "preview": "vite preview",
-    "test:unit": "vitest run",
-    "test:e2e": "playwright test"
+    "test:unit": "npm run generate:version && vitest run",
+    "test:e2e": "npm run generate:version && playwright test"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.0",

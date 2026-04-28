@@ -1,4 +1,5 @@
 node_modules/
+src/generated/bareos-version.js
 dist/.build-env
 test-dist/
 .playwright-artifacts/
