@@ -1,8 +1,48 @@
 <template>
   <q-page class="q-pa-md">
+    <q-card flat bordered class="q-mb-md bareos-panel">
+      <q-card-section class="panel-header row items-center">
+        <span>{{ t('Clients Scope') }}</span>
+        <q-space />
+        <q-chip dense square color="white" text-color="primary" :label="clientsScopeLabel" />
+      </q-card-section>
+      <q-card-section>
+        <q-select
+          v-model="selectedDirectorsModel"
+          data-testid="clients-directors"
+          :options="directorOptions"
+          option-label="label"
+          option-value="value"
+          emit-value
+          map-options
+          multiple
+          use-chips
+          outlined
+          dense
+          :label="t('Directors')"
+        />
+        <div class="text-caption text-grey-6 q-mt-sm">
+          {{ t('Select the directors that contribute to the clients list.') }}
+        </div>
+        <q-banner
+          v-if="directorErrors.length"
+          rounded
+          dense
+          class="bg-warning text-black q-mt-md"
+        >
+          <template #avatar>
+            <q-icon name="warning" />
+          </template>
+          <div v-for="item in directorErrors" :key="item.director">
+            <strong>{{ item.director }}</strong>: {{ item.message }}
+          </div>
+        </q-banner>
+      </q-card-section>
+    </q-card>
+
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="list"     :label="t('Show')"     no-caps />
-      <q-tab name="timeline" :label="t('Timeline')" no-caps />
+      <q-tab name="timeline" :label="t('Timeline')" no-caps :disable="isCommonClients" />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated swipeable>
@@ -16,12 +56,17 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
-            <q-table :rows="clients" :columns="columns" row-key="name" dense flat :loading="loading" :pagination="{ rowsPerPage: 15 }">
+            <q-table :rows="clients" :columns="columns" row-key="scopeKey" dense flat :loading="loading" :pagination="{ rowsPerPage: 15 }">
               <template #body-cell-name="props">
                 <q-td :props="props">
-                  <router-link :to="{ name: 'client-details', params: { name: props.value } }" class="text-primary">
+                  <a href="#" class="text-primary" @click.prevent="openClientDetails(props.row)">
                     {{ props.value }}
-                  </router-link>
+                  </a>
+                </q-td>
+              </template>
+              <template #body-cell-director="props">
+                <q-td :props="props">
+                  <q-chip dense square color="primary" text-color="white" :label="props.value" />
                 </q-td>
               </template>
               <template #body-cell-os="props">
@@ -65,20 +110,23 @@
                           :icon="props.row.enabled ? 'pause' : 'play_arrow'"
                           :color="props.row.enabled ? 'warning' : 'positive'"
                           :title="props.row.enabled ? t('Disable') : t('Enable')"
-                          :loading="toggling === props.row.name"
+                          :loading="toggling === props.row.scopeKey"
                           @click="toggleEnabled(props.row)" />
-                   <q-btn flat round dense size="sm" icon="info" :title="t('Status')"
-                          :data-testid="`client-status-${props.row.name}`"
-                          @click="showStatus(props.row.name)" />
-                </q-td>
-              </template>
-            </q-table>
+                    <q-btn flat round dense size="sm" icon="info" :title="t('Status')"
+                          :data-testid="`client-status-${props.row.scopeKey}`"
+                          @click="showStatus(props.row)" />
+                 </q-td>
+               </template>
+             </q-table>
           </q-card-section>
         </q-card>
       </q-tab-panel>
 
       <!-- TIMELINE -->
       <q-tab-panel name="timeline" class="q-pa-none">
+        <q-banner v-if="isCommonClients" dense rounded class="bg-info text-white q-mb-md">
+          {{ t('Timeline stays scoped to the active director for now. Reduce the clients scope to a single director to use this tab.') }}
+        </q-banner>
         <JobTimeline />
       </q-tab-panel>
     </q-tab-panels>
@@ -102,34 +150,139 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   directorCollection,
   normaliseClient,
 } from '../composables/useDirectorFetch.js'
+import { fetchAggregatedClients } from '../composables/clientsAggregate.js'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
+import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useReleaseInfoStore } from '../stores/releaseInfo.js'
+import { useSettingsStore } from '../stores/settings.js'
 import JobTimeline from '../components/JobTimeline.vue'
 
 const tab = ref('list')
+const auth = useAuthStore()
 const director = useDirectorStore()
 const releaseInfo = useReleaseInfoStore()
+const router = useRouter()
+const settings = useSettingsStore()
 const { t } = useI18n()
 
 const rawClients = ref([])
 const loading    = ref(false)
 const error      = ref(null)
+const directorErrors = ref([])
 
-async function refresh() {
-  if (!director.isConnected) {
-    error.value = t('Not connected to director')
+const directorOptions = computed(() => {
+  const values = new Set([
+    ...director.availableDirectors,
+    ...settings.selectedDirectors,
+    auth.user?.director,
+    settings.directorName,
+  ].filter(Boolean))
+  return [...values].map(value => ({ label: value, value }))
+})
+
+function syncSelectedDirectors() {
+  const validDirectors = directorOptions.value.map(option => option.value)
+  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
+
+  if (selected.length > 0) {
+    if (selected.length !== settings.selectedDirectors.length) {
+      settings.setSelectedDirectors(selected)
+    }
     return
   }
+
+  const fallbackDirector = auth.user?.director || settings.directorName
+  if (fallbackDirector) {
+    settings.setSelectedDirectors([fallbackDirector])
+  }
+}
+
+const selectedDirectorsModel = computed({
+  get: () => settings.selectedDirectors,
+  set: (value) => {
+    const selected = Array.isArray(value) ? value : []
+    if (selected.length > 0) {
+      settings.setSelectedDirectors(selected)
+      return
+    }
+
+    const fallbackDirector = auth.user?.director || settings.directorName
+    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
+  },
+})
+
+const activeDirectors = computed(() => {
+  const selected = settings.selectedDirectors.filter(value => (
+    directorOptions.value.some(option => option.value === value)
+  ))
+
+  if (selected.length > 0) {
+    return selected
+  }
+
+  const currentDirector = auth.user?.director || settings.directorName
+  return currentDirector ? [currentDirector] : []
+})
+
+const isCommonClients = computed(() => activeDirectors.value.length > 1)
+const showDirectorColumn = computed(() => isCommonClients.value)
+const isSingleDirectorScope = computed(() => activeDirectors.value.length === 1)
+const clientsScopeLabel = computed(() => (
+  isCommonClients.value
+    ? `${activeDirectors.value.length} ${t('directors selected')}`
+    : (activeDirectors.value[0] ?? t('No director selected'))
+))
+
+async function ensureSingleScopeDirector() {
+  if (!isSingleDirectorScope.value) {
+    return
+  }
+
+  const scopeDirector = activeDirectors.value[0]
+  if (!scopeDirector) {
+    return
+  }
+
+  if (auth.user?.director === scopeDirector && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(scopeDirector)
+}
+
+async function refresh() {
   loading.value = true
   error.value   = null
+  directorErrors.value = []
   try {
+    if (activeDirectors.value.length === 0) {
+      rawClients.value = []
+      return
+    }
+
+    if (isCommonClients.value) {
+      const credentials = auth.getCredentials()
+      if (!credentials?.password) {
+        throw new Error(t('Not logged in.'))
+      }
+
+      const result = await fetchAggregatedClients(credentials, activeDirectors.value)
+      rawClients.value = result.clients
+      directorErrors.value = result.directorErrors
+      return
+    }
+
+    const currentDirector = activeDirectors.value[0]
+    await ensureSingleScopeDirector()
     const [listResult, dotResult] = await Promise.all([
       director.call('llist clients'),
       director.call('.clients'),
@@ -140,6 +293,8 @@ async function refresh() {
     rawClients.value = list.map(c => ({
       ...c,
       enabled: enabledMap[c.name] ?? true,
+      director: currentDirector,
+      scopeKey: `${currentDirector}:${c.name}`,
     }))
   } catch (e) {
     error.value = e.message ?? String(e)
@@ -151,9 +306,18 @@ async function refresh() {
 onMounted(refresh)
 onMounted(() => {
   releaseInfo.refresh().catch(() => {})
+  director.fetchAvailableDirectors().catch(() => {})
+  syncSelectedDirectors()
 })
 
-const clients = computed(() => directorCollection(rawClients.value).map(normaliseClient))
+const clients = computed(() => directorCollection(rawClients.value).map((entry) => {
+  const client = normaliseClient(entry)
+  return {
+    ...client,
+    director: entry.director,
+    scopeKey: entry.scopeKey ?? `${entry.director ?? ''}:${client.name}`,
+  }
+}))
 
 function osIcon(client)  { return osIconName(client)  }
 function osColor(client) { return osIconColor(client) }
@@ -178,6 +342,9 @@ function clientVersionTooltip(client) {
 }
 
 const columns = computed(() => [
+  ...(showDirectorColumn.value ? [{
+    name: 'director', label: t('Director'), field: 'director', align: 'left', sortable: true,
+  }] : []),
   { name: 'name',    label: t('Name'),    field: 'name',    align: 'left',   sortable: true },
   { name: 'os',      label: t('OS'),      field: 'os',      align: 'left'    },
   { name: 'version', label: t('Version'), field: 'version', align: 'left',   sortable: true },
@@ -189,9 +356,34 @@ const columns = computed(() => [
 
 const toggling = ref(null)
 
-async function toggleEnabled(client) {
-  toggling.value = client.name
+async function switchToClientDirector(client) {
+  if (!client?.director) {
+    return
+  }
+
+  if (auth.user?.director === client.director && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(client.director)
+}
+
+async function openClientDetails(client) {
   try {
+    await switchToClientDirector(client)
+    await router.push({ name: 'client-details', params: { name: client.name } })
+  } catch (error) {
+    directorErrors.value = [{
+      director: client.director ?? t('unknown'),
+      message: error.message,
+    }]
+  }
+}
+
+async function toggleEnabled(client) {
+  toggling.value = client.scopeKey
+  try {
+    await switchToClientDirector(client)
     const cmd = client.enabled
       ? `disable client=${client.name}`
       : `enable client=${client.name}`
@@ -206,10 +398,11 @@ async function toggleEnabled(client) {
 
 const statusDialog = ref({ open: false, client: '', loading: false, text: '' })
 
-async function showStatus(name) {
-  statusDialog.value = { open: true, client: name, loading: true, text: '' }
+async function showStatus(client) {
+  statusDialog.value = { open: true, client: client.name, loading: true, text: '' }
   try {
-    const result = await director.rawCall(`status client=${name}`)
+    await switchToClientDirector(client)
+    const result = await director.rawCall(`status client=${client.name}`)
     statusDialog.value.text = result
   } catch (e) {
     statusDialog.value.text = `${t('Error')}: ${e.message ?? e}`
@@ -217,6 +410,23 @@ async function showStatus(name) {
     statusDialog.value.loading = false
   }
 }
+
+watch(() => directorOptions.value, () => {
+  syncSelectedDirectors()
+})
+
+watch(() => activeDirectors.value.join('\u0000'), () => {
+  if (!isSingleDirectorScope.value && tab.value === 'timeline') {
+    tab.value = 'list'
+  }
+  refresh()
+})
+
+watch(tab, (value) => {
+  if (!isSingleDirectorScope.value && value === 'timeline') {
+    tab.value = 'list'
+  }
+})
 </script>
 
 <style scoped>

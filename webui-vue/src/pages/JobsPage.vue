@@ -499,6 +499,23 @@ const jobsScopeLabel = computed(() => (
     : (activeDirectors.value[0] ?? t('No director selected'))
 ))
 
+async function ensureSingleScopeDirector() {
+  if (!isSingleDirectorScope.value) {
+    return
+  }
+
+  const scopeDirector = activeDirectors.value[0]
+  if (!scopeDirector) {
+    return
+  }
+
+  if (auth.user?.director === scopeDirector && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(scopeDirector)
+}
+
 // ── paginated job list ────────────────────────────────────────────────────────
 const jobs       = ref([])
 const totalJobs  = ref(0)
@@ -542,11 +559,8 @@ async function fetchPage() {
       return
     }
 
-    if (!director.isConnected) {
-      throw new Error(t('Not connected to director'))
-    }
-
     const currentDirector = activeDirectors.value[0]
+    await ensureSingleScopeDirector()
     const [pageResult, countResult] = await Promise.allSettled([
       director.call(`llist jobs reverse limit=${rowsPerPage} offset=${offset}${filter}`),
       director.call(`list jobs count${filter}`),
@@ -689,9 +703,9 @@ const jobDefs       = ref([])
 const loadingDefs   = ref(false)
 
 async function loadJobDefs() {
-  if (!director.isConnected) return
   loadingDefs.value = true
   try {
+    await ensureSingleScopeDirector()
     const res = await director.call('show jobs')
     // show jobs returns {jobs: {"JobName": {name, type, enabled, ...}, ...}}
     const raw = res?.jobs ?? {}
@@ -879,8 +893,8 @@ const runLoading  = ref(false)
 const runForm = ref({ job: null, client: null, fileset: null, pool: null, storage: null, level: 'Incremental', when: '', priority: 10 })
 
 async function loadRunOptions() {
-  if (!director.isConnected) return
   try {
+    await ensureSingleScopeDirector()
     const [j, c, f, p, s] = await Promise.all([
       director.call('.jobs'),
       director.call('.clients'),
@@ -902,6 +916,7 @@ async function loadRunOptions() {
 async function onJobSelected(name) {
   if (!name) return
   try {
+    await ensureSingleScopeDirector()
     const res = await director.call(`.defaults job=${quoteDirectorString(name)}`)
     const d   = res?.defaults ?? res ?? {}
     if (d.client)   runForm.value.client   = d.client
@@ -928,6 +943,7 @@ async function runJob() {
 
   runLoading.value = true
   try {
+    await ensureSingleScopeDirector()
     const res   = await director.call(cmd)
     const newId = res?.run?.jobid ?? res?.jobid ?? '?'
     $q.notify({ type: 'positive', message: `Job started — ID ${newId}` })
