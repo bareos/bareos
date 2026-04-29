@@ -37,7 +37,7 @@ start_test
 
 "${SQLCMD}" -S ${COMPUTERNAME} -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_drop_db.sql
 
-if "${SQLCMD}" -Q "SELECT * FROM DBFileStreamTest.tests.samples" | grep Bareos; then
+if db_exists "DBFileStreamTest"; then
   echo "Database is not empty"
   exit 2
 fi
