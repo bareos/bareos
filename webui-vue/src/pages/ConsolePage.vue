@@ -4,11 +4,30 @@
       <q-card-section class="panel-header row items-center">
         <span>{{ t('Bareos Console') }}</span>
         <q-space />
+        <q-chip dense square color="primary" text-color="white" :label="selectedDirector" class="q-mr-sm" style="font-size:0.72rem" />
         <q-chip dense square :color="statusColor" text-color="white" :label="consoleStatusLabel" class="q-mr-sm" style="font-size:0.72rem" />
+        <q-btn flat round dense icon="refresh" color="white" :title="t('Reconnect')" @click="reconnectSelectedSession" />
         <q-btn v-if="!isPopup" flat round dense icon="open_in_new" color="white" :title="t('Open in new window')" @click="popOut" />
         <q-btn v-if="isPopup"  flat round dense icon="close"       color="white" :title="t('Close window')"       @click="closePopup" />
         <q-btn flat round dense icon="delete_sweep" color="white" :title="t('Clear')" @click="clearOutput" />
       </q-card-section>
+
+      <q-tabs
+        v-model="selectedDirector"
+        dense
+        align="left"
+        active-color="primary"
+        indicator-color="primary"
+        class="bg-grey-2 text-dark"
+      >
+        <q-tab
+          v-for="directorOption in directorOptions"
+          :key="directorOption.value"
+          :name="directorOption.value"
+          :label="directorOption.label"
+          no-caps
+        />
+      </q-tabs>
 
       <!-- terminal area — click to focus, then type -->
       <div
@@ -22,12 +41,12 @@
         @blur="focused = false"
         @click="focusConsole"
       >
-        <div v-for="(line, i) in output" :key="i" :class="['console-line', line.cls]">{{ line.text }}</div>
+        <div v-for="(line, i) in currentSession.output" :key="i" :class="['console-line', line.cls]">{{ line.text }}</div>
 
         <!-- live input line -->
         <div class="console-line console-input-line">
-          <span class="console-prompt">{{ currentPrompt }}</span>
-          <span>{{ cmd }}</span><span :class="['console-cursor', { blink: focused }]">█</span>
+          <span class="console-prompt">{{ currentSession.currentPrompt }}</span>
+          <span>{{ currentSession.cmd }}</span><span :class="['console-cursor', { blink: focused }]">█</span>
         </div>
       </div>
 
@@ -46,23 +65,35 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useRoute }          from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore }     from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
+import { useConsoleSessionsStore } from '../stores/consoleSessions.js'
 
 const auth     = useAuthStore()
 const director = useDirectorStore()
 const route    = useRoute()
+const router   = useRouter()
+const settings = useSettingsStore()
+const consoleSessions = useConsoleSessionsStore()
 const { t } = useI18n()
 
 const isPopup = computed(() => route.name === 'console-popup')
+const selectedDirector = ref(
+  String(route.query.director ?? '').trim()
+  || auth.user?.director
+  || settings.directorName
+)
 
 function popOut() {
   const base = window.location.href.replace(/#.*$/, '')
+  const directorName = encodeURIComponent(selectedDirector.value)
+  const popupName = `bareos-console-${selectedDirector.value.replace(/[^A-Za-z0-9_-]+/g, '-')}`
   window.open(
-    base + '#/console-popup',
-    'bareos-console',
+    `${base}#/console-popup?director=${directorName}`,
+    popupName,
     'width=960,height=720,resizable=yes,scrollbars=no'
   )
 }
@@ -73,29 +104,24 @@ function closePopup() {
 
 // ── refs ─────────────────────────────────────────────────────────────────────
 const outputEl = ref(null)
-const cmd      = ref('')
 const focused  = ref(false)
-const output   = ref([])
 
-// ── command history ───────────────────────────────────────────────────────────
-const history    = ref([])
-let   historyIdx = -1
+const directorOptions = computed(() => {
+  const values = new Set([
+    ...director.availableDirectors,
+    ...settings.selectedDirectors,
+    ...consoleSessions.directors,
+    selectedDirector.value,
+    auth.user?.director,
+  ].filter(Boolean))
 
-// ── raw WebSocket state ───────────────────────────────────────────────────────
-let   rawWs       = null
-let   cmdSeq      = 0
-const pendingCmds  = new Map()
-const completionIds = new Set()   // IDs of in-flight completion (Tab) requests
-const consoleStatus = ref('disconnected')
-const currentPrompt = ref('* ')  // updated from raw_response.prompt
+  return [...values].map(value => ({ label: value, value }))
+})
 
-function defaultWsUrl() {
-  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${proto}//${window.location.host}/ws`
-}
-const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultWsUrl()
-const RAW_CMD_TIMEOUT_MS = 300_000
-const COMPLETION_TIMEOUT_MS = 5_000
+const currentSession = computed(() => (
+  consoleSessions.getSession(selectedDirector.value)
+))
+const consoleStatus = computed(() => currentSession.value.status)
 
 const statusColor = computed(() => ({
   connected: 'positive', connecting: 'warning',
@@ -110,206 +136,80 @@ const consoleStatusLabel = computed(() => ({
 
 const quickCmds = ['status director', 'list jobs', 'list clients', 'list volumes', 'list pools', 'messages', 'help', 'version']
 
-// ── output helpers ────────────────────────────────────────────────────────────
-function appendLines(text, cls = '') {
-  const lines = String(text ?? '').replace(/\r\n/g, '\n').split('\n')
-  while (lines.length && lines[lines.length - 1].trim() === '') lines.pop()
-  lines.forEach(l => output.value.push({ text: l, cls }))
-}
-
-function appendInfo(text) { appendLines(text, 'console-info') }
-function appendErr(text)  { appendLines(text, 'console-err') }
-
 async function scrollBottom() {
   await nextTick()
   if (outputEl.value) outputEl.value.scrollTop = outputEl.value.scrollHeight
 }
 
 function clearOutput() {
-  output.value = []
-  appendInfo(t('Console cleared.'))
+  consoleSessions.clearOutput(selectedDirector.value)
 }
 
 function focusConsole() {
   outputEl.value?.focus()
 }
 
-// ── raw WebSocket ─────────────────────────────────────────────────────────────
-function rejectAll(reason) {
-  for (const { timer, reject } of pendingCmds.values()) {
-    clearTimeout(timer)
-    if (typeof reject === 'function') {
-      reject(new Error(reason))
-    }
+function ensureSelectedSession() {
+  const session = currentSession.value
+  const credentials = auth.getCredentials()
+  if (!session.initialized) {
+    consoleSessions.appendInfo(
+      selectedDirector.value,
+      t('Bareos WebUI Console — click here to type, ↑/↓ for history, Ctrl+L to clear')
+    )
+    session.initialized = true
   }
-  pendingCmds.clear()
+
+  consoleSessions.connectSession(
+    selectedDirector.value,
+    credentials
+      ? { ...credentials, director: selectedDirector.value }
+      : null
+  )
 }
 
-function startPendingTimer(id, timeoutMs, onTimeout) {
-  return setTimeout(() => {
-    if (!pendingCmds.has(id)) {
-      return
-    }
-
-    pendingCmds.delete(id)
-    onTimeout()
-  }, timeoutMs)
-}
-
-function connectRaw() {
-  if (rawWs && (rawWs.readyState === WebSocket.CONNECTING || rawWs.readyState === WebSocket.OPEN)) return
-
-  const creds = auth.getCredentials()
-  if (!creds) {
-    appendErr(t('Not logged in — cannot open console.'))
-    return
-  }
-
-  consoleStatus.value = 'connecting'
-  appendInfo(t('Connecting to director…'))
-
-  rawWs = new WebSocket(WS_URL)
-
-  rawWs.onopen = () => {
-    rawWs.send(JSON.stringify({
-      type: 'auth', mode: 'raw',
-      username: creds.username,
-      password: creds.password,
-      director: creds.director,
-    }))
-  }
-
-  rawWs.onmessage = (event) => {
-    let msg
-    try { msg = JSON.parse(event.data) } catch { return }
-
-    if (msg.type === 'auth_ok') {
-      consoleStatus.value = 'connected'
-      appendInfo(`${t('Connected to')} ${msg.director} — ${t('type \'help\' for commands, click here to type.')}`)
-      scrollBottom()
-      return
-    }
-    if (msg.type === 'auth_error') {
-      consoleStatus.value = 'error'
-      appendErr(`${t('Authentication error')}: ${msg.message}`)
-      scrollBottom()
-      return
-    }
-    if (msg.type === 'raw_response') {
-      const entry = pendingCmds.get(msg.id)
-      if (entry) { clearTimeout(entry.timer); pendingCmds.delete(msg.id) }
-
-      if (completionIds.delete(msg.id)) {
-        // Tab-completion response: single line → update cmd; multiple → display
-        const lines = String(msg.text ?? '').replace(/\r\n/g, '\n').split('\n').filter(l => l.trim())
-        if (lines.length === 1) {
-          cmd.value = lines[0].trim()
-        } else if (lines.length > 1) {
-          appendLines(msg.text)
-        }
-        // empty → no completions, do nothing
-      } else {
-        appendLines(msg.text)
-        currentPrompt.value = msg.prompt === 'select' ? 'Select: '
-                            : msg.prompt === 'sub'    ? '> '
-                            : '* '
-      }
-      scrollBottom()
-      return
-    }
-    if (msg.type === 'error') {
-      const entry = pendingCmds.get(msg.id)
-      if (entry) { clearTimeout(entry.timer); pendingCmds.delete(msg.id) }
-      appendErr(msg.message)
-      scrollBottom()
-    }
-  }
-
-  rawWs.onerror = () => {
-    consoleStatus.value = 'error'
-      appendErr(`${t('Cannot connect to proxy at')} ${WS_URL}`)
-    scrollBottom()
-    rejectAll('WebSocket error')
-  }
-
-  rawWs.onclose = () => {
-    if (consoleStatus.value !== 'disconnected') {
-      consoleStatus.value = 'disconnected'
-      appendInfo(t('Console disconnected.'))
-      scrollBottom()
-    }
-    rejectAll('WebSocket closed')
-  }
-}
-
-function disconnectRaw() {
-  rejectAll('Disconnected')
-  rawWs?.close()
-  rawWs = null
-  consoleStatus.value = 'disconnected'
+function reconnectSelectedSession() {
+  consoleSessions.disconnectSession(selectedDirector.value, { reason: 'Disconnected' })
+  ensureSelectedSession()
 }
 
 // ── send / keyboard ───────────────────────────────────────────────────────────
 function send() {
-  const c = cmd.value.trim()
+  const session = currentSession.value
+  const command = session.cmd.trim()
 
-  if (c && (!history.value.length || history.value[history.value.length - 1] !== c)) {
-    history.value.push(c)
-    historyIdx = history.value.length
+  if (
+    command
+    && (
+      !session.history.length
+      || session.history[session.history.length - 1] !== command
+    )
+  ) {
+    session.history.push(command)
+    session.historyIdx = session.history.length
   }
 
-  // echo the command as a completed line (even if empty — shows the prompt)
-  output.value.push({ text: `${currentPrompt.value}${c}`, cls: 'console-cmd' })
-  cmd.value = ''
-
-  if (!rawWs || rawWs.readyState !== WebSocket.OPEN) {
-    appendErr(t('Not connected to director.'))
-    scrollBottom()
-    return
-  }
-
-  const id = String(++cmdSeq)
-  const timer = startPendingTimer(id, RAW_CMD_TIMEOUT_MS, () => {
-    appendErr(t('Command timed out.'))
-    scrollBottom()
-  })
-  pendingCmds.set(id, { timer })
-  rawWs.send(JSON.stringify({ type: 'command', id, command: c }))
+  consoleSessions.appendCommand(selectedDirector.value, command)
+  session.cmd = ''
+  consoleSessions.sendCommand(selectedDirector.value, command)
   scrollBottom()
 }
 
 function quickSend(c) {
-  output.value.push({ text: `${currentPrompt.value}${c}`, cls: 'console-cmd' })
-  cmd.value = ''
-  if (!rawWs || rawWs.readyState !== WebSocket.OPEN) {
-    appendErr(t('Not connected to director.'))
-    scrollBottom()
-    return
-  }
-  const id = String(++cmdSeq)
-  const timer = startPendingTimer(id, RAW_CMD_TIMEOUT_MS, () => {
-    appendErr(t('Command timed out.'))
-    scrollBottom()
-  })
-  pendingCmds.set(id, { timer })
-  rawWs.send(JSON.stringify({ type: 'command', id, command: c }))
+  currentSession.value.cmd = ''
+  consoleSessions.appendCommand(selectedDirector.value, c)
+  consoleSessions.sendCommand(selectedDirector.value, c)
   scrollBottom()
   focusConsole()
 }
 
 function sendTab() {
-  if (!rawWs || rawWs.readyState !== WebSocket.OPEN) return
-  const id = String(++cmdSeq)
-  const timer = setTimeout(() => {
-    completionIds.delete(id)
-    pendingCmds.delete(id)
-  }, COMPLETION_TIMEOUT_MS)
-  completionIds.add(id)
-  pendingCmds.set(id, { timer })
-  rawWs.send(JSON.stringify({ type: 'command', id, command: cmd.value + '\t' }))
+  consoleSessions.requestCompletion(selectedDirector.value, currentSession.value.cmd)
 }
 
 function onKeyDown(event) {
+  const session = currentSession.value
+
   // Don't interfere with browser shortcuts (Ctrl+R, Ctrl+T, etc.)
   if (event.ctrlKey && event.key !== 'c' && event.key !== 'l') return
 
@@ -321,58 +221,80 @@ function onKeyDown(event) {
     send()
   } else if (event.key === 'Backspace') {
     event.preventDefault()
-    cmd.value = cmd.value.slice(0, -1)
+    session.cmd = session.cmd.slice(0, -1)
   } else if (event.key === 'Delete') {
     event.preventDefault()
-    cmd.value = ''
+    session.cmd = ''
   } else if (event.key === 'ArrowUp') {
     event.preventDefault()
-    if (history.value.length === 0) return
-    if (historyIdx > 0) historyIdx--
-    cmd.value = history.value[historyIdx] ?? ''
+    if (session.history.length === 0) return
+    if (session.historyIdx > 0) session.historyIdx--
+    session.cmd = session.history[session.historyIdx] ?? ''
   } else if (event.key === 'ArrowDown') {
     event.preventDefault()
-    if (historyIdx < history.value.length - 1) {
-      historyIdx++
-      cmd.value = history.value[historyIdx]
+    if (session.historyIdx < session.history.length - 1) {
+      session.historyIdx++
+      session.cmd = session.history[session.historyIdx]
     } else {
-      historyIdx = history.value.length
-      cmd.value  = ''
+      session.historyIdx = session.history.length
+      session.cmd = ''
     }
   } else if (event.ctrlKey && event.key === 'c') {
     event.preventDefault()
-    output.value.push({ text: `${currentPrompt.value}${cmd.value}^C`, cls: 'console-cmd' })
-    cmd.value = ''
+    consoleSessions.appendCommand(selectedDirector.value, `${session.cmd}^C`)
+    session.cmd = ''
   } else if (event.ctrlKey && event.key === 'l') {
     event.preventDefault()
     clearOutput()
   } else if (event.key.length === 1 && !event.altKey) {
     // printable character
     event.preventDefault()
-    cmd.value += event.key
+    session.cmd += event.key
   }
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────────────
 onMounted(() => {
-  appendInfo(t('Bareos WebUI Console — click here to type, ↑/↓ for history, Ctrl+L to clear'))
-  connectRaw()
+  director.fetchAvailableDirectors().catch(() => {})
+  ensureSelectedSession()
 })
 
-onUnmounted(disconnectRaw)
-
-watch(() => director.isConnected, (connected) => {
-  if (connected && consoleStatus.value === 'disconnected') connectRaw()
+onUnmounted(() => {
+  focused.value = false
 })
 
-watch(() => auth.user?.director, (currentDirector, previousDirector) => {
-  if (!currentDirector || currentDirector === previousDirector) {
+watch(selectedDirector, async (directorName, previousDirector) => {
+  if (!directorName || directorName === previousDirector) {
     return
   }
 
-  disconnectRaw()
-  appendInfo(`${t('Switching console to')} ${currentDirector}…`)
-  connectRaw()
+  await router.replace({
+    name: route.name,
+    query: directorName === auth.user?.director ? {} : { director: directorName },
+  })
+  ensureSelectedSession()
+  scrollBottom()
+})
+
+watch(() => route.query.director, (queryDirector) => {
+  const normalizedDirector = String(queryDirector ?? '').trim()
+  const fallbackDirector = auth.user?.director || settings.directorName
+  const targetDirector = normalizedDirector || fallbackDirector
+
+  if (targetDirector && targetDirector !== selectedDirector.value) {
+    selectedDirector.value = targetDirector
+  }
+})
+
+watch(() => auth.user?.director, (directorName) => {
+  if (!selectedDirector.value && directorName) {
+    selectedDirector.value = directorName
+    ensureSelectedSession()
+  }
+})
+
+watch(() => currentSession.value.output.length, () => {
+  scrollBottom()
 })
 </script>
 

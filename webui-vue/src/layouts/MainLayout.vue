@@ -250,6 +250,7 @@ import bareosLogo from '../assets/bareos-logo-small.png'
 import { bareosVersion as appVersion } from '../generated/bareos-version.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
+import { useConsoleSessionsStore } from '../stores/consoleSessions.js'
 import { useDirectorStore } from '../stores/director.js'
 import {
   RELEASE_INFO_PAGE_URL,
@@ -259,6 +260,7 @@ import { useSettingsStore } from '../stores/settings.js'
 
 const $q       = useQuasar()
 const auth     = useAuthStore()
+const consoleSessions = useConsoleSessionsStore()
 const director = useDirectorStore()
 const releaseInfo = useReleaseInfoStore()
 const router   = useRouter()
@@ -269,9 +271,11 @@ const { t } = useI18n()
 
 function openConsole() {
   const base = window.location.href.replace(/#.*$/, '')
+  const directorName = currentDirector.value || auth.user?.director || settings.directorName
+  const popupName = `bareos-console-${String(directorName).replace(/[^A-Za-z0-9_-]+/g, '-')}`
   window.open(
-    base + '#/console-popup',
-    'bareos-console',
+    `${base}#/console-popup?director=${encodeURIComponent(directorName)}`,
+    popupName,
     'width=960,height=720,resizable=yes,scrollbars=no'
   )
 }
@@ -408,6 +412,7 @@ const directorUpdateAlert = computed(() => {
 })
 
 function logout() {
+  consoleSessions.disconnectAll({ reason: 'Disconnected', resetInitialized: true })
   director.disconnect()
   auth.logout()
   router.push({ name: 'login' })
