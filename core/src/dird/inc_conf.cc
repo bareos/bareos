@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,11 +43,13 @@
 #include "lib/edit.h"
 
 #include <cassert>
+#include <array>
+#include <string_view>
 
 namespace directordaemon {
 
-#define PERMITTED_VERIFY_OPTIONS (const char*)"ipnugsamcd51"
-#define PERMITTED_ACCURATE_OPTIONS (const char*)"ipnugsamcd51A"
+static constexpr char const* PERMITTED_VERIFY_OPTIONS = "ipnugsamcd51";
+static constexpr char const* PERMITTED_ACCURATE_OPTIONS = "ipnugsamcd51A";
 
 typedef struct {
   bool configured;
@@ -364,6 +366,72 @@ static inline void IsInPermittedSet(lexer* lc,
   }
 }
 
+constexpr void bstrdedupcat(char* out, const char* in, int out_capacity)
+{
+  if (out_capacity <= 1) { return; }
+  std::string_view full_buffer{out, static_cast<size_t>(out_capacity)};
+
+  auto current_len = full_buffer.find('\0');
+  if (current_len == full_buffer.npos) {
+    // no null terminator => do nothing
+    // as we cannot safely append any chars
+    return;
+  }
+
+  size_t max_len = out_capacity - 1;  // keep space for null terminator
+
+  while (current_len < max_len) {
+    std::string_view existing_chars = full_buffer.substr(0, current_len);
+
+    char c = *in++;
+    if (!c) { break; }
+
+    if (existing_chars.find(c) != existing_chars.npos) { continue; }
+
+    out[current_len++] = c;
+  }
+
+  out[current_len] = '\0';
+}
+
+template <size_t N, size_t M>
+consteval bool test_bstrdedupcat(const char (&input)[N],
+                                 const char (&to_append)[M],
+                                 std::string_view result)
+{
+  if (input[N - 1] != '\0') { return false; }
+  if (to_append[M - 1] != '\0') { return false; }
+
+
+  std::array<char, N + M> buffer{};
+
+  for (size_t i = 0; i < N; ++i) { buffer[i] = input[i]; }
+
+  bstrdedupcat(buffer.data(), to_append, buffer.size());
+
+  std::string_view full_buffer{buffer.data(), buffer.size()};
+
+  auto nul_pos = full_buffer.find('\0');
+  if (nul_pos == full_buffer.npos) {
+    // missing null terminator
+    return false;
+  }
+
+  auto str_len = nul_pos;
+
+  auto as_str = std::string_view{buffer.data(), str_len};
+
+  return as_str == result;
+}
+
+static_assert(test_bstrdedupcat("", "xyz", "xyz"));
+static_assert(test_bstrdedupcat("xyz", "", "xyz"));
+static_assert(test_bstrdedupcat("a", "b", "ab"));
+static_assert(test_bstrdedupcat("a", "ab", "ab"));
+static_assert(test_bstrdedupcat("ad", "ab", "adb"));
+static_assert(test_bstrdedupcat("aaaabbb", "ab", "aaaabbb"));
+static_assert(test_bstrdedupcat("ba", "dab", "bad"));
+
 /**
  * Scan for right hand side of Include options (keyword=option) is
  * converted into one or two characters. Verifyopts=xxxx is Vxxxx:
@@ -384,13 +452,13 @@ static void ScanIncludeOptions(lexer* lc, int keyword, char* opts, int optlen)
   if (keyword == INC_KW_VERIFY) {               /* special case */
     IsInPermittedSet(lc, T_("verify"), PERMITTED_VERIFY_OPTIONS);
     bstrncat(opts, "V", optlen); /* indicate Verify */
-    bstrncat(opts, lc->str, optlen);
+    bstrdedupcat(opts, lc->str, optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_ACCURATE) { /* special case */
     IsInPermittedSet(lc, T_("accurate"), PERMITTED_ACCURATE_OPTIONS);
     bstrncat(opts, "C", optlen); /* indicate Accurate */
-    bstrncat(opts, lc->str, optlen);
+    bstrdedupcat(opts, lc->str, optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_STRIPPATH) { /* special case */
@@ -644,7 +712,15 @@ static void StoreOption(
   // Now scan for the value
   ScanIncludeOptions(lc, keyword, inc_opts, sizeof(inc_opts));
   if (pass == 1) {
-    bstrncat(res_incexe->current_opts->opts, inc_opts, MAX_FOPTS);
+    bstrncat(res_incexe->current_opts->opts, inc_opts,
+             std::size(res_incexe->current_opts->opts));
+
+    if (strlen(res_incexe->current_opts->opts) + 1
+        >= std::size(res_incexe->current_opts->opts)) {
+      scan_err0(lc, T_("Too many fileset options specified; cannot parse this "
+                       "correctly\n"));
+    }
+
     Dmsg2(900, "new pass=%d incexe opts=%s\n", pass,
           res_incexe->current_opts->opts);
   }
@@ -672,6 +748,7 @@ static void SetupCurrentOpts(void)
 }
 
 static void ApplyDefaultValuesForUnsetOptions(
+    lexer* lc,
     OptionsDefaultValues default_values)
 {
   for (auto const& option : default_values.option_default_values) {
@@ -679,18 +756,25 @@ static void ApplyDefaultValuesForUnsetOptions(
     bool was_set_in_config = option.second.configured;
     std::string default_value = option.second.default_value;
     if (!was_set_in_config) {
+      if (strlen(res_incexe->current_opts->opts) + default_value.size()
+          >= std::size(res_incexe->current_opts->opts)) {
+        scan_err0(
+            lc, T_("Options value is too long; cannot append default options"));
+        return;
+      }
+
       bstrncat(res_incexe->current_opts->opts, default_value.c_str(),
-               MAX_FOPTS);
+               std::size(res_incexe->current_opts->opts));
       Dmsg2(900, "setting default value for keyword-id=%d, %s\n", keyword_id,
             default_value.c_str());
     }
   }
 }
 
-static void StoreDefaultOptions()
+static void StoreDefaultOptions(lexer* lc)
 {
   SetupCurrentOpts();
-  ApplyDefaultValuesForUnsetOptions(OptionsDefaultValues{});
+  ApplyDefaultValuesForUnsetOptions(lc, OptionsDefaultValues{});
 }
 
 // Come here when Options seen in Include/Exclude
@@ -766,7 +850,7 @@ static void StoreOptionsRes(lexer* lc,
     }
   }
 
-  if (pass == 1) { ApplyDefaultValuesForUnsetOptions(default_values); }
+  if (pass == 1) { ApplyDefaultValuesForUnsetOptions(lc, default_values); }
 }
 
 static FilesetResource* GetStaticFilesetResource()
@@ -973,7 +1057,7 @@ static void StoreNewinc(lexer* lc,
   }
 
   if (!has_options) {
-    if (pass == 1) { StoreDefaultOptions(); }
+    if (pass == 1) { StoreDefaultOptions(lc); }
   }
 
   if (pass == 1) {

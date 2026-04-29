@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,19 +49,49 @@
 #include "lib/edit.h"
 
 #include <algorithm>
+#include <future>
+#include <thread>
+#include <cstdint>
+#include <string_view>
+
+#include "plugin_private_context.h"
 
 namespace {
-uint32_t PyVersion()
+using python_execution_request = std::pair<void (*)(void*), void*>;
+static inline constexpr python_execution_request REQUEST_THREAD_STOP
+    = {nullptr, nullptr};
+
+// Plugin private context
+struct plugin_private_context {
+  int64_t instance{};                 // Instance number of plugin
+  bool python_loaded{};               // Plugin has python module loaded?
+  bool python_default_path_is_set{};  // Python plugin default search path is
+                                      // set?
+  bool python_path_is_set{};          // Python plugin search path is set?
+  char* module_path{};                // Plugin Module Path
+  char* module_name{};                // Plugin Module Name
+  PyObject* pModule{};                // Python Module entry point
+  PyObject* pyModuleFunctionsDict{};  // Python Dictionary
+
+  std::mutex execute_mut;
+  std::condition_variable request_empty;
+  std::condition_variable execution_requested;
+  std::optional<python_execution_request> to_execute;
+
+  std::thread python_thread;
+};
+
+plugin_private_context* get_private_context(PluginContext* ctx)
 {
-#if PY_VERSION_HEX < VERSION_HEX(3, 11, 0)
-  // bake it in statically
-  return PY_VERSION_HEX;
-#else
-  // determine it at runtime
-  return Py_Version;
-#endif
+  return static_cast<plugin_private_context*>(ctx->plugin_private_context);
 }
 }  // namespace
+
+extern PyObject* get_module_function_dict(PluginContext* ctx)
+{
+  auto* private_ctx = get_private_context(ctx);
+  return private_ctx->pyModuleFunctionsDict;
+}
 
 namespace directordaemon {
 
@@ -121,141 +151,161 @@ static PluginFunctions pluginFuncs
        freePlugin, /* free plugin instance */
        getPluginValue, setPluginValue, handlePluginEvent};
 
-#include "plugin_private_context.h"
-
-
-/* List of interpreters accessed by this thread.
- * We use a vector instead of a set here since we expect that each thread
- * only accesses very few interpreters (<= 1) at the same time.
- */
-thread_local std::vector<PyThreadState*> tl_threadstates{};
-
-/**
- * We don't actually use this but we need it to tear down the
- * final python interpreter on unload of the plugin. Each instance of
- * the plugin get its own interpreter.
- */
 static PyThreadState* mainThreadState{nullptr};
-
-/* Return this threads thread state for interp if it exists.  Returns
- * nullptr otherwise */
-PyThreadState* GetThreadStateForInterp(PyInterpreterState* interp)
-{
-  for (auto* thread : tl_threadstates) {
-    if (thread->interp == interp) { return thread; }
-  }
-  return nullptr;
-}
-
-PyThreadState* PopThreadStateForInterp(PyInterpreterState* interp)
-{
-  auto iter = std::find_if(
-      tl_threadstates.begin(), tl_threadstates.end(),
-      [interp](const auto& thread) { return thread->interp == interp; });
-
-  if (iter != tl_threadstates.end()) {
-    auto* thread = *iter;
-
-    tl_threadstates.erase(iter);
-
-    return thread;
-  } else {
-    return nullptr;
-  }
-}
-
-class locked_threadstate {
- private:
-  locked_threadstate(PyThreadState* t_ts, bool t_owns) : ts{t_ts}, owns{t_owns}
-  {
-    // make the given thread state active
-    // we assume that we are currently holding the gil
-    (void)PyThreadState_Swap(t_ts);
-  }
-
- public:
-  explicit locked_threadstate(PyThreadState* t_ts)
-      : locked_threadstate(t_ts, false)
-  {
-  }
-
-  explicit locked_threadstate(PyInterpreterState* interp)
-      : locked_threadstate(PyThreadState_New(interp), true)
-  {
-  }
-
-  locked_threadstate(const locked_threadstate&) = delete;
-  locked_threadstate& operator=(const locked_threadstate&) = delete;
-
-  locked_threadstate(locked_threadstate&& other) { *this = std::move(other); }
-
-  locked_threadstate& operator=(locked_threadstate&& other)
-  {
-    std::swap(ts, other.ts);
-    std::swap(owns, other.owns);
-
-    return *this;
-  }
-
-  PyThreadState* get() { return ts; }
-
-  ~locked_threadstate()
-  {
-    if (ts) {
-      if (owns) {
-        // destroy the thread state and release the gil
-        PyThreadState_Clear(ts);  // required before delete
-        PyThreadState_DeleteCurrent();
-      } else {
-        // just release the gil and make ts inactive
-        PyEval_ReleaseThread(ts);
-      }
-    }
-  }
-
- private:
-  PyThreadState* ts{nullptr};
-  bool owns{false};
-};
-
-/* Acquire the gil for this thread.  If this thread does not have a thread
- * state for interp, a new one is created.  This newly created thread state
- * is destroyed by locked_threadstates destructor. */
-locked_threadstate AcquireLock(PyInterpreterState* interp)
-{
-  // we lock the gil here to synchronize potential calls to PyThreadState_New().
-  PyEval_RestoreThread(mainThreadState);
-  auto* ts = GetThreadStateForInterp(interp);
-  if (!ts) {
-    // create a new thread state
-    return locked_threadstate{interp};
-  }
-
-  return locked_threadstate{ts};
-}
-
 
 /* functions common to all plugins */
 #include "plugins/include/python_plugins_common.inc"
 #include "plugins/include/python_plugin_modules_common.inc"
+
+void wait_for_thread_end(PluginContext* plugin_ctx)
+{
+  auto* priv_ctx = get_private_context(plugin_ctx);
+
+  for (;;) {
+    std::unique_lock lock{priv_ctx->execute_mut};
+    priv_ctx->execution_requested.wait(
+        lock, [&] { return priv_ctx->to_execute.has_value(); });
+
+    ASSERT(priv_ctx->to_execute.has_value());
+
+    python_execution_request req = priv_ctx->to_execute.value();
+    priv_ctx->to_execute.reset();
+
+    priv_ctx->request_empty.notify_one();
+    lock.unlock();
+
+    if (req == REQUEST_THREAD_STOP) { break; }
+  }
+}
+
+void run_python_thread(PluginContext* plugin_ctx,
+                       PyInterpreterState* main_interp,
+                       std::promise<bool>* ready)
+{
+  /* For each plugin instance we instantiate a new Python interpreter. */
+
+  // before creating the subinterpreter, we first need to acquire
+  // the main interpreter gil.  To do this correctly, we need to
+  // create a new threadstate for that interpreter
+  auto* ts_maininterp = PyThreadState_New(main_interp);
+  if (!ts_maininterp) {
+    ready->set_value(false);
+    return wait_for_thread_end(plugin_ctx);
+  }
+  PyEval_RestoreThread(ts_maininterp);
+
+  bool ok = true;
+
+  PyThreadState* ts = Py_NewInterpreter();
+  if (!ts) {
+    ready->set_value(false);
+    PyThreadState_Clear(ts_maininterp);
+
+    // delete the threadstate and release the gil
+    PyThreadState_DeleteCurrent();
+    return wait_for_thread_end(plugin_ctx);
+  }
+
+  /* set bareos_core_functions inside of barosdir module */
+  Bareosdir_set_plugin_context(plugin_ctx);
+
+  ready->set_value(ok);
+
+  // release the (shared) gil, so that other plugins can also continue
+  PyEval_SaveThread();
+
+  auto* priv_ctx = get_private_context(plugin_ctx);
+
+  for (;;) {
+    std::unique_lock lock{priv_ctx->execute_mut};
+    priv_ctx->execution_requested.wait(
+        lock, [&] { return priv_ctx->to_execute.has_value(); });
+
+    ASSERT(priv_ctx->to_execute.has_value());
+
+    python_execution_request req = priv_ctx->to_execute.value();
+    priv_ctx->to_execute.reset();
+
+    priv_ctx->request_empty.notify_one();
+    lock.unlock();
+
+    if (req == REQUEST_THREAD_STOP) { break; }
+
+    if (ok) {
+      ASSERT(req.first != nullptr);
+
+      // get the gil for the python call
+      PyEval_RestoreThread(ts);
+      (*req.first)(req.second);
+      PyEval_SaveThread();
+    }
+  }
+
+  if (ts) {
+    PyEval_RestoreThread(ts);
+
+    if (priv_ctx->pModule) { Py_DECREF(priv_ctx->pModule); }
+
+    Py_EndInterpreter(ts);
+
+    // now we also need to cleanup the maininterp threadstate
+    PyThreadState_Swap(ts_maininterp);
+  }
+
+  PyThreadState_Clear(ts_maininterp);
+
+  // delete the threadstate and release the gil
+  PyThreadState_DeleteCurrent();
+}
+
+// wait until there is nothing currently executing
+// returns with execution lock
+void plugin_submit(plugin_private_context* ctx, python_execution_request req)
+{
+  std::unique_lock lock{ctx->execute_mut};
+
+  ctx->request_empty.wait(lock,
+                          [&ctx] { return !ctx->to_execute.has_value(); });
+
+  ASSERT(!ctx->to_execute.has_value());
+
+  ctx->to_execute.emplace(req);
+
+  ctx->execution_requested.notify_one();
+}
+
+template <typename F> void plugin_run(plugin_private_context* ctx, F&& fun)
+{
+  using data = std::pair<F*, std::promise<void>>;
+  data d;
+  d.first = &fun;
+
+  auto executed = d.second.get_future();
+
+  plugin_submit(ctx, {+[](void* ptr) {
+                        data* data_ptr = static_cast<data*>(ptr);
+
+                        (*data_ptr->first)();
+                        data_ptr->second.set_value();
+                      },
+                      &d});
+
+  executed.wait();
+}
 
 /* Common functions used in all python plugins.  */
 static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
                           pVariable var,
                           void* value)
 {
-  struct plugin_private_context* plugin_priv_ctx
-      = (struct plugin_private_context*)
-            bareos_plugin_ctx->plugin_private_context;
+  auto* plugin_priv_ctx = get_private_context(bareos_plugin_ctx);
   bRC retval = bRC_Error;
 
   if (!plugin_priv_ctx) { goto bail_out; }
-  Bareosdir_set_plugin_context(bareos_plugin_ctx);
 
-  {
-    auto l = AcquireLock(plugin_priv_ctx->interp);
+  plugin_run(plugin_priv_ctx, [&] {
     retval = Bareosdir_PyGetPluginValue(bareos_plugin_ctx, var, value);
-  }
+  });
 
 bail_out:
   return retval;
@@ -265,18 +315,14 @@ static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
                           pVariable var,
                           void* value)
 {
-  struct plugin_private_context* plugin_priv_ctx
-      = (struct plugin_private_context*)
-            bareos_plugin_ctx->plugin_private_context;
+  auto* plugin_priv_ctx = get_private_context(bareos_plugin_ctx);
   bRC retval = bRC_Error;
 
   if (!plugin_priv_ctx) { return bRC_Error; }
-  Bareosdir_set_plugin_context(bareos_plugin_ctx);
 
-  {
-    auto l = AcquireLock(plugin_priv_ctx->interp);
+  plugin_run(plugin_priv_ctx, [&] {
     retval = Bareosdir_PySetPluginValue(bareos_plugin_ctx, var, value);
-  }
+  });
 
   return retval;
 }
@@ -322,7 +368,8 @@ loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   import_bareosdir();
 
   /* set bareos_core_functions inside of barosdir module */
-  Bareosdir_set_bareos_core_functions(lbareos_core_functions);
+  Bareosdir_set_bareos_core_functions(lbareos_core_functions,
+                                      &get_module_function_dict);
 
   bareos_core_functions
       = lbareos_core_functions; /* Set Bareos funct pointers */
@@ -358,23 +405,23 @@ BAREOS_EXPORT bRC unloadPlugin()
 /* Create a new instance of the plugin i.e. allocate our private storage */
 static bRC newPlugin(PluginContext* plugin_ctx)
 {
-  struct plugin_private_context* plugin_priv_ctx
-      = (struct plugin_private_context*)malloc(
-          sizeof(struct plugin_private_context));
+  plugin_private_context* plugin_priv_ctx = new plugin_private_context;
   if (!plugin_priv_ctx) { return bRC_Error; }
-  memset(plugin_priv_ctx, 0, sizeof(struct plugin_private_context));
   plugin_ctx->plugin_private_context
       = (void*)plugin_priv_ctx; /* set our context pointer */
 
-  /* For each plugin instance we instantiate a new Python interpreter. */
-  PyEval_AcquireThread(mainThreadState);
 
-  /* set bareos_core_functions inside of barosdir module */
-  auto* ts = Py_NewInterpreter();
+  std::promise<bool> ready{};
+  auto thread_ready = ready.get_future();
+  plugin_priv_ctx->python_thread = std::thread{run_python_thread, plugin_ctx,
+                                               mainThreadState->interp, &ready};
 
-  Bareosdir_set_plugin_context(plugin_ctx);
-  plugin_priv_ctx->interp = ts->interp;
-  PyEval_ReleaseThread(ts);
+  auto start_success = thread_ready.get();
+
+  if (!start_success) {
+    Jmsg(plugin_ctx, M_FATAL, "could not start the python sub interpreter");
+    return bRC_Error;
+  }
 
   /* Always register some events the python plugin itself can register
      any other events it is interested in.  */
@@ -387,36 +434,18 @@ static bRC newPlugin(PluginContext* plugin_ctx)
 /* Free a plugin instance, i.e. release our private storage */
 static bRC freePlugin(PluginContext* plugin_ctx)
 {
-  struct plugin_private_context* plugin_priv_ctx
-      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  auto* plugin_priv_ctx = get_private_context(plugin_ctx);
 
   if (!plugin_priv_ctx) { return bRC_Error; }
 
-  // Stop any sub interpreter started per plugin instance.
-  auto* ts = PopThreadStateForInterp(plugin_priv_ctx->interp);
-  if (!ts) {
-    Jmsg(plugin_ctx, M_FATAL, LOGPREFIX "No associated thread state found\n");
-    free(plugin_priv_ctx);
-    plugin_ctx->plugin_private_context = NULL;
-    return bRC_Error;
-  }
-  PyEval_AcquireThread(ts);
+  plugin_submit(plugin_priv_ctx, REQUEST_THREAD_STOP);
+  plugin_priv_ctx->python_thread.join();
 
   if (plugin_priv_ctx->module_path) { free(plugin_priv_ctx->module_path); }
 
   if (plugin_priv_ctx->module_name) { free(plugin_priv_ctx->module_name); }
 
-  if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
-
-  Py_EndInterpreter(ts);
-  if (PyVersion() < VERSION_HEX(3, 12, 0)) {
-    PyThreadState_Swap(mainThreadState);
-    PyEval_ReleaseThread(mainThreadState);
-  } else {
-    // endinterpreter releases the gil for us since 3.12
-  }
-
-  free(plugin_priv_ctx);
+  delete plugin_priv_ctx;
   plugin_ctx->plugin_private_context = NULL;
 
   return bRC_OK;
@@ -430,9 +459,8 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
   bRC retval = bRC_Error;
   bool event_dispatched = false;
   PoolMem plugin_options(PM_FNAME);
-  plugin_private_context* plugin_priv_ctx
-      = (plugin_private_context*)plugin_ctx->plugin_private_context;
 
+  auto* plugin_priv_ctx = get_private_context(plugin_ctx);
   if (!plugin_priv_ctx) { goto bail_out; }
 
   /* First handle some events internally before calling python if it
@@ -451,35 +479,34 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
    * we only do a dispatch to the python entry point when that internal
    * processing was successful (e.g. retval == bRC_OK). */
   if (!event_dispatched || retval == bRC_OK) {
-    auto l = AcquireLock(plugin_priv_ctx->interp);
-    Bareosdir_set_plugin_context(plugin_ctx);
-
     /* Now dispatch the event to Python.
      * First the calls that need special handling. */
-    switch (event->eventType) {
-      case bDirEventNewPluginOptions:
-        // See if we already loaded the Python modules.
-        if (!plugin_priv_ctx->python_loaded) {
-          retval = PyLoadModule(plugin_ctx, plugin_options.c_str());
-        }
+    plugin_run(plugin_priv_ctx, [&] {
+      switch (event->eventType) {
+        case bDirEventNewPluginOptions:
+          // See if we already loaded the Python modules.
+          if (!plugin_priv_ctx->python_loaded) {
+            retval = PyLoadModule(plugin_ctx, plugin_options.c_str());
+          }
 
-        /* Only try to call when the loading succeeded. */
-        if (retval == bRC_OK) {
-          retval = Bareosdir_PyParsePluginDefinition(plugin_ctx,
-                                                     plugin_options.c_str());
-        }
-        break;
-      default:
-        /* Handle the generic events e.g. the ones which are just passed on.
-         * We only try to call Python when we loaded the right module until
-         * that time we pretend the call succeeded. */
-        if (plugin_priv_ctx->python_loaded) {
-          retval = Bareosdir_PyHandlePluginEvent(plugin_ctx, event, value);
-        } else {
-          retval = bRC_OK;
-        }
-        break;
-    }
+          /* Only try to call when the loading succeeded. */
+          if (retval == bRC_OK) {
+            retval = Bareosdir_PyParsePluginDefinition(plugin_ctx,
+                                                       plugin_options.c_str());
+          }
+          break;
+        default:
+          /* Handle the generic events e.g. the ones which are just passed on.
+           * We only try to call Python when we loaded the right module until
+           * that time we pretend the call succeeded. */
+          if (plugin_priv_ctx->python_loaded) {
+            retval = Bareosdir_PyHandlePluginEvent(plugin_ctx, event, value);
+          } else {
+            retval = bRC_OK;
+          }
+          break;
+      }
+    });
   }
 
 bail_out:
