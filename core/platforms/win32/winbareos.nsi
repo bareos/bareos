@@ -1787,8 +1787,6 @@ FunctionEnd
 # Database Configuration Dialog
 #
 Function getDatabaseParameters
-  Push $R0
-
   strcmp $Upgrading "yes" skip
   strcmp $InstallDirector "no" skip
 
@@ -1800,9 +1798,10 @@ Function getDatabaseParameters
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 7" "state" $DbName
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 8" "state" $DbPort
   InstallOptions::dialog $PLUGINSDIR\databasedialog.ini
+  Return
 
 skip:
-  Pop $R0
+  Abort  # skip this page entirely
 FunctionEnd
 
 Function getDatabaseParametersLeave
