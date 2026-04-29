@@ -1,11 +1,51 @@
 <template>
   <q-page class="q-pa-md">
+    <q-card flat bordered class="q-mb-md bareos-panel">
+      <q-card-section class="panel-header row items-center">
+        <span>{{ t('Jobs Scope') }}</span>
+        <q-space />
+        <q-chip dense square color="white" text-color="primary" :label="jobsScopeLabel" />
+      </q-card-section>
+      <q-card-section>
+        <q-select
+          v-model="selectedDirectorsModel"
+          data-testid="jobs-directors"
+          :options="directorOptions"
+          option-label="label"
+          option-value="value"
+          emit-value
+          map-options
+          multiple
+          use-chips
+          outlined
+          dense
+          :label="t('Directors')"
+        />
+        <div class="text-caption text-grey-6 q-mt-sm">
+          {{ t('Select the directors that contribute to the jobs list.') }}
+        </div>
+        <q-banner
+          v-if="directorErrors.length"
+          rounded
+          dense
+          class="bg-warning text-black q-mt-md"
+        >
+          <template #avatar>
+            <q-icon name="warning" />
+          </template>
+          <div v-for="item in directorErrors" :key="item.director">
+            <strong>{{ item.director }}</strong>: {{ item.message }}
+          </div>
+        </q-banner>
+      </q-card-section>
+    </q-card>
+
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="list"     :label="t('Show')"     no-caps />
-      <q-tab name="actions"  :label="t('Actions')"  no-caps data-testid="jobs-tab-actions" />
-      <q-tab name="run"      :label="t('Run')"      no-caps data-testid="jobs-tab-run" />
+      <q-tab name="actions"  :label="t('Actions')"  no-caps data-testid="jobs-tab-actions" :disable="isCommonJobs" />
+      <q-tab name="run"      :label="t('Run')"      no-caps data-testid="jobs-tab-run" :disable="isCommonJobs" />
       <q-tab name="rerun"    :label="t('Rerun')"    no-caps />
-      <q-tab name="timeline" :label="t('Timeline')" no-caps />
+      <q-tab name="timeline" :label="t('Timeline')" no-caps :disable="isCommonJobs" />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated swipeable>
@@ -45,7 +85,7 @@
             <q-table
               :rows="filteredJobs"
               :columns="columns"
-              row-key="id"
+              row-key="scopeKey"
               dense flat
               :loading="loading"
               v-model:pagination="pagination"
@@ -53,9 +93,14 @@
             >
               <template #body-cell-id="props">
                 <q-td :props="props">
-                  <router-link :to="{ name: 'job-details', params: { id: props.value } }" class="text-primary">
+                  <a href="#" class="text-primary" @click.prevent="openJobDetails(props.row)">
                     {{ props.value }}
-                  </router-link>
+                  </a>
+                </q-td>
+              </template>
+              <template #body-cell-director="props">
+                <q-td :props="props">
+                  <q-chip dense square color="primary" text-color="white" :label="props.value" />
                 </q-td>
               </template>
               <template #body-cell-status="props">
@@ -65,9 +110,9 @@
               </template>
               <template #body-cell-client="props">
                 <q-td :props="props">
-                  <router-link :to="{ name: 'client-details', params: { name: props.value } }" class="text-primary">
+                  <a href="#" class="text-primary" @click.prevent="openClientDetails(props.row)">
                     {{ props.value }}
-                  </router-link>
+                  </a>
                 </q-td>
               </template>
               <template #body-cell-type="props">
@@ -158,10 +203,10 @@
                          @click="confirmCancel(props.row)" class="q-mr-xs" />
                   <q-btn flat round dense size="sm" icon="restore" color="teal"
                          :title="t('Restore this job')"
-                         :to="{ name: 'restore', query: { client: props.row.client, jobid: props.row.id } }"
+                         @click="openRestoreDetails(props.row)"
                          class="q-mr-xs" />
                    <q-btn flat round dense size="sm" icon="info" :title="t('Details')"
-                         :to="{ name: 'job-details', params: { id: props.row.id } }" />
+                         @click="openJobDetails(props.row)" />
                 </q-td>
               </template>
             </q-table>
@@ -171,6 +216,9 @@
 
       <!-- ── ACTIONS ───────────────────────────────────────────────────────── -->
       <q-tab-panel name="actions" class="q-pa-none q-gutter-md">
+        <q-banner v-if="isCommonJobs" dense rounded class="bg-info text-white q-mb-md">
+          {{ t('Actions stay scoped to the active director for now. Reduce the jobs scope to a single director to use this tab.') }}
+        </q-banner>
 
         <!-- Enable / Disable jobs -->
         <q-card flat bordered class="bareos-panel">
@@ -261,7 +309,7 @@
             <q-table
               :rows="rerunableJobs"
               :columns="rerunColumns"
-              row-key="id"
+              row-key="scopeKey"
               dense flat
               :pagination="{ rowsPerPage: 15, sortBy: 'id', descending: true }"
             >
@@ -272,9 +320,9 @@
               </template>
               <template #body-cell-client="props">
                 <q-td :props="props">
-                  <router-link :to="{ name: 'client-details', params: { name: props.value } }" class="text-primary">
+                  <a href="#" class="text-primary" @click.prevent="openClientDetails(props.row)">
                     {{ props.value }}
-                  </router-link>
+                  </a>
                 </q-td>
               </template>
               <template #body-cell-level="props">
@@ -285,9 +333,14 @@
               </template>
               <template #body-cell-id="props">
                 <q-td :props="props">
-                  <router-link :to="{ name: 'job-details', params: { id: props.value } }" class="text-primary">
+                  <a href="#" class="text-primary" @click.prevent="openJobDetails(props.row)">
                     {{ props.value }}
-                  </router-link>
+                  </a>
+                </q-td>
+              </template>
+              <template #body-cell-director="props">
+                <q-td :props="props">
+                  <q-chip dense square color="primary" text-color="white" :label="props.value" />
                 </q-td>
               </template>
               <template #body-cell-bytes="props">
@@ -314,7 +367,7 @@
         </q-card>
 
         <!-- Manual ID fallback -->
-        <q-card flat bordered class="bareos-panel" style="max-width:400px">
+        <q-card v-if="!isCommonJobs" flat bordered class="bareos-panel" style="max-width:400px">
           <q-card-section class="panel-header">{{ t('Rerun by Job ID') }}</q-card-section>
           <q-card-section>
             <q-form @submit.prevent="submitRerun" class="q-gutter-md">
@@ -333,6 +386,9 @@
 
       <!-- ── TIMELINE ──────────────────────────────────────────────────────── -->
       <q-tab-panel name="timeline" class="q-pa-none">
+        <q-banner v-if="isCommonJobs" dense rounded class="bg-info text-white q-mb-md">
+          {{ t('Timeline stays scoped to the active director for now. Reduce the jobs scope to a single director to use this tab.') }}
+        </q-banner>
         <JobTimeline />
       </q-tab-panel>
     </q-tab-panels>
@@ -346,6 +402,9 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { jobStatusMap, formatBytes, formatSpeed, parseDurationSecs, timeAgo } from '../mock/index.js'
 import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
+import { fetchAggregatedJobsPage } from '../composables/jobsAggregate.js'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatNumber } from '../utils/locales.js'
@@ -358,12 +417,14 @@ import JobTimeline from '../components/JobTimeline.vue'
 const route    = useRoute()
 const router   = useRouter()
 const $q       = useQuasar()
+const auth     = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
 const { t } = useI18n()
 const tab          = ref(route.query.action || 'list')
 const search       = ref(route.query.search || '')
 const statusFilter = ref(normaliseJobStatusFilter(route.query.status))
+const directorErrors = ref([])
 const fmtBytes  = formatBytes
 const fmtSpeed  = formatSpeed
 const jobStatusOptions = computed(() => Object.entries(jobStatusMap).map(([value, meta]) => ({
@@ -375,6 +436,69 @@ function quoteDirectorString(value) {
   return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
 }
 
+const directorOptions = computed(() => {
+  const values = new Set([
+    ...director.availableDirectors,
+    ...settings.selectedDirectors,
+    auth.user?.director,
+    settings.directorName,
+  ].filter(Boolean))
+  return [...values].map(value => ({ label: value, value }))
+})
+
+function syncSelectedDirectors() {
+  const validDirectors = directorOptions.value.map(option => option.value)
+  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
+
+  if (selected.length > 0) {
+    if (selected.length !== settings.selectedDirectors.length) {
+      settings.setSelectedDirectors(selected)
+    }
+    return
+  }
+
+  const fallbackDirector = auth.user?.director || settings.directorName
+  if (fallbackDirector) {
+    settings.setSelectedDirectors([fallbackDirector])
+  }
+}
+
+const selectedDirectorsModel = computed({
+  get: () => settings.selectedDirectors,
+  set: (value) => {
+    const selected = Array.isArray(value) ? value : []
+    if (selected.length > 0) {
+      settings.setSelectedDirectors(selected)
+      return
+    }
+
+    const fallbackDirector = auth.user?.director || settings.directorName
+    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
+  },
+})
+
+const activeDirectors = computed(() => {
+  const selected = settings.selectedDirectors.filter(value => (
+    directorOptions.value.some(option => option.value === value)
+  ))
+
+  if (selected.length > 0) {
+    return selected
+  }
+
+  const currentDirector = auth.user?.director || settings.directorName
+  return currentDirector ? [currentDirector] : []
+})
+
+const isCommonJobs = computed(() => activeDirectors.value.length > 1)
+const showDirectorColumn = computed(() => isCommonJobs.value)
+const isSingleDirectorScope = computed(() => activeDirectors.value.length === 1)
+const jobsScopeLabel = computed(() => (
+  isCommonJobs.value
+    ? `${activeDirectors.value.length} ${t('directors selected')}`
+    : (activeDirectors.value[0] ?? t('No director selected'))
+))
+
 // ── paginated job list ────────────────────────────────────────────────────────
 const jobs       = ref([])
 const totalJobs  = ref(0)
@@ -385,24 +509,62 @@ const error      = ref(null)
 const pagination = ref({ page: 1, rowsPerPage: 25, sortBy: 'id', descending: true, rowsNumber: 0 })
 
 async function fetchPage() {
-  if (!director.isConnected) return
   loading.value = true
   error.value   = null
+  directorErrors.value = []
   const { page, rowsPerPage } = pagination.value
   const offset = (page - 1) * rowsPerPage
   const filter = statusFilter.value ? ` jobstatus=${statusFilter.value}` : ''
   try {
+    if (activeDirectors.value.length === 0) {
+      jobs.value = []
+      totalJobs.value = 0
+      pagination.value = { ...pagination.value, rowsNumber: 0 }
+      return
+    }
+
+    if (isCommonJobs.value) {
+      const credentials = auth.getCredentials()
+      if (!credentials?.password) {
+        throw new Error(t('Not logged in.'))
+      }
+
+      const result = await fetchAggregatedJobsPage(
+        credentials,
+        activeDirectors.value,
+        pagination.value,
+        statusFilter.value
+      )
+      jobs.value = result.jobs
+      directorErrors.value = result.directorErrors
+      totalJobs.value = result.totalJobs
+      pagination.value = { ...pagination.value, rowsNumber: result.totalJobs }
+      return
+    }
+
+    if (!director.isConnected) {
+      throw new Error(t('Not connected to director'))
+    }
+
+    const currentDirector = activeDirectors.value[0]
     const [pageResult, countResult] = await Promise.allSettled([
       director.call(`llist jobs reverse limit=${rowsPerPage} offset=${offset}${filter}`),
       director.call(`list jobs count${filter}`),
     ])
     if (pageResult.status === 'rejected') throw pageResult.reason
-    jobs.value = directorCollection(pageResult.value?.jobs).map(normaliseJob)
+    jobs.value = directorCollection(pageResult.value?.jobs).map((job) => {
+      const normalized = normaliseJob(job)
+      return {
+        ...normalized,
+        director: currentDirector,
+        scopeKey: `${currentDirector}:${normalized.id}`,
+      }
+    })
     const count = countResult.status === 'fulfilled'
       ? Number(directorCollection(countResult.value?.jobs)[0]?.count ?? 0)
       : (jobs.value.length < rowsPerPage
-          ? offset + jobs.value.length
-          : offset + jobs.value.length + rowsPerPage)
+        ? offset + jobs.value.length
+        : offset + jobs.value.length + rowsPerPage)
     totalJobs.value = count
     pagination.value = { ...pagination.value, rowsNumber: count }
   } catch (e) {
@@ -471,6 +633,9 @@ function isRunning(status) {
 // ── columns ───────────────────────────────────────────────────────────────────
 const columns = computed(() => [
   { name: 'id',        label: 'ID',       field: 'id',        align: 'right',  sortable: true, style: 'width:60px' },
+  ...(showDirectorColumn.value ? [{
+    name: 'director', label: 'Director', field: 'director', align: 'left', sortable: true,
+  }] : []),
   { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left',   sortable: true },
   { name: 'type',      label: 'Type',     field: 'type',      align: 'center'  },
@@ -488,6 +653,9 @@ const columns = computed(() => [
 
 const runningColumns = computed(() => [
   { name: 'id',        label: 'ID',       field: 'id',        align: 'right',  sortable: true },
+  ...(showDirectorColumn.value ? [{
+    name: 'director', label: 'Director', field: 'director', align: 'left', sortable: true,
+  }] : []),
   { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left'    },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left'    },
@@ -496,6 +664,9 @@ const runningColumns = computed(() => [
 
 const rerunColumns = computed(() => [
   { name: 'id',        label: 'ID',       field: 'id',        align: 'right',  sortable: true, style: 'width:60px' },
+  ...(showDirectorColumn.value ? [{
+    name: 'director', label: 'Director', field: 'director', align: 'left', sortable: true,
+  }] : []),
   { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left',   sortable: true },
   { name: 'level',     label: 'Level',    field: 'level',     align: 'center'  },
@@ -538,6 +709,63 @@ async function loadJobDefs() {
 }
 
 // ── row-level actions ─────────────────────────────────────────────────────────
+async function switchToJobDirector(job) {
+  if (!job?.director) {
+    return
+  }
+
+  if (auth.user?.director === job.director && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(job.director)
+}
+
+async function openJobDetails(job) {
+  try {
+    await switchToJobDirector(job)
+    await router.push({ name: 'job-details', params: { id: job.id } })
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: t('Could not switch to director {director}: {message}', {
+        director: job.director ?? t('unknown'),
+        message: error.message,
+      }),
+    })
+  }
+}
+
+async function openClientDetails(job) {
+  try {
+    await switchToJobDirector(job)
+    await router.push({ name: 'client-details', params: { name: job.client } })
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: t('Could not switch to director {director}: {message}', {
+        director: job.director ?? t('unknown'),
+        message: error.message,
+      }),
+    })
+  }
+}
+
+async function openRestoreDetails(job) {
+  try {
+    await switchToJobDirector(job)
+    await router.push({ name: 'restore', query: { client: job.client, jobid: job.id } })
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: t('Could not switch to director {director}: {message}', {
+        director: job.director ?? t('unknown'),
+        message: error.message,
+      }),
+    })
+  }
+}
+
 function confirmCancel(job) {
   $q.dialog({
     title: t('Cancel Job'),
@@ -550,6 +778,7 @@ function confirmCancel(job) {
 
 async function doCancel(job) {
   try {
+    await switchToJobDirector(job)
     await director.call(`cancel jobid=${job.id} yes`)
     $q.notify({ type: 'positive', message: t('Job {id} cancelled.', { id: job.id }) })
     refresh()
@@ -565,11 +794,13 @@ function confirmRerun(job) {
     html: true,
     ok:     { label: t('Rerun'), color: 'primary', flat: true },
     cancel: { label: t('Cancel'), flat: true },
-  }).onOk(() => doRerun(job.id))
+  }).onOk(() => doRerun(job))
 }
 
-async function doRerun(jobId) {
+async function doRerun(job) {
   try {
+    await switchToJobDirector(job)
+    const jobId = typeof job === 'object' ? job.id : job
     const res = await director.call(`rerun jobid=${jobId} yes`)
     const newId = res?.run?.jobid ?? res?.jobid ?? '?'
     $q.notify({ type: 'positive', message: t('Job restarted as ID {id}.', { id: newId }) })
@@ -591,7 +822,10 @@ function cancelAll() {
     cancel: { label: t('Keep running'), flat: true },
   }).onOk(async () => {
     const results = await Promise.allSettled(
-      runningJobs.value.map(j => director.call(`cancel jobid=${j.id} yes`))
+      runningJobs.value.map(j => (async () => {
+        await switchToJobDirector(j)
+        return director.call(`cancel jobid=${j.id} yes`)
+      })())
     )
     const failed = results.filter(r => r.status === 'rejected').length
     if (failed) {
@@ -712,9 +946,16 @@ const rerunLoading = ref(false)
 
 async function submitRerun() {
   if (!rerunJobId.value) return
+  if (isCommonJobs.value) {
+    $q.notify({
+      type: 'warning',
+      message: t('Rerun by Job ID is only available when the jobs scope contains a single director.'),
+    })
+    return
+  }
   rerunLoading.value = true
   try {
-    await doRerun(rerunJobId.value)
+    await doRerun({ id: rerunJobId.value, director: activeDirectors.value[0] })
     rerunJobId.value = ''
   } finally {
     rerunLoading.value = false
@@ -724,6 +965,15 @@ async function submitRerun() {
 // ── lifecycle ─────────────────────────────────────────────────────────────────
 const countdown = ref(settings.refreshInterval)
 let _timer = null
+
+async function loadAvailableDirectors() {
+  try {
+    await director.fetchAvailableDirectors()
+  } catch {
+    // Keep the selector usable with the active director when the proxy list is
+    // unavailable.
+  }
+}
 
 function startAutoRefresh() {
   stopAutoRefresh()
@@ -748,8 +998,10 @@ function manualRefresh() {
 }
 
 onMounted(() => {
-  if (director.isConnected) {
-    fetchPage()
+  loadAvailableDirectors()
+  syncSelectedDirectors()
+  fetchPage()
+  if (director.isConnected && isSingleDirectorScope.value) {
     loadJobDefs()
     loadRunOptions()
   }
@@ -763,8 +1015,10 @@ onUnmounted(() => {
 watch(() => director.isConnected, (connected) => {
   if (connected) {
     fetchPage()
-    loadJobDefs()
-    loadRunOptions()
+    if (isSingleDirectorScope.value) {
+      loadJobDefs()
+      loadRunOptions()
+    }
     startAutoRefresh()
   }
 })
@@ -785,7 +1039,23 @@ watch(statusFilter, (next) => {
   fetchPage()
 })
 
+watch(() => directorOptions.value, () => {
+  syncSelectedDirectors()
+})
+
+watch(() => activeDirectors.value.join('\u0000'), () => {
+  if (!isSingleDirectorScope.value && ['actions', 'run', 'timeline'].includes(tab.value)) {
+    tab.value = 'list'
+  }
+  pagination.value = { ...pagination.value, page: 1 }
+  fetchPage()
+})
+
 watch(tab, async (t) => {
+  if (!isSingleDirectorScope.value && ['actions', 'run', 'timeline'].includes(t)) {
+    tab.value = 'list'
+    return
+  }
   if (t === 'actions'  && jobDefs.value.length === 0) loadJobDefs()
   if (t === 'run'      && dotJobs.value.length === 0)  loadRunOptions()
 })

@@ -41,7 +41,7 @@ function rejectPendingCommands(pendingCommands, reason) {
   pendingCommands.clear()
 }
 
-function createDirectorCommandClient(credentials, options = {}) {
+export function createDirectorCommandClient(credentials, options = {}) {
   const wsUrl = options.wsUrl ?? WS_URL
   const authTimeoutMs = options.authTimeoutMs ?? AUTH_TIMEOUT_MS
   const commandTimeoutMs = options.commandTimeoutMs ?? CMD_TIMEOUT_MS
