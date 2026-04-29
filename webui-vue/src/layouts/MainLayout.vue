@@ -41,6 +41,22 @@
               {{ dirStatusLabel }}
             </q-item-section>
           </q-item>
+            <q-item-label header class="text-grey-4">
+              {{ t('Active Director') }}
+            </q-item-label>
+            <q-item
+              v-for="directorOption in directorOptions"
+              :key="directorOption.value"
+              clickable
+              v-ripple
+              :disable="switchingDirector || directorOption.value === currentDirector"
+              @click="switchDirector(directorOption.value); drawerOpen = false"
+            >
+              <q-item-section avatar>
+                <q-icon :name="directorOption.value === currentDirector ? 'check_circle' : 'dns'" />
+              </q-item-section>
+              <q-item-section>{{ directorOption.label }}</q-item-section>
+            </q-item>
             <q-item clickable v-ripple @click="openConsole(); drawerOpen = false">
               <q-item-section avatar><q-icon name="terminal" /></q-item-section>
               <q-item-section>{{ t('Console') }}</q-item-section>
@@ -127,9 +143,31 @@
         <!-- Desktop-only: director menu, user menu -->
         <template v-if="!$q.screen.lt.md">
 
-          <q-btn flat color="white" :label="auth.user?.director || 'director'" icon="dns" no-caps>
+          <q-btn
+            flat
+            color="white"
+            :label="switchingDirector ? t('Switching…') : (currentDirector || 'director')"
+            icon="dns"
+            no-caps
+            :loading="switchingDirector"
+          >
             <q-menu>
               <q-list dense style="min-width:160px">
+                <q-item-label header>{{ t('Active Director') }}</q-item-label>
+                <q-item
+                  v-for="directorOption in directorOptions"
+                  :key="directorOption.value"
+                  clickable
+                  v-close-popup
+                  :disable="switchingDirector || directorOption.value === currentDirector"
+                  @click="switchDirector(directorOption.value)"
+                >
+                  <q-item-section avatar>
+                    <q-icon :name="directorOption.value === currentDirector ? 'check_circle' : 'dns'" />
+                  </q-item-section>
+                  <q-item-section>{{ directorOption.label }}</q-item-section>
+                </q-item>
+                <q-separator />
                 <q-item clickable v-close-popup @click="openConsole">
                   <q-item-section avatar><q-icon name="terminal" /></q-item-section>
                   <q-item-section>{{ t('Console') }}</q-item-section>
@@ -210,6 +248,7 @@ import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import bareosLogo from '../assets/bareos-logo-small.png'
 import { bareosVersion as appVersion } from '../generated/bareos-version.js'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import {
@@ -225,6 +264,7 @@ const releaseInfo = useReleaseInfoStore()
 const router   = useRouter()
 const drawerOpen = ref(false)
 const directorVersion = ref('')
+const switchingDirector = ref(false)
 const { t } = useI18n()
 
 function openConsole() {
@@ -248,15 +288,46 @@ const mainNavItems = computed(() => [
 ])
 
 const settings = useSettingsStore()
+const currentDirector = computed(() => auth.user?.director || settings.directorName || '')
+const directorOptions = computed(() => {
+  const values = new Set([
+    ...director.availableDirectors,
+    ...settings.selectedDirectors,
+    currentDirector.value,
+  ].filter(Boolean))
+  return [...values].map(value => ({ label: value, value }))
+})
 
 onMounted(() => {
   $q.dark.set(settings.darkMode)
   releaseInfo.refresh().catch(() => {})
+  director.fetchAvailableDirectors().catch(() => {})
 })
 
 function toggleDark() {
   $q.dark.toggle()
   settings.darkMode = $q.dark.isActive
+}
+
+async function switchDirector(targetDirector) {
+  if (!targetDirector || switchingDirector.value) {
+    return
+  }
+
+  switchingDirector.value = true
+  try {
+    await switchActiveDirector(targetDirector)
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: t('Could not switch to director {director}: {message}', {
+        director: targetDirector,
+        message: error.message,
+      }),
+    })
+  } finally {
+    switchingDirector.value = false
+  }
 }
 
 const dirStatusColor = computed(() => {

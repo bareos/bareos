@@ -273,6 +273,7 @@ import {
   aggregateDirectorDashboardSnapshots,
   fetchDirectorDashboardSnapshot,
 } from '../composables/directorAggregate.js'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -354,7 +355,7 @@ const showDirectorColumn = computed(() => isCommonDashboard.value)
 const allowRunningJobActions = computed(() => activeDirectors.value.length === 1)
 const dashboardScopeLabel = computed(() => (
   isCommonDashboard.value
-    ? t('{count} directors selected', { count: activeDirectors.value.length })
+    ? `${activeDirectors.value.length} ${t('directors selected')}`
     : (activeDirectors.value[0] ?? t('No director selected'))
 ))
 
@@ -434,41 +435,9 @@ function confirmCancel(job) {
   }).onOk(() => doCancel(job))
 }
 
-async function ensureActiveDirector(targetDirector) {
-  if (!targetDirector) {
-    throw new Error(t('No director selected.'))
-  }
-
-  const previousCredentials = auth.getCredentials()
-  const previousDirector = previousCredentials?.director
-
-  if (previousDirector === targetDirector && director.isConnected) {
-    return
-  }
-
-  director.disconnect()
-  auth.setDirector(targetDirector)
-  settings.directorName = targetDirector
-
-  try {
-    await director.connectAndWait(auth.getCredentials())
-  } catch (error) {
-    if (previousCredentials?.password && previousDirector && previousDirector !== targetDirector) {
-      auth.setDirector(previousDirector)
-      settings.directorName = previousDirector
-      try {
-        await director.connectAndWait(previousCredentials)
-      } catch {
-        // Preserve the original switch error.
-      }
-    }
-    throw error
-  }
-}
-
 async function openJobDetails(row) {
   try {
-    await ensureActiveDirector(row.director)
+    await switchActiveDirector(row.director)
     await router.push({ name: 'job-details', params: { id: jobId(row) } })
   } catch (error) {
     $q.notify({
@@ -483,7 +452,7 @@ async function openJobDetails(row) {
 
 async function openClientDetails(row) {
   try {
-    await ensureActiveDirector(row.director)
+    await switchActiveDirector(row.director)
     await router.push({ name: 'client-details', params: { name: row.client } })
   } catch (error) {
     $q.notify({
@@ -498,7 +467,7 @@ async function openClientDetails(row) {
 
 async function doCancel(job) {
   try {
-    await ensureActiveDirector(job.director)
+    await switchActiveDirector(job.director)
     await director.call(`cancel jobid=${jobId(job)} yes`)
     $q.notify({ type: 'positive', message: t('Job {id} cancelled.', { id: jobId(job) }) })
     refresh()

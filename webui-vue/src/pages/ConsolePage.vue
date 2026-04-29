@@ -185,7 +185,7 @@ function connectRaw() {
 
     if (msg.type === 'auth_ok') {
       consoleStatus.value = 'connected'
-      appendInfo(t('Connected to {director} — type \'help\' for commands, click here to type.', { director: msg.director }))
+      appendInfo(`${t('Connected to')} ${msg.director} — ${t('type \'help\' for commands, click here to type.')}`)
       scrollBottom()
       return
     }
@@ -227,7 +227,7 @@ function connectRaw() {
 
   rawWs.onerror = () => {
     consoleStatus.value = 'error'
-      appendErr(t('Cannot connect to proxy at {url}', { url: WS_URL }))
+      appendErr(`${t('Cannot connect to proxy at')} ${WS_URL}`)
     scrollBottom()
     rejectAll('WebSocket error')
   }
@@ -363,6 +363,16 @@ onUnmounted(disconnectRaw)
 
 watch(() => director.isConnected, (connected) => {
   if (connected && consoleStatus.value === 'disconnected') connectRaw()
+})
+
+watch(() => auth.user?.director, (currentDirector, previousDirector) => {
+  if (!currentDirector || currentDirector === previousDirector) {
+    return
+  }
+
+  disconnectRaw()
+  appendInfo(`${t('Switching console to')} ${currentDirector}…`)
+  connectRaw()
 })
 </script>
 
