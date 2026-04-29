@@ -199,6 +199,17 @@
               :pagination="{ rowsPerPage: 0 }"
               hide-pagination
             >
+              <template #body-cell-drag="props">
+                <q-td :props="props"
+                      v-if="props.row.content === 'full'"
+                      draggable="true"
+                      style="cursor:grab"
+                      @dragstart="onSlotDragStart($event, props.row)">
+                  <q-icon name="drag_indicator" color="grey-6" />
+                  <q-tooltip>{{ t('Drag to a slot to import') }}</q-tooltip>
+                </q-td>
+                <q-td v-else :props="props" />
+              </template>
               <template #body-cell-slotnr="props">
                 <q-td :props="props">
                   <q-icon name="dns"
@@ -276,7 +287,11 @@
                 </q-td>
               </template>
               <template #body-cell-content="props">
-                <q-td :props="props">
+                <q-td :props="props"
+                      @dragover="onDragOverImportSlot($event, props.row)"
+                      @dragleave="onDragLeaveImportSlot"
+                      @drop="onDropToImportSlot($event, props.row)"
+                      :class="{ 'dnd-drop-target': dragOverImportSlot === props.row.slotnr }">
                   <q-badge :color="props.value === 'full' ? 'green' : 'grey'"
                            :label="props.value" />
                 </q-td>
@@ -473,6 +488,8 @@ import { useSettingsStore } from '../stores/settings.js'
 import { useQuasar } from 'quasar'
 import { directorCollection } from '../composables/useDirectorFetch.js'
 import {
+  buildExportCommand,
+  buildImportCommand,
   buildLabelBarcodesCommand,
   formatInDriveLabel,
   shouldRefreshAutochangerTables,
@@ -527,6 +544,7 @@ let _slotsTimer = null
 const dragSlot = ref(null)      // slot row being dragged
 const dragOverDrive = ref(null) // drive number being hovered during drag
 const dragOverSlot = ref(null)  // slot number being hovered during drag
+const dragOverImportSlot = ref(null) // import/export slot number hovered during drag
 
 // ── Computed ─────────────────────────────────────────────────
 
@@ -567,6 +585,7 @@ const slotInDriveMap = computed(() => {
 // ── Column definitions ────────────────────────────────────────
 
 const ieSlotCols = [
+  { name: 'drag',    label: '',       field: 'drag',     align: 'left', style: 'width:32px; padding:0 4px' },
   { name: 'slotnr',  label: 'Slot',   field: 'slotnr',   align: 'left', sortable: true },
   { name: 'content', label: 'Status', field: 'content',  align: 'left' },
   { name: 'volname', label: 'Volume', field: 'volname',  align: 'left' },
@@ -753,7 +772,10 @@ async function doImportAll() {
 async function doImport(slotNr) {
   await runCmd(
     `Import Slot ${slotNr}`,
-    `import storage="${selectedStorage.value}" srcslots=${slotNr}`
+    buildImportCommand({
+      storage: selectedStorage.value,
+      srcSlot: slotNr,
+    })
   )
   await loadSlots()
 }
@@ -767,7 +789,10 @@ async function doExport(slotNr) {
   }).onOk(async () => {
     await runCmd(
       `Export Slot ${slotNr}`,
-      `export storage="${selectedStorage.value}" srcslots=${slotNr}`
+      buildExportCommand({
+        storage: selectedStorage.value,
+        srcSlot: slotNr,
+      })
     )
     await loadSlots()
   })
@@ -880,6 +905,7 @@ function onSlotDragStart(event, row) {
 }
 
 function onDragOverDrive(event, drive) {
+  if (dragSlot.value?.type !== 'slot') return
   if (drive.content !== 'empty') return
   event.preventDefault()
   event.dataTransfer.dropEffect = 'move'
@@ -895,7 +921,7 @@ async function onDropToDrive(event, drive) {
   dragOverDrive.value = null
   const slot = dragSlot.value
   dragSlot.value = null
-  if (!slot || drive.content !== 'empty') return
+  if (!slot || slot.type !== 'slot' || drive.content !== 'empty') return
   await runCmd(
     `Mount Slot ${slot.slotnr} → Drive ${drive.slotnr}`,
     `mount storage="${selectedStorage.value}"` +
@@ -923,10 +949,51 @@ async function onDropToSlot(event, row) {
   const src = dragSlot.value
   dragSlot.value = null
   if (!src || row.content !== 'empty' || row.slotnr === src.slotnr) return
+  if (src.type === 'import_slot') {
+    await runCmd(
+      `Import Slot ${src.slotnr} → Slot ${row.slotnr}`,
+      buildImportCommand({
+        storage: selectedStorage.value,
+        srcSlot: src.slotnr,
+        dstSlot: row.slotnr,
+      })
+    )
+  } else {
+    await runCmd(
+      `Move Slot ${src.slotnr} → Slot ${row.slotnr}`,
+      `move storage="${selectedStorage.value}"` +
+      ` srcslots=${src.slotnr} dstslots=${row.slotnr}`
+    )
+  }
+  await loadSlots()
+}
+
+function onDragOverImportSlot(event, row) {
+  if (dragSlot.value?.type !== 'slot') return
+  if (!dragSlot.value) return
+  if (row.content !== 'empty') return
+  event.preventDefault()
+  event.dataTransfer.dropEffect = 'move'
+  dragOverImportSlot.value = row.slotnr
+}
+
+function onDragLeaveImportSlot() {
+  dragOverImportSlot.value = null
+}
+
+async function onDropToImportSlot(event, row) {
+  event.preventDefault()
+  dragOverImportSlot.value = null
+  const src = dragSlot.value
+  dragSlot.value = null
+  if (!src || src.type !== 'slot' || row.content !== 'empty') return
   await runCmd(
-    `Move Slot ${src.slotnr} → Slot ${row.slotnr}`,
-    `move storage="${selectedStorage.value}"` +
-    ` srcslots=${src.slotnr} dstslots=${row.slotnr}`
+    `Export Slot ${src.slotnr} → Import/Export Slot ${row.slotnr}`,
+    buildExportCommand({
+      storage: selectedStorage.value,
+      srcSlot: src.slotnr,
+      dstSlot: row.slotnr,
+    })
   )
   await loadSlots()
 }

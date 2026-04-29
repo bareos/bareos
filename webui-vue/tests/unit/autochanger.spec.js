@@ -21,6 +21,8 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  buildExportCommand,
+  buildImportCommand,
   buildLabelBarcodesCommand,
   formatInDriveLabel,
   shouldRefreshAutochangerTables,
@@ -48,6 +50,40 @@ describe('autochanger helpers', () => {
       encrypted: false,
     })).toBe(
       'label barcodes storage="Autochanger" pool="Incremental" drive=0 yes'
+    )
+  })
+
+  it('builds an export command with an optional destination slot', () => {
+    expect(buildExportCommand({
+      storage: 'Autochanger',
+      srcSlot: 4,
+      dstSlot: 91,
+    })).toBe(
+      'export storage="Autochanger" srcslots=4 dstslots=91'
+    )
+
+    expect(buildExportCommand({
+      storage: 'Autochanger',
+      srcSlot: 4,
+    })).toBe(
+      'export storage="Autochanger" srcslots=4'
+    )
+  })
+
+  it('builds an import command with optional source and destination slots', () => {
+    expect(buildImportCommand({
+      storage: 'Autochanger',
+      srcSlot: 91,
+      dstSlot: 4,
+    })).toBe(
+      'import storage="Autochanger" srcslots=91 dstslots=4'
+    )
+
+    expect(buildImportCommand({
+      storage: 'Autochanger',
+      srcSlot: 91,
+    })).toBe(
+      'import storage="Autochanger" srcslots=91'
     )
   })
 

@@ -41,6 +41,38 @@ export function buildLabelBarcodesCommand({
   return `${cmd} yes`
 }
 
+export function buildExportCommand({
+  storage,
+  srcSlot,
+  dstSlot = null,
+}) {
+  let cmd = `export storage="${storage}" srcslots=${srcSlot}`
+
+  if (dstSlot != null) {
+    cmd += ` dstslots=${dstSlot}`
+  }
+
+  return cmd
+}
+
+export function buildImportCommand({
+  storage,
+  srcSlot = null,
+  dstSlot = null,
+}) {
+  let cmd = `import storage="${storage}"`
+
+  if (srcSlot != null) {
+    cmd += ` srcslots=${srcSlot}`
+  }
+
+  if (dstSlot != null) {
+    cmd += ` dstslots=${dstSlot}`
+  }
+
+  return cmd
+}
+
 export function formatInDriveLabel(translate, drive) {
   const key = 'in drive {drive}'
   const label = translate(key, { drive })
