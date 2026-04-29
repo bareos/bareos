@@ -1521,8 +1521,40 @@ status
 
       status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> |
               client=<client-name> | storage=<storage-name> slots |
+              jobid=<jobid> |
               subscriptions [clients] [plugins] [all] [anonymize] [client=<client-name>] |
               configuration]
+
+   .. _section-StatusJsonOutput:
+
+   **JSON output**
+
+   When the console is in JSON api mode (activate with :bcommand:`.api json`),
+   :bcommand:`status director`, :bcommand:`status scheduler`,
+   :bcommand:`status client=<name>` and :bcommand:`status storage=<name>`
+   return a JSON document inside the standard JSON-RPC response envelope,
+   in addition to the :bcommand:`status slots` JSON output that has been
+   available in previous releases.
+
+   For clients, the director requires |fd| protocol version 55 or newer
+   to obtain the JSON status; older
+   |fd|'s return a structured
+   ``{"error": "file_daemon_too_old"}`` response instead. The equivalent
+   gate for |sd| is protocol version 1 -- older |sd|'s return
+   ``{"error": "storage_daemon_too_old"}``.
+
+   The :bcommand:`status jobid=<jobid>` form is a JSON-only aggregator
+   intended for monitoring tools. It returns a single response containing:
+
+   - a ``dir`` subtree with director-local job metadata (name, level,
+     client, storage, status, start time)
+   - an ``fd`` subtree with the |fd|'s complete ``.status json`` reply
+     nested under ``fd.data``
+   - an ``sd`` subtree with the |sd|'s complete ``.status json`` reply
+     nested under ``sd.data``
+
+   In text mode (``.api off``) the aggregator prints an instructive
+   message and does nothing; switch to JSON first.
 
    If you do a status dir, the console will list any currently running jobs, a summary of all jobs
    scheduled to be run in the next 24 hours, and a listing of the last ten terminated jobs with

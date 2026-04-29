@@ -6,6 +6,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- dir/sd/fd: JSON output for `status` commands under `.api json`. Adds
+  JSON emission for `status director`, `status scheduler`,
+  `status client=X`, `status storage=X`, and a new aggregator
+  `status jobid=N` that returns a single document combining the
+  director's view with the targeted FD and SD `.status json` replies.
+  Intended for monitoring UIs (refs bareos/bareos#2325).
+
+### Changed
+- fd: bumped FD protocol to version 55 (capability advertisement for
+  JSON status output).
+- sd: introduced versioned hello handshake (SD_VERSION_1), allowing the
+  director to gate JSON status requests on SD capability. Older
+  (unversioned) SD hello replies remain accepted as SD_VERSION_0.
+
+## [25.0.3] - 2026-04-01
+
+### Changed
+- debian: dbconfig allow major upgrade without backup dump [PR #2538]
+- plugins: mariabackup python-mysqlclient ignore invalid utf8 [PR #2560]
+- dedup backend: Fix leaking filedescriptor [PR #2549]
+- vol-mgr: fix not locking the volume reservation chain during copying [PR #2582]
+- grpc-fd: fix not freeing memory of backed up filenames [PR #2591]
+- hyper-v: fix automerging AVHDX differencing disks after RCT backup [PR #2596]
+- docs and comments: fix typos [PR #2598]
+- barri: sync parameter names between plugin and cli [PR #2570]
+- `status subscription` command: adapt to new price-list [PR #2602]
+
+### Removed
+- dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2573]
+
+### Fixed
+- Increase read timeout in Proxmox plugin [PR #2545]
+- systemtests check runscript failed - improve media_vault [PR #2568]
+- packaging: add missing DLLs to windows installer [PR #2574]
+- Fix gcc 16 build for Fedora 44 and newer [PR #2604]
+
+### Documentation
+- docs: add tape speed test, tapestat & sg_logs in troubleshooting [PR #2555]
+
+## [25.0.2] - 2026-02-11
+
+### Added
 - add SUSE 15SP7 and 16.0 [PR #2505]
 - Add simple dependency generator for systemtest testrunners [PR #2484]
 
