@@ -29,11 +29,14 @@
 #  include <unistd.h>
 #endif
 
+#include <sstream>
+
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "filed/fd_plugins.h"
 #include "plugins/include/common.h"
+#include "lib/bool_string.h"
 #include "lib/bpipe.h"
 
 namespace filedaemon {
@@ -46,9 +49,10 @@ static const int debuglevel = 150;
 #define PLUGIN_VERSION "2"
 #define PLUGIN_DESCRIPTION "Bareos Pipe File Daemon Plugin"
 #define PLUGIN_USAGE                                                   \
-  "bpipe:file=<filepath>:reader=<readprogram>:writer=<writeprogram>\n" \
+  "bpipe:file=<filepath>:reader=<readprogram>:writer=<writeprogram>[:usesuffix=true|false]\n" \
   " readprogram runs on backup and its stdout is saved\n"              \
   " writeprogram runs on restore and gets restored data into stdin\n"  \
+  " usesuffix add unique suffix to filepath (optional)\n" \
   " the data is internally stored as filepath (e.g. mybackup/backup1)"
 
 /* Forward referenced functions */
@@ -70,9 +74,9 @@ static bRC setAcl(PluginContext* ctx, acl_pkt* ap);
 static bRC getXattr(PluginContext* ctx, xattr_pkt* xp);
 static bRC setXattr(PluginContext* ctx, xattr_pkt* xp);
 
-static std::string apply_rp_codes(PluginContext* ctx, const char* fmt);
 static bRC parse_plugin_definition(PluginContext* ctx, void* value);
-static bRC plugin_has_all_arguments(PluginContext* ctx);
+static bRC plugin_has_valid_arguments(PluginContext* ctx);
+static void set_unique_name(PluginContext* ctx);
 
 /* Pointers to Bareos functions */
 static CoreFunctions* bareos_core_functions = NULL;
@@ -105,30 +109,11 @@ struct plugin_ctx {
   char* fname;          /* Filename to "backup/restore" */
   char* reader;         /* Reader program for backup */
   char* writer;         /* Writer program for backup */
+  bool  usesuffix;     /* append unique suffix to fname */
 
   char where[512];
   int replace;
 };
-
-// This defines the arguments that the plugin parser understands.
-enum plugin_argument_type
-{
-  argument_none = 0,
-  argument_file,
-  argument_reader,
-  argument_writer
-};
-
-struct plugin_argument {
-  const char* name;
-  enum plugin_argument_type type;
-  int cmp_length;
-};
-
-static plugin_argument plugin_arguments[] = {{"file=", argument_file, 4},
-                                             {"reader=", argument_reader, 6},
-                                             {"writer=", argument_writer, 6},
-                                             {NULL, argument_none, 0}};
 
 #ifdef __cplusplus
 extern "C" {
@@ -258,10 +243,12 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
   time_t now;
   struct plugin_ctx* p_ctx;
 
-  if (plugin_has_all_arguments(ctx) != bRC_OK) { return bRC_Error; }
+  if (plugin_has_valid_arguments(ctx) != bRC_OK) { return bRC_Error; }
 
   p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
   if (!p_ctx) { return bRC_Error; }
+
+  if(p_ctx->usesuffix) { set_unique_name(ctx); }
 
   now = time(NULL);
   sp->fname = p_ctx->fname;
@@ -310,6 +297,7 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
         int env_since_time;
         bareos_core_functions->getBareosValue(ctx, bVarSinceTime,
                                               &env_since_time);
+	int env_replace = env_job_type == 'R' ? p_ctx->replace : ' ';
 
         std::unordered_map<std::string, std::string> env{
             {"BareosClientName", std::string{env_client_name}},
@@ -318,6 +306,8 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
              std::string{static_cast<char>(env_backup_level)}},
             {"BareosSinceTime", std::to_string(env_since_time)},
             {"BareosJobType", std::string{static_cast<char>(env_job_type)}},
+            {"BareosWhere", std::string{p_ctx->where}},
+            {"BareosReplace", std::string{static_cast<char>(env_replace)}},
         };
 
         if (io->flags & (O_CREAT | O_WRONLY)) {
@@ -327,18 +317,16 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
             return bRC_Error;
           }
 
-          std::string writer_codes = apply_rp_codes(ctx, p_ctx->writer);
-
-          p_ctx->pfd = OpenBpipe(writer_codes.c_str(), 0, "w", true, env);
+          p_ctx->pfd = OpenBpipe(p_ctx->writer, 0, "w", true, env);
           Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p writer=%s\n",
-               p_ctx->pfd, writer_codes.c_str());
+               p_ctx->pfd, p_ctx->writer);
           if (!p_ctx->pfd) {
             io->io_errno = errno;
             Jmsg(ctx, M_FATAL, "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n",
-                 writer_codes.c_str(), strerror(io->io_errno));
+                 p_ctx->writer, strerror(io->io_errno));
             Dmsg(ctx, debuglevel,
                  "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n",
-                 writer_codes.c_str(), strerror(io->io_errno));
+                 p_ctx->writer, strerror(io->io_errno));
             return bRC_Error;
           }
         } else {
@@ -421,7 +409,7 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
  */
 static bRC startRestoreFile(PluginContext* ctx, const char*)
 {
-  if (plugin_has_all_arguments(ctx) != bRC_OK) { return bRC_Error; }
+  if (plugin_has_valid_arguments(ctx) != bRC_OK) { return bRC_Error; }
 
   return bRC_OK;
 }
@@ -476,60 +464,6 @@ static bRC getXattr(PluginContext*, xattr_pkt*) { return bRC_OK; }
 
 static bRC setXattr(PluginContext*, xattr_pkt*) { return bRC_OK; }
 
-/**
- * Apply codes in writer command:
- * %w -> "where"
- * %r -> "replace"
- *
- * Replace:
- * 'always' => 'a', chr(97)
- * 'ifnewer' => 'w', chr(119)
- * 'ifolder' => 'o', chr(111)
- * 'never' => 'n', chr(110)
- *
- * Inspired by edit_job_codes in lib/util.c
- */
-static std::string apply_rp_codes(PluginContext* ctx, const char* fmt)
-{
-  ASSERT(ctx);
-  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
-  ASSERT(p_ctx);
-
-  ASSERT(fmt);
-
-  std::string output;
-
-  for (char const* p = fmt; *p; ++p) {
-    bool parsed_specifier = false;
-    if (p[0] == '%') {
-      switch (p[1]) {
-        case '%': {
-          output += "%";
-          parsed_specifier = true;
-        } break;
-        case 'w': {
-          output += (char const*)p_ctx->where;
-          parsed_specifier = true;
-        } break;
-        case 'r': {
-          output += (char)p_ctx->replace;
-          parsed_specifier = true;
-        } break;
-      }
-
-      // if % is not followed by a valid specifier, we simply treat it as a
-      // normal character
-    }
-
-    if (parsed_specifier) {
-      p += 1;  // skip both characters
-    } else {
-      output += p[0];
-    }
-  }
-  return output;
-}
-
 // Strip any backslashes in the string.
 static inline void StripBackSlashes(char* value)
 {
@@ -549,22 +483,92 @@ static inline void StripBackSlashes(char* value)
   }
 }
 
-// Only set destination to value when it has no previous setting.
-static inline void SetStringIfNull(char** destination, char* value)
-{
-  if (!*destination) {
-    *destination = strdup(value);
-    StripBackSlashes(*destination);
-  }
-}
-
 // Always set destination to value and clean any previous one.
-static inline void SetString(char** destination, char* value)
+static inline void SetString(char** destination, const char* value)
 {
   if (*destination) { free(*destination); }
 
   *destination = strdup(value);
   StripBackSlashes(*destination);
+}
+
+static char get_level_letter(int level) {
+     switch (level) {
+        case L_FULL: return 'F';
+        case L_DIFFERENTIAL: return 'D';
+        case L_INCREMENTAL: return 'I';
+        case L_NONE: return 'N';
+        default: return 'E';
+      }
+}
+
+static void set_unique_name(PluginContext* ctx) {
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
+
+  int job_id = 0;
+  const char* job_name = "undefined";
+  int job_level = L_NONE;
+
+  char new_fname[1024];
+
+  bareos_core_functions->getBareosValue(ctx, bVarJobId, &job_id);
+  bareos_core_functions->getBareosValue(ctx, bVarJobName, &job_name);
+  bareos_core_functions->getBareosValue(ctx, bVarLevel, &job_level);
+
+  snprintf(new_fname, sizeof(new_fname),
+    "%s.%s.%c.%d",
+    p_ctx->fname,
+    job_name,
+    get_level_letter(job_level),
+    job_id);
+  Dmsg(ctx, 100, "renamed pseudo file '%s' to '%s'\n", p_ctx->fname, new_fname);
+  free(p_ctx->fname);
+  p_ctx->fname = strdup(new_fname);
+}
+
+// duplicated from core/src/plugins/include/python_plugins_common.inc
+static inline bool ParseBoolean(const char* argument_value)
+{
+  if (Bstrcasecmp(argument_value, "yes")
+      || Bstrcasecmp(argument_value, "true")) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+static bool is_equal(std::string& a, const char *b) {
+  return Bstrcasecmp(a.c_str(), b);
+}
+
+static bRC parse_single_option(std::string& key, std::string& value, plugin_ctx* p_ctx) {
+  const char *c_str = value.c_str();
+
+  if (is_equal(key, "file")) {
+    SetString(&p_ctx->fname, c_str);
+  } else if (is_equal(key, "reader")) {
+    SetString(&p_ctx->reader, c_str);
+  } else if (is_equal(key, "writer")) {
+    SetString(&p_ctx->writer, c_str);
+  } else if (is_equal(key, "usesuffix")) {
+    p_ctx->usesuffix = ParseBoolean(c_str);
+  }
+  else {
+    return bRC_Error;
+  }
+
+  return bRC_OK;
+}
+
+static void log_config_error(PluginContext *ctx, std::string& key, std::string& value) {
+  Jmsg(ctx, M_FATAL,
+       "bpipe-fd: Illegal argument %s with value %s in plugin "
+       "definition\n",
+       key.c_str(), value.c_str());
+  Dmsg(ctx, debuglevel,
+       "bpipe-fd: Illegal argument %s with value %s in plugin "
+       "definition\n",
+       key.c_str(), value.c_str());
 }
 
 /**
@@ -574,206 +578,41 @@ static inline void SetString(char** destination, char* value)
  *
  * bpipe:file=<filepath>:read=<readprogram>:write=<writeprogram>
  */
-static bRC parse_plugin_definition(PluginContext* ctx, void* value)
+static bRC parse_plugin_definition(PluginContext* ctx, void* plugindef)
 {
-  int i, cnt;
-  char *plugin_definition, *bp, *argument, *argument_value;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
-  bool keep_existing;
-  bool compatible = true;
 
-  if (!p_ctx || !value) { return bRC_Error; }
+  if (!p_ctx || !plugindef) { return bRC_Error; }
 
-  keep_existing = (p_ctx->plugin_options) ? true : false;
+  std::istringstream input((char *) plugindef);
 
-  /* Parse the plugin definition.
-   * Make a private copy of the whole string. */
-  plugin_definition = strdup((char*)value);
+  std::string part;
 
-  bp = strchr(plugin_definition, ':');
-  if (!bp) {
-    Jmsg(ctx, M_FATAL, "bpipe-fd: Illegal plugin definition %s\n",
-         plugin_definition);
-    Dmsg(ctx, debuglevel, "bpipe-fd: Illegal plugin definition %s\n",
-         plugin_definition);
-    goto bail_out;
-  }
+  // skip first token which is always the plugin name
+  std::getline(input, part, ':');
 
-  // Skip the first ':'
-  bp++;
+  for (; std::getline(input, part, ':');) {
+    std::istringstream partin(part);
+    std::string key, value;
 
-  // See if we are parsing a new plugin definition e.g. one with keywords.
-  argument = bp;
-  while (argument) {
-    if (strlen(argument) == 0) { break; }
+    std::getline(partin, key, '=');
+    std::getline(partin, value);
 
-    for (i = 0; plugin_arguments[i].name; i++) {
-      if (bstrncasecmp(argument, plugin_arguments[i].name,
-                       strlen(plugin_arguments[i].name))) {
-        compatible = false;
-        break;
-      }
+    if (key.empty()) {
+        log_config_error(ctx, key, value);
+        return bRC_Error;
     }
 
-    if (!plugin_arguments[i].name && !compatible) {
-      // Parsing something fishy ? e.g. partly with known keywords.
-      Jmsg(ctx, M_FATAL,
-           "bpipe-fd: Found mixing of old and new syntax, please fix your "
-           "plugin definition (%s)\n",
-           plugin_definition);
-      Dmsg(ctx, debuglevel,
-           "bpipe-fd: Found mixing of old and new syntax, please fix your "
-           "plugin definition (%s)\n",
-           plugin_definition);
-      goto bail_out;
+    if (parse_single_option(key, value, p_ctx) != bRC_OK) {
+        log_config_error(ctx, key, value);
+        return bRC_Error;
     }
-
-    argument = strchr(argument, ':');
-    if (argument) { argument++; }
   }
 
-  /* Start processing the definition, if compatible is left set we are
-   * pretending that we are parsing a plugin definition in the old syntax and
-   * hope for the best. */
-  cnt = 1;
-  while (bp) {
-    if (strlen(bp) == 0) { break; }
-
-    argument = bp;
-    if (compatible) {
-      char** str_destination = NULL;
-
-      // See if there are more arguments and setup for the next run.
-      do {
-        bp = strchr(bp, ':');
-        if (bp) {
-          if (*(bp - 1) != '\\') {
-            *bp++ = '\0';
-            break;
-          } else {
-            bp++;
-          }
-        }
-      } while (bp);
-
-      // See which field this is in the argument string.
-      switch (cnt) {
-        case 1:
-          str_destination = &p_ctx->fname;
-          break;
-        case 2:
-          str_destination = &p_ctx->reader;
-          break;
-        case 3:
-          str_destination = &p_ctx->writer;
-          break;
-        default:
-          break;
-      }
-
-      if (str_destination) {
-        if (keep_existing) {
-          // Keep the first value, ignore any next setting.
-          SetStringIfNull(str_destination, argument);
-        } else {
-          // Overwrite any existing value.
-          SetString(str_destination, argument);
-        }
-      }
-    } else {
-      /* Each argument is in the form:
-       *    <argument> = <argument_value>
-       *
-       * So we setup the right pointers here, argument to the beginning
-       * of the argument, argument_value to the beginning of the argument_value.
-       */
-      argument_value = strchr(bp, '=');
-      *argument_value++ = '\0';
-
-      // See if there are more arguments and setup for the next run.
-      bp = argument_value;
-      do {
-        bp = strchr(bp, ':');
-        if (bp) {
-          if (*(bp - 1) != '\\') {
-            *bp++ = '\0';
-            break;
-          } else {
-            bp++;
-          }
-        }
-      } while (bp);
-
-      for (i = 0; plugin_arguments[i].name; i++) {
-        if (bstrncasecmp(argument, plugin_arguments[i].name,
-                         plugin_arguments[i].cmp_length)) {
-          char** str_destination = NULL;
-
-          switch (plugin_arguments[i].type) {
-            case argument_file:
-              if (!PathContainsDirectory(argument_value)) {
-                Jmsg(ctx, M_FATAL,
-                     "bpipe-fd: file argument (%s) must contain a directory "
-                     "structure. Please fix your plugin definition\n",
-                     argument_value);
-                Dmsg(ctx, debuglevel,
-                     "bpipe-fd: file argument (%s) must contain a directory "
-                     "structure. Please fix your plugin definition\n",
-                     argument_value);
-                goto bail_out;
-              }
-              str_destination = &p_ctx->fname;
-              break;
-            case argument_reader:
-              str_destination = &p_ctx->reader;
-              break;
-            case argument_writer:
-              str_destination = &p_ctx->writer;
-              break;
-            default:
-              break;
-          }
-
-          if (str_destination) {
-            if (keep_existing) {
-              // Keep the first value, ignore any next setting.
-              SetStringIfNull(str_destination, argument_value);
-            } else {
-              // Overwrite any existing value.
-              SetString(str_destination, argument_value);
-            }
-          }
-
-          // When we have a match break the loop.
-          break;
-        }
-      }
-
-      // Got an invalid keyword ?
-      if (!plugin_arguments[i].name) {
-        Jmsg(ctx, M_FATAL,
-             "bpipe-fd: Illegal argument %s with value %s in plugin "
-             "definition\n",
-             argument, argument_value);
-        Dmsg(ctx, debuglevel,
-             "bpipe-fd: Illegal argument %s with value %s in plugin "
-             "definition\n",
-             argument, argument_value);
-        goto bail_out;
-      }
-    }
-    cnt++;
-  }
-
-  free(plugin_definition);
   return bRC_OK;
-
-bail_out:
-  free(plugin_definition);
-  return bRC_Error;
 }
 
-static bRC plugin_has_all_arguments(PluginContext* ctx)
+static bRC plugin_has_valid_arguments(PluginContext* ctx)
 {
   bRC retval = bRC_OK;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -795,6 +634,18 @@ static bRC plugin_has_all_arguments(PluginContext* ctx)
   if (!p_ctx->writer) {
     Jmsg(ctx, M_FATAL, T_("bpipe-fd: Plugin Writer argument not specified.\n"));
     Dmsg(ctx, debuglevel, "bpipe-fd: Plugin Writer argument not specified.\n");
+    retval = bRC_Error;
+  }
+
+  if (!PathContainsDirectory(p_ctx->fname)) {
+    Jmsg(ctx, M_FATAL,
+      "bpipe-fd: file argument (%s) must contain a directory "
+      "structure. Please fix your plugin definition\n",
+      p_ctx->fname);
+    Dmsg(ctx, debuglevel,
+      "bpipe-fd: file argument (%s) must contain a directory "
+      "structure. Please fix your plugin definition\n",
+      p_ctx->fname);
     retval = bRC_Error;
   }
 
