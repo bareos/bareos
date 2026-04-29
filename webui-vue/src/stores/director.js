@@ -13,7 +13,7 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   DEFAULT_DIRECTOR_NAME,
   useAuthStore,
@@ -252,6 +252,34 @@ export const useDirectorStore = defineStore('director', () => {
     }
   }
 
+  function connectAndWait(credentials, timeoutMs = 8_000) {
+    connect(credentials)
+
+    if (status.value === 'connected') {
+      return Promise.resolve(true)
+    }
+
+    return new Promise((resolve, reject) => {
+      let timer = null
+      const stop = watch(status, (currentStatus) => {
+        if (currentStatus === 'connected') {
+          clearTimeout(timer)
+          stop()
+          resolve(true)
+        } else if (currentStatus === 'error') {
+          clearTimeout(timer)
+          stop()
+          reject(new Error(errorMsg.value ?? 'Could not connect to director'))
+        }
+      }, { immediate: true })
+
+      timer = setTimeout(() => {
+        stop()
+        reject(new Error(errorMsg.value ?? 'Could not connect to director'))
+      }, timeoutMs)
+    })
+  }
+
   /** Close the WebSocket and clean up. */
   function disconnect() {
     _manualDisconnect = true
@@ -363,6 +391,7 @@ export const useDirectorStore = defineStore('director', () => {
     availableDirectors,
     isConnected,
     connect,
+    connectAndWait,
     disconnect,
     fetchAvailableDirectors,
     call,

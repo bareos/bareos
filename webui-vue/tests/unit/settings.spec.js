@@ -58,4 +58,26 @@ describe('settings store', () => {
     expect(settings.loginUsername).toBe('alice')
     expect(settings.directorName).toBe('prod-dir')
   })
+
+  it('persists and restores the selected dashboard directors', async () => {
+    const settings = useSettingsStore()
+
+    settings.setSelectedDirectors(['prod-dir', 'prod-dir-2', 'prod-dir'])
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
+      expect.objectContaining({
+        selectedDirectors: ['prod-dir', 'prod-dir-2'],
+      })
+    )
+
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      selectedDirectors: ['alpha-dir', 'beta-dir'],
+    }))
+
+    setActivePinia(createPinia())
+    const restored = useSettingsStore()
+    expect(restored.selectedDirectors).toEqual(['alpha-dir', 'beta-dir'])
+  })
 })

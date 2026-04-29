@@ -74,4 +74,21 @@ describe('auth store', () => {
     expect(sessionStorage.getItem('bareos_pass')).toBeNull()
     expect(auth.getCredentials()).toBeNull()
   })
+
+  it('updates the active director without losing the stored password', () => {
+    const auth = useAuthStore()
+
+    auth.login('admin', 'bareos-dir', 'secret')
+    auth.setDirector('bareos-dir-2')
+
+    expect(JSON.parse(sessionStorage.getItem('bareos_user'))).toEqual({
+      username: 'admin',
+      director: 'bareos-dir-2',
+    })
+    expect(auth.getCredentials()).toEqual({
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir-2',
+    })
+  })
 })

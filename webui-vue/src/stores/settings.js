@@ -17,6 +17,19 @@ const DEFAULTS = {
   locale: detectPreferredLocale(),
   loginUsername: 'admin',
   directorName: DEFAULT_DIRECTOR_NAME,
+  selectedDirectors: [],
+}
+
+function normalizeSelectedDirectors(value) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return [...new Set(
+    value
+      .map(item => String(item ?? '').trim())
+      .filter(Boolean)
+  )]
 }
 
 function loadFromStorage() {
@@ -36,6 +49,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const locale          = ref(normalizeWebUiLocale(saved.locale))
   const loginUsername   = ref(saved.loginUsername)
   const directorName    = ref(saved.directorName)
+  const selectedDirectors = ref(normalizeSelectedDirectors(saved.selectedDirectors))
 
   function save() {
     localStorage.setItem(LS_KEY, JSON.stringify({
@@ -45,6 +59,7 @@ export const useSettingsStore = defineStore('settings', () => {
       locale:          locale.value,
       loginUsername:   loginUsername.value,
       directorName:    directorName.value,
+      selectedDirectors: selectedDirectors.value,
     }))
   }
 
@@ -52,11 +67,16 @@ export const useSettingsStore = defineStore('settings', () => {
     locale.value = normalizeWebUiLocale(value)
   }
 
+  function setSelectedDirectors(value) {
+    selectedDirectors.value = normalizeSelectedDirectors(value)
+  }
+
   watch(refreshInterval, save)
   watch(darkMode, save)
   watch(relativeTime, save)
   watch(loginUsername, save)
   watch(directorName, save)
+  watch(selectedDirectors, save, { deep: true })
   watch(locale, (value) => {
     applyDocumentLocale(value)
     setI18nLocale(value)
@@ -70,6 +90,8 @@ export const useSettingsStore = defineStore('settings', () => {
     locale,
     loginUsername,
     directorName,
+    selectedDirectors,
     setLocale,
+    setSelectedDirectors,
   }
 })

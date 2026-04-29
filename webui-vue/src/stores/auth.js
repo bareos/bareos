@@ -10,6 +10,14 @@ export const useAuthStore = defineStore('auth', () => {
   const _password = ref(sessionStorage.getItem('bareos_pass') || '')
   const isLoggedIn = computed(() => !!user.value)
 
+  function persistUser() {
+    if (user.value) {
+      sessionStorage.setItem('bareos_user', JSON.stringify(user.value))
+    } else {
+      sessionStorage.removeItem('bareos_user')
+    }
+  }
+
   function login(
     username,
     director = DEFAULT_DIRECTOR_NAME,
@@ -17,14 +25,26 @@ export const useAuthStore = defineStore('auth', () => {
   ) {
     user.value = { username, director }
     _password.value = password
-    sessionStorage.setItem('bareos_user', JSON.stringify(user.value))
+    persistUser()
     sessionStorage.setItem('bareos_pass', password)
+  }
+
+  function setDirector(director = DEFAULT_DIRECTOR_NAME) {
+    if (!user.value) {
+      return
+    }
+
+    user.value = {
+      ...user.value,
+      director: director || DEFAULT_DIRECTOR_NAME,
+    }
+    persistUser()
   }
 
   function logout() {
     user.value = null
     _password.value = ''
-    sessionStorage.removeItem('bareos_user')
+    persistUser()
     sessionStorage.removeItem('bareos_pass')
   }
 
@@ -38,5 +58,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, isLoggedIn, login, logout, getCredentials }
+  return { user, isLoggedIn, login, setDirector, logout, getCredentials }
 })

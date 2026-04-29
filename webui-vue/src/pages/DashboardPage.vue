@@ -20,6 +20,46 @@
 -->
 <template>
   <q-page class="q-pa-md">
+    <q-card flat bordered class="q-mb-md bareos-panel">
+      <q-card-section class="panel-header row items-center">
+        <span>{{ t('Dashboard Scope') }}</span>
+        <q-space />
+        <q-chip dense square color="white" text-color="primary" :label="dashboardScopeLabel" />
+      </q-card-section>
+      <q-card-section>
+        <q-select
+          v-model="selectedDirectorsModel"
+          data-testid="dashboard-directors"
+          :options="directorOptions"
+          option-label="label"
+          option-value="value"
+          emit-value
+          map-options
+          multiple
+          use-chips
+          outlined
+          dense
+          :label="t('Directors')"
+        />
+        <div class="text-caption text-grey-6 q-mt-sm">
+          {{ t('Select the directors that contribute to the common dashboard.') }}
+        </div>
+        <q-banner
+          v-if="directorErrors.length"
+          rounded
+          dense
+          class="bg-warning text-black q-mt-md"
+        >
+          <template #avatar>
+            <q-icon name="warning" />
+          </template>
+          <div v-for="item in directorErrors" :key="item.director">
+            <strong>{{ item.director }}</strong>: {{ item.message }}
+          </div>
+        </q-banner>
+      </q-card-section>
+    </q-card>
+
     <div class="row q-col-gutter-md">
       <!-- Left column: 8/12 -->
       <div class="col-12 col-md-8">
@@ -35,9 +75,14 @@
           <q-card-section>
             <div class="row q-col-gutter-md text-center">
               <div class="col" v-for="s in summaryStats" :key="s.label">
-                <router-link :to="{ name: 'jobs', query: { status: s.status } }" class="text-decoration-none">
+                <router-link
+                  v-if="!isCommonDashboard"
+                  :to="{ name: 'jobs', query: { status: s.status } }"
+                  class="text-decoration-none"
+                >
                   <StatNumber :value="s.count" :label="s.label" :color="s.color" />
                 </router-link>
+                <StatNumber v-else :value="s.count" :label="s.label" :color="s.color" />
               </div>
             </div>
           </q-card-section>
@@ -54,15 +99,20 @@
             <q-table
               :rows="recentJobs"
               :columns="recentCols"
-              row-key="id"
+              row-key="scopeKey"
               dense flat
-              :pagination="{ rowsPerPage: 10, sortBy: 'id', descending: true }"
+              :pagination="{ rowsPerPage: 10, sortBy: 'starttime', descending: true }"
             >
               <template #body-cell-id="props">
                 <q-td :props="props" class="text-right">
-                  <router-link :to="{ name: 'job-details', params: { id: props.value } }" class="text-primary">
+                  <a href="#" class="text-primary" @click.prevent="openJobDetails(props.row)">
                     {{ props.value }}
-                  </router-link>
+                  </a>
+                </q-td>
+              </template>
+              <template #body-cell-director="props">
+                <q-td :props="props">
+                  <q-chip dense square color="primary" text-color="white" :label="props.value" />
                 </q-td>
               </template>
               <template #body-cell-status="props">
@@ -72,9 +122,9 @@
               </template>
               <template #body-cell-client="props">
                 <q-td :props="props">
-                  <router-link :to="{ name: 'client-details', params: { name: props.value } }" class="text-primary">
+                  <a href="#" class="text-primary" @click.prevent="openClientDetails(props.row)">
                     {{ props.value }}
-                  </router-link>
+                  </a>
                 </q-td>
               </template>
               <template #body-cell-starttime="props">
@@ -86,9 +136,9 @@
               </template>
               <template #body-cell-name="props">
                 <q-td :props="props">
-                  <router-link :to="{ name: 'job-details', params: { id: jobId(props.row) } }" class="text-primary">
+                  <a href="#" class="text-primary" @click.prevent="openJobDetails(props.row)">
                     {{ props.value }}
-                  </router-link>
+                  </a>
                 </q-td>
               </template>
               <template #body-cell-level="props">
@@ -165,12 +215,22 @@
           </q-card-section>
           <q-card-section style="max-height:320px; overflow-y:auto; padding:0">
             <q-list separator>
-              <q-item v-for="job in runningJobs" :key="jobId(job)" class="q-py-sm">
+              <q-item v-for="job in runningJobs" :key="job.scopeKey" class="q-py-sm">
                 <q-item-section>
                   <q-item-label>
-                    <router-link :to="{ name: 'job-details', params: { id: jobId(job) } }" class="text-primary text-weight-medium">
+                    <a href="#" class="text-primary text-weight-medium" @click.prevent="openJobDetails(job)">
                       {{ job.name }}
-                    </router-link>
+                    </a>
+                    <q-chip
+                      v-if="showDirectorColumn"
+                      dense
+                      square
+                      color="primary"
+                      text-color="white"
+                      size="sm"
+                      class="q-ml-xs"
+                      :label="job.director"
+                    />
                     <span class="text-grey-6 text-caption q-ml-xs">({{ job.client }})</span>
                   </q-item-label>
                   <q-item-label caption>
@@ -179,8 +239,17 @@
                   <q-linear-progress indeterminate color="positive" class="q-mt-xs" style="height:6px; border-radius:3px" />
                 </q-item-section>
                 <q-item-section side>
-                  <q-btn flat round dense icon="cancel" color="negative" size="sm"
-                         :title="t('Cancel Job')" @click="confirmCancel(job)" />
+                  <q-btn
+                    v-if="allowRunningJobActions"
+                    flat
+                    round
+                    dense
+                    icon="cancel"
+                    color="negative"
+                    size="sm"
+                    :title="t('Cancel Job')"
+                    @click="confirmCancel(job)"
+                  />
                 </q-item-section>
               </q-item>
               <q-item v-if="!runningJobs.length">
@@ -197,86 +266,145 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatBytes, formatSpeed, parseDurationSecs, timeAgo, formatDuration } from '../mock/index.js'
-import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
+import {
+  aggregateDirectorDashboardSnapshots,
+  fetchDirectorDashboardSnapshot,
+} from '../composables/directorAggregate.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useAuthStore } from '../stores/auth.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatNumber } from '../utils/locales.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import StatNumber from '../components/StatNumber.vue'
 
+const auth = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
 const $q = useQuasar()
+const router = useRouter()
 const { t } = useI18n()
-const fmtBytes      = formatBytes
-const fmtSpeed      = formatSpeed
+const fmtBytes = formatBytes
+const fmtSpeed = formatSpeed
 
 // ── data ─────────────────────────────────────────────────────────────────────
-const rawPast24hJobs = ref([])
-const rawRunningJobs = ref([])
-const rawLastJobs    = ref([])
-const clientCount    = ref(0)
-const storageCount   = ref(0)
-const jobTotals      = ref(null)
-const loadingJobs    = ref(false)
+const dashboardSnapshots = ref([])
+const directorErrors = ref([])
+const loadingJobs = ref(false)
 
-async function fetchJobs() {
-  if (!director.isConnected) return
+const directorOptions = computed(() => {
+  const values = new Set([
+    ...director.availableDirectors,
+    ...settings.selectedDirectors,
+    auth.user?.director,
+    settings.directorName,
+  ].filter(Boolean))
+
+  return [...values].map(value => ({ label: value, value }))
+})
+
+function syncSelectedDirectors() {
+  const validDirectors = directorOptions.value.map(option => option.value)
+  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
+
+  if (selected.length > 0) {
+    if (selected.length !== settings.selectedDirectors.length) {
+      settings.setSelectedDirectors(selected)
+    }
+    return
+  }
+
+  if (validDirectors.length > 0) {
+    settings.setSelectedDirectors(validDirectors)
+  }
+}
+
+const selectedDirectorsModel = computed({
+  get: () => settings.selectedDirectors,
+  set: (value) => {
+    const selected = Array.isArray(value) ? value : []
+    if (selected.length > 0) {
+      settings.setSelectedDirectors(selected)
+      return
+    }
+
+    const fallbackDirector = auth.user?.director || settings.directorName
+    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
+  },
+})
+
+const activeDirectors = computed(() => {
+  const selected = settings.selectedDirectors.filter(value => (
+    directorOptions.value.some(option => option.value === value)
+  ))
+
+  if (selected.length > 0) {
+    return selected
+  }
+
+  const currentDirector = auth.user?.director || settings.directorName
+  return currentDirector ? [currentDirector] : []
+})
+
+const isCommonDashboard = computed(() => activeDirectors.value.length > 1)
+const showDirectorColumn = computed(() => isCommonDashboard.value)
+const allowRunningJobActions = computed(() => activeDirectors.value.length === 1)
+const dashboardScopeLabel = computed(() => (
+  isCommonDashboard.value
+    ? t('{count} directors selected', { count: activeDirectors.value.length })
+    : (activeDirectors.value[0] ?? t('No director selected'))
+))
+
+async function fetchDashboard() {
+  const credentials = auth.getCredentials()
+  if (!credentials || activeDirectors.value.length === 0) {
+    dashboardSnapshots.value = []
+    directorErrors.value = []
+    return
+  }
+
   loadingJobs.value = true
   try {
-    const [past24hRes, runningRes, lastRes] = await Promise.allSettled([
-      director.call('llist jobs days=1'),
-      director.call('list jobs jobstatus=R'),
-      director.call('llist jobs last'),
-    ])
-    if (past24hRes.status === 'fulfilled' && past24hRes.value?.jobs)
-      rawPast24hJobs.value = directorCollection(past24hRes.value.jobs)
-    if (runningRes.status === 'fulfilled' && runningRes.value?.jobs) {
-      rawRunningJobs.value = directorCollection(runningRes.value.jobs)
-    }
-    if (lastRes.status === 'fulfilled' && lastRes.value?.jobs) {
-      rawLastJobs.value = directorCollection(lastRes.value.jobs)
-    }
-  } catch { /* keep empty */ } finally {
+    const results = await Promise.allSettled(activeDirectors.value.map(currentDirector => (
+      fetchDirectorDashboardSnapshot({
+        ...credentials,
+        director: currentDirector,
+      })
+    )))
+
+    dashboardSnapshots.value = results
+      .filter(result => result.status === 'fulfilled')
+      .map(result => result.value)
+    directorErrors.value = results.flatMap((result, index) => (
+      result.status === 'rejected'
+        ? [{
+          director: activeDirectors.value[index],
+          message: result.reason?.message ?? t('Failed to load dashboard data.'),
+        }]
+        : []
+    ))
+  } finally {
     loadingJobs.value = false
   }
 }
 
-async function fetchTotals() {
-  if (!director.isConnected) return
+async function loadAvailableDirectors() {
   try {
-    const result = await director.call('list jobtotals')
-    const t = result?.jobtotals
-    if (t) {
-      jobTotals.value = {
-        jobs:  Number(t.jobs  ?? 0),
-        files: Number(t.files ?? 0),
-        bytes: Number(t.bytes ?? 0),
-      }
-    }
-  } catch { /* ignore */ }
-}
-
-async function fetchSidebar() {
-  if (!director.isConnected) return
-  try {
-    const [cr, sr] = await Promise.allSettled([
-      director.call('list clients'),
-      director.call('list storages'),
-    ])
-    if (cr.status === 'fulfilled') clientCount.value = directorCollection(cr.value?.clients).length
-    if (sr.status === 'fulfilled') storageCount.value = directorCollection(sr.value?.storages).length
-  } catch { /* ignore */ }
+    await director.fetchAvailableDirectors()
+  } catch {
+    // Keep the selector usable with the active director when the proxy list is
+    // unavailable.
+  }
 }
 
 let refreshPromise = null
 let refreshQueued = false
 
 async function runRefreshBatch() {
-  await Promise.allSettled([fetchJobs(), fetchTotals(), fetchSidebar()])
+  await fetchDashboard()
 }
 
 function refresh() {
@@ -306,8 +434,71 @@ function confirmCancel(job) {
   }).onOk(() => doCancel(job))
 }
 
+async function ensureActiveDirector(targetDirector) {
+  if (!targetDirector) {
+    throw new Error(t('No director selected.'))
+  }
+
+  const previousCredentials = auth.getCredentials()
+  const previousDirector = previousCredentials?.director
+
+  if (previousDirector === targetDirector && director.isConnected) {
+    return
+  }
+
+  director.disconnect()
+  auth.setDirector(targetDirector)
+  settings.directorName = targetDirector
+
+  try {
+    await director.connectAndWait(auth.getCredentials())
+  } catch (error) {
+    if (previousCredentials?.password && previousDirector && previousDirector !== targetDirector) {
+      auth.setDirector(previousDirector)
+      settings.directorName = previousDirector
+      try {
+        await director.connectAndWait(previousCredentials)
+      } catch {
+        // Preserve the original switch error.
+      }
+    }
+    throw error
+  }
+}
+
+async function openJobDetails(row) {
+  try {
+    await ensureActiveDirector(row.director)
+    await router.push({ name: 'job-details', params: { id: jobId(row) } })
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: t('Could not switch to director {director}: {message}', {
+        director: row.director ?? t('unknown'),
+        message: error.message,
+      }),
+    })
+  }
+}
+
+async function openClientDetails(row) {
+  try {
+    await ensureActiveDirector(row.director)
+    await router.push({ name: 'client-details', params: { name: row.client } })
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: t('Could not switch to director {director}: {message}', {
+        director: row.director ?? t('unknown'),
+        message: error.message,
+      }),
+    })
+  }
+}
+
 async function doCancel(job) {
   try {
+    await ensureActiveDirector(job.director)
     await director.call(`cancel jobid=${jobId(job)} yes`)
     $q.notify({ type: 'positive', message: t('Job {id} cancelled.', { id: jobId(job) }) })
     refresh()
@@ -318,13 +509,16 @@ async function doCancel(job) {
 
 const now = ref(Date.now())
 
-onMounted(refresh)
-watch(() => director.isConnected, (connected) => { if (connected) refresh() })
+onMounted(async () => {
+  await loadAvailableDirectors()
+  syncSelectedDirectors()
+  refresh()
+})
 
 // ── auto-refresh ──────────────────────────────────────────────────────────────
 const countdown = ref(settings.refreshInterval)
 let _countdownTimer = null
-let _refreshTimer   = null
+let _refreshTimer = null
 
 function startAutoRefresh() {
   stopAutoRefresh()
@@ -343,7 +537,7 @@ function stopAutoRefresh() {
   clearInterval(_countdownTimer)
   clearInterval(_refreshTimer)
   _countdownTimer = null
-  _refreshTimer   = null
+  _refreshTimer = null
 }
 
 function manualRefresh() {
@@ -353,33 +547,56 @@ function manualRefresh() {
 
 onMounted(startAutoRefresh)
 onUnmounted(stopAutoRefresh)
-watch(() => director.isConnected, (connected) => { if (connected) startAutoRefresh() })
+watch(() => directorOptions.value, () => {
+  syncSelectedDirectors()
+}, { deep: true })
+watch(() => activeDirectors.value.join('\u0000'), () => {
+  countdown.value = settings.refreshInterval
+  refresh()
+})
 
 // ── computed views ────────────────────────────────────────────────────────────
-const past24hJobs = computed(() => rawPast24hJobs.value.map(normaliseJob))
-const lastJobs    = computed(() => rawLastJobs.value.map(normaliseJob))
+const aggregate = computed(() => (
+  aggregateDirectorDashboardSnapshots(dashboardSnapshots.value)
+))
+const past24hJobs = computed(() => aggregate.value.jobsPast24h)
+const lastJobs = computed(() => aggregate.value.recentJobs)
 
-const recentCols = computed(() => [
-  { name: 'id', label: 'ID', field: 'id', align: 'right', sortable: true },
-  { name: 'name', label: t('Job Name'), field: 'name', align: 'left', sortable: true },
-  { name: 'client', label: t('Client'), field: 'client', align: 'left', sortable: true },
-  { name: 'level', label: t('Level'), field: 'level', align: 'center' },
-  { name: 'starttime', label: t('Start'), field: 'starttime', align: 'left', sortable: true },
-  {
-    name: 'duration',
-    label: t('Duration'),
-    field: 'duration',
-    align: 'right',
-    sortable: true,
-    sort: (a, b) => parseDurationSecs(a) - parseDurationSecs(b),
-  },
-  { name: 'bytes', label: t('Bytes'), field: 'bytes', align: 'right', sortable: true },
-  { name: 'speed', label: t('Speed'), field: 'speed', align: 'right' },
-  { name: 'status', label: t('Status'), field: 'status', align: 'center' },
-])
+const recentCols = computed(() => {
+  const columns = [
+    { name: 'id', label: 'ID', field: 'id', align: 'right', sortable: true },
+    { name: 'name', label: t('Job Name'), field: 'name', align: 'left', sortable: true },
+    { name: 'client', label: t('Client'), field: 'client', align: 'left', sortable: true },
+    { name: 'level', label: t('Level'), field: 'level', align: 'center' },
+    { name: 'starttime', label: t('Start'), field: 'starttime', align: 'left', sortable: true },
+    {
+      name: 'duration',
+      label: t('Duration'),
+      field: 'duration',
+      align: 'right',
+      sortable: true,
+      sort: (a, b) => parseDurationSecs(a) - parseDurationSecs(b),
+    },
+    { name: 'bytes', label: t('Bytes'), field: 'bytes', align: 'right', sortable: true },
+    { name: 'speed', label: t('Speed'), field: 'speed', align: 'right' },
+    { name: 'status', label: t('Status'), field: 'status', align: 'center' },
+  ]
 
-const recentJobs  = computed(() => lastJobs.value)
-const runningJobs = computed(() => rawRunningJobs.value.map(normaliseJob))
+  if (showDirectorColumn.value) {
+    columns.splice(1, 0, {
+      name: 'director',
+      label: t('Director'),
+      field: 'director',
+      align: 'left',
+      sortable: true,
+    })
+  }
+
+  return columns
+})
+
+const recentJobs = computed(() => lastJobs.value)
+const runningJobs = computed(() => aggregate.value.runningJobs)
 
 function elapsedSecs(job) {
   if (!job.starttime) return 0
@@ -404,38 +621,35 @@ function durationGauge(str) { return parseDurationSecs(str) / maxDurationSecs.va
 function speedGauge(row) { return jobSpeedBps(row) / maxSpeedBps.value }
 
 const summaryStats = computed(() => {
-    const s = (code) => past24hJobs.value.filter(j => j.status === code).length
+  const countByStatus = (code) => past24hJobs.value.filter(j => j.status === code).length
   return [
-    { label: t('Running'), status: 'R', color: 'info', count: s('R') },
-    { label: t('Waiting'), status: 'C', color: 'grey', count: s('C') },
-    { label: t('Successful'), status: 'T', color: 'positive', count: s('T') },
-    { label: t('Warning'), status: 'W', color: 'warning', count: s('W') },
-    { label: t('Failed'), status: 'f', color: 'negative', count: s('f') },
+    { label: t('Running'), status: 'R', color: 'info', count: countByStatus('R') },
+    { label: t('Waiting'), status: 'C', color: 'grey', count: countByStatus('C') },
+    { label: t('Successful'), status: 'T', color: 'positive', count: countByStatus('T') },
+    { label: t('Warning'), status: 'W', color: 'warning', count: countByStatus('W') },
+    { label: t('Failed'), status: 'f', color: 'negative', count: countByStatus('f') },
   ]
 })
 
-const totals = computed(() => {
-  if (jobTotals.value) return jobTotals.value
-  return {
-    jobs:     past24hJobs.value.length,
-    files:    past24hJobs.value.reduce((a, j) => a + j.files, 0),
-    bytes:    past24hJobs.value.reduce((a, j) => a + j.bytes, 0),
-    clients:  clientCount.value,
-    storages: storageCount.value,
-  }
-})
+const totals = computed(() => ({
+  jobs: aggregate.value.jobTotals.jobs,
+  files: aggregate.value.jobTotals.files,
+  bytes: aggregate.value.jobTotals.bytes,
+  clients: aggregate.value.clientCount,
+  storages: aggregate.value.storageCount,
+}))
 
 const totalStats = computed(() => [
   { label: t('Total Jobs'), value: totals.value.jobs },
   { label: t('Total Files'), value: formatNumber(totals.value.files ?? 0, settings.locale) },
   { label: t('Total Bytes'), value: fmtBytes(totals.value.bytes ?? 0) },
-  { label: t('Clients'), value: clientCount.value },
-  { label: t('Storages'), value: storageCount.value },
+  { label: t('Clients'), value: totals.value.clients },
+  { label: t('Storages'), value: totals.value.storages },
 ])
 
 // helper: keep status/bytes getters for template compatibility
 function jobStatus(row) { return row.status ?? '?' }
-function jobBytes(row)  { return fmtBytes(row.bytes ?? 0) }
+function jobBytes(row) { return fmtBytes(row.bytes ?? 0) }
 function jobId(row) {
   return row.id ?? row.jobid
 }

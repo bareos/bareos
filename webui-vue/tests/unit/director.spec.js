@@ -205,6 +205,27 @@ describe('director store', () => {
     })
   })
 
+  it('waits for a successful connection result', async () => {
+    const director = useDirectorStore()
+
+    const connected = director.connectAndWait({
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        transport: 'cleartext',
+      }),
+    })
+
+    await expect(connected).resolves.toBe(true)
+  })
+
   it('allows raw commands to run longer than the normal command timeout', async () => {
     const auth = useAuthStore()
     const director = useDirectorStore()
