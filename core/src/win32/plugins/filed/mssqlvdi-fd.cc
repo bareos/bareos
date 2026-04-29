@@ -405,6 +405,23 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
   return retval;
 }
 
+const char* instance_name_of(plugin_ctx* p_ctx)
+{
+  if (!p_ctx->instance) { p_ctx->instance = strdup(DEFAULT_INSTANCE); }
+
+  return p_ctx->instance;
+}
+
+const char* server_address_of(plugin_ctx* p_ctx)
+{
+  if (!p_ctx->server_address) {
+    p_ctx->server_address = strdup(DEFAULT_SERVER_ADDRESS);
+  }
+
+  return p_ctx->server_address;
+}
+
+
 // Start the backup of a specific file
 static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 {
@@ -415,29 +432,22 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 
   if (!p_ctx) { return bRC_Error; }
 
-  // If no explicit instance name given use the DEFAULT_INSTANCE.
-  if (!p_ctx->instance) { p_ctx->instance = strdup(DEFAULT_INSTANCE); }
-
-  // If no explicit server address given use the DEFAULT_SERVER_ADDRESS.
-  if (!p_ctx->server_address) {
-    p_ctx->server_address = strdup(DEFAULT_SERVER_ADDRESS);
-  }
+  auto* instance = instance_name_of(p_ctx);
 
   now = time(NULL);
   bstrftime(dt, sizeof(dt), now, "%Y%m%d-%H%M%S");
 
   switch (p_ctx->backup_level) {
     case L_FULL:
-      Mmsg(fname, "/@MSSQL/%s/%s/db-%s-full.bak", p_ctx->instance,
-           p_ctx->database, dt);
+      Mmsg(fname, "/@MSSQL/%s/%s/db-%s-full.bak", instance, p_ctx->database,
+           dt);
       break;
     case L_DIFFERENTIAL:
-      Mmsg(fname, "/@MSSQL/%s/%s/db-%s-diff.bak", p_ctx->instance,
-           p_ctx->database, dt);
+      Mmsg(fname, "/@MSSQL/%s/%s/db-%s-diff.bak", instance, p_ctx->database,
+           dt);
       break;
     case L_INCREMENTAL:
-      Mmsg(fname, "/@MSSQL/%s/%s/db-%s-log.trn", p_ctx->instance,
-           p_ctx->database, dt);
+      Mmsg(fname, "/@MSSQL/%s/%s/db-%s-log.trn", instance, p_ctx->database, dt);
       break;
     default:
       Jmsg(ctx, M_FATAL, "Unsupported backup level (%c).\n",
@@ -983,22 +993,17 @@ static void SetAdoConnectString(PluginContext* ctx)
   PoolMem ado_connect_string(PM_NAME);
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
-  // If no explicit instance name given usedthe DEFAULT_INSTANCE name.
-  if (!p_ctx->instance) { p_ctx->instance = strdup(DEFAULT_INSTANCE); }
+  auto* server_address = server_address_of(p_ctx);
+  auto* instance = instance_name_of(p_ctx);
 
-  // If no explicit server address given use the DEFAULT_SERVER_ADDRESS.
-  if (!p_ctx->server_address) {
-    p_ctx->server_address = strdup(DEFAULT_SERVER_ADDRESS);
-  }
-
-  if (Bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
+  if (Bstrcasecmp(instance, DEFAULT_INSTANCE)) {
     Mmsg(ado_connect_string,
          "Provider=MSOLEDBSQL.1;Data Source=%s;Initial Catalog=master",
-         p_ctx->server_address);
+         server_address);
   } else {
     Mmsg(ado_connect_string,
          "Provider=MSOLEDBSQL.1;Data Source=%s\\%s;Initial Catalog=master",
-         p_ctx->server_address, p_ctx->instance);
+         server_address, instance);
   }
 
   // See if we need to use a username/password or a trusted connection.
@@ -1073,9 +1078,6 @@ static inline void perform_aDoRestore(PluginContext* ctx)
   PoolMem ado_query(PM_NAME), temp(PM_NAME);
   POOLMEM* vdsname;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
-
-  // If no explicit instance name given use the DEFAULT_INSTANCE name.
-  if (!p_ctx->instance) { p_ctx->instance = strdup(DEFAULT_INSTANCE); }
 
   SetAdoConnectString(ctx);
 
@@ -1268,14 +1270,15 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
     p_ctx->VDIConfig.features |= VDF_RequestComplete;
   }
 
+  auto* instance = instance_name_of(p_ctx);
   // Create the VDI device set.
-  if (Bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
+  if (Bstrcasecmp(instance, DEFAULT_INSTANCE)) {
     hr = p_ctx->VDIDeviceSet->CreateEx(NULL, p_ctx->vdsname, &p_ctx->VDIConfig);
   } else {
     POOLMEM* instance_name;
 
     instance_name = GetPoolMemory(PM_NAME);
-    UTF8_2_wchar(instance_name, p_ctx->instance);
+    UTF8_2_wchar(instance_name, instance);
     hr = p_ctx->VDIDeviceSet->CreateEx((LPCWSTR)instance_name, p_ctx->vdsname,
                                        &p_ctx->VDIConfig);
     FreePoolMemory(instance_name);
@@ -1314,7 +1317,7 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
                            ? VDI_DEFAULT_WAIT
                            : p_ctx->get_configuration_timeout * 1000;  // ms
 
-    Jmsg(ctx, M_INFO, "Calling GetConfiguration with a timeout of %d sec\n.",
+    Jmsg(ctx, M_INFO, "Calling GetConfiguration with a timeout of %d sec\n",
          timeout / 1000);
 
     hr = p_ctx->VDIDeviceSet->GetConfiguration(timeout, &p_ctx->VDIConfig);
