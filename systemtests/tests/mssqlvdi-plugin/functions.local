@@ -1,7 +1,8 @@
 #!/bin/bash
+
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,28 +19,26 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-set -e
-set -o pipefail
-set -u
-
-TestName="$(basename "$(pwd)")"
-export TestName
-
-myname=$(basename "$0")
-
 #shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../../scripts/functions
-. "${BAREOS_SCRIPTS_DIR}"/functions
+# print_delete_trace
+#   This simply prints the fd trace and then deletes it.
+#   This makes sure that only the relevant trace from the
+#   current test is printed.
+#
+print_delete_trace()
+{
+  local FD_TRACE_NAME="${working_dir}/$(basename "$(pwd)")-fd.trace"
+  cat "${FD_TRACE_NAME}" || echo "Trace does not exist"
+  rm "${FD_TRACE_NAME}" || :
+}
 
-start_test
-
-"${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBNormalTest -i sqlfiles/SQL_drop_db.sql
-
-if db_exists "DBNormalTest"; then
-  echo "Database is not empty"
-  exit 2
-fi
-
-end_test
+db_exists()
+{
+  # Check if the DB still exists: DB_ID() returns a numeric ID if the DB exists,
+  # or NULL if it was dropped. -h -1 suppresses headers, -W strips trailing
+  # whitespace, so grep can match a bare number. A match means the drop failed.
+  "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -h -1 -W \
+    -Q "SET NOCOUNT ON; SELECT DB_ID('$1')" | tr -d '\r' | grep -Eq '^[0-9]+$'
+}
