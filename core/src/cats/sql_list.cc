@@ -52,15 +52,6 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
 }
 
 bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
-                            SQL_QUERY query,
-                            OutputFormatter* sendit,
-                            e_list_type type,
-                            const bool verbose)
-{
-  return ListSqlQuery(jcr, query, sendit, type, "query", verbose);
-}
-
-bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
                             const char* query,
                             OutputFormatter* sendit,
                             e_list_type type,
@@ -97,18 +88,6 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
   SqlFreeResult();
 
   return true;
-}
-
-bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
-                            SQL_QUERY query,
-                            OutputFormatter* sendit,
-                            e_list_type type,
-                            const char* description,
-                            const bool verbose,
-                            const CollapseMode collapse)
-{
-  return ListSqlQuery(jcr, get_predefined_query(query), sendit, type,
-                      description, verbose, collapse);
 }
 
 void BareosDb::ListPoolRecords(JobControlRecord* jcr,
