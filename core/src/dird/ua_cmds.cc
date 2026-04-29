@@ -224,7 +224,8 @@ static struct ua_cmdstruct commands[] = {
     {NT_(".authorized"), DotAuthorizedCmd, T_("Check for authorization"),
      NT_("job=<job-name> | client=<client-name> | storage=<storage-name> "
          "| schedule=<schedule-name> | pool=<pool-name> | cmd=<command> "
-         "| fileset=<fileset-name> | catalog=<catalog>"),
+         "| fileset=<fileset-name> | catalog=<catalog>"
+         "| where=<restore-path> | pluginoptions=<plugin-options>"),
      false, false},
     {NT_(".catalogs"), DotCatalogsCmd, T_("List all catalog resources"), NULL,
      false, false},
