@@ -116,7 +116,7 @@
                   <q-badge
                     v-if="slotInDriveMap[props.row.slotnr] != null"
                     color="blue"
-                    :label="t('in drive {drive}', { drive: slotInDriveMap[props.row.slotnr] })" />
+                    :label="formatInDriveLabel(t, slotInDriveMap[props.row.slotnr])" />
                   <q-badge v-else
                            :color="props.value === 'full' ? 'green' : 'grey'"
                            :label="props.value" />
@@ -472,7 +472,11 @@ import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { useQuasar } from 'quasar'
 import { directorCollection } from '../composables/useDirectorFetch.js'
-import { buildLabelBarcodesCommand } from '../utils/autochanger.js'
+import {
+  buildLabelBarcodesCommand,
+  formatInDriveLabel,
+  shouldRefreshAutochangerTables,
+} from '../utils/autochanger.js'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 
 defineProps({
@@ -683,7 +687,11 @@ async function loadSlots() {
 function startAutoRefresh() {
   clearInterval(_slotsTimer)
   _slotsTimer = setInterval(() => {
-    if (!selectedStorage.value || slotsLoading.value || commandRunning.value) return
+    if (!shouldRefreshAutochangerTables({
+      selectedStorage: selectedStorage.value,
+      slotsLoading: slotsLoading.value,
+      commandRunning: commandRunning.value,
+    })) return
     void loadSlots()
   }, settings.refreshInterval * 1000)
 }

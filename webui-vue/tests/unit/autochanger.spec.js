@@ -20,7 +20,11 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { buildLabelBarcodesCommand } from '../../src/utils/autochanger.js'
+import {
+  buildLabelBarcodesCommand,
+  formatInDriveLabel,
+  shouldRefreshAutochangerTables,
+} from '../../src/utils/autochanger.js'
 
 describe('autochanger helpers', () => {
   it('builds a label barcodes command with encrypt before slots', () => {
@@ -45,5 +49,31 @@ describe('autochanger helpers', () => {
     })).toBe(
       'label barcodes storage="Autochanger" pool="Incremental" drive=0 yes'
     )
+  })
+
+  it('keeps autochanger tables refreshing while command output is streaming', () => {
+    expect(shouldRefreshAutochangerTables({
+      selectedStorage: 'Autochanger',
+      slotsLoading: false,
+      commandRunning: true,
+    })).toBe(true)
+  })
+
+  it('falls back to a concrete drive label when the translation key is missing', () => {
+    expect(formatInDriveLabel((key) => key, 7)).toBe('in drive 7')
+  })
+
+  it('skips autochanger refreshes without a storage or while slots are loading', () => {
+    expect(shouldRefreshAutochangerTables({
+      selectedStorage: '',
+      slotsLoading: false,
+      commandRunning: false,
+    })).toBe(false)
+
+    expect(shouldRefreshAutochangerTables({
+      selectedStorage: 'Autochanger',
+      slotsLoading: true,
+      commandRunning: false,
+    })).toBe(false)
   })
 })

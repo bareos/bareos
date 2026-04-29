@@ -40,3 +40,20 @@ export function buildLabelBarcodesCommand({
 
   return `${cmd} yes`
 }
+
+export function formatInDriveLabel(translate, drive) {
+  const key = 'in drive {drive}'
+  const label = translate(key, { drive })
+  return label === key ? `in drive ${drive}` : label
+}
+
+export function shouldRefreshAutochangerTables({
+  selectedStorage,
+  slotsLoading,
+  commandRunning,
+}) {
+  // Command output streams over a separate raw socket, so it must not pause
+  // the regular slot/drives/import-export polling on the main connection.
+  void commandRunning
+  return Boolean(selectedStorage) && !slotsLoading
+}
