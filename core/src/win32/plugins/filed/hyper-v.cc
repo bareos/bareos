@@ -2688,9 +2688,9 @@ static bRC free_current_state(PluginContext* ctx)
                 } else if (p_ctx->is_diff()) {
                   // intentionally left blank
                 } else {
-                  if (prepared->delta_seq > 1 && prepared->refpoint) {
-                    // the previous reference point is _not_ a full,
-                    // so we can delete
+                  if (prepared->delta_seq > 0 && prepared->refpoint) {
+				    // always delete the previous reference point after a successful incremental,
+				    // regardless of whether it was created by a full or incremental backup
                     DBGC(ctx,
                          L"delta_seq {} > 1 => delete previous non-full ref "
                          L"point",
