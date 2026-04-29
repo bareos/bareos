@@ -341,51 +341,66 @@ static inline bool PySavePacketToNative(
     // Special code for handling restore objects.
     if (IS_FT_OBJECT(sp->type)) {
       // See if a proper restore object was created.
-      if (pSavePkt->object_len > 0) {
-        /* As this has to linger as long as the backup is running we save it
-         * in our plugin context. */
-
-        if (!pSavePkt->object_name) {
-          PyErr_SetString(PyExc_RuntimeError, "object name missing");
-          return false;
-        }
-        if (!PyUnicode_Check(pSavePkt->object_name)) {
-          PyErr_SetString(PyExc_RuntimeError,
-                          "object name must be unicode type");
-          return false;
-        }
-        if (!pSavePkt->object) {
-          PyErr_SetString(PyExc_RuntimeError, "object missing");
-          return false;
-        }
-        if (!PyByteArray_Check(pSavePkt->object)) {
-          PyErr_SetString(PyExc_RuntimeError,
-                          "object needs to be of type bytearray");
-          return false;
-        }
-
-        if (plugin_priv_ctx->object_name) {
-          free(plugin_priv_ctx->object_name);
-        }
-        plugin_priv_ctx->object_name
-            = strdup(PyUnicode_AsUTF8(pSavePkt->object_name));
-        sp->object_name = plugin_priv_ctx->object_name;
-
-        sp->object_len = pSavePkt->object_len;
-        sp->index = pSavePkt->object_index;
-
-        if (char* buf = PyByteArray_AsString(pSavePkt->object)) {
-          if (plugin_priv_ctx->object) { free(plugin_priv_ctx->object); }
-          plugin_priv_ctx->object = (char*)malloc(pSavePkt->object_len);
-          memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
-          sp->object = plugin_priv_ctx->object;
-        } else {
-          return false;
-        }
-      } else {
+      if (pSavePkt->object_len <= 0) {
         PyErr_SetString(PyExc_RuntimeError, "pSavePkt->object_len is <=0");
         return false;
       }
+
+      /* As this has to linger as long as the backup is running we save it
+       * in our plugin context. */
+      if (!pSavePkt->object_name) {
+        PyErr_SetString(PyExc_RuntimeError, "object name missing");
+        return false;
+      }
+      if (!PyUnicode_Check(pSavePkt->object_name)) {
+        PyErr_SetString(PyExc_RuntimeError, "object name must be unicode type");
+        return false;
+      }
+      if (!pSavePkt->object) {
+        PyErr_SetString(PyExc_RuntimeError, "object missing");
+        return false;
+      }
+      if (!PyByteArray_Check(pSavePkt->object)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "object needs to be of type bytearray");
+        return false;
+      }
+
+      char* buf = PyByteArray_AsString(pSavePkt->object);
+
+      if (!buf) {
+        /* if PyByteArray_AsString() fails even though PyByteArray_Check()
+         * succeeds, then python should have already set an exception itself.
+         * As such we do not set our own exception here to not mask that one. */
+        return false;
+      }
+
+      auto array_size = PyByteArray_Size(pSavePkt->object);
+
+      if (array_size < pSavePkt->object_len) {
+        PyErr_SetString(PyExc_RuntimeError, "object_len >= len(object)");
+        return false;
+      }
+
+      auto* object_name = PyUnicode_AsUTF8(pSavePkt->object_name);
+
+      if (!object_name) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "could not convert object name to c-string");
+        return false;
+      }
+
+      if (plugin_priv_ctx->object_name) { free(plugin_priv_ctx->object_name); }
+      plugin_priv_ctx->object_name = strdup(object_name);
+      sp->object_name = plugin_priv_ctx->object_name;
+
+      sp->object_len = pSavePkt->object_len;
+      sp->index = pSavePkt->object_index;
+
+      if (plugin_priv_ctx->object) { free(plugin_priv_ctx->object); }
+      plugin_priv_ctx->object = (char*)malloc(pSavePkt->object_len);
+      memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
+      sp->object = plugin_priv_ctx->object;
     } else {
       sp->no_read = pSavePkt->no_read;
       sp->delta_seq = pSavePkt->delta_seq;
@@ -396,25 +411,23 @@ static inline bool PySavePacketToNative(
     sp->delta_seq = pSavePkt->delta_seq;
     sp->save_time = pSavePkt->save_time;
 
-    if (PyByteArray_Check(pSavePkt->flags)) {
-      char* flags;
-
-      if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
-        PyErr_SetString(PyExc_RuntimeError, "PyByteArray_Size(flags) failed");
-        return false;
-      }
-
-      if ((flags = PyByteArray_AsString(pSavePkt->flags))) {
-        memcpy(sp->flags, flags, sizeof(sp->flags));
-      } else {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "PyByteArray_AsString(flags) failed");
-        return false;
-      }
-    } else {
+    if (!PyByteArray_Check(pSavePkt->flags)) {
       PyErr_SetString(PyExc_TypeError, "flags need to be of type bytearray");
       return false;
     }
+
+    if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
+      PyErr_SetString(PyExc_RuntimeError, "PyByteArray_Size(flags) failed");
+      return false;
+    }
+
+    char* flags = PyByteArray_AsString(pSavePkt->flags);
+    if (!flags) {
+      PyErr_SetString(PyExc_RuntimeError, "PyByteArray_AsString(flags) failed");
+      return false;
+    }
+
+    memcpy(sp->flags, flags, sizeof(sp->flags));
   }
   return true;
 }
