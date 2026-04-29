@@ -126,15 +126,15 @@
               </template>
               <template #body-cell-mr_volname="props">
                 <q-td :props="props">
-                  <template v-if="props.value && props.value !== '?'">
+                  <div v-if="props.value && props.value !== '?'" class="row items-center no-wrap q-gutter-xs">
                     <VolumeNameLink
                       :name="props.value"
                       :volume="volumeDetailsByName[props.value]"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
-                           class="q-ml-xs" :title="t('Copy volume name')"
+                           :title="t('Copy volume name')"
                            @click.stop="copyName(props.value)" />
-                  </template>
+                  </div>
                 </q-td>
               </template>
               <template #body-cell-mr_volstatus="props">
@@ -221,15 +221,15 @@
               </template>
               <template #body-cell-volname="props">
                 <q-td :props="props">
-                  <template v-if="props.value">
+                  <div v-if="props.value" class="row items-center no-wrap q-gutter-xs">
                     <VolumeNameLink
                       :name="props.value"
                       :volume="volumeDetailsByName[props.value]"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
-                           class="q-ml-xs" :title="t('Copy volume name')"
+                           :title="t('Copy volume name')"
                            @click.stop="copyName(props.value)" />
-                  </template>
+                  </div>
                 </q-td>
               </template>
               <template #body-cell-actions="props">
@@ -283,15 +283,15 @@
               </template>
               <template #body-cell-volname="props">
                 <q-td :props="props">
-                  <template v-if="props.value">
+                  <div v-if="props.value" class="row items-center no-wrap q-gutter-xs">
                     <VolumeNameLink
                       :name="props.value"
                       :volume="volumeDetailsByName[props.value]"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
-                           class="q-ml-xs" :title="t('Copy volume name')"
+                           :title="t('Copy volume name')"
                            @click.stop="copyName(props.value)" />
-                  </template>
+                  </div>
                 </q-td>
               </template>
               <template #body-cell-actions="props">
