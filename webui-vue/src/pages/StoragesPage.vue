@@ -1,12 +1,62 @@
 <template>
   <q-page class="q-pa-md">
+    <q-card flat bordered class="q-mb-md bareos-panel">
+      <q-card-section class="panel-header row items-center">
+        <span>{{ t('Storages Scope') }}</span>
+        <q-space />
+        <q-chip dense square color="white" text-color="primary" :label="storagesScopeLabel" />
+      </q-card-section>
+      <q-card-section>
+        <q-select
+          v-model="selectedDirectorsModel"
+          data-testid="storages-directors"
+          :options="directorOptions"
+          option-label="label"
+          option-value="value"
+          emit-value
+          map-options
+          multiple
+          use-chips
+          outlined
+          dense
+          :label="t('Directors')"
+        />
+        <div class="text-caption text-grey-6 q-mt-sm">
+          {{ t('Select the directors that contribute to the storages views.') }}
+        </div>
+        <q-banner
+          v-if="directorErrors.length"
+          rounded
+          dense
+          class="bg-warning text-black q-mt-md"
+        >
+          <template #avatar>
+            <q-icon name="warning" />
+          </template>
+          <div v-for="item in directorErrors" :key="item.director">
+            <strong>{{ item.director }}</strong>: {{ item.message }}
+          </div>
+        </q-banner>
+      </q-card-section>
+    </q-card>
+
     <!-- Tab bar: Devices | Pools | Volumes | Autochangers -->
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-route-tab name="storages" :label="t('Devices')"      no-caps :to="{ path: '/storages' }" />
       <q-route-tab name="pools"    :label="t('Pools')"        no-caps :to="{ path: '/storages', query: { tab: 'pools' } }" />
       <q-route-tab name="volumes"  :label="t('Volumes')"      no-caps :to="{ path: '/storages', query: { tab: 'volumes' } }" />
-      <q-route-tab name="autochangers" :label="t('Autochangers')" no-caps :to="{ path: '/storages', query: { tab: 'autochangers' } }" />
+      <q-route-tab
+        name="autochangers"
+        :label="t('Autochangers')"
+        no-caps
+        :disable="isCommonStorages"
+        :to="{ path: '/storages', query: { tab: 'autochangers' } }"
+      />
     </q-tabs>
+
+    <q-banner v-if="error" dense class="bg-negative text-white q-mb-md">
+      {{ error }}
+    </q-banner>
 
     <q-tab-panels v-model="tab" animated swipeable>
       <!-- DEVICES -->
@@ -14,7 +64,20 @@
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header">{{ t('Storage Devices') }}</q-card-section>
           <q-card-section class="q-pa-none">
-            <q-table :rows="storages" :columns="storageCols" row-key="name" dense flat :pagination="{ rowsPerPage: 15 }">
+            <q-table
+              :rows="storages"
+              :columns="storageCols"
+              row-key="scopeKey"
+              dense
+              flat
+              :loading="loading"
+              :pagination="{ rowsPerPage: 15 }"
+            >
+              <template #body-cell-director="props">
+                <q-td :props="props">
+                  <q-chip dense square color="primary" text-color="white" :label="props.value" />
+                </q-td>
+              </template>
               <template #body-cell-autochanger="props">
                 <q-td :props="props" class="text-center">
                   <BoolIcon :value="props.value" />
@@ -29,7 +92,7 @@
                 <q-td :props="props" class="text-center">
                   <q-btn flat round dense size="sm" icon="monitor_heart"
                          :title="t('Storage Status')"
-                         @click="showStorageStatus(props.row.name)" />
+                         @click="showStorageStatus(props.row)" />
                 </q-td>
               </template>
             </q-table>
@@ -42,12 +105,25 @@
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header">{{ t('Pools') }}</q-card-section>
           <q-card-section class="q-pa-none">
-            <q-table :rows="pools" :columns="poolCols" row-key="name" dense flat :pagination="{ rowsPerPage: 15 }">
+            <q-table
+              :rows="pools"
+              :columns="poolCols"
+              row-key="scopeKey"
+              dense
+              flat
+              :loading="loading"
+              :pagination="{ rowsPerPage: 15 }"
+            >
               <template #body-cell-name="props">
                 <q-td :props="props">
-                  <router-link :to="{ name: 'pool-details', params: { name: props.value } }" class="text-primary">
+                  <a href="#" class="text-primary" @click.prevent="openPoolDetails(props.row)">
                     {{ props.value }}
-                  </router-link>
+                  </a>
+                </q-td>
+              </template>
+              <template #body-cell-director="props">
+                <q-td :props="props">
+                  <q-chip dense square color="primary" text-color="white" :label="props.value" />
                 </q-td>
               </template>
               <template #body-cell-pooltype="props">
@@ -134,11 +210,36 @@
             </q-input>
           </q-card-section>
           <q-card-section class="q-pa-none">
-            <q-table :rows="volumes" :columns="volumeCols" row-key="volumename" dense flat
-                     :filter="volSearch" :pagination="{ rowsPerPage: 15 }">
+            <q-table
+              :rows="volumes"
+              :columns="volumeCols"
+              row-key="scopeKey"
+              dense
+              flat
+              :loading="loading"
+              :filter="volSearch"
+              :pagination="{ rowsPerPage: 15 }"
+            >
               <template #body-cell-volumename="props">
                 <q-td :props="props">
-                  <VolumeNameLink :name="props.value" :volume="props.row" />
+                  <div class="row items-center no-wrap q-gutter-xs">
+                    <a href="#" class="text-primary" @click.prevent="openVolumeDetails(props.row)">
+                      {{ props.value }}
+                    </a>
+                    <q-icon
+                      v-if="volumeHasEncryptionKey(props.row)"
+                      name="vpn_key"
+                      size="xs"
+                      color="amber-8"
+                    >
+                      <q-tooltip>{{ t('Encryption key stored in catalog') }}</q-tooltip>
+                    </q-icon>
+                  </div>
+                </q-td>
+              </template>
+              <template #body-cell-director="props">
+                <q-td :props="props">
+                  <q-chip dense square color="primary" text-color="white" :label="props.value" />
                 </q-td>
               </template>
               <template #body-cell-inchanger="props">
@@ -148,9 +249,9 @@
               </template>
               <template #body-cell-pool="props">
                 <q-td :props="props">
-                  <router-link :to="{ name: 'pool-details', params: { name: props.value } }" class="text-primary">
+                  <a href="#" class="text-primary" @click.prevent="openPoolDetails(props.row)">
                     {{ props.value }}
-                  </router-link>
+                  </a>
                 </q-td>
               </template>
               <template #body-cell-volstatus="props">
@@ -229,21 +330,24 @@
 
       <!-- AUTOCHANGERS -->
       <q-tab-panel name="autochangers" class="q-pa-none">
+        <q-banner v-if="isCommonStorages" dense rounded class="bg-info text-white q-mb-md">
+          {{ t('Autochangers stay scoped to the active director for now. Reduce the storages scope to a single director to use this tab.') }}
+        </q-banner>
         <AutochangerPage embedded />
       </q-tab-panel>
     </q-tab-panels>
 
     <!-- Storage Status Dialog -->
     <q-dialog v-model="storageStatusDlg.open">
-      <q-card style="min-width:600px;max-width:90vw">
-        <q-card-section class="panel-header row items-center">
-          <span>{{ t('Status') }}: {{ storageStatusDlg.name }}</span>
-          <q-space />
-          <q-btn flat round dense icon="refresh" color="white"
-                 @click="reloadStorageStatus(storageStatusDlg.name)"
+        <q-card style="min-width:600px;max-width:90vw">
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Status') }}: {{ storageStatusDlg.name }}</span>
+            <q-space />
+            <q-btn flat round dense icon="refresh" color="white"
+                 @click="reloadStorageStatus(storageStatusDlg)"
                  :loading="storageStatusDlg.loading" />
-          <q-btn flat round dense icon="close" color="white" v-close-popup class="q-ml-xs" />
-        </q-card-section>
+            <q-btn flat round dense icon="close" color="white" v-close-popup class="q-ml-xs" />
+          </q-card-section>
         <q-card-section>
           <q-inner-loading :showing="storageStatusDlg.loading" />
           <div v-if="storageStatusDlg.error" class="text-negative">{{ storageStatusDlg.error }}</div>
@@ -255,25 +359,29 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter, RouterLink } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import {
-  directorCollection,
-  useDirectorFetch,
-  normaliseVolume,
-} from '../composables/useDirectorFetch.js'
+  fetchAggregatedStoragesState,
+  normaliseDirectorStoragesState,
+} from '../composables/storagesAggregate.js'
 import AutochangerPage from './AutochangerPage.vue'
+import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import BoolIcon from '../components/BoolIcon.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
 import PoolTypeBadge from '../components/PoolTypeBadge.vue'
-import VolumeNameLink from '../components/VolumeNameLink.vue'
+import { volumeHasEncryptionKey } from '../utils/volumes.js'
 
 const route    = useRoute()
 const router   = useRouter()
+const auth = useAuthStore()
 const director = useDirectorStore()
+const settings = useSettingsStore()
 const { t } = useI18n()
 const validTabs = new Set(['storages', 'pools', 'volumes', 'autochangers'])
 function normaliseTab(value) {
@@ -281,56 +389,147 @@ function normaliseTab(value) {
 }
 const tab      = ref(normaliseTab(route.query.tab))
 const volSearch = ref('')
+const loading = ref(false)
+const error = ref(null)
+const directorErrors = ref([])
+const storageRows = ref([])
+const poolRows = ref([])
+const volumeRows = ref([])
+
+const directorOptions = computed(() => {
+  const values = new Set([
+    ...director.availableDirectors,
+    ...settings.selectedDirectors,
+    auth.user?.director,
+    settings.directorName,
+  ].filter(Boolean))
+  return [...values].map(value => ({ label: value, value }))
+})
+
+function syncSelectedDirectors() {
+  const validDirectors = directorOptions.value.map(option => option.value)
+  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
+
+  if (selected.length > 0) {
+    if (selected.length !== settings.selectedDirectors.length) {
+      settings.setSelectedDirectors(selected)
+    }
+    return
+  }
+
+  const fallbackDirector = auth.user?.director || settings.directorName
+  if (fallbackDirector) {
+    settings.setSelectedDirectors([fallbackDirector])
+  }
+}
+
+const selectedDirectorsModel = computed({
+  get: () => settings.selectedDirectors,
+  set: (value) => {
+    const selected = Array.isArray(value) ? value : []
+    if (selected.length > 0) {
+      settings.setSelectedDirectors(selected)
+      return
+    }
+
+    const fallbackDirector = auth.user?.director || settings.directorName
+    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
+  },
+})
+
+const activeDirectors = computed(() => {
+  const selected = settings.selectedDirectors.filter(value => (
+    directorOptions.value.some(option => option.value === value)
+  ))
+
+  if (selected.length > 0) {
+    return selected
+  }
+
+  const currentDirector = auth.user?.director || settings.directorName
+  return currentDirector ? [currentDirector] : []
+})
+
+const isCommonStorages = computed(() => activeDirectors.value.length > 1)
+const isSingleDirectorScope = computed(() => activeDirectors.value.length === 1)
+const showDirectorColumn = computed(() => isCommonStorages.value)
+const storagesScopeLabel = computed(() => (
+  isCommonStorages.value
+    ? `${activeDirectors.value.length} ${t('directors selected')}`
+    : (activeDirectors.value[0] ?? t('No director selected'))
+))
 
 watch(() => route.query.tab, (value) => {
-  const next = normaliseTab(value)
+  let next = normaliseTab(value)
+  if (isCommonStorages.value && next === 'autochangers') {
+    next = 'storages'
+  }
   if (tab.value !== next) {
     tab.value = next
   }
 })
 
 watch(tab, (next) => {
+  let target = next
+  if (isCommonStorages.value && target === 'autochangers') {
+    target = 'storages'
+    tab.value = target
+  }
+
   const current = normaliseTab(route.query.tab)
-  if (current === next) {
+  if (current === target) {
     return
   }
 
-  const query = next === 'storages'
+  const query = target === 'storages'
     ? { ...route.query }
-    : { ...route.query, tab: next }
+    : { ...route.query, tab: target }
   delete query.tab
-  if (next !== 'storages') {
-    query.tab = next
+  if (target !== 'storages') {
+    query.tab = target
   }
 
   router.replace({ path: '/storages', query })
 })
 
-const { data: rawStorages, loading: storagesLoading, error: storagesError, refresh: refreshStorages } =
-  useDirectorFetch('list storages', 'storages')
-const { data: rawPools,    loading: poolsLoading,    error: poolsError,    refresh: refreshPools } =
-  useDirectorFetch('llist pools', 'pools')
-const { data: rawVolumes,  loading: volsLoading,     error: volsError,     refresh: refreshVols } =
-  useDirectorFetch('llist volumes', 'volumes')
+async function ensureSingleScopeDirector() {
+  if (!isSingleDirectorScope.value) {
+    return
+  }
 
-const storages = computed(() => directorCollection(rawStorages.value).map(s => ({
-  ...s,
-  autochanger: s.autochanger === '1' || s.autochanger === true,
-  enabled:     s.enabled !== '0' && s.enabled !== false,
-})))
+  const scopeDirector = activeDirectors.value[0]
+  if (!scopeDirector) {
+    return
+  }
+
+  if (auth.user?.director === scopeDirector && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(scopeDirector)
+}
+
+async function switchToRowDirector(row) {
+  if (!row?.director) {
+    return
+  }
+
+  if (auth.user?.director === row.director && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(row.director)
+}
+
+function reportRowError(row, reason) {
+  directorErrors.value = [{
+    director: row?.director ?? t('unknown'),
+    message: reason?.message ?? String(reason),
+  }]
+}
 
 const pools = computed(() => {
-  const bytesByPool = {}
-  for (const v of volumes.value) {
-    const key = v.pool ?? ''
-    bytesByPool[key] = (bytesByPool[key] ?? 0) + (Number(v.volbytes) || 0)
-  }
-  return directorCollection(rawPools.value).map(p => ({
-    ...p,
-    numvols:    Number(p.numvols ?? 0),
-    maxvols:    Number(p.maxvols ?? 0),
-    totalbytes: bytesByPool[p.name] ?? 0,
-  }))
+  return poolRows.value
 })
 
 const maxPoolBytes = computed(() =>
@@ -338,17 +537,59 @@ const maxPoolBytes = computed(() =>
 )
 function poolBytesGauge(val) { return (Number(val) || 0) / maxPoolBytes.value }
 
-// "list volumes" returns a nested object keyed by pool type; flatten it.
 const volumes = computed(() => {
-  const raw = rawVolumes.value
-  if (!raw) return []
-  if (Array.isArray(raw)) return raw.map(normaliseVolume)
-  // Nested by pool: { full: [...], incremental: [...], ... }
-  return Object.values(raw).flat().map(normaliseVolume)
+  return volumeRows.value
 })
 
-function refresh() {
-  refreshStorages(); refreshPools(); refreshVols()
+const storages = computed(() => storageRows.value)
+
+async function refresh() {
+  loading.value = true
+  error.value = null
+  directorErrors.value = []
+  try {
+    if (activeDirectors.value.length === 0) {
+      storageRows.value = []
+      poolRows.value = []
+      volumeRows.value = []
+      return
+    }
+
+    if (isCommonStorages.value) {
+      const credentials = auth.getCredentials()
+      if (!credentials?.password) {
+        throw new Error(t('Not logged in.'))
+      }
+
+      const result = await fetchAggregatedStoragesState(credentials, activeDirectors.value)
+      storageRows.value = result.storages
+      poolRows.value = result.pools
+      volumeRows.value = result.volumes
+      directorErrors.value = result.directorErrors
+      return
+    }
+
+    const currentDirector = activeDirectors.value[0]
+    await ensureSingleScopeDirector()
+    const [storagesResult, poolsResult, volumesResult] = await Promise.all([
+      director.call('list storages'),
+      director.call('llist pools'),
+      director.call('llist volumes'),
+    ])
+    const result = normaliseDirectorStoragesState(
+      currentDirector,
+      storagesResult?.storages,
+      poolsResult?.pools,
+      volumesResult?.volumes
+    )
+    storageRows.value = result.storages
+    poolRows.value = result.pools
+    volumeRows.value = result.volumes
+  } catch (reason) {
+    error.value = reason?.message ?? String(reason)
+  } finally {
+    loading.value = false
+  }
 }
 
 // ── Pool gauge helpers ────────────────────────────────────────────────────────
@@ -367,9 +608,12 @@ const maxVolBytes     = computed(() => maxOf(volumes.value, 'volbytes'))
 const maxVolMaxBytes  = computed(() => maxOf(volumes.value.filter(v => Number(v.maxvolbytes) > 0), 'maxvolbytes'))
 const maxVolRetention = computed(() => maxOf(volumes.value, 'retention'))
 function volBytesGauge(val) { return (Number(val) || 0) / maxVolBytes.value }
-function volGauge(val, max)  { return (Number(val) || 0) / (max || 1) }
+function volGauge(val, max) { return (Number(val) || 0) / (max || 1) }
 
 const poolCols = computed(() => [
+  ...(showDirectorColumn.value ? [{
+    name: 'director', label: t('Director'), field: 'director', align: 'left', sortable: true,
+  }] : []),
   { name: 'name',         label: t('Name'),          field: 'name',         align: 'left',  sortable: true },
   { name: 'pooltype',     label: t('Type'),          field: 'pooltype',     align: 'left'   },
   { name: 'numvols',      label: t('Volumes'),       field: 'numvols',      align: 'right', sortable: true },
@@ -380,6 +624,9 @@ const poolCols = computed(() => [
   { name: 'maxvolbytes',  label: t('Max Bytes/Vol'), field: 'maxvolbytes',  align: 'right'  },
 ])
 const volumeCols = computed(() => [
+  ...(showDirectorColumn.value ? [{
+    name: 'director', label: t('Director'), field: 'director', align: 'left', sortable: true,
+  }] : []),
   { name: 'volumename',  label: t('Volume Name'),  field: 'volumename',  align: 'left',  sortable: true },
   { name: 'pool',        label: t('Pool'),         field: 'pool',        align: 'left',  sortable: true },
   { name: 'storage',     label: t('Storage'),      field: 'storage',     align: 'left'   },
@@ -399,6 +646,7 @@ const statusMsg = ref({ show: false, ok: true, text: '' })
 
 async function setVolStatus(vol, newStatus) {
   try {
+    await switchToRowDirector(vol)
     await director.call(
       `update volume=${vol.volumename} volstatus=${newStatus}`
     )
@@ -411,7 +659,11 @@ async function setVolStatus(vol, newStatus) {
     statusMsg.value = { show: true, ok: false, text: e.message }
   }
 }
+
 const storageCols = computed(() => [
+  ...(showDirectorColumn.value ? [{
+    name: 'director', label: t('Director'), field: 'director', align: 'left', sortable: true,
+  }] : []),
   { name: 'name',        label: t('Name'),        field: 'name',        align: 'left',  sortable: true },
   { name: 'address',     label: t('Address'),     field: 'address',     align: 'left'   },
   { name: 'mediatype',   label: t('Media Type'),  field: 'mediatype',   align: 'left'   },
@@ -426,18 +678,33 @@ function statusColor(s) {
 }
 
 // ── Storage Status Dialog ─────────────────────────────────────────────────────
-const storageStatusDlg = ref({ open: false, name: '', loading: false, error: null, text: '' })
+const storageStatusDlg = ref({
+  open: false,
+  name: '',
+  director: '',
+  loading: false,
+  error: null,
+  text: '',
+})
 
-async function showStorageStatus(name) {
-  storageStatusDlg.value = { open: true, name, loading: true, error: null, text: '' }
-  await reloadStorageStatus(name)
+async function showStorageStatus(storage) {
+  storageStatusDlg.value = {
+    open: true,
+    name: storage.name,
+    director: storage.director ?? '',
+    loading: true,
+    error: null,
+    text: '',
+  }
+  await reloadStorageStatus(storage)
 }
 
-async function reloadStorageStatus(name) {
+async function reloadStorageStatus(storage) {
   storageStatusDlg.value.loading = true
   storageStatusDlg.value.error   = null
   try {
-    const r = await director.rawCall(`status storage=${name}`)
+    await switchToRowDirector(storage)
+    const r = await director.rawCall(`status storage=${storage.name}`)
     storageStatusDlg.value.text = r
   } catch (e) {
     storageStatusDlg.value.error = e.message
@@ -445,4 +712,39 @@ async function reloadStorageStatus(name) {
     storageStatusDlg.value.loading = false
   }
 }
+
+async function openPoolDetails(pool) {
+  try {
+    await switchToRowDirector(pool)
+    await router.push({ name: 'pool-details', params: { name: pool.name } })
+  } catch (reason) {
+    reportRowError(pool, reason)
+  }
+}
+
+async function openVolumeDetails(volume) {
+  try {
+    await switchToRowDirector(volume)
+    await router.push({ name: 'volume-details', params: { name: volume.volumename } })
+  } catch (reason) {
+    reportRowError(volume, reason)
+  }
+}
+
+onMounted(() => {
+  director.fetchAvailableDirectors().catch(() => {})
+  syncSelectedDirectors()
+  refresh()
+})
+
+watch(() => directorOptions.value, () => {
+  syncSelectedDirectors()
+})
+
+watch(() => activeDirectors.value.join('\u0000'), () => {
+  if (!isSingleDirectorScope.value && tab.value === 'autochangers') {
+    tab.value = 'storages'
+  }
+  refresh()
+})
 </script>
