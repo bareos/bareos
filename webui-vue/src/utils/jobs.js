@@ -40,3 +40,15 @@ export function withJobsStatusFilterQuery(query, status) {
 
   return nextQuery
 }
+
+export function resolveJobsSearchQuery(query) {
+  if (typeof query?.search === 'string' && query.search) {
+    return query.search
+  }
+
+  if (typeof query?.name === 'string' && query.name) {
+    return query.name
+  }
+
+  return ''
+}

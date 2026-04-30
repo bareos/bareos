@@ -497,7 +497,11 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatNumber } from '../utils/locales.js'
-import { normaliseJobStatusFilter, withJobsStatusFilterQuery } from '../utils/jobs.js'
+import {
+  normaliseJobStatusFilter,
+  resolveJobsSearchQuery,
+  withJobsStatusFilterQuery,
+} from '../utils/jobs.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
@@ -511,7 +515,7 @@ const director = useDirectorStore()
 const settings = useSettingsStore()
 const { t } = useI18n()
 const tab          = ref(route.query.action || 'list')
-const search       = ref(route.query.search || '')
+const search       = ref(resolveJobsSearchQuery(route.query))
 const statusFilter = ref(normaliseJobStatusFilter(route.query.status))
 const directorErrors = ref([])
 const fmtBytes  = formatBytes
@@ -1193,6 +1197,13 @@ watch(() => route.query.status, (value) => {
   const next = normaliseJobStatusFilter(value)
   if (statusFilter.value !== next) {
     statusFilter.value = next
+  }
+})
+
+watch(() => [route.query.search, route.query.name], () => {
+  const next = resolveJobsSearchQuery(route.query)
+  if (search.value !== next) {
+    search.value = next
   }
 })
 

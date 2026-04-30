@@ -22,6 +22,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   normaliseJobStatusFilter,
+  resolveJobsSearchQuery,
   withJobsStatusFilterQuery,
 } from '../../src/utils/jobs.js'
 
@@ -41,5 +42,11 @@ describe('jobs filter helpers', () => {
     expect(withJobsStatusFilterQuery({ search: 'Backup', status: 'T' }, '')).toEqual({
       search: 'Backup',
     })
+  })
+
+  it('prefers the explicit search query and falls back to name', () => {
+    expect(resolveJobsSearchQuery({ search: 'Explicit', name: 'Legacy' })).toBe('Explicit')
+    expect(resolveJobsSearchQuery({ name: 'Legacy' })).toBe('Legacy')
+    expect(resolveJobsSearchQuery({})).toBe('')
   })
 })

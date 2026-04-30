@@ -1080,7 +1080,7 @@ function openJobDetails(row) {
 function openJobsByName(row) {
   return navigateForDirector(row.director, {
     name: 'jobs',
-    query: { name: row.name },
+    query: { search: row.name },
   })
 }
 
