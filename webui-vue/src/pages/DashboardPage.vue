@@ -76,13 +76,11 @@
             <div class="row q-col-gutter-md text-center">
               <div class="col" v-for="s in summaryStats" :key="s.label">
                 <router-link
-                  v-if="!isCommonDashboard"
-                  :to="{ name: 'jobs', query: { status: s.status } }"
+                  :to="{ name: 'jobs', query: withJobsStatusFilterQuery({}, s.status) }"
                   class="text-decoration-none"
                 >
                   <StatNumber :value="s.count" :label="s.label" :color="s.color" />
                 </router-link>
-                <StatNumber v-else :value="s.count" :label="s.label" :color="s.color" />
               </div>
             </div>
           </q-card-section>
@@ -278,7 +276,7 @@ import { useDirectorStore } from '../stores/director.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildClientDetailsQuery } from '../utils/clients.js'
-import { buildJobDetailsQuery } from '../utils/jobs.js'
+import { buildJobDetailsQuery, withJobsStatusFilterQuery } from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
