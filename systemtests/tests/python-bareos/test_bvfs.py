@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+import concurrent.futures
 import json
 import logging
 import os
@@ -41,6 +42,18 @@ import bareos_unittest
 
 
 class PythonBareosBvfsTest(bareos_unittest.Json):
+    def create_director(self):
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        return bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
     def get_sql_table_count(self, director, sql_from, minimum=None, maximum=None):
         # expect:
         # .sql query="SELECT count(*) FROM Job WHERE HasCache!=0;"
@@ -80,7 +93,7 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
         )
         return count
 
-    def prepare_bvfs_jobs(self, director, jobname, format_params):
+    def prepare_backup_jobids(self, director, jobname, format_params):
         self.append_to_file(format_params["BackupFileExtra"], "Test Content: initial\n")
 
         jobid1 = self.get_backup_jobid(director, jobname, level="Full")
@@ -105,9 +118,13 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
         )
         format_params["BackupJobIds"] = ",".join(backup_job_ids)
 
-        result = director.call(
-            ".bvfs_update jobid={BackupJobIds}".format(**format_params)
-        )
+        return bvfs_jobids
+
+    def prepare_bvfs_jobs(self, director, jobname, format_params):
+        bvfs_jobids = self.prepare_backup_jobids(director, jobname, format_params)
+        backup_job_ids = [jobid["id"] for jobid in bvfs_jobids]
+
+        director.call(".bvfs_update jobid={BackupJobIds}".format(**format_params))
 
         self.get_sql_table_count(
             director, "Job WHERE HasCache!=0", minimum=len(backup_job_ids)
@@ -188,9 +205,6 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
 
         logger = logging.getLogger()
 
-        username = self.get_operator_username()
-        password = self.get_operator_password(username)
-
         jobname = "backup-bareos-fd-bpipe"
 
         format_params = {
@@ -201,13 +215,7 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
             "BackupFileExtra": self.backup_directory + "/bvfstest.txt",
         }
 
-        director = bareos.bsock.DirectorConsoleJson(
-            address=self.director_address,
-            port=self.director_port,
-            name=username,
-            password=password,
-            **self.director_extra_options
-        )
+        director = self.create_director()
 
         bvfs_jobids = self.prepare_bvfs_jobs(director, jobname, format_params)
 
@@ -347,6 +355,41 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
         self.get_sql_table_count(director, "PathHierarchy", maximum=0)
         self.get_sql_table_count(director, "PathVisibility", maximum=0)
 
+    def test_bvfs_concurrent_update(self):
+        jobname = "backup-bareos-fd-bpipe"
+
+        format_params = {
+            "Client": self.client,
+            "BvfsPathId": "b201",
+            "BackupDirectory": self.backup_directory,
+            "BackupFileNameExtra": "bvfstest-concurrent.txt",
+            "BackupFileExtra": self.backup_directory + "/bvfstest-concurrent.txt",
+        }
+
+        director = self.create_director()
+        bvfs_jobids = self.prepare_backup_jobids(director, jobname, format_params)
+        backup_job_ids = [jobid["id"] for jobid in bvfs_jobids]
+
+        director.call(".bvfs_clear_cache yes")
+        self.get_sql_table_count(director, "Job WHERE HasCache!=0", maximum=0)
+        self.get_sql_table_count(director, "PathHierarchy", maximum=0)
+        self.get_sql_table_count(director, "PathVisibility", maximum=0)
+
+        update_cmd = ".bvfs_update jobid={BackupJobIds}".format(**format_params)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            futures = [
+                executor.submit(self.create_director().call, update_cmd),
+                executor.submit(self.create_director().call, update_cmd),
+            ]
+            for future in concurrent.futures.as_completed(futures):
+                future.result()
+
+        self.get_sql_table_count(
+            director, "Job WHERE HasCache!=0", minimum=len(backup_job_ids)
+        )
+        self.get_sql_table_count(director, "PathHierarchy", minimum=1)
+        self.get_sql_table_count(director, "PathVisibility", minimum=1)
+
         ## check for differences between original files and restored files
         # check_restore_diff ${BackupDirectory}
 
@@ -362,9 +405,6 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
 
         logger = logging.getLogger()
 
-        username = self.get_operator_username()
-        password = self.get_operator_password(username)
-
         jobname = "backup-bareos-fd-bpipe"
 
         format_params = {
@@ -375,13 +415,7 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
             "BackupFileExtra": self.backup_directory + "/bvfstest.txt",
         }
 
-        director = bareos.bsock.DirectorConsoleJson(
-            address=self.director_address,
-            port=self.director_port,
-            name=username,
-            password=password,
-            **self.director_extra_options
-        )
+        director = self.create_director()
 
         bvfs_jobids = self.prepare_bvfs_jobs(director, jobname, format_params)
 
