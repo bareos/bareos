@@ -21,6 +21,7 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  buildRestoreSourceQuery,
   filterRestoreSourceClients,
   getRestoreBrowserPlaceholder,
   resolveRestoreSourceClient,
@@ -95,5 +96,32 @@ describe('restore browser placeholder', () => {
       { name: 'db-fd', director: 'prod-b' },
     ]
     expect(filterRestoreSourceClients(clients)).toEqual(clients)
+  })
+
+  it('writes the selected restore source back into the query', () => {
+    expect(buildRestoreSourceQuery({
+      foo: 'bar',
+      jobid: 'old',
+    }, {
+      clientName: 'bareos-fd',
+      directorName: 'prod-a',
+      jobid: 42,
+    })).toEqual({
+      foo: 'bar',
+      client: 'bareos-fd',
+      director: 'prod-a',
+      jobid: '42',
+    })
+  })
+
+  it('clears restore source query fields when no source is selected', () => {
+    expect(buildRestoreSourceQuery({
+      foo: 'bar',
+      client: 'bareos-fd',
+      director: 'prod-a',
+      jobid: '42',
+    }, {})).toEqual({
+      foo: 'bar',
+    })
   })
 })

@@ -73,3 +73,29 @@ export function filterRestoreSourceClients(clients, directorName) {
 
   return clients.filter(client => client.director === directorName)
 }
+
+export function buildRestoreSourceQuery(query, {
+  clientName,
+  directorName,
+  jobid,
+} = {}) {
+  const nextQuery = { ...query }
+
+  delete nextQuery.client
+  delete nextQuery.director
+  delete nextQuery.jobid
+
+  if (clientName) {
+    nextQuery.client = clientName
+  }
+
+  if (directorName) {
+    nextQuery.director = directorName
+  }
+
+  if (jobid !== null && jobid !== undefined && jobid !== '') {
+    nextQuery.jobid = String(jobid)
+  }
+
+  return nextQuery
+}

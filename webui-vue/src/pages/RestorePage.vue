@@ -369,7 +369,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { directorCollection } from '../composables/useDirectorFetch.js'
 import { fetchAggregatedClients } from '../composables/clientsAggregate.js'
@@ -379,6 +379,7 @@ import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes } from '../mock/index.js'
 import {
+  buildRestoreSourceQuery,
   filterRestoreSourceClients,
   getRestoreBrowserPlaceholder,
   resolveRestoreSourceClient,
@@ -388,6 +389,7 @@ const auth = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
 const route    = useRoute()
+const router   = useRouter()
 const { t } = useI18n()
 
 // ── Form state ──────────────────────────────────────────────────────────────
@@ -521,6 +523,31 @@ async function ensureScopeDirector(targetDirector) {
 
 async function ensureSelectedSourceDirector() {
   await ensureScopeDirector(sourceDirector.value)
+}
+
+async function syncRouteToSourceSelection() {
+  const query = buildRestoreSourceQuery(route.query, {
+    clientName: sourceClientName.value,
+    directorName: sourceDirector.value,
+    jobid: form.value.jobid,
+  })
+
+  const currentClient = typeof route.query.client === 'string' ? route.query.client : undefined
+  const currentDirector = typeof route.query.director === 'string' ? route.query.director : undefined
+  const currentJobid = typeof route.query.jobid === 'string' ? route.query.jobid : undefined
+
+  if (
+    currentClient === query.client
+    && currentDirector === query.director
+    && currentJobid === query.jobid
+  ) {
+    return
+  }
+
+  await router.replace({
+    path: route.path,
+    query,
+  })
 }
 
 function syncCommonSourceDirector() {
@@ -1231,5 +1258,9 @@ watch(() => commonSourceDirector.value, async (next, previous) => {
     loadRestoreClients(),
     loadRestoreJobs(),
   ])
+})
+
+watch(() => [sourceClientKey.value, sourceDirector.value, form.value.jobid], () => {
+  syncRouteToSourceSelection()
 })
 </script>
