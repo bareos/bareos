@@ -30,8 +30,8 @@
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="status"       :label="t('Status')"       no-caps />
       <q-tab name="messages"     :label="t('Messages')"     no-caps />
-      <q-tab name="catalog"      :label="t('Catalog Maintenance')" no-caps :disable="isCommonDirectorPage" />
-      <q-tab name="subscription" :label="t('Subscription')" no-caps :disable="isCommonDirectorPage" />
+      <q-tab name="catalog"      :label="t('Catalog Maintenance')" no-caps />
+      <q-tab name="subscription" :label="t('Subscription')" no-caps />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated swipeable>
@@ -76,23 +76,19 @@
                         {{ card.director }}
                         <q-tooltip>Director: {{ card.director }}</q-tooltip>
                       </q-chip>
-                      <q-chip v-if="card.config_warnings != null"
-                              dense
-                              square
-                              :clickable="!isCommonDirectorPage"
-                              :color="card.config_warnings ? 'negative' : 'positive'"
-                              :icon="card.config_warnings ? 'error' : 'check_circle'"
-                              text-color="white"
-                              @click="!isCommonDirectorPage && showConfigStatus(card.director)">
-                        {{ card.config_warnings ? t('Config Warning') : t('Config OK') }}
-                        <q-tooltip>
-                          {{
-                            isCommonDirectorPage
-                              ? t('Configuration status details stay scoped to a single director.')
-                              : t('Click to show configuration status')
-                          }}
-                        </q-tooltip>
-                      </q-chip>
+                       <q-chip v-if="card.config_warnings != null"
+                               dense
+                               square
+                               clickable
+                               :color="card.config_warnings ? 'negative' : 'positive'"
+                               :icon="card.config_warnings ? 'error' : 'check_circle'"
+                               text-color="white"
+                               @click="showConfigStatus(card.director)">
+                         {{ card.config_warnings ? t('Config Warning') : t('Config OK') }}
+                         <q-tooltip>
+                           {{ t('Click to show configuration status for this director') }}
+                         </q-tooltip>
+                       </q-chip>
                       <q-chip v-if="card.version"
                               dense square color="blue-7" text-color="white" icon="info">
                         {{ card.version }}
@@ -397,6 +393,33 @@
 
       <!-- CATALOG MAINTENANCE -->
       <q-tab-panel name="catalog" class="q-pa-none">
+        <q-card
+          v-if="isCommonDirectorPage"
+          flat
+          bordered
+          class="q-mb-md bareos-panel"
+          style="max-width:800px"
+        >
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Catalog Maintenance Target') }}</span>
+          </q-card-section>
+          <q-card-section>
+            <q-select
+              v-model="singletonTabDirector"
+              :options="singletonTabDirectorOptions"
+              option-label="label"
+              option-value="value"
+              emit-value
+              map-options
+              outlined
+              dense
+              :label="t('Director')"
+            />
+            <div class="text-caption text-grey-6 q-mt-sm">
+              {{ t('Catalog maintenance actions run against the selected director while the status and message views stay aggregated.') }}
+            </div>
+          </q-card-section>
+        </q-card>
         <div class="row q-col-gutter-md">
           <div class="col-12" v-if="catalogAclError">
             <q-banner dense rounded class="bg-negative text-white">
@@ -458,7 +481,7 @@
                     <template #body-cell-id="props">
                       <q-td :props="props">
                         <router-link
-                          :to="{ name: 'job-details', params: { id: props.value }, query: { director: activeDirectors[0] ?? settings.directorName } }"
+                          :to="{ name: 'job-details', params: { id: props.value }, query: currentSingletonDirector ? { director: currentSingletonDirector } : {} }"
                           class="text-primary"
                         >{{ props.value }}</router-link>
                       </q-td>
@@ -527,6 +550,22 @@
                    @click="refreshSubscription" :loading="subscriptionLoading" />
           </q-card-section>
           <q-card-section>
+            <div v-if="isCommonDirectorPage" class="q-mb-md">
+              <q-select
+                v-model="singletonTabDirector"
+                :options="singletonTabDirectorOptions"
+                option-label="label"
+                option-value="value"
+                emit-value
+                map-options
+                outlined
+                dense
+                :label="t('Director')"
+              />
+              <div class="text-caption text-grey-6 q-mt-sm">
+                {{ t('Subscription data and downloads run against the selected director while the status and message views stay aggregated.') }}
+              </div>
+            </div>
             <q-inner-loading :showing="subscriptionLoading" />
             <div v-if="subscriptionError" class="text-negative">{{ subscriptionError }}</div>
             <template v-else-if="subscriptionData">
@@ -686,6 +725,29 @@ const directorScopeLabel = computed(() => (
     ? `${activeDirectors.value.length} ${t('directors selected')}`
     : (activeDirectors.value[0] ?? t('No director selected'))
 ))
+const singletonTabDirector = ref('')
+const singletonTabDirectorOptions = computed(() => (
+  activeDirectors.value.map(value => ({ label: value, value }))
+))
+const currentSingletonDirector = computed(() => (
+  isCommonDirectorPage.value
+    ? (singletonTabDirector.value || activeDirectors.value[0] || '')
+    : (activeDirectors.value[0] || '')
+))
+
+function syncSingletonTabDirector() {
+  const validDirectors = activeDirectors.value
+  if (!validDirectors.length) {
+    singletonTabDirector.value = ''
+    return
+  }
+
+  if (validDirectors.includes(singletonTabDirector.value)) {
+    return
+  }
+
+  singletonTabDirector.value = validDirectors[0]
+}
 
 async function ensureSingleScopeDirector() {
   if (!isSingleDirectorScope.value) {
@@ -702,6 +764,20 @@ async function ensureSingleScopeDirector() {
   }
 
   await switchActiveDirector(scopeDirector)
+}
+
+async function ensureSingletonTabDirector() {
+  const targetDirector = currentSingletonDirector.value
+  if (!targetDirector) {
+    return null
+  }
+
+  if (auth.user?.director === targetDirector && director.isConnected) {
+    return targetDirector
+  }
+
+  await switchActiveDirector(targetDirector)
+  return targetDirector
 }
 
 // ── Status ───────────────────────────────────────────────────────────────────
@@ -899,16 +975,61 @@ function formatLogLine(item) {
 watch(messagesLimit, () => refreshMessages())
 
 watch(tab, (t) => {
-  if (isCommonDirectorPage.value && ['catalog', 'subscription'].includes(t)) {
-    tab.value = 'status'
+  if (t === 'messages') refreshMessages()
+  if (t === 'catalog') {
+    ensureSingletonTabDirector()
+      .then(() => acl.refresh())
+      .then(() => loadEmptyJobs())
+      .catch(() => {})
+  }
+  if (t === 'subscription') refreshSubscription()
+})
+
+watch(() => singletonTabDirector.value, () => {
+  if (!isCommonDirectorPage.value) {
     return
   }
-  if (t === 'messages') refreshMessages()
-  if (t === 'catalog' && isSingleDirectorScope.value) {
-    acl.ensureLoaded()
-    loadEmptyJobs()
+
+  if (tab.value === 'catalog') {
+    ensureSingletonTabDirector()
+      .then(() => acl.refresh())
+      .then(() => loadEmptyJobs())
+      .catch(() => {})
   }
-  if (t === 'subscription' && isSingleDirectorScope.value) refreshSubscription()
+  if (tab.value === 'subscription') {
+    refreshSubscription()
+  }
+})
+
+watch(() => activeDirectors.value.join('\u0000'), () => {
+  syncSingletonTabDirector()
+  refreshStatus()
+  refreshMessages()
+  if (tab.value === 'catalog') {
+    ensureSingletonTabDirector()
+      .then(() => acl.refresh())
+      .then(() => loadEmptyJobs())
+      .catch(() => {})
+  }
+  if (tab.value === 'subscription') {
+    refreshSubscription()
+  }
+})
+
+watch(() => director.isConnected, (connected) => {
+  if (!connected) {
+    return
+  }
+
+  refreshStatus()
+  if (tab.value === 'messages') refreshMessages()
+  if (tab.value === 'catalog') {
+    ensureSingletonTabDirector()
+      .then(() => acl.refresh())
+      .then(() => loadEmptyJobs())
+      .catch(() => {})
+  }
+  if (tab.value === 'subscription') refreshSubscription()
 })
 
 async function navigateForDirector(targetDirector, location) {
@@ -964,45 +1085,16 @@ async function loadAvailableDirectors() {
 onMounted(() => {
   loadAvailableDirectors()
   syncSelectedDirectors()
+  syncSingletonTabDirector()
   refreshStatus()
   refreshMessages()
-  if (isSingleDirectorScope.value) {
-    acl.ensureLoaded()
-  }
+  acl.ensureLoaded()
   startStatusAutoRefresh()
 })
 
 watch(() => directorOptions.value, () => {
   syncSelectedDirectors()
-})
-
-watch(() => activeDirectors.value.join('\u0000'), () => {
-  if (isCommonDirectorPage.value && ['catalog', 'subscription'].includes(tab.value)) {
-    tab.value = 'status'
-  }
-  refreshStatus()
-  refreshMessages()
-  if (isSingleDirectorScope.value && tab.value === 'catalog') {
-    acl.refresh()
-    loadEmptyJobs()
-  }
-  if (isSingleDirectorScope.value && tab.value === 'subscription') {
-    refreshSubscription()
-  }
-})
-
-watch(() => director.isConnected, (connected) => {
-  if (!connected || !isSingleDirectorScope.value) {
-    return
-  }
-
-  refreshStatus()
-  if (tab.value === 'messages') refreshMessages()
-  if (tab.value === 'catalog') {
-    acl.refresh()
-    loadEmptyJobs()
-  }
-  if (tab.value === 'subscription') refreshSubscription()
+  syncSingletonTabDirector()
 })
 
 onUnmounted(() => { clearInterval(_statusTimer) })
@@ -1016,6 +1108,7 @@ async function refreshSubscription() {
   subscriptionLoading.value = true
   subscriptionError.value   = null
   try {
+    await ensureSingletonTabDirector()
     subscriptionData.value = await director.call('status subscriptions all')
   } catch (e) {
     subscriptionError.value = e.message
@@ -1038,6 +1131,7 @@ async function printSubscription(anonymize) {
   const loadingRef = anonymize ? pdfAnonLoading : pdfLoading
   loadingRef.value = true
   try {
+    await ensureSingletonTabDirector()
     const cmd = anonymize
       ? 'status subscriptions all anonymize'
       : 'status subscriptions all'
@@ -1057,6 +1151,7 @@ async function downloadSubscription(anonymize) {
   const loadingRef = anonymize ? downloadAnonLoading : downloadLoading
   loadingRef.value = true
   try {
+    await ensureSingletonTabDirector()
     const cmd  = anonymize ? 'status subscriptions all anonymize' : 'status subscriptions all'
     const data = await director.call(cmd)
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -1127,11 +1222,12 @@ async function loadEmptyJobs() {
   deleteResult.value      = null
   selectedEmptyJobs.value = []
   try {
+    const currentDirector = await ensureSingletonTabDirector()
     const res  = await director.call('list jobs')
     const jobs = directorCollection(res?.jobs).map(normaliseJob)
-    emptyJobs.value = jobs.filter(j =>
-      !Number(j.bytes) && !Number(j.files) && j.status !== 'R'
-    )
+    emptyJobs.value = jobs
+      .filter(j => !Number(j.bytes) && !Number(j.files) && j.status !== 'R')
+      .map(j => ({ ...j, director: currentDirector || currentSingletonDirector.value || null }))
   } catch (e) {
     emptyJobsError.value = e.message
   } finally {
@@ -1145,6 +1241,7 @@ async function deleteSelected() {
   deleteResult.value  = null
   const ids = selectedEmptyJobs.value.map(j => j.id).join(',')
   try {
+    await ensureSingletonTabDirector()
     await director.call(`delete jobid=${ids}`)
     deleteResult.value = { ok: true, msg: t('Deleted job(s) {ids}.', { ids }) }
     const deleted = new Set(selectedEmptyJobs.value.map(j => j.id))
@@ -1175,6 +1272,7 @@ async function runPrune(cmd) {
   if (!canPruneCatalog.value) return
   pruneLoading.value[cmd] = true
   try {
+    await ensureSingletonTabDirector()
     await director.call(cmd)
     pruneResults.value.push({ ok: true,
       msg: t('"{cmd}" completed.', { cmd }) })
