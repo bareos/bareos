@@ -89,9 +89,19 @@
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center">
+                  <q-btn
+                    v-if="props.row.autochanger"
+                    flat
+                    round
+                    dense
+                    size="sm"
+                    icon="view_carousel"
+                    :title="t('Open Autochanger')"
+                    @click="openAutochanger(props.row)"
+                  />
                   <q-btn flat round dense size="sm" icon="monitor_heart"
                          :title="t('Storage Status')"
-                         @click="showStorageStatus(props.row)" />
+                          @click="showStorageStatus(props.row)" />
                 </q-td>
               </template>
             </q-table>
@@ -363,7 +373,10 @@ import {
   fetchAggregatedStoragesState,
   normaliseDirectorStoragesState,
 } from '../composables/storagesAggregate.js'
-import { buildStoragesTabQuery } from '../utils/storagesRoute.js'
+import {
+  buildAutochangerSelectionQuery,
+  buildStoragesTabQuery,
+} from '../utils/storagesRoute.js'
 import AutochangerPage from './AutochangerPage.vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -650,7 +663,7 @@ const storageCols = computed(() => [
   { name: 'mediatype',   label: t('Media Type'),  field: 'mediatype',   align: 'left'   },
   { name: 'autochanger', label: t('Autochanger'), field: 'autochanger', align: 'center' },
   { name: 'enabled',     label: t('Status'),      field: 'enabled',     align: 'center' },
-  { name: 'actions',     label: '',               field: 'actions',     align: 'center', style: 'width:80px' },
+  { name: 'actions',     label: '',               field: 'actions',     align: 'center', style: 'width:110px' },
 ])
 
 function statusColor(s) {
@@ -678,6 +691,17 @@ async function showStorageStatus(storage) {
     text: '',
   }
   await reloadStorageStatus(storage)
+}
+
+async function openAutochanger(storage) {
+  try {
+    await router.push({
+      path: '/storages',
+      query: buildAutochangerSelectionQuery(route.query, storage),
+    })
+  } catch (reason) {
+    reportRowError(storage, reason)
+  }
 }
 
 async function reloadStorageStatus(storage) {
