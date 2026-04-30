@@ -1,0 +1,139 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+job_name=keepcount-backup-bareos-fd
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/backup.out
+label volume=KeepCountFull001 storage=File pool=KeepCountFull
+label volume=KeepCountFull002 storage=File pool=KeepCountFull
+label volume=KeepCountFull003 storage=File pool=KeepCountFull
+run job=${job_name} Level=Full yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_log "${log_home}/backup.out"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/full-2.out
+@sleep 2
+run job=${job_name} Level=Full yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_log "${log_home}/full-2.out"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/full-3.out
+@sleep 2
+run job=${job_name} Level=Full yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_log "${log_home}/full-3.out"
+
+job_rows="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Level FROM Job WHERE Name='${job_name}' ORDER BY JobId"
+)"
+
+full1_row="$(sed -n '1p' <<<"${job_rows}")"
+full2_row="$(sed -n '2p' <<<"${job_rows}")"
+full3_row="$(sed -n '3p' <<<"${job_rows}")"
+
+IFS='|' read -r full1_jobid full1_level <<<"${full1_row}"
+IFS='|' read -r full2_jobid full2_level <<<"${full2_row}"
+IFS='|' read -r full3_jobid full3_level <<<"${full3_row}"
+
+if [ -z "${full1_jobid}" ] || [ -z "${full2_jobid}" ] || [ -z "${full3_jobid}" ]; then
+  set_error "Expected three keep-count full jobs, got: ${job_rows}"
+  exit 1
+fi
+
+if [ "${full1_level}" != "F" ] || [ "${full2_level}" != "F" ] || [ "${full3_level}" != "F" ]; then
+  set_error "Unexpected keep-count job levels: ${job_rows}"
+  exit 1
+fi
+
+sleep 4
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/prune.out
+update volume=KeepCountFull001 volstatus=Used
+update volume=KeepCountFull002 volstatus=Used
+update volume=KeepCountFull003 volstatus=Used
+prune volume all pool=KeepCountFull yes
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Purging the following 1 JobIds: ${full1_jobid}" \
+  "${log_home}/prune.out" \
+  "Expected oldest expired full job to be pruned"
+
+full1_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full1_jobid}")"
+full2_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full2_jobid}")"
+full3_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full3_jobid}")"
+
+if [ "${full1_count}" != "0" ]; then
+  set_error "Expected oldest full ${full1_jobid} to be pruned, count=${full1_count}"
+  exit 1
+fi
+
+if [ "${full2_count}" != "1" ]; then
+  set_error "Expected second full ${full2_jobid} to be kept, count=${full2_count}"
+  exit 1
+fi
+
+if [ "${full3_count}" != "1" ]; then
+  set_error "Expected newest full ${full3_jobid} to be kept, count=${full3_count}"
+  exit 1
+fi
+
+end_test

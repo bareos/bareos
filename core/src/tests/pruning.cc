@@ -106,3 +106,112 @@ TEST(Pruning, ExcludeDependentJobsAllowsCopies)
   EXPECT_EQ(NumJobsToBePruned, 1);
   EXPECT_EQ(pruninglist[0], 1);
 }
+
+TEST(Pruning, ExcludeJobsByKeepCountProtectsNewestCandidates)
+{
+  std::vector<JobId_t> pruninglist{1, 2, 3};
+  std::vector<directordaemon::JobKeepCountRecord> jobs{
+      {.JobId = 1,
+       .Name = "backup",
+       .ClientId = 1,
+       .FileSetId = 1,
+       .JobTDate = 10,
+       .KeepNumber = 2},
+      {.JobId = 2,
+       .Name = "backup",
+       .ClientId = 1,
+       .FileSetId = 1,
+       .JobTDate = 20,
+       .KeepNumber = 2},
+      {.JobId = 3,
+       .Name = "backup",
+       .ClientId = 1,
+       .FileSetId = 1,
+       .JobTDate = 30,
+       .KeepNumber = 2},
+      {.JobId = 4,
+       .Name = "backup",
+       .ClientId = 1,
+       .FileSetId = 1,
+       .JobTDate = 40,
+       .KeepNumber = 2},
+  };
+
+  int NumJobsToBePruned
+      = directordaemon::ExcludeJobsByKeepCount(pruninglist, jobs);
+
+  EXPECT_EQ(NumJobsToBePruned, 2);
+  ASSERT_EQ(pruninglist.size(), 2U);
+  EXPECT_EQ(pruninglist[0], 1);
+  EXPECT_EQ(pruninglist[1], 2);
+}
+
+TEST(Pruning, ExcludeJobsByKeepCountSeparatesGroups)
+{
+  std::vector<JobId_t> pruninglist{1, 2, 5};
+  std::vector<directordaemon::JobKeepCountRecord> jobs{
+      {.JobId = 1,
+       .Name = "backup-a",
+       .ClientId = 1,
+       .FileSetId = 1,
+       .JobTDate = 10,
+       .KeepNumber = 2},
+      {.JobId = 2,
+       .Name = "backup-a",
+       .ClientId = 1,
+       .FileSetId = 1,
+       .JobTDate = 20,
+       .KeepNumber = 2},
+      {.JobId = 3,
+       .Name = "backup-a",
+       .ClientId = 1,
+       .FileSetId = 1,
+       .JobTDate = 30,
+       .KeepNumber = 2},
+      {.JobId = 5,
+       .Name = "backup-b",
+       .ClientId = 1,
+       .FileSetId = 1,
+       .JobTDate = 15,
+       .KeepNumber = 1},
+      {.JobId = 6,
+       .Name = "backup-b",
+       .ClientId = 1,
+       .FileSetId = 1,
+       .JobTDate = 25,
+       .KeepNumber = 1},
+  };
+
+  int NumJobsToBePruned
+      = directordaemon::ExcludeJobsByKeepCount(pruninglist, jobs);
+
+  EXPECT_EQ(NumJobsToBePruned, 2);
+  ASSERT_EQ(pruninglist.size(), 2U);
+  EXPECT_EQ(pruninglist[0], 1);
+  EXPECT_EQ(pruninglist[1], 5);
+}
+
+TEST(Pruning, ExcludeJobsByKeepCountProtectsAtFloor)
+{
+  std::vector<JobId_t> pruninglist{2};
+  std::vector<directordaemon::JobKeepCountRecord> jobs{
+      {.JobId = 2,
+       .Name = "backup",
+       .ClientId = 1,
+       .FileSetId = 1,
+       .JobTDate = 20,
+       .KeepNumber = 2},
+      {.JobId = 3,
+       .Name = "backup",
+       .ClientId = 1,
+       .FileSetId = 1,
+       .JobTDate = 30,
+       .KeepNumber = 2},
+  };
+
+  int NumJobsToBePruned
+      = directordaemon::ExcludeJobsByKeepCount(pruninglist, jobs);
+
+  EXPECT_EQ(NumJobsToBePruned, 0);
+  EXPECT_TRUE(pruninglist.empty());
+}

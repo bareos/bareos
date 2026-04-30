@@ -360,6 +360,7 @@ const ResourceItem job_items[] = {
   { "CancelRunningDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelRunningDuplicates), {config::DefaultValue{"false"}}},
   { "SaveFileHistory", CFG_TYPE_BOOL, ITEM(res_job, SaveFileHist), {config::IntroducedIn{14, 2, 0}, config::DefaultValue{"true"}}},
   { "FileHistorySize", CFG_TYPE_SIZE64, ITEM(res_job, FileHistSize), {config::IntroducedIn{15, 2, 4}, config::DefaultValue{"10000000"}}},
+  { "KeepNumber", CFG_TYPE_PINT32, ITEM(res_job, KeepNumber), {config::DefaultValue{"0"}, config::Description{"Guarantee that at least the specified number of Backup Jobs remain in the catalog even if they are otherwise prunable."}}},
   { "FdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, FdPluginOptions), {}},
   { "SdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, SdPluginOptions), {}},
   { "DirPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, DirPluginOptions), {}},

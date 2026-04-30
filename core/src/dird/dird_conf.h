@@ -414,6 +414,7 @@ class JobResource : public BareosResource {
   int64_t FileHistSize = 0; /**< Hint about the size of the expected File history */
   int32_t MaxConcurrentJobs = 0;   /**< Maximum concurrent jobs */
   int32_t MaxConcurrentCopies = 0; /**< Limit number of concurrent jobs one Copy Job spawns */
+  int32_t KeepNumber = 0;          /**< Number of backup jobs to always keep from pruning */
   int32_t AlwaysIncrementalKeepNumber = 0; /**< Number of incrementals that are always left and not consolidated */
   int32_t MaxFullConsolidations = 0;       /**< Number of consolidate jobs to be started that will include a full */
 

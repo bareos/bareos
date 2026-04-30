@@ -242,6 +242,7 @@ JobDefs {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -348,6 +349,7 @@ JobDefs {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -430,6 +432,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -512,6 +515,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -605,6 +609,7 @@ Job {
   CancelRunningDuplicates = Yes
   SaveFileHistory = No
   FileHistorySize = 10 m
+  # KeepNumber = 0
   FdPluginOptions = "Option 11"
   FdPluginOptions = "Option 21"
   SdPluginOptions = "Option 11"
@@ -690,6 +695,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -774,6 +780,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -919,6 +926,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -1029,6 +1037,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -1135,6 +1144,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -1257,6 +1267,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =

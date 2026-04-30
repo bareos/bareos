@@ -25,6 +25,8 @@
 #include "dird/ua.h"
 #include "cats/cats.h"
 
+#include <string>
+
 namespace directordaemon {
 
 struct del_ctx;
@@ -32,6 +34,14 @@ struct JobContentHistoryRecord {
   JobId_t JobId = 0;
   DBId_t BaseId = 0;
   DBId_t ContentId = 0;
+};
+struct JobKeepCountRecord {
+  JobId_t JobId = 0;
+  std::string Name;
+  DBId_t ClientId = 0;
+  DBId_t FileSetId = 0;
+  utime_t JobTDate = 0;
+  int32_t KeepNumber = 0;
 };
 
 bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool);
@@ -47,6 +57,8 @@ int ExcludeRunningJobsFromList(std::vector<JobId_t>& prune_list);
 int ExcludeDependentJobsFromList(
     std::vector<JobId_t>& prune_list,
     const std::vector<JobContentHistoryRecord>& jobs);
+int ExcludeJobsByKeepCount(std::vector<JobId_t>& prune_list,
+                           const std::vector<JobKeepCountRecord>& jobs);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_PRUNE_H_

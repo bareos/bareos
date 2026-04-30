@@ -113,6 +113,38 @@ static bool LoadJobContentHistory(UaContext* ua,
       JobContentHistoryHandler, &jobs);
 }
 
+static int JobKeepCountHandler(void* ctx, int num_fields, char** row)
+{
+  ASSERT(num_fields == 5);
+  auto* jobs = static_cast<std::vector<JobKeepCountRecord>*>(ctx);
+  auto* resource = static_cast<JobResource*>(
+      my_config->GetResWithName(R_JOB, row[1], false));
+  if (!resource || resource->JobType != JT_BACKUP
+      || resource->KeepNumber <= 0) {
+    return 0;
+  }
+
+  jobs->push_back(JobKeepCountRecord{
+      .JobId = static_cast<JobId_t>(str_to_int64(row[0])),
+      .Name = row[1],
+      .ClientId = static_cast<DBId_t>(str_to_int64(row[2])),
+      .FileSetId = static_cast<DBId_t>(str_to_int64(row[3])),
+      .JobTDate = static_cast<utime_t>(str_to_int64(row[4])),
+      .KeepNumber = resource->KeepNumber,
+  });
+  return 0;
+}
+
+static bool LoadJobKeepCountRecords(UaContext* ua,
+                                    std::vector<JobKeepCountRecord>& jobs)
+{
+  jobs.clear();
+  return ua->db->SqlQuery(
+      "SELECT JobId, Name, ClientId, FileSetId, JobTDate "
+      "FROM Job WHERE Type='B' AND JobStatus IN ('T', 'W')",
+      JobKeepCountHandler, &jobs);
+}
+
 int ExcludeDependentJobsFromList(
     std::vector<JobId_t>& prune_list,
     const std::vector<JobContentHistoryRecord>& jobs)
@@ -173,6 +205,79 @@ int ExcludeDependentJobsFromList(
       } else {
         ++it;
       }
+    }
+  }
+
+  prune_list.erase(std::remove_if(prune_list.begin(), prune_list.end(),
+                                  [&prune_candidates](JobId_t jobid) {
+                                    return jobid == 0
+                                           || !prune_candidates.contains(jobid);
+                                  }),
+                   prune_list.end());
+  return prune_list.size();
+}
+
+int ExcludeJobsByKeepCount(std::vector<JobId_t>& prune_list,
+                           const std::vector<JobKeepCountRecord>& jobs)
+{
+  std::unordered_set<JobId_t> prune_candidates;
+  prune_candidates.reserve(prune_list.size());
+  for (auto jobid : prune_list) {
+    if (jobid != 0) { prune_candidates.insert(jobid); }
+  }
+
+  std::unordered_map<std::string, std::vector<const JobKeepCountRecord*>>
+      groups;
+  groups.reserve(jobs.size());
+  for (const auto& job : jobs) {
+    if (job.KeepNumber <= 0) { continue; }
+    std::string key = job.Name + '\x1f' + std::to_string(job.ClientId) + '\x1f'
+                      + std::to_string(job.FileSetId);
+    groups[key].push_back(&job);
+  }
+
+  for (const auto& [_, grouped_jobs] : groups) {
+    const int32_t keep_number
+        = (*std::max_element(grouped_jobs.begin(), grouped_jobs.end(),
+                             [](const auto* left, const auto* right) {
+                               return left->KeepNumber < right->KeepNumber;
+                             }))
+              ->KeepNumber;
+
+    const auto candidate_count
+        = std::count_if(grouped_jobs.begin(), grouped_jobs.end(),
+                        [&prune_candidates](auto* job) {
+                          return prune_candidates.contains(job->JobId);
+                        });
+    const auto total_jobs = grouped_jobs.size();
+    if (candidate_count == 0) { continue; }
+    if (total_jobs <= static_cast<size_t>(keep_number)) {
+      for (auto* job : grouped_jobs) { prune_candidates.erase(job->JobId); }
+      continue;
+    }
+    if (total_jobs - candidate_count >= static_cast<size_t>(keep_number)) {
+      continue;
+    }
+
+    std::vector<const JobKeepCountRecord*> candidate_jobs;
+    candidate_jobs.reserve(candidate_count);
+    for (auto* job : grouped_jobs) {
+      if (prune_candidates.contains(job->JobId)) {
+        candidate_jobs.push_back(job);
+      }
+    }
+    std::sort(candidate_jobs.begin(), candidate_jobs.end(),
+              [](const auto* left, const auto* right) {
+                if (left->JobTDate != right->JobTDate) {
+                  return left->JobTDate > right->JobTDate;
+                }
+                return left->JobId > right->JobId;
+              });
+
+    const auto protect_count
+        = static_cast<size_t>(keep_number) - (total_jobs - candidate_count);
+    for (size_t i = 0; i < protect_count && i < candidate_jobs.size(); ++i) {
+      prune_candidates.erase(candidate_jobs[i]->JobId);
     }
   }
 
@@ -864,9 +969,18 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
   std::vector<JobContentHistoryRecord> jobs;
   if (!LoadJobContentHistory(ua, jobs)) {
     ua->ErrorMsg("%s", ua->db->strerror());
-  } else {
-    ExcludeDependentJobsFromList(prune_list, jobs);
+    DropTempTables(ua);
+    return true;
   }
+  ExcludeDependentJobsFromList(prune_list, jobs);
+
+  std::vector<JobKeepCountRecord> keep_jobs;
+  if (!LoadJobKeepCountRecords(ua, keep_jobs)) {
+    ua->ErrorMsg("%s", ua->db->strerror());
+    DropTempTables(ua);
+    return true;
+  }
+  ExcludeJobsByKeepCount(prune_list, keep_jobs);
 
   PurgeJobListFromCatalog(ua, prune_list);
 
@@ -991,6 +1105,12 @@ int GetPruneListForVolume(UaContext* ua,
     return 0;
   }
   NumJobsToBePruned = ExcludeDependentJobsFromList(prune_list, jobs);
+  std::vector<JobKeepCountRecord> keep_jobs;
+  if (!LoadJobKeepCountRecords(ua, keep_jobs)) {
+    if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
+    return 0;
+  }
+  NumJobsToBePruned = ExcludeJobsByKeepCount(prune_list, keep_jobs);
   if (NumJobsToBePruned > 0) {
     ua->SendMsg(T_("Volume \"%s\" has Volume Retention of %" PRId64
                    " sec. and has %d jobs that will be pruned\n"),
