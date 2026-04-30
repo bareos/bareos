@@ -52,3 +52,17 @@ export function resolveJobsSearchQuery(query) {
 
   return ''
 }
+
+export function withJobsSearchQuery(query, search) {
+  const nextQuery = { ...query }
+  const nextSearch = typeof search === 'string' ? search : ''
+
+  delete nextQuery.search
+  delete nextQuery.name
+
+  if (nextSearch) {
+    nextQuery.search = nextSearch
+  }
+
+  return nextQuery
+}

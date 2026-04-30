@@ -500,6 +500,7 @@ import { formatNumber } from '../utils/locales.js'
 import {
   normaliseJobStatusFilter,
   resolveJobsSearchQuery,
+  withJobsSearchQuery,
   withJobsStatusFilterQuery,
 } from '../utils/jobs.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -1216,6 +1217,14 @@ watch(() => [route.query.search, route.query.name], () => {
   const next = resolveJobsSearchQuery(route.query)
   if (search.value !== next) {
     search.value = next
+  }
+})
+
+watch(search, (next) => {
+  const query = withJobsSearchQuery(route.query, next)
+  const current = resolveJobsSearchQuery(route.query)
+  if (query.search !== current || route.query.name !== undefined) {
+    router.replace({ path: route.path, query })
   }
 })
 
