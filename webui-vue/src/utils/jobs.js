@@ -77,6 +77,9 @@ export function buildJobDetailsQuery({
   clientsTab,
   volumeName,
   volumeDirector,
+  restoreClient,
+  restoreDirector,
+  restoreJobid,
 } = {}) {
   const query = {}
 
@@ -114,6 +117,18 @@ export function buildJobDetailsQuery({
 
   if (volumeDirector) {
     query.volumeDirector = volumeDirector
+  }
+
+  if (restoreClient) {
+    query.restoreClient = restoreClient
+  }
+
+  if (restoreDirector) {
+    query.restoreDirector = restoreDirector
+  }
+
+  if (restoreJobid !== null && restoreJobid !== undefined && restoreJobid !== '') {
+    query.restoreJobid = String(restoreJobid)
   }
 
   return query
@@ -157,5 +172,17 @@ export function resolveJobDetailsVolumeOrigin(query) {
   return {
     name: query.volumeName,
     director: typeof query?.volumeDirector === 'string' ? query.volumeDirector : '',
+  }
+}
+
+export function resolveJobDetailsRestoreOrigin(query) {
+  if (typeof query?.restoreClient !== 'string' || !query.restoreClient) {
+    return null
+  }
+
+  return {
+    client: query.restoreClient,
+    director: typeof query?.restoreDirector === 'string' ? query.restoreDirector : '',
+    jobid: typeof query?.restoreJobid === 'string' ? query.restoreJobid : '',
   }
 }

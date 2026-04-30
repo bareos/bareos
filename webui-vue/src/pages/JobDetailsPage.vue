@@ -144,6 +144,7 @@ import { formatNumber } from '../utils/locales.js'
 import {
   buildJobDetailsQuery,
   resolveJobDetailsClientOrigin,
+  resolveJobDetailsRestoreOrigin,
   resolveJobDetailsVolumeOrigin,
   resolveJobsListQuery,
 } from '../utils/jobs.js'
@@ -169,11 +170,16 @@ const currentJobDirector = computed(() => (
 ))
 const backToJobsQuery = computed(() => resolveJobsListQuery(route.query))
 const clientOrigin = computed(() => resolveJobDetailsClientOrigin(route.query))
+const restoreOrigin = computed(() => resolveJobDetailsRestoreOrigin(route.query))
 const volumeOrigin = computed(() => resolveJobDetailsVolumeOrigin(route.query))
 const backLabel = computed(() => (
   clientOrigin.value
     ? t('Back to Client')
-    : (volumeOrigin.value ? t('Back to Volume') : t('Back to Jobs'))
+    : (
+      restoreOrigin.value
+        ? t('Back to Restore')
+        : (volumeOrigin.value ? t('Back to Volume') : t('Back to Jobs'))
+    )
 ))
 const backLocation = computed(() => {
   if (clientOrigin.value) {
@@ -184,6 +190,17 @@ const backLocation = computed(() => {
         director: clientOrigin.value.director,
         clientsTab: clientOrigin.value.clientsTab,
       }),
+    }
+  }
+
+  if (restoreOrigin.value) {
+    return {
+      name: 'restore',
+      query: {
+        client: restoreOrigin.value.client,
+        director: restoreOrigin.value.director,
+        jobid: restoreOrigin.value.jobid,
+      },
     }
   }
 
@@ -413,6 +430,9 @@ async function doRerun() {
           clientsTab: clientOrigin.value?.clientsTab,
           volumeName: volumeOrigin.value?.name,
           volumeDirector: volumeOrigin.value?.director,
+          restoreClient: restoreOrigin.value?.client,
+          restoreDirector: restoreOrigin.value?.director,
+          restoreJobid: restoreOrigin.value?.jobid,
         }),
       })
     }

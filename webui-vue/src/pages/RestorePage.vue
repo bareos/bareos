@@ -298,7 +298,11 @@
           {{ restoreResult.message }}
           <template v-if="restoreResult.jobid" #action>
             <router-link
-              :to="{ name: 'job-details', params: { id: restoreResult.jobid }, query: sourceDirector ? { director: sourceDirector } : {} }"
+              :to="{
+                name: 'job-details',
+                params: { id: restoreResult.jobid },
+                query: buildRestoreJobDetailsQuery(),
+              }"
               class="text-white"
             >
               {{ t('View Job') }} {{ restoreResult.jobid }}
@@ -384,6 +388,7 @@ import {
   getRestoreBrowserPlaceholder,
   resolveRestoreSourceClient,
 } from '../utils/restore.js'
+import { buildJobDetailsQuery } from '../utils/jobs.js'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
@@ -523,6 +528,15 @@ async function ensureScopeDirector(targetDirector) {
 
 async function ensureSelectedSourceDirector() {
   await ensureScopeDirector(sourceDirector.value)
+}
+
+function buildRestoreJobDetailsQuery() {
+  return buildJobDetailsQuery({
+    director: sourceDirector.value,
+    restoreClient: sourceClientName.value,
+    restoreDirector: sourceDirector.value,
+    restoreJobid: form.value.jobid,
+  })
 }
 
 async function syncRouteToSourceSelection() {
