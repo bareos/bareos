@@ -55,7 +55,7 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="isCommonSchedules" dense rounded class="bg-info text-white q-mb-sm">
-              {{ t('Schedule toggles stay scoped to the active director for now. Reduce the schedules scope to a single director to enable or disable schedules.') }}
+              {{ t('Schedule toggles act on the director shown in each row when multiple directors are selected.') }}
             </q-banner>
             <q-banner v-if="schedError" dense class="bg-negative text-white">{{ schedError }}</q-banner>
             <q-table
@@ -95,7 +95,6 @@
                     :color="props.row.enabled ? 'warning' : 'positive'"
                     :title="props.row.enabled ? t('Disable') : t('Enable')"
                     :loading="togglingName === props.row.scopeKey"
-                    :disable="isCommonSchedules"
                     @click="toggleSchedule(props.row)"
                   />
                 </q-td>
@@ -112,7 +111,7 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="isCommonSchedules" dense rounded class="bg-info text-white q-mb-sm">
-              {{ t('Schedule and job toggles stay scoped to the active director for now. Reduce the schedules scope to a single director to change them.') }}
+              {{ t('Schedule and job toggles act on the director shown in each schedule group when multiple directors are selected.') }}
             </q-banner>
             <q-table :rows="scheduleJobRows" :columns="scheduleJobCols"
                      row-key="idx" dense flat :loading="statusLoading"
@@ -130,7 +129,6 @@
                         :color="props.row.schedEnabled ? 'warning' : 'positive'"
                         :title="props.row.schedEnabled ? t('Disable schedule') : t('Enable schedule')"
                         :loading="togglingName === props.row.scheduleKey"
-                        :disable="isCommonSchedules"
                         @click="toggleSchedule({
                           name: props.row.schedule,
                           enabled: props.row.schedEnabled,
@@ -164,7 +162,6 @@
                         :color="props.row.jobEnabled ? 'warning' : 'positive'"
                         :title="props.row.jobEnabled ? t('Disable job') : t('Enable job')"
                         :loading="togglingJob === props.row.jobScopeKey"
-                        :disable="isCommonSchedules"
                         @click="toggleJob(props.row)"
                       />
                       <span>{{ props.row.job }}</span>
@@ -349,6 +346,19 @@ async function ensureSingleScopeDirector() {
   await switchActiveDirector(scopeDirector)
 }
 
+async function ensureScheduleActionDirector(targetDirector) {
+  if (!targetDirector) {
+    await ensureSingleScopeDirector()
+    return
+  }
+
+  if (auth.user?.director === targetDirector && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(targetDirector)
+}
+
 const schedLoading = ref(false)
 const schedError = ref(null)
 const shownSchedules = ref([])
@@ -408,14 +418,10 @@ const schedCols = computed(() => [
 ])
 
 async function toggleSchedule(row) {
-  if (isCommonSchedules.value) {
-    return
-  }
-
   const action = row.enabled ? 'disable' : 'enable'
   togglingName.value = row.scopeKey ?? row.name
   try {
-    await ensureSingleScopeDirector()
+    await ensureScheduleActionDirector(row.director)
     await director.call(`${action} schedule=${row.name}`)
     $q.notify({ type: 'positive', message: t('Schedule "{name}" {action}d', { name: row.name, action }) })
     await Promise.all([refreshSchedules(), refreshStatus()])
@@ -429,14 +435,10 @@ async function toggleSchedule(row) {
 const togglingJob = ref(null)
 
 async function toggleJob(row) {
-  if (isCommonSchedules.value) {
-    return
-  }
-
   const action = row.jobEnabled ? 'disable' : 'enable'
   togglingJob.value = row.jobScopeKey ?? row.job
   try {
-    await ensureSingleScopeDirector()
+    await ensureScheduleActionDirector(row.director)
     await director.call(`${action} job=${row.job}`)
     $q.notify({ type: 'positive', message: t('Job "{name}" {action}d', { name: row.job, action }) })
     await refreshStatus()
