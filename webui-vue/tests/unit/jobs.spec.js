@@ -81,6 +81,16 @@ describe('jobs filter helpers', () => {
     })
   })
 
+  it('composes a director-scoped search query for drill-downs', () => {
+    expect(withJobsScopeDirectorQuery(
+      withJobsSearchQuery({}, 'BackupCatalog'),
+      'prod-a',
+    )).toEqual({
+      search: 'BackupCatalog',
+      scopeDirector: 'prod-a',
+    })
+  })
+
   it('resolves an optional scope director query parameter', () => {
     expect(resolveJobsScopeDirector({ scopeDirector: 'prod-a' })).toBe('prod-a')
     expect(resolveJobsScopeDirector({ scopeDirector: 42 })).toBe('')

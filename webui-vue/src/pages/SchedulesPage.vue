@@ -164,7 +164,11 @@
                         :loading="togglingJob === props.row.jobScopeKey"
                         @click="toggleJob(props.row)"
                       />
-                      <span>{{ props.row.job }}</span>
+                      <router-link
+                        :to="{ name: 'jobs', query: props.row.jobsQuery }"
+                        class="text-primary"
+                        style="text-decoration:none"
+                      >{{ props.row.job }}</router-link>
                       <q-badge v-if="props.row.jobEnabled !== null"
                                :color="props.row.jobEnabled ? 'positive' : 'negative'"
                                :label="props.row.jobEnabled ? t('Enabled') : t('Disabled')" />
@@ -258,6 +262,10 @@ import {
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import {
+  withJobsSearchQuery,
+  withJobsScopeDirectorQuery,
+} from '../utils/jobs.js'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
@@ -650,12 +658,13 @@ const scheduleJobRows = computed(() => {
         director: sched.director,
         schedule: sched.name,
         scheduleKey: sched.scopeKey,
-        schedEnabled: sched.enabled,
-        job: '—',
-        jobEnabled: null,
-        jobScopeKey: `${sched.scopeKey}:—`,
-        _firstInGroup: true,
-      })
+          schedEnabled: sched.enabled,
+          job: '—',
+          jobEnabled: null,
+          jobScopeKey: `${sched.scopeKey}:—`,
+          jobsQuery: null,
+          _firstInGroup: true,
+        })
     } else {
       jobs.forEach((job, index) => {
         rows.push({
@@ -663,12 +672,16 @@ const scheduleJobRows = computed(() => {
           director: sched.director,
           schedule: sched.name,
           scheduleKey: sched.scopeKey,
-          schedEnabled: sched.enabled,
-          job: job.name,
-          jobEnabled: job.enabled,
-          jobScopeKey: `${sched.scopeKey}:${job.name}`,
-          _firstInGroup: index === 0,
-        })
+            schedEnabled: sched.enabled,
+            job: job.name,
+            jobEnabled: job.enabled,
+            jobScopeKey: `${sched.scopeKey}:${job.name}`,
+            jobsQuery: withJobsScopeDirectorQuery(
+              withJobsSearchQuery({}, job.name),
+              sched.director,
+            ),
+            _firstInGroup: index === 0,
+          })
       })
     }
   }
