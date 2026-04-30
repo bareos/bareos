@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildVolumeDetailsQuery,
   resolveVolumeDetailsDirectorOrigin,
+  resolveVolumeDetailsPoolOrigin,
   volumeEncryptionKey,
   volumeHasEncryptionKey,
 } from '../../src/utils/volumes.js'
@@ -49,10 +50,12 @@ describe('volume encryption helpers', () => {
       director: 'prod-a',
       directorTab: 'catalog',
       directorTarget: 'prod-b',
+      poolName: 'Full',
     })).toEqual({
       director: 'prod-a',
       directorTab: 'catalog',
       directorTarget: 'prod-b',
+      poolName: 'Full',
     })
 
     expect(buildVolumeDetailsQuery({
@@ -77,5 +80,15 @@ describe('volume encryption helpers', () => {
     expect(resolveVolumeDetailsDirectorOrigin({
       directorTarget: 'prod-b',
     })).toBeNull()
+  })
+
+  it('resolves an optional pool origin for volume details routes', () => {
+    expect(resolveVolumeDetailsPoolOrigin({
+      poolName: 'Full',
+    })).toEqual({
+      name: 'Full',
+    })
+
+    expect(resolveVolumeDetailsPoolOrigin({})).toBeNull()
   })
 })

@@ -156,6 +156,7 @@
                     <VolumeNameLink
                       :name="props.value"
                       :volume="volumeDetailsByName[props.value]"
+                      :query="buildAutochangerVolumeDetailsQuery(currentStorage)"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
                            :title="t('Copy volume name')"
@@ -269,6 +270,7 @@
                     <VolumeNameLink
                       :name="props.value"
                       :volume="volumeDetailsByName[props.value]"
+                      :query="buildAutochangerVolumeDetailsQuery(currentStorage)"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
                            :title="t('Copy volume name')"
@@ -335,6 +337,7 @@
                     <VolumeNameLink
                       :name="props.value"
                       :volume="volumeDetailsByName[props.value]"
+                      :query="buildAutochangerVolumeDetailsQuery(currentStorage)"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
                            :title="t('Copy volume name')"
@@ -680,6 +683,17 @@ const emptySlotOptions = computed(() =>
     .filter(s => s.content === 'empty')
     .map(s => ({ label: `Slot ${s.slotnr}`, value: s.slotnr }))
 )
+
+function buildAutochangerVolumeDetailsQuery(storage) {
+  if (!storage) {
+    return null
+  }
+
+  return {
+    ...buildAutochangerSelectionQuery(route.query, storage),
+    ...(storage.director ? { director: storage.director } : {}),
+  }
+}
 
 // Map from slot number → drive number for tapes currently in a drive
 const slotInDriveMap = computed(() => {

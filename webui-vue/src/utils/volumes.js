@@ -61,6 +61,7 @@ export function buildVolumeDetailsQuery({
   director,
   directorTab,
   directorTarget,
+  poolName,
 } = {}) {
   const query = {}
 
@@ -76,6 +77,10 @@ export function buildVolumeDetailsQuery({
     query.directorTarget = directorTarget
   }
 
+  if (poolName) {
+    query.poolName = poolName
+  }
+
   return query
 }
 
@@ -87,5 +92,15 @@ export function resolveVolumeDetailsDirectorOrigin(query) {
   return {
     tab: query.directorTab,
     targetDirector: typeof query?.directorTarget === 'string' ? query.directorTarget : '',
+  }
+}
+
+export function resolveVolumeDetailsPoolOrigin(query) {
+  if (typeof query?.poolName !== 'string' || !query.poolName) {
+    return null
+  }
+
+  return {
+    name: query.poolName,
   }
 }

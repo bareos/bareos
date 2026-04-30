@@ -57,7 +57,10 @@
                     <VolumeNameLink
                       :name="props.value"
                       :volume="props.row"
-                      :query="props.row.director ? { director: props.row.director } : null"
+                      :query="buildVolumeDetailsQuery({
+                        director: props.row.director,
+                        poolName: poolName,
+                      })"
                     />
                   </q-td>
                 </template>
@@ -126,6 +129,7 @@ import {
   buildAutochangerSelectionQuery,
   resolveAutochangerSelectionQuery,
 } from '../utils/storagesRoute.js'
+import { buildVolumeDetailsQuery } from '../utils/volumes.js'
 
 const route     = useRoute()
 const auth      = useAuthStore()

@@ -265,7 +265,12 @@ import { buildDirectorPageQuery } from '../utils/director.js'
 import { buildJobDetailsQuery } from '../utils/jobs.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import {
+  buildAutochangerSelectionQuery,
+  resolveAutochangerSelectionQuery,
+} from '../utils/storagesRoute.js'
+import {
   resolveVolumeDetailsDirectorOrigin,
+  resolveVolumeDetailsPoolOrigin,
   volumeHasEncryptionKey,
 } from '../utils/volumes.js'
 
@@ -281,11 +286,36 @@ const requestedDirector = computed(() => (
 const currentVolumeDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
+const autochangerOrigin = computed(() => resolveAutochangerSelectionQuery(route.query))
+const poolOrigin = computed(() => resolveVolumeDetailsPoolOrigin(route.query))
 const directorOrigin = computed(() => resolveVolumeDetailsDirectorOrigin(route.query))
-const backLabel = computed(() => (
-  directorOrigin.value ? t('Back to Director') : t('Volumes')
-))
+const backLabel = computed(() => {
+  if (poolOrigin.value) {
+    return t('Back to Pool')
+  }
+
+  if (autochangerOrigin.value) {
+    return t('Back to Autochanger')
+  }
+
+  return directorOrigin.value ? t('Back to Director') : t('Volumes')
+})
 const backLocation = computed(() => {
+  if (poolOrigin.value) {
+    return {
+      name: 'pool-details',
+      params: { name: poolOrigin.value.name },
+      query: requestedDirector.value ? { director: requestedDirector.value } : {},
+    }
+  }
+
+  if (autochangerOrigin.value) {
+    return {
+      name: 'storages',
+      query: buildAutochangerSelectionQuery({}, autochangerOrigin.value),
+    }
+  }
+
   if (directorOrigin.value) {
     return {
       name: 'director',
