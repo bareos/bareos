@@ -717,7 +717,11 @@ async function openPoolDetails(pool) {
 async function openVolumeDetails(volume) {
   try {
     await switchToRowDirector(volume)
-    await router.push({ name: 'volume-details', params: { name: volume.volumename } })
+    await router.push({
+      name: 'volume-details',
+      params: { name: volume.volumename },
+      query: volume.director ? { director: volume.director } : {},
+    })
   } catch (reason) {
     reportRowError(volume, reason)
   }

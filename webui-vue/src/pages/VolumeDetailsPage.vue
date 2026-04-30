@@ -180,7 +180,7 @@
                       class="q-mr-sm"
                     />
                     <router-link
-                      :to="{ name: 'job-details', params: { id: seg.jobid }, query: { director: settings.directorName } }"
+                      :to="{ name: 'job-details', params: { id: seg.jobid }, query: currentVolumeDirector ? { director: currentVolumeDirector } : {} }"
                       class="text-primary q-mr-xs"
                       style="white-space:nowrap"
                     >#{{ seg.jobid }}</router-link>
@@ -212,7 +212,7 @@
                        dense flat :pagination="{ rowsPerPage: 15, sortBy: 'jobid', descending: true }">
                 <template #body-cell-jobid="props">
                   <q-td :props="props">
-                    <router-link :to="{ name: 'job-details', params: { id: props.value }, query: { director: settings.directorName } }"
+                    <router-link :to="{ name: 'job-details', params: { id: props.value }, query: props.row.director ? { director: props.row.director } : {} }"
                                  class="text-primary">
                       {{ props.value }}
                     </router-link>
@@ -238,19 +238,28 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import { volumeHasEncryptionKey } from '../utils/volumes.js'
 
 const route      = useRoute()
+const auth       = useAuthStore()
 const director   = useDirectorStore()
 const settings   = useSettingsStore()
-const volumeName = route.params.name
 const { t } = useI18n()
+const volumeName = computed(() => route.params.name)
+const requestedDirector = computed(() => (
+  typeof route.query.director === 'string' ? route.query.director : ''
+))
+const currentVolumeDirector = computed(() => (
+  requestedDirector.value || auth.user?.director || settings.directorName || ''
+))
 
 const vol         = ref(null)
 const jobs        = ref([])
@@ -274,34 +283,64 @@ const RETENTION_STEPS = [
   3 * 365 * 24 * 3600, // 3 years
 ]
 
-onMounted(async () => {
-  try {
-    const [volRes, jobRes] = await Promise.all([
-      director.call(`llist volume=${quoteDirectorString(volumeName)}`),
-      fetchJobs(),
-    ])
-    // `llist volume=xxx` returns { volume: { <fields> } } (flat object, not
-    // array). `llist volumes` would return { volumes: [ ... ] }.
-    const raw = volRes?.volumes ?? volRes?.volume ?? null
-    if (Array.isArray(raw)) {
-      vol.value = raw[0] ?? null
-    } else {
-      vol.value = raw  // flat object – is the volume record itself
+async function ensureVolumeDirector() {
+  if (!requestedDirector.value) {
+    return
+  }
+
+  if (auth.user?.director === requestedDirector.value && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(requestedDirector.value)
+}
+
+async function loadVolume() {
+  await ensureVolumeDirector()
+
+  const [volRes, jobRes] = await Promise.all([
+    director.call(`llist volume=${quoteDirectorString(volumeName.value)}`),
+    fetchJobs(),
+  ])
+  const raw = volRes?.volumes ?? volRes?.volume ?? null
+  if (Array.isArray(raw)) {
+    vol.value = raw[0] ?? null
+  } else {
+    vol.value = raw
+  }
+  if (vol.value) {
+    vol.value = {
+      ...vol.value,
+      director: currentVolumeDirector.value || null,
     }
-    jobs.value = jobRes
-  } catch (e) {
-    error.value = e.message
+  }
+  jobs.value = jobRes
+}
+
+watch(() => `${volumeName.value}\u0000${requestedDirector.value}`, async () => {
+  loading.value = true
+  error.value = null
+  vol.value = null
+  jobs.value = []
+  try {
+    await loadVolume()
+  } catch (loadError) {
+    error.value = loadError.message
   } finally {
     loading.value = false
   }
-})
+}, { immediate: true })
 
 async function fetchJobs() {
   jobsLoading.value = true
   try {
-    const res = await director.call(`llist jobs volume=${quoteDirectorString(volumeName)}`)
+    const res = await director.call(`llist jobs volume=${quoteDirectorString(volumeName.value)}`)
     const raw = res?.jobs ?? []
-    return Array.isArray(raw) ? raw : Object.values(raw).flat()
+    const rows = Array.isArray(raw) ? raw : Object.values(raw).flat()
+    return rows.map(job => ({
+      ...job,
+      director: currentVolumeDirector.value || null,
+    }))
   } catch {
     return []
   } finally {
@@ -332,11 +371,20 @@ const hasEncryptionKey = computed(() => volumeHasEncryptionKey(vol.value))
 
 const detailRows = computed(() => {
   if (!vol.value) return []
-    const v = vol.value
-    return [
-      { label: t('Media ID'),    value: v.mediaid ?? v.mediaId ?? '—' },
-      { label: t('Pool'),        value: v.pool ?? v.Pool ?? '—',
-       link: v.pool ? { name: 'pool-details', params: { name: v.pool }, query: { director: settings.directorName } } : null },
+  const v = vol.value
+  return [
+    { label: t('Media ID'), value: v.mediaid ?? v.mediaId ?? '—' },
+    {
+      label: t('Pool'),
+      value: v.pool ?? v.Pool ?? '—',
+      link: v.pool
+        ? {
+          name: 'pool-details',
+          params: { name: v.pool },
+          query: currentVolumeDirector.value ? { director: currentVolumeDirector.value } : {},
+        }
+        : null,
+    },
     { label: t('Storage'),     value: v.storage ?? v.storagename ?? '—' },
     { label: t('Media Type'),  value: v.mediatype ?? v.MediaType ?? '—' },
     { label: t('Encryption Key'), value: hasEncryptionKey.value ? t('Present') : '—' },
@@ -371,7 +419,7 @@ const volStatuses = ['Append', 'Full', 'Used', 'Purged', 'Recycled', 'Read-Only'
 async function setVolStatus(newStatus) {
   try {
     await director.call(
-      `update volume=${quoteDirectorString(volumeName)} volstatus=${quoteDirectorString(newStatus)}`
+      `update volume=${quoteDirectorString(volumeName.value)} volstatus=${quoteDirectorString(newStatus)}`
     )
     if (vol.value) vol.value.volstatus = newStatus
     statusMsg.value = { show: true, ok: true, text: t('Status set to {status}', { status: newStatus }) }

@@ -948,6 +948,7 @@ function openVolumeDetails(row) {
   return navigateForDirector(row.director, {
     name: 'volume-details',
     params: { name: row.volume },
+    query: row.director ? { director: row.director } : {},
   })
 }
 
