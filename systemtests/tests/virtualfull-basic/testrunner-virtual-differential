@@ -99,19 +99,19 @@ expect_grep "Consolidating JobIds ${INCR1_ID},${INCR2_ID}" \
 full_row="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=${FULL_ID}"
-)"
+)" && full_row="$(printf '%s' "${full_row}" | tr -d '\r')"
 incr1_row="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=${INCR1_ID}"
-)"
+)" && incr1_row="$(printf '%s' "${incr1_row}" | tr -d '\r')"
 incr2_row="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=${INCR2_ID}"
-)"
+)" && incr2_row="$(printf '%s' "${incr2_row}" | tr -d '\r')"
 vdiff_row="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=${VDIFF_ID}"
-)"
+)" && vdiff_row="$(printf '%s' "${vdiff_row}" | tr -d '\r')"
 
 IFS='|' read -r full_jobid full_type full_level full_jobtdate full_baseid full_contentid full_expiretime <<<"${full_row}"
 IFS='|' read -r incr1_jobid incr1_type incr1_level incr1_jobtdate incr1_baseid incr1_contentid incr1_expiretime <<<"${incr1_row}"

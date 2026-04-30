@@ -63,6 +63,7 @@ job_rows=$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, JobStatus, Level, COALESCE(BaseId, 0), COALESCE(ContentId, 0) FROM Job WHERE Name='${history_job_name}' ORDER BY JobId"
 )
+job_rows="$(printf '%s' "${job_rows}" | tr -d '\r')"
 
 full_row="$(sed -n '1p' <<<"${job_rows}")"
 incremental_row="$(sed -n '2p' <<<"${job_rows}")"

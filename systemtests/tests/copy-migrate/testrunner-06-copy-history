@@ -43,15 +43,15 @@ check_log "${tmp}/copy-history-backup.out"
 full_row="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Type, Level, COALESCE(BaseId, 0), COALESCE(ContentId, 0) FROM Job WHERE Name='${history_job_name}' AND Type='B' AND Level='F' ORDER BY JobId DESC LIMIT 1"
-)"
+)" && full_row="$(printf '%s' "${full_row}" | tr -d '\r')"
 copy_row="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Type, Level, COALESCE(BaseId, 0), COALESCE(ContentId, 0) FROM Job WHERE Name='${history_job_name}' AND Type='C' AND Level='F' ORDER BY JobId DESC LIMIT 1"
-)"
+)" && copy_row="$(printf '%s' "${copy_row}" | tr -d '\r')"
 incremental_row="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Type, Level, COALESCE(BaseId, 0), COALESCE(ContentId, 0) FROM Job WHERE Name='${history_job_name}' AND Type='B' AND Level='I' ORDER BY JobId DESC LIMIT 1"
-)"
+)" && incremental_row="$(printf '%s' "${incremental_row}" | tr -d '\r')"
 
 IFS='|' read -r full_jobid full_type full_level full_baseid full_contentid <<<"${full_row}"
 IFS='|' read -r copy_jobid copy_type copy_level copy_baseid copy_contentid <<<"${copy_row}"

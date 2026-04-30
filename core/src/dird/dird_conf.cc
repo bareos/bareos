@@ -3908,6 +3908,10 @@ static void FreeResource(BareosResource* res, int type)
       if (p->RestoreBootstrap) { free(p->RestoreBootstrap); }
       if (p->WriteBootstrap) { free(p->WriteBootstrap); }
       if (p->WriteVerifyList) { free(p->WriteVerifyList); }
+      if (p->Retention) { free(p->Retention); }
+      if (p->FullRetention) { free(p->FullRetention); }
+      if (p->DiffRetention) { free(p->DiffRetention); }
+      if (p->IncRetention) { free(p->IncRetention); }
       if (p->selection_pattern) { free(p->selection_pattern); }
       if (p->run_cmds) { delete p->run_cmds; }
       if (p->storage) { delete p->storage; }

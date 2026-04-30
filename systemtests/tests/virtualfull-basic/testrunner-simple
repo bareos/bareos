@@ -89,15 +89,15 @@ check_log "${test_home}/virtual.out"
 full_row="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=1"
-)"
+)" && full_row="$(printf '%s' "${full_row}" | tr -d '\r')"
 incremental_row="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=2"
-)"
+)" && incremental_row="$(printf '%s' "${incremental_row}" | tr -d '\r')"
 virtual_row="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=3"
-)"
+)" && virtual_row="$(printf '%s' "${virtual_row}" | tr -d '\r')"
 
 IFS='|' read -r full_jobid full_type full_level full_jobtdate full_baseid full_contentid full_expiretime <<<"${full_row}"
 IFS='|' read -r incremental_jobid incremental_type incremental_level incremental_jobtdate incremental_baseid incremental_contentid incremental_expiretime <<<"${incremental_row}"
