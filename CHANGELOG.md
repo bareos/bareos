@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix gcc 16 build for Fedora 44 and newer [PR #2595]
 - ktls: fix daemons getting stuck on reading [PR #2581]
 - refactor systemtests autochanger [PR #2601]
+- fix reverse-history-search crash on windows [PR #2614]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2272,6 +2273,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2597]: https://github.com/bareos/bareos/pull/2597
 [PR #2601]: https://github.com/bareos/bareos/pull/2601
 [PR #2607]: https://github.com/bareos/bareos/pull/2607
+[PR #2614]: https://github.com/bareos/bareos/pull/2614
 [PR #2616]: https://github.com/bareos/bareos/pull/2616
 [PR #2635]: https://github.com/bareos/bareos/pull/2635
 [PR #2638]: https://github.com/bareos/bareos/pull/2638
