@@ -641,7 +641,6 @@ const activeDirectors = computed(() => {
   return currentDirector ? [currentDirector] : []
 })
 
-const isCommonAutochangerScope = computed(() => activeDirectors.value.length > 1)
 const isAutochangerRouteActive = computed(() => !embedded || route.query.tab === 'autochangers')
 const queriedStorageName = computed(() => (
   typeof route.query[AUTOCHANGER_STORAGE_QUERY_KEY] === 'string'
@@ -654,10 +653,14 @@ const queriedDirectorName = computed(() => (
     : ''
 ))
 const storagesScopeDirector = computed(() => resolveStoragesScopeDirector(route.query))
+const autochangerScopeDirectors = computed(() => (
+  storagesScopeDirector.value ? [storagesScopeDirector.value] : activeDirectors.value
+))
 const currentStorage = computed(() => (
   autochangerStorages.value.find(storage => storage.scopeKey === selectedStorage.value) ?? null
 ))
 const selectedStorageName = computed(() => currentStorage.value?.name ?? null)
+const isCommonAutochangerScope = computed(() => autochangerScopeDirectors.value.length > 1)
 const storageOptions = computed(() => autochangerStorages.value.map(storage => ({
   label: isCommonAutochangerScope.value ? storage.label : storage.name,
   value: storage.scopeKey,
@@ -767,7 +770,7 @@ async function loadStorages() {
   loadError.value = null
   directorErrors.value = []
   try {
-    if (activeDirectors.value.length === 0) {
+    if (autochangerScopeDirectors.value.length === 0) {
       autochangerStorages.value = []
       selectedStorage.value = null
       return
@@ -781,21 +784,21 @@ async function loadStorages() {
 
       const result = await fetchAggregatedAutochangerStorages(
         credentials,
-        activeDirectors.value
+        autochangerScopeDirectors.value
       )
       autochangerStorages.value = result.storages
       directorErrors.value = result.directorErrors
     } else {
-      await ensureScopeDirector(activeDirectors.value[0])
+      await ensureScopeDirector(autochangerScopeDirectors.value[0])
       const res = await director.call('list storages')
       const list = directorCollection(res?.storages)
       autochangerStorages.value = list
         .filter(s => String(s.autochanger) === '1')
         .map(storage => ({
           ...storage,
-          director: activeDirectors.value[0],
-          scopeKey: `${activeDirectors.value[0]}:${storage.name}`,
-          label: `${activeDirectors.value[0]} / ${storage.name}`,
+          director: autochangerScopeDirectors.value[0],
+          scopeKey: `${autochangerScopeDirectors.value[0]}:${storage.name}`,
+          label: `${autochangerScopeDirectors.value[0]} / ${storage.name}`,
         }))
     }
 
@@ -803,7 +806,7 @@ async function loadStorages() {
       storageName: queriedStorageName.value,
       directorName: queriedDirectorName.value,
       scopeDirector: storagesScopeDirector.value,
-      activeDirectors: activeDirectors.value,
+      activeDirectors: autochangerScopeDirectors.value,
     })
     if (queriedSelection) {
       selectedStorage.value = queriedSelection.scopeKey
@@ -1245,7 +1248,7 @@ function syncSelectedStorageFromRoute() {
     storageName: queriedStorageName.value,
     directorName: queriedDirectorName.value,
     scopeDirector: storagesScopeDirector.value,
-    activeDirectors: activeDirectors.value,
+    activeDirectors: autochangerScopeDirectors.value,
   })
   if (!queriedSelection || selectedStorage.value === queriedSelection.scopeKey) {
     return
@@ -1289,7 +1292,7 @@ watch(() => directorOptions.value, () => {
   syncSelectedDirectors()
 })
 
-watch(() => activeDirectors.value.join('\u0000'), async () => {
+watch(() => autochangerScopeDirectors.value.join('\u0000'), async () => {
   const previousSelection = selectedStorage.value
   await loadStorages()
   await refreshSelectedStorageViewsIfStable(previousSelection)
@@ -1298,6 +1301,7 @@ watch(() => activeDirectors.value.join('\u0000'), async () => {
 watch(() => [
   queriedStorageName.value,
   queriedDirectorName.value,
+  storagesScopeDirector.value,
   route.query.tab,
 ], () => {
   if (!autochangerStorages.value.length || !isAutochangerRouteActive.value) {
