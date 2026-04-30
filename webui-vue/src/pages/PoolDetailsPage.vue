@@ -57,9 +57,11 @@
                     <VolumeNameLink
                       :name="props.value"
                       :volume="props.row"
-                      :query="buildVolumeDetailsQuery({
+                      :query="buildPoolVolumeDetailsQuery({
                         director: props.row.director,
+                        volumeName: props.value,
                         poolName: poolName.value,
+                        poolQuery: route.query,
                       })"
                     />
                   </q-td>
@@ -126,6 +128,7 @@ import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import {
+  buildPoolVolumeDetailsQuery,
   resolvePoolDetailsVolumeOrigin,
   resolvePoolDetailsVolumeQuery,
 } from '../utils/pools.js'
@@ -133,7 +136,6 @@ import {
   buildAutochangerSelectionQuery,
   resolveAutochangerSelectionQuery,
 } from '../utils/storagesRoute.js'
-import { buildVolumeDetailsQuery } from '../utils/volumes.js'
 
 const route     = useRoute()
 const auth      = useAuthStore()

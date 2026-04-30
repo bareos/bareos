@@ -22,6 +22,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildPoolDetailsQuery,
+  buildPoolVolumeDetailsQuery,
   resolvePoolDetailsVolumeQuery,
   resolvePoolDetailsVolumeOrigin,
 } from '../../src/utils/pools.js'
@@ -55,6 +56,29 @@ describe('pool route helpers', () => {
       jobId: '42',
       poolName: 'Full',
       volumeName: 'Full-0001',
+    })
+  })
+
+  it('builds volume details query from the current pool route state', () => {
+    expect(buildPoolVolumeDetailsQuery({
+      director: 'prod-a',
+      poolName: 'Full',
+      volumeName: 'Full-0002',
+      poolQuery: {
+        director: 'prod-a',
+        jobId: '42',
+        poolName: 'Full',
+        volumeName: 'Full-0001',
+        autochangerStorage: 'TapeLibrary',
+        autochangerDirector: 'prod-a',
+      },
+    })).toEqual({
+      director: 'prod-a',
+      jobId: '42',
+      poolName: 'Full',
+      volumeName: 'Full-0002',
+      autochangerStorage: 'TapeLibrary',
+      autochangerDirector: 'prod-a',
     })
   })
 

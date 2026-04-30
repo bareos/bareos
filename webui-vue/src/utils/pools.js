@@ -43,6 +43,31 @@ export function buildPoolDetailsQuery({
   return query
 }
 
+export function buildPoolVolumeDetailsQuery({
+  director,
+  poolName,
+  volumeName,
+  poolQuery,
+} = {}) {
+  const query = resolvePoolDetailsVolumeQuery(poolQuery)
+
+  if (director) {
+    query.director = director
+  }
+
+  if (poolName) {
+    query.poolName = poolName
+  }
+
+  if (volumeName) {
+    query.volumeName = volumeName
+  } else {
+    delete query.volumeName
+  }
+
+  return query
+}
+
 export function resolvePoolDetailsVolumeOrigin(query) {
   if (typeof query?.volumeName !== 'string' || !query.volumeName) {
     return null
