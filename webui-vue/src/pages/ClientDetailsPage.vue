@@ -156,6 +156,7 @@ function buildClientJobDetailsQuery(job) {
     clientsScopeDirector: typeof route.query.clientsScopeDirector === 'string'
       ? route.query.clientsScopeDirector
       : '',
+    clientDashboardOrigin: dashboardOrigin.value,
     clientJobsAction: typeof route.query.jobsAction === 'string' ? route.query.jobsAction : '',
     clientJobsStatus: typeof route.query.jobsStatus === 'string' ? route.query.jobsStatus : '',
     clientJobsSearch: typeof route.query.jobsSearch === 'string' ? route.query.jobsSearch : '',

@@ -94,6 +94,7 @@ export function buildJobDetailsQuery({
   clientDirector,
   clientsTab,
   clientsScopeDirector,
+  clientDashboardOrigin,
   clientJobsAction,
   clientJobsStatus,
   clientJobsSearch,
@@ -143,6 +144,10 @@ export function buildJobDetailsQuery({
 
   if (clientsScopeDirector) {
     query.clientsScopeDirector = clientsScopeDirector
+  }
+
+  if (clientDashboardOrigin) {
+    query.clientDashboardOrigin = '1'
   }
 
   if (clientJobsAction && clientJobsAction !== 'list') {
@@ -229,6 +234,7 @@ export function resolveJobDetailsQuery(query) {
     clientDirector: typeof query?.clientDirector === 'string' ? query.clientDirector : '',
     clientsTab: typeof query?.clientsTab === 'string' ? query.clientsTab : '',
     clientsScopeDirector: typeof query?.clientsScopeDirector === 'string' ? query.clientsScopeDirector : '',
+    clientDashboardOrigin: query?.clientDashboardOrigin === '1',
     clientJobsAction: typeof query?.clientJobsAction === 'string' ? query.clientJobsAction : '',
     clientJobsStatus: typeof query?.clientJobsStatus === 'string' ? query.clientJobsStatus : '',
     clientJobsSearch: typeof query?.clientJobsSearch === 'string' ? query.clientJobsSearch : '',
@@ -254,6 +260,7 @@ export function resolveJobDetailsClientOrigin(query) {
     director: typeof query?.clientDirector === 'string' ? query.clientDirector : '',
     clientsTab: typeof query?.clientsTab === 'string' ? query.clientsTab : '',
     scopeDirector: typeof query?.clientsScopeDirector === 'string' ? query.clientsScopeDirector : '',
+    dashboardOrigin: query?.clientDashboardOrigin === '1',
     jobsAction: typeof query?.clientJobsAction === 'string' ? query.clientJobsAction : '',
     jobsStatus: typeof query?.clientJobsStatus === 'string' ? query.clientJobsStatus : '',
     jobsSearch: typeof query?.clientJobsSearch === 'string' ? query.clientJobsSearch : '',
