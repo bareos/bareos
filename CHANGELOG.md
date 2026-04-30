@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - ktls: fix daemons getting stuck on reading [PR #2606]
+- fix reverse-history-search crash on windows [PR #2639]
 
 ### Documentation
 - Add documentation for the barri image file format [PR #2608]
@@ -2274,4 +2275,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2628]: https://github.com/bareos/bareos/pull/2628
 [PR #2636]: https://github.com/bareos/bareos/pull/2636
 [PR #2637]: https://github.com/bareos/bareos/pull/2637
+[PR #2639]: https://github.com/bareos/bareos/pull/2639
 [unreleased]: https://github.com/bareos/bareos/tree/master
