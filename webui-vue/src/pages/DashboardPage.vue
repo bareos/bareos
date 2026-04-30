@@ -238,7 +238,6 @@
                 </q-item-section>
                 <q-item-section side>
                   <q-btn
-                    v-if="allowRunningJobActions"
                     flat
                     round
                     dense
@@ -352,7 +351,6 @@ const activeDirectors = computed(() => {
 
 const isCommonDashboard = computed(() => activeDirectors.value.length > 1)
 const showDirectorColumn = computed(() => isCommonDashboard.value)
-const allowRunningJobActions = computed(() => activeDirectors.value.length === 1)
 const dashboardScopeLabel = computed(() => (
   isCommonDashboard.value
     ? `${activeDirectors.value.length} ${t('directors selected')}`
