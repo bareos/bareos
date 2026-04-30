@@ -35,7 +35,7 @@
 #include "lib/bnet.h"
 #include "lib/bpoll.h"
 #include "lib/btimers.h"
-#include "lib/tls_openssl.h"
+#include "lib/tls/openssl.h"
 #include "lib/bsock_tcp.h"
 #include "lib/berrno.h"
 

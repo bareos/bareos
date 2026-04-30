@@ -40,7 +40,7 @@
 #include "lib/daemon.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
-#include "lib/tls_openssl.h"
+#include "lib/tls/openssl.h"
 #include "lib/bsignal.h"
 #include "lib/daemon.h"
 #include "lib/parse_conf.h"

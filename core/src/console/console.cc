@@ -301,7 +301,7 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "lib/edit.h"
-#include "lib/tls_openssl.h"
+#include "lib/tls/openssl.h"
 #include "lib/bsignal.h"
 
 static char* get_first_keyword()

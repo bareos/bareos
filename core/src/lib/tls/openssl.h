@@ -18,18 +18,14 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#ifndef BAREOS_LIB_TLS_OPENSSL_H_
+#define BAREOS_LIB_TLS_OPENSSL_H_
 
 #include "lib/tls.h"
-#include "lib/tls/openssl.h"
 
-std::unique_ptr<Tls> Tls::CreateNewTlsContext(Tls::ImplementationType type)
-{
-  switch (type) {
-    case ImplementationType::kOpenSsl:
-      return make_openssl_tls();
-    case ImplementationType::kUnknown:
-      [[fallthrough]];
-    default:
-      return {};
-  }
-}
+#include "include/bareos.h"
+#include <memory>
+
+std::unique_ptr<Tls> make_openssl_tls();
+
+#endif  // BAREOS_LIB_TLS_OPENSSL_H_
