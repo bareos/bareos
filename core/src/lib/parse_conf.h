@@ -210,6 +210,7 @@ class ConfigurationParser {
   int32_t err_type_{0};       /* The way to Terminate on failure */
   bool omit_defaults_{false}; /* Omit config variables with default values when
                           dumping the config */
+  bool allow_unnamed_resources_{false};
 
   int32_t r_num_{0};                      /* number of daemon resource types */
   int32_t r_own_{0};                      /* own resource type */
@@ -273,6 +274,7 @@ class ConfigurationParser {
                      bool hide_sensitive_data = false);
   int GetResourceCode(const char* resource_type);
   const ResourceTable* GetResourceTable(const char* resource_type_name);
+  const ResourceTable* GetResourceTables() const { return resource_definitions_; }
   int GetResourceItemIndex(const ResourceItem* res_table, const char* item);
   const ResourceItem* GetResourceItem(const ResourceItem* res_table,
                                       const char* item);
@@ -489,6 +491,7 @@ bool HasDefaultValue(const ResourceItem& item, s_kw* keywords);
 
 // Data type routines
 DatatypeName* GetDatatype(int number);
+bool IsRepeatableDatatype(int type);
 const char* DatatypeToString(int type);
 const char* DatatypeToDescription(int type);
 

@@ -1,0 +1,242 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+# Detects connected SCSI tape changers and associated tape drives via the
+# Linux sysfs interface.  Prefers stable /dev/tape/by-id/ symlinks over raw
+# /dev/sgX / /dev/nstX device nodes.
+#
+# Multiple autochangers are supported.  Drives are associated with a changer
+# using three strategies (tried in order, first match wins):
+#   1. SAS expander:  drives whose sysfs path shares the same SAS expander
+#      node as the changer (most reliable for real SAS-attached libraries).
+#   2. PCI parent:    drives whose sysfs path shares the same PCI device
+#      prefix (everything before /hostN/) as the changer (SAS/FC HBAs with
+#      multiple host numbers per port).
+#   3. Host-number proximity: drives whose SCSI host number falls between the
+#      changer's host number and the next changer's host number (virtual/
+#      platform buses such as QuadStor VTL).
+# Drives not matched by any strategy are assigned to the last changer.
+#
+# Output (stdout) — one block per detected changer (N = 0, 1, ...):
+#   CHANGER_COUNT=<n>
+#   CHANGER_DEVICE_0=<path>
+#   TAPE_DEVICES_0=<path1>;<path2>;...   (semicolon-separated)
+#   CHANGER_DEVICE_1=<path>
+#   TAPE_DEVICES_1=<path1>;<path2>;...
+#   ...
+#
+# Exit status:
+#   0  at least one changer was found
+#   1  no changer detected or not running on Linux
+#
+# Usage:
+#   core/scripts/bareos-detect-autochanger
+#   eval "$(core/scripts/bareos-detect-autochanger)"
+
+set -u
+
+# Prefer a /dev/tape/by-id/ symlink for the given device path.
+# Pass suffix '-changer' for changers, '-nst' for tape drives, or ''
+# to match any by-id entry.
+resolve_byid()
+{
+  local dev_path="$1"
+  local suffix="$2"
+  if [ -d /dev/tape/by-id ]; then
+    for link in /dev/tape/by-id/*${suffix}; do
+      [ -L "${link}" ] || continue
+      target=$(readlink -f "${link}" 2>/dev/null)
+      if [ "${target}" = "${dev_path}" ]; then
+        printf '%s' "${link}"
+        return
+      fi
+    done
+  fi
+  printf '%s' "${dev_path}"
+}
+
+# Extract the SCSI host number from a resolved sysfs device path,
+# e.g. '.../host2/target2:0:0/...' -> '2'.
+scsi_host()
+{
+  printf '%s' "$1" | sed -n 's|.*/host\([0-9]*\)/.*|\1|p'
+}
+
+# Extract a topology key used to match drives to a changer.
+# Strategies (in priority order):
+#   1. SAS expander path  — everything up to and including /expander-X:Y/
+#   2. PCI device prefix  — everything before the first /hostN/ that follows
+#                           a PCI address (DDDD:BB:SS.F)
+# Returns an empty string when neither applies (virtual/platform buses).
+topology_key()
+{
+  local p="$1"
+  # Strategy 1: SAS expander
+  local expander
+  expander=$(printf '%s' "${p}" | grep -o 'expander-[^/]*' | head -1)
+  if [ -n "${expander}" ]; then
+    printf '%s' "${p}" \
+      | sed "s|\(.*/${expander}\)/.*|\1|"
+    return
+  fi
+  # Strategy 2: PCI parent (address of form DDDD:BB:SS.F)
+  local pci_prefix
+  pci_prefix=$(printf '%s' "${p}" \
+    | sed -n 's|\(.*/[0-9a-f][0-9a-f]*:[0-9a-f]*:[0-9a-f]*\.[0-9a-f]*\)/host[0-9]*/.*|\1|p')
+  printf '%s' "${pci_prefix}"
+}
+
+# ── Collect changers ─────────────────────────────────────────────────────────
+declare -a changer_paths=()
+declare -a changer_hosts=()
+declare -a changer_topo=()
+
+for sg_sys in /sys/class/scsi_generic/sg*; do
+  [ -f "${sg_sys}/device/type" ] || continue
+  dev_type=$(cat "${sg_sys}/device/type" 2>/dev/null)
+  [ "${dev_type}" = '8' ] || continue
+  sg_name=$(basename "${sg_sys}")
+  sg_path="/dev/${sg_name}"
+  [ -e "${sg_path}" ] || continue
+
+  real_sys=$(readlink -f "${sg_sys}/device" 2>/dev/null)
+  host=$(scsi_host "${real_sys}")
+  topo=$(topology_key "${real_sys}")
+
+  byid=$(resolve_byid "${sg_path}" '-changer')
+  if [ "${byid}" = "${sg_path}" ]; then
+    byid=$(resolve_byid "${sg_path}" '')
+  fi
+
+  changer_paths+=("${byid}")
+  changer_hosts+=("${host}")
+  changer_topo+=("${topo}")
+done
+
+num_changers=${#changer_paths[@]}
+if [ "${num_changers}" -eq 0 ]; then
+  exit 1
+fi
+
+for ((i = 0; i + 1 < num_changers; i++)); do
+  for ((j = i + 1; j < num_changers; j++)); do
+    if [ "${changer_hosts[i]}" -le "${changer_hosts[j]}" ]; then
+      continue
+    fi
+
+    tmp_path=${changer_paths[i]}
+    changer_paths[i]=${changer_paths[j]}
+    changer_paths[j]=${tmp_path}
+
+    tmp_host=${changer_hosts[i]}
+    changer_hosts[i]=${changer_hosts[j]}
+    changer_hosts[j]=${tmp_host}
+
+    tmp_topo=${changer_topo[i]}
+    changer_topo[i]=${changer_topo[j]}
+    changer_topo[j]=${tmp_topo}
+  done
+done
+
+# ── Collect tape drives ──────────────────────────────────────────────────────
+declare -a tape_paths=()
+declare -a tape_hosts=()
+declare -a tape_topo=()
+
+if [ -d /sys/class/scsi_tape ]; then
+  for nst_sys in /sys/class/scsi_tape/nst*; do
+    nst_name=$(basename "${nst_sys}")
+    # Skip density variants nst0l nst0m nst0a — keep only nstN
+    case "${nst_name}" in nst*[!0-9]*) continue ;; esac
+    nst_path="/dev/${nst_name}"
+    [ -e "${nst_path}" ] || continue
+
+    real_sys=$(readlink -f "${nst_sys}/device" 2>/dev/null)
+    host=$(scsi_host "${real_sys}")
+    topo=$(topology_key "${real_sys}")
+    byid=$(resolve_byid "${nst_path}" '-nst')
+
+    tape_paths+=("${byid}")
+    tape_hosts+=("${host}")
+    tape_topo+=("${topo}")
+  done
+fi
+
+# ── Associate drives with changers ───────────────────────────────────────────
+# drive_changer[i] = index into changer_paths[] for tape drive i.
+declare -a drive_changer=()
+num_drives=${#tape_paths[@]}
+for ((i = 0; i < num_drives; i++)); do
+  drive_changer[i]=$((num_changers - 1)) # default: last changer
+done
+
+# Strategies 1 & 2: topology key matching (SAS expander or PCI parent).
+# Only applied when the topology key is non-empty (i.e. not a platform bus).
+for ((i = 0; i < num_drives; i++)); do
+  dtopo="${tape_topo[i]}"
+  [ -z "${dtopo}" ] && continue
+  for ((c = 0; c < num_changers; c++)); do
+    if [ "${dtopo}" = "${changer_topo[c]}" ]; then
+      drive_changer[i]=${c}
+      break
+    fi
+  done
+done
+
+# Strategy 3: host-number proximity (platform/virtual buses).
+# Applied only to drives whose topology key is empty (no PCI/SAS path).
+# A drive belongs to changer C when its host number is greater than
+# changer C's host number and less than changer (C+1)'s host number.
+for ((i = 0; i < num_drives; i++)); do
+  [ -n "${tape_topo[i]}" ] && continue # already matched via topology
+  dh=${tape_hosts[i]}
+  for ((c = 0; c < num_changers; c++)); do
+    ch=${changer_hosts[c]}
+    if [ "${dh}" -gt "${ch}" ]; then
+      if [ $((c + 1)) -lt ${num_changers} ]; then
+        next_ch=${changer_hosts[$((c + 1))]}
+        [ "${dh}" -lt "${next_ch}" ] || continue
+      fi
+      drive_changer[i]=${c}
+      break
+    fi
+  done
+done
+
+# ── Build per-changer drive lists ────────────────────────────────────────────
+declare -a changer_drives=()
+for ((c = 0; c < num_changers; c++)); do
+  changer_drives[c]=""
+done
+for ((i = 0; i < num_drives; i++)); do
+  c=${drive_changer[i]}
+  if [ -z "${changer_drives[c]}" ]; then
+    changer_drives[c]="${tape_paths[i]}"
+  else
+    changer_drives[c]="${changer_drives[c]};${tape_paths[i]}"
+  fi
+done
+
+# ── Output ───────────────────────────────────────────────────────────────────
+printf 'CHANGER_COUNT=%d\n' "${num_changers}"
+for ((c = 0; c < num_changers; c++)); do
+  printf 'CHANGER_DEVICE_%d=%s\n' "${c}" "${changer_paths[c]}"
+  printf 'TAPE_DEVICES_%d=%s\n' "${c}" "${changer_drives[c]}"
+done

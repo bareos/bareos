@@ -51,6 +51,13 @@ add_subdirectory(plugins)
 if(${traymonitor})
   add_subdirectory(qt-tray-monitor)
 endif()
+if(NOT HAVE_WIN32
+   AND NOT HAVE_DARWIN_OS
+   AND NOT client-only
+ )
+  add_subdirectory(bareos-config)
+  add_subdirectory(bareos-setup)
+endif()
 
 if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   message(
