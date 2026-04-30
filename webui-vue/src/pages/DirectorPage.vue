@@ -657,7 +657,11 @@ import {
   isDirectorSingletonTab,
   resolveDirectorTargetQuery,
 } from '../utils/director.js'
-import { buildJobDetailsQuery } from '../utils/jobs.js'
+import {
+  buildJobDetailsQuery,
+  withJobsScopeDirectorQuery,
+  withJobsSearchQuery,
+} from '../utils/jobs.js'
 import { buildVolumeDetailsQuery } from '../utils/volumes.js'
 import {
   formatDirectorRelativeTime,
@@ -1117,9 +1121,14 @@ function openJobDetails(row) {
 }
 
 function openJobsByName(row) {
+  const query = withJobsScopeDirectorQuery(
+    withJobsSearchQuery({}, row.name),
+    row.director
+  )
+
   return navigateForDirector(row.director, {
     name: 'jobs',
-    query: { search: row.name },
+    query,
   })
 }
 

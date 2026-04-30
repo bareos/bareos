@@ -30,8 +30,10 @@ import {
   resolveJobDetailsRestoreOrigin,
   resolveJobDetailsVolumeOrigin,
   resolveJobsSearchQuery,
+  resolveJobsScopeDirector,
   resolveJobsListQuery,
   withJobsSearchQuery,
+  withJobsScopeDirectorQuery,
   withJobsStatusFilterQuery,
 } from '../../src/utils/jobs.js'
 
@@ -69,12 +71,29 @@ describe('jobs filter helpers', () => {
     })
   })
 
+  it('adds and removes the scope director query parameter', () => {
+    expect(withJobsScopeDirectorQuery({ search: 'Backup' }, 'prod-a')).toEqual({
+      search: 'Backup',
+      scopeDirector: 'prod-a',
+    })
+    expect(withJobsScopeDirectorQuery({ search: 'Backup', scopeDirector: 'prod-a' }, '')).toEqual({
+      search: 'Backup',
+    })
+  })
+
+  it('resolves an optional scope director query parameter', () => {
+    expect(resolveJobsScopeDirector({ scopeDirector: 'prod-a' })).toBe('prod-a')
+    expect(resolveJobsScopeDirector({ scopeDirector: 42 })).toBe('')
+    expect(resolveJobsScopeDirector({})).toBe('')
+  })
+
   it('builds job details query with return-state fields', () => {
     expect(buildJobDetailsQuery({
       director: 'prod-a',
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsSearch: 'backup',
+      jobsScopeDirector: 'prod-a',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
@@ -91,6 +110,7 @@ describe('jobs filter helpers', () => {
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsSearch: 'backup',
+      jobsScopeDirector: 'prod-a',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
@@ -119,10 +139,12 @@ describe('jobs filter helpers', () => {
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsSearch: 'backup',
+      jobsScopeDirector: 'prod-a',
     })).toEqual({
       action: 'timeline',
       status: 'T',
       search: 'backup',
+      scopeDirector: 'prod-a',
     })
 
     expect(resolveJobsListQuery({
@@ -138,6 +160,7 @@ describe('jobs filter helpers', () => {
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsSearch: 'backup',
+      jobsScopeDirector: 'prod-a',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
@@ -155,6 +178,7 @@ describe('jobs filter helpers', () => {
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsSearch: 'backup',
+      jobsScopeDirector: 'prod-a',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',

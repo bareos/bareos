@@ -76,10 +76,21 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
-            <div v-if="statusFilter" class="q-px-md q-pt-sm">
+            <div v-if="statusFilter || jobsListScopeDirector" class="q-px-md q-pt-sm">
               <q-chip removable color="primary" text-color="white" icon="filter_list"
                       @remove="statusFilter = ''" class="q-mb-xs">
                 {{ t('Status') }}: {{ jobStatusMap[statusFilter]?.label ?? statusFilter }}
+              </q-chip>
+              <q-chip
+                v-if="jobsListScopeDirector"
+                removable
+                color="blue-7"
+                text-color="white"
+                icon="dns"
+                class="q-mb-xs"
+                @remove="router.replace({ path: route.path, query: withJobsScopeDirectorQuery(route.query, '') })"
+              >
+                {{ t('Director') }}: {{ jobsListScopeDirector }}
               </q-chip>
             </div>
             <q-table
@@ -504,7 +515,9 @@ import {
   buildJobDetailsQuery,
   normaliseJobStatusFilter,
   resolveJobsSearchQuery,
+  resolveJobsScopeDirector,
   withJobsSearchQuery,
+  withJobsScopeDirectorQuery,
   withJobsStatusFilterQuery,
 } from '../utils/jobs.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -593,8 +606,20 @@ const activeDirectors = computed(() => {
   return currentDirector ? [currentDirector] : []
 })
 
+const jobsListScopeDirector = computed(() => {
+  const requestedDirector = resolveJobsScopeDirector(route.query)
+
+  if (requestedDirector && activeDirectors.value.includes(requestedDirector)) {
+    return requestedDirector
+  }
+
+  return ''
+})
+const jobsPageDirectors = computed(() => (
+  jobsListScopeDirector.value ? [jobsListScopeDirector.value] : activeDirectors.value
+))
 const isCommonJobs = computed(() => activeDirectors.value.length > 1)
-const showDirectorColumn = computed(() => isCommonJobs.value)
+const showDirectorColumn = computed(() => jobsPageDirectors.value.length > 1)
 const isSingleDirectorScope = computed(() => activeDirectors.value.length === 1)
 const jobsScopeLabel = computed(() => (
   isCommonJobs.value
@@ -615,6 +640,7 @@ const timelineJobDetailsQuery = computed(() => buildJobDetailsQuery({
   jobsAction: tab.value,
   jobsStatus: statusFilter.value,
   jobsSearch: search.value,
+  jobsScopeDirector: jobsListScopeDirector.value,
 }))
 
 function syncSingletonTabDirector() {
@@ -679,14 +705,14 @@ async function fetchPage() {
   const offset = (page - 1) * rowsPerPage
   const filter = statusFilter.value ? ` jobstatus=${statusFilter.value}` : ''
   try {
-    if (activeDirectors.value.length === 0) {
+    if (jobsPageDirectors.value.length === 0) {
       jobs.value = []
       totalJobs.value = 0
       pagination.value = { ...pagination.value, rowsNumber: 0 }
       return
     }
 
-    if (isCommonJobs.value) {
+    if (jobsPageDirectors.value.length > 1 || (jobsListScopeDirector.value && isCommonJobs.value)) {
       const credentials = auth.getCredentials()
       if (!credentials?.password) {
         throw new Error(t('Not logged in.'))
@@ -694,7 +720,7 @@ async function fetchPage() {
 
       const result = await fetchAggregatedJobsPage(
         credentials,
-        activeDirectors.value,
+        jobsPageDirectors.value,
         pagination.value,
         statusFilter.value
       )
@@ -705,7 +731,7 @@ async function fetchPage() {
       return
     }
 
-    const currentDirector = activeDirectors.value[0]
+    const currentDirector = jobsPageDirectors.value[0]
     await ensureSingleScopeDirector()
     const [pageResult, countResult] = await Promise.allSettled([
       director.call(`llist jobs reverse limit=${rowsPerPage} offset=${offset}${filter}`),
@@ -892,6 +918,7 @@ async function openJobDetails(job) {
         jobsAction: tab.value,
         jobsStatus: statusFilter.value,
         jobsSearch: search.value,
+        jobsScopeDirector: jobsListScopeDirector.value,
       }),
     })
   } catch (error) {
@@ -1235,6 +1262,19 @@ watch(() => [route.query.search, route.query.name], () => {
   }
 })
 
+watch(() => route.query.scopeDirector, (value) => {
+  if (typeof value === 'string' && value && !activeDirectors.value.includes(value)) {
+    router.replace({
+      path: route.path,
+      query: withJobsScopeDirectorQuery(route.query, ''),
+    })
+    return
+  }
+
+  pagination.value = { ...pagination.value, page: 1 }
+  fetchPage()
+})
+
 watch(search, (next) => {
   const query = withJobsSearchQuery(route.query, next)
   const current = resolveJobsSearchQuery(route.query)
@@ -1259,6 +1299,14 @@ watch(() => directorOptions.value, () => {
 
 watch(() => activeDirectors.value.join('\u0000'), () => {
   syncSingletonTabDirector()
+  if (typeof route.query.scopeDirector === 'string'
+    && route.query.scopeDirector
+    && !activeDirectors.value.includes(route.query.scopeDirector)) {
+    router.replace({
+      path: route.path,
+      query: withJobsScopeDirectorQuery(route.query, ''),
+    })
+  }
   pagination.value = { ...pagination.value, page: 1 }
   fetchPage()
   if (tab.value === 'actions') {

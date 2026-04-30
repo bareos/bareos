@@ -67,11 +67,29 @@ export function withJobsSearchQuery(query, search) {
   return nextQuery
 }
 
+export function resolveJobsScopeDirector(query) {
+  return typeof query?.scopeDirector === 'string' ? query.scopeDirector : ''
+}
+
+export function withJobsScopeDirectorQuery(query, director) {
+  const nextQuery = { ...query }
+  const nextDirector = typeof director === 'string' ? director : ''
+
+  delete nextQuery.scopeDirector
+
+  if (nextDirector) {
+    nextQuery.scopeDirector = nextDirector
+  }
+
+  return nextQuery
+}
+
 export function buildJobDetailsQuery({
   director,
   jobsAction,
   jobsStatus,
   jobsSearch,
+  jobsScopeDirector,
   clientName,
   clientDirector,
   clientsTab,
@@ -100,6 +118,10 @@ export function buildJobDetailsQuery({
 
   if (jobsSearch) {
     query.jobsSearch = jobsSearch
+  }
+
+  if (jobsScopeDirector) {
+    query.jobsScopeDirector = jobsScopeDirector
   }
 
   if (clientName) {
@@ -164,6 +186,10 @@ export function resolveJobsListQuery(query) {
     nextQuery.search = query.jobsSearch
   }
 
+  if (typeof query?.jobsScopeDirector === 'string' && query.jobsScopeDirector) {
+    nextQuery.scopeDirector = query.jobsScopeDirector
+  }
+
   return nextQuery
 }
 
@@ -173,6 +199,7 @@ export function resolveJobDetailsQuery(query) {
     jobsAction: typeof query?.jobsAction === 'string' ? query.jobsAction : '',
     jobsStatus: typeof query?.jobsStatus === 'string' ? query.jobsStatus : '',
     jobsSearch: typeof query?.jobsSearch === 'string' ? query.jobsSearch : '',
+    jobsScopeDirector: typeof query?.jobsScopeDirector === 'string' ? query.jobsScopeDirector : '',
     clientName: typeof query?.clientName === 'string' ? query.clientName : '',
     clientDirector: typeof query?.clientDirector === 'string' ? query.clientDirector : '',
     clientsTab: typeof query?.clientsTab === 'string' ? query.clientsTab : '',
