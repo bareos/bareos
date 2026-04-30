@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -256,6 +256,9 @@ class OutputFormatter {
   bool JsonKeyValueAddBool(const char* key, bool value);
   bool JsonKeyValueAdd(const char* key, uint64_t value);
   bool JsonKeyValueAdd(const char* key, const char* value);
+  /* Insert an already-built json_t subtree under `key` at the top of the
+   * stack. Takes ownership of `value` (does not call json_incref). */
+  bool JsonKeyValueAddJson(const char* key, json_t* value);
   void JsonAddMessage(const char* type, PoolMem& message);
   bool JsonHasErrorMessage();
   void JsonFinalizeResult(bool result);

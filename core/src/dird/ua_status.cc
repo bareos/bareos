@@ -27,6 +27,15 @@
  */
 
 #include "include/bareos.h"
+
+#if HAVE_JANSSON
+#  include <jansson.h>
+#endif
+
+#include <cerrno>
+#include <cstdlib>
+#include <limits>
+
 #include "dird.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/date_time.h"
@@ -64,6 +73,14 @@ static void ListRunningJobs(UaContext* ua);
 static void ListTerminatedJobs(UaContext* ua);
 static void ListConnectedClients(UaContext* ua);
 static void DoDirectorStatus(UaContext* ua);
+static void DoJobIdStatus(UaContext* ua, uint32_t jobid);
+#if HAVE_JANSSON
+static void ListDirStatusHeaderJson(UaContext* ua);
+static void ListScheduledJobsJson(UaContext* ua);
+static void ListRunningJobsJson(UaContext* ua);
+static void ListTerminatedJobsJson(UaContext* ua);
+static void DoDirectorStatusJson(UaContext* ua);
+#endif
 static void DoSchedulerStatus(UaContext* ua);
 static bool DoSubscriptionStatus(UaContext* ua);
 static void DoConfigurationStatus(UaContext* ua);
@@ -188,6 +205,33 @@ bool StatusCmd(UaContext* ua, const char* cmd)
     } else if (Bstrcasecmp(ua->argk[i], NT_("client"))) {
       client = get_client_resource(ua);
       if (client) { ClientStatus(ua, client, NULL); }
+      return true;
+    } else if (Bstrcasecmp(ua->argk[i], NT_("jobid"))) {
+      /* Require jobid=<positive integer>. Reject bare `jobid`, empty values,
+       * negatives, and non-numeric junk rather than silently defaulting to 0
+       * and returning {"error":"job_not_found"}. */
+      uint32_t jobid = 0;
+      if (ua->argv[i] && *ua->argv[i]) {
+        char* endp = nullptr;
+        errno = 0;
+        unsigned long v = strtoul(ua->argv[i], &endp, 10);
+        if (errno == 0 && endp != ua->argv[i] && *endp == '\0' && v > 0
+            && v <= std::numeric_limits<uint32_t>::max()) {
+          jobid = static_cast<uint32_t>(v);
+        }
+      }
+      if (jobid == 0) {
+        if (ua->api == API_MODE_JSON) {
+          ua->send->ObjectStart("job_status");
+          ua->send->ObjectKeyValue("error", "invalid_jobid", 0);
+          ua->send->ObjectEnd("job_status");
+        } else {
+          ua->SendMsg(
+              T_("status jobid=<N> requires a positive integer argument.\n"));
+        }
+        return true;
+      }
+      DoJobIdStatus(ua, jobid);
       return true;
     } else if (bstrncasecmp(ua->argk[i], NT_("sched"), 5)) {
       DoSchedulerStatus(ua);
@@ -642,6 +686,12 @@ static void DoConfigurationStatus(UaContext* ua)
 
 static void DoSchedulerStatus(UaContext* ua)
 {
+#if HAVE_JANSSON
+  if (ua->api == API_MODE_JSON) {
+    ListScheduledJobsJson(ua);
+    return;
+  }
+#endif
   int i;
   int max_date_len = 0;
   int days = DEFAULT_STATUS_SCHED_DAYS; /* Default days for preview */
@@ -813,8 +863,270 @@ start_again:
   ua->SendMsg("====\n");
 }
 
+struct sched_pkt {
+  JobResource* job;
+  int level;
+  int priority;
+  utime_t runtime;
+  PoolResource* pool;
+  StorageResource* store;
+};
+
+// Sort items by runtime, priority
+static int CompareByRuntimePriority(const sched_pkt& p1, const sched_pkt& p2)
+{
+  if (p1.runtime < p2.runtime) {
+    return -1;
+  } else if (p1.runtime > p2.runtime) {
+    return 1;
+  }
+
+  if (p1.priority < p2.priority) {
+    return -1;
+  } else if (p1.priority > p2.priority) {
+    return 1;
+  }
+
+  return 0;
+}
+
+#if HAVE_JANSSON
+/* Emit a JS_* status code as a one-character JSON string. All currently
+ * defined JS_* values are ASCII-printable, but `char` is signed on most
+ * targets, so guard against any future non-ASCII code that would emit a
+ * lone high byte and break UTF-8 JSON encoding. */
+static void EmitStatusCodeJson(UaContext* ua, int status)
+{
+  unsigned char u = static_cast<unsigned char>(status);
+  char buf[2] = {(u < 0x80) ? static_cast<char>(u) : '?', 0};
+  ua->send->ObjectKeyValue("status_code", buf, 0);
+}
+
+static void ListDirStatusHeaderJson(UaContext* ua)
+{
+  char dt[MAX_TIME_LENGTH];
+  PoolMem msg(PM_FNAME);
+
+  ua->send->ObjectStart("header");
+  ua->send->ObjectKeyValue("name", my_name, 0);
+  ua->send->ObjectKeyValue("version", kBareosVersionStrings.Full, 0);
+  ua->send->ObjectKeyValue("version_date", kBareosVersionStrings.Date, 0);
+  ua->send->ObjectKeyValue("os_info", kBareosVersionStrings.GetOsInfo(), 0);
+  bstrftime(dt, sizeof(dt), daemon_start_time, "%Y-%m-%dT%H:%M:%S");
+  ua->send->ObjectKeyValue("daemon_started", dt, 0);
+  ua->send->ObjectKeyValue("jobs_run", static_cast<uint64_t>(NumJobsRun()));
+  ua->send->ObjectKeyValue("jobs_running", static_cast<uint64_t>(JobCount()));
+  ua->send->ObjectKeyValue("binary_info", kBareosVersionStrings.BinaryInfo, 0);
+  ua->send->ObjectKeyValueBool("config_warnings", my_config->HasWarnings(), 0);
+  if (me->secure_erase_cmdline) {
+    ua->send->ObjectKeyValue("secure_erase_command", me->secure_erase_cmdline,
+                             0);
+  }
+  int plugin_len = ListDirPlugins(msg);
+  if (plugin_len > 0) { ua->send->ObjectKeyValue("plugins", msg.c_str(), 0); }
+  ua->send->ObjectEnd("header");
+}
+
+static void ListScheduledJobsJson(UaContext* ua)
+{
+  int days = 1;
+  bool days_invalid = false;
+  if (const char* value = GetArgValue(ua, NT_("days"))) {
+    char* endp = nullptr;
+    errno = 0;
+    long v = strtol(value, &endp, 10);
+    if (errno != 0 || endp == value || *endp != '\0' || v < 0 || v > 500) {
+      days_invalid = true;
+    } else {
+      days = static_cast<int>(v);
+    }
+  }
+
+  if (days_invalid) {
+    ua->send->ObjectKeyValue("days_warning",
+                             "invalid_or_out_of_range_reset_to_1", 0);
+  }
+  ua->send->ArrayStart("scheduled_jobs");
+  JobResource* job = nullptr;
+  std::vector<sched_pkt> sched;
+  time_t now = time(nullptr);
+  foreach_res (job, R_JOB) {
+    if (!ua->AclAccessOk(Job_ACL, job->resource_name_) || !job->enabled
+        || (job->client && !job->client->enabled)) {
+      continue;
+    }
+    if (!job->schedule) { continue; }
+    for (RunResource* run = job->schedule->run; run; run = run->next) {
+      std::optional<time_t> next_scheduled = run->NextScheduleTime(now, days);
+      if (!next_scheduled.has_value()) { continue; }
+
+      UnifiedStorageResource storage_res;
+      GetJobStorage(&storage_res, job, run);
+      sched.push_back(
+          {.job = job,
+           .level = int(run->level ? run->level : job->JobLevel),
+           .priority = (run->Priority ? run->Priority : job->Priority),
+           .runtime = next_scheduled.value(),
+           .pool = run->pool,
+           .store = storage_res.store});
+    }
+  }
+
+  std::sort(sched.begin(), sched.end(), [](auto& l, auto& r) -> bool {
+    return CompareByRuntimePriority(l, r) < 0;
+  });
+
+  char dt[MAX_TIME_LENGTH];
+  for (sched_pkt& sp : sched) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("job_name", sp.job->resource_name_, 0);
+    ua->send->ObjectKeyValue("level", job_level_to_str(sp.level), 0);
+    ua->send->ObjectKeyValue("job_type", job_type_to_str(sp.job->JobType), 0);
+    ua->send->ObjectKeyValue("priority", static_cast<uint64_t>(sp.priority));
+    bstrftime(dt, sizeof(dt), sp.runtime, "%Y-%m-%dT%H:%M:%S");
+    ua->send->ObjectKeyValue("scheduled", dt, 0);
+    if (sp.pool) {
+      ua->send->ObjectKeyValue("pool", sp.pool->resource_name_, 0);
+    }
+    if (sp.store) {
+      ua->send->ObjectKeyValue("storage", sp.store->resource_name_, 0);
+    }
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("scheduled_jobs");
+}
+
+static void ListRunningJobsJson(UaContext* ua)
+{
+  JobControlRecord* jcr;
+
+  ua->send->ArrayStart("running_jobs");
+  foreach_jcr (jcr) {
+    if (jcr->JobId == 0
+        || !ua->AclAccessOk(Job_ACL, jcr->dir_impl->res.job->resource_name_)) {
+      continue;
+    }
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("jobid", static_cast<uint64_t>(jcr->JobId));
+    ua->send->ObjectKeyValue("job_name", jcr->Job, 0);
+    ua->send->ObjectKeyValue("level", job_level_to_str(jcr->getJobLevel()), 0);
+    ua->send->ObjectKeyValue("job_type", job_type_to_str(jcr->getJobType()), 0);
+    EmitStatusCodeJson(ua, jcr->getJobStatus());
+    ua->send->ObjectKeyValue("status",
+                             JobstatusToAscii(jcr->getJobStatus()).c_str(), 0);
+    if (jcr->dir_impl->res.client) {
+      ua->send->ObjectKeyValue("client",
+                               jcr->dir_impl->res.client->resource_name_, 0);
+    }
+    if (jcr->dir_impl->res.write_storage) {
+      ua->send->ObjectKeyValue(
+          "storage", jcr->dir_impl->res.write_storage->resource_name_, 0);
+    } else if (jcr->dir_impl->res.read_storage) {
+      ua->send->ObjectKeyValue(
+          "storage", jcr->dir_impl->res.read_storage->resource_name_, 0);
+    }
+    if (jcr->start_time) {
+      char dt[MAX_TIME_LENGTH];
+      bstrftime(dt, sizeof(dt), jcr->start_time, "%Y-%m-%dT%H:%M:%S");
+      ua->send->ObjectKeyValue("started", dt, 0);
+    }
+    if (jcr->sched_time) {
+      char dt[MAX_TIME_LENGTH];
+      bstrftime(dt, sizeof(dt), jcr->sched_time, "%Y-%m-%dT%H:%M:%S");
+      ua->send->ObjectKeyValue("scheduled", dt, 0);
+    }
+    ua->send->ObjectEnd();
+  }
+  endeach_jcr(jcr);
+  ua->send->ArrayEnd("running_jobs");
+}
+
+static void ListTerminatedJobsJson(UaContext* ua)
+{
+  ua->send->ArrayStart("terminated_jobs");
+  for (const RecentJobResultsList::JobResult& je :
+       RecentJobResultsList::Get()) {
+    char JobName[MAX_NAME_LENGTH];
+    const char* termstat;
+
+    bstrncpy(JobName, je.Job, sizeof(JobName));
+    for (int i = 0; i < 3; i++) {
+      char* p = strrchr(JobName, '.');
+      if (p) { *p = 0; }
+    }
+    if (!ua->AclAccessOk(Job_ACL, JobName)) { continue; }
+
+    const char* level_str;
+    switch (je.JobType) {
+      case JT_ADMIN:
+      case JT_ARCHIVE:
+      case JT_RESTORE:
+        level_str = "";
+        break;
+      default:
+        level_str = JobLevelToString(je.JobLevel);
+        break;
+    }
+    switch (je.JobStatus) {
+      case JS_Created:
+        termstat = "Created";
+        break;
+      case JS_FatalError:
+      case JS_ErrorTerminated:
+        termstat = "Error";
+        break;
+      case JS_Differences:
+        termstat = "Diffs";
+        break;
+      case JS_Canceled:
+        termstat = "Cancel";
+        break;
+      case JS_Terminated:
+        termstat = "OK";
+        break;
+      case JS_Warnings:
+        termstat = "OK -- with warnings";
+        break;
+      default:
+        termstat = "Other";
+        break;
+    }
+
+    char dt[MAX_TIME_LENGTH];
+    bstrftime(dt, sizeof(dt), je.end_time, "%Y-%m-%dT%H:%M:%S");
+
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("jobid", static_cast<uint64_t>(je.JobId));
+    ua->send->ObjectKeyValue("job_name", JobName, 0);
+    ua->send->ObjectKeyValue("level", level_str, 0);
+    ua->send->ObjectKeyValue("files", static_cast<uint64_t>(je.JobFiles));
+    ua->send->ObjectKeyValue("bytes", static_cast<uint64_t>(je.JobBytes));
+    EmitStatusCodeJson(ua, je.JobStatus);
+    ua->send->ObjectKeyValue("status", termstat, 0);
+    ua->send->ObjectKeyValue("finished", dt, 0);
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("terminated_jobs");
+}
+
+static void DoDirectorStatusJson(UaContext* ua)
+{
+  ListDirStatusHeaderJson(ua);
+  ListScheduledJobsJson(ua);
+  ListRunningJobsJson(ua);
+  ListTerminatedJobsJson(ua);
+  ListConnectedClients(ua);
+}
+#endif  // HAVE_JANSSON
+
 static void DoDirectorStatus(UaContext* ua)
 {
+#if HAVE_JANSSON
+  if (ua->api == API_MODE_JSON) {
+    DoDirectorStatusJson(ua);
+    return;
+  }
+#endif
   ListDirStatusHeader(ua);
   ListScheduledJobs(ua);
   ListRunningJobs(ua);
@@ -837,15 +1149,6 @@ static void PrtRunhdr(UaContext* ua)
 }
 
 /* Scheduling packet */
-struct sched_pkt {
-  JobResource* job;
-  int level;
-  int priority;
-  utime_t runtime;
-  PoolResource* pool;
-  StorageResource* store;
-};
-
 static void PrtRuntime(UaContext* ua, sched_pkt* sp)
 {
   char dt[MAX_TIME_LENGTH];
@@ -896,24 +1199,6 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
   if (CloseDb) { DbSqlClosePooledConnection(jcr, jcr->db); }
   jcr->db = ua->db; /* restore ua db to jcr */
   jcr->setJobType(orig_jobtype);
-}
-
-// Sort items by runtime, priority
-static int CompareByRuntimePriority(const sched_pkt& p1, const sched_pkt& p2)
-{
-  if (p1.runtime < p2.runtime) {
-    return -1;
-  } else if (p1.runtime > p2.runtime) {
-    return 1;
-  }
-
-  if (p1.priority < p2.priority) {
-    return -1;
-  } else if (p1.priority > p2.priority) {
-    return 1;
-  }
-
-  return 0;
 }
 
 // Find all jobs to be run in roughly the next 24 hours.
@@ -1788,4 +2073,230 @@ bail_out:
 
   return;
 }
+
+#if HAVE_JANSSON
+/* Cap on JSON status payload the director will accept from FD/SD. A real
+ * status reply is at most a few KB; caps prevent a compromised or buggy
+ * daemon from exhausting director memory over the authenticated channel. */
+constexpr int64_t kMaxDaemonStatusJsonBytes = 16 * 1024 * 1024;
+
+/* Drain whatever the daemon wrote to the socket up to BNET_EOD, parse the
+ * accumulated bytes as JSON, return a new json_t* on success or nullptr on
+ * failure. On failure, `err_out` receives a short classifier; callers use
+ * the same error word as the key in the JSON error response so consumers
+ * can distinguish a protocol-level transport error from a malformed
+ * payload or an oversized reply. */
+static json_t* ReadDaemonStatusJson(BareosSocket* bs, std::string& err_out)
+{
+  PoolMem buf(PM_MESSAGE);
+  int64_t total = 0;
+  bool overflow = false;
+  while (bs->recv() >= 0) {
+    if (overflow) { continue; /* drain remainder so peer can close cleanly */ }
+    if (total + bs->message_length + 1 > kMaxDaemonStatusJsonBytes) {
+      overflow = true;
+      continue;
+    }
+    buf.check_size(total + bs->message_length + 1);
+    memcpy(buf.c_str() + total, bs->msg, bs->message_length);
+    total += bs->message_length;
+    buf.c_str()[total] = '\0';
+  }
+  /* The recv() loop exits on any negative return -- that covers BNET_EOD
+   * (normal end), BNET_TERMINATE, and real socket errors. Distinguish
+   * transport failure from clean EOD so callers don't feed a truncated
+   * payload to the JSON parser and surface the parser's complaint as if
+   * it were the root cause. */
+  if (bs->IsError() || bs->IsStop()) {
+    err_out = "transport_error";
+    return nullptr;
+  }
+  if (overflow) {
+    err_out = "reply_too_large";
+    return nullptr;
+  }
+  json_error_t jerr;
+  json_t* parsed = json_loads(buf.c_str(), 0, &jerr);
+  if (!parsed) { err_out = jerr.text; }
+  return parsed;
+}
+#endif
+
+/* Aggregate per-job status: combine director-local info with the FD and SD
+ * JSON replies for a specific running job. JSON mode only — text mode was
+ * never offered, since consumers of this command are monitoring tools. */
+static void DoJobIdStatus(UaContext* ua, uint32_t jobid)
+{
+#if HAVE_JANSSON
+  if (ua->api != API_MODE_JSON) {
+    ua->SendMsg(
+        T_("status jobid=N is only available in JSON mode. "
+           "Run '.api json' first.\n"));
+    return;
+  }
+
+  JobControlRecord* job_jcr = get_jcr_by_id(jobid);
+  ua->send->ObjectStart("job_status");
+  ua->send->ObjectKeyValue("jobid", static_cast<uint64_t>(jobid));
+
+  if (!job_jcr) {
+    ua->send->ObjectKeyValue("error", "job_not_found", 0);
+    ua->send->ObjectEnd("job_status");
+    return;
+  }
+  /* A JCR that lacks its director-private side cannot be fanned out; this
+   * only happens for malformed or partially-initialized records. */
+  if (!job_jcr->dir_impl || !job_jcr->dir_impl->res.job) {
+    ua->send->ObjectKeyValue("error", "job_has_no_dir_state", 0);
+    ua->send->ObjectEnd("job_status");
+    FreeJcr(job_jcr);
+    return;
+  }
+
+  /* Gate on Job_ACL so restricted consoles cannot enumerate or introspect
+   * jobs they aren't allowed to see. Client_ACL / Storage_ACL are re-checked
+   * below before fanning out to the target daemon. */
+  if (!ua->AclAccessOk(Job_ACL, job_jcr->dir_impl->res.job->resource_name_)) {
+    ua->send->ObjectKeyValue("error", "access_denied", 0);
+    ua->send->ObjectEnd("job_status");
+    FreeJcr(job_jcr);
+    return;
+  }
+
+  /* Director-side metadata subtree. */
+  ua->send->ObjectStart("dir");
+  ua->send->ObjectKeyValue("job", job_jcr->Job, 0);
+  ua->send->ObjectKeyValue("level", job_level_to_str(job_jcr->getJobLevel()),
+                           0);
+  ua->send->ObjectKeyValue("job_type", job_type_to_str(job_jcr->getJobType()),
+                           0);
+  EmitStatusCodeJson(ua, job_jcr->getJobStatus());
+  ua->send->ObjectKeyValue(
+      "status", JobstatusToAscii(job_jcr->getJobStatus()).c_str(), 0);
+
+  ClientResource* client = job_jcr->dir_impl->res.client;
+  if (client) { ua->send->ObjectKeyValue("client", client->resource_name_, 0); }
+  StorageResource* store = job_jcr->dir_impl->res.write_storage
+                               ? job_jcr->dir_impl->res.write_storage
+                               : job_jcr->dir_impl->res.read_storage;
+  if (store) { ua->send->ObjectKeyValue("storage", store->resource_name_, 0); }
+  if (job_jcr->start_time) {
+    char dt[MAX_TIME_LENGTH];
+    bstrftime(dt, sizeof(dt), job_jcr->start_time, "%Y-%m-%dT%H:%M:%S");
+    ua->send->ObjectKeyValue("start_time", dt, 0);
+  }
+  if (job_jcr->sched_time) {
+    char dt[MAX_TIME_LENGTH];
+    bstrftime(dt, sizeof(dt), job_jcr->sched_time, "%Y-%m-%dT%H:%M:%S");
+    ua->send->ObjectKeyValue("sched_time", dt, 0);
+  }
+  ua->send->ObjectEnd("dir");
+
+  /* The aggregator reuses the console's JCR (ua->jcr) to open sockets to
+   * the target FD and SD. That requires temporarily setting its res.client
+   * and write-storage to the running job's values, and leaves the handshake
+   * side-effects (FDVersion, SDVersion, authenticated) mutated. Save every
+   * field the fan-out touches and restore before returning so subsequent
+   * console commands on the same session see the console's original state. */
+  ClientResource* saved_client = ua->jcr->dir_impl->res.client;
+  StorageResource* saved_wstore = ua->jcr->dir_impl->res.write_storage;
+  StorageResource* saved_rstore = ua->jcr->dir_impl->res.read_storage;
+  int32_t saved_fdversion = ua->jcr->dir_impl->FDVersion;
+  int32_t saved_sdversion = ua->jcr->dir_impl->SDVersion;
+  bool saved_authenticated = ua->jcr->authenticated;
+
+  /* FD subtree: connect, ask for `.status json`, nest the reply. */
+  if (client) {
+    ua->send->ObjectStart("fd");
+    ua->send->ObjectKeyValue("client", client->resource_name_, 0);
+
+    if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) {
+      ua->send->ObjectKeyValue("error", "access_denied", 0);
+    } else {
+      ua->jcr->dir_impl->res.client = client;
+      if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
+        ua->send->ObjectKeyValue("error", "connect_failed", 0);
+      } else {
+        BareosSocket* fd = ua->jcr->file_bsock;
+        if (ua->jcr->dir_impl->FDVersion < FD_VERSION_55) {
+          ua->send->ObjectKeyValue("error", "file_daemon_too_old", 0);
+        } else {
+          fd->fsend(".status json");
+          std::string perr;
+          json_t* parsed = ReadDaemonStatusJson(fd, perr);
+          if (parsed) {
+            ua->send->JsonKeyValueAddJson("data", parsed);
+          } else {
+            ua->send->ObjectKeyValue("error", "parse_failed", 0);
+            ua->send->ObjectKeyValue("message", perr.c_str(), 0);
+          }
+        }
+        fd->signal(BNET_TERMINATE);
+        fd->close();
+        delete ua->jcr->file_bsock;
+        ua->jcr->file_bsock = nullptr;
+      }
+    }
+    ua->send->ObjectEnd("fd");
+  }
+
+  /* SD subtree: same pattern. */
+  if (store) {
+    ua->send->ObjectStart("sd");
+    ua->send->ObjectKeyValue("storage", store->resource_name_, 0);
+
+    if (!ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
+      ua->send->ObjectKeyValue("error", "access_denied", 0);
+    } else {
+      UnifiedStorageResource lstore;
+      lstore.store = store;
+      PmStrcpy(lstore.store_source, T_("status jobid aggregator"));
+      SetWstorage(ua->jcr, &lstore);
+      if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, false)) {
+        ua->send->ObjectKeyValue("error", "connect_failed", 0);
+      } else {
+        BareosSocket* sd = ua->jcr->store_bsock;
+        if (ua->jcr->dir_impl->SDVersion < SD_VERSION_1) {
+          ua->send->ObjectKeyValue("error", "storage_daemon_too_old", 0);
+        } else {
+          sd->fsend(".status json");
+          std::string perr;
+          json_t* parsed = ReadDaemonStatusJson(sd, perr);
+          if (parsed) {
+            ua->send->JsonKeyValueAddJson("data", parsed);
+          } else {
+            ua->send->ObjectKeyValue("error", "parse_failed", 0);
+            ua->send->ObjectKeyValue("message", perr.c_str(), 0);
+          }
+        }
+        sd->signal(BNET_TERMINATE);
+        sd->close();
+        delete ua->jcr->store_bsock;
+        ua->jcr->store_bsock = nullptr;
+      }
+      /* SetWstorage pushed an entry onto the write-storage list; pop it so
+       * the console's JCR doesn't accumulate storage references on repeated
+       * aggregator calls. */
+      FreeWstorage(ua->jcr);
+    }
+    ua->send->ObjectEnd("sd");
+  }
+
+  ua->send->ObjectEnd("job_status");
+
+  /* Restore prior console JCR state in full. */
+  ua->jcr->dir_impl->res.client = saved_client;
+  ua->jcr->dir_impl->res.write_storage = saved_wstore;
+  ua->jcr->dir_impl->res.read_storage = saved_rstore;
+  ua->jcr->dir_impl->FDVersion = saved_fdversion;
+  ua->jcr->dir_impl->SDVersion = saved_sdversion;
+  ua->jcr->authenticated = saved_authenticated;
+
+  FreeJcr(job_jcr);
+#else
+  (void)jobid;
+  ua->SendMsg(T_("status jobid=N requires JSON support (jansson).\n"));
+#endif
+}
+
 } /* namespace directordaemon */

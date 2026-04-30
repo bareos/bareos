@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,7 +39,18 @@ namespace storagedaemon {
 const int debuglevel = 50;
 
 constexpr const char Dir_sorry[] = "3999 No go\n";
+/* Version history:
+ *
+ *  0          - Implicit version: hello had no version field
+ *  1          - Added JSON output for .status command
+ */
+#if HAVE_JANSSON
+constexpr const char OK_hello[] = "3000 OK Hello 1\n";
+#else
+/* Without jansson the .status json handler is absent -- don't advertise
+ * the capability or the director would send a command we cannot answer. */
 constexpr const char OK_hello[] = "3000 OK Hello\n";
+#endif
 
 /**
  * Initiate the message channel with the Director.
