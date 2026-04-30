@@ -23,6 +23,7 @@ import {
   AUTOCHANGER_DIRECTOR_QUERY_KEY,
   AUTOCHANGER_STORAGE_QUERY_KEY,
 } from './storagesRoute.js'
+import { resolveJobDetailsQuery } from './jobs.js'
 import { buildVolumeDetailsQuery } from './volumes.js'
 
 export function buildPoolDetailsQuery({
@@ -105,13 +106,16 @@ export function resolvePoolDetailsStoragesOrigin(query) {
 }
 
 export function resolvePoolDetailsVolumeQuery(query) {
-  const nextQuery = buildVolumeDetailsQuery({
-    director: typeof query?.director === 'string' ? query.director : '',
-    directorTab: typeof query?.directorTab === 'string' ? query.directorTab : '',
-    directorTarget: typeof query?.directorTarget === 'string' ? query.directorTarget : '',
-    jobId: typeof query?.jobId === 'string' ? query.jobId : '',
-    poolName: typeof query?.poolName === 'string' ? query.poolName : '',
-  })
+  const nextQuery = {
+    ...resolveJobDetailsQuery(query),
+    ...buildVolumeDetailsQuery({
+      director: typeof query?.director === 'string' ? query.director : '',
+      directorTab: typeof query?.directorTab === 'string' ? query.directorTab : '',
+      directorTarget: typeof query?.directorTarget === 'string' ? query.directorTarget : '',
+      jobId: typeof query?.jobId === 'string' ? query.jobId : '',
+      poolName: typeof query?.poolName === 'string' ? query.poolName : '',
+    }),
+  }
 
   if (typeof query?.volumeName === 'string' && query.volumeName) {
     nextQuery.volumeName = query.volumeName
