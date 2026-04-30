@@ -59,7 +59,7 @@
                       :volume="props.row"
                       :query="buildVolumeDetailsQuery({
                         director: props.row.director,
-                        poolName: poolName,
+                        poolName: poolName.value,
                       })"
                     />
                   </q-td>
@@ -125,6 +125,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
+import { resolvePoolDetailsVolumeOrigin } from '../utils/pools.js'
 import {
   buildAutochangerSelectionQuery,
   resolveAutochangerSelectionQuery,
@@ -143,11 +144,27 @@ const requestedDirector = computed(() => (
 const currentPoolDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
+const volumeOrigin = computed(() => resolvePoolDetailsVolumeOrigin(route.query))
 const autochangerOrigin = computed(() => resolveAutochangerSelectionQuery(route.query))
-const backLabel = computed(() => (
-  autochangerOrigin.value ? t('Back to Autochanger') : t('Pools')
-))
+const backLabel = computed(() => {
+  if (volumeOrigin.value) {
+    return t('Back to Volume')
+  }
+
+  return autochangerOrigin.value ? t('Back to Autochanger') : t('Pools')
+})
 const backLocation = computed(() => {
+  if (volumeOrigin.value) {
+    return {
+      name: 'volume-details',
+      params: { name: volumeOrigin.value.name },
+      query: buildVolumeDetailsQuery({
+        director: requestedDirector.value,
+        poolName: poolName.value,
+      }),
+    }
+  }
+
   if (autochangerOrigin.value) {
     return {
       name: 'storages',

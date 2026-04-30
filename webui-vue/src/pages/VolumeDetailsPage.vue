@@ -264,6 +264,7 @@ import { useSettingsStore } from '../stores/settings.js'
 import { buildDirectorPageQuery } from '../utils/director.js'
 import { buildJobDetailsQuery, resolveJobDetailsQuery } from '../utils/jobs.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
+import { buildPoolDetailsQuery } from '../utils/pools.js'
 import {
   buildAutochangerSelectionQuery,
   resolveAutochangerSelectionQuery,
@@ -474,7 +475,10 @@ const detailRows = computed(() => {
         ? {
           name: 'pool-details',
           params: { name: v.pool },
-          query: currentVolumeDirector.value ? { director: currentVolumeDirector.value } : {},
+          query: buildPoolDetailsQuery({
+            director: currentVolumeDirector.value,
+            volumeName: volumeName.value,
+          }),
         }
         : null,
     },
