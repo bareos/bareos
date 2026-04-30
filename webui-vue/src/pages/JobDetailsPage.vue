@@ -214,6 +214,10 @@ const backLocation = computed(() => {
         director: clientOrigin.value.director,
         clientsTab: clientOrigin.value.clientsTab,
         clientsScopeDirector: clientOrigin.value.scopeDirector,
+        jobsAction: clientOrigin.value.jobsAction,
+        jobsStatus: clientOrigin.value.jobsStatus,
+        jobsSearch: clientOrigin.value.jobsSearch,
+        jobsScopeDirector: clientOrigin.value.jobsScopeDirector,
       }),
     }
   }
@@ -468,6 +472,10 @@ async function doRerun() {
           clientDirector: clientOrigin.value?.director,
           clientsTab: clientOrigin.value?.clientsTab,
           clientsScopeDirector: clientOrigin.value?.scopeDirector,
+          clientJobsAction: clientOrigin.value?.jobsAction,
+          clientJobsStatus: clientOrigin.value?.jobsStatus,
+          clientJobsSearch: clientOrigin.value?.jobsSearch,
+          clientJobsScopeDirector: clientOrigin.value?.jobsScopeDirector,
           volumeName: volumeOrigin.value?.name,
           volumeDirector: volumeOrigin.value?.director,
           restoreClient: restoreOrigin.value?.client,

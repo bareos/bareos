@@ -94,6 +94,10 @@ export function buildJobDetailsQuery({
   clientDirector,
   clientsTab,
   clientsScopeDirector,
+  clientJobsAction,
+  clientJobsStatus,
+  clientJobsSearch,
+  clientJobsScopeDirector,
   volumeName,
   volumeDirector,
   restoreClient,
@@ -139,6 +143,22 @@ export function buildJobDetailsQuery({
 
   if (clientsScopeDirector) {
     query.clientsScopeDirector = clientsScopeDirector
+  }
+
+  if (clientJobsAction && clientJobsAction !== 'list') {
+    query.clientJobsAction = clientJobsAction
+  }
+
+  if (clientJobsStatus) {
+    query.clientJobsStatus = clientJobsStatus
+  }
+
+  if (clientJobsSearch) {
+    query.clientJobsSearch = clientJobsSearch
+  }
+
+  if (clientJobsScopeDirector) {
+    query.clientJobsScopeDirector = clientJobsScopeDirector
   }
 
   if (volumeName) {
@@ -209,6 +229,10 @@ export function resolveJobDetailsQuery(query) {
     clientDirector: typeof query?.clientDirector === 'string' ? query.clientDirector : '',
     clientsTab: typeof query?.clientsTab === 'string' ? query.clientsTab : '',
     clientsScopeDirector: typeof query?.clientsScopeDirector === 'string' ? query.clientsScopeDirector : '',
+    clientJobsAction: typeof query?.clientJobsAction === 'string' ? query.clientJobsAction : '',
+    clientJobsStatus: typeof query?.clientJobsStatus === 'string' ? query.clientJobsStatus : '',
+    clientJobsSearch: typeof query?.clientJobsSearch === 'string' ? query.clientJobsSearch : '',
+    clientJobsScopeDirector: typeof query?.clientJobsScopeDirector === 'string' ? query.clientJobsScopeDirector : '',
     volumeName: typeof query?.volumeName === 'string' ? query.volumeName : '',
     volumeDirector: typeof query?.volumeDirector === 'string' ? query.volumeDirector : '',
     restoreClient: typeof query?.restoreClient === 'string' ? query.restoreClient : '',
@@ -230,6 +254,12 @@ export function resolveJobDetailsClientOrigin(query) {
     director: typeof query?.clientDirector === 'string' ? query.clientDirector : '',
     clientsTab: typeof query?.clientsTab === 'string' ? query.clientsTab : '',
     scopeDirector: typeof query?.clientsScopeDirector === 'string' ? query.clientsScopeDirector : '',
+    jobsAction: typeof query?.clientJobsAction === 'string' ? query.clientJobsAction : '',
+    jobsStatus: typeof query?.clientJobsStatus === 'string' ? query.clientJobsStatus : '',
+    jobsSearch: typeof query?.clientJobsSearch === 'string' ? query.clientJobsSearch : '',
+    jobsScopeDirector: typeof query?.clientJobsScopeDirector === 'string'
+      ? query.clientJobsScopeDirector
+      : '',
   }
 }
 

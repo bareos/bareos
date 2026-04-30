@@ -110,6 +110,7 @@ import { useSettingsStore } from '../stores/settings.js'
 import { buildJobDetailsQuery } from '../utils/jobs.js'
 import {
   resolveClientDetailsDashboardOrigin,
+  resolveClientDetailsJobsOrigin,
   resolveClientsListQuery,
 } from '../utils/clients.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
@@ -129,14 +130,21 @@ const currentClientDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
 const backToClientsQuery = computed(() => resolveClientsListQuery(route.query))
+const jobsOrigin = computed(() => resolveClientDetailsJobsOrigin(route.query))
 const dashboardOrigin = computed(() => resolveClientDetailsDashboardOrigin(route.query))
 const backLabel = computed(() => (
-  dashboardOrigin.value ? t('Back to Dashboard') : t('Back to Clients')
+  jobsOrigin.value && Object.keys(jobsOrigin.value).length > 0
+    ? t('Back to Jobs')
+    : (dashboardOrigin.value ? t('Back to Dashboard') : t('Back to Clients'))
 ))
 const backLocation = computed(() => (
-  dashboardOrigin.value
-    ? { name: 'dashboard' }
-    : { name: 'clients', query: backToClientsQuery.value }
+  jobsOrigin.value && Object.keys(jobsOrigin.value).length > 0
+    ? { name: 'jobs', query: jobsOrigin.value }
+    : (
+      dashboardOrigin.value
+        ? { name: 'dashboard' }
+        : { name: 'clients', query: backToClientsQuery.value }
+    )
 ))
 
 function buildClientJobDetailsQuery(job) {
@@ -147,6 +155,12 @@ function buildClientJobDetailsQuery(job) {
     clientsTab: typeof route.query.clientsTab === 'string' ? route.query.clientsTab : '',
     clientsScopeDirector: typeof route.query.clientsScopeDirector === 'string'
       ? route.query.clientsScopeDirector
+      : '',
+    clientJobsAction: typeof route.query.jobsAction === 'string' ? route.query.jobsAction : '',
+    clientJobsStatus: typeof route.query.jobsStatus === 'string' ? route.query.jobsStatus : '',
+    clientJobsSearch: typeof route.query.jobsSearch === 'string' ? route.query.jobsSearch : '',
+    clientJobsScopeDirector: typeof route.query.jobsScopeDirector === 'string'
+      ? route.query.jobsScopeDirector
       : '',
   })
 }

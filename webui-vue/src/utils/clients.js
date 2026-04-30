@@ -23,6 +23,10 @@ export function buildClientDetailsQuery({
   director,
   clientsTab,
   clientsScopeDirector,
+  jobsAction,
+  jobsStatus,
+  jobsSearch,
+  jobsScopeDirector,
   dashboardOrigin,
 } = {}) {
   const query = {}
@@ -37,6 +41,22 @@ export function buildClientDetailsQuery({
 
   if (clientsScopeDirector) {
     query.clientsScopeDirector = clientsScopeDirector
+  }
+
+  if (jobsAction && jobsAction !== 'list') {
+    query.jobsAction = jobsAction
+  }
+
+  if (jobsStatus) {
+    query.jobsStatus = jobsStatus
+  }
+
+  if (jobsSearch) {
+    query.jobsSearch = jobsSearch
+  }
+
+  if (jobsScopeDirector) {
+    query.jobsScopeDirector = jobsScopeDirector
   }
 
   if (dashboardOrigin) {
@@ -62,6 +82,28 @@ export function resolveClientsListQuery(query) {
 
 export function resolveClientDetailsDashboardOrigin(query) {
   return query?.dashboardOrigin === '1'
+}
+
+export function resolveClientDetailsJobsOrigin(query) {
+  const nextQuery = {}
+
+  if (typeof query?.jobsAction === 'string' && query.jobsAction && query.jobsAction !== 'list') {
+    nextQuery.action = query.jobsAction
+  }
+
+  if (typeof query?.jobsStatus === 'string' && query.jobsStatus) {
+    nextQuery.status = query.jobsStatus
+  }
+
+  if (typeof query?.jobsSearch === 'string' && query.jobsSearch) {
+    nextQuery.search = query.jobsSearch
+  }
+
+  if (typeof query?.jobsScopeDirector === 'string' && query.jobsScopeDirector) {
+    nextQuery.scopeDirector = query.jobsScopeDirector
+  }
+
+  return nextQuery
 }
 
 export function resolveClientsScopeDirector(query) {

@@ -510,6 +510,7 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { buildClientDetailsQuery } from '../utils/clients.js'
 import { formatNumber } from '../utils/locales.js'
 import {
   buildJobDetailsQuery,
@@ -938,7 +939,13 @@ async function openClientDetails(job) {
     await router.push({
       name: 'client-details',
       params: { name: job.client },
-      query: job.director ? { director: job.director } : {},
+      query: buildClientDetailsQuery({
+        director: job.director,
+        jobsAction: tab.value,
+        jobsStatus: statusFilter.value,
+        jobsSearch: search.value,
+        jobsScopeDirector: jobsListScopeDirector.value,
+      }),
     })
   } catch (error) {
     $q.notify({

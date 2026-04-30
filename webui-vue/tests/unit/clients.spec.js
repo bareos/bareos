@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildClientDetailsQuery,
   resolveClientDetailsDashboardOrigin,
+  resolveClientDetailsJobsOrigin,
   resolveClientsListQuery,
   resolveClientsScopeDirector,
   withClientsScopeDirectorQuery,
@@ -34,11 +35,19 @@ describe('clients route helpers', () => {
       director: 'prod-a',
       clientsTab: 'timeline',
       clientsScopeDirector: 'prod-a',
+      jobsAction: 'timeline',
+      jobsStatus: 'T',
+      jobsSearch: 'backup',
+      jobsScopeDirector: 'prod-a',
       dashboardOrigin: true,
     })).toEqual({
       director: 'prod-a',
       clientsTab: 'timeline',
       clientsScopeDirector: 'prod-a',
+      jobsAction: 'timeline',
+      jobsStatus: 'T',
+      jobsSearch: 'backup',
+      jobsScopeDirector: 'prod-a',
       dashboardOrigin: '1',
     })
 
@@ -68,6 +77,22 @@ describe('clients route helpers', () => {
     expect(resolveClientDetailsDashboardOrigin({ dashboardOrigin: '1' })).toBe(true)
     expect(resolveClientDetailsDashboardOrigin({ dashboardOrigin: '0' })).toBe(false)
     expect(resolveClientDetailsDashboardOrigin({})).toBe(false)
+  })
+
+  it('resolves an optional jobs origin for client details routes', () => {
+    expect(resolveClientDetailsJobsOrigin({
+      jobsAction: 'timeline',
+      jobsStatus: 'T',
+      jobsSearch: 'backup',
+      jobsScopeDirector: 'prod-a',
+    })).toEqual({
+      action: 'timeline',
+      status: 'T',
+      search: 'backup',
+      scopeDirector: 'prod-a',
+    })
+
+    expect(resolveClientDetailsJobsOrigin({ jobsAction: 'list' })).toEqual({})
   })
 
   it('adds and removes the scope director query parameter', () => {
