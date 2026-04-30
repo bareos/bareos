@@ -1,8 +1,14 @@
 <template>
   <q-page class="q-pa-md">
     <!-- Back -->
-    <q-btn flat no-caps icon="arrow_back" :label="t('Pools')" class="q-mb-md"
-           :to="{ name: 'storages', query: { tab: 'pools' } }" />
+    <q-btn
+      flat
+      no-caps
+      icon="arrow_back"
+      :label="backLabel"
+      class="q-mb-md"
+      :to="backLocation"
+    />
 
     <!-- Loading / error -->
     <q-spinner v-if="loading" size="40px" class="block q-mx-auto q-mt-xl" />
@@ -116,6 +122,10 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
+import {
+  buildAutochangerSelectionQuery,
+  resolveAutochangerSelectionQuery,
+} from '../utils/storagesRoute.js'
 
 const route     = useRoute()
 const auth      = useAuthStore()
@@ -129,6 +139,23 @@ const requestedDirector = computed(() => (
 const currentPoolDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
+const autochangerOrigin = computed(() => resolveAutochangerSelectionQuery(route.query))
+const backLabel = computed(() => (
+  autochangerOrigin.value ? t('Back to Autochanger') : t('Pools')
+))
+const backLocation = computed(() => {
+  if (autochangerOrigin.value) {
+    return {
+      name: 'storages',
+      query: buildAutochangerSelectionQuery({}, autochangerOrigin.value),
+    }
+  }
+
+  return {
+    name: 'storages',
+    query: { tab: 'pools' },
+  }
+})
 
 const pool    = ref(null)
 const volumes = ref([])

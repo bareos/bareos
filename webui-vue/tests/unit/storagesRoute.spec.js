@@ -25,6 +25,7 @@ import {
   AUTOCHANGER_STORAGE_QUERY_KEY,
   buildAutochangerSelectionQuery,
   buildStoragesTabQuery,
+  resolveAutochangerSelectionQuery,
   resolveAutochangerSelection,
 } from '../../src/utils/storagesRoute.js'
 
@@ -62,6 +63,20 @@ describe('storages route helpers', () => {
       [AUTOCHANGER_STORAGE_QUERY_KEY]: 'TapeLibrary',
       [AUTOCHANGER_DIRECTOR_QUERY_KEY]: 'prod-a',
     })
+  })
+
+  it('resolves autochanger selection from route query state', () => {
+    expect(resolveAutochangerSelectionQuery({
+      [AUTOCHANGER_STORAGE_QUERY_KEY]: 'TapeLibrary',
+      [AUTOCHANGER_DIRECTOR_QUERY_KEY]: 'prod-a',
+    })).toEqual({
+      name: 'TapeLibrary',
+      director: 'prod-a',
+    })
+
+    expect(resolveAutochangerSelectionQuery({
+      [AUTOCHANGER_DIRECTOR_QUERY_KEY]: 'prod-a',
+    })).toBeNull()
   })
 
   it('resolves an exact autochanger match by director and name', () => {

@@ -50,6 +50,20 @@ export function buildAutochangerSelectionQuery(query, storage) {
   return next
 }
 
+export function resolveAutochangerSelectionQuery(query) {
+  if (typeof query?.[AUTOCHANGER_STORAGE_QUERY_KEY] !== 'string'
+    || !query[AUTOCHANGER_STORAGE_QUERY_KEY]) {
+    return null
+  }
+
+  return {
+    name: query[AUTOCHANGER_STORAGE_QUERY_KEY],
+    director: typeof query?.[AUTOCHANGER_DIRECTOR_QUERY_KEY] === 'string'
+      ? query[AUTOCHANGER_DIRECTOR_QUERY_KEY]
+      : '',
+  }
+}
+
 export function resolveAutochangerSelection(storages, {
   storageName,
   directorName,

@@ -175,11 +175,18 @@
               </template>
               <template #body-cell-pr_name="props">
                 <q-td :props="props">
-                   <router-link
-                     v-if="props.value && props.value !== '?'"
-                     :to="{ name: 'pool-details', params: { name: props.value }, query: currentStorage?.director ? { director: currentStorage.director } : {} }"
-                     class="text-primary"
-                   >{{ props.value }}</router-link>
+                    <router-link
+                      v-if="props.value && props.value !== '?'"
+                      :to="{
+                        name: 'pool-details',
+                        params: { name: props.value },
+                        query: {
+                          ...buildAutochangerSelectionQuery(route.query, currentStorage),
+                          ...(currentStorage?.director ? { director: currentStorage.director } : {}),
+                        },
+                      }"
+                      class="text-primary"
+                    >{{ props.value }}</router-link>
                   <q-btn v-else-if="props.row.content === 'full'"
                          flat dense size="sm" icon="label" :label="t('Label')"
                          color="primary" no-caps
