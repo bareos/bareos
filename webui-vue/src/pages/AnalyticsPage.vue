@@ -48,7 +48,14 @@
         <q-card flat bordered class="bareos-panel text-center">
           <q-card-section class="q-py-sm">
             <div class="text-caption text-grey-6">{{ s.label }}</div>
-            <div class="text-h6 text-weight-bold" :class="'text-' + s.color">{{ s.value }}</div>
+            <router-link
+              v-if="s.jobsQuery !== null"
+              :to="{ name: 'jobs', query: s.jobsQuery }"
+              style="color: inherit; text-decoration: none"
+            >
+              <div class="text-h6 text-weight-bold" :class="'text-' + s.color">{{ s.value }}</div>
+            </router-link>
+            <div v-else class="text-h6 text-weight-bold" :class="'text-' + s.color">{{ s.value }}</div>
           </q-card-section>
         </q-card>
       </div>
@@ -66,9 +73,12 @@
           </q-card-section>
           <q-card-section class="q-pa-sm">
             <div ref="treemapEl" style="position:relative;width:100%;height:280px;overflow:hidden">
-              <div v-for="tile in treemapTiles" :key="tile.name"
+              <component
+                   :is="tile.jobsQuery !== null ? 'router-link' : 'div'"
+                   v-for="tile in treemapTiles" :key="tile.name"
+                   :to="tile.jobsQuery !== null ? { name: 'jobs', query: tile.jobsQuery } : undefined"
                    :style="tile.style"
-                   style="position:absolute;overflow:hidden;box-sizing:border-box;border:2px solid white;border-radius:4px;cursor:default;transition:opacity .2s"
+                   style="position:absolute;overflow:hidden;box-sizing:border-box;border:2px solid white;border-radius:4px;transition:opacity .2s;color:inherit;text-decoration:none"
                    :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${t('{count} files', { count: formatNumber(tile.files, settings.locale) })}`">
                 <div style="padding:4px 6px;height:100%;display:flex;flex-direction:column;justify-content:center">
                   <div class="text-white text-weight-bold" style="font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
@@ -78,7 +88,7 @@
                     {{ treemapMode === 'bytes' ? fmtBytes(tile.bytes) : t('{count} files', { count: formatNumber(tile.files, settings.locale) }) }}
                   </div>
                 </div>
-              </div>
+              </component>
               <div v-if="!treemapTiles.length" class="flex flex-center text-grey" style="height:100%">
                 <span>{{ t('No data') }}</span>
               </div>
@@ -99,7 +109,14 @@
               </template>
               <template #body-cell-label="props">
                 <q-td :props="props">
-                  <q-badge :color="props.row.color" :label="props.row.label" />
+                  <router-link
+                    v-if="props.row.jobsQuery !== null"
+                    :to="{ name: 'jobs', query: props.row.jobsQuery }"
+                    style="text-decoration: none"
+                  >
+                    <q-badge :color="props.row.color" :label="props.row.label" />
+                  </router-link>
+                  <q-badge v-else :color="props.row.color" :label="props.row.label" />
                 </q-td>
               </template>
             </q-table>
@@ -113,7 +130,12 @@
           <q-card-section class="q-pa-sm q-gutter-xs">
             <div v-for="c in clientBytes" :key="c.name" class="q-mb-xs">
               <div class="row items-center q-mb-xs" style="gap:4px">
-                <span class="text-caption ellipsis" style="width:110px;min-width:0" :title="c.name">{{ c.name }}</span>
+                <router-link
+                  :to="{ name: 'jobs', query: c.jobsQuery }"
+                  class="text-caption ellipsis text-primary"
+                  style="width:110px;min-width:0;text-decoration:none"
+                  :title="c.name"
+                >{{ c.name }}</router-link>
                 <q-linear-progress :value="bytesGauge(c.bytes)" color="primary" track-color="grey-3"
                                    size="10px" rounded style="flex:1" />
                 <span class="text-caption text-grey-6" style="width:60px;text-align:right">{{ fmtBytes(c.bytes) }}</span>
@@ -151,6 +173,11 @@ import { formatBytes } from '../mock/index.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import {
+  withJobsSearchQuery,
+  withJobsScopeDirectorQuery,
+  withJobsStatusFilterQuery,
+} from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
 
 const auth = useAuthStore()
@@ -288,12 +315,37 @@ const totalJobs = computed(() => jobs.value.length || 1)
 const overallStats = computed(() => {
   const j = jobs.value
   return [
-    { label: t('Total Jobs'), value: j.length, color: 'primary' },
-    { label: t('Successful'), value: j.filter(x => x.status === 'T').length, color: 'positive' },
-    { label: t('Warning'), value: j.filter(x => x.status === 'W').length, color: 'warning' },
-    { label: t('Failed'), value: j.filter(x => x.status === 'f' || x.status === 'E').length, color: 'negative' },
-    { label: t('Total Bytes'), value: fmtBytes(j.reduce((a, x) => a + x.bytes, 0)), color: 'blue-7' },
-    { label: t('Total Files'), value: formatNumber(j.reduce((a, x) => a + x.files, 0), settings.locale), color: 'teal-7' },
+    { label: t('Total Jobs'), value: j.length, color: 'primary', jobsQuery: {} },
+    {
+      label: t('Successful'),
+      value: j.filter(x => x.status === 'T').length,
+      color: 'positive',
+      jobsQuery: withJobsStatusFilterQuery({}, 'T'),
+    },
+    {
+      label: t('Warning'),
+      value: j.filter(x => x.status === 'W').length,
+      color: 'warning',
+      jobsQuery: withJobsStatusFilterQuery({}, 'W'),
+    },
+    {
+      label: t('Failed'),
+      value: j.filter(x => x.status === 'f' || x.status === 'E').length,
+      color: 'negative',
+      jobsQuery: null,
+    },
+    {
+      label: t('Total Bytes'),
+      value: fmtBytes(j.reduce((a, x) => a + x.bytes, 0)),
+      color: 'blue-7',
+      jobsQuery: null,
+    },
+    {
+      label: t('Total Files'),
+      value: formatNumber(j.reduce((a, x) => a + x.files, 0), settings.locale),
+      color: 'teal-7',
+      jobsQuery: null,
+    },
   ]
 })
 
@@ -301,11 +353,36 @@ const statusRows = computed(() => {
   const j = jobs.value
   const count = code => j.filter(x => x.status === code).length
   return [
-    { label: t('Successful'), color: 'positive', count: count('T') },
-    { label: t('Warning'), color: 'warning', count: count('W') },
-    { label: t('Failed'), color: 'negative', count: count('f') + count('E') },
-    { label: t('Canceled'), color: 'grey', count: count('A') },
-    { label: t('Running'), color: 'info', count: count('R') },
+    {
+      label: t('Successful'),
+      color: 'positive',
+      count: count('T'),
+      jobsQuery: withJobsStatusFilterQuery({}, 'T'),
+    },
+    {
+      label: t('Warning'),
+      color: 'warning',
+      count: count('W'),
+      jobsQuery: withJobsStatusFilterQuery({}, 'W'),
+    },
+    {
+      label: t('Failed'),
+      color: 'negative',
+      count: count('f') + count('E'),
+      jobsQuery: null,
+    },
+    {
+      label: t('Canceled'),
+      color: 'grey',
+      count: count('A'),
+      jobsQuery: withJobsStatusFilterQuery({}, 'A'),
+    },
+    {
+      label: t('Running'),
+      color: 'info',
+      count: count('R'),
+      jobsQuery: withJobsStatusFilterQuery({}, 'R'),
+    },
   ]
 })
 const maxStatusCount = computed(() => Math.max(1, ...statusRows.value.map(r => r.count)))
@@ -324,10 +401,19 @@ const clientBytes = computed(() => {
   for (const j of jobs.value) {
     if (!j.client) continue
     const label = prefixedLabel(j.director, j.client)
-    map[label] = (map[label] ?? 0) + j.bytes
+    if (!map[label]) {
+      map[label] = {
+        name: label,
+        bytes: 0,
+        jobsQuery: withJobsScopeDirectorQuery(
+          withJobsSearchQuery({}, j.client),
+          j.director,
+        ),
+      }
+    }
+    map[label].bytes += j.bytes
   }
-  return Object.entries(map)
-    .map(([name, bytes]) => ({ name, bytes }))
+  return Object.values(map)
     .sort((a, b) => b.bytes - a.bytes)
     .slice(0, 12)
 })
@@ -350,7 +436,17 @@ const jobGroups = computed(() => {
   for (const j of jobs.value) {
     if (j.type === 'R') continue
     const label = prefixedLabel(j.director, j.name)
-    if (!map[label]) map[label] = { name: label, bytes: 0, files: 0 }
+    if (!map[label]) {
+      map[label] = {
+        name: label,
+        bytes: 0,
+        files: 0,
+        jobsQuery: withJobsScopeDirectorQuery(
+          withJobsSearchQuery({}, j.name),
+          j.director,
+        ),
+      }
+    }
     map[label].bytes += j.bytes
     map[label].files += j.files
   }
@@ -416,6 +512,7 @@ const treemapTiles = computed(() => {
     bytes: t.bytes,
     files: t.files,
     h: t.h,
+    jobsQuery: t.jobsQuery,
     style: {
       left: `${t.x}px`,
       top: `${t.y}px`,
