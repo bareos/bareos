@@ -4,7 +4,16 @@
       <q-card-section class="panel-header row items-center">
         <span>{{ t('Bareos Console') }}</span>
         <q-space />
-        <q-chip dense square color="primary" text-color="white" :label="selectedDirector" class="q-mr-sm" style="font-size:0.72rem" />
+        <q-chip
+          v-if="directorOptions.length > 1"
+          dense
+          square
+          color="primary"
+          text-color="white"
+          :label="selectedDirector"
+          class="q-mr-sm"
+          style="font-size:0.72rem"
+        />
         <q-chip dense square :color="statusColor" text-color="white" :label="consoleStatusLabel" class="q-mr-sm" style="font-size:0.72rem" />
         <q-btn flat round dense icon="refresh" color="white" :title="t('Reconnect')" @click="reconnectSelectedSession" />
         <q-btn v-if="!isPopup" flat round dense icon="open_in_new" color="white" :title="t('Open in new window')" @click="popOut" />
@@ -13,6 +22,7 @@
       </q-card-section>
 
       <q-tabs
+        v-if="directorOptions.length > 1"
         v-model="selectedDirector"
         dense
         align="left"

@@ -1,6 +1,6 @@
 <template>
   <q-page class="q-pa-md">
-    <q-card flat bordered class="q-mb-md bareos-panel">
+    <q-card v-if="directorOptions.length > 1" flat bordered class="q-mb-md bareos-panel">
       <q-card-section class="panel-header row items-center">
         <span>{{ t('ACL Scope') }}</span>
         <q-space />

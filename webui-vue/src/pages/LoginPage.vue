@@ -31,7 +31,7 @@
               autocomplete="current-password"
             />
             <q-select
-              v-if="hasAvailableDirectors"
+              v-if="hasAvailableDirectors && directorOptions.length > 1"
               v-model="directorRef"
               data-testid="login-director"
               :options="directorOptions"
@@ -44,7 +44,7 @@
               class="q-mb-sm"
             />
             <q-input
-              v-else
+              v-else-if="!hasAvailableDirectors"
               v-model="directorRef"
               data-testid="login-director"
               :label="t('Director')"
