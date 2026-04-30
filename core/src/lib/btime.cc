@@ -168,6 +168,15 @@ utime_t StrToUtime(const char* str)
   // Check for bad argument
   if (!str || *str == 0) { return 0; }
 
+// we want the real sscanf() and not bsscanf()
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if ((sscanf(str, "%u-%u-%u %u:%u:%u%15s", &datetime.tm_year, &datetime.tm_mon,
               &datetime.tm_mday, &datetime.tm_hour, &datetime.tm_min,
               &datetime.tm_sec, trailinggarbage)

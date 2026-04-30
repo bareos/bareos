@@ -53,6 +53,14 @@ CramMd5Handshake::CompareChallengeWithOwnQualifiedName(
   uint32_t a, b;
   char buffer[MAXHOSTNAMELEN]{"?"};  // at least one character
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   bool scan_success = sscanf(challenge, "<%u.%u@%s", &a, &b, buffer) == 3;
 
   // string contains the closing ">" of the challenge
@@ -170,6 +178,14 @@ bool CramMd5Handshake::CramMd5Response()
   chal.check_size(bs_->message_length);
   if (bs_->IsBnetDumpEnabled()) {
     std::vector<char> destination_qualified_name(256);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(bs_->msg, "auth cram-md5c %s ssl=%d qualified-name=%s",
                chal.c_str(), &remote_tls_policy_,
                destination_qualified_name.data())
@@ -189,6 +205,14 @@ bool CramMd5Handshake::CramMd5Response()
     }
     bs_->SetBnetDumpDestinationQualifiedName(destination_qualified_name.data());
   } else {  // network dump disabled
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(bs_->msg, "auth cram-md5c %s ssl=%d", chal.c_str(),
                &remote_tls_policy_)
         == 2) {

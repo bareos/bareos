@@ -175,6 +175,14 @@ bool ReserveReadDevice(JobControlRecord* jcr,
     if (BgetDirmsg(sd_socket) > 0) {
       Dmsg1(100, "<stored: %s", sd_socket->msg);
       // ****FIXME**** save actual device name
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
       ok = sscanf(sd_socket->msg, OK_device, device_name.c_str()) == 1;
     } else {
       ok = false;
@@ -251,6 +259,14 @@ bool ReserveWriteDevice(JobControlRecord* jcr,
     if (BgetDirmsg(jcr->store_bsock) > 0) {
       Dmsg1(100, "<stored: %s", jcr->store_bsock->msg);
       // ****FIXME**** save actual device name
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
       ok = sscanf(jcr->store_bsock->msg, OK_device, device_name.c_str()) == 1;
     } else {
       ok = false;
@@ -372,6 +388,14 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
   if (BgetDirmsg(sd_socket) > 0) {
     Dmsg1(100, "<stored: %s", sd_socket->msg);
     char auth_key[100];
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(sd_socket->msg, OK_job, &jcr->VolSessionId, &jcr->VolSessionTime,
                &auth_key)
         != 3) {
@@ -484,6 +508,14 @@ extern "C" void* msg_thread(void* arg)
     Dmsg1(400, "<stored: %s", sd->msg);
     /* Check for "3000 OK Job Authorization="
      * Returned by a rerun cmd. */
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(sd->msg, OK_nextrun, &auth_key) == 1) {
       if (jcr->sd_auth_key) { free(jcr->sd_auth_key); }
       jcr->sd_auth_key = strdup(auth_key);
@@ -493,6 +525,14 @@ extern "C" void* msg_thread(void* arg)
     }
 
     // Check for "3010 Job <jobid> start"
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(sd->msg, Job_start, Job) == 1) { continue; }
 
     /* Check for "3099 Job <JobId> end JobStatus= JobFiles= JobBytes=

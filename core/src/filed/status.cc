@@ -432,6 +432,14 @@ bool QstatusCmd(JobControlRecord* jcr)
   sp.bs = dir;
   cmd = GetMemory(dir->message_length + 1);
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, qstatus, cmd) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
     Jmsg1(jcr, M_FATAL, 0, T_("Bad .status command: %s\n"), jcr->errmsg);

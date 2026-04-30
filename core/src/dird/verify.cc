@@ -606,6 +606,14 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr,
     fname = CheckPoolMemorySize(fname, fd->message_length);
     jcr->dir_impl->fname.check_size(fd->message_length);
     Dmsg1(200, "Atts+Digest=%s\n", fd->msg);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if ((len = sscanf(fd->msg, "%ld %d %100s", &file_index, &stream, fname))
         != 3) {
       Jmsg3(jcr, M_FATAL, 0,

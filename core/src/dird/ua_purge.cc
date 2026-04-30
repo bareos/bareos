@@ -646,6 +646,14 @@ static void do_truncate_on_purge(UaContext* ua,
   UnbashSpaces(mr->MediaType);
 
   // Send relabel command, and check for valid response
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   while (sd->recv() >= 0) {
     ua->SendMsg("%s", sd->msg);
     if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {

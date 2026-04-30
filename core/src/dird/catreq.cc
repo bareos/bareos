@@ -148,6 +148,14 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
 
   // Find next appendable medium for SD
   unwanted_volumes.check_size(bs->message_length);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType,
              unwanted_volumes.c_str())
       == 5) {
@@ -170,6 +178,14 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       bs->fsend(T_("1901 No Media.\n"));
       Dmsg0(500, "1901 No Media.\n");
     }
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   } else if (sscanf(bs->msg, Get_Vol_Info, &Job, &mr.VolumeName, &writing)
              == 3) {
     // Request to find specific Volume information
@@ -214,6 +230,14 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       bs->fsend(T_("1997 Volume \"%s\" not in catalog.\n"), mr.VolumeName);
       Dmsg1(100, "1997 Volume \"%s\" not in catalog.\n", mr.VolumeName);
     }
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   } else if (sscanf(bs->msg, Update_media, &Job, &sdmr.VolumeName,
                     &sdmr.VolJobs, &sdmr.VolFiles, &sdmr.VolBlocks,
                     &sdmr.VolBytes, &sdmr.VolMounts, &sdmr.VolErrors,
@@ -344,6 +368,14 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     Dmsg1(400, ">CatReq response: %s", bs->msg);
     Dmsg1(400, "Leave catreq jcr %p\n", jcr);
     return;
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   } else if (sscanf(bs->msg, Create_job_media, &Job, &jm.FirstIndex,
                     &jm.LastIndex, &jm.StartFile, &jm.EndFile, &jm.StartBlock,
                     &jm.EndBlock, &Copy, &Stripe, &MediaId)
@@ -369,6 +401,14 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       Dmsg0(400, "JobMedia record created\n");
       bs->fsend(OK_create);
     }
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   } else if (sscanf(bs->msg, Update_filelist, &Job) == 1) {
     Dmsg0(0, "Updating filelist\n");
 
@@ -384,6 +424,14 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
             "No batch database connection exists, no files have been added to "
             "the batch (yet).\n");
     }
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   } else if (sscanf(bs->msg, Update_jobrecord, &Job, &update_jobfiles,
                     &update_jobbytes)
              == 3) {
@@ -397,6 +445,14 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
            jcr->db->strerror());
       bs->fsend(T_("1992 Update job record error\n"));
     }
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   } else if (sscanf(bs->msg, Delete_nulljobmediarecord, &Job, &jobid) == 2) {
     int numrows = jcr->db->DeleteNullJobmediaRecords(jcr, jobid);
     Dmsg1(400, "Deleted %d rows.\n", numrows);

@@ -470,6 +470,14 @@ bool SendSecureEraseReqToFd(JobControlRecord* jcr)
     while ((n = BgetDirmsg(fd)) >= 0) {
       jcr->dir_impl->FDSecureEraseCmd = CheckPoolMemorySize(
           jcr->dir_impl->FDSecureEraseCmd, fd->message_length);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
       if (sscanf(fd->msg, OKgetSecureEraseCmd, jcr->dir_impl->FDSecureEraseCmd)
           == 1) {
         Dmsg1(400, "Got FD Secure Erase Cmd: %s\n",
@@ -868,6 +876,14 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
     char *p, *fn;
     PoolMem Digest(PM_MESSAGE); /* Either Verify opts or MD5/SHA1 digest */
     Digest.check_size(fd->message_length);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if ((len
          = sscanf(fd->msg, "%ld %d %s", &file_index, &stream, Digest.c_str()))
         != 3) {

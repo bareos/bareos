@@ -335,6 +335,14 @@ bool AccurateCmd(JobControlRecord* jcr)
 
   if (jcr->IsJobCanceled()) { return true; }
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, "accurate files=%u", &accurate_max_file_count) != 1) {
     dir->fsend(T_("2991 Bad accurate command\n"));
     return false;

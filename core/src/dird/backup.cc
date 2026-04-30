@@ -687,6 +687,14 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
 
     // Wait for Client to terminate
     while ((n = BgetDirmsg(fd)) >= 0) {
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
       if (!fd_ok
           && sscanf(fd->msg, EndJob, &jcr->dir_impl->FDJobStatus, &JobFiles,
                     &ReadBytes, &JobBytes, &JobErrors, &VSS, &Encrypt)

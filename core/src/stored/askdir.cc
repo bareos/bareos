@@ -119,6 +119,14 @@ static bool DoGetVolumeInfo(DeviceControlRecord* dcr)
   }
   VolumeCatalogInfo vol;
   Dmsg1(debuglevel, "<dird %s", dir->msg);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   n = sscanf(dir->msg, OK_media, vol.VolCatName, &vol.VolCatJobs,
              &vol.VolCatFiles, &vol.VolCatBlocks, &vol.VolCatBytes,
              &vol.VolCatMounts, &vol.VolCatErrors, &vol.VolCatWrites,

@@ -539,6 +539,14 @@ bool DoMacRun(JobControlRecord* jcr)
     // Expect to receive back the Ticket number.
     if (BgetMsg(sd) >= 0) {
       Dmsg1(110, "<stored: %s", sd->msg);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
       if (sscanf(sd->msg, OK_start_replicate, &jcr->sd_impl->Ticket) != 1) {
         Jmsg(jcr, M_FATAL, 0, T_("Bad response to start replicate: %s\n"),
              sd->msg);

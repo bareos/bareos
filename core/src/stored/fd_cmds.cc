@@ -371,6 +371,14 @@ static bool ReadOpenSession(JobControlRecord* jcr)
     return false;
   }
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(fd->msg, read_open, jcr->sd_impl->read_dcr->VolumeName,
              &jcr->sd_impl->read_session.read_VolSessionId,
              &jcr->sd_impl->read_session.read_VolSessionTime,

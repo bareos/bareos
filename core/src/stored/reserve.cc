@@ -280,6 +280,14 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
    * use_device for each device that it wants to use. */
   do {
     Dmsg1(debuglevel, "<dird: %s", dir->msg);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     auto res
         = sscanf(dir->msg, use_storage, StoreName.c_str(), media_type.c_str(),
                  pool_name.c_str(), pool_type.c_str(), &append, &Copy, &Stripe);
@@ -301,6 +309,14 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     // Now get all devices
     while (dir->recv() >= 0) {
       Dmsg1(debuglevel, "<dird device: %s", dir->msg);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
       ok = sscanf(dir->msg, use_device, dev_name.c_str()) == 1;
       if (!ok) { break; }
       UnbashSpaces(dev_name);

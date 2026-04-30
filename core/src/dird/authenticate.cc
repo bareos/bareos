@@ -190,6 +190,15 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
 
   Dmsg1(110, "<filed: %s", fd->msg);
   jcr->dir_impl->FDVersion = 0;
+
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (!bstrncmp(fd->msg, FDOKhello, sizeof(FDOKhello))
       && sscanf(fd->msg, FDOKnewHello, &jcr->dir_impl->FDVersion) != 1) {
     Dmsg0(debuglevel, T_("File daemon rejected Hello command\n"));

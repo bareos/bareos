@@ -206,6 +206,14 @@ extern "C" void* statistics_thread(void*)
             uint32_t num_waiting = 0;
             uint32_t num_writers = 0;
             DBId_t media_id = 0;
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
             if (sscanf(sd->msg, DevStats, &sample_time, DevName.c_str(),
                        &dsr.ReadBytes, &dsr.WriteBytes, &dsr.SpoolSize,
                        &num_waiting, &num_writers, &dsr.ReadTime,

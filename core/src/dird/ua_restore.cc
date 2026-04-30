@@ -1013,6 +1013,14 @@ std::string CompensateShortDate(const char* cmd)
   tm datetime{};
   char trailinggarbage[16]{""};
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if ((sscanf(cmd, "%u-%u-%u %u:%u:%u%15s", &datetime.tm_year, &datetime.tm_mon,
               &datetime.tm_mday, &datetime.tm_hour, &datetime.tm_min,
               &datetime.tm_sec, trailinggarbage)

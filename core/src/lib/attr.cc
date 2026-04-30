@@ -79,6 +79,14 @@ int UnpackAttributesRecord(JobControlRecord* jcr,
    * */
   attr->stream = stream;
   Dmsg1(debuglevel, "Attr: %s\n", rec);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(rec, "%d %d", &attr->file_index, &attr->type) != 2) {
     Jmsg(jcr, M_FATAL, 0, T_("Error scanning attributes: %s\n"), rec);
     Dmsg1(debuglevel, "\nError scanning attributes. %s\n", rec);

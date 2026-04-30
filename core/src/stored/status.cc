@@ -915,6 +915,14 @@ bool StatusCmd(JobControlRecord* jcr)
 
   sp.bs = dir;
   devicenames.check_size(dir->message_length);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, statuscmd, devicenames.c_str()) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(T_("3900 No arg in status command: %s\n"), jcr->errmsg);
@@ -941,6 +949,14 @@ bool DotstatusCmd(JobControlRecord* jcr)
 
   sp.bs = dir;
   cmd.check_size(dir->message_length);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, dotstatuscmd, cmd.c_str()) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(T_("3900 No arg in .status command: %s\n"), jcr->errmsg);

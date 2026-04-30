@@ -39,6 +39,14 @@ JobCommand::JobCommand(const char* msg) : job_{0}, sd_auth_key_{0}
   for (auto protocol_try : fd_implemented_protocols) {
     switch (protocol_try) {
       case ProtocolVersion::kVersionFrom_18_2:
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
         if (sscanf(msg, jobcmdssl_.c_str(), &job_id_, job_, &vol_session_id_,
                    &vol_session_time_, sd_auth_key_, &tls_policy_)
             == 6) {

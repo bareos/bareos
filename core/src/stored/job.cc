@@ -92,6 +92,14 @@ bool job_cmd(JobControlRecord* jcr)
   // Get JobId and permissions from Director
   Dmsg1(100, "<dird: %s", dir->msg);
   bstrncpy(spool_size, "0", sizeof(spool_size));
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   status = sscanf(dir->msg, jobcmd, &JobId, job.c_str(), job_name.c_str(),
                   client_name.c_str(), &JobType, &level, fileset_name.c_str(),
                   &no_attributes, &spool_attributes, fileset_md5.c_str(),

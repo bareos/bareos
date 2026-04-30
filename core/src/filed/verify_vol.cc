@@ -93,6 +93,14 @@ void DoVerifyVolume(JobControlRecord* jcr)
   // Get a record from the Storage daemon
   while (BgetMsg(sd) >= 0 && !jcr->IsJobCanceled()) {
     // First we expect a Stream Record Header
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(sd->msg, "rechdr %lu %lu %lu %ld %lu", &VolSessionId,
                &VolSessionTime, &file_index, &stream, &size)
         != 5) {
@@ -140,6 +148,14 @@ void DoVerifyVolume(JobControlRecord* jcr)
          *    Attributes
          *    Link name (if file linked i.e. FT_LNK)
          *    Extended Attributes (if Win32) */
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
         if (sscanf(sd->msg, "%d %d", &record_file_index, &type) != 2) {
           Jmsg(jcr, M_FATAL, 0, T_("Error scanning record header: %s\n"),
                sd->msg);

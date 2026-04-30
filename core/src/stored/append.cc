@@ -451,6 +451,14 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     auto content = std::get<message_type>(std::move(msg).value());
     n = content.size;
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(content.data.c_str(), "%ld %ld", &file_index, &stream) != 2) {
       Jmsg2(jcr, M_FATAL, 0, T_("Malformed data header from %s: %s\n"), what,
             content.data.c_str());

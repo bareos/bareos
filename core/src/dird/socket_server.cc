@@ -106,6 +106,14 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   Dmsg1(110, "Conn: %s", bs->msg);
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   // See if this is a File daemon connection. If so call FD handler.
   if ((sscanf(bs->msg, hello_client_with_version, name, &fd_protocol_version)
        == 2)

@@ -446,6 +446,14 @@ static inline bool UnpackRestoreObject(JobControlRecord*,
   char* bp;
   uint32_t JobFiles;
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(rec, "%d %d %d %d %d %d ", &JobFiles, &t_rop->Stream,
              &t_rop->object_index, &t_rop->object_len, &t_rop->object_full_len,
              &t_rop->object_compression)

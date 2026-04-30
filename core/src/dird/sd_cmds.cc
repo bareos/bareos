@@ -219,6 +219,14 @@ char* get_volume_name_from_SD(UaContext* ua,
     Dmsg1(100, "Got: %s", sd->msg);
     if (strncmp(sd->msg, NT_("3001 Volume="), 12) == 0) {
       VolName = (char*)malloc(sd->message_length);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
       if (sscanf(sd->msg, readlabelresponse, VolName, &rtn_slot) == 2) {
         break;
       }
@@ -543,6 +551,14 @@ slot_number_t NativeGetNumSlots(UaContext* ua, StorageResource* store)
   // Ask for autochanger number of slots
   sd->fsend(changerslotscmd, dev_name);
   while (sd->recv() >= 0) {
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(sd->msg, changerslotsresponse, &slots) == 1) {
       break;
     } else {
@@ -571,6 +587,14 @@ drive_number_t NativeGetNumDrives(UaContext* ua, StorageResource* store)
   // Ask for autochanger number of drives
   sd->fsend(changerdrivescmd, dev_name);
   while (sd->recv() >= 0) {
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(sd->msg, changerdrivesresponse, &drives) == 1) {
       break;
     } else {
@@ -844,6 +868,14 @@ bool SendSecureEraseReqToSd(JobControlRecord* jcr)
   while ((n = BgetDirmsg(sd)) >= 0) {
     jcr->dir_impl->SDSecureEraseCmd = CheckPoolMemorySize(
         jcr->dir_impl->SDSecureEraseCmd, sd->message_length);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(sd->msg, OKSecureEraseCmd, jcr->dir_impl->SDSecureEraseCmd)
         == 1) {
       Dmsg1(421, "Got SD Secure Erase Cmd: %s\n",

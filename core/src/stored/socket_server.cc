@@ -99,6 +99,14 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   Dmsg1(110, "Conn: %s", bs->msg);
 
   // See if this is a File daemon connection. If so call FD handler.
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
     Dmsg1(110, "Got a FD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
@@ -106,6 +114,14 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   }
 
   // See if this is a Storage daemon connection. If so call SD handler.
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
     Dmsg1(110, "Got a SD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));

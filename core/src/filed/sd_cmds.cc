@@ -52,6 +52,14 @@ void* handle_stored_connection(BareosSocket* sd)
     return NULL;
   }
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(sd->msg, "Hello Storage calling Start Job %127s", job_name) != 1) {
     char addr[64];
     char* who = BnetGetPeer(sd, addr, sizeof(addr)) ? sd->who() : addr;

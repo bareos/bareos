@@ -461,6 +461,14 @@ void DoRestore(JobControlRecord* jcr)
     rctx.prev_stream = rctx.stream;
 
     // First we expect a Stream Record Header
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(sd->msg, "rechdr %lu %lu %ld %ld %lu", &VolSessionId,
                &VolSessionTime, &file_index, &rctx.full_stream, &rctx.size)
         != 5) {

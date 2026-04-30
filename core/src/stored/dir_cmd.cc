@@ -354,6 +354,14 @@ static bool SetbandwidthCmd(JobControlRecord* jcr)
   char Job[MAX_NAME_LENGTH];
 
   *Job = 0;
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, setbandwidth, &bw, Job) != 2 || bw < 0) {
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(T_("2991 Bad setbandwidth command: %s\n"), jcr->errmsg);
@@ -386,6 +394,14 @@ static bool SetdebugCmd(JobControlRecord* jcr)
   int scan;
 
   Dmsg1(10, "SetdebugCmd: %s\n", dir->msg);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   scan = sscanf(dir->msg, setdebugv1cmd, &level, &trace_flag, &timestamp_flag);
   if (scan != 3) {
     scan = sscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
@@ -428,6 +444,14 @@ static bool SetdeviceCmd(JobControlRecord* jcr)
 
   std::vector<char> device_name(MAX_SETDEVICE_NAME_LENGTH);
   int autoselect_value = 0;
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   int scan = sscanf(dir->msg, setdevice_autoselect, device_name.data(),
                     &autoselect_value);
   if (scan != 2) {
@@ -465,6 +489,14 @@ static bool CancelCmd(JobControlRecord* cjcr)
   int status;
   const char* reason;
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, cancelcmd, Job) == 1) {
     status = JS_Canceled;
     reason = "canceled";
@@ -560,6 +592,14 @@ static bool ResolveCmd(JobControlRecord* jcr)
   char addresses[2048];
   char hostname[2048];
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   sscanf(dir->msg, resolvecmd, &hostname);
 
   if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == NULL) {
@@ -612,6 +652,14 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
   short int drive_input = -1;
 
   if (relabel) {
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(dir->msg, relabelcmd, dev_name.c_str(), oldname, newname,
                poolname, mediatype, &slot, &drive_input,
                &blocksizes.min_block_size, &blocksizes.max_block_size)
@@ -620,6 +668,14 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
     }
   } else {
     *oldname = 0;
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(dir->msg, labelcmd, dev_name.c_str(), newname, poolname,
                mediatype, &slot, &drive_input, &blocksizes.min_block_size,
                &blocksizes.max_block_size)
@@ -941,6 +997,14 @@ static bool MountCmd(JobControlRecord* jcr)
   slot_number_t slot = 0;
 
   short int drive_input = -1;
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   bool ok = sscanf(dir->msg, mountslotcmd, devname.c_str(), &drive_input, &slot)
             == 3;
 
@@ -1113,6 +1177,14 @@ static bool UnmountCmd(JobControlRecord* jcr)
   DeviceControlRecord* dcr;
 
   short int drive_input = -1;
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, unmountcmd, devname.c_str(), &drive_input) == 2) {
     drive_number_t drive = IntToDriveNumber(drive_input);
     dcr = FindDevice(jcr, devname, drive, NULL);
@@ -1207,6 +1279,14 @@ static bool ReleaseCmd(JobControlRecord* jcr)
   DeviceControlRecord* dcr;
   short int drive_input = -1;
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, releasecmd, devname.c_str(), &drive_input) == 2) {
     drive_number_t drive = IntToDriveNumber(drive_input);
     dcr = FindDevice(jcr, devname, drive, NULL);
@@ -1339,6 +1419,14 @@ static bool ChangerCmd(JobControlRecord* jcr)
    *    slots so it can be done at the same time that the drive is open. */
   bool safe_cmd = false;
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, "autochanger listall %127s", devname.c_str()) == 1) {
     cmd = "listall";
     safe_cmd = ok = true;
@@ -1410,6 +1498,14 @@ static bool ReadlabelCmd(JobControlRecord* jcr)
   slot_number_t slot;
   short int drive_input = -1;
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, readlabelcmd, devname.c_str(), &slot, &drive_input)
       == 3) {
     drive_number_t drive = IntToDriveNumber(drive_input);
@@ -1614,6 +1710,14 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   Dmsg1(100, "ReplicateCmd: %s", dir->msg);
   sd_auth_key.check_size(dir->message_length);
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr, &stored_port,
              &tls_policy, sd_auth_key.c_str())
       != 6) {
@@ -1718,6 +1822,14 @@ static bool PassiveCmd(JobControlRecord* jcr)
   std::string cpy{dir->msg};
 
   Dmsg1(100, "PassiveClientCmd: %s", cpy.c_str());
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(cpy.c_str(), passiveclientcmd, filed_addr, &filed_port,
              &tls_policy)
       != 3) {
@@ -1800,6 +1912,14 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
   std::string cpy{dir->msg};
 
   Dmsg1(100, "PluginOptionsCmd: %s", cpy.c_str());
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(cpy.c_str(), pluginoptionscmd, plugin_options) != 1) {
     PmStrcpy(jcr->errmsg, cpy.c_str());
     Jmsg(jcr, M_FATAL, 0, T_("Bad pluginoptionscmd command: %s"), jcr->errmsg);
