@@ -40,7 +40,7 @@
                      :pagination="{ rowsPerPage: 6 }">
               <template #body-cell-id="props">
                 <q-td :props="props">
-                  <router-link :to="{ name: 'job-details', params: { id: props.value } }" class="text-primary">
+                  <router-link :to="{ name: 'job-details', params: { id: props.value }, query: { director: settings.directorName } }" class="text-primary">
                     {{ props.value }}
                   </router-link>
                 </q-td>

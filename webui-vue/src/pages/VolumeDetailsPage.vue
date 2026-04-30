@@ -177,7 +177,7 @@
                       class="q-mr-sm"
                     />
                     <router-link
-                      :to="{ name: 'job-details', params: { id: seg.jobid } }"
+                      :to="{ name: 'job-details', params: { id: seg.jobid }, query: { director: settings.directorName } }"
                       class="text-primary q-mr-xs"
                       style="white-space:nowrap"
                     >#{{ seg.jobid }}</router-link>
@@ -209,7 +209,7 @@
                        dense flat :pagination="{ rowsPerPage: 15, sortBy: 'jobid', descending: true }">
                 <template #body-cell-jobid="props">
                   <q-td :props="props">
-                    <router-link :to="{ name: 'job-details', params: { id: props.value } }"
+                    <router-link :to="{ name: 'job-details', params: { id: props.value }, query: { director: settings.directorName } }"
                                  class="text-primary">
                       {{ props.value }}
                     </router-link>
@@ -239,11 +239,13 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import { volumeHasEncryptionKey } from '../utils/volumes.js'
 
 const route      = useRoute()
 const director   = useDirectorStore()
+const settings   = useSettingsStore()
 const volumeName = route.params.name
 const { t } = useI18n()
 

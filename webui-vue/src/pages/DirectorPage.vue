@@ -458,7 +458,7 @@
                     <template #body-cell-id="props">
                       <q-td :props="props">
                         <router-link
-                          :to="{ name: 'job-details', params: { id: props.value } }"
+                          :to="{ name: 'job-details', params: { id: props.value }, query: { director: activeDirectors[0] ?? settings.directorName } }"
                           class="text-primary"
                         >{{ props.value }}</router-link>
                       </q-td>
@@ -929,6 +929,7 @@ function openJobDetails(row) {
   return navigateForDirector(row.director, {
     name: 'job-details',
     params: { id: row.jobid ?? row.id },
+    query: row.director ? { director: row.director } : {},
   })
 }
 

@@ -289,7 +289,10 @@
           </template>
           {{ restoreResult.message }}
           <template v-if="restoreResult.jobid" #action>
-            <router-link :to="`/jobs/${restoreResult.jobid}`" class="text-white">
+            <router-link
+              :to="{ name: 'job-details', params: { id: restoreResult.jobid }, query: sourceDirector ? { director: sourceDirector } : {} }"
+              class="text-white"
+            >
               {{ t('View Job') }} {{ restoreResult.jobid }}
             </router-link>
           </template>

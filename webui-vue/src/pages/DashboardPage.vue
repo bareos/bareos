@@ -438,7 +438,11 @@ function confirmCancel(job) {
 async function openJobDetails(row) {
   try {
     await switchActiveDirector(row.director)
-    await router.push({ name: 'job-details', params: { id: jobId(row) } })
+    await router.push({
+      name: 'job-details',
+      params: { id: jobId(row) },
+      query: row.director ? { director: row.director } : {},
+    })
   } catch (error) {
     $q.notify({
       type: 'negative',

@@ -128,6 +128,8 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { jobLevelMap, formatBytes, formatSpeed } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatNumber } from '../utils/locales.js'
@@ -139,11 +141,18 @@ import VolumeNameLink from '../components/VolumeNameLink.vue'
 const route    = useRoute()
 const router   = useRouter()
 const $q       = useQuasar()
+const auth = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
 const { t } = useI18n()
 
 const currentJobId = computed(() => route.params.id)
+const requestedDirector = computed(() => (
+  typeof route.query.director === 'string' ? route.query.director : ''
+))
+const currentJobDirector = computed(() => (
+  requestedDirector.value || auth.user?.director || settings.directorName || ''
+))
 
 // ── state ─────────────────────────────────────────────────────────────────────
 const loading       = ref(true)
@@ -164,7 +173,20 @@ watch(logLines, () => {
 })
 
 // ── data loading ──────────────────────────────────────────────────────────────
+async function ensureJobDirector() {
+  if (!requestedDirector.value) {
+    return
+  }
+
+  if (auth.user?.director === requestedDirector.value && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(requestedDirector.value)
+}
+
 async function loadJob() {
+  await ensureJobDirector()
   const [jobRes, logRes, mediaRes] = await Promise.allSettled([
     director.call(`llist jobid=${currentJobId.value}`),
     director.call(`list joblog jobid=${currentJobId.value}`),
@@ -174,7 +196,12 @@ async function loadJob() {
   if (jobRes.status === 'fulfilled') {
     const raw   = jobRes.value
     const entry = Array.isArray(raw?.jobs) ? raw.jobs[0] : (raw?.jobs ?? raw)
-    jobData.value = entry ? normaliseJob(entry) : null
+    jobData.value = entry
+      ? {
+        ...normaliseJob(entry),
+        director: currentJobDirector.value || null,
+      }
+      : null
   } else {
     error.value = jobRes.reason?.message ?? t('Failed to load job')
   }
@@ -217,7 +244,7 @@ async function loadJob() {
   }
 }
 
-watch(currentJobId, async () => {
+watch(() => `${currentJobId.value}\u0000${requestedDirector.value}`, async () => {
   loading.value = true
   error.value = null
   jobData.value = null
@@ -226,6 +253,8 @@ watch(currentJobId, async () => {
   volumeDetailsByName.value = {}
   try {
     await loadJob()
+  } catch (loadError) {
+    error.value = loadError.message ?? t('Failed to load job')
   } finally {
     loading.value = false
   }
@@ -323,7 +352,13 @@ async function doRerun() {
     const res   = await director.call(`rerun jobid=${currentJobId.value} yes`)
     const newId = res?.run?.jobid ?? res?.jobid ?? null
     $q.notify({ type: 'positive', message: newId ? t('Job restarted as ID {id}.', { id: newId }) : t('Job restarted.') })
-    if (newId) router.push({ name: 'job-details', params: { id: newId } })
+    if (newId) {
+      router.push({
+        name: 'job-details',
+        params: { id: newId },
+        query: currentJobDirector.value ? { director: currentJobDirector.value } : {},
+      })
+    }
   } catch (e) {
     $q.notify({ type: 'negative', message: `${t('Rerun failed')}: ${e.message}` })
   } finally {

@@ -106,7 +106,7 @@
                   :height="TL_ROW_H - TL_BAR_PAD * 2"
                   :fill="tlColorOf(run.status)"
                   rx="3" style="cursor:pointer"
-                  @click="router.push({ name: 'job-details', params: { id: run.id } })"
+                  @click="router.push({ name: 'job-details', params: { id: run.id }, query: run.director ? { director: run.director } : {} })"
                   @mouseenter="(e) => showTlTooltip(e, run)"
                   @mousemove="moveTlTooltip" />
           </g>
