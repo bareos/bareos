@@ -247,6 +247,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
@@ -264,7 +265,14 @@ const settings = useSettingsStore()
 const $q = useQuasar()
 const { t } = useI18n()
 
-const tab = ref('status')
+const validTabs = new Set(['status', 'show'])
+function normaliseTab(value) {
+  return validTabs.has(value) ? value : 'status'
+}
+
+const route = useRoute()
+const router = useRouter()
+const tab = ref(normaliseTab(route.query.tab))
 const directorErrors = ref([])
 
 const directorOptions = computed(() => {
@@ -753,8 +761,25 @@ function scheduleColor(name) {
 }
 
 watch(tab, (value) => {
+  const current = normaliseTab(route.query.tab)
+  if (current !== value) {
+    const query = { ...route.query }
+    delete query.tab
+    if (value !== 'status') {
+      query.tab = value
+    }
+    router.replace({ path: '/schedules', query })
+  }
+
   if (value === 'show') {
     refreshSchedules()
+  }
+})
+
+watch(() => route.query.tab, (value) => {
+  const next = normaliseTab(value)
+  if (tab.value !== next) {
+    tab.value = next
   }
 })
 
