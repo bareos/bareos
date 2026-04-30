@@ -21,6 +21,7 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  filterRestoreSourceClients,
   getRestoreBrowserPlaceholder,
   resolveRestoreSourceClient,
 } from '../../src/utils/restore.js'
@@ -75,5 +76,24 @@ describe('restore browser placeholder', () => {
       name: 'bareos-fd',
       director: 'prod-a',
     })
+  })
+
+  it('filters source clients to the selected common-mode director', () => {
+    expect(filterRestoreSourceClients([
+      { name: 'bareos-fd', director: 'prod-a' },
+      { name: 'db-fd', director: 'prod-b' },
+      { name: 'web-fd', director: 'prod-a' },
+    ], 'prod-a')).toEqual([
+      { name: 'bareos-fd', director: 'prod-a' },
+      { name: 'web-fd', director: 'prod-a' },
+    ])
+  })
+
+  it('keeps all source clients when no common-mode director is selected', () => {
+    const clients = [
+      { name: 'bareos-fd', director: 'prod-a' },
+      { name: 'db-fd', director: 'prod-b' },
+    ]
+    expect(filterRestoreSourceClients(clients)).toEqual(clients)
   })
 })

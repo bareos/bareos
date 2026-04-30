@@ -50,13 +50,21 @@
           <!-- Source -->
           <div class="col-12 col-md-6">
             <q-card flat bordered>
-              <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Source') }}</q-card-section>
-              <q-card-section class="q-pt-none q-gutter-sm">
-                <q-select
-                  v-model="sourceClientKey"
-                  :options="clientOptions"
-                  :label="t('Backup Client')"
-                  outlined dense emit-value map-options
+                <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Source') }}</q-card-section>
+                <q-card-section class="q-pt-none q-gutter-sm">
+                  <q-select
+                    v-if="isCommonRestore"
+                    v-model="commonSourceDirector"
+                    :options="commonSourceDirectorOptions"
+                    :label="t('Source Director')"
+                    outlined dense emit-value map-options
+                    :hint="t('Restore jobs and destination clients come from the selected director')"
+                  />
+                  <q-select
+                    v-model="sourceClientKey"
+                    :options="clientOptions"
+                    :label="t('Backup Client')"
+                    outlined dense emit-value map-options
                   :loading="loadingClients"
                   :hint="t('Select a client to browse its backups')"
                   @update:model-value="onClientChange"
@@ -92,7 +100,7 @@
                   :label="t('Restore to Client')"
                   outlined dense emit-value map-options
                   :loading="loadingClients"
-                  :disable="isCommonRestore && !selectedSourceClient"
+                  :disable="!sourceDirector"
                 />
                 <q-select
                   v-model="form.restorejob"
@@ -100,7 +108,7 @@
                   :label="t('Restore Job')"
                   outlined dense emit-value map-options
                   :loading="loadingRestoreJobs"
-                  :disable="isCommonRestore && !selectedSourceClient"
+                  :disable="!sourceDirector"
                 />
                 <q-input
                   v-model="form.where"
@@ -371,6 +379,7 @@ import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes } from '../mock/index.js'
 import {
+  filterRestoreSourceClients,
   getRestoreBrowserPlaceholder,
   resolveRestoreSourceClient,
 } from '../utils/restore.js'
@@ -454,6 +463,10 @@ const restoreScopeLabel = computed(() => (
     ? `${activeDirectors.value.length} ${t('directors selected')}`
     : (activeDirectors.value[0] ?? t('No director selected'))
 ))
+const commonSourceDirector = ref('')
+const commonSourceDirectorOptions = computed(() => (
+  activeDirectors.value.map(value => ({ label: value, value }))
+))
 
 const replaceOptions = computed(() => [
   { label: t('Always'), value: 'Always' },
@@ -471,14 +484,20 @@ const loadingClients = ref(false)
 const selectedSourceClient = computed(() => (
   sourceClients.value.find(client => client.scopeKey === sourceClientKey.value) ?? null
 ))
+const visibleSourceClients = computed(() => (
+  isCommonRestore.value
+    ? filterRestoreSourceClients(sourceClients.value, commonSourceDirector.value)
+    : sourceClients.value
+))
 const sourceDirector = computed(() => (
   selectedSourceClient.value?.director
+    ?? (isCommonRestore.value ? commonSourceDirector.value : null)
     ?? (activeDirectors.value.length === 1 ? activeDirectors.value[0] : null)
 ))
 const sourceClientName = computed(() => selectedSourceClient.value?.name ?? '')
 
 const clientOptions = computed(() =>
-  sourceClients.value.map(client => ({
+  visibleSourceClients.value.map(client => ({
     label: isCommonRestore.value ? `${client.director} / ${client.name}` : client.name,
     value: client.scopeKey,
   }))
@@ -502,6 +521,31 @@ async function ensureScopeDirector(targetDirector) {
 
 async function ensureSelectedSourceDirector() {
   await ensureScopeDirector(sourceDirector.value)
+}
+
+function syncCommonSourceDirector() {
+  if (!isCommonRestore.value) {
+    commonSourceDirector.value = ''
+    return
+  }
+
+  const validDirectors = activeDirectors.value
+  if (!validDirectors.length) {
+    commonSourceDirector.value = ''
+    return
+  }
+
+  const selectedDirector = selectedSourceClient.value?.director
+  if (selectedDirector && validDirectors.includes(selectedDirector)) {
+    commonSourceDirector.value = selectedDirector
+    return
+  }
+
+  if (validDirectors.includes(commonSourceDirector.value)) {
+    return
+  }
+
+  commonSourceDirector.value = validDirectors[0]
 }
 
 function clearSelectedSourceData({ keepRestoreClient = false } = {}) {
@@ -650,11 +694,21 @@ async function onClientChange(clientName) {
   const selectedClient = sourceClients.value.find(client => client.scopeKey === clientName) ?? null
   form.value.client = selectedClient?.name ?? ''
   form.value.restoreclient = selectedClient?.name ?? ''
+  if (selectedClient?.director && selectedClient.director !== commonSourceDirector.value) {
+    commonSourceDirector.value = selectedClient.director
+  }
 
   if (!selectedClient) {
-    restoreClients.value = []
-    restoreJobs.value = []
-    form.value.restorejob = ''
+    if (sourceDirector.value) {
+      await Promise.all([
+        loadRestoreClients(),
+        loadRestoreJobs(),
+      ])
+    } else {
+      restoreClients.value = []
+      restoreJobs.value = []
+      form.value.restorejob = ''
+    }
     return
   }
 
@@ -1112,6 +1166,10 @@ async function init() {
   const qClient = route.query.client
   const qDirector = route.query.director
   const qJobid  = route.query.jobid
+  if (typeof qDirector === 'string') {
+    commonSourceDirector.value = qDirector
+  }
+  syncCommonSourceDirector()
   if (qClient) {
     const resolvedClient = resolveRestoreSourceClient(sourceClients.value, {
       clientName: qClient,
@@ -1140,13 +1198,38 @@ onMounted(() => { if (director.isConnected) init() })
 watch(() => director.isConnected, (connected) => { if (connected) init() })
 watch(() => directorOptions.value, () => {
   syncSelectedDirectors()
+  syncCommonSourceDirector()
 })
 watch(() => activeDirectors.value.join('\u0000'), async () => {
   const previousClientKey = sourceClientKey.value
   await loadClients()
+  syncCommonSourceDirector()
   if (previousClientKey && sourceClients.value.some(client => client.scopeKey === previousClientKey)) {
     sourceClientKey.value = previousClientKey
     await onClientChange(previousClientKey)
   }
+})
+watch(() => commonSourceDirector.value, async (next, previous) => {
+  if (!isCommonRestore.value || next === previous) {
+    return
+  }
+
+  if (selectedSourceClient.value && selectedSourceClient.value.director !== next) {
+    sourceClientKey.value = ''
+    clearSelectedSourceData()
+  }
+
+  if (!next) {
+    restoreClients.value = []
+    restoreJobs.value = []
+    form.value.restoreclient = ''
+    form.value.restorejob = ''
+    return
+  }
+
+  await Promise.all([
+    loadRestoreClients(),
+    loadRestoreJobs(),
+  ])
 })
 </script>

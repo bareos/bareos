@@ -65,3 +65,11 @@ export function resolveRestoreSourceClient(clients, {
 
   return matches[0]
 }
+
+export function filterRestoreSourceClients(clients, directorName) {
+  if (!directorName) {
+    return clients
+  }
+
+  return clients.filter(client => client.director === directorName)
+}
