@@ -418,16 +418,30 @@
         </q-card>
 
         <!-- Manual ID fallback -->
-        <q-card v-if="!isCommonJobs" flat bordered class="bareos-panel" style="max-width:400px">
+        <q-card flat bordered class="bareos-panel" style="max-width:520px">
           <q-card-section class="panel-header">{{ t('Rerun by Job ID') }}</q-card-section>
           <q-card-section>
             <q-form @submit.prevent="submitRerun" class="q-gutter-md">
+              <q-select
+                v-if="isCommonJobs"
+                v-model="singletonTabDirector"
+                :options="singletonTabDirectorOptions"
+                option-label="label"
+                option-value="value"
+                emit-value
+                map-options
+                outlined
+                dense
+                :label="t('Director')"
+              />
               <q-input v-model="rerunJobId" :label="t('Job ID *')" outlined dense
-                       type="number" style="max-width:180px"
-                       :hint="t('Enter the ID of any completed job')" />
+                        type="number" style="max-width:180px"
+                        :hint="isCommonJobs
+                          ? t('Enter the ID of any completed job from the selected director')
+                          : t('Enter the ID of any completed job')" />
               <div>
                 <q-btn type="submit" color="primary" :label="t('Rerun')" icon="restart_alt"
-                       no-caps :loading="rerunLoading" :disable="!rerunJobId" />
+                        no-caps :loading="rerunLoading" :disable="!rerunJobId" />
               </div>
             </q-form>
           </q-card-section>
@@ -1091,16 +1105,12 @@ const rerunLoading = ref(false)
 
 async function submitRerun() {
   if (!rerunJobId.value) return
-  if (isCommonJobs.value) {
-    $q.notify({
-      type: 'warning',
-      message: t('Rerun by Job ID is only available when the jobs scope contains a single director.'),
-    })
-    return
-  }
   rerunLoading.value = true
   try {
-    await doRerun({ id: rerunJobId.value, director: activeDirectors.value[0] })
+    const targetDirector = isCommonJobs.value
+      ? await ensureSingletonTabDirector()
+      : activeDirectors.value[0]
+    await doRerun({ id: rerunJobId.value, director: targetDirector })
     rerunJobId.value = ''
   } finally {
     rerunLoading.value = false
