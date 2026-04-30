@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -85,8 +85,6 @@ ConfigurationParser::~ConfigurationParser() = default;
 
 ConfigurationParser::ConfigurationParser(
     const char* cf,
-    lexer::error_handler* scan_error,
-    lexer::warning_handler* scan_warning,
     resource_initer* init_res,
     resource_storer* store_res,
     resource_printer* print_res,
@@ -105,8 +103,6 @@ ConfigurationParser::ConfigurationParser(
   cf_ = cf == nullptr ? "" : cf;
   use_config_include_dir_ = false;
   config_include_naming_format_ = "%s/%s/%s.conf";
-  scan_error_ = scan_error;
-  scan_warning_ = scan_warning;
   init_res_ = init_res;
   store_res_ = store_res;
   print_res_ = print_res;
@@ -159,6 +155,29 @@ void ConfigurationParser::ParseConfigOrExit()
   }
 }
 
+void ConfigurationParser_PrintWarning(const char* file,
+                                      int line,
+                                      lexer* lc,
+                                      const char* fmt,
+                                      ...)
+{
+  auto* conf = static_cast<ConfigurationParser*>(lc->caller_ctx);
+
+  ASSERT(conf);
+
+  (void)line;
+  (void)file;
+
+  va_list args;
+  va_start(args, fmt);
+
+  auto warning = vstdprintf(fmt, args);
+
+  va_end(args);
+
+  conf->AddWarning(warning);
+}
+
 bool ConfigurationParser::ParseConfig()
 {
   int errstat;
@@ -179,8 +198,8 @@ bool ConfigurationParser::ParseConfig()
   }
   used_config_path_ = config_path.c_str();
   Dmsg1(100, "config file = %s\n", used_config_path_.c_str());
-  bool success = ParseConfigFile(config_path.c_str(), nullptr, scan_error_,
-                                 scan_warning_);
+  bool success = ParseConfigFile(config_path.c_str(), this, nullptr,
+                                 &ConfigurationParser_PrintWarning);
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
 
   config_resources_container_->SetTimestampToNow();
@@ -201,16 +220,12 @@ void ConfigurationParser::lex_error(const char* cf,
     LexSetDefaultErrorHandler(&lexical_parser_);
   }
 
-  if (scan_warning) {
-    lexical_parser_.scan_warning = scan_warning;
-  } else {
-    LexSetDefaultWarningHandler(&lexical_parser_);
-  }
+  lexical_parser_.print_warning = scan_warning;
 
   LexSetErrorHandlerErrorType(&lexical_parser_, err_type_);
   BErrNo be;
-  scan_err2(&lexical_parser_, T_("Cannot open config file \"%s\": %s\n"), cf,
-            be.bstrerror());
+  scan_err(&lexical_parser_, T_("Cannot open config file \"%s\": %s\n"), cf,
+           be.bstrerror());
 }
 
 bool ConfigurationParser::ParseConfigFile(const char* config_file_name,
@@ -227,17 +242,17 @@ bool ConfigurationParser::ParseConfigFile(const char* config_file_name,
     if (!state_machine.InitParserPass()) { return false; }
 
     if (!state_machine.ParseAllTokens()) {
-      scan_err0(state_machine.lexical_parser_, T_("ParseAllTokens failed."));
+      scan_err(state_machine.lexical_parser_, T_("ParseAllTokens failed."));
       return false;
     }
 
     switch (state_machine.GetParseError()) {
       case ConfigParserStateMachine::ParserError::kResourceIncomplete:
-        scan_err0(state_machine.lexical_parser_,
-                  T_("End of conf file reached with unclosed resource."));
+        scan_err(state_machine.lexical_parser_,
+                 T_("End of conf file reached with unclosed resource."));
         return false;
       case ConfigParserStateMachine::ParserError::kParserError:
-        scan_err0(state_machine.lexical_parser_, T_("Parser Error occurred."));
+        scan_err(state_machine.lexical_parser_, T_("Parser Error occurred."));
         return false;
       case ConfigParserStateMachine::ParserError::kNoError:
         break;

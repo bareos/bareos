@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -235,7 +235,7 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
         token = LexGetToken(lc, BCT_ALL);
         Dmsg1(300, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
         if (token != BCT_EQUALS) {
-          scan_err1(lc, "expected an equals, got: %s", lc->str);
+          scan_err(lc, "expected an equals, got: %s", lc->str);
           bsr = NULL;
           break;
         }
@@ -248,7 +248,7 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
     }
     if (i >= 0) {
       Dmsg1(300, "Keyword = %s\n", lc->str);
-      scan_err1(lc, "Keyword %s not found", lc->str);
+      scan_err(lc, "Keyword %s not found", lc->str);
       bsr = NULL;
       break;
     }

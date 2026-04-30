@@ -44,6 +44,7 @@
  *
  */
 
+#include "lib/bool_string.h"
 #include "lib/resource_item.h"
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
@@ -2419,7 +2420,7 @@ static void StorePooltype(lexer* lc,
     }
 
     if (!found) {
-      scan_err1(lc, T_("Expected a Pool Type option, got: %s"), lc->str);
+      scan_err(lc, T_("Expected a Pool Type option, got: %s"), lc->str);
     }
   }
 
@@ -2448,7 +2449,7 @@ static void StoreActiononpurge(lexer* lc,
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected an Action On Purge option, got: %s"), lc->str);
+    scan_err(lc, T_("Expected an Action On Purge option, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
@@ -2497,8 +2498,7 @@ static void StoreMigtype(lexer* lc, const ResourceItem* item, int index)
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Migration Job Type keyword, got: %s"),
-              lc->str);
+    scan_err(lc, T_("Expected a Migration Job Type keyword, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
@@ -2521,7 +2521,7 @@ static void StoreJobtype(lexer* lc, const ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Job Type keyword, got: %s"), lc->str);
+    scan_err(lc, T_("Expected a Job Type keyword, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
@@ -2547,7 +2547,7 @@ static void StoreProtocoltype(lexer* lc,
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Protocol Type keyword, got: %s"), lc->str);
+    scan_err(lc, T_("Expected a Protocol Type keyword, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
@@ -2569,8 +2569,7 @@ static void StoreReplace(lexer* lc, const ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Restore replacement option, got: %s"),
-              lc->str);
+    scan_err(lc, T_("Expected a Restore replacement option, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
@@ -2596,8 +2595,7 @@ static void StoreAuthprotocoltype(lexer* lc,
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Auth Protocol Type keyword, got: %s"),
-              lc->str);
+    scan_err(lc, T_("Expected a Auth Protocol Type keyword, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
@@ -2620,8 +2618,8 @@ static void StoreAuthtype(lexer* lc, const ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Authentication Type keyword, got: %s"),
-              lc->str);
+    scan_err(lc, T_("Expected a Authentication Type keyword, got: %s"),
+             lc->str);
   }
 
   ScanToEol(lc);
@@ -2645,7 +2643,7 @@ static void StoreLevel(lexer* lc, const ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Job Level keyword, got: %s"), lc->str);
+    scan_err(lc, T_("Expected a Job Level keyword, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
@@ -2684,10 +2682,10 @@ static void StoreAutopassword(lexer* lc,
         ASSERT(res);
 
         if (res_client->Protocol != res->Protocol) {
-          scan_err1(lc,
-                    "Trying to store password to resource \"%s\", but protocol "
-                    "is not known.\n",
-                    (*item->allocated_resource)->resource_name_);
+          scan_err(lc,
+                   "Trying to store password to resource \"%s\", but protocol "
+                   "is not known.\n",
+                   (*item->allocated_resource)->resource_name_);
         }
       }
       switch (res_client->Protocol) {
@@ -2709,10 +2707,10 @@ static void StoreAutopassword(lexer* lc,
         ASSERT(res);
 
         if (res_store->Protocol != res->Protocol) {
-          scan_err1(lc,
-                    "Trying to store password to resource \"%s\", but protocol "
-                    "is not known.\n",
-                    (*item->allocated_resource)->resource_name_);
+          scan_err(lc,
+                   "Trying to store password to resource \"%s\", but protocol "
+                   "is not known.\n",
+                   (*item->allocated_resource)->resource_name_);
         }
       }
       switch (res_store->Protocol) {
@@ -2753,7 +2751,7 @@ static void StoreAcl(lexer* lc, const ResourceItem* item, int index, int pass)
     LexGetToken(lc, BCT_STRING);
     if (pass == 1) {
       if (!IsAclEntryValid(lc->str, msg)) {
-        scan_err1(lc, T_("Cannot store Acl: %s"), msg.c_str());
+        scan_err(lc, T_("Cannot store Acl: %s"), msg.c_str());
         return;
       }
       list->append(strdup(lc->str));
@@ -2805,8 +2803,8 @@ static void StoreRunscriptWhen(lexer* lc, const ResourceItem* item, int, int)
   } else if (Bstrcasecmp(lc->str, "always")) {
     value = SCRIPT_Any;
   } else {
-    scan_err2(lc, T_("Expect %s, got: %s"), "Before, After, AfterVSS or Always",
-              lc->str);
+    scan_err(lc, T_("Expect %s, got: %s"), "Before, After, AfterVSS or Always",
+             lc->str);
   }
   if (value != SCRIPT_INVALID) { SetItemVariable<uint32_t>(*item, value); }
   ScanToEol(lc);
@@ -2831,10 +2829,10 @@ static void StoreRunscriptTarget(lexer* lc,
       BareosResource* res;
 
       if (!(res = my_config->GetResWithName(R_CLIENT, lc->str))) {
-        scan_err3(lc,
-                  T_("Could not find config Resource %s referenced on line %d "
-                     ": %s\n"),
-                  lc->str, lc->line_no, lc->line);
+        scan_err(lc,
+                 T_("Could not find config Resource %s referenced on line %d "
+                    ": %s\n"),
+                 lc->str, lc->line_no, lc->line);
       }
 
       r->SetTarget(lc->str);
@@ -2921,13 +2919,18 @@ static void StoreShortRunscript(lexer* lc,
 static void StoreRunscriptBool(lexer* lc, const ResourceItem* item, int, int)
 {
   LexGetToken(lc, BCT_NAME);
-  if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-    SetItemVariable<bool>(*item, true);
-  } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
-    SetItemVariable<bool>(*item, false);
-  } else {
-    scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
-              lc->str); /* YES and NO must not be translated */
+  switch (parse_conf_bool(lc)) {
+    case parse_bool_result::True: {
+      SetItemVariable<bool>(*item, true);
+    } break;
+    case parse_bool_result::False: {
+      SetItemVariable<bool>(*item, false);
+    } break;
+    case parse_bool_result::Error: {
+      scan_err(lc, T_("Expect %s, got: %s"), "YES or NO",
+               lc->str); /* YES and NO must not be translated */
+      return;
+    } break;
   }
   ScanToEol(lc);
 }
@@ -2949,7 +2952,7 @@ static void StoreRunscript(lexer* lc,
   int token = LexGetToken(lc, BCT_SKIP_EOL);
 
   if (token != BCT_BOB) {
-    scan_err1(lc, T_("Expecting open brace. Got %s"), lc->str);
+    scan_err(lc, T_("Expecting open brace. Got %s"), lc->str);
     return;
   }
 
@@ -2965,7 +2968,7 @@ static void StoreRunscript(lexer* lc,
     if (token == BCT_EOB) { break; }
 
     if (token != BCT_IDENTIFIER) {
-      scan_err1(lc, T_("Expecting keyword, got: %s\n"), lc->str);
+      scan_err(lc, T_("Expecting keyword, got: %s\n"), lc->str);
       goto bail_out;
     }
 
@@ -2974,7 +2977,7 @@ static void StoreRunscript(lexer* lc,
       if (Bstrcasecmp(runscript_items[i].name, lc->str)) {
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
-          scan_err1(lc, T_("Expected an equals, got: %s"), lc->str);
+          scan_err(lc, T_("Expected an equals, got: %s"), lc->str);
           goto bail_out;
         }
         switch (runscript_items[i].type) {
@@ -2999,7 +3002,7 @@ static void StoreRunscript(lexer* lc,
     }
 
     if (!keyword_ok) {
-      scan_err1(lc, T_("Keyword %s not permitted in this resource"), lc->str);
+      scan_err(lc, T_("Keyword %s not permitted in this resource"), lc->str);
       goto bail_out;
     }
   }
@@ -3648,10 +3651,10 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& t_config)
 ConfigurationParser* InitDirConfig(const char* t_configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
-      t_configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb,
-      PrintConfigCb, exit_code, R_NUM, dird_resource_tables,
-      default_config_filename.c_str(), "bareos-dir.d", ConfigBeforeCallback,
-      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
+      t_configfile, InitResourceCb, ParseConfigCb, PrintConfigCb, exit_code,
+      R_NUM, dird_resource_tables, default_config_filename.c_str(),
+      "bareos-dir.d", ConfigBeforeCallback, ConfigReadyCallback, SaveResource,
+      DumpResource, FreeResource);
   if (config) { config->r_own_ = R_DIRECTOR; }
   return config;
 }

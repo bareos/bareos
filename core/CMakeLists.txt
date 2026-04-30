@@ -652,6 +652,12 @@ bareos_configure_file(
   GLOB_RECURSE "${CMAKE_CURRENT_SOURCE_DIR}/src/defaultconfigs/*" COPY
 )
 
+# https://learn.microsoft.com/en-us/cpp/build/reference/zc-preprocessor?view=msvc-170
+# "Enable preprocessor conformance mode" Historically, msvc parses macros
+# incorrectly; it also does not support newer construct such as __VA_OPT__.  To
+# work around this issue, we can simply tell msvc to parse macros correctly.
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/Zc:preprocessor>)
+
 add_subdirectory(platforms)
 add_subdirectory(src)
 add_subdirectory(scripts)

@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,7 @@
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "cats/cats.h"
+#include "lib/bool_string.h"
 #include "lib/runscript.h"
 #include "lib/cli.h"
 #include "dird/dird_conf.h"
@@ -128,7 +129,15 @@ static bool yes_no(const char* prompt, bool batchvalue = true)
     quit = true;
     return false;
   }
-  return (Bstrcasecmp(cmd, "yes")) || (Bstrcasecmp(cmd, T_("yes")));
+
+  switch (parse_user_bool(cmd)) {
+    case parse_bool_result::True: {
+      return true;
+    } break;
+    default: {
+      return false;
+    } break;
+  }
 }
 
 static void set_quit() { quit = true; }

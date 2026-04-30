@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@
 #include "dird/ua_cmds.h"
 #include "dird/ua_select.h"
 #include "lib/bnet.h"
+#include "lib/bool_string.h"
 #include "lib/edit.h"
 
 #include <limits>
@@ -113,13 +114,18 @@ bool GetPint(UaContext* ua, const char* prompt)
  */
 bool IsYesno(char* val, bool* ret)
 {
-  *ret = 0;
-  if (Bstrcasecmp(val, T_("yes")) || Bstrcasecmp(val, NT_("yes"))) {
-    *ret = true;
-  } else if (Bstrcasecmp(val, T_("no")) || Bstrcasecmp(val, NT_("no"))) {
-    *ret = false;
-  } else {
-    return false;
+  *ret = false;
+
+  switch (parse_user_bool(val)) {
+    case parse_bool_result::True: {
+      *ret = true;
+    } break;
+    case parse_bool_result::False: {
+      *ret = false;
+    } break;
+    case parse_bool_result::Error: {
+      return false;
+    } break;
   }
 
   return true;
@@ -133,24 +139,26 @@ bool IsYesno(char* val, bool* ret)
  */
 bool GetYesno(UaContext* ua, const char* prompt)
 {
-  int len;
-  bool ret;
-
   ua->pint32_val = 0;
   for (;;) {
     if (ua->api) { ua->UA_sock->signal(BNET_YESNO); }
 
     if (!GetCmd(ua, prompt)) { return false; }
 
-    len = strlen(ua->cmd);
-    if (len < 1 || len > 3) { continue; }
 
-    if (IsYesno(ua->cmd, &ret)) {
-      ua->pint32_val = ret;
-      return true;
+    switch (parse_user_bool(ua->cmd)) {
+      case parse_bool_result::True: {
+        ua->pint32_val = true;
+        return true;
+      } break;
+      case parse_bool_result::False: {
+        ua->pint32_val = false;
+        return true;
+      } break;
+      case parse_bool_result::Error: {
+        ua->WarningMsg(T_("Invalid response. You must answer YES or NO.\n"));
+      } break;
     }
-
-    ua->WarningMsg(T_("Invalid response. You must answer yes or no.\n"));
   }
 }
 
@@ -172,44 +180,31 @@ bool GetConfirmation(UaContext* ua, const char* prompt, bool fallback_value)
 }
 
 /**
- * Gets an Enabled value => 0, 1, 2, yes, no, archived
- * Returns: 0, 1, 2 if OK
+ * Gets an Enabled value => yes, no, true, false, archived
+ * Returns: e_enabled_val if OK
  *          -1 on error
  */
 int GetEnabled(UaContext* ua, const char* val)
 {
   int Enabled = -1;
 
-  if (Bstrcasecmp(val, "yes") || Bstrcasecmp(val, "true")) {
-    Enabled = VOL_ENABLED;
-  } else if (Bstrcasecmp(val, "no") || Bstrcasecmp(val, "false")) {
-    Enabled = VOL_NOT_ENABLED;
-  } else if (Bstrcasecmp(val, "archived")) {
-    Enabled = VOL_ARCHIVED;
-  } else if (*val != '\0') {
-    char* rest = nullptr;
-    errno = 0;
-    auto parsed = std::strtol(val, &rest, 10);
-    if (rest && *rest != '\0') {
-      // something was not parsed correctly
-      Enabled = -1;
-    } else if ((parsed == std::numeric_limits<decltype(parsed)>::min()
-                || parsed == std::numeric_limits<decltype(parsed)>::max())
-               && errno == ERANGE) {
-      // we got an overflow
-      Enabled = -1;
-    } else if (errno == EINVAL) {
-      // some other issue occurred (i.e. base 10 is not supported...)
-      Enabled = -1;
-    } else {
-      Enabled = parsed;
-    }
-  }
-
-  if (Enabled < 0 || Enabled > 2) {
-    ua->ErrorMsg(T_(
-        "Invalid Enabled value, it must be yes, no, archived, 0, 1, or 2\n"));
-    return -1;
+  switch (parse_user_bool(val)) {
+    case parse_bool_result::True: {
+      Enabled = VOL_ENABLED;
+    } break;
+    case parse_bool_result::False: {
+      Enabled = VOL_NOT_ENABLED;
+    } break;
+    case parse_bool_result::Error: {
+      // in this case we either got some garbage, or archived
+      if (Bstrcasecmp(val, "archived")) {
+        Enabled = VOL_ARCHIVED;
+      } else {
+        ua->ErrorMsg(
+            T_("Invalid Enabled value, it must be yes, no, or archived\n"));
+        return -1;
+      }
+    } break;
   }
 
   return Enabled;

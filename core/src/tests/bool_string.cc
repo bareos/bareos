@@ -1,7 +1,7 @@
 /**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,41 +28,71 @@
 
 #include "lib/bool_string.h"
 
-#include <iostream>
-#include <map>
-#include <string>
+using namespace bool_parsing::internal;
 
-TEST(BoolString, convert_supported_bool_strings)
+
+static inline std::pair<parse_bool_result, bool> deprecated(parse_bool_result x)
 {
-  const std::map<std::string, bool> test_pattern{
-      {"true", true},   {"yes", true}, {"1", true},
-      {"false", false}, {"no", false}, {"0", false}};
-
-  for (const auto& t : test_pattern) {
-    bool value = false;
-    try {
-      BoolString s{t.first};
-      value = s.get<bool>();
-    } catch (const std::out_of_range& e) {
-      // abort the test
-      ASSERT_TRUE(false) << "Failed to create BoolString: " << e.what();
-    }
-    EXPECT_EQ(value, t.second) << "test pattern: '" << t.first << "'";
-  }
+  return {x, true};
 }
 
-TEST(BoolString, try_to_convert_not_supported_bool_strings)
+static inline std::pair<parse_bool_result, bool> allowed(parse_bool_result x)
 {
-  const std::set<std::string> test_pattern{
-      {"o"}, {"tru"}, {"ye"}, {"12"}, {"offf"}, {"ffalse"}, {"0-no"}};
+  return {x, false};
+}
 
-  for (const auto& t : test_pattern) {
-    bool can_be_converted = true;
-    try {
-      BoolString s{t};
-    } catch (const std::out_of_range& e) {
-      can_be_converted = false;
-    }
-    EXPECT_FALSE(can_be_converted) << "test pattern: '" << t << "'";
-  }
+TEST(ParseBool, simple_yes)
+{
+  EXPECT_EQ(parse_bool("yes", true), allowed(parse_bool_result::True));
+  EXPECT_EQ(parse_bool("true", true), deprecated(parse_bool_result::True));
+  EXPECT_EQ(parse_bool("1", true), deprecated(parse_bool_result::True));
+}
+
+TEST(ParseBool, deprecation_true)
+{
+  EXPECT_EQ(parse_bool("yes"), allowed(parse_bool_result::True));
+  EXPECT_EQ(parse_bool("true"), deprecated(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool("1"), deprecated(parse_bool_result::Error));
+}
+
+TEST(ParseBool, simple_no)
+{
+  EXPECT_EQ(parse_bool("no", true), allowed(parse_bool_result::False));
+  EXPECT_EQ(parse_bool("false", true), deprecated(parse_bool_result::False));
+  EXPECT_EQ(parse_bool("0", true), deprecated(parse_bool_result::False));
+}
+
+TEST(ParseBool, deprecation_false)
+{
+  EXPECT_EQ(parse_bool("no"), allowed(parse_bool_result::False));
+  EXPECT_EQ(parse_bool("false"), deprecated(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool("0"), deprecated(parse_bool_result::Error));
+}
+
+TEST(ParseBool, random_capitalisation)
+{
+  EXPECT_EQ(parse_bool("YeS", true), allowed(parse_bool_result::True));
+  EXPECT_EQ(parse_bool("nO", true), allowed(parse_bool_result::False));
+
+  EXPECT_EQ(parse_bool("TrUe", true), deprecated(parse_bool_result::True));
+  EXPECT_EQ(parse_bool("fAlSe", true), deprecated(parse_bool_result::False));
+}
+
+TEST(ParseBool, bad_numbers)
+{
+  EXPECT_EQ(parse_bool("2"), allowed(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool("01"), allowed(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool("10"), allowed(parse_bool_result::Error));
+}
+
+TEST(ParseBool, whitespace)
+{
+  // parse_bool does _not_ handle trimming
+  EXPECT_EQ(parse_bool(" yes"), allowed(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool("yes "), allowed(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool("false "), allowed(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool(" false"), allowed(parse_bool_result::Error));
+
+  EXPECT_EQ(parse_bool(""), allowed(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool(" "), allowed(parse_bool_result::Error));
 }

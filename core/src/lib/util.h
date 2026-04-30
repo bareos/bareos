@@ -232,4 +232,42 @@ static_assert(split_first("abc", ',') == std::nullopt);
 static_assert(split_first("abc", 'b')->first == "a");
 static_assert(split_first("abcbd", 'b')->second == "cbd");
 
+
+inline std::string vstdprintf(const char* fmt, va_list args)
+{
+  va_list copy;
+
+  va_copy(copy, args);
+  auto bytes_required = vsnprintf(nullptr, 0, fmt, copy);
+  va_end(copy);
+
+  if (bytes_required < 0) { return {}; }
+
+  std::string s;
+  s.resize(bytes_required);
+
+  for (;;) {
+    va_copy(copy, args);
+    auto sbytes_written = vsnprintf(s.data(), s.size() + 1, fmt, copy);
+    va_end(copy);
+
+    if (sbytes_written < 0) { return {}; }
+    auto bytes_written
+        = static_cast<std::make_unsigned_t<decltype(sbytes_written)>>(
+            sbytes_written);
+
+    if (bytes_written <= s.size()) {
+      // this is weird, but maybe possible ?
+      s.resize(bytes_written);
+      break;
+    }
+
+    // seems like we ran into some toctou problem, lets try again with a
+    // bigger buffer
+    s.resize(bytes_written);
+  }
+
+  return s;
+}
+
 #endif  // BAREOS_LIB_UTIL_H_

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,7 +22,8 @@
 #ifndef BAREOS_DIRD_UA_CMDS_H_
 #define BAREOS_DIRD_UA_CMDS_H_
 
-#include <map>
+#include <string>
+#include <optional>
 
 namespace directordaemon {
 
@@ -33,8 +34,12 @@ bool Do_a_command(UaContext* ua);
 bool DotMessagesCmd(UaContext* ua, const char* cmd);
 
 struct SetDeviceCommand {
-  using ArgumentsList = std::map<std::string, std::string>;
-  static ArgumentsList ScanCommandLine(UaContext* ua);
+  struct ArgumentsList {
+    std::string storage{};
+    std::string device{};
+    bool autoselect{false};
+  };
+  static std::optional<ArgumentsList> ScanCommandLine(UaContext* ua);
   static bool Cmd(UaContext* ua, const char* cmd);
   static bool SendToSd(UaContext* ua,
                        StorageResource* store,

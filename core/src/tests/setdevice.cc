@@ -1,7 +1,7 @@
 /**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -83,8 +83,8 @@ TEST(setdevice, scan_command_line)
   ParseArgs(command_line.c_str(), ua->args, &ua->argc, ua->argk, ua->argv,
             MAX_CMD_ARGS);
 
-  auto result = SetDeviceCommand::ScanCommandLine(ua.get());
-  EXPECT_TRUE(!result.empty());
+  std::optional result = SetDeviceCommand::ScanCommandLine(ua.get());
+  EXPECT_TRUE(result.has_value());
 
   std::array<std::string, 5> wrong_command_lines{
       "setdevice device=Any autoselect=yes",
@@ -95,7 +95,7 @@ TEST(setdevice, scan_command_line)
 
   for (const auto& c : wrong_command_lines) {
     ParseArgs(c.c_str(), ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
-    auto res = SetDeviceCommand::ScanCommandLine(ua.get());
-    EXPECT_TRUE(res.empty());
+    std::optional res = SetDeviceCommand::ScanCommandLine(ua.get());
+    EXPECT_FALSE(res.has_value());
   }
 }

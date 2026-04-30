@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,6 +39,7 @@
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
+#include "lib/bool_string.h"
 #include "lib/edit.h"
 #include "lib/util.h"
 
@@ -245,13 +246,21 @@ static void UpdateVolmaxbytes(UaContext* ua, char* val, MediaDbRecord* mr)
 
 static void UpdateVolrecycle(UaContext* ua, char* val, MediaDbRecord* mr)
 {
-  bool recycle;
+  bool recycle = false;
   char ed1[50];
   PoolMem query(PM_MESSAGE);
 
-  if (!IsYesno(val, &recycle)) {
-    ua->ErrorMsg(T_("Invalid value. It must be yes or no.\n"));
-    return;
+  switch (parse_user_bool(val)) {
+    case parse_bool_result::True: {
+      recycle = true;
+    } break;
+    case parse_bool_result::False: {
+      recycle = false;
+    } break;
+    case parse_bool_result::Error: {
+      ua->ErrorMsg(T_("Invalid value. It must be YES or NO.\n"));
+      return;
+    } break;
   }
 
   Mmsg(query, "UPDATE Media SET Recycle=%d WHERE MediaId=%s", recycle ? 1 : 0,
@@ -268,12 +277,20 @@ static void UpdateVolrecycle(UaContext* ua, char* val, MediaDbRecord* mr)
 static void UpdateVolinchanger(UaContext* ua, char* val, MediaDbRecord* mr)
 {
   char ed1[50];
-  bool InChanger;
+  bool InChanger = false;
   PoolMem query(PM_MESSAGE);
 
-  if (!IsYesno(val, &InChanger)) {
-    ua->ErrorMsg(T_("Invalid value. It must be yes or no.\n"));
-    return;
+  switch (parse_user_bool(val)) {
+    case parse_bool_result::True: {
+      InChanger = true;
+    } break;
+    case parse_bool_result::False: {
+      InChanger = false;
+    } break;
+    case parse_bool_result::Error: {
+      ua->ErrorMsg(T_("Invalid value. It must be YES or NO.\n"));
+      return;
+    } break;
   }
 
   Mmsg(query, "UPDATE Media SET InChanger=%d WHERE MediaId=%s",
