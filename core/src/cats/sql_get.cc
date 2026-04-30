@@ -1335,7 +1335,8 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
 
   if (!SqlQuery(query.c_str())) { goto bail_out; }
 
-  if (jr->JobLevel == L_INCREMENTAL || jr->JobLevel == L_VIRTUAL_FULL) {
+  if (jr->JobLevel == L_INCREMENTAL || jr->JobLevel == L_VIRTUAL_FULL
+      || jr->JobLevel == L_VIRTUAL_DIFFERENTIAL) {
     // Now, find the last differential backup after the last full
     Mmsg(query,
          "INSERT INTO btemp3%s (JobId, StartTime, EndTime, JobTDate, "

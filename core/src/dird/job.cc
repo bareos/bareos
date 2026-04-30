@@ -166,6 +166,7 @@ const char* GetConfiguredJobRetention(JobLevelCode level,
       }
       break;
     case L_DIFFERENTIAL:
+    case L_VIRTUAL_DIFFERENTIAL:
       if (const char* retention
           = select_retention(job->DiffRetention, "job DifferentialRetention")) {
         return retention;
@@ -226,6 +227,14 @@ void UpdateJobHistoryRecord(JobControlRecord* jcr)
     case L_VIRTUAL_FULL:
       if (jcr->dir_impl->previous_jr) {
         jr.ContentId = EffectiveJobContentId(*jcr->dir_impl->previous_jr);
+      }
+      return;
+    case L_VIRTUAL_DIFFERENTIAL:
+      if (jcr->dir_impl->previous_jr) {
+        jr.ContentId = EffectiveJobContentId(*jcr->dir_impl->previous_jr);
+      }
+      if (jcr->dir_impl->first_consolidated_jr) {
+        jr.BaseId = jcr->dir_impl->first_consolidated_jr->BaseId;
       }
       return;
     default:
@@ -475,7 +484,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
    *  in case of later errors. */
   switch (jcr->getJobType()) {
     case JT_BACKUP:
-      if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+      if (!IsVirtualBackupLevel(jcr->getJobLevel())) {
         if (GetOrCreateFilesetRecord(jcr)) {
           /* See if we need to upgrade the level. If GetLevelSinceTime returns
            * true it has updated the level of the backup and we run
@@ -506,7 +515,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
           }
           break;
         default:
-          if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+          if (IsVirtualBackupLevel(jcr->getJobLevel())) {
             if (!DoNativeVbackupInit(jcr)) {
               NativeVbackupCleanup(jcr, JS_ErrorTerminated);
               goto bail_out;
@@ -753,7 +762,7 @@ static void* job_thread(void* arg)
           break;
         default:
           if (!jcr->IsJobCanceled()) {
-            if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+            if (IsVirtualBackupLevel(jcr->getJobLevel())) {
               if (DoNativeVbackup(jcr)) {
                 DoAutoprune(jcr);
               } else {
@@ -767,7 +776,7 @@ static void* job_thread(void* arg)
               }
             }
           } else {
-            if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+            if (IsVirtualBackupLevel(jcr->getJobLevel())) {
               NativeVbackupCleanup(jcr, JS_Canceled);
             } else {
               NativeBackupCleanup(jcr, JS_Canceled);

@@ -141,7 +141,8 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
       }
       case JT_BACKUP:
         switch (jr.JobLevel) {
-          case L_VIRTUAL_FULL: {
+          case L_VIRTUAL_FULL:
+          case L_VIRTUAL_DIFFERENTIAL: {
             JobResource* job = NULL;
 
             job = ua->GetJobResWithName(jr.Name, false);
@@ -168,6 +169,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
       case JT_BACKUP:
         switch (jr.JobLevel) {
           case L_VIRTUAL_FULL:
+          case L_VIRTUAL_DIFFERENTIAL:
             Mmsg(cmdline, " nextpool=\"%s\"", pr.Name);
             PmStrcat(ua->cmd, cmdline);
 
@@ -418,7 +420,9 @@ try_again:
   if (do_pool_overrides) {
     switch (jcr->getJobType()) {
       case JT_BACKUP:
-        if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) { ApplyPoolOverrides(jcr); }
+        if (!IsVirtualBackupLevel(jcr->getJobLevel())) {
+          ApplyPoolOverrides(jcr);
+        }
         break;
       default:
         break;
@@ -559,8 +563,8 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
       next_prompt = 9;
       if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
           || (jcr->is_JobType(JT_BACKUP)
-              && jcr->is_JobLevel(L_VIRTUAL_FULL))) { /* NextPool */
-        AddPrompt(ua, T_("NextPool"));                /* 9 */
+              && IsVirtualBackupLevel(jcr->getJobLevel()))) { /* NextPool */
+        AddPrompt(ua, T_("NextPool"));                        /* 9 */
         next_prompt = 10;
         if (jcr->is_JobType(JT_BACKUP)) {
           AddPrompt(ua, T_("Plugin Options")); /* 10 */
@@ -627,7 +631,8 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         SelectJobLevel(ua, jcr);
         switch (jcr->getJobType()) {
           case JT_BACKUP:
-            if (!rc.pool_override && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+            if (!rc.pool_override
+                && !IsVirtualBackupLevel(jcr->getJobLevel())) {
               ApplyPoolOverrides(jcr, true);
               rc.pool = jcr->dir_impl->res.pool;
               rc.level_override = true;
@@ -753,7 +758,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         /* NextPool/Verify Job/Where/Plugin Options depending on JobType */
         if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
             || (jcr->is_JobType(JT_BACKUP)
-                && jcr->is_JobLevel(L_VIRTUAL_FULL))) { /* NextPool */
+                && IsVirtualBackupLevel(jcr->getJobLevel()))) { /* NextPool */
           rc.next_pool = select_pool_resource(ua);
           if (rc.next_pool) {
             jcr->dir_impl->res.next_pool = rc.next_pool;
@@ -1000,7 +1005,8 @@ static bool ResetRestoreContext(UaContext* ua,
 
   // If pool changed, update migration write storage
   if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
-      || (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
+      || (jcr->is_JobType(JT_BACKUP)
+          && IsVirtualBackupLevel(jcr->getJobLevel()))) {
     if (!SetMigrationWstorage(jcr, rc.pool, rc.next_pool,
                               T_("Storage from Run NextPool override"))) {
       return false;
@@ -1022,7 +1028,8 @@ static bool ResetRestoreContext(UaContext* ua,
   }
 
   if (rc.jid) {
-    if (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+    if (jcr->is_JobType(JT_BACKUP)
+        && IsVirtualBackupLevel(jcr->getJobLevel())) {
       if (!jcr->dir_impl->vf_jobids) {
         jcr->dir_impl->vf_jobids = GetPoolMemory(PM_MESSAGE);
       }
@@ -1244,6 +1251,7 @@ static void SelectJobLevel(UaContext* ua, JobControlRecord* jcr)
     AddPrompt(ua, T_("Differential"));
     AddPrompt(ua, T_("Since"));
     AddPrompt(ua, T_("VirtualFull"));
+    AddPrompt(ua, T_("VirtualDifferential"));
     switch (DoPrompt(ua, "", T_("Select level"), NULL, 0)) {
       case 0:
         jcr->setJobLevel(L_FULL);
@@ -1259,6 +1267,9 @@ static void SelectJobLevel(UaContext* ua, JobControlRecord* jcr)
         break;
       case 4:
         jcr->setJobLevel(L_VIRTUAL_FULL);
+        break;
+      case 5:
+        jcr->setJobLevel(L_VIRTUAL_DIFFERENTIAL);
         break;
       default:
         break;
@@ -1418,7 +1429,7 @@ static bool DisplayJobParameters(UaContext* ua,
     case JT_BACKUP:
     case JT_VERIFY:
       if (jcr->is_JobType(JT_BACKUP)) {
-        bool is_virtual = jcr->is_JobLevel(L_VIRTUAL_FULL);
+        bool is_virtual = IsVirtualBackupLevel(jcr->getJobLevel());
 
         if (ua->api) {
           ua->signal(BNET_RUN_CMD);

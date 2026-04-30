@@ -130,6 +130,7 @@ struct DirectorJcrImpl {
   uint32_t FileIndex{};           /**< Last FileIndex processed */
   utime_t MaxRunSchedTime{};      /**< Max run time in seconds from Initial Scheduled time */
   JobDbRecord jr;                 /**< Job DB record for current job */
+  std::optional<JobDbRecord> first_consolidated_jr; /**< Oldest job included by a synthetic backup */
   std::optional<JobDbRecord> previous_jr;        /**< Previous job database record */
   JobControlRecord* mig_jcr{};    /**< JobControlRecord for migration/copy job */
   char FSCreateTime[MAX_TIME_LENGTH]{}; /**< FileSet CreateTime as returned from DB */
@@ -144,7 +145,7 @@ struct DirectorJcrImpl {
   POOLMEM* client_uname{};              /**< Client uname */
   POOLMEM* FDSecureEraseCmd{};          /**< Report: Secure Erase Command  */
   POOLMEM* SDSecureEraseCmd{};          /**< Report: Secure Erase Command  */
-  POOLMEM* vf_jobids{};                 /**< JobIds to use for Virtual Full */
+  POOLMEM* vf_jobids{};                 /**< JobIds to use for a synthetic backup */
   uint32_t replace{};                   /**< Replace option */
   int32_t NumVols{};                    /**< Number of Volume used in pool */
   int32_t reschedule_count{};           /**< Number of times rescheduled */

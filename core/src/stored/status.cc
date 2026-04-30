@@ -893,6 +893,12 @@ static const char* JobLevelToString(int level)
     case L_VERIFY_DATA:
       str = T_("Data");
       break;
+    case L_VIRTUAL_FULL:
+      str = T_("Virtual Full");
+      break;
+    case L_VIRTUAL_DIFFERENTIAL:
+      str = T_("Virtual Differential");
+      break;
     case L_NONE:
       str = " ";
       break;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
 
    This program is Free Software; you can redistribute it and/or
@@ -516,6 +516,12 @@ static const char* JobLevelToString(int level)
       break;
     case L_VERIFY_DATA:
       str = T_("Data");
+      break;
+    case L_VIRTUAL_FULL:
+      str = T_("Virtual Full");
+      break;
+    case L_VIRTUAL_DIFFERENTIAL:
+      str = T_("Virtual Differential");
       break;
     case L_NONE:
       str = " ";

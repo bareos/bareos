@@ -116,6 +116,18 @@ std::string GetVfJobids(JobControlRecord& jcr)
     jcr.db->AccurateGetJobids(&jcr, &jcr.dir_impl->jr, &jobids_ctx);
     Dmsg1(10, "consolidate candidates:  %s.\n",
           jobids_ctx.GetAsString().c_str());
+    if (jcr.getJobLevel() == L_VIRTUAL_DIFFERENTIAL) {
+      std::vector<std::string> jobid_list
+          = split_string(jobids_ctx.GetAsString(), ',');
+      if (!jobid_list.empty()) { jobid_list.erase(jobid_list.begin()); }
+      if (jobid_list.empty()) { return {}; }
+
+      std::string filtered_jobids = jobid_list.front();
+      for (size_t i = 1; i < jobid_list.size(); ++i) {
+        filtered_jobids += "," + jobid_list[i];
+      }
+      return filtered_jobids;
+    }
     return jobids_ctx.GetAsString();
   }
 }
@@ -130,7 +142,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
     return false;
   }
 
-  ApplyPoolOverrides(jcr);
+  if (jcr->is_JobLevel(L_VIRTUAL_FULL)) { ApplyPoolOverrides(jcr); }
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
@@ -170,8 +182,19 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
     PmStrcpy(jcr->dir_impl->res.pool_source, T_("Run NextPool override"));
     storage_source = T_("Storage from Run NextPool override");
   } else {
-    // See if there is a next pool override in the Job definition.
-    if (jcr->dir_impl->res.job->next_pool) {
+    if (jcr->is_JobLevel(L_VIRTUAL_DIFFERENTIAL)
+        && jcr->dir_impl->res.diff_pool) {
+      jcr->dir_impl->res.next_pool = jcr->dir_impl->res.diff_pool;
+      if (jcr->dir_impl->res.run_diff_pool_override) {
+        PmStrcpy(jcr->dir_impl->res.npool_source, T_("Run DiffPool override"));
+        PmStrcpy(jcr->dir_impl->res.pool_source, T_("Run DiffPool override"));
+        storage_source = T_("Storage from Run DiffPool override");
+      } else {
+        PmStrcpy(jcr->dir_impl->res.npool_source, T_("Job DiffPool override"));
+        PmStrcpy(jcr->dir_impl->res.pool_source, T_("Job DiffPool override"));
+        storage_source = T_("Storage from Job DiffPool override");
+      }
+    } else if (jcr->dir_impl->res.job->next_pool) {
       jcr->dir_impl->res.next_pool = jcr->dir_impl->res.job->next_pool;
       PmStrcpy(jcr->dir_impl->res.npool_source, T_("Job's NextPool resource"));
       PmStrcpy(jcr->dir_impl->res.pool_source, T_("Job's NextPool resource"));
@@ -297,6 +320,14 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   int JobLevel_of_first_job = tmp_jr.JobLevel;
   Dmsg2(10, "Level of first consolidated job %d: %s\n", tmp_jr.JobId,
         job_level_to_str(JobLevel_of_first_job));
+  if (jcr->getJobLevel() == L_VIRTUAL_DIFFERENTIAL
+      && tmp_jr.JobLevel == L_FULL) {
+    Jmsg(jcr, M_FATAL, 0,
+         T_("VirtualDifferential requires a differential or incremental base, "
+            "not a Full job.\n"));
+    return false;
+  }
+  jcr->dir_impl->first_consolidated_jr.emplace(tmp_jr);
 
   /* Now we find the newest job that ran and store its info in
    * the previous_jr record. We will set our times to the
@@ -416,11 +447,18 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   switch (jcr->getJobStatus()) {
     case JS_Terminated:
     case JS_Warnings:
-      jcr->dir_impl->jr.JobLevel = JobLevel; /* We want this to appear as what
-                                      the first consolidated job was */
-      Jmsg(jcr, M_INFO, 0,
-           T_("Joblevel was set to joblevel of first consolidated job: %s\n"),
-           job_level_to_str(JobLevel));
+      if (jcr->getJobLevel() == L_VIRTUAL_DIFFERENTIAL) {
+        jcr->dir_impl->jr.JobLevel = L_DIFFERENTIAL;
+        Jmsg(jcr, M_INFO, 0,
+             T_("Joblevel was set to virtual differential result level: %s\n"),
+             job_level_to_str(jcr->dir_impl->jr.JobLevel));
+      } else {
+        jcr->dir_impl->jr.JobLevel = JobLevel; /* We want this to appear as what
+                                        the first consolidated job was */
+        Jmsg(jcr, M_INFO, 0,
+             T_("Joblevel was set to joblevel of first consolidated job: %s\n"),
+             job_level_to_str(JobLevel));
+      }
       break;
     default:
       break;

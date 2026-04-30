@@ -1022,12 +1022,13 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
            edit_uint64_with_suffix(jcr->dir_impl->jr.JobBytes, ec4));
       break;
    default:
-      if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+      if (IsVirtualBackupLevel(jcr->getJobLevel())) {
          Mmsg(level_info, T_(
-              "  Backup Level:           Virtual Full\n"));
+               "  Backup Level:           %s\n"),
+               JobLevelToString(jcr->getJobLevel()));
          Mmsg(statistics, T_(
-              "  SD Files Written:       %s\n"
-              "  SD Bytes Written:       %s (%sB)\n"),
+               "  SD Files Written:       %s\n"
+               "  SD Bytes Written:       %s (%sB)\n"),
               edit_uint64_with_commas(jcr->dir_impl->SDJobFiles, ec2),
               edit_uint64_with_commas(jcr->dir_impl->SDJobBytes, ec5),
               edit_uint64_with_suffix(jcr->dir_impl->SDJobBytes, ec6));
@@ -1082,10 +1083,10 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
    case PT_NDMP_NATIVE:
       break;
    default:
-      if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+      if (IsVirtualBackupLevel(jcr->getJobLevel())) {
          Mmsg(daemon_status, T_(
-              "  SD Errors:              %d\n"
-              "  SD termination status:  %s\n"
+               "  SD Errors:              %d\n"
+               "  SD termination status:  %s\n"
               "  Accurate:               %s\n"),
            jcr->dir_impl->SDErrors,
            sd_term_msg.c_str(),
