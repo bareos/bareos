@@ -94,14 +94,16 @@ else()
   endif()
 
   if(ENABLE_BARRI)
-    list(APPEND DEBIAN_CONTROL_SNIPPETS
-         "bareos-filedaemon-barri-python3-plugin"
-    )
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-barri-plugin")
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-barri-cli")
   endif()
 
   if(ENABLE_PROXMOX_PLUGIN)
     list(APPEND DEBIAN_CONTROL_SNIPPETS "proxmox")
+  endif()
+
+  if(ENABLE_INCUS_PLUGIN)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "incus")
   endif()
 
 endif()

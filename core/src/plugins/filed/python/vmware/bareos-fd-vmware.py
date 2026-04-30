@@ -679,10 +679,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bareosfd.bRC_OK
 
         tmp_path = "/var/tmp/bareos-vmware-plugin"
-        if restorepkt.where != "":
-            objectname = "/" + os.path.relpath(restorepkt.ofname, restorepkt.where)
-        else:
-            objectname = restorepkt.ofname
+        objectname = restorepkt.original_file_name
 
         json_filename = tmp_path + objectname + "_cbt.json"
         # for now, restore requires no snapshot to exist so disk to

@@ -33,7 +33,7 @@ import time
 from base64 import b85decode
 
 
-def parse_plugindef_string(plugindef):
+def parse_plugindef_string(plugindef, multi_value_options):
     options = {}
     parts = plugindef.split(":")
     while parts:
@@ -50,12 +50,14 @@ def parse_plugindef_string(plugindef):
         # See if the last character is a escape of the value string
         while val[-1:] == "\\":
             val = val[:-1] + ":" + parts.pop(0)
-        if key not in options:
+        if key in multi_value_options:
+            options.setdefault(key, []).append(val)
+        elif key not in options:
             options[key] = val
     return options
 
 
-def parse_options_file(path):
+def parse_options_file(path, multi_value_options):
     bareosfd.DebugMessage(100, 'reading options from file "%s"\n' % (path))
     options = {}
     with open(path, "r") as fp:
@@ -78,12 +80,15 @@ def parse_options_file(path):
             # check if last character escapes the newline
             while val[-1:] == "\\":
                 val = val[:-1] + lines.pop(0).strip()
-            if key in options:
-                bareosfd.JobMessage(
-                    M_WARNING,
-                    "duplicate option '%s' overriding previous value!\n" % (key),
-                )
-            options[key] = val
+            if key in multi_value_options:
+                options.setdefault(key, []).append(val)
+            else:
+                if key in options:
+                    bareosfd.JobMessage(
+                        M_WARNING,
+                        "duplicate option '%s' overriding previous value!\n" % (key),
+                    )
+                options[key] = val
     return options
 
 
@@ -170,7 +175,7 @@ class BareosFdPluginBaseclass(object):
             )
         )
 
-    def _load_options_from_file(self, option_dict, key):
+    def _load_options_from_file(self, option_dict, key, multi_value_options):
         """
         consume the given key from the option_dict if it exists and return
         the options that are configured in the file the option pointed to
@@ -185,7 +190,7 @@ class BareosFdPluginBaseclass(object):
                 )
             path = os.path.join(self.configdir, option_dict[key])
             try:
-                options = parse_options_file(path)
+                options = parse_options_file(path, multi_value_options)
             except OSError as e:
                 JobMessage(
                     M_FATAL,
@@ -214,19 +219,26 @@ class BareosFdPluginBaseclass(object):
                 bareosfd.DebugMessage(100, 'key:value = "%s:%s"\n' % (key, value))
                 self.options[key] = value
 
-    def parse_plugin_definition(self, plugindef):
+    def parse_plugin_definition(self, plugindef, multi_value_options=None):
         bareosfd.DebugMessage(100, 'plugin def parser called with "%s"\n' % (plugindef))
         # Parse plugin options into a dict
         if not hasattr(self, "options"):
             self.options = dict()
 
-        plugindef_options = parse_plugindef_string(plugindef)
+        if multi_value_options is None:
+            multi_value_options = []
+
+        # builtin options that we handle differently cannot be multi value
+        builtins = ["defaults_file", "overrides_file"]
+        multi_value_options = [x for x in multi_value_options if x not in builtins]
+
+        plugindef_options = parse_plugindef_string(plugindef, multi_value_options)
         try:
             default_options = self._load_options_from_file(
-                plugindef_options, "defaults_file"
+                plugindef_options, "defaults_file", multi_value_options
             )
             override_options = self._load_options_from_file(
-                plugindef_options, "overrides_file"
+                plugindef_options, "overrides_file", multi_value_options
             )
         except OSError:
             return False

@@ -664,23 +664,33 @@ there is an error, you must return **CF_EXTRACT**.
 ::
 
     struct restore_pkt {
-       int32_t pkt_size;                  /* size of this packet */
-       int32_t stream;                    /* attribute stream id */
-       int32_t data_stream;               /* id of data stream to follow */
-       int32_t type;                      /* file type FT */
-       int32_t file_index;                /* file index */
-       int32_t LinkFI;                    /* file index to data if hard link */
-       uid_t uid;                         /* userid */
-       struct stat statp;                 /* decoded stat packet */
-       const char *attrEx;                /* extended attributes if any */
-       const char *ofname;                /* output filename */
-       const char *olname;                /* output link name */
-       const char *where;                 /* where */
-       const char *RegexWhere;            /* regex where */
-       int replace;                       /* replace flag */
-       int create_status;                 /* status from createFile() */
-       int32_t pkt_end;                   /* end packet sentinel */
+      int32_t pkt_size{sizeof(restore_pkt)}; /* Size of this packet */
+      int32_t stream{};                      /* Attribute stream id */
+      int32_t data_stream{};                 /* Id of data stream to follow */
+      int32_t type{};                        /* File type FT */
+      int32_t file_index{};                  /* File index */
+      int32_t LinkFI{};                      /* File index to data if hard link */
+      uid_t uid{};                           /* Userid */
+      struct stat statp{};                   /* Decoded stat packet */
+      const char* attrEx{};                  /* Extended attributes if any */
+      const char* ofname{};                  /* Output filename */
+      const char* olname{};                  /* Output link name */
+      const char* where{};                   /* Where */
+      const char* RegexWhere{};              /* Regex where */
+      int replace{};                         /* Replace flag */
+      int create_status{};                   /* Status from createFile() */
+      uint32_t delta_seq{};                  /* Delta sequence number */
+    #if HAVE_WIN32
+      HANDLE hndl;   /* HANDLE to read/write in core */
+    #else
+      int filedes{}; /* file descriptor to read/write in core */
+    #endif
 
+      const char* original_file_name{}; /* original file name (without
+                                           where/regexwhere applied) */
+      const char* original_link_name{}; /* original link name (without
+                                           where/regexwhere applied) */
+      int32_t pkt_end{sizeof(restore_pkt)}; /* End packet sentinel */
     };
 
 Typical code to create a regular file would be the following:

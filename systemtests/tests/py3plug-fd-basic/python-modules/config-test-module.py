@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -53,7 +53,7 @@ class TestConfigPlugin(BareosFdPluginBaseclass):
 
     def parse_plugin_definition(self, plugindef):
         JobMessage(M_INFO, "plugindef: {}\n".format(plugindef))
-        res = super().parse_plugin_definition(plugindef)
+        res = super().parse_plugin_definition(plugindef, ["test"])
         for k, v in self.options.items():
             JobMessage(M_INFO, "effective configuration: {} = '{}'\n".format(k, v))
         return res

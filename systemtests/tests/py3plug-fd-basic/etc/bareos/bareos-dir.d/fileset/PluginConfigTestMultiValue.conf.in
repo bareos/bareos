@@ -1,0 +1,17 @@
+FileSet {
+  Name = "PluginConfigTestMultiValue"
+  Description = "Test the Plugin functionality with a Python Plugin."
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "@dir_python_module_name@"
+    ":module_path=@python_plugin_module_src_test_dir@"
+    ":module_name=config-test-module"
+    ":test=1"
+    ":test2=1"
+    ":test=2"
+    ":test2=2"
+    ":test=3"
+  }
+}
