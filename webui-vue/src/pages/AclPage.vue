@@ -1,10 +1,50 @@
 <template>
   <q-page class="q-pa-md">
+    <q-card flat bordered class="q-mb-md bareos-panel">
+      <q-card-section class="panel-header row items-center">
+        <span>{{ t('ACL Scope') }}</span>
+        <q-space />
+        <q-chip dense square color="white" text-color="primary" :label="aclScopeLabel" />
+      </q-card-section>
+      <q-card-section>
+        <q-select
+          v-model="selectedDirectorsModel"
+          data-testid="acl-directors"
+          :options="directorOptions"
+          option-label="label"
+          option-value="value"
+          emit-value
+          map-options
+          multiple
+          use-chips
+          outlined
+          dense
+          :label="t('Directors')"
+        />
+        <div class="text-caption text-grey-6 q-mt-sm">
+          {{ t('Select the directors that contribute to the ACL view.') }}
+        </div>
+        <q-banner
+          v-if="directorErrors.length"
+          rounded
+          dense
+          class="bg-warning text-black q-mt-md"
+        >
+          <template #avatar>
+            <q-icon name="warning" />
+          </template>
+          <div v-for="item in directorErrors" :key="item.director">
+            <strong>{{ item.director }}</strong>: {{ item.message }}
+          </div>
+        </q-banner>
+      </q-card-section>
+    </q-card>
+
     <div class="row q-col-gutter-md">
       <div class="col-12">
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-              <span>{{ t('User Command ACL') }}</span>
+            <span>{{ t('User Command ACL') }}</span>
             <q-space />
             <q-btn
               flat
@@ -12,8 +52,8 @@
               dense
               color="white"
               icon="refresh"
-              :loading="acl.loading"
-              @click="acl.refresh"
+              :loading="loading"
+              @click="refresh"
             />
           </q-card-section>
 
@@ -24,13 +64,13 @@
                   {{ auth.user?.username ?? 'user' }}
                 </q-chip>
                 <q-chip dense square color="blue-7" text-color="white" icon="dns">
-                  {{ auth.user?.director ?? 'director' }}
+                  {{ aclScopeLabel }}
                 </q-chip>
                 <q-chip dense square color="positive" text-color="white" icon="check_circle">
-                  {{ acl.allowedCount }} {{ t('allowed') }}
+                  {{ allowedCount }} {{ t('allowed') }}
                 </q-chip>
                 <q-chip dense square color="negative" text-color="white" icon="block">
-                  {{ acl.deniedCount }} {{ t('denied') }}
+                  {{ deniedCount }} {{ t('denied') }}
                 </q-chip>
               </div>
               <div class="text-caption text-grey-7 q-mt-sm">
@@ -68,13 +108,13 @@
               />
             </div>
 
-            <q-banner v-if="acl.error" dense rounded class="bg-negative text-white q-mb-md">
-              {{ t('Could not load command permissions') }}: {{ acl.error }}
+            <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">
+              {{ t('Could not load command permissions') }}: {{ error }}
             </q-banner>
 
-            <q-inner-loading :showing="acl.loading" />
+            <q-inner-loading :showing="loading" />
 
-            <div v-if="!acl.loading && !filteredCommands.length" class="text-grey-7 q-pa-md">
+            <div v-if="!loading && !filteredCommands.length" class="text-grey-7 q-pa-md">
               {{ t('No commands match the current filter.') }}
             </div>
 
@@ -94,7 +134,7 @@
                 </q-card-section>
                 <q-separator />
                 <q-list separator>
-                  <q-item v-for="item in group.items" :key="item.command" class="q-py-sm">
+                  <q-item v-for="item in group.items" :key="item.scopeKey" class="q-py-sm">
                     <q-item-section avatar top>
                       <q-icon
                         :name="item.permission ? 'check_circle' : 'block'"
@@ -104,9 +144,19 @@
                     <q-item-section>
                       <q-item-label class="text-weight-medium">
                         <code>{{ item.command }}</code>
+                        <q-chip
+                          v-if="isCommonAcl"
+                          dense
+                          square
+                          color="primary"
+                          text-color="white"
+                          class="q-ml-sm"
+                        >
+                          {{ item.director }}
+                        </q-chip>
                       </q-item-label>
                       <q-item-label caption class="text-grey-8">
-                         {{ item.description || t('No description provided.') }}
+                        {{ item.description || t('No description provided.') }}
                       </q-item-label>
                       <q-item-label
                         v-if="item.arguments"
@@ -123,7 +173,7 @@
                         :color="item.permission ? 'positive' : 'grey-6'"
                         text-color="white"
                       >
-                         {{ item.permission ? t('Allowed') : t('Denied') }}
+                        {{ item.permission ? t('Allowed') : t('Denied') }}
                       </q-chip>
                     </q-item-section>
                   </q-item>
@@ -138,20 +188,161 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { fetchAggregatedAcl } from '../composables/aclAggregate.js'
+import { normaliseDirectorCommandPermissions } from '../composables/useDirectorFetch.js'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useDirectorAclStore } from '../stores/directorAcl.js'
-import { normaliseDirectorCommandPermissions } from '../composables/useDirectorFetch.js'
+import { useSettingsStore } from '../stores/settings.js'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
 const acl = useDirectorAclStore()
+const settings = useSettingsStore()
 const { t } = useI18n()
 
 const search = ref('')
 const filter = ref('all')
+const aggregateCommands = ref([])
+const aggregateLoading = ref(false)
+const aggregateError = ref(null)
+const directorErrors = ref([])
+
+const directorOptions = computed(() => {
+  const values = new Set([
+    ...director.availableDirectors,
+    ...settings.selectedDirectors,
+    auth.user?.director,
+    settings.directorName,
+  ].filter(Boolean))
+  return [...values].map(value => ({ label: value, value }))
+})
+
+function syncSelectedDirectors() {
+  const validDirectors = directorOptions.value.map(option => option.value)
+  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
+
+  if (selected.length > 0) {
+    if (selected.length !== settings.selectedDirectors.length) {
+      settings.setSelectedDirectors(selected)
+    }
+    return
+  }
+
+  const fallbackDirector = auth.user?.director || settings.directorName
+  if (fallbackDirector) {
+    settings.setSelectedDirectors([fallbackDirector])
+  }
+}
+
+const selectedDirectorsModel = computed({
+  get: () => settings.selectedDirectors,
+  set: (value) => {
+    const selected = Array.isArray(value) ? value : []
+    if (selected.length > 0) {
+      settings.setSelectedDirectors(selected)
+      return
+    }
+
+    const fallbackDirector = auth.user?.director || settings.directorName
+    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
+  },
+})
+
+const activeDirectors = computed(() => {
+  const selected = settings.selectedDirectors.filter(value => (
+    directorOptions.value.some(option => option.value === value)
+  ))
+
+  if (selected.length > 0) {
+    return selected
+  }
+
+  const currentDirector = auth.user?.director || settings.directorName
+  return currentDirector ? [currentDirector] : []
+})
+
+const isCommonAcl = computed(() => activeDirectors.value.length > 1)
+const aclScopeLabel = computed(() => (
+  isCommonAcl.value
+    ? `${activeDirectors.value.length} ${t('directors selected')}`
+    : (activeDirectors.value[0] ?? t('No director selected'))
+))
+
+const loading = computed(() => (
+  isCommonAcl.value ? aggregateLoading.value : acl.loading
+))
+const error = computed(() => (
+  isCommonAcl.value ? aggregateError.value : acl.error
+))
+const currentCommands = computed(() => (
+  isCommonAcl.value
+    ? aggregateCommands.value
+    : normaliseDirectorCommandPermissions(acl.commands).map(item => ({
+      ...item,
+      director: auth.user?.director ?? settings.directorName ?? '',
+      scopeKey: `${auth.user?.director ?? settings.directorName ?? ''}:${item.command}`,
+    }))
+))
+const allowedCount = computed(() => currentCommands.value.filter(item => item.permission).length)
+const deniedCount = computed(() => currentCommands.value.filter(item => !item.permission).length)
+
+async function ensureSingleScopeDirector() {
+  if (activeDirectors.value.length !== 1) {
+    return
+  }
+
+  const scopeDirector = activeDirectors.value[0]
+  if (!scopeDirector) {
+    return
+  }
+
+  if (auth.user?.director === scopeDirector && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(scopeDirector)
+}
+
+async function refresh() {
+  directorErrors.value = []
+
+  if (activeDirectors.value.length === 0) {
+    aggregateCommands.value = []
+    acl.reset()
+    return
+  }
+
+  if (isCommonAcl.value) {
+    aggregateLoading.value = true
+    aggregateError.value = null
+    try {
+      const credentials = auth.getCredentials()
+      if (!credentials?.password) {
+        throw new Error(t('Not logged in.'))
+      }
+
+      const result = await fetchAggregatedAcl(credentials, activeDirectors.value)
+      aggregateCommands.value = result.commands
+      directorErrors.value = result.directorErrors
+    } catch (reason) {
+      aggregateCommands.value = []
+      aggregateError.value = reason?.message ?? String(reason)
+    } finally {
+      aggregateLoading.value = false
+    }
+    return
+  }
+
+  aggregateCommands.value = []
+  aggregateError.value = null
+  await ensureSingleScopeDirector()
+  await acl.refresh()
+}
+
 const filterOptions = computed(() => [
   { label: t('All'), value: 'all' },
   { label: t('Allowed'), value: 'allowed' },
@@ -161,7 +352,7 @@ const filterOptions = computed(() => [
 const filteredCommands = computed(() => {
   const needle = search.value.trim().toLowerCase()
 
-  return normaliseDirectorCommandPermissions(acl.commands).filter((item) => {
+  return currentCommands.value.filter((item) => {
     if (filter.value === 'allowed' && !item.permission) return false
     if (filter.value === 'denied' && item.permission) return false
 
@@ -171,7 +362,8 @@ const filteredCommands = computed(() => {
       item.description,
       item.arguments,
       item.category,
-    ].some(value => value.toLowerCase().includes(needle))
+      item.director,
+    ].some(value => String(value ?? '').toLowerCase().includes(needle))
   })
 })
 
@@ -184,12 +376,24 @@ const commandGroups = computed(() => (
     .filter(group => group.items.length > 0)
 ))
 
-acl.ensureLoaded()
-
 watch(() => director.isConnected, (connected) => {
-  if (connected) {
+  if (connected && !isCommonAcl.value) {
     acl.ensureLoaded()
   }
+})
+
+watch(() => directorOptions.value, () => {
+  syncSelectedDirectors()
+})
+
+watch(() => activeDirectors.value.join('\u0000'), () => {
+  refresh()
+})
+
+onMounted(() => {
+  director.fetchAvailableDirectors().catch(() => {})
+  syncSelectedDirectors()
+  refresh()
 })
 </script>
 
