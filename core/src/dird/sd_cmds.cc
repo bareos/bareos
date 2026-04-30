@@ -116,7 +116,7 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
     heart_beat = me->heartbeat_interval;
   }
 
-  Dmsg2(100, "bNetConnect to Storage daemon %s:%d\n", store->address,
+  Dmsg2(100, "bNetConnect to Storage daemon %s:%" PRIu32 "\n", store->address,
         store->SDport);
   std::unique_ptr<BareosSocket> sd(new BareosSocketTCP);
   if (!sd) { return false; }
@@ -172,7 +172,8 @@ BareosSocket* open_sd_bsock(UaContext* ua)
   }
 
   if (!ua->jcr->store_bsock) {
-    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d ...\n"),
+    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32
+                   " ...\n"),
                 store->resource_name_, store->address, store->SDport);
     /* the next call will set ua->jcr->store_bsock */
     if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
@@ -218,6 +219,14 @@ char* get_volume_name_from_SD(UaContext* ua,
     Dmsg1(100, "Got: %s", sd->msg);
     if (strncmp(sd->msg, NT_("3001 Volume="), 12) == 0) {
       VolName = (char*)malloc(sd->message_length);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
       if (sscanf(sd->msg, readlabelresponse, VolName, &rtn_slot) == 2) {
         break;
       }
@@ -542,6 +551,14 @@ slot_number_t NativeGetNumSlots(UaContext* ua, StorageResource* store)
   // Ask for autochanger number of slots
   sd->fsend(changerslotscmd, dev_name);
   while (sd->recv() >= 0) {
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(sd->msg, changerslotsresponse, &slots) == 1) {
       break;
     } else {
@@ -570,6 +587,14 @@ drive_number_t NativeGetNumDrives(UaContext* ua, StorageResource* store)
   // Ask for autochanger number of drives
   sd->fsend(changerdrivescmd, dev_name);
   while (sd->recv() >= 0) {
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(sd->msg, changerdrivesresponse, &drives) == 1) {
       break;
     } else {
@@ -698,7 +723,7 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   SetWstorage(ua->jcr, &lstore);
 
   if (!ua->api) {
-    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
+    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
                 store->resource_name_, store->address, store->SDport);
   }
 
@@ -843,6 +868,14 @@ bool SendSecureEraseReqToSd(JobControlRecord* jcr)
   while ((n = BgetDirmsg(sd)) >= 0) {
     jcr->dir_impl->SDSecureEraseCmd = CheckPoolMemorySize(
         jcr->dir_impl->SDSecureEraseCmd, sd->message_length);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(sd->msg, OKSecureEraseCmd, jcr->dir_impl->SDSecureEraseCmd)
         == 1) {
       Dmsg1(421, "Got SD Secure Erase Cmd: %s\n",

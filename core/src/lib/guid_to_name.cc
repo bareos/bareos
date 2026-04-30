@@ -127,7 +127,7 @@ char* guid_list::uid_to_name(uid_t uid, char* name, int maxlen)
   char buf[50];
 
   item = (guitem*)uid_list->binary_search(&sitem, UidCompare);
-  Dmsg2(900, "uid=%d item=%p\n", uid, item);
+  Dmsg2(900, "uid=%" PRIu32 " item=%p\n", uid, item);
   if (!item) {
     item = (guitem*)malloc(sizeof(guitem));
     item->uid = uid;
@@ -135,7 +135,7 @@ char* guid_list::uid_to_name(uid_t uid, char* name, int maxlen)
     GetUidname(uid, item);
     if (!item->name) {
       item->name = strdup(edit_int64(uid, buf));
-      Dmsg2(900, "set uid=%d name=%s\n", uid, item->name);
+      Dmsg2(900, "set uid=%" PRIu32 " name=%s\n", uid, item->name);
     }
     fitem = (guitem*)uid_list->binary_insert(item, UidCompare);
     if (fitem != item) { /* item already there this shouldn't happen */

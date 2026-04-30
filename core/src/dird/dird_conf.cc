@@ -1213,7 +1213,7 @@ char* CatalogResource::display(POOLMEM* dst)
 {
   Mmsg(dst,
        "catalog=%s\ndb_name=%s\ndb_driver=%s\ndb_user=%s\n"
-       "db_password=%s\ndb_address=%s\ndb_port=%i\n"
+       "db_password=%s\ndb_address=%s\ndb_port=%" PRIu32 "\n"
        "db_socket=%s\n",
        resource_name_, NPRTB(db_name), NPRTB(db_driver), NPRTB(db_user),
        NPRTB(db_password.value), NPRTB(db_address), db_port, NPRTB(db_socket));
@@ -1474,7 +1474,7 @@ static std::string PrintConfigRun(RunResource* run)
   }
 
   if (run->MaxRunSchedTime) {
-    Mmsg(temp, "maxrunschedtime=%" PRIu64 " ", run->MaxRunSchedTime);
+    Mmsg(temp, "maxrunschedtime=%" PRId64 " ", run->MaxRunSchedTime);
     PmStrcat(run_str, temp.c_str());
   }
 
@@ -1755,7 +1755,7 @@ static std::string PrintConfigRun(RunResource* run)
   PmStrcpy(temp, "");
   for (i = 0; i < 24; i++) {
     if (BitIsSet(i, run->date_time_mask.hour)) {
-      Mmsg(temp, "at %02d:%02d", i, run->minute);
+      Mmsg(temp, "at %02d:%02" PRIu32, i, run->minute);
       PmStrcat(run_str, temp.c_str());
     }
   }

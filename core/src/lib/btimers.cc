@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,7 +66,8 @@ btimer_t* StartChildTimer(JobControlRecord* jcr, pid_t pid, uint32_t wait)
   wid->wd->interval = wait;
   RegisterWatchdog(wid->wd);
 
-  Dmsg3(debuglevel, "Start child timer %p, pid %" PRIiz " for %d secs.\n", wid,
+  Dmsg3(debuglevel,
+        "Start child timer %p, pid %" PRIiz " for %" PRIu32 " secs.\n", wid,
         static_cast<ssize_t>(pid), wait);
   return wid;
 }
@@ -138,7 +139,8 @@ btimer_t* StartThreadTimer(JobControlRecord* jcr, pthread_t tid, uint32_t wait)
 
   wid = btimer_start_common();
   if (wid == NULL) {
-    Dmsg1(debuglevel, "StartThreadTimer return NULL from common. wait=%d.\n",
+    Dmsg1(debuglevel,
+          "StartThreadTimer return NULL from common. wait=%" PRIu32 ".\n",
           wait);
     return NULL;
   }
@@ -151,7 +153,7 @@ btimer_t* StartThreadTimer(JobControlRecord* jcr, pthread_t tid, uint32_t wait)
   wid->wd->interval = wait;
   RegisterWatchdog(wid->wd);
 
-  Dmsg3(debuglevel, "Start thread timer %p tid %s for %d secs.\n", wid,
+  Dmsg3(debuglevel, "Start thread timer %p tid %s for %" PRIu32 " secs.\n", wid,
         edit_pthread(tid, ed1, sizeof(ed1)), wait);
 
   return wid;
@@ -185,9 +187,10 @@ btimer_t* StartBsockTimer(BareosSocket* bsock, uint32_t wait)
   wid->wd->interval = wait;
   RegisterWatchdog(wid->wd);
 
-  Dmsg4(debuglevel, "Start bsock timer %p tid=%s for %d secs at %llu\n", wid,
-        edit_pthread(wid->tid, ed1, sizeof(ed1)), wait,
-        static_cast<long long unsigned>(time(NULL)));
+  Dmsg4(debuglevel,
+        "Start bsock timer %p tid=%s for %" PRIu32 " secs at %" PRIu64 "\n",
+        wid, edit_pthread(wid->tid, ed1, sizeof(ed1)), wait,
+        static_cast<uint64_t>(time(NULL)));
 
   return wid;
 }
@@ -202,9 +205,9 @@ void StopBsockTimer(btimer_t* wid)
     return;
   }
 
-  Dmsg3(debuglevel, "Stop bsock timer %p tid=%s at %llu.\n", wid,
+  Dmsg3(debuglevel, "Stop bsock timer %p tid=%s at %" PRIu64 ".\n", wid,
         edit_pthread(wid->tid, ed1, sizeof(ed1)),
-        static_cast<long long unsigned>(time(NULL)));
+        static_cast<uint64_t>(time(NULL)));
   StopBtimer(wid);
 }
 
@@ -229,12 +232,12 @@ static void CallbackThreadTimer(watchdog_t* self)
   char ed1[50];
   btimer_t* wid = (btimer_t*)self->data;
 
-  Dmsg4(debuglevel, "thread timer %p kill %s tid=%p at %llu.\n", self,
+  Dmsg4(debuglevel, "thread timer %p kill %s tid=%p at %" PRIu64 ".\n", self,
         wid->type == TYPE_BSOCK ? "bsock" : "thread",
         edit_pthread(wid->tid, ed1, sizeof(ed1)),
-        static_cast<long long unsigned>(time(NULL)));
+        static_cast<uint64_t>(time(NULL)));
   if (wid->jcr) {
-    Dmsg2(debuglevel, "killed JobId=%u Job=%s\n", wid->jcr->JobId,
+    Dmsg2(debuglevel, "killed JobId=%" PRIu32 " Job=%s\n", wid->jcr->JobId,
           wid->jcr->Job);
   }
 

@@ -1131,13 +1131,13 @@ std::string FormatPrompts(const UaContext* ua,
                           const int window_width,
                           const int min_lines_threshold)
 {
-  unsigned int max_prompt_length = 1;
+  int max_prompt_length = 1;
 
   const int max_prompt_index_length = std::to_string(ua->num_prompts).length();
 
   for (int i = 1; i < ua->num_prompts; i++) {
-    if (strlen(ua->prompt[i]) > max_prompt_length) {
-      max_prompt_length = strlen(ua->prompt[i]);
+    if (static_cast<int>(strlen(ua->prompt[i])) > max_prompt_length) {
+      max_prompt_length = static_cast<int>(strlen(ua->prompt[i]));
     }
   }
 
@@ -1456,6 +1456,14 @@ drive_number_t GetStorageDrive(UaContext* ua, StorageResource* store)
           < 0) {
         drive = kInvalidDriveNumber; /* None */
       } else {
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
         sscanf(drivename, "Drive %hd", &drive);
       }
     }
@@ -1735,7 +1743,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         }
 
         InsertSelectedJobid(selected_jobids, jcr->JobId);
-        ua->SendMsg(T_("Selected Job %d for cancelling\n"), jcr->JobId);
+        ua->SendMsg(T_("Selected Job %" PRIu32 " for cancelling\n"),
+                    jcr->JobId);
       }
       endeach_jcr(jcr);
 
@@ -1793,6 +1802,14 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         }
       }
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
       sscanf(buf, "JobId=%d Job=%127s", &njobs, JobName);
       jcr = get_jcr_by_full_name(JobName);
       if (!jcr) {

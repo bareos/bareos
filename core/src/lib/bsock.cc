@@ -732,7 +732,7 @@ bool BareosSocket::EvaluateCleartextBareosHello(
           BareosVersionToMajorMinor v(version);
           Dmsg4(200,
                 "Identified from Bareos handshake: %s-%s recognized version: "
-                "%d.%d\n",
+                "%" PRIu32 ".%" PRIu32 "\n",
                 name.c_str(), code.c_str(), v.major, v.minor);
         } else {
           Dmsg2(200,

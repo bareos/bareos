@@ -364,7 +364,7 @@ static void eliminate_orphaned_path_records()
   lctx.count = 0;
   idx_tmp_name = nullptr;
 
-  db->FillQuery(query, BareosDb::SQL_QUERY::get_orphaned_paths_0);
+  db->FillQuery<BareosDb::SQL_QUERY::get_orphaned_paths_0>(query);
 
   printf(T_("Checking for orphaned Path entries. This may take some time!\n"));
   fflush(stdout);
@@ -678,7 +678,7 @@ static void repair_bad_paths()
   int i;
 
   printf(T_("Checking for Paths without a trailing slash\n"));
-  db->FillQuery(query, BareosDb::SQL_QUERY::get_bad_paths_0);
+  db->FillQuery<BareosDb::SQL_QUERY::get_bad_paths_0>(query);
   fflush(stdout);
   if (!MakeIdList(db, query.c_str(), &id_list)) { exit(BEXIT_FAILURE); }
   printf(T_("Found %d bad Path records.\n"), id_list.num_ids);

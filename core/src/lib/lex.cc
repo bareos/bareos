@@ -576,7 +576,8 @@ int LexGetToken(lexer* lf, int expect)
     ch = LexGetChar(lf);
     switch (lf->state) {
       case lex_none:
-        Dmsg2(debuglevel, "Lex state lex_none ch=%d,%x\n", ch, ch);
+        Dmsg2(debuglevel, "Lex state lex_none ch=%d,%x\n", ch,
+              static_cast<unsigned int>(ch));
         if (B_ISSPACE(ch)) break;
         if (B_ISALPHA(ch)) {
           if (lf->options[lexer::options::NoIdent]
@@ -679,7 +680,8 @@ int LexGetToken(lexer* lf, int expect)
         }
         break;
       case lex_comment:
-        Dmsg1(debuglevel, "Lex state lex_comment ch=%x\n", ch);
+        Dmsg1(debuglevel, "Lex state lex_comment ch=%x\n",
+              static_cast<unsigned int>(ch));
         if (ch == L_EOL) {
           lf->state = lex_none;
           if (expect != BCT_SKIP_EOL) { token = BCT_EOL; }
@@ -688,7 +690,8 @@ int LexGetToken(lexer* lf, int expect)
         }
         break;
       case lex_number:
-        Dmsg2(debuglevel, "Lex state lex_number ch=%x %c\n", ch, ch);
+        Dmsg2(debuglevel, "Lex state lex_number ch=%x %c\n",
+              static_cast<unsigned int>(ch), ch);
         if (ch == L_EOF) {
           token = BCT_ERROR;
           break;
@@ -713,10 +716,12 @@ int LexGetToken(lexer* lf, int expect)
           token = BCT_ERROR;
           break;
         }
-        Dmsg1(debuglevel, "Lex state lex_ip_addr ch=%x\n", ch);
+        Dmsg1(debuglevel, "Lex state lex_ip_addr ch=%x\n",
+              static_cast<unsigned int>(ch));
         break;
       case lex_string:
-        Dmsg1(debuglevel, "Lex state lex_string ch=%x\n", ch);
+        Dmsg1(debuglevel, "Lex state lex_string ch=%x\n",
+              static_cast<unsigned int>(ch));
         if (ch == L_EOF) {
           token = BCT_ERROR;
           break;
@@ -732,7 +737,8 @@ int LexGetToken(lexer* lf, int expect)
         add_str(lf, ch);
         break;
       case lex_identifier:
-        Dmsg2(debuglevel, "Lex state lex_identifier ch=%x %c\n", ch, ch);
+        Dmsg2(debuglevel, "Lex state lex_identifier ch=%x %c\n",
+              static_cast<unsigned int>(ch), ch);
         if (B_ISALPHA(ch)) {
           add_str(lf, ch);
           break;
@@ -756,7 +762,8 @@ int LexGetToken(lexer* lf, int expect)
         add_str(lf, ch);
         break;
       case lex_quoted_string:
-        Dmsg2(debuglevel, "Lex state lex_quoted_string ch=%x %c\n", ch, ch);
+        Dmsg2(debuglevel, "Lex state lex_quoted_string ch=%x %c\n",
+              static_cast<unsigned int>(ch), ch);
         if (ch == L_EOF) {
           token = BCT_ERROR;
           break;

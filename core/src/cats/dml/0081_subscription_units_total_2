@@ -17,6 +17,6 @@ FROM (
   SELECT
     COALESCE(SUM(count), 0) AS count_units,
     CEIL(COALESCE(SUM(size_gb)/1000, 0.0)) AS size_units,
-    %d AS configured_units
+    %u AS configured_units
   FROM client_aggregated
 ) t

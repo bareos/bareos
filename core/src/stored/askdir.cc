@@ -119,6 +119,14 @@ static bool DoGetVolumeInfo(DeviceControlRecord* dcr)
   }
   VolumeCatalogInfo vol;
   Dmsg1(debuglevel, "<dird %s", dir->msg);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   n = sscanf(dir->msg, OK_media, vol.VolCatName, &vol.VolCatJobs,
              &vol.VolCatFiles, &vol.VolCatBlocks, &vol.VolCatBytes,
              &vol.VolCatMounts, &vol.VolCatErrors, &vol.VolCatWrites,
@@ -399,7 +407,7 @@ bool StorageDaemonDeviceControlRecord::DirCreateJobmediaRecord(bool zero)
   WroteVol = false;
   if (zero) {
     // Send dummy place holder to avoid purging
-    dir->fsend(Create_job_media, jcr->Job, 0, 0, 0, 0, 0, 0, 0, 0,
+    dir->fsend(Create_job_media, jcr->Job, 0u, 0u, 0u, 0u, 0u, 0u, 0, 0,
                edit_uint64(VolMediaId, ed1));
   } else {
     dir->fsend(Create_job_media, jcr->Job, VolFirstIndex, VolLastIndex,

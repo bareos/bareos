@@ -320,8 +320,9 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
           return true;
         }
         while (!WriteRecordToBlock(out_jcr->sd_impl->dcr, rec)) {
-          Dmsg2(150, "!WriteRecordToBlock data_len=%d rem=%d\n", rec->data_len,
-                rec->remainder);
+          Dmsg2(150,
+                "!WriteRecordToBlock data_len=%" PRIu32 " rem=%" PRIu32 "\n",
+                rec->data_len, rec->remainder);
           if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
             Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
                   out_dev->print_name(), out_dev->bstrerror());
@@ -356,8 +357,8 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
   }
   records++;
   while (!WriteRecordToBlock(out_jcr->sd_impl->dcr, rec)) {
-    Dmsg2(150, "!WriteRecordToBlock data_len=%d rem=%d\n", rec->data_len,
-          rec->remainder);
+    Dmsg2(150, "!WriteRecordToBlock data_len=%" PRIu32 " rem=%" PRIu32 "\n",
+          rec->data_len, rec->remainder);
     if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
       Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
             out_dev->print_name(), out_dev->bstrerror());
@@ -400,13 +401,14 @@ static void GetSessionRecord(Device* dev,
       break;
   }
   Dmsg5(10,
-        "%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n",
+        "%s Record: VolSessionId=%u VolSessionTime=%u JobId=%d DataLen=%" PRIu32
+        "\n",
         rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
         rec->data_len);
   if (g_verbose) {
     Pmsg5(-1,
-          T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d "
-             "DataLen=%d\n"),
+          T_("%s Record: VolSessionId=%u VolSessionTime=%u JobId=%d "
+             "DataLen=%" PRIu32 "\n"),
           rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
           rec->data_len);
   }

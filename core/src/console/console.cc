@@ -712,7 +712,7 @@ static bool SelectDirector(const char* director,
 
     numdir = 0;
     foreach_res (director_resource_tmp, R_DIRECTOR) {
-      ConsoleOutputFormat(T_("%2d:  %s at %s:%d\n"), 1 + numdir++,
+      ConsoleOutputFormat(T_("%2d:  %s at %s:%" PRIu32 "\n"), 1 + numdir++,
                           director_resource_tmp->resource_name_,
                           director_resource_tmp->address,
                           director_resource_tmp->DIRport);
@@ -999,7 +999,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  ConsoleOutputFormat(T_("Connecting to Director %s:%d\n"),
+  ConsoleOutputFormat(T_("Connecting to Director %s:%" PRIu32 "\n"),
                       director_resource->address, director_resource->DIRport);
 
   utime_t heart_beat;

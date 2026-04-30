@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2015 Planets Communications B.V.
-   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -80,10 +80,12 @@ extern "C" int bndmp_fhdb_lmdb_add_dir(struct ndmlog* ixlog,
     struct fhdb_payload* payload;
     struct fhdb_state* fhdb_state = (struct fhdb_state*)nis->fhdb_state;
 
-    Dmsg3(100, "{ \"%s\", %llu , %llu},\n", raw_name, dir_node, node);
+    Dmsg3(100, "{ \"%s\", %" PRIu64 " , %" PRIu64 "},\n", raw_name, dir_node,
+          node);
     Dmsg3(100,
-          "bndmp_fhdb_lmdb_add_dir New dir \"%s\" - dirnode:[%llu] - "
-          "node:[%llu]\n",
+          "bndmp_fhdb_lmdb_add_dir New dir \"%s\" - dirnode:[%" PRIu64
+          "] - "
+          "node:[%" PRIu64 "]\n",
           raw_name, dir_node, node);
 
     // Make sure fhdb_state->pay_load is large enough.
@@ -107,7 +109,8 @@ extern "C" int bndmp_fhdb_lmdb_add_dir(struct ndmlog* ixlog,
     result = mdb_put(fhdb_state->db_rw_txn, fhdb_state->db_dbi, &key, &data, 0);
     switch (result) {
       case 0:
-        Dmsg3(debuglevel, "added file \"%s\", node=%llu, dir_node=%llu\n",
+        Dmsg3(debuglevel,
+              "added file \"%s\", node=%" PRIu64 ", dir_node=%" PRIu64 "\n",
               raw_name, payload->node, payload->dir_node);
         break;
       case MDB_TXN_FULL:
@@ -137,10 +140,11 @@ extern "C" int bndmp_fhdb_lmdb_add_dir(struct ndmlog* ixlog,
         }
         break;
       default:
-        Dmsg2(debuglevel, T_("Unable to insert new data at %llu: %s\n"),
+        Dmsg2(debuglevel, T_("Unable to insert new data at %" PRIu64 ": %s\n"),
               payload->node, mdb_strerror(result));
-        Jmsg2(nis->jcr, M_FATAL, 0, T_("Unable insert new data at %llu: %s\n"),
-              payload->node, mdb_strerror(result));
+        Jmsg2(nis->jcr, M_FATAL, 0,
+              T_("Unable insert new data at %" PRIu64 ": %s\n"), payload->node,
+              mdb_strerror(result));
         goto bail_out;
     }
   }
@@ -170,8 +174,8 @@ extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog* ixlog,
     struct fhdb_payload* payload;
     struct fhdb_state* fhdb_state = (struct fhdb_state*)nis->fhdb_state;
 
-    Dmsg1(100, "{ NULL, %llu , 0},\n", node);
-    Dmsg1(debuglevel, "bndmp_fhdb_lmdb_add_node node:[%llu]\n", node);
+    Dmsg1(100, "{ NULL, %" PRIu64 " , 0},\n", node);
+    Dmsg1(debuglevel, "bndmp_fhdb_lmdb_add_node node:[%" PRIu64 "]\n", node);
 
     /* Need to update which means we first get the existing data
      * and update the fields and write back. */
@@ -330,8 +334,9 @@ extern "C" int bndmp_fhdb_lmdb_add_dirnode_root(struct ndmlog* ixlog,
     struct fhdb_payload* payload;
     struct fhdb_state* fhdb_state = (struct fhdb_state*)nis->fhdb_state;
 
-    Dmsg1(100, "{ NULL, 0, %llu },\n", root_node);
-    Dmsg1(100, "bndmp_fhdb_lmdb_add_dirnode_root: New root node [%llu]\n",
+    Dmsg1(100, "{ NULL, 0, %" PRIu64 " },\n", root_node);
+    Dmsg1(100,
+          "bndmp_fhdb_lmdb_add_dirnode_root: New root node [%" PRIu64 "]\n",
           root_node);
 
     // Make sure fhdb_state->pay_load is large enough.
@@ -357,7 +362,7 @@ extern "C" int bndmp_fhdb_lmdb_add_dirnode_root(struct ndmlog* ixlog,
                      MDB_NOOVERWRITE);
     switch (result) {
       case 0:
-        Dmsg1(100, "new rootnode=%llu\n", root_node);
+        Dmsg1(100, "new rootnode=%" PRIu64 "\n", root_node);
         break;
       case MDB_TXN_FULL:
         /* Seems we filled the transaction.
@@ -574,7 +579,7 @@ static inline void CalculatePath(uint64_t node, fhdb_state* fhdb_state)
   struct fhdb_payload* payload;
   bool root_node_reached = false;
 
-  Dmsg1(100, "CalculatePath for node %llu\n", node);
+  Dmsg1(100, "CalculatePath for node %" PRIu64 "\n", node);
 
   PmStrcpy(fhdb_state->path, "");
   while (!result && !root_node_reached) {
@@ -659,7 +664,8 @@ static inline void ProcessLmdb(NIS* nis, struct fhdb_state* fhdb_state)
                   ? ndmp_fstat.fh_info.value
                   : 0);
         } else {
-          Dmsg1(100, "skipping node %lu because it has no valid node data\n",
+          Dmsg1(100,
+                "skipping node %" PRIu64 " because it has no valid node data\n",
                 node);
         }
         result = mdb_cursor_get(cursor, &rkey, &rdata, MDB_NEXT);

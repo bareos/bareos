@@ -627,8 +627,8 @@ bool DotBvfsGetJobidsCmd(UaContext* ua, const char*)
     /* If we have the "all" option, we do a search on all defined fileset for
      * this client */
     if (FindArg(ua, "all") > 0) {
-      ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_sel_filesetid,
-                        edit_int64(jr.ClientId, ed1));
+      ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_filesetid>(
+          query, edit_int64(jr.ClientId, ed1));
       ua->db->GetQueryDbids(ua->jcr, query, ids);
     } else {
       ids.num_ids = 1;
@@ -761,8 +761,8 @@ bool DotJobstatusCmd(UaContext* ua, const char*)
 
   if (!OpenClientDb(ua)) { return false; }
 
-  ua->db->FillQuery(select, BareosDb::SQL_QUERY::get_jobstatus_details,
-                    where.c_str());
+  ua->db->FillQuery<BareosDb::SQL_QUERY::get_jobstatus_details>(select,
+                                                                where.c_str());
 
   ua->send->ArrayStart("jobstatus");
   retval = ua->db->ListSqlQuery(ua->jcr, select.c_str(), ua->send, HORZ_LIST,

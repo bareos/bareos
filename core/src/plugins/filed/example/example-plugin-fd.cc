@@ -1,7 +1,7 @@
 /*
 
    Copyright (C) 2007-2012 Kern Sibbald
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    You may freely use this code to create your own plugin provided
    it is to write a plugin for Bareos licensed under AGPLv3
@@ -83,8 +83,8 @@ loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   bareos_core_functions
       = lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
-  printf("plugin: Loaded: size=%d version=%d\n", bareos_core_functions->size,
-         bareos_core_functions->version);
+  printf("plugin: Loaded: size=%" PRIu32 " version=%" PRIu32 "\n",
+         bareos_core_functions->size, bareos_core_functions->version);
 
   *plugin_information = &pluginInfo; /* return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
@@ -201,7 +201,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
       printf("plugin: backup command=%s\n", NPRT((char*)value));
       break;
     default:
-      printf("plugin: unknown event=%d\n", event->eventType);
+      printf("plugin: unknown event=%" PRIu32 "\n", event->eventType);
   }
   bareos_core_functions->getBareosValue(ctx, bVarFDName, (void*)&name);
 
@@ -233,10 +233,10 @@ static bRC pluginIO(PluginContext*, io_pkt* io)
       printf("plugin: IO_OPEN\n");
       break;
     case IO_READ:
-      printf("plugin: IO_READ buf=%p len=%d\n", io->buf, io->count);
+      printf("plugin: IO_READ buf=%p len=%" PRId32 "\n", io->buf, io->count);
       break;
     case IO_WRITE:
-      printf("plugin: IO_WRITE buf=%p len=%d\n", io->buf, io->count);
+      printf("plugin: IO_WRITE buf=%p len=%" PRId32 "\n", io->buf, io->count);
       break;
     case IO_CLOSE:
       printf("plugin: IO_CLOSE\n");

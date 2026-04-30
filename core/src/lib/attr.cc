@@ -79,6 +79,14 @@ int UnpackAttributesRecord(JobControlRecord* jcr,
    * */
   attr->stream = stream;
   Dmsg1(debuglevel, "Attr: %s\n", rec);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(rec, "%d %d", &attr->file_index, &attr->type) != 2) {
     Jmsg(jcr, M_FATAL, 0, T_("Error scanning attributes: %s\n"), rec);
     Dmsg1(debuglevel, "\nError scanning attributes. %s\n", rec);
@@ -271,7 +279,7 @@ static const char* attr_stat_to_str(PoolMem& resultbuffer,
   if (!jcr->id_list) { jcr->id_list = new_guid_list(); }
   guid = jcr->id_list;
   p = encode_mode(attr->statp.st_mode, buf);
-  p += snprintf(p, 1000, "  %2d ", (uint32_t)attr->statp.st_nlink);
+  p += snprintf(p, 1000, "  %2u ", (uint32_t)attr->statp.st_nlink);
   p += snprintf(p, 1000, "%-8.8s %-8.8s",
                 guid->uid_to_name(attr->statp.st_uid, en1, sizeof(en1)),
                 guid->gid_to_name(attr->statp.st_gid, en2, sizeof(en2)));

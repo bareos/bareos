@@ -213,7 +213,7 @@ struct RestoreObjectDbRecord {
   char* plugin_name = nullptr;
   uint32_t object_len = 0;
   uint32_t object_full_len = 0;
-  uint32_t object_index = 0;
+  int32_t object_index = 0;
   int32_t object_compression = 0;
   uint32_t FileIndex = 0;
   uint32_t Stream = 0;
@@ -519,13 +519,15 @@ class BareosDb : public BareosDbQueryEnum {
   uint32_t last_hash_key_ = 0; /**< Last hash key lookup on query table */
   POOLMEM* fname = nullptr;    /**< Filename only */
   POOLMEM* path = nullptr;     /**< Path only */
-  POOLMEM* cached_path = nullptr;   /**< Cached path name */
-  POOLMEM* esc_name = nullptr;      /**< Escaped file name */
-  POOLMEM* esc_path = nullptr;      /**< Escaped path name */
-  POOLMEM* esc_obj = nullptr;       /**< Escaped restore object */
-  POOLMEM* cmd = nullptr;           /**< SQL command string */
-  POOLMEM* errmsg = nullptr;        /**< Nicely edited error message */
-  const char** queries = nullptr;   /**< table of query texts */
+  POOLMEM* cached_path = nullptr; /**< Cached path name */
+  POOLMEM* esc_name = nullptr;    /**< Escaped file name */
+  POOLMEM* esc_path = nullptr;    /**< Escaped path name */
+  POOLMEM* esc_obj = nullptr;     /**< Escaped restore object */
+  POOLMEM* cmd = nullptr;         /**< SQL command string */
+  POOLMEM* errmsg = nullptr;      /**< Nicely edited error message */
+  static constexpr const char* queries[] = {
+#include "postgresql_queries.inc"
+  }; /**< table of query texts */
   static const char* query_names[]; /**< table of query names */
   int num_rows_ = 0; /**< Number of rows returned by last query */
  private:
@@ -862,23 +864,11 @@ class BareosDb : public BareosDbQueryEnum {
                     e_list_type type,
                     const bool verbose);
   bool ListSqlQuery(JobControlRecord* jcr,
-                    SQL_QUERY query,
-                    OutputFormatter* sendit,
-                    e_list_type type,
-                    const bool verbose);
-  bool ListSqlQuery(JobControlRecord* jcr,
                     const char* query,
                     OutputFormatter* sendit,
                     e_list_type type,
                     const char* description,
                     const bool verbose = false,
-                    const CollapseMode collapse = CollapseMode::NoCollapse);
-  bool ListSqlQuery(JobControlRecord* jcr,
-                    SQL_QUERY query,
-                    OutputFormatter* sendit,
-                    e_list_type type,
-                    const char* description,
-                    const bool verbose,
                     const CollapseMode collapse = CollapseMode::NoCollapse);
 
   void ListClientRecords(JobControlRecord* jcr,
@@ -895,14 +885,47 @@ class BareosDb : public BareosDbQueryEnum {
                            OutputFormatter* sendit);
 
   /* sql_query.cc */
-  const char* get_predefined_query_name(SQL_QUERY query);
-  const char* get_predefined_query(SQL_QUERY query);
+  static constexpr const char* get_predefined_query_name(
+      BareosDb::SQL_QUERY query)
+  {
+    return query_names[static_cast<int>(query)];
+  }
 
-  void FillQuery(SQL_QUERY predefined_query, ...);
+  static constexpr const char* get_predefined_query(BareosDb::SQL_QUERY query)
+  {
+    return queries[static_cast<int>(query)];
+  }
+
+  static constexpr void printf_check(const char*, ...) PRINTF_LIKE(1, 2) {}
+
+  template <SQL_QUERY query, typename... Args>
+  void FillQuery(POOLMEM*& storage, Args&&... args)
+  {
+    printf_check(queries[static_cast<int>(query)], args...);
+    FillQuery(storage, query, std::forward<Args>(args)...);
+  }
+
+  template <SQL_QUERY query, typename... Args>
+  void FillQuery(PoolMem& storage, Args&&... args)
+  {
+    printf_check(queries[static_cast<int>(query)], args...);
+    FillQuery(storage, query, std::forward<Args>(args)...);
+  }
+
+ private:
   void FillQuery(POOLMEM*& query, SQL_QUERY predefined_query, ...);
   void FillQuery(PoolMem& query, SQL_QUERY predefined_query, ...);
 
-  bool SqlQuery(SQL_QUERY query, ...);
+ public:
+  template <SQL_QUERY query, typename... Args> bool SqlQuery(Args&&... args)
+  {
+    PoolMem formatted(PM_MESSAGE);
+
+    FillQuery<query>(formatted, std::forward<Args>(args)...);
+
+    return SqlQuery(formatted.c_str());
+  }
+
   bool SqlQuery(const char* query);
   bool SqlExec(const char* query);  // like SqlQuery, but does not store result
   bool SqlQuery(const char* query, DB_RESULT_HANDLER* ResultHandler, void* ctx);

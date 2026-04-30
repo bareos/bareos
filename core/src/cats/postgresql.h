@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -115,8 +115,6 @@ class BareosDbPostgresql : public BareosDb {
   PGconn* db_handle_;
   PGresult* result_;
   POOLMEM* buf_; /**< Buffer to manipulate queries */
-  static const char*
-      query_definitions[]; /**< table of predefined sql queries */
 };
 
 #endif  /* HAVE_POSTGRESQL */

@@ -593,7 +593,7 @@ static
       if (fd) {
         fd->SetTimedOut();
         jcr->MyThreadSendSignal(kTimeoutSignal);
-        Dmsg1(100, "term_stored killing JobId=%d\n", jcr->JobId);
+        Dmsg1(100, "term_stored killing JobId=%" PRIu32 "\n", jcr->JobId);
         /* ***FIXME*** wiffle through all dcrs */
         if (jcr->sd_impl->dcr && jcr->sd_impl->dcr->dev
             && jcr->sd_impl->dcr->dev->blocked()) {

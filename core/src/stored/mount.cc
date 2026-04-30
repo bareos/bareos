@@ -108,7 +108,7 @@ mount_next_vol:
   }
 
   if (jcr->IsJobCanceled()) {
-    Jmsg(jcr, M_FATAL, 0, T_("Job %d canceled.\n"), jcr->JobId);
+    Jmsg(jcr, M_FATAL, 0, T_("Job %" PRIu32 " canceled.\n"), jcr->JobId);
     goto bail_out;
   }
   recycle = false;
@@ -330,7 +330,8 @@ read_volume:
     }
 
     dev->VolCatInfo.VolCatMounts++; /* Update mounts */
-    Dmsg1(150, "update volinfo mounts=%d\n", dev->VolCatInfo.VolCatMounts);
+    Dmsg1(150, "update volinfo mounts=%" PRIu32 "\n",
+          dev->VolCatInfo.VolCatMounts);
     if (!dcr->DirUpdateVolumeInfo(is_labeloperation::False)) { goto bail_out; }
 
     /* Return an empty block */
@@ -621,8 +622,9 @@ bool DeviceControlRecord::is_eod_valid()
        * that the database says we should be. */
       if (dev->VolCatInfo.VolCatFiles == dev->GetFile()) {
         Jmsg(jcr, M_INFO, 0,
-             T_("Ready to append to end of Volume \"%s\" at file=%d.\n"),
-             VolumeName, dev->GetFile());
+              T_("Ready to append to end of Volume \"%s\" at file=%" PRIu32
+                 ".\n"),
+              VolumeName, dev->GetFile());
       } else if (dev->GetFile() > dev->VolCatInfo.VolCatFiles) {
         Jmsg(jcr, M_WARNING, 0,
              T_("For Volume \"%s\":\n"
@@ -847,8 +849,8 @@ bool DeviceControlRecord::IsTapePositionOk()
     if (file >= 0 && file != (int32_t)dev->GetFile()) {
       Jmsg(jcr, M_ERROR, 0,
            T_("Invalid tape position on volume \"%s\""
-              " on device %s. Expected %d, got %d\n"),
-           dev->VolHdr.VolumeName, dev->print_name(), dev->GetFile(), file);
+               " on device %s. Expected %" PRIu32 ", got %d\n"),
+            dev->VolHdr.VolumeName, dev->print_name(), dev->GetFile(), file);
       /* If the current file is greater than zero, it means we probably
        *  have some bad count of EOF marks, so mark tape in error.  Otherwise
        *  the operator might have moved the tape, so we just release it

@@ -163,6 +163,14 @@ static inline bool native_send_label_request(UaContext* ua,
   uint64_t VolBytes{0};
   while (BgetDirmsg(sd, true) >= 0) {
     ua->SendMsg("%s", sd->msg);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
     if (sscanf(sd->msg, "3000 OK label. VolFiles=%lu VolBytes=%llu ", &VolFiles,
                &VolBytes)
         == 2) {

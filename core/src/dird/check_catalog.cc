@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -192,8 +192,8 @@ bool CheckCatalog(cat_op mode)
     }
     /* cleanup old job records */
     if (mode == UPDATE_AND_FIX) {
-      db->SqlQuery(BareosDb::SQL_QUERY::cleanup_created_job);
-      db->SqlQuery(BareosDb::SQL_QUERY::cleanup_running_job);
+      db->SqlQuery<BareosDb::SQL_QUERY::cleanup_created_job>();
+      db->SqlQuery<BareosDb::SQL_QUERY::cleanup_running_job>();
     }
 
     /* Set type in global for debugging */

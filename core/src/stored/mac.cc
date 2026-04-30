@@ -50,11 +50,12 @@
 namespace {
 // Responses sent to the Director
 inline constexpr const char Job_end[]
-    = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+    = "3099 Job %s end JobStatus=%d JobFiles=%" PRIu32
+      " JobBytes=%s JobErrors=%" PRIu32 "\n";
 
 // Responses received from Storage Daemon
 inline constexpr const char OK_start_replicate[]
-    = "3000 OK start replicate ticket = %d\n";
+    = "3000 OK start replicate ticket = %" PRIu32 "\n";
 inline constexpr const char OK_replicate[] = "3000 OK replicate data\n";
 inline constexpr const char OK_end_replicate[] = "3000 OK end replicate\n";
 inline constexpr const char OK_data[] = "3000 OK data\n";
@@ -152,7 +153,8 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr,
         }
         jcr->setJobType(sos_label.JobType);
         jcr->setJobLevel(sos_label.JobLevel);
-        Dmsg1(200, "joblevel from SOS_LABEL is now %c\n", sos_label.JobLevel);
+        Dmsg1(200, "joblevel from SOS_LABEL is now %c\n",
+              static_cast<int>(sos_label.JobLevel));
 
         // make sure this volume wasn't written by bacula 1.26 or earlier
         ASSERT(sos_label.VerNum >= 11);
@@ -201,7 +203,9 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr,
   rec->VolSessionId = jcr->VolSessionId;
   rec->VolSessionTime = jcr->VolSessionTime;
 
-  Dmsg5(200, "before write JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
+  Dmsg5(200,
+        "before write JobId=%" PRIu32 " FI=%s SessId=%" PRIu32
+        " Strm=%s len=%" PRIu32 "\n",
         jcr->JobId, FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
         stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
 
@@ -225,7 +229,10 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr,
   }
 
   while (!WriteRecordToBlock(jcr->sd_impl->dcr, jcr->sd_impl->dcr->after_rec)) {
-    Dmsg4(200, "!WriteRecordToBlock blkpos=%u:%u len=%d rem=%d\n", dev->file,
+    Dmsg4(200,
+          "!WriteRecordToBlock blkpos=%u:%u len=%" PRIu32 " rem=%" PRIu32
+          "\n",
+          dev->file,
           dev->block_num, jcr->sd_impl->dcr->after_rec->data_len,
           jcr->sd_impl->dcr->after_rec->remainder);
     if (!jcr->sd_impl->dcr->WriteBlockToDevice()) {
@@ -246,7 +253,8 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr,
   jcr->JobBytes += jcr->sd_impl->dcr->after_rec
                        ->data_len; /* increment bytes of this job */
 
-  Dmsg5(500, "wrote_record JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
+  Dmsg5(500, "wrote_record JobId=%" PRIu32 " FI=%s SessId=%" PRIu32
+              " Strm=%s len=%" PRIu32 "\n",
         jcr->JobId, FI_to_ascii(buf1, jcr->sd_impl->dcr->after_rec->FileIndex),
         jcr->sd_impl->dcr->after_rec->VolSessionId,
         stream_to_ascii(buf2, jcr->sd_impl->dcr->after_rec->Stream,
@@ -347,7 +355,7 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr,
 
   // Send a header when needed.
   if (send_header) {
-    if (!sd->fsend("%" PRIu32 " %" PRId32 " 0", rec->FileIndex, rec->Stream)) {
+    if (!sd->fsend("%d %" PRId32 " 0", rec->FileIndex, rec->Stream)) {
       if (!jcr->IsJobCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
               sd->bstrerror());
@@ -377,7 +385,8 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr,
   jcr->JobBytes += sd->message_length;
   sd->msg = msgsave;
 
-  Dmsg5(200, "wrote_record JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
+  Dmsg5(200, "wrote_record JobId=%" PRIu32 " FI=%s SessId=%" PRIu32
+              " Strm=%s len=%" PRIu32 "\n",
         jcr->JobId, FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
         stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
 
@@ -530,6 +539,14 @@ bool DoMacRun(JobControlRecord* jcr)
     // Expect to receive back the Ticket number.
     if (BgetMsg(sd) >= 0) {
       Dmsg1(110, "<stored: %s", sd->msg);
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
       if (sscanf(sd->msg, OK_start_replicate, &jcr->sd_impl->Ticket) != 1) {
         Jmsg(jcr, M_FATAL, 0, T_("Bad response to start replicate: %s\n"),
              sd->msg);

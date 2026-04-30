@@ -299,7 +299,7 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   block = dcr->block;       /* save block */
   dcr->block = rdcr->block; /* make read and write block the same */
 
-  Dmsg1(800, "read/write block size = %d\n", block->buf_len);
+  Dmsg1(800, "read/write block size = %" PRIu32 "\n", block->buf_len);
   lseek(rdcr->spool_fd, 0, SEEK_SET); /* rewind */
 
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)

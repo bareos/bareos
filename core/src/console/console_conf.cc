@@ -234,7 +234,7 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
         break;
       }
       default:
-        Emsg1(M_ERROR_TERM, 0, "Unknown resource type: %d\n",
+        Emsg1(M_ERROR_TERM, 0, "Unknown resource type: %" PRIu32 "\n",
               resources[type].rcode);
         return false;
     }

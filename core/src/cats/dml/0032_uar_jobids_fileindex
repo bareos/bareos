@@ -12,5 +12,6 @@ WHERE Job.JobId IN (%s)
   AND Client.Name='%s'
   AND Job.ClientId=Client.ClientId
   AND Path.PathId=File.PathId
+  AND TYPE='%c'
 ORDER BY Job.StartTime DESC
 LIMIT 1

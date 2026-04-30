@@ -74,7 +74,7 @@ static void StatusContentJson(UaContext* ua, StorageResource* store);
 
 inline constexpr const char OKdotstatus[] = "1000 OK .status\n";
 inline constexpr const char DotStatusJob[]
-    = "JobId=%s JobStatus=%c JobErrors=%d\n";
+    = "JobId=%s JobStatus=%c JobErrors=%" PRIu32 "\n";
 
 static void ClientStatus(UaContext* ua, ClientResource* client, char* cmd)
 {
@@ -132,7 +132,7 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
             = RecentJobResultsList::GetMostRecentJobResult();
         if (ua->AclAccessOk(Job_ACL, job.Job)) {
           ua->SendMsg(DotStatusJob, edit_int64(job.JobId, ed1), job.JobStatus,
-                      job.Errors);
+                      static_cast<uint32_t>(job.Errors));
         }
       }
     } else if (Bstrcasecmp(ua->argk[2], "header")) {
@@ -294,7 +294,7 @@ static void DoAllStatus(UaContext* ua)
     }
     if (!found) {
       unique_store[i++] = store;
-      Dmsg2(40, "Stuffing: %s:%d\n", store->address, store->SDport);
+      Dmsg2(40, "Stuffing: %s:%" PRIu32 "\n", store->address, store->SDport);
     }
   }
 
@@ -327,7 +327,7 @@ static void DoAllStatus(UaContext* ua)
     }
     if (!found) {
       unique_client[i++] = client;
-      Dmsg2(40, "Stuffing: %s:%d\n", client->address, client->FDport);
+      Dmsg2(40, "Stuffing: %s:%" PRIu32 "\n", client->address, client->FDport);
     }
   }
 
@@ -481,10 +481,11 @@ std::string get_subscription_status_checksum_source_text(UaContext* ua,
   PoolMem query(PM_MESSAGE);
   OutputFormatter output_text
       = OutputFormatter(pm_append, &subscriptions, nullptr, nullptr);
-  ua->db->FillQuery(query, BareosDb::SQL_QUERY::subscription_units_total_2,
-                    ua->db->get_predefined_query(
-                        BareosDb::SQL_QUERY::subscription_with_clause_0),
-                    me->subscriptions);
+  ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_units_total_2>(
+      query,
+      ua->db->get_predefined_query(
+          BareosDb::SQL_QUERY::subscription_with_clause_0),
+      me->subscriptions);
   ua->db->ListSqlQuery(ua->jcr, query.c_str(), &output_text, VERT_LIST, false);
   std::string checksum_source
       = salt + "\n" + timestamp + "\n" + subscriptions.c_str();
@@ -539,10 +540,11 @@ static bool DoSubscriptionStatus(UaContext* ua)
     }
     ua->SendMsg(T_("\nDetailed backup unit report for client '%s':\n"), client);
     PoolMem query(PM_MESSAGE);
-    ua->db->FillQuery(query, BareosDb::SQL_QUERY::subscription_client_detail_2,
-                      ua->db->get_predefined_query(
-                          BareosDb::SQL_QUERY::subscription_with_clause_0),
-                      client);
+    ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_client_detail_2>(
+        query,
+        ua->db->get_predefined_query(
+            BareosDb::SQL_QUERY::subscription_with_clause_0),
+        client);
 
     ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
                          "unit-detail", true);
@@ -566,11 +568,12 @@ static bool DoSubscriptionStatus(UaContext* ua)
     ua->SendMsg(T_("\nDetailed backup unit report:\n"));
 
     PoolMem query(PM_MESSAGE);
-    ua->db->FillQuery(query, BareosDb::SQL_QUERY::subscription_units_3,
-                      ua->db->get_predefined_query(
-                          BareosDb::SQL_QUERY::subscription_with_clause_0),
-                      kw_anon ? "client_anon" : "client_name",
-                      kw_anon ? "client_id" : "client_name");
+    ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_units_3>(
+        query,
+        ua->db->get_predefined_query(
+            BareosDb::SQL_QUERY::subscription_with_clause_0),
+        kw_anon ? "client_anon" : "client_name",
+        kw_anon ? "client_id" : "client_name");
 
     ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
                          "unit-detail", true);
@@ -578,12 +581,12 @@ static bool DoSubscriptionStatus(UaContext* ua)
   if (kw_all || kw_clients) {
     ua->SendMsg(T_("\nBackup unit report aggregated by client:\n"));
     PoolMem query(PM_MESSAGE);
-    ua->db->FillQuery(query,
-                      BareosDb::SQL_QUERY::subscription_units_client_total_3,
-                      ua->db->get_predefined_query(
-                          BareosDb::SQL_QUERY::subscription_with_clause_0),
-                      kw_anon ? "client_anon" : "client_name",
-                      kw_anon ? "client_id" : "client_name");
+    ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_units_client_total_3>(
+        query,
+        ua->db->get_predefined_query(
+            BareosDb::SQL_QUERY::subscription_with_clause_0),
+        kw_anon ? "client_anon" : "client_name",
+        kw_anon ? "client_id" : "client_name");
 
     ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
                          "unit-clients", true);
@@ -595,10 +598,9 @@ static bool DoSubscriptionStatus(UaContext* ua)
   if (kw_all || kw_plugins) {
     ua->SendMsg(T_("\nBackup unit report aggregated by plugin:\n"));
     PoolMem query(PM_MESSAGE);
-    ua->db->FillQuery(query,
-                      BareosDb::SQL_QUERY::subscription_units_plugin_total_1,
-                      ua->db->get_predefined_query(
-                          BareosDb::SQL_QUERY::subscription_with_clause_0));
+    ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_units_plugin_total_1>(
+        query, ua->db->get_predefined_query(
+                   BareosDb::SQL_QUERY::subscription_with_clause_0));
 
     ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
                          "unit-plugins", true);
@@ -606,10 +608,11 @@ static bool DoSubscriptionStatus(UaContext* ua)
 
   ua->SendMsg(T_("\nBackup unit summary:\n"));
   PoolMem query(PM_MESSAGE);
-  ua->db->FillQuery(query, BareosDb::SQL_QUERY::subscription_units_total_2,
-                    ua->db->get_predefined_query(
-                        BareosDb::SQL_QUERY::subscription_with_clause_0),
-                    me->subscriptions);
+  ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_units_total_2>(
+      query,
+      ua->db->get_predefined_query(
+          BareosDb::SQL_QUERY::subscription_with_clause_0),
+      me->subscriptions);
   ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, VERT_LIST,
                        "unit-summary", true, BareosDb::CollapseMode::Collapse);
   std::string checksum_source
@@ -1185,11 +1188,12 @@ static void ListRunningJobs(UaContext* ua)
 
     if (ua->api) {
       BashSpaces(jcr->comment);
-      ua->SendMsg(T_("%6d\t%-6s\t%-20s\t%s\t%s\n"), jcr->JobId, level, jcr->Job,
-                  msg, jcr->comment);
+      ua->SendMsg(T_("%6" PRIu32 "\t%-6s\t%-20s\t%s\t%s\n"), jcr->JobId, level,
+                  jcr->Job, msg, jcr->comment);
       UnbashSpaces(jcr->comment);
     } else {
-      ua->SendMsg(T_("%6d %-6s  %-20s %s\n"), jcr->JobId, level, jcr->Job, msg);
+      ua->SendMsg(T_("%6" PRIu32 " %-6s  %-20s %s\n"), jcr->JobId, level,
+                  jcr->Job, msg);
       /* Display comments if any */
       if (*jcr->comment) {
         ua->SendMsg(T_("               %-30s\n"), jcr->comment);
@@ -1276,13 +1280,13 @@ static void ListTerminatedJobs(UaContext* ua)
         break;
     }
     if (ua->api) {
-      ua->SendMsg(T_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId, level,
-                  edit_uint64_with_commas(je.JobFiles, b1),
+      ua->SendMsg(T_("%6" PRIu32 "\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
+                  je.JobId, level, edit_uint64_with_commas(je.JobFiles, b1),
                   edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
                   JobName);
     } else {
-      ua->SendMsg(T_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
-                  edit_uint64_with_commas(je.JobFiles, b1),
+      ua->SendMsg(T_("%6" PRIu32 "  %-6s %8s %10s  %-7s  %-8s %s\n"),
+                  je.JobId, level, edit_uint64_with_commas(je.JobFiles, b1),
                   edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
                   JobName);
     }

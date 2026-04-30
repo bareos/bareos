@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -80,8 +80,8 @@ BAREOS_EXPORT bRC loadPlugin(bDirInfo* lbareos_plugin_interface_version,
   bareos_core_functions
       = lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
-  printf("plugin: Loaded: size=%d version=%d\n", bareos_core_functions->size,
-         bareos_core_functions->version);
+  printf("plugin: Loaded: size=%" PRIu32 " version=%" PRIu32 "\n",
+         bareos_core_functions->size, bareos_core_functions->version);
 
   *plugin_information = &pluginInfo; /* return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* return pointer to our functions */

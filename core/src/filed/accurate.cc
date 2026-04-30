@@ -222,7 +222,9 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
         break;
       case 'n': /** Number of links */
         if (statc.st_nlink != ff_pkt->statp.st_nlink) {
-          Dmsg3(debuglevel - 1, "%s      st_nlink differ. Cat: %d File: %d\n",
+          Dmsg3(debuglevel - 1,
+                "%s      st_nlink differ. Cat: %" PRIu32 " File: %" PRIu32
+                "\n",
                 fname, (uint32_t)statc.st_nlink,
                 (uint32_t)ff_pkt->statp.st_nlink);
           status = true;
@@ -333,6 +335,14 @@ bool AccurateCmd(JobControlRecord* jcr)
 
   if (jcr->IsJobCanceled()) { return true; }
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, "accurate files=%u", &accurate_max_file_count) != 1) {
     dir->fsend(T_("2991 Bad accurate command\n"));
     return false;

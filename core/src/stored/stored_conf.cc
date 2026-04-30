@@ -324,7 +324,7 @@ static void StoreMaxblocksize(lexer* lc,
   if (GetItemVariable<uint32_t>(*item) > MAX_BLOCK_LENGTH) {
     scan_err(lc,
              T_("Maximum Block Size configured value %u is greater than "
-                "allowed maximum: %u"),
+                "allowed maximum: %d"),
              GetItemVariable<uint32_t>(*item), MAX_BLOCK_LENGTH);
   }
 }

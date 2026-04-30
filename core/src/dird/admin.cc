@@ -55,7 +55,8 @@ bool do_admin(JobControlRecord* jcr)
 {
   jcr->dir_impl->jr.JobId = jcr->JobId;
 
-  Jmsg(jcr, M_INFO, 0, T_("Start Admin JobId %d, Job=%s\n"), jcr->JobId,
+  Jmsg(jcr, M_INFO, 0, T_("Start Admin JobId %" PRIu32 ", Job=%s\n"),
+       jcr->JobId,
        jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
@@ -107,7 +108,7 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
 
   Jmsg(jcr, msg_type, 0,
        T_("BAREOS %s (%s): %s\n"
-          "  JobId:                  %d\n"
+           "  JobId:                  %" PRIu32 "\n"
           "  Job:                    %s\n"
           "  Scheduled time:         %s\n"
           "  Start time:             %s\n"

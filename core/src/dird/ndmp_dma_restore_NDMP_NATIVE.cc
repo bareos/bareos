@@ -201,7 +201,8 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
         }
 
         Jmsg(jcr, M_INFO, 0,
-             T_("Namelist add: node:%llu, info:%llu, name:\"%s\" \n"),
+             T_("Namelist add: node:%" PRIu64 ", info:%" PRIu64
+                ", name:\"%s\" \n"),
              node->fhnode, node->fhinfo, restore_pathname.c_str());
 
         AddToNamelist(job, restore_pathname.c_str() + len, restore_prefix,
@@ -212,7 +213,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
       } else {
         Jmsg(jcr, M_INFO, 0,
              T_("not added node \"%s\" to namelist because "
-                "of missing fhinfo: node:%llu info:%llu\n"),
+                "of missing fhinfo: node:%" PRIu64 " info:%" PRIu64 "\n"),
              restore_pathname.c_str(), node->fhnode, node->fhinfo);
       }
     }
@@ -345,7 +346,8 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
   }
 
   if (!unreserve_ndmp_tapedevice_for_job(store, jcr)) {
-    Jmsg(jcr, M_ERROR, 0, "could not free ndmp tape device %s from job %d",
+    Jmsg(jcr, M_ERROR, 0,
+         "could not free ndmp tape device %s from job %" PRIu32,
          ndmp_job.tape_device, jcr->JobId);
   }
 
@@ -380,7 +382,8 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
 
 cleanup_ndmp:
   if (!unreserve_ndmp_tapedevice_for_job(store, jcr)) {
-    Jmsg(jcr, M_ERROR, 0, "could not free ndmp tape device %s from job %d",
+    Jmsg(jcr, M_ERROR, 0,
+         "could not free ndmp tape device %s from job %" PRIu32,
          ndmp_job.tape_device, jcr->JobId);
   }
   // Only need to cleanup when things are initialized.
@@ -418,7 +421,7 @@ bool DoNdmpRestoreNdmpNative(JobControlRecord* jcr)
   }
   Dmsg0(20, "Updated job start record\n");
 
-  Dmsg1(20, "RestoreJobId=%d\n", jcr->dir_impl->res.job->RestoreJobId);
+  Dmsg1(20, "RestoreJobId=%" PRIu32 "\n", jcr->dir_impl->res.job->RestoreJobId);
 
   // Validate the Job to have a NDMP client.
   if (!NdmpValidateClient(jcr)) { return false; }

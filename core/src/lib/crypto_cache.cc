@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -313,8 +313,9 @@ void DumpCryptoCache(int fd)
     }
   }
 
-  len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, T_("Volumename"),
-             max_key_length, T_("EncryptionKey"), T_("Added"), T_("Expires"));
+  len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", static_cast<int>(max_vol_length),
+             T_("Volumename"), static_cast<int>(max_key_length),
+             T_("EncryptionKey"), T_("Added"), T_("Expires"));
 
   if (write(fd, msg.c_str(), len) <= 0) {
     BErrNo be;
@@ -323,8 +324,9 @@ void DumpCryptoCache(int fd)
   foreach_dlist (cce, cached_crypto_keys) {
     bstrutime(dt1, sizeof(dt1), cce->added);
     bstrutime(dt2, sizeof(dt2), cce->added + CRYPTO_CACHE_MAX_AGE);
-    len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, cce->VolumeName,
-               max_key_length, cce->EncryptionKey, dt1, dt2);
+    len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", static_cast<int>(max_vol_length),
+               cce->VolumeName, static_cast<int>(max_key_length),
+               cce->EncryptionKey, dt1, dt2);
 
     if (write(fd, msg.c_str(), len) <= 0) {
       BErrNo be;

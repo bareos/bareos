@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -278,18 +278,18 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   if (statp.st_mtime != ff_pkt->statp.st_mtime) {
     Jmsg(jcr, M_ERROR, 0, T_("%s: mtime changed during backup.\n"),
          ff_pkt->fname);
-    Dmsg3(50, "%s mtime (%lld) changed during backup (%lld).\n", ff_pkt->fname,
-          static_cast<long long>(ff_pkt->statp.st_mtime),
-          static_cast<long long>(statp.st_mtime));
+    Dmsg3(50, "%s mtime (%" PRIdMAX ") changed during backup (%" PRIdMAX ").\n",
+          ff_pkt->fname, static_cast<intmax_t>(ff_pkt->statp.st_mtime),
+          static_cast<intmax_t>(statp.st_mtime));
     return true;
   }
 
   if (statp.st_ctime != ff_pkt->statp.st_ctime) {
     Jmsg(jcr, M_ERROR, 0, T_("%s: ctime changed during backup.\n"),
          ff_pkt->fname);
-    Dmsg3(50, "%s ctime (%lld) changed during backup (%lld).\n", ff_pkt->fname,
-          static_cast<long long>(ff_pkt->statp.st_ctime),
-          static_cast<long long>(statp.st_ctime));
+    Dmsg3(50, "%s ctime (%" PRIdMAX ") changed during backup (%" PRIdMAX ").\n",
+          ff_pkt->fname, static_cast<intmax_t>(ff_pkt->statp.st_ctime),
+          static_cast<intmax_t>(statp.st_ctime));
     return true;
   }
 
@@ -297,9 +297,9 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     /* TODO: add size change */
     Jmsg(jcr, M_ERROR, 0, T_("%s: size changed during backup.\n"),
          ff_pkt->fname);
-    Dmsg3(50, "%s size (%lld) changed during backup (%lld).\n", ff_pkt->fname,
-          static_cast<long long>(ff_pkt->statp.st_size),
-          static_cast<long long>(statp.st_size));
+    Dmsg3(50, "%s size (%" PRIdMAX ") changed during backup (%" PRIdMAX ").\n",
+          ff_pkt->fname, static_cast<intmax_t>(ff_pkt->statp.st_size),
+          static_cast<intmax_t>(statp.st_size));
     return true;
   }
 
@@ -307,9 +307,9 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
       || (statp.st_blocks != ff_pkt->statp.st_blocks)) {
     Jmsg(jcr, M_ERROR, 0, T_("%s: size changed during backup.\n"),
          ff_pkt->fname);
-    Dmsg3(50, "%s size (%lld) changed during backup (%lld).\n", ff_pkt->fname,
-          static_cast<long long>(ff_pkt->statp.st_blocks),
-          static_cast<long long>(statp.st_blocks));
+    Dmsg3(50, "%s size (%" PRIdMAX ") changed during backup (%" PRIdMAX ").\n",
+          ff_pkt->fname, static_cast<intmax_t>(ff_pkt->statp.st_blocks),
+          static_cast<intmax_t>(statp.st_blocks));
     return true;
   }
 
@@ -447,7 +447,8 @@ static inline int process_hardlink(JobControlRecord* jcr,
     *done = false;
   } else if (bstrcmp(hl.name.c_str(), fname)) {
     // If we have already backed up the hard linked file don't do it again
-    Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl.FileIndex, fname);
+    Dmsg2(400, "== Name identical skip FI=%" PRIu32 " file=%s\n", hl.FileIndex,
+          fname);
     *done = true;
     rtn_stat = 1; /* ignore */
   } else {
@@ -461,8 +462,8 @@ static inline int process_hardlink(JobControlRecord* jcr,
     ff_pkt->digest_len = hl.digest.size();
 
     rtn_stat = HandleFile(jcr, ff_pkt, top_level);
-    Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex,
-          hl.FileIndex, hl.name.c_str());
+    Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%" PRIu32 " file=%s\n",
+          ff_pkt->FileIndex, hl.FileIndex, hl.name.c_str());
     *done = true;
   }
 

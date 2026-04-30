@@ -325,7 +325,7 @@ void DumpPluginfo(progdata* pdata)
   printf("Plugin licence:\t\t%s\n", NPRT(plugin_information->plugin_license));
   printf("Plugin description:\t%s\n",
          NPRT(plugin_information->plugin_description));
-  printf("Plugin API version:\t%d\n", plugin_information->version);
+  printf("Plugin API version:\t%" PRIu32 "\n", plugin_information->version);
   if (plugin_information->plugin_usage) {
     printf("Plugin usage:\n%s\n", plugin_information->plugin_usage);
   }

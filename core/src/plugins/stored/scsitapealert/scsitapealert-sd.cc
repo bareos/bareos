@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,17 +47,17 @@ void dispatch_messages(JobControlRecord* jcr,
                        uint64_t flags)
 {
   constexpr const char* job_msg
-      = "TapeAlert on device \"%s\" with volume \"%s\": [%d] %s\n%s\n"
+      = "TapeAlert on device \"%s\" with volume \"%s\": [%u] %s\n%s\n"
         "Possible cause: %s\n";
   constexpr const char* job_msg_novol
-      = "TapeAlert on device \"%s\": [%d] %s\n%s\n"
+      = "TapeAlert on device \"%s\": [%u] %s\n%s\n"
         "Possible cause: %s\n";
 
   constexpr const char* print_msg
       = "TapeAlert on device \"%s\" with volume \"%s\" from jobid %lu: "
-        "[%d] %s\n";
+        "[%u] %s\n";
   constexpr const char* print_msg_novol
-      = "TapeAlert on device \"%s\" from jobid %lu: [%d] %s\n";
+      = "TapeAlert on device \"%s\" from jobid %lu: [%u] %s\n";
 
   const uint64_t jobid{jcr ? jcr->JobId : 0};
 
@@ -127,7 +127,8 @@ loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   bareos_core_functions
       = lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
-  Dmsg2(debuglevel, "scsitapealert-sd: Loaded: size=%d version=%d\n",
+  Dmsg2(debuglevel,
+        "scsitapealert-sd: Loaded: size=%" PRIu32 " version=%" PRIu32 "\n",
         bareos_core_functions->size, bareos_core_functions->version);
   *plugin_information = &pluginInfo; /* return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
@@ -209,7 +210,7 @@ static bRC handlePluginEvent(PluginContext*, bSdEvent* event, void* value)
     case bSdEventWriteError:
       return handle_tapealert_readout(value);
     default:
-      Dmsg1(debuglevel, "scsitapealert-sd: Unknown event %d\n",
+      Dmsg1(debuglevel, "scsitapealert-sd: Unknown event %" PRIu32 "\n",
             event->eventType);
       return bRC_Error;
   }
@@ -251,7 +252,7 @@ static bRC handle_tapealert_readout(void* value)
   Dmsg1(debuglevel,
         "scsitapealert-sd: checking for tapealerts on device %s DONE\n",
         dev->archive_device_string);
-  Dmsg1(debuglevel, "scsitapealert-sd: flags: %ld \n", flags);
+  Dmsg1(debuglevel, "scsitapealert-sd: flags: %" PRIu64 " \n", flags);
 
   if (flags) {
     Dmsg1(

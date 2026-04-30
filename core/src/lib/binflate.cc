@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,7 @@ int Zdeflate(char* in, int in_len, char* out, int& out_len)
 
   strm.next_in = (Bytef*)in;
   strm.avail_in = in_len;
-  Dmsg1(200, "In: %d bytes\n", strm.avail_in);
+  Dmsg1(200, "In: %u bytes\n", strm.avail_in);
   strm.avail_out = out_len;
   strm.next_out = (Bytef*)out;
   ret = deflate(&strm, Z_FINISH);
@@ -85,7 +85,7 @@ int Zinflate(char* in, int in_len, char* out, int& out_len)
     return ret;
   }
 
-  Dmsg1(200, "In len: %d bytes\n", strm.avail_in);
+  Dmsg1(200, "In len: %u bytes\n", strm.avail_in);
   strm.avail_out = out_len;
   strm.next_out = (Bytef*)out;
   ret = inflate(&strm, Z_FINISH);

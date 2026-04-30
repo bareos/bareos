@@ -168,10 +168,12 @@ void AddReadVolume(JobControlRecord* jcr, const char* VolumeName)
   });
   if (vol != nvol) {
     FreeVolItem(nvol);
-    Dmsg2(debuglevel, "read_vol=%s JobId=%d already in list.\n", VolumeName,
+    Dmsg2(debuglevel, "read_vol=%s JobId=%" PRIu32 " already in list.\n",
+          VolumeName,
           jcr->JobId);
   } else {
-    Dmsg2(debuglevel, "add_read_vol=%s JobId=%d\n", VolumeName, jcr->JobId);
+    Dmsg2(debuglevel, "add_read_vol=%s JobId=%" PRIu32 "\n", VolumeName,
+          jcr->JobId);
   }
 }
 
@@ -189,7 +191,8 @@ void RemoveReadVolume(JobControlRecord* jcr, const char* VolumeName)
     free(vol.vol_name);
 
     if (fvol) {
-      Dmsg3(debuglevel, "remove_read_vol=%s JobId=%d found=%d\n", VolumeName,
+      Dmsg3(debuglevel,
+            "remove_read_vol=%s JobId=%" PRIu32 " found=%d\n", VolumeName,
             jcr->JobId, fvol != NULL);
     }
     if (fvol) {

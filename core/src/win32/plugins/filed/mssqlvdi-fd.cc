@@ -395,8 +395,9 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
       retval = end_restore_job(ctx, value);
       break;
     default:
-      Jmsg(ctx, M_FATAL, "mssqlvdi-fd: unknown event=%d\n", event->eventType);
-      Dmsg(ctx, debuglevel, "mssqlvdi-fd: unknown event=%d\n",
+      Jmsg(ctx, M_FATAL, "mssqlvdi-fd: unknown event=%" PRIu32 "\n",
+           event->eventType);
+      Dmsg(ctx, debuglevel, "mssqlvdi-fd: unknown event=%" PRIu32 "\n",
            event->eventType);
       retval = bRC_Error;
       break;

@@ -103,7 +103,14 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
-
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, "Hello Director %s calling",
              dirname.check_size(dir->message_length))
       != 1) {

@@ -73,6 +73,14 @@ bool AuthenticateDirector(JobControlRecord* jcr)
   dirname = GetPoolMemory(PM_MESSAGE);
   dirname = CheckPoolMemorySize(dirname, dir->message_length);
 
+#ifndef sscanf
+  #error sscanf is not a macro
+#endif
+#define S1(x) #x
+#define S2(x) S1(x)
+  static_assert( std::string_view{ S2(sscanf) } == std::string_view{"bsscanf"} );
+#undef S2
+#undef S1
   if (sscanf(dir->msg, "Hello Director %127s calling", dirname) != 1) {
     dir->msg[100] = 0;
     Dmsg2(debuglevel, "Bad Hello command from Director at %s: %s\n", dir->who(),

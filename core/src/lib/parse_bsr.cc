@@ -734,7 +734,7 @@ static storagedaemon::BootStrapRecord* store_slot(
   token = LexGetToken(lc, BCT_PINT32);
   if (token == BCT_ERROR) { return NULL; }
   if (!bsr->volume) {
-    Emsg1(M_ERROR, 0, T_("Slot %d in bsr at inappropriate place.\n"),
+    Emsg1(M_ERROR, 0, T_("Slot %" PRIu32 " in bsr at inappropriate place.\n"),
           lc->u.pint32_val);
     return bsr;
   }
@@ -788,10 +788,10 @@ static inline void DumpFindex(storagedaemon::BsrFileIndex* FileIndex)
 {
   if (FileIndex) {
     if (FileIndex->findex == FileIndex->findex2) {
-      Pmsg1(-1, T_("FileIndex   : %u\n"), FileIndex->findex);
+      Pmsg1(-1, T_("FileIndex   : %" PRId32 "\n"), FileIndex->findex);
     } else {
-      Pmsg2(-1, T_("FileIndex   : %u-%u\n"), FileIndex->findex,
-            FileIndex->findex2);
+      Pmsg2(-1, T_("FileIndex   : %" PRId32 "-%" PRId32 "\n"),
+            FileIndex->findex, FileIndex->findex2);
     }
     DumpFindex(FileIndex->next);
   }
