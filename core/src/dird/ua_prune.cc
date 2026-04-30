@@ -41,6 +41,8 @@
 #include "lib/parse_conf.h"
 
 #include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace directordaemon {
 
@@ -87,6 +89,100 @@ int FileDeleteHandler(void* ctx, int, char** row)
   if (jobs_todelete->size() >= MAX_DEL_LIST_LEN) { return 1; }
   jobs_todelete->push_back(static_cast<JobId_t>(str_to_int64(row[0])));
   return 0;
+}
+
+static int JobContentHistoryHandler(void* ctx, int num_fields, char** row)
+{
+  ASSERT(num_fields == 3);
+  auto* jobs = static_cast<std::vector<JobContentHistoryRecord>*>(ctx);
+  jobs->push_back(JobContentHistoryRecord{
+      .JobId = static_cast<JobId_t>(str_to_int64(row[0])),
+      .BaseId = static_cast<DBId_t>(row[1] ? str_to_int64(row[1]) : 0),
+      .ContentId = static_cast<DBId_t>(row[2] ? str_to_int64(row[2]) : 0),
+  });
+  return 0;
+}
+
+static bool LoadJobContentHistory(UaContext* ua,
+                                  std::vector<JobContentHistoryRecord>& jobs)
+{
+  jobs.clear();
+  return ua->db->SqlQuery(
+      "SELECT JobId, COALESCE(BaseId, 0), "
+      "COALESCE(NULLIF(ContentId, 0), JobId) FROM Job",
+      JobContentHistoryHandler, &jobs);
+}
+
+int ExcludeDependentJobsFromList(
+    std::vector<JobId_t>& prune_list,
+    const std::vector<JobContentHistoryRecord>& jobs)
+{
+  std::unordered_map<DBId_t, std::size_t> total_jobs_per_content;
+  total_jobs_per_content.reserve(jobs.size());
+  for (const auto& job : jobs) { total_jobs_per_content[job.ContentId] += 1; }
+
+  std::unordered_set<JobId_t> prune_candidates;
+  prune_candidates.reserve(prune_list.size());
+  for (auto jobid : prune_list) {
+    if (jobid != 0) { prune_candidates.insert(jobid); }
+  }
+
+  bool changed = true;
+  while (changed) {
+    changed = false;
+
+    std::unordered_map<DBId_t, std::size_t> pruned_jobs_per_content;
+    pruned_jobs_per_content.reserve(prune_candidates.size());
+    for (const auto& job : jobs) {
+      if (prune_candidates.contains(job.JobId)) {
+        pruned_jobs_per_content[job.ContentId] += 1;
+      }
+    }
+
+    std::unordered_set<DBId_t> removable_content_ids;
+    removable_content_ids.reserve(pruned_jobs_per_content.size());
+    for (const auto& [content_id, pruned_count] : pruned_jobs_per_content) {
+      auto total = total_jobs_per_content.find(content_id);
+      if (total != total_jobs_per_content.end()
+          && total->second == pruned_count) {
+        removable_content_ids.insert(content_id);
+      }
+    }
+
+    if (removable_content_ids.empty()) { break; }
+
+    std::unordered_set<DBId_t> protected_content_ids;
+    protected_content_ids.reserve(removable_content_ids.size());
+    for (const auto& job : jobs) {
+      if (prune_candidates.contains(job.JobId)) { continue; }
+      if (job.BaseId != 0 && removable_content_ids.contains(job.BaseId)) {
+        protected_content_ids.insert(job.BaseId);
+      }
+    }
+
+    if (protected_content_ids.empty()) { break; }
+
+    for (auto it = prune_candidates.begin(); it != prune_candidates.end();) {
+      auto job = std::find_if(jobs.begin(), jobs.end(),
+                              [jobid = *it](const auto& candidate) {
+                                return candidate.JobId == jobid;
+                              });
+      if (job != jobs.end() && protected_content_ids.contains(job->ContentId)) {
+        it = prune_candidates.erase(it);
+        changed = true;
+      } else {
+        ++it;
+      }
+    }
+  }
+
+  prune_list.erase(std::remove_if(prune_list.begin(), prune_list.end(),
+                                  [&prune_candidates](JobId_t jobid) {
+                                    return jobid == 0
+                                           || !prune_candidates.contains(jobid);
+                                  }),
+                   prune_list.end());
+  return prune_list.size();
 }
 
 static bool PruneAllVolumes(UaContext* ua,
@@ -765,6 +861,13 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
     ua->ErrorMsg("%s", ua->db->strerror());
   }
 
+  std::vector<JobContentHistoryRecord> jobs;
+  if (!LoadJobContentHistory(ua, jobs)) {
+    ua->ErrorMsg("%s", ua->db->strerror());
+  } else {
+    ExcludeDependentJobsFromList(prune_list, jobs);
+  }
+
   PurgeJobListFromCatalog(ua, prune_list);
 
   if (prune_list.size() > 0) {
@@ -882,6 +985,12 @@ int GetPruneListForVolume(UaContext* ua,
   }
 
   int NumJobsToBePruned = ExcludeRunningJobsFromList(prune_list);
+  std::vector<JobContentHistoryRecord> jobs;
+  if (!LoadJobContentHistory(ua, jobs)) {
+    if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
+    return 0;
+  }
+  NumJobsToBePruned = ExcludeDependentJobsFromList(prune_list, jobs);
   if (NumJobsToBePruned > 0) {
     ua->SendMsg(T_("Volume \"%s\" has Volume Retention of %" PRId64
                    " sec. and has %d jobs that will be pruned\n"),

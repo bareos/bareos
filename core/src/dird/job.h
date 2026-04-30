@@ -57,6 +57,8 @@ bool UpdateJobExpiration(JobControlRecord* jcr,
                          std::string* log_message = nullptr,
                          std::string* error_message = nullptr);
 std::string JobExpirationToString(const std::optional<utime_t>& expire_time);
+DBId_t EffectiveJobContentId(const JobDbRecord& jr);
+void UpdateJobHistoryRecord(JobControlRecord* jcr);
 bool UpdatePreparedJobStartRecord(JobControlRecord* jcr);
 JobId_t RunJob(JobControlRecord* jcr);
 bool CancelJob(UaContext* ua, JobControlRecord* jcr);

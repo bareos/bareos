@@ -146,6 +146,49 @@ std::string JobExpirationToString(const std::optional<utime_t>& expire_time)
   return FormatAbsoluteTime(*expire_time);
 }
 
+DBId_t EffectiveJobContentId(const JobDbRecord& jr)
+{
+  return jr.ContentId != 0 ? jr.ContentId : jr.JobId;
+}
+
+void UpdateJobHistoryRecord(JobControlRecord* jcr)
+{
+  auto& jr = jcr->dir_impl->jr;
+  jr.BaseId = 0;
+  jr.ContentId = jr.JobId;
+
+  if (jcr->getJobType() == JT_COPY || jcr->getJobType() == JT_MIGRATE
+      || (jcr->cjcr
+          && (jcr->cjcr->is_JobType(JT_COPY)
+              || jcr->cjcr->is_JobType(JT_MIGRATE)))) {
+    if (jcr->dir_impl->previous_jr) {
+      jr.BaseId = jcr->dir_impl->previous_jr->BaseId;
+      jr.ContentId = EffectiveJobContentId(*jcr->dir_impl->previous_jr);
+    }
+    return;
+  }
+
+  if (jcr->getJobType() != JT_BACKUP && jcr->getJobType() != JT_ARCHIVE) {
+    return;
+  }
+
+  switch (jcr->getJobLevel()) {
+    case L_INCREMENTAL:
+    case L_DIFFERENTIAL:
+      if (jcr->dir_impl->previous_jr) {
+        jr.BaseId = EffectiveJobContentId(*jcr->dir_impl->previous_jr);
+      }
+      return;
+    case L_VIRTUAL_FULL:
+      if (jcr->dir_impl->previous_jr) {
+        jr.ContentId = EffectiveJobContentId(*jcr->dir_impl->previous_jr);
+      }
+      return;
+    default:
+      return;
+  }
+}
+
 bool UpdateJobExpiration(JobControlRecord* jcr,
                          utime_t job_tdate,
                          std::string* log_message,
@@ -216,6 +259,8 @@ bool UpdateJobExpiration(JobControlRecord* jcr,
 
 bool UpdatePreparedJobStartRecord(JobControlRecord* jcr)
 {
+  UpdateJobHistoryRecord(jcr);
+
   std::string error;
   if (!UpdateJobExpiration(jcr, jcr->dir_impl->jr.StartTime, nullptr, &error)) {
     Jmsg(jcr, M_FATAL, 0, "%s\n", error.c_str());

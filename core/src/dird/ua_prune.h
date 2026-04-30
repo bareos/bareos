@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,11 @@
 namespace directordaemon {
 
 struct del_ctx;
+struct JobContentHistoryRecord {
+  JobId_t JobId = 0;
+  DBId_t BaseId = 0;
+  DBId_t ContentId = 0;
+};
 
 bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool);
 bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool);
@@ -39,6 +44,9 @@ int GetPruneListForVolume(UaContext* ua,
                           MediaDbRecord* mr,
                           std::vector<JobId_t>& prune_list);
 int ExcludeRunningJobsFromList(std::vector<JobId_t>& prune_list);
+int ExcludeDependentJobsFromList(
+    std::vector<JobId_t>& prune_list,
+    const std::vector<JobContentHistoryRecord>& jobs);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_PRUNE_H_

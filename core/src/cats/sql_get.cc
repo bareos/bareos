@@ -246,16 +246,18 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
     Mmsg(cmd,
          "SELECT VolSessionId,VolSessionTime,"
          "PoolId,StartTime,EndTime,JobFiles,JobBytes,JobTDate,Job,JobStatus,"
-         "ExpireTime,Type,Level,ClientId,Name,PriorJobId,RealEndTime,JobId,"
-         "FileSetId,SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles "
+         "ExpireTime,BaseId,ContentId,Type,Level,ClientId,Name,PriorJobId,"
+         "RealEndTime,JobId,FileSetId,SchedTime,RealEndTime,ReadBytes,HasBase,"
+         "PurgedFiles "
          "FROM Job WHERE Job='%s'",
          esc);
   } else {
     Mmsg(cmd,
          "SELECT VolSessionId,VolSessionTime,"
          "PoolId,StartTime,EndTime,JobFiles,JobBytes,JobTDate,Job,JobStatus,"
-         "ExpireTime,Type,Level,ClientId,Name,PriorJobId,RealEndTime,JobId,"
-         "FileSetId,SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles "
+         "ExpireTime,BaseId,ContentId,Type,Level,ClientId,Name,PriorJobId,"
+         "RealEndTime,JobId,FileSetId,SchedTime,RealEndTime,ReadBytes,HasBase,"
+         "PurgedFiles "
          "FROM Job WHERE JobId=%s",
          edit_int64(jr->JobId, ed1));
   }
@@ -289,26 +291,28 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   } else {
     jr->ExpireTime.reset();
   }
-  jr->JobType = (row[11] != NULL) ? (int)*row[11] : JT_BACKUP;
-  jr->JobLevel = (row[12] != NULL) ? (int)*row[12] : L_NONE;
-  jr->ClientId = str_to_uint64((row[13] != NULL) ? row[13] : (char*)"");
-  bstrncpy(jr->Name, (row[14] != NULL) ? row[14] : "", sizeof(jr->Name));
-  jr->PriorJobId = str_to_uint64((row[15] != NULL) ? row[15] : (char*)"");
-  bstrncpy(jr->cRealEndTime, (row[16] != NULL) ? row[16] : "",
+  jr->BaseId = str_to_uint64((row[11] != NULL) ? row[11] : (char*)"");
+  jr->ContentId = str_to_uint64((row[12] != NULL) ? row[12] : (char*)"");
+  jr->JobType = (row[13] != NULL) ? (int)*row[13] : JT_BACKUP;
+  jr->JobLevel = (row[14] != NULL) ? (int)*row[14] : L_NONE;
+  jr->ClientId = str_to_uint64((row[15] != NULL) ? row[15] : (char*)"");
+  bstrncpy(jr->Name, (row[16] != NULL) ? row[16] : "", sizeof(jr->Name));
+  jr->PriorJobId = str_to_uint64((row[17] != NULL) ? row[17] : (char*)"");
+  bstrncpy(jr->cRealEndTime, (row[18] != NULL) ? row[18] : "",
            sizeof(jr->cRealEndTime));
-  if (jr->JobId == 0) { jr->JobId = str_to_int64(row[17]); }
-  jr->FileSetId = str_to_int64(row[18]);
-  bstrncpy(jr->cSchedTime, (row[19] != NULL) ? row[19] : "",
+  if (jr->JobId == 0) { jr->JobId = str_to_int64(row[19]); }
+  jr->FileSetId = str_to_int64(row[20]);
+  bstrncpy(jr->cSchedTime, (row[21] != NULL) ? row[21] : "",
            sizeof(jr->cSchedTime));
-  bstrncpy(jr->cRealEndTime, (row[20] != NULL) ? row[20] : "",
+  bstrncpy(jr->cRealEndTime, (row[22] != NULL) ? row[22] : "",
            sizeof(jr->cRealEndTime));
-  jr->ReadBytes = str_to_int64(row[21]);
+  jr->ReadBytes = str_to_int64(row[23]);
   jr->StartTime = StrToUtime(jr->cStartTime);
   jr->SchedTime = StrToUtime(jr->cSchedTime);
   jr->EndTime = StrToUtime(jr->cEndTime);
   jr->RealEndTime = StrToUtime(jr->cRealEndTime);
-  jr->HasBase = str_to_int64(row[22]);
-  jr->PurgedFiles = str_to_int64(row[23]);
+  jr->HasBase = str_to_int64(row[24]);
+  jr->PurgedFiles = str_to_int64(row[25]);
 
   SqlFreeResult();
 

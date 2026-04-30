@@ -113,6 +113,8 @@ struct JobDbRecord {
   DBId_t PoolId = 0;                 /**< Id of pool */
   DBId_t FileSetId = 0;              /**< Id of FileSet */
   DBId_t PriorJobId = 0;             /**< Id of migrated (prior) job */
+  DBId_t BaseId = 0;                 /**< Content lineage parent identifier */
+  DBId_t ContentId = 0;              /**< Content lineage identifier */
   time_t SchedTime = 0;              /**< Time job scheduled */
   time_t StartTime = 0;              /**< Job start time */
   time_t EndTime = 0;                /**< Job termination time of orig job */
@@ -473,7 +475,7 @@ class pathid_cache;
 #define QUERY_HTABLE_PAGES 128
 
 // Current database version number schema = 2000 + 10 * Major + Minor
-#define BDB_VERSION 2260
+#define BDB_VERSION 2270
 
 typedef char** SQL_ROW;
 

@@ -91,9 +91,11 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
   char dt[MAX_TIME_LENGTH];
   time_t stime;
   btime_t JobTDate;
-  char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
+  char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50], ed7[50], ed8[50];
   const char* expire_time
       = jr->ExpireTime ? edit_uint64(*jr->ExpireTime, ed6) : "NULL";
+  const char* base_id = edit_int64(jr->BaseId, ed7);
+  const char* content_id = edit_int64(jr->ContentId, ed8);
 
   stime = jr->StartTime;
   bstrutime(dt, sizeof(dt), stime);
@@ -102,12 +104,14 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
   DbLocker _{this};
   Mmsg(cmd,
        "UPDATE Job SET JobStatus='%c',Level='%c',StartTime='%s',"
-       "ClientId=%s,JobTDate=%s,ExpireTime=%s,PoolId=%s,FileSetId=%s,"
-       "VolSessionId=%" PRIu32 ", VolSessionTime=%" PRIu32 " WHERE JobId=%s",
+       "ClientId=%s,JobTDate=%s,ExpireTime=%s,BaseId=%s,ContentId=%s,"
+       "PoolId=%s,FileSetId=%s,VolSessionId=%" PRIu32
+       ", VolSessionTime=%" PRIu32 " WHERE JobId=%s",
        (char)(jcr->getJobStatus()), (char)(jr->JobLevel), dt,
        edit_int64(jr->ClientId, ed1), edit_uint64(JobTDate, ed2), expire_time,
-       edit_int64(jr->PoolId, ed3), edit_int64(jr->FileSetId, ed4),
-       jcr->VolSessionId, jcr->VolSessionTime, edit_int64(jr->JobId, ed5));
+       base_id, content_id, edit_int64(jr->PoolId, ed3),
+       edit_int64(jr->FileSetId, ed4), jcr->VolSessionId, jcr->VolSessionTime,
+       edit_int64(jr->JobId, ed5));
 
   changes = 0;
   return UpdateDb(jcr, cmd) > 0;
@@ -155,11 +159,13 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
   char dt[MAX_TIME_LENGTH];
   char rdt[MAX_TIME_LENGTH];
   time_t ttime;
-  char ed1[30], ed2[30], ed3[50], ed4[50], ed5[50];
+  char ed1[30], ed2[30], ed3[50], ed4[50], ed5[50], ed6[50], ed7[50];
   btime_t JobTDate;
   char PriorJobId[50];
   const char* expire_time
       = jr->ExpireTime ? edit_uint64(*jr->ExpireTime, ed5) : "NULL";
+  const char* base_id = edit_int64(jr->BaseId, ed6);
+  const char* content_id = edit_int64(jr->ContentId, ed7);
 
   if (jr->PriorJobId) {
     bstrncpy(PriorJobId, edit_int64(jr->PriorJobId, ed1), sizeof(PriorJobId));
@@ -178,18 +184,19 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
 
   DbLocker _{this};
 
-  Mmsg(
-      cmd,
-      "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
-      "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,"
-      "VolSessionId=%u,"
-      "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,ExpireTime=%s,"
-      "RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE JobId=%s",
-      (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,
-      edit_uint64(jr->JobBytes, ed1), edit_uint64(jr->ReadBytes, ed4),
-      jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
-      jr->PoolId, jr->FileSetId, edit_uint64(JobTDate, ed2), expire_time, rdt,
-      PriorJobId, jr->HasBase, jr->PurgedFiles, edit_int64(jr->JobId, ed3));
+  Mmsg(cmd,
+       "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
+       "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,"
+       "VolSessionId=%u,"
+       "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,ExpireTime=%s,"
+       "BaseId=%s,ContentId=%s,RealEndTime='%s',PriorJobId=%s,HasBase=%u,"
+       "PurgedFiles=%u WHERE JobId=%s",
+       (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,
+       edit_uint64(jr->JobBytes, ed1), edit_uint64(jr->ReadBytes, ed4),
+       jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
+       jr->PoolId, jr->FileSetId, edit_uint64(JobTDate, ed2), expire_time,
+       base_id, content_id, rdt, PriorJobId, jr->HasBase, jr->PurgedFiles,
+       edit_int64(jr->JobId, ed3));
 
   return UpdateDb(jcr, cmd) > 0;
 }
