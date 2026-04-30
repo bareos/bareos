@@ -21,8 +21,14 @@
 <template>
   <q-page class="q-pa-md">
     <!-- Back -->
-    <q-btn flat no-caps icon="arrow_back" :label="t('Volumes')" class="q-mb-md"
-           :to="{ name: 'storages', query: { tab: 'volumes' } }" />
+    <q-btn
+      flat
+      no-caps
+      icon="arrow_back"
+      :label="backLabel"
+      class="q-mb-md"
+      :to="backLocation"
+    />
 
     <!-- Loading / error -->
     <q-spinner v-if="loading" size="40px" class="block q-mx-auto q-mt-xl" />
@@ -255,9 +261,13 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { buildDirectorPageQuery } from '../utils/director.js'
 import { buildJobDetailsQuery } from '../utils/jobs.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
-import { volumeHasEncryptionKey } from '../utils/volumes.js'
+import {
+  resolveVolumeDetailsDirectorOrigin,
+  volumeHasEncryptionKey,
+} from '../utils/volumes.js'
 
 const route      = useRoute()
 const auth       = useAuthStore()
@@ -271,6 +281,26 @@ const requestedDirector = computed(() => (
 const currentVolumeDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
+const directorOrigin = computed(() => resolveVolumeDetailsDirectorOrigin(route.query))
+const backLabel = computed(() => (
+  directorOrigin.value ? t('Back to Director') : t('Volumes')
+))
+const backLocation = computed(() => {
+  if (directorOrigin.value) {
+    return {
+      name: 'director',
+      query: buildDirectorPageQuery({}, {
+        tab: directorOrigin.value.tab,
+        targetDirector: directorOrigin.value.targetDirector,
+      }),
+    }
+  }
+
+  return {
+    name: 'storages',
+    query: { tab: 'volumes' },
+  }
+})
 
 function buildVolumeJobDetailsQuery(jobDirector) {
   return buildJobDetailsQuery({

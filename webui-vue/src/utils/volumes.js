@@ -56,3 +56,36 @@ export function volumeHasEncryptionKey(volume) {
   return volumeHasEncryptionKeyFlag(volume)
     || volumeEncryptionKey(volume).length > 0
 }
+
+export function buildVolumeDetailsQuery({
+  director,
+  directorTab,
+  directorTarget,
+} = {}) {
+  const query = {}
+
+  if (director) {
+    query.director = director
+  }
+
+  if (directorTab && directorTab !== 'status') {
+    query.directorTab = directorTab
+  }
+
+  if (directorTarget) {
+    query.directorTarget = directorTarget
+  }
+
+  return query
+}
+
+export function resolveVolumeDetailsDirectorOrigin(query) {
+  if (typeof query?.directorTab !== 'string' || !query.directorTab) {
+    return null
+  }
+
+  return {
+    tab: query.directorTab,
+    targetDirector: typeof query?.directorTarget === 'string' ? query.directorTarget : '',
+  }
+}

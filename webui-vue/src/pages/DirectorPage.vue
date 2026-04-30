@@ -658,6 +658,7 @@ import {
   resolveDirectorTargetQuery,
 } from '../utils/director.js'
 import { buildJobDetailsQuery } from '../utils/jobs.js'
+import { buildVolumeDetailsQuery } from '../utils/volumes.js'
 import {
   formatDirectorRelativeTime,
   formatNumber,
@@ -1127,10 +1128,15 @@ function openVolumeDetails(row) {
     return
   }
 
+  const query = buildVolumeDetailsQuery({
+    director: row.director,
+    directorTab: tab.value,
+    directorTarget: isDirectorSingletonTab(tab.value) ? currentSingletonDirector.value : '',
+  })
   return navigateForDirector(row.director, {
     name: 'volume-details',
     params: { name: row.volume },
-    query: row.director ? { director: row.director } : {},
+    query,
   })
 }
 

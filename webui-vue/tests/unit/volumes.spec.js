@@ -21,6 +21,8 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  buildVolumeDetailsQuery,
+  resolveVolumeDetailsDirectorOrigin,
   volumeEncryptionKey,
   volumeHasEncryptionKey,
 } from '../../src/utils/volumes.js'
@@ -40,5 +42,40 @@ describe('volume encryption helpers', () => {
   it('treats empty and missing keys as not encrypted', () => {
     expect(volumeHasEncryptionKey({ encryptionkey: '   ' })).toBe(false)
     expect(volumeHasEncryptionKey({})).toBe(false)
+  })
+
+  it('builds volume detail queries with optional director origin', () => {
+    expect(buildVolumeDetailsQuery({
+      director: 'prod-a',
+      directorTab: 'catalog',
+      directorTarget: 'prod-b',
+    })).toEqual({
+      director: 'prod-a',
+      directorTab: 'catalog',
+      directorTarget: 'prod-b',
+    })
+
+    expect(buildVolumeDetailsQuery({
+      director: 'prod-a',
+      directorTab: 'status',
+      directorTarget: 'prod-b',
+    })).toEqual({
+      director: 'prod-a',
+      directorTarget: 'prod-b',
+    })
+  })
+
+  it('resolves an optional director origin for volume details routes', () => {
+    expect(resolveVolumeDetailsDirectorOrigin({
+      directorTab: 'catalog',
+      directorTarget: 'prod-b',
+    })).toEqual({
+      tab: 'catalog',
+      targetDirector: 'prod-b',
+    })
+
+    expect(resolveVolumeDetailsDirectorOrigin({
+      directorTarget: 'prod-b',
+    })).toBeNull()
   })
 })
