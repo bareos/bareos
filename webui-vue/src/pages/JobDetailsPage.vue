@@ -9,8 +9,8 @@
         <q-btn
           flat
           icon="arrow_back"
-          :label="t('Back to Jobs')"
-          :to="{ name: 'jobs', query: backToJobsQuery }"
+          :label="backLabel"
+          :to="backLocation"
           no-caps
           class="q-mr-md"
         />
@@ -139,8 +139,13 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { buildClientDetailsQuery } from '../utils/clients.js'
 import { formatNumber } from '../utils/locales.js'
-import { buildJobDetailsQuery, resolveJobsListQuery } from '../utils/jobs.js'
+import {
+  buildJobDetailsQuery,
+  resolveJobDetailsClientOrigin,
+  resolveJobsListQuery,
+} from '../utils/jobs.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
@@ -162,6 +167,27 @@ const currentJobDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
 const backToJobsQuery = computed(() => resolveJobsListQuery(route.query))
+const clientOrigin = computed(() => resolveJobDetailsClientOrigin(route.query))
+const backLabel = computed(() => (
+  clientOrigin.value ? t('Back to Client') : t('Back to Jobs')
+))
+const backLocation = computed(() => {
+  if (clientOrigin.value) {
+    return {
+      name: 'client-details',
+      params: { name: clientOrigin.value.name },
+      query: buildClientDetailsQuery({
+        director: clientOrigin.value.director,
+        clientsTab: clientOrigin.value.clientsTab,
+      }),
+    }
+  }
+
+  return {
+    name: 'jobs',
+    query: backToJobsQuery.value,
+  }
+})
 
 // ── state ─────────────────────────────────────────────────────────────────────
 const loading       = ref(true)
@@ -370,6 +396,9 @@ async function doRerun() {
           jobsAction: typeof route.query.jobsAction === 'string' ? route.query.jobsAction : '',
           jobsStatus: typeof route.query.jobsStatus === 'string' ? route.query.jobsStatus : '',
           jobsSearch: typeof route.query.jobsSearch === 'string' ? route.query.jobsSearch : '',
+          clientName: clientOrigin.value?.name,
+          clientDirector: clientOrigin.value?.director,
+          clientsTab: clientOrigin.value?.clientsTab,
         }),
       })
     }

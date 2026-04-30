@@ -48,7 +48,7 @@
               <template #body-cell-id="props">
                 <q-td :props="props">
                   <router-link
-                    :to="{ name: 'job-details', params: { id: props.value }, query: props.row.director ? { director: props.row.director } : {} }"
+                    :to="{ name: 'job-details', params: { id: props.value }, query: buildClientJobDetailsQuery(props.row) }"
                     class="text-primary"
                   >
                     {{ props.value }}
@@ -107,6 +107,7 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { buildJobDetailsQuery } from '../utils/jobs.js'
 import { resolveClientsListQuery } from '../utils/clients.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -125,6 +126,15 @@ const currentClientDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
 const backToClientsQuery = computed(() => resolveClientsListQuery(route.query))
+
+function buildClientJobDetailsQuery(job) {
+  return buildJobDetailsQuery({
+    director: job?.director,
+    clientName: typeof route.params.name === 'string' ? route.params.name : '',
+    clientDirector: currentClientDirector.value,
+    clientsTab: typeof route.query.clientsTab === 'string' ? route.query.clientsTab : '',
+  })
+}
 
 const loading    = ref(true)
 const clientData = ref(null)

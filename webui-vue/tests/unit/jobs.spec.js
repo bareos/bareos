@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildJobDetailsQuery,
   normaliseJobStatusFilter,
+  resolveJobDetailsClientOrigin,
   resolveJobsSearchQuery,
   resolveJobsListQuery,
   withJobsSearchQuery,
@@ -69,11 +70,17 @@ describe('jobs filter helpers', () => {
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsSearch: 'backup',
+      clientName: 'bareos-fd',
+      clientDirector: 'prod-a',
+      clientsTab: 'timeline',
     })).toEqual({
       director: 'prod-a',
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsSearch: 'backup',
+      clientName: 'bareos-fd',
+      clientDirector: 'prod-a',
+      clientsTab: 'timeline',
     })
 
     expect(buildJobDetailsQuery({
@@ -102,5 +109,22 @@ describe('jobs filter helpers', () => {
       jobsStatus: '',
       jobsSearch: '',
     })).toEqual({})
+  })
+
+  it('resolves an optional client origin for job details routes', () => {
+    expect(resolveJobDetailsClientOrigin({
+      clientName: 'bareos-fd',
+      clientDirector: 'prod-a',
+      clientsTab: 'timeline',
+    })).toEqual({
+      name: 'bareos-fd',
+      director: 'prod-a',
+      clientsTab: 'timeline',
+    })
+
+    expect(resolveJobDetailsClientOrigin({
+      clientDirector: 'prod-a',
+      clientsTab: 'timeline',
+    })).toBeNull()
   })
 })

@@ -72,6 +72,9 @@ export function buildJobDetailsQuery({
   jobsAction,
   jobsStatus,
   jobsSearch,
+  clientName,
+  clientDirector,
+  clientsTab,
 } = {}) {
   const query = {}
 
@@ -89,6 +92,18 @@ export function buildJobDetailsQuery({
 
   if (jobsSearch) {
     query.jobsSearch = jobsSearch
+  }
+
+  if (clientName) {
+    query.clientName = clientName
+  }
+
+  if (clientDirector) {
+    query.clientDirector = clientDirector
+  }
+
+  if (clientsTab && clientsTab !== 'list') {
+    query.clientsTab = clientsTab
   }
 
   return query
@@ -110,4 +125,16 @@ export function resolveJobsListQuery(query) {
   }
 
   return nextQuery
+}
+
+export function resolveJobDetailsClientOrigin(query) {
+  if (typeof query?.clientName !== 'string' || !query.clientName) {
+    return null
+  }
+
+  return {
+    name: query.clientName,
+    director: typeof query?.clientDirector === 'string' ? query.clientDirector : '',
+    clientsTab: typeof query?.clientsTab === 'string' ? query.clientsTab : '',
+  }
 }
