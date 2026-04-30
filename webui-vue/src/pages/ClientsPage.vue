@@ -151,7 +151,10 @@
             </div>
           </q-card-section>
         </q-card>
-        <JobTimeline :key="currentTimelineDirector || 'clients-timeline'" />
+        <JobTimeline
+          :key="currentTimelineDirector || 'clients-timeline'"
+          :client-details-query="timelineClientDetailsQuery"
+        />
       </q-tab-panel>
     </q-tab-panels>
 
@@ -281,6 +284,10 @@ const currentTimelineDirector = computed(() => (
     ? (singletonTimelineDirector.value || activeDirectors.value[0] || '')
     : (activeDirectors.value[0] || '')
 ))
+const timelineClientDetailsQuery = computed(() => buildClientDetailsQuery({
+  director: currentTimelineDirector.value,
+  clientsTab: tab.value,
+}))
 
 function syncSingletonTimelineDirector() {
   const validDirectors = activeDirectors.value

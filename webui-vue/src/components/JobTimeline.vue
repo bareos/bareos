@@ -71,7 +71,7 @@
                   font-size="11" text-anchor="middle" font-weight="600"
                   :fill="$q.dark.isActive ? '#90caf9' : '#1565c0'"
                   style="font-family:sans-serif; user-select:none; cursor:pointer"
-                  @click="router.push({ name: 'client-details', params: { name: span.client }, query: currentDirector ? { director: currentDirector } : {} })">
+                  @click="router.push({ name: 'client-details', params: { name: span.client }, query: clientDetailsQuery ?? (currentDirector ? { director: currentDirector } : {}) })">
               {{ span.client.length > 14 ? span.client.slice(0, 13) + '\u2026' : span.client }}
             </text>
           </g>
@@ -106,7 +106,7 @@
                   :height="TL_ROW_H - TL_BAR_PAD * 2"
                   :fill="tlColorOf(run.status)"
                   rx="3" style="cursor:pointer"
-                  @click="router.push({ name: 'job-details', params: { id: run.id }, query: run.director ? { director: run.director } : {} })"
+                  @click="router.push({ name: 'job-details', params: { id: run.id }, query: jobDetailsQuery ?? (run.director ? { director: run.director } : {}) })"
                   @mouseenter="(e) => showTlTooltip(e, run)"
                   @mousemove="moveTlTooltip" />
           </g>
@@ -139,6 +139,20 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatNumber } from '../utils/locales.js'
+
+const {
+  clientDetailsQuery = null,
+  jobDetailsQuery = null,
+} = defineProps({
+  clientDetailsQuery: {
+    type: Object,
+    default: null,
+  },
+  jobDetailsQuery: {
+    type: Object,
+    default: null,
+  },
+})
 
 const $q      = useQuasar()
 const router  = useRouter()
