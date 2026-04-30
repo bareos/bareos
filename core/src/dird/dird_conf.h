@@ -390,6 +390,9 @@ class JobResource : public BareosResource {
   char* WriteBootstrap = nullptr;   /**< Where to write bootstrap Job updates */
   char* WriteVerifyList = nullptr;  /**< List of changed files */
   char* Retention = nullptr;        /**< Job retention or "never" */
+  char* FullRetention = nullptr;    /**< Full/Virtual Full job retention */
+  char* DiffRetention = nullptr;    /**< Differential job retention */
+  char* IncRetention = nullptr;     /**< Incremental job retention */
   utime_t MaxRunTime = {0};         /**< Max run time in seconds */
   utime_t MaxWaitTime = {0};        /**< Max blocking time in seconds */
   utime_t FullMaxRunTime = {0};     /**< Max Full job run time */

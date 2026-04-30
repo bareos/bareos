@@ -25,6 +25,7 @@
 class JobControlRecord;
 
 #include "cats/cats.h"
+#include "include/job_level.h"
 #include <mutex>
 #include <optional>
 #include <string>
@@ -52,6 +53,9 @@ bool ParseJobRetention(const char* value,
                        std::optional<utime_t>& retention,
                        bool& keep_forever,
                        std::string& error);
+const char* GetConfiguredJobRetention(JobLevelCode level,
+                                      const JobResource* job,
+                                      const char*& source);
 bool UpdateJobExpiration(JobControlRecord* jcr,
                          utime_t job_tdate,
                          std::string* log_message = nullptr,

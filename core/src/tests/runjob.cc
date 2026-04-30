@@ -28,6 +28,7 @@
 #endif
 
 #include "dird/ua.h"
+#include "dird/dird_conf.h"
 #include "dird/job.h"
 #include "include/jcr.h"
 #include "dird/ua_run.h"
@@ -217,4 +218,47 @@ TEST(JobExpirationParsing, ParsesNeverExpiry)
   EXPECT_TRUE(expire_time.has_value());
   EXPECT_EQ(*expire_time, 0);
   EXPECT_TRUE(error.empty());
+}
+
+TEST(JobExpirationSelection, PrefersLevelSpecificRetention)
+{
+  directordaemon::JobResource job;
+  const char* source = nullptr;
+
+  job.Retention = const_cast<char*>("7 days");
+  job.FullRetention = const_cast<char*>("3 days");
+  job.DiffRetention = const_cast<char*>("2 days");
+  job.IncRetention = const_cast<char*>("1 days");
+
+  EXPECT_STREQ(directordaemon::GetConfiguredJobRetention(L_FULL, &job, source),
+               "3 days");
+  EXPECT_STREQ(source, "job FullRetention");
+
+  EXPECT_STREQ(
+      directordaemon::GetConfiguredJobRetention(L_VIRTUAL_FULL, &job, source),
+      "3 days");
+  EXPECT_STREQ(source, "job FullRetention");
+
+  EXPECT_STREQ(
+      directordaemon::GetConfiguredJobRetention(L_DIFFERENTIAL, &job, source),
+      "2 days");
+  EXPECT_STREQ(source, "job DifferentialRetention");
+
+  EXPECT_STREQ(
+      directordaemon::GetConfiguredJobRetention(L_INCREMENTAL, &job, source),
+      "1 days");
+  EXPECT_STREQ(source, "job IncrementalRetention");
+}
+
+TEST(JobExpirationSelection, FallsBackToGenericRetention)
+{
+  directordaemon::JobResource job;
+  const char* source = nullptr;
+
+  job.Retention = const_cast<char*>("7 days");
+
+  EXPECT_STREQ(
+      directordaemon::GetConfiguredJobRetention(L_DIFFERENTIAL, &job, source),
+      "7 days");
+  EXPECT_STREQ(source, "job Retention");
 }

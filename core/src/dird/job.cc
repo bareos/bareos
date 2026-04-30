@@ -140,6 +140,50 @@ bool ParseJobRetention(const char* value,
   return true;
 }
 
+const char* GetConfiguredJobRetention(JobLevelCode level,
+                                      const JobResource* job,
+                                      const char*& source)
+{
+  source = "job Retention";
+
+  if (!job) { return nullptr; }
+
+  auto select_retention
+      = [&source](const char* retention, const char* retention_source) {
+          if (retention && retention[0] != '\0') {
+            source = retention_source;
+            return retention;
+          }
+          return static_cast<const char*>(nullptr);
+        };
+
+  switch (level) {
+    case L_FULL:
+    case L_VIRTUAL_FULL:
+      if (const char* retention
+          = select_retention(job->FullRetention, "job FullRetention")) {
+        return retention;
+      }
+      break;
+    case L_DIFFERENTIAL:
+      if (const char* retention
+          = select_retention(job->DiffRetention, "job DifferentialRetention")) {
+        return retention;
+      }
+      break;
+    case L_INCREMENTAL:
+      if (const char* retention
+          = select_retention(job->IncRetention, "job IncrementalRetention")) {
+        return retention;
+      }
+      break;
+    default:
+      break;
+  }
+
+  return select_retention(job->Retention, "job Retention");
+}
+
 std::string JobExpirationToString(const std::optional<utime_t>& expire_time)
 {
   if (!expire_time.has_value()) { return "not set"; }
@@ -205,10 +249,10 @@ bool UpdateJobExpiration(JobControlRecord* jcr,
   const char* retention_spec = jcr->dir_impl->run_job_retention;
   const char* retention_source = "run retention override";
 
-  if ((!retention_spec || retention_spec[0] == '\0') && jcr->dir_impl->res.job
-      && jcr->dir_impl->res.job->Retention) {
-    retention_spec = jcr->dir_impl->res.job->Retention;
-    retention_source = "job Retention";
+  if (!retention_spec || retention_spec[0] == '\0') {
+    retention_spec = GetConfiguredJobRetention(
+        static_cast<JobLevelCode>(jcr->getJobLevel()), jcr->dir_impl->res.job,
+        retention_source);
   }
 
   if (expiry_spec && expiry_spec[0] != '\0') {
