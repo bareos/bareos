@@ -1,0 +1,127 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName=06-copy-history
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+setup_data
+
+history_job_name=history-copy-backup-bareos-fd
+history_copy_name=history-copy
+history_full_volume=HistoryCopyFull001
+history_incremental_volume=HistoryCopyIncremental001
+history_copy_volume=HistoryCopyFullCopy001
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${tmp}/copy-history-backup.out
+label volume=${history_full_volume} storage=File pool=HistoryCopyFull
+label volume=${history_incremental_volume} storage=File pool=HistoryCopyIncremental
+label volume=${history_copy_volume} storage=File2 pool=HistoryCopyFullCopy
+run job=${history_job_name} level=Full yes
+wait
+update volume=${history_full_volume} volstatus=Used
+run job=${history_copy_name} yes
+wait
+run job=${history_job_name} level=Incremental yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_log "${tmp}/copy-history-backup.out"
+
+full_row="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Type, Level, COALESCE(BaseId, 0), COALESCE(ContentId, 0) FROM Job WHERE Name='${history_job_name}' AND Type='B' AND Level='F' ORDER BY JobId DESC LIMIT 1"
+)"
+copy_row="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Type, Level, COALESCE(BaseId, 0), COALESCE(ContentId, 0) FROM Job WHERE Name='${history_job_name}' AND Type='C' AND Level='F' ORDER BY JobId DESC LIMIT 1"
+)"
+incremental_row="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Type, Level, COALESCE(BaseId, 0), COALESCE(ContentId, 0) FROM Job WHERE Name='${history_job_name}' AND Type='B' AND Level='I' ORDER BY JobId DESC LIMIT 1"
+)"
+
+IFS='|' read -r full_jobid full_type full_level full_baseid full_contentid <<<"${full_row}"
+IFS='|' read -r copy_jobid copy_type copy_level copy_baseid copy_contentid <<<"${copy_row}"
+IFS='|' read -r incremental_jobid incremental_type incremental_level incremental_baseid incremental_contentid <<<"${incremental_row}"
+
+if [ -z "${full_jobid}" ] || [ -z "${copy_jobid}" ] || [ -z "${incremental_jobid}" ]; then
+  set_error "Expected full/copy/incremental history rows. full='${full_row}' copy='${copy_row}' incremental='${incremental_row}'"
+  exit 1
+fi
+
+if [ "${full_type}" != "B" ] || [ "${full_level}" != "F" ] \
+  || [ "${full_baseid}" != "0" ] || [ "${full_contentid}" != "${full_jobid}" ]; then
+  set_error "Unexpected full lineage row: ${full_row}"
+  exit 1
+fi
+
+if [ "${copy_type}" != "C" ] || [ "${copy_baseid}" != "${full_baseid}" ] \
+  || [ "${copy_contentid}" != "${full_contentid}" ]; then
+  set_error "Unexpected copy lineage row: ${copy_row}"
+  exit 1
+fi
+
+if [ "${incremental_type}" != "B" ] || [ "${incremental_level}" != "I" ] \
+  || [ "${incremental_baseid}" != "${full_contentid}" ] \
+  || [ "${incremental_contentid}" != "${incremental_jobid}" ]; then
+  set_error "Unexpected incremental lineage row: ${incremental_row}"
+  exit 1
+fi
+
+sleep 2
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${tmp}/copy-history-prune.out
+update volume=${history_full_volume} volstatus=Used
+prune volume=${history_full_volume} yes
+wait
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Pruning volume ${history_full_volume}: 1 Jobs have expired and can be pruned." \
+  "${tmp}/copy-history-prune.out" \
+  "Expected original full volume to become prunable while copy survives"
+
+expect_grep "Purging the following 1 JobIds: ${full_jobid}" \
+  "${tmp}/copy-history-prune.out" \
+  "Expected original full job to be pruned"
+
+expect_grep "Volume \"${history_full_volume}\" contains no jobs after pruning." \
+  "${tmp}/copy-history-prune.out" \
+  "Expected original full volume to be empty after pruning"
+
+full_job_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full_jobid}")"
+copy_job_type_after="$(psql -d "${db_name}" -At -c "SELECT Type FROM Job WHERE JobId=${copy_jobid}")"
+incremental_job_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${incremental_jobid}")"
+
+if [ "${full_job_count}" != "0" ]; then
+  set_error "Expected original full job ${full_jobid} to be pruned, count=${full_job_count}"
+  exit 1
+fi
+
+if [ "${copy_job_type_after}" != "B" ]; then
+  set_error "Expected copy job ${copy_jobid} to be upgraded to backup after prune, got type=${copy_job_type_after}"
+  exit 1
+fi
+
+if [ "${incremental_job_count}" != "1" ]; then
+  set_error "Expected descendant incremental job ${incremental_jobid} to remain, count=${incremental_job_count}"
+  exit 1
+fi
+
+end_test
