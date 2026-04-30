@@ -387,6 +387,7 @@ import {
   filterRestoreSourceClients,
   getRestoreBrowserPlaceholder,
   resolveRestoreSourceClient,
+  resolveRestoreSourceDirector,
 } from '../utils/restore.js'
 import { buildJobDetailsQuery } from '../utils/jobs.js'
 
@@ -568,9 +569,10 @@ async function applyRouteSourceSelection() {
   const qClient = typeof route.query.client === 'string' ? route.query.client : ''
   const qDirector = typeof route.query.director === 'string' ? route.query.director : ''
   const qJobid = typeof route.query.jobid === 'string' ? route.query.jobid : ''
+  const resolvedDirector = resolveRestoreSourceDirector(activeDirectors.value, qDirector)
 
-  if (qDirector) {
-    commonSourceDirector.value = qDirector
+  if (resolvedDirector) {
+    commonSourceDirector.value = resolvedDirector
   } else {
     syncCommonSourceDirector()
   }
@@ -578,7 +580,7 @@ async function applyRouteSourceSelection() {
   if (qClient) {
     const resolvedClient = resolveRestoreSourceClient(sourceClients.value, {
       clientName: qClient,
-      directorName: qDirector,
+      directorName: resolvedDirector,
       currentDirector: auth.user?.director || settings.directorName,
     })
 
@@ -602,13 +604,9 @@ async function applyRouteSourceSelection() {
     }
   }
 
-  if (sourceClientKey.value) {
+  if (sourceClientKey.value || form.value.client || form.value.jobid !== null) {
     sourceClientKey.value = ''
     clearSelectedSourceData()
-  }
-
-  if (qJobid) {
-    form.value.jobid = Number(qJobid)
   }
 
   if (sourceDirector.value) {

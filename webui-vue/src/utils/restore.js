@@ -54,6 +54,8 @@ export function resolveRestoreSourceClient(clients, {
     if (exactMatch) {
       return exactMatch
     }
+
+    return null
   }
 
   if (currentDirector) {
@@ -64,6 +66,14 @@ export function resolveRestoreSourceClient(clients, {
   }
 
   return matches[0]
+}
+
+export function resolveRestoreSourceDirector(activeDirectors, directorName) {
+  if (typeof directorName !== 'string' || !directorName) {
+    return ''
+  }
+
+  return activeDirectors.includes(directorName) ? directorName : ''
 }
 
 export function filterRestoreSourceClients(clients, directorName) {

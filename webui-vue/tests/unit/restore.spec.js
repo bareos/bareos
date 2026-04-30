@@ -25,6 +25,7 @@ import {
   filterRestoreSourceClients,
   getRestoreBrowserPlaceholder,
   resolveRestoreSourceClient,
+  resolveRestoreSourceDirector,
 } from '../../src/utils/restore.js'
 
 describe('restore browser placeholder', () => {
@@ -77,6 +78,23 @@ describe('restore browser placeholder', () => {
       name: 'bareos-fd',
       director: 'prod-a',
     })
+  })
+
+  it('rejects a queried source client when it does not belong to the explicit director', () => {
+    expect(resolveRestoreSourceClient([
+      { name: 'bareos-fd', director: 'prod-a' },
+      { name: 'db-fd', director: 'prod-b' },
+    ], {
+      clientName: 'bareos-fd',
+      directorName: 'prod-b',
+      currentDirector: 'prod-a',
+    })).toBeNull()
+  })
+
+  it('keeps only source directors that are still active', () => {
+    expect(resolveRestoreSourceDirector(['prod-a', 'prod-b'], 'prod-b')).toBe('prod-b')
+    expect(resolveRestoreSourceDirector(['prod-a', 'prod-b'], 'prod-c')).toBe('')
+    expect(resolveRestoreSourceDirector(['prod-a'], '')).toBe('')
   })
 
   it('filters source clients to the selected common-mode director', () => {
