@@ -42,10 +42,10 @@
 
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="list"     :label="t('Show')"     no-caps />
-      <q-tab name="actions"  :label="t('Actions')"  no-caps data-testid="jobs-tab-actions" :disable="isCommonJobs" />
-      <q-tab name="run"      :label="t('Run')"      no-caps data-testid="jobs-tab-run" :disable="isCommonJobs" />
+      <q-tab name="actions"  :label="t('Actions')"  no-caps data-testid="jobs-tab-actions" />
+      <q-tab name="run"      :label="t('Run')"      no-caps data-testid="jobs-tab-run" />
       <q-tab name="rerun"    :label="t('Rerun')"    no-caps />
-      <q-tab name="timeline" :label="t('Timeline')" no-caps :disable="isCommonJobs" />
+      <q-tab name="timeline" :label="t('Timeline')" no-caps />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated swipeable>
@@ -216,9 +216,33 @@
 
       <!-- ── ACTIONS ───────────────────────────────────────────────────────── -->
       <q-tab-panel name="actions" class="q-pa-none q-gutter-md">
-        <q-banner v-if="isCommonJobs" dense rounded class="bg-info text-white q-mb-md">
-          {{ t('Actions stay scoped to the active director for now. Reduce the jobs scope to a single director to use this tab.') }}
-        </q-banner>
+        <q-card
+          v-if="isCommonJobs"
+          flat
+          bordered
+          class="q-mb-md bareos-panel"
+          style="max-width:800px"
+        >
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Jobs Actions Target') }}</span>
+          </q-card-section>
+          <q-card-section>
+            <q-select
+              v-model="singletonTabDirector"
+              :options="singletonTabDirectorOptions"
+              option-label="label"
+              option-value="value"
+              emit-value
+              map-options
+              outlined
+              dense
+              :label="t('Director')"
+            />
+            <div class="text-caption text-grey-6 q-mt-sm">
+              {{ t('Actions in this tab run against the selected director while the jobs list stays aggregated.') }}
+            </div>
+          </q-card-section>
+        </q-card>
 
         <!-- Enable / Disable jobs -->
         <q-card flat bordered class="bareos-panel">
@@ -268,6 +292,33 @@
 
       <!-- ── RUN ───────────────────────────────────────────────────────────── -->
       <q-tab-panel name="run">
+        <q-card
+          v-if="isCommonJobs"
+          flat
+          bordered
+          class="q-mb-md bareos-panel"
+          style="max-width:800px"
+        >
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Run Job Target') }}</span>
+          </q-card-section>
+          <q-card-section>
+            <q-select
+              v-model="singletonTabDirector"
+              :options="singletonTabDirectorOptions"
+              option-label="label"
+              option-value="value"
+              emit-value
+              map-options
+              outlined
+              dense
+              :label="t('Director')"
+            />
+            <div class="text-caption text-grey-6 q-mt-sm">
+              {{ t('Run and defaults lookups in this tab use the selected director while the jobs list stays aggregated.') }}
+            </div>
+          </q-card-section>
+        </q-card>
         <q-card flat bordered class="bareos-panel" style="max-width:640px">
           <q-card-section class="panel-header">{{ t('Run Job') }}</q-card-section>
           <q-card-section>
@@ -386,10 +437,34 @@
 
       <!-- ── TIMELINE ──────────────────────────────────────────────────────── -->
       <q-tab-panel name="timeline" class="q-pa-none">
-        <q-banner v-if="isCommonJobs" dense rounded class="bg-info text-white q-mb-md">
-          {{ t('Timeline stays scoped to the active director for now. Reduce the jobs scope to a single director to use this tab.') }}
-        </q-banner>
-        <JobTimeline />
+        <q-card
+          v-if="isCommonJobs"
+          flat
+          bordered
+          class="q-mb-md bareos-panel"
+          style="max-width:800px"
+        >
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Timeline Target') }}</span>
+          </q-card-section>
+          <q-card-section>
+            <q-select
+              v-model="singletonTabDirector"
+              :options="singletonTabDirectorOptions"
+              option-label="label"
+              option-value="value"
+              emit-value
+              map-options
+              outlined
+              dense
+              :label="t('Director')"
+            />
+            <div class="text-caption text-grey-6 q-mt-sm">
+              {{ t('Timeline data in this tab uses the selected director while the jobs list stays aggregated.') }}
+            </div>
+          </q-card-section>
+        </q-card>
+        <JobTimeline :key="currentSingletonDirector || 'jobs-timeline'" />
       </q-tab-panel>
     </q-tab-panels>
   </q-page>
@@ -498,6 +573,29 @@ const jobsScopeLabel = computed(() => (
     ? `${activeDirectors.value.length} ${t('directors selected')}`
     : (activeDirectors.value[0] ?? t('No director selected'))
 ))
+const singletonTabDirector = ref('')
+const singletonTabDirectorOptions = computed(() => (
+  activeDirectors.value.map(value => ({ label: value, value }))
+))
+const currentSingletonDirector = computed(() => (
+  isCommonJobs.value
+    ? (singletonTabDirector.value || activeDirectors.value[0] || '')
+    : (activeDirectors.value[0] || '')
+))
+
+function syncSingletonTabDirector() {
+  const validDirectors = activeDirectors.value
+  if (!validDirectors.length) {
+    singletonTabDirector.value = ''
+    return
+  }
+
+  if (validDirectors.includes(singletonTabDirector.value)) {
+    return
+  }
+
+  singletonTabDirector.value = validDirectors[0]
+}
 
 async function ensureSingleScopeDirector() {
   if (!isSingleDirectorScope.value) {
@@ -514,6 +612,20 @@ async function ensureSingleScopeDirector() {
   }
 
   await switchActiveDirector(scopeDirector)
+}
+
+async function ensureSingletonTabDirector() {
+  const targetDirector = currentSingletonDirector.value
+  if (!targetDirector) {
+    return null
+  }
+
+  if (auth.user?.director === targetDirector && director.isConnected) {
+    return targetDirector
+  }
+
+  await switchActiveDirector(targetDirector)
+  return targetDirector
 }
 
 // ── paginated job list ────────────────────────────────────────────────────────
@@ -705,7 +817,7 @@ const loadingDefs   = ref(false)
 async function loadJobDefs() {
   loadingDefs.value = true
   try {
-    await ensureSingleScopeDirector()
+    await ensureSingletonTabDirector()
     const res = await director.call('show jobs')
     // show jobs returns {jobs: {"JobName": {name, type, enabled, ...}, ...}}
     const raw = res?.jobs ?? {}
@@ -869,6 +981,7 @@ function cancelAll() {
 // ── enable / disable ──────────────────────────────────────────────────────────
 async function enableJob(name) {
   try {
+    await ensureSingletonTabDirector()
     await director.call(`enable job=${quoteDirectorString(name)} yes`)
     $q.notify({ type: 'positive', message: `Job "${name}" enabled.` })
     const j = jobDefs.value.find(d => d.name === name)
@@ -880,6 +993,7 @@ async function enableJob(name) {
 
 async function disableJob(name) {
   try {
+    await ensureSingletonTabDirector()
     await director.call(`disable job=${quoteDirectorString(name)} yes`)
     $q.notify({ type: 'positive', message: `Job "${name}" disabled.` })
     const j = jobDefs.value.find(d => d.name === name)
@@ -909,7 +1023,7 @@ const runForm = ref({ job: null, client: null, fileset: null, pool: null, storag
 
 async function loadRunOptions() {
   try {
-    await ensureSingleScopeDirector()
+    await ensureSingletonTabDirector()
     const [j, c, f, p, s] = await Promise.all([
       director.call('.jobs'),
       director.call('.clients'),
@@ -931,7 +1045,7 @@ async function loadRunOptions() {
 async function onJobSelected(name) {
   if (!name) return
   try {
-    await ensureSingleScopeDirector()
+    await ensureSingletonTabDirector()
     const res = await director.call(`.defaults job=${quoteDirectorString(name)}`)
     const d   = res?.defaults ?? res ?? {}
     if (d.client)   runForm.value.client   = d.client
@@ -958,7 +1072,7 @@ async function runJob() {
 
   runLoading.value = true
   try {
-    await ensureSingleScopeDirector()
+    await ensureSingletonTabDirector()
     const res   = await director.call(cmd)
     const newId = res?.run?.jobid ?? res?.jobid ?? '?'
     $q.notify({ type: 'positive', message: `Job started — ID ${newId}` })
@@ -1031,10 +1145,16 @@ function manualRefresh() {
 onMounted(() => {
   loadAvailableDirectors()
   syncSelectedDirectors()
+  syncSingletonTabDirector()
   fetchPage()
-  if (director.isConnected && isSingleDirectorScope.value) {
+  if (director.isConnected && (isSingleDirectorScope.value || tab.value === 'actions')) {
     loadJobDefs()
+  }
+  if (director.isConnected && (isSingleDirectorScope.value || tab.value === 'run')) {
     loadRunOptions()
+  }
+  if (director.isConnected && tab.value === 'timeline') {
+    ensureSingletonTabDirector()
   }
   startAutoRefresh()
 })
@@ -1046,9 +1166,14 @@ onUnmounted(() => {
 watch(() => director.isConnected, (connected) => {
   if (connected) {
     fetchPage()
-    if (isSingleDirectorScope.value) {
+    if (isSingleDirectorScope.value || tab.value === 'actions') {
       loadJobDefs()
+    }
+    if (isSingleDirectorScope.value || tab.value === 'run') {
       loadRunOptions()
+    }
+    if (tab.value === 'timeline') {
+      ensureSingletonTabDirector()
     }
     startAutoRefresh()
   }
@@ -1072,22 +1197,45 @@ watch(statusFilter, (next) => {
 
 watch(() => directorOptions.value, () => {
   syncSelectedDirectors()
+  syncSingletonTabDirector()
 })
 
 watch(() => activeDirectors.value.join('\u0000'), () => {
-  if (!isSingleDirectorScope.value && ['actions', 'run', 'timeline'].includes(tab.value)) {
-    tab.value = 'list'
-  }
+  syncSingletonTabDirector()
   pagination.value = { ...pagination.value, page: 1 }
   fetchPage()
+  if (tab.value === 'actions') {
+    loadJobDefs()
+  }
+  if (tab.value === 'run') {
+    loadRunOptions()
+  }
+  if (tab.value === 'timeline') {
+    ensureSingletonTabDirector()
+  }
 })
 
 watch(tab, async (t) => {
-  if (!isSingleDirectorScope.value && ['actions', 'run', 'timeline'].includes(t)) {
-    tab.value = 'list'
-    return
-  }
   if (t === 'actions'  && jobDefs.value.length === 0) loadJobDefs()
   if (t === 'run'      && dotJobs.value.length === 0)  loadRunOptions()
+  if (t === 'timeline') await ensureSingletonTabDirector()
+})
+
+watch(() => singletonTabDirector.value, async () => {
+  if (!isCommonJobs.value) {
+    return
+  }
+
+  if (tab.value === 'actions') {
+    await ensureSingletonTabDirector()
+    await loadJobDefs()
+  }
+  if (tab.value === 'run') {
+    await ensureSingletonTabDirector()
+    await loadRunOptions()
+  }
+  if (tab.value === 'timeline') {
+    await ensureSingletonTabDirector()
+  }
 })
 </script>
