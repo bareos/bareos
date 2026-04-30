@@ -34,9 +34,11 @@ describe('pool route helpers', () => {
       director: 'prod-a',
       volumeName: 'Full-0001',
       storagesTab: 'volumes',
+      storagesScopeDirector: 'prod-a',
     })).toEqual({
       director: 'prod-a',
       storagesTab: 'volumes',
+      storagesScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
     })
 
@@ -98,13 +100,18 @@ describe('pool route helpers', () => {
   it('resolves an optional storages-tab origin for pool details routes', () => {
     expect(resolvePoolDetailsStoragesOrigin({
       storagesTab: 'volumes',
+      storagesScopeDirector: 'prod-a',
     })).toEqual({
       tab: 'volumes',
+      scopeDirector: 'prod-a',
     })
 
     expect(resolvePoolDetailsStoragesOrigin({
-      storagesTab: 'pools',
-    })).toBeNull()
+      storagesScopeDirector: 'prod-a',
+    })).toEqual({
+      tab: 'pools',
+      scopeDirector: 'prod-a',
+    })
   })
 
   it('sanitizes volume details query state for pool routes', () => {
@@ -116,6 +123,7 @@ describe('pool route helpers', () => {
       poolName: 'Full',
       volumeName: 'Full-0001',
       storagesTab: 'volumes',
+      storagesScopeDirector: 'prod-a',
       autochangerStorage: 'TapeLibrary',
       autochangerDirector: 'prod-a',
       ignored: 'value',
@@ -127,6 +135,7 @@ describe('pool route helpers', () => {
       poolName: 'Full',
       volumeName: 'Full-0001',
       storagesTab: 'volumes',
+      storagesScopeDirector: 'prod-a',
       autochangerStorage: 'TapeLibrary',
       autochangerDirector: 'prod-a',
     })

@@ -137,6 +137,7 @@ import {
   buildAutochangerSelectionQuery,
   buildStoragesTabQuery,
   resolveAutochangerSelectionQuery,
+  withStoragesScopeDirectorQuery,
 } from '../utils/storagesRoute.js'
 
 const route     = useRoute()
@@ -175,9 +176,14 @@ const backLocation = computed(() => {
   }
 
   if (storagesOrigin.value) {
+    const storagesQuery = withStoragesScopeDirectorQuery(
+      buildStoragesTabQuery({}, storagesOrigin.value.tab),
+      storagesOrigin.value.scopeDirector
+    )
+
     return {
       name: 'storages',
-      query: buildStoragesTabQuery({}, storagesOrigin.value.tab),
+      query: storagesQuery,
     }
   }
 

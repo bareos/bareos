@@ -28,6 +28,7 @@ import { buildVolumeDetailsQuery } from './volumes.js'
 export function buildPoolDetailsQuery({
   director,
   storagesTab,
+  storagesScopeDirector,
   volumeName,
   volumeQuery,
 } = {}) {
@@ -43,6 +44,10 @@ export function buildPoolDetailsQuery({
 
   if (storagesTab && storagesTab !== 'pools' && !query.storagesTab) {
     query.storagesTab = storagesTab
+  }
+
+  if (storagesScopeDirector && !query.storagesScopeDirector) {
+    query.storagesScopeDirector = storagesScopeDirector
   }
 
   return query
@@ -84,14 +89,18 @@ export function resolvePoolDetailsVolumeOrigin(query) {
 }
 
 export function resolvePoolDetailsStoragesOrigin(query) {
-  if (typeof query?.storagesTab !== 'string'
-    || !query.storagesTab
-    || query.storagesTab === 'pools') {
+  const scopeDirector = typeof query?.storagesScopeDirector === 'string'
+    ? query.storagesScopeDirector
+    : ''
+  const storagesTab = typeof query?.storagesTab === 'string' ? query.storagesTab : ''
+
+  if (!storagesTab && !scopeDirector) {
     return null
   }
 
   return {
-    tab: query.storagesTab,
+    tab: storagesTab || 'pools',
+    scopeDirector,
   }
 }
 
@@ -112,6 +121,10 @@ export function resolvePoolDetailsVolumeQuery(query) {
     && query.storagesTab
     && query.storagesTab !== 'pools') {
     nextQuery.storagesTab = query.storagesTab
+  }
+
+  if (typeof query?.storagesScopeDirector === 'string' && query.storagesScopeDirector) {
+    nextQuery.storagesScopeDirector = query.storagesScopeDirector
   }
 
   if (typeof query?.[AUTOCHANGER_STORAGE_QUERY_KEY] === 'string'

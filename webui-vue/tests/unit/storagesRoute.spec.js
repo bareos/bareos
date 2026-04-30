@@ -27,6 +27,8 @@ import {
   buildStoragesTabQuery,
   resolveAutochangerSelectionQuery,
   resolveAutochangerSelection,
+  resolveStoragesScopeDirector,
+  withStoragesScopeDirectorQuery,
 } from '../../src/utils/storagesRoute.js'
 
 describe('storages route helpers', () => {
@@ -49,6 +51,22 @@ describe('storages route helpers', () => {
     }, 'storages')).toEqual({
       foo: 'bar',
     })
+  })
+
+  it('adds and removes the storages scope director query parameter', () => {
+    expect(withStoragesScopeDirectorQuery({ tab: 'volumes' }, 'prod-a')).toEqual({
+      tab: 'volumes',
+      scopeDirector: 'prod-a',
+    })
+    expect(withStoragesScopeDirectorQuery({ tab: 'volumes', scopeDirector: 'prod-a' }, '')).toEqual({
+      tab: 'volumes',
+    })
+  })
+
+  it('resolves an optional storages scope director from route state', () => {
+    expect(resolveStoragesScopeDirector({ scopeDirector: 'prod-a' })).toBe('prod-a')
+    expect(resolveStoragesScopeDirector({ scopeDirector: 42 })).toBe('')
+    expect(resolveStoragesScopeDirector({})).toBe('')
   })
 
   it('writes autochanger selection into the query', () => {

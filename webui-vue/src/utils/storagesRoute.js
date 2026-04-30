@@ -33,6 +33,23 @@ export function buildStoragesTabQuery(query, tab) {
   return next
 }
 
+export function resolveStoragesScopeDirector(query) {
+  return typeof query?.scopeDirector === 'string' ? query.scopeDirector : ''
+}
+
+export function withStoragesScopeDirectorQuery(query, director) {
+  const next = { ...query }
+  const nextDirector = typeof director === 'string' ? director : ''
+
+  delete next.scopeDirector
+
+  if (nextDirector) {
+    next.scopeDirector = nextDirector
+  }
+
+  return next
+}
+
 export function buildAutochangerSelectionQuery(query, storage) {
   const next = buildStoragesTabQuery(query, 'autochangers')
 

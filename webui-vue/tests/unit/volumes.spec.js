@@ -25,6 +25,7 @@ import {
   resolveVolumeDetailsDirectorOrigin,
   resolveVolumeDetailsJobOrigin,
   resolveVolumeDetailsPoolOrigin,
+  resolveVolumeDetailsStoragesOrigin,
   volumeEncryptionKey,
   volumeHasEncryptionKey,
 } from '../../src/utils/volumes.js'
@@ -53,12 +54,16 @@ describe('volume encryption helpers', () => {
       directorTarget: 'prod-b',
       jobId: 42,
       poolName: 'Full',
+      storagesTab: 'volumes',
+      storagesScopeDirector: 'prod-a',
     })).toEqual({
       director: 'prod-a',
       directorTab: 'catalog',
       directorTarget: 'prod-b',
       jobId: '42',
       poolName: 'Full',
+      storagesTab: 'volumes',
+      storagesScopeDirector: 'prod-a',
     })
 
     expect(buildVolumeDetailsQuery({
@@ -103,5 +108,17 @@ describe('volume encryption helpers', () => {
     })
 
     expect(resolveVolumeDetailsJobOrigin({})).toBeNull()
+  })
+
+  it('resolves an optional storages origin for volume details routes', () => {
+    expect(resolveVolumeDetailsStoragesOrigin({
+      storagesTab: 'volumes',
+      storagesScopeDirector: 'prod-a',
+    })).toEqual({
+      tab: 'volumes',
+      scopeDirector: 'prod-a',
+    })
+
+    expect(resolveVolumeDetailsStoragesOrigin({})).toBeNull()
   })
 })

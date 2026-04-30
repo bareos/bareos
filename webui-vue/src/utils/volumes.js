@@ -63,6 +63,8 @@ export function buildVolumeDetailsQuery({
   directorTarget,
   jobId,
   poolName,
+  storagesTab,
+  storagesScopeDirector,
 } = {}) {
   const query = {}
 
@@ -84,6 +86,14 @@ export function buildVolumeDetailsQuery({
 
   if (poolName) {
     query.poolName = poolName
+  }
+
+  if (storagesTab) {
+    query.storagesTab = storagesTab
+  }
+
+  if (storagesScopeDirector) {
+    query.storagesScopeDirector = storagesScopeDirector
   }
 
   return query
@@ -117,5 +127,18 @@ export function resolveVolumeDetailsJobOrigin(query) {
 
   return {
     id: query.jobId,
+  }
+}
+
+export function resolveVolumeDetailsStoragesOrigin(query) {
+  if (typeof query?.storagesTab !== 'string' || !query.storagesTab) {
+    return null
+  }
+
+  return {
+    tab: query.storagesTab,
+    scopeDirector: typeof query?.storagesScopeDirector === 'string'
+      ? query.storagesScopeDirector
+      : '',
   }
 }

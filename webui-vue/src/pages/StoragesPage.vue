@@ -24,6 +24,17 @@
         <div class="text-caption text-grey-6 q-mt-sm">
           {{ t('Select the directors that contribute to the storages views.') }}
         </div>
+        <q-chip
+          v-if="storagesListScopeDirector"
+          removable
+          color="blue-7"
+          text-color="white"
+          icon="dns"
+          class="q-mt-sm"
+          @remove="router.replace({ path: '/storages', query: withStoragesScopeDirectorQuery(route.query, '') })"
+        >
+          {{ t('Director') }}: {{ storagesListScopeDirector }}
+        </q-chip>
         <q-banner
           v-if="directorErrors.length"
           rounded
@@ -376,8 +387,11 @@ import {
 import {
   buildAutochangerSelectionQuery,
   buildStoragesTabQuery,
+  resolveStoragesScopeDirector,
+  withStoragesScopeDirectorQuery,
 } from '../utils/storagesRoute.js'
 import { buildPoolDetailsQuery } from '../utils/pools.js'
+import { buildVolumeDetailsQuery, volumeHasEncryptionKey } from '../utils/volumes.js'
 import AutochangerPage from './AutochangerPage.vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -386,7 +400,6 @@ import { formatBytes, formatDuration } from '../mock/index.js'
 import BoolIcon from '../components/BoolIcon.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
 import PoolTypeBadge from '../components/PoolTypeBadge.vue'
-import { volumeHasEncryptionKey } from '../utils/volumes.js'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -461,9 +474,21 @@ const activeDirectors = computed(() => {
   return currentDirector ? [currentDirector] : []
 })
 
+const storagesListScopeDirector = computed(() => {
+  const requestedDirector = resolveStoragesScopeDirector(route.query)
+
+  if (requestedDirector && activeDirectors.value.includes(requestedDirector)) {
+    return requestedDirector
+  }
+
+  return ''
+})
+const storagesPageDirectors = computed(() => (
+  storagesListScopeDirector.value ? [storagesListScopeDirector.value] : activeDirectors.value
+))
 const isCommonStorages = computed(() => activeDirectors.value.length > 1)
 const isSingleDirectorScope = computed(() => activeDirectors.value.length === 1)
-const showDirectorColumn = computed(() => isCommonStorages.value)
+const showDirectorColumn = computed(() => storagesPageDirectors.value.length > 1)
 const storagesScopeLabel = computed(() => (
   isCommonStorages.value
     ? `${activeDirectors.value.length} ${t('directors selected')}`
@@ -485,6 +510,18 @@ watch(tab, (next) => {
   }
 
   router.replace({ path: '/storages', query: buildStoragesTabQuery(route.query, target) })
+})
+
+watch(() => route.query.scopeDirector, (value) => {
+  if (typeof value === 'string' && value && !activeDirectors.value.includes(value)) {
+    router.replace({
+      path: '/storages',
+      query: withStoragesScopeDirectorQuery(route.query, ''),
+    })
+    return
+  }
+
+  refresh()
 })
 
 async function ensureSingleScopeDirector() {
@@ -543,20 +580,20 @@ async function refresh() {
   error.value = null
   directorErrors.value = []
   try {
-    if (activeDirectors.value.length === 0) {
+    if (storagesPageDirectors.value.length === 0) {
       storageRows.value = []
       poolRows.value = []
       volumeRows.value = []
       return
     }
 
-    if (isCommonStorages.value) {
+    if (storagesPageDirectors.value.length > 1 || (storagesListScopeDirector.value && isCommonStorages.value)) {
       const credentials = auth.getCredentials()
       if (!credentials?.password) {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedStoragesState(credentials, activeDirectors.value)
+      const result = await fetchAggregatedStoragesState(credentials, storagesPageDirectors.value)
       storageRows.value = result.storages
       poolRows.value = result.pools
       volumeRows.value = result.volumes
@@ -564,7 +601,7 @@ async function refresh() {
       return
     }
 
-    const currentDirector = activeDirectors.value[0]
+    const currentDirector = storagesPageDirectors.value[0]
     await ensureSingleScopeDirector()
     const [storagesResult, poolsResult, volumesResult] = await Promise.all([
       director.call('list storages'),
@@ -728,6 +765,7 @@ async function openPoolDetails(pool) {
       query: buildPoolDetailsQuery({
         director: pool.director,
         storagesTab: tab.value,
+        storagesScopeDirector: pool.director,
       }),
     })
   } catch (reason) {
@@ -741,7 +779,11 @@ async function openVolumeDetails(volume) {
     await router.push({
       name: 'volume-details',
       params: { name: volume.volumename },
-      query: volume.director ? { director: volume.director } : {},
+      query: buildVolumeDetailsQuery({
+        director: volume.director,
+        storagesTab: tab.value,
+        storagesScopeDirector: volume.director,
+      }),
     })
   } catch (reason) {
     reportRowError(volume, reason)
@@ -759,6 +801,14 @@ watch(() => directorOptions.value, () => {
 })
 
 watch(() => activeDirectors.value.join('\u0000'), () => {
+  if (typeof route.query.scopeDirector === 'string'
+    && route.query.scopeDirector
+    && !activeDirectors.value.includes(route.query.scopeDirector)) {
+    router.replace({
+      path: '/storages',
+      query: withStoragesScopeDirectorQuery(route.query, ''),
+    })
+  }
   refresh()
 })
 </script>

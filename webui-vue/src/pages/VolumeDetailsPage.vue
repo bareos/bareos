@@ -267,12 +267,15 @@ import { formatBytes, formatDuration } from '../mock/index.js'
 import { buildPoolDetailsQuery } from '../utils/pools.js'
 import {
   buildAutochangerSelectionQuery,
+  buildStoragesTabQuery,
   resolveAutochangerSelectionQuery,
+  withStoragesScopeDirectorQuery,
 } from '../utils/storagesRoute.js'
 import {
   resolveVolumeDetailsDirectorOrigin,
   resolveVolumeDetailsJobOrigin,
   resolveVolumeDetailsPoolOrigin,
+  resolveVolumeDetailsStoragesOrigin,
   volumeHasEncryptionKey,
 } from '../utils/volumes.js'
 
@@ -291,6 +294,7 @@ const currentVolumeDirector = computed(() => (
 const autochangerOrigin = computed(() => resolveAutochangerSelectionQuery(route.query))
 const jobOrigin = computed(() => resolveVolumeDetailsJobOrigin(route.query))
 const poolOrigin = computed(() => resolveVolumeDetailsPoolOrigin(route.query))
+const storagesOrigin = computed(() => resolveVolumeDetailsStoragesOrigin(route.query))
 const directorOrigin = computed(() => resolveVolumeDetailsDirectorOrigin(route.query))
 const backLabel = computed(() => {
   if (jobOrigin.value) {
@@ -303,6 +307,10 @@ const backLabel = computed(() => {
 
   if (autochangerOrigin.value) {
     return t('Back to Autochanger')
+  }
+
+  if (storagesOrigin.value) {
+    return t('Back to Storages')
   }
 
   return directorOrigin.value ? t('Back to Director') : t('Volumes')
@@ -320,7 +328,11 @@ const backLocation = computed(() => {
     return {
       name: 'pool-details',
       params: { name: poolOrigin.value.name },
-      query: requestedDirector.value ? { director: requestedDirector.value } : {},
+      query: buildPoolDetailsQuery({
+        director: requestedDirector.value,
+        poolName: poolOrigin.value.name,
+        volumeQuery: route.query,
+      }),
     }
   }
 
@@ -328,6 +340,16 @@ const backLocation = computed(() => {
     return {
       name: 'storages',
       query: buildAutochangerSelectionQuery({}, autochangerOrigin.value),
+    }
+  }
+
+  if (storagesOrigin.value) {
+    return {
+      name: 'storages',
+      query: withStoragesScopeDirectorQuery(
+        buildStoragesTabQuery({}, storagesOrigin.value.tab),
+        storagesOrigin.value.scopeDirector
+      ),
     }
   }
 
