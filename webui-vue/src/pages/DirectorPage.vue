@@ -624,7 +624,7 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth.js'
@@ -654,7 +654,13 @@ import JobLevelBadge  from '../components/JobLevelBadge.vue'
 import JobTypeBadge   from '../components/JobTypeBadge.vue'
 import SubscriptionReport from '../components/SubscriptionReport.vue'
 
-const tab = ref('status')
+const validTabs = new Set(['status', 'messages', 'catalog', 'subscription'])
+function normaliseTab(value) {
+  return validTabs.has(value) ? value : 'status'
+}
+
+const route = useRoute()
+const tab = ref(normaliseTab(route.query.tab))
 const router = useRouter()
 const $q = useQuasar()
 const auth = useAuthStore()
@@ -974,7 +980,24 @@ function formatLogLine(item) {
 
 watch(messagesLimit, () => refreshMessages())
 
+watch(() => route.query.tab, (value) => {
+  const next = normaliseTab(value)
+  if (tab.value !== next) {
+    tab.value = next
+  }
+})
+
 watch(tab, (t) => {
+  const current = normaliseTab(route.query.tab)
+  if (current !== t) {
+    const query = { ...route.query }
+    delete query.tab
+    if (t !== 'status') {
+      query.tab = t
+    }
+    router.replace({ path: '/director', query })
+  }
+
   if (t === 'messages') refreshMessages()
   if (t === 'catalog') {
     ensureSingletonTabDirector()
