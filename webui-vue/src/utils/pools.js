@@ -27,6 +27,7 @@ import { buildVolumeDetailsQuery } from './volumes.js'
 
 export function buildPoolDetailsQuery({
   director,
+  storagesTab,
   volumeName,
   volumeQuery,
 } = {}) {
@@ -38,6 +39,10 @@ export function buildPoolDetailsQuery({
 
   if (volumeName && !query.volumeName) {
     query.volumeName = volumeName
+  }
+
+  if (storagesTab && storagesTab !== 'pools' && !query.storagesTab) {
+    query.storagesTab = storagesTab
   }
 
   return query
@@ -78,6 +83,18 @@ export function resolvePoolDetailsVolumeOrigin(query) {
   }
 }
 
+export function resolvePoolDetailsStoragesOrigin(query) {
+  if (typeof query?.storagesTab !== 'string'
+    || !query.storagesTab
+    || query.storagesTab === 'pools') {
+    return null
+  }
+
+  return {
+    tab: query.storagesTab,
+  }
+}
+
 export function resolvePoolDetailsVolumeQuery(query) {
   const nextQuery = buildVolumeDetailsQuery({
     director: typeof query?.director === 'string' ? query.director : '',
@@ -89,6 +106,12 @@ export function resolvePoolDetailsVolumeQuery(query) {
 
   if (typeof query?.volumeName === 'string' && query.volumeName) {
     nextQuery.volumeName = query.volumeName
+  }
+
+  if (typeof query?.storagesTab === 'string'
+    && query.storagesTab
+    && query.storagesTab !== 'pools') {
+    nextQuery.storagesTab = query.storagesTab
   }
 
   if (typeof query?.[AUTOCHANGER_STORAGE_QUERY_KEY] === 'string'

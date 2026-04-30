@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildPoolDetailsQuery,
   buildPoolVolumeDetailsQuery,
+  resolvePoolDetailsStoragesOrigin,
   resolvePoolDetailsVolumeQuery,
   resolvePoolDetailsVolumeOrigin,
 } from '../../src/utils/pools.js'
@@ -32,8 +33,10 @@ describe('pool route helpers', () => {
     expect(buildPoolDetailsQuery({
       director: 'prod-a',
       volumeName: 'Full-0001',
+      storagesTab: 'volumes',
     })).toEqual({
       director: 'prod-a',
+      storagesTab: 'volumes',
       volumeName: 'Full-0001',
     })
 
@@ -92,6 +95,18 @@ describe('pool route helpers', () => {
     expect(resolvePoolDetailsVolumeOrigin({})).toBeNull()
   })
 
+  it('resolves an optional storages-tab origin for pool details routes', () => {
+    expect(resolvePoolDetailsStoragesOrigin({
+      storagesTab: 'volumes',
+    })).toEqual({
+      tab: 'volumes',
+    })
+
+    expect(resolvePoolDetailsStoragesOrigin({
+      storagesTab: 'pools',
+    })).toBeNull()
+  })
+
   it('sanitizes volume details query state for pool routes', () => {
     expect(resolvePoolDetailsVolumeQuery({
       director: 'prod-a',
@@ -100,6 +115,7 @@ describe('pool route helpers', () => {
       jobId: '42',
       poolName: 'Full',
       volumeName: 'Full-0001',
+      storagesTab: 'volumes',
       autochangerStorage: 'TapeLibrary',
       autochangerDirector: 'prod-a',
       ignored: 'value',
@@ -110,6 +126,7 @@ describe('pool route helpers', () => {
       jobId: '42',
       poolName: 'Full',
       volumeName: 'Full-0001',
+      storagesTab: 'volumes',
       autochangerStorage: 'TapeLibrary',
       autochangerDirector: 'prod-a',
     })

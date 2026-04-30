@@ -377,6 +377,7 @@ import {
   buildAutochangerSelectionQuery,
   buildStoragesTabQuery,
 } from '../utils/storagesRoute.js'
+import { buildPoolDetailsQuery } from '../utils/pools.js'
 import AutochangerPage from './AutochangerPage.vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -724,7 +725,10 @@ async function openPoolDetails(pool) {
     await router.push({
       name: 'pool-details',
       params: { name: pool.name },
-      query: pool.director ? { director: pool.director } : {},
+      query: buildPoolDetailsQuery({
+        director: pool.director,
+        storagesTab: tab.value,
+      }),
     })
   } catch (reason) {
     reportRowError(pool, reason)

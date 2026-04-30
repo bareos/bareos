@@ -129,11 +129,13 @@ import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import {
   buildPoolVolumeDetailsQuery,
+  resolvePoolDetailsStoragesOrigin,
   resolvePoolDetailsVolumeOrigin,
   resolvePoolDetailsVolumeQuery,
 } from '../utils/pools.js'
 import {
   buildAutochangerSelectionQuery,
+  buildStoragesTabQuery,
   resolveAutochangerSelectionQuery,
 } from '../utils/storagesRoute.js'
 
@@ -149,11 +151,16 @@ const requestedDirector = computed(() => (
 const currentPoolDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
+const storagesOrigin = computed(() => resolvePoolDetailsStoragesOrigin(route.query))
 const volumeOrigin = computed(() => resolvePoolDetailsVolumeOrigin(route.query))
 const autochangerOrigin = computed(() => resolveAutochangerSelectionQuery(route.query))
 const backLabel = computed(() => {
   if (volumeOrigin.value) {
     return t('Back to Volume')
+  }
+
+  if (storagesOrigin.value) {
+    return t('Back to Storages')
   }
 
   return autochangerOrigin.value ? t('Back to Autochanger') : t('Pools')
@@ -164,6 +171,13 @@ const backLocation = computed(() => {
       name: 'volume-details',
       params: { name: volumeOrigin.value.name },
       query: resolvePoolDetailsVolumeQuery(route.query),
+    }
+  }
+
+  if (storagesOrigin.value) {
+    return {
+      name: 'storages',
+      query: buildStoragesTabQuery({}, storagesOrigin.value.tab),
     }
   }
 
