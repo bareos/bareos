@@ -355,8 +355,7 @@ X509CrlPtr GenerateCrl(X509* ca_cert,
       || X509_REVOKED_set_revocationDate(revoked.get(), revocation_date.get())
              != 1
       || X509_CRL_add0_revoked(crl.get(), revoked.get()) != 1) {
-    *error = "Could not add revoked certificate to CRL: "
-             + GetOpenSslError();
+    *error = "Could not add revoked certificate to CRL: " + GetOpenSslError();
     return {nullptr, X509_CRL_free};
   }
   revoked.release();
@@ -391,9 +390,9 @@ bool GenerateTlsArtifactsForRevocationTest(GeneratedTlsArtifacts* artifacts,
   auto ca_key = GenerateRsaKey(error);
   if (!ca_key) { return false; }
 
-  auto ca_cert = GenerateCertificate(ca_key.get(), "Bareos Test CA", 1, 30,
-                                     ca_key.get(), nullptr, true, nullptr,
-                                     error);
+  auto ca_cert
+      = GenerateCertificate(ca_key.get(), "Bareos Test CA", 1, 30, ca_key.get(),
+                            nullptr, true, nullptr, error);
   if (!ca_cert) { return false; }
 
   auto server_key = GenerateRsaKey(error);
@@ -416,9 +415,11 @@ bool GenerateTlsArtifactsForRevocationTest(GeneratedTlsArtifacts* artifacts,
   if (!crl) { return false; }
 
   return WritePrivateKeyPem(artifacts->server_key, server_key.get(), error)
-         && WriteCertificatePem(artifacts->server_cert, server_cert.get(), error)
+         && WriteCertificatePem(artifacts->server_cert, server_cert.get(),
+                                error)
          && WritePrivateKeyPem(artifacts->client_key, client_key.get(), error)
-         && WriteCertificatePem(artifacts->client_cert, client_cert.get(), error)
+         && WriteCertificatePem(artifacts->client_cert, client_cert.get(),
+                                error)
          && WriteCertificatePem(artifacts->ca_cert, ca_cert.get(), error)
          && WriteCrlPem(artifacts->crl, crl.get(), error);
 }

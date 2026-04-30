@@ -668,9 +668,8 @@ bool TlsOpenSsl::init()
       return false;
     }
 
-    if (!X509_STORE_set_flags(store,
-                              X509_V_FLAG_CRL_CHECK
-                                  | X509_V_FLAG_CRL_CHECK_ALL)) {
+    if (!X509_STORE_set_flags(
+            store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL)) {
       OpensslPostErrors(M_FATAL, T_("Error enabling CRL verification"));
       return false;
     }
@@ -906,7 +905,7 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
 
       if (bstrcmp(extname, "subjectAltName")) {
         const X509V3_EXT_METHOD* method;
-        STACK_OF(CONF_VALUE) * val = nullptr;
+        STACK_OF(CONF_VALUE)* val = nullptr;
         CONF_VALUE* nval;
         void* extstr = nullptr;
         const unsigned char* ext_value_data;
