@@ -2,7 +2,7 @@
   <div class="row items-center no-wrap q-gutter-xs">
     <router-link
       v-if="link"
-      :to="{ name: 'volume-details', params: { name } }"
+      :to="{ name: 'volume-details', params: { name }, query: query ?? {} }"
       class="text-primary"
     >
       {{ name }}
@@ -37,6 +37,10 @@ const props = defineProps({
   link: {
     type: Boolean,
     default: true,
+  },
+  query: {
+    type: Object,
+    default: null,
   },
 })
 

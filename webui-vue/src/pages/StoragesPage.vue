@@ -704,7 +704,11 @@ async function reloadStorageStatus(storage) {
 async function openPoolDetails(pool) {
   try {
     await switchToRowDirector(pool)
-    await router.push({ name: 'pool-details', params: { name: pool.name } })
+    await router.push({
+      name: 'pool-details',
+      params: { name: pool.name },
+      query: pool.director ? { director: pool.director } : {},
+    })
   } catch (reason) {
     reportRowError(pool, reason)
   }

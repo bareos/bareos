@@ -48,7 +48,11 @@
                        dense flat :pagination="{ rowsPerPage: 10 }">
                 <template #body-cell-volumename="props">
                   <q-td :props="props">
-                    <VolumeNameLink :name="props.value" :volume="props.row" />
+                    <VolumeNameLink
+                      :name="props.value"
+                      :volume="props.row"
+                      :query="props.row.director ? { director: props.row.director } : null"
+                    />
                   </q-td>
                 </template>
                 <template #body-cell-volstatus="props">
@@ -102,48 +106,82 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { normaliseVolume } from '../composables/useDirectorFetch.js'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
+import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 
 const route     = useRoute()
+const auth      = useAuthStore()
 const director  = useDirectorStore()
-const poolName  = route.params.name
+const settings  = useSettingsStore()
 const { t } = useI18n()
+const poolName = computed(() => route.params.name)
+const requestedDirector = computed(() => (
+  typeof route.query.director === 'string' ? route.query.director : ''
+))
+const currentPoolDirector = computed(() => (
+  requestedDirector.value || auth.user?.director || settings.directorName || ''
+))
 
 const pool    = ref(null)
 const volumes = ref([])
 const loading = ref(true)
 const error   = ref(null)
 
-onMounted(async () => {
+async function ensurePoolDirector() {
+  if (!requestedDirector.value) {
+    return
+  }
+
+  if (auth.user?.director === requestedDirector.value && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(requestedDirector.value)
+}
+
+async function loadPool() {
+  await ensurePoolDirector()
+
+  const [poolRes, volRes] = await Promise.all([
+    director.call(`llist pool=${poolName.value}`),
+    director.call(`llist volumes pool=${poolName.value}`),
+  ])
+  const pools = poolRes?.pools ?? []
+  pool.value = Array.isArray(pools) ? pools[0] : Object.values(pools)[0]
+  const vols = volRes?.volumes ?? []
+  const volumeRows = Array.isArray(vols) ? vols : Object.values(vols).flat()
+  volumes.value = volumeRows.map((volume) => {
+    const normalized = normaliseVolume(volume)
+    return {
+      ...volume,
+      ...normalized,
+      director: currentPoolDirector.value || null,
+      volretention: volume.volretention ?? volume.VolRetention ?? normalized.retention,
+    }
+  })
+}
+
+watch(() => `${poolName.value}\u0000${requestedDirector.value}`, async () => {
+  loading.value = true
+  error.value = null
+  pool.value = null
+  volumes.value = []
   try {
-    const [poolRes, volRes] = await Promise.all([
-      director.call(`llist pool=${poolName}`),
-      director.call(`llist volumes pool=${poolName}`),
-    ])
-    const pools = poolRes?.pools ?? []
-    pool.value    = Array.isArray(pools) ? pools[0] : Object.values(pools)[0]
-    const vols    = volRes?.volumes ?? []
-    const volumeRows = Array.isArray(vols) ? vols : Object.values(vols).flat()
-    volumes.value = volumeRows.map((volume) => {
-      const normalized = normaliseVolume(volume)
-      return {
-        ...volume,
-        ...normalized,
-        volretention: volume.volretention ?? volume.VolRetention ?? normalized.retention,
-      }
-    })
-  } catch (e) {
-    error.value = e.message
+    await loadPool()
+  } catch (loadError) {
+    error.value = loadError.message
   } finally {
     loading.value = false
   }
-})
+}, { immediate: true })
 
 const detailRows = computed(() => {
   if (!pool.value) return []

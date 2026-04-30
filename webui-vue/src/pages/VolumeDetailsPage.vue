@@ -90,7 +90,10 @@
                     {{ row.label }}
                   </q-item-section>
                   <q-item-section>
-                    <component :is="row.component ?? 'span'" v-if="row.component"
+                    <router-link v-if="row.link" :to="row.link" class="text-primary">
+                      {{ row.value }}
+                    </router-link>
+                    <component :is="row.component ?? 'span'" v-else-if="row.component"
                                v-bind="row.componentProps" />
                     <template v-else>{{ row.value }}</template>
                   </q-item-section>
@@ -329,11 +332,11 @@ const hasEncryptionKey = computed(() => volumeHasEncryptionKey(vol.value))
 
 const detailRows = computed(() => {
   if (!vol.value) return []
-  const v = vol.value
-  return [
-    { label: t('Media ID'),    value: v.mediaid ?? v.mediaId ?? '—' },
-    { label: t('Pool'),        value: v.pool ?? v.Pool ?? '—',
-      link: v.pool ? { name: 'pool-details', params: { name: v.pool } } : null },
+    const v = vol.value
+    return [
+      { label: t('Media ID'),    value: v.mediaid ?? v.mediaId ?? '—' },
+      { label: t('Pool'),        value: v.pool ?? v.Pool ?? '—',
+       link: v.pool ? { name: 'pool-details', params: { name: v.pool }, query: { director: settings.directorName } } : null },
     { label: t('Storage'),     value: v.storage ?? v.storagename ?? '—' },
     { label: t('Media Type'),  value: v.mediatype ?? v.MediaType ?? '—' },
     { label: t('Encryption Key'), value: hasEncryptionKey.value ? t('Present') : '—' },
