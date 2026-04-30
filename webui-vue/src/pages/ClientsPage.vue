@@ -175,7 +175,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   directorCollection,
@@ -190,7 +190,13 @@ import { useReleaseInfoStore } from '../stores/releaseInfo.js'
 import { useSettingsStore } from '../stores/settings.js'
 import JobTimeline from '../components/JobTimeline.vue'
 
-const tab = ref('list')
+const validTabs = new Set(['list', 'timeline'])
+function normaliseTab(value) {
+  return validTabs.has(value) ? value : 'list'
+}
+
+const route = useRoute()
+const tab = ref(normaliseTab(route.query.tab))
 const auth = useAuthStore()
 const director = useDirectorStore()
 const releaseInfo = useReleaseInfoStore()
@@ -483,6 +489,29 @@ async function showStatus(client) {
 watch(() => directorOptions.value, () => {
   syncSelectedDirectors()
   syncSingletonTimelineDirector()
+})
+
+watch(() => route.query.tab, (value) => {
+  const next = normaliseTab(value)
+  if (tab.value !== next) {
+    tab.value = next
+  }
+})
+
+watch(tab, (value) => {
+  const next = normaliseTab(value)
+  const current = normaliseTab(route.query.tab)
+  if (current === next) {
+    return
+  }
+
+  const query = { ...route.query }
+  delete query.tab
+  if (next !== 'list') {
+    query.tab = next
+  }
+
+  router.replace({ path: '/clients', query })
 })
 
 watch(() => activeDirectors.value.join('\u0000'), () => {
