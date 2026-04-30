@@ -140,10 +140,12 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildClientDetailsQuery } from '../utils/clients.js'
+import { buildDirectorPageQuery } from '../utils/director.js'
 import { formatNumber } from '../utils/locales.js'
 import {
   buildJobDetailsQuery,
   resolveJobDetailsClientOrigin,
+  resolveJobDetailsDirectorOrigin,
   resolveJobDetailsRestoreOrigin,
   resolveJobDetailsVolumeOrigin,
   resolveJobsListQuery,
@@ -170,15 +172,20 @@ const currentJobDirector = computed(() => (
 ))
 const backToJobsQuery = computed(() => resolveJobsListQuery(route.query))
 const clientOrigin = computed(() => resolveJobDetailsClientOrigin(route.query))
+const directorOrigin = computed(() => resolveJobDetailsDirectorOrigin(route.query))
 const restoreOrigin = computed(() => resolveJobDetailsRestoreOrigin(route.query))
 const volumeOrigin = computed(() => resolveJobDetailsVolumeOrigin(route.query))
 const backLabel = computed(() => (
   clientOrigin.value
     ? t('Back to Client')
     : (
-      restoreOrigin.value
-        ? t('Back to Restore')
-        : (volumeOrigin.value ? t('Back to Volume') : t('Back to Jobs'))
+      directorOrigin.value
+        ? t('Back to Director')
+        : (
+          restoreOrigin.value
+            ? t('Back to Restore')
+            : (volumeOrigin.value ? t('Back to Volume') : t('Back to Jobs'))
+        )
     )
 ))
 const backLocation = computed(() => {
@@ -189,6 +196,16 @@ const backLocation = computed(() => {
       query: buildClientDetailsQuery({
         director: clientOrigin.value.director,
         clientsTab: clientOrigin.value.clientsTab,
+      }),
+    }
+  }
+
+  if (directorOrigin.value) {
+    return {
+      name: 'director',
+      query: buildDirectorPageQuery({}, {
+        tab: directorOrigin.value.tab,
+        targetDirector: directorOrigin.value.targetDirector,
       }),
     }
   }
@@ -433,6 +450,8 @@ async function doRerun() {
           restoreClient: restoreOrigin.value?.client,
           restoreDirector: restoreOrigin.value?.director,
           restoreJobid: restoreOrigin.value?.jobid,
+          directorTab: directorOrigin.value?.tab,
+          directorTarget: directorOrigin.value?.targetDirector,
         }),
       })
     }

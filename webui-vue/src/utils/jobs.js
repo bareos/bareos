@@ -80,6 +80,8 @@ export function buildJobDetailsQuery({
   restoreClient,
   restoreDirector,
   restoreJobid,
+  directorTab,
+  directorTarget,
 } = {}) {
   const query = {}
 
@@ -129,6 +131,14 @@ export function buildJobDetailsQuery({
 
   if (restoreJobid !== null && restoreJobid !== undefined && restoreJobid !== '') {
     query.restoreJobid = String(restoreJobid)
+  }
+
+  if (directorTab && directorTab !== 'status') {
+    query.directorTab = directorTab
+  }
+
+  if (directorTarget) {
+    query.directorTarget = directorTarget
   }
 
   return query
@@ -184,5 +194,16 @@ export function resolveJobDetailsRestoreOrigin(query) {
     client: query.restoreClient,
     director: typeof query?.restoreDirector === 'string' ? query.restoreDirector : '',
     jobid: typeof query?.restoreJobid === 'string' ? query.restoreJobid : '',
+  }
+}
+
+export function resolveJobDetailsDirectorOrigin(query) {
+  if (typeof query?.directorTab !== 'string' || !query.directorTab) {
+    return null
+  }
+
+  return {
+    tab: query.directorTab,
+    targetDirector: typeof query?.directorTarget === 'string' ? query.directorTarget : '',
   }
 }

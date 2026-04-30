@@ -24,6 +24,7 @@ import {
   buildJobDetailsQuery,
   normaliseJobStatusFilter,
   resolveJobDetailsClientOrigin,
+  resolveJobDetailsDirectorOrigin,
   resolveJobDetailsRestoreOrigin,
   resolveJobDetailsVolumeOrigin,
   resolveJobsSearchQuery,
@@ -80,6 +81,8 @@ describe('jobs filter helpers', () => {
       restoreClient: 'bareos-fd',
       restoreDirector: 'prod-a',
       restoreJobid: 42,
+      directorTab: 'catalog',
+      directorTarget: 'prod-a',
     })).toEqual({
       director: 'prod-a',
       jobsAction: 'timeline',
@@ -93,6 +96,8 @@ describe('jobs filter helpers', () => {
       restoreClient: 'bareos-fd',
       restoreDirector: 'prod-a',
       restoreJobid: '42',
+      directorTab: 'catalog',
+      directorTarget: 'prod-a',
     })
 
     expect(buildJobDetailsQuery({
@@ -168,6 +173,20 @@ describe('jobs filter helpers', () => {
     expect(resolveJobDetailsRestoreOrigin({
       restoreDirector: 'prod-a',
       restoreJobid: '42',
+    })).toBeNull()
+  })
+
+  it('resolves an optional director origin for job details routes', () => {
+    expect(resolveJobDetailsDirectorOrigin({
+      directorTab: 'catalog',
+      directorTarget: 'prod-a',
+    })).toEqual({
+      tab: 'catalog',
+      targetDirector: 'prod-a',
+    })
+
+    expect(resolveJobDetailsDirectorOrigin({
+      directorTarget: 'prod-a',
     })).toBeNull()
   })
 })

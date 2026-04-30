@@ -481,7 +481,15 @@
                     <template #body-cell-id="props">
                       <q-td :props="props">
                         <router-link
-                          :to="{ name: 'job-details', params: { id: props.value }, query: currentSingletonDirector ? { director: currentSingletonDirector } : {} }"
+                          :to="{
+                            name: 'job-details',
+                            params: { id: props.value },
+                            query: buildJobDetailsQuery({
+                              director: currentSingletonDirector,
+                              directorTab: tab,
+                              directorTarget: isDirectorSingletonTab(tab) ? currentSingletonDirector : '',
+                            }),
+                          }"
                           class="text-primary"
                         >{{ props.value }}</router-link>
                       </q-td>
@@ -645,6 +653,12 @@ import {
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { formatBytes } from '../mock/index.js'
 import {
+  buildDirectorPageQuery,
+  isDirectorSingletonTab,
+  resolveDirectorTargetQuery,
+} from '../utils/director.js'
+import { buildJobDetailsQuery } from '../utils/jobs.js'
+import {
   formatDirectorRelativeTime,
   formatNumber,
 } from '../utils/locales.js'
@@ -745,6 +759,14 @@ function syncSingletonTabDirector() {
   const validDirectors = activeDirectors.value
   if (!validDirectors.length) {
     singletonTabDirector.value = ''
+    return
+  }
+
+  const requestedDirector = isDirectorSingletonTab(tab.value)
+    ? resolveDirectorTargetQuery(route.query)
+    : ''
+  if (requestedDirector && validDirectors.includes(requestedDirector)) {
+    singletonTabDirector.value = requestedDirector
     return
   }
 
@@ -987,14 +1009,17 @@ watch(() => route.query.tab, (value) => {
   }
 })
 
+watch(() => route.query.directorTarget, () => {
+  syncSingletonTabDirector()
+})
+
 watch(tab, (t) => {
   const current = normaliseTab(route.query.tab)
-  if (current !== t) {
-    const query = { ...route.query }
-    delete query.tab
-    if (t !== 'status') {
-      query.tab = t
-    }
+  const query = buildDirectorPageQuery(route.query, {
+    tab: t,
+    targetDirector: singletonTabDirector.value,
+  })
+  if (current !== t || route.query.directorTarget !== query.directorTarget) {
     router.replace({ path: '/director', query })
   }
 
@@ -1011,6 +1036,14 @@ watch(tab, (t) => {
 watch(() => singletonTabDirector.value, () => {
   if (!isCommonDirectorPage.value) {
     return
+  }
+
+  const query = buildDirectorPageQuery(route.query, {
+    tab: tab.value,
+    targetDirector: singletonTabDirector.value,
+  })
+  if (route.query.tab !== query.tab || route.query.directorTarget !== query.directorTarget) {
+    router.replace({ path: '/director', query })
   }
 
   if (tab.value === 'catalog') {
@@ -1070,10 +1103,15 @@ async function navigateForDirector(targetDirector, location) {
 }
 
 function openJobDetails(row) {
+  const query = buildJobDetailsQuery({
+    director: row.director,
+    directorTab: tab.value,
+    directorTarget: isDirectorSingletonTab(tab.value) ? currentSingletonDirector.value : '',
+  })
   return navigateForDirector(row.director, {
     name: 'job-details',
     params: { id: row.jobid ?? row.id },
-    query: row.director ? { director: row.director } : {},
+    query,
   })
 }
 
