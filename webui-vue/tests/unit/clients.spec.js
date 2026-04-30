@@ -22,6 +22,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildClientDetailsQuery,
+  resolveClientDetailsDashboardOrigin,
   resolveClientsListQuery,
 } from '../../src/utils/clients.js'
 
@@ -30,9 +31,11 @@ describe('clients route helpers', () => {
     expect(buildClientDetailsQuery({
       director: 'prod-a',
       clientsTab: 'timeline',
+      dashboardOrigin: true,
     })).toEqual({
       director: 'prod-a',
       clientsTab: 'timeline',
+      dashboardOrigin: '1',
     })
 
     expect(buildClientDetailsQuery({
@@ -53,5 +56,11 @@ describe('clients route helpers', () => {
     expect(resolveClientsListQuery({
       clientsTab: 'list',
     })).toEqual({})
+  })
+
+  it('resolves an optional dashboard origin for client details routes', () => {
+    expect(resolveClientDetailsDashboardOrigin({ dashboardOrigin: '1' })).toBe(true)
+    expect(resolveClientDetailsDashboardOrigin({ dashboardOrigin: '0' })).toBe(false)
+    expect(resolveClientDetailsDashboardOrigin({})).toBe(false)
   })
 })

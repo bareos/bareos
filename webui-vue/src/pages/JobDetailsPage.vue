@@ -145,6 +145,7 @@ import { formatNumber } from '../utils/locales.js'
 import {
   buildJobDetailsQuery,
   resolveJobDetailsClientOrigin,
+  resolveJobDetailsDashboardOrigin,
   resolveJobDetailsDirectorOrigin,
   resolveJobDetailsRestoreOrigin,
   resolveJobDetailsVolumeOrigin,
@@ -171,6 +172,7 @@ const currentJobDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
 const backToJobsQuery = computed(() => resolveJobsListQuery(route.query))
+const dashboardOrigin = computed(() => resolveJobDetailsDashboardOrigin(route.query))
 const clientOrigin = computed(() => resolveJobDetailsClientOrigin(route.query))
 const directorOrigin = computed(() => resolveJobDetailsDirectorOrigin(route.query))
 const restoreOrigin = computed(() => resolveJobDetailsRestoreOrigin(route.query))
@@ -178,15 +180,17 @@ const volumeOrigin = computed(() => resolveJobDetailsVolumeOrigin(route.query))
 const backLabel = computed(() => (
   clientOrigin.value
     ? t('Back to Client')
-    : (
-      directorOrigin.value
-        ? t('Back to Director')
-        : (
-          restoreOrigin.value
-            ? t('Back to Restore')
-            : (volumeOrigin.value ? t('Back to Volume') : t('Back to Jobs'))
-        )
-    )
+    : (dashboardOrigin.value
+      ? t('Back to Dashboard')
+      : (
+        directorOrigin.value
+          ? t('Back to Director')
+          : (
+            restoreOrigin.value
+              ? t('Back to Restore')
+              : (volumeOrigin.value ? t('Back to Volume') : t('Back to Jobs'))
+          )
+      ))
 ))
 const backLocation = computed(() => {
   if (clientOrigin.value) {
@@ -198,6 +202,10 @@ const backLocation = computed(() => {
         clientsTab: clientOrigin.value.clientsTab,
       }),
     }
+  }
+
+  if (dashboardOrigin.value) {
+    return { name: 'dashboard' }
   }
 
   if (directorOrigin.value) {
@@ -452,6 +460,7 @@ async function doRerun() {
           restoreJobid: restoreOrigin.value?.jobid,
           directorTab: directorOrigin.value?.tab,
           directorTarget: directorOrigin.value?.targetDirector,
+          dashboardOrigin: dashboardOrigin.value,
         }),
       })
     }

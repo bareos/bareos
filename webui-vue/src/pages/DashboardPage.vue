@@ -277,6 +277,8 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { buildClientDetailsQuery } from '../utils/clients.js'
+import { buildJobDetailsQuery } from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
@@ -441,7 +443,10 @@ async function openJobDetails(row) {
     await router.push({
       name: 'job-details',
       params: { id: jobId(row) },
-      query: row.director ? { director: row.director } : {},
+      query: buildJobDetailsQuery({
+        director: row.director,
+        dashboardOrigin: true,
+      }),
     })
   } catch (error) {
     $q.notify({
@@ -460,7 +465,10 @@ async function openClientDetails(row) {
     await router.push({
       name: 'client-details',
       params: { name: row.client },
-      query: row.director ? { director: row.director } : {},
+      query: buildClientDetailsQuery({
+        director: row.director,
+        dashboardOrigin: true,
+      }),
     })
   } catch (error) {
     $q.notify({

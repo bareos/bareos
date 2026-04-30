@@ -24,6 +24,7 @@ import {
   buildJobDetailsQuery,
   normaliseJobStatusFilter,
   resolveJobDetailsClientOrigin,
+  resolveJobDetailsDashboardOrigin,
   resolveJobDetailsDirectorOrigin,
   resolveJobDetailsRestoreOrigin,
   resolveJobDetailsVolumeOrigin,
@@ -83,6 +84,7 @@ describe('jobs filter helpers', () => {
       restoreJobid: 42,
       directorTab: 'catalog',
       directorTarget: 'prod-a',
+      dashboardOrigin: true,
     })).toEqual({
       director: 'prod-a',
       jobsAction: 'timeline',
@@ -98,6 +100,7 @@ describe('jobs filter helpers', () => {
       restoreJobid: '42',
       directorTab: 'catalog',
       directorTarget: 'prod-a',
+      dashboardOrigin: '1',
     })
 
     expect(buildJobDetailsQuery({
@@ -188,5 +191,11 @@ describe('jobs filter helpers', () => {
     expect(resolveJobDetailsDirectorOrigin({
       directorTarget: 'prod-a',
     })).toBeNull()
+  })
+
+  it('resolves an optional dashboard origin for job details routes', () => {
+    expect(resolveJobDetailsDashboardOrigin({ dashboardOrigin: '1' })).toBe(true)
+    expect(resolveJobDetailsDashboardOrigin({ dashboardOrigin: '0' })).toBe(false)
+    expect(resolveJobDetailsDashboardOrigin({})).toBe(false)
   })
 })

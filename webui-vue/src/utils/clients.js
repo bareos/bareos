@@ -22,6 +22,7 @@
 export function buildClientDetailsQuery({
   director,
   clientsTab,
+  dashboardOrigin,
 } = {}) {
   const query = {}
 
@@ -33,6 +34,10 @@ export function buildClientDetailsQuery({
     query.clientsTab = clientsTab
   }
 
+  if (dashboardOrigin) {
+    query.dashboardOrigin = '1'
+  }
+
   return query
 }
 
@@ -42,4 +47,8 @@ export function resolveClientsListQuery(query) {
   }
 
   return {}
+}
+
+export function resolveClientDetailsDashboardOrigin(query) {
+  return query?.dashboardOrigin === '1'
 }

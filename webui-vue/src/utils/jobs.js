@@ -82,6 +82,7 @@ export function buildJobDetailsQuery({
   restoreJobid,
   directorTab,
   directorTarget,
+  dashboardOrigin,
 } = {}) {
   const query = {}
 
@@ -139,6 +140,10 @@ export function buildJobDetailsQuery({
 
   if (directorTarget) {
     query.directorTarget = directorTarget
+  }
+
+  if (dashboardOrigin) {
+    query.dashboardOrigin = '1'
   }
 
   return query
@@ -206,4 +211,8 @@ export function resolveJobDetailsDirectorOrigin(query) {
     tab: query.directorTab,
     targetDirector: typeof query?.directorTarget === 'string' ? query.directorTarget : '',
   }
+}
+
+export function resolveJobDetailsDashboardOrigin(query) {
+  return query?.dashboardOrigin === '1'
 }

@@ -7,8 +7,8 @@
       <q-btn
         flat
         icon="arrow_back"
-        :label="t('Back to Clients')"
-        :to="{ name: 'clients', query: backToClientsQuery }"
+        :label="backLabel"
+        :to="backLocation"
         no-caps
         class="q-mr-md"
       />
@@ -108,7 +108,10 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildJobDetailsQuery } from '../utils/jobs.js'
-import { resolveClientsListQuery } from '../utils/clients.js'
+import {
+  resolveClientDetailsDashboardOrigin,
+  resolveClientsListQuery,
+} from '../utils/clients.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
@@ -126,6 +129,15 @@ const currentClientDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
 const backToClientsQuery = computed(() => resolveClientsListQuery(route.query))
+const dashboardOrigin = computed(() => resolveClientDetailsDashboardOrigin(route.query))
+const backLabel = computed(() => (
+  dashboardOrigin.value ? t('Back to Dashboard') : t('Back to Clients')
+))
+const backLocation = computed(() => (
+  dashboardOrigin.value
+    ? { name: 'dashboard' }
+    : { name: 'clients', query: backToClientsQuery.value }
+))
 
 function buildClientJobDetailsQuery(job) {
   return buildJobDetailsQuery({
