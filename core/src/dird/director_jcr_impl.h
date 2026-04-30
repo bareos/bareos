@@ -117,6 +117,8 @@ struct DirectorJcrImpl {
   storagedaemon::BootStrapRecord* bsr{}; /**< Bootstrap record -- has everything */
   char* backup_format{};          /**< Backup format used when doing a NDMP backup */
   char* plugin_options{};         /**< User set options for plugin */
+  char* run_job_retention{};      /**< Run command retention override */
+  char* run_job_expiry{};         /**< Run command expiry override */
   uint32_t SDJobFiles{};          /**< Number of files written, this job */
   uint64_t SDJobBytes{};          /**< Number of bytes processed this job */
   uint32_t SDErrors{};            /**< Number of non-fatal errors */

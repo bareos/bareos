@@ -87,6 +87,7 @@ CREATE TABLE Job
     EndTime           TIMESTAMP   WITHOUT TIME ZONE,
     RealEndTime       TIMESTAMP   WITHOUT TIME ZONE,
     JobTDate          BIGINT      DEFAULT 0,
+    ExpireTime        BIGINT,
     VolSessionId      INTEGER     DEFAULT 0,
     volSessionTime    INTEGER     DEFAULT 0,
     JobFiles          INTEGER     DEFAULT 0,
@@ -635,7 +636,7 @@ commit;
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2250;
-INSERT INTO Version (VersionId) VALUES (2250);
+DELETE FROM Version WHERE VersionId<=2260;
+INSERT INTO Version (VersionId) VALUES (2260);
 
 -- Make sure we have appropriate permissions

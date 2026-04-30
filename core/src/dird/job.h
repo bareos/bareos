@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,8 @@ class JobControlRecord;
 
 #include "cats/cats.h"
 #include <mutex>
+#include <optional>
+#include <string>
 
 namespace directordaemon {
 
@@ -43,6 +45,19 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr);
 DBId_t GetOrCreatePoolRecord(JobControlRecord* jcr, char* pool_name);
 bool GetLevelSinceTime(JobControlRecord* jcr);
 void ApplyPoolOverrides(JobControlRecord* jcr, bool force = false);
+bool ParseJobExpiryTime(const char* value,
+                        std::optional<utime_t>& expire_time,
+                        std::string& error);
+bool ParseJobRetention(const char* value,
+                       std::optional<utime_t>& retention,
+                       bool& keep_forever,
+                       std::string& error);
+bool UpdateJobExpiration(JobControlRecord* jcr,
+                         utime_t job_tdate,
+                         std::string* log_message = nullptr,
+                         std::string* error_message = nullptr);
+std::string JobExpirationToString(const std::optional<utime_t>& expire_time);
+bool UpdatePreparedJobStartRecord(JobControlRecord* jcr);
 JobId_t RunJob(JobControlRecord* jcr);
 bool CancelJob(UaContext* ua, JobControlRecord* jcr);
 void GetJobStorage(UnifiedStorageResource* store,

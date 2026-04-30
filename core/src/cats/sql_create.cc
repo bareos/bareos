@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,9 +57,11 @@ bool BareosDb::CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   time_t stime;
   int len;
   utime_t JobTDate;
-  char ed1[30], ed2[30];
+  char ed1[30], ed2[30], ed3[30];
   char esc_ujobname[MAX_ESCAPE_NAME_LENGTH];
   char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
+  const char* expire_time
+      = jr->ExpireTime ? edit_uint64(*jr->ExpireTime, ed3) : "NULL";
 
   DbLocker _{this};
 
@@ -79,10 +81,10 @@ bool BareosDb::CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   /* clang-format off */
   Mmsg(cmd,
        "INSERT INTO Job (Job,Name,Type,Level,JobStatus,SchedTime,JobTDate,"
-       "ClientId,Comment) "
-       "VALUES ('%s','%s','%c','%c','%c','%s',%s,%s,'%s')",
+       "ExpireTime,ClientId,Comment) "
+       "VALUES ('%s','%s','%c','%c','%c','%s',%s,%s,%s,'%s')",
        esc_ujobname, esc_jobname, (char)(jr->JobType), (char)(jr->JobLevel),
-       (char)(jr->JobStatus), dt, edit_uint64(JobTDate, ed1),
+       (char)(jr->JobStatus), dt, edit_uint64(JobTDate, ed1), expire_time,
        edit_int64(jr->ClientId, ed2), buf.c_str());
   /* clang-format on */
 

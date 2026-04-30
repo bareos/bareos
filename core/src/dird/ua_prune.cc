@@ -828,7 +828,7 @@ int GetPruneListForVolume(UaContext* ua,
 {
   PoolMem query(PM_MESSAGE);
   utime_t now;
-  char ed1[50], ed2[50];
+  char ed1[50], ed2[50], ed3[50];
 
   if (mr->Enabled == VOL_ARCHIVED) {
     return 0; /* cannot prune Archived volumes */
@@ -837,9 +837,17 @@ int GetPruneListForVolume(UaContext* ua,
   // Now add to the  list of JobIds for Jobs written to this Volume
   utime_t VolRetention = mr->VolRetention;
   now = (utime_t)time(NULL);
-  ua->db->FillQuery(query, BareosDb::SQL_QUERY::sel_JobMedia,
-                    edit_int64(mr->MediaId, ed1),
-                    edit_int64(now - VolRetention, ed2));
+  Mmsg(query,
+       "SELECT DISTINCT JobMedia.JobId "
+       "FROM JobMedia, Job "
+       "WHERE MediaId = %s "
+       "AND Job.JobId = JobMedia.JobId "
+       "AND Job.JobTDate < %s "
+       "AND (Job.ExpireTime IS NULL "
+       "     OR (Job.ExpireTime != 0 AND Job.ExpireTime <= %s)) "
+       "ORDER BY JobId",
+       edit_int64(mr->MediaId, ed1), edit_int64(now - VolRetention, ed2),
+       edit_int64(now, ed3));
 
   Dmsg3(250, "Now=%d VolRetention=%d now-VolRetention=%s\n", (int)now,
         (int)VolRetention, ed2);

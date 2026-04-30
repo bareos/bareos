@@ -160,8 +160,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
   jcr->dir_impl->jr.StartTime = jcr->start_time;
 
 
-  if (DbLocker _{jcr->db};
-      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
 
@@ -357,8 +356,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   // Update job start record
-  if (DbLocker _{jcr->db};
-      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     return false;
   }
@@ -439,15 +437,29 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   UpdateJobEnd(jcr, TermCode);
 
   if (jcr->dir_impl->previous_jr) {
+    std::string error;
+    if (!UpdateJobExpiration(jcr, jcr->dir_impl->previous_jr->JobTDate, nullptr,
+                             &error)) {
+      Jmsg(jcr, M_WARNING, 0, "%s\n", error.c_str());
+    }
+    char ec3[30];
+    const char* expire_time
+        = jcr->dir_impl->jr.ExpireTime
+              ? edit_uint64(*jcr->dir_impl->jr.ExpireTime, ec3)
+              : "NULL";
     // Update final items to set them to the previous job's values
     Mmsg(query,
-         "UPDATE Job SET StartTime='%s',EndTime='%s',"
-         "JobTDate=%s WHERE JobId=%s",
+         "UPDATE Job SET StartTime='%s',EndTime='%s',JobTDate=%s,"
+         "ExpireTime=%s WHERE JobId=%s",
          jcr->dir_impl->previous_jr->cStartTime,
          jcr->dir_impl->previous_jr->cEndTime,
-         edit_uint64(jcr->dir_impl->previous_jr->JobTDate, ec1),
+         edit_uint64(jcr->dir_impl->previous_jr->JobTDate, ec1), expire_time,
          edit_uint64(jcr->JobId, ec2));
     jcr->db->SqlQuery(query.c_str());
+    Jmsg(jcr, M_INFO, 0,
+         "Job expiry set to %s from newest consolidated job %u.\n",
+         JobExpirationToString(jcr->dir_impl->jr.ExpireTime).c_str(),
+         jcr->dir_impl->previous_jr->JobId);
   }
 
   // Get the fully updated job record

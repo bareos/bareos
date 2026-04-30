@@ -535,6 +535,10 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
 
   // At user request modify parameters of job to be run.
   if (ua->cmd[0] != 0 && bstrncasecmp(ua->cmd, T_("mod"), strlen(ua->cmd))) {
+    int next_prompt = 8;
+    int retention_prompt = -1;
+    int expiry_prompt = -1;
+
     StartPrompt(ua, T_("Parameters to modify:\n"));
 
     AddPrompt(ua, T_("Level"));   /* 0 */
@@ -552,17 +556,22 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
     if (jcr->is_JobType(JT_BACKUP) || jcr->is_JobType(JT_COPY)
         || jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_VERIFY)) {
       AddPrompt(ua, T_("Pool")); /* 8 */
+      next_prompt = 9;
       if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
           || (jcr->is_JobType(JT_BACKUP)
               && jcr->is_JobLevel(L_VIRTUAL_FULL))) { /* NextPool */
         AddPrompt(ua, T_("NextPool"));                /* 9 */
+        next_prompt = 10;
         if (jcr->is_JobType(JT_BACKUP)) {
           AddPrompt(ua, T_("Plugin Options")); /* 10 */
+          next_prompt = 11;
         }
       } else if (jcr->is_JobType(JT_VERIFY)) {
         AddPrompt(ua, T_("Verify Job")); /* 9 */
+        next_prompt = 10;
       } else if (jcr->is_JobType(JT_BACKUP)) {
         AddPrompt(ua, T_("Plugin Options")); /* 9 */
+        next_prompt = 10;
       }
     } else if (jcr->is_JobType(JT_RESTORE)) {
       AddPrompt(ua, T_("Bootstrap"));       /* 8 */
@@ -571,9 +580,48 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
       AddPrompt(ua, T_("Replace"));         /* 11 */
       AddPrompt(ua, T_("JobId"));           /* 12 */
       AddPrompt(ua, T_("Plugin Options"));  /* 13 */
+      next_prompt = 14;
     }
 
-    switch (DoPrompt(ua, "", T_("Select parameter to modify"), NULL, 0)) {
+    retention_prompt = next_prompt++;
+    AddPrompt(ua, T_("Retention"));
+    expiry_prompt = next_prompt++;
+    AddPrompt(ua, T_("Expiry"));
+
+    int selected_prompt
+        = DoPrompt(ua, "", T_("Select parameter to modify"), NULL, 0);
+
+    if (selected_prompt == retention_prompt) {
+      if (GetCmd(ua, T_("Please enter retention (duration, never, or empty to "
+                        "clear): "))) {
+        if (jcr->dir_impl->run_job_retention) {
+          free(jcr->dir_impl->run_job_retention);
+          jcr->dir_impl->run_job_retention = NULL;
+        }
+        if (ua->cmd[0] != 0) {
+          jcr->dir_impl->run_job_retention = strdup(ua->cmd);
+        }
+        goto try_again;
+      }
+      return -1;
+    }
+
+    if (selected_prompt == expiry_prompt) {
+      if (GetCmd(ua, T_("Please enter expiry as YYYY-MM-DD HH:MM:SS, never, or "
+                        "empty to clear: "))) {
+        if (jcr->dir_impl->run_job_expiry) {
+          free(jcr->dir_impl->run_job_expiry);
+          jcr->dir_impl->run_job_expiry = NULL;
+        }
+        if (ua->cmd[0] != 0) {
+          jcr->dir_impl->run_job_expiry = strdup(ua->cmd);
+        }
+        goto try_again;
+      }
+      return -1;
+    }
+
+    switch (selected_prompt) {
       case 0:
         /* Level */
         SelectJobLevel(ua, jcr);
@@ -843,6 +891,33 @@ static bool ResetRestoreContext(UaContext* ua,
   if (rc.catalog) {
     jcr->dir_impl->res.catalog = rc.catalog;
     PmStrcpy(jcr->dir_impl->res.catalog_source, T_("user input"));
+  }
+
+  if (rc.retention) {
+    std::optional<utime_t> retention;
+    bool keep_forever = false;
+    std::string error;
+    if (!ParseJobRetention(rc.retention, retention, keep_forever, error)) {
+      ua->SendMsg("%s\n", error.c_str());
+      return false;
+    }
+    if (jcr->dir_impl->run_job_retention) {
+      free(jcr->dir_impl->run_job_retention);
+    }
+    jcr->dir_impl->run_job_retention = strdup(rc.retention);
+    rc.retention = NULL;
+  }
+
+  if (rc.expiry) {
+    std::optional<utime_t> expire_time;
+    std::string error;
+    if (!ParseJobExpiryTime(rc.expiry, expire_time, error)) {
+      ua->SendMsg("%s\n", error.c_str());
+      return false;
+    }
+    if (jcr->dir_impl->run_job_expiry) { free(jcr->dir_impl->run_job_expiry); }
+    jcr->dir_impl->run_job_expiry = strdup(rc.expiry);
+    rc.expiry = NULL;
   }
 
   PmStrcpy(jcr->comment, rc.comment);
@@ -1779,6 +1854,8 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
          "accurate",             /* 30 */
          "backupformat",         /* 31 */
          "consolidatejob",       /* 32 - parent consolidate job */
+         "retention",            /* 33 */
+         "expiry",               /* 34 */
          NULL};
 
 #define YES_POS 14
@@ -1793,11 +1870,13 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
   rc.fileset_name = NULL;
   rc.verify_job_name = NULL;
   rc.previous_job_name = NULL;
+  rc.retention = NULL;
   rc.accurate_set = false;
   rc.spool_data_set = false;
   rc.ignoreduplicatecheck = false;
   rc.comment = NULL;
   rc.backup_format = NULL;
+  rc.expiry = NULL;
 
   char* consolidate_job_name = nullptr;
 
@@ -2102,6 +2181,22 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               return false;
             }
             consolidate_job_name = ua->argv[i];
+            kw_ok = true;
+            break;
+          case 33: /* retention */
+            if (rc.retention && !rc.mod) {
+              ua->SendMsg(T_("Retention specified twice.\n"));
+              return false;
+            }
+            rc.retention = ua->argv[i];
+            kw_ok = true;
+            break;
+          case 34: /* expiry */
+            if (rc.expiry && !rc.mod) {
+              ua->SendMsg(T_("Expiry specified twice.\n"));
+              return false;
+            }
+            rc.expiry = ua->argv[i];
             kw_ok = true;
             break;
           default:

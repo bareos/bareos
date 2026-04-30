@@ -312,6 +312,7 @@ const ResourceItem job_items[] = {
   { "WriteBootstrap", CFG_TYPE_DIR_OR_CMD, ITEM(res_job, WriteBootstrap), {}},
   { "WriteVerifyList", CFG_TYPE_DIR, ITEM(res_job, WriteVerifyList), { config::DeprecatedSince{25, 1, 0} }},
   { "Replace", CFG_TYPE_REPLACE, ITEM(res_job, replace), {config::DefaultValue{"Always"}}},
+  { "Retention", CFG_TYPE_STR, ITEM(res_job, Retention), {config::Description{"Job retention duration or \"never\". The resulting expiry is stored per job in the catalog."}}},
   { "MaximumBandwidth", CFG_TYPE_SPEED, ITEM(res_job, max_bandwidth), {}},
   { "MaxRunSchedTime", CFG_TYPE_TIME, ITEM(res_job, MaxRunSchedTime), {}},
   { "MaxRunTime", CFG_TYPE_TIME, ITEM(res_job, MaxRunTime), {}},

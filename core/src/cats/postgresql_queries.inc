@@ -27,12 +27,12 @@ R"SQL(INSERT INTO JobHisto (
 	       JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate,
 	       VolSessionId, VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId,
 	       PriorJobId, PurgedFiles,
-	       HasBase, Reviewed, Comment
+	       HasBase, Reviewed, Comment, ExpireTime
        )
 SELECT JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate, VolSessionId,
        VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId, PriorJobId, PurgedFiles,
        HasBase,
-       Reviewed, Comment
+       Reviewed, Comment, ExpireTime
   FROM Job
  WHERE JobStatus IN ('T','W','f','A','E')
    AND NOT EXISTS (
@@ -75,7 +75,7 @@ CASE
     WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime
     ELSE CURRENT_TIMESTAMP(0) - Job.starttime
     END as Duration,
-Job.JobTDate, Job.VolSessionId, Job.VolSessionTime,
+Job.JobTDate, Job.ExpireTime, Job.VolSessionId, Job.VolSessionTime,
 Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId,
 Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet
 FROM Job
@@ -138,7 +138,7 @@ CASE
     WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime
     ELSE CURRENT_TIMESTAMP(0) - Job.starttime
     END as Duration,
-Job.JobTDate, Job.VolSessionId, Job.VolSessionTime,
+Job.JobTDate, Job.ExpireTime, Job.VolSessionId, Job.VolSessionTime,
 Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId,
 Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet
 FROM Job

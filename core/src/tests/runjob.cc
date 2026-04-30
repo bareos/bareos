@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,7 @@
 #endif
 
 #include "dird/ua.h"
+#include "dird/job.h"
 #include "include/jcr.h"
 #include "dird/ua_run.h"
 
@@ -166,4 +167,54 @@ TEST_F(RerunArgumentsParsing, Jobid_Since)
   directordaemon::RerunArguments rereunargs = GetRerunCmdlineArguments(ua);
 
   EXPECT_TRUE(rereunargs.parsingerror);
+}
+
+TEST(JobExpirationParsing, ParsesRetentionDuration)
+{
+  std::optional<utime_t> retention;
+  bool keep_forever = false;
+  std::string error;
+
+  EXPECT_TRUE(directordaemon::ParseJobRetention("2 days", retention,
+                                                keep_forever, error));
+  EXPECT_TRUE(retention.has_value());
+  EXPECT_EQ(*retention, 2 * 24 * 60 * 60);
+  EXPECT_FALSE(keep_forever);
+  EXPECT_TRUE(error.empty());
+}
+
+TEST(JobExpirationParsing, ParsesRetentionNever)
+{
+  std::optional<utime_t> retention;
+  bool keep_forever = false;
+  std::string error;
+
+  EXPECT_TRUE(directordaemon::ParseJobRetention("never", retention,
+                                                keep_forever, error));
+  EXPECT_FALSE(retention.has_value());
+  EXPECT_TRUE(keep_forever);
+  EXPECT_TRUE(error.empty());
+}
+
+TEST(JobExpirationParsing, ParsesAbsoluteExpiry)
+{
+  std::optional<utime_t> expire_time;
+  std::string error;
+  const char* expiry = "2026-05-01 12:34:56";
+
+  EXPECT_TRUE(directordaemon::ParseJobExpiryTime(expiry, expire_time, error));
+  EXPECT_TRUE(expire_time.has_value());
+  EXPECT_EQ(*expire_time, StrToUtime(expiry));
+  EXPECT_TRUE(error.empty());
+}
+
+TEST(JobExpirationParsing, ParsesNeverExpiry)
+{
+  std::optional<utime_t> expire_time;
+  std::string error;
+
+  EXPECT_TRUE(directordaemon::ParseJobExpiryTime("never", expire_time, error));
+  EXPECT_TRUE(expire_time.has_value());
+  EXPECT_EQ(*expire_time, 0);
+  EXPECT_TRUE(error.empty());
 }

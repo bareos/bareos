@@ -1024,8 +1024,8 @@ PoolResource* get_pool_resource(UaContext* ua)
 // List all jobs and ask user to select one
 int SelectJobDbr(UaContext* ua, JobDbRecord* jr)
 {
-  ua->db->ListJobRecords(ua->jcr, jr, "", NULL, {}, {}, {}, nullptr, nullptr, 0,
-                         0, 0, ua->send, HORZ_LIST);
+  ua->db->ListJobRecords(ua->jcr, jr, "", NULL, {}, {}, {}, nullptr, nullptr,
+                         false, std::nullopt, 0, 0, 0, ua->send, HORZ_LIST);
   if (!GetPint(ua, T_("Enter the JobId to select: "))) { return 0; }
 
   jr->JobId = ua->int64_val;
