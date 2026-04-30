@@ -34,3 +34,34 @@ export function getRestoreBrowserPlaceholder({
 
   return 'empty'
 }
+
+export function resolveRestoreSourceClient(clients, {
+  clientName,
+  directorName,
+  currentDirector,
+} = {}) {
+  if (!clientName) {
+    return null
+  }
+
+  const matches = clients.filter(client => client.name === clientName)
+  if (matches.length === 0) {
+    return null
+  }
+
+  if (directorName) {
+    const exactMatch = matches.find(client => client.director === directorName)
+    if (exactMatch) {
+      return exactMatch
+    }
+  }
+
+  if (currentDirector) {
+    const currentMatch = matches.find(client => client.director === currentDirector)
+    if (currentMatch) {
+      return currentMatch
+    }
+  }
+
+  return matches[0]
+}

@@ -20,7 +20,10 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { getRestoreBrowserPlaceholder } from '../../src/utils/restore.js'
+import {
+  getRestoreBrowserPlaceholder,
+  resolveRestoreSourceClient,
+} from '../../src/utils/restore.js'
 
 describe('restore browser placeholder', () => {
   it('prefers the error state', () => {
@@ -45,5 +48,32 @@ describe('restore browser placeholder', () => {
       loadingBrowser: false,
       hasSelectedJob: false,
     })).toBe('empty')
+  })
+
+  it('prefers an explicit director when resolving a queried source client', () => {
+    expect(resolveRestoreSourceClient([
+      { name: 'bareos-fd', director: 'prod-a' },
+      { name: 'bareos-fd', director: 'prod-b' },
+    ], {
+      clientName: 'bareos-fd',
+      directorName: 'prod-b',
+      currentDirector: 'prod-a',
+    })).toEqual({
+      name: 'bareos-fd',
+      director: 'prod-b',
+    })
+  })
+
+  it('falls back to the current director when no explicit director is given', () => {
+    expect(resolveRestoreSourceClient([
+      { name: 'bareos-fd', director: 'prod-a' },
+      { name: 'bareos-fd', director: 'prod-b' },
+    ], {
+      clientName: 'bareos-fd',
+      currentDirector: 'prod-a',
+    })).toEqual({
+      name: 'bareos-fd',
+      director: 'prod-a',
+    })
   })
 })

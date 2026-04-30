@@ -1,5 +1,45 @@
 <template>
   <q-page class="q-pa-md">
+    <q-card flat bordered class="q-mb-md bareos-panel">
+      <q-card-section class="panel-header row items-center">
+        <span>{{ t('Restore Scope') }}</span>
+        <q-space />
+        <q-chip dense square color="white" text-color="primary" :label="restoreScopeLabel" />
+      </q-card-section>
+      <q-card-section>
+        <q-select
+          v-model="selectedDirectorsModel"
+          data-testid="restore-directors"
+          :options="directorOptions"
+          option-label="label"
+          option-value="value"
+          emit-value
+          map-options
+          multiple
+          use-chips
+          outlined
+          dense
+          :label="t('Directors')"
+        />
+        <div class="text-caption text-grey-6 q-mt-sm">
+          {{ t('Select the directors that contribute to the restore source choices.') }}
+        </div>
+        <q-banner
+          v-if="directorErrors.length"
+          rounded
+          dense
+          class="bg-warning text-black q-mt-md"
+        >
+          <template #avatar>
+            <q-icon name="warning" />
+          </template>
+          <div v-for="item in directorErrors" :key="item.director">
+            <strong>{{ item.director }}</strong>: {{ item.message }}
+          </div>
+        </q-banner>
+      </q-card-section>
+    </q-card>
+
     <q-card flat bordered class="bareos-panel">
       <q-card-section class="panel-header">{{ t('Restore Files') }}</q-card-section>
       <q-card-section>
@@ -13,7 +53,7 @@
               <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Source') }}</q-card-section>
               <q-card-section class="q-pt-none q-gutter-sm">
                 <q-select
-                  v-model="form.client"
+                  v-model="sourceClientKey"
                   :options="clientOptions"
                   :label="t('Backup Client')"
                   outlined dense emit-value map-options
@@ -48,10 +88,11 @@
               <q-card-section class="q-pt-none q-gutter-sm">
                 <q-select
                   v-model="form.restoreclient"
-                  :options="clientOptions"
+                  :options="restoreClientOptions"
                   :label="t('Restore to Client')"
                   outlined dense emit-value map-options
                   :loading="loadingClients"
+                  :disable="isCommonRestore && !selectedSourceClient"
                 />
                 <q-select
                   v-model="form.restorejob"
@@ -59,6 +100,7 @@
                   :label="t('Restore Job')"
                   outlined dense emit-value map-options
                   :loading="loadingRestoreJobs"
+                  :disable="isCommonRestore && !selectedSourceClient"
                 />
                 <q-input
                   v-model="form.where"
@@ -319,11 +361,20 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { directorCollection } from '../composables/useDirectorFetch.js'
+import { fetchAggregatedClients } from '../composables/clientsAggregate.js'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes } from '../mock/index.js'
-import { getRestoreBrowserPlaceholder } from '../utils/restore.js'
+import {
+  getRestoreBrowserPlaceholder,
+  resolveRestoreSourceClient,
+} from '../utils/restore.js'
 
+const auth = useAuthStore()
 const director = useDirectorStore()
+const settings = useSettingsStore()
 const route    = useRoute()
 const { t } = useI18n()
 
@@ -338,6 +389,69 @@ const form = ref({
   mergeJobsets:  true,
 })
 
+const sourceClientKey = ref('')
+
+const directorOptions = computed(() => {
+  const values = new Set([
+    ...director.availableDirectors,
+    ...settings.selectedDirectors,
+    auth.user?.director,
+    settings.directorName,
+  ].filter(Boolean))
+  return [...values].map(value => ({ label: value, value }))
+})
+
+function syncSelectedDirectors() {
+  const validDirectors = directorOptions.value.map(option => option.value)
+  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
+
+  if (selected.length > 0) {
+    if (selected.length !== settings.selectedDirectors.length) {
+      settings.setSelectedDirectors(selected)
+    }
+    return
+  }
+
+  const fallbackDirector = auth.user?.director || settings.directorName
+  if (fallbackDirector) {
+    settings.setSelectedDirectors([fallbackDirector])
+  }
+}
+
+const selectedDirectorsModel = computed({
+  get: () => settings.selectedDirectors,
+  set: (value) => {
+    const selected = Array.isArray(value) ? value : []
+    if (selected.length > 0) {
+      settings.setSelectedDirectors(selected)
+      return
+    }
+
+    const fallbackDirector = auth.user?.director || settings.directorName
+    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
+  },
+})
+
+const activeDirectors = computed(() => {
+  const selected = settings.selectedDirectors.filter(value => (
+    directorOptions.value.some(option => option.value === value)
+  ))
+
+  if (selected.length > 0) {
+    return selected
+  }
+
+  const currentDirector = auth.user?.director || settings.directorName
+  return currentDirector ? [currentDirector] : []
+})
+
+const isCommonRestore = computed(() => activeDirectors.value.length > 1)
+const restoreScopeLabel = computed(() => (
+  isCommonRestore.value
+    ? `${activeDirectors.value.length} ${t('directors selected')}`
+    : (activeDirectors.value[0] ?? t('No director selected'))
+))
+
 const replaceOptions = computed(() => [
   { label: t('Always'), value: 'Always' },
   { label: t('If Newer'), value: 'IfNewer' },
@@ -346,20 +460,104 @@ const replaceOptions = computed(() => [
 ])
 
 // ── Clients ─────────────────────────────────────────────────────────────────
-const clients        = ref([])
+const sourceClients   = ref([])
+const restoreClients  = ref([])
+const directorErrors  = ref([])
 const loadingClients = ref(false)
 
+const selectedSourceClient = computed(() => (
+  sourceClients.value.find(client => client.scopeKey === sourceClientKey.value) ?? null
+))
+const sourceDirector = computed(() => (
+  selectedSourceClient.value?.director
+    ?? (activeDirectors.value.length === 1 ? activeDirectors.value[0] : null)
+))
+const sourceClientName = computed(() => selectedSourceClient.value?.name ?? '')
+
 const clientOptions = computed(() =>
-  clients.value.map(c => ({ label: c.name, value: c.name }))
+  sourceClients.value.map(client => ({
+    label: isCommonRestore.value ? `${client.director} / ${client.name}` : client.name,
+    value: client.scopeKey,
+  }))
 )
+
+const restoreClientOptions = computed(() =>
+  restoreClients.value.map(client => ({ label: client.name, value: client.name }))
+)
+
+async function ensureScopeDirector(targetDirector) {
+  if (!targetDirector) {
+    return
+  }
+
+  if (auth.user?.director === targetDirector && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(targetDirector)
+}
+
+async function ensureSelectedSourceDirector() {
+  await ensureScopeDirector(sourceDirector.value)
+}
+
+function clearSelectedSourceData({ keepRestoreClient = false } = {}) {
+  form.value.client = ''
+  form.value.jobid = null
+  form.value.restorejob = ''
+  if (!keepRestoreClient) {
+    form.value.restoreclient = ''
+  }
+  backups.value = []
+  restoreJobs.value = []
+  browserReady.value = false
+  clearBrowserState()
+}
 
 async function loadClients() {
   loadingClients.value = true
+  directorErrors.value = []
   try {
-    const r = await director.call('list clients')
-    clients.value = directorCollection(r?.clients)
+    if (activeDirectors.value.length === 0) {
+      sourceClients.value = []
+      restoreClients.value = []
+      sourceClientKey.value = ''
+      clearSelectedSourceData()
+      return
+    }
+
+    if (isCommonRestore.value) {
+      const credentials = auth.getCredentials()
+      if (!credentials?.password) {
+        throw new Error(t('Not logged in.'))
+      }
+
+      const result = await fetchAggregatedClients(credentials, activeDirectors.value)
+      sourceClients.value = result.clients
+      directorErrors.value = result.directorErrors
+    } else {
+      const currentDirector = activeDirectors.value[0]
+      await ensureScopeDirector(currentDirector)
+      const r = await director.call('list clients')
+      sourceClients.value = directorCollection(r?.clients)
+        .map(client => ({
+          ...client,
+          director: currentDirector,
+          scopeKey: `${currentDirector}:${client.name}`,
+        }))
+        .sort((left, right) => String(left.name ?? '').localeCompare(String(right.name ?? '')))
+      restoreClients.value = sourceClients.value
+    }
+
+    if (!sourceClients.value.some(client => client.scopeKey === sourceClientKey.value)) {
+      sourceClientKey.value = ''
+      clearSelectedSourceData()
+    }
   } catch (_) {
-    clients.value = []
+    sourceClients.value = []
+    restoreClients.value = []
+    sourceClientKey.value = ''
+    clearSelectedSourceData()
   } finally {
     loadingClients.value = false
   }
@@ -374,17 +572,54 @@ const restoreJobOptions = computed(() =>
 )
 
 async function loadRestoreJobs() {
+  if (!sourceDirector.value) {
+    restoreJobs.value = []
+    form.value.restorejob = ''
+    return
+  }
+
   loadingRestoreJobs.value = true
   try {
+    await ensureSelectedSourceDirector()
     const r = await director.call('.jobs type=R')
     restoreJobs.value = directorCollection(r?.jobs)
+    if (!restoreJobs.value.some(job => job.name === form.value.restorejob)) {
+      form.value.restorejob = ''
+    }
     if (restoreJobs.value.length && !form.value.restorejob) {
       form.value.restorejob = restoreJobs.value[0].name
     }
   } catch (_) {
     restoreJobs.value = []
+    form.value.restorejob = ''
   } finally {
     loadingRestoreJobs.value = false
+  }
+}
+
+async function loadRestoreClients() {
+  if (!sourceDirector.value) {
+    restoreClients.value = []
+    form.value.restoreclient = ''
+    return
+  }
+
+  try {
+    await ensureSelectedSourceDirector()
+    const r = await director.call('list clients')
+    restoreClients.value = directorCollection(r?.clients)
+      .map(client => ({
+        ...client,
+        director: sourceDirector.value,
+        scopeKey: `${sourceDirector.value}:${client.name}`,
+      }))
+      .sort((left, right) => String(left.name ?? '').localeCompare(String(right.name ?? '')))
+    if (!restoreClients.value.some(client => client.name === form.value.restoreclient)) {
+      form.value.restoreclient = sourceClientName.value || ''
+    }
+  } catch (_) {
+    restoreClients.value = []
+    form.value.restoreclient = ''
   }
 }
 
@@ -408,15 +643,30 @@ async function onClientChange(clientName) {
   browserReady.value = false
   clearBrowserState()
   backups.value = []
-  if (!clientName) return
-  form.value.restoreclient = clientName
-  await loadBackups(clientName)
+
+  const selectedClient = sourceClients.value.find(client => client.scopeKey === clientName) ?? null
+  form.value.client = selectedClient?.name ?? ''
+  form.value.restoreclient = selectedClient?.name ?? ''
+
+  if (!selectedClient) {
+    restoreClients.value = []
+    restoreJobs.value = []
+    form.value.restorejob = ''
+    return
+  }
+
+  await Promise.all([
+    loadRestoreClients(),
+    loadRestoreJobs(),
+  ])
+  await loadBackups(selectedClient)
 }
 
-async function loadBackups(clientName) {
+async function loadBackups(client) {
   loadingBackups.value = true
   try {
-    const r = await director.call(`llist backups client=${quoteDirectorString(clientName)}`)
+    await ensureScopeDirector(client.director)
+    const r = await director.call(`llist backups client=${quoteDirectorString(client.name)}`)
     backups.value = directorCollection(r?.backups)
       .sort((a, b) => Number(b.jobid) - Number(a.jobid))
   } catch (_) {
@@ -464,6 +714,7 @@ async function initBrowser() {
   browserReady.value   = false
   browserError.value   = ''
   try {
+    await ensureSelectedSourceDirector()
     // Step 1: get merged jobids
     const flag = form.value.mergeJobsets ? ' all' : ''
     let gjr
@@ -493,6 +744,7 @@ async function initBrowser() {
 }
 
 async function fetchDir(pathId) {
+  await ensureSelectedSourceDirector()
   const jids = mergedJobids.value
   const pathArg = pathId != null ? `pathid=${pathId}` : `path=${quoteDirectorString('/')}`
   const [dr, fr] = await Promise.all([
@@ -611,6 +863,7 @@ async function doRestore() {
   const jids     = mergedJobids.value
 
   try {
+    await ensureSelectedSourceDirector()
     // Step 1: build restore list in BVFS
     await director.call(
       `.bvfs_restore jobid=${jids} fileid=${fileids} dirid=${dirids} path=${quoteDirectorString(bvfsPath)}`
@@ -769,8 +1022,9 @@ function versionCount(fileId) {
 
 async function checkVersionsInBackground(files, dirKey) {
   if (!files.length || !versionCheckEnabled.value) return
+  await ensureSelectedSourceDirector()
   const jids = mergedJobids.value
-  const client = form.value.client
+  const client = sourceClientName.value
   await Promise.allSettled(
     files.map(async (f) => {
       if (dirKey !== versionCheckDirKey || !versionCheckEnabled.value) return
@@ -811,8 +1065,9 @@ async function openVersions(row) {
     selectedFileId: fileVersionOverrides.value.get(row.fileId) ?? row.fileId,
   }
   try {
+    await ensureSelectedSourceDirector()
     const r = await director.call(
-      `.bvfs_versions jobid=${mergedJobids.value} client="${form.value.client}" pathid=${row.pathId} fname=${row.name}`
+      `.bvfs_versions jobid=${mergedJobids.value} client="${sourceClientName.value}" pathid=${row.pathId} fname=${row.name}`
     )
     versionsDialog.value.versions = r?.versions ?? []
   } catch (e) {
@@ -846,19 +1101,49 @@ function applyVersion() {
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
-  await Promise.all([loadClients(), loadRestoreJobs()])
+  await director.fetchAvailableDirectors().catch(() => {})
+  syncSelectedDirectors()
+  await loadClients()
+
   // Pre-fill from query params when navigating from the jobs list
   const qClient = route.query.client
+  const qDirector = route.query.director
   const qJobid  = route.query.jobid
   if (qClient) {
-    form.value.client = qClient
-    await onClientChange(qClient)
+    const resolvedClient = resolveRestoreSourceClient(sourceClients.value, {
+      clientName: qClient,
+      directorName: qDirector,
+      currentDirector: auth.user?.director || settings.directorName,
+    })
+
+    if (resolvedClient) {
+      sourceClientKey.value = resolvedClient.scopeKey
+      await onClientChange(resolvedClient.scopeKey)
+    }
+
     if (qJobid) {
       form.value.jobid = Number(qJobid)
+      await initBrowser()
     }
+  } else if (activeDirectors.value.length === 1) {
+    await Promise.all([
+      loadRestoreClients(),
+      loadRestoreJobs(),
+    ])
   }
 }
 
 onMounted(() => { if (director.isConnected) init() })
 watch(() => director.isConnected, (connected) => { if (connected) init() })
+watch(() => directorOptions.value, () => {
+  syncSelectedDirectors()
+})
+watch(() => activeDirectors.value.join('\u0000'), async () => {
+  const previousClientKey = sourceClientKey.value
+  await loadClients()
+  if (previousClientKey && sourceClients.value.some(client => client.scopeKey === previousClientKey)) {
+    sourceClientKey.value = previousClientKey
+    await onClientChange(previousClientKey)
+  }
+})
 </script>

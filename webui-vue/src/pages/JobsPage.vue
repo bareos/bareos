@@ -768,7 +768,14 @@ async function openClientDetails(job) {
 async function openRestoreDetails(job) {
   try {
     await switchToJobDirector(job)
-    await router.push({ name: 'restore', query: { client: job.client, jobid: job.id } })
+    await router.push({
+      name: 'restore',
+      query: {
+        client: job.client,
+        director: job.director,
+        jobid: job.id,
+      },
+    })
   } catch (error) {
     $q.notify({
       type: 'negative',
