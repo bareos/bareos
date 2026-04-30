@@ -24,6 +24,7 @@ import {
   buildJobDetailsQuery,
   normaliseJobStatusFilter,
   resolveJobDetailsClientOrigin,
+  resolveJobDetailsQuery,
   resolveJobDetailsDashboardOrigin,
   resolveJobDetailsDirectorOrigin,
   resolveJobDetailsRestoreOrigin,
@@ -129,6 +130,43 @@ describe('jobs filter helpers', () => {
       jobsStatus: '',
       jobsSearch: '',
     })).toEqual({})
+  })
+
+  it('sanitizes job details query state from route query fields', () => {
+    expect(resolveJobDetailsQuery({
+      director: 'prod-a',
+      jobsAction: 'timeline',
+      jobsStatus: 'T',
+      jobsSearch: 'backup',
+      clientName: 'bareos-fd',
+      clientDirector: 'prod-a',
+      clientsTab: 'timeline',
+      volumeName: 'Full-0001',
+      volumeDirector: 'prod-a',
+      restoreClient: 'bareos-fd',
+      restoreDirector: 'prod-a',
+      restoreJobid: '42',
+      directorTab: 'catalog',
+      directorTarget: 'prod-a',
+      dashboardOrigin: '1',
+      ignored: 'value',
+    })).toEqual({
+      director: 'prod-a',
+      jobsAction: 'timeline',
+      jobsStatus: 'T',
+      jobsSearch: 'backup',
+      clientName: 'bareos-fd',
+      clientDirector: 'prod-a',
+      clientsTab: 'timeline',
+      volumeName: 'Full-0001',
+      volumeDirector: 'prod-a',
+      restoreClient: 'bareos-fd',
+      restoreDirector: 'prod-a',
+      restoreJobid: '42',
+      directorTab: 'catalog',
+      directorTarget: 'prod-a',
+      dashboardOrigin: '1',
+    })
   })
 
   it('resolves an optional client origin for job details routes', () => {

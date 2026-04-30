@@ -167,6 +167,26 @@ export function resolveJobsListQuery(query) {
   return nextQuery
 }
 
+export function resolveJobDetailsQuery(query) {
+  return buildJobDetailsQuery({
+    director: typeof query?.director === 'string' ? query.director : '',
+    jobsAction: typeof query?.jobsAction === 'string' ? query.jobsAction : '',
+    jobsStatus: typeof query?.jobsStatus === 'string' ? query.jobsStatus : '',
+    jobsSearch: typeof query?.jobsSearch === 'string' ? query.jobsSearch : '',
+    clientName: typeof query?.clientName === 'string' ? query.clientName : '',
+    clientDirector: typeof query?.clientDirector === 'string' ? query.clientDirector : '',
+    clientsTab: typeof query?.clientsTab === 'string' ? query.clientsTab : '',
+    volumeName: typeof query?.volumeName === 'string' ? query.volumeName : '',
+    volumeDirector: typeof query?.volumeDirector === 'string' ? query.volumeDirector : '',
+    restoreClient: typeof query?.restoreClient === 'string' ? query.restoreClient : '',
+    restoreDirector: typeof query?.restoreDirector === 'string' ? query.restoreDirector : '',
+    restoreJobid: typeof query?.restoreJobid === 'string' ? query.restoreJobid : '',
+    directorTab: typeof query?.directorTab === 'string' ? query.directorTab : '',
+    directorTarget: typeof query?.directorTarget === 'string' ? query.directorTarget : '',
+    dashboardOrigin: query?.dashboardOrigin === '1',
+  })
+}
+
 export function resolveJobDetailsClientOrigin(query) {
   if (typeof query?.clientName !== 'string' || !query.clientName) {
     return null

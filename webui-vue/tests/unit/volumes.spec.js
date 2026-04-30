@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildVolumeDetailsQuery,
   resolveVolumeDetailsDirectorOrigin,
+  resolveVolumeDetailsJobOrigin,
   resolveVolumeDetailsPoolOrigin,
   volumeEncryptionKey,
   volumeHasEncryptionKey,
@@ -50,11 +51,13 @@ describe('volume encryption helpers', () => {
       director: 'prod-a',
       directorTab: 'catalog',
       directorTarget: 'prod-b',
+      jobId: 42,
       poolName: 'Full',
     })).toEqual({
       director: 'prod-a',
       directorTab: 'catalog',
       directorTarget: 'prod-b',
+      jobId: '42',
       poolName: 'Full',
     })
 
@@ -90,5 +93,15 @@ describe('volume encryption helpers', () => {
     })
 
     expect(resolveVolumeDetailsPoolOrigin({})).toBeNull()
+  })
+
+  it('resolves an optional job origin for volume details routes', () => {
+    expect(resolveVolumeDetailsJobOrigin({
+      jobId: '42',
+    })).toEqual({
+      id: '42',
+    })
+
+    expect(resolveVolumeDetailsJobOrigin({})).toBeNull()
   })
 })

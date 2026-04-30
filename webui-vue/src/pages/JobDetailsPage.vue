@@ -77,7 +77,17 @@
                 <template #body-cell-volumename="props">
                   <q-td :props="props">
                     <q-icon name="album" color="primary" size="xs" class="q-mr-xs" />
-                    <VolumeNameLink :name="props.value" :volume="props.row" />
+                    <VolumeNameLink
+                      :name="props.value"
+                      :volume="props.row"
+                      :query="{
+                        ...currentJobDetailsQuery,
+                        ...buildVolumeDetailsQuery({
+                          director: currentJobDirector,
+                          jobId: currentJobId,
+                        }),
+                      }"
+                    />
                   </q-td>
                 </template>
                 <template #header-cell-firstindex="props">
@@ -145,12 +155,14 @@ import { formatNumber } from '../utils/locales.js'
 import {
   buildJobDetailsQuery,
   resolveJobDetailsClientOrigin,
+  resolveJobDetailsQuery,
   resolveJobDetailsDashboardOrigin,
   resolveJobDetailsDirectorOrigin,
   resolveJobDetailsRestoreOrigin,
   resolveJobDetailsVolumeOrigin,
   resolveJobsListQuery,
 } from '../utils/jobs.js'
+import { buildVolumeDetailsQuery } from '../utils/volumes.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
@@ -177,6 +189,7 @@ const clientOrigin = computed(() => resolveJobDetailsClientOrigin(route.query))
 const directorOrigin = computed(() => resolveJobDetailsDirectorOrigin(route.query))
 const restoreOrigin = computed(() => resolveJobDetailsRestoreOrigin(route.query))
 const volumeOrigin = computed(() => resolveJobDetailsVolumeOrigin(route.query))
+const currentJobDetailsQuery = computed(() => resolveJobDetailsQuery(route.query))
 const backLabel = computed(() => (
   clientOrigin.value
     ? t('Back to Client')

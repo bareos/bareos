@@ -262,7 +262,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildDirectorPageQuery } from '../utils/director.js'
-import { buildJobDetailsQuery } from '../utils/jobs.js'
+import { buildJobDetailsQuery, resolveJobDetailsQuery } from '../utils/jobs.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import {
   buildAutochangerSelectionQuery,
@@ -270,6 +270,7 @@ import {
 } from '../utils/storagesRoute.js'
 import {
   resolveVolumeDetailsDirectorOrigin,
+  resolveVolumeDetailsJobOrigin,
   resolveVolumeDetailsPoolOrigin,
   volumeHasEncryptionKey,
 } from '../utils/volumes.js'
@@ -287,9 +288,14 @@ const currentVolumeDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
 const autochangerOrigin = computed(() => resolveAutochangerSelectionQuery(route.query))
+const jobOrigin = computed(() => resolveVolumeDetailsJobOrigin(route.query))
 const poolOrigin = computed(() => resolveVolumeDetailsPoolOrigin(route.query))
 const directorOrigin = computed(() => resolveVolumeDetailsDirectorOrigin(route.query))
 const backLabel = computed(() => {
+  if (jobOrigin.value) {
+    return t('Back to Job')
+  }
+
   if (poolOrigin.value) {
     return t('Back to Pool')
   }
@@ -301,6 +307,14 @@ const backLabel = computed(() => {
   return directorOrigin.value ? t('Back to Director') : t('Volumes')
 })
 const backLocation = computed(() => {
+  if (jobOrigin.value) {
+    return {
+      name: 'job-details',
+      params: { id: jobOrigin.value.id },
+      query: resolveJobDetailsQuery(route.query),
+    }
+  }
+
   if (poolOrigin.value) {
     return {
       name: 'pool-details',
