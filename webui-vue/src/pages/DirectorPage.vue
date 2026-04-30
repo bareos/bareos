@@ -115,16 +115,32 @@
                         {{ settings.relativeTime ? formatDirectorRelativeTime(card.daemon_started, settings.locale) : card.daemon_started }}
                         <q-tooltip>Started: {{ card.daemon_started }}</q-tooltip>
                       </q-chip>
-                      <q-chip v-if="card.jobs_run != null"
-                              dense square color="purple-7" text-color="white" icon="check">
-                        {{ card.jobs_run }}
-                        <q-tooltip>Jobs Run: {{ card.jobs_run }}</q-tooltip>
-                      </q-chip>
-                      <q-chip v-if="card.jobs_running != null"
-                              dense square color="orange-7" text-color="white" icon="play_arrow">
-                        {{ card.jobs_running }}
-                        <q-tooltip>Running: {{ card.jobs_running }}</q-tooltip>
-                      </q-chip>
+                      <router-link
+                        v-if="card.jobs_run != null"
+                        :to="{ name: 'jobs', query: withJobsScopeDirectorQuery({}, card.scopeDirector) }"
+                        class="text-decoration-none"
+                      >
+                        <q-chip dense square clickable color="purple-7" text-color="white" icon="check">
+                          {{ card.jobs_run }}
+                          <q-tooltip>Jobs Run: {{ card.jobs_run }}</q-tooltip>
+                        </q-chip>
+                      </router-link>
+                      <router-link
+                        v-if="card.jobs_running != null"
+                        :to="{
+                          name: 'jobs',
+                          query: withJobsScopeDirectorQuery(
+                            withJobsStatusFilterQuery({}, 'R'),
+                            card.scopeDirector,
+                          ),
+                        }"
+                        class="text-decoration-none"
+                      >
+                        <q-chip dense square clickable color="orange-7" text-color="white" icon="play_arrow">
+                          {{ card.jobs_running }}
+                          <q-tooltip>Running: {{ card.jobs_running }}</q-tooltip>
+                        </q-chip>
+                      </router-link>
                     </div>
                   </div>
                 </q-card-section>
@@ -659,6 +675,7 @@ import {
 } from '../utils/director.js'
 import {
   buildJobDetailsQuery,
+  withJobsStatusFilterQuery,
   withJobsScopeDirectorQuery,
   withJobsSearchQuery,
 } from '../utils/jobs.js'

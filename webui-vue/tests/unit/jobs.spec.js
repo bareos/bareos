@@ -91,6 +91,16 @@ describe('jobs filter helpers', () => {
     })
   })
 
+  it('composes a director-scoped running-status query for drill-downs', () => {
+    expect(withJobsScopeDirectorQuery(
+      withJobsStatusFilterQuery({}, 'R'),
+      'prod-a',
+    )).toEqual({
+      status: 'R',
+      scopeDirector: 'prod-a',
+    })
+  })
+
   it('resolves an optional scope director query parameter', () => {
     expect(resolveJobsScopeDirector({ scopeDirector: 'prod-a' })).toBe('prod-a')
     expect(resolveJobsScopeDirector({ scopeDirector: 42 })).toBe('')
