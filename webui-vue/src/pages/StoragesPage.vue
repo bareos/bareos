@@ -49,7 +49,6 @@
         name="autochangers"
         :label="t('Autochangers')"
         no-caps
-        :disable="isCommonStorages"
         :to="{ path: '/storages', query: { tab: 'autochangers' } }"
       />
     </q-tabs>
@@ -330,9 +329,6 @@
 
       <!-- AUTOCHANGERS -->
       <q-tab-panel name="autochangers" class="q-pa-none">
-        <q-banner v-if="isCommonStorages" dense rounded class="bg-info text-white q-mb-md">
-          {{ t('Autochangers stay scoped to the active director for now. Reduce the storages scope to a single director to use this tab.') }}
-        </q-banner>
         <AutochangerPage embedded />
       </q-tab-panel>
     </q-tab-panels>
@@ -460,22 +456,14 @@ const storagesScopeLabel = computed(() => (
 ))
 
 watch(() => route.query.tab, (value) => {
-  let next = normaliseTab(value)
-  if (isCommonStorages.value && next === 'autochangers') {
-    next = 'storages'
-  }
+  const next = normaliseTab(value)
   if (tab.value !== next) {
     tab.value = next
   }
 })
 
 watch(tab, (next) => {
-  let target = next
-  if (isCommonStorages.value && target === 'autochangers') {
-    target = 'storages'
-    tab.value = target
-  }
-
+  const target = next
   const current = normaliseTab(route.query.tab)
   if (current === target) {
     return
@@ -742,9 +730,6 @@ watch(() => directorOptions.value, () => {
 })
 
 watch(() => activeDirectors.value.join('\u0000'), () => {
-  if (!isSingleDirectorScope.value && tab.value === 'autochangers') {
-    tab.value = 'storages'
-  }
   refresh()
 })
 </script>

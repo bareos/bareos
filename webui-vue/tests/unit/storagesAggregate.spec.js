@@ -20,7 +20,10 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchAggregatedStoragesState } from '../../src/composables/storagesAggregate.js'
+import {
+  fetchAggregatedAutochangerStorages,
+  fetchAggregatedStoragesState,
+} from '../../src/composables/storagesAggregate.js'
 
 class FakeWebSocket {
   static instances = []
@@ -190,6 +193,80 @@ describe('storages aggregate helpers', () => {
           director: 'prod-b',
           volumename: 'Vol-B',
           volbytes: 22,
+        }),
+      ],
+      directorErrors: [],
+    })
+  })
+
+  it('merges autochanger storages across multiple directors', async () => {
+    const loading = fetchAggregatedAutochangerStorages(
+      {
+        username: 'admin',
+        password: 'secret',
+      },
+      ['prod-a', 'prod-b']
+    )
+
+    const socketA = FakeWebSocket.instances[0]
+    const socketB = FakeWebSocket.instances[1]
+    socketA.open()
+    socketB.open()
+
+    socketA.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    socketB.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await Promise.resolve()
+
+    const socketCommands = (socket) => new Map(
+      socket.sent.slice(1).map((payload) => {
+        const command = JSON.parse(payload)
+        return [command.command, command.id]
+      })
+    )
+
+    const commandsA = socketCommands(socketA)
+    const commandsB = socketCommands(socketB)
+
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsA.get('list storages'),
+        data: {
+          storages: [
+            { name: 'file-a', autochanger: '0', enabled: '1' },
+            { name: 'tape-a', autochanger: '1', enabled: '1' },
+          ],
+        },
+      }),
+    })
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('list storages'),
+        data: {
+          storages: [
+            { name: 'tape-b', autochanger: '1', enabled: '0' },
+          ],
+        },
+      }),
+    })
+
+    await expect(loading).resolves.toEqual({
+      storages: [
+        expect.objectContaining({
+          scopeKey: 'prod-a:tape-a',
+          director: 'prod-a',
+          label: 'prod-a / tape-a',
+          name: 'tape-a',
+          autochanger: true,
+        }),
+        expect.objectContaining({
+          scopeKey: 'prod-b:tape-b',
+          director: 'prod-b',
+          label: 'prod-b / tape-b',
+          name: 'tape-b',
+          autochanger: true,
+          enabled: false,
         }),
       ],
       directorErrors: [],

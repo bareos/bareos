@@ -39,6 +39,15 @@ function decorateStorages(entries, director) {
   }))
 }
 
+function decorateAutochangerStorages(entries, director) {
+  return decorateStorages(entries, director)
+    .filter(entry => entry.autochanger)
+    .map(entry => ({
+      ...entry,
+      label: `${director} / ${entry.name}`,
+    }))
+}
+
 function decorateVolumes(entries, director) {
   const raw = entries
   const collection = Array.isArray(raw)
@@ -141,6 +150,36 @@ export async function fetchAggregatedStoragesState(credentials, directors) {
         ? [{
           director: directors[index],
           message: result.reason?.message ?? 'Failed to load storages.',
+        }]
+        : []
+    )),
+  }
+}
+
+export async function fetchAggregatedAutochangerStorages(credentials, directors) {
+  const results = await Promise.allSettled(directors.map(async (director) => {
+    const client = await createDirectorCommandClient({
+      ...credentials,
+      director,
+    })
+
+    try {
+      const storagesResult = await client.call('list storages')
+      return decorateAutochangerStorages(storagesResult?.storages, director)
+    } finally {
+      client.disconnect()
+    }
+  }))
+
+  return {
+    storages: sortByNameAndDirector(results
+      .filter(result => result.status === 'fulfilled')
+      .flatMap(result => result.value), 'name'),
+    directorErrors: results.flatMap((result, index) => (
+      result.status === 'rejected'
+        ? [{
+          director: directors[index],
+          message: result.reason?.message ?? 'Failed to load autochangers.',
         }]
         : []
     )),
