@@ -75,6 +75,8 @@ export function buildJobDetailsQuery({
   clientName,
   clientDirector,
   clientsTab,
+  volumeName,
+  volumeDirector,
 } = {}) {
   const query = {}
 
@@ -104,6 +106,14 @@ export function buildJobDetailsQuery({
 
   if (clientsTab && clientsTab !== 'list') {
     query.clientsTab = clientsTab
+  }
+
+  if (volumeName) {
+    query.volumeName = volumeName
+  }
+
+  if (volumeDirector) {
+    query.volumeDirector = volumeDirector
   }
 
   return query
@@ -136,5 +146,16 @@ export function resolveJobDetailsClientOrigin(query) {
     name: query.clientName,
     director: typeof query?.clientDirector === 'string' ? query.clientDirector : '',
     clientsTab: typeof query?.clientsTab === 'string' ? query.clientsTab : '',
+  }
+}
+
+export function resolveJobDetailsVolumeOrigin(query) {
+  if (typeof query?.volumeName !== 'string' || !query.volumeName) {
+    return null
+  }
+
+  return {
+    name: query.volumeName,
+    director: typeof query?.volumeDirector === 'string' ? query.volumeDirector : '',
   }
 }

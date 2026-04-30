@@ -144,6 +144,7 @@ import { formatNumber } from '../utils/locales.js'
 import {
   buildJobDetailsQuery,
   resolveJobDetailsClientOrigin,
+  resolveJobDetailsVolumeOrigin,
   resolveJobsListQuery,
 } from '../utils/jobs.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -168,8 +169,11 @@ const currentJobDirector = computed(() => (
 ))
 const backToJobsQuery = computed(() => resolveJobsListQuery(route.query))
 const clientOrigin = computed(() => resolveJobDetailsClientOrigin(route.query))
+const volumeOrigin = computed(() => resolveJobDetailsVolumeOrigin(route.query))
 const backLabel = computed(() => (
-  clientOrigin.value ? t('Back to Client') : t('Back to Jobs')
+  clientOrigin.value
+    ? t('Back to Client')
+    : (volumeOrigin.value ? t('Back to Volume') : t('Back to Jobs'))
 ))
 const backLocation = computed(() => {
   if (clientOrigin.value) {
@@ -180,6 +184,14 @@ const backLocation = computed(() => {
         director: clientOrigin.value.director,
         clientsTab: clientOrigin.value.clientsTab,
       }),
+    }
+  }
+
+  if (volumeOrigin.value) {
+    return {
+      name: 'volume-details',
+      params: { name: volumeOrigin.value.name },
+      query: volumeOrigin.value.director ? { director: volumeOrigin.value.director } : {},
     }
   }
 
@@ -399,6 +411,8 @@ async function doRerun() {
           clientName: clientOrigin.value?.name,
           clientDirector: clientOrigin.value?.director,
           clientsTab: clientOrigin.value?.clientsTab,
+          volumeName: volumeOrigin.value?.name,
+          volumeDirector: volumeOrigin.value?.director,
         }),
       })
     }

@@ -24,6 +24,7 @@ import {
   buildJobDetailsQuery,
   normaliseJobStatusFilter,
   resolveJobDetailsClientOrigin,
+  resolveJobDetailsVolumeOrigin,
   resolveJobsSearchQuery,
   resolveJobsListQuery,
   withJobsSearchQuery,
@@ -73,6 +74,8 @@ describe('jobs filter helpers', () => {
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
+      volumeName: 'Full-0001',
+      volumeDirector: 'prod-a',
     })).toEqual({
       director: 'prod-a',
       jobsAction: 'timeline',
@@ -81,6 +84,8 @@ describe('jobs filter helpers', () => {
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
+      volumeName: 'Full-0001',
+      volumeDirector: 'prod-a',
     })
 
     expect(buildJobDetailsQuery({
@@ -125,6 +130,20 @@ describe('jobs filter helpers', () => {
     expect(resolveJobDetailsClientOrigin({
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
+    })).toBeNull()
+  })
+
+  it('resolves an optional volume origin for job details routes', () => {
+    expect(resolveJobDetailsVolumeOrigin({
+      volumeName: 'Full-0001',
+      volumeDirector: 'prod-a',
+    })).toEqual({
+      name: 'Full-0001',
+      director: 'prod-a',
+    })
+
+    expect(resolveJobDetailsVolumeOrigin({
+      volumeDirector: 'prod-a',
     })).toBeNull()
   })
 })

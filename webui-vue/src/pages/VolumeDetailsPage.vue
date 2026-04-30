@@ -180,7 +180,11 @@
                       class="q-mr-sm"
                     />
                     <router-link
-                      :to="{ name: 'job-details', params: { id: seg.jobid }, query: currentVolumeDirector ? { director: currentVolumeDirector } : {} }"
+                      :to="{
+                        name: 'job-details',
+                        params: { id: seg.jobid },
+                        query: buildVolumeJobDetailsQuery(currentVolumeDirector),
+                      }"
                       class="text-primary q-mr-xs"
                       style="white-space:nowrap"
                     >#{{ seg.jobid }}</router-link>
@@ -212,8 +216,14 @@
                        dense flat :pagination="{ rowsPerPage: 15, sortBy: 'jobid', descending: true }">
                 <template #body-cell-jobid="props">
                   <q-td :props="props">
-                    <router-link :to="{ name: 'job-details', params: { id: props.value }, query: props.row.director ? { director: props.row.director } : {} }"
-                                 class="text-primary">
+                    <router-link
+                      :to="{
+                        name: 'job-details',
+                        params: { id: props.value },
+                        query: buildVolumeJobDetailsQuery(props.row.director),
+                      }"
+                      class="text-primary"
+                    >
                       {{ props.value }}
                     </router-link>
                   </q-td>
@@ -245,6 +255,7 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { buildJobDetailsQuery } from '../utils/jobs.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import { volumeHasEncryptionKey } from '../utils/volumes.js'
 
@@ -260,6 +271,14 @@ const requestedDirector = computed(() => (
 const currentVolumeDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
+
+function buildVolumeJobDetailsQuery(jobDirector) {
+  return buildJobDetailsQuery({
+    director: jobDirector,
+    volumeName: volumeName.value,
+    volumeDirector: currentVolumeDirector.value,
+  })
+}
 
 const vol         = ref(null)
 const jobs        = ref([])
