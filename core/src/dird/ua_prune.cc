@@ -729,14 +729,9 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
     ua->ErrorMsg("%s", ua->db->strerror());
   }
 
-  /* If we found jobs to exclude from the DelCandidates list, we should
-   * also remove BaseJobs that can be linked with them
-   */
   if (!jobids.empty()) {
     Dmsg1(60, "jobids to exclude before basejobs = %s\n",
           jobids.GetAsString().c_str());
-    // We also need to exclude all basejobs used
-    ua->db->GetUsedBaseJobids(ua->jcr, jobids.GetAsString().c_str(), &jobids);
 
     // Removing useful jobs from the DelCandidates list
     Mmsg(query,

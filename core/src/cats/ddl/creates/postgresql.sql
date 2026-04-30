@@ -321,27 +321,6 @@ CREATE TABLE counters
     PRIMARY KEY (Counter)
 );
 
-CREATE TABLE basefiles
-(
-    BaseId            BIGSERIAL   NOT NULL,
-    JobId             INTEGER     NOT NULL,
-    FileId            BIGINT      NOT NULL,
-    FileIndex         INTEGER,
-    BaseJobId         INTEGER,
-    PRIMARY KEY (BaseId)
-);
-
-CREATE INDEX basefiles_jobid_idx ON BaseFiles (JobId);
-
--- This table seems to be obsolete
--- CREATE TABLE UnsavedFiles
--- (
---     UnsavedId         INTEGER     NOT NULL,
---     JobId             INTEGER     NOT NULL,
---     PathId            INTEGER     NOT NULL,
---     FilenameId        INTEGER     NOT NULL,
---     PRIMARY KEY (UnsavedId)
--- );
 
 CREATE TABLE PathHierarchy
 (
@@ -635,7 +614,7 @@ commit;
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2250;
-INSERT INTO Version (VersionId) VALUES (2250);
+DELETE FROM Version WHERE VersionId<=2260;
+INSERT INTO Version (VersionId) VALUES (2260);
 
 -- Make sure we have appropriate permissions

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -406,67 +406,6 @@ retry:
       break;
   }
 
-  return retval;
-}
-
-bool BareosAccurateFilelistLmdb::SendBaseFileList()
-{
-  int result;
-  int32_t LinkFIc;
-  FindFilesPacket* ff_pkt;
-  MDB_cursor* cursor;
-  MDB_val key, data;
-  bool retval = false;
-  accurate_payload* payload;
-  int stream = STREAM_UNIX_ATTRIBUTES;
-
-  if (!jcr_->accurate || jcr_->getJobLevel() != L_FULL) { return true; }
-
-  // Commit any pending write transactions.
-  if (db_rw_txn_) {
-    result = mdb_txn_commit(db_rw_txn_);
-    if (result != 0) {
-      Jmsg1(jcr_, M_FATAL, 0, T_("Unable close write transaction: %s\n"),
-            mdb_strerror(result));
-      return false;
-    }
-    db_rw_txn_ = NULL;
-  }
-
-  ff_pkt = init_find_files();
-  ff_pkt->type = FT_BASE;
-
-  result = mdb_cursor_open(db_ro_txn_, db_dbi_, &cursor);
-  if (result == 0) {
-    while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
-      payload = (accurate_payload*)data.mv_data;
-      if (seen_bitmap_.at(payload->filenr)) {
-        Dmsg1(debuglevel, "base file fname=%s\n",
-              static_cast<const char*>(key.mv_data));
-        DecodeStat(payload->lstat, &ff_pkt->statp, sizeof(struct stat),
-                   &LinkFIc); /* decode catalog stat */
-        ff_pkt->fname = (char*)key.mv_data;
-        EncodeAndSendAttributes(jcr_, ff_pkt, stream);
-      }
-    }
-    mdb_cursor_close(cursor);
-  } else {
-    Jmsg1(jcr_, M_FATAL, 0, T_("Unable create cursor: %s\n"),
-          mdb_strerror(result));
-  }
-
-  mdb_txn_reset(db_ro_txn_);
-  result = mdb_txn_renew(db_ro_txn_);
-  if (result != 0) {
-    Jmsg1(jcr_, M_FATAL, 0, T_("Unable to renew read transaction: %s\n"),
-          mdb_strerror(result));
-    goto bail_out;
-  }
-
-  retval = true;
-
-bail_out:
-  TermFindFiles(ff_pkt);
   return retval;
 }
 

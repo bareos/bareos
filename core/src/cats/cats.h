@@ -471,7 +471,7 @@ class pathid_cache;
 #define QUERY_HTABLE_PAGES 128
 
 // Current database version number schema = 2000 + 10 * Major + Minor
-#define BDB_VERSION 2250
+#define BDB_VERSION 2260
 
 typedef char** SQL_ROW;
 
@@ -755,9 +755,6 @@ class BareosDb : public BareosDbQueryEnum {
                          JobDbRecord* jr,
                          db_list_ctx* jobids);
   db_list_ctx FilterZeroFileJobs(db_list_ctx& jobids);
-  bool GetUsedBaseJobids(JobControlRecord* jcr,
-                         const char* jobids,
-                         db_list_ctx* result);
   bool GetQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr);
   bool get_quota_jobbytes(JobControlRecord* jcr,
                           JobDbRecord* jr,
@@ -890,10 +887,6 @@ class BareosDb : public BareosDbQueryEnum {
                          const char* jobids,
                          OutputFormatter* sendit,
                          e_list_type type);
-  void ListBaseFilesForJob(JobControlRecord* jcr,
-                           JobId_t jobid,
-                           OutputFormatter* sendit);
-
   /* sql_query.cc */
   const char* get_predefined_query_name(SQL_QUERY query);
   const char* get_predefined_query(SQL_QUERY query);
