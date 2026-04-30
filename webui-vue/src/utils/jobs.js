@@ -29,9 +29,39 @@ export function normaliseJobStatusFilter(value) {
   return Object.hasOwn(jobStatusMap, value) ? value : ''
 }
 
+export function normaliseJobStatusFilters(value) {
+  const rawValues = Array.isArray(value)
+    ? value
+    : (typeof value === 'string' ? value.split(',') : [])
+  const seen = new Set()
+  const filters = []
+
+  for (const rawValue of rawValues) {
+    const status = normaliseJobStatusFilter(
+      typeof rawValue === 'string' ? rawValue.trim() : rawValue
+    )
+    if (!status || seen.has(status)) {
+      continue
+    }
+
+    seen.add(status)
+    filters.push(status)
+  }
+
+  return filters
+}
+
+export function encodeJobsStatusFilters(value) {
+  return normaliseJobStatusFilters(value).join(',')
+}
+
+export function resolveJobsStatusFilters(query) {
+  return normaliseJobStatusFilters(query?.status)
+}
+
 export function withJobsStatusFilterQuery(query, status) {
   const nextQuery = { ...query }
-  const nextStatus = normaliseJobStatusFilter(status)
+  const nextStatus = encodeJobsStatusFilters(status)
 
   delete nextQuery.status
   if (nextStatus) {
@@ -118,8 +148,9 @@ export function buildJobDetailsQuery({
     query.jobsAction = jobsAction
   }
 
-  if (jobsStatus) {
-    query.jobsStatus = jobsStatus
+  const nextJobsStatus = encodeJobsStatusFilters(jobsStatus)
+  if (nextJobsStatus) {
+    query.jobsStatus = nextJobsStatus
   }
 
   if (jobsSearch) {
@@ -154,8 +185,9 @@ export function buildJobDetailsQuery({
     query.clientJobsAction = clientJobsAction
   }
 
-  if (clientJobsStatus) {
-    query.clientJobsStatus = clientJobsStatus
+  const nextClientJobsStatus = encodeJobsStatusFilters(clientJobsStatus)
+  if (nextClientJobsStatus) {
+    query.clientJobsStatus = nextClientJobsStatus
   }
 
   if (clientJobsSearch) {
@@ -208,8 +240,9 @@ export function resolveJobsListQuery(query) {
     nextQuery.action = query.jobsAction
   }
 
-  if (typeof query?.jobsStatus === 'string' && query.jobsStatus) {
-    nextQuery.status = query.jobsStatus
+  const nextStatus = encodeJobsStatusFilters(query?.jobsStatus)
+  if (nextStatus) {
+    nextQuery.status = nextStatus
   }
 
   if (typeof query?.jobsSearch === 'string' && query.jobsSearch) {
@@ -227,7 +260,7 @@ export function resolveJobDetailsQuery(query) {
   return buildJobDetailsQuery({
     director: typeof query?.director === 'string' ? query.director : '',
     jobsAction: typeof query?.jobsAction === 'string' ? query.jobsAction : '',
-    jobsStatus: typeof query?.jobsStatus === 'string' ? query.jobsStatus : '',
+    jobsStatus: encodeJobsStatusFilters(query?.jobsStatus),
     jobsSearch: typeof query?.jobsSearch === 'string' ? query.jobsSearch : '',
     jobsScopeDirector: typeof query?.jobsScopeDirector === 'string' ? query.jobsScopeDirector : '',
     clientName: typeof query?.clientName === 'string' ? query.clientName : '',
@@ -236,7 +269,7 @@ export function resolveJobDetailsQuery(query) {
     clientsScopeDirector: typeof query?.clientsScopeDirector === 'string' ? query.clientsScopeDirector : '',
     clientDashboardOrigin: query?.clientDashboardOrigin === '1',
     clientJobsAction: typeof query?.clientJobsAction === 'string' ? query.clientJobsAction : '',
-    clientJobsStatus: typeof query?.clientJobsStatus === 'string' ? query.clientJobsStatus : '',
+    clientJobsStatus: encodeJobsStatusFilters(query?.clientJobsStatus),
     clientJobsSearch: typeof query?.clientJobsSearch === 'string' ? query.clientJobsSearch : '',
     clientJobsScopeDirector: typeof query?.clientJobsScopeDirector === 'string' ? query.clientJobsScopeDirector : '',
     volumeName: typeof query?.volumeName === 'string' ? query.volumeName : '',
@@ -262,7 +295,7 @@ export function resolveJobDetailsClientOrigin(query) {
     scopeDirector: typeof query?.clientsScopeDirector === 'string' ? query.clientsScopeDirector : '',
     dashboardOrigin: query?.clientDashboardOrigin === '1',
     jobsAction: typeof query?.clientJobsAction === 'string' ? query.clientJobsAction : '',
-    jobsStatus: typeof query?.clientJobsStatus === 'string' ? query.clientJobsStatus : '',
+    jobsStatus: encodeJobsStatusFilters(query?.clientJobsStatus),
     jobsSearch: typeof query?.clientJobsSearch === 'string' ? query.clientJobsSearch : '',
     jobsScopeDirector: typeof query?.clientJobsScopeDirector === 'string'
       ? query.clientJobsScopeDirector

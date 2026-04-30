@@ -57,16 +57,18 @@
             <span>{{ t('Job List') }}</span>
             <q-space />
             <q-select
-              v-model="statusFilter"
+              v-model="statusFilters"
               dense
               outlined
               clearable
               emit-value
               map-options
+              multiple
+              use-chips
               :options="jobStatusOptions"
               :label="t('Status')"
               class="q-mr-sm"
-              style="width:200px"
+              style="min-width:220px"
             />
             <q-input v-model="search" dense outlined :placeholder="t('Search…')" class="q-mr-sm" style="width:200px" clearable>
               <template #prepend><q-icon name="search" /></template>
@@ -76,10 +78,18 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
-            <div v-if="statusFilter || jobsListScopeDirector" class="q-px-md q-pt-sm">
-              <q-chip removable color="primary" text-color="white" icon="filter_list"
-                      @remove="statusFilter = ''" class="q-mb-xs">
-                {{ t('Status') }}: {{ jobStatusMap[statusFilter]?.label ?? statusFilter }}
+            <div v-if="(statusFilters?.length ?? 0) || jobsListScopeDirector" class="q-px-md q-pt-sm">
+              <q-chip
+                v-for="status in (statusFilters ?? [])"
+                :key="status"
+                removable
+                color="primary"
+                text-color="white"
+                icon="filter_list"
+                class="q-mb-xs q-mr-xs"
+                @remove="statusFilters = statusFilters.filter(value => value !== status)"
+              >
+                {{ t('Status') }}: {{ t(jobStatusMap[status]?.label ?? status) }}
               </q-chip>
               <q-chip
                 v-if="jobsListScopeDirector"
@@ -514,9 +524,10 @@ import { buildClientDetailsQuery } from '../utils/clients.js'
 import { formatNumber } from '../utils/locales.js'
 import {
   buildJobDetailsQuery,
-  normaliseJobStatusFilter,
+  encodeJobsStatusFilters,
   resolveJobsSearchQuery,
   resolveJobsScopeDirector,
+  resolveJobsStatusFilters,
   withJobsSearchQuery,
   withJobsScopeDirectorQuery,
   withJobsStatusFilterQuery,
@@ -538,9 +549,13 @@ function normaliseTab(value) {
   return validTabs.has(value) ? value : 'list'
 }
 
+function jobsStatusFiltersEqual(left, right) {
+  return encodeJobsStatusFilters(left) === encodeJobsStatusFilters(right)
+}
+
 const tab          = ref(normaliseTab(route.query.action))
 const search       = ref(resolveJobsSearchQuery(route.query))
-const statusFilter = ref(normaliseJobStatusFilter(route.query.status))
+const statusFilters = ref(resolveJobsStatusFilters(route.query))
 const directorErrors = ref([])
 const fmtBytes  = formatBytes
 const fmtSpeed  = formatSpeed
@@ -639,7 +654,7 @@ const currentSingletonDirector = computed(() => (
 const timelineJobDetailsQuery = computed(() => buildJobDetailsQuery({
   director: currentSingletonDirector.value,
   jobsAction: tab.value,
-  jobsStatus: statusFilter.value,
+  jobsStatus: statusFilters.value,
   jobsSearch: search.value,
   jobsScopeDirector: jobsListScopeDirector.value,
 }))
@@ -704,7 +719,7 @@ async function fetchPage() {
   directorErrors.value = []
   const { page, rowsPerPage } = pagination.value
   const offset = (page - 1) * rowsPerPage
-  const filter = statusFilter.value ? ` jobstatus=${statusFilter.value}` : ''
+  const encodedStatusFilters = encodeJobsStatusFilters(statusFilters.value)
   try {
     if (jobsPageDirectors.value.length === 0) {
       jobs.value = []
@@ -723,7 +738,7 @@ async function fetchPage() {
         credentials,
         jobsPageDirectors.value,
         pagination.value,
-        statusFilter.value
+        statusFilters.value
       )
       jobs.value = result.jobs
       directorErrors.value = result.directorErrors
@@ -734,24 +749,72 @@ async function fetchPage() {
 
     const currentDirector = jobsPageDirectors.value[0]
     await ensureSingleScopeDirector()
-    const [pageResult, countResult] = await Promise.allSettled([
-      director.call(`llist jobs reverse limit=${rowsPerPage} offset=${offset}${filter}`),
-      director.call(`list jobs count${filter}`),
+    if (!encodedStatusFilters.includes(',')) {
+      const filter = encodedStatusFilters ? ` jobstatus=${encodedStatusFilters}` : ''
+      const [pageResult, countResult] = await Promise.allSettled([
+        director.call(`llist jobs reverse limit=${rowsPerPage} offset=${offset}${filter}`),
+        director.call(`list jobs count${filter}`),
+      ])
+      if (pageResult.status === 'rejected') throw pageResult.reason
+      jobs.value = directorCollection(pageResult.value?.jobs).map((job) => {
+        const normalized = normaliseJob(job)
+        return {
+          ...normalized,
+          director: currentDirector,
+          scopeKey: `${currentDirector}:${normalized.id}`,
+        }
+      })
+      const count = countResult.status === 'fulfilled'
+        ? Number(directorCollection(countResult.value?.jobs)[0]?.count ?? 0)
+        : (jobs.value.length < rowsPerPage
+          ? offset + jobs.value.length
+          : offset + jobs.value.length + rowsPerPage)
+      totalJobs.value = count
+      pagination.value = { ...pagination.value, rowsNumber: count }
+      return
+    }
+
+    const fetchLimit = offset + rowsPerPage
+    const filters = resolveJobsStatusFilters({ status: encodedStatusFilters })
+    const [pageResults, countResults] = await Promise.all([
+      Promise.allSettled(filters.map(status => (
+        director.call(`llist jobs reverse limit=${fetchLimit} offset=0 jobstatus=${status}`)
+      ))),
+      Promise.allSettled(filters.map(status => (
+        director.call(`list jobs count jobstatus=${status}`)
+      ))),
     ])
-    if (pageResult.status === 'rejected') throw pageResult.reason
-    jobs.value = directorCollection(pageResult.value?.jobs).map((job) => {
-      const normalized = normaliseJob(job)
-      return {
-        ...normalized,
-        director: currentDirector,
-        scopeKey: `${currentDirector}:${normalized.id}`,
+    const rejectedPageResult = pageResults.find(result => result.status === 'rejected')
+    if (rejectedPageResult?.status === 'rejected') {
+      throw rejectedPageResult.reason
+    }
+    const mergedJobs = [...pageResults.flatMap((result) => (
+      result.status === 'fulfilled'
+        ? directorCollection(result.value?.jobs).map((job) => {
+          const normalized = normaliseJob(job)
+          return {
+            ...normalized,
+            director: currentDirector,
+            scopeKey: `${currentDirector}:${normalized.id}`,
+          }
+        })
+        : []
+    ))].sort((left, right) => {
+      const startCompare = String(right.starttime ?? '').localeCompare(String(left.starttime ?? ''))
+      if (startCompare !== 0) {
+        return startCompare
       }
+
+      return Number(right.id ?? 0) - Number(left.id ?? 0)
     })
-    const count = countResult.status === 'fulfilled'
-      ? Number(directorCollection(countResult.value?.jobs)[0]?.count ?? 0)
-      : (jobs.value.length < rowsPerPage
-        ? offset + jobs.value.length
-        : offset + jobs.value.length + rowsPerPage)
+    jobs.value = mergedJobs.slice(offset, offset + rowsPerPage)
+    const count = countResults.reduce((sum, result, index) => (
+      sum + (
+        result.status === 'fulfilled'
+          ? Number(directorCollection(result.value?.jobs)[0]?.count ?? 0)
+          : numberOfJobsFromResult(pageResults[index])
+      )
+    ), 0)
     totalJobs.value = count
     pagination.value = { ...pagination.value, rowsNumber: count }
   } catch (e) {
@@ -759,6 +822,14 @@ async function fetchPage() {
   } finally {
     loading.value = false
   }
+}
+
+function numberOfJobsFromResult(result) {
+  if (result?.status !== 'fulfilled') {
+    return 0
+  }
+
+  return directorCollection(result.value?.jobs).length
 }
 
 function refresh() { fetchPage() }
@@ -917,7 +988,7 @@ async function openJobDetails(job) {
       query: buildJobDetailsQuery({
         director: job.director,
         jobsAction: tab.value,
-        jobsStatus: statusFilter.value,
+        jobsStatus: statusFilters.value,
         jobsSearch: search.value,
         jobsScopeDirector: jobsListScopeDirector.value,
       }),
@@ -942,7 +1013,7 @@ async function openClientDetails(job) {
       query: buildClientDetailsQuery({
         director: job.director,
         jobsAction: tab.value,
-        jobsStatus: statusFilter.value,
+        jobsStatus: statusFilters.value,
         jobsSearch: search.value,
         jobsScopeDirector: jobsListScopeDirector.value,
       }),
@@ -1249,9 +1320,9 @@ watch(() => director.isConnected, (connected) => {
 })
 
 watch(() => route.query.status, (value) => {
-  const next = normaliseJobStatusFilter(value)
-  if (statusFilter.value !== next) {
-    statusFilter.value = next
+  const next = resolveJobsStatusFilters({ status: value })
+  if (!jobsStatusFiltersEqual(statusFilters.value, next)) {
+    statusFilters.value = next
   }
 })
 
@@ -1290,14 +1361,20 @@ watch(search, (next) => {
   }
 })
 
-watch(statusFilter, (next) => {
-  const query = withJobsStatusFilterQuery(route.query, next)
-  if (query.status !== route.query.status) {
+watch(statusFilters, (next) => {
+  const normalized = resolveJobsStatusFilters({ status: next })
+  if (!jobsStatusFiltersEqual(next, normalized)) {
+    statusFilters.value = normalized
+    return
+  }
+
+  const query = withJobsStatusFilterQuery(route.query, normalized)
+  if ((query.status ?? '') !== (typeof route.query.status === 'string' ? route.query.status : '')) {
     router.replace({ path: route.path, query })
   }
   pagination.value = { ...pagination.value, page: 1 }
   fetchPage()
-})
+}, { deep: true })
 
 watch(() => directorOptions.value, () => {
   syncSelectedDirectors()

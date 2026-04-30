@@ -21,6 +21,7 @@
 
 import { directorCollection, normaliseJob } from './useDirectorFetch.js'
 import { createDirectorCommandClient } from './directorAggregate.js'
+import { normaliseJobStatusFilters } from '../utils/jobs.js'
 
 function numberValue(value) {
   const number = Number(value ?? 0)
@@ -54,15 +55,16 @@ function sortJobsByStartTime(jobs) {
   })
 }
 
-function jobsFilterCommand(statusFilter) {
-  return statusFilter ? ` jobstatus=${statusFilter}` : ''
+function jobsFilterCommands(statusFilter) {
+  const filters = normaliseJobStatusFilters(statusFilter)
+  return filters.length ? filters.map(filter => ` jobstatus=${filter}`) : ['']
 }
 
 export async function fetchAggregatedJobsPage(credentials, directors, pagination, statusFilter = '') {
   const { page = 1, rowsPerPage = 25 } = pagination ?? {}
   const offset = Math.max(0, (page - 1) * rowsPerPage)
   const fetchLimit = offset + rowsPerPage
-  const filter = jobsFilterCommand(statusFilter)
+  const filters = jobsFilterCommands(statusFilter)
 
   const results = await Promise.allSettled(directors.map(async (director) => {
     const client = await createDirectorCommandClient({
@@ -71,22 +73,38 @@ export async function fetchAggregatedJobsPage(credentials, directors, pagination
     })
 
     try {
-      const [jobsResult, countResult] = await Promise.allSettled([
-        client.call(`llist jobs reverse limit=${fetchLimit} offset=0${filter}`),
-        client.call(`list jobs count${filter}`),
+      const [jobsResults, countResults] = await Promise.all([
+        Promise.allSettled(filters.map(filter => (
+          client.call(`llist jobs reverse limit=${fetchLimit} offset=0${filter}`)
+        ))),
+        Promise.allSettled(filters.map(filter => (
+          client.call(`list jobs count${filter}`)
+        ))),
       ])
 
-      if (jobsResult.status === 'rejected') {
-        throw jobsResult.reason
+      const rejectedJobsResult = jobsResults.find(result => result.status === 'rejected')
+      if (rejectedJobsResult?.status === 'rejected') {
+        throw rejectedJobsResult.reason
       }
 
-      const count = countResult.status === 'fulfilled'
-        ? numberValue(directorCollection(countResult.value?.jobs)[0]?.count)
-        : numberValue(directorCollection(jobsResult.value?.jobs).length)
+      const jobs = sortJobsByStartTime(jobsResults.flatMap((result) => (
+        result.status === 'fulfilled'
+          ? decorateJobs(result.value?.jobs, director)
+          : []
+      )))
+      const count = countResults.reduce((sum, result, index) => (
+        sum + (
+          result.status === 'fulfilled'
+            ? numberValue(directorCollection(result.value?.jobs)[0]?.count)
+            : numberValue(directorCollection(
+              jobsResults[index]?.status === 'fulfilled' ? jobsResults[index].value?.jobs : []
+            ).length)
+        )
+      ), 0)
 
       return {
         director,
-        jobs: decorateJobs(jobsResult.value?.jobs, director),
+        jobs,
         count,
       }
     } finally {

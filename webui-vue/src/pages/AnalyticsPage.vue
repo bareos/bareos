@@ -332,7 +332,7 @@ const overallStats = computed(() => {
       label: t('Failed'),
       value: j.filter(x => x.status === 'f' || x.status === 'E').length,
       color: 'negative',
-      jobsQuery: null,
+      jobsQuery: withJobsStatusFilterQuery({}, ['f', 'E']),
     },
     {
       label: t('Total Bytes'),
@@ -369,7 +369,7 @@ const statusRows = computed(() => {
       label: t('Failed'),
       color: 'negative',
       count: count('f') + count('E'),
-      jobsQuery: null,
+      jobsQuery: withJobsStatusFilterQuery({}, ['f', 'E']),
     },
     {
       label: t('Canceled'),

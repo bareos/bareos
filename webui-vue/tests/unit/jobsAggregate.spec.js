@@ -158,4 +158,118 @@ describe('jobs aggregate helpers', () => {
       directorErrors: [],
     })
   })
+
+  it('merges multi-status jobs across multiple directors', async () => {
+    const loading = fetchAggregatedJobsPage(
+      {
+        username: 'admin',
+        password: 'secret',
+      },
+      ['prod-a', 'prod-b'],
+      { page: 1, rowsPerPage: 3 },
+      ['f', 'E']
+    )
+
+    const socketA = FakeWebSocket.instances[0]
+    const socketB = FakeWebSocket.instances[1]
+    socketA.open()
+    socketB.open()
+    socketA.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    socketB.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await Promise.resolve()
+
+    const socketCommands = (socket) => new Map(
+      socket.sent.slice(1).map((payload) => {
+        const command = JSON.parse(payload)
+        return [command.command, command.id]
+      })
+    )
+
+    const commandsA = socketCommands(socketA)
+    const commandsB = socketCommands(socketB)
+
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsA.get('llist jobs reverse limit=3 offset=0 jobstatus=f'),
+        data: {
+          jobs: [
+            { jobid: '31', name: 'failed-a', clientname: 'fd-a', jobstatus: 'f', starttime: '2026-04-29 10:00:00' },
+          ],
+        },
+      }),
+    })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsA.get('list jobs count jobstatus=f'),
+        data: { jobs: [{ count: '1' }] },
+      }),
+    })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsA.get('llist jobs reverse limit=3 offset=0 jobstatus=E'),
+        data: {
+          jobs: [
+            { jobid: '30', name: 'error-a', clientname: 'fd-a', jobstatus: 'E', starttime: '2026-04-29 09:00:00' },
+          ],
+        },
+      }),
+    })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsA.get('list jobs count jobstatus=E'),
+        data: { jobs: [{ count: '1' }] },
+      }),
+    })
+
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('llist jobs reverse limit=3 offset=0 jobstatus=f'),
+        data: {
+          jobs: [
+            { jobid: '41', name: 'failed-b', clientname: 'fd-b', jobstatus: 'f', starttime: '2026-04-29 12:00:00' },
+          ],
+        },
+      }),
+    })
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('list jobs count jobstatus=f'),
+        data: { jobs: [{ count: '1' }] },
+      }),
+    })
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('llist jobs reverse limit=3 offset=0 jobstatus=E'),
+        data: {
+          jobs: [
+            { jobid: '40', name: 'error-b', clientname: 'fd-b', jobstatus: 'E', starttime: '2026-04-29 11:00:00' },
+          ],
+        },
+      }),
+    })
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('list jobs count jobstatus=E'),
+        data: { jobs: [{ count: '1' }] },
+      }),
+    })
+
+    await expect(loading).resolves.toEqual({
+      jobs: [
+        expect.objectContaining({ scopeKey: 'prod-b:41', director: 'prod-b', id: 41, status: 'f' }),
+        expect.objectContaining({ scopeKey: 'prod-b:40', director: 'prod-b', id: 40, status: 'E' }),
+        expect.objectContaining({ scopeKey: 'prod-a:31', director: 'prod-a', id: 31, status: 'f' }),
+      ],
+      totalJobs: 4,
+      directorErrors: [],
+    })
+  })
 })

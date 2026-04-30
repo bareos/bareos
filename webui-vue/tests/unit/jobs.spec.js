@@ -22,7 +22,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildJobDetailsQuery,
+  encodeJobsStatusFilters,
   normaliseJobStatusFilter,
+  normaliseJobStatusFilters,
   resolveJobDetailsClientOrigin,
   resolveJobDetailsQuery,
   resolveJobDetailsDashboardOrigin,
@@ -31,6 +33,7 @@ import {
   resolveJobDetailsVolumeOrigin,
   resolveJobsSearchQuery,
   resolveJobsScopeDirector,
+  resolveJobsStatusFilters,
   resolveJobsListQuery,
   withJobsSearchQuery,
   withJobsScopeDirectorQuery,
@@ -45,10 +48,20 @@ describe('jobs filter helpers', () => {
     expect(normaliseJobStatusFilter(undefined)).toBe('')
   })
 
+  it('normalizes and encodes multi-status filters', () => {
+    expect(normaliseJobStatusFilters('f,E,f,invalid')).toEqual(['f', 'E'])
+    expect(normaliseJobStatusFilters(['R', 'A', 'R', 'invalid'])).toEqual(['R', 'A'])
+    expect(encodeJobsStatusFilters(['f', 'E', 'f'])).toBe('f,E')
+  })
+
   it('adds and removes the status query parameter', () => {
     expect(withJobsStatusFilterQuery({ search: 'Backup' }, 'T')).toEqual({
       search: 'Backup',
       status: 'T',
+    })
+    expect(withJobsStatusFilterQuery({ search: 'Backup' }, ['f', 'E'])).toEqual({
+      search: 'Backup',
+      status: 'f,E',
     })
     expect(withJobsStatusFilterQuery({ search: 'Backup', status: 'T' }, '')).toEqual({
       search: 'Backup',
@@ -107,6 +120,12 @@ describe('jobs filter helpers', () => {
     expect(resolveJobsScopeDirector({})).toBe('')
   })
 
+  it('resolves optional multi-status route filters', () => {
+    expect(resolveJobsStatusFilters({ status: 'f,E' })).toEqual(['f', 'E'])
+    expect(resolveJobsStatusFilters({ status: ['R', 'A', 'invalid'] })).toEqual(['R', 'A'])
+    expect(resolveJobsStatusFilters({})).toEqual([])
+  })
+
   it('builds job details query with return-state fields', () => {
     expect(buildJobDetailsQuery({
       director: 'prod-a',
@@ -159,22 +178,23 @@ describe('jobs filter helpers', () => {
     expect(buildJobDetailsQuery({
       director: 'prod-a',
       jobsAction: 'list',
-      jobsStatus: '',
+      jobsStatus: ['f', 'E'],
       jobsSearch: '',
     })).toEqual({
       director: 'prod-a',
+      jobsStatus: 'f,E',
     })
   })
 
   it('restores jobs list query from detail return-state fields', () => {
     expect(resolveJobsListQuery({
       jobsAction: 'timeline',
-      jobsStatus: 'T',
+      jobsStatus: 'f,E',
       jobsSearch: 'backup',
       jobsScopeDirector: 'prod-a',
     })).toEqual({
       action: 'timeline',
-      status: 'T',
+      status: 'f,E',
       search: 'backup',
       scopeDirector: 'prod-a',
     })
