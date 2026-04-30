@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -38,6 +38,8 @@ JobName=backup-bareos-fd
 . "${BAREOS_SCRIPTS_DIR}"/functions
 #shellcheck source=functions
 . functions
+
+export BCONSOLE_TIMEOUT=300s
 
 start_test
 

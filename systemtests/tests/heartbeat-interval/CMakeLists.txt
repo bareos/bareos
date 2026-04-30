@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,9 @@ get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
 if(TARGET python3-fd)
   create_systemtest(${SYSTEMTEST_PREFIX} "${BASENAME}")
+  set_tests_properties(
+    ${SYSTEMTEST_PREFIX}${BASENAME}:check PROPERTIES TIMEOUT 400 COST 1.0
+  )
 else()
   create_systemtest(${SYSTEMTEST_PREFIX} "${BASENAME}" DISABLED)
 endif()
