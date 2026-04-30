@@ -514,7 +514,12 @@ const auth     = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
 const { t } = useI18n()
-const tab          = ref(route.query.action || 'list')
+const validTabs = new Set(['list', 'actions', 'run', 'rerun', 'timeline'])
+function normaliseTab(value) {
+  return validTabs.has(value) ? value : 'list'
+}
+
+const tab          = ref(normaliseTab(route.query.action))
 const search       = ref(resolveJobsSearchQuery(route.query))
 const statusFilter = ref(normaliseJobStatusFilter(route.query.status))
 const directorErrors = ref([])
@@ -1200,6 +1205,13 @@ watch(() => route.query.status, (value) => {
   }
 })
 
+watch(() => route.query.action, (value) => {
+  const next = normaliseTab(value)
+  if (tab.value !== next) {
+    tab.value = next
+  }
+})
+
 watch(() => [route.query.search, route.query.name], () => {
   const next = resolveJobsSearchQuery(route.query)
   if (search.value !== next) {
@@ -1237,6 +1249,16 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
 })
 
 watch(tab, async (t) => {
+  const current = normaliseTab(route.query.action)
+  if (current !== t) {
+    const query = { ...route.query }
+    delete query.action
+    if (t !== 'list') {
+      query.action = t
+    }
+    router.replace({ path: route.path, query })
+  }
+
   if (t === 'actions'  && jobDefs.value.length === 0) loadJobDefs()
   if (t === 'run'      && dotJobs.value.length === 0)  loadRunOptions()
   if (t === 'timeline') await ensureSingletonTabDirector()
