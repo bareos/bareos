@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui: optimize performance and security [PR #2593]
 - python-bareos: add support for the sslpsk3 module [PR #2559]
 - matrix: add ubuntu 26.04 [PR #2635]
+- core: unify parsing of bools [PR #2578]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2263,6 +2264,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2567]: https://github.com/bareos/bareos/pull/2567
 [PR #2569]: https://github.com/bareos/bareos/pull/2569
 [PR #2572]: https://github.com/bareos/bareos/pull/2572
+[PR #2578]: https://github.com/bareos/bareos/pull/2578
 [PR #2581]: https://github.com/bareos/bareos/pull/2581
 [PR #2585]: https://github.com/bareos/bareos/pull/2585
 [PR #2588]: https://github.com/bareos/bareos/pull/2588
