@@ -1,0 +1,6 @@
+// BAREOS® - Backup Archiving REcovery Open Sourced
+//
+// Copyright (C) 2025-2026 Bareos GmbH & Co. KG
+//
+// Generated from bareos-version.js.in — do not edit manually.
+export const bareosVersion = '@BAREOS_FULL_VERSION@'

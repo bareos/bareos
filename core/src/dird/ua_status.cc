@@ -347,28 +347,47 @@ void ListDirStatusHeader(UaContext* ua)
   char dt[MAX_TIME_LENGTH];
   PoolMem msg(PM_FNAME);
 
-  ua->SendMsg(T_("%s Version: %s (%s) %s\n"), my_name,
-              kBareosVersionStrings.Full, kBareosVersionStrings.Date,
-              kBareosVersionStrings.GetOsInfo());
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
-  ua->SendMsg(T_("Daemon started %s. Jobs: run=%" PRIuz
-                 ", running=%d db:postgresql, %s "
-                 "binary\n"),
-              dt, NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
 
-  if (me->secure_erase_cmdline) {
-    ua->SendMsg(T_(" secure erase command='%s'\n"), me->secure_erase_cmdline);
-  }
+  if (ua->api == API_MODE_JSON) {
+    ua->send->ObjectStart("header");
+    ua->send->ObjectKeyValue("director", my_name, "%s\n");
+    ua->send->ObjectKeyValue("version", kBareosVersionStrings.Full, "%s\n");
+    ua->send->ObjectKeyValue("release_date", kBareosVersionStrings.Date,
+                             "%s\n");
+    ua->send->ObjectKeyValue("os", kBareosVersionStrings.GetOsInfo(), "%s\n");
+    ua->send->ObjectKeyValue("binary_info", kBareosVersionStrings.BinaryInfo,
+                             "%s\n");
+    ua->send->ObjectKeyValue("daemon_started", dt, "%s\n");
+    ua->send->ObjectKeyValue("jobs_run", (uint64_t)NumJobsRun(),
+                             "%" PRIuz "\n");
+    ua->send->ObjectKeyValueSignedInt("jobs_running", (int64_t)JobCount(),
+                                      "%d\n");
+    ua->send->ObjectKeyValueBool("config_warnings", my_config->HasWarnings());
+    ua->send->ObjectEnd("header");
+  } else {
+    ua->SendMsg(T_("%s Version: %s (%s) %s\n"), my_name,
+                kBareosVersionStrings.Full, kBareosVersionStrings.Date,
+                kBareosVersionStrings.GetOsInfo());
+    ua->SendMsg(T_("Daemon started %s. Jobs: run=%" PRIuz
+                   ", running=%d db:postgresql, %s "
+                   "binary\n"),
+                dt, NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
 
-  len = ListDirPlugins(msg);
-  if (len > 0) { ua->SendMsg("%s\n", msg.c_str()); }
+    if (me->secure_erase_cmdline) {
+      ua->SendMsg(T_(" secure erase command='%s'\n"), me->secure_erase_cmdline);
+    }
 
-  if (my_config->HasWarnings()) {
-    ua->SendMsg(
-        T_("\n"
-           "There are WARNINGS for the director configuration!\n"
-           "See 'status configuration' for details.\n"
-           "\n"));
+    len = ListDirPlugins(msg);
+    if (len > 0) { ua->SendMsg("%s\n", msg.c_str()); }
+
+    if (my_config->HasWarnings()) {
+      ua->SendMsg(
+          T_("\n"
+             "There are WARNINGS for the director configuration!\n"
+             "See 'status configuration' for details.\n"
+             "\n"));
+    }
   }
 }
 
@@ -640,11 +659,28 @@ static void DoConfigurationStatus(UaContext* ua)
   }
 }
 
+/* Scheduling packet */
+struct sched_pkt {
+  JobResource* job;
+  int level;
+  int priority;
+  utime_t runtime;
+  PoolResource* pool;
+  StorageResource* store;
+};
+
+static int CompareByRuntimePriority(const sched_pkt& p1, const sched_pkt& p2);
+static void PrtRuntime(UaContext* ua, sched_pkt* sp);
+
 static void DoSchedulerStatus(UaContext* ua)
 {
   int i;
   int max_date_len = 0;
-  int days = DEFAULT_STATUS_SCHED_DAYS; /* Default days for preview */
+  int days
+      = DEFAULT_STATUS_SCHED_DAYS; /* Default days for preview (text mode) */
+  int json_days_from = 0;          /* Days offset for JSON preview start */
+  int json_days_to
+      = DEFAULT_STATUS_SCHED_DAYS; /* Days offset for JSON preview end */
   bool schedule_given_by_cmdline_args = false;
   time_t time_to_check, now, start, stop;
   char schedulename[MAX_NAME_LENGTH];
@@ -660,11 +696,40 @@ static void DoSchedulerStatus(UaContext* ua)
 
   i = FindArgWithValue(ua, NT_("days"));
   if (i >= 0) {
-    days = atoi(ua->argv[i]);
-    if (((days < -366) || (days > 366)) && !ua->api) {
-      ua->SendMsg(T_(
-          "Ignoring invalid value for days. Allowed is -366 < days < 366.\n"));
-      days = DEFAULT_STATUS_SCHED_DAYS;
+    const char* val = ua->argv[i];
+    const char* comma = strchr(val, ',');
+    if (comma) {
+      // Range format: days=FROM,TO (both relative to now, e.g. days=-7,7)
+      json_days_from = atoi(val);
+      json_days_to = atoi(comma + 1);
+      if (json_days_from > json_days_to) {
+        std::swap(json_days_from, json_days_to);
+      }
+      if (!ua->api) {
+        if (json_days_from < -366 || json_days_to > 366) {
+          ua->SendMsg(T_("Ignoring invalid days range. Allowed: -366..366.\n"));
+          json_days_from = 0;
+          json_days_to = DEFAULT_STATUS_SCHED_DAYS;
+        }
+      }
+      // For text mode use the larger absolute value.
+      days = std::max(std::abs(json_days_from), std::abs(json_days_to));
+    } else {
+      days = atoi(val);
+      if (((days < -366) || (days > 366)) && !ua->api) {
+        ua->SendMsg(
+            T_("Ignoring invalid value for days. Allowed is -366 < days < "
+               "366.\n"));
+        days = DEFAULT_STATUS_SCHED_DAYS;
+      }
+      // Convert single value to a from/to range.
+      if (days >= 0) {
+        json_days_from = 0;
+        json_days_to = days;
+      } else {
+        json_days_from = days;
+        json_days_to = 0;
+      }
     }
   }
 
@@ -686,6 +751,171 @@ static void DoSchedulerStatus(UaContext* ua)
 
     // If a bogus jobname was given ask for it interactively.
     if (!job) { job = select_job_resource(ua); }
+  }
+
+  // JSON mode: emit the same two sections as the text output but as
+  // structured data:
+  //   "schedules" – schedule → jobs mapping (mirrors "Scheduler Jobs")
+  //   "preview"   – hour-by-hour timeline with overrides
+  if (ua->api == API_MODE_JSON) {
+    time_t json_now = time(nullptr);
+
+    // ── "schedules": which schedule triggers which jobs ───────────────────
+    {
+      ScheduleResource* json_sr;
+      ua->send->ArrayStart("schedules");
+      foreach_res (json_sr, R_SCHEDULE) {
+        if (!json_sr->enabled) { continue; }
+        if (!ua->AclAccessOk(Schedule_ACL, json_sr->resource_name_)) {
+          continue;
+        }
+        if (schedule_given_by_cmdline_args
+            && !bstrcmp(json_sr->resource_name_, schedulename)) {
+          continue;
+        }
+        // Collect matching jobs for this schedule.
+        std::vector<std::pair<const char*, bool>> sched_jobs;
+        if (job) {
+          if (job->schedule
+              && bstrcmp(json_sr->resource_name_,
+                         job->schedule->resource_name_)) {
+            bool enabled
+                = job->enabled && !(job->client && !job->client->enabled);
+            sched_jobs.push_back({job->resource_name_, enabled});
+          }
+        } else {
+          JobResource* json_job;
+          foreach_res (json_job, R_JOB) {
+            if (!ua->AclAccessOk(Job_ACL, json_job->resource_name_)) {
+              continue;
+            }
+            if (client && json_job->client != client) { continue; }
+            if (json_job->schedule
+                && bstrcmp(json_sr->resource_name_,
+                           json_job->schedule->resource_name_)) {
+              bool enabled
+                  = json_job->enabled
+                    && !(json_job->client && !json_job->client->enabled);
+              sched_jobs.push_back({json_job->resource_name_, enabled});
+            }
+          }
+        }
+        if (sched_jobs.empty()) { continue; }
+        ua->send->ObjectStart();
+        ua->send->ObjectKeyValue("name", json_sr->resource_name_, "%s\n");
+        ua->send->ObjectKeyValueBool("enabled", json_sr->enabled);
+        ua->send->ArrayStart("jobs");
+        for (auto& [jname, jenabled] : sched_jobs) {
+          ua->send->ObjectStart();
+          ua->send->ObjectKeyValue("name", jname, "%s\n");
+          ua->send->ObjectKeyValueBool("enabled", jenabled);
+          ua->send->ObjectEnd();
+        }
+        ua->send->ArrayEnd("jobs");
+        ua->send->ObjectEnd();
+      }
+      ua->send->ArrayEnd("schedules");
+    }
+
+    // ── "preview": hour-by-hour run timeline with per-run overrides ───────
+    {
+      time_t preview_start
+          = json_now + (static_cast<time_t>(json_days_from) * seconds_per_day);
+      time_t preview_stop
+          = json_now + (static_cast<time_t>(json_days_to) * seconds_per_day);
+      ua->send->ArrayStart("preview");
+      for (time_t t = preview_start; t < preview_stop; t += seconds_per_hour) {
+        auto emit_run = [&](ScheduleResource* s, RunResource* run) {
+          if (!run->date_time_mask.TriggersOnDayAndHour(t)) { return; }
+          struct tm tm_s;
+          Blocaltime(&t, &tm_s);
+          tm_s.tm_min = run->minute;
+          tm_s.tm_sec = 0;
+          time_t runtime = mktime(&tm_s);
+          char dt[MAX_TIME_LENGTH];
+          bstrftime_wd(dt, sizeof(dt), runtime);
+          ua->send->ObjectStart();
+          ua->send->ObjectKeyValue("datetime", dt, "%s\n");
+          ua->send->ObjectKeyValueSignedInt(
+              "runtime", static_cast<int64_t>(runtime), "%" PRId64 "\n");
+          ua->send->ObjectKeyValue("schedule", s->resource_name_, "%s\n");
+          if (run->level) {
+            ua->send->ObjectKeyValue("level", JobLevelToString(run->level),
+                                     "%s\n");
+          }
+          if (run->Priority) {
+            ua->send->ObjectKeyValueSignedInt("priority", run->Priority,
+                                              "%d\n");
+          }
+          if (run->pool) {
+            ua->send->ObjectKeyValue("pool", run->pool->resource_name_, "%s\n");
+          }
+          if (run->storage) {
+            ua->send->ObjectKeyValue("storage", run->storage->resource_name_,
+                                     "%s\n");
+          }
+          if (run->msgs) {
+            ua->send->ObjectKeyValue("messages", run->msgs->resource_name_,
+                                     "%s\n");
+          }
+          if (run->spool_data_set) {
+            ua->send->ObjectKeyValueBool("spool_data", run->spool_data);
+          }
+          if (run->accurate_set) {
+            ua->send->ObjectKeyValueBool("accurate", run->accurate);
+          }
+          ua->send->ObjectEnd();
+        };
+        if (job) {
+          if (job->schedule && job->schedule->enabled && job->enabled) {
+            if (!(job->client && !job->client->enabled)) {
+              for (RunResource* run = job->schedule->run; run;
+                   run = run->next) {
+                emit_run(job->schedule, run);
+              }
+            }
+          }
+        } else if (client) {
+          JobResource* json_job;
+          foreach_res (json_job, R_JOB) {
+            if (!ua->AclAccessOk(Job_ACL, json_job->resource_name_)) {
+              continue;
+            }
+            if (!json_job->schedule || !json_job->schedule->enabled
+                || !json_job->enabled) {
+              continue;
+            }
+            if (!json_job->client || json_job->client != client) { continue; }
+            if (schedule_given_by_cmdline_args
+                && !bstrcmp(json_job->schedule->resource_name_, schedulename)) {
+              continue;
+            }
+            for (RunResource* run = json_job->schedule->run; run;
+                 run = run->next) {
+              emit_run(json_job->schedule, run);
+            }
+          }
+        } else {
+          ScheduleResource* json_sr;
+          foreach_res (json_sr, R_SCHEDULE) {
+            if (!json_sr->enabled) { continue; }
+            if (!ua->AclAccessOk(Schedule_ACL, json_sr->resource_name_)) {
+              continue;
+            }
+            if (schedule_given_by_cmdline_args
+                && !bstrcmp(json_sr->resource_name_, schedulename)) {
+              continue;
+            }
+            for (RunResource* run = json_sr->run; run; run = run->next) {
+              emit_run(json_sr, run);
+            }
+          }
+        }
+      }
+      ua->send->ArrayEnd("preview");
+    }
+
+    return;
   }
 
   ua->SendMsg("Scheduler Jobs:\n\n");
@@ -836,16 +1066,6 @@ static void PrtRunhdr(UaContext* ua)
   }
 }
 
-/* Scheduling packet */
-struct sched_pkt {
-  JobResource* job;
-  int level;
-  int priority;
-  utime_t runtime;
-  PoolResource* pool;
-  StorageResource* store;
-};
-
 static void PrtRuntime(UaContext* ua, sched_pkt* sp)
 {
   char dt[MAX_TIME_LENGTH];
@@ -884,7 +1104,22 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
       level_ptr = JobLevelToString(sp->level);
       break;
   }
-  if (ua->api) {
+  if (ua->api == API_MODE_JSON) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("name", sp->job->resource_name_, "%s\n");
+    ua->send->ObjectKeyValue("type", job_type_to_str(sp->job->JobType), "%s\n");
+    ua->send->ObjectKeyValue("level", level_ptr, "%s\n");
+    ua->send->ObjectKeyValueSignedInt("priority", sp->priority, "%d\n");
+    ua->send->ObjectKeyValue("scheduled", dt, "%s\n");
+    ua->send->ObjectKeyValue("volume", mr.VolumeName, "%s\n");
+    if (sp->pool) {
+      ua->send->ObjectKeyValue("pool", sp->pool->resource_name_, "%s\n");
+    }
+    if (sp->store) {
+      ua->send->ObjectKeyValue("storage", sp->store->resource_name_, "%s\n");
+    }
+    ua->send->ObjectEnd();
+  } else if (ua->api) {
     ua->SendMsg(T_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"), level_ptr,
                 job_type_to_str(sp->job->JobType), sp->priority, dt,
                 sp->job->resource_name_, mr.VolumeName);
@@ -968,7 +1203,9 @@ static void ListScheduledJobs(UaContext* ua)
   std::sort(sched.begin(), sched.end(), [](auto& l, auto& r) -> bool {
     return CompareByRuntimePriority(l, r) < 0;
   });
+  if (ua->api == API_MODE_JSON) { ua->send->ArrayStart("scheduled"); }
   for (sched_pkt& sp : sched) { PrtRuntime(ua, &sp); }
+  if (ua->api == API_MODE_JSON) { ua->send->ArrayEnd("scheduled"); }
   if (sched.empty() && !ua->api) { ua->SendMsg(T_("No Scheduled Jobs.\n")); }
   if (!ua->api) ua->SendMsg("====\n");
   Dmsg0(200, "Leave list_sched_jobs_runs()\n");
@@ -985,6 +1222,7 @@ static void ListRunningJobs(UaContext* ua)
 
   Dmsg0(200, "enter list_run_jobs()\n");
   if (!ua->api) ua->SendMsg(T_("\nRunning Jobs:\n"));
+  if (ua->api == API_MODE_JSON) { ua->send->ArrayStart("running"); }
   foreach_jcr (jcr) {
     if (jcr->JobId == 0) { /* this is us */
       /* this is a console or other control job. We only show console
@@ -1004,6 +1242,7 @@ static void ListRunningJobs(UaContext* ua)
   if (njobs == 0) {
     // Note the following message is used by external programs -- don't change
     if (!ua->api) ua->SendMsg(T_("No Jobs running.\n====\n"));
+    if (ua->api == API_MODE_JSON) { ua->send->ArrayEnd("running"); }
     Dmsg0(200, "leave list_run_jobs()\n");
     return;
   }
@@ -1183,7 +1422,24 @@ static void ListRunningJobs(UaContext* ua)
         break;
     }
 
-    if (ua->api) {
+    if (ua->api == API_MODE_JSON) {
+      char dt[MAX_TIME_LENGTH];
+      bstrftime_nc(dt, sizeof(dt), jcr->start_time);
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("jobid", (uint64_t)jcr->JobId, "%llu\n");
+      ua->send->ObjectKeyValue("name", jcr->Job, "%s\n");
+      ua->send->ObjectKeyValue("level", level, "%s\n");
+      ua->send->ObjectKeyValue("type", job_type_to_str(jcr->getJobType()),
+                               "%s\n");
+      ua->send->ObjectKeyValue("status", msg, "%s\n");
+      ua->send->ObjectKeyValue("start_time", dt, "%s\n");
+      ua->send->ObjectKeyValue("files", (uint64_t)jcr->JobFiles, "%llu\n");
+      ua->send->ObjectKeyValue("bytes", (uint64_t)jcr->JobBytes, "%llu\n");
+      if (*jcr->comment) {
+        ua->send->ObjectKeyValue("comment", jcr->comment, "%s\n");
+      }
+      ua->send->ObjectEnd();
+    } else if (ua->api) {
       BashSpaces(jcr->comment);
       ua->SendMsg(T_("%6d\t%-6s\t%-20s\t%s\t%s\n"), jcr->JobId, level, jcr->Job,
                   msg, jcr->comment);
@@ -1202,7 +1458,11 @@ static void ListRunningJobs(UaContext* ua)
     }
   }
   endeach_jcr(jcr);
-  if (!ua->api) ua->SendMsg("====\n");
+  if (ua->api == API_MODE_JSON) {
+    ua->send->ArrayEnd("running");
+  } else if (!ua->api) {
+    ua->SendMsg("====\n");
+  }
   Dmsg0(200, "leave list_run_jobs()\n");
 }
 
@@ -1213,6 +1473,10 @@ static void ListTerminatedJobs(UaContext* ua)
 
   if (RecentJobResultsList::IsEmpty()) {
     if (!ua->api) ua->SendMsg(T_("No Terminated Jobs.\n"));
+    if (ua->api == API_MODE_JSON) {
+      ua->send->ArrayStart("terminated");
+      ua->send->ArrayEnd("terminated");
+    }
     return;
   }
   if (!ua->api) {
@@ -1224,6 +1488,7 @@ static void ListTerminatedJobs(UaContext* ua)
         "===================================================================="
         "\n"));
   }
+  if (ua->api == API_MODE_JSON) { ua->send->ArrayStart("terminated"); }
 
   for (const RecentJobResultsList::JobResult& je :
        RecentJobResultsList::Get()) {
@@ -1275,7 +1540,18 @@ static void ListTerminatedJobs(UaContext* ua)
         termstat = T_("Other");
         break;
     }
-    if (ua->api) {
+    if (ua->api == API_MODE_JSON) {
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("jobid", (uint64_t)je.JobId, "%llu\n");
+      ua->send->ObjectKeyValue("name", JobName, "%s\n");
+      ua->send->ObjectKeyValue("level", level, "%s\n");
+      ua->send->ObjectKeyValue("type", job_type_to_str(je.JobType), "%s\n");
+      ua->send->ObjectKeyValue("status", termstat, "%s\n");
+      ua->send->ObjectKeyValue("files", (uint64_t)je.JobFiles, "%llu\n");
+      ua->send->ObjectKeyValue("bytes", (uint64_t)je.JobBytes, "%llu\n");
+      ua->send->ObjectKeyValue("finished", dt, "%s\n");
+      ua->send->ObjectEnd();
+    } else if (ua->api) {
       ua->SendMsg(T_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId, level,
                   edit_uint64_with_commas(je.JobFiles, b1),
                   edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
@@ -1287,7 +1563,11 @@ static void ListTerminatedJobs(UaContext* ua)
                   JobName);
     }
   }
-  if (!ua->api) ua->SendMsg(T_("\n"));
+  if (ua->api == API_MODE_JSON) {
+    ua->send->ArrayEnd("terminated");
+  } else if (!ua->api) {
+    ua->SendMsg(T_("\n"));
+  }
 }
 
 

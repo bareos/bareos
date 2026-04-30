@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,6 @@ if(HAVE_WIN32)
   add_definitions(-DMS_WIN64)
 endif()
 
-if(ENABLE_PYTHON)
+if(ENABLE_PYTHON AND Python3_FOUND)
   add_subdirectory(python)
 endif()

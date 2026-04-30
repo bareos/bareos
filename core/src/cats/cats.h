@@ -807,7 +807,8 @@ class BareosDb : public BareosDbQueryEnum {
                       bool last,
                       bool count,
                       OutputFormatter* sendit,
-                      e_list_type type);
+                      e_list_type type,
+                      bool descending = false);
   void ListJobTotals(JobControlRecord* jcr,
                      JobDbRecord* jr,
                      OutputFormatter* sendit);

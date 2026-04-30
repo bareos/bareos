@@ -1220,6 +1220,18 @@ msgstr ""
 msgid "Label barcodes"
 msgstr ""
 
+msgid "encrypt newly labeled volumes"
+msgstr ""
+
+msgid "Encryption key stored in catalog"
+msgstr ""
+
+msgid "Encryption Key"
+msgstr ""
+
+msgid "Present"
+msgstr ""
+
 #: ../module/Storage/view/storage/storage/details.phtml:82
 msgid "Assign media to this pool."
 msgstr ""

@@ -169,6 +169,7 @@ set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
     bareos-fd
     bareos-test-fd
     bareos-sd
+    bareos-webui-proxy
     bcopy
     btape
     bextract
@@ -367,6 +368,9 @@ set(READONLY_WEBUI_SELENIUM_TESTNAMES
 
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
+find_program(NODE node)
+find_program(NPM npm)
+find_program(GOOGLE_CHROME google-chrome)
 check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 # FALSE
 
@@ -374,6 +378,9 @@ message("   PHP:                       " ${PHP})
 message("   PYTHON_EXECUTABLE:         " ${PYTHON_EXECUTABLE})
 message("   PYMODULE_3_SELENIUM_FOUND: " ${PYMODULE_3_SELENIUM_FOUND})
 message("   CHROMEDRIVER:              " ${CHROMEDRIVER})
+message("   NODE:                      " ${NODE})
+message("   NPM:                       " ${NPM})
+message("   GOOGLE_CHROME:             " ${GOOGLE_CHROME})
 
 if(PHP
    AND PYTHON_EXECUTABLE
@@ -417,7 +424,6 @@ else()
 
     prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
     prepare_testdir_for_daemon_run()
-
     set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui)
     file(MAKE_DIRECTORY ${WEBUICONFDIR})
     configure_file(
@@ -452,6 +458,9 @@ else()
 
   # unset variables, so that they are not set in other environments.
   set(BAREOS_WEBUI_PROFILE "")
+  set(BAREOS_WEBUI_USERNAME "")
+  set(BAREOS_WEBUI_PASSWORD "")
+  set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT "")
   set(BAREOS_WEBUI_TESTNAME "")
   set(BAREOS_WEBUI_TESTS "")
 endif()
@@ -459,5 +468,94 @@ endif()
 #
 # webui: end
 #
+
+set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS admin-smoke testuser-smoke
+                                         testuser-tls-psk-smoke
+)
+
+if(NODE
+   AND NPM
+   AND GOOGLE_CHROME
+)
+  set(ENABLE_WEBUI_VUE_PLAYWRIGHT_TEST TRUE)
+  message(STATUS "OK: all requirements for webui-vue browser tests were met.")
+else()
+  set(ENABLE_WEBUI_VUE_PLAYWRIGHT_TEST FALSE)
+  message(
+    STATUS
+      "NOT OK: disabling webui-vue browser tests as not all requirements were found."
+  )
+endif()
+
+set(WEBUI_VUE_TEST_PREFIX "webui-vue:")
+if(NOT ENABLE_WEBUI_VUE_PLAYWRIGHT_TEST)
+  foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS})
+    add_test(NAME ${WEBUI_VUE_TEST_PREFIX}${TEST_NAME_DISABLED} COMMAND false)
+    set_tests_properties(
+      ${WEBUI_VUE_TEST_PREFIX}${TEST_NAME_DISABLED} PROPERTIES DISABLED true
+    )
+    message(
+      STATUS "Disabled test: ${WEBUI_VUE_TEST_PREFIX}${TEST_NAME_DISABLED}"
+    )
+  endforeach()
+else()
+  foreach(TEST_NAME ${AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS})
+    message(STATUS "Configuring test: ${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}")
+
+    prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
+    set(BAREOS_WEBUI_PROFILE admin)
+    set(BAREOS_WEBUI_TESTNAME smoke)
+    set(BAREOS_WEBUI_USERNAME admin)
+    set(BAREOS_WEBUI_PASSWORD admin)
+    set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT TLS-PSK)
+    set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK 0)
+
+    if(TEST_NAME STREQUAL "testuser-smoke")
+      set(BAREOS_WEBUI_PROFILE testuser)
+      set(BAREOS_WEBUI_USERNAME testuser)
+      set(BAREOS_WEBUI_PASSWORD testuser)
+      set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT cleartext)
+      set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK 1)
+    elseif(TEST_NAME STREQUAL "testuser-tls-psk-smoke")
+      set(BAREOS_WEBUI_PROFILE testuser)
+      set(BAREOS_WEBUI_USERNAME testuser)
+      set(BAREOS_WEBUI_PASSWORD testuser)
+      set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT TLS-PSK)
+    endif()
+
+    configurefilestosystemtest(
+      "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
+    )
+    configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
+    configurefilestosystemtest(
+      "systemtests" "tests/${TEST_NAME}" "testrunner" @ONLY
+      "tests/webui-vue-common"
+    )
+
+    configure_file(
+      "environment.in" "tests/${TEST_NAME}/environment" @ONLY
+      NEWLINE_STYLE UNIX
+    )
+
+    configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
+    configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
+
+    add_test(
+      NAME "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
+      COMMAND ${tests_dir}/${TEST_NAME}/testrunner
+      WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
+    )
+    set_tests_properties(
+      ${WEBUI_VUE_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 240 COST 2.0
+    )
+    math(EXPR BASEPORT "${BASEPORT} + 10")
+  endforeach()
+  set(BAREOS_WEBUI_PROFILE "")
+  set(BAREOS_WEBUI_USERNAME "")
+  set(BAREOS_WEBUI_PASSWORD "")
+  set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT "")
+  set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK "")
+  set(BAREOS_WEBUI_TESTNAME "")
+endif()
 
 add_subdirectory(tests)
