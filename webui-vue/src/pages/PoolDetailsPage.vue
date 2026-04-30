@@ -125,7 +125,10 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
-import { resolvePoolDetailsVolumeOrigin } from '../utils/pools.js'
+import {
+  resolvePoolDetailsVolumeOrigin,
+  resolvePoolDetailsVolumeQuery,
+} from '../utils/pools.js'
 import {
   buildAutochangerSelectionQuery,
   resolveAutochangerSelectionQuery,
@@ -158,10 +161,7 @@ const backLocation = computed(() => {
     return {
       name: 'volume-details',
       params: { name: volumeOrigin.value.name },
-      query: buildVolumeDetailsQuery({
-        director: requestedDirector.value,
-        poolName: poolName.value,
-      }),
+      query: resolvePoolDetailsVolumeQuery(route.query),
     }
   }
 

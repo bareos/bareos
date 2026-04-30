@@ -19,17 +19,24 @@
    02110-1301, USA.
  */
 
+import {
+  AUTOCHANGER_DIRECTOR_QUERY_KEY,
+  AUTOCHANGER_STORAGE_QUERY_KEY,
+} from './storagesRoute.js'
+import { buildVolumeDetailsQuery } from './volumes.js'
+
 export function buildPoolDetailsQuery({
   director,
   volumeName,
+  volumeQuery,
 } = {}) {
-  const query = {}
+  const query = resolvePoolDetailsVolumeQuery(volumeQuery)
 
-  if (director) {
+  if (director && !query.director) {
     query.director = director
   }
 
-  if (volumeName) {
+  if (volumeName && !query.volumeName) {
     query.volumeName = volumeName
   }
 
@@ -44,4 +51,30 @@ export function resolvePoolDetailsVolumeOrigin(query) {
   return {
     name: query.volumeName,
   }
+}
+
+export function resolvePoolDetailsVolumeQuery(query) {
+  const nextQuery = buildVolumeDetailsQuery({
+    director: typeof query?.director === 'string' ? query.director : '',
+    directorTab: typeof query?.directorTab === 'string' ? query.directorTab : '',
+    directorTarget: typeof query?.directorTarget === 'string' ? query.directorTarget : '',
+    jobId: typeof query?.jobId === 'string' ? query.jobId : '',
+    poolName: typeof query?.poolName === 'string' ? query.poolName : '',
+  })
+
+  if (typeof query?.volumeName === 'string' && query.volumeName) {
+    nextQuery.volumeName = query.volumeName
+  }
+
+  if (typeof query?.[AUTOCHANGER_STORAGE_QUERY_KEY] === 'string'
+    && query[AUTOCHANGER_STORAGE_QUERY_KEY]) {
+    nextQuery[AUTOCHANGER_STORAGE_QUERY_KEY] = query[AUTOCHANGER_STORAGE_QUERY_KEY]
+  }
+
+  if (typeof query?.[AUTOCHANGER_DIRECTOR_QUERY_KEY] === 'string'
+    && query[AUTOCHANGER_DIRECTOR_QUERY_KEY]) {
+    nextQuery[AUTOCHANGER_DIRECTOR_QUERY_KEY] = query[AUTOCHANGER_DIRECTOR_QUERY_KEY]
+  }
+
+  return nextQuery
 }

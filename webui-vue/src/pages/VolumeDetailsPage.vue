@@ -478,6 +478,7 @@ const detailRows = computed(() => {
           query: buildPoolDetailsQuery({
             director: currentVolumeDirector.value,
             volumeName: volumeName.value,
+            volumeQuery: route.query,
           }),
         }
         : null,
