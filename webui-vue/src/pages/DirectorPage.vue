@@ -1,83 +1,135 @@
 <template>
   <q-page class="q-pa-md">
+    <q-card flat bordered class="q-mb-md bareos-panel">
+      <q-card-section class="panel-header row items-center">
+        <span>{{ t('Director Scope') }}</span>
+        <q-space />
+        <q-chip dense square color="white" text-color="primary" :label="directorScopeLabel" />
+      </q-card-section>
+      <q-card-section>
+        <q-select
+          v-model="selectedDirectorsModel"
+          data-testid="director-page-directors"
+          :options="directorOptions"
+          option-label="label"
+          option-value="value"
+          emit-value
+          map-options
+          multiple
+          use-chips
+          outlined
+          dense
+          :label="t('Directors')"
+        />
+        <div class="text-caption text-grey-6 q-mt-sm">
+          {{ t('Select the directors that contribute to the status and message views.') }}
+        </div>
+      </q-card-section>
+    </q-card>
+
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="status"       :label="t('Status')"       no-caps />
       <q-tab name="messages"     :label="t('Messages')"     no-caps />
-      <q-tab name="catalog"      :label="t('Catalog Maintenance')" no-caps />
-      <q-tab name="subscription" :label="t('Subscription')" no-caps />
+      <q-tab name="catalog"      :label="t('Catalog Maintenance')" no-caps :disable="isCommonDirectorPage" />
+      <q-tab name="subscription" :label="t('Subscription')" no-caps :disable="isCommonDirectorPage" />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated swipeable>
       <!-- STATUS -->
       <q-tab-panel name="status" class="q-pa-none">
+        <q-banner
+          v-if="statusDirectorErrors.length"
+          rounded
+          dense
+          class="bg-warning text-black q-mb-md"
+        >
+          <template #avatar>
+            <q-icon name="warning" />
+          </template>
+          <div v-for="item in statusDirectorErrors" :key="item.director">
+            <strong>{{ item.director }}</strong>: {{ item.message }}
+          </div>
+        </q-banner>
         <q-inner-loading :showing="statusLoading" />
         <div v-if="statusError" class="text-negative q-pa-md">{{ statusError }}</div>
-        <template v-else-if="rawStatus">
+        <template v-else-if="statusCards.length">
           <div class="row q-col-gutter-md">
 
             <!-- Director Info – single summary line -->
             <div class="col-12">
-              <q-card flat bordered class="bareos-panel">
-                <q-card-section class="panel-header row items-center">
-                  <span>{{ t('Director Info') }}</span>
-                  <q-space />
-                  <q-chip v-if="statusHeader.config_warnings != null"
-                          dense square clickable
-                          :color="statusHeader.config_warnings ? 'negative' : 'positive'"
-                          :icon="statusHeader.config_warnings ? 'error' : 'check_circle'"
-                          text-color="white"
-                          class="q-mr-sm"
-                          @click="showConfigStatus">
-                    {{ statusHeader.config_warnings ? t('Config Warning') : t('Config OK') }}
-                    <q-tooltip>{{ t('Click to show configuration status') }}</q-tooltip>
-                  </q-chip>
-                  <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ statusCountdown }}s</span>
-                  <q-btn flat round dense icon="refresh" color="white"
-                         @click="manualRefreshStatus" :loading="statusLoading" />
-                </q-card-section>
+                <q-card flat bordered class="bareos-panel">
+                  <q-card-section class="panel-header row items-center">
+                    <span>{{ t('Director Info') }}</span>
+                    <q-space />
+                    <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ statusCountdown }}s</span>
+                    <q-btn flat round dense icon="refresh" color="white"
+                           @click="manualRefreshStatus" :loading="statusLoading" />
+                  </q-card-section>
                 <q-card-section class="q-py-sm">
-                  <div class="row items-center q-gutter-sm text-body2 flex-wrap">
-                    <q-chip v-if="statusHeader.director"
-                            dense square color="primary" text-color="white" icon="dns">
-                      {{ statusHeader.director }}
-                      <q-tooltip>Director: {{ statusHeader.director }}</q-tooltip>
-                    </q-chip>
-                    <q-chip v-if="statusHeader.version"
-                            dense square color="blue-7" text-color="white" icon="info">
-                      {{ statusHeader.version }}
-                      <q-tooltip>Version: {{ statusHeader.version }}</q-tooltip>
-                    </q-chip>
-                    <q-chip v-if="statusHeader.release_date"
-                            dense square color="blue-grey-6" text-color="white" icon="event">
-                      {{ statusHeader.release_date }}
-                      <q-tooltip>Released: {{ statusHeader.release_date }}</q-tooltip>
-                    </q-chip>
-                    <q-chip v-if="statusHeader.binary_info"
-                            dense square color="blue-grey-7" text-color="white" icon="build">
-                      {{ statusHeader.binary_info }}
-                      <q-tooltip>Build: {{ statusHeader.binary_info }}</q-tooltip>
-                    </q-chip>
-                    <q-chip v-if="statusHeader.os"
-                            dense square :color="directorOsIcon.color" text-color="white"
-                            :icon="directorOsIcon.icon">
-                      {{ statusHeader.os }}
-                      <q-tooltip>OS: {{ statusHeader.os }}</q-tooltip>
-                    </q-chip>
-                    <q-chip v-if="statusHeader.daemon_started"
-                            dense square color="teal-7" text-color="white" icon="schedule">
-                      {{ settings.relativeTime ? formatDirectorRelativeTime(statusHeader.daemon_started, settings.locale) : statusHeader.daemon_started }}
-                      <q-tooltip>Started: {{ statusHeader.daemon_started }}</q-tooltip>
-                    </q-chip>
-                    <q-chip v-if="statusHeader.jobs_run != null"
-                            dense square color="purple-7" text-color="white" icon="check">
-                      {{ statusHeader.jobs_run }}
-                      <q-tooltip>Jobs Run: {{ statusHeader.jobs_run }}</q-tooltip>
-                    </q-chip>
-                    <q-chip v-if="statusHeader.jobs_running != null"
-                            dense square color="orange-7" text-color="white" icon="play_arrow">
-                      {{ statusHeader.jobs_running }}
-                      <q-tooltip>Running: {{ statusHeader.jobs_running }}</q-tooltip>
-                    </q-chip>
+                  <div class="column q-gutter-md">
+                    <div
+                      v-for="card in statusCards"
+                      :key="card.director"
+                      class="row items-center q-gutter-sm text-body2 flex-wrap"
+                    >
+                      <q-chip dense square color="primary" text-color="white" icon="dns">
+                        {{ card.director }}
+                        <q-tooltip>Director: {{ card.director }}</q-tooltip>
+                      </q-chip>
+                      <q-chip v-if="card.config_warnings != null"
+                              dense
+                              square
+                              :clickable="!isCommonDirectorPage"
+                              :color="card.config_warnings ? 'negative' : 'positive'"
+                              :icon="card.config_warnings ? 'error' : 'check_circle'"
+                              text-color="white"
+                              @click="!isCommonDirectorPage && showConfigStatus(card.director)">
+                        {{ card.config_warnings ? t('Config Warning') : t('Config OK') }}
+                        <q-tooltip>
+                          {{
+                            isCommonDirectorPage
+                              ? t('Configuration status details stay scoped to a single director.')
+                              : t('Click to show configuration status')
+                          }}
+                        </q-tooltip>
+                      </q-chip>
+                      <q-chip v-if="card.version"
+                              dense square color="blue-7" text-color="white" icon="info">
+                        {{ card.version }}
+                        <q-tooltip>Version: {{ card.version }}</q-tooltip>
+                      </q-chip>
+                      <q-chip v-if="card.release_date"
+                              dense square color="blue-grey-6" text-color="white" icon="event">
+                        {{ card.release_date }}
+                        <q-tooltip>Released: {{ card.release_date }}</q-tooltip>
+                      </q-chip>
+                      <q-chip v-if="card.binary_info"
+                              dense square color="blue-grey-7" text-color="white" icon="build">
+                        {{ card.binary_info }}
+                        <q-tooltip>Build: {{ card.binary_info }}</q-tooltip>
+                      </q-chip>
+                      <q-chip v-if="card.os"
+                              dense square :color="card.osIcon.color" text-color="white"
+                              :icon="card.osIcon.icon">
+                        {{ card.os }}
+                        <q-tooltip>OS: {{ card.os }}</q-tooltip>
+                      </q-chip>
+                      <q-chip v-if="card.daemon_started"
+                              dense square color="teal-7" text-color="white" icon="schedule">
+                        {{ settings.relativeTime ? formatDirectorRelativeTime(card.daemon_started, settings.locale) : card.daemon_started }}
+                        <q-tooltip>Started: {{ card.daemon_started }}</q-tooltip>
+                      </q-chip>
+                      <q-chip v-if="card.jobs_run != null"
+                              dense square color="purple-7" text-color="white" icon="check">
+                        {{ card.jobs_run }}
+                        <q-tooltip>Jobs Run: {{ card.jobs_run }}</q-tooltip>
+                      </q-chip>
+                      <q-chip v-if="card.jobs_running != null"
+                              dense square color="orange-7" text-color="white" icon="play_arrow">
+                        {{ card.jobs_running }}
+                        <q-tooltip>Running: {{ card.jobs_running }}</q-tooltip>
+                      </q-chip>
+                    </div>
                   </div>
                 </q-card-section>
               </q-card>
@@ -94,16 +146,22 @@
                   <q-table v-else flat dense
                     :rows="scheduledJobs"
                     :columns="scheduledJobCols"
-                    row-key="name"
+                    row-key="scopeKey"
                     hide-pagination
                     :rows-per-page-options="[0]"
                   >
+                    <template #body-cell-director="props">
+                      <td>
+                        <q-chip dense square color="primary" text-color="white">
+                          {{ props.value }}
+                        </q-chip>
+                      </td>
+                    </template>
                     <template #body-cell-name="props">
                       <td>
-                        <router-link :to="{ name: 'jobs', query: { name: props.value } }"
-                                     class="text-primary">
+                        <a href="#" class="text-primary" @click.prevent="openJobsByName(props.row)">
                           {{ props.value }}
-                        </router-link>
+                        </a>
                       </td>
                     </template>
                     <template #body-cell-level="props">
@@ -123,11 +181,12 @@
                     </template>
                     <template #body-cell-volume="props">
                       <td>
-                        <router-link v-if="props.value"
-                                     :to="{ name: 'volume-details', params: { name: props.value } }"
-                                     class="text-primary">
+                        <a v-if="props.value"
+                           href="#"
+                           class="text-primary"
+                           @click.prevent="openVolumeDetails(props.row)">
                           {{ props.value }}
-                        </router-link>
+                        </a>
                         <span v-else>—</span>
                       </td>
                     </template>
@@ -147,24 +206,29 @@
                   <q-table v-else flat dense
                     :rows="runningJobs"
                     :columns="runningJobCols"
-                    row-key="jobid"
+                    row-key="scopeKey"
                     hide-pagination
                     :rows-per-page-options="[0]"
                   >
+                    <template #body-cell-director="props">
+                      <td>
+                        <q-chip dense square color="primary" text-color="white">
+                          {{ props.value }}
+                        </q-chip>
+                      </td>
+                    </template>
                     <template #body-cell-jobid="props">
                       <td>
-                        <router-link :to="{ name: 'job-details', params: { id: props.value } }"
-                                     class="text-primary">
+                        <a href="#" class="text-primary" @click.prevent="openJobDetails(props.row)">
                           {{ props.value }}
-                        </router-link>
+                        </a>
                       </td>
                     </template>
                     <template #body-cell-name="props">
                       <td>
-                        <router-link :to="{ name: 'jobs', query: { name: props.value } }"
-                                     class="text-primary">
+                        <a href="#" class="text-primary" @click.prevent="openJobsByName(props.row)">
                           {{ props.value }}
-                        </router-link>
+                        </a>
                       </td>
                     </template>
                     <template #body-cell-level="props">
@@ -225,24 +289,29 @@
                   <q-table v-else flat dense
                     :rows="terminatedJobs"
                     :columns="terminatedJobCols"
-                    row-key="jobid"
+                    row-key="scopeKey"
                     hide-pagination
                     :rows-per-page-options="[0]"
                   >
+                    <template #body-cell-director="props">
+                      <td>
+                        <q-chip dense square color="primary" text-color="white">
+                          {{ props.value }}
+                        </q-chip>
+                      </td>
+                    </template>
                     <template #body-cell-jobid="props">
                       <td>
-                        <router-link :to="{ name: 'job-details', params: { id: props.value } }"
-                                     class="text-primary">
+                        <a href="#" class="text-primary" @click.prevent="openJobDetails(props.row)">
                           {{ props.value }}
-                        </router-link>
+                        </a>
                       </td>
                     </template>
                     <template #body-cell-name="props">
                       <td>
-                        <router-link :to="{ name: 'jobs', query: { name: props.value } }"
-                                     class="text-primary">
+                        <a href="#" class="text-primary" @click.prevent="openJobsByName(props.row)">
                           {{ props.value }}
-                        </router-link>
+                        </a>
                       </td>
                     </template>
                     <template #body-cell-level="props">
@@ -301,12 +370,25 @@
             <q-btn flat round dense icon="refresh" color="white" @click="refreshMessages" :loading="messagesLoading" />
           </q-card-section>
           <q-card-section class="q-pa-none">
+            <q-banner
+              v-if="messagesDirectorErrors.length"
+              rounded
+              dense
+              class="bg-warning text-black"
+            >
+              <template #avatar>
+                <q-icon name="warning" />
+              </template>
+              <div v-for="item in messagesDirectorErrors" :key="item.director">
+                <strong>{{ item.director }}</strong>: {{ item.message }}
+              </div>
+            </q-banner>
             <q-inner-loading :showing="messagesLoading" />
             <div v-if="messagesError" class="q-pa-md text-negative">{{ messagesError }}</div>
             <div v-else-if="!logEntries.length && !messagesLoading" class="q-pa-md text-grey">{{ t('(no messages)') }}</div>
             <div v-else class="terminal-output">
-              <template v-for="item in logEntries" :key="item.logid">
-                <span class="terminal-line">{{ item.time }} {{ item.logtext }}</span>
+              <template v-for="item in logEntries" :key="item.scopeKey">
+                <span class="terminal-line">{{ formatLogLine(item) }}</span>
               </template>
             </div>
           </q-card-section>
@@ -503,7 +585,10 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useDirectorAclStore } from '../stores/directorAcl.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -513,6 +598,12 @@ import {
   missingDirectorCommands,
   normaliseJob,
 } from '../composables/useDirectorFetch.js'
+import {
+  fetchAggregatedDirectorMessages,
+  fetchAggregatedDirectorStatus,
+  normaliseDirectorStatusSnapshot,
+} from '../composables/directorPageAggregate.js'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { formatBytes } from '../mock/index.js'
 import {
   formatDirectorRelativeTime,
@@ -525,21 +616,126 @@ import JobTypeBadge   from '../components/JobTypeBadge.vue'
 import SubscriptionReport from '../components/SubscriptionReport.vue'
 
 const tab = ref('status')
+const router = useRouter()
+const $q = useQuasar()
+const auth = useAuthStore()
 const director = useDirectorStore()
 const acl = useDirectorAclStore()
 const settings  = useSettingsStore()
 const { t } = useI18n()
 
+const directorOptions = computed(() => {
+  const values = new Set([
+    ...director.availableDirectors,
+    ...settings.selectedDirectors,
+    auth.user?.director,
+    settings.directorName,
+  ].filter(Boolean))
+  return [...values].map(value => ({ label: value, value }))
+})
+
+function syncSelectedDirectors() {
+  const validDirectors = directorOptions.value.map(option => option.value)
+  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
+
+  if (selected.length > 0) {
+    if (selected.length !== settings.selectedDirectors.length) {
+      settings.setSelectedDirectors(selected)
+    }
+    return
+  }
+
+  const fallbackDirector = auth.user?.director || settings.directorName
+  if (fallbackDirector) {
+    settings.setSelectedDirectors([fallbackDirector])
+  }
+}
+
+const selectedDirectorsModel = computed({
+  get: () => settings.selectedDirectors,
+  set: (value) => {
+    const selected = Array.isArray(value) ? value : []
+    if (selected.length > 0) {
+      settings.setSelectedDirectors(selected)
+      return
+    }
+
+    const fallbackDirector = auth.user?.director || settings.directorName
+    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
+  },
+})
+
+const activeDirectors = computed(() => {
+  const selected = settings.selectedDirectors.filter(value => (
+    directorOptions.value.some(option => option.value === value)
+  ))
+
+  if (selected.length > 0) {
+    return selected
+  }
+
+  const currentDirector = auth.user?.director || settings.directorName
+  return currentDirector ? [currentDirector] : []
+})
+
+const isSingleDirectorScope = computed(() => activeDirectors.value.length === 1)
+const isCommonDirectorPage = computed(() => activeDirectors.value.length > 1)
+const showDirectorColumn = computed(() => isCommonDirectorPage.value)
+const directorScopeLabel = computed(() => (
+  isCommonDirectorPage.value
+    ? `${activeDirectors.value.length} ${t('directors selected')}`
+    : (activeDirectors.value[0] ?? t('No director selected'))
+))
+
+async function ensureSingleScopeDirector() {
+  if (!isSingleDirectorScope.value) {
+    return
+  }
+
+  const scopeDirector = activeDirectors.value[0]
+  if (!scopeDirector) {
+    return
+  }
+
+  if (auth.user?.director === scopeDirector && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(scopeDirector)
+}
+
 // ── Status ───────────────────────────────────────────────────────────────────
 const statusLoading = ref(false)
 const statusError   = ref(null)
-const rawStatus     = ref(null)
+const statusSnapshots = ref([])
+const statusDirectorErrors = ref([])
 
 async function refreshStatus() {
   statusLoading.value = true
   statusError.value = null
+  statusDirectorErrors.value = []
   try {
-    rawStatus.value = await director.call('status director')
+    if (activeDirectors.value.length === 0) {
+      statusSnapshots.value = []
+      return
+    }
+
+    if (isCommonDirectorPage.value) {
+      const credentials = auth.getCredentials()
+      if (!credentials?.password) {
+        throw new Error(t('Not logged in.'))
+      }
+
+      const result = await fetchAggregatedDirectorStatus(credentials, activeDirectors.value)
+      statusSnapshots.value = result.snapshots
+      statusDirectorErrors.value = result.directorErrors
+      return
+    }
+
+    const currentDirector = activeDirectors.value[0]
+    await ensureSingleScopeDirector()
+    const result = await director.call('status director')
+    statusSnapshots.value = [normaliseDirectorStatusSnapshot(result, currentDirector)]
   } catch (e) {
     statusError.value = e.message
   } finally {
@@ -567,33 +763,29 @@ function manualRefreshStatus() {
   statusCountdown.value = settings.refreshInterval
 }
 
-// The director now returns a structured JSON object with header, scheduled,
-// running and terminated arrays.  Fall back gracefully for older directors.
-const statusHeader = computed(() => {
-  const d = rawStatus.value
-  if (!d || typeof d !== 'object') return {}
-  return d.header || {}
-})
-const scheduledJobs = computed(() => directorCollection(rawStatus.value?.scheduled))
-const runningJobs = computed(() => directorCollection(rawStatus.value?.running))
-const terminatedJobs = computed(() => directorCollection(rawStatus.value?.terminated))
-
-const maxTermBytes = computed(() => Math.max(1, ...terminatedJobs.value.map(j => Number(j.bytes) || 0)))
-const maxTermFiles = computed(() => Math.max(1, ...terminatedJobs.value.map(j => Number(j.files) || 0)))
-
-// Relative-time toggle handled by global settings store
-
-// OS icon: pass the full os string as osInfo so distro detection works
-// (e.g. "Fedora Linux 43" → mdi-fedora)
-const directorOsIcon = computed(() => {
-  const full = statusHeader.value.os ?? ''
+function resolveDirectorOsChip(full = '') {
   const lower = full.toLowerCase()
   if (lower.includes('windows') || lower.includes('win'))
     return resolveOsIcon({ os: 'windows', osInfo: full })
   if (lower.includes('darwin') || lower.includes('apple') || lower.includes('macos'))
     return resolveOsIcon({ os: 'macos', osInfo: full })
   return resolveOsIcon({ os: 'linux', osInfo: full })
-})
+}
+
+const statusCards = computed(() => statusSnapshots.value.map(({ director, header }) => ({
+  ...header,
+  director: header?.director || director,
+  osIcon: resolveDirectorOsChip(header?.os ?? ''),
+  scopeDirector: director,
+})))
+const scheduledJobs = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.scheduledJobs))
+const runningJobs = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.runningJobs))
+const terminatedJobs = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.terminatedJobs))
+
+const maxTermBytes = computed(() => Math.max(1, ...terminatedJobs.value.map(j => Number(j.bytes) || 0)))
+const maxTermFiles = computed(() => Math.max(1, ...terminatedJobs.value.map(j => Number(j.files) || 0)))
+
+// Relative-time toggle handled by global settings store
 
 // Map full-word level/type strings emitted by the director to single-letter
 // codes expected by JobLevelBadge / JobTypeBadge.
@@ -612,6 +804,9 @@ function typeCode(v)  { return TYPE_CODE[v]  ?? null }
 function isWaiting(status) { return typeof status === 'string' && status.includes('is waiting') }
 
 const scheduledJobCols = computed(() => [
+  ...(showDirectorColumn.value
+    ? [{ name: 'director', label: 'Director', field: 'director', align: 'left' }]
+    : []),
   { name: 'name',      label: 'Job',       field: 'name',      align: 'left' },
   { name: 'level',     label: 'Level',     field: 'level',     align: 'left' },
   { name: 'type',      label: 'Type',      field: 'type',      align: 'left' },
@@ -622,6 +817,9 @@ const scheduledJobCols = computed(() => [
   { name: 'storage',   label: 'Storage',   field: 'storage',   align: 'left' },
 ].map((col) => ({ ...col, label: t(col.label) })))
 const runningJobCols = computed(() => [
+  ...(showDirectorColumn.value
+    ? [{ name: 'director', label: 'Director', field: 'director', align: 'left' }]
+    : []),
   { name: 'jobid',      label: 'JobId',      field: 'jobid',      align: 'right' },
   { name: 'name',       label: 'Job',        field: 'name',       align: 'left' },
   { name: 'level',      label: 'Level',      field: 'level',      align: 'left' },
@@ -632,6 +830,9 @@ const runningJobCols = computed(() => [
   { name: 'status',     label: 'Status',     field: 'status',     align: 'left' },
 ].map((col) => ({ ...col, label: t(col.label) })))
 const terminatedJobCols = computed(() => [
+  ...(showDirectorColumn.value
+    ? [{ name: 'director', label: 'Director', field: 'director', align: 'left' }]
+    : []),
   { name: 'jobid',    label: 'JobId',    field: 'jobid',    align: 'right' },
   { name: 'name',     label: 'Job',      field: 'name',     align: 'left' },
   { name: 'level',    label: 'Level',    field: 'level',    align: 'left' },
@@ -647,13 +848,42 @@ const messagesLoading = ref(false)
 const messagesError   = ref(null)
 const messagesLimit   = ref(100)
 const logEntries      = ref([])
+const messagesDirectorErrors = ref([])
 
 async function refreshMessages() {
   messagesLoading.value = true
   messagesError.value = null
+  messagesDirectorErrors.value = []
   try {
+    if (activeDirectors.value.length === 0) {
+      logEntries.value = []
+      return
+    }
+
+    if (isCommonDirectorPage.value) {
+      const credentials = auth.getCredentials()
+      if (!credentials?.password) {
+        throw new Error(t('Not logged in.'))
+      }
+
+      const result = await fetchAggregatedDirectorMessages(
+        credentials,
+        activeDirectors.value,
+        messagesLimit.value
+      )
+      logEntries.value = result.logEntries
+      messagesDirectorErrors.value = result.directorErrors
+      return
+    }
+
+    const currentDirector = activeDirectors.value[0]
+    await ensureSingleScopeDirector()
     const data = await director.call(`list log limit=${messagesLimit.value}`)
-    logEntries.value = data?.log ?? []
+    logEntries.value = directorCollection(data?.log).map((entry, index) => ({
+      ...entry,
+      director: currentDirector,
+      scopeKey: `${currentDirector}:log:${entry.logid ?? index}`,
+    }))
   } catch (e) {
     messagesError.value = e.message
   } finally {
@@ -661,18 +891,118 @@ async function refreshMessages() {
   }
 }
 
+function formatLogLine(item) {
+  const prefix = isCommonDirectorPage.value ? `${item.director} · ` : ''
+  return `${prefix}${item.time} ${item.logtext}`
+}
+
 watch(messagesLimit, () => refreshMessages())
 
-refreshStatus()
-refreshMessages()
-acl.ensureLoaded()
 watch(tab, (t) => {
+  if (isCommonDirectorPage.value && ['catalog', 'subscription'].includes(t)) {
+    tab.value = 'status'
+    return
+  }
   if (t === 'messages') refreshMessages()
-  if (t === 'catalog') loadEmptyJobs()
-  if (t === 'subscription') refreshSubscription()
+  if (t === 'catalog' && isSingleDirectorScope.value) {
+    acl.ensureLoaded()
+    loadEmptyJobs()
+  }
+  if (t === 'subscription' && isSingleDirectorScope.value) refreshSubscription()
 })
 
-onMounted(() => { startStatusAutoRefresh() })
+async function navigateForDirector(targetDirector, location) {
+  try {
+    if (targetDirector) {
+      await switchActiveDirector(targetDirector)
+    }
+    await router.push(location)
+  } catch (e) {
+    $q.notify({
+      type: 'negative',
+      message: e?.message ?? String(e),
+    })
+  }
+}
+
+function openJobDetails(row) {
+  return navigateForDirector(row.director, {
+    name: 'job-details',
+    params: { id: row.jobid ?? row.id },
+  })
+}
+
+function openJobsByName(row) {
+  return navigateForDirector(row.director, {
+    name: 'jobs',
+    query: { name: row.name },
+  })
+}
+
+function openVolumeDetails(row) {
+  if (!row.volume) {
+    return
+  }
+
+  return navigateForDirector(row.director, {
+    name: 'volume-details',
+    params: { name: row.volume },
+  })
+}
+
+async function loadAvailableDirectors() {
+  try {
+    await director.fetchAvailableDirectors()
+  } catch {
+    // Keep the selector usable with the active director when the proxy list is
+    // unavailable.
+  }
+}
+
+onMounted(() => {
+  loadAvailableDirectors()
+  syncSelectedDirectors()
+  refreshStatus()
+  refreshMessages()
+  if (isSingleDirectorScope.value) {
+    acl.ensureLoaded()
+  }
+  startStatusAutoRefresh()
+})
+
+watch(() => directorOptions.value, () => {
+  syncSelectedDirectors()
+})
+
+watch(() => activeDirectors.value.join('\u0000'), () => {
+  if (isCommonDirectorPage.value && ['catalog', 'subscription'].includes(tab.value)) {
+    tab.value = 'status'
+  }
+  refreshStatus()
+  refreshMessages()
+  if (isSingleDirectorScope.value && tab.value === 'catalog') {
+    acl.refresh()
+    loadEmptyJobs()
+  }
+  if (isSingleDirectorScope.value && tab.value === 'subscription') {
+    refreshSubscription()
+  }
+})
+
+watch(() => director.isConnected, (connected) => {
+  if (!connected || !isSingleDirectorScope.value) {
+    return
+  }
+
+  refreshStatus()
+  if (tab.value === 'messages') refreshMessages()
+  if (tab.value === 'catalog') {
+    acl.refresh()
+    loadEmptyJobs()
+  }
+  if (tab.value === 'subscription') refreshSubscription()
+})
+
 onUnmounted(() => { clearInterval(_statusTimer) })
 
 // ── Subscription ──────────────────────────────────────────────────────────────
@@ -858,9 +1188,14 @@ async function runPrune(cmd) {
 
 const configStatusDlg = ref({ open: false, loading: false, text: '' })
 
-async function showConfigStatus() {
+async function showConfigStatus(targetDirector = activeDirectors.value[0]) {
   configStatusDlg.value = { open: true, loading: true, text: '' }
   try {
+    if (targetDirector && (!director.isConnected || auth.user?.director !== targetDirector)) {
+      await switchActiveDirector(targetDirector)
+    } else {
+      await ensureSingleScopeDirector()
+    }
     configStatusDlg.value.text = await director.rawCall('status configuration')
   } catch (e) {
     configStatusDlg.value.text = `${t('Error')}: ${e.message ?? e}`
