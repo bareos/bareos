@@ -550,6 +550,66 @@ async function syncRouteToSourceSelection() {
   })
 }
 
+async function applyRouteSourceSelection() {
+  const qClient = typeof route.query.client === 'string' ? route.query.client : ''
+  const qDirector = typeof route.query.director === 'string' ? route.query.director : ''
+  const qJobid = typeof route.query.jobid === 'string' ? route.query.jobid : ''
+
+  if (qDirector) {
+    commonSourceDirector.value = qDirector
+  } else {
+    syncCommonSourceDirector()
+  }
+
+  if (qClient) {
+    const resolvedClient = resolveRestoreSourceClient(sourceClients.value, {
+      clientName: qClient,
+      directorName: qDirector,
+      currentDirector: auth.user?.director || settings.directorName,
+    })
+
+    if (resolvedClient) {
+      if (sourceClientKey.value !== resolvedClient.scopeKey) {
+        sourceClientKey.value = resolvedClient.scopeKey
+        await onClientChange(resolvedClient.scopeKey)
+      }
+      if (qJobid) {
+        const nextJobid = Number(qJobid)
+        if (form.value.jobid !== nextJobid) {
+          form.value.jobid = nextJobid
+          await initBrowser()
+        }
+      } else if (form.value.jobid !== null) {
+        form.value.jobid = null
+        browserReady.value = false
+        clearBrowserState()
+      }
+      return
+    }
+  }
+
+  if (sourceClientKey.value) {
+    sourceClientKey.value = ''
+    clearSelectedSourceData()
+  }
+
+  if (qJobid) {
+    form.value.jobid = Number(qJobid)
+  }
+
+  if (sourceDirector.value) {
+    await Promise.all([
+      loadRestoreClients(),
+      loadRestoreJobs(),
+    ])
+  } else {
+    restoreClients.value = []
+    restoreJobs.value = []
+    form.value.restoreclient = ''
+    form.value.restorejob = ''
+  }
+}
+
 function syncCommonSourceDirector() {
   if (!isCommonRestore.value) {
     commonSourceDirector.value = ''
@@ -1188,37 +1248,7 @@ async function init() {
   await director.fetchAvailableDirectors().catch(() => {})
   syncSelectedDirectors()
   await loadClients()
-
-  // Pre-fill from query params when navigating from the jobs list
-  const qClient = route.query.client
-  const qDirector = route.query.director
-  const qJobid  = route.query.jobid
-  if (typeof qDirector === 'string') {
-    commonSourceDirector.value = qDirector
-  }
-  syncCommonSourceDirector()
-  if (qClient) {
-    const resolvedClient = resolveRestoreSourceClient(sourceClients.value, {
-      clientName: qClient,
-      directorName: qDirector,
-      currentDirector: auth.user?.director || settings.directorName,
-    })
-
-    if (resolvedClient) {
-      sourceClientKey.value = resolvedClient.scopeKey
-      await onClientChange(resolvedClient.scopeKey)
-    }
-
-    if (qJobid) {
-      form.value.jobid = Number(qJobid)
-      await initBrowser()
-    }
-  } else if (activeDirectors.value.length === 1) {
-    await Promise.all([
-      loadRestoreClients(),
-      loadRestoreJobs(),
-    ])
-  }
+  await applyRouteSourceSelection()
 }
 
 onMounted(() => { if (director.isConnected) init() })
@@ -1234,7 +1264,10 @@ watch(() => activeDirectors.value.join('\u0000'), async () => {
   if (previousClientKey && sourceClients.value.some(client => client.scopeKey === previousClientKey)) {
     sourceClientKey.value = previousClientKey
     await onClientChange(previousClientKey)
+    return
   }
+
+  await applyRouteSourceSelection()
 })
 watch(() => commonSourceDirector.value, async (next, previous) => {
   if (!isCommonRestore.value || next === previous) {
@@ -1262,5 +1295,9 @@ watch(() => commonSourceDirector.value, async (next, previous) => {
 
 watch(() => [sourceClientKey.value, sourceDirector.value, form.value.jobid], () => {
   syncRouteToSourceSelection()
+})
+
+watch(() => [route.query.client, route.query.director, route.query.jobid], async () => {
+  await applyRouteSourceSelection()
 })
 </script>
