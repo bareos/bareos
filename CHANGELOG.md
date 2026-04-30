@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add SUSE 15SP7 and 16.0 [PR #2505]
 - Add simple dependency generator for systemtest testrunners [PR #2484]
 
+### Breaking Changes
+- stored: `MaximumFileSizeImmediateFilemark` now defaults to non-blocking
+  rollover filemarks for `MaximumFileSize`, changing tape backends that
+  override `weof_immediate()` from `weof(1)` to `weof_immediate(1)` on upgrade
+  unless `sd/device/MaximumFileSizeImmediateFilemark = no` is set to keep the
+  previous blocking behavior [PR #2634]
+
 ### Changed
 - dirconfig: add subscription setting with comment [PR #2468]
 - hyper-v: fix restores with portable data [PR #2469]

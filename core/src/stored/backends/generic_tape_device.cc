@@ -334,6 +334,16 @@ bool generic_tape_device::offline()
  */
 bool generic_tape_device::weof(int num)
 {
+  return DoWeof(num, false);
+}
+
+bool generic_tape_device::weof_immediate(int num)
+{
+  return DoWeof(num, true);
+}
+
+bool generic_tape_device::DoWeof(int num, bool immediate)
+{
   mtop mt_com{};
   int status;
   Dmsg1(129, "=== weof_dev=%s\n", prt_name);
@@ -354,7 +364,12 @@ bool generic_tape_device::weof(int num)
 
   ClearEof();
   ClearEot();
+#if defined(MTWEOFI)
+  mt_com.mt_op = UseImmediateWriteFilemarkOperation(immediate) ? MTWEOFI : MTWEOF;
+#else
+  static_cast<void>(immediate);
   mt_com.mt_op = MTWEOF;
+#endif
   mt_com.mt_count = num;
   status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
   if (status == 0) {

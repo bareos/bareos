@@ -260,13 +260,67 @@ The following is an example of a valid Autochanger resource definition:
      Drive Index = 1
      Autochanger = yes
      ...
-   Device {
-     Name = "LTO8-3"
-     Drive Index = 2
-     Autochanger = yes
-     Autoselect = no
-     ...
+    Device {
+      Name = "LTO8-3"
+      Drive Index = 2
+      Autochanger = yes
+      Autoselect = no
+      ...
+    }
+
+For supported local SCSI changers, the Storage Daemon can also use an in-process
+native changer backend instead of an external changer script:
+
+.. code-block:: bareosconfig
+   :caption: Native SCSI Autochanger Configuration Example
+
+   Autochanger {
+     Name = "LTO8-native"
+     Device = LTO8-1, LTO8-2
+     Changer Device = /dev/sg0
+     Changer Command = "builtin:scsi"
    }
+   Device {
+      Name = "LTO8-1"
+      Archive Device = /dev/nst0
+      DiagnosticDevice = /dev/sg1
+      Drive Index = 0
+      Autochanger = yes
+      DriveTapeAlertEnabled = yes
+      ...
+   }
+   Device {
+      Name = "LTO8-2"
+      Archive Device = /dev/nst1
+      DiagnosticDevice = /dev/sg2
+      Drive Index = 1
+      Autochanger = yes
+      DriveTapeAlertEnabled = yes
+      ...
+   }
+
+With :strong:`Changer Command = "builtin:scsi"`, Bareos talks directly to the
+configured :config:option:`sd/autochanger/ChangerDevice` for changer operations
+and diagnostics. The existing script-based path remains available for unsupported
+hardware or custom changer workflows.
+
+The first native SCSI implementation is intentionally conservative:
+
+- it targets supported local SCSI changers and tape drives,
+- it preserves the usual changer commands (`load`, `unload`, `loaded`, `slots`,
+  `list`, `listall`, `transfer`),
+- it can use :config:option:`sd/device/DiagnosticDevice` for direct drive
+  readiness checks and drive diagnostics,
+- it reuses :config:option:`sd/device/DriveTapeAlertEnabled` for direct drive
+  TapeAlert reads in the native path.
+
+Current limitations of the native path are:
+
+- changers with multiple robot arms are handled conservatively by retrying
+  `MOVE MEDIUM` across all reported transport elements, but Bareos does not yet
+  make topology-aware arm selections,
+- the NDMP changer codepath remains separate; the local native SCSI backend does
+  not depend on the NDMP SMC implementation.
 
 Please note that it is important to include the :config:option:`sd/device/Autochanger = yes`\  directive
 in each device definition that belongs to an Autochanger. A device definition should not belong to more

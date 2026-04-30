@@ -30,6 +30,7 @@
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
+#include "stored/drive_tapealert_monitor.h"
 #include "stored/stored_jcr_impl.h"
 #include "sd_plugins.h"
 #include "lib/crypto_cache.h"
@@ -307,6 +308,8 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
   bSdEvent event;
   alist<PluginContext*>* plugin_ctx_list;
   bRC rc = bRC_OK;
+
+  HandleDriveTapealertEvent(jcr, eventType, value);
 
   if (!sd_plugin_list) {
     Dmsg0(debuglevel, "No bplugin_list: GeneratePluginEvent ignored.\n");

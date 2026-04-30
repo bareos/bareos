@@ -280,6 +280,11 @@ if(NOT client-only)
     ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
     LINK_LIBRARIES ${LINK_LIBRARIES}
   )
+  bareos_add_test(
+    native_scsi_autochanger_config_test
+    LINK_LIBRARIES testing_common Bareos::SD Bareos::LibSD Bareos::Lib
+                   GTest::gtest_main
+  )
 
   bareos_add_test(pruning LINK_LIBRARIES testing_common GTest::gtest_main)
   bareos_add_test(
@@ -305,6 +310,10 @@ if(NOT client-only)
     scheduler_job_item_queue
     LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib Bareos::SQL
                    GTest::gtest_main
+  )
+  bareos_add_test(
+    scsi_changer_test
+    LINK_LIBRARIES Bareos::Lib Bareos::LibSD GTest::gtest_main
   )
   bareos_add_test(sd_backend LINK_LIBRARIES ${LINK_LIBRARIES})
   if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS") # disable on solaris

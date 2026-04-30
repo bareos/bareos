@@ -25,10 +25,7 @@
  * SCSI Tape Alert Storage daemon Plugin
  */
 #include "include/bareos.h"
-#include "stored/device_control_record.h"
 #include "stored/stored.h"
-#include "lib/scsi_tapealert.h"
-#include "scsitapealert-sd.h"
 
 using namespace storagedaemon;
 
@@ -36,47 +33,8 @@ using namespace storagedaemon;
 #define PLUGIN_AUTHOR "Marco van Wieringen"
 #define PLUGIN_DATE "November 2013"
 #define PLUGIN_VERSION "1"
-#define PLUGIN_DESCRIPTION "SCSI Tape Alert Storage Daemon Plugin"
+#define PLUGIN_DESCRIPTION "SCSI Tape Alert Storage Daemon Compatibility Plugin"
 #define PLUGIN_USAGE "(No usage yet)"
-
-namespace {
-
-void dispatch_messages(JobControlRecord* jcr,
-                       const char* device,
-                       const char* volume,
-                       uint64_t flags)
-{
-  constexpr const char* job_msg
-      = "TapeAlert on device \"%s\" with volume \"%s\": [%d] %s\n%s\n"
-        "Possible cause: %s\n";
-  constexpr const char* job_msg_novol
-      = "TapeAlert on device \"%s\": [%d] %s\n%s\n"
-        "Possible cause: %s\n";
-
-  constexpr const char* print_msg
-      = "TapeAlert on device \"%s\" with volume \"%s\" from jobid %lu: "
-        "[%d] %s\n";
-  constexpr const char* print_msg_novol
-      = "TapeAlert on device \"%s\" from jobid %lu: [%d] %s\n";
-
-  const uint64_t jobid{jcr ? jcr->JobId : 0};
-
-  for (auto& flag : scsitapealert::flags) {
-    if (flag.present_in(flags)) {
-      if (volume && volume[0] != '\0') {
-        Jmsg(jcr, flag.type, 0, job_msg, device, volume, flag.no, flag.name,
-             flag.message, flag.cause);
-        Pmsg0(-1, print_msg, device, volume, jobid, flag.no, flag.name);
-      } else {
-        Jmsg(jcr, flag.type, 0, job_msg_novol, device, flag.no, flag.name,
-             flag.message, flag.cause);
-        Pmsg0(-1, print_msg_novol, device, jobid, flag.no, flag.name);
-      }
-    }
-  }
-}
-
-}  // namespace
 
 // Forward referenced functions
 static bRC newPlugin(PluginContext* ctx);
@@ -84,7 +42,6 @@ static bRC freePlugin(PluginContext* ctx);
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC handlePluginEvent(PluginContext* ctx, bSdEvent* event, void* value);
-static bRC handle_tapealert_readout(void* value);
 
 // Pointers to Bareos functions
 static CoreFunctions* bareos_core_functions = NULL;
@@ -156,13 +113,6 @@ static bRC newPlugin(PluginContext* ctx)
   bareos_core_functions->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
   Dmsg1(debuglevel, "scsitapealert-sd: newPlugin JobId=%d\n", JobId);
 
-  // Only register plugin events we are interested in.
-  bareos_core_functions->registerBareosEvents(
-      ctx, 10, bSdEventDeviceInit, bSdEventVolumeLoad, bSdEventLabelVerified,
-      bSdEventLabelWrite, bSdEventReadError, bSdEventWriteError,
-      bSdEventVolumeUnload, bSdEventDeviceRelease, bSdEventDeviceOpen,
-      bSdEventDeviceClose);
-
   return bRC_OK;
 }
 
@@ -194,74 +144,10 @@ static bRC setPluginValue(PluginContext*, pVariable var, void*)
 }
 
 // Handle an event that was generated in Bareos
-static bRC handlePluginEvent(PluginContext*, bSdEvent* event, void* value)
+static bRC handlePluginEvent(PluginContext*, bSdEvent* event, void*)
 {
-  switch (event->eventType) {
-    case bSdEventDeviceClose:
-    case bSdEventDeviceInit:
-    case bSdEventDeviceOpen:
-    case bSdEventDeviceRelease:
-    case bSdEventLabelVerified:
-    case bSdEventLabelWrite:
-    case bSdEventReadError:
-    case bSdEventVolumeLoad:
-    case bSdEventVolumeUnload:
-    case bSdEventWriteError:
-      return handle_tapealert_readout(value);
-    default:
-      Dmsg1(debuglevel, "scsitapealert-sd: Unknown event %d\n",
-            event->eventType);
-      return bRC_Error;
-  }
-
-  return bRC_OK;
-}
-
-static pthread_mutex_t tapealert_operation_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-static bRC handle_tapealert_readout(void* value)
-{
-  DeviceControlRecord* dcr;
-  Device* dev;
-  DeviceResource* device_resource;
-  uint64_t flags;
-
-  // Unpack the arguments passed in.
-  dcr = (DeviceControlRecord*)value;
-  if (!dcr) { return bRC_Error; }
-  dev = dcr->dev;
-  if (!dev) { return bRC_Error; }
-  device_resource = dev->device_resource;
-  if (!device_resource) { return bRC_Error; }
-
-  // See if drive tapealert is enabled.
-  if (!device_resource->drive_tapealert_enabled) {
-    Dmsg1(debuglevel,
-          "scsitapealert-sd: tapealert is not enabled on device %s\n",
-          dev->archive_device_string);
-    return bRC_OK;
-  }
-
-  Dmsg1(debuglevel, "scsitapealert-sd: checking for tapealerts on device %s\n",
-        dev->archive_device_string);
-  lock_mutex(tapealert_operation_mutex);
-  GetTapealertFlags(dev->fd, dev->archive_device_string, &flags);
-  unlock_mutex(tapealert_operation_mutex);
-
   Dmsg1(debuglevel,
-        "scsitapealert-sd: checking for tapealerts on device %s DONE\n",
-        dev->archive_device_string);
-  Dmsg1(debuglevel, "scsitapealert-sd: flags: %ld \n", flags);
-
-  if (flags) {
-    Dmsg1(
-        debuglevel,
-        "scsitapealert-sd: tapealerts on device %s, calling UpdateTapeAlerts\n",
-        dev->archive_device_string);
-    bareos_core_functions->UpdateTapeAlert(dcr, flags);
-    dispatch_messages(dcr->jcr, device_resource->resource_name_,
-                      dev->getVolCatName(), flags);
-  }
-
+        "scsitapealert-sd: core monitoring active, ignoring event %d\n",
+        event->eventType);
   return bRC_OK;
 }

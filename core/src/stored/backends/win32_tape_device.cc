@@ -508,6 +508,17 @@ int win32_tape_device::TapeOp(struct mtop* mt_com)
         pHandleInfo->ullFileStart = 0;
       }
       break;
+    case MTWEOFI:
+      result = WriteTapemark(pHandleInfo->OSHandle, TAPE_FILEMARKS,
+                             mt_com->mt_count, TRUE);
+      if (result == NO_ERROR) {
+        pHandleInfo->bEOF = true;
+        pHandleInfo->bEOT = false;
+        pHandleInfo->ulFile += mt_com->mt_count;
+        pHandleInfo->bBlockValid = true;
+        pHandleInfo->ullFileStart = 0;
+      }
+      break;
     case MTREW:
       result
           = SetTapePosition(pHandleInfo->OSHandle, TAPE_REWIND, 0, 0, 0, FALSE);

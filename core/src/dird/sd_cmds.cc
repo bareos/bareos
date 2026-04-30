@@ -298,12 +298,12 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
       continue;
     }
 
-    /* Parse the message. list gives max 2 fields listall max 5.
+    /* Parse the message. list gives max 3 fields, listall max 5.
      * We always make sure all fields are initialized to either
      * a value or nullptr.
      *
      * For autochanger list the following mapping is used:
-     * - field1 == slotnr
+     * - field1 == slotnr or D<drive>
      * - field2 == volumename
      *
      * For autochanger listall the following mapping is used:
@@ -363,6 +363,10 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
 
     if (scan && !listall) {
       // Scanning -- require only valid slot
+      if (!IsAnInteger(field1)) {
+        free(vl);
+        continue;
+      }
       vl->bareos_slot_number = atoi(field1);
       if (vl->bareos_slot_number <= 0) {
         ua->ErrorMsg(T_("Invalid Slot number: %s\n"), sd->msg);
@@ -380,16 +384,27 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
       vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
     } else if (!listall) {
       // Not scanning and not listall.
-      if (strlen(field2) == 0) {
+      const bool drive_entry = field1[0] == 'D' && IsAnInteger(field1 + 1);
+
+      if (!drive_entry && strlen(field2) == 0) {
         free(vl);
         continue;
       }
 
-      if (!IsAnInteger(field1)
-          || (vl->bareos_slot_number = atoi(field1)) <= 0) {
+      if (drive_entry) {
+        vl->slot_type = slot_type_t::kSlotTypeDrive;
+        vl->slot_status = slot_status_t::kSlotStatusFull;
+        vl->bareos_slot_number = static_cast<slot_number_t>(atoi(field1 + 1));
+        vl->element_address = INDEX_DRIVE_OFFSET + vl->bareos_slot_number;
+      } else if (!IsAnInteger(field1)
+                 || (vl->bareos_slot_number = atoi(field1)) <= 0) {
         ua->ErrorMsg(T_("Invalid Slot number: %s\n"), field1);
         free(vl);
         continue;
+      } else {
+        vl->slot_type = slot_type_t::kSlotTypeStorage;
+        vl->slot_status = slot_status_t::kSlotStatusFull;
+        vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
       }
 
       if (!IsVolumeNameLegal(ua, field2)) {
@@ -398,10 +413,7 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
         continue;
       }
 
-      vl->slot_type = slot_type_t::kSlotTypeStorage;
-      vl->slot_status = slot_status_t::kSlotStatusFull;
       vl->VolName = strdup(field2);
-      vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
     } else {
       // Listall.
       if (!field3) { goto parse_error; }

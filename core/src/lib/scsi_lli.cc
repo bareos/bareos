@@ -130,6 +130,15 @@ bool RecvScsiCmdPage(int fd,
                           SG_DXFER_FROM_DEV);
 }
 
+bool DoScsiCmd(int fd,
+               const char* device_name,
+               void* cdb,
+               unsigned int cdb_len)
+{
+  return do_scsi_cmd_page(fd, device_name, cdb, cdb_len, nullptr, 0,
+                          SG_DXFER_NONE);
+}
+
 /*
  * Send a lowlevel SCSI cmd to a SCSI device using the Linux SG_IO ioctl
  * interface.
@@ -241,6 +250,15 @@ bool RecvScsiCmdPage(int fd,
 {
   return do_scsi_cmd_page(fd, device_name, cdb, cdb_len, cmd_page, cmd_page_len,
                           (USCSI_READ | USCSI_SILENT | USCSI_RQENABLE));
+}
+
+bool DoScsiCmd(int fd,
+               const char* device_name,
+               void* cdb,
+               unsigned int cdb_len)
+{
+  return do_scsi_cmd_page(fd, device_name, cdb, cdb_len, nullptr, 0,
+                          (USCSI_SILENT | USCSI_RQENABLE));
 }
 
 /*
@@ -372,6 +390,15 @@ bool RecvScsiCmdPage(int fd,
                           CAM_DIR_IN);
 }
 
+bool DoScsiCmd(int fd,
+               const char* device_name,
+               void* cdb,
+               unsigned int cdb_len)
+{
+  return do_scsi_cmd_page(fd, device_name, cdb, cdb_len, nullptr, 0,
+                          CAM_DIR_NONE);
+}
+
 /*
  * Send a lowlevel SCSI cmd to a SCSI device using the FreeBSD SCSI CAM
  * interface.
@@ -395,6 +422,8 @@ bool RecvScsiCmdPage(int, const char*, void*, unsigned int, void*, unsigned int)
 {
   return false;
 }
+
+bool DoScsiCmd(int, const char*, void*, unsigned int) { return false; }
 
 bool send_scsi_cmd_page(int,
                         const char*,

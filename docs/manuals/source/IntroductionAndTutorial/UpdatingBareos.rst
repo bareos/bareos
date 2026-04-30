@@ -27,6 +27,13 @@ We consider both operations usually safe and they can be applied without restric
 Especially when updating the |dir| (together with the corresponding |sd|) it is recommended to do a number of security steps before going ahead:
 
 - Read the :ref:`Bareos current release notes <bareos-current-releasenotes>` and watch out for changes that might impact your installation. Take special care for the :strong:`Breaking Changes` paragraph, as it contains the information about changes that require your special attention when upgrading your installation as they might require adaptions of the configuration.
+- If you use tape storage with :config:option:`sd/device/MaximumFileSize`, review
+  the :config:option:`sd/device/MaximumFileSizeImmediateFilemark` setting before
+  restarting the upgraded storage daemon. Bareos now uses non-blocking rollover
+  filemarks by default. This changes tape backends that override
+  ``weof_immediate()`` from ``weof(1)`` to ``weof_immediate(1)`` on upgrade; set
+  :config:option:`sd/device/MaximumFileSizeImmediateFilemark = no` to keep the
+  previous blocking behavior after upgrade.
 - Update your operating system to the latest security and patch level of the publisher.
 - Empty the running jobs queue.
 - Run :strong:`BackupCatalog` or equivalent as last job (keep the most up to date database dump & configuration state).

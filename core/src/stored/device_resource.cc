@@ -63,6 +63,7 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   access_mode = other.access_mode;
   autoselect = other.autoselect;
   norewindonclose = other.norewindonclose;
+  max_file_size_immediate_filemark = other.max_file_size_immediate_filemark;
   drive_tapealert_enabled = other.drive_tapealert_enabled;
   drive_crypto_enabled = other.drive_crypto_enabled;
   query_crypto_status = other.query_crypto_status;
@@ -117,6 +118,7 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   access_mode = rhs.access_mode;
   autoselect = rhs.autoselect;
   norewindonclose = rhs.norewindonclose;
+  max_file_size_immediate_filemark = rhs.max_file_size_immediate_filemark;
   drive_tapealert_enabled = rhs.drive_tapealert_enabled;
   drive_crypto_enabled = rhs.drive_crypto_enabled;
   query_crypto_status = rhs.query_crypto_status;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -549,7 +549,7 @@ extern "C" void* device_initialization(void*)
     jcr->sd_impl->dcr = nullptr;
   }
   FreeJcr(jcr);
-  init_done = true;
+  SignalDeviceInitializationComplete();
   return nullptr;
 }
 

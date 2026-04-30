@@ -29,6 +29,7 @@
 
 #include "lib/alist.h"
 #include "lib/parse_conf.h"
+#include "stored/backends/generic_tape_device.h"
 #include "stored/stored_conf.h"
 #include "stored/stored_globals.h"
 #include <iostream>
@@ -75,6 +76,17 @@ TEST(sd, MultipliedDeviceTest_ConfigParameter)
   ASSERT_TRUE(d);
 
   EXPECT_EQ(d->count, 3);
+  EXPECT_FALSE(d->max_file_size_immediate_filemark);
+}
+
+TEST(sd, MaxFileSizeImmediateFilemarkOperation)
+{
+  EXPECT_FALSE(UseImmediateWriteFilemarkOperation(false));
+#if defined(MTWEOFI)
+  EXPECT_TRUE(UseImmediateWriteFilemarkOperation(true));
+#else
+  EXPECT_FALSE(UseImmediateWriteFilemarkOperation(true));
+#endif
 }
 
 static uint32_t CountAllDeviceResources(ConfigurationParser& config)

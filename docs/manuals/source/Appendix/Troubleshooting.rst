@@ -379,10 +379,15 @@ Please consider the following information when testing tape speed:
 #. Please set the tape drive device :config:option:`sd/device/MaximumFileSize` to a reasonable value.
    For LTO-7 a value of 200 GiB should work pretty good.
    When Bareos writes to tape, it adds a **file-mark** after :config:option:`sd/device/MaximumFileSize`
-   Bytes to the tape to improve search times on restore. By default these file-marks are written in
-   immediate mode (i.e. the syscall will only return after the file mark was physically written to
-   the tape). Thus every file-mark implies a buffer-flush of the drive which significantly reduces
-   the total write speed.
+   Bytes to the tape to improve search times on restore. By default these
+   rollover file-marks use the tape driver's immediate/non-blocking mode when
+   supported, which avoids stalling the write path until the file-mark is fully
+   committed to tape. If you need the previous blocking behavior, set
+   :config:option:`sd/device/MaximumFileSizeImmediateFilemark = no`\ .
+   After upgrading older Bareos installations, set this option to ``no`` if
+   your tape backend overrides ``weof_immediate()`` or your operating
+   procedures depend on waiting for each rollover file-mark to be fully
+   committed before the write path continues.
    Modern tape drives have internal buffers of 1 GiB and more and a write speed of 400MB/s.
    With :config:option:`sd/device/MaximumFileSize = 200G`, such a tape drive will write a file mark
    every 512 seconds or roughly 9 minutes.

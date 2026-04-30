@@ -678,7 +678,11 @@ bool DeviceControlRecord::WriteBlockToDev()
       && (dev->file_size + block->binbuf) >= dev->max_file_size) {
     dev->file_size = 0; /* reset file size */
 
-    if (!dev->weof(1)) { /* write eof */
+    bool wrote_filemark
+        = dev->device_resource->max_file_size_immediate_filemark
+              ? dev->weof_immediate(1)
+              : dev->weof(1);
+    if (!wrote_filemark) { /* write eof */
       Dmsg0(50, "WEOF error in max file size.\n");
       Jmsg(jcr, M_FATAL, 0, T_("Unable to write EOF. ERR=%s\n"),
            dev->bstrerror());

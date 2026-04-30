@@ -10,7 +10,7 @@ Bareos provides autochanger support for reading and writing tapes. In order to w
 
 -  The package **bareos-storage-tape** must be installed.
 
--  A script that actually controls the autochanger according to commands sent by Bareos. Bareos contains the script :command:`mtx-changer`, that utilize the command :command:`mtx`. It’s config file is normally located at :file:`/etc/bareos/mtx-changer.conf`
+-  Either a script that controls the autochanger according to commands sent by Bareos, or the native local SCSI backend described below. Bareos contains the script :command:`mtx-changer`, that utilize the command :command:`mtx`. It’s config file is normally located at :file:`/etc/bareos/mtx-changer.conf`
 
 -  That each Volume (tape) to be used must be defined in the Catalog and have a Slot number assigned to it so that Bareos knows where the Volume is in the autochanger. This is generally done with the :bcommand:`label` command, but can also done after the tape is labeled using the :bcommand:`update slots` command. See below for more details. You must pre-label the tapes manually before using them.
 
@@ -20,7 +20,7 @@ Bareos provides autochanger support for reading and writing tapes. In order to w
 
 -  Set :config:option:`dir/storage/AutoChanger = yes`\ .
 
-Bareos uses its own :command:`mtx-changer` script to interface with a program that actually does the tape changing. Thus in principle, :command:`mtx-changer` can be adapted to function with any autochanger program, or you can call any other script or program. The current version of :command:`mtx-changer` works with the :command:`mtx` program. FreeBSD users might need to adapt this script to use :command:`chio`. For more details, refer
+Bareos uses its own :command:`mtx-changer` script to interface with a program that actually does the tape changing. Thus in principle, :command:`mtx-changer` can be adapted to function with any autochanger program, or you can call any other script or program. The current version of :command:`mtx-changer` works with the :command:`mtx` program. FreeBSD users might need to adapt this script to use :command:`chio`. For supported local hardware, Bareos can also use :strong:`Changer Command = "builtin:scsi"` to talk directly to the changer device instead of shelling out to a changer script. For more details, refer
 to the :ref:`Testing Autochanger <AutochangerTesting>` chapter.
 
 Bareos also supports autochangers with barcode readers. This support includes two Console commands: :bcommand:`label barcodes` and :bcommand:`update slots`. For more details on these commands, see the chapter about :ref:`Barcodes`.
@@ -175,6 +175,22 @@ Following records control how Bareos uses the autochanger:
    Individual driver number, starting at 0.
 
 :config:option:`sd/device/MaximumChangerWait`\
+
+When :config:option:`sd/autochanger/ChangerCommand`\  is set to
+:strong:`"builtin:scsi"`, the Storage Daemon uses its native local SCSI changer
+backend. In that mode, :config:option:`sd/autochanger/ChangerDevice`\  should
+point to the changer control device (for example a Linux :file:`/dev/sgN`
+device), and each drive can optionally set
+:config:option:`sd/device/DiagnosticDevice`\  to a direct-SCSI drive device used
+for readiness checks and diagnostics. If :config:option:`sd/device/DriveTapeAlertEnabled`\
+is enabled, the native path also reads direct drive TapeAlert data.
+
+The native SCSI backend keeps the usual Bareos autochanger behavior and leaves
+the script-based path available as a fallback. For changers that report more
+than one medium transport element, Bareos now retries MOVE MEDIUM operations
+across all reported transport elements. The native path still does not have
+topology-aware arm selection, and the local native changer implementation
+remains separate from the NDMP changer codepath.
 
 
 Specifying Slots When Labeling
@@ -479,7 +495,7 @@ Bareos Autochanger Interface
 
 
 
-Bareos calls the autochanger script that you specify on the Changer Command statement. Normally this script will be the mtx-changer script that we provide, but it can in fact be any program. The only requirement for the script is that it must understand the commands that Bareos uses, which are loaded, load, unload, list, and slots. In addition, each of those commands must return the information in the precise format as specified below:
+Bareos normally calls the autochanger script that you specify on the Changer Command statement. Normally this script will be the mtx-changer script that we provide, but it can in fact be any program. The only requirement for the script is that it must understand the commands that Bareos uses, which are loaded, load, unload, list, and slots. In addition, each of those commands must return the information in the precise format as specified below:
 
 
 
@@ -504,6 +520,12 @@ Bareos calls the autochanger script that you specify on the Changer Command stat
 
 
 Bareos checks the exit status of the program called, and if it is zero, the data is accepted. If the exit status is non-zero, Bareos will print an error message and request the tape be manually mounted on the drive.
+
+When :config:option:`sd/autochanger/ChangerCommand`\  is set to
+:strong:`"builtin:scsi"`, Bareos performs these operations in-process via direct
+SCSI commands instead of calling an external changer script. The user-visible
+operations remain the same, but troubleshooting shifts from shell-script testing
+to verifying direct access to the configured changer and diagnostic devices.
 
 
 .. _Tapespeed and blocksizes:
@@ -801,5 +823,5 @@ TapeAlert Flags
 ---------------
 
 All modern tape drives support extended problem reporting using TapeAlert flags.
-The |sd| can retrieve and report these flags using the :ref:`scsitapealert-sd`
-plugin.
+The |sd| can retrieve and report these flags directly in core when
+:config:option:`sd/device/DriveTapeAlertEnabled`\  is enabled.
