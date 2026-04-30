@@ -93,6 +93,7 @@ export function buildJobDetailsQuery({
   clientName,
   clientDirector,
   clientsTab,
+  clientsScopeDirector,
   volumeName,
   volumeDirector,
   restoreClient,
@@ -134,6 +135,10 @@ export function buildJobDetailsQuery({
 
   if (clientsTab && clientsTab !== 'list') {
     query.clientsTab = clientsTab
+  }
+
+  if (clientsScopeDirector) {
+    query.clientsScopeDirector = clientsScopeDirector
   }
 
   if (volumeName) {
@@ -203,6 +208,7 @@ export function resolveJobDetailsQuery(query) {
     clientName: typeof query?.clientName === 'string' ? query.clientName : '',
     clientDirector: typeof query?.clientDirector === 'string' ? query.clientDirector : '',
     clientsTab: typeof query?.clientsTab === 'string' ? query.clientsTab : '',
+    clientsScopeDirector: typeof query?.clientsScopeDirector === 'string' ? query.clientsScopeDirector : '',
     volumeName: typeof query?.volumeName === 'string' ? query.volumeName : '',
     volumeDirector: typeof query?.volumeDirector === 'string' ? query.volumeDirector : '',
     restoreClient: typeof query?.restoreClient === 'string' ? query.restoreClient : '',
@@ -223,6 +229,7 @@ export function resolveJobDetailsClientOrigin(query) {
     name: query.clientName,
     director: typeof query?.clientDirector === 'string' ? query.clientDirector : '',
     clientsTab: typeof query?.clientsTab === 'string' ? query.clientsTab : '',
+    scopeDirector: typeof query?.clientsScopeDirector === 'string' ? query.clientsScopeDirector : '',
   }
 }
 

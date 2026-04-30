@@ -213,6 +213,7 @@ const backLocation = computed(() => {
       query: buildClientDetailsQuery({
         director: clientOrigin.value.director,
         clientsTab: clientOrigin.value.clientsTab,
+        clientsScopeDirector: clientOrigin.value.scopeDirector,
       }),
     }
   }
@@ -466,6 +467,7 @@ async function doRerun() {
           clientName: clientOrigin.value?.name,
           clientDirector: clientOrigin.value?.director,
           clientsTab: clientOrigin.value?.clientsTab,
+          clientsScopeDirector: clientOrigin.value?.scopeDirector,
           volumeName: volumeOrigin.value?.name,
           volumeDirector: volumeOrigin.value?.director,
           restoreClient: restoreOrigin.value?.client,

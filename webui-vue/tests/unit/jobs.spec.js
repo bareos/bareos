@@ -97,6 +97,7 @@ describe('jobs filter helpers', () => {
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
+      clientsScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
       restoreClient: 'bareos-fd',
@@ -114,6 +115,7 @@ describe('jobs filter helpers', () => {
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
+      clientsScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
       restoreClient: 'bareos-fd',
@@ -164,6 +166,7 @@ describe('jobs filter helpers', () => {
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
+      clientsScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
       restoreClient: 'bareos-fd',
@@ -182,6 +185,7 @@ describe('jobs filter helpers', () => {
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
+      clientsScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
       restoreClient: 'bareos-fd',
@@ -198,10 +202,12 @@ describe('jobs filter helpers', () => {
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
+      clientsScopeDirector: 'prod-a',
     })).toEqual({
       name: 'bareos-fd',
       director: 'prod-a',
       clientsTab: 'timeline',
+      scopeDirector: 'prod-a',
     })
 
     expect(resolveJobDetailsClientOrigin({

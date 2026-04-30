@@ -24,6 +24,8 @@ import {
   buildClientDetailsQuery,
   resolveClientDetailsDashboardOrigin,
   resolveClientsListQuery,
+  resolveClientsScopeDirector,
+  withClientsScopeDirectorQuery,
 } from '../../src/utils/clients.js'
 
 describe('clients route helpers', () => {
@@ -31,10 +33,12 @@ describe('clients route helpers', () => {
     expect(buildClientDetailsQuery({
       director: 'prod-a',
       clientsTab: 'timeline',
+      clientsScopeDirector: 'prod-a',
       dashboardOrigin: true,
     })).toEqual({
       director: 'prod-a',
       clientsTab: 'timeline',
+      clientsScopeDirector: 'prod-a',
       dashboardOrigin: '1',
     })
 
@@ -49,8 +53,10 @@ describe('clients route helpers', () => {
   it('restores the clients list query from detail return-state fields', () => {
     expect(resolveClientsListQuery({
       clientsTab: 'timeline',
+      clientsScopeDirector: 'prod-a',
     })).toEqual({
       tab: 'timeline',
+      scopeDirector: 'prod-a',
     })
 
     expect(resolveClientsListQuery({
@@ -62,5 +68,21 @@ describe('clients route helpers', () => {
     expect(resolveClientDetailsDashboardOrigin({ dashboardOrigin: '1' })).toBe(true)
     expect(resolveClientDetailsDashboardOrigin({ dashboardOrigin: '0' })).toBe(false)
     expect(resolveClientDetailsDashboardOrigin({})).toBe(false)
+  })
+
+  it('adds and removes the scope director query parameter', () => {
+    expect(withClientsScopeDirectorQuery({ tab: 'timeline' }, 'prod-a')).toEqual({
+      tab: 'timeline',
+      scopeDirector: 'prod-a',
+    })
+    expect(withClientsScopeDirectorQuery({ tab: 'timeline', scopeDirector: 'prod-a' }, '')).toEqual({
+      tab: 'timeline',
+    })
+  })
+
+  it('resolves an optional clients scope director query parameter', () => {
+    expect(resolveClientsScopeDirector({ scopeDirector: 'prod-a' })).toBe('prod-a')
+    expect(resolveClientsScopeDirector({ scopeDirector: 42 })).toBe('')
+    expect(resolveClientsScopeDirector({})).toBe('')
   })
 })

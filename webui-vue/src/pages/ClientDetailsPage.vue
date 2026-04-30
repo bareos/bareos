@@ -145,6 +145,9 @@ function buildClientJobDetailsQuery(job) {
     clientName: typeof route.params.name === 'string' ? route.params.name : '',
     clientDirector: currentClientDirector.value,
     clientsTab: typeof route.query.clientsTab === 'string' ? route.query.clientsTab : '',
+    clientsScopeDirector: typeof route.query.clientsScopeDirector === 'string'
+      ? route.query.clientsScopeDirector
+      : '',
   })
 }
 

@@ -22,6 +22,7 @@
 export function buildClientDetailsQuery({
   director,
   clientsTab,
+  clientsScopeDirector,
   dashboardOrigin,
 } = {}) {
   const query = {}
@@ -34,6 +35,10 @@ export function buildClientDetailsQuery({
     query.clientsTab = clientsTab
   }
 
+  if (clientsScopeDirector) {
+    query.clientsScopeDirector = clientsScopeDirector
+  }
+
   if (dashboardOrigin) {
     query.dashboardOrigin = '1'
   }
@@ -42,13 +47,36 @@ export function buildClientDetailsQuery({
 }
 
 export function resolveClientsListQuery(query) {
+  const nextQuery = {}
+
   if (typeof query?.clientsTab === 'string' && query.clientsTab && query.clientsTab !== 'list') {
-    return { tab: query.clientsTab }
+    nextQuery.tab = query.clientsTab
   }
 
-  return {}
+  if (typeof query?.clientsScopeDirector === 'string' && query.clientsScopeDirector) {
+    nextQuery.scopeDirector = query.clientsScopeDirector
+  }
+
+  return nextQuery
 }
 
 export function resolveClientDetailsDashboardOrigin(query) {
   return query?.dashboardOrigin === '1'
+}
+
+export function resolveClientsScopeDirector(query) {
+  return typeof query?.scopeDirector === 'string' ? query.scopeDirector : ''
+}
+
+export function withClientsScopeDirectorQuery(query, director) {
+  const nextQuery = { ...query }
+  const nextDirector = typeof director === 'string' ? director : ''
+
+  delete nextQuery.scopeDirector
+
+  if (nextDirector) {
+    nextQuery.scopeDirector = nextDirector
+  }
+
+  return nextQuery
 }

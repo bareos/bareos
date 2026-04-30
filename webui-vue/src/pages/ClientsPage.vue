@@ -56,6 +56,18 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
+            <div v-if="clientsListScopeDirector" class="q-px-md q-pt-sm">
+              <q-chip
+                removable
+                color="blue-7"
+                text-color="white"
+                icon="dns"
+                class="q-mb-xs"
+                @remove="router.replace({ path: '/clients', query: withClientsScopeDirectorQuery(route.query, '') })"
+              >
+                {{ t('Director') }}: {{ clientsListScopeDirector }}
+              </q-chip>
+            </div>
             <q-table :rows="clients" :columns="columns" row-key="scopeKey" dense flat :loading="loading" :pagination="{ rowsPerPage: 15 }">
               <template #body-cell-name="props">
                 <q-td :props="props">
@@ -186,7 +198,11 @@ import {
 } from '../composables/useDirectorFetch.js'
 import { fetchAggregatedClients } from '../composables/clientsAggregate.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
-import { buildClientDetailsQuery } from '../utils/clients.js'
+import {
+  buildClientDetailsQuery,
+  resolveClientsScopeDirector,
+  withClientsScopeDirectorQuery,
+} from '../utils/clients.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -267,8 +283,20 @@ const activeDirectors = computed(() => {
   return currentDirector ? [currentDirector] : []
 })
 
+const clientsListScopeDirector = computed(() => {
+  const requestedDirector = resolveClientsScopeDirector(route.query)
+
+  if (requestedDirector && activeDirectors.value.includes(requestedDirector)) {
+    return requestedDirector
+  }
+
+  return ''
+})
+const clientsPageDirectors = computed(() => (
+  clientsListScopeDirector.value ? [clientsListScopeDirector.value] : activeDirectors.value
+))
 const isCommonClients = computed(() => activeDirectors.value.length > 1)
-const showDirectorColumn = computed(() => isCommonClients.value)
+const showDirectorColumn = computed(() => clientsPageDirectors.value.length > 1)
 const isSingleDirectorScope = computed(() => activeDirectors.value.length === 1)
 const clientsScopeLabel = computed(() => (
   isCommonClients.value
@@ -287,6 +315,7 @@ const currentTimelineDirector = computed(() => (
 const timelineClientDetailsQuery = computed(() => buildClientDetailsQuery({
   director: currentTimelineDirector.value,
   clientsTab: tab.value,
+  clientsScopeDirector: clientsListScopeDirector.value,
 }))
 
 function syncSingletonTimelineDirector() {
@@ -339,24 +368,24 @@ async function refresh() {
   error.value   = null
   directorErrors.value = []
   try {
-    if (activeDirectors.value.length === 0) {
+    if (clientsPageDirectors.value.length === 0) {
       rawClients.value = []
       return
     }
 
-    if (isCommonClients.value) {
+    if (clientsPageDirectors.value.length > 1 || (clientsListScopeDirector.value && isCommonClients.value)) {
       const credentials = auth.getCredentials()
       if (!credentials?.password) {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedClients(credentials, activeDirectors.value)
+      const result = await fetchAggregatedClients(credentials, clientsPageDirectors.value)
       rawClients.value = result.clients
       directorErrors.value = result.directorErrors
       return
     }
 
-    const currentDirector = activeDirectors.value[0]
+    const currentDirector = clientsPageDirectors.value[0]
     await ensureSingleScopeDirector()
     const [listResult, dotResult] = await Promise.all([
       director.call('llist clients'),
@@ -456,6 +485,7 @@ async function openClientDetails(client) {
       query: buildClientDetailsQuery({
         director: client.director,
         clientsTab: tab.value,
+        clientsScopeDirector: clientsListScopeDirector.value,
       }),
     })
   } catch (error) {
@@ -525,8 +555,28 @@ watch(tab, (value) => {
   router.replace({ path: '/clients', query })
 })
 
+watch(() => route.query.scopeDirector, (value) => {
+  if (typeof value === 'string' && value && !activeDirectors.value.includes(value)) {
+    router.replace({
+      path: '/clients',
+      query: withClientsScopeDirectorQuery(route.query, ''),
+    })
+    return
+  }
+
+  refresh()
+})
+
 watch(() => activeDirectors.value.join('\u0000'), () => {
   syncSingletonTimelineDirector()
+  if (typeof route.query.scopeDirector === 'string'
+    && route.query.scopeDirector
+    && !activeDirectors.value.includes(route.query.scopeDirector)) {
+    router.replace({
+      path: '/clients',
+      query: withClientsScopeDirectorQuery(route.query, ''),
+    })
+  }
   refresh()
   if (tab.value === 'timeline') {
     ensureTimelineDirector()
