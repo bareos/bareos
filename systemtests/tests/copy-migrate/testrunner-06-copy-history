@@ -105,9 +105,18 @@ expect_grep "Volume \"${history_full_volume}\" contains no jobs after pruning." 
   "${tmp}/copy-history-prune.out" \
   "Expected original full volume to be empty after pruning"
 
-full_job_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full_jobid}")"
-copy_job_type_after="$(psql -d "${db_name}" -At -c "SELECT Type FROM Job WHERE JobId=${copy_jobid}")"
-incremental_job_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${incremental_jobid}")"
+full_job_count="$(
+  psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full_jobid}" \
+    | tr -d '\r'
+)"
+copy_job_type_after="$(
+  psql -d "${db_name}" -At -c "SELECT Type FROM Job WHERE JobId=${copy_jobid}" \
+    | tr -d '\r'
+)"
+incremental_job_count="$(
+  psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${incremental_jobid}" \
+    | tr -d '\r'
+)"
 
 if [ "${full_job_count}" != "0" ]; then
   set_error "Expected original full job ${full_jobid} to be pruned, count=${full_job_count}"

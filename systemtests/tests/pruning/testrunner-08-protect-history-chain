@@ -109,7 +109,10 @@ expect_grep "Volume \"${history_full_volume}\" still contains jobs after pruning
   "${log_home}/prune-protected.out" \
   "Expected protected full volume to still contain jobs"
 
-full_job_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full_jobid}")"
+full_job_count="$(
+  psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full_jobid}" \
+    | tr -d '\r'
+)"
 if [ "${full_job_count}" != "1" ]; then
   set_error "Full job ${full_jobid} should still exist after protected prune, count=${full_job_count}"
   exit 1
@@ -132,7 +135,10 @@ expect_grep "Pruned 1 Job for client bareos-fd from catalog." \
   "${log_home}/prune-dependent.out" \
   "Expected exactly one dependent job to be pruned"
 
-incremental_job_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${incremental_jobid}")"
+incremental_job_count="$(
+  psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${incremental_jobid}" \
+    | tr -d '\r'
+)"
 if [ "${incremental_job_count}" != "0" ]; then
   set_error "Incremental job ${incremental_jobid} should be pruned, count=${incremental_job_count}"
   exit 1
@@ -160,7 +166,10 @@ expect_grep "Volume \"${history_full_volume}\" contains no jobs after pruning." 
   "${log_home}/prune-released.out" \
   "Expected released full volume to be empty after pruning"
 
-full_job_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full_jobid}")"
+full_job_count="$(
+  psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full_jobid}" \
+    | tr -d '\r'
+)"
 if [ "${full_job_count}" != "0" ]; then
   set_error "Full job ${full_jobid} should be pruned after dependent removal, count=${full_job_count}"
   exit 1
