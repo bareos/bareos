@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
+import { buildStoragesTabQuery } from '../utils/storagesRoute.js'
 
 const routes = [
   {
@@ -23,7 +24,14 @@ const routes = [
       { path: 'clients/:name', name: 'client-details', component: () => import('../pages/ClientDetailsPage.vue') },
       { path: 'schedules', name: 'schedules', component: () => import('../pages/SchedulesPage.vue') },
       { path: 'storages', name: 'storages', component: () => import('../pages/StoragesPage.vue') },
-      { path: 'autochangers', name: 'autochangers', redirect: { path: '/storages', query: { tab: 'autochangers' } } },
+      {
+        path: 'autochangers',
+        name: 'autochangers',
+        redirect: to => ({
+          path: '/storages',
+          query: buildStoragesTabQuery(to.query, 'autochangers'),
+        }),
+      },
       { path: 'storages/pools/:name', name: 'pool-details', component: () => import('../pages/PoolDetailsPage.vue') },
       { path: 'storages/volumes/:name', name: 'volume-details', component: () => import('../pages/VolumeDetailsPage.vue') },
       { path: 'director',  name: 'director',  component: () => import('../pages/DirectorPage.vue') },

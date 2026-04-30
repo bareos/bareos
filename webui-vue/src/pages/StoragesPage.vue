@@ -42,14 +42,14 @@
 
     <!-- Tab bar: Devices | Pools | Volumes | Autochangers -->
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-route-tab name="storages" :label="t('Devices')"      no-caps :to="{ path: '/storages' }" />
-      <q-route-tab name="pools"    :label="t('Pools')"        no-caps :to="{ path: '/storages', query: { tab: 'pools' } }" />
-      <q-route-tab name="volumes"  :label="t('Volumes')"      no-caps :to="{ path: '/storages', query: { tab: 'volumes' } }" />
+      <q-route-tab name="storages" :label="t('Devices')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'storages') }" />
+      <q-route-tab name="pools"    :label="t('Pools')"        no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'pools') }" />
+      <q-route-tab name="volumes"  :label="t('Volumes')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'volumes') }" />
       <q-route-tab
         name="autochangers"
         :label="t('Autochangers')"
         no-caps
-        :to="{ path: '/storages', query: { tab: 'autochangers' } }"
+        :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'autochangers') }"
       />
     </q-tabs>
 
@@ -363,6 +363,7 @@ import {
   fetchAggregatedStoragesState,
   normaliseDirectorStoragesState,
 } from '../composables/storagesAggregate.js'
+import { buildStoragesTabQuery } from '../utils/storagesRoute.js'
 import AutochangerPage from './AutochangerPage.vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -469,15 +470,7 @@ watch(tab, (next) => {
     return
   }
 
-  const query = target === 'storages'
-    ? { ...route.query }
-    : { ...route.query, tab: target }
-  delete query.tab
-  if (target !== 'storages') {
-    query.tab = target
-  }
-
-  router.replace({ path: '/storages', query })
+  router.replace({ path: '/storages', query: buildStoragesTabQuery(route.query, target) })
 })
 
 async function ensureSingleScopeDirector() {

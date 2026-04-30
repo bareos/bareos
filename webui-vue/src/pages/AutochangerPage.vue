@@ -22,10 +22,10 @@
 <template>
   <component :is="embedded ? 'div' : 'q-page'" class="q-pa-md">
     <q-tabs v-if="!embedded" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-route-tab :label="t('Devices')"      no-caps :to="{ path: '/storages' }" />
-      <q-route-tab :label="t('Pools')"        no-caps :to="{ path: '/storages', query: { tab: 'pools' } }" />
-      <q-route-tab :label="t('Volumes')"      no-caps :to="{ path: '/storages', query: { tab: 'volumes' } }" />
-      <q-route-tab :label="t('Autochangers')" no-caps :to="{ path: '/storages', query: { tab: 'autochangers' } }" />
+      <q-route-tab :label="t('Devices')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'storages') }" />
+      <q-route-tab :label="t('Pools')"        no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'pools') }" />
+      <q-route-tab :label="t('Volumes')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'volumes') }" />
+      <q-route-tab :label="t('Autochangers')" no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'autochangers') }" />
     </q-tabs>
 
     <!-- ── Toolbar ─────────────────────────────────────────── -->
@@ -508,6 +508,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -523,6 +524,13 @@ import {
   formatInDriveLabel,
   shouldRefreshAutochangerTables,
 } from '../utils/autochanger.js'
+import {
+  AUTOCHANGER_DIRECTOR_QUERY_KEY,
+  AUTOCHANGER_STORAGE_QUERY_KEY,
+  buildAutochangerSelectionQuery,
+  buildStoragesTabQuery,
+  resolveAutochangerSelection,
+} from '../utils/storagesRoute.js'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 
 const { embedded } = defineProps({
@@ -536,6 +544,8 @@ const auth = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
 const $q = useQuasar()
+const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 
 // ── State ───────────────────────────────────────────────────
@@ -621,6 +631,17 @@ const activeDirectors = computed(() => {
 })
 
 const isCommonAutochangerScope = computed(() => activeDirectors.value.length > 1)
+const isAutochangerRouteActive = computed(() => !embedded || route.query.tab === 'autochangers')
+const queriedStorageName = computed(() => (
+  typeof route.query[AUTOCHANGER_STORAGE_QUERY_KEY] === 'string'
+    ? route.query[AUTOCHANGER_STORAGE_QUERY_KEY]
+    : ''
+))
+const queriedDirectorName = computed(() => (
+  typeof route.query[AUTOCHANGER_DIRECTOR_QUERY_KEY] === 'string'
+    ? route.query[AUTOCHANGER_DIRECTOR_QUERY_KEY]
+    : ''
+))
 const currentStorage = computed(() => (
   autochangerStorages.value.find(storage => storage.scopeKey === selectedStorage.value) ?? null
 ))
@@ -755,7 +776,14 @@ async function loadStorages() {
         }))
     }
 
-    if (!autochangerStorages.value.some(storage => storage.scopeKey === selectedStorage.value)) {
+    const queriedSelection = resolveAutochangerSelection(autochangerStorages.value, {
+      storageName: queriedStorageName.value,
+      directorName: queriedDirectorName.value,
+      activeDirectors: activeDirectors.value,
+    })
+    if (queriedSelection) {
+      selectedStorage.value = queriedSelection.scopeKey
+    } else if (!autochangerStorages.value.some(storage => storage.scopeKey === selectedStorage.value)) {
       selectedStorage.value = autochangerStorages.value[0]?.scopeKey ?? null
     }
   } catch (e) {
@@ -1163,6 +1191,44 @@ async function refreshSelectedStorageViewsIfStable(previousSelection) {
   startAutoRefresh()
 }
 
+async function syncRouteToSelectedStorage() {
+  if (!isAutochangerRouteActive.value) {
+    return
+  }
+
+  const targetQuery = buildAutochangerSelectionQuery(route.query, currentStorage.value)
+  const currentStorageName = queriedStorageName.value
+  const currentDirectorName = queriedDirectorName.value
+  const targetStorageName = targetQuery[AUTOCHANGER_STORAGE_QUERY_KEY] ?? ''
+  const targetDirectorName = targetQuery[AUTOCHANGER_DIRECTOR_QUERY_KEY] ?? ''
+
+  if (
+    route.query.tab === targetQuery.tab
+    && currentStorageName === targetStorageName
+    && currentDirectorName === targetDirectorName
+  ) {
+    return
+  }
+
+  await router.replace({
+    path: '/storages',
+    query: targetQuery,
+  })
+}
+
+function syncSelectedStorageFromRoute() {
+  const queriedSelection = resolveAutochangerSelection(autochangerStorages.value, {
+    storageName: queriedStorageName.value,
+    directorName: queriedDirectorName.value,
+    activeDirectors: activeDirectors.value,
+  })
+  if (!queriedSelection || selectedStorage.value === queriedSelection.scopeKey) {
+    return
+  }
+
+  selectedStorage.value = queriedSelection.scopeKey
+}
+
 function clearCommandLog() {
   commandLogVisible.value = false
   commandLogTitle.value = ''
@@ -1204,8 +1270,21 @@ watch(() => activeDirectors.value.join('\u0000'), async () => {
   await refreshSelectedStorageViewsIfStable(previousSelection)
 })
 
+watch(() => [
+  queriedStorageName.value,
+  queriedDirectorName.value,
+  route.query.tab,
+], () => {
+  if (!autochangerStorages.value.length || !isAutochangerRouteActive.value) {
+    return
+  }
+
+  syncSelectedStorageFromRoute()
+})
+
 watch(selectedStorage, async (next) => {
   if (!next) {
+    await syncRouteToSelectedStorage()
     pools.value = []
     allSlots.value = []
     volumeDetailsByName.value = {}
@@ -1213,9 +1292,17 @@ watch(selectedStorage, async (next) => {
     return
   }
 
+  await syncRouteToSelectedStorage()
   await loadPools()
   await loadSlots()
   startAutoRefresh()
+})
+
+watch(isAutochangerRouteActive, async (active) => {
+  if (active) {
+    syncSelectedStorageFromRoute()
+    await syncRouteToSelectedStorage()
+  }
 })
 
 watch(() => settings.refreshInterval, () => {
