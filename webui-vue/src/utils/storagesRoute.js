@@ -84,15 +84,24 @@ export function resolveAutochangerSelectionQuery(query) {
 export function resolveAutochangerSelection(storages, {
   storageName,
   directorName,
+  scopeDirector = '',
   activeDirectors = [],
 } = {}) {
   if (!storageName) {
     return null
   }
 
-  if (directorName) {
+  const effectiveScopeDirector = typeof scopeDirector === 'string' ? scopeDirector : ''
+  const effectiveDirectorName = typeof directorName === 'string' ? directorName : ''
+
+  if (effectiveScopeDirector && effectiveDirectorName && effectiveDirectorName !== effectiveScopeDirector) {
+    return null
+  }
+
+  if (effectiveDirectorName || effectiveScopeDirector) {
+    const targetDirector = effectiveDirectorName || effectiveScopeDirector
     const exactMatch = storages.find(storage => (
-      storage.name === storageName && storage.director === directorName
+      storage.name === storageName && storage.director === targetDirector
     ))
     if (exactMatch) {
       return exactMatch

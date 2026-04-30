@@ -540,6 +540,7 @@ import {
   buildAutochangerSelectionQuery,
   buildStoragesTabQuery,
   resolveAutochangerSelection,
+  resolveStoragesScopeDirector,
 } from '../utils/storagesRoute.js'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 
@@ -652,6 +653,7 @@ const queriedDirectorName = computed(() => (
     ? route.query[AUTOCHANGER_DIRECTOR_QUERY_KEY]
     : ''
 ))
+const storagesScopeDirector = computed(() => resolveStoragesScopeDirector(route.query))
 const currentStorage = computed(() => (
   autochangerStorages.value.find(storage => storage.scopeKey === selectedStorage.value) ?? null
 ))
@@ -800,6 +802,7 @@ async function loadStorages() {
     const queriedSelection = resolveAutochangerSelection(autochangerStorages.value, {
       storageName: queriedStorageName.value,
       directorName: queriedDirectorName.value,
+      scopeDirector: storagesScopeDirector.value,
       activeDirectors: activeDirectors.value,
     })
     if (queriedSelection) {
@@ -1241,6 +1244,7 @@ function syncSelectedStorageFromRoute() {
   const queriedSelection = resolveAutochangerSelection(autochangerStorages.value, {
     storageName: queriedStorageName.value,
     directorName: queriedDirectorName.value,
+    scopeDirector: storagesScopeDirector.value,
     activeDirectors: activeDirectors.value,
   })
   if (!queriedSelection || selectedStorage.value === queriedSelection.scopeKey) {

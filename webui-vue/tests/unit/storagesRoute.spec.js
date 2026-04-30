@@ -125,4 +125,29 @@ describe('storages route helpers', () => {
       scopeKey: 'prod-a:TapeLibrary',
     })
   })
+
+  it('honors an explicit storages scope director for autochanger selection', () => {
+    expect(resolveAutochangerSelection([
+      { name: 'TapeLibrary', director: 'prod-a', scopeKey: 'prod-a:TapeLibrary' },
+      { name: 'TapeLibrary', director: 'prod-b', scopeKey: 'prod-b:TapeLibrary' },
+    ], {
+      storageName: 'TapeLibrary',
+      directorName: 'prod-b',
+      scopeDirector: 'prod-a',
+      activeDirectors: ['prod-a', 'prod-b'],
+    })).toBeNull()
+
+    expect(resolveAutochangerSelection([
+      { name: 'TapeLibrary', director: 'prod-a', scopeKey: 'prod-a:TapeLibrary' },
+      { name: 'TapeLibrary', director: 'prod-b', scopeKey: 'prod-b:TapeLibrary' },
+    ], {
+      storageName: 'TapeLibrary',
+      scopeDirector: 'prod-a',
+      activeDirectors: ['prod-a', 'prod-b'],
+    })).toEqual({
+      name: 'TapeLibrary',
+      director: 'prod-a',
+      scopeKey: 'prod-a:TapeLibrary',
+    })
+  })
 })
