@@ -183,6 +183,7 @@ import {
 } from '../composables/useDirectorFetch.js'
 import { fetchAggregatedClients } from '../composables/clientsAggregate.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { buildClientDetailsQuery } from '../utils/clients.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -445,7 +446,10 @@ async function openClientDetails(client) {
     await router.push({
       name: 'client-details',
       params: { name: client.name },
-      query: client.director ? { director: client.director } : {},
+      query: buildClientDetailsQuery({
+        director: client.director,
+        clientsTab: tab.value,
+      }),
     })
   } catch (error) {
     directorErrors.value = [{

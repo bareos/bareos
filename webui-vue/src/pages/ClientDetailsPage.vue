@@ -4,7 +4,14 @@
     <div v-if="error" class="text-negative q-pa-md">{{ error }}</div>
     <template v-else-if="!loading">
     <div class="row items-center q-mb-md">
-      <q-btn flat icon="arrow_back" :label="t('Back to Clients')" :to="{ name: 'clients' }" no-caps class="q-mr-md" />
+      <q-btn
+        flat
+        icon="arrow_back"
+        :label="t('Back to Clients')"
+        :to="{ name: 'clients', query: backToClientsQuery }"
+        no-caps
+        class="q-mr-md"
+      />
       <q-icon v-if="client" :name="osIcon(client)" :color="osColor(client)" size="28px" class="q-mr-sm" />
       <div class="text-h6">{{ client?.name }}</div>
       <q-badge v-if="client?.version" color="grey-6" :label="'v' + client.version" class="q-ml-sm text-mono" />
@@ -100,6 +107,7 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { resolveClientsListQuery } from '../utils/clients.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
@@ -116,6 +124,7 @@ const requestedDirector = computed(() => (
 const currentClientDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
+const backToClientsQuery = computed(() => resolveClientsListQuery(route.query))
 
 const loading    = ref(true)
 const clientData = ref(null)
