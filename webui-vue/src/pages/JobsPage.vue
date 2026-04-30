@@ -498,6 +498,7 @@ import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatNumber } from '../utils/locales.js'
 import {
+  buildJobDetailsQuery,
   normaliseJobStatusFilter,
   resolveJobsSearchQuery,
   withJobsSearchQuery,
@@ -877,7 +878,12 @@ async function openJobDetails(job) {
     await router.push({
       name: 'job-details',
       params: { id: job.id },
-      query: job.director ? { director: job.director } : {},
+      query: buildJobDetailsQuery({
+        director: job.director,
+        jobsAction: tab.value,
+        jobsStatus: statusFilter.value,
+        jobsSearch: search.value,
+      }),
     })
   } catch (error) {
     $q.notify({

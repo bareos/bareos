@@ -66,3 +66,48 @@ export function withJobsSearchQuery(query, search) {
 
   return nextQuery
 }
+
+export function buildJobDetailsQuery({
+  director,
+  jobsAction,
+  jobsStatus,
+  jobsSearch,
+} = {}) {
+  const query = {}
+
+  if (director) {
+    query.director = director
+  }
+
+  if (jobsAction && jobsAction !== 'list') {
+    query.jobsAction = jobsAction
+  }
+
+  if (jobsStatus) {
+    query.jobsStatus = jobsStatus
+  }
+
+  if (jobsSearch) {
+    query.jobsSearch = jobsSearch
+  }
+
+  return query
+}
+
+export function resolveJobsListQuery(query) {
+  const nextQuery = {}
+
+  if (typeof query?.jobsAction === 'string' && query.jobsAction && query.jobsAction !== 'list') {
+    nextQuery.action = query.jobsAction
+  }
+
+  if (typeof query?.jobsStatus === 'string' && query.jobsStatus) {
+    nextQuery.status = query.jobsStatus
+  }
+
+  if (typeof query?.jobsSearch === 'string' && query.jobsSearch) {
+    nextQuery.search = query.jobsSearch
+  }
+
+  return nextQuery
+}

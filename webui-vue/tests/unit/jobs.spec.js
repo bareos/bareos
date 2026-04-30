@@ -21,8 +21,10 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  buildJobDetailsQuery,
   normaliseJobStatusFilter,
   resolveJobsSearchQuery,
+  resolveJobsListQuery,
   withJobsSearchQuery,
   withJobsStatusFilterQuery,
 } from '../../src/utils/jobs.js'
@@ -59,5 +61,46 @@ describe('jobs filter helpers', () => {
     expect(withJobsSearchQuery({ search: 'Explicit', status: 'T' }, '')).toEqual({
       status: 'T',
     })
+  })
+
+  it('builds job details query with return-state fields', () => {
+    expect(buildJobDetailsQuery({
+      director: 'prod-a',
+      jobsAction: 'timeline',
+      jobsStatus: 'T',
+      jobsSearch: 'backup',
+    })).toEqual({
+      director: 'prod-a',
+      jobsAction: 'timeline',
+      jobsStatus: 'T',
+      jobsSearch: 'backup',
+    })
+
+    expect(buildJobDetailsQuery({
+      director: 'prod-a',
+      jobsAction: 'list',
+      jobsStatus: '',
+      jobsSearch: '',
+    })).toEqual({
+      director: 'prod-a',
+    })
+  })
+
+  it('restores jobs list query from detail return-state fields', () => {
+    expect(resolveJobsListQuery({
+      jobsAction: 'timeline',
+      jobsStatus: 'T',
+      jobsSearch: 'backup',
+    })).toEqual({
+      action: 'timeline',
+      status: 'T',
+      search: 'backup',
+    })
+
+    expect(resolveJobsListQuery({
+      jobsAction: 'list',
+      jobsStatus: '',
+      jobsSearch: '',
+    })).toEqual({})
   })
 })

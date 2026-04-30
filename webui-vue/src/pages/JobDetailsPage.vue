@@ -6,7 +6,14 @@
     <div v-else-if="!loading && job">
       <!-- Header row -->
       <div class="row items-center q-mb-md">
-        <q-btn flat icon="arrow_back" :label="t('Back to Jobs')" :to="{ name: 'jobs' }" no-caps class="q-mr-md" />
+        <q-btn
+          flat
+          icon="arrow_back"
+          :label="t('Back to Jobs')"
+          :to="{ name: 'jobs', query: backToJobsQuery }"
+          no-caps
+          class="q-mr-md"
+        />
         <div class="text-h6">Job #{{ job.id }} — {{ job.name }}</div>
         <q-space />
         <q-spinner v-if="isRunning" color="primary" size="18px" class="q-mr-sm" :title="t('Auto-refreshing…')" />
@@ -133,6 +140,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatNumber } from '../utils/locales.js'
+import { buildJobDetailsQuery, resolveJobsListQuery } from '../utils/jobs.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
@@ -153,6 +161,7 @@ const requestedDirector = computed(() => (
 const currentJobDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
+const backToJobsQuery = computed(() => resolveJobsListQuery(route.query))
 
 // ── state ─────────────────────────────────────────────────────────────────────
 const loading       = ref(true)
@@ -356,7 +365,12 @@ async function doRerun() {
       router.push({
         name: 'job-details',
         params: { id: newId },
-        query: currentJobDirector.value ? { director: currentJobDirector.value } : {},
+        query: buildJobDetailsQuery({
+          director: currentJobDirector.value,
+          jobsAction: typeof route.query.jobsAction === 'string' ? route.query.jobsAction : '',
+          jobsStatus: typeof route.query.jobsStatus === 'string' ? route.query.jobsStatus : '',
+          jobsSearch: typeof route.query.jobsSearch === 'string' ? route.query.jobsSearch : '',
+        }),
       })
     }
   } catch (e) {
