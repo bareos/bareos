@@ -3,7 +3,7 @@
 
    Copyright (C) 2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1309,7 +1309,7 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
                            ? VDI_DEFAULT_WAIT
                            : p_ctx->get_configuration_timeout * 1000;  // ms
 
-    Jmsg(ctx, M_INFO, "Calling GetConfiguration with a timeout of %d sec\n.",
+    Jmsg(ctx, M_INFO, "Calling GetConfiguration with a timeout of %d sec\n",
          timeout / 1000);
 
     hr = p_ctx->VDIDeviceSet->GetConfiguration(timeout, &p_ctx->VDIConfig);

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -127,7 +127,6 @@ find_package(Git)
 include(BareosVersionFromGit)
 include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
-include(RemoveNDebugFlag)
 include(ForceOption)
 
 set(BUILDNAME
@@ -196,6 +195,7 @@ endif()
 
 if(BUILD_BAREOS_BINARIES)
   project(bareos C CXX)
+  include(RemoveNDebugFlag)
   if(NOT CMAKE_BUILD_TYPE
      AND NOT CMAKE_C_FLAGS
      AND NOT CMAKE_CXX_FLAGS

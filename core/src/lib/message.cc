@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -724,9 +724,9 @@ void DispatchMessage(JobControlRecord* jcr,
             len = strlen(msg);
             if (len > 0) {
               (void)fwrite(msg, len, 1, con_fd);
-              if (msg[len - 1] != '\n') { (void)fwrite("\n", 2, 1, con_fd); }
+              if (msg[len - 1] != '\n') { (void)fwrite("\n", 1, 1, con_fd); }
             } else {
-              (void)fwrite("\n", 2, 1, con_fd);
+              (void)fwrite("\n", 1, 1, con_fd);
             }
             fflush(con_fd);
             console_msg_pending = true;

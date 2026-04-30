@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,7 +49,7 @@ char* edit_uint64(uint64_t val, char* buf);
 char* edit_int64(int64_t val, char* buf);
 char* edit_int64_with_commas(int64_t val, char* buf);
 
-char* add_commas(char* val, char* buf);
+char* add_commas(const char* val, char* buf);
 bool DurationToUtime(const char* str, utime_t* value);
 bool size_to_uint64(const char* str, uint64_t* value);
 bool speed_to_uint64(const char* str, uint64_t* value);
