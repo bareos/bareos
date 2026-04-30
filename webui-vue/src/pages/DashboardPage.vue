@@ -457,7 +457,11 @@ async function openJobDetails(row) {
 async function openClientDetails(row) {
   try {
     await switchActiveDirector(row.director)
-    await router.push({ name: 'client-details', params: { name: row.client } })
+    await router.push({
+      name: 'client-details',
+      params: { name: row.client },
+      query: row.director ? { director: row.director } : {},
+    })
   } catch (error) {
     $q.notify({
       type: 'negative',

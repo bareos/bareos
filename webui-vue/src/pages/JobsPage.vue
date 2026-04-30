@@ -757,7 +757,11 @@ async function openJobDetails(job) {
 async function openClientDetails(job) {
   try {
     await switchToJobDirector(job)
-    await router.push({ name: 'client-details', params: { name: job.client } })
+    await router.push({
+      name: 'client-details',
+      params: { name: job.client },
+      query: job.director ? { director: job.director } : {},
+    })
   } catch (error) {
     $q.notify({
       type: 'negative',

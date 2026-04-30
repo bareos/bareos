@@ -40,7 +40,10 @@
                      :pagination="{ rowsPerPage: 6 }">
               <template #body-cell-id="props">
                 <q-td :props="props">
-                  <router-link :to="{ name: 'job-details', params: { id: props.value }, query: { director: settings.directorName } }" class="text-primary">
+                  <router-link
+                    :to="{ name: 'job-details', params: { id: props.value }, query: props.row.director ? { director: props.row.director } : {} }"
+                    class="text-primary"
+                  >
                     {{ props.value }}
                   </router-link>
                 </q-td>
@@ -84,7 +87,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatBytes, timeAgo } from '../mock/index.js'
@@ -93,6 +96,8 @@ import {
   normaliseClient,
   normaliseJob,
 } from '../composables/useDirectorFetch.js'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
@@ -100,10 +105,17 @@ import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 
 const route         = useRoute()
+const auth          = useAuthStore()
 const director      = useDirectorStore()
 const settings      = useSettingsStore()
 const fmtBytes      = formatBytes
 const { t } = useI18n()
+const requestedDirector = computed(() => (
+  typeof route.query.director === 'string' ? route.query.director : ''
+))
+const currentClientDirector = computed(() => (
+  requestedDirector.value || auth.user?.director || settings.directorName || ''
+))
 
 const loading    = ref(true)
 const clientData = ref(null)
@@ -113,33 +125,58 @@ const error      = ref(null)
 function osIcon(client)  { return osIconName(client)  }
 function osColor(client) { return osIconColor(client) }
 
-onMounted(async () => {
+async function ensureClientDirector() {
+  if (!requestedDirector.value) {
+    return
+  }
+
+  if (auth.user?.director === requestedDirector.value && director.isConnected) {
+    return
+  }
+
+  await switchActiveDirector(requestedDirector.value)
+}
+
+async function loadClient() {
   const name = route.params.name
+  await ensureClientDirector()
+
+  const [clientRes, jobsRes, defaultsRes] = await Promise.allSettled([
+    director.call(`llist clients`),
+    director.call(`list jobs client=${name} reverse`),
+    director.call(`.defaults client=${name}`),
+  ])
+  if (clientRes.status === 'fulfilled') {
+    const list = directorCollection(clientRes.value?.clients)
+    const found = list.find(c => c.name === name)
+    if (found) {
+      const defaults = defaultsRes.status === 'fulfilled' ? (defaultsRes.value ?? {}) : {}
+      clientData.value = normaliseClient({ ...found, ...defaults })
+    } else {
+      clientData.value = null
+    }
+  }
+  if (jobsRes.status === 'fulfilled') {
+    clientJobs.value = directorCollection(jobsRes.value?.jobs).map(job => ({
+      ...normaliseJob(job),
+      director: currentClientDirector.value || null,
+    }))
+  }
+}
+
+watch(() => `${route.params.name}\u0000${requestedDirector.value}`, async () => {
+  loading.value = true
+  error.value = null
+  clientData.value = null
+  clientJobs.value = []
   try {
-    const [clientRes, jobsRes, defaultsRes] = await Promise.allSettled([
-      director.call(`llist clients`),
-      director.call(`list jobs client=${name} reverse`),
-      director.call(`.defaults client=${name}`),
-    ])
-    if (clientRes.status === 'fulfilled') {
-      const list = directorCollection(clientRes.value?.clients)
-      const found = list.find(c => c.name === name)
-      if (found) {
-        const defaults = defaultsRes.status === 'fulfilled' ? (defaultsRes.value ?? {}) : {}
-        clientData.value = normaliseClient({ ...found, ...defaults })
-      } else {
-        clientData.value = null
-      }
-    }
-    if (jobsRes.status === 'fulfilled') {
-      clientJobs.value = directorCollection(jobsRes.value?.jobs).map(normaliseJob)
-    }
-  } catch (e) {
-    error.value = e.message
+    await loadClient()
+  } catch (loadError) {
+    error.value = loadError.message
   } finally {
     loading.value = false
   }
-})
+}, { immediate: true })
 
 const client = computed(() => clientData.value)
 

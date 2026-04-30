@@ -371,7 +371,11 @@ async function switchToClientDirector(client) {
 async function openClientDetails(client) {
   try {
     await switchToClientDirector(client)
-    await router.push({ name: 'client-details', params: { name: client.name } })
+    await router.push({
+      name: 'client-details',
+      params: { name: client.name },
+      query: client.director ? { director: client.director } : {},
+    })
   } catch (error) {
     directorErrors.value = [{
       director: client.director ?? t('unknown'),

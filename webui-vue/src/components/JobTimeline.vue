@@ -71,7 +71,7 @@
                   font-size="11" text-anchor="middle" font-weight="600"
                   :fill="$q.dark.isActive ? '#90caf9' : '#1565c0'"
                   style="font-family:sans-serif; user-select:none; cursor:pointer"
-                  @click="router.push({ name: 'client-details', params: { name: span.client } })">
+                  @click="router.push({ name: 'client-details', params: { name: span.client }, query: currentDirector ? { director: currentDirector } : {} })">
               {{ span.client.length > 14 ? span.client.slice(0, 13) + '\u2026' : span.client }}
             </text>
           </g>
@@ -135,16 +135,19 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { jobStatusMap, formatBytes } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
+import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatNumber } from '../utils/locales.js'
 
 const $q      = useQuasar()
 const router  = useRouter()
+const auth = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
 const fmtBytes = formatBytes
 const { t } = useI18n()
+const currentDirector = computed(() => auth.user?.director || settings.directorName || '')
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 const TL_CLIENT_W = 110
