@@ -42,7 +42,7 @@
 
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="list"     :label="t('Show')"     no-caps />
-      <q-tab name="timeline" :label="t('Timeline')" no-caps :disable="isCommonClients" />
+      <q-tab name="timeline" :label="t('Timeline')" no-caps />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated swipeable>
@@ -124,10 +124,34 @@
 
       <!-- TIMELINE -->
       <q-tab-panel name="timeline" class="q-pa-none">
-        <q-banner v-if="isCommonClients" dense rounded class="bg-info text-white q-mb-md">
-          {{ t('Timeline stays scoped to the active director for now. Reduce the clients scope to a single director to use this tab.') }}
-        </q-banner>
-        <JobTimeline />
+        <q-card
+          v-if="isCommonClients"
+          flat
+          bordered
+          class="q-mb-md bareos-panel"
+          style="max-width:800px"
+        >
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Timeline Target') }}</span>
+          </q-card-section>
+          <q-card-section>
+            <q-select
+              v-model="singletonTimelineDirector"
+              :options="singletonTimelineDirectorOptions"
+              option-label="label"
+              option-value="value"
+              emit-value
+              map-options
+              outlined
+              dense
+              :label="t('Director')"
+            />
+            <div class="text-caption text-grey-6 q-mt-sm">
+              {{ t('Timeline data in this tab uses the selected director while the clients list stays aggregated.') }}
+            </div>
+          </q-card-section>
+        </q-card>
+        <JobTimeline :key="currentTimelineDirector || 'clients-timeline'" />
       </q-tab-panel>
     </q-tab-panels>
 
@@ -241,6 +265,29 @@ const clientsScopeLabel = computed(() => (
     ? `${activeDirectors.value.length} ${t('directors selected')}`
     : (activeDirectors.value[0] ?? t('No director selected'))
 ))
+const singletonTimelineDirector = ref('')
+const singletonTimelineDirectorOptions = computed(() => (
+  activeDirectors.value.map(value => ({ label: value, value }))
+))
+const currentTimelineDirector = computed(() => (
+  isCommonClients.value
+    ? (singletonTimelineDirector.value || activeDirectors.value[0] || '')
+    : (activeDirectors.value[0] || '')
+))
+
+function syncSingletonTimelineDirector() {
+  const validDirectors = activeDirectors.value
+  if (!validDirectors.length) {
+    singletonTimelineDirector.value = ''
+    return
+  }
+
+  if (validDirectors.includes(singletonTimelineDirector.value)) {
+    return
+  }
+
+  singletonTimelineDirector.value = validDirectors[0]
+}
 
 async function ensureSingleScopeDirector() {
   if (!isSingleDirectorScope.value) {
@@ -257,6 +304,20 @@ async function ensureSingleScopeDirector() {
   }
 
   await switchActiveDirector(scopeDirector)
+}
+
+async function ensureTimelineDirector() {
+  const targetDirector = currentTimelineDirector.value
+  if (!targetDirector) {
+    return null
+  }
+
+  if (auth.user?.director === targetDirector && director.isConnected) {
+    return targetDirector
+  }
+
+  await switchActiveDirector(targetDirector)
+  return targetDirector
 }
 
 async function refresh() {
@@ -308,6 +369,10 @@ onMounted(() => {
   releaseInfo.refresh().catch(() => {})
   director.fetchAvailableDirectors().catch(() => {})
   syncSelectedDirectors()
+  syncSingletonTimelineDirector()
+  if (tab.value === 'timeline') {
+    ensureTimelineDirector()
+  }
 })
 
 const clients = computed(() => directorCollection(rawClients.value).map((entry) => {
@@ -417,18 +482,26 @@ async function showStatus(client) {
 
 watch(() => directorOptions.value, () => {
   syncSelectedDirectors()
+  syncSingletonTimelineDirector()
 })
 
 watch(() => activeDirectors.value.join('\u0000'), () => {
-  if (!isSingleDirectorScope.value && tab.value === 'timeline') {
-    tab.value = 'list'
-  }
+  syncSingletonTimelineDirector()
   refresh()
+  if (tab.value === 'timeline') {
+    ensureTimelineDirector()
+  }
 })
 
 watch(tab, (value) => {
-  if (!isSingleDirectorScope.value && value === 'timeline') {
-    tab.value = 'list'
+  if (value === 'timeline') {
+    ensureTimelineDirector()
+  }
+})
+
+watch(() => singletonTimelineDirector.value, () => {
+  if (isCommonClients.value && tab.value === 'timeline') {
+    ensureTimelineDirector()
   }
 })
 </script>
