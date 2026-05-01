@@ -25,6 +25,7 @@ import {
   buildImportCommand,
   buildLabelBarcodesCommand,
   formatInDriveLabel,
+  shouldReloadAutochangerAfterCommand,
   shouldRefreshAutochangerTables,
 } from '../../src/utils/autochanger.js'
 
@@ -111,5 +112,12 @@ describe('autochanger helpers', () => {
       slotsLoading: true,
       commandRunning: false,
     })).toBe(false)
+  })
+
+  it('reloads autochanger data only after terminal command states', () => {
+    expect(shouldReloadAutochangerAfterCommand('completed')).toBe(true)
+    expect(shouldReloadAutochangerAfterCommand('failed')).toBe(true)
+    expect(shouldReloadAutochangerAfterCommand('waiting_for_input')).toBe(false)
+    expect(shouldReloadAutochangerAfterCommand('running')).toBe(false)
   })
 })

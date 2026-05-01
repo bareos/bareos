@@ -89,3 +89,7 @@ export function shouldRefreshAutochangerTables({
   void commandRunning
   return Boolean(selectedStorage) && !slotsLoading
 }
+
+export function shouldReloadAutochangerAfterCommand(status) {
+  return status === 'completed' || status === 'failed'
+}

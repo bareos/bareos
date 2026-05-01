@@ -307,4 +307,53 @@ describe('director store', () => {
     await expect(rawPromise).resolves.toBe('part one\npart two\n')
     expect(chunks).toEqual(['part one\n', 'part two\n'])
   })
+
+  it('reports tracked raw command lifecycle states including waiting prompts', async () => {
+    const auth = useAuthStore()
+    const director = useDirectorStore()
+    const states = []
+
+    auth.login('admin', 'bareos-dir', 'secret')
+
+    const rawPromise = director.rawCall('label barcodes', {
+      onStateChange: (state) => states.push(state),
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        director: 'bareos-dir',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'command_state',
+        id: '1',
+        status: 'running',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'command_state',
+        id: '1',
+        status: 'waiting_for_input',
+        prompt: 'select',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: '1: yes\n2: no\n',
+        prompt: 'select',
+      }),
+    })
+
+    await expect(rawPromise).resolves.toBe('1: yes\n2: no\n')
+    expect(states).toEqual([
+      { status: 'running', prompt: '', message: '' },
+      { status: 'waiting_for_input', prompt: 'select', message: '' },
+    ])
+  })
 })

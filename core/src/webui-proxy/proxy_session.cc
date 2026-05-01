@@ -277,36 +277,59 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     fprintf(stderr, "[proxy] %s command [id=%s]: %s\n", peer.c_str(),
             req_id.c_str(), command.c_str());
 
+    auto prompt_to_string = [](DirectorPrompt prompt) {
+      switch (prompt) {
+        case DirectorPrompt::Select:
+          return "select";
+        case DirectorPrompt::Sub:
+          return "sub";
+        case DirectorPrompt::Other:
+          return "other";
+        default:
+          return "main";
+      }
+    };
+    auto send_raw_response
+        = [&](const std::string& text, const char* prompt_str) {
+            json_t* resp = json_object();
+            json_object_set_new(resp, "type", json_string("raw_response"));
+            if (!req_id.empty()) {
+              json_object_set_new(resp, "id", json_string(req_id.c_str()));
+            }
+            json_object_set_new(resp, "command", json_string(command.c_str()));
+            json_object_set_new(resp, "text", json_string(text.c_str()));
+            if (prompt_str) {
+              json_object_set_new(resp, "prompt", json_string(prompt_str));
+            }
+            char* resp_str = json_dumps(resp, JSON_COMPACT);
+            json_decref(resp);
+            ws.SendText(std::string(resp_str));
+            free(resp_str);
+          };
+    auto send_command_state
+        = [&](const char* status, const char* prompt_str = nullptr,
+              const char* message = nullptr) {
+            json_t* resp = json_object();
+            json_object_set_new(resp, "type", json_string("command_state"));
+            if (!req_id.empty()) {
+              json_object_set_new(resp, "id", json_string(req_id.c_str()));
+            }
+            json_object_set_new(resp, "command", json_string(command.c_str()));
+            json_object_set_new(resp, "status", json_string(status));
+            if (prompt_str) {
+              json_object_set_new(resp, "prompt", json_string(prompt_str));
+            }
+            if (message) {
+              json_object_set_new(resp, "message", json_string(message));
+            }
+            char* resp_str = json_dumps(resp, JSON_COMPACT);
+            json_decref(resp);
+            ws.SendText(std::string(resp_str));
+            free(resp_str);
+          };
+
     try {
-      auto prompt_to_string = [](DirectorPrompt prompt) {
-        switch (prompt) {
-          case DirectorPrompt::Select:
-            return "select";
-          case DirectorPrompt::Sub:
-            return "sub";
-          case DirectorPrompt::Other:
-            return "other";
-          default:
-            return "main";
-        }
-      };
-      auto send_raw_response = [&](const std::string& text,
-                                   const char* prompt_str) {
-        json_t* resp = json_object();
-        json_object_set_new(resp, "type", json_string("raw_response"));
-        if (!req_id.empty()) {
-          json_object_set_new(resp, "id", json_string(req_id.c_str()));
-        }
-        json_object_set_new(resp, "command", json_string(command.c_str()));
-        json_object_set_new(resp, "text", json_string(text.c_str()));
-        if (prompt_str) {
-          json_object_set_new(resp, "prompt", json_string(prompt_str));
-        }
-        char* resp_str = json_dumps(resp, JSON_COMPACT);
-        json_decref(resp);
-        ws.SendText(std::string(resp_str));
-        free(resp_str);
-      };
+      if (!cfg.json_mode) { send_command_state("running"); }
 
       CallResult result = director.Call(
           command, (!cfg.json_mode && stream_raw)
@@ -351,13 +374,25 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
       } else {
         // Raw mode: {"type":"raw_response","id":...,"command":...,"text":"...",
         //            "prompt":"main"|"sub"|"select"|"other"|"more"}
+        const char* prompt_str = prompt_to_string(result.prompt);
+        send_command_state(result.prompt == DirectorPrompt::Main
+                               ? "completed"
+                               : "waiting_for_input",
+                           prompt_str);
         if (stream_raw) {
-          send_raw_response("", prompt_to_string(result.prompt));
+          send_raw_response("", prompt_str);
         } else {
-          send_raw_response(result.text, prompt_to_string(result.prompt));
+          send_raw_response(result.text, prompt_str);
         }
       }
     } catch (const std::exception& ex) {
+      if (!cfg.json_mode) {
+        try {
+          send_command_state("failed", nullptr, ex.what());
+        } catch (...) {
+          break;
+        }
+      }
       json_t* err = json_object();
       json_object_set_new(err, "type", json_string("error"));
       if (!req_id.empty()) {

@@ -333,6 +333,9 @@ export const useDirectorStore = defineStore('director', () => {
       const creds = auth.getCredentials()
       if (!creds) { return reject(new Error('Not logged in')) }
       const onChunk = typeof options.onChunk === 'function' ? options.onChunk : null
+      const onStateChange = typeof options.onStateChange === 'function'
+        ? options.onStateChange
+        : null
 
       const sock = new WebSocket(WS_URL)
       let cmdId = 1
@@ -340,6 +343,26 @@ export const useDirectorStore = defineStore('director', () => {
         sock.close()
         reject(new Error(`Raw command timed out: ${command}`))
       }, RAW_CMD_TIMEOUT_MS)
+      let lastStateSignature = ''
+      const emitStateChange = (nextState) => {
+        if (!onStateChange || !nextState?.status) {
+          return
+        }
+
+        const prompt = typeof nextState.prompt === 'string' ? nextState.prompt : ''
+        const message = typeof nextState.message === 'string' ? nextState.message : ''
+        const signature = `${nextState.status}\u0000${prompt}\u0000${message}`
+        if (signature === lastStateSignature) {
+          return
+        }
+
+        lastStateSignature = signature
+        onStateChange({
+          status: nextState.status,
+          prompt,
+          message,
+        })
+      }
 
       sock.onopen = () => {
         sock.send(JSON.stringify({
@@ -356,6 +379,7 @@ export const useDirectorStore = defineStore('director', () => {
         let msg
         try { msg = JSON.parse(event.data) } catch { return }
         if (msg.type === 'auth_ok') {
+          emitStateChange({ status: 'running' })
           sock.send(JSON.stringify({
             type: 'command', id: String(cmdId), command, stream: true,
           }))
@@ -363,17 +387,32 @@ export const useDirectorStore = defineStore('director', () => {
           clearTimeout(timer)
           sock.close()
           reject(new Error(msg.message ?? 'Auth failed'))
+        } else if (msg.type === 'command_state' && msg.id === String(cmdId)) {
+          emitStateChange({
+            status: typeof msg.status === 'string' ? msg.status : '',
+            prompt: typeof msg.prompt === 'string' ? msg.prompt : '',
+            message: typeof msg.message === 'string' ? msg.message : '',
+          })
         } else if (msg.type === 'raw_response' && msg.id === String(cmdId)) {
           accumulated += msg.text ?? ''
           onChunk?.(msg.text ?? '', msg)
-          // Accumulate until back at the main prompt
-          if (!msg.prompt || msg.prompt === 'main') {
+          if (!msg.prompt || msg.prompt !== 'more') {
+            emitStateChange({
+              status: msg.prompt === 'main' || !msg.prompt
+                ? 'completed'
+                : 'waiting_for_input',
+              prompt: typeof msg.prompt === 'string' ? msg.prompt : '',
+            })
             clearTimeout(timer)
             sock.close()
             resolve(accumulated)
           }
         } else if (msg.type === 'error' && msg.id === String(cmdId)) {
           clearTimeout(timer)
+          emitStateChange({
+            status: 'failed',
+            message: msg.message ?? 'Director error',
+          })
           sock.close()
           reject(new Error(msg.message ?? 'Director error'))
         }

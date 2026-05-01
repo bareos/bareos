@@ -486,16 +486,19 @@
         <div class="col">
           <div class="text-subtitle1">{{ commandLogTitle || t('Command output') }}</div>
           <div class="text-caption text-grey-7 command-log-command">{{ commandLogCommand }}</div>
+          <div v-if="commandStatusSummary" class="text-caption text-grey-7 q-mt-xs">
+            {{ commandStatusSummary }}
+          </div>
         </div>
         <q-badge
           v-if="commandRunning"
-          color="primary"
+          :color="commandStatusColor"
           class="q-mr-sm"
         >
           <q-spinner size="14px" class="q-mr-xs" />
-          {{ t('Running') }}
+          {{ commandStatusLabel }}
         </q-badge>
-        <q-badge v-else color="positive" class="q-mr-sm">{{ t('Completed') }}</q-badge>
+        <q-badge v-else :color="commandStatusColor" class="q-mr-sm">{{ commandStatusLabel }}</q-badge>
         <q-btn
           flat
           round
@@ -532,6 +535,7 @@ import {
   buildImportCommand,
   buildLabelBarcodesCommand,
   formatInDriveLabel,
+  shouldReloadAutochangerAfterCommand,
   shouldRefreshAutochangerTables,
 } from '../utils/autochanger.js'
 import {
@@ -590,6 +594,9 @@ const commandLogVisible = ref(false)
 const commandLogTitle = ref('')
 const commandLogCommand = ref('')
 const commandLogText = ref('')
+const commandStatus = ref('idle')
+const commandStatusPrompt = ref('')
+const commandStatusMessage = ref('')
 const commandLogScroll = ref(null)
 let _slotsTimer = null
 
@@ -709,6 +716,64 @@ const slotInDriveMap = computed(() => {
     }
   }
   return map
+})
+
+const commandStatusColor = computed(() => {
+  switch (commandStatus.value) {
+    case 'starting':
+      return 'info'
+    case 'running':
+      return 'primary'
+    case 'waiting_for_input':
+      return 'warning'
+    case 'failed':
+      return 'negative'
+    case 'completed':
+      return 'positive'
+    default:
+      return 'grey-6'
+  }
+})
+
+const commandStatusLabel = computed(() => {
+  switch (commandStatus.value) {
+    case 'starting':
+      return t('Starting...')
+    case 'running':
+      return t('Running')
+    case 'waiting_for_input':
+      return t('Waiting for input')
+    case 'failed':
+      return t('Failed')
+    case 'completed':
+      return t('Completed')
+    default:
+      return t('Idle')
+  }
+})
+
+const commandStatusSummary = computed(() => {
+  if (commandStatusMessage.value) {
+    return commandStatusMessage.value
+  }
+
+  if (commandStatus.value === 'waiting_for_input') {
+    if (commandStatusPrompt.value === 'select') {
+      return t('The director is waiting for a numeric selection.')
+    }
+
+    if (commandStatusPrompt.value === 'sub') {
+      return t('The director is waiting for additional input.')
+    }
+
+    return t('The director returned a non-final prompt.')
+  }
+
+  if (commandStatus.value === 'completed') {
+    return t('The command finished and returned to the main prompt.')
+  }
+
+  return ''
 })
 
 // ── Column definitions ────────────────────────────────────────
@@ -936,8 +1001,29 @@ async function runCmd(title, cmd) {
   commandLogCommand.value = cmd
   commandLogText.value = `$ ${cmd}\n\n`
   commandLogVisible.value = true
+  commandStatus.value = 'starting'
+  commandStatusPrompt.value = ''
+  commandStatusMessage.value = ''
   commandRunning.value = true
   await scrollCommandLogToBottom()
+
+  let finalState = {
+    status: 'starting',
+    prompt: '',
+    message: '',
+  }
+
+  const applyCommandState = (nextState) => {
+    finalState = {
+      ...finalState,
+      ...nextState,
+      status: nextState?.status || finalState.status,
+    }
+
+    commandStatus.value = finalState.status
+    commandStatusPrompt.value = finalState.prompt ?? ''
+    commandStatusMessage.value = finalState.message ?? ''
+  }
 
   try {
     await ensureSelectedStorageDirector()
@@ -947,40 +1033,60 @@ async function runCmd(title, cmd) {
         commandLogText.value += chunk
         void scrollCommandLogToBottom()
       },
+      onStateChange: applyCommandState,
     })
   } catch (e) {
     commandLogText.value += `\nError: ${e.message}\n`
+    applyCommandState({
+      status: 'failed',
+      message: e.message,
+    })
     void scrollCommandLogToBottom()
   } finally {
     commandRunning.value = false
   }
+
+  if (finalState.status === 'starting' || finalState.status === 'running') {
+    applyCommandState({
+      status: 'completed',
+      prompt: 'main',
+    })
+  }
+
+  return finalState
 }
 
 async function doUpdateSlots() {
-  await runCmd(
+  const result = await runCmd(
     'Update Slots',
     `update slots storage="${selectedStorageName.value}"`
   )
-  await loadSlots()
+  if (shouldReloadAutochangerAfterCommand(result?.status)) {
+    await loadSlots()
+  }
 }
 
 async function doImportAll() {
-  await runCmd(
+  const result = await runCmd(
     'Import All',
     `import storage="${selectedStorageName.value}"`
   )
-  await loadSlots()
+  if (shouldReloadAutochangerAfterCommand(result?.status)) {
+    await loadSlots()
+  }
 }
 
 async function doImport(slotNr) {
-  await runCmd(
+  const result = await runCmd(
       `Import Slot ${slotNr}`,
       buildImportCommand({
         storage: selectedStorageName.value,
         srcSlot: slotNr,
       })
     )
-  await loadSlots()
+  if (shouldReloadAutochangerAfterCommand(result?.status)) {
+    await loadSlots()
+  }
 }
 
 async function doExport(slotNr) {
@@ -990,14 +1096,16 @@ async function doExport(slotNr) {
     ok: { color: 'primary', label: 'Export' },
     cancel: true,
   }).onOk(async () => {
-    await runCmd(
+    const result = await runCmd(
       `Export Slot ${slotNr}`,
       buildExportCommand({
         storage: selectedStorageName.value,
         srcSlot: slotNr,
       })
     )
-    await loadSlots()
+    if (shouldReloadAutochangerAfterCommand(result?.status)) {
+      await loadSlots()
+    }
   })
 }
 
@@ -1027,38 +1135,46 @@ function openTransferDialog(slotNr) {
 async function doTransfer() {
   transferDialog.value = false
   const { srcSlot, dstSlot } = transferForm.value
-  await runCmd(
+  const result = await runCmd(
     `Transfer Slot ${srcSlot} → Slot ${dstSlot}`,
     `move storage="${selectedStorageName.value}"` +
     ` srcslots=${srcSlot} dstslots=${dstSlot}`
   )
-  await loadSlots()
+  if (shouldReloadAutochangerAfterCommand(result?.status)) {
+    await loadSlots()
+  }
 }
 
 async function doMount() {
   mountDialog.value = false
-  await runCmd(
+  const result = await runCmd(
     'Mount',
     `mount storage="${selectedStorageName.value}"` +
     ` slot=${mountForm.value.slot} drive=${mountForm.value.drive}`
   )
-  await loadSlots()
+  if (shouldReloadAutochangerAfterCommand(result?.status)) {
+    await loadSlots()
+  }
 }
 
 async function doUnmount(driveNr) {
-  await runCmd(
+  const result = await runCmd(
     `Unmount Drive ${driveNr}`,
     `unmount storage="${selectedStorageName.value}" drive=${driveNr}`
   )
-  await loadSlots()
+  if (shouldReloadAutochangerAfterCommand(result?.status)) {
+    await loadSlots()
+  }
 }
 
 async function doRelease(driveNr) {
-  await runCmd(
+  const result = await runCmd(
     `Release Drive ${driveNr}`,
     `release storage="${selectedStorageName.value}" drive=${driveNr}`
   )
-  await loadSlots()
+  if (shouldReloadAutochangerAfterCommand(result?.status)) {
+    await loadSlots()
+  }
 }
 
 async function doLabelBarcodes() {
@@ -1071,8 +1187,10 @@ async function doLabelBarcodes() {
     slots,
     encrypted,
   })
-  await runCmd(t('Label barcodes'), cmd)
-  await loadSlots()
+  const result = await runCmd(t('Label barcodes'), cmd)
+  if (shouldReloadAutochangerAfterCommand(result?.status)) {
+    await loadSlots()
+  }
 }
 
 function openSlotLabelDialog(slotNr) {
@@ -1095,8 +1213,10 @@ async function doSlotLabel() {
     slots: slot,
     encrypted,
   })
-  await runCmd(`Label Slot ${slot}`, cmd)
-  await loadSlots()
+  const result = await runCmd(`Label Slot ${slot}`, cmd)
+  if (shouldReloadAutochangerAfterCommand(result?.status)) {
+    await loadSlots()
+  }
 }
 
 // ── Drag-and-drop ─────────────────────────────────────────────
@@ -1125,12 +1245,14 @@ async function onDropToDrive(event, drive) {
   const slot = dragSlot.value
   dragSlot.value = null
   if (!slot || slot.type !== 'slot' || drive.content !== 'empty') return
-  await runCmd(
+  const result = await runCmd(
       `Mount Slot ${slot.slotnr} → Drive ${drive.slotnr}`,
       `mount storage="${selectedStorageName.value}"` +
       ` slot=${slot.slotnr} drive=${drive.slotnr}`
     )
-  await loadSlots()
+  if (shouldReloadAutochangerAfterCommand(result?.status)) {
+    await loadSlots()
+  }
 }
 
 function onDragOverSlot(event, row) {
@@ -1153,22 +1275,27 @@ async function onDropToSlot(event, row) {
   dragSlot.value = null
   if (!src || row.content !== 'empty' || row.slotnr === src.slotnr) return
   if (src.type === 'import_slot') {
-    await runCmd(
+    const result = await runCmd(
         `Import Slot ${src.slotnr} → Slot ${row.slotnr}`,
         buildImportCommand({
           storage: selectedStorageName.value,
           srcSlot: src.slotnr,
           dstSlot: row.slotnr,
-      })
+        })
     )
+    if (shouldReloadAutochangerAfterCommand(result?.status)) {
+      await loadSlots()
+    }
   } else {
-      await runCmd(
+      const result = await runCmd(
         `Move Slot ${src.slotnr} → Slot ${row.slotnr}`,
         `move storage="${selectedStorageName.value}"` +
         ` srcslots=${src.slotnr} dstslots=${row.slotnr}`
       )
-  }
-  await loadSlots()
+      if (shouldReloadAutochangerAfterCommand(result?.status)) {
+        await loadSlots()
+      }
+   }
 }
 
 function onDragOverImportSlot(event, row) {
@@ -1190,7 +1317,7 @@ async function onDropToImportSlot(event, row) {
   const src = dragSlot.value
   dragSlot.value = null
   if (!src || src.type !== 'slot' || row.content !== 'empty') return
-  await runCmd(
+  const result = await runCmd(
     `Export Slot ${src.slotnr} → Import/Export Slot ${row.slotnr}`,
     buildExportCommand({
       storage: selectedStorageName.value,
@@ -1198,7 +1325,9 @@ async function onDropToImportSlot(event, row) {
       dstSlot: row.slotnr,
     })
   )
-  await loadSlots()
+  if (shouldReloadAutochangerAfterCommand(result?.status)) {
+    await loadSlots()
+  }
 }
 
 async function showStatus() {
