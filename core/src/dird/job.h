@@ -69,7 +69,7 @@ bool CancelJob(UaContext* ua, JobControlRecord* jcr);
 void GetJobStorage(UnifiedStorageResource* store,
                    JobResource* job,
                    RunResource* run);
-void InitJcrJobRecord(JobControlRecord* jcr);
+bool InitJcrJobRecord(JobControlRecord* jcr);
 void UpdateJobEnd(JobControlRecord* jcr, int TermCode);
 bool SetupJob(JobControlRecord* jcr, bool suppress_output = false);
 void ExecuteJob(JobControlRecord* jcr);

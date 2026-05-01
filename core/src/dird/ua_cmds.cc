@@ -1892,7 +1892,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
   jcr->dir_impl->res.job = job;
   jcr->setJobType(JT_BACKUP);
   jcr->start_time = time(NULL);
-  InitJcrJobRecord(jcr);
+  if (!InitJcrJobRecord(jcr)) { return false; }
 
   if (!GetOrCreateClientRecord(jcr)) { return true; }
 

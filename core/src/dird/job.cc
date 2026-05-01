@@ -446,7 +446,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
   }
 
   // Create Job record
-  InitJcrJobRecord(jcr);
+  if (!InitJcrJobRecord(jcr)) { goto bail_out; }
 
   if (jcr->dir_impl->res.client) {
     if (!GetOrCreateClientRecord(jcr)) { goto bail_out; }
@@ -1682,7 +1682,7 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
   return true;
 }
 
-void InitJcrJobRecord(JobControlRecord* jcr)
+bool InitJcrJobRecord(JobControlRecord* jcr)
 {
   jcr->dir_impl->jr.SchedTime = jcr->sched_time;
   jcr->dir_impl->jr.StartTime = jcr->start_time;
@@ -1699,7 +1699,9 @@ void InitJcrJobRecord(JobControlRecord* jcr)
   std::string error;
   if (!UpdateJobExpiration(jcr, jcr->dir_impl->jr.StartTime, nullptr, &error)) {
     Jmsg(jcr, M_FATAL, 0, "%s\n", error.c_str());
+    return false;
   }
+  return true;
 }
 
 // Write status and such in DB
