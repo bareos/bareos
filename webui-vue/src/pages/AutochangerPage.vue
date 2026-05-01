@@ -138,7 +138,10 @@
                       @dragover="onDragOverSlot($event, props.row)"
                       @dragleave="onDragLeaveSlot"
                       @drop="onDropToSlot($event, props.row)"
-                      :class="{ 'dnd-drop-target': dragOverSlot === props.row.slotnr }">
+                      :class="{
+                        'dnd-drop-target': dragOverSlot === props.row.slotnr,
+                        'dnd-drop-container': props.row.content === 'empty',
+                      }">
                   <q-badge
                     v-if="slotInDriveMap[props.row.slotnr] != null"
                     color="blue"
@@ -146,8 +149,10 @@
                   <q-badge v-else
                            :color="props.value === 'full' ? 'green' : 'grey'"
                            :label="props.value" />
-                  <span v-if="dragOverSlot === props.row.slotnr"
-                        class="q-ml-sm text-caption text-grey-6">{{ t('drop to move') }}</span>
+                  <span
+                    v-if="dragOverSlot === props.row.slotnr"
+                    class="dnd-drop-hint text-caption text-grey-6"
+                  >{{ t('drop to move') }}</span>
                 </q-td>
               </template>
               <template #body-cell-mr_volname="props">
@@ -259,14 +264,14 @@
                       @drop="onDropToDrive($event, props.row)"
                       :class="{
                         'dnd-drop-target': dragOverDrive === props.row.slotnr && props.row.content === 'empty',
-                        'drive-drop-target': props.row.content === 'empty',
+                        'dnd-drop-container': props.row.content === 'empty',
                       }">
                    <q-badge :color="props.value === 'full' ? 'green' : 'grey'"
                             :label="props.value" />
                    <span
                      v-if="dragOverDrive === props.row.slotnr && props.row.content === 'empty'"
-                     class="drive-drop-hint text-caption text-grey-6"
-                   >{{ t('drop to mount') }}</span>
+                      class="dnd-drop-hint text-caption text-grey-6"
+                    >{{ t('drop to mount') }}</span>
                  </q-td>
                </template>
               <template #body-cell-volname="props">
@@ -1484,11 +1489,11 @@ onUnmounted(() => {
   outline-offset: -2px;
 }
 
-.drive-drop-target {
+.dnd-drop-container {
   position: relative;
 }
 
-.drive-drop-hint {
+.dnd-drop-hint {
   position: absolute;
   right: 8px;
   top: 50%;
