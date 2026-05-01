@@ -1708,6 +1708,8 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
            new_jobid, jcr->dir_impl->previous_jr->JobId, jcr->db->strerror());
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       mig_jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      UpdateJobEndRecord(jcr);
+      UpdateJobEndRecord(mig_jcr);
     }
     if (jcr->IsTerminatedOk()) {
       Jmsg(mig_jcr, M_INFO, 0,
