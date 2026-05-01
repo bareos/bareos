@@ -174,6 +174,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
 
   if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
+    return false;
   }
 
   // See if there is a next pool override.
@@ -493,11 +494,16 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
          jcr->dir_impl->previous_jr->cEndTime,
          edit_uint64(jcr->dir_impl->previous_jr->JobTDate, ec1), expire_time,
          edit_uint64(jcr->JobId, ec2));
-    jcr->db->SqlQuery(query.c_str());
-    Jmsg(jcr, M_INFO, 0,
-         "Job expiry set to %s from newest consolidated job %u.\n",
-         JobExpirationToString(jcr->dir_impl->jr.ExpireTime).c_str(),
-         jcr->dir_impl->previous_jr->JobId);
+    if (DbLocker _{jcr->db}; !jcr->db->SqlQuery(query.c_str())) {
+      Jmsg(jcr, M_WARNING, 0,
+           T_("Error updating consolidated job timestamps/expiry: ERR=%s\n"),
+           jcr->db->strerror());
+    } else {
+      Jmsg(jcr, M_INFO, 0,
+           "Job expiry set to %s from newest consolidated job %u.\n",
+           JobExpirationToString(jcr->dir_impl->jr.ExpireTime).c_str(),
+           jcr->dir_impl->previous_jr->JobId);
+    }
   }
 
   // Get the fully updated job record

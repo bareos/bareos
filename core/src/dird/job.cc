@@ -1689,7 +1689,7 @@ void InitJcrJobRecord(JobControlRecord* jcr)
   bstrncpy(jcr->dir_impl->jr.Job, jcr->Job, sizeof(jcr->dir_impl->jr.Job));
 
   std::string error;
-  if (!UpdateJobExpiration(jcr, jcr->dir_impl->jr.JobTDate, nullptr, &error)) {
+  if (!UpdateJobExpiration(jcr, jcr->dir_impl->jr.StartTime, nullptr, &error)) {
     Jmsg(jcr, M_FATAL, 0, "%s\n", error.c_str());
   }
 }

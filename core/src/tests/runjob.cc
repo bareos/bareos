@@ -19,13 +19,8 @@
    02110-1301, USA.
 */
 
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "include/bareos.h"
 
 #include "dird/ua.h"
 #include "dird/dird_conf.h"
@@ -242,6 +237,11 @@ TEST(JobExpirationSelection, PrefersLevelSpecificRetention)
   EXPECT_STREQ(
       directordaemon::GetConfiguredJobRetention(L_DIFFERENTIAL, &job, source),
       "2 days");
+  EXPECT_STREQ(source, "job DifferentialRetention");
+
+  EXPECT_STREQ(directordaemon::GetConfiguredJobRetention(L_VIRTUAL_DIFFERENTIAL,
+                                                         &job, source),
+               "2 days");
   EXPECT_STREQ(source, "job DifferentialRetention");
 
   EXPECT_STREQ(

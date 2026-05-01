@@ -353,8 +353,18 @@ static void ListTerminatedJobs(StatusPacket* sp)
         bstrncpy(level, "    ", sizeof(level));
         break;
       default:
-        bstrncpy(level, JobLevelToString(je.JobLevel), sizeof(level));
-        level[4] = 0;
+        switch (je.JobLevel) {
+          case L_VIRTUAL_FULL:
+            bstrncpy(level, "VFul", sizeof(level));
+            break;
+          case L_VIRTUAL_DIFFERENTIAL:
+            bstrncpy(level, "VDif", sizeof(level));
+            break;
+          default:
+            bstrncpy(level, JobLevelToString(je.JobLevel), sizeof(level));
+            level[4] = 0;
+            break;
+        }
         break;
     }
 

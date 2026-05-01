@@ -1057,7 +1057,11 @@ static bool UpdateJob(UaContext* ua)
     std::string message = T_("Expiry updated to ")
                           + JobExpirationToString(jr.ExpireTime)
                           + T_(" via update job command.");
-    if (!InsertJobLog(ua, jr.JobId, message)) { return false; }
+    if (!InsertJobLog(ua, jr.JobId, message)) {
+      ua->WarningMsg(
+          "%s",
+          T_("Expiry was updated, but writing the job log entry failed.\n"));
+    }
   }
   return true;
 }

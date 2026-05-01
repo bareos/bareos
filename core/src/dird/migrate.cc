@@ -1701,10 +1701,21 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
          jcr->dir_impl->previous_jr->cEndTime,
          edit_uint64(jcr->dir_impl->previous_jr->JobTDate, ec1), expire_time,
          new_jobid);
-    jcr->db->SqlQuery(query.c_str());
-    Jmsg(mig_jcr, M_INFO, 0, "Job expiry retained from original JobId %u: %s\n",
-         jcr->dir_impl->previous_jr->JobId,
-         JobExpirationToString(jcr->dir_impl->previous_jr->ExpireTime).c_str());
+    if (!jcr->db->SqlQuery(query.c_str())) {
+      Jmsg(mig_jcr, M_ERROR, 0,
+           T_("Error updating retained expiry for JobId %s from original JobId "
+              "%u: ERR=%s\n"),
+           new_jobid, jcr->dir_impl->previous_jr->JobId, jcr->db->strerror());
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      mig_jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+    }
+    if (jcr->IsTerminatedOk()) {
+      Jmsg(mig_jcr, M_INFO, 0,
+           "Job expiry retained from original JobId %u: %s\n",
+           jcr->dir_impl->previous_jr->JobId,
+           JobExpirationToString(jcr->dir_impl->previous_jr->ExpireTime)
+               .c_str());
+    }
 
     if (jcr->IsTerminatedOk()) {
       UaContext* ua;

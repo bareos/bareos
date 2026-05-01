@@ -611,6 +611,8 @@ bool DoNativeBackup(JobControlRecord* jcr)
   jcr->dir_impl->jr.StartTime = jcr->start_time;
   if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
+    TerminateBackupWithError(jcr);
+    return false;
   }
 
   /* If backup is in accurate mode, we send the list of
