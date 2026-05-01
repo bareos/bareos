@@ -80,7 +80,7 @@ check_log "${log_home}/full-3.out"
 job_rows="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Level FROM Job WHERE Name='${job_name}' ORDER BY JobId"
-)"
+)" && job_rows="$(printf '%s' "${job_rows}" | tr -d '\r')"
 
 full1_row="$(sed -n '1p' <<<"${job_rows}")"
 full2_row="$(sed -n '2p' <<<"${job_rows}")"
@@ -117,9 +117,9 @@ expect_grep "Purging the following 1 JobIds: ${full1_jobid}" \
   "${log_home}/prune.out" \
   "Expected oldest expired full job to be pruned"
 
-full1_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full1_jobid}")"
-full2_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full2_jobid}")"
-full3_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full3_jobid}")"
+full1_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full1_jobid}" | tr -d '\r')"
+full2_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full2_jobid}" | tr -d '\r')"
+full3_count="$(psql -d "${db_name}" -At -c "SELECT COUNT(*) FROM Job WHERE JobId=${full3_jobid}" | tr -d '\r')"
 
 if [ "${full1_count}" != "0" ]; then
   set_error "Expected oldest full ${full1_jobid} to be pruned, count=${full1_count}"
