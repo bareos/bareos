@@ -141,6 +141,7 @@
                       :class="{
                         'dnd-drop-target': dragOverSlot === props.row.slotnr,
                         'dnd-drop-container': props.row.content === 'empty',
+                        'slot-drop-target': props.row.content === 'empty',
                       }">
                   <q-badge
                     v-if="slotInDriveMap[props.row.slotnr] != null"
@@ -1493,12 +1494,17 @@ onUnmounted(() => {
   position: relative;
 }
 
+.slot-drop-target {
+  padding-right: 104px;
+}
+
 .dnd-drop-hint {
   position: absolute;
   right: 8px;
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
+  white-space: nowrap;
 }
 
 .command-log-command,
