@@ -62,9 +62,31 @@ run_bconsole
 # take the last 3 jobs (needed in case of test restart)
 
 jobids=$(grep "jobid" "$tmp/consolidate-empty-incrementals_incr.out" | tail -n 3 | sed 's/["jobid:]//g' | xargs | tr ' ' ',')
+purged_jobids="$(
+  sed -n "s/.*purging empty jobids //p" "$tmp/consolidate-empty-incrementals_messages.out" \
+    | tail -n 1 | tr -d '\r'
+)"
 
-expect_grep "purging empty jobids ${jobids}" \
-  "$tmp/consolidate-empty-incrementals_messages.out" \
-  "Removal of expected empty jobs was not successful."
+if [ -z "${purged_jobids}" ]; then
+  set_error "Removal of expected empty jobs was not successful."
+  exit 1
+fi
+
+IFS=',' read -r -a expected_jobids <<<"${jobids}"
+IFS=',' read -r -a actual_jobids <<<"${purged_jobids// /}"
+
+for purged_jobid in "${actual_jobids[@]}"; do
+  found=0
+  for expected_jobid in "${expected_jobids[@]}"; do
+    if [ "${purged_jobid}" = "${expected_jobid}" ]; then
+      found=1
+      break
+    fi
+  done
+  if [ "${found}" -ne 1 ]; then
+    set_error "Unexpected empty jobs were purged: expected subset of ${jobids}, got ${purged_jobids}"
+    exit 1
+  fi
+done
 
 end_test
