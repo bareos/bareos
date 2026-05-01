@@ -39,11 +39,11 @@ check_log "${tmp}/migrate-history.out"
 old_row="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Type, Level, COALESCE(BaseId, 0), COALESCE(ContentId, 0) FROM Job WHERE Name='${history_job_name}' AND Type='M' AND Level='F' ORDER BY JobId DESC LIMIT 1"
-)"
+)" && old_row="$(printf '%s' "${old_row}" | tr -d '\r')"
 control_row="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Type, Level, PriorJobId FROM Job WHERE Name='${history_migrate_name}' ORDER BY JobId DESC LIMIT 1"
-)"
+)" && control_row="$(printf '%s' "${control_row}" | tr -d '\r')"
 
 IFS='|' read -r old_jobid old_type old_level old_baseid old_contentid <<<"${old_row}"
 IFS='|' read -r control_jobid control_type control_level migrated_jobid <<<"${control_row}"
@@ -57,7 +57,7 @@ fi
 new_row="$(
   psql -d "${db_name}" -At -F '|' \
     -c "SELECT JobId, Type, Level, COALESCE(BaseId, 0), COALESCE(ContentId, 0), PriorJobId FROM Job WHERE JobId=${migrated_jobid}"
-)"
+)" && new_row="$(printf '%s' "${new_row}" | tr -d '\r')"
 
 IFS='|' read -r new_jobid new_type new_level new_baseid new_contentid new_priorjobid <<<"${new_row}"
 
