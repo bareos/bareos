@@ -398,7 +398,7 @@ export const useDirectorStore = defineStore('director', () => {
           onChunk?.(msg.text ?? '', msg)
           if (!msg.prompt || msg.prompt !== 'more') {
             emitStateChange({
-              status: msg.prompt === 'main' || !msg.prompt
+              status: msg.prompt === 'main' || msg.prompt === 'other' || !msg.prompt
                 ? 'completed'
                 : 'waiting_for_input',
               prompt: typeof msg.prompt === 'string' ? msg.prompt : '',

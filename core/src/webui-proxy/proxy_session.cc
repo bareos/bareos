@@ -306,6 +306,9 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
             ws.SendText(std::string(resp_str));
             free(resp_str);
           };
+    auto is_terminal_prompt = [](DirectorPrompt prompt) {
+      return prompt == DirectorPrompt::Main || prompt == DirectorPrompt::Other;
+    };
     auto send_command_state
         = [&](const char* status, const char* prompt_str = nullptr,
               const char* message = nullptr) {
@@ -375,7 +378,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
         // Raw mode: {"type":"raw_response","id":...,"command":...,"text":"...",
         //            "prompt":"main"|"sub"|"select"|"other"|"more"}
         const char* prompt_str = prompt_to_string(result.prompt);
-        send_command_state(result.prompt == DirectorPrompt::Main
+        send_command_state(is_terminal_prompt(result.prompt)
                                ? "completed"
                                : "waiting_for_input",
                            prompt_str);

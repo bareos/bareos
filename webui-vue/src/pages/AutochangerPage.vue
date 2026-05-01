@@ -257,13 +257,18 @@
                       @dragover="onDragOverDrive($event, props.row)"
                       @dragleave="onDragLeaveDrive"
                       @drop="onDropToDrive($event, props.row)"
-                      :class="{ 'dnd-drop-target': dragOverDrive === props.row.slotnr && props.row.content === 'empty' }">
-                  <q-badge :color="props.value === 'full' ? 'green' : 'grey'"
-                           :label="props.value" />
-                  <span v-if="dragOverDrive === props.row.slotnr && props.row.content === 'empty'"
-                        class="q-ml-sm text-caption text-grey-6">{{ t('drop to mount') }}</span>
-                </q-td>
-              </template>
+                      :class="{
+                        'dnd-drop-target': dragOverDrive === props.row.slotnr && props.row.content === 'empty',
+                        'drive-drop-target': props.row.content === 'empty',
+                      }">
+                   <q-badge :color="props.value === 'full' ? 'green' : 'grey'"
+                            :label="props.value" />
+                   <span
+                     v-if="dragOverDrive === props.row.slotnr && props.row.content === 'empty'"
+                     class="drive-drop-hint text-caption text-grey-6"
+                   >{{ t('drop to mount') }}</span>
+                 </q-td>
+               </template>
               <template #body-cell-volname="props">
                 <q-td :props="props">
                   <div v-if="props.value" class="row items-center no-wrap q-gutter-xs">
@@ -608,18 +613,18 @@ const dragOverImportSlot = ref(null) // import/export slot number hovered during
 
 // ── Computed ─────────────────────────────────────────────────
 
-const directorOptions = computed(() => {
-  const values = new Set([
-    ...director.availableDirectors,
-    ...settings.selectedDirectors,
-    auth.user?.director,
-    settings.directorName,
-  ].filter(Boolean))
-  return [...values].map(value => ({ label: value, value }))
-})
+const reachableDirectors = computed(() => [...new Set([
+  ...director.availableDirectors,
+  auth.user?.director,
+  settings.directorName,
+].filter(Boolean))])
+
+const directorOptions = computed(() => (
+  reachableDirectors.value.map(value => ({ label: value, value }))
+))
 
 function syncSelectedDirectors() {
-  const validDirectors = directorOptions.value.map(option => option.value)
+  const validDirectors = reachableDirectors.value
   const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
 
   if (selected.length > 0) {
@@ -637,7 +642,7 @@ function syncSelectedDirectors() {
 
 const activeDirectors = computed(() => {
   const selected = settings.selectedDirectors.filter(value => (
-    directorOptions.value.some(option => option.value === value)
+    reachableDirectors.value.includes(value)
   ))
 
   if (selected.length > 0) {
@@ -1477,6 +1482,18 @@ onUnmounted(() => {
   background: rgba(var(--q-primary), 0.12);
   outline: 2px dashed var(--q-primary);
   outline-offset: -2px;
+}
+
+.drive-drop-target {
+  position: relative;
+}
+
+.drive-drop-hint {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 .command-log-command,

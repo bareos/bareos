@@ -5,62 +5,189 @@ set -u
 exec 2>>"${tmp:-/tmp}/mtx-changer.out"
 echo "$0" "$@" >&2
 
-inv_file="${tmp:-/tmp}/mtx-inventory.txt"
-contents="$(cat "$inv_file")"
+readonly inv_file="${tmp:-/tmp}/mtx-inventory.txt"
+readonly media_root="${tmp:-/tmp}/autochanger-media"
+readonly robot_delay="${AUTOCHANGER_ROBOT_DELAY:-10}"
 
-#ctl="$1"
-cmd="$2"
-slot="$3"
-device="$4"
-drive="$5"
+# ctl is unused by the emulator, but Bareos still passes it in.
+readonly cmd="${2:-}"
+readonly slot="${3:-0}"
+readonly device="${4:-}"
+readonly drive="${5:-0}"
 
-case "$cmd" in
+fail()
+{
+  echo "mtx-changer: $*" >&2
+  echo "mtx-changer: $*"
+  exit 1
+}
+
+ensure_state()
+{
+  [[ -f "${inv_file}" ]] || fail "inventory file ${inv_file} missing"
+  mkdir -p "${media_root}"
+}
+
+slot_line()
+{
+  awk -F: -v slot="${slot}" '($1 == "S" || $1 == "I") && $2 == slot { print; exit }' \
+    "${inv_file}"
+}
+
+drive_line()
+{
+  awk -F: -v drive="${drive}" '$1 == "D" && $2 == drive { print; exit }' "${inv_file}"
+}
+
+slot_state()
+{
+  awk -F: -v slot="${slot}" '($1 == "S" || $1 == "I") && $2 == slot { print $3; exit }' \
+    "${inv_file}"
+}
+
+drive_state()
+{
+  awk -F: -v drive="${drive}" '$1 == "D" && $2 == drive { print $3; exit }' "${inv_file}"
+}
+
+slot_barcode()
+{
+  awk -F: -v slot="${slot}" \
+    '($1 == "S" || $1 == "I") && $2 == slot && $3 == "F" { print $4; exit }' \
+    "${inv_file}"
+}
+
+slot_kind()
+{
+  awk -F: -v slot="${slot}" '($1 == "S" || $1 == "I") && $2 == slot { print $1; exit }' \
+    "${inv_file}"
+}
+
+drive_barcode()
+{
+  awk -F: -v drive="${drive}" '$1 == "D" && $2 == drive && $3 == "F" { print $5; exit }' \
+    "${inv_file}"
+}
+
+drive_slot()
+{
+  awk -F: -v drive="${drive}" '$1 == "D" && $2 == drive && $3 == "F" { print $4; exit }' \
+    "${inv_file}"
+}
+
+media_path()
+{
+  local barcode="$1"
+  printf "%s/%s" "${media_root}" "${barcode}"
+}
+
+ensure_media_file()
+{
+  local barcode="$1"
+  local path
+  path="$(media_path "${barcode}")"
+  mkdir -p "$(dirname "${path}")"
+  touch "${path}"
+}
+
+link_drive_device()
+{
+  local barcode="$1"
+  ensure_media_file "${barcode}"
+  mkdir -p "$(dirname "${device}")"
+  ln -sfn "$(media_path "${barcode}")" "${device}"
+}
+
+unlink_drive_device()
+{
+  if [[ -L "${device}" || -e "${device}" ]]; then
+    rm -f "${device}"
+  fi
+}
+
+rewrite_state()
+{
+  local tmp_file
+  tmp_file="$(mktemp "${inv_file}.XXXXXX")"
+  {
+    grep -v -E "^(D:${drive}:|[SI]:${slot}:)" "${inv_file}" || true
+    printf '%s\n' "$1"
+    printf '%s\n' "$2"
+  } | sort -t: -k1,1 -k2,2n >"${tmp_file}"
+  mv "${tmp_file}" "${inv_file}"
+}
+
+ensure_slot_exists()
+{
+  [[ -n "$(slot_line)" ]] || fail "slot ${slot} does not exist"
+}
+
+ensure_drive_exists()
+{
+  [[ -n "$(drive_line)" ]] || fail "drive ${drive} does not exist"
+}
+
+robot_sleep()
+{
+  sleep "${robot_delay}"
+}
+
+ensure_state
+
+case "${cmd}" in
   slots)
-    grep -c '^S:' <<<"$contents"
+    awk -F: '$1 == "S" { ++count } END { print count + 0 }' "${inv_file}"
     ;;
   list)
-    awk -F: '$3 == "F" { 
-    if($1 == "D")
-      printf("%s:%s\n", $4, $5)
-    else
-      printf("%s:%s\n", $2, $4)
-    }' <<<"$contents"
+    awk -F: '
+      $1 == "D" && $3 == "F" { printf("%s:%s\n", $4, $5) }
+      $1 == "S" && $3 == "F" { printf("%s:%s\n", $2, $4) }
+    ' "${inv_file}"
     ;;
   listall)
-    cat <<<"$contents"
+    cat "${inv_file}"
     ;;
   loaded)
-    line="$(grep "D:${drive}:" <<<"$contents")"
-    barcode="$(cut -d: -f 5 <<< "$line")"
-    if [ "$(cut -d: -f 3 <<< "$line")" = F ]; then
-      ln -sf "$barcode" "${device}"
-      touch "${device}"
-      cut -d: -f 4 <<< "$line"
+    ensure_drive_exists
+    if [[ "$(drive_state)" == "F" ]]; then
+      barcode="$(drive_barcode)"
+      link_drive_device "${barcode}"
+      drive_slot
     else
-      [ -L "${device}" ] && rm "${device}"
+      unlink_drive_device
       echo 0
     fi
     ;;
   load)
-    barcode="$(awk -F: "/^S:$slot:F:/ { print \$NF }" <<<"$contents")"
-    ln -sf "$barcode" "${device}"
-    touch "${device}"
-    (
-    grep -v -E "^(D:${drive}:|S:${slot}:)" <<< "$contents"
-    printf "D:%d:F:%s:%s\n" "${drive}" "${slot}" "${barcode}"
-    printf "S:%d:E\n" "${slot}"
-    ) | sort -V > "$inv_file"
+    ensure_slot_exists
+    ensure_drive_exists
+
+    [[ "$(slot_state)" == "F" ]] || fail "slot ${slot} is empty"
+    [[ "$(drive_state)" == "E" ]] || fail "drive ${drive} is already loaded"
+
+    barcode="$(slot_barcode)"
+    robot_sleep
+    link_drive_device "${barcode}"
+    rewrite_state \
+      "D:${drive}:F:${slot}:${barcode}" \
+      "$(slot_kind):${slot}:E"
     ;;
   unload)
-    barcode="$(awk -F: "/^D:$drive:F:/ { print \$NF }" <<<"$contents")"
-    [ -L "${device}" ] && rm "${device}"
+    ensure_slot_exists
+    ensure_drive_exists
 
-    (
-    grep -v -E "^(D:${drive}:|S:${slot}:)" <<< "$contents"
-    printf "D:%d:E\n" "${drive}"
-    printf "S:%d:F:%s\n" "${slot}" "${barcode}"
-    ) | sort -V > "$inv_file"
+    [[ "$(drive_state)" == "F" ]] || fail "drive ${drive} is empty"
+    [[ "$(slot_state)" == "E" ]] || fail "slot ${slot} is already occupied"
+
+    barcode="$(drive_barcode)"
+    robot_sleep
+    unlink_drive_device
+    ensure_media_file "${barcode}"
+    rewrite_state \
+      "D:${drive}:E" \
+      "$(slot_kind):${slot}:F:${barcode}"
     ;;
   *)
+    fail "unsupported command ${cmd}"
     ;;
 esac

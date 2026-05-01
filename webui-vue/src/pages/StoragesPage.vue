@@ -420,18 +420,18 @@ const storageRows = ref([])
 const poolRows = ref([])
 const volumeRows = ref([])
 
-const directorOptions = computed(() => {
-  const values = new Set([
-    ...director.availableDirectors,
-    ...settings.selectedDirectors,
-    auth.user?.director,
-    settings.directorName,
-  ].filter(Boolean))
-  return [...values].map(value => ({ label: value, value }))
-})
+const reachableDirectors = computed(() => [...new Set([
+  ...director.availableDirectors,
+  auth.user?.director,
+  settings.directorName,
+].filter(Boolean))])
+
+const directorOptions = computed(() => (
+  reachableDirectors.value.map(value => ({ label: value, value }))
+))
 
 function syncSelectedDirectors() {
-  const validDirectors = directorOptions.value.map(option => option.value)
+  const validDirectors = reachableDirectors.value
   const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
 
   if (selected.length > 0) {
@@ -463,7 +463,7 @@ const selectedDirectorsModel = computed({
 
 const activeDirectors = computed(() => {
   const selected = settings.selectedDirectors.filter(value => (
-    directorOptions.value.some(option => option.value === value)
+    reachableDirectors.value.includes(value)
   ))
 
   if (selected.length > 0) {

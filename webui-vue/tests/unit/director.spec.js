@@ -356,4 +356,53 @@ describe('director store', () => {
       { status: 'waiting_for_input', prompt: 'select', message: '' },
     ])
   })
+
+  it('treats the raw "other" prompt as a completed command', async () => {
+    const auth = useAuthStore()
+    const director = useDirectorStore()
+    const states = []
+
+    auth.login('admin', 'bareos-dir', 'secret')
+
+    const rawPromise = director.rawCall('mount storage="File" slot=1 drive=0', {
+      onStateChange: (state) => states.push(state),
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        director: 'bareos-dir',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'command_state',
+        id: '1',
+        status: 'running',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'command_state',
+        id: '1',
+        status: 'completed',
+        prompt: 'other',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: '',
+        prompt: 'other',
+      }),
+    })
+
+    await expect(rawPromise).resolves.toBe('')
+    expect(states).toEqual([
+      { status: 'running', prompt: '', message: '' },
+      { status: 'completed', prompt: 'other', message: '' },
+    ])
+  })
 })
