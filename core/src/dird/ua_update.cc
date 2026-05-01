@@ -1013,7 +1013,7 @@ static bool UpdateJob(UaContext* ua)
 
     StartTime = StrToUtime(start_time);
     if (StartTime == 0) {
-      ua->ErrorMsg(T_("Improper date format: %s\n"), ua->argv[i]);
+      ua->ErrorMsg(T_("Improper date format: %s\n"), start_time);
       return false;
     }
     delta_start = StartTime - jr.StartTime;
