@@ -307,7 +307,10 @@ int ExcludeDependentJobsFromList(
 
     std::unordered_map<DBId_t, JobId_t> kept_jobids_by_content;
     kept_jobids_by_content.reserve(protected_content_ids.size());
+    std::unordered_map<JobId_t, const JobContentHistoryRecord*> jobs_by_id;
+    jobs_by_id.reserve(jobs.size());
     for (const auto& job : jobs) {
+      jobs_by_id.emplace(job.JobId, &job);
       if (!prune_candidates.contains(job.JobId)
           || !protected_content_ids.contains(job.ContentId)) {
         continue;
@@ -318,12 +321,11 @@ int ExcludeDependentJobsFromList(
     }
 
     for (auto it = prune_candidates.begin(); it != prune_candidates.end();) {
-      auto job = std::find_if(jobs.begin(), jobs.end(),
-                              [jobid = *it](const auto& candidate) {
-                                return candidate.JobId == jobid;
-                              });
-      if (job != jobs.end() && protected_content_ids.contains(job->ContentId)
-          && kept_jobids_by_content[job->ContentId] == job->JobId) {
+      auto job = jobs_by_id.find(*it);
+      if (job != jobs_by_id.end()
+          && protected_content_ids.contains(job->second->ContentId)
+          && kept_jobids_by_content[job->second->ContentId]
+                 == job->second->JobId) {
         it = prune_candidates.erase(it);
         changed = true;
       } else {
