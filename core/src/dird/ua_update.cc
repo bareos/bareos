@@ -963,10 +963,12 @@ static bool UpdateJob(UaContext* ua)
     return false;
   }
   jr.JobId = str_to_int64(ua->argv[i]);
-  DbLocker _{ua->db};
-  if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
-    ua->ErrorMsg("%s", ua->db->strerror());
-    return false;
+  {
+    DbLocker _{ua->db};
+    if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+      ua->ErrorMsg("%s", ua->db->strerror());
+      return false;
+    }
   }
 
   for (i = 0; kw[i]; i++) {
@@ -1049,9 +1051,12 @@ static bool UpdateJob(UaContext* ua)
        jr.Name, edit_int64(jr.ClientId, ed1), jr.cStartTime, jr.cSchedTime,
        jr.cEndTime, edit_uint64(jr.JobTDate, ed2), expire_time,
        edit_uint64(jr.FileSetId, ed3), jr.JobType, edit_int64(jr.JobId, ed4));
-  if (!ua->db->SqlQuery(cmd.c_str())) {
-    ua->ErrorMsg("%s", ua->db->strerror());
-    return false;
+  {
+    DbLocker _{ua->db};
+    if (!ua->db->SqlQuery(cmd.c_str())) {
+      ua->ErrorMsg("%s", ua->db->strerror());
+      return false;
+    }
   }
   if (expiry) {
     std::string message = T_("Expiry updated to ")
