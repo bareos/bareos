@@ -46,64 +46,6 @@
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated swipeable>
-      <q-tab-panel name="show" class="q-pa-none">
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header row items-center">
-            <span>{{ t('Schedules') }}</span>
-            <q-space />
-            <q-btn flat round dense icon="refresh" color="white" @click="refreshSchedules" />
-          </q-card-section>
-          <q-card-section class="q-pa-none">
-            <q-banner v-if="isCommonSchedules" dense rounded class="bg-info text-white q-mb-sm">
-              {{ t('Schedule toggles act on the director shown in each row when multiple directors are selected.') }}
-            </q-banner>
-            <q-banner v-if="schedError" dense class="bg-negative text-white">{{ schedError }}</q-banner>
-            <q-table
-              :rows="schedules"
-              :columns="schedCols"
-              row-key="scopeKey"
-              dense
-              flat
-              :loading="schedLoading"
-              :pagination="{ rowsPerPage: 20 }"
-            >
-              <template #body-cell-director="props">
-                <q-td :props="props">
-                  <q-chip dense square color="primary" text-color="white" :label="props.value" />
-                </q-td>
-              </template>
-              <template #body-cell-enabled="props">
-                <q-td :props="props" class="text-center">
-                  <q-badge :color="props.value ? 'positive' : 'negative'"
-                           :label="props.value ? t('Enabled') : t('Disabled')" />
-                </q-td>
-              </template>
-              <template #body-cell-run="props">
-                <q-td :props="props">
-                  <div v-for="(r, i) in props.value" :key="i" class="text-caption text-mono">{{ r }}</div>
-                  <span v-if="!props.value?.length" class="text-grey-5">—</span>
-                </q-td>
-              </template>
-              <template #body-cell-actions="props">
-                <q-td :props="props" class="text-center">
-                  <q-btn
-                    flat
-                    round
-                    dense
-                    size="sm"
-                    :icon="props.row.enabled ? 'pause' : 'play_arrow'"
-                    :color="props.row.enabled ? 'warning' : 'positive'"
-                    :title="props.row.enabled ? t('Disable') : t('Enable')"
-                    :loading="togglingName === props.row.scopeKey"
-                    @click="toggleSchedule(props.row)"
-                  />
-                </q-td>
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
-      </q-tab-panel>
-
       <q-tab-panel name="status" class="q-pa-none">
         <q-card flat bordered class="bareos-panel q-mb-md">
           <q-card-section class="panel-header">
@@ -242,6 +184,64 @@
                 </div>
               </div>
             </div>
+          </q-card-section>
+        </q-card>
+      </q-tab-panel>
+
+      <q-tab-panel name="show" class="q-pa-none">
+        <q-card flat bordered class="bareos-panel">
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Schedules') }}</span>
+            <q-space />
+            <q-btn flat round dense icon="refresh" color="white" @click="refreshSchedules" />
+          </q-card-section>
+          <q-card-section class="q-pa-none">
+            <q-banner v-if="isCommonSchedules" dense rounded class="bg-info text-white q-mb-sm">
+              {{ t('Schedule toggles act on the director shown in each row when multiple directors are selected.') }}
+            </q-banner>
+            <q-banner v-if="schedError" dense class="bg-negative text-white">{{ schedError }}</q-banner>
+            <q-table
+              :rows="schedules"
+              :columns="schedCols"
+              row-key="scopeKey"
+              dense
+              flat
+              :loading="schedLoading"
+              :pagination="{ rowsPerPage: 20 }"
+            >
+              <template #body-cell-director="props">
+                <q-td :props="props">
+                  <q-chip dense square color="primary" text-color="white" :label="props.value" />
+                </q-td>
+              </template>
+              <template #body-cell-enabled="props">
+                <q-td :props="props" class="text-center">
+                  <q-badge :color="props.value ? 'positive' : 'negative'"
+                           :label="props.value ? t('Enabled') : t('Disabled')" />
+                </q-td>
+              </template>
+              <template #body-cell-run="props">
+                <q-td :props="props">
+                  <div v-for="(r, i) in props.value" :key="i" class="text-caption text-mono">{{ r }}</div>
+                  <span v-if="!props.value?.length" class="text-grey-5">—</span>
+                </q-td>
+              </template>
+              <template #body-cell-actions="props">
+                <q-td :props="props" class="text-center">
+                  <q-btn
+                    flat
+                    round
+                    dense
+                    size="sm"
+                    :icon="props.row.enabled ? 'pause' : 'play_arrow'"
+                    :color="props.row.enabled ? 'warning' : 'positive'"
+                    :title="props.row.enabled ? t('Disable') : t('Enable')"
+                    :loading="togglingName === props.row.scopeKey"
+                    @click="toggleSchedule(props.row)"
+                  />
+                </q-td>
+              </template>
+            </q-table>
           </q-card-section>
         </q-card>
       </q-tab-panel>
