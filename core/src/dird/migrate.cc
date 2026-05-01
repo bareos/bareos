@@ -1148,6 +1148,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
     mig_jcr->cjcr = jcr;
 
     // Now reset the job record from the previous job
+    mig_jcr->dir_impl->previous_jr = prev_jr;
     mig_jcr->dir_impl->jr = prev_jr;
 
     // Update the jr to reflect the new values of PoolId and JobId.
