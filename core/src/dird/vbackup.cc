@@ -142,7 +142,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
     return false;
   }
 
-  if (jcr->is_JobLevel(L_VIRTUAL_FULL)) { ApplyPoolOverrides(jcr); }
+  ApplyPoolOverrides(jcr);
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
