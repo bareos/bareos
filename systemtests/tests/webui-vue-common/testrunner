@@ -37,6 +37,23 @@ proxy_log="${tmp}/webui-vue-proxy.out"
 frontend_log="${tmp}/webui-vue-frontend.out"
 playwright_log="${tmp}/webui-vue-playwright.out"
 proxy_config="${tmp}/bareos-webui-proxy.ini"
+PROXY_PID=""
+FRONTEND_PID=""
+
+function cleanup_children()
+{
+  if [[ -n "${FRONTEND_PID}" ]] && kill -0 "${FRONTEND_PID}" >/dev/null 2>&1; then
+    kill "${FRONTEND_PID}" || true
+    wait "${FRONTEND_PID}" || true
+  fi
+
+  if [[ -n "${PROXY_PID}" ]] && kill -0 "${PROXY_PID}" >/dev/null 2>&1; then
+    kill "${PROXY_PID}" || true
+    wait "${PROXY_PID}" || true
+  fi
+}
+
+trap cleanup_children EXIT
 
 function wait_for_http()
 {
@@ -153,10 +170,7 @@ if [[ -n "${BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT}" ]]; then
   fi
 fi
 
-kill "${FRONTEND_PID}"
-wait "${FRONTEND_PID}" || true
-kill "${PROXY_PID}"
-wait "${PROXY_PID}" || true
+cleanup_children
 
 stop_bareos
 

@@ -419,6 +419,8 @@ else()
 
     set(TEST_NAME "${profile}")
     set(BAREOS_WEBUI_PROFILE "${profile}")
+    set(BAREOS_WEBUI_USERNAME "${profile}")
+    set(BAREOS_WEBUI_PASSWORD "${profile}")
     set(BAREOS_WEBUI_TESTNAME "")
     message(STATUS "Configuring test: ${WEBUI_TEST_PREFIX}${TEST_NAME}")
 
