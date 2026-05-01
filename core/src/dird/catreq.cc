@@ -735,8 +735,8 @@ bool DespoolAttributesFromFile(JobControlRecord* jcr, const char* file)
     goto bail_out;
   }
 
-#if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
-  posix_fadvise(spool_fd, 0, 0, POSIX_FADV_WILLNEED);
+#if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_NOREUSE)
+  posix_fadvise(spool_fd, 0, 0, POSIX_FADV_NOREUSE);
 #endif
 
   while ((nbytes = read(spool_fd, (char*)&pktsiz, sizeof(int32_t)))

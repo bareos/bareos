@@ -222,8 +222,8 @@ bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size),
     return false;
   }
 
-#if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
-  posix_fadvise(spool_fd_, 0, 0, POSIX_FADV_WILLNEED);
+#if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_NOREUSE)
+  posix_fadvise(spool_fd_, 0, 0, POSIX_FADV_NOREUSE);
 #endif
 
   while ((nbytes = read(spool_fd_, (char*)&pktsiz, sizeof(int32_t)))
