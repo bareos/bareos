@@ -107,6 +107,23 @@ TEST(Pruning, ExcludeDependentJobsAllowsCopies)
   EXPECT_EQ(pruninglist[0], 1);
 }
 
+TEST(Pruning, ExcludeDependentJobsKeepsSingleRepresentative)
+{
+  std::vector<JobId_t> pruninglist{1, 2};
+  std::vector<directordaemon::JobContentHistoryRecord> jobs{
+      {.JobId = 1, .BaseId = 0, .ContentId = 6},
+      {.JobId = 2, .BaseId = 0, .ContentId = 6},
+      {.JobId = 3, .BaseId = 6, .ContentId = 7},
+  };
+
+  int NumJobsToBePruned
+      = directordaemon::ExcludeDependentJobsFromList(pruninglist, jobs);
+
+  EXPECT_EQ(NumJobsToBePruned, 1);
+  ASSERT_EQ(pruninglist.size(), 1U);
+  EXPECT_EQ(pruninglist[0], 1);
+}
+
 TEST(Pruning, ExcludeJobsByKeepCountProtectsNewestCandidates)
 {
   std::vector<JobId_t> pruninglist{1, 2, 3};

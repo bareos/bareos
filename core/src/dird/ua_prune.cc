@@ -103,14 +103,70 @@ static int JobContentHistoryHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
+template <typename T>
+static std::string JoinNumericIds(const std::vector<T>& ids)
+{
+  std::string values;
+  for (auto id : ids) {
+    if (id == 0) { continue; }
+    if (!values.empty()) { values += ','; }
+    values += std::to_string(id);
+  }
+  return values;
+}
+
 static bool LoadJobContentHistory(UaContext* ua,
+                                  const std::vector<JobId_t>& prune_list,
                                   std::vector<JobContentHistoryRecord>& jobs)
 {
   jobs.clear();
-  return ua->db->SqlQuery(
-      "SELECT JobId, COALESCE(BaseId, 0), "
-      "COALESCE(NULLIF(ContentId, 0), JobId) FROM Job",
-      JobContentHistoryHandler, &jobs);
+  std::vector<JobId_t> candidate_jobids;
+  candidate_jobids.reserve(prune_list.size());
+  for (auto jobid : prune_list) {
+    if (jobid != 0) { candidate_jobids.push_back(jobid); }
+  }
+  if (candidate_jobids.empty()) { return true; }
+
+  PoolMem query(PM_MESSAGE);
+  std::string jobids = JoinNumericIds(candidate_jobids);
+  Mmsg(query,
+       "SELECT JobId, COALESCE(BaseId, 0), "
+       "COALESCE(NULLIF(ContentId, 0), JobId) FROM Job "
+       "WHERE JobId IN (%s)",
+       jobids.c_str());
+  if (!ua->db->SqlQuery(query.c_str(), JobContentHistoryHandler, &jobs)) {
+    return false;
+  }
+  if (jobs.empty()) { return true; }
+
+  std::vector<DBId_t> candidate_content_ids;
+  candidate_content_ids.reserve(jobs.size());
+  for (const auto& job : jobs) {
+    if (job.ContentId != 0) { candidate_content_ids.push_back(job.ContentId); }
+  }
+  if (candidate_content_ids.empty()) { return true; }
+
+  std::vector<JobContentHistoryRecord> related_jobs;
+  std::string content_ids = JoinNumericIds(candidate_content_ids);
+  Mmsg(query,
+       "SELECT JobId, COALESCE(BaseId, 0), "
+       "COALESCE(NULLIF(ContentId, 0), JobId) FROM Job "
+       "WHERE JobStatus IN ('T', 'W') "
+       "AND (BaseId IN (%s) "
+       "OR COALESCE(NULLIF(ContentId, 0), JobId) IN (%s))",
+       content_ids.c_str(), content_ids.c_str());
+  if (!ua->db->SqlQuery(query.c_str(), JobContentHistoryHandler,
+                        &related_jobs)) {
+    return false;
+  }
+
+  std::unordered_set<JobId_t> loaded_jobids;
+  loaded_jobids.reserve(jobs.size() + related_jobs.size());
+  for (const auto& job : jobs) { loaded_jobids.insert(job.JobId); }
+  for (const auto& job : related_jobs) {
+    if (loaded_jobids.insert(job.JobId).second) { jobs.push_back(job); }
+  }
+  return true;
 }
 
 static int JobKeepCountHandler(void* ctx, int num_fields, char** row)
@@ -136,13 +192,68 @@ static int JobKeepCountHandler(void* ctx, int num_fields, char** row)
 }
 
 static bool LoadJobKeepCountRecords(UaContext* ua,
+                                    const std::vector<JobId_t>& prune_list,
                                     std::vector<JobKeepCountRecord>& jobs)
 {
   jobs.clear();
-  return ua->db->SqlQuery(
-      "SELECT JobId, Name, ClientId, FileSetId, JobTDate "
-      "FROM Job WHERE Type='B' AND JobStatus IN ('T', 'W')",
-      JobKeepCountHandler, &jobs);
+  std::vector<JobId_t> candidate_jobids;
+  candidate_jobids.reserve(prune_list.size());
+  for (auto jobid : prune_list) {
+    if (jobid != 0) { candidate_jobids.push_back(jobid); }
+  }
+  if (candidate_jobids.empty()) { return true; }
+
+  PoolMem query(PM_MESSAGE);
+  std::string jobids = JoinNumericIds(candidate_jobids);
+  Mmsg(query,
+       "SELECT JobId, Name, ClientId, FileSetId, JobTDate "
+       "FROM Job WHERE Type='B' AND JobStatus IN ('T', 'W') "
+       "AND JobId IN (%s)",
+       jobids.c_str());
+  if (!ua->db->SqlQuery(query.c_str(), JobKeepCountHandler, &jobs)) {
+    return false;
+  }
+  if (jobs.empty()) { return true; }
+
+  std::vector<std::pair<DBId_t, DBId_t>> candidate_groups;
+  candidate_groups.reserve(jobs.size());
+  for (const auto& job : jobs) {
+    if (job.KeepNumber <= 0) { continue; }
+    auto group = std::make_pair(job.ClientId, job.FileSetId);
+    if (std::find(candidate_groups.begin(), candidate_groups.end(), group)
+        == candidate_groups.end()) {
+      candidate_groups.push_back(group);
+    }
+  }
+  if (candidate_groups.empty()) {
+    jobs.clear();
+    return true;
+  }
+
+  std::string group_filter;
+  for (const auto& [client_id, fileset_id] : candidate_groups) {
+    if (!group_filter.empty()) { group_filter += " OR "; }
+    group_filter += "(ClientId=" + std::to_string(client_id)
+                    + " AND FileSetId=" + std::to_string(fileset_id) + ")";
+  }
+
+  std::vector<JobKeepCountRecord> related_jobs;
+  Mmsg(query,
+       "SELECT JobId, Name, ClientId, FileSetId, JobTDate "
+       "FROM Job WHERE Type='B' AND JobStatus IN ('T', 'W') "
+       "AND (%s)",
+       group_filter.c_str());
+  if (!ua->db->SqlQuery(query.c_str(), JobKeepCountHandler, &related_jobs)) {
+    return false;
+  }
+
+  std::unordered_set<JobId_t> loaded_jobids;
+  loaded_jobids.reserve(jobs.size() + related_jobs.size());
+  for (const auto& job : jobs) { loaded_jobids.insert(job.JobId); }
+  for (const auto& job : related_jobs) {
+    if (loaded_jobids.insert(job.JobId).second) { jobs.push_back(job); }
+  }
+  return true;
 }
 
 int ExcludeDependentJobsFromList(
@@ -194,12 +305,25 @@ int ExcludeDependentJobsFromList(
 
     if (protected_content_ids.empty()) { break; }
 
+    std::unordered_map<DBId_t, JobId_t> kept_jobids_by_content;
+    kept_jobids_by_content.reserve(protected_content_ids.size());
+    for (const auto& job : jobs) {
+      if (!prune_candidates.contains(job.JobId)
+          || !protected_content_ids.contains(job.ContentId)) {
+        continue;
+      }
+      auto [it, inserted]
+          = kept_jobids_by_content.emplace(job.ContentId, job.JobId);
+      if (!inserted && it->second < job.JobId) { it->second = job.JobId; }
+    }
+
     for (auto it = prune_candidates.begin(); it != prune_candidates.end();) {
       auto job = std::find_if(jobs.begin(), jobs.end(),
                               [jobid = *it](const auto& candidate) {
                                 return candidate.JobId == jobid;
                               });
-      if (job != jobs.end() && protected_content_ids.contains(job->ContentId)) {
+      if (job != jobs.end() && protected_content_ids.contains(job->ContentId)
+          && kept_jobids_by_content[job->ContentId] == job->JobId) {
         it = prune_candidates.erase(it);
         changed = true;
       } else {
@@ -967,7 +1091,7 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
   }
 
   std::vector<JobContentHistoryRecord> jobs;
-  if (!LoadJobContentHistory(ua, jobs)) {
+  if (!LoadJobContentHistory(ua, prune_list, jobs)) {
     ua->ErrorMsg("%s", ua->db->strerror());
     DropTempTables(ua);
     return true;
@@ -975,7 +1099,7 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
   ExcludeDependentJobsFromList(prune_list, jobs);
 
   std::vector<JobKeepCountRecord> keep_jobs;
-  if (!LoadJobKeepCountRecords(ua, keep_jobs)) {
+  if (!LoadJobKeepCountRecords(ua, prune_list, keep_jobs)) {
     ua->ErrorMsg("%s", ua->db->strerror());
     DropTempTables(ua);
     return true;
@@ -1100,13 +1224,13 @@ int GetPruneListForVolume(UaContext* ua,
 
   int NumJobsToBePruned = ExcludeRunningJobsFromList(prune_list);
   std::vector<JobContentHistoryRecord> jobs;
-  if (!LoadJobContentHistory(ua, jobs)) {
+  if (!LoadJobContentHistory(ua, prune_list, jobs)) {
     if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
     return 0;
   }
   NumJobsToBePruned = ExcludeDependentJobsFromList(prune_list, jobs);
   std::vector<JobKeepCountRecord> keep_jobs;
-  if (!LoadJobKeepCountRecords(ua, keep_jobs)) {
+  if (!LoadJobKeepCountRecords(ua, prune_list, keep_jobs)) {
     if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
     return 0;
   }
