@@ -677,6 +677,12 @@ void UpdateJobEnd(JobControlRecord* jcr, int TermCode)
 static void* job_thread(void* arg)
 {
   JobControlRecord* jcr = (JobControlRecord*)arg;
+  auto abort_job_start = [&jcr]() -> void* {
+    UpdateJobEnd(jcr, JS_ErrorTerminated);
+    GeneratePluginEvent(jcr, bDirEventJobEnd);
+    Dmsg1(50, "======== End Job stat=%c ==========\n", jcr->getJobStatus());
+    return NULL;
+  };
 
   DetachIfNotDetached(pthread_self());
 
@@ -715,6 +721,7 @@ static void* job_thread(void* arg)
 
   if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
+    return abort_job_start();
   }
 
   // Run any script BeforeJob on dird
@@ -731,6 +738,7 @@ static void* job_thread(void* arg)
   jcr->dir_impl->jr.StartTime = jcr->start_time;
   if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
+    return abort_job_start();
   }
 
   GeneratePluginEvent(jcr, bDirEventJobRun);
