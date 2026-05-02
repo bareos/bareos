@@ -234,6 +234,24 @@
                   <q-item-label caption>
                      {{ formatNumber(job.files ?? 0, settings.locale) }} {{ t('Files') }} &middot; {{ jobBytes(job) }} &middot; {{ formatDuration(elapsedSecs(job)) }}
                   </q-item-label>
+                  <q-item-label v-if="runtimeRateSummary(job)" caption class="text-grey-7">
+                    {{ runtimeRateSummary(job) }}
+                  </q-item-label>
+                  <q-item-label
+                    v-if="runtimeStorageSummary(job)"
+                    caption
+                    class="text-grey-7"
+                  >
+                    {{ runtimeStorageSummary(job) }}
+                  </q-item-label>
+                  <q-item-label
+                    v-if="job.runtime?.currentFile"
+                    caption
+                    class="ellipsis"
+                    :title="job.runtime.currentFile"
+                  >
+                    {{ job.runtime.currentFile }}
+                  </q-item-label>
                   <q-linear-progress indeterminate color="positive" class="q-mt-xs" style="height:6px; border-radius:3px" />
                 </q-item-section>
                 <q-item-section side>
@@ -600,6 +618,56 @@ const maxSpeedBps = computed(() => Math.max(1, ...recentJobs.value
 function bytesGauge(val) { return val / maxBytes.value }
 function durationGauge(str) { return parseDurationSecs(str) / maxDurationSecs.value }
 function speedGauge(row) { return jobSpeedBps(row) / maxSpeedBps.value }
+
+function formatRuntimeRate(value) {
+  return value == null ? '' : `${fmtBytes(value)}/s`
+}
+
+function runtimeRateSummary(job) {
+  const runtime = job.runtime
+  if (!runtime) {
+    return ''
+  }
+
+  const details = []
+  if (runtime.averageBytesPerSecond != null) {
+    details.push(`${t('Average')}: ${formatRuntimeRate(runtime.averageBytesPerSecond)}`)
+  }
+  if (runtime.lastBytesPerSecond != null) {
+    details.push(`${t('Last')}: ${formatRuntimeRate(runtime.lastBytesPerSecond)}`)
+  }
+
+  return details.join(' · ')
+}
+
+function runtimeStorageSummary(job) {
+  const runtime = job.runtime
+  if (!runtime) {
+    return ''
+  }
+
+  const details = []
+
+  if (runtime.pool || runtime.writeVolume || runtime.writeDevice) {
+    details.push([
+      runtime.pool ? `${t('Pool')}: ${runtime.pool}` : null,
+      runtime.writeVolume ? `${t('Volume')}: ${runtime.writeVolume}` : null,
+      runtime.writeDevice ? `${t('Device')}: ${runtime.writeDevice}` : null,
+    ].filter(Boolean).join(' · '))
+  }
+
+  if (runtime.spooling) {
+    details.push(t('Spooling'))
+  }
+  if (runtime.despooling) {
+    details.push(t('Despooling'))
+  }
+  if (runtime.despoolWait) {
+    details.push(t('Waiting for despool'))
+  }
+
+  return details.join(' · ')
+}
 
 const summaryStats = computed(() => {
   const countByStatus = (code) => past24hJobs.value.filter(j => j.status === code).length

@@ -140,6 +140,25 @@ describe('director aggregate dashboard helpers', () => {
     socket.onmessage?.({
       data: JSON.stringify({
         type: 'response',
+        id: commandIds.get('status director'),
+        data: {
+          running: [{
+            jobid: '8',
+            sd_files: '11',
+            sd_bytes: '2048',
+            sd_average_bytes_per_second: '512',
+            sd_last_bytes_per_second: '256',
+            sd_current_file: '/srv/data/current-file.txt',
+            sd_write_device: 'File',
+            sd_write_volume: 'Vol001',
+            sd_pool: 'Full',
+          }],
+        },
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
         id: commandIds.get('llist jobs last'),
         data: {
           jobs: [{
@@ -198,6 +217,14 @@ describe('director aggregate dashboard helpers', () => {
         expect.objectContaining({
           director: 'prod-dir',
           id: 8,
+          files: 11,
+          bytes: 2048,
+          runtime: expect.objectContaining({
+            currentFile: '/srv/data/current-file.txt',
+            writeDevice: 'File',
+            writeVolume: 'Vol001',
+            pool: 'Full',
+          }),
         }),
       ],
       recentJobs: [

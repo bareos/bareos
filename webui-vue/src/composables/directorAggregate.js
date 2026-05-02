@@ -21,6 +21,7 @@
 
 import {
   directorCollection,
+  mergeStorageRuntime,
   normaliseJob,
 } from './useDirectorFetch.js'
 
@@ -214,6 +215,18 @@ function sortJobsByStartTime(jobs) {
   })
 }
 
+function buildRunningRuntimeMap(result) {
+  if (result.status !== 'fulfilled') {
+    return new Map()
+  }
+
+  return new Map(
+    directorCollection(result.value?.running)
+      .filter(entry => entry?.jobid !== null && entry?.jobid !== undefined)
+      .map(entry => [String(entry.jobid), entry])
+  )
+}
+
 export async function fetchDirectorDashboardSnapshot(credentials, options = {}) {
   const client = await createDirectorCommandClient(credentials, options)
 
@@ -221,6 +234,7 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
     const [
       past24hResult,
       runningResult,
+      statusResult,
       lastResult,
       totalsResult,
       clientsResult,
@@ -228,11 +242,14 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
     ] = await Promise.allSettled([
       client.call('llist jobs days=1'),
       client.call('list jobs jobstatus=R'),
+      client.call('status director'),
       client.call('llist jobs last'),
       client.call('list jobtotals'),
       client.call('list clients'),
       client.call('list storages'),
     ])
+
+    const runningRuntimeMap = buildRunningRuntimeMap(statusResult)
 
     return {
       director: credentials.director,
@@ -242,6 +259,10 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
         : [],
       runningJobs: runningResult.status === 'fulfilled'
         ? decorateJobs(runningResult.value?.jobs, credentials.director)
+          .map(job => mergeStorageRuntime(
+            job,
+            runningRuntimeMap.get(String(job.id))
+          ))
         : [],
       recentJobs: lastResult.status === 'fulfilled'
         ? decorateJobs(lastResult.value?.jobs, credentials.director)

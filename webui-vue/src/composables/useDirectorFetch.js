@@ -55,6 +55,10 @@ export function directorCollection(value) {
   ))
 }
 
+export function quoteDirectorString(value) {
+  return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
+
 export function directorCommandAllowed(commands, command) {
   return commands?.[command]?.permission === true
 }
@@ -87,7 +91,7 @@ export function normaliseDirectorCommandPermissions(commands) {
  */
 export function normaliseJob(j) {
   const endtime = j.endtime ?? j.realendtime ?? ''
-  return {
+  const job = {
     id:        Number(j.jobid ?? j.id),
     name:      j.name       ?? '',
     client:    j.client     ?? j.clientname ?? '',
@@ -100,6 +104,134 @@ export function normaliseJob(j) {
     files:     Number(j.jobfiles   ?? j.files   ?? 0),
     bytes:     Number(j.jobbytes   ?? j.bytes   ?? 0),
     errors:    Number(j.joberrors  ?? j.errors  ?? 0),
+  }
+
+  return mergeStorageRuntime(job, j)
+}
+
+function runtimeNumber(value) {
+  if (value === null || value === undefined || value === '') {
+    return null
+  }
+
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+function runtimeString(value) {
+  if (value === null || value === undefined) {
+    return ''
+  }
+
+  return String(value)
+}
+
+export function extractStorageRuntime(entry) {
+  if (!entry || typeof entry !== 'object') {
+    return null
+  }
+
+  const runtime = {
+    sampleTime: runtimeNumber(entry.sd_sample_time),
+    jobStatus: runtimeNumber(entry.sd_job_status),
+    files: runtimeNumber(entry.sd_files),
+    bytes: runtimeNumber(entry.sd_bytes),
+    averageBytesPerSecond: runtimeNumber(entry.sd_average_bytes_per_second),
+    lastBytesPerSecond: runtimeNumber(entry.sd_last_bytes_per_second),
+    spooling: runtimeNumber(entry.sd_spooling) === 1,
+    despooling: runtimeNumber(entry.sd_despooling) === 1,
+    despoolWait: runtimeNumber(entry.sd_despool_wait) === 1,
+    currentFile: runtimeString(entry.sd_current_file),
+    readDevice: runtimeString(entry.sd_read_device),
+    writeDevice: runtimeString(entry.sd_write_device),
+    readVolume: runtimeString(entry.sd_read_volume),
+    writeVolume: runtimeString(entry.sd_write_volume),
+    pool: runtimeString(entry.sd_pool),
+  }
+
+  const hasRuntime = runtime.sampleTime !== null
+    || runtime.files !== null
+    || runtime.bytes !== null
+    || runtime.averageBytesPerSecond !== null
+    || runtime.lastBytesPerSecond !== null
+    || runtime.spooling
+    || runtime.despooling
+    || runtime.despoolWait
+    || runtime.currentFile !== ''
+    || runtime.readDevice !== ''
+    || runtime.writeDevice !== ''
+    || runtime.readVolume !== ''
+    || runtime.writeVolume !== ''
+    || runtime.pool !== ''
+
+  return hasRuntime ? runtime : null
+}
+
+export function mergeStorageRuntime(job, entry) {
+  const runtime = extractStorageRuntime(entry) ?? job.runtime ?? null
+  if (!runtime) {
+    return job
+  }
+
+  return {
+    ...job,
+    files: runtime.files ?? job.files,
+    bytes: runtime.bytes ?? job.bytes,
+    runtime,
+  }
+}
+
+function historyNumber(value) {
+  if (value === null || value === undefined || value === '') {
+    return null
+  }
+
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+function historyString(value) {
+  if (value === null || value === undefined) {
+    return ''
+  }
+
+  return String(value)
+}
+
+export function normaliseJobHistoryEvent(entry) {
+  if (!entry || typeof entry !== 'object') {
+    return null
+  }
+
+  return {
+    timestamp: historyNumber(entry.timestamp),
+    source: historyString(entry.source),
+    previousStatus: historyString(entry.previous_status),
+    previousStatusLong: historyString(entry.previous_status_long),
+    newStatus: historyString(entry.new_status),
+    newStatusLong: historyString(entry.new_status_long),
+    directorStatus: historyString(entry.director_status),
+    directorStatusLong: historyString(entry.director_status_long),
+    storageDaemonStatus: historyString(entry.storage_daemon_status),
+    storageDaemonStatusLong: historyString(entry.storage_daemon_status_long),
+    fileDaemonStatus: historyString(entry.file_daemon_status),
+    fileDaemonStatusLong: historyString(entry.file_daemon_status_long),
+    jobFiles: historyNumber(entry.job_files),
+    jobBytes: historyNumber(entry.job_bytes),
+    currentFile: historyString(entry.current_file),
+  }
+}
+
+export function normaliseJobHistory(result) {
+  const events = directorCollection(result?.events)
+    .map(normaliseJobHistoryEvent)
+    .filter(Boolean)
+    .filter(event => event.timestamp !== null)
+    .sort((left, right) => right.timestamp - left.timestamp)
+
+  return {
+    available: result?.available === true || events.length > 0,
+    events,
   }
 }
 

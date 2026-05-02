@@ -23,7 +23,7 @@
       <div class="row q-col-gutter-md">
 
         <!-- Summary -->
-        <div class="col-12 col-md-6">
+        <div class="col-12 col-md-6 column q-gutter-md">
           <q-card flat bordered class="bareos-panel">
             <q-card-section class="panel-header">{{ t('Job Summary') }}</q-card-section>
             <q-card-section>
@@ -40,6 +40,43 @@
                       <span class="q-ml-xs text-grey-7">{{ row.value }}</span>
                     </span>
                     <span v-else>{{ row.value }}</span>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-card-section>
+          </q-card>
+
+          <q-card v-if="runtimeRows.length" flat bordered class="bareos-panel">
+            <q-card-section class="panel-header">{{ t('Live Storage Runtime') }}</q-card-section>
+            <q-card-section>
+              <q-list dense separator>
+                <q-item v-for="row in runtimeRows" :key="row.label">
+                  <q-item-section class="text-weight-medium" style="max-width:160px">{{ row.label }}</q-item-section>
+                  <q-item-section>{{ row.value }}</q-item-section>
+                </q-item>
+              </q-list>
+            </q-card-section>
+          </q-card>
+
+          <q-card v-if="jobHistoryEntries.length" flat bordered class="bareos-panel">
+            <q-card-section class="panel-header">{{ t('Daemon Status History') }}</q-card-section>
+            <q-card-section class="q-pa-none">
+              <q-list dense separator>
+                <q-item v-for="entry in jobHistoryEntries" :key="`${entry.timestamp}-${entry.source}-${entry.newStatus}`" class="items-start">
+                  <q-item-section>
+                    <div class="text-weight-medium">
+                      {{ entry.newStatusLong || entry.newStatus || '—' }}
+                      <span class="text-grey-7">· {{ entry.sourceLabel }}</span>
+                    </div>
+                    <div class="text-caption text-grey-7">
+                      {{ entry.timestampLabel }}
+                      <span v-if="entry.previousStatusLong">
+                        · {{ t('from') }} {{ entry.previousStatusLong }}
+                      </span>
+                    </div>
+                    <div v-if="entry.detailLine" class="text-caption q-mt-xs">
+                      {{ entry.detailLine }}
+                    </div>
                   </q-item-section>
                 </q-item>
               </q-list>
@@ -144,7 +181,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { jobLevelMap, formatBytes, formatSpeed } from '../mock/index.js'
-import { normaliseJob } from '../composables/useDirectorFetch.js'
+import {
+  directorCollection,
+  mergeStorageRuntime,
+  normaliseJobHistory,
+  normaliseJob,
+  quoteDirectorString,
+} from '../composables/useDirectorFetch.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -269,6 +312,7 @@ const logLines      = ref('')
 const logContainer  = ref(null)
 const volumes       = ref([])
 const volumeDetailsByName = ref({})
+const jobHistory = ref({ available: false, events: [] })
 const error         = ref(null)
 const rerunLoading  = ref(false)
 const cancelLoading = ref(false)
@@ -295,21 +339,31 @@ async function ensureJobDirector() {
 
 async function loadJob() {
   await ensureJobDirector()
-  const [jobRes, logRes, mediaRes] = await Promise.allSettled([
+  const [jobRes, logRes, mediaRes, statusRes, historyRes] = await Promise.allSettled([
     director.call(`llist jobid=${currentJobId.value}`),
     director.call(`list joblog jobid=${currentJobId.value}`),
     director.call(`list jobmedia jobid=${currentJobId.value}`),
+    director.call('status director'),
+    director.call(`.jobhistory jobid=${currentJobId.value}`),
   ])
 
   if (jobRes.status === 'fulfilled') {
     const raw   = jobRes.value
     const entry = Array.isArray(raw?.jobs) ? raw.jobs[0] : (raw?.jobs ?? raw)
-    jobData.value = entry
+    const normalizedJob = entry
       ? {
         ...normaliseJob(entry),
         director: currentJobDirector.value || null,
       }
       : null
+
+    if (normalizedJob && statusRes.status === 'fulfilled') {
+      const runtimeEntry = directorCollection(statusRes.value?.running)
+        .find(runningJob => Number(runningJob?.jobid) === normalizedJob.id)
+      jobData.value = mergeStorageRuntime(normalizedJob, runtimeEntry)
+    } else {
+      jobData.value = normalizedJob
+    }
   } else {
     error.value = jobRes.reason?.message ?? t('Failed to load job')
   }
@@ -350,6 +404,12 @@ async function loadJob() {
       ...row,
     }))
   }
+
+  if (historyRes.status === 'fulfilled') {
+    jobHistory.value = normaliseJobHistory(historyRes.value)
+  } else {
+    jobHistory.value = { available: false, events: [] }
+  }
 }
 
 watch(() => `${currentJobId.value}\u0000${requestedDirector.value}`, async () => {
@@ -359,6 +419,7 @@ watch(() => `${currentJobId.value}\u0000${requestedDirector.value}`, async () =>
   logLines.value = ''
   volumes.value = []
   volumeDetailsByName.value = {}
+  jobHistory.value = { available: false, events: [] }
   try {
     await loadJob()
   } catch (loadError) {
@@ -406,7 +467,78 @@ const summaryRows = computed(() => {
   ]
 })
 
+function formatRuntimeRate(value) {
+  return value == null ? '—' : `${formatBytes(value)}/s`
+}
+
+const runtimeRows = computed(() => {
+  const runtime = job.value?.runtime
+  if (!runtime) return []
+
+  const rows = [
+    { label: t('Current File'), value: runtime.currentFile || '—' },
+    { label: t('Files'), value: runtime.files == null ? '—' : formatNumber(runtime.files, settings.locale) },
+    { label: t('Bytes'), value: runtime.bytes == null ? '—' : formatBytes(runtime.bytes) },
+    { label: t('Average Rate'), value: formatRuntimeRate(runtime.averageBytesPerSecond) },
+    { label: t('Last Rate'), value: formatRuntimeRate(runtime.lastBytesPerSecond) },
+  ]
+
+  const writePath = [
+    runtime.pool ? `${t('Pool')}: ${runtime.pool}` : null,
+    runtime.writeVolume ? `${t('Volume')}: ${runtime.writeVolume}` : null,
+    runtime.writeDevice ? `${t('Device')}: ${runtime.writeDevice}` : null,
+  ].filter(Boolean).join(' · ')
+  if (writePath) {
+    rows.push({ label: t('Writing'), value: writePath })
+  }
+
+  const readPath = [
+    runtime.readVolume ? `${t('Volume')}: ${runtime.readVolume}` : null,
+    runtime.readDevice ? `${t('Device')}: ${runtime.readDevice}` : null,
+  ].filter(Boolean).join(' · ')
+  if (readPath) {
+    rows.push({ label: t('Reading'), value: readPath })
+  }
+
+  rows.push(
+    { label: t('Spooling'), value: runtime.spooling ? t('Yes') : t('No') },
+    { label: t('Despooling'), value: runtime.despooling ? t('Yes') : t('No') },
+    { label: t('Waiting for despool'), value: runtime.despoolWait ? t('Yes') : t('No') },
+  )
+
+  return rows
+})
+
 const jobLog = computed(() => logLines.value)
+
+function formatTimestamp(value) {
+  if (!value) return '—'
+  const date = new Date(value * 1000)
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString(settings.locale)
+}
+
+const sourceLabels = {
+  director: 'Director',
+  'storage-daemon': 'Storage Daemon',
+  'file-daemon': 'File Daemon',
+}
+
+const jobHistoryEntries = computed(() => (
+  jobHistory.value.events.map((event) => {
+    const detailParts = [
+      event.currentFile ? `${t('Current File')}: ${event.currentFile}` : null,
+      event.jobFiles != null ? `${t('Files')}: ${formatNumber(event.jobFiles, settings.locale)}` : null,
+      event.jobBytes != null ? `${t('Bytes')}: ${formatBytes(event.jobBytes)}` : null,
+    ].filter(Boolean)
+
+    return {
+      ...event,
+      sourceLabel: t(sourceLabels[event.source] ?? 'Director'),
+      timestampLabel: formatTimestamp(event.timestamp),
+      detailLine: detailParts.join(' · '),
+    }
+  })
+))
 
 const highlightedLines = computed(() => {
   if (!logLines.value) return []

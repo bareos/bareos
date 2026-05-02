@@ -20,7 +20,10 @@
  */
 
 import { createDirectorCommandClient } from './directorAggregate.js'
-import { directorCollection } from './useDirectorFetch.js'
+import {
+  directorCollection,
+  extractStorageRuntime,
+} from './useDirectorFetch.js'
 
 function directorError(results, directors, index, fallback) {
   return results[index].status === 'rejected'
@@ -48,11 +51,16 @@ function sortByTimestampDescending(entries, field, fallbackField) {
 }
 
 function decorateStatusEntries(entries, director, section) {
-  return directorCollection(entries).map((entry, index) => ({
-    ...entry,
-    director,
-    scopeKey: `${director}:${section}:${entry.jobid ?? entry.name ?? index}`,
-  }))
+  return directorCollection(entries).map((entry, index) => {
+    const runtime = extractStorageRuntime(entry)
+
+    return {
+      ...entry,
+      director,
+      ...(runtime ? { runtime } : {}),
+      scopeKey: `${director}:${section}:${entry.jobid ?? entry.name ?? index}`,
+    }
+  })
 }
 
 function decorateLogEntries(entries, director) {

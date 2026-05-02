@@ -61,6 +61,96 @@
       </div>
     </div>
 
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col-12">
+        <q-card flat bordered class="bareos-panel">
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Historical Metrics Window') }}</span>
+            <q-space />
+            <q-btn-toggle
+              v-model="historyRangeHours"
+              flat
+              dense
+              no-caps
+              text-color="grey-4"
+              toggle-color="white"
+              :options="historyRangeOptions"
+            />
+          </q-card-section>
+        </q-card>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <q-card flat bordered class="bareos-panel">
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Historical System Usage') }}</span>
+            <q-space />
+            <q-btn-toggle
+              v-model="systemMetricMode"
+              flat
+              dense
+              no-caps
+              text-color="grey-4"
+              toggle-color="white"
+              :options="[
+                { label: t('Bytes'), value: 'total_bytes' },
+                { label: t('Files'), value: 'total_files' },
+              ]"
+            />
+          </q-card-section>
+          <q-card-section class="q-pa-sm">
+            <div class="text-caption text-grey-6 q-mb-sm">
+              {{ t('Latest') }}: {{ systemHistorySummary }}
+            </div>
+            <MetricLineChart
+              :points="systemChartPoints"
+              color="#1976D2"
+              :empty-label="t('No historical data')"
+            />
+          </q-card-section>
+        </q-card>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <q-card flat bordered class="bareos-panel">
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Historical Pool Usage') }}</span>
+            <q-space />
+            <q-btn-toggle
+              v-model="poolMetricMode"
+              flat
+              dense
+              no-caps
+              text-color="grey-4"
+              toggle-color="white"
+              :options="[
+                { label: t('Bytes'), value: 'total_bytes' },
+                { label: t('Files'), value: 'total_files' },
+              ]"
+            />
+          </q-card-section>
+          <q-card-section class="q-pa-sm">
+            <q-select
+              v-model="selectedPool"
+              :options="availablePools"
+              outlined
+              dense
+              :label="t('Pool')"
+              class="q-mb-sm"
+            />
+            <div class="text-caption text-grey-6 q-mb-sm">
+              {{ selectedPool ? `${t('Latest')}: ${poolHistorySummary}` : t('Select a pool') }}
+            </div>
+            <MetricLineChart
+              :points="poolChartPoints"
+              color="#00897B"
+              :empty-label="selectedPool ? t('No historical data') : t('Select a pool')"
+            />
+          </q-card-section>
+        </q-card>
+      </div>
+    </div>
+
     <div class="row q-col-gutter-md">
       <div class="col-12 col-md-8">
         <q-card flat bordered class="bareos-panel q-mb-md">
@@ -166,9 +256,11 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { fetchAggregatedAnalytics } from '../composables/analyticsAggregate.js'
-import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
-import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import {
+  fetchAggregatedAnalytics,
+  fetchAggregatedAnalyticsHistory,
+} from '../composables/analyticsAggregate.js'
+import { directorCollection } from '../composables/useDirectorFetch.js'
 import { formatBytes } from '../mock/index.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -179,6 +271,7 @@ import {
   withJobsStatusFilterQuery,
 } from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
+import MetricLineChart from '../components/MetricLineChart.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
@@ -193,6 +286,21 @@ const rawJobs = ref([])
 const loading = ref(false)
 const error = ref(null)
 const directorErrors = ref([])
+const historyRangeHours = ref(24)
+const systemMetricMode = ref('total_bytes')
+const poolMetricMode = ref('total_bytes')
+const availablePools = ref([])
+const selectedPool = ref('')
+const systemHistory = ref({
+  available: false,
+  dataSourceNames: [],
+  points: [],
+})
+const poolHistory = ref({
+  available: false,
+  dataSourceNames: [],
+  points: [],
+})
 
 const directorOptions = computed(() => {
   const values = new Set([
@@ -255,23 +363,6 @@ const analyticsScopeLabel = computed(() => (
     : (activeDirectors.value[0] ?? t('No director selected'))
 ))
 
-async function ensureSingleScopeDirector() {
-  if (activeDirectors.value.length !== 1) {
-    return
-  }
-
-  const scopeDirector = activeDirectors.value[0]
-  if (!scopeDirector) {
-    return
-  }
-
-  if (auth.user?.director === scopeDirector && director.isConnected) {
-    return
-  }
-
-  await switchActiveDirector(scopeDirector)
-}
-
 async function refresh() {
   loading.value = true
   error.value = null
@@ -279,29 +370,39 @@ async function refresh() {
   try {
     if (activeDirectors.value.length === 0) {
       rawJobs.value = []
+      availablePools.value = []
+      systemHistory.value = { available: false, dataSourceNames: [], points: [] }
+      poolHistory.value = { available: false, dataSourceNames: [], points: [] }
       return
     }
 
-    if (isCommonAnalytics.value) {
-      const credentials = auth.getCredentials()
-      if (!credentials?.password) {
-        throw new Error(t('Not logged in.'))
-      }
-
-      const result = await fetchAggregatedAnalytics(credentials, activeDirectors.value)
-      rawJobs.value = result.jobs
-      directorErrors.value = result.directorErrors
-      return
+    const credentials = auth.getCredentials()
+    if (!credentials?.password) {
+      throw new Error(t('Not logged in.'))
     }
 
-    const currentDirector = activeDirectors.value[0]
-    await ensureSingleScopeDirector()
-    const result = await director.call('list jobs')
-    rawJobs.value = directorCollection(result?.jobs).map((job) => ({
-      ...normaliseJob(job),
-      director: currentDirector,
-      scopeKey: `${currentDirector}:${normaliseJob(job).id}`,
-    }))
+    const [analyticsResult, historyResult] = await Promise.all([
+      fetchAggregatedAnalytics(credentials, activeDirectors.value),
+      fetchAggregatedAnalyticsHistory(credentials, activeDirectors.value, {
+        hours: historyRangeHours.value,
+        pool: selectedPool.value,
+      }),
+    ])
+
+    rawJobs.value = analyticsResult.jobs
+    availablePools.value = historyResult.poolNames
+    systemHistory.value = historyResult.systemHistory
+    poolHistory.value = historyResult.poolHistory
+    directorErrors.value = [
+      ...analyticsResult.directorErrors,
+      ...historyResult.directorErrors,
+    ]
+
+    if (selectedPool.value && !availablePools.value.includes(selectedPool.value)) {
+      selectedPool.value = availablePools.value[0] ?? ''
+    } else if (!selectedPool.value && availablePools.value.length) {
+      selectedPool.value = availablePools.value[0]
+    }
   } catch (reason) {
     error.value = reason?.message ?? String(reason)
   } finally {
@@ -311,6 +412,59 @@ async function refresh() {
 
 const jobs = computed(() => directorCollection(rawJobs.value))
 const totalJobs = computed(() => jobs.value.length || 1)
+const historyRangeOptions = computed(() => ([
+  { label: t('24h'), value: 24 },
+  { label: t('7d'), value: 24 * 7 },
+  { label: t('30d'), value: 24 * 30 },
+]))
+
+function historySeriesPoints(series, metric) {
+  return (series?.points ?? []).map((point) => ({
+    timestamp: point.timestamp,
+    value: Number.isFinite(point.values?.[metric]) ? point.values[metric] : null,
+  }))
+}
+
+function latestMetricValue(series, metric) {
+  const points = historySeriesPoints(series, metric)
+  for (let index = points.length - 1; index >= 0; index -= 1) {
+    if (Number.isFinite(points[index].value)) {
+      return points[index].value
+    }
+  }
+  return null
+}
+
+function formatHistoryValue(metric, value) {
+  if (value == null) {
+    return t('No data')
+  }
+
+  if (metric.includes('bytes')) {
+    return fmtBytes(value)
+  }
+
+  return formatNumber(value, settings.locale)
+}
+
+const systemChartPoints = computed(() => (
+  historySeriesPoints(systemHistory.value, systemMetricMode.value)
+))
+const poolChartPoints = computed(() => (
+  historySeriesPoints(poolHistory.value, poolMetricMode.value)
+))
+const systemHistorySummary = computed(() => (
+  formatHistoryValue(
+    systemMetricMode.value,
+    latestMetricValue(systemHistory.value, systemMetricMode.value),
+  )
+))
+const poolHistorySummary = computed(() => (
+  formatHistoryValue(
+    poolMetricMode.value,
+    latestMetricValue(poolHistory.value, poolMetricMode.value),
+  )
+))
 
 const overallStats = computed(() => {
   const j = jobs.value
@@ -543,5 +697,15 @@ watch(() => directorOptions.value, () => {
 
 watch(() => activeDirectors.value.join('\u0000'), () => {
   refresh()
+})
+
+watch(historyRangeHours, () => {
+  refresh()
+})
+
+watch(selectedPool, (value, previousValue) => {
+  if (value !== previousValue) {
+    refresh()
+  }
 })
 </script>

@@ -169,13 +169,20 @@
                         </q-chip>
                       </td>
                     </template>
-                    <template #body-cell-name="props">
-                      <td>
-                        <a href="#" class="text-primary" @click.prevent="openJobsByName(props.row)">
-                          {{ props.value }}
-                        </a>
-                      </td>
-                    </template>
+                     <template #body-cell-name="props">
+                       <td>
+                         <a href="#" class="text-primary" @click.prevent="openJobsByName(props.row)">
+                           {{ props.value }}
+                         </a>
+                         <div
+                           v-if="props.row.runtime?.currentFile"
+                           class="text-caption text-grey-7 ellipsis"
+                           :title="props.row.runtime.currentFile"
+                         >
+                           {{ props.row.runtime.currentFile }}
+                         </div>
+                       </td>
+                     </template>
                     <template #body-cell-level="props">
                       <td><JobLevelBadge v-if="levelCode(props.value)" :level="levelCode(props.value)" />
                           <span v-else>{{ props.value }}</span></td>
@@ -236,13 +243,20 @@
                         </a>
                       </td>
                     </template>
-                    <template #body-cell-name="props">
-                      <td>
-                        <a href="#" class="text-primary" @click.prevent="openJobsByName(props.row)">
-                          {{ props.value }}
-                        </a>
-                      </td>
-                    </template>
+                     <template #body-cell-name="props">
+                       <td>
+                         <a href="#" class="text-primary" @click.prevent="openJobsByName(props.row)">
+                           {{ props.value }}
+                         </a>
+                         <div
+                           v-if="props.row.runtime?.currentFile"
+                           class="text-caption text-grey-7 ellipsis"
+                           :title="props.row.runtime.currentFile"
+                         >
+                           {{ props.row.runtime.currentFile }}
+                         </div>
+                       </td>
+                     </template>
                     <template #body-cell-level="props">
                       <td><JobLevelBadge v-if="levelCode(props.value)" :level="levelCode(props.value)" />
                           <span v-else>{{ props.value }}</span></td>
@@ -266,25 +280,31 @@
                           size="4px" class="q-mt-xs" rounded />
                       </td>
                     </template>
-                    <template #body-cell-bytes="props">
-                      <td class="text-right" style="min-width:90px">
-                        <div>{{ formatBytes(Number(props.value) || 0) }}</div>
-                        <q-linear-progress v-if="!isWaiting(props.row.status)" indeterminate
-                          color="primary" track-color="grey-3"
-                          size="4px" class="q-mt-xs" rounded />
-                      </td>
-                    </template>
+                     <template #body-cell-bytes="props">
+                       <td class="text-right" style="min-width:90px">
+                         <div>{{ formatBytes(Number(props.value) || 0) }}</div>
+                         <div v-if="runningRateSummary(props.row)" class="text-caption text-grey-7">
+                           {{ runningRateSummary(props.row) }}
+                         </div>
+                         <q-linear-progress v-if="!isWaiting(props.row.status)" indeterminate
+                           color="primary" track-color="grey-3"
+                           size="4px" class="q-mt-xs" rounded />
+                       </td>
+                     </template>
                     <template #body-cell-status="props">
                       <td>
-                        <span v-if="isWaiting(props.value)"
-                              class="row items-center no-wrap q-gutter-x-xs">
-                          <q-icon name="hourglass_empty" color="orange-7" size="16px"
-                                  class="animated-spin" />
-                          <span class="text-orange-7 text-caption">{{ props.value }}</span>
-                        </span>
-                        <JobStatusBadge v-else :status="props.value" />
-                      </td>
-                    </template>
+                         <span v-if="isWaiting(props.value)"
+                               class="row items-center no-wrap q-gutter-x-xs">
+                           <q-icon name="hourglass_empty" color="orange-7" size="16px"
+                                   class="animated-spin" />
+                           <span class="text-orange-7 text-caption">{{ props.value }}</span>
+                         </span>
+                         <JobStatusBadge v-else :status="props.value" />
+                         <div v-if="runningStorageSummary(props.row)" class="text-caption text-grey-7">
+                           {{ runningStorageSummary(props.row) }}
+                         </div>
+                       </td>
+                     </template>
                   </q-table>
                 </q-card-section>
               </q-card>
@@ -928,6 +948,59 @@ const TYPE_CODE  = { Backup: 'B', Restore: 'R', Verify: 'V', Admin: 'A', Diagnos
 function levelCode(v) { return LEVEL_CODE[v] ?? null }
 function typeCode(v)  { return TYPE_CODE[v]  ?? null }
 function isWaiting(status) { return typeof status === 'string' && status.includes('is waiting') }
+
+function formatRuntimeRate(value) {
+  return value == null ? '' : `${formatBytes(value)}/s`
+}
+
+function runningRateSummary(row) {
+  const runtime = row.runtime
+  if (!runtime) {
+    return ''
+  }
+
+  const details = []
+  if (runtime.averageBytesPerSecond != null) {
+    details.push(`${t('Average')}: ${formatRuntimeRate(runtime.averageBytesPerSecond)}`)
+  }
+  if (runtime.lastBytesPerSecond != null) {
+    details.push(`${t('Last')}: ${formatRuntimeRate(runtime.lastBytesPerSecond)}`)
+  }
+  return details.join(' · ')
+}
+
+function runningStorageSummary(row) {
+  const runtime = row.runtime
+  if (!runtime) {
+    return ''
+  }
+
+  const details = []
+  if (runtime.pool || runtime.writeVolume || runtime.writeDevice) {
+    details.push([
+      runtime.pool ? `${t('Pool')}: ${runtime.pool}` : null,
+      runtime.writeVolume ? `${t('Volume')}: ${runtime.writeVolume}` : null,
+      runtime.writeDevice ? `${t('Device')}: ${runtime.writeDevice}` : null,
+    ].filter(Boolean).join(' · '))
+  }
+  if (runtime.readVolume || runtime.readDevice) {
+    details.push([
+      runtime.readVolume ? `${t('Read Volume')}: ${runtime.readVolume}` : null,
+      runtime.readDevice ? `${t('Read Device')}: ${runtime.readDevice}` : null,
+    ].filter(Boolean).join(' · '))
+  }
+  if (runtime.spooling) {
+    details.push(t('Spooling'))
+  }
+  if (runtime.despooling) {
+    details.push(t('Despooling'))
+  }
+  if (runtime.despoolWait) {
+    details.push(t('Waiting for despool'))
+  }
+
+  return details.join(' · ')
+}
 
 const scheduledJobCols = computed(() => [
   ...(showDirectorColumn.value

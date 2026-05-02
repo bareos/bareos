@@ -24,7 +24,9 @@ import {
   directorCommandCategory,
   directorCommandAllowed,
   directorCollection,
+  extractStorageRuntime,
   missingDirectorCommands,
+  normaliseJobHistory,
   normaliseDirectorCommandPermissions,
   normaliseClient,
   normaliseJob,
@@ -59,6 +61,85 @@ describe('director data normalisers', () => {
       files: 48231,
       bytes: 2147483648,
       errors: 0,
+    })
+  })
+
+  it('extracts storage runtime metrics from director status rows', () => {
+    expect(extractStorageRuntime({
+      sd_sample_time: '1746114000',
+      sd_files: '17',
+      sd_bytes: '8192',
+      sd_average_bytes_per_second: '2048',
+      sd_last_bytes_per_second: '1024',
+      sd_spooling: '1',
+      sd_despooling: '0',
+      sd_despool_wait: '1',
+      sd_current_file: '/srv/data/example.txt',
+      sd_write_device: 'File',
+      sd_write_volume: 'Vol001',
+      sd_pool: 'Full',
+    })).toEqual({
+      sampleTime: 1746114000,
+      jobStatus: null,
+      files: 17,
+      bytes: 8192,
+      averageBytesPerSecond: 2048,
+      lastBytesPerSecond: 1024,
+      spooling: true,
+      despooling: false,
+      despoolWait: true,
+      currentFile: '/srv/data/example.txt',
+      readDevice: '',
+      writeDevice: 'File',
+      readVolume: '',
+      writeVolume: 'Vol001',
+      pool: 'Full',
+    })
+  })
+
+  it('normalises director job history events', () => {
+    expect(normaliseJobHistory({
+      available: true,
+      events: [
+        {
+          timestamp: '1746114000',
+          source: 'storage-daemon',
+          previous_status: 'S',
+          previous_status_long: 'Waiting on Storage daemon',
+          new_status: 'R',
+          new_status_long: 'Running',
+          director_status: 'R',
+          director_status_long: 'Running',
+          storage_daemon_status: 'R',
+          storage_daemon_status_long: 'Running',
+          file_daemon_status: 'f',
+          file_daemon_status_long: 'Waiting on File daemon',
+          job_files: '17',
+          job_bytes: '8192',
+          current_file: '/srv/data/example.txt',
+        },
+      ],
+    })).toEqual({
+      available: true,
+      events: [
+        {
+          timestamp: 1746114000,
+          source: 'storage-daemon',
+          previousStatus: 'S',
+          previousStatusLong: 'Waiting on Storage daemon',
+          newStatus: 'R',
+          newStatusLong: 'Running',
+          directorStatus: 'R',
+          directorStatusLong: 'Running',
+          storageDaemonStatus: 'R',
+          storageDaemonStatusLong: 'Running',
+          fileDaemonStatus: 'f',
+          fileDaemonStatusLong: 'Waiting on File daemon',
+          jobFiles: 17,
+          jobBytes: 8192,
+          currentFile: '/srv/data/example.txt',
+        },
+      ],
     })
   })
 
