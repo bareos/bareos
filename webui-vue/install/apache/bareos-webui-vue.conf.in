@@ -1,0 +1,46 @@
+#
+# Bareos WebUI Vue - Apache configuration file
+#
+
+Alias /bareos-webui-vue @WEBUI_VUE_DIR@
+
+# Vite builds asset URLs relative to /, so map /assets/ and /favicon.ico
+# directly to the /bareos-webui-vue/ sub-path where they actually live.
+AliasMatch "^/assets/(.*)" "@WEBUI_VUE_DIR@/assets/$1"
+AliasMatch "^/favicon\.ico$" "@WEBUI_VUE_DIR@/favicon.ico"
+
+<Directory @WEBUI_VUE_DIR@>
+    Options FollowSymLinks
+    AllowOverride None
+
+    # Apache 2.2
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Allow from all
+    </IfModule>
+
+    # Apache 2.4
+    <IfModule mod_authz_core.c>
+        <IfModule mod_access_compat.c>
+            Order deny,allow
+        </IfModule>
+        Require all granted
+    </IfModule>
+
+    # SPA routing: redirect all non-file requests to index.html
+    <IfModule mod_rewrite.c>
+        RewriteEngine on
+        RewriteBase /bareos-webui-vue
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteRule ^ index.html [L]
+    </IfModule>
+</Directory>
+
+# Proxy WebSocket connections to bareos-webui-proxy
+<IfModule mod_proxy.c>
+    <IfModule mod_proxy_wstunnel.c>
+        ProxyPass /ws ws://localhost:8765/
+        ProxyPassReverse /ws ws://localhost:8765/
+    </IfModule>
+</IfModule>
