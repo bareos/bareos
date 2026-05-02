@@ -18,6 +18,8 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+include(BareosPlugins)
+
 # create include dirs needed when compiling python modules
 
 set(pymod_include_dirs ${PROJECT_SOURCE_DIR}/src)
@@ -44,7 +46,7 @@ endif()
 
 set(pymod3_include_dirs ${Python3_INCLUDE_DIRS} ${pymod_include_dirs})
 
-if(ENABLE_PYTHON)
+if(ENABLE_PYTHON AND Python3_FOUND)
   add_library(python-common python/common.cc)
   target_link_libraries(python-common PUBLIC Python3::Python Bareos::Lib)
   target_include_directories(
