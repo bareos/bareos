@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,10 +21,15 @@
 #ifndef BAREOS_STORED_STATUS_H_
 #define BAREOS_STORED_STATUS_H_
 
+#include "lib/mem_pool.h"
+
+class JobControlRecord;
+
 namespace storagedaemon {
 
 bool StatusCmd(JobControlRecord* jcr);
 bool DotstatusCmd(JobControlRecord* jcr);
+int FormatRunningJobRuntimeRecord(PoolMem& msg, JobControlRecord* jcr);
 
 } /* namespace storagedaemon */
 

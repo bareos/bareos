@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -138,15 +138,9 @@ void* HandleFiledConnection(BareosSocket* fd, char* job_name)
     Jmsg(jcr, M_FATAL, 0, T_("Unable to authenticate File daemon\n"));
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   } else {
-    utime_t now;
-
     *jcr->sd_impl->client_available.lock() = true;
     Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,
           jcr->Job);
-
-    // Update the initial Job Statistics.
-    now = (utime_t)time(NULL);
-    UpdateJobStatistics(jcr, now);
   }
 
   jcr->sd_impl->job_start_wait.notify_one(); /* wake waiting job */

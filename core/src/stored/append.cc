@@ -40,6 +40,7 @@
 #include "include/jcr.h"
 #include "include/streams.h"
 #include "lib/berrno.h"
+#include "lib/attr.h"
 #include "lib/crypto.h"
 #include "lib/berrno.h"
 #include <algorithm>
@@ -107,6 +108,12 @@ bool IsAttribute(DeviceRecord* record)
          || CryptoDigestStreamType(record->maskedStream) != CRYPTO_DIGEST_NONE;
 }
 
+bool AttributeStreamContainsPathname(int masked_stream)
+{
+  return masked_stream == STREAM_UNIX_ATTRIBUTES
+         || masked_stream == STREAM_UNIX_ATTRIBUTES_EX;
+}
+
 static bool SaveFullyProcessedFilesAttributes(
     JobControlRecord* jcr,
     std::vector<ProcessedFile>& processed_files)
@@ -120,6 +127,20 @@ static bool SaveFullyProcessedFilesAttributes(
     return true;
   }
   return false;
+}
+
+static void UpdateCurrentFileFromAttribute(JobControlRecord* jcr,
+                                           DeviceRecord* record)
+{
+  if (!AttributeStreamContainsPathname(record->maskedStream)) { return; }
+
+  auto* attr = new_attr(jcr);
+  if (UnpackAttributesRecord(jcr, record->Stream, record->data,
+                             record->data_len, attr)) {
+    std::lock_guard<std::mutex> guard(jcr->mutex_guard());
+    jcr->sd_impl->current_file = attr->fname;
+  }
+  FreeAttr(attr);
 }
 
 class MessageHandler {
@@ -398,6 +419,11 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   ProcessedFile file_currently_processed;
 
+  {
+    std::lock_guard<std::mutex> guard(jcr->mutex_guard());
+    jcr->sd_impl->current_file.clear();
+  }
+
   // we need to clone here as we need to send heartbeats in case of
   // just in time reservation.  Keep in mind that from this point forward
   // trying to read from the filedaemon socked is still forbidden.  Only
@@ -564,6 +590,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       }
 
       if (IsAttribute(jcr->sd_impl->dcr->rec)) {
+        UpdateCurrentFileFromAttribute(jcr, jcr->sd_impl->dcr->rec);
         file_currently_processed.AddAttribute(jcr->sd_impl->dcr->rec);
       }
 

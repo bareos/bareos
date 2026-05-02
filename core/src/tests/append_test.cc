@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,6 +24,7 @@
 
 #include "gtest/gtest.h"
 
+#include "include/streams.h"
 #include "stored/append.h"
 
 TEST(AppendProcessedFileTest, ProcessedFileIsEmptyOnInitialization)
@@ -55,4 +56,16 @@ TEST(AppendProcessedFileTest, AddDeviceRecordCopiesDataContentNotPointer)
   EXPECT_EQ(memcmp(processedfiledata.GetData().data, dr.data, dr.data_len), 0);
 
   FreePoolMemory(test_msg);
+}
+
+TEST(AppendProcessedFileTest, OnlyPathAttributeStreamsUpdateCurrentFile)
+{
+  EXPECT_TRUE(
+      storagedaemon::AttributeStreamContainsPathname(STREAM_UNIX_ATTRIBUTES));
+  EXPECT_TRUE(storagedaemon::AttributeStreamContainsPathname(
+      STREAM_UNIX_ATTRIBUTES_EX));
+  EXPECT_FALSE(
+      storagedaemon::AttributeStreamContainsPathname(STREAM_RESTORE_OBJECT));
+  EXPECT_FALSE(
+      storagedaemon::AttributeStreamContainsPathname(STREAM_MD5_DIGEST));
 }

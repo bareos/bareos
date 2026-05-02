@@ -109,9 +109,7 @@ static const ResourceItem store_items[] = {
   { "NdmpPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store, NDMPaddrs), {config::DefaultValue{"10000"}}},
   { "AutoXFlateOnReplication", CFG_TYPE_BOOL, ITEM(res_store, autoxflateonreplication), {config::IntroducedIn{13, 4, 0}, config::DefaultValue{"false"}}},
   { "AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_store, jcr_watchdog_time), {config::IntroducedIn{14, 2, 0}, config::Description{"Absolute time after which a Job gets terminated regardless of its progress"}}},
-  { "CollectDeviceStatistics", CFG_TYPE_BOOL, ITEM(res_store, collect_dev_stats), {config::DeprecatedSince{22, 0, 0}, config::DefaultValue{"false"}}},
-  { "CollectJobStatistics", CFG_TYPE_BOOL, ITEM(res_store, collect_job_stats), {config::DeprecatedSince{22, 0, 0}, config::DefaultValue{"false"}}},
-  { "StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_store, stats_collect_interval), {config::DeprecatedSince{22, 0, 0}, config::DefaultValue{"0"}}},
+  { "StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_store, stats_collect_interval), {config::DeprecatedSince{22, 0, 0}, config::DefaultValue{"60"}}},
   { "DeviceReserveByMediaType", CFG_TYPE_BOOL, ITEM(res_store, device_reserve_by_mediatype), {config::DefaultValue{"false"}}},
   { "FileDeviceConcurrentRead", CFG_TYPE_BOOL, ITEM(res_store, filedevice_concurrent_read), {config::DefaultValue{"false"}}},
   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_store, secure_erase_cmdline), {config::IntroducedIn{15, 2, 1}, config::Description{"Specify command that will be called when bareos unlinks files."}}},
@@ -207,7 +205,6 @@ static const ResourceItem dev_items[] = {
   { "AutoDeflateAlgorithm", CFG_TYPE_CMPRSALGO, ITEM(res_dev, autodeflate_algorithm), {config::IntroducedIn{13, 4, 0}}},
   { "AutoDeflateLevel", CFG_TYPE_PINT16, ITEM(res_dev, autodeflate_level), {config::IntroducedIn{13, 4, 0}, config::DefaultValue{"6"}}},
   { "AutoInflate", CFG_TYPE_IODIRECTION, ITEM(res_dev, autoinflate), {config::IntroducedIn{13, 4, 0}}},
-  { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_dev, collectstats), {config::DefaultValue{"true"}}},
   { "EofOnErrorIsEot", CFG_TYPE_BOOL, ITEM(res_dev, eof_on_error_is_eot), {config::IntroducedIn{18, 2, 4}, config::Description{"If Yes, Bareos will treat any read error at an end-of-file mark as end-of-tape. You should only set this option if your tape-drive fails to detect end-of-tape while reading."}}},
   { "Count", CFG_TYPE_PINT32, ITEM(res_dev, count), {config::DefaultValue{"1"}, config::Description{"If Count is set to (1 < Count < 10000), duplicated devices will be created post-fixed with serial numbers 0000 up to Count. The 0000 device is automatically assigned 'Autoselect=No'. Additionally, an autochanger resource is created with the name of the device the Count directive is specified for. The duplicated devices will be assigned to this autochanger unless they are used in another autochanger already."}}},
   {}

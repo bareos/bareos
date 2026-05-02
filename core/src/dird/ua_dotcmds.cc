@@ -38,6 +38,8 @@
 #include "dird/dird_globals.h"
 #include "dird/sd_cmds.h"
 #include "dird/fd_cmds.h"
+#include "dird/job_status_history.h"
+#include "dird/statistics_time_series.h"
 #include "cats/bvfs.h"
 #include "findlib/find.h"
 #include "dird/ua_db.h"
@@ -48,6 +50,8 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+
+#include <cmath>
 
 namespace directordaemon {
 
@@ -954,6 +958,251 @@ bool DotAopCmd(UaContext* ua, const char*)
   }
   ua->send->ArrayEnd("actiononpurge");
 
+  return true;
+}
+
+namespace {
+
+bool ParseMetricsRange(UaContext* ua, time_t* start_time, time_t* end_time)
+{
+  *end_time = time(nullptr);
+  if (*end_time <= 0) { return false; }
+
+  uint64_t range_seconds = 24u * 60u * 60u;
+
+  int position = FindArgWithValue(ua, "hours");
+  if (position >= 0) {
+    range_seconds = str_to_uint64(ua->argv[position]) * 60u * 60u;
+  }
+
+  position = FindArgWithValue(ua, "days");
+  if (position >= 0) {
+    range_seconds = str_to_uint64(ua->argv[position]) * 24u * 60u * 60u;
+  }
+
+  if (range_seconds == 0) { range_seconds = 24u * 60u * 60u; }
+
+  *start_time = *end_time - static_cast<time_t>(range_seconds);
+  return true;
+}
+
+void ParseOptionalHistoryRange(UaContext* ua,
+                               time_t* start_time,
+                               time_t* end_time)
+{
+  *start_time = 0;
+  *end_time = time(nullptr);
+  if (*end_time <= 0) { *end_time = 0; }
+
+  uint64_t range_seconds = 0;
+
+  if (const int position = FindArgWithValue(ua, "hours"); position >= 0) {
+    range_seconds = str_to_uint64(ua->argv[position]) * 60u * 60u;
+  }
+
+  if (const int position = FindArgWithValue(ua, "days"); position >= 0) {
+    range_seconds = str_to_uint64(ua->argv[position]) * 24u * 60u * 60u;
+  }
+
+  if (range_seconds > 0 && *end_time > 0) {
+    *start_time = *end_time - static_cast<time_t>(range_seconds);
+  }
+}
+
+std::string FormatMetricsValue(double value)
+{
+  if (std::isnan(value)) { return ""; }
+
+  const double rounded = std::round(value);
+  if (std::fabs(value - rounded) < 0.000001) {
+    return std::to_string(static_cast<int64_t>(rounded));
+  }
+
+  std::string text = std::to_string(value);
+  while (!text.empty() && text.back() == '0') { text.pop_back(); }
+  if (!text.empty() && text.back() == '.') { text.pop_back(); }
+  return text;
+}
+
+std::string FormatJobStatusCode(int32_t status)
+{
+  if (status <= 0 || status > 0x7f) { return ""; }
+  return std::string(1, static_cast<char>(status));
+}
+
+void OutputJobStatusValue(UaContext* ua, const char* key, int32_t status)
+{
+  const std::string status_code = FormatJobStatusCode(status);
+  if (status_code.empty()) { return; }
+
+  ua->send->ObjectKeyValue(key, status_code.c_str());
+
+  const std::string long_key = std::string(key) + "_long";
+  ua->send->ObjectKeyValue(long_key.c_str(), job_status_to_str(status));
+}
+
+void OutputMetricsSeries(UaContext* ua, const StatisticsTimeSeriesData& series)
+{
+  ua->send->ArrayStart("series");
+  for (const auto& point : series.points) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("timestamp",
+                             static_cast<uint64_t>(point.sample_time));
+
+    const size_t column_count
+        = std::min(series.data_source_names.size(), point.values.size());
+    for (size_t column = 0; column < column_count; ++column) {
+      const std::string value = FormatMetricsValue(point.values[column]);
+      if (value.empty()) { continue; }
+      ua->send->ObjectKeyValue(series.data_source_names[column].c_str(),
+                               value.c_str());
+    }
+
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("series");
+}
+
+}  // namespace
+
+bool DotMetricsCmd(UaContext* ua, const char*)
+{
+  const char* kind = nullptr;
+  if (FindArg(ua, "system") >= 0) {
+    kind = "system";
+  } else if (FindArg(ua, "pool") >= 0) {
+    kind = "pool";
+  } else if (const int position = FindArgWithValue(ua, "kind"); position >= 0) {
+    kind = ua->argv[position];
+  }
+
+  if (kind == nullptr) {
+    ua->ErrorMsg(T_("kind=system or kind=pool is required.\n"));
+    return false;
+  }
+
+  StatisticsTimeSeriesConsolidationFunction cf
+      = StatisticsTimeSeriesConsolidationFunction::kLast;
+  if (const int position = FindArgWithValue(ua, "cf"); position >= 0) {
+    if (!ParseStatisticsTimeSeriesConsolidationFunction(ua->argv[position],
+                                                        &cf)) {
+      ua->ErrorMsg(T_("Unsupported consolidation function \"%s\".\n"),
+                   ua->argv[position]);
+      return false;
+    }
+  }
+
+  time_t start_time = 0;
+  time_t end_time = 0;
+  if (!ParseMetricsRange(ua, &start_time, &end_time)) {
+    ua->ErrorMsg(T_("Could not determine the metrics time range.\n"));
+    return false;
+  }
+
+  const std::string base_directory
+      = GetConfiguredStatisticsTimeSeriesDirectory();
+  StatisticsTimeSeriesData series;
+  bool success = false;
+  std::string pool_name;
+
+  if (Bstrcasecmp(kind, "system")) {
+    success = ReadSystemStatisticsTimeSeries(base_directory, cf, start_time,
+                                             end_time, &series);
+  } else if (Bstrcasecmp(kind, "pool")) {
+    const int position = FindArgWithValue(ua, "pool");
+    if (position < 0 || !ua->argv[position] || !ua->argv[position][0]) {
+      ua->ErrorMsg(T_("pool=<pool-name> is required for kind=pool.\n"));
+      return false;
+    }
+
+    pool_name = ua->argv[position];
+    success = ReadPoolStatisticsTimeSeries(base_directory, pool_name, cf,
+                                           start_time, end_time, &series);
+  } else {
+    ua->ErrorMsg(T_("Unsupported metrics kind \"%s\".\n"), kind);
+    return false;
+  }
+
+  if (!success) {
+    ua->ErrorMsg(T_("Could not query metrics time series: %s\n"),
+                 ConsumeStatisticsTimeSeriesError().c_str());
+    return false;
+  }
+
+  ua->send->ObjectStart("metrics");
+  ua->send->ObjectKeyValue("kind", kind);
+  ua->send->ObjectKeyValue(
+      "cf", StatisticsTimeSeriesConsolidationFunctionToString(cf));
+  ua->send->ObjectKeyValueBool("available", series.available);
+  ua->send->ObjectKeyValue("start", static_cast<uint64_t>(series.start_time));
+  ua->send->ObjectKeyValue("end", static_cast<uint64_t>(series.end_time));
+  ua->send->ObjectKeyValue("step", static_cast<uint64_t>(series.step_seconds));
+  if (!pool_name.empty()) {
+    ua->send->ObjectKeyValue("pool", pool_name.c_str());
+  }
+
+  ua->send->ArrayStart("data_source_names");
+  for (const auto& data_source_name : series.data_source_names) {
+    ua->send->ArrayItem(data_source_name.c_str());
+  }
+  ua->send->ArrayEnd("data_source_names");
+
+  OutputMetricsSeries(ua, series);
+  ua->send->ObjectEnd("metrics");
+  return true;
+}
+
+bool DotJobhistoryCmd(UaContext* ua, const char*)
+{
+  const int position = FindArgWithValue(ua, "jobid");
+  if (position < 0 || !ua->argv[position] || !ua->argv[position][0]) {
+    ua->ErrorMsg(T_("jobid=<jobid> is required.\n"));
+    return false;
+  }
+
+  const JobId_t job_id = str_to_uint64(ua->argv[position]);
+  if (job_id == 0) {
+    ua->ErrorMsg(T_("jobid=<jobid> must be greater than zero.\n"));
+    return false;
+  }
+
+  time_t start_time = 0;
+  time_t end_time = 0;
+  ParseOptionalHistoryRange(ua, &start_time, &end_time);
+
+  JobStatusTransitionHistory history;
+  if (!GetJobStatusTransitionHistory(job_id, start_time, end_time, &history)) {
+    ua->ErrorMsg(T_("Could not query job status history.\n"));
+    return false;
+  }
+
+  ua->send->ObjectStart("jobhistory");
+  ua->send->ObjectKeyValue("jobid", static_cast<uint64_t>(job_id));
+  ua->send->ObjectKeyValueBool("available", history.available);
+  ua->send->ArrayStart("events");
+
+  for (const auto& event : history.events) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("timestamp",
+                             static_cast<uint64_t>(event.timestamp));
+    ua->send->ObjectKeyValue("source",
+                             JobStatusTransitionSourceToString(event.source));
+    OutputJobStatusValue(ua, "previous_status", event.previous_status);
+    OutputJobStatusValue(ua, "new_status", event.new_status);
+    OutputJobStatusValue(ua, "director_status", event.director_status);
+    OutputJobStatusValue(ua, "storage_daemon_status",
+                         event.storage_daemon_status);
+    OutputJobStatusValue(ua, "file_daemon_status", event.file_daemon_status);
+    ua->send->ObjectKeyValue("job_files", event.job_files);
+    ua->send->ObjectKeyValue("job_bytes", event.job_bytes);
+    if (!event.current_file.empty()) {
+      ua->send->ObjectKeyValue("current_file", event.current_file.c_str());
+    }
+    ua->send->ObjectEnd();
+  }
+
+  ua->send->ArrayEnd("events");
+  ua->send->ObjectEnd("jobhistory");
   return true;
 }
 

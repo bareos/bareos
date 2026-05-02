@@ -441,7 +441,6 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
 // Read Data and commit to new job.
 bool DoMacRun(JobControlRecord* jcr)
 {
-  utime_t now;
   char ec1[50];
   const char* Type;
   bool ok = true;
@@ -552,10 +551,6 @@ bool DoMacRun(JobControlRecord* jcr)
       goto bail_out;
     }
 
-    // Update the initial Job Statistics.
-    now = (utime_t)time(NULL);
-    UpdateJobStatistics(jcr, now);
-
     if (me->enable_ktls) {
       bool ktls_enabled = sd->KtlsForSend();
       Jmsg(jcr, M_INFO, 0, "Sending via kTLS: %s\n",
@@ -639,10 +634,6 @@ bool DoMacRun(JobControlRecord* jcr)
     }
 
     jcr->sendJobStatus(JS_Running);
-
-    // Update the initial Job Statistics.
-    now = (utime_t)time(NULL);
-    UpdateJobStatistics(jcr, now);
 
     if (!BeginDataSpool(jcr->sd_impl->dcr)) {
       ok = false;

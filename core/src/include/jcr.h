@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -255,9 +255,13 @@ class JobControlRecord {
 };
 /* clang-format on */
 
+using job_status_change_hook_t
+    = void(JobControlRecord* jcr, int old_job_status, int new_job_status);
+
 // The following routines are found in lib/jcr.c
 BAREOS_IMPORT int GetNextJobidFromList(const char** p, uint32_t* JobId);
 BAREOS_IMPORT bool InitJcrSubsystem(int timeout);
+BAREOS_IMPORT void SetJobStatusChangeHook(job_status_change_hook_t* hook);
 BAREOS_IMPORT JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr);
 BAREOS_IMPORT void register_jcr(JobControlRecord* jcr);
 BAREOS_IMPORT JobControlRecord* get_jcr_by_id(uint32_t JobId);

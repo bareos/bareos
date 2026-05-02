@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -114,10 +114,8 @@ class StorageResource
   bool allow_bw_bursting = false; /**< Allow bursting with bandwidth limiting */
   bool ndmp_enable = false;       /**< Enable NDMP protocol listener */
   bool ndmp_snooping = false;     /**< Enable NDMP protocol snooping */
-  bool collect_dev_stats = false; /**< Collect Device Statistics */
-  bool collect_job_stats = false; /**< Collect Job Statistics */
   bool device_reserve_by_mediatype = false; /**< Allow device reservation based
-                                       on a matching mediatype */
+                                        on a matching mediatype */
   bool filedevice_concurrent_read = false;  /**< Allow filedevices to be read
                                        concurrently */
   char* verid = nullptr; /**< Custom Id to print in version command */

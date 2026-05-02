@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -17,15 +17,18 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-*/
-#ifndef BAREOS_STORED_SD_STATS_H_
-#define BAREOS_STORED_SD_STATS_H_
+ */
+#ifndef BAREOS_DIRD_RUNTIME_SNAPSHOT_H_
+#define BAREOS_DIRD_RUNTIME_SNAPSHOT_H_
 
-namespace storagedaemon {
+#include "dird/director_jcr_impl.h"
 
-bool StartStatisticsThread(void);
-void StopStatisticsThread();
+namespace directordaemon {
 
-} /* namespace storagedaemon */
+bool ParseStorageRuntimeSnapshotRecord(const char* record,
+                                       JobId_t* jobid,
+                                       StorageRuntimeSnapshot* snapshot);
 
-#endif  // BAREOS_STORED_SD_STATS_H_
+}  // namespace directordaemon
+
+#endif  // BAREOS_DIRD_RUNTIME_SNAPSHOT_H_

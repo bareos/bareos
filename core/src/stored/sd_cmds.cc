@@ -2,7 +2,7 @@
    BAREOS - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -303,12 +303,6 @@ static bool ReplicateData(JobControlRecord* jcr)
 
   Dmsg1(120, "Replicate data: %s", sd->msg);
   if (jcr->sd_impl->session_opened) {
-    utime_t now;
-
-    // Update the initial Job Statistics.
-    now = (utime_t)time(NULL);
-    UpdateJobStatistics(jcr, now);
-
     Dmsg1(110, "<stored: %s", sd->msg);
     if (DoAppendData(jcr, sd, "SD")) {
       return true;

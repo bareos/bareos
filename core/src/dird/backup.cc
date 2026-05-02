@@ -40,6 +40,7 @@
 #include "dird/getmsg.h"
 #include "dird/inc_conf.h"
 #include "dird/director_jcr_impl.h"
+#include "dird/job_status_history.h"
 #include "dird/job.h"
 #include "dird/msgchan.h"
 #include "dird/quota.h"
@@ -687,12 +688,15 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
 
     // Wait for Client to terminate
     while ((n = BgetDirmsg(fd)) >= 0) {
+      const int32_t previous_fd_job_status = jcr->dir_impl->FDJobStatus.load();
       if (!fd_ok
           && sscanf(fd->msg, EndJob, &jcr->dir_impl->FDJobStatus, &JobFiles,
                     &ReadBytes, &JobBytes, &JobErrors, &VSS, &Encrypt)
                  == 7) {
         fd_ok = true;
         jcr->setJobStatusWithPriorityCheck(jcr->dir_impl->FDJobStatus);
+        RecordFileDaemonJobStatusTransition(jcr, previous_fd_job_status,
+                                            jcr->dir_impl->FDJobStatus.load());
         Dmsg1(100, "FDStatus=%c\n", (char)jcr->getJobStatus());
       } else {
         Jmsg(jcr, M_WARNING, 0, T_("Unexpected Client Job message: %s\n"),

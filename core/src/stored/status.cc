@@ -57,7 +57,7 @@ inline constexpr const char DotStatusJob[]
 static void SendBlockedStatus(Device* dev, StatusPacket* sp);
 static void SendDeviceStatus(Device* dev, StatusPacket* sp);
 static void ListTerminatedJobs(StatusPacket* sp);
-static void ListRunningJobs(StatusPacket* sp);
+static void ListRunningJobs(StatusPacket* sp, bool runtime_details = false);
 static void ListJobsWaitingOnReservation(StatusPacket* sp);
 static void ListStatusHeader(StatusPacket* sp);
 static void ListDevices(JobControlRecord* jcr,
@@ -66,6 +66,113 @@ static void ListDevices(JobControlRecord* jcr,
 static void ListVolumes(StatusPacket* sp, const char* devicenames);
 
 static const char* JobLevelToString(int level);
+
+namespace {
+constexpr char kRuntimeUnset[] = "*None*";
+
+struct RunningJobRuntimeDetails {
+  char read_device[MAX_NAME_LENGTH];
+  char write_device[MAX_NAME_LENGTH];
+  char read_volume[MAX_NAME_LENGTH];
+  char write_volume[MAX_NAME_LENGTH];
+  char pool_name[MAX_NAME_LENGTH];
+  PoolMem current_file{PM_FNAME};
+  bool spooling{};
+  bool despooling{};
+  bool despool_wait{};
+};
+
+void InitializeRuntimeDetails(RunningJobRuntimeDetails& details)
+{
+  bstrncpy(details.read_device, kRuntimeUnset, sizeof(details.read_device));
+  bstrncpy(details.write_device, kRuntimeUnset, sizeof(details.write_device));
+  bstrncpy(details.read_volume, kRuntimeUnset, sizeof(details.read_volume));
+  bstrncpy(details.write_volume, kRuntimeUnset, sizeof(details.write_volume));
+  bstrncpy(details.pool_name, kRuntimeUnset, sizeof(details.pool_name));
+  PmStrcpy(details.current_file, kRuntimeUnset);
+}
+
+void FillRunningJobRuntimeDetails(JobControlRecord* jcr,
+                                  DeviceControlRecord* dcr,
+                                  DeviceControlRecord* rdcr,
+                                  RunningJobRuntimeDetails& details)
+{
+  InitializeRuntimeDetails(details);
+  if (rdcr && rdcr->device_resource) {
+    bstrncpy(details.read_device,
+             rdcr->dev ? rdcr->dev->print_name()
+                       : rdcr->device_resource->archive_device_string,
+             sizeof(details.read_device));
+    bstrncpy(details.read_volume, rdcr->VolumeName,
+             sizeof(details.read_volume));
+  }
+  if (dcr && dcr->device_resource) {
+    bstrncpy(details.write_device,
+             dcr->dev ? dcr->dev->print_name()
+                      : dcr->device_resource->archive_device_string,
+             sizeof(details.write_device));
+    bstrncpy(details.write_volume, dcr->VolumeName,
+             sizeof(details.write_volume));
+    bstrncpy(details.pool_name, dcr->pool_name, sizeof(details.pool_name));
+    details.spooling = dcr->spooling;
+    details.despooling = dcr->despooling;
+    details.despool_wait = dcr->despool_wait;
+  } else if (rdcr && rdcr->device_resource) {
+    bstrncpy(details.pool_name, rdcr->pool_name, sizeof(details.pool_name));
+  }
+
+  std::lock_guard<std::mutex> guard(jcr->mutex_guard());
+  if (!jcr->sd_impl->current_file.empty()) {
+    PmStrcpy(details.current_file, jcr->sd_impl->current_file.c_str());
+  }
+}
+
+void EmitRunningJobRuntimeDetails(StatusPacket* sp,
+                                  JobControlRecord* jcr,
+                                  DeviceControlRecord* dcr,
+                                  DeviceControlRecord* rdcr)
+{
+  PoolMem msg(PM_MESSAGE);
+  static_cast<void>(dcr);
+  static_cast<void>(rdcr);
+
+  PoolMem runtime_record(PM_MESSAGE);
+  FormatRunningJobRuntimeRecord(runtime_record, jcr);
+  auto len = Mmsg(msg, "JobRuntime %s\n", runtime_record.c_str());
+  sp->send(msg, len);
+}
+}  // namespace
+
+int FormatRunningJobRuntimeRecord(PoolMem& msg, JobControlRecord* jcr)
+{
+  auto* dcr = jcr->sd_impl->dcr;
+  auto* rdcr = jcr->sd_impl->read_dcr;
+  RunningJobRuntimeDetails details;
+  FillRunningJobRuntimeDetails(jcr, dcr, rdcr, details);
+
+  BashSpaces(details.read_device);
+  BashSpaces(details.write_device);
+  BashSpaces(details.read_volume);
+  BashSpaces(details.write_volume);
+  BashSpaces(details.pool_name);
+  BashSpaces(details.current_file);
+
+  jcr->UpdateJobStats();
+
+  auto sample_time = static_cast<long long>(time(nullptr));
+  return Mmsg(
+      msg,
+      "JobId=%u JobStatus=%c SampleTime=%lld JobFiles=%u "
+      "JobBytes=%" PRIu64
+      " AverageRate=%u LastRate=%u Spooling=%d Despooling=%d "
+      "DespoolWait=%d ReadDevice=%s WriteDevice=%s "
+      "ReadVolume=%s WriteVolume=%s Pool=%s CurrentFile=%s",
+      static_cast<uint32_t>(jcr->JobId), static_cast<char>(jcr->getJobStatus()),
+      sample_time, jcr->JobFiles, jcr->JobBytes, jcr->AverageRate,
+      jcr->LastRate, details.spooling, details.despooling, details.despool_wait,
+      details.read_device, details.write_device, details.read_volume,
+      details.write_volume, details.pool_name, details.current_file.c_str());
+}
 
 // Status command from Director
 static void OutputStatus(JobControlRecord* jcr,
@@ -630,7 +737,7 @@ static void SendDeviceStatus(Device* dev, StatusPacket* sp)
   sp->send(msg, len);
 }
 
-static void ListRunningJobs(StatusPacket* sp)
+static void ListRunningJobs(StatusPacket* sp, bool runtime_details)
 {
   JobControlRecord* jcr;
   DeviceControlRecord *dcr, *rdcr;
@@ -688,7 +795,11 @@ static void ListRunningJobs(StatusPacket* sp)
         sp->send(msg, len);
       }
 
-      jcr->UpdateJobStats();
+      if (runtime_details) {
+        EmitRunningJobRuntimeDetails(sp, jcr, dcr, rdcr);
+        found = true;
+        continue;
+      }
 
       len = Mmsg(msg,
                  T_("    Files=%s Bytes=%s AveBytes/sec=%s LastBytes/sec=%s\n"),
@@ -971,6 +1082,9 @@ bool DotstatusCmd(JobControlRecord* jcr)
   } else if (Bstrcasecmp(cmd.c_str(), "running")) {
     sp.api = true;
     ListRunningJobs(&sp);
+  } else if (Bstrcasecmp(cmd.c_str(), "runningdetails")) {
+    sp.api = true;
+    ListRunningJobs(&sp, true);
   } else if (Bstrcasecmp(cmd.c_str(), "waitreservation")) {
     sp.api = true;
     ListJobsWaitingOnReservation(&sp);

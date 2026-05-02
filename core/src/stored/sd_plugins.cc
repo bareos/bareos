@@ -922,10 +922,8 @@ static bool bareosUpdateVolumeInfo(DeviceControlRecord* dcr)
 
 static void bareosUpdateTapeAlert(DeviceControlRecord* dcr, uint64_t flags)
 {
-  utime_t now;
-  now = (utime_t)time(NULL);
-
-  UpdateDeviceTapealert(dcr->device_resource->resource_name_, flags, now);
+  static_cast<void>(dcr);
+  static_cast<void>(flags);
 }
 
 static DeviceRecord* bareosNewRecord(bool with_data)

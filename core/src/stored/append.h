@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,6 +63,7 @@ class ProcessedFile {
 
 bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what);
 bool IsAttribute(DeviceRecord* record);
+bool AttributeStreamContainsPathname(int masked_stream);
 bool SendAttrsToDir(JobControlRecord* jcr, DeviceRecord* rec);
 }  // namespace storagedaemon
 

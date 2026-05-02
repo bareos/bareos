@@ -57,6 +57,10 @@
 
 #define DEFAULT_STATUS_SCHED_DAYS 7
 
+namespace {
+constexpr char kRuntimeUnset[] = "*None*";
+}  // namespace
+
 namespace directordaemon {
 
 static void ListScheduledJobs(UaContext* ua);
@@ -1435,6 +1439,57 @@ static void ListRunningJobs(UaContext* ua)
       ua->send->ObjectKeyValue("start_time", dt, "%s\n");
       ua->send->ObjectKeyValue("files", (uint64_t)jcr->JobFiles, "%llu\n");
       ua->send->ObjectKeyValue("bytes", (uint64_t)jcr->JobBytes, "%llu\n");
+      if (jcr->dir_impl->sd_runtime_snapshot.valid) {
+        const auto& snapshot = jcr->dir_impl->sd_runtime_snapshot;
+        ua->send->ObjectKeyValue("sd_sample_time",
+                                 (uint64_t)snapshot.sample_time, "%llu\n");
+        ua->send->ObjectKeyValue("sd_job_status", (uint64_t)snapshot.job_status,
+                                 "%llu\n");
+        ua->send->ObjectKeyValue("sd_files", (uint64_t)snapshot.job_files,
+                                 "%llu\n");
+        ua->send->ObjectKeyValue("sd_bytes", (uint64_t)snapshot.job_bytes,
+                                 "%llu\n");
+        ua->send->ObjectKeyValue("sd_average_bytes_per_second",
+                                 (uint64_t)snapshot.average_rate, "%llu\n");
+        ua->send->ObjectKeyValue("sd_last_bytes_per_second",
+                                 (uint64_t)snapshot.last_rate, "%llu\n");
+        ua->send->ObjectKeyValue("sd_spooling", (uint64_t)snapshot.spooling,
+                                 "%llu\n");
+        ua->send->ObjectKeyValue("sd_despooling", (uint64_t)snapshot.despooling,
+                                 "%llu\n");
+        ua->send->ObjectKeyValue("sd_despool_wait",
+                                 (uint64_t)snapshot.despool_wait, "%llu\n");
+        if (!snapshot.current_file.empty()
+            && snapshot.current_file != kRuntimeUnset) {
+          ua->send->ObjectKeyValue("sd_current_file",
+                                   snapshot.current_file.c_str(), "%s\n");
+        }
+        if (!snapshot.read_device.empty()
+            && snapshot.read_device != kRuntimeUnset) {
+          ua->send->ObjectKeyValue("sd_read_device",
+                                   snapshot.read_device.c_str(), "%s\n");
+        }
+        if (!snapshot.write_device.empty()
+            && snapshot.write_device != kRuntimeUnset) {
+          ua->send->ObjectKeyValue("sd_write_device",
+                                   snapshot.write_device.c_str(), "%s\n");
+        }
+        if (!snapshot.read_volume.empty()
+            && snapshot.read_volume != kRuntimeUnset) {
+          ua->send->ObjectKeyValue("sd_read_volume",
+                                   snapshot.read_volume.c_str(), "%s\n");
+        }
+        if (!snapshot.write_volume.empty()
+            && snapshot.write_volume != kRuntimeUnset) {
+          ua->send->ObjectKeyValue("sd_write_volume",
+                                   snapshot.write_volume.c_str(), "%s\n");
+        }
+        if (!snapshot.pool_name.empty()
+            && snapshot.pool_name != kRuntimeUnset) {
+          ua->send->ObjectKeyValue("sd_pool", snapshot.pool_name.c_str(),
+                                   "%s\n");
+        }
+      }
       if (*jcr->comment) {
         ua->send->ObjectKeyValue("comment", jcr->comment, "%s\n");
       }
@@ -1446,6 +1501,42 @@ static void ListRunningJobs(UaContext* ua)
       UnbashSpaces(jcr->comment);
     } else {
       ua->SendMsg(T_("%6d %-6s  %-20s %s\n"), jcr->JobId, level, jcr->Job, msg);
+      if (jcr->dir_impl->sd_runtime_snapshot.valid) {
+        const auto& snapshot = jcr->dir_impl->sd_runtime_snapshot;
+        char b1[50], b2[50], b3[50], b4[50];
+        ua->SendMsg(T_("               SD Files=%s Bytes=%s AveBytes/sec=%s "
+                       "LastBytes/sec=%s\n"),
+                    edit_uint64_with_commas(snapshot.job_files, b1),
+                    edit_uint64_with_commas(snapshot.job_bytes, b2),
+                    edit_uint64_with_commas(snapshot.average_rate, b3),
+                    edit_uint64_with_commas(snapshot.last_rate, b4));
+        if (!snapshot.current_file.empty()
+            && snapshot.current_file != kRuntimeUnset) {
+          ua->SendMsg(T_("               SD CurrentFile=%s\n"),
+                      snapshot.current_file.c_str());
+        }
+        if (!snapshot.write_device.empty()
+            && snapshot.write_device != kRuntimeUnset) {
+          ua->SendMsg(T_("               SD Writing: pool=%s volume=%s "
+                         "device=%s spooling=%d despooling=%d "
+                         "despool_wait=%d\n"),
+                      snapshot.pool_name.empty() ? kRuntimeUnset
+                                                 : snapshot.pool_name.c_str(),
+                      snapshot.write_volume.empty()
+                          ? kRuntimeUnset
+                          : snapshot.write_volume.c_str(),
+                      snapshot.write_device.c_str(), snapshot.spooling,
+                      snapshot.despooling, snapshot.despool_wait);
+        }
+        if (!snapshot.read_device.empty()
+            && snapshot.read_device != kRuntimeUnset) {
+          ua->SendMsg(T_("               SD Reading: volume=%s device=%s\n"),
+                      snapshot.read_volume.empty()
+                          ? kRuntimeUnset
+                          : snapshot.read_volume.c_str(),
+                      snapshot.read_device.c_str());
+        }
+      }
       /* Display comments if any */
       if (*jcr->comment) {
         ua->SendMsg(T_("               %-30s\n"), jcr->comment);

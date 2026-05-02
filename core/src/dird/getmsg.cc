@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,10 @@
 #include "dird.h"
 #include "dird/catreq.h"
 #include "dird/director_jcr_impl.h"
+#include "dird/job_status_history.h"
 #include "dird/msgchan.h"
+#include "dird/runtime_snapshot.h"
+#include "dird/statistics_time_series.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/util.h"
@@ -61,6 +64,7 @@ inline constexpr const char OK_msg[] = "1000 OK\n";
 static void SetJcrSdJobStatus(JobControlRecord* jcr, int SDJobStatus)
 {
   bool set_waittime = false;
+  const int32_t previous_sd_job_status = jcr->dir_impl->SDJobStatus.load();
 
   Dmsg2(800, "SetJcrSdJobStatus(%s, %c)\n", jcr->Job, SDJobStatus);
 
@@ -94,6 +98,9 @@ static void SetJcrSdJobStatus(JobControlRecord* jcr, int SDJobStatus)
     default:
       break;
   }
+
+  RecordStorageDaemonJobStatusTransition(jcr, previous_sd_job_status,
+                                         SDJobStatus);
 }
 
 /**
@@ -255,6 +262,20 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
         SetJcrSdJobStatus(jcr, JobStatus); /* current status */
       } else {
         Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), bs->msg);
+      }
+      continue;
+    }
+    if (bs->msg[0] == 'R') { /* SD runtime snapshot */
+      JobId_t runtime_jobid = 0;
+      StorageRuntimeSnapshot snapshot;
+      if (!ParseStorageRuntimeSnapshotRecord(msg, &runtime_jobid, &snapshot)) {
+        Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), bs->msg);
+      } else if (runtime_jobid != jcr->JobId) {
+        Jmsg1(jcr, M_ERROR, 0, T_("Runtime snapshot jobid mismatch: %s\n"),
+              bs->msg);
+      } else {
+        jcr->dir_impl->sd_runtime_snapshot = snapshot;
+        StoreStorageRuntimeSnapshot(jcr, jcr->dir_impl->sd_runtime_snapshot);
       }
       continue;
     }

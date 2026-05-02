@@ -1549,6 +1549,15 @@ status
    so it is waiting for higher priority jobs to finish, and finally, JobId 2507 (ClientVerify) is
    waiting because only one job can run at a time, hence it is simply "waiting execution"
 
+   For running jobs, :bcommand:`status dir` also shows the latest runtime sample
+   received from the Storage Daemon. Depending on the job type and current
+   state, this can include the current file or pathname, processed files and
+   bytes, average and last transfer rate, pool and volume, read and write
+   device, and whether the job is spooling or despooling. These fields are
+   derived on the Storage Daemon side and pushed to the Director regularly, so
+   the Director does not need to poll the Storage Daemon just to refresh live
+   job details.
+
    If you do a status dir, it will by default list the first occurrence of all jobs that are
    scheduled today and tomorrow. If you wish to see the jobs that are scheduled in the next three
    days (e.g. on Friday you want to see the first occurrence of what tapes are scheduled to be used
@@ -1628,6 +1637,24 @@ status
    (with two devices), it would block because the user unmounted the device. The real problem
    for the Job I started using the "File" device is that the device is blocked waiting for media
    – that is Bareos needs you to label a Volume.
+
+   If Director-side time-series persistence is enabled, these runtime samples
+   are also written to RRD files. Set
+   :config:option:`dir/director/StatisticsTimeSeries` to ``yes`` and optionally
+   :config:option:`dir/director/StatisticsTimeSeriesDirectory` to choose a
+   directory other than ``WorkingDirectory/statistics/rrd``. The sampling
+   cadence is controlled by
+   :config:option:`dir/director/StatisticsCollectInterval` on the Director and
+   by the Storage Daemon's :config:option:`sd/storage/StatisticsCollectInterval`.
+   The Storage Daemon sends runtime snapshots automatically; the default
+   interval on the Storage Daemon is 60 seconds.
+
+   The Director also keeps an in-memory history of daemon-reported job status
+   transitions for the current runtime. You can query it with
+   :bcommand:`.jobhistory jobid=<jobid>` and optionally restrict it with
+   ``hours=<number>`` or ``days=<number>``. Each event records which daemon
+   reported the transition together with the Director, Storage Daemon, and File
+   Daemon status values known at that time.
 
 status scheduler
    The command :bcommand:`status scheduler` (:sinceVersion:`12.4.4: status scheduler`) can be used

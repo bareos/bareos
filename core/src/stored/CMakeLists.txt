@@ -75,6 +75,7 @@ target_sources(
           sd_plugins.cc
           sd_stats.cc
           spool.cc
+          status.cc
           stored_globals.cc
           stored_conf.cc
           vol_mgr.cc
@@ -107,7 +108,6 @@ target_sources(
           read.cc
           sd_cmds.cc
           socket_server.cc
-          status.cc
 )
 if(HAVE_WIN32)
   target_sources(

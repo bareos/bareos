@@ -157,6 +157,9 @@ if(ENABLE_JANSSON)
   find_package(Jansson REQUIRED)
 endif()
 
+find_package(RRD REQUIRED)
+set(HAVE_LIBRRD 1)
+
 option(ENABLE_GRPC "Build with grpc support" OFF)
 
 if(ENABLE_GRPC)

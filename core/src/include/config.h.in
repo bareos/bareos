@@ -246,6 +246,9 @@
 // Define to 1 if you have jansson lib
 #cmakedefine HAVE_JANSSON @HAVE_JANSSON@
 
+// Define to 1 if you have librrd
+#cmakedefine HAVE_LIBRRD @HAVE_LIBRRD@
+
 // Define to 1 if you have the `lchmod' function
 #cmakedefine HAVE_LCHMOD @HAVE_LCHMOD@
 

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,10 +28,25 @@ class SdStatisticsThread : public ::testing::Test {
 
 static void test_starting_statistics_thread(std::string path_to_config)
 {
-  PConfigParser storage_config(StoragePrepareResources(path_to_config));
-  if (!storage_config) { return; }
+  PConfigParser storage_config(
+      storagedaemon::InitSdConfig(path_to_config.c_str(), M_INFO));
+  storagedaemon::my_config = storage_config.get();
+  if (!storage_config) {
+    GTEST_SKIP() << "Could not initialize storage config";
+  }
 
-  EXPECT_FALSE(storagedaemon::StartStatisticsThread());
+  if (!storage_config->ParseConfig()) {
+    GTEST_SKIP() << "Could not parse storage config";
+  }
+
+  storagedaemon::me
+      = (storagedaemon::StorageResource*)storage_config->GetNextRes(
+          storagedaemon::R_STORAGE, nullptr);
+  storagedaemon::my_config->own_resource_ = storagedaemon::me;
+
+  bool started = storagedaemon::StartStatisticsThread();
+  EXPECT_TRUE(started);
+  if (started) { storagedaemon::StopStatisticsThread(); }
 }
 
 TEST_F(SdStatisticsThread, default_collect_statistics)

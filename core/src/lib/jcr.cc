@@ -77,11 +77,17 @@ std::size_t NumJobsRun()
 static std::vector<std::weak_ptr<JobControlRecord>> job_control_record_cache;
 static dlist<JobControlRecord>* job_control_record_chain = nullptr;
 static int watch_dog_timeout = 0;
+static std::atomic<job_status_change_hook_t*> job_status_change_hook{nullptr};
 
 static std::mutex jcr_chain_mutex;
 static pthread_mutex_t job_start_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 inline constexpr const char Job_status[] = "Status Job=%s JobStatus=%d\n";
+
+void SetJobStatusChangeHook(job_status_change_hook_t* hook)
+{
+  job_status_change_hook.store(hook, std::memory_order_relaxed);
+}
 
 void LockJobs() { lock_mutex(job_start_mutex); }
 
@@ -740,7 +746,8 @@ void JobControlRecord::setJobStarted()
 void JobControlRecord::setJobStatusWithPriorityCheck(int newJobStatus)
 {
   int priority;
-  int oldJobStatus = JobStatus_;
+  const int previousJobStatus = JobStatus_;
+  int oldJobStatus = previousJobStatus;
   int old_priority = GetStatusPriority(oldJobStatus);
 
   priority = GetStatusPriority(newJobStatus);
@@ -768,6 +775,9 @@ void JobControlRecord::setJobStatusWithPriorityCheck(int newJobStatus)
   if (oldJobStatus != JobStatus_) {
     Dmsg2(800, "leave setJobStatus old=%c new=%c\n", oldJobStatus,
           newJobStatus);
+    if (auto* hook = job_status_change_hook.load(std::memory_order_relaxed)) {
+      hook(this, previousJobStatus, JobStatus_);
+    }
     //    GeneratePluginEvent(this, bEventStatusChange, nullptr);
   }
 }

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,7 +31,9 @@ static void test_starting_statistics_thread(std::string path_to_config)
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   if (!director_config) { return; }
 
-  EXPECT_FALSE(directordaemon::StartStatisticsThread());
+  bool started = directordaemon::StartStatisticsThread();
+  EXPECT_TRUE(started);
+  if (started) { directordaemon::StopStatisticsThread(); }
 }
 
 TEST_F(DirStatisticsThread, default_collect_statistics)

@@ -111,12 +111,12 @@ class DirectorResource
   alist<const char*>* plugin_names = nullptr; /* Plugin names to load */
   MessagesResource* messages = nullptr;       /* Daemon message handler */
   uint32_t MaxConcurrentJobs = 0; /* Max concurrent jobs for whole director */
-  uint32_t MaxConsoleConnections = 0; /* Max concurrent console connections */
-  utime_t FDConnectTimeout = {0};     /* Timeout for connect in seconds */
-  utime_t SDConnectTimeout = {0};     /* Timeout for connect in seconds */
-  utime_t heartbeat_interval = {0};   /* Interval to send heartbeats */
-  utime_t stats_retention = {0}; /* Statistics retention period in seconds */
-  bool ndmp_snooping = false;    /* NDMP Protocol specific snooping enabled */
+  uint32_t MaxConsoleConnections = 0;  /* Max concurrent console connections */
+  utime_t FDConnectTimeout = {0};      /* Timeout for connect in seconds */
+  utime_t SDConnectTimeout = {0};      /* Timeout for connect in seconds */
+  utime_t heartbeat_interval = {0};    /* Interval to send heartbeats */
+  bool statistics_time_series = false; /* Enable time-series persistence */
+  bool ndmp_snooping = false; /* NDMP Protocol specific snooping enabled */
   bool ndmp_fhinfo_set_zero_for_invalid_u_quad
       = false;  // Workaround for Isilon 9.1.0.0 not accepting -1 as value for
                 // FhInfo (which is the tape offset)
@@ -128,7 +128,9 @@ class DirectorResource
   uint32_t jcr_watchdog_time = 0; /* Absolute time after which a Job gets
                                  terminated  regardless of its progress */
   uint32_t stats_collect_interval
-      = 0;               /* Statistics collect interval in seconds */
+      = 0; /* Statistics collect interval in seconds */
+  char* statistics_time_series_directory
+      = nullptr;         /* Directory for time-series files */
   char* verid = nullptr; /* Custom Id to print in version command */
   char* secure_erase_cmdline = nullptr; /* Cmdline to execute to perform secure
                                  erase of file */
@@ -314,10 +316,8 @@ class StorageResource
   int32_t MaxConcurrentReadJobs = 0; /**< Maximum concurrent jobs reading */
   bool enabled = false;              /**< Set if device is enabled */
   bool autochanger = false;          /**< Set if autochanger */
-  bool collectstats
-      = false; /**< Set if statistics should be collected of this SD */
   bool AllowCompress = false; /**< Set if this Storage should allow jobs to
-                         enable compression */
+                          enable compression */
   int64_t StorageId = 0;      /**< Set from Storage DB record */
   int64_t max_bandwidth
       = 0; /**< Limit speed on this storage daemon for replication */

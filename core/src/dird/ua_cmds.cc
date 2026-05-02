@@ -89,6 +89,7 @@ extern bool UpdateCmd(UaContext* ua, const char* cmd);
 extern bool DotCatalogsCmd(UaContext* ua, const char* cmd);
 extern bool DotJobdefsCmd(UaContext* ua, const char* cmd);
 extern bool DotJobsCmd(UaContext* ua, const char* cmd);
+extern bool DotJobhistoryCmd(UaContext* ua, const char* cmd);
 extern bool DotJobstatusCmd(UaContext* ua, const char* cmd);
 extern bool DotFilesetsCmd(UaContext* ua, const char* cmd);
 extern bool DotClientsCmd(UaContext* ua, const char* cmd);
@@ -108,6 +109,7 @@ extern bool DotLocationsCmd(UaContext* ua, const char* cmd);
 extern bool DotMediaCmd(UaContext* ua, const char* cmd);
 extern bool DotProfilesCmd(UaContext* ua, const char* cmd);
 extern bool DotAopCmd(UaContext* ua, const char* cmd);
+extern bool DotMetricsCmd(UaContext* ua, const char* cmd);
 extern bool DotBvfsLsdirsCmd(UaContext* ua, const char* cmd);
 extern bool DotBvfsLsfilesCmd(UaContext* ua, const char* cmd);
 extern bool DotBvfsUpdateCmd(UaContext* ua, const char* cmd);
@@ -246,6 +248,9 @@ static struct ua_cmdstruct commands[] = {
      NULL, true, false},
     {NT_(".jobs"), DotJobsCmd, T_("List all job resources"),
      NT_("[type=<jobtype>] | [enabled | disabled]"), true, false},
+    {NT_(".jobhistory"), DotJobhistoryCmd,
+     T_("List director-tracked daemon job status history"),
+     NT_("jobid=<jobid> [hours=<number> | days=<number>]"), true, true},
     {NT_(".jobstatus"), DotJobstatusCmd, T_("List jobstatus information"),
      NT_("[ =<jobstatus> ]"), true, false},
     {NT_(".levels"), DotLevelsCmd, T_("List all backup levels"), NULL, false,
@@ -256,6 +261,12 @@ static struct ua_cmdstruct commands[] = {
     {NT_(".media"), DotMediaCmd, T_("List all medias"), NULL, true, false},
     {NT_(".mediatypes"), DotMediatypesCmd, T_("List all media types"), NULL,
      true, false},
+    {NT_(".metrics"), DotMetricsCmd, T_("Query historical metrics"),
+     NT_("kind=system [hours=<number> | days=<number>] "
+         "[cf=<last|max|min|average>] | "
+         "kind=pool pool=<pool-name> [hours=<number> | days=<number>] "
+         "[cf=<last|max|min|average>]"),
+     false, true},
     {NT_(".msgs"), DotMsgsCmd, T_("List all message resources"), NULL, false,
      false},
     {NT_(".pools"), DotPoolsCmd, T_("List all pool resources"),

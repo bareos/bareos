@@ -509,6 +509,21 @@ if(NOT client-only)
   bareos_add_test(
     backend_parse LINK_LIBRARIES Bareos::Lib GTest::gtest_main backend-utils
   )
+  bareos_add_test(
+    job_status_history_test
+    ADDITIONAL_SOURCES ../dird/job_status_history.cc
+    LINK_LIBRARIES Bareos::Lib GTest::gtest_main
+  )
+  bareos_add_test(
+    runtime_snapshot_test
+    ADDITIONAL_SOURCES ../dird/runtime_snapshot.cc
+    LINK_LIBRARIES Bareos::Lib GTest::gtest_main
+  )
+  bareos_add_test(
+    statistics_time_series_test
+    LINK_LIBRARIES Bareos::Lib GTest::gtest_main RRD::RRD
+    ADDITIONAL_SOURCES ../dird/statistics_time_series_rrd.cc
+  )
 endif()
 
 add_executable(env_tester env_tester.cc)

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -99,26 +99,6 @@ bool CheckResources()
               "\"backup\" in file %s\n"),
            job->resource_name_, configfile_name.c_str());
       return false;
-    }
-  }
-
-  StorageResource *store, *nstore;
-  foreach_res (store, R_STORAGE) {
-    /* If we collect statistics on this SD make sure any other entry pointing to
-     * the same SD does not collect statistics otherwise we collect the same
-     * data multiple times. */
-    if (store->collectstats) {
-      nstore = store;
-      while ((nstore = (StorageResource*)my_config->GetNextRes(
-                  R_STORAGE, (BareosResource*)nstore))) {
-        if (IsSameStorageDaemon(store, nstore) && nstore->collectstats) {
-          nstore->collectstats = false;
-          Dmsg1(200,
-                T_("Disabling collectstats for storage \"%s\""
-                   " as other storage already collects from this SD.\n"),
-                nstore->resource_name_);
-        }
-      }
     }
   }
 

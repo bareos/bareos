@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,7 +66,6 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   drive_tapealert_enabled = other.drive_tapealert_enabled;
   drive_crypto_enabled = other.drive_crypto_enabled;
   query_crypto_status = other.query_crypto_status;
-  collectstats = other.collectstats;
   eof_on_error_is_eot = other.eof_on_error_is_eot;
   drive = other.drive;
   drive_index = other.drive_index;
@@ -120,7 +119,6 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   drive_tapealert_enabled = rhs.drive_tapealert_enabled;
   drive_crypto_enabled = rhs.drive_crypto_enabled;
   query_crypto_status = rhs.query_crypto_status;
-  collectstats = rhs.collectstats;
   eof_on_error_is_eot = rhs.eof_on_error_is_eot;
   drive = rhs.drive;
   drive_index = rhs.drive_index;

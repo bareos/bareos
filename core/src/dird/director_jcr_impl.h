@@ -25,6 +25,7 @@
 #define BAREOS_DIRD_DIRECTOR_JCR_IMPL_H_
 
 #include <optional>
+#include <string>
 
 #include "cats/cats.h"
 #include "lib/mem_pool.h"
@@ -45,6 +46,7 @@ class PoolResource;
 class FilesetResource;
 class CatalogResource;
 struct RuntimeJobStatus;
+void EnsureJobStatusHistoryHookRegistered();
 }  // namespace directordaemon
 
 namespace storagedaemon {
@@ -103,8 +105,31 @@ struct Resources {
   bool run_next_pool_override{};  /**< Next pool override was given on run cmdline */
 };
 
+struct StorageRuntimeSnapshot {
+  time_t sample_time{};
+  uint32_t job_files{};
+  uint64_t job_bytes{};
+  uint32_t average_rate{};
+  uint32_t last_rate{};
+  int32_t job_status{};
+  bool valid{};
+  bool spooling{};
+  bool despooling{};
+  bool despool_wait{};
+  std::string current_file{};
+  std::string read_device{};
+  std::string write_device{};
+  std::string read_volume{};
+  std::string write_volume{};
+  std::string pool_name{};
+};
+
 struct DirectorJcrImpl {
-  DirectorJcrImpl( std::shared_ptr<ConfigResourcesContainer> configuration_resources_container) : job_config_resources_container_(configuration_resources_container) {
+  DirectorJcrImpl(
+      std::shared_ptr<ConfigResourcesContainer> configuration_resources_container)
+      : job_config_resources_container_(configuration_resources_container)
+  {
+    directordaemon::EnsureJobStatusHistoryHookRegistered();
     RestoreJobId = 0; MigrateJobId = 0; VerifyJobId = 0;
   }
   std::shared_ptr<ConfigResourcesContainer> job_config_resources_container_;
@@ -122,6 +147,7 @@ struct DirectorJcrImpl {
   uint32_t SDErrors{};            /**< Number of non-fatal errors */
   std::atomic<int32_t> SDJobStatus{}; /**< Storage Job Status */
   std::atomic<int32_t> FDJobStatus{}; /**< File daemon Job Status */
+  StorageRuntimeSnapshot sd_runtime_snapshot{};
   uint32_t DumpLevel{};           /**< Dump level when doing a NDMP backup */
   uint32_t ExpectedFiles{};       /**< Expected restore files */
   uint32_t MediaId{};             /**< DB record IDs associated with this job */

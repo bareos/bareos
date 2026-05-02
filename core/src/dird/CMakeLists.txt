@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -61,6 +61,7 @@ target_sources(
           getmsg.cc
           inc_conf.cc
           job.cc
+          job_status_history.cc
           jcr_util.cc
           jobq.cc
           job_trigger.cc
@@ -86,6 +87,7 @@ target_sources(
           socket_server.cc
           recycle.cc
           reload.cc
+          runtime_snapshot.cc
           restore.cc
           run_conf.cc
           run_on_incoming_connect_interval.cc
@@ -94,6 +96,8 @@ target_sources(
           scheduler_job_item_queue.cc
           scheduler_private.cc
           stats.cc
+          statistics_time_series.cc
+          statistics_time_series_rrd.cc
           storage.cc
           ua.cc
           ua_acl.cc
@@ -152,6 +156,10 @@ endif()
 
 if(HAVE_PAM)
   target_link_libraries(dird_objects PRIVATE PAM::pam)
+endif()
+
+if(RRD_FOUND)
+  target_link_libraries(dird_objects PRIVATE RRD::RRD)
 endif()
 
 add_executable(bareos-dbcheck)

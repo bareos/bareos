@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,7 +66,7 @@ JobControlRecord* new_control_jcr(const char* base_name, int job_type)
   {
     ResLocker _{my_config};
     jcr->dir_impl->res.job = (JobResource*)my_config->GetNextRes(R_JOB, NULL);
-    SetJcrDefaults(jcr, jcr->dir_impl->res.job);
+    if (jcr->dir_impl->res.job) { SetJcrDefaults(jcr, jcr->dir_impl->res.job); }
   }
 
   jcr->sd_auth_key = strdup("dummy"); /* dummy Storage daemon key */
