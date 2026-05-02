@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+set -e
+set -o pipefail
+set -u
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+# shellcheck source=../../environment.in
+. ./environment
+
+# shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+readonly expected_robot_delay="${AUTOCHANGER_ROBOT_DELAY:-10}"
+
+run_changer() {
+  ./mtx-changer never_used "$1" "$2" "$3" "$4"
+}
+
+run_changer_with_delay_check() {
+  local operation="$1"
+  shift
+  local duration
+  SECONDS=0
+  run_changer "${operation}" "$@"
+  duration="${SECONDS}"
+  if [[ "${duration}" -lt "${expected_robot_delay}" ]]; then
+    echo "${operation} completed too quickly: ${duration}s" >&2
+    estat=3
+  fi
+}
+
+capture_failure() {
+  local logfile="$1"
+  shift
+  if "$@" >"${logfile}" 2>&1; then
+    echo "command unexpectedly succeeded: $*" >&2
+    estat=3
+    return 1
+  fi
+}
+
+expect_grep '^D:0:E$' "${tmp}/mtx-inventory.txt" "drive 0 should start empty"
+expect_grep '^D:1:E$' "${tmp}/mtx-inventory.txt" "drive 1 should start empty"
+expect_grep '^D:2:E$' "${tmp}/mtx-inventory.txt" "drive 2 should start empty"
+expect_grep '^D:3:E$' "${tmp}/mtx-inventory.txt" "drive 3 should start empty"
+expect_not_grep '^D:4:' "${tmp}/mtx-inventory.txt" "fixture should emulate exactly four drives"
+expect_grep '^I:31:E$' "${tmp}/mtx-inventory.txt" "import/export slot 31 should start empty"
+expect_grep '^I:32:E$' "${tmp}/mtx-inventory.txt" "import/export slot 32 should start empty"
+expect_grep '^I:33:E$' "${tmp}/mtx-inventory.txt" "import/export slot 33 should start empty"
+expect_grep '^I:34:E$' "${tmp}/mtx-inventory.txt" "import/export slot 34 should start empty"
+expect_not_grep '^I:35:' "${tmp}/mtx-inventory.txt" "fixture should emulate exactly four import/export slots"
+expect_grep '^S:1:F:000001HD$' "${tmp}/mtx-inventory.txt" \
+  "slot 1 should start with its volume"
+expect_grep '^S:2:F:000002HD$' "${tmp}/mtx-inventory.txt" \
+  "slot 2 should start with its volume"
+
+slots="$(run_changer slots 0 "${archivedir}/drv_0" 0)"
+[[ "${slots}" == "30" ]] || {
+  echo "expected 30 slots, got ${slots}" >&2
+  estat=3
+}
+
+loaded_slot="$(run_changer loaded 0 "${archivedir}/drv_3" 3)"
+[[ "${loaded_slot}" == "0" ]] || {
+  echo "expected drive 3 to start empty, got ${loaded_slot}" >&2
+  estat=3
+}
+
+run_changer_with_delay_check load 1 "${archivedir}/drv_0" 0
+loaded_slot="$(run_changer loaded 0 "${archivedir}/drv_0" 0)"
+[[ "${loaded_slot}" == "1" ]] || {
+  echo "expected drive 0 to report slot 1, got ${loaded_slot}" >&2
+  estat=3
+}
+[[ -L "${archivedir}/drv_0" ]] || {
+  echo "drive device ${archivedir}/drv_0 is not linked to media" >&2
+  estat=3
+}
+expect_grep '^D:0:F:1:000001HD$' "${tmp}/mtx-inventory.txt" \
+  "drive 0 should contain slot 1 media after load"
+expect_grep '^S:1:E$' "${tmp}/mtx-inventory.txt" \
+  "slot 1 should be empty after load"
+
+capture_failure "${tmp}/load-same-slot.out" \
+  run_changer load 1 "${archivedir}/drv_1" 1
+expect_grep 'slot 1 is empty' "${tmp}/load-same-slot.out" \
+  "reloading an emptied slot should fail"
+
+capture_failure "${tmp}/load-busy-drive.out" \
+  run_changer load 2 "${archivedir}/drv_0" 0
+expect_grep 'drive 0 is already loaded' "${tmp}/load-busy-drive.out" \
+  "loading an occupied drive should fail"
+
+run_changer_with_delay_check unload 1 "${archivedir}/drv_0" 0
+loaded_slot="$(run_changer loaded 0 "${archivedir}/drv_0" 0)"
+[[ "${loaded_slot}" == "0" ]] || {
+  echo "expected drive 0 to be empty after unload, got ${loaded_slot}" >&2
+  estat=3
+}
+expect_grep '^D:0:E$' "${tmp}/mtx-inventory.txt" \
+  "drive 0 should be empty after unload"
+expect_grep '^S:1:F:000001HD$' "${tmp}/mtx-inventory.txt" \
+  "slot 1 should hold its media again after unload"
+expect_grep '^S:2:F:000002HD$' "${tmp}/mtx-inventory.txt" \
+  "slot 2 should keep its original media"
+
+run_changer_with_delay_check load 3 "${archivedir}/drv_1" 1
+capture_failure "${tmp}/unload-occupied-slot.out" \
+  run_changer unload 1 "${archivedir}/drv_1" 1
+expect_grep 'slot 1 is already occupied' "${tmp}/unload-occupied-slot.out" \
+  "unloading into an occupied slot should fail"
+
+capture_failure "${tmp}/unload-missing-slot.out" \
+  run_changer unload 99 "${archivedir}/drv_1" 1
+expect_grep 'slot 99 does not exist' "${tmp}/unload-missing-slot.out" \
+  "unloading to a missing slot should fail"
+
+end_test

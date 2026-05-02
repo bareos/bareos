@@ -1,0 +1,187 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2026 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+ */
+
+import {
+  directorCollection,
+  normaliseVolume,
+} from './useDirectorFetch.js'
+import { createDirectorCommandClient } from './directorAggregate.js'
+
+function storageScopeKey(director, name) {
+  return `${director}:${name}`
+}
+
+function decorateStorages(entries, director) {
+  return directorCollection(entries).map(entry => ({
+    ...entry,
+    autochanger: entry.autochanger === '1' || entry.autochanger === true,
+    enabled: entry.enabled !== '0' && entry.enabled !== false,
+    director,
+    scopeKey: storageScopeKey(director, entry.name ?? ''),
+  }))
+}
+
+function decorateAutochangerStorages(entries, director) {
+  return decorateStorages(entries, director)
+    .filter(entry => entry.autochanger)
+    .map(entry => ({
+      ...entry,
+      label: `${director} / ${entry.name}`,
+    }))
+}
+
+function decorateVolumes(entries, director) {
+  const raw = entries
+  const collection = Array.isArray(raw)
+    ? raw
+    : Object.values(raw ?? {}).flat()
+
+  return collection.map((entry) => {
+    const volume = normaliseVolume(entry)
+    return {
+      ...volume,
+      director,
+      scopeKey: storageScopeKey(director, volume.volumename),
+    }
+  })
+}
+
+function decoratePools(entries, director, bytesByPool) {
+  return directorCollection(entries).map(entry => ({
+    ...entry,
+    numvols: Number(entry.numvols ?? 0),
+    maxvols: Number(entry.maxvols ?? 0),
+    totalbytes: bytesByPool[storageScopeKey(director, entry.name ?? '')] ?? 0,
+    director,
+    scopeKey: storageScopeKey(director, entry.name ?? ''),
+  }))
+}
+
+function sortByNameAndDirector(entries, nameField) {
+  return [...entries].sort((left, right) => {
+    const nameCompare = String(left[nameField] ?? '').localeCompare(
+      String(right[nameField] ?? '')
+    )
+    if (nameCompare !== 0) {
+      return nameCompare
+    }
+
+    return String(left.director ?? '').localeCompare(String(right.director ?? ''))
+  })
+}
+
+export function normaliseDirectorStoragesState(
+  director,
+  storagesData,
+  poolsData,
+  volumesData
+) {
+  const volumes = decorateVolumes(volumesData, director)
+  const bytesByPool = Object.fromEntries(
+    volumes.reduce((totals, volume) => {
+      const key = storageScopeKey(director, volume.pool ?? '')
+      totals.set(key, (totals.get(key) ?? 0) + (Number(volume.volbytes) || 0))
+      return totals
+    }, new Map())
+  )
+
+  return {
+    storages: sortByNameAndDirector(decorateStorages(storagesData, director), 'name'),
+    pools: sortByNameAndDirector(decoratePools(poolsData, director, bytesByPool), 'name'),
+    volumes: sortByNameAndDirector(volumes, 'volumename'),
+  }
+}
+
+export async function fetchAggregatedStoragesState(credentials, directors) {
+  const results = await Promise.allSettled(directors.map(async (director) => {
+    const client = await createDirectorCommandClient({
+      ...credentials,
+      director,
+    })
+
+    try {
+      const [storagesResult, poolsResult, volumesResult] = await Promise.all([
+        client.call('list storages'),
+        client.call('llist pools'),
+        client.call('llist volumes'),
+      ])
+
+      return normaliseDirectorStoragesState(
+        director,
+        storagesResult?.storages,
+        poolsResult?.pools,
+        volumesResult?.volumes
+      )
+    } finally {
+      client.disconnect()
+    }
+  }))
+
+  return {
+    storages: sortByNameAndDirector(results
+      .filter(result => result.status === 'fulfilled')
+      .flatMap(result => result.value.storages), 'name'),
+    pools: sortByNameAndDirector(results
+      .filter(result => result.status === 'fulfilled')
+      .flatMap(result => result.value.pools), 'name'),
+    volumes: sortByNameAndDirector(results
+      .filter(result => result.status === 'fulfilled')
+      .flatMap(result => result.value.volumes), 'volumename'),
+    directorErrors: results.flatMap((result, index) => (
+      result.status === 'rejected'
+        ? [{
+          director: directors[index],
+          message: result.reason?.message ?? 'Failed to load storages.',
+        }]
+        : []
+    )),
+  }
+}
+
+export async function fetchAggregatedAutochangerStorages(credentials, directors) {
+  const results = await Promise.allSettled(directors.map(async (director) => {
+    const client = await createDirectorCommandClient({
+      ...credentials,
+      director,
+    })
+
+    try {
+      const storagesResult = await client.call('list storages')
+      return decorateAutochangerStorages(storagesResult?.storages, director)
+    } finally {
+      client.disconnect()
+    }
+  }))
+
+  return {
+    storages: sortByNameAndDirector(results
+      .filter(result => result.status === 'fulfilled')
+      .flatMap(result => result.value), 'name'),
+    directorErrors: results.flatMap((result, index) => (
+      result.status === 'rejected'
+        ? [{
+          director: directors[index],
+          message: result.reason?.message ?? 'Failed to load autochangers.',
+        }]
+        : []
+    )),
+  }
+}

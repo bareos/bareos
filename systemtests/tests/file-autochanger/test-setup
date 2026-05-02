@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,14 @@ set -u
 setup_data
 
 cp mtx-inventory.txt "${tmp}/mtx-inventory.txt"
+rm -rf "${tmp}/autochanger-media"
+mkdir -p "${tmp}/autochanger-media"
+while IFS=: read -r kind slot_index state barcode; do
+  if [[ "${kind}" == "S" && "${state}" == "F" ]]; then
+    touch "${tmp}/autochanger-media/${barcode}"
+  fi
+done <mtx-inventory.txt
+rm -f storage/drv_*
 
 bin/bareos start
 bin/bareos status
