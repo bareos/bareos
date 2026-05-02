@@ -145,7 +145,7 @@ class SeleniumTest(unittest.TestCase):
     chromedriverpath = None
     base_url = "http://127.0.0.1/bareos-webui"
     username = "admin"
-    password = "secret"
+    password = "admin"
     profile = "admin"
     client = "bareos-fd"
     restorefile = "/usr/sbin/bconsole"
@@ -945,6 +945,14 @@ def get_env():
     if profile:
         SeleniumTest.profile = profile
         print("using profile:" + profile)
+
+    if not os.environ.get("BAREOS_WEBUI_USERNAME"):
+        SeleniumTest.username = (
+            "readonly" if SeleniumTest.profile == "readonly" else "admin"
+        )
+
+    if not os.environ.get("BAREOS_WEBUI_PASSWORD"):
+        SeleniumTest.password = SeleniumTest.username
 
     testname = os.environ.get("BAREOS_WEBUI_TESTNAME")
     if testname:
