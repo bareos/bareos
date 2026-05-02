@@ -32,6 +32,8 @@ aarch64/bareos-storage-tape
 aarch64/bareos-tools
 aarch64/bareos-traymonitor
 aarch64/bareos-webui
+aarch64/bareos-webui-proxy
+aarch64/bareos-webui-vue
 debug/aarch64/bareos-barri-cli-debuginfo
 debug/aarch64/bareos-bconsole-debuginfo
 debug/aarch64/bareos-common-debuginfo
@@ -53,6 +55,7 @@ debug/aarch64/bareos-storage-python3-plugin-debuginfo
 debug/aarch64/bareos-storage-tape-debuginfo
 debug/aarch64/bareos-tools-debuginfo
 debug/aarch64/bareos-traymonitor-debuginfo
+debug/aarch64/bareos-webui-proxy-debuginfo
 noarch/python3-bareos
 src/bareos
 src/python-bareos

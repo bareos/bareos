@@ -334,6 +334,7 @@ if(NOT client-only)
   bareos_add_test(
     sort_stringvector LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   )
+  bareos_add_test(sql_query_test LINK_LIBRARIES Bareos::SQL GTest::gtest_main)
   bareos_add_test(
     test_config_parser_dir
     LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib testing_common
@@ -540,7 +541,7 @@ if(ENABLE_BARRI)
   )
 endif()
 
-if(ENABLE_PYTHON)
+if(ENABLE_PYTHON AND TARGET python-common)
   bareos_add_test(
     python_common_test LINK_LIBRARIES python-common GTest::gtest_main
   )

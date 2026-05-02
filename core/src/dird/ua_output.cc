@@ -711,10 +711,13 @@ static bool ListJobs(UaContext* ua,
   std::string query_range;
   SetQueryRange(query_range, ua, &jr);
 
+  const bool descending = FindArg(ua, NT_("reverse")) >= 0;
+
   ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
                          optionslist.jobstatuslist, optionslist.joblevel_list,
                          optionslist.jobtypes, volumename, poolname, schedtime,
-                         optionslist.last, optionslist.count, ua->send, llist);
+                         optionslist.last, optionslist.count, ua->send, llist,
+                         descending);
 
   return true;
 }

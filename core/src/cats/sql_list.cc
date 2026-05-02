@@ -513,7 +513,8 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               bool last,
                               bool count,
                               OutputFormatter* sendit,
-                              e_list_type type)
+                              e_list_type type,
+                              bool descending)
 {
   char ed1[50];
   char dt[MAX_TIME_LENGTH];
@@ -575,19 +576,27 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
 
   DbLocker _{this};
 
+  // For non-count queries the ORDER BY clause accepts an optional direction
+  // suffix (" DESC") followed by the LIMIT/OFFSET range string.
+  const std::string order_range
+      = (descending ? std::string(" DESC") : std::string()) + range;
+
   if (count) {
     FillQuery(SQL_QUERY::list_jobs_count, selection.c_str(), range);
   } else if (last) {
     if (type == VERT_LIST) {
-      FillQuery(SQL_QUERY::list_jobs_long_last, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs_long_last, selection.c_str(),
+                order_range.c_str());
     } else {
-      FillQuery(SQL_QUERY::list_jobs_last, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs_last, selection.c_str(),
+                order_range.c_str());
     }
   } else {
     if (type == VERT_LIST) {
-      FillQuery(SQL_QUERY::list_jobs_long, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs_long, selection.c_str(),
+                order_range.c_str());
     } else {
-      FillQuery(SQL_QUERY::list_jobs, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs, selection.c_str(), order_range.c_str());
     }
   }
 
