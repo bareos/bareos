@@ -116,15 +116,28 @@
       <div class="row q-col-gutter-md q-mt-md">
         <div class="col-12 col-lg-6">
           <q-card flat bordered class="bareos-panel">
-            <q-card-section class="panel-header">
+            <q-card-section class="panel-header row items-center">
               {{ t('Prunable Volumes') }} ({{ pruneReport.volumes.length }})
+              <q-space />
+              <q-btn
+                color="negative"
+                size="sm"
+                no-caps
+                unelevated
+                icon="delete_sweep"
+                :label="pruneSelectedLabel"
+                :loading="pruneSelectedLoading"
+                :disable="pruneSelectedDisabled"
+                @click="confirmPruneSelectedVolumes"
+              />
             </q-card-section>
             <q-card-section v-if="pruneReport.volumes.length === 0" class="text-grey-6">
               {{ t('No prune candidates right now.') }}
             </q-card-section>
             <q-card-section v-else class="q-pa-none">
               <q-table :rows="pruneReport.volumes" :columns="prunableVolumeCols" row-key="name"
-                       dense flat :pagination="{ rowsPerPage: 10 }">
+                       dense flat selection="multiple" v-model:selected="selectedPrunableVolumes"
+                       :pagination="{ rowsPerPage: 10 }">
                 <template #body-cell-name="props">
                   <q-td :props="props">
                     <VolumeNameLink
@@ -183,6 +196,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import {
   normalisePool,
   normalisePoolPruneReport,
@@ -212,6 +226,7 @@ const auth      = useAuthStore()
 const director  = useDirectorStore()
 const settings  = useSettingsStore()
 const { t } = useI18n()
+const $q = useQuasar()
 const poolName = computed(() => route.params.name)
 const requestedDirector = computed(() => (
   typeof route.query.director === 'string' ? route.query.director : ''
@@ -270,8 +285,10 @@ const backLocation = computed(() => {
 const pool    = ref(null)
 const volumes = ref([])
 const pruneReport = ref(normalisePoolPruneReport())
+const selectedPrunableVolumes = ref([])
 const loading = ref(true)
 const error   = ref(null)
+const pruneSelectedLoading = ref(false)
 
 function pruneReasonLabel(reason) {
   return {
@@ -294,7 +311,7 @@ async function ensurePoolDirector() {
 async function loadPool() {
   await ensurePoolDirector()
 
-  const [poolRes, volRes, pruneRes] = await Promise.all([
+  const [poolRes, volRes] = await Promise.all([
     director.call(`list pool=${poolName.value}`),
     director.call(`llist volumes pool=${poolName.value}`),
   ])
@@ -302,6 +319,7 @@ async function loadPool() {
   const rawPool = Array.isArray(pools) ? pools[0] : Object.values(pools)[0]
   pool.value = rawPool ? normalisePool(rawPool) : null
   pruneReport.value = normalisePoolPruneReport(rawPool)
+  selectedPrunableVolumes.value = []
   const vols = volRes?.volumes ?? []
   const volumeRows = Array.isArray(vols) ? vols : Object.values(vols).flat()
   volumes.value = volumeRows.map((volume) => {
@@ -315,12 +333,74 @@ async function loadPool() {
   })
 }
 
+const pruneSelectedLabel = computed(() => (
+  selectedPrunableVolumes.value.length
+    ? `${t('Prune selected')} (${selectedPrunableVolumes.value.length})`
+    : t('Prune selected')
+))
+
+const pruneSelectedDisabled = computed(() => (
+  pruneSelectedLoading.value || selectedPrunableVolumes.value.length === 0
+))
+
+function confirmPruneSelectedVolumes() {
+  if (pruneSelectedDisabled.value) return
+
+  const selectedNames = selectedPrunableVolumes.value.map(volume => volume.name).join(', ')
+  const totalJobs = selectedPrunableVolumes.value.reduce(
+    (sum, volume) => sum + Number(volume.prunablejobs ?? 0),
+    0
+  )
+  const totalBytes = selectedPrunableVolumes.value.reduce(
+    (sum, volume) => sum + Number(volume.prunablebytes ?? 0),
+    0
+  )
+  $q.dialog({
+    title: t('Prune Volumes'),
+    message: `${t('Prune the selected volumes from pool')} ${poolName.value}? ${selectedNames} (${totalJobs} ${t('Jobs')}, ${formatBytes(totalBytes)})`,
+    ok: { label: t('Prune'), color: 'negative', flat: true },
+    cancel: { label: t('Cancel'), flat: true },
+  }).onOk(pruneSelectedVolumes)
+}
+
+async function pruneSelectedVolumes() {
+  if (pruneSelectedDisabled.value) return
+
+  pruneSelectedLoading.value = true
+  const selectedNames = selectedPrunableVolumes.value.map(volume => volume.name)
+  const command = [
+    `prune volume pool=${poolName.value}`,
+    ...selectedNames.map(name => `volume=${name}`),
+    'yes',
+  ].join(' ')
+
+  try {
+    await ensurePoolDirector()
+    await director.call(command)
+    $q.notify({
+      type: 'positive',
+      message: t('Pruned {count} selected volume(s).', {
+        count: selectedNames.length,
+      }),
+    })
+    await loadPool()
+  } catch (pruneError) {
+    $q.notify({
+      type: 'negative',
+      message: `${t('Prune failed')}: ${pruneError.message}`,
+    })
+  } finally {
+    pruneSelectedLoading.value = false
+  }
+}
+
 watch(() => `${poolName.value}\u0000${requestedDirector.value}`, async () => {
   loading.value = true
   error.value = null
   pool.value = null
   volumes.value = []
   pruneReport.value = normalisePoolPruneReport()
+  selectedPrunableVolumes.value = []
   try {
     await loadPool()
   } catch (loadError) {
