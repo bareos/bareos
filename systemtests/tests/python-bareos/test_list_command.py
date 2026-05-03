@@ -539,13 +539,20 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             "recyclepoolid",
             "labeltype",
         ]
+        optional_long_list_pool_keys = {
+            "prunablevolumes",
+            "prunablejobs",
+            "prunablebytes",
+        }
         resultkeys = list(result["pools"][0].keys())
-
-        resultkeys.sort()
-        expected_long_list_pool_keys.sort()
         self.assertEqual(
-            resultkeys,
-            expected_long_list_pool_keys,
+            set(resultkeys) - optional_long_list_pool_keys,
+            set(expected_long_list_pool_keys),
+        )
+        self.assertTrue(
+            set(resultkeys).issubset(
+                set(expected_long_list_pool_keys) | optional_long_list_pool_keys
+            ),
         )
 
         # check expected behavior when asking for specific volume by name

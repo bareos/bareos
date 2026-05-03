@@ -62,8 +62,31 @@ run_bconsole
 # take the last 3 jobs (needed in case of test restart)
 
 jobids=$(grep "jobid" "$tmp/consolidate-empty-incrementals_incr.out" | tail -n 3 | sed 's/["jobid:]//g' | xargs | tr ' ' ',')
+empty_jobids=$(
+  awk -v ids="$jobids" '
+    BEGIN {
+      split(ids, job_list, ",")
+      for (job_index in job_list) {
+        wanted[job_list[job_index]] = 1
+      }
+    }
+    $1 == "JobId:" && wanted[$2] {
+      current_jobid = $2
+      next
+    }
+    $1 == "FD" && $2 == "Files" && $3 == "Written:" && $4 == "0" && current_jobid != "" {
+      print current_jobid
+      current_jobid = ""
+    }
+  ' "$tmp/consolidate-empty-incrementals_messages.out" | xargs | tr ' ' ','
+)
 
-expect_grep "purging empty jobids ${jobids}" \
+if [ -z "$empty_jobids" ]; then
+  echo "Expected at least one empty incremental job among ${jobids}."
+  exit 1
+fi
+
+expect_grep "purging empty jobids ${empty_jobids}" \
   "$tmp/consolidate-empty-incrementals_messages.out" \
   "Removal of expected empty jobs was not successful."
 
