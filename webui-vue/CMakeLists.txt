@@ -48,6 +48,7 @@ execute_process(
 set(WEBUI_VUE_SRC "${CMAKE_CURRENT_SOURCE_DIR}")
 set(WEBUI_VUE_DIST "${CMAKE_CURRENT_BINARY_DIR}/dist")
 set(WEBUI_VUE_SOURCE_DIST "${WEBUI_VUE_SRC}/dist")
+set(WEBUI_VUE_GIT_METADATA "${WEBUI_VUE_SRC}/../.git")
 set(WEBUI_VUE_PACKAGE_JSON "${WEBUI_VUE_SRC}/package.json")
 set(WEBUI_VUE_PACKAGE_LOCK "${WEBUI_VUE_SRC}/package-lock.json")
 set(WEBUI_VUE_BUILD_SCRIPT "${WEBUI_VUE_SRC}/build-dist.cmake")
@@ -69,10 +70,13 @@ set(WEBUI_VUE_INSTALL_CODE_TEMPLATE
     [=[
 if(EXISTS "@WEBUI_VUE_DIST@/index.html")
   set(webui_vue_install_dist "@WEBUI_VUE_DIST@")
+elseif(EXISTS "@WEBUI_VUE_SOURCE_DIST@/index.html" AND NOT EXISTS
+                                                  "@WEBUI_VUE_GIT_METADATA@")
+  set(webui_vue_install_dist "@WEBUI_VUE_SOURCE_DIST@")
 else()
   message(
     FATAL_ERROR
-      "Bareos WebUI Vue build-tree dist not found in @WEBUI_VUE_DIST@. Generate it with \"cmake --build <builddir> --target bareos-webui-vue-build\" before install."
+      "Bareos WebUI Vue build-tree dist not found in @WEBUI_VUE_DIST@. In git checkouts, generate it with \"cmake --build <builddir> --target bareos-webui-vue-build\" before install. Source archives may install a prebuilt webui-vue/dist."
   )
 endif()
 file(INSTALL DESTINATION "@WEBUI_VUE_DIR@" TYPE DIRECTORY FILES
