@@ -21,6 +21,7 @@
 
 import {
   directorCollection,
+  normalisePool,
   normaliseVolume,
 } from './useDirectorFetch.js'
 import { createDirectorCommandClient } from './directorAggregate.js'
@@ -65,14 +66,16 @@ function decorateVolumes(entries, director) {
 }
 
 function decoratePools(entries, director, bytesByPool) {
-  return directorCollection(entries).map(entry => ({
-    ...entry,
-    numvols: Number(entry.numvols ?? 0),
-    maxvols: Number(entry.maxvols ?? 0),
-    totalbytes: bytesByPool[storageScopeKey(director, entry.name ?? '')] ?? 0,
-    director,
-    scopeKey: storageScopeKey(director, entry.name ?? ''),
-  }))
+  return directorCollection(entries).map(entry => {
+    const pool = normalisePool(entry)
+    return {
+      ...entry,
+      ...pool,
+      totalbytes: bytesByPool[storageScopeKey(director, pool.name ?? '')] ?? 0,
+      director,
+      scopeKey: storageScopeKey(director, pool.name ?? ''),
+    }
+  })
 }
 
 function sortByNameAndDirector(entries, nameField) {

@@ -150,6 +150,22 @@ export function normaliseClient(c) {
   }
 }
 
+export function normalisePool(p) {
+  return {
+    ...p,
+    poolid: p.poolid ?? p.PoolId ?? '',
+    name: p.name ?? p.Name ?? '',
+    numvols: Number(p.numvols ?? p.NumVols ?? 0),
+    maxvols: Number(p.maxvols ?? p.MaxVols ?? 0),
+    volretention: p.volretention ?? p.VolRetention ?? '',
+    maxvoljobs: Number(p.maxvoljobs ?? p.MaxVolJobs ?? 0),
+    maxvolbytes: Number(p.maxvolbytes ?? p.MaxVolBytes ?? 0),
+    prunablevolumes: Number(p.prunablevolumes ?? p.PrunableVolumes ?? 0),
+    prunablejobs: Number(p.prunablejobs ?? p.PrunableJobs ?? 0),
+    prunablebytes: Number(p.prunablebytes ?? p.PrunableBytes ?? 0),
+  }
+}
+
 /**
  * Normalise a raw volume record.  Volumes can come from either
  * "list volumes" (nested by pool) or "llist volumes".

@@ -120,7 +120,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { normaliseVolume } from '../composables/useDirectorFetch.js'
+import { normalisePool, normaliseVolume } from '../composables/useDirectorFetch.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 import { useAuthStore } from '../stores/auth.js'
@@ -225,7 +225,8 @@ async function loadPool() {
     director.call(`llist volumes pool=${poolName.value}`),
   ])
   const pools = poolRes?.pools ?? []
-  pool.value = Array.isArray(pools) ? pools[0] : Object.values(pools)[0]
+  const rawPool = Array.isArray(pools) ? pools[0] : Object.values(pools)[0]
+  pool.value = rawPool ? normalisePool(rawPool) : null
   const vols = volRes?.volumes ?? []
   const volumeRows = Array.isArray(vols) ? vols : Object.values(vols).flat()
   volumes.value = volumeRows.map((volume) => {
@@ -266,6 +267,9 @@ const detailRows = computed(() => {
     { label: t('Max Bytes/Vol'),     value: p.maxvolbytes > 0 ? formatBytes(p.maxvolbytes) : '∞' },
     { label: t('Auto Prune'),        value: p.autoprune === '1' ? t('Yes') : t('No') },
     { label: t('Recycle'),           value: p.recycle === '1' ? t('Yes') : t('No') },
+    { label: t('Prunable Data Now'), value: p.prunablebytes > 0 ? formatBytes(p.prunablebytes) : '—' },
+    { label: t('Prunable Jobs Now'), value: p.prunablejobs > 0 ? p.prunablejobs : '—' },
+    { label: t('Affected Volumes'),  value: p.prunablevolumes > 0 ? p.prunablevolumes : '—' },
     { label: t('Use Once'),          value: p.useonce === '1' ? t('Yes') : t('No') },
     { label: t('Accept Any Volume'), value: p.acceptanyvolume === '1' ? t('Yes') : t('No') },
     { label: t('Scratch Pool ID'),   value: p.scratchpoolid > 0 ? p.scratchpoolid : '—' },
