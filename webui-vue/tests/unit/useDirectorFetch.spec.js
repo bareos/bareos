@@ -29,6 +29,7 @@ import {
   normaliseClient,
   normaliseJob,
   normalisePool,
+  normalisePoolPruneReport,
   normaliseVolume,
 } from '../../src/composables/useDirectorFetch.js'
 
@@ -142,6 +143,54 @@ describe('director data normalisers', () => {
       prunablejobs: 5,
       prunablebytes: 123456789,
     }))
+  })
+
+  it('normalises pool prune drilldown details', () => {
+    expect(normalisePoolPruneReport({
+      pool: 'Full',
+      reason: 'volume_retention_expired',
+      prunablevolumes: '1',
+      prunablejobs: '3',
+      prunablebytes: '4096',
+      status_breakdown: [{ status: 'Used', volumes: '1' }],
+      volumes: [{
+        name: 'Full-0001',
+        status: 'Used',
+        lastwritten: '2026-05-03 10:00:00',
+        reason: 'volume_retention_expired',
+        prunablejobs: '3',
+        prunablebytes: '4096',
+        jobids: ['1', '2', '3'],
+      }],
+      jobs: [{
+        jobid: '1',
+        name: 'backup-bareos-fd',
+        bytes: '2048',
+        starttime: '2026-05-03 09:00:00',
+      }],
+    })).toEqual({
+      pool: 'Full',
+      reason: 'volume_retention_expired',
+      prunablevolumes: 1,
+      prunablejobs: 3,
+      prunablebytes: 4096,
+      statusBreakdown: [{ status: 'Used', volumes: 1 }],
+      volumes: [{
+        name: 'Full-0001',
+        status: 'Used',
+        lastwritten: '2026-05-03 10:00:00',
+        reason: 'volume_retention_expired',
+        prunablejobs: 3,
+        prunablebytes: 4096,
+        jobids: [1, 2, 3],
+      }],
+      jobs: [{
+        jobid: 1,
+        name: 'backup-bareos-fd',
+        bytes: 2048,
+        starttime: '2026-05-03 09:00:00',
+      }],
+    })
   })
 
   it('converts keyed director collections to arrays', () => {
