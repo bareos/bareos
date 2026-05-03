@@ -25,6 +25,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include <string>
+#include <cctype>
 
 #include <unistd.h>
 
@@ -89,10 +90,56 @@ bool IsExpectedConsoleExitCommand(bool at_main_prompt, std::string_view command)
          || command == ".exit";
 }
 
+static bool IsMessagesConsoleCommand(std::string_view command)
+{
+  constexpr std::string_view kMessagesCommand = "messages";
+
+  const auto separator = command.find_first_of(" \t");
+  const auto token = command.substr(0, separator);
+  if (token.size() < 4 || token.size() > kMessagesCommand.size()) {
+    return false;
+  }
+
+  return std::equal(token.begin(), token.end(), kMessagesCommand.begin(),
+                    [](char lhs, char rhs) {
+                      return std::tolower(static_cast<unsigned char>(lhs))
+                             == std::tolower(static_cast<unsigned char>(rhs));
+                    });
+}
+
 bool ShouldSuppressRawConsoleChunk(std::string_view command,
                                    std::string_view chunk)
 {
-  return command == "messages" && chunk == "You have messages.\n";
+  return FilterRawConsoleChunk(command, chunk).empty();
+}
+
+std::string FilterRawConsoleChunk(std::string_view command,
+                                  std::string_view chunk)
+{
+  if (!IsMessagesConsoleCommand(command)) { return std::string(chunk); }
+
+  constexpr std::string_view kSuppressedLine = "You have messages.";
+  std::string filtered;
+  filtered.reserve(chunk.size());
+
+  size_t pos = 0;
+  while (pos < chunk.size()) {
+    const auto line_end = chunk.find('\n', pos);
+    const auto line_stop
+        = line_end == std::string_view::npos ? chunk.size() : line_end;
+    auto line = chunk.substr(pos, line_stop - pos);
+    if (!line.empty() && line.back() == '\r') { line.remove_suffix(1); }
+
+    if (line != kSuppressedLine) {
+      filtered.append(line);
+      if (line_end != std::string_view::npos) { filtered.push_back('\n'); }
+    }
+
+    if (line_end == std::string_view::npos) { break; }
+    pos = line_end + 1;
+  }
+
+  return filtered;
 }
 
 // ---------------------------------------------------------------------------
@@ -361,16 +408,15 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
             && IsExpectedConsoleExitCommand(
                 current_prompt == DirectorPrompt::Main, command);
       CallResult result = director.Call(
-          command,
-          (!cfg.json_mode && stream_raw)
-              ? std::function<void(std::string_view)>(
-                    [&](std::string_view chunk) {
-                      if (ShouldSuppressRawConsoleChunk(command, chunk)) {
-                        return;
-                      }
-                      send_raw_response(std::string(chunk), "more");
-                    })
-              : std::function<void(std::string_view)>());
+          command, (!cfg.json_mode && stream_raw)
+                       ? std::function<void(std::string_view)>(
+                             [&](std::string_view chunk) {
+                               auto filtered
+                                   = FilterRawConsoleChunk(command, chunk);
+                               if (filtered.empty()) { return; }
+                               send_raw_response(filtered, "more");
+                             })
+                       : std::function<void(std::string_view)>());
 
       if (cfg.json_mode) {
         // Parse and re-emit as
@@ -416,9 +462,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
         if (stream_raw) {
           send_raw_response("", prompt_str);
         } else {
-          if (ShouldSuppressRawConsoleChunk(command, result.text)) {
-            result.text.clear();
-          }
+          result.text = FilterRawConsoleChunk(command, result.text);
           send_raw_response(result.text, prompt_str);
         }
         if (should_close_console_session) { break; }
