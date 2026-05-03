@@ -7,6 +7,7 @@
 [listen]
 ws_host = localhost
 ws_port = 8765
+session_ttl = 28800
 
 [director:bareos-dir]
 host = localhost

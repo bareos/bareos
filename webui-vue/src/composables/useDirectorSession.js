@@ -35,7 +35,7 @@ export async function switchActiveDirector(targetDirector) {
   const previousCredentials = auth.getCredentials()
   const previousDirector = previousCredentials?.director
 
-  if (!previousCredentials?.password) {
+  if (!previousCredentials) {
     throw new Error('Not logged in.')
   }
 

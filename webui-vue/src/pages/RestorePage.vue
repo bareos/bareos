@@ -674,7 +674,7 @@ async function loadClients() {
 
     if (isCommonRestore.value) {
       const credentials = auth.getCredentials()
-      if (!credentials?.password) {
+      if (!credentials) {
         throw new Error(t('Not logged in.'))
       }
 

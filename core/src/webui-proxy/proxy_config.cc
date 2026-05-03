@@ -86,6 +86,8 @@ void ApplyProxySetting(ProxyConfig& cfg,
     cfg.bind_host = value;
   } else if (key == "ws_port") {
     cfg.port = ParseInteger(value, key);
+  } else if (key == "session_ttl") {
+    cfg.session_ttl = ParseInteger(value, key);
   } else {
     throw std::runtime_error("Proxy config: unknown key in [listen]: '" + key
                              + "'");
@@ -149,7 +151,10 @@ void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
       const std::string director_id = current_section.substr(9);
       auto [it, inserted]
           = cfg.allowed_directors.emplace(director_id, DirectorTargetConfig{});
-      if (inserted) { it->second.name = director_id; }
+      if (inserted) {
+        it->second.id = director_id;
+        it->second.name = director_id;
+      }
       ApplyDirectorSetting(it->second, key, value);
       continue;
     }

@@ -730,7 +730,7 @@ async function fetchPage() {
 
     if (jobsPageDirectors.value.length > 1 || (jobsListScopeDirector.value && isCommonJobs.value)) {
       const credentials = auth.getCredentials()
-      if (!credentials?.password) {
+      if (!credentials) {
         throw new Error(t('Not logged in.'))
       }
 

@@ -15,6 +15,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import {
+  buildDirectorAuthMessage,
+  canAuthenticateWithDirector,
   DEFAULT_DIRECTOR_NAME,
   useAuthStore,
 } from './auth.js'
@@ -36,6 +38,7 @@ export const useDirectorStore = defineStore('director', () => {
   const status   = ref('disconnected')
   const errorMsg = ref(null)
   const transport = ref(null)
+  const sessionToken = ref(null)
   const availableDirectors = ref([])
 
   const isConnected = computed(() => status.value === 'connected')
@@ -84,7 +87,10 @@ export const useDirectorStore = defineStore('director', () => {
     const auth = useAuthStore()
     const creds = auth.getCredentials() ?? _lastCredentials
 
-    if (!creds?.password || _reconnectTimer || !_hasAuthenticated || _manualDisconnect) {
+    if (!canAuthenticateWithDirector(creds)
+      || _reconnectTimer
+      || !_hasAuthenticated
+      || _manualDisconnect) {
       return
     }
 
@@ -110,6 +116,14 @@ export const useDirectorStore = defineStore('director', () => {
       status.value = 'connected'
       errorMsg.value = null
       transport.value = msg.transport ?? null
+      sessionToken.value = msg.session_token ?? _lastCredentials?.sessionToken ?? null
+      if (sessionToken.value) {
+        _lastCredentials = {
+          username: msg.username ?? _lastCredentials?.username ?? '',
+          director: msg.director ?? _lastCredentials?.director ?? DEFAULT_DIRECTOR_NAME,
+          sessionToken: sessionToken.value,
+        }
+      }
       _hasAuthenticated = true
       _startKeepalive()
       _clearReconnect()
@@ -125,6 +139,7 @@ export const useDirectorStore = defineStore('director', () => {
       status.value = 'error'
       errorMsg.value = msg.message ?? 'Authentication failed'
       transport.value = null
+      sessionToken.value = null
       _clearKeepalive()
       ws.value?.close()
       return
@@ -195,7 +210,8 @@ export const useDirectorStore = defineStore('director', () => {
    *
    * @param {object} credentials
    * @param {string} credentials.username
-   * @param {string} credentials.password
+   * @param {string} [credentials.password]
+   * @param {string} [credentials.sessionToken]
    * @param {string} credentials.director  configured director id
    */
   function connect(credentials) {
@@ -208,27 +224,24 @@ export const useDirectorStore = defineStore('director', () => {
 
     _manualDisconnect = false
     _lastCredentials = {
-      username: credentials.username,
-      password: credentials.password,
+      username: credentials.username ?? '',
       director: credentials.director ?? DEFAULT_DIRECTOR_NAME,
+      ...(credentials.password ? { password: credentials.password } : {}),
+      ...(credentials.sessionToken ? { sessionToken: credentials.sessionToken } : {}),
     }
     _clearReconnect()
     _clearKeepalive()
     status.value = 'connecting'
     errorMsg.value = null
     transport.value = null
+    sessionToken.value = credentials.sessionToken ?? null
 
     const socket = new WebSocket(WS_URL)
     ws.value = socket
 
     socket.onopen = () => {
       status.value = 'authenticating'
-      _send({
-        type:     'auth',
-        username:  credentials.username,
-        password:  credentials.password,
-        director:  credentials.director ?? DEFAULT_DIRECTOR_NAME,
-      })
+      _send(buildDirectorAuthMessage(credentials))
     }
 
     socket.onmessage = _onMessage
@@ -237,6 +250,7 @@ export const useDirectorStore = defineStore('director', () => {
       _clearKeepalive()
       status.value = 'error'
       errorMsg.value = `Cannot connect to proxy at ${WS_URL}`
+      sessionToken.value = null
       _rejectAll('WebSocket error')
     }
 
@@ -245,6 +259,7 @@ export const useDirectorStore = defineStore('director', () => {
       if (status.value === 'connected' || status.value === 'authenticating') {
         status.value = 'disconnected'
       }
+      sessionToken.value = null
       _rejectAll('WebSocket closed')
       if (!_manualDisconnect) {
         _scheduleReconnect()
@@ -291,6 +306,7 @@ export const useDirectorStore = defineStore('director', () => {
     status.value = 'disconnected'
     errorMsg.value = null
     transport.value = null
+    sessionToken.value = null
   }
 
   /**
@@ -365,12 +381,10 @@ export const useDirectorStore = defineStore('director', () => {
       }
 
       sock.onopen = () => {
-        sock.send(JSON.stringify({
-          type: 'auth', mode: 'raw',
-          username: creds.username,
-          password: creds.password,
+        sock.send(JSON.stringify(buildDirectorAuthMessage(creds, {
+          mode: 'raw',
           director: creds.director ?? DEFAULT_DIRECTOR_NAME,
-        }))
+        })))
       }
 
       let accumulated = ''
@@ -427,6 +441,7 @@ export const useDirectorStore = defineStore('director', () => {
     status,
     errorMsg,
     transport,
+    sessionToken,
     availableDirectors,
     isConnected,
     connect,

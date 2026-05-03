@@ -13,9 +13,9 @@ find_package(Threads REQUIRED)
 find_package(Jansson REQUIRED)
 
 set(PROXY_SOURCES
-    main.cc bareos_base64.cc director_connection.cc proxy_config.cc
-    "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc" proxy_session.cc
-    proxy_server.cc
+    main.cc auth_session.cc bareos_base64.cc director_connection.cc
+    proxy_config.cc "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc"
+    proxy_session.cc proxy_server.cc
 )
 
 add_executable(bareos-webui-proxy ${PROXY_SOURCES})
@@ -61,13 +61,20 @@ install(
 if(BUILD_TESTING AND GTest_FOUND)
   include(GoogleTest)
 
-  set(PROXY_LIB_SOURCES bareos_base64.cc director_connection.cc proxy_config.cc)
+  set(PROXY_LIB_SOURCES auth_session.cc bareos_base64.cc director_connection.cc
+                        proxy_config.cc
+  )
 
   add_executable(
     test_webui_proxy
-    tests/test_bareos_base64.cc tests/test_director_connection.cc
-    tests/test_proxy_config.cc tests/test_proxy_session.cc proxy_session.cc
-    "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc" ${PROXY_LIB_SOURCES}
+    tests/test_auth_session.cc
+    tests/test_bareos_base64.cc
+    tests/test_director_connection.cc
+    tests/test_proxy_config.cc
+    tests/test_proxy_session.cc
+    proxy_session.cc
+    "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc"
+    ${PROXY_LIB_SOURCES}
   )
   target_compile_features(test_webui_proxy PRIVATE cxx_std_20)
   target_compile_definitions(

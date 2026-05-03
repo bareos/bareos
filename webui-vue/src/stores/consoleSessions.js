@@ -21,7 +21,12 @@
 
 import { computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
-import { DEFAULT_DIRECTOR_NAME, useAuthStore } from './auth.js'
+import {
+  buildDirectorAuthMessage,
+  canAuthenticateWithDirector,
+  DEFAULT_DIRECTOR_NAME,
+  useAuthStore,
+} from './auth.js'
 
 function defaultWsUrl() {
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -266,7 +271,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     const auth = useAuthStore()
     const creds = credentials ?? auth.getCredentials()
 
-    if (!creds?.password) {
+    if (!canAuthenticateWithDirector(creds)) {
       appendErr(director, 'Not logged in — cannot open console.')
       return false
     }
@@ -288,13 +293,10 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     runtime.ws = ws
 
     ws.onopen = () => {
-      ws.send(JSON.stringify({
-        type: 'auth',
+      ws.send(JSON.stringify(buildDirectorAuthMessage(creds, {
         mode: 'raw',
-        username: creds.username,
-        password: creds.password,
         director: director || creds.director || DEFAULT_DIRECTOR_NAME,
-      }))
+      })))
     }
 
     ws.onmessage = (event) => {

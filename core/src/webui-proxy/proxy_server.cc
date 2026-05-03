@@ -174,9 +174,10 @@ void ProxyServer::Run()
       // Move fd and defaults into a detached thread — thread owns the socket.
       int cfd = client_fd;
       ProxyConfig cfg = cfg_;
-      std::thread([cfd, peer, cfg]() {
+      auto session_store = session_store_;
+      std::thread([cfd, peer, cfg, session_store]() {
         try {
-          RunProxySession(cfd, peer, cfg);
+          RunProxySession(cfd, peer, cfg, session_store);
         } catch (const std::exception& ex) {
           fprintf(stderr, "[proxy] %s session aborted: %s\n", peer.c_str(),
                   ex.what());

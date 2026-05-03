@@ -321,7 +321,7 @@ async function refresh() {
     aggregateError.value = null
     try {
       const credentials = auth.getCredentials()
-      if (!credentials?.password) {
+      if (!credentials) {
         throw new Error(t('Not logged in.'))
       }
 

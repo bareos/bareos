@@ -32,6 +32,7 @@ TEST(ProxyConfig, ParsesAllowedDirectorsFromIni)
 [listen]
 ws_host = 127.0.0.1
 ws_port = 18765
+session_ttl = 600
 
 [director:prod]
 host = prod.example.test
@@ -48,10 +49,13 @@ tls_psk_disable = true
 
   EXPECT_EQ(cfg.bind_host, "127.0.0.1");
   EXPECT_EQ(cfg.port, 18765);
+  EXPECT_EQ(cfg.session_ttl, 600);
   ASSERT_EQ(cfg.allowed_directors.size(), 2U);
+  EXPECT_EQ(cfg.allowed_directors.at("prod").id, "prod");
   EXPECT_EQ(cfg.allowed_directors.at("prod").host, "prod.example.test");
   EXPECT_EQ(cfg.allowed_directors.at("prod").port, 19101);
   EXPECT_EQ(cfg.allowed_directors.at("prod").name, "bareos-dir");
+  EXPECT_EQ(cfg.allowed_directors.at("dr").id, "dr");
   EXPECT_EQ(cfg.allowed_directors.at("dr").host, "dr.example.test");
   EXPECT_EQ(cfg.allowed_directors.at("dr").port, 29101);
   EXPECT_EQ(cfg.allowed_directors.at("dr").name, "dr-dir");

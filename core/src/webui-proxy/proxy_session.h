@@ -28,8 +28,10 @@
 #ifndef BAREOS_WEBUI_PROXY_PROXY_SESSION_H_
 #define BAREOS_WEBUI_PROXY_PROXY_SESSION_H_
 
+#include "auth_session.h"
 #include "proxy_config.h"
 
+#include <memory>
 #include <string>
 
 /**
@@ -39,7 +41,8 @@
  */
 void RunProxySession(int fd,
                      const std::string& peer,
-                     const ProxyConfig& config);
+                     const ProxyConfig& config,
+                     const std::shared_ptr<ProxySessionStore>& session_store);
 
 /**
  * Normalize a raw console command while preserving a trailing tab completion

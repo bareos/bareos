@@ -29,28 +29,28 @@ describe('auth store', () => {
     setActivePinia(createPinia())
   })
 
-  it('persists login credentials for reconnects', () => {
+  it('persists proxy session tokens for reconnects', () => {
     const auth = useAuthStore()
 
-    auth.login('admin', 'bareos-dir', 'secret')
+    auth.login('admin', 'bareos-dir', { sessionToken: 'proxy-session' })
 
     expect(auth.isLoggedIn).toBe(true)
     expect(JSON.parse(sessionStorage.getItem('bareos_user'))).toEqual({
       username: 'admin',
       director: 'bareos-dir',
     })
-    expect(sessionStorage.getItem('bareos_pass')).toBe('secret')
+    expect(sessionStorage.getItem('bareos_session_token')).toBe('proxy-session')
     expect(auth.getCredentials()).toEqual({
       username: 'admin',
-      password: 'secret',
       director: 'bareos-dir',
+      sessionToken: 'proxy-session',
     })
   })
 
   it('falls back to the default director connection when omitted', () => {
     const auth = useAuthStore()
 
-    auth.login('admin', undefined, 'secret')
+    auth.login('admin', undefined, { sessionToken: 'proxy-session' })
 
     expect(JSON.parse(sessionStorage.getItem('bareos_user'))).toEqual({
       username: 'admin',
@@ -58,27 +58,27 @@ describe('auth store', () => {
     })
     expect(auth.getCredentials()).toEqual({
       username: 'admin',
-      password: 'secret',
       director: 'bareos-dir',
+      sessionToken: 'proxy-session',
     })
   })
 
   it('clears the stored session on logout', () => {
     const auth = useAuthStore()
 
-    auth.login('admin', 'bareos-dir', 'secret')
+    auth.login('admin', 'bareos-dir', { sessionToken: 'proxy-session' })
     auth.logout()
 
     expect(auth.isLoggedIn).toBe(false)
     expect(sessionStorage.getItem('bareos_user')).toBeNull()
-    expect(sessionStorage.getItem('bareos_pass')).toBeNull()
+    expect(sessionStorage.getItem('bareos_session_token')).toBeNull()
     expect(auth.getCredentials()).toBeNull()
   })
 
-  it('updates the active director without losing the stored password', () => {
+  it('updates the active director without losing the stored session token', () => {
     const auth = useAuthStore()
 
-    auth.login('admin', 'bareos-dir', 'secret')
+    auth.login('admin', 'bareos-dir', { sessionToken: 'proxy-session' })
     auth.setDirector('bareos-dir-2')
 
     expect(JSON.parse(sessionStorage.getItem('bareos_user'))).toEqual({
@@ -87,8 +87,21 @@ describe('auth store', () => {
     })
     expect(auth.getCredentials()).toEqual({
       username: 'admin',
-      password: 'secret',
       director: 'bareos-dir-2',
+      sessionToken: 'proxy-session',
+    })
+  })
+
+  it('keeps plaintext passwords in memory only', () => {
+    const auth = useAuthStore()
+
+    auth.login('admin', 'bareos-dir', 'secret')
+
+    expect(sessionStorage.getItem('bareos_session_token')).toBeNull()
+    expect(auth.getCredentials()).toEqual({
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
     })
   })
 })

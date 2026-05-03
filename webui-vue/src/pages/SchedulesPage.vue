@@ -392,7 +392,7 @@ async function refreshSchedules() {
 
     if (isCommonSchedules.value) {
       const credentials = auth.getCredentials()
-      if (!credentials?.password) {
+      if (!credentials) {
         throw new Error(t('Not logged in.'))
       }
 
@@ -585,7 +585,7 @@ async function refreshStatus() {
 
     if (isCommonSchedules.value) {
       const credentials = auth.getCredentials()
-      if (!credentials?.password) {
+      if (!credentials) {
         throw new Error(t('Not logged in.'))
       }
 

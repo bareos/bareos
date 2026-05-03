@@ -163,7 +163,14 @@ async function doLogin() {
   }
 
   settings.setLocale(locale.value)
-  auth.login(username.value, directorRef.value, password.value)
+  if (!director.sessionToken) {
+    errorMsg.value = t('Could not establish a reusable proxy session.')
+    director.disconnect()
+    loading.value = false
+    return
+  }
+
+  auth.login(username.value, directorRef.value, { sessionToken: director.sessionToken })
   loading.value = false
   router.push({ name: 'dashboard' })
 }

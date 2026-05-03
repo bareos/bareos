@@ -27,6 +27,7 @@
 #include <vector>
 
 struct DirectorTargetConfig {
+  std::string id{"bareos-dir"};
   std::string host{"localhost"};
   int port{9101};
   std::string name{"bareos-dir"};
@@ -37,6 +38,7 @@ struct DirectorTargetConfig {
 struct ProxyConfig {
   std::string bind_host{"localhost"};
   int port{8765};
+  int session_ttl{8 * 60 * 60};
   std::map<std::string, DirectorTargetConfig> allowed_directors;
 };
 

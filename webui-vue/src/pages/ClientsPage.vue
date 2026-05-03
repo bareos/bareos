@@ -375,7 +375,7 @@ async function refresh() {
 
     if (clientsPageDirectors.value.length > 1 || (clientsListScopeDirector.value && isCommonClients.value)) {
       const credentials = auth.getCredentials()
-      if (!credentials?.password) {
+      if (!credentials) {
         throw new Error(t('Not logged in.'))
       }
 

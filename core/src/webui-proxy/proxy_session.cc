@@ -22,6 +22,7 @@
 #include "director_connection.h"
 #include "ws_codec.h"
 
+#include <optional>
 #include <cstdio>
 #include <stdexcept>
 #include <string>
@@ -68,6 +69,13 @@ static std::string JsonDirectorList(const ProxyConfig& config)
   return result;
 }
 
+struct SessionBootstrap {
+  AuthIdentity identity;
+  std::string session_token;
+  std::string preferred_director_id;
+  bool reused_existing_session{false};
+};
+
 std::string NormalizeRawConsoleCommand(std::string command)
 {
   command.erase(0, command.find_first_not_of(" \r\n"));
@@ -85,7 +93,10 @@ std::string NormalizeRawConsoleCommand(std::string command)
 // Session implementation
 // ---------------------------------------------------------------------------
 
-void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
+void RunProxySession(int fd,
+                     const std::string& peer,
+                     const ProxyConfig& config,
+                     const std::shared_ptr<ProxySessionStore>& session_store)
 {
   // RAII socket close
   struct FdGuard {
@@ -156,17 +167,61 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
                ? std::optional<int>(static_cast<int>(json_integer_value(v)))
                : std::nullopt;
   };
+  auto jstr_required = [&](const char* key) -> std::optional<std::string> {
+    const char* v = json_string_value(json_object_get(auth_msg, key));
+    if (!v || !*v) { return std::nullopt; }
+    return std::string(v);
+  };
 
   DirectorConfig cfg;
-  cfg.username = jstr("username", "admin");
-  cfg.password = jstr("password", "");
+  const auto requested_session_token = jstr_required("session_token");
+  const auto requested_username = jstr_required("username");
+  const auto requested_password = jstr_required("password");
+  const auto requested_director = joptional("director");
   std::string mode = jstr("mode", "json");
   cfg.json_mode = (mode != "raw");
+  SessionBootstrap bootstrap;
 
   try {
-    const auto target
-        = ResolveDirectorTarget(config, joptional("director"),
-                                joptional("host"), joptional_int("port"));
+    std::optional<ProxySession> session;
+    if (requested_session_token) {
+      if (!session_store) {
+        throw std::runtime_error(
+            "Proxy auth: session support is not available");
+      }
+      session = session_store->GetSession(*requested_session_token);
+      if (!session) {
+        throw std::runtime_error("Proxy auth: unknown or expired session");
+      }
+
+      bootstrap.identity = session->identity;
+      bootstrap.session_token = session->token;
+      bootstrap.preferred_director_id = session->preferred_director_id;
+      bootstrap.reused_existing_session = true;
+      cfg.username = session->director_username;
+      cfg.password = session->director_password;
+    } else {
+      if (!requested_username || !requested_password) {
+        throw std::runtime_error(
+            "Proxy auth: provide either session_token or username/password");
+      }
+
+      cfg.username = *requested_username;
+      cfg.password = *requested_password;
+      bootstrap.identity.provider = "password";
+      bootstrap.identity.subject = cfg.username;
+      bootstrap.identity.username = cfg.username;
+    }
+
+    const auto target = ResolveDirectorTarget(
+        config,
+        requested_director
+            ? requested_director
+            : (!bootstrap.preferred_director_id.empty()
+                   ? std::optional<std::string>(bootstrap.preferred_director_id)
+                   : std::nullopt),
+        joptional("host"), joptional_int("port"));
+    bootstrap.preferred_director_id = target.id;
     cfg.director_name = target.name;
     cfg.host = target.host;
     cfg.port = target.port;
@@ -180,8 +235,10 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
   json_decref(auth_msg);
 
-  fprintf(stderr, "[proxy] %s auth: user=%s director=%s host=%s:%d mode=%s\n",
-          peer.c_str(), cfg.username.c_str(), cfg.director_name.c_str(),
+  fprintf(stderr,
+          "[proxy] %s auth: user=%s director=%s target=%s host=%s:%d mode=%s\n",
+          peer.c_str(), cfg.username.c_str(),
+          bootstrap.preferred_director_id.c_str(), cfg.director_name.c_str(),
           cfg.host.c_str(), cfg.port, mode.c_str());
 
   // ── Step 2: connect and authenticate to director ─────────────────────────
@@ -211,6 +268,19 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   const char* director_transport
       = director.UsesTlsPsk() ? "TLS-PSK" : "cleartext";
 
+  if (bootstrap.reused_existing_session) {
+    const auto refreshed = session_store->RefreshSession(
+        bootstrap.session_token, bootstrap.preferred_director_id);
+    if (refreshed) { bootstrap.session_token = refreshed->token; }
+  } else {
+    AuthResult auth_result;
+    auth_result.identity = bootstrap.identity;
+    const auto created
+        = session_store->CreateSession(auth_result, cfg.username, cfg.password,
+                                       bootstrap.preferred_director_id);
+    bootstrap.session_token = created.token;
+  }
+
   fprintf(stderr, "[proxy] %s director transport: %s\n", peer.c_str(),
           director_transport);
 
@@ -221,6 +291,9 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     json_object_set_new(ok, "director", json_string(cfg.director_name.c_str()));
     json_object_set_new(ok, "mode", json_string(mode.c_str()));
     json_object_set_new(ok, "transport", json_string(director_transport));
+    json_object_set_new(ok, "username", json_string(cfg.username.c_str()));
+    json_object_set_new(ok, "session_token",
+                        json_string(bootstrap.session_token.c_str()));
     char* ok_str = json_dumps(ok, JSON_COMPACT);
     json_decref(ok);
     try {

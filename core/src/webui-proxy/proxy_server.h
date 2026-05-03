@@ -25,8 +25,11 @@
 #ifndef BAREOS_WEBUI_PROXY_PROXY_SERVER_H_
 #define BAREOS_WEBUI_PROXY_PROXY_SERVER_H_
 
+#include "auth_session.h"
 #include "proxy_config.h"
+
 #include <csignal>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -37,7 +40,12 @@
  */
 class ProxyServer {
  public:
-  explicit ProxyServer(const ProxyConfig& cfg) : cfg_(cfg) {}
+  explicit ProxyServer(const ProxyConfig& cfg)
+      : cfg_(cfg)
+      , session_store_(std::make_shared<ProxySessionStore>(
+            std::chrono::seconds(cfg.session_ttl)))
+  {
+  }
 
   /** Blocking: accept loop.  Returns when Stop() is called. */
   void Run();
@@ -47,6 +55,7 @@ class ProxyServer {
 
  private:
   ProxyConfig cfg_;
+  std::shared_ptr<ProxySessionStore> session_store_;
   // All listening sockets (one per address family for the bind host).
   // Populated by Run(); closed during Run() shutdown.
   std::vector<int> listen_fds_;

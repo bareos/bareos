@@ -848,7 +848,7 @@ async function refreshStatus() {
 
     if (isCommonDirectorPage.value) {
       const credentials = auth.getCredentials()
-      if (!credentials?.password) {
+      if (!credentials) {
         throw new Error(t('Not logged in.'))
       }
 
@@ -988,7 +988,7 @@ async function refreshMessages() {
 
     if (isCommonDirectorPage.value) {
       const credentials = auth.getCredentials()
-      if (!credentials?.password) {
+      if (!credentials) {
         throw new Error(t('Not logged in.'))
       }
 

@@ -10,12 +10,12 @@ import { useDirectorStore } from './stores/director.js'
 const auth     = useAuthStore()
 const director = useDirectorStore()
 
-// On page reload the WS connection is gone but sessionStorage still holds
-// the credentials.  Reconnect automatically so pages can load their data.
+// On page reload the WS connection is gone but sessionStorage still holds the
+// proxy session token. Reconnect automatically so pages can load their data.
 onMounted(() => {
   if (auth.isLoggedIn && !director.isConnected) {
     const creds = auth.getCredentials()
-    if (creds?.password) director.connect(creds)
+    if (creds) director.connect(creds)
   }
 })
 </script>

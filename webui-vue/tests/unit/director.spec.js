@@ -125,11 +125,13 @@ describe('director store', () => {
       data: JSON.stringify({
         type: 'auth_ok',
         transport: 'cleartext',
+        session_token: 'proxy-session',
       }),
     })
 
     expect(director.status).toBe('connected')
     expect(director.transport).toBe('cleartext')
+    expect(director.sessionToken).toBe('proxy-session')
   })
 
   it('sends keepalive pings after authentication', () => {
@@ -159,7 +161,7 @@ describe('director store', () => {
     const auth = useAuthStore()
     const director = useDirectorStore()
 
-    auth.login('admin', 'bareos-dir', 'secret')
+    auth.login('admin', 'bareos-dir', { sessionToken: 'proxy-session' })
     director.connect(auth.getCredentials())
 
     const firstSocket = FakeWebSocket.instances[0]
@@ -180,9 +182,8 @@ describe('director store', () => {
 
     expect(JSON.parse(secondSocket.sent[0])).toEqual({
       type: 'auth',
-      username: 'admin',
-      password: 'secret',
       director: 'bareos-dir',
+      session_token: 'proxy-session',
     })
   })
 
@@ -230,7 +231,7 @@ describe('director store', () => {
     const auth = useAuthStore()
     const director = useDirectorStore()
 
-    auth.login('admin', 'bareos-dir', 'secret')
+    auth.login('admin', 'bareos-dir', { sessionToken: 'proxy-session' })
 
     const rawPromise = director.rawCall('messages')
     const socket = FakeWebSocket.instances[0]
@@ -239,6 +240,7 @@ describe('director store', () => {
       data: JSON.stringify({
         type: 'auth_ok',
         director: 'bareos-dir',
+        session_token: 'proxy-session',
       }),
     })
 
@@ -273,7 +275,7 @@ describe('director store', () => {
     const director = useDirectorStore()
     const chunks = []
 
-    auth.login('admin', 'bareos-dir', 'secret')
+    auth.login('admin', 'bareos-dir', { sessionToken: 'proxy-session' })
 
     const rawPromise = director.rawCall('messages', {
       onChunk: (chunk) => chunks.push(chunk),
@@ -284,6 +286,7 @@ describe('director store', () => {
       data: JSON.stringify({
         type: 'auth_ok',
         director: 'bareos-dir',
+        session_token: 'proxy-session',
       }),
     })
 
@@ -313,7 +316,7 @@ describe('director store', () => {
     const director = useDirectorStore()
     const states = []
 
-    auth.login('admin', 'bareos-dir', 'secret')
+    auth.login('admin', 'bareos-dir', { sessionToken: 'proxy-session' })
 
     const rawPromise = director.rawCall('label barcodes', {
       onStateChange: (state) => states.push(state),
@@ -324,6 +327,7 @@ describe('director store', () => {
       data: JSON.stringify({
         type: 'auth_ok',
         director: 'bareos-dir',
+        session_token: 'proxy-session',
       }),
     })
     socket.onmessage?.({

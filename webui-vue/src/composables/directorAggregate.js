@@ -23,6 +23,7 @@ import {
   directorCollection,
   normaliseJob,
 } from './useDirectorFetch.js'
+import { buildDirectorAuthMessage } from '../stores/auth.js'
 
 function defaultWsUrl() {
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -117,12 +118,7 @@ export function createDirectorCommandClient(credentials, options = {}) {
     }
 
     socket.onopen = () => {
-      socket.send(JSON.stringify({
-        type: 'auth',
-        username: credentials.username,
-        password: credentials.password,
-        director: credentials.director,
-      }))
+      socket.send(JSON.stringify(buildDirectorAuthMessage(credentials)))
     }
 
     socket.onmessage = (event) => {

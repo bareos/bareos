@@ -72,7 +72,7 @@ describe('director aggregate dashboard helpers', () => {
   it('fetches a dashboard snapshot from the selected director', async () => {
     const snapshotPromise = fetchDirectorDashboardSnapshot({
       username: 'admin',
-      password: 'secret',
+      sessionToken: 'proxy-session',
       director: 'prod-dir',
     })
 
@@ -80,9 +80,8 @@ describe('director aggregate dashboard helpers', () => {
     socket.open()
     expect(JSON.parse(socket.sent[0])).toEqual({
       type: 'auth',
-      username: 'admin',
-      password: 'secret',
       director: 'prod-dir',
+      session_token: 'proxy-session',
     })
 
     socket.onmessage?.({

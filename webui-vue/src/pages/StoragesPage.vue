@@ -597,7 +597,7 @@ async function refresh() {
 
     if (storagesPageDirectors.value.length > 1 || (storagesListScopeDirector.value && isCommonStorages.value)) {
       const credentials = auth.getCredentials()
-      if (!credentials?.password) {
+      if (!credentials) {
         throw new Error(t('Not logged in.'))
       }
 

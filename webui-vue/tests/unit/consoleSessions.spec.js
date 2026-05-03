@@ -69,12 +69,12 @@ describe('console session store', () => {
 
     consoleSessions.connectSession('bareos-dir-a', {
       username: 'admin',
-      password: 'secret',
+      sessionToken: 'proxy-session-a',
       director: 'bareos-dir-a',
     })
     consoleSessions.connectSession('bareos-dir-b', {
       username: 'admin',
-      password: 'secret',
+      sessionToken: 'proxy-session-b',
       director: 'bareos-dir-b',
     })
 
@@ -86,16 +86,14 @@ describe('console session store', () => {
     expect(JSON.parse(socketA.sent[0])).toEqual({
       type: 'auth',
       mode: 'raw',
-      username: 'admin',
-      password: 'secret',
       director: 'bareos-dir-a',
+      session_token: 'proxy-session-a',
     })
     expect(JSON.parse(socketB.sent[0])).toEqual({
       type: 'auth',
       mode: 'raw',
-      username: 'admin',
-      password: 'secret',
       director: 'bareos-dir-b',
+      session_token: 'proxy-session-b',
     })
 
     socketA.onmessage?.({
