@@ -117,7 +117,7 @@
         <div class="text-weight-bold q-mb-xs">{{ tlTooltip.job.name }}</div>
         <div>{{ t('Client') }}: {{ tlTooltip.job.client }}</div>
         <div>{{ t('ID') }}: {{ tlTooltip.job.id }}</div>
-        <div>{{ t('Status') }}: {{ translatedJobStatusMap[tlTooltip.job.status]?.label ?? tlTooltip.job.status }}</div>
+        <div>{{ t('Status') }}: {{ displayJobStatus(tlTooltip.job) }}</div>
         <div>{{ t('Start') }}: {{ tlTooltip.job.starttime }}</div>
         <div v-if="tlTooltip.job.endtime">{{ t('End') }}: {{ tlTooltip.job.endtime }}</div>
         <div>{{ t('Duration') }}: {{ tlTooltip.job.duration || '—' }}</div>
@@ -134,7 +134,13 @@ import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { jobStatusMap, formatBytes } from '../mock/index.js'
-import { normaliseJob } from '../composables/useDirectorFetch.js'
+import {
+  directorCollection,
+  displayJobStatus,
+  isRunningJobStatus,
+  normaliseJob,
+  overlayRuntimeStatuses,
+} from '../composables/useDirectorFetch.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -185,13 +191,6 @@ const timelineRangeOptions = computed(() => [
   { label: t('7 days'), value: 7 },
   { label: t('30 days'), value: 30 },
 ])
-const translatedJobStatusMap = computed(() => Object.fromEntries(
-  Object.entries(jobStatusMap).map(([key, info]) => [
-    key,
-    { ...info, label: info?.label ? t(info.label) : info?.label },
-  ]),
-))
-
 // ── Computed geometry ─────────────────────────────────────────────────────────
 const tlStart  = computed(() => Date.now() - tlDays.value * 24 * 3600 * 1000)
 const tlRange  = computed(() => Date.now() - tlStart.value)
@@ -210,8 +209,7 @@ function tlParseTS(str) {
 const tlRows = computed(() => {
   const now = Date.now()
   const clientGroups = new Map()
-  for (const raw of (tlRawJobs.value ?? [])) {
-    const j = normaliseJob(raw)
+  for (const j of (tlRawJobs.value ?? [])) {
     const s = tlParseTS(j.starttime)
     const e = tlParseTS(j.endtime) ?? now
     if (s === null || e < tlStart.value || s > now) continue
@@ -304,7 +302,18 @@ async function tlRefresh() {
   tlError.value   = ''
   try {
     const res = await director.call(`llist jobs days=${tlDays.value}`)
-    tlRawJobs.value = res?.jobs ?? []
+    const jobs = directorCollection(res?.jobs).map((job) => ({
+      ...normaliseJob(job),
+      director: currentDirector.value || null,
+    }))
+    if (jobs.some(job => isRunningJobStatus(job.status))) {
+      const runtimeStatus = await Promise.allSettled([director.call('status director')])
+      tlRawJobs.value = runtimeStatus[0].status === 'fulfilled'
+        ? overlayRuntimeStatuses(jobs, runtimeStatus[0].value?.running)
+        : jobs
+    } else {
+      tlRawJobs.value = jobs
+    }
   } catch (e) {
     tlError.value = e.message
   } finally {

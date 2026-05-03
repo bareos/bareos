@@ -55,6 +55,26 @@ function sortJobsByStartTime(jobs) {
   })
 }
 
+function decorateRuntimeJobs(entries) {
+  return directorCollection(entries).map((entry) => ({
+    id: numberValue(entry.jobid ?? entry.id),
+    runtimeStatus: entry.status ?? entry.jobstatus ?? undefined,
+  }))
+}
+
+function overlayRuntimeStatuses(jobs, runtimeJobs) {
+  const runtimeById = new Map(
+    runtimeJobs
+      .filter(job => job.id > 0)
+      .map(job => [job.id, job])
+  )
+
+  return jobs.map((job) => ({
+    ...job,
+    runtimeStatus: runtimeById.get(job.id)?.runtimeStatus ?? job.runtimeStatus,
+  }))
+}
+
 function jobsFilterCommands(statusFilter) {
   const filters = normaliseJobStatusFilters(statusFilter)
   return filters.length ? filters.map(filter => ` jobstatus=${filter}`) : ['']
@@ -73,13 +93,14 @@ export async function fetchAggregatedJobsPage(credentials, directors, pagination
     })
 
     try {
-      const [jobsResults, countResults] = await Promise.all([
+      const [jobsResults, countResults, directorStatusResult] = await Promise.all([
         Promise.allSettled(filters.map(filter => (
           client.call(`llist jobs reverse limit=${fetchLimit} offset=0${filter}`)
         ))),
         Promise.allSettled(filters.map(filter => (
           client.call(`list jobs count${filter}`)
         ))),
+        Promise.allSettled([client.call('status director')]),
       ])
 
       const rejectedJobsResult = jobsResults.find(result => result.status === 'rejected')
@@ -87,9 +108,13 @@ export async function fetchAggregatedJobsPage(credentials, directors, pagination
         throw rejectedJobsResult.reason
       }
 
-      const jobs = sortJobsByStartTime(jobsResults.flatMap((result) => (
+      const jobs = sortJobsByStartTime(overlayRuntimeStatuses(jobsResults.flatMap((result) => (
         result.status === 'fulfilled'
           ? decorateJobs(result.value?.jobs, director)
+          : []
+      )), decorateRuntimeJobs(
+        directorStatusResult[0]?.status === 'fulfilled'
+          ? directorStatusResult[0].value?.running
           : []
       )))
       const count = countResults.reduce((sum, result, index) => (

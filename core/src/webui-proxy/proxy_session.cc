@@ -89,6 +89,12 @@ bool IsExpectedConsoleExitCommand(bool at_main_prompt, std::string_view command)
          || command == ".exit";
 }
 
+bool ShouldSuppressRawConsoleChunk(std::string_view command,
+                                   std::string_view chunk)
+{
+  return command == "messages" && chunk == "You have messages.\n";
+}
+
 // ---------------------------------------------------------------------------
 // Session implementation
 // ---------------------------------------------------------------------------
@@ -355,12 +361,16 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
             && IsExpectedConsoleExitCommand(
                 current_prompt == DirectorPrompt::Main, command);
       CallResult result = director.Call(
-          command, (!cfg.json_mode && stream_raw)
-                       ? std::function<void(std::string_view)>(
-                             [&](std::string_view chunk) {
-                               send_raw_response(std::string(chunk), "more");
-                             })
-                       : std::function<void(std::string_view)>());
+          command,
+          (!cfg.json_mode && stream_raw)
+              ? std::function<void(std::string_view)>(
+                    [&](std::string_view chunk) {
+                      if (ShouldSuppressRawConsoleChunk(command, chunk)) {
+                        return;
+                      }
+                      send_raw_response(std::string(chunk), "more");
+                    })
+              : std::function<void(std::string_view)>());
 
       if (cfg.json_mode) {
         // Parse and re-emit as
@@ -406,6 +416,9 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
         if (stream_raw) {
           send_raw_response("", prompt_str);
         } else {
+          if (ShouldSuppressRawConsoleChunk(command, result.text)) {
+            result.text.clear();
+          }
           send_raw_response(result.text, prompt_str);
         }
         if (should_close_console_session) { break; }
