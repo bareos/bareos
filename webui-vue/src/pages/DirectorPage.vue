@@ -669,6 +669,7 @@ import {
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { formatBytes } from '../mock/index.js'
 import {
+  buildDirectorOptions,
   buildDirectorPageQuery,
   isDirectorSingletonTab,
   resolveDirectorTargetQuery,
@@ -706,13 +707,12 @@ const settings  = useSettingsStore()
 const { t } = useI18n()
 
 const directorOptions = computed(() => {
-  const values = new Set([
-    ...director.availableDirectors,
-    ...settings.selectedDirectors,
-    auth.user?.director,
-    settings.directorName,
-  ].filter(Boolean))
-  return [...values].map(value => ({ label: value, value }))
+  return buildDirectorOptions({
+    availableDirectors: director.availableDirectors,
+    selectedDirectors: settings.selectedDirectors,
+    currentDirector: auth.user?.director,
+    fallbackDirector: settings.directorName,
+  })
 })
 
 function syncSelectedDirectors() {

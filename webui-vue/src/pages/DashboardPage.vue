@@ -275,6 +275,7 @@ import { useDirectorStore } from '../stores/director.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildClientDetailsQuery } from '../utils/clients.js'
+import { buildDirectorOptions } from '../utils/director.js'
 import { buildJobDetailsQuery, withJobsStatusFilterQuery } from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -296,14 +297,12 @@ const directorErrors = ref([])
 const loadingJobs = ref(false)
 
 const directorOptions = computed(() => {
-  const values = new Set([
-    ...director.availableDirectors,
-    ...settings.selectedDirectors,
-    auth.user?.director,
-    settings.directorName,
-  ].filter(Boolean))
-
-  return [...values].map(value => ({ label: value, value }))
+  return buildDirectorOptions({
+    availableDirectors: director.availableDirectors,
+    selectedDirectors: settings.selectedDirectors,
+    currentDirector: auth.user?.director,
+    fallbackDirector: settings.directorName,
+  })
 })
 
 function syncSelectedDirectors() {

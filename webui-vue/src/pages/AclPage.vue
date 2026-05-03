@@ -197,6 +197,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useDirectorAclStore } from '../stores/directorAcl.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { buildDirectorOptions } from '../utils/director.js'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
@@ -212,13 +213,12 @@ const aggregateError = ref(null)
 const directorErrors = ref([])
 
 const directorOptions = computed(() => {
-  const values = new Set([
-    ...director.availableDirectors,
-    ...settings.selectedDirectors,
-    auth.user?.director,
-    settings.directorName,
-  ].filter(Boolean))
-  return [...values].map(value => ({ label: value, value }))
+  return buildDirectorOptions({
+    availableDirectors: director.availableDirectors,
+    selectedDirectors: settings.selectedDirectors,
+    currentDirector: auth.user?.director,
+    fallbackDirector: settings.directorName,
+  })
 })
 
 function syncSelectedDirectors() {

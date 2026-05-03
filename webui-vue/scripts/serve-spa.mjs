@@ -94,6 +94,7 @@ const server = createServer(async (req, res) => {
   const ext = path.extname(filePath)
   res.writeHead(200, {
     'Content-Type': mimeTypes[ext] || 'application/octet-stream',
+    'Cache-Control': 'no-store',
   })
   res.end(body)
 })
