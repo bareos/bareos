@@ -432,6 +432,27 @@ describe('console session store', () => {
     )
   })
 
+  it('keeps info messages on separate lines', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    expect(consoleSessions.getSession('bareos-dir').output.map(line => line.text)).toEqual([
+      'Connecting to director…',
+      "Connected to bareos-dir — type 'help' for commands, click here to type.",
+    ])
+  })
+
   it('disconnects all tracked director sessions', () => {
     const consoleSessions = useConsoleSessionsStore()
 

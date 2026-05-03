@@ -81,6 +81,14 @@ std::string NormalizeRawConsoleCommand(std::string command)
   return command;
 }
 
+bool IsExpectedConsoleExitCommand(bool at_main_prompt, std::string_view command)
+{
+  if (!at_main_prompt) { return false; }
+
+  return command == "quit" || command == "exit" || command == ".quit"
+         || command == ".exit";
+}
+
 // ---------------------------------------------------------------------------
 // Session implementation
 // ---------------------------------------------------------------------------
@@ -238,6 +246,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
           mode.c_str(), director_transport);
 
   // ── Step 3: command loop ─────────────────────────────────────────────────
+  auto current_prompt = DirectorPrompt::Main;
   while (!ws.IsClosed()) {
     std::string raw_msg;
     try {
@@ -341,6 +350,10 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     try {
       if (!cfg.json_mode) { send_command_state("running"); }
 
+      const bool should_close_console_session
+          = !cfg.json_mode
+            && IsExpectedConsoleExitCommand(
+                current_prompt == DirectorPrompt::Main, command);
       CallResult result = director.Call(
           command, (!cfg.json_mode && stream_raw)
                        ? std::function<void(std::string_view)>(
@@ -384,6 +397,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
       } else {
         // Raw mode: {"type":"raw_response","id":...,"command":...,"text":"...",
         //            "prompt":"main"|"sub"|"select"|"other"|"more"}
+        current_prompt = result.prompt;
         const char* prompt_str = prompt_to_string(result.prompt);
         send_command_state(is_terminal_prompt(result.prompt)
                                ? "completed"
@@ -394,8 +408,14 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
         } else {
           send_raw_response(result.text, prompt_str);
         }
+        if (should_close_console_session) { break; }
       }
     } catch (const std::exception& ex) {
+      if (IsExpectedConsoleExitCommand(
+              !cfg.json_mode && current_prompt == DirectorPrompt::Main,
+              command)) {
+        break;
+      }
       if (!cfg.json_mode) {
         try {
           send_command_state("failed", nullptr, ex.what());
