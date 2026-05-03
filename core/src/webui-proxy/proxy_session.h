@@ -41,4 +41,10 @@ void RunProxySession(int fd,
                      const std::string& peer,
                      const ProxyConfig& config);
 
+/**
+ * Normalize a raw console command while preserving a trailing tab completion
+ * marker.
+ */
+std::string NormalizeRawConsoleCommand(std::string command);
+
 #endif  // BAREOS_WEBUI_PROXY_PROXY_SESSION_H_

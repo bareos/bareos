@@ -178,6 +178,35 @@ describe('console session store', () => {
     expect(consoleSessions.getSession('bareos-dir-a').cmd).toBe('')
   })
 
+  it('preserves trailing spaces returned by command completion', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    consoleSessions.requestCompletion('bareos-dir', 'list cl')
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'list clients ',
+        prompt: 'main',
+      }),
+    })
+
+    expect(consoleSessions.getSession('bareos-dir').cmd).toBe('list clients ')
+  })
+
   it('disconnects all tracked director sessions', () => {
     const consoleSessions = useConsoleSessionsStore()
 
