@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,13 +25,26 @@
 #include "dird/ua.h"
 #include "cats/cats.h"
 
+#include <unordered_map>
+
 namespace directordaemon {
 
 struct del_ctx;
+struct PoolPruneSummary {
+  uint32_t prunable_volumes = 0;
+  uint32_t prunable_jobs = 0;
+  uint64_t prunable_bytes = 0;
+};
 
 bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool);
 bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool);
 bool PruneVolume(UaContext* ua, MediaDbRecord* mr);
+bool GetPoolPruneSummary(UaContext* ua,
+                         PoolDbRecord* pool,
+                         PoolPruneSummary* summary);
+PoolPruneSummary SummarizePoolPruneJobs(
+    const std::unordered_map<JobId_t, uint64_t>& prunable_jobs,
+    uint32_t prunable_volumes);
 int JobDeleteHandler(void* ctx, int num_fields, char** row);
 int DelCountHandler(void* ctx, int num_fields, char** row);
 int FileDeleteHandler(void* ctx, int num_fields, char** row);

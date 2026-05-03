@@ -42,6 +42,8 @@
 #include "dird/next_vol.h"
 
 #include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace directordaemon {
 
@@ -88,6 +90,141 @@ int FileDeleteHandler(void* ctx, int, char** row)
   if (jobs_todelete->size() >= MAX_DEL_LIST_LEN) { return 1; }
   jobs_todelete->push_back(static_cast<JobId_t>(str_to_int64(row[0])));
   return 0;
+}
+
+static bool GetPruneCandidatesForVolume(UaContext* ua,
+                                        MediaDbRecord* mr,
+                                        std::vector<JobId_t>& prune_list)
+{
+  PoolMem query(PM_MESSAGE);
+  utime_t now;
+  char ed1[50], ed2[50];
+
+  if (mr->Enabled == VOL_ARCHIVED) {
+    return true; /* cannot prune Archived volumes */
+  }
+
+  utime_t VolRetention = mr->VolRetention;
+  now = (utime_t)time(NULL);
+  ua->db->FillQuery<BareosDb::SQL_QUERY::sel_JobMedia>(
+      query, edit_int64(mr->MediaId, ed1), edit_int64(now - VolRetention, ed2));
+
+  Dmsg3(250, "Now=%d VolRetention=%d now-VolRetention=%s\n", (int)now,
+        (int)VolRetention, ed2);
+  Dmsg1(050, "Query=%s\n", query.c_str());
+
+  if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
+                        static_cast<void*>(&prune_list))) {
+    if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
+    Dmsg0(050, "Adding eligible jobs for pruning failed\n");
+    return false;
+  }
+
+  // in case job was the result of a copy or migration, delete the related
+  // migration or copy job
+  if (prune_list.size() > 0) {
+    BStringList copy_migrate_jobs_list;
+    for (auto jobid : prune_list) { copy_migrate_jobs_list << jobid; }
+    Mmsg(query,
+         "SELECT JobId from Job "
+         "WHERE type in ('%c','%c') AND priorjobid in (%s)",
+         JT_COPY, JT_MIGRATE, copy_migrate_jobs_list.Join(',').c_str());
+
+    if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
+                          static_cast<void*>(&prune_list))) {
+      if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
+      Dmsg0(050,
+            "Adding migration and copy child jobs eligible for pruning "
+            "failed\n");
+      return false;
+    }
+  }
+
+  ExcludeRunningJobsFromList(prune_list);
+  return true;
+}
+
+PoolPruneSummary SummarizePoolPruneJobs(
+    const std::unordered_map<JobId_t, uint64_t>& prunable_jobs,
+    uint32_t prunable_volumes)
+{
+  PoolPruneSummary summary;
+  summary.prunable_volumes = prunable_volumes;
+  summary.prunable_jobs = prunable_jobs.size();
+
+  for (const auto& [jobid, bytes] : prunable_jobs) {
+    static_cast<void>(jobid);
+    summary.prunable_bytes += bytes;
+  }
+
+  return summary;
+}
+
+bool GetPoolPruneSummary(UaContext* ua,
+                         PoolDbRecord* pool,
+                         PoolPruneSummary* summary)
+{
+  if (!summary) { return false; }
+
+  *summary = {};
+
+  char ed1[50];
+  PoolMem query(PM_MESSAGE);
+  dbid_list volume_ids;
+  Mmsg(query, "SELECT MediaId FROM Media WHERE PoolId=%s ORDER BY MediaId",
+       edit_int64(pool->PoolId, ed1));
+  if (!ua->db->GetQueryDbids(ua->jcr, query, volume_ids)) { return false; }
+
+  std::unordered_set<JobId_t> unique_job_ids;
+  uint32_t prunable_volumes = 0;
+
+  for (int i = 0; i < volume_ids.num_ids; ++i) {
+    MediaDbRecord mr;
+    mr.MediaId = volume_ids.DBId[i];
+    if (!ua->db->GetMediaRecord(ua->jcr, &mr)) { return false; }
+
+    if (mr.Enabled == VOL_ARCHIVED) { continue; }
+    if (!bstrcmp(mr.VolStatus, "Full") && !bstrcmp(mr.VolStatus, "Used")) {
+      continue;
+    }
+
+    std::vector<JobId_t> volume_jobs;
+    if (!GetPruneCandidatesForVolume(ua, &mr, volume_jobs)) { return false; }
+    if (volume_jobs.empty()) { continue; }
+
+    ++prunable_volumes;
+    unique_job_ids.insert(volume_jobs.begin(), volume_jobs.end());
+  }
+
+  std::unordered_map<JobId_t, uint64_t> bytes_by_job;
+  if (!unique_job_ids.empty()) {
+    BStringList job_list;
+    for (const auto jobid : unique_job_ids) { job_list << jobid; }
+
+    Mmsg(query, "SELECT JobId, JobBytes FROM Job WHERE JobId IN (%s)",
+         job_list.Join(',').c_str());
+
+    struct JobBytesHandlerContext {
+      std::unordered_map<JobId_t, uint64_t>* bytes_by_job;
+    } ctx{&bytes_by_job};
+
+    auto handler = [](void* c, int, char** row) {
+      auto* handler_ctx = static_cast<JobBytesHandlerContext*>(c);
+      if (row[0] && row[1]) {
+        (*handler_ctx->bytes_by_job)[str_to_int64(row[0])]
+            = str_to_uint64(row[1]);
+      }
+      return 0;
+    };
+
+    if (!ua->db->SqlQuery(query.c_str(), handler, &ctx)) {
+      if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
+      return false;
+    }
+  }
+
+  *summary = SummarizePoolPruneJobs(bytes_by_job, prunable_volumes);
+  return true;
 }
 
 static bool PruneAllVolumes(UaContext* ua,
@@ -837,55 +974,11 @@ int GetPruneListForVolume(UaContext* ua,
                           MediaDbRecord* mr,
                           std::vector<JobId_t>& prune_list)
 {
-  PoolMem query(PM_MESSAGE);
-  utime_t now;
-  char ed1[50], ed2[50];
+  if (!GetPruneCandidatesForVolume(ua, mr, prune_list)) { return 0; }
 
-  if (mr->Enabled == VOL_ARCHIVED) {
-    return 0; /* cannot prune Archived volumes */
-  }
-
-  // Now add to the  list of JobIds for Jobs written to this Volume
-  utime_t VolRetention = mr->VolRetention;
-  now = (utime_t)time(NULL);
-  ua->db->FillQuery(query, BareosDb::SQL_QUERY::sel_JobMedia,
-                    edit_int64(mr->MediaId, ed1),
-                    edit_int64(now - VolRetention, ed2));
-
-  Dmsg3(250, "Now=%d VolRetention=%d now-VolRetention=%s\n", (int)now,
-        (int)VolRetention, ed2);
-  Dmsg1(050, "Query=%s\n", query.c_str());
-
-
-  if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
-                        static_cast<void*>(&prune_list))) {
-    if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
-    Dmsg0(050, "Adding eligible jobs for pruning failed\n");
-    return 0;
-  }
-
-  // in case job was the result of a copy or migration, delete the related
-  // migration or copy job
-  if (prune_list.size() > 0) {
-    BStringList copy_migrate_jobs_list;
-    for (auto jobid : prune_list) { copy_migrate_jobs_list << jobid; }
-    Mmsg(query,
-         "SELECT JobId from Job "
-         "WHERE type in ('%c','%c') AND priorjobid in (%s)",
-         JT_COPY, JT_MIGRATE, copy_migrate_jobs_list.Join(',').c_str());
-
-    if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
-                          static_cast<void*>(&prune_list))) {
-      if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
-      Dmsg0(050,
-            "Adding migration and copy child jobs eligible for pruning "
-            "failed\n");
-      return 0;
-    }
-  }
-
-  int NumJobsToBePruned = ExcludeRunningJobsFromList(prune_list);
+  int NumJobsToBePruned = prune_list.size();
   if (NumJobsToBePruned > 0) {
+    utime_t VolRetention = mr->VolRetention;
     ua->SendMsg(T_("Volume \"%s\" has Volume Retention of %" PRId64
                    " sec. and has %d jobs that will be pruned\n"),
                 mr->VolumeName, VolRetention, NumJobsToBePruned);

@@ -28,6 +28,7 @@ import {
   normaliseDirectorCommandPermissions,
   normaliseClient,
   normaliseJob,
+  normalisePool,
   normaliseVolume,
 } from '../../src/composables/useDirectorFetch.js'
 
@@ -115,6 +116,32 @@ describe('director data normalisers', () => {
       slot: 8,
       enabled: true,
     })
+  })
+
+  it('normalises pool prune summary fields', () => {
+    expect(normalisePool({
+      PoolId: '7',
+      Name: 'Full',
+      NumVols: '4',
+      MaxVols: '10',
+      VolRetention: '2592000',
+      MaxVolJobs: '100',
+      MaxVolBytes: '1099511627776',
+      PrunableVolumes: '2',
+      PrunableJobs: '5',
+      PrunableBytes: '123456789',
+    })).toEqual(expect.objectContaining({
+      poolid: '7',
+      name: 'Full',
+      numvols: 4,
+      maxvols: 10,
+      volretention: '2592000',
+      maxvoljobs: 100,
+      maxvolbytes: 1099511627776,
+      prunablevolumes: 2,
+      prunablejobs: 5,
+      prunablebytes: 123456789,
+    }))
   })
 
   it('converts keyed director collections to arrays', () => {

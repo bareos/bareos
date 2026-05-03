@@ -214,6 +214,14 @@
                   />
                 </q-td>
               </template>
+              <template #body-cell-prunablebytes="props">
+                <q-td :props="props" class="text-right" style="min-width:120px">
+                  <div>{{ Number(props.value) > 0 ? formatBytes(props.value) : '—' }}</div>
+                  <div v-if="props.row.prunablejobs > 0" class="text-caption text-grey-6">
+                    {{ props.row.prunablejobs }} {{ t('jobs') }} / {{ props.row.prunablevolumes }} {{ t('volumes') }}
+                  </div>
+                </q-td>
+              </template>
             </q-table>
           </q-card-section>
         </q-card>
@@ -651,6 +659,7 @@ const poolCols = computed(() => [
   { name: 'numvols',      label: t('Volumes'),       field: 'numvols',      align: 'right', sortable: true },
   { name: 'maxvols',      label: t('Max Volumes'),   field: 'maxvols',      align: 'right'  },
   { name: 'totalbytes',   label: t('Total Data'),    field: 'totalbytes',   align: 'right', sortable: true },
+  { name: 'prunablebytes',label: t('Prunable Now'),  field: 'prunablebytes',align: 'right', sortable: true },
   { name: 'volretention', label: t('Retention'),     field: 'volretention', align: 'left'   },
   { name: 'maxvoljobs',   label: t('Max Jobs/Vol'),  field: 'maxvoljobs',   align: 'right'  },
   { name: 'maxvolbytes',  label: t('Max Bytes/Vol'), field: 'maxvolbytes',  align: 'right'  },
