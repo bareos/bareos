@@ -521,6 +521,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildClientDetailsQuery } from '../utils/clients.js'
+import { buildDirectorOptions } from '../utils/director.js'
 import { formatNumber } from '../utils/locales.js'
 import {
   buildJobDetailsQuery,
@@ -569,13 +570,12 @@ function quoteDirectorString(value) {
 }
 
 const directorOptions = computed(() => {
-  const values = new Set([
-    ...director.availableDirectors,
-    ...settings.selectedDirectors,
-    auth.user?.director,
-    settings.directorName,
-  ].filter(Boolean))
-  return [...values].map(value => ({ label: value, value }))
+  return buildDirectorOptions({
+    availableDirectors: director.availableDirectors,
+    selectedDirectors: settings.selectedDirectors,
+    currentDirector: auth.user?.director,
+    fallbackDirector: settings.directorName,
+  })
 })
 
 function syncSelectedDirectors() {

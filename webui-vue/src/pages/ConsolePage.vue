@@ -81,6 +81,7 @@ import { useAuthStore }     from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { useConsoleSessionsStore } from '../stores/consoleSessions.js'
+import { buildDirectorOptions } from '../utils/director.js'
 
 const auth     = useAuthStore()
 const director = useDirectorStore()
@@ -117,15 +118,15 @@ const outputEl = ref(null)
 const focused  = ref(false)
 
 const directorOptions = computed(() => {
-  const values = new Set([
-    ...director.availableDirectors,
-    ...settings.selectedDirectors,
-    ...consoleSessions.directors,
-    selectedDirector.value,
-    auth.user?.director,
-  ].filter(Boolean))
-
-  return [...values].map(value => ({ label: value, value }))
+  return buildDirectorOptions({
+    availableDirectors: director.availableDirectors,
+    selectedDirectors: [
+      ...settings.selectedDirectors,
+      ...consoleSessions.directors,
+    ],
+    currentDirector: selectedDirector.value,
+    fallbackDirector: auth.user?.director,
+  })
 })
 
 const currentSession = computed(() => (

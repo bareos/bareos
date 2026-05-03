@@ -126,7 +126,7 @@ class DirectorConnection {
   void ReadAll(void* buf, size_t len);
   void ConnectTcp(const DirectorConfig& cfg);
   void ConnectTlsPsk(const DirectorConfig& cfg);
-  bool HasPendingInput() const;
+  bool HasPendingInput(int timeout_ms = 0) const;
   void DrainPendingInput();
 
   // Bareos frame I/O
