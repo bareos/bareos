@@ -22,6 +22,7 @@
 #define BAREOS_WEBUI_PROXY_PROXY_CONFIG_H_
 
 #include "identity_mapping.h"
+#include "local_auth.h"
 
 #include <map>
 #include <optional>
@@ -42,6 +43,7 @@ struct ProxyConfig {
   int port{8765};
   int session_ttl{8 * 60 * 60};
   std::map<std::string, DirectorTargetConfig> allowed_directors;
+  std::vector<LocalAuthUser> local_auth_users;
   std::vector<IdentityMappingRule> identity_mappings;
 };
 

@@ -153,6 +153,28 @@ void ApplyIdentityMappingSetting(IdentityMappingRule& rule,
   }
 }
 
+void ApplyLocalAuthUserSetting(LocalAuthUser& user,
+                               const std::string& key,
+                               const std::string& value)
+{
+  if (key == "username") {
+    user.username = value;
+  } else if (key == "password_hash") {
+    user.password_hash = value;
+  } else if (key == "subject") {
+    user.subject = value;
+  } else if (key == "email") {
+    user.email = value;
+  } else if (key == "groups") {
+    user.groups = ParseList(value);
+  } else if (key == "roles") {
+    user.roles = ParseList(value);
+  } else {
+    throw std::runtime_error("Proxy config: unknown auth user key '" + key
+                             + "'");
+  }
+}
+
 void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
 {
   std::istringstream input(ini);
@@ -198,6 +220,20 @@ void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
       ApplyDirectorSetting(it->second, key, value);
       continue;
     }
+    if (current_section.rfind("auth-user:", 0) == 0) {
+      const std::string user_id = current_section.substr(10);
+      auto it = std::find_if(
+          cfg.local_auth_users.begin(), cfg.local_auth_users.end(),
+          [&](const auto& user) { return user.id == user_id; });
+      if (it == cfg.local_auth_users.end()) {
+        LocalAuthUser user;
+        user.id = user_id;
+        cfg.local_auth_users.push_back(std::move(user));
+        it = std::prev(cfg.local_auth_users.end());
+      }
+      ApplyLocalAuthUserSetting(*it, key, value);
+      continue;
+    }
     if (current_section.rfind("identity-map:", 0) == 0) {
       const std::string mapping_id = current_section.substr(13);
       auto it = std::find_if(
@@ -220,6 +256,12 @@ void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
   if (cfg.allowed_directors.empty()) {
     throw std::runtime_error(
         "Proxy config: at least one [director:<id>] section is required");
+  }
+  for (const auto& user : cfg.local_auth_users) {
+    if (user.username.empty() || user.password_hash.empty()) {
+      throw std::runtime_error("Proxy config: auth user '" + user.id
+                               + "' requires username and password_hash");
+    }
   }
   for (const auto& rule : cfg.identity_mappings) {
     if (rule.director_username.empty() || rule.director_password.empty()) {

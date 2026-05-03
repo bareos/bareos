@@ -21,6 +21,7 @@
 #include "proxy_session.h"
 #include "director_connection.h"
 #include "identity_mapping.h"
+#include "local_auth.h"
 #include "ws_codec.h"
 
 #include <optional>
@@ -207,11 +208,21 @@ void RunProxySession(int fd,
             "Proxy auth: provide either session_token or username/password");
       }
 
-      cfg.username = *requested_username;
-      cfg.password = *requested_password;
-      bootstrap.identity.provider = "password";
-      bootstrap.identity.subject = cfg.username;
-      bootstrap.identity.username = cfg.username;
+      if (!config.local_auth_users.empty()) {
+        const auto local_user = AuthenticateLocalUser(
+            config.local_auth_users, *requested_username, *requested_password);
+        if (!local_user) {
+          throw std::runtime_error(
+              "Proxy auth: invalid local username or password");
+        }
+        bootstrap.identity = local_user->identity;
+      } else {
+        cfg.username = *requested_username;
+        cfg.password = *requested_password;
+        bootstrap.identity.provider = "password";
+        bootstrap.identity.subject = cfg.username;
+        bootstrap.identity.username = cfg.username;
+      }
     }
 
     if (!config.identity_mappings.empty()) {
@@ -227,6 +238,10 @@ void RunProxySession(int fd,
           && !mapped->preferred_director_id->empty() && !requested_director) {
         bootstrap.preferred_director_id = *mapped->preferred_director_id;
       }
+    }
+    if (cfg.username.empty() || cfg.password.empty()) {
+      throw std::runtime_error(
+          "Proxy auth: no Director credentials resolved for this identity");
     }
 
     const auto target = ResolveDirectorTarget(

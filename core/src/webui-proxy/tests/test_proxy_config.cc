@@ -126,6 +126,61 @@ director_username = webui-admin
                std::runtime_error);
 }
 
+TEST(ProxyConfig, ParsesLocalAuthUsersFromIni)
+{
+  ProxyConfig cfg;
+
+  LoadProxyConfigFromString(
+      R"ini(
+[listen]
+ws_host = 127.0.0.1
+
+[director:prod]
+host = prod.example.test
+port = 19101
+director_name = bareos-dir
+
+[auth-user:demo-admin]
+username = demo-admin
+password_hash = pbkdf2-sha256$600000$00112233445566778899aabbccddeeff$5fdcc31c2fc8cbef8a0f8317d421ebcf54f7514c0f2ec08e3f771a4312f3b9cf
+subject = demo-admin-subject
+email = demo@example.test
+groups = backup-admins, linux
+roles = operator
+)ini",
+      cfg);
+
+  ASSERT_EQ(cfg.local_auth_users.size(), 1U);
+  const auto& user = cfg.local_auth_users.front();
+  EXPECT_EQ(user.id, "demo-admin");
+  EXPECT_EQ(user.username, "demo-admin");
+  EXPECT_EQ(user.subject, "demo-admin-subject");
+  EXPECT_EQ(user.email, "demo@example.test");
+  EXPECT_EQ(user.groups, std::vector<std::string>({"backup-admins", "linux"}));
+  EXPECT_EQ(user.roles, std::vector<std::string>({"operator"}));
+}
+
+TEST(ProxyConfig, RejectsLocalAuthUsersWithoutPasswordHash)
+{
+  ProxyConfig cfg;
+
+  EXPECT_THROW(LoadProxyConfigFromString(
+                   R"ini(
+[listen]
+ws_host = 127.0.0.1
+
+[director:prod]
+host = prod.example.test
+port = 19101
+director_name = bareos-dir
+
+[auth-user:demo-admin]
+username = demo-admin
+)ini",
+                   cfg),
+               std::runtime_error);
+}
+
 TEST(ProxyConfig, RejectsLegacyDirectorSection)
 {
   ProxyConfig cfg;

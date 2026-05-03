@@ -15,9 +15,15 @@ port = 9101
 director_name = bareos-dir
 tls_psk_disable = false
 
+#[auth-user:demo-admin]
+#username = demo-admin
+#password_hash = pbkdf2-sha256$600000$00112233445566778899aabbccddeeff$96666a043e8f5c98df6e3babfd926c3bf48788e81ed82927b71dd7ece1da7d6a
+#groups = backup-admins
+#roles = operator
+
 #[identity-map:webui-admin]
-#provider = password
-#username = admin
+#provider = local
+#username = demo-admin
 #director_username = webui-admin
 #director_password = secret
 #preferred_director = bareos-dir

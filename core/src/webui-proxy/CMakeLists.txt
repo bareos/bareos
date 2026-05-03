@@ -18,6 +18,7 @@ set(PROXY_SOURCES
     bareos_base64.cc
     director_connection.cc
     identity_mapping.cc
+    local_auth.cc
     proxy_config.cc
     "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc"
     proxy_session.cc
@@ -68,7 +69,7 @@ if(BUILD_TESTING AND GTest_FOUND)
   include(GoogleTest)
 
   set(PROXY_LIB_SOURCES auth_session.cc bareos_base64.cc director_connection.cc
-                        identity_mapping.cc proxy_config.cc
+                        identity_mapping.cc local_auth.cc proxy_config.cc
   )
 
   add_executable(
@@ -77,6 +78,7 @@ if(BUILD_TESTING AND GTest_FOUND)
     tests/test_bareos_base64.cc
     tests/test_director_connection.cc
     tests/test_identity_mapping.cc
+    tests/test_local_auth.cc
     tests/test_proxy_config.cc
     tests/test_proxy_session.cc
     proxy_session.cc
