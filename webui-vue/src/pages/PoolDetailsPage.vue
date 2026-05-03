@@ -112,6 +112,69 @@
           </q-card>
         </div>
       </div>
+
+      <div class="row q-col-gutter-md q-mt-md">
+        <div class="col-12 col-lg-6">
+          <q-card flat bordered class="bareos-panel">
+            <q-card-section class="panel-header">
+              {{ t('Prunable Volumes') }} ({{ pruneReport.volumes.length }})
+            </q-card-section>
+            <q-card-section v-if="pruneReport.volumes.length === 0" class="text-grey-6">
+              {{ t('No prune candidates right now.') }}
+            </q-card-section>
+            <q-card-section v-else class="q-pa-none">
+              <q-table :rows="pruneReport.volumes" :columns="prunableVolumeCols" row-key="name"
+                       dense flat :pagination="{ rowsPerPage: 10 }">
+                <template #body-cell-name="props">
+                  <q-td :props="props">
+                    <VolumeNameLink
+                      :name="props.value"
+                      :volume="findVolume(props.value)"
+                      :query="buildPoolVolumeDetailsQuery({
+                        director: currentPoolDirector,
+                        volumeName: props.value,
+                        poolName: poolName.value,
+                        poolQuery: route.query,
+                      })"
+                    />
+                  </q-td>
+                </template>
+                <template #body-cell-status="props">
+                  <q-td :props="props">
+                    <q-badge :color="statusColor(props.value)" :label="props.value" />
+                  </q-td>
+                </template>
+                <template #body-cell-prunablebytes="props">
+                  <q-td :props="props" class="text-right">
+                    {{ formatBytes(props.value) }}
+                  </q-td>
+                </template>
+              </q-table>
+            </q-card-section>
+          </q-card>
+        </div>
+
+        <div class="col-12 col-lg-6">
+          <q-card flat bordered class="bareos-panel">
+            <q-card-section class="panel-header">
+              {{ t('Prunable Jobs') }} ({{ pruneReport.jobs.length }})
+            </q-card-section>
+            <q-card-section v-if="pruneReport.jobs.length === 0" class="text-grey-6">
+              {{ t('No prune candidates right now.') }}
+            </q-card-section>
+            <q-card-section v-else class="q-pa-none">
+              <q-table :rows="pruneReport.jobs" :columns="prunableJobCols" row-key="jobid"
+                       dense flat :pagination="{ rowsPerPage: 10 }">
+                <template #body-cell-bytes="props">
+                  <q-td :props="props" class="text-right">
+                    {{ formatBytes(props.value) }}
+                  </q-td>
+                </template>
+              </q-table>
+            </q-card-section>
+          </q-card>
+        </div>
+      </div>
     </template>
   </q-page>
 </template>
@@ -120,7 +183,11 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { normalisePool, normaliseVolume } from '../composables/useDirectorFetch.js'
+import {
+  normalisePool,
+  normalisePoolPruneReport,
+  normaliseVolume,
+} from '../composables/useDirectorFetch.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 import { useAuthStore } from '../stores/auth.js'
@@ -202,8 +269,15 @@ const backLocation = computed(() => {
 
 const pool    = ref(null)
 const volumes = ref([])
+const pruneReport = ref(normalisePoolPruneReport())
 const loading = ref(true)
 const error   = ref(null)
+
+function pruneReasonLabel(reason) {
+  return {
+    volume_retention_expired: t('Volume retention expired'),
+  }[reason] ?? (reason || '—')
+}
 
 async function ensurePoolDirector() {
   if (!requestedDirector.value) {
@@ -220,13 +294,14 @@ async function ensurePoolDirector() {
 async function loadPool() {
   await ensurePoolDirector()
 
-  const [poolRes, volRes] = await Promise.all([
-    director.call(`llist pool=${poolName.value}`),
+  const [poolRes, volRes, pruneRes] = await Promise.all([
+    director.call(`list pool=${poolName.value}`),
     director.call(`llist volumes pool=${poolName.value}`),
   ])
   const pools = poolRes?.pools ?? []
   const rawPool = Array.isArray(pools) ? pools[0] : Object.values(pools)[0]
   pool.value = rawPool ? normalisePool(rawPool) : null
+  pruneReport.value = normalisePoolPruneReport(rawPool)
   const vols = volRes?.volumes ?? []
   const volumeRows = Array.isArray(vols) ? vols : Object.values(vols).flat()
   volumes.value = volumeRows.map((volume) => {
@@ -245,6 +320,7 @@ watch(() => `${poolName.value}\u0000${requestedDirector.value}`, async () => {
   error.value = null
   pool.value = null
   volumes.value = []
+  pruneReport.value = normalisePoolPruneReport()
   try {
     await loadPool()
   } catch (loadError) {
@@ -267,6 +343,10 @@ const detailRows = computed(() => {
     { label: t('Max Bytes/Vol'),     value: p.maxvolbytes > 0 ? formatBytes(p.maxvolbytes) : '∞' },
     { label: t('Auto Prune'),        value: p.autoprune === '1' ? t('Yes') : t('No') },
     { label: t('Recycle'),           value: p.recycle === '1' ? t('Yes') : t('No') },
+    { label: t('Prune Reason'),      value: pruneReasonLabel(pruneReport.value.reason) },
+    { label: t('Affected Statuses'), value: pruneReport.value.statusBreakdown.length > 0
+      ? pruneReport.value.statusBreakdown.map(item => `${item.status} (${item.volumes})`).join(', ')
+      : '—' },
     { label: t('Prunable Data Now'), value: p.prunablebytes > 0 ? formatBytes(p.prunablebytes) : '—' },
     { label: t('Prunable Jobs Now'), value: p.prunablejobs > 0 ? p.prunablejobs : '—' },
     { label: t('Affected Volumes'),  value: p.prunablevolumes > 0 ? p.prunablevolumes : '—' },
@@ -287,6 +367,19 @@ const volumeCols = computed(() => [
   { name: 'inchanger',   label: t('In Changer'),   field: 'inchanger',   align: 'center' },
   { name: 'storage',     label: t('Storage'),      field: 'storage',     align: 'left'   },
 ])
+const prunableVolumeCols = computed(() => [
+  { name: 'name', label: t('Volume'), field: 'name', align: 'left', sortable: true },
+  { name: 'status', label: t('Status'), field: 'status', align: 'center', sortable: true },
+  { name: 'lastwritten', label: t('Last Written'), field: 'lastwritten', align: 'left', sortable: true },
+  { name: 'prunablejobs', label: t('Jobs'), field: 'prunablejobs', align: 'right', sortable: true },
+  { name: 'prunablebytes', label: t('Bytes'), field: 'prunablebytes', align: 'right', sortable: true },
+])
+const prunableJobCols = computed(() => [
+  { name: 'jobid', label: t('Job ID'), field: 'jobid', align: 'right', sortable: true },
+  { name: 'name', label: t('Job'), field: 'name', align: 'left', sortable: true },
+  { name: 'starttime', label: t('Start Time'), field: 'starttime', align: 'left', sortable: true },
+  { name: 'bytes', label: t('Bytes'), field: 'bytes', align: 'right', sortable: true },
+])
 
 const maxVolBytes = computed(() =>
   Math.max(1, ...volumes.value.map(v => Number(v.volbytes) || 0))
@@ -302,6 +395,10 @@ const maxVolRetention = computed(() =>
 function volBytesGauge(val)    { return (Number(val) || 0) / maxVolBytes.value }
 function volMaxBytesGauge(val) { return (Number(val) || 0) / maxVolMaxBytes.value }
 function retentionGauge(val)   { return (Number(val) || 0) / maxVolRetention.value }
+
+function findVolume(name) {
+  return volumes.value.find(volume => volume.volumename === name) ?? { volumename: name }
+}
 
 function statusColor(s) {
   return { Full: 'warning', Append: 'positive', Recycled: 'grey', Error: 'negative', Purged: 'grey', Used: 'info' }[s] || 'info'
