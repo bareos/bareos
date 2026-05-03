@@ -242,6 +242,72 @@ subject = ci-bot
                std::runtime_error);
 }
 
+TEST(ProxyConfig, ParsesOidcProvidersFromIni)
+{
+  ProxyConfig cfg;
+
+  LoadProxyConfigFromString(
+      R"ini(
+[listen]
+ws_host = 127.0.0.1
+
+[director:prod]
+host = prod.example.test
+port = 19101
+director_name = bareos-dir
+
+[auth-oidc:example]
+display_name = Example Identity
+issuer = https://id.example.test
+authorization_endpoint = https://id.example.test/oauth2/authorize
+token_endpoint = https://id.example.test/oauth2/token
+jwks_uri = https://id.example.test/.well-known/jwks.json
+client_id = bareos-webui
+client_secret = top-secret
+redirect_uri = https://webui.example.test/api/v1/auth/oidc/example/callback
+scopes = openid, profile, email
+)ini",
+      cfg);
+
+  ASSERT_EQ(cfg.oidc_auth_providers.size(), 1U);
+  const auto& provider = cfg.oidc_auth_providers.front();
+  EXPECT_EQ(provider.id, "example");
+  EXPECT_EQ(provider.display_name, "Example Identity");
+  EXPECT_EQ(provider.issuer, "https://id.example.test");
+  EXPECT_EQ(provider.authorization_endpoint,
+            "https://id.example.test/oauth2/authorize");
+  EXPECT_EQ(provider.token_endpoint, "https://id.example.test/oauth2/token");
+  EXPECT_EQ(provider.jwks_uri, "https://id.example.test/.well-known/jwks.json");
+  EXPECT_EQ(provider.client_id, "bareos-webui");
+  EXPECT_EQ(provider.client_secret, "top-secret");
+  EXPECT_EQ(provider.redirect_uri,
+            "https://webui.example.test/api/v1/auth/oidc/example/callback");
+  EXPECT_EQ(provider.scopes,
+            std::vector<std::string>({"openid", "profile", "email"}));
+}
+
+TEST(ProxyConfig, RejectsOidcProvidersWithoutAuthorizationConfig)
+{
+  ProxyConfig cfg;
+
+  EXPECT_THROW(LoadProxyConfigFromString(
+                   R"ini(
+[listen]
+ws_host = 127.0.0.1
+
+[director:prod]
+host = prod.example.test
+port = 19101
+director_name = bareos-dir
+
+[auth-oidc:example]
+client_id = bareos-webui
+redirect_uri = https://webui.example.test/api/v1/auth/oidc/example/callback
+)ini",
+                   cfg),
+               std::runtime_error);
+}
+
 TEST(ProxyConfig, RejectsLegacyDirectorSection)
 {
   ProxyConfig cfg;

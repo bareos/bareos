@@ -20,6 +20,7 @@ set(PROXY_SOURCES
     http_api.cc
     identity_mapping.cc
     local_auth.cc
+    oidc_auth.cc
     proxy_config.cc
     token_auth.cc
     "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc"
@@ -71,8 +72,15 @@ if(BUILD_TESTING AND GTest_FOUND)
   include(GoogleTest)
 
   set(PROXY_LIB_SOURCES
-      auth_session.cc bareos_base64.cc director_connection.cc http_api.cc
-      identity_mapping.cc local_auth.cc proxy_config.cc token_auth.cc
+      auth_session.cc
+      bareos_base64.cc
+      director_connection.cc
+      http_api.cc
+      identity_mapping.cc
+      local_auth.cc
+      oidc_auth.cc
+      proxy_config.cc
+      token_auth.cc
   )
 
   add_executable(
@@ -83,6 +91,7 @@ if(BUILD_TESTING AND GTest_FOUND)
     tests/test_http_api.cc
     tests/test_identity_mapping.cc
     tests/test_local_auth.cc
+    tests/test_oidc_auth.cc
     tests/test_proxy_config.cc
     tests/test_proxy_session.cc
     tests/test_token_auth.cc

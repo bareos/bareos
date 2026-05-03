@@ -26,6 +26,7 @@
 #define BAREOS_WEBUI_PROXY_PROXY_SERVER_H_
 
 #include "auth_session.h"
+#include "oidc_auth.h"
 #include "proxy_config.h"
 
 #include <csignal>
@@ -44,6 +45,7 @@ class ProxyServer {
       : cfg_(cfg)
       , session_store_(std::make_shared<ProxySessionStore>(
             std::chrono::seconds(cfg.session_ttl)))
+      , oidc_store_(std::make_shared<OidcPendingAuthStore>())
   {
   }
 
@@ -56,6 +58,7 @@ class ProxyServer {
  private:
   ProxyConfig cfg_;
   std::shared_ptr<ProxySessionStore> session_store_;
+  std::shared_ptr<OidcPendingAuthStore> oidc_store_;
   // All listening sockets (one per address family for the bind host).
   // Populated by Run(); closed during Run() shutdown.
   std::vector<int> listen_fds_;

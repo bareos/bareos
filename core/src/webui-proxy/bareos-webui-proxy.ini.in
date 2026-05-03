@@ -27,6 +27,15 @@ tls_psk_disable = false
 #groups = automation
 #roles = operator
 
+#[auth-oidc:example]
+#display_name = Example Identity
+#issuer = https://id.example.test
+#authorization_endpoint = https://id.example.test/oauth2/authorize
+#client_id = bareos-webui
+#client_secret = replace-me
+#redirect_uri = https://webui.example.test/api/v1/auth/oidc/example/callback
+#scopes = openid, profile, email
+
 #[identity-map:webui-admin]
 #provider = local
 #username = demo-admin
@@ -38,6 +47,13 @@ tls_psk_disable = false
 #provider = token
 #subject = ci-bot
 #director_username = limited-operator
+#director_password = secret
+#preferred_director = bareos-dir
+
+#[identity-map:oidc-admin]
+#provider = oidc
+#subject = 248289761001
+#director_username = webui-admin
 #director_password = secret
 #preferred_director = bareos-dir
 

@@ -217,6 +217,34 @@ void ApplyTokenAuthSetting(TokenAuthEntry& token,
   }
 }
 
+void ApplyOidcProviderSetting(OidcAuthProvider& provider,
+                              const std::string& key,
+                              const std::string& value)
+{
+  if (key == "display_name") {
+    provider.display_name = value;
+  } else if (key == "issuer") {
+    provider.issuer = value;
+  } else if (key == "authorization_endpoint") {
+    provider.authorization_endpoint = value;
+  } else if (key == "token_endpoint") {
+    provider.token_endpoint = value;
+  } else if (key == "jwks_uri") {
+    provider.jwks_uri = value;
+  } else if (key == "client_id") {
+    provider.client_id = value;
+  } else if (key == "client_secret") {
+    provider.client_secret = value;
+  } else if (key == "redirect_uri") {
+    provider.redirect_uri = value;
+  } else if (key == "scopes") {
+    provider.scopes = ParseList(value);
+  } else {
+    throw std::runtime_error("Proxy config: unknown OIDC provider key '" + key
+                             + "'");
+  }
+}
+
 void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
 {
   std::istringstream input(ini);
@@ -290,6 +318,21 @@ void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
       ApplyTokenAuthSetting(*it, key, value);
       continue;
     }
+    if (current_section.rfind("auth-oidc:", 0) == 0) {
+      const std::string provider_id = current_section.substr(10);
+      auto it = std::find_if(
+          cfg.oidc_auth_providers.begin(), cfg.oidc_auth_providers.end(),
+          [&](const auto& provider) { return provider.id == provider_id; });
+      if (it == cfg.oidc_auth_providers.end()) {
+        OidcAuthProvider provider;
+        provider.id = provider_id;
+        provider.display_name = provider_id;
+        cfg.oidc_auth_providers.push_back(std::move(provider));
+        it = std::prev(cfg.oidc_auth_providers.end());
+      }
+      ApplyOidcProviderSetting(*it, key, value);
+      continue;
+    }
     if (current_section.rfind("identity-map:", 0) == 0) {
       const std::string mapping_id = current_section.substr(13);
       auto it = std::find_if(
@@ -323,6 +366,17 @@ void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
     if (token.token_hash.empty()) {
       throw std::runtime_error("Proxy config: auth token '" + token.id
                                + "' requires token_hash");
+    }
+  }
+  for (auto& provider : cfg.oidc_auth_providers) {
+    if (provider.authorization_endpoint.empty() || provider.client_id.empty()
+        || provider.redirect_uri.empty()) {
+      throw std::runtime_error("Proxy config: OIDC provider '" + provider.id
+                               + "' requires authorization_endpoint, "
+                                 "client_id, and redirect_uri");
+    }
+    if (provider.scopes.empty()) {
+      provider.scopes = {"openid", "profile", "email"};
     }
   }
   for (const auto& rule : cfg.identity_mappings) {

@@ -22,6 +22,7 @@
 #define BAREOS_WEBUI_PROXY_HTTP_API_H_
 
 #include "auth_session.h"
+#include "oidc_auth.h"
 #include "proxy_config.h"
 
 #include <map>
@@ -51,6 +52,7 @@ bool IsWebSocketUpgradeRequest(const HttpRequest& request);
 HttpResponse HandleHttpApiRequest(
     const ProxyConfig& config,
     const std::shared_ptr<ProxySessionStore>& session_store,
+    const std::shared_ptr<OidcPendingAuthStore>& oidc_store,
     const HttpRequest& request);
 
 std::string BuildHttpResponse(const HttpResponse& response);

@@ -134,7 +134,8 @@ void HandleProxyConnection(
     int fd,
     const std::string& peer,
     const ProxyConfig& config,
-    const std::shared_ptr<ProxySessionStore>& session_store)
+    const std::shared_ptr<ProxySessionStore>& session_store,
+    const std::shared_ptr<OidcPendingAuthStore>& oidc_store)
 {
   const std::string request_head = ReadHttpHead(fd);
   HttpRequest request = ParseHttpRequest(request_head, "");
@@ -152,7 +153,7 @@ void HandleProxyConnection(
   request.body = ReadHttpBody(fd, content_length);
 
   const HttpResponse response
-      = HandleHttpApiRequest(config, session_store, request);
+      = HandleHttpApiRequest(config, session_store, oidc_store, request);
   WriteAll(fd, BuildHttpResponse(response));
   ::close(fd);
 }
@@ -256,9 +257,10 @@ void ProxyServer::Run()
       int cfd = client_fd;
       ProxyConfig cfg = cfg_;
       auto session_store = session_store_;
-      std::thread([cfd, peer, cfg, session_store]() {
+      auto oidc_store = oidc_store_;
+      std::thread([cfd, peer, cfg, session_store, oidc_store]() {
         try {
-          HandleProxyConnection(cfd, peer, cfg, session_store);
+          HandleProxyConnection(cfd, peer, cfg, session_store, oidc_store);
         } catch (const std::exception& ex) {
           fprintf(stderr, "[proxy] %s session aborted: %s\n", peer.c_str(),
                   ex.what());

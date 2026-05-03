@@ -108,9 +108,7 @@ std::string JsonIdentity(const AuthIdentity& identity)
   return result;
 }
 
-HttpResponse JsonResponse(int status_code,
-                          std::string reason,
-                          std::string body)
+HttpResponse JsonResponse(int status_code, std::string reason, std::string body)
 {
   HttpResponse response;
   response.status_code = status_code;
@@ -137,6 +135,17 @@ std::string ProvidersJson(const ProxyConfig& config)
     json_object_set_new(token, "kind", json_string("bearer"));
     json_array_append_new(providers, token);
   }
+  for (const auto& provider : config.oidc_auth_providers) {
+    json_t* oidc = json_object();
+    json_object_set_new(oidc, "id", json_string(provider.id.c_str()));
+    json_object_set_new(oidc, "kind", json_string("oidc"));
+    json_object_set_new(oidc, "display_name",
+                        json_string(provider.display_name.c_str()));
+    json_object_set_new(
+        oidc, "authorization_path",
+        json_string(("/api/v1/auth/oidc/" + provider.id + "/login").c_str()));
+    json_array_append_new(providers, oidc);
+  }
 
   json_object_set_new(obj, "providers", providers);
   char* raw = json_dumps(obj, JSON_COMPACT);
@@ -149,6 +158,58 @@ std::string ProvidersJson(const ProxyConfig& config)
 HttpResponse HandleProvidersRequest(const ProxyConfig& config)
 {
   return JsonResponse(200, "OK", ProvidersJson(config));
+}
+
+HttpResponse RedirectResponse(std::string location)
+{
+  HttpResponse response;
+  response.status_code = 302;
+  response.reason = "Found";
+  response.headers.emplace("location", std::move(location));
+  return response;
+}
+
+std::optional<std::string> FindOidcProviderId(const std::string& path)
+{
+  static constexpr std::string_view prefix = "/api/v1/auth/oidc/";
+  static constexpr std::string_view suffix = "/login";
+  if (path.rfind(prefix, 0) != 0
+      || path.size() <= prefix.size() + suffix.size()) {
+    return std::nullopt;
+  }
+  if (path.substr(path.size() - suffix.size()) != suffix) {
+    return std::nullopt;
+  }
+  return path.substr(prefix.size(),
+                     path.size() - prefix.size() - suffix.size());
+}
+
+HttpResponse HandleOidcLoginRequest(
+    const ProxyConfig& config,
+    const std::shared_ptr<OidcPendingAuthStore>& store,
+    const HttpRequest& request)
+{
+  if (!store) {
+    throw std::runtime_error("Proxy OIDC: pending auth store is not available");
+  }
+  const auto provider_id = FindOidcProviderId(request.path);
+  if (!provider_id) {
+    return JsonResponse(
+        404, "Not Found",
+        JsonObject({{"type", "error"}, {"message", "Unknown OIDC provider"}}));
+  }
+
+  const auto it = std::find_if(
+      config.oidc_auth_providers.begin(), config.oidc_auth_providers.end(),
+      [&](const auto& provider) { return provider.id == *provider_id; });
+  if (it == config.oidc_auth_providers.end()) {
+    return JsonResponse(
+        404, "Not Found",
+        JsonObject({{"type", "error"}, {"message", "Unknown OIDC provider"}}));
+  }
+
+  const auto pending_auth = store->CreatePendingAuth(*provider_id);
+  return RedirectResponse(BuildOidcAuthorizationUrl(*it, pending_auth));
 }
 
 HttpResponse HandleLoginRequest(const ProxyConfig& config,
@@ -185,8 +246,8 @@ HttpResponse HandleLoginRequest(const ProxyConfig& config,
 
     ProxySession session;
     if (auth.reused_existing_session) {
-      const auto refreshed
-          = store->RefreshSession(auth.session_token, auth.preferred_director_id);
+      const auto refreshed = store->RefreshSession(auth.session_token,
+                                                   auth.preferred_director_id);
       if (!refreshed) {
         throw std::runtime_error("Proxy auth: unknown or expired session");
       }
@@ -205,10 +266,10 @@ HttpResponse HandleLoginRequest(const ProxyConfig& config,
                         json_string(session.token.c_str()));
     json_object_set_new(obj, "director",
                         json_string(session.preferred_director_id.c_str()));
-    json_object_set_new(
-        obj, "director_username",
-        json_string(session.director_username.c_str()));
-    json_t* identity = json_loads(JsonIdentity(session.identity).c_str(), 0, nullptr);
+    json_object_set_new(obj, "director_username",
+                        json_string(session.director_username.c_str()));
+    json_t* identity
+        = json_loads(JsonIdentity(session.identity).c_str(), 0, nullptr);
     json_object_set_new(obj, "identity", identity);
     json_object_set_new(obj, "expires_at", json_integer(session.expires_at));
 
@@ -227,7 +288,8 @@ HttpResponse HandleLoginRequest(const ProxyConfig& config,
 }
 
 HttpResponse HandleSessionRequest(
-    const std::shared_ptr<ProxySessionStore>& store, const HttpRequest& request)
+    const std::shared_ptr<ProxySessionStore>& store,
+    const HttpRequest& request)
 {
   const auto token = GetBearerToken(request);
   if (!token) {
@@ -246,12 +308,14 @@ HttpResponse HandleSessionRequest(
   }
 
   json_t* obj = json_object();
-  json_object_set_new(obj, "session_token", json_string(session->token.c_str()));
-  json_object_set_new(
-      obj, "director", json_string(session->preferred_director_id.c_str()));
-  json_object_set_new(
-      obj, "director_username", json_string(session->director_username.c_str()));
-  json_t* identity = json_loads(JsonIdentity(session->identity).c_str(), 0, nullptr);
+  json_object_set_new(obj, "session_token",
+                      json_string(session->token.c_str()));
+  json_object_set_new(obj, "director",
+                      json_string(session->preferred_director_id.c_str()));
+  json_object_set_new(obj, "director_username",
+                      json_string(session->director_username.c_str()));
+  json_t* identity
+      = json_loads(JsonIdentity(session->identity).c_str(), 0, nullptr);
   json_object_set_new(obj, "identity", identity);
   json_object_set_new(obj, "created_at", json_integer(session->created_at));
   json_object_set_new(obj, "expires_at", json_integer(session->expires_at));
@@ -263,8 +327,9 @@ HttpResponse HandleSessionRequest(
   return response;
 }
 
-HttpResponse HandleLogoutRequest(const std::shared_ptr<ProxySessionStore>& store,
-                                 const HttpRequest& request)
+HttpResponse HandleLogoutRequest(
+    const std::shared_ptr<ProxySessionStore>& store,
+    const HttpRequest& request)
 {
   const auto token = GetBearerToken(request);
   if (!token) {
@@ -335,10 +400,15 @@ bool IsWebSocketUpgradeRequest(const HttpRequest& request)
 HttpResponse HandleHttpApiRequest(
     const ProxyConfig& config,
     const std::shared_ptr<ProxySessionStore>& session_store,
+    const std::shared_ptr<OidcPendingAuthStore>& oidc_store,
     const HttpRequest& request)
 {
   if (request.method == "GET" && request.path == "/api/v1/auth/providers") {
     return HandleProvidersRequest(config);
+  }
+  if (request.method == "GET"
+      && request.path.rfind("/api/v1/auth/oidc/", 0) == 0) {
+    return HandleOidcLoginRequest(config, oidc_store, request);
   }
   if (request.method == "POST" && request.path == "/api/v1/auth/login") {
     return HandleLoginRequest(config, session_store, request);

@@ -21,6 +21,7 @@
 
 #include "../http_api.h"
 #include "../local_auth.h"
+#include "../oidc_auth.h"
 #include "../token_auth.h"
 
 #include <gtest/gtest.h>
@@ -46,14 +47,13 @@ HttpRequest MakeRequest(std::string method,
 ProxyConfig DemoConfig()
 {
   ProxyConfig cfg;
-  cfg.allowed_directors.emplace(
-      "bareos-dir",
-      DirectorTargetConfig{.id = "bareos-dir",
-                           .host = "127.0.0.1",
-                           .port = 9101,
-                           .name = "bareos-dir",
-                           .tls_psk_disable = true,
-                           .tls_psk_require = false});
+  cfg.allowed_directors.emplace("bareos-dir",
+                                DirectorTargetConfig{.id = "bareos-dir",
+                                                     .host = "127.0.0.1",
+                                                     .port = 9101,
+                                                     .name = "bareos-dir",
+                                                     .tls_psk_disable = true,
+                                                     .tls_psk_require = false});
 
   LocalAuthUser user;
   user.id = "demo-admin";
@@ -69,6 +69,16 @@ ProxyConfig DemoConfig()
   token.subject = "ci-bot";
   token.roles = {"operator"};
   cfg.token_auth_entries.push_back(std::move(token));
+
+  OidcAuthProvider oidc;
+  oidc.id = "example";
+  oidc.display_name = "Example Identity";
+  oidc.authorization_endpoint = "https://id.example.test/oauth2/authorize";
+  oidc.client_id = "bareos-webui";
+  oidc.redirect_uri
+      = "https://webui.example.test/api/v1/auth/oidc/example/callback";
+  oidc.scopes = {"openid", "profile", "email"};
+  cfg.oidc_auth_providers.push_back(std::move(oidc));
 
   IdentityMappingRule local_rule;
   local_rule.id = "local-admin";
@@ -104,14 +114,14 @@ json_t* ParseJson(const std::string& body)
 TEST(HttpApi, ListsConfiguredProviders)
 {
   const auto response
-      = HandleHttpApiRequest(DemoConfig(), nullptr,
+      = HandleHttpApiRequest(DemoConfig(), nullptr, nullptr,
                              MakeRequest("GET", "/api/v1/auth/providers"));
 
   EXPECT_EQ(response.status_code, 200);
   json_t* body = ParseJson(response.body);
   json_t* providers = json_object_get(body, "providers");
   ASSERT_TRUE(json_is_array(providers));
-  EXPECT_EQ(json_array_size(providers), 2U);
+  EXPECT_EQ(json_array_size(providers), 3U);
   json_decref(body);
 }
 
@@ -119,10 +129,11 @@ TEST(HttpApi, LogsInLocalUserAndReturnsSession)
 {
   const auto store = std::make_shared<ProxySessionStore>(std::chrono::hours(8));
   const auto response = HandleHttpApiRequest(
-      DemoConfig(), store,
-      MakeRequest("POST", "/api/v1/auth/login",
-                  R"json({"username":"demo-admin","password":"secret","director":"bareos-dir"})json",
-                  {{"content-type", "application/json"}}));
+      DemoConfig(), store, nullptr,
+      MakeRequest(
+          "POST", "/api/v1/auth/login",
+          R"json({"username":"demo-admin","password":"secret","director":"bareos-dir"})json",
+          {{"content-type", "application/json"}}));
 
   EXPECT_EQ(response.status_code, 200);
   json_t* body = ParseJson(response.body);
@@ -142,19 +153,40 @@ TEST(HttpApi, InspectsAndLogsOutSession)
   AuthResult result;
   result.identity.provider = "token";
   result.identity.subject = "ci-bot";
-  const auto session
-      = store->CreateSession(result, "limited-operator", "secret", "bareos-dir");
+  const auto session = store->CreateSession(result, "limited-operator",
+                                            "secret", "bareos-dir");
 
   const auto session_response = HandleHttpApiRequest(
-      DemoConfig(), store,
+      DemoConfig(), store, nullptr,
       MakeRequest("GET", "/api/v1/auth/session", "",
                   {{"authorization", "Bearer " + session.token}}));
   EXPECT_EQ(session_response.status_code, 200);
 
   const auto logout_response = HandleHttpApiRequest(
-      DemoConfig(), store,
+      DemoConfig(), store, nullptr,
       MakeRequest("POST", "/api/v1/auth/logout", "",
                   {{"authorization", "Bearer " + session.token}}));
   EXPECT_EQ(logout_response.status_code, 204);
   EXPECT_FALSE(store->GetSession(session.token).has_value());
+}
+
+TEST(HttpApi, RedirectsToOidcAuthorizationEndpoint)
+{
+  const auto oidc_store = std::make_shared<OidcPendingAuthStore>();
+  const auto response = HandleHttpApiRequest(
+      DemoConfig(), nullptr, oidc_store,
+      MakeRequest("GET", "/api/v1/auth/oidc/example/login"));
+
+  EXPECT_EQ(response.status_code, 302);
+  const auto location = response.headers.find("location");
+  ASSERT_NE(location, response.headers.end());
+  EXPECT_NE(location->second.find("https://id.example.test/oauth2/authorize"),
+            std::string::npos);
+  EXPECT_NE(location->second.find("response_type=code"), std::string::npos);
+  EXPECT_NE(location->second.find("client_id=bareos-webui"), std::string::npos);
+  EXPECT_NE(location->second.find("scope=openid%20profile%20email"),
+            std::string::npos);
+  EXPECT_NE(location->second.find("state="), std::string::npos);
+  EXPECT_NE(location->second.find("nonce="), std::string::npos);
+  EXPECT_NE(location->second.find("code_challenge="), std::string::npos);
 }
