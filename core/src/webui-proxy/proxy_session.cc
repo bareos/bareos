@@ -85,6 +85,58 @@ std::string NormalizeRawConsoleCommand(std::string command)
   return command;
 }
 
+ProxyAuthContext ResolveMappedIdentity(
+    const ProxyConfig& config,
+    const AuthResult& auth_result,
+    const std::optional<std::string>& requested_director,
+    const std::optional<std::string>& requested_host,
+    const std::optional<int>& requested_port,
+    bool json_mode)
+{
+  ProxyAuthContext auth;
+  auth.identity = auth_result.identity;
+  auth.expires_at = auth_result.expires_at;
+  auth.director_config.json_mode = json_mode;
+
+  if (!config.identity_mappings.empty()) {
+    const auto mapped
+        = ResolveIdentityMapping(config.identity_mappings, auth.identity);
+    if (!mapped) {
+      throw std::runtime_error(
+          "Proxy auth: no identity mapping matched this user");
+    }
+    auth.director_config.username = mapped->director_username;
+    auth.director_config.password = mapped->director_password;
+    if (mapped->preferred_director_id && !mapped->preferred_director_id->empty()
+        && !requested_director) {
+      auth.preferred_director_id = *mapped->preferred_director_id;
+    }
+  }
+
+  if (auth.director_config.username.empty()
+      || auth.director_config.password.empty()) {
+    throw std::runtime_error(
+        "Proxy auth: no Director credentials resolved for this identity");
+  }
+
+  const auto target = ResolveDirectorTarget(
+      config,
+      requested_director
+          ? requested_director
+          : (!auth.preferred_director_id.empty()
+                 ? std::optional<std::string>(auth.preferred_director_id)
+                 : std::nullopt),
+      requested_host, requested_port);
+  auth.preferred_director_id = target.id;
+  auth.director_config.director_name = target.name;
+  auth.director_config.host = target.host;
+  auth.director_config.port = target.port;
+  auth.director_config.tls_psk_disable = target.tls_psk_disable;
+  auth.director_config.tls_psk_require = target.tls_psk_require;
+
+  return auth;
+}
+
 ProxyAuthContext ResolveProxyAuthRequest(
     const ProxyConfig& config,
     const std::shared_ptr<ProxySessionStore>& session_store,
@@ -122,8 +174,8 @@ ProxyAuthContext ResolveProxyAuthRequest(
     if (!token_identity) {
       throw std::runtime_error("Proxy auth: invalid or expired access token");
     }
-    auth.identity = token_identity->identity;
-    auth.expires_at = token_identity->expires_at;
+    return ResolveMappedIdentity(config, *token_identity, requested_director,
+                                 requested_host, requested_port, json_mode);
   } else {
     if (!requested_username || !requested_password) {
       throw std::runtime_error(
@@ -139,8 +191,8 @@ ProxyAuthContext ResolveProxyAuthRequest(
             "Proxy auth: invalid local username or "
             "password");
       }
-      auth.identity = local_user->identity;
-      auth.expires_at = local_user->expires_at;
+      return ResolveMappedIdentity(config, *local_user, requested_director,
+                                   requested_host, requested_port, json_mode);
     } else {
       auth.director_config.username = *requested_username;
       auth.director_config.password = *requested_password;
@@ -148,28 +200,6 @@ ProxyAuthContext ResolveProxyAuthRequest(
       auth.identity.subject = auth.director_config.username;
       auth.identity.username = auth.director_config.username;
     }
-  }
-
-  if (!config.identity_mappings.empty()) {
-    const auto mapped
-        = ResolveIdentityMapping(config.identity_mappings, auth.identity);
-    if (!mapped) {
-      throw std::runtime_error(
-          "Proxy auth: no identity mapping matched this "
-          "user");
-    }
-    auth.director_config.username = mapped->director_username;
-    auth.director_config.password = mapped->director_password;
-    if (mapped->preferred_director_id && !mapped->preferred_director_id->empty()
-        && !requested_director) {
-      auth.preferred_director_id = *mapped->preferred_director_id;
-    }
-  }
-
-  if (auth.director_config.username.empty()
-      || auth.director_config.password.empty()) {
-    throw std::runtime_error(
-        "Proxy auth: no Director credentials resolved for this identity");
   }
 
   const auto target = ResolveDirectorTarget(

@@ -79,4 +79,12 @@ ProxyAuthContext ResolveProxyAuthRequest(
     const std::optional<int>& requested_port,
     bool json_mode);
 
+ProxyAuthContext ResolveMappedIdentity(
+    const ProxyConfig& config,
+    const AuthResult& auth_result,
+    const std::optional<std::string>& requested_director,
+    const std::optional<std::string>& requested_host,
+    const std::optional<int>& requested_port,
+    bool json_mode);
+
 #endif  // BAREOS_WEBUI_PROXY_PROXY_SESSION_H_

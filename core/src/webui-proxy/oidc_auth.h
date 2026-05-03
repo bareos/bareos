@@ -21,9 +21,12 @@
 #ifndef BAREOS_WEBUI_PROXY_OIDC_AUTH_H_
 #define BAREOS_WEBUI_PROXY_OIDC_AUTH_H_
 
+#include "auth_session.h"
+
 #include <chrono>
 #include <ctime>
 #include <functional>
+#include <map>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -54,6 +57,25 @@ struct OidcPendingAuth {
 
 using OidcClock = std::function<std::time_t()>;
 
+struct OidcHttpRequest {
+  std::string method;
+  std::string url;
+  std::map<std::string, std::string> headers;
+  std::string body;
+};
+
+struct OidcHttpResponse {
+  int status_code{0};
+  std::map<std::string, std::string> headers;
+  std::string body;
+};
+
+class OidcHttpClient {
+ public:
+  virtual ~OidcHttpClient() = default;
+  virtual OidcHttpResponse Request(const OidcHttpRequest& request) const = 0;
+};
+
 class OidcPendingAuthStore {
  public:
   explicit OidcPendingAuthStore(
@@ -75,5 +97,14 @@ class OidcPendingAuthStore {
 
 std::string BuildOidcAuthorizationUrl(const OidcAuthProvider& provider,
                                       const OidcPendingAuth& pending_auth);
+
+const OidcHttpClient& DefaultOidcHttpClient();
+
+AuthResult CompleteOidcAuthorization(
+    const OidcAuthProvider& provider,
+    const OidcPendingAuth& pending_auth,
+    const std::string& code,
+    const OidcHttpClient& http_client,
+    OidcClock clock = []() { return std::time(nullptr); });
 
 #endif  // BAREOS_WEBUI_PROXY_OIDC_AUTH_H_

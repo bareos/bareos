@@ -53,7 +53,8 @@ HttpResponse HandleHttpApiRequest(
     const ProxyConfig& config,
     const std::shared_ptr<ProxySessionStore>& session_store,
     const std::shared_ptr<OidcPendingAuthStore>& oidc_store,
-    const HttpRequest& request);
+    const HttpRequest& request,
+    const OidcHttpClient* oidc_http_client = nullptr);
 
 std::string BuildHttpResponse(const HttpResponse& response);
 
