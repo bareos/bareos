@@ -20,6 +20,7 @@
 */
 #include "proxy_session.h"
 #include "director_connection.h"
+#include "identity_mapping.h"
 #include "ws_codec.h"
 
 #include <optional>
@@ -211,6 +212,21 @@ void RunProxySession(int fd,
       bootstrap.identity.provider = "password";
       bootstrap.identity.subject = cfg.username;
       bootstrap.identity.username = cfg.username;
+    }
+
+    if (!config.identity_mappings.empty()) {
+      const auto mapped = ResolveIdentityMapping(config.identity_mappings,
+                                                 bootstrap.identity);
+      if (!mapped) {
+        throw std::runtime_error(
+            "Proxy auth: no identity mapping matched this user");
+      }
+      cfg.username = mapped->director_username;
+      cfg.password = mapped->director_password;
+      if (mapped->preferred_director_id
+          && !mapped->preferred_director_id->empty() && !requested_director) {
+        bootstrap.preferred_director_id = *mapped->preferred_director_id;
+      }
     }
 
     const auto target = ResolveDirectorTarget(

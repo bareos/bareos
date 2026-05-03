@@ -78,6 +78,18 @@ int ParseInteger(const std::string& value, const std::string& key)
   }
 }
 
+std::vector<std::string> ParseList(const std::string& value)
+{
+  std::vector<std::string> entries;
+  std::istringstream input(value);
+  std::string item;
+  while (std::getline(input, item, ',')) {
+    item = Trim(std::move(item));
+    if (!item.empty()) { entries.push_back(item); }
+  }
+  return entries;
+}
+
 void ApplyProxySetting(ProxyConfig& cfg,
                        const std::string& key,
                        const std::string& value)
@@ -111,6 +123,34 @@ void ApplyDirectorSetting(DirectorTargetConfig& cfg,
                              + "'");
   }
   cfg.tls_psk_require = !cfg.tls_psk_disable;
+}
+
+void ApplyIdentityMappingSetting(IdentityMappingRule& rule,
+                                 const std::string& key,
+                                 const std::string& value)
+{
+  if (key == "provider") {
+    rule.provider = value;
+  } else if (key == "subject") {
+    rule.subject = value;
+  } else if (key == "username") {
+    rule.username = value;
+  } else if (key == "email") {
+    rule.email = value;
+  } else if (key == "groups") {
+    rule.groups = ParseList(value);
+  } else if (key == "roles") {
+    rule.roles = ParseList(value);
+  } else if (key == "director_username") {
+    rule.director_username = value;
+  } else if (key == "director_password") {
+    rule.director_password = value;
+  } else if (key == "preferred_director") {
+    rule.preferred_director_id = value;
+  } else {
+    throw std::runtime_error("Proxy config: unknown identity map key '" + key
+                             + "'");
+  }
 }
 
 void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
@@ -158,6 +198,20 @@ void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
       ApplyDirectorSetting(it->second, key, value);
       continue;
     }
+    if (current_section.rfind("identity-map:", 0) == 0) {
+      const std::string mapping_id = current_section.substr(13);
+      auto it = std::find_if(
+          cfg.identity_mappings.begin(), cfg.identity_mappings.end(),
+          [&](const auto& rule) { return rule.id == mapping_id; });
+      if (it == cfg.identity_mappings.end()) {
+        IdentityMappingRule rule;
+        rule.id = mapping_id;
+        cfg.identity_mappings.push_back(std::move(rule));
+        it = std::prev(cfg.identity_mappings.end());
+      }
+      ApplyIdentityMappingSetting(*it, key, value);
+      continue;
+    }
 
     throw std::runtime_error("Proxy config: unknown section '" + current_section
                              + "'");
@@ -166,6 +220,13 @@ void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
   if (cfg.allowed_directors.empty()) {
     throw std::runtime_error(
         "Proxy config: at least one [director:<id>] section is required");
+  }
+  for (const auto& rule : cfg.identity_mappings) {
+    if (rule.director_username.empty() || rule.director_password.empty()) {
+      throw std::runtime_error("Proxy config: identity map '" + rule.id
+                               + "' requires director_username and "
+                                 "director_password");
+    }
   }
 }
 

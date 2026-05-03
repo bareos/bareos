@@ -15,6 +15,13 @@ port = 9101
 director_name = bareos-dir
 tls_psk_disable = false
 
+#[identity-map:webui-admin]
+#provider = password
+#username = admin
+#director_username = webui-admin
+#director_password = secret
+#preferred_director = bareos-dir
+
 #[director:dr-site]
 #host = dr.example.com
 #port = 9101

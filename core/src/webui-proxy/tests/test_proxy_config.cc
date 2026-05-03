@@ -63,6 +63,69 @@ tls_psk_disable = true
   EXPECT_FALSE(cfg.allowed_directors.at("dr").tls_psk_require);
 }
 
+TEST(ProxyConfig, ParsesIdentityMappingsFromIni)
+{
+  ProxyConfig cfg;
+
+  LoadProxyConfigFromString(
+      R"ini(
+[listen]
+ws_host = 127.0.0.1
+
+[director:prod]
+host = prod.example.test
+port = 19101
+director_name = bareos-dir
+
+[identity-map:admin]
+provider = password
+username = admin-notls
+groups = backup-admins, linux
+roles = operator
+director_username = webui-admin
+director_password = mapped-secret
+preferred_director = prod
+)ini",
+      cfg);
+
+  ASSERT_EQ(cfg.identity_mappings.size(), 1U);
+  const auto& rule = cfg.identity_mappings.front();
+  EXPECT_EQ(rule.id, "admin");
+  ASSERT_TRUE(rule.provider.has_value());
+  EXPECT_EQ(*rule.provider, "password");
+  ASSERT_TRUE(rule.username.has_value());
+  EXPECT_EQ(*rule.username, "admin-notls");
+  EXPECT_EQ(rule.groups, std::vector<std::string>({"backup-admins", "linux"}));
+  EXPECT_EQ(rule.roles, std::vector<std::string>({"operator"}));
+  EXPECT_EQ(rule.director_username, "webui-admin");
+  EXPECT_EQ(rule.director_password, "mapped-secret");
+  ASSERT_TRUE(rule.preferred_director_id.has_value());
+  EXPECT_EQ(*rule.preferred_director_id, "prod");
+}
+
+TEST(ProxyConfig, RejectsIdentityMappingsWithoutDirectorCredentials)
+{
+  ProxyConfig cfg;
+
+  EXPECT_THROW(LoadProxyConfigFromString(
+                   R"ini(
+[listen]
+ws_host = 127.0.0.1
+
+[director:prod]
+host = prod.example.test
+port = 19101
+director_name = bareos-dir
+
+[identity-map:admin]
+provider = password
+username = admin-notls
+director_username = webui-admin
+)ini",
+                   cfg),
+               std::runtime_error);
+}
+
 TEST(ProxyConfig, RejectsLegacyDirectorSection)
 {
   ProxyConfig cfg;

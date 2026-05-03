@@ -13,9 +13,15 @@ find_package(Threads REQUIRED)
 find_package(Jansson REQUIRED)
 
 set(PROXY_SOURCES
-    main.cc auth_session.cc bareos_base64.cc director_connection.cc
-    proxy_config.cc "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc"
-    proxy_session.cc proxy_server.cc
+    main.cc
+    auth_session.cc
+    bareos_base64.cc
+    director_connection.cc
+    identity_mapping.cc
+    proxy_config.cc
+    "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc"
+    proxy_session.cc
+    proxy_server.cc
 )
 
 add_executable(bareos-webui-proxy ${PROXY_SOURCES})
@@ -62,7 +68,7 @@ if(BUILD_TESTING AND GTest_FOUND)
   include(GoogleTest)
 
   set(PROXY_LIB_SOURCES auth_session.cc bareos_base64.cc director_connection.cc
-                        proxy_config.cc
+                        identity_mapping.cc proxy_config.cc
   )
 
   add_executable(
@@ -70,6 +76,7 @@ if(BUILD_TESTING AND GTest_FOUND)
     tests/test_auth_session.cc
     tests/test_bareos_base64.cc
     tests/test_director_connection.cc
+    tests/test_identity_mapping.cc
     tests/test_proxy_config.cc
     tests/test_proxy_session.cc
     proxy_session.cc
