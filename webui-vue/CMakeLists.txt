@@ -67,14 +67,12 @@ file(
 )
 set(WEBUI_VUE_INSTALL_CODE_TEMPLATE
     [=[
-if(EXISTS "@WEBUI_VUE_SOURCE_DIST@/index.html")
-  set(webui_vue_install_dist "@WEBUI_VUE_SOURCE_DIST@")
-elseif(EXISTS "@WEBUI_VUE_DIST@/index.html")
+if(EXISTS "@WEBUI_VUE_DIST@/index.html")
   set(webui_vue_install_dist "@WEBUI_VUE_DIST@")
 else()
   message(
     FATAL_ERROR
-      "Bareos WebUI Vue dist not found in @WEBUI_VUE_SOURCE_DIST@ or @WEBUI_VUE_DIST@. Generate it with \"cmake -P webui-vue/build-dist.cmake\" or \"cmake --build <builddir> --target bareos-webui-vue-build\" before install."
+      "Bareos WebUI Vue build-tree dist not found in @WEBUI_VUE_DIST@. Generate it with \"cmake --build <builddir> --target bareos-webui-vue-build\" before install."
   )
 endif()
 file(INSTALL DESTINATION "@WEBUI_VUE_DIR@" TYPE DIRECTORY FILES

@@ -89,7 +89,8 @@ endif()
 
 message(STATUS "Building webui-vue dist in ${DIST_DIR}")
 execute_process(
-  COMMAND "${NPM_EXECUTABLE}" run build -- --outDir "${DIST_DIR}"
+  COMMAND "${CMAKE_COMMAND}" -E env "BAREOS_FULL_VERSION=${BAREOS_FULL_VERSION}"
+          "${NPM_EXECUTABLE}" run build -- --outDir "${DIST_DIR}"
   WORKING_DIRECTORY "${WEBUI_VUE_SRC_DIR}"
   RESULT_VARIABLE npm_build_result
 )
