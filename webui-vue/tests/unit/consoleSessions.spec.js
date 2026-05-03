@@ -162,19 +162,19 @@ describe('console session store', () => {
     expect(completionB).toEqual({
       type: 'command',
       id: '1',
-      command: 'list cl\t',
+      command: '.help item=list',
     })
 
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'raw_response',
         id: '1',
-        text: 'list clients',
+        text: 'basefiles | clients | jobs | pools',
         prompt: 'main',
       }),
     })
 
-    expect(consoleSessions.getSession('bareos-dir-b').cmd).toBe('list clients')
+    expect(consoleSessions.getSession('bareos-dir-b').cmd).toBe('list clients ')
     expect(consoleSessions.getSession('bareos-dir-a').cmd).toBe('')
   })
 
@@ -199,12 +199,81 @@ describe('console session store', () => {
       data: JSON.stringify({
         type: 'raw_response',
         id: '1',
-        text: 'list clients ',
+        text: 'clients',
         prompt: 'main',
       }),
     })
 
     expect(consoleSessions.getSession('bareos-dir').cmd).toBe('list clients ')
+  })
+
+  it('uses value completion commands for known argument keywords', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    consoleSessions.requestCompletion('bareos-dir', 'list jobs client=ba')
+
+    expect(JSON.parse(socket.sent[1])).toEqual({
+      type: 'command',
+      id: '1',
+      command: '.client',
+    })
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'test2-fd\ntest-client-fd\nbareos-fd\n',
+        prompt: 'main',
+      }),
+    })
+
+    expect(consoleSessions.getSession('bareos-dir').cmd).toBe('list jobs client=bareos-fd ')
+  })
+
+  it('lists ambiguous completion candidates in the console output', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    consoleSessions.requestCompletion('bareos-dir', 'list cl')
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'client=\nclients\n',
+        prompt: 'main',
+      }),
+    })
+
+    expect(consoleSessions.getSession('bareos-dir').cmd).toBe('list client')
+    expect(
+      consoleSessions.getSession('bareos-dir').output.map(line => line.text)
+    ).toContain('client=')
+    expect(
+      consoleSessions.getSession('bareos-dir').output.map(line => line.text)
+    ).toContain('clients')
   })
 
   it('disconnects all tracked director sessions', () => {
