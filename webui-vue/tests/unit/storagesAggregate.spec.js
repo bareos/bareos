@@ -111,7 +111,14 @@ describe('storages aggregate helpers', () => {
         type: 'response',
         id: commandsA.get('llist pools'),
         data: {
-          pools: [{ name: 'Full', numvols: '1', maxvols: '10' }],
+          pools: [{
+            name: 'Full',
+            numvols: '1',
+            maxvols: '10',
+            prunablevolumes: '1',
+            prunablejobs: '2',
+            prunablebytes: '33',
+          }],
         },
       }),
     })
@@ -139,7 +146,14 @@ describe('storages aggregate helpers', () => {
         type: 'response',
         id: commandsB.get('llist pools'),
         data: {
-          pools: [{ name: 'Full', numvols: '2', maxvols: '20' }],
+          pools: [{
+            name: 'Full',
+            numvols: '2',
+            maxvols: '20',
+            prunablevolumes: '0',
+            prunablejobs: '0',
+            prunablebytes: '0',
+          }],
         },
       }),
     })
@@ -174,11 +188,17 @@ describe('storages aggregate helpers', () => {
           scopeKey: 'prod-a:Full',
           director: 'prod-a',
           totalbytes: 11,
+          prunablevolumes: 1,
+          prunablejobs: 2,
+          prunablebytes: 33,
         }),
         expect.objectContaining({
           scopeKey: 'prod-b:Full',
           director: 'prod-b',
           totalbytes: 22,
+          prunablevolumes: 0,
+          prunablejobs: 0,
+          prunablebytes: 0,
         }),
       ],
       volumes: [
