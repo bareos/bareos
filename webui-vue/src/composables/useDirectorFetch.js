@@ -166,6 +166,45 @@ export function normalisePool(p) {
   }
 }
 
+export function normalisePoolPruneReport(report) {
+  const statuses = Array.isArray(report?.status_breakdown)
+    ? report.status_breakdown.map(item => ({
+      status: item.status ?? '',
+      volumes: Number(item.volumes ?? 0),
+    }))
+    : []
+  const volumes = Array.isArray(report?.volumes)
+    ? report.volumes.map(item => ({
+      name: item.name ?? '',
+      status: item.status ?? '',
+      lastwritten: item.lastwritten ?? '',
+      reason: item.reason ?? '',
+      prunablejobs: Number(item.prunablejobs ?? 0),
+      prunablebytes: Number(item.prunablebytes ?? 0),
+      jobids: Array.isArray(item.jobids) ? item.jobids.map(Number) : [],
+    }))
+    : []
+  const jobs = Array.isArray(report?.jobs)
+    ? report.jobs.map(item => ({
+      jobid: Number(item.jobid ?? 0),
+      name: item.name ?? '',
+      bytes: Number(item.bytes ?? 0),
+      starttime: item.starttime ?? '',
+    }))
+    : []
+
+  return {
+    pool: report?.pool ?? '',
+    reason: report?.reason ?? '',
+    prunablevolumes: Number(report?.prunablevolumes ?? 0),
+    prunablejobs: Number(report?.prunablejobs ?? 0),
+    prunablebytes: Number(report?.prunablebytes ?? 0),
+    statusBreakdown: statuses,
+    volumes,
+    jobs,
+  }
+}
+
 /**
  * Normalise a raw volume record.  Volumes can come from either
  * "list volumes" (nested by pool) or "llist volumes".

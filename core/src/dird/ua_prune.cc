@@ -46,6 +46,8 @@
 
 namespace directordaemon {
 
+static constexpr char kPoolPruneReasonCode[] = "volume_retention_expired";
+
 /* Forward referenced functions */
 static bool PruneDirectory(UaContext* ua, ClientResource* client);
 static bool PruneStats(UaContext* ua, utime_t retention);
@@ -159,13 +161,44 @@ PoolPruneSummary SummarizePoolPruneJobs(
   return summary;
 }
 
-bool GetPoolPruneSummary(UaContext* ua,
-                         PoolDbRecord* pool,
-                         PoolPruneSummary* summary)
+PoolPruneReport BuildPoolPruneReport(
+    const std::vector<PoolPruneVolumeDetail>& volumes,
+    const std::vector<PoolPruneJobDetail>& jobs)
 {
-  if (!summary) { return false; }
+  PoolPruneReport report;
+  report.reason = volumes.empty() ? "" : kPoolPruneReasonCode;
+  report.volumes = volumes;
+  report.jobs = jobs;
 
-  *summary = {};
+  std::unordered_map<JobId_t, uint64_t> bytes_by_job;
+  for (const auto& job : jobs) { bytes_by_job[job.jobid] = job.bytes; }
+
+  report.summary = SummarizePoolPruneJobs(
+      bytes_by_job, static_cast<uint32_t>(volumes.size()));
+
+  std::unordered_map<std::string, uint32_t> status_counts;
+  std::vector<std::string> ordered_statuses;
+  for (const auto& volume : volumes) {
+    if (status_counts.emplace(volume.volume_status, 0).second) {
+      ordered_statuses.push_back(volume.volume_status);
+    }
+    ++status_counts[volume.volume_status];
+  }
+
+  for (const auto& status : ordered_statuses) {
+    report.status_breakdown.push_back({status, status_counts[status]});
+  }
+
+  return report;
+}
+
+bool GetPoolPruneReport(UaContext* ua,
+                        PoolDbRecord* pool,
+                        PoolPruneReport* report)
+{
+  if (!report) { return false; }
+
+  *report = {};
 
   char ed1[50];
   PoolMem query(PM_MESSAGE);
@@ -175,7 +208,7 @@ bool GetPoolPruneSummary(UaContext* ua,
   if (!ua->db->GetQueryDbids(ua->jcr, query, volume_ids)) { return false; }
 
   std::unordered_set<JobId_t> unique_job_ids;
-  uint32_t prunable_volumes = 0;
+  std::vector<PoolPruneVolumeDetail> volume_details;
 
   for (int i = 0; i < volume_ids.num_ids; ++i) {
     MediaDbRecord mr;
@@ -191,27 +224,46 @@ bool GetPoolPruneSummary(UaContext* ua,
     if (!GetPruneCandidatesForVolume(ua, &mr, volume_jobs)) { return false; }
     if (volume_jobs.empty()) { continue; }
 
-    ++prunable_volumes;
+    std::sort(volume_jobs.begin(), volume_jobs.end());
+    volume_jobs.erase(std::unique(volume_jobs.begin(), volume_jobs.end()),
+                      volume_jobs.end());
+
+    PoolPruneVolumeDetail detail;
+    detail.volume_name = mr.VolumeName;
+    detail.volume_status = mr.VolStatus;
+    detail.last_written = mr.cLastWritten;
+    detail.reason = kPoolPruneReasonCode;
+    detail.job_ids = volume_jobs;
+    detail.prunable_jobs = volume_jobs.size();
+    volume_details.push_back(std::move(detail));
+
     unique_job_ids.insert(volume_jobs.begin(), volume_jobs.end());
   }
 
-  std::unordered_map<JobId_t, uint64_t> bytes_by_job;
+  std::vector<PoolPruneJobDetail> job_details;
+  std::unordered_map<JobId_t, PoolPruneJobDetail> jobs_by_id;
   if (!unique_job_ids.empty()) {
     BStringList job_list;
     for (const auto jobid : unique_job_ids) { job_list << jobid; }
 
-    Mmsg(query, "SELECT JobId, JobBytes FROM Job WHERE JobId IN (%s)",
+    Mmsg(query,
+         "SELECT JobId, Name, JobBytes, StartTime FROM Job WHERE JobId IN (%s) "
+         "ORDER BY JobId",
          job_list.Join(',').c_str());
 
-    struct JobBytesHandlerContext {
-      std::unordered_map<JobId_t, uint64_t>* bytes_by_job;
-    } ctx{&bytes_by_job};
+    struct JobDetailsHandlerContext {
+      std::unordered_map<JobId_t, PoolPruneJobDetail>* jobs_by_id;
+    } ctx{&jobs_by_id};
 
     auto handler = [](void* c, int, char** row) {
-      auto* handler_ctx = static_cast<JobBytesHandlerContext*>(c);
-      if (row[0] && row[1]) {
-        (*handler_ctx->bytes_by_job)[str_to_int64(row[0])]
-            = str_to_uint64(row[1]);
+      auto* handler_ctx = static_cast<JobDetailsHandlerContext*>(c);
+      if (row[0]) {
+        PoolPruneJobDetail detail;
+        detail.jobid = str_to_int64(row[0]);
+        detail.name = row[1] ? row[1] : "";
+        detail.bytes = row[2] ? str_to_uint64(row[2]) : 0;
+        detail.start_time = row[3] ? row[3] : "";
+        (*handler_ctx->jobs_by_id)[detail.jobid] = std::move(detail);
       }
       return 0;
     };
@@ -222,7 +274,39 @@ bool GetPoolPruneSummary(UaContext* ua,
     }
   }
 
-  *summary = SummarizePoolPruneJobs(bytes_by_job, prunable_volumes);
+  for (auto& volume : volume_details) {
+    for (const auto jobid : volume.job_ids) {
+      if (const auto it = jobs_by_id.find(jobid); it != jobs_by_id.end()) {
+        volume.prunable_bytes += it->second.bytes;
+      }
+    }
+  }
+
+  job_details.reserve(jobs_by_id.size());
+  for (const auto& [jobid, detail] : jobs_by_id) {
+    static_cast<void>(jobid);
+    job_details.push_back(detail);
+  }
+
+  std::sort(job_details.begin(), job_details.end(),
+            [](const PoolPruneJobDetail& lhs, const PoolPruneJobDetail& rhs) {
+              return lhs.jobid < rhs.jobid;
+            });
+
+  *report = BuildPoolPruneReport(volume_details, job_details);
+  return true;
+}
+
+bool GetPoolPruneSummary(UaContext* ua,
+                         PoolDbRecord* pool,
+                         PoolPruneSummary* summary)
+{
+  if (!summary) { return false; }
+
+  PoolPruneReport report;
+  if (!GetPoolPruneReport(ua, pool, &report)) { return false; }
+
+  *summary = report.summary;
   return true;
 }
 
