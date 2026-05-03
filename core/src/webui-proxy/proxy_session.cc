@@ -68,6 +68,19 @@ static std::string JsonDirectorList(const ProxyConfig& config)
   return result;
 }
 
+std::string NormalizeRawConsoleCommand(std::string command)
+{
+  command.erase(0, command.find_first_not_of(" \r\n"));
+
+  while (!command.empty()) {
+    const char last = command.back();
+    if (last != ' ' && last != '\r' && last != '\n') { break; }
+    command.pop_back();
+  }
+
+  return command;
+}
+
 // ---------------------------------------------------------------------------
 // Session implementation
 // ---------------------------------------------------------------------------
@@ -262,13 +275,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     std::string command = cmd_raw ? cmd_raw : "";
     std::string req_id = id_raw ? id_raw : "";
 
-    // Trim leading/trailing whitespace
-    auto trim = [](std::string s) {
-      s.erase(0, s.find_first_not_of(" \t\r\n"));
-      s.erase(s.find_last_not_of(" \t\r\n") + 1);
-      return s;
-    };
-    command = trim(command);
+    command = NormalizeRawConsoleCommand(command);
 
     json_decref(req);
 

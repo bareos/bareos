@@ -199,7 +199,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
             .filter(line => line.trim())
 
           if (lines.length === 1) {
-            session.cmd = lines[0].trim()
+            session.cmd = lines[0]
           } else if (lines.length > 1) {
             appendLines(director, msg.text)
           }
