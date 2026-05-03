@@ -453,6 +453,39 @@ describe('console session store', () => {
     ])
   })
 
+  it('suppresses standalone director message notifications in console output', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    consoleSessions.sendCommand('bareos-dir', 'messages')
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'You have no messages.\nYou have messages.\n',
+        prompt: 'main',
+      }),
+    })
+
+    expect(consoleSessions.getSession('bareos-dir').output.map(line => line.text)).toContain(
+      'You have no messages.'
+    )
+    expect(consoleSessions.getSession('bareos-dir').output.map(line => line.text)).not.toContain(
+      'You have messages.'
+    )
+  })
+
   it('disconnects all tracked director sessions', () => {
     const consoleSessions = useConsoleSessionsStore()
 
