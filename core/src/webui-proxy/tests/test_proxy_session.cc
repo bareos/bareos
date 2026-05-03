@@ -52,3 +52,12 @@ TEST(ProxySession, DoesNotTreatSubPromptExitAsConsoleClose)
   EXPECT_FALSE(IsExpectedConsoleExitCommand(false, "exit"));
   EXPECT_FALSE(IsExpectedConsoleExitCommand(true, "done"));
 }
+
+TEST(ProxySession, SuppressesOutOfBandMessagesNotification)
+{
+  EXPECT_TRUE(
+      ShouldSuppressRawConsoleChunk("messages", "You have messages.\n"));
+  EXPECT_FALSE(ShouldSuppressRawConsoleChunk("help", "You have messages.\n"));
+  EXPECT_FALSE(
+      ShouldSuppressRawConsoleChunk("messages", "You have no messages.\n"));
+}

@@ -126,7 +126,14 @@
               </template>
               <template #body-cell-status="props">
                 <q-td :props="props" class="text-center">
-                  <JobStatusBadge :status="props.value" />
+                  <span
+                    v-if="isWaitingStatus(displayJobStatus(props.row))"
+                    class="row items-center no-wrap q-gutter-x-xs justify-center"
+                  >
+                    <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
+                    <span class="text-orange-7 text-caption">{{ displayJobStatus(props.row) }}</span>
+                  </span>
+                  <JobStatusBadge v-else :status="displayJobStatus(props.row)" />
                 </q-td>
               </template>
               <template #body-cell-client="props">
@@ -569,6 +576,23 @@ function quoteDirectorString(value) {
   return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
 }
 
+function overlayRuntimeStatuses(jobs, runtimeJobs) {
+  const runtimeById = new Map(
+    (runtimeJobs ?? [])
+      .map(job => ({
+        id: Number(job?.jobid ?? job?.id ?? 0),
+        runtimeStatus: job?.status ?? job?.jobstatus,
+      }))
+      .filter(job => Number.isFinite(job.id) && job.id > 0 && typeof job.runtimeStatus === 'string')
+      .map(job => [job.id, job.runtimeStatus])
+  )
+
+  return jobs.map((job) => ({
+    ...job,
+    runtimeStatus: runtimeById.get(job.id) ?? job.runtimeStatus,
+  }))
+}
+
 const directorOptions = computed(() => {
   return buildDirectorOptions({
     availableDirectors: director.availableDirectors,
@@ -756,7 +780,7 @@ async function fetchPage() {
         director.call(`list jobs count${filter}`),
       ])
       if (pageResult.status === 'rejected') throw pageResult.reason
-      jobs.value = directorCollection(pageResult.value?.jobs).map((job) => {
+      const pageJobs = directorCollection(pageResult.value?.jobs).map((job) => {
         const normalized = normaliseJob(job)
         return {
           ...normalized,
@@ -764,6 +788,15 @@ async function fetchPage() {
           scopeKey: `${currentDirector}:${normalized.id}`,
         }
       })
+      const runningJobIds = pageJobs.filter(job => isRunning(job.status)).map(job => job.id)
+      if (runningJobIds.length > 0) {
+        const runtimeStatus = await Promise.allSettled([director.call('status director')])
+        jobs.value = runtimeStatus[0].status === 'fulfilled'
+          ? overlayRuntimeStatuses(pageJobs, runtimeStatus[0].value?.running)
+          : pageJobs
+      } else {
+        jobs.value = pageJobs
+      }
       const count = countResult.status === 'fulfilled'
         ? Number(directorCollection(countResult.value?.jobs)[0]?.count ?? 0)
         : (jobs.value.length < rowsPerPage
@@ -807,7 +840,16 @@ async function fetchPage() {
 
       return Number(right.id ?? 0) - Number(left.id ?? 0)
     })
-    jobs.value = mergedJobs.slice(offset, offset + rowsPerPage)
+    const visibleJobs = mergedJobs.slice(offset, offset + rowsPerPage)
+    const runningJobIds = visibleJobs.filter(job => isRunning(job.status)).map(job => job.id)
+    if (runningJobIds.length > 0) {
+      const runtimeStatus = await Promise.allSettled([director.call('status director')])
+      jobs.value = runtimeStatus[0].status === 'fulfilled'
+        ? overlayRuntimeStatuses(visibleJobs, runtimeStatus[0].value?.running)
+        : visibleJobs
+    } else {
+      jobs.value = visibleJobs
+    }
     const count = countResults.reduce((sum, result, index) => (
       sum + (
         result.status === 'fulfilled'
@@ -867,6 +909,14 @@ const maxSpeed = computed(() => Math.max(1, ...filteredJobs.value
   .filter(j => !isRunning(j.status))
   .map(j => jobSpeedBps(j))))
 function speedGauge(row) { return jobSpeedBps(row) / maxSpeed.value }
+
+function displayJobStatus(job) {
+  return job?.runtimeStatus ?? job?.status ?? '?'
+}
+
+function isWaitingStatus(status) {
+  return typeof status === 'string' && status.toLowerCase().includes('is waiting')
+}
 
 const runningJobs  = computed(() => jobs.value.filter(j => isRunning(j.status)))
 
@@ -1438,3 +1488,16 @@ watch(() => singletonTabDirector.value, async () => {
   }
 })
 </script>
+
+<style scoped>
+.animated-spin {
+  animation: hourglass-spin 1.4s ease-in-out infinite;
+}
+
+@keyframes hourglass-spin {
+  0%   { transform: rotate(0deg); }
+  45%  { transform: rotate(0deg); }
+  55%  { transform: rotate(180deg); }
+  100% { transform: rotate(180deg); }
+}
+</style>

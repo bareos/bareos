@@ -112,6 +112,17 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
+        id: commandsA.get('status director'),
+        data: {
+          running: [
+            { jobid: '10', status: 'is waiting for a mount request' },
+          ],
+        },
+      }),
+    })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
         id: commandsA.get('llist jobs reverse limit=2 offset=0 jobstatus=T'),
         data: {
           jobs: [
@@ -129,6 +140,15 @@ describe('jobs aggregate helpers', () => {
       }),
     })
 
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('status director'),
+        data: {
+          running: [],
+        },
+      }),
+    })
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
@@ -152,7 +172,12 @@ describe('jobs aggregate helpers', () => {
     await expect(loading).resolves.toEqual({
       jobs: [
         expect.objectContaining({ scopeKey: 'prod-b:11', director: 'prod-b', id: 11 }),
-        expect.objectContaining({ scopeKey: 'prod-a:10', director: 'prod-a', id: 10 }),
+        expect.objectContaining({
+          scopeKey: 'prod-a:10',
+          director: 'prod-a',
+          id: 10,
+          runtimeStatus: 'is waiting for a mount request',
+        }),
       ],
       totalJobs: 4,
       directorErrors: [],
@@ -191,6 +216,15 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
+        id: commandsA.get('status director'),
+        data: {
+          running: [],
+        },
+      }),
+    })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
         id: commandsA.get('llist jobs reverse limit=3 offset=0 jobstatus=f'),
         data: {
           jobs: [
@@ -225,6 +259,15 @@ describe('jobs aggregate helpers', () => {
       }),
     })
 
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('status director'),
+        data: {
+          running: [],
+        },
+      }),
+    })
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',

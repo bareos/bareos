@@ -103,6 +103,35 @@ export function normaliseJob(j) {
   }
 }
 
+export function overlayRuntimeStatuses(jobs, runtimeJobs) {
+  const runtimeById = new Map(
+    directorCollection(runtimeJobs)
+      .map((job) => ({
+        id: Number(job?.jobid ?? job?.id ?? 0),
+        runtimeStatus: job?.status ?? job?.jobstatus,
+      }))
+      .filter(job => Number.isFinite(job.id) && job.id > 0 && typeof job.runtimeStatus === 'string')
+      .map(job => [job.id, job.runtimeStatus])
+  )
+
+  return jobs.map((job) => ({
+    ...job,
+    runtimeStatus: runtimeById.get(job.id) ?? job.runtimeStatus,
+  }))
+}
+
+export function displayJobStatus(job) {
+  return job?.runtimeStatus ?? job?.status ?? '?'
+}
+
+export function isRunningJobStatus(status) {
+  return status === 'R' || status === 'l'
+}
+
+export function isWaitingJobStatus(status) {
+  return typeof status === 'string' && status.toLowerCase().includes('is waiting')
+}
+
 /**
  * Normalise a raw director client record (from "list clients").
  */

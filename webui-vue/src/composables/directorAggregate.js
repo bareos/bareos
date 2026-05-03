@@ -198,6 +198,15 @@ function numberValue(value) {
   return Number.isFinite(number) ? number : 0
 }
 
+function optionalNumberValue(value) {
+  if (value == null || value === '') {
+    return undefined
+  }
+
+  const number = Number(value)
+  return Number.isFinite(number) ? number : undefined
+}
+
 function sortJobsByStartTime(jobs) {
   return [...jobs].sort((left, right) => {
     const startCompare = String(right.starttime ?? '').localeCompare(String(left.starttime ?? ''))
@@ -214,6 +223,89 @@ function sortJobsByStartTime(jobs) {
   })
 }
 
+function decorateRuntimeJobs(entries, director) {
+  return directorCollection(entries).map((entry, index) => {
+    const id = optionalNumberValue(entry.jobid ?? entry.id)
+
+    return {
+      id,
+      name: entry.name ?? undefined,
+      client: entry.client ?? entry.clientname ?? undefined,
+      type: entry.jobtype ?? entry.type ?? undefined,
+      level: entry.joblevel ?? entry.level ?? undefined,
+      starttime: entry.start_time ?? entry.starttime ?? undefined,
+      duration: entry.duration ?? undefined,
+      files: optionalNumberValue(entry.files ?? entry.jobfiles),
+      bytes: optionalNumberValue(entry.bytes ?? entry.jobbytes),
+      errors: optionalNumberValue(entry.errors ?? entry.joberrors),
+      runtimeStatus: entry.status ?? entry.jobstatus ?? undefined,
+      director,
+      scopeKey: `${director}:${id ?? entry.name ?? index}`,
+    }
+  })
+}
+
+function withRuntimeJobState(job, runtimeJob) {
+  if (!runtimeJob) {
+    return job
+  }
+
+  return {
+    ...job,
+    name: runtimeJob.name ?? job.name,
+    client: runtimeJob.client ?? job.client,
+    type: runtimeJob.type ?? job.type,
+    level: runtimeJob.level ?? job.level,
+    starttime: runtimeJob.starttime ?? job.starttime,
+    duration: runtimeJob.duration ?? job.duration,
+    files: runtimeJob.files ?? job.files,
+    bytes: runtimeJob.bytes ?? job.bytes,
+    errors: runtimeJob.errors ?? job.errors,
+    runtimeStatus: runtimeJob.runtimeStatus ?? job.runtimeStatus,
+  }
+}
+
+function runtimeJobsById(runtimeJobs) {
+  return new Map(
+    runtimeJobs
+      .filter(job => job.id != null)
+      .map(job => [job.id, job])
+  )
+}
+
+function mergeRunningJobs(catalogJobs, runtimeJobs) {
+  const runtimeById = runtimeJobsById(runtimeJobs)
+  const mergedCatalogJobs = catalogJobs.map(job => withRuntimeJobState(job, runtimeById.get(job.id)))
+  const knownJobIds = new Set(catalogJobs.map(job => job.id))
+  const runtimeOnlyJobs = runtimeJobs
+    .filter(job => !knownJobIds.has(job.id))
+    .map(job => withRuntimeJobState({
+      id: job.id ?? 0,
+      name: job.name ?? '',
+      client: job.client ?? '',
+      type: job.type ?? '',
+      level: job.level ?? '',
+      status: 'R',
+      starttime: job.starttime ?? '',
+      endtime: '',
+      duration: job.duration ?? '',
+      files: job.files ?? 0,
+      bytes: job.bytes ?? 0,
+      errors: job.errors ?? 0,
+      director: job.director,
+      scopeKey: job.scopeKey,
+    }, job))
+
+  return sortJobsByStartTime([...mergedCatalogJobs, ...runtimeOnlyJobs])
+}
+
+function overlayRuntimeStatus(jobs, runtimeJobs) {
+  const runtimeById = runtimeJobsById(runtimeJobs)
+  return sortJobsByStartTime(
+    jobs.map(job => withRuntimeJobState(job, runtimeById.get(job.id)))
+  )
+}
+
 export async function fetchDirectorDashboardSnapshot(credentials, options = {}) {
   const client = await createDirectorCommandClient(credentials, options)
 
@@ -225,6 +317,7 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       totalsResult,
       clientsResult,
       storagesResult,
+      directorStatusResult,
     ] = await Promise.allSettled([
       client.call('llist jobs days=1'),
       client.call('list jobs jobstatus=R'),
@@ -232,7 +325,18 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       client.call('list jobtotals'),
       client.call('list clients'),
       client.call('list storages'),
+      client.call('status director'),
     ])
+
+    const runtimeRunningJobs = directorStatusResult.status === 'fulfilled'
+      ? decorateRuntimeJobs(directorStatusResult.value?.running, credentials.director)
+      : []
+    const runningJobs = runningResult.status === 'fulfilled'
+      ? decorateJobs(runningResult.value?.jobs, credentials.director)
+      : []
+    const recentJobs = lastResult.status === 'fulfilled'
+      ? decorateJobs(lastResult.value?.jobs, credentials.director)
+      : []
 
     return {
       director: credentials.director,
@@ -240,12 +344,8 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       jobsPast24h: past24hResult.status === 'fulfilled'
         ? decorateJobs(past24hResult.value?.jobs, credentials.director)
         : [],
-      runningJobs: runningResult.status === 'fulfilled'
-        ? decorateJobs(runningResult.value?.jobs, credentials.director)
-        : [],
-      recentJobs: lastResult.status === 'fulfilled'
-        ? decorateJobs(lastResult.value?.jobs, credentials.director)
-        : [],
+      runningJobs: mergeRunningJobs(runningJobs, runtimeRunningJobs),
+      recentJobs: overlayRuntimeStatus(recentJobs, runtimeRunningJobs),
       jobTotals: totalsResult.status === 'fulfilled'
         ? {
           jobs: numberValue(totalsResult.value?.jobtotals?.jobs),

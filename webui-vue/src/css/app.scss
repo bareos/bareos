@@ -95,6 +95,17 @@ $bareos-blue-dark: #005a96;
   font-family: 'Courier New', monospace;
 }
 
+.animated-spin {
+  animation: hourglass-spin 1.4s ease-in-out infinite;
+}
+
+@keyframes hourglass-spin {
+  0%   { transform: rotate(0deg); }
+  45%  { transform: rotate(0deg); }
+  55%  { transform: rotate(180deg); }
+  100% { transform: rotate(180deg); }
+}
+
 // ── Scheduler Calendar ────────────────────────────────────────────────────────
 .sched-calendar {
   display: grid;
