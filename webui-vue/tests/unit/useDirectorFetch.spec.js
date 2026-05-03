@@ -21,13 +21,17 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  displayJobStatus,
   directorCommandCategory,
   directorCommandAllowed,
   directorCollection,
+  isRunningJobStatus,
+  isWaitingJobStatus,
   missingDirectorCommands,
   normaliseDirectorCommandPermissions,
   normaliseClient,
   normaliseJob,
+  overlayRuntimeStatuses,
   normalisePool,
   normalisePoolPruneReport,
   normaliseVolume,
@@ -62,6 +66,28 @@ describe('director data normalisers', () => {
       bytes: 2147483648,
       errors: 0,
     })
+  })
+
+  it('overlays runtime statuses for matching jobs', () => {
+    expect(overlayRuntimeStatuses([
+      { id: 2, status: 'R', name: 'backup-bareos-fd' },
+      { id: 1, status: 'T', name: 'backup-bareos-fd' },
+    ], [
+      { jobid: '2', status: 'is waiting for a mount request' },
+    ])).toEqual([
+      { id: 2, status: 'R', name: 'backup-bareos-fd', runtimeStatus: 'is waiting for a mount request' },
+      { id: 1, status: 'T', name: 'backup-bareos-fd', runtimeStatus: undefined },
+    ])
+  })
+
+  it('prefers runtime status text for display helpers', () => {
+    expect(displayJobStatus({ status: 'R', runtimeStatus: 'is waiting for a mount request' }))
+      .toBe('is waiting for a mount request')
+    expect(isRunningJobStatus('R')).toBe(true)
+    expect(isRunningJobStatus('l')).toBe(true)
+    expect(isRunningJobStatus('T')).toBe(false)
+    expect(isWaitingJobStatus('is waiting for a mount request')).toBe(true)
+    expect(isWaitingJobStatus('Running')).toBe(false)
   })
 
   it('extracts client OS and version details from uname', () => {

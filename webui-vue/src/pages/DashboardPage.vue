@@ -115,7 +115,14 @@
               </template>
               <template #body-cell-status="props">
                 <q-td :props="props">
-                  <JobStatusBadge :status="jobStatus(props.row)" />
+                  <span
+                    v-if="isWaitingStatus(jobStatus(props.row))"
+                    class="row items-center no-wrap q-gutter-x-xs"
+                  >
+                    <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
+                    <span class="text-orange-7 text-caption">{{ jobStatus(props.row) }}</span>
+                  </span>
+                  <JobStatusBadge v-else :status="jobStatus(props.row)" />
                 </q-td>
               </template>
               <template #body-cell-client="props">
@@ -149,7 +156,7 @@
                 <q-td :props="props" class="text-right" style="min-width:90px">
                   <div>{{ jobBytes(props.row) }}</div>
                   <q-linear-progress
-                    v-if="props.row.status === 'R'"
+                    v-if="isRunningJob(props.row)"
                     indeterminate color="primary" track-color="grey-3"
                     size="4px" class="q-mt-xs" rounded
                   />
@@ -173,7 +180,7 @@
               </template>
               <template #body-cell-speed="props">
                 <q-td :props="props" class="text-right" style="min-width:80px">
-                  <span v-if="props.row.status === 'R'" class="text-grey-5">—</span>
+                  <span v-if="isRunningJob(props.row)" class="text-grey-5">—</span>
                   <template v-else>
                     <div>{{ fmtSpeed(props.row.bytes, props.row.duration) }}</div>
                     <q-linear-progress
@@ -232,7 +239,20 @@
                     <span class="text-grey-6 text-caption q-ml-xs">({{ job.client }})</span>
                   </q-item-label>
                   <q-item-label caption>
-                     {{ formatNumber(job.files ?? 0, settings.locale) }} {{ t('Files') }} &middot; {{ jobBytes(job) }} &middot; {{ formatDuration(elapsedSecs(job)) }}
+                      {{ formatNumber(job.files ?? 0, settings.locale) }} {{ t('Files') }} &middot; {{ jobBytes(job) }} &middot; {{ formatDuration(elapsedSecs(job)) }}
+                  </q-item-label>
+                  <q-item-label
+                    v-if="jobStatus(job)"
+                    caption
+                    :class="isWaitingStatus(jobStatus(job)) ? 'text-orange-7' : 'text-grey-6'"
+                  >
+                    <q-icon
+                      v-if="isWaitingStatus(jobStatus(job))"
+                      name="hourglass_empty"
+                      size="14px"
+                      class="q-mr-xs"
+                    />
+                    {{ jobStatus(job) }}
                   </q-item-label>
                   <q-linear-progress indeterminate color="positive" class="q-mt-xs" style="height:6px; border-radius:3px" />
                 </q-item-section>
@@ -594,7 +614,7 @@ function jobSpeedBps(row) {
   return bytes / secs
 }
 const maxSpeedBps = computed(() => Math.max(1, ...recentJobs.value
-  .filter(j => j.status !== 'R')
+  .filter(j => !isRunningJob(j))
   .map(j => jobSpeedBps(j))))
 function bytesGauge(val) { return val / maxBytes.value }
 function durationGauge(str) { return parseDurationSecs(str) / maxDurationSecs.value }
@@ -628,9 +648,28 @@ const totalStats = computed(() => [
 ])
 
 // helper: keep status/bytes getters for template compatibility
-function jobStatus(row) { return row.status ?? '?' }
+function jobStatus(row) { return row.runtimeStatus ?? row.status ?? '?' }
+function isWaitingStatus(status) {
+  return typeof status === 'string' && status.toLowerCase().includes('is waiting')
+}
+function isRunningJob(row) {
+  return row?.status === 'R' || row?.runtimeStatus != null
+}
 function jobBytes(row) { return fmtBytes(row.bytes ?? 0) }
 function jobId(row) {
   return row.id ?? row.jobid
 }
 </script>
+
+<style scoped>
+.animated-spin {
+  animation: hourglass-spin 1.4s ease-in-out infinite;
+}
+
+@keyframes hourglass-spin {
+  0%   { transform: rotate(0deg); }
+  45%  { transform: rotate(0deg); }
+  55%  { transform: rotate(180deg); }
+  100% { transform: rotate(180deg); }
+}
+</style>

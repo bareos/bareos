@@ -143,12 +143,12 @@ describe('director aggregate dashboard helpers', () => {
         id: commandIds.get('llist jobs last'),
         data: {
           jobs: [{
-            jobid: '9',
-            name: 'BackupClient3',
-            clientname: 'mail-fd',
-            jobstatus: 'W',
-            starttime: '2026-03-23 10:00:00',
-            jobbytes: '4096',
+            jobid: '8',
+            name: 'BackupClient2',
+            clientname: 'db-fd',
+            jobstatus: 'R',
+            starttime: '2026-03-23 09:00:00',
+            jobbytes: '1024',
           }],
         },
       }),
@@ -184,6 +184,22 @@ describe('director aggregate dashboard helpers', () => {
         },
       }),
     })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get('status director'),
+        data: {
+          running: [{
+            jobid: '8',
+            name: 'BackupClient2',
+            start_time: '2026-03-23 09:00:00',
+            files: '11',
+            bytes: '2048',
+            status: 'Is waiting for a mount request',
+          }],
+        },
+      }),
+    })
 
     await expect(snapshotPromise).resolves.toMatchObject({
       director: 'prod-dir',
@@ -198,12 +214,16 @@ describe('director aggregate dashboard helpers', () => {
         expect.objectContaining({
           director: 'prod-dir',
           id: 8,
+          files: 11,
+          bytes: 2048,
+          runtimeStatus: 'Is waiting for a mount request',
         }),
       ],
       recentJobs: [
         expect.objectContaining({
           director: 'prod-dir',
-          id: 9,
+          id: 8,
+          runtimeStatus: 'Is waiting for a mount request',
         }),
       ],
       clientCount: 2,

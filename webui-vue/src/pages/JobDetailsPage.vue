@@ -17,7 +17,14 @@
         <div class="text-h6">Job #{{ job.id }} — {{ job.name }}</div>
         <q-space />
         <q-spinner v-if="isRunning" color="primary" size="18px" class="q-mr-sm" :title="t('Auto-refreshing…')" />
-        <JobStatusBadge :status="job.status" />
+        <span
+          v-if="isWaitingJobStatus(displayJobStatus(job))"
+          class="row items-center no-wrap q-gutter-x-xs"
+        >
+          <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
+          <span class="text-orange-7 text-caption">{{ displayJobStatus(job) }}</span>
+        </span>
+        <JobStatusBadge v-else :status="displayJobStatus(job)" />
       </div>
 
       <div class="row q-col-gutter-md">
@@ -144,7 +151,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { jobLevelMap, formatBytes, formatSpeed } from '../mock/index.js'
-import { normaliseJob } from '../composables/useDirectorFetch.js'
+import {
+  displayJobStatus,
+  isRunningJobStatus,
+  isWaitingJobStatus,
+  normaliseJob,
+  overlayRuntimeStatuses,
+} from '../composables/useDirectorFetch.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -304,12 +317,22 @@ async function loadJob() {
   if (jobRes.status === 'fulfilled') {
     const raw   = jobRes.value
     const entry = Array.isArray(raw?.jobs) ? raw.jobs[0] : (raw?.jobs ?? raw)
-    jobData.value = entry
-      ? {
+    if (entry) {
+      const loadedJob = {
         ...normaliseJob(entry),
         director: currentJobDirector.value || null,
       }
-      : null
+      if (isRunningJobStatus(loadedJob.status)) {
+        const runtimeStatus = await Promise.allSettled([director.call('status director')])
+        jobData.value = runtimeStatus[0].status === 'fulfilled'
+          ? overlayRuntimeStatuses([loadedJob], runtimeStatus[0].value?.running)[0]
+          : loadedJob
+      } else {
+        jobData.value = loadedJob
+      }
+    } else {
+      jobData.value = null
+    }
   } else {
     error.value = jobRes.reason?.message ?? t('Failed to load job')
   }
@@ -420,7 +443,7 @@ const highlightedLines = computed(() => {
 })
 
 // ── auto-refresh for running jobs ─────────────────────────────────────────────
-const isRunning = computed(() => job.value?.status === 'R' || job.value?.status === 'l')
+const isRunning = computed(() => isRunningJobStatus(job.value?.status))
 
 let _pollTimer = null
 

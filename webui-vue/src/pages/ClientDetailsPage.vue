@@ -63,7 +63,14 @@
               </template>
               <template #body-cell-status="props">
                 <q-td :props="props">
-                  <JobStatusBadge :status="props.value" />
+                  <span
+                    v-if="isWaitingJobStatus(displayJobStatus(props.row))"
+                    class="row items-center no-wrap q-gutter-x-xs"
+                  >
+                    <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
+                    <span class="text-orange-7 text-caption">{{ displayJobStatus(props.row) }}</span>
+                  </span>
+                  <JobStatusBadge v-else :status="displayJobStatus(props.row)" />
                 </q-td>
               </template>
               <template #body-cell-starttime="props">
@@ -99,9 +106,13 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatBytes, timeAgo } from '../mock/index.js'
 import {
+  displayJobStatus,
   directorCollection,
+  isRunningJobStatus,
+  isWaitingJobStatus,
   normaliseClient,
   normaliseJob,
+  overlayRuntimeStatuses,
 } from '../composables/useDirectorFetch.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
@@ -206,10 +217,19 @@ async function loadClient() {
     }
   }
   if (jobsRes.status === 'fulfilled') {
-    clientJobs.value = directorCollection(jobsRes.value?.jobs).map(job => ({
+    const jobs = directorCollection(jobsRes.value?.jobs).map(job => ({
       ...normaliseJob(job),
       director: currentClientDirector.value || null,
     }))
+
+    if (jobs.some(job => isRunningJobStatus(job.status))) {
+      const runtimeStatus = await Promise.allSettled([director.call('status director')])
+      clientJobs.value = runtimeStatus[0].status === 'fulfilled'
+        ? overlayRuntimeStatuses(jobs, runtimeStatus[0].value?.running)
+        : jobs
+    } else {
+      clientJobs.value = jobs
+    }
   }
 }
 
