@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,8 @@
 #include "dird/job.h"
 #include "dird/ua_prune.h"
 #include "dird/ua_purge.h"
+
+#include <unordered_map>
 
 TEST(Pruning, ExcludeRunningJobsFromList)
 {
@@ -73,4 +75,19 @@ TEST(Pruning, TransformJobidsTobedeleted)
   EXPECT_EQ(pruninglist.size(), 4);
 
   FreeUaContext(ua);
+}
+
+TEST(Pruning, SummarizePoolPruneJobs)
+{
+  std::unordered_map<JobId_t, uint64_t> prunable_jobs{
+      {10, 1024},
+      {11, 2048},
+      {42, 4096},
+  };
+
+  auto summary = directordaemon::SummarizePoolPruneJobs(prunable_jobs, 2);
+
+  EXPECT_EQ(summary.prunable_volumes, 2);
+  EXPECT_EQ(summary.prunable_jobs, 3);
+  EXPECT_EQ(summary.prunable_bytes, 7168);
 }
