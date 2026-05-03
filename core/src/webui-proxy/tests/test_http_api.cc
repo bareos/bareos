@@ -32,8 +32,8 @@
 #include <vector>
 
 #include <jansson.h>
-#include <openssl/core_names.h>
 #include <openssl/evp.h>
+#include <openssl/opensslv.h>
 #include <openssl/rsa.h>
 
 namespace {
@@ -79,6 +79,7 @@ using BnPtr = std::unique_ptr<BIGNUM, decltype(&BN_free)>;
 
 EvpPkeyPtr GenerateRsaKey()
 {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
   EvpPkeyCtxPtr ctx(EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullptr),
                     &EVP_PKEY_CTX_free);
   EXPECT_TRUE(ctx != nullptr);
@@ -87,15 +88,57 @@ EvpPkeyPtr GenerateRsaKey()
   EVP_PKEY* key = nullptr;
   EXPECT_EQ(EVP_PKEY_keygen(ctx.get(), &key), 1);
   return EvpPkeyPtr(key, &EVP_PKEY_free);
+#else
+  BnPtr exponent(BN_new(), &BN_free);
+  EXPECT_TRUE(exponent != nullptr);
+  EXPECT_EQ(BN_set_word(exponent.get(), RSA_F4), 1);
+
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+  RSA* rsa = RSA_new();
+  EXPECT_TRUE(rsa != nullptr);
+  EXPECT_EQ(RSA_generate_key_ex(rsa, 2048, exponent.get(), nullptr), 1);
+
+  EVP_PKEY* key = EVP_PKEY_new();
+  EXPECT_TRUE(key != nullptr);
+  EXPECT_EQ(EVP_PKEY_assign_RSA(key, rsa), 1);
+  rsa = nullptr;
+#  pragma GCC diagnostic pop
+
+  return EvpPkeyPtr(key, &EVP_PKEY_free);
+#endif
 }
 
-std::string GetBnParamBase64Url(EVP_PKEY* key, const char* param)
+std::string GetRsaComponentBase64Url(EVP_PKEY* key, bool modulus)
 {
+  const BIGNUM* component = nullptr;
+  BnPtr holder(nullptr, &BN_free);
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
   BIGNUM* bn = nullptr;
-  EXPECT_EQ(EVP_PKEY_get_bn_param(key, param, &bn), 1);
-  BnPtr holder(bn, &BN_free);
-  std::vector<unsigned char> bytes(BN_num_bytes(holder.get()));
-  BN_bn2bin(holder.get(), bytes.data());
+  EXPECT_EQ(EVP_PKEY_get_bn_param(key, modulus ? "n" : "e", &bn), 1);
+  holder.reset(bn);
+  component = holder.get();
+#else
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+  std::unique_ptr<RSA, decltype(&RSA_free)> rsa(EVP_PKEY_get1_RSA(key),
+                                                &RSA_free);
+  EXPECT_TRUE(rsa != nullptr);
+  if (!rsa) { return {}; }
+
+  const BIGNUM* modulus_bn = nullptr;
+  const BIGNUM* exponent_bn = nullptr;
+  RSA_get0_key(rsa.get(), &modulus_bn, &exponent_bn, nullptr);
+  component = modulus ? modulus_bn : exponent_bn;
+#  pragma GCC diagnostic pop
+#endif
+
+  EXPECT_NE(component, nullptr);
+  if (!component) { return {}; }
+
+  std::vector<unsigned char> bytes(BN_num_bytes(component));
+  BN_bn2bin(component, bytes.data());
   return Base64UrlEncode(bytes.data(), bytes.size());
 }
 
@@ -130,9 +173,8 @@ std::string BuildJwks(EVP_PKEY* key, const std::string& kid)
 {
   return R"json({"keys":[{"kty":"RSA","use":"sig","kid":")json" + kid
          + R"json(","alg":"RS256","n":")json"
-         + GetBnParamBase64Url(key, OSSL_PKEY_PARAM_RSA_N)
-         + R"json(","e":")json"
-         + GetBnParamBase64Url(key, OSSL_PKEY_PARAM_RSA_E) + R"json("}]})json";
+         + GetRsaComponentBase64Url(key, true) + R"json(","e":")json"
+         + GetRsaComponentBase64Url(key, false) + R"json("}]})json";
 }
 
 HttpRequest MakeRequest(std::string method,

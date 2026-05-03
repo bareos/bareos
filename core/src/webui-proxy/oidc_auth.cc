@@ -35,9 +35,7 @@
 #include <arpa/inet.h>
 #include <jansson.h>
 #include <netdb.h>
-#include <openssl/core_names.h>
 #include <openssl/evp.h>
-#include <openssl/param_build.h>
 #include <openssl/rand.h>
 #include <openssl/rsa.h>
 #include <openssl/ssl.h>

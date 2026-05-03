@@ -538,6 +538,9 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             "scratchpoolid",
             "recyclepoolid",
             "labeltype",
+            "prunablevolumes",
+            "prunablejobs",
+            "prunablebytes",
         ]
         resultkeys = list(result["pools"][0].keys())
 
