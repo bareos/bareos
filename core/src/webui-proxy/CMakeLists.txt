@@ -17,6 +17,7 @@ set(PROXY_SOURCES
     auth_session.cc
     bareos_base64.cc
     director_connection.cc
+    http_api.cc
     identity_mapping.cc
     local_auth.cc
     proxy_config.cc
@@ -70,7 +71,7 @@ if(BUILD_TESTING AND GTest_FOUND)
   include(GoogleTest)
 
   set(PROXY_LIB_SOURCES
-      auth_session.cc bareos_base64.cc director_connection.cc
+      auth_session.cc bareos_base64.cc director_connection.cc http_api.cc
       identity_mapping.cc local_auth.cc proxy_config.cc token_auth.cc
   )
 
@@ -79,6 +80,7 @@ if(BUILD_TESTING AND GTest_FOUND)
     tests/test_auth_session.cc
     tests/test_bareos_base64.cc
     tests/test_director_connection.cc
+    tests/test_http_api.cc
     tests/test_identity_mapping.cc
     tests/test_local_auth.cc
     tests/test_proxy_config.cc

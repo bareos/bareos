@@ -55,7 +55,8 @@ ProxySession ProxySessionStore::CreateSession(const AuthResult& auth_result,
   return session;
 }
 
-std::optional<ProxySession> ProxySessionStore::GetSession(const std::string& token)
+std::optional<ProxySession> ProxySessionStore::GetSession(
+    const std::string& token)
 {
   const std::time_t now = clock_();
   std::lock_guard<std::mutex> lock(mutex_);
@@ -84,6 +85,14 @@ std::optional<ProxySession> ProxySessionStore::RefreshSession(
   return it->second;
 }
 
+bool ProxySessionStore::RemoveSession(const std::string& token)
+{
+  const std::time_t now = clock_();
+  std::lock_guard<std::mutex> lock(mutex_);
+  RemoveExpiredSessionsLocked(now);
+  return sessions_.erase(token) > 0;
+}
+
 std::string ProxySessionStore::GenerateSessionToken() const
 {
   std::array<unsigned char, 32> bytes{};
@@ -101,7 +110,8 @@ std::string ProxySessionStore::GenerateSessionToken() const
 }
 
 std::time_t ProxySessionStore::ComputeExpiry(
-    std::time_t now, const std::optional<std::time_t>& upstream_expiry) const
+    std::time_t now,
+    const std::optional<std::time_t>& upstream_expiry) const
 {
   const auto ttl_max = std::chrono::seconds(
       std::max<long long>(ttl_.count(), 1));  // keep sessions positive-lived

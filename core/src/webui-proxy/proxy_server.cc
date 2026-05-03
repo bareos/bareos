@@ -19,10 +19,12 @@
    02110-1301, USA.
 */
 #include "proxy_server.h"
+#include "http_api.h"
 #include "proxy_session.h"
 
 #include <cstdio>
 #include <cstring>
+#include <string_view>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -77,6 +79,85 @@ void ProxyServer::CleanupSockets()
   }
   listen_fds_.clear();
 }
+
+namespace {
+
+std::string ReadHttpHead(int fd)
+{
+  std::string request;
+  request.reserve(1024);
+  char ch = '\0';
+  while (true) {
+    const ssize_t n = ::recv(fd, &ch, 1, 0);
+    if (n <= 0) {
+      throw std::runtime_error("HTTP: connection closed while reading request");
+    }
+    request += ch;
+    if (request.size() >= 4
+        && request.compare(request.size() - 4, 4, "\r\n\r\n") == 0) {
+      return request;
+    }
+    if (request.size() > 16384) {
+      throw std::runtime_error("HTTP: request headers too large");
+    }
+  }
+}
+
+std::string ReadHttpBody(int fd, size_t content_length)
+{
+  std::string body(content_length, '\0');
+  size_t offset = 0;
+  while (offset < content_length) {
+    const ssize_t n = ::recv(fd, body.data() + offset, content_length - offset,
+                             MSG_WAITALL);
+    if (n <= 0) {
+      throw std::runtime_error("HTTP: connection closed while reading body");
+    }
+    offset += static_cast<size_t>(n);
+  }
+  return body;
+}
+
+void WriteAll(int fd, const std::string& response)
+{
+  const char* data = response.data();
+  size_t remaining = response.size();
+  while (remaining > 0) {
+    const ssize_t n = ::send(fd, data, remaining, MSG_NOSIGNAL);
+    if (n <= 0) { throw std::runtime_error("HTTP: send failed"); }
+    data += n;
+    remaining -= static_cast<size_t>(n);
+  }
+}
+
+void HandleProxyConnection(
+    int fd,
+    const std::string& peer,
+    const ProxyConfig& config,
+    const std::shared_ptr<ProxySessionStore>& session_store)
+{
+  const std::string request_head = ReadHttpHead(fd);
+  HttpRequest request = ParseHttpRequest(request_head, "");
+
+  if (IsWebSocketUpgradeRequest(request)) {
+    RunProxySession(fd, peer, config, session_store, request_head);
+    return;
+  }
+
+  size_t content_length = 0;
+  if (const auto it = request.headers.find("content-length");
+      it != request.headers.end()) {
+    content_length = static_cast<size_t>(std::stoul(it->second));
+  }
+  request.body = ReadHttpBody(fd, content_length);
+
+  const HttpResponse response
+      = HandleHttpApiRequest(config, session_store, request);
+  WriteAll(fd, BuildHttpResponse(response));
+  ::close(fd);
+}
+
+}  // namespace
 
 void ProxyServer::Run()
 {
@@ -177,13 +258,15 @@ void ProxyServer::Run()
       auto session_store = session_store_;
       std::thread([cfd, peer, cfg, session_store]() {
         try {
-          RunProxySession(cfd, peer, cfg, session_store);
+          HandleProxyConnection(cfd, peer, cfg, session_store);
         } catch (const std::exception& ex) {
           fprintf(stderr, "[proxy] %s session aborted: %s\n", peer.c_str(),
                   ex.what());
+          ::close(cfd);
         } catch (...) {
           fprintf(stderr, "[proxy] %s session aborted (unknown exception)\n",
                   peer.c_str());
+          ::close(cfd);
         }
       }).detach();
     }

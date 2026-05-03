@@ -197,7 +197,8 @@ ProxyAuthContext ResolveProxyAuthRequest(
 void RunProxySession(int fd,
                      const std::string& peer,
                      const ProxyConfig& config,
-                     const std::shared_ptr<ProxySessionStore>& session_store)
+                     const std::shared_ptr<ProxySessionStore>& session_store,
+                     const std::optional<std::string>& initial_request)
 {
   // RAII socket close
   struct FdGuard {
@@ -209,7 +210,7 @@ void RunProxySession(int fd,
 
   WsCodec ws(fd);
   try {
-    ws.Handshake();
+    ws.Handshake(initial_request);
   } catch (const std::exception& ex) {
     fprintf(stderr, "[proxy] %s WS handshake failed: %s\n", peer.c_str(),
             ex.what());

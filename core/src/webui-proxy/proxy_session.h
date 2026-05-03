@@ -53,7 +53,9 @@ struct ProxyAuthContext {
 void RunProxySession(int fd,
                      const std::string& peer,
                      const ProxyConfig& config,
-                     const std::shared_ptr<ProxySessionStore>& session_store);
+                     const std::shared_ptr<ProxySessionStore>& session_store,
+                     const std::optional<std::string>& initial_request
+                     = std::nullopt);
 
 /**
  * Normalize a raw console command while preserving a trailing tab completion

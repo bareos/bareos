@@ -108,25 +108,29 @@ static std::string ComputeAcceptKey(const std::string& client_key)
   return Base64Encode(sha1, sha1_len);
 }
 
-void WsCodec::Handshake()
+void WsCodec::Handshake(const std::optional<std::string>& initial_request)
 {
   // Read HTTP request line by line until blank line
-  std::string headers;
-  headers.reserve(1024);
-  char ch;
-  while (true) {
-    ssize_t n = ::recv(fd_, &ch, 1, 0);
-    if (n <= 0) {
-      throw std::runtime_error("WebSocket: connection lost during handshake");
+  std::string headers = initial_request.value_or("");
+  if (!initial_request) {
+    headers.reserve(1024);
+    char ch;
+    while (true) {
+      ssize_t n = ::recv(fd_, &ch, 1, 0);
+      if (n <= 0) {
+        throw std::runtime_error("WebSocket: connection lost during handshake");
+      }
+      headers += ch;
+      if (headers.size() >= 4
+          && headers.compare(headers.size() - 4, 4, "\r\n\r\n") == 0) {
+        break;
+      }
+      if (headers.size() > 16384) {
+        throw std::runtime_error("WebSocket: HTTP headers too large");
+      }
     }
-    headers += ch;
-    if (headers.size() >= 4
-        && headers.compare(headers.size() - 4, 4, "\r\n\r\n") == 0) {
-      break;
-    }
-    if (headers.size() > 16384) {
-      throw std::runtime_error("WebSocket: HTTP headers too large");
-    }
+  } else if (headers.size() > 16384) {
+    throw std::runtime_error("WebSocket: HTTP headers too large");
   }
 
   // Extract Sec-WebSocket-Key

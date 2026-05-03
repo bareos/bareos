@@ -75,11 +75,13 @@ class ProxySessionStore {
       const std::string& token,
       const std::optional<std::string>& preferred_director_id = std::nullopt);
 
+  bool RemoveSession(const std::string& token);
+
  private:
   std::string GenerateSessionToken() const;
-  std::time_t ComputeExpiry(std::time_t now,
-                            const std::optional<std::time_t>& upstream_expiry)
-      const;
+  std::time_t ComputeExpiry(
+      std::time_t now,
+      const std::optional<std::time_t>& upstream_expiry) const;
   void RemoveExpiredSessionsLocked(std::time_t now);
 
   std::chrono::seconds ttl_;

@@ -35,6 +35,7 @@
 #define BAREOS_LIB_WS_CODEC_H_
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 /** Opaque handle wrapping a connected file descriptor. */
@@ -45,7 +46,8 @@ class WsCodec {
   /* Perform the HTTP/WebSocket upgrade handshake.
    * Reads the HTTP GET request and sends the 101 Switching Protocols reply.
    * Throws std::runtime_error on failure. */
-  void Handshake();
+  void Handshake(const std::optional<std::string>& initial_request
+                 = std::nullopt);
 
   /* Read one complete WebSocket message (text frame, possibly fragmented).
    * Transparently handles ping/pong and close frames.
