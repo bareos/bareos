@@ -257,11 +257,15 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     return runtimes.get(director || DEFAULT_DIRECTOR_NAME)
   }
 
-  function appendLines(director, text, cls = '') {
+  function appendLines(director, text, cls = '', continueLine = false) {
     const session = getSession(director)
     const normalizedText = String(text ?? '').replace(/\r\n/g, '\n')
     if (!normalizedText) {
       return
+    }
+
+    if (!continueLine) {
+      session.outputLineOpen = false
     }
 
     const appendLine = (line) => {
@@ -425,7 +429,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
             }
           }
 
-          appendLines(director, outputText)
+          appendLines(director, outputText, '', isStreamingChunk)
           if (isStreamingChunk && promptText) {
             session.currentPrompt = promptText
           } else if (!isStreamingChunk) {

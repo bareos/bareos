@@ -166,7 +166,7 @@ function ensureSelectedSession() {
   if (!session.initialized) {
     consoleSessions.appendInfo(
       selectedDirector.value,
-      t('Bareos WebUI Console — click here to type, ↑/↓ for history, Ctrl+L to clear')
+      t('Bareos WebUI Console — click here to type, use ↑ and ↓ for history, Ctrl+L to clear')
     )
     session.initialized = true
   }
