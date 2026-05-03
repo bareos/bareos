@@ -44,8 +44,11 @@
 #ifndef BAREOS_WEBUI_PROXY_DIRECTOR_CONNECTION_H_
 #define BAREOS_WEBUI_PROXY_DIRECTOR_CONNECTION_H_
 
+#include "auth_session.h"
+
 #include <cstddef>
 #include <functional>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -76,6 +79,7 @@ struct DirectorConfig {
   bool json_mode{true};
   bool tls_psk_disable{false};
   bool tls_psk_require{true};
+  std::optional<ProxyAuditMetadata> audit_metadata;
 };
 
 std::string GetDirectorTlsPskIdentity(const std::string& console_name);

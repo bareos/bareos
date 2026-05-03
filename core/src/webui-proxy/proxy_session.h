@@ -40,6 +40,7 @@ struct ProxyAuthContext {
   DirectorConfig director_config;
   AuthIdentity identity;
   std::optional<std::time_t> expires_at;
+  std::optional<ProxyAuditMetadata> audit_metadata;
   std::string session_token;
   std::string preferred_director_id;
   bool reused_existing_session{false};

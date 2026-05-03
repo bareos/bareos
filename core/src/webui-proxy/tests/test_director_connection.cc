@@ -59,6 +59,13 @@ TEST(DirectorConfig, DisableTlsPskOverridesRequiredDefault)
   EXPECT_TRUE(cfg.tls_psk_require);
 }
 
+TEST(DirectorConfig, StartsWithoutAuditMetadata)
+{
+  DirectorConfig cfg;
+
+  EXPECT_FALSE(cfg.audit_metadata.has_value());
+}
+
 TEST(DirectorConnection, StartsWithoutTlsPskTransport)
 {
   DirectorConnection connection;

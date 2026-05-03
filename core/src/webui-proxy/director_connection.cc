@@ -118,6 +118,20 @@ static std::string GetOpenSslError()
   return error.empty() ? "unknown OpenSSL error" : error;
 }
 
+static void LogDirectorAuditMetadata(const DirectorConfig& cfg)
+{
+  if (!cfg.audit_metadata) { return; }
+
+  fprintf(
+      stderr,
+      "[proxy] director audit: provider=%s subject=%s username=%s "
+      "email=%s mapped=%s session=%s\n",
+      cfg.audit_metadata->provider.c_str(), cfg.audit_metadata->subject.c_str(),
+      cfg.audit_metadata->username.c_str(), cfg.audit_metadata->email.c_str(),
+      cfg.audit_metadata->mapped_director_username.c_str(),
+      cfg.audit_metadata->proxy_session_token.c_str());
+}
+
 static int GetDirectorConnectionSslCtxExDataIndex()
 {
   static const int index
@@ -398,6 +412,7 @@ void DirectorConnection::Connect(const DirectorConfig& cfg)
   tls_psk_active_ = false;
   tls_psk_identity_ = GetDirectorTlsPskIdentity(cfg.username);
   tls_psk_secret_ = GetDirectorTlsPskSecret(cfg.password);
+  LogDirectorAuditMetadata(cfg);
 
   auto connect_and_authenticate = [this, &cfg](bool use_tls) {
     ConnectTcp(cfg);

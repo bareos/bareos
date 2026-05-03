@@ -41,20 +41,36 @@ struct AuthIdentity {
   std::map<std::string, std::string> attributes;
 };
 
+struct ProxyAuditMetadata {
+  std::string provider;
+  std::string subject;
+  std::string username;
+  std::string email;
+  std::string mapped_director_username;
+  std::string proxy_session_token;
+};
+
 struct AuthResult {
   AuthIdentity identity;
   std::optional<std::time_t> expires_at;
+  std::optional<ProxyAuditMetadata> audit_metadata;
 };
 
 struct ProxySession {
   std::string token;
   AuthIdentity identity;
+  ProxyAuditMetadata audit_metadata;
   std::string director_username;
   std::string director_password;
   std::string preferred_director_id;
   std::time_t created_at{0};
   std::time_t expires_at{0};
 };
+
+ProxyAuditMetadata BuildProxyAuditMetadata(const AuthIdentity& identity,
+                                           std::string mapped_director_username,
+                                           std::string proxy_session_token
+                                           = "");
 
 using ProxySessionClock = std::function<std::time_t()>;
 

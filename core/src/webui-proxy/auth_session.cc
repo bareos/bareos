@@ -27,6 +27,20 @@
 
 #include <openssl/rand.h>
 
+ProxyAuditMetadata BuildProxyAuditMetadata(const AuthIdentity& identity,
+                                           std::string mapped_director_username,
+                                           std::string proxy_session_token)
+{
+  ProxyAuditMetadata audit;
+  audit.provider = identity.provider;
+  audit.subject = identity.subject;
+  audit.username = identity.username;
+  audit.email = identity.email;
+  audit.mapped_director_username = std::move(mapped_director_username);
+  audit.proxy_session_token = std::move(proxy_session_token);
+  return audit;
+}
+
 ProxySessionStore::ProxySessionStore(std::chrono::seconds ttl,
                                      ProxySessionClock clock)
     : ttl_(ttl), clock_(std::move(clock))
@@ -45,6 +59,11 @@ ProxySession ProxySessionStore::CreateSession(const AuthResult& auth_result,
   session.identity = auth_result.identity;
   session.director_username = std::move(director_username);
   session.director_password = std::move(director_password);
+  session.audit_metadata
+      = auth_result.audit_metadata.value_or(BuildProxyAuditMetadata(
+          auth_result.identity, session.director_username, session.token));
+  session.audit_metadata.mapped_director_username = session.director_username;
+  session.audit_metadata.proxy_session_token = session.token;
   session.preferred_director_id = std::move(preferred_director_id);
   session.created_at = now;
   session.expires_at = ComputeExpiry(now, auth_result.expires_at);

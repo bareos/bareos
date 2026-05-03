@@ -72,6 +72,25 @@ static std::string JsonDirectorList(const ProxyConfig& config)
   return result;
 }
 
+static std::string JsonAuditMetadata(const ProxyAuditMetadata& audit)
+{
+  json_t* obj = json_object();
+  json_object_set_new(obj, "provider", json_string(audit.provider.c_str()));
+  json_object_set_new(obj, "subject", json_string(audit.subject.c_str()));
+  json_object_set_new(obj, "username", json_string(audit.username.c_str()));
+  json_object_set_new(obj, "email", json_string(audit.email.c_str()));
+  json_object_set_new(obj, "mapped_director_username",
+                      json_string(audit.mapped_director_username.c_str()));
+  json_object_set_new(obj, "proxy_session_token",
+                      json_string(audit.proxy_session_token.c_str()));
+
+  char* raw = json_dumps(obj, JSON_COMPACT);
+  json_decref(obj);
+  std::string result(raw);
+  free(raw);
+  return result;
+}
+
 std::string NormalizeRawConsoleCommand(std::string command)
 {
   command.erase(0, command.find_first_not_of(" \r\n"));
@@ -119,6 +138,9 @@ ProxyAuthContext ResolveMappedIdentity(
         "Proxy auth: no Director credentials resolved for this identity");
   }
 
+  auth.audit_metadata = auth_result.audit_metadata.value_or(
+      BuildProxyAuditMetadata(auth.identity, auth.director_config.username));
+
   const auto target = ResolveDirectorTarget(
       config,
       requested_director
@@ -133,6 +155,7 @@ ProxyAuthContext ResolveMappedIdentity(
   auth.director_config.port = target.port;
   auth.director_config.tls_psk_disable = target.tls_psk_disable;
   auth.director_config.tls_psk_require = target.tls_psk_require;
+  auth.director_config.audit_metadata = auth.audit_metadata;
 
   return auth;
 }
@@ -166,8 +189,10 @@ ProxyAuthContext ResolveProxyAuthRequest(
     auth.session_token = session->token;
     auth.preferred_director_id = session->preferred_director_id;
     auth.reused_existing_session = true;
+    auth.audit_metadata = session->audit_metadata;
     auth.director_config.username = session->director_username;
     auth.director_config.password = session->director_password;
+    auth.director_config.audit_metadata = session->audit_metadata;
   } else if (requested_access_token) {
     const auto token_identity
         = AuthenticateToken(config.token_auth_entries, *requested_access_token);
@@ -199,6 +224,9 @@ ProxyAuthContext ResolveProxyAuthRequest(
       auth.identity.provider = "password";
       auth.identity.subject = auth.director_config.username;
       auth.identity.username = auth.director_config.username;
+      auth.audit_metadata = BuildProxyAuditMetadata(
+          auth.identity, auth.director_config.username);
+      auth.director_config.audit_metadata = auth.audit_metadata;
     }
   }
 
@@ -216,6 +244,11 @@ ProxyAuthContext ResolveProxyAuthRequest(
   auth.director_config.port = target.port;
   auth.director_config.tls_psk_disable = target.tls_psk_disable;
   auth.director_config.tls_psk_require = target.tls_psk_require;
+  if (!auth.audit_metadata) {
+    auth.audit_metadata
+        = BuildProxyAuditMetadata(auth.identity, auth.director_config.username);
+  }
+  auth.director_config.audit_metadata = auth.audit_metadata;
 
   return auth;
 }
@@ -365,14 +398,19 @@ void RunProxySession(int fd,
   if (auth.reused_existing_session) {
     const auto refreshed = session_store->RefreshSession(
         auth.session_token, auth.preferred_director_id);
-    if (refreshed) { auth.session_token = refreshed->token; }
+    if (refreshed) {
+      auth.session_token = refreshed->token;
+      auth.audit_metadata = refreshed->audit_metadata;
+    }
   } else {
     AuthResult auth_result;
     auth_result.identity = auth.identity;
     auth_result.expires_at = auth.expires_at;
+    auth_result.audit_metadata = auth.audit_metadata;
     const auto created = session_store->CreateSession(
         auth_result, cfg.username, cfg.password, auth.preferred_director_id);
     auth.session_token = created.token;
+    auth.audit_metadata = created.audit_metadata;
   }
 
   fprintf(stderr, "[proxy] %s director transport: %s\n", peer.c_str(),
@@ -388,6 +426,11 @@ void RunProxySession(int fd,
     json_object_set_new(ok, "username", json_string(cfg.username.c_str()));
     json_object_set_new(ok, "session_token",
                         json_string(auth.session_token.c_str()));
+    if (auth.audit_metadata) {
+      json_t* audit = json_loads(
+          JsonAuditMetadata(*auth.audit_metadata).c_str(), 0, nullptr);
+      json_object_set_new(ok, "audit", audit);
+    }
     char* ok_str = json_dumps(ok, JSON_COMPACT);
     json_decref(ok);
     try {

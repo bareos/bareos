@@ -75,10 +75,19 @@ TEST(ProxySession, ResolvesAccessTokenIntoMappedDirectorCredentials)
   EXPECT_EQ(auth.identity.provider, "token");
   EXPECT_EQ(auth.identity.subject, "ci-bot");
   EXPECT_EQ(auth.identity.groups, std::vector<std::string>({"automation"}));
+  ASSERT_TRUE(auth.audit_metadata.has_value());
+  EXPECT_EQ(auth.audit_metadata->provider, "token");
+  EXPECT_EQ(auth.audit_metadata->subject, "ci-bot");
+  EXPECT_EQ(auth.audit_metadata->mapped_director_username, "limited-operator");
   ASSERT_TRUE(auth.expires_at.has_value());
   EXPECT_EQ(*auth.expires_at, 4102444800);
   EXPECT_EQ(auth.director_config.username, "limited-operator");
   EXPECT_EQ(auth.director_config.password, "secret");
+  ASSERT_TRUE(auth.director_config.audit_metadata.has_value());
+  EXPECT_EQ(auth.director_config.audit_metadata->provider, "token");
+  EXPECT_EQ(auth.director_config.audit_metadata->subject, "ci-bot");
+  EXPECT_EQ(auth.director_config.audit_metadata->mapped_director_username,
+            "limited-operator");
   EXPECT_EQ(auth.director_config.host, "dir.example.test");
   EXPECT_EQ(auth.director_config.port, 19101);
   EXPECT_EQ(auth.director_config.director_name, "bareos-dir");

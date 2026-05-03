@@ -258,9 +258,19 @@ TEST(HttpApi, LogsInLocalUserAndReturnsSession)
   const char* director_username
       = json_string_value(json_object_get(body, "director_username"));
   EXPECT_STREQ(director_username, "admin-notls");
+  json_t* audit = json_object_get(body, "audit");
+  ASSERT_TRUE(json_is_object(audit));
+  EXPECT_STREQ(json_string_value(json_object_get(audit, "provider")), "local");
+  EXPECT_STREQ(json_string_value(json_object_get(audit, "username")),
+               "demo-admin");
+  EXPECT_STREQ(
+      json_string_value(json_object_get(audit, "mapped_director_username")),
+      "admin-notls");
   const char* session_token
       = json_string_value(json_object_get(body, "session_token"));
   ASSERT_NE(session_token, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(audit, "proxy_session_token")),
+               session_token);
   EXPECT_TRUE(store->GetSession(session_token).has_value());
   json_decref(body);
 }
@@ -279,6 +289,14 @@ TEST(HttpApi, InspectsAndLogsOutSession)
       MakeRequest("GET", "/api/v1/auth/session", "",
                   {{"authorization", "Bearer " + session.token}}));
   EXPECT_EQ(session_response.status_code, 200);
+  json_t* body = ParseJson(session_response.body);
+  json_t* audit = json_object_get(body, "audit");
+  ASSERT_TRUE(json_is_object(audit));
+  EXPECT_STREQ(json_string_value(json_object_get(audit, "provider")), "token");
+  EXPECT_STREQ(json_string_value(json_object_get(audit, "subject")), "ci-bot");
+  EXPECT_STREQ(json_string_value(json_object_get(audit, "proxy_session_token")),
+               session.token.c_str());
+  json_decref(body);
 
   const auto logout_response = HandleHttpApiRequest(
       DemoConfig(), store, nullptr,
@@ -358,9 +376,19 @@ TEST(HttpApi, CompletesOidcCallbackIntoProxySession)
                "oidc");
   EXPECT_STREQ(json_string_value(json_object_get(identity, "subject")),
                "248289761001");
+  json_t* audit = json_object_get(body, "audit");
+  ASSERT_TRUE(json_is_object(audit));
+  EXPECT_STREQ(json_string_value(json_object_get(audit, "provider")), "oidc");
+  EXPECT_STREQ(json_string_value(json_object_get(audit, "subject")),
+               "248289761001");
+  EXPECT_STREQ(
+      json_string_value(json_object_get(audit, "mapped_director_username")),
+      "admin-notls");
   const char* session_token
       = json_string_value(json_object_get(body, "session_token"));
   ASSERT_NE(session_token, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(audit, "proxy_session_token")),
+               session_token);
   EXPECT_TRUE(session_store->GetSession(session_token).has_value());
   json_decref(body);
 }

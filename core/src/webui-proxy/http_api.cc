@@ -133,6 +133,25 @@ std::string JsonIdentity(const AuthIdentity& identity)
   return result;
 }
 
+std::string JsonAuditMetadata(const ProxyAuditMetadata& audit)
+{
+  json_t* obj = json_object();
+  json_object_set_new(obj, "provider", json_string(audit.provider.c_str()));
+  json_object_set_new(obj, "subject", json_string(audit.subject.c_str()));
+  json_object_set_new(obj, "username", json_string(audit.username.c_str()));
+  json_object_set_new(obj, "email", json_string(audit.email.c_str()));
+  json_object_set_new(obj, "mapped_director_username",
+                      json_string(audit.mapped_director_username.c_str()));
+  json_object_set_new(obj, "proxy_session_token",
+                      json_string(audit.proxy_session_token.c_str()));
+
+  char* raw = json_dumps(obj, JSON_COMPACT);
+  json_decref(obj);
+  std::string result(raw);
+  free(raw);
+  return result;
+}
+
 HttpResponse JsonResponse(int status_code, std::string reason, std::string body)
 {
   HttpResponse response;
@@ -154,6 +173,9 @@ HttpResponse SessionResponse(const ProxySession& session)
   json_t* identity
       = json_loads(JsonIdentity(session.identity).c_str(), 0, nullptr);
   json_object_set_new(obj, "identity", identity);
+  json_t* audit = json_loads(JsonAuditMetadata(session.audit_metadata).c_str(),
+                             0, nullptr);
+  json_object_set_new(obj, "audit", audit);
   json_object_set_new(obj, "created_at", json_integer(session.created_at));
   json_object_set_new(obj, "expires_at", json_integer(session.expires_at));
 
@@ -412,6 +434,7 @@ HttpResponse HandleLoginRequest(const ProxyConfig& config,
       AuthResult result;
       result.identity = auth.identity;
       result.expires_at = auth.expires_at;
+      result.audit_metadata = auth.audit_metadata;
       session = store->CreateSession(result, auth.director_config.username,
                                      auth.director_config.password,
                                      auth.preferred_director_id);
