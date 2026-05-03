@@ -62,4 +62,11 @@ bool IsExpectedConsoleExitCommand(bool at_main_prompt,
 bool ShouldSuppressRawConsoleChunk(std::string_view command,
                                    std::string_view chunk);
 
+/**
+ * Remove out-of-band console notifications from raw command output while
+ * preserving the actual command result text.
+ */
+std::string FilterRawConsoleChunk(std::string_view command,
+                                  std::string_view chunk);
+
 #endif  // BAREOS_WEBUI_PROXY_PROXY_SESSION_H_

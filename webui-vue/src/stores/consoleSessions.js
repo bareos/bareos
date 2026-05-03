@@ -35,6 +35,9 @@ const COMPLETION_NOISE_PREFIXES = [
   'Automatically selected Catalog:',
   'Using Catalog ',
 ]
+const CONSOLE_NOISE_LINES = new Set([
+  'You have messages.',
+])
 const COMPLETION_KEYWORDS = [
   { key: 'pool=', cmd: '.pool' },
   { key: 'nextpool=', cmd: '.pool' },
@@ -122,10 +125,23 @@ function parseSimpleCompletionItems(text) {
       .map(line => line.trim())
       .filter(line => (
         line
-        && line !== 'You have messages.'
+        && !CONSOLE_NOISE_LINES.has(line)
         && !COMPLETION_NOISE_PREFIXES.some(prefix => line.startsWith(prefix))
       ))
   )]
+}
+
+function filterConsoleNoiseText(text) {
+  const normalizedText = String(text ?? '').replace(/\r\n/g, '\n')
+  if (!normalizedText) {
+    return ''
+  }
+
+  const filteredLines = normalizedText
+    .split('\n')
+    .filter(line => !CONSOLE_NOISE_LINES.has(line))
+
+  return filteredLines.join('\n')
 }
 
 function parseHelpCompletionItems(text) {
@@ -259,7 +275,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
 
   function appendLines(director, text, cls = '', continueLine = false) {
     const session = getSession(director)
-    const normalizedText = String(text ?? '').replace(/\r\n/g, '\n')
+    const normalizedText = filterConsoleNoiseText(text)
     if (!normalizedText) {
       return
     }

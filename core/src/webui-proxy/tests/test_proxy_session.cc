@@ -57,7 +57,21 @@ TEST(ProxySession, SuppressesOutOfBandMessagesNotification)
 {
   EXPECT_TRUE(
       ShouldSuppressRawConsoleChunk("messages", "You have messages.\n"));
+  EXPECT_TRUE(ShouldSuppressRawConsoleChunk("mess", "You have messages.\n"));
+  EXPECT_TRUE(ShouldSuppressRawConsoleChunk("MESSAGE", "You have messages.\n"));
   EXPECT_FALSE(ShouldSuppressRawConsoleChunk("help", "You have messages.\n"));
+  EXPECT_FALSE(ShouldSuppressRawConsoleChunk("mes", "You have messages.\n"));
   EXPECT_FALSE(
       ShouldSuppressRawConsoleChunk("messages", "You have no messages.\n"));
+}
+
+TEST(ProxySession, FiltersMessagesNotificationFromCommandOutput)
+{
+  EXPECT_EQ(FilterRawConsoleChunk("messages", "You have messages.\n"), "");
+  EXPECT_EQ(FilterRawConsoleChunk(
+                "messages", "You have no messages.\nYou have messages.\n"),
+            "You have no messages.\n");
+  EXPECT_EQ(FilterRawConsoleChunk("messages", "You have messages."), "");
+  EXPECT_EQ(FilterRawConsoleChunk("help", "You have messages.\n"),
+            "You have messages.\n");
 }
