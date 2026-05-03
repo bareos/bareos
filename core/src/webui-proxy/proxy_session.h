@@ -31,6 +31,7 @@
 #include "proxy_config.h"
 
 #include <string>
+#include <string_view>
 
 /**
  * Handle one browser WebSocket connection until it closes.
@@ -46,5 +47,12 @@ void RunProxySession(int fd,
  * marker.
  */
 std::string NormalizeRawConsoleCommand(std::string command);
+
+/**
+ * Return true when a command is expected to terminate the console session from
+ * the main Bareos prompt.
+ */
+bool IsExpectedConsoleExitCommand(bool at_main_prompt,
+                                  std::string_view command);
 
 #endif  // BAREOS_WEBUI_PROXY_PROXY_SESSION_H_
