@@ -31,6 +31,29 @@ function defaultWsUrl() {
 const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultWsUrl()
 const RAW_CMD_TIMEOUT_MS = 300_000
 const COMPLETION_TIMEOUT_MS = 5_000
+const COMPLETION_NOISE_PREFIXES = [
+  'Automatically selected Catalog:',
+  'Using Catalog ',
+]
+const COMPLETION_KEYWORDS = [
+  { key: 'pool=', cmd: '.pool' },
+  { key: 'nextpool=', cmd: '.pool' },
+  { key: 'fileset=', cmd: '.fileset' },
+  { key: 'client=', cmd: '.client' },
+  { key: 'jobdefs=', cmd: '.jobdefs' },
+  { key: 'job=', cmd: '.jobs' },
+  { key: 'restore_job=', cmd: '.jobs type=R' },
+  { key: 'level=', cmd: '.level' },
+  { key: 'storage=', cmd: '.storage' },
+  { key: 'schedule=', cmd: '.schedule' },
+  { key: 'volume=', cmd: '.media' },
+  { key: 'oldvolume=', cmd: '.media' },
+  { key: 'volstatus=', cmd: '.volstatus' },
+  { key: 'catalog=', cmd: '.catalogs' },
+  { key: 'message=', cmd: '.msgs' },
+  { key: 'profile=', cmd: '.profiles' },
+  { key: 'actiononpurge=', cmd: '.actiononpurge' },
+]
 
 function createSession(director) {
   return reactive({
@@ -50,8 +73,120 @@ function createRuntime() {
     ws: null,
     cmdSeq: 0,
     pendingCmds: new Map(),
-    completionIds: new Set(),
+    completionRequests: new Map(),
   }
+}
+
+function getFirstKeyword(line) {
+  const firstSpace = line.indexOf(' ')
+  return firstSpace > 0 ? line.slice(0, firstSpace) : null
+}
+
+function getCompletionContext(line) {
+  const currentPoint = Math.max(0, line.length - 1)
+  const separatorIndex = Math.max(line.lastIndexOf(' ', currentPoint), line.lastIndexOf('=', currentPoint))
+  const text = separatorIndex >= 0 ? line.slice(separatorIndex + 1) : line
+
+  let previousKeyword = null
+  if (separatorIndex >= 0) {
+    let i = separatorIndex
+    while (i >= 0 && (line[i] === ' ' || line[i] === '=')) {
+      i -= 1
+    }
+    if (i >= 0) {
+      let start = i
+      while (start > 0 && line[start - 1] !== ' ') {
+        start -= 1
+      }
+      previousKeyword = line.slice(start, i + 1)
+      if (line[separatorIndex] === '=') {
+        previousKeyword += '='
+      }
+    }
+  }
+
+  return {
+    text,
+    replaceStart: separatorIndex + 1,
+    previousKeyword,
+    firstKeyword: getFirstKeyword(line),
+  }
+}
+
+function parseSimpleCompletionItems(text) {
+  return [...new Set(
+    String(text ?? '')
+      .replace(/\r\n/g, '\n')
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => (
+        line
+        && line !== 'You have messages.'
+        && !COMPLETION_NOISE_PREFIXES.some(prefix => line.startsWith(prefix))
+      ))
+  )]
+}
+
+function parseHelpCompletionItems(text) {
+  const matches = String(text ?? '').match(/([a-z_]+=|[a-z]+(?=\s|$))/g)
+  return [...new Set(matches ?? [])]
+}
+
+function longestCommonPrefix(values) {
+  if (!values.length) return ''
+  let prefix = values[0]
+  for (const value of values.slice(1)) {
+    let index = 0
+    while (index < prefix.length && index < value.length && prefix[index] === value[index]) {
+      index += 1
+    }
+    prefix = prefix.slice(0, index)
+    if (!prefix) break
+  }
+  return prefix
+}
+
+function replaceCompletionText(line, request, replacement) {
+  return `${line.slice(0, request.replaceStart)}${replacement}`
+}
+
+function buildCompletionRequest(command) {
+  const context = getCompletionContext(command)
+  const mapping = COMPLETION_KEYWORDS.find(item => item.key === context.previousKeyword)
+  if (mapping) {
+    return { ...context, source: mapping.cmd, parser: 'items' }
+  }
+
+  if (context.previousKeyword && context.firstKeyword) {
+    return { ...context, source: `.help item=${context.firstKeyword}`, parser: 'help' }
+  }
+
+  return { ...context, source: '.help all', parser: 'items' }
+}
+
+function applyCompletionResult(session, director, appendLines, request, text) {
+  const items = (
+    request.parser === 'help'
+      ? parseHelpCompletionItems(text)
+      : parseSimpleCompletionItems(text)
+  ).filter(item => item.startsWith(request.text))
+
+  if (!items.length) {
+    return
+  }
+
+  if (items.length === 1) {
+    const item = items[0]
+    const replacement = item.endsWith('=') ? item : `${item} `
+    session.cmd = replaceCompletionText(session.cmd, request, replacement)
+    return
+  }
+
+  const commonPrefix = longestCommonPrefix(items)
+  if (commonPrefix.length > request.text.length) {
+    session.cmd = replaceCompletionText(session.cmd, request, commonPrefix)
+  }
+  appendLines(director, items.join('\n'))
 }
 
 export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
@@ -108,7 +243,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       reject?.(new Error(reason))
     }
     runtime.pendingCmds.clear()
-    runtime.completionIds.clear()
+    runtime.completionRequests.clear()
   }
 
   function disconnectSession(director, options = {}) {
@@ -192,17 +327,16 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
           runtime.pendingCmds.delete(msg.id)
         }
 
-        if (runtime.completionIds.delete(msg.id)) {
-          const lines = String(msg.text ?? '')
-            .replace(/\r\n/g, '\n')
-            .split('\n')
-            .filter(line => line.trim())
-
-          if (lines.length === 1) {
-            session.cmd = lines[0]
-          } else if (lines.length > 1) {
-            appendLines(director, msg.text)
-          }
+        const completionRequest = runtime.completionRequests.get(msg.id)
+        if (completionRequest) {
+          runtime.completionRequests.delete(msg.id)
+          applyCompletionResult(
+            session,
+            director,
+            appendLines,
+            completionRequest,
+            msg.text
+          )
         } else {
           appendLines(director, msg.text)
           session.currentPrompt = msg.prompt === 'select'
@@ -275,21 +409,25 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
   }
 
   function requestCompletion(director, command) {
+    const session = getSession(director)
     const runtime = getRuntime(director)
 
     if (!runtime.ws || runtime.ws.readyState !== WebSocket.OPEN) {
       return false
     }
 
+    session.cmd = command
+    const request = buildCompletionRequest(command)
     const id = String(++runtime.cmdSeq)
     const timer = setTimeout(() => {
-      runtime.completionIds.delete(id)
+      runtime.completionRequests.delete(id)
       runtime.pendingCmds.delete(id)
     }, COMPLETION_TIMEOUT_MS)
 
-    runtime.completionIds.add(id)
+    runtime.completionRequests.set(id, request)
     runtime.pendingCmds.set(id, { timer })
-    runtime.ws.send(JSON.stringify({ type: 'command', id, command: `${command}\t` }))
+    runtime.ws.send(JSON.stringify({ type: 'command', id, command: request.source }))
+    session.status = 'connected'
     return true
   }
 
