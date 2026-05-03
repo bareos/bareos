@@ -41,6 +41,7 @@
 #include "lib/parse_conf.h"
 
 #include <algorithm>
+#include <cctype>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -169,6 +170,17 @@ PoolPruneReport BuildPoolPruneReport(
   report.reason = volumes.empty() ? "" : kPoolPruneReasonCode;
   report.volumes = volumes;
   report.jobs = jobs;
+
+  std::sort(
+      report.volumes.begin(), report.volumes.end(),
+      [](const PoolPruneVolumeDetail& lhs, const PoolPruneVolumeDetail& rhs) {
+        if (lhs.last_written != rhs.last_written) {
+          if (lhs.last_written.empty()) { return false; }
+          if (rhs.last_written.empty()) { return true; }
+          return lhs.last_written < rhs.last_written;
+        }
+        return lhs.volume_name < rhs.volume_name;
+      });
 
   std::unordered_map<JobId_t, uint64_t> bytes_by_job;
   for (const auto& job : jobs) { bytes_by_job[job.jobid] = job.bytes; }
@@ -445,10 +457,173 @@ bool PruneCmd(UaContext* ua, const char*)
         }
         return PruneAllVolumes(ua, pool, pr, mr);
       } else {
+        std::vector<std::string> selected_volumes;
+        std::unordered_set<std::string> seen_volumes;
+        for (int i = 1; i < ua->argc; ++i) {
+          if (!ua->argv[i]) { continue; }
+          if (!Bstrcasecmp(ua->argk[i], NT_("volume"))) { continue; }
+
+          std::string volume_name = ua->argv[i];
+          if (seen_volumes.insert(volume_name).second) {
+            selected_volumes.push_back(std::move(volume_name));
+          }
+        }
+
+        if ((FindArgWithValue(ua, NT_("pool")) >= 0)
+            || ua->AclHasRestrictions(Pool_ACL)) {
+          pool = get_pool_resource(ua);
+          if (!pool) { return false; }
+        } else {
+          pool = nullptr;
+        }
+
         if (ua->AclHasRestrictions(Client_ACL)) {
           ua->ErrorMsg(permission_denied_message, "client");
           return false;
         }
+
+        if (selected_volumes.empty() && pool) {
+          PoolDbRecord pool_record;
+          bstrncpy(pool_record.Name, pool->resource_name_,
+                   sizeof(pool_record.Name));
+          if (!ua->db->GetPoolRecord(ua->jcr, &pool_record)) {
+            ua->ErrorMsg(T_("Pool %s doesn't exist.\n"), pool->resource_name_);
+            return false;
+          }
+
+          PoolPruneReport report;
+          if (!GetPoolPruneReport(ua, &pool_record, &report)) {
+            ua->ErrorMsg(T_("Failed to compute prune details for pool %s.\n"),
+                         pool_record.Name);
+            return false;
+          }
+
+          if (report.volumes.empty()) {
+            ua->SendMsg(T_("No prunable volumes found in Pool \"%s\".\n"),
+                        pool_record.Name);
+            return true;
+          }
+
+          char jobs[edit::min_buffer_size];
+          char bytes[edit::min_buffer_size];
+          ua->SendMsg(
+              T_("Prunable volumes in Pool \"%s\" (oldest data first):\n"),
+              pool_record.Name);
+          for (size_t i = 0; i < report.volumes.size(); ++i) {
+            const auto& volume = report.volumes[i];
+            ua->SendMsg("  %zu: %s | lastwritten=%s | jobs=%s | bytes=%s\n",
+                        i + 1, volume.volume_name.c_str(),
+                        volume.last_written.c_str(),
+                        edit_uint64_with_commas(volume.prunable_jobs, jobs),
+                        edit_uint64_with_suffix(volume.prunable_bytes, bytes));
+          }
+
+          if (!GetCmd(ua,
+                      T_("Enter volume numbers or names separated by commas "
+                         "(or \"all\"): "))) {
+            return false;
+          }
+
+          auto trim = [](std::string value) {
+            auto is_space = [](unsigned char c) { return std::isspace(c); };
+            value.erase(value.begin(),
+                        std::find_if_not(value.begin(), value.end(), is_space));
+            value.erase(
+                std::find_if_not(value.rbegin(), value.rend(), is_space).base(),
+                value.end());
+            return value;
+          };
+
+          std::string selection = trim(ua->cmd);
+          if (selection.empty()) {
+            ua->ErrorMsg(T_("No volumes selected.\n"));
+            return false;
+          }
+
+          if (Bstrcasecmp(selection.c_str(), "all")) {
+            for (const auto& volume : report.volumes) {
+              selected_volumes.push_back(volume.volume_name);
+            }
+          } else {
+            size_t start = 0;
+            while (start <= selection.size()) {
+              const auto end = selection.find(',', start);
+              auto token = trim(selection.substr(start, end - start));
+              if (!token.empty()) {
+                if (Is_a_number(token.c_str())) {
+                  const auto selection_index = str_to_int64(token.c_str());
+                  if (selection_index < 1
+                      || selection_index
+                             > static_cast<int64_t>(report.volumes.size())) {
+                    ua->ErrorMsg(T_("Invalid prune selection \"%s\".\n"),
+                                 token.c_str());
+                    return false;
+                  }
+                  token = report.volumes[selection_index - 1].volume_name;
+                }
+
+                if (!seen_volumes.insert(token).second) {
+                  start = (end == std::string::npos) ? selection.size() + 1
+                                                     : end + 1;
+                  continue;
+                }
+
+                const auto match = std::find_if(
+                    report.volumes.begin(), report.volumes.end(),
+                    [&token](const PoolPruneVolumeDetail& volume) {
+                      return volume.volume_name == token;
+                    });
+                if (match == report.volumes.end()) {
+                  ua->ErrorMsg(
+                      T_("Volume \"%s\" is not currently prunable in Pool "
+                         "\"%s\".\n"),
+                      token.c_str(), pool_record.Name);
+                  return false;
+                }
+                selected_volumes.push_back(std::move(token));
+              }
+
+              if (end == std::string::npos) { break; }
+              start = end + 1;
+            }
+          }
+        }
+
+        if (!selected_volumes.empty()) {
+          bool result = true;
+          for (const auto& volume_name : selected_volumes) {
+            if (!SelectMediaDbrByName(ua, &mr, volume_name.c_str())) {
+              return false;
+            }
+            if (!SelectPoolForMediaDbr(ua, &pr, &mr)) { return false; }
+
+            if (pool && strcmp(pool->resource_name_, pr.Name)) {
+              ua->ErrorMsg(T_("Volume \"%s\" is not in Pool \"%s\".\n"),
+                           mr.VolumeName, pool->resource_name_);
+              result = false;
+              continue;
+            }
+
+            if (mr.Enabled == VOL_ARCHIVED) {
+              ua->ErrorMsg(
+                  T_("Cannot prune Volume \"%s\" because it is archived.\n"),
+                  mr.VolumeName);
+              result = false;
+              continue;
+            }
+
+            std::string msg("Volume");
+            msg.append(" (" + volume_name + ")");
+            if (!ConfirmRetention(ua, &mr.VolRetention, msg.c_str())) {
+              result = false;
+              continue;
+            }
+
+            result &= PruneVolume(ua, &mr);
+          }
+          return result;
+        }
+
         if (!SelectMediaDbr(ua, &mr)) { return false; }
         if (!SelectPoolForMediaDbr(ua, &pr, &mr)) { return false; }
 
