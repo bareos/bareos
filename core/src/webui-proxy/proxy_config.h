@@ -23,6 +23,7 @@
 
 #include "identity_mapping.h"
 #include "local_auth.h"
+#include "token_auth.h"
 
 #include <map>
 #include <optional>
@@ -44,6 +45,7 @@ struct ProxyConfig {
   int session_ttl{8 * 60 * 60};
   std::map<std::string, DirectorTargetConfig> allowed_directors;
   std::vector<LocalAuthUser> local_auth_users;
+  std::vector<TokenAuthEntry> token_auth_entries;
   std::vector<IdentityMappingRule> identity_mappings;
 };
 

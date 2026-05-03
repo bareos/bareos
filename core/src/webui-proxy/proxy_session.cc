@@ -22,6 +22,7 @@
 #include "director_connection.h"
 #include "identity_mapping.h"
 #include "local_auth.h"
+#include "token_auth.h"
 #include "ws_codec.h"
 
 #include <optional>
@@ -71,13 +72,6 @@ static std::string JsonDirectorList(const ProxyConfig& config)
   return result;
 }
 
-struct SessionBootstrap {
-  AuthIdentity identity;
-  std::string session_token;
-  std::string preferred_director_id;
-  bool reused_existing_session{false};
-};
-
 std::string NormalizeRawConsoleCommand(std::string command)
 {
   command.erase(0, command.find_first_not_of(" \r\n"));
@@ -89,6 +83,111 @@ std::string NormalizeRawConsoleCommand(std::string command)
   }
 
   return command;
+}
+
+ProxyAuthContext ResolveProxyAuthRequest(
+    const ProxyConfig& config,
+    const std::shared_ptr<ProxySessionStore>& session_store,
+    const std::optional<std::string>& requested_session_token,
+    const std::optional<std::string>& requested_access_token,
+    const std::optional<std::string>& requested_username,
+    const std::optional<std::string>& requested_password,
+    const std::optional<std::string>& requested_director,
+    const std::optional<std::string>& requested_host,
+    const std::optional<int>& requested_port,
+    bool json_mode)
+{
+  ProxyAuthContext auth;
+  auth.director_config.json_mode = json_mode;
+
+  std::optional<ProxySession> session;
+  if (requested_session_token) {
+    if (!session_store) {
+      throw std::runtime_error("Proxy auth: session support is not available");
+    }
+    session = session_store->GetSession(*requested_session_token);
+    if (!session) {
+      throw std::runtime_error("Proxy auth: unknown or expired session");
+    }
+
+    auth.identity = session->identity;
+    auth.session_token = session->token;
+    auth.preferred_director_id = session->preferred_director_id;
+    auth.reused_existing_session = true;
+    auth.director_config.username = session->director_username;
+    auth.director_config.password = session->director_password;
+  } else if (requested_access_token) {
+    const auto token_identity
+        = AuthenticateToken(config.token_auth_entries, *requested_access_token);
+    if (!token_identity) {
+      throw std::runtime_error("Proxy auth: invalid or expired access token");
+    }
+    auth.identity = token_identity->identity;
+    auth.expires_at = token_identity->expires_at;
+  } else {
+    if (!requested_username || !requested_password) {
+      throw std::runtime_error(
+          "Proxy auth: provide session_token, access_token, or "
+          "username/password");
+    }
+
+    if (!config.local_auth_users.empty()) {
+      const auto local_user = AuthenticateLocalUser(
+          config.local_auth_users, *requested_username, *requested_password);
+      if (!local_user) {
+        throw std::runtime_error(
+            "Proxy auth: invalid local username or "
+            "password");
+      }
+      auth.identity = local_user->identity;
+      auth.expires_at = local_user->expires_at;
+    } else {
+      auth.director_config.username = *requested_username;
+      auth.director_config.password = *requested_password;
+      auth.identity.provider = "password";
+      auth.identity.subject = auth.director_config.username;
+      auth.identity.username = auth.director_config.username;
+    }
+  }
+
+  if (!config.identity_mappings.empty()) {
+    const auto mapped
+        = ResolveIdentityMapping(config.identity_mappings, auth.identity);
+    if (!mapped) {
+      throw std::runtime_error(
+          "Proxy auth: no identity mapping matched this "
+          "user");
+    }
+    auth.director_config.username = mapped->director_username;
+    auth.director_config.password = mapped->director_password;
+    if (mapped->preferred_director_id && !mapped->preferred_director_id->empty()
+        && !requested_director) {
+      auth.preferred_director_id = *mapped->preferred_director_id;
+    }
+  }
+
+  if (auth.director_config.username.empty()
+      || auth.director_config.password.empty()) {
+    throw std::runtime_error(
+        "Proxy auth: no Director credentials resolved for this identity");
+  }
+
+  const auto target = ResolveDirectorTarget(
+      config,
+      requested_director
+          ? requested_director
+          : (!auth.preferred_director_id.empty()
+                 ? std::optional<std::string>(auth.preferred_director_id)
+                 : std::nullopt),
+      requested_host, requested_port);
+  auth.preferred_director_id = target.id;
+  auth.director_config.director_name = target.name;
+  auth.director_config.host = target.host;
+  auth.director_config.port = target.port;
+  auth.director_config.tls_psk_disable = target.tls_psk_disable;
+  auth.director_config.tls_psk_require = target.tls_psk_require;
+
+  return auth;
 }
 
 // ---------------------------------------------------------------------------
@@ -177,87 +276,20 @@ void RunProxySession(int fd,
 
   DirectorConfig cfg;
   const auto requested_session_token = jstr_required("session_token");
+  const auto requested_access_token = jstr_required("access_token");
   const auto requested_username = jstr_required("username");
   const auto requested_password = jstr_required("password");
   const auto requested_director = joptional("director");
   std::string mode = jstr("mode", "json");
-  cfg.json_mode = (mode != "raw");
-  SessionBootstrap bootstrap;
+  const bool json_mode = (mode != "raw");
+  ProxyAuthContext auth;
 
   try {
-    std::optional<ProxySession> session;
-    if (requested_session_token) {
-      if (!session_store) {
-        throw std::runtime_error(
-            "Proxy auth: session support is not available");
-      }
-      session = session_store->GetSession(*requested_session_token);
-      if (!session) {
-        throw std::runtime_error("Proxy auth: unknown or expired session");
-      }
-
-      bootstrap.identity = session->identity;
-      bootstrap.session_token = session->token;
-      bootstrap.preferred_director_id = session->preferred_director_id;
-      bootstrap.reused_existing_session = true;
-      cfg.username = session->director_username;
-      cfg.password = session->director_password;
-    } else {
-      if (!requested_username || !requested_password) {
-        throw std::runtime_error(
-            "Proxy auth: provide either session_token or username/password");
-      }
-
-      if (!config.local_auth_users.empty()) {
-        const auto local_user = AuthenticateLocalUser(
-            config.local_auth_users, *requested_username, *requested_password);
-        if (!local_user) {
-          throw std::runtime_error(
-              "Proxy auth: invalid local username or password");
-        }
-        bootstrap.identity = local_user->identity;
-      } else {
-        cfg.username = *requested_username;
-        cfg.password = *requested_password;
-        bootstrap.identity.provider = "password";
-        bootstrap.identity.subject = cfg.username;
-        bootstrap.identity.username = cfg.username;
-      }
-    }
-
-    if (!config.identity_mappings.empty()) {
-      const auto mapped = ResolveIdentityMapping(config.identity_mappings,
-                                                 bootstrap.identity);
-      if (!mapped) {
-        throw std::runtime_error(
-            "Proxy auth: no identity mapping matched this user");
-      }
-      cfg.username = mapped->director_username;
-      cfg.password = mapped->director_password;
-      if (mapped->preferred_director_id
-          && !mapped->preferred_director_id->empty() && !requested_director) {
-        bootstrap.preferred_director_id = *mapped->preferred_director_id;
-      }
-    }
-    if (cfg.username.empty() || cfg.password.empty()) {
-      throw std::runtime_error(
-          "Proxy auth: no Director credentials resolved for this identity");
-    }
-
-    const auto target = ResolveDirectorTarget(
-        config,
-        requested_director
-            ? requested_director
-            : (!bootstrap.preferred_director_id.empty()
-                   ? std::optional<std::string>(bootstrap.preferred_director_id)
-                   : std::nullopt),
-        joptional("host"), joptional_int("port"));
-    bootstrap.preferred_director_id = target.id;
-    cfg.director_name = target.name;
-    cfg.host = target.host;
-    cfg.port = target.port;
-    cfg.tls_psk_disable = target.tls_psk_disable;
-    cfg.tls_psk_require = target.tls_psk_require;
+    auth = ResolveProxyAuthRequest(
+        config, session_store, requested_session_token, requested_access_token,
+        requested_username, requested_password, requested_director,
+        joptional("host"), joptional_int("port"), json_mode);
+    cfg = auth.director_config;
   } catch (const std::exception& ex) {
     ws.SendText(JsonObject({{"type", "auth_error"}, {"message", ex.what()}}));
     json_decref(auth_msg);
@@ -269,7 +301,7 @@ void RunProxySession(int fd,
   fprintf(stderr,
           "[proxy] %s auth: user=%s director=%s target=%s host=%s:%d mode=%s\n",
           peer.c_str(), cfg.username.c_str(),
-          bootstrap.preferred_director_id.c_str(), cfg.director_name.c_str(),
+          auth.preferred_director_id.c_str(), cfg.director_name.c_str(),
           cfg.host.c_str(), cfg.port, mode.c_str());
 
   // ── Step 2: connect and authenticate to director ─────────────────────────
@@ -299,17 +331,17 @@ void RunProxySession(int fd,
   const char* director_transport
       = director.UsesTlsPsk() ? "TLS-PSK" : "cleartext";
 
-  if (bootstrap.reused_existing_session) {
+  if (auth.reused_existing_session) {
     const auto refreshed = session_store->RefreshSession(
-        bootstrap.session_token, bootstrap.preferred_director_id);
-    if (refreshed) { bootstrap.session_token = refreshed->token; }
+        auth.session_token, auth.preferred_director_id);
+    if (refreshed) { auth.session_token = refreshed->token; }
   } else {
     AuthResult auth_result;
-    auth_result.identity = bootstrap.identity;
-    const auto created
-        = session_store->CreateSession(auth_result, cfg.username, cfg.password,
-                                       bootstrap.preferred_director_id);
-    bootstrap.session_token = created.token;
+    auth_result.identity = auth.identity;
+    auth_result.expires_at = auth.expires_at;
+    const auto created = session_store->CreateSession(
+        auth_result, cfg.username, cfg.password, auth.preferred_director_id);
+    auth.session_token = created.token;
   }
 
   fprintf(stderr, "[proxy] %s director transport: %s\n", peer.c_str(),
@@ -324,7 +356,7 @@ void RunProxySession(int fd,
     json_object_set_new(ok, "transport", json_string(director_transport));
     json_object_set_new(ok, "username", json_string(cfg.username.c_str()));
     json_object_set_new(ok, "session_token",
-                        json_string(bootstrap.session_token.c_str()));
+                        json_string(auth.session_token.c_str()));
     char* ok_str = json_dumps(ok, JSON_COMPACT);
     json_decref(ok);
     try {

@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cctype>
 #include <fstream>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -75,6 +76,23 @@ int ParseInteger(const std::string& value, const std::string& key)
     return parsed;
   } catch (...) {
     throw std::runtime_error("Proxy config: '" + key + "' must be an integer");
+  }
+}
+
+std::time_t ParseTimestamp(const std::string& value, const std::string& key)
+{
+  try {
+    size_t pos = 0;
+    const long long parsed = std::stoll(value, &pos, 10);
+    if (pos != value.size()) { throw std::invalid_argument("trailing"); }
+    if (parsed < std::numeric_limits<std::time_t>::min()
+        || parsed > std::numeric_limits<std::time_t>::max()) {
+      throw std::out_of_range("range");
+    }
+    return static_cast<std::time_t>(parsed);
+  } catch (...) {
+    throw std::runtime_error("Proxy config: '" + key
+                             + "' must be a unix timestamp");
   }
 }
 
@@ -175,6 +193,30 @@ void ApplyLocalAuthUserSetting(LocalAuthUser& user,
   }
 }
 
+void ApplyTokenAuthSetting(TokenAuthEntry& token,
+                           const std::string& key,
+                           const std::string& value)
+{
+  if (key == "token_hash") {
+    token.token_hash = value;
+  } else if (key == "subject") {
+    token.subject = value;
+  } else if (key == "username") {
+    token.username = value;
+  } else if (key == "email") {
+    token.email = value;
+  } else if (key == "groups") {
+    token.groups = ParseList(value);
+  } else if (key == "roles") {
+    token.roles = ParseList(value);
+  } else if (key == "expires_at") {
+    token.expires_at = ParseTimestamp(value, key);
+  } else {
+    throw std::runtime_error("Proxy config: unknown auth token key '" + key
+                             + "'");
+  }
+}
+
 void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
 {
   std::istringstream input(ini);
@@ -234,6 +276,20 @@ void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
       ApplyLocalAuthUserSetting(*it, key, value);
       continue;
     }
+    if (current_section.rfind("auth-token:", 0) == 0) {
+      const std::string token_id = current_section.substr(11);
+      auto it = std::find_if(
+          cfg.token_auth_entries.begin(), cfg.token_auth_entries.end(),
+          [&](const auto& token) { return token.id == token_id; });
+      if (it == cfg.token_auth_entries.end()) {
+        TokenAuthEntry token;
+        token.id = token_id;
+        cfg.token_auth_entries.push_back(std::move(token));
+        it = std::prev(cfg.token_auth_entries.end());
+      }
+      ApplyTokenAuthSetting(*it, key, value);
+      continue;
+    }
     if (current_section.rfind("identity-map:", 0) == 0) {
       const std::string mapping_id = current_section.substr(13);
       auto it = std::find_if(
@@ -261,6 +317,12 @@ void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
     if (user.username.empty() || user.password_hash.empty()) {
       throw std::runtime_error("Proxy config: auth user '" + user.id
                                + "' requires username and password_hash");
+    }
+  }
+  for (const auto& token : cfg.token_auth_entries) {
+    if (token.token_hash.empty()) {
+      throw std::runtime_error("Proxy config: auth token '" + token.id
+                               + "' requires token_hash");
     }
   }
   for (const auto& rule : cfg.identity_mappings) {

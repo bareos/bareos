@@ -29,10 +29,21 @@
 #define BAREOS_WEBUI_PROXY_PROXY_SESSION_H_
 
 #include "auth_session.h"
+#include "director_connection.h"
 #include "proxy_config.h"
 
 #include <memory>
+#include <optional>
 #include <string>
+
+struct ProxyAuthContext {
+  DirectorConfig director_config;
+  AuthIdentity identity;
+  std::optional<std::time_t> expires_at;
+  std::string session_token;
+  std::string preferred_director_id;
+  bool reused_existing_session{false};
+};
 
 /**
  * Handle one browser WebSocket connection until it closes.
@@ -49,5 +60,21 @@ void RunProxySession(int fd,
  * marker.
  */
 std::string NormalizeRawConsoleCommand(std::string command);
+
+/**
+ * Resolve one proxy auth request into a normalized identity and Director
+ * connection configuration before any network handoff occurs.
+ */
+ProxyAuthContext ResolveProxyAuthRequest(
+    const ProxyConfig& config,
+    const std::shared_ptr<ProxySessionStore>& session_store,
+    const std::optional<std::string>& requested_session_token,
+    const std::optional<std::string>& requested_access_token,
+    const std::optional<std::string>& requested_username,
+    const std::optional<std::string>& requested_password,
+    const std::optional<std::string>& requested_director,
+    const std::optional<std::string>& requested_host,
+    const std::optional<int>& requested_port,
+    bool json_mode);
 
 #endif  // BAREOS_WEBUI_PROXY_PROXY_SESSION_H_

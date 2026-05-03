@@ -21,10 +21,23 @@ tls_psk_disable = false
 #groups = backup-admins
 #roles = operator
 
+#[auth-token:ci-bot]
+#token_hash = sha256$94313d1c406f7af5469a1e7145dfce63a8d46d6e2523d39114f6bc9e864eb518
+#subject = ci-bot
+#groups = automation
+#roles = operator
+
 #[identity-map:webui-admin]
 #provider = local
 #username = demo-admin
 #director_username = webui-admin
+#director_password = secret
+#preferred_director = bareos-dir
+
+#[identity-map:ci-bot]
+#provider = token
+#subject = ci-bot
+#director_username = limited-operator
 #director_password = secret
 #preferred_director = bareos-dir
 

@@ -181,6 +181,67 @@ username = demo-admin
                std::runtime_error);
 }
 
+TEST(ProxyConfig, ParsesTokenAuthEntriesFromIni)
+{
+  ProxyConfig cfg;
+
+  LoadProxyConfigFromString(
+      R"ini(
+[listen]
+ws_host = 127.0.0.1
+
+[director:prod]
+host = prod.example.test
+port = 19101
+director_name = bareos-dir
+
+[auth-token:ci-bot]
+token_hash = sha256$94313d1c406f7af5469a1e7145dfce63a8d46d6e2523d39114f6bc9e864eb518
+subject = ci-bot
+username = ci-bot
+email = ci@example.test
+groups = automation, linux
+roles = operator
+expires_at = 4102444800
+)ini",
+      cfg);
+
+  ASSERT_EQ(cfg.token_auth_entries.size(), 1U);
+  const auto& token = cfg.token_auth_entries.front();
+  EXPECT_EQ(token.id, "ci-bot");
+  EXPECT_EQ(token.token_hash,
+            "sha256$"
+            "94313d1c406f7af5469a1e7145dfce63a8d46d6e2523d39114f6bc9e864eb518");
+  EXPECT_EQ(token.subject, "ci-bot");
+  EXPECT_EQ(token.username, "ci-bot");
+  EXPECT_EQ(token.email, "ci@example.test");
+  EXPECT_EQ(token.groups, std::vector<std::string>({"automation", "linux"}));
+  EXPECT_EQ(token.roles, std::vector<std::string>({"operator"}));
+  ASSERT_TRUE(token.expires_at.has_value());
+  EXPECT_EQ(*token.expires_at, 4102444800);
+}
+
+TEST(ProxyConfig, RejectsTokenAuthEntriesWithoutTokenHash)
+{
+  ProxyConfig cfg;
+
+  EXPECT_THROW(LoadProxyConfigFromString(
+                   R"ini(
+[listen]
+ws_host = 127.0.0.1
+
+[director:prod]
+host = prod.example.test
+port = 19101
+director_name = bareos-dir
+
+[auth-token:ci-bot]
+subject = ci-bot
+)ini",
+                   cfg),
+               std::runtime_error);
+}
+
 TEST(ProxyConfig, RejectsLegacyDirectorSection)
 {
   ProxyConfig cfg;
