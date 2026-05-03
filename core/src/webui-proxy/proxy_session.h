@@ -55,4 +55,11 @@ std::string NormalizeRawConsoleCommand(std::string command);
 bool IsExpectedConsoleExitCommand(bool at_main_prompt,
                                   std::string_view command);
 
+/**
+ * Return true when a raw text chunk is just an out-of-band console
+ * notification and should not be shown as part of the command output.
+ */
+bool ShouldSuppressRawConsoleChunk(std::string_view command,
+                                   std::string_view chunk);
+
 #endif  // BAREOS_WEBUI_PROXY_PROXY_SESSION_H_
