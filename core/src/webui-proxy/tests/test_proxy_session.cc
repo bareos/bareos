@@ -37,3 +37,18 @@ TEST(ProxySession, PreservesStandaloneTabCompletion)
 {
   EXPECT_EQ(NormalizeRawConsoleCommand("\t"), "\t");
 }
+
+TEST(ProxySession, TreatsQuitAsExpectedMainPromptExit)
+{
+  EXPECT_TRUE(IsExpectedConsoleExitCommand(true, "quit"));
+  EXPECT_TRUE(IsExpectedConsoleExitCommand(true, "exit"));
+  EXPECT_TRUE(IsExpectedConsoleExitCommand(true, ".quit"));
+  EXPECT_TRUE(IsExpectedConsoleExitCommand(true, ".exit"));
+}
+
+TEST(ProxySession, DoesNotTreatSubPromptExitAsConsoleClose)
+{
+  EXPECT_FALSE(IsExpectedConsoleExitCommand(false, "quit"));
+  EXPECT_FALSE(IsExpectedConsoleExitCommand(false, "exit"));
+  EXPECT_FALSE(IsExpectedConsoleExitCommand(true, "done"));
+}
