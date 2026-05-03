@@ -61,6 +61,7 @@ function createSession(director) {
     status: 'disconnected',
     currentPrompt: '* ',
     output: [],
+    outputLineOpen: false,
     cmd: '',
     history: [],
     historyIdx: -1,
@@ -150,6 +151,51 @@ function replaceCompletionText(line, request, replacement) {
   return `${line.slice(0, request.replaceStart)}${replacement}`
 }
 
+function splitInteractivePrompt(text, promptKind) {
+  const normalizedText = String(text ?? '').replace(/\r\n/g, '\n')
+  const canCarryInlinePrompt = (
+    promptKind === 'sub'
+    || promptKind === 'select'
+    || promptKind === 'more'
+  )
+
+  if (
+    !normalizedText
+    || normalizedText.endsWith('\n')
+    || !canCarryInlinePrompt
+  ) {
+    return {
+      outputText: normalizedText,
+      promptText: '',
+    }
+  }
+
+  const lastNewlineIndex = normalizedText.lastIndexOf('\n')
+  const promptText = lastNewlineIndex >= 0
+    ? normalizedText.slice(lastNewlineIndex + 1)
+    : normalizedText
+  const outputText = lastNewlineIndex >= 0
+    ? normalizedText.slice(0, lastNewlineIndex + 1)
+    : ''
+
+  if (
+    promptKind === 'more'
+    && promptText !== '$ '
+    && promptText !== '> '
+    && !promptText.startsWith('Select ')
+  ) {
+    return {
+      outputText: normalizedText,
+      promptText: '',
+    }
+  }
+
+  return {
+    outputText,
+    promptText,
+  }
+}
+
 function buildCompletionRequest(command) {
   const context = getCompletionContext(command)
   const mapping = COMPLETION_KEYWORDS.find(item => item.key === context.previousKeyword)
@@ -213,11 +259,38 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
 
   function appendLines(director, text, cls = '') {
     const session = getSession(director)
-    const lines = String(text ?? '').replace(/\r\n/g, '\n').split('\n')
-    while (lines.length && lines[lines.length - 1].trim() === '') {
-      lines.pop()
+    const normalizedText = String(text ?? '').replace(/\r\n/g, '\n')
+    if (!normalizedText) {
+      return
     }
-    lines.forEach(line => session.output.push({ text: line, cls }))
+
+    const appendLine = (line) => {
+      const lastLine = session.output[session.output.length - 1]
+      if (session.outputLineOpen && lastLine && lastLine.cls === cls) {
+        lastLine.text += line
+      } else {
+        session.output.push({ text: line, cls })
+      }
+    }
+
+    let start = 0
+    for (let i = 0; i < normalizedText.length; i += 1) {
+      if (normalizedText[i] !== '\n') {
+        continue
+      }
+
+      appendLine(normalizedText.slice(start, i))
+      session.outputLineOpen = false
+      start = i + 1
+    }
+
+    const trailingLine = normalizedText.slice(start)
+    if (trailingLine) {
+      appendLine(trailingLine)
+      session.outputLineOpen = true
+    } else if (normalizedText.endsWith('\n')) {
+      session.outputLineOpen = false
+    }
   }
 
   function appendInfo(director, text) {
@@ -234,6 +307,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       text: `${session.currentPrompt}${text}`,
       cls: 'console-cmd',
     })
+    session.outputLineOpen = false
   }
 
   function rejectAll(director, reason) {
@@ -321,14 +395,13 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       }
 
       if (msg.type === 'raw_response') {
-        const entry = runtime.pendingCmds.get(msg.id)
-        if (entry) {
-          clearTimeout(entry.timer)
-          runtime.pendingCmds.delete(msg.id)
-        }
-
         const completionRequest = runtime.completionRequests.get(msg.id)
         if (completionRequest) {
+          const entry = runtime.pendingCmds.get(msg.id)
+          if (entry) {
+            clearTimeout(entry.timer)
+            runtime.pendingCmds.delete(msg.id)
+          }
           runtime.completionRequests.delete(msg.id)
           applyCompletionResult(
             session,
@@ -338,12 +411,32 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
             msg.text
           )
         } else {
-          appendLines(director, msg.text)
-          session.currentPrompt = msg.prompt === 'select'
-            ? 'Select: '
-            : msg.prompt === 'sub'
-              ? '> '
-              : '* '
+          const isStreamingChunk = msg.prompt === 'more'
+          const {
+            outputText,
+            promptText,
+          } = splitInteractivePrompt(msg.text, msg.prompt)
+
+          if (!isStreamingChunk) {
+            const entry = runtime.pendingCmds.get(msg.id)
+            if (entry) {
+              clearTimeout(entry.timer)
+              runtime.pendingCmds.delete(msg.id)
+            }
+          }
+
+          appendLines(director, outputText)
+          if (isStreamingChunk && promptText) {
+            session.currentPrompt = promptText
+          } else if (!isStreamingChunk) {
+            session.currentPrompt = promptText || (
+              msg.prompt === 'select'
+                ? 'Select: '
+                : msg.prompt === 'sub'
+                  ? (session.currentPrompt || '> ')
+                  : '* '
+            )
+          }
         }
 
         return
@@ -380,6 +473,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
   function clearOutput(director) {
     const session = getSession(director)
     session.output = []
+    session.outputLineOpen = false
     appendInfo(director, 'Console cleared.')
   }
 
@@ -403,7 +497,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     }, timeoutMs)
 
     runtime.pendingCmds.set(id, { timer })
-    runtime.ws.send(JSON.stringify({ type: 'command', id, command }))
+    runtime.ws.send(JSON.stringify({ type: 'command', id, command, stream: true }))
     session.status = 'connected'
     return true
   }

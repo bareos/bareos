@@ -382,6 +382,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes } from '../mock/index.js'
+import { buildDirectorOptions } from '../utils/director.js'
 import {
   buildRestoreSourceQuery,
   filterRestoreSourceClients,
@@ -412,13 +413,12 @@ const form = ref({
 const sourceClientKey = ref('')
 
 const directorOptions = computed(() => {
-  const values = new Set([
-    ...director.availableDirectors,
-    ...settings.selectedDirectors,
-    auth.user?.director,
-    settings.directorName,
-  ].filter(Boolean))
-  return [...values].map(value => ({ label: value, value }))
+  return buildDirectorOptions({
+    availableDirectors: director.availableDirectors,
+    selectedDirectors: settings.selectedDirectors,
+    currentDirector: auth.user?.director,
+    fallbackDirector: settings.directorName,
+  })
 })
 
 function syncSelectedDirectors() {

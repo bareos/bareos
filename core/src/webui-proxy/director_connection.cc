@@ -55,8 +55,10 @@ static constexpr int32_t kBnetError = -4;  // Error
     = -16;                                       // Start command execution
 static constexpr int32_t kBnetMainPrompt = -18;  // Server ready and waiting
 static constexpr int32_t kBnetSelectInput
-    = -19;                                      // Waiting for numeric selection
-static constexpr int32_t kBnetSubPrompt = -27;  // At a sub-prompt
+    = -19;  // Waiting for numeric selection
+static constexpr int32_t kBnetStartRtree = -25;  // Start restore tree mode
+static constexpr int32_t kBnetEndRtree = -26;    // End restore tree mode
+static constexpr int32_t kBnetSubPrompt = -27;   // At a sub-prompt
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -218,13 +220,13 @@ void DirectorConnection::SendFrame(const std::string& data)
   if (!data.empty()) { WriteAll(data.data(), data.size()); }
 }
 
-bool DirectorConnection::HasPendingInput() const
+bool DirectorConnection::HasPendingInput(int timeout_ms) const
 {
   if (ssl_ && SSL_pending(ssl_) > 0) { return true; }
   if (fd_ < 0) { return false; }
 
   struct pollfd pfd{fd_, POLLIN, 0};
-  int rc = poll(&pfd, 1, 0);
+  int rc = poll(&pfd, 1, timeout_ms);
   return rc > 0 && (pfd.revents & POLLIN);
 }
 
@@ -551,35 +553,31 @@ CallResult DirectorConnection::Call(
       if (len == kBnetError) {
         throw std::runtime_error("Director: received BNET_ERROR signal");
       }
-      if (result.text.empty()) {
-        if (len == kBnetMainPrompt) {
-          result.prompt = DirectorPrompt::Main;
-          break;
-        }
-        if (len == kBnetSubPrompt) {
-          result.prompt = DirectorPrompt::Sub;
-          break;
-        }
-        if (len == kBnetSelectInput) {
-          result.prompt = DirectorPrompt::Select;
-          break;
-        }
-        if (len == kBnetEod || len == kBnetEods || len == kBnetEof) {
+      if (len == kBnetMainPrompt) {
+        result.prompt = DirectorPrompt::Main;
+        break;
+      }
+      if (len == kBnetSubPrompt) {
+        result.prompt = DirectorPrompt::Sub;
+        break;
+      }
+      if (len == kBnetSelectInput) {
+        result.prompt = DirectorPrompt::Select;
+        break;
+      }
+      if (len == kBnetStartRtree || len == kBnetEndRtree) { continue; }
+      if (len == kBnetEod || len == kBnetEods || len == kBnetEof) {
+        // Some interactive raw-mode commands emit an EOD separator before the
+        // follow-up prompt text ("cwd is: /\n$ "). Wait briefly so that prompt
+        // transition data stays attached to the command that triggered it.
+        if (HasPendingInput(50)) { continue; }
+        if (!result.text.empty()) {
           result.prompt = DirectorPrompt::Other;
           break;
         }
       }
       if (!result.text.empty()) {
-        // Signal after data: determine prompt type and stop.
-        if (len == kBnetMainPrompt) {
-          result.prompt = DirectorPrompt::Main;
-        } else if (len == kBnetSubPrompt) {
-          result.prompt = DirectorPrompt::Sub;
-        } else if (len == kBnetSelectInput) {
-          result.prompt = DirectorPrompt::Select;
-        } else {
-          result.prompt = DirectorPrompt::Other;
-        }
+        result.prompt = DirectorPrompt::Other;
         break;
       }
       continue;  // leading signal before data → skip
