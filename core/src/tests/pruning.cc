@@ -91,3 +91,44 @@ TEST(Pruning, SummarizePoolPruneJobs)
   EXPECT_EQ(summary.prunable_jobs, 3);
   EXPECT_EQ(summary.prunable_bytes, 7168);
 }
+
+TEST(Pruning, BuildPoolPruneReport)
+{
+  std::vector<directordaemon::PoolPruneVolumeDetail> volumes{
+      {
+          .volume_name = "Full-0001",
+          .volume_status = "Used",
+          .last_written = "2026-05-03 10:00:00",
+          .reason = "volume_retention_expired",
+          .job_ids = {1, 2},
+          .prunable_jobs = 2,
+          .prunable_bytes = 3072,
+      },
+      {
+          .volume_name = "Full-0002",
+          .volume_status = "Full",
+          .last_written = "2026-05-03 11:00:00",
+          .reason = "volume_retention_expired",
+          .job_ids = {3},
+          .prunable_jobs = 1,
+          .prunable_bytes = 4096,
+      },
+  };
+  std::vector<directordaemon::PoolPruneJobDetail> jobs{
+      {.jobid = 1, .name = "backup-a", .bytes = 1024, .start_time = ""},
+      {.jobid = 2, .name = "backup-b", .bytes = 2048, .start_time = ""},
+      {.jobid = 3, .name = "backup-c", .bytes = 4096, .start_time = ""},
+  };
+
+  auto report = directordaemon::BuildPoolPruneReport(volumes, jobs);
+
+  EXPECT_EQ(report.reason, "volume_retention_expired");
+  EXPECT_EQ(report.summary.prunable_volumes, 2);
+  EXPECT_EQ(report.summary.prunable_jobs, 3);
+  EXPECT_EQ(report.summary.prunable_bytes, 7168);
+  ASSERT_EQ(report.status_breakdown.size(), 2u);
+  EXPECT_EQ(report.status_breakdown[0].status, "Used");
+  EXPECT_EQ(report.status_breakdown[0].volumes, 1);
+  EXPECT_EQ(report.status_breakdown[1].status, "Full");
+  EXPECT_EQ(report.status_breakdown[1].volumes, 1);
+}
