@@ -91,6 +91,7 @@ import {
 } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { buildDirectorOptions } from '../utils/director.js'
 import LanguageSelect from '../components/LanguageSelect.vue'
 import bareosLogo from '../assets/bareos-logo-small.png'
 
@@ -113,13 +114,12 @@ const locale    = ref(settings.locale)
 const loading   = ref(false)
 const errorMsg  = ref(null)
 const hasAvailableDirectors = computed(() => director.availableDirectors.length > 0)
-const directorOptions = computed(() => {
-  const options = [...director.availableDirectors]
-  if (directorRef.value && !options.includes(directorRef.value)) {
-    options.unshift(directorRef.value)
-  }
-  return options.map((value) => ({ label: value, value }))
-})
+const directorOptions = computed(() => (
+  buildDirectorOptions({
+    availableDirectors: director.availableDirectors,
+    currentDirector: directorRef.value,
+  })
+))
 
 onMounted(async () => {
   try {

@@ -21,8 +21,44 @@
 
 const DIRECTOR_SINGLETON_TABS = new Set(['catalog', 'subscription'])
 
+function normalizeDirectorValues(values) {
+  return [...new Set(
+    values
+      .map(value => String(value ?? '').trim())
+      .filter(Boolean)
+  )]
+}
+
 export function isDirectorSingletonTab(tab) {
   return DIRECTOR_SINGLETON_TABS.has(tab)
+}
+
+export function buildDirectorOptions({
+  availableDirectors = [],
+  selectedDirectors = [],
+  currentDirector = '',
+  fallbackDirector = '',
+} = {}) {
+  const configuredDirectors = normalizeDirectorValues(availableDirectors)
+
+  if (configuredDirectors.length > 0) {
+    const effectiveDirectors = configuredDirectors.length === 1
+      ? configuredDirectors
+      : normalizeDirectorValues([
+          ...configuredDirectors,
+          currentDirector,
+          fallbackDirector,
+          ...selectedDirectors,
+        ])
+
+    return effectiveDirectors.map(value => ({ label: value, value }))
+  }
+
+  return normalizeDirectorValues([
+    currentDirector,
+    fallbackDirector,
+    ...selectedDirectors,
+  ]).map(value => ({ label: value, value }))
 }
 
 export function resolveDirectorTargetQuery(query) {

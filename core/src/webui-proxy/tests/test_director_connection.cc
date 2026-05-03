@@ -19,11 +19,20 @@
    02110-1301, USA.
  */
 
+#define private public
 #include "../director_connection.h"
+#undef private
 
 #include "ascii_control_characters.h"
 
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include <gtest/gtest.h>
+
+#include <chrono>
+#include <thread>
 
 TEST(DirectorConnection, BuildsTlsPskIdentityForConsole)
 {
@@ -64,4 +73,62 @@ TEST(DirectorConnection, StartsWithoutTlsPskTransport)
   DirectorConnection connection;
 
   EXPECT_FALSE(connection.UsesTlsPsk());
+}
+
+namespace {
+constexpr int32_t kBnetStartRtree = -25;
+constexpr int32_t kBnetSubPrompt = -27;
+
+void WriteFrame(int fd, std::string_view data)
+{
+  const int32_t header = htonl(static_cast<int32_t>(data.size()));
+  ASSERT_EQ(write(fd, &header, sizeof(header)), sizeof(header));
+  if (!data.empty()) {
+    ASSERT_EQ(write(fd, data.data(), data.size()),
+              static_cast<ssize_t>(data.size()));
+  }
+}
+
+void WriteSignal(int fd, int32_t signal)
+{
+  const int32_t header = htonl(signal);
+  ASSERT_EQ(write(fd, &header, sizeof(header)), sizeof(header));
+}
+}  // namespace
+
+TEST(DirectorConnection, KeepsRestoreTreePromptDataWithSameCommand)
+{
+  int sockets[2] = {-1, -1};
+  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+  DirectorConnection connection;
+  connection.fd_ = sockets[0];
+  connection.json_mode_ = false;
+
+  std::thread director([peer = sockets[1]]() {
+    int32_t header = 0;
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+
+    const auto payload_size = static_cast<size_t>(ntohl(header));
+    std::string payload(payload_size, '\0');
+    ASSERT_EQ(read(peer, payload.data(), payload.size()),
+              static_cast<ssize_t>(payload.size()));
+    EXPECT_EQ(payload, "find *\n");
+
+    WriteFrame(peer, "selection ready\n");
+    WriteSignal(peer, kBnetStartRtree);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    WriteFrame(peer, "cwd is: /\n$ ");
+    WriteSignal(peer, kBnetSubPrompt);
+    close(peer);
+  });
+
+  const auto result = connection.Call("find *");
+
+  EXPECT_EQ(result.text, "selection ready\ncwd is: /\n$ ");
+  EXPECT_EQ(result.prompt, DirectorPrompt::Sub);
+
+  director.join();
+  close(connection.fd_);
+  connection.fd_ = -1;
 }

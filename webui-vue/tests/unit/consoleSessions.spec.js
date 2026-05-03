@@ -158,6 +158,7 @@ describe('console session store', () => {
       type: 'command',
       id: '1',
       command: 'list jobs',
+      stream: true,
     })
     expect(completionB).toEqual({
       type: 'command',
@@ -274,6 +275,161 @@ describe('console session store', () => {
     expect(
       consoleSessions.getSession('bareos-dir').output.map(line => line.text)
     ).toContain('clients')
+  })
+
+  it('moves interactive restore prompts onto the live input line', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    consoleSessions.sendCommand('bareos-dir', 'restore')
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: [
+          'To select the JobIds, you have the following choices:',
+          ' 1: List last 20 Jobs run',
+          '13: Cancel',
+          'Select item:  (1-13): ',
+        ].join('\n'),
+        prompt: 'sub',
+      }),
+    })
+
+    const session = consoleSessions.getSession('bareos-dir')
+    expect(session.currentPrompt).toBe('Select item:  (1-13): ')
+    expect(session.output.map(line => line.text)).toContain(
+      'To select the JobIds, you have the following choices:'
+    )
+    expect(session.output.map(line => line.text)).not.toContain(
+      'Select item:  (1-13): '
+    )
+  })
+
+  it('moves streamed restore prompts onto the live input line', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    const session = consoleSessions.getSession('bareos-dir')
+    consoleSessions.sendCommand('bareos-dir', 'find *')
+
+    expect(JSON.parse(socket.sent[1])).toEqual({
+      type: 'command',
+      id: '1',
+      command: 'find *',
+      stream: true,
+    })
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: '/home/\n/home/pai/\n$ ',
+        prompt: 'more',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: '',
+        prompt: 'sub',
+      }),
+    })
+
+    expect(session.output.map(line => line.text)).toContain('/home/')
+    expect(session.output.map(line => line.text)).toContain('/home/pai/')
+    expect(session.currentPrompt).toBe('$ ')
+    expect(session.output.map(line => line.text)).not.toContain('$ ')
+  })
+
+  it('keeps streamed restore progress on one output line', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    consoleSessions.sendCommand('bareos-dir', '5')
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Building directory tree for JobId(s) 1 ...  ',
+        prompt: 'more',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: '+',
+        prompt: 'more',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: '+',
+        prompt: 'more',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: '\n86 files inserted into the tree.\n$ ',
+        prompt: 'more',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: '',
+        prompt: 'sub',
+      }),
+    })
+
+    const session = consoleSessions.getSession('bareos-dir')
+    expect(session.output.map(line => line.text)).toContain(
+      'Building directory tree for JobId(s) 1 ...  ++'
+    )
+    expect(session.output.map(line => line.text)).toContain(
+      '86 files inserted into the tree.'
+    )
   })
 
   it('disconnects all tracked director sessions', () => {

@@ -266,6 +266,7 @@ import {
   withJobsSearchQuery,
   withJobsScopeDirectorQuery,
 } from '../utils/jobs.js'
+import { buildDirectorOptions } from '../utils/director.js'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
@@ -284,13 +285,12 @@ const tab = ref(normaliseTab(route.query.tab))
 const directorErrors = ref([])
 
 const directorOptions = computed(() => {
-  const values = new Set([
-    ...director.availableDirectors,
-    ...settings.selectedDirectors,
-    auth.user?.director,
-    settings.directorName,
-  ].filter(Boolean))
-  return [...values].map(value => ({ label: value, value }))
+  return buildDirectorOptions({
+    availableDirectors: director.availableDirectors,
+    selectedDirectors: settings.selectedDirectors,
+    currentDirector: auth.user?.director,
+    fallbackDirector: settings.directorName,
+  })
 })
 
 function syncSelectedDirectors() {

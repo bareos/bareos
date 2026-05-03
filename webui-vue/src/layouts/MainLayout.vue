@@ -252,6 +252,7 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useConsoleSessionsStore } from '../stores/consoleSessions.js'
 import { useDirectorStore } from '../stores/director.js'
+import { buildDirectorOptions } from '../utils/director.js'
 import {
   RELEASE_INFO_PAGE_URL,
   useReleaseInfoStore,
@@ -294,12 +295,11 @@ const mainNavItems = computed(() => [
 const settings = useSettingsStore()
 const currentDirector = computed(() => auth.user?.director || settings.directorName || '')
 const directorOptions = computed(() => {
-  const values = new Set([
-    ...director.availableDirectors,
-    ...settings.selectedDirectors,
-    currentDirector.value,
-  ].filter(Boolean))
-  return [...values].map(value => ({ label: value, value }))
+  return buildDirectorOptions({
+    availableDirectors: director.availableDirectors,
+    selectedDirectors: settings.selectedDirectors,
+    currentDirector: currentDirector.value,
+  })
 })
 
 onMounted(() => {
