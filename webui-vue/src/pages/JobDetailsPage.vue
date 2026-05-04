@@ -469,10 +469,20 @@ watch(isRunning, (running) => {
 onUnmounted(stopPolling)
 
 // ── actions ───────────────────────────────────────────────────────────────────
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function confirmRerun() {
   $q.dialog({
     title: t('Rerun Job'),
-    message: t('Rerun job {name} (ID {id})?', { name: job.value.name, id: job.value.id }),
+    message: `${t('Rerun job')} <b>${escapeHtml(job.value.name)}</b> (ID&nbsp;${escapeHtml(job.value.id)})?`,
+    html: true,
     ok:     { label: t('Rerun'), color: 'primary', flat: true },
     cancel: { label: t('Cancel'), flat: true },
   }).onOk(doRerun)
@@ -525,7 +535,8 @@ async function doRerun() {
 function confirmCancel() {
   $q.dialog({
     title: t('Cancel Job'),
-    message: t('Cancel job {name} (ID {id})?', { name: job.value.name, id: job.value.id }),
+    message: `${t('Cancel job')} <b>${escapeHtml(job.value.name)}</b> (ID&nbsp;${escapeHtml(job.value.id)})?`,
+    html: true,
     ok:     { label: t('Cancel Job'), color: 'negative', flat: true },
     cancel: { label: t('Keep Running'), flat: true },
   }).onOk(doCancel)
