@@ -37,6 +37,7 @@ describe('clients route helpers', () => {
       clientsScopeDirector: 'prod-a',
       jobsAction: 'timeline',
       jobsStatus: 'T',
+      jobsLevel: 'F',
       jobsSearch: 'backup',
       jobsScopeDirector: 'prod-a',
       dashboardOrigin: true,
@@ -46,6 +47,7 @@ describe('clients route helpers', () => {
       clientsScopeDirector: 'prod-a',
       jobsAction: 'timeline',
       jobsStatus: 'T',
+      jobsLevel: 'F',
       jobsSearch: 'backup',
       jobsScopeDirector: 'prod-a',
       dashboardOrigin: '1',
@@ -83,11 +85,13 @@ describe('clients route helpers', () => {
     expect(resolveClientDetailsJobsOrigin({
       jobsAction: 'timeline',
       jobsStatus: 'T',
+      jobsLevel: 'F',
       jobsSearch: 'backup',
       jobsScopeDirector: 'prod-a',
     })).toEqual({
       action: 'timeline',
       status: 'T',
+      level: 'F',
       search: 'backup',
       scopeDirector: 'prod-a',
     })

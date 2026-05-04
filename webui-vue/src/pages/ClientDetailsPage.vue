@@ -170,6 +170,7 @@ function buildClientJobDetailsQuery(job) {
     clientDashboardOrigin: dashboardOrigin.value,
     clientJobsAction: typeof route.query.jobsAction === 'string' ? route.query.jobsAction : '',
     clientJobsStatus: typeof route.query.jobsStatus === 'string' ? route.query.jobsStatus : '',
+    clientJobsLevel: typeof route.query.jobsLevel === 'string' ? route.query.jobsLevel : '',
     clientJobsSearch: typeof route.query.jobsSearch === 'string' ? route.query.jobsSearch : '',
     clientJobsScopeDirector: typeof route.query.jobsScopeDirector === 'string'
       ? route.query.jobsScopeDirector
@@ -275,11 +276,11 @@ const details = computed(() => {
 })
 
 const jobCols = computed(() => [
-  { name: 'id',        label: t('ID'),     field: 'id',        align: 'right' },
-  { name: 'name',      label: t('Job'),    field: 'name',      align: 'left'  },
-  { name: 'level',     label: t('Level'),  field: 'level',     align: 'center'},
-  { name: 'starttime', label: t('Start'),  field: 'starttime', align: 'left'  },
-  { name: 'bytes',     label: t('Bytes'),  field: 'bytes',     align: 'right' },
-  { name: 'status',    label: t('Status'), field: 'status',    align: 'center'},
+  { name: 'id',        label: t('ID'),     field: 'id',        align: 'right', sortable: true },
+  { name: 'name',      label: t('Job'),    field: 'name',      align: 'left',  sortable: true },
+  { name: 'level',     label: t('Level'),  field: 'level',     align: 'center', sortable: true },
+  { name: 'starttime', label: t('Start'),  field: 'starttime', align: 'left',  sortable: true },
+  { name: 'bytes',     label: t('Bytes'),  field: 'bytes',     align: 'right', sortable: true },
+  { name: 'status',    label: t('Status'), field: 'status',    align: 'center', sortable: true },
 ])
 </script>

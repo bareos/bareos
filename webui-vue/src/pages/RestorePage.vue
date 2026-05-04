@@ -857,11 +857,11 @@ const browserCols = computed(() => [
   { name: 'sel',   label: '',            field: 'sel',   align: 'center', style: 'width:36px' },
   { name: 'icon',  label: '',            field: 'isDir', align: 'center', style: 'width:28px' },
   { name: 'name',  label: t('Name'),     field: 'name',  align: 'left',   sortable: true },
-  { name: 'mode',  label: t('Mode'),     field: 'mode',  align: 'left',   style: 'width:90px' },
-  { name: 'user',  label: t('User'),     field: 'user',  align: 'left',   style: 'width:80px' },
-  { name: 'group', label: t('Group'),    field: 'group', align: 'left',   style: 'width:80px' },
-  { name: 'size',  label: t('Size'),     field: 'size',  align: 'right',  style: 'width:90px' },
-  { name: 'mtime', label: t('Modified'), field: 'mtime', align: 'left',   style: 'width:160px' },
+  { name: 'mode',  label: t('Mode'),     field: 'mode',  align: 'left',   style: 'width:90px', sortable: true },
+  { name: 'user',  label: t('User'),     field: 'user',  align: 'left',   style: 'width:80px', sortable: true },
+  { name: 'group', label: t('Group'),    field: 'group', align: 'left',   style: 'width:80px', sortable: true },
+  { name: 'size',  label: t('Size'),     field: 'size',  align: 'right',  style: 'width:90px', sortable: true },
+  { name: 'mtime', label: t('Modified'), field: 'mtime', align: 'left',   style: 'width:160px', sortable: true },
 ])
 
 async function initBrowser() {
@@ -1202,11 +1202,11 @@ async function checkVersionsInBackground(files, dirKey) {
 
 const versionsCols = [
   { name: 'sel',    label: '',        field: 'sel',                  align: 'center', style: 'width:36px' },
-  { name: 'jobid',  label: 'Job ID',  field: 'jobid',                align: 'right',  style: 'width:70px' },
-  { name: 'mtime',  label: 'Date',    field: row => row.stat?.mtime, align: 'left' },
-  { name: 'size',   label: 'Size',    field: row => row.stat?.size,  align: 'right',  style: 'width:90px' },
-  { name: 'volume', label: 'Volume',  field: 'volumename',           align: 'left' },
-  { name: 'md5',    label: 'MD5',     field: 'md5',                  align: 'left' },
+  { name: 'jobid',  label: 'Job ID',  field: 'jobid',                align: 'right',  style: 'width:70px', sortable: true },
+  { name: 'mtime',  label: 'Date',    field: row => row.stat?.mtime, align: 'left', sortable: true },
+  { name: 'size',   label: 'Size',    field: row => row.stat?.size,  align: 'right',  style: 'width:90px', sortable: true },
+  { name: 'volume', label: 'Volume',  field: 'volumename',           align: 'left', sortable: true },
+  { name: 'md5',    label: 'MD5',     field: 'md5',                  align: 'left', sortable: true },
 ]
 
 async function openVersions(row) {
