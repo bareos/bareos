@@ -25,6 +25,7 @@
 #ifndef BAREOS_WEBUI_PROXY_PROXY_SERVER_H_
 #define BAREOS_WEBUI_PROXY_PROXY_SERVER_H_
 
+#include "bconfig_http_proxy.h"
 #include "proxy_config.h"
 #include <csignal>
 #include <string>
@@ -37,7 +38,10 @@
  */
 class ProxyServer {
  public:
-  explicit ProxyServer(const ProxyConfig& cfg) : cfg_(cfg) {}
+  ProxyServer(const ProxyConfig& cfg, const BconfigHttpProxyConfig& bconfig_cfg)
+      : cfg_(cfg), bconfig_cfg_(bconfig_cfg)
+  {
+  }
 
   /** Blocking: accept loop.  Returns when Stop() is called. */
   void Run();
@@ -47,6 +51,7 @@ class ProxyServer {
 
  private:
   ProxyConfig cfg_;
+  BconfigHttpProxyConfig bconfig_cfg_;
   // All listening sockets (one per address family for the bind host).
   // Populated by Run(); closed during Run() shutdown.
   std::vector<int> listen_fds_;

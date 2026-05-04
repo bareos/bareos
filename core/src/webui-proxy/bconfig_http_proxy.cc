@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,8 +26,9 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 
-#include <cstdio>
-#include <thread>
+#include <stdexcept>
+
+#include <sys/socket.h>
 
 namespace net = boost::asio;
 namespace beast = boost::beast;
@@ -36,26 +37,24 @@ using tcp = net::ip::tcp;
 
 namespace {
 
-void WakeTcpListener(const std::string& host, int port)
+bool HasPathPrefix(std::string_view path, std::string_view prefix)
 {
-  try {
-    net::io_context io_context;
-    tcp::resolver resolver{io_context};
-    beast::tcp_stream stream{io_context};
-    auto endpoints = resolver.resolve(host, std::to_string(port));
-    stream.connect(endpoints);
-    boost::system::error_code ec;
-    stream.socket().shutdown(tcp::socket::shutdown_both, ec);
-  } catch (...) {
-  }
+  return path == prefix
+         || (path.size() > prefix.size() && path.starts_with(prefix)
+             && path[prefix.size()] == '/');
 }
 
-http::response<http::string_body> MakeBadGatewayResponse(
+std::string_view ExtractPath(std::string_view target)
+{
+  return target.substr(0, target.find('?'));
+}
+
+http::response<http::string_body> MakeErrorResponse(
     const http::request<http::string_body>& request,
+    http::status status,
     std::string_view message)
 {
-  http::response<http::string_body> response{http::status::bad_gateway,
-                                             request.version()};
+  http::response<http::string_body> response{status, request.version()};
   response.set(http::field::content_type, "text/plain; charset=utf-8");
   response.body() = std::string{message};
   response.keep_alive(request.keep_alive());
@@ -75,9 +74,8 @@ http::response<http::string_body> ForwardRequest(
       = resolver.resolve(cfg.upstream_host, std::to_string(cfg.upstream_port));
   stream.connect(endpoints);
 
-  http::request<http::string_body> upstream{request.method(),
-                                            std::string{request.target()},
-                                            request.version()};
+  http::request<http::string_body> upstream{
+      request.method(), std::string{request.target()}, request.version()};
   upstream.body() = request.body();
   upstream.keep_alive(false);
   upstream.chunked(false);
@@ -105,8 +103,43 @@ http::response<http::string_body> ForwardRequest(
   return response;
 }
 
-void HandleHttpSession(tcp::socket socket, const BconfigHttpProxyConfig& cfg)
+http::response<http::string_body> HandleHttpRequest(
+    const BconfigHttpProxyConfig& cfg,
+    const http::request<http::string_body>& request)
 {
+  if (!IsBconfigProxyRoute(
+          std::string_view{request.target().data(), request.target().size()})) {
+    return MakeErrorResponse(request, http::status::not_found,
+                             "route not found.");
+  }
+
+  try {
+    return ForwardRequest(cfg, request);
+  } catch (const std::exception& ex) {
+    return MakeErrorResponse(request, http::status::bad_gateway, ex.what());
+  }
+}
+
+tcp::socket MakeSocket(net::io_context& io_context, int fd, int address_family)
+{
+  tcp::socket socket{io_context};
+  switch (address_family) {
+    case AF_INET6:
+      socket.assign(tcp::v6(), fd);
+      return socket;
+    case AF_INET:
+    default:
+      socket.assign(tcp::v4(), fd);
+      return socket;
+  }
+}
+
+void HandleHttpSession(int fd,
+                       int address_family,
+                       const BconfigHttpProxyConfig& cfg)
+{
+  net::io_context io_context;
+  auto socket = MakeSocket(io_context, fd, address_family);
   beast::flat_buffer buffer;
   boost::system::error_code ec;
 
@@ -116,13 +149,7 @@ void HandleHttpSession(tcp::socket socket, const BconfigHttpProxyConfig& cfg)
     if (ec == http::error::end_of_stream) { break; }
     if (ec) { break; }
 
-    http::response<http::string_body> response
-        = MakeBadGatewayResponse(request, "upstream proxy failure");
-    try {
-      response = ForwardRequest(cfg, request);
-    } catch (const std::exception& ex) {
-      response = MakeBadGatewayResponse(request, ex.what());
-    }
+    auto response = HandleHttpRequest(cfg, request);
 
     http::write(socket, response, ec);
     if (ec || response.need_eof() || !request.keep_alive()) { break; }
@@ -133,79 +160,16 @@ void HandleHttpSession(tcp::socket socket, const BconfigHttpProxyConfig& cfg)
 
 }  // namespace
 
-BconfigHttpProxyServer::BconfigHttpProxyServer(const BconfigHttpProxyConfig& cfg)
-    : cfg_(cfg)
+bool IsBconfigProxyRoute(std::string_view target)
 {
+  const auto path = ExtractPath(target);
+  return HasPathPrefix(path, "/api/bconfig") || HasPathPrefix(path, "/v1")
+         || HasPathPrefix(path, "/ui");
 }
 
-void BconfigHttpProxyServer::Run()
+void RunBconfigHttpProxySession(int fd,
+                                int address_family,
+                                const BconfigHttpProxyConfig& cfg)
 {
-  io_context_ = std::make_unique<net::io_context>();
-  tcp::resolver resolver{*io_context_};
-  auto endpoints = resolver.resolve(cfg_.bind_host,
-                                    std::to_string(cfg_.listen_port),
-                                    tcp::resolver::flags::passive);
-
-  auto acceptor = std::make_unique<tcp::acceptor>(*io_context_);
-  boost::system::error_code ec;
-  bool bound = false;
-  for (const auto& endpoint : endpoints) {
-    acceptor->open(endpoint.endpoint().protocol(), ec);
-    if (ec) { continue; }
-    acceptor->set_option(net::socket_base::reuse_address(true), ec);
-    if (ec) {
-      acceptor->close(ec);
-      continue;
-    }
-    acceptor->bind(endpoint.endpoint(), ec);
-    if (ec) {
-      acceptor->close(ec);
-      continue;
-    }
-    acceptor->listen(net::socket_base::max_listen_connections, ec);
-    if (ec) {
-      acceptor->close(ec);
-      continue;
-    }
-    bound = true;
-    break;
-  }
-
-  if (!bound) {
-    throw std::runtime_error("bconfig proxy could not bind to " + cfg_.bind_host
-                             + ":" + std::to_string(cfg_.listen_port));
-  }
-
-  acceptor_ = std::move(acceptor);
-  fprintf(stderr, "[proxy] listening on http://%s:%d -> %s:%d\n",
-          cfg_.bind_host.c_str(), cfg_.listen_port, cfg_.upstream_host.c_str(),
-          cfg_.upstream_port);
-
-  while (!stop_requested_) {
-    tcp::socket socket{*io_context_};
-    acceptor_->accept(socket, ec);
-    if (stop_requested_) { break; }
-    if (ec) {
-      if (ec == net::error::operation_aborted
-          || ec == beast::error::timeout) {
-        break;
-      }
-      continue;
-    }
-
-    std::thread([cfg = cfg_, socket = std::move(socket)]() mutable {
-      HandleHttpSession(std::move(socket), cfg);
-    }).detach();
-  }
-}
-
-void BconfigHttpProxyServer::Stop()
-{
-  stop_requested_ = true;
-  WakeTcpListener(cfg_.bind_host, cfg_.listen_port);
-  if (acceptor_) {
-    boost::system::error_code ec;
-    acceptor_->close(ec);
-  }
-  if (io_context_) { io_context_->stop(); }
+  HandleHttpSession(fd, address_family, cfg);
 }

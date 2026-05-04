@@ -43,4 +43,8 @@ AliasMatch "^/favicon\.ico$" "@WEBUI_VUE_DIR@/favicon.ico"
         ProxyPass /ws ws://localhost:8765/
         ProxyPassReverse /ws ws://localhost:8765/
     </IfModule>
+
+    # Same-origin HTTP access to bconfig-service through bareos-webui-proxy.
+    ProxyPass /api/bconfig http://localhost:8765/api/bconfig
+    ProxyPassReverse /api/bconfig http://localhost:8765/api/bconfig
 </IfModule>

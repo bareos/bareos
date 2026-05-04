@@ -21,6 +21,9 @@
 #include "proxy_server.h"
 #include "proxy_session.h"
 
+#include <algorithm>
+#include <array>
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <stdexcept>
@@ -36,6 +39,51 @@
 #include <unistd.h>
 
 namespace {
+
+std::string PeekHttpHeaders(int fd)
+{
+  std::array<char, 16384> buffer{};
+
+  for (;;) {
+    ssize_t received = ::recv(fd, buffer.data(), buffer.size(), MSG_PEEK);
+    if (received < 0) {
+      if (errno == EINTR) { continue; }
+      throw std::runtime_error(std::string("peek failed: ")
+                               + std::strerror(errno));
+    }
+    if (received == 0) {
+      throw std::runtime_error("connection closed before request headers");
+    }
+
+    std::string_view headers(buffer.data(), static_cast<size_t>(received));
+    const auto header_end = headers.find("\r\n\r\n");
+    if (header_end != std::string_view::npos) {
+      return std::string(headers.substr(0, header_end + 4));
+    }
+
+    if (static_cast<size_t>(received) == buffer.size()) {
+      throw std::runtime_error("request headers too large");
+    }
+
+    struct pollfd pfd{fd, POLLIN, 0};
+    int ready = ::poll(&pfd, 1, 1000);
+    if (ready < 0) {
+      if (errno == EINTR) { continue; }
+      throw std::runtime_error(std::string("poll failed while peeking: ")
+                               + std::strerror(errno));
+    }
+    if (ready == 0) {
+      throw std::runtime_error("timed out waiting for request headers");
+    }
+  }
+}
+
+bool IsWebSocketUpgradeRequest(std::string headers)
+{
+  std::transform(headers.begin(), headers.end(), headers.begin(),
+                 [](unsigned char ch) { return std::tolower(ch); });
+  return headers.find("upgrade: websocket") != std::string::npos;
+}
 
 bool IsTransientAcceptError(int err)
 {
@@ -119,10 +167,12 @@ void ProxyServer::Run()
                              + cfg_.bind_host + ":" + port_str);
   }
 
-  fprintf(stderr, "[proxy] listening on ws://%s:%d (%zu socket(s))\n",
+  fprintf(stderr, "[proxy] listening on http/ws://%s:%d (%zu socket(s))\n",
           cfg_.bind_host.c_str(), cfg_.port, listen_fds_.size());
   fprintf(stderr, "[proxy] allowed directors: %zu\n",
           cfg_.allowed_directors.size());
+  fprintf(stderr, "[proxy] bconfig upstream: %s:%d\n",
+          bconfig_cfg_.upstream_host.c_str(), bconfig_cfg_.upstream_port);
 
   // Accept loop: poll all listen sockets, accept on whichever is ready.
   while (true) {
@@ -171,12 +221,18 @@ void ProxyServer::Run()
                   NI_NUMERICHOST | NI_NUMERICSERV);
       std::string peer = std::string(host_buf) + ":" + port_buf;
 
-      // Move fd and defaults into a detached thread — thread owns the socket.
       int cfd = client_fd;
       ProxyConfig cfg = cfg_;
-      std::thread([cfd, peer, cfg]() {
+      BconfigHttpProxyConfig bconfig_cfg = bconfig_cfg_;
+      int address_family = client_addr.ss_family;
+      std::thread([cfd, peer, cfg, bconfig_cfg, address_family]() {
         try {
-          RunProxySession(cfd, peer, cfg);
+          const auto headers = PeekHttpHeaders(cfd);
+          if (IsWebSocketUpgradeRequest(headers)) {
+            RunProxySession(cfd, peer, cfg);
+          } else {
+            RunBconfigHttpProxySession(cfd, address_family, bconfig_cfg);
+          }
         } catch (const std::exception& ex) {
           fprintf(stderr, "[proxy] %s session aborted: %s\n", peer.c_str(),
                   ex.what());

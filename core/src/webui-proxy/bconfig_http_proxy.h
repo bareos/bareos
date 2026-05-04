@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,32 +21,17 @@
 #ifndef BAREOS_WEBUI_PROXY_BCONFIG_HTTP_PROXY_H_
 #define BAREOS_WEBUI_PROXY_BCONFIG_HTTP_PROXY_H_
 
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/tcp.hpp>
-
-#include <atomic>
-#include <memory>
 #include <string>
+#include <string_view>
 
 struct BconfigHttpProxyConfig {
-  std::string bind_host{"localhost"};
-  int listen_port{0};
   std::string upstream_host{"127.0.0.1"};
   int upstream_port{8080};
 };
 
-class BconfigHttpProxyServer {
- public:
-  explicit BconfigHttpProxyServer(const BconfigHttpProxyConfig& cfg);
-
-  void Run();
-  void Stop();
-
- private:
-  BconfigHttpProxyConfig cfg_;
-  std::atomic<bool> stop_requested_{false};
-  std::unique_ptr<boost::asio::io_context> io_context_;
-  std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor_;
-};
+bool IsBconfigProxyRoute(std::string_view target);
+void RunBconfigHttpProxySession(int fd,
+                                int address_family,
+                                const BconfigHttpProxyConfig& cfg);
 
 #endif  // BAREOS_WEBUI_PROXY_BCONFIG_HTTP_PROXY_H_

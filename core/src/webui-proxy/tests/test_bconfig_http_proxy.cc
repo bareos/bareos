@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,7 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#include "../bconfig_http_proxy.h"
+#include "../proxy_server.h"
 
 #include <boost/asio/connect.hpp>
 #include <boost/asio/io_context.hpp>
@@ -74,10 +74,7 @@ class FakeUpstream {
     }
   }
 
-  ~FakeUpstream()
-  {
-    Stop();
-  }
+  ~FakeUpstream() { Stop(); }
 
   void Stop()
   {
@@ -99,8 +96,8 @@ class FakeUpstream {
   void Run()
   {
     net::io_context io_context;
-    tcp::acceptor acceptor{
-        io_context, {net::ip::make_address("127.0.0.1"), port_}};
+    tcp::acceptor acceptor{io_context,
+                           {net::ip::make_address("127.0.0.1"), port_}};
     acceptor_ = &acceptor;
     ready_ = true;
 
@@ -166,33 +163,68 @@ http::response<http::string_body> SendRequest(uint16_t port,
   return response;
 }
 
-TEST(BconfigHttpProxy, ForwardsRequestsToConfiguredUpstream)
+TEST(BconfigHttpProxy, ForwardsRequestsThroughMainProxyListener)
 {
   FakeUpstream upstream;
   upstream.Start();
 
+  ProxyConfig proxy_cfg;
+  proxy_cfg.bind_host = "127.0.0.1";
+  proxy_cfg.port = FindUnusedTcpPort();
+
   BconfigHttpProxyConfig cfg;
-  cfg.bind_host = "127.0.0.1";
-  cfg.listen_port = FindUnusedTcpPort();
   cfg.upstream_host = "127.0.0.1";
   cfg.upstream_port = upstream.port();
 
-  BconfigHttpProxyServer proxy{cfg};
+  ProxyServer proxy{proxy_cfg, cfg};
   std::thread proxy_thread([&]() { proxy.Run(); });
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-  auto response = SendRequest(cfg.listen_port, http::verb::post,
-                              "/v1/schema/director?verbose=true", "{\"x\":1}");
+  auto response = SendRequest(proxy_cfg.port, http::verb::post,
+                              "/api/bconfig/v1/schema/director?verbose=true",
+                              "{\"x\":1}");
 
   proxy.Stop();
+  WakeTcpListener(proxy_cfg.port);
   proxy_thread.join();
   upstream.Stop();
 
   EXPECT_EQ(response.result(), http::status::ok);
-  EXPECT_EQ(response.body(), "POST /v1/schema/director?verbose=true {\"x\":1}");
+  EXPECT_EQ(response.body(),
+            "POST /api/bconfig/v1/schema/director?verbose=true {\"x\":1}");
   EXPECT_EQ(upstream.last_method(), "POST");
-  EXPECT_EQ(upstream.last_target(), "/v1/schema/director?verbose=true");
+  EXPECT_EQ(upstream.last_target(),
+            "/api/bconfig/v1/schema/director?verbose=true");
   EXPECT_EQ(upstream.last_body(), "{\"x\":1}");
+}
+
+TEST(BconfigHttpProxy, RejectsUnknownHttpRoutesOnMainProxyListener)
+{
+  FakeUpstream upstream;
+  upstream.Start();
+
+  ProxyConfig proxy_cfg;
+  proxy_cfg.bind_host = "127.0.0.1";
+  proxy_cfg.port = FindUnusedTcpPort();
+
+  BconfigHttpProxyConfig cfg;
+  cfg.upstream_host = "127.0.0.1";
+  cfg.upstream_port = upstream.port();
+
+  ProxyServer proxy{proxy_cfg, cfg};
+  std::thread proxy_thread([&]() { proxy.Run(); });
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+  auto response
+      = SendRequest(proxy_cfg.port, http::verb::get, "/not-bconfig", "");
+
+  proxy.Stop();
+  WakeTcpListener(proxy_cfg.port);
+  proxy_thread.join();
+  upstream.Stop();
+
+  EXPECT_EQ(response.result(), http::status::not_found);
+  EXPECT_TRUE(upstream.last_target().empty());
 }
 
 }  // namespace
