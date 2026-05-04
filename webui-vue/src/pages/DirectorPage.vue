@@ -685,6 +685,8 @@ import {
   formatDirectorRelativeTime,
   formatNumber,
 } from '../utils/locales.js'
+import { resolveJobLevelCode } from '../utils/jobLevels.js'
+import { resolveJobTypeCode } from '../utils/jobTypes.js'
 import { resolveOsIcon } from '../utils/osIcon.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge  from '../components/JobLevelBadge.vue'
@@ -914,19 +916,8 @@ const maxTermFiles = computed(() => Math.max(1, ...terminatedJobs.value.map(j =>
 // Relative-time toggle handled by global settings store
 
 // Map full-word level/type strings emitted by the director to single-letter
-// codes expected by JobLevelBadge / JobTypeBadge.
-// The director truncates levels differently per section:
-//   scheduled: full string ("Incremental", "Differential")
-//   running:   level[7]=0  ("Incremen", "Differen")
-//   terminated: level[4]=0 ("Incr", "Diff", "VFul")
-const LEVEL_CODE = {
-  Full: 'F', Incremental: 'I', Differential: 'D', 'Virtual Full': 'V', Base: 'B',
-  Incremen: 'I', Differen: 'D',
-  Incr: 'I', Diff: 'D', VFul: 'V',
-}
-const TYPE_CODE  = { Backup: 'B', Restore: 'R', Verify: 'V', Admin: 'A', Diagnostic: 'D', Copy: 'C', Migration: 'M' }
-function levelCode(v) { return LEVEL_CODE[v] ?? null }
-function typeCode(v)  { return TYPE_CODE[v]  ?? null }
+function levelCode(v) { return resolveJobLevelCode(v) }
+function typeCode(v)  { return resolveJobTypeCode(v) }
 function isWaiting(status) { return typeof status === 'string' && status.includes('is waiting') }
 
 const scheduledJobCols = computed(() => [

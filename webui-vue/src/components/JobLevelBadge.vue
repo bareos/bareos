@@ -6,7 +6,7 @@
     font-size="12px"
     style="font-weight:700; cursor:default"
   >
-    {{ props.level }}
+    {{ info.badge }}
     <q-tooltip>{{ info.label }}</q-tooltip>
   </q-avatar>
 </template>
@@ -14,19 +14,18 @@
 <script setup>
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { resolveJobLevelInfo } from '../utils/jobLevels.js'
 
 const props = defineProps({
   level: { type: String, required: true },
 })
 const { t } = useI18n()
 
-const info = computed(() =>
-  ({
-    F: { color: 'primary', label: t('Full') },
-    I: { color: 'teal', label: t('Incremental') },
-    D: { color: 'orange', label: t('Differential') },
-    V: { color: 'purple', label: t('Virtual Full') },
-    B: { color: 'grey', label: t('Base') },
-  }[props.level] ?? { color: 'grey', label: props.level })
-)
+const info = computed(() => {
+  const resolved = resolveJobLevelInfo(props.level)
+  return {
+    ...resolved,
+    label: resolved.labelKey ? t(resolved.labelKey) : props.level,
+  }
+})
 </script>
