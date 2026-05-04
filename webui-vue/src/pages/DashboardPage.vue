@@ -20,45 +20,15 @@
 -->
 <template>
   <q-page class="q-pa-md">
-    <q-card v-if="directorOptions.length > 1" flat bordered class="q-mb-md bareos-panel">
-      <q-card-section class="panel-header row items-center">
-        <span>{{ t('Dashboard Scope') }}</span>
-        <q-space />
-        <q-chip dense square color="white" text-color="primary" :label="dashboardScopeLabel" />
-      </q-card-section>
-      <q-card-section>
-        <q-select
-          v-model="selectedDirectorsModel"
-          data-testid="dashboard-directors"
-          :options="directorOptions"
-          option-label="label"
-          option-value="value"
-          emit-value
-          map-options
-          multiple
-          use-chips
-          outlined
-          dense
-          :label="t('Directors')"
-        />
-        <div class="text-caption text-grey-6 q-mt-sm">
-          {{ t('Select the directors that contribute to the common dashboard.') }}
-        </div>
-        <q-banner
-          v-if="directorErrors.length"
-          rounded
-          dense
-          class="bg-warning text-black q-mt-md"
-        >
-          <template #avatar>
-            <q-icon name="warning" />
-          </template>
-          <div v-for="item in directorErrors" :key="item.director">
-            <strong>{{ item.director }}</strong>: {{ item.message }}
-          </div>
-        </q-banner>
-      </q-card-section>
-    </q-card>
+    <DirectorScopePanel
+      v-model="selectedDirectorsModel"
+      :title="t('Dashboard Scope')"
+      :summary-label="dashboardScopeLabel"
+      :options="directorOptions"
+      :help-text="t('Select the directors that contribute to the common dashboard.')"
+      :errors="directorErrors"
+      data-test-id="dashboard-directors"
+    />
 
     <div class="row q-col-gutter-md">
       <!-- Left column: 8/12 -->
@@ -110,7 +80,10 @@
               </template>
               <template #body-cell-director="props">
                 <q-td :props="props">
-                  <q-chip dense square color="primary" text-color="white" :label="props.value" />
+                  <div class="row items-center q-gutter-sm no-wrap">
+                    <span :style="directorSwatchStyle(props.row.director || props.value || '')" />
+                    <span>{{ props.row.director || props.value || '—' }}</span>
+                  </div>
                 </q-td>
               </template>
               <template #body-cell-status="props">
@@ -226,15 +199,11 @@
                     <a href="#" class="text-primary text-weight-medium" @click.prevent="openJobDetails(job)">
                       {{ job.name }}
                     </a>
-                    <q-chip
+                    <DirectorBadge
                       v-if="showDirectorColumn"
-                      dense
-                      square
-                      color="primary"
-                      text-color="white"
+                      :director="job.director"
                       size="sm"
                       class="q-ml-xs"
-                      :label="job.director"
                     />
                     <span class="text-grey-6 text-caption q-ml-xs">({{ job.client }})</span>
                   </q-item-label>
@@ -295,9 +264,12 @@ import { useDirectorStore } from '../stores/director.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildClientDetailsQuery } from '../utils/clients.js'
+import { resolveDirectorColors } from '../utils/directorColors.js'
 import { buildDirectorOptions } from '../utils/director.js'
 import { buildJobDetailsQuery, withJobsStatusFilterQuery } from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
+import DirectorBadge from '../components/DirectorBadge.vue'
+import DirectorScopePanel from '../components/DirectorScopePanel.vue'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import StatNumber from '../components/StatNumber.vue'
@@ -369,7 +341,7 @@ const activeDirectors = computed(() => {
 })
 
 const isCommonDashboard = computed(() => activeDirectors.value.length > 1)
-const showDirectorColumn = computed(() => isCommonDashboard.value)
+const showDirectorColumn = computed(() => directorOptions.value.length > 1)
 const dashboardScopeLabel = computed(() => (
   isCommonDashboard.value
     ? `${activeDirectors.value.length} ${t('directors selected')}`
@@ -598,6 +570,22 @@ const recentCols = computed(() => {
 
 const recentJobs = computed(() => lastJobs.value)
 const runningJobs = computed(() => aggregate.value.runningJobs)
+
+function directorSwatchStyle(name) {
+  const colors = resolveDirectorColors(
+    name,
+    directorOptions.value.map(option => option.value)
+  )
+  return {
+    display: 'inline-block',
+    width: '10px',
+    height: '10px',
+    borderRadius: '999px',
+    backgroundColor: colors.background,
+    border: `1px solid ${colors.border}`,
+    flexShrink: 0,
+  }
+}
 
 function elapsedSecs(job) {
   if (!job.starttime) return 0

@@ -1,47 +1,18 @@
 <template>
   <q-page class="q-pa-md">
-    <q-card v-if="directorOptions.length > 1" flat bordered class="q-mb-md bareos-panel">
-      <q-card-section class="panel-header row items-center">
-        <span>{{ t('Analytics Scope') }}</span>
-        <q-space />
-        <q-chip dense square color="white" text-color="primary" :label="analyticsScopeLabel" />
-      </q-card-section>
-      <q-card-section>
-        <q-select
-          v-model="selectedDirectorsModel"
-          data-testid="analytics-directors"
-          :options="directorOptions"
-          option-label="label"
-          option-value="value"
-          emit-value
-          map-options
-          multiple
-          use-chips
-          outlined
-          dense
-          :label="t('Directors')"
-        />
-        <div class="text-caption text-grey-6 q-mt-sm">
-          {{ t('Select the directors that contribute to the analytics view.') }}
-        </div>
-        <q-banner
-          v-if="directorErrors.length"
-          rounded
-          dense
-          class="bg-warning text-black q-mt-md"
-        >
-          <template #avatar>
-            <q-icon name="warning" />
-          </template>
-          <div v-for="item in directorErrors" :key="item.director">
-            <strong>{{ item.director }}</strong>: {{ item.message }}
-          </div>
-        </q-banner>
-        <q-banner v-if="error" dense class="bg-negative text-white q-mt-md">
-          {{ error }}
-        </q-banner>
-      </q-card-section>
-    </q-card>
+    <DirectorScopePanel
+      v-model="selectedDirectorsModel"
+      :title="t('Analytics Scope')"
+      :summary-label="analyticsScopeLabel"
+      :options="directorOptions"
+      :help-text="t('Select the directors that contribute to the analytics view.')"
+      :errors="directorErrors"
+      data-test-id="analytics-directors"
+    >
+      <q-banner v-if="error" dense class="bg-negative text-white">
+        {{ error }}
+      </q-banner>
+    </DirectorScopePanel>
 
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col-6 col-sm-3 col-md-2" v-for="s in overallStats" :key="s.label">
@@ -180,6 +151,7 @@ import {
   withJobsStatusFilterQuery,
 } from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
+import DirectorScopePanel from '../components/DirectorScopePanel.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()

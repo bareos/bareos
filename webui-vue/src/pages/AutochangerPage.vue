@@ -47,15 +47,12 @@
       <q-btn flat round dense icon="refresh" :title="t('Refresh')"
              :loading="slotsLoading" @click="manualRefresh" />
 
-      <q-chip
+      <DirectorBadge
         v-if="isCommonAutochangerScope && currentStorage"
-        dense
-        square
-        color="primary"
-        text-color="white"
+        :director="currentStorage.director"
       >
         {{ currentStorage.director }}
-      </q-chip>
+      </DirectorBadge>
 
       <q-space />
 
@@ -81,8 +78,9 @@
       <template #avatar>
         <q-icon name="warning" />
       </template>
-      <div v-for="item in directorErrors" :key="item.director">
-        <strong>{{ item.director }}</strong>: {{ item.message }}
+      <div v-for="item in directorErrors" :key="item.director" class="row items-center q-gutter-xs">
+        <DirectorBadge :director="item.director" size="sm" />
+        <span>{{ item.message }}</span>
       </div>
     </q-banner>
 
@@ -557,6 +555,7 @@ import {
   resolveAutochangerSelection,
   resolveStoragesScopeDirector,
 } from '../utils/storagesRoute.js'
+import DirectorBadge from '../components/DirectorBadge.vue'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 
 const { embedded } = defineProps({

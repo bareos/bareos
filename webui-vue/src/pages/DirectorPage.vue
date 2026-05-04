@@ -1,31 +1,13 @@
 <template>
   <q-page class="q-pa-md">
-    <q-card v-if="directorOptions.length > 1" flat bordered class="q-mb-md bareos-panel">
-      <q-card-section class="panel-header row items-center">
-        <span>{{ t('Director Scope') }}</span>
-        <q-space />
-        <q-chip dense square color="white" text-color="primary" :label="directorScopeLabel" />
-      </q-card-section>
-      <q-card-section>
-        <q-select
-          v-model="selectedDirectorsModel"
-          data-testid="director-page-directors"
-          :options="directorOptions"
-          option-label="label"
-          option-value="value"
-          emit-value
-          map-options
-          multiple
-          use-chips
-          outlined
-          dense
-          :label="t('Directors')"
-        />
-        <div class="text-caption text-grey-6 q-mt-sm">
-          {{ t('Select the directors that contribute to the status and message views.') }}
-        </div>
-      </q-card-section>
-    </q-card>
+    <DirectorScopePanel
+      v-model="selectedDirectorsModel"
+      :title="t('Director Scope')"
+      :summary-label="directorScopeLabel"
+      :options="directorOptions"
+      :help-text="t('Select the directors that contribute to the status and message views.')"
+      data-test-id="director-page-directors"
+    />
 
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="status"       :label="t('Status')"       no-caps />
@@ -46,8 +28,13 @@
           <template #avatar>
             <q-icon name="warning" />
           </template>
-          <div v-for="item in statusDirectorErrors" :key="item.director">
-            <strong>{{ item.director }}</strong>: {{ item.message }}
+          <div
+            v-for="item in statusDirectorErrors"
+            :key="item.director"
+            class="row items-center q-gutter-xs"
+          >
+            <DirectorBadge :director="item.director" size="sm" />
+            <span>{{ item.message }}</span>
           </div>
         </q-banner>
         <q-inner-loading :showing="statusLoading" />
@@ -69,25 +56,42 @@
                   <div class="column q-gutter-md">
                     <div
                       v-for="card in statusCards"
-                      :key="card.director"
+                      :key="card.scopeDirector"
                       class="row items-center q-gutter-sm text-body2 flex-wrap"
                     >
-                      <q-chip dense square color="primary" text-color="white" icon="dns">
-                        {{ card.director }}
-                        <q-tooltip>Director: {{ card.director }}</q-tooltip>
-                      </q-chip>
-                       <q-chip v-if="card.config_warnings != null"
-                               dense
-                               square
-                               clickable
+                      <DirectorBadge :director="card.scopeDirector" icon="dns">
+                        {{ card.scopeDirector }}
+                        <q-tooltip>
+                          {{
+                            card.reportedDirector && card.reportedDirector !== card.scopeDirector
+                              ? `${t('Configured as')}: ${card.scopeDirector}\n${t('Reported by Director')}: ${card.reportedDirector}`
+                              : `${t('Director')}: ${card.scopeDirector}`
+                          }}
+                        </q-tooltip>
+                      </DirectorBadge>
+                        <q-chip v-if="card.config_warnings != null"
+                                dense
+                                square
+                                clickable
                                :color="card.config_warnings ? 'negative' : 'positive'"
-                               :icon="card.config_warnings ? 'error' : 'check_circle'"
-                               text-color="white"
-                               @click="showConfigStatus(card.director)">
-                         {{ card.config_warnings ? t('Config Warning') : t('Config OK') }}
-                         <q-tooltip>
-                           {{ t('Click to show configuration status for this director') }}
-                         </q-tooltip>
+                                :icon="card.config_warnings ? 'error' : 'check_circle'"
+                                text-color="white"
+                               @click="showConfigStatus(card.scopeDirector)">
+                          {{ card.config_warnings ? t('Config Warning') : t('Config OK') }}
+                          <q-tooltip>
+                            {{ t('Click to show configuration status for this director') }}
+                          </q-tooltip>
+                        </q-chip>
+                       <q-chip
+                         v-if="card.reportedDirector && card.reportedDirector !== card.scopeDirector"
+                         dense
+                         square
+                         color="blue-grey-6"
+                         text-color="white"
+                         icon="link"
+                       >
+                         {{ card.reportedDirector }}
+                         <q-tooltip>{{ t('Reported by Director') }}: {{ card.reportedDirector }}</q-tooltip>
                        </q-chip>
                       <q-chip v-if="card.version"
                               dense square color="blue-7" text-color="white" icon="info">
@@ -164,9 +168,7 @@
                   >
                     <template #body-cell-director="props">
                       <td>
-                        <q-chip dense square color="primary" text-color="white">
-                          {{ props.value }}
-                        </q-chip>
+                        <DirectorLabel :director="props.row.director || props.value || ''" />
                       </td>
                     </template>
                     <template #body-cell-name="props">
@@ -224,9 +226,7 @@
                   >
                     <template #body-cell-director="props">
                       <td>
-                        <q-chip dense square color="primary" text-color="white">
-                          {{ props.value }}
-                        </q-chip>
+                        <DirectorLabel :director="props.row.director || props.value || ''" />
                       </td>
                     </template>
                     <template #body-cell-jobid="props">
@@ -307,9 +307,7 @@
                   >
                     <template #body-cell-director="props">
                       <td>
-                        <q-chip dense square color="primary" text-color="white">
-                          {{ props.value }}
-                        </q-chip>
+                        <DirectorLabel :director="props.row.director || props.value || ''" />
                       </td>
                     </template>
                     <template #body-cell-jobid="props">
@@ -391,8 +389,13 @@
               <template #avatar>
                 <q-icon name="warning" />
               </template>
-              <div v-for="item in messagesDirectorErrors" :key="item.director">
-                <strong>{{ item.director }}</strong>: {{ item.message }}
+              <div
+                v-for="item in messagesDirectorErrors"
+                :key="item.director"
+                class="row items-center q-gutter-xs"
+              >
+                <DirectorBadge :director="item.director" size="sm" />
+                <span>{{ item.message }}</span>
               </div>
             </q-banner>
             <q-inner-loading :showing="messagesLoading" />
@@ -420,17 +423,28 @@
             <span>{{ t('Catalog Maintenance Target') }}</span>
           </q-card-section>
           <q-card-section>
-            <q-select
-              v-model="singletonTabDirector"
-              :options="singletonTabDirectorOptions"
-              option-label="label"
-              option-value="value"
+             <q-select
+               v-model="singletonTabDirector"
+               :options="singletonTabDirectorOptions"
+               option-label="label"
+               option-value="value"
               emit-value
               map-options
-              outlined
-              dense
-              :label="t('Director')"
-            />
+               outlined
+               dense
+               :label="t('Director')"
+             >
+               <template #selected-item="scope">
+                 <DirectorLabel :director="scope.opt?.value || scope.opt?.label || ''" />
+               </template>
+               <template #option="scope">
+                 <q-item v-bind="scope.itemProps">
+                   <q-item-section>
+                     <DirectorLabel :director="scope.opt?.value || scope.opt?.label || ''" />
+                   </q-item-section>
+                 </q-item>
+               </template>
+             </q-select>
             <div class="text-caption text-grey-6 q-mt-sm">
               {{ t('Catalog maintenance actions run against the selected director while the status and message views stay aggregated.') }}
             </div>
@@ -585,7 +599,18 @@
                 outlined
                 dense
                 :label="t('Director')"
-              />
+              >
+                <template #selected-item="scope">
+                  <DirectorLabel :director="scope.opt?.value || scope.opt?.label || ''" />
+                </template>
+                <template #option="scope">
+                  <q-item v-bind="scope.itemProps">
+                    <q-item-section>
+                      <DirectorLabel :director="scope.opt?.value || scope.opt?.label || ''" />
+                    </q-item-section>
+                  </q-item>
+                </template>
+              </q-select>
               <div class="text-caption text-grey-6 q-mt-sm">
                 {{ t('Subscription data and downloads run against the selected director while the status and message views stay aggregated.') }}
               </div>
@@ -688,6 +713,9 @@ import {
 import { resolveJobLevelCode } from '../utils/jobLevels.js'
 import { resolveJobTypeCode } from '../utils/jobTypes.js'
 import { resolveOsIcon } from '../utils/osIcon.js'
+import DirectorBadge from '../components/DirectorBadge.vue'
+import DirectorLabel from '../components/DirectorLabel.vue'
+import DirectorScopePanel from '../components/DirectorScopePanel.vue'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge  from '../components/JobLevelBadge.vue'
 import JobTypeBadge   from '../components/JobTypeBadge.vue'
@@ -902,9 +930,9 @@ function resolveDirectorOsChip(full = '') {
 
 const statusCards = computed(() => statusSnapshots.value.map(({ director, header }) => ({
   ...header,
-  director: header?.director || director,
-  osIcon: resolveDirectorOsChip(header?.os ?? ''),
   scopeDirector: director,
+  reportedDirector: header?.director || director,
+  osIcon: resolveDirectorOsChip(header?.os ?? ''),
 })))
 const scheduledJobs = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.scheduledJobs))
 const runningJobs = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.runningJobs))
