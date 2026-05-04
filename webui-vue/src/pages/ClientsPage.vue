@@ -454,9 +454,9 @@ const columns = computed(() => [
     name: 'director', label: t('Director'), field: 'director', align: 'left', sortable: true,
   }] : []),
   { name: 'name',    label: t('Name'),    field: 'name',    align: 'left',   sortable: true },
-  { name: 'os',      label: t('OS'),      field: 'os',      align: 'left'    },
+  { name: 'os',      label: t('OS'),      field: 'os',      align: 'left',   sortable: true },
   { name: 'version', label: t('Version'), field: 'version', align: 'left',   sortable: true },
-  { name: 'enabled', label: t('Status'),  field: 'enabled', align: 'center'  },
+  { name: 'enabled', label: t('Status'),  field: 'enabled', align: 'center', sortable: true },
   { name: 'actions', label: '',           field: 'actions', align: 'center',  style: 'width:80px' },
 ])
 

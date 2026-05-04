@@ -444,8 +444,8 @@ const volumeCols = computed(() => [
   { name: 'maxvolbytes', label: t('Max Bytes'),    field: 'maxvolbytes', align: 'right',  sortable: true },
   { name: 'volretention',label: t('Retention'),    field: 'volretention',align: 'left',   sortable: true },
   { name: 'lastwritten', label: t('Last Written'), field: 'lastwritten', align: 'left',   sortable: true },
-  { name: 'inchanger',   label: t('In Changer'),   field: 'inchanger',   align: 'center' },
-  { name: 'storage',     label: t('Storage'),      field: 'storage',     align: 'left'   },
+  { name: 'inchanger',   label: t('In Changer'),   field: 'inchanger',   align: 'center', sortable: true },
+  { name: 'storage',     label: t('Storage'),      field: 'storage',     align: 'left', sortable: true },
 ])
 const prunableVolumeCols = computed(() => [
   { name: 'name', label: t('Volume'), field: 'name', align: 'left', sortable: true },

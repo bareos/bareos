@@ -931,42 +931,49 @@ function isWaiting(status) { return typeof status === 'string' && status.include
 
 const scheduledJobCols = computed(() => [
   ...(showDirectorColumn.value
-    ? [{ name: 'director', label: 'Director', field: 'director', align: 'left' }]
+    ? [{ name: 'director', label: 'Director', field: 'director', align: 'left', sortable: true }]
     : []),
-  { name: 'name',      label: 'Job',       field: 'name',      align: 'left' },
-  { name: 'level',     label: 'Level',     field: 'level',     align: 'left' },
-  { name: 'type',      label: 'Type',      field: 'type',      align: 'left' },
-  { name: 'priority',  label: 'Pri',       field: 'priority',  align: 'right' },
-  { name: 'scheduled', label: 'Scheduled', field: 'scheduled', align: 'left' },
-  { name: 'volume',    label: 'Volume',    field: 'volume',    align: 'left' },
-  { name: 'pool',      label: 'Pool',      field: 'pool',      align: 'left' },
-  { name: 'storage',   label: 'Storage',   field: 'storage',   align: 'left' },
+  { name: 'name',      label: 'Job',       field: 'name',      align: 'left', sortable: true },
+  { name: 'level',     label: 'Level',     field: 'level',     align: 'left', sortable: true },
+  { name: 'type',      label: 'Type',      field: 'type',      align: 'left', sortable: true },
+  { name: 'priority',  label: 'Pri',       field: 'priority',  align: 'right', sortable: true,
+    sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
+  { name: 'scheduled', label: 'Scheduled', field: 'scheduled', align: 'left', sortable: true },
+  { name: 'volume',    label: 'Volume',    field: 'volume',    align: 'left', sortable: true },
+  { name: 'pool',      label: 'Pool',      field: 'pool',      align: 'left', sortable: true },
+  { name: 'storage',   label: 'Storage',   field: 'storage',   align: 'left', sortable: true },
 ].map((col) => ({ ...col, label: t(col.label) })))
 const runningJobCols = computed(() => [
   ...(showDirectorColumn.value
-    ? [{ name: 'director', label: 'Director', field: 'director', align: 'left' }]
+    ? [{ name: 'director', label: 'Director', field: 'director', align: 'left', sortable: true }]
     : []),
-  { name: 'jobid',      label: 'JobId',      field: 'jobid',      align: 'right' },
-  { name: 'name',       label: 'Job',        field: 'name',       align: 'left' },
-  { name: 'level',      label: 'Level',      field: 'level',      align: 'left' },
-  { name: 'type',       label: 'Type',       field: 'type',       align: 'left' },
-  { name: 'start_time', label: 'Started',    field: 'start_time', align: 'left' },
-  { name: 'files',      label: 'Files',      field: 'files',      align: 'right' },
-  { name: 'bytes',      label: 'Bytes',      field: 'bytes',      align: 'right' },
-  { name: 'status',     label: 'Status',     field: 'status',     align: 'left' },
+  { name: 'jobid',      label: 'JobId',      field: 'jobid',      align: 'right', sortable: true,
+    sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
+  { name: 'name',       label: 'Job',        field: 'name',       align: 'left', sortable: true },
+  { name: 'level',      label: 'Level',      field: 'level',      align: 'left', sortable: true },
+  { name: 'type',       label: 'Type',       field: 'type',       align: 'left', sortable: true },
+  { name: 'start_time', label: 'Started',    field: 'start_time', align: 'left', sortable: true },
+  { name: 'files',      label: 'Files',      field: 'files',      align: 'right', sortable: true,
+    sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
+  { name: 'bytes',      label: 'Bytes',      field: 'bytes',      align: 'right', sortable: true,
+    sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
+  { name: 'status',     label: 'Status',     field: 'status',     align: 'left', sortable: true },
 ].map((col) => ({ ...col, label: t(col.label) })))
 const terminatedJobCols = computed(() => [
   ...(showDirectorColumn.value
-    ? [{ name: 'director', label: 'Director', field: 'director', align: 'left' }]
+    ? [{ name: 'director', label: 'Director', field: 'director', align: 'left', sortable: true }]
     : []),
-  { name: 'jobid',    label: 'JobId',    field: 'jobid',    align: 'right' },
-  { name: 'name',     label: 'Job',      field: 'name',     align: 'left' },
-  { name: 'level',    label: 'Level',    field: 'level',    align: 'left' },
-  { name: 'type',     label: 'Type',     field: 'type',     align: 'left' },
-  { name: 'finished', label: 'Finished', field: 'finished', align: 'left' },
-  { name: 'files',    label: 'Files',    field: 'files',    align: 'right' },
-  { name: 'bytes',    label: 'Bytes',    field: 'bytes',    align: 'right' },
-  { name: 'status',   label: 'Status',   field: 'status',   align: 'left' },
+  { name: 'jobid',    label: 'JobId',    field: 'jobid',    align: 'right', sortable: true,
+    sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
+  { name: 'name',     label: 'Job',      field: 'name',     align: 'left', sortable: true },
+  { name: 'level',    label: 'Level',    field: 'level',    align: 'left', sortable: true },
+  { name: 'type',     label: 'Type',     field: 'type',     align: 'left', sortable: true },
+  { name: 'finished', label: 'Finished', field: 'finished', align: 'left', sortable: true },
+  { name: 'files',    label: 'Files',    field: 'files',    align: 'right', sortable: true,
+    sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
+  { name: 'bytes',    label: 'Bytes',    field: 'bytes',    align: 'right', sortable: true,
+    sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
+  { name: 'status',   label: 'Status',   field: 'status',   align: 'left', sortable: true },
 ].map((col) => ({ ...col, label: t(col.label) })))
 
 // ── Messages ─────────────────────────────────────────────────────────────────
@@ -1302,11 +1309,11 @@ const emptyJobCols = computed(() => [
   { name: 'client',    label: 'Client',   field: 'client',
     align: 'left',  sortable: true },
   { name: 'type',      label: 'Type',     field: 'type',
-    align: 'center' },
+    align: 'center', sortable: true },
   { name: 'starttime', label: 'Start',    field: 'starttime',
     align: 'left',  sortable: true },
   { name: 'status',    label: 'Status',   field: 'status',
-    align: 'center' },
+    align: 'center', sortable: true },
 ].map((col) => ({ ...col, label: t(col.label) })))
 
 async function loadEmptyJobs() {

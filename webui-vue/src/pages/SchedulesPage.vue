@@ -428,8 +428,8 @@ const schedCols = computed(() => [
     name: 'director', label: t('Director'), field: 'director', align: 'left', sortable: true,
   }] : []),
   { name: 'name', label: t('Name'), field: 'name', align: 'left', sortable: true },
-  { name: 'enabled', label: t('Status'), field: 'enabled', align: 'center' },
-  { name: 'run', label: t('Run Directives'), field: 'run', align: 'left' },
+  { name: 'enabled', label: t('Status'), field: 'enabled', align: 'center', sortable: true },
+  { name: 'run', label: t('Run Directives'), field: 'run', align: 'left', sortable: true },
   { name: 'actions', label: '', field: 'actions', align: 'center', style: 'width:60px' },
 ])
 
@@ -689,7 +689,7 @@ const scheduleJobRows = computed(() => {
 })
 
 const scheduleJobCols = computed(() => [
-  { name: 'job', label: t('Job'), field: 'job', align: 'left', headerStyle: 'padding-left: 48px' },
+  { name: 'job', label: t('Job'), field: 'job', align: 'left', headerStyle: 'padding-left: 48px', sortable: true },
 ])
 const viewModeOptions = computed(() => [
   { label: t('Month'), value: 'month' },

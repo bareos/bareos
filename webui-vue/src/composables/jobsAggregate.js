@@ -19,9 +19,13 @@
    02110-1301, USA.
  */
 
+import { parseDurationSecs } from '../mock/index.js'
 import { directorCollection, normaliseJob } from './useDirectorFetch.js'
 import { createDirectorCommandClient } from './directorAggregate.js'
-import { normaliseJobStatusFilters } from '../utils/jobs.js'
+import {
+  encodeJobsLevelFilters,
+  normaliseJobStatusFilters,
+} from '../utils/jobs.js'
 
 function numberValue(value) {
   const number = Number(value ?? 0)
@@ -39,19 +43,86 @@ function decorateJobs(entries, director) {
   })
 }
 
-function sortJobsByStartTime(jobs) {
+function stringValue(value) {
+  return String(value ?? '')
+}
+
+function jobSpeedBps(job) {
+  const secs = parseDurationSecs(job?.duration)
+  if (!secs) {
+    return 0
+  }
+
+  return numberValue(job?.bytes) / secs
+}
+
+function compareStrings(left, right) {
+  return stringValue(left).localeCompare(stringValue(right))
+}
+
+function compareJobsDefault(left, right) {
+  const directorCompare = compareStrings(left.director, right.director)
+  if (directorCompare !== 0) {
+    return directorCompare
+  }
+
+  const startCompare = compareStrings(left.starttime, right.starttime)
+  if (startCompare !== 0) {
+    return startCompare
+  }
+
+  return numberValue(left.id) - numberValue(right.id)
+}
+
+function compareJobsByField(left, right, sortBy) {
+  switch (sortBy) {
+  case 'id':
+    return numberValue(left.id) - numberValue(right.id)
+  case 'director':
+    return compareStrings(left.director, right.director)
+  case 'name':
+    return compareStrings(left.name, right.name)
+  case 'client':
+    return compareStrings(left.client, right.client)
+  case 'type':
+    return compareStrings(left.type, right.type)
+  case 'level':
+    return compareStrings(left.level, right.level)
+  case 'starttime':
+    return compareStrings(left.starttime, right.starttime)
+  case 'duration':
+    return parseDurationSecs(left.duration) - parseDurationSecs(right.duration)
+  case 'files':
+    return numberValue(left.files) - numberValue(right.files)
+  case 'bytes':
+    return numberValue(left.bytes) - numberValue(right.bytes)
+  case 'speed':
+    return jobSpeedBps(left) - jobSpeedBps(right)
+  case 'errors':
+    return numberValue(left.errors) - numberValue(right.errors)
+  case 'status':
+    return compareStrings(left.runtimeStatus ?? left.status, right.runtimeStatus ?? right.status)
+  default:
+    return compareJobsDefault(left, right)
+  }
+}
+
+export function usesDefaultJobsSorting(pagination) {
+  const { sortBy = 'id', descending = true } = pagination ?? {}
+  return sortBy === 'id' && descending === true
+}
+
+export function sortJobsByPagination(jobs, pagination) {
+  const { sortBy = 'id', descending = true } = pagination ?? {}
+
   return [...jobs].sort((left, right) => {
-    const startCompare = String(right.starttime ?? '').localeCompare(String(left.starttime ?? ''))
-    if (startCompare !== 0) {
-      return startCompare
+    const compare = compareJobsByField(left, right, sortBy)
+    if (compare !== 0) {
+      return descending ? -compare : compare
     }
 
-    const directorCompare = String(left.director ?? '').localeCompare(String(right.director ?? ''))
-    if (directorCompare !== 0) {
-      return directorCompare
-    }
-
-    return numberValue(right.id) - numberValue(left.id)
+    const fallback = compareJobsDefault(left, right)
+    return descending ? -fallback : fallback
   })
 }
 
@@ -75,16 +146,27 @@ function overlayRuntimeStatuses(jobs, runtimeJobs) {
   }))
 }
 
-function jobsFilterCommands(statusFilter) {
+function jobsFilterCommands(statusFilter, levelFilter) {
   const filters = normaliseJobStatusFilters(statusFilter)
-  return filters.length ? filters.map(filter => ` jobstatus=${filter}`) : ['']
+  const encodedLevels = encodeJobsLevelFilters(levelFilter)
+  const levelClause = encodedLevels ? ` joblevel=${encodedLevels}` : ''
+  return filters.length
+    ? filters.map(filter => ` jobstatus=${filter}${levelClause}`)
+    : [levelClause]
 }
 
-export async function fetchAggregatedJobsPage(credentials, directors, pagination, statusFilter = '') {
+export async function fetchAggregatedJobsPage(
+  credentials,
+  directors,
+  pagination,
+  statusFilter = '',
+  levelFilter = '',
+) {
   const { page = 1, rowsPerPage = 25 } = pagination ?? {}
   const offset = Math.max(0, (page - 1) * rowsPerPage)
   const fetchLimit = offset + rowsPerPage
-  const filters = jobsFilterCommands(statusFilter)
+  const filters = jobsFilterCommands(statusFilter, levelFilter)
+  const useDefaultSorting = usesDefaultJobsSorting(pagination)
 
   const results = await Promise.allSettled(directors.map(async (director) => {
     const client = await createDirectorCommandClient({
@@ -93,22 +175,49 @@ export async function fetchAggregatedJobsPage(credentials, directors, pagination
     })
 
     try {
-      const [jobsResults, countResults, directorStatusResult] = await Promise.all([
-        Promise.allSettled(filters.map(filter => (
-          client.call(`llist jobs reverse limit=${fetchLimit} offset=0${filter}`)
-        ))),
-        Promise.allSettled(filters.map(filter => (
-          client.call(`list jobs count${filter}`)
-        ))),
-        Promise.allSettled([client.call('status director')]),
-      ])
+      let jobsResults
+      let countResults
+      let directorStatusResult
+
+      if (useDefaultSorting) {
+        [jobsResults, countResults, directorStatusResult] = await Promise.all([
+          Promise.allSettled(filters.map(filter => (
+            client.call(`llist jobs reverse limit=${fetchLimit} offset=0${filter}`)
+          ))),
+          Promise.allSettled(filters.map(filter => (
+            client.call(`list jobs count${filter}`)
+          ))),
+          Promise.allSettled([client.call('status director')]),
+        ])
+      } else {
+        [countResults, directorStatusResult] = await Promise.all([
+          Promise.allSettled(filters.map(filter => (
+            client.call(`list jobs count${filter}`)
+          ))),
+          Promise.allSettled([client.call('status director')]),
+        ])
+
+        jobsResults = await Promise.allSettled(filters.map((filter, index) => {
+          const countResult = countResults[index]
+          if (countResult?.status === 'fulfilled') {
+            const count = numberValue(directorCollection(countResult.value?.jobs)[0]?.count)
+            if (count === 0) {
+              return Promise.resolve({ jobs: [] })
+            }
+
+            return client.call(`llist jobs reverse limit=${count} offset=0${filter}`)
+          }
+
+          return client.call(`llist jobs reverse limit=${fetchLimit} offset=0${filter}`)
+        }))
+      }
 
       const rejectedJobsResult = jobsResults.find(result => result.status === 'rejected')
       if (rejectedJobsResult?.status === 'rejected') {
         throw rejectedJobsResult.reason
       }
 
-      const jobs = sortJobsByStartTime(overlayRuntimeStatuses(jobsResults.flatMap((result) => (
+      const jobs = sortJobsByPagination(overlayRuntimeStatuses(jobsResults.flatMap((result) => (
         result.status === 'fulfilled'
           ? decorateJobs(result.value?.jobs, director)
           : []
@@ -116,7 +225,7 @@ export async function fetchAggregatedJobsPage(credentials, directors, pagination
         directorStatusResult[0]?.status === 'fulfilled'
           ? directorStatusResult[0].value?.running
           : []
-      )))
+      )), pagination)
       const count = countResults.reduce((sum, result, index) => (
         sum + (
           result.status === 'fulfilled'
@@ -138,7 +247,7 @@ export async function fetchAggregatedJobsPage(credentials, directors, pagination
   }))
 
   const successful = results.filter(result => result.status === 'fulfilled').map(result => result.value)
-  const jobs = sortJobsByStartTime(successful.flatMap(result => result.jobs))
+  const jobs = sortJobsByPagination(successful.flatMap(result => result.jobs), pagination)
   const totalJobs = successful.reduce((sum, result) => sum + numberValue(result.count), 0)
 
   return {

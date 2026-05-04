@@ -20,7 +20,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchAggregatedJobsPage } from '../../src/composables/jobsAggregate.js'
+import {
+  fetchAggregatedJobsPage,
+  sortJobsByPagination,
+  usesDefaultJobsSorting,
+} from '../../src/composables/jobsAggregate.js'
 
 class FakeWebSocket {
   static instances = []
@@ -66,6 +70,31 @@ describe('jobs aggregate helpers', () => {
     vi.useRealTimers()
   })
 
+  it('sorts jobs by the selected pagination column', () => {
+    expect(sortJobsByPagination([
+      { id: 11, name: 'zeta', bytes: 25, duration: '00:00:05', status: 'T' },
+      { id: 9, name: 'alpha', bytes: 10, duration: '00:00:05', status: 'E' },
+      { id: 10, name: 'beta', bytes: 40, duration: '00:00:10', status: 'T' },
+    ], { sortBy: 'name', descending: false }).map(job => job.name)).toEqual([
+      'alpha',
+      'beta',
+      'zeta',
+    ])
+
+    expect(sortJobsByPagination([
+      { id: 11, name: 'zeta', bytes: 25, duration: '00:00:05', status: 'T' },
+      { id: 9, name: 'alpha', bytes: 10, duration: '00:00:05', status: 'E' },
+      { id: 10, name: 'beta', bytes: 40, duration: '00:00:10', status: 'T' },
+    ], { sortBy: 'speed', descending: true }).map(job => job.id)).toEqual([
+      11,
+      10,
+      9,
+    ])
+
+    expect(usesDefaultJobsSorting({ sortBy: 'id', descending: true })).toBe(true)
+    expect(usesDefaultJobsSorting({ sortBy: 'name', descending: false })).toBe(false)
+  })
+
   it('merges and paginates jobs across multiple directors', async () => {
     const loading = fetchAggregatedJobsPage(
       {
@@ -74,7 +103,8 @@ describe('jobs aggregate helpers', () => {
       },
       ['prod-a', 'prod-b'],
       { page: 1, rowsPerPage: 2 },
-      'T'
+      'T',
+      'F'
     )
 
     const socketA = FakeWebSocket.instances[0]
@@ -112,6 +142,21 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
+        id: commandsA.get('list jobs count jobstatus=T joblevel=F'),
+        data: { jobs: [{ count: '2' }] },
+      }),
+    })
+
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('list jobs count jobstatus=T joblevel=F'),
+        data: { jobs: [{ count: '2' }] },
+      }),
+    })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
         id: commandsA.get('status director'),
         data: {
           running: [
@@ -120,26 +165,6 @@ describe('jobs aggregate helpers', () => {
         },
       }),
     })
-    socketA.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandsA.get('llist jobs reverse limit=2 offset=0 jobstatus=T'),
-        data: {
-          jobs: [
-            { jobid: '10', name: 'backup-a', clientname: 'fd-a', jobstatus: 'T', starttime: '2026-04-29 10:00:00' },
-            { jobid: '9', name: 'backup-a-old', clientname: 'fd-a', jobstatus: 'T', starttime: '2026-04-29 08:00:00' },
-          ],
-        },
-      }),
-    })
-    socketA.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandsA.get('list jobs count jobstatus=T'),
-        data: { jobs: [{ count: '2' }] },
-      }),
-    })
-
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
@@ -149,14 +174,18 @@ describe('jobs aggregate helpers', () => {
         },
       }),
     })
-    socketB.onmessage?.({
+    await Promise.resolve()
+    const jobsCommandsA = socketCommands(socketA)
+    const jobsCommandsB = socketCommands(socketB)
+
+    socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsB.get('llist jobs reverse limit=2 offset=0 jobstatus=T'),
+        id: jobsCommandsA.get('llist jobs reverse limit=2 offset=0 jobstatus=T joblevel=F'),
         data: {
           jobs: [
-            { jobid: '11', name: 'backup-b', clientname: 'fd-b', jobstatus: 'T', starttime: '2026-04-29 11:00:00' },
-            { jobid: '8', name: 'backup-b-old', clientname: 'fd-b', jobstatus: 'T', starttime: '2026-04-29 07:00:00' },
+            { jobid: '10', name: 'backup-a', clientname: 'fd-a', jobstatus: 'T', starttime: '2026-04-29 10:00:00' },
+            { jobid: '9', name: 'backup-a-old', clientname: 'fd-a', jobstatus: 'T', starttime: '2026-04-29 08:00:00' },
           ],
         },
       }),
@@ -164,8 +193,13 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsB.get('list jobs count jobstatus=T'),
-        data: { jobs: [{ count: '2' }] },
+        id: jobsCommandsB.get('llist jobs reverse limit=2 offset=0 jobstatus=T joblevel=F'),
+        data: {
+          jobs: [
+            { jobid: '11', name: 'backup-b', clientname: 'fd-b', jobstatus: 'T', starttime: '2026-04-29 11:00:00' },
+            { jobid: '8', name: 'backup-b-old', clientname: 'fd-b', jobstatus: 'T', starttime: '2026-04-29 07:00:00' },
+          ],
+        },
       }),
     })
 
@@ -216,39 +250,8 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsA.get('status director'),
-        data: {
-          running: [],
-        },
-      }),
-    })
-    socketA.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandsA.get('llist jobs reverse limit=3 offset=0 jobstatus=f'),
-        data: {
-          jobs: [
-            { jobid: '31', name: 'failed-a', clientname: 'fd-a', jobstatus: 'f', starttime: '2026-04-29 10:00:00' },
-          ],
-        },
-      }),
-    })
-    socketA.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
         id: commandsA.get('list jobs count jobstatus=f'),
         data: { jobs: [{ count: '1' }] },
-      }),
-    })
-    socketA.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandsA.get('llist jobs reverse limit=3 offset=0 jobstatus=E'),
-        data: {
-          jobs: [
-            { jobid: '30', name: 'error-a', clientname: 'fd-a', jobstatus: 'E', starttime: '2026-04-29 09:00:00' },
-          ],
-        },
       }),
     })
     socketA.onmessage?.({
@@ -262,7 +265,21 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsB.get('status director'),
+        id: commandsB.get('list jobs count jobstatus=f'),
+        data: { jobs: [{ count: '1' }] },
+      }),
+    })
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('list jobs count jobstatus=E'),
+        data: { jobs: [{ count: '1' }] },
+      }),
+    })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsA.get('status director'),
         data: {
           running: [],
         },
@@ -271,7 +288,45 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsB.get('llist jobs reverse limit=3 offset=0 jobstatus=f'),
+        id: commandsB.get('status director'),
+        data: {
+          running: [],
+        },
+      }),
+    })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    const jobsCommandsA = socketCommands(socketA)
+    const jobsCommandsB = socketCommands(socketB)
+
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: jobsCommandsA.get('llist jobs reverse limit=3 offset=0 jobstatus=f'),
+        data: {
+          jobs: [
+            { jobid: '31', name: 'failed-a', clientname: 'fd-a', jobstatus: 'f', starttime: '2026-04-29 10:00:00' },
+          ],
+        },
+      }),
+    })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: jobsCommandsA.get('llist jobs reverse limit=3 offset=0 jobstatus=E'),
+        data: {
+          jobs: [
+            { jobid: '30', name: 'error-a', clientname: 'fd-a', jobstatus: 'E', starttime: '2026-04-29 09:00:00' },
+          ],
+        },
+      }),
+    })
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: jobsCommandsB.get('llist jobs reverse limit=3 offset=0 jobstatus=f'),
         data: {
           jobs: [
             { jobid: '41', name: 'failed-b', clientname: 'fd-b', jobstatus: 'f', starttime: '2026-04-29 12:00:00' },
@@ -282,26 +337,12 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsB.get('list jobs count jobstatus=f'),
-        data: { jobs: [{ count: '1' }] },
-      }),
-    })
-    socketB.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandsB.get('llist jobs reverse limit=3 offset=0 jobstatus=E'),
+        id: jobsCommandsB.get('llist jobs reverse limit=3 offset=0 jobstatus=E'),
         data: {
           jobs: [
             { jobid: '40', name: 'error-b', clientname: 'fd-b', jobstatus: 'E', starttime: '2026-04-29 11:00:00' },
           ],
         },
-      }),
-    })
-    socketB.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandsB.get('list jobs count jobstatus=E'),
-        data: { jobs: [{ count: '1' }] },
       }),
     })
 
@@ -315,4 +356,5 @@ describe('jobs aggregate helpers', () => {
       directorErrors: [],
     })
   })
+
 })
