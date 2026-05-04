@@ -456,8 +456,11 @@ bool dedup_device::eod(DeviceControlRecord* dcr)
 bool dedup_device::d_flush(DeviceControlRecord*)
 {
   if (!openvol) {
-    Emsg0(M_ERROR, 0, T_("Trying to flush dedup volume when none are open.\n"));
-    return false;
+    // this can happen if a device gets released before any volumes were
+    // loaded, or after the volume was already released.
+
+    Dmsg0(100, T_("Trying to flush dedup volume when none are open.\n"));
+    return true;
   }
 
   try {
