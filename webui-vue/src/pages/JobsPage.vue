@@ -70,6 +70,20 @@
               class="q-mr-sm"
               style="min-width:220px"
             />
+            <q-select
+              v-model="levelFilters"
+              dense
+              outlined
+              clearable
+              emit-value
+              map-options
+              multiple
+              use-chips
+              :options="jobLevelOptions"
+              :label="t('Level')"
+              class="q-mr-sm"
+              style="min-width:220px"
+            />
             <q-input v-model="search" dense outlined :placeholder="t('Search…')" class="q-mr-sm" style="width:200px" clearable>
               <template #prepend><q-icon name="search" /></template>
             </q-input>
@@ -78,7 +92,10 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
-            <div v-if="(statusFilters?.length ?? 0) || jobsListScopeDirector" class="q-px-md q-pt-sm">
+            <div
+              v-if="(statusFilters?.length ?? 0) || (levelFilters?.length ?? 0) || jobsListScopeDirector"
+              class="q-px-md q-pt-sm"
+            >
               <q-chip
                 v-for="status in (statusFilters ?? [])"
                 :key="status"
@@ -90,6 +107,18 @@
                 @remove="statusFilters = statusFilters.filter(value => value !== status)"
               >
                 {{ t('Status') }}: {{ t(jobStatusMap[status]?.label ?? status) }}
+              </q-chip>
+              <q-chip
+                v-for="level in (levelFilters ?? [])"
+                :key="level"
+                removable
+                color="teal"
+                text-color="white"
+                icon="filter_list"
+                class="q-mb-xs q-mr-xs"
+                @remove="levelFilters = levelFilters.filter(value => value !== level)"
+              >
+                {{ t('Level') }}: {{ t(jobLevelLabels[level] ?? level) }}
               </q-chip>
               <q-chip
                 v-if="jobsListScopeDirector"
@@ -150,7 +179,15 @@
               </template>
               <template #body-cell-level="props">
                 <q-td :props="props" class="text-center">
-                  <JobLevelBadge v-if="props.value" :level="props.value" />
+                  <a
+                    v-if="props.value"
+                    href="#"
+                    class="inline-level-filter"
+                    :title="`${t('Level')}: ${props.value}`"
+                    @click.prevent="applyLevelFilter(props.value)"
+                  >
+                    <JobLevelBadge :level="props.value" />
+                  </a>
                   <span v-else>—</span>
                 </q-td>
               </template>
@@ -520,9 +557,19 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
-import { jobStatusMap, formatBytes, formatSpeed, parseDurationSecs, timeAgo } from '../mock/index.js'
+import {
+  jobStatusMap,
+  formatBytes,
+  formatSpeed,
+  parseDurationSecs,
+  timeAgo,
+} from '../mock/index.js'
 import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
-import { fetchAggregatedJobsPage } from '../composables/jobsAggregate.js'
+import {
+  fetchAggregatedJobsPage,
+  sortJobsByPagination,
+  usesDefaultJobsSorting,
+} from '../composables/jobsAggregate.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -532,11 +579,14 @@ import { buildDirectorOptions } from '../utils/director.js'
 import { formatNumber } from '../utils/locales.js'
 import {
   buildJobDetailsQuery,
+  encodeJobsLevelFilters,
   encodeJobsStatusFilters,
+  resolveJobsLevelFilters,
   resolveJobsSearchQuery,
   resolveJobsScopeDirector,
   resolveJobsStatusFilters,
   withJobsSearchQuery,
+  withJobsLevelFilterQuery,
   withJobsScopeDirectorQuery,
   withJobsStatusFilterQuery,
 } from '../utils/jobs.js'
@@ -561,9 +611,14 @@ function jobsStatusFiltersEqual(left, right) {
   return encodeJobsStatusFilters(left) === encodeJobsStatusFilters(right)
 }
 
+function jobsLevelFiltersEqual(left, right) {
+  return encodeJobsLevelFilters(left) === encodeJobsLevelFilters(right)
+}
+
 const tab          = ref(normaliseTab(route.query.action))
 const search       = ref(resolveJobsSearchQuery(route.query))
 const statusFilters = ref(resolveJobsStatusFilters(route.query))
+const levelFilters = ref(resolveJobsLevelFilters(route.query))
 const directorErrors = ref([])
 const fmtBytes  = formatBytes
 const fmtSpeed  = formatSpeed
@@ -571,9 +626,29 @@ const jobStatusOptions = computed(() => Object.entries(jobStatusMap).map(([value
   value,
   label: t(meta.label),
 })))
+const jobLevelLabels = {
+  F: 'Full',
+  I: 'Incremental',
+  D: 'Differential',
+  V: 'Virtual Full',
+  B: 'Base',
+}
+const jobLevelOptions = computed(() => Object.entries(jobLevelLabels).map(([value, label]) => ({
+  value,
+  label: t(label),
+})))
 
 function quoteDirectorString(value) {
   return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 function overlayRuntimeStatuses(jobs, runtimeJobs) {
@@ -679,6 +754,7 @@ const timelineJobDetailsQuery = computed(() => buildJobDetailsQuery({
   director: currentSingletonDirector.value,
   jobsAction: tab.value,
   jobsStatus: statusFilters.value,
+  jobsLevel: levelFilters.value,
   jobsSearch: search.value,
   jobsScopeDirector: jobsListScopeDirector.value,
 }))
@@ -741,9 +817,13 @@ async function fetchPage() {
   loading.value = true
   error.value   = null
   directorErrors.value = []
-  const { page, rowsPerPage } = pagination.value
+  const currentPagination = pagination.value
+  const { page, rowsPerPage } = currentPagination
   const offset = (page - 1) * rowsPerPage
   const encodedStatusFilters = encodeJobsStatusFilters(statusFilters.value)
+  const encodedLevelFilters = encodeJobsLevelFilters(levelFilters.value)
+  const levelFilter = encodedLevelFilters ? ` joblevel=${encodedLevelFilters}` : ''
+  const useDefaultSorting = usesDefaultJobsSorting(currentPagination)
   try {
     if (jobsPageDirectors.value.length === 0) {
       jobs.value = []
@@ -758,12 +838,13 @@ async function fetchPage() {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedJobsPage(
-        credentials,
-        jobsPageDirectors.value,
-        pagination.value,
-        statusFilters.value
-      )
+        const result = await fetchAggregatedJobsPage(
+          credentials,
+          jobsPageDirectors.value,
+          pagination.value,
+          statusFilters.value,
+          levelFilters.value,
+        )
       jobs.value = result.jobs
       directorErrors.value = result.directorErrors
       totalJobs.value = result.totalJobs
@@ -774,13 +855,16 @@ async function fetchPage() {
     const currentDirector = jobsPageDirectors.value[0]
     await ensureSingleScopeDirector()
     if (!encodedStatusFilters.includes(',')) {
-      const filter = encodedStatusFilters ? ` jobstatus=${encodedStatusFilters}` : ''
-      const [pageResult, countResult] = await Promise.allSettled([
-        director.call(`llist jobs reverse limit=${rowsPerPage} offset=${offset}${filter}`),
-        director.call(`list jobs count${filter}`),
-      ])
-      if (pageResult.status === 'rejected') throw pageResult.reason
-      const pageJobs = directorCollection(pageResult.value?.jobs).map((job) => {
+      const filter = `${encodedStatusFilters ? ` jobstatus=${encodedStatusFilters}` : ''}${levelFilter}`
+      const countResult = await director.call(`list jobs count${filter}`)
+      const count = Number(directorCollection(countResult?.jobs)[0]?.count ?? 0)
+      const limit = useDefaultSorting
+        ? rowsPerPage
+        : Math.max(count, 1)
+      const pageResult = await director.call(
+        `llist jobs reverse limit=${limit} offset=${useDefaultSorting ? offset : 0}${filter}`
+      )
+      const fetchedJobs = directorCollection(pageResult?.jobs).map((job) => {
         const normalized = normaliseJob(job)
         return {
           ...normalized,
@@ -788,40 +872,53 @@ async function fetchPage() {
           scopeKey: `${currentDirector}:${normalized.id}`,
         }
       })
-      const runningJobIds = pageJobs.filter(job => isRunning(job.status)).map(job => job.id)
+      const sortedJobs = useDefaultSorting
+        ? fetchedJobs
+        : sortJobsByPagination(fetchedJobs, currentPagination).slice(offset, offset + rowsPerPage)
+      const runningJobIds = sortedJobs.filter(job => isRunning(job.status)).map(job => job.id)
       if (runningJobIds.length > 0) {
         const runtimeStatus = await Promise.allSettled([director.call('status director')])
         jobs.value = runtimeStatus[0].status === 'fulfilled'
-          ? overlayRuntimeStatuses(pageJobs, runtimeStatus[0].value?.running)
-          : pageJobs
+          ? overlayRuntimeStatuses(sortedJobs, runtimeStatus[0].value?.running)
+          : sortedJobs
       } else {
-        jobs.value = pageJobs
+        jobs.value = sortedJobs
       }
-      const count = countResult.status === 'fulfilled'
-        ? Number(directorCollection(countResult.value?.jobs)[0]?.count ?? 0)
-        : (jobs.value.length < rowsPerPage
-          ? offset + jobs.value.length
-          : offset + jobs.value.length + rowsPerPage)
       totalJobs.value = count
       pagination.value = { ...pagination.value, rowsNumber: count }
       return
     }
 
-    const fetchLimit = offset + rowsPerPage
     const filters = resolveJobsStatusFilters({ status: encodedStatusFilters })
-    const [pageResults, countResults] = await Promise.all([
-      Promise.allSettled(filters.map(status => (
-        director.call(`llist jobs reverse limit=${fetchLimit} offset=0 jobstatus=${status}`)
-      ))),
-      Promise.allSettled(filters.map(status => (
-        director.call(`list jobs count jobstatus=${status}`)
-      ))),
-    ])
+    const countResults = await Promise.allSettled(filters.map(status => (
+      director.call(`list jobs count jobstatus=${status}${levelFilter}`)
+    )))
+    const pageResults = await Promise.allSettled(filters.map((status, index) => {
+      if (useDefaultSorting) {
+        return director.call(
+          `llist jobs reverse limit=${offset + rowsPerPage} offset=0 jobstatus=${status}${levelFilter}`
+        )
+      }
+
+      const countResult = countResults[index]
+      if (countResult?.status === 'fulfilled') {
+        const count = Number(directorCollection(countResult.value?.jobs)[0]?.count ?? 0)
+        if (count === 0) {
+          return Promise.resolve({ jobs: [] })
+        }
+
+        return director.call(`llist jobs reverse limit=${count} offset=0 jobstatus=${status}${levelFilter}`)
+      }
+
+      return director.call(
+        `llist jobs reverse limit=${offset + rowsPerPage} offset=0 jobstatus=${status}${levelFilter}`
+      )
+    }))
     const rejectedPageResult = pageResults.find(result => result.status === 'rejected')
     if (rejectedPageResult?.status === 'rejected') {
       throw rejectedPageResult.reason
     }
-    const mergedJobs = [...pageResults.flatMap((result) => (
+    const mergedJobs = sortJobsByPagination([...pageResults.flatMap((result) => (
       result.status === 'fulfilled'
         ? directorCollection(result.value?.jobs).map((job) => {
           const normalized = normaliseJob(job)
@@ -832,14 +929,7 @@ async function fetchPage() {
           }
         })
         : []
-    ))].sort((left, right) => {
-      const startCompare = String(right.starttime ?? '').localeCompare(String(left.starttime ?? ''))
-      if (startCompare !== 0) {
-        return startCompare
-      }
-
-      return Number(right.id ?? 0) - Number(left.id ?? 0)
-    })
+    ))], currentPagination)
     const visibleJobs = mergedJobs.slice(offset, offset + rowsPerPage)
     const runningJobIds = visibleJobs.filter(job => isRunning(job.status)).map(job => job.id)
     if (runningJobIds.length > 0) {
@@ -918,6 +1008,14 @@ function isWaitingStatus(status) {
   return typeof status === 'string' && status.toLowerCase().includes('is waiting')
 }
 
+function applyLevelFilter(level) {
+  if (!level) {
+    return
+  }
+
+  levelFilters.value = [level]
+}
+
 const runningJobs  = computed(() => jobs.value.filter(j => isRunning(j.status)))
 
 // Rerunable = any finished job (not currently running)
@@ -946,15 +1044,16 @@ const columns = computed(() => [
   }] : []),
   { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left',   sortable: true },
-  { name: 'type',      label: 'Type',     field: 'type',      align: 'center'  },
-  { name: 'level',     label: 'Level',    field: 'level',     align: 'center'  },
+  { name: 'type',      label: 'Type',     field: 'type',      align: 'center', sortable: true },
+  { name: 'level',     label: 'Level',    field: 'level',     align: 'center', sortable: true },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',   sortable: true },
   { name: 'duration',  label: 'Duration', field: 'duration',  align: 'right',  sortable: true,
     sort: (a, b) => parseDurationSecs(a) - parseDurationSecs(b) },
   { name: 'files',     label: 'Files',    field: 'files',     align: 'right',  sortable: true },
   { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right',  sortable: true },
-  { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right'   },
-  { name: 'errors',    label: 'Errors',   field: 'errors',    align: 'center'  },
+  { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right', sortable: true,
+    sort: (_a, _b, rowA, rowB) => jobSpeedBps(rowA) - jobSpeedBps(rowB) },
+  { name: 'errors',    label: 'Errors',   field: 'errors',    align: 'center', sortable: true },
   { name: 'status',    label: 'Status',   field: 'status',    align: 'center', sortable: true },
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:100px' },
 ].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
@@ -965,8 +1064,8 @@ const runningColumns = computed(() => [
     name: 'director', label: 'Director', field: 'director', align: 'left', sortable: true,
   }] : []),
   { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
-  { name: 'client',    label: 'Client',   field: 'client',    align: 'left'    },
-  { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left'    },
+  { name: 'client',    label: 'Client',   field: 'client',    align: 'left', sortable: true },
+  { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left', sortable: true },
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:90px' },
 ].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
 
@@ -977,18 +1076,19 @@ const rerunColumns = computed(() => [
   }] : []),
   { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left',   sortable: true },
-  { name: 'level',     label: 'Level',    field: 'level',     align: 'center'  },
+  { name: 'level',     label: 'Level',    field: 'level',     align: 'center', sortable: true },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',   sortable: true },
-  { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right'   },
-  { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right'   },
+  { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right', sortable: true },
+  { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right', sortable: true,
+    sort: (_a, _b, rowA, rowB) => jobSpeedBps(rowA) - jobSpeedBps(rowB) },
   { name: 'status',    label: 'Status',   field: 'status',    align: 'center', sortable: true },
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:60px' },
 ].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
 
 const defsColumns = computed(() => [
   { name: 'name',    label: 'Job Name', field: 'name',    align: 'left',   sortable: true },
-  { name: 'type',    label: 'Type',     field: 'type',    align: 'center'  },
-  { name: 'enabled', label: 'Status',   field: 'enabled', align: 'center'  },
+  { name: 'type',    label: 'Type',     field: 'type',    align: 'center', sortable: true },
+  { name: 'enabled', label: 'Status',   field: 'enabled', align: 'center', sortable: true },
   { name: 'actions', label: '',         field: 'actions', align: 'center', style: 'width:220px' },
 ].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
 
@@ -1035,13 +1135,14 @@ async function openJobDetails(job) {
     await router.push({
       name: 'job-details',
       params: { id: job.id },
-      query: buildJobDetailsQuery({
-        director: job.director,
-        jobsAction: tab.value,
-        jobsStatus: statusFilters.value,
-        jobsSearch: search.value,
-        jobsScopeDirector: jobsListScopeDirector.value,
-      }),
+        query: buildJobDetailsQuery({
+          director: job.director,
+          jobsAction: tab.value,
+          jobsStatus: statusFilters.value,
+          jobsLevel: levelFilters.value,
+          jobsSearch: search.value,
+          jobsScopeDirector: jobsListScopeDirector.value,
+        }),
     })
   } catch (error) {
     $q.notify({
@@ -1064,6 +1165,7 @@ async function openClientDetails(job) {
         director: job.director,
         jobsAction: tab.value,
         jobsStatus: statusFilters.value,
+        jobsLevel: encodeJobsLevelFilters(levelFilters.value),
         jobsSearch: search.value,
         jobsScopeDirector: jobsListScopeDirector.value,
       }),
@@ -1125,7 +1227,7 @@ async function doCancel(job) {
 function confirmRerun(job) {
   $q.dialog({
     title: t('Rerun Job'),
-    message: t('Rerun job <b>{name}</b> (ID&nbsp;{id})?', { name: job.name, id: job.id }),
+    message: `${t('Rerun job')} <b>${escapeHtml(job.name)}</b> (ID&nbsp;${escapeHtml(job.id)})?`,
     html: true,
     ok:     { label: t('Rerun'), color: 'primary', flat: true },
     cancel: { label: t('Cancel'), flat: true },
@@ -1376,6 +1478,13 @@ watch(() => route.query.status, (value) => {
   }
 })
 
+watch(() => route.query.level, (value) => {
+  const next = resolveJobsLevelFilters({ level: value })
+  if (!jobsLevelFiltersEqual(levelFilters.value, next)) {
+    levelFilters.value = next
+  }
+})
+
 watch(() => route.query.action, (value) => {
   const next = normaliseTab(value)
   if (tab.value !== next) {
@@ -1420,6 +1529,21 @@ watch(statusFilters, (next) => {
 
   const query = withJobsStatusFilterQuery(route.query, normalized)
   if ((query.status ?? '') !== (typeof route.query.status === 'string' ? route.query.status : '')) {
+    router.replace({ path: route.path, query })
+  }
+  pagination.value = { ...pagination.value, page: 1 }
+  fetchPage()
+}, { deep: true })
+
+watch(levelFilters, (next) => {
+  const normalized = resolveJobsLevelFilters({ level: next })
+  if (!jobsLevelFiltersEqual(next, normalized)) {
+    levelFilters.value = normalized
+    return
+  }
+
+  const query = withJobsLevelFilterQuery(route.query, normalized)
+  if ((query.level ?? '') !== (typeof route.query.level === 'string' ? route.query.level : '')) {
     router.replace({ path: route.path, query })
   }
   pagination.value = { ...pagination.value, page: 1 }
@@ -1490,6 +1614,12 @@ watch(() => singletonTabDirector.value, async () => {
 </script>
 
 <style scoped>
+.inline-level-filter {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
 .animated-spin {
   animation: hourglass-spin 1.4s ease-in-out infinite;
 }
