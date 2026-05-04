@@ -22,7 +22,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildJobDetailsQuery,
+  encodeJobsLevelFilters,
   encodeJobsStatusFilters,
+  normaliseJobLevelFilter,
+  normaliseJobLevelFilters,
   normaliseJobStatusFilter,
   normaliseJobStatusFilters,
   resolveJobDetailsClientOrigin,
@@ -31,10 +34,12 @@ import {
   resolveJobDetailsDirectorOrigin,
   resolveJobDetailsRestoreOrigin,
   resolveJobDetailsVolumeOrigin,
+  resolveJobsLevelFilters,
   resolveJobsSearchQuery,
   resolveJobsScopeDirector,
   resolveJobsStatusFilters,
   resolveJobsListQuery,
+  withJobsLevelFilterQuery,
   withJobsSearchQuery,
   withJobsScopeDirectorQuery,
   withJobsStatusFilterQuery,
@@ -48,10 +53,23 @@ describe('jobs filter helpers', () => {
     expect(normaliseJobStatusFilter(undefined)).toBe('')
   })
 
+  it('accepts supported job level filters only', () => {
+    expect(normaliseJobLevelFilter('F')).toBe('F')
+    expect(normaliseJobLevelFilter('V')).toBe('V')
+    expect(normaliseJobLevelFilter('Full')).toBe('')
+    expect(normaliseJobLevelFilter(undefined)).toBe('')
+  })
+
   it('normalizes and encodes multi-status filters', () => {
     expect(normaliseJobStatusFilters('f,E,f,invalid')).toEqual(['f', 'E'])
     expect(normaliseJobStatusFilters(['R', 'A', 'R', 'invalid'])).toEqual(['R', 'A'])
     expect(encodeJobsStatusFilters(['f', 'E', 'f'])).toBe('f,E')
+  })
+
+  it('normalizes and encodes multi-level filters', () => {
+    expect(normaliseJobLevelFilters('F,I,F,invalid')).toEqual(['F', 'I'])
+    expect(normaliseJobLevelFilters(['D', 'V', 'D', 'invalid'])).toEqual(['D', 'V'])
+    expect(encodeJobsLevelFilters(['F', 'I', 'F'])).toBe('F,I')
   })
 
   it('adds and removes the status query parameter', () => {
@@ -64,6 +82,20 @@ describe('jobs filter helpers', () => {
       status: 'f,E',
     })
     expect(withJobsStatusFilterQuery({ search: 'Backup', status: 'T' }, '')).toEqual({
+      search: 'Backup',
+    })
+  })
+
+  it('adds and removes the level query parameter', () => {
+    expect(withJobsLevelFilterQuery({ search: 'Backup' }, 'F')).toEqual({
+      search: 'Backup',
+      level: 'F',
+    })
+    expect(withJobsLevelFilterQuery({ search: 'Backup' }, ['F', 'I'])).toEqual({
+      search: 'Backup',
+      level: 'F,I',
+    })
+    expect(withJobsLevelFilterQuery({ search: 'Backup', level: 'F' }, '')).toEqual({
       search: 'Backup',
     })
   })
@@ -126,11 +158,18 @@ describe('jobs filter helpers', () => {
     expect(resolveJobsStatusFilters({})).toEqual([])
   })
 
+  it('resolves optional multi-level route filters', () => {
+    expect(resolveJobsLevelFilters({ level: 'F,I' })).toEqual(['F', 'I'])
+    expect(resolveJobsLevelFilters({ level: ['D', 'V', 'invalid'] })).toEqual(['D', 'V'])
+    expect(resolveJobsLevelFilters({})).toEqual([])
+  })
+
   it('builds job details query with return-state fields', () => {
     expect(buildJobDetailsQuery({
       director: 'prod-a',
       jobsAction: 'timeline',
       jobsStatus: 'T',
+      jobsLevel: 'F,I',
       jobsSearch: 'backup',
       jobsScopeDirector: 'prod-a',
       clientName: 'bareos-fd',
@@ -140,6 +179,7 @@ describe('jobs filter helpers', () => {
       clientDashboardOrigin: true,
       clientJobsAction: 'timeline',
       clientJobsStatus: 'T',
+      clientJobsLevel: 'D',
       clientJobsSearch: 'backup',
       clientJobsScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
@@ -154,6 +194,7 @@ describe('jobs filter helpers', () => {
       director: 'prod-a',
       jobsAction: 'timeline',
       jobsStatus: 'T',
+      jobsLevel: 'F,I',
       jobsSearch: 'backup',
       jobsScopeDirector: 'prod-a',
       clientName: 'bareos-fd',
@@ -163,6 +204,7 @@ describe('jobs filter helpers', () => {
       clientDashboardOrigin: '1',
       clientJobsAction: 'timeline',
       clientJobsStatus: 'T',
+      clientJobsLevel: 'D',
       clientJobsSearch: 'backup',
       clientJobsScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
@@ -179,10 +221,12 @@ describe('jobs filter helpers', () => {
       director: 'prod-a',
       jobsAction: 'list',
       jobsStatus: ['f', 'E'],
+      jobsLevel: 'F',
       jobsSearch: '',
     })).toEqual({
       director: 'prod-a',
       jobsStatus: 'f,E',
+      jobsLevel: 'F',
     })
   })
 
@@ -190,11 +234,13 @@ describe('jobs filter helpers', () => {
     expect(resolveJobsListQuery({
       jobsAction: 'timeline',
       jobsStatus: 'f,E',
+      jobsLevel: 'F,I',
       jobsSearch: 'backup',
       jobsScopeDirector: 'prod-a',
     })).toEqual({
       action: 'timeline',
       status: 'f,E',
+      level: 'F,I',
       search: 'backup',
       scopeDirector: 'prod-a',
     })
@@ -211,6 +257,7 @@ describe('jobs filter helpers', () => {
       director: 'prod-a',
       jobsAction: 'timeline',
       jobsStatus: 'T',
+      jobsLevel: 'F,I',
       jobsSearch: 'backup',
       jobsScopeDirector: 'prod-a',
       clientName: 'bareos-fd',
@@ -220,6 +267,7 @@ describe('jobs filter helpers', () => {
       clientDashboardOrigin: '1',
       clientJobsAction: 'timeline',
       clientJobsStatus: 'T',
+      clientJobsLevel: 'D',
       clientJobsSearch: 'backup',
       clientJobsScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
@@ -235,6 +283,7 @@ describe('jobs filter helpers', () => {
       director: 'prod-a',
       jobsAction: 'timeline',
       jobsStatus: 'T',
+      jobsLevel: 'F,I',
       jobsSearch: 'backup',
       jobsScopeDirector: 'prod-a',
       clientName: 'bareos-fd',
@@ -244,6 +293,7 @@ describe('jobs filter helpers', () => {
       clientDashboardOrigin: '1',
       clientJobsAction: 'timeline',
       clientJobsStatus: 'T',
+      clientJobsLevel: 'D',
       clientJobsSearch: 'backup',
       clientJobsScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
@@ -266,6 +316,7 @@ describe('jobs filter helpers', () => {
       clientDashboardOrigin: '1',
       clientJobsAction: 'timeline',
       clientJobsStatus: 'T',
+      clientJobsLevel: 'F',
       clientJobsSearch: 'backup',
       clientJobsScopeDirector: 'prod-a',
     })).toEqual({
@@ -276,6 +327,7 @@ describe('jobs filter helpers', () => {
       dashboardOrigin: true,
       jobsAction: 'timeline',
       jobsStatus: 'T',
+      jobsLevel: 'F',
       jobsSearch: 'backup',
       jobsScopeDirector: 'prod-a',
     })

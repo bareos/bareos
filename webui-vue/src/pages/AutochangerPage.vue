@@ -792,26 +792,26 @@ const commandStatusSummary = computed(() => {
 const ieSlotCols = [
   { name: 'drag',    label: '',       field: 'drag',     align: 'left', style: 'width:32px; padding:0 4px' },
   { name: 'slotnr',  label: 'Slot',   field: 'slotnr',   align: 'left', sortable: true },
-  { name: 'content', label: 'Status', field: 'content',  align: 'left' },
-  { name: 'volname', label: 'Volume', field: 'volname',  align: 'left' },
+  { name: 'content', label: 'Status', field: 'content',  align: 'left', sortable: true },
+  { name: 'volname', label: 'Volume', field: 'volname',  align: 'left', sortable: true },
   { name: 'actions', label: '',       field: 'actions',  align: 'right' },
 ]
 
 const driveCols = [
   { name: 'slotnr',  label: 'Drive',  field: 'slotnr',   align: 'left', sortable: true },
-  { name: 'content', label: 'Status', field: 'content',  align: 'left' },
-  { name: 'volname', label: 'Volume', field: 'volname',  align: 'left' },
-  { name: 'loaded',  label: 'Slot',   field: 'loaded',   align: 'left' },
+  { name: 'content', label: 'Status', field: 'content',  align: 'left', sortable: true },
+  { name: 'volname', label: 'Volume', field: 'volname',  align: 'left', sortable: true },
+  { name: 'loaded',  label: 'Slot',   field: 'loaded',   align: 'left', sortable: true },
   { name: 'actions', label: '',       field: 'actions',  align: 'right' },
 ]
 
 const slotCols = [
   { name: 'drag',        label: '',          field: 'drag',        align: 'left',  style: 'width:32px; padding:0 4px' },
   { name: 'slotnr',      label: 'Slot',      field: 'slotnr',      align: 'left',  sortable: true },
-  { name: 'content',     label: 'Status',    field: 'content',     align: 'left' },
-  { name: 'mr_volname',  label: 'Volume',    field: 'mr_volname',  align: 'left' },
-  { name: 'mr_volstatus',label: 'Vol Status',field: 'mr_volstatus',align: 'left' },
-  { name: 'pr_name',     label: 'Pool',      field: 'pr_name',     align: 'left' },
+  { name: 'content',     label: 'Status',    field: 'content',     align: 'left', sortable: true },
+  { name: 'mr_volname',  label: 'Volume',    field: 'mr_volname',  align: 'left', sortable: true },
+  { name: 'mr_volstatus',label: 'Vol Status',field: 'mr_volstatus',align: 'left', sortable: true },
+  { name: 'pr_name',     label: 'Pool',      field: 'pr_name',     align: 'left', sortable: true },
   { name: 'actions',     label: '',          field: 'actions',     align: 'right' },
 ]
 

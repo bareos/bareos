@@ -387,9 +387,9 @@ const statusRows = computed(() => {
 })
 const maxStatusCount = computed(() => Math.max(1, ...statusRows.value.map(r => r.count)))
 const statusCols = [
-  { name: 'label', label: 'Status', field: 'label', align: 'left', style: 'width:100px' },
+  { name: 'label', label: 'Status', field: 'label', align: 'left', style: 'width:100px', sortable: true },
   { name: 'bar', label: '', field: 'bar', align: 'left' },
-  { name: 'count', label: '#', field: 'count', align: 'right', style: 'width:50px' },
+  { name: 'count', label: '#', field: 'count', align: 'right', style: 'width:50px', sortable: true },
 ].map(col => ({ ...col, label: col.label ? t(col.label) : col.label }))
 
 function prefixedLabel(directorName, baseName) {

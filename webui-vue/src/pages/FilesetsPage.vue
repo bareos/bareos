@@ -249,8 +249,8 @@ const columns = computed(() => [
     name: 'director', label: t('Director'), field: 'director', align: 'left', sortable: true,
   }] : []),
   { name: 'name',       label: t('Name'),        field: 'name',       align: 'left', sortable: true },
-  { name: 'createtime', label: t('Created'),     field: 'createtime', align: 'left' },
-  { name: 'md5',        label: t('Config Hash'), field: 'md5',        align: 'left' },
+  { name: 'createtime', label: t('Created'),     field: 'createtime', align: 'left', sortable: true },
+  { name: 'md5',        label: t('Config Hash'), field: 'md5',        align: 'left', sortable: true },
 ])
 
 onMounted(() => {

@@ -585,7 +585,7 @@ const jobCols = computed(() => [
   { name: 'jobid',      label: t('ID'),       field: 'jobid',      align: 'right',  sortable: true },
   { name: 'name',       label: t('Job Name'), field: 'name',       align: 'left',   sortable: true },
   { name: 'client',     label: t('Client'),   field: 'client',     align: 'left',   sortable: true },
-  { name: 'level',      label: t('Level'),    field: 'level',      align: 'center' },
+  { name: 'level',      label: t('Level'),    field: 'level',      align: 'center', sortable: true },
   { name: 'starttime',  label: t('Start'),    field: 'starttime',  align: 'left',   sortable: true },
   { name: 'jobstatus',  label: t('Status'),   field: 'jobstatus',  align: 'center', sortable: true },
   { name: 'jobbytes',   label: t('Bytes'),    field: 'jobbytes',   align: 'right',  sortable: true },
