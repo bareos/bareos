@@ -261,6 +261,7 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { quoteDirectorString } from '../utils/directorStrings.js'
 import { buildDirectorPageQuery } from '../utils/director.js'
 import { buildJobDetailsQuery, resolveJobDetailsQuery } from '../utils/jobs.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
@@ -384,10 +385,6 @@ const loading     = ref(true)
 const jobsLoading = ref(false)
 const error       = ref(null)
 const statusMsg   = ref({ show: false, ok: true, text: '' })
-
-function quoteDirectorString(value) {
-  return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
-}
 
 function formatJobCount(count) {
   return `${formatNumber(count, settings.locale)} ${t('job(s)')}`

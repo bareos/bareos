@@ -382,6 +382,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes } from '../mock/index.js'
+import { quoteDirectorString } from '../utils/directorStrings.js'
 import { buildDirectorOptions } from '../utils/director.js'
 import {
   buildRestoreSourceQuery,
@@ -779,10 +780,6 @@ const backupOptions = computed(() =>
     value: b.jobid,
   }))
 )
-
-function quoteDirectorString(value) {
-  return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
-}
 
 async function onClientChange(clientName) {
   form.value.jobid = null
