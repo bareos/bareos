@@ -36,9 +36,16 @@ print_delete_trace()
 
 db_exists()
 {
+  local out
+
   # Check if the DB still exists: DB_ID() returns a numeric ID if the DB exists,
   # or NULL if it was dropped. -h -1 suppresses headers, -W strips trailing
-  # whitespace, so grep can match a bare number. A match means the drop failed.
-  "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -h -1 -W \
-    -Q "SET NOCOUNT ON; SELECT DB_ID('$1')" | tr -d '\r' | grep -Eq '^[0-9]+$'
+  # whitespace, so grep can match a bare number. SQLCMD failures return a
+  # dedicated status so drop verification errors do not look like a missing DB.
+  if out="$("${SQLCMD}" -S "${COMPUTERNAME}" -E -b -h -1 -W \
+    -Q "SET NOCOUNT ON; SELECT DB_ID('$1')" | tr -d '\r')"; then
+    grep -Eq '^[0-9]+$' <<<"${out}"
+  else
+    return 2
+  fi
 }

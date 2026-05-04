@@ -38,8 +38,14 @@ start_test
 "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBNormalTest -i sqlfiles/SQL_drop_db.sql
 
 if db_exists "DBNormalTest"; then
-  echo "Database is not empty"
+  echo "Database still exists after drop"
   exit 2
+else
+  db_exists_rc=$?
+  if [ "${db_exists_rc}" -ne 1 ]; then
+    echo "Failed to verify whether DBNormalTest still exists"
+    exit "${db_exists_rc}"
+  fi
 fi
 
 end_test
