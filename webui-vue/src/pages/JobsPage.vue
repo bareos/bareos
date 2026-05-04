@@ -575,6 +575,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildClientDetailsQuery } from '../utils/clients.js'
+import { quoteDirectorString } from '../utils/directorStrings.js'
 import { buildDirectorOptions } from '../utils/director.js'
 import { formatNumber } from '../utils/locales.js'
 import {
@@ -637,10 +638,6 @@ const jobLevelOptions = computed(() => Object.entries(jobLevelLabels).map(([valu
   value,
   label: t(label),
 })))
-
-function quoteDirectorString(value) {
-  return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
-}
 
 function escapeHtml(value) {
   return String(value ?? '')
