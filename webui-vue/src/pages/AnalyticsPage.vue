@@ -50,13 +50,13 @@
                    :to="tile.jobsQuery !== null ? { name: 'jobs', query: tile.jobsQuery } : undefined"
                    :style="tile.style"
                    style="position:absolute;overflow:hidden;box-sizing:border-box;border:2px solid white;border-radius:4px;transition:opacity .2s;color:inherit;text-decoration:none"
-                   :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${t('{count} files', { count: formatNumber(tile.files, settings.locale) })}`">
+                    :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${formatFileCount(tile.files)}`">
                 <div style="padding:4px 6px;height:100%;display:flex;flex-direction:column;justify-content:center">
                   <div class="text-white text-weight-bold" style="font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                     {{ tile.name }}
                   </div>
                   <div v-if="tile.h > 36" class="text-white" style="font-size:10px;opacity:.85">
-                    {{ treemapMode === 'bytes' ? fmtBytes(tile.bytes) : t('{count} files', { count: formatNumber(tile.files, settings.locale) }) }}
+                    {{ treemapMode === 'bytes' ? fmtBytes(tile.bytes) : formatFileCount(tile.files) }}
                   </div>
                 </div>
               </component>
@@ -226,6 +226,10 @@ const analyticsScopeLabel = computed(() => (
     ? `${activeDirectors.value.length} ${t('directors selected')}`
     : (activeDirectors.value[0] ?? t('No director selected'))
 ))
+
+function formatFileCount(count) {
+  return `${formatNumber(count ?? 0, settings.locale)} ${t('files')}`
+}
 
 async function ensureSingleScopeDirector() {
   if (activeDirectors.value.length !== 1) {
