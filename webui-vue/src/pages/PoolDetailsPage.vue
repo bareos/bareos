@@ -208,6 +208,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
+import { formatNumber } from '../utils/locales.js'
 import {
   buildPoolVolumeDetailsQuery,
   resolvePoolDetailsStoragesOrigin,
@@ -379,9 +380,7 @@ async function pruneSelectedVolumes() {
     await director.call(command)
     $q.notify({
       type: 'positive',
-      message: t('Pruned {count} selected volume(s).', {
-        count: selectedNames.length,
-      }),
+      message: `${t('Pruned')} ${formatNumber(selectedNames.length, settings.locale)} ${t('selected volume(s).')}`,
     })
     await loadPool()
   } catch (pruneError) {
