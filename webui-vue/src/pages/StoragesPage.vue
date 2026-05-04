@@ -1,55 +1,24 @@
 <template>
   <q-page class="q-pa-md">
-    <q-card v-if="directorOptions.length > 1" flat bordered class="q-mb-md bareos-panel">
-      <q-card-section class="panel-header row items-center">
-        <span>{{ t('Storages Scope') }}</span>
-        <q-space />
-        <q-chip dense square color="white" text-color="primary" :label="storagesScopeLabel" />
-      </q-card-section>
-      <q-card-section>
-        <q-select
-          v-model="selectedDirectorsModel"
-          data-testid="storages-directors"
-          :options="directorOptions"
-          option-label="label"
-          option-value="value"
-          emit-value
-          map-options
-          multiple
-          use-chips
-          outlined
-          dense
-          :label="t('Directors')"
-        />
-        <div class="text-caption text-grey-6 q-mt-sm">
-          {{ t('Select the directors that contribute to the storages views.') }}
-        </div>
-        <q-chip
-          v-if="storagesListScopeDirector"
-          removable
-          color="blue-7"
-          text-color="white"
-          icon="dns"
-          class="q-mt-sm"
-          @remove="router.replace({ path: '/storages', query: withStoragesScopeDirectorQuery(route.query, '') })"
-        >
-          {{ t('Director') }}: {{ storagesListScopeDirector }}
-        </q-chip>
-        <q-banner
-          v-if="directorErrors.length"
-          rounded
-          dense
-          class="bg-warning text-black q-mt-md"
-        >
-          <template #avatar>
-            <q-icon name="warning" />
-          </template>
-          <div v-for="item in directorErrors" :key="item.director">
-            <strong>{{ item.director }}</strong>: {{ item.message }}
-          </div>
-        </q-banner>
-      </q-card-section>
-    </q-card>
+    <DirectorScopePanel
+      v-model="selectedDirectorsModel"
+      :title="t('Storages Scope')"
+      :summary-label="storagesScopeLabel"
+      :options="directorOptions"
+      :help-text="t('Select the directors that contribute to the storages views.')"
+      :errors="directorErrors"
+      data-test-id="storages-directors"
+    >
+      <DirectorBadge
+        v-if="storagesListScopeDirector"
+        removable
+        icon="dns"
+        :director="storagesListScopeDirector"
+        @remove="router.replace({ path: '/storages', query: withStoragesScopeDirectorQuery(route.query, '') })"
+      >
+        {{ t('Director') }}: {{ storagesListScopeDirector }}
+      </DirectorBadge>
+    </DirectorScopePanel>
 
     <!-- Tab bar: Devices | Pools | Volumes | Autochangers -->
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
@@ -85,7 +54,7 @@
             >
               <template #body-cell-director="props">
                 <q-td :props="props">
-                  <q-chip dense square color="primary" text-color="white" :label="props.value" />
+                  <DirectorLabel :director="props.row.director || props.value || ''" />
                 </q-td>
               </template>
               <template #body-cell-autochanger="props">
@@ -143,7 +112,7 @@
               </template>
               <template #body-cell-director="props">
                 <q-td :props="props">
-                  <q-chip dense square color="primary" text-color="white" :label="props.value" />
+                  <DirectorLabel :director="props.row.director || props.value || ''" />
                 </q-td>
               </template>
               <template #body-cell-pooltype="props">
@@ -267,7 +236,7 @@
               </template>
               <template #body-cell-director="props">
                 <q-td :props="props">
-                  <q-chip dense square color="primary" text-color="white" :label="props.value" />
+                  <DirectorLabel :director="props.row.director || props.value || ''" />
                 </q-td>
               </template>
               <template #body-cell-inchanger="props">
@@ -406,6 +375,9 @@ import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import BoolIcon from '../components/BoolIcon.vue'
+import DirectorBadge from '../components/DirectorBadge.vue'
+import DirectorLabel from '../components/DirectorLabel.vue'
+import DirectorScopePanel from '../components/DirectorScopePanel.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
 import PoolTypeBadge from '../components/PoolTypeBadge.vue'
 

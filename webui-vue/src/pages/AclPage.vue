@@ -1,44 +1,14 @@
 <template>
   <q-page class="q-pa-md">
-    <q-card v-if="directorOptions.length > 1" flat bordered class="q-mb-md bareos-panel">
-      <q-card-section class="panel-header row items-center">
-        <span>{{ t('ACL Scope') }}</span>
-        <q-space />
-        <q-chip dense square color="white" text-color="primary" :label="aclScopeLabel" />
-      </q-card-section>
-      <q-card-section>
-        <q-select
-          v-model="selectedDirectorsModel"
-          data-testid="acl-directors"
-          :options="directorOptions"
-          option-label="label"
-          option-value="value"
-          emit-value
-          map-options
-          multiple
-          use-chips
-          outlined
-          dense
-          :label="t('Directors')"
-        />
-        <div class="text-caption text-grey-6 q-mt-sm">
-          {{ t('Select the directors that contribute to the ACL view.') }}
-        </div>
-        <q-banner
-          v-if="directorErrors.length"
-          rounded
-          dense
-          class="bg-warning text-black q-mt-md"
-        >
-          <template #avatar>
-            <q-icon name="warning" />
-          </template>
-          <div v-for="item in directorErrors" :key="item.director">
-            <strong>{{ item.director }}</strong>: {{ item.message }}
-          </div>
-        </q-banner>
-      </q-card-section>
-    </q-card>
+    <DirectorScopePanel
+      v-model="selectedDirectorsModel"
+      :title="t('ACL Scope')"
+      :summary-label="aclScopeLabel"
+      :options="directorOptions"
+      :help-text="t('Select the directors that contribute to the ACL view.')"
+      :errors="directorErrors"
+      data-test-id="acl-directors"
+    />
 
     <div class="row q-col-gutter-md">
       <div class="col-12">
@@ -63,9 +33,9 @@
                 <q-chip dense square color="primary" text-color="white" icon="person">
                   {{ auth.user?.username ?? 'user' }}
                 </q-chip>
-                <q-chip dense square color="blue-7" text-color="white" icon="dns">
+                <DirectorBadge icon="dns" :director="aclScopeLabel">
                   {{ aclScopeLabel }}
-                </q-chip>
+                </DirectorBadge>
                 <q-chip dense square color="positive" text-color="white" icon="check_circle">
                   {{ allowedCount }} {{ t('allowed') }}
                 </q-chip>
@@ -144,16 +114,11 @@
                     <q-item-section>
                       <q-item-label class="text-weight-medium">
                         <code>{{ item.command }}</code>
-                        <q-chip
+                        <DirectorBadge
                           v-if="isCommonAcl"
-                          dense
-                          square
-                          color="primary"
-                          text-color="white"
+                          :director="item.director"
                           class="q-ml-sm"
-                        >
-                          {{ item.director }}
-                        </q-chip>
+                        />
                       </q-item-label>
                       <q-item-label caption class="text-grey-8">
                         {{ item.description || t('No description provided.') }}
@@ -198,6 +163,8 @@ import { useDirectorStore } from '../stores/director.js'
 import { useDirectorAclStore } from '../stores/directorAcl.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildDirectorOptions } from '../utils/director.js'
+import DirectorBadge from '../components/DirectorBadge.vue'
+import DirectorScopePanel from '../components/DirectorScopePanel.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
