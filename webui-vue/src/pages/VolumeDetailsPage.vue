@@ -159,7 +159,7 @@
               <div v-if="jobUsageSegments.length" class="q-mt-md">
                 <div class="row justify-between text-caption text-grey-6 q-mb-xs">
                   <span>{{ t('Space by Job') }}</span>
-                  <span>{{ t('{count} job(s)', { count: jobUsageSegments.length }) }}</span>
+                  <span>{{ formatJobCount(jobUsageSegments.length) }}</span>
                 </div>
                 <!-- stacked bar -->
                 <div style="height:14px; display:flex; overflow:hidden; background:#e0e0e0; border-radius:4px">
@@ -201,7 +201,7 @@
                     </span>
                   </div>
                   <div v-if="jobUsageSegments.length > 8" class="text-caption text-grey-5">
-                     + {{ t('{count} more jobs', { count: jobUsageSegments.length - 8 }) }}
+                     + {{ formatMoreJobsCount(jobUsageSegments.length - 8) }}
                   </div>
                 </div>
               </div>
@@ -264,6 +264,7 @@ import { useSettingsStore } from '../stores/settings.js'
 import { buildDirectorPageQuery } from '../utils/director.js'
 import { buildJobDetailsQuery, resolveJobDetailsQuery } from '../utils/jobs.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
+import { formatNumber } from '../utils/locales.js'
 import { buildPoolDetailsQuery } from '../utils/pools.js'
 import {
   buildAutochangerSelectionQuery,
@@ -386,6 +387,14 @@ const statusMsg   = ref({ show: false, ok: true, text: '' })
 
 function quoteDirectorString(value) {
   return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
+
+function formatJobCount(count) {
+  return `${formatNumber(count, settings.locale)} ${t('job(s)')}`
+}
+
+function formatMoreJobsCount(count) {
+  return `${formatNumber(count, settings.locale)} ${t('more jobs')}`
 }
 
 // Retention reference scale: 1 year in seconds
