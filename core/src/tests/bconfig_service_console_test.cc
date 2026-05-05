@@ -245,6 +245,7 @@ TEST(BconfigService, UpsertsConsoleComponentConsoleHistoryFields)
   const auto updated_text = ReadTextFile(updated.value->path / "bconsole.conf");
   EXPECT_NE(updated_text.find("Description = \"Updated imported console\""),
             std::string::npos);
+  EXPECT_NE(updated_text.find("Password = \"secret\""), std::string::npos);
   EXPECT_NE(updated_text.find(
                 "HistoryFile = \"/var/lib/bareos/admin.updated.history\""),
             std::string::npos);

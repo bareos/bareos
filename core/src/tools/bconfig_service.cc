@@ -1563,6 +1563,89 @@ std::string RenderParsedResource(BareosResource& resource,
   return output.content;
 }
 
+std::string QuoteBareosString(std::string_view value);
+std::string NormalizeDirectiveLookupName(std::string_view name);
+bool HasMemberSource(const BareosResource& resource,
+                     std::initializer_list<const char*> member_names);
+OperationResult<std::string> LoadSecretMemberSourceValue(
+    const BareosResource& resource,
+    std::initializer_list<const char*> member_names,
+    const s_password& password,
+    std::string_view context);
+
+std::string ReplaceRenderedQuotedDirective(std::string rendered,
+                                           std::string_view directive_name,
+                                           std::string_view value)
+{
+  std::istringstream stream{rendered};
+  std::ostringstream updated;
+  std::string line;
+  const auto normalized_name = NormalizeDirectiveLookupName(directive_name);
+  bool replaced = false;
+  while (std::getline(stream, line)) {
+    const auto trimmed = TrimAsciiWhitespace(line);
+    const auto equals = trimmed.find('=');
+    if (!replaced && equals != std::string::npos) {
+      const auto rendered_name = NormalizeDirectiveLookupName(
+          TrimAsciiWhitespace(trimmed.substr(0, equals)));
+      if (rendered_name == normalized_name) {
+        updated << "  " << directive_name << " = " << QuoteBareosString(value)
+                << "\n";
+        replaced = true;
+        continue;
+      }
+    }
+    updated << line << "\n";
+  }
+
+  return updated.str();
+}
+
+OperationResult<std::string> RenderParsedResourceWithPreservedSecret(
+    BareosResource& resource,
+    ConfigurationParser& parser,
+    std::string_view directive_name,
+    std::initializer_list<const char*> member_names,
+    const s_password& password,
+    std::string_view context)
+{
+  if (!HasMemberSource(resource, member_names)
+      && (!password.value || password.value[0] == '\0')) {
+    return {.value = RenderParsedResource(resource, parser)};
+  }
+
+  auto rendered_password
+      = LoadSecretMemberSourceValue(resource, member_names, password, context);
+  if (!rendered_password) { return {.error = rendered_password.error}; }
+
+  auto rendered = RenderParsedResource(resource, parser);
+  if (rendered_password.value->empty()) {
+    return {.value = std::move(rendered)};
+  }
+
+  return {.value = ReplaceRenderedQuotedDirective(
+              std::move(rendered), directive_name, *rendered_password.value)};
+}
+
+OperationResult<std::string> RenderParsedConsoleResource(
+    console::ConsoleResource& resource,
+    ConfigurationParser& parser)
+{
+  return RenderParsedResourceWithPreservedSecret(
+      resource, parser, "Password", {"Password"}, resource.password_,
+      "console password for '" + std::string{resource.resource_name_} + "'");
+}
+
+OperationResult<std::string> RenderParsedConsoleDirectorResource(
+    console::DirectorResource& resource,
+    ConfigurationParser& parser)
+{
+  return RenderParsedResourceWithPreservedSecret(
+      resource, parser, "Password", {"Password"}, resource.password_,
+      "console director password for '" + std::string{resource.resource_name_}
+          + "'");
+}
+
 #ifdef BCONFIG_HAVE_CONSOLE
 std::string BuildConsoleConfigFileContent(
     const std::vector<std::string>& director_resources,
@@ -1599,8 +1682,15 @@ std::optional<std::string> WriteImportedConsoleConfig(
     if (!resource->resource_name_) {
       return "console import encountered a Console resource without a name.";
     }
-    console_resources.emplace_back(
-        RenderParsedResource(*resource, *loaded.parser));
+    auto* configured_console
+        = dynamic_cast<console::ConsoleResource*>(resource);
+    if (!configured_console) {
+      return "console import encountered an unexpected Console resource type.";
+    }
+    auto rendered
+        = RenderParsedConsoleResource(*configured_console, *loaded.parser);
+    if (!rendered) { return rendered.error; }
+    console_resources.emplace_back(std::move(*rendered.value));
   }
 
   for (auto* resource = loaded.parser->GetNextRes(console::R_DIRECTOR, nullptr);
@@ -1609,8 +1699,15 @@ std::optional<std::string> WriteImportedConsoleConfig(
     if (!resource->resource_name_) {
       return "console import encountered a Director resource without a name.";
     }
-    director_resources.emplace_back(
-        RenderParsedResource(*resource, *loaded.parser));
+    auto* configured_director
+        = dynamic_cast<console::DirectorResource*>(resource);
+    if (!configured_director) {
+      return "console import encountered an unexpected Director resource type.";
+    }
+    auto rendered = RenderParsedConsoleDirectorResource(*configured_director,
+                                                        *loaded.parser);
+    if (!rendered) { return rendered.error; }
+    director_resources.emplace_back(std::move(*rendered.value));
   }
 
   const auto root_config_path
@@ -2508,6 +2605,78 @@ std::optional<uint16_t> LoadIntegerMemberSourceValue(
 
   if (!found_digit || value == 0) { return std::nullopt; }
   return static_cast<uint16_t>(value);
+}
+
+OperationResult<std::string> RenderPasswordForConfig(const s_password& password,
+                                                     std::string_view context);
+
+const BareosResource::SourceLocation* FindMemberSource(
+    const BareosResource& resource,
+    std::initializer_list<const char*> member_names)
+{
+  for (const auto* member_name : member_names) {
+    if (auto* source = resource.GetMemberSource(member_name)) { return source; }
+  }
+  return nullptr;
+}
+
+std::optional<std::string> LoadStringMemberSourceValue(
+    const BareosResource& resource,
+    std::initializer_list<const char*> member_names)
+{
+  const auto* source = FindMemberSource(resource, member_names);
+  if (!source || source->file.empty() || source->line <= 0) {
+    return std::nullopt;
+  }
+
+  std::ifstream input(source->file);
+  if (!input) { return std::nullopt; }
+
+  std::string line;
+  for (int current_line = 1; current_line <= source->line; ++current_line) {
+    if (!std::getline(input, line)) { return std::nullopt; }
+  }
+
+  const auto equals = line.find('=');
+  if (equals == std::string::npos) { return std::nullopt; }
+
+  size_t pos = equals + 1;
+  while (pos < line.size()
+         && std::isspace(static_cast<unsigned char>(line[pos]))) {
+    ++pos;
+  }
+  if (pos >= line.size()) { return std::nullopt; }
+
+  if (line[pos] == '"') {
+    ++pos;
+    std::string value;
+    while (pos < line.size()) {
+      const char ch = line[pos++];
+      if (ch == '\\' && pos < line.size()) {
+        value.push_back(line[pos++]);
+        continue;
+      }
+      if (ch == '"') { return value; }
+      value.push_back(ch);
+    }
+    return std::nullopt;
+  }
+
+  const auto end = line.find_first_of(" \t\r\n#", pos);
+  return line.substr(pos,
+                     end == std::string::npos ? std::string::npos : end - pos);
+}
+
+OperationResult<std::string> LoadSecretMemberSourceValue(
+    const BareosResource& resource,
+    std::initializer_list<const char*> member_names,
+    const s_password& password,
+    std::string_view context)
+{
+  if (auto value = LoadStringMemberSourceValue(resource, member_names)) {
+    return {.value = std::move(*value)};
+  }
+  return RenderPasswordForConfig(password, context);
 }
 
 std::optional<std::string> CopyFirstAddress(dlist<IPADDR>* addrs)
@@ -4901,8 +5070,8 @@ OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
     if (client->description_ && client->description_[0] != '\0') {
       context.description = std::string{client->description_};
     }
-    auto rendered_password = RenderPasswordForConfig(
-        client->password_,
+    auto rendered_password = LoadSecretMemberSourceValue(
+        *client, {"Password"}, client->password_,
         "director-side client password for '" + std::string{client_name} + "'");
     if (!rendered_password) { return {.error = rendered_password.error}; }
     context.password = *rendered_password.value;
@@ -5078,9 +5247,10 @@ OperationResult<DirectorStorageWriteContext> LoadDirectorStorageWriteContext(
     if (storage->media_type && storage->media_type[0] != '\0') {
       context.media_type = std::string{storage->media_type};
     }
-    auto rendered_password = RenderPasswordForConfig(
-        storage->password_, "director-side storage password for '"
-                                + std::string{storage_name} + "'");
+    auto rendered_password = LoadSecretMemberSourceValue(
+        *storage, {"Password"}, storage->password_,
+        "director-side storage password for '" + std::string{storage_name}
+            + "'");
     if (!rendered_password) { return {.error = rendered_password.error}; }
     context.password = *rendered_password.value;
 
@@ -6078,9 +6248,10 @@ OperationResult<DirectorConsoleWriteContext> LoadDirectorConsoleWriteContext(
       context.description = std::string{console->description_};
     }
     context.use_pam_authentication = console->use_pam_authentication_;
-    auto rendered_password = RenderPasswordForConfig(
-        console->password_, "director-side console password for '"
-                                + std::string{console_name} + "'");
+    auto rendered_password = LoadSecretMemberSourceValue(
+        *console, {"Password"}, console->password_,
+        "director-side console password for '" + std::string{console_name}
+            + "'");
     if (!rendered_password) { return {.error = rendered_password.error}; }
     context.password = *rendered_password.value;
     if (HasMemberSource(*console, {"TlsAuthenticate"})) {
@@ -6193,11 +6364,15 @@ OperationResult<ConsoleConsoleWriteContext> LoadConsoleConsoleWriteContext(
     if (!configured_console) { continue; }
     if (!configured_console->resource_name_
         || configured_console->resource_name_ != console_name) {
-      auto rendered = RenderParsedResource(*configured_console, *loaded.parser);
+      auto rendered
+          = RenderParsedConsoleResource(*configured_console, *loaded.parser);
+      if (!rendered) { return {.error = rendered.error}; }
       if (seen_target) {
-        context.console_resources_after.emplace_back(std::move(rendered));
+        context.console_resources_after.emplace_back(
+            std::move(*rendered.value));
       } else {
-        context.console_resources_before.emplace_back(std::move(rendered));
+        context.console_resources_before.emplace_back(
+            std::move(*rendered.value));
       }
       continue;
     }
@@ -6208,8 +6383,8 @@ OperationResult<ConsoleConsoleWriteContext> LoadConsoleConsoleWriteContext(
         && configured_console->description_[0] != '\0') {
       context.description = std::string{configured_console->description_};
     }
-    auto rendered_password = RenderPasswordForConfig(
-        configured_console->password_,
+    auto rendered_password = LoadSecretMemberSourceValue(
+        *configured_console, {"Password"}, configured_console->password_,
         "console password for '" + std::string{console_name} + "'");
     if (!rendered_password) { return {.error = rendered_password.error}; }
     context.password = *rendered_password.value;
@@ -6319,8 +6494,10 @@ OperationResult<ConsoleDirectorWriteContext> LoadConsoleDirectorWriteContext(
     auto* configured_console
         = dynamic_cast<console::ConsoleResource*>(resource);
     if (!configured_console) { continue; }
-    context.console_resources.emplace_back(
-        RenderParsedResource(*configured_console, *loaded.parser));
+    auto rendered
+        = RenderParsedConsoleResource(*configured_console, *loaded.parser);
+    if (!rendered) { return {.error = rendered.error}; }
+    context.console_resources.emplace_back(std::move(*rendered.value));
   }
 
   bool seen_target = false;
@@ -6332,12 +6509,15 @@ OperationResult<ConsoleDirectorWriteContext> LoadConsoleDirectorWriteContext(
     if (!configured_director) { continue; }
     if (!configured_director->resource_name_
         || configured_director->resource_name_ != director_name) {
-      auto rendered
-          = RenderParsedResource(*configured_director, *loaded.parser);
+      auto rendered = RenderParsedConsoleDirectorResource(*configured_director,
+                                                          *loaded.parser);
+      if (!rendered) { return {.error = rendered.error}; }
       if (seen_target) {
-        context.director_resources_after.emplace_back(std::move(rendered));
+        context.director_resources_after.emplace_back(
+            std::move(*rendered.value));
       } else {
-        context.director_resources_before.emplace_back(std::move(rendered));
+        context.director_resources_before.emplace_back(
+            std::move(*rendered.value));
       }
       continue;
     }
@@ -6352,8 +6532,8 @@ OperationResult<ConsoleDirectorWriteContext> LoadConsoleDirectorWriteContext(
       context.port = configured_director->DIRport;
     }
     if (HasMemberSource(*configured_director, {"Password"})) {
-      auto rendered_password = RenderPasswordForConfig(
-          configured_director->password_,
+      auto rendered_password = LoadSecretMemberSourceValue(
+          *configured_director, {"Password"}, configured_director->password_,
           "console director password for '" + std::string{director_name} + "'");
       if (!rendered_password) { return {.error = rendered_password.error}; }
       if (!rendered_password.value->empty()) {
@@ -6763,9 +6943,10 @@ OperationResult<DirectorCatalogWriteContext> LoadDirectorCatalogWriteContext(
       context.content.validate_timeout = catalog->pooling_validate_timeout;
     }
 
-    auto rendered_password = RenderPasswordForConfig(
-        catalog->db_password, "director-side catalog password for '"
-                                  + std::string{catalog_name} + "'");
+    auto rendered_password = LoadSecretMemberSourceValue(
+        *catalog, {"DbPassword"}, catalog->db_password,
+        "director-side catalog password for '" + std::string{catalog_name}
+            + "'");
     if (!rendered_password) { return {.error = rendered_password.error}; }
     context.content.db_password = *rendered_password.value;
 
@@ -7513,9 +7694,10 @@ OperationResult<DirectorDaemonWriteContext> LoadDirectorDaemonWriteContext(
       context.content.description = std::string{director->description_};
     }
     if (HasMemberSource(*director, {"KeyEncryptionKey"})) {
-      auto rendered_key = RenderPasswordForConfig(
-          director->keyencrkey, "director daemon key encryption key for '"
-                                    + director_config.name + "'");
+      auto rendered_key = LoadSecretMemberSourceValue(
+          *director, {"KeyEncryptionKey"}, director->keyencrkey,
+          "director daemon key encryption key for '" + director_config.name
+              + "'");
       if (!rendered_key) { return {.error = rendered_key.error}; }
       if (!rendered_key.value->empty()) {
         context.content.key_encryption_key = *rendered_key.value;
@@ -9100,9 +9282,10 @@ LoadStorageDaemonDirectorWriteContext(
     if (director->description_ && director->description_[0] != '\0') {
       context.description = std::string{director->description_};
     }
-    auto rendered_password = RenderPasswordForConfig(
-        director->password_, "storage-daemon director password for '"
-                                 + std::string{director_name} + "'");
+    auto rendered_password = LoadSecretMemberSourceValue(
+        *director, {"Password"}, director->password_,
+        "storage-daemon director password for '" + std::string{director_name}
+            + "'");
     if (!rendered_password) { return {.error = rendered_password.error}; }
     context.password = *rendered_password.value;
     if (HasMemberSource(*director, {"Monitor"})) {
@@ -9112,8 +9295,8 @@ LoadStorageDaemonDirectorWriteContext(
       context.maximum_bandwidth_per_job = director->max_bandwidth_per_job;
     }
     if (HasMemberSource(*director, {"KeyEncryptionKey"})) {
-      auto rendered_key = RenderPasswordForConfig(
-          director->keyencrkey,
+      auto rendered_key = LoadSecretMemberSourceValue(
+          *director, {"KeyEncryptionKey"}, director->keyencrkey,
           "storage-daemon director key encryption key for '"
               + std::string{director_name} + "'");
       if (!rendered_key) { return {.error = rendered_key.error}; }
@@ -9610,8 +9793,8 @@ OperationResult<StorageNdmpWriteContext> LoadStorageNdmpWriteContext(
     if (ndmp->username && ndmp->username[0] != '\0') {
       context.username = std::string{ndmp->username};
     }
-    auto rendered_password = RenderPasswordForConfig(
-        ndmp->password,
+    auto rendered_password = LoadSecretMemberSourceValue(
+        *ndmp, {"Password"}, ndmp->password,
         "storage-daemon NDMP password for '" + std::string{ndmp_name} + "'");
     if (!rendered_password) { return {.error = rendered_password.error}; }
     context.password = *rendered_password.value;
@@ -10298,8 +10481,8 @@ OperationResult<std::string> LoadClientPasswordFromDirectorConfig(
       return {.error = "director '" + director_config.name + "' client '"
                        + std::string{client_name} + "' has an empty password."};
     }
-    return RenderPasswordForConfig(
-        client->password_,
+    return LoadSecretMemberSourceValue(
+        *client, {"Password"}, client->password_,
         "director-side client password for '" + std::string{client_name} + "'");
   }
 
@@ -10356,8 +10539,8 @@ LoadClientDirectorStubWriteContext(const std::filesystem::path& client_root,
       context.description = std::string{director->description_};
     }
     if (HasMemberSource(*director, {"Password"})) {
-      auto rendered_password = RenderPasswordForConfig(
-          director->password_,
+      auto rendered_password = LoadSecretMemberSourceValue(
+          *director, {"Password"}, director->password_,
           "client director password for '" + std::string{director_name} + "'");
       if (!rendered_password) { return {.error = rendered_password.error}; }
       context.password = *rendered_password.value;
@@ -18618,6 +18801,52 @@ OperationResult<std::monostate> EnsureDaemonWorkingDirectories(
   return {.value = std::monostate{}};
 }
 
+OperationResult<std::monostate> EnsureStorageArchiveDirectories(
+    const ServiceState& state,
+    std::string_view deployment_id,
+    const std::vector<DeploymentConfigRecord>& daemon_configs,
+    std::vector<std::string>& logs)
+{
+  for (const auto& config : daemon_configs) {
+    if (config.component != bconfig::Component::kStorage) { continue; }
+
+    const auto device_directory = config.path / "bareos-sd.d" / "device";
+    if (!std::filesystem::is_directory(device_directory)) { continue; }
+
+    for (const auto& entry :
+         std::filesystem::directory_iterator(device_directory)) {
+      if (!entry.is_regular_file() || entry.path().extension() != ".conf") {
+        continue;
+      }
+
+      auto spec = state.GetStorageDeviceResourceSpec(
+          deployment_id, config.name, entry.path().stem().string());
+      if (!spec) { return {.error = spec.error}; }
+
+      if (!spec.value->archive_device || spec.value->archive_device->empty()) {
+        continue;
+      }
+      if (!spec.value->device_type || *spec.value->device_type != "File") {
+        continue;
+      }
+
+      const auto archive_directory
+          = std::filesystem::path{*spec.value->archive_device};
+      std::error_code error_code;
+      std::filesystem::create_directories(archive_directory, error_code);
+      if (error_code) {
+        return {.error = "failed to create archive directory '"
+                         + archive_directory.string()
+                         + "': " + error_code.message()};
+      }
+      logs.emplace_back("ensured archive directory '"
+                        + archive_directory.string() + "'");
+    }
+  }
+
+  return {.value = std::monostate{}};
+}
+
 OperationResult<std::vector<StartedSmokeTestProcess>> StartDeploymentProcesses(
     const std::vector<DeploymentConfigRecord>& daemon_configs,
     std::vector<std::string>& logs)
@@ -18698,6 +18927,13 @@ std::pair<JobStatus, std::vector<std::string>> ExecuteSmokeTestDeployment(
       state, *job_snapshot.deployment_id, *daemon_configs.value, logs);
   if (!working_directories) {
     logs.emplace_back(working_directories.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto archive_directories = EnsureStorageArchiveDirectories(
+      state, *job_snapshot.deployment_id, *daemon_configs.value, logs);
+  if (!archive_directories) {
+    logs.emplace_back(archive_directories.error);
     return {JobStatus::kFailed, logs};
   }
 
