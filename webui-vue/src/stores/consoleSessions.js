@@ -39,7 +39,16 @@ const COMPLETION_NOISE_PREFIXES = [
 const CONSOLE_NOISE_LINES = new Set([
   'You have messages.',
 ])
-const RAW_PROMPT_TAB_COMPLETION_PROMPTS = new Set(['$ ', '> '])
+const RESTORE_TREE_PROMPTS = new Set(['$ ', '> '])
+const RESTORE_TREE_COMPLETION_COMMANDS = {
+  ls: '.ls',
+  cd: '.lsdir',
+  add: '.ls',
+  mark: '.ls',
+  m: '.ls',
+  delete: '.lsmark',
+  unmark: '.lsmark',
+}
 const COMPLETION_KEYWORDS = [
   { key: 'pool=', cmd: '.pool' },
   { key: 'nextpool=', cmd: '.pool' },
@@ -80,11 +89,6 @@ function createRuntime() {
     cmdSeq: 0,
     pendingCmds: new Map(),
     completionRequests: new Map(),
-    rawPromptTabCompletion: {
-      command: '',
-      prompt: '',
-      count: 0,
-    },
   }
 }
 
@@ -246,7 +250,10 @@ function applyCompletionResult(session, director, appendLines, request, text) {
 
   if (items.length === 1) {
     const item = items[0]
-    const replacement = item.endsWith('=') ? item : `${item} `
+    const replacement = (
+      item.endsWith('=')
+      || request.suppressAppend
+    ) ? item : `${item} `
     session.cmd = replaceCompletionText(session.cmd, request, replacement)
     return
   }
@@ -258,8 +265,8 @@ function applyCompletionResult(session, director, appendLines, request, text) {
   appendLines(director, items.join('\n'))
 }
 
-function isRawPromptTabCompletion(session) {
-  return RAW_PROMPT_TAB_COMPLETION_PROMPTS.has(session.currentPrompt)
+function isRestoreTreePrompt(session) {
+  return RESTORE_TREE_PROMPTS.has(session.currentPrompt)
 }
 
 function isInteractivePrompt(prompt) {
@@ -296,26 +303,28 @@ function applyRawConsoleResponse(session, director, appendLines, message) {
   }
 }
 
-function applyRawPromptTabCompletionResult(session, director, appendLines, request, text, promptKind) {
-  const {
-    outputText,
-  } = applyRawConsoleResponse(session, director, appendLines, {
-    text,
-    prompt: promptKind,
-  })
-  const items = parseSimpleCompletionItems(outputText)
-    .filter(item => item.startsWith(request.text))
-
-  if (request.text && items.length === 1) {
-    session.cmd = replaceCompletionText(session.cmd, request, items[0])
-    return
+function buildRestoreTreeCompletionRequest(command) {
+  const context = getCompletionContext(command)
+  const restoreCommand = context.firstKeyword || command.trim()
+  const helper = RESTORE_TREE_COMPLETION_COMMANDS[restoreCommand]
+  if (!helper) {
+    return null
   }
 
-  if (request.text && items.length > 1) {
-    const commonPrefix = longestCommonPrefix(items)
-    if (commonPrefix.length > request.text.length) {
-      session.cmd = replaceCompletionText(session.cmd, request, commonPrefix)
-    }
+  const rawToken = context.text ?? ''
+  const lastSlashIndex = rawToken.lastIndexOf('/')
+  const fragment = lastSlashIndex >= 0 ? rawToken.slice(lastSlashIndex + 1) : rawToken
+  const replaceStart = lastSlashIndex >= 0
+    ? context.replaceStart + lastSlashIndex + 1
+    : context.replaceStart
+
+  return {
+    ...context,
+    text: fragment,
+    replaceStart,
+    source: fragment ? `${helper} ${fragment}*` : helper,
+    parser: 'items',
+    suppressAppend: true,
   }
 }
 
@@ -491,24 +500,13 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
             runtime.pendingCmds.delete(msg.id)
           }
           runtime.completionRequests.delete(msg.id)
-          if (completionRequest.parser === 'raw-tab') {
-            applyRawPromptTabCompletionResult(
-              session,
-              director,
-              appendLines,
-              completionRequest,
-              msg.text,
-              msg.prompt
-            )
-          } else {
-            applyCompletionResult(
-              session,
-              director,
-              appendLines,
-              completionRequest,
-              msg.text
-            )
-          }
+          applyCompletionResult(
+            session,
+            director,
+            appendLines,
+            completionRequest,
+            msg.text
+          )
         } else {
           const isStreamingChunk = msg.prompt === 'more'
           if (!isStreamingChunk) {
@@ -564,11 +562,6 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     const session = getSession(director)
     const runtime = getRuntime(director)
     const previousPrompt = session.currentPrompt
-    runtime.rawPromptTabCompletion = {
-      command: '',
-      prompt: '',
-      count: 0,
-    }
 
     if (!runtime.ws || runtime.ws.readyState !== WebSocket.OPEN) {
       appendErr(director, 'Not connected to director.')
@@ -603,46 +596,23 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     }
 
     session.cmd = command
-    const isRawTabCompletion = isRawPromptTabCompletion(session)
-    const rawTabCount = (
-      isRawTabCompletion
-      && runtime.rawPromptTabCompletion.command === command
-      && runtime.rawPromptTabCompletion.prompt === session.currentPrompt
-    )
-      ? runtime.rawPromptTabCompletion.count + 1
-      : 1
-    const request = isRawTabCompletion
-      ? {
-          ...getCompletionContext(command),
-          parser: 'raw-tab',
-          tabCount: rawTabCount,
-        }
-      : buildCompletionRequest(command)
+    const request = (
+      isRestoreTreePrompt(session)
+        ? buildRestoreTreeCompletionRequest(command)
+        : null
+    ) || buildCompletionRequest(command)
     const id = String(++runtime.cmdSeq)
     const timer = setTimeout(() => {
       runtime.completionRequests.delete(id)
       runtime.pendingCmds.delete(id)
     }, COMPLETION_TIMEOUT_MS)
 
-    runtime.rawPromptTabCompletion = isRawTabCompletion
-      ? {
-          command,
-          prompt: session.currentPrompt,
-          count: rawTabCount,
-        }
-      : {
-          command: '',
-          prompt: '',
-          count: 0,
-        }
     runtime.completionRequests.set(id, request)
     runtime.pendingCmds.set(id, { timer })
     runtime.ws.send(JSON.stringify({
       type: 'command',
       id,
-      command: request.parser === 'raw-tab'
-        ? `${command}${'\t'.repeat(request.tabCount)}`
-        : request.source,
+      command: request.source,
     }))
     session.status = 'connected'
     return true
