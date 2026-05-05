@@ -439,15 +439,16 @@ static bRC endRestoreFile(PluginContext* ctx)
  */
 static bRC createFile(PluginContext* ctx, restore_pkt* rp)
 {
-  if (strlen(rp->where) > 512) {
-    printf(
-        "bpipe-fd: Restore target dir too long. Restricting to first 512 "
-        "bytes.\n");
+  auto* p_ctx = static_cast<struct plugin_ctx*>(ctx->plugin_private_context);
+
+  if (strlen(rp->where) > sizeof(p_ctx->where)) {
+    Jmsg(ctx, M_WARNING,
+         "bpipe-fd: Restore target dir too long. Restricting to first 512 "
+         "bytes.\n");
   }
 
-  bstrncpy(((struct plugin_ctx*)ctx->plugin_private_context)->where, rp->where,
-           513);
-  ((struct plugin_ctx*)ctx->plugin_private_context)->replace = rp->replace;
+  bstrncpy(p_ctx->where, rp->where, sizeof(p_ctx->where));
+  p_ctx->replace = rp->replace;
 
   rp->create_status = CF_EXTRACT;
   return bRC_OK;
