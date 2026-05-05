@@ -288,41 +288,12 @@
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center">
-                  <q-btn flat round dense size="sm" icon="edit" :title="t('Change status')">
-                    <q-menu anchor="bottom right" self="top right" auto-close>
-                      <q-list dense style="min-width:130px">
-                        <q-item-label header class="text-caption">{{ t('Set status') }}</q-item-label>
-                        <q-item
-                          v-for="s in volStatuses" :key="s"
-                          clickable
-                          :active="props.row.volstatus === s"
-                          @click="setVolStatus(props.row, s)"
-                        >
-                          <q-item-section>
-                            <q-badge :color="statusColor(s)" :label="s" />
-                          </q-item-section>
-                        </q-item>
-                      </q-list>
-                    </q-menu>
-                  </q-btn>
+                  <span class="text-grey-5">—</span>
                 </q-td>
               </template>
             </q-table>
           </q-card-section>
         </q-card>
-
-        <!-- Status-change result snackbar -->
-        <q-dialog v-model="statusMsg.show" position="bottom">
-          <q-card :class="statusMsg.ok ? 'bg-positive text-white' : 'bg-negative text-white'"
-                  style="min-width:300px">
-            <q-card-section class="row items-center q-py-sm">
-              <q-icon :name="statusMsg.ok ? 'check_circle' : 'error'" class="q-mr-sm" />
-              <span>{{ statusMsg.text }}</span>
-              <q-space />
-              <q-btn flat round dense icon="close" v-close-popup />
-            </q-card-section>
-          </q-card>
-        </q-dialog>
       </q-tab-panel>
 
       <!-- AUTOCHANGERS -->
@@ -652,26 +623,6 @@ const volumeCols = computed(() => [
   { name: 'volbytes',    label: t('Used Bytes'),   field: 'volbytes',    align: 'right', sortable: true },
   { name: 'actions',     label: '',                field: 'actions',     align: 'center', style: 'width:40px' },
 ])
-
-const volStatuses = ['Append', 'Full', 'Used', 'Purged', 'Recycled', 'Read-Only', 'Error', 'Cleaning']
-
-const statusMsg = ref({ show: false, ok: true, text: '' })
-
-async function setVolStatus(vol, newStatus) {
-  try {
-    await switchToRowDirector(vol)
-    await director.call(
-      `update volume=${vol.volumename} volstatus=${newStatus}`
-    )
-    vol.volstatus = newStatus
-    statusMsg.value = {
-      show: true, ok: true,
-      text: `${vol.volumename} → ${newStatus}`,
-    }
-  } catch (e) {
-    statusMsg.value = { show: true, ok: false, text: e.message }
-  }
-}
 
 const storageCols = computed(() => [
   ...(showDirectorColumn.value ? [{
