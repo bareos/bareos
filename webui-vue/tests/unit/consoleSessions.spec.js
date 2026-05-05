@@ -243,7 +243,7 @@ describe('console session store', () => {
     expect(consoleSessions.getSession('bareos-dir').cmd).toBe('list jobs client=bareos-fd ')
   })
 
-  it('sends literal tab completion at restore tree prompts', () => {
+  it('uses restore-tree helper commands for cd completion', () => {
     const consoleSessions = useConsoleSessionsStore()
 
     consoleSessions.connectSession('bareos-dir', {
@@ -266,11 +266,11 @@ describe('console session store', () => {
     expect(JSON.parse(socket.sent[1])).toEqual({
       type: 'command',
       id: '1',
-      command: 'cd /ho\t',
+      command: '.lsdir ho*',
     })
   })
 
-  it('accumulates repeated restore tree tab presses', () => {
+  it('lists restore-tree directory candidates for empty cd completion', () => {
     const consoleSessions = useConsoleSessionsStore()
 
     consoleSessions.connectSession('bareos-dir', {
@@ -289,21 +289,15 @@ describe('console session store', () => {
     session.currentPrompt = '$ '
 
     consoleSessions.requestCompletion('bareos-dir', 'cd ')
-    consoleSessions.requestCompletion('bareos-dir', 'cd ')
 
     expect(JSON.parse(socket.sent[1])).toEqual({
       type: 'command',
       id: '1',
-      command: 'cd \t',
-    })
-    expect(JSON.parse(socket.sent[2])).toEqual({
-      type: 'command',
-      id: '2',
-      command: 'cd \t\t',
+      command: '.lsdir',
     })
   })
 
-  it('updates restore tree input from raw tab completion results', () => {
+  it('updates restore tree input from .lsdir completion results', () => {
     const consoleSessions = useConsoleSessionsStore()
 
     consoleSessions.connectSession('bareos-dir', {
@@ -326,15 +320,12 @@ describe('console session store', () => {
       data: JSON.stringify({
         type: 'raw_response',
         id: '1',
-        text: '/home/\n$ ',
-        prompt: 'sub',
+        text: 'home/\n',
+        prompt: 'other',
       }),
     })
 
     expect(session.cmd).toBe('cd /home/')
-    expect(session.currentPrompt).toBe('$ ')
-    expect(session.output.map(line => line.text)).toContain('/home/')
-    expect(session.output.map(line => line.text)).not.toContain('$ ')
   })
 
   it('lists ambiguous completion candidates in the console output', () => {
