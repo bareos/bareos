@@ -411,6 +411,29 @@ describe('console session store', () => {
     )
   })
 
+  it('clears stale interactive prompts while restore work is running', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    const session = consoleSessions.getSession('bareos-dir')
+    session.currentPrompt = 'Select FileSet resource (1-2): '
+
+    consoleSessions.sendCommand('bareos-dir', '1')
+
+    expect(session.currentPrompt).toBe('')
+  })
+
   it('moves streamed restore prompts onto the live input line', () => {
     const consoleSessions = useConsoleSessionsStore()
 
