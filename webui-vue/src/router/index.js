@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { useSetupStore } from '../stores/setup.js'
 import { buildStoragesTabQuery } from '../utils/storagesRoute.js'
+import { resolveSetupNavigation } from './guards.js'
 
 const routes = [
   {
@@ -72,20 +73,7 @@ router.beforeEach(async (to) => {
     }
   }
 
-  if (!auth.isLoggedIn && setup.needsSetup && to.name !== 'setup') {
-    return { name: 'setup' }
-  }
-
-  if (!auth.isLoggedIn && setup.isReady && to.name === 'setup') {
-    return { name: 'login' }
-  }
-
-  if (to.meta.requiresAuth && !auth.isLoggedIn) {
-    return { name: 'login' }
-  }
-  if ((to.name === 'login' || to.name === 'setup') && auth.isLoggedIn) {
-    return { name: 'dashboard' }
-  }
+  return resolveSetupNavigation(auth, setup, to)
 })
 
 export default router
