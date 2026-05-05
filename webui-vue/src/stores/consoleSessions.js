@@ -262,6 +262,10 @@ function isRawPromptTabCompletion(session) {
   return RAW_PROMPT_TAB_COMPLETION_PROMPTS.has(session.currentPrompt)
 }
 
+function isInteractivePrompt(prompt) {
+  return !!prompt && prompt !== '* '
+}
+
 function updateSessionPrompt(session, promptKind, promptText, isStreamingChunk) {
   if (isStreamingChunk && promptText) {
     session.currentPrompt = promptText
@@ -559,6 +563,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
   function sendCommand(director, command, timeoutMs = RAW_CMD_TIMEOUT_MS) {
     const session = getSession(director)
     const runtime = getRuntime(director)
+    const previousPrompt = session.currentPrompt
     runtime.rawPromptTabCompletion = {
       command: '',
       prompt: '',
@@ -582,6 +587,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
 
     runtime.pendingCmds.set(id, { timer })
     runtime.ws.send(JSON.stringify({ type: 'command', id, command, stream: true }))
+    if (isInteractivePrompt(previousPrompt)) {
+      session.currentPrompt = ''
+    }
     session.status = 'connected'
     return true
   }
