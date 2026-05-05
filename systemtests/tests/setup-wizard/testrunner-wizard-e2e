@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+PLAYWRIGHT_ARTIFACTS_DIR="${current_test_directory}/playwright-artifacts"
+SETUP_DIRECTOR_PORT=$((20000 + BASEPORT))
+SETUP_CLIENT_PORT=$((20001 + BASEPORT))
+SETUP_STORAGE_PORT=$((20002 + BASEPORT))
+SETUP_RUNTIME_ROOT="${current_test_directory}/var/lib/bareos-runtime"
+SETUP_REPOSITORY_PATH="${current_test_directory}/var/lib/bconfig/deployments/prod"
+SETUP_CONSOLE_PASSWORD="wizard-secret"
+
+mkdir -p "${PLAYWRIGHT_ARTIFACTS_DIR}"
+
+cd "${CMAKE_SOURCE_DIR}/webui-vue"
+PLAYWRIGHT_BASE_URL="http://127.0.0.1:${BAREOS_WEBUI_PORT}/" \
+  PLAYWRIGHT_ARTIFACTS_DIR="${PLAYWRIGHT_ARTIFACTS_DIR}" \
+  GOOGLE_CHROME_EXECUTABLE="${GOOGLE_CHROME_EXECUTABLE}" \
+  BAREOS_SETUP_REPOSITORY_PATH="${SETUP_REPOSITORY_PATH}" \
+  BAREOS_SETUP_RUNTIME_ROOT="${SETUP_RUNTIME_ROOT}" \
+  BAREOS_SETUP_DIRECTOR_PORT="${SETUP_DIRECTOR_PORT}" \
+  BAREOS_SETUP_CLIENT_PORT="${SETUP_CLIENT_PORT}" \
+  BAREOS_SETUP_STORAGE_PORT="${SETUP_STORAGE_PORT}" \
+  BAREOS_SETUP_CONSOLE_PASSWORD="${SETUP_CONSOLE_PASSWORD}" \
+  "${NPM_EXECUTABLE}" run test:e2e -- tests/e2e/setup-wizard.spec.js

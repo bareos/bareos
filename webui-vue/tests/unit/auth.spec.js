@@ -91,4 +91,18 @@ describe('auth store', () => {
       director: 'bareos-dir-2',
     })
   })
+
+  it('stages the setup password for the first login and clears it after login', () => {
+    const auth = useAuthStore()
+
+    auth.stageSetupPassword('setup-secret')
+
+    expect(auth.getStagedSetupPassword()).toBe('setup-secret')
+    expect(sessionStorage.getItem('bareos_setup_pass')).toBe('setup-secret')
+
+    auth.login('admin', 'bareos-dir', 'setup-secret')
+
+    expect(auth.getStagedSetupPassword()).toBe('')
+    expect(sessionStorage.getItem('bareos_setup_pass')).toBeNull()
+  })
 })

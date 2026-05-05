@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
+import { useSetupStore } from '../stores/setup.js'
 import { buildStoragesTabQuery } from '../utils/storagesRoute.js'
 
 const routes = [
@@ -7,7 +8,8 @@ const routes = [
     path: '/login',
     component: () => import('../layouts/AuthLayout.vue'),
     children: [
-      { path: '', name: 'login', component: () => import('../pages/LoginPage.vue') }
+      { path: '', name: 'login', component: () => import('../pages/LoginPage.vue') },
+      { path: '/setup', name: 'setup', component: () => import('../pages/SetupPage.vue') },
     ]
   },
   {
@@ -57,12 +59,31 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
+  const setup = useSetupStore()
+
+  if (!auth.isLoggedIn) {
+    try {
+      await setup.refresh()
+    } catch {
+      // Fall back to the existing login flow when bconfig-service is not
+      // reachable.
+    }
+  }
+
+  if (!auth.isLoggedIn && setup.needsSetup && to.name !== 'setup') {
+    return { name: 'setup' }
+  }
+
+  if (!auth.isLoggedIn && setup.isReady && to.name === 'setup') {
+    return { name: 'login' }
+  }
+
   if (to.meta.requiresAuth && !auth.isLoggedIn) {
     return { name: 'login' }
   }
-  if (to.name === 'login' && auth.isLoggedIn) {
+  if ((to.name === 'login' || to.name === 'setup') && auth.isLoggedIn) {
     return { name: 'dashboard' }
   }
 })

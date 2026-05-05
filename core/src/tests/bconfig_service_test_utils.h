@@ -353,7 +353,7 @@ class [[maybe_unused]] ScopedBconfigServiceServer {
     ServiceState& state,
     std::string_view id)
 {
-  for (int attempt = 0; attempt < 100; ++attempt) {
+  for (int attempt = 0; attempt < 400; ++attempt) {
     auto job = state.GetJob(id);
     if (job
         && (job->status == JobStatus::kSucceeded

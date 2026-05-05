@@ -1,0 +1,73 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+SETUP_RUNTIME_ROOT="${current_test_directory}/var/lib/bareos-runtime"
+SETUP_REPOSITORY_PATH="${current_test_directory}/var/lib/bconfig/deployments/prod"
+SETUP_STATE_DIR="${current_test_directory}/var/lib/bconfig/service-state"
+BCONFIG_PORT=$((BASEPORT + 8))
+SETUP_DIRECTOR_PORT=$((20000 + BASEPORT))
+SETUP_CLIENT_PORT=$((20001 + BASEPORT))
+SETUP_STORAGE_PORT=$((20002 + BASEPORT))
+
+stop_pidfile() {
+  local pidfile="$1"
+  if [ ! -f "${pidfile}" ]; then
+    return
+  fi
+
+  local pid
+  pid=$(cat "${pidfile}")
+  if kill -0 "${pid}" 2>/dev/null; then
+    kill "${pid}" || true
+    for _ in $(seq 1 20); do
+      if ! kill -0 "${pid}" 2>/dev/null; then
+        break
+      fi
+      sleep 1
+    done
+  fi
+  rm -f "${pidfile}"
+}
+
+stop_listener_port() {
+  local port="$1"
+  local pid
+
+  while IFS= read -r pid; do
+    if [ -n "${pid}" ] && kill -0 "${pid}" 2>/dev/null; then
+      kill "${pid}" || true
+    fi
+  done < <(
+    ss -ltnp "( sport = :${port} )" 2>/dev/null \
+      | grep -o 'pid=[0-9]\+' \
+      | cut -d= -f2 \
+      | sort -u
+  )
+}
+
+if [ -d "${SETUP_RUNTIME_ROOT}" ]; then
+  while IFS= read -r -d '' pidfile; do
+    pid=$(cat "${pidfile}" 2>/dev/null || true)
+    if [ -n "${pid}" ] && kill -0 "${pid}" 2>/dev/null; then
+      kill "${pid}" || true
+    fi
+  done < <(find "${SETUP_RUNTIME_ROOT}" -name '*.pid' -print0 2>/dev/null || true)
+fi
+
+stop_pidfile "${tmp}/setup-wizard-frontend.pid"
+stop_pidfile "${tmp}/webui-proxy.pid"
+stop_pidfile "${tmp}/bconfig-service.pid"
+stop_listener_port "${BAREOS_WEBUI_PORT}"
+stop_listener_port "${BAREOS_WEBUI_PROXY_PORT}"
+stop_listener_port "${BCONFIG_PORT}"
+stop_listener_port "${SETUP_DIRECTOR_PORT}"
+stop_listener_port "${SETUP_CLIENT_PORT}"
+stop_listener_port "${SETUP_STORAGE_PORT}"
+
+rm -rf "${SETUP_RUNTIME_ROOT}" "${SETUP_REPOSITORY_PATH}" "${SETUP_STATE_DIR}"

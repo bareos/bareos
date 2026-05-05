@@ -75,6 +75,42 @@ TEST(BconfigService, CreatesDeploymentScaffold)
 TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
 {
   ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory runtime_path{MakeTempPath()};
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  ScopedDirectory backend_path{MakeTempPath()};
+  ScopedEnvironmentVariable backend_override{"BCONFIG_BAREOS_SD_BACKEND_DIR",
+                                             backend_path.path().string()};
+  (void)backend_override;
+#endif
+#if !HAVE_WIN32
+  const auto make_fake_daemon = [](const std::filesystem::path& path) {
+    WriteTextFile(path,
+                  "#!/bin/sh\n"
+                  "trap 'exit 0' TERM INT\n"
+                  "sleep 30 &\n"
+                  "wait $!\n");
+    std::filesystem::permissions(path,
+                                 std::filesystem::perms::owner_read
+                                     | std::filesystem::perms::owner_write
+                                     | std::filesystem::perms::owner_exec,
+                                 std::filesystem::perm_options::replace);
+  };
+  const auto fake_dir_binary = runtime_path.path() / "bareos-dir";
+  const auto fake_sd_binary = runtime_path.path() / "bareos-sd";
+  const auto fake_fd_binary = runtime_path.path() / "bareos-fd";
+  make_fake_daemon(fake_dir_binary);
+  make_fake_daemon(fake_sd_binary);
+  make_fake_daemon(fake_fd_binary);
+  ScopedEnvironmentVariable dir_binary_override{"BCONFIG_BAREOS_DIR_BINARY",
+                                                fake_dir_binary.string()};
+  ScopedEnvironmentVariable sd_binary_override{"BCONFIG_BAREOS_SD_BINARY",
+                                               fake_sd_binary.string()};
+  ScopedEnvironmentVariable fd_binary_override{"BCONFIG_BAREOS_FD_BINARY",
+                                               fake_fd_binary.string()};
+  (void)dir_binary_override;
+  (void)sd_binary_override;
+  (void)fd_binary_override;
+#endif
   ServiceState state;
 
   auto deployment
@@ -94,7 +130,7 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
       {.address = std::string{"127.0.0.1"},
        .port = 9101,
        .password = std::string{"director-secret"},
-       .working_directory = std::string{"/var/lib/bareos"},
+       .working_directory = (runtime_path.path() / "director").string(),
        .messages = std::string{"Daemon"}});
   ASSERT_TRUE(director) << director.error;
 
@@ -108,7 +144,7 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
       "prod", "bareos-sd",
       {.address = std::string{"127.0.0.1"},
        .port = 9103,
-       .working_directory = std::string{"/var/lib/bareos/storage"},
+       .working_directory = (runtime_path.path() / "storage").string(),
        .messages = std::string{"Standard"}});
   ASSERT_TRUE(storage) << storage.error;
 
@@ -123,9 +159,57 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
       "prod", "bareos-fd",
       {.address = std::string{"127.0.0.1"},
        .port = 9102,
-       .working_directory = std::string{"/var/lib/bareos"},
+       .working_directory = (runtime_path.path() / "client").string(),
        .messages = std::string{"Standard"}});
   ASSERT_TRUE(client) << client.error;
+
+  auto director_client = state.UpsertDirectorClientResource(
+      "prod", "bareos-dir", "bareos-fd",
+      {.address = std::string{"127.0.0.1"},
+       .password = std::string{"director-secret"}});
+  ASSERT_TRUE(director_client) << director_client.error;
+
+  auto director_storage = state.UpsertDirectorStorageResource(
+      "prod", "bareos-dir", "bareos-sd",
+      {.address = std::string{"127.0.0.1"},
+       .password = std::string{"director-secret"},
+       .device = std::string{"bareos-sd"},
+       .media_type = std::string{"File"},
+       .archive_device = std::string{"storage"},
+       .device_type = std::string{"File"}});
+  ASSERT_TRUE(director_storage) << director_storage.error;
+
+  auto director_pool = state.UpsertDirectorPoolResource(
+      "prod", "bareos-dir", "Default",
+      {.pool_type = std::string{"Backup"},
+       .label_format = std::string{"Default-"},
+       .storages = std::vector<std::string>{"bareos-sd"},
+       .use_catalog = false});
+  ASSERT_TRUE(director_pool) << director_pool.error;
+
+  auto director_schedule = state.UpsertDirectorScheduleResource(
+      "prod", "bareos-dir", "Default",
+      {.enabled = true,
+       .run_entries = std::vector<std::string>{"Level=Full 1st sun at 21:00"}});
+  ASSERT_TRUE(director_schedule) << director_schedule.error;
+
+  auto director_fileset = state.UpsertDirectorFilesetResource(
+      "prod", "bareos-dir", "Default",
+      {.include_blocks
+       = std::vector<std::string>{"  Include {\n    File = /tmp\n  }\n"}});
+  ASSERT_TRUE(director_fileset) << director_fileset.error;
+
+  auto director_job = state.UpsertDirectorJobResource(
+      "prod", "bareos-dir", "DefaultBackup",
+      {.type = std::string{"Backup"},
+       .level = std::string{"Full"},
+       .messages = std::string{"Daemon"},
+       .storages = std::vector<std::string>{"bareos-sd"},
+       .pool = std::string{"Default"},
+       .client = std::string{"bareos-fd"},
+       .fileset = std::string{"Default"},
+       .schedule = std::string{"Default"}});
+  ASSERT_TRUE(director_job) << director_job.error;
 
   auto console_director = state.UpsertConsoleDirectorResource(
       "prod", "admin", "bareos-dir",
@@ -140,12 +224,81 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
        .password = std::string{"console-secret"}});
   ASSERT_TRUE(console_resource) << console_resource.error;
 
+  auto webui_profile = state.UpsertDirectorProfileResource(
+      "prod", "bareos-dir", "webui-admin",
+      {.job_acl = std::vector<std::string>{"*all*"},
+       .client_acl = std::vector<std::string>{"*all*"},
+       .storage_acl = std::vector<std::string>{"*all*"},
+       .schedule_acl = std::vector<std::string>{"*all*"},
+       .pool_acl = std::vector<std::string>{"*all*"},
+       .command_acl
+       = std::vector<std::string>{"!.bvfs_clear_cache", "!.exit", "!.sql",
+                                  "!configure", "!create", "!delete", "!purge",
+                                  "!prune", "!sqlquery", "!umount", "!unmount",
+                                  "*all*"},
+       .fileset_acl = std::vector<std::string>{"*all*"},
+       .catalog_acl = std::vector<std::string>{"*all*"},
+       .where_acl = std::vector<std::string>{"*all*"},
+       .plugin_options_acl = std::vector<std::string>{"*all*"}});
+  ASSERT_TRUE(webui_profile) << webui_profile.error;
+
+  auto director_console = state.UpsertDirectorConsoleResource(
+      "prod", "bareos-dir", "admin",
+      {.password = std::string{"console-secret"},
+       .profiles = std::vector<std::string>{"webui-admin"}});
+  ASSERT_TRUE(director_console) << director_console.error;
+
   auto validate_job = state.CreateJob({.type = "validate_deployment_repo",
                                        .deployment_id = std::string{"prod"}});
   ASSERT_TRUE(validate_job);
   auto validated = WaitForJobTerminal(state, validate_job.value->id);
   ASSERT_TRUE(validated.has_value());
   EXPECT_EQ(validated->status, JobStatus::kSucceeded);
+
+  const auto profile_text = ReadTextFile(
+      repo_path.path()
+      / "directors/bareos-dir/bareos-dir.d/profile/webui-admin.conf");
+  EXPECT_NE(profile_text.find("CommandACL = !.bvfs_clear_cache, !.exit, !.sql, "
+                              "!configure, !create, !delete, !purge, !prune, "
+                              "!sqlquery, !umount, !unmount, *all*"),
+            std::string::npos);
+
+  const auto console_text
+      = ReadTextFile(repo_path.path()
+                     / "directors/bareos-dir/bareos-dir.d/console/admin.conf");
+  EXPECT_NE(console_text.find("Profile = webui-admin"), std::string::npos);
+
+#if HAVE_WIN32
+  auto smoke_job = state.CreateJob(
+      {.type = "smoke_test_deployment", .deployment_id = std::string{"prod"}});
+  ASSERT_TRUE(smoke_job);
+  auto smoked = WaitForJobTerminal(state, smoke_job.value->id);
+  ASSERT_TRUE(smoked.has_value());
+  EXPECT_EQ(smoked->status, JobStatus::kFailed);
+#else
+  const auto format_logs = [](const JobRecord& job) {
+    std::string joined;
+    for (const auto& log : job.logs) {
+      if (!joined.empty()) { joined += '\n'; }
+      joined += log;
+    }
+    return joined;
+  };
+
+  auto smoke_job = state.CreateJob(
+      {.type = "smoke_test_deployment", .deployment_id = std::string{"prod"}});
+  ASSERT_TRUE(smoke_job);
+  auto smoked = WaitForJobTerminal(state, smoke_job.value->id);
+  ASSERT_TRUE(smoked.has_value());
+  EXPECT_EQ(smoked->status, JobStatus::kSucceeded) << format_logs(*smoked);
+
+  auto start_job = state.CreateJob({.type = "start_deployment_daemons",
+                                    .deployment_id = std::string{"prod"}});
+  ASSERT_TRUE(start_job);
+  auto started = WaitForJobTerminal(state, start_job.value->id);
+  ASSERT_TRUE(started.has_value());
+  EXPECT_EQ(started->status, JobStatus::kSucceeded) << format_logs(*started);
+#endif
 }
 
 TEST(BconfigService, RejectsDuplicateDeploymentIds)
@@ -165,6 +318,129 @@ TEST(BconfigService, RejectsDuplicateDeploymentIds)
   ASSERT_FALSE(second);
   EXPECT_EQ(second.error, "deployment id already exists.");
 }
+
+#if !HAVE_WIN32
+TEST(BconfigService, InitializesCatalogDatabaseWithHelperScripts)
+{
+  ScopedDirectory repo_path{MakeTempPath()};
+  ScopedDirectory runtime_path{MakeTempPath()};
+  ScopedDirectory tools_path{MakeTempPath()};
+  const auto psql_log = tools_path.path() / "psql.log";
+  const auto script_log = tools_path.path() / "scripts.log";
+
+  const auto make_executable
+      = [](const std::filesystem::path& path, std::string_view content) {
+          WriteTextFile(path, content);
+          std::filesystem::permissions(path,
+                                       std::filesystem::perms::owner_read
+                                           | std::filesystem::perms::owner_write
+                                           | std::filesystem::perms::owner_exec,
+                                       std::filesystem::perm_options::replace);
+        };
+
+  make_executable(tools_path.path() / "psql",
+                  "#!/bin/sh\n"
+                  "printf '%s\\n' \"$*\" >> \"$BCONFIG_TEST_PSQL_LOG\"\n"
+                  "case \"$*\" in\n"
+                  "  *pg_catalog.pg_roles*) exit 0 ;;\n"
+                  "  *pg_catalog.pg_database*) exit 0 ;;\n"
+                  "  *information_schema.tables*) exit 0 ;;\n"
+                  "esac\n"
+                  "exit 0\n");
+  make_executable(
+      tools_path.path() / "create_bareos_database",
+      "#!/bin/sh\n"
+      "echo create_bareos_database >> \"$BCONFIG_TEST_SCRIPT_LOG\"\n"
+      "exit 0\n");
+  make_executable(tools_path.path() / "make_bareos_tables",
+                  "#!/bin/sh\n"
+                  "echo make_bareos_tables >> \"$BCONFIG_TEST_SCRIPT_LOG\"\n"
+                  "exit 0\n");
+  make_executable(
+      tools_path.path() / "grant_bareos_privileges",
+      "#!/bin/sh\n"
+      "echo grant_bareos_privileges >> \"$BCONFIG_TEST_SCRIPT_LOG\"\n"
+      "exit 0\n");
+
+  ScopedEnvironmentVariable psql_override{
+      "BCONFIG_PSQL_BINARY", (tools_path.path() / "psql").string()};
+  ScopedEnvironmentVariable create_override{
+      "BCONFIG_BAREOS_CREATE_DATABASE_SCRIPT",
+      (tools_path.path() / "create_bareos_database").string()};
+  ScopedEnvironmentVariable tables_override{
+      "BCONFIG_BAREOS_MAKE_TABLES_SCRIPT",
+      (tools_path.path() / "make_bareos_tables").string()};
+  ScopedEnvironmentVariable grant_override{
+      "BCONFIG_BAREOS_GRANT_PRIVILEGES_SCRIPT",
+      (tools_path.path() / "grant_bareos_privileges").string()};
+  ScopedEnvironmentVariable psql_log_override{"BCONFIG_TEST_PSQL_LOG",
+                                              psql_log.string()};
+  ScopedEnvironmentVariable script_log_override{"BCONFIG_TEST_SCRIPT_LOG",
+                                                script_log.string()};
+  (void)psql_override;
+  (void)create_override;
+  (void)tables_override;
+  (void)grant_override;
+  (void)psql_log_override;
+  (void)script_log_override;
+
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  auto messages = state.UpsertDirectorMessagesResource(
+      "prod", "bareos-dir", "Daemon",
+      {.description = std::string{"Managed daemon messages"},
+       .console_entries = std::vector<std::string>{"all"}});
+  ASSERT_TRUE(messages) << messages.error;
+
+  auto director = state.UpsertDirectorDaemonResource(
+      "prod", "bareos-dir",
+      {.address = std::string{"127.0.0.1"},
+       .port = 39101,
+       .password = std::string{"director-secret"},
+       .working_directory = (runtime_path.path() / "director").string(),
+       .messages = std::string{"Daemon"}});
+  ASSERT_TRUE(director) << director.error;
+
+  auto catalog
+      = state.UpsertDirectorCatalogResource("prod", "bareos-dir", "MyCatalog",
+                                            {.db_password = std::string{""},
+                                             .db_user = std::string{"bareos"},
+                                             .db_name = std::string{"bareos"}});
+  ASSERT_TRUE(catalog) << catalog.error;
+
+  auto job = state.CreateJob({.type = "initialize_catalog_database",
+                              .deployment_id = std::string{"prod"}});
+  ASSERT_TRUE(job);
+
+  auto finished = WaitForJobTerminal(state, job.value->id);
+  ASSERT_TRUE(finished.has_value());
+  EXPECT_EQ(finished->status, JobStatus::kSucceeded);
+  EXPECT_NE(std::find(finished->logs.begin(), finished->logs.end(),
+                      "created database 'bareos'"),
+            finished->logs.end());
+  EXPECT_NE(std::find(finished->logs.begin(), finished->logs.end(),
+                      "created catalog tables in 'bareos'"),
+            finished->logs.end());
+  EXPECT_NE(std::find(finished->logs.begin(), finished->logs.end(),
+                      "created database user 'bareos' and granted catalog "
+                      "privileges"),
+            finished->logs.end());
+
+  EXPECT_EQ(ReadTextFile(script_log),
+            "create_bareos_database\nmake_bareos_tables\n"
+            "grant_bareos_privileges\n");
+  const auto psql_calls = ReadTextFile(psql_log);
+  EXPECT_NE(psql_calls.find("pg_catalog.pg_roles"), std::string::npos);
+  EXPECT_NE(psql_calls.find("pg_catalog.pg_database"), std::string::npos);
+  EXPECT_NE(psql_calls.find("information_schema.tables"), std::string::npos);
+}
+#endif
 
 TEST(BconfigService, ExpandsTildeRepositoryPaths)
 {

@@ -178,7 +178,7 @@ static void StoreCipher(lexer* lc, const ResourceItem* item, int index, int)
 {
   auto* client = dynamic_cast<ClientResource*>(*item->allocated_resource);
   if (!client) {
-    scan_err0(lc, T_("PkiCipher is only supported in Client resources."));
+    scan_err(lc, T_("PkiCipher is only supported in Client resources."));
     return;
   }
 
@@ -290,9 +290,9 @@ ConfigurationParser* InitFdConfig(const char* t_configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
       t_configfile, InitResourceCb, ParseConfigCb, PrintConfigCb, exit_code,
-      R_NUM, resources,
-      default_config_filename.c_str(), "bareos-fd.d", ConfigBeforeCallback,
-      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
+      R_NUM, resources, default_config_filename.c_str(), "bareos-fd.d",
+      ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
+      FreeResource);
   if (config) { config->r_own_ = R_CLIENT; }
   return config;
 }

@@ -109,7 +109,7 @@ const directorRef = computed({
   get: () => settings.directorName,
   set: (value) => { settings.directorName = value },
 })
-const password  = ref('')
+const password  = ref(auth.getStagedSetupPassword())
 const locale    = ref(settings.locale)
 const loading   = ref(false)
 const errorMsg  = ref(null)

@@ -1334,8 +1334,8 @@ void ConfigurationParser::StoreAddresses(lexer* lc,
                        IPADDR::R_MULTIPLE, htons(port), family, hostname_str,
                        port_str, errmsg, sizeof(errmsg),
                        IsOptionValidationEnabled())) {
-      scan_err3(lc, T_("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
-                hostname_str, port_str, errmsg);
+      scan_err(lc, T_("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
+               hostname_str, port_str, errmsg);
     }
     token = ScanToNextNotEol(lc);
   } while ((token == BCT_IDENTIFIER || token == BCT_UNQUOTED_STRING));
@@ -1366,7 +1366,7 @@ void ConfigurationParser::StoreAddressesAddress(lexer* lc,
                      IPADDR::R_SINGLE_ADDR, htons(port),
                      strchr(lc->str, ':') ? AF_INET6 : AF_INET, lc->str, 0,
                      errmsg, sizeof(errmsg), IsOptionValidationEnabled())) {
-    scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
+    scan_err(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
   }
 }
 
@@ -1398,14 +1398,14 @@ void ConfigurationParser::StoreAddressesPort(lexer* lc,
         && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
                        IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
                        errmsg, sizeof(errmsg), IsOptionValidationEnabled())) {
-      scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
+      scan_err(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
     }
   } else {
     if (pass == 1
         && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
                        IPADDR::R_SINGLE, htons(port), 0, 0, lc->str, errmsg,
                        sizeof(errmsg), IsOptionValidationEnabled())) {
-      scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
+      scan_err(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
     }
   }
 }

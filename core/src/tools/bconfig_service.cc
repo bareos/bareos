@@ -60,7 +60,15 @@
 #include <sstream>
 #include <stdexcept>
 #include <system_error>
+#include <thread>
 #include <variant>
+
+#if !HAVE_WIN32
+#  include <csignal>
+#  include <fcntl.h>
+#  include <sys/wait.h>
+#  include <unistd.h>
+#endif
 
 namespace bconfig::service {
 namespace {
@@ -195,6 +203,816 @@ std::vector<std::string> SplitLines(const std::string& text)
   }
   return lines;
 }
+
+std::optional<std::string> GetEnvironmentVariable(std::string_view name)
+{
+  if (const char* value = std::getenv(std::string{name}.c_str());
+      value && value[0] != '\0') {
+    return std::string{value};
+  }
+  return std::nullopt;
+}
+
+bool PathExists(const std::filesystem::path& path)
+{
+  std::error_code error_code;
+  return std::filesystem::exists(path, error_code) && !error_code;
+}
+
+bool IsExecutableFile(const std::filesystem::path& path)
+{
+  if (!PathExists(path)) { return false; }
+#if HAVE_WIN32
+  return true;
+#else
+  return access(path.c_str(), X_OK) == 0;
+#endif
+}
+
+std::vector<std::filesystem::path> FindPathsInEnvironment(
+    std::string_view executable_name)
+{
+  std::vector<std::filesystem::path> results;
+  const auto path_environment = GetEnvironmentVariable("PATH");
+  if (!path_environment) { return results; }
+
+  std::stringstream stream{*path_environment};
+  std::string segment;
+  while (std::getline(stream, segment, ':')) {
+    if (segment.empty()) { continue; }
+    const auto candidate = std::filesystem::path{segment} / executable_name;
+    if (IsExecutableFile(candidate)) { results.emplace_back(candidate); }
+  }
+  return results;
+}
+
+template <typename Container>
+void AppendUniqueExistingDirectories(std::vector<std::filesystem::path>& target,
+                                     const Container& candidates)
+{
+  for (const auto& candidate : candidates) {
+    if (candidate.empty() || !PathExists(candidate)
+        || !std::filesystem::is_directory(candidate)) {
+      continue;
+    }
+    if (std::find(target.begin(), target.end(), candidate) == target.end()) {
+      target.emplace_back(candidate);
+    }
+  }
+}
+
+std::vector<std::filesystem::path> DefaultStorageBackendDirectories()
+{
+  std::vector<std::filesystem::path> candidates;
+  if (const auto override_path
+      = GetEnvironmentVariable("BCONFIG_BAREOS_SD_BACKEND_DIR")) {
+    AppendUniqueExistingDirectories(candidates,
+                                    std::array<std::filesystem::path, 1>{
+                                        std::filesystem::path{*override_path}});
+  }
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  if (std::string_view{PATH_BAREOS_BACKENDDIR}.size() > 0) {
+    AppendUniqueExistingDirectories(
+        candidates, std::array<std::filesystem::path, 1>{
+                        std::filesystem::path{PATH_BAREOS_BACKENDDIR}});
+  }
+#endif
+#if !HAVE_WIN32
+  std::error_code error_code;
+  const auto self = std::filesystem::canonical("/proc/self/exe", error_code);
+  if (!error_code) {
+    AppendUniqueExistingDirectories(
+        candidates,
+        std::array<std::filesystem::path, 1>{self.parent_path().parent_path()
+                                             / "stored" / "backends"});
+  }
+#endif
+  return candidates;
+}
+
+OperationResult<std::filesystem::path> ResolveBareosExecutable(
+    std::string_view environment_name,
+    std::string_view executable_name,
+    const std::filesystem::path& relative_build_path)
+{
+  if (const auto override_path = GetEnvironmentVariable(environment_name)) {
+    const auto candidate = std::filesystem::path{*override_path};
+    if (IsExecutableFile(candidate)) { return {.value = candidate}; }
+    return {.error = "configured executable '" + candidate.string() + "' for "
+                     + std::string{environment_name} + " is not executable."};
+  }
+
+#if !HAVE_WIN32
+  std::error_code error_code;
+  const auto self = std::filesystem::canonical("/proc/self/exe", error_code);
+  if (!error_code) {
+    const auto candidate
+        = self.parent_path().parent_path() / relative_build_path;
+    if (IsExecutableFile(candidate)) { return {.value = candidate}; }
+  }
+#endif
+
+  for (const auto& candidate : FindPathsInEnvironment(executable_name)) {
+    return {.value = candidate};
+  }
+
+  for (const auto& candidate :
+       {std::filesystem::path{"/usr/sbin"} / executable_name,
+        std::filesystem::path{"/usr/bin"} / executable_name}) {
+    if (IsExecutableFile(candidate)) { return {.value = candidate}; }
+  }
+
+  return {.error = "could not locate executable '"
+                   + std::string{executable_name} + "'."};
+}
+
+#if !HAVE_WIN32
+struct StartedSmokeTestProcess {
+  std::string label{};
+  std::filesystem::path executable{};
+  std::filesystem::path config_root{};
+  std::filesystem::path log_path{};
+  pid_t pid{-1};
+};
+
+struct ScopedPathCleanup {
+  std::filesystem::path path{};
+
+  ~ScopedPathCleanup()
+  {
+    if (path.empty()) { return; }
+    std::error_code error_code;
+    std::filesystem::remove_all(path, error_code);
+  }
+};
+
+struct CatalogProvisioningTarget {
+  DeploymentRecord deployment{};
+  std::string director_name{};
+  std::string catalog_name{};
+  DirectorCatalogResourceSpec catalog_spec{};
+};
+
+bool WriteFile(const std::filesystem::path& path, const std::string& content);
+OperationResult<std::string> ReadFile(const std::filesystem::path& path);
+std::vector<DeploymentConfigRecord> DiscoverDeploymentConfigRoots(
+    const std::filesystem::path& repository_root);
+
+std::string TrimTrailingNewlines(std::string text)
+{
+  while (!text.empty() && (text.back() == '\n' || text.back() == '\r')) {
+    text.pop_back();
+  }
+  return text;
+}
+
+std::string TrimAsciiWhitespace(std::string text)
+{
+  const auto is_whitespace = [](unsigned char ch) { return std::isspace(ch); };
+  auto begin = std::find_if_not(text.begin(), text.end(), is_whitespace);
+  auto end = std::find_if_not(text.rbegin(), text.rend(), is_whitespace).base();
+  if (begin >= end) { return {}; }
+  return std::string(begin, end);
+}
+
+std::string EscapeSqlLiteral(std::string_view value)
+{
+  std::string escaped;
+  escaped.reserve(value.size());
+  for (const char ch : value) {
+    escaped.push_back(ch);
+    if (ch == '\'') { escaped.push_back('\''); }
+  }
+  return escaped;
+}
+
+void ReplaceAll(std::string& text,
+                std::string_view needle,
+                std::string_view replacement)
+{
+  size_t position = 0;
+  while ((position = text.find(needle, position)) != std::string::npos) {
+    text.replace(position, needle.size(), replacement);
+    position += replacement.size();
+  }
+}
+
+OperationResult<std::filesystem::path> ResolveCatalogHelperScript(
+    std::string_view environment_name,
+    std::string_view script_name,
+    const std::filesystem::path& relative_build_path,
+    bool& used_override)
+{
+  used_override = false;
+  if (const auto override_path = GetEnvironmentVariable(environment_name)) {
+    used_override = true;
+    const auto candidate = std::filesystem::path{*override_path};
+    if (IsExecutableFile(candidate)) { return {.value = candidate}; }
+    return {.error = "configured script '" + candidate.string() + "' for "
+                     + std::string{environment_name} + " is not executable."};
+  }
+
+  return ResolveBareosExecutable(environment_name, script_name,
+                                 relative_build_path);
+}
+
+OperationResult<std::filesystem::path> ResolveCatalogConfigLibPath()
+{
+  if (const auto override_path
+      = GetEnvironmentVariable("BCONFIG_BAREOS_CONFIG_LIB")) {
+    const auto candidate = std::filesystem::path{*override_path};
+    if (PathExists(candidate)) { return {.value = candidate}; }
+    return {.error = "configured config library '" + candidate.string()
+                     + "' for BCONFIG_BAREOS_CONFIG_LIB does not exist."};
+  }
+
+  std::error_code error_code;
+  const auto self = std::filesystem::canonical("/proc/self/exe", error_code);
+  if (!error_code) {
+    const auto base = self.parent_path().parent_path();
+    for (const auto& candidate :
+         {base / "scripts" / "bareos-config-lib.sh",
+          base.parent_path() / "scripts" / "bareos-config-lib.sh"}) {
+      if (PathExists(candidate)) { return {.value = candidate}; }
+    }
+  }
+
+  return {.error = "could not locate bareos-config-lib.sh."};
+}
+
+OperationResult<std::filesystem::path> ResolveCatalogSqlDdlDirectory()
+{
+  if (const auto override_path
+      = GetEnvironmentVariable("BCONFIG_BAREOS_SQL_DDL_DIR")) {
+    const auto candidate = std::filesystem::path{*override_path};
+    if (PathExists(candidate) && std::filesystem::is_directory(candidate)) {
+      return {.value = candidate};
+    }
+    return {.error = "configured SQL DDL directory '" + candidate.string()
+                     + "' for BCONFIG_BAREOS_SQL_DDL_DIR is not a directory."};
+  }
+
+  std::error_code error_code;
+  const auto self = std::filesystem::canonical("/proc/self/exe", error_code);
+  if (!error_code) {
+    const auto base = self.parent_path().parent_path();
+    const auto repo_root = base.parent_path().parent_path().parent_path();
+    for (const auto& candidate :
+         {repo_root / "core" / "src" / "cats" / "ddl", base / "cats" / "ddl",
+          base / "src" / "cats" / "ddl",
+          base.parent_path() / "src" / "cats" / "ddl"}) {
+      if (PathExists(candidate) && std::filesystem::is_directory(candidate)) {
+        return {.value = candidate};
+      }
+    }
+  }
+
+  return {.error = "could not locate Bareos SQL DDL directory."};
+}
+
+OperationResult<std::filesystem::path> PrepareCatalogHelperScript(
+    const std::filesystem::path& script_path,
+    const std::filesystem::path& config_lib_path,
+    const std::filesystem::path& staging_directory)
+{
+  auto script_content = ReadFile(script_path);
+  if (!script_content) { return {.error = script_content.error}; }
+
+  const std::string original_source
+      = ". \"/usr/local/lib/bareos/scripts\"/bareos-config-lib.sh";
+  const std::string replacement_source
+      = ". " + QuoteCommandArgument(config_lib_path.string());
+  ReplaceAll(*script_content.value, original_source, replacement_source);
+
+  const auto staged_path = staging_directory / script_path.filename();
+  if (!WriteFile(staged_path, *script_content.value)) {
+    return {.error = "failed to write temporary helper script '"
+                     + staged_path.string() + "'."};
+  }
+
+  std::error_code error_code;
+  std::filesystem::permissions(
+      staged_path,
+      std::filesystem::perms::owner_read | std::filesystem::perms::owner_write
+          | std::filesystem::perms::owner_exec,
+      std::filesystem::perm_options::replace, error_code);
+  if (error_code) {
+    return {.error = "failed to make temporary helper script executable '"
+                     + staged_path.string() + "': " + error_code.message()};
+  }
+
+  return {.value = staged_path};
+}
+
+OperationResult<CatalogProvisioningTarget> ResolveCatalogProvisioningTarget(
+    const ServiceState& state,
+    const JobRecord& job_snapshot)
+{
+  if (!job_snapshot.deployment_id) {
+    return {.error = "deployment_id is required"};
+  }
+
+  auto deployment = state.GetDeployment(*job_snapshot.deployment_id);
+  if (!deployment) { return {.error = "deployment not found"}; }
+
+  std::vector<DeploymentConfigRecord> director_configs;
+  for (const auto& config :
+       DiscoverDeploymentConfigRoots(deployment->repository_path)) {
+    if (config.component == bconfig::Component::kDirector) {
+      director_configs.emplace_back(config);
+    }
+  }
+
+  if (director_configs.empty()) {
+    return {.error = "no director config found in deployment repo"};
+  }
+  if (director_configs.size() != 1) {
+    return {.error
+            = "catalog initialization requires exactly one director "
+              "config root"};
+  }
+
+  const auto& director_config = director_configs.front();
+  const auto catalog_directory
+      = director_config.path / "bareos-dir.d" / "catalog";
+  if (!std::filesystem::is_directory(catalog_directory)) {
+    return {.error = "director '" + director_config.name
+                     + "' does not define a catalog directory."};
+  }
+
+  std::vector<std::string> catalog_names;
+  for (const auto& entry :
+       std::filesystem::directory_iterator(catalog_directory)) {
+    if (!entry.is_regular_file() || entry.path().extension() != ".conf") {
+      continue;
+    }
+    catalog_names.emplace_back(entry.path().stem().string());
+  }
+
+  if (catalog_names.empty()) {
+    return {.error = "director '" + director_config.name
+                     + "' does not define any catalog resource files."};
+  }
+  std::sort(catalog_names.begin(), catalog_names.end());
+  if (catalog_names.size() != 1) {
+    return {.error
+            = "catalog initialization requires exactly one catalog "
+              "resource file"};
+  }
+
+  auto catalog_spec = state.GetDirectorCatalogResourceSpec(
+      *job_snapshot.deployment_id, director_config.name, catalog_names.front());
+  if (!catalog_spec) { return {.error = catalog_spec.error}; }
+  if (!catalog_spec.value->db_name || catalog_spec.value->db_name->empty()) {
+    return {.error = "director catalog '" + catalog_names.front()
+                     + "' does not define DbName."};
+  }
+  if (!catalog_spec.value->db_user || catalog_spec.value->db_user->empty()) {
+    return {.error = "director catalog '" + catalog_names.front()
+                     + "' does not define DbUser."};
+  }
+  if (!catalog_spec.value->db_password) {
+    return {.error = "director catalog '" + catalog_names.front()
+                     + "' does not define DbPassword."};
+  }
+
+  return {.value = CatalogProvisioningTarget{
+              .deployment = *deployment,
+              .director_name = director_config.name,
+              .catalog_name = catalog_names.front(),
+              .catalog_spec = *catalog_spec.value,
+          }};
+}
+
+std::vector<std::string> BuildCatalogCommandPrefix(
+    const DirectorCatalogResourceSpec& catalog_spec,
+    const std::filesystem::path& sql_ddl_directory)
+{
+  std::vector<std::string> command{
+      "env", "SQL_DDL_DIR=" + sql_ddl_directory.string(),
+      "db_name=" + *catalog_spec.db_name, "db_user=" + *catalog_spec.db_user,
+      "db_password=" + *catalog_spec.db_password};
+  if (catalog_spec.db_socket && !catalog_spec.db_socket->empty()) {
+    command.emplace_back("PGHOST=" + *catalog_spec.db_socket);
+  } else if (catalog_spec.db_address && !catalog_spec.db_address->empty()) {
+    command.emplace_back("PGHOST=" + *catalog_spec.db_address);
+  }
+  if (catalog_spec.db_port) {
+    command.emplace_back("PGPORT=" + std::to_string(*catalog_spec.db_port));
+  }
+  return command;
+}
+
+OperationResult<std::string> RunCatalogPsqlQuery(
+    const std::filesystem::path& psql_path,
+    const DirectorCatalogResourceSpec& catalog_spec,
+    std::string_view database_name,
+    std::string_view query)
+{
+  auto command
+      = BuildCatalogCommandPrefix(catalog_spec, std::filesystem::path{});
+  command.erase(std::remove_if(command.begin(), command.end(),
+                               [](const std::string& value) {
+                                 return value.rfind("SQL_DDL_DIR=", 0) == 0;
+                               }),
+                command.end());
+  command.emplace_back(psql_path.string());
+  command.emplace_back("--no-psqlrc");
+  command.emplace_back("--tuples-only");
+  command.emplace_back("--no-align");
+  command.emplace_back("-d");
+  command.emplace_back(std::string{database_name});
+  command.emplace_back("--command");
+  command.emplace_back(std::string{query});
+  return RunCommand(BuildCommand(command));
+}
+
+OperationResult<bool> CatalogQueryHasRow(
+    const std::filesystem::path& psql_path,
+    const DirectorCatalogResourceSpec& spec,
+    std::string_view database_name,
+    std::string_view query)
+{
+  auto result = RunCatalogPsqlQuery(psql_path, spec, database_name, query);
+  if (!result) { return {.error = result.error}; }
+  for (const auto& line : SplitLines(*result.value)) {
+    if (TrimAsciiWhitespace(line) == "1") { return {.value = true}; }
+  }
+  return {.value = false};
+}
+
+OperationResult<std::monostate> RunCatalogHelperScript(
+    const std::filesystem::path& script_path,
+    const DirectorCatalogResourceSpec& catalog_spec,
+    const std::filesystem::path& sql_ddl_directory)
+{
+  auto command = BuildCatalogCommandPrefix(catalog_spec, sql_ddl_directory);
+  command.emplace_back(script_path.string());
+  auto result = RunCommand(BuildCommand(command));
+  if (!result) { return {.error = result.error}; }
+  return {.value = std::monostate{}};
+}
+
+OperationResult<std::monostate> ApplyCatalogPrivilegesForExistingUser(
+    const std::filesystem::path& psql_path,
+    const DirectorCatalogResourceSpec& catalog_spec,
+    const std::filesystem::path& sql_ddl_directory,
+    const std::filesystem::path& staging_directory)
+{
+  auto grant_template
+      = ReadFile(sql_ddl_directory / "grants" / "postgresql.sql");
+  if (!grant_template) { return {.error = grant_template.error}; }
+
+  auto translated = *grant_template.value;
+  ReplaceAll(translated, "@DB_NAME@", *catalog_spec.db_name);
+  ReplaceAll(translated, "@DB_USER@", *catalog_spec.db_user);
+  ReplaceAll(
+      translated, "@DB_PASS@",
+      catalog_spec.db_password->empty()
+          ? std::string{}
+          : "PASSWORD '" + EscapeSqlLiteral(*catalog_spec.db_password) + "'");
+  ReplaceAll(translated, "@DB_VERSION@", "2250");
+
+  std::ostringstream filtered;
+  std::istringstream input(translated);
+  std::string line;
+  while (std::getline(input, line)) {
+    if (line.rfind("CREATE USER ", 0) == 0) { continue; }
+    filtered << line << "\n";
+  }
+
+  const auto grants_path = staging_directory / "grant-existing-user.sql";
+  if (!WriteFile(grants_path, filtered.str())) {
+    return {.error = "failed to write temporary grants file '"
+                     + grants_path.string() + "'."};
+  }
+
+  auto command = BuildCatalogCommandPrefix(catalog_spec, sql_ddl_directory);
+  command.erase(std::remove_if(command.begin(), command.end(),
+                               [](const std::string& value) {
+                                 return value.rfind("db_password=", 0) == 0
+                                        || value.rfind("db_user=", 0) == 0
+                                        || value.rfind("db_name=", 0) == 0
+                                        || value.rfind("SQL_DDL_DIR=", 0) == 0;
+                               }),
+                command.end());
+  command.emplace_back(psql_path.string());
+  command.emplace_back("--no-psqlrc");
+  command.emplace_back("-d");
+  command.emplace_back(*catalog_spec.db_name);
+  command.emplace_back("-f");
+  command.emplace_back(grants_path.string());
+  auto result = RunCommand(BuildCommand(command));
+  if (!result) { return {.error = result.error}; }
+  return {.value = std::monostate{}};
+}
+
+std::pair<JobStatus, std::vector<std::string>> ExecuteInitializeCatalogDatabase(
+    const ServiceState& state,
+    const JobRecord& job_snapshot)
+{
+  std::vector<std::string> logs;
+
+  auto target = ResolveCatalogProvisioningTarget(state, job_snapshot);
+  if (!target) {
+    logs.emplace_back(target.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  logs.emplace_back("initializing catalog '" + target.value->catalog_name
+                    + "' for director '" + target.value->director_name + "'");
+
+  auto psql_path = ResolveBareosExecutable(
+      "BCONFIG_PSQL_BINARY", "psql", std::filesystem::path{"bin"} / "psql");
+  if (!psql_path) {
+    logs.emplace_back(psql_path.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  bool create_script_override = false;
+  auto create_database_script = ResolveCatalogHelperScript(
+      "BCONFIG_BAREOS_CREATE_DATABASE_SCRIPT", "create_bareos_database",
+      std::filesystem::path{"cats"} / "create_bareos_database",
+      create_script_override);
+  if (!create_database_script) {
+    logs.emplace_back(create_database_script.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  bool make_tables_script_override = false;
+  auto make_tables_script = ResolveCatalogHelperScript(
+      "BCONFIG_BAREOS_MAKE_TABLES_SCRIPT", "make_bareos_tables",
+      std::filesystem::path{"cats"} / "make_bareos_tables",
+      make_tables_script_override);
+  if (!make_tables_script) {
+    logs.emplace_back(make_tables_script.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  bool grant_script_override = false;
+  auto grant_privileges_script = ResolveCatalogHelperScript(
+      "BCONFIG_BAREOS_GRANT_PRIVILEGES_SCRIPT", "grant_bareos_privileges",
+      std::filesystem::path{"cats"} / "grant_bareos_privileges",
+      grant_script_override);
+  if (!grant_privileges_script) {
+    logs.emplace_back(grant_privileges_script.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto sql_ddl_directory = ResolveCatalogSqlDdlDirectory();
+  if (!sql_ddl_directory) {
+    logs.emplace_back(sql_ddl_directory.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  const auto staging_directory
+      = std::filesystem::temp_directory_path()
+        / ("bconfig-catalog-" + job_snapshot.id + "-"
+           + std::to_string(
+               static_cast<unsigned long long>(std::time(nullptr))));
+  std::error_code error_code;
+  std::filesystem::create_directories(staging_directory, error_code);
+  if (error_code) {
+    logs.emplace_back("failed to create temporary staging directory '"
+                      + staging_directory.string()
+                      + "': " + error_code.message());
+    return {JobStatus::kFailed, logs};
+  }
+  ScopedPathCleanup cleanup{staging_directory};
+
+  if (!create_script_override || !make_tables_script_override
+      || !grant_script_override) {
+    auto config_lib_path = ResolveCatalogConfigLibPath();
+    if (!config_lib_path) {
+      logs.emplace_back(config_lib_path.error);
+      return {JobStatus::kFailed, logs};
+    }
+
+    if (!create_script_override) {
+      auto staged = PrepareCatalogHelperScript(*create_database_script.value,
+                                               *config_lib_path.value,
+                                               staging_directory);
+      if (!staged) {
+        logs.emplace_back(staged.error);
+        return {JobStatus::kFailed, logs};
+      }
+      create_database_script = std::move(staged);
+    }
+    if (!make_tables_script_override) {
+      auto staged = PrepareCatalogHelperScript(
+          *make_tables_script.value, *config_lib_path.value, staging_directory);
+      if (!staged) {
+        logs.emplace_back(staged.error);
+        return {JobStatus::kFailed, logs};
+      }
+      make_tables_script = std::move(staged);
+    }
+    if (!grant_script_override) {
+      auto staged = PrepareCatalogHelperScript(*grant_privileges_script.value,
+                                               *config_lib_path.value,
+                                               staging_directory);
+      if (!staged) {
+        logs.emplace_back(staged.error);
+        return {JobStatus::kFailed, logs};
+      }
+      grant_privileges_script = std::move(staged);
+    }
+  }
+
+  const auto quoted_db_user
+      = EscapeSqlLiteral(*target.value->catalog_spec.db_user);
+  const auto quoted_db_name
+      = EscapeSqlLiteral(*target.value->catalog_spec.db_name);
+  auto role_exists = CatalogQueryHasRow(
+      *psql_path.value, target.value->catalog_spec, "template1",
+      "SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = '" + quoted_db_user
+          + "';");
+  if (!role_exists) {
+    logs.emplace_back(role_exists.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto database_exists = CatalogQueryHasRow(
+      *psql_path.value, target.value->catalog_spec, "template1",
+      "SELECT 1 FROM pg_catalog.pg_database WHERE datname = '" + quoted_db_name
+          + "';");
+  if (!database_exists) {
+    logs.emplace_back(database_exists.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  if (!*database_exists.value) {
+    auto create_result = RunCatalogHelperScript(*create_database_script.value,
+                                                target.value->catalog_spec,
+                                                *sql_ddl_directory.value);
+    if (!create_result) {
+      logs.emplace_back(create_result.error);
+      return {JobStatus::kFailed, logs};
+    }
+    logs.emplace_back("created database '" + *target.value->catalog_spec.db_name
+                      + "'");
+  } else {
+    logs.emplace_back("database '" + *target.value->catalog_spec.db_name
+                      + "' already exists");
+  }
+
+  auto schema_exists = CatalogQueryHasRow(
+      *psql_path.value, target.value->catalog_spec,
+      *target.value->catalog_spec.db_name,
+      "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' "
+      "AND table_name = 'version';");
+  if (!schema_exists) {
+    logs.emplace_back(schema_exists.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  if (!*schema_exists.value) {
+    auto make_result = RunCatalogHelperScript(*make_tables_script.value,
+                                              target.value->catalog_spec,
+                                              *sql_ddl_directory.value);
+    if (!make_result) {
+      logs.emplace_back(make_result.error);
+      return {JobStatus::kFailed, logs};
+    }
+    logs.emplace_back("created catalog tables in '"
+                      + *target.value->catalog_spec.db_name + "'");
+  } else {
+    logs.emplace_back("catalog tables already exist in '"
+                      + *target.value->catalog_spec.db_name + "'");
+  }
+
+  if (!*role_exists.value) {
+    auto grant_result = RunCatalogHelperScript(*grant_privileges_script.value,
+                                               target.value->catalog_spec,
+                                               *sql_ddl_directory.value);
+    if (!grant_result) {
+      logs.emplace_back(grant_result.error);
+      return {JobStatus::kFailed, logs};
+    }
+    logs.emplace_back("created database user '"
+                      + *target.value->catalog_spec.db_user
+                      + "' and granted catalog privileges");
+  } else {
+    auto grant_result = ApplyCatalogPrivilegesForExistingUser(
+        *psql_path.value, target.value->catalog_spec, *sql_ddl_directory.value,
+        staging_directory);
+    if (!grant_result) {
+      logs.emplace_back(grant_result.error);
+      return {JobStatus::kFailed, logs};
+    }
+    logs.emplace_back("granted catalog privileges to existing database user '"
+                      + *target.value->catalog_spec.db_user + "'");
+  }
+
+  return {JobStatus::kSucceeded, logs};
+}
+
+void AppendSmokeTestLogFile(std::vector<std::string>& logs,
+                            const StartedSmokeTestProcess& process)
+{
+  std::ifstream stream{process.log_path};
+  if (!stream) { return; }
+  const auto output
+      = TrimTrailingNewlines(std::string{std::istreambuf_iterator<char>(stream),
+                                         std::istreambuf_iterator<char>()});
+  if (output.empty()) { return; }
+  for (const auto& line : SplitLines(output)) {
+    logs.emplace_back(process.label + ": " + line);
+  }
+}
+
+OperationResult<StartedSmokeTestProcess> StartSmokeTestProcess(
+    std::string_view label,
+    const std::filesystem::path& executable,
+    const std::filesystem::path& config_root)
+{
+  StartedSmokeTestProcess process{};
+  process.label = std::string{label};
+  process.executable = executable;
+  process.config_root = config_root;
+  process.log_path
+      = std::filesystem::temp_directory_path()
+        / ("bconfig-smoketest-" + process.label + "-"
+           + std::to_string(static_cast<unsigned long long>(std::time(nullptr)))
+           + ".log");
+
+  const auto log_fd = open(process.log_path.c_str(),
+                           O_CREAT | O_TRUNC | O_WRONLY | O_CLOEXEC, 0600);
+  if (log_fd < 0) {
+    return {.error = "failed to open smoke-test log file '"
+                     + process.log_path.string() + "'."};
+  }
+
+  process.pid = fork();
+  if (process.pid < 0) {
+    close(log_fd);
+    return {.error
+            = "failed to fork smoke-test process for " + process.label + "."};
+  }
+  if (process.pid == 0) {
+    dup2(log_fd, STDOUT_FILENO);
+    dup2(log_fd, STDERR_FILENO);
+    close(log_fd);
+    execl(process.executable.c_str(), process.executable.c_str(), "-f", "-c",
+          process.config_root.c_str(), static_cast<char*>(nullptr));
+    _exit(127);
+  }
+
+  close(log_fd);
+  return {.value = std::move(process)};
+}
+
+OperationResult<std::monostate> WaitForSmokeTestStartup(
+    const StartedSmokeTestProcess& process,
+    std::vector<std::string>& logs)
+{
+  for (int attempt = 0; attempt < 20; ++attempt) {
+    int status = 0;
+    const auto waited = waitpid(process.pid, &status, WNOHANG);
+    if (waited == process.pid) {
+      AppendSmokeTestLogFile(logs, process);
+      return {.error = process.label + " exited before startup completed."};
+    }
+    if (waited < 0) {
+      return {.error = "failed to wait for " + process.label + " process."};
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+  logs.emplace_back("started " + process.label + " using "
+                    + process.executable.string());
+  return {.value = std::monostate{}};
+}
+
+std::optional<std::string> StopSmokeTestProcess(
+    const StartedSmokeTestProcess& process,
+    std::vector<std::string>& logs)
+{
+  if (process.pid <= 0) { return std::nullopt; }
+
+  kill(process.pid, SIGTERM);
+  int status = 0;
+  for (int attempt = 0; attempt < 40; ++attempt) {
+    const auto waited = waitpid(process.pid, &status, WNOHANG);
+    if (waited == process.pid) {
+      AppendSmokeTestLogFile(logs, process);
+      logs.emplace_back("stopped " + process.label);
+      return std::nullopt;
+    }
+    if (waited < 0) {
+      return "failed to wait for " + process.label + " during shutdown.";
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+
+  kill(process.pid, SIGKILL);
+  if (waitpid(process.pid, &status, 0) < 0) {
+    return "failed to reap " + process.label + " after SIGKILL.";
+  }
+  AppendSmokeTestLogFile(logs, process);
+  logs.emplace_back("force-stopped " + process.label);
+  return std::nullopt;
+}
+#endif
 
 OperationResult<DeploymentDiffPreviewRecord> LoadDeploymentDiffPreview(
     const std::filesystem::path& repository_root)
@@ -612,7 +1430,8 @@ bool HasManagedConfigFiles(const DeploymentConfigRecord& config)
   }
 #endif
 
-  const auto config_directory_name = ComponentConfigDirectoryName(config.component);
+  const auto config_directory_name
+      = ComponentConfigDirectoryName(config.component);
   if (config_directory_name.empty()) { return false; }
 
   const auto config_directory = config.path / config_directory_name;
@@ -10084,12 +10903,7 @@ std::filesystem::path ExpandUserPath(const std::filesystem::path& path)
   return path;
 }
 
-std::filesystem::path DefaultStorageBasePath()
-{
-  const auto home = HomeDirectory();
-  if (!home.empty()) { return home / "tmp/bconfig"; }
-  return std::filesystem::temp_directory_path() / "bconfig";
-}
+std::filesystem::path DefaultStorageBasePath() { return "/var/lib/bconfig"; }
 
 std::filesystem::path DefaultDeploymentRepositoryPath(
     std::string_view deployment_id)
@@ -10917,9 +11731,7 @@ OperationResult<ClientDirectorStubSpec> ServiceState::GetClientDirectorStubSpec(
 {
   auto client_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kClient, client_name);
-  if (!client_config) {
-    return {.error = client_config.error};
-  }
+  if (!client_config) { return {.error = client_config.error}; }
 
   auto context = LoadClientDirectorStubWriteContext(client_config.value->path,
                                                     director_name);
@@ -10968,9 +11780,7 @@ ServiceState::GetDirectorClientResourceSpec(std::string_view deployment_id,
 {
   auto director_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kDirector, director_name);
-  if (!director_config) {
-    return {.error = director_config.error};
-  }
+  if (!director_config) { return {.error = director_config.error}; }
 
   auto context
       = LoadDirectorClientWriteContext(*director_config.value, client_name);
@@ -11037,9 +11847,7 @@ ServiceState::GetDirectorStorageResourceSpec(
 {
   auto director_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kDirector, director_name);
-  if (!director_config) {
-    return {.error = director_config.error};
-  }
+  if (!director_config) { return {.error = director_config.error}; }
 
   auto context
       = LoadDirectorStorageWriteContext(*director_config.value, storage_name);
@@ -11099,9 +11907,7 @@ ServiceState::GetDirectorConsoleResourceSpec(
 {
   auto director_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kDirector, director_name);
-  if (!director_config) {
-    return {.error = director_config.error};
-  }
+  if (!director_config) { return {.error = director_config.error}; }
 
   auto context
       = LoadDirectorConsoleWriteContext(*director_config.value, console_name);
@@ -11143,9 +11949,7 @@ ServiceState::GetStorageDirectorResourceSpec(
 {
   auto storage_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kStorage, storage_name);
-  if (!storage_config) {
-    return {.error = storage_config.error};
-  }
+  if (!storage_config) { return {.error = storage_config.error}; }
 
   const auto repository_root
       = RepositoryRootFromConfigPath(storage_config.value->path);
@@ -11192,9 +11996,7 @@ ServiceState::GetStorageDeviceResourceSpec(std::string_view deployment_id,
 {
   auto storage_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kStorage, storage_name);
-  if (!storage_config) {
-    return {.error = storage_config.error};
-  }
+  if (!storage_config) { return {.error = storage_config.error}; }
 
   const auto repository_root
       = RepositoryRootFromConfigPath(storage_config.value->path);
@@ -11275,9 +12077,7 @@ ServiceState::GetClientDaemonResourceSpec(std::string_view deployment_id,
 {
   auto client_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kClient, client_name);
-  if (!client_config) {
-    return {.error = client_config.error};
-  }
+  if (!client_config) { return {.error = client_config.error}; }
 
   auto context = LoadClientDaemonWriteContext(*client_config.value);
   if (!context) { return {.error = context.error}; }
@@ -11296,9 +12096,7 @@ ServiceState::GetDirectorDaemonResourceSpec(
 {
   auto director_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kDirector, director_name);
-  if (!director_config) {
-    return {.error = director_config.error};
-  }
+  if (!director_config) { return {.error = director_config.error}; }
 
   auto context = LoadDirectorDaemonWriteContext(*director_config.value);
   if (!context) { return {.error = context.error}; }
@@ -11340,9 +12138,7 @@ ServiceState::GetClientMessagesResourceSpec(
 {
   auto client_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kClient, client_name);
-  if (!client_config) {
-    return {.error = client_config.error};
-  }
+  if (!client_config) { return {.error = client_config.error}; }
 
   auto context
       = LoadClientMessagesWriteContext(*client_config.value, messages_name);
@@ -11364,9 +12160,7 @@ ServiceState::GetDirectorMessagesResourceSpec(
 {
   auto director_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kDirector, director_name);
-  if (!director_config) {
-    return {.error = director_config.error};
-  }
+  if (!director_config) { return {.error = director_config.error}; }
 
   auto context
       = LoadDirectorMessagesWriteContext(*director_config.value, messages_name);
@@ -11388,9 +12182,7 @@ ServiceState::GetStorageMessagesResourceSpec(
 {
   auto storage_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kStorage, storage_name);
-  if (!storage_config) {
-    return {.error = storage_config.error};
-  }
+  if (!storage_config) { return {.error = storage_config.error}; }
 
   auto context
       = LoadStorageMessagesWriteContext(*storage_config.value, messages_name);
@@ -11411,9 +12203,7 @@ ServiceState::GetDirectorUserResourceSpec(std::string_view deployment_id,
 {
   auto director_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kDirector, director_name);
-  if (!director_config) {
-    return {.error = director_config.error};
-  }
+  if (!director_config) { return {.error = director_config.error}; }
 
   auto context
       = LoadDirectorUserWriteContext(*director_config.value, user_name);
@@ -11888,9 +12678,7 @@ ServiceState::UpsertClientMessagesResource(
 
   auto client_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kClient, client_name);
-  if (!client_config) {
-    return {.error = client_config.error};
-  }
+  if (!client_config) { return {.error = client_config.error}; }
 
   auto context
       = LoadClientMessagesWriteContext(*client_config.value, messages_name);
@@ -12307,9 +13095,7 @@ ServiceState::UpsertDirectorDaemonResource(
   }
   auto director_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kDirector, director_name);
-  if (!director_config) {
-    return {.error = director_config.error};
-  }
+  if (!director_config) { return {.error = director_config.error}; }
 
   auto context = LoadDirectorDaemonWriteContext(*director_config.value);
   if (!context) { return {.error = context.error}; }
@@ -13422,9 +14208,7 @@ ServiceState::GetConsoleConsoleResourceSpec(
 {
   auto console_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kConsole, console_config_name);
-  if (!console_config) {
-    return {.error = console_config.error};
-  }
+  if (!console_config) { return {.error = console_config.error}; }
 
   auto context
       = LoadConsoleConsoleWriteContext(*console_config.value, console_name);
@@ -13445,9 +14229,7 @@ ServiceState::GetConsoleDirectorResourceSpec(
 {
   auto console_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kConsole, console_config_name);
-  if (!console_config) {
-    return {.error = console_config.error};
-  }
+  if (!console_config) { return {.error = console_config.error}; }
 
   auto context
       = LoadConsoleDirectorWriteContext(*console_config.value, director_name);
@@ -13480,9 +14262,7 @@ ServiceState::UpsertConsoleConsoleResource(
 
   auto console_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kConsole, console_config_name);
-  if (!console_config) {
-    return {.error = console_config.error};
-  }
+  if (!console_config) { return {.error = console_config.error}; }
 
   auto context
       = LoadConsoleConsoleWriteContext(*console_config.value, console_name);
@@ -13607,9 +14387,7 @@ ServiceState::DeleteConsoleConsoleResource(std::string_view deployment_id,
 
   auto console_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kConsole, console_config_name);
-  if (!console_config) {
-    return {.error = console_config.error};
-  }
+  if (!console_config) { return {.error = console_config.error}; }
 
   auto context
       = LoadConsoleConsoleWriteContext(*console_config.value, console_name);
@@ -13669,9 +14447,7 @@ ServiceState::UpsertConsoleDirectorResource(
 
   auto console_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kConsole, console_config_name);
-  if (!console_config) {
-    return {.error = console_config.error};
-  }
+  if (!console_config) { return {.error = console_config.error}; }
 
   auto context
       = LoadConsoleDirectorWriteContext(*console_config.value, director_name);
@@ -13788,9 +14564,7 @@ ServiceState::DeleteConsoleDirectorResource(
 
   auto console_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kConsole, console_config_name);
-  if (!console_config) {
-    return {.error = console_config.error};
-  }
+  if (!console_config) { return {.error = console_config.error}; }
 
   auto context
       = LoadConsoleDirectorWriteContext(*console_config.value, director_name);
@@ -13848,9 +14622,7 @@ ServiceState::UpsertDirectorUserResource(
 
   auto director_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kDirector, director_name);
-  if (!director_config) {
-    return {.error = director_config.error};
-  }
+  if (!director_config) { return {.error = director_config.error}; }
 
   auto context
       = LoadDirectorUserWriteContext(*director_config.value, user_name);
@@ -13944,9 +14716,7 @@ ServiceState::DeleteDirectorUserResource(std::string_view deployment_id,
 
   auto director_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kDirector, director_name);
-  if (!director_config) {
-    return {.error = director_config.error};
-  }
+  if (!director_config) { return {.error = director_config.error}; }
 
   auto context
       = LoadDirectorUserWriteContext(*director_config.value, user_name);
@@ -14583,9 +15353,7 @@ ServiceState::UpsertDirectorMessagesResource(
 
   auto director_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kDirector, director_name);
-  if (!director_config) {
-    return {.error = director_config.error};
-  }
+  if (!director_config) { return {.error = director_config.error}; }
 
   auto context
       = LoadDirectorMessagesWriteContext(*director_config.value, messages_name);
@@ -15969,9 +16737,7 @@ ServiceState::UpsertStorageMessagesResource(
 
   auto storage_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kStorage, storage_name);
-  if (!storage_config) {
-    return {.error = storage_config.error};
-  }
+  if (!storage_config) { return {.error = storage_config.error}; }
 
   auto context
       = LoadStorageMessagesWriteContext(*storage_config.value, messages_name);
@@ -16090,9 +16856,7 @@ ServiceState::DeleteStorageMessagesResource(
 
   auto storage_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kStorage, storage_name);
-  if (!storage_config) {
-    return {.error = storage_config.error};
-  }
+  if (!storage_config) { return {.error = storage_config.error}; }
 
   auto context
       = LoadStorageMessagesWriteContext(*storage_config.value, messages_name);
@@ -16161,9 +16925,7 @@ ServiceState::UpsertStorageDirectorResource(
 
   auto storage_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kStorage, storage_name);
-  if (!storage_config) {
-    return {.error = storage_config.error};
-  }
+  if (!storage_config) { return {.error = storage_config.error}; }
 
   const auto repository_root
       = RepositoryRootFromConfigPath(storage_config.value->path);
@@ -17330,9 +18092,7 @@ ServiceState::UpsertStorageDaemonResource(
   }
   auto storage_config = EnsureDeploymentConfigRoot(
       *this, deployment_id, bconfig::Component::kStorage, storage_name);
-  if (!storage_config) {
-    return {.error = storage_config.error};
-  }
+  if (!storage_config) { return {.error = storage_config.error}; }
 
   auto context = LoadStorageDaemonWriteContext(*storage_config.value);
   if (!context) { return {.error = context.error}; }
@@ -17462,6 +18222,11 @@ ServiceState::UpsertStorageDaemonResource(
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
   if (spec.backend_directories) {
     content.backend_directories = *spec.backend_directories;
+  }
+  if (content.backend_directories.empty()) {
+    for (const auto& backend_directory : DefaultStorageBackendDirectories()) {
+      content.backend_directories.emplace_back(backend_directory.string());
+    }
   }
 #endif
   if (spec.scripts_directory) {
@@ -17737,6 +18502,269 @@ void ServiceState::RequeueRunningJobsLocked()
   }
 }
 
+OperationResult<std::optional<std::filesystem::path>>
+GetSmokeTestWorkingDirectory(const ServiceState& state,
+                             std::string_view deployment_id,
+                             const DeploymentConfigRecord& config)
+{
+  switch (config.component) {
+    case bconfig::Component::kDirector: {
+      auto spec
+          = state.GetDirectorDaemonResourceSpec(deployment_id, config.name);
+      if (!spec) { return {.error = spec.error}; }
+      if (!spec.value->working_directory) { return {.value = std::nullopt}; }
+      return {.value = std::filesystem::path{*spec.value->working_directory}};
+    }
+    case bconfig::Component::kStorage: {
+      auto spec
+          = state.GetStorageDaemonResourceSpec(deployment_id, config.name);
+      if (!spec) { return {.error = spec.error}; }
+      if (!spec.value->working_directory) { return {.value = std::nullopt}; }
+      return {.value = std::filesystem::path{*spec.value->working_directory}};
+    }
+    case bconfig::Component::kClient: {
+      auto spec = state.GetClientDaemonResourceSpec(deployment_id, config.name);
+      if (!spec) { return {.error = spec.error}; }
+      if (!spec.value->working_directory) { return {.value = std::nullopt}; }
+      return {.value = std::filesystem::path{*spec.value->working_directory}};
+    }
+    default:
+      return {.value = std::nullopt};
+  }
+}
+
+OperationResult<std::filesystem::path> ResolveSmokeTestExecutable(
+    bconfig::Component component)
+{
+  switch (component) {
+    case bconfig::Component::kDirector:
+      return ResolveBareosExecutable(
+          "BCONFIG_BAREOS_DIR_BINARY", "bareos-dir",
+          std::filesystem::path{"dird"} / "bareos-dir");
+    case bconfig::Component::kStorage:
+      return ResolveBareosExecutable(
+          "BCONFIG_BAREOS_SD_BINARY", "bareos-sd",
+          std::filesystem::path{"stored"} / "bareos-sd");
+    case bconfig::Component::kClient:
+      return ResolveBareosExecutable(
+          "BCONFIG_BAREOS_FD_BINARY", "bareos-fd",
+          std::filesystem::path{"filed"} / "bareos-fd");
+    default:
+      return {.error = "unsupported config component for smoke test."};
+  }
+}
+
+#if !HAVE_WIN32
+OperationResult<std::vector<DeploymentConfigRecord>>
+DiscoverOrderedDaemonConfigs(const std::filesystem::path& repository_path)
+{
+  std::vector<DeploymentConfigRecord> daemon_configs;
+  for (const auto& config : DiscoverDeploymentConfigRoots(repository_path)) {
+    if (config.component == bconfig::Component::kClient
+        || config.component == bconfig::Component::kStorage
+        || config.component == bconfig::Component::kDirector) {
+      daemon_configs.emplace_back(config);
+    }
+  }
+  if (daemon_configs.empty()) {
+    return {.error = "no client, storage, or director configs found"};
+  }
+
+  const auto component_order = [](bconfig::Component component) {
+    switch (component) {
+      case bconfig::Component::kClient:
+        return 0;
+      case bconfig::Component::kStorage:
+        return 1;
+      case bconfig::Component::kDirector:
+        return 2;
+      default:
+        return 3;
+    }
+  };
+  std::sort(daemon_configs.begin(), daemon_configs.end(),
+            [&](const auto& left, const auto& right) {
+              return component_order(left.component)
+                     < component_order(right.component);
+            });
+  return {.value = std::move(daemon_configs)};
+}
+
+OperationResult<std::monostate> EnsureDaemonWorkingDirectories(
+    const ServiceState& state,
+    std::string_view deployment_id,
+    const std::vector<DeploymentConfigRecord>& daemon_configs,
+    std::vector<std::string>& logs)
+{
+  for (const auto& config : daemon_configs) {
+    auto working_directory
+        = GetSmokeTestWorkingDirectory(state, deployment_id, config);
+    if (!working_directory) { return {.error = working_directory.error}; }
+
+    const auto& maybe_working_directory = *working_directory.value;
+    if (!maybe_working_directory) { continue; }
+
+    std::error_code error_code;
+    std::filesystem::create_directories(*maybe_working_directory, error_code);
+    if (error_code) {
+      return {.error = "failed to create working directory '"
+                       + maybe_working_directory->string()
+                       + "': " + error_code.message()};
+    }
+    logs.emplace_back("ensured working directory '"
+                      + maybe_working_directory->string() + "'");
+  }
+
+  return {.value = std::monostate{}};
+}
+
+OperationResult<std::vector<StartedSmokeTestProcess>> StartDeploymentProcesses(
+    const std::vector<DeploymentConfigRecord>& daemon_configs,
+    std::vector<std::string>& logs)
+{
+  std::vector<StartedSmokeTestProcess> started_processes;
+  started_processes.reserve(daemon_configs.size());
+  for (const auto& config : daemon_configs) {
+    auto executable = ResolveSmokeTestExecutable(config.component);
+    if (!executable) {
+      for (auto it = started_processes.rbegin(); it != started_processes.rend();
+           ++it) {
+        if (auto stop_error = StopSmokeTestProcess(*it, logs); stop_error) {
+          logs.emplace_back(*stop_error);
+        }
+      }
+      return {.error = executable.error};
+    }
+
+    auto process = StartSmokeTestProcess(
+        std::string{bconfig::ComponentToString(config.component)} + " '"
+            + config.name + "'",
+        *executable.value, config.path);
+    if (!process) {
+      for (auto it = started_processes.rbegin(); it != started_processes.rend();
+           ++it) {
+        if (auto stop_error = StopSmokeTestProcess(*it, logs); stop_error) {
+          logs.emplace_back(*stop_error);
+        }
+      }
+      return {.error = process.error};
+    }
+
+    auto startup = WaitForSmokeTestStartup(*process.value, logs);
+    if (!startup) {
+      if (auto stop_error = StopSmokeTestProcess(*process.value, logs);
+          stop_error) {
+        logs.emplace_back(*stop_error);
+      }
+      for (auto it = started_processes.rbegin(); it != started_processes.rend();
+           ++it) {
+        if (auto stop_error = StopSmokeTestProcess(*it, logs); stop_error) {
+          logs.emplace_back(*stop_error);
+        }
+      }
+      return {.error = startup.error};
+    }
+
+    started_processes.emplace_back(std::move(*process.value));
+  }
+
+  return {.value = std::move(started_processes)};
+}
+
+std::pair<JobStatus, std::vector<std::string>> ExecuteSmokeTestDeployment(
+    const ServiceState& state,
+    const JobRecord& job_snapshot)
+{
+  std::vector<std::string> logs;
+  if (!job_snapshot.deployment_id) {
+    logs.emplace_back("deployment_id is required");
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto deployment = state.GetDeployment(*job_snapshot.deployment_id);
+  if (!deployment) {
+    logs.emplace_back("deployment not found");
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto daemon_configs
+      = DiscoverOrderedDaemonConfigs(deployment->repository_path);
+  if (!daemon_configs) {
+    logs.emplace_back(daemon_configs.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto working_directories = EnsureDaemonWorkingDirectories(
+      state, *job_snapshot.deployment_id, *daemon_configs.value, logs);
+  if (!working_directories) {
+    logs.emplace_back(working_directories.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto started_processes
+      = StartDeploymentProcesses(*daemon_configs.value, logs);
+  if (!started_processes) {
+    logs.emplace_back(started_processes.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  for (auto it = started_processes.value->rbegin();
+       it != started_processes.value->rend(); ++it) {
+    if (auto stop_error = StopSmokeTestProcess(*it, logs); stop_error) {
+      logs.emplace_back(*stop_error);
+      return {JobStatus::kFailed, logs};
+    }
+  }
+
+  logs.emplace_back("smoke-tested "
+                    + std::to_string(daemon_configs.value->size())
+                    + " daemon config root(s)");
+  return {JobStatus::kSucceeded, logs};
+}
+
+std::pair<JobStatus, std::vector<std::string>> ExecuteStartDeploymentDaemons(
+    const ServiceState& state,
+    const JobRecord& job_snapshot)
+{
+  std::vector<std::string> logs;
+  if (!job_snapshot.deployment_id) {
+    logs.emplace_back("deployment_id is required");
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto deployment = state.GetDeployment(*job_snapshot.deployment_id);
+  if (!deployment) {
+    logs.emplace_back("deployment not found");
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto daemon_configs
+      = DiscoverOrderedDaemonConfigs(deployment->repository_path);
+  if (!daemon_configs) {
+    logs.emplace_back(daemon_configs.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto working_directories = EnsureDaemonWorkingDirectories(
+      state, *job_snapshot.deployment_id, *daemon_configs.value, logs);
+  if (!working_directories) {
+    logs.emplace_back(working_directories.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto started_processes
+      = StartDeploymentProcesses(*daemon_configs.value, logs);
+  if (!started_processes) {
+    logs.emplace_back(started_processes.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  logs.emplace_back("started " + std::to_string(started_processes.value->size())
+                    + " deployment daemon(s)");
+  return {JobStatus::kSucceeded, logs};
+}
+#endif
+
 std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
     const JobRecord& job_snapshot) const
 {
@@ -17977,6 +19005,37 @@ std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
     }
     logs.emplace_back("created commit " + commit_sha);
     return {JobStatus::kSucceeded, logs};
+  }
+
+  if (job_snapshot.type == "initialize_catalog_database") {
+#if HAVE_WIN32
+    logs.emplace_back("catalog initialization is not supported on Windows.");
+    return {JobStatus::kFailed, logs};
+#else
+    DebugLog("initializing catalog database for job '" + job_snapshot.id + "'");
+    return ExecuteInitializeCatalogDatabase(*this, job_snapshot);
+#endif
+  }
+
+  if (job_snapshot.type == "smoke_test_deployment") {
+#if HAVE_WIN32
+    logs.emplace_back("daemon smoke tests are not supported on Windows.");
+    return {JobStatus::kFailed, logs};
+#else
+    DebugLog("smoke-testing deployment for job '" + job_snapshot.id + "'");
+    return ExecuteSmokeTestDeployment(*this, job_snapshot);
+#endif
+  }
+
+  if (job_snapshot.type == "start_deployment_daemons") {
+#if HAVE_WIN32
+    logs.emplace_back(
+        "starting deployment daemons is not supported on Windows.");
+    return {JobStatus::kFailed, logs};
+#else
+    DebugLog("starting deployment daemons for job '" + job_snapshot.id + "'");
+    return ExecuteStartDeploymentDaemons(*this, job_snapshot);
+#endif
   }
 
   logs.emplace_back("unsupported job type: " + job_snapshot.type);
