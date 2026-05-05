@@ -59,28 +59,7 @@
           </div>
         </div>
         <q-space />
-        <!-- Status change -->
-         <q-btn flat dense icon="edit" :label="t('Set Status')" color="primary">
-          <q-menu anchor="bottom right" self="top right" auto-close>
-            <q-list dense style="min-width:130px">
-              <q-item-label header class="text-caption">{{ t('Set status') }}</q-item-label>
-              <q-item v-for="s in volStatuses" :key="s" clickable
-                      :active="vol.volstatus === s"
-                      @click="setVolStatus(s)">
-                <q-item-section>
-                  <q-badge :color="statusColor(s)" :label="s" />
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
       </div>
-
-      <q-banner v-if="statusMsg.show"
-                :class="statusMsg.ok ? 'bg-positive' : 'bg-negative'"
-                class="text-white q-mb-md">
-        {{ statusMsg.text }}
-      </q-banner>
 
       <!-- ── Two-column layout ─────────────────────────────────────────── -->
       <div class="row q-col-gutter-md">
@@ -384,8 +363,6 @@ const jobs        = ref([])
 const loading     = ref(true)
 const jobsLoading = ref(false)
 const error       = ref(null)
-const statusMsg   = ref({ show: false, ok: true, text: '' })
-
 function formatJobCount(count) {
   return `${formatNumber(count, settings.locale)} ${t('job(s)')}`
 }
@@ -537,23 +514,6 @@ const detailRows = computed(() => {
     { label: t('Comment'), value: v.comment || '—' },
   ].filter(r => r.value !== '—' || r.label === t('Storage') || r.label === t('Comment'))
 })
-
-// ── Volume status ─────────────────────────────────────────────────────────────
-
-const volStatuses = ['Append', 'Full', 'Used', 'Purged', 'Recycled', 'Read-Only', 'Error', 'Cleaning']
-
-async function setVolStatus(newStatus) {
-  try {
-    await director.call(
-      `update volume=${quoteDirectorString(volumeName.value)} volstatus=${quoteDirectorString(newStatus)}`
-    )
-    if (vol.value) vol.value.volstatus = newStatus
-    statusMsg.value = { show: true, ok: true, text: t('Status set to {status}', { status: newStatus }) }
-    setTimeout(() => { statusMsg.value.show = false }, 4000)
-  } catch (e) {
-    statusMsg.value = { show: true, ok: false, text: e.message }
-  }
-}
 
 // ── Jobs table ────────────────────────────────────────────────────────────────
 

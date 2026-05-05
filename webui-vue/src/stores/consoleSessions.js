@@ -34,10 +34,12 @@ const COMPLETION_TIMEOUT_MS = 5_000
 const COMPLETION_NOISE_PREFIXES = [
   'Automatically selected Catalog:',
   'Using Catalog ',
+  'cwd is: ',
 ]
 const CONSOLE_NOISE_LINES = new Set([
   'You have messages.',
 ])
+const RAW_PROMPT_TAB_COMPLETION_PROMPTS = new Set(['$ ', '> '])
 const COMPLETION_KEYWORDS = [
   { key: 'pool=', cmd: '.pool' },
   { key: 'nextpool=', cmd: '.pool' },
@@ -78,6 +80,11 @@ function createRuntime() {
     cmdSeq: 0,
     pendingCmds: new Map(),
     completionRequests: new Map(),
+    rawPromptTabCompletion: {
+      command: '',
+      prompt: '',
+      count: 0,
+    },
   }
 }
 
@@ -249,6 +256,63 @@ function applyCompletionResult(session, director, appendLines, request, text) {
     session.cmd = replaceCompletionText(session.cmd, request, commonPrefix)
   }
   appendLines(director, items.join('\n'))
+}
+
+function isRawPromptTabCompletion(session) {
+  return RAW_PROMPT_TAB_COMPLETION_PROMPTS.has(session.currentPrompt)
+}
+
+function updateSessionPrompt(session, promptKind, promptText, isStreamingChunk) {
+  if (isStreamingChunk && promptText) {
+    session.currentPrompt = promptText
+  } else if (!isStreamingChunk) {
+    session.currentPrompt = promptText || (
+      promptKind === 'select'
+        ? 'Select: '
+        : promptKind === 'sub'
+          ? (session.currentPrompt || '> ')
+          : '* '
+    )
+  }
+}
+
+function applyRawConsoleResponse(session, director, appendLines, message) {
+  const isStreamingChunk = message.prompt === 'more'
+  const {
+    outputText,
+    promptText,
+  } = splitInteractivePrompt(message.text, message.prompt)
+
+  appendLines(director, outputText, '', isStreamingChunk)
+  updateSessionPrompt(session, message.prompt, promptText, isStreamingChunk)
+
+  return {
+    outputText,
+    promptText,
+  }
+}
+
+function applyRawPromptTabCompletionResult(session, director, appendLines, request, text, promptKind) {
+  const {
+    outputText,
+  } = applyRawConsoleResponse(session, director, appendLines, {
+    text,
+    prompt: promptKind,
+  })
+  const items = parseSimpleCompletionItems(outputText)
+    .filter(item => item.startsWith(request.text))
+
+  if (request.text && items.length === 1) {
+    session.cmd = replaceCompletionText(session.cmd, request, items[0])
+    return
+  }
+
+  if (request.text && items.length > 1) {
+    const commonPrefix = longestCommonPrefix(items)
+    if (commonPrefix.length > request.text.length) {
+      session.cmd = replaceCompletionText(session.cmd, request, commonPrefix)
+    }
+  }
 }
 
 export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
@@ -423,20 +487,26 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
             runtime.pendingCmds.delete(msg.id)
           }
           runtime.completionRequests.delete(msg.id)
-          applyCompletionResult(
-            session,
-            director,
-            appendLines,
-            completionRequest,
-            msg.text
-          )
+          if (completionRequest.parser === 'raw-tab') {
+            applyRawPromptTabCompletionResult(
+              session,
+              director,
+              appendLines,
+              completionRequest,
+              msg.text,
+              msg.prompt
+            )
+          } else {
+            applyCompletionResult(
+              session,
+              director,
+              appendLines,
+              completionRequest,
+              msg.text
+            )
+          }
         } else {
           const isStreamingChunk = msg.prompt === 'more'
-          const {
-            outputText,
-            promptText,
-          } = splitInteractivePrompt(msg.text, msg.prompt)
-
           if (!isStreamingChunk) {
             const entry = runtime.pendingCmds.get(msg.id)
             if (entry) {
@@ -445,18 +515,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
             }
           }
 
-          appendLines(director, outputText, '', isStreamingChunk)
-          if (isStreamingChunk && promptText) {
-            session.currentPrompt = promptText
-          } else if (!isStreamingChunk) {
-            session.currentPrompt = promptText || (
-              msg.prompt === 'select'
-                ? 'Select: '
-                : msg.prompt === 'sub'
-                  ? (session.currentPrompt || '> ')
-                  : '* '
-            )
-          }
+          applyRawConsoleResponse(session, director, appendLines, msg)
         }
 
         return
@@ -500,6 +559,11 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
   function sendCommand(director, command, timeoutMs = RAW_CMD_TIMEOUT_MS) {
     const session = getSession(director)
     const runtime = getRuntime(director)
+    runtime.rawPromptTabCompletion = {
+      command: '',
+      prompt: '',
+      count: 0,
+    }
 
     if (!runtime.ws || runtime.ws.readyState !== WebSocket.OPEN) {
       appendErr(director, 'Not connected to director.')
@@ -531,16 +595,47 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     }
 
     session.cmd = command
-    const request = buildCompletionRequest(command)
+    const isRawTabCompletion = isRawPromptTabCompletion(session)
+    const rawTabCount = (
+      isRawTabCompletion
+      && runtime.rawPromptTabCompletion.command === command
+      && runtime.rawPromptTabCompletion.prompt === session.currentPrompt
+    )
+      ? runtime.rawPromptTabCompletion.count + 1
+      : 1
+    const request = isRawTabCompletion
+      ? {
+          ...getCompletionContext(command),
+          parser: 'raw-tab',
+          tabCount: rawTabCount,
+        }
+      : buildCompletionRequest(command)
     const id = String(++runtime.cmdSeq)
     const timer = setTimeout(() => {
       runtime.completionRequests.delete(id)
       runtime.pendingCmds.delete(id)
     }, COMPLETION_TIMEOUT_MS)
 
+    runtime.rawPromptTabCompletion = isRawTabCompletion
+      ? {
+          command,
+          prompt: session.currentPrompt,
+          count: rawTabCount,
+        }
+      : {
+          command: '',
+          prompt: '',
+          count: 0,
+        }
     runtime.completionRequests.set(id, request)
     runtime.pendingCmds.set(id, { timer })
-    runtime.ws.send(JSON.stringify({ type: 'command', id, command: request.source }))
+    runtime.ws.send(JSON.stringify({
+      type: 'command',
+      id,
+      command: request.parser === 'raw-tab'
+        ? `${command}${'\t'.repeat(request.tabCount)}`
+        : request.source,
+    }))
     session.status = 'connected'
     return true
   }
