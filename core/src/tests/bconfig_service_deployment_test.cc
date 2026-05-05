@@ -298,6 +298,7 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
   auto started = WaitForJobTerminal(state, start_job.value->id);
   ASSERT_TRUE(started.has_value());
   EXPECT_EQ(started->status, JobStatus::kSucceeded) << format_logs(*started);
+  EXPECT_TRUE(std::filesystem::is_directory(runtime_path.path() / "storage"));
 #endif
 }
 

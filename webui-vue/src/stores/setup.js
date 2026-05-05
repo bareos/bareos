@@ -93,8 +93,21 @@ export function buildDefaultRuntimeRoot(deploymentId = DEFAULT_DEPLOYMENT_ID) {
   if (typeof configuredRoot === 'string' && configuredRoot.trim()) {
     return configuredRoot.trim()
   }
-  const trimmed = String(deploymentId ?? '').trim() || DEFAULT_DEPLOYMENT_ID
-  return `/tmp/bareos-${trimmed}`
+  return '/var/lib/bareos'
+}
+
+export function buildDefaultDaemonAddress() {
+  const configuredAddress = readSetupRuntimeConfig().daemonAddress
+  if (typeof configuredAddress === 'string' && configuredAddress.trim()) {
+    return configuredAddress.trim()
+  }
+
+  const hostname = globalThis.location?.hostname
+  if (typeof hostname === 'string' && hostname.trim()) {
+    return hostname.trim()
+  }
+
+  return '127.0.0.1'
 }
 
 export function generateSetupPassword(length = 24) {
@@ -213,12 +226,12 @@ export function buildInitialSetupRequests(spec) {
   const clientPort = Number.isInteger(spec.clientPort)
     ? spec.clientPort
     : getDefaultSetupClientPort()
-  const directorWorkingDirectory = `${runtimeRoot}/director`
-  const storageWorkingDirectory = `${runtimeRoot}/storage`
-  const clientWorkingDirectory = `${runtimeRoot}/client`
-  const storageArchiveDirectory = `${storageWorkingDirectory}/storage`
-  const bootstrapFile = `${directorWorkingDirectory}/%c.bsr`
-  const catalogDumpFile = `${directorWorkingDirectory}/${DEFAULT_CATALOG_DB_NAME}.sql`
+  const directorWorkingDirectory = runtimeRoot
+  const storageWorkingDirectory = runtimeRoot
+  const clientWorkingDirectory = runtimeRoot
+  const storageArchiveDirectory = `${runtimeRoot}/storage`
+  const bootstrapFile = `${runtimeRoot}/%c.bsr`
+  const catalogDumpFile = `${runtimeRoot}/${DEFAULT_CATALOG_DB_NAME}.sql`
   const catalogConfigPath = spec.repositoryPath || '/usr/local/etc/bareos'
   const webuiAdminCommandAcl = [
     '!.bvfs_clear_cache',
@@ -259,7 +272,6 @@ export function buildInitialSetupRequests(spec) {
     {
       path: `/deployments/${deploymentId}/directors/${directorName}`,
       body: {
-        address: spec.daemonAddress,
         port: directorPort,
         password: directorDaemonPassword,
         working_directory: directorWorkingDirectory,
@@ -398,6 +410,7 @@ export function buildInitialSetupRequests(spec) {
       path: `/deployments/${deploymentId}/directors/${directorName}/clients/${clientName}`,
       body: {
         address: spec.daemonAddress,
+        port: clientPort,
         password: clientDirectorPassword,
       },
     },
@@ -419,6 +432,7 @@ export function buildInitialSetupRequests(spec) {
       path: `/deployments/${deploymentId}/directors/${directorName}/storages/${defaultDirectorStorageName}`,
       body: {
         address: spec.daemonAddress,
+        port: storagePort,
         password: storageDirectorPassword,
         device: DEFAULT_STORAGE_DEVICE_NAME,
         media_type: 'File',

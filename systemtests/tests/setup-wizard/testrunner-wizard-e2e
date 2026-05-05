@@ -11,7 +11,7 @@ PLAYWRIGHT_ARTIFACTS_DIR="${current_test_directory}/playwright-artifacts"
 SETUP_DIRECTOR_PORT=$((20000 + BASEPORT))
 SETUP_CLIENT_PORT=$((20001 + BASEPORT))
 SETUP_STORAGE_PORT=$((20002 + BASEPORT))
-SETUP_RUNTIME_ROOT="${current_test_directory}/var/lib/bareos-runtime"
+SETUP_RUNTIME_ROOT="${current_test_directory}/var/lib/bareos"
 SETUP_REPOSITORY_PATH="${current_test_directory}/var/lib/bconfig/deployments/prod"
 SETUP_CONSOLE_PASSWORD="wizard-secret"
 

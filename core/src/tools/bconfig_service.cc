@@ -1601,6 +1601,27 @@ std::string ReplaceRenderedQuotedDirective(std::string rendered,
   return updated.str();
 }
 
+std::string RemoveRenderedDirective(std::string rendered,
+                                    std::string_view directive_name)
+{
+  std::istringstream stream{rendered};
+  std::ostringstream updated;
+  std::string line;
+  const auto normalized_name = NormalizeDirectiveLookupName(directive_name);
+  while (std::getline(stream, line)) {
+    const auto trimmed = TrimAsciiWhitespace(line);
+    const auto equals = trimmed.find('=');
+    if (equals != std::string::npos) {
+      const auto rendered_name = NormalizeDirectiveLookupName(
+          TrimAsciiWhitespace(trimmed.substr(0, equals)));
+      if (rendered_name == normalized_name) { continue; }
+    }
+    updated << line << "\n";
+  }
+
+  return updated.str();
+}
+
 OperationResult<std::string> RenderParsedResourceWithPreservedSecret(
     BareosResource& resource,
     ConfigurationParser& parser,
@@ -1638,12 +1659,16 @@ OperationResult<std::string> RenderParsedConsoleResource(
 
 OperationResult<std::string> RenderParsedConsoleDirectorResource(
     console::DirectorResource& resource,
-    ConfigurationParser& parser)
+    ConfigurationParser& parser,
+    bool include_password = true)
 {
-  return RenderParsedResourceWithPreservedSecret(
+  auto rendered = RenderParsedResourceWithPreservedSecret(
       resource, parser, "Password", {"Password"}, resource.password_,
       "console director password for '" + std::string{resource.resource_name_}
           + "'");
+  if (!rendered || include_password) { return rendered; }
+  return {.value
+          = RemoveRenderedDirective(std::move(*rendered.value), "Password")};
 }
 
 #ifdef BCONFIG_HAVE_CONSOLE
@@ -4598,6 +4623,7 @@ struct ConsoleDirectorWriteContext {
   std::vector<std::string> director_resources_before{};
   std::vector<std::string> director_resources_after{};
   std::vector<std::string> console_resources{};
+  bool has_named_console{false};
   bool exists{false};
 };
 
@@ -6351,8 +6377,10 @@ OperationResult<ConsoleConsoleWriteContext> LoadConsoleConsoleWriteContext(
     auto* configured_director
         = dynamic_cast<console::DirectorResource*>(resource);
     if (!configured_director) { continue; }
-    context.director_resources.emplace_back(
-        RenderParsedResource(*configured_director, *loaded.parser));
+    auto rendered = RenderParsedConsoleDirectorResource(*configured_director,
+                                                        *loaded.parser, false);
+    if (!rendered) { return {.error = rendered.error}; }
+    context.director_resources.emplace_back(std::move(*rendered.value));
   }
 
   bool seen_target = false;
@@ -6494,6 +6522,7 @@ OperationResult<ConsoleDirectorWriteContext> LoadConsoleDirectorWriteContext(
     auto* configured_console
         = dynamic_cast<console::ConsoleResource*>(resource);
     if (!configured_console) { continue; }
+    context.has_named_console = true;
     auto rendered
         = RenderParsedConsoleResource(*configured_console, *loaded.parser);
     if (!rendered) { return {.error = rendered.error}; }
@@ -6509,8 +6538,8 @@ OperationResult<ConsoleDirectorWriteContext> LoadConsoleDirectorWriteContext(
     if (!configured_director) { continue; }
     if (!configured_director->resource_name_
         || configured_director->resource_name_ != director_name) {
-      auto rendered = RenderParsedConsoleDirectorResource(*configured_director,
-                                                          *loaded.parser);
+      auto rendered = RenderParsedConsoleDirectorResource(
+          *configured_director, *loaded.parser, !context.has_named_console);
       if (!rendered) { return {.error = rendered.error}; }
       if (seen_target) {
         context.director_resources_after.emplace_back(
@@ -6536,7 +6565,7 @@ OperationResult<ConsoleDirectorWriteContext> LoadConsoleDirectorWriteContext(
           *configured_director, {"Password"}, configured_director->password_,
           "console director password for '" + std::string{director_name} + "'");
       if (!rendered_password) { return {.error = rendered_password.error}; }
-      if (!rendered_password.value->empty()) {
+      if (!context.has_named_console && !rendered_password.value->empty()) {
         context.password = *rendered_password.value;
       }
     }
@@ -14643,7 +14672,10 @@ ServiceState::UpsertConsoleDirectorResource(
               "resource."};
   }
 
-  const auto password = spec.password ? spec.password : context.value->password;
+  const auto password
+      = context.value->has_named_console
+            ? std::optional<std::string>{}
+            : (spec.password ? spec.password : context.value->password);
   const auto port
       = spec.port ? std::optional<uint32_t>{*spec.port} : context.value->port;
   const auto description = spec.description

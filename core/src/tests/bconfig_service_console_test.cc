@@ -23,6 +23,20 @@
 
 namespace bconfig::service {
 namespace {
+size_t CountSubstring(std::string_view haystack, std::string_view needle)
+{
+  if (needle.empty()) { return 0; }
+
+  size_t count = 0;
+  size_t position = 0;
+  while ((position = haystack.find(needle, position))
+         != std::string_view::npos) {
+    ++count;
+    position += needle.size();
+  }
+  return count;
+}
+
 TEST(BconfigService, ImportsConsoleRootsIntoSingleConfigFile)
 {
   ScopedDirectory source_root{MakeTempPath()};
@@ -189,6 +203,39 @@ TEST(BconfigService, UpsertsConsoleComponentConsoleResources)
   EXPECT_EQ(current.value->description, "Updated imported console");
   ASSERT_TRUE(current.value->password.has_value());
   EXPECT_FALSE(current.value->password->empty());
+}
+
+TEST(BconfigService, OmitsConsoleDirectorPasswordWhenAddingConsoleResource)
+{
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  auto created_director = state.UpsertConsoleDirectorResource(
+      "prod", "admin", "bareos-dir",
+      {.address = std::string{"localhost"},
+       .port = 9101,
+       .password = std::string{"director-secret"}});
+  ASSERT_TRUE(created_director) << created_director.error;
+
+  auto created_console = state.UpsertConsoleConsoleResource(
+      "prod", "admin", "admin",
+      {.director = std::string{"bareos-dir"},
+       .password = std::string{"console-secret"}});
+  ASSERT_TRUE(created_console) << created_console.error;
+
+  const auto config_text
+      = ReadTextFile(created_console.value->path / "bconsole.conf");
+  EXPECT_EQ(config_text.find("Password = \"director-secret\""),
+            std::string::npos);
+  EXPECT_NE(config_text.find("Password = \"console-secret\""),
+            std::string::npos);
+  EXPECT_EQ(config_text.find("Password = \"[md5]"), std::string::npos);
 }
 
 TEST(BconfigService, UpsertsConsoleComponentConsoleHistoryFields)
@@ -746,7 +793,7 @@ TEST(BconfigService, UpsertsConsoleComponentDirectorResources)
   EXPECT_NE(created_text.find("Name = \"managed-dir\""), std::string::npos);
   EXPECT_NE(created_text.find("Address = localhost"), std::string::npos);
   EXPECT_NE(created_text.find("Port = 9101"), std::string::npos);
-  EXPECT_NE(created_text.find("Password = \"managed_password\""),
+  EXPECT_EQ(created_text.find("Password = \"managed_password\""),
             std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Managed bconsole director\""),
             std::string::npos);
@@ -792,6 +839,7 @@ TEST(BconfigService, UpsertsConsoleComponentDirectorResources)
             std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated imported director\""),
             std::string::npos);
+  EXPECT_EQ(CountSubstring(updated_text, "Password = "), 1u);
   EXPECT_NE(updated_text.find("Name = \"managed-dir\""), std::string::npos);
   EXPECT_NE(updated_text.find("Name = \"admin\""), std::string::npos);
 
@@ -800,8 +848,7 @@ TEST(BconfigService, UpsertsConsoleComponentDirectorResources)
   ASSERT_TRUE(current) << current.error;
   EXPECT_EQ(current.value->address, "director.example.test");
   EXPECT_EQ(current.value->description, "Updated imported director");
-  ASSERT_TRUE(current.value->password.has_value());
-  EXPECT_FALSE(current.value->password->empty());
+  EXPECT_FALSE(current.value->password.has_value());
 }
 
 TEST(BconfigService, UpsertsConsoleComponentDirectorHeartbeatInterval)
@@ -858,6 +905,7 @@ TEST(BconfigService, UpsertsConsoleComponentDirectorHeartbeatInterval)
   EXPECT_NE(updated_text.find("HeartbeatInterval = 90"), std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated imported director\""),
             std::string::npos);
+  EXPECT_EQ(CountSubstring(updated_text, "Password = "), 1u);
 }
 
 TEST(BconfigService, UpsertsConsoleComponentDirectorPreservesLargeImportedPort)
@@ -911,6 +959,7 @@ TEST(BconfigService, UpsertsConsoleComponentDirectorPreservesLargeImportedPort)
   EXPECT_NE(updated_text.find("Port = 70000"), std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated imported director\""),
             std::string::npos);
+  EXPECT_EQ(CountSubstring(updated_text, "Password = "), 1u);
 }
 
 TEST(BconfigService, UpsertsConsoleComponentDirectorTlsBooleans)

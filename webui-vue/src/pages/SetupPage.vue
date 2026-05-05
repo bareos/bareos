@@ -162,15 +162,6 @@
                     class="q-mb-sm"
                     @update:model-value="repositoryPathTouched = true"
                   />
-                  <q-input
-                    v-model="form.runtimeRoot"
-                    data-testid="setup-runtime-root"
-                    :label="t('Runtime root')"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                    @update:model-value="runtimeRootTouched = true"
-                  />
                   <q-select
                     v-model="form.workflowMode"
                     data-testid="setup-workflow-mode"
@@ -226,8 +217,10 @@
                     v-model="form.daemonAddress"
                     data-testid="setup-daemon-address"
                     :label="t('Daemon address')"
+                    :hint="t('Enter the FQDN of the Bareos server that will run the director, storage daemon, and file daemon.')"
                     outlined
                     dense
+                    hide-bottom-space
                     class="q-mb-sm"
                   />
                   <q-input
@@ -330,11 +323,10 @@
 
               <q-banner dense class="bg-grey-2 text-dark q-mb-md rounded-borders">
                 <template #avatar><q-icon name="settings" /></template>
-                {{ t('The generated daemon resources use ports {directorPort}, {clientPort}, and {storagePort} with runtime data under {runtimeRoot}. Unique daemon connection passwords and the admin password are generated automatically.', {
+                {{ t('The generated daemon resources use ports {directorPort}, {clientPort}, and {storagePort}. Unique daemon connection passwords and the admin password are generated automatically.', {
                   directorPort: form.directorPort,
                   clientPort: form.clientPort,
                   storagePort: form.storagePort,
-                  runtimeRoot: form.runtimeRoot,
                 }) }}
               </q-banner>
 
@@ -361,12 +353,6 @@
                       {{ form.daemonAddress }} · {{ t('Ports') }}
                       {{ form.directorPort }}/{{ form.clientPort }}/{{ form.storagePort }}
                     </q-item-label>
-                  </q-item-section>
-                </q-item>
-                <q-item>
-                  <q-item-section>
-                    <q-item-label caption>{{ t('Runtime root') }}</q-item-label>
-                    <q-item-label class="text-break">{{ form.runtimeRoot }}</q-item-label>
                   </q-item-section>
                 </q-item>
                 <q-item>
@@ -476,6 +462,7 @@ import borisIcon from '../assets/boris.png'
 import { useAuthStore } from '../stores/auth.js'
 import { useSettingsStore } from '../stores/settings.js'
 import {
+  buildDefaultDaemonAddress,
   buildDefaultRepositoryPath,
   buildDefaultRuntimeRoot,
   getDefaultSetupClientPort,
@@ -516,7 +503,6 @@ const $q = useQuasar()
 const step = ref(1)
 const locale = ref(settings.locale)
 const repositoryPathTouched = ref(false)
-const runtimeRootTouched = ref(false)
 const showAdvancedDeployment = ref(false)
 const showAdvancedServices = ref(false)
 const errorMsg = ref(null)
@@ -531,7 +517,7 @@ const form = reactive({
   repositoryPath: buildDefaultRepositoryPath(DEFAULT_DEPLOYMENT_ID),
   runtimeRoot: buildDefaultRuntimeRoot(DEFAULT_DEPLOYMENT_ID),
   workflowMode: 'review',
-  daemonAddress: '127.0.0.1',
+  daemonAddress: buildDefaultDaemonAddress(),
   directorPort: getDefaultSetupDirectorPort(),
   clientPort: getDefaultSetupClientPort(),
   storagePort: getDefaultSetupStoragePort(),
@@ -619,9 +605,6 @@ watch(locale, (value) => {
 watch(() => form.deploymentId, (value) => {
   if (!repositoryPathTouched.value) {
     form.repositoryPath = buildDefaultRepositoryPath(value)
-  }
-  if (!runtimeRootTouched.value) {
-    form.runtimeRoot = buildDefaultRuntimeRoot(value)
   }
 })
 

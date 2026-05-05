@@ -10,7 +10,7 @@ set -u
 SETUP_DIRECTOR_PORT=$((20000 + BASEPORT))
 SETUP_CLIENT_PORT=$((20001 + BASEPORT))
 SETUP_STORAGE_PORT=$((20002 + BASEPORT))
-SETUP_RUNTIME_ROOT="${current_test_directory}/var/lib/bareos-runtime"
+SETUP_RUNTIME_ROOT="${current_test_directory}/var/lib/bareos"
 SETUP_REPOSITORY_PATH="${current_test_directory}/var/lib/bconfig/deployments/prod"
 
 case "${1-}" in
@@ -18,7 +18,7 @@ case "${1-}" in
     ./test-setup
     cat <<EOF
 Manual setup-wizard stack is running.
-Frontend URL: http://127.0.0.1:${BAREOS_WEBUI_PORT}/
+Frontend URL: http://127.0.0.1:${BAREOS_WEBUI_PORT}/#/setup
 Suggested repository path: ${SETUP_REPOSITORY_PATH}
 Suggested runtime root: ${SETUP_RUNTIME_ROOT}
 Suggested daemon ports: ${SETUP_DIRECTOR_PORT}/${SETUP_CLIENT_PORT}/${SETUP_STORAGE_PORT}

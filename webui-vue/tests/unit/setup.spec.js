@@ -33,6 +33,7 @@ import {
   DEFAULT_WEBUI_READONLY_PROFILE,
   DEFAULT_WEBUI_ADMIN_PROFILE,
   DEFAULT_OPERATOR_PROFILE,
+  buildDefaultDaemonAddress,
   generateSetupPassword,
   buildInitialSetupRequests,
   useSetupStore,
@@ -75,13 +76,29 @@ describe('setup store', () => {
     expect(password).toMatch(/^[A-HJ-NP-Za-km-z2-9_-]+$/)
   })
 
+  it('uses the configured daemon address default when provided', () => {
+    vi.stubGlobal('__BAREOS_SETUP_DEFAULTS__', {
+      daemonAddress: 'bareos.example.com',
+    })
+
+    expect(buildDefaultDaemonAddress()).toBe('bareos.example.com')
+  })
+
+  it('falls back to the current hostname for the daemon address default', () => {
+    vi.stubGlobal('location', {
+      hostname: 'bareos.example.com',
+    })
+
+    expect(buildDefaultDaemonAddress()).toBe('bareos.example.com')
+  })
+
   it('creates the initial deployment resources and validates the result', async () => {
     const setup = useSetupStore()
     const spec = {
       deploymentId: 'prod',
       deploymentName: 'Production',
       repositoryPath: '/var/lib/bconfig/deployments/prod',
-      runtimeRoot: '/var/lib/bareos-runtime/prod',
+      runtimeRoot: '/var/lib/bareos',
       workflowMode: 'review',
       daemonAddress: '127.0.0.1',
       directorPort: 41001,
@@ -160,10 +177,9 @@ describe('setup store', () => {
     )
 
     expect(JSON.parse(fetch.mock.calls[requestIndexByPath['/deployments/prod/directors/bareos-dir']][1].body)).toEqual({
-      address: '127.0.0.1',
       port: 41001,
       password: 'director-daemon-secret',
-      working_directory: '/var/lib/bareos-runtime/prod/director',
+      working_directory: '/var/lib/bareos',
       messages: 'Daemon',
     })
     expect(JSON.parse(fetch.mock.calls[requestIndexByPath['/deployments/prod/directors/bareos-dir/profiles/webui-admin']][1].body)).toEqual({
@@ -270,6 +286,7 @@ describe('setup store', () => {
     })
     expect(JSON.parse(fetch.mock.calls[requestIndexByPath['/deployments/prod/directors/bareos-dir/clients/bareos-fd']][1].body)).toEqual({
       address: '127.0.0.1',
+      port: 41002,
       password: 'client-director-secret',
     })
     expect(JSON.parse(fetch.mock.calls[requestIndexByPath['/deployments/prod/storages/bareos-sd/directors/bareos-dir']][1].body)).toEqual({
@@ -278,7 +295,7 @@ describe('setup store', () => {
     })
     expect(JSON.parse(fetch.mock.calls[requestIndexByPath[`/deployments/prod/storages/bareos-sd/devices/${DEFAULT_STORAGE_DEVICE_NAME}`]][1].body)).toEqual({
       media_type: 'File',
-      archive_device: '/var/lib/bareos-runtime/prod/storage/storage',
+      archive_device: '/var/lib/bareos/storage',
       device_type: 'File',
       label_media: true,
       random_access: true,
@@ -289,6 +306,7 @@ describe('setup store', () => {
     })
     expect(JSON.parse(fetch.mock.calls[requestIndexByPath[`/deployments/prod/directors/bareos-dir/storages/${DEFAULT_DIRECTOR_STORAGE_NAME}`]][1].body)).toEqual({
       address: '127.0.0.1',
+      port: 41003,
       password: 'storage-director-secret',
       device: DEFAULT_STORAGE_DEVICE_NAME,
       media_type: 'File',
@@ -304,7 +322,7 @@ describe('setup store', () => {
       messages: 'Standard',
       pool: 'Incremental',
       priority: 10,
-      write_bootstrap: '/var/lib/bareos-runtime/prod/director/%c.bsr',
+      write_bootstrap: '/var/lib/bareos/%c.bsr',
       full_backup_pool: 'Full',
       differential_backup_pool: 'Differential',
       incremental_backup_pool: 'Incremental',
@@ -338,13 +356,13 @@ describe('setup store', () => {
     expect(JSON.parse(fetch.mock.calls[requestIndexByPath['/deployments/prod/storages/bareos-sd']][1].body)).toEqual({
       address: '127.0.0.1',
       port: 41003,
-      working_directory: '/var/lib/bareos-runtime/prod/storage',
+      working_directory: '/var/lib/bareos',
       messages: 'Standard',
     })
     expect(JSON.parse(fetch.mock.calls[requestIndexByPath['/deployments/prod/clients/bareos-fd']][1].body)).toEqual({
       address: '127.0.0.1',
       port: 41002,
-      working_directory: '/var/lib/bareos-runtime/prod/client',
+      working_directory: '/var/lib/bareos',
       messages: 'Standard',
     })
     expect(JSON.parse(fetch.mock.calls[requestIndexByPath['/deployments/prod/consoles/admin/directors/bareos-dir']][1].body)).toEqual({

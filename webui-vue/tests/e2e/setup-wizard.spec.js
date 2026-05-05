@@ -22,7 +22,6 @@
 import { test, expect } from '@playwright/test'
 
 const setupRepositoryPath = process.env.BAREOS_SETUP_REPOSITORY_PATH
-const setupRuntimeRoot = process.env.BAREOS_SETUP_RUNTIME_ROOT
 const setupDirectorPort = process.env.BAREOS_SETUP_DIRECTOR_PORT
 const setupClientPort = process.env.BAREOS_SETUP_CLIENT_PORT
 const setupStoragePort = process.env.BAREOS_SETUP_STORAGE_PORT
@@ -37,7 +36,6 @@ test('creates the initial deployment and reaches login', async ({ page }) => {
   await page.getByRole('button', { name: 'Start wizard' }).click()
   await page.getByRole('button', { name: /Advanced deployment settings/ }).click()
   await page.getByLabel('Repository path').fill(setupRepositoryPath)
-  await page.getByLabel('Runtime root').fill(setupRuntimeRoot)
   await page.getByRole('button', { name: 'Continue' }).click()
 
   await page.getByRole('button', { name: /Advanced service settings/ }).click()

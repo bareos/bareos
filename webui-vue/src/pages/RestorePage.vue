@@ -134,7 +134,7 @@
                 <span class="text-body2">{{ t('Browse Files') }}</span>
               <div class="row items-center q-gutter-sm">
                 <span v-if="selectedFiles.size || selectedDirs.size" class="text-caption text-grey-5">
-                  {{ t('{files} file(s), {folders} folder(s) selected', { files: selectedFiles.size, folders: selectedDirs.size }) }}
+                  {{ selectionSummary }}
                 </span>
                 <q-btn
                   flat dense round size="sm"
@@ -849,6 +849,10 @@ const browserPlaceholder = computed(() => getRestoreBrowserPlaceholder({
 // Selection: Map<key, {FileId or PathId, name, isDir}>
 const selectedFiles = ref(new Map())  // key = FileId
 const selectedDirs  = ref(new Map())  // key = PathId
+
+const selectionSummary = computed(() => (
+  `${selectedFiles.value.size} file(s), ${selectedDirs.value.size} folder(s) selected`
+))
 
 const browserCols = computed(() => [
   { name: 'sel',   label: '',            field: 'sel',   align: 'center', style: 'width:36px' },

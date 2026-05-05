@@ -32,24 +32,25 @@ import socketserver
 import urllib.parse
 
 
-DIST_DIR = pathlib.Path(os.environ['BAREOS_SETUP_DIST_DIR'])
-BCONFIG_HOST = os.environ.get('BAREOS_BCONFIG_HOST', '127.0.0.1')
-BCONFIG_PORT = int(os.environ['BAREOS_BCONFIG_PORT'])
-WS_PROXY_HOST = os.environ.get('BAREOS_SETUP_WS_PROXY_HOST', '127.0.0.1')
-WS_PROXY_PORT = int(os.environ['BAREOS_SETUP_WS_PROXY_PORT'])
-LISTEN_HOST = os.environ.get('BAREOS_SETUP_LISTEN_HOST', '127.0.0.1')
-LISTEN_PORT = int(os.environ['BAREOS_SETUP_LISTEN_PORT'])
+DIST_DIR = pathlib.Path(os.environ["BAREOS_SETUP_DIST_DIR"])
+BCONFIG_HOST = os.environ.get("BAREOS_BCONFIG_HOST", "127.0.0.1")
+BCONFIG_PORT = int(os.environ["BAREOS_BCONFIG_PORT"])
+WS_PROXY_HOST = os.environ.get("BAREOS_SETUP_WS_PROXY_HOST", "127.0.0.1")
+WS_PROXY_PORT = int(os.environ["BAREOS_SETUP_WS_PROXY_PORT"])
+LISTEN_HOST = os.environ.get("BAREOS_SETUP_LISTEN_HOST", "127.0.0.1")
+LISTEN_PORT = int(os.environ["BAREOS_SETUP_LISTEN_PORT"])
 SETUP_DEFAULTS = {
-    'repositoryPath': os.environ.get('BAREOS_SETUP_DEFAULT_REPOSITORY_PATH', ''),
-    'runtimeRoot': os.environ.get('BAREOS_SETUP_DEFAULT_RUNTIME_ROOT', ''),
-    'directorPort': int(os.environ['BAREOS_SETUP_DEFAULT_DIRECTOR_PORT']),
-    'clientPort': int(os.environ['BAREOS_SETUP_DEFAULT_CLIENT_PORT']),
-    'storagePort': int(os.environ['BAREOS_SETUP_DEFAULT_STORAGE_PORT']),
+    "repositoryPath": os.environ.get("BAREOS_SETUP_DEFAULT_REPOSITORY_PATH", ""),
+    "runtimeRoot": os.environ.get("BAREOS_SETUP_DEFAULT_RUNTIME_ROOT", ""),
+    "daemonAddress": os.environ.get("BAREOS_SETUP_DEFAULT_DAEMON_ADDRESS", ""),
+    "directorPort": int(os.environ["BAREOS_SETUP_DEFAULT_DIRECTOR_PORT"]),
+    "clientPort": int(os.environ["BAREOS_SETUP_DEFAULT_CLIENT_PORT"]),
+    "storagePort": int(os.environ["BAREOS_SETUP_DEFAULT_STORAGE_PORT"]),
 }
 SETUP_DEFAULTS_SCRIPT = (
-    '<script>'
-    f'window.__BAREOS_SETUP_DEFAULTS__ = {json.dumps(SETUP_DEFAULTS)};'
-    '</script>'
+    "<script>"
+    f"window.__BAREOS_SETUP_DEFAULTS__ = {json.dumps(SETUP_DEFAULTS)};"
+    "</script>"
 )
 
 
@@ -58,23 +59,26 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(DIST_DIR), **kwargs)
 
     def do_GET(self):
-        if self.path == '/ws' and self.headers.get('Upgrade', '').lower() == 'websocket':
+        if (
+            self.path == "/ws"
+            and self.headers.get("Upgrade", "").lower() == "websocket"
+        ):
             self._proxy_websocket()
             return
 
-        if self.path.startswith('/api/bconfig/'):
+        if self.path.startswith("/api/bconfig/"):
             self._proxy_http_request(BCONFIG_HOST, BCONFIG_PORT)
             return
 
-        if self.path == '/' or self.path == '/index.html':
+        if self.path == "/" or self.path == "/index.html":
             self._serve_index()
             return
 
-        if self.path.startswith('/assets/'):
+        if self.path.startswith("/assets/"):
             super().do_GET()
             return
 
-        self.path = '/index.html'
+        self.path = "/index.html"
         self._serve_index()
 
     def do_POST(self):
@@ -89,31 +93,34 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def _proxy_http_request(self, upstream_host, upstream_port):
         target = urllib.parse.urlsplit(self.path)
         body = None
-        content_length = self.headers.get('Content-Length')
+        content_length = self.headers.get("Content-Length")
         if content_length is not None:
             body = self.rfile.read(int(content_length))
 
-        connection = http.client.HTTPConnection(upstream_host, upstream_port, timeout=30)
+        connection = http.client.HTTPConnection(
+            upstream_host, upstream_port, timeout=30
+        )
         upstream_headers = {
             key: value
             for key, value in self.headers.items()
-            if key.lower() not in {
-                'host',
-                'connection',
-                'keep-alive',
-                'proxy-authenticate',
-                'proxy-authorization',
-                'te',
-                'trailers',
-                'transfer-encoding',
-                'upgrade',
+            if key.lower()
+            not in {
+                "host",
+                "connection",
+                "keep-alive",
+                "proxy-authenticate",
+                "proxy-authorization",
+                "te",
+                "trailers",
+                "transfer-encoding",
+                "upgrade",
             }
         }
-        upstream_headers['Host'] = f'{upstream_host}:{upstream_port}'
+        upstream_headers["Host"] = f"{upstream_host}:{upstream_port}"
 
         path = target.path
         if target.query:
-            path = f'{path}?{target.query}'
+            path = f"{path}?{target.query}"
 
         connection.request(self.command, path, body=body, headers=upstream_headers)
         response = connection.getresponse()
@@ -121,7 +128,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
         self.send_response(response.status, response.reason)
         for key, value in response.getheaders():
-            if key.lower() in {'connection', 'transfer-encoding'}:
+            if key.lower() in {"connection", "transfer-encoding"}:
                 continue
             self.send_header(key, value)
         self.end_headers()
@@ -130,11 +137,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def _proxy_websocket(self):
         upstream = socket.create_connection((WS_PROXY_HOST, WS_PROXY_PORT), timeout=30)
         try:
-            request_line = f'{self.command} {self.path} {self.request_version}\r\n'
-            upstream.sendall(request_line.encode('ascii'))
+            request_line = f"{self.command} {self.path} {self.request_version}\r\n"
+            upstream.sendall(request_line.encode("ascii"))
             for key, value in self.headers.items():
-                upstream.sendall(f'{key}: {value}\r\n'.encode('latin-1'))
-            upstream.sendall(b'\r\n')
+                upstream.sendall(f"{key}: {value}\r\n".encode("latin-1"))
+            upstream.sendall(b"\r\n")
 
             self.connection.setblocking(False)
             upstream.setblocking(False)
@@ -146,7 +153,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 if exceptional:
                     break
 
-                for current, peer in ((self.connection, upstream), (upstream, self.connection)):
+                for current, peer in (
+                    (self.connection, upstream),
+                    (upstream, self.connection),
+                ):
                     if current not in readable:
                         continue
                     try:
@@ -160,14 +170,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             upstream.close()
 
     def _serve_index(self):
-        index_path = DIST_DIR / 'index.html'
-        payload = index_path.read_text(encoding='utf-8').replace(
-            '</head>', f'{SETUP_DEFAULTS_SCRIPT}</head>', 1
+        index_path = DIST_DIR / "index.html"
+        payload = index_path.read_text(encoding="utf-8").replace(
+            "</head>", f"{SETUP_DEFAULTS_SCRIPT}</head>", 1
         )
-        encoded = payload.encode('utf-8')
+        encoded = payload.encode("utf-8")
         self.send_response(200)
-        self.send_header('Content-Type', 'text/html; charset=utf-8')
-        self.send_header('Content-Length', str(len(encoded)))
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         self.wfile.write(encoded)
 
@@ -178,15 +188,15 @@ class ThreadingHttpServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 def main():
     if not DIST_DIR.exists():
-        raise SystemExit(f'dist directory not found: {DIST_DIR}')
+        raise SystemExit(f"dist directory not found: {DIST_DIR}")
 
     server = ThreadingHttpServer((LISTEN_HOST, LISTEN_PORT), Handler)
     print(
-        f'setup-wizard test server listening on http://{LISTEN_HOST}:{LISTEN_PORT}',
+        f"setup-wizard test server listening on http://{LISTEN_HOST}:{LISTEN_PORT}",
         flush=True,
     )
     server.serve_forever()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

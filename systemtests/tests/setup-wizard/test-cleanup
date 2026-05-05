@@ -7,7 +7,7 @@ set -u
 #shellcheck source=../../environment.in
 . ./environment
 
-SETUP_RUNTIME_ROOT="${current_test_directory}/var/lib/bareos-runtime"
+SETUP_RUNTIME_ROOT="${current_test_directory}/var/lib/bareos"
 SETUP_REPOSITORY_PATH="${current_test_directory}/var/lib/bconfig/deployments/prod"
 SETUP_STATE_DIR="${current_test_directory}/var/lib/bconfig/service-state"
 BCONFIG_PORT=$((BASEPORT + 8))
@@ -15,7 +15,8 @@ SETUP_DIRECTOR_PORT=$((20000 + BASEPORT))
 SETUP_CLIENT_PORT=$((20001 + BASEPORT))
 SETUP_STORAGE_PORT=$((20002 + BASEPORT))
 
-stop_pidfile() {
+stop_pidfile()
+{
   local pidfile="$1"
   if [ ! -f "${pidfile}" ]; then
     return
@@ -35,7 +36,8 @@ stop_pidfile() {
   rm -f "${pidfile}"
 }
 
-stop_listener_port() {
+stop_listener_port()
+{
   local port="$1"
   local pid
 

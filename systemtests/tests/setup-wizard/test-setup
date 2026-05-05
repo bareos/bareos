@@ -11,15 +11,17 @@ BCONFIG_PORT=$((BASEPORT + 8))
 SETUP_DIRECTOR_PORT=$((20000 + BASEPORT))
 SETUP_CLIENT_PORT=$((20001 + BASEPORT))
 SETUP_STORAGE_PORT=$((20002 + BASEPORT))
-SETUP_RUNTIME_ROOT="${current_test_directory}/var/lib/bareos-runtime"
+DEFAULT_DAEMON_ADDRESS=$(hostname -f 2>/dev/null || hostname)
+SETUP_RUNTIME_ROOT="${current_test_directory}/var/lib/bareos"
 SETUP_REPOSITORY_PATH="${current_test_directory}/var/lib/bconfig/deployments/prod"
 SETUP_STATE_DIR="${current_test_directory}/var/lib/bconfig/service-state"
 STACK_LOG_DIR="${current_test_directory}/var/log/setup-wizard"
 PROXY_CONFIG="${tmp}/setup-wizard-webui-proxy.ini"
+SETUP_DIRECTOR_CONFIG_ROOT="${SETUP_REPOSITORY_PATH}/directors/bareos-dir"
 
 mkdir -p \
   "${current_test_directory}/var/lib/bconfig" \
-  "${current_test_directory}/var/lib/bareos-runtime" \
+  "${current_test_directory}/var/lib/bareos" \
   "${current_test_directory}/var/log" \
   "${STACK_LOG_DIR}"
 
@@ -34,10 +36,14 @@ ws_host = 127.0.0.1
 ws_port = ${BAREOS_WEBUI_PROXY_PORT}
 
 [director:bareos-dir]
-host = 127.0.0.1
+host = ${DEFAULT_DAEMON_ADDRESS}
 port = ${SETUP_DIRECTOR_PORT}
 director_name = bareos-dir
 EOF
+
+export BAREOS_CONFIG_DIR="${SETUP_DIRECTOR_CONFIG_ROOT}"
+export BAREOS_CONFIG_TEMPLATE_DIR="${SETUP_DIRECTOR_CONFIG_ROOT}"
+export BAREOS_WORKING_DIR="${SETUP_RUNTIME_ROOT}"
 
 "${CMAKE_BINARY_DIR}/core/src/tools/bconfig-service" \
   --address 127.0.0.1 \
@@ -49,8 +55,8 @@ echo $! >"${tmp}/bconfig-service.pid"
 BAREOS_BCONFIG_HOST=127.0.0.1 \
   BAREOS_BCONFIG_PORT="${BCONFIG_PORT}" \
   "${CMAKE_BINARY_DIR}/core/src/webui-proxy/bareos-webui-proxy" \
-    --config "${PROXY_CONFIG}" \
-    >"${STACK_LOG_DIR}/webui-proxy.log" 2>&1 &
+  --config "${PROXY_CONFIG}" \
+  >"${STACK_LOG_DIR}/webui-proxy.log" 2>&1 &
 echo $! >"${tmp}/webui-proxy.pid"
 
 BAREOS_SETUP_DIST_DIR="${CMAKE_SOURCE_DIR}/webui-vue/dist" \
@@ -62,6 +68,7 @@ BAREOS_SETUP_DIST_DIR="${CMAKE_SOURCE_DIR}/webui-vue/dist" \
   BAREOS_SETUP_LISTEN_PORT="${BAREOS_WEBUI_PORT}" \
   BAREOS_SETUP_DEFAULT_REPOSITORY_PATH="${SETUP_REPOSITORY_PATH}" \
   BAREOS_SETUP_DEFAULT_RUNTIME_ROOT="${SETUP_RUNTIME_ROOT}" \
+  BAREOS_SETUP_DEFAULT_DAEMON_ADDRESS="${DEFAULT_DAEMON_ADDRESS}" \
   BAREOS_SETUP_DEFAULT_DIRECTOR_PORT="${SETUP_DIRECTOR_PORT}" \
   BAREOS_SETUP_DEFAULT_CLIENT_PORT="${SETUP_CLIENT_PORT}" \
   BAREOS_SETUP_DEFAULT_STORAGE_PORT="${SETUP_STORAGE_PORT}" \
@@ -72,7 +79,7 @@ echo $! >"${tmp}/setup-wizard-frontend.pid"
 
 for _ in $(seq 1 60); do
   if curl --silent --fail "http://127.0.0.1:${BCONFIG_PORT}/api/bconfig/v1/deployments" \
-      | grep -q '"deployments":[[:space:]]*\[\]'; then
+    | grep -q '"deployments":[[:space:]]*\[\]'; then
     break
   fi
   sleep 1
@@ -83,7 +90,7 @@ curl --silent --fail "http://127.0.0.1:${BCONFIG_PORT}/api/bconfig/v1/deployment
 
 for _ in $(seq 1 30); do
   if curl --silent --fail "http://127.0.0.1:${BAREOS_WEBUI_PORT}/" \
-      | grep -q '<div id="app"></div>'; then
+    | grep -q '<div id="app"></div>'; then
     break
   fi
   sleep 1

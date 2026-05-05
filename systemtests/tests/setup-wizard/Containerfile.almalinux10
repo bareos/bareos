@@ -1,0 +1,34 @@
+FROM docker.io/library/almalinux:10
+
+RUN dnf -y install \
+      acl \
+      attr \
+      bash \
+      curl \
+      cyrus-sasl-lib \
+      findutils \
+      git \
+      hostname \
+      iproute \
+      jq \
+      jansson \
+      keyutils-libs \
+      krb5-libs \
+      libevent \
+      libpq \
+      libselinux \
+      libtirpc \
+      lzo \
+      openldap \
+      openssl \
+      pam \
+      postgresql \
+      postgresql-server \
+      procps-ng \
+      python3 \
+      shadow-utils \
+      util-linux \
+      which \
+      && dnf clean all
+
+CMD ["/bin/bash"]

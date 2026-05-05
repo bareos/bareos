@@ -1,0 +1,132 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+set -u
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+REPO_ROOT=$(cd -- "${SCRIPT_DIR}/../../.." && pwd)
+BUILD_TEST_DIR="${REPO_ROOT}/cmake-build/systemtests/tests/setup-wizard"
+ENVIRONMENT_FILE="${BUILD_TEST_DIR}/environment"
+
+#shellcheck source=../../environment.in
+. "${ENVIRONMENT_FILE}"
+
+IMAGE_NAME=localhost/bareos-setup-wizard:alma10
+CONTAINER_NAME=bareos-setup-wizard-alma10
+STATE_ROOT="${current_test_directory}/podman-state"
+BCONFIG_PORT=$((BASEPORT + 8))
+SETUP_REPOSITORY_PATH=/var/lib/bconfig/deployments/prod
+SETUP_RUNTIME_ROOT=/var/lib/bareos
+SETUP_DIRECTOR_PORT=9101
+SETUP_CLIENT_PORT=9102
+SETUP_STORAGE_PORT=9103
+SOURCE_SETUP_DIR="${CMAKE_SOURCE_DIR}/systemtests/tests/setup-wizard"
+
+ensure_state_dirs() {
+  mkdir -p \
+    "${STATE_ROOT}/etc/bareos" \
+    "${STATE_ROOT}/var/lib/bconfig" \
+    "${STATE_ROOT}/var/lib/bareos" \
+    "${STATE_ROOT}/var/lib/pgsql" \
+    "${STATE_ROOT}/var/log/bareos" \
+    "${STATE_ROOT}/var/log/postgresql"
+}
+
+remove_state_root() {
+  podman unshare rm -rf "${STATE_ROOT}"
+}
+
+build_image() {
+  podman build \
+    --tag "${IMAGE_NAME}" \
+    --file "${SOURCE_SETUP_DIR}/Containerfile.almalinux10" \
+    "${SOURCE_SETUP_DIR}"
+}
+
+start_container() {
+  remove_state_root
+  ensure_state_dirs
+
+  podman run -d \
+    --name "${CONTAINER_NAME}" \
+    --replace \
+    --hostname bareos-setup-wizard-alma10 \
+    -p "127.0.0.1:${BAREOS_WEBUI_PORT}:${BAREOS_WEBUI_PORT}" \
+    -v "${CMAKE_SOURCE_DIR}:${CMAKE_SOURCE_DIR}:ro,Z" \
+    -v "${CMAKE_BINARY_DIR}:${CMAKE_BINARY_DIR}:ro,Z" \
+    -v /lib64/libfmt.so.11.2.0:/lib64/libfmt.so.11:ro \
+    -v /lib64/libxxhash.so.0.8.3:/lib64/libxxhash.so.0:ro \
+    -v "${STATE_ROOT}/etc/bareos:/etc/bareos:Z" \
+    -v "${STATE_ROOT}/var/lib/bconfig:/var/lib/bconfig:Z" \
+    -v "${STATE_ROOT}/var/lib/bareos:/var/lib/bareos:Z" \
+    -v "${STATE_ROOT}/var/lib/pgsql:/var/lib/pgsql:Z" \
+    -v "${STATE_ROOT}/var/log/bareos:/var/log/bareos:Z" \
+    -v "${STATE_ROOT}/var/log/postgresql:/var/log/postgresql:Z" \
+    -e BAREOS_SOURCE_DIR="${CMAKE_SOURCE_DIR}" \
+    -e BAREOS_BUILD_DIR="${CMAKE_BINARY_DIR}" \
+    -e BAREOS_BCONFIG_PORT="${BCONFIG_PORT}" \
+    -e BAREOS_WEBUI_PORT="${BAREOS_WEBUI_PORT}" \
+    -e BAREOS_WEBUI_PROXY_PORT="${BAREOS_WEBUI_PROXY_PORT}" \
+    -e BAREOS_SETUP_REPOSITORY_PATH="${SETUP_REPOSITORY_PATH}" \
+    -e BAREOS_SETUP_RUNTIME_ROOT="${SETUP_RUNTIME_ROOT}" \
+    -e BAREOS_SETUP_DIRECTOR_PORT="${SETUP_DIRECTOR_PORT}" \
+    -e BAREOS_SETUP_CLIENT_PORT="${SETUP_CLIENT_PORT}" \
+    -e BAREOS_SETUP_STORAGE_PORT="${SETUP_STORAGE_PORT}" \
+    "${IMAGE_NAME}" \
+    /bin/bash "${CMAKE_SOURCE_DIR}/systemtests/tests/setup-wizard/podman-entrypoint.sh"
+}
+
+wait_ready() {
+  for _ in $(seq 1 90); do
+    if curl --silent --fail "http://127.0.0.1:${BAREOS_WEBUI_PORT}/" >/dev/null; then
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
+case "${1-}" in
+  build)
+    build_image
+    ;;
+  start)
+    if ! podman image exists "${IMAGE_NAME}"; then
+      build_image
+    fi
+    start_container
+    wait_ready
+    cat <<EOF
+Podman setup-wizard stack is running.
+Frontend URL: http://127.0.0.1:${BAREOS_WEBUI_PORT}/#/setup
+Suggested repository path: ${SETUP_REPOSITORY_PATH}
+Suggested runtime root: ${SETUP_RUNTIME_ROOT}
+Suggested daemon ports: ${SETUP_DIRECTOR_PORT}/${SETUP_CLIENT_PORT}/${SETUP_STORAGE_PORT}
+Host state root: ${STATE_ROOT}
+EOF
+    ;;
+  stop)
+    podman rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+    ;;
+  status)
+    podman ps --filter "name=${CONTAINER_NAME}" --format '{{.Names}} {{.Status}}'
+    curl --silent --fail "http://127.0.0.1:${BAREOS_WEBUI_PORT}/" >/dev/null
+    podman exec "${CONTAINER_NAME}" curl --silent --fail \
+      "http://127.0.0.1:${BCONFIG_PORT}/api/bconfig/v1/deployments"
+    ;;
+  logs)
+    podman logs "${CONTAINER_NAME}"
+    ;;
+  shell)
+    exec podman exec -it "${CONTAINER_NAME}" /bin/bash
+    ;;
+  clean)
+    podman rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+    remove_state_root
+    ;;
+  *)
+    echo "Usage: $0 {build|start|stop|status|logs|shell|clean}"
+    exit 1
+    ;;
+esac
