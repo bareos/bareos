@@ -34,6 +34,8 @@ ENVIRONMENT_FILE="${BUILD_TEST_DIR}/environment"
 IMAGE_NAME=localhost/bareos-setup-wizard:alma10
 CONTAINER_NAME=bareos-setup-wizard-alma10
 STATE_ROOT="${current_test_directory}/podman-state"
+LOCAL_INSTALL_BUILD_DIR="${BUILD_TEST_DIR}/local-install-build"
+LOCAL_INSTALL_STAGE_DIR="${BUILD_TEST_DIR}/local-install-stage"
 BCONFIG_PORT=$((BASEPORT + 8))
 SETUP_REPOSITORY_PATH=/var/lib/bconfig/deployments/prod
 SETUP_RUNTIME_ROOT=/var/lib/bareos
@@ -56,6 +58,58 @@ ensure_state_dirs()
     "${STATE_ROOT}/var/log/setup-wizard"
 }
 
+prepare_local_install_tree()
+{
+  cmake -S "${CMAKE_SOURCE_DIR}" -B "${LOCAL_INSTALL_BUILD_DIR}" -G Ninja \
+    -DCMAKE_INSTALL_PREFIX:PATH=/usr \
+    -DCMAKE_INSTALL_LIBDIR:PATH=/usr/lib \
+    -DINCLUDE_INSTALL_DIR:PATH=/usr/include \
+    -DLIB_INSTALL_DIR:PATH=/usr/lib \
+    -DSYSCONF_INSTALL_DIR:PATH=/etc \
+    -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
+    -DBUILD_SHARED_LIBS:BOOL=ON \
+    -Dprefix=/usr \
+    -Dlibdir=/usr/lib64/bareos \
+    -Dsbindir=/usr/sbin \
+    -Dsysconfdir=/etc \
+    -Dconfdir=/etc/bareos \
+    -Dmandir=/usr/share/man \
+    -Darchivedir=/var/lib/bareos/storage \
+    -Dbackenddir=/usr/lib64/bareos/backends \
+    -Dconfigtemplatedir=/usr/lib/bareos/defaultconfigs \
+    -Dscriptdir=/usr/lib/bareos/scripts \
+    -Dworkingdir=/var/lib/bareos \
+    -Dplugindir=/usr/lib64/bareos/plugins \
+    -Dlogdir=/var/log/bareos \
+    -Dscsi-crypto=yes \
+    -Dndmp=yes \
+    -Ddir-user=bareos \
+    -Ddir-group=bareos \
+    -Dsd-user=bareos \
+    -Dsd-group=bareos \
+    -Dfd-user=root \
+    -Dfd-group=bareos \
+    -Ddir-password=XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX \
+    -Dfd-password=XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX \
+    -Dsd-password=XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX \
+    -Dmon-dir-password=XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX \
+    -Dmon-fd-password=XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX \
+    -Dmon-sd-password=XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX \
+    -Dbasename="${CONTAINER_NAME}" \
+    -Dhostname="${CONTAINER_NAME}" \
+    -Dsystemd=yes \
+    -Dwebuiconfdir=/etc/bareos-webui
+
+  cmake --build "${LOCAL_INSTALL_BUILD_DIR}" --parallel "$(nproc)"
+  cmake --build "${LOCAL_INSTALL_BUILD_DIR}" --parallel "$(nproc)" \
+    --target bareos-webui-vue-build
+
+  rm -rf "${LOCAL_INSTALL_STAGE_DIR}"
+  mkdir -p "${LOCAL_INSTALL_STAGE_DIR}"
+  DESTDIR="${LOCAL_INSTALL_STAGE_DIR}" \
+    cmake --install "${LOCAL_INSTALL_BUILD_DIR}"
+}
+
 remove_state_root()
 {
   podman unshare rm -rf "${STATE_ROOT}"
@@ -71,6 +125,7 @@ build_image()
 
 start_container()
 {
+  prepare_local_install_tree
   remove_state_root
   ensure_state_dirs
 
@@ -84,7 +139,7 @@ start_container()
     --tmpfs /run/lock \
     -p "127.0.0.1:${BAREOS_WEBUI_PORT}:${BAREOS_WEBUI_PORT}" \
     -v "${CMAKE_SOURCE_DIR}:${CMAKE_SOURCE_DIR}:ro,Z" \
-    -v "${CMAKE_BINARY_DIR}:${CMAKE_BINARY_DIR}:ro,Z" \
+    -v "${LOCAL_INSTALL_STAGE_DIR}:/bareos-install:ro,Z" \
     -v /lib64/libfmt.so.11.2.0:/lib64/libfmt.so.11:ro \
     -v /lib64/libxxhash.so.0.8.3:/lib64/libxxhash.so.0:ro \
     -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
@@ -96,7 +151,7 @@ start_container()
     -v "${STATE_ROOT}/var/log/postgresql:/var/log/postgresql:Z" \
     -v "${STATE_ROOT}/var/log/setup-wizard:/var/log/setup-wizard:Z" \
     -e BAREOS_SOURCE_DIR="${CMAKE_SOURCE_DIR}" \
-    -e BAREOS_BUILD_DIR="${CMAKE_BINARY_DIR}" \
+    -e BAREOS_INSTALL_STAGE_DIR=/bareos-install \
     -e BAREOS_BCONFIG_PORT="${BCONFIG_PORT}" \
     -e BAREOS_WEBUI_PORT="${BAREOS_WEBUI_PORT}" \
     -e BAREOS_WEBUI_PROXY_PORT="${BAREOS_WEBUI_PROXY_PORT}" \
@@ -117,7 +172,7 @@ start_container()
 
   podman exec \
     --env BAREOS_SOURCE_DIR="${CMAKE_SOURCE_DIR}" \
-    --env BAREOS_BUILD_DIR="${CMAKE_BINARY_DIR}" \
+    --env BAREOS_INSTALL_STAGE_DIR=/bareos-install \
     --env BAREOS_BCONFIG_PORT="${BCONFIG_PORT}" \
     --env BAREOS_WEBUI_PORT="${BAREOS_WEBUI_PORT}" \
     --env BAREOS_WEBUI_PROXY_PORT="${BAREOS_WEBUI_PROXY_PORT}" \

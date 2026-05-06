@@ -24,7 +24,7 @@ set -o pipefail
 set -u
 
 : "${BAREOS_SOURCE_DIR:?}"
-: "${BAREOS_BUILD_DIR:?}"
+: "${BAREOS_INSTALL_STAGE_DIR:?}"
 : "${BAREOS_BCONFIG_PORT:=8080}"
 : "${BAREOS_WEBUI_PORT:?}"
 : "${BAREOS_WEBUI_PROXY_PORT:?}"
@@ -38,33 +38,12 @@ STACK_LOG_DIR=/var/log/setup-wizard
 POSTGRES_DATA_DIR=/var/lib/pgsql/data
 POSTGRES_SOCKET_DIR=/run/postgresql
 DEFAULT_DAEMON_ADDRESS=$(hostname -f 2>/dev/null || hostname)
-LD_DIRS=(
-  "${BAREOS_BUILD_DIR}/core/src/lib"
-  "${BAREOS_BUILD_DIR}/core/src/findlib"
-  "${BAREOS_BUILD_DIR}/core/src/cats"
-  "${BAREOS_BUILD_DIR}/core/src/lmdb"
-  "${BAREOS_BUILD_DIR}/core/src/fastlz"
-  "${BAREOS_BUILD_DIR}/core/src/ndmp"
-  "${BAREOS_BUILD_DIR}/core/src/stored"
-  "${BAREOS_BUILD_DIR}/core/src/stored/backends"
-)
-LD_LIBRARY_PATH_VALUE=$(
-  IFS=:
-  echo "${LD_DIRS[*]}"
-)
 
 mkdir -p \
   /etc/bareos \
   /etc/systemd/system/setup-wizard-frontend.service.d \
-  /usr/sbin \
   "${POSTGRES_SOCKET_DIR}" \
   "${STACK_LOG_DIR}"
-
-install_bareos_repository()
-{
-  curl -fsSL https://download.bareos.org/current/EL_10/add_bareos_repositories.sh \
-    | /bin/sh
-}
 
 install_runtime_packages()
 {
@@ -72,13 +51,16 @@ install_runtime_packages()
   for attempt in 1 2 3; do
     rm -f /var/cache/dnf/metadata_lock.pid
     if dnf -y install \
-      bareos-bconsole \
-      bareos-database-common \
-      bareos-database-postgresql \
-      bareos-director \
-      bareos-filedaemon \
-      bareos-storage \
-      git-core; then
+      git-core \
+      jansson \
+      libedit \
+      libpq \
+      libtirpc \
+      lzo \
+      openldap \
+      postgresql \
+      postgresql-server \
+      readline; then
       return 0
     fi
     sleep 2
@@ -88,35 +70,39 @@ install_runtime_packages()
   exit 1
 }
 
+install_local_bareos_tree()
+{
+  if [ ! -d "${BAREOS_INSTALL_STAGE_DIR}/usr" ]; then
+    echo "staged local install tree not found: ${BAREOS_INSTALL_STAGE_DIR}" >&2
+    exit 1
+  fi
+
+  cp -a "${BAREOS_INSTALL_STAGE_DIR}/usr/." /usr/
+  if [ -d "${BAREOS_INSTALL_STAGE_DIR}/etc" ]; then
+    cp -a "${BAREOS_INSTALL_STAGE_DIR}/etc/." /etc/
+  fi
+
+  systemctl daemon-reload
+}
+
+ensure_bareos_accounts()
+{
+  if ! getent group bareos >/dev/null; then
+    groupadd --system bareos
+  fi
+
+  if ! id bareos >/dev/null 2>&1; then
+    useradd --system --gid bareos --home-dir /var/lib/bareos \
+      --shell /sbin/nologin bareos
+  fi
+}
+
 disable_bareos_daemons()
 {
   systemctl disable --now \
     bareos-fd.service \
     bareos-sd.service \
     bareos-dir.service
-}
-
-install_local_service_binary()
-{
-  local source=$1
-  local target=$2
-
-  if [ ! -x "${source}" ]; then
-    echo "Required binary not found: ${source}" >&2
-    exit 1
-  fi
-
-  install -m 0755 "${source}" "${target}"
-}
-
-install_local_service_units()
-{
-  install_local_service_binary \
-    "${BAREOS_BUILD_DIR}/core/src/tools/bconfig-service" \
-    /usr/sbin/bconfig-service
-  install_local_service_binary \
-    "${BAREOS_BUILD_DIR}/core/src/webui-proxy/bareos-webui-proxy" \
-    /usr/sbin/bareos-webui-proxy
 }
 
 configure_postgresql()
@@ -157,7 +143,6 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-Environment=LD_LIBRARY_PATH=${LD_LIBRARY_PATH_VALUE}
 Environment=PGHOST=127.0.0.1
 Environment=PGPORT=5432
 Environment=PGUSER=postgres
@@ -201,7 +186,6 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-Environment=LD_LIBRARY_PATH=${LD_LIBRARY_PATH_VALUE}
 ExecStart=/usr/sbin/bareos-webui-proxy --config /etc/bareos/bareos-webui-proxy.ini
 Restart=on-failure
 RestartSec=5
@@ -224,7 +208,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-Environment=BAREOS_SETUP_DIST_DIR=${BAREOS_SOURCE_DIR}/webui-vue/dist
+Environment=BAREOS_SETUP_DIST_DIR=/usr/share/bareos-webui-vue
 Environment=BAREOS_BCONFIG_HOST=127.0.0.1
 Environment=BAREOS_BCONFIG_PORT=${BAREOS_BCONFIG_PORT}
 Environment=BAREOS_SETUP_WS_PROXY_HOST=127.0.0.1
@@ -266,10 +250,10 @@ wait_http_ready()
   return 1
 }
 
-install_bareos_repository
 install_runtime_packages
+install_local_bareos_tree
+ensure_bareos_accounts
 disable_bareos_daemons
-install_local_service_units
 configure_postgresql
 configure_bareos_runtime_paths
 configure_bconfig_service
