@@ -1,5 +1,24 @@
 #!/bin/bash
 
+# BAREOS® - Backup Archiving REcovery Open Sourced
+#
+# Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of version three of the GNU Affero General Public
+# License as published by the Free Software Foundation and included
+# in the file LICENSE.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
+
 set -e
 set -o pipefail
 set -u
@@ -31,7 +50,10 @@ LD_DIRS=(
   "${BAREOS_BUILD_DIR}/core/src/stored"
   "${BAREOS_BUILD_DIR}/core/src/stored/backends"
 )
-LD_LIBRARY_PATH_VALUE=$(IFS=:; echo "${LD_DIRS[*]}")
+LD_LIBRARY_PATH_VALUE=$(
+  IFS=:
+  echo "${LD_DIRS[*]}"
+)
 
 mkdir -p \
   /etc/bareos \
@@ -55,7 +77,6 @@ ln -sf "${BAREOS_BUILD_DIR}/core/scripts/bareos-config-lib.sh" \
   /usr/lib/bareos/scripts/bareos-config-lib.sh
 ln -sf "${BAREOS_BUILD_DIR}/core/scripts/bareos-config-lib.sh" \
   /usr/local/lib/bareos/scripts/bareos-config-lib.sh
-ln -sfn "${BAREOS_SETUP_REPOSITORY_PATH}/directors/bareos-dir" /usr/local/etc/bareos
 ln -sfn /var/lib/bareos /usr/local/var/lib/bareos
 ln -sf "${BAREOS_BUILD_DIR}/core/src/dird/bareos-dir" /usr/local/sbin/bareos-dir
 ln -sf "${BAREOS_BUILD_DIR}/core/src/filed/bareos-fd" /usr/local/sbin/bareos-fd
@@ -78,7 +99,8 @@ host    all             all             ::1/128                 trust
 EOF
 fi
 
-cleanup() {
+cleanup()
+{
   if [ -n "${frontend_pid-}" ] && kill -0 "${frontend_pid}" 2>/dev/null; then
     kill "${frontend_pid}" || true
   fi
@@ -121,11 +143,12 @@ director_name = bareos-dir
 EOF
 
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH_VALUE}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
-export BAREOS_CONFIG_DIR="${BAREOS_SETUP_REPOSITORY_PATH}/directors/bareos-dir"
+export BAREOS_CONFIG_DIR=/etc/bareos
 export BAREOS_CONFIG_TEMPLATE_DIR="${BAREOS_CONFIG_DIR}"
 export PGHOST=127.0.0.1
 export PGPORT=5432
 export PGUSER=postgres
+export BCONFIG_BAREOS_CONFIG_ROOT=/etc/bareos
 export BCONFIG_BAREOS_DIR_BINARY="${BAREOS_BUILD_DIR}/core/src/dird/bareos-dir"
 export BCONFIG_BAREOS_FD_BINARY="${BAREOS_BUILD_DIR}/core/src/filed/bareos-fd"
 export BCONFIG_BAREOS_SD_BINARY="${BAREOS_BUILD_DIR}/core/src/stored/bareos-sd"
@@ -152,8 +175,8 @@ curl --silent --fail "http://127.0.0.1:${BAREOS_BCONFIG_PORT}/api/bconfig/v1/dep
 BAREOS_BCONFIG_HOST=127.0.0.1 \
   BAREOS_BCONFIG_PORT="${BAREOS_BCONFIG_PORT}" \
   "${BAREOS_BUILD_DIR}/core/src/webui-proxy/bareos-webui-proxy" \
-    --config "${PROXY_CONFIG}" \
-    >"${STACK_LOG_DIR}/webui-proxy.log" 2>&1 &
+  --config "${PROXY_CONFIG}" \
+  >"${STACK_LOG_DIR}/webui-proxy.log" 2>&1 &
 proxy_pid=$!
 
 BAREOS_SETUP_DIST_DIR="${BAREOS_SOURCE_DIR}/webui-vue/dist" \

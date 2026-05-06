@@ -76,6 +76,7 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
 {
   ScopedDirectory repo_path{MakeTempPath()};
   ScopedDirectory runtime_path{MakeTempPath()};
+  ScopedDirectory installed_config_root{MakeTempPath()};
   const auto systemctl_log = runtime_path.path() / "systemctl.log";
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
   ScopedDirectory backend_path{MakeTempPath()};
@@ -103,6 +104,14 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
   make_fake_daemon(fake_dir_binary);
   make_fake_daemon(fake_sd_binary);
   make_fake_daemon(fake_fd_binary);
+  WriteTextFile(installed_config_root.path() / "bareos-dir.d/stale.conf",
+                "stale director config\n");
+  WriteTextFile(installed_config_root.path() / "bareos-fd.d/stale.conf",
+                "stale client config\n");
+  WriteTextFile(installed_config_root.path() / "bareos-sd.d/stale.conf",
+                "stale storage config\n");
+  WriteTextFile(installed_config_root.path() / "bconsole.conf",
+                "stale console config\n");
   WriteTextFile(
       fake_systemctl,
       "#!/bin/sh\n"
@@ -110,8 +119,19 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
       "case \"$1 $2\" in\n"
       "  'reset-failed bareos-fd.service'|'reset-failed "
       "bareos-sd.service'|'reset-failed bareos-dir.service') exit 0 ;;\n"
-      "  'start bareos-fd.service'|'start bareos-sd.service'|'start "
-      "bareos-dir.service') exit 0 ;;\n"
+      "  'start bareos-fd.service') test -f "
+      "\"$BCONFIG_TEST_INSTALLED_CONFIG_ROOT/bareos-fd.d/client/"
+      "bareos-fd.conf\" "
+      "&& exit 0 ;;\n"
+      "  'start bareos-sd.service') test -f "
+      "\"$BCONFIG_TEST_INSTALLED_CONFIG_ROOT/bareos-sd.d/storage/"
+      "bareos-sd.conf\" "
+      "&& exit 0 ;;\n"
+      "  'start bareos-dir.service') test -f "
+      "\"$BCONFIG_TEST_INSTALLED_CONFIG_ROOT/bareos-dir.d/director/"
+      "bareos-dir.conf\" "
+      "&& test -f \"$BCONFIG_TEST_INSTALLED_CONFIG_ROOT/bconsole.conf\" "
+      "&& exit 0 ;;\n"
       "  '--quiet is-active') exit 0 ;;\n"
       "  '--no-pager --full') printf 'active (%s)\\n' \"$4\"; exit 0 ;;\n"
       "esac\n"
@@ -131,11 +151,18 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
                                                fake_systemctl.string()};
   ScopedEnvironmentVariable systemctl_log_override{"BCONFIG_TEST_SYSTEMCTL_LOG",
                                                    systemctl_log.string()};
+  ScopedEnvironmentVariable installed_config_root_override{
+      "BCONFIG_BAREOS_CONFIG_ROOT", installed_config_root.path().string()};
+  ScopedEnvironmentVariable installed_config_root_log_override{
+      "BCONFIG_TEST_INSTALLED_CONFIG_ROOT",
+      installed_config_root.path().string()};
   (void)dir_binary_override;
   (void)sd_binary_override;
   (void)fd_binary_override;
   (void)systemctl_override;
   (void)systemctl_log_override;
+  (void)installed_config_root_override;
+  (void)installed_config_root_log_override;
 #endif
   ServiceState state;
 
@@ -342,6 +369,23 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
             std::string::npos);
   EXPECT_NE(systemctl_calls.find("--quiet is-active bareos-dir.service"),
             std::string::npos);
+  EXPECT_TRUE(std::filesystem::is_directory(installed_config_root.path()
+                                            / "bareos-dir.d"));
+  EXPECT_TRUE(std::filesystem::is_directory(installed_config_root.path()
+                                            / "bareos-fd.d"));
+  EXPECT_TRUE(std::filesystem::is_directory(installed_config_root.path()
+                                            / "bareos-sd.d"));
+  EXPECT_TRUE(std::filesystem::is_regular_file(installed_config_root.path()
+                                               / "bconsole.conf"));
+  EXPECT_FALSE(std::filesystem::exists(installed_config_root.path()
+                                       / "bareos-dir.d/stale.conf"));
+  EXPECT_FALSE(std::filesystem::exists(installed_config_root.path()
+                                       / "bareos-fd.d/stale.conf"));
+  EXPECT_FALSE(std::filesystem::exists(installed_config_root.path()
+                                       / "bareos-sd.d/stale.conf"));
+  const auto installed_console
+      = ReadTextFile(installed_config_root.path() / "bconsole.conf");
+  EXPECT_NE(installed_console.find("Console {"), std::string::npos);
 #endif
 }
 

@@ -1534,6 +1534,84 @@ std::optional<std::string> CopyDirectoryTree(
   return std::nullopt;
 }
 
+std::optional<std::string> CopyFileTree(const std::filesystem::path& source,
+                                        const std::filesystem::path& target)
+{
+  std::error_code error_code;
+  std::filesystem::create_directories(target.parent_path(), error_code);
+  if (error_code) {
+    return "failed to create directory '" + target.parent_path().string()
+           + "': " + error_code.message();
+  }
+
+  std::filesystem::copy_file(source, target,
+                             std::filesystem::copy_options::overwrite_existing,
+                             error_code);
+  if (error_code) {
+    return "failed to copy file '" + source.string() + "' to '"
+           + target.string() + "': " + error_code.message();
+  }
+
+  return std::nullopt;
+}
+
+std::optional<std::string> ReplacePathWithCopy(
+    const std::filesystem::path& source,
+    const std::filesystem::path& target)
+{
+  std::error_code error_code;
+  std::filesystem::create_directories(target.parent_path(), error_code);
+  if (error_code) {
+    return "failed to create directory '" + target.parent_path().string()
+           + "': " + error_code.message();
+  }
+
+  const auto temp_target
+      = target.parent_path()
+        / (target.filename().string() + ".tmp-bconfig-"
+           + std::to_string(static_cast<unsigned long long>(
+               std::chrono::steady_clock::now().time_since_epoch().count())));
+  ScopedPathCleanup cleanup{temp_target};
+  std::filesystem::remove_all(temp_target, error_code);
+
+  std::optional<std::string> copy_error;
+  if (std::filesystem::is_directory(source)) {
+    copy_error = CopyDirectoryTree(source, temp_target);
+  } else if (std::filesystem::is_regular_file(source)) {
+    copy_error = CopyFileTree(source, temp_target);
+  } else {
+    return "sync source does not exist: " + source.string();
+  }
+  if (copy_error) { return copy_error; }
+
+  if (std::filesystem::exists(target)) {
+    std::filesystem::remove_all(target, error_code);
+    if (error_code) {
+      return "failed to remove existing path '" + target.string()
+             + "': " + error_code.message();
+    }
+  }
+
+  std::filesystem::rename(temp_target, target, error_code);
+  if (error_code) {
+    return "failed to activate synced path '" + target.string()
+           + "': " + error_code.message();
+  }
+
+  cleanup.path.clear();
+  return std::nullopt;
+}
+
+OperationResult<std::filesystem::path> ResolveInstalledConfigRoot()
+{
+  if (const auto override_path
+      = GetEnvironmentVariable("BCONFIG_BAREOS_CONFIG_ROOT")) {
+    return {.value = std::filesystem::path{*override_path}};
+  }
+
+  return {.value = std::filesystem::path{"/etc/bareos"}};
+}
+
 struct StringOutputBuffer {
   std::string content{};
 };
@@ -19021,6 +19099,101 @@ OperationResult<std::vector<std::string>> DiscoverOrderedSystemdServices(
   return {.value = std::move(services)};
 }
 
+OperationResult<std::monostate> SyncDeploymentIntoInstalledConfigRoot(
+    const DeploymentRecord& deployment,
+    std::vector<std::string>& logs)
+{
+  auto install_root = ResolveInstalledConfigRoot();
+  if (!install_root) { return {.error = install_root.error}; }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(*install_root.value, error_code);
+  if (error_code) {
+    return {.error = "failed to create installed config root '"
+                     + install_root.value->string()
+                     + "': " + error_code.message()};
+  }
+
+  std::optional<DeploymentConfigRecord> director_config;
+  std::optional<DeploymentConfigRecord> storage_config;
+  std::optional<DeploymentConfigRecord> client_config;
+#  ifdef BCONFIG_HAVE_CONSOLE
+  std::optional<DeploymentConfigRecord> console_config;
+#  endif
+
+  for (const auto& config :
+       DiscoverDeploymentConfigRoots(deployment.repository_path)) {
+    auto* slot = [&]() -> std::optional<DeploymentConfigRecord>* {
+      switch (config.component) {
+        case bconfig::Component::kDirector:
+          return &director_config;
+        case bconfig::Component::kStorage:
+          return &storage_config;
+        case bconfig::Component::kClient:
+          return &client_config;
+#  ifdef BCONFIG_HAVE_CONSOLE
+        case bconfig::Component::kConsole:
+          return &console_config;
+#  endif
+        default:
+          return nullptr;
+      }
+    }();
+    if (!slot) { continue; }
+    if (slot->has_value()) {
+      return {.error
+              = "installed config sync supports only one "
+                + std::string{bconfig::ComponentToString(config.component)}
+                + " config root per deployment."};
+    }
+    *slot = config;
+  }
+
+  const auto sync_config = [&](const DeploymentConfigRecord& config,
+                               const std::filesystem::path& source,
+                               const std::filesystem::path& target)
+      -> OperationResult<std::monostate> {
+    auto copy_error = ReplacePathWithCopy(source, target);
+    if (copy_error) { return {.error = *copy_error}; }
+    logs.emplace_back(
+        "synced " + std::string{bconfig::ComponentToString(config.component)}
+        + " '" + config.name + "' to " + target.string());
+    return {.value = std::monostate{}};
+  };
+
+  if (director_config) {
+    auto synced
+        = sync_config(*director_config, director_config->path / "bareos-dir.d",
+                      *install_root.value / "bareos-dir.d");
+    if (!synced) { return synced; }
+  }
+  if (storage_config) {
+    auto synced
+        = sync_config(*storage_config, storage_config->path / "bareos-sd.d",
+                      *install_root.value / "bareos-sd.d");
+    if (!synced) { return synced; }
+  }
+  if (client_config) {
+    auto synced
+        = sync_config(*client_config, client_config->path / "bareos-fd.d",
+                      *install_root.value / "bareos-fd.d");
+    if (!synced) { return synced; }
+  }
+#  ifdef BCONFIG_HAVE_CONSOLE
+  if (console_config) {
+    auto synced = sync_config(
+        *console_config,
+        console_config->path
+            / ComponentDefaultConfigFilename(bconfig::Component::kConsole),
+        *install_root.value
+            / ComponentDefaultConfigFilename(bconfig::Component::kConsole));
+    if (!synced) { return synced; }
+  }
+#  endif
+
+  return {.value = std::monostate{}};
+}
+
 std::pair<JobStatus, std::vector<std::string>> ExecuteSmokeTestDeployment(
     const ServiceState& state,
     const JobRecord& job_snapshot)
@@ -19034,6 +19207,12 @@ std::pair<JobStatus, std::vector<std::string>> ExecuteSmokeTestDeployment(
   auto deployment = state.GetDeployment(*job_snapshot.deployment_id);
   if (!deployment) {
     logs.emplace_back("deployment not found");
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto synced_config = SyncDeploymentIntoInstalledConfigRoot(*deployment, logs);
+  if (!synced_config) {
+    logs.emplace_back(synced_config.error);
     return {JobStatus::kFailed, logs};
   }
 
