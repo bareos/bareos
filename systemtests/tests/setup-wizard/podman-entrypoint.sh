@@ -25,7 +25,7 @@ set -u
 
 : "${BAREOS_SOURCE_DIR:?}"
 : "${BAREOS_BUILD_DIR:?}"
-: "${BAREOS_BCONFIG_PORT:?}"
+: "${BAREOS_BCONFIG_PORT:=8080}"
 : "${BAREOS_WEBUI_PORT:?}"
 : "${BAREOS_WEBUI_PROXY_PORT:?}"
 : "${BAREOS_SETUP_REPOSITORY_PATH:?}"
@@ -35,9 +35,7 @@ set -u
 : "${BAREOS_SETUP_STORAGE_PORT:?}"
 
 STACK_LOG_DIR=/var/log/setup-wizard
-PROXY_CONFIG=/tmp/setup-wizard-webui-proxy.ini
 POSTGRES_DATA_DIR=/var/lib/pgsql/data
-POSTGRES_LOG=/var/log/postgresql/postgresql.log
 POSTGRES_SOCKET_DIR=/run/postgresql
 DEFAULT_DAEMON_ADDRESS=$(hostname -f 2>/dev/null || hostname)
 LD_DIRS=(
@@ -57,81 +55,100 @@ LD_LIBRARY_PATH_VALUE=$(
 
 mkdir -p \
   /etc/bareos \
-  /usr/local/etc \
-  /usr/local/lib/bareos/scripts \
-  /usr/local/var/lib \
-  /usr/local/sbin \
-  /usr/lib/bareos/scripts \
-  /var/lib/bconfig \
-  /var/lib/bareos \
-  /var/log/bareos \
-  /var/log/postgresql \
-  "${STACK_LOG_DIR}" \
-  "${POSTGRES_SOCKET_DIR}"
+  /etc/systemd/system/setup-wizard-frontend.service.d \
+  /usr/sbin \
+  "${POSTGRES_SOCKET_DIR}" \
+  "${STACK_LOG_DIR}"
 
-ln -sf "${BAREOS_BUILD_DIR}/core/src/cats/make_catalog_backup" \
-  /usr/lib/bareos/scripts/make_catalog_backup
-ln -sf "${BAREOS_BUILD_DIR}/core/src/cats/delete_catalog_backup" \
-  /usr/lib/bareos/scripts/delete_catalog_backup
-ln -sf "${BAREOS_BUILD_DIR}/core/scripts/bareos-config-lib.sh" \
-  /usr/lib/bareos/scripts/bareos-config-lib.sh
-ln -sf "${BAREOS_BUILD_DIR}/core/scripts/bareos-config-lib.sh" \
-  /usr/local/lib/bareos/scripts/bareos-config-lib.sh
-ln -sfn /var/lib/bareos /usr/local/var/lib/bareos
-ln -sf "${BAREOS_BUILD_DIR}/core/src/dird/bareos-dir" /usr/local/sbin/bareos-dir
-ln -sf "${BAREOS_BUILD_DIR}/core/src/filed/bareos-fd" /usr/local/sbin/bareos-fd
-ln -sf "${BAREOS_BUILD_DIR}/core/src/stored/bareos-sd" /usr/local/sbin/bareos-sd
-ln -sf "${BAREOS_BUILD_DIR}/core/src/tools/bsmtp" /usr/sbin/bsmtp
+install_bareos_repository()
+{
+  curl -fsSL https://download.bareos.org/current/EL_10/add_bareos_repositories.sh \
+    | /bin/sh
+}
 
-chown postgres:postgres /var/lib/pgsql "${POSTGRES_SOCKET_DIR}" /var/log/postgresql
-chmod 2775 "${POSTGRES_SOCKET_DIR}"
+install_runtime_packages()
+{
+  dnf -y install \
+    bareos-database-common \
+    bareos-database-postgresql \
+    bareos-director \
+    bareos-filedaemon \
+    bareos-storage \
+    git-core
+}
 
-if [ ! -f "${POSTGRES_DATA_DIR}/PG_VERSION" ]; then
-  runuser -u postgres -- initdb -D "${POSTGRES_DATA_DIR}" >/tmp/initdb.log
-  {
-    echo "listen_addresses = '127.0.0.1'"
-    echo "unix_socket_directories = '${POSTGRES_SOCKET_DIR}'"
-  } >>"${POSTGRES_DATA_DIR}/postgresql.conf"
-  cat >"${POSTGRES_DATA_DIR}/pg_hba.conf" <<'EOF'
+install_local_service_binary()
+{
+  local source=$1
+  local target=$2
+
+  if [ ! -x "${source}" ]; then
+    echo "Required binary not found: ${source}" >&2
+    exit 1
+  fi
+
+  install -m 0755 "${source}" "${target}"
+}
+
+install_local_service_units()
+{
+  install_local_service_binary \
+    "${BAREOS_BUILD_DIR}/core/src/tools/bconfig-service" \
+    /usr/sbin/bconfig-service
+  install_local_service_binary \
+    "${BAREOS_BUILD_DIR}/core/src/webui-proxy/bareos-webui-proxy" \
+    /usr/sbin/bareos-webui-proxy
+}
+
+configure_postgresql()
+{
+  chown postgres:postgres /var/lib/pgsql "${POSTGRES_SOCKET_DIR}" \
+    /var/log/postgresql
+  chmod 2775 "${POSTGRES_SOCKET_DIR}"
+
+  if [ ! -f "${POSTGRES_DATA_DIR}/PG_VERSION" ]; then
+    /usr/bin/postgresql-setup --initdb
+    {
+      echo "listen_addresses = '127.0.0.1'"
+      echo "unix_socket_directories = '${POSTGRES_SOCKET_DIR}'"
+    } >>"${POSTGRES_DATA_DIR}/postgresql.conf"
+    cat >"${POSTGRES_DATA_DIR}/pg_hba.conf" <<'EOF'
 local   all             all                                     trust
 host    all             all             127.0.0.1/32            trust
 host    all             all             ::1/128                 trust
 EOF
-fi
+  fi
 
-cleanup()
-{
-  if [ -n "${frontend_pid-}" ] && kill -0 "${frontend_pid}" 2>/dev/null; then
-    kill "${frontend_pid}" || true
-  fi
-  if [ -n "${proxy_pid-}" ] && kill -0 "${proxy_pid}" 2>/dev/null; then
-    kill "${proxy_pid}" || true
-  fi
-  if [ -n "${bconfig_pid-}" ] && kill -0 "${bconfig_pid}" 2>/dev/null; then
-    kill "${bconfig_pid}" || true
-  fi
-  if [ -n "${postgres_pid-}" ] && kill -0 "${postgres_pid}" 2>/dev/null; then
-    kill "${postgres_pid}" || true
-    wait "${postgres_pid}" || true
-  fi
+  systemctl enable --now postgresql.service
 }
-trap cleanup EXIT INT TERM
 
-runuser -u postgres -- /usr/bin/postgres \
-  -D "${POSTGRES_DATA_DIR}" \
-  -k "${POSTGRES_SOCKET_DIR}" \
-  >/var/log/postgresql/postgresql.log 2>&1 &
-postgres_pid=$!
+configure_bconfig_service()
+{
+  cat >/etc/systemd/system/bconfig-service.service <<EOF
+[Unit]
+Description=Bareos Configuration Service
+After=network-online.target
+Wants=network-online.target
 
-for _ in $(seq 1 60); do
-  if pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1; then
-    break
-  fi
-  sleep 1
-done
-pg_isready -h 127.0.0.1 -p 5432 >/dev/null
+[Service]
+Type=simple
+Environment=LD_LIBRARY_PATH=${LD_LIBRARY_PATH_VALUE}
+ExecStart=/usr/sbin/bconfig-service --address 127.0.0.1 --port ${BAREOS_BCONFIG_PORT} --state-dir /var/lib/bconfig/service-state
+Restart=on-failure
+RestartSec=5
 
-cat >"${PROXY_CONFIG}" <<EOF
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  mkdir -p /var/lib/bconfig
+  systemctl daemon-reload
+  systemctl enable --now bconfig-service.service
+}
+
+configure_webui_proxy()
+{
+  cat >/etc/bareos/bareos-webui-proxy.ini <<EOF
 [listen]
 ws_host = 0.0.0.0
 ws_port = ${BAREOS_WEBUI_PROXY_PORT}
@@ -142,68 +159,89 @@ port = ${BAREOS_SETUP_DIRECTOR_PORT}
 director_name = bareos-dir
 EOF
 
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH_VALUE}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
-export BAREOS_CONFIG_DIR=/etc/bareos
-export BAREOS_CONFIG_TEMPLATE_DIR="${BAREOS_CONFIG_DIR}"
-export PGHOST=127.0.0.1
-export PGPORT=5432
-export PGUSER=postgres
-export BCONFIG_BAREOS_CONFIG_ROOT=/etc/bareos
-export BCONFIG_BAREOS_DIR_BINARY="${BAREOS_BUILD_DIR}/core/src/dird/bareos-dir"
-export BCONFIG_BAREOS_FD_BINARY="${BAREOS_BUILD_DIR}/core/src/filed/bareos-fd"
-export BCONFIG_BAREOS_SD_BINARY="${BAREOS_BUILD_DIR}/core/src/stored/bareos-sd"
-export BCONFIG_BAREOS_SD_BACKEND_DIR="${BAREOS_BUILD_DIR}/core/src/stored/backends"
-export BCONFIG_BAREOS_CONFIG_LIB="${BAREOS_BUILD_DIR}/core/scripts/bareos-config-lib.sh"
-export BCONFIG_BAREOS_SQL_DDL_DIR="${BAREOS_SOURCE_DIR}/core/src/cats/ddl"
-export BCONFIG_PSQL_BINARY=/usr/bin/psql
+  cat >/etc/systemd/system/bareos-webui-proxy.service <<EOF
+[Unit]
+Description=Bareos WebUI WebSocket Proxy
+After=network-online.target
+Wants=network-online.target
 
-"${BAREOS_BUILD_DIR}/core/src/tools/bconfig-service" \
-  --address 127.0.0.1 \
-  --port "${BAREOS_BCONFIG_PORT}" \
-  --state-dir /var/lib/bconfig/service-state \
-  >"${STACK_LOG_DIR}/bconfig-service.log" 2>&1 &
-bconfig_pid=$!
+[Service]
+Type=simple
+Environment=LD_LIBRARY_PATH=${LD_LIBRARY_PATH_VALUE}
+ExecStart=/usr/sbin/bareos-webui-proxy --config /etc/bareos/bareos-webui-proxy.ini
+Restart=on-failure
+RestartSec=5
 
-for _ in $(seq 1 60); do
-  if curl --silent --fail "http://127.0.0.1:${BAREOS_BCONFIG_PORT}/api/bconfig/v1/deployments" >/dev/null; then
-    break
-  fi
-  sleep 1
-done
-curl --silent --fail "http://127.0.0.1:${BAREOS_BCONFIG_PORT}/api/bconfig/v1/deployments" >/dev/null
+[Install]
+WantedBy=multi-user.target
+EOF
 
-BAREOS_BCONFIG_HOST=127.0.0.1 \
-  BAREOS_BCONFIG_PORT="${BAREOS_BCONFIG_PORT}" \
-  "${BAREOS_BUILD_DIR}/core/src/webui-proxy/bareos-webui-proxy" \
-  --config "${PROXY_CONFIG}" \
-  >"${STACK_LOG_DIR}/webui-proxy.log" 2>&1 &
-proxy_pid=$!
+  systemctl daemon-reload
+  systemctl enable --now bareos-webui-proxy.service
+}
 
-BAREOS_SETUP_DIST_DIR="${BAREOS_SOURCE_DIR}/webui-vue/dist" \
-  BAREOS_BCONFIG_HOST=127.0.0.1 \
-  BAREOS_BCONFIG_PORT="${BAREOS_BCONFIG_PORT}" \
-  BAREOS_SETUP_WS_PROXY_HOST=127.0.0.1 \
-  BAREOS_SETUP_WS_PROXY_PORT="${BAREOS_WEBUI_PROXY_PORT}" \
-  BAREOS_SETUP_LISTEN_HOST=0.0.0.0 \
-  BAREOS_SETUP_LISTEN_PORT="${BAREOS_WEBUI_PORT}" \
-  BAREOS_SETUP_DEFAULT_REPOSITORY_PATH="${BAREOS_SETUP_REPOSITORY_PATH}" \
-  BAREOS_SETUP_DEFAULT_RUNTIME_ROOT="${BAREOS_SETUP_RUNTIME_ROOT}" \
-  BAREOS_SETUP_DEFAULT_DAEMON_ADDRESS="${DEFAULT_DAEMON_ADDRESS}" \
-  BAREOS_SETUP_DEFAULT_DIRECTOR_PORT="${BAREOS_SETUP_DIRECTOR_PORT}" \
-  BAREOS_SETUP_DEFAULT_CLIENT_PORT="${BAREOS_SETUP_CLIENT_PORT}" \
-  BAREOS_SETUP_DEFAULT_STORAGE_PORT="${BAREOS_SETUP_STORAGE_PORT}" \
-  PYTHONUNBUFFERED=1 \
-  python3 "${BAREOS_SOURCE_DIR}/systemtests/tests/setup-wizard/setup_wizard_http_server.py" \
-  >"${STACK_LOG_DIR}/frontend.log" 2>&1 &
-frontend_pid=$!
+configure_frontend_service()
+{
+  cat >/etc/systemd/system/setup-wizard-frontend.service <<EOF
+[Unit]
+Description=Setup Wizard Frontend
+After=network-online.target bconfig-service.service bareos-webui-proxy.service
+Wants=network-online.target
 
-for _ in $(seq 1 60); do
-  if curl --silent --fail "http://127.0.0.1:${BAREOS_WEBUI_PORT}/" >/dev/null; then
-    break
-  fi
-  sleep 1
-done
-curl --silent --fail "http://127.0.0.1:${BAREOS_WEBUI_PORT}/" >/dev/null
+[Service]
+Type=simple
+Environment=BAREOS_SETUP_DIST_DIR=${BAREOS_SOURCE_DIR}/webui-vue/dist
+Environment=BAREOS_BCONFIG_HOST=127.0.0.1
+Environment=BAREOS_BCONFIG_PORT=${BAREOS_BCONFIG_PORT}
+Environment=BAREOS_SETUP_WS_PROXY_HOST=127.0.0.1
+Environment=BAREOS_SETUP_WS_PROXY_PORT=${BAREOS_WEBUI_PROXY_PORT}
+Environment=BAREOS_SETUP_LISTEN_HOST=0.0.0.0
+Environment=BAREOS_SETUP_LISTEN_PORT=${BAREOS_WEBUI_PORT}
+Environment=BAREOS_SETUP_DEFAULT_REPOSITORY_PATH=${BAREOS_SETUP_REPOSITORY_PATH}
+Environment=BAREOS_SETUP_DEFAULT_RUNTIME_ROOT=${BAREOS_SETUP_RUNTIME_ROOT}
+Environment=BAREOS_SETUP_DEFAULT_DAEMON_ADDRESS=${DEFAULT_DAEMON_ADDRESS}
+Environment=BAREOS_SETUP_DEFAULT_DIRECTOR_PORT=${BAREOS_SETUP_DIRECTOR_PORT}
+Environment=BAREOS_SETUP_DEFAULT_CLIENT_PORT=${BAREOS_SETUP_CLIENT_PORT}
+Environment=BAREOS_SETUP_DEFAULT_STORAGE_PORT=${BAREOS_SETUP_STORAGE_PORT}
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 ${BAREOS_SOURCE_DIR}/systemtests/tests/setup-wizard/setup_wizard_http_server.py
+Restart=on-failure
+RestartSec=2
+StandardOutput=append:${STACK_LOG_DIR}/frontend.log
+StandardError=append:${STACK_LOG_DIR}/frontend.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  systemctl daemon-reload
+  systemctl enable --now setup-wizard-frontend.service
+}
+
+wait_http_ready()
+{
+  local url=$1
+  local label=$2
+  for _ in $(seq 1 90); do
+    if curl --silent --fail "${url}" >/dev/null; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "${label} did not become ready: ${url}" >&2
+  return 1
+}
+
+install_bareos_repository
+install_runtime_packages
+install_local_service_units
+configure_postgresql
+configure_bconfig_service
+wait_http_ready "http://127.0.0.1:${BAREOS_BCONFIG_PORT}/api/bconfig/v1/deployments" \
+  "bconfig-service"
+configure_webui_proxy
+configure_frontend_service
+wait_http_ready "http://127.0.0.1:${BAREOS_WEBUI_PORT}/" "setup-wizard frontend"
 
 echo "podman setup-wizard stack is ready:"
 echo "  frontend: http://127.0.0.1:${BAREOS_WEBUI_PORT}/"
@@ -211,5 +249,3 @@ echo "  bconfig-service: http://127.0.0.1:${BAREOS_BCONFIG_PORT}/api/bconfig/v1/
 echo "  repository path: ${BAREOS_SETUP_REPOSITORY_PATH}"
 echo "  runtime root: ${BAREOS_SETUP_RUNTIME_ROOT}"
 echo "  daemon ports: ${BAREOS_SETUP_DIRECTOR_PORT}/${BAREOS_SETUP_CLIENT_PORT}/${BAREOS_SETUP_STORAGE_PORT}"
-
-wait -n "${bconfig_pid}" "${proxy_pid}" "${frontend_pid}" "${postgres_pid}"

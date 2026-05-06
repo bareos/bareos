@@ -1,5 +1,24 @@
 #!/bin/bash
 
+# BAREOS® - Backup Archiving REcovery Open Sourced
+#
+# Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of version three of the GNU Affero General Public
+# License as published by the Free Software Foundation and included
+# in the file LICENSE.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
+
 set -e
 set -o pipefail
 set -u
@@ -23,28 +42,33 @@ SETUP_CLIENT_PORT=9102
 SETUP_STORAGE_PORT=9103
 SOURCE_SETUP_DIR="${CMAKE_SOURCE_DIR}/systemtests/tests/setup-wizard"
 
-ensure_state_dirs() {
+ensure_state_dirs()
+{
   mkdir -p \
     "${STATE_ROOT}/etc/bareos" \
     "${STATE_ROOT}/var/lib/bconfig" \
     "${STATE_ROOT}/var/lib/bareos" \
     "${STATE_ROOT}/var/lib/pgsql" \
     "${STATE_ROOT}/var/log/bareos" \
-    "${STATE_ROOT}/var/log/postgresql"
+    "${STATE_ROOT}/var/log/postgresql" \
+    "${STATE_ROOT}/var/log/setup-wizard"
 }
 
-remove_state_root() {
+remove_state_root()
+{
   podman unshare rm -rf "${STATE_ROOT}"
 }
 
-build_image() {
+build_image()
+{
   podman build \
     --tag "${IMAGE_NAME}" \
     --file "${SOURCE_SETUP_DIR}/Containerfile.almalinux10" \
     "${SOURCE_SETUP_DIR}"
 }
 
-start_container() {
+start_container()
+{
   remove_state_root
   ensure_state_dirs
 
@@ -52,17 +76,23 @@ start_container() {
     --name "${CONTAINER_NAME}" \
     --replace \
     --hostname bareos-setup-wizard-alma10 \
+    --privileged \
+    --systemd=always \
+    --tmpfs /run \
+    --tmpfs /run/lock \
     -p "127.0.0.1:${BAREOS_WEBUI_PORT}:${BAREOS_WEBUI_PORT}" \
     -v "${CMAKE_SOURCE_DIR}:${CMAKE_SOURCE_DIR}:ro,Z" \
     -v "${CMAKE_BINARY_DIR}:${CMAKE_BINARY_DIR}:ro,Z" \
     -v /lib64/libfmt.so.11.2.0:/lib64/libfmt.so.11:ro \
     -v /lib64/libxxhash.so.0.8.3:/lib64/libxxhash.so.0:ro \
+    -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
     -v "${STATE_ROOT}/etc/bareos:/etc/bareos:Z" \
     -v "${STATE_ROOT}/var/lib/bconfig:/var/lib/bconfig:Z" \
     -v "${STATE_ROOT}/var/lib/bareos:/var/lib/bareos:Z" \
     -v "${STATE_ROOT}/var/lib/pgsql:/var/lib/pgsql:Z" \
     -v "${STATE_ROOT}/var/log/bareos:/var/log/bareos:Z" \
     -v "${STATE_ROOT}/var/log/postgresql:/var/log/postgresql:Z" \
+    -v "${STATE_ROOT}/var/log/setup-wizard:/var/log/setup-wizard:Z" \
     -e BAREOS_SOURCE_DIR="${CMAKE_SOURCE_DIR}" \
     -e BAREOS_BUILD_DIR="${CMAKE_BINARY_DIR}" \
     -e BAREOS_BCONFIG_PORT="${BCONFIG_PORT}" \
@@ -74,10 +104,32 @@ start_container() {
     -e BAREOS_SETUP_CLIENT_PORT="${SETUP_CLIENT_PORT}" \
     -e BAREOS_SETUP_STORAGE_PORT="${SETUP_STORAGE_PORT}" \
     "${IMAGE_NAME}" \
+    /sbin/init
+
+  for _ in $(seq 1 90); do
+    if podman exec "${CONTAINER_NAME}" systemctl list-units >/dev/null 2>&1; then
+      break
+    fi
+    sleep 1
+  done
+
+  podman exec \
+    --env BAREOS_SOURCE_DIR="${CMAKE_SOURCE_DIR}" \
+    --env BAREOS_BUILD_DIR="${CMAKE_BINARY_DIR}" \
+    --env BAREOS_BCONFIG_PORT="${BCONFIG_PORT}" \
+    --env BAREOS_WEBUI_PORT="${BAREOS_WEBUI_PORT}" \
+    --env BAREOS_WEBUI_PROXY_PORT="${BAREOS_WEBUI_PROXY_PORT}" \
+    --env BAREOS_SETUP_REPOSITORY_PATH="${SETUP_REPOSITORY_PATH}" \
+    --env BAREOS_SETUP_RUNTIME_ROOT="${SETUP_RUNTIME_ROOT}" \
+    --env BAREOS_SETUP_DIRECTOR_PORT="${SETUP_DIRECTOR_PORT}" \
+    --env BAREOS_SETUP_CLIENT_PORT="${SETUP_CLIENT_PORT}" \
+    --env BAREOS_SETUP_STORAGE_PORT="${SETUP_STORAGE_PORT}" \
+    "${CONTAINER_NAME}" \
     /bin/bash "${CMAKE_SOURCE_DIR}/systemtests/tests/setup-wizard/podman-entrypoint.sh"
 }
 
-wait_ready() {
+wait_ready()
+{
   for _ in $(seq 1 90); do
     if curl --silent --fail "http://127.0.0.1:${BAREOS_WEBUI_PORT}/" >/dev/null; then
       return 0
@@ -116,7 +168,9 @@ EOF
       "http://127.0.0.1:${BCONFIG_PORT}/api/bconfig/v1/deployments"
     ;;
   logs)
-    podman logs "${CONTAINER_NAME}"
+    podman exec "${CONTAINER_NAME}" journalctl --no-pager -u postgresql.service \
+      -u bconfig-service.service -u bareos-webui-proxy.service \
+      -u setup-wizard-frontend.service
     ;;
   shell)
     exec podman exec -it "${CONTAINER_NAME}" /bin/bash
