@@ -345,6 +345,11 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
   ASSERT_TRUE(smoked.has_value());
   EXPECT_EQ(smoked->status, JobStatus::kSucceeded) << format_logs(*smoked);
 
+  WriteTextFile(runtime_path.path() / "director" / "bareos-dir.conmsg",
+                "stale console messages\n");
+  ASSERT_TRUE(std::filesystem::exists(runtime_path.path() / "director"
+                                      / "bareos-dir.conmsg"));
+
   auto start_job = state.CreateJob({.type = "start_deployment_daemons",
                                     .deployment_id = std::string{"prod"}});
   ASSERT_TRUE(start_job);
@@ -352,6 +357,8 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
   ASSERT_TRUE(started.has_value());
   EXPECT_EQ(started->status, JobStatus::kSucceeded) << format_logs(*started);
   EXPECT_TRUE(std::filesystem::is_directory(runtime_path.path() / "storage"));
+  EXPECT_TRUE(std::filesystem::exists(runtime_path.path() / "director"
+                                      / "bareos-dir.conmsg"));
   const auto systemctl_calls = ReadTextFile(systemctl_log);
   EXPECT_NE(systemctl_calls.find("reset-failed bareos-fd.service"),
             std::string::npos);

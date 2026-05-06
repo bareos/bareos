@@ -24,7 +24,7 @@ import { defineStore } from 'pinia'
 
 export const BCONFIG_API_PREFIX = '/api/bconfig/v1'
 export const DEFAULT_DEPLOYMENT_ID = 'prod'
-export const JOB_POLL_ATTEMPTS = 20
+export const JOB_POLL_ATTEMPTS = 80
 export const JOB_POLL_INTERVAL_MS = 250
 export const SMOKE_TEST_JOB_POLL_ATTEMPTS = 80
 export const DEFAULT_WEBUI_ADMIN_PROFILE = 'webui-admin'

@@ -50,6 +50,8 @@
 #include <array>
 #include <chrono>
 #include <cctype>
+#include <cerrno>
+#include <cstring>
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
@@ -66,6 +68,7 @@
 #if !HAVE_WIN32
 #  include <csignal>
 #  include <fcntl.h>
+#  include <sys/stat.h>
 #  include <sys/wait.h>
 #  include <unistd.h>
 #endif
@@ -19021,6 +19024,61 @@ OperationResult<std::monostate> EnsureStorageArchiveDirectories(
   return {.value = std::monostate{}};
 }
 
+OperationResult<std::monostate> PrepareConsoleMessageFiles(
+    const ServiceState& state,
+    std::string_view deployment_id,
+    const std::vector<DeploymentConfigRecord>& daemon_configs,
+    std::vector<std::string>& logs)
+{
+  for (const auto& config : daemon_configs) {
+    auto working_directory
+        = GetSmokeTestWorkingDirectory(state, deployment_id, config);
+    if (!working_directory) { return {.error = working_directory.error}; }
+
+    const auto& maybe_working_directory = *working_directory.value;
+    if (!maybe_working_directory) { continue; }
+
+    struct stat working_directory_stat{};
+    if (stat(maybe_working_directory->c_str(), &working_directory_stat) != 0) {
+      return {.error = "failed to stat working directory '"
+                       + maybe_working_directory->string()
+                       + "': " + std::strerror(errno)};
+    }
+
+    auto console_message_file
+        = *maybe_working_directory / (config.name + ".conmsg");
+    int file_descriptor = open(console_message_file.c_str(), O_CREAT | O_RDWR,
+                               S_IRUSR | S_IWUSR);
+    if (file_descriptor == -1) {
+      return {.error = "failed to open console message file '"
+                       + console_message_file.string()
+                       + "': " + std::strerror(errno)};
+    }
+
+    if (fchown(file_descriptor, working_directory_stat.st_uid,
+               working_directory_stat.st_gid)
+        != 0) {
+      close(file_descriptor);
+      return {.error = "failed to assign ownership for console message file '"
+                       + console_message_file.string()
+                       + "': " + std::strerror(errno)};
+    }
+
+    if (fchmod(file_descriptor, S_IRUSR | S_IWUSR) != 0) {
+      close(file_descriptor);
+      return {.error = "failed to set permissions for console message file '"
+                       + console_message_file.string()
+                       + "': " + std::strerror(errno)};
+    }
+
+    close(file_descriptor);
+    logs.emplace_back("prepared console message file '"
+                      + console_message_file.string() + "'");
+  }
+
+  return {.value = std::monostate{}};
+}
+
 OperationResult<std::vector<StartedSmokeTestProcess>> StartDeploymentProcesses(
     const std::vector<DeploymentConfigRecord>& daemon_configs,
     std::vector<std::string>& logs)
@@ -19285,6 +19343,13 @@ std::pair<JobStatus, std::vector<std::string>> ExecuteStartDeploymentDaemons(
       state, *job_snapshot.deployment_id, *daemon_configs.value, logs);
   if (!working_directories) {
     logs.emplace_back(working_directories.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto console_message_files = PrepareConsoleMessageFiles(
+      state, *job_snapshot.deployment_id, *daemon_configs.value, logs);
+  if (!console_message_files) {
+    logs.emplace_back(console_message_files.error);
     return {JobStatus::kFailed, logs};
   }
 

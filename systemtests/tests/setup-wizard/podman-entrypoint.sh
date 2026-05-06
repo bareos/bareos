@@ -68,13 +68,23 @@ install_bareos_repository()
 
 install_runtime_packages()
 {
-  dnf -y install \
-    bareos-database-common \
-    bareos-database-postgresql \
-    bareos-director \
-    bareos-filedaemon \
-    bareos-storage \
-    git-core
+  local attempt
+  for attempt in 1 2 3; do
+    rm -f /var/cache/dnf/metadata_lock.pid
+    if dnf -y install \
+      bareos-database-common \
+      bareos-database-postgresql \
+      bareos-director \
+      bareos-filedaemon \
+      bareos-storage \
+      git-core; then
+      return 0
+    fi
+    sleep 2
+  done
+
+  echo "failed to install runtime packages after retries" >&2
+  exit 1
 }
 
 install_local_service_binary()
@@ -122,6 +132,12 @@ EOF
   systemctl enable --now postgresql.service
 }
 
+configure_bareos_runtime_paths()
+{
+  mkdir -p "${BAREOS_SETUP_RUNTIME_ROOT}" /var/log/bareos
+  chown -R bareos:bareos "${BAREOS_SETUP_RUNTIME_ROOT}" /var/log/bareos
+}
+
 configure_bconfig_service()
 {
   cat >/etc/systemd/system/bconfig-service.service <<EOF
@@ -133,6 +149,15 @@ Wants=network-online.target
 [Service]
 Type=simple
 Environment=LD_LIBRARY_PATH=${LD_LIBRARY_PATH_VALUE}
+Environment=PGHOST=127.0.0.1
+Environment=PGPORT=5432
+Environment=PGUSER=postgres
+Environment=BCONFIG_PSQL_BINARY=/usr/bin/psql
+Environment=BCONFIG_BAREOS_CREATE_DATABASE_SCRIPT=/usr/lib/bareos/scripts/create_bareos_database
+Environment=BCONFIG_BAREOS_MAKE_TABLES_SCRIPT=/usr/lib/bareos/scripts/make_bareos_tables
+Environment=BCONFIG_BAREOS_GRANT_PRIVILEGES_SCRIPT=/usr/lib/bareos/scripts/grant_bareos_privileges
+Environment=BCONFIG_BAREOS_CONFIG_LIB=/usr/lib/bareos/scripts/bareos-config-lib.sh
+Environment=BCONFIG_BAREOS_SQL_DDL_DIR=/usr/lib/bareos/scripts/ddl
 ExecStart=/usr/sbin/bconfig-service --address 127.0.0.1 --port ${BAREOS_BCONFIG_PORT} --state-dir /var/lib/bconfig/service-state
 Restart=on-failure
 RestartSec=5
@@ -236,6 +261,7 @@ install_bareos_repository
 install_runtime_packages
 install_local_service_units
 configure_postgresql
+configure_bareos_runtime_paths
 configure_bconfig_service
 wait_http_ready "http://127.0.0.1:${BAREOS_BCONFIG_PORT}/api/bconfig/v1/deployments" \
   "bconfig-service"

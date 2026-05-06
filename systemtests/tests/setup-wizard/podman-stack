@@ -41,6 +41,8 @@ SETUP_DIRECTOR_PORT=9101
 SETUP_CLIENT_PORT=9102
 SETUP_STORAGE_PORT=9103
 SOURCE_SETUP_DIR="${CMAKE_SOURCE_DIR}/systemtests/tests/setup-wizard"
+PLAYWRIGHT_ARTIFACTS_DIR="${current_test_directory}/playwright-artifacts"
+SETUP_CONSOLE_PASSWORD="wizard-secret"
 
 ensure_state_dirs()
 {
@@ -139,6 +141,31 @@ wait_ready()
   return 1
 }
 
+run_e2e()
+{
+  mkdir -p "${PLAYWRIGHT_ARTIFACTS_DIR}"
+
+  cd "${CMAKE_SOURCE_DIR}/webui-vue"
+  PLAYWRIGHT_BASE_URL="http://127.0.0.1:${BAREOS_WEBUI_PORT}/" \
+    PLAYWRIGHT_ARTIFACTS_DIR="${PLAYWRIGHT_ARTIFACTS_DIR}" \
+    GOOGLE_CHROME_EXECUTABLE="${GOOGLE_CHROME_EXECUTABLE:-}" \
+    BAREOS_SETUP_REPOSITORY_PATH="${SETUP_REPOSITORY_PATH}" \
+    BAREOS_SETUP_RUNTIME_ROOT="${SETUP_RUNTIME_ROOT}" \
+    BAREOS_SETUP_DIRECTOR_PORT="${SETUP_DIRECTOR_PORT}" \
+    BAREOS_SETUP_CLIENT_PORT="${SETUP_CLIENT_PORT}" \
+    BAREOS_SETUP_STORAGE_PORT="${SETUP_STORAGE_PORT}" \
+    BAREOS_SETUP_CONSOLE_PASSWORD="${SETUP_CONSOLE_PASSWORD}" \
+    "${NPM_EXECUTABLE}" run test:e2e -- tests/e2e/setup-wizard.spec.js
+
+  podman exec "${CONTAINER_NAME}" sh -lc '
+    test -f /etc/bareos/bareos-dir.d/director/bareos-dir.conf &&
+    test -f /etc/bareos/bareos-sd.d/storage/bareos-sd.conf &&
+    test -f /etc/bareos/bareos-fd.d/client/bareos-fd.conf &&
+    test -f /etc/bareos/bconsole.conf &&
+    systemctl is-active bareos-dir.service bareos-sd.service bareos-fd.service
+  '
+}
+
 case "${1-}" in
   build)
     build_image
@@ -172,6 +199,17 @@ EOF
       -u bconfig-service.service -u bareos-webui-proxy.service \
       -u setup-wizard-frontend.service
     ;;
+  e2e)
+    if ! podman ps --filter "name=${CONTAINER_NAME}" --format '{{.Names}}' \
+      | grep -qx "${CONTAINER_NAME}"; then
+      if ! podman image exists "${IMAGE_NAME}"; then
+        build_image
+      fi
+      start_container
+      wait_ready
+    fi
+    run_e2e
+    ;;
   shell)
     exec podman exec -it "${CONTAINER_NAME}" /bin/bash
     ;;
@@ -180,7 +218,7 @@ EOF
     remove_state_root
     ;;
   *)
-    echo "Usage: $0 {build|start|stop|status|logs|shell|clean}"
+    echo "Usage: $0 {build|start|stop|status|logs|e2e|shell|clean}"
     exit 1
     ;;
 esac
