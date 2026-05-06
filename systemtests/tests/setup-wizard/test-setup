@@ -11,7 +11,8 @@ BCONFIG_PORT=$((BASEPORT + 8))
 SETUP_DIRECTOR_PORT=$((20000 + BASEPORT))
 SETUP_CLIENT_PORT=$((20001 + BASEPORT))
 SETUP_STORAGE_PORT=$((20002 + BASEPORT))
-DEFAULT_DAEMON_ADDRESS=$(hostname -f 2>/dev/null || hostname)
+DEFAULT_DAEMON_ADDRESS=bareos.example.com
+PROXY_DIRECTOR_HOST=127.0.0.1
 SETUP_RUNTIME_ROOT="${current_test_directory}/var/lib/bareos"
 SETUP_REPOSITORY_PATH="${current_test_directory}/var/lib/bconfig/deployments/prod"
 SETUP_STATE_DIR="${current_test_directory}/var/lib/bconfig/service-state"
@@ -36,7 +37,7 @@ ws_host = 127.0.0.1
 ws_port = ${BAREOS_WEBUI_PROXY_PORT}
 
 [director:bareos-dir]
-host = ${DEFAULT_DAEMON_ADDRESS}
+host = ${PROXY_DIRECTOR_HOST}
 port = ${SETUP_DIRECTOR_PORT}
 director_name = bareos-dir
 EOF

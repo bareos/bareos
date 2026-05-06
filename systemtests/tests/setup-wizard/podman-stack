@@ -24,8 +24,13 @@ set -o pipefail
 set -u
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-REPO_ROOT=$(cd -- "${SCRIPT_DIR}/../../.." && pwd)
-BUILD_TEST_DIR="${REPO_ROOT}/cmake-build/systemtests/tests/setup-wizard"
+if [ -f "${SCRIPT_DIR}/environment" ]; then
+  BUILD_TEST_DIR="${SCRIPT_DIR}"
+  REPO_ROOT=$(cd -- "${SCRIPT_DIR}/../../../.." && pwd)
+else
+  REPO_ROOT=$(cd -- "${SCRIPT_DIR}/../../.." && pwd)
+  BUILD_TEST_DIR="${REPO_ROOT}/cmake-build/systemtests/tests/setup-wizard"
+fi
 ENVIRONMENT_FILE="${BUILD_TEST_DIR}/environment"
 
 #shellcheck source=../../environment.in
@@ -33,6 +38,8 @@ ENVIRONMENT_FILE="${BUILD_TEST_DIR}/environment"
 
 IMAGE_NAME=localhost/bareos-setup-wizard:alma10
 CONTAINER_NAME=bareos-setup-wizard-alma10
+SETUP_HOSTNAME=bareos
+SETUP_FQDN="${SETUP_HOSTNAME}.example.com"
 STATE_ROOT="${current_test_directory}/podman-state"
 LOCAL_INSTALL_BUILD_DIR="${BUILD_TEST_DIR}/local-install-build"
 LOCAL_INSTALL_STAGE_DIR="${BUILD_TEST_DIR}/local-install-stage"
@@ -95,8 +102,8 @@ prepare_local_install_tree()
     -Dmon-dir-password=XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX \
     -Dmon-fd-password=XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX \
     -Dmon-sd-password=XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX \
-    -Dbasename="${CONTAINER_NAME}" \
-    -Dhostname="${CONTAINER_NAME}" \
+    -Dbasename="${SETUP_HOSTNAME}" \
+    -Dhostname="${SETUP_HOSTNAME}" \
     -Dsystemd=yes \
     -Dwebuiconfdir=/etc/bareos-webui
 
@@ -132,7 +139,7 @@ start_container()
   podman run -d \
     --name "${CONTAINER_NAME}" \
     --replace \
-    --hostname bareos-setup-wizard-alma10 \
+    --hostname "${SETUP_HOSTNAME}" \
     --privileged \
     --systemd=always \
     --tmpfs /run \
@@ -157,6 +164,7 @@ start_container()
     -e BAREOS_WEBUI_PROXY_PORT="${BAREOS_WEBUI_PROXY_PORT}" \
     -e BAREOS_SETUP_REPOSITORY_PATH="${SETUP_REPOSITORY_PATH}" \
     -e BAREOS_SETUP_RUNTIME_ROOT="${SETUP_RUNTIME_ROOT}" \
+    -e BAREOS_SETUP_DEFAULT_DAEMON_ADDRESS="${SETUP_FQDN}" \
     -e BAREOS_SETUP_DIRECTOR_PORT="${SETUP_DIRECTOR_PORT}" \
     -e BAREOS_SETUP_CLIENT_PORT="${SETUP_CLIENT_PORT}" \
     -e BAREOS_SETUP_STORAGE_PORT="${SETUP_STORAGE_PORT}" \
@@ -178,6 +186,7 @@ start_container()
     --env BAREOS_WEBUI_PROXY_PORT="${BAREOS_WEBUI_PROXY_PORT}" \
     --env BAREOS_SETUP_REPOSITORY_PATH="${SETUP_REPOSITORY_PATH}" \
     --env BAREOS_SETUP_RUNTIME_ROOT="${SETUP_RUNTIME_ROOT}" \
+    --env BAREOS_SETUP_DEFAULT_DAEMON_ADDRESS="${SETUP_FQDN}" \
     --env BAREOS_SETUP_DIRECTOR_PORT="${SETUP_DIRECTOR_PORT}" \
     --env BAREOS_SETUP_CLIENT_PORT="${SETUP_CLIENT_PORT}" \
     --env BAREOS_SETUP_STORAGE_PORT="${SETUP_STORAGE_PORT}" \
@@ -213,9 +222,9 @@ run_e2e()
     "${NPM_EXECUTABLE}" run test:e2e -- tests/e2e/setup-wizard.spec.js
 
   podman exec "${CONTAINER_NAME}" sh -lc '
-    test -f /etc/bareos/bareos-dir.d/director/bareos-dir.conf &&
-    test -f /etc/bareos/bareos-sd.d/storage/bareos-sd.conf &&
-    test -f /etc/bareos/bareos-fd.d/client/bareos-fd.conf &&
+    find /etc/bareos/bareos-dir.d/director -maxdepth 1 -name "*.conf" | grep -q . &&
+    find /etc/bareos/bareos-sd.d/storage -maxdepth 1 -name "*.conf" | grep -q . &&
+    find /etc/bareos/bareos-fd.d/client -maxdepth 1 -name "*.conf" | grep -q . &&
     test -f /etc/bareos/bconsole.conf &&
     systemctl is-active bareos-dir.service bareos-sd.service bareos-fd.service
   '

@@ -34,6 +34,8 @@ import {
   DEFAULT_WEBUI_ADMIN_PROFILE,
   DEFAULT_OPERATOR_PROFILE,
   buildDefaultDaemonAddress,
+  deriveSetupDaemonBaseName,
+  deriveSetupDaemonNames,
   generateSetupPassword,
   buildInitialSetupRequests,
   useSetupStore,
@@ -90,6 +92,19 @@ describe('setup store', () => {
     })
 
     expect(buildDefaultDaemonAddress()).toBe('bareos.example.com')
+  })
+
+  it('derives the daemon basename from the FQDN hostname', () => {
+    expect(deriveSetupDaemonBaseName('backup.example.com')).toBe('backup')
+    expect(deriveSetupDaemonBaseName('Backup-01.example.com')).toBe('backup-01')
+  })
+
+  it('derives default daemon names from the server address', () => {
+    expect(deriveSetupDaemonNames('backup.example.com')).toEqual({
+      directorName: 'backup-dir',
+      storageName: 'backup-sd',
+      clientName: 'backup-fd',
+    })
   })
 
   it('creates the initial deployment resources and validates the result', async () => {

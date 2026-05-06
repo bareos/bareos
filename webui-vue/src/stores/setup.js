@@ -110,6 +110,28 @@ export function buildDefaultDaemonAddress() {
   return '127.0.0.1'
 }
 
+export function deriveSetupDaemonBaseName(address) {
+  const normalizedAddress = String(address ?? '').trim().toLowerCase()
+  const host = normalizedAddress.includes('.')
+    ? normalizedAddress.split('.')[0]
+    : normalizedAddress
+  const sanitized = host
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+
+  return sanitized || 'bareos'
+}
+
+export function deriveSetupDaemonNames(address) {
+  const baseName = deriveSetupDaemonBaseName(address)
+  return {
+    directorName: `${baseName}-dir`,
+    storageName: `${baseName}-sd`,
+    clientName: `${baseName}-fd`,
+  }
+}
+
 export function generateSetupPassword(length = 24) {
   const size = Number.isInteger(length) && length > 0 ? length : 24
   const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789-_'

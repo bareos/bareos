@@ -30,6 +30,7 @@ set -u
 : "${BAREOS_WEBUI_PROXY_PORT:?}"
 : "${BAREOS_SETUP_REPOSITORY_PATH:?}"
 : "${BAREOS_SETUP_RUNTIME_ROOT:?}"
+: "${BAREOS_SETUP_DEFAULT_DAEMON_ADDRESS:=bareos.example.com}"
 : "${BAREOS_SETUP_DIRECTOR_PORT:?}"
 : "${BAREOS_SETUP_CLIENT_PORT:?}"
 : "${BAREOS_SETUP_STORAGE_PORT:?}"
@@ -37,7 +38,8 @@ set -u
 STACK_LOG_DIR=/var/log/setup-wizard
 POSTGRES_DATA_DIR=/var/lib/pgsql/data
 POSTGRES_SOCKET_DIR=/run/postgresql
-DEFAULT_DAEMON_ADDRESS=$(hostname -f 2>/dev/null || hostname)
+DEFAULT_DAEMON_ADDRESS="${BAREOS_SETUP_DEFAULT_DAEMON_ADDRESS}"
+PROXY_DIRECTOR_HOST=127.0.0.1
 
 mkdir -p \
   /etc/bareos \
@@ -103,6 +105,16 @@ disable_bareos_daemons()
     bareos-fd.service \
     bareos-sd.service \
     bareos-dir.service
+}
+
+ensure_setup_hostname_resolution()
+{
+  local short_hostname="${DEFAULT_DAEMON_ADDRESS%%.*}"
+  if ! grep -Eq "[[:space:]]${DEFAULT_DAEMON_ADDRESS}([[:space:]]|\$)" /etc/hosts; then
+    printf '127.0.0.1 %s %s\n' \
+      "${DEFAULT_DAEMON_ADDRESS}" \
+      "${short_hostname}" >>/etc/hosts
+  fi
 }
 
 configure_postgresql()
@@ -173,7 +185,7 @@ ws_host = 0.0.0.0
 ws_port = ${BAREOS_WEBUI_PROXY_PORT}
 
 [director:bareos-dir]
-host = ${DEFAULT_DAEMON_ADDRESS}
+host = ${PROXY_DIRECTOR_HOST}
 port = ${BAREOS_SETUP_DIRECTOR_PORT}
 director_name = bareos-dir
 EOF
@@ -254,6 +266,7 @@ install_runtime_packages
 install_local_bareos_tree
 ensure_bareos_accounts
 disable_bareos_daemons
+ensure_setup_hostname_resolution
 configure_postgresql
 configure_bareos_runtime_paths
 configure_bconfig_service

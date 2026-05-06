@@ -21,28 +21,18 @@
 
 import { test, expect } from '@playwright/test'
 
-const setupRepositoryPath = process.env.BAREOS_SETUP_REPOSITORY_PATH
-const setupDirectorPort = process.env.BAREOS_SETUP_DIRECTOR_PORT
-const setupClientPort = process.env.BAREOS_SETUP_CLIENT_PORT
-const setupStoragePort = process.env.BAREOS_SETUP_STORAGE_PORT
+const setupConsoleName = process.env.BAREOS_SETUP_CONSOLE_NAME ?? 'admin'
 const setupConsolePassword = process.env.BAREOS_SETUP_CONSOLE_PASSWORD ?? 'wizard-secret'
 
 test('creates the initial deployment and reaches login', async ({ page }) => {
   test.setTimeout(180_000)
 
   await page.goto('/')
-  await expect(page.getByText('Initial setup wizard', { exact: true })).toBeVisible()
+  await expect(page.getByText('Welcome to Bareos setup', { exact: true })).toBeVisible()
 
   await page.getByRole('button', { name: 'Start wizard' }).click()
-  await page.getByRole('button', { name: /Advanced deployment settings/ }).click()
-  await page.getByLabel('Repository path').fill(setupRepositoryPath)
-  await page.getByRole('button', { name: 'Continue' }).click()
-
-  await page.getByRole('button', { name: /Advanced service settings/ }).click()
-  await page.getByLabel('Director port').fill(setupDirectorPort)
-  await page.getByLabel('File daemon port').fill(setupClientPort)
-  await page.getByLabel('Storage daemon port').fill(setupStoragePort)
-  await page.getByLabel('Admin console password').fill(setupConsolePassword)
+  await page.getByLabel('Administrator Name').fill(setupConsoleName)
+  await page.getByLabel('Administrator Password').fill(setupConsolePassword)
   await page.getByRole('button', { name: 'Continue' }).click()
 
   await page.locator('[data-testid="setup-submit"]').click()
@@ -62,7 +52,7 @@ test('creates the initial deployment and reaches login', async ({ page }) => {
   await page.locator('[data-testid="setup-continue-login"]').click()
   await page.waitForURL(/#\/login$/)
   await expect(page.locator('[data-testid="login-form"]')).toBeVisible()
-  await expect(page.getByLabel('Username')).toHaveValue('admin')
+  await expect(page.getByLabel('Username')).toHaveValue(setupConsoleName)
   await expect(page.getByLabel('Password')).toHaveValue(setupConsolePassword)
 
   await page.getByRole('button', { name: 'Login' }).click()

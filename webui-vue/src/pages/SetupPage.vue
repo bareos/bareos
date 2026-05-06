@@ -22,12 +22,6 @@
 <template>
   <q-page class="setup-page flex flex-center">
     <div class="setup-shell">
-      <div class="text-center q-mb-lg">
-        <img :src="bareosLogo" alt="Bareos" class="setup-logo" />
-        <div class="text-h5 text-white text-weight-bold q-mt-sm">BAREOS</div>
-        <div class="text-subtitle2 text-white">{{ t('Initial setup wizard') }}</div>
-      </div>
-
       <q-card flat bordered class="setup-card">
         <q-card-section class="bg-primary text-white">
           <div class="text-h6">{{ t('Welcome to Bareos setup') }}</div>
@@ -76,26 +70,18 @@
                     class="q-mb-md"
                   />
                   <div class="row q-col-gutter-sm">
-                    <div class="col-12 col-sm-4">
+                    <div class="col-12 col-sm-6">
                       <q-card flat bordered class="setup-highlight">
                         <q-card-section>
                           <div class="text-subtitle2">{{ t('Step 1') }}</div>
-                          <div>{{ t('Review the automatic deployment defaults.') }}</div>
+                          <div>{{ t('Provide the server address and administrator credentials.') }}</div>
                         </q-card-section>
                       </q-card>
                     </div>
-                    <div class="col-12 col-sm-4">
+                    <div class="col-12 col-sm-6">
                       <q-card flat bordered class="setup-highlight">
                         <q-card-section>
                           <div class="text-subtitle2">{{ t('Step 2') }}</div>
-                          <div>{{ t('Confirm passwords and optional advanced settings.') }}</div>
-                        </q-card-section>
-                      </q-card>
-                    </div>
-                    <div class="col-12 col-sm-4">
-                      <q-card flat bordered class="setup-highlight">
-                        <q-card-section>
-                          <div class="text-subtitle2">{{ t('Step 3') }}</div>
                           <div>{{ t('Review and create the initial configuration.') }}</div>
                         </q-card-section>
                       </q-card>
@@ -111,71 +97,82 @@
 
             <q-step
               :name="2"
-              :title="t('Deployment')"
-              icon="folder_open"
+              :title="t('Services')"
+              icon="dns"
               :done="step > 2"
             >
               <div class="text-body2 q-mb-md">
-                {{ t('Bareos preconfigures the first deployment automatically. Open the advanced section only when you need to change the defaults.') }}
+                {{ t('Enter the Bareos server address and the first administrator credentials.') }}
               </div>
 
-              <q-banner dense class="bg-grey-2 text-dark q-mb-md rounded-borders">
-                <template #avatar><q-icon name="auto_fix_high" /></template>
-                {{ t('Deployment') }} "{{ form.deploymentName }}" ·
-                {{ t('Repository path') }} "{{ form.repositoryPath }}" ·
-                {{ t('Workflow mode') }} {{ form.workflowMode }}
-              </q-banner>
-
-              <q-expansion-item
-                v-model="showAdvancedDeployment"
+              <q-input
+                v-model="form.daemonAddress"
+                data-testid="setup-daemon-address"
+                :label="t('Bareos Server Address (FQDN)')"
+                :hint="t('Enter the FQDN of the Bareos server that will run the director, storage daemon, and file daemon.')"
+                outlined
                 dense
-                switch-toggle-side
-                expand-separator
-                icon="tune"
-                :label="t('Advanced deployment settings')"
-                data-testid="setup-advanced-deployment"
-                class="q-mb-sm rounded-borders advanced-settings"
-              >
-                <div class="q-pa-md">
+                hide-bottom-space
+                class="q-mb-md"
+              />
+              <div class="text-subtitle2 q-mb-sm">{{ t('Administrator') }}</div>
+              <div class="row q-col-gutter-md q-mb-md">
+                <div class="col-12 col-md-5">
                   <q-input
-                    v-model="form.deploymentId"
-                    data-testid="setup-deployment-id"
-                    :label="t('Deployment ID')"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                  />
-                  <q-input
-                    v-model="form.deploymentName"
-                    data-testid="setup-deployment-name"
-                    :label="t('Deployment name')"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                  />
-                  <q-input
-                    v-model="form.repositoryPath"
-                    data-testid="setup-repository-path"
-                    :label="t('Repository path')"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                    @update:model-value="repositoryPathTouched = true"
-                  />
-                  <q-select
-                    v-model="form.workflowMode"
-                    data-testid="setup-workflow-mode"
-                    :label="t('Workflow mode')"
-                    :options="workflowOptions"
-                    option-label="label"
-                    option-value="value"
-                    emit-value
-                    map-options
+                    v-model="form.consoleName"
+                    data-testid="setup-console-name"
+                    :label="t('Administrator Name')"
                     outlined
                     dense
                   />
                 </div>
-              </q-expansion-item>
+                <div class="col-12 col-md-7">
+                  <q-input
+                    v-model="form.consolePassword"
+                    data-testid="setup-console-password"
+                    :label="t('Administrator Password')"
+                    :type="showAdminPassword ? 'text' : 'password'"
+                    outlined
+                    dense
+                    autocomplete="new-password"
+                  >
+                    <template #append>
+                      <q-btn
+                        flat
+                        dense
+                        round
+                        color="primary"
+                        :icon="showAdminPassword ? 'visibility_off' : 'visibility'"
+                        :aria-label="showAdminPassword
+                          ? t('Hide admin password')
+                          : t('Show admin password')"
+                        :title="showAdminPassword
+                          ? t('Hide admin password')
+                          : t('Show admin password')"
+                        @click="showAdminPassword = !showAdminPassword"
+                      />
+                      <q-btn
+                        flat
+                        dense
+                        round
+                        color="primary"
+                        icon="content_copy"
+                        :aria-label="t('Copy admin password')"
+                        :title="t('Copy admin password')"
+                        @click="copyAdminPassword"
+                      />
+                      <q-btn
+                        flat
+                        dense
+                        no-caps
+                        color="primary"
+                        :label="t('Regenerate')"
+                        @click="form.consolePassword = generateSetupPassword()"
+                      />
+                    </template>
+                  </q-input>
+                </div>
+              </div>
 
               <q-stepper-navigation>
                 <q-btn color="primary" :label="t('Continue')" @click="nextStep" />
@@ -185,159 +182,6 @@
 
             <q-step
               :name="3"
-              :title="t('Services')"
-              icon="dns"
-              :done="step > 3"
-            >
-              <div class="text-body2 q-mb-md">
-                {{ t('Bareos also preconfigures the first director, storage daemon, file daemon, and admin console. Adjust them only if the defaults are not suitable.') }}
-              </div>
-
-              <q-banner dense class="bg-grey-2 text-dark q-mb-md rounded-borders">
-                <template #avatar><q-icon name="dns" /></template>
-                {{ t('Director name') }} "{{ form.directorName }}" ·
-                {{ t('Storage daemon name') }} "{{ form.storageName }}" ·
-                {{ t('File daemon name') }} "{{ form.clientName }}" ·
-                {{ t('Admin console name') }} "{{ form.consoleName }}" ·
-                {{ t('Daemon address') }} {{ form.daemonAddress }}
-              </q-banner>
-
-              <q-expansion-item
-                v-model="showAdvancedServices"
-                dense
-                switch-toggle-side
-                expand-separator
-                icon="tune"
-                :label="t('Advanced service settings')"
-                data-testid="setup-advanced-services"
-                class="q-mb-md rounded-borders advanced-settings"
-              >
-                <div class="q-pa-md">
-                  <q-input
-                    v-model="form.daemonAddress"
-                    data-testid="setup-daemon-address"
-                    :label="t('Daemon address')"
-                    :hint="t('Enter the FQDN of the Bareos server that will run the director, storage daemon, and file daemon.')"
-                    outlined
-                    dense
-                    hide-bottom-space
-                    class="q-mb-sm"
-                  />
-                  <q-input
-                    v-model="form.directorPort"
-                    data-testid="setup-director-port"
-                    :label="t('Director port')"
-                    type="number"
-                    min="1"
-                    max="65535"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                  />
-                  <q-input
-                    v-model="form.clientPort"
-                    data-testid="setup-client-port"
-                    :label="t('File daemon port')"
-                    type="number"
-                    min="1"
-                    max="65535"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                  />
-                  <q-input
-                    v-model="form.storagePort"
-                    data-testid="setup-storage-port"
-                    :label="t('Storage daemon port')"
-                    type="number"
-                    min="1"
-                    max="65535"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                  />
-                  <q-input
-                    v-model="form.directorName"
-                    data-testid="setup-director-name"
-                    :label="t('Director name')"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                  />
-                  <q-input
-                    v-model="form.storageName"
-                    data-testid="setup-storage-name"
-                    :label="t('Storage daemon name')"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                  />
-                  <q-input
-                    v-model="form.clientName"
-                    data-testid="setup-client-name"
-                    :label="t('File daemon name')"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                  />
-                  <q-input
-                    v-model="form.consoleName"
-                    data-testid="setup-console-name"
-                    :label="t('Admin console name')"
-                    outlined
-                    dense
-                  />
-                </div>
-              </q-expansion-item>
-              <q-input
-                v-model="form.consolePassword"
-                data-testid="setup-console-password"
-                :label="t('Admin console password')"
-                type="password"
-                outlined
-                dense
-                class="q-mb-md"
-                autocomplete="new-password"
-              >
-                <template #append>
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    color="primary"
-                    icon="content_copy"
-                    :aria-label="t('Copy admin password')"
-                    :title="t('Copy admin password')"
-                    @click="copyAdminPassword"
-                  />
-                  <q-btn
-                    flat
-                    dense
-                    no-caps
-                    color="primary"
-                    :label="t('Regenerate')"
-                    @click="form.consolePassword = generateSetupPassword()"
-                  />
-                </template>
-              </q-input>
-
-              <q-banner dense class="bg-grey-2 text-dark q-mb-md rounded-borders">
-                <template #avatar><q-icon name="settings" /></template>
-                {{ t('The generated daemon resources use ports {directorPort}, {clientPort}, and {storagePort}. Unique daemon connection passwords and the admin password are generated automatically.', {
-                  directorPort: form.directorPort,
-                  clientPort: form.clientPort,
-                  storagePort: form.storagePort,
-                }) }}
-              </q-banner>
-
-              <q-stepper-navigation>
-                <q-btn color="primary" :label="t('Continue')" @click="nextStep" />
-                <q-btn flat color="primary" :label="t('Back')" class="q-ml-sm" @click="step = 2" />
-              </q-stepper-navigation>
-            </q-step>
-
-            <q-step
-              :name="4"
               :title="t('Review')"
               icon="fact_check"
             >
@@ -348,37 +192,16 @@
               <q-list bordered separator class="rounded-borders q-mb-md">
                 <q-item>
                   <q-item-section>
-                    <q-item-label caption>{{ t('Daemon address') }}</q-item-label>
+                    <q-item-label caption>{{ t('Bareos Server Address (FQDN)') }}</q-item-label>
                     <q-item-label>
-                      {{ form.daemonAddress }} · {{ t('Ports') }}
-                      {{ form.directorPort }}/{{ form.clientPort }}/{{ form.storagePort }}
+                      {{ form.daemonAddress }}
                     </q-item-label>
                   </q-item-section>
                 </q-item>
                 <q-item>
                   <q-item-section>
-                    <q-item-label caption>{{ t('Initial resources') }}</q-item-label>
-                    <q-item-label v-for="resourceGroup in initialResourceGroups" :key="resourceGroup.label">
-                      <strong>{{ resourceGroup.label }}:</strong> {{ resourceGroup.items.join(', ') }}
-                    </q-item-label>
-                  </q-item-section>
-                </q-item>
-                <q-item>
-                  <q-item-section>
-                    <q-item-label caption>{{ t('Credentials') }}</q-item-label>
-                    <q-item-label>{{ t('Unique daemon connection passwords and the admin console password are configured automatically.') }}</q-item-label>
-                  </q-item-section>
-                  <q-item-section side>
-                    <q-btn
-                      flat
-                      dense
-                      color="primary"
-                      icon="content_copy"
-                      no-caps
-                      data-testid="setup-copy-admin-password"
-                      :label="t('Copy admin password')"
-                      @click="copyAdminPassword"
-                    />
+                    <q-item-label caption>{{ t('Administrator Name') }}</q-item-label>
+                    <q-item-label>{{ form.consoleName }}</q-item-label>
                   </q-item-section>
                 </q-item>
               </q-list>
@@ -440,7 +263,7 @@
                   color="primary"
                   :label="t('Back')"
                   class="q-ml-sm"
-                  @click="step = 3"
+                  @click="step = 2"
                 />
               </q-stepper-navigation>
             </q-step>
@@ -457,7 +280,6 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import LanguageSelect from '../components/LanguageSelect.vue'
-import bareosLogo from '../assets/bareos-logo-small.png'
 import borisIcon from '../assets/boris.png'
 import { useAuthStore } from '../stores/auth.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -465,30 +287,11 @@ import {
   buildDefaultDaemonAddress,
   buildDefaultRepositoryPath,
   buildDefaultRuntimeRoot,
+  deriveSetupDaemonNames,
   getDefaultSetupClientPort,
   getDefaultSetupDirectorPort,
   getDefaultSetupStoragePort,
-  DEFAULT_CATALOG_BACKUP_JOB_NAME,
-  DEFAULT_CATALOG_FILESET_NAME,
-  DEFAULT_CATALOG_NAME,
   DEFAULT_DEPLOYMENT_ID,
-  DEFAULT_DIFFERENTIAL_POOL_NAME,
-  DEFAULT_DIRECTOR_STORAGE_NAME,
-  DEFAULT_FULL_POOL_NAME,
-  DEFAULT_INCREMENTAL_POOL_NAME,
-  DEFAULT_JOBDEFS_NAME,
-  DEFAULT_LINUX_ALL_FILESET_NAME,
-  DEFAULT_MONITOR_CONSOLE_NAME,
-  DEFAULT_OPERATOR_PROFILE,
-  DEFAULT_PRIMARY_BACKUP_JOB_NAME,
-  DEFAULT_RESTORE_JOB_NAME,
-  DEFAULT_SCRATCH_POOL_NAME,
-  DEFAULT_SELFTEST_FILESET_NAME,
-  DEFAULT_STORAGE_DEVICE_NAME,
-  DEFAULT_WEBUI_ADMIN_PROFILE,
-  DEFAULT_WEBUI_READONLY_PROFILE,
-  DEFAULT_WEEKLY_CYCLE_AFTER_BACKUP_NAME,
-  DEFAULT_WEEKLY_CYCLE_NAME,
   generateSetupPassword,
   useSetupStore,
 } from '../stores/setup.js'
@@ -502,14 +305,9 @@ const $q = useQuasar()
 
 const step = ref(1)
 const locale = ref(settings.locale)
-const repositoryPathTouched = ref(false)
-const showAdvancedDeployment = ref(false)
-const showAdvancedServices = ref(false)
+const showAdminPassword = ref(false)
 const errorMsg = ref(null)
-const workflowOptions = [
-  { label: 'review', value: 'review' },
-  { label: 'direct_commit', value: 'direct_commit' },
-]
+const defaultDaemonNames = deriveSetupDaemonNames(buildDefaultDaemonAddress())
 
 const form = reactive({
   deploymentId: DEFAULT_DEPLOYMENT_ID,
@@ -521,9 +319,9 @@ const form = reactive({
   directorPort: getDefaultSetupDirectorPort(),
   clientPort: getDefaultSetupClientPort(),
   storagePort: getDefaultSetupStoragePort(),
-  directorName: 'bareos-dir',
-  storageName: 'bareos-sd',
-  clientName: 'bareos-fd',
+  directorName: defaultDaemonNames.directorName,
+  storageName: defaultDaemonNames.storageName,
+  clientName: defaultDaemonNames.clientName,
   consoleName: 'admin',
   consolePassword: generateSetupPassword(),
 })
@@ -551,61 +349,15 @@ const credentialsReady = computed(() => (
   form.consolePassword.trim()
 ))
 
-const initialResourceGroups = computed(() => ([
-  {
-    label: t('Daemons and access'),
-    items: [
-      form.directorName.trim(),
-      DEFAULT_DIRECTOR_STORAGE_NAME,
-      form.storageName.trim(),
-      DEFAULT_STORAGE_DEVICE_NAME,
-      form.clientName.trim(),
-      form.consoleName.trim(),
-      DEFAULT_MONITOR_CONSOLE_NAME,
-    ].filter(Boolean),
-  },
-  {
-    label: t('Catalog and profiles'),
-    items: [
-      DEFAULT_CATALOG_NAME,
-      DEFAULT_OPERATOR_PROFILE,
-      DEFAULT_WEBUI_READONLY_PROFILE,
-      DEFAULT_WEBUI_ADMIN_PROFILE,
-    ],
-  },
-  {
-    label: t('Schedules, pools, and filesets'),
-    items: [
-      DEFAULT_WEEKLY_CYCLE_NAME,
-      DEFAULT_WEEKLY_CYCLE_AFTER_BACKUP_NAME,
-      DEFAULT_FULL_POOL_NAME,
-      DEFAULT_DIFFERENTIAL_POOL_NAME,
-      DEFAULT_INCREMENTAL_POOL_NAME,
-      DEFAULT_SCRATCH_POOL_NAME,
-      DEFAULT_SELFTEST_FILESET_NAME,
-      DEFAULT_CATALOG_FILESET_NAME,
-      DEFAULT_LINUX_ALL_FILESET_NAME,
-    ],
-  },
-  {
-    label: t('Jobs'),
-    items: [
-      DEFAULT_JOBDEFS_NAME,
-      DEFAULT_PRIMARY_BACKUP_JOB_NAME,
-      DEFAULT_CATALOG_BACKUP_JOB_NAME,
-      DEFAULT_RESTORE_JOB_NAME,
-    ],
-  },
-]))
-
 watch(locale, (value) => {
   settings.setLocale(value)
 })
 
-watch(() => form.deploymentId, (value) => {
-  if (!repositoryPathTouched.value) {
-    form.repositoryPath = buildDefaultRepositoryPath(value)
-  }
+watch(() => form.daemonAddress, (value) => {
+  const names = deriveSetupDaemonNames(value)
+  form.directorName = names.directorName
+  form.storageName = names.storageName
+  form.clientName = names.clientName
 })
 
 onMounted(async () => {
@@ -635,17 +387,7 @@ function requireStep(message, condition) {
 function nextStep() {
   if (step.value === 2) {
     const ok = requireStep(
-      t('Please complete the deployment details before continuing.'),
-      deploymentReady.value
-    )
-    if (!ok) {
-      return
-    }
-  }
-
-  if (step.value === 3) {
-    const ok = requireStep(
-      t('Please complete the service names and passwords before continuing.'),
+      t('Please complete the server details and administrator credentials before continuing.'),
       servicesReady.value && credentialsReady.value
     )
     if (!ok) {
@@ -760,10 +502,6 @@ function continueToLogin() {
 
 .setup-highlight {
   height: 100%;
-}
-
-.advanced-settings {
-  border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 .text-break {
