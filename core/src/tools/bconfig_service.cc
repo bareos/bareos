@@ -18994,6 +18994,22 @@ OperationResult<std::monostate> EnsureStorageArchiveDirectories(
   for (const auto& config : daemon_configs) {
     if (config.component != bconfig::Component::kStorage) { continue; }
 
+    auto working_directory
+        = GetSmokeTestWorkingDirectory(state, deployment_id, config);
+    if (!working_directory) { return {.error = working_directory.error}; }
+    const auto& maybe_working_directory = *working_directory.value;
+    if (!maybe_working_directory) {
+      return {.error = "storage config '" + config.name
+                       + "' is missing a working directory."};
+    }
+
+    struct stat working_directory_stat{};
+    if (stat(maybe_working_directory->c_str(), &working_directory_stat) != 0) {
+      return {.error = "failed to stat working directory '"
+                       + maybe_working_directory->string()
+                       + "': " + std::strerror(errno)};
+    }
+
     const auto device_directory = config.path / "bareos-sd.d" / "device";
     if (!std::filesystem::is_directory(device_directory)) { continue; }
 
@@ -19023,7 +19039,16 @@ OperationResult<std::monostate> EnsureStorageArchiveDirectories(
                          + archive_directory.string()
                          + "': " + error_code.message()};
       }
+      if (chown(archive_directory.c_str(), working_directory_stat.st_uid,
+                working_directory_stat.st_gid)
+          != 0) {
+        return {.error = "failed to assign ownership for archive directory '"
+                         + archive_directory.string()
+                         + "': " + std::strerror(errno)};
+      }
       logs.emplace_back("ensured archive directory '"
+                        + archive_directory.string() + "'");
+      logs.emplace_back("assigned archive directory ownership '"
                         + archive_directory.string() + "'");
     }
   }

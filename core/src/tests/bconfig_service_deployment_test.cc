@@ -347,6 +347,8 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
   auto smoked = WaitForJobTerminal(state, smoke_job.value->id);
   ASSERT_TRUE(smoked.has_value());
   EXPECT_EQ(smoked->status, JobStatus::kSucceeded) << format_logs(*smoked);
+  EXPECT_NE(format_logs(*smoked).find("assigned archive directory ownership"),
+            std::string::npos);
 
   WriteTextFile(runtime_path.path() / "director" / "bareos-dir.conmsg",
                 "stale console messages\n");
