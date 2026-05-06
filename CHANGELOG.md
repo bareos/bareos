@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - matrix: add ubuntu 26.04 [PR #2636]
 - python-bareos: add support for the sslpsk3 module [PR #2637]
 - python-dir: fix not registering python thread state correctly#2493 [PR #2605]
+- bvfs: fix cache race [PR #2650]
 
 ## [25.0.3] - 2026-04-01
 
@@ -2276,4 +2277,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2636]: https://github.com/bareos/bareos/pull/2636
 [PR #2637]: https://github.com/bareos/bareos/pull/2637
 [PR #2639]: https://github.com/bareos/bareos/pull/2639
+[PR #2650]: https://github.com/bareos/bareos/pull/2650
 [unreleased]: https://github.com/bareos/bareos/tree/master
