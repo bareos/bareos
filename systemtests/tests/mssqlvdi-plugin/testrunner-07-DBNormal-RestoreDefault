@@ -18,7 +18,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-# this tests the restore with address not being explicitly set
+# this tests the restore with instance/address not being explicitly set
 
 set -e
 set -o pipefail
