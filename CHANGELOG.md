@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - fix reverse-history-search crash on windows [PR #2640]
 
+### Changed
+- bvfs: fix cache race [PR #2651]
+
 ## [24.0.10] - 2026-04-01
 
 ### Changed
@@ -2030,4 +2033,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2583]: https://github.com/bareos/bareos/pull/2583
 [PR #2592]: https://github.com/bareos/bareos/pull/2592
 [PR #2640]: https://github.com/bareos/bareos/pull/2640
+[PR #2651]: https://github.com/bareos/bareos/pull/2651
 [unreleased]: https://github.com/bareos/bareos/tree/master

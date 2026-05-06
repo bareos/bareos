@@ -51,7 +51,7 @@ wait
 messages
 END_OF_DATA
 run_bconsole
-if on_freebsd_host; then
+if [[ "${HAVE_FREEBSD_OS}" = "1" ]]; then
   when="$(date -r $(($(date +"%s") + 5)) "+%F %H:%M:%S")"
 else
   when="$(date "+%F %H:%M:%S" --date="5 seconds")"
