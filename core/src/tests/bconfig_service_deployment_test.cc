@@ -76,6 +76,7 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
 {
   ScopedDirectory repo_path{MakeTempPath()};
   ScopedDirectory runtime_path{MakeTempPath()};
+  const auto systemctl_log = runtime_path.path() / "systemctl.log";
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
   ScopedDirectory backend_path{MakeTempPath()};
   ScopedEnvironmentVariable backend_override{"BCONFIG_BAREOS_SD_BACKEND_DIR",
@@ -98,18 +99,43 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
   const auto fake_dir_binary = runtime_path.path() / "bareos-dir";
   const auto fake_sd_binary = runtime_path.path() / "bareos-sd";
   const auto fake_fd_binary = runtime_path.path() / "bareos-fd";
+  const auto fake_systemctl = runtime_path.path() / "systemctl";
   make_fake_daemon(fake_dir_binary);
   make_fake_daemon(fake_sd_binary);
   make_fake_daemon(fake_fd_binary);
+  WriteTextFile(
+      fake_systemctl,
+      "#!/bin/sh\n"
+      "printf '%s\\n' \"$*\" >> \"$BCONFIG_TEST_SYSTEMCTL_LOG\"\n"
+      "case \"$1 $2\" in\n"
+      "  'reset-failed bareos-fd.service'|'reset-failed "
+      "bareos-sd.service'|'reset-failed bareos-dir.service') exit 0 ;;\n"
+      "  'start bareos-fd.service'|'start bareos-sd.service'|'start "
+      "bareos-dir.service') exit 0 ;;\n"
+      "  '--quiet is-active') exit 0 ;;\n"
+      "  '--no-pager --full') printf 'active (%s)\\n' \"$4\"; exit 0 ;;\n"
+      "esac\n"
+      "exit 1\n");
+  std::filesystem::permissions(fake_systemctl,
+                               std::filesystem::perms::owner_read
+                                   | std::filesystem::perms::owner_write
+                                   | std::filesystem::perms::owner_exec,
+                               std::filesystem::perm_options::replace);
   ScopedEnvironmentVariable dir_binary_override{"BCONFIG_BAREOS_DIR_BINARY",
                                                 fake_dir_binary.string()};
   ScopedEnvironmentVariable sd_binary_override{"BCONFIG_BAREOS_SD_BINARY",
                                                fake_sd_binary.string()};
   ScopedEnvironmentVariable fd_binary_override{"BCONFIG_BAREOS_FD_BINARY",
                                                fake_fd_binary.string()};
+  ScopedEnvironmentVariable systemctl_override{"BCONFIG_SYSTEMCTL_BINARY",
+                                               fake_systemctl.string()};
+  ScopedEnvironmentVariable systemctl_log_override{"BCONFIG_TEST_SYSTEMCTL_LOG",
+                                                   systemctl_log.string()};
   (void)dir_binary_override;
   (void)sd_binary_override;
   (void)fd_binary_override;
+  (void)systemctl_override;
+  (void)systemctl_log_override;
 #endif
   ServiceState state;
 
@@ -299,6 +325,23 @@ TEST(BconfigService, BootstrapsConfigRootsWithoutImport)
   ASSERT_TRUE(started.has_value());
   EXPECT_EQ(started->status, JobStatus::kSucceeded) << format_logs(*started);
   EXPECT_TRUE(std::filesystem::is_directory(runtime_path.path() / "storage"));
+  const auto systemctl_calls = ReadTextFile(systemctl_log);
+  EXPECT_NE(systemctl_calls.find("reset-failed bareos-fd.service"),
+            std::string::npos);
+  EXPECT_NE(systemctl_calls.find("start bareos-fd.service"), std::string::npos);
+  EXPECT_NE(systemctl_calls.find("--quiet is-active bareos-fd.service"),
+            std::string::npos);
+  EXPECT_NE(systemctl_calls.find("reset-failed bareos-sd.service"),
+            std::string::npos);
+  EXPECT_NE(systemctl_calls.find("start bareos-sd.service"), std::string::npos);
+  EXPECT_NE(systemctl_calls.find("--quiet is-active bareos-sd.service"),
+            std::string::npos);
+  EXPECT_NE(systemctl_calls.find("reset-failed bareos-dir.service"),
+            std::string::npos);
+  EXPECT_NE(systemctl_calls.find("start bareos-dir.service"),
+            std::string::npos);
+  EXPECT_NE(systemctl_calls.find("--quiet is-active bareos-dir.service"),
+            std::string::npos);
 #endif
 }
 

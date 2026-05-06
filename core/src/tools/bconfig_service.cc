@@ -18769,6 +18769,70 @@ OperationResult<std::filesystem::path> ResolveSmokeTestExecutable(
   }
 }
 
+OperationResult<std::filesystem::path> ResolveSystemctlExecutable()
+{
+  return ResolveBareosExecutable("BCONFIG_SYSTEMCTL_BINARY", "systemctl",
+                                 std::filesystem::path{"systemctl"});
+}
+
+std::optional<std::string> SystemdServiceNameForComponent(
+    bconfig::Component component)
+{
+  switch (component) {
+    case bconfig::Component::kDirector:
+      return std::string{"bareos-dir.service"};
+    case bconfig::Component::kStorage:
+      return std::string{"bareos-sd.service"};
+    case bconfig::Component::kClient:
+      return std::string{"bareos-fd.service"};
+    default:
+      return std::nullopt;
+  }
+}
+
+OperationResult<std::monostate> StartSystemdService(
+    const std::filesystem::path& systemctl,
+    std::string_view service_name,
+    std::vector<std::string>& logs)
+{
+  auto reset_result = RunCommand(BuildCommand(
+      {systemctl.string(), "reset-failed", std::string{service_name}}));
+  if (!reset_result) {
+    return {.error = "failed to reset systemd service state for '"
+                     + std::string{service_name} + "': " + reset_result.error};
+  }
+
+  auto start_result = RunCommand(
+      BuildCommand({systemctl.string(), "start", std::string{service_name}}));
+  if (!start_result) {
+    return {.error = "failed to start systemd service '"
+                     + std::string{service_name} + "': " + start_result.error};
+  }
+
+  for (int attempt = 0; attempt < 20; ++attempt) {
+    auto active_result
+        = RunCommand(BuildCommand({systemctl.string(), "--quiet", "is-active",
+                                   std::string{service_name}}));
+    if (active_result) {
+      logs.emplace_back("started " + std::string{service_name}
+                        + " via systemctl");
+      return {.value = std::monostate{}};
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+
+  auto status_result
+      = RunCommand(BuildCommand({systemctl.string(), "--no-pager", "--full",
+                                 "status", std::string{service_name}}));
+  if (status_result && !TrimAsciiWhitespace(*status_result.value).empty()) {
+    for (const auto& line : SplitLines(*status_result.value)) {
+      logs.emplace_back(std::string{service_name} + ": " + line);
+    }
+  }
+  return {.error = "systemd service '" + std::string{service_name}
+                   + "' did not become active."};
+}
+
 #if !HAVE_WIN32
 OperationResult<std::vector<DeploymentConfigRecord>>
 DiscoverOrderedDaemonConfigs(const std::filesystem::path& repository_path)
@@ -18932,6 +18996,31 @@ OperationResult<std::vector<StartedSmokeTestProcess>> StartDeploymentProcesses(
   return {.value = std::move(started_processes)};
 }
 
+OperationResult<std::vector<std::string>> DiscoverOrderedSystemdServices(
+    const std::vector<DeploymentConfigRecord>& daemon_configs)
+{
+  std::vector<std::string> services;
+  services.reserve(daemon_configs.size());
+
+  for (const auto& config : daemon_configs) {
+    auto service_name = SystemdServiceNameForComponent(config.component);
+    if (!service_name) {
+      return {.error = "unsupported config component for systemd startup."};
+    }
+
+    if (std::find(services.begin(), services.end(), *service_name)
+        != services.end()) {
+      return {.error
+              = "systemd startup supports only one config root per "
+                "daemon type."};
+    }
+
+    services.emplace_back(std::move(*service_name));
+  }
+
+  return {.value = std::move(services)};
+}
+
 std::pair<JobStatus, std::vector<std::string>> ExecuteSmokeTestDeployment(
     const ServiceState& state,
     const JobRecord& job_snapshot)
@@ -19020,15 +19109,29 @@ std::pair<JobStatus, std::vector<std::string>> ExecuteStartDeploymentDaemons(
     return {JobStatus::kFailed, logs};
   }
 
-  auto started_processes
-      = StartDeploymentProcesses(*daemon_configs.value, logs);
-  if (!started_processes) {
-    logs.emplace_back(started_processes.error);
+  auto services = DiscoverOrderedSystemdServices(*daemon_configs.value);
+  if (!services) {
+    logs.emplace_back(services.error);
     return {JobStatus::kFailed, logs};
   }
 
-  logs.emplace_back("started " + std::to_string(started_processes.value->size())
-                    + " deployment daemon(s)");
+  auto systemctl = ResolveSystemctlExecutable();
+  if (!systemctl) {
+    logs.emplace_back(systemctl.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  for (const auto& service_name : *services.value) {
+    auto start_result
+        = StartSystemdService(*systemctl.value, service_name, logs);
+    if (!start_result) {
+      logs.emplace_back(start_result.error);
+      return {JobStatus::kFailed, logs};
+    }
+  }
+
+  logs.emplace_back("started " + std::to_string(services.value->size())
+                    + " deployment daemon(s) via systemctl");
   return {JobStatus::kSucceeded, logs};
 }
 #endif
