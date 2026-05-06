@@ -72,6 +72,7 @@ install_runtime_packages()
   for attempt in 1 2 3; do
     rm -f /var/cache/dnf/metadata_lock.pid
     if dnf -y install \
+      bareos-bconsole \
       bareos-database-common \
       bareos-database-postgresql \
       bareos-director \
@@ -85,6 +86,14 @@ install_runtime_packages()
 
   echo "failed to install runtime packages after retries" >&2
   exit 1
+}
+
+disable_bareos_daemons()
+{
+  systemctl disable --now \
+    bareos-fd.service \
+    bareos-sd.service \
+    bareos-dir.service
 }
 
 install_local_service_binary()
@@ -259,6 +268,7 @@ wait_http_ready()
 
 install_bareos_repository
 install_runtime_packages
+disable_bareos_daemons
 install_local_service_units
 configure_postgresql
 configure_bareos_runtime_paths

@@ -18879,8 +18879,15 @@ OperationResult<std::monostate> StartSystemdService(
   auto reset_result = RunCommand(BuildCommand(
       {systemctl.string(), "reset-failed", std::string{service_name}}));
   if (!reset_result) {
-    return {.error = "failed to reset systemd service state for '"
-                     + std::string{service_name} + "': " + reset_result.error};
+    const auto unit_not_loaded
+        = "Unit " + std::string{service_name} + " not loaded";
+    if (reset_result.error.find(unit_not_loaded) == std::string::npos) {
+      return {.error = "failed to reset systemd service state for '"
+                       + std::string{service_name}
+                       + "': " + reset_result.error};
+    }
+    logs.emplace_back("systemd service '" + std::string{service_name}
+                      + "' was not loaded while resetting failed state");
   }
 
   auto start_result = RunCommand(
