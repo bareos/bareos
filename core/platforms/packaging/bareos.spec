@@ -632,6 +632,7 @@ This package contains the webui (Bareos Web User Interface).
 Summary:       Bareos Web User Interface (Vue)
 Group:         Productivity/Archiving/Backup
 Requires:      %{name}-webui-proxy = %{version}
+Requires:      %{name}-bconfig-service = %{version}
 Requires:      httpd
 
 %description webui-vue
@@ -648,6 +649,23 @@ Group:         Productivity/Archiving/Backup
 
 This package contains the Bareos WebUI WebSocket proxy and optional
 bconfig-service HTTP forwarding support.
+
+%package bconfig-service
+Summary:       Bareos configuration service
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-director = %{version}
+Requires:      %{name}-storage = %{version}
+Requires:      %{name}-filedaemon = %{version}
+Requires:      %{name}-database-common = %{version}
+Requires:      %{name}-database-postgresql = %{version}
+Requires:      git-core
+Requires:      postgresql
+
+%description bconfig-service
+%{dscr}
+
+This package contains the Bareos configuration service used by the
+setup wizard and deployment management APIs.
 %endif
 
 %if 0%{?contrib}
@@ -898,6 +916,7 @@ install -d -m 755 %{buildroot}/usr/share/applications
 install -d -m 755 %{buildroot}/usr/share/pixmaps
 install -d -m 755 %{buildroot}%{backend_dir}
 install -d -m 755 %{buildroot}%{working_dir}
+install -d -m 755 %{buildroot}%{_sharedstatedir}/bconfig
 install -d -m 755 %{buildroot}%{plugin_dir}
 install -d -m 755 %{buildroot}%{configtemplatedir}
 install -d -m 750 %{buildroot}%{confdir}/bareos-dir-export/client
@@ -974,6 +993,7 @@ install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-dir.service %{bui
 install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-fd.service %{buildroot}%{_unitdir}
 install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-sd.service %{buildroot}%{_unitdir}
 install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-webui-proxy.service %{buildroot}%{_unitdir}
+install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bconfig-service.service %{buildroot}%{_unitdir}
 %if 0%{?suse_version}
 ln -sf service %{buildroot}%{_sbindir}/rcbareos-dir
 ln -sf service %{buildroot}%{_sbindir}/rcbareos-fd
@@ -1016,6 +1036,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_sbindir}/bareos-webui-proxy
 %config(noreplace) %{_sysconfdir}/bareos/bareos-webui-proxy.ini
 %{_unitdir}/bareos-webui-proxy.service
+
+%files bconfig-service
+%defattr(-,root,root,-)
+%dir %{_sharedstatedir}/bconfig
+%{_sbindir}/bconfig-service
+%{_unitdir}/bconfig-service.service
 %endif
 
 %files client
@@ -1916,6 +1942,22 @@ a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
 a2enmod proxy_wstunnel &> /dev/null || true
 %endif
+%logging_end
+
+%post bconfig-service
+%logging_start bconfig-service post
+%service_add_post bconfig-service.service
+/bin/systemctl enable bconfig-service.service >/dev/null 2>&1 || true
+%logging_end
+
+%preun bconfig-service
+%logging_start bconfig-service preun
+%service_del_preun bconfig-service.service
+%logging_end
+
+%postun bconfig-service
+%logging_start bconfig-service postun
+%service_del_postun bconfig-service.service
 %logging_end
 
 %posttrans webui

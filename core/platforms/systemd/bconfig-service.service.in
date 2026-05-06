@@ -1,0 +1,21 @@
+# Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+[Unit]
+Description=Bareos Configuration Service
+Requires=network.target
+After=network-online.target
+# Limit the number of restart per day
+StartLimitIntervalSec=1d
+
+[Service]
+Type=simple
+# bconfig-service manages /etc/bareos and controls Bareos daemons.
+ExecStart=@sbindir@/bconfig-service --address 127.0.0.1 --port 8080 --state-dir /var/lib/bconfig/service-state
+# Restart on failure, wait 30 seconds
+Restart=on-failure
+RestartSec=30
+# Limit the number of restarts to 10; reset with systemctl reset-failed
+StartLimitBurst=10
+
+[Install]
+WantedBy=multi-user.target
