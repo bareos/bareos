@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -35,15 +35,15 @@ myname=$(basename "$0")
 
 start_test
 
-"${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBNormalTest -i sqlfiles/SQL_drop_db.sql
+"${SQLCMD}" -S ${COMPUTERNAME} -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_drop_db.sql
 
-if db_exists "DBNormalTest"; then
+if db_exists "DBFileStreamTest"; then
   echo "Database still exists after drop"
   exit 2
 else
   db_exists_rc=$?
   if [ "${db_exists_rc}" -ne 1 ]; then
-    echo "Failed to verify whether DBNormalTest still exists"
+    echo "Failed to verify whether DBFileStreamTest still exists"
     exit "${db_exists_rc}"
   fi
 fi

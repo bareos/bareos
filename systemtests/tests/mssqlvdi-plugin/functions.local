@@ -1,0 +1,51 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+#shellcheck source=../../environment.in
+. ./environment
+
+# print_delete_trace
+#   This simply prints the fd trace and then deletes it.
+#   This makes sure that only the relevant trace from the
+#   current test is printed.
+#
+print_delete_trace()
+{
+  local FD_TRACE_NAME="${working_dir}/$(basename "$(pwd)")-fd.trace"
+  cat "${FD_TRACE_NAME}" || echo "Trace does not exist"
+  rm "${FD_TRACE_NAME}" || :
+}
+
+db_exists()
+{
+  local out
+
+  # Check if the DB still exists: DB_ID() returns a numeric ID if the DB exists,
+  # or NULL if it was dropped. -h -1 suppresses headers, -W strips trailing
+  # whitespace, so grep can match a bare number. SQLCMD failures return a
+  # dedicated status so drop verification errors do not look like a missing DB.
+  if out="$("${SQLCMD}" -S "${COMPUTERNAME}" -E -b -h -1 -W \
+    -Q "SET NOCOUNT ON; SELECT DB_ID('$1')" | tr -d '\r')"; then
+    grep -Eq '^[0-9]+$' <<<"${out}"
+  else
+    return 2
+  fi
+}

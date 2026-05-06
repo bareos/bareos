@@ -158,10 +158,10 @@ mssqlvdi
    This is the reference to the MSSQL plugin.
 
 serveraddress
-   (:sinceVersion:`14.2.2: MSSQL: serveraddress`) Defines the server address to connect to (if empty defaults to localhost).
+   (:sinceVersion:`14.2.2: MSSQL: serveraddress`) Defines the server address to connect to (if empty defaults to ``localhost``).
 
 instance
-   Defines the instance within the database server.
+   Defines the instance within the database server. (if empty defaults to ``default``)
 
 database
    Defines the database that should get backed up.
@@ -283,16 +283,7 @@ Incremental FileSet example:
 Restores
 ^^^^^^^^
 
-If you want to perform a restore of a full backup without differentials or incrementals you have some options which helps you to restore even the corrupted database still exist. But you have to specify the options like plugin, instance and database during every backup.
-
-replace=<yes|no>
-   With this option you can replace the database if it still exist.
-
-instance
-   Defines the server instance within the database is running.
-
-database
-   Defines the database you want to backup.
+There are generally two ways to restore a mssql database.  You can restore it into the filesystem so that you can e.g. use the builtin restore functionality of mssql to do the restore yourself, or you can let bareos restore the database directly.
 
 Restore to local files
 ''''''''''''''''''''''
@@ -305,13 +296,38 @@ If the *where* parameter is set **to a directory** instead of '/', the plugin wi
 restore the backup as files into the given directory.
 
 Example: If *where* is set to  **’c:/temp’**, the plugin will restore the selected backup
-files under a relocated path under c:/temp/@MSSQL@/...
+files under a relocated path under c:/temp/@MSSQL/...
 
 If *where* is set to ’/’ it will restore to the Virtual Device Interface (VDI).
 
 
 Restore to database
 '''''''''''''''''''
+
+To restore the database directly, you can simply run the restore command with *where* set to **/**.
+You can change how the restore is performed by setting some optional plugin options:
+
+replace=<yes|default:no>
+   If this option is set to **yes**, then the database will be replaced if it already exists.
+   Otherwise the restore will fail if the database already exists.
+
+instance
+   Defines the server instance within which the database is running.  If unset,
+   the instance specified during the backup is used.
+
+database
+   Defines the name under which you want to restore the database.  If unset,
+   the name specified during the backup is used.
+
+.. note::
+   Setting the name via *database* does **not** change the name of the files within that database.
+   I.e. if you have a database called **mydb**, then mssql has internal files **mydb.mdf**, **mydb.ldf**, ...
+   for it.  If you now try to restore the database as **newname**, these internal files will still use their
+   old name.  This means that if these files still exist and are used, then the restore under the new name
+   will fail, even if you set ``replace=yes``.
+   If the files exist because an old version of that database still exists, then you can restore the database
+   by restore to the old name with ``replace=yes``.  Otherwise you can restore the db via the local files approach.
+
 
 Example for a full restore:
 
@@ -451,16 +467,17 @@ Example for a full restore:
      SD termination status:  OK
      Termination:            Restore OK
 
+
 Restore a Backup Chain
 ''''''''''''''''''''''
 
-If you like to restore a specific state or a whole chain consists of full, incremental and differential backups you need to use the "norecovery=yes" option. After this the database is in "recovery mode". You can also use a option which put the database right after the restore back into the right mode. If you like to restore certains point with protocols or "LSN" it it not recommend to work with this option.
+If you like to restore a specific state or a whole chain consists of full, incremental and differential backups you need to use the "norecovery=yes" option. Otherwise the database would try to recover the database after the full backup was restored, but before the incremental changes were restored.  As this option turns of the auto recovery mode, you will need to recover the database by either doing it manually after the restore is done, or by setting `recoverafterrestore=yes` so that bareos does it for you. If you like to restore certains point with protocols or "LSN" it it not recommend to work with this option.
 
 norecovery=<yes|no>
-   This option must be set to yes, if the database server should not do a automatic recovery after the backup. Instead, additional manual maintenance operations are possible.
+   This option must be set to yes, if the database server should not do a automatic recovery after the every restore. Instead, additional manual maintenance operations are possible.
 
 recoverafterrestore=<yes|no>
-   With this command the database is right after backup in the correct mode. If you not use this you have to use the followed tsql statement:
+   Automatically issues a recover after bareos is done with all its restores. If you not use this you have to use the followed tsql statement:
 
    ::
 
