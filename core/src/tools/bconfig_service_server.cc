@@ -73,6 +73,35 @@ struct InspectRequestSpec {
   std::vector<PeerLoadSpec> peers{};
 };
 
+struct StorageBootstrapSessionCreateRequestSpec {
+  std::string deployment_id{};
+  std::optional<std::string> storage_name{};
+  uint64_t ttl_seconds{900};
+};
+
+struct StorageBootstrapSessionRegisterRequestSpec {
+  std::string bootstrap_token{};
+  std::optional<std::string> hostname{};
+  std::optional<std::string> fqdn{};
+};
+
+struct StorageBootstrapSessionDiscoveryRequestSpec {
+  std::string bootstrap_token{};
+  std::optional<std::string> hostname{};
+  std::optional<std::string> fqdn{};
+  std::string discovery_report_json{};
+};
+
+struct StorageBootstrapSessionSelectionRequestSpec {
+  std::string selection_json{};
+};
+
+struct StorageBootstrapSessionAppliedRequestSpec {
+  std::string bootstrap_token{};
+  bool success{false};
+  std::optional<std::string> error{};
+};
+
 struct ClientDirectorStubRequestSpec {
   std::optional<std::string> description{};
   std::optional<std::string> password{};
@@ -9045,6 +9074,15 @@ std::string DumpJson(json_t* value)
   return json_text;
 }
 
+std::string DumpJsonCompact(json_t* value)
+{
+  char* dump = json_dumps(value, JSON_COMPACT);
+  if (!dump) { return "{}"; }
+  std::string json_text{dump};
+  std::free(dump);
+  return json_text;
+}
+
 http::response<http::string_body> JsonResponse(http::status status,
                                                std::string body)
 {
@@ -9074,6 +9112,27 @@ http::response<http::string_body> ErrorResponse(http::status status,
   json_object_set_new(root.get(), "error", json_string(message.c_str()));
   return JsonResponse(status, DumpJson(root.get()));
 }
+
+void SetOptionalString(json_t* object,
+                       const char* key,
+                       const std::optional<std::string>& value);
+std::optional<std::string> QueryParameter(std::string_view target,
+                                          std::string_view key);
+std::optional<StorageBootstrapSessionCreateRequestSpec>
+ParseStorageBootstrapSessionCreateRequest(std::string_view body,
+                                          std::string& error);
+std::optional<StorageBootstrapSessionRegisterRequestSpec>
+ParseStorageBootstrapSessionRegisterRequest(std::string_view body,
+                                            std::string& error);
+std::optional<StorageBootstrapSessionDiscoveryRequestSpec>
+ParseStorageBootstrapSessionDiscoveryRequest(std::string_view body,
+                                             std::string& error);
+std::optional<StorageBootstrapSessionSelectionRequestSpec>
+ParseStorageBootstrapSessionSelectionRequest(std::string_view body,
+                                             std::string& error);
+std::optional<StorageBootstrapSessionAppliedRequestSpec>
+ParseStorageBootstrapSessionAppliedRequest(std::string_view body,
+                                           std::string& error);
 
 void AppendDeployment(json_t* array, const DeploymentRecord& record)
 {
@@ -9148,6 +9207,103 @@ void AppendJob(json_t* array, const JobRecord& record)
   }
   json_object_set_new(object.get(), "logs", logs.release());
   json_array_append_new(array, object.release());
+}
+
+void AppendStorageBootstrapSession(json_t* array,
+                                   const StorageBootstrapSessionRecord& record)
+{
+  auto object = MakeJson(json_object());
+  json_object_set_new(object.get(), "id", json_string(record.id.c_str()));
+  json_object_set_new(object.get(), "deployment_id",
+                      json_string(record.deployment_id.c_str()));
+  if (record.storage_name) {
+    json_object_set_new(object.get(), "storage_name",
+                        json_string(record.storage_name->c_str()));
+  } else {
+    json_object_set_new(object.get(), "storage_name", json_null());
+  }
+  json_object_set_new(object.get(), "bootstrap_token",
+                      json_string(record.bootstrap_token.c_str()));
+  json_object_set_new(object.get(), "status",
+                      json_string(ToString(record.status).data()));
+  json_object_set_new(object.get(), "created_at",
+                      json_string(record.created_at.c_str()));
+  json_object_set_new(object.get(), "updated_at",
+                      json_string(record.updated_at.c_str()));
+  json_object_set_new(
+      object.get(), "expires_at_epoch_seconds",
+      json_integer(static_cast<json_int_t>(record.expires_at_epoch_seconds)));
+  SetOptionalString(object.get(), "hostname", record.hostname);
+  SetOptionalString(object.get(), "fqdn", record.fqdn);
+  if (record.discovery_report_json) {
+    json_error_t error{};
+    auto discovery_report = MakeJson(
+        json_loads(record.discovery_report_json->c_str(), 0, &error));
+    json_object_set_new(
+        object.get(), "discovery_report",
+        discovery_report ? discovery_report.release() : json_null());
+  } else {
+    json_object_set_new(object.get(), "discovery_report", json_null());
+  }
+  if (record.selection_json) {
+    json_error_t error{};
+    auto selection
+        = MakeJson(json_loads(record.selection_json->c_str(), 0, &error));
+    json_object_set_new(object.get(), "selection",
+                        selection ? selection.release() : json_null());
+  } else {
+    json_object_set_new(object.get(), "selection", json_null());
+  }
+  SetOptionalString(object.get(), "last_error", record.last_error);
+  json_array_append_new(array, object.release());
+}
+
+void AppendStorageBootstrapConfigBundle(
+    json_t* object,
+    const StorageBootstrapConfigBundleRecord& record)
+{
+  auto bundle = MakeJson(json_object());
+  json_object_set_new(bundle.get(), "format",
+                      json_string(record.format.c_str()));
+  json_object_set_new(bundle.get(), "path_base",
+                      json_string(record.path_base.c_str()));
+  json_object_set_new(bundle.get(), "session_id",
+                      json_string(record.session_id.c_str()));
+  json_object_set_new(bundle.get(), "deployment_id",
+                      json_string(record.deployment_id.c_str()));
+  json_object_set_new(bundle.get(), "storage_name",
+                      json_string(record.storage_name.c_str()));
+  json_object_set_new(bundle.get(), "selected_archive_path",
+                      json_string(record.selected_archive_path.c_str()));
+
+  auto directories = MakeJson(json_array());
+  for (const auto& directory : record.directories) {
+    auto item = MakeJson(json_object());
+    json_object_set_new(item.get(), "path",
+                        json_string(directory.path.c_str()));
+    SetOptionalString(item.get(), "owner", directory.owner);
+    SetOptionalString(item.get(), "group", directory.group);
+    json_object_set_new(item.get(), "mode",
+                        json_string(directory.mode.c_str()));
+    json_array_append_new(directories.get(), item.release());
+  }
+  json_object_set_new(bundle.get(), "directories", directories.release());
+
+  auto files = MakeJson(json_array());
+  for (const auto& file : record.files) {
+    auto item = MakeJson(json_object());
+    json_object_set_new(item.get(), "path", json_string(file.path.c_str()));
+    SetOptionalString(item.get(), "owner", file.owner);
+    SetOptionalString(item.get(), "group", file.group);
+    json_object_set_new(item.get(), "mode", json_string(file.mode.c_str()));
+    json_object_set_new(item.get(), "contains_secret",
+                        json_boolean(file.contains_secret));
+    json_object_set_new(item.get(), "content",
+                        json_string(file.content.c_str()));
+    json_array_append_new(files.get(), item.release());
+  }
+  json_object_set_new(bundle.get(), "files", files.release());
+  json_object_set_new(object, "config_bundle", bundle.release());
 }
 
 void AppendDeploymentImport(json_t* array, const DeploymentImportRecord& record)
@@ -9269,8 +9425,7 @@ std::string BareosNameToSnakeCase(std::string_view value)
         if (std::islower(previous) || std::isdigit(previous)) {
           split_before = true;
         } else if (std::isupper(previous) && index + 1 < value.size()
-                   && std::islower(
-                       static_cast<unsigned char>(value[index + 1]))
+                   && std::islower(static_cast<unsigned char>(value[index + 1]))
                    && current_token_length > 1) {
           split_before = true;
         }
@@ -9289,12 +9444,12 @@ std::string BareosNameToSnakeCase(std::string_view value)
   return result;
 }
 
-std::string DirectiveApiName(
-    bconfig::Component component,
-    std::string_view resource_type,
-    std::string_view directive_name)
+std::string DirectiveApiName(bconfig::Component component,
+                             std::string_view resource_type,
+                             std::string_view directive_name)
 {
-  const auto component_name = std::string{bconfig::ComponentToString(component)};
+  const auto component_name
+      = std::string{bconfig::ComponentToString(component)};
   const auto resource = std::string{resource_type};
   const auto directive = std::string{directive_name};
 
@@ -9387,9 +9542,8 @@ std::string DetermineEditorGroup(std::string_view field_name)
     return "catalog";
   }
   if (field_name == "messages" || field_name == "mail_command"
-      || field_name == "operator_command"
-      || field_name == "timestamp_format" || field_name == "entries"
-      || field_name.ends_with("_entries")) {
+      || field_name == "operator_command" || field_name == "timestamp_format"
+      || field_name == "entries" || field_name.ends_with("_entries")) {
     return "messages";
   }
   if (field_name == "client" || field_name == "director"
@@ -9416,7 +9570,8 @@ std::string DetermineEditorGroup(std::string_view field_name)
       || field_name == "pool_type" || field_name == "label_format") {
     return "general";
   }
-  if (field_name.starts_with("statistics_") || field_name == "collect_statistics"
+  if (field_name.starts_with("statistics_")
+      || field_name == "collect_statistics"
       || field_name == "collect_device_statistics"
       || field_name == "collect_job_statistics" || field_name == "auditing"
       || field_name.starts_with("audit_") || field_name == "ver_id"
@@ -9438,40 +9593,23 @@ bool IsSimpleEditorField(std::string_view field_name, bool required)
 {
   if (required) { return true; }
   static const std::array<std::string_view, 34> kSimpleFields{
-      "description",
-      "enabled",
-      "address",
-      "addresses",
-      "source_address",
-      "source_addresses",
-      "port",
-      "password",
-      "messages",
-      "working_directory",
-      "query_file",
-      "director",
-      "client",
-      "storage",
-      "storages",
-      "console",
-      "catalog",
-      "pool",
-      "schedule",
-      "fileset",
-      "jobdefs",
-      "device",
-      "devices",
-      "media_type",
-      "archive_device",
-      "db_name",
-      "db_user",
-      "db_password",
-      "db_address",
-      "db_port",
-      "pool_type",
-      "label_format",
-      "include_blocks",
-      "exclude_blocks",
+      "description",    "enabled",
+      "address",        "addresses",
+      "source_address", "source_addresses",
+      "port",           "password",
+      "messages",       "working_directory",
+      "query_file",     "director",
+      "client",         "storage",
+      "storages",       "console",
+      "catalog",        "pool",
+      "schedule",       "fileset",
+      "jobdefs",        "device",
+      "devices",        "media_type",
+      "archive_device", "db_name",
+      "db_user",        "db_password",
+      "db_address",     "db_port",
+      "pool_type",      "label_format",
+      "include_blocks", "exclude_blocks",
   };
   if (std::find(kSimpleFields.begin(), kSimpleFields.end(), field_name)
       != kSimpleFields.end()) {
@@ -9484,8 +9622,7 @@ bool IsSimpleEditorField(std::string_view field_name, bool required)
          || group == "relationships" || group == "selection";
 }
 
-JsonPtr ParsedDefaultValueJson(
-    const std::optional<std::string>& default_value)
+JsonPtr ParsedDefaultValueJson(const std::optional<std::string>& default_value)
 {
   if (!default_value) { return MakeJson(json_null()); }
 
@@ -9628,14 +9765,15 @@ JsonPtr BuildEditorMetadataJson(bconfig::Component component,
     if (const auto* resource = FindResourceSchema(resources, resource_type);
         resource) {
       for (const auto& directive : resource->directives) {
-        auto api_name = DirectiveApiName(component, resource_type,
-                                         directive.name);
+        auto api_name
+            = DirectiveApiName(component, resource_type, directive.name);
         matched_fields.insert(api_name);
         auto* current_value
             = spec ? json_object_get(spec, api_name.c_str()) : nullptr;
         json_array_append_new(
             fields.get(),
-            BuildEditorFieldJson(api_name, &directive, current_value).release());
+            BuildEditorFieldJson(api_name, &directive, current_value)
+                .release());
       }
     }
   }
@@ -11234,9 +11372,9 @@ http::response<http::string_body> HandleDirectorDaemonPrefillRequest(
 
   auto spec = state.GetDirectorDaemonResourceSpec(deployment_id, director_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Director",
-                         MakeJson(
-                             DirectorDaemonResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kDirector, "Director",
+      MakeJson(DirectorDaemonResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleStorageDaemonPrefillRequest(
@@ -11251,8 +11389,9 @@ http::response<http::string_body> HandleStorageDaemonPrefillRequest(
 
   auto spec = state.GetStorageDaemonResourceSpec(deployment_id, storage_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kStorage, "Storage",
-                         MakeJson(StorageDaemonResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kStorage, "Storage",
+      MakeJson(StorageDaemonResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleClientDirectorStubPrefillRequest(
@@ -11287,8 +11426,9 @@ http::response<http::string_body> HandleDirectorClientPrefillRequest(
   auto spec = state.GetDirectorClientResourceSpec(deployment_id, director_name,
                                                   client_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Client",
-                         MakeJson(DirectorClientResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kDirector, "Client",
+      MakeJson(DirectorClientResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorStoragePrefillRequest(
@@ -11305,9 +11445,9 @@ http::response<http::string_body> HandleDirectorStoragePrefillRequest(
   auto spec = state.GetDirectorStorageResourceSpec(deployment_id, director_name,
                                                    storage_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Storage",
-                         MakeJson(
-                             DirectorStorageResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kDirector, "Storage",
+      MakeJson(DirectorStorageResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorConsolePrefillRequest(
@@ -11324,9 +11464,9 @@ http::response<http::string_body> HandleDirectorConsolePrefillRequest(
   auto spec = state.GetDirectorConsoleResourceSpec(deployment_id, director_name,
                                                    console_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Console",
-                         MakeJson(
-                             DirectorConsoleResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kDirector, "Console",
+      MakeJson(DirectorConsoleResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleStorageDirectorPrefillRequest(
@@ -11343,9 +11483,9 @@ http::response<http::string_body> HandleStorageDirectorPrefillRequest(
   auto spec = state.GetStorageDirectorResourceSpec(deployment_id, storage_name,
                                                    director_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kStorage, "Director",
-                         MakeJson(
-                             StorageDirectorResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kStorage, "Director",
+      MakeJson(StorageDirectorResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleConsoleConsolePrefillRequest(
@@ -11362,9 +11502,9 @@ http::response<http::string_body> HandleConsoleConsolePrefillRequest(
   auto spec = state.GetConsoleConsoleResourceSpec(
       deployment_id, console_config_name, console_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kConsole, "Console",
-                         MakeJson(
-                             ConsoleConsoleResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kConsole, "Console",
+      MakeJson(ConsoleConsoleResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleConsoleDirectorPrefillRequest(
@@ -11381,9 +11521,9 @@ http::response<http::string_body> HandleConsoleDirectorPrefillRequest(
   auto spec = state.GetConsoleDirectorResourceSpec(
       deployment_id, console_config_name, director_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kConsole, "Director",
-                         MakeJson(
-                             ConsoleDirectorResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kConsole, "Director",
+      MakeJson(ConsoleDirectorResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleClientMessagesPrefillRequest(
@@ -11454,8 +11594,9 @@ http::response<http::string_body> HandleStorageDevicePrefillRequest(
   auto spec = state.GetStorageDeviceResourceSpec(deployment_id, storage_name,
                                                  device_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kStorage, "Device",
-                         MakeJson(StorageDeviceResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kStorage, "Device",
+      MakeJson(StorageDeviceResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleStorageNdmpPrefillRequest(
@@ -11490,10 +11631,9 @@ http::response<http::string_body> HandleStorageAutochangerPrefillRequest(
   auto spec = state.GetStorageAutochangerResourceSpec(
       deployment_id, storage_name, autochanger_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kStorage,
-                         "Autochanger",
-                         MakeJson(
-                             StorageAutochangerResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kStorage, "Autochanger",
+      MakeJson(StorageAutochangerResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorUserPrefillRequest(
@@ -11528,9 +11668,9 @@ http::response<http::string_body> HandleDirectorProfilePrefillRequest(
   auto spec = state.GetDirectorProfileResourceSpec(deployment_id, director_name,
                                                    profile_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Profile",
-                         MakeJson(
-                             DirectorProfileResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kDirector, "Profile",
+      MakeJson(DirectorProfileResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorCatalogPrefillRequest(
@@ -11547,9 +11687,9 @@ http::response<http::string_body> HandleDirectorCatalogPrefillRequest(
   auto spec = state.GetDirectorCatalogResourceSpec(deployment_id, director_name,
                                                    catalog_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Catalog",
-                         MakeJson(
-                             DirectorCatalogResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kDirector, "Catalog",
+      MakeJson(DirectorCatalogResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorPoolPrefillRequest(
@@ -11584,10 +11724,9 @@ http::response<http::string_body> HandleDirectorSchedulePrefillRequest(
   auto spec = state.GetDirectorScheduleResourceSpec(
       deployment_id, director_name, schedule_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kDirector,
-                         "Schedule",
-                         MakeJson(
-                             DirectorScheduleResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kDirector, "Schedule",
+      MakeJson(DirectorScheduleResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorCounterPrefillRequest(
@@ -11604,9 +11743,9 @@ http::response<http::string_body> HandleDirectorCounterPrefillRequest(
   auto spec = state.GetDirectorCounterResourceSpec(deployment_id, director_name,
                                                    counter_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Counter",
-                         MakeJson(
-                             DirectorCounterResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kDirector, "Counter",
+      MakeJson(DirectorCounterResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorFilesetPrefillRequest(
@@ -11623,9 +11762,9 @@ http::response<http::string_body> HandleDirectorFilesetPrefillRequest(
   auto spec = state.GetDirectorFilesetResourceSpec(deployment_id, director_name,
                                                    fileset_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kDirector, "FileSet",
-                         MakeJson(
-                             DirectorFilesetResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kDirector, "FileSet",
+      MakeJson(DirectorFilesetResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorJobPrefillRequest(
@@ -11642,9 +11781,9 @@ http::response<http::string_body> HandleDirectorJobPrefillRequest(
   auto spec = state.GetDirectorJobResourceSpec(deployment_id, director_name,
                                                job_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kDirector, "Job",
-                         MakeJson(
-                             DirectorJobLikeResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kDirector, "Job",
+      MakeJson(DirectorJobLikeResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDirectorJobDefsPrefillRequest(
@@ -11661,9 +11800,9 @@ http::response<http::string_body> HandleDirectorJobDefsPrefillRequest(
   auto spec = state.GetDirectorJobDefsResourceSpec(deployment_id, director_name,
                                                    jobdefs_name);
   if (!spec) { return ErrorResponse(http::status::bad_request, spec.error); }
-  return PrefillResponse(*deployment, bconfig::Component::kDirector, "JobDefs",
-                         MakeJson(
-                             DirectorJobLikeResourceSpecToJson(*spec.value)));
+  return PrefillResponse(
+      *deployment, bconfig::Component::kDirector, "JobDefs",
+      MakeJson(DirectorJobLikeResourceSpecToJson(*spec.value)));
 }
 
 http::response<http::string_body> HandleDeploymentClientDaemonPutRequest(
@@ -14488,6 +14627,182 @@ http::response<http::string_body> HandleDeploymentDiffPreviewRequest(
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
+http::response<http::string_body> HandleStorageBootstrapSessionsRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    const std::vector<std::string_view>& path_parts,
+    std::string_view target)
+{
+  if (path_parts.size() < 3 || path_parts[2] != "storage-sessions") {
+    return ErrorResponse(http::status::not_found, "unknown bootstrap route.");
+  }
+
+  if (path_parts.size() == 3 && request.method() == http::verb::get) {
+    auto root = MakeJson(json_object());
+    auto sessions = MakeJson(json_array());
+    for (const auto& session : state.ListStorageBootstrapSessions()) {
+      AppendStorageBootstrapSession(sessions.get(), session);
+    }
+    json_object_set_new(root.get(), "storage_bootstrap_sessions",
+                        sessions.release());
+    return JsonResponse(http::status::ok, DumpJson(root.get()));
+  }
+
+  if (path_parts.size() == 3 && request.method() == http::verb::post) {
+    std::string error;
+    auto spec
+        = ParseStorageBootstrapSessionCreateRequest(request.body(), error);
+    if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+    StorageBootstrapSessionSpec session_spec{};
+    session_spec.deployment_id = spec->deployment_id;
+    session_spec.storage_name = spec->storage_name;
+    session_spec.ttl_seconds = spec->ttl_seconds;
+    auto session = state.CreateStorageBootstrapSession(session_spec);
+    if (!session) {
+      return ErrorResponse(http::status::bad_request, session.error);
+    }
+
+    auto root = MakeJson(json_object());
+    auto sessions = MakeJson(json_array());
+    AppendStorageBootstrapSession(sessions.get(), *session.value);
+    json_object_set(root.get(), "storage_bootstrap_session",
+                    json_array_get(sessions.get(), 0));
+    return JsonResponse(http::status::created, DumpJson(root.get()));
+  }
+
+  if (path_parts.size() == 4 && request.method() == http::verb::get) {
+    auto session = state.GetStorageBootstrapSession(path_parts[3]);
+    if (!session) {
+      return ErrorResponse(http::status::not_found,
+                           "storage bootstrap session not found.");
+    }
+
+    auto root = MakeJson(json_object());
+    auto sessions = MakeJson(json_array());
+    AppendStorageBootstrapSession(sessions.get(), *session);
+    json_object_set(root.get(), "storage_bootstrap_session",
+                    json_array_get(sessions.get(), 0));
+    return JsonResponse(http::status::ok, DumpJson(root.get()));
+  }
+
+  if (path_parts.size() == 5 && path_parts[4] == "register"
+      && request.method() == http::verb::post) {
+    std::string error;
+    auto spec
+        = ParseStorageBootstrapSessionRegisterRequest(request.body(), error);
+    if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+    auto session = state.RegisterStorageBootstrapSession(
+        path_parts[3], spec->bootstrap_token, spec->hostname, spec->fqdn);
+    if (!session) {
+      return ErrorResponse(http::status::bad_request, session.error);
+    }
+
+    auto root = MakeJson(json_object());
+    auto sessions = MakeJson(json_array());
+    AppendStorageBootstrapSession(sessions.get(), *session.value);
+    json_object_set(root.get(), "storage_bootstrap_session",
+                    json_array_get(sessions.get(), 0));
+    return JsonResponse(http::status::ok, DumpJson(root.get()));
+  }
+
+  if (path_parts.size() == 5 && path_parts[4] == "discovery"
+      && request.method() == http::verb::post) {
+    std::string error;
+    auto spec
+        = ParseStorageBootstrapSessionDiscoveryRequest(request.body(), error);
+    if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+    auto session = state.SubmitStorageBootstrapDiscovery(
+        path_parts[3], spec->bootstrap_token,
+        std::move(spec->discovery_report_json), spec->hostname, spec->fqdn);
+    if (!session) {
+      return ErrorResponse(http::status::bad_request, session.error);
+    }
+
+    auto root = MakeJson(json_object());
+    auto sessions = MakeJson(json_array());
+    AppendStorageBootstrapSession(sessions.get(), *session.value);
+    json_object_set(root.get(), "storage_bootstrap_session",
+                    json_array_get(sessions.get(), 0));
+    return JsonResponse(http::status::ok, DumpJson(root.get()));
+  }
+
+  if (path_parts.size() == 5 && path_parts[4] == "selection"
+      && request.method() == http::verb::post) {
+    std::string error;
+    auto spec
+        = ParseStorageBootstrapSessionSelectionRequest(request.body(), error);
+    if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+    auto session = state.SubmitStorageBootstrapSelection(
+        path_parts[3], std::move(spec->selection_json));
+    if (!session) {
+      return ErrorResponse(http::status::bad_request, session.error);
+    }
+
+    auto root = MakeJson(json_object());
+    auto sessions = MakeJson(json_array());
+    AppendStorageBootstrapSession(sessions.get(), *session.value);
+    json_object_set(root.get(), "storage_bootstrap_session",
+                    json_array_get(sessions.get(), 0));
+    return JsonResponse(http::status::ok, DumpJson(root.get()));
+  }
+
+  if (path_parts.size() == 5 && path_parts[4] == "config-bundle"
+      && request.method() == http::verb::get) {
+    const auto token = QueryParameter(target, "token");
+    if (!token) {
+      return ErrorResponse(http::status::bad_request,
+                           "query parameter 'token' is required.");
+    }
+
+    auto bundle = state.GetStorageBootstrapConfigBundle(path_parts[3], *token);
+    if (!bundle) {
+      return ErrorResponse(http::status::bad_request, bundle.error);
+    }
+
+    auto session = state.GetStorageBootstrapSession(path_parts[3]);
+    if (!session) {
+      return ErrorResponse(http::status::not_found,
+                           "storage bootstrap session not found.");
+    }
+
+    auto root = MakeJson(json_object());
+    auto sessions = MakeJson(json_array());
+    AppendStorageBootstrapSession(sessions.get(), *session);
+    json_object_set(root.get(), "storage_bootstrap_session",
+                    json_array_get(sessions.get(), 0));
+    AppendStorageBootstrapConfigBundle(root.get(), *bundle.value);
+    return JsonResponse(http::status::ok, DumpJson(root.get()));
+  }
+
+  if (path_parts.size() == 5 && path_parts[4] == "applied"
+      && request.method() == http::verb::post) {
+    std::string error;
+    auto spec
+        = ParseStorageBootstrapSessionAppliedRequest(request.body(), error);
+    if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+    auto session = state.ReportStorageBootstrapApplied(
+        path_parts[3], spec->bootstrap_token, spec->success, spec->error);
+    if (!session) {
+      return ErrorResponse(http::status::bad_request, session.error);
+    }
+
+    auto root = MakeJson(json_object());
+    auto sessions = MakeJson(json_array());
+    AppendStorageBootstrapSession(sessions.get(), *session.value);
+    json_object_set(root.get(), "storage_bootstrap_session",
+                    json_array_get(sessions.get(), 0));
+    return JsonResponse(http::status::ok, DumpJson(root.get()));
+  }
+
+  return ErrorResponse(http::status::not_found,
+                       "unknown storage bootstrap sessions route.");
+}
+
 std::vector<std::string_view> SplitPath(std::string_view target)
 {
   auto path = target.substr(0, target.find('?'));
@@ -14515,6 +14830,29 @@ std::vector<std::string_view> StripRoutePrefix(
     }
   }
   return path_parts;
+}
+
+std::optional<std::string> QueryParameter(std::string_view target,
+                                          std::string_view key)
+{
+  const auto query_start = target.find('?');
+  if (query_start == std::string_view::npos) { return std::nullopt; }
+
+  auto query = target.substr(query_start + 1);
+  while (!query.empty()) {
+    const auto ampersand = query.find('&');
+    const auto entry = query.substr(0, ampersand);
+    const auto equals = entry.find('=');
+    const auto entry_key = entry.substr(0, equals);
+    if (entry_key == key) {
+      if (equals == std::string_view::npos) { return std::string{}; }
+      return std::string{entry.substr(equals + 1)};
+    }
+    if (ampersand == std::string_view::npos) { break; }
+    query.remove_prefix(ampersand + 1);
+  }
+
+  return std::nullopt;
 }
 
 std::optional<DeploymentSpec> ParseDeploymentSpec(std::string_view body,
@@ -14615,6 +14953,191 @@ std::optional<JobSpec> ParseJobSpec(std::string_view body, std::string& error)
     spec.commit_message = std::string{json_string_value(commit_message)};
   }
 
+  return spec;
+}
+
+std::optional<StorageBootstrapSessionCreateRequestSpec>
+ParseStorageBootstrapSessionCreateRequest(std::string_view body,
+                                          std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* deployment_id = json_object_get(root.get(), "deployment_id");
+  auto* storage_name = json_object_get(root.get(), "storage_name");
+  auto* ttl_seconds = json_object_get(root.get(), "ttl_seconds");
+  if (!json_is_string(deployment_id)) {
+    error = "field 'deployment_id' must be a string.";
+    return std::nullopt;
+  }
+  if (storage_name && !json_is_null(storage_name)
+      && !json_is_string(storage_name)) {
+    error = "field 'storage_name' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (ttl_seconds && !json_is_integer(ttl_seconds)) {
+    error = "field 'ttl_seconds' must be an integer when provided.";
+    return std::nullopt;
+  }
+
+  StorageBootstrapSessionCreateRequestSpec spec{};
+  spec.deployment_id = json_string_value(deployment_id);
+  if (storage_name && json_is_string(storage_name)) {
+    spec.storage_name = std::string{json_string_value(storage_name)};
+  }
+  if (ttl_seconds) {
+    const auto value = json_integer_value(ttl_seconds);
+    if (value < 0) {
+      error = "field 'ttl_seconds' must be greater than or equal to zero.";
+      return std::nullopt;
+    }
+    spec.ttl_seconds = static_cast<uint64_t>(value);
+  }
+  return spec;
+}
+
+std::optional<StorageBootstrapSessionRegisterRequestSpec>
+ParseStorageBootstrapSessionRegisterRequest(std::string_view body,
+                                            std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* bootstrap_token = json_object_get(root.get(), "bootstrap_token");
+  auto* hostname = json_object_get(root.get(), "hostname");
+  auto* fqdn = json_object_get(root.get(), "fqdn");
+  if (!json_is_string(bootstrap_token)) {
+    error = "field 'bootstrap_token' must be a string.";
+    return std::nullopt;
+  }
+  if (hostname && !json_is_null(hostname) && !json_is_string(hostname)) {
+    error = "field 'hostname' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (fqdn && !json_is_null(fqdn) && !json_is_string(fqdn)) {
+    error = "field 'fqdn' must be a string when provided.";
+    return std::nullopt;
+  }
+
+  StorageBootstrapSessionRegisterRequestSpec spec{};
+  spec.bootstrap_token = json_string_value(bootstrap_token);
+  if (hostname && json_is_string(hostname)) {
+    spec.hostname = std::string{json_string_value(hostname)};
+  }
+  if (fqdn && json_is_string(fqdn)) {
+    spec.fqdn = std::string{json_string_value(fqdn)};
+  }
+  return spec;
+}
+
+std::optional<StorageBootstrapSessionDiscoveryRequestSpec>
+ParseStorageBootstrapSessionDiscoveryRequest(std::string_view body,
+                                             std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* bootstrap_token = json_object_get(root.get(), "bootstrap_token");
+  auto* hostname = json_object_get(root.get(), "hostname");
+  auto* fqdn = json_object_get(root.get(), "fqdn");
+  auto* report = json_object_get(root.get(), "report");
+  if (!json_is_string(bootstrap_token)) {
+    error = "field 'bootstrap_token' must be a string.";
+    return std::nullopt;
+  }
+  if (hostname && !json_is_null(hostname) && !json_is_string(hostname)) {
+    error = "field 'hostname' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (fqdn && !json_is_null(fqdn) && !json_is_string(fqdn)) {
+    error = "field 'fqdn' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (!json_is_object(report)) {
+    error = "field 'report' must be an object.";
+    return std::nullopt;
+  }
+
+  StorageBootstrapSessionDiscoveryRequestSpec spec{};
+  spec.bootstrap_token = json_string_value(bootstrap_token);
+  if (hostname && json_is_string(hostname)) {
+    spec.hostname = std::string{json_string_value(hostname)};
+  }
+  if (fqdn && json_is_string(fqdn)) {
+    spec.fqdn = std::string{json_string_value(fqdn)};
+  }
+  spec.discovery_report_json = DumpJsonCompact(report);
+  return spec;
+}
+
+std::optional<StorageBootstrapSessionSelectionRequestSpec>
+ParseStorageBootstrapSessionSelectionRequest(std::string_view body,
+                                             std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* selection = json_object_get(root.get(), "selection");
+  if (!json_is_object(selection)) {
+    error = "field 'selection' must be an object.";
+    return std::nullopt;
+  }
+
+  StorageBootstrapSessionSelectionRequestSpec spec{};
+  spec.selection_json = DumpJsonCompact(selection);
+  return spec;
+}
+
+std::optional<StorageBootstrapSessionAppliedRequestSpec>
+ParseStorageBootstrapSessionAppliedRequest(std::string_view body,
+                                           std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* bootstrap_token = json_object_get(root.get(), "bootstrap_token");
+  auto* success = json_object_get(root.get(), "success");
+  auto* apply_error = json_object_get(root.get(), "error");
+  if (!json_is_string(bootstrap_token)) {
+    error = "field 'bootstrap_token' must be a string.";
+    return std::nullopt;
+  }
+  if (!json_is_boolean(success)) {
+    error = "field 'success' must be a boolean.";
+    return std::nullopt;
+  }
+  if (apply_error && !json_is_null(apply_error)
+      && !json_is_string(apply_error)) {
+    error = "field 'error' must be a string when provided.";
+    return std::nullopt;
+  }
+
+  StorageBootstrapSessionAppliedRequestSpec spec{};
+  spec.bootstrap_token = json_string_value(bootstrap_token);
+  spec.success = json_is_true(success);
+  if (apply_error && json_is_string(apply_error)) {
+    spec.error = std::string{json_string_value(apply_error)};
+  }
   return spec;
 }
 
@@ -19644,6 +20167,12 @@ http::response<http::string_body> HandleRequest(
   if (path_parts.size() == 2 && path_parts[0] == "v1"
       && path_parts[1] == "inspect" && request.method() == http::verb::post) {
     return HandleInspectRequest(request);
+  }
+
+  if (path_parts.size() >= 2 && path_parts[0] == "v1"
+      && path_parts[1] == "bootstrap") {
+    return HandleStorageBootstrapSessionsRequest(state, request, path_parts,
+                                                 target);
   }
 
   if (path_parts.size() >= 2 && path_parts[0] == "v1"

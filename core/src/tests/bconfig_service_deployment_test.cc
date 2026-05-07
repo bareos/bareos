@@ -791,6 +791,205 @@ TEST(BconfigService, PersistsAndExpiresStorageBootstrapSessionsAcrossRestart)
   }
 }
 
+TEST(BconfigService, ServesStorageBootstrapSessionApi)
+{
+  ScopedDirectory state_path{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+
+  {
+    ServiceState state{state_path.path()};
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    auto storage_messages = state.UpsertStorageMessagesResource(
+        "prod", "bareos-sd", "Standard",
+        {.description = std::string{"Managed storage messages"},
+         .director_entries = std::vector<std::string>{"bareos-dir = all"}});
+    ASSERT_TRUE(storage_messages) << storage_messages.error;
+
+    auto storage = state.UpsertStorageDaemonResource(
+        "prod", "bareos-sd",
+        {.address = std::string{"127.0.0.1"},
+         .port = 9103,
+         .working_directory = std::string{"/var/lib/bareos"},
+         .messages = std::string{"Standard"}});
+    ASSERT_TRUE(storage) << storage.error;
+
+    auto storage_director = state.UpsertStorageDirectorResource(
+        "prod", "bareos-sd", "bareos-dir",
+        {.password = std::string{"storage-director-secret"},
+         .description = std::string{
+             "Director, who is permitted to contact this storage daemon."}});
+    ASSERT_TRUE(storage_director) << storage_director.error;
+
+    auto storage_device = state.UpsertStorageDeviceResource(
+        "prod", "bareos-sd", "FileStorage",
+        {.media_type = std::string{"File"},
+         .archive_device = std::string{"/var/lib/bareos/storage"},
+         .device_type = std::string{"File"},
+         .removable_media = false,
+         .random_access = true,
+         .automatic_mount = true,
+         .label_media = true,
+         .always_open = false,
+         .description = std::string{
+             "File device. A connecting Director must have the same Name and "
+             "MediaType."}});
+    ASSERT_TRUE(storage_device) << storage_device.error;
+  }
+
+#if !HAVE_WIN32
+  ScopedBconfigServiceServer server{state_path.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto create_response = server.Post(
+      "/v1/bootstrap/storage-sessions",
+      R"({"deployment_id":"prod","storage_name":"bareos-sd","ttl_seconds":600})");
+  ASSERT_EQ(create_response.status_code, 201u) << create_response.body;
+  auto create_json = ParseJson(create_response.body);
+  ASSERT_NE(create_json.get(), nullptr) << create_response.body;
+  auto* created
+      = json_object_get(create_json.get(), "storage_bootstrap_session");
+  ASSERT_TRUE(json_is_object(created));
+  auto* session_id = json_object_get(created, "id");
+  auto* bootstrap_token = json_object_get(created, "bootstrap_token");
+  auto* created_status = json_object_get(created, "status");
+  ASSERT_TRUE(json_is_string(session_id));
+  ASSERT_TRUE(json_is_string(bootstrap_token));
+  ASSERT_TRUE(json_is_string(created_status));
+  EXPECT_STREQ(json_string_value(created_status), "pending");
+
+  const std::string session_id_text{json_string_value(session_id)};
+  const std::string bootstrap_token_text{json_string_value(bootstrap_token)};
+  const auto session_base_path
+      = std::string{"/v1/bootstrap/storage-sessions/"} + session_id_text;
+
+  const auto list_response = server.Get("/v1/bootstrap/storage-sessions");
+  ASSERT_EQ(list_response.status_code, 200u) << list_response.body;
+  auto list_json = ParseJson(list_response.body);
+  ASSERT_NE(list_json.get(), nullptr) << list_response.body;
+  auto* sessions
+      = json_object_get(list_json.get(), "storage_bootstrap_sessions");
+  ASSERT_TRUE(json_is_array(sessions));
+  ASSERT_EQ(json_array_size(sessions), 1u);
+
+  const auto register_response = server.Post(
+      session_base_path + "/register",
+      "{\"bootstrap_token\":\"" + bootstrap_token_text
+          + "\",\"hostname\":\"sdhost\",\"fqdn\":\"sdhost.example.com\"}");
+  ASSERT_EQ(register_response.status_code, 200u) << register_response.body;
+  auto register_json = ParseJson(register_response.body);
+  ASSERT_NE(register_json.get(), nullptr) << register_response.body;
+  auto* registered
+      = json_object_get(register_json.get(), "storage_bootstrap_session");
+  ASSERT_TRUE(json_is_object(registered));
+  EXPECT_STREQ(json_string_value(json_object_get(registered, "status")),
+               "registered");
+
+  const auto discovery_response = server.Post(
+      session_base_path + "/discovery",
+      "{\"bootstrap_token\":\"" + bootstrap_token_text
+          + "\",\"hostname\":\"sdhost\",\"fqdn\":\"sdhost.example.com\","
+            "\"report\":{\"hostname\":\"sdhost\",\"filesystems\":[]}}");
+  ASSERT_EQ(discovery_response.status_code, 200u) << discovery_response.body;
+  auto discovery_json = ParseJson(discovery_response.body);
+  ASSERT_NE(discovery_json.get(), nullptr) << discovery_response.body;
+  auto* discovered
+      = json_object_get(discovery_json.get(), "storage_bootstrap_session");
+  ASSERT_TRUE(json_is_object(discovered));
+  EXPECT_STREQ(json_string_value(json_object_get(discovered, "status")),
+               "discovered");
+  auto* discovery_report = json_object_get(discovered, "discovery_report");
+  ASSERT_TRUE(json_is_object(discovery_report));
+  auto* discovery_hostname = json_object_get(discovery_report, "hostname");
+  ASSERT_TRUE(json_is_string(discovery_hostname));
+  EXPECT_STREQ(json_string_value(discovery_hostname), "sdhost");
+
+  const auto selection_response = server.Post(
+      session_base_path + "/selection",
+      R"({"selection":{"filesystem_mountpoint":"/srv/storage","archive_path":"/srv/storage/bareos/storage"}})");
+  ASSERT_EQ(selection_response.status_code, 200u) << selection_response.body;
+  auto selection_json = ParseJson(selection_response.body);
+  ASSERT_NE(selection_json.get(), nullptr) << selection_response.body;
+  auto* selected
+      = json_object_get(selection_json.get(), "storage_bootstrap_session");
+  ASSERT_TRUE(json_is_object(selected));
+  EXPECT_STREQ(json_string_value(json_object_get(selected, "status")),
+               "selected");
+  auto* selection = json_object_get(selected, "selection");
+  ASSERT_TRUE(json_is_object(selection));
+  auto* archive_path = json_object_get(selection, "archive_path");
+  ASSERT_TRUE(json_is_string(archive_path));
+  EXPECT_STREQ(json_string_value(archive_path), "/srv/storage/bareos/storage");
+
+  const auto get_response = server.Get(session_base_path);
+  ASSERT_EQ(get_response.status_code, 200u) << get_response.body;
+  auto get_json = ParseJson(get_response.body);
+  ASSERT_NE(get_json.get(), nullptr) << get_response.body;
+  auto* loaded = json_object_get(get_json.get(), "storage_bootstrap_session");
+  ASSERT_TRUE(json_is_object(loaded));
+  EXPECT_STREQ(json_string_value(json_object_get(loaded, "status")),
+               "selected");
+
+  const auto config_response = server.Get(
+      session_base_path + "/config-bundle?token=" + bootstrap_token_text);
+  ASSERT_EQ(config_response.status_code, 200u) << config_response.body;
+  auto config_json = ParseJson(config_response.body);
+  ASSERT_NE(config_json.get(), nullptr) << config_response.body;
+  auto* config_session
+      = json_object_get(config_json.get(), "storage_bootstrap_session");
+  ASSERT_TRUE(json_is_object(config_session));
+  EXPECT_STREQ(json_string_value(json_object_get(config_session, "status")),
+               "config_ready");
+  auto* config_bundle = json_object_get(config_json.get(), "config_bundle");
+  ASSERT_TRUE(json_is_object(config_bundle));
+  auto* selected_archive_path
+      = json_object_get(config_bundle, "selected_archive_path");
+  ASSERT_TRUE(json_is_string(selected_archive_path));
+  EXPECT_STREQ(json_string_value(selected_archive_path),
+               "/srv/storage/bareos/storage");
+  auto* files = json_object_get(config_bundle, "files");
+  ASSERT_TRUE(json_is_array(files));
+
+  json_t* file_entry = nullptr;
+  size_t file_index = 0;
+  json_array_foreach(files, file_index, file_entry)
+  {
+    auto* path = json_object_get(file_entry, "path");
+    if (json_is_string(path)
+        && std::string_view{json_string_value(path)}
+               == "bareos-sd.d/device/FileStorage.conf") {
+      break;
+    }
+    file_entry = nullptr;
+  }
+  ASSERT_NE(file_entry, nullptr);
+  auto* device_content = json_object_get(file_entry, "content");
+  ASSERT_TRUE(json_is_string(device_content));
+  EXPECT_NE(std::string_view{json_string_value(device_content)}.find(
+                "/srv/storage/bareos/storage"),
+            std::string_view::npos);
+
+  const auto applied_response
+      = server.Post(session_base_path + "/applied",
+                    "{\"bootstrap_token\":\"" + bootstrap_token_text
+                        + "\",\"success\":false,\"error\":\"apply failed\"}");
+  ASSERT_EQ(applied_response.status_code, 200u) << applied_response.body;
+  auto applied_json = ParseJson(applied_response.body);
+  ASSERT_NE(applied_json.get(), nullptr) << applied_response.body;
+  auto* applied
+      = json_object_get(applied_json.get(), "storage_bootstrap_session");
+  ASSERT_TRUE(json_is_object(applied));
+  EXPECT_STREQ(json_string_value(json_object_get(applied, "status")), "failed");
+  auto* last_error = json_object_get(applied, "last_error");
+  ASSERT_TRUE(json_is_string(last_error));
+  EXPECT_STREQ(json_string_value(last_error), "apply failed");
+#endif
+}
+
 TEST(BconfigService, ImportsDetectedComponentTreesFromConfigRoot)
 {
   ScopedDirectory source_root{MakeTempPath()};

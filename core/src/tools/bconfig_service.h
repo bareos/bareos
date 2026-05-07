@@ -945,7 +945,36 @@ struct StorageBootstrapSessionRecord {
   uint64_t expires_at_epoch_seconds{0};
   std::optional<std::string> hostname{};
   std::optional<std::string> fqdn{};
+  std::optional<std::string> discovery_report_json{};
+  std::optional<std::string> selection_json{};
   std::optional<std::string> last_error{};
+};
+
+struct StorageBootstrapConfigBundleDirectoryRecord {
+  std::string path{};
+  std::optional<std::string> owner{};
+  std::optional<std::string> group{};
+  std::string mode{};
+};
+
+struct StorageBootstrapConfigBundleFileRecord {
+  std::string path{};
+  std::optional<std::string> owner{};
+  std::optional<std::string> group{};
+  std::string mode{};
+  bool contains_secret{false};
+  std::string content{};
+};
+
+struct StorageBootstrapConfigBundleRecord {
+  std::string format{"storage-bootstrap-config-bundle-v1"};
+  std::string path_base{"storage_config_root"};
+  std::string session_id{};
+  std::string deployment_id{};
+  std::string storage_name{};
+  std::string selected_archive_path{};
+  std::vector<StorageBootstrapConfigBundleDirectoryRecord> directories{};
+  std::vector<StorageBootstrapConfigBundleFileRecord> files{};
 };
 
 class RepositoryLayout {
@@ -1329,6 +1358,32 @@ class ServiceState {
       std::optional<std::string> last_error = std::nullopt,
       std::optional<std::string> hostname = std::nullopt,
       std::optional<std::string> fqdn = std::nullopt);
+  OperationResult<StorageBootstrapSessionRecord>
+  RegisterStorageBootstrapSession(std::string_view id,
+                                  std::string_view bootstrap_token,
+                                  std::optional<std::string> hostname
+                                  = std::nullopt,
+                                  std::optional<std::string> fqdn
+                                  = std::nullopt);
+  OperationResult<StorageBootstrapSessionRecord>
+  SubmitStorageBootstrapDiscovery(std::string_view id,
+                                  std::string_view bootstrap_token,
+                                  std::string discovery_report_json,
+                                  std::optional<std::string> hostname
+                                  = std::nullopt,
+                                  std::optional<std::string> fqdn
+                                  = std::nullopt);
+  OperationResult<StorageBootstrapSessionRecord>
+  SubmitStorageBootstrapSelection(std::string_view id,
+                                  std::string selection_json);
+  OperationResult<StorageBootstrapSessionRecord> ReportStorageBootstrapApplied(
+      std::string_view id,
+      std::string_view bootstrap_token,
+      bool success,
+      std::optional<std::string> error = std::nullopt);
+  OperationResult<StorageBootstrapConfigBundleRecord>
+  GetStorageBootstrapConfigBundle(std::string_view id,
+                                  std::string_view bootstrap_token);
 
   OperationResult<JobRecord> CreateJob(const JobSpec& spec);
   std::vector<JobRecord> ListJobs() const;

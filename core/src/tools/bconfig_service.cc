@@ -58,6 +58,7 @@
 #include <fstream>
 #include <iomanip>
 #include <limits>
+#include <map>
 #include <set>
 #include <source_location>
 #include <sstream>
@@ -213,6 +214,81 @@ std::optional<std::string> ValidateStorageBootstrapSessionTransition(
   }
 
   return "invalid bootstrap session status transition.";
+}
+
+constexpr std::string_view kStorageBootstrapBundleDirectoryMode = "0750";
+constexpr std::string_view kStorageBootstrapBundleFileMode = "0640";
+constexpr std::string_view kStorageBootstrapBundleOwner = "root";
+constexpr std::string_view kStorageBootstrapBundleGroup = "bareos";
+
+struct StorageBootstrapSelectionSpec {
+  std::string archive_path{};
+  std::optional<std::string> device_name{};
+};
+
+std::string ToLowerCopy(std::string_view value)
+{
+  std::string normalized;
+  normalized.reserve(value.size());
+  for (const auto ch : value) {
+    normalized.push_back(
+        static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
+  }
+  return normalized;
+}
+
+bool ContainsStorageBootstrapSecret(std::string_view content)
+{
+  static constexpr std::array<std::string_view, 8> kSensitiveDirectives{
+      "Password =",       "TlsKey =",
+      "TlsCertificate =", "TlsPskIdentity =",
+      "TlsPskHexKey =",   "Pkikeypair =",
+      "Pkimasterkey =",   "Key Encryption Key =",
+  };
+
+  const auto normalized = ToLowerCopy(content);
+  return std::any_of(kSensitiveDirectives.begin(), kSensitiveDirectives.end(),
+                     [&normalized](std::string_view directive) {
+                       return normalized.find(ToLowerCopy(directive))
+                              != std::string::npos;
+                     });
+}
+
+OperationResult<StorageBootstrapSelectionSpec> ParseStorageBootstrapSelection(
+    std::string_view selection_json)
+{
+  json_error_t error{};
+  auto root
+      = MakeJson(json_loads(std::string{selection_json}.c_str(), 0, &error));
+  if (!root) {
+    return {.error = "failed to parse storage bootstrap selection: "
+                     + std::string{error.text}};
+  }
+  if (!json_is_object(root.get())) {
+    return {.error = "storage bootstrap selection must be a JSON object."};
+  }
+
+  auto* archive_path = json_object_get(root.get(), "archive_path");
+  auto* device_name = json_object_get(root.get(), "device_name");
+  if (!json_is_string(archive_path)
+      || std::string_view{json_string_value(archive_path)}.empty()) {
+    return {.error
+            = "storage bootstrap selection must define a non-empty "
+              "'archive_path' string."};
+  }
+  if (device_name && !json_is_null(device_name)
+      && !json_is_string(device_name)) {
+    return {.error
+            = "storage bootstrap selection field 'device_name' must be "
+              "a string when provided."};
+  }
+
+  StorageBootstrapSelectionSpec spec{.archive_path
+                                     = json_string_value(archive_path)};
+  if (device_name && json_is_string(device_name)) {
+    spec.device_name = std::string{json_string_value(device_name)};
+  }
+  return {.value = std::move(spec)};
 }
 
 std::filesystem::path HomeDirectory()
@@ -18806,6 +18882,8 @@ ServiceState::CreateStorageBootstrapSession(
       .expires_at_epoch_seconds = CurrentUnixTimeSeconds() + spec.ttl_seconds,
       .hostname = std::nullopt,
       .fqdn = std::nullopt,
+      .discovery_report_json = std::nullopt,
+      .selection_json = std::nullopt,
       .last_error = std::nullopt};
 
   storage_bootstrap_sessions_.emplace(record.id, record);
@@ -18822,14 +18900,22 @@ ServiceState::CreateStorageBootstrapSession(
 std::vector<StorageBootstrapSessionRecord>
 ServiceState::ListStorageBootstrapSessions() const
 {
+  auto* self = const_cast<ServiceState*>(this);
   std::lock_guard guard{mutex_};
+  if (self->ExpireStorageBootstrapSessionsLocked()) {
+    static_cast<void>(self->SaveStateLocked());
+  }
   return SortedValues(storage_bootstrap_sessions_);
 }
 
 std::optional<StorageBootstrapSessionRecord>
 ServiceState::GetStorageBootstrapSession(std::string_view id) const
 {
+  auto* self = const_cast<ServiceState*>(this);
   std::lock_guard guard{mutex_};
+  if (self->ExpireStorageBootstrapSessionsLocked()) {
+    static_cast<void>(self->SaveStateLocked());
+  }
   auto it = storage_bootstrap_sessions_.find(std::string{id});
   if (it == storage_bootstrap_sessions_.end()) { return std::nullopt; }
   return it->second;
@@ -18860,6 +18946,367 @@ ServiceState::AuthenticateStorageBootstrapSession(std::string_view id,
     return {.error = "invalid storage bootstrap token."};
   }
   return {.value = it->second};
+}
+
+OperationResult<StorageBootstrapSessionRecord>
+ServiceState::RegisterStorageBootstrapSession(
+    std::string_view id,
+    std::string_view bootstrap_token,
+    std::optional<std::string> hostname,
+    std::optional<std::string> fqdn)
+{
+  auto authenticated = AuthenticateStorageBootstrapSession(id, bootstrap_token);
+  if (!authenticated) { return authenticated; }
+
+  return TransitionStorageBootstrapSession(
+      id, StorageBootstrapSessionStatus::kRegistered, std::nullopt,
+      std::move(hostname), std::move(fqdn));
+}
+
+OperationResult<StorageBootstrapSessionRecord>
+ServiceState::SubmitStorageBootstrapDiscovery(
+    std::string_view id,
+    std::string_view bootstrap_token,
+    std::string discovery_report_json,
+    std::optional<std::string> hostname,
+    std::optional<std::string> fqdn)
+{
+  auto authenticated = AuthenticateStorageBootstrapSession(id, bootstrap_token);
+  if (!authenticated) { return authenticated; }
+
+  std::lock_guard guard{mutex_};
+  auto it = storage_bootstrap_sessions_.find(std::string{id});
+  if (it == storage_bootstrap_sessions_.end()) {
+    return {.error = "storage bootstrap session not found."};
+  }
+  if (it->second.status == StorageBootstrapSessionStatus::kPending) {
+    if (auto error = ValidateStorageBootstrapSessionTransition(
+            it->second.status, StorageBootstrapSessionStatus::kRegistered);
+        error) {
+      return {.error = *error};
+    }
+    it->second.status = StorageBootstrapSessionStatus::kRegistered;
+  } else if (it->second.status != StorageBootstrapSessionStatus::kRegistered) {
+    return {.error
+            = "storage bootstrap session must be registered before discovery."};
+  }
+
+  if (auto error = ValidateStorageBootstrapSessionTransition(
+          it->second.status, StorageBootstrapSessionStatus::kDiscovered);
+      error) {
+    return {.error = *error};
+  }
+
+  it->second.status = StorageBootstrapSessionStatus::kDiscovered;
+  it->second.updated_at = MakeTimestamp();
+  it->second.discovery_report_json = std::move(discovery_report_json);
+  if (hostname) { it->second.hostname = std::move(hostname); }
+  if (fqdn) { it->second.fqdn = std::move(fqdn); }
+  it->second.last_error.reset();
+
+  if (auto error = SaveStateLocked(); error) { return {.error = *error}; }
+  return {.value = it->second};
+}
+
+OperationResult<StorageBootstrapSessionRecord>
+ServiceState::SubmitStorageBootstrapSelection(std::string_view id,
+                                              std::string selection_json)
+{
+  std::lock_guard guard{mutex_};
+  if (ExpireStorageBootstrapSessionsLocked()) {
+    if (auto error = SaveStateLocked(); error) { return {.error = *error}; }
+  }
+
+  auto it = storage_bootstrap_sessions_.find(std::string{id});
+  if (it == storage_bootstrap_sessions_.end()) {
+    return {.error = "storage bootstrap session not found."};
+  }
+  if (auto error = ValidateStorageBootstrapSessionTransition(
+          it->second.status, StorageBootstrapSessionStatus::kSelected);
+      error) {
+    return {.error = *error};
+  }
+
+  it->second.status = StorageBootstrapSessionStatus::kSelected;
+  it->second.updated_at = MakeTimestamp();
+  it->second.selection_json = std::move(selection_json);
+  it->second.last_error.reset();
+
+  if (auto error = SaveStateLocked(); error) { return {.error = *error}; }
+  return {.value = it->second};
+}
+
+OperationResult<StorageBootstrapSessionRecord>
+ServiceState::ReportStorageBootstrapApplied(std::string_view id,
+                                            std::string_view bootstrap_token,
+                                            bool success,
+                                            std::optional<std::string> error)
+{
+  auto authenticated = AuthenticateStorageBootstrapSession(id, bootstrap_token);
+  if (!authenticated) { return authenticated; }
+
+  if (!success) {
+    return TransitionStorageBootstrapSession(
+        id, StorageBootstrapSessionStatus::kFailed, std::move(error));
+  }
+
+  std::lock_guard guard{mutex_};
+  auto it = storage_bootstrap_sessions_.find(std::string{id});
+  if (it == storage_bootstrap_sessions_.end()) {
+    return {.error = "storage bootstrap session not found."};
+  }
+  if (it->second.status == StorageBootstrapSessionStatus::kConfigReady) {
+    it->second.status = StorageBootstrapSessionStatus::kApplying;
+  } else if (it->second.status != StorageBootstrapSessionStatus::kApplying) {
+    return {.error = "storage bootstrap session is not ready to apply."};
+  }
+  if (auto transition_error = ValidateStorageBootstrapSessionTransition(
+          it->second.status, StorageBootstrapSessionStatus::kApplied);
+      transition_error) {
+    return {.error = *transition_error};
+  }
+
+  it->second.status = StorageBootstrapSessionStatus::kApplied;
+  it->second.updated_at = MakeTimestamp();
+  it->second.last_error.reset();
+  if (auto save_error = SaveStateLocked(); save_error) {
+    return {.error = *save_error};
+  }
+  return {.value = it->second};
+}
+
+OperationResult<StorageBootstrapConfigBundleRecord>
+ServiceState::GetStorageBootstrapConfigBundle(std::string_view id,
+                                              std::string_view bootstrap_token)
+{
+  auto authenticated = AuthenticateStorageBootstrapSession(id, bootstrap_token);
+  if (!authenticated) { return {.error = authenticated.error}; }
+
+  auto session = *authenticated.value;
+  if (session.status != StorageBootstrapSessionStatus::kSelected
+      && session.status != StorageBootstrapSessionStatus::kConfigReady
+      && session.status != StorageBootstrapSessionStatus::kApplying) {
+    return {.error = "storage bootstrap config bundle is not ready."};
+  }
+  if (!session.selection_json) {
+    return {.error
+            = "storage bootstrap session has no selected storage "
+              "configuration."};
+  }
+
+  auto selection = ParseStorageBootstrapSelection(*session.selection_json);
+  if (!selection) { return {.error = selection.error}; }
+
+  std::string storage_name;
+  if (session.storage_name) {
+    storage_name = *session.storage_name;
+  } else {
+    auto configs = ListDeploymentConfigs(session.deployment_id,
+                                         bconfig::Component::kStorage);
+    if (!configs) { return {.error = configs.error}; }
+    if (configs.value->empty()) {
+      return {.error = "deployment does not define a storage config."};
+    }
+    if (configs.value->size() != 1) {
+      return {.error
+              = "storage bootstrap session must specify a storage_name "
+                "when the deployment defines multiple storage configs."};
+    }
+    storage_name = configs.value->front().name;
+  }
+
+  auto storage_config = GetDeploymentConfig(
+      session.deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) { return {.error = storage_config.error}; }
+
+  auto managed_paths = LoadManagedPaths(
+      RepositoryRootFromConfigPath(storage_config.value->path));
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.value->path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "storage bootstrap config bundle parser initialization ",
+                loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("storage bootstrap config bundle ",
+                                        loaded.messages)};
+  }
+
+  std::vector<std::string> file_device_names;
+  for (auto* resource
+       = loaded.parser->GetNextRes(storagedaemon::R_DEVICE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                storagedaemon::R_DEVICE, resource)) {
+    auto* device = dynamic_cast<storagedaemon::DeviceResource*>(resource);
+    if (!device || !device->resource_name_
+        || device->resource_name_[0] == '\0') {
+      continue;
+    }
+    if (ToLowerCopy(device->device_type) == "file") {
+      file_device_names.emplace_back(device->resource_name_);
+    }
+  }
+
+  if (file_device_names.empty()) {
+    return {.error
+            = "storage bootstrap config bundle requires at least one file "
+              "device in the selected storage config."};
+  }
+
+  std::string selected_device_name;
+  if (selection.value->device_name) {
+    selected_device_name = *selection.value->device_name;
+    if (std::find(file_device_names.begin(), file_device_names.end(),
+                  selected_device_name)
+        == file_device_names.end()) {
+      return {.error
+              = "selected storage bootstrap device was not found or is "
+                "not a file device."};
+    }
+  } else if (file_device_names.size() == 1) {
+    selected_device_name = file_device_names.front();
+  } else {
+    return {.error
+            = "storage bootstrap selection must include 'device_name' "
+              "when multiple file devices exist."};
+  }
+
+  StorageBootstrapConfigBundleRecord bundle{
+      .session_id = session.id,
+      .deployment_id = session.deployment_id,
+      .storage_name = storage_name,
+      .selected_archive_path = selection.value->archive_path,
+  };
+
+  std::map<std::string, size_t> file_index_by_path;
+  for (const auto& entry : std::filesystem::recursive_directory_iterator(
+           storage_config.value->path)) {
+    if (!entry.is_regular_file()) { continue; }
+
+    auto content = ReadFile(entry.path());
+    if (!content) { return {.error = content.error}; }
+
+    std::error_code error_code;
+    const auto relative = std::filesystem::relative(
+        entry.path(), storage_config.value->path, error_code);
+    if (error_code) {
+      return {.error = "failed to derive storage bootstrap bundle path for '"
+                       + entry.path().string() + "': " + error_code.message()};
+    }
+
+    const auto relative_path = relative.generic_string();
+    if (!relative.parent_path().empty()) {
+      bundle.directories.push_back(
+          {.path = relative.parent_path().generic_string(),
+           .owner = std::string{kStorageBootstrapBundleOwner},
+           .group = std::string{kStorageBootstrapBundleGroup},
+           .mode = std::string{kStorageBootstrapBundleDirectoryMode}});
+    }
+
+    file_index_by_path.emplace(relative_path, bundle.files.size());
+    bundle.files.push_back(
+        {.path = relative_path,
+         .owner = std::string{kStorageBootstrapBundleOwner},
+         .group = std::string{kStorageBootstrapBundleGroup},
+         .mode = std::string{kStorageBootstrapBundleFileMode},
+         .contains_secret = ContainsStorageBootstrapSecret(*content.value),
+         .content = std::move(*content.value)});
+  }
+
+  std::sort(
+      bundle.directories.begin(), bundle.directories.end(),
+      [](const auto& lhs, const auto& rhs) { return lhs.path < rhs.path; });
+  bundle.directories.erase(
+      std::unique(bundle.directories.begin(), bundle.directories.end(),
+                  [](const auto& lhs, const auto& rhs) {
+                    return lhs.path == rhs.path;
+                  }),
+      bundle.directories.end());
+
+  auto device_context = LoadStorageDaemonDeviceWriteContext(
+      *storage_config.value, selected_device_name, *managed_paths.value);
+  if (!device_context) { return {.error = device_context.error}; }
+  if (!device_context.value->exists) {
+    return {.error = "storage bootstrap file device '" + selected_device_name
+                     + "' was not found."};
+  }
+  auto device_spec = ToStorageDeviceResourceSpec(*device_context.value);
+  device_spec.archive_device = selection.value->archive_path;
+  const auto rendered_device = BuildStorageDaemonDeviceResourceContent(
+      selected_device_name, device_spec.media_type.value_or("File"),
+      selection.value->archive_path, device_spec.device_type.value_or("File"),
+      device_spec.access_mode, device_spec.device_options,
+      device_spec.diagnostic_device, device_spec.hardware_end_of_file,
+      device_spec.hardware_end_of_medium, device_spec.backward_space_record,
+      device_spec.backward_space_file, device_spec.bsf_at_eom,
+      device_spec.two_eof, device_spec.forward_space_record,
+      device_spec.forward_space_file, device_spec.fast_forward_space_file,
+      device_spec.removable_media, device_spec.random_access,
+      device_spec.automatic_mount, device_spec.label_media,
+      device_spec.always_open, device_spec.autochanger,
+      device_spec.close_on_poll, device_spec.block_positioning,
+      device_spec.use_mtiocget, device_spec.check_labels,
+      device_spec.requires_mount, device_spec.offline_on_unmount,
+      device_spec.block_checksum, device_spec.auto_select,
+      device_spec.changer_device, device_spec.changer_command,
+      device_spec.alert_command, device_spec.maximum_changer_wait,
+      device_spec.maximum_open_wait, device_spec.maximum_open_volumes,
+      device_spec.maximum_network_buffer_size, device_spec.volume_poll_interval,
+      device_spec.maximum_rewind_wait, device_spec.label_block_size,
+      device_spec.minimum_block_size, device_spec.maximum_block_size,
+      device_spec.maximum_file_size, device_spec.volume_capacity,
+      device_spec.maximum_concurrent_jobs, device_spec.spool_directory,
+      device_spec.maximum_spool_size, device_spec.maximum_job_spool_size,
+      device_spec.drive_index, device_spec.mount_point,
+      device_spec.mount_command, device_spec.unmount_command,
+      device_spec.label_type, device_spec.no_rewind_on_close,
+      device_spec.drive_tape_alert_enabled, device_spec.drive_crypto_enabled,
+      device_spec.query_crypto_status, device_spec.auto_deflate,
+      device_spec.auto_deflate_algorithm, device_spec.auto_deflate_level,
+      device_spec.auto_inflate, device_spec.collect_statistics,
+      device_spec.eof_on_error_is_eot, device_spec.count,
+      device_spec.description.value_or(selected_device_name));
+
+  std::string rewritten_device_content = rendered_device;
+  if (device_context.value->exists
+      && !device_context.value->is_standalone_file) {
+    auto rewritten = RewriteNamedTopLevelResource(
+        device_context.value->file_path, "Device", selected_device_name,
+        rendered_device);
+    if (!rewritten) { return {.error = rewritten.error}; }
+    rewritten_device_content = std::move(*rewritten.value);
+  }
+
+  std::error_code error_code;
+  const auto device_relative = std::filesystem::relative(
+      device_context.value->file_path, storage_config.value->path, error_code);
+  if (error_code) {
+    return {.error = "failed to derive storage bootstrap device path for '"
+                     + device_context.value->file_path.string()
+                     + "': " + error_code.message()};
+  }
+  const auto device_relative_path = device_relative.generic_string();
+  auto bundle_file_it = file_index_by_path.find(device_relative_path);
+  if (bundle_file_it == file_index_by_path.end()) {
+    return {.error
+            = "storage bootstrap bundle is missing the selected device "
+              "config file."};
+  }
+  auto& device_file = bundle.files[bundle_file_it->second];
+  device_file.content = std::move(rewritten_device_content);
+  device_file.contains_secret
+      = ContainsStorageBootstrapSecret(device_file.content);
+
+  if (session.status == StorageBootstrapSessionStatus::kSelected) {
+    auto transitioned = TransitionStorageBootstrapSession(
+        id, StorageBootstrapSessionStatus::kConfigReady);
+    if (!transitioned) { return {.error = transitioned.error}; }
+  }
+
+  return {.value = std::move(bundle)};
 }
 
 OperationResult<StorageBootstrapSessionRecord>
@@ -20132,6 +20579,20 @@ std::string ServiceState::SerializeState(
       stream << "null";
     }
     stream << ",\n"
+           << "      \"discovery_report_json\": ";
+    if (session.discovery_report_json) {
+      stream << "\"" << JsonEscape(*session.discovery_report_json) << "\"";
+    } else {
+      stream << "null";
+    }
+    stream << ",\n"
+           << "      \"selection_json\": ";
+    if (session.selection_json) {
+      stream << "\"" << JsonEscape(*session.selection_json) << "\"";
+    } else {
+      stream << "null";
+    }
+    stream << ",\n"
            << "      \"last_error\": ";
     if (session.last_error) {
       stream << "\"" << JsonEscape(*session.last_error) << "\"";
@@ -20370,6 +20831,9 @@ std::optional<std::string> ServiceState::LoadState()
           = json_object_get(entry, "expires_at_epoch_seconds");
       auto* hostname = json_object_get(entry, "hostname");
       auto* fqdn = json_object_get(entry, "fqdn");
+      auto* discovery_report_json
+          = json_object_get(entry, "discovery_report_json");
+      auto* selection_json = json_object_get(entry, "selection_json");
       auto* last_error = json_object_get(entry, "last_error");
 
       if (!json_is_string(id) || !json_is_string(deployment_id)
@@ -20380,6 +20844,10 @@ std::optional<std::string> ServiceState::LoadState()
           || !json_is_integer(expires_at_epoch_seconds)
           || (hostname && !json_is_null(hostname) && !json_is_string(hostname))
           || (fqdn && !json_is_null(fqdn) && !json_is_string(fqdn))
+          || (discovery_report_json && !json_is_null(discovery_report_json)
+              && !json_is_string(discovery_report_json))
+          || (selection_json && !json_is_null(selection_json)
+              && !json_is_string(selection_json))
           || (last_error && !json_is_null(last_error)
               && !json_is_string(last_error))) {
         return "service state file '" + state_file.string()
@@ -20405,6 +20873,8 @@ std::optional<std::string> ServiceState::LoadState()
           = static_cast<uint64_t>(json_integer_value(expires_at_epoch_seconds)),
           .hostname = std::nullopt,
           .fqdn = std::nullopt,
+          .discovery_report_json = std::nullopt,
+          .selection_json = std::nullopt,
           .last_error = std::nullopt};
       if (storage_name && json_is_string(storage_name)) {
         record.storage_name = std::string{json_string_value(storage_name)};
@@ -20414,6 +20884,13 @@ std::optional<std::string> ServiceState::LoadState()
       }
       if (fqdn && json_is_string(fqdn)) {
         record.fqdn = std::string{json_string_value(fqdn)};
+      }
+      if (discovery_report_json && json_is_string(discovery_report_json)) {
+        record.discovery_report_json
+            = std::string{json_string_value(discovery_report_json)};
+      }
+      if (selection_json && json_is_string(selection_json)) {
+        record.selection_json = std::string{json_string_value(selection_json)};
       }
       if (last_error && json_is_string(last_error)) {
         record.last_error = std::string{json_string_value(last_error)};

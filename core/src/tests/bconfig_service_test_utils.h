@@ -255,16 +255,33 @@ class [[maybe_unused]] ScopedBconfigServiceServer {
 
   HttpResponse Get(std::string_view target) const
   {
+    return Request(http::verb::get, target, "");
+  }
+
+  HttpResponse Post(std::string_view target, std::string_view body) const
+  {
+    return Request(http::verb::post, target, body);
+  }
+
+ private:
+  HttpResponse Request(http::verb method,
+                       std::string_view target,
+                       std::string_view body) const
+  {
     net::io_context io_context;
     tcp::resolver resolver{io_context};
     tcp::socket socket{io_context};
     const auto endpoints = resolver.resolve("127.0.0.1", std::to_string(port_));
     net::connect(socket, endpoints);
 
-    http::request<http::empty_body> request{http::verb::get,
-                                            std::string{target}, 11};
+    http::request<http::string_body> request{method, std::string{target}, 11};
     request.set(http::field::host, "127.0.0.1");
     request.set(http::field::user_agent, "bconfig-service-test");
+    if (method == http::verb::post) {
+      request.set(http::field::content_type, "application/json");
+      request.body() = std::string{body};
+      request.prepare_payload();
+    }
     http::write(socket, request);
 
     boost::beast::flat_buffer buffer;
@@ -276,7 +293,6 @@ class [[maybe_unused]] ScopedBconfigServiceServer {
     return {.status_code = response.result_int(), .body = response.body()};
   }
 
- private:
   bool WaitUntilReady()
   {
     for (int attempt = 0; attempt < 100; ++attempt) {
