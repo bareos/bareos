@@ -60,12 +60,21 @@ struct TapeDeviceInfo {
   std::string accessibility_error{};
 };
 
+struct ChangerDriveInfo {
+  std::string tape_device_node{};
+  std::string generic_device_node{};
+  std::optional<uint32_t> drive_element_address{};
+  std::optional<std::string> device_identifier{};
+  std::optional<std::string> source{};
+};
+
 struct ChangerInfo {
   std::string device_node{};
   std::string vendor{};
   std::string model{};
   std::string serial{};
   std::vector<std::string> drive_device_nodes{};
+  std::vector<ChangerDriveInfo> drives{};
   bool accessible{false};
   std::string accessibility_error{};
 };

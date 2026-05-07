@@ -77,6 +77,13 @@ TEST(SdDiscoveryProbe, SerializesStableJsonShape)
       .model = "3573-TL",
       .serial = "CHG1",
       .drive_device_nodes = {"/dev/nst0"},
+      .drives = {{
+          .tape_device_node = "/dev/nst0",
+          .generic_device_node = "/dev/sg3",
+          .drive_element_address = 256,
+          .device_identifier = "naa.1234",
+          .source = "test",
+      }},
       .accessible = true,
   });
 
@@ -115,6 +122,24 @@ TEST(SdDiscoveryProbe, SerializesStableJsonShape)
   json_t* changers = json_object_get(parsed, "changers");
   ASSERT_TRUE(json_is_array(changers));
   ASSERT_EQ(json_array_size(changers), 1U);
+
+  json_t* changer = json_array_get(changers, 0);
+  ASSERT_NE(changer, nullptr);
+  json_t* drives = json_object_get(changer, "drives");
+  ASSERT_TRUE(json_is_array(drives));
+  ASSERT_EQ(json_array_size(drives), 1U);
+
+  json_t* drive = json_array_get(drives, 0);
+  ASSERT_NE(drive, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "tape_device_node")),
+               "/dev/nst0");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "generic_device_node")),
+               "/dev/sg3");
+  EXPECT_EQ(json_integer_value(json_object_get(drive, "drive_element_address")),
+            256);
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "device_identifier")),
+               "naa.1234");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "source")), "test");
 
   json_decref(parsed);
 }

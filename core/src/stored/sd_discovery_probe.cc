@@ -337,10 +337,31 @@ json_t* JsonTapeDeviceInfo(const TapeDeviceInfo& tape_device)
 
 json_t* JsonChangerInfo(const ChangerInfo& changer)
 {
+  auto json_string_or_null = [](const std::optional<std::string>& value) {
+    return value ? json_string(value->c_str()) : json_null();
+  };
+  auto json_integer_or_null = [](const std::optional<uint32_t>& value) {
+    return value ? json_integer(*value) : json_null();
+  };
   json_t* drive_device_nodes = json_array();
   for (const auto& drive_device_node : changer.drive_device_nodes) {
     json_array_append_new(drive_device_nodes,
                           json_string(drive_device_node.c_str()));
+  }
+
+  json_t* drives = json_array();
+  for (const auto& drive : changer.drives) {
+    json_t* item = json_object();
+    json_object_set_new(item, "tape_device_node",
+                        json_string(drive.tape_device_node.c_str()));
+    json_object_set_new(item, "generic_device_node",
+                        json_string(drive.generic_device_node.c_str()));
+    json_object_set_new(item, "drive_element_address",
+                        json_integer_or_null(drive.drive_element_address));
+    json_object_set_new(item, "device_identifier",
+                        json_string_or_null(drive.device_identifier));
+    json_object_set_new(item, "source", json_string_or_null(drive.source));
+    json_array_append_new(drives, item);
   }
 
   json_t* obj = json_object();
@@ -350,6 +371,7 @@ json_t* JsonChangerInfo(const ChangerInfo& changer)
   json_object_set_new(obj, "model", json_string(changer.model.c_str()));
   json_object_set_new(obj, "serial", json_string(changer.serial.c_str()));
   json_object_set_new(obj, "drive_device_nodes", drive_device_nodes);
+  json_object_set_new(obj, "drives", drives);
   json_object_set_new(obj, "accessible", json_boolean(changer.accessible));
   json_object_set_new(obj, "accessibility_error",
                       json_string(changer.accessibility_error.c_str()));

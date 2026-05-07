@@ -57,6 +57,13 @@ storagedaemon::StorageDiscoveryReport ExampleReport()
       .model = "3573-TL",
       .serial = "CHG1",
       .drive_device_nodes = {"/dev/nst0"},
+      .drives = {{
+          .tape_device_node = "/dev/nst0",
+          .generic_device_node = "/dev/sg3",
+          .drive_element_address = 256,
+          .device_identifier = "naa.1234",
+          .source = "test",
+      }},
       .accessible = true,
   });
   return report;
@@ -79,7 +86,8 @@ TEST(SdDiscoveryCli, ParsesReportSections)
 TEST(SdDiscoveryCli, FiltersFilesystemSection)
 {
   auto filtered = storagedaemon::discoverycli::FilterDiscoveryReport(
-      ExampleReport(), storagedaemon::discoverycli::ReportSection::kFilesystems);
+      ExampleReport(),
+      storagedaemon::discoverycli::ReportSection::kFilesystems);
 
   EXPECT_EQ(filtered.filesystems.size(), 1U);
   EXPECT_TRUE(filtered.tape_devices.empty());
@@ -100,7 +108,7 @@ TEST(SdDiscoveryCli, RendersFilteredJson)
 {
   const auto json = storagedaemon::discoverycli::RenderDiscoveryReportJson(
       ExampleReport(), storagedaemon::discoverycli::ReportSection::kTape);
-  json_error_t error {};
+  json_error_t error{};
   json_t* parsed = json_loads(json.c_str(), 0, &error);
 
   ASSERT_NE(parsed, nullptr) << error.text;
@@ -108,6 +116,9 @@ TEST(SdDiscoveryCli, RendersFilteredJson)
   EXPECT_EQ(json_array_size(json_object_get(parsed, "filesystems")), 0U);
   EXPECT_EQ(json_array_size(json_object_get(parsed, "tape_devices")), 1U);
   EXPECT_EQ(json_array_size(json_object_get(parsed, "changers")), 1U);
+  json_t* changer = json_array_get(json_object_get(parsed, "changers"), 0);
+  ASSERT_NE(changer, nullptr);
+  EXPECT_EQ(json_array_size(json_object_get(changer, "drives")), 1U);
 
   json_decref(parsed);
 }
