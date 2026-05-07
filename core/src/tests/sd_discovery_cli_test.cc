@@ -569,4 +569,79 @@ TEST(SdDiscoveryCli, InvokesExecutableWithScsiFallbackTapeSection)
 
   json_decref(parsed);
 }
+
+TEST(SdDiscoveryCli, InvokesExecutableWithUnmatchedTapeSection)
+{
+  ScopedDirectory sysfs_root;
+  ScopedDirectory dev_root;
+  ScopedDirectory read_element_status_root;
+  ScopedDirectory output_root;
+
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vendor",
+                  "IBM\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/model",
+                  "ULTRIUM-HH8 \n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vpd_pg80",
+                  BuildPage80("TAPE123"));
+  std::filesystem::create_directories(
+      sysfs_root.path() / "class/scsi_tape/nst0/device/scsi_generic/sg3");
+  WriteBinaryFile(dev_root.path() / "nst0", "");
+  WriteBinaryFile(dev_root.path() / "sg3", "");
+
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/vendor",
+                  "IBM\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/model",
+                  "3573-TL\n");
+  std::filesystem::create_directories(
+      sysfs_root.path() / "class/scsi_changer/sch0/device/scsi_generic/sg4");
+  WriteBinaryFile(dev_root.path() / "sg4", "");
+  WriteBinaryFile(
+      read_element_status_root.path() / "sg4.bin",
+      BuildReadElementStatusData({BuildReadElementStatusDataTransferDescriptor(
+          257, "\x55\x66\x77\x88")}));
+
+  ScopedEnvironmentVariable sysfs_override{"BAREOS_SD_DISCOVERY_SYSFS_ROOT",
+                                           sysfs_root.path().string()};
+  ScopedEnvironmentVariable dev_override{"BAREOS_SD_DISCOVERY_DEV_ROOT",
+                                         dev_root.path().string()};
+  ScopedEnvironmentVariable read_element_status_override{
+      "BAREOS_SD_DISCOVERY_READ_ELEMENT_STATUS_ROOT",
+      read_element_status_root.path().string()};
+
+  const auto output_path = output_root.path() / "discovery.json";
+  const auto command = QuoteShellArgument(BAREOS_SD_DISCOVER_BINARY)
+                       + " --section tape > "
+                       + QuoteShellArgument(output_path.string());
+  EXPECT_EQ(ExtractExitStatus(std::system(command.c_str())), 0);
+
+  json_error_t error{};
+  json_t* parsed = json_loads(ReadTextFile(output_path).c_str(), 0, &error);
+  ASSERT_NE(parsed, nullptr) << error.text;
+  EXPECT_EQ(json_array_size(json_object_get(parsed, "changers")), 1U);
+
+  auto* changer = json_array_get(json_object_get(parsed, "changers"), 0);
+  ASSERT_NE(changer, nullptr);
+  auto* drive_device_nodes = json_object_get(changer, "drive_device_nodes");
+  ASSERT_TRUE(json_is_array(drive_device_nodes));
+  ASSERT_EQ(json_array_size(drive_device_nodes), 0U);
+
+  auto* drives = json_object_get(changer, "drives");
+  ASSERT_TRUE(json_is_array(drives));
+  ASSERT_EQ(json_array_size(drives), 1U);
+  auto* drive = json_array_get(drives, 0);
+  ASSERT_NE(drive, nullptr);
+  EXPECT_EQ(json_integer_value(json_object_get(drive, "drive_element_address")),
+            257);
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "tape_device_node")),
+               "");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "generic_device_node")),
+               "");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "device_identifier")),
+               "naa.55667788");
+  EXPECT_TRUE(json_is_null(json_object_get(drive, "serial")));
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "source")),
+               "read_element_status:unmatched");
+
+  json_decref(parsed);
+}
 #endif
