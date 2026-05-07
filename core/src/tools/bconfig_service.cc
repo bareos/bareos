@@ -45,6 +45,7 @@
 #include "stored/stored_conf.h"
 
 #include <jansson.h>
+#include <openssl/rand.h>
 
 #include <algorithm>
 #include <array>
@@ -112,6 +113,28 @@ std::string MakeDebugTimestamp()
   return stream.str();
 }
 
+uint64_t CurrentUnixTimeSeconds()
+{
+  return std::chrono::duration_cast<std::chrono::seconds>(
+             std::chrono::system_clock::now().time_since_epoch())
+      .count();
+}
+
+std::string GenerateRandomHexToken()
+{
+  std::array<unsigned char, 16> random_bytes{};
+  if (RAND_bytes(random_bytes.data(), random_bytes.size()) != 1) { return {}; }
+
+  constexpr char kHexDigits[] = "0123456789abcdef";
+  std::string token;
+  token.reserve(random_bytes.size() * 2);
+  for (unsigned char byte : random_bytes) {
+    token.push_back(kHexDigits[(byte >> 4) & 0x0f]);
+    token.push_back(kHexDigits[byte & 0x0f]);
+  }
+  return token;
+}
+
 void DebugLog(std::string_view message,
               const std::source_location& location
               = std::source_location::current())
@@ -125,6 +148,71 @@ void DebugLog(std::string_view message,
                     + std::to_string(GetJobIdFromThreadSpecificData()) + " "
                     + std::string{message};
   p_msg(__FILE__, __LINE__, -1, "%s\n", line.c_str());
+}
+
+bool IsStorageBootstrapSessionStatusTerminal(
+    StorageBootstrapSessionStatus status)
+{
+  return status == StorageBootstrapSessionStatus::kApplied
+         || status == StorageBootstrapSessionStatus::kFailed
+         || status == StorageBootstrapSessionStatus::kExpired;
+}
+
+std::optional<std::string> ValidateStorageBootstrapSessionTransition(
+    StorageBootstrapSessionStatus current,
+    StorageBootstrapSessionStatus next)
+{
+  if (current == next) { return std::nullopt; }
+  if (current == StorageBootstrapSessionStatus::kExpired) {
+    return "expired bootstrap sessions cannot transition.";
+  }
+  if (current == StorageBootstrapSessionStatus::kApplied) {
+    return "applied bootstrap sessions cannot transition.";
+  }
+  if (current == StorageBootstrapSessionStatus::kFailed) {
+    return "failed bootstrap sessions cannot transition.";
+  }
+  if (next == StorageBootstrapSessionStatus::kExpired) { return std::nullopt; }
+  if (next == StorageBootstrapSessionStatus::kFailed) { return std::nullopt; }
+
+  switch (current) {
+    case StorageBootstrapSessionStatus::kPending:
+      if (next == StorageBootstrapSessionStatus::kRegistered) {
+        return std::nullopt;
+      }
+      break;
+    case StorageBootstrapSessionStatus::kRegistered:
+      if (next == StorageBootstrapSessionStatus::kDiscovered) {
+        return std::nullopt;
+      }
+      break;
+    case StorageBootstrapSessionStatus::kDiscovered:
+      if (next == StorageBootstrapSessionStatus::kSelected) {
+        return std::nullopt;
+      }
+      break;
+    case StorageBootstrapSessionStatus::kSelected:
+      if (next == StorageBootstrapSessionStatus::kConfigReady) {
+        return std::nullopt;
+      }
+      break;
+    case StorageBootstrapSessionStatus::kConfigReady:
+      if (next == StorageBootstrapSessionStatus::kApplying) {
+        return std::nullopt;
+      }
+      break;
+    case StorageBootstrapSessionStatus::kApplying:
+      if (next == StorageBootstrapSessionStatus::kApplied) {
+        return std::nullopt;
+      }
+      break;
+    case StorageBootstrapSessionStatus::kApplied:
+    case StorageBootstrapSessionStatus::kFailed:
+    case StorageBootstrapSessionStatus::kExpired:
+      break;
+  }
+
+  return "invalid bootstrap session status transition.";
 }
 
 std::filesystem::path HomeDirectory()
@@ -11335,6 +11423,53 @@ std::optional<JobStatus> ParseJobStatus(std::string_view value)
   return std::nullopt;
 }
 
+std::string_view ToString(StorageBootstrapSessionStatus status)
+{
+  switch (status) {
+    case StorageBootstrapSessionStatus::kPending:
+      return "pending";
+    case StorageBootstrapSessionStatus::kRegistered:
+      return "registered";
+    case StorageBootstrapSessionStatus::kDiscovered:
+      return "discovered";
+    case StorageBootstrapSessionStatus::kSelected:
+      return "selected";
+    case StorageBootstrapSessionStatus::kConfigReady:
+      return "config_ready";
+    case StorageBootstrapSessionStatus::kApplying:
+      return "applying";
+    case StorageBootstrapSessionStatus::kApplied:
+      return "applied";
+    case StorageBootstrapSessionStatus::kFailed:
+      return "failed";
+    case StorageBootstrapSessionStatus::kExpired:
+      return "expired";
+  }
+
+  return "unknown";
+}
+
+std::optional<StorageBootstrapSessionStatus> ParseStorageBootstrapSessionStatus(
+    std::string_view value)
+{
+  if (value == "pending") { return StorageBootstrapSessionStatus::kPending; }
+  if (value == "registered") {
+    return StorageBootstrapSessionStatus::kRegistered;
+  }
+  if (value == "discovered") {
+    return StorageBootstrapSessionStatus::kDiscovered;
+  }
+  if (value == "selected") { return StorageBootstrapSessionStatus::kSelected; }
+  if (value == "config_ready") {
+    return StorageBootstrapSessionStatus::kConfigReady;
+  }
+  if (value == "applying") { return StorageBootstrapSessionStatus::kApplying; }
+  if (value == "applied") { return StorageBootstrapSessionStatus::kApplied; }
+  if (value == "failed") { return StorageBootstrapSessionStatus::kFailed; }
+  if (value == "expired") { return StorageBootstrapSessionStatus::kExpired; }
+  return std::nullopt;
+}
+
 OperationResult<DeploymentRecord> ServiceState::CreateDeployment(
     const DeploymentSpec& spec)
 {
@@ -18635,6 +18770,137 @@ ServiceState::GetDeploymentDiffPreview(std::string_view deployment_id) const
   return LoadDeploymentDiffPreview(repository_path);
 }
 
+OperationResult<StorageBootstrapSessionRecord>
+ServiceState::CreateStorageBootstrapSession(
+    const StorageBootstrapSessionSpec& spec)
+{
+  DebugLog("creating storage bootstrap session for deployment '"
+           + spec.deployment_id + "'");
+  if (spec.deployment_id.empty()) {
+    return {.error = "deployment_id must not be empty."};
+  }
+
+  std::lock_guard guard{mutex_};
+  if (deployments_.find(spec.deployment_id) == deployments_.end()) {
+    return {.error = "deployment id does not exist."};
+  }
+  if (ExpireStorageBootstrapSessionsLocked()) {
+    if (auto error = SaveStateLocked(); error) { return {.error = *error}; }
+  }
+
+  const auto token = GenerateRandomHexToken();
+  if (token.empty()) {
+    return {.error = "failed to generate bootstrap token."};
+  }
+
+  const auto timestamp = MakeTimestamp();
+  StorageBootstrapSessionRecord record{
+      .id = "storage-bootstrap-"
+            + std::to_string(next_storage_bootstrap_session_id_++),
+      .deployment_id = spec.deployment_id,
+      .storage_name = spec.storage_name,
+      .bootstrap_token = token,
+      .status = StorageBootstrapSessionStatus::kPending,
+      .created_at = timestamp,
+      .updated_at = timestamp,
+      .expires_at_epoch_seconds = CurrentUnixTimeSeconds() + spec.ttl_seconds,
+      .hostname = std::nullopt,
+      .fqdn = std::nullopt,
+      .last_error = std::nullopt};
+
+  storage_bootstrap_sessions_.emplace(record.id, record);
+  if (auto error = SaveStateLocked(); error) {
+    storage_bootstrap_sessions_.erase(record.id);
+    --next_storage_bootstrap_session_id_;
+    return {.error = *error};
+  }
+
+  DebugLog("created storage bootstrap session '" + record.id + "'");
+  return {.value = record};
+}
+
+std::vector<StorageBootstrapSessionRecord>
+ServiceState::ListStorageBootstrapSessions() const
+{
+  std::lock_guard guard{mutex_};
+  return SortedValues(storage_bootstrap_sessions_);
+}
+
+std::optional<StorageBootstrapSessionRecord>
+ServiceState::GetStorageBootstrapSession(std::string_view id) const
+{
+  std::lock_guard guard{mutex_};
+  auto it = storage_bootstrap_sessions_.find(std::string{id});
+  if (it == storage_bootstrap_sessions_.end()) { return std::nullopt; }
+  return it->second;
+}
+
+OperationResult<StorageBootstrapSessionRecord>
+ServiceState::AuthenticateStorageBootstrapSession(std::string_view id,
+                                                  std::string_view token)
+{
+  std::lock_guard guard{mutex_};
+  if (ExpireStorageBootstrapSessionsLocked()) {
+    if (auto error = SaveStateLocked(); error) { return {.error = *error}; }
+  }
+
+  auto it = storage_bootstrap_sessions_.find(std::string{id});
+  if (it == storage_bootstrap_sessions_.end()) {
+    return {.error = "storage bootstrap session not found."};
+  }
+  if (it->second.status == StorageBootstrapSessionStatus::kExpired) {
+    return {.error = "storage bootstrap session has expired."};
+  }
+  if (IsStorageBootstrapSessionStatusTerminal(it->second.status)) {
+    return {
+        .error
+        = "storage bootstrap session is no longer available for bootstrap."};
+  }
+  if (it->second.bootstrap_token != token) {
+    return {.error = "invalid storage bootstrap token."};
+  }
+  return {.value = it->second};
+}
+
+OperationResult<StorageBootstrapSessionRecord>
+ServiceState::TransitionStorageBootstrapSession(
+    std::string_view id,
+    StorageBootstrapSessionStatus next_status,
+    std::optional<std::string> last_error,
+    std::optional<std::string> hostname,
+    std::optional<std::string> fqdn)
+{
+  std::lock_guard guard{mutex_};
+  if (ExpireStorageBootstrapSessionsLocked()) {
+    if (auto error = SaveStateLocked(); error) { return {.error = *error}; }
+  }
+
+  auto it = storage_bootstrap_sessions_.find(std::string{id});
+  if (it == storage_bootstrap_sessions_.end()) {
+    return {.error = "storage bootstrap session not found."};
+  }
+
+  if (auto error = ValidateStorageBootstrapSessionTransition(it->second.status,
+                                                             next_status);
+      error) {
+    return {.error = *error};
+  }
+
+  it->second.status = next_status;
+  it->second.updated_at = MakeTimestamp();
+  if (hostname) { it->second.hostname = std::move(hostname); }
+  if (fqdn) { it->second.fqdn = std::move(fqdn); }
+  if (next_status == StorageBootstrapSessionStatus::kFailed) {
+    it->second.last_error
+        = last_error ? std::move(last_error) : std::optional<std::string>{};
+  } else if (last_error) {
+    it->second.last_error = std::move(last_error);
+  }
+
+  if (auto error = SaveStateLocked(); error) { return {.error = *error}; }
+  return {.value = it->second};
+}
+
 OperationResult<JobRecord> ServiceState::CreateJob(const JobSpec& spec)
 {
   DebugLog("queueing job type '" + spec.type + "'");
@@ -18783,6 +19049,27 @@ void ServiceState::MarkJobFinished(const std::string& id,
   it->second.last_error = std::move(last_error);
   it->second.logs.emplace_back(std::move(log_message));
   static_cast<void>(SaveStateLocked());
+}
+
+bool ServiceState::ExpireStorageBootstrapSessionsLocked()
+{
+  const auto now = CurrentUnixTimeSeconds();
+  bool changed = false;
+  for (auto& [_, session] : storage_bootstrap_sessions_) {
+    if (session.status == StorageBootstrapSessionStatus::kExpired
+        || IsStorageBootstrapSessionStatusTerminal(session.status)) {
+      continue;
+    }
+    if (session.expires_at_epoch_seconds > now) { continue; }
+
+    session.status = StorageBootstrapSessionStatus::kExpired;
+    session.updated_at = MakeTimestamp();
+    if (!session.last_error) {
+      session.last_error = "storage bootstrap session expired";
+    }
+    changed = true;
+  }
+  return changed;
 }
 
 void ServiceState::RequeueRunningJobsLocked()
@@ -19777,12 +20064,17 @@ std::string ServiceState::EmptyObjectJson() { return "{}\n"; }
 
 std::string ServiceState::SerializeState(
     uint64_t next_job_id,
+    uint64_t next_storage_bootstrap_session_id,
     const std::vector<DeploymentRecord>& deployments,
-    const std::vector<JobRecord>& jobs)
+    const std::vector<JobRecord>& jobs,
+    const std::vector<StorageBootstrapSessionRecord>&
+        storage_bootstrap_sessions)
 {
   std::ostringstream stream;
   stream << "{\n"
          << "  \"next_job_id\": " << next_job_id << ",\n"
+         << "  \"next_storage_bootstrap_session_id\": "
+         << next_storage_bootstrap_session_id << ",\n"
          << "  \"deployments\": [\n";
 
   for (size_t i = 0; i < deployments.size(); ++i) {
@@ -19798,6 +20090,57 @@ std::string ServiceState::SerializeState(
            << "\"\n"
            << "    }";
     if (i + 1 != deployments.size()) { stream << ","; }
+    stream << "\n";
+  }
+
+  stream << "  ],\n"
+         << "  \"storage_bootstrap_sessions\": [\n";
+
+  for (size_t i = 0; i < storage_bootstrap_sessions.size(); ++i) {
+    const auto& session = storage_bootstrap_sessions[i];
+    stream << "    {\n"
+           << "      \"id\": \"" << JsonEscape(session.id) << "\",\n"
+           << "      \"deployment_id\": \"" << JsonEscape(session.deployment_id)
+           << "\",\n"
+           << "      \"storage_name\": ";
+    if (session.storage_name) {
+      stream << "\"" << JsonEscape(*session.storage_name) << "\"";
+    } else {
+      stream << "null";
+    }
+    stream << ",\n"
+           << "      \"bootstrap_token\": \""
+           << JsonEscape(session.bootstrap_token) << "\",\n"
+           << "      \"status\": \"" << ToString(session.status) << "\",\n"
+           << "      \"created_at\": \"" << JsonEscape(session.created_at)
+           << "\",\n"
+           << "      \"updated_at\": \"" << JsonEscape(session.updated_at)
+           << "\",\n"
+           << "      \"expires_at_epoch_seconds\": "
+           << session.expires_at_epoch_seconds << ",\n"
+           << "      \"hostname\": ";
+    if (session.hostname) {
+      stream << "\"" << JsonEscape(*session.hostname) << "\"";
+    } else {
+      stream << "null";
+    }
+    stream << ",\n"
+           << "      \"fqdn\": ";
+    if (session.fqdn) {
+      stream << "\"" << JsonEscape(*session.fqdn) << "\"";
+    } else {
+      stream << "null";
+    }
+    stream << ",\n"
+           << "      \"last_error\": ";
+    if (session.last_error) {
+      stream << "\"" << JsonEscape(*session.last_error) << "\"";
+    } else {
+      stream << "null";
+    }
+    stream << "\n"
+           << "    }";
+    if (i + 1 != storage_bootstrap_sessions.size()) { stream << ","; }
     stream << "\n";
   }
 
@@ -19955,17 +20298,31 @@ std::optional<std::string> ServiceState::LoadState()
   }
 
   auto* next_job_id = json_object_get(root.get(), "next_job_id");
+  auto* next_storage_bootstrap_session_id
+      = json_object_get(root.get(), "next_storage_bootstrap_session_id");
   auto* deployments = json_object_get(root.get(), "deployments");
+  auto* storage_bootstrap_sessions
+      = json_object_get(root.get(), "storage_bootstrap_sessions");
   auto* jobs = json_object_get(root.get(), "jobs");
   if (!json_is_integer(next_job_id) || !json_is_array(deployments)
+      || (next_storage_bootstrap_session_id
+          && !json_is_integer(next_storage_bootstrap_session_id))
+      || (storage_bootstrap_sessions
+          && !json_is_array(storage_bootstrap_sessions))
       || !json_is_array(jobs)) {
     return "service state file '" + state_file.string()
            + "' is missing required fields.";
   }
 
   deployments_.clear();
+  storage_bootstrap_sessions_.clear();
   jobs_.clear();
   next_job_id_ = static_cast<uint64_t>(json_integer_value(next_job_id));
+  next_storage_bootstrap_session_id_
+      = next_storage_bootstrap_session_id
+            ? static_cast<uint64_t>(
+                  json_integer_value(next_storage_bootstrap_session_id))
+            : 1;
 
   size_t index = 0;
   json_t* entry = nullptr;
@@ -19997,6 +20354,73 @@ std::optional<std::string> ServiceState::LoadState()
         .workflow_mode = *parsed_workflow,
         .created_at = json_string_value(created_at)};
     deployments_.emplace(record.id, std::move(record));
+  }
+
+  if (storage_bootstrap_sessions) {
+    json_array_foreach(storage_bootstrap_sessions, index, entry)
+    {
+      auto* id = json_object_get(entry, "id");
+      auto* deployment_id = json_object_get(entry, "deployment_id");
+      auto* storage_name = json_object_get(entry, "storage_name");
+      auto* bootstrap_token = json_object_get(entry, "bootstrap_token");
+      auto* status = json_object_get(entry, "status");
+      auto* created_at = json_object_get(entry, "created_at");
+      auto* updated_at = json_object_get(entry, "updated_at");
+      auto* expires_at_epoch_seconds
+          = json_object_get(entry, "expires_at_epoch_seconds");
+      auto* hostname = json_object_get(entry, "hostname");
+      auto* fqdn = json_object_get(entry, "fqdn");
+      auto* last_error = json_object_get(entry, "last_error");
+
+      if (!json_is_string(id) || !json_is_string(deployment_id)
+          || (storage_name && !json_is_null(storage_name)
+              && !json_is_string(storage_name))
+          || !json_is_string(bootstrap_token) || !json_is_string(status)
+          || !json_is_string(created_at) || !json_is_string(updated_at)
+          || !json_is_integer(expires_at_epoch_seconds)
+          || (hostname && !json_is_null(hostname) && !json_is_string(hostname))
+          || (fqdn && !json_is_null(fqdn) && !json_is_string(fqdn))
+          || (last_error && !json_is_null(last_error)
+              && !json_is_string(last_error))) {
+        return "service state file '" + state_file.string()
+               + "' contains an invalid storage bootstrap session entry.";
+      }
+
+      auto parsed_status
+          = ParseStorageBootstrapSessionStatus(json_string_value(status));
+      if (!parsed_status) {
+        return "service state file '" + state_file.string()
+               + "' contains an unknown storage bootstrap session status.";
+      }
+
+      StorageBootstrapSessionRecord record{
+          .id = json_string_value(id),
+          .deployment_id = json_string_value(deployment_id),
+          .storage_name = std::nullopt,
+          .bootstrap_token = json_string_value(bootstrap_token),
+          .status = *parsed_status,
+          .created_at = json_string_value(created_at),
+          .updated_at = json_string_value(updated_at),
+          .expires_at_epoch_seconds
+          = static_cast<uint64_t>(json_integer_value(expires_at_epoch_seconds)),
+          .hostname = std::nullopt,
+          .fqdn = std::nullopt,
+          .last_error = std::nullopt};
+      if (storage_name && json_is_string(storage_name)) {
+        record.storage_name = std::string{json_string_value(storage_name)};
+      }
+      if (hostname && json_is_string(hostname)) {
+        record.hostname = std::string{json_string_value(hostname)};
+      }
+      if (fqdn && json_is_string(fqdn)) {
+        record.fqdn = std::string{json_string_value(fqdn)};
+      }
+      if (last_error && json_is_string(last_error)) {
+        record.last_error = std::string{json_string_value(last_error)};
+      }
+
+      storage_bootstrap_sessions_.emplace(record.id, std::move(record));
+    }
   }
 
   json_array_foreach(jobs, index, entry)
@@ -20090,8 +20514,13 @@ std::optional<std::string> ServiceState::LoadState()
     jobs_.emplace(record.id, std::move(record));
   }
 
+  const bool expired_sessions = ExpireStorageBootstrapSessionsLocked();
   RequeueRunningJobsLocked();
   if (next_job_id_ == 0) { next_job_id_ = 1; }
+  if (next_storage_bootstrap_session_id_ == 0) {
+    next_storage_bootstrap_session_id_ = 1;
+  }
+  if (expired_sessions) { return SaveStateLocked(); }
   return std::nullopt;
 }
 
@@ -20100,8 +20529,10 @@ std::optional<std::string> ServiceState::SaveStateLocked() const
   if (state_directory_.empty()) { return std::nullopt; }
 
   const auto state_file = state_directory_ / "service-state.json";
-  const auto content = SerializeState(next_job_id_, SortedValues(deployments_),
-                                      SortedValues(jobs_));
+  const auto content
+      = SerializeState(next_job_id_, next_storage_bootstrap_session_id_,
+                       SortedValues(deployments_), SortedValues(jobs_),
+                       SortedValues(storage_bootstrap_sessions_));
   if (!WriteFile(state_file, content)) {
     return "failed to write service state '" + state_file.string() + "'.";
   }

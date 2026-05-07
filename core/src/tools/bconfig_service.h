@@ -52,6 +52,19 @@ enum class JobStatus
   kFailed
 };
 
+enum class StorageBootstrapSessionStatus
+{
+  kPending,
+  kRegistered,
+  kDiscovered,
+  kSelected,
+  kConfigReady,
+  kApplying,
+  kApplied,
+  kFailed,
+  kExpired
+};
+
 template <typename T> struct OperationResult {
   std::optional<T> value{};
   std::string error{};
@@ -915,6 +928,26 @@ struct JobRecord {
   std::vector<std::string> logs{};
 };
 
+struct StorageBootstrapSessionSpec {
+  std::string deployment_id{};
+  std::optional<std::string> storage_name{};
+  uint64_t ttl_seconds{900};
+};
+
+struct StorageBootstrapSessionRecord {
+  std::string id{};
+  std::string deployment_id{};
+  std::optional<std::string> storage_name{};
+  std::string bootstrap_token{};
+  StorageBootstrapSessionStatus status{StorageBootstrapSessionStatus::kPending};
+  std::string created_at{};
+  std::string updated_at{};
+  uint64_t expires_at_epoch_seconds{0};
+  std::optional<std::string> hostname{};
+  std::optional<std::string> fqdn{};
+  std::optional<std::string> last_error{};
+};
+
 class RepositoryLayout {
  public:
   static std::filesystem::path ManifestPath(
@@ -946,6 +979,9 @@ std::string_view ToString(WorkflowMode mode);
 std::optional<WorkflowMode> ParseWorkflowMode(std::string_view value);
 std::string_view ToString(JobStatus status);
 std::optional<JobStatus> ParseJobStatus(std::string_view value);
+std::string_view ToString(StorageBootstrapSessionStatus status);
+std::optional<StorageBootstrapSessionStatus> ParseStorageBootstrapSessionStatus(
+    std::string_view value);
 
 class ServiceState {
  public:
@@ -1277,6 +1313,23 @@ class ServiceState {
   OperationResult<DeploymentDiffPreviewRecord> GetDeploymentDiffPreview(
       std::string_view deployment_id) const;
 
+  OperationResult<StorageBootstrapSessionRecord> CreateStorageBootstrapSession(
+      const StorageBootstrapSessionSpec& spec);
+  std::vector<StorageBootstrapSessionRecord> ListStorageBootstrapSessions()
+      const;
+  std::optional<StorageBootstrapSessionRecord> GetStorageBootstrapSession(
+      std::string_view id) const;
+  OperationResult<StorageBootstrapSessionRecord>
+  AuthenticateStorageBootstrapSession(std::string_view id,
+                                      std::string_view bootstrap_token);
+  OperationResult<StorageBootstrapSessionRecord>
+  TransitionStorageBootstrapSession(
+      std::string_view id,
+      StorageBootstrapSessionStatus next_status,
+      std::optional<std::string> last_error = std::nullopt,
+      std::optional<std::string> hostname = std::nullopt,
+      std::optional<std::string> fqdn = std::nullopt);
+
   OperationResult<JobRecord> CreateJob(const JobSpec& spec);
   std::vector<JobRecord> ListJobs() const;
   std::optional<JobRecord> GetJob(std::string_view id) const;
@@ -1291,8 +1344,11 @@ class ServiceState {
   static std::string EmptyObjectJson();
   static std::string SerializeState(
       uint64_t next_job_id,
+      uint64_t next_storage_bootstrap_session_id,
       const std::vector<DeploymentRecord>& deployments,
-      const std::vector<JobRecord>& jobs);
+      const std::vector<JobRecord>& jobs,
+      const std::vector<StorageBootstrapSessionRecord>&
+          storage_bootstrap_sessions);
   static std::optional<std::string> InitializeRepositoryLayout(
       const DeploymentRecord& record);
   void WorkerLoop();
@@ -1302,6 +1358,7 @@ class ServiceState {
                        JobStatus status,
                        std::optional<std::string> last_error,
                        std::string log_message);
+  bool ExpireStorageBootstrapSessionsLocked();
   void RequeueRunningJobsLocked();
   std::pair<JobStatus, std::vector<std::string>> ExecuteJob(
       const JobRecord& job_snapshot) const;
@@ -1314,8 +1371,11 @@ class ServiceState {
   bool stop_worker_{false};
   std::filesystem::path state_directory_{};
   std::unordered_map<std::string, DeploymentRecord> deployments_{};
+  std::unordered_map<std::string, StorageBootstrapSessionRecord>
+      storage_bootstrap_sessions_{};
   std::unordered_map<std::string, JobRecord> jobs_{};
   uint64_t next_job_id_{1};
+  uint64_t next_storage_bootstrap_session_id_{1};
 };
 
 }  // namespace bconfig::service

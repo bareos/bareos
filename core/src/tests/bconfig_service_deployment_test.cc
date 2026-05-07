@@ -666,6 +666,131 @@ TEST(BconfigService, PersistsDeploymentsAndJobsAcrossRestart)
   }
 }
 
+TEST(BconfigService, CreatesStorageBootstrapSessions)
+{
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path(),
+                                .workflow_mode = WorkflowMode::kReview});
+  ASSERT_TRUE(deployment);
+
+  auto session = state.CreateStorageBootstrapSession(
+      {.deployment_id = "prod",
+       .storage_name = std::string{"bareos-sd"},
+       .ttl_seconds = 600});
+  ASSERT_TRUE(session) << session.error;
+  EXPECT_EQ(session.value->id, "storage-bootstrap-1");
+  EXPECT_EQ(session.value->deployment_id, "prod");
+  ASSERT_TRUE(session.value->storage_name.has_value());
+  EXPECT_EQ(*session.value->storage_name, "bareos-sd");
+  EXPECT_EQ(session.value->status, StorageBootstrapSessionStatus::kPending);
+  EXPECT_EQ(session.value->bootstrap_token.size(), 32U);
+  EXPECT_GT(session.value->expires_at_epoch_seconds, 0U);
+
+  auto loaded = state.GetStorageBootstrapSession(session.value->id);
+  ASSERT_TRUE(loaded.has_value());
+  EXPECT_EQ(loaded->bootstrap_token, session.value->bootstrap_token);
+
+  auto authenticated = state.AuthenticateStorageBootstrapSession(
+      session.value->id, session.value->bootstrap_token);
+  ASSERT_TRUE(authenticated) << authenticated.error;
+  EXPECT_EQ(authenticated.value->id, session.value->id);
+
+  auto rejected = state.AuthenticateStorageBootstrapSession(session.value->id,
+                                                            "bad-token");
+  ASSERT_FALSE(rejected);
+  EXPECT_EQ(state.ListStorageBootstrapSessions().size(), 1U);
+}
+
+TEST(BconfigService, ValidatesStorageBootstrapSessionTransitions)
+{
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  auto session = state.CreateStorageBootstrapSession({.deployment_id = "prod"});
+  ASSERT_TRUE(session) << session.error;
+
+  auto invalid = state.TransitionStorageBootstrapSession(
+      session.value->id, StorageBootstrapSessionStatus::kSelected);
+  ASSERT_FALSE(invalid);
+
+  auto registered = state.TransitionStorageBootstrapSession(
+      session.value->id, StorageBootstrapSessionStatus::kRegistered,
+      std::nullopt, std::string{"sdhost"}, std::string{"sdhost.example.com"});
+  ASSERT_TRUE(registered) << registered.error;
+  EXPECT_EQ(registered.value->status,
+            StorageBootstrapSessionStatus::kRegistered);
+  ASSERT_TRUE(registered.value->hostname.has_value());
+  EXPECT_EQ(*registered.value->hostname, "sdhost");
+  ASSERT_TRUE(registered.value->fqdn.has_value());
+  EXPECT_EQ(*registered.value->fqdn, "sdhost.example.com");
+
+  auto discovered = state.TransitionStorageBootstrapSession(
+      session.value->id, StorageBootstrapSessionStatus::kDiscovered);
+  ASSERT_TRUE(discovered) << discovered.error;
+  EXPECT_EQ(discovered.value->status,
+            StorageBootstrapSessionStatus::kDiscovered);
+
+  auto failed = state.TransitionStorageBootstrapSession(
+      session.value->id, StorageBootstrapSessionStatus::kFailed,
+      std::string{"discovery upload failed"});
+  ASSERT_TRUE(failed) << failed.error;
+  EXPECT_EQ(failed.value->status, StorageBootstrapSessionStatus::kFailed);
+  ASSERT_TRUE(failed.value->last_error.has_value());
+  EXPECT_EQ(*failed.value->last_error, "discovery upload failed");
+
+  auto terminal = state.TransitionStorageBootstrapSession(
+      session.value->id, StorageBootstrapSessionStatus::kSelected);
+  ASSERT_FALSE(terminal);
+}
+
+TEST(BconfigService, PersistsAndExpiresStorageBootstrapSessionsAcrossRestart)
+{
+  ScopedDirectory state_path{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+
+  std::string bootstrap_token;
+  {
+    ServiceState state{state_path.path()};
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    auto session = state.CreateStorageBootstrapSession(
+        {.deployment_id = "prod", .ttl_seconds = 0});
+    ASSERT_TRUE(session) << session.error;
+    bootstrap_token = session.value->bootstrap_token;
+  }
+
+  {
+    ServiceState reloaded{state_path.path()};
+    auto session = reloaded.GetStorageBootstrapSession("storage-bootstrap-1");
+    ASSERT_TRUE(session.has_value());
+    EXPECT_EQ(session->status, StorageBootstrapSessionStatus::kExpired);
+
+    auto rejected = reloaded.AuthenticateStorageBootstrapSession(
+        session->id, bootstrap_token);
+    ASSERT_FALSE(rejected);
+
+    auto next = reloaded.CreateStorageBootstrapSession(
+        {.deployment_id = "prod", .ttl_seconds = 600});
+    ASSERT_TRUE(next) << next.error;
+    EXPECT_EQ(next.value->id, "storage-bootstrap-2");
+  }
+}
+
 TEST(BconfigService, ImportsDetectedComponentTreesFromConfigRoot)
 {
   ScopedDirectory source_root{MakeTempPath()};
