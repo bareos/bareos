@@ -109,6 +109,21 @@ std::string BuildPage80(std::string_view serial)
   page.append(serial);
   return page;
 }
+
+std::string BuildPage83Naa(std::string_view designator)
+{
+  std::string page;
+  page.push_back('\0');
+  page.push_back(static_cast<char>(0x83));
+  page.push_back('\0');
+  page.push_back(static_cast<char>(4 + designator.size()));
+  page.push_back(static_cast<char>(0x01));
+  page.push_back(static_cast<char>(0x03));
+  page.push_back('\0');
+  page.push_back(static_cast<char>(designator.size()));
+  page.append(designator);
+  return page;
+}
 #endif
 
 }  // namespace
@@ -156,6 +171,7 @@ TEST(SdDiscoveryProbe, SerializesStableJsonShape)
       .generic_device_node = "/dev/sg3",
       .vendor = "IBM",
       .model = "ULTRIUM-HH8",
+      .device_identifier = "naa.11223344",
       .serial = "ABC123",
       .accessible = true,
   });
@@ -163,6 +179,7 @@ TEST(SdDiscoveryProbe, SerializesStableJsonShape)
       .device_node = "/dev/sg4",
       .vendor = "IBM",
       .model = "3573-TL",
+      .device_identifier = "naa.aabbccdd",
       .serial = "CHG1",
       .drive_device_nodes = {"/dev/nst0"},
       .drives = {{
@@ -206,6 +223,11 @@ TEST(SdDiscoveryProbe, SerializesStableJsonShape)
   json_t* tape_devices = json_object_get(parsed, "tape_devices");
   ASSERT_TRUE(json_is_array(tape_devices));
   ASSERT_EQ(json_array_size(tape_devices), 1U);
+  json_t* tape_device = json_array_get(tape_devices, 0);
+  ASSERT_NE(tape_device, nullptr);
+  EXPECT_STREQ(
+      json_string_value(json_object_get(tape_device, "device_identifier")),
+      "naa.11223344");
 
   json_t* changers = json_object_get(parsed, "changers");
   ASSERT_TRUE(json_is_array(changers));
@@ -213,6 +235,8 @@ TEST(SdDiscoveryProbe, SerializesStableJsonShape)
 
   json_t* changer = json_array_get(changers, 0);
   ASSERT_NE(changer, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(changer, "device_identifier")),
+               "naa.aabbccdd");
   json_t* drives = json_object_get(changer, "drives");
   ASSERT_TRUE(json_is_array(drives));
   ASSERT_EQ(json_array_size(drives), 1U);
@@ -254,6 +278,8 @@ TEST(SdDiscoveryProbe, ProbesTapeAndChangerSerialsFromLinuxSysfs)
                   "ULTRIUM-HH8 \n");
   WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vpd_pg80",
                   BuildPage80("TAPE123"));
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vpd_pg83",
+                  BuildPage83Naa("\x11\x22\x33\x44"));
   std::filesystem::create_directories(
       sysfs_root.path() / "class/scsi_tape/nst0/device/scsi_generic/sg3");
   WriteBinaryFile(dev_root.path() / "nst0", "");
@@ -265,6 +291,8 @@ TEST(SdDiscoveryProbe, ProbesTapeAndChangerSerialsFromLinuxSysfs)
                   "3573-TL\n");
   WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/vpd_pg80",
                   BuildPage80("CHANGER42"));
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/vpd_pg83",
+                  BuildPage83Naa("\xaa\xbb\xcc\xdd"));
   std::filesystem::create_directories(
       sysfs_root.path() / "class/scsi_changer/sch0/device/scsi_generic/sg4");
   WriteBinaryFile(dev_root.path() / "sg4", "");
@@ -283,6 +311,8 @@ TEST(SdDiscoveryProbe, ProbesTapeAndChangerSerialsFromLinuxSysfs)
             (dev_root.path() / "sg3").string());
   EXPECT_EQ(report.tape_devices[0].vendor, "IBM");
   EXPECT_EQ(report.tape_devices[0].model, "ULTRIUM-HH8");
+  ASSERT_TRUE(report.tape_devices[0].device_identifier);
+  EXPECT_EQ(*report.tape_devices[0].device_identifier, "naa.11223344");
   EXPECT_EQ(report.tape_devices[0].serial, "TAPE123");
   EXPECT_TRUE(report.tape_devices[0].accessible);
 
@@ -290,6 +320,8 @@ TEST(SdDiscoveryProbe, ProbesTapeAndChangerSerialsFromLinuxSysfs)
   EXPECT_EQ(report.changers[0].device_node, (dev_root.path() / "sg4").string());
   EXPECT_EQ(report.changers[0].vendor, "IBM");
   EXPECT_EQ(report.changers[0].model, "3573-TL");
+  ASSERT_TRUE(report.changers[0].device_identifier);
+  EXPECT_EQ(*report.changers[0].device_identifier, "naa.aabbccdd");
   EXPECT_EQ(report.changers[0].serial, "CHANGER42");
   EXPECT_TRUE(report.changers[0].accessible);
 }

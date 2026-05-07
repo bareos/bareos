@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <string_view>
 #include <set>
 
 #include <jansson.h>
@@ -245,6 +246,100 @@ std::optional<std::string> ReadScsiSerial(
   return std::nullopt;
 }
 
+std::string ToLowerHex(std::string_view bytes)
+{
+  constexpr char kHexDigits[] = "0123456789abcdef";
+
+  std::string encoded;
+  encoded.reserve(bytes.size() * 2);
+  for (unsigned char byte : bytes) {
+    encoded.push_back(kHexDigits[(byte >> 4) & 0x0f]);
+    encoded.push_back(kHexDigits[byte & 0x0f]);
+  }
+  return encoded;
+}
+
+std::optional<std::string> FormatScsiDeviceIdentifier(uint8_t designator_type,
+                                                      uint8_t code_set,
+                                                      std::string_view data)
+{
+  switch (designator_type) {
+    case 0x03:
+      return std::string{"naa."} + ToLowerHex(data);
+    case 0x02:
+      return std::string{"eui."} + ToLowerHex(data);
+    case 0x01:
+      if (code_set == 0x02 || code_set == 0x03) {
+        auto value = TrimWhitespaceAndNuls(std::string{data});
+        if (!value.empty()) { return std::string{"t10."} + value; }
+      }
+      break;
+    case 0x08:
+      if (code_set == 0x02 || code_set == 0x03) {
+        auto value = TrimWhitespaceAndNuls(std::string{data});
+        if (!value.empty()) { return std::string{"scsi-name."} + value; }
+      }
+      break;
+    default:
+      break;
+  }
+
+  return std::nullopt;
+}
+
+std::optional<std::string> ParseScsiPage83DeviceIdentifier(
+    std::string_view page)
+{
+  if (page.size() < 4) { return std::nullopt; }
+
+  const auto length
+      = (static_cast<uint16_t>(static_cast<unsigned char>(page[2])) << 8)
+        | static_cast<uint16_t>(static_cast<unsigned char>(page[3]));
+  if (page.size() < static_cast<std::size_t>(4 + length)) {
+    return std::nullopt;
+  }
+
+  std::optional<std::string> fallback{};
+  std::size_t offset = 4;
+  const auto end = static_cast<std::size_t>(4 + length);
+  while (offset + 4 <= end) {
+    const auto descriptor_length = static_cast<std::size_t>(
+        static_cast<unsigned char>(page[offset + 3]));
+    const auto descriptor_end = offset + 4 + descriptor_length;
+    if (descriptor_end > end) { break; }
+
+    const auto code_set
+        = static_cast<uint8_t>(static_cast<unsigned char>(page[offset]) & 0x0f);
+    const auto association = static_cast<uint8_t>(
+        (static_cast<unsigned char>(page[offset + 1]) >> 4) & 0x03);
+    const auto designator_type = static_cast<uint8_t>(
+        static_cast<unsigned char>(page[offset + 1]) & 0x0f);
+    if (association == 0) {
+      auto identifier = FormatScsiDeviceIdentifier(
+          designator_type, code_set,
+          std::string_view{page.data() + offset + 4, descriptor_length});
+      if (identifier) {
+        if (designator_type == 0x03 || designator_type == 0x02) {
+          return identifier;
+        }
+        if (!fallback) { fallback = std::move(identifier); }
+      }
+    }
+
+    offset = descriptor_end;
+  }
+
+  return fallback;
+}
+
+std::optional<std::string> ReadScsiDeviceIdentifier(
+    const std::filesystem::path& device_path)
+{
+  auto page83 = ReadBinaryFile(device_path / "vpd_pg83");
+  if (!page83) { return std::nullopt; }
+  return ParseScsiPage83DeviceIdentifier(*page83);
+}
+
 std::string ResolveGenericDeviceNode(const std::filesystem::path& device_path)
 {
   for (const auto& child_directory :
@@ -288,6 +383,7 @@ std::vector<TapeDeviceInfo> ProbeTapeDevicesLinux()
     if (auto model = ReadTextFile(device_path / "model")) {
       tape_device.model = *model;
     }
+    tape_device.device_identifier = ReadScsiDeviceIdentifier(device_path);
     if (auto serial = ReadScsiSerial(device_path)) {
       tape_device.serial = *serial;
     }
@@ -331,6 +427,7 @@ std::vector<ChangerInfo> ProbeChangersLinux()
     if (auto model = ReadTextFile(device_path / "model")) {
       changer.model = *model;
     }
+    changer.device_identifier = ReadScsiDeviceIdentifier(device_path);
     if (auto serial = ReadScsiSerial(device_path)) { changer.serial = *serial; }
 
     changer.accessible
@@ -514,6 +611,9 @@ json_t* JsonFilesystemCandidate(const FilesystemCandidate& candidate)
 
 json_t* JsonTapeDeviceInfo(const TapeDeviceInfo& tape_device)
 {
+  auto json_string_or_null = [](const std::optional<std::string>& value) {
+    return value ? json_string(value->c_str()) : json_null();
+  };
   json_t* obj = json_object();
   json_object_set_new(obj, "device_node",
                       json_string(tape_device.device_node.c_str()));
@@ -521,6 +621,8 @@ json_t* JsonTapeDeviceInfo(const TapeDeviceInfo& tape_device)
                       json_string(tape_device.generic_device_node.c_str()));
   json_object_set_new(obj, "vendor", json_string(tape_device.vendor.c_str()));
   json_object_set_new(obj, "model", json_string(tape_device.model.c_str()));
+  json_object_set_new(obj, "device_identifier",
+                      json_string_or_null(tape_device.device_identifier));
   json_object_set_new(obj, "serial", json_string(tape_device.serial.c_str()));
   json_object_set_new(obj, "accessible", json_boolean(tape_device.accessible));
   json_object_set_new(obj, "accessibility_error",
@@ -563,6 +665,8 @@ json_t* JsonChangerInfo(const ChangerInfo& changer)
                       json_string(changer.device_node.c_str()));
   json_object_set_new(obj, "vendor", json_string(changer.vendor.c_str()));
   json_object_set_new(obj, "model", json_string(changer.model.c_str()));
+  json_object_set_new(obj, "device_identifier",
+                      json_string_or_null(changer.device_identifier));
   json_object_set_new(obj, "serial", json_string(changer.serial.c_str()));
   json_object_set_new(obj, "drive_device_nodes", drive_device_nodes);
   json_object_set_new(obj, "drives", drives);

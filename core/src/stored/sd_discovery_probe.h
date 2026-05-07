@@ -55,6 +55,7 @@ struct TapeDeviceInfo {
   std::string generic_device_node{};
   std::string vendor{};
   std::string model{};
+  std::optional<std::string> device_identifier{};
   std::string serial{};
   bool accessible{false};
   std::string accessibility_error{};
@@ -73,6 +74,7 @@ struct ChangerInfo {
   std::string device_node{};
   std::string vendor{};
   std::string model{};
+  std::optional<std::string> device_identifier{};
   std::string serial{};
   std::vector<std::string> drive_device_nodes{};
   std::vector<ChangerDriveInfo> drives{};

@@ -48,6 +48,7 @@ storagedaemon::StorageDiscoveryReport ExampleReport()
       .generic_device_node = "/dev/sg3",
       .vendor = "IBM",
       .model = "ULTRIUM-HH8",
+      .device_identifier = "naa.11223344",
       .serial = "ABC123",
       .accessible = true,
   });
@@ -55,6 +56,7 @@ storagedaemon::StorageDiscoveryReport ExampleReport()
       .device_node = "/dev/sg4",
       .vendor = "IBM",
       .model = "3573-TL",
+      .device_identifier = "naa.aabbccdd",
       .serial = "CHG1",
       .drive_device_nodes = {"/dev/nst0"},
       .drives = {{
@@ -116,8 +118,16 @@ TEST(SdDiscoveryCli, RendersFilteredJson)
   EXPECT_EQ(json_array_size(json_object_get(parsed, "filesystems")), 0U);
   EXPECT_EQ(json_array_size(json_object_get(parsed, "tape_devices")), 1U);
   EXPECT_EQ(json_array_size(json_object_get(parsed, "changers")), 1U);
+  json_t* tape_device
+      = json_array_get(json_object_get(parsed, "tape_devices"), 0);
+  ASSERT_NE(tape_device, nullptr);
+  EXPECT_STREQ(
+      json_string_value(json_object_get(tape_device, "device_identifier")),
+      "naa.11223344");
   json_t* changer = json_array_get(json_object_get(parsed, "changers"), 0);
   ASSERT_NE(changer, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(changer, "device_identifier")),
+               "naa.aabbccdd");
   json_t* drives = json_object_get(changer, "drives");
   ASSERT_TRUE(json_is_array(drives));
   EXPECT_EQ(json_array_size(drives), 1U);
