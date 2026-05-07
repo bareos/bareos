@@ -1048,8 +1048,17 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
                                                "drive_element_address")),
             258);
   EXPECT_STREQ(json_string_value(json_object_get(loaded_scsi_fallback_drive,
+                                                 "tape_device_node")),
+               "/dev/nst0");
+  EXPECT_STREQ(json_string_value(json_object_get(loaded_scsi_fallback_drive,
+                                                 "generic_device_node")),
+               "/dev/sg3");
+  EXPECT_STREQ(json_string_value(json_object_get(loaded_scsi_fallback_drive,
                                                  "device_identifier")),
                "naa.88776655");
+  EXPECT_STREQ(
+      json_string_value(json_object_get(loaded_scsi_fallback_drive, "serial")),
+      "TAPE123");
   EXPECT_STREQ(
       json_string_value(json_object_get(loaded_scsi_fallback_drive, "source")),
       "read_element_status:scsi_address");
