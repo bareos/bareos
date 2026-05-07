@@ -78,6 +78,12 @@ if(NOT client-only)
   target_link_libraries(bdedupestimate Bareos::Lib Bareos::LibSD CLI11::CLI11)
   list(APPEND TOOLS_SBIN bdedupestimate)
 
+  add_executable(bareos-sd-discover bareos_sd_discover.cc sd_discovery_cli.cc)
+  target_link_libraries(
+    bareos-sd-discover Bareos::Lib CLI11::CLI11 Bareos::LibSD
+  )
+  list(APPEND TOOLS_SBIN bareos-sd-discover)
+
   if(NOT HAVE_WIN32)
     add_executable(
       dedup-conf dedup_conf.cc ../stored/backends/dedupable/volume.cc

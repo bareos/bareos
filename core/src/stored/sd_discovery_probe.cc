@@ -96,7 +96,7 @@ std::string DetectFqdn(const std::string& hostname)
   if (hostname.empty()) { return {}; }
 
 #ifdef HAVE_GETADDRINFO
-  struct addrinfo hints {};
+  struct addrinfo hints{};
   hints.ai_family = AF_UNSPEC;
   hints.ai_flags = AI_CANONNAME;
 
@@ -145,12 +145,12 @@ void SortAndDeduplicate(std::vector<FilesystemCandidate>& filesystems)
             });
 
   filesystems.erase(
-      std::unique(filesystems.begin(), filesystems.end(),
-                  [](const FilesystemCandidate& lhs,
-                     const FilesystemCandidate& rhs) {
-                    return lhs.mountpoint == rhs.mountpoint
-                           && lhs.filesystem_type == rhs.filesystem_type;
-                  }),
+      std::unique(
+          filesystems.begin(), filesystems.end(),
+          [](const FilesystemCandidate& lhs, const FilesystemCandidate& rhs) {
+            return lhs.mountpoint == rhs.mountpoint
+                   && lhs.filesystem_type == rhs.filesystem_type;
+          }),
       filesystems.end());
 }
 
@@ -174,7 +174,7 @@ std::vector<FilesystemCandidate> ProbeFilesystemCandidatesLinux()
         entry->mnt_dir ? std::string(entry->mnt_dir) : std::string{});
     if (!seen_mountpoints.insert(mountpoint).second) { continue; }
 
-    struct statvfs stats {};
+    struct statvfs stats{};
     if (statvfs(mountpoint.c_str(), &stats) != 0) { continue; }
 
     const uint64_t total_bytes
@@ -233,9 +233,9 @@ std::vector<FilesystemCandidate> ProbeFilesystemCandidatesWindows()
   for (const char* drive = drives; *drive != '\0';
        drive += std::strlen(drive) + 1) {
     char filesystem_type[MAX_PATH]{};
-    ULARGE_INTEGER free_bytes_available {};
-    ULARGE_INTEGER total_bytes {};
-    ULARGE_INTEGER free_bytes {};
+    ULARGE_INTEGER free_bytes_available{};
+    ULARGE_INTEGER total_bytes{};
+    ULARGE_INTEGER free_bytes{};
 
     if (!GetVolumeInformationA(drive, nullptr, 0, nullptr, nullptr, nullptr,
                                filesystem_type, sizeof(filesystem_type))) {
@@ -247,9 +247,9 @@ std::vector<FilesystemCandidate> ProbeFilesystemCandidatesWindows()
     }
 
     const bool writable = (GetDriveTypeA(drive) != DRIVE_CDROM);
-    filesystems.emplace_back(BuildFilesystemCandidate(
-        drive, filesystem_type, total_bytes.QuadPart, free_bytes.QuadPart,
-        writable));
+    filesystems.emplace_back(
+        BuildFilesystemCandidate(drive, filesystem_type, total_bytes.QuadPart,
+                                 free_bytes.QuadPart, writable));
   }
 
   SortAndDeduplicate(filesystems);
@@ -307,8 +307,7 @@ json_t* JsonFilesystemCandidate(const FilesystemCandidate& candidate)
                       json_string(candidate.mountpoint.c_str()));
   json_object_set_new(obj, "filesystem_type",
                       json_string(candidate.filesystem_type.c_str()));
-  json_object_set_new(obj, "total_bytes",
-                      json_integer(candidate.total_bytes));
+  json_object_set_new(obj, "total_bytes", json_integer(candidate.total_bytes));
   json_object_set_new(obj, "free_bytes", json_integer(candidate.free_bytes));
   json_object_set_new(obj, "writable", json_boolean(candidate.writable));
   json_object_set_new(obj, "local", json_boolean(candidate.local));
@@ -320,24 +319,61 @@ json_t* JsonFilesystemCandidate(const FilesystemCandidate& candidate)
   return obj;
 }
 
+json_t* JsonTapeDeviceInfo(const TapeDeviceInfo& tape_device)
+{
+  json_t* obj = json_object();
+  json_object_set_new(obj, "device_node",
+                      json_string(tape_device.device_node.c_str()));
+  json_object_set_new(obj, "generic_device_node",
+                      json_string(tape_device.generic_device_node.c_str()));
+  json_object_set_new(obj, "vendor", json_string(tape_device.vendor.c_str()));
+  json_object_set_new(obj, "model", json_string(tape_device.model.c_str()));
+  json_object_set_new(obj, "serial", json_string(tape_device.serial.c_str()));
+  json_object_set_new(obj, "accessible", json_boolean(tape_device.accessible));
+  json_object_set_new(obj, "accessibility_error",
+                      json_string(tape_device.accessibility_error.c_str()));
+  return obj;
+}
+
+json_t* JsonChangerInfo(const ChangerInfo& changer)
+{
+  json_t* drive_device_nodes = json_array();
+  for (const auto& drive_device_node : changer.drive_device_nodes) {
+    json_array_append_new(drive_device_nodes,
+                          json_string(drive_device_node.c_str()));
+  }
+
+  json_t* obj = json_object();
+  json_object_set_new(obj, "device_node",
+                      json_string(changer.device_node.c_str()));
+  json_object_set_new(obj, "vendor", json_string(changer.vendor.c_str()));
+  json_object_set_new(obj, "model", json_string(changer.model.c_str()));
+  json_object_set_new(obj, "serial", json_string(changer.serial.c_str()));
+  json_object_set_new(obj, "drive_device_nodes", drive_device_nodes);
+  json_object_set_new(obj, "accessible", json_boolean(changer.accessible));
+  json_object_set_new(obj, "accessibility_error",
+                      json_string(changer.accessibility_error.c_str()));
+  return obj;
+}
+
 }  // namespace
 
 bool IsFilesystemTypeIgnoredForStorageDiscovery(
     std::string_view filesystem_type)
 {
-  return InList(filesystem_type,
-                {"proc", "procfs", "sysfs", "tmpfs", "devtmpfs", "devfs",
-                 "devpts", "mqueue", "tracefs", "securityfs", "pstore",
-                 "efivarfs", "cgroup", "cgroup2", "rpc_pipefs",
-                 "binfmt_misc", "fusectl", "debugfs", "nsfs"});
+  return InList(
+      filesystem_type,
+      {"proc", "procfs", "sysfs", "tmpfs", "devtmpfs", "devfs", "devpts",
+       "mqueue", "tracefs", "securityfs", "pstore", "efivarfs", "cgroup",
+       "cgroup2", "rpc_pipefs", "binfmt_misc", "fusectl", "debugfs", "nsfs"});
 }
 
 bool IsLocalFilesystemTypeForStorageDiscovery(std::string_view filesystem_type)
 {
-  return !InList(filesystem_type, {"nfs",   "nfs4",  "cifs",   "smbfs",
-                                   "sshfs", "glusterfs", "ceph",   "cephfs",
-                                   "gpfs",  "lustre", "afs",    "9p",
-                                   "davfs", "davfs2", "coda"});
+  return !InList(
+      filesystem_type,
+      {"nfs", "nfs4", "cifs", "smbfs", "sshfs", "glusterfs", "ceph", "cephfs",
+       "gpfs", "lustre", "afs", "9p", "davfs", "davfs2", "coda"});
 }
 
 std::string RecommendedArchivePathForMountpoint(std::string_view mountpoint)
@@ -387,8 +423,17 @@ std::string StorageDiscoveryReportToJson(const StorageDiscoveryReport& report)
   }
   json_object_set_new(obj, "filesystems", filesystems);
 
-  json_object_set_new(obj, "tape_devices", json_array());
-  json_object_set_new(obj, "changers", json_array());
+  json_t* tape_devices = json_array();
+  for (const auto& tape_device : report.tape_devices) {
+    json_array_append_new(tape_devices, JsonTapeDeviceInfo(tape_device));
+  }
+  json_object_set_new(obj, "tape_devices", tape_devices);
+
+  json_t* changers = json_array();
+  for (const auto& changer : report.changers) {
+    json_array_append_new(changers, JsonChangerInfo(changer));
+  }
+  json_object_set_new(obj, "changers", changers);
 
   char* raw = json_dumps(obj, JSON_COMPACT);
   json_decref(obj);

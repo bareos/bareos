@@ -247,6 +247,12 @@ if(NOT client-only)
     ADDITIONAL_SOURCES ../stored/sd_discovery_probe.cc
     LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   )
+  bareos_add_test(
+    sd_discovery_cli_test
+    ADDITIONAL_SOURCES ../tools/sd_discovery_cli.cc
+                       ../stored/sd_discovery_probe.cc
+    LINK_LIBRARIES Bareos::Lib GTest::gtest_main
+  )
 
   bareos_add_test(
     configure LINK_LIBRARIES testing_common Bareos::Dir Bareos::Findlib

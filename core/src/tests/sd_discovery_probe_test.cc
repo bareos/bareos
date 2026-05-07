@@ -63,9 +63,25 @@ TEST(SdDiscoveryProbe, SerializesStableJsonShape)
       .suitable_for_archive = true,
       .recommended_archive_path = "/srv/storage/bareos/storage",
   });
+  report.tape_devices.push_back({
+      .device_node = "/dev/nst0",
+      .generic_device_node = "/dev/sg3",
+      .vendor = "IBM",
+      .model = "ULTRIUM-HH8",
+      .serial = "ABC123",
+      .accessible = true,
+  });
+  report.changers.push_back({
+      .device_node = "/dev/sg4",
+      .vendor = "IBM",
+      .model = "3573-TL",
+      .serial = "CHG1",
+      .drive_device_nodes = {"/dev/nst0"},
+      .accessible = true,
+  });
 
   const auto json = storagedaemon::StorageDiscoveryReportToJson(report);
-  json_error_t error {};
+  json_error_t error{};
   json_t* parsed = json_loads(json.c_str(), 0, &error);
 
   ASSERT_NE(parsed, nullptr) << error.text;
@@ -85,16 +101,20 @@ TEST(SdDiscoveryProbe, SerializesStableJsonShape)
 
   json_t* deduplication = json_object_get(filesystem, "deduplication");
   ASSERT_TRUE(json_is_object(deduplication));
-  EXPECT_STREQ(
-      json_string_value(json_object_get(deduplication, "support")), "unknown");
-  EXPECT_TRUE(
-      json_is_null(json_object_get(deduplication, "block_size_bytes")));
+  EXPECT_STREQ(json_string_value(json_object_get(deduplication, "support")),
+               "unknown");
+  EXPECT_TRUE(json_is_null(json_object_get(deduplication, "block_size_bytes")));
   EXPECT_TRUE(json_is_null(json_object_get(deduplication, "mode")));
   EXPECT_TRUE(json_is_null(json_object_get(deduplication, "source")));
   EXPECT_TRUE(json_is_null(json_object_get(deduplication, "note")));
 
-  EXPECT_TRUE(json_is_array(json_object_get(parsed, "tape_devices")));
-  EXPECT_TRUE(json_is_array(json_object_get(parsed, "changers")));
+  json_t* tape_devices = json_object_get(parsed, "tape_devices");
+  ASSERT_TRUE(json_is_array(tape_devices));
+  ASSERT_EQ(json_array_size(tape_devices), 1U);
+
+  json_t* changers = json_object_get(parsed, "changers");
+  ASSERT_TRUE(json_is_array(changers));
+  ASSERT_EQ(json_array_size(changers), 1U);
 
   json_decref(parsed);
 }
