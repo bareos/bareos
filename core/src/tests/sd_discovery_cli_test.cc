@@ -490,6 +490,44 @@ TEST(SdDiscoveryCli, RendersByIdTapeNodesInJson)
   json_decref(parsed);
 }
 
+TEST(SdDiscoveryCli, RendersByIdSerialFallbackInJson)
+{
+  const auto json = storagedaemon::discoverycli::RenderDiscoveryReportJson(
+      ExampleByIdSerialFallbackReport(),
+      storagedaemon::discoverycli::ReportSection::kTape);
+  json_error_t error{};
+  json_t* parsed = json_loads(json.c_str(), 0, &error);
+
+  ASSERT_NE(parsed, nullptr) << error.text;
+  auto* tape_device
+      = json_array_get(json_object_get(parsed, "tape_devices"), 0);
+  ASSERT_NE(tape_device, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(tape_device, "device_node")),
+               "/dev/tape/by-id/scsi-123456-nst");
+
+  auto* changer = json_array_get(json_object_get(parsed, "changers"), 0);
+  ASSERT_NE(changer, nullptr);
+  auto* drive_device_nodes = json_object_get(changer, "drive_device_nodes");
+  ASSERT_TRUE(json_is_array(drive_device_nodes));
+  ASSERT_EQ(json_array_size(drive_device_nodes), 1U);
+  EXPECT_STREQ(json_string_value(json_array_get(drive_device_nodes, 0)),
+               "/dev/tape/by-id/scsi-123456-nst");
+
+  auto* drives = json_object_get(changer, "drives");
+  ASSERT_TRUE(json_is_array(drives));
+  ASSERT_EQ(json_array_size(drives), 1U);
+  auto* drive = json_array_get(drives, 0);
+  ASSERT_NE(drive, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "tape_device_node")),
+               "/dev/tape/by-id/scsi-123456-nst");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "source")),
+               "read_element_status:serial");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "device_identifier")),
+               "t10.HPE     Ultrium 9-SCSI  4E77FE415F");
+
+  json_decref(parsed);
+}
+
 TEST(SdDiscoveryCli, RendersUnmatchedDriveMetadataInJson)
 {
   const auto json = storagedaemon::discoverycli::RenderDiscoveryReportJson(
