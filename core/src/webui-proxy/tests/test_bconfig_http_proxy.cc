@@ -113,7 +113,7 @@ class FakeUpstream {
       http::read(socket, buffer, request, ec);
       if (ec) { continue; }
 
-      last_method_ = request.method_string();
+      last_method_ = std::string{request.method_string()};
       last_target_ = std::string{request.target()};
       last_body_ = request.body();
 
