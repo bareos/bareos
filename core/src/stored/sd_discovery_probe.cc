@@ -444,14 +444,79 @@ std::string TapeDevicePhysicalKey(const TapeDeviceInfo& tape_device)
   return "device:" + tape_device.device_node;
 }
 
-int TapeDeviceAliasPreference(const TapeDeviceInfo& tape_device)
+std::optional<TapeDeviceAliasInfo> ResolveTapeDeviceAlias(
+    const std::string& device_node)
 {
-  auto alias = ParseTapeDeviceAlias(tape_device.device_node);
+  auto alias = ParseTapeDeviceAlias(device_node);
+  if (alias) { return alias; }
+
+  std::error_code error_code;
+  auto resolved = std::filesystem::weakly_canonical(
+      std::filesystem::path{device_node}, error_code);
+  if (error_code) { return std::nullopt; }
+
+  return ParseTapeDeviceAlias(resolved.filename().string());
+}
+
+bool IsTapeByIdDeviceNode(const std::string& device_node)
+{
+  return std::filesystem::path{device_node}.parent_path()
+         == (DiscoveryDeviceRoot() / "tape" / "by-id");
+}
+
+int TapeDeviceAliasBasePreference(const std::string& device_node)
+{
+  auto alias = ResolveTapeDeviceAlias(device_node);
   if (!alias) { return 4; }
   if (alias->nonrewinding && alias->suffix.empty()) { return 0; }
   if (!alias->nonrewinding && alias->suffix.empty()) { return 1; }
   if (alias->nonrewinding) { return 2; }
   return 3;
+}
+
+std::optional<std::filesystem::path> ResolveTapeByIdDeviceNode(
+    const std::filesystem::path& raw_device_node)
+{
+  const auto by_id_root = DiscoveryDeviceRoot() / "tape" / "by-id";
+  std::error_code error_code;
+  if (!std::filesystem::is_directory(by_id_root, error_code)) {
+    return std::nullopt;
+  }
+
+  auto raw_canonical
+      = std::filesystem::weakly_canonical(raw_device_node, error_code);
+  if (error_code) { return std::nullopt; }
+
+  std::vector<std::filesystem::path> candidates;
+  for (const auto& entry : std::filesystem::directory_iterator(by_id_root)) {
+    const auto symlink_status = entry.symlink_status(error_code);
+    if (error_code || !std::filesystem::is_symlink(symlink_status)) {
+      error_code.clear();
+      continue;
+    }
+
+    auto resolved = std::filesystem::weakly_canonical(entry.path(), error_code);
+    if (error_code) {
+      error_code.clear();
+      continue;
+    }
+
+    if (resolved == raw_canonical) { candidates.emplace_back(entry.path()); }
+  }
+
+  if (candidates.empty()) { return std::nullopt; }
+
+  std::sort(
+      candidates.begin(), candidates.end(),
+      [](const std::filesystem::path& lhs, const std::filesystem::path& rhs) {
+        const auto lhs_preference = TapeDeviceAliasBasePreference(lhs.string());
+        const auto rhs_preference = TapeDeviceAliasBasePreference(rhs.string());
+        if (lhs_preference != rhs_preference) {
+          return lhs_preference < rhs_preference;
+        }
+        return lhs.filename().string() < rhs.filename().string();
+      });
+  return candidates.front();
 }
 
 void SortAndDeduplicateTapeDevices(std::vector<TapeDeviceInfo>& tape_devices)
@@ -462,11 +527,17 @@ void SortAndDeduplicateTapeDevices(std::vector<TapeDeviceInfo>& tape_devices)
               const auto rhs_key = TapeDevicePhysicalKey(rhs);
               if (lhs_key != rhs_key) { return lhs_key < rhs_key; }
 
-              const auto lhs_preference = TapeDeviceAliasPreference(lhs);
-              const auto rhs_preference = TapeDeviceAliasPreference(rhs);
+              const auto lhs_preference
+                  = TapeDeviceAliasBasePreference(lhs.device_node);
+              const auto rhs_preference
+                  = TapeDeviceAliasBasePreference(rhs.device_node);
               if (lhs_preference != rhs_preference) {
                 return lhs_preference < rhs_preference;
               }
+
+              const auto lhs_by_id = IsTapeByIdDeviceNode(lhs.device_node);
+              const auto rhs_by_id = IsTapeByIdDeviceNode(rhs.device_node);
+              if (lhs_by_id != rhs_by_id) { return lhs_by_id; }
 
               return lhs.device_node < rhs.device_node;
             });
@@ -893,7 +964,12 @@ std::vector<TapeDeviceInfo> ProbeTapeDevicesLinux()
   for (const auto& entry : std::filesystem::directory_iterator(class_root)) {
     TapeDeviceInfo tape_device;
     const auto class_name = entry.path().filename().string();
-    tape_device.device_node = (DiscoveryDeviceRoot() / class_name).string();
+    const auto raw_device_node = DiscoveryDeviceRoot() / class_name;
+    if (auto by_id_node = ResolveTapeByIdDeviceNode(raw_device_node)) {
+      tape_device.device_node = by_id_node->string();
+    } else {
+      tape_device.device_node = raw_device_node.string();
+    }
 
     const auto device_path = entry.path() / "device";
     tape_device.generic_device_node = ResolveGenericDeviceNode(device_path);
