@@ -237,6 +237,11 @@ if(NOT client-only)
   bareos_add_test(
     cli_test LINK_LIBRARIES Bareos::Lib CLI11::CLI11 GTest::gtest_main
   )
+  bareos_add_test(
+    sd_bootstrap_test
+    ADDITIONAL_SOURCES ../stored/sd_bootstrap.cc
+    LINK_LIBRARIES Bareos::Lib CLI11::CLI11 GTest::gtest_main
+  )
 
   bareos_add_test(
     configure LINK_LIBRARIES testing_common Bareos::Dir Bareos::Findlib

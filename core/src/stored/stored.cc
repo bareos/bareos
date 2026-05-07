@@ -44,6 +44,7 @@
 #include "stored/label.h"
 #include "stored/ndmp_tape.h"
 #include "stored/sd_backends.h"
+#include "stored/sd_bootstrap.h"
 #include "stored/sd_device_control_record.h"
 #include "stored/sd_stats.h"
 #include "stored/socket_server.h"
@@ -167,6 +168,9 @@ int main(int argc, char* argv[])
 
   AddVerboseOption(sd_app);
 
+  BootstrapModeOptions bootstrap_mode;
+  auto bootstrap_option_handles = AddBootstrapOptions(sd_app, bootstrap_mode);
+
   bool export_config = false;
   CLI::Option* xc
       = sd_app.add_flag("--xc,--export-config", export_config,
@@ -185,7 +189,30 @@ int main(int argc, char* argv[])
 
   AddDeprecatedExportOptionsHelp(sd_app);
 
+  bootstrap_option_handles.discovery->excludes(xc);
+  bootstrap_option_handles.discovery->excludes(xs);
+  bootstrap_option_handles.discovery->excludes(testconfig_option);
+
   ParseBareosApp(sd_app, argc, argv);
+
+  if (auto bootstrap_error = ValidateBootstrapOptions(bootstrap_mode);
+      bootstrap_error) {
+    Emsg1(M_ERROR_TERM, 0, T_("%s\n"), bootstrap_error->c_str());
+  }
+
+  if (bootstrap_mode.enabled) {
+    if (configfile != nullptr) {
+      Emsg0(M_ERROR_TERM, 0,
+            T_("--discovery cannot be combined with --config.\n"));
+    }
+#ifndef HAVE_WIN32
+    if (!pidfile_path.empty()) {
+      Emsg0(M_ERROR_TERM, 0,
+            T_("--discovery cannot be combined with --pid-file.\n"));
+    }
+#endif
+    return RunStorageDaemonBootstrap(bootstrap_mode);
+  }
 
   if (!no_signals) { InitSignals(TerminateStored); }
 

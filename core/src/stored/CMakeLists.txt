@@ -120,6 +120,7 @@ if(HAVE_NDMP)
 endif()
 
 add_executable(bareos-sd stored.cc)
+target_sources(bareos-sd PRIVATE sd_bootstrap.cc)
 bareos_windows_resource(bareos-sd storedres.rc.in)
 if(HAVE_WIN32)
   set_target_properties(bareos-sd PROPERTIES WIN32_EXECUTABLE ON)
