@@ -365,6 +365,24 @@ TEST(SdDiscoveryCli, FiltersTapeSection)
   EXPECT_EQ(filtered.changers.size(), 1U);
 }
 
+TEST(SdDiscoveryCli, FiltersFullSectionWithByIdTapeNodes)
+{
+  auto filtered = storagedaemon::discoverycli::FilterDiscoveryReport(
+      ExampleByIdReport(), storagedaemon::discoverycli::ReportSection::kFull);
+
+  EXPECT_EQ(filtered.filesystems.size(), 1U);
+  ASSERT_EQ(filtered.tape_devices.size(), 1U);
+  EXPECT_EQ(filtered.tape_devices[0].device_node,
+            "/dev/tape/by-id/scsi-123456-nst");
+  ASSERT_EQ(filtered.changers.size(), 1U);
+  ASSERT_EQ(filtered.changers[0].drive_device_nodes.size(), 1U);
+  EXPECT_EQ(filtered.changers[0].drive_device_nodes[0],
+            "/dev/tape/by-id/scsi-123456-nst");
+  ASSERT_EQ(filtered.changers[0].drives.size(), 1U);
+  EXPECT_EQ(filtered.changers[0].drives[0].tape_device_node,
+            "/dev/tape/by-id/scsi-123456-nst");
+}
+
 TEST(SdDiscoveryCli, PreservesFallbackAndUnmatchedDriveMetadata)
 {
   auto filtered = storagedaemon::discoverycli::FilterDiscoveryReport(
