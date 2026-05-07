@@ -21,9 +21,97 @@
 
 #include "gtest/gtest.h"
 
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <optional>
 #include <jansson.h>
 
+#include "include/bareos.h"
 #include "stored/sd_discovery_probe.h"
+
+namespace {
+
+class ScopedEnvironmentVariable {
+ public:
+  ScopedEnvironmentVariable(const char* name, std::string value) : name_(name)
+  {
+    if (const char* existing = std::getenv(name_); existing) {
+      previous_ = existing;
+    }
+#if HAVE_WIN32
+    _putenv_s(name_, value.c_str());
+#else
+    setenv(name_, value.c_str(), 1);
+#endif
+  }
+
+  ~ScopedEnvironmentVariable()
+  {
+    if (previous_) {
+#if HAVE_WIN32
+      _putenv_s(name_, previous_->c_str());
+#else
+      setenv(name_, previous_->c_str(), 1);
+#endif
+    } else {
+#if HAVE_WIN32
+      _putenv_s(name_, "");
+#else
+      unsetenv(name_);
+#endif
+    }
+  }
+
+ private:
+  const char* name_;
+  std::optional<std::string> previous_{};
+};
+
+class ScopedDirectory {
+ public:
+  ScopedDirectory()
+  {
+    const auto unique
+        = "sd-discovery-probe-test-" + std::to_string(std::rand());
+    path_ = std::filesystem::temp_directory_path() / unique;
+    std::filesystem::create_directories(path_);
+  }
+
+  ~ScopedDirectory()
+  {
+    std::error_code error_code;
+    std::filesystem::remove_all(path_, error_code);
+  }
+
+  const std::filesystem::path& path() const { return path_; }
+
+ private:
+  std::filesystem::path path_{};
+};
+
+#if defined(HAVE_LINUX_OS)
+void WriteBinaryFile(const std::filesystem::path& path,
+                     std::string_view content)
+{
+  std::filesystem::create_directories(path.parent_path());
+  std::ofstream stream(path, std::ios::binary | std::ios::trunc);
+  stream.write(content.data(), static_cast<std::streamsize>(content.size()));
+}
+
+std::string BuildPage80(std::string_view serial)
+{
+  std::string page;
+  page.push_back('\0');
+  page.push_back(static_cast<char>(0x80));
+  page.push_back(static_cast<char>((serial.size() >> 8) & 0xff));
+  page.push_back(static_cast<char>(serial.size() & 0xff));
+  page.append(serial);
+  return page;
+}
+#endif
+
+}  // namespace
 
 TEST(SdDiscoveryProbe, ClassifiesFilesystemTypes)
 {
@@ -153,3 +241,56 @@ TEST(SdDiscoveryProbe, ProbesFilesystemCandidatesForCurrentHost)
   EXPECT_FALSE(report.fqdn.empty());
   EXPECT_FALSE(report.filesystems.empty());
 }
+
+#if defined(HAVE_LINUX_OS)
+TEST(SdDiscoveryProbe, ProbesTapeAndChangerSerialsFromLinuxSysfs)
+{
+  ScopedDirectory sysfs_root;
+  ScopedDirectory dev_root;
+
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vendor",
+                  "IBM\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/model",
+                  "ULTRIUM-HH8 \n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vpd_pg80",
+                  BuildPage80("TAPE123"));
+  std::filesystem::create_directories(
+      sysfs_root.path() / "class/scsi_tape/nst0/device/scsi_generic/sg3");
+  WriteBinaryFile(dev_root.path() / "nst0", "");
+  WriteBinaryFile(dev_root.path() / "sg3", "");
+
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/vendor",
+                  "IBM\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/model",
+                  "3573-TL\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/vpd_pg80",
+                  BuildPage80("CHANGER42"));
+  std::filesystem::create_directories(
+      sysfs_root.path() / "class/scsi_changer/sch0/device/scsi_generic/sg4");
+  WriteBinaryFile(dev_root.path() / "sg4", "");
+
+  ScopedEnvironmentVariable sysfs_override{"BAREOS_SD_DISCOVERY_SYSFS_ROOT",
+                                           sysfs_root.path().string()};
+  ScopedEnvironmentVariable dev_override{"BAREOS_SD_DISCOVERY_DEV_ROOT",
+                                         dev_root.path().string()};
+
+  const auto report = storagedaemon::ProbeStorageDiscoveryReport();
+
+  ASSERT_EQ(report.tape_devices.size(), 1U);
+  EXPECT_EQ(report.tape_devices[0].device_node,
+            (dev_root.path() / "nst0").string());
+  EXPECT_EQ(report.tape_devices[0].generic_device_node,
+            (dev_root.path() / "sg3").string());
+  EXPECT_EQ(report.tape_devices[0].vendor, "IBM");
+  EXPECT_EQ(report.tape_devices[0].model, "ULTRIUM-HH8");
+  EXPECT_EQ(report.tape_devices[0].serial, "TAPE123");
+  EXPECT_TRUE(report.tape_devices[0].accessible);
+
+  ASSERT_EQ(report.changers.size(), 1U);
+  EXPECT_EQ(report.changers[0].device_node, (dev_root.path() / "sg4").string());
+  EXPECT_EQ(report.changers[0].vendor, "IBM");
+  EXPECT_EQ(report.changers[0].model, "3573-TL");
+  EXPECT_EQ(report.changers[0].serial, "CHANGER42");
+  EXPECT_TRUE(report.changers[0].accessible);
+}
+#endif

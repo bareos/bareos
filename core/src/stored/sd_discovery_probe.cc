@@ -24,7 +24,9 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <set>
 
 #include <jansson.h>
@@ -54,10 +56,49 @@ namespace {
 
 constexpr std::string_view kDefaultArchiveRoot = "/var/lib/bareos/storage";
 
+std::optional<std::string> GetEnvironmentVariable(std::string_view name)
+{
+  if (const char* value = std::getenv(std::string{name}.c_str());
+      value && value[0] != '\0') {
+    return std::string{value};
+  }
+  return std::nullopt;
+}
+
 bool InList(std::string_view value,
             std::initializer_list<std::string_view> values)
 {
   return std::find(values.begin(), values.end(), value) != values.end();
+}
+
+std::string TrimWhitespaceAndNuls(std::string value)
+{
+  while (!value.empty()
+         && (value.back() == '\0' || value.back() == ' ' || value.back() == '\n'
+             || value.back() == '\r' || value.back() == '\t')) {
+    value.pop_back();
+  }
+
+  auto first = value.find_first_not_of(" \n\r\t");
+  if (first == std::string::npos) { return {}; }
+  return value.substr(first);
+}
+
+std::optional<std::string> ReadTextFile(const std::filesystem::path& path)
+{
+  std::ifstream stream(path, std::ios::binary);
+  if (!stream.is_open()) { return std::nullopt; }
+  std::string content{std::istreambuf_iterator<char>(stream),
+                      std::istreambuf_iterator<char>()};
+  return TrimWhitespaceAndNuls(std::move(content));
+}
+
+std::optional<std::string> ReadBinaryFile(const std::filesystem::path& path)
+{
+  std::ifstream stream(path, std::ios::binary);
+  if (!stream.is_open()) { return std::nullopt; }
+  return std::string{std::istreambuf_iterator<char>(stream),
+                     std::istreambuf_iterator<char>()};
 }
 
 std::string NormalizeMountpoint(std::string mountpoint)
@@ -155,6 +196,158 @@ void SortAndDeduplicate(std::vector<FilesystemCandidate>& filesystems)
 }
 
 #if defined(HAVE_LINUX_OS)
+std::filesystem::path DiscoverySysfsRoot()
+{
+  if (auto configured
+      = GetEnvironmentVariable("BAREOS_SD_DISCOVERY_SYSFS_ROOT")) {
+    return *configured;
+  }
+  return "/sys";
+}
+
+std::filesystem::path DiscoveryDeviceRoot()
+{
+  if (auto configured
+      = GetEnvironmentVariable("BAREOS_SD_DISCOVERY_DEV_ROOT")) {
+    return *configured;
+  }
+  return "/dev";
+}
+
+std::optional<std::string> ParseScsiPage80Serial(std::string_view page)
+{
+  if (page.size() < 4) { return std::nullopt; }
+
+  const auto length
+      = (static_cast<uint16_t>(static_cast<unsigned char>(page[2])) << 8)
+        | static_cast<uint16_t>(static_cast<unsigned char>(page[3]));
+  if (page.size() < static_cast<std::size_t>(4 + length)) {
+    return std::nullopt;
+  }
+
+  auto serial = TrimWhitespaceAndNuls(std::string{page.substr(4, length)});
+  if (serial.empty()) { return std::nullopt; }
+  return serial;
+}
+
+std::optional<std::string> ReadScsiSerial(
+    const std::filesystem::path& device_path)
+{
+  auto page80 = ReadBinaryFile(device_path / "vpd_pg80");
+  if (page80) {
+    auto serial = ParseScsiPage80Serial(*page80);
+    if (serial) { return serial; }
+  }
+
+  auto serial = ReadTextFile(device_path / "serial");
+  if (serial && !serial->empty()) { return serial; }
+
+  return std::nullopt;
+}
+
+std::string ResolveGenericDeviceNode(const std::filesystem::path& device_path)
+{
+  for (const auto& child_directory :
+       {device_path / "scsi_generic", device_path / "generic"}) {
+    std::error_code error_code;
+    if (!std::filesystem::is_directory(child_directory, error_code)) {
+      continue;
+    }
+
+    for (const auto& entry :
+         std::filesystem::directory_iterator(child_directory)) {
+      const auto name = entry.path().filename().string();
+      if (name.size() >= 3 && name.starts_with("sg")) {
+        return (DiscoveryDeviceRoot() / name).string();
+      }
+    }
+  }
+
+  return {};
+}
+
+std::vector<TapeDeviceInfo> ProbeTapeDevicesLinux()
+{
+  std::vector<TapeDeviceInfo> tape_devices;
+  const auto class_root = DiscoverySysfsRoot() / "class" / "scsi_tape";
+  std::error_code error_code;
+  if (!std::filesystem::is_directory(class_root, error_code)) {
+    return tape_devices;
+  }
+
+  for (const auto& entry : std::filesystem::directory_iterator(class_root)) {
+    TapeDeviceInfo tape_device;
+    const auto class_name = entry.path().filename().string();
+    tape_device.device_node = (DiscoveryDeviceRoot() / class_name).string();
+
+    const auto device_path = entry.path() / "device";
+    tape_device.generic_device_node = ResolveGenericDeviceNode(device_path);
+    if (auto vendor = ReadTextFile(device_path / "vendor")) {
+      tape_device.vendor = *vendor;
+    }
+    if (auto model = ReadTextFile(device_path / "model")) {
+      tape_device.model = *model;
+    }
+    if (auto serial = ReadScsiSerial(device_path)) {
+      tape_device.serial = *serial;
+    }
+
+    tape_device.accessible
+        = std::filesystem::exists(tape_device.device_node, error_code);
+    if (!tape_device.accessible) {
+      tape_device.accessibility_error = "device node not accessible";
+    }
+    tape_devices.emplace_back(std::move(tape_device));
+  }
+
+  std::sort(tape_devices.begin(), tape_devices.end(),
+            [](const TapeDeviceInfo& lhs, const TapeDeviceInfo& rhs) {
+              return lhs.device_node < rhs.device_node;
+            });
+  return tape_devices;
+}
+
+std::vector<ChangerInfo> ProbeChangersLinux()
+{
+  std::vector<ChangerInfo> changers;
+  const auto class_root = DiscoverySysfsRoot() / "class" / "scsi_changer";
+  std::error_code error_code;
+  if (!std::filesystem::is_directory(class_root, error_code)) {
+    return changers;
+  }
+
+  for (const auto& entry : std::filesystem::directory_iterator(class_root)) {
+    ChangerInfo changer;
+    const auto class_name = entry.path().filename().string();
+    const auto device_path = entry.path() / "device";
+    const auto generic_device_node = ResolveGenericDeviceNode(device_path);
+    changer.device_node = !generic_device_node.empty()
+                              ? generic_device_node
+                              : (DiscoveryDeviceRoot() / class_name).string();
+
+    if (auto vendor = ReadTextFile(device_path / "vendor")) {
+      changer.vendor = *vendor;
+    }
+    if (auto model = ReadTextFile(device_path / "model")) {
+      changer.model = *model;
+    }
+    if (auto serial = ReadScsiSerial(device_path)) { changer.serial = *serial; }
+
+    changer.accessible
+        = std::filesystem::exists(changer.device_node, error_code);
+    if (!changer.accessible) {
+      changer.accessibility_error = "device node not accessible";
+    }
+    changers.emplace_back(std::move(changer));
+  }
+
+  std::sort(changers.begin(), changers.end(),
+            [](const ChangerInfo& lhs, const ChangerInfo& rhs) {
+              return lhs.device_node < rhs.device_node;
+            });
+  return changers;
+}
+
 std::vector<FilesystemCandidate> ProbeFilesystemCandidatesLinux()
 {
   std::vector<FilesystemCandidate> filesystems;
@@ -423,6 +616,8 @@ StorageDiscoveryReport ProbeStorageDiscoveryReport()
 
 #if defined(HAVE_LINUX_OS)
   report.filesystems = ProbeFilesystemCandidatesLinux();
+  report.tape_devices = ProbeTapeDevicesLinux();
+  report.changers = ProbeChangersLinux();
 #elif defined(HAVE_FREEBSD_OS) || defined(HAVE_DARWIN_OS)
   report.filesystems = ProbeFilesystemCandidatesBsd();
 #elif defined(HAVE_WIN32)
