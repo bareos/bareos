@@ -170,12 +170,18 @@ std::string BuildPage83Naa(std::string_view designator)
 
 std::string BuildReadElementStatusDataTransferDescriptor(
     uint16_t element_address,
-    std::string_view designator)
+    std::string_view designator,
+    uint8_t scsi_id = 0,
+    uint8_t lun = 0,
+    bool scsi_address_valid = false)
 {
   std::string descriptor(12, '\0');
   descriptor[0] = static_cast<char>((element_address >> 8) & 0xff);
   descriptor[1] = static_cast<char>(element_address & 0xff);
   descriptor[2] = static_cast<char>(0x09);
+  descriptor[6]
+      = static_cast<char>((lun & 0x07) | (scsi_address_valid ? 0x30 : 0x00));
+  descriptor[7] = static_cast<char>(scsi_id);
   descriptor.append(1, static_cast<char>(0x01));
   descriptor.append(1, static_cast<char>(0x03));
   descriptor.append(1, '\0');
@@ -210,6 +216,17 @@ std::string BuildReadElementStatusData(
   payload[7] = static_cast<char>(page.size() & 0xff);
   payload.append(page);
   return payload;
+}
+
+void CreateScsiClassDeviceLink(const std::filesystem::path& sysfs_root,
+                               const std::filesystem::path& class_path,
+                               std::string_view address)
+{
+  const auto scsi_device_path
+      = sysfs_root / "devices/platform/mock" / std::string{address};
+  std::filesystem::create_directories(scsi_device_path);
+  std::filesystem::remove(class_path / "device");
+  std::filesystem::create_symlink(scsi_device_path, class_path / "device");
 }
 #endif
 
@@ -658,8 +675,10 @@ TEST(SdBootstrap, UploadsTapeDiscoveryTopology)
   WriteBinaryFile(dev_root.path() / "sg4", "");
   WriteBinaryFile(
       read_element_status_root.path() / "sg4.bin",
-      BuildReadElementStatusData({BuildReadElementStatusDataTransferDescriptor(
-          256, "\x11\x22\x33\x44")}));
+      BuildReadElementStatusData({
+          BuildReadElementStatusDataTransferDescriptor(256, "\x11\x22\x33\x44"),
+          BuildReadElementStatusDataTransferDescriptor(257, "\x55\x66\x77\x88"),
+      }));
 
   const std::string command
       = std::string{QuoteShellArgument(BAREOS_SD_BINARY)} + " --discovery"
@@ -710,7 +729,7 @@ TEST(SdBootstrap, UploadsTapeDiscoveryTopology)
 
   auto* drives = json_object_get(changer, "drives");
   ASSERT_TRUE(json_is_array(drives));
-  ASSERT_EQ(json_array_size(drives), 1U);
+  ASSERT_EQ(json_array_size(drives), 2U);
   auto* drive = json_array_get(drives, 0);
   ASSERT_NE(drive, nullptr);
   EXPECT_EQ(json_integer_value(json_object_get(drive, "drive_element_address")),
@@ -724,6 +743,119 @@ TEST(SdBootstrap, UploadsTapeDiscoveryTopology)
   EXPECT_STREQ(json_string_value(json_object_get(drive, "serial")), "TAPE123");
   EXPECT_STREQ(json_string_value(json_object_get(drive, "source")),
                "read_element_status:identifier");
+
+  auto* unmatched_drive = json_array_get(drives, 1);
+  ASSERT_NE(unmatched_drive, nullptr);
+  EXPECT_EQ(json_integer_value(
+                json_object_get(unmatched_drive, "drive_element_address")),
+            257);
+  EXPECT_STREQ(
+      json_string_value(json_object_get(unmatched_drive, "tape_device_node")),
+      "");
+  EXPECT_STREQ(json_string_value(
+                   json_object_get(unmatched_drive, "generic_device_node")),
+               "");
+  EXPECT_STREQ(
+      json_string_value(json_object_get(unmatched_drive, "device_identifier")),
+      "naa.55667788");
+  EXPECT_TRUE(json_is_null(json_object_get(unmatched_drive, "serial")));
+  EXPECT_STREQ(json_string_value(json_object_get(unmatched_drive, "source")),
+               "read_element_status:unmatched");
+}
+
+TEST(SdBootstrap, UploadsTapeDiscoveryTopologyViaScsiFallback)
+{
+  ScopedDirectory config_root;
+  ScopedDirectory working_directory;
+  ScopedDirectory sysfs_root;
+  ScopedDirectory dev_root;
+  ScopedDirectory read_element_status_root;
+  FakeBootstrapServer server{
+      BuildConfigBundleResponse(working_directory.path())};
+  ScopedEnvironmentVariable config_root_override{
+      "BAREOS_SD_BOOTSTRAP_CONFIG_ROOT", config_root.path().string()};
+  ScopedEnvironmentVariable sysfs_override{"BAREOS_SD_DISCOVERY_SYSFS_ROOT",
+                                           sysfs_root.path().string()};
+  ScopedEnvironmentVariable dev_override{"BAREOS_SD_DISCOVERY_DEV_ROOT",
+                                         dev_root.path().string()};
+  ScopedEnvironmentVariable read_element_status_override{
+      "BAREOS_SD_DISCOVERY_READ_ELEMENT_STATUS_ROOT",
+      read_element_status_root.path().string()};
+  std::optional<ScopedEnvironmentVariable> validate_binary_override;
+  if (!std::getenv("BAREOS_SD_BOOTSTRAP_VALIDATE_BINARY")) {
+    validate_binary_override.emplace("BAREOS_SD_BOOTSTRAP_VALIDATE_BINARY",
+                                     BAREOS_SD_BINARY);
+  }
+  ScopedEnvironmentVariable poll_interval_override{
+      "BAREOS_SD_BOOTSTRAP_POLL_INTERVAL_MS", "1"};
+  ScopedEnvironmentVariable poll_attempts_override{
+      "BAREOS_SD_BOOTSTRAP_MAX_POLL_ATTEMPTS", "10"};
+
+  const auto tape_class = sysfs_root.path() / "class/scsi_tape/nst0";
+  std::filesystem::create_directories(tape_class);
+  CreateScsiClassDeviceLink(sysfs_root.path(), tape_class, "1:0:3:0");
+  WriteBinaryFile(tape_class / "device/vendor", "IBM\n");
+  WriteBinaryFile(tape_class / "device/model", "ULTRIUM-HH8 \n");
+  WriteBinaryFile(tape_class / "device/vpd_pg80", BuildPage80("TAPE123"));
+  std::filesystem::create_directories(tape_class / "device/scsi_generic/sg3");
+  WriteBinaryFile(dev_root.path() / "nst0", "");
+  WriteBinaryFile(dev_root.path() / "sg3", "");
+
+  const auto changer_class = sysfs_root.path() / "class/scsi_changer/sch0";
+  std::filesystem::create_directories(changer_class);
+  CreateScsiClassDeviceLink(sysfs_root.path(), changer_class, "1:0:4:0");
+  WriteBinaryFile(changer_class / "device/vendor", "IBM\n");
+  WriteBinaryFile(changer_class / "device/model", "3573-TL\n");
+  std::filesystem::create_directories(changer_class
+                                      / "device/scsi_generic/sg4");
+  WriteBinaryFile(dev_root.path() / "sg4", "");
+  WriteBinaryFile(
+      read_element_status_root.path() / "sg4.bin",
+      BuildReadElementStatusData(
+          {BuildReadElementStatusDataTransferDescriptor(256, "", 3, 0, true)}));
+
+  const std::string command
+      = std::string{QuoteShellArgument(BAREOS_SD_BINARY)} + " --discovery"
+        + " --bootstrap-url " + QuoteShellArgument(server.base_url())
+        + " --bootstrap-token " + QuoteShellArgument("secret-token")
+        + " --bootstrap-session " + QuoteShellArgument("session-123");
+
+  EXPECT_EQ(ExtractExitStatus(std::system(command.c_str())), BEXIT_SUCCESS);
+
+  json_error_t error{};
+  auto discovery_body
+      = MakeJson(json_loads(server.discovery_body().c_str(), 0, &error));
+  ASSERT_NE(discovery_body.get(), nullptr);
+  auto* report = json_object_get(discovery_body.get(), "report");
+  ASSERT_TRUE(json_is_object(report));
+  auto* changers = json_object_get(report, "changers");
+  ASSERT_TRUE(json_is_array(changers));
+  ASSERT_EQ(json_array_size(changers), 1U);
+  auto* changer = json_array_get(changers, 0);
+  ASSERT_NE(changer, nullptr);
+
+  auto* drive_device_nodes = json_object_get(changer, "drive_device_nodes");
+  ASSERT_TRUE(json_is_array(drive_device_nodes));
+  ASSERT_EQ(json_array_size(drive_device_nodes), 1U);
+  EXPECT_STREQ(json_string_value(json_array_get(drive_device_nodes, 0)),
+               (dev_root.path() / "nst0").string().c_str());
+
+  auto* drives = json_object_get(changer, "drives");
+  ASSERT_TRUE(json_is_array(drives));
+  ASSERT_EQ(json_array_size(drives), 1U);
+  auto* drive = json_array_get(drives, 0);
+  ASSERT_NE(drive, nullptr);
+  EXPECT_EQ(json_integer_value(json_object_get(drive, "drive_element_address")),
+            256);
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "tape_device_node")),
+               (dev_root.path() / "nst0").string().c_str());
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "generic_device_node")),
+               (dev_root.path() / "sg3").string().c_str());
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "device_identifier")),
+               "naa.");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "serial")), "TAPE123");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "source")),
+               "read_element_status:scsi_address");
 }
 #endif
 
