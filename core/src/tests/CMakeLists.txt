@@ -240,7 +240,13 @@ if(NOT client-only)
   bareos_add_test(
     sd_bootstrap_test
     ADDITIONAL_SOURCES ../stored/sd_bootstrap.cc ../stored/sd_discovery_probe.cc
-    LINK_LIBRARIES Bareos::Lib CLI11::CLI11 GTest::gtest_main
+    LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib CLI11::CLI11
+                   GTest::gtest_main
+    COMPILE_DEFINITIONS BACKEND_OUTPUT_DIRECTORY="${BACKEND_OUTPUT_DIRECTORY}"
+  )
+  set_target_properties(sd_bootstrap_test PROPERTIES ENABLE_EXPORTS ON)
+  target_compile_definitions(
+    sd_bootstrap_test PRIVATE BAREOS_SD_BINARY="$<TARGET_FILE:bareos-sd>"
   )
   bareos_add_test(
     sd_discovery_probe_test
