@@ -902,19 +902,19 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
              "\"changers\":[{\"device_node\":\"/dev/sg4\",\"vendor\":\"IBM\","
              "\"model\":\"3573-TL\",\"device_identifier\":\"naa.aabbccdd\","
              "\"serial\":\"CHANGER42\",\"drive_device_nodes\":[\"/dev/nst0\"],"
-             "\"drives\":[{\"tape_device_node\":\"/dev/nst0\","
-             "\"generic_device_node\":\"/dev/sg3\","
-             "\"drive_element_address\":256,"
-             "\"device_identifier\":\"naa.11223344\","
-             "\"serial\":\"TAPE123\","
-             "\"source\":\"read_element_status:identifier\"},"
-             "{\"tape_device_node\":\"\","
-             "\"generic_device_node\":\"\","
-             "\"drive_element_address\":257,"
-             "\"device_identifier\":null,"
-             "\"serial\":null,"
-             "\"source\":\"read_element_status:unmatched\"}],"
-             "\"accessible\":true,\"accessibility_error\":\"\"}]}}");
+              "\"drives\":[{\"tape_device_node\":\"/dev/nst0\","
+              "\"generic_device_node\":\"/dev/sg3\","
+              "\"drive_element_address\":256,"
+              "\"device_identifier\":\"naa.11223344\","
+              "\"serial\":\"TAPE123\","
+              "\"source\":\"read_element_status:identifier\"},"
+              "{\"tape_device_node\":\"\","
+              "\"generic_device_node\":\"\","
+              "\"drive_element_address\":257,"
+              "\"device_identifier\":\"naa.55667788\","
+              "\"serial\":null,"
+              "\"source\":\"read_element_status:unmatched\"}],"
+              "\"accessible\":true,\"accessibility_error\":\"\"}]}}");
   ASSERT_EQ(discovery_response.status_code, 200u) << discovery_response.body;
   auto discovery_json = ParseJson(discovery_response.body);
   ASSERT_NE(discovery_json.get(), nullptr) << discovery_response.body;
@@ -967,8 +967,9 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
   EXPECT_STREQ(json_string_value(
                    json_object_get(unmatched_drive, "generic_device_node")),
                "");
-  EXPECT_TRUE(
-      json_is_null(json_object_get(unmatched_drive, "device_identifier")));
+  EXPECT_STREQ(
+      json_string_value(json_object_get(unmatched_drive, "device_identifier")),
+      "naa.55667788");
   EXPECT_TRUE(json_is_null(json_object_get(unmatched_drive, "serial")));
   EXPECT_STREQ(json_string_value(json_object_get(unmatched_drive, "source")),
                "read_element_status:unmatched");
@@ -1017,8 +1018,9 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
   EXPECT_EQ(json_integer_value(json_object_get(loaded_unmatched_drive,
                                                "drive_element_address")),
             257);
-  EXPECT_TRUE(json_is_null(
-      json_object_get(loaded_unmatched_drive, "device_identifier")));
+  EXPECT_STREQ(json_string_value(json_object_get(loaded_unmatched_drive,
+                                                 "device_identifier")),
+               "naa.55667788");
   EXPECT_TRUE(json_is_null(json_object_get(loaded_unmatched_drive, "serial")));
   EXPECT_STREQ(
       json_string_value(json_object_get(loaded_unmatched_drive, "source")),
