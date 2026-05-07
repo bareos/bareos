@@ -239,8 +239,13 @@ if(NOT client-only)
   )
   bareos_add_test(
     sd_bootstrap_test
-    ADDITIONAL_SOURCES ../stored/sd_bootstrap.cc
+    ADDITIONAL_SOURCES ../stored/sd_bootstrap.cc ../stored/sd_discovery_probe.cc
     LINK_LIBRARIES Bareos::Lib CLI11::CLI11 GTest::gtest_main
+  )
+  bareos_add_test(
+    sd_discovery_probe_test
+    ADDITIONAL_SOURCES ../stored/sd_discovery_probe.cc
+    LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   )
 
   bareos_add_test(

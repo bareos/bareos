@@ -71,6 +71,7 @@ target_sources(
           record.cc
           reserve.cc
           scan.cc
+          sd_discovery_probe.cc
           sd_device_control_record.cc
           sd_plugins.cc
           sd_stats.cc
