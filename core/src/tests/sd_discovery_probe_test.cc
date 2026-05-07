@@ -543,4 +543,62 @@ TEST(SdDiscoveryProbe, ExtractsSerialFromUnmatchedT10DriveIdentifier)
   EXPECT_EQ(*report.changers[0].drives[0].source,
             "read_element_status:unmatched");
 }
+
+TEST(SdDiscoveryProbe, FallsBackToSerialWhenDriveIdentifierUsesT10)
+{
+  ScopedDirectory sysfs_root;
+  ScopedDirectory dev_root;
+  ScopedDirectory read_element_status_root;
+
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vendor",
+                  "HPE\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/model",
+                  "Ultrium 9-SCSI\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vpd_pg80",
+                  BuildPage80("4E77FE415F"));
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vpd_pg83",
+                  BuildPage83Naa("\x20\x34\x45\x37\x37\x34\x31\x46"));
+  std::filesystem::create_directories(
+      sysfs_root.path() / "class/scsi_tape/nst0/device/scsi_generic/sg3");
+  WriteBinaryFile(dev_root.path() / "nst0", "");
+  WriteBinaryFile(dev_root.path() / "sg3", "");
+
+  std::filesystem::create_directories(sysfs_root.path()
+                                      / "class/scsi_changer/sch0/device");
+  std::filesystem::create_directories(
+      sysfs_root.path() / "class/scsi_changer/sch0/device/scsi_generic/sg4");
+  WriteBinaryFile(dev_root.path() / "sg4", "");
+
+  ScopedEnvironmentVariable sysfs_override{"BAREOS_SD_DISCOVERY_SYSFS_ROOT",
+                                           sysfs_root.path().string()};
+  ScopedEnvironmentVariable dev_override{"BAREOS_SD_DISCOVERY_DEV_ROOT",
+                                         dev_root.path().string()};
+  ScopedEnvironmentVariable read_element_status_override{
+      "BAREOS_SD_DISCOVERY_READ_ELEMENT_STATUS_ROOT",
+      read_element_status_root.path().string()};
+  WriteBinaryFile(
+      read_element_status_root.path() / "sg4.bin",
+      BuildReadElementStatusData({BuildReadElementStatusDataTransferDescriptor(
+          256, "HPE     Ultrium 9-SCSI  4E77FE415F", 0, 0, false, 0x02,
+          0x01)}));
+
+  const auto report = storagedaemon::ProbeStorageDiscoveryReport();
+
+  ASSERT_EQ(report.changers.size(), 1U);
+  ASSERT_EQ(report.changers[0].drive_device_nodes.size(), 1U);
+  EXPECT_EQ(report.changers[0].drive_device_nodes[0],
+            (dev_root.path() / "nst0").string());
+  ASSERT_EQ(report.changers[0].drives.size(), 1U);
+  EXPECT_EQ(report.changers[0].drives[0].tape_device_node,
+            (dev_root.path() / "nst0").string());
+  EXPECT_EQ(report.changers[0].drives[0].generic_device_node,
+            (dev_root.path() / "sg3").string());
+  ASSERT_TRUE(report.changers[0].drives[0].device_identifier);
+  EXPECT_EQ(*report.changers[0].drives[0].device_identifier,
+            "t10.HPE     Ultrium 9-SCSI  4E77FE415F");
+  ASSERT_TRUE(report.changers[0].drives[0].serial);
+  EXPECT_EQ(*report.changers[0].drives[0].serial, "4E77FE415F");
+  ASSERT_TRUE(report.changers[0].drives[0].source);
+  EXPECT_EQ(*report.changers[0].drives[0].source, "read_element_status:serial");
+}
 #endif

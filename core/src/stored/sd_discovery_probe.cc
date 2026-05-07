@@ -578,6 +578,31 @@ const TapeDeviceInfo* FindTapeByDeviceIdentifier(
   return tape == tape_devices.end() ? nullptr : &*tape;
 }
 
+bool IsSamePhysicalTapeDevice(const TapeDeviceInfo& lhs,
+                              const TapeDeviceInfo& rhs)
+{
+  return lhs.generic_device_node == rhs.generic_device_node
+         && lhs.device_identifier == rhs.device_identifier;
+}
+
+const TapeDeviceInfo* FindTapeBySerial(
+    const ChangerDriveInfo& drive,
+    const std::vector<TapeDeviceInfo>& tape_devices)
+{
+  if (!drive.serial) { return nullptr; }
+
+  const TapeDeviceInfo* match = nullptr;
+  for (const auto& candidate : tape_devices) {
+    if (candidate.serial != *drive.serial) { continue; }
+    if (match != nullptr && !IsSamePhysicalTapeDevice(*match, candidate)) {
+      return nullptr;
+    }
+    match = &candidate;
+  }
+
+  return match;
+}
+
 const TapeDeviceInfo* FindTapeByScsiTargetLun(
     std::pair<uint8_t, uint8_t> target_lun,
     const std::vector<TapeDeviceInfo>& tape_devices)
@@ -698,6 +723,11 @@ void CorrelateChangerDrives(
   for (auto& drive : changer.drives) {
     if (const auto* tape = FindTapeByDeviceIdentifier(drive, tape_devices)) {
       ApplyTapeMatch(drive, changer, *tape, "read_element_status:identifier");
+      continue;
+    }
+
+    if (const auto* tape = FindTapeBySerial(drive, tape_devices)) {
+      ApplyTapeMatch(drive, changer, *tape, "read_element_status:serial");
       continue;
     }
 
