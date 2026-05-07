@@ -906,13 +906,19 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
               "\"generic_device_node\":\"/dev/sg3\","
               "\"drive_element_address\":256,"
               "\"device_identifier\":\"naa.11223344\","
-              "\"serial\":\"TAPE123\","
-              "\"source\":\"read_element_status:identifier\"},"
-              "{\"tape_device_node\":\"\","
-              "\"generic_device_node\":\"\","
-              "\"drive_element_address\":257,"
-              "\"device_identifier\":\"naa.55667788\","
-              "\"serial\":null,"
+               "\"serial\":\"TAPE123\","
+               "\"source\":\"read_element_status:identifier\"},"
+               "{\"tape_device_node\":\"/dev/nst0\","
+               "\"generic_device_node\":\"/dev/sg3\","
+               "\"drive_element_address\":258,"
+               "\"device_identifier\":\"naa.88776655\","
+               "\"serial\":\"TAPE123\","
+               "\"source\":\"read_element_status:scsi_address\"},"
+               "{\"tape_device_node\":\"\","
+               "\"generic_device_node\":\"\","
+               "\"drive_element_address\":257,"
+               "\"device_identifier\":\"naa.55667788\","
+               "\"serial\":null,"
               "\"source\":\"read_element_status:unmatched\"}],"
               "\"accessible\":true,\"accessibility_error\":\"\"}]}}");
   ASSERT_EQ(discovery_response.status_code, 200u) << discovery_response.body;
@@ -947,7 +953,7 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
                "naa.aabbccdd");
   auto* drives = json_object_get(changer, "drives");
   ASSERT_TRUE(json_is_array(drives));
-  ASSERT_EQ(json_array_size(drives), 2u);
+  ASSERT_EQ(json_array_size(drives), 3u);
   auto* drive = json_array_get(drives, 0);
   ASSERT_TRUE(json_is_object(drive));
   EXPECT_EQ(json_integer_value(json_object_get(drive, "drive_element_address")),
@@ -956,7 +962,29 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
                "naa.11223344");
   EXPECT_STREQ(json_string_value(json_object_get(drive, "source")),
                "read_element_status:identifier");
-  auto* unmatched_drive = json_array_get(drives, 1);
+
+  auto* scsi_fallback_drive = json_array_get(drives, 1);
+  ASSERT_TRUE(json_is_object(scsi_fallback_drive));
+  EXPECT_EQ(json_integer_value(
+                json_object_get(scsi_fallback_drive, "drive_element_address")),
+            258);
+  EXPECT_STREQ(json_string_value(
+                   json_object_get(scsi_fallback_drive, "tape_device_node")),
+               "/dev/nst0");
+  EXPECT_STREQ(json_string_value(
+                   json_object_get(scsi_fallback_drive, "generic_device_node")),
+               "/dev/sg3");
+  EXPECT_STREQ(json_string_value(
+                   json_object_get(scsi_fallback_drive, "device_identifier")),
+               "naa.88776655");
+  EXPECT_STREQ(
+      json_string_value(json_object_get(scsi_fallback_drive, "serial")),
+      "TAPE123");
+  EXPECT_STREQ(
+      json_string_value(json_object_get(scsi_fallback_drive, "source")),
+      "read_element_status:scsi_address");
+
+  auto* unmatched_drive = json_array_get(drives, 2);
   ASSERT_TRUE(json_is_object(unmatched_drive));
   EXPECT_EQ(json_integer_value(
                 json_object_get(unmatched_drive, "drive_element_address")),
@@ -1008,12 +1036,25 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
   ASSERT_TRUE(json_is_object(loaded_changer));
   auto* loaded_drives = json_object_get(loaded_changer, "drives");
   ASSERT_TRUE(json_is_array(loaded_drives));
-  ASSERT_EQ(json_array_size(loaded_drives), 2u);
+  ASSERT_EQ(json_array_size(loaded_drives), 3u);
   auto* loaded_drive = json_array_get(loaded_drives, 0);
   ASSERT_TRUE(json_is_object(loaded_drive));
   EXPECT_STREQ(json_string_value(json_object_get(loaded_drive, "serial")),
                "TAPE123");
-  auto* loaded_unmatched_drive = json_array_get(loaded_drives, 1);
+
+  auto* loaded_scsi_fallback_drive = json_array_get(loaded_drives, 1);
+  ASSERT_TRUE(json_is_object(loaded_scsi_fallback_drive));
+  EXPECT_EQ(json_integer_value(json_object_get(loaded_scsi_fallback_drive,
+                                               "drive_element_address")),
+            258);
+  EXPECT_STREQ(json_string_value(json_object_get(loaded_scsi_fallback_drive,
+                                                 "device_identifier")),
+               "naa.88776655");
+  EXPECT_STREQ(
+      json_string_value(json_object_get(loaded_scsi_fallback_drive, "source")),
+      "read_element_status:scsi_address");
+
+  auto* loaded_unmatched_drive = json_array_get(loaded_drives, 2);
   ASSERT_TRUE(json_is_object(loaded_unmatched_drive));
   EXPECT_EQ(json_integer_value(json_object_get(loaded_unmatched_drive,
                                                "drive_element_address")),
