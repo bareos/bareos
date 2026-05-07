@@ -398,6 +398,93 @@ std::optional<std::string> ExtractSerialFromDeviceIdentifier(
   return serial;
 }
 
+struct TapeDeviceAliasInfo {
+  bool nonrewinding{false};
+  std::string number{};
+  std::string suffix{};
+};
+
+std::optional<TapeDeviceAliasInfo> ParseTapeDeviceAlias(
+    std::string_view device_node)
+{
+  const auto name = std::filesystem::path{device_node}.filename().string();
+  std::string_view view{name};
+
+  TapeDeviceAliasInfo info;
+  if (view.starts_with("nst")) {
+    info.nonrewinding = true;
+    view.remove_prefix(3);
+  } else if (view.starts_with("st")) {
+    info.nonrewinding = false;
+    view.remove_prefix(2);
+  } else {
+    return std::nullopt;
+  }
+
+  const auto digits_end = view.find_first_not_of("0123456789");
+  if (digits_end == 0) { return std::nullopt; }
+
+  info.number = std::string{view.substr(0, digits_end)};
+  if (digits_end != std::string_view::npos) {
+    info.suffix = std::string{view.substr(digits_end)};
+  }
+
+  return info;
+}
+
+std::string TapeDevicePhysicalKey(const TapeDeviceInfo& tape_device)
+{
+  if (!tape_device.generic_device_node.empty()) {
+    return "generic:" + tape_device.generic_device_node;
+  }
+  if (tape_device.device_identifier) {
+    return "identifier:" + *tape_device.device_identifier;
+  }
+  if (!tape_device.serial.empty()) { return "serial:" + tape_device.serial; }
+  return "device:" + tape_device.device_node;
+}
+
+int TapeDeviceAliasPreference(const TapeDeviceInfo& tape_device)
+{
+  auto alias = ParseTapeDeviceAlias(tape_device.device_node);
+  if (!alias) { return 4; }
+  if (alias->nonrewinding && alias->suffix.empty()) { return 0; }
+  if (!alias->nonrewinding && alias->suffix.empty()) { return 1; }
+  if (alias->nonrewinding) { return 2; }
+  return 3;
+}
+
+void SortAndDeduplicateTapeDevices(std::vector<TapeDeviceInfo>& tape_devices)
+{
+  std::sort(tape_devices.begin(), tape_devices.end(),
+            [](const TapeDeviceInfo& lhs, const TapeDeviceInfo& rhs) {
+              const auto lhs_key = TapeDevicePhysicalKey(lhs);
+              const auto rhs_key = TapeDevicePhysicalKey(rhs);
+              if (lhs_key != rhs_key) { return lhs_key < rhs_key; }
+
+              const auto lhs_preference = TapeDeviceAliasPreference(lhs);
+              const auto rhs_preference = TapeDeviceAliasPreference(rhs);
+              if (lhs_preference != rhs_preference) {
+                return lhs_preference < rhs_preference;
+              }
+
+              return lhs.device_node < rhs.device_node;
+            });
+
+  tape_devices.erase(
+      std::unique(tape_devices.begin(), tape_devices.end(),
+                  [](const TapeDeviceInfo& lhs, const TapeDeviceInfo& rhs) {
+                    return TapeDevicePhysicalKey(lhs)
+                           == TapeDevicePhysicalKey(rhs);
+                  }),
+      tape_devices.end());
+
+  std::sort(tape_devices.begin(), tape_devices.end(),
+            [](const TapeDeviceInfo& lhs, const TapeDeviceInfo& rhs) {
+              return lhs.device_node < rhs.device_node;
+            });
+}
+
 std::optional<std::pair<uint8_t, uint8_t>> ParseLinuxScsiTargetLun(
     const std::filesystem::path& path)
 {
@@ -829,10 +916,7 @@ std::vector<TapeDeviceInfo> ProbeTapeDevicesLinux()
     tape_devices.emplace_back(std::move(tape_device));
   }
 
-  std::sort(tape_devices.begin(), tape_devices.end(),
-            [](const TapeDeviceInfo& lhs, const TapeDeviceInfo& rhs) {
-              return lhs.device_node < rhs.device_node;
-            });
+  SortAndDeduplicateTapeDevices(tape_devices);
   return tape_devices;
 }
 
