@@ -297,6 +297,17 @@ storagedaemon::StorageDiscoveryReport ExampleFallbackReport()
   return report;
 }
 
+storagedaemon::StorageDiscoveryReport ExampleByIdReport()
+{
+  auto report = ExampleReport();
+  report.tape_devices[0].device_node = "/dev/tape/by-id/scsi-123456-nst";
+  report.changers[0].drive_device_nodes = {"/dev/tape/by-id/scsi-123456-nst"};
+  report.changers[0].drives[0].tape_device_node
+      = "/dev/tape/by-id/scsi-123456-nst";
+  report.changers[0].drives[0].source = "read_element_status:identifier";
+  return report;
+}
+
 }  // namespace
 
 TEST(SdDiscoveryCli, ParsesReportSections)
@@ -352,6 +363,26 @@ TEST(SdDiscoveryCli, PreservesFallbackAndUnmatchedDriveMetadata)
   ASSERT_TRUE(filtered.changers[0].drives[1].source);
   EXPECT_EQ(*filtered.changers[0].drives[1].source,
             "read_element_status:unmatched");
+}
+
+TEST(SdDiscoveryCli, PreservesByIdTapeNodesInFilteredTapeSection)
+{
+  auto filtered = storagedaemon::discoverycli::FilterDiscoveryReport(
+      ExampleByIdReport(), storagedaemon::discoverycli::ReportSection::kTape);
+
+  ASSERT_EQ(filtered.tape_devices.size(), 1U);
+  EXPECT_EQ(filtered.tape_devices[0].device_node,
+            "/dev/tape/by-id/scsi-123456-nst");
+  ASSERT_EQ(filtered.changers.size(), 1U);
+  ASSERT_EQ(filtered.changers[0].drive_device_nodes.size(), 1U);
+  EXPECT_EQ(filtered.changers[0].drive_device_nodes[0],
+            "/dev/tape/by-id/scsi-123456-nst");
+  ASSERT_EQ(filtered.changers[0].drives.size(), 1U);
+  EXPECT_EQ(filtered.changers[0].drives[0].tape_device_node,
+            "/dev/tape/by-id/scsi-123456-nst");
+  ASSERT_TRUE(filtered.changers[0].drives[0].source);
+  EXPECT_EQ(*filtered.changers[0].drives[0].source,
+            "read_element_status:identifier");
 }
 
 TEST(SdDiscoveryCli, RendersFilteredJson)
