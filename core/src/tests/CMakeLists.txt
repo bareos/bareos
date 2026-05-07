@@ -259,6 +259,10 @@ if(NOT client-only)
                        ../stored/sd_discovery_probe.cc
     LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   )
+  target_compile_definitions(
+    sd_discovery_cli_test
+    PRIVATE BAREOS_SD_DISCOVER_BINARY="$<TARGET_FILE:bareos-sd-discover>"
+  )
 
   bareos_add_test(
     configure LINK_LIBRARIES testing_common Bareos::Dir Bareos::Findlib

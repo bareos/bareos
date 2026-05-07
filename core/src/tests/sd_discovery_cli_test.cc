@@ -21,12 +21,190 @@
 
 #include "gtest/gtest.h"
 
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <jansson.h>
+#include <optional>
 
+#include "include/bareos.h"
 #include "stored/sd_discovery_probe.h"
 #include "tools/sd_discovery_cli.h"
 
 namespace {
+
+class ScopedEnvironmentVariable {
+ public:
+  ScopedEnvironmentVariable(const char* name, std::string value) : name_(name)
+  {
+    if (const char* existing = std::getenv(name_); existing) {
+      previous_ = existing;
+    }
+#if HAVE_WIN32
+    _putenv_s(name_, value.c_str());
+#else
+    setenv(name_, value.c_str(), 1);
+#endif
+  }
+
+  ~ScopedEnvironmentVariable()
+  {
+    if (previous_) {
+#if HAVE_WIN32
+      _putenv_s(name_, previous_->c_str());
+#else
+      setenv(name_, previous_->c_str(), 1);
+#endif
+    } else {
+#if HAVE_WIN32
+      _putenv_s(name_, "");
+#else
+      unsetenv(name_);
+#endif
+    }
+  }
+
+ private:
+  const char* name_;
+  std::optional<std::string> previous_{};
+};
+
+class ScopedDirectory {
+ public:
+  ScopedDirectory()
+  {
+    const auto unique = "sd-discovery-cli-test-" + std::to_string(std::rand());
+    path_ = std::filesystem::temp_directory_path() / unique;
+    std::filesystem::create_directories(path_);
+  }
+
+  ~ScopedDirectory()
+  {
+    std::error_code error_code;
+    std::filesystem::remove_all(path_, error_code);
+  }
+
+  const std::filesystem::path& path() const { return path_; }
+
+ private:
+  std::filesystem::path path_{};
+};
+
+#if defined(HAVE_LINUX_OS)
+void WriteBinaryFile(const std::filesystem::path& path,
+                     std::string_view content)
+{
+  std::filesystem::create_directories(path.parent_path());
+  std::ofstream stream(path, std::ios::binary | std::ios::trunc);
+  stream.write(content.data(), static_cast<std::streamsize>(content.size()));
+}
+
+std::string ReadTextFile(const std::filesystem::path& path)
+{
+  std::ifstream stream(path, std::ios::binary);
+  return {std::istreambuf_iterator<char>(stream),
+          std::istreambuf_iterator<char>()};
+}
+
+std::string QuoteShellArgument(std::string_view value)
+{
+#  if HAVE_WIN32
+  return "\"" + std::string{value} + "\"";
+#  else
+  std::string quoted{"'"};
+  for (char ch : value) {
+    if (ch == '\'') {
+      quoted += "'\"'\"'";
+    } else {
+      quoted.push_back(ch);
+    }
+  }
+  quoted += "'";
+  return quoted;
+#  endif
+}
+
+int ExtractExitStatus(int result)
+{
+#  if HAVE_WIN32
+  return result;
+#  else
+  if (result == -1) { return -1; }
+  if (WIFEXITED(result)) { return WEXITSTATUS(result); }
+  return -1;
+#  endif
+}
+
+std::string BuildPage80(std::string_view serial)
+{
+  std::string page;
+  page.push_back('\0');
+  page.push_back(static_cast<char>(0x80));
+  page.push_back(static_cast<char>((serial.size() >> 8) & 0xff));
+  page.push_back(static_cast<char>(serial.size() & 0xff));
+  page.append(serial);
+  return page;
+}
+
+std::string BuildPage83Naa(std::string_view designator)
+{
+  std::string page;
+  page.push_back('\0');
+  page.push_back(static_cast<char>(0x83));
+  page.push_back('\0');
+  page.push_back(static_cast<char>(4 + designator.size()));
+  page.push_back(static_cast<char>(0x01));
+  page.push_back(static_cast<char>(0x03));
+  page.push_back('\0');
+  page.push_back(static_cast<char>(designator.size()));
+  page.append(designator);
+  return page;
+}
+
+std::string BuildReadElementStatusDataTransferDescriptor(
+    uint16_t element_address,
+    std::string_view designator)
+{
+  std::string descriptor(12, '\0');
+  descriptor[0] = static_cast<char>((element_address >> 8) & 0xff);
+  descriptor[1] = static_cast<char>(element_address & 0xff);
+  descriptor[2] = static_cast<char>(0x09);
+  descriptor.append(1, static_cast<char>(0x01));
+  descriptor.append(1, static_cast<char>(0x03));
+  descriptor.append(1, '\0');
+  descriptor.append(1, static_cast<char>(designator.size()));
+  descriptor.append(designator);
+  return descriptor;
+}
+
+std::string BuildReadElementStatusData(
+    std::initializer_list<std::string_view> descriptors)
+{
+  std::string page(8, '\0');
+  page[0] = static_cast<char>(0x04);
+  std::size_t descriptor_size = 0;
+  std::size_t descriptor_length = 0;
+  for (const auto descriptor : descriptors) {
+    descriptor_size += descriptor.size();
+    descriptor_length = descriptor.size();
+    page.append(descriptor);
+  }
+  page[2] = static_cast<char>((descriptor_length >> 8) & 0xff);
+  page[3] = static_cast<char>(descriptor_length & 0xff);
+  page[5] = static_cast<char>((descriptor_size >> 16) & 0xff);
+  page[6] = static_cast<char>((descriptor_size >> 8) & 0xff);
+  page[7] = static_cast<char>(descriptor_size & 0xff);
+
+  std::string payload(8, '\0');
+  payload[2] = '\0';
+  payload[3] = '\1';
+  payload[5] = static_cast<char>((page.size() >> 16) & 0xff);
+  payload[6] = static_cast<char>((page.size() >> 8) & 0xff);
+  payload[7] = static_cast<char>(page.size() & 0xff);
+  payload.append(page);
+  return payload;
+}
+#endif
 
 storagedaemon::StorageDiscoveryReport ExampleReport()
 {
@@ -214,3 +392,87 @@ TEST(SdDiscoveryCli, RendersUnmatchedDriveMetadataInJson)
 
   json_decref(parsed);
 }
+
+#if defined(HAVE_LINUX_OS)
+TEST(SdDiscoveryCli, InvokesExecutableWithTapeSection)
+{
+  ScopedDirectory sysfs_root;
+  ScopedDirectory dev_root;
+  ScopedDirectory read_element_status_root;
+  ScopedDirectory output_root;
+
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vendor",
+                  "IBM\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/model",
+                  "ULTRIUM-HH8 \n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vpd_pg80",
+                  BuildPage80("TAPE123"));
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vpd_pg83",
+                  BuildPage83Naa("\x11\x22\x33\x44"));
+  std::filesystem::create_directories(
+      sysfs_root.path() / "class/scsi_tape/nst0/device/scsi_generic/sg3");
+  WriteBinaryFile(dev_root.path() / "nst0", "");
+  WriteBinaryFile(dev_root.path() / "sg3", "");
+
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/vendor",
+                  "IBM\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/model",
+                  "3573-TL\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/vpd_pg80",
+                  BuildPage80("CHANGER42"));
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/vpd_pg83",
+                  BuildPage83Naa("\xaa\xbb\xcc\xdd"));
+  std::filesystem::create_directories(
+      sysfs_root.path() / "class/scsi_changer/sch0/device/scsi_generic/sg4");
+  WriteBinaryFile(dev_root.path() / "sg4", "");
+  WriteBinaryFile(
+      read_element_status_root.path() / "sg4.bin",
+      BuildReadElementStatusData({BuildReadElementStatusDataTransferDescriptor(
+          256, "\x11\x22\x33\x44")}));
+
+  ScopedEnvironmentVariable sysfs_override{"BAREOS_SD_DISCOVERY_SYSFS_ROOT",
+                                           sysfs_root.path().string()};
+  ScopedEnvironmentVariable dev_override{"BAREOS_SD_DISCOVERY_DEV_ROOT",
+                                         dev_root.path().string()};
+  ScopedEnvironmentVariable read_element_status_override{
+      "BAREOS_SD_DISCOVERY_READ_ELEMENT_STATUS_ROOT",
+      read_element_status_root.path().string()};
+
+  const auto output_path = output_root.path() / "discovery.json";
+  const auto command = QuoteShellArgument(BAREOS_SD_DISCOVER_BINARY)
+                       + " --section tape > "
+                       + QuoteShellArgument(output_path.string());
+  EXPECT_EQ(ExtractExitStatus(std::system(command.c_str())), 0);
+
+  json_error_t error{};
+  json_t* parsed = json_loads(ReadTextFile(output_path).c_str(), 0, &error);
+  ASSERT_NE(parsed, nullptr) << error.text;
+  EXPECT_EQ(json_array_size(json_object_get(parsed, "filesystems")), 0U);
+  EXPECT_EQ(json_array_size(json_object_get(parsed, "tape_devices")), 1U);
+  EXPECT_EQ(json_array_size(json_object_get(parsed, "changers")), 1U);
+
+  auto* tape_device
+      = json_array_get(json_object_get(parsed, "tape_devices"), 0);
+  ASSERT_NE(tape_device, nullptr);
+  EXPECT_STREQ(
+      json_string_value(json_object_get(tape_device, "device_identifier")),
+      "naa.11223344");
+
+  auto* changer = json_array_get(json_object_get(parsed, "changers"), 0);
+  ASSERT_NE(changer, nullptr);
+  auto* drives = json_object_get(changer, "drives");
+  ASSERT_TRUE(json_is_array(drives));
+  ASSERT_EQ(json_array_size(drives), 1U);
+  auto* drive = json_array_get(drives, 0);
+  ASSERT_NE(drive, nullptr);
+  EXPECT_EQ(json_integer_value(json_object_get(drive, "drive_element_address")),
+            256);
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "device_identifier")),
+               "naa.11223344");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "serial")), "TAPE123");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "source")),
+               "read_element_status:identifier");
+
+  json_decref(parsed);
+}
+#endif
