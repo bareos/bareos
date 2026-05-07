@@ -22,6 +22,7 @@
 #include "stored/sd_discovery_probe.h"
 
 #include <algorithm>
+#include <array>
 #include <cerrno>
 #include <cstring>
 #include <cstdlib>
@@ -40,6 +41,8 @@
 #  include <netdb.h>
 #  include <sys/statvfs.h>
 #  include <unistd.h>
+
+#  include "lib/scsi_lli.h"
 #elif defined(HAVE_FREEBSD_OS) || defined(HAVE_DARWIN_OS)
 #  include <netdb.h>
 #  include <sys/mount.h>
@@ -215,6 +218,34 @@ std::filesystem::path DiscoveryDeviceRoot()
   return "/dev";
 }
 
+std::optional<std::filesystem::path> DiscoveryReadElementStatusRoot()
+{
+  if (auto configured = GetEnvironmentVariable(
+          "BAREOS_SD_DISCOVERY_READ_ELEMENT_STATUS_ROOT")) {
+    return std::filesystem::path{*configured};
+  }
+  return std::nullopt;
+}
+
+uint16_t ReadBigEndian16(std::string_view data, std::size_t offset)
+{
+  return (static_cast<uint16_t>(static_cast<unsigned char>(data.at(offset)))
+          << 8)
+         | static_cast<uint16_t>(
+             static_cast<unsigned char>(data.at(offset + 1)));
+}
+
+uint32_t ReadBigEndian24(std::string_view data, std::size_t offset)
+{
+  return (static_cast<uint32_t>(static_cast<unsigned char>(data.at(offset)))
+          << 16)
+         | (static_cast<uint32_t>(
+                static_cast<unsigned char>(data.at(offset + 1)))
+            << 8)
+         | static_cast<uint32_t>(
+             static_cast<unsigned char>(data.at(offset + 2)));
+}
+
 std::optional<std::string> ParseScsiPage80Serial(std::string_view page)
 {
   if (page.size() < 4) { return std::nullopt; }
@@ -338,6 +369,184 @@ std::optional<std::string> ReadScsiDeviceIdentifier(
   auto page83 = ReadBinaryFile(device_path / "vpd_pg83");
   if (!page83) { return std::nullopt; }
   return ParseScsiPage83DeviceIdentifier(*page83);
+}
+
+std::array<unsigned char, 12> BuildReadElementStatusCdb(
+    uint16_t starting_element_address,
+    uint16_t number_of_elements,
+    uint32_t allocation_length)
+{
+  std::array<unsigned char, 12> cdb{};
+  cdb[0] = 0xb8;
+  cdb[1] = 0x04;
+  cdb[2] = static_cast<unsigned char>((starting_element_address >> 8) & 0xff);
+  cdb[3] = static_cast<unsigned char>(starting_element_address & 0xff);
+  cdb[4] = static_cast<unsigned char>((number_of_elements >> 8) & 0xff);
+  cdb[5] = static_cast<unsigned char>(number_of_elements & 0xff);
+  cdb[6] = 0x01;
+  cdb[7] = static_cast<unsigned char>((allocation_length >> 16) & 0xff);
+  cdb[8] = static_cast<unsigned char>((allocation_length >> 8) & 0xff);
+  cdb[9] = static_cast<unsigned char>(allocation_length & 0xff);
+  return cdb;
+}
+
+std::optional<std::string> ReadChangerElementStatusFixture(
+    const std::string& changer_device_node)
+{
+  auto fixture_root = DiscoveryReadElementStatusRoot();
+  if (!fixture_root) { return std::nullopt; }
+
+  const auto fixture_path
+      = *fixture_root
+        / (std::filesystem::path{changer_device_node}.filename().string()
+           + ".bin");
+  return ReadBinaryFile(fixture_path);
+}
+
+std::optional<std::string> ReadChangerElementStatusData(
+    const std::string& changer_device_node)
+{
+  if (auto fixture = ReadChangerElementStatusFixture(changer_device_node)) {
+    return fixture;
+  }
+
+  if (changer_device_node.empty()) { return std::nullopt; }
+
+  constexpr uint16_t kAllElements = 0xffff;
+  constexpr uint32_t kHeaderLength = 8;
+
+  auto header_cdb = BuildReadElementStatusCdb(0, kAllElements, kHeaderLength);
+  std::array<unsigned char, kHeaderLength> header{};
+  if (!RecvScsiCmdPage(-1, changer_device_node.c_str(), header_cdb.data(),
+                       header_cdb.size(), header.data(), header.size())) {
+    return std::nullopt;
+  }
+
+  std::string_view header_view{reinterpret_cast<const char*>(header.data()),
+                               header.size()};
+  const auto total_length = static_cast<std::size_t>(
+      kHeaderLength + ReadBigEndian24(header_view, 5));
+  if (total_length <= kHeaderLength || total_length > 0x00ffffffU) {
+    return std::nullopt;
+  }
+
+  auto full_cdb = BuildReadElementStatusCdb(
+      0, kAllElements, static_cast<uint32_t>(total_length));
+  std::string payload(total_length, '\0');
+  if (!RecvScsiCmdPage(-1, changer_device_node.c_str(), full_cdb.data(),
+                       full_cdb.size(), payload.data(),
+                       static_cast<unsigned int>(payload.size()))) {
+    return std::nullopt;
+  }
+
+  return payload;
+}
+
+ChangerDriveInfo ParseElementStatusDescriptor(std::string_view descriptor,
+                                              uint8_t page_flags)
+{
+  ChangerDriveInfo drive;
+  if (descriptor.size() < 12) { return drive; }
+
+  drive.drive_element_address = ReadBigEndian16(descriptor, 0);
+  std::size_t offset = 12;
+  if ((page_flags & 0x80U) != 0) { offset += 36; }
+  if ((page_flags & 0x40U) != 0) { offset += 36; }
+  if (offset + 4 > descriptor.size()) { return drive; }
+
+  const auto code_set = static_cast<uint8_t>(
+      static_cast<unsigned char>(descriptor[offset]) & 0x0f);
+  const auto designator_type = static_cast<uint8_t>(
+      static_cast<unsigned char>(descriptor[offset + 1]) & 0x0f);
+  const auto identifier_length = static_cast<std::size_t>(
+      static_cast<unsigned char>(descriptor[offset + 3]));
+  if (offset + 4 + identifier_length > descriptor.size()) { return drive; }
+
+  drive.device_identifier = FormatScsiDeviceIdentifier(
+      designator_type, code_set,
+      descriptor.substr(offset + 4, identifier_length));
+  return drive;
+}
+
+std::vector<ChangerDriveInfo> ParseChangerDriveStatusData(
+    std::string_view payload)
+{
+  std::vector<ChangerDriveInfo> drives;
+  if (payload.size() < 8) { return drives; }
+
+  const auto report_length
+      = static_cast<std::size_t>(8 + ReadBigEndian24(payload, 5));
+  const auto end = std::min(payload.size(), report_length);
+  std::size_t offset = 8;
+  while (offset + 8 <= end) {
+    const auto page_flags
+        = static_cast<uint8_t>(static_cast<unsigned char>(payload[offset + 1]));
+    const auto descriptor_length
+        = static_cast<std::size_t>(ReadBigEndian16(payload, offset + 2));
+    const auto descriptor_bytes
+        = static_cast<std::size_t>(ReadBigEndian24(payload, offset + 5));
+    const auto page_end = offset + 8 + descriptor_bytes;
+    if (page_end > end) { break; }
+
+    if (static_cast<unsigned char>(payload[offset]) == 0x04
+        && descriptor_length >= 12) {
+      std::size_t descriptor_offset = offset + 8;
+      while (descriptor_offset + descriptor_length <= page_end) {
+        auto drive = ParseElementStatusDescriptor(
+            payload.substr(descriptor_offset, descriptor_length), page_flags);
+        if (drive.drive_element_address || drive.device_identifier) {
+          drive.source = "read_element_status";
+          drives.emplace_back(std::move(drive));
+        }
+        descriptor_offset += descriptor_length;
+      }
+    }
+
+    offset = page_end;
+  }
+
+  return drives;
+}
+
+void CorrelateChangerDrives(ChangerInfo& changer,
+                            const std::vector<TapeDeviceInfo>& tape_devices)
+{
+  changer.drive_device_nodes.clear();
+  for (auto& drive : changer.drives) {
+    if (!drive.device_identifier) { continue; }
+
+    auto tape = std::find_if(tape_devices.begin(), tape_devices.end(),
+                             [&](const TapeDeviceInfo& candidate) {
+                               return candidate.device_identifier
+                                      == drive.device_identifier;
+                             });
+    if (tape == tape_devices.end()) { continue; }
+
+    drive.tape_device_node = tape->device_node;
+    drive.generic_device_node = tape->generic_device_node;
+    if (!drive.serial && !tape->serial.empty()) { drive.serial = tape->serial; }
+    if (!drive.tape_device_node.empty()) {
+      changer.drive_device_nodes.emplace_back(drive.tape_device_node);
+    }
+  }
+
+  std::sort(changer.drive_device_nodes.begin(),
+            changer.drive_device_nodes.end());
+  changer.drive_device_nodes.erase(
+      std::unique(changer.drive_device_nodes.begin(),
+                  changer.drive_device_nodes.end()),
+      changer.drive_device_nodes.end());
+}
+
+void EnrichChangerTopologyLinux(StorageDiscoveryReport& report)
+{
+  for (auto& changer : report.changers) {
+    auto payload = ReadChangerElementStatusData(changer.device_node);
+    if (!payload) { continue; }
+
+    changer.drives = ParseChangerDriveStatusData(*payload);
+    CorrelateChangerDrives(changer, report.tape_devices);
+  }
 }
 
 std::string ResolveGenericDeviceNode(const std::filesystem::path& device_path)
@@ -722,6 +931,7 @@ StorageDiscoveryReport ProbeStorageDiscoveryReport()
   report.filesystems = ProbeFilesystemCandidatesLinux();
   report.tape_devices = ProbeTapeDevicesLinux();
   report.changers = ProbeChangersLinux();
+  EnrichChangerTopologyLinux(report);
 #elif defined(HAVE_FREEBSD_OS) || defined(HAVE_DARWIN_OS)
   report.filesystems = ProbeFilesystemCandidatesBsd();
 #elif defined(HAVE_WIN32)

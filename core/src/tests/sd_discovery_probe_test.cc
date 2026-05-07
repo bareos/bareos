@@ -124,6 +124,43 @@ std::string BuildPage83Naa(std::string_view designator)
   page.append(designator);
   return page;
 }
+
+std::string BuildReadElementStatusDataTransferDescriptor(
+    uint16_t element_address,
+    std::string_view designator)
+{
+  std::string descriptor(12, '\0');
+  descriptor[0] = static_cast<char>((element_address >> 8) & 0xff);
+  descriptor[1] = static_cast<char>(element_address & 0xff);
+  descriptor[2] = static_cast<char>(0x09);
+  descriptor.append(1, static_cast<char>(0x01));
+  descriptor.append(1, static_cast<char>(0x03));
+  descriptor.append(1, '\0');
+  descriptor.append(1, static_cast<char>(designator.size()));
+  descriptor.append(designator);
+  return descriptor;
+}
+
+std::string BuildReadElementStatusData(std::string_view descriptor)
+{
+  std::string page(8, '\0');
+  page[0] = static_cast<char>(0x04);
+  page[2] = static_cast<char>((descriptor.size() >> 8) & 0xff);
+  page[3] = static_cast<char>(descriptor.size() & 0xff);
+  page[5] = static_cast<char>((descriptor.size() >> 16) & 0xff);
+  page[6] = static_cast<char>((descriptor.size() >> 8) & 0xff);
+  page[7] = static_cast<char>(descriptor.size() & 0xff);
+  page.append(descriptor);
+
+  std::string payload(8, '\0');
+  payload[2] = '\0';
+  payload[3] = '\1';
+  payload[5] = static_cast<char>((page.size() >> 16) & 0xff);
+  payload[6] = static_cast<char>((page.size() >> 8) & 0xff);
+  payload[7] = static_cast<char>(page.size() & 0xff);
+  payload.append(page);
+  return payload;
+}
 #endif
 
 }  // namespace
@@ -271,6 +308,7 @@ TEST(SdDiscoveryProbe, ProbesTapeAndChangerSerialsFromLinuxSysfs)
 {
   ScopedDirectory sysfs_root;
   ScopedDirectory dev_root;
+  ScopedDirectory read_element_status_root;
 
   WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vendor",
                   "IBM\n");
@@ -301,6 +339,13 @@ TEST(SdDiscoveryProbe, ProbesTapeAndChangerSerialsFromLinuxSysfs)
                                            sysfs_root.path().string()};
   ScopedEnvironmentVariable dev_override{"BAREOS_SD_DISCOVERY_DEV_ROOT",
                                          dev_root.path().string()};
+  ScopedEnvironmentVariable read_element_status_override{
+      "BAREOS_SD_DISCOVERY_READ_ELEMENT_STATUS_ROOT",
+      read_element_status_root.path().string()};
+  WriteBinaryFile(
+      read_element_status_root.path() / "sg4.bin",
+      BuildReadElementStatusData(BuildReadElementStatusDataTransferDescriptor(
+          256, "\x11\x22\x33\x44")));
 
   const auto report = storagedaemon::ProbeStorageDiscoveryReport();
 
@@ -324,5 +369,21 @@ TEST(SdDiscoveryProbe, ProbesTapeAndChangerSerialsFromLinuxSysfs)
   EXPECT_EQ(*report.changers[0].device_identifier, "naa.aabbccdd");
   EXPECT_EQ(report.changers[0].serial, "CHANGER42");
   EXPECT_TRUE(report.changers[0].accessible);
+  ASSERT_EQ(report.changers[0].drive_device_nodes.size(), 1U);
+  EXPECT_EQ(report.changers[0].drive_device_nodes[0],
+            (dev_root.path() / "nst0").string());
+  ASSERT_EQ(report.changers[0].drives.size(), 1U);
+  EXPECT_EQ(report.changers[0].drives[0].tape_device_node,
+            (dev_root.path() / "nst0").string());
+  EXPECT_EQ(report.changers[0].drives[0].generic_device_node,
+            (dev_root.path() / "sg3").string());
+  ASSERT_TRUE(report.changers[0].drives[0].drive_element_address);
+  EXPECT_EQ(*report.changers[0].drives[0].drive_element_address, 256U);
+  ASSERT_TRUE(report.changers[0].drives[0].device_identifier);
+  EXPECT_EQ(*report.changers[0].drives[0].device_identifier, "naa.11223344");
+  ASSERT_TRUE(report.changers[0].drives[0].serial);
+  EXPECT_EQ(*report.changers[0].drives[0].serial, "TAPE123");
+  ASSERT_TRUE(report.changers[0].drives[0].source);
+  EXPECT_EQ(*report.changers[0].drives[0].source, "read_element_status");
 }
 #endif
