@@ -1162,4 +1162,24 @@ TEST(SdDiscoveryCli, RejectsInvalidFormatOption)
   EXPECT_NE(stderr.find("--format"), std::string::npos);
   EXPECT_NE(stderr.find("bogus"), std::string::npos);
 }
+
+TEST(SdDiscoveryCli, PrintsHelp)
+{
+  ScopedDirectory output_root;
+
+  const auto stdout_path = output_root.path() / "stdout.txt";
+  const auto stderr_path = output_root.path() / "stderr.txt";
+  const auto command = QuoteShellArgument(BAREOS_SD_DISCOVER_BINARY)
+                       + " --help > " + QuoteShellArgument(stdout_path.string())
+                       + " 2> " + QuoteShellArgument(stderr_path.string());
+  EXPECT_EQ(ExtractExitStatus(std::system(command.c_str())), 0);
+  EXPECT_TRUE(ReadTextFile(stderr_path).empty());
+
+  const auto stdout = ReadTextFile(stdout_path);
+  EXPECT_NE(stdout.find("Print storage discovery information as JSON."),
+            std::string::npos);
+  EXPECT_NE(stdout.find("[OPTIONS]"), std::string::npos);
+  EXPECT_NE(stdout.find("--format"), std::string::npos);
+  EXPECT_NE(stdout.find("--section"), std::string::npos);
+}
 #endif
