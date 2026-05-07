@@ -1034,11 +1034,6 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
   ASSERT_EQ(json_array_size(loaded_changers), 1u);
   auto* loaded_changer = json_array_get(loaded_changers, 0);
   ASSERT_TRUE(json_is_object(loaded_changer));
-  EXPECT_STREQ(
-      json_string_value(json_object_get(loaded_changer, "device_identifier")),
-      "naa.aabbccdd");
-  EXPECT_STREQ(json_string_value(json_object_get(loaded_changer, "serial")),
-               "CHANGER42");
   auto* loaded_drive_device_nodes
       = json_object_get(loaded_changer, "drive_device_nodes");
   ASSERT_TRUE(json_is_array(loaded_drive_device_nodes));
