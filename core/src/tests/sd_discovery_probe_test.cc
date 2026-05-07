@@ -392,6 +392,71 @@ TEST(SdDiscoveryProbe, SerializesByIdTapeNodes)
   json_decref(parsed);
 }
 
+TEST(SdDiscoveryProbe, SerializesByIdSerialFallback)
+{
+  storagedaemon::StorageDiscoveryReport report;
+  report.hostname = "sdhost";
+  report.fqdn = "sdhost.example.com";
+  report.tape_devices.push_back({
+      .device_node = "/dev/tape/by-id/scsi-123456-nst",
+      .generic_device_node = "/dev/sg3",
+      .vendor = "HPE",
+      .model = "Ultrium 9-SCSI",
+      .device_identifier = "naa.2034453737343146",
+      .serial = "4E77FE415F",
+      .accessible = true,
+  });
+  report.changers.push_back({
+      .device_node = "/dev/sg4",
+      .vendor = "IBM",
+      .model = "3573-TL",
+      .device_identifier = "naa.aabbccdd",
+      .serial = "CHG1",
+      .drive_device_nodes = {"/dev/tape/by-id/scsi-123456-nst"},
+      .drives = {{
+          .tape_device_node = "/dev/tape/by-id/scsi-123456-nst",
+          .generic_device_node = "/dev/sg3",
+          .drive_element_address = 256,
+          .device_identifier = "t10.HPE     Ultrium 9-SCSI  4E77FE415F",
+          .serial = "4E77FE415F",
+          .source = "read_element_status:serial",
+      }},
+      .accessible = true,
+  });
+
+  const auto json = storagedaemon::StorageDiscoveryReportToJson(report);
+  json_error_t error{};
+  json_t* parsed = json_loads(json.c_str(), 0, &error);
+
+  ASSERT_NE(parsed, nullptr) << error.text;
+  auto* tape_device
+      = json_array_get(json_object_get(parsed, "tape_devices"), 0);
+  ASSERT_NE(tape_device, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(tape_device, "device_node")),
+               "/dev/tape/by-id/scsi-123456-nst");
+
+  auto* changer = json_array_get(json_object_get(parsed, "changers"), 0);
+  ASSERT_NE(changer, nullptr);
+  auto* drive_device_nodes = json_object_get(changer, "drive_device_nodes");
+  ASSERT_TRUE(json_is_array(drive_device_nodes));
+  ASSERT_EQ(json_array_size(drive_device_nodes), 1U);
+  EXPECT_STREQ(json_string_value(json_array_get(drive_device_nodes, 0)),
+               "/dev/tape/by-id/scsi-123456-nst");
+
+  auto* drive = json_array_get(json_object_get(changer, "drives"), 0);
+  ASSERT_NE(drive, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "tape_device_node")),
+               "/dev/tape/by-id/scsi-123456-nst");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "source")),
+               "read_element_status:serial");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "device_identifier")),
+               "t10.HPE     Ultrium 9-SCSI  4E77FE415F");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "serial")),
+               "4E77FE415F");
+
+  json_decref(parsed);
+}
+
 TEST(SdDiscoveryProbe, ProbesFilesystemCandidatesForCurrentHost)
 {
   const auto report = storagedaemon::ProbeStorageDiscoveryReport();
