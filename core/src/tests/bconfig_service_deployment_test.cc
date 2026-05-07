@@ -893,7 +893,22 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
       session_base_path + "/discovery",
       "{\"bootstrap_token\":\"" + bootstrap_token_text
           + "\",\"hostname\":\"sdhost\",\"fqdn\":\"sdhost.example.com\","
-            "\"report\":{\"hostname\":\"sdhost\",\"filesystems\":[]}}");
+            "\"report\":{\"hostname\":\"sdhost\",\"filesystems\":[],"
+            "\"tape_devices\":[{\"device_node\":\"/dev/nst0\","
+            "\"generic_device_node\":\"/dev/sg3\",\"vendor\":\"IBM\","
+            "\"model\":\"ULTRIUM-HH8\",\"device_identifier\":\"naa.11223344\","
+            "\"serial\":\"TAPE123\",\"accessible\":true,"
+            "\"accessibility_error\":\"\"}],"
+            "\"changers\":[{\"device_node\":\"/dev/sg4\",\"vendor\":\"IBM\","
+            "\"model\":\"3573-TL\",\"device_identifier\":\"naa.aabbccdd\","
+            "\"serial\":\"CHANGER42\",\"drive_device_nodes\":[\"/dev/nst0\"],"
+            "\"drives\":[{\"tape_device_node\":\"/dev/nst0\","
+            "\"generic_device_node\":\"/dev/sg3\","
+            "\"drive_element_address\":256,"
+            "\"device_identifier\":\"naa.11223344\","
+            "\"serial\":\"TAPE123\","
+            "\"source\":\"read_element_status:identifier\"}],"
+            "\"accessible\":true,\"accessibility_error\":\"\"}]}}");
   ASSERT_EQ(discovery_response.status_code, 200u) << discovery_response.body;
   auto discovery_json = ParseJson(discovery_response.body);
   ASSERT_NE(discovery_json.get(), nullptr) << discovery_response.body;
@@ -907,6 +922,34 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
   auto* discovery_hostname = json_object_get(discovery_report, "hostname");
   ASSERT_TRUE(json_is_string(discovery_hostname));
   EXPECT_STREQ(json_string_value(discovery_hostname), "sdhost");
+  auto* tape_devices = json_object_get(discovery_report, "tape_devices");
+  ASSERT_TRUE(json_is_array(tape_devices));
+  ASSERT_EQ(json_array_size(tape_devices), 1u);
+  auto* tape_device = json_array_get(tape_devices, 0);
+  ASSERT_TRUE(json_is_object(tape_device));
+  EXPECT_STREQ(
+      json_string_value(json_object_get(tape_device, "device_identifier")),
+      "naa.11223344");
+  EXPECT_STREQ(json_string_value(json_object_get(tape_device, "serial")),
+               "TAPE123");
+  auto* changers = json_object_get(discovery_report, "changers");
+  ASSERT_TRUE(json_is_array(changers));
+  ASSERT_EQ(json_array_size(changers), 1u);
+  auto* changer = json_array_get(changers, 0);
+  ASSERT_TRUE(json_is_object(changer));
+  EXPECT_STREQ(json_string_value(json_object_get(changer, "device_identifier")),
+               "naa.aabbccdd");
+  auto* drives = json_object_get(changer, "drives");
+  ASSERT_TRUE(json_is_array(drives));
+  ASSERT_EQ(json_array_size(drives), 1u);
+  auto* drive = json_array_get(drives, 0);
+  ASSERT_TRUE(json_is_object(drive));
+  EXPECT_EQ(json_integer_value(json_object_get(drive, "drive_element_address")),
+            256);
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "device_identifier")),
+               "naa.11223344");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "source")),
+               "read_element_status:identifier");
 
   const auto selection_response = server.Post(
       session_base_path + "/selection",
@@ -933,6 +976,20 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
   ASSERT_TRUE(json_is_object(loaded));
   EXPECT_STREQ(json_string_value(json_object_get(loaded, "status")),
                "selected");
+  auto* loaded_report = json_object_get(loaded, "discovery_report");
+  ASSERT_TRUE(json_is_object(loaded_report));
+  auto* loaded_changers = json_object_get(loaded_report, "changers");
+  ASSERT_TRUE(json_is_array(loaded_changers));
+  ASSERT_EQ(json_array_size(loaded_changers), 1u);
+  auto* loaded_changer = json_array_get(loaded_changers, 0);
+  ASSERT_TRUE(json_is_object(loaded_changer));
+  auto* loaded_drives = json_object_get(loaded_changer, "drives");
+  ASSERT_TRUE(json_is_array(loaded_drives));
+  ASSERT_EQ(json_array_size(loaded_drives), 1u);
+  auto* loaded_drive = json_array_get(loaded_drives, 0);
+  ASSERT_TRUE(json_is_object(loaded_drive));
+  EXPECT_STREQ(json_string_value(json_object_get(loaded_drive, "serial")),
+               "TAPE123");
 
   const auto config_response = server.Get(
       session_base_path + "/config-bundle?token=" + bootstrap_token_text);
