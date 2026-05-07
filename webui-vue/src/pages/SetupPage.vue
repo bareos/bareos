@@ -241,6 +241,240 @@
                 </div>
               </q-banner>
 
+              <q-card
+                v-if="setup.completed"
+                flat
+                bordered
+                class="q-mb-md"
+                data-testid="setup-storage-bootstrap"
+              >
+                <q-card-section>
+                  <div class="text-subtitle1">
+                    {{ t('Remote storage daemon (optional)') }}
+                  </div>
+                  <div class="text-body2 q-mt-xs">
+                    {{ t('Create a storage bootstrap session, run the generated bareos-sd --discovery command on the storage host, then select the reported archive path once discovery data arrives.') }}
+                  </div>
+                </q-card-section>
+
+                <q-separator />
+
+                <q-card-section>
+                  <q-banner
+                    v-if="setup.storageBootstrapError"
+                    dense
+                    class="bg-negative text-white q-mb-md rounded-borders"
+                  >
+                    <template #avatar><q-icon name="error" /></template>
+                    {{ setup.storageBootstrapError }}
+                  </q-banner>
+
+                  <div
+                    v-if="!storageBootstrapSession"
+                    class="column items-start q-gutter-md"
+                  >
+                    <div class="text-body2">
+                      {{ t('Use this optional step when the storage daemon should be prepared on another host before it receives its final configuration.') }}
+                    </div>
+                    <q-btn
+                      data-testid="setup-storage-bootstrap-create"
+                      color="primary"
+                      :label="t('Prepare remote storage daemon')"
+                      :loading="setup.storageBootstrapLoading"
+                      @click="prepareRemoteStorage"
+                    />
+                  </div>
+
+                  <div v-else class="column q-gutter-md">
+                    <div class="row items-center q-col-gutter-md">
+                      <div class="col-auto">
+                        <q-chip
+                          square
+                          dense
+                          text-color="white"
+                          :color="storageBootstrapStatusMeta.color"
+                          data-testid="setup-storage-bootstrap-status"
+                        >
+                          {{ storageBootstrapStatusMeta.label }}
+                        </q-chip>
+                      </div>
+                      <div class="col">
+                        <div class="text-body2 text-weight-medium">
+                          {{ t('Session {id}', { id: storageBootstrapSession.id }) }}
+                        </div>
+                        <div class="text-caption text-grey-8">
+                          {{ storageBootstrapStatusMeta.description }}
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <q-btn
+                          flat
+                          color="primary"
+                          icon="refresh"
+                          :label="t('Refresh')"
+                          :loading="setup.storageBootstrapLoading"
+                          @click="refreshRemoteStorage"
+                        />
+                      </div>
+                    </div>
+
+                    <q-input
+                      :model-value="storageBootstrapCommand"
+                      data-testid="setup-storage-bootstrap-command"
+                      :label="t('Run on the storage host')"
+                      readonly
+                      autogrow
+                      type="textarea"
+                      outlined
+                    >
+                      <template #append>
+                        <q-btn
+                          flat
+                          dense
+                          round
+                          color="primary"
+                          icon="content_copy"
+                          :aria-label="t('Copy bootstrap command')"
+                          :title="t('Copy bootstrap command')"
+                          @click="copyStorageBootstrapCommand"
+                        />
+                      </template>
+                    </q-input>
+
+                    <q-banner
+                      dense
+                      class="bg-blue-1 text-primary rounded-borders"
+                    >
+                      <template #avatar><q-icon name="terminal" /></template>
+                      {{ t('The storage host registers itself with bconfig-service, uploads its discovery report, waits for your selected archive path, and then downloads its config bundle.') }}
+                    </q-banner>
+
+                    <div
+                      v-if="storageBootstrapSession.selection"
+                      class="text-body2"
+                    >
+                      {{ t('Selected archive path: {path}', {
+                        path: storageBootstrapSession.selection.archive_path,
+                      }) }}
+                    </div>
+
+                    <div
+                      v-if="storageDiscoveryFilesystems.length"
+                      class="column q-gutter-md"
+                    >
+                      <div class="text-subtitle2">
+                        {{ t('Detected filesystems') }}
+                      </div>
+                      <q-select
+                        v-model="storageBootstrapSelection.filesystemMountpoint"
+                        :options="storageFilesystemOptions"
+                        emit-value
+                        map-options
+                        outlined
+                        dense
+                        :label="t('Archive filesystem')"
+                      />
+                      <q-input
+                        v-model="storageBootstrapSelection.archivePath"
+                        outlined
+                        dense
+                        :label="t('Archive path')"
+                        :hint="t('Choose the directory that should become the File device archive path on the storage host.')"
+                      />
+                      <q-btn
+                        color="primary"
+                        :label="t('Use selected archive path')"
+                        :loading="setup.submittingStorageSelection"
+                        :disable="!storageBootstrapSelection.archivePath.trim()"
+                        @click="submitRemoteStorageLayout"
+                      />
+
+                      <q-list bordered separator class="rounded-borders">
+                        <q-item
+                          v-for="filesystem in storageDiscoveryFilesystems"
+                          :key="filesystem.mountpoint"
+                        >
+                          <q-item-section>
+                            <q-item-label class="text-weight-medium">
+                              {{ filesystem.mountpoint }}
+                            </q-item-label>
+                            <q-item-label caption>
+                              {{ filesystem.filesystem_type }} ·
+                              {{ t('Free: {size}', {
+                                size: formatByteCount(filesystem.free_bytes),
+                              }) }} ·
+                              {{ filesystem.suitable_for_archive
+                                ? t('recommended')
+                                : t('not recommended') }}
+                            </q-item-label>
+                            <q-item-label
+                              v-if="filesystem.recommended_archive_path"
+                              caption
+                            >
+                              {{ t('Suggested archive path: {path}', {
+                                path: filesystem.recommended_archive_path,
+                              }) }}
+                            </q-item-label>
+                          </q-item-section>
+                        </q-item>
+                      </q-list>
+                    </div>
+
+                    <q-banner
+                      v-else-if="storageBootstrapSession.status === 'discovered'"
+                      dense
+                      class="bg-warning text-dark rounded-borders"
+                    >
+                      <template #avatar><q-icon name="warning" /></template>
+                      {{ t('No filesystem candidates were reported by the storage host.') }}
+                    </q-banner>
+
+                    <div
+                      v-if="storageDiscoveryTapeDevices.length || storageDiscoveryChangers.length"
+                      class="column q-gutter-md"
+                    >
+                      <div class="text-subtitle2">
+                        {{ t('Detected tape hardware') }}
+                      </div>
+                      <q-list bordered separator class="rounded-borders">
+                        <q-item
+                          v-for="device in storageDiscoveryTapeDevices"
+                          :key="device.device_node"
+                        >
+                          <q-item-section>
+                            <q-item-label class="text-weight-medium">
+                              {{ device.device_node }}
+                            </q-item-label>
+                            <q-item-label caption>
+                              {{ [device.vendor, device.model, device.serial]
+                                .filter(Boolean)
+                                .join(' · ') }}
+                            </q-item-label>
+                          </q-item-section>
+                        </q-item>
+                        <q-item
+                          v-for="changer in storageDiscoveryChangers"
+                          :key="changer.device_node"
+                        >
+                          <q-item-section>
+                            <q-item-label class="text-weight-medium">
+                              {{ changer.device_node }}
+                            </q-item-label>
+                            <q-item-label caption>
+                              {{ t('{count} drive entries', {
+                                count: Array.isArray(changer.drives)
+                                  ? changer.drives.length
+                                  : 0,
+                              }) }}
+                            </q-item-label>
+                          </q-item-section>
+                        </q-item>
+                      </q-list>
+                    </div>
+                  </div>
+                </q-card-section>
+              </q-card>
+
               <q-stepper-navigation>
                 <q-btn
                   v-if="!setup.completed"
@@ -275,7 +509,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
@@ -284,10 +525,13 @@ import borisIcon from '../assets/boris.png'
 import { useAuthStore } from '../stores/auth.js'
 import { useSettingsStore } from '../stores/settings.js'
 import {
+  buildDefaultSetupBootstrapUrl,
   buildDefaultDaemonAddress,
   buildDefaultRepositoryPath,
   buildDefaultRuntimeRoot,
+  buildStorageBootstrapCommand,
   deriveSetupDaemonNames,
+  DEFAULT_STORAGE_DEVICE_NAME,
   getDefaultSetupClientPort,
   getDefaultSetupDirectorPort,
   getDefaultSetupStoragePort,
@@ -307,7 +551,12 @@ const step = ref(1)
 const locale = ref(settings.locale)
 const showAdminPassword = ref(false)
 const errorMsg = ref(null)
+let storageBootstrapPollHandle = null
 const defaultDaemonNames = deriveSetupDaemonNames(buildDefaultDaemonAddress())
+const storageBootstrapSelection = reactive({
+  filesystemMountpoint: '',
+  archivePath: '',
+})
 
 const form = reactive({
   deploymentId: DEFAULT_DEPLOYMENT_ID,
@@ -348,6 +597,41 @@ const servicesReady = computed(() => (
 const credentialsReady = computed(() => (
   form.consolePassword.trim()
 ))
+const storageBootstrapSession = computed(() => setup.storageBootstrapSession)
+const storageDiscoveryReport = computed(() => (
+  storageBootstrapSession.value?.discovery_report ?? null
+))
+const storageDiscoveryFilesystems = computed(() => (
+  Array.isArray(storageDiscoveryReport.value?.filesystems)
+    ? storageDiscoveryReport.value.filesystems
+    : []
+))
+const storageDiscoveryTapeDevices = computed(() => (
+  Array.isArray(storageDiscoveryReport.value?.tape_devices)
+    ? storageDiscoveryReport.value.tape_devices
+    : []
+))
+const storageDiscoveryChangers = computed(() => (
+  Array.isArray(storageDiscoveryReport.value?.changers)
+    ? storageDiscoveryReport.value.changers
+    : []
+))
+const storageFilesystemOptions = computed(() => (
+  storageDiscoveryFilesystems.value.map(filesystem => ({
+    label: `${filesystem.mountpoint} (${filesystem.filesystem_type}, ${t('Free: {size}', {
+      size: formatByteCount(filesystem.free_bytes),
+    })})`,
+    value: filesystem.mountpoint,
+  }))
+))
+const storageBootstrapCommand = computed(() => buildStorageBootstrapCommand({
+  bootstrapUrl: buildDefaultSetupBootstrapUrl(),
+  sessionId: storageBootstrapSession.value?.id,
+  bootstrapToken: storageBootstrapSession.value?.bootstrap_token,
+}))
+const storageBootstrapStatusMeta = computed(() => (
+  describeStorageBootstrapStatus(storageBootstrapSession.value?.status)
+))
 
 watch(locale, (value) => {
   settings.setLocale(value)
@@ -359,6 +643,60 @@ watch(() => form.daemonAddress, (value) => {
   form.storageName = names.storageName
   form.clientName = names.clientName
 })
+
+watch(storageDiscoveryFilesystems, (filesystems) => {
+  if (!filesystems.length) {
+    storageBootstrapSelection.filesystemMountpoint = ''
+    if (!storageBootstrapSession.value?.selection?.archive_path) {
+      storageBootstrapSelection.archivePath = ''
+    }
+    return
+  }
+
+  const hasCurrentSelection = filesystems.some(filesystem => (
+    filesystem.mountpoint === storageBootstrapSelection.filesystemMountpoint
+  ))
+  if (hasCurrentSelection) {
+    return
+  }
+
+  const preferredFilesystem = filesystems.find(filesystem => (
+    filesystem.suitable_for_archive
+  )) ?? filesystems[0]
+  storageBootstrapSelection.filesystemMountpoint = preferredFilesystem.mountpoint
+}, { immediate: true })
+
+watch(() => storageBootstrapSelection.filesystemMountpoint, (next, previous) => {
+  const previousFilesystem = storageDiscoveryFilesystems.value.find(filesystem => (
+    filesystem.mountpoint === previous
+  )) ?? null
+  const nextFilesystem = storageDiscoveryFilesystems.value.find(filesystem => (
+    filesystem.mountpoint === next
+  )) ?? null
+  const previousSuggestion = buildArchivePathSuggestion(previousFilesystem)
+
+  if (!storageBootstrapSelection.archivePath.trim()
+    || storageBootstrapSelection.archivePath === previousSuggestion) {
+    storageBootstrapSelection.archivePath
+      = buildArchivePathSuggestion(nextFilesystem)
+  }
+})
+
+watch(() => storageBootstrapSession.value?.selection?.archive_path, (archivePath) => {
+  if (typeof archivePath === 'string' && archivePath.trim()) {
+    storageBootstrapSelection.archivePath = archivePath
+  }
+})
+
+watch(() => storageBootstrapSession.value?.selection?.filesystem_mountpoint, (mountpoint) => {
+  if (typeof mountpoint === 'string' && mountpoint.trim()) {
+    storageBootstrapSelection.filesystemMountpoint = mountpoint
+  }
+})
+
+watch(() => `${storageBootstrapSession.value?.id ?? ''}:${storageBootstrapSession.value?.status ?? ''}`, () => {
+  restartStorageBootstrapPolling()
+}, { immediate: true })
 
 onMounted(async () => {
   if (setup.mode === 'unknown' || setup.mode === 'error') {
@@ -372,6 +710,10 @@ onMounted(async () => {
   if (setup.isReady) {
     router.replace({ name: 'login' })
   }
+})
+
+onBeforeUnmount(() => {
+  stopStorageBootstrapPolling()
 })
 
 function requireStep(message, condition) {
@@ -405,6 +747,129 @@ function parsePort(value) {
     : null
 }
 
+function formatByteCount(value) {
+  const size = Number(value)
+  if (!Number.isFinite(size) || size < 0) {
+    return t('unknown')
+  }
+
+  const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
+  let current = size
+  let unitIndex = 0
+  while (current >= 1024 && unitIndex < units.length - 1) {
+    current /= 1024
+    unitIndex += 1
+  }
+  const precision = unitIndex === 0 ? 0 : 1
+  return `${current.toFixed(precision)} ${units[unitIndex]}`
+}
+
+function buildArchivePathSuggestion(filesystem) {
+  const suggested = filesystem?.recommended_archive_path
+  if (typeof suggested === 'string' && suggested.trim()) {
+    return suggested.trim()
+  }
+
+  const mountpoint = String(filesystem?.mountpoint ?? '').trim()
+  if (!mountpoint) {
+    return '/var/lib/bareos/storage'
+  }
+
+  return `${mountpoint.replace(/\/$/, '') || ''}/bareos/storage`
+}
+
+function describeStorageBootstrapStatus(status) {
+  switch (status) {
+    case 'pending':
+      return {
+        color: 'primary',
+        label: t('Pending'),
+        description: t('Run the bootstrap command on the storage host to start discovery.'),
+      }
+    case 'registered':
+      return {
+        color: 'primary',
+        label: t('Registered'),
+        description: t('The storage host contacted bconfig-service and is gathering discovery data.'),
+      }
+    case 'discovered':
+      return {
+        color: 'info',
+        label: t('Discovered'),
+        description: t('Select the final archive path from the reported filesystem candidates.'),
+      }
+    case 'selected':
+      return {
+        color: 'positive',
+        label: t('Selected'),
+        description: t('The archive path was saved. The storage host can now fetch its config bundle.'),
+      }
+    case 'config_ready':
+      return {
+        color: 'positive',
+        label: t('Config ready'),
+        description: t('The generated storage config bundle is ready for download on the storage host.'),
+      }
+    case 'applying':
+      return {
+        color: 'accent',
+        label: t('Applying'),
+        description: t('The storage host is installing and validating the generated config.'),
+      }
+    case 'applied':
+      return {
+        color: 'positive',
+        label: t('Applied'),
+        description: t('The storage host reported a successful bootstrap apply.'),
+      }
+    case 'failed':
+      return {
+        color: 'negative',
+        label: t('Failed'),
+        description: t('The storage host reported a bootstrap failure.'),
+      }
+    case 'expired':
+      return {
+        color: 'negative',
+        label: t('Expired'),
+        description: t('The bootstrap session expired before the workflow completed.'),
+      }
+    default:
+      return {
+        color: 'grey-7',
+        label: t('Unknown'),
+        description: t('Waiting for storage bootstrap status information.'),
+      }
+  }
+}
+
+function shouldPollStorageBootstrapSession(session) {
+  return Boolean(session?.id)
+    && !['applied', 'failed', 'expired'].includes(session.status)
+}
+
+function stopStorageBootstrapPolling() {
+  if (storageBootstrapPollHandle) {
+    clearInterval(storageBootstrapPollHandle)
+    storageBootstrapPollHandle = null
+  }
+}
+
+function restartStorageBootstrapPolling() {
+  stopStorageBootstrapPolling()
+  if (!shouldPollStorageBootstrapSession(storageBootstrapSession.value)) {
+    return
+  }
+
+  storageBootstrapPollHandle = setInterval(async () => {
+    try {
+      await setup.refreshStorageBootstrapSession(storageBootstrapSession.value.id)
+    } catch {
+      // The dedicated storage bootstrap error banner renders the latest error.
+    }
+  }, 2000)
+}
+
 async function copyAdminPassword() {
   try {
     await navigator.clipboard.writeText(form.consolePassword)
@@ -417,6 +882,28 @@ async function copyAdminPassword() {
     $q.notify({
       type: 'negative',
       message: t('Could not copy admin password: {message}', {
+        message: error?.message ?? String(error),
+      }),
+    })
+  }
+}
+
+async function copyStorageBootstrapCommand() {
+  if (!storageBootstrapCommand.value) {
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(storageBootstrapCommand.value)
+    $q.notify({
+      type: 'positive',
+      message: t('Bootstrap command copied to clipboard'),
+      timeout: 1500,
+    })
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: t('Could not copy bootstrap command: {message}', {
         message: error?.message ?? String(error),
       }),
     })
@@ -456,6 +943,55 @@ async function submitSetup() {
     auth.stageSetupPassword(form.consolePassword)
   } catch (e) {
     errorMsg.value = e?.message ?? String(e)
+  }
+}
+
+async function prepareRemoteStorage() {
+  try {
+    await setup.createStorageBootstrapSession({
+      deploymentId: form.deploymentId.trim(),
+      storageName: form.storageName.trim(),
+    })
+  } catch {
+    // The dedicated storage bootstrap error banner renders the latest error.
+  }
+}
+
+async function refreshRemoteStorage() {
+  if (!storageBootstrapSession.value?.id) {
+    return
+  }
+
+  try {
+    await setup.refreshStorageBootstrapSession(storageBootstrapSession.value.id)
+  } catch {
+    // The dedicated storage bootstrap error banner renders the latest error.
+  }
+}
+
+async function submitRemoteStorageLayout() {
+  if (!storageBootstrapSession.value?.id) {
+    return
+  }
+
+  const archivePath = storageBootstrapSelection.archivePath.trim()
+  const filesystemMountpoint
+    = storageBootstrapSelection.filesystemMountpoint.trim()
+  if (!archivePath) {
+    return
+  }
+
+  try {
+    await setup.submitStorageBootstrapSelection(
+      storageBootstrapSession.value.id,
+      {
+        filesystem_mountpoint: filesystemMountpoint || null,
+        archive_path: archivePath,
+        device_name: DEFAULT_STORAGE_DEVICE_NAME,
+      }
+    )
+  } catch {
+    // The dedicated storage bootstrap error banner renders the latest error.
   }
 }
 

@@ -49,6 +49,14 @@ test('creates the initial deployment and reaches login', async ({ page }) => {
     { timeout: 120_000 }
   )
 
+  await page.locator('[data-testid="setup-storage-bootstrap-create"]').click()
+  await expect(page.locator('[data-testid="setup-storage-bootstrap-status"]')).toContainText(
+    'Pending'
+  )
+  await expect(page.locator('[data-testid="setup-storage-bootstrap-command"]')).toHaveValue(
+    /bareos-sd --discovery/
+  )
+
   await page.locator('[data-testid="setup-continue-login"]').click()
   await page.waitForURL(/#\/login$/)
   await expect(page.locator('[data-testid="login-form"]')).toBeVisible()

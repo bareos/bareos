@@ -22,6 +22,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import {
+  buildDefaultSetupBootstrapUrl,
   DEFAULT_CATALOG_BACKUP_JOB_NAME,
   DEFAULT_CATALOG_NAME,
   DEFAULT_DIRECTOR_STORAGE_NAME,
@@ -33,6 +34,7 @@ import {
   DEFAULT_WEBUI_READONLY_PROFILE,
   DEFAULT_WEBUI_ADMIN_PROFILE,
   DEFAULT_OPERATOR_PROFILE,
+  buildStorageBootstrapCommand,
   buildDefaultDaemonAddress,
   deriveSetupDaemonBaseName,
   deriveSetupDaemonNames,
@@ -89,9 +91,30 @@ describe('setup store', () => {
   it('falls back to the current hostname for the daemon address default', () => {
     vi.stubGlobal('location', {
       hostname: 'bareos.example.com',
+      origin: 'http://bareos.example.com:8080',
     })
 
     expect(buildDefaultDaemonAddress()).toBe('bareos.example.com')
+  })
+
+  it('derives the default bootstrap url from the current origin', () => {
+    vi.stubGlobal('location', {
+      origin: 'http://bareos.example.com:8080',
+    })
+
+    expect(buildDefaultSetupBootstrapUrl()).toBe(
+      'http://bareos.example.com:8080/api/bconfig/v1'
+    )
+  })
+
+  it('renders the storage bootstrap command with shell-quoted values', () => {
+    expect(buildStorageBootstrapCommand({
+      bootstrapUrl: 'http://bareos.example.com:8080/api/bconfig/v1',
+      sessionId: 'storage-bootstrap-1',
+      bootstrapToken: 'secret-token',
+    })).toBe(
+      "sudo bareos-sd --discovery --bootstrap-url 'http://bareos.example.com:8080/api/bconfig/v1' --bootstrap-session 'storage-bootstrap-1' --bootstrap-token 'secret-token'"
+    )
   })
 
   it('derives the daemon basename from the FQDN hostname', () => {
@@ -414,5 +437,110 @@ describe('setup store', () => {
     expect(setup.progressLogs).toContain('Setup finished successfully. Review the log and continue to the login page when you are ready.')
     expect(setup.mode).toBe('ready')
     expect(setup.needsSetup).toBe(false)
+  })
+
+  it('creates and refreshes a storage bootstrap session', async () => {
+    const setup = useSetupStore()
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({
+        storage_bootstrap_session: {
+          id: 'storage-bootstrap-1',
+          deployment_id: 'prod',
+          storage_name: 'bareos-sd',
+          bootstrap_token: 'secret-token',
+          status: 'pending',
+        },
+      }, 201))
+      .mockResolvedValueOnce(jsonResponse({
+        storage_bootstrap_session: {
+          id: 'storage-bootstrap-1',
+          deployment_id: 'prod',
+          storage_name: 'bareos-sd',
+          bootstrap_token: 'secret-token',
+          status: 'discovered',
+          discovery_report: {
+            hostname: 'sdhost',
+            filesystems: [
+              {
+                mountpoint: '/srv/storage',
+                filesystem_type: 'xfs',
+                free_bytes: 1024,
+                suitable_for_archive: true,
+                recommended_archive_path: '/srv/storage/bareos/storage',
+              },
+            ],
+          },
+        },
+      }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(setup.createStorageBootstrapSession({
+      deploymentId: 'prod',
+      storageName: 'bareos-sd',
+    })).resolves.toMatchObject({
+      id: 'storage-bootstrap-1',
+      status: 'pending',
+    })
+
+    await expect(setup.refreshStorageBootstrapSession('storage-bootstrap-1')).resolves.toMatchObject({
+      id: 'storage-bootstrap-1',
+      status: 'discovered',
+    })
+
+    expect(fetch.mock.calls.map(([path]) => path)).toEqual([
+      '/api/bconfig/v1/bootstrap/storage-sessions',
+      '/api/bconfig/v1/bootstrap/storage-sessions/storage-bootstrap-1',
+    ])
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({
+      deployment_id: 'prod',
+      storage_name: 'bareos-sd',
+      ttl_seconds: 900,
+    })
+    expect(setup.storageBootstrapSession.discovery_report.filesystems[0]).toMatchObject({
+      mountpoint: '/srv/storage',
+      recommended_archive_path: '/srv/storage/bareos/storage',
+    })
+  })
+
+  it('submits the selected storage archive path', async () => {
+    const setup = useSetupStore()
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({
+        storage_bootstrap_session: {
+          id: 'storage-bootstrap-1',
+          status: 'selected',
+          selection: {
+            filesystem_mountpoint: '/srv/storage',
+            archive_path: '/srv/storage/bareos/storage',
+            device_name: 'FileStorage',
+          },
+        },
+      }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(setup.submitStorageBootstrapSelection('storage-bootstrap-1', {
+      filesystem_mountpoint: '/srv/storage',
+      archive_path: '/srv/storage/bareos/storage',
+      device_name: 'FileStorage',
+    })).resolves.toMatchObject({
+      status: 'selected',
+    })
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/bconfig/v1/bootstrap/storage-sessions/storage-bootstrap-1/selection',
+      expect.objectContaining({
+        method: 'POST',
+      })
+    )
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({
+      selection: {
+        filesystem_mountpoint: '/srv/storage',
+        archive_path: '/srv/storage/bareos/storage',
+        device_name: 'FileStorage',
+      },
+    })
+    expect(setup.storageBootstrapSession.selection.archive_path).toBe(
+      '/srv/storage/bareos/storage'
+    )
   })
 })

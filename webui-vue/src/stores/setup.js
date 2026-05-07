@@ -96,6 +96,20 @@ export function buildDefaultRuntimeRoot(deploymentId = DEFAULT_DEPLOYMENT_ID) {
   return '/var/lib/bareos'
 }
 
+export function buildDefaultSetupBootstrapUrl() {
+  const configuredUrl = readSetupRuntimeConfig().bootstrapUrl
+  if (typeof configuredUrl === 'string' && configuredUrl.trim()) {
+    return configuredUrl.trim()
+  }
+
+  const origin = globalThis.location?.origin
+  if (typeof origin === 'string' && origin.trim()) {
+    return `${origin.trim()}${BCONFIG_API_PREFIX}`
+  }
+
+  return BCONFIG_API_PREFIX
+}
+
 export function buildDefaultDaemonAddress() {
   const configuredAddress = readSetupRuntimeConfig().daemonAddress
   if (typeof configuredAddress === 'string' && configuredAddress.trim()) {
@@ -146,6 +160,32 @@ export function generateSetupPassword(length = 24) {
   }
 
   return Array.from(array, value => characters[value % characters.length]).join('')
+}
+
+function shellQuote(value) {
+  return `'${String(value ?? '').replaceAll("'", "'\"'\"'")}'`
+}
+
+export function buildStorageBootstrapCommand({
+  bootstrapUrl = buildDefaultSetupBootstrapUrl(),
+  sessionId,
+  bootstrapToken,
+} = {}) {
+  if (!String(sessionId ?? '').trim() || !String(bootstrapToken ?? '').trim()) {
+    return ''
+  }
+
+  return [
+    'sudo',
+    'bareos-sd',
+    '--discovery',
+    '--bootstrap-url',
+    shellQuote(bootstrapUrl),
+    '--bootstrap-session',
+    shellQuote(sessionId),
+    '--bootstrap-token',
+    shellQuote(bootstrapToken),
+  ].join(' ')
 }
 
 function sleep(delayMs) {
@@ -667,10 +707,14 @@ export const useSetupStore = defineStore('setup', () => {
   const deployments = ref([])
   const loading = ref(false)
   const creating = ref(false)
+  const storageBootstrapLoading = ref(false)
+  const submittingStorageSelection = ref(false)
   const completed = ref(false)
   const error = ref(null)
+  const storageBootstrapError = ref(null)
   const progressTitle = ref(null)
   const progressLogs = ref([])
+  const storageBootstrapSession = ref(null)
   let pendingRefresh = null
 
   const needsSetup = computed(() => mode.value === 'needs-setup')
@@ -699,6 +743,11 @@ export const useSetupStore = defineStore('setup', () => {
     completed.value = false
     progressTitle.value = null
     progressLogs.value = []
+  }
+
+  function clearStorageBootstrapState() {
+    storageBootstrapError.value = null
+    storageBootstrapSession.value = null
   }
 
   async function refresh(force = false) {
@@ -739,6 +788,7 @@ export const useSetupStore = defineStore('setup', () => {
     completed.value = false
     error.value = null
     clearProgress()
+    clearStorageBootstrapState()
 
     try {
       updateProgress('Creating deployment repository')
@@ -906,18 +956,101 @@ export const useSetupStore = defineStore('setup', () => {
     }
   }
 
+  async function createStorageBootstrapSession({
+    deploymentId,
+    storageName,
+    ttlSeconds = 900,
+  }) {
+    storageBootstrapLoading.value = true
+    storageBootstrapError.value = null
+
+    try {
+      const payload = await requestBconfig('/bootstrap/storage-sessions', {
+        method: 'POST',
+        body: {
+          deployment_id: deploymentId,
+          storage_name: storageName,
+          ttl_seconds: ttlSeconds,
+        },
+      })
+      storageBootstrapSession.value = payload?.storage_bootstrap_session ?? null
+      return storageBootstrapSession.value
+    } catch (e) {
+      storageBootstrapError.value = e?.message ?? String(e)
+      throw e
+    } finally {
+      storageBootstrapLoading.value = false
+    }
+  }
+
+  async function refreshStorageBootstrapSession(sessionId) {
+    if (!String(sessionId ?? '').trim()) {
+      storageBootstrapSession.value = null
+      return null
+    }
+
+    storageBootstrapLoading.value = true
+    storageBootstrapError.value = null
+
+    try {
+      const payload = await requestBconfig(
+        `/bootstrap/storage-sessions/${encodeURIComponent(sessionId)}`
+      )
+      storageBootstrapSession.value = payload?.storage_bootstrap_session ?? null
+      return storageBootstrapSession.value
+    } catch (e) {
+      storageBootstrapError.value = e?.message ?? String(e)
+      throw e
+    } finally {
+      storageBootstrapLoading.value = false
+    }
+  }
+
+  async function submitStorageBootstrapSelection(sessionId, selection) {
+    if (!String(sessionId ?? '').trim()) {
+      throw new Error('Storage bootstrap session id is required')
+    }
+
+    submittingStorageSelection.value = true
+    storageBootstrapError.value = null
+
+    try {
+      const payload = await requestBconfig(
+        `/bootstrap/storage-sessions/${encodeURIComponent(sessionId)}/selection`,
+        {
+          method: 'POST',
+          body: { selection },
+        }
+      )
+      storageBootstrapSession.value = payload?.storage_bootstrap_session ?? null
+      return storageBootstrapSession.value
+    } catch (e) {
+      storageBootstrapError.value = e?.message ?? String(e)
+      throw e
+    } finally {
+      submittingStorageSelection.value = false
+    }
+  }
+
   return {
     mode,
     deployments,
     loading,
     creating,
+    storageBootstrapLoading,
+    submittingStorageSelection,
     completed,
     error,
+    storageBootstrapError,
     progressTitle,
     progressLogs,
+    storageBootstrapSession,
     needsSetup,
     isReady,
     refresh,
     createInitialDeployment,
+    createStorageBootstrapSession,
+    refreshStorageBootstrapSession,
+    submitStorageBootstrapSelection,
   }
 })
