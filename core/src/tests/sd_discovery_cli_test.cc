@@ -1002,4 +1002,23 @@ TEST(SdDiscoveryCli, RejectsInvalidSectionOption)
   EXPECT_NE(stderr.find("--section"), std::string::npos);
   EXPECT_NE(stderr.find("bogus"), std::string::npos);
 }
+
+TEST(SdDiscoveryCli, RejectsInvalidFormatOption)
+{
+  ScopedDirectory output_root;
+
+  const auto stdout_path = output_root.path() / "stdout.txt";
+  const auto stderr_path = output_root.path() / "stderr.txt";
+  const auto command = QuoteShellArgument(BAREOS_SD_DISCOVER_BINARY)
+                       + " --format bogus > "
+                       + QuoteShellArgument(stdout_path.string()) + " 2> "
+                       + QuoteShellArgument(stderr_path.string());
+  EXPECT_NE(ExtractExitStatus(std::system(command.c_str())), 0);
+  EXPECT_TRUE(ReadTextFile(stdout_path).empty());
+
+  const auto stderr = ReadTextFile(stderr_path);
+  EXPECT_NE(stderr.find("ValidationError"), std::string::npos);
+  EXPECT_NE(stderr.find("--format"), std::string::npos);
+  EXPECT_NE(stderr.find("bogus"), std::string::npos);
+}
 #endif
