@@ -644,4 +644,37 @@ TEST(SdDiscoveryCli, InvokesExecutableWithUnmatchedTapeSection)
 
   json_decref(parsed);
 }
+
+TEST(SdDiscoveryCli, InvokesExecutableWithFilesystemSection)
+{
+  ScopedDirectory sysfs_root;
+  ScopedDirectory dev_root;
+  ScopedDirectory read_element_status_root;
+  ScopedDirectory output_root;
+
+  ScopedEnvironmentVariable sysfs_override{"BAREOS_SD_DISCOVERY_SYSFS_ROOT",
+                                           sysfs_root.path().string()};
+  ScopedEnvironmentVariable dev_override{"BAREOS_SD_DISCOVERY_DEV_ROOT",
+                                         dev_root.path().string()};
+  ScopedEnvironmentVariable read_element_status_override{
+      "BAREOS_SD_DISCOVERY_READ_ELEMENT_STATUS_ROOT",
+      read_element_status_root.path().string()};
+
+  const auto output_path = output_root.path() / "discovery.json";
+  const auto command = QuoteShellArgument(BAREOS_SD_DISCOVER_BINARY)
+                       + " --section filesystems > "
+                       + QuoteShellArgument(output_path.string());
+  EXPECT_EQ(ExtractExitStatus(std::system(command.c_str())), 0);
+
+  json_error_t error{};
+  json_t* parsed = json_loads(ReadTextFile(output_path).c_str(), 0, &error);
+  ASSERT_NE(parsed, nullptr) << error.text;
+  auto* filesystems = json_object_get(parsed, "filesystems");
+  ASSERT_TRUE(json_is_array(filesystems));
+  EXPECT_GT(json_array_size(filesystems), 0U);
+  EXPECT_EQ(json_array_size(json_object_get(parsed, "tape_devices")), 0U);
+  EXPECT_EQ(json_array_size(json_object_get(parsed, "changers")), 0U);
+
+  json_decref(parsed);
+}
 #endif
