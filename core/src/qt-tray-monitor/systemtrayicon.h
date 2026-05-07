@@ -52,8 +52,10 @@ class SystemTrayIcon : public QSystemTrayIcon {
 
   void updateIcon();
   QList<QIcon> createAnimationIcons() const;
-  QPixmap createBaseShieldPixmap() const;
-  QPixmap createShieldPixmap(qreal angle, qreal widthScale) const;
+  QPixmap createBaseShieldPixmap(bool recolor_green) const;
+  QPixmap createShieldPixmap(qreal angle,
+                             qreal widthScale,
+                             bool use_green_palette) const;
 
  protected:
  public slots:
