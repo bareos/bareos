@@ -480,6 +480,63 @@ TEST(SdDiscoveryProbe, FallsBackToScsiAddressWhenDriveIdentifierMissing)
             (dev_root.path() / "nst0").string());
 }
 
+TEST(SdDiscoveryProbe, FallsBackToScsiAddressViaTapeByIdWhenAvailable)
+{
+  ScopedDirectory sysfs_root;
+  ScopedDirectory dev_root;
+  ScopedDirectory read_element_status_root;
+
+  const auto tape_class = sysfs_root.path() / "class/scsi_tape/nst0";
+  std::filesystem::create_directories(tape_class);
+  CreateScsiClassDeviceLink(sysfs_root.path(), tape_class, "1:0:3:0");
+  WriteBinaryFile(tape_class / "device/vendor", "IBM\n");
+  WriteBinaryFile(tape_class / "device/model", "ULTRIUM-HH8 \n");
+  WriteBinaryFile(tape_class / "device/vpd_pg80", BuildPage80("TAPE123"));
+  std::filesystem::create_directories(tape_class / "device/scsi_generic/sg3");
+  WriteBinaryFile(dev_root.path() / "nst0", "");
+  WriteBinaryFile(dev_root.path() / "sg3", "");
+  CreateTapeByIdLink(dev_root.path(), "scsi-tape123-nst", "nst0");
+
+  const auto changer_class = sysfs_root.path() / "class/scsi_changer/sch0";
+  std::filesystem::create_directories(changer_class);
+  CreateScsiClassDeviceLink(sysfs_root.path(), changer_class, "1:0:4:0");
+  WriteBinaryFile(changer_class / "device/vendor", "IBM\n");
+  WriteBinaryFile(changer_class / "device/model", "3573-TL\n");
+  std::filesystem::create_directories(changer_class
+                                      / "device/scsi_generic/sg4");
+  WriteBinaryFile(dev_root.path() / "sg4", "");
+
+  ScopedEnvironmentVariable sysfs_override{"BAREOS_SD_DISCOVERY_SYSFS_ROOT",
+                                           sysfs_root.path().string()};
+  ScopedEnvironmentVariable dev_override{"BAREOS_SD_DISCOVERY_DEV_ROOT",
+                                         dev_root.path().string()};
+  ScopedEnvironmentVariable read_element_status_override{
+      "BAREOS_SD_DISCOVERY_READ_ELEMENT_STATUS_ROOT",
+      read_element_status_root.path().string()};
+  WriteBinaryFile(
+      read_element_status_root.path() / "sg4.bin",
+      BuildReadElementStatusData(
+          {BuildReadElementStatusDataTransferDescriptor(256, "", 3, 0, true)}));
+
+  const auto report = storagedaemon::ProbeStorageDiscoveryReport();
+  const auto expected_device_node
+      = (dev_root.path() / "tape/by-id/scsi-tape123-nst").string();
+
+  ASSERT_EQ(report.changers.size(), 1U);
+  ASSERT_EQ(report.changers[0].drives.size(), 1U);
+  EXPECT_EQ(report.changers[0].drives[0].tape_device_node,
+            expected_device_node);
+  EXPECT_EQ(report.changers[0].drives[0].generic_device_node,
+            (dev_root.path() / "sg3").string());
+  ASSERT_TRUE(report.changers[0].drives[0].serial);
+  EXPECT_EQ(*report.changers[0].drives[0].serial, "TAPE123");
+  ASSERT_TRUE(report.changers[0].drives[0].source);
+  EXPECT_EQ(*report.changers[0].drives[0].source,
+            "read_element_status:scsi_address");
+  ASSERT_EQ(report.changers[0].drive_device_nodes.size(), 1U);
+  EXPECT_EQ(report.changers[0].drive_device_nodes[0], expected_device_node);
+}
+
 TEST(SdDiscoveryProbe, KeepsUnmatchedPartialChangerDrivesVisible)
 {
   ScopedDirectory sysfs_root;

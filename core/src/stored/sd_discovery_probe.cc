@@ -594,11 +594,18 @@ std::optional<std::pair<uint8_t, uint8_t>> ReadTapeDeviceScsiTargetLun(
 {
   if (tape_device.device_node.empty()) { return std::nullopt; }
 
-  const auto class_name
+  auto class_name
       = std::filesystem::path{tape_device.device_node}.filename().string();
+  std::error_code error_code;
+  auto resolved_device_node = std::filesystem::weakly_canonical(
+      std::filesystem::path{tape_device.device_node}, error_code);
+  if (!error_code) {
+    class_name = resolved_device_node.filename().string();
+  } else {
+    error_code.clear();
+  }
   if (class_name.empty()) { return std::nullopt; }
 
-  std::error_code error_code;
   auto device_path = std::filesystem::weakly_canonical(
       DiscoverySysfsRoot() / "class" / "scsi_tape" / class_name / "device",
       error_code);
