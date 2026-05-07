@@ -52,6 +52,7 @@ class SystemTrayIcon : public QSystemTrayIcon {
 
   void updateIcon();
   QList<QIcon> createAnimationIcons() const;
+  QPixmap createBaseShieldPixmap() const;
   QPixmap createShieldPixmap(qreal angle, qreal widthScale) const;
 
  protected:

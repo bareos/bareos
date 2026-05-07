@@ -2,9 +2,6 @@
     <qresource prefix="/">
         <file>images/f.png</file>
         <file>images/W.png</file>
-        <file>images/bareos_1.png</file>
-        <file>images/bareos_2.png</file>
-        <file>images/bareos_3.png</file>
         <file alias="images/bareos-logo_128x128.png">../images/bareos-logo_128x128.png</file>
     </qresource>
 </RCC>
