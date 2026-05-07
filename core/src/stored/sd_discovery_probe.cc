@@ -30,6 +30,7 @@
 #include <fstream>
 #include <string_view>
 #include <set>
+#include <map>
 
 #include <jansson.h>
 
@@ -371,6 +372,59 @@ std::optional<std::string> ReadScsiDeviceIdentifier(
   return ParseScsiPage83DeviceIdentifier(*page83);
 }
 
+std::optional<std::pair<uint8_t, uint8_t>> ParseLinuxScsiTargetLun(
+    const std::filesystem::path& path)
+{
+  auto name = path.filename().string();
+  if (name.empty() && path.has_parent_path()) {
+    name = path.parent_path().filename().string();
+  }
+
+  std::array<unsigned int, 4> values{};
+  std::size_t offset = 0;
+  for (std::size_t index = 0; index < values.size(); ++index) {
+    std::size_t next = name.find(':', offset);
+    if (next == std::string::npos) {
+      if (index + 1 != values.size()) { return std::nullopt; }
+      next = name.size();
+    }
+
+    unsigned int value = 0;
+    if (next == offset) { return std::nullopt; }
+    for (std::size_t i = offset; i < next; ++i) {
+      if (name[i] < '0' || name[i] > '9') { return std::nullopt; }
+      value = (value * 10U) + static_cast<unsigned int>(name[i] - '0');
+      if (value > 255U) { return std::nullopt; }
+    }
+    values[index] = value;
+    offset = next + 1;
+  }
+
+  if (offset <= name.size()) { return std::nullopt; }
+  return std::pair<uint8_t, uint8_t>{static_cast<uint8_t>(values[2]),
+                                     static_cast<uint8_t>(values[3])};
+}
+
+std::optional<std::pair<uint8_t, uint8_t>> ReadTapeDeviceScsiTargetLun(
+    const TapeDeviceInfo& tape_device)
+{
+  if (tape_device.device_node.empty()) { return std::nullopt; }
+
+  const auto class_name
+      = std::filesystem::path{tape_device.device_node}.filename().string();
+  if (class_name.empty()) { return std::nullopt; }
+
+  std::error_code error_code;
+  auto device_path = std::filesystem::weakly_canonical(
+      DiscoverySysfsRoot() / "class" / "scsi_tape" / class_name / "device",
+      error_code);
+  if (error_code) { return std::nullopt; }
+
+  auto parsed = ParseLinuxScsiTargetLun(device_path);
+  if (parsed) { return parsed; }
+  return ParseLinuxScsiTargetLun(device_path.parent_path());
+}
+
 std::array<unsigned char, 12> BuildReadElementStatusCdb(
     uint16_t starting_element_address,
     uint16_t number_of_elements,
@@ -468,6 +522,69 @@ ChangerDriveInfo ParseElementStatusDescriptor(std::string_view descriptor,
   return drive;
 }
 
+std::optional<std::pair<uint8_t, uint8_t>> ParseElementStatusScsiTargetLun(
+    std::string_view descriptor)
+{
+  if (descriptor.size() < 8) { return std::nullopt; }
+
+  const auto flags6 = static_cast<uint8_t>(descriptor[6]);
+  if ((flags6 & 0x80U) != 0 || (flags6 & 0x20U) == 0 || (flags6 & 0x10U) == 0) {
+    return std::nullopt;
+  }
+
+  return std::pair<uint8_t, uint8_t>{
+      static_cast<uint8_t>(static_cast<unsigned char>(descriptor[7])),
+      static_cast<uint8_t>(flags6 & 0x07U)};
+}
+
+const TapeDeviceInfo* FindTapeByDeviceIdentifier(
+    const ChangerDriveInfo& drive,
+    const std::vector<TapeDeviceInfo>& tape_devices)
+{
+  if (!drive.device_identifier) { return nullptr; }
+
+  auto tape = std::find_if(tape_devices.begin(), tape_devices.end(),
+                           [&](const TapeDeviceInfo& candidate) {
+                             return candidate.device_identifier
+                                    == drive.device_identifier;
+                           });
+  return tape == tape_devices.end() ? nullptr : &*tape;
+}
+
+const TapeDeviceInfo* FindTapeByScsiTargetLun(
+    std::pair<uint8_t, uint8_t> target_lun,
+    const std::vector<TapeDeviceInfo>& tape_devices)
+{
+  const TapeDeviceInfo* match = nullptr;
+  for (const auto& candidate : tape_devices) {
+    auto candidate_target_lun = ReadTapeDeviceScsiTargetLun(candidate);
+    if (!candidate_target_lun || *candidate_target_lun != target_lun) {
+      continue;
+    }
+    if (match != nullptr) { return nullptr; }
+    match = &candidate;
+  }
+
+  return match;
+}
+
+void ApplyTapeMatch(ChangerDriveInfo& drive,
+                    ChangerInfo& changer,
+                    const TapeDeviceInfo& tape,
+                    std::string_view source)
+{
+  drive.tape_device_node = tape.device_node;
+  drive.generic_device_node = tape.generic_device_node;
+  if (!drive.device_identifier && tape.device_identifier) {
+    drive.device_identifier = tape.device_identifier;
+  }
+  if (!drive.serial && !tape.serial.empty()) { drive.serial = tape.serial; }
+  drive.source = std::string{source};
+  if (!drive.tape_device_node.empty()) {
+    changer.drive_device_nodes.emplace_back(drive.tape_device_node);
+  }
+}
+
 std::vector<ChangerDriveInfo> ParseChangerDriveStatusData(
     std::string_view payload)
 {
@@ -495,7 +612,6 @@ std::vector<ChangerDriveInfo> ParseChangerDriveStatusData(
         auto drive = ParseElementStatusDescriptor(
             payload.substr(descriptor_offset, descriptor_length), page_flags);
         if (drive.drive_element_address || drive.device_identifier) {
-          drive.source = "read_element_status";
           drives.emplace_back(std::move(drive));
         }
         descriptor_offset += descriptor_length;
@@ -508,25 +624,75 @@ std::vector<ChangerDriveInfo> ParseChangerDriveStatusData(
   return drives;
 }
 
-void CorrelateChangerDrives(ChangerInfo& changer,
-                            const std::vector<TapeDeviceInfo>& tape_devices)
+std::map<uint16_t, std::pair<uint8_t, uint8_t>> ParseChangerDriveScsiAddresses(
+    std::string_view payload)
+{
+  std::map<uint16_t, std::pair<uint8_t, uint8_t>> addresses;
+  if (payload.size() < 8) { return addresses; }
+
+  const auto report_length
+      = static_cast<std::size_t>(8 + ReadBigEndian24(payload, 5));
+  const auto end = std::min(payload.size(), report_length);
+  std::size_t offset = 8;
+  while (offset + 8 <= end) {
+    const auto descriptor_length
+        = static_cast<std::size_t>(ReadBigEndian16(payload, offset + 2));
+    const auto descriptor_bytes
+        = static_cast<std::size_t>(ReadBigEndian24(payload, offset + 5));
+    const auto page_end = offset + 8 + descriptor_bytes;
+    if (page_end > end) { break; }
+
+    if (static_cast<unsigned char>(payload[offset]) == 0x04
+        && descriptor_length >= 12) {
+      std::size_t descriptor_offset = offset + 8;
+      while (descriptor_offset + descriptor_length <= page_end) {
+        const auto descriptor = std::string_view{
+            payload.data() + descriptor_offset, descriptor_length};
+        auto target_lun = ParseElementStatusScsiTargetLun(descriptor);
+        if (target_lun) {
+          addresses.emplace(ReadBigEndian16(descriptor, 0), *target_lun);
+        }
+        descriptor_offset += descriptor_length;
+      }
+    }
+
+    offset = page_end;
+  }
+
+  return addresses;
+}
+
+void CorrelateChangerDrives(
+    ChangerInfo& changer,
+    const std::vector<TapeDeviceInfo>& tape_devices,
+    const std::map<uint16_t, std::pair<uint8_t, uint8_t>>& scsi_addresses)
 {
   changer.drive_device_nodes.clear();
   for (auto& drive : changer.drives) {
-    if (!drive.device_identifier) { continue; }
+    if (const auto* tape = FindTapeByDeviceIdentifier(drive, tape_devices)) {
+      ApplyTapeMatch(drive, changer, *tape, "read_element_status:identifier");
+      continue;
+    }
 
-    auto tape = std::find_if(tape_devices.begin(), tape_devices.end(),
-                             [&](const TapeDeviceInfo& candidate) {
-                               return candidate.device_identifier
-                                      == drive.device_identifier;
-                             });
-    if (tape == tape_devices.end()) { continue; }
+    if (!drive.source) { drive.source = "read_element_status:unmatched"; }
+  }
 
-    drive.tape_device_node = tape->device_node;
-    drive.generic_device_node = tape->generic_device_node;
-    if (!drive.serial && !tape->serial.empty()) { drive.serial = tape->serial; }
-    if (!drive.tape_device_node.empty()) {
-      changer.drive_device_nodes.emplace_back(drive.tape_device_node);
+  for (auto& drive : changer.drives) {
+    if (!drive.tape_device_node.empty()) { continue; }
+    if (!drive.drive_element_address) { continue; }
+
+    auto address = scsi_addresses.find(
+        static_cast<uint16_t>(*drive.drive_element_address));
+    if (address != scsi_addresses.end()) {
+      if (const auto* tape
+          = FindTapeByScsiTargetLun(address->second, tape_devices)) {
+        ApplyTapeMatch(drive, changer, *tape,
+                       "read_element_status:scsi_address");
+      }
+    }
+
+    if (drive.tape_device_node.empty()) {
+      drive.source = "read_element_status:unmatched";
     }
   }
 
@@ -545,7 +711,8 @@ void EnrichChangerTopologyLinux(StorageDiscoveryReport& report)
     if (!payload) { continue; }
 
     changer.drives = ParseChangerDriveStatusData(*payload);
-    CorrelateChangerDrives(changer, report.tape_devices);
+    auto scsi_addresses = ParseChangerDriveScsiAddresses(*payload);
+    CorrelateChangerDrives(changer, report.tape_devices, scsi_addresses);
   }
 }
 

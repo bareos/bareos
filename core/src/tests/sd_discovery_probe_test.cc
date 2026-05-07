@@ -127,12 +127,18 @@ std::string BuildPage83Naa(std::string_view designator)
 
 std::string BuildReadElementStatusDataTransferDescriptor(
     uint16_t element_address,
-    std::string_view designator)
+    std::string_view designator,
+    uint8_t scsi_id = 0,
+    uint8_t lun = 0,
+    bool scsi_address_valid = false)
 {
   std::string descriptor(12, '\0');
   descriptor[0] = static_cast<char>((element_address >> 8) & 0xff);
   descriptor[1] = static_cast<char>(element_address & 0xff);
   descriptor[2] = static_cast<char>(0x09);
+  descriptor[6]
+      = static_cast<char>((lun & 0x07) | (scsi_address_valid ? 0x30 : 0x00));
+  descriptor[7] = static_cast<char>(scsi_id);
   descriptor.append(1, static_cast<char>(0x01));
   descriptor.append(1, static_cast<char>(0x03));
   descriptor.append(1, '\0');
@@ -141,16 +147,23 @@ std::string BuildReadElementStatusDataTransferDescriptor(
   return descriptor;
 }
 
-std::string BuildReadElementStatusData(std::string_view descriptor)
+std::string BuildReadElementStatusData(
+    std::initializer_list<std::string_view> descriptors)
 {
   std::string page(8, '\0');
   page[0] = static_cast<char>(0x04);
-  page[2] = static_cast<char>((descriptor.size() >> 8) & 0xff);
-  page[3] = static_cast<char>(descriptor.size() & 0xff);
-  page[5] = static_cast<char>((descriptor.size() >> 16) & 0xff);
-  page[6] = static_cast<char>((descriptor.size() >> 8) & 0xff);
-  page[7] = static_cast<char>(descriptor.size() & 0xff);
-  page.append(descriptor);
+  std::size_t descriptor_size = 0;
+  std::size_t descriptor_length = 0;
+  for (const auto descriptor : descriptors) {
+    descriptor_size += descriptor.size();
+    descriptor_length = descriptor.size();
+    page.append(descriptor);
+  }
+  page[2] = static_cast<char>((descriptor_length >> 8) & 0xff);
+  page[3] = static_cast<char>(descriptor_length & 0xff);
+  page[5] = static_cast<char>((descriptor_size >> 16) & 0xff);
+  page[6] = static_cast<char>((descriptor_size >> 8) & 0xff);
+  page[7] = static_cast<char>(descriptor_size & 0xff);
 
   std::string payload(8, '\0');
   payload[2] = '\0';
@@ -160,6 +173,17 @@ std::string BuildReadElementStatusData(std::string_view descriptor)
   payload[7] = static_cast<char>(page.size() & 0xff);
   payload.append(page);
   return payload;
+}
+
+void CreateScsiClassDeviceLink(const std::filesystem::path& sysfs_root,
+                               const std::filesystem::path& class_path,
+                               std::string_view address)
+{
+  const auto scsi_device_path
+      = sysfs_root / "devices/platform/mock" / std::string{address};
+  std::filesystem::create_directories(scsi_device_path);
+  std::filesystem::remove(class_path / "device");
+  std::filesystem::create_symlink(scsi_device_path, class_path / "device");
 }
 #endif
 
@@ -344,8 +368,8 @@ TEST(SdDiscoveryProbe, ProbesTapeAndChangerSerialsFromLinuxSysfs)
       read_element_status_root.path().string()};
   WriteBinaryFile(
       read_element_status_root.path() / "sg4.bin",
-      BuildReadElementStatusData(BuildReadElementStatusDataTransferDescriptor(
-          256, "\x11\x22\x33\x44")));
+      BuildReadElementStatusData({BuildReadElementStatusDataTransferDescriptor(
+          256, "\x11\x22\x33\x44")}));
 
   const auto report = storagedaemon::ProbeStorageDiscoveryReport();
 
@@ -384,6 +408,98 @@ TEST(SdDiscoveryProbe, ProbesTapeAndChangerSerialsFromLinuxSysfs)
   ASSERT_TRUE(report.changers[0].drives[0].serial);
   EXPECT_EQ(*report.changers[0].drives[0].serial, "TAPE123");
   ASSERT_TRUE(report.changers[0].drives[0].source);
-  EXPECT_EQ(*report.changers[0].drives[0].source, "read_element_status");
+  EXPECT_EQ(*report.changers[0].drives[0].source,
+            "read_element_status:identifier");
+}
+
+TEST(SdDiscoveryProbe, FallsBackToScsiAddressWhenDriveIdentifierMissing)
+{
+  ScopedDirectory sysfs_root;
+  ScopedDirectory dev_root;
+  ScopedDirectory read_element_status_root;
+
+  const auto tape_class = sysfs_root.path() / "class/scsi_tape/nst0";
+  std::filesystem::create_directories(tape_class);
+  CreateScsiClassDeviceLink(sysfs_root.path(), tape_class, "1:0:3:0");
+  WriteBinaryFile(tape_class / "device/vendor", "IBM\n");
+  WriteBinaryFile(tape_class / "device/model", "ULTRIUM-HH8 \n");
+  WriteBinaryFile(tape_class / "device/vpd_pg80", BuildPage80("TAPE123"));
+  std::filesystem::create_directories(tape_class / "device/scsi_generic/sg3");
+  WriteBinaryFile(dev_root.path() / "nst0", "");
+  WriteBinaryFile(dev_root.path() / "sg3", "");
+
+  const auto changer_class = sysfs_root.path() / "class/scsi_changer/sch0";
+  std::filesystem::create_directories(changer_class);
+  CreateScsiClassDeviceLink(sysfs_root.path(), changer_class, "1:0:4:0");
+  WriteBinaryFile(changer_class / "device/vendor", "IBM\n");
+  WriteBinaryFile(changer_class / "device/model", "3573-TL\n");
+  std::filesystem::create_directories(changer_class
+                                      / "device/scsi_generic/sg4");
+  WriteBinaryFile(dev_root.path() / "sg4", "");
+
+  ScopedEnvironmentVariable sysfs_override{"BAREOS_SD_DISCOVERY_SYSFS_ROOT",
+                                           sysfs_root.path().string()};
+  ScopedEnvironmentVariable dev_override{"BAREOS_SD_DISCOVERY_DEV_ROOT",
+                                         dev_root.path().string()};
+  ScopedEnvironmentVariable read_element_status_override{
+      "BAREOS_SD_DISCOVERY_READ_ELEMENT_STATUS_ROOT",
+      read_element_status_root.path().string()};
+  WriteBinaryFile(
+      read_element_status_root.path() / "sg4.bin",
+      BuildReadElementStatusData(
+          {BuildReadElementStatusDataTransferDescriptor(256, "", 3, 0, true)}));
+
+  const auto report = storagedaemon::ProbeStorageDiscoveryReport();
+
+  ASSERT_EQ(report.changers.size(), 1U);
+  ASSERT_EQ(report.changers[0].drives.size(), 1U);
+  EXPECT_EQ(report.changers[0].drives[0].tape_device_node,
+            (dev_root.path() / "nst0").string());
+  EXPECT_EQ(report.changers[0].drives[0].generic_device_node,
+            (dev_root.path() / "sg3").string());
+  ASSERT_TRUE(report.changers[0].drives[0].serial);
+  EXPECT_EQ(*report.changers[0].drives[0].serial, "TAPE123");
+  ASSERT_TRUE(report.changers[0].drives[0].source);
+  EXPECT_EQ(*report.changers[0].drives[0].source,
+            "read_element_status:scsi_address");
+  ASSERT_EQ(report.changers[0].drive_device_nodes.size(), 1U);
+  EXPECT_EQ(report.changers[0].drive_device_nodes[0],
+            (dev_root.path() / "nst0").string());
+}
+
+TEST(SdDiscoveryProbe, KeepsUnmatchedPartialChangerDrivesVisible)
+{
+  ScopedDirectory sysfs_root;
+  ScopedDirectory dev_root;
+  ScopedDirectory read_element_status_root;
+
+  std::filesystem::create_directories(sysfs_root.path()
+                                      / "class/scsi_changer/sch0/device");
+  std::filesystem::create_directories(
+      sysfs_root.path() / "class/scsi_changer/sch0/device/scsi_generic/sg4");
+  WriteBinaryFile(dev_root.path() / "sg4", "");
+
+  ScopedEnvironmentVariable sysfs_override{"BAREOS_SD_DISCOVERY_SYSFS_ROOT",
+                                           sysfs_root.path().string()};
+  ScopedEnvironmentVariable dev_override{"BAREOS_SD_DISCOVERY_DEV_ROOT",
+                                         dev_root.path().string()};
+  ScopedEnvironmentVariable read_element_status_override{
+      "BAREOS_SD_DISCOVERY_READ_ELEMENT_STATUS_ROOT",
+      read_element_status_root.path().string()};
+  WriteBinaryFile(read_element_status_root.path() / "sg4.bin",
+                  BuildReadElementStatusData({std::string(12, '\0')}));
+
+  const auto report = storagedaemon::ProbeStorageDiscoveryReport();
+
+  ASSERT_EQ(report.changers.size(), 1U);
+  EXPECT_TRUE(report.changers[0].drive_device_nodes.empty());
+  ASSERT_EQ(report.changers[0].drives.size(), 1U);
+  EXPECT_TRUE(report.changers[0].drives[0].tape_device_node.empty());
+  EXPECT_TRUE(report.changers[0].drives[0].generic_device_node.empty());
+  ASSERT_TRUE(report.changers[0].drives[0].drive_element_address);
+  EXPECT_EQ(*report.changers[0].drives[0].drive_element_address, 0U);
+  ASSERT_TRUE(report.changers[0].drives[0].source);
+  EXPECT_EQ(*report.changers[0].drives[0].source,
+            "read_element_status:unmatched");
 }
 #endif
