@@ -6,15 +6,32 @@ Pluggable Authentication Modules (PAM)
 Introduction
 ------------
 
-Before Bareos Version 18.2 authentication with a Bareos Director is done primarily by a named Console connection. Name and password are set in the regarding Bareos Console or |WebUI| configuration resource. Starting with Bareos Version 18.2 it is also possible to use Pluggable Authentication Modules (PAM) to authenticate a user independently from the Console Resource.
+Before Bareos Version 18.2 authentication with a Bareos Director is done
+primarily by a named Console connection.
+Name and password are set in the regarding Bareos Console or |WebUI|
+configuration resource.
+Starting with Bareos Version 18.2 it is also possible to use Pluggable
+Authentication Modules (PAM) to authenticate a user independently from the
+Console Resource.
 
-As consequence a dedicated named Console or |WebUI| configuration must be used to establish a connection to a Bareos Director Daemon. This connection has name and password credentials, but only to establish an encrypted connection to the Director. To be able to authenticate users with PAM using this console, each user needs an additional User configuration that holds the regarding name and the Access Control List (ACL) or ACL profile. The ACL will be loaded as soon as the User is authenticated.
+As consequence a dedicated named Console or |WebUI| configuration must be used
+to establish a connection to a Bareos Director Daemon.
+This connection has name and password credentials, but only to establish an
+encrypted connection to the Director.
+To be able to authenticate users with PAM using this console, each user needs
+an additional User configuration that holds the regarding name and the Access
+Control List (ACL) or ACL profile.
+The ACL will be loaded as soon as the User is authenticated.
 
-The credentials for user authentication comes from the PAM module which has been enabled for the Bareos Director Daemon.
+The credentials for user authentication comes from the PAM module which has been
+enabled for the Bareos Director Daemon.
 
-For a simplified technical overview the following diagram shows the connection sequence of a Bareos Console to a Bareos Director using an interactive PAM authentication using the pam_unix.so PAM module.
+For a simplified technical overview the following diagram shows the connection
+sequence of a Bareos Console to a Bareos Director using an interactive PAM
+authentication using the pam_unix.so PAM module.
 
-More technical details can be found in the Bareos Developer Guide: :ref:`PAMDeveloperChapter`.
+More technical details can be found in the Bareos Developer Guide:
+:ref:`PAMDeveloperChapter`.
 
 .. uml::
   :caption: Initiation of a Bareos Console connection using PAM authentication
@@ -57,11 +74,14 @@ More technical details can be found in the Bareos Developer Guide: :ref:`PAMDeve
 
 Configuration
 -------------
-To enable PAM authentication two systems have to be configured. The PAM module in the operating system and the Bareos Console.
+To enable PAM authentication two systems have to be configured.
+The PAM module in the operating system and the Bareos Console.
 
 PAM Module
 ^^^^^^^^^^
-This is depending on the operating system and on the used pam module. For details read the manuals. The name of the service that has to be registered is **bareos**.
+This is depending on the operating system and on the used pam module.
+For details read the manuals.
+The name of the service that has to be registered is **bareos**.
 
 Fedora 28 example:
 
@@ -74,13 +94,18 @@ Fedora 28 example:
 
 .. warning::
 
-   The |dir| runs as user **bareos**. However, some PAM modules require more privileges. E.g. **pam_unix** requires access to the file :file:`/etc/shadow`, which is normally not permitted. Make sure you verify your system accordingly.
+   The |dir| runs as user **bareos**.
+   However, some PAM modules require more privileges.
+   E.g. **pam_unix** requires access to the file :file:`/etc/shadow`, which is
+   normally not permitted.
+   Make sure you verify your system accordingly.
 
 
 .. note::
 
-   **PAM_SSS** doesn't ask for a username, and you will see a *PAM Authentication failed* message
-   without being prompted for your username. You can force a username prompt with `auth required pam_permit.so`
+   **PAM_SSS** does not ask for a username, and you will see
+   "PAM Authentication failed" without being prompted for your username.
+   You can force a username prompt with ``auth required pam_permit.so``.
 
 .. code-block:: bareosconfig
    :caption: :file:`/etc/pam.d/bareos` with pam_sss
@@ -89,27 +114,36 @@ Fedora 28 example:
    auth	   required pam_sss.so
    account required pam_sss.so
 
-**pam_permit** always returns success and ensures the PAM conversation mechanism is triggered,
-allowing Bareos to prompt for the username. **pam_sss** then performs the actual authentication
-using the collected credentials. Without **pam_permit**, **pam_sss** may fail immediately without
-prompting for credentials.
+**pam_permit** always returns success and ensures the PAM conversation mechanism
+is triggered, allowing Bareos to prompt for the username. **pam_sss** then
+performs the actual authentication using the collected credentials.
+Without **pam_permit**, **pam_sss** may fail immediately without prompting for
+credentials.
 
 
 Upgrading from previous versions
 ''''''''''''''''''''''''''''''''
 
-Previous versions of Bareos only used PAM authentication (who is the user) but not PAM authorization (what is the user allowed to do).
-As a result configuring the account management group in PAM had no effect in these versions so that, for example, a disabled user might still be able to log in.
+Previous versions of Bareos only used PAM authentication (who is the user) but
+not PAM authorization (what is the user allowed to do).
+As a result configuring the account management group in PAM had no effect in
+these versions so that, for example, a disabled user might still be able to log
+in.
 
-If on an existing installation ``account`` is not configured at all, the **login will always fail** after upgrading from an affected version.
+If on an existing installation ``account`` is not configured at all, the
+**login will always fail** after upgrading from an affected version.
 
-We strongly suggest that you configure proper authorization on production systems.
-We strictly advise against the possibility to regain the old behaviour by configuring ``account required pam_permit.so``.
+We strongly suggest that you configure proper authorization on production
+systems.
+We strictly advise against the possibility to regain the old behaviour by
+configuring ``account required pam_permit.so``.
 
 Bareos Console
 ^^^^^^^^^^^^^^
 
-For PAM authentication a dedicated named console is used. Set the directive UsePamAuthentication=yes in the regarding Director-Console resource:
+For PAM authentication a dedicated named console is used.
+Set the directive UsePamAuthentication=yes in the regarding Director-Console
+resource:
 
 .. code-block:: bareosconfig
   :caption: :file:`bareos-dir.d/console/pam-console.conf`
@@ -120,7 +154,8 @@ For PAM authentication a dedicated named console is used. Set the directive UseP
     UsePamAuthentication = yes
   }
 
-In the dedicated |bconsole| config use name and password according as to the |dir|:
+In the dedicated |bconsole| config use name and password according as to the
+|dir|:
 
 .. code-block:: bareosconfig
   :caption: :file:`bconsole.conf`
@@ -137,7 +172,9 @@ In the dedicated |bconsole| config use name and password according as to the |di
 PAM User
 ^^^^^^^^
 
-Users have limited access to commands and jobs. Therefore the appropriate rights should also be granted to PAM users. This is an example of a User resource (Bareos Director Configuration):
+Users have limited access to commands and jobs.
+Therefore the appropriate rights should also be granted to PAM users.
+This is an example of a User resource (Bareos Director Configuration):
 
 .. code-block:: bareosconfig
   :caption: :file:`bareos-dir.d/user/a-pam-user.conf`
@@ -149,4 +186,5 @@ Users have limited access to commands and jobs. Therefore the appropriate rights
   }
 
 
-Additional information can be found at https://github.com/bareos/bareos/tree/master/contrib/misc/bareos_pam_integration
+Additional information can be found at
+https://github.com/bareos/bareos/tree/bareos-25/contrib/misc/bareos_pam_integration
