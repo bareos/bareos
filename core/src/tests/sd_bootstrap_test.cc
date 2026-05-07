@@ -969,6 +969,106 @@ TEST(SdBootstrap, UploadsTapeDiscoveryTopologyViaSerialFallback)
                "read_element_status:serial");
 }
 
+TEST(SdBootstrap, UploadsTapeDiscoveryTopologyViaSerialFallbackAndTapeById)
+{
+  ScopedDirectory config_root;
+  ScopedDirectory working_directory;
+  ScopedDirectory sysfs_root;
+  ScopedDirectory dev_root;
+  ScopedDirectory read_element_status_root;
+  FakeBootstrapServer server{
+      BuildConfigBundleResponse(working_directory.path())};
+  ScopedEnvironmentVariable config_root_override{
+      "BAREOS_SD_BOOTSTRAP_CONFIG_ROOT", config_root.path().string()};
+  ScopedEnvironmentVariable sysfs_override{"BAREOS_SD_DISCOVERY_SYSFS_ROOT",
+                                           sysfs_root.path().string()};
+  ScopedEnvironmentVariable dev_override{"BAREOS_SD_DISCOVERY_DEV_ROOT",
+                                         dev_root.path().string()};
+  ScopedEnvironmentVariable read_element_status_override{
+      "BAREOS_SD_DISCOVERY_READ_ELEMENT_STATUS_ROOT",
+      read_element_status_root.path().string()};
+  std::optional<ScopedEnvironmentVariable> validate_binary_override;
+  if (!std::getenv("BAREOS_SD_BOOTSTRAP_VALIDATE_BINARY")) {
+    validate_binary_override.emplace("BAREOS_SD_BOOTSTRAP_VALIDATE_BINARY",
+                                     BAREOS_SD_BINARY);
+  }
+  ScopedEnvironmentVariable poll_interval_override{
+      "BAREOS_SD_BOOTSTRAP_POLL_INTERVAL_MS", "1"};
+  ScopedEnvironmentVariable poll_attempts_override{
+      "BAREOS_SD_BOOTSTRAP_MAX_POLL_ATTEMPTS", "10"};
+
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vendor",
+                  "HPE\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/model",
+                  "Ultrium 9-SCSI\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vpd_pg80",
+                  BuildPage80("4E77FE415F"));
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vpd_pg83",
+                  BuildPage83Naa("\x20\x34\x45\x37\x37\x34\x31\x46"));
+  std::filesystem::create_directories(
+      sysfs_root.path() / "class/scsi_tape/nst0/device/scsi_generic/sg3");
+  WriteBinaryFile(dev_root.path() / "nst0", "");
+  WriteBinaryFile(dev_root.path() / "sg3", "");
+  CreateTapeByIdLink(dev_root.path(), "scsi-4e77fe415f", "nst0");
+
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/vendor",
+                  "IBM\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/model",
+                  "3573-TL\n");
+  std::filesystem::create_directories(
+      sysfs_root.path() / "class/scsi_changer/sch0/device/scsi_generic/sg4");
+  WriteBinaryFile(dev_root.path() / "sg4", "");
+  WriteBinaryFile(
+      read_element_status_root.path() / "sg4.bin",
+      BuildReadElementStatusData({BuildReadElementStatusDataTransferDescriptor(
+          256, "HPE     Ultrium 9-SCSI  4E77FE415F", 0, 0, false, 0x02,
+          0x01)}));
+
+  const std::string command
+      = std::string{QuoteShellArgument(BAREOS_SD_BINARY)} + " --discovery"
+        + " --bootstrap-url " + QuoteShellArgument(server.base_url())
+        + " --bootstrap-token " + QuoteShellArgument("secret-token")
+        + " --bootstrap-session " + QuoteShellArgument("session-123");
+
+  EXPECT_EQ(ExtractExitStatus(std::system(command.c_str())), BEXIT_SUCCESS);
+
+  json_error_t error{};
+  auto discovery_body
+      = MakeJson(json_loads(server.discovery_body().c_str(), 0, &error));
+  ASSERT_NE(discovery_body.get(), nullptr);
+  auto* report = json_object_get(discovery_body.get(), "report");
+  ASSERT_TRUE(json_is_object(report));
+  const auto expected_device_node
+      = (dev_root.path() / "tape/by-id/scsi-4e77fe415f").string();
+
+  auto* changers = json_object_get(report, "changers");
+  ASSERT_TRUE(json_is_array(changers));
+  ASSERT_EQ(json_array_size(changers), 1U);
+  auto* changer = json_array_get(changers, 0);
+  ASSERT_NE(changer, nullptr);
+  auto* drive_device_nodes = json_object_get(changer, "drive_device_nodes");
+  ASSERT_TRUE(json_is_array(drive_device_nodes));
+  ASSERT_EQ(json_array_size(drive_device_nodes), 1U);
+  EXPECT_STREQ(json_string_value(json_array_get(drive_device_nodes, 0)),
+               expected_device_node.c_str());
+
+  auto* drives = json_object_get(changer, "drives");
+  ASSERT_TRUE(json_is_array(drives));
+  ASSERT_EQ(json_array_size(drives), 1U);
+  auto* drive = json_array_get(drives, 0);
+  ASSERT_NE(drive, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "tape_device_node")),
+               expected_device_node.c_str());
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "generic_device_node")),
+               (dev_root.path() / "sg3").string().c_str());
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "device_identifier")),
+               "t10.HPE     Ultrium 9-SCSI  4E77FE415F");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "serial")),
+               "4E77FE415F");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "source")),
+               "read_element_status:serial");
+}
+
 TEST(SdBootstrap, UploadsTapeDiscoveryTopologyViaTapeById)
 {
   ScopedDirectory config_root;
