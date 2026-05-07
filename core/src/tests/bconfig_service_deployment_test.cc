@@ -1138,6 +1138,202 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
 #endif
 }
 
+TEST(BconfigService, PersistsStorageBootstrapDiscoveryByIdTapeNodes)
+{
+  ScopedDirectory state_path{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+
+  {
+    ServiceState state{state_path.path()};
+    auto deployment
+        = state.CreateDeployment({.id = "prod",
+                                  .name = "Production",
+                                  .repository_path = repo_path.path()});
+    ASSERT_TRUE(deployment);
+
+    auto storage_messages = state.UpsertStorageMessagesResource(
+        "prod", "bareos-sd", "Standard",
+        {.description = std::string{"Managed storage messages"},
+         .director_entries = std::vector<std::string>{"bareos-dir = all"}});
+    ASSERT_TRUE(storage_messages) << storage_messages.error;
+
+    auto storage = state.UpsertStorageDaemonResource(
+        "prod", "bareos-sd",
+        {.address = std::string{"127.0.0.1"},
+         .port = 9103,
+         .working_directory = std::string{"/var/lib/bareos"},
+         .messages = std::string{"Standard"}});
+    ASSERT_TRUE(storage) << storage.error;
+
+    auto storage_director = state.UpsertStorageDirectorResource(
+        "prod", "bareos-sd", "bareos-dir",
+        {.password = std::string{"storage-director-secret"},
+         .description = std::string{
+             "Director, who is permitted to contact this storage daemon."}});
+    ASSERT_TRUE(storage_director) << storage_director.error;
+
+    auto storage_device = state.UpsertStorageDeviceResource(
+        "prod", "bareos-sd", "FileStorage",
+        {.media_type = std::string{"File"},
+         .archive_device = std::string{"/var/lib/bareos/storage"},
+         .device_type = std::string{"File"},
+         .removable_media = false,
+         .random_access = true,
+         .automatic_mount = true,
+         .label_media = true,
+         .always_open = false,
+         .description = std::string{
+             "File device. A connecting Director must have the same Name and "
+             "MediaType."}});
+    ASSERT_TRUE(storage_device) << storage_device.error;
+  }
+
+#if !HAVE_WIN32
+  ScopedBconfigServiceServer server{state_path.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto create_response = server.Post(
+      "/v1/bootstrap/storage-sessions",
+      R"({"deployment_id":"prod","storage_name":"bareos-sd","ttl_seconds":600})");
+  ASSERT_EQ(create_response.status_code, 201u) << create_response.body;
+  auto create_json = ParseJson(create_response.body);
+  ASSERT_NE(create_json.get(), nullptr) << create_response.body;
+  auto* created
+      = json_object_get(create_json.get(), "storage_bootstrap_session");
+  ASSERT_TRUE(json_is_object(created));
+  auto* session_id = json_object_get(created, "id");
+  auto* bootstrap_token = json_object_get(created, "bootstrap_token");
+  ASSERT_TRUE(json_is_string(session_id));
+  ASSERT_TRUE(json_is_string(bootstrap_token));
+
+  const std::string session_id_text{json_string_value(session_id)};
+  const std::string bootstrap_token_text{json_string_value(bootstrap_token)};
+  const auto session_base_path
+      = std::string{"/v1/bootstrap/storage-sessions/"} + session_id_text;
+  const auto by_id_tape = std::string{"/dev/tape/by-id/scsi-123456-nst"};
+
+  const auto register_response = server.Post(
+      session_base_path + "/register",
+      "{\"bootstrap_token\":\"" + bootstrap_token_text
+          + "\",\"hostname\":\"sdhost\",\"fqdn\":\"sdhost.example.com\"}");
+  ASSERT_EQ(register_response.status_code, 200u) << register_response.body;
+
+  const auto discovery_response = server.Post(
+      session_base_path + "/discovery",
+      "{\"bootstrap_token\":\"" + bootstrap_token_text
+          + "\",\"hostname\":\"sdhost\",\"fqdn\":\"sdhost.example.com\","
+            "\"report\":{\"hostname\":\"sdhost\",\"filesystems\":[],"
+            "\"tape_devices\":[{\"device_node\":\"/dev/tape/by-id/scsi-123456-nst\","
+            "\"generic_device_node\":\"/dev/sg3\",\"vendor\":\"IBM\","
+            "\"model\":\"ULTRIUM-HH8\",\"device_identifier\":\"naa.11223344\","
+            "\"serial\":\"TAPE123\",\"accessible\":true,"
+            "\"accessibility_error\":\"\"}],"
+             "\"changers\":[{\"device_node\":\"/dev/sg4\",\"vendor\":\"IBM\","
+             "\"model\":\"3573-TL\",\"device_identifier\":\"naa.aabbccdd\","
+             "\"serial\":\"CHANGER42\","
+             "\"drive_device_nodes\":[\"/dev/tape/by-id/scsi-123456-nst\"],"
+              "\"drives\":[{\"tape_device_node\":\"/dev/tape/by-id/scsi-123456-nst\","
+              "\"generic_device_node\":\"/dev/sg3\","
+              "\"drive_element_address\":256,"
+              "\"device_identifier\":\"naa.11223344\","
+               "\"serial\":\"TAPE123\","
+               "\"source\":\"read_element_status:identifier\"},"
+               "{\"tape_device_node\":\"/dev/tape/by-id/scsi-123456-nst\","
+               "\"generic_device_node\":\"/dev/sg3\","
+               "\"drive_element_address\":258,"
+               "\"device_identifier\":\"naa.88776655\","
+               "\"serial\":\"TAPE123\","
+               "\"source\":\"read_element_status:scsi_address\"}],"
+              "\"accessible\":true,\"accessibility_error\":\"\"}]}}");
+  ASSERT_EQ(discovery_response.status_code, 200u) << discovery_response.body;
+  auto discovery_json = ParseJson(discovery_response.body);
+  ASSERT_NE(discovery_json.get(), nullptr) << discovery_response.body;
+  auto* discovered
+      = json_object_get(discovery_json.get(), "storage_bootstrap_session");
+  ASSERT_TRUE(json_is_object(discovered));
+  auto* discovery_report = json_object_get(discovered, "discovery_report");
+  ASSERT_TRUE(json_is_object(discovery_report));
+
+  auto* tape_devices = json_object_get(discovery_report, "tape_devices");
+  ASSERT_TRUE(json_is_array(tape_devices));
+  ASSERT_EQ(json_array_size(tape_devices), 1u);
+  auto* tape_device = json_array_get(tape_devices, 0);
+  ASSERT_TRUE(json_is_object(tape_device));
+  EXPECT_STREQ(json_string_value(json_object_get(tape_device, "device_node")),
+               by_id_tape.c_str());
+
+  auto* changers = json_object_get(discovery_report, "changers");
+  ASSERT_TRUE(json_is_array(changers));
+  ASSERT_EQ(json_array_size(changers), 1u);
+  auto* changer = json_array_get(changers, 0);
+  ASSERT_TRUE(json_is_object(changer));
+  auto* drive_device_nodes = json_object_get(changer, "drive_device_nodes");
+  ASSERT_TRUE(json_is_array(drive_device_nodes));
+  ASSERT_EQ(json_array_size(drive_device_nodes), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(drive_device_nodes, 0)),
+               by_id_tape.c_str());
+
+  auto* drives = json_object_get(changer, "drives");
+  ASSERT_TRUE(json_is_array(drives));
+  ASSERT_EQ(json_array_size(drives), 2u);
+  auto* drive = json_array_get(drives, 0);
+  ASSERT_TRUE(json_is_object(drive));
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "tape_device_node")),
+               by_id_tape.c_str());
+
+  auto* scsi_fallback_drive = json_array_get(drives, 1);
+  ASSERT_TRUE(json_is_object(scsi_fallback_drive));
+  EXPECT_STREQ(json_string_value(
+                   json_object_get(scsi_fallback_drive, "tape_device_node")),
+               by_id_tape.c_str());
+
+  const auto get_response = server.Get(session_base_path);
+  ASSERT_EQ(get_response.status_code, 200u) << get_response.body;
+  auto get_json = ParseJson(get_response.body);
+  ASSERT_NE(get_json.get(), nullptr) << get_response.body;
+  auto* loaded = json_object_get(get_json.get(), "storage_bootstrap_session");
+  ASSERT_TRUE(json_is_object(loaded));
+  auto* loaded_report = json_object_get(loaded, "discovery_report");
+  ASSERT_TRUE(json_is_object(loaded_report));
+
+  auto* loaded_tape_devices = json_object_get(loaded_report, "tape_devices");
+  ASSERT_TRUE(json_is_array(loaded_tape_devices));
+  ASSERT_EQ(json_array_size(loaded_tape_devices), 1u);
+  auto* loaded_tape_device = json_array_get(loaded_tape_devices, 0);
+  ASSERT_TRUE(json_is_object(loaded_tape_device));
+  EXPECT_STREQ(
+      json_string_value(json_object_get(loaded_tape_device, "device_node")),
+      by_id_tape.c_str());
+
+  auto* loaded_changers = json_object_get(loaded_report, "changers");
+  ASSERT_TRUE(json_is_array(loaded_changers));
+  ASSERT_EQ(json_array_size(loaded_changers), 1u);
+  auto* loaded_changer = json_array_get(loaded_changers, 0);
+  ASSERT_TRUE(json_is_object(loaded_changer));
+  auto* loaded_drive_device_nodes
+      = json_object_get(loaded_changer, "drive_device_nodes");
+  ASSERT_TRUE(json_is_array(loaded_drive_device_nodes));
+  ASSERT_EQ(json_array_size(loaded_drive_device_nodes), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(loaded_drive_device_nodes, 0)),
+               by_id_tape.c_str());
+
+  auto* loaded_drives = json_object_get(loaded_changer, "drives");
+  ASSERT_TRUE(json_is_array(loaded_drives));
+  ASSERT_EQ(json_array_size(loaded_drives), 2u);
+  auto* loaded_drive = json_array_get(loaded_drives, 0);
+  ASSERT_TRUE(json_is_object(loaded_drive));
+  EXPECT_STREQ(
+      json_string_value(json_object_get(loaded_drive, "tape_device_node")),
+      by_id_tape.c_str());
+
+  auto* loaded_scsi_fallback_drive = json_array_get(loaded_drives, 1);
+  ASSERT_TRUE(json_is_object(loaded_scsi_fallback_drive));
+  EXPECT_STREQ(json_string_value(json_object_get(loaded_scsi_fallback_drive,
+                                                 "tape_device_node")),
+               by_id_tape.c_str());
+#endif
+}
+
 TEST(BconfigService, ImportsDetectedComponentTreesFromConfigRoot)
 {
   ScopedDirectory source_root{MakeTempPath()};
