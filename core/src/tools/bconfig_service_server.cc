@@ -14840,16 +14840,18 @@ std::optional<std::string> QueryParameter(std::string_view target,
 
   auto query = target.substr(query_start + 1);
   while (!query.empty()) {
-    const auto ampersand = query.find('&');
-    const auto entry = query.substr(0, ampersand);
-    const auto equals = entry.find('=');
-    const auto entry_key = entry.substr(0, equals);
+    const auto entry_end = query.find('&');
+    const auto entry = query.substr(0, entry_end);
+    const auto equals_pos = entry.find('=');
+    const auto key_end
+        = equals_pos == std::string_view::npos ? entry.size() : equals_pos;
+    const auto entry_key = entry.substr(0, key_end);
     if (entry_key == key) {
-      if (equals == std::string_view::npos) { return std::string{}; }
-      return std::string{entry.substr(equals + 1)};
+      if (equals_pos == std::string_view::npos) { return std::string{}; }
+      return std::string{entry.substr(equals_pos + 1)};
     }
-    if (ampersand == std::string_view::npos) { break; }
-    query.remove_prefix(ampersand + 1);
+    if (entry_end == std::string_view::npos) { break; }
+    query.remove_prefix(entry_end + 1);
   }
 
   return std::nullopt;

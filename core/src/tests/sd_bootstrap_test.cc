@@ -344,7 +344,8 @@ class FakeBootstrapServer {
   http::response<http::string_body> HandleRequest(
       const http::request<http::string_body>& request)
   {
-    const auto path = ExtractPath(request.target());
+    const auto path = ExtractPath(
+        std::string_view{request.target().data(), request.target().size()});
     http::response<http::string_body> response{http::status::ok,
                                                request.version()};
     response.set(http::field::content_type, "application/json");
