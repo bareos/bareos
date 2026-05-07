@@ -545,11 +545,16 @@ void DoRestore(JobControlRecord* jcr)
                                        sizeof(attr->statp), &attr->LinkFI);
 
         if (!IsRestoreStreamSupported(attr->data_stream)) {
+          const bool fatal_unsupported_stream
+              = is_win32_stream(attr->data_stream) && !have_win32_api();
+
           if (!non_support_data++) {
-            Jmsg(jcr, M_WARNING, 0,
+            Jmsg(jcr, fatal_unsupported_stream ? M_ERROR : M_WARNING, 0,
                  T_("%s stream not supported on this Client.\n"),
                  stream_to_ascii(attr->data_stream));
           }
+
+          if (fatal_unsupported_stream) { goto bail_out; }
           continue;
         }
 
