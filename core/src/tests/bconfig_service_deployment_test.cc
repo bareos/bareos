@@ -899,16 +899,22 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
             "\"model\":\"ULTRIUM-HH8\",\"device_identifier\":\"naa.11223344\","
             "\"serial\":\"TAPE123\",\"accessible\":true,"
             "\"accessibility_error\":\"\"}],"
-            "\"changers\":[{\"device_node\":\"/dev/sg4\",\"vendor\":\"IBM\","
-            "\"model\":\"3573-TL\",\"device_identifier\":\"naa.aabbccdd\","
-            "\"serial\":\"CHANGER42\",\"drive_device_nodes\":[\"/dev/nst0\"],"
-            "\"drives\":[{\"tape_device_node\":\"/dev/nst0\","
-            "\"generic_device_node\":\"/dev/sg3\","
-            "\"drive_element_address\":256,"
-            "\"device_identifier\":\"naa.11223344\","
-            "\"serial\":\"TAPE123\","
-            "\"source\":\"read_element_status:identifier\"}],"
-            "\"accessible\":true,\"accessibility_error\":\"\"}]}}");
+             "\"changers\":[{\"device_node\":\"/dev/sg4\",\"vendor\":\"IBM\","
+             "\"model\":\"3573-TL\",\"device_identifier\":\"naa.aabbccdd\","
+             "\"serial\":\"CHANGER42\",\"drive_device_nodes\":[\"/dev/nst0\"],"
+             "\"drives\":[{\"tape_device_node\":\"/dev/nst0\","
+             "\"generic_device_node\":\"/dev/sg3\","
+             "\"drive_element_address\":256,"
+             "\"device_identifier\":\"naa.11223344\","
+             "\"serial\":\"TAPE123\","
+             "\"source\":\"read_element_status:identifier\"},"
+             "{\"tape_device_node\":\"\","
+             "\"generic_device_node\":\"\","
+             "\"drive_element_address\":257,"
+             "\"device_identifier\":null,"
+             "\"serial\":null,"
+             "\"source\":\"read_element_status:unmatched\"}],"
+             "\"accessible\":true,\"accessibility_error\":\"\"}]}}");
   ASSERT_EQ(discovery_response.status_code, 200u) << discovery_response.body;
   auto discovery_json = ParseJson(discovery_response.body);
   ASSERT_NE(discovery_json.get(), nullptr) << discovery_response.body;
@@ -941,7 +947,7 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
                "naa.aabbccdd");
   auto* drives = json_object_get(changer, "drives");
   ASSERT_TRUE(json_is_array(drives));
-  ASSERT_EQ(json_array_size(drives), 1u);
+  ASSERT_EQ(json_array_size(drives), 2u);
   auto* drive = json_array_get(drives, 0);
   ASSERT_TRUE(json_is_object(drive));
   EXPECT_EQ(json_integer_value(json_object_get(drive, "drive_element_address")),
@@ -950,6 +956,22 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
                "naa.11223344");
   EXPECT_STREQ(json_string_value(json_object_get(drive, "source")),
                "read_element_status:identifier");
+  auto* unmatched_drive = json_array_get(drives, 1);
+  ASSERT_TRUE(json_is_object(unmatched_drive));
+  EXPECT_EQ(json_integer_value(
+                json_object_get(unmatched_drive, "drive_element_address")),
+            257);
+  EXPECT_STREQ(
+      json_string_value(json_object_get(unmatched_drive, "tape_device_node")),
+      "");
+  EXPECT_STREQ(json_string_value(
+                   json_object_get(unmatched_drive, "generic_device_node")),
+               "");
+  EXPECT_TRUE(
+      json_is_null(json_object_get(unmatched_drive, "device_identifier")));
+  EXPECT_TRUE(json_is_null(json_object_get(unmatched_drive, "serial")));
+  EXPECT_STREQ(json_string_value(json_object_get(unmatched_drive, "source")),
+               "read_element_status:unmatched");
 
   const auto selection_response = server.Post(
       session_base_path + "/selection",
@@ -985,11 +1007,22 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
   ASSERT_TRUE(json_is_object(loaded_changer));
   auto* loaded_drives = json_object_get(loaded_changer, "drives");
   ASSERT_TRUE(json_is_array(loaded_drives));
-  ASSERT_EQ(json_array_size(loaded_drives), 1u);
+  ASSERT_EQ(json_array_size(loaded_drives), 2u);
   auto* loaded_drive = json_array_get(loaded_drives, 0);
   ASSERT_TRUE(json_is_object(loaded_drive));
   EXPECT_STREQ(json_string_value(json_object_get(loaded_drive, "serial")),
                "TAPE123");
+  auto* loaded_unmatched_drive = json_array_get(loaded_drives, 1);
+  ASSERT_TRUE(json_is_object(loaded_unmatched_drive));
+  EXPECT_EQ(json_integer_value(json_object_get(loaded_unmatched_drive,
+                                               "drive_element_address")),
+            257);
+  EXPECT_TRUE(json_is_null(
+      json_object_get(loaded_unmatched_drive, "device_identifier")));
+  EXPECT_TRUE(json_is_null(json_object_get(loaded_unmatched_drive, "serial")));
+  EXPECT_STREQ(
+      json_string_value(json_object_get(loaded_unmatched_drive, "source")),
+      "read_element_status:unmatched");
 
   const auto config_response = server.Get(
       session_base_path + "/config-bundle?token=" + bootstrap_token_text);
