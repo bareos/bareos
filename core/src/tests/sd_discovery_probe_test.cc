@@ -331,6 +331,67 @@ TEST(SdDiscoveryProbe, SerializesStableJsonShape)
   json_decref(parsed);
 }
 
+TEST(SdDiscoveryProbe, SerializesByIdTapeNodes)
+{
+  storagedaemon::StorageDiscoveryReport report;
+  report.hostname = "sdhost";
+  report.fqdn = "sdhost.example.com";
+  report.tape_devices.push_back({
+      .device_node = "/dev/tape/by-id/scsi-123456-nst",
+      .generic_device_node = "/dev/sg3",
+      .vendor = "IBM",
+      .model = "ULTRIUM-HH8",
+      .device_identifier = "naa.11223344",
+      .serial = "ABC123",
+      .accessible = true,
+  });
+  report.changers.push_back({
+      .device_node = "/dev/sg4",
+      .vendor = "IBM",
+      .model = "3573-TL",
+      .device_identifier = "naa.aabbccdd",
+      .serial = "CHG1",
+      .drive_device_nodes = {"/dev/tape/by-id/scsi-123456-nst"},
+      .drives = {{
+          .tape_device_node = "/dev/tape/by-id/scsi-123456-nst",
+          .generic_device_node = "/dev/sg3",
+          .drive_element_address = 256,
+          .device_identifier = "naa.1234",
+          .serial = "ABC123",
+          .source = "read_element_status:identifier",
+      }},
+      .accessible = true,
+  });
+
+  const auto json = storagedaemon::StorageDiscoveryReportToJson(report);
+  json_error_t error{};
+  json_t* parsed = json_loads(json.c_str(), 0, &error);
+
+  ASSERT_NE(parsed, nullptr) << error.text;
+  auto* tape_device
+      = json_array_get(json_object_get(parsed, "tape_devices"), 0);
+  ASSERT_NE(tape_device, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(tape_device, "device_node")),
+               "/dev/tape/by-id/scsi-123456-nst");
+
+  auto* changer = json_array_get(json_object_get(parsed, "changers"), 0);
+  ASSERT_NE(changer, nullptr);
+  auto* drive_device_nodes = json_object_get(changer, "drive_device_nodes");
+  ASSERT_TRUE(json_is_array(drive_device_nodes));
+  ASSERT_EQ(json_array_size(drive_device_nodes), 1U);
+  EXPECT_STREQ(json_string_value(json_array_get(drive_device_nodes, 0)),
+               "/dev/tape/by-id/scsi-123456-nst");
+
+  auto* drive = json_array_get(json_object_get(changer, "drives"), 0);
+  ASSERT_NE(drive, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "tape_device_node")),
+               "/dev/tape/by-id/scsi-123456-nst");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "source")),
+               "read_element_status:identifier");
+
+  json_decref(parsed);
+}
+
 TEST(SdDiscoveryProbe, ProbesFilesystemCandidatesForCurrentHost)
 {
   const auto report = storagedaemon::ProbeStorageDiscoveryReport();
