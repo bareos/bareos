@@ -372,6 +372,32 @@ std::optional<std::string> ReadScsiDeviceIdentifier(
   return ParseScsiPage83DeviceIdentifier(*page83);
 }
 
+std::optional<std::string> ExtractSerialFromDeviceIdentifier(
+    const std::optional<std::string>& device_identifier)
+{
+  if (!device_identifier || !device_identifier->starts_with("t10.")) {
+    return std::nullopt;
+  }
+
+  auto value = TrimWhitespaceAndNuls(device_identifier->substr(4));
+  if (value.empty()) { return std::nullopt; }
+
+  const auto last_separator = value.find_last_of(" \t");
+  if (last_separator == std::string::npos) { return std::nullopt; }
+
+  auto serial = TrimWhitespaceAndNuls(value.substr(last_separator + 1));
+  if (serial.empty()) { return std::nullopt; }
+
+  if (serial.find_first_not_of(
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+          "0123456789._-")
+      != std::string::npos) {
+    return std::nullopt;
+  }
+
+  return serial;
+}
+
 std::optional<std::pair<uint8_t, uint8_t>> ParseLinuxScsiTargetLun(
     const std::filesystem::path& path)
 {
@@ -519,6 +545,7 @@ ChangerDriveInfo ParseElementStatusDescriptor(std::string_view descriptor,
   drive.device_identifier = FormatScsiDeviceIdentifier(
       designator_type, code_set,
       descriptor.substr(offset + 4, identifier_length));
+  drive.serial = ExtractSerialFromDeviceIdentifier(drive.device_identifier);
   return drive;
 }
 
@@ -578,7 +605,7 @@ void ApplyTapeMatch(ChangerDriveInfo& drive,
   if (!drive.device_identifier && tape.device_identifier) {
     drive.device_identifier = tape.device_identifier;
   }
-  if (!drive.serial && !tape.serial.empty()) { drive.serial = tape.serial; }
+  if (!tape.serial.empty()) { drive.serial = tape.serial; }
   drive.source = std::string{source};
   if (!drive.tape_device_node.empty()) {
     changer.drive_device_nodes.emplace_back(drive.tape_device_node);

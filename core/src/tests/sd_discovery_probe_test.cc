@@ -130,7 +130,9 @@ std::string BuildReadElementStatusDataTransferDescriptor(
     std::string_view designator,
     uint8_t scsi_id = 0,
     uint8_t lun = 0,
-    bool scsi_address_valid = false)
+    bool scsi_address_valid = false,
+    uint8_t code_set = 0x01,
+    uint8_t designator_type = 0x03)
 {
   std::string descriptor(12, '\0');
   descriptor[0] = static_cast<char>((element_address >> 8) & 0xff);
@@ -139,8 +141,8 @@ std::string BuildReadElementStatusDataTransferDescriptor(
   descriptor[6]
       = static_cast<char>((lun & 0x07) | (scsi_address_valid ? 0x30 : 0x00));
   descriptor[7] = static_cast<char>(scsi_id);
-  descriptor.append(1, static_cast<char>(0x01));
-  descriptor.append(1, static_cast<char>(0x03));
+  descriptor.append(1, static_cast<char>(code_set));
+  descriptor.append(1, static_cast<char>(designator_type));
   descriptor.append(1, '\0');
   descriptor.append(1, static_cast<char>(designator.size()));
   descriptor.append(designator);
@@ -498,6 +500,45 @@ TEST(SdDiscoveryProbe, KeepsUnmatchedPartialChangerDrivesVisible)
   EXPECT_TRUE(report.changers[0].drives[0].generic_device_node.empty());
   ASSERT_TRUE(report.changers[0].drives[0].drive_element_address);
   EXPECT_EQ(*report.changers[0].drives[0].drive_element_address, 0U);
+  ASSERT_TRUE(report.changers[0].drives[0].source);
+  EXPECT_EQ(*report.changers[0].drives[0].source,
+            "read_element_status:unmatched");
+}
+
+TEST(SdDiscoveryProbe, ExtractsSerialFromUnmatchedT10DriveIdentifier)
+{
+  ScopedDirectory sysfs_root;
+  ScopedDirectory dev_root;
+  ScopedDirectory read_element_status_root;
+
+  std::filesystem::create_directories(sysfs_root.path()
+                                      / "class/scsi_changer/sch0/device");
+  std::filesystem::create_directories(
+      sysfs_root.path() / "class/scsi_changer/sch0/device/scsi_generic/sg4");
+  WriteBinaryFile(dev_root.path() / "sg4", "");
+
+  ScopedEnvironmentVariable sysfs_override{"BAREOS_SD_DISCOVERY_SYSFS_ROOT",
+                                           sysfs_root.path().string()};
+  ScopedEnvironmentVariable dev_override{"BAREOS_SD_DISCOVERY_DEV_ROOT",
+                                         dev_root.path().string()};
+  ScopedEnvironmentVariable read_element_status_override{
+      "BAREOS_SD_DISCOVERY_READ_ELEMENT_STATUS_ROOT",
+      read_element_status_root.path().string()};
+  WriteBinaryFile(
+      read_element_status_root.path() / "sg4.bin",
+      BuildReadElementStatusData({BuildReadElementStatusDataTransferDescriptor(
+          256, "HPE     Ultrium 9-SCSI  4E77FE415F", 0, 0, false, 0x02,
+          0x01)}));
+
+  const auto report = storagedaemon::ProbeStorageDiscoveryReport();
+
+  ASSERT_EQ(report.changers.size(), 1U);
+  ASSERT_EQ(report.changers[0].drives.size(), 1U);
+  ASSERT_TRUE(report.changers[0].drives[0].device_identifier);
+  EXPECT_EQ(*report.changers[0].drives[0].device_identifier,
+            "t10.HPE     Ultrium 9-SCSI  4E77FE415F");
+  ASSERT_TRUE(report.changers[0].drives[0].serial);
+  EXPECT_EQ(*report.changers[0].drives[0].serial, "4E77FE415F");
   ASSERT_TRUE(report.changers[0].drives[0].source);
   EXPECT_EQ(*report.changers[0].drives[0].source,
             "read_element_status:unmatched");

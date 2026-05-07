@@ -166,7 +166,9 @@ std::string BuildReadElementStatusDataTransferDescriptor(
     std::string_view designator,
     uint8_t scsi_id = 0,
     uint8_t lun = 0,
-    bool scsi_address_valid = false)
+    bool scsi_address_valid = false,
+    uint8_t code_set = 0x01,
+    uint8_t designator_type = 0x03)
 {
   std::string descriptor(12, '\0');
   descriptor[0] = static_cast<char>((element_address >> 8) & 0xff);
@@ -175,8 +177,8 @@ std::string BuildReadElementStatusDataTransferDescriptor(
   descriptor[6]
       = static_cast<char>((lun & 0x07) | (scsi_address_valid ? 0x30 : 0x00));
   descriptor[7] = static_cast<char>(scsi_id);
-  descriptor.append(1, static_cast<char>(0x01));
-  descriptor.append(1, static_cast<char>(0x03));
+  descriptor.append(1, static_cast<char>(code_set));
+  descriptor.append(1, static_cast<char>(designator_type));
   descriptor.append(1, '\0');
   descriptor.append(1, static_cast<char>(designator.size()));
   descriptor.append(designator);
@@ -714,6 +716,59 @@ TEST(SdDiscoveryCli, InvokesExecutableWithUnmatchedTapeSection)
   json_decref(parsed);
 }
 
+TEST(SdDiscoveryCli, ExtractsSerialFromUnmatchedT10TapeSection)
+{
+  ScopedDirectory sysfs_root;
+  ScopedDirectory dev_root;
+  ScopedDirectory read_element_status_root;
+  ScopedDirectory output_root;
+
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/vendor",
+                  "IBM\n");
+  WriteBinaryFile(sysfs_root.path() / "class/scsi_changer/sch0/device/model",
+                  "3573-TL\n");
+  std::filesystem::create_directories(
+      sysfs_root.path() / "class/scsi_changer/sch0/device/scsi_generic/sg4");
+  WriteBinaryFile(dev_root.path() / "sg4", "");
+  WriteBinaryFile(
+      read_element_status_root.path() / "sg4.bin",
+      BuildReadElementStatusData({BuildReadElementStatusDataTransferDescriptor(
+          256, "HPE     Ultrium 9-SCSI  4E77FE415F", 0, 0, false, 0x02,
+          0x01)}));
+
+  ScopedEnvironmentVariable sysfs_override{"BAREOS_SD_DISCOVERY_SYSFS_ROOT",
+                                           sysfs_root.path().string()};
+  ScopedEnvironmentVariable dev_override{"BAREOS_SD_DISCOVERY_DEV_ROOT",
+                                         dev_root.path().string()};
+  ScopedEnvironmentVariable read_element_status_override{
+      "BAREOS_SD_DISCOVERY_READ_ELEMENT_STATUS_ROOT",
+      read_element_status_root.path().string()};
+
+  const auto output_path = output_root.path() / "discovery.json";
+  const auto command = QuoteShellArgument(BAREOS_SD_DISCOVER_BINARY)
+                       + " --section tape > "
+                       + QuoteShellArgument(output_path.string());
+  EXPECT_EQ(ExtractExitStatus(std::system(command.c_str())), 0);
+
+  json_error_t error{};
+  json_t* parsed = json_loads(ReadTextFile(output_path).c_str(), 0, &error);
+  ASSERT_NE(parsed, nullptr) << error.text;
+  auto* drives = json_object_get(
+      json_array_get(json_object_get(parsed, "changers"), 0), "drives");
+  ASSERT_TRUE(json_is_array(drives));
+  ASSERT_EQ(json_array_size(drives), 1U);
+  auto* drive = json_array_get(drives, 0);
+  ASSERT_NE(drive, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "device_identifier")),
+               "t10.HPE     Ultrium 9-SCSI  4E77FE415F");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "serial")),
+               "4E77FE415F");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "source")),
+               "read_element_status:unmatched");
+
+  json_decref(parsed);
+}
+
 TEST(SdDiscoveryCli, InvokesExecutableWithFilesystemSection)
 {
   ScopedDirectory sysfs_root;
@@ -1181,5 +1236,23 @@ TEST(SdDiscoveryCli, PrintsHelp)
   EXPECT_NE(stdout.find("[OPTIONS]"), std::string::npos);
   EXPECT_NE(stdout.find("--format"), std::string::npos);
   EXPECT_NE(stdout.find("--section"), std::string::npos);
+}
+
+TEST(SdDiscoveryCli, PrintsVersion)
+{
+  ScopedDirectory output_root;
+
+  const auto stdout_path = output_root.path() / "stdout.txt";
+  const auto stderr_path = output_root.path() / "stderr.txt";
+  const auto command = QuoteShellArgument(BAREOS_SD_DISCOVER_BINARY)
+                       + " --version > "
+                       + QuoteShellArgument(stdout_path.string()) + " 2> "
+                       + QuoteShellArgument(stderr_path.string());
+  EXPECT_EQ(ExtractExitStatus(std::system(command.c_str())), 0);
+  EXPECT_TRUE(ReadTextFile(stderr_path).empty());
+
+  const auto stdout = ReadTextFile(stdout_path);
+  EXPECT_FALSE(stdout.empty());
+  EXPECT_NE(stdout.find('\n'), std::string::npos);
 }
 #endif
