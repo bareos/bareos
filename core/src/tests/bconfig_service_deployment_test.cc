@@ -1034,6 +1034,12 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
   ASSERT_EQ(json_array_size(loaded_changers), 1u);
   auto* loaded_changer = json_array_get(loaded_changers, 0);
   ASSERT_TRUE(json_is_object(loaded_changer));
+  auto* loaded_drive_device_nodes
+      = json_object_get(loaded_changer, "drive_device_nodes");
+  ASSERT_TRUE(json_is_array(loaded_drive_device_nodes));
+  ASSERT_EQ(json_array_size(loaded_drive_device_nodes), 1u);
+  EXPECT_STREQ(json_string_value(json_array_get(loaded_drive_device_nodes, 0)),
+               "/dev/nst0");
   auto* loaded_drives = json_object_get(loaded_changer, "drives");
   ASSERT_TRUE(json_is_array(loaded_drives));
   ASSERT_EQ(json_array_size(loaded_drives), 3u);
