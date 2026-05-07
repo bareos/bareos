@@ -65,6 +65,7 @@ struct ChangerDriveInfo {
   std::string generic_device_node{};
   std::optional<uint32_t> drive_element_address{};
   std::optional<std::string> device_identifier{};
+  std::optional<std::string> serial{};
   std::optional<std::string> source{};
 };
 

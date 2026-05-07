@@ -118,7 +118,12 @@ TEST(SdDiscoveryCli, RendersFilteredJson)
   EXPECT_EQ(json_array_size(json_object_get(parsed, "changers")), 1U);
   json_t* changer = json_array_get(json_object_get(parsed, "changers"), 0);
   ASSERT_NE(changer, nullptr);
-  EXPECT_EQ(json_array_size(json_object_get(changer, "drives")), 1U);
+  json_t* drives = json_object_get(changer, "drives");
+  ASSERT_TRUE(json_is_array(drives));
+  EXPECT_EQ(json_array_size(drives), 1U);
+  json_t* drive = json_array_get(drives, 0);
+  ASSERT_NE(drive, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "serial")), "ABC123");
 
   json_decref(parsed);
 }

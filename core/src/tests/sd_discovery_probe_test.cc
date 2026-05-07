@@ -139,6 +139,7 @@ TEST(SdDiscoveryProbe, SerializesStableJsonShape)
             256);
   EXPECT_STREQ(json_string_value(json_object_get(drive, "device_identifier")),
                "naa.1234");
+  EXPECT_STREQ(json_string_value(json_object_get(drive, "serial")), "ABC123");
   EXPECT_STREQ(json_string_value(json_object_get(drive, "source")), "test");
 
   json_decref(parsed);

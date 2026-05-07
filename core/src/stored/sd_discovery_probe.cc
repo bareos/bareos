@@ -360,6 +360,7 @@ json_t* JsonChangerInfo(const ChangerInfo& changer)
                         json_integer_or_null(drive.drive_element_address));
     json_object_set_new(item, "device_identifier",
                         json_string_or_null(drive.device_identifier));
+    json_object_set_new(item, "serial", json_string_or_null(drive.serial));
     json_object_set_new(item, "source", json_string_or_null(drive.source));
     json_array_append_new(drives, item);
   }
@@ -433,26 +434,54 @@ StorageDiscoveryReport ProbeStorageDiscoveryReport()
   return report;
 }
 
+StorageDiscoveryReport EnrichChangerDriveSerials(StorageDiscoveryReport report)
+{
+  for (auto& changer : report.changers) {
+    for (auto& drive : changer.drives) {
+      if (drive.serial) { continue; }
+
+      for (const auto& tape_device : report.tape_devices) {
+        const bool matches_tape_device
+            = !drive.tape_device_node.empty()
+              && drive.tape_device_node == tape_device.device_node;
+        const bool matches_generic_device
+            = !drive.generic_device_node.empty()
+              && drive.generic_device_node == tape_device.generic_device_node;
+        if ((!matches_tape_device && !matches_generic_device)
+            || tape_device.serial.empty()) {
+          continue;
+        }
+
+        drive.serial = tape_device.serial;
+        break;
+      }
+    }
+  }
+
+  return report;
+}
+
 std::string StorageDiscoveryReportToJson(const StorageDiscoveryReport& report)
 {
+  auto enriched = EnrichChangerDriveSerials(StorageDiscoveryReport{report});
   json_t* obj = json_object();
-  json_object_set_new(obj, "hostname", json_string(report.hostname.c_str()));
-  json_object_set_new(obj, "fqdn", json_string(report.fqdn.c_str()));
+  json_object_set_new(obj, "hostname", json_string(enriched.hostname.c_str()));
+  json_object_set_new(obj, "fqdn", json_string(enriched.fqdn.c_str()));
 
   json_t* filesystems = json_array();
-  for (const auto& filesystem : report.filesystems) {
+  for (const auto& filesystem : enriched.filesystems) {
     json_array_append_new(filesystems, JsonFilesystemCandidate(filesystem));
   }
   json_object_set_new(obj, "filesystems", filesystems);
 
   json_t* tape_devices = json_array();
-  for (const auto& tape_device : report.tape_devices) {
+  for (const auto& tape_device : enriched.tape_devices) {
     json_array_append_new(tape_devices, JsonTapeDeviceInfo(tape_device));
   }
   json_object_set_new(obj, "tape_devices", tape_devices);
 
   json_t* changers = json_array();
-  for (const auto& changer : report.changers) {
+  for (const auto& changer : enriched.changers) {
     json_array_append_new(changers, JsonChangerInfo(changer));
   }
   json_object_set_new(obj, "changers", changers);
