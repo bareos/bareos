@@ -71,6 +71,24 @@ storagedaemon::StorageDiscoveryReport ExampleReport()
   return report;
 }
 
+storagedaemon::StorageDiscoveryReport ExampleFallbackReport()
+{
+  auto report = ExampleReport();
+  report.changers[0].drives = {{
+                                   .tape_device_node = "/dev/nst0",
+                                   .generic_device_node = "/dev/sg3",
+                                   .drive_element_address = 256,
+                                   .device_identifier = "naa.11223344",
+                                   .serial = "ABC123",
+                                   .source = "read_element_status:identifier",
+                               },
+                               {
+                                   .drive_element_address = 257,
+                                   .source = "read_element_status:unmatched",
+                               }};
+  return report;
+}
+
 }  // namespace
 
 TEST(SdDiscoveryCli, ParsesReportSections)
@@ -106,6 +124,28 @@ TEST(SdDiscoveryCli, FiltersTapeSection)
   EXPECT_EQ(filtered.changers.size(), 1U);
 }
 
+TEST(SdDiscoveryCli, PreservesFallbackAndUnmatchedDriveMetadata)
+{
+  auto filtered = storagedaemon::discoverycli::FilterDiscoveryReport(
+      ExampleFallbackReport(),
+      storagedaemon::discoverycli::ReportSection::kTape);
+
+  ASSERT_EQ(filtered.changers.size(), 1U);
+  ASSERT_EQ(filtered.changers[0].drives.size(), 2U);
+  EXPECT_EQ(filtered.changers[0].drives[0].tape_device_node, "/dev/nst0");
+  ASSERT_TRUE(filtered.changers[0].drives[0].source);
+  EXPECT_EQ(*filtered.changers[0].drives[0].source,
+            "read_element_status:identifier");
+
+  EXPECT_TRUE(filtered.changers[0].drives[1].tape_device_node.empty());
+  EXPECT_TRUE(filtered.changers[0].drives[1].generic_device_node.empty());
+  ASSERT_TRUE(filtered.changers[0].drives[1].drive_element_address);
+  EXPECT_EQ(*filtered.changers[0].drives[1].drive_element_address, 257U);
+  ASSERT_TRUE(filtered.changers[0].drives[1].source);
+  EXPECT_EQ(*filtered.changers[0].drives[1].source,
+            "read_element_status:unmatched");
+}
+
 TEST(SdDiscoveryCli, RendersFilteredJson)
 {
   const auto json = storagedaemon::discoverycli::RenderDiscoveryReportJson(
@@ -134,6 +174,43 @@ TEST(SdDiscoveryCli, RendersFilteredJson)
   json_t* drive = json_array_get(drives, 0);
   ASSERT_NE(drive, nullptr);
   EXPECT_STREQ(json_string_value(json_object_get(drive, "serial")), "ABC123");
+
+  json_decref(parsed);
+}
+
+TEST(SdDiscoveryCli, RendersUnmatchedDriveMetadataInJson)
+{
+  const auto json = storagedaemon::discoverycli::RenderDiscoveryReportJson(
+      ExampleFallbackReport(),
+      storagedaemon::discoverycli::ReportSection::kTape);
+  json_error_t error{};
+  json_t* parsed = json_loads(json.c_str(), 0, &error);
+
+  ASSERT_NE(parsed, nullptr) << error.text;
+  json_t* changer = json_array_get(json_object_get(parsed, "changers"), 0);
+  ASSERT_NE(changer, nullptr);
+  json_t* drives = json_object_get(changer, "drives");
+  ASSERT_TRUE(json_is_array(drives));
+  ASSERT_EQ(json_array_size(drives), 2U);
+
+  json_t* matched = json_array_get(drives, 0);
+  ASSERT_NE(matched, nullptr);
+  EXPECT_STREQ(json_string_value(json_object_get(matched, "source")),
+               "read_element_status:identifier");
+
+  json_t* unmatched = json_array_get(drives, 1);
+  ASSERT_NE(unmatched, nullptr);
+  EXPECT_STREQ(
+      json_string_value(json_object_get(unmatched, "tape_device_node")), "");
+  EXPECT_STREQ(
+      json_string_value(json_object_get(unmatched, "generic_device_node")), "");
+  EXPECT_EQ(
+      json_integer_value(json_object_get(unmatched, "drive_element_address")),
+      257);
+  EXPECT_TRUE(json_is_null(json_object_get(unmatched, "device_identifier")));
+  EXPECT_TRUE(json_is_null(json_object_get(unmatched, "serial")));
+  EXPECT_STREQ(json_string_value(json_object_get(unmatched, "source")),
+               "read_element_status:unmatched");
 
   json_decref(parsed);
 }
