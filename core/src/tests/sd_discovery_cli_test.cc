@@ -408,6 +408,30 @@ TEST(SdDiscoveryCli, FiltersFullSectionWithByIdSerialFallback)
             "t10.HPE     Ultrium 9-SCSI  4E77FE415F");
 }
 
+TEST(SdDiscoveryCli, FiltersFullSectionWithByIdScsiFallback)
+{
+  auto filtered = storagedaemon::discoverycli::FilterDiscoveryReport(
+      ExampleByIdScsiFallbackReport(),
+      storagedaemon::discoverycli::ReportSection::kFull);
+
+  EXPECT_EQ(filtered.filesystems.size(), 1U);
+  ASSERT_EQ(filtered.tape_devices.size(), 1U);
+  EXPECT_EQ(filtered.tape_devices[0].device_node,
+            "/dev/tape/by-id/scsi-123456-nst");
+  ASSERT_EQ(filtered.changers.size(), 1U);
+  ASSERT_EQ(filtered.changers[0].drive_device_nodes.size(), 1U);
+  EXPECT_EQ(filtered.changers[0].drive_device_nodes[0],
+            "/dev/tape/by-id/scsi-123456-nst");
+  ASSERT_EQ(filtered.changers[0].drives.size(), 1U);
+  EXPECT_EQ(filtered.changers[0].drives[0].tape_device_node,
+            "/dev/tape/by-id/scsi-123456-nst");
+  ASSERT_TRUE(filtered.changers[0].drives[0].source);
+  EXPECT_EQ(*filtered.changers[0].drives[0].source,
+            "read_element_status:scsi_address");
+  ASSERT_TRUE(filtered.changers[0].drives[0].device_identifier);
+  EXPECT_EQ(*filtered.changers[0].drives[0].device_identifier, "naa.55667788");
+}
+
 TEST(SdDiscoveryCli, PreservesFallbackAndUnmatchedDriveMetadata)
 {
   auto filtered = storagedaemon::discoverycli::FilterDiscoveryReport(
