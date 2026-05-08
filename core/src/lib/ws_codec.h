@@ -34,6 +34,7 @@
 #ifndef BAREOS_LIB_WS_CODEC_H_
 #define BAREOS_LIB_WS_CODEC_H_
 
+#include <chrono>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -41,7 +42,14 @@
 /** Opaque handle wrapping a connected file descriptor. */
 class WsCodec {
  public:
-  explicit WsCodec(int fd) : fd_(fd) {}
+  explicit WsCodec(int fd,
+                   std::chrono::milliseconds io_timeout
+                   = std::chrono::seconds(30),
+                   std::chrono::milliseconds handshake_timeout
+                   = std::chrono::seconds(5))
+      : fd_(fd), io_timeout_(io_timeout), handshake_timeout_(handshake_timeout)
+  {
+  }
 
   /* Perform the HTTP/WebSocket upgrade handshake.
    * Reads the HTTP GET request and sends the 101 Switching Protocols reply.
@@ -66,10 +74,8 @@ class WsCodec {
  private:
   int fd_;
   bool closed_ = false;
-
-  // Low-level I/O helpers
-  void WriteAll(const void* buf, size_t len);
-  void ReadAll(void* buf, size_t len);
+  std::chrono::milliseconds io_timeout_;
+  std::chrono::milliseconds handshake_timeout_;
 
   // Frame encode/decode
   struct Frame {

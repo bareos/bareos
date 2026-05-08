@@ -23,7 +23,10 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cerrno>
+#include <chrono>
 #include <cstring>
+#include <poll.h>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -50,29 +53,91 @@ static constexpr uint8_t kOpPong = 0xA;
 // Low-level I/O
 // ---------------------------------------------------------------------------
 
-void WsCodec::WriteAll(const void* buf, size_t len)
+namespace {
+
+using Clock = std::chrono::steady_clock;
+
+int RemainingTimeoutMs(Clock::time_point deadline)
+{
+  const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(
+      deadline - Clock::now());
+  return remaining.count() > 0 ? static_cast<int>(remaining.count()) : 0;
+}
+
+void WaitForSocket(int fd,
+                   short events,
+                   Clock::time_point deadline,
+                   std::string_view action)
+{
+  while (true) {
+    struct pollfd pfd{fd, events, 0};
+    const int rc = ::poll(&pfd, 1, RemainingTimeoutMs(deadline));
+    if (rc > 0) {
+      if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+        throw std::runtime_error("WebSocket: socket error while waiting to "
+                                 + std::string(action));
+      }
+      if (pfd.revents & events) { return; }
+      continue;
+    }
+    if (rc == 0) {
+      throw std::runtime_error("WebSocket: timeout while waiting to "
+                               + std::string(action));
+    }
+    if (errno == EINTR) { continue; }
+    throw std::runtime_error("WebSocket: poll failed while waiting to "
+                             + std::string(action));
+  }
+}
+
+void WriteAll(int fd, const void* buf, size_t len, Clock::time_point deadline)
 {
   const auto* p = static_cast<const uint8_t*>(buf);
   while (len > 0) {
-    ssize_t n = ::send(fd_, p, len, MSG_NOSIGNAL);
-    if (n <= 0) { throw std::runtime_error("WebSocket: send failed"); }
+    WaitForSocket(fd, POLLOUT, deadline, "write to peer");
+    const ssize_t n = ::send(fd, p, len, MSG_NOSIGNAL);
+    if (n < 0) {
+      if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+        continue;
+      }
+      throw std::runtime_error("WebSocket: send failed");
+    }
+    if (n == 0) { throw std::runtime_error("WebSocket: send failed"); }
     p += n;
     len -= static_cast<size_t>(n);
   }
 }
 
-void WsCodec::ReadAll(void* buf, size_t len)
+void ReadAll(int fd,
+             void* buf,
+             size_t len,
+             Clock::time_point deadline,
+             std::string_view action)
 {
   auto* p = static_cast<uint8_t*>(buf);
   while (len > 0) {
-    ssize_t n = ::recv(fd_, p, len, MSG_WAITALL);
-    if (n <= 0) {
+    WaitForSocket(fd, POLLIN, deadline, action);
+    const ssize_t n = ::recv(fd, p, len, 0);
+    if (n < 0) {
+      if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+        continue;
+      }
+      throw std::runtime_error("WebSocket: recv failed");
+    }
+    if (n == 0) {
       throw std::runtime_error("WebSocket: connection closed by peer");
     }
     p += n;
     len -= static_cast<size_t>(n);
   }
 }
+
+Clock::time_point MakeDeadline(std::chrono::milliseconds timeout)
+{
+  return Clock::now() + timeout;
+}
+
+}  // namespace
 
 // ---------------------------------------------------------------------------
 // Handshake
@@ -112,14 +177,12 @@ static std::string ComputeAcceptKey(std::string_view client_key)
 void WsCodec::Handshake()
 {
   // Read HTTP request line by line until blank line
+  const auto deadline = MakeDeadline(handshake_timeout_);
   std::string headers;
   headers.reserve(1024);
   char ch;
   while (true) {
-    ssize_t n = ::recv(fd_, &ch, 1, 0);
-    if (n <= 0) {
-      throw std::runtime_error("WebSocket: connection lost during handshake");
-    }
+    ReadAll(fd_, &ch, 1, deadline, "read handshake data");
     headers.push_back(ch);
     if (headers.ends_with("\r\n\r\n")) { break; }
     if (headers.size() > 16384) {
@@ -163,7 +226,7 @@ void WsCodec::Handshake()
         "Sec-WebSocket-Accept: "
         + accept + "\r\n\r\n";
 
-  WriteAll(response.data(), response.size());
+  WriteAll(fd_, response.data(), response.size(), deadline);
 }
 
 // ---------------------------------------------------------------------------
@@ -172,35 +235,37 @@ void WsCodec::Handshake()
 
 WsCodec::Frame WsCodec::RecvFrame()
 {
+  const auto deadline = MakeDeadline(io_timeout_);
   Frame f;
 
   uint8_t b0;
-  ReadAll(&b0, 1);
+  ReadAll(fd_, &b0, 1, deadline, "read websocket frame");
   f.fin = (b0 & 0x80u) != 0;
   f.opcode = b0 & 0x0Fu;
 
   uint8_t b1;
-  ReadAll(&b1, 1);
+  ReadAll(fd_, &b1, 1, deadline, "read websocket frame");
   bool masked = (b1 & 0x80u) != 0;
   uint64_t payload_len = b1 & 0x7Fu;
 
   if (payload_len == 126) {
     uint8_t ext[2];
-    ReadAll(ext, 2);
+    ReadAll(fd_, ext, 2, deadline, "read websocket frame");
     payload_len = (static_cast<uint64_t>(ext[0]) << 8) | ext[1];
   } else if (payload_len == 127) {
     uint8_t ext[8];
-    ReadAll(ext, 8);
+    ReadAll(fd_, ext, 8, deadline, "read websocket frame");
     payload_len = 0;
     for (int i = 0; i < 8; ++i) { payload_len = (payload_len << 8) | ext[i]; }
   }
 
   uint8_t mask[4] = {};
-  if (masked) { ReadAll(mask, 4); }
+  if (masked) { ReadAll(fd_, mask, 4, deadline, "read websocket frame"); }
 
   if (payload_len > 0) {
     f.payload.resize(static_cast<size_t>(payload_len));
-    ReadAll(f.payload.data(), static_cast<size_t>(payload_len));
+    ReadAll(fd_, f.payload.data(), static_cast<size_t>(payload_len), deadline,
+            "read websocket frame payload");
     if (masked) {
       for (size_t i = 0; i < f.payload.size(); ++i) {
         f.payload[i] ^= static_cast<char>(mask[i % 4]);
@@ -213,6 +278,7 @@ WsCodec::Frame WsCodec::RecvFrame()
 
 void WsCodec::SendFrame(uint8_t opcode, std::string_view payload, bool fin)
 {
+  const auto deadline = MakeDeadline(io_timeout_);
   std::string frame;
   frame.reserve(10 + payload.size());
 
@@ -233,7 +299,7 @@ void WsCodec::SendFrame(uint8_t opcode, std::string_view payload, bool fin)
   }
 
   frame += payload;
-  WriteAll(frame.data(), frame.size());
+  WriteAll(fd_, frame.data(), frame.size(), deadline);
 }
 
 // ---------------------------------------------------------------------------
