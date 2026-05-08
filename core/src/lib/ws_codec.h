@@ -36,6 +36,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 /** Opaque handle wrapping a connected file descriptor. */
 class WsCodec {
@@ -55,7 +56,7 @@ class WsCodec {
 
   /* Send a text frame (opcode 0x1, FIN=1, unmasked).
    * Throws std::runtime_error on I/O error. */
-  void SendText(const std::string& payload);
+  void SendText(std::string_view payload);
 
   /* Send a close frame and mark the connection as closed. */
   void SendClose();
@@ -78,7 +79,7 @@ class WsCodec {
   };
 
   Frame RecvFrame();
-  void SendFrame(uint8_t opcode, const std::string& payload, bool fin = true);
+  void SendFrame(uint8_t opcode, std::string_view payload, bool fin = true);
 };
 
 #endif  // BAREOS_LIB_WS_CODEC_H_

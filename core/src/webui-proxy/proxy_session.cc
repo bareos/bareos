@@ -24,9 +24,11 @@
 #include "ws_codec.h"
 
 #include <cstdio>
+#include <cctype>
+#include <optional>
 #include <stdexcept>
 #include <string>
-#include <cctype>
+#include <string_view>
 
 #include <unistd.h>
 
@@ -39,11 +41,12 @@
 // Build a JSON string using jansson and return it as std::string.
 // Caller must ensure all values are valid.
 static std::string JsonObject(
-    std::initializer_list<std::pair<const char*, std::string>> fields)
+    std::initializer_list<std::pair<const char*, std::string_view>> fields)
 {
   json_t* obj = json_object();
   for (auto& [key, val] : fields) {
-    json_object_set_new(obj, key, json_string(val.c_str()));
+    json_object_set_new(
+        obj, key, json_stringn(val.data(), static_cast<size_t>(val.size())));
   }
   char* raw = json_dumps(obj, JSON_COMPACT);
   json_decref(obj);
@@ -70,17 +73,21 @@ static std::string JsonDirectorList(const ProxyConfig& config)
   return result;
 }
 
-std::string NormalizeRawConsoleCommand(std::string command)
+std::string NormalizeRawConsoleCommand(std::string_view command)
 {
-  command.erase(0, command.find_first_not_of(" \r\n"));
+  const auto first = command.find_first_not_of(" \r\n");
+  if (first == std::string_view::npos) { return {}; }
+  command.remove_prefix(first);
 
   while (!command.empty()) {
     const char last = command.back();
-    if (last != ' ' && last != '\r' && last != '\n') { break; }
-    command.pop_back();
+    if (last != ' ' && last != '\r' && last != '\n') {
+      return std::string(command);
+    }
+    command.remove_suffix(1);
   }
 
-  return command;
+  return {};
 }
 
 bool IsExpectedConsoleExitCommand(bool at_main_prompt, std::string_view command)
@@ -187,28 +194,9 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     return;
   }
 
-  const char* type = json_string_value(json_object_get(auth_msg, "type"));
-  if (type && std::string(type) == "list_directors") {
-    ws.SendText(JsonDirectorList(config));
-    json_decref(auth_msg);
-    return;
-  }
-  if (!type || std::string(type) != "auth") {
-    ws.SendText(JsonObject(
-        {{"type", "error"},
-         {"message",
-          "First message must be type=auth or type=list_directors"}}));
-    json_decref(auth_msg);
-    return;
-  }
-
-  auto jstr = [&](const char* key, const std::string& def) -> std::string {
+  auto jstr = [&](const char* key) -> std::optional<std::string_view> {
     const char* v = json_string_value(json_object_get(auth_msg, key));
-    return v ? v : def;
-  };
-  auto joptional = [&](const char* key) -> std::optional<std::string> {
-    const char* v = json_string_value(json_object_get(auth_msg, key));
-    return v ? std::optional<std::string>(v) : std::nullopt;
+    return v ? std::optional<std::string_view>(v) : std::nullopt;
   };
   auto joptional_int = [&](const char* key) -> std::optional<int> {
     json_t* v = json_object_get(auth_msg, key);
@@ -218,16 +206,40 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
                : std::nullopt;
   };
 
+  const auto type = jstr("type");
+  if (type && *type == "list_directors") {
+    ws.SendText(JsonDirectorList(config));
+    json_decref(auth_msg);
+    return;
+  }
+  if (!type || *type != "auth") {
+    ws.SendText(JsonObject(
+        {{"type", "error"},
+         {"message",
+          "First message must be type=auth or type=list_directors"}}));
+    json_decref(auth_msg);
+    return;
+  }
+
   DirectorConfig cfg;
-  cfg.username = jstr("username", "admin");
-  cfg.password = jstr("password", "");
-  std::string mode = jstr("mode", "json");
+  cfg.username = jstr("username").value_or("admin");
+  cfg.password = jstr("password").value_or("");
+  const std::string mode(jstr("mode").value_or("json"));
   cfg.json_mode = (mode != "raw");
 
   try {
-    const auto target
-        = ResolveDirectorTarget(config, joptional("director"),
-                                joptional("host"), joptional_int("port"));
+    const auto target = ResolveDirectorTarget(
+        config,
+        [&]() -> std::optional<std::string> {
+          const auto director = jstr("director");
+          return director ? std::optional<std::string>(*director)
+                          : std::nullopt;
+        }(),
+        [&]() -> std::optional<std::string> {
+          const auto host = jstr("host");
+          return host ? std::optional<std::string>(*host) : std::nullopt;
+        }(),
+        joptional_int("port"));
     cfg.director_name = target.name;
     cfg.host = target.host;
     cfg.port = target.port;
@@ -250,7 +262,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   try {
     director.Connect(cfg);
   } catch (const std::exception& ex) {
-    std::string msg = ex.what();
+    const std::string_view msg = ex.what();
     PROXY_LOG_WARN(peer, "auth failed: %s", ex.what());
     try {
       if (msg.find("authentication failed") != std::string::npos
@@ -284,7 +296,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     char* ok_str = json_dumps(ok, JSON_COMPACT);
     json_decref(ok);
     try {
-      ws.SendText(std::string(ok_str));
+      ws.SendText(ok_str);
     } catch (...) {
       free(ok_str);
       return;  // Client disconnected right after authentication succeeded.
@@ -317,12 +329,12 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     }
 
     const char* req_type = json_string_value(json_object_get(req, "type"));
-    if (req_type && std::string(req_type) == "ping") {
+    if (req_type && std::string_view(req_type) == "ping") {
       json_decref(req);
       ws.SendText(JsonObject({{"type", "pong"}}));
       continue;
     }
-    if (!req_type || std::string(req_type) != "command") {
+    if (!req_type || std::string_view(req_type) != "command") {
       ws.SendText(JsonObject(
           {{"type", "error"}, {"message", "Expected type=command"}}));
       json_decref(req);
@@ -332,10 +344,10 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     const char* cmd_raw = json_string_value(json_object_get(req, "command"));
     const char* id_raw = json_string_value(json_object_get(req, "id"));
     const bool stream_raw = json_is_true(json_object_get(req, "stream"));
-    std::string command = cmd_raw ? cmd_raw : "";
+    const std::string_view command_raw = cmd_raw ? cmd_raw : "";
     std::string req_id = id_raw ? id_raw : "";
 
-    command = NormalizeRawConsoleCommand(command);
+    std::string command = NormalizeRawConsoleCommand(command_raw);
 
     json_decref(req);
 
@@ -370,7 +382,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
             }
             char* resp_str = json_dumps(resp, JSON_COMPACT);
             json_decref(resp);
-            ws.SendText(std::string(resp_str));
+            ws.SendText(resp_str);
             free(resp_str);
           };
     auto is_terminal_prompt = [](DirectorPrompt prompt) {
@@ -394,7 +406,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
             }
             char* resp_str = json_dumps(resp, JSON_COMPACT);
             json_decref(resp);
-            ws.SendText(std::string(resp_str));
+            ws.SendText(resp_str);
             free(resp_str);
           };
 
@@ -446,7 +458,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
         char* resp_str = json_dumps(resp, JSON_COMPACT);
         json_decref(resp);
-        ws.SendText(std::string(resp_str));
+        ws.SendText(resp_str);
         free(resp_str);
       } else {
         // Raw mode: {"type":"raw_response","id":...,"command":...,"text":"...",
@@ -489,7 +501,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
       json_decref(err);
       PROXY_LOG_ERROR(peer, "director error: %s", ex.what());
       try {
-        ws.SendText(std::string(err_str));
+        ws.SendText(err_str);
       } catch (...) {
         free(err_str);
         break;  // Client disconnected — end session.
