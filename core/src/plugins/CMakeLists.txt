@@ -46,7 +46,7 @@ endif()
 
 set(pymod3_include_dirs ${Python3_INCLUDE_DIRS} ${pymod_include_dirs})
 
-if(ENABLE_PYTHON AND Python3_FOUND)
+if(HAVE_PYTHON)
   add_library(python-common python/common.cc)
   target_link_libraries(python-common PUBLIC Python3::Python Bareos::Lib)
   target_include_directories(

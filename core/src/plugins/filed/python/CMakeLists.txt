@@ -21,7 +21,7 @@ include(BareosDisableWarnings)
 include(BareosConfigureFile)
 include(BareosPlugins)
 
-if(Python3_FOUND)
+if(HAVE_PYTHON)
   bareos_add_plugin(python3-fd)
   target_sources(python3-fd PRIVATE python-fd.cc)
   install(
@@ -38,7 +38,7 @@ if(Python3_FOUND)
   add_dependencies(python3-fd bareosfd-python3-module)
 endif()
 
-if(Python3_FOUND AND NOT HAVE_WIN32)
+if(HAVE_PYTHON AND NOT HAVE_WIN32)
   add_executable(bareosfd-python3-module-tester test/python-fd-module-tester.cc)
   target_link_libraries(
     bareosfd-python3-module-tester ${Python3_LIBRARIES} bareos
@@ -59,7 +59,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
   )
 endif()
 
-if(Python3_FOUND)
+if(HAVE_PYTHON)
   add_library(bareosfd-python3-module MODULE module/bareosfd.cc)
   install(
     TARGETS bareosfd-python3-module

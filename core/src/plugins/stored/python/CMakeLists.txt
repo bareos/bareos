@@ -19,7 +19,7 @@
 
 include(BareosPlugins)
 
-if(Python3_FOUND)
+if(HAVE_PYTHON)
   bareos_add_plugin(python3-sd)
   target_sources(python3-sd PRIVATE python-sd.cc)
   install(TARGETS python3-sd DESTINATION ${plugindir})
