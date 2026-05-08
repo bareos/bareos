@@ -110,6 +110,76 @@ describe('director store', () => {
     expect(director.availableDirectors).toEqual(['bareos-dir', 'bareos-dir-2'])
   })
 
+  it('deduplicates concurrent director list requests', async () => {
+    const director = useDirectorStore()
+
+    const firstLoading = director.fetchAvailableDirectors()
+    const secondLoading = director.fetchAvailableDirectors()
+
+    expect(FakeWebSocket.instances).toHaveLength(1)
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'director_list',
+        directors: ['bareos-dir', 'bareos-dir-2'],
+      }),
+    })
+
+    await expect(firstLoading).resolves.toEqual(['bareos-dir', 'bareos-dir-2'])
+    await expect(secondLoading).resolves.toEqual(['bareos-dir', 'bareos-dir-2'])
+  })
+
+  it('reuses the cached director list after it has been loaded', async () => {
+    const director = useDirectorStore()
+
+    const initialLoading = director.fetchAvailableDirectors()
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'director_list',
+        directors: ['bareos-dir', 'bareos-dir-2'],
+      }),
+    })
+    await initialLoading
+
+    await expect(director.fetchAvailableDirectors()).resolves.toEqual([
+      'bareos-dir',
+      'bareos-dir-2',
+    ])
+    expect(FakeWebSocket.instances).toHaveLength(1)
+  })
+
+  it('reloads the director list when forced', async () => {
+    const director = useDirectorStore()
+
+    const firstLoading = director.fetchAvailableDirectors()
+    const firstSocket = FakeWebSocket.instances[0]
+    firstSocket.open()
+    firstSocket.onmessage?.({
+      data: JSON.stringify({
+        type: 'director_list',
+        directors: ['bareos-dir'],
+      }),
+    })
+    await firstLoading
+
+    const secondLoading = director.fetchAvailableDirectors({ forceReload: true })
+    const secondSocket = FakeWebSocket.instances[1]
+    secondSocket.open()
+    secondSocket.onmessage?.({
+      data: JSON.stringify({
+        type: 'director_list',
+        directors: ['bareos-dir', 'bareos-dir-2'],
+      }),
+    })
+
+    await expect(secondLoading).resolves.toEqual(['bareos-dir', 'bareos-dir-2'])
+    expect(FakeWebSocket.instances).toHaveLength(2)
+  })
+
   it('stores director transport from auth_ok', () => {
     const director = useDirectorStore()
 
