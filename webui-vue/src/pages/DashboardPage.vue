@@ -38,7 +38,10 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Jobs started during the past 24 hours') }}</span>
             <q-space />
-            <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ countdown }}s</span>
+            <span class="text-white text-caption q-mr-sm panel-refresh-countdown">
+              <span aria-hidden="true">↻</span>
+              <span class="panel-refresh-countdown__value">{{ countdown }}s</span>
+            </span>
             <q-spinner v-if="loadingJobs" color="white" size="18px" class="q-mr-sm" />
             <q-btn flat round dense icon="refresh" color="white" size="sm" @click="manualRefresh" />
           </q-card-section>

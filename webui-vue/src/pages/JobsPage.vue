@@ -33,51 +33,51 @@
       <!-- ── SHOW ─────────────────────────────────────────────────────────── -->
       <q-tab-panel name="list" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header jobs-list-header">
-            <div class="jobs-list-header__top row items-center">
-              <span>{{ t('Job List') }}</span>
-              <div class="jobs-list-header__actions row items-center no-wrap">
-                <span class="text-white text-caption jobs-list-header__countdown">↻ {{ countdown }}s</span>
-                <q-btn flat round dense icon="refresh" color="white" @click="manualRefresh" />
-              </div>
-            </div>
-            <div class="jobs-list-header__filters row items-start">
-              <q-select
-                v-model="statusFilters"
-                dense
-                outlined
-                clearable
-                emit-value
-                map-options
-                multiple
-                use-chips
-                :options="jobStatusOptions"
-                :label="t('Status')"
-                class="jobs-list-header__filter"
-              />
-              <q-select
-                v-model="levelFilters"
-                dense
-                outlined
-                clearable
-                emit-value
-                map-options
-                multiple
-                use-chips
-                :options="jobLevelOptions"
-                :label="t('Level')"
-                class="jobs-list-header__filter"
-              />
-              <q-input
-                v-model="search"
-                dense
-                outlined
-                clearable
-                :placeholder="t('Search…')"
-                class="jobs-list-header__search"
-              >
-                <template #prepend><q-icon name="search" /></template>
-              </q-input>
+          <q-card-section class="panel-header jobs-list-header row items-center no-wrap">
+            <span class="jobs-list-header__title">{{ t('Job List') }}</span>
+            <q-space />
+            <q-select
+              v-model="statusFilters"
+              dense
+              outlined
+              clearable
+              emit-value
+              map-options
+              multiple
+              use-chips
+              :options="jobStatusOptions"
+              :label="t('Status')"
+              class="jobs-list-header__filter"
+            />
+            <q-select
+              v-model="levelFilters"
+              dense
+              outlined
+              clearable
+              emit-value
+              map-options
+              multiple
+              use-chips
+              :options="jobLevelOptions"
+              :label="t('Level')"
+              class="jobs-list-header__filter"
+            />
+            <q-input
+              v-model="search"
+              dense
+              outlined
+              clearable
+              :placeholder="t('Search…')"
+              class="jobs-list-header__search"
+            >
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <div class="jobs-list-header__actions row items-center no-wrap">
+              <span class="text-white text-caption jobs-list-header__countdown panel-refresh-countdown">
+                <span aria-hidden="true">↻</span>
+                <span class="panel-refresh-countdown__value">{{ countdown }}s</span>
+              </span>
+              <q-btn flat round dense icon="refresh" color="white" @click="manualRefresh" />
             </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
@@ -1689,70 +1689,45 @@ watch(() => singletonTabDirector.value, async () => {
 }
 
 .jobs-list-header {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
-.jobs-list-header__top {
-  justify-content: space-between;
-  gap: 12px;
+.jobs-list-header__title {
+  flex: 0 0 auto;
 }
 
 .jobs-list-header__actions {
   gap: 8px;
-  margin-left: auto;
-}
-
-.jobs-list-header__filters {
-  gap: 8px;
-  width: 100%;
 }
 
 .jobs-list-header__filter {
-  flex: 1 1 220px;
-  min-width: 220px;
+  flex: 1 1 210px;
+  min-width: 180px;
+  max-width: 240px;
 }
 
 .jobs-list-header__search {
-  flex: 1 1 200px;
-  min-width: 200px;
+  flex: 1 1 220px;
+  min-width: 180px;
+  max-width: 260px;
 }
 
 .jobs-list-header__countdown {
   opacity: 0.7;
 }
 
-.jobs-list-header__filters :deep(.q-field--outlined.q-field--focused .q-field__control:after),
-.jobs-list-header__filters :deep(.q-field--outlined.q-field--highlighted .q-field__control:after) {
+.jobs-list-header :deep(.q-field--outlined.q-field--focused .q-field__control:after),
+.jobs-list-header :deep(.q-field--outlined.q-field--highlighted .q-field__control:after) {
   border-color: rgba(0, 0, 0, 0.7);
 }
 
-.jobs-list-header__filters :deep(.q-field--focused .q-field__label),
-.jobs-list-header__filters :deep(.q-field--highlighted .q-field__label),
-.jobs-list-header__filters :deep(.q-field--focused .q-field__marginal),
-.jobs-list-header__filters :deep(.q-field--highlighted .q-field__marginal),
-.jobs-list-header__filters :deep(.q-field--focused .q-select__dropdown-icon),
-.jobs-list-header__filters :deep(.q-field--highlighted .q-select__dropdown-icon) {
+.jobs-list-header :deep(.q-field--focused .q-field__label),
+.jobs-list-header :deep(.q-field--highlighted .q-field__label),
+.jobs-list-header :deep(.q-field--focused .q-field__marginal),
+.jobs-list-header :deep(.q-field--highlighted .q-field__marginal),
+.jobs-list-header :deep(.q-field--focused .q-select__dropdown-icon),
+.jobs-list-header :deep(.q-field--highlighted .q-select__dropdown-icon) {
   color: rgba(0, 0, 0, 0.7);
-}
-
-@media (max-width: 599px) {
-  .jobs-list-header__top {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .jobs-list-header__actions {
-    margin-left: 0;
-    width: 100%;
-    justify-content: flex-end;
-  }
-
-  .jobs-list-header__filter,
-  .jobs-list-header__search {
-    min-width: 100%;
-  }
 }
 
 .animated-spin {

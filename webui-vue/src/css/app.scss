@@ -63,6 +63,20 @@ $bareos-blue-dark: #005a96;
   gap: 6px;
 }
 
+.panel-refresh-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  opacity: 0.7;
+}
+
+.panel-refresh-countdown__value {
+  display: inline-block;
+  width: 3ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 .nav-link-text {
   font-size: 0.875rem;
 }
