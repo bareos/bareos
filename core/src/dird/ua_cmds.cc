@@ -241,7 +241,7 @@ static struct ua_cmdstruct commands[] = {
     {NT_(".filesets"), DotFilesetsCmd, T_("List all filesets"), NULL, false,
      false},
     {NT_(".help"), DotHelpCmd, T_("Print parsable information about a command"),
-     NT_("[ all ] [ item=cmd ] [ full=yes ]"), false, false},
+     NT_("[ all ] [ item=cmd ] [ full ]"), false, false},
     {NT_(".jobdefs"), DotJobdefsCmd, T_("List all job defaults resources"),
      NULL, true, false},
     {NT_(".jobs"), DotJobsCmd, T_("List all job resources"),
@@ -2809,8 +2809,13 @@ static bool DotHelpCmd(UaContext* ua, const char*)
   /* Implement DotHelpCmd here instead of ua_dotcmds.c,
    * because comsize and commands are defined here. */
 
-  j = FindArgWithValue(ua, NT_("full"));
-  if (j >= 0 && ua->argv[j] && Bstrcasecmp(ua->argv[j], NT_("yes"))) {
+  j = FindArg(ua, NT_("full"));
+  if (j >= 0) {
+    if (ua->argv[j]) {
+      ua->ErrorMsg(T_("The full option does not take a value.\n"));
+      return false;
+    }
+
     full = true;
   }
 
