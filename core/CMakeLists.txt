@@ -616,7 +616,7 @@ if(${lmdb})
 endif()
 
 # info what the config files need to be installed PLUGINS  ############
-if(ENABLE_PYTHON AND Python3_FOUND)
+if(HAVE_PYTHON)
   set(PLUGINS python-ldap)
 else()
   set(PLUGINS "")
