@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -67,6 +67,7 @@ add_subdirectory(ignoreduplicatecheck)
 add_subdirectory(just-in-time-reservation)
 add_subdirectory(list-backups)
 add_subdirectory(messages)
+add_subdirectory(multi-runscript)
 add_subdirectory(mtx-changer)
 add_subdirectory(multiplied-device)
 add_subdirectory(multiple-clients)
