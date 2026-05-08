@@ -23,8 +23,9 @@
 #include "proxy_log.h"
 #include "ws_codec.h"
 
-#include <cstdio>
 #include <cctype>
+#include <cstdlib>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -38,40 +39,175 @@
 // Tiny JSON helpers (avoid pulling in a large JSON library interface)
 // ---------------------------------------------------------------------------
 
+namespace {
+
+struct JsonDeleter {
+  void operator()(json_t* value) const
+  {
+    if (value) { json_decref(value); }
+  }
+};
+
+using JsonPtr = std::unique_ptr<json_t, JsonDeleter>;
+
+struct FreeDeleter {
+  void operator()(void* ptr) const { free(ptr); }
+};
+
+using JsonDumpPtr = std::unique_ptr<char, FreeDeleter>;
+
+JsonPtr MakeJsonObject()
+{
+  JsonPtr obj(json_object());
+  if (!obj) { throw std::runtime_error("Failed to allocate JSON object"); }
+  return obj;
+}
+
+JsonPtr MakeJsonArray()
+{
+  JsonPtr array(json_array());
+  if (!array) { throw std::runtime_error("Failed to allocate JSON array"); }
+  return array;
+}
+
+JsonPtr MakeJsonString(std::string_view value)
+{
+  JsonPtr string(json_stringn(value.data(), static_cast<size_t>(value.size())));
+  if (!string) { throw std::runtime_error("Failed to allocate JSON string"); }
+  return string;
+}
+
+void SetJsonValue(json_t* object, const char* key, JsonPtr value)
+{
+  if (json_object_set_new(object, key, value.release()) != 0) {
+    throw std::runtime_error("Failed to build JSON object");
+  }
+}
+
+void SetJsonString(json_t* object, const char* key, std::string_view value)
+{
+  SetJsonValue(object, key, MakeJsonString(value));
+}
+
+void AppendJsonString(json_t* array, std::string_view value)
+{
+  JsonPtr string = MakeJsonString(value);
+  if (json_array_append_new(array, string.release()) != 0) {
+    throw std::runtime_error("Failed to build JSON array");
+  }
+}
+
+std::string DumpJson(json_t* value)
+{
+  JsonDumpPtr raw(json_dumps(value, JSON_COMPACT));
+  if (!raw) { throw std::runtime_error("Failed to serialize JSON"); }
+  return raw.get();
+}
+
+std::optional<std::string_view> JsonStringField(const json_t* object,
+                                                const char* key)
+{
+  const char* value = json_string_value(json_object_get(object, key));
+  return value ? std::optional<std::string_view>(value) : std::nullopt;
+}
+
+std::string_view RequireJsonStringField(const json_t* object, const char* key)
+{
+  const auto value = JsonStringField(object, key);
+  if (!value) {
+    throw std::invalid_argument("Auth message requires string field '"
+                                + std::string(key) + "'");
+  }
+  return *value;
+}
+
 // Build a JSON string using jansson and return it as std::string.
 // Caller must ensure all values are valid.
-static std::string JsonObject(
+std::string JsonObject(
     std::initializer_list<std::pair<const char*, std::string_view>> fields)
 {
-  json_t* obj = json_object();
-  for (auto& [key, val] : fields) {
-    json_object_set_new(
-        obj, key, json_stringn(val.data(), static_cast<size_t>(val.size())));
-  }
-  char* raw = json_dumps(obj, JSON_COMPACT);
-  json_decref(obj);
-  std::string result(raw);
-  free(raw);
-  return result;
+  JsonPtr obj = MakeJsonObject();
+  for (auto& [key, val] : fields) { SetJsonString(obj.get(), key, val); }
+  return DumpJson(obj.get());
 }
 
-static std::string JsonDirectorList(const ProxyConfig& config)
+std::string JsonDirectorList(const ProxyConfig& config)
 {
-  json_t* obj = json_object();
-  json_t* directors = json_array();
+  JsonPtr obj = MakeJsonObject();
+  JsonPtr directors = MakeJsonArray();
 
-  json_object_set_new(obj, "type", json_string("director_list"));
+  SetJsonString(obj.get(), "type", "director_list");
   for (const auto& id : GetAllowedDirectorIds(config)) {
-    json_array_append_new(directors, json_string(id.c_str()));
+    AppendJsonString(directors.get(), id);
   }
-  json_object_set_new(obj, "directors", directors);
-
-  char* raw = json_dumps(obj, JSON_COMPACT);
-  json_decref(obj);
-  std::string result(raw);
-  free(raw);
-  return result;
+  SetJsonValue(obj.get(), "directors", std::move(directors));
+  return DumpJson(obj.get());
 }
+
+std::string JsonAuthOk(std::string_view director,
+                       std::string_view mode,
+                       std::string_view transport)
+{
+  return JsonObject({{"type", "auth_ok"},
+                     {"director", director},
+                     {"mode", mode},
+                     {"transport", transport}});
+}
+
+std::string JsonRawResponse(std::optional<std::string_view> id,
+                            std::string_view command,
+                            std::string_view text,
+                            std::optional<std::string_view> prompt)
+{
+  JsonPtr response = MakeJsonObject();
+  SetJsonString(response.get(), "type", "raw_response");
+  if (id) { SetJsonString(response.get(), "id", *id); }
+  SetJsonString(response.get(), "command", command);
+  SetJsonString(response.get(), "text", text);
+  if (prompt) { SetJsonString(response.get(), "prompt", *prompt); }
+  return DumpJson(response.get());
+}
+
+std::string JsonCommandState(std::optional<std::string_view> id,
+                             std::string_view command,
+                             std::string_view status,
+                             std::optional<std::string_view> prompt,
+                             std::optional<std::string_view> message)
+{
+  JsonPtr response = MakeJsonObject();
+  SetJsonString(response.get(), "type", "command_state");
+  if (id) { SetJsonString(response.get(), "id", *id); }
+  SetJsonString(response.get(), "command", command);
+  SetJsonString(response.get(), "status", status);
+  if (prompt) { SetJsonString(response.get(), "prompt", *prompt); }
+  if (message) { SetJsonString(response.get(), "message", *message); }
+  return DumpJson(response.get());
+}
+
+std::string JsonCommandResponse(std::optional<std::string_view> id,
+                                std::string_view command,
+                                JsonPtr data)
+{
+  JsonPtr response = MakeJsonObject();
+  SetJsonString(response.get(), "type", "response");
+  if (id) { SetJsonString(response.get(), "id", *id); }
+  SetJsonString(response.get(), "command", command);
+  SetJsonValue(response.get(), "data", std::move(data));
+  return DumpJson(response.get());
+}
+
+std::string JsonCommandError(std::optional<std::string_view> id,
+                             std::string_view command,
+                             std::string_view message)
+{
+  JsonPtr error = MakeJsonObject();
+  SetJsonString(error.get(), "type", "error");
+  if (id) { SetJsonString(error.get(), "id", *id); }
+  SetJsonString(error.get(), "command", command);
+  SetJsonString(error.get(), "message", message);
+  return DumpJson(error.get());
+}
+}  // namespace
 
 std::string NormalizeRawConsoleCommand(std::string_view command)
 {
@@ -189,21 +325,16 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   }
 
   json_error_t jerr{};
-  json_t* auth_msg = json_loads(raw_auth.c_str(), 0, &jerr);
+  JsonPtr auth_msg(json_loads(raw_auth.c_str(), 0, &jerr));
   if (!auth_msg) {
     ws->SendText(
         JsonObject({{"type", "error"}, {"message", "Expected JSON auth"}}));
     return;
   }
 
-  auto jstr = [&](const char* key) -> std::optional<std::string_view> {
-    const char* v = json_string_value(json_object_get(auth_msg, key));
-    return v ? std::optional<std::string_view>(v) : std::nullopt;
-  };
-  const auto type = jstr("type");
+  const auto type = JsonStringField(auth_msg.get(), "type");
   if (type && *type == "list_directors") {
     ws->SendText(JsonDirectorList(config));
-    json_decref(auth_msg);
     return;
   }
   if (!type || *type != "auth") {
@@ -211,20 +342,21 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
         {{"type", "error"},
          {"message",
           "First message must be type=auth or type=list_directors"}}));
-    json_decref(auth_msg);
     return;
   }
 
   DirectorConfig cfg;
-  cfg.username = jstr("username").value_or("admin");
-  cfg.password = jstr("password").value_or("");
-  const std::string mode(jstr("mode").value_or("json"));
-  cfg.json_mode = (mode != "raw");
-
   try {
+    cfg.username
+        = std::string(RequireJsonStringField(auth_msg.get(), "username"));
+    cfg.password
+        = std::string(RequireJsonStringField(auth_msg.get(), "password"));
+    const std::string mode(
+        JsonStringField(auth_msg.get(), "mode").value_or("json"));
+    cfg.json_mode = (mode != "raw");
     const auto target
         = ResolveDirectorTarget(config, [&]() -> std::optional<std::string> {
-            const auto director = jstr("director");
+            const auto director = JsonStringField(auth_msg.get(), "director");
             return director ? std::optional<std::string>(*director)
                             : std::nullopt;
           }());
@@ -233,17 +365,17 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     cfg.port = target.port;
     cfg.tls_psk_disable = target.tls_psk_disable;
     cfg.tls_psk_require = target.tls_psk_require;
+    PROXY_LOG_INFO(peer, "auth: user=%s director=%s host=%s:%d mode=%s",
+                   cfg.username.c_str(), cfg.director_name.c_str(),
+                   cfg.host.c_str(), cfg.port, mode.c_str());
+
   } catch (const std::exception& ex) {
     ws->SendText(JsonObject({{"type", "auth_error"}, {"message", ex.what()}}));
-    json_decref(auth_msg);
     return;
   }
 
-  json_decref(auth_msg);
-
-  PROXY_LOG_INFO(peer, "auth: user=%s director=%s host=%s:%d mode=%s",
-                 cfg.username.c_str(), cfg.director_name.c_str(),
-                 cfg.host.c_str(), cfg.port, mode.c_str());
+  const std::string mode(
+      JsonStringField(auth_msg.get(), "mode").value_or("json"));
 
   // ── Step 2: connect and authenticate to director ─────────────────────────
   DirectorConnection director;
@@ -274,22 +406,10 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
   PROXY_LOG_INFO(peer, "director transport: %s", director_transport);
 
-  // Build auth_ok response
-  {
-    json_t* ok = json_object();
-    json_object_set_new(ok, "type", json_string("auth_ok"));
-    json_object_set_new(ok, "director", json_string(cfg.director_name.c_str()));
-    json_object_set_new(ok, "mode", json_string(mode.c_str()));
-    json_object_set_new(ok, "transport", json_string(director_transport));
-    char* ok_str = json_dumps(ok, JSON_COMPACT);
-    json_decref(ok);
-    try {
-      ws->SendText(ok_str);
-    } catch (...) {
-      free(ok_str);
-      return;  // Client disconnected right after authentication succeeded.
-    }
-    free(ok_str);
+  try {
+    ws->SendText(JsonAuthOk(cfg.director_name, mode, director_transport));
+  } catch (...) {
+    return;  // Client disconnected right after authentication succeeded.
   }
 
   PROXY_LOG_INFO(peer, "authenticated as %s on %s (mode=%s, transport=%s)",
@@ -310,40 +430,35 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     if (raw_msg.empty()) { break; }  // clean WebSocket close
 
     json_error_t jerr2{};
-    json_t* req = json_loads(raw_msg.c_str(), 0, &jerr2);
+    JsonPtr req(json_loads(raw_msg.c_str(), 0, &jerr2));
     if (!req) {
       ws->SendText(
           JsonObject({{"type", "error"}, {"message", "Invalid JSON"}}));
       continue;
     }
 
-    const char* req_type = json_string_value(json_object_get(req, "type"));
-    if (req_type && std::string_view(req_type) == "ping") {
-      json_decref(req);
+    const auto req_type = JsonStringField(req.get(), "type");
+    if (req_type && *req_type == "ping") {
       ws->SendText(JsonObject({{"type", "pong"}}));
       continue;
     }
-    if (!req_type || std::string_view(req_type) != "command") {
+    if (!req_type || *req_type != "command") {
       ws->SendText(JsonObject(
           {{"type", "error"}, {"message", "Expected type=command"}}));
-      json_decref(req);
       continue;
     }
 
-    const char* cmd_raw = json_string_value(json_object_get(req, "command"));
-    const char* id_raw = json_string_value(json_object_get(req, "id"));
-    const bool stream_raw = json_is_true(json_object_get(req, "stream"));
-    const std::string_view command_raw = cmd_raw ? cmd_raw : "";
-    std::string req_id = id_raw ? id_raw : "";
-
+    const auto req_id = JsonStringField(req.get(), "id");
+    const bool stream_raw = json_is_true(json_object_get(req.get(), "stream"));
+    const std::string_view command_raw
+        = JsonStringField(req.get(), "command").value_or("");
     std::string command = NormalizeRawConsoleCommand(command_raw);
-
-    json_decref(req);
 
     if (command.empty()) { continue; }
 
-    PROXY_LOG_INFO(peer, "command [id=%s]: %s", req_id.c_str(),
-                   command.c_str());
+    PROXY_LOG_INFO(peer, "command [id=%.*s]: %s",
+                   static_cast<int>(req_id.value_or("").size()),
+                   req_id.value_or("").data(), command.c_str());
 
     auto prompt_to_string = [](DirectorPrompt prompt) {
       switch (prompt) {
@@ -358,46 +473,24 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
       }
     };
     auto send_raw_response
-        = [&](const std::string& text, const char* prompt_str) {
-            json_t* resp = json_object();
-            json_object_set_new(resp, "type", json_string("raw_response"));
-            if (!req_id.empty()) {
-              json_object_set_new(resp, "id", json_string(req_id.c_str()));
-            }
-            json_object_set_new(resp, "command", json_string(command.c_str()));
-            json_object_set_new(resp, "text", json_string(text.c_str()));
-            if (prompt_str) {
-              json_object_set_new(resp, "prompt", json_string(prompt_str));
-            }
-            char* resp_str = json_dumps(resp, JSON_COMPACT);
-            json_decref(resp);
-            ws->SendText(resp_str);
-            free(resp_str);
+        = [&](std::string_view text, const char* prompt_str) {
+            ws->SendText(JsonRawResponse(
+                req_id, command, text,
+                prompt_str ? std::optional<std::string_view>(prompt_str)
+                           : std::nullopt));
           };
     auto is_terminal_prompt = [](DirectorPrompt prompt) {
       return prompt == DirectorPrompt::Main || prompt == DirectorPrompt::Other;
     };
-    auto send_command_state
-        = [&](const char* status, const char* prompt_str = nullptr,
-              const char* message = nullptr) {
-            json_t* resp = json_object();
-            json_object_set_new(resp, "type", json_string("command_state"));
-            if (!req_id.empty()) {
-              json_object_set_new(resp, "id", json_string(req_id.c_str()));
-            }
-            json_object_set_new(resp, "command", json_string(command.c_str()));
-            json_object_set_new(resp, "status", json_string(status));
-            if (prompt_str) {
-              json_object_set_new(resp, "prompt", json_string(prompt_str));
-            }
-            if (message) {
-              json_object_set_new(resp, "message", json_string(message));
-            }
-            char* resp_str = json_dumps(resp, JSON_COMPACT);
-            json_decref(resp);
-            ws->SendText(resp_str);
-            free(resp_str);
-          };
+    auto send_command_state = [&](const char* status,
+                                  const char* prompt_str = nullptr,
+                                  const char* message = nullptr) {
+      ws->SendText(JsonCommandState(
+          req_id, command, status,
+          prompt_str ? std::optional<std::string_view>(prompt_str)
+                     : std::nullopt,
+          message ? std::optional<std::string_view>(message) : std::nullopt));
+    };
 
     try {
       if (!cfg.json_mode) { send_command_state("running"); }
@@ -424,31 +517,20 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
         // it so callers receive {"key": value} directly, matching the behaviour
         // of the python-bareos director.call() method.
         json_error_t jerr3{};
-        json_t* data = json_loads(result.text.c_str(), 0, &jerr3);
-        if (!data) { data = json_string(result.text.c_str()); }
+        JsonPtr data(json_loads(result.text.c_str(), 0, &jerr3));
+        if (!data) { data = MakeJsonString(result.text); }
 
         // Unwrap jsonrpc envelope when present.
-        if (json_is_object(data) && json_object_get(data, "jsonrpc")) {
-          json_t* inner = json_object_get(data, "result");
+        if (json_is_object(data.get())
+            && json_object_get(data.get(), "jsonrpc")) {
+          json_t* inner = json_object_get(data.get(), "result");
           if (inner) {
             json_incref(inner);
-            json_decref(data);
-            data = inner;
+            data.reset(inner);
           }
         }
 
-        json_t* resp = json_object();
-        json_object_set_new(resp, "type", json_string("response"));
-        if (!req_id.empty()) {
-          json_object_set_new(resp, "id", json_string(req_id.c_str()));
-        }
-        json_object_set_new(resp, "command", json_string(command.c_str()));
-        json_object_set_new(resp, "data", data);
-
-        char* resp_str = json_dumps(resp, JSON_COMPACT);
-        json_decref(resp);
-        ws->SendText(resp_str);
-        free(resp_str);
+        ws->SendText(JsonCommandResponse(req_id, command, std::move(data)));
       } else {
         // Raw mode: {"type":"raw_response","id":...,"command":...,"text":"...",
         //            "prompt":"main"|"sub"|"select"|"other"|"more"}
@@ -479,23 +561,12 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
           break;
         }
       }
-      json_t* err = json_object();
-      json_object_set_new(err, "type", json_string("error"));
-      if (!req_id.empty()) {
-        json_object_set_new(err, "id", json_string(req_id.c_str()));
-      }
-      json_object_set_new(err, "command", json_string(command.c_str()));
-      json_object_set_new(err, "message", json_string(ex.what()));
-      char* err_str = json_dumps(err, JSON_COMPACT);
-      json_decref(err);
       PROXY_LOG_ERROR(peer, "director error: %s", ex.what());
       try {
-        ws->SendText(err_str);
+        ws->SendText(JsonCommandError(req_id, command, ex.what()));
       } catch (...) {
-        free(err_str);
         break;  // Client disconnected — end session.
       }
-      free(err_str);
     }
   }
 
