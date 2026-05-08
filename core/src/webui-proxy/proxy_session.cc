@@ -200,14 +200,6 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     const char* v = json_string_value(json_object_get(auth_msg, key));
     return v ? std::optional<std::string_view>(v) : std::nullopt;
   };
-  auto joptional_int = [&](const char* key) -> std::optional<int> {
-    json_t* v = json_object_get(auth_msg, key);
-    if (!v) { return std::nullopt; }
-    return json_is_integer(v)
-               ? std::optional<int>(static_cast<int>(json_integer_value(v)))
-               : std::nullopt;
-  };
-
   const auto type = jstr("type");
   if (type && *type == "list_directors") {
     ws->SendText(JsonDirectorList(config));
@@ -230,18 +222,12 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   cfg.json_mode = (mode != "raw");
 
   try {
-    const auto target = ResolveDirectorTarget(
-        config,
-        [&]() -> std::optional<std::string> {
-          const auto director = jstr("director");
-          return director ? std::optional<std::string>(*director)
-                          : std::nullopt;
-        }(),
-        [&]() -> std::optional<std::string> {
-          const auto host = jstr("host");
-          return host ? std::optional<std::string>(*host) : std::nullopt;
-        }(),
-        joptional_int("port"));
+    const auto target
+        = ResolveDirectorTarget(config, [&]() -> std::optional<std::string> {
+            const auto director = jstr("director");
+            return director ? std::optional<std::string>(*director)
+                            : std::nullopt;
+          }());
     cfg.director_name = target.name;
     cfg.host = target.host;
     cfg.port = target.port;
