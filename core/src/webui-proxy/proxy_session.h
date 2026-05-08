@@ -46,7 +46,7 @@ void RunProxySession(int fd,
  * Normalize a raw console command while preserving a trailing tab completion
  * marker.
  */
-std::string NormalizeRawConsoleCommand(std::string command);
+std::string NormalizeRawConsoleCommand(std::string_view command);
 
 /**
  * Return true when a command is expected to terminate the console session from
