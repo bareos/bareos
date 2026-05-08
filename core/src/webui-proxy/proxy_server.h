@@ -38,6 +38,7 @@
 class ProxyServer {
  public:
   explicit ProxyServer(const ProxyConfig& cfg) : cfg_(cfg) {}
+  ~ProxyServer();
 
   /** Blocking: accept loop.  Returns when Stop() is called. */
   void Run();
