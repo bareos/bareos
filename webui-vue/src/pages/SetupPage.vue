@@ -26,7 +26,7 @@
         <q-card-section class="bg-primary text-white">
           <div class="text-h6">{{ t('Welcome to Bareos setup') }}</div>
           <div class="text-body2 q-mt-xs">
-            {{ t('This wizard creates the first managed deployment and bootstraps the initial director, storage, client, and admin console resources.') }}
+            {{ t('This wizard detects storage first, then creates the first managed deployment and bootstraps the initial Bareos services.') }}
           </div>
         </q-card-section>
 
@@ -60,9 +60,9 @@
                 <img :src="borisIcon" alt="Boris wizard" class="boris-icon" />
                 <div class="wizard-intro-copy">
                   <div class="text-h6 q-mb-sm">{{ t('Boris will guide the initial setup') }}</div>
-                    <p class="q-mb-md">
-                      {{ t('The wizard uses sensible defaults for the first managed deployment, the daemon names, and the repository layout. Advanced options remain available when you need to adjust them. After creating the configuration it validates the repository and briefly starts the generated daemons before Bareos switches to the normal login flow.') }}
-                    </p>
+                  <p class="q-mb-md">
+                    {{ t('The wizard uses sensible defaults for the first managed deployment, discovers the available storage options before generating the configuration, and then validates the resulting setup before Bareos switches to the normal login flow.') }}
+                  </p>
                   <LanguageSelect
                     v-model="locale"
                     data-testid="setup-language"
@@ -70,18 +70,26 @@
                     class="q-mb-md"
                   />
                   <div class="row q-col-gutter-sm">
-                    <div class="col-12 col-sm-6">
+                    <div class="col-12 col-sm-4">
                       <q-card flat bordered class="setup-highlight">
                         <q-card-section>
                           <div class="text-subtitle2">{{ t('Step 1') }}</div>
-                          <div>{{ t('Provide the server address and administrator credentials.') }}</div>
+                          <div>{{ t('Choose the local services and administrator credentials.') }}</div>
                         </q-card-section>
                       </q-card>
                     </div>
-                    <div class="col-12 col-sm-6">
+                    <div class="col-12 col-sm-4">
                       <q-card flat bordered class="setup-highlight">
                         <q-card-section>
                           <div class="text-subtitle2">{{ t('Step 2') }}</div>
+                          <div>{{ t('Detect the available storage options before creating the configuration.') }}</div>
+                        </q-card-section>
+                      </q-card>
+                    </div>
+                    <div class="col-12 col-sm-4">
+                      <q-card flat bordered class="setup-highlight">
+                        <q-card-section>
+                          <div class="text-subtitle2">{{ t('Step 3') }}</div>
                           <div>{{ t('Review and create the initial configuration.') }}</div>
                         </q-card-section>
                       </q-card>
@@ -102,19 +110,50 @@
               :done="step > 2"
             >
               <div class="text-body2 q-mb-md">
-                {{ t('Enter the Bareos server address and the first administrator credentials.') }}
+                {{ t('Enter the Bareos server details, choose whether the storage daemon is local or remote, and define the first administrator credentials.') }}
               </div>
 
               <q-input
                 v-model="form.daemonAddress"
                 data-testid="setup-daemon-address"
                 :label="t('Bareos Server Address (FQDN)')"
-                :hint="t('Enter the FQDN of the Bareos server that will run the director, storage daemon, and file daemon.')"
+                :hint="t('Enter the FQDN of the Bareos server that will run the director and file daemon.')"
                 outlined
                 dense
                 hide-bottom-space
                 class="q-mb-md"
               />
+
+              <div class="text-subtitle2 q-mb-sm">{{ t('Storage daemon') }}</div>
+              <q-option-group
+                v-model="form.storageMode"
+                inline
+                :options="storageModeOptions"
+                type="radio"
+                class="q-mb-md"
+              />
+
+              <q-input
+                v-if="storageModeIsRemote"
+                v-model="form.storageDaemonAddress"
+                data-testid="setup-storage-daemon-address"
+                :label="t('Remote Storage Daemon Address (FQDN)')"
+                :hint="t('Enter the FQDN of the storage host that will run bareos-sd.')"
+                outlined
+                dense
+                hide-bottom-space
+                class="q-mb-md"
+              />
+
+              <q-banner
+                v-else
+                dense
+                class="bg-blue-1 text-primary q-mb-md rounded-borders"
+              >
+                <template #avatar><q-icon name="storage" /></template>
+                {{ t('The storage daemon runs locally on the Bareos server, and bconfig-service will start storage detection automatically in the next step.') }}
+              </q-banner>
+
               <div class="text-subtitle2 q-mb-sm">{{ t('Administrator') }}</div>
               <div class="row q-col-gutter-md q-mb-md">
                 <div class="col-12 col-md-5">
@@ -182,67 +221,34 @@
 
             <q-step
               :name="3"
-              :title="t('Review')"
-              icon="fact_check"
+              :title="t('Storage detection')"
+              icon="storage"
+              :done="step > 3"
             >
               <div class="text-body2 q-mb-md">
-                {{ t('Review the generated values before creating the initial configuration.') }}
+                {{ t('Detect the available storage options now, then choose the archive path that should be used when the initial configuration is generated.') }}
               </div>
 
               <q-list bordered separator class="rounded-borders q-mb-md">
                 <q-item>
                   <q-item-section>
-                    <q-item-label caption>{{ t('Bareos Server Address (FQDN)') }}</q-item-label>
+                    <q-item-label caption>{{ t('Storage daemon mode') }}</q-item-label>
                     <q-item-label>
-                      {{ form.daemonAddress }}
+                      {{ storageModeIsRemote
+                        ? t('Remote storage daemon')
+                        : t('Local storage daemon') }}
                     </q-item-label>
                   </q-item-section>
                 </q-item>
                 <q-item>
                   <q-item-section>
-                    <q-item-label caption>{{ t('Administrator Name') }}</q-item-label>
-                    <q-item-label>{{ form.consoleName }}</q-item-label>
+                    <q-item-label caption>{{ t('Storage daemon address') }}</q-item-label>
+                    <q-item-label>{{ effectiveStorageDaemonAddress }}</q-item-label>
                   </q-item-section>
                 </q-item>
               </q-list>
 
-              <q-banner
-                v-if="setup.creating || setup.progressTitle || setup.progressLogs.length || setup.completed"
-                dense
-                :class="setup.completed
-                  ? 'bg-positive text-white q-mb-md rounded-borders'
-                  : 'bg-blue-1 text-primary q-mb-md rounded-borders'"
-                data-testid="setup-progress"
-              >
-                <template #avatar>
-                  <q-icon
-                    v-if="setup.completed"
-                    name="check_circle"
-                  />
-                  <q-spinner
-                    v-else
-                    color="primary"
-                    size="sm"
-                  />
-                </template>
-                <div class="text-subtitle2">
-                  {{ setup.progressTitle || t('Creating initial configuration') }}
-                </div>
-                <div
-                  v-if="setup.progressLogs.length"
-                  class="setup-progress-log q-mt-sm text-body2"
-                >
-                  <div
-                    v-for="(entry, index) in setup.progressLogs"
-                    :key="`${index}-${entry}`"
-                  >
-                    {{ entry }}
-                  </div>
-                </div>
-              </q-banner>
-
               <q-card
-                v-if="setup.completed"
                 flat
                 bordered
                 class="q-mb-md"
@@ -250,10 +256,14 @@
               >
                 <q-card-section>
                   <div class="text-subtitle1">
-                    {{ t('Remote storage daemon (optional)') }}
+                    {{ storageModeIsRemote
+                      ? t('Remote storage daemon')
+                      : t('Local storage daemon') }}
                   </div>
                   <div class="text-body2 q-mt-xs">
-                    {{ t('Create a storage bootstrap session, run the generated bareos-sd --discovery command on the storage host, then select the reported archive path once discovery data arrives.') }}
+                    {{ storageModeIsRemote
+                      ? t('Create a bootstrap session, run the generated bareos-sd --discovery command on the storage host, and choose the detected archive path once discovery data arrives.')
+                      : t('bconfig-service starts bareos-sd --discovery locally and waits for you to choose one of the detected archive paths before the configuration is created.') }}
                   </div>
                 </q-card-section>
 
@@ -273,10 +283,19 @@
                     v-if="!storageBootstrapSession"
                     class="column items-start q-gutter-md"
                   >
-                    <div class="text-body2">
-                      {{ t('Use this optional step when the storage daemon should be prepared on another host before it receives its final configuration.') }}
+                    <q-banner
+                      v-if="storageModeIsLocal"
+                      dense
+                      class="bg-blue-1 text-primary rounded-borders"
+                    >
+                      <template #avatar><q-spinner color="primary" size="sm" /></template>
+                      {{ t('Preparing local storage detection...') }}
+                    </q-banner>
+                    <div v-else class="text-body2">
+                      {{ t('Prepare the remote storage daemon first so the detected storage options can influence the generated configuration.') }}
                     </div>
                     <q-btn
+                      v-if="storageModeIsRemote"
                       data-testid="setup-storage-bootstrap-create"
                       color="primary"
                       :label="t('Prepare remote storage daemon')"
@@ -318,7 +337,17 @@
                       </div>
                     </div>
 
+                    <q-banner
+                      v-if="storageModeIsLocal"
+                      dense
+                      class="bg-blue-1 text-primary rounded-borders"
+                    >
+                      <template #avatar><q-icon name="play_circle" /></template>
+                      {{ t('bconfig-service starts the local bareos-sd discovery process automatically and waits until the selected archive path is applied during setup.') }}
+                    </q-banner>
+
                     <q-input
+                      v-if="storageModeIsRemote && storageBootstrapCommand"
                       :model-value="storageBootstrapCommand"
                       data-testid="setup-storage-bootstrap-command"
                       :label="t('Run on the storage host')"
@@ -346,15 +375,15 @@
                       class="bg-blue-1 text-primary rounded-borders"
                     >
                       <template #avatar><q-icon name="terminal" /></template>
-                      {{ t('The storage host registers itself with bconfig-service, uploads its discovery report, waits for your selected archive path, and then downloads its config bundle.') }}
+                      {{ t('The storage host registers itself with bconfig-service, uploads its discovery report, waits for the selected archive path, and then downloads its config bundle.') }}
                     </q-banner>
 
                     <div
-                      v-if="storageBootstrapSession.selection"
+                      v-if="selectedArchivePath"
                       class="text-body2"
                     >
                       {{ t('Selected archive path: {path}', {
-                        path: storageBootstrapSession.selection.archive_path,
+                        path: selectedArchivePath,
                       }) }}
                     </div>
 
@@ -381,13 +410,13 @@
                         :label="t('Archive path')"
                         :hint="t('Choose the directory that should become the File device archive path on the storage host.')"
                       />
-                      <q-btn
-                        color="primary"
-                        :label="t('Use selected archive path')"
-                        :loading="setup.submittingStorageSelection"
-                        :disable="!storageBootstrapSelection.archivePath.trim()"
-                        @click="submitRemoteStorageLayout"
-                      />
+                      <q-banner
+                        dense
+                        class="bg-blue-1 text-primary rounded-borders"
+                      >
+                        <template #avatar><q-icon name="fact_check" /></template>
+                        {{ t('This archive path will be applied when the initial configuration is created.') }}
+                      </q-banner>
 
                       <q-list bordered separator class="rounded-borders">
                         <q-item
@@ -399,10 +428,10 @@
                               {{ filesystem.mountpoint }}
                             </q-item-label>
                             <q-item-label caption>
-                              {{ filesystem.filesystem_type }} ·
+                              {{ filesystem.filesystem_type }} .
                               {{ t('Free: {size}', {
                                 size: formatByteCount(filesystem.free_bytes),
-                              }) }} ·
+                              }) }} .
                               {{ filesystem.suitable_for_archive
                                 ? t('recommended')
                                 : t('not recommended') }}
@@ -448,7 +477,7 @@
                             <q-item-label caption>
                               {{ [device.vendor, device.model, device.serial]
                                 .filter(Boolean)
-                                .join(' · ') }}
+                                .join(' . ') }}
                             </q-item-label>
                           </q-item-section>
                         </q-item>
@@ -476,6 +505,93 @@
               </q-card>
 
               <q-stepper-navigation>
+                <q-btn color="primary" :label="t('Continue')" @click="nextStep" />
+                <q-btn flat color="primary" :label="t('Back')" class="q-ml-sm" @click="step = 2" />
+              </q-stepper-navigation>
+            </q-step>
+
+            <q-step
+              :name="4"
+              :title="t('Review')"
+              icon="fact_check"
+            >
+              <div class="text-body2 q-mb-md">
+                {{ t('Review the detected storage settings and generated values before creating the initial configuration.') }}
+              </div>
+
+              <q-list bordered separator class="rounded-borders q-mb-md">
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>{{ t('Bareos Server Address (FQDN)') }}</q-item-label>
+                    <q-item-label>{{ form.daemonAddress }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>{{ t('Storage daemon mode') }}</q-item-label>
+                    <q-item-label>
+                      {{ storageModeIsRemote
+                        ? t('Remote storage daemon')
+                        : t('Local storage daemon') }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>{{ t('Storage daemon address') }}</q-item-label>
+                    <q-item-label>{{ effectiveStorageDaemonAddress }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>{{ t('Selected archive path') }}</q-item-label>
+                    <q-item-label>{{ selectedArchivePath }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>{{ t('Administrator Name') }}</q-item-label>
+                    <q-item-label>{{ form.consoleName }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+
+              <q-banner
+                v-if="setup.creating || setup.progressTitle || setup.progressLogs.length || setup.completed"
+                dense
+                :class="setup.completed
+                  ? 'bg-positive text-white q-mb-md rounded-borders'
+                  : 'bg-blue-1 text-primary q-mb-md rounded-borders'"
+                data-testid="setup-progress"
+              >
+                <template #avatar>
+                  <q-icon
+                    v-if="setup.completed"
+                    name="check_circle"
+                  />
+                  <q-spinner
+                    v-else
+                    color="primary"
+                    size="sm"
+                  />
+                </template>
+                <div class="text-subtitle2">
+                  {{ setup.progressTitle || t('Creating initial configuration') }}
+                </div>
+                <div
+                  v-if="setup.progressLogs.length"
+                  class="setup-progress-log q-mt-sm text-body2"
+                >
+                  <div
+                    v-for="(entry, index) in setup.progressLogs"
+                    :key="`${index}-${entry}`"
+                  >
+                    {{ entry }}
+                  </div>
+                </div>
+              </q-banner>
+
+              <q-stepper-navigation>
                 <q-btn
                   v-if="!setup.completed"
                   data-testid="setup-submit"
@@ -497,7 +613,7 @@
                   color="primary"
                   :label="t('Back')"
                   class="q-ml-sm"
-                  @click="step = 2"
+                  @click="step = 3"
                 />
               </q-stepper-navigation>
             </q-step>
@@ -565,6 +681,8 @@ const form = reactive({
   runtimeRoot: buildDefaultRuntimeRoot(DEFAULT_DEPLOYMENT_ID),
   workflowMode: 'review',
   daemonAddress: buildDefaultDaemonAddress(),
+  storageMode: 'local',
+  storageDaemonAddress: buildDefaultDaemonAddress(),
   directorPort: getDefaultSetupDirectorPort(),
   clientPort: getDefaultSetupClientPort(),
   storagePort: getDefaultSetupStoragePort(),
@@ -575,6 +693,17 @@ const form = reactive({
   consolePassword: generateSetupPassword(),
 })
 
+const storageModeOptions = computed(() => ([
+  {
+    label: t('Local storage daemon (recommended)'),
+    value: 'local',
+  },
+  {
+    label: t('Remote storage daemon'),
+    value: 'remote',
+  },
+]))
+
 const deploymentReady = computed(() => (
   form.deploymentId.trim()
   && form.deploymentName.trim()
@@ -583,8 +712,17 @@ const deploymentReady = computed(() => (
   && form.workflowMode.trim()
 ))
 
+const storageModeIsRemote = computed(() => form.storageMode === 'remote')
+const storageModeIsLocal = computed(() => !storageModeIsRemote.value)
+const effectiveStorageDaemonAddress = computed(() => (
+  storageModeIsRemote.value
+    ? form.storageDaemonAddress.trim()
+    : form.daemonAddress.trim()
+))
+
 const servicesReady = computed(() => (
   form.daemonAddress.trim()
+  && effectiveStorageDaemonAddress.value
   && parsePort(form.directorPort)
   && parsePort(form.clientPort)
   && parsePort(form.storagePort)
@@ -597,6 +735,7 @@ const servicesReady = computed(() => (
 const credentialsReady = computed(() => (
   form.consolePassword.trim()
 ))
+
 const storageBootstrapSession = computed(() => setup.storageBootstrapSession)
 const storageDiscoveryReport = computed(() => (
   storageBootstrapSession.value?.discovery_report ?? null
@@ -624,13 +763,37 @@ const storageFilesystemOptions = computed(() => (
     value: filesystem.mountpoint,
   }))
 ))
-const storageBootstrapCommand = computed(() => buildStorageBootstrapCommand({
-  bootstrapUrl: buildDefaultSetupBootstrapUrl(),
-  sessionId: storageBootstrapSession.value?.id,
-  bootstrapToken: storageBootstrapSession.value?.bootstrap_token,
-}))
+const storageBootstrapCommand = computed(() => (
+  storageModeIsRemote.value
+    ? buildStorageBootstrapCommand({
+      bootstrapUrl: buildDefaultSetupBootstrapUrl(),
+      sessionId: storageBootstrapSession.value?.id,
+      bootstrapToken: storageBootstrapSession.value?.bootstrap_token,
+    })
+    : ''
+))
 const storageBootstrapStatusMeta = computed(() => (
   describeStorageBootstrapStatus(storageBootstrapSession.value?.status)
+))
+const selectedArchivePath = computed(() => {
+  const sessionArchivePath
+    = storageBootstrapSession.value?.selection?.archive_path
+  if (typeof sessionArchivePath === 'string' && sessionArchivePath.trim()) {
+    return sessionArchivePath.trim()
+  }
+  return storageBootstrapSelection.archivePath.trim()
+})
+const selectedFilesystemMountpoint = computed(() => {
+  const sessionMountpoint
+    = storageBootstrapSession.value?.selection?.filesystem_mountpoint
+  if (typeof sessionMountpoint === 'string' && sessionMountpoint.trim()) {
+    return sessionMountpoint.trim()
+  }
+  return storageBootstrapSelection.filesystemMountpoint.trim()
+})
+const storageBootstrapReady = computed(() => (
+  Boolean(storageBootstrapSession.value?.id)
+  && Boolean(selectedArchivePath.value)
 ))
 
 watch(locale, (value) => {
@@ -640,8 +803,18 @@ watch(locale, (value) => {
 watch(() => form.daemonAddress, (value) => {
   const names = deriveSetupDaemonNames(value)
   form.directorName = names.directorName
-  form.storageName = names.storageName
   form.clientName = names.clientName
+  if (storageModeIsLocal.value) {
+    form.storageDaemonAddress = value
+    form.storageName = names.storageName
+  }
+})
+
+watch(() => form.storageDaemonAddress, (value) => {
+  if (!storageModeIsRemote.value) {
+    return
+  }
+  form.storageName = deriveSetupDaemonNames(value).storageName
 })
 
 watch(storageDiscoveryFilesystems, (filesystems) => {
@@ -698,6 +871,25 @@ watch(() => `${storageBootstrapSession.value?.id ?? ''}:${storageBootstrapSessio
   restartStorageBootstrapPolling()
 }, { immediate: true })
 
+watch(() => [
+  form.deploymentId,
+  form.storageMode,
+  form.storageName,
+  effectiveStorageDaemonAddress.value,
+].join('|'), () => {
+  if (setup.creating || setup.completed) {
+    return
+  }
+  resetStorageBootstrapWorkflow()
+})
+
+watch(() => `${step.value}:${form.storageMode}`, async () => {
+  if (step.value !== 3 || !storageModeIsLocal.value) {
+    return
+  }
+  await ensureLocalStorageBootstrap()
+})
+
 onMounted(async () => {
   if (setup.mode === 'unknown' || setup.mode === 'error') {
     try {
@@ -726,11 +918,60 @@ function requireStep(message, condition) {
   return true
 }
 
+function resetStorageBootstrapWorkflow() {
+  stopStorageBootstrapPolling()
+  setup.clearStorageBootstrapState()
+  storageBootstrapSelection.filesystemMountpoint = ''
+  storageBootstrapSelection.archivePath = ''
+}
+
+async function initializeStorageBootstrap({ launchLocal }) {
+  errorMsg.value = null
+  resetStorageBootstrapWorkflow()
+
+  const session = await setup.createStorageBootstrapSession({
+    deploymentId: form.deploymentId.trim(),
+    storageName: form.storageName.trim(),
+  })
+
+  if (launchLocal) {
+    await setup.launchLocalStorageBootstrap(
+      session.id,
+      buildDefaultSetupBootstrapUrl()
+    )
+  }
+}
+
+async function ensureLocalStorageBootstrap() {
+  if (setup.storageBootstrapLoading
+    || setup.creating
+    || setup.completed
+    || storageBootstrapSession.value) {
+    return
+  }
+
+  try {
+    await initializeStorageBootstrap({ launchLocal: true })
+  } catch {
+    // The dedicated storage bootstrap error banner renders the latest error.
+  }
+}
+
 function nextStep() {
   if (step.value === 2) {
     const ok = requireStep(
       t('Please complete the server details and administrator credentials before continuing.'),
       servicesReady.value && credentialsReady.value
+    )
+    if (!ok) {
+      return
+    }
+  }
+
+  if (step.value === 3) {
+    const ok = requireStep(
+      t('Please detect the storage options and choose an archive path before continuing.'),
+      storageBootstrapReady.value
     )
     if (!ok) {
       return
@@ -784,7 +1025,7 @@ function describeStorageBootstrapStatus(status) {
       return {
         color: 'primary',
         label: t('Pending'),
-        description: t('Run the bootstrap command on the storage host to start discovery.'),
+        description: t('Waiting for the storage host to start discovery.'),
       }
     case 'registered':
       return {
@@ -796,13 +1037,13 @@ function describeStorageBootstrapStatus(status) {
       return {
         color: 'info',
         label: t('Discovered'),
-        description: t('Select the final archive path from the reported filesystem candidates.'),
+        description: t('Choose the archive path that should be used for the initial storage configuration.'),
       }
     case 'selected':
       return {
         color: 'positive',
         label: t('Selected'),
-        description: t('The archive path was saved. The storage host can now fetch its config bundle.'),
+        description: t('The storage archive path has been selected and is waiting to be applied during setup.'),
       }
     case 'config_ready':
       return {
@@ -840,7 +1081,7 @@ function describeStorageBootstrapStatus(status) {
         label: t('Unknown'),
         description: t('Waiting for storage bootstrap status information.'),
       }
-  }
+    }
 }
 
 function shouldPollStorageBootstrapSession(session) {
@@ -913,7 +1154,10 @@ async function copyStorageBootstrapCommand() {
 async function submitSetup() {
   const ready = requireStep(
     t('Please complete all wizard steps before creating the initial configuration.'),
-    deploymentReady.value && servicesReady.value && credentialsReady.value
+    deploymentReady.value
+      && servicesReady.value
+      && credentialsReady.value
+      && storageBootstrapReady.value
   )
   if (!ready) {
     return
@@ -921,18 +1165,29 @@ async function submitSetup() {
 
   try {
     errorMsg.value = null
-      await setup.createInitialDeployment({
-        deploymentId: form.deploymentId.trim(),
-        deploymentName: form.deploymentName.trim(),
-        repositoryPath: form.repositoryPath.trim(),
-        runtimeRoot: form.runtimeRoot.trim(),
-        workflowMode: form.workflowMode,
-        daemonAddress: form.daemonAddress.trim(),
-        directorPort: parsePort(form.directorPort),
-        clientPort: parsePort(form.clientPort),
-        storagePort: parsePort(form.storagePort),
-        directorName: form.directorName.trim(),
-        storageName: form.storageName.trim(),
+    await setup.createInitialDeployment({
+      deploymentId: form.deploymentId.trim(),
+      deploymentName: form.deploymentName.trim(),
+      repositoryPath: form.repositoryPath.trim(),
+      runtimeRoot: form.runtimeRoot.trim(),
+      workflowMode: form.workflowMode,
+      daemonAddress: form.daemonAddress.trim(),
+      storageDaemonAddress: effectiveStorageDaemonAddress.value,
+      storageArchivePath: selectedArchivePath.value,
+      storageBootstrapSessionId: storageBootstrapSession.value.id,
+      storageBootstrapSelection: {
+        filesystem_mountpoint: selectedFilesystemMountpoint.value || null,
+        archive_path: selectedArchivePath.value,
+        device_name: DEFAULT_STORAGE_DEVICE_NAME,
+      },
+      localDaemonComponents: storageModeIsRemote.value
+        ? ['client', 'director']
+        : ['client', 'storage', 'director'],
+      directorPort: parsePort(form.directorPort),
+      clientPort: parsePort(form.clientPort),
+      storagePort: parsePort(form.storagePort),
+      directorName: form.directorName.trim(),
+      storageName: form.storageName.trim(),
       clientName: form.clientName.trim(),
       consoleName: form.consoleName.trim(),
       consolePassword: form.consolePassword,
@@ -948,10 +1203,7 @@ async function submitSetup() {
 
 async function prepareRemoteStorage() {
   try {
-    await setup.createStorageBootstrapSession({
-      deploymentId: form.deploymentId.trim(),
-      storageName: form.storageName.trim(),
-    })
+    await initializeStorageBootstrap({ launchLocal: false })
   } catch {
     // The dedicated storage bootstrap error banner renders the latest error.
   }
@@ -964,32 +1216,6 @@ async function refreshRemoteStorage() {
 
   try {
     await setup.refreshStorageBootstrapSession(storageBootstrapSession.value.id)
-  } catch {
-    // The dedicated storage bootstrap error banner renders the latest error.
-  }
-}
-
-async function submitRemoteStorageLayout() {
-  if (!storageBootstrapSession.value?.id) {
-    return
-  }
-
-  const archivePath = storageBootstrapSelection.archivePath.trim()
-  const filesystemMountpoint
-    = storageBootstrapSelection.filesystemMountpoint.trim()
-  if (!archivePath) {
-    return
-  }
-
-  try {
-    await setup.submitStorageBootstrapSelection(
-      storageBootstrapSession.value.id,
-      {
-        filesystem_mountpoint: filesystemMountpoint || null,
-        archive_path: archivePath,
-        device_name: DEFAULT_STORAGE_DEVICE_NAME,
-      }
-    )
   } catch {
     // The dedicated storage bootstrap error banner renders the latest error.
   }

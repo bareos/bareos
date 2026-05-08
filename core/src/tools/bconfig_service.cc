@@ -494,6 +494,45 @@ OperationResult<std::filesystem::path> ResolveBareosExecutable(
 }
 
 #if !HAVE_WIN32
+OperationResult<std::monostate> StartDetachedCommand(std::string_view command)
+{
+  const pid_t first_child = fork();
+  if (first_child < 0) {
+    return {.error = "failed to fork detached command: "
+                     + std::string{std::strerror(errno)}};
+  }
+  if (first_child == 0) {
+    if (setsid() < 0) { _exit(1); }
+
+    const pid_t second_child = fork();
+    if (second_child < 0) { _exit(1); }
+    if (second_child > 0) { _exit(0); }
+
+    const int devnull = open("/dev/null", O_RDWR);
+    if (devnull >= 0) {
+      static_cast<void>(dup2(devnull, STDIN_FILENO));
+      static_cast<void>(dup2(devnull, STDOUT_FILENO));
+      static_cast<void>(dup2(devnull, STDERR_FILENO));
+      if (devnull > STDERR_FILENO) { close(devnull); }
+    }
+
+    execl("/bin/sh", "sh", "-c", std::string{command}.c_str(),
+          static_cast<char*>(nullptr));
+    _exit(127);
+  }
+
+  int status = 0;
+  if (waitpid(first_child, &status, 0) < 0) {
+    return {.error = "failed to wait for detached command launcher: "
+                     + std::string{std::strerror(errno)}};
+  }
+  if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+    return {.error = "failed to launch detached command."};
+  }
+
+  return {.value = std::monostate{}};
+}
+
 struct StartedSmokeTestProcess {
   std::string label{};
   std::filesystem::path executable{};
@@ -18857,9 +18896,6 @@ ServiceState::CreateStorageBootstrapSession(
   }
 
   std::lock_guard guard{mutex_};
-  if (deployments_.find(spec.deployment_id) == deployments_.end()) {
-    return {.error = "deployment id does not exist."};
-  }
   if (ExpireStorageBootstrapSessionsLocked()) {
     if (auto error = SaveStateLocked(); error) { return {.error = *error}; }
   }
@@ -18895,6 +18931,60 @@ ServiceState::CreateStorageBootstrapSession(
 
   DebugLog("created storage bootstrap session '" + record.id + "'");
   return {.value = record};
+}
+
+OperationResult<StorageBootstrapSessionRecord>
+ServiceState::LaunchLocalStorageBootstrap(std::string_view id,
+                                          std::string_view bootstrap_url)
+{
+#if HAVE_WIN32
+  return {.error
+          = "local storage bootstrap launching is not supported on "
+            "Windows."};
+#else
+  const auto trimmed_bootstrap_url
+      = TrimAsciiWhitespace(std::string{bootstrap_url});
+  if (trimmed_bootstrap_url.empty()) {
+    return {.error = "bootstrap_url must not be empty."};
+  }
+
+  StorageBootstrapSessionRecord session;
+  {
+    std::lock_guard guard{mutex_};
+    if (ExpireStorageBootstrapSessionsLocked()) {
+      if (auto error = SaveStateLocked(); error) { return {.error = *error}; }
+    }
+
+    auto it = storage_bootstrap_sessions_.find(std::string{id});
+    if (it == storage_bootstrap_sessions_.end()) {
+      return {.error = "storage bootstrap session not found."};
+    }
+    if (it->second.status == StorageBootstrapSessionStatus::kExpired) {
+      return {.error = "storage bootstrap session has expired."};
+    }
+    if (it->second.status != StorageBootstrapSessionStatus::kPending) {
+      return {.error
+              = "local storage bootstrap launch requires a pending "
+                "session."};
+    }
+    session = it->second;
+  }
+
+  auto bareos_sd
+      = ResolveBareosExecutable("BCONFIG_BAREOS_SD_BINARY", "bareos-sd",
+                                std::filesystem::path{"stored"} / "bareos-sd");
+  if (!bareos_sd) { return {.error = bareos_sd.error}; }
+
+  const auto command = BuildCommand(
+      {bareos_sd.value->string(), "--discovery", "--bootstrap-url",
+       trimmed_bootstrap_url, "--bootstrap-session", session.id,
+       "--bootstrap-token", session.bootstrap_token});
+  auto launched = StartDetachedCommand(command);
+  if (!launched) { return {.error = launched.error}; }
+
+  DebugLog("launched local storage bootstrap for session '" + session.id + "'");
+  return {.value = std::move(session)};
+#endif
 }
 
 std::vector<StorageBootstrapSessionRecord>
@@ -19367,6 +19457,7 @@ OperationResult<JobRecord> ServiceState::CreateJob(const JobSpec& spec)
                    .source_component = spec.source_component,
                    .source_path = spec.source_path,
                    .commit_message = spec.commit_message,
+                   .components = spec.components,
                    .status = JobStatus::kQueued,
                    .created_at = timestamp,
                    .updated_at = timestamp};
@@ -19590,6 +19681,39 @@ OperationResult<std::filesystem::path> ResolveSystemctlExecutable()
                                  std::filesystem::path{"systemctl"});
 }
 
+OperationResult<std::set<bconfig::Component>> ResolveJobDaemonComponents(
+    const JobRecord& job_snapshot)
+{
+  if (!job_snapshot.components || job_snapshot.components->empty()) {
+    return {.value = std::set<bconfig::Component>{
+                bconfig::Component::kClient, bconfig::Component::kStorage,
+                bconfig::Component::kDirector}};
+  }
+
+  std::set<bconfig::Component> components;
+  for (const auto component : *job_snapshot.components) {
+    switch (component) {
+      case bconfig::Component::kClient:
+      case bconfig::Component::kStorage:
+      case bconfig::Component::kDirector:
+        components.insert(component);
+        break;
+      default:
+        return {.error
+                = "job component filter supports only client, storage, "
+                  "and director components."};
+    }
+  }
+
+  if (components.empty()) {
+    return {.error
+            = "job component filter must include at least one daemon "
+              "component."};
+  }
+
+  return {.value = std::move(components)};
+}
+
 std::optional<std::string> SystemdServiceNameForComponent(
     bconfig::Component component)
 {
@@ -19689,6 +19813,23 @@ DiscoverOrderedDaemonConfigs(const std::filesystem::path& repository_path)
                      < component_order(right.component);
             });
   return {.value = std::move(daemon_configs)};
+}
+
+OperationResult<std::vector<DeploymentConfigRecord>> FilterDaemonConfigs(
+    const std::vector<DeploymentConfigRecord>& daemon_configs,
+    const std::set<bconfig::Component>& components)
+{
+  std::vector<DeploymentConfigRecord> filtered;
+  filtered.reserve(daemon_configs.size());
+  for (const auto& config : daemon_configs) {
+    if (components.find(config.component) != components.end()) {
+      filtered.emplace_back(config);
+    }
+  }
+  if (filtered.empty()) {
+    return {.error = "job component filter excluded all daemon configs."};
+  }
+  return {.value = std::move(filtered)};
 }
 
 OperationResult<std::monostate> EnsureDaemonWorkingDirectories(
@@ -19925,6 +20066,7 @@ OperationResult<std::vector<std::string>> DiscoverOrderedSystemdServices(
 
 OperationResult<std::monostate> SyncDeploymentIntoInstalledConfigRoot(
     const DeploymentRecord& deployment,
+    const std::set<bconfig::Component>& components,
     std::vector<std::string>& logs)
 {
   auto install_root = ResolveInstalledConfigRoot();
@@ -19985,19 +20127,22 @@ OperationResult<std::monostate> SyncDeploymentIntoInstalledConfigRoot(
     return {.value = std::monostate{}};
   };
 
-  if (director_config) {
+  if (director_config
+      && components.find(bconfig::Component::kDirector) != components.end()) {
     auto synced
         = sync_config(*director_config, director_config->path / "bareos-dir.d",
                       *install_root.value / "bareos-dir.d");
     if (!synced) { return synced; }
   }
-  if (storage_config) {
+  if (storage_config
+      && components.find(bconfig::Component::kStorage) != components.end()) {
     auto synced
         = sync_config(*storage_config, storage_config->path / "bareos-sd.d",
                       *install_root.value / "bareos-sd.d");
     if (!synced) { return synced; }
   }
-  if (client_config) {
+  if (client_config
+      && components.find(bconfig::Component::kClient) != components.end()) {
     auto synced
         = sync_config(*client_config, client_config->path / "bareos-fd.d",
                       *install_root.value / "bareos-fd.d");
@@ -20034,7 +20179,14 @@ std::pair<JobStatus, std::vector<std::string>> ExecuteSmokeTestDeployment(
     return {JobStatus::kFailed, logs};
   }
 
-  auto synced_config = SyncDeploymentIntoInstalledConfigRoot(*deployment, logs);
+  auto requested_components = ResolveJobDaemonComponents(job_snapshot);
+  if (!requested_components) {
+    logs.emplace_back(requested_components.error);
+    return {JobStatus::kFailed, logs};
+  }
+
+  auto synced_config = SyncDeploymentIntoInstalledConfigRoot(
+      *deployment, *requested_components.value, logs);
   if (!synced_config) {
     logs.emplace_back(synced_config.error);
     return {JobStatus::kFailed, logs};
@@ -20047,22 +20199,29 @@ std::pair<JobStatus, std::vector<std::string>> ExecuteSmokeTestDeployment(
     return {JobStatus::kFailed, logs};
   }
 
+  auto filtered_daemon_configs
+      = FilterDaemonConfigs(*daemon_configs.value, *requested_components.value);
+  if (!filtered_daemon_configs) {
+    logs.emplace_back(filtered_daemon_configs.error);
+    return {JobStatus::kFailed, logs};
+  }
+
   auto working_directories = EnsureDaemonWorkingDirectories(
-      state, *job_snapshot.deployment_id, *daemon_configs.value, logs);
+      state, *job_snapshot.deployment_id, *filtered_daemon_configs.value, logs);
   if (!working_directories) {
     logs.emplace_back(working_directories.error);
     return {JobStatus::kFailed, logs};
   }
 
   auto archive_directories = EnsureStorageArchiveDirectories(
-      state, *job_snapshot.deployment_id, *daemon_configs.value, logs);
+      state, *job_snapshot.deployment_id, *filtered_daemon_configs.value, logs);
   if (!archive_directories) {
     logs.emplace_back(archive_directories.error);
     return {JobStatus::kFailed, logs};
   }
 
   auto started_processes
-      = StartDeploymentProcesses(*daemon_configs.value, logs);
+      = StartDeploymentProcesses(*filtered_daemon_configs.value, logs);
   if (!started_processes) {
     logs.emplace_back(started_processes.error);
     return {JobStatus::kFailed, logs};
@@ -20077,7 +20236,7 @@ std::pair<JobStatus, std::vector<std::string>> ExecuteSmokeTestDeployment(
   }
 
   logs.emplace_back("smoke-tested "
-                    + std::to_string(daemon_configs.value->size())
+                    + std::to_string(filtered_daemon_configs.value->size())
                     + " daemon config root(s)");
   return {JobStatus::kSucceeded, logs};
 }
@@ -20098,6 +20257,12 @@ std::pair<JobStatus, std::vector<std::string>> ExecuteStartDeploymentDaemons(
     return {JobStatus::kFailed, logs};
   }
 
+  auto requested_components = ResolveJobDaemonComponents(job_snapshot);
+  if (!requested_components) {
+    logs.emplace_back(requested_components.error);
+    return {JobStatus::kFailed, logs};
+  }
+
   auto daemon_configs
       = DiscoverOrderedDaemonConfigs(deployment->repository_path);
   if (!daemon_configs) {
@@ -20105,21 +20270,29 @@ std::pair<JobStatus, std::vector<std::string>> ExecuteStartDeploymentDaemons(
     return {JobStatus::kFailed, logs};
   }
 
+  auto filtered_daemon_configs
+      = FilterDaemonConfigs(*daemon_configs.value, *requested_components.value);
+  if (!filtered_daemon_configs) {
+    logs.emplace_back(filtered_daemon_configs.error);
+    return {JobStatus::kFailed, logs};
+  }
+
   auto working_directories = EnsureDaemonWorkingDirectories(
-      state, *job_snapshot.deployment_id, *daemon_configs.value, logs);
+      state, *job_snapshot.deployment_id, *filtered_daemon_configs.value, logs);
   if (!working_directories) {
     logs.emplace_back(working_directories.error);
     return {JobStatus::kFailed, logs};
   }
 
   auto console_message_files = PrepareConsoleMessageFiles(
-      state, *job_snapshot.deployment_id, *daemon_configs.value, logs);
+      state, *job_snapshot.deployment_id, *filtered_daemon_configs.value, logs);
   if (!console_message_files) {
     logs.emplace_back(console_message_files.error);
     return {JobStatus::kFailed, logs};
   }
 
-  auto services = DiscoverOrderedSystemdServices(*daemon_configs.value);
+  auto services
+      = DiscoverOrderedSystemdServices(*filtered_daemon_configs.value);
   if (!services) {
     logs.emplace_back(services.error);
     return {JobStatus::kFailed, logs};
@@ -20641,6 +20814,22 @@ std::string ServiceState::SerializeState(
       stream << "null";
     }
     stream << ",\n"
+           << "      \"components\": ";
+    if (job.components) {
+      stream << "[";
+      for (size_t component_index = 0; component_index < job.components->size();
+           ++component_index) {
+        if (component_index > 0) { stream << ", "; }
+        stream << "\""
+               << JsonEscape(bconfig::ComponentToString(
+                      job.components->at(component_index)))
+               << "\"";
+      }
+      stream << "]";
+    } else {
+      stream << "null";
+    }
+    stream << ",\n"
            << "      \"status\": \"" << ToString(job.status) << "\",\n"
            << "      \"created_at\": \"" << JsonEscape(job.created_at)
            << "\",\n"
@@ -20908,6 +21097,7 @@ std::optional<std::string> ServiceState::LoadState()
     auto* source_component = json_object_get(entry, "source_component");
     auto* source_path = json_object_get(entry, "source_path");
     auto* commit_message = json_object_get(entry, "commit_message");
+    auto* components = json_object_get(entry, "components");
     auto* status = json_object_get(entry, "status");
     auto* created_at = json_object_get(entry, "created_at");
     auto* updated_at = json_object_get(entry, "updated_at");
@@ -20925,6 +21115,8 @@ std::optional<std::string> ServiceState::LoadState()
             && !json_is_string(source_path))
         || (commit_message && !json_is_null(commit_message)
             && !json_is_string(commit_message))
+        || (components && !json_is_null(components)
+            && !json_is_array(components))
         || !json_is_string(status) || !json_is_string(created_at)
         || !json_is_string(updated_at)
         || (started_at && !json_is_null(started_at)
@@ -20950,6 +21142,7 @@ std::optional<std::string> ServiceState::LoadState()
                      .source_component = std::nullopt,
                      .source_path = std::nullopt,
                      .commit_message = std::nullopt,
+                     .components = std::nullopt,
                      .status = *parsed_status,
                      .created_at = json_string_value(created_at),
                      .updated_at = json_string_value(updated_at)};
@@ -20965,6 +21158,26 @@ std::optional<std::string> ServiceState::LoadState()
     }
     if (commit_message && json_is_string(commit_message)) {
       record.commit_message = std::string{json_string_value(commit_message)};
+    }
+    if (components && json_is_array(components)) {
+      std::vector<bconfig::Component> parsed_components;
+      size_t component_index = 0;
+      json_t* component_entry = nullptr;
+      json_array_foreach(components, component_index, component_entry)
+      {
+        if (!json_is_string(component_entry)) {
+          return "service state file '" + state_file.string()
+                 + "' contains a non-string job component entry.";
+        }
+        auto parsed_component
+            = bconfig::ParseComponent(json_string_value(component_entry));
+        if (!parsed_component) {
+          return "service state file '" + state_file.string()
+                 + "' contains an unknown job component.";
+        }
+        parsed_components.emplace_back(*parsed_component);
+      }
+      record.components = std::move(parsed_components);
     }
     if (started_at && json_is_string(started_at)) {
       record.started_at = std::string{json_string_value(started_at)};

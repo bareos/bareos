@@ -102,6 +102,10 @@ struct StorageBootstrapSessionAppliedRequestSpec {
   std::optional<std::string> error{};
 };
 
+struct StorageBootstrapSessionLaunchLocalRequestSpec {
+  std::string bootstrap_url{};
+};
+
 struct ClientDirectorStubRequestSpec {
   std::optional<std::string> description{};
   std::optional<std::string> password{};
@@ -9133,6 +9137,9 @@ ParseStorageBootstrapSessionSelectionRequest(std::string_view body,
 std::optional<StorageBootstrapSessionAppliedRequestSpec>
 ParseStorageBootstrapSessionAppliedRequest(std::string_view body,
                                            std::string& error);
+std::optional<StorageBootstrapSessionLaunchLocalRequestSpec>
+ParseStorageBootstrapSessionLaunchLocalRequest(std::string_view body,
+                                               std::string& error);
 
 void AppendDeployment(json_t* array, const DeploymentRecord& record)
 {
@@ -9176,6 +9183,16 @@ void AppendJob(json_t* array, const JobRecord& record)
                         json_string(record.commit_message->c_str()));
   } else {
     json_object_set_new(object.get(), "commit_message", json_null());
+  }
+  if (record.components) {
+    auto components = MakeJson(json_array());
+    for (const auto component : *record.components) {
+      json_array_append_new(components.get(),
+                            json_string(bconfig::ComponentToString(component)));
+    }
+    json_object_set_new(object.get(), "components", components.release());
+  } else {
+    json_object_set_new(object.get(), "components", json_null());
   }
   json_object_set_new(object.get(), "status",
                       json_string(ToString(record.status).data()));
@@ -14750,6 +14767,27 @@ http::response<http::string_body> HandleStorageBootstrapSessionsRequest(
     return JsonResponse(http::status::ok, DumpJson(root.get()));
   }
 
+  if (path_parts.size() == 5 && path_parts[4] == "launch-local"
+      && request.method() == http::verb::post) {
+    std::string error;
+    auto spec
+        = ParseStorageBootstrapSessionLaunchLocalRequest(request.body(), error);
+    if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+    auto session
+        = state.LaunchLocalStorageBootstrap(path_parts[3], spec->bootstrap_url);
+    if (!session) {
+      return ErrorResponse(http::status::bad_request, session.error);
+    }
+
+    auto root = MakeJson(json_object());
+    auto sessions = MakeJson(json_array());
+    AppendStorageBootstrapSession(sessions.get(), *session.value);
+    json_object_set(root.get(), "storage_bootstrap_session",
+                    json_array_get(sessions.get(), 0));
+    return JsonResponse(http::status::ok, DumpJson(root.get()));
+  }
+
   if (path_parts.size() == 5 && path_parts[4] == "config-bundle"
       && request.method() == http::verb::get) {
     const auto token = QueryParameter(target, "token");
@@ -14914,6 +14952,7 @@ std::optional<JobSpec> ParseJobSpec(std::string_view body, std::string& error)
   auto* source_component = json_object_get(root.get(), "source_component");
   auto* source_path = json_object_get(root.get(), "source_path");
   auto* commit_message = json_object_get(root.get(), "commit_message");
+  auto* components = json_object_get(root.get(), "components");
   if (!json_is_string(type)) {
     error = "field 'type' must be a string.";
     return std::nullopt;
@@ -14939,6 +14978,10 @@ std::optional<JobSpec> ParseJobSpec(std::string_view body, std::string& error)
     error = "field 'commit_message' must be a string when provided.";
     return std::nullopt;
   }
+  if (components && !json_is_null(components) && !json_is_array(components)) {
+    error = "field 'components' must be an array when provided.";
+    return std::nullopt;
+  }
 
   JobSpec spec{};
   spec.type = json_string_value(type);
@@ -14953,6 +14996,26 @@ std::optional<JobSpec> ParseJobSpec(std::string_view body, std::string& error)
   }
   if (commit_message && json_is_string(commit_message)) {
     spec.commit_message = std::string{json_string_value(commit_message)};
+  }
+  if (components && json_is_array(components)) {
+    std::vector<bconfig::Component> parsed_components;
+    size_t component_index = 0;
+    json_t* component = nullptr;
+    json_array_foreach(components, component_index, component)
+    {
+      if (!json_is_string(component)) {
+        error = "field 'components' entries must be strings.";
+        return std::nullopt;
+      }
+      auto parsed_component
+          = bconfig::ParseComponent(json_string_value(component));
+      if (!parsed_component) {
+        error = "field 'components' contains an unknown component.";
+        return std::nullopt;
+      }
+      parsed_components.emplace_back(*parsed_component);
+    }
+    spec.components = std::move(parsed_components);
   }
 
   return spec;
@@ -15140,6 +15203,28 @@ ParseStorageBootstrapSessionAppliedRequest(std::string_view body,
   if (apply_error && json_is_string(apply_error)) {
     spec.error = std::string{json_string_value(apply_error)};
   }
+  return spec;
+}
+
+std::optional<StorageBootstrapSessionLaunchLocalRequestSpec>
+ParseStorageBootstrapSessionLaunchLocalRequest(std::string_view body,
+                                               std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* bootstrap_url = json_object_get(root.get(), "bootstrap_url");
+  if (!json_is_string(bootstrap_url)) {
+    error = "field 'bootstrap_url' must be a string.";
+    return std::nullopt;
+  }
+
+  StorageBootstrapSessionLaunchLocalRequestSpec spec{};
+  spec.bootstrap_url = json_string_value(bootstrap_url);
   return spec;
 }
 

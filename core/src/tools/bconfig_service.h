@@ -910,6 +910,7 @@ struct JobSpec {
   std::optional<std::string> source_component{};
   std::optional<std::string> source_path{};
   std::optional<std::string> commit_message{};
+  std::optional<std::vector<bconfig::Component>> components{};
 };
 
 struct JobRecord {
@@ -919,6 +920,7 @@ struct JobRecord {
   std::optional<std::string> source_component{};
   std::optional<std::string> source_path{};
   std::optional<std::string> commit_message{};
+  std::optional<std::vector<bconfig::Component>> components{};
   JobStatus status{JobStatus::kQueued};
   std::string created_at{};
   std::string updated_at{};
@@ -1384,6 +1386,9 @@ class ServiceState {
   OperationResult<StorageBootstrapConfigBundleRecord>
   GetStorageBootstrapConfigBundle(std::string_view id,
                                   std::string_view bootstrap_token);
+  OperationResult<StorageBootstrapSessionRecord> LaunchLocalStorageBootstrap(
+      std::string_view id,
+      std::string_view bootstrap_url);
 
   OperationResult<JobRecord> CreateJob(const JobSpec& spec);
   std::vector<JobRecord> ListJobs() const;

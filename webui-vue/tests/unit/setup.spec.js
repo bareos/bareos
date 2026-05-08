@@ -139,6 +139,15 @@ describe('setup store', () => {
       runtimeRoot: '/var/lib/bareos',
       workflowMode: 'review',
       daemonAddress: '127.0.0.1',
+      storageDaemonAddress: 'storage.example.com',
+      storageArchivePath: '/srv/storage/bareos/storage',
+      storageBootstrapSessionId: 'storage-bootstrap-1',
+      storageBootstrapSelection: {
+        filesystem_mountpoint: '/srv/storage',
+        archive_path: '/srv/storage/bareos/storage',
+        device_name: 'FileStorage',
+      },
+      localDaemonComponents: ['client', 'director'],
       directorPort: 41001,
       clientPort: 41002,
       storagePort: 41003,
@@ -161,6 +170,28 @@ describe('setup store', () => {
     }
 
     fetchMock
+      .mockResolvedValueOnce(jsonResponse({
+        storage_bootstrap_session: {
+          id: 'storage-bootstrap-1',
+          status: 'selected',
+          selection: {
+            filesystem_mountpoint: '/srv/storage',
+            archive_path: '/srv/storage/bareos/storage',
+            device_name: 'FileStorage',
+          },
+        },
+      }))
+      .mockResolvedValueOnce(jsonResponse({
+        storage_bootstrap_session: {
+          id: 'storage-bootstrap-1',
+          status: 'applied',
+          selection: {
+            filesystem_mountpoint: '/srv/storage',
+            archive_path: '/srv/storage/bareos/storage',
+            device_name: 'FileStorage',
+          },
+        },
+      }))
       .mockResolvedValueOnce(jsonResponse({ job: { id: 'job-1' } }, 201))
       .mockResolvedValueOnce(jsonResponse({ job: { id: 'job-1', status: 'succeeded', logs: [
         'job execution started',
@@ -181,7 +212,7 @@ describe('setup store', () => {
       .mockResolvedValueOnce(jsonResponse({ job: { id: 'job-4', status: 'succeeded', logs: [
         'job execution started',
         'started director \'bareos-dir\' using /tmp/bareos-dir',
-        'started 3 deployment daemon(s)',
+        'started 2 deployment daemon(s) via systemctl',
       ] } }))
       .mockResolvedValueOnce(jsonResponse({ deployments: [{ id: 'prod' }] }))
     vi.stubGlobal('fetch', fetchMock)
@@ -191,6 +222,8 @@ describe('setup store', () => {
     const expectedPaths = [
       '/api/bconfig/v1/deployments',
       ...initialRequests.map(request => `/api/bconfig/v1${request.path}`),
+      '/api/bconfig/v1/bootstrap/storage-sessions/storage-bootstrap-1/selection',
+      '/api/bconfig/v1/bootstrap/storage-sessions/storage-bootstrap-1',
       '/api/bconfig/v1/jobs',
       '/api/bconfig/v1/jobs/job-1',
       '/api/bconfig/v1/jobs',
@@ -333,7 +366,7 @@ describe('setup store', () => {
     })
     expect(JSON.parse(fetch.mock.calls[requestIndexByPath[`/deployments/prod/storages/bareos-sd/devices/${DEFAULT_STORAGE_DEVICE_NAME}`]][1].body)).toEqual({
       media_type: 'File',
-      archive_device: '/var/lib/bareos/storage',
+      archive_device: '/srv/storage/bareos/storage',
       device_type: 'File',
       label_media: true,
       random_access: true,
@@ -343,7 +376,7 @@ describe('setup store', () => {
       description: 'File device. A connecting Director must have the same Name and MediaType.',
     })
     expect(JSON.parse(fetch.mock.calls[requestIndexByPath[`/deployments/prod/directors/bareos-dir/storages/${DEFAULT_DIRECTOR_STORAGE_NAME}`]][1].body)).toEqual({
-      address: '127.0.0.1',
+      address: 'storage.example.com',
       port: 41003,
       password: 'storage-director-secret',
       device: DEFAULT_STORAGE_DEVICE_NAME,
@@ -392,7 +425,7 @@ describe('setup store', () => {
       maximum_concurrent_jobs: 10,
     })
     expect(JSON.parse(fetch.mock.calls[requestIndexByPath['/deployments/prod/storages/bareos-sd']][1].body)).toEqual({
-      address: '127.0.0.1',
+      address: 'storage.example.com',
       port: 41003,
       working_directory: '/var/lib/bareos',
       messages: 'Standard',
@@ -409,31 +442,42 @@ describe('setup store', () => {
       password: 'console-secret',
     })
     expect(JSON.parse(fetch.mock.calls[initialRequests.length + 1][1].body)).toEqual({
+      selection: {
+        filesystem_mountpoint: '/srv/storage',
+        archive_path: '/srv/storage/bareos/storage',
+        device_name: 'FileStorage',
+      },
+    })
+    expect(JSON.parse(fetch.mock.calls[initialRequests.length + 3][1].body)).toEqual({
       type: 'validate_deployment_repo',
       deployment_id: 'prod',
     })
-    expect(JSON.parse(fetch.mock.calls[initialRequests.length + 3][1].body)).toEqual({
+    expect(JSON.parse(fetch.mock.calls[initialRequests.length + 5][1].body)).toEqual({
       type: 'initialize_catalog_database',
       deployment_id: 'prod',
     })
-    expect(JSON.parse(fetch.mock.calls[initialRequests.length + 5][1].body)).toEqual({
+    expect(JSON.parse(fetch.mock.calls[initialRequests.length + 7][1].body)).toEqual({
       type: 'smoke_test_deployment',
       deployment_id: 'prod',
+      components: ['client', 'director'],
     })
-    expect(JSON.parse(fetch.mock.calls[initialRequests.length + 7][1].body)).toEqual({
+    expect(JSON.parse(fetch.mock.calls[initialRequests.length + 9][1].body)).toEqual({
       type: 'start_deployment_daemons',
       deployment_id: 'prod',
+      components: ['client', 'director'],
     })
     expect(setup.completed).toBe(true)
     expect(setup.progressTitle).toBe('Setup completed')
     expect(setup.progressLogs).toContain("Creating deployment 'Production' (prod) at /var/lib/bconfig/deployments/prod")
     expect(setup.progressLogs).toContain('Creating initial Bareos resources')
     expect(setup.progressLogs).toContain('Applying /deployments/prod/directors/bareos-dir')
+    expect(setup.progressLogs).toContain('Bootstrapping storage daemon')
+    expect(setup.progressLogs).toContain('Storage bootstrap status: applied')
     expect(setup.progressLogs).toContain('validated 4 imported config root(s)')
     expect(setup.progressLogs).toContain("created database user 'bareos' and granted catalog privileges")
     expect(setup.progressLogs).toContain("started director 'bareos-dir' using /tmp/bareos-dir")
     expect(setup.progressLogs).toContain('Starting generated Bareos daemons')
-    expect(setup.progressLogs).toContain('started 3 deployment daemon(s)')
+    expect(setup.progressLogs).toContain('started 2 deployment daemon(s) via systemctl')
     expect(setup.progressLogs).toContain('Setup finished successfully. Review the log and continue to the login page when you are ready.')
     expect(setup.mode).toBe('ready')
     expect(setup.needsSetup).toBe(false)
@@ -542,5 +586,35 @@ describe('setup store', () => {
     expect(setup.storageBootstrapSession.selection.archive_path).toBe(
       '/srv/storage/bareos/storage'
     )
+  })
+
+  it('launches local storage bootstrap discovery', async () => {
+    const setup = useSetupStore()
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({
+        storage_bootstrap_session: {
+          id: 'storage-bootstrap-1',
+          status: 'pending',
+        },
+      }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(setup.launchLocalStorageBootstrap(
+      'storage-bootstrap-1',
+      'http://bareos.example.com:8080/api/bconfig/v1'
+    )).resolves.toMatchObject({
+      id: 'storage-bootstrap-1',
+      status: 'pending',
+    })
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/bconfig/v1/bootstrap/storage-sessions/storage-bootstrap-1/launch-local',
+      expect.objectContaining({
+        method: 'POST',
+      })
+    )
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({
+      bootstrap_url: 'http://bareos.example.com:8080/api/bconfig/v1',
+    })
   })
 })

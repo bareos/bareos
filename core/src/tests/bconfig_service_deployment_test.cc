@@ -706,6 +706,19 @@ TEST(BconfigService, CreatesStorageBootstrapSessions)
   EXPECT_EQ(state.ListStorageBootstrapSessions().size(), 1U);
 }
 
+TEST(BconfigService, CreatesStorageBootstrapSessionsBeforeDeploymentExists)
+{
+  ServiceState state;
+
+  auto session = state.CreateStorageBootstrapSession(
+      {.deployment_id = "prod",
+       .storage_name = std::string{"bareos-sd"},
+       .ttl_seconds = 600});
+  ASSERT_TRUE(session) << session.error;
+  EXPECT_EQ(session.value->deployment_id, "prod");
+  EXPECT_EQ(session.value->status, StorageBootstrapSessionStatus::kPending);
+}
+
 TEST(BconfigService, ValidatesStorageBootstrapSessionTransitions)
 {
   ScopedDirectory repo_path{MakeTempPath()};
@@ -1135,6 +1148,69 @@ TEST(BconfigService, ServesStorageBootstrapSessionApi)
   auto* last_error = json_object_get(applied, "last_error");
   ASSERT_TRUE(json_is_string(last_error));
   EXPECT_STREQ(json_string_value(last_error), "apply failed");
+#endif
+}
+
+TEST(BconfigService, ServesStorageBootstrapLocalLaunchApi)
+{
+  ScopedDirectory state_path{MakeTempPath()};
+#if !HAVE_WIN32
+  ScopedDirectory runtime_path{MakeTempPath()};
+  const auto fake_sd_binary = runtime_path.path() / "bareos-sd";
+  const auto discovery_log = runtime_path.path() / "storage-bootstrap.log";
+  WriteTextFile(
+      fake_sd_binary,
+      "#!/bin/sh\n"
+      "printf '%s\\n' \"$*\" >> \"$BCONFIG_TEST_SD_DISCOVERY_LOG\"\n");
+  std::filesystem::permissions(fake_sd_binary,
+                               std::filesystem::perms::owner_read
+                                   | std::filesystem::perms::owner_write
+                                   | std::filesystem::perms::owner_exec,
+                               std::filesystem::perm_options::replace);
+  ScopedEnvironmentVariable sd_binary_override{"BCONFIG_BAREOS_SD_BINARY",
+                                               fake_sd_binary.string()};
+  ScopedEnvironmentVariable discovery_log_override{
+      "BCONFIG_TEST_SD_DISCOVERY_LOG", discovery_log.string()};
+  (void)sd_binary_override;
+  (void)discovery_log_override;
+
+  ScopedBconfigServiceServer server{state_path.path()};
+  ASSERT_TRUE(server.ready()) << server.startup_error();
+
+  const auto create_response = server.Post(
+      "/v1/bootstrap/storage-sessions",
+      R"({"deployment_id":"prod","storage_name":"bareos-sd","ttl_seconds":600})");
+  ASSERT_EQ(create_response.status_code, 201u) << create_response.body;
+  auto create_json = ParseJson(create_response.body);
+  ASSERT_NE(create_json.get(), nullptr) << create_response.body;
+  auto* created
+      = json_object_get(create_json.get(), "storage_bootstrap_session");
+  ASSERT_TRUE(json_is_object(created));
+  auto* session_id = json_object_get(created, "id");
+  ASSERT_TRUE(json_is_string(session_id));
+
+  const std::string session_id_text{json_string_value(session_id)};
+  const auto launch_response = server.Post(
+      std::string{"/v1/bootstrap/storage-sessions/"} + session_id_text
+          + "/launch-local",
+      R"({"bootstrap_url":"http://127.0.0.1:18080/api/bconfig/v1"})");
+  ASSERT_EQ(launch_response.status_code, 200u) << launch_response.body;
+
+  std::string discovery_command;
+  for (int attempt = 0; attempt < 40; ++attempt) {
+    if (std::filesystem::exists(discovery_log)) {
+      discovery_command = ReadTextFile(discovery_log);
+      if (!discovery_command.empty()) { break; }
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(25));
+  }
+
+  EXPECT_NE(discovery_command.find("--discovery"), std::string::npos);
+  EXPECT_NE(discovery_command.find(
+                "--bootstrap-url http://127.0.0.1:18080/api/bconfig/v1"),
+            std::string::npos);
+  EXPECT_NE(discovery_command.find("--bootstrap-session " + session_id_text),
+            std::string::npos);
 #endif
 }
 

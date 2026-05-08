@@ -58,6 +58,7 @@ const DEFAULT_SELFTEST_PATH = '/usr/sbin'
 const DEFAULT_RESTORE_PATH = '/tmp/bareos-restores'
 const DEFAULT_CATALOG_DB_NAME = 'bareos'
 const DEFAULT_CATALOG_DB_USER = 'bareos'
+const STORAGE_BOOTSTRAP_POLL_ATTEMPTS = 120
 
 function readSetupRuntimeConfig() {
   const config = globalThis.__BAREOS_SETUP_DEFAULTS__
@@ -291,7 +292,12 @@ export function buildInitialSetupRequests(spec) {
   const directorWorkingDirectory = runtimeRoot
   const storageWorkingDirectory = runtimeRoot
   const clientWorkingDirectory = runtimeRoot
-  const storageArchiveDirectory = `${runtimeRoot}/storage`
+  const storageArchiveDirectory = String(
+    spec.storageArchivePath || `${runtimeRoot}/storage`
+  ).trim()
+  const storageDaemonAddress = String(
+    spec.storageDaemonAddress || spec.daemonAddress
+  ).trim()
   const bootstrapFile = `${runtimeRoot}/%c.bsr`
   const catalogDumpFile = `${runtimeRoot}/${DEFAULT_CATALOG_DB_NAME}.sql`
   const catalogConfigPath = spec.repositoryPath || '/usr/local/etc/bareos'
@@ -432,7 +438,7 @@ export function buildInitialSetupRequests(spec) {
     {
       path: `/deployments/${deploymentId}/storages/${storageName}`,
       body: {
-        address: spec.daemonAddress,
+        address: storageDaemonAddress,
         port: storagePort,
         working_directory: storageWorkingDirectory,
         messages: 'Standard',
@@ -493,7 +499,7 @@ export function buildInitialSetupRequests(spec) {
     {
       path: `/deployments/${deploymentId}/directors/${directorName}/storages/${defaultDirectorStorageName}`,
       body: {
-        address: spec.daemonAddress,
+        address: storageDaemonAddress,
         port: storagePort,
         password: storageDirectorPassword,
         device: DEFAULT_STORAGE_DEVICE_NAME,
@@ -702,6 +708,38 @@ async function waitForJob(
   throw new Error(`${failureMessage} timed out`)
 }
 
+async function waitForStorageBootstrap(
+  sessionId,
+  failureMessage,
+  attempts = STORAGE_BOOTSTRAP_POLL_ATTEMPTS,
+  onProgress = null
+) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const payload = await requestBconfig(
+      `/bootstrap/storage-sessions/${encodeURIComponent(sessionId)}`
+    )
+    const session = payload?.storage_bootstrap_session
+
+    if (!session) {
+      throw new Error('Storage bootstrap request did not return a session record')
+    }
+
+    onProgress?.(session)
+
+    if (session.status === 'applied') {
+      return session
+    }
+
+    if (['failed', 'expired'].includes(session.status)) {
+      throw new Error(session.last_error || failureMessage)
+    }
+
+    await sleep(JOB_POLL_INTERVAL_MS)
+  }
+
+  throw new Error(`${failureMessage} timed out`)
+}
+
 export const useSetupStore = defineStore('setup', () => {
   const mode = ref('unknown')
   const deployments = ref([])
@@ -788,7 +826,9 @@ export const useSetupStore = defineStore('setup', () => {
     completed.value = false
     error.value = null
     clearProgress()
-    clearStorageBootstrapState()
+    if (!String(spec.storageBootstrapSessionId ?? '').trim()) {
+      clearStorageBootstrapState()
+    }
 
     try {
       updateProgress('Creating deployment repository')
@@ -819,6 +859,43 @@ export const useSetupStore = defineStore('setup', () => {
           body: request.body,
         })
         appendProgress(`Applied ${request.path}`)
+      }
+
+      const localDaemonComponents = Array.isArray(spec.localDaemonComponents)
+        ? spec.localDaemonComponents
+        : null
+      const pendingStorageSelection = (
+        String(spec.storageBootstrapSessionId ?? '').trim()
+        && String(spec.storageBootstrapSelection?.archive_path ?? '').trim()
+      )
+        ? spec.storageBootstrapSelection
+        : null
+
+      if (pendingStorageSelection) {
+        updateProgress('Bootstrapping storage daemon')
+        appendProgress('Bootstrapping storage daemon')
+
+        if (storageBootstrapSession.value?.selection?.archive_path !== pendingStorageSelection.archive_path) {
+          appendProgress(`Submitting detected archive path ${pendingStorageSelection.archive_path}`)
+          await submitStorageBootstrapSelection(
+            spec.storageBootstrapSessionId,
+            pendingStorageSelection
+          )
+        }
+
+        let storageBootstrapLogStatus = null
+        await waitForStorageBootstrap(
+          spec.storageBootstrapSessionId,
+          'Storage daemon bootstrap failed',
+          STORAGE_BOOTSTRAP_POLL_ATTEMPTS,
+          session => {
+            storageBootstrapSession.value = session
+            if (session.status && session.status !== storageBootstrapLogStatus) {
+              storageBootstrapLogStatus = session.status
+              appendProgress(`Storage bootstrap status: ${session.status}`)
+            }
+          }
+        )
       }
 
       updateProgress('Validating generated configuration')
@@ -888,6 +965,7 @@ export const useSetupStore = defineStore('setup', () => {
         body: {
           type: 'smoke_test_deployment',
           deployment_id: spec.deploymentId,
+          components: localDaemonComponents,
         },
       })
       const smokeTestJobId = smokeTestJobPayload?.job?.id
@@ -917,6 +995,7 @@ export const useSetupStore = defineStore('setup', () => {
         body: {
           type: 'start_deployment_daemons',
           deployment_id: spec.deploymentId,
+          components: localDaemonComponents,
         },
       })
       const startDaemonsJobId = startDaemonsJobPayload?.job?.id
@@ -1032,6 +1111,37 @@ export const useSetupStore = defineStore('setup', () => {
     }
   }
 
+  async function launchLocalStorageBootstrap(sessionId, bootstrapUrl) {
+    if (!String(sessionId ?? '').trim()) {
+      throw new Error('Storage bootstrap session id is required')
+    }
+    if (!String(bootstrapUrl ?? '').trim()) {
+      throw new Error('Storage bootstrap url is required')
+    }
+
+    storageBootstrapLoading.value = true
+    storageBootstrapError.value = null
+
+    try {
+      const payload = await requestBconfig(
+        `/bootstrap/storage-sessions/${encodeURIComponent(sessionId)}/launch-local`,
+        {
+          method: 'POST',
+          body: {
+            bootstrap_url: bootstrapUrl,
+          },
+        }
+      )
+      storageBootstrapSession.value = payload?.storage_bootstrap_session ?? null
+      return storageBootstrapSession.value
+    } catch (e) {
+      storageBootstrapError.value = e?.message ?? String(e)
+      throw e
+    } finally {
+      storageBootstrapLoading.value = false
+    }
+  }
+
   return {
     mode,
     deployments,
@@ -1049,8 +1159,10 @@ export const useSetupStore = defineStore('setup', () => {
     isReady,
     refresh,
     createInitialDeployment,
+    clearStorageBootstrapState,
     createStorageBootstrapSession,
     refreshStorageBootstrapSession,
     submitStorageBootstrapSelection,
+    launchLocalStorageBootstrap,
   }
 })
