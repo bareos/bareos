@@ -1,0 +1,13 @@
+Job {
+  Name = "backup-bareos-fd"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+
+  RunScript {
+    Command = "bash -c @CMAKE_CURRENT_BINARY_DIR@/after-job.sh"
+    RunsWhen = After
+    RunsOnFailure = Yes
+    FailJobOnError = Yes
+    RunsOnClient = No
+  }
+}
