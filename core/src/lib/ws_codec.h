@@ -76,6 +76,7 @@ class WsCodec {
   bool closed_ = false;
   std::chrono::milliseconds io_timeout_;
   std::chrono::milliseconds handshake_timeout_;
+  std::string pending_input_;
 
   // Frame encode/decode
   struct Frame {

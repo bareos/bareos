@@ -172,6 +172,28 @@ TEST(WsCodec, HandshakeAcceptsVersion13Request)
             std::string::npos);
 }
 
+TEST(WsCodec, HandshakePreservesBufferedFrameData)
+{
+  SocketPair sockets;
+  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
+                std::chrono::milliseconds(50));
+
+  const unsigned char masked_text_frame[] = {
+      0x81u, 0x81u, 0x01u, 0x02u, 0x03u, 0x04u, 0x40u,
+  };
+
+  std::string request(kValidHandshakeRequest);
+  request.append(reinterpret_cast<const char*>(masked_text_frame),
+                 sizeof(masked_text_frame));
+  WriteAll(sockets.peer(), request.data(), request.size());
+
+  EXPECT_NO_THROW(codec.Handshake());
+  const auto response = ReadSome(sockets.peer());
+  EXPECT_NE(response.find("HTTP/1.1 101 Switching Protocols"),
+            std::string::npos);
+  EXPECT_EQ(codec.RecvMessage(), "A");
+}
+
 TEST(WsCodec, RecvMessageTimesOutWhenFramePayloadStalls)
 {
   SocketPair sockets;
