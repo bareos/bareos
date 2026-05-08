@@ -34,8 +34,8 @@ target_include_directories(
 )
 
 target_link_libraries(
-  bareos-webui-proxy PRIVATE OpenSSL::SSL OpenSSL::Crypto Jansson::Jansson
-                             Threads::Threads CLI11::CLI11
+  bareos-webui-proxy PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto
+                             Jansson::Jansson Threads::Threads CLI11::CLI11
 )
 
 configure_file(
@@ -86,8 +86,9 @@ if(BUILD_TESTING AND GTest_FOUND)
                              "${CMAKE_CURRENT_SOURCE_DIR}/../lib"
   )
   target_link_libraries(
-    test_webui_proxy PRIVATE OpenSSL::SSL OpenSSL::Crypto Jansson::Jansson
-                             GTest::gtest GTest::gtest_main Threads::Threads
+    test_webui_proxy
+    PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto Jansson::Jansson
+            GTest::gtest GTest::gtest_main Threads::Threads
   )
   gtest_discover_tests(test_webui_proxy)
 endif()

@@ -22,11 +22,7 @@
  * @file
  * Bareos-specific base64 encoding used in CRAM-MD5 authentication.
  *
- * This is a port of BinToBase64(..., compatible=false) from
- * core/src/lib/base64.cc.  The "not compatible" variant uses signed
- * byte interpretation (int8_t) instead of unsigned (uint8_t) when
- * building the bit register.  This produces different output from
- * standard RFC 4648 base64 for any byte value >= 128.
+ * This is a small std::string wrapper around libbareos BinToBase64().
  */
 #ifndef BAREOS_WEBUI_PROXY_BAREOS_BASE64_H_
 #define BAREOS_WEBUI_PROXY_BAREOS_BASE64_H_
