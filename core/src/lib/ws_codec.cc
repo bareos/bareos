@@ -48,6 +48,7 @@ static constexpr uint8_t kOpClose = 0x8;
 static constexpr uint8_t kOpPing = 0x9;
 static constexpr uint8_t kOpPong = 0xA;
 static constexpr size_t kMaxHttpHeaderSize = 16384;
+static constexpr size_t kHandshakeReadChunkSize = 1024;
 static constexpr std::string_view kSupportedWsVersion = "13";
 
 // ---------------------------------------------------------------------------
@@ -110,12 +111,21 @@ void WriteAll(int fd, const void* buf, size_t len, Clock::time_point deadline)
 }
 
 void ReadAll(int fd,
+             std::string& pending_input,
              void* buf,
              size_t len,
              Clock::time_point deadline,
              std::string_view action)
 {
   auto* p = static_cast<uint8_t*>(buf);
+  if (!pending_input.empty()) {
+    const auto buffered = std::min(len, pending_input.size());
+    std::memcpy(p, pending_input.data(), buffered);
+    pending_input.erase(0, buffered);
+    p += buffered;
+    len -= buffered;
+  }
+
   while (len > 0) {
     WaitForSocket(fd, POLLIN, deadline, action);
     const ssize_t n = ::recv(fd, p, len, 0);
@@ -130,6 +140,34 @@ void ReadAll(int fd,
     }
     p += n;
     len -= static_cast<size_t>(n);
+  }
+}
+
+size_t ReadChunk(int fd,
+                 std::string& target,
+                 Clock::time_point deadline,
+                 std::string_view action,
+                 size_t chunk_size = kHandshakeReadChunkSize)
+{
+  WaitForSocket(fd, POLLIN, deadline, action);
+  const auto original_size = target.size();
+  target.resize(original_size + chunk_size);
+
+  while (true) {
+    const ssize_t n = ::recv(fd, target.data() + original_size, chunk_size, 0);
+    if (n < 0) {
+      if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+        continue;
+      }
+      target.resize(original_size);
+      throw std::runtime_error("WebSocket: recv failed");
+    }
+    if (n == 0) {
+      target.resize(original_size);
+      throw std::runtime_error("WebSocket: connection closed by peer");
+    }
+    target.resize(original_size + static_cast<size_t>(n));
+    return static_cast<size_t>(n);
   }
 }
 
@@ -267,12 +305,15 @@ void WsCodec::Handshake()
   const auto deadline = MakeDeadline(handshake_timeout_);
   std::string headers;
   headers.reserve(1024);
-  char ch;
   while (true) {
-    ReadAll(fd_, &ch, 1, deadline, "read handshake data");
-    headers.push_back(ch);
-    if (headers.ends_with("\r\n\r\n")) { break; }
-    if (headers.size() > kMaxHttpHeaderSize) {
+    ReadChunk(fd_, pending_input_, deadline, "read handshake data");
+    const auto header_end = pending_input_.find("\r\n\r\n");
+    if (header_end != std::string::npos) {
+      headers.assign(pending_input_.data(), header_end + 4);
+      pending_input_.erase(0, header_end + 4);
+      break;
+    }
+    if (pending_input_.size() > kMaxHttpHeaderSize) {
       throw std::runtime_error("WebSocket: HTTP headers too large");
     }
   }
@@ -337,32 +378,35 @@ WsCodec::Frame WsCodec::RecvFrame()
   Frame f;
 
   uint8_t b0;
-  ReadAll(fd_, &b0, 1, deadline, "read websocket frame");
+  ReadAll(fd_, pending_input_, &b0, 1, deadline, "read websocket frame");
   f.fin = (b0 & 0x80u) != 0;
   f.opcode = b0 & 0x0Fu;
 
   uint8_t b1;
-  ReadAll(fd_, &b1, 1, deadline, "read websocket frame");
+  ReadAll(fd_, pending_input_, &b1, 1, deadline, "read websocket frame");
   bool masked = (b1 & 0x80u) != 0;
   uint64_t payload_len = b1 & 0x7Fu;
 
   if (payload_len == 126) {
     uint8_t ext[2];
-    ReadAll(fd_, ext, 2, deadline, "read websocket frame");
+    ReadAll(fd_, pending_input_, ext, 2, deadline, "read websocket frame");
     payload_len = (static_cast<uint64_t>(ext[0]) << 8) | ext[1];
   } else if (payload_len == 127) {
     uint8_t ext[8];
-    ReadAll(fd_, ext, 8, deadline, "read websocket frame");
+    ReadAll(fd_, pending_input_, ext, 8, deadline, "read websocket frame");
     payload_len = 0;
     for (int i = 0; i < 8; ++i) { payload_len = (payload_len << 8) | ext[i]; }
   }
 
   uint8_t mask[4] = {};
-  if (masked) { ReadAll(fd_, mask, 4, deadline, "read websocket frame"); }
+  if (masked) {
+    ReadAll(fd_, pending_input_, mask, 4, deadline, "read websocket frame");
+  }
 
   if (payload_len > 0) {
     f.payload.resize(static_cast<size_t>(payload_len));
-    ReadAll(fd_, f.payload.data(), static_cast<size_t>(payload_len), deadline,
+    ReadAll(fd_, pending_input_, f.payload.data(),
+            static_cast<size_t>(payload_len), deadline,
             "read websocket frame payload");
     if (masked) {
       for (size_t i = 0; i < f.payload.size(); ++i) {
