@@ -300,6 +300,31 @@ static std::string ComputeAcceptKey(std::string_view client_key)
   return Base64Encode(sha1, sha1_len);
 }
 
+WsCodec::WsCodec(int fd,
+                 std::chrono::milliseconds io_timeout,
+                 std::chrono::milliseconds handshake_timeout,
+                 size_t max_frame_payload_size,
+                 size_t max_message_size)
+    : fd_(fd)
+    , io_timeout_(io_timeout)
+    , handshake_timeout_(handshake_timeout)
+    , max_frame_payload_size_(max_frame_payload_size)
+    , max_message_size_(max_message_size)
+{
+}
+
+WsCodec WsCodec::Accept(int fd,
+                        std::chrono::milliseconds io_timeout,
+                        std::chrono::milliseconds handshake_timeout,
+                        size_t max_frame_payload_size,
+                        size_t max_message_size)
+{
+  WsCodec codec(fd, io_timeout, handshake_timeout, max_frame_payload_size,
+                max_message_size);
+  codec.Handshake();
+  return codec;
+}
+
 void WsCodec::Handshake()
 {
   const auto deadline = MakeDeadline(handshake_timeout_);
