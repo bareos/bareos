@@ -17,7 +17,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-*/
+ */
 /**
  * @file
  * bareos-webui-proxy — C++ drop-in replacement for director_ws_proxy.py.
@@ -26,13 +26,15 @@
  *
  * CLI flags:
  *   --config <path>
+ *   --log-file <path>
+ *   --log-level <debug|info|warn|error>
  */
 
+#include "proxy_log.h"
 #include "proxy_server.h"
 
 #include <CLI/CLI.hpp>
 #include <csignal>
-#include <cstdio>
 #include <stdexcept>
 #include <string>
 
@@ -47,26 +49,41 @@ int main(int argc, char* argv[])
 {
   CLI::App app{"Bareos Director WebSocket Proxy"};
   std::string config_file = WEBUI_PROXY_DEFAULT_CONFIG_PATH;
+  std::string log_file;
+  std::string log_level = "info";
   app.add_option("--config", config_file,
                  "Proxy config file (default: " WEBUI_PROXY_DEFAULT_CONFIG_PATH
                  ")");
+  app.add_option("--log-file", log_file, "Append proxy logs to this file");
+  app.add_option("--log-level", log_level,
+                 "Minimum proxy log level: debug, info, warn, error");
 
   CLI11_PARSE(app, argc, argv);
 
-  ProxyConfig cfg;
-  LoadProxyConfigFile(config_file, cfg);
-
-  std::signal(SIGINT, HandleSignal);
-  std::signal(SIGTERM, HandleSignal);
-  std::signal(SIGPIPE, SIG_IGN);  // prevent crash on broken pipe
-
-  ProxyServer server(cfg);
-  g_server = &server;
-
   try {
+    ProxyLogLevel min_level;
+    if (!ParseProxyLogLevel(log_level, min_level)) {
+      throw CLI::ValidationError("--log-level",
+                                 "must be one of: debug, info, warn, error");
+    }
+
+    ProxyLoggerConfig logger_cfg;
+    logger_cfg.min_level = min_level;
+    logger_cfg.log_file = log_file;
+    ConfigureProxyLogger(logger_cfg);
+
+    ProxyConfig cfg;
+    LoadProxyConfigFile(config_file, cfg);
+
+    std::signal(SIGINT, HandleSignal);
+    std::signal(SIGTERM, HandleSignal);
+    std::signal(SIGPIPE, SIG_IGN);  // prevent crash on broken pipe
+
+    ProxyServer server(cfg);
+    g_server = &server;
     server.Run();
   } catch (const std::exception& ex) {
-    fprintf(stderr, "[proxy] fatal: %s\n", ex.what());
+    PROXY_LOG_ERROR("", "fatal: %s", ex.what());
     return 1;
   }
 

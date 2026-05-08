@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 #include "proxy_server.h"
+#include "proxy_log.h"
 #include "proxy_session.h"
 
 #include <cstdio>
@@ -119,10 +120,9 @@ void ProxyServer::Run()
                              + cfg_.bind_host + ":" + port_str);
   }
 
-  fprintf(stderr, "[proxy] listening on ws://%s:%d (%zu socket(s))\n",
-          cfg_.bind_host.c_str(), cfg_.port, listen_fds_.size());
-  fprintf(stderr, "[proxy] allowed directors: %zu\n",
-          cfg_.allowed_directors.size());
+  PROXY_LOG_INFO("", "listening on ws://%s:%d (%zu socket(s))",
+                 cfg_.bind_host.c_str(), cfg_.port, listen_fds_.size());
+  PROXY_LOG_INFO("", "allowed directors: %zu", cfg_.allowed_directors.size());
 
   // Accept loop: poll all listen sockets, accept on whichever is ready.
   while (true) {
@@ -158,7 +158,7 @@ void ProxyServer::Run()
           continue;
         }
         if (IsTransientAcceptError(errno)) { continue; }
-        fprintf(stderr, "[proxy] accept failed: %s\n", std::strerror(errno));
+        PROXY_LOG_ERROR("", "accept failed: %s", std::strerror(errno));
         any_closed = true;
         continue;
       }
@@ -178,11 +178,9 @@ void ProxyServer::Run()
         try {
           RunProxySession(cfd, peer, cfg);
         } catch (const std::exception& ex) {
-          fprintf(stderr, "[proxy] %s session aborted: %s\n", peer.c_str(),
-                  ex.what());
+          PROXY_LOG_ERROR(peer, "session aborted: %s", ex.what());
         } catch (...) {
-          fprintf(stderr, "[proxy] %s session aborted (unknown exception)\n",
-                  peer.c_str());
+          PROXY_LOG_ERROR(peer, "session aborted (unknown exception)");
         }
       }).detach();
     }
@@ -191,5 +189,5 @@ void ProxyServer::Run()
   }
 
   CleanupSockets();
-  fprintf(stderr, "[proxy] accept loop exited\n");
+  PROXY_LOG_INFO("", "accept loop exited");
 }
