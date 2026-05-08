@@ -120,8 +120,10 @@ tls_psk_disable = ${proxy_tls_psk_disable}
 END_OF_PROXY_CONFIG
 
 pushd "${CMAKE_SOURCE_DIR}/webui-vue" >/dev/null
-if ! [ -x node_modules/.bin/playwright ] || ! [ -x node_modules/.bin/vitest ]; then
-  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 "${NPM_EXECUTABLE}" ci >"${tmp}/webui-vue-npm-ci.out" 2>&1
+if ! [ -x node_modules/.bin/playwright ] || ! [ -x node_modules/.bin/vite ]; then
+  set_error \
+    "Missing webui-vue npm dependencies. Install them before configuring and running the Playwright systemtests."
+  exit 1
 fi
 
 "${NPM_EXECUTABLE}" run generate:version >"${tmp}/webui-vue-generate-version.out" 2>&1
