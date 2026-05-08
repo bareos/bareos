@@ -14,8 +14,7 @@ find_package(Jansson REQUIRED)
 
 set(PROXY_SOURCES
     main.cc bareos_base64.cc director_connection.cc proxy_config.cc
-    proxy_log.cc "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc"
-    proxy_session.cc proxy_server.cc
+    proxy_log.cc proxy_session.cc proxy_server.cc ws_codec.cc
 )
 
 add_executable(bareos-webui-proxy ${PROXY_SOURCES})
@@ -74,7 +73,7 @@ if(BUILD_TESTING AND GTest_FOUND)
     tests/test_proxy_session.cc
     tests/test_ws_codec.cc
     proxy_session.cc
-    "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc"
+    ws_codec.cc
     ${PROXY_LIB_SOURCES}
   )
   target_compile_features(test_webui_proxy PRIVATE cxx_std_20)
