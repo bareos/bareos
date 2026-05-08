@@ -20,6 +20,7 @@
 */
 #include "proxy_session.h"
 #include "director_connection.h"
+#include "proxy_log.h"
 #include "ws_codec.h"
 
 #include <cstdio>
@@ -154,14 +155,13 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     ~FdGuard() { ::close(fd); }
   } guard{fd};
 
-  fprintf(stderr, "[proxy] connected: %s\n", peer.c_str());
+  PROXY_LOG_INFO(peer, "connected");
 
   WsCodec ws(fd);
   try {
     ws.Handshake();
   } catch (const std::exception& ex) {
-    fprintf(stderr, "[proxy] %s WS handshake failed: %s\n", peer.c_str(),
-            ex.what());
+    PROXY_LOG_WARN(peer, "WS handshake failed: %s", ex.what());
     return;
   }
 
@@ -170,12 +170,12 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   try {
     raw_auth = ws.RecvMessage();
   } catch (const std::exception& ex) {
-    fprintf(stderr, "[proxy] %s recv auth: %s\n", peer.c_str(), ex.what());
+    PROXY_LOG_WARN(peer, "recv auth: %s", ex.what());
     return;
   }
 
   if (raw_auth.empty()) {
-    fprintf(stderr, "[proxy] %s: WS closed before auth\n", peer.c_str());
+    PROXY_LOG_INFO(peer, "WS closed before auth");
     return;
   }
 
@@ -241,9 +241,9 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
   json_decref(auth_msg);
 
-  fprintf(stderr, "[proxy] %s auth: user=%s director=%s host=%s:%d mode=%s\n",
-          peer.c_str(), cfg.username.c_str(), cfg.director_name.c_str(),
-          cfg.host.c_str(), cfg.port, mode.c_str());
+  PROXY_LOG_INFO(peer, "auth: user=%s director=%s host=%s:%d mode=%s",
+                 cfg.username.c_str(), cfg.director_name.c_str(),
+                 cfg.host.c_str(), cfg.port, mode.c_str());
 
   // ── Step 2: connect and authenticate to director ─────────────────────────
   DirectorConnection director;
@@ -251,7 +251,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     director.Connect(cfg);
   } catch (const std::exception& ex) {
     std::string msg = ex.what();
-    fprintf(stderr, "[proxy] %s auth failed: %s\n", peer.c_str(), ex.what());
+    PROXY_LOG_WARN(peer, "auth failed: %s", ex.what());
     try {
       if (msg.find("authentication failed") != std::string::npos
           || msg.find("Authorization failed") != std::string::npos) {
@@ -272,8 +272,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   const char* director_transport
       = director.UsesTlsPsk() ? "TLS-PSK" : "cleartext";
 
-  fprintf(stderr, "[proxy] %s director transport: %s\n", peer.c_str(),
-          director_transport);
+  PROXY_LOG_INFO(peer, "director transport: %s", director_transport);
 
   // Build auth_ok response
   {
@@ -293,10 +292,9 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     free(ok_str);
   }
 
-  fprintf(stderr,
-          "[proxy] %s authenticated as %s on %s (mode=%s, transport=%s)\n",
-          peer.c_str(), cfg.username.c_str(), cfg.director_name.c_str(),
-          mode.c_str(), director_transport);
+  PROXY_LOG_INFO(peer, "authenticated as %s on %s (mode=%s, transport=%s)",
+                 cfg.username.c_str(), cfg.director_name.c_str(), mode.c_str(),
+                 director_transport);
 
   // ── Step 3: command loop ─────────────────────────────────────────────────
   auto current_prompt = DirectorPrompt::Main;
@@ -305,7 +303,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     try {
       raw_msg = ws.RecvMessage();
     } catch (const std::exception& ex) {
-      fprintf(stderr, "[proxy] %s recv: %s\n", peer.c_str(), ex.what());
+      PROXY_LOG_WARN(peer, "recv: %s", ex.what());
       break;
     }
 
@@ -343,8 +341,8 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
     if (command.empty()) { continue; }
 
-    fprintf(stderr, "[proxy] %s command [id=%s]: %s\n", peer.c_str(),
-            req_id.c_str(), command.c_str());
+    PROXY_LOG_INFO(peer, "command [id=%s]: %s", req_id.c_str(),
+                   command.c_str());
 
     auto prompt_to_string = [](DirectorPrompt prompt) {
       switch (prompt) {
@@ -489,8 +487,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
       json_object_set_new(err, "message", json_string(ex.what()));
       char* err_str = json_dumps(err, JSON_COMPACT);
       json_decref(err);
-      fprintf(stderr, "[proxy] %s director error: %s\n", peer.c_str(),
-              ex.what());
+      PROXY_LOG_ERROR(peer, "director error: %s", ex.what());
       try {
         ws.SendText(std::string(err_str));
       } catch (...) {
@@ -501,5 +498,5 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     }
   }
 
-  fprintf(stderr, "[proxy] session ended: %s\n", peer.c_str());
+  PROXY_LOG_INFO(peer, "session ended");
 }
