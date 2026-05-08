@@ -2,11 +2,10 @@
 #
 # [listen] configures where the proxy accepts WebSocket connections.
 # Each [director:<id>] section defines one Bareos Director the proxy may use.
-# If exactly one director is configured, it is used automatically.
-# If multiple directors are configured, the WebUI must select one by id.
+# The WebUI must select a configured director by id.
 [listen]
 ws_host = localhost
-ws_port = 8765
+ws_port = 9104
 
 [director:bareos-dir]
 host = localhost

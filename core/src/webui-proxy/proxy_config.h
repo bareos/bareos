@@ -36,7 +36,7 @@ struct DirectorTargetConfig {
 
 struct ProxyConfig {
   std::string bind_host{"localhost"};
-  int port{8765};
+  int port{9104};
   std::map<std::string, DirectorTargetConfig> allowed_directors;
 };
 
@@ -45,9 +45,7 @@ void LoadProxyConfigFromString(const std::string& ini, ProxyConfig& cfg);
 
 DirectorTargetConfig ResolveDirectorTarget(
     const ProxyConfig& cfg,
-    const std::optional<std::string>& requested_director,
-    const std::optional<std::string>& requested_host,
-    const std::optional<int>& requested_port);
+    const std::optional<std::string>& requested_director);
 
 std::vector<std::string> GetAllowedDirectorIds(const ProxyConfig& cfg);
 
