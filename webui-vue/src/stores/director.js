@@ -37,6 +37,7 @@ export const useDirectorStore = defineStore('director', () => {
   const errorMsg = ref(null)
   const transport = ref(null)
   const availableDirectors = ref([])
+  const availableDirectorsLoaded = ref(false)
 
   const isConnected = computed(() => status.value === 'connected')
 
@@ -48,6 +49,7 @@ export const useDirectorStore = defineStore('director', () => {
   let _manualDisconnect = false
   let _hasAuthenticated = false
   let _lastCredentials = null
+  let _availableDirectorsPromise = null
 
   // ── internal helpers ────────────────────────────────────────────────────────
 
@@ -143,12 +145,32 @@ export const useDirectorStore = defineStore('director', () => {
     }
   }
 
-  function fetchAvailableDirectors() {
-    return new Promise((resolve, reject) => {
+  function fetchAvailableDirectors(options = {}) {
+    if (!options.forceReload) {
+      if (availableDirectorsLoaded.value) {
+        return Promise.resolve([...availableDirectors.value])
+      }
+
+      if (_availableDirectorsPromise) {
+        return _availableDirectorsPromise
+      }
+    }
+
+    _availableDirectorsPromise = new Promise((resolve, reject) => {
       const sock = new WebSocket(WS_URL)
-      const timer = setTimeout(() => {
+      let settled = false
+      const finish = (handler, value) => {
+        if (settled) {
+          return
+        }
+        settled = true
+        clearTimeout(timer)
+        _availableDirectorsPromise = null
         sock.close()
-        reject(new Error('Timed out while loading directors'))
+        handler(value)
+      }
+      const timer = setTimeout(() => {
+        finish(reject, new Error('Timed out while loading directors'))
       }, DIRECTOR_LIST_TIMEOUT_MS)
 
       sock.onopen = () => {
@@ -158,34 +180,30 @@ export const useDirectorStore = defineStore('director', () => {
       sock.onmessage = (event) => {
         let msg
         try { msg = JSON.parse(event.data) } catch {
-          clearTimeout(timer)
-          sock.close()
-          reject(new Error('Invalid director list response'))
+          finish(reject, new Error('Invalid director list response'))
           return
         }
 
         if (msg.type !== 'director_list' || !Array.isArray(msg.directors)) {
-          clearTimeout(timer)
-          sock.close()
-          reject(new Error(msg.message ?? 'Failed to load directors'))
+          finish(reject, new Error(msg.message ?? 'Failed to load directors'))
           return
         }
 
         availableDirectors.value = [...msg.directors]
-        clearTimeout(timer)
-        sock.close()
-        resolve(availableDirectors.value)
+        availableDirectorsLoaded.value = true
+        finish(resolve, [...availableDirectors.value])
       }
 
       sock.onerror = () => {
-        clearTimeout(timer)
-        reject(new Error(`Cannot connect to proxy at ${WS_URL}`))
+        finish(reject, new Error(`Cannot connect to proxy at ${WS_URL}`))
       }
 
       sock.onclose = () => {
         clearTimeout(timer)
       }
     })
+
+    return _availableDirectorsPromise
   }
 
   // ── public API ──────────────────────────────────────────────────────────────
