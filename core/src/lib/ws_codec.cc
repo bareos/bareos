@@ -377,6 +377,12 @@ WsCodec::Frame WsCodec::RecvFrame()
   const auto deadline = MakeDeadline(io_timeout_);
   Frame f;
 
+  // RFC 6455 §5.2 frame header layout:
+  // https://datatracker.ietf.org/doc/html/rfc6455#section-5.2
+  // - byte 0 carries FIN and the opcode
+  // - byte 1 carries MASK and the 7-bit payload length
+  // - payload lengths 126 and 127 add 16-bit or 64-bit extended lengths
+  // - client-to-server frames must include the masking key
   uint8_t b0;
   ReadAll(fd_, pending_input_, &b0, 1, deadline, "read websocket frame");
   f.fin = (b0 & 0x80u) != 0;
