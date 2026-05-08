@@ -522,14 +522,24 @@
                   </q-item>
                 </template>
               </q-select>
-              <q-input v-model="rerunJobId" :label="t('Job ID *')" outlined dense
-                        type="number" style="max-width:180px"
-                        :hint="isCommonJobs
-                          ? t('Enter the ID of any completed job from the selected director')
-                          : t('Enter the ID of any completed job')" />
+              <q-input
+                v-model="rerunJobId"
+                :label="t('Job ID *')"
+                outlined
+                dense
+                type="number"
+                min="1"
+                step="1"
+                style="max-width:180px"
+                :hint="isCommonJobs
+                  ? t('Enter the ID of any completed job from the selected director')
+                  : t('Enter the ID of any completed job')"
+                :error="Boolean(rerunJobIdError)"
+                :error-message="rerunJobIdError"
+              />
               <div>
                 <q-btn type="submit" color="primary" :label="t('Rerun')" icon="restart_alt"
-                        no-caps :loading="rerunLoading" :disable="!rerunJobId" />
+                        no-caps :loading="rerunLoading" :disable="!rerunJobIdValue" />
               </div>
             </q-form>
           </q-card-section>
@@ -616,6 +626,7 @@ import {
   buildJobDetailsQuery,
   encodeJobsLevelFilters,
   encodeJobsStatusFilters,
+  normaliseJobId,
   resolveJobsLevelFilters,
   resolveJobsSearchQuery,
   resolveJobsScopeDirector,
@@ -1271,14 +1282,25 @@ function confirmRerun(job) {
 async function doRerun(job) {
   try {
     await switchToJobDirector(job)
-    const jobId = typeof job === 'object' ? job.id : job
+    const jobId = normaliseJobId(typeof job === 'object' ? job.id : job)
+    if (jobId === null) {
+      throw new Error(t('Job ID must be a positive integer.'))
+    }
+
+    if (!(typeof job === 'object' && job?.name)) {
+      const lookup = await director.call(`llist jobid=${jobId}`)
+      if (directorCollection(lookup?.jobs).length === 0) {
+        throw new Error(`${t('Job')} ${jobId} ${t('was not found.')}`)
+      }
+    }
+
     const res = await director.call(`rerun jobid=${jobId} yes`)
     const newId = res?.run?.jobid ?? res?.jobid ?? '?'
-    $q.notify({ type: 'positive', message: t('Job restarted as ID {id}.', { id: newId }) })
+    $q.notify({ type: 'positive', message: `${t('Job restarted as ID')} ${newId}.` })
     tab.value = 'list'
     refresh()
   } catch (e) {
-    $q.notify({ type: 'negative', message: t('Rerun failed: {message}', { message: e.message }) })
+    $q.notify({ type: 'negative', message: `${t('Rerun failed')}: ${e.message}` })
   }
 }
 
@@ -1418,15 +1440,27 @@ async function runJob() {
 // ── rerun tab ─────────────────────────────────────────────────────────────────
 const rerunJobId   = ref('')
 const rerunLoading = ref(false)
+const rerunJobIdValue = computed(() => normaliseJobId(rerunJobId.value))
+const rerunJobIdError = computed(() => {
+  if (rerunJobId.value === '' || rerunJobId.value === null) {
+    return ''
+  }
+
+  return rerunJobIdValue.value === null ? t('Enter a positive Job ID.') : ''
+})
 
 async function submitRerun() {
-  if (!rerunJobId.value) return
+  if (rerunJobIdValue.value === null) {
+    $q.notify({ type: 'negative', message: t('Enter a positive Job ID.') })
+    return
+  }
+
   rerunLoading.value = true
   try {
     const targetDirector = isCommonJobs.value
       ? await ensureSingletonTabDirector()
       : activeDirectors.value[0]
-    await doRerun({ id: rerunJobId.value, director: targetDirector })
+    await doRerun({ id: rerunJobIdValue.value, director: targetDirector })
     rerunJobId.value = ''
   } finally {
     rerunLoading.value = false

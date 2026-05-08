@@ -24,6 +24,7 @@ import {
   buildJobDetailsQuery,
   encodeJobsLevelFilters,
   encodeJobsStatusFilters,
+  normaliseJobId,
   normaliseJobLevelFilter,
   normaliseJobLevelFilters,
   normaliseJobStatusFilter,
@@ -58,6 +59,17 @@ describe('jobs filter helpers', () => {
     expect(normaliseJobLevelFilter('V')).toBe('V')
     expect(normaliseJobLevelFilter('Full')).toBe('')
     expect(normaliseJobLevelFilter(undefined)).toBe('')
+  })
+
+  it('accepts positive integer job ids only', () => {
+    expect(normaliseJobId(42)).toBe(42)
+    expect(normaliseJobId('42')).toBe(42)
+    expect(normaliseJobId(' 42 ')).toBe(42)
+    expect(normaliseJobId('0')).toBeNull()
+    expect(normaliseJobId('-1')).toBeNull()
+    expect(normaliseJobId('1.5')).toBeNull()
+    expect(normaliseJobId('abc')).toBeNull()
+    expect(normaliseJobId(undefined)).toBeNull()
   })
 
   it('normalizes and encodes multi-status filters', () => {
