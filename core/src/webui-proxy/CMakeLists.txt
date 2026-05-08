@@ -19,8 +19,6 @@ set(PROXY_SOURCES
 
 add_executable(bareos-webui-proxy ${PROXY_SOURCES})
 
-target_compile_features(bareos-webui-proxy PRIVATE cxx_std_20)
-
 target_compile_definitions(
   bareos-webui-proxy
   PRIVATE BAREOS_FULL_VERSION="${BAREOS_FULL_VERSION}"
@@ -76,7 +74,6 @@ if(BUILD_TESTING AND GTest_FOUND)
     ws_codec.cc
     ${PROXY_LIB_SOURCES}
   )
-  target_compile_features(test_webui_proxy PRIVATE cxx_std_20)
   target_compile_definitions(
     test_webui_proxy PRIVATE BAREOS_FULL_VERSION="${BAREOS_FULL_VERSION}"
   )
