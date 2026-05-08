@@ -55,6 +55,8 @@ using JsonPtr = std::unique_ptr<json_t, decltype(&json_decref)>;
 
 namespace {
 
+std::string QuoteShellArgument(std::string_view value);
+
 class ScopedDirectory {
  public:
   ScopedDirectory()
@@ -131,6 +133,31 @@ std::string ReadTextFile(const std::filesystem::path& path)
   std::ifstream stream(path, std::ios::binary);
   return {std::istreambuf_iterator<char>(stream),
           std::istreambuf_iterator<char>()};
+}
+
+std::string CreateFakeActivationCommand(
+    const std::filesystem::path& script_path,
+    const std::filesystem::path& log_path,
+    int exit_code)
+{
+  std::filesystem::create_directories(script_path.parent_path());
+  std::ofstream stream(script_path, std::ios::binary | std::ios::trunc);
+  stream << "#!/bin/sh\n"
+         << "printf '%s\\n' \"$*\" >> " << QuoteShellArgument(log_path.string())
+         << "\n"
+         << "exit " << exit_code << "\n";
+  stream.close();
+  std::filesystem::permissions(script_path,
+                               std::filesystem::perms::owner_read
+                                   | std::filesystem::perms::owner_write
+                                   | std::filesystem::perms::owner_exec
+                                   | std::filesystem::perms::group_read
+                                   | std::filesystem::perms::group_exec
+                                   | std::filesystem::perms::others_read
+                                   | std::filesystem::perms::others_exec,
+                               std::filesystem::perm_options::replace);
+  return QuoteShellArgument(script_path.string())
+         + " enable --now bareos-sd.service";
 }
 
 #if defined(HAVE_LINUX_OS)
@@ -568,6 +595,7 @@ TEST(SdBootstrap, InstallsBootstrapConfigBundleAndReportsApplySuccess)
 {
   ScopedDirectory config_root;
   ScopedDirectory working_directory;
+  ScopedDirectory activation_root;
   FakeBootstrapServer server{
       BuildConfigBundleResponse(working_directory.path())};
   ScopedEnvironmentVariable config_root_override{
@@ -581,6 +609,11 @@ TEST(SdBootstrap, InstallsBootstrapConfigBundleAndReportsApplySuccess)
       "BAREOS_SD_BOOTSTRAP_POLL_INTERVAL_MS", "1"};
   ScopedEnvironmentVariable poll_attempts_override{
       "BAREOS_SD_BOOTSTRAP_MAX_POLL_ATTEMPTS", "10"};
+  const auto activation_log = activation_root.path() / "activation.log";
+  const auto activation_command = CreateFakeActivationCommand(
+      activation_root.path() / "activate-service.sh", activation_log, 0);
+  ScopedEnvironmentVariable activation_command_override{
+      "BAREOS_SD_BOOTSTRAP_ACTIVATE_COMMAND", activation_command};
 
   storagedaemon::BootstrapModeOptions options{
       .enabled = true,
@@ -632,6 +665,53 @@ TEST(SdBootstrap, InstallsBootstrapConfigBundleAndReportsApplySuccess)
   EXPECT_STREQ(
       json_string_value(json_object_get(applied_body.get(), "bootstrap_token")),
       "secret-token");
+  EXPECT_EQ(ReadTextFile(activation_log), "enable --now bareos-sd.service\n");
+}
+
+TEST(SdBootstrap, ReportsApplyFailureWhenServiceActivationFails)
+{
+  ScopedDirectory config_root;
+  ScopedDirectory working_directory;
+  ScopedDirectory activation_root;
+  FakeBootstrapServer server{
+      BuildConfigBundleResponse(working_directory.path())};
+  ScopedEnvironmentVariable config_root_override{
+      "BAREOS_SD_BOOTSTRAP_CONFIG_ROOT", config_root.path().string()};
+  std::optional<ScopedEnvironmentVariable> validate_binary_override;
+  if (!std::getenv("BAREOS_SD_BOOTSTRAP_VALIDATE_BINARY")) {
+    validate_binary_override.emplace("BAREOS_SD_BOOTSTRAP_VALIDATE_BINARY",
+                                     BAREOS_SD_BINARY);
+  }
+  ScopedEnvironmentVariable poll_interval_override{
+      "BAREOS_SD_BOOTSTRAP_POLL_INTERVAL_MS", "1"};
+  ScopedEnvironmentVariable poll_attempts_override{
+      "BAREOS_SD_BOOTSTRAP_MAX_POLL_ATTEMPTS", "10"};
+  const auto activation_log = activation_root.path() / "activation.log";
+  const auto activation_command = CreateFakeActivationCommand(
+      activation_root.path() / "activate-service.sh", activation_log, 9);
+  ScopedEnvironmentVariable activation_command_override{
+      "BAREOS_SD_BOOTSTRAP_ACTIVATE_COMMAND", activation_command};
+
+  const std::string command
+      = std::string{QuoteShellArgument(BAREOS_SD_BINARY)} + " --discovery"
+        + " --bootstrap-url " + QuoteShellArgument(server.base_url())
+        + " --bootstrap-token " + QuoteShellArgument("secret-token")
+        + " --bootstrap-session " + QuoteShellArgument("session-123");
+
+  EXPECT_EQ(ExtractExitStatus(std::system(command.c_str())), BEXIT_FAILURE);
+
+  json_error_t error{};
+  auto applied_body
+      = MakeJson(json_loads(server.applied_body().c_str(), 0, &error));
+  ASSERT_NE(applied_body.get(), nullptr);
+  EXPECT_TRUE(json_is_false(json_object_get(applied_body.get(), "success")));
+  EXPECT_STREQ(
+      json_string_value(json_object_get(applied_body.get(), "bootstrap_token")),
+      "secret-token");
+  EXPECT_STREQ(
+      json_string_value(json_object_get(applied_body.get(), "error")),
+      "failed to enable and start bareos-sd.service after bootstrap apply.");
+  EXPECT_EQ(ReadTextFile(activation_log), "enable --now bareos-sd.service\n");
 }
 
 #if defined(HAVE_LINUX_OS)
@@ -662,6 +742,8 @@ TEST(SdBootstrap, UploadsTapeDiscoveryTopology)
       "BAREOS_SD_BOOTSTRAP_POLL_INTERVAL_MS", "1"};
   ScopedEnvironmentVariable poll_attempts_override{
       "BAREOS_SD_BOOTSTRAP_MAX_POLL_ATTEMPTS", "10"};
+  ScopedEnvironmentVariable activation_command_override{
+      "BAREOS_SD_BOOTSTRAP_ACTIVATE_COMMAND", "true"};
 
   WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vendor",
                   "IBM\n");
@@ -804,6 +886,8 @@ TEST(SdBootstrap, UploadsTapeDiscoveryTopologyViaScsiFallback)
       "BAREOS_SD_BOOTSTRAP_POLL_INTERVAL_MS", "1"};
   ScopedEnvironmentVariable poll_attempts_override{
       "BAREOS_SD_BOOTSTRAP_MAX_POLL_ATTEMPTS", "10"};
+  ScopedEnvironmentVariable activation_command_override{
+      "BAREOS_SD_BOOTSTRAP_ACTIVATE_COMMAND", "true"};
 
   const auto tape_class = sysfs_root.path() / "class/scsi_tape/nst0";
   std::filesystem::create_directories(tape_class);
@@ -899,6 +983,8 @@ TEST(SdBootstrap, UploadsTapeDiscoveryTopologyViaScsiFallbackAndTapeById)
       "BAREOS_SD_BOOTSTRAP_POLL_INTERVAL_MS", "1"};
   ScopedEnvironmentVariable poll_attempts_override{
       "BAREOS_SD_BOOTSTRAP_MAX_POLL_ATTEMPTS", "10"};
+  ScopedEnvironmentVariable activation_command_override{
+      "BAREOS_SD_BOOTSTRAP_ACTIVATE_COMMAND", "true"};
 
   const auto tape_class = sysfs_root.path() / "class/scsi_tape/nst0";
   std::filesystem::create_directories(tape_class);
@@ -998,6 +1084,8 @@ TEST(SdBootstrap, UploadsTapeDiscoveryTopologyViaSerialFallback)
       "BAREOS_SD_BOOTSTRAP_POLL_INTERVAL_MS", "1"};
   ScopedEnvironmentVariable poll_attempts_override{
       "BAREOS_SD_BOOTSTRAP_MAX_POLL_ATTEMPTS", "10"};
+  ScopedEnvironmentVariable activation_command_override{
+      "BAREOS_SD_BOOTSTRAP_ACTIVATE_COMMAND", "true"};
 
   WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vendor",
                   "HPE\n");
@@ -1095,6 +1183,8 @@ TEST(SdBootstrap, UploadsTapeDiscoveryTopologyViaSerialFallbackAndTapeById)
       "BAREOS_SD_BOOTSTRAP_POLL_INTERVAL_MS", "1"};
   ScopedEnvironmentVariable poll_attempts_override{
       "BAREOS_SD_BOOTSTRAP_MAX_POLL_ATTEMPTS", "10"};
+  ScopedEnvironmentVariable activation_command_override{
+      "BAREOS_SD_BOOTSTRAP_ACTIVATE_COMMAND", "true"};
 
   WriteBinaryFile(sysfs_root.path() / "class/scsi_tape/nst0/device/vendor",
                   "HPE\n");
@@ -1195,6 +1285,8 @@ TEST(SdBootstrap, UploadsTapeDiscoveryTopologyViaTapeById)
       "BAREOS_SD_BOOTSTRAP_POLL_INTERVAL_MS", "1"};
   ScopedEnvironmentVariable poll_attempts_override{
       "BAREOS_SD_BOOTSTRAP_MAX_POLL_ATTEMPTS", "10"};
+  ScopedEnvironmentVariable activation_command_override{
+      "BAREOS_SD_BOOTSTRAP_ACTIVATE_COMMAND", "true"};
 
   for (const auto* alias : {"st0", "nst0m", "nst0"}) {
     WriteBinaryFile(

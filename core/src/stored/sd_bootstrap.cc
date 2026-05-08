@@ -106,6 +106,10 @@ struct ConfigBundle {
   std::vector<BundleFileEntry> files{};
 };
 
+struct ServiceActivationOutcome {
+  bool attempted{false};
+};
+
 class ScopedDirectory {
  public:
   explicit ScopedDirectory(std::filesystem::path path) : path_(std::move(path))
@@ -884,6 +888,35 @@ BootstrapResult<std::string> ReportBootstrapApplied(
                   body.get());
 }
 
+BootstrapResult<ServiceActivationOutcome> ActivateInstalledService()
+{
+  if (auto command
+      = GetEnvironmentVariable("BAREOS_SD_BOOTSTRAP_ACTIVATE_COMMAND")) {
+    if (ExtractExitStatus(std::system(command->c_str())) != BEXIT_SUCCESS) {
+      return {.error
+              = "failed to enable and start bareos-sd.service after "
+                "bootstrap apply."};
+    }
+    return {.value = ServiceActivationOutcome{.attempted = true}};
+  }
+
+#if defined(HAVE_LINUX_OS)
+  const auto systemctl
+      = GetEnvironmentVariable("BAREOS_SD_BOOTSTRAP_SYSTEMCTL_BINARY")
+            .value_or("systemctl");
+  const auto command
+      = QuoteShellArgument(systemctl) + " enable --now bareos-sd.service";
+  if (ExtractExitStatus(std::system(command.c_str())) != BEXIT_SUCCESS) {
+    return {.error
+            = "failed to enable and start bareos-sd.service after "
+              "bootstrap apply."};
+  }
+  return {.value = ServiceActivationOutcome{.attempted = true}};
+#else
+  return {.value = ServiceActivationOutcome{.attempted = false}};
+#endif
+}
+
 }  // namespace
 
 BootstrapModeOptionHandles AddBootstrapOptions(CLI::App& app,
@@ -1009,6 +1042,15 @@ int RunStorageDaemonBootstrap(const BootstrapModeOptions& options)
     return BEXIT_FAILURE;
   }
 
+  auto activation = ActivateInstalledService();
+  if (!activation) {
+    std::fprintf(stderr,
+                 "bareos-sd: failed to activate installed service: %s\n",
+                 activation.error.c_str());
+    ReportBootstrapFailure(*parsed_url.value, options, activation.error);
+    return BEXIT_FAILURE;
+  }
+
   auto applied_response = ReportBootstrapApplied(*parsed_url.value, options);
   if (!applied_response) {
     std::fprintf(stderr,
@@ -1020,6 +1062,9 @@ int RunStorageDaemonBootstrap(const BootstrapModeOptions& options)
 
   std::fprintf(stderr, "bareos-sd: installed bootstrap config bundle into %s\n",
                config_root.c_str());
+  if (activation.value->attempted) {
+    std::fprintf(stderr, "bareos-sd: enabled and started bareos-sd.service\n");
+  }
   std::fprintf(stderr,
                "bareos-sd: bootstrap session '%s' completed successfully\n",
                options.bootstrap_session.c_str());
