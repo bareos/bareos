@@ -34,8 +34,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <openssl/bio.h>
-#include <openssl/buffer.h>
 #include <openssl/evp.h>
 
 // RFC 6455 magic GUID appended to Sec-WebSocket-Key before SHA-1
@@ -145,18 +143,15 @@ Clock::time_point MakeDeadline(std::chrono::milliseconds timeout)
 
 static std::string Base64Encode(const uint8_t* data, size_t len)
 {
-  BIO* b64 = BIO_new(BIO_f_base64());
-  BIO* mem = BIO_new(BIO_s_mem());
-  b64 = BIO_push(b64, mem);
-  BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-  BIO_write(b64, data, static_cast<int>(len));
-  BIO_flush(b64);
-
-  BUF_MEM* bptr = nullptr;
-  BIO_get_mem_ptr(b64, &bptr);
-  std::string result(bptr->data, bptr->length);
-  BIO_free_all(b64);
-  return result;
+  std::string encoded(4 * ((len + 2) / 3), '\0');
+  const int encoded_len
+      = EVP_EncodeBlock(reinterpret_cast<unsigned char*>(encoded.data()), data,
+                        static_cast<int>(len));
+  if (encoded_len < 0) {
+    throw std::runtime_error("WebSocket: base64 encode failed");
+  }
+  encoded.resize(static_cast<size_t>(encoded_len));
+  return encoded;
 }
 
 static std::string ComputeAcceptKey(std::string_view client_key)
