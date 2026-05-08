@@ -59,7 +59,11 @@
                       :key="card.scopeDirector"
                       class="row items-center q-gutter-sm text-body2 flex-wrap"
                     >
-                      <DirectorBadge :director="card.scopeDirector" icon="dns">
+                      <DirectorBadge
+                        :director="card.scopeDirector"
+                        icon="dns"
+                        class="director-info-chip"
+                      >
                         {{ card.scopeDirector }}
                         <q-tooltip>
                           {{
@@ -69,53 +73,91 @@
                           }}
                         </q-tooltip>
                       </DirectorBadge>
-                        <q-chip v-if="card.config_warnings != null"
-                                dense
-                                square
-                                clickable
-                               :color="card.config_warnings ? 'negative' : 'positive'"
-                                :icon="card.config_warnings ? 'error' : 'check_circle'"
-                                text-color="white"
-                               @click="showConfigStatus(card.scopeDirector)">
+                        <q-chip
+                          v-if="card.config_warnings != null"
+                          dense
+                          square
+                          clickable
+                          class="director-info-chip director-info-chip--clickable"
+                          :color="card.config_warnings ? 'negative' : 'positive'"
+                          :icon="card.config_warnings ? 'error' : 'check_circle'"
+                          text-color="white"
+                          @click="showConfigStatus(card.scopeDirector)"
+                        >
                           {{ card.config_warnings ? t('Config Warning') : t('Config OK') }}
                           <q-tooltip>
                             {{ t('Click to show configuration status for this director') }}
                           </q-tooltip>
                         </q-chip>
                        <q-chip
-                         v-if="card.reportedDirector && card.reportedDirector !== card.scopeDirector"
-                         dense
-                         square
-                         color="blue-grey-6"
-                         text-color="white"
-                         icon="link"
+                          v-if="card.reportedDirector && card.reportedDirector !== card.scopeDirector"
+                          dense
+                          square
+                          class="director-info-chip"
+                          color="blue-grey-6"
+                          text-color="white"
+                          icon="link"
                        >
                          {{ card.reportedDirector }}
                          <q-tooltip>{{ t('Reported by Director') }}: {{ card.reportedDirector }}</q-tooltip>
                        </q-chip>
-                      <q-chip v-if="card.version"
-                              dense square color="blue-7" text-color="white" icon="info">
+                      <q-chip
+                        v-if="card.version"
+                        dense
+                        square
+                        class="director-info-chip"
+                        color="blue-7"
+                        text-color="white"
+                        icon="info"
+                      >
                         {{ card.version }}
                         <q-tooltip>Version: {{ card.version }}</q-tooltip>
                       </q-chip>
-                      <q-chip v-if="card.release_date"
-                              dense square color="blue-grey-6" text-color="white" icon="event">
+                      <q-chip
+                        v-if="card.release_date"
+                        dense
+                        square
+                        class="director-info-chip"
+                        color="blue-grey-6"
+                        text-color="white"
+                        icon="event"
+                      >
                         {{ card.release_date }}
                         <q-tooltip>Released: {{ card.release_date }}</q-tooltip>
                       </q-chip>
-                      <q-chip v-if="card.binary_info"
-                              dense square color="blue-grey-7" text-color="white" icon="build">
+                      <q-chip
+                        v-if="card.binary_info"
+                        dense
+                        square
+                        class="director-info-chip"
+                        color="blue-grey-7"
+                        text-color="white"
+                        icon="build"
+                      >
                         {{ card.binary_info }}
                         <q-tooltip>Build: {{ card.binary_info }}</q-tooltip>
                       </q-chip>
-                      <q-chip v-if="card.os"
-                              dense square :color="card.osIcon.color" text-color="white"
-                              :icon="card.osIcon.icon">
+                      <q-chip
+                        v-if="card.os"
+                        dense
+                        square
+                        class="director-info-chip"
+                        :color="card.osIcon.color"
+                        text-color="white"
+                        :icon="card.osIcon.icon"
+                      >
                         {{ card.os }}
                         <q-tooltip>OS: {{ card.os }}</q-tooltip>
                       </q-chip>
-                      <q-chip v-if="card.daemon_started"
-                              dense square color="teal-7" text-color="white" icon="schedule">
+                      <q-chip
+                        v-if="card.daemon_started"
+                        dense
+                        square
+                        class="director-info-chip"
+                        color="teal-7"
+                        text-color="white"
+                        icon="schedule"
+                      >
                         {{ settings.relativeTime ? formatDirectorRelativeTime(card.daemon_started, settings.locale) : card.daemon_started }}
                         <q-tooltip>Started: {{ card.daemon_started }}</q-tooltip>
                       </q-chip>
@@ -124,7 +166,15 @@
                         :to="{ name: 'jobs', query: withJobsScopeDirectorQuery({}, card.scopeDirector) }"
                         class="text-decoration-none"
                       >
-                        <q-chip dense square clickable color="purple-7" text-color="white" icon="check">
+                        <q-chip
+                          dense
+                          square
+                          clickable
+                          class="director-info-chip director-info-chip--clickable"
+                          color="purple-7"
+                          text-color="white"
+                          icon="check"
+                        >
                           {{ card.jobs_run }}
                           <q-tooltip>Jobs Run: {{ card.jobs_run }}</q-tooltip>
                         </q-chip>
@@ -140,7 +190,15 @@
                         }"
                         class="text-decoration-none"
                       >
-                        <q-chip dense square clickable color="orange-7" text-color="white" icon="play_arrow">
+                        <q-chip
+                          dense
+                          square
+                          clickable
+                          class="director-info-chip director-info-chip--clickable"
+                          color="orange-7"
+                          text-color="white"
+                          icon="play_arrow"
+                        >
                           {{ card.jobs_running }}
                           <q-tooltip>Running: {{ card.jobs_running }}</q-tooltip>
                         </q-chip>
@@ -1425,6 +1483,15 @@ async function showConfigStatus(targetDirector = activeDirectors.value[0]) {
 </script>
 
 <style scoped>
+.director-info-chip {
+  cursor: default;
+  user-select: none;
+}
+
+.director-info-chip--clickable {
+  cursor: pointer;
+}
+
 .config-status-output {
   background: #1e1e1e;
   color: #d4d4d4;
