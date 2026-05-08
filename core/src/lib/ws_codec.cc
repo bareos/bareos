@@ -409,6 +409,11 @@ WsCodec::Frame WsCodec::RecvFrame()
     ReadAll(fd_, pending_input_, mask, 4, deadline, "read websocket frame");
   }
 
+  if (payload_len > max_frame_payload_size_) {
+    throw std::runtime_error(
+        "WebSocket: frame payload exceeds configured limit");
+  }
+
   if (payload_len > 0) {
     f.payload.resize(static_cast<size_t>(payload_len));
     ReadAll(fd_, pending_input_, f.payload.data(),
@@ -475,11 +480,19 @@ std::string WsCodec::RecvMessage()
 
       case kOpText:
       case kOpBinary:
+        if (f.payload.size() > max_message_size_ - message.size()) {
+          throw std::runtime_error(
+              "WebSocket: message payload exceeds configured limit");
+        }
         message += f.payload;
         if (f.fin) { return message; }
         break;
 
       case kOpContinuation:
+        if (f.payload.size() > max_message_size_ - message.size()) {
+          throw std::runtime_error(
+              "WebSocket: message payload exceeds configured limit");
+        }
         message += f.payload;
         if (f.fin) { return message; }
         break;
