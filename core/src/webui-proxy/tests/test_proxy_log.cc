@@ -21,15 +21,36 @@
 
 #include "../proxy_log.h"
 
+#include <cctype>
 #include <unistd.h>
 
 #include <fstream>
 #include <iterator>
-#include <regex>
 
 #include <gtest/gtest.h>
 
 namespace {
+
+bool IsAllDigits(std::string_view text)
+{
+  return !text.empty()
+         && std::all_of(text.begin(), text.end(),
+                        [](unsigned char ch) { return std::isdigit(ch) != 0; });
+}
+
+bool HasIso8601LocalTimestampFormat(std::string_view text)
+{
+  return text.size() == 32 && IsAllDigits(text.substr(0, 4)) && text[4] == '-'
+         && IsAllDigits(text.substr(5, 2)) && text[7] == '-'
+         && IsAllDigits(text.substr(8, 2)) && text[10] == 'T'
+         && IsAllDigits(text.substr(11, 2)) && text[13] == ':'
+         && IsAllDigits(text.substr(14, 2)) && text[16] == ':'
+         && IsAllDigits(text.substr(17, 2)) && text[19] == '.'
+         && IsAllDigits(text.substr(20, 6))
+         && (text[26] == '+' || text[26] == '-')
+         && IsAllDigits(text.substr(27, 2)) && text[29] == ':'
+         && IsAllDigits(text.substr(30, 2));
+}
 
 class ProxyLogFileTest : public ::testing::Test {
  protected:
@@ -58,11 +79,11 @@ class ProxyLogFileTest : public ::testing::Test {
   std::string path_;
 };
 
-void WriteProxyLogForTest(
-    ProxyLogLevel level,
-    std::string_view peer,
-    std::string_view message,
-    libbareos::source_location loc = libbareos::source_location::current())
+void WriteProxyLogForTest(ProxyLogLevel level,
+                          std::string_view peer,
+                          std::string_view message,
+                          libbareos::source_location loc
+                          = libbareos::source_location::current())
 {
   ProxyLogWrite(level, peer, message, loc);
 }
@@ -87,10 +108,7 @@ TEST(ProxyLog, FormatsIso8601LocalTimestampWithMicroseconds)
   const auto timestamp = std::chrono::system_clock::now();
   const std::string formatted = FormatProxyLogTimestamp(timestamp);
 
-  EXPECT_TRUE(std::regex_match(
-      formatted,
-      std::regex(
-          R"(^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}$)")));
+  EXPECT_TRUE(HasIso8601LocalTimestampFormat(formatted));
 }
 
 TEST_F(ProxyLogFileTest, WritesLogLineWithSourceLocationAndPeer)
@@ -104,10 +122,21 @@ TEST_F(ProxyLogFileTest, WritesLogLineWithSourceLocationAndPeer)
                        "session started");
 
   const std::string output = ReadLogFile();
-  EXPECT_TRUE(std::regex_search(
-      output,
-      std::regex(
-          R"(^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2} \[proxy\] \[INFO\] \[test_proxy_log\.cc:\d+\] \[127\.0\.0\.1:12345\] session started\n$)")));
+  ASSERT_GE(output.size(), 32u);
+  EXPECT_TRUE(HasIso8601LocalTimestampFormat(output.substr(0, 32)));
+
+  constexpr std::string_view kPrefix = " [proxy] [INFO] [test_proxy_log.cc:";
+  constexpr std::string_view kSuffix = "] [127.0.0.1:12345] session started\n";
+
+  const auto prefix_pos = output.find(kPrefix, 32);
+  ASSERT_EQ(prefix_pos, 32u);
+
+  const auto line_number_pos = prefix_pos + kPrefix.size();
+  const auto suffix_pos = output.find(kSuffix, line_number_pos);
+  ASSERT_NE(suffix_pos, std::string::npos);
+  EXPECT_TRUE(IsAllDigits(std::string_view(output).substr(
+      line_number_pos, suffix_pos - line_number_pos)));
+  EXPECT_EQ(suffix_pos + kSuffix.size(), output.size());
 }
 
 TEST_F(ProxyLogFileTest, HonorsMinimumLogLevel)
