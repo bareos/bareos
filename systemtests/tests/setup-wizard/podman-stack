@@ -226,6 +226,8 @@ run_e2e()
     find /etc/bareos/bareos-sd.d/storage -maxdepth 1 -name "*.conf" | grep -q . &&
     find /etc/bareos/bareos-fd.d/client -maxdepth 1 -name "*.conf" | grep -q . &&
     test -f /etc/bareos/bconsole.conf &&
+    test -s /var/log/setup-wizard/storage-bootstrap.log &&
+    grep -q "enabled and started bareos-sd.service" /var/log/setup-wizard/storage-bootstrap.log &&
     systemctl is-active bareos-dir.service bareos-sd.service bareos-fd.service
   '
 }

@@ -56,6 +56,28 @@ test('creates the initial deployment and reaches login', async ({ page }) => {
   await expect(page.locator('[data-testid="setup-storage-bootstrap-command"]')).toHaveValue(
     /bareos-sd --discovery/
   )
+  const bootstrapCommand = await page.locator(
+    '[data-testid="setup-storage-bootstrap-command"]'
+  ).inputValue()
+  const launchResponse = await page.request.post('/api/test/storage-bootstrap/run', {
+    data: {
+      command: bootstrapCommand,
+      stop_service: true,
+    },
+  })
+  expect(launchResponse.ok()).toBeTruthy()
+  await expect(page.locator('[data-testid="setup-storage-bootstrap-status"]')).toContainText(
+    'Discovered',
+    { timeout: 120_000 }
+  )
+  await expect(page.getByLabel('Archive path')).toHaveValue(/bareos\/storage/, {
+    timeout: 120_000,
+  })
+  await page.getByRole('button', { name: 'Use selected archive path' }).click()
+  await expect(page.locator('[data-testid="setup-storage-bootstrap-status"]')).toContainText(
+    'Applied',
+    { timeout: 120_000 }
+  )
 
   await page.locator('[data-testid="setup-continue-login"]').click()
   await page.waitForURL(/#\/login$/)

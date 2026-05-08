@@ -27,8 +27,10 @@ import json
 import os
 import pathlib
 import select
+import shlex
 import socket
 import socketserver
+import subprocess
 import urllib.parse
 
 
@@ -39,6 +41,10 @@ WS_PROXY_HOST = os.environ.get("BAREOS_SETUP_WS_PROXY_HOST", "127.0.0.1")
 WS_PROXY_PORT = int(os.environ["BAREOS_SETUP_WS_PROXY_PORT"])
 LISTEN_HOST = os.environ.get("BAREOS_SETUP_LISTEN_HOST", "127.0.0.1")
 LISTEN_PORT = int(os.environ["BAREOS_SETUP_LISTEN_PORT"])
+STACK_LOG_DIR = pathlib.Path(
+    os.environ.get("BAREOS_SETUP_LOG_DIR", "/var/log/setup-wizard")
+)
+STORAGE_BOOTSTRAP_LOG = STACK_LOG_DIR / "storage-bootstrap.log"
 SETUP_DEFAULTS = {
     "repositoryPath": os.environ.get("BAREOS_SETUP_DEFAULT_REPOSITORY_PATH", ""),
     "runtimeRoot": os.environ.get("BAREOS_SETUP_DEFAULT_RUNTIME_ROOT", ""),
@@ -82,6 +88,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self._serve_index()
 
     def do_POST(self):
+        if self.path == "/api/test/storage-bootstrap/run":
+            self._start_storage_bootstrap()
+            return
         self._proxy_http_request(BCONFIG_HOST, BCONFIG_PORT)
 
     def do_PUT(self):
@@ -180,6 +189,69 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         self.wfile.write(encoded)
+
+    def _start_storage_bootstrap(self):
+        content_length = self.headers.get("Content-Length")
+        if content_length is None:
+            self.send_error(411, "Content-Length required")
+            return
+
+        try:
+            payload = json.loads(self.rfile.read(int(content_length)))
+        except json.JSONDecodeError:
+            self.send_error(400, "Invalid JSON body")
+            return
+
+        command = payload.get("command")
+        if not isinstance(command, str) or not command.strip():
+            self.send_error(400, "command must be a non-empty string")
+            return
+
+        argv = shlex.split(command)
+        if argv and argv[0] == "sudo":
+            argv = argv[1:]
+        if not argv or pathlib.Path(argv[0]).name != "bareos-sd":
+            self.send_error(400, "command must invoke bareos-sd")
+            return
+        if "--discovery" not in argv:
+            self.send_error(400, "command must enable discovery mode")
+            return
+
+        try:
+            if payload.get("stop_service"):
+                subprocess.run(
+                    ["systemctl", "stop", "bareos-sd.service"],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+
+            STACK_LOG_DIR.mkdir(parents=True, exist_ok=True)
+            with STORAGE_BOOTSTRAP_LOG.open("ab") as log_file:
+                process = subprocess.Popen(
+                    argv,
+                    stdout=log_file,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True,
+                )
+        except subprocess.CalledProcessError as error:
+            self.send_response(500)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(
+                json.dumps(
+                    {
+                        "error": "failed to prepare storage bootstrap",
+                        "details": error.stderr or error.stdout or str(error),
+                    }
+                ).encode("utf-8")
+            )
+            return
+
+        self.send_response(202)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps({"pid": process.pid}).encode("utf-8"))
 
 
 class ThreadingHttpServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
