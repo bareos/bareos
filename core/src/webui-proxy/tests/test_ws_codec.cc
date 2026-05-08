@@ -26,18 +26,25 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <chrono>
 #include <iterator>
 #include <stdexcept>
+#include <string>
 
 namespace {
 
+constexpr std::string_view kValidHandshakeRequest
+    = "GET /ws HTTP/1.1\r\n"
+      "Host: localhost\r\n"
+      "Upgrade: websocket\r\n"
+      "Connection: Upgrade\r\n"
+      "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+      "Sec-WebSocket-Version: 13\r\n\r\n";
+
 class SocketPair {
  public:
-  SocketPair()
-  {
-    EXPECT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, fds_), 0);
-  }
+  SocketPair() { EXPECT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, fds_), 0); }
 
   ~SocketPair()
   {
@@ -64,6 +71,14 @@ void WriteAll(int fd, const void* data, size_t size)
   }
 }
 
+std::string ReadSome(int fd)
+{
+  std::array<char, 512> buffer{};
+  const auto received = ::recv(fd, buffer.data(), buffer.size(), 0);
+  EXPECT_GT(received, 0);
+  return std::string(buffer.data(), static_cast<size_t>(received));
+}
+
 }  // namespace
 
 TEST(WsCodec, HandshakeTimesOutWhenPeerStalls)
@@ -78,6 +93,83 @@ TEST(WsCodec, HandshakeTimesOutWhenPeerStalls)
   } catch (const std::runtime_error& error) {
     EXPECT_NE(std::string(error.what()).find("timeout"), std::string::npos);
   }
+}
+
+TEST(WsCodec, HandshakeRejectsMissingVersionWithUpgradeRequired)
+{
+  SocketPair sockets;
+  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
+                std::chrono::milliseconds(50));
+
+  const std::string request
+      = "GET /ws HTTP/1.1\r\n"
+        "Host: localhost\r\n"
+        "Upgrade: websocket\r\n"
+        "Connection: Upgrade\r\n"
+        "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n";
+  WriteAll(sockets.peer(), request.data(), request.size());
+
+  EXPECT_THROW(codec.Handshake(), std::runtime_error);
+  const auto response = ReadSome(sockets.peer());
+  EXPECT_NE(response.find("HTTP/1.1 426 Upgrade Required"), std::string::npos);
+  EXPECT_NE(response.find("Sec-WebSocket-Version: 13"), std::string::npos);
+}
+
+TEST(WsCodec, HandshakeRejectsUnsupportedVersionWithUpgradeRequired)
+{
+  SocketPair sockets;
+  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
+                std::chrono::milliseconds(50));
+
+  const std::string request
+      = "GET /ws HTTP/1.1\r\n"
+        "Host: localhost\r\n"
+        "Upgrade: websocket\r\n"
+        "Connection: Upgrade\r\n"
+        "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+        "Sec-WebSocket-Version: 12\r\n\r\n";
+  WriteAll(sockets.peer(), request.data(), request.size());
+
+  EXPECT_THROW(codec.Handshake(), std::runtime_error);
+  const auto response = ReadSome(sockets.peer());
+  EXPECT_NE(response.find("HTTP/1.1 426 Upgrade Required"), std::string::npos);
+  EXPECT_NE(response.find("Sec-WebSocket-Version: 13"), std::string::npos);
+}
+
+TEST(WsCodec, HandshakeRejectsMissingUpgradeHeaderWithBadRequest)
+{
+  SocketPair sockets;
+  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
+                std::chrono::milliseconds(50));
+
+  const std::string request
+      = "GET /ws HTTP/1.1\r\n"
+        "Host: localhost\r\n"
+        "Connection: Upgrade\r\n"
+        "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+        "Sec-WebSocket-Version: 13\r\n\r\n";
+  WriteAll(sockets.peer(), request.data(), request.size());
+
+  EXPECT_THROW(codec.Handshake(), std::runtime_error);
+  const auto response = ReadSome(sockets.peer());
+  EXPECT_NE(response.find("HTTP/1.1 400 Bad Request"), std::string::npos);
+}
+
+TEST(WsCodec, HandshakeAcceptsVersion13Request)
+{
+  SocketPair sockets;
+  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
+                std::chrono::milliseconds(50));
+
+  WriteAll(sockets.peer(), kValidHandshakeRequest.data(),
+           kValidHandshakeRequest.size());
+
+  EXPECT_NO_THROW(codec.Handshake());
+  const auto response = ReadSome(sockets.peer());
+  EXPECT_NE(response.find("HTTP/1.1 101 Switching Protocols"),
+            std::string::npos);
+  EXPECT_NE(response.find("Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo="),
+            std::string::npos);
 }
 
 TEST(WsCodec, RecvMessageTimesOutWhenFramePayloadStalls)

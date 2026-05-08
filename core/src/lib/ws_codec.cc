@@ -26,6 +26,7 @@
 #include <cerrno>
 #include <chrono>
 #include <cstring>
+#include <optional>
 #include <poll.h>
 #include <stdexcept>
 #include <string>
@@ -46,6 +47,8 @@ static constexpr uint8_t kOpBinary = 0x2;
 static constexpr uint8_t kOpClose = 0x8;
 static constexpr uint8_t kOpPing = 0x9;
 static constexpr uint8_t kOpPong = 0xA;
+static constexpr size_t kMaxHttpHeaderSize = 16384;
+static constexpr std::string_view kSupportedWsVersion = "13";
 
 // ---------------------------------------------------------------------------
 // Low-level I/O
@@ -135,6 +138,96 @@ Clock::time_point MakeDeadline(std::chrono::milliseconds timeout)
   return Clock::now() + timeout;
 }
 
+bool EqualsIgnoreCase(std::string_view lhs, std::string_view rhs)
+{
+  return lhs.size() == rhs.size()
+         && std::equal(
+             lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
+             [](char left, char right) {
+               return std::tolower(static_cast<unsigned char>(left))
+                      == std::tolower(static_cast<unsigned char>(right));
+             });
+}
+
+std::optional<std::string_view> FindHeaderValue(std::string_view headers,
+                                                std::string_view name)
+{
+  size_t line_start = headers.find("\r\n");
+  if (line_start == std::string_view::npos) { return std::nullopt; }
+  line_start += 2;
+
+  while (line_start < headers.size()) {
+    const auto line_end = headers.find("\r\n", line_start);
+    if (line_end == std::string_view::npos || line_end == line_start) {
+      return std::nullopt;
+    }
+
+    const auto line = headers.substr(line_start, line_end - line_start);
+    const auto colon = line.find(':');
+    if (colon != std::string_view::npos
+        && EqualsIgnoreCase(line.substr(0, colon), name)) {
+      auto value = line.substr(colon + 1);
+      while (!value.empty()
+             && (value.front() == ' ' || value.front() == '\t')) {
+        value.remove_prefix(1);
+      }
+      while (!value.empty() && (value.back() == ' ' || value.back() == '\t')) {
+        value.remove_suffix(1);
+      }
+      return value;
+    }
+
+    line_start = line_end + 2;
+  }
+
+  return std::nullopt;
+}
+
+bool HeaderHasToken(std::string_view value, std::string_view expected)
+{
+  while (!value.empty()) {
+    const auto comma = value.find(',');
+    auto token = value.substr(0, comma);
+    while (!token.empty() && (token.front() == ' ' || token.front() == '\t')) {
+      token.remove_prefix(1);
+    }
+    while (!token.empty() && (token.back() == ' ' || token.back() == '\t')) {
+      token.remove_suffix(1);
+    }
+    if (EqualsIgnoreCase(token, expected)) { return true; }
+    if (comma == std::string_view::npos) { break; }
+    value.remove_prefix(comma + 1);
+  }
+  return false;
+}
+
+void SendHttpResponse(int fd,
+                      Clock::time_point deadline,
+                      std::string_view status_line,
+                      std::string_view headers = {})
+{
+  std::string response;
+  response.reserve(status_line.size() + headers.size() + 32);
+  response += status_line;
+  response += "\r\n";
+  if (!headers.empty()) {
+    response += headers;
+    if (!headers.ends_with("\r\n")) { response += "\r\n"; }
+  }
+  response += "Content-Length: 0\r\n\r\n";
+  WriteAll(fd, response.data(), response.size(), deadline);
+}
+
+[[noreturn]] void FailHandshake(int fd,
+                                Clock::time_point deadline,
+                                std::string_view status_line,
+                                std::string_view message,
+                                std::string_view headers = {})
+{
+  SendHttpResponse(fd, deadline, status_line, headers);
+  throw std::runtime_error(std::string(message));
+}
+
 }  // namespace
 
 // ---------------------------------------------------------------------------
@@ -171,7 +264,6 @@ static std::string ComputeAcceptKey(std::string_view client_key)
 
 void WsCodec::Handshake()
 {
-  // Read HTTP request line by line until blank line
   const auto deadline = MakeDeadline(handshake_timeout_);
   std::string headers;
   headers.reserve(1024);
@@ -180,39 +272,50 @@ void WsCodec::Handshake()
     ReadAll(fd_, &ch, 1, deadline, "read handshake data");
     headers.push_back(ch);
     if (headers.ends_with("\r\n\r\n")) { break; }
-    if (headers.size() > 16384) {
+    if (headers.size() > kMaxHttpHeaderSize) {
       throw std::runtime_error("WebSocket: HTTP headers too large");
     }
   }
 
-  // Extract Sec-WebSocket-Key
-  constexpr std::string_view kKeyHeader = "Sec-WebSocket-Key:";
-  const auto pos_it
-      = std::search(headers.begin(), headers.end(), kKeyHeader.begin(),
-                    kKeyHeader.end(), [](char lhs, char rhs) {
-                      return std::tolower(static_cast<unsigned char>(lhs))
-                             == std::tolower(static_cast<unsigned char>(rhs));
-                    });
-  if (pos_it == headers.end()) {
-    throw std::runtime_error("WebSocket: missing Sec-WebSocket-Key header");
-  }
-
-  const auto pos = static_cast<size_t>(std::distance(headers.begin(), pos_it))
-                   + kKeyHeader.size();
   const std::string_view headers_view(headers);
-  const auto end = headers_view.find("\r\n", pos);
-  if (end == std::string::npos) {
-    throw std::runtime_error("WebSocket: malformed Sec-WebSocket-Key header");
+  const auto request_line_end = headers_view.find("\r\n");
+  if (request_line_end == std::string_view::npos) {
+    FailHandshake(fd_, deadline, "HTTP/1.1 400 Bad Request",
+                  "WebSocket: malformed HTTP request line");
   }
-  std::string_view key = headers_view.substr(pos, end - pos);
-  while (!key.empty() && (key.front() == ' ' || key.front() == '\t')) {
-    key.remove_prefix(1);
-  }
-  while (!key.empty() && (key.back() == ' ' || key.back() == '\t')) {
-    key.remove_suffix(1);
+  const auto request_line = headers_view.substr(0, request_line_end);
+  if (!request_line.starts_with("GET ")
+      || request_line.find(" HTTP/1.1") == std::string_view::npos) {
+    FailHandshake(fd_, deadline, "HTTP/1.1 400 Bad Request",
+                  "WebSocket: invalid HTTP upgrade request");
   }
 
-  const std::string accept = ComputeAcceptKey(key);
+  const auto upgrade = FindHeaderValue(headers_view, "Upgrade");
+  if (!upgrade || !EqualsIgnoreCase(*upgrade, "websocket")) {
+    FailHandshake(fd_, deadline, "HTTP/1.1 400 Bad Request",
+                  "WebSocket: missing Upgrade: websocket header");
+  }
+
+  const auto connection = FindHeaderValue(headers_view, "Connection");
+  if (!connection || !HeaderHasToken(*connection, "Upgrade")) {
+    FailHandshake(fd_, deadline, "HTTP/1.1 400 Bad Request",
+                  "WebSocket: missing Connection: Upgrade header");
+  }
+
+  const auto version = FindHeaderValue(headers_view, "Sec-WebSocket-Version");
+  if (!version || *version != kSupportedWsVersion) {
+    FailHandshake(fd_, deadline, "HTTP/1.1 426 Upgrade Required",
+                  "WebSocket: unsupported WebSocket version",
+                  "Sec-WebSocket-Version: 13\r\n");
+  }
+
+  const auto key = FindHeaderValue(headers_view, "Sec-WebSocket-Key");
+  if (!key || key->empty()) {
+    FailHandshake(fd_, deadline, "HTTP/1.1 400 Bad Request",
+                  "WebSocket: missing Sec-WebSocket-Key header");
+  }
+
+  const std::string accept = ComputeAcceptKey(*key);
 
   std::string response
       = "HTTP/1.1 101 Switching Protocols\r\n"
