@@ -28,6 +28,6 @@ if(HAVE_WIN32)
   add_definitions(-DMS_WIN64)
 endif()
 
-if(ENABLE_PYTHON AND Python3_FOUND)
+if(HAVE_PYTHON)
   add_subdirectory(python)
 endif()
