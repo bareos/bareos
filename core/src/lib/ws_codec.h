@@ -46,8 +46,14 @@ class WsCodec {
                    std::chrono::milliseconds io_timeout
                    = std::chrono::seconds(30),
                    std::chrono::milliseconds handshake_timeout
-                   = std::chrono::seconds(5))
-      : fd_(fd), io_timeout_(io_timeout), handshake_timeout_(handshake_timeout)
+                   = std::chrono::seconds(5),
+                   size_t max_frame_payload_size = 1024 * 1024,
+                   size_t max_message_size = 4 * 1024 * 1024)
+      : fd_(fd)
+      , io_timeout_(io_timeout)
+      , handshake_timeout_(handshake_timeout)
+      , max_frame_payload_size_(max_frame_payload_size)
+      , max_message_size_(max_message_size)
   {
   }
 
@@ -76,6 +82,8 @@ class WsCodec {
   bool closed_ = false;
   std::chrono::milliseconds io_timeout_;
   std::chrono::milliseconds handshake_timeout_;
+  size_t max_frame_payload_size_;
+  size_t max_message_size_;
   std::string pending_input_;
 
   // Frame encode/decode

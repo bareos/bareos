@@ -79,6 +79,35 @@ std::string ReadSome(int fd)
   return std::string(buffer.data(), static_cast<size_t>(received));
 }
 
+std::string BuildMaskedFrame(uint8_t opcode,
+                             std::string_view payload,
+                             bool fin = true)
+{
+  std::string frame;
+  frame.push_back(static_cast<char>((fin ? 0x80u : 0u) | (opcode & 0x0Fu)));
+
+  constexpr std::array<unsigned char, 4> kMask = {0x01u, 0x02u, 0x03u, 0x04u};
+  const size_t len = payload.size();
+  if (len <= 125) {
+    frame.push_back(static_cast<char>(0x80u | len));
+  } else if (len <= 65535) {
+    frame.push_back(static_cast<char>(0x80u | 126u));
+    frame.push_back(static_cast<char>((len >> 8) & 0xFFu));
+    frame.push_back(static_cast<char>(len & 0xFFu));
+  } else {
+    frame.push_back(static_cast<char>(0x80u | 127u));
+    for (int i = 7; i >= 0; --i) {
+      frame.push_back(static_cast<char>((len >> (i * 8)) & 0xFFu));
+    }
+  }
+
+  frame.append(reinterpret_cast<const char*>(kMask.data()), kMask.size());
+  for (size_t i = 0; i < payload.size(); ++i) {
+    frame.push_back(static_cast<char>(payload[i] ^ kMask[i % kMask.size()]));
+  }
+  return frame;
+}
+
 }  // namespace
 
 TEST(WsCodec, HandshakeTimesOutWhenPeerStalls)
@@ -192,6 +221,32 @@ TEST(WsCodec, HandshakePreservesBufferedFrameData)
   EXPECT_NE(response.find("HTTP/1.1 101 Switching Protocols"),
             std::string::npos);
   EXPECT_EQ(codec.RecvMessage(), "A");
+}
+
+TEST(WsCodec, RejectsOversizedSingleFramePayload)
+{
+  SocketPair sockets;
+  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
+                std::chrono::milliseconds(50), 8, 16);
+
+  const auto oversized = BuildMaskedFrame(0x1u, "123456789");
+  WriteAll(sockets.peer(), oversized.data(), oversized.size());
+
+  EXPECT_THROW(codec.RecvMessage(), std::runtime_error);
+}
+
+TEST(WsCodec, RejectsOversizedFragmentedMessage)
+{
+  SocketPair sockets;
+  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
+                std::chrono::milliseconds(50), 8, 6);
+
+  const auto first = BuildMaskedFrame(0x1u, "abcd", false);
+  const auto second = BuildMaskedFrame(0x0u, "efg");
+  WriteAll(sockets.peer(), first.data(), first.size());
+  WriteAll(sockets.peer(), second.data(), second.size());
+
+  EXPECT_THROW(codec.RecvMessage(), std::runtime_error);
 }
 
 TEST(WsCodec, RecvMessageTimesOutWhenFramePayloadStalls)
