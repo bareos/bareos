@@ -108,16 +108,25 @@ std::string BuildMaskedFrame(uint8_t opcode,
   return frame;
 }
 
+WsCodec AcceptCodec(SocketPair& sockets,
+                    std::chrono::milliseconds io_timeout
+                    = std::chrono::milliseconds(50),
+                    std::chrono::milliseconds handshake_timeout
+                    = std::chrono::milliseconds(50),
+                    size_t max_frame_payload_size = 1024 * 1024,
+                    size_t max_message_size = 4 * 1024 * 1024)
+{
+  return WsCodec::Accept(sockets.local(), io_timeout, handshake_timeout,
+                         max_frame_payload_size, max_message_size);
+}
+
 }  // namespace
 
 TEST(WsCodec, HandshakeTimesOutWhenPeerStalls)
 {
   SocketPair sockets;
-  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
-                std::chrono::milliseconds(50));
-
   try {
-    codec.Handshake();
+    (void)AcceptCodec(sockets);
     FAIL() << "expected timeout";
   } catch (const std::runtime_error& error) {
     EXPECT_NE(std::string(error.what()).find("timeout"), std::string::npos);
@@ -127,8 +136,6 @@ TEST(WsCodec, HandshakeTimesOutWhenPeerStalls)
 TEST(WsCodec, HandshakeRejectsMissingVersionWithUpgradeRequired)
 {
   SocketPair sockets;
-  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
-                std::chrono::milliseconds(50));
 
   const std::string request
       = "GET /ws HTTP/1.1\r\n"
@@ -138,7 +145,7 @@ TEST(WsCodec, HandshakeRejectsMissingVersionWithUpgradeRequired)
         "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n";
   WriteAll(sockets.peer(), request.data(), request.size());
 
-  EXPECT_THROW(codec.Handshake(), std::runtime_error);
+  EXPECT_THROW((void)AcceptCodec(sockets), std::runtime_error);
   const auto response = ReadSome(sockets.peer());
   EXPECT_NE(response.find("HTTP/1.1 426 Upgrade Required"), std::string::npos);
   EXPECT_NE(response.find("Sec-WebSocket-Version: 13"), std::string::npos);
@@ -147,8 +154,6 @@ TEST(WsCodec, HandshakeRejectsMissingVersionWithUpgradeRequired)
 TEST(WsCodec, HandshakeRejectsUnsupportedVersionWithUpgradeRequired)
 {
   SocketPair sockets;
-  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
-                std::chrono::milliseconds(50));
 
   const std::string request
       = "GET /ws HTTP/1.1\r\n"
@@ -159,7 +164,7 @@ TEST(WsCodec, HandshakeRejectsUnsupportedVersionWithUpgradeRequired)
         "Sec-WebSocket-Version: 12\r\n\r\n";
   WriteAll(sockets.peer(), request.data(), request.size());
 
-  EXPECT_THROW(codec.Handshake(), std::runtime_error);
+  EXPECT_THROW((void)AcceptCodec(sockets), std::runtime_error);
   const auto response = ReadSome(sockets.peer());
   EXPECT_NE(response.find("HTTP/1.1 426 Upgrade Required"), std::string::npos);
   EXPECT_NE(response.find("Sec-WebSocket-Version: 13"), std::string::npos);
@@ -168,8 +173,6 @@ TEST(WsCodec, HandshakeRejectsUnsupportedVersionWithUpgradeRequired)
 TEST(WsCodec, HandshakeRejectsMissingUpgradeHeaderWithBadRequest)
 {
   SocketPair sockets;
-  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
-                std::chrono::milliseconds(50));
 
   const std::string request
       = "GET /ws HTTP/1.1\r\n"
@@ -179,7 +182,7 @@ TEST(WsCodec, HandshakeRejectsMissingUpgradeHeaderWithBadRequest)
         "Sec-WebSocket-Version: 13\r\n\r\n";
   WriteAll(sockets.peer(), request.data(), request.size());
 
-  EXPECT_THROW(codec.Handshake(), std::runtime_error);
+  EXPECT_THROW((void)AcceptCodec(sockets), std::runtime_error);
   const auto response = ReadSome(sockets.peer());
   EXPECT_NE(response.find("HTTP/1.1 400 Bad Request"), std::string::npos);
 }
@@ -187,13 +190,10 @@ TEST(WsCodec, HandshakeRejectsMissingUpgradeHeaderWithBadRequest)
 TEST(WsCodec, HandshakeAcceptsVersion13Request)
 {
   SocketPair sockets;
-  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
-                std::chrono::milliseconds(50));
-
   WriteAll(sockets.peer(), kValidHandshakeRequest.data(),
            kValidHandshakeRequest.size());
 
-  EXPECT_NO_THROW(codec.Handshake());
+  WsCodec codec = AcceptCodec(sockets);
   const auto response = ReadSome(sockets.peer());
   EXPECT_NE(response.find("HTTP/1.1 101 Switching Protocols"),
             std::string::npos);
@@ -204,9 +204,6 @@ TEST(WsCodec, HandshakeAcceptsVersion13Request)
 TEST(WsCodec, HandshakePreservesBufferedFrameData)
 {
   SocketPair sockets;
-  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
-                std::chrono::milliseconds(50));
-
   const unsigned char masked_text_frame[] = {
       0x81u, 0x81u, 0x01u, 0x02u, 0x03u, 0x04u, 0x40u,
   };
@@ -216,7 +213,7 @@ TEST(WsCodec, HandshakePreservesBufferedFrameData)
                  sizeof(masked_text_frame));
   WriteAll(sockets.peer(), request.data(), request.size());
 
-  EXPECT_NO_THROW(codec.Handshake());
+  WsCodec codec = AcceptCodec(sockets);
   const auto response = ReadSome(sockets.peer());
   EXPECT_NE(response.find("HTTP/1.1 101 Switching Protocols"),
             std::string::npos);
@@ -226,8 +223,10 @@ TEST(WsCodec, HandshakePreservesBufferedFrameData)
 TEST(WsCodec, RejectsOversizedSingleFramePayload)
 {
   SocketPair sockets;
-  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
-                std::chrono::milliseconds(50), 8, 16);
+  WriteAll(sockets.peer(), kValidHandshakeRequest.data(),
+           kValidHandshakeRequest.size());
+  WsCodec codec = AcceptCodec(sockets, std::chrono::milliseconds(50),
+                              std::chrono::milliseconds(50), 8, 16);
 
   const auto oversized = BuildMaskedFrame(0x1u, "123456789");
   WriteAll(sockets.peer(), oversized.data(), oversized.size());
@@ -238,8 +237,10 @@ TEST(WsCodec, RejectsOversizedSingleFramePayload)
 TEST(WsCodec, RejectsOversizedFragmentedMessage)
 {
   SocketPair sockets;
-  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
-                std::chrono::milliseconds(50), 8, 6);
+  WriteAll(sockets.peer(), kValidHandshakeRequest.data(),
+           kValidHandshakeRequest.size());
+  WsCodec codec = AcceptCodec(sockets, std::chrono::milliseconds(50),
+                              std::chrono::milliseconds(50), 8, 6);
 
   const auto first = BuildMaskedFrame(0x1u, "abcd", false);
   const auto second = BuildMaskedFrame(0x0u, "efg");
@@ -252,8 +253,9 @@ TEST(WsCodec, RejectsOversizedFragmentedMessage)
 TEST(WsCodec, RecvMessageTimesOutWhenFramePayloadStalls)
 {
   SocketPair sockets;
-  WsCodec codec(sockets.local(), std::chrono::milliseconds(50),
-                std::chrono::milliseconds(50));
+  WriteAll(sockets.peer(), kValidHandshakeRequest.data(),
+           kValidHandshakeRequest.size());
+  WsCodec codec = AcceptCodec(sockets);
 
   const unsigned char partial_frame[] = {
       0x81u, 0x83u, 0x01u, 0x02u, 0x03u, 0x04u, 0x69u,
