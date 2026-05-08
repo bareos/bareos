@@ -44,8 +44,9 @@
 #include "lib/source_location.h"
 
 #include <bitset>
-#include <string>
+#include <optional>
 #include <stdexcept>
+#include <string>
 #include <system_error>
 #include <vector>
 template <typename T> class dlist;
@@ -103,20 +104,23 @@ class dbid_list {
 
 struct JobDbRecord {
   JobId_t JobId = 0;
-  char Job[MAX_NAME_LENGTH]{0};  /**< Job unique name */
-  char Name[MAX_NAME_LENGTH]{0}; /**< Job base name */
-  int JobType = 0;               /**< actually char(1) */
-  int JobLevel = 0;              /**< actually char(1) */
-  int JobStatus = 0;             /**< actually char(1) */
-  DBId_t ClientId = 0;           /**< Id of client */
-  DBId_t PoolId = 0;             /**< Id of pool */
-  DBId_t FileSetId = 0;          /**< Id of FileSet */
-  DBId_t PriorJobId = 0;         /**< Id of migrated (prior) job */
-  time_t SchedTime = 0;          /**< Time job scheduled */
-  time_t StartTime = 0;          /**< Job start time */
-  time_t EndTime = 0;            /**< Job termination time of orig job */
-  time_t RealEndTime = 0;        /**< Job termination time of this job */
-  utime_t JobTDate = 0;          /**< Backup time/date in seconds */
+  char Job[MAX_NAME_LENGTH]{0};      /**< Job unique name */
+  char Name[MAX_NAME_LENGTH]{0};     /**< Job base name */
+  int JobType = 0;                   /**< actually char(1) */
+  int JobLevel = 0;                  /**< actually char(1) */
+  int JobStatus = 0;                 /**< actually char(1) */
+  DBId_t ClientId = 0;               /**< Id of client */
+  DBId_t PoolId = 0;                 /**< Id of pool */
+  DBId_t FileSetId = 0;              /**< Id of FileSet */
+  DBId_t PriorJobId = 0;             /**< Id of migrated (prior) job */
+  DBId_t BaseId = 0;                 /**< Content lineage parent identifier */
+  DBId_t ContentId = 0;              /**< Content lineage identifier */
+  time_t SchedTime = 0;              /**< Time job scheduled */
+  time_t StartTime = 0;              /**< Job start time */
+  time_t EndTime = 0;                /**< Job termination time of orig job */
+  time_t RealEndTime = 0;            /**< Job termination time of this job */
+  utime_t JobTDate = 0;              /**< Backup time/date in seconds */
+  std::optional<utime_t> ExpireTime; /**< Expiry time in seconds since epoch */
   uint32_t VolSessionId = 0;
   uint32_t VolSessionTime = 0;
   uint32_t JobFiles = 0;
@@ -471,7 +475,7 @@ class pathid_cache;
 #define QUERY_HTABLE_PAGES 128
 
 // Current database version number schema = 2000 + 10 * Major + Minor
-#define BDB_VERSION 2250
+#define BDB_VERSION 2270
 
 typedef char** SQL_ROW;
 
@@ -803,6 +807,8 @@ class BareosDb : public BareosDbQueryEnum {
                       std::vector<char> jobtypes,
                       const char* volumename,
                       const char* poolname,
+                      bool filter_by_expiry,
+                      std::optional<utime_t> expire_time,
                       utime_t since_time,
                       bool last,
                       bool count,

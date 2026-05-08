@@ -509,6 +509,8 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               std::vector<char> jobtypes,
                               const char* volumename,
                               const char* poolname,
+                              bool filter_by_expiry,
+                              std::optional<utime_t> expire_time,
                               utime_t since_time,
                               bool last,
                               bool count,
@@ -564,6 +566,18 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     temp.bsprintf(
         "AND Job.poolid = (SELECT poolid FROM pool WHERE name = '%s' LIMIT 1) ",
         poolname);
+    PmStrcat(selection, temp.c_str());
+  }
+
+  if (filter_by_expiry) {
+    if (expire_time && *expire_time == 0) {
+      temp.bsprintf("AND Job.ExpireTime = 0 ");
+    } else if (expire_time) {
+      temp.bsprintf("AND Job.ExpireTime IS NOT NULL AND Job.ExpireTime <= %s ",
+                    edit_uint64(*expire_time, ed1));
+    } else {
+      temp.bsprintf("AND Job.ExpireTime IS NULL ");
+    }
     PmStrcat(selection, temp.c_str());
   }
 

@@ -143,7 +143,8 @@ bool ReserveReadDevice(JobControlRecord* jcr,
   if (read_storage) {
     // For the moment, only migrate, copy and vbackup have rpool
     if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
-        || (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
+        || (jcr->is_JobType(JT_BACKUP)
+            && IsVirtualBackupLevel(jcr->getJobLevel()))) {
       pool_type = jcr->dir_impl->res.rpool->pool_type;
       pool_name = jcr->dir_impl->res.rpool->resource_name_;
     } else {

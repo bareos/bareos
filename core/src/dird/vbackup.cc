@@ -116,6 +116,18 @@ std::string GetVfJobids(JobControlRecord& jcr)
     jcr.db->AccurateGetJobids(&jcr, &jcr.dir_impl->jr, &jobids_ctx);
     Dmsg1(10, "consolidate candidates:  %s.\n",
           jobids_ctx.GetAsString().c_str());
+    if (jcr.getJobLevel() == L_VIRTUAL_DIFFERENTIAL) {
+      std::vector<std::string> jobid_list
+          = split_string(jobids_ctx.GetAsString(), ',');
+      if (!jobid_list.empty()) { jobid_list.erase(jobid_list.begin()); }
+      if (jobid_list.empty()) { return {}; }
+
+      std::string filtered_jobids = jobid_list.front();
+      for (size_t i = 1; i < jobid_list.size(); ++i) {
+        filtered_jobids += "," + jobid_list[i];
+      }
+      return filtered_jobids;
+    }
     return jobids_ctx.GetAsString();
   }
 }
@@ -160,9 +172,9 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
   jcr->dir_impl->jr.StartTime = jcr->start_time;
 
 
-  if (DbLocker _{jcr->db};
-      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
+    return false;
   }
 
   // See if there is a next pool override.
@@ -171,8 +183,19 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
     PmStrcpy(jcr->dir_impl->res.pool_source, T_("Run NextPool override"));
     storage_source = T_("Storage from Run NextPool override");
   } else {
-    // See if there is a next pool override in the Job definition.
-    if (jcr->dir_impl->res.job->next_pool) {
+    if (jcr->is_JobLevel(L_VIRTUAL_DIFFERENTIAL)
+        && jcr->dir_impl->res.diff_pool) {
+      jcr->dir_impl->res.next_pool = jcr->dir_impl->res.diff_pool;
+      if (jcr->dir_impl->res.run_diff_pool_override) {
+        PmStrcpy(jcr->dir_impl->res.npool_source, T_("Run DiffPool override"));
+        PmStrcpy(jcr->dir_impl->res.pool_source, T_("Run DiffPool override"));
+        storage_source = T_("Storage from Run DiffPool override");
+      } else {
+        PmStrcpy(jcr->dir_impl->res.npool_source, T_("Job DiffPool override"));
+        PmStrcpy(jcr->dir_impl->res.pool_source, T_("Job DiffPool override"));
+        storage_source = T_("Storage from Job DiffPool override");
+      }
+    } else if (jcr->dir_impl->res.job->next_pool) {
       jcr->dir_impl->res.next_pool = jcr->dir_impl->res.job->next_pool;
       PmStrcpy(jcr->dir_impl->res.npool_source, T_("Job's NextPool resource"));
       PmStrcpy(jcr->dir_impl->res.pool_source, T_("Job's NextPool resource"));
@@ -298,6 +321,14 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   int JobLevel_of_first_job = tmp_jr.JobLevel;
   Dmsg2(10, "Level of first consolidated job %d: %s\n", tmp_jr.JobId,
         job_level_to_str(JobLevel_of_first_job));
+  if (jcr->getJobLevel() == L_VIRTUAL_DIFFERENTIAL
+      && tmp_jr.JobLevel == L_FULL) {
+    Jmsg(jcr, M_FATAL, 0,
+         T_("VirtualDifferential requires a differential or incremental base, "
+            "not a Full job.\n"));
+    return false;
+  }
+  jcr->dir_impl->first_consolidated_jr.emplace(tmp_jr);
 
   /* Now we find the newest job that ran and store its info in
    * the previous_jr record. We will set our times to the
@@ -357,8 +388,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   // Update job start record
-  if (DbLocker _{jcr->db};
-      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     return false;
   }
@@ -418,11 +448,18 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   switch (jcr->getJobStatus()) {
     case JS_Terminated:
     case JS_Warnings:
-      jcr->dir_impl->jr.JobLevel = JobLevel; /* We want this to appear as what
-                                      the first consolidated job was */
-      Jmsg(jcr, M_INFO, 0,
-           T_("Joblevel was set to joblevel of first consolidated job: %s\n"),
-           job_level_to_str(JobLevel));
+      if (jcr->getJobLevel() == L_VIRTUAL_DIFFERENTIAL) {
+        jcr->dir_impl->jr.JobLevel = L_DIFFERENTIAL;
+        Jmsg(jcr, M_INFO, 0,
+             T_("Joblevel was set to virtual differential result level: %s\n"),
+             job_level_to_str(jcr->dir_impl->jr.JobLevel));
+      } else {
+        jcr->dir_impl->jr.JobLevel = JobLevel; /* We want this to appear as what
+                                        the first consolidated job was */
+        Jmsg(jcr, M_INFO, 0,
+             T_("Joblevel was set to joblevel of first consolidated job: %s\n"),
+             job_level_to_str(JobLevel));
+      }
       break;
     default:
       break;
@@ -439,15 +476,34 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   UpdateJobEnd(jcr, TermCode);
 
   if (jcr->dir_impl->previous_jr) {
+    std::string error;
+    if (!UpdateJobExpiration(jcr, jcr->dir_impl->previous_jr->JobTDate, nullptr,
+                             &error)) {
+      Jmsg(jcr, M_WARNING, 0, "%s\n", error.c_str());
+    }
+    char ec3[30];
+    const char* expire_time
+        = jcr->dir_impl->jr.ExpireTime
+              ? edit_uint64(*jcr->dir_impl->jr.ExpireTime, ec3)
+              : "NULL";
     // Update final items to set them to the previous job's values
     Mmsg(query,
-         "UPDATE Job SET StartTime='%s',EndTime='%s',"
-         "JobTDate=%s WHERE JobId=%s",
+         "UPDATE Job SET StartTime='%s',EndTime='%s',JobTDate=%s,"
+         "ExpireTime=%s WHERE JobId=%s",
          jcr->dir_impl->previous_jr->cStartTime,
          jcr->dir_impl->previous_jr->cEndTime,
-         edit_uint64(jcr->dir_impl->previous_jr->JobTDate, ec1),
+         edit_uint64(jcr->dir_impl->previous_jr->JobTDate, ec1), expire_time,
          edit_uint64(jcr->JobId, ec2));
-    jcr->db->SqlQuery(query.c_str());
+    if (DbLocker _{jcr->db}; !jcr->db->SqlQuery(query.c_str())) {
+      Jmsg(jcr, M_WARNING, 0,
+           T_("Error updating consolidated job timestamps/expiry: ERR=%s\n"),
+           jcr->db->strerror());
+    } else {
+      Jmsg(jcr, M_INFO, 0,
+           "Job expiry set to %s from newest consolidated job %u.\n",
+           JobExpirationToString(jcr->dir_impl->jr.ExpireTime).c_str(),
+           jcr->dir_impl->previous_jr->JobId);
+    }
   }
 
   // Get the fully updated job record

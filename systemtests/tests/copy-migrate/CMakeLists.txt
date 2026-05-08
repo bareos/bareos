@@ -18,5 +18,12 @@
 #   02110-1301, USA.
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+  set(global_fileset_options "XAttr Support = No")
+else()
+  set(global_fileset_options "")
+endif()
+
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME})

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -828,6 +828,7 @@ MOD_INIT(bareosfd)
   ConstSet_StrStr(pDictbLevels, L_BASE, "B");
   ConstSet_StrStr(pDictbLevels, L_NONE, " ");
   ConstSet_StrStr(pDictbLevels, L_VIRTUAL_FULL, "f");
+  ConstSet_StrStr(pDictbLevels, L_VIRTUAL_DIFFERENTIAL, "g");
   if (PyModule_AddObject(m, bLevels, pDictbLevels)) { return MOD_ERROR_VAL; }
 
 

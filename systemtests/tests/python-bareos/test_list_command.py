@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+from datetime import datetime, timedelta
 import json
 import logging
 import os
@@ -41,6 +42,96 @@ import bareos_unittest
 
 
 class PythonBareosListCommandTest(bareos_unittest.Json):
+    def test_list_jobs_expiry(self):
+        """
+        verifying expiry-related `run`, `update job`, `list jobs`, and joblog output
+        """
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options,
+        )
+
+        jobname = "backup-bareos-fd-expiry"
+        explicit_expiry_dt = (datetime.now() + timedelta(days=2)).replace(microsecond=0)
+        updated_expiry_dt = (datetime.now() + timedelta(days=3)).replace(microsecond=0)
+        between_expiries_dt = (datetime.now() + timedelta(days=2, hours=12)).replace(
+            microsecond=0
+        )
+        explicit_expiry = explicit_expiry_dt.strftime("%Y-%m-%d %H:%M:%S")
+        updated_expiry = updated_expiry_dt.strftime("%Y-%m-%d %H:%M:%S")
+        between_expiries = between_expiries_dt.strftime("%Y-%m-%d %H:%M:%S")
+        explicit_expiry_epoch = str(int(explicit_expiry_dt.timestamp()))
+        updated_expiry_epoch = str(int(updated_expiry_dt.timestamp()))
+
+        config_jobid = self.run_job(director, jobname, level="Full", wait=True)
+        never_jobid = self.run_job(
+            director, jobname, level="Full", extra="retention=never", wait=True
+        )
+        explicit_jobid = self.run_job(
+            director,
+            jobname,
+            level="Full",
+            extra=f'expiry="{explicit_expiry}"',
+            wait=True,
+        )
+
+        config_job = self.list_jobid(director, config_jobid)
+        never_job = self.list_jobid(director, never_jobid)
+        explicit_job = self.list_jobid(director, explicit_jobid)
+
+        self.assertNotEqual(config_job["expiretime"], "")
+        self.assertNotEqual(config_job["expiretime"], "never")
+        self.assertEqual(never_job["expiretime"], "0")
+        self.assertEqual(explicit_job["expiretime"], explicit_expiry_epoch)
+
+        self.search_joblog(
+            director,
+            config_jobid,
+            r"Job expiry set to .* from job Retention\.",
+        )
+        self.search_joblog(
+            director,
+            never_jobid,
+            r"Job expiry set to never from run retention override\.",
+        )
+        self.search_joblog(
+            director,
+            explicit_jobid,
+            r"Job expiry set to .* from run expiry override\.",
+        )
+
+        director.call(f'update jobid={explicit_jobid} expiry="{updated_expiry}"')
+
+        explicit_job = self.list_jobid(director, explicit_jobid)
+        self.assertEqual(explicit_job["expiretime"], updated_expiry_epoch)
+        self.search_joblog(
+            director,
+            explicit_jobid,
+            [
+                r"Job expiry set to .* from run expiry override\.",
+                r"Expiry updated to .* via update job command\.",
+            ],
+        )
+
+        result = director.call(f"list jobs count job={jobname} expiry=never")
+        self.assertEqual(result["jobs"][0]["count"], "1")
+
+        result = director.call(
+            f'list jobs count job={jobname} expiry="{between_expiries}"'
+        )
+        self.assertEqual(result["jobs"][0]["count"], "2")
+
+        result = director.call(
+            f'list jobs count job={jobname} expiry="{updated_expiry}"'
+        )
+        self.assertEqual(result["jobs"][0]["count"], "3")
+
     def test_list_jobs(self):
         """
         verifying `list jobs` and `llist jobs ...` outputs correct data
@@ -109,6 +200,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             "realendtime",
             "duration",
             "jobtdate",
+            "expiretime",
             "volsessionid",
             "volsessiontime",
             "jobfiles",
@@ -157,6 +249,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             "realendtime",
             "duration",
             "jobtdate",
+            "expiretime",
             "volsessionid",
             "volsessiontime",
             "jobfiles",

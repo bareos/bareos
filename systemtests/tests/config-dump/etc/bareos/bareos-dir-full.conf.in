@@ -202,6 +202,10 @@ JobDefs {
   # Bootstrap =
   WriteBootstrap = "/var/lib/bareos/%c.bsr"
   # Replace = Always
+  # Retention =
+  # FullRetention = 
+  # DifferentialRetention = 
+  # IncrementalRetention = 
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
   # MaxRunTime = 0
@@ -238,6 +242,7 @@ JobDefs {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -280,6 +285,10 @@ JobDefs {
   # Bootstrap =
   WriteBootstrap = "/var/lib/bareos/%c.bsr"
   # Replace = Always
+  # Retention =
+  # FullRetention = 
+  # DifferentialRetention = 
+  # IncrementalRetention = 
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
   # MaxRunTime = 0
@@ -340,6 +349,7 @@ JobDefs {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -382,6 +392,10 @@ Job {
   # Bootstrap =
   # WriteBootstrap = "/var/lib/bareos/%c.bsr"
   # Replace = Always
+  # Retention =
+  # FullRetention = 
+  # DifferentialRetention = 
+  # IncrementalRetention = 
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
   # MaxRunTime = 0
@@ -418,6 +432,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -460,6 +475,10 @@ Job {
   # Bootstrap =
   # WriteBootstrap =
   # Replace = Always
+  # Retention =
+  # FullRetention = 
+  # DifferentialRetention = 
+  # IncrementalRetention = 
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
   # MaxRunTime = 0
@@ -496,6 +515,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -539,6 +559,10 @@ Job {
   Bootstrap = "/tmp/used_for_restore/"
   WriteBootstrap = "|/bin/true"
   Replace = IfNewer
+  # Retention =
+  # FullRetention = 
+  # DifferentialRetention = 
+  # IncrementalRetention = 
   MaximumBandwidth = 10000
   MaxRunSchedTime = 1 hours
   MaxRunTime = 1 hours
@@ -585,6 +609,7 @@ Job {
   CancelRunningDuplicates = Yes
   SaveFileHistory = No
   FileHistorySize = 10 m
+  # KeepNumber = 0
   FdPluginOptions = "Option 11"
   FdPluginOptions = "Option 21"
   SdPluginOptions = "Option 11"
@@ -630,6 +655,10 @@ Job {
   # Bootstrap =
   # WriteBootstrap =
   # Replace = Always
+  # Retention =
+  # FullRetention = 
+  # DifferentialRetention = 
+  # IncrementalRetention = 
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
   # MaxRunTime = 0
@@ -666,6 +695,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -708,6 +738,10 @@ Job {
   # Bootstrap =
   WriteBootstrap = "|/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root"
   # Replace = Always
+  # Retention =
+  # FullRetention = 
+  # DifferentialRetention = 
+  # IncrementalRetention = 
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
   # MaxRunTime = 0
@@ -746,6 +780,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -788,6 +823,10 @@ Job {
   # Bootstrap =
   # WriteBootstrap = "/var/lib/bareos/%c.bsr"
   # Replace = Always
+  # Retention =
+  # FullRetention = 
+  # DifferentialRetention = 
+  # IncrementalRetention = 
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
   # MaxRunTime = 0
@@ -887,6 +926,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -929,6 +969,10 @@ Job {
   # Bootstrap =
   # WriteBootstrap = "/var/lib/bareos/%c.bsr"
   # Replace = Always
+  # Retention =
+  # FullRetention = 
+  # DifferentialRetention = 
+  # IncrementalRetention = 
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
   # MaxRunTime = 0
@@ -993,6 +1037,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -1035,6 +1080,10 @@ Job {
   # Bootstrap =
   # WriteBootstrap = "/var/lib/bareos/%c.bsr"
   # Replace = Always
+  # Retention =
+  # FullRetention = 
+  # DifferentialRetention = 
+  # IncrementalRetention = 
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
   # MaxRunTime = 0
@@ -1095,6 +1144,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =
@@ -1137,6 +1187,10 @@ Job {
   # Bootstrap =
   # WriteBootstrap = "/var/lib/bareos/%c.bsr"
   # Replace = Always
+  # Retention =
+  # FullRetention = 
+  # DifferentialRetention = 
+  # IncrementalRetention = 
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
   # MaxRunTime = 0
@@ -1213,6 +1267,7 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
+  # KeepNumber = 0
   # FdPluginOptions =
   # SdPluginOptions =
   # DirPluginOptions =

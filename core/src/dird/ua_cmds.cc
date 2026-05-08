@@ -180,10 +180,11 @@ const char list_cmd_usage[] = NT_(
     "fileset [ ujobid=<complete_name> ] | "
     "jobs [job=<job-name>] [client=<client-name>] [jobstatus=<status>] "
     "[jobtype=<jobtype>] [joblevel=<joblevel>] [volume=<volumename>] "
-    "[pool=<pool>] "
+    "[pool=<pool>] [expiry=<time|never>] "
     "[days=<number>] [hours=<number>] [last] [count] | "
     "job=<job-name> [client=<client-name>] [jobstatus=<status>] "
     "[jobtype=<jobtype>] [joblevel=<joblevel>] [volume=<volumename>] "
+    "[expiry=<time|never>] "
     "[days=<number>] [hours=<number>] | "
     "jobid=<jobid> | "
     "ujobid=<complete_name> | "
@@ -435,7 +436,8 @@ static struct ua_cmdstruct commands[] = {
          "when=<universal-time-specification> "
          "pool=<pool-name> pluginoptions=<plugin-options-string> "
          "accurate=<yes|no> comment=<text> "
-         "spooldata=<yes|no> priority=<number> jobid=<jobid> "
+         "spooldata=<yes|no> priority=<number> retention=<time|never> "
+         "expiry=<universal-time-specification|never> jobid=<jobid> "
          "catalog=<catalog> migrationjob=<job-name> "
          "backupclient=<client-name> backupformat=<format> "
          "nextpool=<pool-name> "
@@ -512,7 +514,8 @@ static struct ua_cmdstruct commands[] = {
          "slots [storage=<storage-name>] [scan]] "
          "| [jobid=<jobid> [jobname=<name>] [starttime=<time-def>] "
          "[client=<client-name>] "
-         "[filesetid=<fileset-id>] [jobtype=<job-type>]] "
+         "[filesetid=<fileset-id>] [jobtype=<job-type>] "
+         "[expiry=<universal-time-specification|never>]] "
          "| [stats [days=<number>]]"),
      true, true},
     {NT_("use"), use_cmd, T_("Use specific catalog"), NT_("catalog=<catalog>"),
@@ -1889,7 +1892,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
   jcr->dir_impl->res.job = job;
   jcr->setJobType(JT_BACKUP);
   jcr->start_time = time(NULL);
-  InitJcrJobRecord(jcr);
+  if (!InitJcrJobRecord(jcr)) { return false; }
 
   if (!GetOrCreateClientRecord(jcr)) { return true; }
 

@@ -508,8 +508,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
   jcr->setJobStatusWithPriorityCheck(JS_Running);
   Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->dir_impl->jr.JobId,
         jcr->dir_impl->jr.JobLevel);
-  if (DbLocker _{jcr->db};
-      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     return false;
   }
@@ -610,9 +609,10 @@ bool DoNativeBackup(JobControlRecord* jcr)
    * is after the start of this run. */
   jcr->start_time = time(nullptr);
   jcr->dir_impl->jr.StartTime = jcr->start_time;
-  if (DbLocker _{jcr->db};
-      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
+    TerminateBackupWithError(jcr);
+    return false;
   }
 
   /* If backup is in accurate mode, we send the list of
@@ -1024,12 +1024,13 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
            edit_uint64_with_suffix(jcr->dir_impl->jr.JobBytes, ec4));
       break;
    default:
-      if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+      if (IsVirtualBackupLevel(jcr->getJobLevel())) {
          Mmsg(level_info, T_(
-              "  Backup Level:           Virtual Full\n"));
+               "  Backup Level:           %s\n"),
+               JobLevelToString(jcr->getJobLevel()));
          Mmsg(statistics, T_(
-              "  SD Files Written:       %s\n"
-              "  SD Bytes Written:       %s (%sB)\n"),
+               "  SD Files Written:       %s\n"
+               "  SD Bytes Written:       %s (%sB)\n"),
               edit_uint64_with_commas(jcr->dir_impl->SDJobFiles, ec2),
               edit_uint64_with_commas(jcr->dir_impl->SDJobBytes, ec5),
               edit_uint64_with_suffix(jcr->dir_impl->SDJobBytes, ec6));
@@ -1084,10 +1085,10 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
    case PT_NDMP_NATIVE:
       break;
    default:
-      if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+      if (IsVirtualBackupLevel(jcr->getJobLevel())) {
          Mmsg(daemon_status, T_(
-              "  SD Errors:              %d\n"
-              "  SD termination status:  %s\n"
+               "  SD Errors:              %d\n"
+               "  SD termination status:  %s\n"
               "  Accurate:               %s\n"),
            jcr->dir_impl->SDErrors,
            sd_term_msg.c_str(),

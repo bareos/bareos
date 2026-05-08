@@ -1,0 +1,13 @@
+FileSet {
+  Name = "SelfTestVirtualDifferential"
+  Description = "fileset just to backup some files for isolated virtual differential selftest"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = XXH128
+      HardLinks = Yes
+      @global_fileset_options@
+    }
+    File=<@tmpdir@/file-list
+  }
+}

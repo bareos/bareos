@@ -152,7 +152,7 @@ bool JobControlRecord::JobReads()
     case JT_MIGRATE:
       return true;
     case JT_BACKUP:
-      if (JobLevel_ == L_VIRTUAL_FULL) { return true; }
+      if (IsVirtualBackupLevel(JobLevel_)) { return true; }
       break;
     default:
       break;

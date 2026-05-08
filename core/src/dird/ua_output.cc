@@ -676,19 +676,29 @@ static bool ListJobs(UaContext* ua,
 
   const char* volumename = GetArgValue(ua, NT_("volume"));
   const char* poolname = GetArgValue(ua, NT_("pool"));
+  bool filter_by_expiry = false;
+  std::optional<utime_t> expire_time;
+  if (const char* value = GetArgValue(ua, NT_("expiry"))) {
+    std::string error;
+    if (!ParseJobExpiryTime(value, expire_time, error)) {
+      ua->ErrorMsg("%s\n", error.c_str());
+      return false;
+    }
+    filter_by_expiry = true;
+  }
 
   switch (llist) {
     case VERT_LIST:
       if (!optionslist.count) {  // count result is one column, no filtering
         SetAclFilter(ua, 2, Job_ACL);
         SetAclFilter(ua, 7, Client_ACL);
-        SetAclFilter(ua, 22, Pool_ACL);
-        SetAclFilter(ua, 25, FileSet_ACL);
+        SetAclFilter(ua, 23, Pool_ACL);
+        SetAclFilter(ua, 26, FileSet_ACL);
         if (optionslist.current) {
           SetResFilter(ua, 2, R_JOB);
           SetResFilter(ua, 7, R_CLIENT);
-          SetResFilter(ua, 22, R_POOL);
-          SetResFilter(ua, 25, R_FILESET);
+          SetResFilter(ua, 23, R_POOL);
+          SetResFilter(ua, 26, R_FILESET);
         }
       }
       if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
@@ -713,7 +723,8 @@ static bool ListJobs(UaContext* ua,
 
   ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
                          optionslist.jobstatuslist, optionslist.joblevel_list,
-                         optionslist.jobtypes, volumename, poolname, schedtime,
+                         optionslist.jobtypes, volumename, poolname,
+                         filter_by_expiry, expire_time, schedtime,
                          optionslist.last, optionslist.count, ua->send, llist);
 
   return true;
@@ -987,10 +998,10 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       switch (llist) {
         case VERT_LIST:
           SetAclFilter(ua, 2, Job_ACL);
-          SetAclFilter(ua, 22, Pool_ACL);
+          SetAclFilter(ua, 23, Pool_ACL);
           if (optionslist.current) {
             SetResFilter(ua, 2, R_JOB);
-            SetResFilter(ua, 22, R_POOL);
+            SetResFilter(ua, 23, R_POOL);
           }
           if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
           if (optionslist.disabled) { SetDisabledFilter(ua, 2, R_JOB); }

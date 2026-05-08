@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,7 +37,13 @@ enum JobLevelCode : char
   L_VERIFY_DATA = 'A',              /**< Verify data on volume */
   L_BASE = 'B',                     /**< Base level job */
   L_NONE = ' ',                     /**< None, for Restore and Admin */
-  L_VIRTUAL_FULL = 'f'              /**< Virtual full backup */
+  L_VIRTUAL_FULL = 'f',             /**< Virtual full backup */
+  L_VIRTUAL_DIFFERENTIAL = 'g'      /**< Virtual differential backup */
 };
+
+inline bool IsVirtualBackupLevel(int level)
+{
+  return level == L_VIRTUAL_FULL || level == L_VIRTUAL_DIFFERENTIAL;
+}
 
 #endif  // BAREOS_INCLUDE_JOB_LEVEL_H_

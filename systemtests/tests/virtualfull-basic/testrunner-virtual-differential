@@ -1,0 +1,161 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+JobName=backup-bareos-fd-virtual-differential
+export JobName
+
+start_test
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${test_home}/label.out
+label volume=VDiffTestVolume001 storage=File pool=Full
+label volume=VDiffTestVolume002 storage=File pool=Incremental
+label volume=VDiffTestVolume003 storage=File pool=Incremental
+label volume=VDiffTestVolume004 storage=File2 pool=Differential
+@$out ${test_home}/full.out
+run job=$JobName level=Full yes
+wait
+messages
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${test_home}/full.out"
+FULL_ID=$(last_jobid_or_zero)
+
+touch "${tmp}"/data/*.c
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${test_home}/incr-1.out
+@sleep 2
+run job=$JobName level=Incremental yes
+wait
+messages
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${test_home}/incr-1.out"
+INCR1_ID=$(last_jobid_or_zero)
+
+touch "${tmp}"/data/*.h
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${test_home}/incr-2.out
+@sleep 2
+run job=$JobName level=Incremental yes
+wait
+messages
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${test_home}/incr-2.out"
+INCR2_ID=$(last_jobid_or_zero)
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${test_home}/virtual-diff.out
+run job=$JobName level=VirtualDifferential yes
+wait
+messages
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${test_home}/virtual-diff.out"
+VDIFF_ID=$(last_jobid_or_zero)
+
+expect_grep "Consolidating JobIds ${INCR1_ID},${INCR2_ID}" \
+  "${test_home}/virtual-diff.out" \
+  "VirtualDifferential did not synthesize from incrementals since the last Full"
+
+full_row="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=${FULL_ID}"
+)" && full_row="$(printf '%s' "${full_row}" | tr -d '\r')"
+incr1_row="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=${INCR1_ID}"
+)" && incr1_row="$(printf '%s' "${incr1_row}" | tr -d '\r')"
+incr2_row="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=${INCR2_ID}"
+)" && incr2_row="$(printf '%s' "${incr2_row}" | tr -d '\r')"
+vdiff_row="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=${VDIFF_ID}"
+)" && vdiff_row="$(printf '%s' "${vdiff_row}" | tr -d '\r')"
+
+IFS='|' read -r full_jobid full_type full_level full_jobtdate full_baseid full_contentid full_expiretime <<<"${full_row}"
+IFS='|' read -r incr1_jobid incr1_type incr1_level incr1_jobtdate incr1_baseid incr1_contentid incr1_expiretime <<<"${incr1_row}"
+IFS='|' read -r incr2_jobid incr2_type incr2_level incr2_jobtdate incr2_baseid incr2_contentid incr2_expiretime <<<"${incr2_row}"
+IFS='|' read -r vdiff_jobid vdiff_type vdiff_level vdiff_jobtdate vdiff_baseid vdiff_contentid vdiff_expiretime <<<"${vdiff_row}"
+
+if [ -z "${full_jobid}" ] || [ -z "${incr1_jobid}" ] || [ -z "${incr2_jobid}" ] || [ -z "${vdiff_jobid}" ]; then
+  set_error "Expected full/incremental/incremental/virtual-differential rows. full='${full_row}' incr1='${incr1_row}' incr2='${incr2_row}' vdiff='${vdiff_row}'"
+  exit 1
+fi
+
+expected_vdiff_expiretime="$((incr2_jobtdate + 2 * 60 * 60))"
+
+if [ "${full_type}" != "B" ] || [ "${full_level}" != "F" ] \
+  || [ "${full_baseid}" != "0" ] || [ "${full_contentid}" != "${full_jobid}" ]; then
+  set_error "Unexpected full lineage row: ${full_row}"
+  exit 1
+fi
+
+if [ "${incr1_type}" != "B" ] || [ "${incr1_level}" != "I" ] \
+  || [ "${incr1_baseid}" != "${full_contentid}" ] \
+  || [ "${incr1_contentid}" != "${incr1_jobid}" ]; then
+  set_error "Unexpected first incremental lineage row: ${incr1_row}"
+  exit 1
+fi
+
+if [ "${incr2_type}" != "B" ] || [ "${incr2_level}" != "I" ] \
+  || [ "${incr2_baseid}" != "${incr1_contentid}" ] \
+  || [ "${incr2_contentid}" != "${incr2_jobid}" ]; then
+  set_error "Unexpected second incremental lineage row: ${incr2_row}"
+  exit 1
+fi
+
+if [ "${vdiff_type}" != "B" ] || [ "${vdiff_level}" != "D" ] \
+  || [ "${vdiff_baseid}" != "${full_contentid}" ] \
+  || [ "${vdiff_contentid}" != "${incr2_contentid}" ] \
+  || [ "${vdiff_expiretime}" != "${expected_vdiff_expiretime}" ]; then
+  set_error "Unexpected virtual differential lineage row: ${vdiff_row}"
+  exit 1
+fi
+
+if [ "${vdiff_expiretime}" = "${incr2_expiretime}" ]; then
+  set_error "Expected virtual differential expiry to use DifferentialRetention instead of IncrementalRetention"
+  exit 1
+fi
+
+end_test

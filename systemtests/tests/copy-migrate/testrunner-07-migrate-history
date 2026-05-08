@@ -1,0 +1,88 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName=07-migrate-history
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+setup_data
+
+history_job_name=history-migrate-backup-bareos-fd
+history_migrate_name=history-migrate
+history_full_volume=HistoryMigrateFull001
+history_copy_volume=HistoryMigrateFullCopy001
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${tmp}/migrate-history.out
+label volume=${history_full_volume} storage=File pool=HistoryMigrateFull
+label volume=${history_copy_volume} storage=File2 pool=HistoryMigrateFullCopy
+run job=${history_job_name} level=Full yes
+wait
+update volume=${history_full_volume} volstatus=Used
+run job=${history_migrate_name} yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_log "${tmp}/migrate-history.out"
+
+old_row="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Type, Level, COALESCE(BaseId, 0), COALESCE(ContentId, 0) FROM Job WHERE Name='${history_job_name}' AND Type='M' AND Level='F' ORDER BY JobId DESC LIMIT 1"
+)" && old_row="$(printf '%s' "${old_row}" | tr -d '\r')"
+control_row="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Type, Level, PriorJobId FROM Job WHERE Name='${history_migrate_name}' ORDER BY JobId DESC LIMIT 1"
+)" && control_row="$(printf '%s' "${control_row}" | tr -d '\r')"
+
+IFS='|' read -r old_jobid old_type old_level old_baseid old_contentid <<<"${old_row}"
+IFS='|' read -r control_jobid control_type control_level migrated_jobid <<<"${control_row}"
+
+if [ -z "${old_jobid}" ] || [ -z "${control_jobid}" ] || [ -z "${migrated_jobid}" ] \
+  || [ "${migrated_jobid}" = "0" ]; then
+  set_error "Expected migrated old/control rows. old='${old_row}' control='${control_row}'"
+  exit 1
+fi
+
+new_row="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Type, Level, COALESCE(BaseId, 0), COALESCE(ContentId, 0), PriorJobId FROM Job WHERE JobId=${migrated_jobid}"
+)" && new_row="$(printf '%s' "${new_row}" | tr -d '\r')"
+
+IFS='|' read -r new_jobid new_type new_level new_baseid new_contentid new_priorjobid <<<"${new_row}"
+
+if [ -z "${new_jobid}" ]; then
+  set_error "Expected migrated worker row for JobId ${migrated_jobid}"
+  exit 1
+fi
+
+if [ "${old_type}" != "M" ] || [ "${old_level}" != "F" ] \
+  || [ "${old_baseid}" != "0" ] || [ "${old_contentid}" != "${old_jobid}" ]; then
+  set_error "Unexpected old migrated lineage row: ${old_row}"
+  exit 1
+fi
+
+if [ "${control_type}" != "g" ]; then
+  set_error "Unexpected migration control row: ${control_row}"
+  exit 1
+fi
+
+if [ "${new_type}" != "B" ] || [ "${new_level}" != "F" ] \
+  || [ "${new_baseid}" != "${old_baseid}" ] \
+  || [ "${new_contentid}" != "${old_contentid}" ] \
+  || [ "${new_priorjobid}" != "${old_jobid}" ]; then
+  set_error "Unexpected migrated worker lineage row: ${new_row}"
+  exit 1
+fi
+
+end_test

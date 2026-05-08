@@ -389,6 +389,10 @@ class JobResource : public BareosResource {
   char* RestoreBootstrap = nullptr; /**< Bootstrap file */
   char* WriteBootstrap = nullptr;   /**< Where to write bootstrap Job updates */
   char* WriteVerifyList = nullptr;  /**< List of changed files */
+  char* Retention = nullptr;        /**< Job retention or "never" */
+  char* FullRetention = nullptr;    /**< Full/Virtual Full job retention */
+  char* DiffRetention = nullptr;    /**< Differential job retention */
+  char* IncRetention = nullptr;     /**< Incremental job retention */
   utime_t MaxRunTime = {0};         /**< Max run time in seconds */
   utime_t MaxWaitTime = {0};        /**< Max blocking time in seconds */
   utime_t FullMaxRunTime = {0};     /**< Max Full job run time */
@@ -410,6 +414,7 @@ class JobResource : public BareosResource {
   int64_t FileHistSize = 0; /**< Hint about the size of the expected File history */
   int32_t MaxConcurrentJobs = 0;   /**< Maximum concurrent jobs */
   int32_t MaxConcurrentCopies = 0; /**< Limit number of concurrent jobs one Copy Job spawns */
+  int32_t KeepNumber = 0;          /**< Number of backup jobs to always keep from pruning */
   int32_t AlwaysIncrementalKeepNumber = 0; /**< Number of incrementals that are always left and not consolidated */
   int32_t MaxFullConsolidations = 0;       /**< Number of consolidate jobs to be started that will include a full */
 

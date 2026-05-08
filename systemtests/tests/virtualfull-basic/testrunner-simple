@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -61,6 +61,7 @@ touch "${tmp}"/data/*.c
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${test_home}/incr.out
 list jobs
+@sleep 2
 run job=$JobName level=Incremental yes
 wait
 messages
@@ -84,6 +85,60 @@ END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 
 check_log "${test_home}/virtual.out"
+
+full_row="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=1"
+)" && full_row="$(printf '%s' "${full_row}" | tr -d '\r')"
+incremental_row="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=2"
+)" && incremental_row="$(printf '%s' "${incremental_row}" | tr -d '\r')"
+virtual_row="$(
+  psql -d "${db_name}" -At -F '|' \
+    -c "SELECT JobId, Type, Level, JobTDate, COALESCE(BaseId, 0), COALESCE(ContentId, 0), COALESCE(ExpireTime, 0) FROM Job WHERE JobId=3"
+)" && virtual_row="$(printf '%s' "${virtual_row}" | tr -d '\r')"
+
+IFS='|' read -r full_jobid full_type full_level full_jobtdate full_baseid full_contentid full_expiretime <<<"${full_row}"
+IFS='|' read -r incremental_jobid incremental_type incremental_level incremental_jobtdate incremental_baseid incremental_contentid incremental_expiretime <<<"${incremental_row}"
+IFS='|' read -r virtual_jobid virtual_type virtual_level virtual_jobtdate virtual_baseid virtual_contentid virtual_expiretime <<<"${virtual_row}"
+
+if [ -z "${full_jobid}" ] || [ -z "${incremental_jobid}" ] || [ -z "${virtual_jobid}" ]; then
+  set_error "Expected full/incremental/virtual rows. full='${full_row}' incremental='${incremental_row}' virtual='${virtual_row}'"
+  exit 1
+fi
+
+expected_full_expiretime="$((full_jobtdate + 3 * 60 * 60))"
+expected_incremental_expiretime="$((incremental_jobtdate + 60 * 60))"
+expected_virtual_expiretime="$((virtual_jobtdate + 3 * 60 * 60))"
+
+if [ "${full_type}" != "B" ] || [ "${full_level}" != "F" ] \
+  || [ "${full_baseid}" != "0" ] || [ "${full_contentid}" != "${full_jobid}" ] \
+  || [ "${full_expiretime}" != "${expected_full_expiretime}" ]; then
+  set_error "Unexpected full lineage row: ${full_row}"
+  exit 1
+fi
+
+if [ "${incremental_type}" != "B" ] || [ "${incremental_level}" != "I" ] \
+  || [ "${incremental_baseid}" != "${full_contentid}" ] \
+  || [ "${incremental_contentid}" != "${incremental_jobid}" ] \
+  || [ "${incremental_expiretime}" != "${expected_incremental_expiretime}" ]; then
+  set_error "Unexpected incremental lineage row: ${incremental_row}"
+  exit 1
+fi
+
+if [ "${virtual_type}" != "B" ] || [ "${virtual_level}" != "F" ] \
+  || [ "${virtual_baseid}" != "0" ] \
+  || [ "${virtual_contentid}" != "${incremental_contentid}" ] \
+  || [ "${virtual_expiretime}" != "${expected_virtual_expiretime}" ]; then
+  set_error "Unexpected virtual full lineage row: ${virtual_row}"
+  exit 1
+fi
+
+if [ "${virtual_expiretime}" = "${incremental_expiretime}" ]; then
+  set_error "Expected virtual full expiry to use FullRetention instead of IncrementalRetention"
+  exit 1
+fi
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @# make sure we really restore the virtualfull

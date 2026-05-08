@@ -33,6 +33,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/director_jcr_impl.h"
+#include "dird/job.h"
 #include "dird/next_vol.h"
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
@@ -51,6 +52,32 @@ static bool UpdatePool(UaContext* ua);
 static bool UpdateJob(UaContext* ua);
 static bool UpdateStats(UaContext* ua);
 static void UpdateSlots(UaContext* ua);
+
+static bool InsertJobLog(UaContext* ua,
+                         JobId_t jobid,
+                         const std::string& message)
+{
+  char dt[MAX_TIME_LENGTH];
+  char ed1[50];
+  PoolMem query(PM_MESSAGE);
+  PoolMem escaped(PM_MESSAGE);
+  const auto now = static_cast<utime_t>(time(nullptr));
+
+  escaped.check_size(message.size() * 2 + 1);
+  ua->db->EscapeString(ua->jcr, escaped.c_str(), message.c_str(),
+                       message.size());
+  bstrutime(dt, sizeof(dt), now);
+
+  Mmsg(query, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
+       edit_int64(jobid, ed1), dt, escaped.c_str());
+
+  if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str())) {
+    ua->ErrorMsg("%s", ua->db->strerror());
+    return false;
+  }
+
+  return true;
+}
 
 /**
  * Update a Pool Record in the database.
@@ -910,12 +937,13 @@ static bool UpdatePool(UaContext* ua)
 static bool UpdateJob(UaContext* ua)
 {
   int i;
-  char ed1[50], ed2[50], ed3[50], ed4[50];
+  char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50];
   PoolMem cmd(PM_MESSAGE);
   JobDbRecord jr;
   ClientDbRecord cr;
   utime_t StartTime;
   char* client_name = NULL;
+  char* expiry = NULL;
   char* job_name = NULL;
   char* start_time = NULL;
   char job_type = '\0';
@@ -925,6 +953,7 @@ static bool UpdateJob(UaContext* ua)
                       NT_("filesetid"), /* 2 */
                       NT_("jobname"),   /* 3 */
                       NT_("jobtype"),   /* 4 */
+                      NT_("expiry"),    /* 5 */
                       NULL};
 
   Dmsg1(200, "cmd=%s\n", ua->cmd);
@@ -934,10 +963,12 @@ static bool UpdateJob(UaContext* ua)
     return false;
   }
   jr.JobId = str_to_int64(ua->argv[i]);
-  DbLocker _{ua->db};
-  if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
-    ua->ErrorMsg("%s", ua->db->strerror());
-    return false;
+  {
+    DbLocker _{ua->db};
+    if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+      ua->ErrorMsg("%s", ua->db->strerror());
+      return false;
+    }
   }
 
   for (i = 0; kw[i]; i++) {
@@ -959,12 +990,17 @@ static bool UpdateJob(UaContext* ua)
         case 4: /* Job Type */
           job_type = ua->argv[j][0];
           break;
+        case 5: /* Expiry */
+          expiry = ua->argv[j];
+          break;
       }
     }
   }
-  if (!client_name && !start_time && !fileset_id && !job_name && !job_type) {
-    ua->ErrorMsg(T_(
-        "Neither Client, StartTime, Filesetid, JobType nor Name specified.\n"));
+  if (!client_name && !start_time && !fileset_id && !job_name && !job_type
+      && !expiry) {
+    ua->ErrorMsg(
+        T_("Neither Client, StartTime, Filesetid, JobType, Name nor Expiry "
+           "specified.\n"));
     return false;
   }
   if (client_name) {
@@ -979,7 +1015,7 @@ static bool UpdateJob(UaContext* ua)
 
     StartTime = StrToUtime(start_time);
     if (StartTime == 0) {
-      ua->ErrorMsg(T_("Improper date format: %s\n"), ua->argv[i]);
+      ua->ErrorMsg(T_("Improper date format: %s\n"), start_time);
       return false;
     }
     delta_start = StartTime - jr.StartTime;
@@ -989,20 +1025,48 @@ static bool UpdateJob(UaContext* ua)
     jr.SchedTime += (time_t)delta_start;
     jr.EndTime += (time_t)delta_start;
     jr.JobTDate += delta_start;
+    if (!expiry && jr.ExpireTime && *jr.ExpireTime != 0) {
+      jr.ExpireTime = *jr.ExpireTime + delta_start;
+    }
     /* Convert to DB times */
     bstrutime(jr.cStartTime, sizeof(jr.cStartTime), jr.StartTime);
     bstrutime(jr.cSchedTime, sizeof(jr.cSchedTime), jr.SchedTime);
     bstrutime(jr.cEndTime, sizeof(jr.cEndTime), jr.EndTime);
   }
+  if (expiry) {
+    std::optional<utime_t> expire_time;
+    std::string error;
+    if (!ParseJobExpiryTime(expiry, expire_time, error)) {
+      ua->ErrorMsg("%s\n", error.c_str());
+      return false;
+    }
+    jr.ExpireTime = expire_time;
+  }
+  const char* expire_time
+      = jr.ExpireTime ? edit_uint64(*jr.ExpireTime, ed5) : "NULL";
   Mmsg(cmd,
        "UPDATE Job SET Name='%s', ClientId=%s,StartTime='%s',SchedTime='%s',"
-       "EndTime='%s',JobTDate=%s, FileSetId='%s', Type='%c' WHERE JobId=%s",
+       "EndTime='%s',JobTDate=%s,ExpireTime=%s, FileSetId='%s', Type='%c' "
+       "WHERE JobId=%s",
        jr.Name, edit_int64(jr.ClientId, ed1), jr.cStartTime, jr.cSchedTime,
-       jr.cEndTime, edit_uint64(jr.JobTDate, ed2),
+       jr.cEndTime, edit_uint64(jr.JobTDate, ed2), expire_time,
        edit_uint64(jr.FileSetId, ed3), jr.JobType, edit_int64(jr.JobId, ed4));
-  if (!ua->db->SqlQuery(cmd.c_str())) {
-    ua->ErrorMsg("%s", ua->db->strerror());
-    return false;
+  {
+    DbLocker _{ua->db};
+    if (!ua->db->SqlQuery(cmd.c_str())) {
+      ua->ErrorMsg("%s", ua->db->strerror());
+      return false;
+    }
+  }
+  if (expiry) {
+    std::string message = T_("Expiry updated to ")
+                          + JobExpirationToString(jr.ExpireTime)
+                          + T_(" via update job command.");
+    if (!InsertJobLog(ua, jr.JobId, message)) {
+      ua->WarningMsg(
+          "%s",
+          T_("Expiry was updated, but writing the job log entry failed.\n"));
+    }
   }
   return true;
 }

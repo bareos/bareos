@@ -75,6 +75,259 @@
 
 namespace directordaemon {
 
+namespace {
+
+std::string FormatAbsoluteTime(utime_t when)
+{
+  if (when == 0) { return "never"; }
+
+  char dt[MAX_TIME_LENGTH];
+  bstrutime(dt, sizeof(dt), when);
+  return dt;
+}
+
+}  // namespace
+
+bool ParseJobExpiryTime(const char* value,
+                        std::optional<utime_t>& expire_time,
+                        std::string& error)
+{
+  expire_time.reset();
+  error.clear();
+
+  if (!value || value[0] == '\0') { return true; }
+
+  if (Bstrcasecmp(value, "never") || Bstrcasecmp(value, "forever")) {
+    expire_time = 0;
+    return true;
+  }
+
+  utime_t parsed = StrToUtime(value);
+  if (parsed == 0) {
+    error = T_(
+        "Expiry must be a date in format \"YYYY-MM-DD HH:MM:SS\" or "
+        "\"never\".");
+    return false;
+  }
+
+  expire_time = parsed;
+  return true;
+}
+
+bool ParseJobRetention(const char* value,
+                       std::optional<utime_t>& retention,
+                       bool& keep_forever,
+                       std::string& error)
+{
+  retention.reset();
+  keep_forever = false;
+  error.clear();
+
+  if (!value || value[0] == '\0') { return true; }
+
+  if (Bstrcasecmp(value, "never") || Bstrcasecmp(value, "forever")) {
+    keep_forever = true;
+    return true;
+  }
+
+  utime_t parsed = 0;
+  if (!DurationToUtime(value, &parsed)) {
+    error = T_("Retention must be a duration or \"never\".");
+    return false;
+  }
+
+  retention = parsed;
+  return true;
+}
+
+const char* GetConfiguredJobRetention(JobLevelCode level,
+                                      const JobResource* job,
+                                      const char*& source)
+{
+  source = "job Retention";
+
+  if (!job) { return nullptr; }
+
+  auto select_retention
+      = [&source](const char* retention, const char* retention_source) {
+          if (retention && retention[0] != '\0') {
+            source = retention_source;
+            return retention;
+          }
+          return static_cast<const char*>(nullptr);
+        };
+
+  switch (level) {
+    case L_FULL:
+    case L_VIRTUAL_FULL:
+      if (const char* retention
+          = select_retention(job->FullRetention, "job FullRetention")) {
+        return retention;
+      }
+      break;
+    case L_DIFFERENTIAL:
+    case L_VIRTUAL_DIFFERENTIAL:
+      if (const char* retention
+          = select_retention(job->DiffRetention, "job DifferentialRetention")) {
+        return retention;
+      }
+      break;
+    case L_INCREMENTAL:
+      if (const char* retention
+          = select_retention(job->IncRetention, "job IncrementalRetention")) {
+        return retention;
+      }
+      break;
+    default:
+      break;
+  }
+
+  return select_retention(job->Retention, "job Retention");
+}
+
+std::string JobExpirationToString(const std::optional<utime_t>& expire_time)
+{
+  if (!expire_time.has_value()) { return "not set"; }
+  return FormatAbsoluteTime(*expire_time);
+}
+
+DBId_t EffectiveJobContentId(const JobDbRecord& jr)
+{
+  return jr.ContentId != 0 ? jr.ContentId : jr.JobId;
+}
+
+void UpdateJobHistoryRecord(JobControlRecord* jcr)
+{
+  auto& jr = jcr->dir_impl->jr;
+  jr.BaseId = 0;
+  jr.ContentId = jr.JobId;
+
+  if (jcr->getJobType() == JT_COPY || jcr->getJobType() == JT_MIGRATE
+      || (jcr->cjcr
+          && (jcr->cjcr->is_JobType(JT_COPY)
+              || jcr->cjcr->is_JobType(JT_MIGRATE)))) {
+    if (jcr->dir_impl->previous_jr) {
+      jr.BaseId = jcr->dir_impl->previous_jr->BaseId;
+      jr.ContentId = EffectiveJobContentId(*jcr->dir_impl->previous_jr);
+    }
+    return;
+  }
+
+  if (jcr->getJobType() != JT_BACKUP && jcr->getJobType() != JT_ARCHIVE) {
+    return;
+  }
+
+  switch (jcr->getJobLevel()) {
+    case L_INCREMENTAL:
+    case L_DIFFERENTIAL:
+      if (jcr->dir_impl->previous_jr) {
+        jr.BaseId = EffectiveJobContentId(*jcr->dir_impl->previous_jr);
+      }
+      return;
+    case L_VIRTUAL_FULL:
+      if (jcr->dir_impl->previous_jr) {
+        jr.ContentId = EffectiveJobContentId(*jcr->dir_impl->previous_jr);
+      }
+      return;
+    case L_VIRTUAL_DIFFERENTIAL:
+      if (jcr->dir_impl->previous_jr) {
+        jr.ContentId = EffectiveJobContentId(*jcr->dir_impl->previous_jr);
+      }
+      if (jcr->dir_impl->first_consolidated_jr) {
+        jr.BaseId = jcr->dir_impl->first_consolidated_jr->BaseId;
+      }
+      return;
+    default:
+      return;
+  }
+}
+
+bool UpdateJobExpiration(JobControlRecord* jcr,
+                         utime_t job_tdate,
+                         std::string* log_message,
+                         std::string* error_message)
+{
+  if (log_message) { log_message->clear(); }
+  if (error_message) { error_message->clear(); }
+
+  auto set_error = [error_message](const std::string& error) {
+    if (error_message) { *error_message = error; }
+  };
+
+  const char* expiry_spec = jcr->dir_impl->run_job_expiry;
+  const char* retention_spec = jcr->dir_impl->run_job_retention;
+  const char* retention_source = "run retention override";
+
+  if (!retention_spec || retention_spec[0] == '\0') {
+    retention_spec = GetConfiguredJobRetention(
+        static_cast<JobLevelCode>(jcr->getJobLevel()), jcr->dir_impl->res.job,
+        retention_source);
+  }
+
+  if (expiry_spec && expiry_spec[0] != '\0') {
+    std::optional<utime_t> expire_time;
+    std::string error;
+    if (!ParseJobExpiryTime(expiry_spec, expire_time, error)) {
+      set_error(error);
+      return false;
+    }
+
+    jcr->dir_impl->jr.ExpireTime = expire_time;
+    if (log_message) {
+      *log_message = T_("Job expiry set to ")
+                     + JobExpirationToString(expire_time)
+                     + T_(" from run expiry override.");
+    }
+    return true;
+  }
+
+  if (retention_spec && retention_spec[0] != '\0') {
+    std::optional<utime_t> retention;
+    bool keep_forever = false;
+    std::string error;
+    if (!ParseJobRetention(retention_spec, retention, keep_forever, error)) {
+      set_error(error);
+      return false;
+    }
+
+    if (keep_forever) {
+      jcr->dir_impl->jr.ExpireTime = 0;
+    } else if (retention) {
+      jcr->dir_impl->jr.ExpireTime = job_tdate + *retention;
+    } else {
+      jcr->dir_impl->jr.ExpireTime.reset();
+    }
+
+    if (log_message) {
+      *log_message = T_("Job expiry set to ")
+                     + JobExpirationToString(jcr->dir_impl->jr.ExpireTime)
+                     + T_(" from ") + retention_source + T_(".");
+    }
+    return true;
+  }
+
+  jcr->dir_impl->jr.ExpireTime.reset();
+  return true;
+}
+
+bool UpdatePreparedJobStartRecord(JobControlRecord* jcr)
+{
+  UpdateJobHistoryRecord(jcr);
+
+  std::string error;
+  if (!UpdateJobExpiration(jcr, jcr->dir_impl->jr.StartTime, nullptr, &error)) {
+    Jmsg(jcr, M_FATAL, 0, "%s\n", error.c_str());
+    return false;
+  }
+
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+    return false;
+  }
+
+  return true;
+}
+
 /* Forward referenced subroutines */
 static void* job_thread(void* arg);
 static void JobMonitorWatchdog(watchdog_t* self);
@@ -193,7 +446,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
   }
 
   // Create Job record
-  InitJcrJobRecord(jcr);
+  if (!InitJcrJobRecord(jcr)) { goto bail_out; }
 
   if (jcr->dir_impl->res.client) {
     if (!GetOrCreateClientRecord(jcr)) { goto bail_out; }
@@ -231,7 +484,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
    *  in case of later errors. */
   switch (jcr->getJobType()) {
     case JT_BACKUP:
-      if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+      if (!IsVirtualBackupLevel(jcr->getJobLevel())) {
         if (GetOrCreateFilesetRecord(jcr)) {
           /* See if we need to upgrade the level. If GetLevelSinceTime returns
            * true it has updated the level of the backup and we run
@@ -262,7 +515,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
           }
           break;
         default:
-          if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+          if (IsVirtualBackupLevel(jcr->getJobLevel())) {
             if (!DoNativeVbackupInit(jcr)) {
               NativeVbackupCleanup(jcr, JS_ErrorTerminated);
               goto bail_out;
@@ -424,6 +677,12 @@ void UpdateJobEnd(JobControlRecord* jcr, int TermCode)
 static void* job_thread(void* arg)
 {
   JobControlRecord* jcr = (JobControlRecord*)arg;
+  auto abort_job_start = [&jcr]() -> void* {
+    UpdateJobEnd(jcr, JS_ErrorTerminated);
+    GeneratePluginEvent(jcr, bDirEventJobEnd);
+    Dmsg1(50, "======== End Job stat=%c ==========\n", jcr->getJobStatus());
+    return NULL;
+  };
 
   DetachIfNotDetached(pthread_self());
 
@@ -460,9 +719,9 @@ static void* job_thread(void* arg)
         = new alist<RunScript*>(10, not_owned_by_alist);
   }
 
-  if (DbLocker _{jcr->db};
-      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
+    return abort_job_start();
   }
 
   // Run any script BeforeJob on dird
@@ -477,9 +736,9 @@ static void* job_thread(void* arg)
    * because in that case, their date is after the start of this run. */
   jcr->start_time = time(NULL);
   jcr->dir_impl->jr.StartTime = jcr->start_time;
-  if (DbLocker _{jcr->db};
-      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
+    return abort_job_start();
   }
 
   GeneratePluginEvent(jcr, bDirEventJobRun);
@@ -511,7 +770,7 @@ static void* job_thread(void* arg)
           break;
         default:
           if (!jcr->IsJobCanceled()) {
-            if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+            if (IsVirtualBackupLevel(jcr->getJobLevel())) {
               if (DoNativeVbackup(jcr)) {
                 DoAutoprune(jcr);
               } else {
@@ -525,7 +784,7 @@ static void* job_thread(void* arg)
               }
             }
           } else {
-            if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+            if (IsVirtualBackupLevel(jcr->getJobLevel())) {
               NativeVbackupCleanup(jcr, JS_Canceled);
             } else {
               NativeBackupCleanup(jcr, JS_Canceled);
@@ -1423,7 +1682,7 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
   return true;
 }
 
-void InitJcrJobRecord(JobControlRecord* jcr)
+bool InitJcrJobRecord(JobControlRecord* jcr)
 {
   jcr->dir_impl->jr.SchedTime = jcr->sched_time;
   jcr->dir_impl->jr.StartTime = jcr->start_time;
@@ -1436,6 +1695,13 @@ void InitJcrJobRecord(JobControlRecord* jcr)
   bstrncpy(jcr->dir_impl->jr.Name, jcr->dir_impl->res.job->resource_name_,
            sizeof(jcr->dir_impl->jr.Name));
   bstrncpy(jcr->dir_impl->jr.Job, jcr->Job, sizeof(jcr->dir_impl->jr.Job));
+
+  std::string error;
+  if (!UpdateJobExpiration(jcr, jcr->dir_impl->jr.StartTime, nullptr, &error)) {
+    Jmsg(jcr, M_FATAL, 0, "%s\n", error.c_str());
+    return false;
+  }
+  return true;
 }
 
 // Write status and such in DB
@@ -1452,6 +1718,14 @@ void UpdateJobEndRecord(JobControlRecord* jcr)
   jcr->dir_impl->jr.VolSessionTime = jcr->VolSessionTime;
   jcr->dir_impl->jr.JobErrors = jcr->JobErrors;
   jcr->dir_impl->jr.HasBase = jcr->HasBase;
+  std::string log_message;
+  std::string error;
+  if (!UpdateJobExpiration(jcr, jcr->dir_impl->jr.EndTime, &log_message,
+                           &error)) {
+    Jmsg(jcr, M_WARNING, 0, "%s\n", error.c_str());
+  } else if (!log_message.empty()) {
+    Jmsg(jcr, M_INFO, 0, "%s\n", log_message.c_str());
+  }
   if (DbLocker _{jcr->db};
       !jcr->db->UpdateJobEndRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0, T_("Error updating job record. %s\n"),
@@ -1600,6 +1874,10 @@ void DirdFreeJcr(JobControlRecord* jcr)
   FreeAndNullPoolMemory(jcr->dir_impl->SDSecureEraseCmd);
   FreeAndNullPoolMemory(jcr->dir_impl->vf_jobids);
   if (jcr->dir_impl->plugin_options) { free(jcr->dir_impl->plugin_options); }
+  if (jcr->dir_impl->run_job_retention) {
+    free(jcr->dir_impl->run_job_retention);
+  }
+  if (jcr->dir_impl->run_job_expiry) { free(jcr->dir_impl->run_job_expiry); }
 
   // Delete lists setup to hold storage pointers
   FreeRwstorage(jcr);

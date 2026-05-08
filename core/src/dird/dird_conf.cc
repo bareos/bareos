@@ -312,6 +312,10 @@ const ResourceItem job_items[] = {
   { "WriteBootstrap", CFG_TYPE_DIR_OR_CMD, ITEM(res_job, WriteBootstrap), {}},
   { "WriteVerifyList", CFG_TYPE_DIR, ITEM(res_job, WriteVerifyList), { config::DeprecatedSince{25, 1, 0} }},
   { "Replace", CFG_TYPE_REPLACE, ITEM(res_job, replace), {config::DefaultValue{"Always"}}},
+  { "Retention", CFG_TYPE_STR, ITEM(res_job, Retention), {config::Description{"Job retention duration or \"never\". The resulting expiry is stored per job in the catalog."}}},
+  { "FullRetention", CFG_TYPE_STR, ITEM(res_job, FullRetention), {config::Description{"Full and Virtual Full job retention duration or \"never\". Overrides Retention for those levels when set."}}},
+  { "DifferentialRetention", CFG_TYPE_STR, ITEM(res_job, DiffRetention), {config::Description{"Differential job retention duration or \"never\". Overrides Retention for differential jobs when set."}, config::Alias{"DiffRetention"}}},
+  { "IncrementalRetention", CFG_TYPE_STR, ITEM(res_job, IncRetention), {config::Description{"Incremental job retention duration or \"never\". Overrides Retention for incremental jobs when set."}, config::Alias{"IncRetention"}}},
   { "MaximumBandwidth", CFG_TYPE_SPEED, ITEM(res_job, max_bandwidth), {}},
   { "MaxRunSchedTime", CFG_TYPE_TIME, ITEM(res_job, MaxRunSchedTime), {}},
   { "MaxRunTime", CFG_TYPE_TIME, ITEM(res_job, MaxRunTime), {}},
@@ -356,6 +360,7 @@ const ResourceItem job_items[] = {
   { "CancelRunningDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelRunningDuplicates), {config::DefaultValue{"false"}}},
   { "SaveFileHistory", CFG_TYPE_BOOL, ITEM(res_job, SaveFileHist), {config::IntroducedIn{14, 2, 0}, config::DefaultValue{"true"}}},
   { "FileHistorySize", CFG_TYPE_SIZE64, ITEM(res_job, FileHistSize), {config::IntroducedIn{15, 2, 4}, config::DefaultValue{"10000000"}}},
+  { "KeepNumber", CFG_TYPE_PINT32, ITEM(res_job, KeepNumber), {config::DefaultValue{"0"}, config::Description{"Guarantee that at least the specified number of Backup Jobs remain in the catalog even if they are otherwise prunable."}}},
   { "FdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, FdPluginOptions), {}},
   { "SdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, SdPluginOptions), {}},
   { "DirPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, DirPluginOptions), {}},
@@ -520,6 +525,7 @@ struct s_jl joblevels[]
        {"Differential", L_DIFFERENTIAL, JT_BACKUP},
        {"Since", L_SINCE, JT_BACKUP},
        {"VirtualFull", L_VIRTUAL_FULL, JT_BACKUP},
+       {"VirtualDifferential", L_VIRTUAL_DIFFERENTIAL, JT_BACKUP},
        {"Catalog", L_VERIFY_CATALOG, JT_VERIFY},
        {"InitCatalog", L_VERIFY_INIT, JT_VERIFY},
        {"VolumeToCatalog", L_VERIFY_VOLUME_TO_CATALOG, JT_VERIFY},
@@ -3902,6 +3908,10 @@ static void FreeResource(BareosResource* res, int type)
       if (p->RestoreBootstrap) { free(p->RestoreBootstrap); }
       if (p->WriteBootstrap) { free(p->WriteBootstrap); }
       if (p->WriteVerifyList) { free(p->WriteVerifyList); }
+      if (p->Retention) { free(p->Retention); }
+      if (p->FullRetention) { free(p->FullRetention); }
+      if (p->DiffRetention) { free(p->DiffRetention); }
+      if (p->IncRetention) { free(p->IncRetention); }
       if (p->selection_pattern) { free(p->selection_pattern); }
       if (p->run_cmds) { delete p->run_cmds; }
       if (p->storage) { delete p->storage; }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1148,6 +1148,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
     mig_jcr->cjcr = jcr;
 
     // Now reset the job record from the previous job
+    mig_jcr->dir_impl->previous_jr = prev_jr;
     mig_jcr->dir_impl->jr = prev_jr;
 
     // Update the jr to reflect the new values of PoolId and JobId.
@@ -1367,8 +1368,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   // Update job start record for this migration control job
-  if (DbLocker _{jcr->db};
-      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     goto bail_out;
   }
@@ -1382,8 +1382,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   mig_jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   // Update job start record for the real migration backup job
-  if (DbLocker _{mig_jcr->db};
-      !mig_jcr->db->UpdateJobStartRecord(mig_jcr, &mig_jcr->dir_impl->jr)) {
+  if (!UpdatePreparedJobStartRecord(mig_jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", mig_jcr->db->strerror());
     goto bail_out;
   }
@@ -1691,13 +1690,35 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
     UpdateJobEnd(mig_jcr, TermCode);
 
     // Update final items to set them to the previous job's values
+    char ec3[30];
+    const char* expire_time
+        = jcr->dir_impl->previous_jr->ExpireTime
+              ? edit_uint64(*jcr->dir_impl->previous_jr->ExpireTime, ec3)
+              : "NULL";
     Mmsg(query,
-         "UPDATE Job SET StartTime='%s',EndTime='%s',"
-         "JobTDate=%s WHERE JobId=%s",
+         "UPDATE Job SET StartTime='%s',EndTime='%s',JobTDate=%s,"
+         "ExpireTime=%s WHERE JobId=%s",
          jcr->dir_impl->previous_jr->cStartTime,
          jcr->dir_impl->previous_jr->cEndTime,
-         edit_uint64(jcr->dir_impl->previous_jr->JobTDate, ec1), new_jobid);
-    jcr->db->SqlQuery(query.c_str());
+         edit_uint64(jcr->dir_impl->previous_jr->JobTDate, ec1), expire_time,
+         new_jobid);
+    if (!jcr->db->SqlQuery(query.c_str())) {
+      Jmsg(mig_jcr, M_ERROR, 0,
+           T_("Error updating retained expiry for JobId %s from original JobId "
+              "%u: ERR=%s\n"),
+           new_jobid, jcr->dir_impl->previous_jr->JobId, jcr->db->strerror());
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      mig_jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      UpdateJobEndRecord(jcr);
+      UpdateJobEndRecord(mig_jcr);
+    }
+    if (jcr->IsTerminatedOk()) {
+      Jmsg(mig_jcr, M_INFO, 0,
+           "Job expiry retained from original JobId %u: %s\n",
+           jcr->dir_impl->previous_jr->JobId,
+           JobExpirationToString(jcr->dir_impl->previous_jr->ExpireTime)
+               .c_str());
+    }
 
     if (jcr->IsTerminatedOk()) {
       UaContext* ua;

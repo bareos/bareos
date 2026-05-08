@@ -30,6 +30,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
+#include "dird/job.h"
 #include "dird/storage.h"
 #include "lib/edit.h"
 #include "lib/tree.h"
@@ -411,8 +412,7 @@ bool DoNdmpRestoreNdmpNative(JobControlRecord* jcr)
   int status;
 
   jcr->dir_impl->jr.JobLevel = L_FULL; /* Full restore */
-  if (DbLocker _{jcr->db};
-      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (!UpdatePreparedJobStartRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     goto bail_out;
   }

@@ -803,8 +803,18 @@ static void ListTerminatedJobs(StatusPacket* sp)
         bstrncpy(level, "    ", sizeof(level));
         break;
       default:
-        bstrncpy(level, JobLevelToString(je.JobLevel), sizeof(level));
-        level[4] = 0;
+        switch (je.JobLevel) {
+          case L_VIRTUAL_FULL:
+            bstrncpy(level, "VFul", sizeof(level));
+            break;
+          case L_VIRTUAL_DIFFERENTIAL:
+            bstrncpy(level, "VDif", sizeof(level));
+            break;
+          default:
+            bstrncpy(level, JobLevelToString(je.JobLevel), sizeof(level));
+            level[4] = 0;
+            break;
+        }
         break;
     }
     switch (je.JobStatus) {
@@ -892,6 +902,12 @@ static const char* JobLevelToString(int level)
       break;
     case L_VERIFY_DATA:
       str = T_("Data");
+      break;
+    case L_VIRTUAL_FULL:
+      str = T_("Virtual Full");
+      break;
+    case L_VIRTUAL_DIFFERENTIAL:
+      str = T_("Virtual Differential");
       break;
     case L_NONE:
       str = " ";
