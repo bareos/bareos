@@ -39,28 +39,18 @@
 #include <string>
 #include <string_view>
 
-/** Opaque handle wrapping a connected file descriptor. */
+/** Opaque handle wrapping a connected WebSocket after HTTP upgrade. */
 class WsCodec {
  public:
-  explicit WsCodec(int fd,
-                   std::chrono::milliseconds io_timeout
-                   = std::chrono::seconds(30),
-                   std::chrono::milliseconds handshake_timeout
-                   = std::chrono::seconds(5),
-                   size_t max_frame_payload_size = 1024 * 1024,
-                   size_t max_message_size = 4 * 1024 * 1024)
-      : fd_(fd)
-      , io_timeout_(io_timeout)
-      , handshake_timeout_(handshake_timeout)
-      , max_frame_payload_size_(max_frame_payload_size)
-      , max_message_size_(max_message_size)
-  {
-  }
-
-  /* Perform the HTTP/WebSocket upgrade handshake.
-   * Reads the HTTP GET request and sends the 101 Switching Protocols reply.
-   * Throws std::runtime_error on failure. */
-  void Handshake();
+  /* Perform the HTTP/WebSocket upgrade handshake and return the upgraded
+   * connection. Throws std::runtime_error on failure. */
+  static WsCodec Accept(int fd,
+                        std::chrono::milliseconds io_timeout
+                        = std::chrono::seconds(30),
+                        std::chrono::milliseconds handshake_timeout
+                        = std::chrono::seconds(5),
+                        size_t max_frame_payload_size = 1024 * 1024,
+                        size_t max_message_size = 4 * 1024 * 1024);
 
   /* Read one complete WebSocket message (text frame, possibly fragmented).
    * Transparently handles ping/pong and close frames.
@@ -78,6 +68,13 @@ class WsCodec {
   bool IsClosed() const { return closed_; }
 
  private:
+  WsCodec(int fd,
+          std::chrono::milliseconds io_timeout,
+          std::chrono::milliseconds handshake_timeout,
+          size_t max_frame_payload_size,
+          size_t max_message_size);
+  void Handshake();
+
   int fd_;
   bool closed_ = false;
   std::chrono::milliseconds io_timeout_;

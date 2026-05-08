@@ -164,18 +164,20 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
   PROXY_LOG_INFO(peer, "connected");
 
-  WsCodec ws(fd);
-  try {
-    ws.Handshake();
-  } catch (const std::exception& ex) {
-    PROXY_LOG_WARN(peer, "WS handshake failed: %s", ex.what());
-    return;
-  }
+  auto ws = [&]() -> std::optional<WsCodec> {
+    try {
+      return WsCodec::Accept(fd);
+    } catch (const std::exception& ex) {
+      PROXY_LOG_WARN(peer, "WS handshake failed: %s", ex.what());
+      return std::nullopt;
+    }
+  }();
+  if (!ws) { return; }
 
   // ── Step 1: receive auth message ─────────────────────────────────────────
   std::string raw_auth;
   try {
-    raw_auth = ws.RecvMessage();
+    raw_auth = ws->RecvMessage();
   } catch (const std::exception& ex) {
     PROXY_LOG_WARN(peer, "recv auth: %s", ex.what());
     return;
@@ -189,7 +191,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   json_error_t jerr{};
   json_t* auth_msg = json_loads(raw_auth.c_str(), 0, &jerr);
   if (!auth_msg) {
-    ws.SendText(
+    ws->SendText(
         JsonObject({{"type", "error"}, {"message", "Expected JSON auth"}}));
     return;
   }
@@ -208,12 +210,12 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
   const auto type = jstr("type");
   if (type && *type == "list_directors") {
-    ws.SendText(JsonDirectorList(config));
+    ws->SendText(JsonDirectorList(config));
     json_decref(auth_msg);
     return;
   }
   if (!type || *type != "auth") {
-    ws.SendText(JsonObject(
+    ws->SendText(JsonObject(
         {{"type", "error"},
          {"message",
           "First message must be type=auth or type=list_directors"}}));
@@ -246,7 +248,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     cfg.tls_psk_disable = target.tls_psk_disable;
     cfg.tls_psk_require = target.tls_psk_require;
   } catch (const std::exception& ex) {
-    ws.SendText(JsonObject({{"type", "auth_error"}, {"message", ex.what()}}));
+    ws->SendText(JsonObject({{"type", "auth_error"}, {"message", ex.what()}}));
     json_decref(auth_msg);
     return;
   }
@@ -267,11 +269,11 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     try {
       if (msg.find("authentication failed") != std::string::npos
           || msg.find("Authorization failed") != std::string::npos) {
-        ws.SendText(JsonObject(
+        ws->SendText(JsonObject(
             {{"type", "auth_error"},
              {"message", std::string("Authentication failed: ") + ex.what()}}));
       } else {
-        ws.SendText(JsonObject(
+        ws->SendText(JsonObject(
             {{"type", "auth_error"},
              {"message", std::string("Connection error: ") + ex.what()}}));
       }
@@ -296,7 +298,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     char* ok_str = json_dumps(ok, JSON_COMPACT);
     json_decref(ok);
     try {
-      ws.SendText(ok_str);
+      ws->SendText(ok_str);
     } catch (...) {
       free(ok_str);
       return;  // Client disconnected right after authentication succeeded.
@@ -310,10 +312,10 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
   // ── Step 3: command loop ─────────────────────────────────────────────────
   auto current_prompt = DirectorPrompt::Main;
-  while (!ws.IsClosed()) {
+  while (!ws->IsClosed()) {
     std::string raw_msg;
     try {
-      raw_msg = ws.RecvMessage();
+      raw_msg = ws->RecvMessage();
     } catch (const std::exception& ex) {
       PROXY_LOG_WARN(peer, "recv: %s", ex.what());
       break;
@@ -324,18 +326,19 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     json_error_t jerr2{};
     json_t* req = json_loads(raw_msg.c_str(), 0, &jerr2);
     if (!req) {
-      ws.SendText(JsonObject({{"type", "error"}, {"message", "Invalid JSON"}}));
+      ws->SendText(
+          JsonObject({{"type", "error"}, {"message", "Invalid JSON"}}));
       continue;
     }
 
     const char* req_type = json_string_value(json_object_get(req, "type"));
     if (req_type && std::string_view(req_type) == "ping") {
       json_decref(req);
-      ws.SendText(JsonObject({{"type", "pong"}}));
+      ws->SendText(JsonObject({{"type", "pong"}}));
       continue;
     }
     if (!req_type || std::string_view(req_type) != "command") {
-      ws.SendText(JsonObject(
+      ws->SendText(JsonObject(
           {{"type", "error"}, {"message", "Expected type=command"}}));
       json_decref(req);
       continue;
@@ -382,7 +385,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
             }
             char* resp_str = json_dumps(resp, JSON_COMPACT);
             json_decref(resp);
-            ws.SendText(resp_str);
+            ws->SendText(resp_str);
             free(resp_str);
           };
     auto is_terminal_prompt = [](DirectorPrompt prompt) {
@@ -406,7 +409,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
             }
             char* resp_str = json_dumps(resp, JSON_COMPACT);
             json_decref(resp);
-            ws.SendText(resp_str);
+            ws->SendText(resp_str);
             free(resp_str);
           };
 
@@ -458,7 +461,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
         char* resp_str = json_dumps(resp, JSON_COMPACT);
         json_decref(resp);
-        ws.SendText(resp_str);
+        ws->SendText(resp_str);
         free(resp_str);
       } else {
         // Raw mode: {"type":"raw_response","id":...,"command":...,"text":"...",
@@ -501,7 +504,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
       json_decref(err);
       PROXY_LOG_ERROR(peer, "director error: %s", ex.what());
       try {
-        ws.SendText(err_str);
+        ws->SendText(err_str);
       } catch (...) {
         free(err_str);
         break;  // Client disconnected — end session.
