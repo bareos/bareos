@@ -19,7 +19,7 @@
    02110-1301, USA.
  */
 
-#include "../../lib/ws_codec.h"
+#include "../ws_codec.h"
 
 #include <sys/socket.h>
 #include <unistd.h>

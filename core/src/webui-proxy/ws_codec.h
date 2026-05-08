@@ -20,7 +20,7 @@
  */
 /**
  * @file
- * Minimal RFC 6455 WebSocket server codec shared by multiple frontends.
+ * Minimal RFC 6455 WebSocket server codec for the webui proxy.
  *
  * Handles:
  *  - HTTP upgrade handshake (SHA-1 accept key via OpenSSL)
@@ -31,8 +31,8 @@
  *  - Unmasked outbound frames (server never masks per RFC 6455)
  *  - 7-bit, 16-bit, and 64-bit payload length encoding
  */
-#ifndef BAREOS_LIB_WS_CODEC_H_
-#define BAREOS_LIB_WS_CODEC_H_
+#ifndef BAREOS_WEBUI_PROXY_WS_CODEC_H_
+#define BAREOS_WEBUI_PROXY_WS_CODEC_H_
 
 #include <chrono>
 #include <cstdint>
@@ -94,4 +94,4 @@ class WsCodec {
   void SendFrame(uint8_t opcode, std::string_view payload, bool fin = true);
 };
 
-#endif  // BAREOS_LIB_WS_CODEC_H_
+#endif  // BAREOS_WEBUI_PROXY_WS_CODEC_H_
