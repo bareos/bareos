@@ -33,42 +33,52 @@
       <!-- ── SHOW ─────────────────────────────────────────────────────────── -->
       <q-tab-panel name="list" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header row items-center">
-            <span>{{ t('Job List') }}</span>
-            <q-space />
-            <q-select
-              v-model="statusFilters"
-              dense
-              outlined
-              clearable
-              emit-value
-              map-options
-              multiple
-              use-chips
-              :options="jobStatusOptions"
-              :label="t('Status')"
-              class="q-mr-sm"
-              style="min-width:220px"
-            />
-            <q-select
-              v-model="levelFilters"
-              dense
-              outlined
-              clearable
-              emit-value
-              map-options
-              multiple
-              use-chips
-              :options="jobLevelOptions"
-              :label="t('Level')"
-              class="q-mr-sm"
-              style="min-width:220px"
-            />
-            <q-input v-model="search" dense outlined :placeholder="t('Search…')" class="q-mr-sm" style="width:200px" clearable>
-              <template #prepend><q-icon name="search" /></template>
-            </q-input>
-            <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ countdown }}s</span>
-            <q-btn flat round dense icon="refresh" color="white" @click="manualRefresh" />
+          <q-card-section class="panel-header jobs-list-header">
+            <div class="jobs-list-header__top row items-center">
+              <span>{{ t('Job List') }}</span>
+              <div class="jobs-list-header__actions row items-center no-wrap">
+                <span class="text-white text-caption jobs-list-header__countdown">↻ {{ countdown }}s</span>
+                <q-btn flat round dense icon="refresh" color="white" @click="manualRefresh" />
+              </div>
+            </div>
+            <div class="jobs-list-header__filters row items-start">
+              <q-select
+                v-model="statusFilters"
+                dense
+                outlined
+                clearable
+                emit-value
+                map-options
+                multiple
+                use-chips
+                :options="jobStatusOptions"
+                :label="t('Status')"
+                class="jobs-list-header__filter"
+              />
+              <q-select
+                v-model="levelFilters"
+                dense
+                outlined
+                clearable
+                emit-value
+                map-options
+                multiple
+                use-chips
+                :options="jobLevelOptions"
+                :label="t('Level')"
+                class="jobs-list-header__filter"
+              />
+              <q-input
+                v-model="search"
+                dense
+                outlined
+                clearable
+                :placeholder="t('Search…')"
+                class="jobs-list-header__search"
+              >
+                <template #prepend><q-icon name="search" /></template>
+              </q-input>
+            </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
@@ -1642,6 +1652,73 @@ watch(() => singletonTabDirector.value, async () => {
   display: inline-flex;
   align-items: center;
   text-decoration: none;
+}
+
+.jobs-list-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.jobs-list-header__top {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.jobs-list-header__actions {
+  gap: 8px;
+  margin-left: auto;
+}
+
+.jobs-list-header__filters {
+  gap: 8px;
+  width: 100%;
+}
+
+.jobs-list-header__filter {
+  flex: 1 1 220px;
+  min-width: 220px;
+}
+
+.jobs-list-header__search {
+  flex: 1 1 200px;
+  min-width: 200px;
+}
+
+.jobs-list-header__countdown {
+  opacity: 0.7;
+}
+
+.jobs-list-header__filters :deep(.q-field--outlined.q-field--focused .q-field__control:after),
+.jobs-list-header__filters :deep(.q-field--outlined.q-field--highlighted .q-field__control:after) {
+  border-color: rgba(0, 0, 0, 0.7);
+}
+
+.jobs-list-header__filters :deep(.q-field--focused .q-field__label),
+.jobs-list-header__filters :deep(.q-field--highlighted .q-field__label),
+.jobs-list-header__filters :deep(.q-field--focused .q-field__marginal),
+.jobs-list-header__filters :deep(.q-field--highlighted .q-field__marginal),
+.jobs-list-header__filters :deep(.q-field--focused .q-select__dropdown-icon),
+.jobs-list-header__filters :deep(.q-field--highlighted .q-select__dropdown-icon) {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+@media (max-width: 599px) {
+  .jobs-list-header__top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .jobs-list-header__actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .jobs-list-header__filter,
+  .jobs-list-header__search {
+    min-width: 100%;
+  }
 }
 
 .animated-spin {
