@@ -48,7 +48,10 @@
                   <q-card-section class="panel-header row items-center">
                     <span>{{ t('Director Info') }}</span>
                     <q-space />
-                    <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ statusCountdown }}s</span>
+                    <span class="text-white text-caption q-mr-sm panel-refresh-countdown">
+                      <span aria-hidden="true">↻</span>
+                      <span class="panel-refresh-countdown__value">{{ statusCountdown }}s</span>
+                    </span>
                     <q-btn flat round dense icon="refresh" color="white"
                            @click="manualRefreshStatus" :loading="statusLoading" />
                   </q-card-section>
