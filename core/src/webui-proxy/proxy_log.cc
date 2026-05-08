@@ -46,8 +46,11 @@ std::string NormalizeTimezoneOffset(std::string_view raw_offset)
 {
   if (raw_offset.size() == 5
       && (raw_offset.front() == '+' || raw_offset.front() == '-')) {
-    std::string normalized(raw_offset);
-    normalized.insert(3, ":");
+    std::string normalized;
+    normalized.reserve(6);
+    normalized.append(raw_offset.substr(0, 3));
+    normalized.push_back(':');
+    normalized.append(raw_offset.substr(3));
     return normalized;
   }
 
@@ -153,8 +156,7 @@ std::string FormatProxyLogTimestamp(
   }
 
   char formatted[64];
-  std::snprintf(formatted, sizeof(formatted), "%s.%06lld%s",
-                date_buffer.data(),
+  std::snprintf(formatted, sizeof(formatted), "%s.%06lld%s", date_buffer.data(),
                 static_cast<long long>(subseconds.count()),
                 NormalizeTimezoneOffset(offset_buffer.data()).c_str());
   return formatted;
