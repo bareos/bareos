@@ -38,6 +38,12 @@
 
 namespace {
 
+constexpr int kListenBacklog = 16;
+
+// accept(2) can fail transiently when interrupted, when the listening socket is
+// momentarily not ready anymore, or when the kernel reports a temporary
+// resource/network condition for one pending connection. In the accept loop we
+// just ignore these and wait for the next readiness notification.
 bool IsTransientAcceptError(int err)
 {
   switch (err) {
@@ -68,6 +74,8 @@ bool IsTransientAcceptError(int err)
 }
 
 }  // namespace
+
+ProxyServer::~ProxyServer() { CleanupSockets(); }
 
 void ProxyServer::Stop() { stop_requested_ = 1; }
 
@@ -107,7 +115,8 @@ void ProxyServer::Run()
     int opt = 1;
     ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-    if (::bind(fd, ai->ai_addr, ai->ai_addrlen) == 0 && ::listen(fd, 16) == 0) {
+    if (::bind(fd, ai->ai_addr, ai->ai_addrlen) == 0
+        && ::listen(fd, kListenBacklog) == 0) {
       listen_fds_.push_back(fd);
     } else {
       ::close(fd);
