@@ -23,6 +23,24 @@ import { jobStatusMap } from '../mock/index.js'
 
 const JOB_LEVEL_FILTERS = new Set(['F', 'I', 'D', 'V', 'B'])
 
+export function normaliseJobId(value) {
+  if (typeof value === 'number') {
+    return Number.isInteger(value) && value > 0 ? value : null
+  }
+
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const trimmedValue = value.trim()
+  if (!/^\d+$/.test(trimmedValue)) {
+    return null
+  }
+
+  const jobId = Number(trimmedValue)
+  return Number.isSafeInteger(jobId) && jobId > 0 ? jobId : null
+}
+
 export function normaliseJobStatusFilter(value) {
   if (typeof value !== 'string') {
     return ''

@@ -494,7 +494,7 @@ async function doRerun() {
   try {
     const res   = await director.call(`rerun jobid=${currentJobId.value} yes`)
     const newId = res?.run?.jobid ?? res?.jobid ?? null
-    $q.notify({ type: 'positive', message: newId ? t('Job restarted as ID {id}.', { id: newId }) : t('Job restarted.') })
+    $q.notify({ type: 'positive', message: newId ? `${t('Job restarted as ID')} ${newId}.` : t('Job restarted.') })
     if (newId) {
       router.push({
         name: 'job-details',
