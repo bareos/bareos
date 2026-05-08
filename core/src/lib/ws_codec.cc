@@ -22,9 +22,11 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cstring>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 #include <sys/socket.h>
 #include <unistd.h>
@@ -92,16 +94,15 @@ static std::string Base64Encode(const uint8_t* data, size_t len)
   return result;
 }
 
-static std::string ComputeAcceptKey(const std::string& client_key)
+static std::string ComputeAcceptKey(std::string_view client_key)
 {
-  std::string combined = client_key + kWsMagic;
-
   uint8_t sha1[EVP_MAX_MD_SIZE];
   unsigned int sha1_len = 0;
 
   EVP_MD_CTX* ctx = EVP_MD_CTX_new();
   EVP_DigestInit_ex(ctx, EVP_sha1(), nullptr);
-  EVP_DigestUpdate(ctx, combined.data(), combined.size());
+  EVP_DigestUpdate(ctx, client_key.data(), client_key.size());
+  EVP_DigestUpdate(ctx, kWsMagic, sizeof(kWsMagic) - 1);
   EVP_DigestFinal_ex(ctx, sha1, &sha1_len);
   EVP_MD_CTX_free(ctx);
 
@@ -119,45 +120,41 @@ void WsCodec::Handshake()
     if (n <= 0) {
       throw std::runtime_error("WebSocket: connection lost during handshake");
     }
-    headers += ch;
-    if (headers.size() >= 4
-        && headers.compare(headers.size() - 4, 4, "\r\n\r\n") == 0) {
-      break;
-    }
+    headers.push_back(ch);
+    if (headers.ends_with("\r\n\r\n")) { break; }
     if (headers.size() > 16384) {
       throw std::runtime_error("WebSocket: HTTP headers too large");
     }
   }
 
   // Extract Sec-WebSocket-Key
-  std::string key;
-  const std::string key_header = "Sec-WebSocket-Key:";
-  auto pos = headers.find(key_header);
-  if (pos == std::string::npos) {
-    // Try case-insensitive search
-    std::string lower_headers = headers;
-    std::transform(lower_headers.begin(), lower_headers.end(),
-                   lower_headers.begin(), ::tolower);
-    std::string lower_key_header = "sec-websocket-key:";
-    pos = lower_headers.find(lower_key_header);
-    if (pos == std::string::npos) {
-      throw std::runtime_error("WebSocket: missing Sec-WebSocket-Key header");
-    }
+  constexpr std::string_view kKeyHeader = "Sec-WebSocket-Key:";
+  const auto pos_it
+      = std::search(headers.begin(), headers.end(), kKeyHeader.begin(),
+                    kKeyHeader.end(), [](char lhs, char rhs) {
+                      return std::tolower(static_cast<unsigned char>(lhs))
+                             == std::tolower(static_cast<unsigned char>(rhs));
+                    });
+  if (pos_it == headers.end()) {
+    throw std::runtime_error("WebSocket: missing Sec-WebSocket-Key header");
   }
-  pos += key_header.size();
-  auto end = headers.find("\r\n", pos);
+
+  const auto pos = static_cast<size_t>(std::distance(headers.begin(), pos_it))
+                   + kKeyHeader.size();
+  const std::string_view headers_view(headers);
+  const auto end = headers_view.find("\r\n", pos);
   if (end == std::string::npos) {
     throw std::runtime_error("WebSocket: malformed Sec-WebSocket-Key header");
   }
-  key = headers.substr(pos, end - pos);
+  std::string_view key = headers_view.substr(pos, end - pos);
   while (!key.empty() && (key.front() == ' ' || key.front() == '\t')) {
-    key.erase(key.begin());
+    key.remove_prefix(1);
   }
   while (!key.empty() && (key.back() == ' ' || key.back() == '\t')) {
-    key.pop_back();
+    key.remove_suffix(1);
   }
 
-  std::string accept = ComputeAcceptKey(key);
+  const std::string accept = ComputeAcceptKey(key);
 
   std::string response
       = "HTTP/1.1 101 Switching Protocols\r\n"
@@ -214,7 +211,7 @@ WsCodec::Frame WsCodec::RecvFrame()
   return f;
 }
 
-void WsCodec::SendFrame(uint8_t opcode, const std::string& payload, bool fin)
+void WsCodec::SendFrame(uint8_t opcode, std::string_view payload, bool fin)
 {
   std::string frame;
   frame.reserve(10 + payload.size());
@@ -279,7 +276,7 @@ std::string WsCodec::RecvMessage()
   }
 }
 
-void WsCodec::SendText(const std::string& payload)
+void WsCodec::SendText(std::string_view payload)
 {
   SendFrame(kOpText, payload);
 }
