@@ -592,8 +592,7 @@ else()
     )
     configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
     configurefilestosystemtest(
-      "systemtests" "tests/${TEST_NAME}" "testrunner" @ONLY
-      "tests/webui-vue-common"
+      "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-vue-common"
     )
 
     configure_file(
@@ -604,13 +603,34 @@ else()
     configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
     configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
 
-    add_test(
-      NAME "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
-      COMMAND ${tests_dir}/${TEST_NAME}/testrunner
-      WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
+    add_systemtest(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
+      ${tests_dir}/${TEST_NAME}/test-setup
     )
     set_tests_properties(
-      ${WEBUI_VUE_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 240 COST 2.0
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
+      PROPERTIES FIXTURES_SETUP "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
+                 TIMEOUT 240 COST 2.0
+    )
+    add_systemtest(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
+      ${tests_dir}/${TEST_NAME}/testrunner
+    )
+    set_tests_properties(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
+      PROPERTIES FIXTURES_REQUIRED
+                 "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture" TIMEOUT 240
+                 COST 2.0
+    )
+    add_systemtest(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:cleanup"
+      ${tests_dir}/${TEST_NAME}/test-cleanup
+    )
+    set_tests_properties(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:cleanup"
+      PROPERTIES FIXTURES_CLEANUP
+                 "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture" TIMEOUT 60 COST
+                 1.0
     )
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endforeach()

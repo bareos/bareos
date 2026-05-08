@@ -26,8 +26,6 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-JobName=backup-bareos-fd
-
 . ./environment
 . "${BAREOS_SCRIPTS_DIR}/functions"
 
@@ -37,20 +35,30 @@ proxy_log="${tmp}/webui-vue-proxy.out"
 frontend_log="${tmp}/webui-vue-frontend.out"
 playwright_log="${tmp}/webui-vue-playwright.out"
 proxy_config="${tmp}/bareos-webui-proxy.ini"
+proxy_pid_file="${tmp}/webui-vue-proxy.pid"
+frontend_pid_file="${tmp}/webui-vue-frontend.pid"
 PROXY_PID=""
 FRONTEND_PID=""
 
 function cleanup_children()
 {
+  if [[ -z "${FRONTEND_PID}" ]] && [[ -f "${frontend_pid_file}" ]]; then
+    FRONTEND_PID="$(<"${frontend_pid_file}")"
+  fi
+  if [[ -z "${PROXY_PID}" ]] && [[ -f "${proxy_pid_file}" ]]; then
+    PROXY_PID="$(<"${proxy_pid_file}")"
+  fi
+
   if [[ -n "${FRONTEND_PID}" ]] && kill -0 "${FRONTEND_PID}" >/dev/null 2>&1; then
     kill "${FRONTEND_PID}" || true
     wait "${FRONTEND_PID}" || true
   fi
-
   if [[ -n "${PROXY_PID}" ]] && kill -0 "${PROXY_PID}" >/dev/null 2>&1; then
     kill "${PROXY_PID}" || true
     wait "${PROXY_PID}" || true
   fi
+
+  rm -f "${frontend_pid_file}" "${proxy_pid_file}"
 }
 
 trap cleanup_children EXIT
@@ -82,25 +90,9 @@ function wait_for_tcp()
   return 1
 }
 
-${BAREOS_SCRIPTS_DIR}/cleanup
-${BAREOS_SCRIPTS_DIR}/setup
-
-setup_data
-
 start_test
 
-cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${NULL_DEV}
-messages
-@$out ${tmp}/log1.out
-run job=$JobName yes
-wait
-messages
-quit
-END_OF_DATA
-
 run_bareos
-run_bconsole
 
 proxy_tls_psk_disable=false
 if [[ "${BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK}" = "1" ]]; then
@@ -137,6 +129,7 @@ popd >/dev/null
 
 "${BAREOS_WEBUI_PROXY_BINARY}" --config "${proxy_config}" >"${proxy_log}" 2>&1 &
 PROXY_PID=$!
+printf '%s\n' "${PROXY_PID}" >"${proxy_pid_file}"
 
 "${NODE_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/webui-vue/scripts/serve-spa.mjs" \
   --host 127.0.0.1 \
@@ -144,6 +137,7 @@ PROXY_PID=$!
   --root "${bundle_dir}" \
   >"${frontend_log}" 2>&1 &
 FRONTEND_PID=$!
+printf '%s\n' "${FRONTEND_PID}" >"${frontend_pid_file}"
 
 if ! wait_for_tcp 127.0.0.1 "${proxy_port}"; then
   set_error "bareos-webui-proxy did not start:\n$(cat "${proxy_log}")"
