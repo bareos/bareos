@@ -184,24 +184,13 @@ void LoadProxyConfigFromString(const std::string& ini, ProxyConfig& cfg)
 
 DirectorTargetConfig ResolveDirectorTarget(
     const ProxyConfig& cfg,
-    const std::optional<std::string>& requested_director,
-    const std::optional<std::string>& requested_host,
-    const std::optional<int>& requested_port)
+    const std::optional<std::string>& requested_director)
 {
-  if (requested_host || requested_port) {
-    throw std::runtime_error(
-        "Proxy config: host and port overrides are not allowed");
+  if (!requested_director || requested_director->empty()) {
+    throw std::runtime_error("Proxy config: no director selected");
   }
 
-  std::string director_id;
-  if (requested_director && !requested_director->empty()) {
-    director_id = *requested_director;
-  } else if (cfg.allowed_directors.size() == 1) {
-    director_id = cfg.allowed_directors.begin()->first;
-  } else {
-    throw std::runtime_error(
-        "Proxy config: no director selected from the allowlist");
-  }
+  const std::string& director_id = *requested_director;
 
   auto it = cfg.allowed_directors.find(director_id);
   if (it == cfg.allowed_directors.end()) {

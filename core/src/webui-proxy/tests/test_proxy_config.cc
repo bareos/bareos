@@ -103,9 +103,7 @@ TEST(ProxyConfig, RequiresDirectorSelectionWhenMultipleConfigured)
       "dr", DirectorTargetConfig{
                 .host = "dr.example.test", .port = 29101, .name = "dr-dir"});
 
-  EXPECT_THROW(
-      ResolveDirectorTarget(cfg, std::nullopt, std::nullopt, std::nullopt),
-      std::runtime_error);
+  EXPECT_THROW(ResolveDirectorTarget(cfg, std::nullopt), std::runtime_error);
 }
 
 TEST(ProxyConfig, ResolvesAllowedDirectorById)
@@ -116,8 +114,7 @@ TEST(ProxyConfig, ResolvesAllowedDirectorById)
       DirectorTargetConfig{
           .host = "prod.example.test", .port = 19101, .name = "bareos-dir"});
 
-  const auto target = ResolveDirectorTarget(cfg, std::string("prod"),
-                                            std::nullopt, std::nullopt);
+  const auto target = ResolveDirectorTarget(cfg, std::string("prod"));
 
   EXPECT_EQ(target.host, "prod.example.test");
   EXPECT_EQ(target.port, 19101);
@@ -139,7 +136,7 @@ TEST(ProxyConfig, ListsAllowedDirectorIds)
             std::vector<std::string>({"dr", "prod"}));
 }
 
-TEST(ProxyConfig, ResolvesSingleConfiguredDirectorWithoutDefault)
+TEST(ProxyConfig, RequiresDirectorSelectionWhenSingleConfigured)
 {
   ProxyConfig cfg;
   cfg.allowed_directors.emplace(
@@ -147,21 +144,7 @@ TEST(ProxyConfig, ResolvesSingleConfiguredDirectorWithoutDefault)
       DirectorTargetConfig{
           .host = "dir.example.test", .port = 19101, .name = "custom-dir"});
 
-  const auto target
-      = ResolveDirectorTarget(cfg, std::nullopt, std::nullopt, std::nullopt);
-
-  EXPECT_EQ(target.host, "dir.example.test");
-  EXPECT_EQ(target.port, 19101);
-  EXPECT_EQ(target.name, "custom-dir");
-}
-
-TEST(ProxyConfig, RejectsBrowserHostPortOverrides)
-{
-  ProxyConfig cfg;
-
-  EXPECT_THROW(ResolveDirectorTarget(cfg, std::nullopt,
-                                     std::string("dir.example.test"), 19101),
-               std::runtime_error);
+  EXPECT_THROW(ResolveDirectorTarget(cfg, std::nullopt), std::runtime_error);
 }
 
 TEST(ProxyConfig, RejectsUnexpectedDirectorWithoutAllowlist)
@@ -172,7 +155,6 @@ TEST(ProxyConfig, RejectsUnexpectedDirectorWithoutAllowlist)
       DirectorTargetConfig{
           .host = "dir.example.test", .port = 19101, .name = "custom-dir"});
 
-  EXPECT_THROW(ResolveDirectorTarget(cfg, std::string("other-dir"),
-                                     std::nullopt, std::nullopt),
+  EXPECT_THROW(ResolveDirectorTarget(cfg, std::string("other-dir")),
                std::runtime_error);
 }
