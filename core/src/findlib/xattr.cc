@@ -1061,6 +1061,8 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
             goto bail_out;
 #    if defined(EOPNOTSUPP)
           case EOPNOTSUPP: {
+            if (attrnamespace == EXTATTR_NAMESPACE_SYSTEM) { continue; }
+
             retval = BxattrExitCode::kWarning;
             Mmsg2(jcr->errmsg,
                   T_("extended attributes are not supported on file \"%s\"\n"),
@@ -1070,17 +1072,18 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
             goto bail_out;
           } break;
 #    endif
-          case EPERM:
+          case EPERM: {
             if (attrnamespace == EXTATTR_NAMESPACE_SYSTEM) { continue; }
+          }
             [[fallthrough]];
-            // FALLTHROUGH
-          default:
+          default: {
             Mmsg2(jcr->errmsg,
                   T_("extattr_list_link error on file \"%s\": ERR=%s\n"),
                   xattr_data->last_fname, be.bstrerror());
             Dmsg2(100, "extattr_list_link error file=%s ERR=%s\n",
                   xattr_data->last_fname, be.bstrerror());
             goto bail_out;
+          }
         }
         break;
       }
