@@ -1060,10 +1060,19 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
             retval = BxattrExitCode::kSuccess;
             goto bail_out;
 #    if defined(EOPNOTSUPP)
-          case EOPNOTSUPP:
+          case EOPNOTSUPP: {
+            retval = BxattrExitCode::kWarning;
+            Mmsg2(jcr->errmsg,
+                  T_("extended attributes are not supported on file \"%s\"\n"),
+                  xattr_data->last_fname);
+            Dmsg2(100, "extended attributes are not supported on file \"%s\"\n",
+                  xattr_data->last_fname);
+            goto bail_out;
+          } break;
 #    endif
           case EPERM:
             if (attrnamespace == EXTATTR_NAMESPACE_SYSTEM) { continue; }
+            [[fallthrough]];
             // FALLTHROUGH
           default:
             Mmsg2(jcr->errmsg,
