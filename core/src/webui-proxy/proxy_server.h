@@ -28,7 +28,6 @@
 #include "proxy_config.h"
 #include <csignal>
 #include <string>
-#include <vector>
 
 /**
  * Open a listen socket and block until Stop() is called or a fatal error
@@ -38,7 +37,6 @@
 class ProxyServer {
  public:
   explicit ProxyServer(const ProxyConfig& cfg) : cfg_(cfg) {}
-  ~ProxyServer();
 
   /** Blocking: accept loop.  Returns when Stop() is called. */
   void Run();
@@ -48,12 +46,7 @@ class ProxyServer {
 
  private:
   ProxyConfig cfg_;
-  // All listening sockets (one per address family for the bind host).
-  // Populated by Run(); closed during Run() shutdown.
-  std::vector<int> listen_fds_;
   volatile std::sig_atomic_t stop_requested_{0};
-
-  void CleanupSockets();
 };
 
 #endif  // BAREOS_WEBUI_PROXY_PROXY_SERVER_H_
