@@ -13,7 +13,7 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import {
   DEFAULT_DIRECTOR_NAME,
   useAuthStore,
@@ -31,7 +31,7 @@ const KEEPALIVE_INTERVAL_MS = 20_000
 const RECONNECT_DELAY_MS = 1_000
 
 export const useDirectorStore = defineStore('director', () => {
-  const ws       = ref(null)
+  const ws       = shallowRef(null)
   // 'disconnected' | 'connecting' | 'authenticating' | 'connected' | 'error'
   const status   = ref('disconnected')
   const errorMsg = ref(null)
@@ -240,18 +240,29 @@ export const useDirectorStore = defineStore('director', () => {
     ws.value = socket
 
     socket.onopen = () => {
+      if (ws.value !== socket) {
+        return
+      }
       status.value = 'authenticating'
-      _send({
+      socket.send(JSON.stringify({
         type:     'auth',
         username:  credentials.username,
         password:  credentials.password,
         director:  credentials.director ?? DEFAULT_DIRECTOR_NAME,
-      })
+      }))
     }
 
-    socket.onmessage = _onMessage
+    socket.onmessage = (event) => {
+      if (ws.value !== socket) {
+        return
+      }
+      _onMessage(event)
+    }
 
     socket.onerror = () => {
+      if (ws.value !== socket) {
+        return
+      }
       _clearKeepalive()
       status.value = 'error'
       errorMsg.value = `Cannot connect to proxy at ${WS_URL}`
@@ -259,7 +270,11 @@ export const useDirectorStore = defineStore('director', () => {
     }
 
     socket.onclose = () => {
+      if (ws.value !== socket) {
+        return
+      }
       _clearKeepalive()
+      ws.value = null
       if (status.value === 'connected' || status.value === 'authenticating') {
         status.value = 'disconnected'
       }
