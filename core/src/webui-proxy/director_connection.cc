@@ -324,7 +324,7 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
 
   // Step 3: compute and send our CRAM-MD5 response (no trailing newline)
   auto hmac = HmacMd5(key, director_challenge);
-  std::string response = BareosBase64Encode(hmac.data(), 16, true);
+  std::string response = BareosBase64Encode(hmac.data(), 16);
   SendFrame(response);
 
   // Step 4: receive director's "1000 OK auth\n"
@@ -351,18 +351,11 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
     dir_response.pop_back();
   }
 
-  // Step 7: verify director response (accept both compatible and
-  // non-compatible)
+  // Step 7: verify director response against the Bareos-compatible variant.
   auto expected_hmac = HmacMd5(key, our_challenge);
-  std::string expected_compat
-      = BareosBase64Encode(expected_hmac.data(), 16, true);
-  std::string expected_noncompat
-      = BareosBase64Encode(expected_hmac.data(), 16, false);
+  std::string expected = BareosBase64Encode(expected_hmac.data(), 16);
 
-  bool ok = (dir_response == expected_compat)
-            || (dir_response == expected_noncompat);
-
-  if (ok) {
+  if (dir_response == expected) {
     SendFrame("1000 OK auth\n");
   } else {
     SendFrame("1999 Authorization failed.\n");
