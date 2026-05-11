@@ -26,31 +26,128 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-JobName=backup-bareos-fd
-
 . ./environment
 . "${BAREOS_SCRIPTS_DIR}/functions"
+
+proxy_port="${BAREOS_WEBUI_PROXY_PORT}"
+bundle_dir="${current_test_directory}/webui-vue-dist"
+proxy_log="${tmp}/webui-vue-proxy.out"
+frontend_log="${tmp}/webui-vue-frontend.out"
+proxy_config="${tmp}/bareos-webui-proxy.ini"
+proxy_pid_file="${tmp}/webui-vue-proxy.pid"
+frontend_pid_file="${tmp}/webui-vue-frontend.pid"
+PROXY_PID=""
+FRONTEND_PID=""
+
+function cleanup_on_error()
+{
+  local rc=$?
+  if [[ $rc -eq 0 ]]; then
+    return 0
+  fi
+
+  if [[ -n "${FRONTEND_PID}" ]] && kill -0 "${FRONTEND_PID}" >/dev/null 2>&1; then
+    kill "${FRONTEND_PID}" || true
+    wait "${FRONTEND_PID}" || true
+  fi
+  if [[ -n "${PROXY_PID}" ]] && kill -0 "${PROXY_PID}" >/dev/null 2>&1; then
+    kill "${PROXY_PID}" || true
+    wait "${PROXY_PID}" || true
+  fi
+  rm -f "${frontend_pid_file}" "${proxy_pid_file}"
+  stop_bareos || true
+}
+
+function wait_for_http()
+{
+  local url="$1"
+  local attempt
+  for attempt in $(seq 1 100); do
+    if curl --silent --fail "$url" >/dev/null; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  return 1
+}
+
+function wait_for_tcp()
+{
+  local host="$1"
+  local port="$2"
+  local attempt
+  for attempt in $(seq 1 100); do
+    if (echo >/dev/tcp/"$host"/"$port") >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  return 1
+}
+
+trap cleanup_on_error EXIT
 
 ${BAREOS_SCRIPTS_DIR}/cleanup
 ${BAREOS_SCRIPTS_DIR}/setup
 
 setup_data
 
-start_test
+bin/bareos start
+bin/bareos status
+print_debug "$(bin/bconsole <<<"status dir")"
 
-cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${NULL_DEV}
-messages
-@$out ${tmp}/log1.out
-run job=$JobName yes
-wait
-messages
-quit
-END_OF_DATA
+proxy_tls_psk_disable=false
+if [[ "${BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK}" = "1" ]]; then
+  proxy_tls_psk_disable=true
+fi
 
-run_bareos
-run_bconsole
+cat >"${proxy_config}" <<END_OF_PROXY_CONFIG
+[listen]
+ws_host = 127.0.0.1
+ws_port = ${proxy_port}
 
-stop_bareos
+[director:bareos-dir]
+host = 127.0.0.1
+port = ${BAREOS_DIRECTOR_PORT}
+director_name = bareos-dir
+tls_psk_disable = ${proxy_tls_psk_disable}
+END_OF_PROXY_CONFIG
 
-end_test
+pushd "${CMAKE_SOURCE_DIR}/webui-vue" >/dev/null
+if ! [ -x node_modules/.bin/playwright ] || ! [ -x node_modules/.bin/vite ]; then
+  echo "Missing webui-vue npm dependencies. Install them before configuring and running the Playwright systemtests." >&2
+  exit 1
+fi
+
+"${NPM_EXECUTABLE}" run generate:version >"${tmp}/webui-vue-generate-version.out" 2>&1
+
+VITE_DIRECTOR_WS_URL="ws://127.0.0.1:${proxy_port}" \
+  VITE_DIRECTOR_HOST="127.0.0.1" \
+  VITE_DIRECTOR_PORT="${BAREOS_DIRECTOR_PORT}" \
+  "${NPM_EXECUTABLE}" exec vite build -- --outDir "${bundle_dir}" \
+  >"${tmp}/webui-vue-build.out" 2>&1
+popd >/dev/null
+
+"${BAREOS_WEBUI_PROXY_BINARY}" --config "${proxy_config}" >"${proxy_log}" 2>&1 &
+PROXY_PID=$!
+printf '%s\n' "${PROXY_PID}" >"${proxy_pid_file}"
+
+"${NODE_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/webui-vue/scripts/serve-spa.mjs" \
+  --host 127.0.0.1 \
+  --port "${BAREOS_WEBUI_PORT}" \
+  --root "${bundle_dir}" \
+  >"${frontend_log}" 2>&1 &
+FRONTEND_PID=$!
+printf '%s\n' "${FRONTEND_PID}" >"${frontend_pid_file}"
+
+if ! wait_for_tcp 127.0.0.1 "${proxy_port}"; then
+  echo "bareos-webui-proxy did not start:" >&2
+  cat "${proxy_log}" >&2
+  exit 1
+fi
+
+if ! wait_for_http "${BAREOS_WEBUI_BASE_URL}"; then
+  echo "webui-vue frontend did not start:" >&2
+  cat "${frontend_log}" >&2
+  exit 1
+fi

@@ -26,31 +26,27 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
+JobName=backup-bareos-fd
+
 . ./environment
 . "${BAREOS_SCRIPTS_DIR}/functions"
 
-proxy_log="${tmp}/webui-vue-proxy.out"
-playwright_log="${tmp}/webui-vue-playwright.out"
-
 start_test
 
-pushd "${CMAKE_SOURCE_DIR}/webui-vue" >/dev/null
-if ! PLAYWRIGHT_BASE_URL="${BAREOS_WEBUI_BASE_URL}" \
-  PLAYWRIGHT_ARTIFACTS_DIR="${tmp}/playwright-artifacts" \
-  BAREOS_WEBUI_USERNAME="${BAREOS_WEBUI_USERNAME}" \
-  BAREOS_WEBUI_PASSWORD="${BAREOS_WEBUI_PASSWORD}" \
-  GOOGLE_CHROME_EXECUTABLE="${GOOGLE_CHROME_EXECUTABLE}" \
-  "${NPM_EXECUTABLE}" run test:e2e -- --reporter=line \
-  >"${playwright_log}" 2>&1; then
-  set_error "$(cat "${playwright_log}")"
-fi
-popd >/dev/null
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${tmp}/webui-vue-create-backup.out
+run job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
 
-if [[ -n "${BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT}" ]]; then
-  if ! grep -F "director transport: ${BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT}" \
-    "${proxy_log}" >/dev/null; then
-    set_error "webui-vue proxy did not use expected director transport ${BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT}:\n$(cat "${proxy_log}")"
-  fi
-fi
+run_bconsole
+
+expect_grep 'Termination:.*Backup OK' \
+  "${tmp}/webui-vue-create-backup.out" \
+  "Backup did not succeed."
 
 end_test
