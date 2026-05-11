@@ -22,9 +22,8 @@
  * @file
  * Unit tests for bareos_base64 and the Bareos director CRAM-MD5 response.
  *
- * Reference values were generated using the python-bareos BareosBase64
- * implementation with compatible=False and cross-checked against the
- * C++ BinToBase64(..., compatible=false) from core/src/lib/base64.cc.
+ * Reference values were generated using the Bareos-compatible base64 variant
+ * used by the director during CRAM-MD5 authentication.
  */
 #include "../bareos_base64.h"
 
@@ -45,25 +44,19 @@ TEST(BareosBase64, AllZeros)
 {
   const uint8_t data[16]{};
   std::string result = BareosBase64Encode(data, 16);
-  // With compatible=false and all zeros the output must start with 'A's.
-  // Exact: each byte is 0x00 (signed), same as unsigned → "AAAA..." style.
+  // Each byte is 0x00, so every 6-bit group maps to 'A'.
   EXPECT_FALSE(result.empty());
   for (char c : result) {
     EXPECT_EQ(c, 'A') << "all-zero input should encode to all 'A'";
   }
 }
 
-// Single byte 0xFF with compatible=false: as int8_t this is -1 (sign-extended
-// to 0xFFFFFFFF in the 32-bit accumulator).
-//   group 1: reg>>2 = 0x3FFFFFE0 (with saved all-ones), & 0x3F = 63 → '/'
-//   rem=2 left, mask=3, 0xFFFFFFFF & 3 = 3 → 'D'
-// Cross-checked against python-bareos BareosBase64.string_to_base64([0xFF],
-// compatible=False) which also returns b'/D'.
-TEST(BareosBase64, SingleByteFF)
+TEST(BareosBase64, EncodesKnownCompatibleValue)
 {
-  const uint8_t data[] = {0xFF};
-  std::string result = BareosBase64Encode(data, 1, false);
-  EXPECT_EQ(result, "/D");
+  const uint8_t data[] = {0x80, 0x80};
+  std::string result = BareosBase64Encode(data, 2);
+
+  EXPECT_EQ(result, "gIA");
 }
 
 // A known CRAM-MD5 test vector:
@@ -85,23 +78,6 @@ TEST(BareosBase64, RoundTripConsistency)
                  || (c >= '0' && c <= '9') || c == '+' || c == '/';
     EXPECT_TRUE(valid) << "invalid char: " << c;
   }
-}
-
-// For a single-byte input, compatible=false and compatible=true give the
-// same output because sign extension only affects higher bits that are never
-// included in the 6-bit groups extracted from a single byte.
-// The difference shows up with multi-byte inputs.  Use {0x80, 0x80}:
-//   compatible=false → "g4A"   (verified against python-bareos)
-//   compatible=true  → "gIA"
-TEST(BareosBase64, HighByteDiffersFromCompatible)
-{
-  const uint8_t data[] = {0x80, 0x80};
-  std::string not_compat = BareosBase64Encode(data, 2, false);
-  std::string compat = BareosBase64Encode(data, 2, true);
-
-  // Reference from python-bareos BareosBase64.string_to_base64(..., False/True)
-  EXPECT_EQ(not_compat, "g4A");
-  EXPECT_EQ(compat, "gIA");
 }
 
 // ---------------------------------------------------------------------------
@@ -146,7 +122,7 @@ TEST(CramMd5, ResponseMatchesKnownVector)
   EXPECT_EQ(key, "5ebe2294ecd0e0f08eab7690d2a6ee69");
 
   auto hmac = HmacMd5(key, challenge);
-  std::string response = BareosBase64Encode(hmac.data(), 16, true);
+  std::string response = BareosBase64Encode(hmac.data(), 16);
 
   EXPECT_EQ(response, "bQVIkYLtKkU2li6JcCLWaA");
 }

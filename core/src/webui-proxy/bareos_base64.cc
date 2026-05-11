@@ -22,12 +22,12 @@
 
 #include "base64.h"
 
-std::string BareosBase64Encode(const uint8_t* data, int len, bool compatible)
+std::string BareosBase64Encode(const uint8_t* data, int len)
 {
   std::string result(BASE64_SIZE(len), '\0');
   const auto encoded = BinToBase64(
       result.data(), static_cast<int>(result.size()),
-      const_cast<char*>(reinterpret_cast<const char*>(data)), len, compatible);
+      const_cast<char*>(reinterpret_cast<const char*>(data)), len, true);
   result.resize(static_cast<size_t>(encoded));
   return result;
 }
