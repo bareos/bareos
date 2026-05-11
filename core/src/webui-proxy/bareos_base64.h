@@ -30,18 +30,7 @@
 #include <cstdint>
 #include <string>
 
-/**
- * Encode @p len raw bytes from @p data using the Bareos-specific base64.
- *
- * When @p compatible is true (default), use the Bacula-compatible variant
- * (uint8_t byte loads, left-shifted final group) — this is what the Bareos
- * director expects in CRAM-MD5 authentication.
- *
- * When @p compatible is false, use the non-compatible variant (signed int8_t
- * byte loads, raw final bits) — this matches BinToBase64(compatible=false).
- */
-std::string BareosBase64Encode(const uint8_t* data,
-                               int len,
-                               bool compatible = true);
+// Encode @p len raw bytes from @p data using the Bareos-specific base64.
+std::string BareosBase64Encode(const uint8_t* data, int len);
 
 #endif  // BAREOS_WEBUI_PROXY_BAREOS_BASE64_H_
