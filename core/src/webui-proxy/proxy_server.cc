@@ -26,6 +26,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -205,15 +206,21 @@ void ProxyServer::Run()
       // Move fd and defaults into a detached thread — thread owns the socket.
       int cfd = client_fd;
       ProxyConfig cfg = cfg_;
-      std::thread([cfd, peer, cfg]() {
-        try {
-          RunProxySession(cfd, peer, cfg);
-        } catch (const std::exception& ex) {
-          PROXY_LOG_ERROR(peer, "session aborted: %s", ex.what());
-        } catch (...) {
-          PROXY_LOG_ERROR(peer, "session aborted (unknown exception)");
-        }
-      }).detach();
+      try {
+        std::thread([cfd, peer, cfg]() {
+          try {
+            RunProxySession(cfd, peer, cfg);
+          } catch (const std::exception& ex) {
+            PROXY_LOG_ERROR(peer, "session aborted: %s", ex.what());
+          } catch (...) {
+            PROXY_LOG_ERROR(peer, "session aborted (unknown exception)");
+          }
+        }).detach();
+      } catch (const std::system_error& ex) {
+        PROXY_LOG_ERROR(peer, "failed to start session thread: %s", ex.what());
+        ::close(cfd);
+        continue;
+      }
     }
 
     if (any_closed) { break; }  // Stop() was called.
