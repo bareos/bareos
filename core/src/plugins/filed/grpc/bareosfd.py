@@ -918,7 +918,7 @@ class Restore:
             path = self.current_file.output_name
             JobMessage(
                 bJobMessageType.M_ERROR,
-                f"could not write '{len(msg.data)}' bytes at offset '{current_offset}' in file '{path}'",
+                f"could not write '{len(bf.data)}' bytes at offset '{self.current_offset}' in file '{path}'",
             )
             self.file_close()
             self.current_file = None
@@ -927,7 +927,7 @@ class Restore:
         if iop.status != len(bf.data):
             JobMessage(
                 bJobMessageType.M_ERROR,
-                f"could not write '{len(msg.data)}' bytes at offset '{current_offset}' in file '{path}': only wrote {iop.status} / {iop.count} bytes",
+                f"could not write '{len(bf.data)}' bytes at offset '{self.current_offset}' in file '{path}': only wrote {iop.status} / {iop.count} bytes",
             )
             self.file_close()
             self.current_file = None
