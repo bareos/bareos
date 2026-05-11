@@ -256,6 +256,73 @@ describe('director store', () => {
     })
   })
 
+  it('ignores late callbacks from a stale socket after reconnecting', async () => {
+    const director = useDirectorStore()
+
+    director.connect({
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const firstSocket = FakeWebSocket.instances[0]
+    firstSocket.open()
+    firstSocket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        transport: 'cleartext',
+      }),
+    })
+
+    director.disconnect()
+
+    director.connect({
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const secondSocket = FakeWebSocket.instances[1]
+    secondSocket.open()
+    secondSocket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        transport: 'tls-psk',
+      }),
+    })
+
+    const pendingCall = director.call('list jobs')
+    expect(JSON.parse(secondSocket.sent[1])).toEqual({
+      type: 'command',
+      id: '1',
+      command: 'list jobs',
+    })
+
+    firstSocket.onclose?.()
+    firstSocket.onerror?.()
+    firstSocket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_error',
+        message: 'stale socket error',
+      }),
+    })
+    vi.advanceTimersByTime(1_000)
+
+    expect(FakeWebSocket.instances).toHaveLength(2)
+    expect(director.status).toBe('connected')
+    expect(director.transport).toBe('tls-psk')
+
+    secondSocket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: '1',
+        data: { jobs: [] },
+      }),
+    })
+
+    await expect(pendingCall).resolves.toEqual({ jobs: [] })
+  })
+
   it('uses default director connection values when optional settings are omitted', () => {
     const director = useDirectorStore()
 
