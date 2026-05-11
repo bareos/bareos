@@ -108,7 +108,6 @@ void ApplyDirectorSetting(DirectorTargetConfig& cfg,
     throw std::runtime_error("Proxy config: unknown director key '" + key
                              + "'");
   }
-  cfg.tls_psk_require = !cfg.tls_psk_disable;
 }
 
 void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)

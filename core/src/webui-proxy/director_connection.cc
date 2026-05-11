@@ -400,6 +400,7 @@ void DirectorConnection::Connect(const DirectorConfig& cfg)
   tls_psk_active_ = false;
   tls_psk_identity_ = GetDirectorTlsPskIdentity(cfg.username);
   tls_psk_secret_ = GetDirectorTlsPskSecret(cfg.password);
+  const bool use_tls_psk = !cfg.tls_psk_disable;
 
   auto connect_and_authenticate = [this, &cfg](bool use_tls) {
     ConnectTcp(cfg);
@@ -407,39 +408,8 @@ void DirectorConnection::Connect(const DirectorConfig& cfg)
     Authenticate(cfg);
   };
 
-  if (cfg.tls_psk_disable) {
-    try {
-      connect_and_authenticate(false);
-    } catch (...) {
-      Disconnect();
-      throw;
-    }
-    return;
-  }
-
-  if (cfg.tls_psk_require) {
-    try {
-      connect_and_authenticate(true);
-    } catch (...) {
-      Disconnect();
-      throw;
-    }
-    return;
-  }
-
   try {
-    connect_and_authenticate(true);
-    return;
-  } catch (...) {
-    if (tls_psk_active_) {
-      Disconnect();
-      throw;
-    }
-    Disconnect();
-  }
-
-  try {
-    connect_and_authenticate(false);
+    connect_and_authenticate(use_tls_psk);
   } catch (...) {
     Disconnect();
     throw;

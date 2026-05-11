@@ -56,7 +56,6 @@ tls_psk_disable = true
   EXPECT_EQ(cfg.allowed_directors.at("dr").port, 29101);
   EXPECT_EQ(cfg.allowed_directors.at("dr").name, "dr-dir");
   EXPECT_TRUE(cfg.allowed_directors.at("dr").tls_psk_disable);
-  EXPECT_FALSE(cfg.allowed_directors.at("dr").tls_psk_require);
 }
 
 TEST(ProxyConfig, RejectsLegacyDirectorSection)

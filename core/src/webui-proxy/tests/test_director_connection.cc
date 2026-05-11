@@ -50,22 +50,20 @@ TEST(DirectorConnection, UsesMd5HexPasswordAsTlsPsk)
             "5ebe2294ecd0e0f08eab7690d2a6ee69");
 }
 
-TEST(DirectorConfig, RequiresTlsPskByDefault)
+TEST(DirectorConfig, EnablesTlsPskByDefault)
 {
   DirectorConfig cfg;
 
   EXPECT_FALSE(cfg.tls_psk_disable);
-  EXPECT_TRUE(cfg.tls_psk_require);
 }
 
-TEST(DirectorConfig, DisableTlsPskOverridesRequiredDefault)
+TEST(DirectorConfig, AllowsDisablingTlsPsk)
 {
   DirectorConfig cfg;
 
   cfg.tls_psk_disable = true;
 
   EXPECT_TRUE(cfg.tls_psk_disable);
-  EXPECT_TRUE(cfg.tls_psk_require);
 }
 
 TEST(DirectorConnection, StartsWithoutTlsPskTransport)
