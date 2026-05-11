@@ -58,16 +58,16 @@ tls_psk_disable = true
   EXPECT_TRUE(cfg.allowed_directors.at("dr").tls_psk_disable);
 }
 
-TEST(ProxyConfig, RejectsLegacyDirectorSection)
+TEST(ProxyConfig, RejectsDirectorSectionWithoutId)
 {
   ProxyConfig cfg;
 
   EXPECT_THROW(LoadProxyConfigFromString(
                    R"ini(
 [director]
-host = legacy.example.test
+host = unscoped.example.test
 port = 19101
-director_name = legacy-dir
+director_name = unscoped-dir
 
 [director:prod]
 host = prod.example.test
