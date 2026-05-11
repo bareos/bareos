@@ -20,6 +20,10 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(bareos SHARED)
 add_library(Bareos::Lib ALIAS bareos)
+target_include_directories(
+  bareos PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+                $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
+)
 target_sources(
   bareos
   PRIVATE address_conf.cc

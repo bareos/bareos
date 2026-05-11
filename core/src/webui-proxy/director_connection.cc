@@ -20,7 +20,7 @@
 */
 #include "director_connection.h"
 #include "bareos_base64.h"
-#include "ascii_control_characters.h"
+#include "lib/ascii_control_characters.h"
 
 #include <algorithm>
 #include <array>
