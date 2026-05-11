@@ -20,7 +20,7 @@
 */
 #include "bareos_base64.h"
 
-#include "base64.h"
+#include "lib/base64.h"
 
 std::string BareosBase64Encode(const uint8_t* data, int len)
 {

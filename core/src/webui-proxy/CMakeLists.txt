@@ -27,7 +27,6 @@ target_compile_definitions(
 
 target_include_directories(
   bareos-webui-proxy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-                             "${CMAKE_CURRENT_SOURCE_DIR}/../lib"
 )
 
 target_link_libraries(
@@ -79,7 +78,6 @@ if(BUILD_TESTING AND GTest_FOUND)
   )
   target_include_directories(
     test_webui_proxy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-                             "${CMAKE_CURRENT_SOURCE_DIR}/../lib"
   )
   target_link_libraries(
     test_webui_proxy

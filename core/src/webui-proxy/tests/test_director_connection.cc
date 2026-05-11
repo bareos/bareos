@@ -23,7 +23,7 @@
 #include "../director_connection.h"
 #undef private
 
-#include "ascii_control_characters.h"
+#include "lib/ascii_control_characters.h"
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
