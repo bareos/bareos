@@ -266,6 +266,9 @@ static inline bool do_restore_xattr(JobControlRecord* jcr,
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
       jcr->fd_impl->xattr_data->nr_errors++;
       break;
+    case BxattrExitCode::kInfo:
+      Jmsg(jcr, M_INFO, 0, "%s", jcr->errmsg);
+      [[fallthrough]];
     case BxattrExitCode::kSuccess:
       break;
   }
