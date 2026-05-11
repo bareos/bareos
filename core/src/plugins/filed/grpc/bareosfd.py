@@ -256,6 +256,9 @@ def bareos_event(event: events_pb2.Event):
             raise ValueError
 
 
+additional_plugin_options: str = None
+
+
 def parse_options(options: str) -> str:
     if options == "":
         return None
@@ -264,9 +267,14 @@ def parse_options(options: str) -> str:
 
     log(f"parsing '{options}'")
 
-    # TODO: if the plugin wasnt loaded yet, we need to keep a copy
-    #       of options around and append it to the next option
-    #       so that the plugin gets it
+    if not plugin_loaded and additional_plugin_options is not None:
+        new_options = additional_plugin_options
+        if new_options[-1] != ":":
+            new_options += ":"
+
+        new_options += options
+        log(f"transforming '{options}' to '{new_options}'")
+        options = new_options
 
     plugin_options = []
 
@@ -292,7 +300,8 @@ def parse_options(options: str) -> str:
                 pass
             case "module_path":
                 global module_path
-                module_path = value
+                if module_path is None:
+                    module_path = value
             case _:
                 plugin_options.append(kv)
 
@@ -350,7 +359,9 @@ def handle_plugin_event(
         case "plugin_command":
             result = handle_plugin_options(event.plugin_command.data)
         case "new_plugin_options":
-            result = handle_plugin_options(event.new_plugin_options.data)
+            global additional_plugin_options
+            additional_plugin_options = event.new_plugin_options.data
+            result = bRC_OK
         case "level":
             level = event.level.level
             result = bRC_OK
