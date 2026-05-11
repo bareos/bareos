@@ -364,7 +364,6 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     cfg.host = target.host;
     cfg.port = target.port;
     cfg.tls_psk_disable = target.tls_psk_disable;
-    cfg.tls_psk_require = target.tls_psk_require;
     PROXY_LOG_INFO(peer, "auth: user=%s director=%s host=%s:%d mode=%s",
                    cfg.username.c_str(), cfg.director_name.c_str(),
                    cfg.host.c_str(), cfg.port, mode.c_str());
