@@ -27,6 +27,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include <arpa/inet.h>
@@ -39,6 +40,36 @@
 namespace {
 
 constexpr int kListenBacklog = 16;
+
+struct FdGuard {
+  FdGuard() = default;
+  explicit FdGuard(int fd_value) : fd(fd_value) {}
+
+  ~FdGuard()
+  {
+    if (fd >= 0) { ::close(fd); }
+  }
+
+  FdGuard(const FdGuard&) = delete;
+  FdGuard& operator=(const FdGuard&) = delete;
+
+  FdGuard(FdGuard&& other) noexcept : fd(other.fd) { other.fd = -1; }
+
+  FdGuard& operator=(FdGuard&& other) noexcept
+  {
+    if (this != &other) {
+      if (fd >= 0) { ::close(fd); }
+      fd = other.fd;
+      other.fd = -1;
+    }
+    return *this;
+  }
+
+  int get() const { return fd; }
+
+ private:
+  int fd{-1};
+};
 
 // accept(2) can fail transiently when interrupted, when the listening socket is
 // momentarily not ready anymore, or when the kernel reports a temporary
@@ -75,17 +106,7 @@ bool IsTransientAcceptError(int err)
 
 }  // namespace
 
-ProxyServer::~ProxyServer() { CleanupSockets(); }
-
 void ProxyServer::Stop() { stop_requested_ = 1; }
-
-void ProxyServer::CleanupSockets()
-{
-  for (int fd : listen_fds_) {
-    if (fd >= 0) { ::close(fd); }
-  }
-  listen_fds_.clear();
-}
 
 void ProxyServer::Run()
 {
@@ -104,6 +125,8 @@ void ProxyServer::Run()
                              + gai_strerror(rc));
   }
 
+  std::vector<FdGuard> listen_fds;
+
   // Bind a listen socket for every address returned (both IPv4 and IPv6 when
   // the host resolves to multiple addresses, e.g. "localhost" → 127.0.0.1 +
   // ::1).  This matches the Python websockets library behaviour and ensures
@@ -111,26 +134,25 @@ void ProxyServer::Run()
   for (const struct addrinfo* ai = res; ai != nullptr; ai = ai->ai_next) {
     int fd = ::socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
     if (fd < 0) { continue; }
+    FdGuard fd_guard(fd);
 
     int opt = 1;
     ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     if (::bind(fd, ai->ai_addr, ai->ai_addrlen) == 0
         && ::listen(fd, kListenBacklog) == 0) {
-      listen_fds_.push_back(fd);
-    } else {
-      ::close(fd);
+      listen_fds.push_back(std::move(fd_guard));
     }
   }
   freeaddrinfo(res);
 
-  if (listen_fds_.empty()) {
+  if (listen_fds.empty()) {
     throw std::runtime_error("ProxyServer: could not bind to any address for "
                              + cfg_.bind_host + ":" + port_str);
   }
 
   PROXY_LOG_INFO("", "listening on ws://%s:%d (%zu socket(s))",
-                 cfg_.bind_host.c_str(), cfg_.port, listen_fds_.size());
+                 cfg_.bind_host.c_str(), cfg_.port, listen_fds.size());
   PROXY_LOG_INFO("", "allowed directors: %zu", cfg_.allowed_directors.size());
 
   // Accept loop: poll all listen sockets, accept on whichever is ready.
@@ -138,8 +160,8 @@ void ProxyServer::Run()
     if (stop_requested_) { break; }
 
     std::vector<struct pollfd> pfds;
-    pfds.reserve(listen_fds_.size());
-    for (int fd : listen_fds_) { pfds.push_back({fd, POLLIN, 0}); }
+    pfds.reserve(listen_fds.size());
+    for (const auto& fd : listen_fds) { pfds.push_back({fd.get(), POLLIN, 0}); }
 
     int nready = ::poll(pfds.data(), static_cast<nfds_t>(pfds.size()), 1000);
     if (nready < 0) {
@@ -197,6 +219,5 @@ void ProxyServer::Run()
     if (any_closed) { break; }  // Stop() was called.
   }
 
-  CleanupSockets();
   PROXY_LOG_INFO("", "accept loop exited");
 }
