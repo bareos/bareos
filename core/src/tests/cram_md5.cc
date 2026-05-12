@@ -20,10 +20,6 @@
    02110-1301, USA.
 */
 
-#define private public
-#include "lib/cram_md5.h"
-#undef private
-
 #if defined(HAVE_MINGW)
 #  include "include/bareos.h"
 #  include "gtest/gtest.h"
@@ -35,6 +31,7 @@
 #include "lib/bsock.h"
 #include "lib/bsock_tcp.h"
 #include "lib/base64.h"
+#include "lib/cram_md5.h"
 #include "tests/bareos_test_sockets.h"
 
 #include <cassert>
@@ -76,6 +73,18 @@ static std::string CreateQualifiedResourceName(const char* r_type_str,
                                                const char* name)
 {
   return std::string(r_type_str) + static_cast<char>(0x1e) + std::string(name);
+}
+
+static std::string ExtractChallenge(const char* message)
+{
+  std::string msg(message);
+  const auto prefix_end = msg.find('<');
+  const auto suffix = msg.find(" ssl=");
+
+  EXPECT_NE(prefix_end, std::string::npos);
+  EXPECT_NE(suffix, std::string::npos);
+
+  return msg.substr(prefix_end, suffix - prefix_end);
 }
 
 static constexpr bool InitiatedByRemote = true;
@@ -200,7 +209,7 @@ TEST(cram_md5, accepts_compatible_challenge_without_qualified_name)
       CreateQualifiedResourceName("R_DIRECTOR", "srv"));
 
   auto server_future = std::async(
-      std::launch::async, &CramMd5Handshake::CramMd5Response, &server_cram);
+      std::launch::async, &CramMd5Handshake::DoHandshake, &server_cram, false);
 
   const std::string challenge
       = "auth cram-md5c <1234567890.1715520000@client> ssl=0\n";
@@ -223,6 +232,18 @@ TEST(cram_md5, accepts_compatible_challenge_without_qualified_name)
   ASSERT_TRUE(
       static_cast<BareosSocket*>(sockets->client.get())
           ->send(auth_ok.c_str(), static_cast<uint32_t>(auth_ok.size())));
+
+  ASSERT_GT(sockets->client->recv(), 0);
+  const std::string server_challenge = ExtractChallenge(sockets->client->msg);
+
+  hmac_md5((uint8_t*)server_challenge.c_str(), strlen(server_challenge.c_str()),
+           (uint8_t*)"Secret-Password", strlen("Secret-Password"), hmac);
+  BinToBase64(expected, sizeof(expected), (char*)hmac, 16, true);
+
+  ASSERT_TRUE(static_cast<BareosSocket*>(sockets->client.get())
+                  ->send(expected, static_cast<uint32_t>(strlen(expected))));
+  ASSERT_GT(sockets->client->recv(), 0);
+  EXPECT_STREQ(sockets->client->msg, "1000 OK auth\n");
 
   EXPECT_TRUE(server_future.get());
   EXPECT_EQ(server_cram.result, CramMd5Handshake::HandshakeResult::SUCCESS);
