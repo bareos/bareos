@@ -23,6 +23,7 @@
 #include "../director_connection.h"
 #undef private
 
+#include "../bareos_base64.h"
 #include "lib/ascii_control_characters.h"
 
 #include <arpa/inet.h>
@@ -31,8 +32,12 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <chrono>
 #include <thread>
+
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
 
 TEST(DirectorConnection, BuildsTlsPskIdentityForConsole)
 {
@@ -76,6 +81,35 @@ TEST(DirectorConnection, StartsWithoutTlsPskTransport)
 namespace {
 constexpr int32_t kBnetStartRtree = -25;
 constexpr int32_t kBnetSubPrompt = -27;
+constexpr int32_t kBnetEod = -1;
+
+std::string Md5Hex(const std::string& text)
+{
+  uint8_t digest[EVP_MAX_MD_SIZE];
+  unsigned int dlen = 0;
+  EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+  EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
+  EVP_DigestUpdate(ctx, text.data(), text.size());
+  EVP_DigestFinal_ex(ctx, digest, &dlen);
+  EVP_MD_CTX_free(ctx);
+
+  char hex[65]{};
+  for (unsigned int i = 0; i < dlen; ++i) {
+    snprintf(hex + i * 2, 3, "%02x", digest[i]);
+  }
+  return {hex, dlen * 2};
+}
+
+std::array<uint8_t, 16> HmacMd5Digest(const std::string& key,
+                                      const std::string& data)
+{
+  std::array<uint8_t, 16> out{};
+  unsigned int len = 16;
+  HMAC(EVP_md5(), key.data(), static_cast<int>(key.size()),
+       reinterpret_cast<const uint8_t*>(data.data()), data.size(), out.data(),
+       &len);
+  return out;
+}
 
 void WriteFrame(int fd, std::string_view data)
 {
@@ -125,6 +159,82 @@ TEST(DirectorConnection, KeepsRestoreTreePromptDataWithSameCommand)
 
   EXPECT_EQ(result.text, "selection ready\ncwd is: /\n$ ");
   EXPECT_EQ(result.prompt, DirectorPrompt::Sub);
+
+  director.join();
+  close(connection.fd_);
+  connection.fd_ = -1;
+}
+
+TEST(DirectorConnection, UsesCompatibleDirectorIdentityResponse)
+{
+  int sockets[2] = {-1, -1};
+  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+  DirectorConnection connection;
+  connection.fd_ = sockets[0];
+
+  DirectorConfig cfg;
+  cfg.username = "admin";
+  cfg.password = "secret";
+  cfg.json_mode = false;
+
+  std::thread director([peer = sockets[1], cfg]() {
+    int32_t header = 0;
+
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+    const auto hello_size = static_cast<size_t>(ntohl(header));
+    std::string hello(hello_size, '\0');
+    ASSERT_EQ(read(peer, hello.data(), hello.size()),
+              static_cast<ssize_t>(hello.size()));
+    EXPECT_NE(hello.find("Hello admin calling version "), std::string::npos);
+
+    WriteFrame(peer, "auth cram-md5 <director-challenge> ssl=0\n");
+
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+    const auto response_size = static_cast<size_t>(ntohl(header));
+    std::string response(response_size, '\0');
+    ASSERT_EQ(read(peer, response.data(), response.size()),
+              static_cast<ssize_t>(response.size()));
+
+    const std::string key = Md5Hex(cfg.password);
+    auto expected_client_hmac = HmacMd5Digest(key, "<director-challenge>");
+    EXPECT_EQ(response, BareosBase64Encode(expected_client_hmac.data(), 16));
+
+    WriteFrame(peer, "1000 OK auth\n");
+
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+    const auto challenge_size = static_cast<size_t>(ntohl(header));
+    std::string challenge_msg(challenge_size, '\0');
+    ASSERT_EQ(read(peer, challenge_msg.data(), challenge_msg.size()),
+              static_cast<ssize_t>(challenge_msg.size()));
+    ASSERT_NE(challenge_msg.find("auth cram-md5c <"), std::string::npos);
+
+    const std::string prefix = "auth cram-md5c ";
+    const auto challenge_begin = challenge_msg.find(prefix);
+    ASSERT_NE(challenge_begin, std::string::npos);
+    const auto challenge_end = challenge_msg.find(" ssl=", challenge_begin);
+    ASSERT_NE(challenge_end, std::string::npos);
+    const std::string challenge = challenge_msg.substr(
+        challenge_begin + prefix.size(),
+        challenge_end - (challenge_begin + prefix.size()));
+
+    auto expected_director_hmac = HmacMd5Digest(key, challenge);
+    WriteFrame(peer, BareosBase64Encode(expected_director_hmac.data(), 16));
+
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+    const auto auth_ok_size = static_cast<size_t>(ntohl(header));
+    std::string auth_ok(auth_ok_size, '\0');
+    ASSERT_EQ(read(peer, auth_ok.data(), auth_ok.size()),
+              static_cast<ssize_t>(auth_ok.size()));
+    EXPECT_EQ(auth_ok, "1000 OK auth\n");
+
+    WriteFrame(peer, "1000 OK: bareos-dir Version: 26.0.0\n");
+    WriteFrame(peer, "1002 additional info\n");
+    WriteSignal(peer, kBnetEod);
+    close(peer);
+  });
+
+  EXPECT_NO_THROW(connection.Authenticate(cfg));
 
   director.join();
   close(connection.fd_);
