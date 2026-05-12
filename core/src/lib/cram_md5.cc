@@ -173,9 +173,13 @@ bool CramMd5Handshake::CramMd5Response()
                destination_qualified_name.data())
         >= 2) {
       compatible_ = true;
-    } else if (sscanf(bs_->msg, "auth cram-md5 %s ssl=%d qualified-name=%s",
-                      chal.c_str(), &remote_tls_policy_,
-                      destination_qualified_name.data())
+    } else if (bsscanf(bs_->msg, "auth cram-md5c %s ssl=%d", chal.c_str(),
+                       &remote_tls_policy_)
+               == 2) {
+      compatible_ = true;
+    } else if (bsscanf(bs_->msg, "auth cram-md5 %s ssl=%d qualified-name=%s",
+                       chal.c_str(), &remote_tls_policy_,
+                       destination_qualified_name.data())
                < 2) {  // minimum 2
       if (sscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
         Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
