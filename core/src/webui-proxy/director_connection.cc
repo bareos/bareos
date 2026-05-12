@@ -340,7 +340,8 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   uint32_t ts = static_cast<uint32_t>(std::time(nullptr));
   std::string our_challenge = "<" + std::to_string(rand_val) + "."
                               + std::to_string(ts) + "@" + cfg.username + ">";
-  std::string our_challenge_msg = "auth cram-md5 " + our_challenge + " ssl=0\n";
+  std::string our_challenge_msg
+      = "auth cram-md5c " + our_challenge + " ssl=0\n";
   SendFrame(our_challenge_msg);
 
   // Step 6: receive director's CRAM-MD5 response to our challenge.
