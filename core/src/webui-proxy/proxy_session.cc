@@ -371,7 +371,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
         = config.configured_directors.find(requested_director);
     if (director_it == config.configured_directors.end()) {
       throw std::runtime_error("Proxy config: director '" + requested_director
-                               + "' is not in the allowlist");
+                               + "' is not configured");
     }
     const auto& target = director_it->second;
     cfg.director_name = target.name;
