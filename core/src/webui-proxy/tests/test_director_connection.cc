@@ -49,10 +49,9 @@ TEST(DirectorConnection, BuildsTlsPskIdentityForConsole)
   EXPECT_EQ(identity, expected);
 }
 
-TEST(DirectorConnection, UsesMd5HexPasswordAsTlsPsk)
+TEST(DirectorConnection, BuildsCramMd5KeyFromPassword)
 {
-  EXPECT_EQ(GetDirectorTlsPskSecret("secret"),
-            "5ebe2294ecd0e0f08eab7690d2a6ee69");
+  EXPECT_EQ(MakeCramMd5Key("secret"), "5ebe2294ecd0e0f08eab7690d2a6ee69");
 }
 
 TEST(DirectorConfig, EnablesTlsPskByDefault)

@@ -68,7 +68,7 @@ constexpr unsigned int kMd5DigestBytes = 16;
 constexpr unsigned int kMd5HexChars = kMd5DigestBytes * 2;
 
 // Compute MD5(text) and return it as a lowercase hex string.
-std::string GetDirectorTlsPskSecret(const std::string& password)
+std::string MakeCramMd5Key(const std::string& password)
 {
   uint8_t digest[EVP_MAX_MD_SIZE];
   unsigned int dlen = 0;
@@ -305,7 +305,7 @@ std::string DirectorConnection::RecvResponse()
 void DirectorConnection::Authenticate(const DirectorConfig& cfg)
 {
   // The CRAM-MD5 key is MD5(plaintext_password) as a hex string.
-  const std::string key = GetDirectorTlsPskSecret(cfg.password);
+  const std::string key = MakeCramMd5Key(cfg.password);
 
   // Step 1: send Hello with version so the director uses the >= 18.2 protocol.
   const std::string hello
@@ -400,7 +400,7 @@ void DirectorConnection::Connect(const DirectorConfig& cfg)
   json_mode_ = cfg.json_mode;
   tls_psk_active_ = false;
   tls_psk_identity_ = GetDirectorTlsPskIdentity(cfg.username);
-  tls_psk_secret_ = GetDirectorTlsPskSecret(cfg.password);
+  tls_psk_secret_ = MakeCramMd5Key(cfg.password);
   const bool use_tls_psk = !cfg.tls_psk_disable;
 
   auto connect_and_authenticate = [this, &cfg](bool use_tls) {
