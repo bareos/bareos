@@ -37,8 +37,11 @@
 
 #include <openssl/evp.h>
 
-// RFC 6455 magic GUID appended to Sec-WebSocket-Key before SHA-1
-static constexpr const char kWsMagic[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+#include "lib/bpoll.h"
+
+// RFC 6455 §1.3 defines this GUID for Sec-WebSocket-Accept calculation.
+static constexpr std::string_view kWsMagic
+    = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 // WebSocket opcodes
 static constexpr uint8_t kOpContinuation = 0x0;
@@ -71,24 +74,39 @@ void WaitForSocket(int fd,
                    Clock::time_point deadline,
                    std::string_view action)
 {
-  while (true) {
+  const auto wait_for_fd = [fd, events](int timeout_ms) {
+    if (events == POLLIN) { return WaitForReadableFd(fd, timeout_ms, true); }
+    if (events == POLLOUT) { return WaitForWritableFd(fd, timeout_ms, true); }
+    throw std::runtime_error("WebSocket: unsupported wait event");
+  };
+
+  auto socket_has_error = [fd, events]() {
     struct pollfd pfd{fd, events, 0};
-    const int rc = ::poll(&pfd, 1, RemainingTimeoutMs(deadline));
-    if (rc > 0) {
-      if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+    if (::poll(&pfd, 1, 0) <= 0) { return false; }
+    return (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) != 0;
+  };
+
+  while (true) {
+    switch (wait_for_fd(RemainingTimeoutMs(deadline))) {
+      case 1:
+        if (socket_has_error()) {
+          throw std::runtime_error("WebSocket: socket error while waiting to "
+                                   + std::string(action));
+        }
+        return;
+      case 0:
+        if (socket_has_error()) {
+          throw std::runtime_error("WebSocket: socket error while waiting to "
+                                   + std::string(action));
+        }
+        throw std::runtime_error("WebSocket: timeout while waiting to "
+                                 + std::string(action));
+      case -1:
         throw std::runtime_error("WebSocket: socket error while waiting to "
                                  + std::string(action));
-      }
-      if (pfd.revents & events) { return; }
-      continue;
+      default:
+        throw std::runtime_error("WebSocket: invalid wait result");
     }
-    if (rc == 0) {
-      throw std::runtime_error("WebSocket: timeout while waiting to "
-                               + std::string(action));
-    }
-    if (errno == EINTR) { continue; }
-    throw std::runtime_error("WebSocket: poll failed while waiting to "
-                             + std::string(action));
   }
 }
 
@@ -293,7 +311,7 @@ static std::string ComputeAcceptKey(std::string_view client_key)
   EVP_MD_CTX* ctx = EVP_MD_CTX_new();
   EVP_DigestInit_ex(ctx, EVP_sha1(), nullptr);
   EVP_DigestUpdate(ctx, client_key.data(), client_key.size());
-  EVP_DigestUpdate(ctx, kWsMagic, sizeof(kWsMagic) - 1);
+  EVP_DigestUpdate(ctx, kWsMagic.data(), kWsMagic.size());
   EVP_DigestFinal_ex(ctx, sha1, &sha1_len);
   EVP_MD_CTX_free(ctx);
 
