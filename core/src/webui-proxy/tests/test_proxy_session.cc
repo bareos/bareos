@@ -33,6 +33,7 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <vector>
 
 namespace {
 
@@ -181,10 +182,41 @@ std::string GetJsonStringField(std::string_view text, const char* key)
   return value ? std::string(value) : std::string();
 }
 
-std::string ExchangeAuthMessage(std::string_view auth_message)
+std::vector<std::string> GetJsonStringArrayField(std::string_view text,
+                                                 const char* key)
+{
+  json_error_t error{};
+  json_t* root = json_loadb(text.data(), text.size(), 0, &error);
+  if (!root) {
+    ADD_FAILURE() << "failed to parse JSON response";
+    return {};
+  }
+  std::unique_ptr<json_t, decltype(&json_decref)> guard(root, &json_decref);
+  json_t* array = json_object_get(root, key);
+  if (!json_is_array(array)) {
+    ADD_FAILURE() << "missing JSON string array field: " << key;
+    return {};
+  }
+
+  std::vector<std::string> values;
+  values.reserve(json_array_size(array));
+  size_t index = 0;
+  json_t* entry = nullptr;
+  json_array_foreach(array, index, entry)
+  {
+    const char* value = json_string_value(entry);
+    if (!value) {
+      ADD_FAILURE() << "non-string JSON array element at index " << index;
+      return {};
+    }
+    values.emplace_back(value);
+  }
+  return values;
+}
+
+std::string ExchangeMessage(const ProxyConfig& config, std::string_view message)
 {
   SocketPair sockets;
-  ProxyConfig config;
   const int server_fd = sockets.ReleaseLocal();
   std::thread session([server_fd, &config]() {
     RunProxySession(server_fd, "test-peer", config);
@@ -196,12 +228,18 @@ std::string ExchangeAuthMessage(std::string_view auth_message)
   EXPECT_NE(handshake.find("HTTP/1.1 101 Switching Protocols"),
             std::string::npos);
 
-  const auto frame = BuildMaskedFrame(0x1u, auth_message);
+  const auto frame = BuildMaskedFrame(0x1u, message);
   WriteAll(sockets.peer(), frame.data(), frame.size());
 
   const auto response = ReadServerTextFrame(sockets.peer());
   session.join();
   return response;
+}
+
+std::string ExchangeAuthMessage(std::string_view auth_message)
+{
+  const ProxyConfig config;
+  return ExchangeMessage(config, auth_message);
 }
 
 }  // namespace
@@ -259,6 +297,24 @@ TEST(ProxySession, FiltersMessagesNotificationFromCommandOutput)
             "You have messages.\n");
 }
 
+TEST(ProxySession, ListsConfiguredDirectors)
+{
+  ProxyConfig config;
+  config.allowed_directors.emplace(
+      "prod",
+      DirectorTargetConfig{
+          .host = "prod.example.test", .port = 19101, .name = "bareos-dir"});
+  config.allowed_directors.emplace(
+      "dr", DirectorTargetConfig{
+                .host = "dr.example.test", .port = 29101, .name = "dr-dir"});
+
+  const auto response = ExchangeMessage(config, R"({"type":"list_directors"})");
+
+  EXPECT_EQ(GetJsonStringField(response, "type"), "director_list");
+  EXPECT_EQ(GetJsonStringArrayField(response, "directors"),
+            std::vector<std::string>({"dr", "prod"}));
+}
+
 TEST(ProxySession, RequiresExplicitUsernameInAuthMessage)
 {
   const auto response = ExchangeAuthMessage(
@@ -277,6 +333,40 @@ TEST(ProxySession, RequiresExplicitPasswordInAuthMessage)
   EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
   EXPECT_EQ(GetJsonStringField(response, "message"),
             "Auth message requires string field 'password'");
+}
+
+TEST(ProxySession, RejectsEmptyDirectorInAuthMessage)
+{
+  ProxyConfig config;
+  config.allowed_directors.emplace(
+      "prod",
+      DirectorTargetConfig{
+          .host = "prod.example.test", .port = 19101, .name = "bareos-dir"});
+
+  const auto response = ExchangeMessage(
+      config,
+      R"({"type":"auth","username":"admin","password":"secret","director":"","mode":"json"})");
+
+  EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
+  EXPECT_EQ(GetJsonStringField(response, "message"),
+            "Proxy config: no director selected");
+}
+
+TEST(ProxySession, RejectsUnknownDirectorInAuthMessage)
+{
+  ProxyConfig config;
+  config.allowed_directors.emplace(
+      "prod",
+      DirectorTargetConfig{
+          .host = "prod.example.test", .port = 19101, .name = "bareos-dir"});
+
+  const auto response = ExchangeMessage(
+      config,
+      R"({"type":"auth","username":"admin","password":"secret","director":"other-dir","mode":"json"})");
+
+  EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
+  EXPECT_EQ(GetJsonStringField(response, "message"),
+            "Proxy config: director 'other-dir' is not in the allowlist");
 }
 
 TEST(ProxySession, RejectsUnsupportedAuthMode)
