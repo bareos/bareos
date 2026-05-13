@@ -206,3 +206,76 @@ TEST(ProxyConfig, RejectsNonAsciiKeysWithLineNumber)
               std::string::npos);
   }
 }
+
+TEST(ProxyConfig, ParsesEscapedQuotedValues)
+{
+  ProxyConfig cfg;
+
+  LoadProxyConfigFromString(
+      R"ini(
+[listen]
+ws_host = "127.0.0.1"
+ws_port = 18765
+
+[director:prod]
+host = "prod\"backup\\node"
+port = 19101
+director_name = "bareos-dir"
+)ini",
+      cfg);
+
+  ASSERT_EQ(cfg.allowed_directors.size(), 1U);
+  EXPECT_EQ(cfg.bind_host, "127.0.0.1");
+  EXPECT_EQ(cfg.allowed_directors.at("prod").host, "prod\"backup\\node");
+  EXPECT_EQ(cfg.allowed_directors.at("prod").name, "bareos-dir");
+}
+
+TEST(ProxyConfig, RejectsUnmatchedQuotedValuesWithLineNumber)
+{
+  ProxyConfig cfg;
+
+  try {
+    LoadProxyConfigFromString(
+        R"ini(
+[listen]
+ws_host = "127.0.0.1
+ws_port = 18765
+
+[director:prod]
+host = prod.example.test
+port = 19101
+director_name = bareos-dir
+)ini",
+        cfg);
+    FAIL() << "expected runtime_error";
+  } catch (const std::runtime_error& error) {
+    EXPECT_NE(std::string(error.what()).find("line 3"), std::string::npos);
+    EXPECT_NE(std::string(error.what()).find("matching quotes"),
+              std::string::npos);
+  }
+}
+
+TEST(ProxyConfig, RejectsInvalidQuotedEscapesWithLineNumber)
+{
+  ProxyConfig cfg;
+
+  try {
+    LoadProxyConfigFromString(
+        R"ini(
+[listen]
+ws_host = 127.0.0.1
+ws_port = 18765
+
+[director:prod]
+host = "prod\backup"
+port = 19101
+director_name = bareos-dir
+)ini",
+        cfg);
+    FAIL() << "expected runtime_error";
+  } catch (const std::runtime_error& error) {
+    EXPECT_NE(std::string(error.what()).find("line 7"), std::string::npos);
+    EXPECT_NE(std::string(error.what()).find("invalid escape"),
+              std::string::npos);
+  }
+}
