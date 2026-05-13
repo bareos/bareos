@@ -158,10 +158,10 @@ mssqlvdi
    This is the reference to the MSSQL plugin.
 
 serveraddress
-   (:sinceVersion:`14.2.2: MSSQL: serveraddress`) Defines the server address to connect to (if empty defaults to ``localhost``).
+   (:sinceVersion:`14.2.2: MSSQL: serveraddress`) Defines the server address to connect to (if unset defaults to ``localhost``).
 
 instance
-   Defines the instance within the database server. (if empty defaults to ``default``)
+   Defines the instance within the database server. (if unset defaults to ``default``)
 
 database
    Defines the database that should get backed up.
