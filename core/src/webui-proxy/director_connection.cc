@@ -90,7 +90,7 @@ std::string MakeCramMd5Key(const std::string& password)
   return {hex, dlen * 2};
 }
 
-std::string GetDirectorTlsPskIdentity(const std::string& console_name)
+std::string GetTlsPskIdentityForDirector(const std::string& console_name)
 {
   std::string identity = "R_CONSOLE";
   identity.reserve(identity.size() + 1 + console_name.size());
@@ -399,7 +399,7 @@ void DirectorConnection::Connect(const DirectorConfig& cfg)
 {
   json_mode_ = cfg.json_mode;
   tls_psk_active_ = false;
-  tls_psk_identity_ = GetDirectorTlsPskIdentity(cfg.username);
+  tls_psk_identity_ = GetTlsPskIdentityForDirector(cfg.username);
   tls_psk_secret_ = MakeCramMd5Key(cfg.password);
   const bool use_tls_psk = !cfg.tls_psk_disable;
 
