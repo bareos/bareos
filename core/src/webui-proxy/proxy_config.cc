@@ -20,8 +20,9 @@
  */
 #include "proxy_config.h"
 
+#include "lib/bsys.h"
+
 #include <algorithm>
-#include <cctype>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -50,15 +51,8 @@ std::string StripQuotes(std::string value)
 
 bool ParseBool(const std::string& value, const std::string& key)
 {
-  const std::string lower = [&]() {
-    std::string normalized = value;
-    std::transform(normalized.begin(), normalized.end(), normalized.begin(),
-                   [](unsigned char ch) { return std::tolower(ch); });
-    return normalized;
-  }();
-
-  if (lower == "yes") { return true; }
-  if (lower == "no") { return false; }
+  if (Bstrcasecmp(value.c_str(), "yes")) { return true; }
+  if (Bstrcasecmp(value.c_str(), "no")) { return false; }
   throw std::runtime_error("Proxy config: '" + key + "' must be a boolean");
 }
 
