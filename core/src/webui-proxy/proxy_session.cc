@@ -354,12 +354,8 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     const std::string mode(
         JsonStringField(auth_msg.get(), "mode").value_or("json"));
     cfg.json_mode = (mode != "raw");
-    const auto target
-        = ResolveDirectorTarget(config, [&]() -> std::optional<std::string> {
-            const auto director = JsonStringField(auth_msg.get(), "director");
-            return director ? std::optional<std::string>(*director)
-                            : std::nullopt;
-          }());
+    const auto target = ResolveDirectorTarget(
+        config, RequireJsonStringField(auth_msg.get(), "director"));
     cfg.director_name = target.name;
     cfg.host = target.host;
     cfg.port = target.port;
