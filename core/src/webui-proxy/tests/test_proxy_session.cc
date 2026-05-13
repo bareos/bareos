@@ -300,11 +300,11 @@ TEST(ProxySession, FiltersMessagesNotificationFromCommandOutput)
 TEST(ProxySession, ListsConfiguredDirectors)
 {
   ProxyConfig config;
-  config.allowed_directors.emplace(
+  config.configured_directors.emplace(
       "prod",
       DirectorTargetConfig{
           .host = "prod.example.test", .port = 19101, .name = "bareos-dir"});
-  config.allowed_directors.emplace(
+  config.configured_directors.emplace(
       "dr", DirectorTargetConfig{
                 .host = "dr.example.test", .port = 29101, .name = "dr-dir"});
 
@@ -338,7 +338,7 @@ TEST(ProxySession, RequiresExplicitPasswordInAuthMessage)
 TEST(ProxySession, RejectsEmptyDirectorInAuthMessage)
 {
   ProxyConfig config;
-  config.allowed_directors.emplace(
+  config.configured_directors.emplace(
       "prod",
       DirectorTargetConfig{
           .host = "prod.example.test", .port = 19101, .name = "bareos-dir"});
@@ -355,7 +355,7 @@ TEST(ProxySession, RejectsEmptyDirectorInAuthMessage)
 TEST(ProxySession, RejectsUnknownDirectorInAuthMessage)
 {
   ProxyConfig config;
-  config.allowed_directors.emplace(
+  config.configured_directors.emplace(
       "prod",
       DirectorTargetConfig{
           .host = "prod.example.test", .port = 19101, .name = "bareos-dir"});

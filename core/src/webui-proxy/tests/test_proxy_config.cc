@@ -50,14 +50,14 @@ tls_psk_disable = yes
 
   EXPECT_EQ(cfg.bind_host, "127.0.0.1");
   EXPECT_EQ(cfg.port, 18765);
-  ASSERT_EQ(cfg.allowed_directors.size(), 2U);
-  EXPECT_EQ(cfg.allowed_directors.at("prod").host, "prod.example.test");
-  EXPECT_EQ(cfg.allowed_directors.at("prod").port, 19101);
-  EXPECT_EQ(cfg.allowed_directors.at("prod").name, "bareos-dir");
-  EXPECT_EQ(cfg.allowed_directors.at("dr").host, "dr.example.test");
-  EXPECT_EQ(cfg.allowed_directors.at("dr").port, 29101);
-  EXPECT_EQ(cfg.allowed_directors.at("dr").name, "dr-dir");
-  EXPECT_TRUE(cfg.allowed_directors.at("dr").tls_psk_disable);
+  ASSERT_EQ(cfg.configured_directors.size(), 2U);
+  EXPECT_EQ(cfg.configured_directors.at("prod").host, "prod.example.test");
+  EXPECT_EQ(cfg.configured_directors.at("prod").port, 19101);
+  EXPECT_EQ(cfg.configured_directors.at("prod").name, "bareos-dir");
+  EXPECT_EQ(cfg.configured_directors.at("dr").host, "dr.example.test");
+  EXPECT_EQ(cfg.configured_directors.at("dr").port, 29101);
+  EXPECT_EQ(cfg.configured_directors.at("dr").name, "dr-dir");
+  EXPECT_TRUE(cfg.configured_directors.at("dr").tls_psk_disable);
 }
 
 TEST(ProxyConfig, RejectsDirectorSectionWithoutId)
@@ -272,10 +272,10 @@ director_name = "bareos-dir"
 )ini",
       cfg);
 
-  ASSERT_EQ(cfg.allowed_directors.size(), 1U);
+  ASSERT_EQ(cfg.configured_directors.size(), 1U);
   EXPECT_EQ(cfg.bind_host, "127.0.0.1");
-  EXPECT_EQ(cfg.allowed_directors.at("prod").host, "prod\"backup\\node");
-  EXPECT_EQ(cfg.allowed_directors.at("prod").name, "bareos-dir");
+  EXPECT_EQ(cfg.configured_directors.at("prod").host, "prod\"backup\\node");
+  EXPECT_EQ(cfg.configured_directors.at("prod").name, "bareos-dir");
 }
 
 TEST(ProxyConfig, RejectsUnmatchedQuotedValuesWithLineNumber)

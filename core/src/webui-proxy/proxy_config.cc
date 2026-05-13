@@ -215,7 +215,7 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
         ApplyProxySetting(cfg, key, value, line_number);
         continue;
       case SectionKind::kDirector: {
-        auto [it, inserted] = cfg.allowed_directors.emplace(
+        auto [it, inserted] = cfg.configured_directors.emplace(
             current_director_id, DirectorTargetConfig{});
         if (inserted) { it->second.name = current_director_id; }
         ApplyDirectorSetting(it->second, key, value, line_number);
@@ -229,7 +229,7 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
         line_number, "unknown section '" + current_section + "'"));
   }
 
-  if (cfg.allowed_directors.empty()) {
+  if (cfg.configured_directors.empty()) {
     throw std::runtime_error(
         "Proxy config: at least one [director:<id>] section is required");
   }
