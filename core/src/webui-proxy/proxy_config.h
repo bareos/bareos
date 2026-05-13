@@ -36,7 +36,7 @@ struct DirectorTargetConfig {
 struct ProxyConfig {
   std::string bind_host{"localhost"};
   int port{9104};
-  std::map<std::string, DirectorTargetConfig> allowed_directors;
+  std::map<std::string, DirectorTargetConfig> configured_directors;
 };
 
 void LoadProxyConfigFile(const std::string& path, ProxyConfig& cfg);

@@ -145,7 +145,7 @@ std::string JsonDirectorList(const ProxyConfig& config)
   JsonPtr directors = MakeJsonArray();
 
   SetJsonString(obj.get(), "type", "director_list");
-  for (const auto& [id, _] : config.allowed_directors) {
+  for (const auto& [id, _] : config.configured_directors) {
     AppendJsonString(directors.get(), id);
   }
   SetJsonValue(obj.get(), "directors", std::move(directors));
@@ -367,8 +367,9 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     if (requested_director.empty()) {
       throw std::runtime_error("Proxy config: no director selected");
     }
-    const auto director_it = config.allowed_directors.find(requested_director);
-    if (director_it == config.allowed_directors.end()) {
+    const auto director_it
+        = config.configured_directors.find(requested_director);
+    if (director_it == config.configured_directors.end()) {
       throw std::runtime_error("Proxy config: director '" + requested_director
                                + "' is not in the allowlist");
     }
