@@ -49,14 +49,24 @@ std::string StripQuotes(std::string value)
   return value;
 }
 
-bool ParseBool(const std::string& value, const std::string& key)
+std::string FormatConfigError(size_t line_number, const std::string& message)
+{
+  return "Proxy config line " + std::to_string(line_number) + ": " + message;
+}
+
+bool ParseBool(const std::string& value,
+               const std::string& key,
+               size_t line_number)
 {
   if (Bstrcasecmp(value.c_str(), "yes")) { return true; }
   if (Bstrcasecmp(value.c_str(), "no")) { return false; }
-  throw std::runtime_error("Proxy config: '" + key + "' must be a boolean");
+  throw std::runtime_error(
+      FormatConfigError(line_number, "'" + key + "' must be a boolean"));
 }
 
-int ParseInteger(const std::string& value, const std::string& key)
+int ParseInteger(const std::string& value,
+                 const std::string& key,
+                 size_t line_number)
 {
   try {
     size_t pos = 0;
@@ -64,39 +74,42 @@ int ParseInteger(const std::string& value, const std::string& key)
     if (pos != value.size()) { throw std::invalid_argument("trailing"); }
     return parsed;
   } catch (...) {
-    throw std::runtime_error("Proxy config: '" + key + "' must be an integer");
+    throw std::runtime_error(
+        FormatConfigError(line_number, "'" + key + "' must be an integer"));
   }
 }
 
 void ApplyProxySetting(ProxyConfig& cfg,
                        const std::string& key,
-                       const std::string& value)
+                       const std::string& value,
+                       size_t line_number)
 {
   if (key == "ws_host") {
     cfg.bind_host = value;
   } else if (key == "ws_port") {
-    cfg.port = ParseInteger(value, key);
+    cfg.port = ParseInteger(value, key, line_number);
   } else {
-    throw std::runtime_error("Proxy config: unknown key in [listen]: '" + key
-                             + "'");
+    throw std::runtime_error(FormatConfigError(
+        line_number, "unknown key in [listen]: '" + key + "'"));
   }
 }
 
 void ApplyDirectorSetting(DirectorTargetConfig& cfg,
                           const std::string& key,
-                          const std::string& value)
+                          const std::string& value,
+                          size_t line_number)
 {
   if (key == "host") {
     cfg.host = value;
   } else if (key == "port") {
-    cfg.port = ParseInteger(value, key);
+    cfg.port = ParseInteger(value, key, line_number);
   } else if (key == "director_name") {
     cfg.name = value;
   } else if (key == "tls_psk_disable") {
-    cfg.tls_psk_disable = ParseBool(value, key);
+    cfg.tls_psk_disable = ParseBool(value, key, line_number);
   } else {
-    throw std::runtime_error("Proxy config: unknown director key '" + key
-                             + "'");
+    throw std::runtime_error(
+        FormatConfigError(line_number, "unknown director key '" + key + "'"));
   }
 }
 
@@ -123,15 +136,14 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
 
     const auto eq_pos = line.find('=');
     if (eq_pos == std::string::npos) {
-      throw std::runtime_error("Proxy config: invalid line "
-                               + std::to_string(line_number));
+      throw std::runtime_error(FormatConfigError(line_number, "invalid line"));
     }
 
     const std::string key = Trim(line.substr(0, eq_pos));
     const std::string value = StripQuotes(line.substr(eq_pos + 1));
 
     if (current_section == "listen") {
-      ApplyProxySetting(cfg, key, value);
+      ApplyProxySetting(cfg, key, value, line_number);
       continue;
     }
     if (current_section.rfind("director:", 0) == 0) {
@@ -139,12 +151,12 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
       auto [it, inserted]
           = cfg.allowed_directors.emplace(director_id, DirectorTargetConfig{});
       if (inserted) { it->second.name = director_id; }
-      ApplyDirectorSetting(it->second, key, value);
+      ApplyDirectorSetting(it->second, key, value, line_number);
       continue;
     }
 
-    throw std::runtime_error("Proxy config: unknown section '" + current_section
-                             + "'");
+    throw std::runtime_error(FormatConfigError(
+        line_number, "unknown section '" + current_section + "'"));
   }
 
   if (cfg.allowed_directors.empty()) {
