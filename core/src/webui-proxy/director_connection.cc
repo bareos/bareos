@@ -47,7 +47,6 @@
 // Bareos signal codes (negative length-prefix values)
 // ---------------------------------------------------------------------------
 constexpr unsigned int kMd5DigestBytes = 16;
-constexpr unsigned int kMd5HexChars = kMd5DigestBytes * 2;
 
 // Compute MD5(text) and return it as a lowercase hex string.
 std::string MakeCramMd5Key(const std::string& password)
