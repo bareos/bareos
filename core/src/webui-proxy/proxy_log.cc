@@ -44,6 +44,8 @@ std::string_view Basename(std::string_view path)
 
 std::string NormalizeTimezoneOffset(std::string_view raw_offset)
 {
+  // strftime("%z") returns +HHMM/-HHMM, but the proxy log format uses
+  // RFC 3339 style offsets with a colon: +HH:MM/-HH:MM.
   if (raw_offset.size() == 5
       && (raw_offset.front() == '+' || raw_offset.front() == '-')) {
     std::string normalized;
