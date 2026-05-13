@@ -25,10 +25,6 @@ target_compile_definitions(
           WEBUI_PROXY_DEFAULT_CONFIG_PATH="${confdir}/bareos-webui-proxy.ini"
 )
 
-target_include_directories(
-  bareos-webui-proxy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
 target_link_libraries(
   bareos-webui-proxy PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto
                              Jansson::Jansson Threads::Threads CLI11::CLI11
@@ -75,9 +71,6 @@ if(BUILD_TESTING AND GTest_FOUND)
   )
   target_compile_definitions(
     test_webui_proxy PRIVATE BAREOS_FULL_VERSION="${BAREOS_FULL_VERSION}"
-  )
-  target_include_directories(
-    test_webui_proxy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   )
   target_link_libraries(
     test_webui_proxy
