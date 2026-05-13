@@ -121,6 +121,14 @@ std::string_view RequireJsonStringField(const json_t* object, const char* key)
   return *value;
 }
 
+bool ParseAuthMode(std::string_view mode)
+{
+  if (mode == "json") { return true; }
+  if (mode == "raw") { return false; }
+  throw std::invalid_argument("Auth message has unsupported mode '"
+                              + std::string(mode) + "'");
+}
+
 // Build a JSON string using jansson and return it as std::string.
 // Caller must ensure all values are valid.
 std::string JsonObject(
@@ -346,14 +354,14 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   }
 
   DirectorConfig cfg;
+  const std::string mode(
+      JsonStringField(auth_msg.get(), "mode").value_or("json"));
   try {
     cfg.username
         = std::string(RequireJsonStringField(auth_msg.get(), "username"));
     cfg.password
         = std::string(RequireJsonStringField(auth_msg.get(), "password"));
-    const std::string mode(
-        JsonStringField(auth_msg.get(), "mode").value_or("json"));
-    cfg.json_mode = (mode != "raw");
+    cfg.json_mode = ParseAuthMode(mode);
     const auto target = ResolveDirectorTarget(
         config, RequireJsonStringField(auth_msg.get(), "director"));
     cfg.director_name = target.name;
@@ -368,9 +376,6 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     ws->SendText(JsonObject({{"type", "auth_error"}, {"message", ex.what()}}));
     return;
   }
-
-  const std::string mode(
-      JsonStringField(auth_msg.get(), "mode").value_or("json"));
 
   // ── Step 2: connect and authenticate to director ─────────────────────────
   DirectorConnection director;
