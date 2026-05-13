@@ -39,9 +39,9 @@
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 
-TEST(DirectorConnection, BuildsTlsPskIdentityForConsole)
+TEST(DirectorConnection, BuildsTlsPskIdentityForDirector)
 {
-  const std::string identity = GetDirectorTlsPskIdentity("admin-tls");
+  const std::string identity = GetTlsPskIdentityForDirector("admin-tls");
   std::string expected = "R_CONSOLE";
   expected.push_back(AsciiControlCharacters::RecordSeparator());
   expected.append("admin-tls");
