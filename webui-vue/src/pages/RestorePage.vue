@@ -35,21 +35,23 @@
                     :options="clientOptions"
                     :label="t('Backup Client')"
                     outlined dense emit-value map-options
-                  :loading="loadingClients"
-                  :hint="t('Select a client to browse its backups')"
-                  @update:model-value="onClientChange"
-                />
-                <q-select
-                  v-model="form.jobid"
-                  :options="backupOptions"
-                  :label="t('Backup Job')"
-                  outlined dense emit-value map-options
-                  :loading="loadingBackups"
-                  :disable="!form.client || loadingBackups"
-                  no-error-icon
-                  :hint="t('Select a completed backup job')"
-                  @update:model-value="initBrowser"
-                />
+                    :loading="loadingClients"
+                    :hint="t('Select a client to browse its backups')"
+                    data-testid="restore-source-client"
+                    @update:model-value="onClientChange"
+                  />
+                  <q-select
+                    v-model="form.jobid"
+                    :options="backupOptions"
+                    :label="t('Backup Job')"
+                    outlined dense emit-value map-options
+                    :loading="loadingBackups"
+                    :disable="!form.client || loadingBackups"
+                    no-error-icon
+                    :hint="t('Select a completed backup job')"
+                    data-testid="restore-backup-job"
+                    @update:model-value="initBrowser"
+                  />
                 <q-checkbox
                   v-model="form.mergeJobsets"
                   :label="t('Include related jobs (Full + Incremental/Differential)')"
@@ -71,6 +73,7 @@
                   outlined dense emit-value map-options
                   :loading="loadingClients"
                   :disable="!sourceDirector"
+                  data-testid="restore-target-client"
                 />
                 <q-select
                   v-model="form.restorejob"
@@ -79,18 +82,21 @@
                   outlined dense emit-value map-options
                   :loading="loadingRestoreJobs"
                   :disable="!sourceDirector"
+                  data-testid="restore-job"
                 />
                 <q-input
                   v-model="form.where"
                   :label="t('Restore to (Where)')"
                   outlined dense
                   placeholder="/ or /tmp/bareos-restores"
+                  data-testid="restore-where"
                 />
                 <q-select
                   v-model="form.replace"
                   :options="replaceOptions"
                   :label="t('Replace Policy')"
                   outlined dense emit-value map-options
+                  data-testid="restore-replace-policy"
                 />
               </q-card-section>
             </q-card>
@@ -152,6 +158,7 @@
               :pagination="{ rowsPerPage: 200, sortBy: 'name' }"
               hide-bottom
               style="min-height: 260px"
+              data-testid="restore-browser"
             >
               <template #header-cell-sel="props">
                 <q-th :props="props" style="width:36px">
@@ -246,6 +253,7 @@
             color="primary" :label="t('Restore')" icon="restore"
             :disable="!canRestore"
             :loading="loadingRestore"
+            data-testid="restore-submit"
             @click="doRestore"
           />
           <q-btn flat :label="t('Reset')" @click="resetAll" />
@@ -261,6 +269,7 @@
           :class="restoreResult.ok ? 'bg-positive text-white' : 'bg-negative text-white'"
           class="q-mt-md"
           rounded
+          data-testid="restore-result"
         >
           <template #avatar>
             <q-icon :name="restoreResult.ok ? 'check_circle' : 'error'" />

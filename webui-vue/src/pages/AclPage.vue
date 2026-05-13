@@ -58,6 +58,7 @@
                 debounce="150"
                 :label="t('Filter commands')"
                 :hint="t('Search by command, description, or arguments')"
+                data-testid="acl-filter"
               >
                 <template #prepend>
                   <q-icon name="search" />
