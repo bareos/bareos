@@ -137,7 +137,8 @@ void ApplyProxySetting(ProxyConfig& cfg,
   } else if (key == "ws_port") {
     cfg.port = ParseInteger(value, key, line_number);
   } else {
-    throw std::runtime_error(FormatUnknownKeyError("listen", key, line_number));
+    throw ProxyConfigUnknownKeyError(
+        FormatUnknownKeyError("listen", key, line_number));
   }
 }
 
@@ -155,7 +156,7 @@ void ApplyDirectorSetting(DirectorTargetConfig& cfg,
   } else if (key == "tls_psk_disable") {
     cfg.tls_psk_disable = ParseBool(value, key, line_number);
   } else {
-    throw std::runtime_error(
+    throw ProxyConfigUnknownKeyError(
         FormatUnknownKeyError("director", key, line_number));
   }
 }
@@ -225,12 +226,12 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
         break;
     }
 
-    throw std::runtime_error(FormatConfigError(
+    throw ProxyConfigUnknownSectionError(FormatConfigError(
         line_number, "unknown section '" + current_section + "'"));
   }
 
   if (cfg.configured_directors.empty()) {
-    throw std::runtime_error(
+    throw ProxyConfigMissingDirectorSectionError(
         "Proxy config: at least one [director:<id>] section is required");
   }
 }

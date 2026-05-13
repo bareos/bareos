@@ -22,9 +22,30 @@
 #define BAREOS_WEBUI_PROXY_PROXY_CONFIG_H_
 
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
+
+class ProxyConfigError : public std::runtime_error {
+ public:
+  using std::runtime_error::runtime_error;
+};
+
+class ProxyConfigUnknownSectionError : public ProxyConfigError {
+ public:
+  using ProxyConfigError::ProxyConfigError;
+};
+
+class ProxyConfigUnknownKeyError : public ProxyConfigError {
+ public:
+  using ProxyConfigError::ProxyConfigError;
+};
+
+class ProxyConfigMissingDirectorSectionError : public ProxyConfigError {
+ public:
+  using ProxyConfigError::ProxyConfigError;
+};
 
 struct DirectorTargetConfig {
   std::string host{"localhost"};
