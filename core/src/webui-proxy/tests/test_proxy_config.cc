@@ -135,3 +135,74 @@ director_name = bareos-dir
     EXPECT_NE(std::string(error.what()).find("line 4"), std::string::npos);
   }
 }
+
+TEST(ProxyConfig, RejectsNonAsciiValuesWithLineNumber)
+{
+  ProxyConfig cfg;
+
+  try {
+    LoadProxyConfigFromString(
+        "[listen]\n"
+        "ws_host = 127.0.0.1\n"
+        "ws_port = 18765\n"
+        "\n"
+        "[director:prod]\n"
+        "host = prod.example.test\n"
+        "port = 19101\n"
+        "director_name = bar\xC3\xA4os-dir\n",
+        cfg);
+    FAIL() << "expected runtime_error";
+  } catch (const std::runtime_error& error) {
+    EXPECT_NE(std::string(error.what()).find("line 8"), std::string::npos);
+    EXPECT_NE(std::string(error.what()).find("printable ASCII"),
+              std::string::npos);
+  }
+}
+
+TEST(ProxyConfig, RejectsNonAsciiSectionNamesWithLineNumber)
+{
+  ProxyConfig cfg;
+
+  try {
+    LoadProxyConfigFromString(
+        "[listen]\n"
+        "ws_host = 127.0.0.1\n"
+        "ws_port = 18765\n"
+        "\n"
+        "[director:pr\xC3\xB6"
+        "d]\n"
+        "host = prod.example.test\n"
+        "port = 19101\n"
+        "director_name = bareos-dir\n",
+        cfg);
+    FAIL() << "expected runtime_error";
+  } catch (const std::runtime_error& error) {
+    EXPECT_NE(std::string(error.what()).find("line 5"), std::string::npos);
+    EXPECT_NE(std::string(error.what()).find("printable ASCII"),
+              std::string::npos);
+  }
+}
+
+TEST(ProxyConfig, RejectsNonAsciiKeysWithLineNumber)
+{
+  ProxyConfig cfg;
+
+  try {
+    LoadProxyConfigFromString(
+        "[listen]\n"
+        "ws_h\xC3\xB6"
+        "st = 127.0.0.1\n"
+        "ws_port = 18765\n"
+        "\n"
+        "[director:prod]\n"
+        "host = prod.example.test\n"
+        "port = 19101\n"
+        "director_name = bareos-dir\n",
+        cfg);
+    FAIL() << "expected runtime_error";
+  } catch (const std::runtime_error& error) {
+    EXPECT_NE(std::string(error.what()).find("line 2"), std::string::npos);
+    EXPECT_NE(std::string(error.what()).find("printable ASCII"),
+              std::string::npos);
+  }
+}
