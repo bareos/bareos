@@ -154,3 +154,17 @@ TEST_F(ProxyLogFileTest, HonorsMinimumLogLevel)
   EXPECT_EQ(output.find("suppressed"), std::string::npos);
   EXPECT_NE(output.find("emitted"), std::string::npos);
 }
+
+TEST_F(ProxyLogFileTest, TreatsLiteralPercentTextAsMessageWithoutArgs)
+{
+  ProxyLoggerConfig cfg;
+  cfg.log_file = path_;
+  cfg.log_to_stderr = false;
+  ConfigureProxyLogger(cfg);
+
+  ProxyLogFormat(ProxyLogLevel::Info, "", libbareos::source_location::current(),
+                 "100% literal %s text");
+
+  const std::string output = ReadLogFile();
+  EXPECT_NE(output.find("100% literal %s text"), std::string::npos);
+}

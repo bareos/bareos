@@ -29,7 +29,8 @@
 
 #include "lib/source_location.h"
 
-enum class ProxyLogLevel {
+enum class ProxyLogLevel
+{
   Debug = 0,
   Info,
   Warn,
@@ -47,18 +48,18 @@ std::string_view ProxyLogLevelName(ProxyLogLevel level);
 std::string FormatProxyLogTimestamp(
     std::chrono::system_clock::time_point timestamp);
 void ConfigureProxyLogger(const ProxyLoggerConfig& config);
-void ProxyLogWrite(
-    ProxyLogLevel level,
-    std::string_view peer,
-    std::string_view message,
-    libbareos::source_location loc = libbareos::source_location::current());
+void ProxyLogWrite(ProxyLogLevel level,
+                   std::string_view peer,
+                   std::string_view message,
+                   libbareos::source_location loc
+                   = libbareos::source_location::current());
 
 inline void ProxyLogFormat(ProxyLogLevel level,
                            std::string_view peer,
                            libbareos::source_location loc,
-                           const char* format)
+                           const char* message)
 {
-  ProxyLogWrite(level, peer, format, loc);
+  ProxyLogWrite(level, peer, message, loc);
 }
 
 template <typename First, typename... Rest>
@@ -83,24 +84,24 @@ void ProxyLogFormat(ProxyLogLevel level,
   ProxyLogWrite(level, peer, rendered, loc);
 }
 
-#define PROXY_LOG_DEBUG(peer, format, ...) \
-  ProxyLogFormat(                          \
-      ProxyLogLevel::Debug, peer, libbareos::source_location::current(), \
-      format __VA_OPT__(, ) __VA_ARGS__)
+#define PROXY_LOG_DEBUG(peer, format, ...)              \
+  ProxyLogFormat(ProxyLogLevel::Debug, peer,            \
+                 libbareos::source_location::current(), \
+                 format __VA_OPT__(, ) __VA_ARGS__)
 
-#define PROXY_LOG_INFO(peer, format, ...) \
-  ProxyLogFormat(                         \
-      ProxyLogLevel::Info, peer, libbareos::source_location::current(), \
-      format __VA_OPT__(, ) __VA_ARGS__)
+#define PROXY_LOG_INFO(peer, format, ...)               \
+  ProxyLogFormat(ProxyLogLevel::Info, peer,             \
+                 libbareos::source_location::current(), \
+                 format __VA_OPT__(, ) __VA_ARGS__)
 
-#define PROXY_LOG_WARN(peer, format, ...) \
-  ProxyLogFormat(                         \
-      ProxyLogLevel::Warn, peer, libbareos::source_location::current(), \
-      format __VA_OPT__(, ) __VA_ARGS__)
+#define PROXY_LOG_WARN(peer, format, ...)               \
+  ProxyLogFormat(ProxyLogLevel::Warn, peer,             \
+                 libbareos::source_location::current(), \
+                 format __VA_OPT__(, ) __VA_ARGS__)
 
-#define PROXY_LOG_ERROR(peer, format, ...) \
-  ProxyLogFormat(                          \
-      ProxyLogLevel::Error, peer, libbareos::source_location::current(), \
-      format __VA_OPT__(, ) __VA_ARGS__)
+#define PROXY_LOG_ERROR(peer, format, ...)              \
+  ProxyLogFormat(ProxyLogLevel::Error, peer,            \
+                 libbareos::source_location::current(), \
+                 format __VA_OPT__(, ) __VA_ARGS__)
 
 #endif  // BAREOS_WEBUI_PROXY_PROXY_LOG_H_
