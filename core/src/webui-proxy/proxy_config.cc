@@ -46,6 +46,15 @@ std::string FormatConfigError(size_t line_number, const std::string& message)
   return "Proxy config line " + std::to_string(line_number) + ": " + message;
 }
 
+std::string FormatUnknownKeyError(std::string_view section,
+                                  const std::string& key,
+                                  size_t line_number)
+{
+  return FormatConfigError(
+      line_number,
+      "unknown key in [" + std::string(section) + "]: '" + key + "'");
+}
+
 std::string ParseValue(std::string value, size_t line_number)
 {
   value = Trim(std::move(value));
@@ -128,8 +137,7 @@ void ApplyProxySetting(ProxyConfig& cfg,
   } else if (key == "ws_port") {
     cfg.port = ParseInteger(value, key, line_number);
   } else {
-    throw std::runtime_error(FormatConfigError(
-        line_number, "unknown key in [listen]: '" + key + "'"));
+    throw std::runtime_error(FormatUnknownKeyError("listen", key, line_number));
   }
 }
 
@@ -148,7 +156,7 @@ void ApplyDirectorSetting(DirectorTargetConfig& cfg,
     cfg.tls_psk_disable = ParseBool(value, key, line_number);
   } else {
     throw std::runtime_error(
-        FormatConfigError(line_number, "unknown director key '" + key + "'"));
+        FormatUnknownKeyError("director", key, line_number));
   }
 }
 

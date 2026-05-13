@@ -136,6 +136,54 @@ director_name = bareos-dir
   }
 }
 
+TEST(ProxyConfig, RejectsUnknownListenKeysWithConsistentError)
+{
+  ProxyConfig cfg;
+
+  try {
+    LoadProxyConfigFromString(
+        R"ini(
+[listen]
+unexpected = 127.0.0.1
+
+[director:prod]
+host = prod.example.test
+port = 19101
+director_name = bareos-dir
+)ini",
+        cfg);
+    FAIL() << "expected runtime_error";
+  } catch (const std::runtime_error& error) {
+    EXPECT_NE(std::string(error.what()).find("line 3"), std::string::npos);
+    EXPECT_NE(std::string(error.what()).find("unknown key in [listen]"),
+              std::string::npos);
+  }
+}
+
+TEST(ProxyConfig, RejectsUnknownDirectorKeysWithConsistentError)
+{
+  ProxyConfig cfg;
+
+  try {
+    LoadProxyConfigFromString(
+        R"ini(
+[listen]
+ws_host = 127.0.0.1
+
+[director:prod]
+unexpected = prod.example.test
+port = 19101
+director_name = bareos-dir
+)ini",
+        cfg);
+    FAIL() << "expected runtime_error";
+  } catch (const std::runtime_error& error) {
+    EXPECT_NE(std::string(error.what()).find("line 6"), std::string::npos);
+    EXPECT_NE(std::string(error.what()).find("unknown key in [director]"),
+              std::string::npos);
+  }
+}
+
 TEST(ProxyConfig, RejectsNonAsciiValuesWithLineNumber)
 {
   ProxyConfig cfg;
