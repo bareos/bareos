@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cerrno>
 #include <cstring>
 #include <ctime>
@@ -165,6 +166,7 @@ unsigned int TlsPskClientCallback(SSL* ssl,
 
 void DirectorConnection::WriteAll(const void* buf, size_t len)
 {
+  assert(fd_ >= 0);
   const auto* p = static_cast<const uint8_t*>(buf);
   while (len > 0) {
     int n = 0;
@@ -191,6 +193,7 @@ void DirectorConnection::WriteAll(const void* buf, size_t len)
 
 void DirectorConnection::ReadAll(void* buf, size_t len)
 {
+  assert(fd_ >= 0);
   auto* p = static_cast<uint8_t*>(buf);
   while (len > 0) {
     int n = 0;
@@ -219,6 +222,7 @@ void DirectorConnection::ReadAll(void* buf, size_t len)
 
 void DirectorConnection::SendFrame(const std::string& data)
 {
+  assert(fd_ >= 0);
   int32_t hdr = htonl(static_cast<int32_t>(data.size()));
   WriteAll(&hdr, 4);
   if (!data.empty()) { WriteAll(data.data(), data.size()); }
@@ -227,7 +231,7 @@ void DirectorConnection::SendFrame(const std::string& data)
 bool DirectorConnection::HasPendingInput(int timeout_ms) const
 {
   if (ssl_ && SSL_pending(ssl_) > 0) { return true; }
-  if (fd_ < 0) { return false; }
+  assert(fd_ >= 0);
 
   struct pollfd pfd{fd_, POLLIN, 0};
   int rc = poll(&pfd, 1, timeout_ms);
@@ -251,6 +255,7 @@ void DirectorConnection::DrainPendingInput()
 
 std::string DirectorConnection::RecvFrame(int32_t* signal)
 {
+  assert(fd_ >= 0);
   int32_t hdr_net;
   ReadAll(&hdr_net, 4);
   int32_t len = ntohl(hdr_net);
@@ -269,6 +274,7 @@ std::string DirectorConnection::RecvFrame(int32_t* signal)
 
 std::string DirectorConnection::RecvResponse()
 {
+  assert(fd_ >= 0);
   std::string result;
   while (true) {
     int32_t hdr_net;
@@ -301,6 +307,7 @@ std::string DirectorConnection::RecvResponse()
 
 void DirectorConnection::Authenticate(const DirectorConfig& cfg)
 {
+  assert(fd_ >= 0);
   // The CRAM-MD5 key is MD5(plaintext_password) as a hex string.
   const std::string key = MakeCramMd5Key(cfg.password);
 
@@ -445,6 +452,7 @@ void DirectorConnection::ConnectTcp(const DirectorConfig& cfg)
 
 void DirectorConnection::ConnectTlsPsk(const DirectorConfig& cfg)
 {
+  assert(fd_ >= 0);
   ssl_ctx_ = SSL_CTX_new(TLS_client_method());
   if (!ssl_ctx_) {
     throw std::runtime_error("Director: could not create TLS-PSK context: "
@@ -494,6 +502,7 @@ CallResult DirectorConnection::Call(
     const std::string& command,
     const std::function<void(std::string_view)>& on_data)
 {
+  assert(fd_ >= 0);
   if (json_mode_) { DrainPendingInput(); }
   SendFrame(command + "\n");
   // Unified receive strategy for both JSON and raw (text) mode:
