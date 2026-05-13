@@ -104,7 +104,7 @@ TEST(ProxyConfig, RequiresDirectorSelectionWhenMultipleConfigured)
       "dr", DirectorTargetConfig{
                 .host = "dr.example.test", .port = 29101, .name = "dr-dir"});
 
-  EXPECT_THROW(ResolveDirectorTarget(cfg, std::nullopt), std::runtime_error);
+  EXPECT_THROW(ResolveDirectorTarget(cfg, ""), std::runtime_error);
 }
 
 TEST(ProxyConfig, ResolvesAllowedDirectorById)
@@ -145,7 +145,7 @@ TEST(ProxyConfig, RequiresDirectorSelectionWhenSingleConfigured)
       DirectorTargetConfig{
           .host = "dir.example.test", .port = 19101, .name = "custom-dir"});
 
-  EXPECT_THROW(ResolveDirectorTarget(cfg, std::nullopt), std::runtime_error);
+  EXPECT_THROW(ResolveDirectorTarget(cfg, ""), std::runtime_error);
 }
 
 TEST(ProxyConfig, RejectsUnexpectedDirectorWithoutAllowlist)

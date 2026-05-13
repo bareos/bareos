@@ -183,19 +183,17 @@ void LoadProxyConfigFromString(const std::string& ini, ProxyConfig& cfg)
   ParseAndApplyProxyConfig(ini, cfg);
 }
 
-DirectorTargetConfig ResolveDirectorTarget(
-    const ProxyConfig& cfg,
-    const std::optional<std::string>& requested_director)
+DirectorTargetConfig ResolveDirectorTarget(const ProxyConfig& cfg,
+                                           std::string_view requested_director)
 {
-  if (!requested_director || requested_director->empty()) {
+  if (requested_director.empty()) {
     throw std::runtime_error("Proxy config: no director selected");
   }
 
-  const std::string& director_id = *requested_director;
-
-  auto it = cfg.allowed_directors.find(director_id);
+  auto it = cfg.allowed_directors.find(std::string(requested_director));
   if (it == cfg.allowed_directors.end()) {
-    throw std::runtime_error("Proxy config: director '" + director_id
+    throw std::runtime_error("Proxy config: director '"
+                             + std::string(requested_director)
                              + "' is not in the allowlist");
   }
 
