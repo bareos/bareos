@@ -41,18 +41,45 @@ std::string Trim(std::string value)
   return value;
 }
 
-std::string StripQuotes(std::string value)
-{
-  value = Trim(std::move(value));
-  if (value.size() >= 2 && value.front() == '"' && value.back() == '"') {
-    return value.substr(1, value.size() - 2);
-  }
-  return value;
-}
-
 std::string FormatConfigError(size_t line_number, const std::string& message)
 {
   return "Proxy config line " + std::to_string(line_number) + ": " + message;
+}
+
+std::string ParseValue(std::string value, size_t line_number)
+{
+  value = Trim(std::move(value));
+  const bool starts_quoted = !value.empty() && value.front() == '"';
+  const bool ends_quoted = !value.empty() && value.back() == '"';
+  if (starts_quoted != ends_quoted) {
+    throw std::runtime_error(FormatConfigError(
+        line_number, "quoted value must use matching quotes"));
+  }
+  if (!starts_quoted) { return value; }
+
+  std::string parsed;
+  parsed.reserve(value.size() - 2);
+  for (size_t i = 1; i + 1 < value.size(); ++i) {
+    if (value[i] != '\\') {
+      parsed.push_back(value[i]);
+      continue;
+    }
+    ++i;
+    if (i + 1 >= value.size()) {
+      throw std::runtime_error(FormatConfigError(
+          line_number, "quoted value ends with an incomplete escape"));
+    }
+    switch (value[i]) {
+      case '"':
+      case '\\':
+        parsed.push_back(value[i]);
+        break;
+      default:
+        throw std::runtime_error(FormatConfigError(
+            line_number, "quoted value contains an invalid escape"));
+    }
+  }
+  return parsed;
 }
 
 void EnsurePrintableAscii(std::string_view value,
@@ -153,7 +180,7 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
     }
 
     const std::string key = Trim(line.substr(0, eq_pos));
-    const std::string value = StripQuotes(line.substr(eq_pos + 1));
+    const std::string value = ParseValue(line.substr(eq_pos + 1), line_number);
     EnsurePrintableAscii(key, "key", line_number);
     EnsurePrintableAscii(value, "value", line_number);
 
