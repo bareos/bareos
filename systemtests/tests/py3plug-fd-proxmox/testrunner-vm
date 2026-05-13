@@ -17,12 +17,12 @@ JobName=backup-proxmox-vm
 export PATH="${current_test_directory}/sbin:${current_test_directory}/bin:$PATH"
 
 JobName=backup-proxmox-vm
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
 BACKGUESTID=999010
 RESTGUESTID=999011
-GUESTNAME=plugtestvm
+GUESTNAME="plugtestvm${CIUID:+-${CIUID}}"
 
 qm stop "${BACKGUESTID}" || :
 qm destroy "${BACKGUESTID}" || :
@@ -66,7 +66,6 @@ wait
 messages
 END_OF_DATA2
 
-
 run_bconsole "$@"
 
 qm start "${RESTGUESTID}"
@@ -77,7 +76,6 @@ qm list | grep "${RESTGUESTID}"
 # cleanup
 qm stop "${RESTGUESTID}"
 qm destroy "${RESTGUESTID}"
-
 
 cat <<END_OF_DATA3 >$tmp/bconcmds
 @#
@@ -92,18 +90,17 @@ wait
 messages
 END_OF_DATA3
 
-
 run_bconsole "$@"
 
 check_for_zombie_jobs storage=File
 
 RESTOREFILE=$(grep -o "/var/lib/vz/dump.*vma" "${tmp}/log3.out")
 
-head "$RESTOREFILE"  > "${tmp}/diskhead"
+head "$RESTOREFILE" >"${tmp}/diskhead"
 
 expect_grep "name: ${GUESTNAME}" \
- "${tmp}/diskhead" \
- "did not find expected vm name in vma dump file"
+  "${tmp}/diskhead" \
+  "did not find expected vm name in vma dump file"
 
 check_log "${tmp}/log1.out"
 check_log "${tmp}/log2.out"

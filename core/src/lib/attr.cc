@@ -46,6 +46,8 @@ Attributes* new_attr(JobControlRecord* jcr)
   attr->ofname = GetPoolMemory(PM_FNAME);
   attr->olname = GetPoolMemory(PM_FNAME);
   attr->attrEx = GetPoolMemory(PM_FNAME);
+  attr->fname = GetPoolMemory(PM_FNAME);
+  attr->lname = GetPoolMemory(PM_FNAME);
   attr->jcr = jcr;
   attr->uid = getuid();
   return attr;
@@ -56,6 +58,8 @@ void FreeAttr(Attributes* attr)
   FreePoolMemory(attr->olname);
   FreePoolMemory(attr->ofname);
   FreePoolMemory(attr->attrEx);
+  FreePoolMemory(attr->fname);
+  FreePoolMemory(attr->lname);
   free(attr);
 }
 
@@ -100,14 +104,14 @@ int UnpackAttributesRecord(JobControlRecord* jcr,
   while (*p++ != ' ') /* skip type */
   {}
 
-  attr->fname = p;  /* set filename position */
-  while (*p++ != 0) /* skip filename */
+  PmStrcpy(attr->fname, p); /* set filename position */
+  while (*p++ != 0)         /* skip filename */
   {}
   attr->attr = p;   /* set attributes position */
   while (*p++ != 0) /* skip attributes */
   {}
-  attr->lname = p;  /* set link position */
-  while (*p++ != 0) /* skip link */
+  PmStrcpy(attr->lname, p); /* set filename position */
+  while (*p++ != 0)         /* skip link */
   {}
   attr->delta_seq = 0;
   if (attr->type == FT_RESTORE_FIRST) {

@@ -53,6 +53,10 @@ messages
 run job=$JobName fileset=PluginConfigTestBothFiles yes
 wait
 messages
+@$out $tmp/config-test-multi-value.out
+run job=$JobName fileset=PluginConfigTestMultiValue yes
+wait
+messages
 END_OF_DATA
 
 run_bconsole
@@ -108,6 +112,9 @@ done
 for i in 1 6 7 8; do
   check_option "option$i" "override-value$i" both-files
 done
+
+check_option "test" "\['1', '2', '3'\]" "multi-value"
+check_option "test2" "1" "multi-value"
 
 for f in defaults-file override-file both-files; do
   expect_not_grep \

@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -146,10 +146,16 @@ struct restore_pkt {
   int create_status{};                   /* Status from createFile() */
   uint32_t delta_seq{};                  /* Delta sequence number */
 #if HAVE_WIN32
-  HANDLE hndl;
+  HANDLE hndl; /* HANDLE to read/write in core */
 #else
   int filedes{}; /* file descriptor to read/write in core */
 #endif
+
+  const char* original_file_name{}; /* original file name (without
+                                       where/regexwhere applied) */
+  const char* original_link_name{}; /* original link name (without
+                                       where/regexwhere applied) */
+
   int32_t pkt_end{sizeof(restore_pkt)}; /* End packet sentinel */
 };
 

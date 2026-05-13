@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -297,6 +297,9 @@ typedef struct {
   int replace;                  /* Replace flag */
   int create_status;            /* Status from createFile() */
   int filedes;                  /* filedescriptor for read/write in core */
+
+  const char* original_file_name;
+  const char* original_link_name;
 } PyRestorePacket;
 
 // Forward declarations of type specific functions.
@@ -340,7 +343,13 @@ static PyMemberDef PyRestorePacket_members[] = {
      (char*)"Status from createFile()"},
     {(char*)"filedes", T_INT, offsetof(PyRestorePacket, filedes), 0,
      (char*)"file descriptor of current file"},
-    {NULL, 0, 0, 0, NULL}};
+    {(char*)"original_file_name", T_STRING,
+     offsetof(PyRestorePacket, original_file_name), 0,
+     (char*)"filename at backup time"},
+    {(char*)"original_link_name", T_STRING,
+     offsetof(PyRestorePacket, original_link_name), 0,
+     (char*)"link name at backup time"},
+    {}};
 
 IGNORE_MISSING_INITIALIZERS_ON
 /* clang-format off */

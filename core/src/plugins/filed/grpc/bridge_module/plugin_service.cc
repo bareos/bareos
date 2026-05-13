@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1019,6 +1019,8 @@ auto PluginService::createFile(ServerContext*,
   memcpy(&rp.statp, request->stats().c_str(), sizeof(rp.statp));
   rp.ofname = request->output_name().c_str();
   rp.olname = request->soft_link_to().c_str();
+  rp.original_file_name = request->original_name().c_str();
+  rp.original_link_name = request->original_link().c_str();
   if (request->has_where()) {
     rp.where = request->where().c_str();
   } else {
@@ -1084,6 +1086,10 @@ auto PluginService::setFileAttributes(
   rp.attrEx = request->extended_attributes().c_str();
   rp.ofname = request->file().c_str();
   rp.olname = request->file().c_str();
+
+  rp.original_file_name = request->original_name().c_str();
+  rp.original_link_name = request->original_link().c_str();
+
   rp.where = request->where().c_str();
   rp.create_status = CF_ERROR;
   rp.filedes = kInvalidFiledescriptor;

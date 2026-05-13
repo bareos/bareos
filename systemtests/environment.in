@@ -181,6 +181,8 @@ export SQLCMD="@SQLCMD@"
 export PERL="@PERL@"
 export AWK="@AWK@"
 
+export CIUID="@CIUID@"
+
 if [ -f environment.local ]; then
   source environment.local
 fi

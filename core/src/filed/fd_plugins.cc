@@ -1383,6 +1383,8 @@ int PluginCreateFile(JobControlRecord* jcr,
   rp.attrEx = attr->attrEx;
   rp.ofname = attr->ofname;
   rp.olname = attr->olname;
+  rp.original_file_name = attr->fname;
+  rp.original_link_name = attr->lname;
   rp.where = jcr->where;
   rp.RegexWhere = jcr->RegexWhere;
   rp.replace = jcr->fd_impl->replace;
@@ -1486,6 +1488,8 @@ bool PluginSetAttributes(JobControlRecord* jcr,
   rp.RegexWhere = jcr->RegexWhere;
   rp.replace = jcr->fd_impl->replace;
   rp.create_status = CF_ERROR;
+  rp.original_file_name = attr->fname;
+  rp.original_link_name = attr->lname;
 #if HAVE_WIN32
   rp.hndl = INVALID_HANDLE_VALUE;
 #else

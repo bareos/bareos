@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -90,11 +90,10 @@ class TestBareosFd(unittest.TestCase):
         r2.object_compression = 1
         r2.stream = 4
         r2.jobid = 123123
-        print(r2)
-        # self.assertEqual(
-        #   'RestoreObject(object_name="this is a very long object name", object="", plugin_name="(null)", object_type=3, object_len=111111, object_full_len=11111111, object_index=1234, object_compression=1, stream=4, jobid=123123)',
-        #    str(test_RestoreObject),
-        # )
+        self.assertEqual(
+            'RestoreObject(object_name="this is a very long object name", object="", plugin_name="(null)", object_type=3, object_len=111111, object_full_len=11111111, object_index=1234, object_compression=1, stream=4, jobid=123123)',
+            str(r2),
+        )
 
     def test_StatPacket(self):
         timestamp = time.time()
@@ -143,7 +142,7 @@ class TestBareosFd(unittest.TestCase):
     def test_RestorePacket(self):
         test_RestorePacket = bareosfd.RestorePacket()
         self.assertEqual(
-            'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp="<NULL>", attrEx="(null)", ofname="(null)", olname="(null)", where="(null)", RegexWhere="(null)", replace=0, create_status=0)',
+            'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp="<NULL>", attrEx="(null)", ofname="(null)", olname="(null)", where="(null)", RegexWhere="(null)", replace=0, create_status=0, original_file_name="(null)", original_link_name="(null)")',
             str(test_RestorePacket),
         )
 

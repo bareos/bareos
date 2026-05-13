@@ -43,6 +43,7 @@ Vendor:     The Bareos Team
 %define webui 1
 %define enable_grpc 1
 %define enable_barri 1
+%define enable_incus 1
 
 # cmake build directory
 %define CMAKE_BUILDDIR       cmake-build
@@ -442,6 +443,15 @@ Summary:       Bareos Recovery Imager (Barri) command line program
 Group:         Productivity/Archiving/Backup
 %endif
 
+%if 0%{?enable_incus}
+%package       filedaemon-incus-python-plugin
+Summary:       Bareos Recovery Imager (Barri) plugin for Bareos File daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-filedaemon = %{version}
+Requires:      bareos-filedaemon-python-plugin = %{version}
+Suggests:      bareos-filedaemon-python3-plugin = %{version}
+%endif
+
 %package       storage-python3-plugin
 Summary:       Python plugin for Bareos Storage daemon
 Group:         Productivity/Archiving/Backup
@@ -556,6 +566,13 @@ This package contains the Bareos Recovery Imager (barri) plugin for the file dae
 %{dscr}
 
 This package contains the Bareos Recovery Imager (barri) command line tool
+%endif
+
+%if 0%{?enable_incus}
+%description filedaemon-incus-python-plugin
+%{dscr}
+
+This package contains the incus plugin for the file daemon
 %endif
 
 
@@ -850,6 +867,9 @@ cmake  .. \
 %endif
 %if 0%{?enable_grpc}
   -DENABLE_GRPC=yes \
+%endif
+%if 0%{?enable_incus}
+  -DENABLE_INCUS_PLUGIN=yes \
 %endif
   -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
   -DVERSION_STRING=%version
@@ -1360,6 +1380,15 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_bindir}/barri-cli
 %endif
 
+%if 0%{?enable_incus}
+%files filedaemon-incus-python-plugin
+%defattr(-, root, root)
+%{plugin_dir}/bareos-fd-incus.py*
+
+%files barri-cli
+%defattr(-, root, root)
+%{_bindir}/barri-cli
+%endif
 
 %files director-python3-plugin
 %defattr(-, root, root)
