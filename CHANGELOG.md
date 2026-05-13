@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bvfs: fix cache race [PR #2650]
 - mssqlvdi: set default for serveraddress+instance on restore [PR #2652]
 - dedupable: remove error on flush [PR #2658]
+- docs: clarify mssql plugin options [PR #2659]
 
 ## [25.0.3] - 2026-04-01
 
@@ -2283,5 +2284,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2650]: https://github.com/bareos/bareos/pull/2650
 [PR #2652]: https://github.com/bareos/bareos/pull/2652
 [PR #2658]: https://github.com/bareos/bareos/pull/2658
+[PR #2659]: https://github.com/bareos/bareos/pull/2659
 [PR #2660]: https://github.com/bareos/bareos/pull/2660
 [unreleased]: https://github.com/bareos/bareos/tree/master
