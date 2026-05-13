@@ -117,9 +117,8 @@ void WriteAll(int fd, const void* buf, size_t len, Clock::time_point deadline)
     WaitForSocket(fd, POLLOUT, deadline, "write to peer");
     const ssize_t n = ::send(fd, p, len, MSG_NOSIGNAL);
     if (n < 0) {
-      if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
-        continue;
-      }
+      if (errno == EINTR) { continue; }
+      if (errno == EAGAIN || errno == EWOULDBLOCK) { continue; }
       throw std::runtime_error("WebSocket: send failed");
     }
     if (n == 0) { throw std::runtime_error("WebSocket: send failed"); }
@@ -148,9 +147,8 @@ void ReadAll(int fd,
     WaitForSocket(fd, POLLIN, deadline, action);
     const ssize_t n = ::recv(fd, p, len, 0);
     if (n < 0) {
-      if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
-        continue;
-      }
+      if (errno == EINTR) { continue; }
+      if (errno == EAGAIN || errno == EWOULDBLOCK) { continue; }
       throw std::runtime_error("WebSocket: recv failed");
     }
     if (n == 0) {
@@ -174,7 +172,9 @@ size_t ReadChunk(int fd,
   while (true) {
     const ssize_t n = ::recv(fd, target.data() + original_size, chunk_size, 0);
     if (n < 0) {
-      if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+      if (errno == EINTR) { continue; }
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        WaitForSocket(fd, POLLIN, deadline, action);
         continue;
       }
       target.resize(original_size);
