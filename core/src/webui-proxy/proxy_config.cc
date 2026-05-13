@@ -100,7 +100,7 @@ void ApplyDirectorSetting(DirectorTargetConfig& cfg,
   }
 }
 
-void ApplyParsedProxyConfig(const std::string& ini, ProxyConfig& cfg)
+void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
 {
   std::istringstream input(ini);
   std::string line;
@@ -163,12 +163,12 @@ void LoadProxyConfigFile(const std::string& path, ProxyConfig& cfg)
   }
   std::ostringstream contents;
   contents << input.rdbuf();
-  ApplyParsedProxyConfig(contents.str(), cfg);
+  ParseAndApplyProxyConfig(contents.str(), cfg);
 }
 
 void LoadProxyConfigFromString(const std::string& ini, ProxyConfig& cfg)
 {
-  ApplyParsedProxyConfig(ini, cfg);
+  ParseAndApplyProxyConfig(ini, cfg);
 }
 
 DirectorTargetConfig ResolveDirectorTarget(
