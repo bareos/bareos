@@ -584,5 +584,3 @@ void DirectorConnection::Disconnect()
   }
   tls_psk_active_ = false;
 }
-
-DirectorConnection::~DirectorConnection() { Disconnect(); }
