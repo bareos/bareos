@@ -27,6 +27,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace {
 
@@ -52,6 +53,17 @@ std::string StripQuotes(std::string value)
 std::string FormatConfigError(size_t line_number, const std::string& message)
 {
   return "Proxy config line " + std::to_string(line_number) + ": " + message;
+}
+
+void EnsurePrintableAscii(std::string_view value,
+                          std::string_view what,
+                          size_t line_number)
+{
+  const auto is_printable_ascii
+      = [](unsigned char ch) { return ch >= 0x20 && ch <= 0x7e; };
+  if (std::all_of(value.begin(), value.end(), is_printable_ascii)) { return; }
+  throw std::runtime_error(FormatConfigError(
+      line_number, std::string(what) + " must contain only printable ASCII"));
 }
 
 bool ParseBool(const std::string& value,
@@ -131,6 +143,7 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
 
     if (line.front() == '[' && line.back() == ']') {
       current_section = Trim(line.substr(1, line.size() - 2));
+      EnsurePrintableAscii(current_section, "section name", line_number);
       continue;
     }
 
@@ -141,6 +154,8 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
 
     const std::string key = Trim(line.substr(0, eq_pos));
     const std::string value = StripQuotes(line.substr(eq_pos + 1));
+    EnsurePrintableAscii(key, "key", line_number);
+    EnsurePrintableAscii(value, "value", line_number);
 
     if (current_section == "listen") {
       ApplyProxySetting(cfg, key, value, line_number);
