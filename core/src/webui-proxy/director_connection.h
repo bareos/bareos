@@ -77,7 +77,7 @@ struct DirectorConfig {
   bool tls_psk_disable{false};
 };
 
-std::string GetDirectorTlsPskIdentity(const std::string& console_name);
+std::string GetTlsPskIdentityForDirector(const std::string& console_name);
 std::string MakeCramMd5Key(const std::string& password);
 
 class DirectorConnection {
