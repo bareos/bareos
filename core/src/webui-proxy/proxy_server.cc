@@ -154,7 +154,8 @@ void ProxyServer::Run()
 
   PROXY_LOG_INFO("", "listening on ws://%s:%d (%zu socket(s))",
                  cfg_.bind_host.c_str(), cfg_.port, listen_fds.size());
-  PROXY_LOG_INFO("", "allowed directors: %zu", cfg_.allowed_directors.size());
+  PROXY_LOG_INFO("", "configured directors: %zu",
+                 cfg_.configured_directors.size());
 
   // Accept loop: poll all listen sockets, accept on whichever is ready.
   while (true) {
