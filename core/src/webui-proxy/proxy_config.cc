@@ -154,9 +154,18 @@ void ApplyDirectorSetting(DirectorTargetConfig& cfg,
 
 void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
 {
+  enum class SectionKind
+  {
+    kUnknown,
+    kListen,
+    kDirector
+  };
+
   std::istringstream input(ini);
   std::string line;
   std::string current_section;
+  std::string current_director_id;
+  SectionKind current_section_kind = SectionKind::kUnknown;
   size_t line_number = 0;
 
   while (std::getline(input, line)) {
@@ -171,6 +180,15 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
     if (line.front() == '[' && line.back() == ']') {
       current_section = Trim(line.substr(1, line.size() - 2));
       EnsurePrintableAscii(current_section, "section name", line_number);
+      current_director_id.clear();
+      if (current_section == "listen") {
+        current_section_kind = SectionKind::kListen;
+      } else if (current_section.rfind("director:", 0) == 0) {
+        current_section_kind = SectionKind::kDirector;
+        current_director_id = current_section.substr(9);
+      } else {
+        current_section_kind = SectionKind::kUnknown;
+      }
       continue;
     }
 
@@ -184,17 +202,19 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
     EnsurePrintableAscii(key, "key", line_number);
     EnsurePrintableAscii(value, "value", line_number);
 
-    if (current_section == "listen") {
-      ApplyProxySetting(cfg, key, value, line_number);
-      continue;
-    }
-    if (current_section.rfind("director:", 0) == 0) {
-      const std::string director_id = current_section.substr(9);
-      auto [it, inserted]
-          = cfg.allowed_directors.emplace(director_id, DirectorTargetConfig{});
-      if (inserted) { it->second.name = director_id; }
-      ApplyDirectorSetting(it->second, key, value, line_number);
-      continue;
+    switch (current_section_kind) {
+      case SectionKind::kListen:
+        ApplyProxySetting(cfg, key, value, line_number);
+        continue;
+      case SectionKind::kDirector: {
+        auto [it, inserted] = cfg.allowed_directors.emplace(
+            current_director_id, DirectorTargetConfig{});
+        if (inserted) { it->second.name = current_director_id; }
+        ApplyDirectorSetting(it->second, key, value, line_number);
+        continue;
+      }
+      case SectionKind::kUnknown:
+        break;
     }
 
     throw std::runtime_error(FormatConfigError(
