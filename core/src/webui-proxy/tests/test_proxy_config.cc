@@ -77,7 +77,7 @@ port = 19101
 director_name = bareos-dir
 )ini",
                    cfg),
-               std::runtime_error);
+               ProxyConfigUnknownSectionError);
 }
 
 TEST(ProxyConfig, RejectsMissingDirectorSections)
@@ -90,7 +90,7 @@ TEST(ProxyConfig, RejectsMissingDirectorSections)
 ws_host = 127.0.0.1
 )ini",
                    cfg),
-               std::runtime_error);
+               ProxyConfigMissingDirectorSectionError);
 }
 
 TEST(ProxyConfig, RejectsNonYesNoBooleanValues)
@@ -153,7 +153,7 @@ director_name = bareos-dir
 )ini",
         cfg);
     FAIL() << "expected runtime_error";
-  } catch (const std::runtime_error& error) {
+  } catch (const ProxyConfigUnknownKeyError& error) {
     EXPECT_NE(std::string(error.what()).find("line 3"), std::string::npos);
     EXPECT_NE(std::string(error.what()).find("unknown key in [listen]"),
               std::string::npos);
@@ -177,7 +177,7 @@ director_name = bareos-dir
 )ini",
         cfg);
     FAIL() << "expected runtime_error";
-  } catch (const std::runtime_error& error) {
+  } catch (const ProxyConfigUnknownKeyError& error) {
     EXPECT_NE(std::string(error.what()).find("line 6"), std::string::npos);
     EXPECT_NE(std::string(error.what()).find("unknown key in [director]"),
               std::string::npos);
