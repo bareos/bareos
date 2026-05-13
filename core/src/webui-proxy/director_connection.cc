@@ -83,11 +83,11 @@ std::string MakeCramMd5Key(const std::string& password)
     throw std::runtime_error("Director: unexpected MD5 digest length");
   }
 
-  char hex[kMd5HexChars + 1] = {};
+  std::string hex(dlen * 2, '\0');
   for (unsigned int i = 0; i < dlen; ++i) {
-    snprintf(hex + i * 2, 3, "%02x", digest[i]);
+    snprintf(hex.data() + i * 2, 3, "%02x", digest[i]);
   }
-  return {hex, dlen * 2};
+  return hex;
 }
 
 std::string GetTlsPskIdentityForDirector(const std::string& console_name)
