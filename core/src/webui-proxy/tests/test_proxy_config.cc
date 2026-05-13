@@ -23,6 +23,8 @@
 
 #include <gtest/gtest.h>
 
+#include <string>
+
 TEST(ProxyConfig, ParsesAllowedDirectorsFromIni)
 {
   ProxyConfig cfg;
@@ -176,4 +178,27 @@ tls_psk_disable = true
 )ini",
                    cfg),
                std::runtime_error);
+}
+
+TEST(ProxyConfig, ReportsLineNumberInParseErrors)
+{
+  ProxyConfig cfg;
+
+  try {
+    LoadProxyConfigFromString(
+        R"ini(
+[listen]
+ws_host = 127.0.0.1
+invalid
+
+[director:prod]
+host = prod.example.test
+port = 19101
+director_name = bareos-dir
+)ini",
+        cfg);
+    FAIL() << "expected runtime_error";
+  } catch (const std::runtime_error& error) {
+    EXPECT_NE(std::string(error.what()).find("line 4"), std::string::npos);
+  }
 }
