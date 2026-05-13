@@ -525,8 +525,8 @@ endif()
 # webui: end
 #
 
-set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS admin-smoke testuser-smoke
-                                         testuser-tls-psk-smoke
+set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS admin-smoke readonly-smoke
+                                         testuser-smoke testuser-tls-psk-smoke
 )
 
 if(NODE
@@ -580,6 +580,11 @@ else()
       set(BAREOS_WEBUI_PASSWORD testuser)
       set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT cleartext)
       set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK 1)
+    elseif(TEST_NAME STREQUAL "readonly-smoke")
+      set(BAREOS_WEBUI_PROFILE readonly)
+      set(BAREOS_WEBUI_USERNAME readonly)
+      set(BAREOS_WEBUI_PASSWORD readonly)
+      set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT TLS-PSK)
     elseif(TEST_NAME STREQUAL "testuser-tls-psk-smoke")
       set(BAREOS_WEBUI_PROFILE testuser)
       set(BAREOS_WEBUI_USERNAME testuser)
