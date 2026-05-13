@@ -278,3 +278,13 @@ TEST(ProxySession, RequiresExplicitPasswordInAuthMessage)
   EXPECT_EQ(GetJsonStringField(response, "message"),
             "Auth message requires string field 'password'");
 }
+
+TEST(ProxySession, RejectsUnsupportedAuthMode)
+{
+  const auto response = ExchangeAuthMessage(
+      R"({"type":"auth","username":"admin","password":"secret","director":"bareos-dir","mode":"json-v2"})");
+
+  EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
+  EXPECT_EQ(GetJsonStringField(response, "message"),
+            "Auth message has unsupported mode 'json-v2'");
+}
