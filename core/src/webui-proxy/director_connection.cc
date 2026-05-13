@@ -64,7 +64,10 @@ static constexpr int32_t kBnetSubPrompt = -27;   // At a sub-prompt
 // Helpers
 // ---------------------------------------------------------------------------
 
-// Compute MD5(text) and return it as a lowercase hex string (32 chars).
+constexpr unsigned int kMd5DigestBytes = 16;
+constexpr unsigned int kMd5HexChars = kMd5DigestBytes * 2;
+
+// Compute MD5(text) and return it as a lowercase hex string.
 std::string GetDirectorTlsPskSecret(const std::string& password)
 {
   uint8_t digest[EVP_MAX_MD_SIZE];
@@ -76,7 +79,11 @@ std::string GetDirectorTlsPskSecret(const std::string& password)
   EVP_DigestFinal_ex(ctx, digest, &dlen);
   EVP_MD_CTX_free(ctx);
 
-  char hex[65] = {};
+  if (dlen > kMd5DigestBytes) {
+    throw std::runtime_error("Director: unexpected MD5 digest length");
+  }
+
+  char hex[kMd5HexChars + 1] = {};
   for (unsigned int i = 0; i < dlen; ++i) {
     snprintf(hex + i * 2, 3, "%02x", digest[i]);
   }
