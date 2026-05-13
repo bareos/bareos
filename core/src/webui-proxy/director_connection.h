@@ -103,7 +103,7 @@ class DirectorConnection {
 
   bool UsesTlsPsk() const { return tls_psk_active_; }
 
-  ~DirectorConnection();
+  ~DirectorConnection() { Disconnect(); }
 
  private:
   friend unsigned int TlsPskClientCallback(ssl_st* ssl,
