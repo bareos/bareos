@@ -45,25 +45,6 @@
 // ---------------------------------------------------------------------------
 // Bareos signal codes (negative length-prefix values)
 // ---------------------------------------------------------------------------
-static constexpr int32_t kBnetEod = -1;    // End of data
-static constexpr int32_t kBnetEods = -2;   // End of data stream
-static constexpr int32_t kBnetEof = -3;    // End of file
-static constexpr int32_t kBnetError = -4;  // Error
-[[maybe_unused]] static constexpr int32_t kBnetCmdOk
-    = -15;  // Command succeeded
-[[maybe_unused]] static constexpr int32_t kBnetCmdBegin
-    = -16;                                       // Start command execution
-static constexpr int32_t kBnetMainPrompt = -18;  // Server ready and waiting
-static constexpr int32_t kBnetSelectInput
-    = -19;  // Waiting for numeric selection
-static constexpr int32_t kBnetStartRtree = -25;  // Start restore tree mode
-static constexpr int32_t kBnetEndRtree = -26;    // End restore tree mode
-static constexpr int32_t kBnetSubPrompt = -27;   // At a sub-prompt
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 constexpr unsigned int kMd5DigestBytes = 16;
 constexpr unsigned int kMd5HexChars = kMd5DigestBytes * 2;
 
@@ -99,12 +80,26 @@ std::string GetTlsPskIdentityForDirector(const std::string& console_name)
   return identity;
 }
 
+namespace {
+
+constexpr int32_t kBnetEod = -1;                      // End of data
+constexpr int32_t kBnetEods = -2;                     // End of data stream
+constexpr int32_t kBnetEof = -3;                      // End of file
+constexpr int32_t kBnetError = -4;                    // Error
+[[maybe_unused]] constexpr int32_t kBnetCmdOk = -15;  // Command succeeded
+[[maybe_unused]] constexpr int32_t kBnetCmdBegin
+    = -16;                                 // Start command execution
+constexpr int32_t kBnetMainPrompt = -18;   // Server ready and waiting
+constexpr int32_t kBnetSelectInput = -19;  // Waiting for numeric selection
+constexpr int32_t kBnetStartRtree = -25;   // Start restore tree mode
+constexpr int32_t kBnetEndRtree = -26;     // End restore tree mode
+constexpr int32_t kBnetSubPrompt = -27;    // At a sub-prompt
+
 /**
  * Compute HMAC-MD5(key, data) and return the 16-byte raw digest.
  * The key is the MD5 hex string of the plaintext password.
  */
-static std::array<uint8_t, 16> HmacMd5(const std::string& key,
-                                       const std::string& data)
+std::array<uint8_t, 16> HmacMd5(const std::string& key, const std::string& data)
 {
   std::array<uint8_t, 16> result{};
   unsigned int len = 16;
@@ -115,7 +110,7 @@ static std::array<uint8_t, 16> HmacMd5(const std::string& key,
   return result;
 }
 
-static std::string GetOpenSslError()
+std::string GetOpenSslError()
 {
   std::string error;
   while (unsigned long code = ERR_get_error()) {
@@ -127,12 +122,14 @@ static std::string GetOpenSslError()
   return error.empty() ? "unknown OpenSSL error" : error;
 }
 
-static int GetDirectorConnectionSslCtxExDataIndex()
+int GetDirectorConnectionSslCtxExDataIndex()
 {
   static const int index
       = SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   return index;
 }
+
+}  // namespace
 
 unsigned int TlsPskClientCallback(SSL* ssl,
                                   const char* /*hint*/,
