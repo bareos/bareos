@@ -182,28 +182,3 @@ void LoadProxyConfigFromString(const std::string& ini, ProxyConfig& cfg)
 {
   ParseAndApplyProxyConfig(ini, cfg);
 }
-
-DirectorTargetConfig ResolveDirectorTarget(const ProxyConfig& cfg,
-                                           std::string_view requested_director)
-{
-  if (requested_director.empty()) {
-    throw std::runtime_error("Proxy config: no director selected");
-  }
-
-  auto it = cfg.allowed_directors.find(std::string(requested_director));
-  if (it == cfg.allowed_directors.end()) {
-    throw std::runtime_error("Proxy config: director '"
-                             + std::string(requested_director)
-                             + "' is not in the allowlist");
-  }
-
-  return it->second;
-}
-
-std::vector<std::string> GetAllowedDirectorIds(const ProxyConfig& cfg)
-{
-  std::vector<std::string> ids;
-  ids.reserve(cfg.allowed_directors.size());
-  for (const auto& [id, _] : cfg.allowed_directors) { ids.push_back(id); }
-  return ids;
-}
