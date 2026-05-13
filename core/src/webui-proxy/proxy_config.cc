@@ -57,12 +57,8 @@ bool ParseBool(const std::string& value, const std::string& key)
     return normalized;
   }();
 
-  if (lower == "true" || lower == "yes" || lower == "on" || lower == "1") {
-    return true;
-  }
-  if (lower == "false" || lower == "no" || lower == "off" || lower == "0") {
-    return false;
-  }
+  if (lower == "yes") { return true; }
+  if (lower == "no") { return false; }
   throw std::runtime_error("Proxy config: '" + key + "' must be a boolean");
 }
 

@@ -42,7 +42,7 @@ director_name = bareos-dir
 host = dr.example.test
 port = 29101
 director_name = dr-dir
-tls_psk_disable = true
+tls_psk_disable = yes
 )ini",
       cfg);
 
@@ -155,5 +155,25 @@ TEST(ProxyConfig, RejectsUnexpectedDirectorWithoutAllowlist)
           .host = "dir.example.test", .port = 19101, .name = "custom-dir"});
 
   EXPECT_THROW(ResolveDirectorTarget(cfg, std::string("other-dir")),
+               std::runtime_error);
+}
+
+TEST(ProxyConfig, RejectsNonYesNoBooleanValues)
+{
+  ProxyConfig cfg;
+
+  EXPECT_THROW(LoadProxyConfigFromString(
+                   R"ini(
+[listen]
+ws_host = 127.0.0.1
+ws_port = 18765
+
+[director:prod]
+host = prod.example.test
+port = 19101
+director_name = bareos-dir
+tls_psk_disable = true
+)ini",
+                   cfg),
                std::runtime_error);
 }
