@@ -366,7 +366,7 @@ TEST(ProxySession, RejectsUnknownDirectorInAuthMessage)
 
   EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
   EXPECT_EQ(GetJsonStringField(response, "message"),
-            "Proxy config: director 'other-dir' is not in the allowlist");
+            "Proxy config: director 'other-dir' is not configured");
 }
 
 TEST(ProxySession, RejectsUnsupportedAuthMode)
