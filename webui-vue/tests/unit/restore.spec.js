@@ -21,11 +21,14 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  canNavigateRestoreBrowser,
   buildRestoreSourceQuery,
   filterRestoreSourceClients,
   getRestoreBrowserPlaceholder,
+  pushRestoreBreadcrumb,
   resolveRestoreSourceClient,
   resolveRestoreSourceDirector,
+  truncateRestoreBreadcrumbs,
 } from '../../src/utils/restore.js'
 
 describe('restore browser placeholder', () => {
@@ -51,6 +54,45 @@ describe('restore browser placeholder', () => {
       loadingBrowser: false,
       hasSelectedJob: false,
     })).toBe('empty')
+  })
+
+  it('allows navigation only when the current directory is interactive', () => {
+    expect(canNavigateRestoreBrowser({
+      browserReady: true,
+      loadingBrowser: false,
+    })).toBe(true)
+    expect(canNavigateRestoreBrowser({
+      browserReady: false,
+      loadingBrowser: false,
+    })).toBe(false)
+    expect(canNavigateRestoreBrowser({
+      browserReady: true,
+      loadingBrowser: true,
+    })).toBe(false)
+  })
+
+  it('builds the next breadcrumb level without mutating the current stack', () => {
+    const stack = [{ label: '/', pathId: null }]
+
+    expect(pushRestoreBreadcrumb(stack, {
+      label: 'etc/',
+      pathId: 17,
+    })).toEqual([
+      { label: '/', pathId: null },
+      { label: 'etc/', pathId: 17 },
+    ])
+    expect(stack).toEqual([{ label: '/', pathId: null }])
+  })
+
+  it('truncates breadcrumbs back to the requested level', () => {
+    expect(truncateRestoreBreadcrumbs([
+      { label: '/', pathId: null },
+      { label: 'etc/', pathId: 17 },
+      { label: 'bareos/', pathId: 23 },
+    ], 1)).toEqual([
+      { label: '/', pathId: null },
+      { label: 'etc/', pathId: 17 },
+    ])
   })
 
   it('prefers an explicit director when resolving a queried source client', () => {

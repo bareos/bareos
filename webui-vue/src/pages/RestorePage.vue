@@ -364,11 +364,14 @@ import { formatBytes } from '../mock/index.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import { buildDirectorOptions } from '../utils/director.js'
 import {
+  canNavigateRestoreBrowser,
   buildRestoreSourceQuery,
   filterRestoreSourceClients,
   getRestoreBrowserPlaceholder,
+  pushRestoreBreadcrumb,
   resolveRestoreSourceClient,
   resolveRestoreSourceDirector,
+  truncateRestoreBreadcrumbs,
 } from '../utils/restore.js'
 import { buildJobDetailsQuery } from '../utils/jobs.js'
 import DirectorScopePanel from '../components/DirectorScopePanel.vue'
@@ -921,23 +924,75 @@ async function fetchDir(pathId) {
 }
 
 async function navigateInto(row) {
-  navStack.value.push({ label: row.name, pathId: row.pathId })
+  if (!canNavigateRestoreBrowser({
+    browserReady: browserReady.value,
+    loadingBrowser: loadingBrowser.value,
+  })) {
+    return
+  }
+
+  const nextStack = pushRestoreBreadcrumb(navStack.value, {
+    label: row.name,
+    pathId: row.pathId,
+  })
   loadingBrowser.value = true
-  try { await fetchDir(row.pathId) } finally { loadingBrowser.value = false }
+  browserReady.value = false
+  browserError.value = ''
+  try {
+    await fetchDir(row.pathId)
+    navStack.value = nextStack
+    browserReady.value = true
+  } catch (e) {
+    browserError.value = e.message || t('Failed to load file tree')
+  } finally {
+    loadingBrowser.value = false
+  }
 }
 
 async function navigateTo(index) {
-  if (index === navStack.value.length - 1) return
-  navStack.value = navStack.value.slice(0, index + 1)
-  const pathId = navStack.value[navStack.value.length - 1].pathId
+  if (!canNavigateRestoreBrowser({
+    browserReady: browserReady.value,
+    loadingBrowser: loadingBrowser.value,
+  }) || index === navStack.value.length - 1) {
+    return
+  }
+
+  const nextStack = truncateRestoreBreadcrumbs(navStack.value, index)
+  const pathId = nextStack[nextStack.length - 1].pathId
   loadingBrowser.value = true
-  try { await fetchDir(pathId) } finally { loadingBrowser.value = false }
+  browserReady.value = false
+  browserError.value = ''
+  try {
+    await fetchDir(pathId)
+    navStack.value = nextStack
+    browserReady.value = true
+  } catch (e) {
+    browserError.value = e.message || t('Failed to load file tree')
+  } finally {
+    loadingBrowser.value = false
+  }
 }
 
 async function reloadCurrentDir() {
+  if (!canNavigateRestoreBrowser({
+    browserReady: browserReady.value,
+    loadingBrowser: loadingBrowser.value,
+  })) {
+    return
+  }
+
   const pathId = navStack.value[navStack.value.length - 1].pathId
   loadingBrowser.value = true
-  try { await fetchDir(pathId) } finally { loadingBrowser.value = false }
+  browserReady.value = false
+  browserError.value = ''
+  try {
+    await fetchDir(pathId)
+    browserReady.value = true
+  } catch (e) {
+    browserError.value = e.message || t('Failed to load file tree')
+  } finally {
+    loadingBrowser.value = false
+  }
 }
 
 // ── Selection helpers ─────────────────────────────────────────────────────────
