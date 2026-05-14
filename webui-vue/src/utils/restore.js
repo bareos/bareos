@@ -35,6 +35,27 @@ export function getRestoreBrowserPlaceholder({
   return 'empty'
 }
 
+export function canNavigateRestoreBrowser({
+  browserReady,
+  loadingBrowser,
+}) {
+  return browserReady && !loadingBrowser
+}
+
+export function pushRestoreBreadcrumb(navStack, {
+  label,
+  pathId,
+}) {
+  return [
+    ...navStack,
+    { label, pathId },
+  ]
+}
+
+export function truncateRestoreBreadcrumbs(navStack, index) {
+  return navStack.slice(0, index + 1)
+}
+
 export function resolveRestoreSourceClient(clients, {
   clientName,
   directorName,
