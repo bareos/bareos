@@ -21,6 +21,8 @@ END
 $$ LANGUAGE 'plpgsql';
 
 DROP TABLE IF EXISTS public.basefiles;
+ALTER TABLE Job DROP COLUMN IF EXISTS HasBase;
+ALTER TABLE JobHisto DROP COLUMN IF EXISTS HasBase;
 
 -- update the schema version
 UPDATE Version SET VersionId = 2260;
