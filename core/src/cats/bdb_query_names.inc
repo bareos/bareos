@@ -51,7 +51,6 @@ const char *BareosDb::query_names[] = {
 "bvfs_select",
 "bvfs_list_files",
 "batch_lock_path_query",
-"batch_lock_filename_query",
 "batch_unlock_tables_query",
 "batch_fill_path_query",
 "match_query",
