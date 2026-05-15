@@ -127,7 +127,6 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord*,
 {
   // Initialize the parent class members.
   db_interface_type_ = SQL_INTERFACE_TYPE_POSTGRESQL;
-  db_type_ = SQL_TYPE_POSTGRESQL;
   db_driver_ = strdup("PostgreSQL");
   db_name_ = strdup(db_name);
   db_user_ = strdup(db_user);

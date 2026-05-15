@@ -455,12 +455,6 @@ typedef enum
   SQL_INTERFACE_TYPE_UNKNOWN = 99
 } SQL_INTERFACETYPE;
 
-typedef enum
-{
-  SQL_TYPE_POSTGRESQL = 1,
-  SQL_TYPE_UNKNOWN = 99
-} SQL_DBTYPE;
-
 typedef void(DB_LIST_HANDLER)(void*, const char*);
 typedef int(DB_RESULT_HANDLER)(void*, int, char**);
 
@@ -492,7 +486,6 @@ class BareosDb : public BareosDbQueryEnum {
   brwlock_t lock_; /**< Transaction lock */
   SQL_INTERFACETYPE db_interface_type_
       = SQL_INTERFACE_TYPE_UNKNOWN;       /**< Type of backend used */
-  SQL_DBTYPE db_type_ = SQL_TYPE_UNKNOWN; /**< Database type */
   uint32_t ref_count_ = 0;                /**< Reference count */
   bool connected_ = false;                /**< Connection made to db */
   bool have_batch_insert_ = false;        /**< Have batch insert support ? */
@@ -958,7 +951,6 @@ class BareosDb : public BareosDbQueryEnum {
                                     bool mult_db_connections,
                                     bool get_pooled_connection = true,
                                     bool need_private = false);
-  int GetTypeIndex(void) { return db_type_; }
   const char* GetType(void);
   void LockDb(const char* file, int line);
   void UnlockDb(const char* file, int line);
