@@ -622,10 +622,6 @@ OFFSET %)SQL" PRId64 R"SQL(
 R"SQL(BEGIN; LOCK TABLE Path IN SHARE ROW EXCLUSIVE MODE
 )SQL",
 
-/* 0050_batch_lock_filename_query */
-R"SQL(BEGIN; LOCK TABLE Filename IN SHARE ROW EXCLUSIVE MODE
-)SQL",
-
 /* 0051_batch_unlock_tables_query */
 R"SQL(COMMIT
 )SQL",
