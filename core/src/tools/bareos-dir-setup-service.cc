@@ -20,22 +20,33 @@
  */
 
 #include "include/config.h"
+#include "include/fcntl_def.h"
+#include "dird/dird_conf.h"
+#include "dird/dird_globals.h"
+#include "lib/address_conf.h"
+#include "lib/parse_conf.h"
 
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/ssl.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
 
 #include <netdb.h>
 #include <poll.h>
+#include <sys/file.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include <array>
 #include <chrono>
 #include <csignal>
+#include <cstring>
 #include <cstdint>
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -65,6 +76,7 @@ enum class ConnectionDirection
 
 struct Options {
   ConnectionDirection connection_direction = ConnectionDirection::kClientConnects;
+  std::string config_path = ConfigurationParser::GetDefaultConfigDir();
   std::string listen_address = "127.0.0.1";
   uint16_t port = 10443;
   std::string connect_back_address;
@@ -79,6 +91,15 @@ struct Options {
   std::string token;
   std::optional<std::string> shared_password;
   bool force = false;
+};
+
+struct DerivedDefaults {
+  std::string certificate;
+  std::string key;
+  std::string director_name;
+  std::string director_address;
+  uint16_t director_port = 0;
+  fs::path setup_tls_dir;
 };
 
 struct SocketCloser {
@@ -118,6 +139,22 @@ struct SslCtxDeleter {
   void operator()(SSL_CTX* ctx) const { SSL_CTX_free(ctx); }
 };
 
+struct EvpPkeyCtxDeleter {
+  void operator()(EVP_PKEY_CTX* ctx) const { EVP_PKEY_CTX_free(ctx); }
+};
+
+struct EvpPkeyDeleter {
+  void operator()(EVP_PKEY* pkey) const { EVP_PKEY_free(pkey); }
+};
+
+struct X509Deleter {
+  void operator()(X509* cert) const { X509_free(cert); }
+};
+
+struct X509ExtensionDeleter {
+  void operator()(X509_EXTENSION* extension) const { X509_EXTENSION_free(extension); }
+};
+
 class SslConnection {
  public:
   SslConnection(SSL* ssl, int fd) : ssl_(ssl), fd_(fd) {}
@@ -139,6 +176,11 @@ class SslConnection {
 };
 
 volatile sig_atomic_t should_stop = 0;
+
+struct GeneratedTlsMaterial {
+  fs::path certificate_path;
+  fs::path key_path;
+};
 
 [[noreturn]] void Throw(const std::string& message)
 {
@@ -210,6 +252,387 @@ std::string GenerateSharedPassword()
   encoded.erase(std::remove(encoded.begin(), encoded.end(), '='),
                 encoded.end());
   return encoded;
+}
+
+bool AddExtension(X509* cert, int nid, const std::string& value)
+{
+  X509V3_CTX ctx;
+  X509V3_set_ctx_nodb(&ctx);
+  X509V3_set_ctx(&ctx, cert, cert, nullptr, nullptr, 0);
+
+  std::unique_ptr<X509_EXTENSION, X509ExtensionDeleter> extension(
+      X509V3_EXT_conf_nid(nullptr, &ctx, nid, const_cast<char*>(value.c_str())));
+  if (!extension) { return false; }
+  return X509_add_ext(cert, extension.get(), -1) == 1;
+}
+
+std::string BuildSubjectAlternativeName(std::string_view host)
+{
+  if (host.empty()) { return ""; }
+
+  in_addr ipv4{};
+  if (inet_pton(AF_INET, std::string{host}.c_str(), &ipv4) == 1) {
+    return "IP:" + std::string{host};
+  }
+
+  in6_addr ipv6{};
+  if (inet_pton(AF_INET6, std::string{host}.c_str(), &ipv6) == 1) {
+    return "IP:" + std::string{host};
+  }
+
+  return "DNS:" + std::string{host};
+}
+
+std::unique_ptr<EVP_PKEY, EvpPkeyDeleter> GenerateRsaKey()
+{
+  std::unique_ptr<EVP_PKEY_CTX, EvpPkeyCtxDeleter> ctx(
+      EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr));
+  if (!ctx) {
+    Throw("Failed to create the setup-service key generation context: "
+          + OpenSslError());
+  }
+
+  if (EVP_PKEY_keygen_init(ctx.get()) <= 0
+      || EVP_PKEY_CTX_set_rsa_keygen_bits(ctx.get(), 2048) <= 0) {
+    Throw("Failed to initialize setup-service RSA key generation: "
+          + OpenSslError());
+  }
+
+  EVP_PKEY* raw_key = nullptr;
+  if (EVP_PKEY_keygen(ctx.get(), &raw_key) <= 0) {
+    Throw("Failed to generate a setup-service RSA key: " + OpenSslError());
+  }
+
+  return std::unique_ptr<EVP_PKEY, EvpPkeyDeleter>(raw_key);
+}
+
+std::unique_ptr<X509, X509Deleter> GenerateSelfSignedCertificate(
+    EVP_PKEY* key,
+    std::string_view common_name,
+    std::string_view subject_alt_name)
+{
+  std::unique_ptr<X509, X509Deleter> cert(X509_new());
+  if (!cert) {
+    Throw("Failed to create the setup-service certificate: " + OpenSslError());
+  }
+
+  if (X509_set_version(cert.get(), 2) != 1
+      || ASN1_INTEGER_set(X509_get_serialNumber(cert.get()),
+                          static_cast<long>(std::time(nullptr)))
+             != 1
+      || X509_gmtime_adj(X509_get_notBefore(cert.get()), 0) == nullptr
+      || X509_gmtime_adj(X509_get_notAfter(cert.get()),
+                         60L * 60 * 24 * 365 * 10)
+             == nullptr
+      || X509_set_pubkey(cert.get(), key) != 1) {
+    Throw("Failed to initialize the setup-service certificate: "
+          + OpenSslError());
+  }
+
+  X509_NAME* subject = X509_get_subject_name(cert.get());
+  if (!subject
+      || X509_NAME_add_entry_by_txt(
+             subject, "CN", MBSTRING_ASC,
+             reinterpret_cast<const unsigned char*>(common_name.data()), -1, -1,
+             0)
+             != 1
+      || X509_set_issuer_name(cert.get(), subject) != 1) {
+    Throw("Failed to set the setup-service certificate subject: "
+          + OpenSslError());
+  }
+
+  if (!AddExtension(cert.get(), NID_basic_constraints, "critical,CA:FALSE")
+      || !AddExtension(cert.get(), NID_key_usage,
+                       "critical,digitalSignature,keyEncipherment")
+      || !AddExtension(cert.get(), NID_ext_key_usage, "serverAuth")) {
+    Throw("Failed to add required extensions to the setup-service"
+          " certificate: "
+          + OpenSslError());
+  }
+
+  if (!subject_alt_name.empty()
+      && !AddExtension(cert.get(), NID_subject_alt_name,
+                       std::string(subject_alt_name))) {
+    Throw("Failed to add the subjectAltName to the setup-service"
+          " certificate: "
+          + OpenSslError());
+  }
+
+  if (X509_sign(cert.get(), key, EVP_sha256()) <= 0) {
+    Throw("Failed to sign the setup-service certificate: " + OpenSslError());
+  }
+
+  return cert;
+}
+
+void SetFileMode(const fs::path& path, int mode)
+{
+  if (chmod(path.c_str(), mode) != 0) {
+    Throw("Failed to set file permissions on \"" + path.string()
+          + "\": " + std::strerror(errno));
+  }
+}
+
+fs::path CreateTemporaryPath(const fs::path& directory, const char* prefix)
+{
+  std::string pattern = (directory / (std::string(prefix) + ".XXXXXX")).string();
+  std::vector<char> buffer(pattern.begin(), pattern.end());
+  buffer.push_back('\0');
+
+  const int fd = mkstemp(buffer.data());
+  if (fd < 0) {
+    Throw("Failed to create a temporary file in \"" + directory.string()
+          + "\": " + std::strerror(errno));
+  }
+  close(fd);
+  return fs::path(buffer.data());
+}
+
+void WritePrivateKeyPem(const fs::path& path, EVP_PKEY* key)
+{
+  FILE* file = fopen(path.c_str(), "wb");
+  if (!file) {
+    Throw("Failed to open \"" + path.string()
+          + "\" for writing the setup-service key.");
+  }
+
+  const bool ok
+      = PEM_write_PrivateKey(file, key, nullptr, nullptr, 0, nullptr, nullptr)
+        == 1;
+  fclose(file);
+  if (!ok) {
+    Throw("Failed to write the setup-service key to \"" + path.string()
+          + "\": " + OpenSslError());
+  }
+}
+
+void WriteCertificatePem(const fs::path& path, X509* cert)
+{
+  FILE* file = fopen(path.c_str(), "wb");
+  if (!file) {
+    Throw("Failed to open \"" + path.string()
+          + "\" for writing the setup-service certificate.");
+  }
+
+  const bool ok = PEM_write_X509(file, cert) == 1;
+  fclose(file);
+  if (!ok) {
+    Throw("Failed to write the setup-service certificate to \"" + path.string()
+          + "\": " + OpenSslError());
+  }
+}
+
+GeneratedTlsMaterial EnsureGeneratedTlsMaterial(const DerivedDefaults& defaults)
+{
+  const auto tls_dir = defaults.setup_tls_dir;
+  std::error_code ec;
+  fs::create_directories(tls_dir, ec);
+  if (ec) {
+    Throw("Failed to create the setup-service TLS directory \""
+          + tls_dir.string() + "\": " + ec.message());
+  }
+  SetFileMode(tls_dir, 0700);
+
+  const auto certificate_path = tls_dir / "setup-service-cert.pem";
+  const auto key_path = tls_dir / "setup-service-key.pem";
+  const auto lock_path = tls_dir / "setup-service-tls.lock";
+
+  const int lock_fd = open(lock_path.c_str(), O_CREAT | O_RDWR | O_CLOEXEC, 0600);
+  if (lock_fd < 0) {
+    Throw("Failed to open the setup-service TLS lock file \""
+          + lock_path.string() + "\": " + std::strerror(errno));
+  }
+
+  if (flock(lock_fd, LOCK_EX) != 0) {
+    close(lock_fd);
+    Throw("Failed to lock the setup-service TLS directory \""
+          + tls_dir.string() + "\": " + std::strerror(errno));
+  }
+
+  auto unlock = [&]() {
+    flock(lock_fd, LOCK_UN);
+    close(lock_fd);
+  };
+
+  try {
+    if (fs::exists(certificate_path) && fs::exists(key_path)) {
+      unlock();
+      return {.certificate_path = certificate_path, .key_path = key_path};
+    }
+
+    fs::remove(certificate_path, ec);
+    fs::remove(key_path, ec);
+
+    const auto key = GenerateRsaKey();
+    const auto certificate = GenerateSelfSignedCertificate(
+        key.get(), defaults.director_name.empty() ? "Bareos Setup Service"
+                                                  : defaults.director_name,
+        BuildSubjectAlternativeName(defaults.director_address));
+
+    const auto temporary_key_path = CreateTemporaryPath(tls_dir, "setup-key");
+    const auto temporary_cert_path = CreateTemporaryPath(tls_dir, "setup-cert");
+
+    try {
+      WritePrivateKeyPem(temporary_key_path, key.get());
+      SetFileMode(temporary_key_path, 0600);
+      WriteCertificatePem(temporary_cert_path, certificate.get());
+      SetFileMode(temporary_cert_path, 0644);
+
+      fs::rename(temporary_key_path, key_path, ec);
+      if (ec) {
+        Throw("Failed to install the generated setup-service key: "
+              + ec.message());
+      }
+      fs::rename(temporary_cert_path, certificate_path, ec);
+      if (ec) {
+        Throw("Failed to install the generated setup-service certificate: "
+              + ec.message());
+      }
+    } catch (...) {
+      fs::remove(temporary_key_path, ec);
+      fs::remove(temporary_cert_path, ec);
+      throw;
+    }
+
+    unlock();
+    return {.certificate_path = certificate_path, .key_path = key_path};
+  } catch (...) {
+    unlock();
+    throw;
+  }
+}
+
+std::unique_ptr<ConfigurationParser> LoadDirectorConfig(const std::string& config_path)
+{
+  auto parser = std::unique_ptr<ConfigurationParser>(
+      directordaemon::InitDirConfig(config_path.c_str(), M_CONFIG_ERROR));
+  if (!parser) { Throw("Failed to initialize the Director config parser."); }
+
+  directordaemon::my_config = parser.get();
+  if (!parser->ParseConfig()) {
+    Throw("Failed to parse the Director config from \"" + config_path + "\".");
+  }
+
+  directordaemon::me
+      = static_cast<directordaemon::DirectorResource*>(
+          parser->GetNextRes(directordaemon::R_DIRECTOR, nullptr));
+  if (directordaemon::me == nullptr) {
+    Throw("No Director resource found in \"" + config_path + "\".");
+  }
+  directordaemon::my_config->own_resource_ = directordaemon::me;
+  return parser;
+}
+
+bool IsUnsuitableAdvertisedAddress(std::string_view address)
+{
+  return address.empty() || address == "0.0.0.0" || address == "::"
+         || address == "::0" || address == "127.0.0.1" || address == "::1";
+}
+
+std::string DeriveLocalAdvertisedAddress()
+{
+  std::array<char, NI_MAXHOST> hostname{};
+  if (gethostname(hostname.data(), hostname.size()) != 0) {
+    Throw("Failed to derive the local host name for the setup service.");
+  }
+  hostname.back() = '\0';
+
+  addrinfo hints{};
+  hints.ai_flags = AI_CANONNAME;
+  hints.ai_socktype = SOCK_STREAM;
+
+  addrinfo* raw_results = nullptr;
+  if (getaddrinfo(hostname.data(), nullptr, &hints, &raw_results) == 0) {
+    std::unique_ptr<addrinfo, AddrinfoDeleter> results(raw_results);
+    if (results && results->ai_canonname != nullptr
+        && results->ai_canonname[0] != '\0') {
+      return results->ai_canonname;
+    }
+  }
+
+  return hostname.data();
+}
+
+std::string DeriveDirectorAddress(const directordaemon::DirectorResource& director)
+{
+  if (director.DIRaddrs != nullptr && director.DIRaddrs->size() > 0) {
+    auto* address = static_cast<IPADDR*>(director.DIRaddrs->first());
+    if (address != nullptr) {
+      std::array<char, 1024> buffer{};
+      const std::string candidate = address->GetAddress(buffer.data(), buffer.size());
+      if (!IsUnsuitableAdvertisedAddress(candidate)) { return candidate; }
+    }
+  }
+
+  return DeriveLocalAdvertisedAddress();
+}
+
+DerivedDefaults LoadDerivedDefaults(const Options& options)
+{
+  auto parser = LoadDirectorConfig(options.config_path);
+
+  DerivedDefaults defaults;
+  defaults.certificate = directordaemon::me->tls_cert_.certfile_;
+  defaults.key = directordaemon::me->tls_cert_.keyfile_;
+  defaults.director_name = directordaemon::me->resource_name_;
+  defaults.director_address = DeriveDirectorAddress(*directordaemon::me);
+  defaults.setup_tls_dir
+      = directordaemon::me->working_directory != nullptr
+            && directordaemon::me->working_directory[0] != '\0'
+          ? fs::path(directordaemon::me->working_directory) / "setup" / "tls"
+          : fs::path(PATH_BAREOS_WORKINGDIR) / "setup" / "tls";
+  const auto director_port = GetFirstPortHostOrder(directordaemon::me->DIRaddrs);
+  if (director_port > 0 && director_port <= 65535) {
+    defaults.director_port = static_cast<uint16_t>(director_port);
+  } else {
+    defaults.director_port = options.director_port;
+  }
+
+  parser.reset();
+  directordaemon::my_config = nullptr;
+  directordaemon::me = nullptr;
+  return defaults;
+}
+
+void ApplyDerivedDefaults(Options& options,
+                          bool certificate_explicit,
+                          bool key_explicit,
+                          bool director_name_explicit,
+                          bool director_address_explicit,
+                          bool director_port_explicit)
+{
+  if (certificate_explicit && key_explicit && director_name_explicit
+      && director_address_explicit && director_port_explicit) {
+    return;
+  }
+
+  const auto defaults = LoadDerivedDefaults(options);
+
+  if (!certificate_explicit) { options.certificate = defaults.certificate; }
+  if (!key_explicit) { options.key = defaults.key; }
+  if (!director_name_explicit) { options.director_name = defaults.director_name; }
+  if (!director_address_explicit) {
+    options.director_address = defaults.director_address;
+  }
+  if (!director_port_explicit) { options.director_port = defaults.director_port; }
+
+  if (options.certificate.empty() != options.key.empty()) {
+    Throw("The setup-service TLS certificate and key must either both be set"
+          " or both be absent.");
+  }
+  if (options.certificate.empty() && options.key.empty()) {
+    const auto generated = EnsureGeneratedTlsMaterial(defaults);
+    options.certificate = generated.certificate_path.string();
+    options.key = generated.key_path.string();
+  }
+  if (options.director_name.empty()) {
+    Throw("Could not derive --director-name from the Director config. Use"
+          " --director-name explicitly.");
+  }
+  if (options.director_address.empty()) {
+    Throw("Could not derive --director-address from the Director config. Use"
+          " --director-address explicitly.");
+  }
 }
 
 void WriteTextFileAtomic(const fs::path& path,
@@ -616,6 +1039,7 @@ void RunConnectBackMode(const Options& options, SSL_CTX* ssl_ctx)
 int main(int argc, char* argv[])
 {
   try {
+    OSDependentInit();
     std::signal(SIGPIPE, SIG_IGN);
     std::signal(SIGTERM, SignalHandler);
     std::signal(SIGINT, SignalHandler);
@@ -627,6 +1051,10 @@ int main(int argc, char* argv[])
     std::string connection_direction = "client-connects";
 
     CLI::App app("Serve the Bareos setup-service enrollment endpoint.");
+    auto* config_option
+        = app.add_option("-c,--config", options.config_path)
+              ->check(CLI::ExistingPath)
+              ->capture_default_str();
     app.add_option("--connection-direction", connection_direction)
         ->check(CLI::IsMember({"client-connects", "director-connects"}));
     app.add_option("--listen-address", options.listen_address);
@@ -636,19 +1064,30 @@ int main(int argc, char* argv[])
         ->check(CLI::Range(1, 65535));
     app.add_option("--connect-timeout", options.connect_timeout)
         ->check(CLI::Range(1, 600));
-    app.add_option("--certificate", options.certificate)->required();
-    app.add_option("--key", options.key)->required();
-    app.add_option("--director-name", options.director_name)->required();
-    app.add_option("--director-address", options.director_address)->required();
-    app.add_option("--director-port", options.director_port)
-        ->check(CLI::Range(1, 65535));
+    auto* certificate_option
+        = app.add_option("--certificate", options.certificate)
+              ->type_name("<path>");
+    auto* key_option = app.add_option("--key", options.key)->type_name("<path>");
+    auto* director_name_option
+        = app.add_option("--director-name", options.director_name);
+    auto* director_address_option
+        = app.add_option("--director-address", options.director_address);
+    auto* director_port_option
+        = app.add_option("--director-port", options.director_port)
+              ->check(CLI::Range(1, 65535));
     app.add_option("--staging-dir", options.staging_dir)->capture_default_str();
     app.add_option("--token", options.token)->required();
     app.add_option("--shared-password", options.shared_password);
     app.add_flag("--force", options.force);
     CLI11_PARSE(app, argc, argv);
 
+    (void)config_option;
     options.connection_direction = ParseConnectionDirection(connection_direction);
+    ApplyDerivedDefaults(options, certificate_option->count() > 0,
+                         key_option->count() > 0,
+                         director_name_option->count() > 0,
+                         director_address_option->count() > 0,
+                         director_port_option->count() > 0);
     ValidateName("director_name", options.director_name);
 
     auto ssl_ctx = CreateTlsServerContext(options);

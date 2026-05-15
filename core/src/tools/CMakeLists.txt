@@ -53,7 +53,8 @@ list(APPEND TOOLS_SBIN bareos-fd-setup)
 
 add_executable(bareos-dir-setup-service bareos-dir-setup-service.cc)
 target_link_libraries(
-  bareos-dir-setup-service PRIVATE CLI11::CLI11 OpenSSL::SSL OpenSSL::Crypto
+  bareos-dir-setup-service PRIVATE Bareos::Dir Bareos::Lib Bareos::Findlib
+                                    CLI11::CLI11 OpenSSL::SSL OpenSSL::Crypto
 )
 list(APPEND TOOLS_SBIN bareos-dir-setup-service)
 

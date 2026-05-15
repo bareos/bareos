@@ -68,7 +68,7 @@ enum class ConnectionDirection
 };
 
 struct Options {
-  std::string config_path;
+  std::string config_path = ConfigurationParser::GetDefaultConfigDir();
   std::string address;
   uint16_t port = kDefaultSetupPort;
   std::string token;
@@ -834,7 +834,7 @@ int main(int argc, char* argv[])
     app.add_option("-c,--config", options.config_path,
                    "Use <path> as FD configuration file or directory.")
         ->check(CLI::ExistingPath)
-        ->required()
+        ->capture_default_str()
         ->type_name("<path>");
     auto* address_option
         = app.add_option("--address", options.address,

@@ -30,6 +30,7 @@
 #include <array>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -300,6 +301,60 @@ class SetupServiceProcess {
     }
   }
 
+  SetupServiceProcess(const fs::path& config_path,
+                      const fs::path& staging_dir,
+                      bool force,
+                      const char* token)
+  {
+    std::array<int, 2> pipefd{};
+    if (pipe(pipefd.data()) != 0) {
+      throw std::runtime_error("pipe() failed for the setup service process.");
+    }
+
+    pid_ = fork();
+    if (pid_ == -1) {
+      close(pipefd[0]);
+      close(pipefd[1]);
+      throw std::runtime_error("fork() failed for the setup service process.");
+    }
+
+    if (pid_ == 0) {
+      dup2(pipefd[1], STDOUT_FILENO);
+      dup2(pipefd[1], STDERR_FILENO);
+      close(pipefd[0]);
+      close(pipefd[1]);
+
+      std::vector<std::string> arguments{
+          BAREOS_DIR_SETUP_BIN, "--config",         config_path.string(),
+          "--listen-address",   "127.0.0.1",        "--port",
+          "0",                  "--staging-dir",    staging_dir.string(),
+          "--token",            token};
+      if (force) { arguments.emplace_back("--force"); }
+
+      std::vector<char*> argv;
+      for (auto& argument : arguments) {
+        argv.push_back(argument.data());
+      }
+      argv.push_back(nullptr);
+      execv(argv.front(), argv.data());
+      _exit(127);
+    }
+
+    close(pipefd[1]);
+    pipe_fd_ = pipefd[0];
+
+    const auto line = ReadLineFromFd(pipe_fd_);
+    if (!Contains(line, "LISTENING ")) {
+      throw std::runtime_error("The setup service did not report a listening port: "
+                               + line);
+    }
+    port_ = static_cast<uint16_t>(
+        std::stoi(line.substr(std::string("LISTENING ").size())));
+    if (port_ == 0) {
+      throw std::runtime_error("The setup service reported an invalid port.");
+    }
+  }
+
   ~SetupServiceProcess()
   {
     if (pipe_fd_ >= 0) { close(pipe_fd_); }
@@ -564,6 +619,68 @@ TEST(FdSetup, ExplicitAddressWinsOverDiscoveryInputs)
 
   ASSERT_EQ(result.exit_code, 0) << result.output;
   EXPECT_TRUE(Contains(result.output, "Created setup resource"));
+}
+
+TEST(FdSetup, SetupServiceDerivesDefaultsFromDirectorConfig)
+{
+  const auto config = PrepareConfig("fd_setup_service_derived_defaults");
+  const auto staging_dir = config / "staging";
+  const auto trust_file = config / "trusted-setup.sha256";
+  const auto director_config = config / "bareos-dir.d" / "director" / "bareos-dir.conf";
+
+  ReplaceFileContent(
+      director_config, "Name = bareos-dir",
+      "Name = derived-setup-dir");
+  ReplaceFileContent(
+      director_config, "Port = 42001",
+      std::string("Address = 127.0.0.1\n")
+      + "  Port = 42001\n"
+      + "  TLS Certificate = \"" + TEST_SETUP_CERT + "\"\n"
+      + "  TLS Key = \"" + TEST_SETUP_KEY + "\"");
+
+  SetupServiceProcess service(config, staging_dir, true, "OneTimeToken");
+
+  const auto result = RunCommand(
+      {BAREOS_FD_SETUP_BIN, "--config", config.string(), "--address",
+       "127.0.0.1", "--port", std::to_string(service.port()), "--token",
+       "OneTimeToken", "--trust-file", trust_file.string(), "--trust-on-first-use"});
+
+  ASSERT_EQ(result.exit_code, 0) << result.output;
+
+  const auto generated_fd_config
+      = config / "bareos-fd.d" / "director" / "derived-setup-dir.conf";
+  ASSERT_TRUE(fs::exists(generated_fd_config));
+}
+
+TEST(FdSetup, SetupServiceGeneratesTlsMaterialWhenDirectorHasNone)
+{
+  const auto config = PrepareConfig("fd_setup_service_generates_tls");
+  const auto staging_dir = config / "staging";
+  const auto trust_file = config / "trusted-setup.sha256";
+  const auto working_dir = config / "working";
+  const auto director_config
+      = config / "bareos-dir.d" / "director" / "bareos-dir.conf";
+
+  std::error_code ec;
+  fs::create_directories(working_dir, ec);
+  ASSERT_FALSE(ec);
+  ReplaceFileContent(
+      director_config,
+      "Working Directory =  \"/tmp/tests/backup-bareos-test/working\"",
+      std::string("Working Directory =  \"") + working_dir.string() + "\"");
+
+  SetupServiceProcess service(config, staging_dir, true, "OneTimeToken");
+
+  const auto result = RunCommand(
+      {BAREOS_FD_SETUP_BIN, "--config", config.string(), "--address",
+       "127.0.0.1", "--port", std::to_string(service.port()), "--token",
+       "OneTimeToken", "--trust-file", trust_file.string(), "--trust-on-first-use"});
+
+  ASSERT_EQ(result.exit_code, 0) << result.output;
+  EXPECT_TRUE(
+      fs::exists(working_dir / "setup" / "tls" / "setup-service-cert.pem"));
+  EXPECT_TRUE(
+      fs::exists(working_dir / "setup" / "tls" / "setup-service-key.pem"));
 }
 
 TEST(FdSetup, DiscoveryFailureIsVisibleToOperators)
