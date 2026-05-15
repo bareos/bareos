@@ -1975,6 +1975,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\uninst.exe"
   Delete "$INSTDIR\bareos-tray-monitor.exe"
   Delete "$INSTDIR\bareos-fd.exe"
+  Delete "$INSTDIR\bclient-enroll.exe"
   Delete "$INSTDIR\bareos-sd.exe"
   Delete "$INSTDIR\bareos-dir.exe"
   Delete "$INSTDIR\bareos-dbcheck.exe"
