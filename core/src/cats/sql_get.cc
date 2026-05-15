@@ -1198,7 +1198,6 @@ static void strip_md5(char* q)
  * Find the last "accurate" backup state (that can take deleted files in
  * account)
  * 1) Get all files with jobid in list (F subquery)
- *    Get all files in BaseFiles with jobid in list
  * 2) Take only the last version of each file (Temp subquery) => accurate list
  *    is ok
  * 3) Join the result to file table to get fileindex, jobid and lstat
@@ -1372,73 +1371,6 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
 bail_out:
   Mmsg(query, "DROP TABLE IF EXISTS btemp3%s", jobid);
   SqlQuery(query.c_str());
-  return retval;
-}
-
-bool BareosDb::GetBaseFileList(JobControlRecord* jcr,
-                               bool use_md5,
-                               DB_RESULT_HANDLER* ResultHandler,
-                               void* ctx)
-{
-  PoolMem query(PM_MESSAGE);
-
-  Mmsg(query,
-       "SELECT Path, Name, FileIndex, JobId, LStat, 0 As DeltaSeq, MD5, "
-       "Fhinfo, Fhnode "
-       "FROM new_basefile%" PRIu32 " ORDER BY JobId, FileIndex ASC",
-       jcr->JobId);
-
-  if (!use_md5) { strip_md5(query.c_str()); }
-  return BigSqlQuery(query.c_str(), ResultHandler, ctx);
-}
-
-bool BareosDb::GetBaseJobid(JobControlRecord* jcr,
-                            JobDbRecord* jr,
-                            JobId_t* jobid)
-{
-  PoolMem query(PM_MESSAGE);
-  utime_t StartTime;
-  db_int64_ctx lctx;
-  char date[MAX_TIME_LENGTH];
-  char esc[MAX_ESCAPE_NAME_LENGTH];
-  bool retval = false;
-  // char clientid[50], filesetid[50];
-
-  *jobid = 0;
-  lctx.count = 0;
-  lctx.value = 0;
-
-  StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
-  bstrutime(date, sizeof(date), StartTime + 1);
-  EscapeString(jcr, esc, jr->Name, strlen(jr->Name));
-
-  /* we can take also client name, fileset, etc... */
-
-  Mmsg(query,
-       "SELECT JobId, Job, StartTime, EndTime, JobTDate, PurgedFiles "
-       "FROM Job "
-       // "JOIN FileSet USING (FileSetId) JOIN Client USING (ClientId) "
-       "WHERE Job.Name = '%s' "
-       "AND Level='B' AND JobStatus IN ('T','W') AND Type='B' "
-       //    "AND FileSet.FileSet= '%s' "
-       //    "AND Client.Name = '%s' "
-       "AND StartTime<'%s' "
-       "ORDER BY Job.JobTDate DESC LIMIT 1",
-       esc,
-       //      edit_uint64(jr->ClientId, clientid),
-       //      edit_uint64(jr->FileSetId, filesetid));
-       date);
-
-  Dmsg1(10, "GetBaseJobid q=%s\n", query.c_str());
-  if (!SqlQueryWithHandler(query.c_str(), db_int64_handler, &lctx)) {
-    goto bail_out;
-  }
-  *jobid = (JobId_t)lctx.value;
-
-  Dmsg1(10, "GetBaseJobid=%" PRIu32 "\n", *jobid);
-  retval = true;
-
-bail_out:
   return retval;
 }
 

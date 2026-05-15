@@ -612,8 +612,6 @@ class BareosDb : public BareosDbQueryEnum {
  private:
   bool CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
   bool CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
-  void CleanupBaseFile(JobControlRecord* jcr);
-
  public:
   bool CreateFileAttributesRecord(JobControlRecord* jcr,
                                   AttributesDbRecord* ar);
@@ -632,10 +630,6 @@ class BareosDb : public BareosDbQueryEnum {
   bool CreateAttributesRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
   bool CreateRestoreObjectRecord(JobControlRecord* jcr,
                                  RestoreObjectDbRecord* ar);
-  bool CreateBaseFileAttributesRecord(JobControlRecord* jcr,
-                                      AttributesDbRecord* ar);
-  bool CommitBaseFileAttributesRecord(JobControlRecord* jcr);
-  bool CreateBaseFileList(JobControlRecord* jcr, const char* jobids);
   bool CreateQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr);
   bool CreateNdmpLevelMapping(JobControlRecord* jcr,
                               JobDbRecord* jr,
@@ -702,10 +696,6 @@ class BareosDb : public BareosDbQueryEnum {
  public:
   bool GetVolumeJobids(MediaDbRecord* mr, db_list_ctx* lst);
   bool GetMediaIdsInPool(PoolDbRecord* pool_record, std::vector<DBId_t>* lst);
-  bool GetBaseFileList(JobControlRecord* jcr,
-                       bool use_md5,
-                       DB_RESULT_HANDLER* ResultHandler,
-                       void* ctx);
   int GetPathRecord(JobControlRecord* jcr, const char* new_path);
   bool GetPoolRecord(JobControlRecord* jcr, PoolDbRecord* pdbr);
   bool GetStorageRecord(JobControlRecord* jcr, StorageDbRecord* sdbr);
@@ -745,7 +735,6 @@ class BareosDb : public BareosDbQueryEnum {
                    bool use_delta,
                    DB_RESULT_HANDLER* ResultHandler,
                    void* ctx);
-  bool GetBaseJobid(JobControlRecord* jcr, JobDbRecord* jr, JobId_t* jobid);
   bool AccurateGetJobids(JobControlRecord* jcr,
                          JobDbRecord* jr,
                          db_list_ctx* jobids);
