@@ -19,6 +19,12 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+# The numbered DML fragments in this directory are the canonical source for
+# generated query ids and query text. Keep new queries in the 4-digit prefix
+# format so enum values and query_names[] stay stable across regenerations.
+#
+# We only generate PostgreSQL query definitions here. Legacy backend-specific
+# variants are intentionally ignored by this script.
 DATABASES="postgresql"
 QUERY_NAMES_FILE="../bdb_query_names.inc"
 QUERY_ENUM_FILE="../bdb_query_enum_class.h"
@@ -73,6 +79,9 @@ done
 # file data
 #
 let i=0
+# Generate one enum/name entry per numbered query fragment. We strip optional
+# suffixes before uniquing so files like 0001_name.sql would still map to the
+# canonical 0001_name query id.
 for query in $(ls ????_* | sed 's#\..*##g' | sort | uniq); do
   queryname=$(sed 's/[0-9]*_//' <<<$query)
   printf '"%s",\n' "$queryname" >>$QUERY_NAMES_FILE
