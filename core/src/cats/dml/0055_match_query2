@@ -1,1 +1,1 @@
- AND Filename.Name ~ '%s'
+ AND File.Name ~ '%s'
