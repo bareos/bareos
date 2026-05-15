@@ -27,6 +27,7 @@ import signal
 import socket
 import ssl
 import sys
+import time
 from pathlib import Path
 
 
@@ -37,8 +38,16 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Serve the first-slice Bareos client enrollment endpoint."
     )
+    parser.add_argument(
+        "--connection-direction",
+        choices=("client-connects", "director-connects"),
+        default="client-connects",
+    )
     parser.add_argument("--listen-address", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=10443)
+    parser.add_argument("--connect-back-address")
+    parser.add_argument("--connect-back-port", type=int)
+    parser.add_argument("--connect-timeout", type=int, default=30)
     parser.add_argument("--certificate", required=True)
     parser.add_argument("--key", required=True)
     parser.add_argument("--director-name", required=True)
@@ -194,6 +203,29 @@ def handle_connection(connection, peer_address, args):
             reader.close()
 
 
+def connect_back(args):
+    if not args.connect_back_address or not args.connect_back_port:
+        raise ValueError(
+            "director-connects mode requires --connect-back-address and --connect-back-port."
+        )
+
+    deadline = time.monotonic() + args.connect_timeout
+    while time.monotonic() < deadline:
+        try:
+            client = socket.create_connection(
+                (args.connect_back_address, args.connect_back_port), timeout=1.0
+            )
+            client.settimeout(None)
+            return client
+        except OSError:
+            time.sleep(0.2)
+
+    raise RuntimeError(
+        "Timed out connecting back to the File Daemon setup tool at "
+        f"{args.connect_back_address}:{args.connect_back_port}."
+    )
+
+
 def main():
     args = parse_args()
     validate_name("director_name", args.director_name)
@@ -210,24 +242,33 @@ def main():
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)
 
-    with socket.create_server((args.listen_address, args.port), reuse_port=False) as server:
-        server.settimeout(0.5)
-        actual_port = server.getsockname()[1]
-        print(f"LISTENING {actual_port}", flush=True)
+    if args.connection_direction == "director-connects":
+        with connect_back(args) as client:
+            peer_address = client.getpeername()
+            # The setup service intentionally stays the TLS server even when it
+            # opened the TCP connection. The FD tool still verifies this service's
+            # certificate fingerprint, so TCP direction does not alter trust.
+            with context.wrap_socket(client, server_side=True) as tls_connection:
+                handle_connection(tls_connection, peer_address, args)
+    else:
+        with socket.create_server((args.listen_address, args.port), reuse_port=False) as server:
+            server.settimeout(0.5)
+            actual_port = server.getsockname()[1]
+            print(f"LISTENING {actual_port}", flush=True)
 
-        while not should_stop:
-            try:
-                client, peer_address = server.accept()
-            except TimeoutError:
-                continue
-            except OSError as exc:
-                if should_stop:
-                    break
-                raise exc
+            while not should_stop:
+                try:
+                    client, peer_address = server.accept()
+                except TimeoutError:
+                    continue
+                except OSError as exc:
+                    if should_stop:
+                        break
+                    raise exc
 
-            with client:
-                with context.wrap_socket(client, server_side=True) as tls_connection:
-                    handle_connection(tls_connection, peer_address, args)
+                with client:
+                    with context.wrap_socket(client, server_side=True) as tls_connection:
+                        handle_connection(tls_connection, peer_address, args)
 
     return 0
 

@@ -22,6 +22,7 @@
 #include "gtest/gtest.h"
 
 #include <signal.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -46,6 +47,11 @@ namespace fs = std::filesystem;
 struct CommandResult {
   int exit_code{-1};
   std::string output;
+};
+
+struct AsyncProcess {
+  pid_t pid{-1};
+  int pipe_fd{-1};
 };
 
 bool Contains(std::string_view haystack, std::string_view needle)
@@ -146,6 +152,89 @@ std::string ReadLineFromFd(int fd)
     if (ch == '\n') { return line; }
     line.push_back(ch);
   }
+}
+
+uint16_t ReserveLoopbackPort()
+{
+  int fd = socket(AF_INET, SOCK_STREAM, 0);
+  if (fd < 0) { throw std::runtime_error("Failed to reserve a loopback port."); }
+
+  sockaddr_in address{};
+  address.sin_family = AF_INET;
+  address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  address.sin_port = 0;
+
+  if (bind(fd, reinterpret_cast<sockaddr*>(&address), sizeof(address)) != 0) {
+    close(fd);
+    throw std::runtime_error("Failed to bind a temporary loopback socket.");
+  }
+
+  socklen_t address_length = sizeof(address);
+  if (getsockname(fd, reinterpret_cast<sockaddr*>(&address), &address_length)
+      != 0) {
+    close(fd);
+    throw std::runtime_error("Failed to inspect the temporary loopback socket.");
+  }
+  close(fd);
+  return ntohs(address.sin_port);
+}
+
+AsyncProcess StartAsyncProcess(const std::vector<std::string>& arguments)
+{
+  std::array<int, 2> pipefd{};
+  if (pipe(pipefd.data()) != 0) {
+    throw std::runtime_error("pipe() failed for the async process.");
+  }
+
+  pid_t pid = fork();
+  if (pid == -1) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    throw std::runtime_error("fork() failed for the async process.");
+  }
+
+  if (pid == 0) {
+    dup2(pipefd[1], STDOUT_FILENO);
+    dup2(pipefd[1], STDERR_FILENO);
+    close(pipefd[0]);
+    close(pipefd[1]);
+
+    std::vector<char*> argv;
+    for (const auto& argument : arguments) {
+      argv.push_back(const_cast<char*>(argument.c_str()));
+    }
+    argv.push_back(nullptr);
+    execv(argv.front(), argv.data());
+    _exit(127);
+  }
+
+  close(pipefd[1]);
+  return {.pid = pid, .pipe_fd = pipefd[0]};
+}
+
+CommandResult WaitProcess(AsyncProcess& process)
+{
+  std::string output;
+  char buffer[4096];
+  ssize_t bytes_read = 0;
+  while ((bytes_read = read(process.pipe_fd, buffer, sizeof(buffer))) > 0) {
+    output.append(buffer, bytes_read);
+  }
+  close(process.pipe_fd);
+  process.pipe_fd = -1;
+
+  int status = 0;
+  waitpid(process.pid, &status, 0);
+  process.pid = -1;
+
+  CommandResult result;
+  result.output = std::move(output);
+  if (WIFEXITED(status)) {
+    result.exit_code = WEXITSTATUS(status);
+  } else if (WIFSIGNALED(status)) {
+    result.exit_code = 128 + WTERMSIG(status);
+  }
+  return result;
 }
 
 class SetupServiceProcess {
@@ -339,6 +428,114 @@ TEST(FdSetup, PathLikeClientNameIsRejected)
   ASSERT_NE(result.exit_code, 0);
   EXPECT_TRUE(Contains(result.output, "client_name"));
   EXPECT_TRUE(Contains(result.output, "path separators"));
+}
+
+TEST(FdSetup, DirectorConnectsWritesConfigWithPinnedFingerprint)
+{
+  const auto config = PrepareConfig("fd_setup_director_connects");
+  const auto staging_dir = config / "staging";
+  const auto trust_file = config / "trusted-setup-reverse.sha256";
+  const auto listen_port = ReserveLoopbackPort();
+
+  auto service = StartAsyncProcess(
+      {PYTHON_EXECUTABLE,
+       BAREOS_DIR_SETUP_SERVICE,
+       "--connection-direction",
+       "director-connects",
+       "--connect-back-address",
+       "127.0.0.1",
+       "--connect-back-port",
+       std::to_string(listen_port),
+       "--connect-timeout",
+       "10",
+       "--certificate",
+       TEST_SETUP_CERT,
+       "--key",
+       TEST_SETUP_KEY,
+       "--director-name",
+       "reverse-dir",
+       "--director-address",
+       "director.example.com",
+       "--director-port",
+       "9101",
+       "--staging-dir",
+       staging_dir.string(),
+       "--token",
+       "OneTimeToken",
+       "--force"});
+
+  const auto client_result = RunCommand(
+      {BAREOS_FD_SETUP_BIN,
+       "--config",
+       config.string(),
+       "--connection-direction",
+       "director-connects",
+       "--address",
+       "127.0.0.1",
+       "--port",
+       "10443",
+       "--listen-address",
+       "127.0.0.1",
+       "--listen-port",
+       std::to_string(listen_port),
+       "--connect-timeout",
+       "10",
+       "--token",
+       "OneTimeToken",
+       "--advertise-address",
+       "reverse.example.com",
+       "--trust-file",
+       trust_file.string(),
+       "--expected-fingerprint",
+       TEST_SETUP_FINGERPRINT,
+       "--force"});
+  const auto service_result = WaitProcess(service);
+
+  ASSERT_EQ(service_result.exit_code, 0) << service_result.output;
+  ASSERT_EQ(client_result.exit_code, 0) << client_result.output;
+
+  const auto generated_fd_config
+      = config / "bareos-fd.d" / "director" / "reverse-dir.conf";
+  ASSERT_TRUE(fs::exists(generated_fd_config));
+  ASSERT_TRUE(fs::exists(trust_file));
+
+  const auto staged_client_config
+      = staging_dir / "bareos-dir.d" / "client" / "backup-bareos-test-fd.conf";
+  ASSERT_TRUE(fs::exists(staged_client_config));
+
+  std::ifstream staged_input(staged_client_config);
+  ASSERT_TRUE(staged_input.is_open());
+  std::string staged_content((std::istreambuf_iterator<char>(staged_input)),
+                             std::istreambuf_iterator<char>());
+  EXPECT_TRUE(Contains(staged_content, "Address = reverse.example.com"));
+
+  ExpectConfigParses(config);
+}
+
+TEST(FdSetup, DirectorConnectsRejectsTrustOnFirstUse)
+{
+  const auto config = PrepareConfig("fd_setup_reverse_tofu_rejected");
+
+  const auto result = RunCommand(
+      {BAREOS_FD_SETUP_BIN,
+       "--config",
+       config.string(),
+       "--connection-direction",
+       "director-connects",
+       "--address",
+       "127.0.0.1",
+       "--port",
+       "10443",
+       "--listen-address",
+       "127.0.0.1",
+       "--listen-port",
+       std::to_string(ReserveLoopbackPort()),
+       "--token",
+       "OneTimeToken",
+       "--trust-on-first-use"});
+
+  ASSERT_NE(result.exit_code, 0);
+  EXPECT_TRUE(Contains(result.output, "does not allow --trust-on-first-use"));
 }
 
 }  // namespace

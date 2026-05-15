@@ -26,11 +26,13 @@
 
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include <array>
 #include <cerrno>
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -58,6 +60,12 @@ using filedaemon::ClientResource;
 constexpr uint16_t kDefaultSetupPort = 10443;
 constexpr std::string_view kProtocolHello = "BAREOS-SETUP 1";
 
+enum class ConnectionDirection
+{
+  kClientConnects,
+  kDirectorConnects,
+};
+
 struct Options {
   std::string config_path;
   std::string address = "127.0.0.1";
@@ -66,6 +74,10 @@ struct Options {
   std::vector<std::string> advertise_addresses;
   std::string trust_file;
   std::string expected_fingerprint;
+  std::string listen_address;
+  uint16_t listen_port = 0;
+  uint16_t connect_timeout = 30;
+  ConnectionDirection connection_direction = ConnectionDirection::kClientConnects;
   bool trust_on_first_use = false;
   bool force = false;
 };
@@ -81,6 +93,14 @@ struct SetupResponse {
   std::string director_name;
   std::string stage_path;
   std::string config_text;
+};
+
+struct FingerprintPolicy {
+  fs::path trust_path;
+  std::optional<std::string> required_fingerprint;
+  bool prompt_on_first_use = false;
+  bool trust_on_first_use = false;
+  bool store_on_success = false;
 };
 
 struct AddrinfoDeleter {
@@ -103,6 +123,15 @@ struct SocketCloser {
   }
   SocketCloser(const SocketCloser&) = delete;
   SocketCloser& operator=(const SocketCloser&) = delete;
+  SocketCloser(SocketCloser&& other) noexcept : fd_(other.release()) {}
+  SocketCloser& operator=(SocketCloser&& other) noexcept
+  {
+    if (this != &other) {
+      if (fd_ >= 0) { close(fd_); }
+      fd_ = other.release();
+    }
+    return *this;
+  }
   int get() const { return fd_; }
   int release()
   {
@@ -183,6 +212,18 @@ std::string NormalizeFingerprint(std::string value)
   return normalized;
 }
 
+ConnectionDirection ParseConnectionDirection(const std::string& value)
+{
+  if (value == "client-connects") {
+    return ConnectionDirection::kClientConnects;
+  }
+  if (value == "director-connects") {
+    return ConnectionDirection::kDirectorConnects;
+  }
+
+  Throw("Unsupported connection direction \"" + value + "\".");
+}
+
 std::string FormatFingerprint(X509* cert)
 {
   std::array<unsigned char, EVP_MAX_MD_SIZE> digest{};
@@ -200,6 +241,16 @@ std::string FormatFingerprint(X509* cert)
     fingerprint << static_cast<int>(digest[i]);
   }
   return fingerprint.str();
+}
+
+std::unique_ptr<SSL_CTX, SslCtxDeleter> CreateTlsClientContext()
+{
+  std::unique_ptr<SSL_CTX, SslCtxDeleter> ssl_ctx(SSL_CTX_new(TLS_client_method()));
+  if (!ssl_ctx) {
+    Throw("Failed to initialize the TLS client context: " + OpenSslError());
+  }
+  SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_NONE, nullptr);
+  return ssl_ctx;
 }
 
 fs::path DetermineConfigRoot(const std::string& base_path)
@@ -341,6 +392,105 @@ LocalClientConfig LoadLocalClientConfig(const Options& options)
   return result;
 }
 
+FingerprintPolicy PrepareFingerprintPolicy(const Options& options,
+                                           const LocalClientConfig& client_config)
+{
+  FingerprintPolicy policy;
+  policy.trust_path = options.trust_file.empty()
+                          ? DefaultTrustFilePath(client_config.config_root,
+                                                 options.address, options.port)
+                          : fs::path{options.trust_file};
+
+  std::error_code ec;
+  const bool trust_file_exists = fs::exists(policy.trust_path, ec);
+  if (ec) {
+    Throw("Failed to inspect trust file \"" + policy.trust_path.string() + "\": "
+          + ec.message());
+  }
+
+  if (trust_file_exists) {
+    policy.required_fingerprint = ReadFileTrimmed(policy.trust_path);
+    if (!options.expected_fingerprint.empty()
+        && NormalizeFingerprint(options.expected_fingerprint)
+               != *policy.required_fingerprint) {
+      Throw("The stored setup-service fingerprint does not match the value from "
+            "--expected-fingerprint.");
+    }
+    return policy;
+  }
+
+  if (!options.expected_fingerprint.empty()) {
+    policy.required_fingerprint
+        = NormalizeFingerprint(options.expected_fingerprint);
+    policy.store_on_success = true;
+    return policy;
+  }
+
+  if (options.connection_direction == ConnectionDirection::kDirectorConnects) {
+    Throw("director-connects mode requires --expected-fingerprint or a pre-existing"
+          " trust file.");
+  }
+
+  if (options.trust_on_first_use) {
+    policy.trust_on_first_use = true;
+    policy.store_on_success = true;
+    return policy;
+  }
+
+  if (isatty(STDIN_FILENO) != 0) {
+    policy.prompt_on_first_use = true;
+    policy.store_on_success = true;
+    return policy;
+  }
+
+  Throw("The setup service is unknown and this session is non-interactive."
+        " Re-run with --expected-fingerprint or --trust-on-first-use.");
+}
+
+void StoreTrustedFingerprintIfNeeded(const FingerprintPolicy& policy,
+                                     const std::string& fingerprint)
+{
+  if (policy.store_on_success) {
+    WriteTextFileAtomic(policy.trust_path, fingerprint + "\n", true);
+  }
+}
+
+void VerifyOutgoingFingerprint(const FingerprintPolicy& policy,
+                               const std::string& fingerprint,
+                               const Options& options)
+{
+  const auto normalized = NormalizeFingerprint(fingerprint);
+  if (policy.required_fingerprint) {
+    if (*policy.required_fingerprint != normalized) {
+      Throw("TLS fingerprint mismatch for the setup service. Expected "
+            + *policy.required_fingerprint + " from \""
+            + policy.trust_path.string() + "\" but received " + normalized
+            + ".");
+    }
+    StoreTrustedFingerprintIfNeeded(policy, normalized);
+    return;
+  }
+
+  if (policy.trust_on_first_use) {
+    StoreTrustedFingerprintIfNeeded(policy, normalized);
+    return;
+  }
+
+  std::cout << "First contact with the setup service at " << options.address
+            << ":" << options.port << "\n"
+            << "SHA256 fingerprint: " << normalized << "\n"
+            << "Trust this setup service and continue? [y/N]: " << std::flush;
+  std::string answer;
+  bool accepted = false;
+  if (std::getline(std::cin, answer)) {
+    accepted = answer == "y" || answer == "Y" || answer == "yes"
+               || answer == "YES";
+  }
+  if (!accepted) { Throw("Setup canceled because the service was not trusted."); }
+
+  StoreTrustedFingerprintIfNeeded(policy, normalized);
+}
+
 std::unique_ptr<SslConnection> ConnectTls(const Options& options)
 {
   addrinfo hints{};
@@ -356,11 +506,7 @@ std::unique_ptr<SslConnection> ConnectTls(const Options& options)
   }
   std::unique_ptr<addrinfo, AddrinfoDeleter> results(raw_results);
 
-  std::unique_ptr<SSL_CTX, SslCtxDeleter> ssl_ctx(SSL_CTX_new(TLS_client_method()));
-  if (!ssl_ctx) {
-    Throw("Failed to initialize the TLS client context: " + OpenSslError());
-  }
-  SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_NONE, nullptr);
+  auto ssl_ctx = CreateTlsClientContext();
 
   for (addrinfo* current = results.get(); current != nullptr;
        current = current->ai_next) {
@@ -390,6 +536,68 @@ std::unique_ptr<SslConnection> ConnectTls(const Options& options)
 
   Throw("Failed to connect to the setup service at " + options.address + ":"
         + std::to_string(options.port) + ".");
+}
+
+SocketCloser OpenListener(const std::string& address, uint16_t port)
+{
+  addrinfo hints{};
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_flags = AI_PASSIVE;
+
+  addrinfo* raw_results = nullptr;
+  const auto port_string = std::to_string(port);
+  const char* bind_address = address.empty() ? nullptr : address.c_str();
+  if (getaddrinfo(bind_address, port_string.c_str(), &hints, &raw_results)
+      != 0) {
+    Throw("Failed to resolve the local listener address for director-connects"
+          " mode.");
+  }
+  std::unique_ptr<addrinfo, AddrinfoDeleter> results(raw_results);
+
+  for (addrinfo* current = results.get(); current != nullptr;
+       current = current->ai_next) {
+    SocketCloser socket(::socket(current->ai_family, current->ai_socktype,
+                                 current->ai_protocol));
+    if (socket.get() < 0) { continue; }
+
+    int reuse = 1;
+    setsockopt(socket.get(), SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+
+    if (bind(socket.get(), current->ai_addr, current->ai_addrlen) != 0) {
+      continue;
+    }
+    if (listen(socket.get(), 16) != 0) { continue; }
+    return socket;
+  }
+
+  Throw("Failed to start the temporary listener for director-connects mode at "
+        + address + ":" + std::to_string(port) + ".");
+}
+
+std::unique_ptr<SslConnection> WrapAcceptedSocketAsTlsClient(
+    int socket_fd,
+    const Options& options)
+{
+  auto ssl_ctx = CreateTlsClientContext();
+
+  SSL* ssl = SSL_new(ssl_ctx.get());
+  if (!ssl) {
+    Throw("Failed to allocate a TLS connection object: " + OpenSslError());
+  }
+  SSL_set_tlsext_host_name(ssl, options.address.c_str());
+  SSL_set_fd(ssl, socket_fd);
+
+  // The TLS client role intentionally stays on the FD setup tool even when the
+  // director side initiated the TCP connection. That keeps trust anchored in the
+  // setup-service certificate fingerprint instead of in the transport direction.
+  if (SSL_connect(ssl) != 1) {
+    SSL_free(ssl);
+    return nullptr;
+  }
+
+  ssl_ctx.release();
+  return std::make_unique<SslConnection>(ssl, socket_fd);
 }
 
 void WriteAll(SSL* ssl, std::string_view data)
@@ -458,67 +666,54 @@ std::vector<std::pair<std::string, std::string>> ReadHeaders(SSL* ssl)
   }
 }
 
-void VerifyFingerprint(const Options& options,
-                       const LocalClientConfig& client_config,
-                       const std::string& fingerprint)
+std::unique_ptr<SslConnection> WaitForDirectorConnection(
+    const Options& options,
+    const FingerprintPolicy& policy)
 {
-  const fs::path trust_path = options.trust_file.empty()
-                                  ? DefaultTrustFilePath(client_config.config_root,
-                                                         options.address,
-                                                         options.port)
-                                  : fs::path{options.trust_file};
+  SocketCloser listener = OpenListener(options.listen_address, options.listen_port);
+  const auto deadline
+      = std::chrono::steady_clock::now()
+        + std::chrono::seconds(options.connect_timeout);
 
-  std::error_code ec;
-  if (fs::exists(trust_path, ec)) {
-    const auto stored = ReadFileTrimmed(trust_path);
-    if (stored != NormalizeFingerprint(fingerprint)) {
-      Throw("TLS fingerprint mismatch for the setup service. Expected "
-            + stored + " from \"" + trust_path.string() + "\" but received "
-            + fingerprint + ".");
+  while (std::chrono::steady_clock::now() < deadline) {
+    const auto remaining
+        = std::chrono::duration_cast<std::chrono::milliseconds>(
+              deadline - std::chrono::steady_clock::now())
+              .count();
+    pollfd candidate{};
+    candidate.fd = listener.get();
+    candidate.events = POLLIN;
+    const int poll_result
+        = poll(&candidate, 1, remaining > 1000 ? 1000 : static_cast<int>(remaining));
+    if (poll_result == 0) { continue; }
+    if (poll_result < 0) {
+      if (errno == EINTR) { continue; }
+      Throw("Failed while waiting for the director-side setup connection.");
     }
-    if (!options.expected_fingerprint.empty()
-        && NormalizeFingerprint(options.expected_fingerprint) != stored) {
-      Throw("The stored setup-service fingerprint does not match the value from "
-            "--expected-fingerprint.");
-    }
-    return;
-  }
-  if (ec) {
-    Throw("Failed to inspect trust file \"" + trust_path.string() + "\": "
-          + ec.message());
-  }
 
-  if (!options.expected_fingerprint.empty()) {
-    const auto expected = NormalizeFingerprint(options.expected_fingerprint);
-    if (expected != NormalizeFingerprint(fingerprint)) {
-      Throw("The setup service fingerprint does not match --expected-fingerprint."
-            " Expected " + expected + " but received " + fingerprint + ".");
-    }
-    WriteTextFileAtomic(trust_path, fingerprint + "\n", true);
-    return;
-  }
+    sockaddr_storage peer_address{};
+    socklen_t peer_length = sizeof(peer_address);
+    SocketCloser accepted(
+        accept(listener.get(), reinterpret_cast<sockaddr*>(&peer_address),
+               &peer_length));
+    if (accepted.get() < 0) { continue; }
 
-  bool accepted = false;
-  if (options.trust_on_first_use) {
-    accepted = true;
-  } else if (isatty(STDIN_FILENO) != 0) {
-    std::cout << "First contact with the setup service at " << options.address
-              << ":" << options.port << "\n"
-              << "SHA256 fingerprint: " << fingerprint << "\n"
-              << "Trust this setup service and continue? [y/N]: " << std::flush;
-    std::string answer;
-    if (std::getline(std::cin, answer)) {
-      accepted = answer == "y" || answer == "Y" || answer == "yes"
-                 || answer == "YES";
-    }
-  } else {
-    Throw("The setup service is unknown and this session is non-interactive."
-          " Re-run with --expected-fingerprint or --trust-on-first-use.");
+    auto connection = WrapAcceptedSocketAsTlsClient(accepted.release(), options);
+    if (!connection) { continue; }
+
+    std::unique_ptr<X509, X509Deleter> peer_cert(
+        SSL_get1_peer_certificate(connection->get()));
+    if (!peer_cert) { continue; }
+    const auto fingerprint = NormalizeFingerprint(FormatFingerprint(peer_cert.get()));
+    if (*policy.required_fingerprint != fingerprint) { continue; }
+
+    StoreTrustedFingerprintIfNeeded(policy, fingerprint);
+    return connection;
   }
 
-  if (!accepted) { Throw("Setup canceled because the service was not trusted."); }
-
-  WriteTextFileAtomic(trust_path, fingerprint + "\n", true);
+  Throw("Timed out waiting for the director-side setup service to connect to "
+        + options.listen_address + ":" + std::to_string(options.listen_port)
+        + ".");
 }
 
 void SendRequest(SSL* ssl,
@@ -626,6 +821,19 @@ int main(int argc, char* argv[])
     app.add_option("--expected-fingerprint", options.expected_fingerprint,
                    "Expected SHA256 fingerprint of the setup-service"
                    " certificate.");
+    std::string connection_direction = "client-connects";
+    app.add_option("--connection-direction", connection_direction,
+                  "Who opens the TCP connection for the setup session: "
+                  "client-connects or director-connects.")
+        ->check(CLI::IsMember({"client-connects", "director-connects"}));
+    app.add_option("--listen-address", options.listen_address,
+                  "Local address to listen on in director-connects mode.");
+    app.add_option("--listen-port", options.listen_port,
+                  "Local port to listen on in director-connects mode.")
+        ->check(CLI::Range(1, 65535));
+    app.add_option("--connect-timeout", options.connect_timeout,
+                  "Timeout in seconds for setup session establishment.")
+        ->check(CLI::Range(1, 600));
     app.add_flag("--trust-on-first-use", options.trust_on_first_use,
                  "Accept and store the setup-service fingerprint on first"
                  " contact without prompting.");
@@ -633,18 +841,38 @@ int main(int argc, char* argv[])
                  "Overwrite generated setup files if they already exist.");
 
     ParseBareosApp(app, argc, argv);
+    options.connection_direction = ParseConnectionDirection(connection_direction);
+
+    if (options.connection_direction == ConnectionDirection::kDirectorConnects) {
+      if (options.listen_address.empty()) {
+        Throw("director-connects mode requires --listen-address.");
+      }
+      if (options.listen_port == 0) {
+        Throw("director-connects mode requires --listen-port.");
+      }
+      if (options.trust_on_first_use) {
+        Throw("director-connects mode does not allow --trust-on-first-use."
+              " Use --expected-fingerprint or a pre-existing trust file.");
+      }
+    }
 
     const auto client_config = LoadLocalClientConfig(options);
     std::unique_ptr<ConfigurationParser> parser_guard(client_config.parser);
+    const auto fingerprint_policy = PrepareFingerprintPolicy(options, client_config);
 
-    const auto connection = ConnectTls(options);
-    std::unique_ptr<X509, X509Deleter> peer_cert(
-        SSL_get1_peer_certificate(connection->get()));
-    if (!peer_cert) {
-      Throw("The setup service did not present a TLS certificate.");
+    std::unique_ptr<SslConnection> connection;
+    if (options.connection_direction == ConnectionDirection::kClientConnects) {
+      connection = ConnectTls(options);
+      std::unique_ptr<X509, X509Deleter> peer_cert(
+          SSL_get1_peer_certificate(connection->get()));
+      if (!peer_cert) {
+        Throw("The setup service did not present a TLS certificate.");
+      }
+      VerifyOutgoingFingerprint(fingerprint_policy,
+                                FormatFingerprint(peer_cert.get()), options);
+    } else {
+      connection = WaitForDirectorConnection(options, fingerprint_policy);
     }
-    const auto fingerprint = FormatFingerprint(peer_cert.get());
-    VerifyFingerprint(options, client_config, fingerprint);
 
     SendRequest(connection->get(), options, client_config);
     const auto response = ReadResponse(connection->get());
