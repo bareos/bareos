@@ -5,11 +5,10 @@ INSERT INTO JobHisto (
 	       JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate,
 	       VolSessionId, VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId,
 	       PriorJobId, PurgedFiles,
-	       HasBase, Reviewed, Comment
+	       Reviewed, Comment
        )
 SELECT JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate, VolSessionId,
        VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId, PriorJobId, PurgedFiles,
-       HasBase,
        Reviewed, Comment
   FROM Job
  WHERE JobStatus IN ('T','W','f','A','E')
