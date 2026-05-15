@@ -663,7 +663,7 @@ R"SQL( AND Path2.Path ~ '%s'
 )SQL",
 
 /* 0055_match_query2 */
-R"SQL( AND Filename.Name ~ '%s'
+R"SQL( AND File.Name ~ '%s'
 )SQL",
 
 /* 0056_insert_counter_values */

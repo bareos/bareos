@@ -283,6 +283,19 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
             ),
         )
 
+        cmd = (
+            ".bvfs_lsfiles jobid={BackupJobIds} path={BackupDirectory}/ "
+            "pattern={BackupFileNameExtra}"
+        ).format(**format_params)
+        bvfs_lsfiles_pattern = director.call(cmd)["files"]
+        self.assertEqual(
+            [item["name"] for item in bvfs_lsfiles_pattern],
+            [format_params["BackupFileNameExtra"]],
+            'Expecting "{}" to return only the matching file, instead received: {}'.format(
+                cmd, bvfs_lsfiles_pattern
+            ),
+        )
+
         # test limit.
         cmd = ".bvfs_lsfiles jobid={BackupJobIds} path={BackupDirectory}/ offset 0 limit 1".format(
             **format_params
