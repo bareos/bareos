@@ -502,6 +502,23 @@ if(NOT HAVE_WIN32)
     LINK_LIBRARIES Bareos::Lib CLI11::CLI11 GTest::gtest_main
                    $<$<NOT:$<PLATFORM_ID:FreeBSD>>:stdc++fs>
   )
+
+  bareos_add_test(
+    fd_setup
+    LINK_LIBRARIES Bareos::FD Bareos::Lib Bareos::Findlib GTest::gtest_main
+    COMPILE_DEFINITIONS
+      TEST_TEMP_DIR=\"${TEST_TEMP_DIR}\"
+      BAREOS_FD_TEST_CONFIG_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/bareos-configparser-tests\"
+      BAREOS_FD_SETUP_BIN=\"$<TARGET_FILE:bareos-fd-setup>\"
+      BAREOS_DIR_SETUP_SERVICE=\"${CMAKE_SOURCE_DIR}/core/src/tools/bareos-dir-setup-service.py\"
+      PYTHON_EXECUTABLE=\"${Python3_EXECUTABLE}\"
+      TEST_SETUP_CERT=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls/bareos-dir.bareos.org-cert.pem\"
+      TEST_SETUP_KEY=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls/bareos-dir.bareos.org-key.pem\"
+      TEST_SETUP_ALT_CERT=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls/console.bareos.org-cert.pem\"
+      TEST_SETUP_ALT_KEY=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls/console.bareos.org-key.pem\"
+      TEST_SETUP_FINGERPRINT=\"AC:50:28:9C:09:25:D4:FE:4E:55:EC:32:8D:5B:76:75:71:0A:F5:FB:5C:DF:67:E0:2F:FB:DC:39:02:6F:79:BC\"
+  )
+  add_dependencies(fd_setup bareos-fd-setup)
 endif()
 
 if(NOT client-only)
