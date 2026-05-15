@@ -10,7 +10,7 @@ BEGIN
     RETURN;
   END IF;
 
-  SELECT count(*) INTO remaining_rows FROM basefiles;
+  SELECT count(*) INTO remaining_rows FROM public.basefiles;
 
   IF remaining_rows != 0 THEN
     RAISE EXCEPTION
@@ -20,7 +20,7 @@ BEGIN
 END
 $$ LANGUAGE 'plpgsql';
 
-DROP TABLE IF EXISTS basefiles;
+DROP TABLE IF EXISTS public.basefiles;
 
 -- update the schema version
 UPDATE Version SET VersionId = 2260;
