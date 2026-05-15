@@ -644,20 +644,6 @@ SELECT a.Path
        )
 )SQL",
 
-/* 0053_batch_fill_filename_query */
-R"SQL(INSERT INTO Filename (Name)
-SELECT a.Name
-  FROM (
-      SELECT DISTINCT Name
-        FROM batch
-       ) as a
- WHERE NOT EXISTS (
-      SELECT Name
-        FROM Filename
-       WHERE Name = a.Name
-       )
-)SQL",
-
 /* 0054_match_query */
 R"SQL( AND Path2.Path ~ '%s'
 )SQL",
