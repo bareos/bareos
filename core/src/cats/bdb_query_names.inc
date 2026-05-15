@@ -54,7 +54,6 @@ const char *BareosDb::query_names[] = {
 "batch_lock_filename_query",
 "batch_unlock_tables_query",
 "batch_fill_path_query",
-"batch_fill_filename_query",
 "match_query",
 "match_query2",
 "insert_counter_values",
