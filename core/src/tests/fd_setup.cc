@@ -265,7 +265,7 @@ class SetupServiceProcess {
       close(pipefd[1]);
 
       std::vector<std::string> arguments{
-          PYTHON_EXECUTABLE,        BAREOS_DIR_SETUP_SERVICE,
+          BAREOS_DIR_SETUP_BIN,
           "--listen-address",       "127.0.0.1",
           "--port",                 "0",
           "--certificate",          cert_path,
@@ -438,8 +438,7 @@ TEST(FdSetup, DirectorConnectsWritesConfigWithPinnedFingerprint)
   const auto listen_port = ReserveLoopbackPort();
 
   auto service = StartAsyncProcess(
-      {PYTHON_EXECUTABLE,
-       BAREOS_DIR_SETUP_SERVICE,
+      {BAREOS_DIR_SETUP_BIN,
        "--connection-direction",
        "director-connects",
        "--connect-back-address",

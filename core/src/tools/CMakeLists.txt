@@ -51,6 +51,12 @@ target_link_libraries(
 )
 list(APPEND TOOLS_SBIN bareos-fd-setup)
 
+add_executable(bareos-dir-setup-service bareos-dir-setup-service.cc)
+target_link_libraries(
+  bareos-dir-setup-service PRIVATE CLI11::CLI11 OpenSSL::SSL OpenSSL::Crypto
+)
+list(APPEND TOOLS_SBIN bareos-dir-setup-service)
+
 if(NOT HAVE_MSVC)
   add_executable(drivetype drivetype.cc)
   target_link_libraries(drivetype Bareos::Lib Bareos::Findlib)
@@ -108,7 +114,6 @@ target_link_libraries(random-commands fmt::fmt CLI11::CLI11)
 
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
 install(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")
-install(PROGRAMS bareos-dir-setup-service.py DESTINATION "${sbindir}")
 
 # install bsmtp for non-root directors
 install(TARGETS bsmtp DESTINATION "${bindir}")
