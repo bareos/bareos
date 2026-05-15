@@ -130,6 +130,15 @@ inline int CloseSocket(int fd)
 #endif
 }
 
+X509* GetPeerCertificate(SSL* ssl)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+  return SSL_get1_peer_certificate(ssl);
+#else
+  return SSL_get_peer_certificate(ssl);
+#endif
+}
+
 struct SocketCloser {
   explicit SocketCloser(int fd) : fd_(fd) {}
   ~SocketCloser()
@@ -455,7 +464,7 @@ FingerprintPolicy PrepareFingerprintPolicy(const Options& options,
     return policy;
   }
 
-  if (isatty(STDIN_FILENO) != 0) {
+  if (isatty(0) != 0) {
     policy.prompt_on_first_use = true;
     policy.store_on_success = true;
     return policy;
@@ -743,7 +752,7 @@ std::unique_ptr<SslConnection> WaitForDirectorConnection(
     if (!connection) { continue; }
 
     std::unique_ptr<X509, X509Deleter> peer_cert(
-        SSL_get1_peer_certificate(connection->get()));
+        GetPeerCertificate(connection->get()));
     if (!peer_cert) { continue; }
     const auto fingerprint = NormalizeFingerprint(FormatFingerprint(peer_cert.get()));
     if (*policy.required_fingerprint != fingerprint) { continue; }
@@ -917,7 +926,7 @@ int main(int argc, char* argv[])
     if (options.connection_direction == ConnectionDirection::kClientConnects) {
       connection = ConnectTls(options);
       std::unique_ptr<X509, X509Deleter> peer_cert(
-          SSL_get1_peer_certificate(connection->get()));
+          GetPeerCertificate(connection->get()));
       if (!peer_cert) {
         Throw("The setup service did not present a TLS certificate.");
       }

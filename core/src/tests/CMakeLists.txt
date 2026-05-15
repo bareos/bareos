@@ -503,21 +503,23 @@ if(NOT HAVE_WIN32)
                    $<$<NOT:$<PLATFORM_ID:FreeBSD>>:stdc++fs>
   )
 
-  bareos_add_test(
-    fd_setup
-    LINK_LIBRARIES Bareos::FD Bareos::Lib Bareos::Findlib GTest::gtest_main
-    COMPILE_DEFINITIONS
-      TEST_TEMP_DIR=\"${TEST_TEMP_DIR}\"
-      BAREOS_FD_TEST_CONFIG_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/bareos-configparser-tests\"
-      BAREOS_FD_SETUP_BIN=\"$<TARGET_FILE:bclient-enroll>\"
-      BAREOS_DIR_SETUP_BIN=\"$<TARGET_FILE:bclient-enrolld>\"
-      TEST_SETUP_CERT=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls/bareos-dir.bareos.org-cert.pem\"
-      TEST_SETUP_KEY=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls/bareos-dir.bareos.org-key.pem\"
-      TEST_SETUP_ALT_CERT=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls/console.bareos.org-cert.pem\"
-      TEST_SETUP_ALT_KEY=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls/console.bareos.org-key.pem\"
-      TEST_SETUP_FINGERPRINT=\"AC:50:28:9C:09:25:D4:FE:4E:55:EC:32:8D:5B:76:75:71:0A:F5:FB:5C:DF:67:E0:2F:FB:DC:39:02:6F:79:BC\"
-  )
-  add_dependencies(fd_setup bclient-enroll bclient-enrolld)
+  if(NOT client-only)
+    bareos_add_test(
+      fd_setup
+      LINK_LIBRARIES Bareos::FD Bareos::Lib Bareos::Findlib GTest::gtest_main
+      COMPILE_DEFINITIONS
+        TEST_TEMP_DIR=\"${TEST_TEMP_DIR}\"
+        BAREOS_FD_TEST_CONFIG_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/bareos-configparser-tests\"
+        BAREOS_FD_SETUP_BIN=\"$<TARGET_FILE:bclient-enroll>\"
+        BAREOS_DIR_SETUP_BIN=\"$<TARGET_FILE:bclient-enrolld>\"
+        TEST_SETUP_CERT=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls/bareos-dir.bareos.org-cert.pem\"
+        TEST_SETUP_KEY=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls/bareos-dir.bareos.org-key.pem\"
+        TEST_SETUP_ALT_CERT=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls/console.bareos.org-cert.pem\"
+        TEST_SETUP_ALT_KEY=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls/console.bareos.org-key.pem\"
+        TEST_SETUP_FINGERPRINT=\"AC:50:28:9C:09:25:D4:FE:4E:55:EC:32:8D:5B:76:75:71:0A:F5:FB:5C:DF:67:E0:2F:FB:DC:39:02:6F:79:BC\"
+    )
+    add_dependencies(fd_setup bclient-enroll bclient-enrolld)
+  endif()
   bareos_add_test(
     fd_setup_discovery
     ADDITIONAL_SOURCES ../tools/setup_service_discovery.cc
@@ -525,15 +527,17 @@ if(NOT HAVE_WIN32)
       GTest::gtest_main
       $<$<BOOL:${SETUP_DISCOVERY_RESOLV_LIBRARY}>:${SETUP_DISCOVERY_RESOLV_LIBRARY}>
   )
-  bareos_add_test(
-    dir_setup_activation
-    LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib GTest::gtest_main
-    COMPILE_DEFINITIONS
-      TEST_TEMP_DIR=\"${TEST_TEMP_DIR}\"
-      BAREOS_DIR_TEST_CONFIG_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/configure\"
-      BAREOS_DIR_ACTIVATE_BIN=\"$<TARGET_FILE:bclient-activate>\"
-  )
-  add_dependencies(dir_setup_activation bclient-activate)
+  if(NOT client-only)
+    bareos_add_test(
+      dir_setup_activation
+      LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib GTest::gtest_main
+      COMPILE_DEFINITIONS
+        TEST_TEMP_DIR=\"${TEST_TEMP_DIR}\"
+        BAREOS_DIR_TEST_CONFIG_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/configure\"
+        BAREOS_DIR_ACTIVATE_BIN=\"$<TARGET_FILE:bclient-activate>\"
+    )
+    add_dependencies(dir_setup_activation bclient-activate)
+  endif()
 endif()
 
 if(NOT client-only)

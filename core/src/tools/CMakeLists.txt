@@ -24,26 +24,6 @@ include(BareosWindowsResource)
 set(TOOLS_BIN "")
 set(TOOLS_SBIN "")
 
-add_executable(bsmtp bsmtp.cc)
-bareos_windows_resource(bsmtp bsmtpres.rc.in)
-target_link_libraries(bsmtp Bareos::Lib CLI11::CLI11)
-list(APPEND TOOLS_BIN bsmtp)
-
-add_executable(bregex bregex.cc)
-target_link_libraries(bregex Bareos::Lib Bareos::Findlib CLI11::CLI11)
-bareos_windows_resource(bregex bregexres.rc.in)
-list(APPEND TOOLS_BIN bregex)
-list(APPEND TOOLS_SBIN bregex)
-
-add_executable(bwild bwild.cc)
-target_link_libraries(bwild Bareos::Lib CLI11::CLI11)
-bareos_windows_resource(bwild bwildres.rc.in)
-list(APPEND TOOLS_BIN bwild)
-list(APPEND TOOLS_SBIN bwild)
-
-add_executable(gentestdata gentestdata.cc)
-target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
-
 find_library(SETUP_DISCOVERY_RESOLV_LIBRARY NAMES resolv)
 
 add_executable(bclient-enroll bareos-fd-setup.cc setup_service_discovery.cc)
@@ -54,44 +34,66 @@ target_link_libraries(
 )
 list(APPEND TOOLS_SBIN bclient-enroll)
 
-if(NOT HAVE_WIN32)
-  add_executable(bclient-enrolld bareos-dir-setup-service.cc)
-  target_link_libraries(
-    bclient-enrolld PRIVATE Bareos::Dir Bareos::Lib Bareos::Findlib CLI11::CLI11
-                             OpenSSL::SSL OpenSSL::Crypto
-  )
-  list(APPEND TOOLS_SBIN bclient-enrolld)
-
-  add_executable(bclient-activate bareos-dir-activate-staged-client.cc)
-  target_link_libraries(
-    bclient-activate PRIVATE Bareos::Dir Bareos::Lib Bareos::Findlib CLI11::CLI11
-  )
-  list(APPEND TOOLS_SBIN bclient-activate)
-endif()
-
-if(NOT HAVE_MSVC)
-  add_executable(drivetype drivetype.cc)
-  target_link_libraries(drivetype Bareos::Lib Bareos::Findlib)
-
-  add_executable(fstype fstype.cc)
-  target_link_libraries(fstype Bareos::Lib Bareos::Findlib)
-
-  add_executable(bscrypto bscrypto.cc)
-  target_link_libraries(bscrypto Bareos::Lib CLI11::CLI11)
-  list(APPEND TOOLS_SBIN bscrypto)
-endif()
-
-if(NOT HAVE_WIN32)
-  add_executable(btestls btestls.cc)
-  target_link_libraries(btestls Bareos::Findlib Bareos::Lib)
-  list(APPEND TOOLS_SBIN btestls)
-
-  add_executable(bpluginfo bpluginfo.cc)
-  target_link_libraries(bpluginfo Bareos::Lib ${CMAKE_DL_LIBS} CLI11::CLI11)
-  list(APPEND TOOLS_SBIN bpluginfo)
-endif()
-
 if(NOT client-only)
+  add_executable(bsmtp bsmtp.cc)
+  bareos_windows_resource(bsmtp bsmtpres.rc.in)
+  target_link_libraries(bsmtp Bareos::Lib CLI11::CLI11)
+  list(APPEND TOOLS_BIN bsmtp)
+
+  add_executable(bregex bregex.cc)
+  target_link_libraries(bregex Bareos::Lib Bareos::Findlib CLI11::CLI11)
+  bareos_windows_resource(bregex bregexres.rc.in)
+  list(APPEND TOOLS_BIN bregex)
+  list(APPEND TOOLS_SBIN bregex)
+
+  add_executable(bwild bwild.cc)
+  target_link_libraries(bwild Bareos::Lib CLI11::CLI11)
+  bareos_windows_resource(bwild bwildres.rc.in)
+  list(APPEND TOOLS_BIN bwild)
+  list(APPEND TOOLS_SBIN bwild)
+
+  add_executable(gentestdata gentestdata.cc)
+  target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
+
+  if(NOT HAVE_WIN32)
+    add_executable(bclient-enrolld bareos-dir-setup-service.cc)
+    target_link_libraries(
+      bclient-enrolld
+      PRIVATE Bareos::Dir Bareos::Lib Bareos::Findlib CLI11::CLI11
+              OpenSSL::SSL OpenSSL::Crypto
+    )
+    list(APPEND TOOLS_SBIN bclient-enrolld)
+
+    add_executable(bclient-activate bareos-dir-activate-staged-client.cc)
+    target_link_libraries(
+      bclient-activate
+      PRIVATE Bareos::Dir Bareos::Lib Bareos::Findlib CLI11::CLI11
+    )
+    list(APPEND TOOLS_SBIN bclient-activate)
+  endif()
+
+  if(NOT HAVE_MSVC)
+    add_executable(drivetype drivetype.cc)
+    target_link_libraries(drivetype Bareos::Lib Bareos::Findlib)
+
+    add_executable(fstype fstype.cc)
+    target_link_libraries(fstype Bareos::Lib Bareos::Findlib)
+
+    add_executable(bscrypto bscrypto.cc)
+    target_link_libraries(bscrypto Bareos::Lib CLI11::CLI11)
+    list(APPEND TOOLS_SBIN bscrypto)
+  endif()
+
+  if(NOT HAVE_WIN32)
+    add_executable(btestls btestls.cc)
+    target_link_libraries(btestls Bareos::Findlib Bareos::Lib)
+    list(APPEND TOOLS_SBIN btestls)
+
+    add_executable(bpluginfo bpluginfo.cc)
+    target_link_libraries(bpluginfo Bareos::Lib ${CMAKE_DL_LIBS} CLI11::CLI11)
+    list(APPEND TOOLS_SBIN bpluginfo)
+  endif()
+
   set(TSTFNDSRCS testfind.cc testfind_fd.cc dummysockets.cc)
   add_executable(testfind ${TSTFNDSRCS})
   target_link_libraries(
@@ -121,14 +123,18 @@ if(NOT client-only)
   endif()
 endif()
 
-add_executable(random-commands random_commands.cc)
-target_link_libraries(random-commands fmt::fmt CLI11::CLI11)
+if(NOT client-only)
+  add_executable(random-commands random_commands.cc)
+  target_link_libraries(random-commands fmt::fmt CLI11::CLI11)
+endif()
 
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
 install(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")
 
 # install bsmtp for non-root directors
-install(TARGETS bsmtp DESTINATION "${bindir}")
-install(TARGETS bsmtp DESTINATION "${sbindir}")
+if(NOT client-only)
+  install(TARGETS bsmtp DESTINATION "${bindir}")
+  install(TARGETS bsmtp DESTINATION "${sbindir}")
+endif()
 
 include(DebugEdit)

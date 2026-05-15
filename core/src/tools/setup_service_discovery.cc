@@ -109,6 +109,7 @@ std::string DeriveLocalDiscoveryDomain()
 std::vector<SrvRecord> LookupSrvRecords(const std::string& query_name)
 {
 #ifndef HAVE_ARPA_NAMESER_H
+  (void)query_name;
   Throw("DNS SRV setup-service discovery is not supported on this platform."
         " Use --address or --discovery-domain with a build that includes"
         " resolver support.");
