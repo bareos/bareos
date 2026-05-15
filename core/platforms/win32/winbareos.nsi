@@ -545,6 +545,7 @@ SectionIn 1 2 3
   SetOutPath "$INSTDIR"
   File bareos-config-deploy.bat
   File bareos-fd.exe
+  File bclient-enroll.exe
   File libbareos.dll
   File libbareosfastlz.dll
   File libbareosfind.dll

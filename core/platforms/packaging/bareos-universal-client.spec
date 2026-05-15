@@ -324,6 +324,7 @@ ln -sf service %{buildroot}%{_sbindir}/rcbareos-fd
 %{_sbindir}/rcbareos-fd
 %endif
 %{_sbindir}/bareos-fd
+%{_sbindir}/bclient-enroll
 %{plugin_dir}/bpipe-fd.so
 %{_mandir}/man8/bareos-fd.8.gz
 # tray monitor

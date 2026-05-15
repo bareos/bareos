@@ -1,4 +1,5 @@
 /usr/sbin/bareos-fd
+/usr/sbin/bclient-enroll
 /usr/sbin/btraceback
 /usr/share/man/man8/bareos-fd.8*
 /usr/share/man/man8/btraceback.8*

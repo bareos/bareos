@@ -19,12 +19,19 @@
    02110-1301, USA.
  */
 
+#include "include/bareos.h"
 #include "tools/setup_service_discovery.h"
 
-#include <arpa/nameser.h>
 #include <netdb.h>
-#include <resolv.h>
-#include <unistd.h>
+
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
+
+#ifdef HAVE_ARPA_NAMESER_H
+#  include <arpa/nameser.h>
+#  include <resolv.h>
+#endif
 
 #include <algorithm>
 #include <array>
@@ -101,6 +108,11 @@ std::string DeriveLocalDiscoveryDomain()
 
 std::vector<SrvRecord> LookupSrvRecords(const std::string& query_name)
 {
+#ifndef HAVE_ARPA_NAMESER_H
+  Throw("DNS SRV setup-service discovery is not supported on this platform."
+        " Use --address or --discovery-domain with a build that includes"
+        " resolver support.");
+#else
   std::array<unsigned char, NS_MAXMSG> answer{};
   const int length
       = res_query(query_name.c_str(), ns_c_in, ns_t_srv, answer.data(),
@@ -152,6 +164,7 @@ std::vector<SrvRecord> LookupSrvRecords(const std::string& query_name)
           + "\". Use --address or --discovery-domain.");
   }
   return records;
+#endif
 }
 
 uint16_t DefaultRandomBelow(uint16_t exclusive_upper_bound)

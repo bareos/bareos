@@ -30,5 +30,7 @@
 @configtemplatedir@/bareos-dir.d/user
 @configtemplatedir@/tray-monitor.d/director/Director-local*.conf
 /usr/sbin/bareos-dir
+/usr/sbin/bclient-enrolld
+/usr/sbin/bclient-activate
 /usr/share/man/man8/bareos-dir.8*
 /usr/share/man/man8/bareos.8*

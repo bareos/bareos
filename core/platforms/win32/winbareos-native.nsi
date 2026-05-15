@@ -654,6 +654,7 @@ SectionIn 1 2 3
   File "bareos-config-deploy.bat"
   !cd "${CMAKE_BINARY_DIR}\bin"
   File "bareos-fd.exe"
+  File "bclient-enroll.exe"
   File "bareos.dll"
   File "bareosfastlz.dll"
   File "bareosfind.dll"

@@ -44,26 +44,30 @@ list(APPEND TOOLS_SBIN bwild)
 add_executable(gentestdata gentestdata.cc)
 target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
 
-add_executable(bareos-fd-setup bareos-fd-setup.cc setup_service_discovery.cc)
-target_link_libraries(
-  bareos-fd-setup PRIVATE Bareos::FD Bareos::Lib CLI11::CLI11 OpenSSL::SSL
-                           OpenSSL::Crypto resolv
-)
-list(APPEND TOOLS_SBIN bareos-fd-setup)
+find_library(SETUP_DISCOVERY_RESOLV_LIBRARY NAMES resolv)
 
-add_executable(bareos-dir-setup-service bareos-dir-setup-service.cc)
+add_executable(bclient-enroll bareos-fd-setup.cc setup_service_discovery.cc)
 target_link_libraries(
-  bareos-dir-setup-service PRIVATE Bareos::Dir Bareos::Lib Bareos::Findlib
-                                    CLI11::CLI11 OpenSSL::SSL OpenSSL::Crypto
+  bclient-enroll PRIVATE Bareos::FD Bareos::Lib CLI11::CLI11 OpenSSL::SSL
+                          OpenSSL::Crypto
+                          $<$<BOOL:${SETUP_DISCOVERY_RESOLV_LIBRARY}>:${SETUP_DISCOVERY_RESOLV_LIBRARY}>
 )
-list(APPEND TOOLS_SBIN bareos-dir-setup-service)
+list(APPEND TOOLS_SBIN bclient-enroll)
 
-add_executable(bareos-dir-activate-staged-client bareos-dir-activate-staged-client.cc)
-target_link_libraries(
-  bareos-dir-activate-staged-client PRIVATE Bareos::Dir Bareos::Lib Bareos::Findlib
-                                             CLI11::CLI11
-)
-list(APPEND TOOLS_SBIN bareos-dir-activate-staged-client)
+if(NOT HAVE_WIN32)
+  add_executable(bclient-enrolld bareos-dir-setup-service.cc)
+  target_link_libraries(
+    bclient-enrolld PRIVATE Bareos::Dir Bareos::Lib Bareos::Findlib CLI11::CLI11
+                             OpenSSL::SSL OpenSSL::Crypto
+  )
+  list(APPEND TOOLS_SBIN bclient-enrolld)
+
+  add_executable(bclient-activate bareos-dir-activate-staged-client.cc)
+  target_link_libraries(
+    bclient-activate PRIVATE Bareos::Dir Bareos::Lib Bareos::Findlib CLI11::CLI11
+  )
+  list(APPEND TOOLS_SBIN bclient-activate)
+endif()
 
 if(NOT HAVE_MSVC)
   add_executable(drivetype drivetype.cc)

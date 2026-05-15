@@ -19,16 +19,27 @@
    02110-1301, USA.
  */
 
+#include "include/bareos.h"
+#include "filed/filed_conf.h"
+#include "filed/filed_globals.h"
+#include "lib/address_conf.h"
+#include "lib/bpoll.h"
+#include "lib/cli.h"
+#include "lib/edit.h"
+#include "lib/parse_conf.h"
+#include "tools/setup_service_discovery.h"
+
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 
-#include <arpa/inet.h>
 #include <netdb.h>
-#include <poll.h>
 #include <sys/socket.h>
-#include <unistd.h>
+
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 
 #include <array>
 #include <cerrno>
@@ -43,15 +54,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-
-#include "include/bareos.h"
-#include "filed/filed_conf.h"
-#include "filed/filed_globals.h"
-#include "lib/address_conf.h"
-#include "lib/cli.h"
-#include "lib/edit.h"
-#include "lib/parse_conf.h"
-#include "tools/setup_service_discovery.h"
 
 namespace {
 
@@ -119,11 +121,20 @@ struct X509Deleter {
   void operator()(X509* cert) const { X509_free(cert); }
 };
 
+inline int CloseSocket(int fd)
+{
+#if defined(HAVE_WIN32)
+  return closesocket(fd);
+#else
+  return close(fd);
+#endif
+}
+
 struct SocketCloser {
   explicit SocketCloser(int fd) : fd_(fd) {}
   ~SocketCloser()
   {
-    if (fd_ >= 0) { close(fd_); }
+    if (fd_ >= 0) { CloseSocket(fd_); }
   }
   SocketCloser(const SocketCloser&) = delete;
   SocketCloser& operator=(const SocketCloser&) = delete;
@@ -131,7 +142,7 @@ struct SocketCloser {
   SocketCloser& operator=(SocketCloser&& other) noexcept
   {
     if (this != &other) {
-      if (fd_ >= 0) { close(fd_); }
+      if (fd_ >= 0) { CloseSocket(fd_); }
       fd_ = other.release();
     }
     return *this;
@@ -157,7 +168,7 @@ class SslConnection {
       SSL_shutdown(ssl_);
       SSL_free(ssl_);
     }
-    if (fd_ >= 0) { close(fd_); }
+    if (fd_ >= 0) { CloseSocket(fd_); }
   }
   SslConnection(const SslConnection&) = delete;
   SslConnection& operator=(const SslConnection&) = delete;
@@ -375,7 +386,7 @@ LocalClientConfig LoadLocalClientConfig(const Options& options)
         != nullptr) {
       delete parser;
       filedaemon::my_config = nullptr;
-      Throw("Only one Client resource is supported by bareos-fd-setup.");
+      Throw("Only one Client resource is supported by bclient-enroll.");
     }
   }
 
@@ -594,7 +605,8 @@ SocketCloser OpenListener(const std::string& address, uint16_t port)
     if (socket.get() < 0) { continue; }
 
     int reuse = 1;
-    setsockopt(socket.get(), SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+    setsockopt(socket.get(), SOL_SOCKET, SO_REUSEADDR,
+               (sockopt_val_t)&reuse, sizeof(reuse));
 
     if (bind(socket.get(), current->ai_addr, current->ai_addrlen) != 0) {
       continue;
@@ -712,14 +724,11 @@ std::unique_ptr<SslConnection> WaitForDirectorConnection(
         = std::chrono::duration_cast<std::chrono::milliseconds>(
               deadline - std::chrono::steady_clock::now())
               .count();
-    pollfd candidate{};
-    candidate.fd = listener.get();
-    candidate.events = POLLIN;
-    const int poll_result
-        = poll(&candidate, 1, remaining > 1000 ? 1000 : static_cast<int>(remaining));
-    if (poll_result == 0) { continue; }
-    if (poll_result < 0) {
-      if (errno == EINTR) { continue; }
+    const int wait_result = WaitForReadableFd(
+        listener.get(), remaining > 1000 ? 1000 : static_cast<int>(remaining),
+        true);
+    if (wait_result == 0) { continue; }
+    if (wait_result < 0) {
       Throw("Failed while waiting for the director-side setup connection.");
     }
 
@@ -822,6 +831,7 @@ int main(int argc, char* argv[])
 {
   CLI::App app;
   try {
+    if (WSA_Init() != 0) { Throw("Failed to initialize socket support."); }
     SSL_library_init();
     SSL_load_error_strings();
 

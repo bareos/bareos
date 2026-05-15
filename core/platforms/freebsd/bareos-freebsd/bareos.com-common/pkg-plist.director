@@ -26,6 +26,8 @@
 @dir(bareos,wheel,2750) %%ETCDIR%%/bareos-dir-export/client/
 lib/bareos/scripts/delete_catalog_backup
 lib/bareos/scripts/make_catalog_backup
+sbin/bclient-enrolld
+sbin/bclient-activate
 sbin/bareos-dir
 share/man/man8/bareos-dir.8.gz
 share/man/man8/bareos.8.gz
