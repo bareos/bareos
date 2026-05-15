@@ -126,7 +126,6 @@ struct JobDbRecord {
   uint64_t ReadBytes = 0;
   uint64_t JobSumTotalBytes = 0; /**< All jobs but this one */
   int PurgedFiles = 0;
-  int HasBase = 0;
 
   /* Note, FirstIndex, LastIndex, Start/End File and Block
    * are only used in the JobMedia record.
@@ -485,19 +484,19 @@ class BareosDb : public BareosDbQueryEnum {
  protected:
   brwlock_t lock_; /**< Transaction lock */
   SQL_INTERFACETYPE db_interface_type_
-      = SQL_INTERFACE_TYPE_UNKNOWN;       /**< Type of backend used */
-  uint32_t ref_count_ = 0;                /**< Reference count */
-  bool connected_ = false;                /**< Connection made to db */
-  bool have_batch_insert_ = false;        /**< Have batch insert support ? */
-  bool try_reconnect_ = true;    /**< Try reconnecting DB connection ? */
-  bool exit_on_fatal_ = false;   /**< Exit on FATAL DB errors ? */
-  char* db_driver_ = nullptr;    /**< Database driver */
-  char* db_driverdir_ = nullptr; /**< Database driver dir */
-  char* db_name_ = nullptr;      /**< Database name */
-  char* db_user_ = nullptr;      /**< Database user */
-  char* db_address_ = nullptr;   /**< Host name address */
-  char* db_socket_ = nullptr;    /**< Socket for local access */
-  char* db_password_ = nullptr;  /**< Database password */
+      = SQL_INTERFACE_TYPE_UNKNOWN; /**< Type of backend used */
+  uint32_t ref_count_ = 0;          /**< Reference count */
+  bool connected_ = false;          /**< Connection made to db */
+  bool have_batch_insert_ = false;  /**< Have batch insert support ? */
+  bool try_reconnect_ = true;       /**< Try reconnecting DB connection ? */
+  bool exit_on_fatal_ = false;      /**< Exit on FATAL DB errors ? */
+  char* db_driver_ = nullptr;       /**< Database driver */
+  char* db_driverdir_ = nullptr;    /**< Database driver dir */
+  char* db_name_ = nullptr;         /**< Database name */
+  char* db_user_ = nullptr;         /**< Database user */
+  char* db_address_ = nullptr;      /**< Host name address */
+  char* db_socket_ = nullptr;       /**< Socket for local access */
+  char* db_password_ = nullptr;     /**< Database password */
   char* last_query_text_
       = nullptr;           /**< Last query text obtained from query table */
   int db_port_ = 0;        /**< Port for host name address */
@@ -612,6 +611,7 @@ class BareosDb : public BareosDbQueryEnum {
  private:
   bool CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
   bool CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
+
  public:
   bool CreateFileAttributesRecord(JobControlRecord* jcr,
                                   AttributesDbRecord* ar);

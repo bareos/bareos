@@ -248,7 +248,7 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
          "SELECT VolSessionId,VolSessionTime,"
          "PoolId,StartTime,EndTime,JobFiles,JobBytes,JobTDate,Job,JobStatus,"
          "Type,Level,ClientId,Name,PriorJobId,RealEndTime,JobId,FileSetId,"
-         "SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles "
+         "SchedTime,RealEndTime,ReadBytes,PurgedFiles "
          "FROM Job WHERE Job='%s'",
          esc);
   } else {
@@ -256,7 +256,7 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
          "SELECT VolSessionId,VolSessionTime,"
          "PoolId,StartTime,EndTime,JobFiles,JobBytes,JobTDate,Job,JobStatus,"
          "Type,Level,ClientId,Name,PriorJobId,RealEndTime,JobId,FileSetId,"
-         "SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles "
+         "SchedTime,RealEndTime,ReadBytes,PurgedFiles "
          "FROM Job WHERE JobId=%s",
          edit_int64(jr->JobId, ed1));
   }
@@ -303,8 +303,7 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   jr->SchedTime = StrToUtime(jr->cSchedTime);
   jr->EndTime = StrToUtime(jr->cEndTime);
   jr->RealEndTime = StrToUtime(jr->cRealEndTime);
-  jr->HasBase = str_to_int64(row[21]);
-  jr->PurgedFiles = str_to_int64(row[22]);
+  jr->PurgedFiles = str_to_int64(row[21]);
 
   SqlFreeResult();
 

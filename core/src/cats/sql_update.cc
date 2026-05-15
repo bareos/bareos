@@ -174,18 +174,17 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
 
   DbLocker _{this};
 
-  Mmsg(
-      cmd,
-      "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
-      "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,"
-      "VolSessionId=%u,"
-      "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
-      "RealEndTime='%s',PriorJobId=%s,HasBase=%d,PurgedFiles=%d WHERE JobId=%s",
-      (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,
-      edit_uint64(jr->JobBytes, ed1), edit_uint64(jr->ReadBytes, ed4),
-      jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
-      jr->PoolId, jr->FileSetId, edit_uint64(JobTDate, ed2), rdt, PriorJobId,
-      jr->HasBase, jr->PurgedFiles, edit_int64(jr->JobId, ed3));
+  Mmsg(cmd,
+       "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
+       "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,"
+       "VolSessionId=%u,"
+       "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
+       "RealEndTime='%s',PriorJobId=%s,PurgedFiles=%d WHERE JobId=%s",
+       (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,
+       edit_uint64(jr->JobBytes, ed1), edit_uint64(jr->ReadBytes, ed4),
+       jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
+       jr->PoolId, jr->FileSetId, edit_uint64(JobTDate, ed2), rdt, PriorJobId,
+       jr->PurgedFiles, edit_int64(jr->JobId, ed3));
 
   return UpdateDb(jcr, cmd) > 0;
 }

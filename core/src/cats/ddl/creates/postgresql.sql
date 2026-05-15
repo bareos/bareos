@@ -98,7 +98,6 @@ CREATE TABLE Job
     FilesetId         INTEGER     DEFAULT 0,
     PriorJobid        INTEGER     DEFAULT 0,
     PurgedFiles       SMALLINT    DEFAULT 0,
-    HasBase           SMALLINT    DEFAULT 0,
     HasCache          SMALLINT    DEFAULT 0,
     Reviewed          SMALLINT    DEFAULT 0,
     Comment           TEXT,
