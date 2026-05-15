@@ -9,6 +9,8 @@
 #   %d offset
 #
 # row  0    1            2          3           4           5            6         7                 8
+# Keep versions ordered by FileId so callers can treat the last row as the
+# newest version and cross-check the DISTINCT ON result from .bvfs_lsfiles.
 SELECT 'V', File.PathId, File.Name, File.JobId, File.LStat, File.FileId, File.Md5, Media.VolumeName, Media.InChanger
 FROM File, Job, Client, JobMedia, Media
 WHERE File.Name = '%s'

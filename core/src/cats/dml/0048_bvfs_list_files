@@ -1,3 +1,5 @@
+# DISTINCT ON keeps a single visible entry per filename. The ORDER BY must keep
+# the newest job first so .bvfs_lsfiles exposes the latest version.
 SELECT TYPE,
        PathId,
        Name,
