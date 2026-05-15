@@ -22,6 +22,7 @@
 #include "gtest/gtest.h"
 
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <array>
@@ -42,6 +43,10 @@ struct CommandResult {
   int exit_code{-1};
   std::string output;
 };
+
+CommandResult RunCommandWithEnvironment(
+    const std::vector<std::string>& arguments,
+    const std::vector<std::pair<std::string, std::string>>& environment);
 
 bool Contains(std::string_view haystack, std::string_view needle)
 {
@@ -72,6 +77,13 @@ void WriteTextFile(const fs::path& path, std::string_view content)
 
 CommandResult RunCommand(const std::vector<std::string>& arguments)
 {
+  return RunCommandWithEnvironment(arguments, {});
+}
+
+CommandResult RunCommandWithEnvironment(
+    const std::vector<std::string>& arguments,
+    const std::vector<std::pair<std::string, std::string>>& environment)
+{
   std::array<int, 2> pipefd{};
   if (pipe(pipefd.data()) != 0) { return {}; }
 
@@ -87,6 +99,10 @@ CommandResult RunCommand(const std::vector<std::string>& arguments)
     dup2(pipefd[1], STDERR_FILENO);
     close(pipefd[0]);
     close(pipefd[1]);
+
+    for (const auto& [name, value] : environment) {
+      setenv(name.c_str(), value.c_str(), 1);
+    }
 
     std::vector<char*> argv;
     for (const auto& argument : arguments) {
@@ -118,6 +134,15 @@ CommandResult RunCommand(const std::vector<std::string>& arguments)
     result.exit_code = 128 + WTERMSIG(status);
   }
   return result;
+}
+
+void MakeExecutable(const fs::path& path)
+{
+  const auto permissions = fs::perms::owner_read | fs::perms::owner_write
+                           | fs::perms::owner_exec | fs::perms::group_read
+                           | fs::perms::group_exec | fs::perms::others_read
+                           | fs::perms::others_exec;
+  fs::permissions(path, permissions, fs::perm_options::replace);
 }
 
 std::unique_ptr<ConfigurationParser> ParseDirectorConfig(const fs::path& config_root)
@@ -254,6 +279,100 @@ TEST(DirSetupActivation, RejectsMismatchedStagedClientName)
       << result.output;
   EXPECT_TRUE(fs::exists(stage_path));
   EXPECT_FALSE(fs::exists(live_path));
+}
+
+TEST(DirSetupActivation, ReloadsDirectorViaSystemdWhenRequested)
+{
+  const auto config = PrepareConfig("dir-setup-activation-reload");
+  const auto staging_dir
+      = fs::path(TEST_TEMP_DIR) / "dir-setup-activation-reload-staging";
+  const auto fake_bin
+      = fs::path(TEST_TEMP_DIR) / "dir-setup-activation-reload-bin";
+  const auto log_path
+      = fs::path(TEST_TEMP_DIR) / "dir-setup-activation-reload.log";
+  const auto stage_path
+      = staging_dir / "bareos-dir.d" / "client" / "reload-fd.conf";
+
+  std::error_code ec;
+  fs::remove_all(staging_dir, ec);
+  fs::remove_all(fake_bin, ec);
+  fs::remove(log_path, ec);
+  WriteTextFile(stage_path,
+                "Client {\n"
+                "  Name = reload-fd\n"
+                "  Address = reload.example.com\n"
+                "  Password = \"secret\"\n"
+                "}\n");
+
+  const auto script_path = fake_bin / "systemctl";
+  WriteTextFile(script_path,
+                "#!/bin/sh\n"
+                "printf '%s %s\\n' \"$1\" \"$2\" > \"" TEST_TEMP_DIR
+                "/dir-setup-activation-reload.log\"\n");
+  MakeExecutable(script_path);
+
+  const auto inherited_path = getenv("PATH");
+  ASSERT_NE(inherited_path, nullptr);
+  const auto path_value = fake_bin.string() + ":" + inherited_path;
+  const auto result = RunCommandWithEnvironment(
+      {BAREOS_DIR_ACTIVATE_BIN, "--config", config.string(), "--staging-dir",
+       staging_dir.string(), "--client", "reload-fd", "--reload"},
+      {{"PATH", path_value}});
+
+  EXPECT_EQ(result.exit_code, 0) << result.output;
+  EXPECT_TRUE(Contains(result.output, "Reloaded Director via systemd unit"))
+      << result.output;
+
+  std::ifstream input(log_path);
+  ASSERT_TRUE(input.is_open());
+  std::string log_line;
+  std::getline(input, log_line);
+  EXPECT_EQ(log_line, "reload bareos-dir");
+}
+
+TEST(DirSetupActivation, ReportsReloadFailureAfterActivation)
+{
+  const auto config = PrepareConfig("dir-setup-activation-reload-failure");
+  const auto staging_dir
+      = fs::path(TEST_TEMP_DIR) / "dir-setup-activation-reload-failure-staging";
+  const auto fake_bin
+      = fs::path(TEST_TEMP_DIR) / "dir-setup-activation-reload-failure-bin";
+  const auto stage_path
+      = staging_dir / "bareos-dir.d" / "client" / "reload-failure-fd.conf";
+  const auto live_path
+      = config / "bareos-dir.d" / "client" / "reload-failure-fd.conf";
+
+  std::error_code ec;
+  fs::remove_all(staging_dir, ec);
+  fs::remove_all(fake_bin, ec);
+  WriteTextFile(stage_path,
+                "Client {\n"
+                "  Name = reload-failure-fd\n"
+                "  Address = reload-failure.example.com\n"
+                "  Password = \"secret\"\n"
+                "}\n");
+
+  const auto script_path = fake_bin / "systemctl";
+  WriteTextFile(script_path,
+                "#!/bin/sh\n"
+                "echo 'reload failed' >&2\n"
+                "exit 23\n");
+  MakeExecutable(script_path);
+
+  const auto inherited_path = getenv("PATH");
+  ASSERT_NE(inherited_path, nullptr);
+  const auto path_value = fake_bin.string() + ":" + inherited_path;
+  const auto result = RunCommandWithEnvironment(
+      {BAREOS_DIR_ACTIVATE_BIN, "--config", config.string(), "--staging-dir",
+       staging_dir.string(), "--client", "reload-failure-fd", "--reload"},
+      {{"PATH", path_value}});
+
+  EXPECT_EQ(result.exit_code, 1);
+  EXPECT_TRUE(Contains(result.output, "activated on disk, but reloading the Director"))
+      << result.output;
+  EXPECT_TRUE(Contains(result.output, "reload failed")) << result.output;
+  EXPECT_TRUE(fs::exists(live_path));
+  EXPECT_FALSE(fs::exists(stage_path));
 }
 
 }  // namespace

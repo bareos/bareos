@@ -27,6 +27,7 @@
 #include "lib/parse_conf.h"
 
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <array>
@@ -51,6 +52,13 @@ struct Options {
   std::string config_path = ConfigurationParser::GetDefaultConfigDir();
   fs::path staging_dir{kDefaultSetupStagingDir};
   std::string client_name;
+  bool reload = false;
+  std::string reload_systemd_unit = "bareos-dir";
+};
+
+struct CommandResult {
+  int exit_code{-1};
+  std::string output;
 };
 
 [[noreturn]] void Throw(const std::string& message)
@@ -136,6 +144,59 @@ void FsyncDirectory(const fs::path& directory)
   if (fd < 0) { return; }
   fsync(fd);
   close(fd);
+}
+
+CommandResult RunCommand(const std::vector<std::string>& arguments)
+{
+  std::array<int, 2> pipefd{};
+  if (pipe(pipefd.data()) != 0) {
+    Throw("Failed to create a pipe for the reload command.");
+  }
+
+  const pid_t pid = fork();
+  if (pid < 0) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    Throw("Failed to start the reload command.");
+  }
+
+  if (pid == 0) {
+    dup2(pipefd[1], STDOUT_FILENO);
+    dup2(pipefd[1], STDERR_FILENO);
+    close(pipefd[0]);
+    close(pipefd[1]);
+
+    std::vector<char*> argv;
+    argv.reserve(arguments.size() + 1);
+    for (const auto& argument : arguments) {
+      argv.push_back(const_cast<char*>(argument.c_str()));
+    }
+    argv.push_back(nullptr);
+    execvp(argv.front(), argv.data());
+    _exit(127);
+  }
+
+  close(pipefd[1]);
+
+  std::string output;
+  std::array<char, 4096> buffer{};
+  ssize_t bytes_read = 0;
+  while ((bytes_read = read(pipefd[0], buffer.data(), buffer.size())) > 0) {
+    output.append(buffer.data(), static_cast<size_t>(bytes_read));
+  }
+  close(pipefd[0]);
+
+  int status = 0;
+  waitpid(pid, &status, 0);
+
+  CommandResult result;
+  result.output = std::move(output);
+  if (WIFEXITED(status)) {
+    result.exit_code = WEXITSTATUS(status);
+  } else if (WIFSIGNALED(status)) {
+    result.exit_code = 128 + WTERMSIG(status);
+  }
+  return result;
 }
 
 void CopyStagedFileToTemporaryPath(const fs::path& source, const fs::path& temporary_path)
@@ -232,7 +293,26 @@ void ValidateActivatedResource(ConfigurationParser& parser,
   }
 }
 
-void ActivateStagedClient(const Options& options)
+void ReloadDirector(const Options& options)
+{
+  const auto result = RunCommand(
+      {"systemctl", "reload", options.reload_systemd_unit});
+  if (result.exit_code != 0) {
+    std::string message
+        = "The staged client config was activated on disk, but reloading the"
+          " Director via systemd unit \""
+          + options.reload_systemd_unit + "\" failed.";
+    if (!result.output.empty()) {
+      message += " systemctl output:\n" + result.output;
+    }
+    Throw(message);
+  }
+
+  std::cout << "Reloaded Director via systemd unit \""
+            << options.reload_systemd_unit << "\".\n";
+}
+
+fs::path ActivateStagedClient(const Options& options)
 {
   auto parser = LoadDirectorConfig(options.config_path);
   if (parser->GetResWithName(directordaemon::R_CLIENT,
@@ -281,9 +361,7 @@ void ActivateStagedClient(const Options& options)
               << stage_path.string() << "\": " << ec.message() << "\n";
   }
 
-  std::cout << "Activated staged client \"" << options.client_name << "\" at "
-            << destination_path.c_str() << ".\n";
-  std::cout << "Reload or restart the Director to apply the new client.\n";
+  return fs::path{destination_path.c_str()};
 }
 
 }  // namespace
@@ -313,9 +391,22 @@ int main(int argc, char** argv)
     app.add_option("--client", options.client_name,
                    "Client resource name to activate from staging.")
         ->required();
+    app.add_flag("--reload", options.reload,
+                 "Reload the running Director after successful activation.");
+    app.add_option("--reload-systemd-unit", options.reload_systemd_unit,
+                   "systemd unit to reload when --reload is used.")
+        ->capture_default_str();
 
     ParseBareosApp(app, argc, argv);
-    ActivateStagedClient(options);
+    const auto activated_path = ActivateStagedClient(options);
+
+    std::cout << "Activated staged client \"" << options.client_name << "\" at "
+              << activated_path.string() << ".\n";
+    if (options.reload) {
+      ReloadDirector(options);
+    } else {
+      std::cout << "Reload or restart the Director to apply the new client.\n";
+    }
 
     directordaemon::my_config = nullptr;
     directordaemon::me = nullptr;
