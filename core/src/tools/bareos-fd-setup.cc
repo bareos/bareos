@@ -560,7 +560,6 @@ std::unique_ptr<SslConnection> ConnectTls(const Options& options)
       Throw("TLS negotiation with the setup service failed: " + error);
     }
 
-    ssl_ctx.release();
     return std::make_unique<SslConnection>(ssl, socket.release());
   }
 
@@ -649,7 +648,6 @@ std::unique_ptr<SslConnection> WrapAcceptedSocketAsTlsClient(
     return nullptr;
   }
 
-  ssl_ctx.release();
   return std::make_unique<SslConnection>(ssl, socket_fd);
 }
 
