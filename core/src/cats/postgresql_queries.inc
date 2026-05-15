@@ -801,7 +801,8 @@ WHERE  Path != ''
 )SQL",
 
 /* 0074_bvfs_ls_special_dirs_3 */
-R"SQL(SELECT DISTINCT ON (PathId) 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId
+R"SQL((
+SELECT DISTINCT ON (SpecialDir.PathId) 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId
 FROM (
     SELECT %s AS PathId, '.' AS Path
     UNION
@@ -817,6 +818,8 @@ LEFT JOIN (
     ORDER BY PathId ASC, JobId DESC
 ) AS DirAttribute
 ON (SpecialDir.PathId = DirAttribute.PathId)
+ORDER BY SpecialDir.PathId ASC, JobId DESC
+) 
 )SQL",
 
 /* 0075_bvfs_ls_sub_dirs_5 */
