@@ -11,6 +11,8 @@
 #   %s JobIds ("1,2,...")
 #
 # row                       0    1                  2                3      4      5
+# DISTINCT ON needs the newest directory attribute row first. Keep the
+# ORDER BY inside this fragment because it is UNIONed by 0064_bvfs_lsdirs_4.
 (
 SELECT DISTINCT ON (SpecialDir.PathId) 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId
 FROM (

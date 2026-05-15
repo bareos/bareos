@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -326,6 +326,26 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
             2,
             'Expecting at least 2 versions of file "{}" from "{}". Received: {}'.format(
                 format_params["BackupFileNameExtra"], cmd, bvfs_versions_extrafile
+            ),
+        )
+        bvfs_version_file_ids = [
+            version["fileid"] for version in bvfs_versions_extrafile
+        ]
+        self.assertEqual(
+            bvfs_version_file_ids,
+            sorted(bvfs_version_file_ids),
+            'Expecting "{}" to return versions ordered by ascending fileid, instead received: {}'.format(
+                cmd, bvfs_versions_extrafile
+            ),
+        )
+        self.assertEqual(
+            backup_extrafile_id,
+            bvfs_version_file_ids[-1],
+            'Expecting "{}" to expose the newest visible file version, instead received: {}'.format(
+                ".bvfs_lsfiles jobid={BackupJobIds} path={BackupDirectory}/".format(
+                    **format_params
+                ),
+                bvfs_lsfiles_BackupDirectory,
             ),
         )
 
