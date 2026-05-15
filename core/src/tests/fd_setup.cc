@@ -537,4 +537,51 @@ TEST(FdSetup, DirectorConnectsRejectsTrustOnFirstUse)
   EXPECT_TRUE(Contains(result.output, "does not allow --trust-on-first-use"));
 }
 
+TEST(FdSetup, ExplicitAddressWinsOverDiscoveryInputs)
+{
+  const auto config = PrepareConfig("fd_setup_discovery_precedence");
+  const auto staging_dir = config / "staging";
+  const auto trust_file = config / "trusted-setup.sha256";
+
+  SetupServiceProcess service(staging_dir, TEST_SETUP_CERT, TEST_SETUP_KEY,
+                              "setup-dir", true, "OneTimeToken");
+
+  const auto result = RunCommand(
+      {BAREOS_FD_SETUP_BIN,
+       "--config",
+       config.string(),
+       "--address",
+       "127.0.0.1",
+       "--port",
+       std::to_string(service.port()),
+       "--discovery-domain",
+       "does-not-matter.example.com",
+       "--token",
+       "OneTimeToken",
+       "--trust-file",
+       trust_file.string(),
+       "--trust-on-first-use"});
+
+  ASSERT_EQ(result.exit_code, 0) << result.output;
+  EXPECT_TRUE(Contains(result.output, "Created setup resource"));
+}
+
+TEST(FdSetup, DiscoveryFailureIsVisibleToOperators)
+{
+  const auto config = PrepareConfig("fd_setup_discovery_failure");
+  const auto result = RunCommand(
+      {BAREOS_FD_SETUP_BIN,
+       "--config",
+       config.string(),
+       "--discovery-domain",
+       "invalid.example.invalid",
+       "--token",
+       "OneTimeToken",
+       "--expected-fingerprint",
+       TEST_SETUP_FINGERPRINT});
+
+  ASSERT_NE(result.exit_code, 0);
+  EXPECT_TRUE(Contains(result.output, "Failed to discover the setup service"));
+}
+
 }  // namespace

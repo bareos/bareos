@@ -44,10 +44,10 @@ list(APPEND TOOLS_SBIN bwild)
 add_executable(gentestdata gentestdata.cc)
 target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
 
-add_executable(bareos-fd-setup bareos-fd-setup.cc)
+add_executable(bareos-fd-setup bareos-fd-setup.cc setup_service_discovery.cc)
 target_link_libraries(
   bareos-fd-setup PRIVATE Bareos::FD Bareos::Lib CLI11::CLI11 OpenSSL::SSL
-                           OpenSSL::Crypto
+                           OpenSSL::Crypto resolv
 )
 list(APPEND TOOLS_SBIN bareos-fd-setup)
 
@@ -56,6 +56,13 @@ target_link_libraries(
   bareos-dir-setup-service PRIVATE CLI11::CLI11 OpenSSL::SSL OpenSSL::Crypto
 )
 list(APPEND TOOLS_SBIN bareos-dir-setup-service)
+
+add_executable(bareos-dir-activate-staged-client bareos-dir-activate-staged-client.cc)
+target_link_libraries(
+  bareos-dir-activate-staged-client PRIVATE Bareos::Dir Bareos::Lib Bareos::Findlib
+                                             CLI11::CLI11
+)
+list(APPEND TOOLS_SBIN bareos-dir-activate-staged-client)
 
 if(NOT HAVE_MSVC)
   add_executable(drivetype drivetype.cc)

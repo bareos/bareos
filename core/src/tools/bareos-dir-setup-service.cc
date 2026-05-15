@@ -19,6 +19,8 @@
    02110-1301, USA.
  */
 
+#include "include/config.h"
+
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
@@ -53,6 +55,7 @@ namespace {
 namespace fs = std::filesystem;
 
 constexpr std::string_view kProtocolHello = "BAREOS-SETUP 1";
+constexpr const char* kDefaultSetupStagingDir = PATH_BAREOS_WORKINGDIR "/setup";
 
 enum class ConnectionDirection
 {
@@ -72,7 +75,7 @@ struct Options {
   std::string director_name;
   std::string director_address;
   uint16_t director_port = 9101;
-  fs::path staging_dir;
+  fs::path staging_dir{kDefaultSetupStagingDir};
   std::string token;
   std::optional<std::string> shared_password;
   bool force = false;
@@ -639,7 +642,7 @@ int main(int argc, char* argv[])
     app.add_option("--director-address", options.director_address)->required();
     app.add_option("--director-port", options.director_port)
         ->check(CLI::Range(1, 65535));
-    app.add_option("--staging-dir", options.staging_dir)->required();
+    app.add_option("--staging-dir", options.staging_dir)->capture_default_str();
     app.add_option("--token", options.token)->required();
     app.add_option("--shared-password", options.shared_password);
     app.add_flag("--force", options.force);

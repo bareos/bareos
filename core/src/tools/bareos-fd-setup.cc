@@ -51,6 +51,7 @@
 #include "lib/cli.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "tools/setup_service_discovery.h"
 
 namespace {
 
@@ -68,16 +69,19 @@ enum class ConnectionDirection
 
 struct Options {
   std::string config_path;
-  std::string address = "127.0.0.1";
+  std::string address;
   uint16_t port = kDefaultSetupPort;
   std::string token;
   std::vector<std::string> advertise_addresses;
   std::string trust_file;
   std::string expected_fingerprint;
+  std::string discovery_domain;
+  std::string discovery_query_name;
   std::string listen_address;
   uint16_t listen_port = 0;
   uint16_t connect_timeout = 30;
   ConnectionDirection connection_direction = ConnectionDirection::kClientConnects;
+  bool used_discovery = false;
   bool trust_on_first_use = false;
   bool force = false;
 };
@@ -279,11 +283,11 @@ std::string SanitizeFilenameComponent(std::string_view input)
 }
 
 fs::path DefaultTrustFilePath(const fs::path& config_root,
-                              std::string_view address,
+                              std::string_view identity,
                               uint16_t port)
 {
   std::ostringstream filename;
-  filename << SanitizeFilenameComponent(address) << "_" << port << ".sha256";
+  filename << SanitizeFilenameComponent(identity) << "_" << port << ".sha256";
   return config_root / "bareos-fd.d" / "setup-trust" / filename.str();
 }
 
@@ -396,9 +400,11 @@ FingerprintPolicy PrepareFingerprintPolicy(const Options& options,
                                            const LocalClientConfig& client_config)
 {
   FingerprintPolicy policy;
+  const auto trust_identity = options.used_discovery ? options.discovery_query_name
+                                                     : options.address;
   policy.trust_path = options.trust_file.empty()
                           ? DefaultTrustFilePath(client_config.config_root,
-                                                 options.address, options.port)
+                                                 trust_identity, options.port)
                           : fs::path{options.trust_file};
 
   std::error_code ec;
@@ -426,8 +432,9 @@ FingerprintPolicy PrepareFingerprintPolicy(const Options& options,
     return policy;
   }
 
-  if (options.connection_direction == ConnectionDirection::kDirectorConnects) {
-    Throw("director-connects mode requires --expected-fingerprint or a pre-existing"
+  if (options.connection_direction == ConnectionDirection::kDirectorConnects
+      || options.used_discovery) {
+    Throw("This setup mode requires --expected-fingerprint or a pre-existing"
           " trust file.");
   }
 
@@ -478,6 +485,9 @@ void VerifyOutgoingFingerprint(const FingerprintPolicy& policy,
 
   std::cout << "First contact with the setup service at " << options.address
             << ":" << options.port << "\n"
+            << (options.used_discovery
+                   ? "Discovered via DNS SRV: " + options.discovery_query_name + "\n"
+                   : "")
             << "SHA256 fingerprint: " << normalized << "\n"
             << "Trust this setup service and continue? [y/N]: " << std::flush;
   std::string answer;
@@ -536,6 +546,28 @@ std::unique_ptr<SslConnection> ConnectTls(const Options& options)
 
   Throw("Failed to connect to the setup service at " + options.address + ":"
         + std::to_string(options.port) + ".");
+}
+
+void ResolveSetupEndpoint(Options& options,
+                          bool address_explicit,
+                          bool port_explicit)
+{
+  if (options.connection_direction != ConnectionDirection::kClientConnects
+      || address_explicit) {
+    return;
+  }
+
+  const auto domain = options.discovery_domain.empty()
+                          ? setup_service_discovery::DeriveLocalDiscoveryDomain()
+                          : options.discovery_domain;
+  const auto endpoint = setup_service_discovery::DiscoverSetupService(
+      domain, port_explicit ? std::optional<uint16_t>(options.port) : std::nullopt);
+
+  options.address = endpoint.target;
+  options.port = endpoint.port;
+  options.discovery_domain = domain;
+  options.discovery_query_name = endpoint.query_name;
+  options.used_discovery = true;
 }
 
 SocketCloser OpenListener(const std::string& address, uint16_t port)
@@ -804,12 +836,15 @@ int main(int argc, char* argv[])
         ->check(CLI::ExistingPath)
         ->required()
         ->type_name("<path>");
-    app.add_option("--address", options.address,
-                   "Network address of the director-side setup service.")
-        ->required();
-    app.add_option("--port", options.port,
+    auto* address_option
+        = app.add_option("--address", options.address,
+                        "Network address of the director-side setup service.");
+    auto* port_option = app.add_option("--port", options.port,
                    "Network port of the director-side setup service.")
-        ->check(CLI::Range(1, 65535));
+                           ->check(CLI::Range(1, 65535));
+    app.add_option("--discovery-domain", options.discovery_domain,
+                   "DNS domain used to discover the setup service via"
+                   " _bareos-setup._tcp.<domain>.");
     app.add_option("--token", options.token,
                    "One-time enrollment token required by the setup service.")
         ->required();
@@ -842,6 +877,8 @@ int main(int argc, char* argv[])
 
     ParseBareosApp(app, argc, argv);
     options.connection_direction = ParseConnectionDirection(connection_direction);
+    const bool address_explicit = address_option->count() > 0;
+    const bool port_explicit = port_option->count() > 0;
 
     if (options.connection_direction == ConnectionDirection::kDirectorConnects) {
       if (options.listen_address.empty()) {
@@ -853,6 +890,12 @@ int main(int argc, char* argv[])
       if (options.trust_on_first_use) {
         Throw("director-connects mode does not allow --trust-on-first-use."
               " Use --expected-fingerprint or a pre-existing trust file.");
+      }
+    } else {
+      ResolveSetupEndpoint(options, address_explicit, port_explicit);
+      if (options.address.empty()) {
+        Throw("client-connects mode requires --address or a usable discovery"
+              " domain.");
       }
     }
 
