@@ -216,7 +216,8 @@ static int AccurateListHandler(void* ctx, int num_fields, char** row)
 
 /* In this procedure, we check if the current fileset is using checksum
  * FileSet-> Include-> Options-> Accurate/Verify/BaseJob=checksum
- * This procedure uses jcr->HasBase, so it must be call after the initialization
+ * This procedure inspects the loaded job/fileset resources, so it must be
+ * called after initialization.
  */
 static bool IsChecksumNeededByFileset(JobControlRecord* jcr)
 {
