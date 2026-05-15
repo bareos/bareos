@@ -1,1 +1,1 @@
- AND File.Name ~ '%s'
+ AND File.Name LIKE '%s' ESCAPE '\'

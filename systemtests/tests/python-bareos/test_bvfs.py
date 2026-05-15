@@ -296,6 +296,19 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
             ),
         )
 
+        cmd = (
+            ".bvfs_lsfiles jobid={BackupJobIds} path={BackupDirectory}/ "
+            "pattern=bvfs%"
+        ).format(**format_params)
+        bvfs_lsfiles_wildcard_pattern = director.call(cmd)["files"]
+        self.assertEqual(
+            [item["name"] for item in bvfs_lsfiles_wildcard_pattern],
+            [format_params["BackupFileNameExtra"]],
+            'Expecting "{}" to return the LIKE-style wildcard match, instead received: {}'.format(
+                cmd, bvfs_lsfiles_wildcard_pattern
+            ),
+        )
+
         # test limit.
         cmd = ".bvfs_lsfiles jobid={BackupJobIds} path={BackupDirectory}/ offset 0 limit 1".format(
             **format_params
