@@ -1223,11 +1223,10 @@ bool BareosDb::GetFileList(JobControlRecord*,
   }
 
   if (use_delta) {
-    FillQuery<SQL_QUERY::select_recent_version_from_jobids_and_delta>(
-        query2, jobids, jobids);
+    FillQuery<SQL_QUERY::select_recent_version_from_jobids_and_delta>(query2,
+                                                                      jobids);
   } else {
-    FillQuery<SQL_QUERY::select_recent_version_from_jobids>(query2, jobids,
-                                                            jobids);
+    FillQuery<SQL_QUERY::select_recent_version_from_jobids>(query2, jobids);
   }
 
   /* BootStrapRecord code is optimized for JobId sorted, with Delta, we need to
