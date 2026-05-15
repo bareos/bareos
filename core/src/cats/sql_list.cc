@@ -626,10 +626,9 @@ void BareosDb::ListFilesForJob(JobControlRecord* jcr,
   DbLocker _{this};
 
   Mmsg(cmd,
-       "SELECT Path.Path||Name AS Filename "
-       "FROM (SELECT PathId, Name FROM File WHERE JobId=%s "
-       ") AS F, Path "
-       "WHERE Path.PathId=F.PathId ",
+       "SELECT Path.Path||File.Name AS Filename "
+       "FROM File JOIN Path USING (PathId) "
+       "WHERE File.JobId=%s ",
        edit_int64(jobid, ed1));
 
   sendit->ArrayStart("filenames");
