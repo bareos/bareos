@@ -321,14 +321,15 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   args.jcr = jcr;
 
   if (DbLocker _{jcr->db}; !jcr->db->OpenBatchConnection(jcr)) {
-    Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connection");
+    Jmsg(jcr, M_FATAL, 0, T_("Can't get batch sql connection: %s\n"),
+         jcr->db->strerror());
     return false; /* Fail */
   }
 
   if (DbLocker _{jcr->db_batch}; !jcr->db_batch->GetFileList(
           jcr, jobids.GetAsString().c_str(), jcr->dir_impl->use_accurate_chksum,
           false /* no delta */, AccurateListHandler, (void*)&args)) {
-    Jmsg(jcr, M_FATAL, 0, "error in jcr->db_batch->GetBaseFileList:%s\n",
+    Jmsg(jcr, M_FATAL, 0, T_("error in jcr->db_batch->GetFileList: %s\n"),
          jcr->db_batch->strerror());
     return false;
   }
