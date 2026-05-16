@@ -36,6 +36,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <algorithm>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -87,11 +88,67 @@ void ValidateName(std::string_view field, std::string_view name)
   }
 }
 
+fs::path GetStagingClientDirectory(const Options& options)
+{
+  return options.staging_dir / "bareos-dir.d" / "client";
+}
+
 fs::path DetermineStagePath(const Options& options)
 {
   ValidateName("client", options.client_name);
-  return options.staging_dir / "bareos-dir.d" / "client"
-         / (options.client_name + ".conf");
+  return GetStagingClientDirectory(options) / (options.client_name + ".conf");
+}
+
+std::vector<std::string> ListStagedClients(const Options& options)
+{
+  std::vector<std::string> clients;
+  const auto staging_client_dir = GetStagingClientDirectory(options);
+
+  std::error_code ec;
+  if (!fs::exists(staging_client_dir, ec)) { return clients; }
+  if (ec) {
+   Throw("Failed to inspect the staged client directory \""
+         + staging_client_dir.string() + "\": " + ec.message());
+  }
+  if (!fs::is_directory(staging_client_dir, ec)) {
+   Throw("The staged client directory \"" + staging_client_dir.string()
+         + "\" is not a directory.");
+  }
+  if (ec) {
+   Throw("Failed to inspect the staged client directory \""
+         + staging_client_dir.string() + "\": " + ec.message());
+  }
+
+  for (const auto& entry : fs::directory_iterator(staging_client_dir, ec)) {
+   if (ec) {
+     Throw("Failed to read the staged client directory \""
+           + staging_client_dir.string() + "\": " + ec.message());
+   }
+
+   if (!entry.is_regular_file()) { continue; }
+   if (entry.path().extension() != ".conf") { continue; }
+
+   const auto client_name = entry.path().stem().string();
+   if (client_name.empty()) { continue; }
+   clients.push_back(client_name);
+  }
+
+  std::sort(clients.begin(), clients.end());
+  return clients;
+}
+
+void PrintStagedClients(const Options& options)
+{
+  const auto clients = ListStagedClients(options);
+  if (clients.empty()) {
+   Throw("No staged client configs found in \""
+         + GetStagingClientDirectory(options).string() + "\".");
+  }
+
+  std::cout << "Staged clients available for activation:\n";
+  for (const auto& client : clients) {
+   std::cout << "  " << client << "\n";
+  }
 }
 
 std::unique_ptr<ConfigurationParser> LoadDirectorConfig(const std::string& config_path)
@@ -396,8 +453,7 @@ int main(int argc, char** argv)
                    "Directory holding staged setup-service output.")
         ->capture_default_str();
     app.add_option("--client", options.client_name,
-                   "Client resource name to activate from staging.")
-        ->required();
+                   "Client resource name to activate from staging.");
     app.add_flag("--reload", options.reload,
                  "Reload the running Director after successful activation.");
     app.add_option("--reload-systemd-unit", options.reload_systemd_unit,
@@ -405,6 +461,11 @@ int main(int argc, char** argv)
         ->capture_default_str();
 
     ParseBareosApp(app, argc, argv);
+    if (options.client_name.empty()) {
+      PrintStagedClients(options);
+      return 0;
+    }
+
     const auto activated_path = ActivateStagedClient(options);
 
     std::cout << "Activated staged client \"" << options.client_name << "\" at "

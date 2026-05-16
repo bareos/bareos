@@ -195,6 +195,55 @@ TEST(DirSetupActivation, ActivatesStagedClientIntoLiveConfig)
   directordaemon::me = nullptr;
 }
 
+TEST(DirSetupActivation, ListsAvailableStagedClientsWhenNoClientIsSpecified)
+{
+  const auto config = PrepareConfig("dir-setup-activation-list");
+  const auto staging_dir = fs::path(TEST_TEMP_DIR) / "dir-setup-activation-list-staging";
+
+  std::error_code ec;
+  fs::remove_all(staging_dir, ec);
+  WriteTextFile(staging_dir / "bareos-dir.d" / "client" / "alpha-fd.conf",
+                "Client {\n"
+                "  Name = alpha-fd\n"
+                "  Address = alpha.example.com\n"
+                "  Password = \"secret\"\n"
+                "}\n");
+  WriteTextFile(staging_dir / "bareos-dir.d" / "client" / "zulu-fd.conf",
+                "Client {\n"
+                "  Name = zulu-fd\n"
+                "  Address = zulu.example.com\n"
+                "  Password = \"secret\"\n"
+                "}\n");
+
+  const auto result = RunCommand({BAREOS_DIR_ACTIVATE_BIN, "--config", config.string(),
+                                  "--staging-dir", staging_dir.string()});
+
+  EXPECT_EQ(result.exit_code, 0) << result.output;
+  EXPECT_TRUE(Contains(result.output, "Staged clients available for activation:"))
+      << result.output;
+  EXPECT_TRUE(Contains(result.output, "  alpha-fd")) << result.output;
+  EXPECT_TRUE(Contains(result.output, "  zulu-fd")) << result.output;
+  EXPECT_TRUE(fs::exists(staging_dir / "bareos-dir.d" / "client" / "alpha-fd.conf"));
+  EXPECT_TRUE(fs::exists(staging_dir / "bareos-dir.d" / "client" / "zulu-fd.conf"));
+}
+
+TEST(DirSetupActivation, ReportsMissingStagedClientsWhenListing)
+{
+  const auto config = PrepareConfig("dir-setup-activation-list-empty");
+  const auto staging_dir
+      = fs::path(TEST_TEMP_DIR) / "dir-setup-activation-list-empty-staging";
+
+  std::error_code ec;
+  fs::remove_all(staging_dir, ec);
+
+  const auto result = RunCommand({BAREOS_DIR_ACTIVATE_BIN, "--config", config.string(),
+                                  "--staging-dir", staging_dir.string()});
+
+  EXPECT_EQ(result.exit_code, 1);
+  EXPECT_TRUE(Contains(result.output, "No staged client configs found"))
+      << result.output;
+}
+
 TEST(DirSetupActivation, RejectsDuplicateLiveClient)
 {
   const auto config = PrepareConfig("dir-setup-activation-duplicate");
