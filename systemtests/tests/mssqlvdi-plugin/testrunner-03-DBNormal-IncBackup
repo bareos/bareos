@@ -55,12 +55,12 @@ END_OF_DATA
 
 run_bconsole
 
-print_delete_trace
+print_delete_trace "${tmp}/${myname}.trace"
 
 check_for_zombie_jobs storage=File
 
 expect_grep "IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)" \
-  "${tmp}/${myname}.log" \
-  "\"IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)\" not found in log"
+  "${tmp}/${myname}.trace" \
+  "\"IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)\" not found in trace"
 
 end_test

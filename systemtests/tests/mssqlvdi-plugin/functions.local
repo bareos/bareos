@@ -30,6 +30,10 @@
 print_delete_trace()
 {
   local FD_TRACE_NAME="${working_dir}/$(basename "$(pwd)")-fd.trace"
+  local TRACE_DEST="${1:-}"
+  if [ -n "${TRACE_DEST}" ] && [ -f "${FD_TRACE_NAME}" ]; then
+    cp "${FD_TRACE_NAME}" "${TRACE_DEST}"
+  fi
   cat "${FD_TRACE_NAME}" || echo "Trace does not exist"
   rm "${FD_TRACE_NAME}" || :
 }
