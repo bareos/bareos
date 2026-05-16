@@ -40,6 +40,8 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "stored/device_control_record.h"
+#include "stored/sd_device_control_record.h"
+#include "stored/acquire.h"
 #include "stored/stored_jcr_impl.h"
 #include "stored/job.h"
 #include "stored/sd_plugins.h"
@@ -144,6 +146,14 @@ void WaitThenUnreserve(std::unique_ptr<TestJob>& job,
   job->jcr->sd_impl->dcr->UnreserveDevice();
   ReleaseDeviceCond();
 }
+
+static constexpr char kMountedAppendVolumeInfo[]
+    = "1000 OK VolName=MountedVolume VolJobs=0 VolFiles=0 VolBlocks=0 "
+      "VolBytes=0 VolMounts=0 VolErrors=0 VolWrites=0 MaxVolBytes=0 "
+      "VolCapacityBytes=0 VolStatus=Append Slot=0 MaxVolJobs=0 "
+      "MaxVolFiles=0 InChanger=1 VolReadTime=0 VolWriteTime=0 EndFile=0 "
+      "EndBlock=0 LabelType=0 MediaId=1 EncryptionKey=dummy "
+      "MinBlocksize=0 MaxBlocksize=0\n";
 
 // Test that an illegal command passed to use_cmd will fail gracefully
 TEST_F(ReservationTest, use_cmd_illegal)
@@ -378,6 +388,60 @@ TEST_F(ReservationTest, use_cmd_append_reserves_write_only)
   bsock->recv();
   ASSERT_EQ(use_cmd(job1->jcr), true);
   ASSERT_STREQ(bsock->msg, "3000 OK use device device=writeonly1\n");
+}
+
+TEST_F(ReservationTest, append_found_in_use_releases_retry_reservation)
+{
+  auto bsock = std::make_unique<BareosSocketMock>();
+  auto job1 = std::make_unique<TestJob>(111u);
+  auto job2 = std::make_unique<TestJob>(222u);
+  job1->jcr->dir_bsock = job2->jcr->dir_bsock = bsock.get();
+
+  auto configure_append_storage
+      = [](TestJob& job, std::initializer_list<const char*> devices) {
+          auto& stores = job.jcr->sd_impl->dirstores;
+          stores.clear();
+          stores.emplace_back(true, "sssss", "File", "ppppp", "ptptp");
+          for (const auto* device : devices) {
+            stores.front().device_names.push_back(device);
+          }
+        };
+
+  configure_append_storage(*job1, {"auto1dev2"});
+  configure_append_storage(*job2, {"auto1dev3", "auto1dev2"});
+
+  EXPECT_CALL(*bsock, recv())
+      .WillOnce(BSOCK_RECV(
+          bsock.get(),
+          kMountedAppendVolumeInfo))  // DirFindNextAppendableVolume for job1
+      .WillOnce(BSOCK_RECV(
+          bsock.get(),
+          kMountedAppendVolumeInfo))  // mounted volume is in use on auto1dev2
+      .WillOnce(
+          BSOCK_RECV(bsock.get(), "1901 No Media."));  // stop free-drive search
+
+  EXPECT_CALL(*bsock, send()).WillRepeatedly(Return(true));
+
+  ASSERT_TRUE(TryReserveAfterUse(job1->jcr, true));
+  ASSERT_STREQ(job1->jcr->sd_impl->dcr->dev->device_resource->resource_name_,
+               "auto1dev2");
+  ASSERT_STREQ(job1->jcr->sd_impl->dcr->VolumeName, "MountedVolume");
+
+  auto* job2_dcr = new StorageDaemonDeviceControlRecord;
+  SetupNewDcrDevice(job2->jcr, job2_dcr, nullptr, nullptr);
+  job2_dcr->SetWillWrite();
+  job2->jcr->sd_impl->dcr = job2_dcr;
+
+  ReserveContext rctx{};
+  rctx.append = true;
+  rctx.store = &job2->jcr->sd_impl->dirstores.front();
+  rctx.device_name
+      = job2->jcr->sd_impl->dirstores.front().device_names.front().c_str();
+
+  ASSERT_EQ(SearchResForDevice(job2->jcr, rctx), -1);
+  ASSERT_TRUE(rctx.PreferMountedVols);
+  ASSERT_FALSE(job2_dcr->IsReserved());
+  ASSERT_EQ(job2_dcr->dev->NumReserved(), 0);
 }
 
 // Test append=0 reserving read-only devices only works correctly

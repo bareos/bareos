@@ -740,7 +740,7 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
          * elsewhere, so we bail out and retry using that drive. */
         if (dcr->FoundInUse() && !rctx.PreferMountedVols) {
           rctx.PreferMountedVols = true;
-          if (dcr->VolumeName[0]) { dcr->UnreserveDevice(); }
+          if (dcr->IsReserved()) { dcr->UnreserveDevice(); }
           goto bail_out;
         }
 
