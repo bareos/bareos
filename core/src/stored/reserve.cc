@@ -49,6 +49,8 @@
 namespace storagedaemon {
 
 const int debuglevel = 150;
+static constexpr int kReservationRetryAttemptsBeforeWait = 2;
+static constexpr int kReservationRetrySleepUsec = 50000;
 
 /* Global static variables */
 static std::mutex* reservation_mutex = nullptr;
@@ -245,13 +247,19 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
      * jobs, we will simply try again, and most likely succeed.
      * This can happen if one job reserves a drive or finishes using
      * a drive at the same time a second job wants it. */
-    if (repeat++ > 1) {   /* try algorithm 3 times */
-      Bmicrosleep(30, 0); /* wait a bit */
-      Dmsg0(debuglevel, "repeat reserve algorithm\n");
-    } else if (!rctx.suitable_device
-               || !WaitForDevice(jcr, wait_for_device_retries)) {
-      Dmsg0(debuglevel, "Fail. !suitable_device || !WaitForDevice\n");
+    if (!rctx.suitable_device) {
+      Dmsg0(debuglevel, "Fail. !suitable_device\n");
       fail = true;
+    } else if (repeat < kReservationRetryAttemptsBeforeWait) {
+      ++repeat;
+      Bmicrosleep(0, kReservationRetrySleepUsec);
+      Dmsg0(debuglevel, "repeat reserve algorithm\n");
+    } else {
+      repeat = 0;
+      if (!WaitForDevice(jcr, wait_for_device_retries)) {
+        Dmsg0(debuglevel, "Fail. !WaitForDevice\n");
+        fail = true;
+      }
     }
     dir->signal(BNET_HEARTBEAT); /* Inform Dir that we are alive */
   }

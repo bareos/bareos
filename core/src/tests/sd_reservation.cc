@@ -131,9 +131,16 @@ struct TestJob {
 };
 
 void WaitThenUnreserve(std::unique_ptr<TestJob>&);
+void WaitThenUnreserve(std::unique_ptr<TestJob>&, std::chrono::milliseconds);
 void WaitThenUnreserve(std::unique_ptr<TestJob>& job)
 {
-  std::this_thread::sleep_for(std::chrono::seconds(5));
+  WaitThenUnreserve(job, std::chrono::seconds(5));
+}
+
+void WaitThenUnreserve(std::unique_ptr<TestJob>& job,
+                       std::chrono::milliseconds delay)
+{
+  std::this_thread::sleep_for(delay);
   job->jcr->sd_impl->dcr->UnreserveDevice();
   ReleaseDeviceCond();
 }
@@ -199,7 +206,7 @@ TEST_F(ReservationTest, use_cmd_reserve_read_twice_success)
       .WillOnce(Return(BNET_EOD))   // end of device commands
       .WillOnce(Return(BNET_EOD));  // end of storage command
 
-  EXPECT_CALL(*bsock, send()).Times(2).WillRepeatedly(Return(true));
+  EXPECT_CALL(*bsock, send()).WillRepeatedly(Return(true));
 
   bsock->recv();
   ASSERT_EQ(use_cmd(job1->jcr), true);
@@ -225,7 +232,7 @@ TEST_F(ReservationTest, use_cmd_reserve_broken)
       .WillOnce(Return(BNET_EOD))   // end of device commands
       .WillOnce(Return(BNET_EOD));  // end of storage command
 
-  EXPECT_CALL(*bsock, send()).Times(2).WillRepeatedly(Return(true));
+  EXPECT_CALL(*bsock, send()).WillRepeatedly(Return(true));
 
   bsock->recv();
   ASSERT_EQ(use_cmd(job1->jcr), false);
@@ -249,7 +256,7 @@ TEST_F(ReservationTest, use_cmd_reserve_wrong_mediatype)
       .WillOnce(Return(BNET_EOD))   // end of device commands
       .WillOnce(Return(BNET_EOD));  // end of storage command
 
-  EXPECT_CALL(*bsock, send()).Times(2).WillRepeatedly(Return(true));
+  EXPECT_CALL(*bsock, send()).WillRepeatedly(Return(true));
 
   bsock->recv();
   ASSERT_EQ(use_cmd(job1->jcr), false);
@@ -301,6 +308,47 @@ TEST_F(ReservationTest, wait_for_device_times_out)
 
   ASSERT_EQ(WaitForDevice(job->jcr, retries), false);
   ASSERT_EQ(retries, 1);
+}
+
+TEST_F(ReservationTest, use_cmd_reserve_read_retries_before_waiting)
+{
+  auto bsock = std::make_unique<BareosSocketMock>();
+  auto job1 = std::make_unique<TestJob>(111u);
+  auto job2 = std::make_unique<TestJob>(222u);
+  job1->jcr->dir_bsock = job2->jcr->dir_bsock = bsock.get();
+
+  EXPECT_CALL(*bsock, recv())
+      .WillOnce(BSOCK_RECV(bsock.get(),
+                           "use storage=sssss media_type=File pool_name=ppppp "
+                           "pool_type=ptptp append=0 copy=0 stripe=0"))
+      .WillOnce(BSOCK_RECV(bsock.get(), "use device=single3"))
+      .WillOnce(Return(BNET_EOD))  // end of device commands
+      .WillOnce(Return(BNET_EOD))  // end of storage command
+      .WillOnce(BSOCK_RECV(bsock.get(),
+                           "use storage=sssss media_type=File pool_name=ppppp "
+                           "pool_type=ptptp append=0 copy=0 stripe=0"))
+      .WillOnce(BSOCK_RECV(bsock.get(), "use device=single3"))
+      .WillOnce(Return(BNET_EOD))   // end of device commands
+      .WillOnce(Return(BNET_EOD));  // end of storage command
+
+  EXPECT_CALL(*bsock, send()).WillRepeatedly(Return(true));
+
+  bsock->recv();
+  ASSERT_EQ(use_cmd(job1->jcr), true);
+  ASSERT_STREQ(bsock->msg, "3000 OK use device device=single3\n");
+
+  SetWaitForDeviceTimeoutForTesting(0);
+  bsock->recv();
+  auto future
+      = std::async(std::launch::async, [&job2] { return use_cmd(job2->jcr); });
+  std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  job1->jcr->sd_impl->dcr->UnreserveDevice();
+  ReleaseDeviceCond();
+
+  ASSERT_EQ(future.wait_for(std::chrono::seconds(1)),
+            std::future_status::ready);
+  ASSERT_EQ(future.get(), true);
+  ASSERT_STREQ(bsock->msg, "3000 OK use device device=single3\n");
 }
 
 // Test append=1 reserving write-only devices only works correctly
@@ -401,7 +449,7 @@ TEST_F(ReservationTest, use_cmd_non_append_reserves_read_only_with_wait)
       .WillOnce(Return(BNET_EOD))   // end of device commands
       .WillOnce(Return(BNET_EOD));  // end of storage command
 
-  EXPECT_CALL(*bsock, send()).Times(4).WillRepeatedly(Return(true));
+  EXPECT_CALL(*bsock, send()).WillRepeatedly(Return(true));
 
   bsock->recv();
   ASSERT_EQ(use_cmd(job1->jcr), true);
