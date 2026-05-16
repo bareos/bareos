@@ -314,10 +314,28 @@ TEST_F(ReservationTest, wait_for_device_times_out)
   auto job = std::make_unique<TestJob>(111u);
   int retries = 0;
 
+  job->jcr->sd_impl->device_wait_times.max_num_wait = 1;
+  job->jcr->sd_impl->device_wait_times.wait_sec = 0;
+  job->jcr->sd_impl->device_wait_times.rem_wait_sec = 0;
   SetWaitForDeviceTimeoutForTesting(0);
 
   ASSERT_EQ(WaitForDevice(job->jcr, retries), false);
   ASSERT_EQ(retries, 1);
+}
+
+TEST_F(ReservationTest, wait_for_device_uses_total_wait_budget)
+{
+  auto job = std::make_unique<TestJob>(111u);
+  int retries = 0;
+
+  job->jcr->sd_impl->device_wait_times.max_num_wait = 2;
+  job->jcr->sd_impl->device_wait_times.wait_sec = 0;
+  job->jcr->sd_impl->device_wait_times.rem_wait_sec = 0;
+  SetWaitForDeviceTimeoutForTesting(0);
+
+  ASSERT_EQ(WaitForDevice(job->jcr, retries), true);
+  ASSERT_EQ(WaitForDevice(job->jcr, retries), false);
+  ASSERT_EQ(retries, 2);
 }
 
 TEST_F(ReservationTest, use_cmd_reserve_read_retries_before_waiting)
