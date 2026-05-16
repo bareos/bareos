@@ -194,7 +194,40 @@ bool ConfigurationParser::ParseConfig()
   parser_first_run_ = false;
 
   if (!FindConfigPath(config_path)) {
-    Jmsg0(nullptr, M_CONFIG_ERROR, 0, T_("Failed to find config filename.\n"));
+    if (cf_.empty()) {
+      PoolMem default_file_path;
+      PoolMem default_include_path;
+      GetConfigFile(default_file_path, GetDefaultConfigDir(),
+                    config_default_filename_.c_str());
+      GetConfigIncludePath(default_include_path, GetDefaultConfigDir());
+      Jmsg4(nullptr, M_CONFIG_ERROR, 0,
+            T_("Failed to find a usable config path. Looked for config file "
+               "\"%s\" and config include directory \"%s\" under the default "
+               "config directory \"%s\". Pass -c either an existing config "
+               "file or a directory containing \"%s\" or the include "
+               "directory.\n"),
+            default_file_path.c_str(), default_include_path.c_str(),
+            GetDefaultConfigDir(), config_default_filename_.c_str());
+    } else if (PathExists(cf_.c_str()) && PathIsDirectory(cf_.c_str())) {
+      PoolMem config_file_path;
+      PoolMem include_path;
+      GetConfigFile(config_file_path, cf_.c_str(), config_default_filename_.c_str());
+      GetConfigIncludePath(include_path, cf_.c_str());
+      Jmsg4(nullptr, M_CONFIG_ERROR, 0,
+            T_("Failed to find a usable config path under \"%s\". Looked for "
+               "config file \"%s\" and config include directory \"%s\". Pass "
+               "-c either an existing config file or a directory containing "
+               "\"%s\" or the include directory.\n"),
+            cf_.c_str(), config_file_path.c_str(), include_path.c_str(),
+            config_default_filename_.c_str());
+    } else {
+      Jmsg3(nullptr, M_CONFIG_ERROR, 0,
+            T_("Failed to use config path \"%s\". Pass -c either an existing "
+               "config file or a directory containing \"%s\" or the include "
+               "directory \"%s\".\n"),
+            cf_.c_str(), config_default_filename_.c_str(),
+            config_include_dir_.c_str());
+    }
   }
   used_config_path_ = config_path.c_str();
   Dmsg1(100, "config file = %s\n", used_config_path_.c_str());

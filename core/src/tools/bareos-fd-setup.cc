@@ -838,6 +838,7 @@ int main(int argc, char* argv[])
 {
   CLI::App app;
   try {
+    OSDependentInit();
     if (WSA_Init() != 0) { Throw("Failed to initialize socket support."); }
     SSL_library_init();
     SSL_load_error_strings();
