@@ -48,6 +48,7 @@
 #include "stored/sd_stats.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
+#include "stored/vol_mgr.h"
 #include "stored/wait.h"
 #include "stored/sd_backends.h"
 
@@ -154,6 +155,18 @@ static constexpr char kMountedAppendVolumeInfo[]
       "MaxVolFiles=0 InChanger=1 VolReadTime=0 VolWriteTime=0 EndFile=0 "
       "EndBlock=0 LabelType=0 MediaId=1 EncryptionKey=dummy "
       "MinBlocksize=0 MaxBlocksize=0\n";
+
+static std::string AppendVolumeInfo(std::string_view volume_name, int media_id)
+{
+  return "1000 OK VolName=" + std::string(volume_name)
+         + " VolJobs=0 VolFiles=0 VolBlocks=0 VolBytes=0 VolMounts=0 "
+           "VolErrors=0 VolWrites=0 MaxVolBytes=0 VolCapacityBytes=0 "
+           "VolStatus=Append Slot=0 MaxVolJobs=0 MaxVolFiles=0 InChanger=1 "
+           "VolReadTime=0 VolWriteTime=0 EndFile=0 EndBlock=0 LabelType=0 "
+           "MediaId="
+         + std::to_string(media_id)
+         + " EncryptionKey=dummy MinBlocksize=0 MaxBlocksize=0\n";
+}
 
 // Test that an illegal command passed to use_cmd will fail gracefully
 TEST_F(ReservationTest, use_cmd_illegal)
@@ -460,6 +473,43 @@ TEST_F(ReservationTest, append_found_in_use_releases_retry_reservation)
   ASSERT_TRUE(rctx.PreferMountedVols);
   ASSERT_FALSE(job2_dcr->IsReserved());
   ASSERT_EQ(job2_dcr->dev->NumReserved(), 0);
+}
+
+TEST_F(ReservationTest, read_held_volume_does_not_trigger_append_retry)
+{
+  auto bsock = std::make_unique<BareosSocketMock>();
+  auto blocker = std::make_unique<TestJob>(111u);
+  auto job = std::make_unique<TestJob>(222u);
+  blocker->jcr->dir_bsock = job->jcr->dir_bsock = bsock.get();
+
+  auto& stores = job->jcr->sd_impl->dirstores;
+  stores.clear();
+  stores.emplace_back(true, "sssss", "FileRWOnly", "ppppp", "ptptp");
+  stores.front().device_names.push_back("writeonly1");
+
+  AddReadVolume(blocker->jcr, "ReadHeldVolume");
+
+  const auto read_held_volume_info = AppendVolumeInfo("ReadHeldVolume", 1);
+
+  EXPECT_CALL(*bsock, recv())
+      .WillOnce(BSOCK_RECV(bsock.get(), read_held_volume_info.c_str()))
+      .WillOnce(BSOCK_RECV(bsock.get(), "1901 No Media."));
+
+  EXPECT_CALL(*bsock, send()).WillRepeatedly(Return(true));
+
+  auto* dcr = new StorageDaemonDeviceControlRecord;
+  SetupNewDcrDevice(job->jcr, dcr, nullptr, nullptr);
+  dcr->SetWillWrite();
+  job->jcr->sd_impl->dcr = dcr;
+
+  ReserveContext rctx{};
+  rctx.append = true;
+  rctx.store = &stores.front();
+  rctx.device_name = stores.front().device_names.front().c_str();
+
+  ASSERT_EQ(SearchResForDevice(job->jcr, rctx), 1);
+  ASSERT_FALSE(rctx.PreferMountedVols);
+  ASSERT_FALSE(dcr->AppendVolumeBusy());
 }
 
 // Test append=0 reserving read-only devices only works correctly

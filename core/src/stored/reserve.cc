@@ -733,12 +733,10 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
         rctx.have_volume = false;
         rctx.VolumeName[0] = 0;
 
-        /* If there is at least one volume that is valid and in use,
-         * but we get here, check if we are running with prefers
-         * non-mounted drives.  In that case, we have selected a
-         * non-used drive and our one and only volume is mounted
-         * elsewhere, so we bail out and retry using that drive. */
-        if (dcr->FoundInUse() && !rctx.PreferMountedVols) {
+        /* If we found an appendable volume that is mounted and busy on another
+         * drive while we were still preferring non-mounted drives, retry by
+         * preferring the mounted drive that already owns that volume. */
+        if (dcr->AppendVolumeBusy() && !rctx.PreferMountedVols) {
           rctx.PreferMountedVols = true;
           if (dcr->IsReserved()) { dcr->UnreserveDevice(); }
           goto bail_out;

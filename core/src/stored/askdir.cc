@@ -201,8 +201,8 @@ bool StorageDaemonDeviceControlRecord::DirGetVolumeInfo(
  * Returns: true  on success dcr->VolumeName is volume
  *                reserve_volume() called on Volume name
  *          false on failure dcr->VolumeName[0] == 0
- *                also sets dcr->FoundInUse if at least one
- *                in use volume was found.
+ *                also sets dcr->AppendVolumeBusy if at least one
+ *                appendable volume was found busy on another device.
  *
  * Volume information returned in dcr
  */
@@ -221,6 +221,7 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
   with_volume_lock([&] {
     lock_mutex(vol_info_mutex);
     ClearFoundInUse();
+    ClearAppendVolumeBusy();
 
     PmStrcpy(unwanted_volumes, "");
 
@@ -286,9 +287,7 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
           goto get_out;
         } else {
           Dmsg1(debuglevel, "Volume %s is in use.\n", VolumeName);
-
-          // If volume is not usable, it is in use by someone else
-          SetFoundInUse();
+          if (IsAppendVolumeBusyOnAnotherDevice()) { SetAppendVolumeBusy(); }
           continue;
         }
       }
