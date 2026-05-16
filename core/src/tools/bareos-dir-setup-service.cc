@@ -66,7 +66,15 @@ namespace {
 namespace fs = std::filesystem;
 
 constexpr std::string_view kProtocolHello = "BAREOS-SETUP 1";
-constexpr const char* kDefaultSetupStagingDir = PATH_BAREOS_WORKINGDIR "/setup";
+
+fs::path GetDefaultSetupStagingDir()
+{
+#if defined(HAVE_WIN32)
+  return fs::path(ConfigurationParser::GetDefaultConfigDir()) / "setup";
+#else
+  return fs::path(PATH_BAREOS_WORKINGDIR) / "setup";
+#endif
+}
 
 enum class ConnectionDirection
 {
@@ -77,7 +85,7 @@ enum class ConnectionDirection
 struct Options {
   ConnectionDirection connection_direction = ConnectionDirection::kClientConnects;
   std::string config_path = ConfigurationParser::GetDefaultConfigDir();
-  std::string listen_address = "127.0.0.1";
+  std::string listen_address = "all";
   uint16_t port = 10443;
   std::string connect_back_address;
   uint16_t connect_back_port = 0;
@@ -87,7 +95,7 @@ struct Options {
   std::string director_name;
   std::string director_address;
   uint16_t director_port = 9101;
-  fs::path staging_dir{kDefaultSetupStagingDir};
+  fs::path staging_dir{GetDefaultSetupStagingDir()};
   std::string token;
   std::optional<std::string> shared_password;
   bool force = false;
@@ -182,9 +190,61 @@ struct GeneratedTlsMaterial {
   fs::path key_path;
 };
 
+struct ListenerSocket {
+  SocketCloser socket;
+  sockaddr_storage bound_address{};
+};
+
+struct ListenerSet {
+  std::vector<ListenerSocket> sockets;
+  std::vector<std::string> warnings;
+};
+
 [[noreturn]] void Throw(const std::string& message)
 {
   throw std::runtime_error(message);
+}
+
+std::string Iso8601TimestampNow()
+{
+  const auto now = std::chrono::system_clock::now();
+  const auto timestamp = std::chrono::system_clock::to_time_t(now);
+  std::tm tm{};
+#if defined(HAVE_WIN32)
+  localtime_s(&tm, &timestamp);
+#else
+  localtime_r(&timestamp, &tm);
+#endif
+
+  std::array<char, 32> buffer{};
+  if (std::strftime(buffer.data(), buffer.size(), "%Y-%m-%dT%H:%M:%S%z", &tm)
+      == 0) {
+    return "1970-01-01T00:00:00+00:00";
+  }
+
+  std::string formatted = buffer.data();
+  if (formatted.size() >= 5) {
+    const auto offset_pos = formatted.size() - 5;
+    if ((formatted[offset_pos] == '+' || formatted[offset_pos] == '-')
+        && std::isdigit(static_cast<unsigned char>(formatted[offset_pos + 1]))
+        && std::isdigit(static_cast<unsigned char>(formatted[offset_pos + 2]))
+        && std::isdigit(static_cast<unsigned char>(formatted[offset_pos + 3]))
+        && std::isdigit(static_cast<unsigned char>(formatted[offset_pos + 4]))) {
+      formatted.insert(offset_pos + 3, ":");
+    }
+  }
+  return formatted;
+}
+
+void LogInfo(const std::string& message)
+{
+  std::cout << Iso8601TimestampNow() << " INFO " << message << "\n" << std::flush;
+}
+
+void LogError(const std::string& message)
+{
+  std::cerr << Iso8601TimestampNow() << " ERROR " << message << "\n"
+            << std::flush;
 }
 
 std::string OpenSslError()
@@ -194,6 +254,22 @@ std::string OpenSslError()
   if (error == 0) { return "unknown OpenSSL error"; }
   ERR_error_string_n(error, buffer.data(), buffer.size());
   return buffer.data();
+}
+
+const char* ConnectionDirectionName(ConnectionDirection direction)
+{
+  switch (direction) {
+    case ConnectionDirection::kClientConnects:
+      return "client-connects";
+    case ConnectionDirection::kDirectorConnects:
+      return "director-connects";
+  }
+  return "unknown";
+}
+
+bool ListenOnAllInterfaces(std::string_view address)
+{
+  return address.empty() || address == "all";
 }
 
 ConnectionDirection ParseConnectionDirection(const std::string& value)
@@ -456,6 +532,8 @@ GeneratedTlsMaterial EnsureGeneratedTlsMaterial(const DerivedDefaults& defaults)
 
   try {
     if (fs::exists(certificate_path) && fs::exists(key_path)) {
+      LogInfo("Using existing setup-service TLS certificate \"" + certificate_path.string()
+              + "\" and key \"" + key_path.string() + "\".");
       unlock();
       return {.certificate_path = certificate_path, .key_path = key_path};
     }
@@ -468,6 +546,8 @@ GeneratedTlsMaterial EnsureGeneratedTlsMaterial(const DerivedDefaults& defaults)
         key.get(), defaults.director_name.empty() ? "Bareos Setup Service"
                                                   : defaults.director_name,
         BuildSubjectAlternativeName(defaults.director_address));
+    LogInfo("Autocreating setup-service TLS certificate \"" + certificate_path.string()
+            + "\" and key \"" + key_path.string() + "\".");
 
     const auto temporary_key_path = CreateTemporaryPath(tls_dir, "setup-key");
     const auto temporary_cert_path = CreateTemporaryPath(tls_dir, "setup-cert");
@@ -494,6 +574,8 @@ GeneratedTlsMaterial EnsureGeneratedTlsMaterial(const DerivedDefaults& defaults)
       throw;
     }
 
+    LogInfo("Created setup-service TLS certificate \"" + certificate_path.string()
+            + "\" and key \"" + key_path.string() + "\".");
     unlock();
     return {.certificate_path = certificate_path, .key_path = key_path};
   } catch (...) {
@@ -703,18 +785,33 @@ std::string BuildFdDirectorConfig(const std::string& director_name,
   return config.str();
 }
 
-SocketCloser OpenListener(const std::string& address, uint16_t port)
+sockaddr_storage GetSocketAddress(int socket_fd)
+{
+  sockaddr_storage address{};
+  socklen_t length = sizeof(address);
+  if (getsockname(socket_fd, reinterpret_cast<sockaddr*>(&address), &length)
+      != 0) {
+    Throw("Failed to determine the setup listener address.");
+  }
+  return address;
+}
+
+ListenerSocket OpenSingleListener(const char* node,
+                                  uint16_t port,
+                                  int family,
+                                  bool ipv6_only,
+                                  const std::string& description)
 {
   addrinfo hints{};
   hints.ai_socktype = SOCK_STREAM;
-  hints.ai_family = AF_UNSPEC;
+  hints.ai_family = family;
   hints.ai_flags = AI_PASSIVE;
 
   addrinfo* raw_results = nullptr;
   const auto port_string = std::to_string(port);
-  if (getaddrinfo(address.c_str(), port_string.c_str(), &hints, &raw_results)
+  if (getaddrinfo(node, port_string.c_str(), &hints, &raw_results)
       != 0) {
-    Throw("Failed to resolve the listener address.");
+    Throw("Failed to resolve the listener address \"" + description + "\".");
   }
   std::unique_ptr<addrinfo, AddrinfoDeleter> results(raw_results);
 
@@ -726,31 +823,76 @@ SocketCloser OpenListener(const std::string& address, uint16_t port)
 
     int reuse = 1;
     setsockopt(socket.get(), SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+#ifdef IPV6_V6ONLY
+    if (current->ai_family == AF_INET6) {
+      int v6only = ipv6_only ? 1 : 0;
+      setsockopt(socket.get(), IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only));
+    }
+#endif
 
     if (bind(socket.get(), current->ai_addr, current->ai_addrlen) != 0) {
       continue;
     }
     if (listen(socket.get(), 16) != 0) { continue; }
-    return socket;
+    auto bound_address = GetSocketAddress(socket.get());
+    return {.socket = std::move(socket), .bound_address = bound_address};
   }
 
-  Throw("Failed to start the setup listener on " + address + ":"
+  Throw("Failed to start the setup listener on " + description + ":"
         + std::to_string(port) + ".");
 }
 
-uint16_t GetBoundPort(int socket_fd)
+uint16_t GetSocketPort(const sockaddr_storage& address);
+
+ListenerSet OpenListeners(const std::string& address, uint16_t port)
 {
-  sockaddr_storage address{};
-  socklen_t length = sizeof(address);
-  if (getsockname(socket_fd, reinterpret_cast<sockaddr*>(&address), &length)
-      != 0) {
-    Throw("Failed to determine the setup listener port.");
+  if (!ListenOnAllInterfaces(address)) {
+    ListenerSet listeners;
+    listeners.sockets.push_back(
+        OpenSingleListener(address.c_str(), port, AF_UNSPEC, false, address));
+    return listeners;
   }
+
+  ListenerSet listeners;
+  std::optional<uint16_t> bound_port;
+
+  try {
+    auto ipv6_listener = OpenSingleListener(nullptr, port, AF_INET6, true, "[::]");
+    bound_port = GetSocketPort(ipv6_listener.bound_address);
+    listeners.sockets.push_back(std::move(ipv6_listener));
+  } catch (const std::exception& e) {
+    listeners.warnings.push_back(e.what());
+  }
+
+  try {
+    auto ipv4_listener
+        = OpenSingleListener(nullptr, bound_port.value_or(port), AF_INET, false,
+                             "0.0.0.0");
+    if (!bound_port) { bound_port = GetSocketPort(ipv4_listener.bound_address); }
+    listeners.sockets.push_back(std::move(ipv4_listener));
+  } catch (const std::exception& e) {
+    listeners.warnings.push_back(e.what());
+  }
+
+  if (listeners.sockets.empty()) {
+    std::ostringstream message;
+    message << "Failed to start the setup listener on all interfaces.";
+    for (const auto& warning : listeners.warnings) {
+      message << " " << warning;
+    }
+    Throw(message.str());
+  }
+
+  return listeners;
+}
+
+uint16_t GetSocketPort(const sockaddr_storage& address)
+{
   if (address.ss_family == AF_INET) {
-    return ntohs(reinterpret_cast<sockaddr_in*>(&address)->sin_port);
+    return ntohs(reinterpret_cast<const sockaddr_in*>(&address)->sin_port);
   }
   if (address.ss_family == AF_INET6) {
-    return ntohs(reinterpret_cast<sockaddr_in6*>(&address)->sin6_port);
+    return ntohs(reinterpret_cast<const sockaddr_in6*>(&address)->sin6_port);
   }
   Throw("Unsupported socket family for the setup listener.");
 }
@@ -770,9 +912,37 @@ std::string SocketAddressToString(const sockaddr_storage& address)
   return host.data();
 }
 
+std::string SocketEndpointToString(const sockaddr_storage& address)
+{
+  const auto host = SocketAddressToString(address);
+  const auto port = GetSocketPort(address);
+  if (host.empty()) { return ":" + std::to_string(port); }
+  if (address.ss_family == AF_INET6) {
+    return "[" + host + "]:" + std::to_string(port);
+  }
+  return host + ":" + std::to_string(port);
+}
+
+void LogStartupConfiguration(const Options& options)
+{
+  std::ostringstream message;
+  message << "bclient-enrolld started in " << ConnectionDirectionName(options.connection_direction)
+          << " mode."
+          << " Config=" << options.config_path
+          << ", listen-address=" << options.listen_address
+          << ", staging-dir=" << options.staging_dir.string()
+          << ", director=" << options.director_name << "@"
+          << options.director_address << ":" << options.director_port
+          << ", certificate=" << options.certificate
+          << ", key=" << options.key;
+  LogInfo(message.str());
+}
+
 std::unique_ptr<SSL_CTX, SslCtxDeleter> CreateTlsServerContext(
     const Options& options)
 {
+  LogInfo("Loading TLS certificate from \"" + options.certificate + "\".");
+  LogInfo("Loading TLS private key from \"" + options.key + "\".");
   std::unique_ptr<SSL_CTX, SslCtxDeleter> ssl_ctx(SSL_CTX_new(TLS_server_method()));
   if (!ssl_ctx) {
     Throw("Failed to initialize the TLS server context: " + OpenSslError());
@@ -795,22 +965,41 @@ std::unique_ptr<SSL_CTX, SslCtxDeleter> CreateTlsServerContext(
   return ssl_ctx;
 }
 
-std::unique_ptr<SslConnection> WrapAsTlsServer(SSL_CTX* ssl_ctx, int socket_fd)
+std::unique_ptr<SslConnection> WrapAsTlsServer(SSL_CTX* ssl_ctx,
+                                               int socket_fd,
+                                               std::string_view peer_endpoint)
 {
+  LogInfo("Starting TLS handshake with " + std::string(peer_endpoint) + ".");
   SSL* ssl = SSL_new(ssl_ctx);
   if (!ssl) {
     Throw("Failed to allocate a TLS connection object: " + OpenSslError());
   }
   SSL_set_fd(ssl, socket_fd);
   if (SSL_accept(ssl) != 1) {
+    const auto error = OpenSslError();
     SSL_free(ssl);
+    LogError("TLS handshake failed with " + std::string(peer_endpoint) + ": "
+             + error);
     return nullptr;
   }
+  std::ostringstream message;
+  message << "TLS handshake completed with " << peer_endpoint;
+  if (const char* version = SSL_get_version(ssl); version != nullptr) {
+    message << " using " << version;
+  }
+  if (const char* cipher = SSL_get_cipher_name(ssl); cipher != nullptr) {
+    message << " / " << cipher;
+  }
+  message << ".";
+  LogInfo(message.str());
   return std::make_unique<SslConnection>(ssl, socket_fd);
 }
 
 SocketCloser ConnectBack(const Options& options)
 {
+  LogInfo("Connecting back to File Daemon setup tool at "
+          + options.connect_back_address + ":"
+          + std::to_string(options.connect_back_port) + ".");
   addrinfo hints{};
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_family = AF_UNSPEC;
@@ -922,9 +1111,11 @@ void SendError(SSL* ssl, const std::string& message)
 
 void HandleConnection(SSL* ssl,
                       const std::string& peer_address,
+                      const std::string& peer_endpoint,
                       const Options& options)
 {
   try {
+    LogInfo("Receiving enrollment request from " + peer_endpoint + ".");
     const auto hello = ReadLine(ssl);
     if (hello != kProtocolHello) { Throw("Unsupported enrollment protocol."); }
 
@@ -944,11 +1135,34 @@ void HandleConnection(SSL* ssl,
     const auto fd_port = static_cast<uint16_t>(std::stoul(*fd_port_header));
     if (fd_port == 0) { Throw("fd_port must be between 1 and 65535."); }
 
+    const auto request_force = FirstHeaderValue(headers, "force");
+    const bool force = options.force || (request_force && *request_force == "true");
+
     const auto advertise_addresses = AllHeaderValues(headers, "advertise_address");
     const auto client_address
         = advertise_addresses.empty() ? peer_address : advertise_addresses.front();
     if (client_address.empty()) {
       Throw("Could not determine a client address to stage.");
+    }
+
+    std::ostringstream request_log;
+    request_log << "Accepted enrollment request from " << peer_endpoint
+                << " for client \"" << *client_name << "\""
+                << " with File Daemon port " << fd_port
+                << " and staged address \"" << client_address << "\"";
+    if (force) { request_log << " (overwrite enabled)"; }
+    request_log << ".";
+    LogInfo(request_log.str());
+    if (!advertise_addresses.empty()) {
+      std::ostringstream advertised;
+      advertised << "Advertised client addresses:";
+      for (const auto& address : advertise_addresses) {
+        advertised << " " << address;
+      }
+      LogInfo(advertised.str());
+    } else {
+      LogInfo("No advertised client address received; using peer address \""
+              + peer_address + "\".");
     }
 
     const auto password
@@ -959,7 +1173,9 @@ void HandleConnection(SSL* ssl,
 
     const auto stage_content
         = BuildDirectorClientConfig(*client_name, client_address, fd_port, password);
-    WriteTextFileAtomic(stage_path, stage_content, options.force);
+    LogInfo("Writing staged client config to " + stage_path.string() + ".");
+    WriteTextFileAtomic(stage_path, stage_content, force);
+    LogInfo("Wrote staged client config to " + stage_path.string() + ".");
 
     const auto fd_config = BuildFdDirectorConfig(options.director_name, password);
 
@@ -969,9 +1185,14 @@ void HandleConnection(SSL* ssl,
     response << "stage_path: " << stage_path.string() << "\n";
     response << "config_length: " << fd_config.size() << "\n";
     response << "\n";
+    LogInfo("Sending generated File Daemon config for director \""
+            + options.director_name + "\" to " + peer_endpoint + ".");
     WriteAll(ssl, response.str());
     WriteAll(ssl, fd_config);
+    LogInfo("Enrollment request for client \"" + *client_name
+            + "\" completed successfully.");
   } catch (const std::exception& e) {
+    LogError("Enrollment request from " + peer_endpoint + " failed: " + e.what());
     SendError(ssl, e.what());
   }
 }
@@ -983,30 +1204,49 @@ void SignalHandler(int)
 
 void RunListenMode(const Options& options, SSL_CTX* ssl_ctx)
 {
-  auto listener = OpenListener(options.listen_address, options.port);
-  const auto port = GetBoundPort(listener.get());
-  std::cout << "LISTENING " << port << "\n" << std::flush;
+  auto listeners = OpenListeners(options.listen_address, options.port);
+  for (const auto& listener : listeners.sockets) {
+    const auto bound_endpoint = SocketEndpointToString(listener.bound_address);
+    std::cout << "LISTENING " << bound_endpoint << "\n" << std::flush;
+    LogInfo("Listening on " + bound_endpoint + ".");
+  }
+  LogStartupConfiguration(options);
+  for (const auto& warning : listeners.warnings) {
+    LogError(warning);
+  }
+  LogInfo("Waiting for incoming setup connections.");
 
   while (!should_stop) {
-    pollfd candidate{};
-    candidate.fd = listener.get();
-    candidate.events = POLLIN;
-    const int poll_result = poll(&candidate, 1, 500);
+    std::vector<pollfd> candidates(listeners.sockets.size());
+    for (size_t i = 0; i < listeners.sockets.size(); ++i) {
+      candidates[i].fd = listeners.sockets[i].socket.get();
+      candidates[i].events = POLLIN;
+      candidates[i].revents = 0;
+    }
+    const int poll_result = poll(candidates.data(), candidates.size(), 500);
     if (poll_result == 0) { continue; }
     if (poll_result < 0) {
       if (errno == EINTR) { continue; }
       Throw("poll() failed while waiting for setup connections.");
     }
 
-    sockaddr_storage peer{};
-    socklen_t peer_length = sizeof(peer);
-    SocketCloser accepted(
-        accept(listener.get(), reinterpret_cast<sockaddr*>(&peer), &peer_length));
-    if (accepted.get() < 0) { continue; }
+    for (size_t i = 0; i < candidates.size(); ++i) {
+      if ((candidates[i].revents & POLLIN) == 0) { continue; }
 
-    auto tls = WrapAsTlsServer(ssl_ctx, accepted.release());
-    if (!tls) { continue; }
-    HandleConnection(tls->get(), SocketAddressToString(peer), options);
+      sockaddr_storage peer{};
+      socklen_t peer_length = sizeof(peer);
+      SocketCloser accepted(accept(listeners.sockets[i].socket.get(),
+                                   reinterpret_cast<sockaddr*>(&peer), &peer_length));
+      if (accepted.get() < 0) { continue; }
+
+      const auto peer_address = SocketAddressToString(peer);
+      const auto peer_endpoint = SocketEndpointToString(peer);
+      LogInfo("Accepted TCP connection from " + peer_endpoint + ".");
+      auto tls = WrapAsTlsServer(ssl_ctx, accepted.release(), peer_endpoint);
+      if (!tls) { continue; }
+      HandleConnection(tls->get(), peer_address, peer_endpoint, options);
+      LogInfo("Closed setup connection from " + peer_endpoint + ".");
+    }
   }
 }
 
@@ -1017,6 +1257,7 @@ void RunConnectBackMode(const Options& options, SSL_CTX* ssl_ctx)
           " --connect-back-port.");
   }
 
+  LogStartupConfiguration(options);
   auto socket = ConnectBack(options);
 
   sockaddr_storage peer{};
@@ -1025,13 +1266,17 @@ void RunConnectBackMode(const Options& options, SSL_CTX* ssl_ctx)
       != 0) {
     Throw("Failed to inspect the connect-back peer address.");
   }
+  const auto peer_address = SocketAddressToString(peer);
+  const auto peer_endpoint = SocketEndpointToString(peer);
+  LogInfo("Established TCP connect-back connection to " + peer_endpoint + ".");
 
   // The setup service intentionally remains the TLS server even when it opened
   // the TCP connection. Trust stays anchored in this service's certificate, not
   // in the transport direction.
-  auto tls = WrapAsTlsServer(ssl_ctx, socket.release());
+  auto tls = WrapAsTlsServer(ssl_ctx, socket.release(), peer_endpoint);
   if (!tls) { Throw("TLS handshake failed in connect-back mode."); }
-  HandleConnection(tls->get(), SocketAddressToString(peer), options);
+  HandleConnection(tls->get(), peer_address, peer_endpoint, options);
+  LogInfo("Closed setup connection to " + peer_endpoint + ".");
 }
 
 }  // namespace
@@ -1099,7 +1344,7 @@ int main(int argc, char* argv[])
     }
     return 0;
   } catch (const std::exception& e) {
-    std::cerr << e.what() << "\n";
+    LogError(e.what());
     return 1;
   }
 }

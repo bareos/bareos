@@ -60,6 +60,55 @@ bool Contains(std::string_view haystack, std::string_view needle)
   return haystack.find(needle) != std::string_view::npos;
 }
 
+std::string ReadLineFromFd(int fd);
+
+uint16_t ParseListeningPort(const std::string& line)
+{
+  const std::string prefix = "LISTENING ";
+  if (!Contains(line, prefix)) {
+    throw std::runtime_error("The setup service did not report a listening endpoint: "
+                             + line);
+  }
+
+  const auto endpoint = line.substr(prefix.size());
+  const auto separator = endpoint.rfind(':');
+  if (separator == std::string::npos || separator + 1 >= endpoint.size()) {
+    throw std::runtime_error("The setup service reported an invalid listening endpoint: "
+                             + line);
+  }
+
+  const auto port = static_cast<uint16_t>(std::stoi(endpoint.substr(separator + 1)));
+  if (port == 0) {
+    throw std::runtime_error("The setup service reported an invalid port.");
+  }
+  return port;
+}
+
+uint16_t ReadListeningPort(int fd, std::string_view expected_endpoint_prefix)
+{
+  std::string line;
+  do {
+    line = ReadLineFromFd(fd);
+  } while (!line.empty() && !Contains(line, "LISTENING "));
+
+  const auto port = ParseListeningPort(line);
+  if (!expected_endpoint_prefix.empty()
+      && !Contains(line, std::string(expected_endpoint_prefix) + std::to_string(port))) {
+    throw std::runtime_error("The setup service did not report its listening "
+                             "address: " + line);
+  }
+
+  for (;;) {
+    const auto next_line = ReadLineFromFd(fd);
+    if (!Contains(next_line, "LISTENING ")) { return port; }
+    const auto next_port = ParseListeningPort(next_line);
+    if (next_port != port) {
+      throw std::runtime_error("The setup service reported inconsistent listening "
+                               "ports: " + next_line);
+    }
+  }
+}
+
 fs::path PrepareConfig(const char* test_name)
 {
   const fs::path source{BAREOS_FD_TEST_CONFIG_DIR};
@@ -290,15 +339,7 @@ class SetupServiceProcess {
     close(pipefd[1]);
     pipe_fd_ = pipefd[0];
 
-    const auto line = ReadLineFromFd(pipe_fd_);
-    if (!Contains(line, "LISTENING ")) {
-      throw std::runtime_error("The setup service did not report a listening port: "
-                               + line);
-    }
-    port_ = static_cast<uint16_t>(std::stoi(line.substr(std::string("LISTENING ").size())));
-    if (port_ == 0) {
-      throw std::runtime_error("The setup service reported an invalid port.");
-    }
+    port_ = ReadListeningPort(pipe_fd_, "127.0.0.1:");
   }
 
   SetupServiceProcess(const fs::path& config_path,
@@ -343,16 +384,7 @@ class SetupServiceProcess {
     close(pipefd[1]);
     pipe_fd_ = pipefd[0];
 
-    const auto line = ReadLineFromFd(pipe_fd_);
-    if (!Contains(line, "LISTENING ")) {
-      throw std::runtime_error("The setup service did not report a listening port: "
-                               + line);
-    }
-    port_ = static_cast<uint16_t>(
-        std::stoi(line.substr(std::string("LISTENING ").size())));
-    if (port_ == 0) {
-      throw std::runtime_error("The setup service reported an invalid port.");
-    }
+    port_ = ReadListeningPort(pipe_fd_, "127.0.0.1:");
   }
 
   ~SetupServiceProcess()
@@ -460,6 +492,39 @@ TEST(FdSetup, TrustOnFirstUseWritesDefaultTrustFileBelowConfigRoot)
       = config / "bareos-fd.d" / "setup-trust"
         / ("127.0.0.1_" + std::to_string(service.port()) + ".sha256");
   EXPECT_TRUE(fs::exists(default_trust_file));
+  ExpectConfigParses(config);
+}
+
+TEST(FdSetup, ClientForceOverwritesExistingStagedConfig)
+{
+  const auto config = PrepareConfig("fd_setup_force_overwrites_stage");
+  const auto staging_dir = config / "staging";
+  const auto trust_file = config / "trusted-setup.sha256";
+
+  SetupServiceProcess service(staging_dir, TEST_SETUP_CERT, TEST_SETUP_KEY,
+                              "setup-dir", false, "OneTimeToken");
+
+  const std::vector<std::string> first_run{
+      BAREOS_FD_SETUP_BIN,  "--config",         config.string(),
+      "--address",          "127.0.0.1",        "--port",
+      std::to_string(service.port()),           "--token",
+      "OneTimeToken",       "--advertise-address",
+      "client.example.com", "--trust-file",     trust_file.string(),
+      "--trust-on-first-use"};
+  const auto first_result = RunCommand(first_run);
+  ASSERT_EQ(first_result.exit_code, 0) << first_result.output;
+
+  const std::vector<std::string> second_run{
+      BAREOS_FD_SETUP_BIN, "--config",     config.string(), "--address",
+      "127.0.0.1",         "--port",       std::to_string(service.port()),
+      "--token",           "OneTimeToken", "--trust-file",
+      trust_file.string(), "--force"};
+  const auto second_result = RunCommand(second_run);
+  ASSERT_EQ(second_result.exit_code, 0) << second_result.output;
+
+  const auto staged_client_config
+      = staging_dir / "bareos-dir.d" / "client" / "backup-bareos-test-fd.conf";
+  ASSERT_TRUE(fs::exists(staged_client_config));
   ExpectConfigParses(config);
 }
 

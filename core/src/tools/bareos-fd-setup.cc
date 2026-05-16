@@ -763,6 +763,7 @@ void SendRequest(SSL* ssl,
   request << "token: " << options.token << "\n";
   request << "client_name: " << client_config.name << "\n";
   request << "fd_port: " << client_config.port << "\n";
+  if (options.force) { request << "force: true\n"; }
   for (const auto& address : options.advertise_addresses) {
     request << "advertise_address: " << address << "\n";
   }

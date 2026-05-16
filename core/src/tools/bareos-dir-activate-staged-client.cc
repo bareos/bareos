@@ -46,11 +46,18 @@ namespace {
 
 namespace fs = std::filesystem;
 
-constexpr const char* kDefaultSetupStagingDir = PATH_BAREOS_WORKINGDIR "/setup";
+fs::path GetDefaultSetupStagingDir()
+{
+#if defined(HAVE_WIN32)
+  return fs::path(ConfigurationParser::GetDefaultConfigDir()) / "setup";
+#else
+  return fs::path(PATH_BAREOS_WORKINGDIR) / "setup";
+#endif
+}
 
 struct Options {
   std::string config_path = ConfigurationParser::GetDefaultConfigDir();
-  fs::path staging_dir{kDefaultSetupStagingDir};
+  fs::path staging_dir{GetDefaultSetupStagingDir()};
   std::string client_name;
   bool reload = false;
   std::string reload_systemd_unit = "bareos-dir";
