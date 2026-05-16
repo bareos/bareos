@@ -49,6 +49,28 @@ run job=$JobName level=Incremental yes
 wait
 run job=$JobName level=Incremental yes
 wait
+END_OF_DATA
+run_bconsole
+
+# take the last 3 jobs (needed in case of test restart)
+
+jobids=$(grep "jobid" "$tmp/consolidate-empty-incrementals_incr.out" | tail -n 3 | sed 's/["jobid:]//g' | xargs | tr ' ' ',')
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/consolidate-empty-incrementals_jobfiles.out
+.api 2
+.sql query="SELECT JobId AS jobid FROM Job WHERE JobId IN (${jobids}) AND JobFiles = 0 ORDER BY JobId;"
+END_OF_DATA
+run_bconsole
+
+expected_empty_jobids=$("${AWK}" '/"jobid":/ {gsub("[\"\\r,]","",$2); print $2}' "$tmp/consolidate-empty-incrementals_jobfiles.out" | xargs | tr ' ' ',')
+
+if [ -z "${expected_empty_jobids}" ]; then
+  set_error "Did not find any zero-file incremental jobs among ${jobids}."
+  end_test
+fi
+
+cat <<END_OF_DATA >$tmp/bconcmds
 @sleep 1
 @$out $tmp/consolidate-empty-incrementals_consolidate.out
 run job=Consolidate yes
@@ -59,11 +81,7 @@ messages
 END_OF_DATA
 run_bconsole
 
-# take the last 3 jobs (needed in case of test restart)
-
-jobids=$(grep "jobid" "$tmp/consolidate-empty-incrementals_incr.out" | tail -n 3 | sed 's/["jobid:]//g' | xargs | tr ' ' ',')
-
-expect_grep "purging empty jobids ${jobids}" \
+expect_grep "purging empty jobids ${expected_empty_jobids}" \
   "$tmp/consolidate-empty-incrementals_messages.out" \
   "Removal of expected empty jobs was not successful."
 
