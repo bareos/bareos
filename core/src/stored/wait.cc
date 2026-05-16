@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,9 +41,21 @@
 namespace storagedaemon {
 
 const int debuglevel = 400;
+static constexpr int kDefaultWaitForDeviceTimeout = 60;
 
 static pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
+static int wait_for_device_timeout = kDefaultWaitForDeviceTimeout;
+
+void SetWaitForDeviceTimeoutForTesting(int timeout_in_seconds)
+{
+  wait_for_device_timeout = timeout_in_seconds >= 0 ? timeout_in_seconds : 0;
+}
+
+void ResetWaitForDeviceTimeoutForTesting()
+{
+  wait_for_device_timeout = kDefaultWaitForDeviceTimeout;
+}
 
 /**
  * Wait for SysOp to mount a tape on a specific device
@@ -217,7 +229,6 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
   struct timespec timeout;
   int status = 0;
   bool ok = true;
-  const int max_wait_time = 1 * 60; /* wait 1 minute */
   char ed1[50];
 
   Dmsg0(debuglevel, "Enter WaitForDevice\n");
@@ -231,7 +242,7 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
 
   gettimeofday(&tv, NULL);
   timeout.tv_nsec = tv.tv_usec * 1000;
-  timeout.tv_sec = tv.tv_sec + max_wait_time;
+  timeout.tv_sec = tv.tv_sec + wait_for_device_timeout;
 
   Dmsg0(debuglevel, "Going to wait for a device.\n");
 
@@ -239,6 +250,12 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
   status = pthread_cond_timedwait(&wait_device_release, &device_release_mutex,
                                   &timeout);
   Dmsg1(debuglevel, "Wokeup from sleep on device status=%d\n", status);
+  if (status != 0) {
+    BErrNo be;
+    Dmsg2(debuglevel, "Device wait failed status=%d ERR=%s\n", status,
+          be.bstrerror(status));
+    ok = false;
+  }
 
   unlock_mutex(device_release_mutex);
   Dmsg1(debuglevel, "Return from wait_device ok=%d\n", ok);
