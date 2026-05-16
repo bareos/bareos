@@ -441,6 +441,28 @@ TEST(FdSetup, TrustOnFirstUseWritesConfigAndAllowsRepeat)
   ExpectConfigParses(config);
 }
 
+TEST(FdSetup, TrustOnFirstUseWritesDefaultTrustFileBelowConfigRoot)
+{
+  const auto config = PrepareConfig("fd_setup_default_trust_path");
+  const auto staging_dir = config / "staging";
+
+  SetupServiceProcess service(staging_dir, TEST_SETUP_CERT, TEST_SETUP_KEY,
+                              "setup-dir", true, "OneTimeToken");
+
+  const std::vector<std::string> run{
+      BAREOS_FD_SETUP_BIN, "--config", config.string(), "--address", "127.0.0.1",
+      "--port", std::to_string(service.port()), "--token", "OneTimeToken",
+      "--trust-on-first-use"};
+  const auto result = RunCommand(run);
+  ASSERT_EQ(result.exit_code, 0) << result.output;
+
+  const auto default_trust_file
+      = config / "bareos-fd.d" / "setup-trust"
+        / ("127.0.0.1_" + std::to_string(service.port()) + ".sha256");
+  EXPECT_TRUE(fs::exists(default_trust_file));
+  ExpectConfigParses(config);
+}
+
 TEST(FdSetup, FingerprintMismatchIsRejected)
 {
   const auto config = PrepareConfig("fd_setup_fingerprint_mismatch");

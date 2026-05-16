@@ -277,16 +277,6 @@ std::unique_ptr<SSL_CTX, SslCtxDeleter> CreateTlsClientContext()
   return ssl_ctx;
 }
 
-fs::path DetermineConfigRoot(const std::string& base_path)
-{
-  fs::path path{base_path};
-  std::error_code ec;
-  if (fs::is_directory(path, ec)) { return path; }
-  auto parent = path.parent_path();
-  if (!parent.empty()) { return parent; }
-  return fs::current_path();
-}
-
 std::string SanitizeFilenameComponent(std::string_view input)
 {
   std::string sanitized;
@@ -411,7 +401,7 @@ LocalClientConfig LoadLocalClientConfig(const Options& options)
   LocalClientConfig result;
   result.name = client->resource_name_;
   result.port = static_cast<uint16_t>(port);
-  result.config_root = DetermineConfigRoot(parser->get_base_config_path());
+  result.config_root = fs::path{parser->get_config_directory()};
   result.parser = parser;
   return result;
 }
