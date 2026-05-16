@@ -512,6 +512,44 @@ TEST_F(ReservationTest, read_held_volume_does_not_trigger_append_retry)
   ASSERT_FALSE(dcr->AppendVolumeBusy());
 }
 
+TEST_F(ReservationTest, append_scan_reaches_volumes_beyond_device_count)
+{
+  auto bsock = std::make_unique<BareosSocketMock>();
+  auto blocker = std::make_unique<TestJob>(111u);
+  auto job = std::make_unique<TestJob>(222u);
+  blocker->jcr->dir_bsock = job->jcr->dir_bsock = bsock.get();
+
+  auto& stores = job->jcr->sd_impl->dirstores;
+  stores.clear();
+  stores.emplace_back(true, "sssss", "FileRWOnly", "ppppp", "ptptp");
+  stores.front().device_names.push_back("writeonly1");
+
+  std::vector<std::string> responses;
+  for (int media_id = 1; media_id <= 7; media_id++) {
+    auto volume_name = "BlockedVolume" + std::to_string(media_id);
+    AddReadVolume(blocker->jcr, volume_name.c_str());
+    responses.push_back(AppendVolumeInfo(volume_name, media_id));
+  }
+  responses.push_back(AppendVolumeInfo("FreeVolume", 8));
+
+  EXPECT_CALL(*bsock, recv())
+      .WillOnce(BSOCK_RECV(bsock.get(), responses[0].c_str()))
+      .WillOnce(BSOCK_RECV(bsock.get(), responses[1].c_str()))
+      .WillOnce(BSOCK_RECV(bsock.get(), responses[2].c_str()))
+      .WillOnce(BSOCK_RECV(bsock.get(), responses[3].c_str()))
+      .WillOnce(BSOCK_RECV(bsock.get(), responses[4].c_str()))
+      .WillOnce(BSOCK_RECV(bsock.get(), responses[5].c_str()))
+      .WillOnce(BSOCK_RECV(bsock.get(), responses[6].c_str()))
+      .WillOnce(BSOCK_RECV(bsock.get(), responses[7].c_str()));
+
+  EXPECT_CALL(*bsock, send()).WillRepeatedly(Return(true));
+
+  ASSERT_TRUE(TryReserveAfterUse(job->jcr, true));
+  ASSERT_STREQ(job->jcr->sd_impl->dcr->dev->device_resource->resource_name_,
+               "writeonly1");
+  ASSERT_STREQ(job->jcr->sd_impl->dcr->VolumeName, "FreeVolume");
+}
+
 // Test append=0 reserving read-only devices only works correctly
 TEST_F(ReservationTest, use_cmd_non_append_reserves_read_only)
 {
