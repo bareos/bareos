@@ -82,6 +82,7 @@ void ReservationTest::SetUp()
 }
 void ReservationTest::TearDown()
 {
+  ResetWaitForDeviceTimeoutForTesting();
   FreeVolumeLists();
 
   {
@@ -289,6 +290,17 @@ TEST_F(ReservationTest, use_cmd_reserve_read_twice_wait)
   auto _ = std::async(std::launch::async, [&job1] { WaitThenUnreserve(job1); });
   ASSERT_EQ(use_cmd(job2->jcr), true);
   ASSERT_STREQ(bsock->msg, "3000 OK use device device=single3\n");
+}
+
+TEST_F(ReservationTest, wait_for_device_times_out)
+{
+  auto job = std::make_unique<TestJob>(111u);
+  int retries = 0;
+
+  SetWaitForDeviceTimeoutForTesting(0);
+
+  ASSERT_EQ(WaitForDevice(job->jcr, retries), false);
+  ASSERT_EQ(retries, 1);
 }
 
 // Test append=1 reserving write-only devices only works correctly
