@@ -273,3 +273,82 @@ TEST(DirectorConnection, UsesCompatibleDirectorIdentityResponse)
   close(connection.fd_);
   connection.fd_ = -1;
 }
+
+TEST(DirectorConnection, RejectsUnexpectedPostAuthInfoFrame)
+{
+  int sockets[2] = {-1, -1};
+  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+  DirectorConnection connection;
+  connection.fd_ = sockets[0];
+
+  DirectorConfig cfg;
+  cfg.username = "admin";
+  cfg.password = "secret";
+  cfg.json_mode = false;
+
+  std::thread director([peer = sockets[1], cfg]() {
+    int32_t header = 0;
+
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+    const auto hello_size = static_cast<size_t>(ntohl(header));
+    std::string hello(hello_size, '\0');
+    ASSERT_EQ(read(peer, hello.data(), hello.size()),
+              static_cast<ssize_t>(hello.size()));
+
+    WriteFrame(peer, "auth cram-md5 <director-challenge> ssl=0\n");
+
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+    const auto response_size = static_cast<size_t>(ntohl(header));
+    std::string response(response_size, '\0');
+    ASSERT_EQ(read(peer, response.data(), response.size()),
+              static_cast<ssize_t>(response.size()));
+
+    const std::string key = Md5Hex(cfg.password);
+    auto expected_client_hmac = HmacMd5Digest(key, "<director-challenge>");
+    EXPECT_EQ(response, BareosBase64Encode(expected_client_hmac.data(), 16));
+
+    WriteFrame(peer, "1000 OK auth\n");
+
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+    const auto challenge_size = static_cast<size_t>(ntohl(header));
+    std::string challenge_msg(challenge_size, '\0');
+    ASSERT_EQ(read(peer, challenge_msg.data(), challenge_msg.size()),
+              static_cast<ssize_t>(challenge_msg.size()));
+
+    const std::string prefix = "auth cram-md5c ";
+    const auto challenge_begin = challenge_msg.find(prefix);
+    ASSERT_NE(challenge_begin, std::string::npos);
+    const auto challenge_end = challenge_msg.find(" ssl=", challenge_begin);
+    ASSERT_NE(challenge_end, std::string::npos);
+    const std::string challenge = challenge_msg.substr(
+        challenge_begin + prefix.size(),
+        challenge_end - (challenge_begin + prefix.size()));
+
+    auto expected_director_hmac = HmacMd5Digest(key, challenge);
+    WriteFrame(peer, BareosBase64Encode(expected_director_hmac.data(), 16));
+
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+    const auto auth_ok_size = static_cast<size_t>(ntohl(header));
+    std::string auth_ok(auth_ok_size, '\0');
+    ASSERT_EQ(read(peer, auth_ok.data(), auth_ok.size()),
+              static_cast<ssize_t>(auth_ok.size()));
+    EXPECT_EQ(auth_ok, "1000 OK auth\n");
+
+    WriteFrame(peer, "1000 OK: bareos-dir Version: 26.0.0\n");
+    WriteFrame(peer, "1999 unexpected trailing frame\n");
+    close(peer);
+  });
+
+  try {
+    connection.Authenticate(cfg);
+    FAIL() << "expected Authenticate to fail";
+  } catch (const std::runtime_error& error) {
+    EXPECT_NE(std::string(error.what()).find("unexpected info message"),
+              std::string::npos);
+  }
+
+  director.join();
+  close(connection.fd_);
+  connection.fd_ = -1;
+}
