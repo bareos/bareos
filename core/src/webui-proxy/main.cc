@@ -47,12 +47,7 @@
 #include <stdexcept>
 #include <string>
 
-static ProxyServer* g_server = nullptr;
-
-static void HandleSignal(int /*sig*/)
-{
-  if (g_server) { g_server->Stop(); }
-}
+static void HandleSignal(int /*sig*/) { g_proxy_shutdown_requested = 1; }
 
 int main(int argc, char* argv[])
 {
@@ -84,12 +79,12 @@ int main(int argc, char* argv[])
     ProxyConfig cfg;
     LoadProxyConfigFile(config_file, cfg);
 
+    g_proxy_shutdown_requested = 0;
     std::signal(SIGINT, HandleSignal);
     std::signal(SIGTERM, HandleSignal);
     std::signal(SIGPIPE, SIG_IGN);  // prevent crash on broken pipe
 
     ProxyServer server(cfg);
-    g_server = &server;
     server.Run();
   } catch (const std::exception& ex) {
     PROXY_LOG_ERROR("", "fatal: %s", ex.what());

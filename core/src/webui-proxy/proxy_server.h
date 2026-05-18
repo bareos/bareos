@@ -30,23 +30,25 @@
 #include <string>
 
 /**
- * Open a listen socket and block until Stop() is called or a fatal error
- * occurs.  Each accepted connection is handed to RunProxySession() in a
+ * Global shutdown flag for the proxy process. Signal handlers set this directly
+ * so they never need to dereference a ProxyServer object during shutdown.
+ */
+extern volatile std::sig_atomic_t g_proxy_shutdown_requested;
+
+/**
+ * Open a listen socket and block until shutdown is requested or a fatal error
+ * occurs. Each accepted connection is handed to RunProxySession() in a
  * detached std::thread.
  */
 class ProxyServer {
  public:
   explicit ProxyServer(const ProxyConfig& cfg) : cfg_(cfg) {}
 
-  /** Blocking: accept loop.  Returns when Stop() is called. */
+  /** Blocking: accept loop. Returns when shutdown is requested. */
   void Run();
-
-  /** Signal the accept loop to stop (safe to call from a signal handler). */
-  void Stop();
 
  private:
   ProxyConfig cfg_;
-  volatile std::sig_atomic_t stop_requested_{0};
 };
 
 #endif  // BAREOS_WEBUI_PROXY_PROXY_SERVER_H_
