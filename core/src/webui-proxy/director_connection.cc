@@ -261,25 +261,22 @@ std::string DirectorConnection::RecvResponse()
   assert(fd_ >= 0);
   std::string result;
   while (true) {
-    int32_t hdr_net;
-    ReadAll(&hdr_net, 4);
-    int32_t len = ntohl(hdr_net);
+    int32_t signal = 0;
+    std::string chunk = RecvFrame(&signal);
 
-    if (len == BNET_EOD || len == BNET_EOD_POLL || len == BNET_STATUS) {
+    if (signal == BNET_EOD || signal == BNET_EOD_POLL
+        || signal == BNET_STATUS) {
       break;  // end of response
     }
-    if (len == BNET_TERMINATE) {
+    if (signal == BNET_TERMINATE) {
       throw std::runtime_error("Director: received BNET_TERMINATE signal");
     }
-    if (len < 0) {
+    if (signal < 0) {
       continue;  // other signals (BNET_CMD_BEGIN, BNET_CMD_OK, …) — skip
     }
-    if (len == 0) {
+    if (chunk.empty()) {
       continue;  // keep-alive — skip
     }
-
-    std::string chunk(static_cast<size_t>(len), '\0');
-    ReadAll(chunk.data(), static_cast<size_t>(len));
     result += chunk;
   }
   return result;
@@ -504,35 +501,33 @@ DirectorPrompt DirectorConnection::CallStreamed(
   //
   // Large responses (> ~1 MB) arrive as multiple consecutive data frames with
   // no signals between them; the loop accumulates them all correctly.
-  DirectorPrompt prompt = DirectorPrompt::Main;
+  bool received_data = false;
   while (true) {
-    int32_t hdr_net;
-    ReadAll(&hdr_net, 4);
-    int32_t len = ntohl(hdr_net);
+    int32_t signal = 0;
+    std::string chunk = RecvFrame(&signal);
 
-    if (len < 0) {
-      if (len == BNET_TERMINATE) {
+    if (signal < 0) {
+      if (signal == BNET_TERMINATE) {
         throw std::runtime_error("Director: received BNET_TERMINATE signal");
       }
-      if (len == BNET_MAIN_PROMPT) { return DirectorPrompt::Main; }
-      if (len == BNET_SUB_PROMPT) { return DirectorPrompt::Sub; }
-      if (len == BNET_SELECT_INPUT) { return DirectorPrompt::Select; }
-      if (len == BNET_START_RTREE || len == BNET_END_RTREE) { continue; }
-      if (len == BNET_EOD || len == BNET_EOD_POLL || len == BNET_STATUS) {
+      if (signal == BNET_MAIN_PROMPT) { return DirectorPrompt::Main; }
+      if (signal == BNET_SUB_PROMPT) { return DirectorPrompt::Sub; }
+      if (signal == BNET_SELECT_INPUT) { return DirectorPrompt::Select; }
+      if (signal == BNET_START_RTREE || signal == BNET_END_RTREE) { continue; }
+      if (signal == BNET_EOD || signal == BNET_EOD_POLL
+          || signal == BNET_STATUS) {
         // Some interactive raw-mode commands emit an EOD separator before the
         // follow-up prompt text ("cwd is: /\n$ "). Wait briefly so that prompt
         // transition data stays attached to the command that triggered it.
         if (HasPendingInput(50)) { continue; }
-        if (prompt != DirectorPrompt::Main) { return DirectorPrompt::Other; }
+        if (received_data) { return DirectorPrompt::Other; }
       }
-      if (prompt != DirectorPrompt::Main) { return DirectorPrompt::Other; }
+      if (received_data) { return DirectorPrompt::Other; }
       continue;  // leading signal before data → skip
     }
-    if (len == 0) { continue; }  // keep-alive
+    if (chunk.empty()) { continue; }  // keep-alive
 
-    std::string chunk(static_cast<size_t>(len), '\0');
-    ReadAll(chunk.data(), static_cast<size_t>(len));
-    prompt = DirectorPrompt::Other;
+    received_data = true;
     if (on_data) { on_data(chunk); }
   }
 }
