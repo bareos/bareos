@@ -28,6 +28,7 @@
 #include "../bareos_base64.h"
 
 #include <array>
+#include <cassert>
 #include <cstdint>
 #include <string>
 
@@ -97,11 +98,14 @@ std::string Md5Hex(const std::string& text)
   EVP_DigestUpdate(ctx, text.data(), text.size());
   EVP_DigestFinal_ex(ctx, digest, &dlen);
   EVP_MD_CTX_free(ctx);
-  char hex[65]{};
+
+  assert(dlen <= 32);
+  std::string hex(64, '\0');
   for (unsigned int i = 0; i < dlen; ++i) {
-    snprintf(hex + i * 2, 3, "%02x", digest[i]);
+    snprintf(hex.data() + i * 2, 3, "%02x", digest[i]);
   }
-  return {hex, dlen * 2};
+  hex.resize(dlen * 2);
+  return hex;
 }
 
 std::array<uint8_t, 16> HmacMd5(const std::string& key, const std::string& data)
