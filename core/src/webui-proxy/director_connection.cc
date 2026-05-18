@@ -168,8 +168,16 @@ void DirectorConnection::WriteAll(const void* buf, size_t len)
     } else {
       n = static_cast<int>(::send(fd_, p, len, MSG_NOSIGNAL));
       if (n < 0 && errno == EINTR) { continue; }
+      if (n < 0) {
+        const int send_errno = errno;
+        throw std::runtime_error("Director: send failed: errno="
+                                 + std::to_string(send_errno) + " ("
+                                 + std::strerror(send_errno) + ")");
+      }
+      if (n == 0) {
+        throw std::runtime_error("Director: send failed: connection closed");
+      }
     }
-    if (!ssl_ && n <= 0) { throw std::runtime_error("Director: send failed"); }
     p += n;
     len -= static_cast<size_t>(n);
   }
@@ -195,9 +203,15 @@ void DirectorConnection::ReadAll(void* buf, size_t len)
     } else {
       n = static_cast<int>(::recv(fd_, p, len, MSG_WAITALL));
       if (n < 0 && errno == EINTR) { continue; }
-    }
-    if (!ssl_ && n <= 0) {
-      throw std::runtime_error("Director: connection closed by peer");
+      if (n < 0) {
+        const int recv_errno = errno;
+        throw std::runtime_error("Director: recv failed: errno="
+                                 + std::to_string(recv_errno) + " ("
+                                 + std::strerror(recv_errno) + ")");
+      }
+      if (n == 0) {
+        throw std::runtime_error("Director: connection closed by peer");
+      }
     }
     p += n;
     len -= static_cast<size_t>(n);
