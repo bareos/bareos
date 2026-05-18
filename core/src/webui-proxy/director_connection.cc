@@ -531,8 +531,9 @@ DirectorPrompt DirectorConnection::CallStreamed(
         // transition data stays attached to the command that triggered it.
         if (HasPendingInput(50)) { continue; }
         if (received_data) { return DirectorPrompt::Other; }
+      } else if (received_data) {
+        return DirectorPrompt::Other;
       }
-      if (received_data) { return DirectorPrompt::Other; }
       continue;  // leading signal before data → skip
     }
     if (chunk.empty()) { continue; }  // keep-alive
