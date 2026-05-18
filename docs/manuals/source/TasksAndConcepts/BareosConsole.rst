@@ -1736,7 +1736,8 @@ status subscriptions
 
    This shows a combined list of clients and plugins, together with the
    use-count of the plugins and the aggregated amount of backed up frontend
-   data (in gigabytes).
+   data (in gigabytes), based on the latest successful Full or VirtualFull
+   backup per client/fileset.
    At the end a summary shows the accounting-mode (i.e. count- or volume-based)
    alongside with the used, configured and remaining units.
    The value for the configured units can be set in

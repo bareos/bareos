@@ -54,7 +54,8 @@ INSERT INTO Client (ClientId, Name, UName) VALUES
 (10002, 'file-and-plugins', 'synthetic test client'),
 (10003, 'native-plugins', 'synthetic test client'),
 (10004, 'python-plugins', 'synthetic test client'),
-(10005, 'special-syntax', 'synthetic test client');
+(10005, 'special-syntax', 'synthetic test client'),
+(10006, 'vfull-only', 'synthetic test client');
 INSERT INTO Fileset (FileSetId, Fileset, FileSetText, Md5, CreateTime) VALUES
 (10000, 'file1', E'{\n{\nFile = "/a"\n}\n}', 'x', now()),
 (10001, 'file2', E'{\n{\nFile = "/b"\n}\n}', 'x', now()),
@@ -82,7 +83,8 @@ INSERT INTO Fileset (FileSetId, Fileset, FileSetText, Md5, CreateTime) VALUES
 (10023, 'custom', E'{\n{\nPlugin = "custom-plugin"\n}\n}', 'x', now()),
 (10024, 'grpc1', E'{\n{\nPlugin = "grpc:bareos-grpc-fd-plugin-bridge:python3:arg1:arg2:module_name=bareos-fd-bridged"\n}\n}', 'x', now()),
 (10025, 'grpc2', E'{\n{\nPlugin = "grpc:my-gprc-plugin:arg1=val1:arg2"\n}\n}', 'x', now()),
-(10026, 'noprefix', E'{\n{\nPlugin = "python:arg:module_name=noprefix"\n}\n}', 'x', now());
+(10026, 'noprefix', E'{\n{\nPlugin = "python:arg:module_name=noprefix"\n}\n}', 'x', now()),
+(10027, 'vfull-file', E'{\n{\nFile = "/vf"\n}\n}', 'x', now());
 INSERT INTO Job (JobId, Job, Name, Type, Level, ClientId, JobStatus, JobBytes, ReadBytes, FilesetId) VALUES
 (10000, 'file1-1',  'file1',    'B', 'F', 10000, 'T', 10^9, 1000, 10000),
 (10001, 'file2-1',  'file2',    'B', 'F', 10000, 'T', 1000, 10^9, 10001),
@@ -119,7 +121,8 @@ INSERT INTO Job (JobId, Job, Name, Type, Level, ClientId, JobStatus, JobBytes, R
 (10032, 'custom',   'custom',   'B', 'F', 10005, 'T', 1000, 10^9, 10023),
 (10033, 'grpc1',    'grpc1',    'B', 'F', 10005, 'T', 1000, 10^9, 10024),
 (10034, 'grpc2',    'grpc2',    'B', 'F', 10005, 'T', 1000, 10^9, 10025),
-(10035, 'noprefix', 'noprefix', 'B', 'F', 10005, 'T', 1000, 10^9, 10026);
+(10035, 'noprefix', 'noprefix', 'B', 'F', 10005, 'T', 1000, 10^9, 10026),
+(10036, 'vfull-file', 'vfull-file', 'B', 'f', 10006, 'T', 1000, 2 * 10^9, 10027);
 CREATE TEMPORARY VIEW Job AS SELECT * FROM Job WHERE JobId >= 10000;
 
 @$out $tmp/status-subscriptions-default.txt

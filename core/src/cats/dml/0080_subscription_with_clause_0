@@ -58,7 +58,7 @@ client_detail AS (
     FROM job j
     INNER JOIN fileset f
       ON j.filesetid = f.filesetid
-    WHERE level = 'F'
+    WHERE level IN ('F', 'f')
       AND j.jobstatus IN ('T','W')
       AND j.type = 'B'
       AND j.jobbytes > 0

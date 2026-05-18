@@ -56,8 +56,8 @@ status subscriptions plugins
       },
       {
         "plugin": "none (file data)",
-        "count": "2",
-        "size_gb": "5.00"
+        "count": "3",
+        "size_gb": "7.00"
       },
       {
         "plugin": "noprefix",
@@ -101,12 +101,12 @@ status subscriptions plugins
       },
       {
         "plugin": "TOTAL",
-        "count": "30",
-        "size_gb": "1235815.89"
+        "count": "31",
+        "size_gb": "1235817.89"
       }
     ],
     "unit-summary": {
-      "accounting_mode": "volume-based (1236 volume-based units >= 30 count-based units)",
+      "accounting_mode": "volume-based (1236 volume-based units >= 31 count-based units)",
       "used": "1236",
       "configured": "1240",
       "remaining": "4"

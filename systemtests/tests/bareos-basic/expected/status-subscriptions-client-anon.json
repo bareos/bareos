@@ -35,13 +35,18 @@ status subscriptions clients anonymize
         "size_gb": "5.00"
       },
       {
+        "client": "Client 10006",
+        "count": "1",
+        "size_gb": "2.00"
+      },
+      {
         "client": "TOTAL",
-        "count": "30",
-        "size_gb": "1235815.89"
+        "count": "31",
+        "size_gb": "1235817.89"
       }
     ],
     "unit-summary": {
-      "accounting_mode": "volume-based (1236 volume-based units >= 30 count-based units)",
+      "accounting_mode": "volume-based (1236 volume-based units >= 31 count-based units)",
       "used": "1236",
       "configured": "1240",
       "remaining": "4"

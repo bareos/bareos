@@ -10,13 +10,14 @@ Backup unit report aggregated by client:
 | python-plugins   |     9 |    1234567.89 |
 | special-syntax   |     5 |          5.00 |
 | two-barri-jobs   |     2 |          2.00 |
-| TOTAL            |    30 |    1235815.89 |
+| vfull-only       |     1 |          2.00 |
+| TOTAL            |    31 |    1235817.89 |
 +------------------+-------+---------------+
 For a detailed per-client report run 'status subscriptions client=<client-name>'
 
 Backup unit summary:
- accounting_mode: volume-based (1236 volume-based units >= 30 count-based units)
+ accounting_mode: volume-based (1236 volume-based units >= 31 count-based units)
             used: 1,236
       configured: 1,240
        remaining: 4
-
+ 

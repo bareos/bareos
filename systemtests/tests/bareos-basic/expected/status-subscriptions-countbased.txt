@@ -27,13 +27,14 @@ Detailed backup unit report:
 | special-syntax   | noprefix            |     1 |      1.00 |
 | special-syntax   | other python plugin |     1 |      1.00 |
 | two-barri-jobs   | barri               |     2 |      2.00 |
-| TOTAL            |                     |    30 |   5815.89 |
+| vfull-only       | none (file data)   |     1 |      2.00 |
+| TOTAL            |                     |    31 |   5817.89 |
 +------------------+---------------------+-------+-----------+
 
 Backup unit summary:
- accounting_mode: count-based (6 volume-based < 30 count-based)
-            used: 30
+ accounting_mode: count-based (6 volume-based < 31 count-based)
+            used: 31
       configured: 1,240
-       remaining: 1,210
-
-
+       remaining: 1,209
+ 
+ 
