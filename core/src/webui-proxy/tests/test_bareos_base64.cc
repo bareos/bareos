@@ -86,7 +86,9 @@ TEST(BareosBase64, RoundTripConsistency)
 // and checks the final protocol response against a known-good vector.
 // ---------------------------------------------------------------------------
 
-static std::string Md5Hex(const std::string& text)
+namespace {
+
+std::string Md5Hex(const std::string& text)
 {
   uint8_t digest[EVP_MAX_MD_SIZE];
   unsigned int dlen = 0;
@@ -102,8 +104,7 @@ static std::string Md5Hex(const std::string& text)
   return {hex, dlen * 2};
 }
 
-static std::array<uint8_t, 16> HmacMd5(const std::string& key,
-                                       const std::string& data)
+std::array<uint8_t, 16> HmacMd5(const std::string& key, const std::string& data)
 {
   std::array<uint8_t, 16> out{};
   unsigned int len = 16;
@@ -112,6 +113,8 @@ static std::array<uint8_t, 16> HmacMd5(const std::string& key,
        &len);
   return out;
 }
+
+}  // namespace
 
 TEST(CramMd5, ResponseMatchesKnownVector)
 {

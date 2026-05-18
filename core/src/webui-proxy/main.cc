@@ -47,7 +47,11 @@
 #include <stdexcept>
 #include <string>
 
-static void HandleSignal(int /*sig*/) { g_proxy_shutdown_requested = 1; }
+namespace {
+
+void HandleSignal(int /*sig*/) { g_proxy_shutdown_requested = 1; }
+
+}  // namespace
 
 int main(int argc, char* argv[])
 {

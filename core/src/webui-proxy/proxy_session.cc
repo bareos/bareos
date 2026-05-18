@@ -242,7 +242,9 @@ bool IsExpectedConsoleExitCommand(bool at_main_prompt, std::string_view command)
          || command == ".exit";
 }
 
-static bool IsMessagesConsoleCommand(std::string_view command)
+namespace {
+
+bool IsMessagesConsoleCommand(std::string_view command)
 {
   constexpr std::string_view kMessagesCommand = "messages";
 
@@ -258,6 +260,8 @@ static bool IsMessagesConsoleCommand(std::string_view command)
                              == std::tolower(static_cast<unsigned char>(rhs));
                     });
 }
+
+}  // namespace
 
 bool ShouldSuppressRawConsoleChunk(std::string_view command,
                                    std::string_view chunk)
