@@ -388,14 +388,10 @@ void DirectorConnection::Connect(const DirectorConfig& cfg)
   tls_psk_secret_ = MakeCramMd5Key(cfg.password);
   const bool use_tls_psk = !cfg.tls_psk_disable;
 
-  auto connect_and_authenticate = [this, &cfg](bool use_tls) {
-    ConnectTcp(cfg);
-    if (use_tls) { ConnectTlsPsk(cfg); }
-    Authenticate(cfg);
-  };
-
   try {
-    connect_and_authenticate(use_tls_psk);
+    ConnectTcp(cfg);
+    if (use_tls_psk) { ConnectTlsPsk(cfg); }
+    Authenticate(cfg);
   } catch (...) {
     Disconnect();
     throw;
