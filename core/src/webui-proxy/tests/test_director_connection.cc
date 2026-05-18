@@ -82,6 +82,7 @@ TEST(DirectorConnection, StartsWithoutTlsPskTransport)
 namespace {
 std::string Md5Hex(const std::string& text)
 {
+  constexpr size_t kMaxHexChars = 64;
   uint8_t digest[EVP_MAX_MD_SIZE];
   unsigned int dlen = 0;
   EVP_MD_CTX* ctx = EVP_MD_CTX_new();
@@ -90,8 +91,8 @@ std::string Md5Hex(const std::string& text)
   EVP_DigestFinal_ex(ctx, digest, &dlen);
   EVP_MD_CTX_free(ctx);
 
-  assert(dlen <= 32);
-  std::string hex(64, '\0');
+  assert(dlen * 2 <= kMaxHexChars);
+  std::string hex(kMaxHexChars, '\0');
   for (unsigned int i = 0; i < dlen; ++i) {
     snprintf(hex.data() + i * 2, 3, "%02x", digest[i]);
   }
