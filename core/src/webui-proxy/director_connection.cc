@@ -482,7 +482,7 @@ void DirectorConnection::ConnectTlsPsk(const DirectorConfig& cfg)
   tls_psk_active_ = true;
 }
 
-CallResult DirectorConnection::Call(
+DirectorPrompt DirectorConnection::CallStreamed(
     const std::string& command,
     const std::function<void(std::string_view)>& on_data)
 {
@@ -504,7 +504,7 @@ CallResult DirectorConnection::Call(
   //
   // Large responses (> ~1 MB) arrive as multiple consecutive data frames with
   // no signals between them; the loop accumulates them all correctly.
-  CallResult result;
+  DirectorPrompt prompt = DirectorPrompt::Main;
   while (true) {
     int32_t hdr_net;
     ReadAll(&hdr_net, 4);
@@ -514,42 +514,35 @@ CallResult DirectorConnection::Call(
       if (len == BNET_TERMINATE) {
         throw std::runtime_error("Director: received BNET_TERMINATE signal");
       }
-      if (len == BNET_MAIN_PROMPT) {
-        result.prompt = DirectorPrompt::Main;
-        break;
-      }
-      if (len == BNET_SUB_PROMPT) {
-        result.prompt = DirectorPrompt::Sub;
-        break;
-      }
-      if (len == BNET_SELECT_INPUT) {
-        result.prompt = DirectorPrompt::Select;
-        break;
-      }
+      if (len == BNET_MAIN_PROMPT) { return DirectorPrompt::Main; }
+      if (len == BNET_SUB_PROMPT) { return DirectorPrompt::Sub; }
+      if (len == BNET_SELECT_INPUT) { return DirectorPrompt::Select; }
       if (len == BNET_START_RTREE || len == BNET_END_RTREE) { continue; }
       if (len == BNET_EOD || len == BNET_EOD_POLL || len == BNET_STATUS) {
         // Some interactive raw-mode commands emit an EOD separator before the
         // follow-up prompt text ("cwd is: /\n$ "). Wait briefly so that prompt
         // transition data stays attached to the command that triggered it.
         if (HasPendingInput(50)) { continue; }
-        if (!result.text.empty()) {
-          result.prompt = DirectorPrompt::Other;
-          break;
-        }
+        if (prompt != DirectorPrompt::Main) { return DirectorPrompt::Other; }
       }
-      if (!result.text.empty()) {
-        result.prompt = DirectorPrompt::Other;
-        break;
-      }
+      if (prompt != DirectorPrompt::Main) { return DirectorPrompt::Other; }
       continue;  // leading signal before data → skip
     }
     if (len == 0) { continue; }  // keep-alive
 
     std::string chunk(static_cast<size_t>(len), '\0');
     ReadAll(chunk.data(), static_cast<size_t>(len));
+    prompt = DirectorPrompt::Other;
     if (on_data) { on_data(chunk); }
-    result.text += chunk;
   }
+}
+
+CallResult DirectorConnection::Call(const std::string& command)
+{
+  CallResult result;
+  result.prompt = CallStreamed(command, [&](std::string_view chunk) {
+    result.text.append(chunk.data(), chunk.size());
+  });
   return result;
 }
 

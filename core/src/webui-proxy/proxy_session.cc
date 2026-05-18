@@ -509,16 +509,17 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
           = !cfg.json_mode
             && IsExpectedConsoleExitCommand(
                 current_prompt == DirectorPrompt::Main, command);
-      CallResult result = director.Call(
-          command, (!cfg.json_mode && stream_raw)
-                       ? std::function<void(std::string_view)>(
-                             [&](std::string_view chunk) {
-                               auto filtered
-                                   = FilterRawConsoleChunk(command, chunk);
-                               if (filtered.empty()) { return; }
-                               send_raw_response(filtered, "more");
-                             })
-                       : std::function<void(std::string_view)>());
+      CallResult result;
+      if (!cfg.json_mode && stream_raw) {
+        result.prompt
+            = director.CallStreamed(command, [&](std::string_view chunk) {
+                auto filtered = FilterRawConsoleChunk(command, chunk);
+                if (filtered.empty()) { return; }
+                send_raw_response(filtered, "more");
+              });
+      } else {
+        result = director.Call(command);
+      }
 
       if (cfg.json_mode) {
         // Parse and re-emit as

@@ -83,20 +83,25 @@ std::string MakeCramMd5Key(const std::string& password);
 class DirectorConnection {
  public:
   /* Connect to the director and perform full authentication.
-   * After return the connection is ready for Call() / CallRaw().
+   * After return the connection is ready for Call() / CallStreamed().
    * Throws std::runtime_error on any failure. */
   void Connect(const DirectorConfig& cfg);
+
+  /* Send a command and stream each received data chunk to @p on_data.
+   * Returns the prompt type that terminated the response so callers can update
+   * the UI prompt indicator.
+   * Throws std::runtime_error on I/O error. */
+  DirectorPrompt CallStreamed(
+      const std::string& command,
+      const std::function<void(std::string_view)>& on_data);
 
   /* Send a command and receive the complete response string.
    * In json_mode=true, the response is a JSON object.
    * In json_mode=false, the response is a raw text string.
-   * When @p on_data is provided, it is called for every positive-length data
-   * frame before the terminating prompt/signal is received.
    * The returned CallResult also carries the prompt type that terminated the
    * response so callers can update the UI prompt indicator.
    * Throws std::runtime_error on I/O error. */
-  CallResult Call(const std::string& command,
-                  const std::function<void(std::string_view)>& on_data = {});
+  CallResult Call(const std::string& command);
 
   /** Cleanly disconnect from the director. */
   void Disconnect();
