@@ -161,6 +161,43 @@ TEST(DirectorConnection, KeepsRestoreTreePromptDataWithSameCommand)
   connection.fd_ = -1;
 }
 
+TEST(DirectorConnection, StreamsChunksWithoutAccumulatingInCallStreamed)
+{
+  int sockets[2] = {-1, -1};
+  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+  DirectorConnection connection;
+  connection.fd_ = sockets[0];
+  connection.json_mode_ = false;
+
+  std::thread director([peer = sockets[1]]() {
+    int32_t header = 0;
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+
+    const auto payload_size = static_cast<size_t>(ntohl(header));
+    std::string payload(payload_size, '\0');
+    ASSERT_EQ(read(peer, payload.data(), payload.size()),
+              static_cast<ssize_t>(payload.size()));
+    EXPECT_EQ(payload, "status dir\n");
+
+    WriteFrame(peer, "first chunk\n");
+    WriteFrame(peer, "second chunk\n");
+    WriteSignal(peer, BNET_MAIN_PROMPT);
+    close(peer);
+  });
+
+  std::string streamed;
+  const auto prompt = connection.CallStreamed(
+      "status dir", [&](std::string_view chunk) { streamed.append(chunk); });
+
+  EXPECT_EQ(streamed, "first chunk\nsecond chunk\n");
+  EXPECT_EQ(prompt, DirectorPrompt::Main);
+
+  director.join();
+  close(connection.fd_);
+  connection.fd_ = -1;
+}
+
 TEST(DirectorConnection, UsesCompatibleDirectorIdentityResponse)
 {
   int sockets[2] = {-1, -1};
