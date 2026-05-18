@@ -370,6 +370,10 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   // Use the normal Call() path here so we consume both the data response and
   // the terminating prompt. Otherwise the last .api response can remain queued
   // and shift every subsequent dashboard command by one response.
+  //
+  // We intentionally send both commands for compatibility with older Directors:
+  // ".api json" is the baseline mode, while ".api json compact=yes" upgrades to
+  // compact JSON output where that newer option is supported.
   if (cfg.json_mode) {
     Call(".api json");
     Call(".api json compact=yes");
