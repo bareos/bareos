@@ -108,7 +108,8 @@ class DirectorConnection {
    * Throws std::runtime_error on I/O error. */
   CallResult Call(const std::string& command);
 
-  /** Cleanly disconnect from the director. */
+  /** Cleanly disconnect from the director. Safe to call on a disconnected
+   * object. */
   void Disconnect();
 
   bool UsesTlsPsk() const { return tls_psk_active_; }
@@ -123,6 +124,8 @@ class DirectorConnection {
                                            unsigned char* psk,
                                            unsigned int max_psk_len);
 
+  // -1 means disconnected (before Connect(), after Disconnect(), or after
+  // failed connection setup cleanup). Connected-only helpers assert fd_ >= 0.
   int fd_{-1};
   bool json_mode_{true};
   ssl_ctx_st* ssl_ctx_{nullptr};
