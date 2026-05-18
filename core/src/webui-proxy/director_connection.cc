@@ -444,9 +444,8 @@ void DirectorConnection::ConnectTlsPsk(const DirectorConfig& cfg)
     throw std::runtime_error("Director: could not set TLS-PSK cipher list: "
                              + GetOpenSslError());
   }
-  if (SSL_CTX_set_min_proto_version(ssl_ctx_, TLS1_2_VERSION) != 1
-      || SSL_CTX_set_max_proto_version(ssl_ctx_, TLS1_2_VERSION) != 1) {
-    throw std::runtime_error("Director: could not restrict TLS-PSK protocol: "
+  if (SSL_CTX_set_min_proto_version(ssl_ctx_, TLS1_2_VERSION) != 1) {
+    throw std::runtime_error("Director: could not set minimum TLS version: "
                              + GetOpenSslError());
   }
 
