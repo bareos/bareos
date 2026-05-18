@@ -27,7 +27,7 @@ Additional configuration directives have been added to all the daemons (Director
    Enable TLS support. This is by default enabled. If no certificates are configured PSK (Pre Shared Keys) ciphers will be used. If the other side does not support TLS, or cleartext is configured the connection will be aborted. However, for downward compatibility with clients before Bareos-18.2 the daemons can omit transport encryption and cleartext will be sent.
 
 :config:option:`dir/director/TlsRequire`\
-   Require TLS connection, for downward compatibility. This is by default disabled. However, if :strong:`TlsRequire`\ =yes, clients with a version before Bareos-18.2 will be denied if configured to use cleartext.
+   Require TLS connection. This is enabled by default. If :strong:`TlsRequire`\ =no, Bareos can fall back to unencrypted cleartext connections for compatibility with clients before Bareos-18.2.
 
 :config:option:`dir/director/TlsCertificate`\
    The full path and filename of a PEM encoded TLS certificate. It can be used as either a client or server certificate. It is used because PEM files are base64 encoded and hence ASCII text based rather than binary. They may also contain encrypted information.
