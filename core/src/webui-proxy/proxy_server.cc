@@ -107,7 +107,7 @@ bool IsTransientAcceptError(int err)
 
 }  // namespace
 
-void ProxyServer::Stop() { stop_requested_ = 1; }
+volatile std::sig_atomic_t g_proxy_shutdown_requested = 0;
 
 void ProxyServer::Run()
 {
@@ -159,7 +159,7 @@ void ProxyServer::Run()
 
   // Accept loop: poll all listen sockets, accept on whichever is ready.
   while (true) {
-    if (stop_requested_) { break; }
+    if (g_proxy_shutdown_requested) { break; }
 
     std::vector<struct pollfd> pfds;
     pfds.reserve(listen_fds.size());
@@ -167,11 +167,11 @@ void ProxyServer::Run()
 
     int nready = ::poll(pfds.data(), static_cast<nfds_t>(pfds.size()), 1000);
     if (nready < 0) {
-      if (errno == EINTR && !stop_requested_) { continue; }
+      if (errno == EINTR && !g_proxy_shutdown_requested) { continue; }
       break;  // Unexpected poll error.
     }
 
-    if (stop_requested_) { break; }
+    if (g_proxy_shutdown_requested) { break; }
 
     bool any_closed = false;
     for (const auto& pfd : pfds) {
@@ -186,7 +186,7 @@ void ProxyServer::Run()
       int client_fd = ::accept(
           pfd.fd, reinterpret_cast<struct sockaddr*>(&client_addr), &addr_len);
       if (client_fd < 0) {
-        if (stop_requested_) {
+        if (g_proxy_shutdown_requested) {
           any_closed = true;
           continue;
         }
@@ -224,7 +224,7 @@ void ProxyServer::Run()
       }
     }
 
-    if (any_closed) { break; }  // Stop() was called.
+    if (any_closed) { break; }  // A listen socket became unusable.
   }
 
   PROXY_LOG_INFO("", "accept loop exited");
