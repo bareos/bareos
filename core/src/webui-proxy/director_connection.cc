@@ -298,10 +298,13 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   SendFrame(hello);
 
   // Step 2: receive director's challenge
-  std::string challenge_msg = RecvFrame();
+  int32_t challenge_signal = 0;
+  std::string challenge_msg = RecvFrame(&challenge_signal);
   if (challenge_msg.empty()) {
     throw std::runtime_error(
-        "Director: no challenge received after Hello (got signal frame)");
+        "Director: no challenge received after Hello "
+        "(got signal frame "
+        + std::to_string(challenge_signal) + ")");
   }
   // Challenge format: "auth cram-md5 <token> ssl=<n>\n"
   char token_buf[512] = {};
