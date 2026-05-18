@@ -167,7 +167,10 @@ void ProxyServer::Run()
 
     int nready = ::poll(pfds.data(), static_cast<nfds_t>(pfds.size()), 1000);
     if (nready < 0) {
-      if (errno == EINTR && !g_proxy_shutdown_requested) { continue; }
+      if (errno == EINTR && !g_proxy_shutdown_requested) {
+        PROXY_LOG_DEBUG("", "poll interrupted by signal");
+        continue;
+      }
       break;  // Unexpected poll error.
     }
 
@@ -190,7 +193,11 @@ void ProxyServer::Run()
           any_closed = true;
           continue;
         }
-        if (IsTransientAcceptError(errno)) { continue; }
+        if (IsTransientAcceptError(errno)) {
+          PROXY_LOG_DEBUG("", "accept transient failure: %s",
+                          std::strerror(errno));
+          continue;
+        }
         PROXY_LOG_ERROR("", "accept failed: %s", std::strerror(errno));
         any_closed = true;
         continue;
