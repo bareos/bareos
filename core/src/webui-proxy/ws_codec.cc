@@ -39,26 +39,21 @@
 
 #include "lib/bpoll.h"
 
+namespace {
+
 // RFC 6455 §1.3 defines this GUID for Sec-WebSocket-Accept calculation.
-static constexpr std::string_view kWsMagic
-    = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+constexpr std::string_view kWsMagic = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 // WebSocket opcodes
-static constexpr uint8_t kOpContinuation = 0x0;
-static constexpr uint8_t kOpText = 0x1;
-static constexpr uint8_t kOpBinary = 0x2;
-static constexpr uint8_t kOpClose = 0x8;
-static constexpr uint8_t kOpPing = 0x9;
-static constexpr uint8_t kOpPong = 0xA;
-static constexpr size_t kMaxHttpHeaderSize = 16384;
-static constexpr size_t kHandshakeReadChunkSize = 1024;
-static constexpr std::string_view kSupportedWsVersion = "13";
-
-// ---------------------------------------------------------------------------
-// Low-level I/O
-// ---------------------------------------------------------------------------
-
-namespace {
+constexpr uint8_t kOpContinuation = 0x0;
+constexpr uint8_t kOpText = 0x1;
+constexpr uint8_t kOpBinary = 0x2;
+constexpr uint8_t kOpClose = 0x8;
+constexpr uint8_t kOpPing = 0x9;
+constexpr uint8_t kOpPong = 0xA;
+constexpr size_t kMaxHttpHeaderSize = 16384;
+constexpr size_t kHandshakeReadChunkSize = 1024;
+constexpr std::string_view kSupportedWsVersion = "13";
 
 using Clock = std::chrono::steady_clock;
 
@@ -284,13 +279,7 @@ void SendHttpResponse(int fd,
   throw std::runtime_error(std::string(message));
 }
 
-}  // namespace
-
-// ---------------------------------------------------------------------------
-// Handshake
-// ---------------------------------------------------------------------------
-
-static std::string Base64Encode(const uint8_t* data, size_t len)
+std::string Base64Encode(const uint8_t* data, size_t len)
 {
   std::string encoded(4 * ((len + 2) / 3), '\0');
   const int encoded_len
@@ -303,7 +292,7 @@ static std::string Base64Encode(const uint8_t* data, size_t len)
   return encoded;
 }
 
-static std::string ComputeAcceptKey(std::string_view client_key)
+std::string ComputeAcceptKey(std::string_view client_key)
 {
   uint8_t sha1[EVP_MAX_MD_SIZE];
   unsigned int sha1_len = 0;
@@ -317,6 +306,8 @@ static std::string ComputeAcceptKey(std::string_view client_key)
 
   return Base64Encode(sha1, sha1_len);
 }
+
+}  // namespace
 
 WsCodec::WsCodec(int fd,
                  std::chrono::milliseconds io_timeout,
