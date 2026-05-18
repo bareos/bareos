@@ -29,7 +29,6 @@
 #include <cerrno>
 #include <cstring>
 #include <ctime>
-#include <random>
 #include <stdexcept>
 #include <string>
 
@@ -42,6 +41,7 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#include <openssl/rand.h>
 #include <openssl/ssl.h>
 
 constexpr unsigned int kMd5DigestBytes = 16;
@@ -327,9 +327,12 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   }
 
   // Step 5: send our own challenge to verify the director
-  static thread_local std::mt19937 rng{std::random_device{}()};
-  std::uniform_int_distribution<uint32_t> dist(1000000000u, 4000000000u);
-  uint32_t rand_val = dist(rng);
+  uint32_t rand_val = 0;
+  if (RAND_bytes(reinterpret_cast<unsigned char*>(&rand_val), sizeof(rand_val))
+      != 1) {
+    throw std::runtime_error("Director: failed to create CRAM-MD5 challenge: "
+                             + GetOpenSslError());
+  }
   uint32_t ts = static_cast<uint32_t>(std::time(nullptr));
   std::string our_challenge = "<" + std::to_string(rand_val) + "."
                               + std::to_string(ts) + "@" + cfg.username + ">";
