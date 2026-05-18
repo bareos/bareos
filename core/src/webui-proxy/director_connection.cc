@@ -21,6 +21,7 @@
 #include "director_connection.h"
 #include "bareos_base64.h"
 #include "lib/ascii_control_characters.h"
+#include "lib/bnet_protocol_signals.h"
 
 #include <algorithm>
 #include <array>
@@ -43,9 +44,6 @@
 #include <openssl/hmac.h>
 #include <openssl/ssl.h>
 
-// ---------------------------------------------------------------------------
-// Bareos signal codes (negative length-prefix values)
-// ---------------------------------------------------------------------------
 constexpr unsigned int kMd5DigestBytes = 16;
 
 // Compute MD5(text) and return it as a lowercase hex string.
@@ -81,19 +79,6 @@ std::string GetTlsPskIdentityForDirector(const std::string& console_name)
 }
 
 namespace {
-
-constexpr int32_t kBnetEod = -1;                      // End of data
-constexpr int32_t kBnetEods = -2;                     // End of data stream
-constexpr int32_t kBnetEof = -3;                      // End of file
-constexpr int32_t kBnetError = -4;                    // Error
-[[maybe_unused]] constexpr int32_t kBnetCmdOk = -15;  // Command succeeded
-[[maybe_unused]] constexpr int32_t kBnetCmdBegin
-    = -16;                                 // Start command execution
-constexpr int32_t kBnetMainPrompt = -18;   // Server ready and waiting
-constexpr int32_t kBnetSelectInput = -19;  // Waiting for numeric selection
-constexpr int32_t kBnetStartRtree = -25;   // Start restore tree mode
-constexpr int32_t kBnetEndRtree = -26;     // End restore tree mode
-constexpr int32_t kBnetSubPrompt = -27;    // At a sub-prompt
 
 /**
  * Compute HMAC-MD5(key, data) and return the 16-byte raw digest.
@@ -242,8 +227,8 @@ void DirectorConnection::DrainPendingInput()
   while (HasPendingInput()) {
     int32_t signal = 0;
     std::string frame = RecvFrame(&signal);
-    if (signal == kBnetError) {
-      throw std::runtime_error("Director: received BNET_ERROR signal");
+    if (signal == BNET_TERMINATE) {
+      throw std::runtime_error("Director: received BNET_TERMINATE signal");
     }
     if (!frame.empty()) {
       // Discard queued JSON/text frames that belong to a previous command.
@@ -261,7 +246,7 @@ std::string DirectorConnection::RecvFrame(int32_t* signal)
 
   if (len <= 0) {
     if (signal) { *signal = len; }
-    return {};  // signal frame (BNET_EOD, BNET_ERROR, etc.) — no payload
+    return {};  // signal frame (BNET_EOD, BNET_TERMINATE, etc.) — no payload
   }
 
   if (signal) { *signal = 0; }
@@ -280,11 +265,11 @@ std::string DirectorConnection::RecvResponse()
     ReadAll(&hdr_net, 4);
     int32_t len = ntohl(hdr_net);
 
-    if (len == kBnetEod || len == kBnetEods || len == kBnetEof) {
+    if (len == BNET_EOD || len == BNET_EOD_POLL || len == BNET_STATUS) {
       break;  // end of response
     }
-    if (len == kBnetError) {
-      throw std::runtime_error("Director: received BNET_ERROR signal");
+    if (len == BNET_TERMINATE) {
+      throw std::runtime_error("Director: received BNET_TERMINATE signal");
     }
     if (len < 0) {
       continue;  // other signals (BNET_CMD_BEGIN, BNET_CMD_OK, …) — skip
@@ -526,23 +511,23 @@ CallResult DirectorConnection::Call(
     int32_t len = ntohl(hdr_net);
 
     if (len < 0) {
-      if (len == kBnetError) {
-        throw std::runtime_error("Director: received BNET_ERROR signal");
+      if (len == BNET_TERMINATE) {
+        throw std::runtime_error("Director: received BNET_TERMINATE signal");
       }
-      if (len == kBnetMainPrompt) {
+      if (len == BNET_MAIN_PROMPT) {
         result.prompt = DirectorPrompt::Main;
         break;
       }
-      if (len == kBnetSubPrompt) {
+      if (len == BNET_SUB_PROMPT) {
         result.prompt = DirectorPrompt::Sub;
         break;
       }
-      if (len == kBnetSelectInput) {
+      if (len == BNET_SELECT_INPUT) {
         result.prompt = DirectorPrompt::Select;
         break;
       }
-      if (len == kBnetStartRtree || len == kBnetEndRtree) { continue; }
-      if (len == kBnetEod || len == kBnetEods || len == kBnetEof) {
+      if (len == BNET_START_RTREE || len == BNET_END_RTREE) { continue; }
+      if (len == BNET_EOD || len == BNET_EOD_POLL || len == BNET_STATUS) {
         // Some interactive raw-mode commands emit an EOD separator before the
         // follow-up prompt text ("cwd is: /\n$ "). Wait briefly so that prompt
         // transition data stays attached to the command that triggered it.

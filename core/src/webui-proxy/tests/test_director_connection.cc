@@ -25,6 +25,7 @@
 
 #include "../bareos_base64.h"
 #include "lib/ascii_control_characters.h"
+#include "lib/bnet_protocol_signals.h"
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -78,10 +79,6 @@ TEST(DirectorConnection, StartsWithoutTlsPskTransport)
 }
 
 namespace {
-constexpr int32_t kBnetStartRtree = -25;
-constexpr int32_t kBnetSubPrompt = -27;
-constexpr int32_t kBnetEod = -1;
-
 std::string Md5Hex(const std::string& text)
 {
   uint8_t digest[EVP_MAX_MD_SIZE];
@@ -147,10 +144,10 @@ TEST(DirectorConnection, KeepsRestoreTreePromptDataWithSameCommand)
     EXPECT_EQ(payload, "find *\n");
 
     WriteFrame(peer, "selection ready\n");
-    WriteSignal(peer, kBnetStartRtree);
+    WriteSignal(peer, BNET_START_RTREE);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     WriteFrame(peer, "cwd is: /\n$ ");
-    WriteSignal(peer, kBnetSubPrompt);
+    WriteSignal(peer, BNET_SUB_PROMPT);
     close(peer);
   });
 
@@ -229,7 +226,7 @@ TEST(DirectorConnection, UsesCompatibleDirectorIdentityResponse)
 
     WriteFrame(peer, "1000 OK: bareos-dir Version: 26.0.0\n");
     WriteFrame(peer, "1002 additional info\n");
-    WriteSignal(peer, kBnetEod);
+    WriteSignal(peer, BNET_EOD);
     close(peer);
   });
 
