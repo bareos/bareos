@@ -363,8 +363,10 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   if (welcome.find("1000") == std::string::npos) {
     throw std::runtime_error("Director: unexpected welcome: " + welcome);
   }
-  // Consume the info message frame (1002).
-  RecvFrame();
+  std::string info = RecvFrame();
+  if (info.find("1002") == std::string::npos) {
+    throw std::runtime_error("Director: unexpected info message: " + info);
+  }
 
   // Step 9: activate JSON API if requested.
   // Use the normal Call() path here so we consume both the data response and
