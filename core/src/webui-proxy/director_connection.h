@@ -24,12 +24,15 @@
  *
  * Connects to the Bareos Director over TCP and runs the Bareos wire protocol
  * (4-byte big-endian length-prefix framing) with CRAM-MD5 mutual
- * authentication. By default it uses the console-style TLS-PSK path.
- * Cleartext is only used when TLS-PSK is explicitly disabled in the config.
+ * authentication. By default it uses the console-style TLS-PSK path and lets
+ * OpenSSL negotiate the highest supported TLS version (TLS 1.3 where
+ * available, otherwise TLS 1.2). Cleartext is only used when TLS-PSK is
+ * explicitly disabled in the config.
  *
  * Protocol summary (client side):
  *  1. Connect TCP to director:9101
  *  2. Establish TLS-PSK on that socket unless explicitly disabled
+ *     (OpenSSL negotiates TLS 1.3 or TLS 1.2)
  *  3. Send:  Hello <name> calling\n               (as a Bareos frame)
  *  4. Recv:  auth cram-md5 <chal> ssl=<n>\n      (director challenge)
  *  5. Compute response = BareosBase64(HMAC-MD5(MD5(password), challenge))
