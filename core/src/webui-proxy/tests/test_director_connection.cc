@@ -231,7 +231,9 @@ TEST(DirectorConnection, UsesCompatibleDirectorIdentityResponse)
 
     const std::string key = Md5Hex(cfg.password);
     auto expected_client_hmac = HmacMd5Digest(key, "<director-challenge>");
-    EXPECT_EQ(response, BareosBase64Encode(expected_client_hmac.data(), 16));
+    ASSERT_EQ(expected_client_hmac.size(), 16U);
+    EXPECT_EQ(response, BareosBase64Encode(expected_client_hmac.data(),
+                                           expected_client_hmac.size()));
 
     WriteFrame(peer, "1000 OK auth\n");
 
@@ -252,7 +254,9 @@ TEST(DirectorConnection, UsesCompatibleDirectorIdentityResponse)
         challenge_end - (challenge_begin + prefix.size()));
 
     auto expected_director_hmac = HmacMd5Digest(key, challenge);
-    WriteFrame(peer, BareosBase64Encode(expected_director_hmac.data(), 16));
+    ASSERT_EQ(expected_director_hmac.size(), 16U);
+    WriteFrame(peer, BareosBase64Encode(expected_director_hmac.data(),
+                                        expected_director_hmac.size()));
 
     ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
     const auto auth_ok_size = static_cast<size_t>(ntohl(header));
@@ -306,7 +310,9 @@ TEST(DirectorConnection, RejectsUnexpectedPostAuthInfoFrame)
 
     const std::string key = Md5Hex(cfg.password);
     auto expected_client_hmac = HmacMd5Digest(key, "<director-challenge>");
-    EXPECT_EQ(response, BareosBase64Encode(expected_client_hmac.data(), 16));
+    ASSERT_EQ(expected_client_hmac.size(), 16U);
+    EXPECT_EQ(response, BareosBase64Encode(expected_client_hmac.data(),
+                                           expected_client_hmac.size()));
 
     WriteFrame(peer, "1000 OK auth\n");
 
@@ -326,7 +332,9 @@ TEST(DirectorConnection, RejectsUnexpectedPostAuthInfoFrame)
         challenge_end - (challenge_begin + prefix.size()));
 
     auto expected_director_hmac = HmacMd5Digest(key, challenge);
-    WriteFrame(peer, BareosBase64Encode(expected_director_hmac.data(), 16));
+    ASSERT_EQ(expected_director_hmac.size(), 16U);
+    WriteFrame(peer, BareosBase64Encode(expected_director_hmac.data(),
+                                        expected_director_hmac.size()));
 
     ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
     const auto auth_ok_size = static_cast<size_t>(ntohl(header));
