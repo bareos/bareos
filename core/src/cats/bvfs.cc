@@ -173,8 +173,7 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
   Mmsg(cmd,
        "INSERT INTO PathVisibility (PathId, JobId) "
        "SELECT DISTINCT PathId, JobId "
-       "FROM (SELECT PathId, JobId FROM File WHERE JobId = %s "
-       ") AS B",
+       "FROM File WHERE JobId = %s",
        jobid);
 
   if (!QueryDb(jcr, cmd)) {
