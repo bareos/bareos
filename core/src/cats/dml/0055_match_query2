@@ -1,1 +1,3 @@
+# .bvfs_lsfiles uses LIKE semantics. Keep '\' as the explicit escape character
+# so user-supplied backslashes can still quote '%' and '_' after SQL escaping.
  AND File.Name LIKE '%s' ESCAPE '\'
