@@ -25,5 +25,5 @@ FROM (
             Job.StartTime DESC
 ) AS A
 WHERE A.FileIndex > 0
-LIMIT %lld
-OFFSET %lld
+LIMIT %)SQL" PRId64 R"SQL(
+OFFSET %)SQL" PRId64 R"SQL(
