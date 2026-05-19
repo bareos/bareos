@@ -198,17 +198,6 @@ R"SQL(SELECT JobId, Client.Name as Client, StartTime, Level as JobLevel, JobFile
  ORDER BY StartTime DESC LIMIT 20
 )SQL",
 
-/* 0017_uar_print_jobs */
-R"SQL(SELECT DISTINCT JobId, Level, JobFiles, JobBytes, StartTime, VolumeName
-  FROM Job
-  JOIN JobMedia
- USING (JobId)
-  JOIN Media
- USING (MediaId)
- WHERE JobId IN (%s)
- ORDER BY StartTime ASC
-)SQL",
-
 /* 0018_uar_del_temp */
 R"SQL(DROP TABLE IF EXISTS temp
 )SQL",
@@ -434,26 +423,6 @@ ORDER BY File.Name,
          Job.JobTDate DESC
 )SQL",
 
-/* 0036_select_recent_version */
-R"SQL(SELECT DISTINCT ON (File.Name,
-                    PathId) JobTDate,
-                   JobId,
-                   FileId,
-                   FileIndex,
-                   PathId,
-                   File.Name,
-                   LStat,
-                   MD5,
-                   Fhinfo,
-                   Fhnode
-FROM File
-JOIN Job USING (JobId)
-WHERE JobId IN (%s)
-ORDER BY File.Name,
-         PathId,
-         JobTDate DESC
-)SQL",
-
 /* 0037_create_temp_accurate_jobids */
 R"SQL(CREATE TABLE btemp3%s AS
 SELECT JobId,
@@ -473,27 +442,6 @@ WHERE ClientId = %s
 ORDER BY Job.JobId DESC,
          Job.JobTDate DESC
 LIMIT 1
-)SQL",
-
-/* 0038_create_temp_basefile */
-R"SQL(CREATE TEMPORARY TABLE basefile%)SQL" PRIu64 R"SQL( ( Path TEXT, Name TEXT)
-)SQL",
-
-/* 0039_create_temp_new_basefile */
-R"SQL(CREATE
-TEMPORARY TABLE new_basefile%)SQL" PRId64 R"SQL( AS
-SELECT Path.Path AS Path,
-       Temp.Name AS Name,
-       Temp.FileIndex AS FileIndex,
-       Temp.JobId AS JobId,
-       Temp.LStat AS LStat,
-       Temp.FileId AS FileId,
-       Temp.MD5 AS MD5,
-       Temp.Fhinfo AS Fhinfo,
-       Temp.Fhnode AS Fhnode
-FROM (%s) AS Temp
-JOIN Path ON (Path.PathId = Temp.PathId)
-WHERE Temp.FileIndex > 0
 )SQL",
 
 /* 0040_uap_upgrade_copies_oldest_job */
