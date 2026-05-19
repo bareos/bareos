@@ -37,6 +37,24 @@ target_sources(
 )
 target_link_libraries(bareossql PUBLIC Bareos::Lib PostgreSQL::PostgreSQL)
 
+set(cats_generated_query_files
+    core/src/cats/bdb_query_enum_class.h
+    core/src/cats/bdb_query_names.inc
+    core/src/cats/postgresql_queries.inc
+)
+
+add_custom_target(
+  check-cats-queryfiles
+  COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_SOURCE_DIR}/dml
+          ./create_queryfiles.sh
+  COMMAND git diff --no-ext-diff -p --exit-code --stat=80 --
+          ${cats_generated_query_files}
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  COMMENT "Comparing generated catalog query files with git repo"
+  VERBATIM
+)
+add_dependencies(check-git check-cats-queryfiles)
+
 set_target_properties(
   bareossql PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                        SOVERSION "${BAREOS_VERSION_MAJOR}"
