@@ -262,10 +262,10 @@ return array(
         ),
     ),
     'session' => array(
+        'name' => 'bareos',
         'config' => array(
             'class' => 'Laminas\Session\Config\SessionConfig',
             'options' => array(
-                'name' => 'bareos',
                 'use_cookies' => true,
                 'cookie_lifetime' => '0', // to reset lifetime to maximum at every click
                 'gc_maxlifetime' => '3600',
