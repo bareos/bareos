@@ -123,6 +123,7 @@ add_custom_target(
   uninstall "${CMAKE_COMMAND}" -P
             "${CMAKE_CURRENT_SOURCE_DIR}/cmake/uninstall.cmake"
 )
+add_custom_target(check-git)
 set(default_build_type "Debug")
 
 include(CMakePrintHelpers)
