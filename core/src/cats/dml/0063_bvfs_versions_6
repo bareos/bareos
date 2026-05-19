@@ -5,8 +5,8 @@
 #   %s PathId
 #   %s Client Name
 #   %s extra filter
-#   %d limit
-#   %d offset
+#   %u limit
+#   %u offset
 #
 # row  0    1            2          3           4           5            6         7                 8
 # Keep versions ordered by FileId so callers can treat the last row as the
@@ -24,5 +24,5 @@ WHERE File.Name = '%s'
   AND Client.Name = '%s'
   %s
 ORDER BY File.FileId
-LIMIT %d
-OFFSET %d
+LIMIT %u
+OFFSET %u
