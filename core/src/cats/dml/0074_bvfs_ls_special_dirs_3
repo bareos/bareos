@@ -1,8 +1,8 @@
 #
 # for .bvfs_lsdir
 #
-# Retrieve special directors "." and "..".
-# If attributes of this paths are known, include them,
+# Retrieve special directories "." and "..".
+# If attributes of these paths are known, include them,
 # otherwise result for extra columns will be empty.
 #
 # parameter:

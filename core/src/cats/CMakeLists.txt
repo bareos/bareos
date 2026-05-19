@@ -47,9 +47,8 @@ add_custom_target(
   check-cats-queryfiles
   COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_SOURCE_DIR}/dml
           ./create_queryfiles.sh
-  COMMAND git diff --no-ext-diff -p --exit-code --stat=80 --
+  COMMAND git -C ${CMAKE_SOURCE_DIR} diff --no-ext-diff -p --exit-code --stat=80 --
           ${cats_generated_query_files}
-  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
   COMMENT "Comparing generated catalog query files with git repo"
   VERBATIM
 )
