@@ -72,7 +72,6 @@ for db in $DATABASES; do
   queryincludefile=$(get_query_include_filename $db)
   >$queryincludefile
   print_note >>$queryincludefile
-  printf "const char *BareosDb%s::query_definitions[] = {\n" "$DB" >>$queryincludefile
 done
 
 #
@@ -112,5 +111,4 @@ EOF
 
 for db in $DATABASES; do
   queryincludefile=$(get_query_include_filename $db)
-  printf "NULL\n};\n" >>$queryincludefile
 done

@@ -818,7 +818,7 @@ LEFT JOIN (
 ) AS DirAttribute
 ON (SpecialDir.PathId = DirAttribute.PathId)
 ORDER BY SpecialDir.PathId ASC, JobId DESC
-) 
+)
 )SQL",
 
 /* 0075_bvfs_ls_sub_dirs_5 */
@@ -1122,3 +1122,4 @@ WHERE
 ORDER BY
   fileset;
 )SQL",
+

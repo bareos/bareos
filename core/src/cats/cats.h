@@ -876,14 +876,18 @@ class BareosDb : public BareosDbQueryEnum {
   template <SQL_QUERY query, typename... Args>
   void FillQuery(POOLMEM*& storage, Args&&... args)
   {
-    printf_check(queries[static_cast<int>(query)], args...);
+    if constexpr (sizeof...(Args) > 0) {
+      printf_check(queries[static_cast<int>(query)], args...);
+    }
     FillQuery(storage, query, std::forward<Args>(args)...);
   }
 
   template <SQL_QUERY query, typename... Args>
   void FillQuery(PoolMem& storage, Args&&... args)
   {
-    printf_check(queries[static_cast<int>(query)], args...);
+    if constexpr (sizeof...(Args) > 0) {
+      printf_check(queries[static_cast<int>(query)], args...);
+    }
     FillQuery(storage, query, std::forward<Args>(args)...);
   }
 
