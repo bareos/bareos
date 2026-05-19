@@ -496,18 +496,17 @@ R"SQL(CREATE TEMPORARY TABLE temp1 ( JobId INTEGER NOT NULL, JobTDate BIGINT)
 )SQL",
 
 /* 0044_uar_jobid_fileindex_from_dir */
-R"SQL(SELECT Job.JobId,
-       File.FileIndex
-FROM Job,
-     File,
-     Path,
-     Client
+R"SQL(SELECT DISTINCT ON (File.Name) Job.JobId,
+                                  File.FileIndex
+FROM Job
+JOIN File ON Job.JobId = File.JobId
+JOIN Path ON Path.PathId = File.PathId
+JOIN Client ON Job.ClientId = Client.ClientId
 WHERE Job.JobId IN (%s)
-  AND Job.JobId=File.JobId
-  AND Path.Path='%s'
-  AND Client.Name='%s'
-  AND Job.ClientId=Client.ClientId
-  AND Path.PathId=File.Pathid
+  AND Path.Path = '%s'
+  AND Client.Name = '%s'
+ORDER BY File.Name,
+         Job.StartTime DESC
 )SQL",
 
 /* 0045_sql_media_order_most_recently_written */
