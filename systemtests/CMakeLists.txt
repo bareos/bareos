@@ -330,6 +330,7 @@ message(STATUS "Looking for webui test requirements ...")
 # Admin selenium test method names (without the "test_" prefix). All run in a
 # single director instance under the webui:admin ctest entry.
 set(ADMIN_WEBUI_SELENIUM_TESTNAMES
+    "login_after_failed_login"
     "client_link_on_dashboard"
     "rerun_job"
     "restore"

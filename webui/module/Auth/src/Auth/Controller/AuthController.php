@@ -119,6 +119,7 @@ class AuthController extends AbstractActionController
             return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
         }
 
+        $session->getManager()->regenerateId(true);
         $session->offsetSet('director', $director);
         $session->offsetSet('username', $username);
         $session->offsetSet('password', $password);
@@ -214,7 +215,9 @@ class AuthController extends AbstractActionController
         if ($bsock != null) {
             $bsock->disconnect();
         }
-        session_destroy();
+        $this->clearAuthenticationSessionState();
+        // Keep the existing session alive so the login form CSRF token remains valid.
+        $form->setData([]);
         return new ViewModel(
             array(
                 'form' => $form,
@@ -222,6 +225,24 @@ class AuthController extends AbstractActionController
                 'err_msg' => $err_msg
             )
         );
+    }
+
+    private function clearAuthenticationSessionState()
+    {
+        $session = new Container('bareos');
+        $session->offsetSet('authenticated', false);
+
+        foreach (array(
+            'director',
+            'username',
+            'password',
+            'idletime',
+            'commands',
+            'product-updates',
+            'dird-update-info',
+        ) as $key) {
+            $session->offsetUnset($key);
+        }
     }
 
     /**

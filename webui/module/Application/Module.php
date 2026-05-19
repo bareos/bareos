@@ -135,14 +135,23 @@ class Module
 
                     if (isset($config['session'])) {
                         $session = $config['session'];
+                        $sessionName = null;
 
                         $sessionConfig = null;
 
                         if (isset($session['config'])) {
                             $class = isset($session['config']['class']) ? $session['config']['class'] : 'Laminas\Session\Config\SessionConfig';
                             $options = isset($session['config']['options']) ? $session['config']['options'] : array();
+                            if (isset($options['name'])) {
+                                $sessionName = $options['name'];
+                                unset($options['name']);
+                            }
                             $sessionConfig = new $class();
                             $sessionConfig->setOptions($options);
+                        }
+
+                        if (!$sessionName && isset($session['name'])) {
+                            $sessionName = $session['name'];
                         }
 
                         $sessionStorage = null;
@@ -160,6 +169,9 @@ class Module
                         }
 
                         $sessionManager = new SessionManager($sessionConfig, $sessionStorage, $sessionSaveHandler);
+                        if ($sessionName) {
+                            $sessionManager->setName($sessionName);
+                        }
                     } else {
                         $sessionManager = new SessionManager();
                     }
