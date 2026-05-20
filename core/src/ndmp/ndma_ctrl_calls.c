@@ -39,6 +39,38 @@
 
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT
 
+static void ndmca_clear_addr_env(ndmp9_pval** envp, unsigned* env_lenp)
+{
+  if (*envp) {
+    ndmp_4to9_pval_vec_free(*envp, *env_lenp);
+    *envp = NULL;
+    *env_lenp = 0;
+  }
+}
+
+static int ndmca_store_v4_addr_env(ndmp4_addr* addr,
+                                   ndmp9_pval** envp,
+                                   unsigned* env_lenp)
+{
+  ndmca_clear_addr_env(envp, env_lenp);
+
+  if (addr->addr_type != NDMP4_ADDR_TCP ||
+      addr->ndmp4_addr_u.tcp_addr.tcp_addr_len < 1) {
+    return 0;
+  }
+
+  ndmp4_tcp_addr* tcp = &addr->ndmp4_addr_u.tcp_addr.tcp_addr_val[0];
+  if (tcp->addr_env.addr_env_len == 0) { return 0; }
+
+  if (ndmp_4to9_pval_vec_dup(tcp->addr_env.addr_env_val, envp,
+                             tcp->addr_env.addr_env_len) != 0) {
+    return -1;
+  }
+
+  *env_lenp = tcp->addr_env.addr_env_len;
+  return 0;
+}
+
 
 /*
  * DATA Agent calls
@@ -70,6 +102,38 @@ int ndmca_data_listen(struct ndm_session* sess)
   struct ndmconn* conn = sess->plumb.data;
   struct ndm_control_agent* ca = sess->control_acb;
   int rc;
+
+  if (conn->protocol_version == NDMP4VER && conn->cab_extensions_enabled) {
+    NDMC_WITH(ndmp4_data_listen, NDMP4VER)
+    if (sess->plumb.tape == sess->plumb.data) {
+      request->addr_type = NDMP4_ADDR_LOCAL;
+    } else {
+      request->addr_type = NDMP4_ADDR_TCP;
+    }
+    rc = NDMC_CALL(conn);
+    if (rc) return rc;
+
+    if (request->addr_type != reply->connect_addr.addr_type) {
+      ndmalogf(sess, 0, 0, "DATA_LISTEN addr_type mismatch");
+      return -1;
+    }
+
+    if (ndmp_4to9_addr(&reply->connect_addr, &ca->data_addr) != 0) {
+      ndmalogf(sess, 0, 0, "DATA_LISTEN address conversion failed");
+      return -1;
+    }
+
+    if (ndmca_store_v4_addr_env(&reply->connect_addr, &ca->data_addr_env,
+                                &ca->data_addr_env_len) != 0) {
+      ndmalogf(sess, 0, 0, "DATA_LISTEN addr_env copy failed");
+      return -1;
+    }
+    NDMC_ENDWITH
+
+    return 0;
+  }
+
+  ndmca_clear_addr_env(&ca->data_addr_env, &ca->data_addr_env_len);
 
   NDMC_WITH(ndmp9_data_listen, NDMP9VER)
   if (sess->plumb.tape == sess->plumb.data) {
@@ -540,6 +604,40 @@ int ndmca_mover_listen(struct ndm_session* sess)
   struct ndmconn* conn = sess->plumb.tape;
   struct ndm_control_agent* ca = sess->control_acb;
   int rc;
+
+  if (conn->protocol_version == NDMP4VER && conn->cab_extensions_enabled) {
+    NDMC_WITH(ndmp4_mover_listen, NDMP4VER)
+    request->mode = ca->mover_mode;
+
+    if (sess->plumb.tape == sess->plumb.data) {
+      request->addr_type = NDMP4_ADDR_LOCAL;
+    } else {
+      request->addr_type = NDMP4_ADDR_TCP;
+    }
+    rc = NDMC_CALL(conn);
+    if (rc) return rc;
+
+    if (request->addr_type != reply->connect_addr.addr_type) {
+      ndmalogf(sess, 0, 0, "MOVER_LISTEN addr_type mismatch");
+      return -1;
+    }
+
+    if (ndmp_4to9_addr(&reply->connect_addr, &ca->mover_addr) != 0) {
+      ndmalogf(sess, 0, 0, "MOVER_LISTEN address conversion failed");
+      return -1;
+    }
+
+    if (ndmca_store_v4_addr_env(&reply->connect_addr, &ca->mover_addr_env,
+                                &ca->mover_addr_env_len) != 0) {
+      ndmalogf(sess, 0, 0, "MOVER_LISTEN addr_env copy failed");
+      return -1;
+    }
+    NDMC_ENDWITH
+
+    return 0;
+  }
+
+  ndmca_clear_addr_env(&ca->mover_addr_env, &ca->mover_addr_env_len);
 
   NDMC_WITH(ndmp9_mover_listen, NDMP9VER)
   request->mode = ca->mover_mode;

@@ -311,12 +311,16 @@ struct ndm_control_agent {
   NDM_FLAG_DECL(pending_notify_data_halted)
   ndmp9_notify_data_read_request last_notify_data_read;
   ndmp9_addr data_addr;
+  ndmp9_pval* data_addr_env;
+  unsigned data_addr_env_len;
   int32_t recover_log_file_count;
   int32_t recover_log_file_ok;
   int32_t recover_log_file_error;
 
   /* Image stream */
   ndmp9_addr mover_addr;
+  ndmp9_pval* mover_addr_env;
+  unsigned mover_addr_env_len;
   ndmp9_mover_mode mover_mode;
 
   /* TAPE Agent */
