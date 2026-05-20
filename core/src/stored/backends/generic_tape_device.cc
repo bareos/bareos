@@ -328,6 +328,60 @@ bool generic_tape_device::offline()
   return true;
 }
 
+static bool WriteFilemark(generic_tape_device* dev, int num, bool immediate)
+{
+  mtop mt_com{};
+  int status;
+  Dmsg2(129, "=== weof_dev=%s immediate=%d\n", dev->prt_name, immediate);
+
+  if (!dev->IsOpen()) {
+    dev->dev_errno = EBADF;
+    Mmsg0(dev->errmsg, T_("Bad call to weof_dev. Device not open\n"));
+    Emsg0(M_FATAL, 0, "%s", dev->errmsg);
+    return false;
+  }
+  dev->file_size = 0;
+
+  if (!dev->CanAppend()) {
+    Mmsg0(dev->errmsg, T_("Attempt to WEOF on non-appendable Volume\n"));
+    Emsg0(M_FATAL, 0, "%s", dev->errmsg);
+    return false;
+  }
+
+  dev->ClearEof();
+  dev->ClearEot();
+  mt_com.mt_op = MTWEOF;
+#if defined(MTWEOFI)
+  if (immediate) { mt_com.mt_op = MTWEOFI; }
+#endif
+  mt_com.mt_count = num;
+  status = dev->d_ioctl(dev->fd, MTIOCTOP, (char*)&mt_com);
+#if defined(MTWEOFI)
+  if (status < 0 && mt_com.mt_op == MTWEOFI
+      && (errno == ENOTTY || errno == ENOSYS)) {
+    Dmsg1(129, "Immediate filemark unsupported on %s, falling back to MTWEOF\n",
+          dev->prt_name);
+    mt_com.mt_op = MTWEOF;
+    status = dev->d_ioctl(dev->fd, MTIOCTOP, (char*)&mt_com);
+  }
+#endif
+  if (status == 0) {
+    dev->block_num = 0;
+    dev->file += num;
+    dev->file_addr = 0;
+  } else {
+    BErrNo be;
+
+    dev->clrerror(mt_com.mt_op);
+    if (status == -1) {
+      Mmsg2(dev->errmsg, T_("ioctl MTWEOF error on %s. ERR=%s.\n"),
+            dev->prt_name, be.bstrerror());
+    }
+  }
+
+  return status == 0;
+}
+
 /**
  * Write an end of file on the device
  *
@@ -336,44 +390,39 @@ bool generic_tape_device::offline()
  */
 bool generic_tape_device::weof(int num)
 {
+  return WriteFilemark(this, num, true);
+}
+
+bool generic_tape_device::d_flush(DeviceControlRecord*)
+{
   mtop mt_com{};
-  int status;
-  Dmsg1(129, "=== weof_dev=%s\n", prt_name);
 
   if (!IsOpen()) {
     dev_errno = EBADF;
-    Mmsg0(errmsg, T_("Bad call to weof_dev. Device not open\n"));
-    Emsg0(M_FATAL, 0, "%s", errmsg);
-    return false;
-  }
-  file_size = 0;
-
-  if (!CanAppend()) {
-    Mmsg0(errmsg, T_("Attempt to WEOF on non-appendable Volume\n"));
-    Emsg0(M_FATAL, 0, "%s", errmsg);
+    Mmsg1(errmsg, T_("Bad call to d_flush. Device %s not open\n"), prt_name);
     return false;
   }
 
-  ClearEof();
-  ClearEot();
-  mt_com.mt_op = MTWEOF;
-  mt_com.mt_count = num;
-  status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
-  if (status == 0) {
-    block_num = 0;
-    file += num;
-    file_addr = 0;
-  } else {
+  mt_com.mt_op = MTNOP;
+  mt_com.mt_count = 1;
+  if (d_ioctl(fd, MTIOCTOP, (char*)&mt_com) < 0) {
     BErrNo be;
-
     clrerror(mt_com.mt_op);
-    if (status == -1) {
-      Mmsg2(errmsg, T_("ioctl MTWEOF error on %s. ERR=%s.\n"), prt_name,
-            be.bstrerror());
-    }
+    Mmsg2(errmsg, T_("ioctl MTNOP error on %s. ERR=%s.\n"), prt_name,
+          be.bstrerror());
+    return false;
   }
 
-  return status == 0;
+#if !defined(HAVE_WIN32)
+  if (::fsync(fd) < 0 && errno != EINVAL && errno != ENOTSUP
+      && errno != ENOSYS) {
+    BErrNo be;
+    Mmsg2(errmsg, T_("fsync error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
+    return false;
+  }
+#endif
+
+  return true;
 }
 
 /**

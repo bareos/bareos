@@ -345,8 +345,16 @@ if(NOT client-only)
     LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   )
   bareos_add_test(
-    test_config_parser_sd LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib
-                                         GTest::gtest_main
+    test_config_parser_sd
+    LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib GTest::gtest_main
+  )
+  if(TARGET bareossd-file)
+    add_dependencies(test_config_parser_sd bareossd-file)
+  endif()
+  bareos_add_test(
+    test_generic_tape_device
+    ADDITIONAL_SOURCES ../stored/backends/generic_tape_device.cc
+    LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib GTest::gtest_main
   )
   bareos_add_test(
     test_db_list_ctx LINK_LIBRARIES Bareos::Lib Bareos::SQL GTest::gtest_main
