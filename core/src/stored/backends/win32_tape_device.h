@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
    Copyright (C) 2013-2014 Planets Communications B.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -40,6 +40,7 @@ class win32_tape_device : public generic_tape_device {
   int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) override;
   ssize_t d_read(int fd, void* buffer, size_t count) override;
   ssize_t d_write(int fd, const void* buffer, size_t count) override;
+  bool d_flush(DeviceControlRecord* dcr) override;
   int TapeOp(struct mtop* mt_com);
   int TapeGet(struct mtget* mt_com);
   int TapePos(struct mtpos* mt_com);

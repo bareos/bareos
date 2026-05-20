@@ -560,6 +560,10 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
         if (!dev->num_writers && dev->CanWrite() && dev->block_num > 0) {
           dev->weof(1);
           WriteAnsiIbmLabels(dcr, ANSI_EOF_LABEL, dev->VolHdr.VolumeName);
+          if (!jcr->IsJobCanceled() && !dev->d_flush(dcr)) {
+            Jmsg(jcr, M_FATAL, 0, "Failed to flush device %s.\n",
+                 dev->print_name());
+          }
         }
         if (!dev->AtWeot()) {
           dev->VolCatInfo.VolCatFiles = dev->file; /* set number of files */
