@@ -44,6 +44,11 @@
 #  include "lib/berrno.h"
 #  include "lib/dlist.h"
 
+#  include <dirent.h>
+#  include <cstdlib>
+#  include <fstream>
+#  include <optional>
+
 /* -----------------------------------------------------------------------
  *
  *   PostgreSQL dependent defines and subroutines
@@ -53,6 +58,7 @@
 
 static pthread_mutex_t db_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 static dlist<BareosDbPostgresql>* db_list = NULL;
+static constexpr int64_t kCatalogBootstrapLockId = 0x424152454f53;
 
 namespace postgres {
 
@@ -176,6 +182,28 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord*,
 
 BareosDbPostgresql::~BareosDbPostgresql() {}
 
+namespace {
+
+std::string JoinPath(const char* base, const char* relative)
+{
+  std::string result = base ? base : "";
+  if (!result.empty() && result.back() != '/') { result.push_back('/'); }
+  result.append(relative);
+  return result;
+}
+
+bool ReadFile(const std::string& path, std::string& content)
+{
+  std::ifstream input(path, std::ios::binary);
+  if (!input.is_open()) { return false; }
+
+  content.assign(std::istreambuf_iterator<char>(input),
+                 std::istreambuf_iterator<char>());
+  return input.good() || input.eof();
+}
+
+}  // namespace
+
 // Check that the database correspond to the encoding we want
 bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
 {
@@ -210,6 +238,18 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
   return retval;
 }
 
+void BareosDbPostgresql::SetConnectionOptions()
+{
+  SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
+  SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
+  SqlQueryWithoutHandler("SET client_min_messages TO WARNING");
+
+  /* Tell PostgreSQL we are using standard conforming strings
+   * and avoid warnings such as:
+   *  WARNING:  nonstandard use of \\ in a string literal */
+  SqlQueryWithoutHandler("SET standard_conforming_strings=on");
+}
+
 /**
  * Now actually open the database.  This can generate errors, which are returned
  * in the errmsg
@@ -217,6 +257,18 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
  * DO NOT close the database or delete mdb here !!!!
  */
 const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
+{
+  return OpenDatabase(jcr, true);
+}
+
+const char* BareosDbPostgresql::OpenDatabaseWithoutVersionCheck(
+    JobControlRecord* jcr)
+{
+  return OpenDatabase(jcr, false);
+}
+
+const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr,
+                                             bool check_tables_version)
 {
   int errstat;
   char buf[10], *port;
@@ -308,21 +360,232 @@ const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
   if (!db_handle_) { return errmsg; }
 
   connected_ = true;
-  if (!CheckTablesVersion(jcr)) { return errmsg; }
+  if (check_tables_version && !CheckTablesVersion(jcr)) { return errmsg; }
 
-  SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
-  SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
-  SqlQueryWithoutHandler("SET client_min_messages TO WARNING");
-
-  /* Tell PostgreSQL we are using standard conforming strings
-   * and avoid warnings such as:
-   *  WARNING:  nonstandard use of \\ in a string literal */
-  SqlQueryWithoutHandler("SET standard_conforming_strings=on");
-
+  SetConnectionOptions();
   // Check that encoding is SQL_ASCII
   CheckDatabaseEncoding(jcr);
 
   return nullptr;
+}
+
+bool BareosDbPostgresql::BootstrapBareosSchema(JobControlRecord* jcr,
+                                               const char* scripts_directory)
+{
+  int lock_backend_pid = 0;
+
+  auto acquire_bootstrap_lock = [this]() -> bool {
+    PoolMem query(PM_MESSAGE);
+    Mmsg(query, "SELECT pg_try_advisory_lock(%" PRId64 ")",
+         kCatalogBootstrapLockId);
+    if (!SqlQuery(query.c_str())) {
+      return false;
+    }
+
+    auto row = SqlFetchRow();
+    return row && row[0] && row[0][0] == 't';
+  };
+
+  auto release_bootstrap_lock = [this, &lock_backend_pid]() {
+    if (lock_backend_pid == 0 || PQbackendPID(db_handle_) != lock_backend_pid) {
+      return;
+    }
+
+    PoolMem query(PM_MESSAGE);
+    Mmsg(query, "SELECT pg_advisory_unlock(%" PRId64 ")",
+         kCatalogBootstrapLockId);
+    if (!SqlExec(query.c_str())) {
+      Dmsg1(50, "Failed to release catalog bootstrap lock: %s\n", errmsg);
+    }
+  };
+
+  auto has_version_table = [this]() -> std::optional<bool> {
+    if (!SqlQuery("SELECT to_regclass('version') IS NOT NULL")) {
+      return std::nullopt;
+    }
+
+    auto row = SqlFetchRow();
+    if (!row || !row[0]) { return std::nullopt; }
+    return row[0][0] == 't';
+  };
+
+  auto get_catalog_version = [this]() -> std::optional<uint32_t> {
+    if (!SqlQuery("SELECT MAX(VersionId) FROM Version")) {
+      return std::nullopt;
+    }
+
+    auto row = SqlFetchRow();
+    if (!row || !row[0]) { return std::nullopt; }
+
+    return static_cast<uint32_t>(std::strtoul(row[0], nullptr, 10));
+  };
+
+  auto execute_sql_file = [this, jcr](const std::string& sql_file) -> bool {
+    std::string sql;
+    if (!ReadFile(sql_file, sql)) {
+      Mmsg(errmsg, T_("Unable to open database definition file %s\n"),
+           sql_file.c_str());
+      return false;
+    }
+
+    if (!SqlExec(sql.c_str())) {
+      Mmsg(errmsg, T_("Failed to execute database definition file %s: %s\n"),
+           sql_file.c_str(), sql_strerror());
+      Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
+      return false;
+    }
+
+    return true;
+  };
+
+  auto find_next_update = [this](const std::string& updates_directory,
+                                 uint32_t current_version,
+                                 uint32_t& next_version,
+                                 std::string& update_file) -> bool {
+    DIR* dir = opendir(updates_directory.c_str());
+    if (!dir) {
+      Mmsg(errmsg, T_("Unable to open database update directory %s\n"),
+           updates_directory.c_str());
+      return false;
+    }
+
+    struct DirCloser {
+      DIR* dir;
+      ~DirCloser()
+      {
+        if (dir) { closedir(dir); }
+      }
+    } close_dir{dir};
+
+    bool found = false;
+    while (auto* entry = readdir(dir)) {
+      std::string entry_name = entry->d_name;
+      constexpr const char* prefix = "postgresql.";
+      constexpr const char* suffix = ".sql";
+
+      if (entry_name.rfind(prefix, 0) != 0
+          || entry_name.size() <= strlen(prefix) + strlen(suffix)
+          || entry_name.compare(entry_name.size() - strlen(suffix),
+                                strlen(suffix), suffix)
+                 != 0) {
+        continue;
+      }
+
+      auto versions = entry_name.substr(strlen(prefix),
+                                        entry_name.size() - strlen(prefix)
+                                            - strlen(suffix));
+      auto separator = versions.find('_');
+      if (separator == std::string::npos || separator == 0
+          || separator + 1 >= versions.size()) {
+        continue;
+      }
+
+      auto start_version = static_cast<uint32_t>(
+          std::strtoul(versions.substr(0, separator).c_str(), nullptr, 10));
+      auto end_version = static_cast<uint32_t>(std::strtoul(
+          versions.substr(separator + 1).c_str(), nullptr, 10));
+
+      if (start_version != current_version) { continue; }
+      if (found) {
+        Mmsg(errmsg,
+             T_("Multiple database upgrade paths found for schema version %" PRIu32
+                " in %s\n"),
+             current_version, updates_directory.c_str());
+        return false;
+      }
+
+      found = true;
+      next_version = end_version;
+      update_file = JoinPath(updates_directory.c_str(), entry->d_name);
+    }
+
+    if (!found) {
+      Mmsg(errmsg,
+           T_("Don't know how to upgrade database \"%s\" from version %" PRIu32
+              " to %" PRIu32 "\n"),
+           get_db_name(), current_version, static_cast<uint32_t>(BDB_VERSION));
+    }
+
+    return found;
+  };
+
+  if (!acquire_bootstrap_lock()) {
+    if (*errmsg == '\0') {
+      Mmsg(errmsg,
+           T_("Unable to acquire the catalog bootstrap lock for database \"%s\"\n"),
+           get_db_name());
+    }
+    Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
+    return false;
+  }
+  lock_backend_pid = PQbackendPID(db_handle_);
+
+  struct LockReleaser {
+    decltype(release_bootstrap_lock)& release;
+    ~LockReleaser() { release(); }
+  } release_lock{release_bootstrap_lock};
+
+  auto version_table_exists = has_version_table();
+  if (!version_table_exists) {
+    Mmsg(errmsg, T_("Unable to determine if the Version table exists in \"%s\"\n"),
+         get_db_name());
+    Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
+    return false;
+  }
+
+  if (!*version_table_exists) {
+    auto create_file = JoinPath(scripts_directory, "ddl/creates/postgresql.sql");
+    Jmsg(jcr, M_INFO, 0, T_("Creating Bareos catalog schema in database \"%s\"\n"),
+         get_db_name());
+    if (!execute_sql_file(create_file)) { return false; }
+    return true;
+  }
+
+  auto catalog_version = get_catalog_version();
+  if (!catalog_version) {
+    Mmsg(errmsg,
+         T_("Unable to determine the Bareos catalog schema version in \"%s\"\n"),
+         get_db_name());
+    Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
+    return false;
+  }
+
+  if (*catalog_version > BDB_VERSION) {
+    Mmsg(errmsg,
+         T_("Version error for database \"%s\". Wanted %" PRIu32
+            ", got %" PRIu32 "\n"),
+         get_db_name(), static_cast<uint32_t>(BDB_VERSION), *catalog_version);
+    Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
+    return false;
+  }
+
+  auto updates_directory = JoinPath(scripts_directory, "ddl/updates");
+  while (*catalog_version < BDB_VERSION) {
+    uint32_t next_version = 0;
+    std::string update_file;
+    if (!find_next_update(updates_directory, *catalog_version, next_version,
+                          update_file)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
+      return false;
+    }
+
+    Jmsg(jcr, M_INFO, 0,
+         T_("Upgrading Bareos catalog schema in database \"%s\" from %" PRIu32
+            " to %" PRIu32 "\n"),
+         get_db_name(), *catalog_version, next_version);
+    if (!execute_sql_file(update_file)) { return false; }
+
+    catalog_version = get_catalog_version();
+    if (!catalog_version || *catalog_version != next_version) {
+      Mmsg(errmsg,
+           T_("Failed to upgrade database \"%s\" to schema version %" PRIu32 "\n"),
+           get_db_name(), next_version);
+      Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void BareosDbPostgresql::CloseDatabase(JobControlRecord* jcr)
