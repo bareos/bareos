@@ -398,6 +398,7 @@ if(NOT HAVE_WIN32 AND NOT client-only)
     test_bsock
     ADDITIONAL_SOURCES
       bareos_test_sockets.cc bsock_constructor_test.cc
+      bsock_keepalive_test.cc
       bsock_cert_verify_common_names_test.cc create_resource.cc init_openssl.cc
     LINK_LIBRARIES ${LINK_LIBRARIES}
     COMPILE_DEFINITIONS CERTDIR=\"${CERTDIR}\"

@@ -35,6 +35,7 @@
 #include "lib/bnet_server_tcp.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bsys.h"
+#include "lib/tcp_keepalive.h"
 #include "lib/thread_list.h"
 #include "lib/watchdog.h"
 #include "lib/address_conf.h"
@@ -271,11 +272,14 @@ void BnetThreadServerTcp(
     std::function<void*(ConfigurationParser* config, void* bsock)>
         HandleConnectionRequest,
     ConfigurationParser* config,
+    utime_t heartbeat_interval,
     std::atomic<BnetServerState>* const server_state,
     std::function<void*(void* bsock)> UserAgentShutdownCallback,
     std::function<void()> CustomCallback)
 {
   BNetThreadServerCleanupObject cleanup_object(thread_list);
+  const auto keepalive_settings
+      = ResolveTcpKeepaliveSettings(heartbeat_interval);
 
   quit = false;  // allow other threads to set this true during initialization
   if (server_state) { server_state->store(BnetServerState::kStarting); }
@@ -388,14 +392,8 @@ void BnetThreadServerTcp(
 #  endif
 #endif
 
-        int keepalive = 1;
-        if (setsockopt(newsockfd, SOL_SOCKET, SO_KEEPALIVE,
-                       (sockopt_val_t)&keepalive, sizeof(keepalive))
-            < 0) {
-          BErrNo be;
-          Emsg1(M_WARNING, 0, T_("Cannot set SO_KEEPALIVE on socket: %s\n"),
-                be.bstrerror());
-        }
+        ApplyTcpKeepaliveSettings(nullptr, newsockfd, keepalive_settings,
+                                  false);
 
         // See who client is. i.e. who connected to us.
         char buf[128];
