@@ -82,7 +82,7 @@ TEST(tcp_keepalive, applies_socket_options)
   ASSERT_EQ(getsockopt(fd.get(), SOL_SOCKET, SO_KEEPALIVE, &keepalive,
                        &keepalive_size),
             0);
-  EXPECT_EQ(keepalive, 1);
+  EXPECT_NE(keepalive, 0);
 
 #if defined(TCP_KEEPIDLE)
   int idle_time = 0;
