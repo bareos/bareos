@@ -44,8 +44,8 @@
 #  include "lib/berrno.h"
 #  include "lib/dlist.h"
 
-#  include <dirent.h>
 #  include <cstdlib>
+#  include <filesystem>
 #  include <fstream>
 #  include <optional>
 
@@ -442,24 +442,18 @@ bool BareosDbPostgresql::BootstrapBareosSchema(JobControlRecord* jcr,
                                  uint32_t current_version,
                                  uint32_t& next_version,
                                  std::string& update_file) -> bool {
-    DIR* dir = opendir(updates_directory.c_str());
-    if (!dir) {
+    std::error_code error;
+    auto iterator
+        = std::filesystem::directory_iterator(updates_directory, error);
+    if (error) {
       Mmsg(errmsg, T_("Unable to open database update directory %s\n"),
            updates_directory.c_str());
       return false;
     }
 
-    struct DirCloser {
-      DIR* dir;
-      ~DirCloser()
-      {
-        if (dir) { closedir(dir); }
-      }
-    } close_dir{dir};
-
     bool found = false;
-    while (auto* entry = readdir(dir)) {
-      std::string entry_name = entry->d_name;
+    for (const auto& entry : iterator) {
+      std::string entry_name = entry.path().filename().string();
       constexpr const char* prefix = "postgresql.";
       constexpr const char* suffix = ".sql";
 
@@ -496,7 +490,7 @@ bool BareosDbPostgresql::BootstrapBareosSchema(JobControlRecord* jcr,
 
       found = true;
       next_version = end_version;
-      update_file = JoinPath(updates_directory.c_str(), entry->d_name);
+      update_file = entry.path().string();
     }
 
     if (!found) {
