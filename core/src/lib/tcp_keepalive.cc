@@ -28,6 +28,7 @@
 #include "lib/berrno.h"
 
 #ifndef HAVE_WIN32
+#  include <netinet/in.h>
 #  include <netinet/tcp.h>
 #endif
 
