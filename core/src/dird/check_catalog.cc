@@ -23,7 +23,6 @@
 
 #include "include/bareos.h"
 #include "cats/cats.h"
-#include "cats/postgresql.h"
 #include "dird/check_catalog.h"
 #include "dird/dird.h"
 #include "dird/dird_conf.h"
@@ -37,14 +36,12 @@ static bool OpenCatalogWithBootstrap(CatalogResource* catalog,
                                      BareosDb* db,
                                      bool allow_bootstrap)
 {
-  if (allow_bootstrap) {
-    auto* pg_db = dynamic_cast<BareosDbPostgresql*>(db);
-    if (!pg_db) { allow_bootstrap = false; }
+  if (allow_bootstrap && !db->SupportsBareosSchemaBootstrap()) {
+    allow_bootstrap = false;
   }
 
   if (allow_bootstrap) {
-    auto* pg_db = static_cast<BareosDbPostgresql*>(db);
-    if (auto err = pg_db->OpenDatabaseWithoutVersionCheck(nullptr)) {
+    if (auto err = db->OpenDatabaseWithoutVersionCheck(nullptr)) {
       Pmsg2(000, T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
             catalog->resource_name_, catalog->db_name, err);
       Jmsg(nullptr, M_FATAL, 0,
@@ -53,8 +50,8 @@ static bool OpenCatalogWithBootstrap(CatalogResource* catalog,
       return false;
     }
 
-    if (!pg_db->BootstrapBareosSchema(nullptr, me->scripts_directory)
-        || !pg_db->CheckTablesVersion(nullptr)) {
+    if (!db->BootstrapBareosSchema(nullptr, me->scripts_directory)
+        || !db->CheckTablesVersion(nullptr)) {
       Pmsg2(000, T_("Could not bootstrap Catalog \"%s\", database \"%s\".\n"),
             catalog->resource_name_, catalog->db_name);
       Jmsg(nullptr, M_FATAL, 0,
