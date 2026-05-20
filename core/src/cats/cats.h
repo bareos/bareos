@@ -572,6 +572,16 @@ class BareosDb : public BareosDbQueryEnum {
   bool BatchInsertAvailable(void) { return have_batch_insert_; }
   bool IsPrivate(void) { return is_private_; }
   void IncrementRefcount(void) { ref_count_++; }
+  virtual bool SupportsBareosSchemaBootstrap(void) { return false; }
+  virtual const char* OpenDatabaseWithoutVersionCheck(JobControlRecord* jcr)
+  {
+    return OpenDatabase(jcr);
+  }
+  virtual bool BootstrapBareosSchema(JobControlRecord*,
+                                     const char* /*scripts_directory*/)
+  {
+    return false;
+  }
 
   /* bvfs.c */
   bool BvfsUpdatePathHierarchyCache(JobControlRecord* jcr, const char* jobids);

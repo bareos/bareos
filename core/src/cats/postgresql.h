@@ -55,9 +55,10 @@ class BareosDbPostgresql : public BareosDb {
                      bool need_private);
   ~BareosDbPostgresql();
 
-  const char* OpenDatabaseWithoutVersionCheck(JobControlRecord* jcr);
+  bool SupportsBareosSchemaBootstrap(void) override { return true; }
+  const char* OpenDatabaseWithoutVersionCheck(JobControlRecord* jcr) override;
   bool BootstrapBareosSchema(JobControlRecord* jcr,
-                             const char* scripts_directory);
+                             const char* scripts_directory) override;
 
   dlink<BareosDbPostgresql> link; /**< Queue control */
 
