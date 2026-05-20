@@ -17,7 +17,7 @@ mkdir -p "${BAREOS_CONFIG_DIR}"
 mkdir -p "${working}"
 ${SED} 's#dbname = ".*"#dbname = "'"${db_name}"'"#' \
   "${BAREOS_CONFIG_DIR}/bareos-dir.d/catalog/MyCatalog.conf"
-${SED} '/^}/i\  WorkingDirectory = "'"${working}"'"\n  ScriptsDirectory = "'"${BAREOS_SCRIPTS_DIR}"'"' \
+${SED} "s,\(Name.*=.*-dir\).*$,\1\n  WorkingDirectory = \"${working}\"\n  ScriptsDirectory = \"${BAREOS_SCRIPTS_DIR}\"\n,g" \
   "${BAREOS_CONFIG_DIR}/bareos-dir.d/director/bareos-dir.conf"
 
 assert_catalog_version()
