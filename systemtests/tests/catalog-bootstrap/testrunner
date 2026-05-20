@@ -14,12 +14,10 @@ export TestName
 
 current_db_version="$("${BAREOS_SCRIPTS_DIR}/bareos-config" get_database_version)"
 mkdir -p "${BAREOS_CONFIG_DIR}"
-/bin/cp -r "${CMAKE_BINARY_DIR}/systemtests/tests/config-default/etc/bareos/." \
-  "${BAREOS_CONFIG_DIR}/"
 mkdir -p "${working}"
-sed -i 's#dbname = ".*"#dbname = "'"${db_name}"'"#' \
+${SED} 's#dbname = ".*"#dbname = "'"${db_name}"'"#' \
   "${BAREOS_CONFIG_DIR}/bareos-dir.d/catalog/MyCatalog.conf"
-sed -i '/^}/i\  WorkingDirectory = "'"${working}"'"\n  ScriptsDirectory = "'"${BAREOS_SCRIPTS_DIR}"'"' \
+${SED} '/^}/i\  WorkingDirectory = "'"${working}"'"\n  ScriptsDirectory = "'"${BAREOS_SCRIPTS_DIR}"'"' \
   "${BAREOS_CONFIG_DIR}/bareos-dir.d/director/bareos-dir.conf"
 
 assert_catalog_version()
