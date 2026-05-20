@@ -550,7 +550,7 @@ void DoRestore(JobControlRecord* jcr)
               = is_win32_stream(attr->data_stream) && !have_win32_api();
 
           if (fatal_unsupported_stream) {
-            Jmsg(jcr, M_ERROR, 0,
+            Jmsg(jcr, M_FATAL, 0,
                  T_("%s stream not supported on this Client.\n"),
                  stream_to_ascii(attr->data_stream));
             aborted_on_fatal_unsupported_data_stream = true;
