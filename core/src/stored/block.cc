@@ -495,6 +495,13 @@ static bool TerminateWritingVolume(DeviceControlRecord* dcr)
     Dmsg0(50, "Writing second EOF failed.\n");
   }
 
+  if (ok && !dev->d_flush(dcr)) {
+    dev->VolCatInfo.VolCatErrors++;
+    Jmsg(dcr->jcr, M_ERROR, 0, "%s", dev->errmsg);
+    Dmsg0(50, "Flushing final EOFs failed.\n");
+    ok = false;
+  }
+
   dev->SetAteot(); /* no more writing this tape */
   Dmsg1(50, "*** Leave TerminateWritingVolume -- %s\n", ok ? "OK" : "ERROR");
   return ok;
