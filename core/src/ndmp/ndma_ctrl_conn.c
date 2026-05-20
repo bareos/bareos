@@ -86,6 +86,15 @@ int ndmca_connect_xxx_agent(struct ndm_session* sess,
     goto error_out;
   }
 
+  if (agent == &sess->control_acb->job.data_agent &&
+      sess->control_acb->job.use_cab_extensions) {
+    rc = ndmconn_negotiate_cab_extensions(conn);
+    if (rc) {
+      err = "Can't enable CAB extensions";
+      goto error_out;
+    }
+  }
+
   *connp = conn;
   return 0;
 

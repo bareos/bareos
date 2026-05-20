@@ -229,6 +229,9 @@ extern int ndmos_chan_poll(struct ndmchan* chtab[],
 #define NDMCONN_CALL_STATUS_REPLY_ERROR 1
 #define NDMCONN_CALL_STATUS_REPLY_LATE 2
 
+#define NDMP4_EXT_CLASS_CAB 0x2052
+#define NDMP4_EXT_VERSION_CAB 1
+
 
 struct ndmconn {
   struct sockaddr sa;
@@ -263,6 +266,9 @@ struct ndmconn {
   int last_call_status;
   ndmp9_error last_header_error;
   ndmp9_error last_reply_error;
+  NDM_FLAG_DECL(cab_extensions_available)
+  NDM_FLAG_DECL(cab_extensions_enabled)
+  uint16_t cab_extension_version;
 
   long sent_time;
   long received_time;
@@ -288,6 +294,7 @@ extern int ndmconn_auth_agent(struct ndmconn* conn, struct ndmagent* agent);
 extern int ndmconn_auth_none(struct ndmconn* conn);
 extern int ndmconn_auth_text(struct ndmconn* conn, char* id, char* pw);
 extern int ndmconn_auth_md5(struct ndmconn* conn, char* id, char* pw);
+extern int ndmconn_negotiate_cab_extensions(struct ndmconn* conn);
 extern int ndmconn_call(struct ndmconn* conn, struct ndmp_xa_buf* xa);
 extern int ndmconn_exchange_nmb(struct ndmconn* conn,
                                 struct ndmp_msg_buf* request_nmb,

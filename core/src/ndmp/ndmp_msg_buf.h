@@ -271,6 +271,9 @@ struct ndmp_msg_buf {
     ndmp4_config_get_tape_info_reply ndmp4_config_get_tape_info_reply_body;
     ndmp4_config_get_scsi_info_reply ndmp4_config_get_scsi_info_reply_body;
     ndmp4_config_get_server_info_reply ndmp4_config_get_server_info_reply_body;
+    ndmp4_config_get_ext_list_reply ndmp4_config_get_ext_list_reply_body;
+    ndmp4_config_set_ext_list_request ndmp4_config_set_ext_list_request_body;
+    ndmp4_config_set_ext_list_reply ndmp4_config_set_ext_list_reply_body;
     ndmp4_scsi_open_request ndmp4_scsi_open_request_body;
     ndmp4_scsi_open_reply ndmp4_scsi_open_reply_body;
     ndmp4_scsi_close_reply ndmp4_scsi_close_reply_body;
@@ -566,6 +569,8 @@ struct ndmp_xa_buf {
 #define MT_ndmp4_config_get_tape_info NDMP4_CONFIG_GET_TAPE_INFO
 #define MT_ndmp4_config_get_scsi_info NDMP4_CONFIG_GET_SCSI_INFO
 #define MT_ndmp4_config_get_server_info NDMP4_CONFIG_GET_SERVER_INFO
+#define MT_ndmp4_config_get_ext_list NDMP4_CONFIG_GET_EXT_LIST
+#define MT_ndmp4_config_set_ext_list NDMP4_CONFIG_SET_EXT_LIST
 #define MT_ndmp4_scsi_open NDMP4_SCSI_OPEN
 #define MT_ndmp4_scsi_close NDMP4_SCSI_CLOSE
 #define MT_ndmp4_scsi_get_state NDMP4_SCSI_GET_STATE

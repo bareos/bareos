@@ -602,6 +602,91 @@ int ndmconn_auth_md5(struct ndmconn* conn, char* id, char* pw)
   return 0;
 }
 
+#ifndef NDMOS_OPTION_NO_NDMP4
+static bool ndmconn_find_extension_version(
+    const ndmp4_config_get_ext_list_reply* reply,
+    uint16_t class_id,
+    uint16_t version)
+{
+  if (reply->error != NDMP4_NO_ERR) { return false; }
+
+  for (u_int i = 0; i < reply->class_list.class_list_len; ++i) {
+    const ndmp4_class_list* class_list = &reply->class_list.class_list_val[i];
+    if (class_list->class_id != class_id) { continue; }
+
+    for (u_int j = 0; j < class_list->class_version.class_version_len; ++j) {
+      if (class_list->class_version.class_version_val[j] == version) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+#endif
+
+int ndmconn_negotiate_cab_extensions(struct ndmconn* conn)
+{
+#ifndef NDMOS_OPTION_NO_NDMP4
+  int rc;
+  uint16_t cab_version = NDMP4_EXT_VERSION_CAB;
+  ndmp4_class_list cab_extension;
+
+  conn->cab_extensions_available = 0;
+  conn->cab_extensions_enabled = 0;
+  conn->cab_extension_version = 0;
+
+  if (conn->conn_type != NDMCONN_TYPE_REMOTE) { return 0; }
+
+  if (conn->protocol_version != NDMP4VER) {
+    ndmconn_set_err_msg(conn, "cab-requires-ndmp4");
+    return -1;
+  }
+
+  NDMC_WITH_VOID_REQUEST(ndmp4_config_get_ext_list, NDMP4VER)
+  rc = NDMC_CALL(conn);
+  if (rc != NDMCONN_CALL_STATUS_OK) {
+    NDMC_FREE_REPLY();
+    ndmconn_set_err_msg(conn, "cab-ext-list-query-failed");
+    return -1;
+  }
+
+  if (!ndmconn_find_extension_version(reply, NDMP4_EXT_CLASS_CAB,
+                                      NDMP4_EXT_VERSION_CAB)) {
+    NDMC_FREE_REPLY();
+    ndmconn_set_err_msg(conn, "cab-extension-unavailable");
+    return -1;
+  }
+  NDMC_FREE_REPLY();
+  NDMC_ENDWITH
+
+  NDMOS_MACRO_ZEROFILL(&cab_extension);
+  cab_extension.class_id = NDMP4_EXT_CLASS_CAB;
+  cab_extension.class_version.class_version_len = 1;
+  cab_extension.class_version.class_version_val = &cab_version;
+
+  NDMC_WITH(ndmp4_config_set_ext_list, NDMP4VER)
+  request->error = NDMP4_NO_ERR;
+  request->ndmp4_accepted_ext.ndmp4_accepted_ext_len = 1;
+  request->ndmp4_accepted_ext.ndmp4_accepted_ext_val = &cab_extension;
+  rc = NDMC_CALL(conn);
+  if (rc != NDMCONN_CALL_STATUS_OK) {
+    ndmconn_set_err_msg(conn, "cab-ext-list-enable-failed");
+    return -1;
+  }
+  NDMC_ENDWITH
+
+  conn->cab_extensions_available = 1;
+  conn->cab_extensions_enabled = 1;
+  conn->cab_extension_version = NDMP4_EXT_VERSION_CAB;
+
+  return 0;
+#else
+  ndmconn_set_err_msg(conn, "cab-requires-ndmp4");
+  return -1;
+#endif
+}
+
 
 /*
  * CALL (REQUEST/REPLY), SEND, and RECEIVE

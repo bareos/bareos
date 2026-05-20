@@ -51,6 +51,7 @@
 #define xdr_ndmp4_config_get_tape_info_request xdr_void
 #define xdr_ndmp4_config_get_scsi_info_request xdr_void
 #define xdr_ndmp4_config_get_server_info_request xdr_void
+#define xdr_ndmp4_config_get_ext_list_request xdr_void
 #define xdr_ndmp4_scsi_close_request xdr_void
 #define xdr_ndmp4_scsi_get_state_request xdr_void
 #define xdr_ndmp4_scsi_reset_device_request xdr_void
@@ -130,6 +131,16 @@ struct ndmp_xdr_message_table ndmp4_xdr_message_table[] = {
         NDMP4_CONFIG_GET_SERVER_INFO,
         xdr_ndmp4_config_get_server_info_request,
         xdr_ndmp4_config_get_server_info_reply,
+    },
+    {
+        NDMP4_CONFIG_GET_EXT_LIST,
+        xdr_ndmp4_config_get_ext_list_request,
+        xdr_ndmp4_config_get_ext_list_reply,
+    },
+    {
+        NDMP4_CONFIG_SET_EXT_LIST,
+        xdr_ndmp4_config_set_ext_list_request,
+        xdr_ndmp4_config_set_ext_list_reply,
     },
     {
         NDMP4_SCSI_OPEN,

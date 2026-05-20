@@ -252,6 +252,7 @@ struct ndm_job_param {
   struct ndm_nlist_table nlist_tab;    /* for RECOVER ops */
   struct ndm_env_table result_env_tab; /* after BACKUP */
   struct ndmlog index_log;             /* to log NDMP_FH_ADD_... */
+  NDM_FLAG_DECL(use_cab_extensions)
 
   struct ndmagent tape_agent;         /* TAPE AGENT host/pw */
   char* tape_device;                  /* eg "/dev/rmt0" */
