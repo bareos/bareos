@@ -1,0 +1,70 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+current_db_version="$("${BAREOS_SCRIPTS_DIR}/bareos-config" get_database_version)"
+mkdir -p "${BAREOS_CONFIG_DIR}"
+/bin/cp -r "${CMAKE_BINARY_DIR}/systemtests/tests/config-default/etc/bareos/." \
+  "${BAREOS_CONFIG_DIR}/"
+mkdir -p "${working}"
+sed -i 's#dbname = ".*"#dbname = "'"${db_name}"'"#' \
+  "${BAREOS_CONFIG_DIR}/bareos-dir.d/catalog/MyCatalog.conf"
+sed -i '/^}/i\  WorkingDirectory = "'"${working}"'"\n  ScriptsDirectory = "'"${BAREOS_SCRIPTS_DIR}"'"' \
+  "${BAREOS_CONFIG_DIR}/bareos-dir.d/director/bareos-dir.conf"
+
+assert_catalog_version()
+{
+  local expected_version=$1
+  local actual_version
+
+  actual_version=$(
+    PGUSER="${db_user}" \
+      PGPASSWORD="${db_password}" \
+      PGOPTIONS='--client-min-messages=warning' \
+      psql --no-psqlrc -d "${db_name}" -t --pset format=unaligned \
+        -c "SELECT MAX(VersionId) FROM Version;" | tr -d '\r'
+  )
+
+  if [ "${actual_version}" != "${expected_version}" ]; then
+    set_error "Expected catalog version ${expected_version}, got ${actual_version:-<empty>}"
+    exit 1
+  fi
+}
+
+start_and_verify_director()
+{
+  local dir_log="${current_test_directory}/bareos-dir.log"
+
+  "${BAREOS_DIRECTOR_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f >"${dir_log}" 2>&1 &
+  local dir_pid=$!
+
+  sleep 2
+  if ! kill -0 "${dir_pid}" 2>/dev/null; then
+    print_debug "$(cat "${dir_log}")"
+    set_error "bareos-dir failed to stay running"
+    wait "${dir_pid}" || true
+    exit 1
+  fi
+
+  assert_catalog_version "${current_db_version}"
+  kill "${dir_pid}"
+  wait "${dir_pid}" || true
+}
+
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/drop_bareos_database 2>&1 >/dev/null \
+  || echo "info: ${BAREOS_SCRIPTS_DIR}/drop_bareos_database failed"
+"${BAREOS_SCRIPTS_DIR}"/create_bareos_database 2>&1 >/dev/null
+"${BAREOS_SCRIPTS_DIR}"/grant_bareos_privileges 2>&1 >/dev/null \
+  || echo "info: ${BAREOS_SCRIPTS_DIR}/grant_bareos_privileges failed"
+start_and_verify_director

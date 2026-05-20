@@ -23,6 +23,7 @@
 
 #include "include/bareos.h"
 #include "cats/cats.h"
+#include "cats/postgresql.h"
 #include "dird/check_catalog.h"
 #include "dird/dird.h"
 #include "dird/dird_conf.h"
@@ -31,6 +32,51 @@
 #include "lib/parse_conf.h"
 
 namespace directordaemon {
+
+static bool OpenCatalogWithBootstrap(CatalogResource* catalog,
+                                     BareosDb* db,
+                                     bool allow_bootstrap)
+{
+  if (allow_bootstrap) {
+    auto* pg_db = dynamic_cast<BareosDbPostgresql*>(db);
+    if (!pg_db) { allow_bootstrap = false; }
+  }
+
+  if (allow_bootstrap) {
+    auto* pg_db = static_cast<BareosDbPostgresql*>(db);
+    if (auto err = pg_db->OpenDatabaseWithoutVersionCheck(nullptr)) {
+      Pmsg2(000, T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
+            catalog->resource_name_, catalog->db_name, err);
+      Jmsg(nullptr, M_FATAL, 0,
+           T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
+           catalog->resource_name_, catalog->db_name, err);
+      return false;
+    }
+
+    if (!pg_db->BootstrapBareosSchema(nullptr, me->scripts_directory)
+        || !pg_db->CheckTablesVersion(nullptr)) {
+      Pmsg2(000, T_("Could not bootstrap Catalog \"%s\", database \"%s\".\n"),
+            catalog->resource_name_, catalog->db_name);
+      Jmsg(nullptr, M_FATAL, 0,
+           T_("Could not bootstrap Catalog \"%s\", database \"%s\".\n"),
+           catalog->resource_name_, catalog->db_name);
+      return false;
+    }
+
+    return true;
+  }
+
+  if (auto err = db->OpenDatabase(nullptr)) {
+    Pmsg2(000, T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
+          catalog->resource_name_, catalog->db_name, err);
+    Jmsg(nullptr, M_FATAL, 0,
+         T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
+         catalog->resource_name_, catalog->db_name, err);
+    return false;
+  }
+
+  return true;
+}
 
 /**
  * In this routine,
@@ -68,12 +114,7 @@ bool CheckCatalog(cat_op mode)
     }
 
 
-    if (auto err = db->OpenDatabase(NULL)) {
-      Pmsg2(000, T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
-            catalog->resource_name_, catalog->db_name, err);
-      Jmsg(NULL, M_FATAL, 0,
-           T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
-           catalog->resource_name_, catalog->db_name, err);
+    if (!OpenCatalogWithBootstrap(catalog, db, mode == UPDATE_AND_FIX)) {
       db->CloseDatabase(NULL);
       OK = false;
       goto bail_out;
