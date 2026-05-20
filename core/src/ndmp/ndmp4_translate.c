@@ -216,6 +216,7 @@ struct enum_conversion ndmp_49_addr_type[] = {
     {NDMP_INVALID_GENERAL, NDMP_INVALID_GENERAL}, /* default */
     {NDMP4_ADDR_LOCAL, NDMP9_ADDR_LOCAL},
     {NDMP4_ADDR_TCP, NDMP9_ADDR_TCP},
+    {NDMP4_ADDR_TCP_IPV6, NDMP9_ADDR_TCP_IPV6},
     END_ENUM_CONVERSION_TABLE};
 
 
@@ -235,6 +236,17 @@ int ndmp_4to9_addr(ndmp4_addr* addr4, ndmp9_addr* addr9)
           addr4->ndmp4_addr_u.tcp_addr.tcp_addr_val[0].port;
       break;
 
+    case NDMP4_ADDR_TCP_IPV6:
+      addr9->addr_type = NDMP9_ADDR_TCP_IPV6;
+      if (addr4->ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_len < 1) return -1;
+      memcpy(addr9->ndmp9_addr_u.tcp_ipv6_addr.ipv6_addr,
+             addr4->ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_val[0].ipv6_addr
+                 .ipv6_addr,
+             sizeof(addr9->ndmp9_addr_u.tcp_ipv6_addr.ipv6_addr));
+      addr9->ndmp9_addr_u.tcp_ipv6_addr.port =
+          addr4->ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_val[0].port;
+      break;
+
     default:
       NDMOS_MACRO_ZEROFILL(addr9);
       addr9->addr_type = -1;
@@ -247,6 +259,7 @@ int ndmp_4to9_addr(ndmp4_addr* addr4, ndmp9_addr* addr9)
 int ndmp_9to4_addr(ndmp9_addr* addr9, ndmp4_addr* addr4)
 {
   ndmp4_tcp_addr* tcp;
+  ndmp4_tcp_ipv6_addr* tcp_ipv6;
 
   switch (addr9->addr_type) {
     case NDMP9_ADDR_LOCAL:
@@ -266,6 +279,21 @@ int ndmp_9to4_addr(ndmp9_addr* addr9, ndmp4_addr* addr4)
       addr4->ndmp4_addr_u.tcp_addr.tcp_addr_len = 1;
       break;
 
+    case NDMP9_ADDR_TCP_IPV6:
+      addr4->addr_type = NDMP4_ADDR_TCP_IPV6;
+
+      tcp_ipv6 = NDMOS_MACRO_NEWN(ndmp4_tcp_ipv6_addr, 1);
+      NDMOS_MACRO_ZEROFILL(tcp_ipv6);
+
+      memcpy(tcp_ipv6[0].ipv6_addr.ipv6_addr,
+             addr9->ndmp9_addr_u.tcp_ipv6_addr.ipv6_addr,
+             sizeof(tcp_ipv6[0].ipv6_addr.ipv6_addr));
+      tcp_ipv6[0].port = addr9->ndmp9_addr_u.tcp_ipv6_addr.port;
+
+      addr4->ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_val = tcp_ipv6;
+      addr4->ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_len = 1;
+      break;
+
     default:
       NDMOS_MACRO_ZEROFILL(addr4);
       addr4->addr_type = -1;
@@ -279,6 +307,8 @@ int ndmp_9to4_addr_free(ndmp4_addr* addr4)
 {
   if (addr4->addr_type == NDMP4_ADDR_TCP) {
     NDMOS_MACRO_FREE(addr4->ndmp4_addr_u.tcp_addr.tcp_addr_val);
+  } else if (addr4->addr_type == NDMP4_ADDR_TCP_IPV6) {
+    NDMOS_MACRO_FREE(addr4->ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_val);
   }
   return 0;
 }
@@ -597,6 +627,10 @@ int ndmp_4to9_config_get_connection_type_reply(void* input, void* output)
         reply9->config_info.conntypes |= NDMP9_CONFIG_CONNTYPE_TCP;
         break;
 
+      case NDMP4_ADDR_TCP_IPV6:
+        reply9->config_info.conntypes |= NDMP9_CONFIG_CONNTYPE_TCP_IPV6;
+        break;
+
       default:
         n_error++;
         /* ignore */
@@ -616,7 +650,7 @@ int ndmp_9to4_config_get_connection_type_reply(void* input, void* output)
 
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
 
-  reply4->addr_types.addr_types_val = NDMOS_MACRO_NEWN(ndmp4_addr_type, 3);
+  reply4->addr_types.addr_types_val = NDMOS_MACRO_NEWN(ndmp4_addr_type, 4);
   if (!reply4->addr_types.addr_types_val) { return -1; /* no mem */ }
 
   i = 0;
@@ -625,6 +659,9 @@ int ndmp_9to4_config_get_connection_type_reply(void* input, void* output)
   }
   if (reply9->config_info.conntypes & NDMP9_CONFIG_CONNTYPE_TCP) {
     reply4->addr_types.addr_types_val[i++] = NDMP4_ADDR_TCP;
+  }
+  if (reply9->config_info.conntypes & NDMP9_CONFIG_CONNTYPE_TCP_IPV6) {
+    reply4->addr_types.addr_types_val[i++] = NDMP4_ADDR_TCP_IPV6;
   }
   reply4->addr_types.addr_types_len = i;
 

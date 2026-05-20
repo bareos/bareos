@@ -241,6 +241,7 @@ int ndmp4_addr_type_from_str(ndmp4_addr_type* valp, char* str)
 struct ndmp_enum_str_table ndmp4_addr_type_table[] = {
         { "NDMP4_ADDR_LOCAL",           NDMP4_ADDR_LOCAL, },
         { "NDMP4_ADDR_TCP",             NDMP4_ADDR_TCP, },
+        { "NDMP4_ADDR_TCP_IPV6",        NDMP4_ADDR_TCP_IPV6, },
         { "NDMP4_ADDR_RESERVED",        NDMP4_ADDR_RESERVED, },
         { "NDMP4_ADDR_IPC",             NDMP4_ADDR_IPC, },
         { 0 }

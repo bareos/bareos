@@ -229,12 +229,14 @@ extern int ndmos_chan_poll(struct ndmchan* chtab[],
 #define NDMCONN_CALL_STATUS_REPLY_ERROR 1
 #define NDMCONN_CALL_STATUS_REPLY_LATE 2
 
+#define NDMP4_EXT_CLASS_IPV6 0x2051
+#define NDMP4_EXT_VERSION_IPV6 1
 #define NDMP4_EXT_CLASS_CAB 0x2052
 #define NDMP4_EXT_VERSION_CAB 1
 
 
 struct ndmconn {
-  struct sockaddr sa;
+  struct sockaddr_storage sa;
 
   struct ndmchan chan;
 
@@ -266,8 +268,11 @@ struct ndmconn {
   int last_call_status;
   ndmp9_error last_header_error;
   ndmp9_error last_reply_error;
+  NDM_FLAG_DECL(ipv6_extensions_available)
+  NDM_FLAG_DECL(ipv6_extensions_enabled)
   NDM_FLAG_DECL(cab_extensions_available)
   NDM_FLAG_DECL(cab_extensions_enabled)
+  uint16_t ipv6_extension_version;
   uint16_t cab_extension_version;
 
   long sent_time;
@@ -282,9 +287,10 @@ extern int ndmconn_connect_host_port(struct ndmconn* conn,
                                      char* hostname,
                                      int port,
                                      unsigned want_protocol_version);
-extern int ndmconn_connect_sockaddr_in(struct ndmconn* conn,
-                                       struct sockaddr_in* sin,
-                                       unsigned want_protocol_version);
+extern int ndmconn_connect_sockaddr(struct ndmconn* conn,
+                                    struct sockaddr* sa,
+                                    socklen_t sa_len,
+                                    unsigned want_protocol_version);
 extern int ndmconn_try_open(struct ndmconn* conn, unsigned protocol_version);
 extern int ndmconn_accept(struct ndmconn* conn, int sock);
 extern int ndmconn_abort(struct ndmconn* conn);
@@ -294,6 +300,7 @@ extern int ndmconn_auth_agent(struct ndmconn* conn, struct ndmagent* agent);
 extern int ndmconn_auth_none(struct ndmconn* conn);
 extern int ndmconn_auth_text(struct ndmconn* conn, char* id, char* pw);
 extern int ndmconn_auth_md5(struct ndmconn* conn, char* id, char* pw);
+extern int ndmconn_negotiate_ipv6_extensions(struct ndmconn* conn);
 extern int ndmconn_negotiate_cab_extensions(struct ndmconn* conn);
 extern int ndmconn_call(struct ndmconn* conn, struct ndmp_xa_buf* xa);
 extern int ndmconn_exchange_nmb(struct ndmconn* conn,
@@ -460,9 +467,14 @@ struct ndmagent {
   int auth_type;
 };
 extern int ndmagent_from_str(struct ndmagent* agent, char* str);
-extern int ndmhost_lookup(char* hostname, struct sockaddr_in* sin);
-extern int ndmagent_to_sockaddr_in(struct ndmagent* agent,
-                                   struct sockaddr_in* sin);
+extern int ndmhost_lookup(char* hostname, struct sockaddr_storage* ss);
+extern int ndmagent_to_sockaddr(struct ndmagent* agent,
+                                struct sockaddr_storage* ss);
+extern int ndm_sockaddr_set_port(struct sockaddr_storage* ss, int port);
+extern int ndm_sockaddr_to_ndmp9_addr(struct sockaddr* sa, ndmp9_addr* addr);
+extern int ndmp9_addr_to_sockaddr(const ndmp9_addr* addr,
+                                  struct sockaddr_storage* ss,
+                                  socklen_t* len);
 
 
 /*

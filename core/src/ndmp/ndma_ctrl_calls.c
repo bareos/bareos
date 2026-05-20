@@ -52,22 +52,98 @@ static int ndmca_store_v4_addr_env(ndmp4_addr* addr,
                                    ndmp9_pval** envp,
                                    unsigned* env_lenp)
 {
+  ndmp4_pval* addr_env = NULL;
+  unsigned addr_env_len = 0;
+
   ndmca_clear_addr_env(envp, env_lenp);
 
-  if (addr->addr_type != NDMP4_ADDR_TCP ||
-      addr->ndmp4_addr_u.tcp_addr.tcp_addr_len < 1) {
-    return 0;
+  switch (addr->addr_type) {
+    case NDMP4_ADDR_TCP:
+      if (addr->ndmp4_addr_u.tcp_addr.tcp_addr_len < 1) { return 0; }
+      addr_env = addr->ndmp4_addr_u.tcp_addr.tcp_addr_val[0].addr_env.addr_env_val;
+      addr_env_len
+          = addr->ndmp4_addr_u.tcp_addr.tcp_addr_val[0].addr_env.addr_env_len;
+      break;
+
+    case NDMP4_ADDR_TCP_IPV6:
+      if (addr->ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_len < 1) { return 0; }
+      addr_env = addr->ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_val[0]
+                     .addr_env.addr_env_val;
+      addr_env_len = addr->ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_val[0]
+                         .addr_env.addr_env_len;
+      break;
+
+    default:
+      return 0;
   }
 
-  ndmp4_tcp_addr* tcp = &addr->ndmp4_addr_u.tcp_addr.tcp_addr_val[0];
-  if (tcp->addr_env.addr_env_len == 0) { return 0; }
+  if (addr_env_len == 0) { return 0; }
 
-  if (ndmp_4to9_pval_vec_dup(tcp->addr_env.addr_env_val, envp,
-                             tcp->addr_env.addr_env_len) != 0) {
+  if (ndmp_4to9_pval_vec_dup(addr_env, envp, addr_env_len) != 0) {
     return -1;
   }
 
-  *env_lenp = tcp->addr_env.addr_env_len;
+  *env_lenp = addr_env_len;
+  return 0;
+}
+
+static ndmp9_addr_type ndmca_preferred_tcp_addr_type(struct ndmconn* conn)
+{
+  struct sockaddr_storage ss;
+  socklen_t ss_len = sizeof(ss);
+
+  if (conn && conn->conn_type == NDMCONN_TYPE_REMOTE
+      && conn->ipv6_extensions_enabled
+      && getsockname(ndmconn_fileno(conn), (struct sockaddr*)&ss, &ss_len) == 0
+      && ss.ss_family == AF_INET6) {
+    return NDMP9_ADDR_TCP_IPV6;
+  }
+
+  return NDMP9_ADDR_TCP;
+}
+
+static ndmp4_addr_type ndmca_preferred_v4_addr_type(struct ndmconn* conn)
+{
+  return ndmca_preferred_tcp_addr_type(conn) == NDMP9_ADDR_TCP_IPV6
+             ? NDMP4_ADDR_TCP_IPV6
+             : NDMP4_ADDR_TCP;
+}
+
+static int ndmca_parse_tape_tcp_endpoint(const char* endpoint,
+                                         char* host_buf,
+                                         size_t host_buf_size,
+                                         char** host,
+                                         const char** port)
+{
+  const char* separator;
+  size_t host_len;
+
+  if (!endpoint || !host_buf || host_buf_size == 0 || !host || !port) {
+    return -1;
+  }
+
+  if (endpoint[0] == '[') {
+    separator = strchr(endpoint, ']');
+    if (!separator || separator[1] != ':') { return -1; }
+
+    host_len = (size_t)(separator - (endpoint + 1));
+    if (host_len >= host_buf_size) { return -1; }
+    memcpy(host_buf, endpoint + 1, host_len);
+    host_buf[host_len] = '\0';
+    *host = host_buf;
+    *port = separator + 2;
+    return 0;
+  }
+
+  separator = strrchr(endpoint, ':');
+  if (!separator) { return -1; }
+
+  host_len = (size_t)(separator - endpoint);
+  if (host_len >= host_buf_size) { return -1; }
+  memcpy(host_buf, endpoint, host_len);
+  host_buf[host_len] = '\0';
+  *host = host_buf;
+  *port = separator + 1;
   return 0;
 }
 
@@ -108,7 +184,7 @@ int ndmca_data_listen(struct ndm_session* sess)
     if (sess->plumb.tape == sess->plumb.data) {
       request->addr_type = NDMP4_ADDR_LOCAL;
     } else {
-      request->addr_type = NDMP4_ADDR_TCP;
+      request->addr_type = ndmca_preferred_v4_addr_type(conn);
     }
     rc = NDMC_CALL(conn);
     if (rc) return rc;
@@ -139,7 +215,7 @@ int ndmca_data_listen(struct ndm_session* sess)
   if (sess->plumb.tape == sess->plumb.data) {
     request->addr_type = NDMP9_ADDR_LOCAL;
   } else {
-    request->addr_type = NDMP9_ADDR_TCP;
+    request->addr_type = ndmca_preferred_tcp_addr_type(conn);
   }
   rc = NDMC_CALL(conn);
   if (rc) return rc;
@@ -163,18 +239,22 @@ int ndmca_data_connect(struct ndm_session* sess)
   ndmp9_addr addr;
 
   if (ca->job.tape_tcp) {
-    char* host;
-    char* port;
-    struct sockaddr_in sin;
+    char host_buf[1024];
+    char* host = NULL;
+    const char* port = NULL;
+    struct sockaddr_storage ss;
 
-    host = ca->job.tape_tcp;
-    port = strchr(ca->job.tape_tcp, ':');
-    if (!port) { return 1; }
-    *port++ = '\0';
-    rc = ndmhost_lookup(host, &sin);
-    addr.addr_type = NDMP9_ADDR_TCP;
-    addr.ndmp9_addr_u.tcp_addr.ip_addr = ntohl(sin.sin_addr.s_addr);
-    addr.ndmp9_addr_u.tcp_addr.port = atoi(port);
+    if (ndmca_parse_tape_tcp_endpoint(ca->job.tape_tcp, host_buf,
+                                      sizeof(host_buf), &host, &port)
+        != 0) {
+      return 1;
+    }
+    rc = ndmhost_lookup(host, &ss);
+    if (rc != 0) { return rc; }
+    if (ndm_sockaddr_set_port(&ss, atoi(port)) != 0) { return -1; }
+    if (ndm_sockaddr_to_ndmp9_addr((struct sockaddr*)&ss, &addr) != 0) {
+      return -1;
+    }
   } else {
     addr = ca->mover_addr;
   }
@@ -612,7 +692,7 @@ int ndmca_mover_listen(struct ndm_session* sess)
     if (sess->plumb.tape == sess->plumb.data) {
       request->addr_type = NDMP4_ADDR_LOCAL;
     } else {
-      request->addr_type = NDMP4_ADDR_TCP;
+      request->addr_type = ndmca_preferred_v4_addr_type(conn);
     }
     rc = NDMC_CALL(conn);
     if (rc) return rc;
@@ -645,7 +725,7 @@ int ndmca_mover_listen(struct ndm_session* sess)
   if (sess->plumb.tape == sess->plumb.data) {
     request->addr_type = NDMP9_ADDR_LOCAL;
   } else {
-    request->addr_type = NDMP9_ADDR_TCP;
+    request->addr_type = ndmca_preferred_tcp_addr_type(conn);
   }
   rc = NDMC_CALL(conn);
   if (rc) return rc;

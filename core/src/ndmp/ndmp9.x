@@ -323,6 +323,7 @@ union ndmp9_auth_data switch (enum ndmp9_auth_type auth_type) {
 enum ndmp9_addr_type {
         NDMP9_ADDR_LOCAL,
         NDMP9_ADDR_TCP,
+        NDMP9_ADDR_TCP_IPV6,
         /* IPC and FC addr types contemplated but never deployed */
         NDMP9_ADDR_AS_CONNECTED = 0x1000
 };
@@ -332,12 +333,19 @@ struct ndmp9_tcp_addr {
         uint16_t        port;
 };
 
+struct ndmp9_tcp_ipv6_addr {
+        opaque          ipv6_addr[16];
+        uint16_t        port;
+};
+
 union ndmp9_addr switch (ndmp9_addr_type addr_type) {
         case NDMP9_ADDR_LOCAL:
         case NDMP9_ADDR_AS_CONNECTED:
                 void;
         case NDMP9_ADDR_TCP:
                 ndmp9_tcp_addr  tcp_addr;
+        case NDMP9_ADDR_TCP_IPV6:
+                ndmp9_tcp_ipv6_addr tcp_ipv6_addr;
 };
 
 
@@ -435,6 +443,7 @@ struct ndmp9_device_info {
 
 const NDMP9_CONFIG_CONNTYPE_LOCAL       = 0x0001;
 const NDMP9_CONFIG_CONNTYPE_TCP         = 0x0002;
+const NDMP9_CONFIG_CONNTYPE_TCP_IPV6    = 0x0004;
 
 const NDMP9_CONFIG_AUTHTYPE_NONE        = 0x0001;
 const NDMP9_CONFIG_AUTHTYPE_TEXT        = 0x0002;
