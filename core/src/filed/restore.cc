@@ -384,7 +384,6 @@ void DoRestore(JobControlRecord* jcr)
   int non_support_attr = 0;
   int non_support_rsrc = 0;
   int non_support_finfo = 0;
-  bool aborted_on_fatal_unsupported_data_stream = false;
   int non_support_acl = 0;
   int non_support_progname = 0;
   int non_support_crypto = 0;
@@ -546,18 +545,12 @@ void DoRestore(JobControlRecord* jcr)
                                        sizeof(attr->statp), &attr->LinkFI);
 
         if (!IsRestoreStreamSupported(attr->data_stream)) {
-          const bool fatal_unsupported_stream
-              = is_win32_stream(attr->data_stream) && !have_win32_api();
-
-          if (fatal_unsupported_stream) {
-            Jmsg(jcr, M_FATAL, 0,
+          ++non_support_data;
+          if (is_win32_stream(attr->data_stream) && !have_win32_api()) {
+            Jmsg(jcr, M_WARNING, 0,
                  T_("%s stream not supported on this Client.\n"),
                  stream_to_ascii(attr->data_stream));
-            aborted_on_fatal_unsupported_data_stream = true;
-            goto bail_out;
-          }
-
-          if (!non_support_data++) {
+          } else if (non_support_data == 1) {
             Jmsg(jcr, M_WARNING, 0,
                  T_("%s stream not supported on this Client.\n"),
                  stream_to_ascii(attr->data_stream));
@@ -1054,11 +1047,8 @@ ok_out:
   }
   if (non_support_data > 1 || non_support_attr > 1) {
     Jmsg(jcr, M_WARNING, 0,
-         aborted_on_fatal_unsupported_data_stream
-             ? T_("%d non-supported data streams and %d non-supported attrib "
-                  "streams encountered before restore aborted.\n")
-             : T_("%d non-supported data streams and %d non-supported attrib "
-                  "streams ignored.\n"),
+         T_("%d non-supported data streams and %d non-supported attrib "
+            "streams ignored.\n"),
          non_support_data, non_support_attr);
   }
   if (non_support_rsrc) {
