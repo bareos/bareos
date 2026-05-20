@@ -296,6 +296,8 @@ struct ndmp_msg_buf {
     ndmp4_data_get_state_reply ndmp4_data_get_state_reply_body;
     ndmp4_data_start_backup_request ndmp4_data_start_backup_request_body;
     ndmp4_data_start_backup_reply ndmp4_data_start_backup_reply_body;
+    ndmp4_data_start_backup_request ndmp4_cab_data_conn_prepare_request_body;
+    ndmp4_data_start_backup_reply ndmp4_cab_data_conn_prepare_reply_body;
     ndmp4_data_start_recover_request ndmp4_data_start_recover_request_body;
     ndmp4_data_start_recover_reply ndmp4_data_start_recover_reply_body;
     ndmp4_data_abort_reply ndmp4_data_abort_reply_body;
@@ -585,6 +587,7 @@ struct ndmp_xa_buf {
 #define MT_ndmp4_tape_execute_cdb NDMP4_TAPE_EXECUTE_CDB
 #define MT_ndmp4_data_get_state NDMP4_DATA_GET_STATE
 #define MT_ndmp4_data_start_backup NDMP4_DATA_START_BACKUP
+#define MT_ndmp4_cab_data_conn_prepare NDMP4_CAB_DATA_CONN_PREPARE
 #define MT_ndmp4_data_start_recover NDMP4_DATA_START_RECOVER
 #define MT_ndmp4_data_start_recover_filehist NDMP4_DATA_START_RECOVER_FILEHIST
 #define MT_ndmp4_data_abort NDMP4_DATA_ABORT

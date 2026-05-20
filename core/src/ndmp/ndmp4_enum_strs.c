@@ -162,6 +162,7 @@ struct ndmp_enum_str_table ndmp4_message_table[] = {
         { "NDMP4_TAPE_EXECUTE_CDB",     NDMP4_TAPE_EXECUTE_CDB, },
         { "NDMP4_DATA_GET_STATE",       NDMP4_DATA_GET_STATE, },
         { "NDMP4_DATA_START_BACKUP",    NDMP4_DATA_START_BACKUP, },
+        { "NDMP4_CAB_DATA_CONN_PREPARE",NDMP4_CAB_DATA_CONN_PREPARE, },
         { "NDMP4_DATA_START_RECOVER",   NDMP4_DATA_START_RECOVER, },
         { "NDMP4_DATA_START_RECOVER_FILEHIST",
                                         NDMP4_DATA_START_RECOVER_FILEHIST, },

@@ -809,6 +809,7 @@ int ndmconn_xdr_nmb(struct ndmconn* conn,
                     enum xdr_op x_op)
 {
   xdrproc_t xdr_body = 0;
+  uint32_t cab_prepare_length = 1;
 
   assert(conn->conn_type == NDMCONN_TYPE_REMOTE);
 
@@ -838,6 +839,13 @@ int ndmconn_xdr_nmb(struct ndmconn* conn,
       return ndmconn_set_err_msg(conn, "EOF");
     } else {
       return ndmconn_set_err_msg(conn, "xdr-hdr");
+    }
+  }
+
+  if (nmb->header.message == NDMP4_CAB_DATA_CONN_PREPARE) {
+    if (!xdr_u_int(&conn->xdrs, &cab_prepare_length)) {
+      ndmconn_abort(conn);
+      return ndmconn_set_err_msg(conn, "xdr-cab-hdr");
     }
   }
 

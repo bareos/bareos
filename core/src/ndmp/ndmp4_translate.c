@@ -179,12 +179,30 @@ int ndmp_4to9_pval_free(ndmp9_pval* pval9)
   return 0;
 }
 
+int ndmp_9to4_pval_free(ndmp4_pval* pval4)
+{
+  CNVT_FREE(pval4, name)
+  CNVT_FREE(pval4, value)
+
+  return 0;
+}
+
 int ndmp_4to9_pval_vec_free(ndmp9_pval* pval9, unsigned n_pval)
 {
   unsigned int i;
 
   for (i = 0; i < n_pval; i++) ndmp_4to9_pval_free(&pval9[i]);
   NDMOS_MACRO_FREE(pval9);
+
+  return 0;
+}
+
+int ndmp_9to4_pval_vec_free(ndmp4_pval* pval4, unsigned n_pval)
+{
+  unsigned int i;
+
+  for (i = 0; i < n_pval; i++) ndmp_9to4_pval_free(&pval4[i]);
+  NDMOS_MACRO_FREE(pval4);
 
   return 0;
 }

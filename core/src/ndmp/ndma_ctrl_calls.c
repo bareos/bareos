@@ -123,6 +123,56 @@ int ndmca_data_connect(struct ndm_session* sess)
   return rc;
 }
 
+int ndmca_data_conn_prepare(struct ndm_session* sess)
+{
+  struct ndmconn* conn = sess->plumb.data;
+  struct ndm_control_agent* ca = sess->control_acb;
+  unsigned n_env;
+  ndmp9_pval* env;
+  ndmp4_pval* env4 = NULL;
+  int rc;
+
+  if (!ca->job.use_cab_extensions) { return 0; }
+
+  if (!conn->cab_extensions_enabled) {
+    ndmalogf(sess, 0, 0, "CAB extension not negotiated on data connection");
+    return -1;
+  }
+
+  env = ndma_enumerate_env_list(&ca->job.env_tab);
+  if (!env) {
+    ndmalogf(sess, 0, 0, "Failed allocating enumerate buffer");
+    return -1;
+  }
+  n_env = ca->job.env_tab.n_env;
+
+  if (ndmp_9to4_pval_vec_dup(env, &env4, n_env) != 0) {
+    ndmalogf(sess, 0, 0, "Failed converting backup environment for CAB");
+    return -1;
+  }
+
+  {
+    struct ndmp_xa_buf* xa = &conn->call_xa_buf;
+    ndmp4_data_start_backup_request* request;
+
+    request = &xa->request.body.ndmp4_cab_data_conn_prepare_request_body;
+    NDMOS_MACRO_ZEROFILL(xa);
+    xa->request.protocol_version = NDMP4VER;
+    xa->request.header.message = NDMP4_CAB_DATA_CONN_PREPARE;
+
+    request->butype_name = ca->job.bu_type;
+    request->env.env_len = n_env;
+    request->env.env_val = env4;
+
+    rc = NDMC_CALL(conn);
+    if (rc == NDMCONN_CALL_STATUS_OK) { NDMC_FREE_REPLY(); }
+  }
+
+  ndmp_9to4_pval_vec_free(env4, n_env);
+
+  return rc;
+}
+
 int ndmca_data_start_backup(struct ndm_session* sess)
 {
   struct ndmconn* conn = sess->plumb.data;

@@ -59,6 +59,8 @@
 #define xdr_ndmp4_tape_close_request xdr_void
 #define xdr_ndmp4_tape_get_state_request xdr_void
 #define xdr_ndmp4_data_get_state_request xdr_void
+#define xdr_ndmp4_cab_data_conn_prepare_request xdr_ndmp4_data_start_backup_request
+#define xdr_ndmp4_cab_data_conn_prepare_reply xdr_ndmp4_data_start_backup_reply
 
 #define xdr_ndmp4_data_abort_request xdr_void
 #define xdr_ndmp4_data_get_env_request xdr_void
@@ -211,6 +213,11 @@ struct ndmp_xdr_message_table ndmp4_xdr_message_table[] = {
         NDMP4_DATA_START_BACKUP,
         xdr_ndmp4_data_start_backup_request,
         xdr_ndmp4_data_start_backup_reply,
+    },
+    {
+        NDMP4_CAB_DATA_CONN_PREPARE,
+        xdr_ndmp4_cab_data_conn_prepare_request,
+        xdr_ndmp4_cab_data_conn_prepare_reply,
     },
     {
         NDMP4_DATA_START_RECOVER,
