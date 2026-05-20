@@ -23,6 +23,7 @@
 
 #include "lib/tcp_keepalive.h"
 
+#include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <unistd.h>
