@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -59,7 +59,22 @@ bool fstype(const char* fname, char* fs, int fslen)
 #elif defined(HAVE_LINUX_OS)
 
 #  include <sys/stat.h>
+#  include <sys/vfs.h>
 #  include "lib/mntent_cache.h"
+
+#  if !defined(BTRFS_SUPER_MAGIC)
+#    define BTRFS_SUPER_MAGIC 0x9123683E
+#  endif
+
+const char* LinuxFstypeFromMagic(long magic)
+{
+  switch (magic) {
+    case BTRFS_SUPER_MAGIC:
+      return "btrfs";
+    default:
+      return nullptr;
+  }
+}
 
 bool fstype(const char* fname, char* fs, int fslen)
 {
@@ -72,6 +87,24 @@ bool fstype(const char* fname, char* fs, int fslen)
       ReleaseMntentMapping(mce);
       return true;
     }
+
+    if (!S_ISLNK(st.st_mode)) {
+      struct statfs statfs_buf;
+      const char* fallback_fstype;
+
+      if (statfs(fname, &statfs_buf) == 0) {
+        fallback_fstype = LinuxFstypeFromMagic(statfs_buf.f_type);
+        if (fallback_fstype != nullptr) {
+          Dmsg2(50, "Using statfs() fallback fstype %s for \"%s\"\n",
+                fallback_fstype, fname);
+          bstrncpy(fs, fallback_fstype, fslen);
+          return true;
+        }
+      } else {
+        Dmsg1(50, "statfs() failed for \"%s\"\n", fname);
+      }
+    }
+
     return false;
   }
 
