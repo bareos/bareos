@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - bvfs: fix cache race [PR #2651]
 
+### Documentation
+- docs: correct TlsRequire default in docs [PR #2674]
+
 ## [24.0.10] - 2026-04-01
 
 ### Changed
@@ -2034,4 +2037,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2592]: https://github.com/bareos/bareos/pull/2592
 [PR #2640]: https://github.com/bareos/bareos/pull/2640
 [PR #2651]: https://github.com/bareos/bareos/pull/2651
+[PR #2674]: https://github.com/bareos/bareos/pull/2674
 [unreleased]: https://github.com/bareos/bareos/tree/master
