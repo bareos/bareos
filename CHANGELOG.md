@@ -75,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - gh: change milestone bulletpoint in PR templates [PR #2638]
 - docs: PAM add remarks about pam_sss [PR #2629]
 - Update security policy [PR #2663]
+- docs: correct TlsRequire default in docs [PR #2671]
 
 ## [25.0.0] - 2025-12-01
 
@@ -2299,4 +2300,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2653]: https://github.com/bareos/bareos/pull/2653
 [PR #2663]: https://github.com/bareos/bareos/pull/2663
 [PR #2665]: https://github.com/bareos/bareos/pull/2665
+[PR #2671]: https://github.com/bareos/bareos/pull/2671
 [unreleased]: https://github.com/bareos/bareos/tree/master
