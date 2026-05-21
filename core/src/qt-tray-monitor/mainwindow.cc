@@ -70,7 +70,7 @@ MainWindow::~MainWindow()
 {
   delete ui;
   delete monitorTabMap;
-  delete bRefs;
+  delete[] bRefs;
 }
 
 MainWindow* MainWindow::instance()
