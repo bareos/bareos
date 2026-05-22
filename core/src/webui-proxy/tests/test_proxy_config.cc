@@ -110,7 +110,7 @@ director_name = bareos-dir
 tls_psk_disable = true
 )ini",
                    cfg),
-               std::runtime_error);
+               ProxyConfigInvalidBooleanError);
 }
 
 TEST(ProxyConfig, ReportsLineNumberInParseErrors)
@@ -130,9 +130,11 @@ port = 19101
 director_name = bareos-dir
 )ini",
         cfg);
-    FAIL() << "expected runtime_error";
-  } catch (const std::runtime_error& error) {
+    FAIL() << "expected ProxyConfigParseError";
+  } catch (const ProxyConfigParseError& error) {
     EXPECT_NE(std::string(error.what()).find("line 4"), std::string::npos);
+    EXPECT_NE(std::string(error.what()).find("invalid line"),
+              std::string::npos);
   }
 }
 
@@ -199,11 +201,12 @@ TEST(ProxyConfig, RejectsNonAsciiValuesWithLineNumber)
         "port = 19101\n"
         "director_name = bar\xC3\xA4os-dir\n",
         cfg);
-    FAIL() << "expected runtime_error";
-  } catch (const std::runtime_error& error) {
+    FAIL() << "expected ProxyConfigInvalidCharacterError";
+  } catch (const ProxyConfigInvalidCharacterError& error) {
     EXPECT_NE(std::string(error.what()).find("line 8"), std::string::npos);
     EXPECT_NE(std::string(error.what()).find("printable ASCII"),
               std::string::npos);
+    EXPECT_NE(std::string(error.what()).find("value"), std::string::npos);
   }
 }
 
@@ -223,10 +226,12 @@ TEST(ProxyConfig, RejectsNonAsciiSectionNamesWithLineNumber)
         "port = 19101\n"
         "director_name = bareos-dir\n",
         cfg);
-    FAIL() << "expected runtime_error";
-  } catch (const std::runtime_error& error) {
+    FAIL() << "expected ProxyConfigInvalidCharacterError";
+  } catch (const ProxyConfigInvalidCharacterError& error) {
     EXPECT_NE(std::string(error.what()).find("line 5"), std::string::npos);
     EXPECT_NE(std::string(error.what()).find("printable ASCII"),
+              std::string::npos);
+    EXPECT_NE(std::string(error.what()).find("section name"),
               std::string::npos);
   }
 }
@@ -247,12 +252,32 @@ TEST(ProxyConfig, RejectsNonAsciiKeysWithLineNumber)
         "port = 19101\n"
         "director_name = bareos-dir\n",
         cfg);
-    FAIL() << "expected runtime_error";
-  } catch (const std::runtime_error& error) {
+    FAIL() << "expected ProxyConfigInvalidCharacterError";
+  } catch (const ProxyConfigInvalidCharacterError& error) {
     EXPECT_NE(std::string(error.what()).find("line 2"), std::string::npos);
     EXPECT_NE(std::string(error.what()).find("printable ASCII"),
               std::string::npos);
+    EXPECT_NE(std::string(error.what()).find("key"), std::string::npos);
   }
+}
+
+TEST(ProxyConfig, RejectsNonIntegerValues)
+{
+  ProxyConfig cfg;
+
+  EXPECT_THROW(LoadProxyConfigFromString(
+                   R"ini(
+        [listen]
+        ws_host = 127.0.0.1
+        ws_port = invalid
+
+        [director:prod]
+        host = prod.example.test
+        port = 19101
+        director_name = bareos-dir
+        )ini",
+                   cfg),
+               ProxyConfigInvalidIntegerError);
 }
 
 TEST(ProxyConfig, ParsesEscapedQuotedValues)
@@ -295,8 +320,8 @@ port = 19101
 director_name = bareos-dir
 )ini",
         cfg);
-    FAIL() << "expected runtime_error";
-  } catch (const std::runtime_error& error) {
+    FAIL() << "expected ProxyConfigQuotedValueError";
+  } catch (const ProxyConfigQuotedValueError& error) {
     EXPECT_NE(std::string(error.what()).find("line 3"), std::string::npos);
     EXPECT_NE(std::string(error.what()).find("matching quotes"),
               std::string::npos);
@@ -320,10 +345,18 @@ port = 19101
 director_name = bareos-dir
 )ini",
         cfg);
-    FAIL() << "expected runtime_error";
-  } catch (const std::runtime_error& error) {
+    FAIL() << "expected ProxyConfigQuotedValueError";
+  } catch (const ProxyConfigQuotedValueError& error) {
     EXPECT_NE(std::string(error.what()).find("line 7"), std::string::npos);
     EXPECT_NE(std::string(error.what()).find("invalid escape"),
               std::string::npos);
   }
+}
+
+TEST(ProxyConfig, RejectsMissingFilesWithTypedError)
+{
+  ProxyConfig cfg;
+
+  EXPECT_THROW(LoadProxyConfigFile("/definitely/missing/proxy.ini", cfg),
+               ProxyConfigFileError);
 }

@@ -61,7 +61,7 @@ std::string ParseValue(std::string value, size_t line_number)
   const bool starts_quoted = !value.empty() && value.front() == '"';
   const bool ends_quoted = !value.empty() && value.back() == '"';
   if (starts_quoted != ends_quoted) {
-    throw std::runtime_error(FormatConfigError(
+    throw ProxyConfigQuotedValueError(FormatConfigError(
         line_number, "quoted value must use matching quotes"));
   }
   if (!starts_quoted) { return value; }
@@ -75,7 +75,7 @@ std::string ParseValue(std::string value, size_t line_number)
     }
     ++i;
     if (i + 1 >= value.size()) {
-      throw std::runtime_error(FormatConfigError(
+      throw ProxyConfigQuotedValueError(FormatConfigError(
           line_number, "quoted value ends with an incomplete escape"));
     }
     switch (value[i]) {
@@ -84,7 +84,7 @@ std::string ParseValue(std::string value, size_t line_number)
         parsed.push_back(value[i]);
         break;
       default:
-        throw std::runtime_error(FormatConfigError(
+        throw ProxyConfigQuotedValueError(FormatConfigError(
             line_number, "quoted value contains an invalid escape"));
     }
   }
@@ -98,7 +98,7 @@ void EnsurePrintableAscii(std::string_view value,
   const auto is_printable_ascii
       = [](unsigned char ch) { return ch >= 0x20 && ch <= 0x7e; };
   if (std::all_of(value.begin(), value.end(), is_printable_ascii)) { return; }
-  throw std::runtime_error(FormatConfigError(
+  throw ProxyConfigInvalidCharacterError(FormatConfigError(
       line_number, std::string(what) + " must contain only printable ASCII"));
 }
 
@@ -108,7 +108,7 @@ bool ParseBool(const std::string& value,
 {
   if (Bstrcasecmp(value.c_str(), "yes")) { return true; }
   if (Bstrcasecmp(value.c_str(), "no")) { return false; }
-  throw std::runtime_error(
+  throw ProxyConfigInvalidBooleanError(
       FormatConfigError(line_number, "'" + key + "' must be a boolean"));
 }
 
@@ -121,8 +121,8 @@ int ParseInteger(const std::string& value,
     const int parsed = std::stoi(value, &pos, 10);
     if (pos != value.size()) { throw std::invalid_argument("trailing"); }
     return parsed;
-  } catch (...) {
-    throw std::runtime_error(
+  } catch (const std::exception&) {
+    throw ProxyConfigInvalidIntegerError(
         FormatConfigError(line_number, "'" + key + "' must be an integer"));
   }
 }
@@ -203,7 +203,8 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
 
     const auto eq_pos = line.find('=');
     if (eq_pos == std::string::npos) {
-      throw std::runtime_error(FormatConfigError(line_number, "invalid line"));
+      throw ProxyConfigParseError(
+          FormatConfigError(line_number, "invalid line"));
     }
 
     const std::string key = Trim(line.substr(0, eq_pos));
@@ -242,7 +243,7 @@ void LoadProxyConfigFile(const std::string& path, ProxyConfig& cfg)
 {
   std::ifstream input(path);
   if (!input) {
-    throw std::runtime_error("Proxy config: cannot load '" + path + "'");
+    throw ProxyConfigFileError("Proxy config: cannot load '" + path + "'");
   }
   std::ostringstream contents;
   contents << input.rdbuf();
