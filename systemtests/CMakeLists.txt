@@ -372,10 +372,13 @@ find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
 find_program(NODE node)
 set(WEBUI_VUE_TEST_DIST "")
+set(WEBUI_VUE_PREFER_PREBUILT_DIST FALSE)
 if(EXISTS "${PROJECT_BINARY_DIR}/webui-vue/dist/index.html")
   set(WEBUI_VUE_TEST_DIST "${PROJECT_BINARY_DIR}/webui-vue/dist")
-elseif(EXISTS "${CMAKE_SOURCE_DIR}/webui-vue/dist/index.html")
+elseif(EXISTS "${CMAKE_SOURCE_DIR}/webui-vue/dist/index.html"
+       AND NOT EXISTS "${CMAKE_SOURCE_DIR}/.git")
   set(WEBUI_VUE_TEST_DIST "${CMAKE_SOURCE_DIR}/webui-vue/dist")
+  set(WEBUI_VUE_PREFER_PREBUILT_DIST TRUE)
 endif()
 find_program(
   GOOGLE_CHROME NAMES google-chrome google-chrome-stable chromium
@@ -403,6 +406,7 @@ message("   GOOGLE_CHROME:             " ${GOOGLE_CHROME})
 message("   WEBUI_VUE_PLAYWRIGHT:      " ${WEBUI_VUE_PLAYWRIGHT})
 message("   WEBUI_VUE_VITE:            " ${WEBUI_VUE_VITE})
 message("   WEBUI_VUE_TEST_DIST:       " ${WEBUI_VUE_TEST_DIST})
+message("   WEBUI_VUE_USE_DIST_FIRST:  " ${WEBUI_VUE_PREFER_PREBUILT_DIST})
 
 if(PHP
    AND PYTHON_EXECUTABLE
