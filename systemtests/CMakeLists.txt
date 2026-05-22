@@ -372,7 +372,10 @@ find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
 find_program(NODE node)
 find_program(NPM npm)
-find_program(GOOGLE_CHROME google-chrome)
+find_program(
+  GOOGLE_CHROME NAMES google-chrome google-chrome-stable chromium
+                      chromium-browser chrome
+)
 find_program(
   WEBUI_VUE_PLAYWRIGHT
   NAMES playwright playwright.cmd
