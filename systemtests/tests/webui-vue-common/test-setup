@@ -126,7 +126,12 @@ tls_psk_disable = ${proxy_tls_psk_disable}
 END_OF_PROXY_CONFIG
 
 pushd "${CMAKE_SOURCE_DIR}/webui-vue" >/dev/null
-if [ -x "${WEBUI_VUE_VITE_EXECUTABLE}" ]; then
+if [[ "${BAREOS_WEBUI_VUE_USE_DIST_FIRST}" = "TRUE" &&
+  -n "${BAREOS_WEBUI_VUE_DIST_DIR}" &&
+  -f "${BAREOS_WEBUI_VUE_DIST_DIR}/index.html" ]]; then
+  bundle_dir="${BAREOS_WEBUI_VUE_DIST_DIR}"
+  echo "Using prebuilt webui-vue dist: ${bundle_dir}"
+elif [ -x "${WEBUI_VUE_VITE_EXECUTABLE}" ]; then
   run_logged_command \
     "${tmp}/webui-vue-generate-version.out" \
     "generate-bareos-version.mjs" \
