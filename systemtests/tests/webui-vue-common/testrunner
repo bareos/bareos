@@ -40,7 +40,7 @@ if ! PLAYWRIGHT_BASE_URL="${BAREOS_WEBUI_BASE_URL}" \
   BAREOS_WEBUI_USERNAME="${BAREOS_WEBUI_USERNAME}" \
   BAREOS_WEBUI_PASSWORD="${BAREOS_WEBUI_PASSWORD}" \
   GOOGLE_CHROME_EXECUTABLE="${GOOGLE_CHROME_EXECUTABLE}" \
-  "${NPM_EXECUTABLE}" run test:e2e -- --reporter=line \
+  "${WEBUI_VUE_PLAYWRIGHT_EXECUTABLE}" test --reporter=line \
   >"${playwright_log}" 2>&1; then
   set_error "$(cat "${playwright_log}")"
 fi

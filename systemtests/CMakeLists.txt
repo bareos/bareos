@@ -370,7 +370,12 @@ set(READONLY_WEBUI_SELENIUM_TESTNAMES
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
 find_program(NODE node)
-find_program(NPM npm)
+set(WEBUI_VUE_TEST_DIST "")
+if(EXISTS "${PROJECT_BINARY_DIR}/webui-vue/dist/index.html")
+  set(WEBUI_VUE_TEST_DIST "${PROJECT_BINARY_DIR}/webui-vue/dist")
+elseif(EXISTS "${CMAKE_SOURCE_DIR}/webui-vue/dist/index.html")
+  set(WEBUI_VUE_TEST_DIST "${CMAKE_SOURCE_DIR}/webui-vue/dist")
+endif()
 find_program(
   GOOGLE_CHROME NAMES google-chrome google-chrome-stable chromium
                       chromium-browser chrome
@@ -378,14 +383,12 @@ find_program(
 find_program(
   WEBUI_VUE_PLAYWRIGHT
   NAMES playwright playwright.cmd
-  PATHS "${CMAKE_SOURCE_DIR}/webui-vue/node_modules/.bin"
-  NO_DEFAULT_PATH
+  HINTS "${CMAKE_SOURCE_DIR}/webui-vue/node_modules/.bin"
 )
 find_program(
   WEBUI_VUE_VITE
   NAMES vite vite.cmd
-  PATHS "${CMAKE_SOURCE_DIR}/webui-vue/node_modules/.bin"
-  NO_DEFAULT_PATH
+  HINTS "${CMAKE_SOURCE_DIR}/webui-vue/node_modules/.bin"
 )
 check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 # FALSE
@@ -395,10 +398,10 @@ message("   PYTHON_EXECUTABLE:         " ${PYTHON_EXECUTABLE})
 message("   PYMODULE_3_SELENIUM_FOUND: " ${PYMODULE_3_SELENIUM_FOUND})
 message("   CHROMEDRIVER:              " ${CHROMEDRIVER})
 message("   NODE:                      " ${NODE})
-message("   NPM:                       " ${NPM})
 message("   GOOGLE_CHROME:             " ${GOOGLE_CHROME})
 message("   WEBUI_VUE_PLAYWRIGHT:      " ${WEBUI_VUE_PLAYWRIGHT})
 message("   WEBUI_VUE_VITE:            " ${WEBUI_VUE_VITE})
+message("   WEBUI_VUE_TEST_DIST:       " ${WEBUI_VUE_TEST_DIST})
 
 if(PHP
    AND PYTHON_EXECUTABLE
@@ -532,10 +535,9 @@ set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS admin-smoke readonly-smoke
 )
 
 if(NODE
-   AND NPM
    AND GOOGLE_CHROME
    AND WEBUI_VUE_PLAYWRIGHT
-   AND WEBUI_VUE_VITE
+   AND (WEBUI_VUE_TEST_DIST OR WEBUI_VUE_VITE)
 )
   set(ENABLE_WEBUI_VUE_PLAYWRIGHT_TEST TRUE)
   message(STATUS "OK: all requirements for webui-vue browser tests were met.")
@@ -545,10 +547,15 @@ else()
     STATUS
       "NOT OK: disabling webui-vue browser tests as not all requirements were found."
   )
-  if(NOT WEBUI_VUE_PLAYWRIGHT AND NOT WEBUI_VUE_VITE)
+  if(NOT WEBUI_VUE_PLAYWRIGHT)
     message(
       STATUS
-        "Install webui-vue Playwright and Vite before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
+        "Install webui-vue Playwright before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
+    )
+  elseif(NOT WEBUI_VUE_TEST_DIST AND NOT WEBUI_VUE_VITE)
+    message(
+      STATUS
+        "Provide a prebuilt webui-vue dist/ or install Vite before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
     )
   endif()
 endif()
