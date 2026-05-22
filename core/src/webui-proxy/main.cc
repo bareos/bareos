@@ -24,13 +24,13 @@
  *
  * Reads configuration from an INI file with:
  *   [listen]
- *     ws_host = <bind address>          (default: localhost)
- *     ws_port = <bind port>             (default: 9104)
+ *     address = <bind address>          (default: localhost)
+ *     port = <bind port>                (default: 9104)
  *
- *   [director:<id>]                     (at least one section is required)
- *     host = <director address>         (default: localhost)
+ *   [<selector>]                        (at least one section is required)
+ *     address = <director address>      (default: localhost)
  *     port = <director port>            (default: 9101)
- *     director_name = <director name>   (default: <id>)
+ *     director_name = <director name>   (default: <selector>)
  *     tls_psk_disable = yes|no          (default: no)
  *
  * CLI flags:
