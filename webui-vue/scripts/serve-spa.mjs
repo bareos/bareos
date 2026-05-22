@@ -21,6 +21,7 @@
 
 import { createServer } from 'node:http'
 import { promises as fs } from 'node:fs'
+import net from 'node:net'
 import path from 'node:path'
 
 function parseArgs(argv) {
@@ -28,6 +29,8 @@ function parseArgs(argv) {
     host: '127.0.0.1',
     port: 4173,
     root: path.resolve('dist'),
+    wsProxyHost: null,
+    wsProxyPort: null,
   }
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -35,6 +38,8 @@ function parseArgs(argv) {
     if (arg === '--host') options.host = argv[++i]
     if (arg === '--port') options.port = Number(argv[++i])
     if (arg === '--root') options.root = path.resolve(argv[++i])
+    if (arg === '--ws-proxy-host') options.wsProxyHost = argv[++i]
+    if (arg === '--ws-proxy-port') options.wsProxyPort = Number(argv[++i])
   }
 
   return options
@@ -60,7 +65,13 @@ async function readFileOrNull(filePath) {
   }
 }
 
-const { host, port, root } = parseArgs(process.argv.slice(2))
+const {
+  host,
+  port,
+  root,
+  wsProxyHost,
+  wsProxyPort,
+} = parseArgs(process.argv.slice(2))
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? `${host}:${port}`}`)
@@ -97,6 +108,35 @@ const server = createServer(async (req, res) => {
     'Cache-Control': 'no-store',
   })
   res.end(body)
+})
+
+server.on('upgrade', (req, socket, head) => {
+  const url = new URL(req.url ?? '/', `http://${req.headers.host ?? `${host}:${port}`}`)
+  if (url.pathname !== '/ws' || !wsProxyHost || !wsProxyPort) {
+    socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
+    socket.destroy()
+    return
+  }
+
+  const upstream = net.connect(wsProxyPort, wsProxyHost, () => {
+    upstream.write(`${req.method} ${req.url} HTTP/${req.httpVersion}\r\n`)
+    for (let i = 0; i < req.rawHeaders.length; i += 2) {
+      upstream.write(`${req.rawHeaders[i]}: ${req.rawHeaders[i + 1]}\r\n`)
+    }
+    upstream.write('\r\n')
+    if (head.length > 0) {
+      upstream.write(head)
+    }
+    socket.pipe(upstream)
+    upstream.pipe(socket)
+  })
+
+  upstream.on('error', () => {
+    socket.destroy()
+  })
+  socket.on('error', () => {
+    upstream.destroy()
+  })
 })
 
 server.listen(port, host, () => {
