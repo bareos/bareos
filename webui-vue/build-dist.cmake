@@ -11,9 +11,20 @@ cmake_minimum_required(VERSION 3.17...3.31)
 
 set(WEBUI_VUE_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}")
 set(REPO_ROOT_DIR "${WEBUI_VUE_SRC_DIR}/..")
+set(SOURCE_DIST_DIR "${WEBUI_VUE_SRC_DIR}/dist")
 
 if(NOT DEFINED DIST_DIR)
-  set(DIST_DIR "${WEBUI_VUE_SRC_DIR}/dist")
+  set(DIST_DIR "${SOURCE_DIST_DIR}")
+endif()
+
+if(EXISTS "${SOURCE_DIST_DIR}/index.html" AND NOT EXISTS "${REPO_ROOT_DIR}/.git")
+  message(STATUS "Using prebuilt webui-vue dist from ${SOURCE_DIST_DIR}")
+  if(NOT DIST_DIR STREQUAL SOURCE_DIST_DIR)
+    file(REMOVE_RECURSE "${DIST_DIR}")
+    file(MAKE_DIRECTORY "${DIST_DIR}")
+    file(COPY "${SOURCE_DIST_DIR}/" DESTINATION "${DIST_DIR}")
+  endif()
+  return()
 endif()
 
 set(VERSION_TEMPLATE_FILE
