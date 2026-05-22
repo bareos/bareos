@@ -32,19 +32,49 @@ class ProxyConfigError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-class ProxyConfigUnknownSectionError : public ProxyConfigError {
+class ProxyConfigFileError : public ProxyConfigError {
  public:
   using ProxyConfigError::ProxyConfigError;
 };
 
-class ProxyConfigUnknownKeyError : public ProxyConfigError {
+class ProxyConfigParseError : public ProxyConfigError {
  public:
   using ProxyConfigError::ProxyConfigError;
 };
 
-class ProxyConfigMissingDirectorSectionError : public ProxyConfigError {
+class ProxyConfigQuotedValueError : public ProxyConfigParseError {
  public:
-  using ProxyConfigError::ProxyConfigError;
+  using ProxyConfigParseError::ProxyConfigParseError;
+};
+
+class ProxyConfigInvalidCharacterError : public ProxyConfigParseError {
+ public:
+  using ProxyConfigParseError::ProxyConfigParseError;
+};
+
+class ProxyConfigInvalidBooleanError : public ProxyConfigParseError {
+ public:
+  using ProxyConfigParseError::ProxyConfigParseError;
+};
+
+class ProxyConfigInvalidIntegerError : public ProxyConfigParseError {
+ public:
+  using ProxyConfigParseError::ProxyConfigParseError;
+};
+
+class ProxyConfigUnknownSectionError : public ProxyConfigParseError {
+ public:
+  using ProxyConfigParseError::ProxyConfigParseError;
+};
+
+class ProxyConfigUnknownKeyError : public ProxyConfigParseError {
+ public:
+  using ProxyConfigParseError::ProxyConfigParseError;
+};
+
+class ProxyConfigMissingDirectorSectionError : public ProxyConfigParseError {
+ public:
+  using ProxyConfigParseError::ProxyConfigParseError;
 };
 
 struct DirectorTargetConfig {
