@@ -96,9 +96,9 @@ bin/bareos start
 bin/bareos status
 print_debug "$(bin/bconsole <<<"status dir")"
 
-proxy_tls_psk_disable=false
+proxy_tls_psk_disable=no
 if [[ "${BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK}" = "1" ]]; then
-  proxy_tls_psk_disable=true
+  proxy_tls_psk_disable=yes
 fi
 
 cat >"${proxy_config}" <<END_OF_PROXY_CONFIG

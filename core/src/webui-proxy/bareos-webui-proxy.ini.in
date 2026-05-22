@@ -11,10 +11,10 @@ ws_port = 9104
 host = localhost
 port = 9101
 director_name = bareos-dir
-tls_psk_disable = false
+tls_psk_disable = no
 
 #[director:dr-site]
 #host = dr.example.com
 #port = 9101
 #director_name = bareos-dir-dr
-#tls_psk_disable = false
+#tls_psk_disable = no
