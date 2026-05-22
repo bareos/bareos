@@ -301,18 +301,19 @@ TEST(ProxySession, ListsConfiguredDirectors)
 {
   ProxyConfig config;
   config.configured_directors.emplace(
-      "prod",
+      "bareos-dir",
       DirectorTargetConfig{
-          .host = "prod.example.test", .port = 19101, .name = "bareos-dir"});
+          .address = "prod.example.test", .port = 19101, .name = "bareos-dir"});
   config.configured_directors.emplace(
-      "dr", DirectorTargetConfig{
-                .host = "dr.example.test", .port = 29101, .name = "dr-dir"});
+      "site-b",
+      DirectorTargetConfig{
+          .address = "dr.example.test", .port = 29101, .name = "bareos-dir"});
 
   const auto response = ExchangeMessage(config, R"({"type":"list_directors"})");
 
   EXPECT_EQ(GetJsonStringField(response, "type"), "director_list");
   EXPECT_EQ(GetJsonStringArrayField(response, "directors"),
-            std::vector<std::string>({"dr", "prod"}));
+            std::vector<std::string>({"bareos-dir", "site-b"}));
 }
 
 TEST(ProxySession, RequiresExplicitUsernameInAuthMessage)
@@ -339,9 +340,9 @@ TEST(ProxySession, RejectsEmptyDirectorInAuthMessage)
 {
   ProxyConfig config;
   config.configured_directors.emplace(
-      "prod",
+      "bareos-dir",
       DirectorTargetConfig{
-          .host = "prod.example.test", .port = 19101, .name = "bareos-dir"});
+          .address = "prod.example.test", .port = 19101, .name = "bareos-dir"});
 
   const auto response = ExchangeMessage(
       config,
@@ -356,9 +357,9 @@ TEST(ProxySession, RejectsUnknownDirectorInAuthMessage)
 {
   ProxyConfig config;
   config.configured_directors.emplace(
-      "prod",
+      "bareos-dir",
       DirectorTargetConfig{
-          .host = "prod.example.test", .port = 19101, .name = "bareos-dir"});
+          .address = "prod.example.test", .port = 19101, .name = "bareos-dir"});
 
   const auto response = ExchangeMessage(
       config,
