@@ -118,9 +118,9 @@ void ProxyServer::Run()
 
   struct addrinfo* res = nullptr;
   const std::string port_str = std::to_string(cfg_.port);
-  int rc
-      = getaddrinfo(cfg_.bind_host.empty() ? nullptr : cfg_.bind_host.c_str(),
-                    port_str.c_str(), &hints, &res);
+  int rc = getaddrinfo(
+      cfg_.bind_address.empty() ? nullptr : cfg_.bind_address.c_str(),
+      port_str.c_str(), &hints, &res);
   if (rc != 0) {
     throw std::runtime_error(std::string("ProxyServer: getaddrinfo: ")
                              + gai_strerror(rc));
@@ -149,11 +149,11 @@ void ProxyServer::Run()
 
   if (listen_fds.empty()) {
     throw std::runtime_error("ProxyServer: could not bind to any address for "
-                             + cfg_.bind_host + ":" + port_str);
+                             + cfg_.bind_address + ":" + port_str);
   }
 
   PROXY_LOG_INFO("", "listening on ws://%s:%d (%zu socket(s))",
-                 cfg_.bind_host.c_str(), cfg_.port, listen_fds.size());
+                 cfg_.bind_address.c_str(), cfg_.port, listen_fds.size());
   PROXY_LOG_INFO("", "configured directors: %zu",
                  cfg_.configured_directors.size());
 

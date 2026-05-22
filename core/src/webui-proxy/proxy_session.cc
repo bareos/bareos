@@ -379,7 +379,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     }
     const auto& target = director_it->second;
     cfg.director_name = target.name;
-    cfg.host = target.host;
+    cfg.host = target.address;
     cfg.port = target.port;
     cfg.tls_psk_disable = target.tls_psk_disable;
     PROXY_LOG_INFO(peer, "auth: user=%s director=%s host=%s:%d mode=%s",

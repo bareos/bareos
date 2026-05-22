@@ -116,13 +116,12 @@ fi
 
 cat >"${proxy_config}" <<END_OF_PROXY_CONFIG
 [listen]
-ws_host = 127.0.0.1
-ws_port = ${proxy_port}
+address = 127.0.0.1
+port = ${proxy_port}
 
-[director:bareos-dir]
-host = 127.0.0.1
+[bareos-dir]
+address = 127.0.0.1
 port = ${BAREOS_DIRECTOR_PORT}
-director_name = bareos-dir
 tls_psk_disable = ${proxy_tls_psk_disable}
 END_OF_PROXY_CONFIG
 

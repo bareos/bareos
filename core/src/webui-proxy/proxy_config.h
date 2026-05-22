@@ -62,6 +62,11 @@ class ProxyConfigInvalidIntegerError : public ProxyConfigParseError {
   using ProxyConfigParseError::ProxyConfigParseError;
 };
 
+class ProxyConfigDuplicateSectionError : public ProxyConfigParseError {
+ public:
+  using ProxyConfigParseError::ProxyConfigParseError;
+};
+
 class ProxyConfigUnknownSectionError : public ProxyConfigParseError {
  public:
   using ProxyConfigParseError::ProxyConfigParseError;
@@ -78,14 +83,14 @@ class ProxyConfigMissingDirectorSectionError : public ProxyConfigParseError {
 };
 
 struct DirectorTargetConfig {
-  std::string host{"localhost"};
+  std::string address{"localhost"};
   int port{9101};
-  std::string name{"bareos-dir"};
+  std::string name;
   bool tls_psk_disable{false};
 };
 
 struct ProxyConfig {
-  std::string bind_host{"localhost"};
+  std::string bind_address{"localhost"};
   int port{9104};
   std::map<std::string, DirectorTargetConfig> configured_directors;
 };

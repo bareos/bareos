@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -132,9 +133,9 @@ void ApplyProxySetting(ProxyConfig& cfg,
                        const std::string& value,
                        size_t line_number)
 {
-  if (key == "ws_host") {
-    cfg.bind_host = value;
-  } else if (key == "ws_port") {
+  if (key == "address") {
+    cfg.bind_address = value;
+  } else if (key == "port") {
     cfg.port = ParseInteger(value, key, line_number);
   } else {
     throw ProxyConfigUnknownKeyError(
@@ -143,12 +144,13 @@ void ApplyProxySetting(ProxyConfig& cfg,
 }
 
 void ApplyDirectorSetting(DirectorTargetConfig& cfg,
+                          std::string_view section_name,
                           const std::string& key,
                           const std::string& value,
                           size_t line_number)
 {
-  if (key == "host") {
-    cfg.host = value;
+  if (key == "address") {
+    cfg.address = value;
   } else if (key == "port") {
     cfg.port = ParseInteger(value, key, line_number);
   } else if (key == "director_name") {
@@ -157,7 +159,7 @@ void ApplyDirectorSetting(DirectorTargetConfig& cfg,
     cfg.tls_psk_disable = ParseBool(value, key, line_number);
   } else {
     throw ProxyConfigUnknownKeyError(
-        FormatUnknownKeyError("director", key, line_number));
+        FormatUnknownKeyError(section_name, key, line_number));
   }
 }
 
@@ -173,9 +175,11 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
   std::istringstream input(ini);
   std::string line;
   std::string current_section;
-  std::string current_director_id;
+  std::string current_director_selector;
   SectionKind current_section_kind = SectionKind::kUnknown;
   size_t line_number = 0;
+  std::map<std::string, size_t> seen_sections;
+  std::map<std::string, DirectorTargetConfig> parsed_directors;
 
   while (std::getline(input, line)) {
     ++line_number;
@@ -189,14 +193,26 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
     if (line.front() == '[' && line.back() == ']') {
       current_section = Trim(line.substr(1, line.size() - 2));
       EnsurePrintableAscii(current_section, "section name", line_number);
-      current_director_id.clear();
-      if (current_section == "listen") {
+      if (current_section.empty()) {
+        throw ProxyConfigParseError(
+            FormatConfigError(line_number, "section name must not be empty"));
+      }
+      if (!seen_sections.emplace(current_section, line_number).second) {
+        throw ProxyConfigDuplicateSectionError(FormatConfigError(
+            line_number, "duplicate section '" + current_section + "'"));
+      }
+
+      current_director_selector.clear();
+      if (Bstrcasecmp(current_section.c_str(), "listen")) {
         current_section_kind = SectionKind::kListen;
       } else if (current_section.rfind("director:", 0) == 0) {
-        current_section_kind = SectionKind::kDirector;
-        current_director_id = current_section.substr(9);
+        throw ProxyConfigUnknownSectionError(
+            FormatConfigError(line_number,
+                              "director sections no longer use the "
+                              "'director:' prefix"));
       } else {
-        current_section_kind = SectionKind::kUnknown;
+        current_section_kind = SectionKind::kDirector;
+        current_director_selector = current_section;
       }
       continue;
     }
@@ -217,10 +233,11 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
         ApplyProxySetting(cfg, key, value, line_number);
         continue;
       case SectionKind::kDirector: {
-        auto [it, inserted] = cfg.configured_directors.emplace(
-            current_director_id, DirectorTargetConfig{});
-        if (inserted) { it->second.name = current_director_id; }
-        ApplyDirectorSetting(it->second, key, value, line_number);
+        auto [it, inserted] = parsed_directors.emplace(
+            current_director_selector, DirectorTargetConfig{});
+        if (inserted) { it->second.name = current_director_selector; }
+        ApplyDirectorSetting(it->second, current_section, key, value,
+                             line_number);
         continue;
       }
       case SectionKind::kUnknown:
@@ -231,10 +248,12 @@ void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
         line_number, "unknown section '" + current_section + "'"));
   }
 
-  if (cfg.configured_directors.empty()) {
+  if (parsed_directors.empty()) {
     throw ProxyConfigMissingDirectorSectionError(
-        "Proxy config: at least one [director:<id>] section is required");
+        "Proxy config: at least one director section is required");
   }
+
+  cfg.configured_directors = std::move(parsed_directors);
 }
 
 }  // namespace

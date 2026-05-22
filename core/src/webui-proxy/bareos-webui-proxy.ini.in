@@ -1,20 +1,20 @@
 # bareos-webui-proxy configuration
 #
 # [listen] configures where the proxy accepts WebSocket connections.
-# Each [director:<id>] section defines one Bareos Director the proxy may use.
-# The WebUI must select a configured director by id.
+# Every other section defines one selectable Bareos Director target.
+# The section name is shown in the WebUI and is used as the real
+# director name by default. Set director_name only when the real
+# Bareos Director name differs from the section name.
+# Director address defaults to localhost and port defaults to 9101.
 [listen]
-ws_host = localhost
-ws_port = 9104
+address = localhost
+port = 9104
 
-[director:bareos-dir]
-host = localhost
-port = 9101
-director_name = bareos-dir
+[bareos-dir]
+address = localhost
 tls_psk_disable = no
 
-#[director:dr-site]
-#host = dr.example.com
-#port = 9101
-#director_name = bareos-dir-dr
+#[site-b]
+#address = dr.example.com
+#director_name = bareos-dir
 #tls_psk_disable = no
