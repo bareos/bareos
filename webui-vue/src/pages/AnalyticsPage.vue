@@ -147,7 +147,6 @@ import { useSettingsStore } from '../stores/settings.js'
 import { buildDirectorOptions } from '../utils/director.js'
 import {
   withJobsSearchQuery,
-  withJobsScopeDirectorQuery,
   withJobsStatusFilterQuery,
 } from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
@@ -381,10 +380,7 @@ const clientBytes = computed(() => {
       map[label] = {
         name: label,
         bytes: 0,
-        jobsQuery: withJobsScopeDirectorQuery(
-          withJobsSearchQuery({}, j.client),
-          j.director,
-        ),
+        jobsQuery: withJobsSearchQuery({}, j.client),
       }
     }
     map[label].bytes += j.bytes
@@ -417,10 +413,7 @@ const jobGroups = computed(() => {
         name: label,
         bytes: 0,
         files: 0,
-        jobsQuery: withJobsScopeDirectorQuery(
-          withJobsSearchQuery({}, j.name),
-          j.director,
-        ),
+        jobsQuery: withJobsSearchQuery({}, j.name),
       }
     }
     map[label].bytes += j.bytes

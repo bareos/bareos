@@ -116,46 +116,9 @@
 
       <!-- TIMELINE -->
       <q-tab-panel name="timeline" class="q-pa-none">
-        <q-card
-          v-if="isCommonClients"
-          flat
-          bordered
-          class="q-mb-md bareos-panel"
-          style="max-width:800px"
-        >
-          <q-card-section class="panel-header row items-center">
-            <span>{{ t('Timeline Target') }}</span>
-          </q-card-section>
-          <q-card-section>
-             <q-select
-               v-model="singletonTimelineDirector"
-               :options="singletonTimelineDirectorOptions"
-               option-label="label"
-               option-value="value"
-              emit-value
-              map-options
-               outlined
-               dense
-               :label="t('Director')"
-             >
-               <template #selected-item="scope">
-                 <DirectorLabel :director="scope.opt?.value || scope.opt?.label || ''" />
-               </template>
-               <template #option="scope">
-                 <q-item v-bind="scope.itemProps">
-                   <q-item-section>
-                     <DirectorLabel :director="scope.opt?.value || scope.opt?.label || ''" />
-                   </q-item-section>
-                 </q-item>
-               </template>
-             </q-select>
-            <div class="text-caption text-grey-6 q-mt-sm">
-              {{ t('Timeline data in this tab uses the selected director while the clients list stays aggregated.') }}
-            </div>
-          </q-card-section>
-        </q-card>
         <JobTimeline
-          :key="currentTimelineDirector || 'clients-timeline'"
+          :key="clientsPageDirectors.join('\u0000') || 'clients-timeline'"
+          :directors="clientsPageDirectors"
           :client-details-query="timelineClientDetailsQuery"
         />
       </q-tab-panel>
@@ -297,34 +260,10 @@ const clientsScopeLabel = computed(() => (
     ? `${activeDirectors.value.length} ${t('directors selected')}`
     : (activeDirectors.value[0] ?? t('No director selected'))
 ))
-const singletonTimelineDirector = ref('')
-const singletonTimelineDirectorOptions = computed(() => (
-  activeDirectors.value.map(value => ({ label: value, value }))
-))
-const currentTimelineDirector = computed(() => (
-  isCommonClients.value
-    ? (singletonTimelineDirector.value || activeDirectors.value[0] || '')
-    : (activeDirectors.value[0] || '')
-))
 const timelineClientDetailsQuery = computed(() => buildClientDetailsQuery({
-  director: currentTimelineDirector.value,
   clientsTab: tab.value,
   clientsScopeDirector: clientsListScopeDirector.value,
 }))
-
-function syncSingletonTimelineDirector() {
-  const validDirectors = activeDirectors.value
-  if (!validDirectors.length) {
-    singletonTimelineDirector.value = ''
-    return
-  }
-
-  if (validDirectors.includes(singletonTimelineDirector.value)) {
-    return
-  }
-
-  singletonTimelineDirector.value = validDirectors[0]
-}
 
 async function ensureSingleScopeDirector() {
   if (!isSingleDirectorScope.value) {
@@ -341,20 +280,6 @@ async function ensureSingleScopeDirector() {
   }
 
   await switchActiveDirector(scopeDirector)
-}
-
-async function ensureTimelineDirector() {
-  const targetDirector = currentTimelineDirector.value
-  if (!targetDirector) {
-    return null
-  }
-
-  if (auth.user?.director === targetDirector && director.isConnected) {
-    return targetDirector
-  }
-
-  await switchActiveDirector(targetDirector)
-  return targetDirector
 }
 
 async function refresh() {
@@ -406,10 +331,6 @@ onMounted(() => {
   releaseInfo.refresh().catch(() => {})
   director.fetchAvailableDirectors().catch(() => {})
   syncSelectedDirectors()
-  syncSingletonTimelineDirector()
-  if (tab.value === 'timeline') {
-    ensureTimelineDirector()
-  }
 })
 
 const clients = computed(() => directorCollection(rawClients.value).map((entry) => {
@@ -523,7 +444,6 @@ async function showStatus(client) {
 
 watch(() => directorOptions.value, () => {
   syncSelectedDirectors()
-  syncSingletonTimelineDirector()
 })
 
 watch(() => route.query.tab, (value) => {
@@ -562,7 +482,6 @@ watch(() => route.query.scopeDirector, (value) => {
 })
 
 watch(() => activeDirectors.value.join('\u0000'), () => {
-  syncSingletonTimelineDirector()
   if (typeof route.query.scopeDirector === 'string'
     && route.query.scopeDirector
     && !activeDirectors.value.includes(route.query.scopeDirector)) {
@@ -572,21 +491,6 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
     })
   }
   refresh()
-  if (tab.value === 'timeline') {
-    ensureTimelineDirector()
-  }
-})
-
-watch(tab, (value) => {
-  if (value === 'timeline') {
-    ensureTimelineDirector()
-  }
-})
-
-watch(() => singletonTimelineDirector.value, () => {
-  if (isCommonClients.value && tab.value === 'timeline') {
-    ensureTimelineDirector()
-  }
 })
 </script>
 

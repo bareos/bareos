@@ -376,7 +376,7 @@ import {
   resolveRestoreSourceDirector,
   truncateRestoreBreadcrumbs,
 } from '../utils/restore.js'
-import { buildJobDetailsQuery, withJobsScopeDirectorQuery } from '../utils/jobs.js'
+import { buildJobDetailsQuery } from '../utils/jobs.js'
 import DirectorScopePanel from '../components/DirectorScopePanel.vue'
 
 const auth = useAuthStore()
@@ -1135,7 +1135,7 @@ async function doRestore() {
 
     await router.push({
       name: 'jobs',
-      query: withJobsScopeDirectorQuery({}, sourceDirector.value),
+      query: {},
     })
   } catch (e) {
     restoreResult.value = { ok: false, message: `Restore failed: ${e.message}`, jobid: null }

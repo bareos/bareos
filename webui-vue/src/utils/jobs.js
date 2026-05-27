@@ -167,30 +167,12 @@ export function withJobsSearchQuery(query, search) {
   return nextQuery
 }
 
-export function resolveJobsScopeDirector(query) {
-  return typeof query?.scopeDirector === 'string' ? query.scopeDirector : ''
-}
-
-export function withJobsScopeDirectorQuery(query, director) {
-  const nextQuery = { ...query }
-  const nextDirector = typeof director === 'string' ? director : ''
-
-  delete nextQuery.scopeDirector
-
-  if (nextDirector) {
-    nextQuery.scopeDirector = nextDirector
-  }
-
-  return nextQuery
-}
-
 export function buildJobDetailsQuery({
   director,
   jobsAction,
   jobsStatus,
   jobsLevel,
   jobsSearch,
-  jobsScopeDirector,
   clientName,
   clientDirector,
   clientsTab,
@@ -200,7 +182,6 @@ export function buildJobDetailsQuery({
   clientJobsStatus,
   clientJobsLevel,
   clientJobsSearch,
-  clientJobsScopeDirector,
   volumeName,
   volumeDirector,
   restoreClient,
@@ -232,10 +213,6 @@ export function buildJobDetailsQuery({
 
   if (jobsSearch) {
     query.jobsSearch = jobsSearch
-  }
-
-  if (jobsScopeDirector) {
-    query.jobsScopeDirector = jobsScopeDirector
   }
 
   if (clientName) {
@@ -274,10 +251,6 @@ export function buildJobDetailsQuery({
 
   if (clientJobsSearch) {
     query.clientJobsSearch = clientJobsSearch
-  }
-
-  if (clientJobsScopeDirector) {
-    query.clientJobsScopeDirector = clientJobsScopeDirector
   }
 
   if (volumeName) {
@@ -336,10 +309,6 @@ export function resolveJobsListQuery(query) {
     nextQuery.search = query.jobsSearch
   }
 
-  if (typeof query?.jobsScopeDirector === 'string' && query.jobsScopeDirector) {
-    nextQuery.scopeDirector = query.jobsScopeDirector
-  }
-
   return nextQuery
 }
 
@@ -350,7 +319,6 @@ export function resolveJobDetailsQuery(query) {
     jobsStatus: encodeJobsStatusFilters(query?.jobsStatus),
     jobsLevel: encodeJobsLevelFilters(query?.jobsLevel),
     jobsSearch: typeof query?.jobsSearch === 'string' ? query.jobsSearch : '',
-    jobsScopeDirector: typeof query?.jobsScopeDirector === 'string' ? query.jobsScopeDirector : '',
     clientName: typeof query?.clientName === 'string' ? query.clientName : '',
     clientDirector: typeof query?.clientDirector === 'string' ? query.clientDirector : '',
     clientsTab: typeof query?.clientsTab === 'string' ? query.clientsTab : '',
@@ -360,7 +328,6 @@ export function resolveJobDetailsQuery(query) {
     clientJobsStatus: encodeJobsStatusFilters(query?.clientJobsStatus),
     clientJobsLevel: encodeJobsLevelFilters(query?.clientJobsLevel),
     clientJobsSearch: typeof query?.clientJobsSearch === 'string' ? query.clientJobsSearch : '',
-    clientJobsScopeDirector: typeof query?.clientJobsScopeDirector === 'string' ? query.clientJobsScopeDirector : '',
     volumeName: typeof query?.volumeName === 'string' ? query.volumeName : '',
     volumeDirector: typeof query?.volumeDirector === 'string' ? query.volumeDirector : '',
     restoreClient: typeof query?.restoreClient === 'string' ? query.restoreClient : '',
@@ -387,9 +354,6 @@ export function resolveJobDetailsClientOrigin(query) {
     jobsStatus: encodeJobsStatusFilters(query?.clientJobsStatus),
     jobsLevel: encodeJobsLevelFilters(query?.clientJobsLevel),
     jobsSearch: typeof query?.clientJobsSearch === 'string' ? query.clientJobsSearch : '',
-    jobsScopeDirector: typeof query?.clientJobsScopeDirector === 'string'
-      ? query.clientJobsScopeDirector
-      : '',
   }
 }
 
