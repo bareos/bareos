@@ -36,6 +36,7 @@ frontend_log="${tmp}/webui-vue-frontend.out"
 proxy_config="${tmp}/bareos-webui-proxy.ini"
 proxy_pid_file="${tmp}/webui-vue-proxy.pid"
 frontend_pid_file="${tmp}/webui-vue-frontend.pid"
+required_node_major=20
 PROXY_PID=""
 FRONTEND_PID=""
 
@@ -69,6 +70,29 @@ function cleanup_on_error()
   fi
   rm -f "${frontend_pid_file}" "${proxy_pid_file}"
   stop_bareos || true
+}
+
+function check_node_version()
+{
+  local version
+  local major
+
+  version="$("${NODE_EXECUTABLE}" --version 2>/dev/null)" || {
+    echo "Failed to run Node executable: ${NODE_EXECUTABLE}" >&2
+    exit 1
+  }
+
+  if [[ ! "${version}" =~ ^v([0-9]+)\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Could not parse Node version from: ${version}" >&2
+    exit 1
+  fi
+
+  major="${BASH_REMATCH[1]}"
+  if ((major < required_node_major)); then
+    echo \
+      "webui-vue tests require Node >= ${required_node_major}, but found ${version} (${NODE_EXECUTABLE})." >&2
+    exit 1
+  fi
 }
 
 function wait_for_http()
@@ -124,6 +148,8 @@ address = 127.0.0.1
 port = ${BAREOS_DIRECTOR_PORT}
 tls_psk_disable = ${proxy_tls_psk_disable}
 END_OF_PROXY_CONFIG
+
+check_node_version
 
 pushd "${CMAKE_SOURCE_DIR}/webui-vue" >/dev/null
 if [[ "${BAREOS_WEBUI_VUE_USE_DIST_FIRST}" = "TRUE" &&

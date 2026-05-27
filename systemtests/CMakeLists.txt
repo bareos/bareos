@@ -370,6 +370,23 @@ set(READONLY_WEBUI_SELENIUM_TESTNAMES
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
 find_program(NODE node)
+set(WEBUI_VUE_MINIMUM_NODE_MAJOR 20)
+set(WEBUI_VUE_NODE_VERSION_OK FALSE)
+set(NODE_VERSION "")
+if(NODE)
+  execute_process(
+    COMMAND "${NODE}" --version
+    OUTPUT_VARIABLE NODE_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+  )
+  if("${NODE_VERSION}" MATCHES "^v([0-9]+)\\.")
+    set(NODE_VERSION_MAJOR "${CMAKE_MATCH_1}")
+    if(NODE_VERSION_MAJOR GREATER_EQUAL WEBUI_VUE_MINIMUM_NODE_MAJOR)
+      set(WEBUI_VUE_NODE_VERSION_OK TRUE)
+    endif()
+  endif()
+endif()
 set(WEBUI_VUE_TEST_DIST "")
 set(WEBUI_VUE_PREFER_PREBUILT_DIST FALSE)
 if(EXISTS "${PROJECT_BINARY_DIR}/webui-vue/dist/index.html")
@@ -401,6 +418,7 @@ message("   PYTHON_EXECUTABLE:         " ${PYTHON_EXECUTABLE})
 message("   PYMODULE_3_SELENIUM_FOUND: " ${PYMODULE_3_SELENIUM_FOUND})
 message("   CHROMEDRIVER:              " ${CHROMEDRIVER})
 message("   NODE:                      " ${NODE})
+message("   NODE_VERSION:              " ${NODE_VERSION})
 message("   GOOGLE_CHROME:             " ${GOOGLE_CHROME})
 message("   WEBUI_VUE_PLAYWRIGHT:      " ${WEBUI_VUE_PLAYWRIGHT})
 message("   WEBUI_VUE_VITE:            " ${WEBUI_VUE_VITE})
@@ -539,6 +557,7 @@ set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS admin-smoke readonly-smoke
 )
 
 if(NODE
+   AND WEBUI_VUE_NODE_VERSION_OK
    AND GOOGLE_CHROME
    AND WEBUI_VUE_PLAYWRIGHT
    AND (WEBUI_VUE_TEST_DIST OR WEBUI_VUE_VITE)
@@ -551,7 +570,17 @@ else()
     STATUS
       "NOT OK: disabling webui-vue browser tests as not all requirements were found."
   )
-  if(NOT WEBUI_VUE_PLAYWRIGHT)
+  if(NOT NODE)
+    message(
+      STATUS
+        "Install Node >= ${WEBUI_VUE_MINIMUM_NODE_MAJOR} before configuring webui-vue browser tests."
+    )
+  elseif(NOT WEBUI_VUE_NODE_VERSION_OK)
+    message(
+      STATUS
+        "webui-vue browser tests require Node >= ${WEBUI_VUE_MINIMUM_NODE_MAJOR}, but found ${NODE_VERSION}."
+    )
+  elseif(NOT WEBUI_VUE_PLAYWRIGHT)
     message(
       STATUS
         "Install webui-vue Playwright before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
