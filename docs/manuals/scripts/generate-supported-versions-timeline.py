@@ -197,8 +197,9 @@ def append_bar_label(
     )
 
 
-def svg_header(height: int) -> str:
-    return f"""<svg xmlns="http://www.w3.org/2000/svg" width="{SVG_WIDTH}" height="{height}" viewBox="0 0 {SVG_WIDTH} {height}">
+def svg_header(height: int, window_start: date, window_end: date) -> str:
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" width="{SVG_WIDTH}" height="{height}" viewBox="0 0 {SVG_WIDTH} {height}"
+data-window-start="{window_start.isoformat()}" data-window-end="{window_end.isoformat()}">
   <defs>
     <style type="text/css"><![CDATA[
       .bg {{ fill: #ffffff; }}
@@ -237,7 +238,7 @@ def render_timeline(
     footer_y = legend_y + 45
     svg_height = footer_y + 70
 
-    parts = [svg_header(svg_height)]
+    parts = [svg_header(svg_height, window_start, window_end)]
     parts.append(
         f'  <rect class="bg" x="0" y="0" width="{SVG_WIDTH}" height="{svg_height}"/>\n'
     )
@@ -245,7 +246,9 @@ def render_timeline(
         '  <text class="title" x="40" y="36">'
         "Bareos supported versions over time</text>\n"
     )
-    parts.append(f'  <g transform="translate({SVG_LEFT},{TOP_MARGIN})">\n')
+    parts.append(
+        f'  <g id="timeline" transform="translate({SVG_LEFT},{TOP_MARGIN})">\n'
+    )
     parts.append('    <g class="tick">\n')
     for tick in tick_dates(window_start, window_end):
         x = x_position(tick, window_start, window_end)
@@ -376,7 +379,7 @@ def render_timeline(
 
     parts.append("  </g>\n\n")
 
-    parts.append(f'  <g transform="translate(40,{legend_y})">\n')
+    parts.append(f'  <g id="timeline-legend" transform="translate(40,{legend_y})">\n')
     parts.append(
         '    <rect class="development" x="0" y="0" width="18" height="18" rx="3"/>\n'
     )
