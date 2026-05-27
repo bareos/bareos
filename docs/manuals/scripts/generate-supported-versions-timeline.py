@@ -216,8 +216,6 @@ def svg_header(height: int) -> str:
       .label {{ fill: #ffffff; font: 600 15px sans-serif; dominant-baseline: middle; }}
       .small-label {{ fill: #334854; font: 13px sans-serif; dominant-baseline: middle; }}
       .note {{ fill: #5c7285; font: 13px sans-serif; }}
-      .today {{ stroke: #123047; stroke-width: 2; stroke-dasharray: 6 4; }}
-      .today-text {{ fill: #123047; font: 600 13px sans-serif; text-anchor: end; }}
     ]]></style>
   </defs>
 
@@ -259,15 +257,6 @@ def render_timeline(
         parts.append(f'      <text x="{x}" y="-12">{tick_label(tick)}</text>\n')
     parts.append("    </g>\n\n")
 
-    today_x = x_position(today, window_start, window_end)
-    parts.append(
-        f'    <line class="today" x1="{today_x}" y1="0" '
-        f'x2="{today_x}" y2="{timeline_height}"/>\n'
-    )
-    parts.append(
-        f'    <text class="today-text" x="{today_x - 6}" y="{timeline_height + 17}">'
-        f"Today · {today.isoformat()}</text>\n\n"
-    )
     parts.append(
         f'    <line class="axis" x1="0" y1="{timeline_height}" '
         f'x2="{TIMELINE_WIDTH}" y2="{timeline_height}"/>\n\n'
