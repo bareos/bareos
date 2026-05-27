@@ -110,7 +110,10 @@
                 <span class="text-body2">{{ t('Browse Files') }}</span>
               <div class="row items-center q-gutter-sm">
                 <span v-if="selectedFiles.size || selectedDirs.size" class="text-caption text-grey-5">
-                  {{ t('{files} file(s), {folders} folder(s) selected', { files: selectedFiles.size, folders: selectedDirs.size }) }}
+                  <q-icon name="description" size="14px" class="q-mr-xs" />
+                  {{ selectedFiles.size }}
+                  <q-icon name="folder" size="14px" class="q-mx-xs" />
+                  {{ selectedDirs.size }}
                 </span>
                 <q-btn
                   flat dense round size="sm"
@@ -373,7 +376,7 @@ import {
   resolveRestoreSourceDirector,
   truncateRestoreBreadcrumbs,
 } from '../utils/restore.js'
-import { buildJobDetailsQuery } from '../utils/jobs.js'
+import { buildJobDetailsQuery, withJobsScopeDirectorQuery } from '../utils/jobs.js'
 import DirectorScopePanel from '../components/DirectorScopePanel.vue'
 
 const auth = useAuthStore()
@@ -522,6 +525,52 @@ function buildRestoreJobDetailsQuery() {
     restoreDirector: sourceDirector.value,
     restoreJobid: form.value.jobid,
   })
+}
+
+function extractQueuedJobId(value) {
+  if (value == null) {
+    return null
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+
+  if (typeof value === 'string') {
+    const match = value.match(/jobid["=: ]+("?)(\d+)/i)
+      ?? value.match(/queued[^0-9]*(\d+)/i)
+    return match ? match[2] ?? match[1] : null
+  }
+
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const nested = extractQueuedJobId(entry)
+      if (nested) {
+        return nested
+      }
+    }
+    return null
+  }
+
+  if (typeof value === 'object') {
+    for (const [key, nestedValue] of Object.entries(value)) {
+      if (/jobid/i.test(key)) {
+        const direct = extractQueuedJobId(nestedValue)
+        if (direct) {
+          return direct
+        }
+      }
+    }
+
+    for (const nestedValue of Object.values(value)) {
+      const nested = extractQueuedJobId(nestedValue)
+      if (nested) {
+        return nested
+      }
+    }
+  }
+
+  return null
 }
 
 async function syncRouteToSourceSelection() {
@@ -1069,10 +1118,7 @@ async function doRestore() {
       ` yes`
     const result = await director.call(cmd)
 
-    // Extract queued JobId from response string (result may be a string or object)
-    const raw   = typeof result === 'string' ? result : JSON.stringify(result)
-    const match = raw.match(/JobId[=: ]+(\d+)/i)
-    const jobid = match ? match[1] : null
+    const jobid = extractQueuedJobId(result)
 
     restoreResult.value = {
       ok:      true,
@@ -1081,7 +1127,16 @@ async function doRestore() {
     }
 
     // Step 3: clean up BVFS restore path
-    await director.call(`.bvfs_cleanup path=${quoteDirectorString(bvfsPath)}`)
+    try {
+      await director.call(`.bvfs_cleanup path=${quoteDirectorString(bvfsPath)}`)
+    } catch (_) {
+      // Cleanup should not block the queued restore from being shown.
+    }
+
+    await router.push({
+      name: 'jobs',
+      query: withJobsScopeDirectorQuery({}, sourceDirector.value),
+    })
   } catch (e) {
     restoreResult.value = { ok: false, message: `Restore failed: ${e.message}`, jobid: null }
   } finally {
