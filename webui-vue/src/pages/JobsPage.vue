@@ -70,7 +70,7 @@
               dense
               outlined
               clearable
-              :placeholder="t('Search…')"
+              :placeholder="t('Search job, client, or ID…')"
               class="jobs-list-header__search"
             >
               <template #prepend><q-icon name="search" /></template>

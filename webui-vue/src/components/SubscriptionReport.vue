@@ -32,10 +32,10 @@
           </div>
           <div class="sub-summary-stat">
             <div class="sub-summary-value"
-                 :class="Number(data['unit-summary'].remaining) < 0 ? 'text-negative' : 'text-positive'">
-              {{ data['unit-summary'].remaining }}
+                 :class="remainingSummary.isOverLimit ? 'text-negative' : 'text-positive'">
+              {{ remainingSummary.value }}
             </div>
-            <div class="sub-summary-label">{{ t('Remaining') }}</div>
+            <div class="sub-summary-label">{{ t(remainingSummary.labelKey) }}</div>
           </div>
         </div>
         <div class="sub-summary-mode">
@@ -120,9 +120,11 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useSettingsStore } from '../stores/settings.js'
 import { useI18n } from 'vue-i18n'
 import { formatLocalDateTime, formatNumber } from '../utils/locales.js'
+import { subscriptionRemainingSummary } from '../utils/subscription.js'
 
 const props = defineProps({
   data:      { type: Object, required: true },
@@ -132,6 +134,7 @@ const props = defineProps({
 const settings = useSettingsStore()
 const { t } = useI18n()
 const generatedAt = formatLocalDateTime(new Date(), settings.locale)
+const remainingSummary = computed(() => subscriptionRemainingSummary(props.data?.['unit-summary']))
 
 function fmtGB(gbStr) {
   return formatNumber(parseFloat(gbStr), settings.locale, {
