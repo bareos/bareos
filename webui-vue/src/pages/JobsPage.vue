@@ -85,7 +85,18 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
-            <div v-if="(statusFilters?.length ?? 0) || (levelFilters?.length ?? 0) || (typeFilters?.length ?? 0)" class="q-px-md q-pt-sm">
+            <div v-if="search || (statusFilters?.length ?? 0) || (levelFilters?.length ?? 0) || (typeFilters?.length ?? 0)" class="q-px-md q-pt-sm">
+              <q-chip
+                v-if="search"
+                removable
+                color="grey-8"
+                text-color="white"
+                icon="search"
+                class="q-mb-xs q-mr-xs"
+                @remove="search = ''"
+              >
+                {{ t('Search') }}: {{ search }}
+              </q-chip>
               <q-chip
                 v-for="status in (statusFilters ?? [])"
                 :key="status"
@@ -142,6 +153,18 @@
               <template #body-cell-director="props">
                 <q-td :props="props">
                   <DirectorLabel :director="props.row.director || props.value || ''" />
+                </q-td>
+              </template>
+              <template #body-cell-name="props">
+                <q-td :props="props">
+                  <a
+                    href="#"
+                    class="text-primary"
+                    :title="`${t('Job Name')}: ${props.value}`"
+                    @click.prevent="search = props.value ?? ''"
+                  >
+                    {{ props.value }}
+                  </a>
                 </q-td>
               </template>
               <template #body-cell-status="props">
