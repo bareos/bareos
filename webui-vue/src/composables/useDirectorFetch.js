@@ -162,6 +162,7 @@ function parseUname(raw) {
 export function normaliseClient(c) {
   const uname = c.uname ?? c.uagent ?? ''
   const { version, buildDate, os, osInfo, arch } = parseUname(uname)
+  const passiveValue = c.passive ?? c.Passive
   return {
     clientid:  c.clientid ?? '',
     name:      c.name ?? '',
@@ -171,8 +172,9 @@ export function normaliseClient(c) {
     enabled:   c.enabled !== '0' && c.enabled !== false,
     address:   c.address ?? '',
     port:      c.fdport ? Number(c.fdport) : (c.port ? Number(c.port) : 9102),
-    fileretention: c.fileretention ?? '',
-    jobretention:  c.jobretention  ?? '',
+    passive: passiveValue === '' || passiveValue === null || passiveValue === undefined
+      ? ''
+      : (passiveValue === true || passiveValue === '1' || passiveValue === 1),
     os,
     osInfo,
     arch,

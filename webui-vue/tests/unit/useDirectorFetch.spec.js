@@ -97,17 +97,35 @@ describe('director data normalisers', () => {
       uname: '23.0.0 (01Jan24) Debian GNU/Linux 12 (bookworm),x86_64-pc-linux-gnu',
       enabled: '1',
       fdport: '9102',
+      passive: '1',
     })).toMatchObject({
       clientid: 7,
       name: 'bareos-fd',
       version: '23.0.0',
       buildDate: '01Jan24',
       enabled: true,
+      passive: true,
       os: 'linux',
       osInfo: 'Debian GNU/Linux 12 (bookworm)',
       arch: 'x86_64',
       port: 9102,
     })
+  })
+
+  it('keeps passive empty when the field is unavailable', () => {
+    expect(normaliseClient({
+      clientid: 8,
+      name: 'fileserver-fd',
+      uname: '23.0.0 (01Jan24) Debian GNU/Linux 12 (bookworm),x86_64-pc-linux-gnu',
+    }).passive).toBe('')
+  })
+
+  it('normalises show-style passive booleans', () => {
+    expect(normaliseClient({
+      clientid: 9,
+      name: 'plain-show-fd',
+      passive: false,
+    }).passive).toBe(false)
   })
 
   it('normalises volume records from either naming convention', () => {
