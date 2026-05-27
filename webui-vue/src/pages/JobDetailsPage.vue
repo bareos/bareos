@@ -69,7 +69,7 @@
           </q-card>
 
           <!-- Volumes used -->
-          <q-card flat bordered class="bareos-panel">
+          <q-card v-if="showVolumesCard" flat bordered class="bareos-panel">
             <q-card-section class="panel-header">{{ t('Volumes Used') }}</q-card-section>
             <q-card-section class="q-pa-none">
               <q-table
@@ -176,6 +176,7 @@ import {
   resolveJobDetailsVolumeOrigin,
   resolveJobsListQuery,
 } from '../utils/jobs.js'
+import { resolveJobTypeCode } from '../utils/jobTypes.js'
 import { buildVolumeDetailsQuery } from '../utils/volumes.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
@@ -395,6 +396,8 @@ watch(() => `${currentJobId.value}\u0000${requestedDirector.value}`, async () =>
 
 // ── computed ──────────────────────────────────────────────────────────────────
 const job = computed(() => jobData.value)
+const isRestoreJob = computed(() => resolveJobTypeCode(job.value?.type) === 'R')
+const showVolumesCard = computed(() => !isRestoreJob.value || volumes.value.length > 0)
 
 const volumeCols = computed(() => [
   { name: 'volumename', label: 'Volume',
