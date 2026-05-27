@@ -138,6 +138,7 @@
               :rows="filteredJobs"
               :columns="columns"
               row-key="scopeKey"
+              binary-state-sort
               dense flat
               :loading="loading"
               v-model:pagination="pagination"
