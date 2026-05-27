@@ -53,7 +53,7 @@ TEST(BareosBase64, EncodesKnownCompatibleValue)
   EXPECT_EQ(result, "gIA");
 }
 
-TEST(BareosBase64, RoundTripConsistency)
+TEST(BareosBase64, UsesOnlyBase64Alphabet)
 {
   // Encode 16 bytes of the pattern 0x00..0x0F
   uint8_t data[16];
