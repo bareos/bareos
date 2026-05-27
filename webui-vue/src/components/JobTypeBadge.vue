@@ -4,7 +4,7 @@
     text-color="white"
     size="24px"
     font-size="12px"
-    style="font-weight:700; cursor:default"
+    style="font-weight:700; user-select:none"
   >
     {{ info.badge }}
     <q-tooltip>{{ info.label }}</q-tooltip>

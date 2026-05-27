@@ -24,6 +24,7 @@ import { directorCollection, normaliseJob } from './useDirectorFetch.js'
 import { createDirectorCommandClient } from './directorAggregate.js'
 import {
   encodeJobsLevelFilters,
+  encodeJobsTypeFilters,
   normaliseJobStatusFilters,
 } from '../utils/jobs.js'
 
@@ -146,13 +147,15 @@ function overlayRuntimeStatuses(jobs, runtimeJobs) {
   }))
 }
 
-function jobsFilterCommands(statusFilter, levelFilter) {
+function jobsFilterCommands(statusFilter, levelFilter, typeFilter) {
   const filters = normaliseJobStatusFilters(statusFilter)
   const encodedLevels = encodeJobsLevelFilters(levelFilter)
+  const encodedTypes = encodeJobsTypeFilters(typeFilter)
   const levelClause = encodedLevels ? ` joblevel=${encodedLevels}` : ''
+  const typeClause = encodedTypes ? ` jobtype=${encodedTypes}` : ''
   return filters.length
-    ? filters.map(filter => ` jobstatus=${filter}${levelClause}`)
-    : [levelClause]
+    ? filters.map(filter => ` jobstatus=${filter}${levelClause}${typeClause}`)
+    : [`${levelClause}${typeClause}`]
 }
 
 export async function fetchAggregatedJobsPage(
@@ -161,11 +164,12 @@ export async function fetchAggregatedJobsPage(
   pagination,
   statusFilter = '',
   levelFilter = '',
+  typeFilter = '',
 ) {
   const { page = 1, rowsPerPage = 25 } = pagination ?? {}
   const offset = Math.max(0, (page - 1) * rowsPerPage)
   const fetchLimit = offset + rowsPerPage
-  const filters = jobsFilterCommands(statusFilter, levelFilter)
+  const filters = jobsFilterCommands(statusFilter, levelFilter, typeFilter)
   const useDefaultSorting = usesDefaultJobsSorting(pagination)
 
   const results = await Promise.allSettled(directors.map(async (director) => {
