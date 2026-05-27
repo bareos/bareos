@@ -1031,13 +1031,13 @@ const runningJobCols = computed(() => [
     sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
   { name: 'name',       label: 'Job',        field: 'name',       align: 'left', sortable: true },
   { name: 'level',      label: 'Level',      field: 'level',      align: 'left', sortable: true },
+  { name: 'status',     label: 'Status',     field: 'status',     align: 'left', sortable: true },
   { name: 'type',       label: 'Type',       field: 'type',       align: 'left', sortable: true },
   { name: 'start_time', label: 'Started',    field: 'start_time', align: 'left', sortable: true },
   { name: 'files',      label: 'Files',      field: 'files',      align: 'right', sortable: true,
     sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
   { name: 'bytes',      label: 'Bytes',      field: 'bytes',      align: 'right', sortable: true,
     sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
-  { name: 'status',     label: 'Status',     field: 'status',     align: 'left', sortable: true },
 ].map((col) => ({ ...col, label: t(col.label) })))
 const terminatedJobCols = computed(() => [
   ...(showDirectorColumn.value
@@ -1047,13 +1047,13 @@ const terminatedJobCols = computed(() => [
     sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
   { name: 'name',     label: 'Job',      field: 'name',     align: 'left', sortable: true },
   { name: 'level',    label: 'Level',    field: 'level',    align: 'left', sortable: true },
+  { name: 'status',   label: 'Status',   field: 'status',   align: 'left', sortable: true },
   { name: 'type',     label: 'Type',     field: 'type',     align: 'left', sortable: true },
   { name: 'finished', label: 'Finished', field: 'finished', align: 'left', sortable: true },
   { name: 'files',    label: 'Files',    field: 'files',    align: 'right', sortable: true,
     sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
   { name: 'bytes',    label: 'Bytes',    field: 'bytes',    align: 'right', sortable: true,
     sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
-  { name: 'status',   label: 'Status',   field: 'status',   align: 'left', sortable: true },
 ].map((col) => ({ ...col, label: t(col.label) })))
 
 // ── Messages ─────────────────────────────────────────────────────────────────
