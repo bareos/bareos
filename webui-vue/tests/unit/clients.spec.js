@@ -39,7 +39,6 @@ describe('clients route helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F',
       jobsSearch: 'backup',
-      jobsScopeDirector: 'prod-a',
       dashboardOrigin: true,
     })).toEqual({
       director: 'prod-a',
@@ -49,7 +48,6 @@ describe('clients route helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F',
       jobsSearch: 'backup',
-      jobsScopeDirector: 'prod-a',
       dashboardOrigin: '1',
     })
 
@@ -87,13 +85,11 @@ describe('clients route helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F',
       jobsSearch: 'backup',
-      jobsScopeDirector: 'prod-a',
     })).toEqual({
       action: 'timeline',
       status: 'T',
       level: 'F',
       search: 'backup',
-      scopeDirector: 'prod-a',
     })
 
     expect(resolveClientDetailsJobsOrigin({ jobsAction: 'list' })).toEqual({})

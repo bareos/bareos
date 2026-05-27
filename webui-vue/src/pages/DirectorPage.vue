@@ -169,7 +169,7 @@
                       </q-chip>
                       <router-link
                         v-if="card.jobs_run != null"
-                        :to="{ name: 'jobs', query: withJobsScopeDirectorQuery({}, card.scopeDirector) }"
+                        :to="{ name: 'jobs' }"
                         class="text-decoration-none"
                       >
                         <q-chip
@@ -189,10 +189,7 @@
                         v-if="card.jobs_running != null"
                         :to="{
                           name: 'jobs',
-                          query: withJobsScopeDirectorQuery(
-                            withJobsStatusFilterQuery({}, 'R'),
-                            card.scopeDirector,
-                          ),
+                          query: withJobsStatusFilterQuery({}, 'R'),
                         }"
                         class="text-decoration-none"
                       >
@@ -767,7 +764,6 @@ import {
 import {
   buildJobDetailsQuery,
   withJobsStatusFilterQuery,
-  withJobsScopeDirectorQuery,
   withJobsSearchQuery,
 } from '../utils/jobs.js'
 import { buildVolumeDetailsQuery } from '../utils/volumes.js'
@@ -1288,10 +1284,7 @@ function openJobDetails(row) {
 }
 
 function openJobsByName(row) {
-  const query = withJobsScopeDirectorQuery(
-    withJobsSearchQuery({}, row.name),
-    row.director
-  )
+  const query = withJobsSearchQuery({}, row.name)
 
   return navigateForDirector(row.director, {
     name: 'jobs',

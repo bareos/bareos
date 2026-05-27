@@ -34,7 +34,7 @@
       <div v-else ref="svgContainer" class="tl-container" @mouseleave="hideTooltip">
         <svg :width="svgW" :height="svgH">
           <!-- Alternating row backgrounds -->
-          <rect v-for="(row, i) in tlRows" :key="'bg-' + row.client + row.name"
+          <rect v-for="(row, i) in tlRows" :key="'bg-' + (row.director ?? '') + '-' + row.client + '-' + row.name"
                 x="0" :y="i * TL_ROW_H"
                 :width="svgW" :height="TL_ROW_H"
                 :fill="i % 2 === 0
@@ -58,7 +58,7 @@
           </text>
 
           <!-- Client column: label centered over all rows for that client -->
-          <g v-for="span in tlClientSpans" :key="'client-' + span.client">
+          <g v-for="span in tlClientSpans" :key="'client-' + (span.director ?? '') + '-' + span.client">
             <!-- Separator line above each client group (except the first) -->
             <line v-if="span.startRow > 0"
                   x1="0" :y1="span.startRow * TL_ROW_H"
@@ -71,8 +71,8 @@
                   font-size="11" text-anchor="middle" font-weight="600"
                   :fill="$q.dark.isActive ? '#90caf9' : '#1565c0'"
                   style="font-family:sans-serif; user-select:none; cursor:pointer"
-                  @click="router.push({ name: 'client-details', params: { name: span.client }, query: clientDetailsQuery ?? (currentDirector ? { director: currentDirector } : {}) })">
-              {{ span.client.length > 14 ? span.client.slice(0, 13) + '\u2026' : span.client }}
+                  @click="router.push(clientDetailsRoute(span))">
+              {{ span.label.length > 14 ? span.label.slice(0, 13) + '\u2026' : span.label }}
             </text>
           </g>
 
@@ -89,7 +89,7 @@
                 stroke-width="1" />
 
           <!-- Job name labels -->
-          <text v-for="(row, i) in tlRows" :key="'name-' + row.client + row.name"
+          <text v-for="(row, i) in tlRows" :key="'name-' + (row.director ?? '') + '-' + row.client + '-' + row.name"
                 :x="tlColsW - 6" :y="i * TL_ROW_H + TL_ROW_H / 2 + 4"
                 font-size="11" text-anchor="end"
                 :fill="$q.dark.isActive ? '#ccc' : '#555'"
@@ -98,7 +98,7 @@
           </text>
 
           <!-- Job bars — all runs for each job name in the same row -->
-          <g v-for="(row, i) in tlRows" :key="'grp-' + row.client + row.name">
+          <g v-for="(row, i) in tlRows" :key="'grp-' + (row.director ?? '') + '-' + row.client + '-' + row.name">
             <rect v-for="run in row.runs" :key="'bar-' + run.id"
                   :x="tlColsW + tlBarStart(run)"
                   :y="i * TL_ROW_H + TL_BAR_PAD"
@@ -106,7 +106,7 @@
                   :height="TL_ROW_H - TL_BAR_PAD * 2"
                   :fill="tlColorOf(run.status)"
                   rx="3" style="cursor:pointer"
-                  @click="router.push({ name: 'job-details', params: { id: run.id }, query: jobDetailsQuery ?? (run.director ? { director: run.director } : {}) })"
+                  @click="router.push(jobDetailsRoute(run))"
                   @mouseenter="(e) => showTlTooltip(e, run)"
                   @mousemove="moveTlTooltip" />
           </g>
@@ -115,6 +115,7 @@
       <div v-if="tlTooltip.visible" class="tl-tooltip"
            :style="`left:${tlTooltip.x}px; top:${tlTooltip.y}px`">
         <div class="text-weight-bold q-mb-xs">{{ tlTooltip.job.name }}</div>
+        <div v-if="multiDirectorTimeline">{{ t('Director') }}: {{ tlTooltip.job.director }}</div>
         <div>{{ t('Client') }}: {{ tlTooltip.job.client }}</div>
         <div>{{ t('ID') }}: {{ tlTooltip.job.id }}</div>
         <div>{{ t('Status') }}: {{ displayJobStatus(tlTooltip.job) }}</div>
@@ -141,6 +142,7 @@ import {
   normaliseJob,
   overlayRuntimeStatuses,
 } from '../composables/useDirectorFetch.js'
+import { createDirectorCommandClient } from '../composables/directorAggregate.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -149,6 +151,7 @@ import { formatNumber } from '../utils/locales.js'
 const {
   clientDetailsQuery = null,
   jobDetailsQuery = null,
+  directors = null,
 } = defineProps({
   clientDetailsQuery: {
     type: Object,
@@ -156,6 +159,10 @@ const {
   },
   jobDetailsQuery: {
     type: Object,
+    default: null,
+  },
+  directors: {
+    type: Array,
     default: null,
   },
 })
@@ -168,6 +175,12 @@ const settings = useSettingsStore()
 const fmtBytes = formatBytes
 const { t } = useI18n()
 const currentDirector = computed(() => auth.user?.director || settings.directorName || '')
+const timelineDirectors = computed(() => (
+  Array.isArray(directors) && directors.length > 0
+    ? directors.filter(value => typeof value === 'string' && value)
+    : (currentDirector.value ? [currentDirector.value] : [])
+))
+const multiDirectorTimeline = computed(() => timelineDirectors.value.length > 1)
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 const TL_CLIENT_W = 110
@@ -213,14 +226,36 @@ const tlRows = computed(() => {
     const s = tlParseTS(j.starttime)
     const e = tlParseTS(j.endtime) ?? now
     if (s === null || e < tlStart.value || s > now) continue
-    if (!clientGroups.has(j.client)) clientGroups.set(j.client, new Map())
-    const jobMap = clientGroups.get(j.client)
-    if (!jobMap.has(j.name)) jobMap.set(j.name, { name: j.name, client: j.client, runs: [] })
+    const clientKey = multiDirectorTimeline.value
+      ? `${j.director ?? ''}\u0000${j.client}`
+      : j.client
+    const clientLabel = multiDirectorTimeline.value
+      ? `${j.director}: ${j.client}`
+      : j.client
+    if (!clientGroups.has(clientKey)) {
+      clientGroups.set(clientKey, {
+        client: j.client,
+        director: j.director ?? null,
+        label: clientLabel,
+        jobs: new Map(),
+      })
+    }
+    const clientGroup = clientGroups.get(clientKey)
+    const jobMap = clientGroup.jobs
+    if (!jobMap.has(j.name)) {
+      jobMap.set(j.name, {
+        name: j.name,
+        client: j.client,
+        clientLabel,
+        director: j.director ?? null,
+        runs: [],
+      })
+    }
     jobMap.get(j.name).runs.push(j)
   }
   const rows = []
-  for (const [, jobMap] of [...clientGroups.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-    for (const g of [...jobMap.values()].sort((a, b) => a.name.localeCompare(b.name))) {
+  for (const [, clientGroup] of [...clientGroups.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    for (const g of [...clientGroup.jobs.values()].sort((a, b) => a.name.localeCompare(b.name))) {
       rows.push({ ...g, runs: g.runs.sort((a, b) => (tlParseTS(a.starttime) ?? 0) - (tlParseTS(b.starttime) ?? 0)) })
     }
   }
@@ -233,13 +268,49 @@ const tlClientSpans = computed(() => {
   let i = 0
   while (i < tlRows.value.length) {
     const client = tlRows.value[i].client
+    const director = tlRows.value[i].director ?? null
+    const label = tlRows.value[i].clientLabel ?? client
     let count = 0
-    while (i + count < tlRows.value.length && tlRows.value[i + count].client === client) count++
-    spans.push({ client, startRow: i, rowCount: count })
+    while (
+      i + count < tlRows.value.length
+      && tlRows.value[i + count].client === client
+      && (tlRows.value[i + count].director ?? null) === director
+    ) count++
+    spans.push({ client, director, label, startRow: i, rowCount: count })
     i += count
   }
   return spans
 })
+
+function clientDetailsRoute(span) {
+  const query = clientDetailsQuery
+    ? {
+      ...clientDetailsQuery,
+      director: span.director || clientDetailsQuery.director || currentDirector.value || '',
+    }
+    : (span.director ? { director: span.director } : (currentDirector.value ? { director: currentDirector.value } : {}))
+
+  return {
+    name: 'client-details',
+    params: { name: span.client },
+    query,
+  }
+}
+
+function jobDetailsRoute(run) {
+  const query = jobDetailsQuery
+    ? {
+      ...jobDetailsQuery,
+      director: run.director || jobDetailsQuery.director || currentDirector.value || '',
+    }
+    : (run.director ? { director: run.director } : (currentDirector.value ? { director: currentDirector.value } : {}))
+
+  return {
+    name: 'job-details',
+    params: { id: run.id },
+    query,
+  }
+}
 
 const tlTicks = computed(() => {
   const steps = 6
@@ -297,23 +368,45 @@ function moveTlTooltip(event) {
 function hideTooltip() { tlTooltip.visible = false }
 
 async function tlRefresh() {
-  if (!director.isConnected) return
+  if (!director.isConnected && timelineDirectors.value.length === 0) return
   tlLoading.value = true
   tlError.value   = ''
   try {
-    const res = await director.call(`llist jobs days=${tlDays.value}`)
-    const jobs = directorCollection(res?.jobs).map((job) => ({
-      ...normaliseJob(job),
-      director: currentDirector.value || null,
-    }))
-    if (jobs.some(job => isRunningJobStatus(job.status))) {
-      const runtimeStatus = await Promise.allSettled([director.call('status director')])
-      tlRawJobs.value = runtimeStatus[0].status === 'fulfilled'
-        ? overlayRuntimeStatuses(jobs, runtimeStatus[0].value?.running)
-        : jobs
-    } else {
-      tlRawJobs.value = jobs
+    const credentials = auth.getCredentials()
+    if (!credentials?.password) {
+      throw new Error(t('Not logged in.'))
     }
+
+    const results = await Promise.allSettled(timelineDirectors.value.map(async (directorName) => {
+      const client = await createDirectorCommandClient({
+        ...credentials,
+        director: directorName,
+      })
+
+      try {
+        const [jobsResult, statusResult] = await Promise.all([
+          client.call(`llist jobs days=${tlDays.value}`),
+          client.call('status director'),
+        ])
+        const jobs = directorCollection(jobsResult?.jobs).map((job) => ({
+          ...normaliseJob(job),
+          director: directorName,
+        }))
+        return jobs.some(job => isRunningJobStatus(job.status))
+          ? overlayRuntimeStatuses(jobs, statusResult?.running)
+          : jobs
+      } finally {
+        client.disconnect()
+      }
+    }))
+
+    const successful = results
+      .filter(result => result.status === 'fulfilled')
+      .flatMap(result => result.value)
+    if (successful.length === 0 && results.some(result => result.status === 'rejected')) {
+      throw results.find(result => result.status === 'rejected').reason
+    }
+    tlRawJobs.value = successful
   } catch (e) {
     tlError.value = e.message
   } finally {
