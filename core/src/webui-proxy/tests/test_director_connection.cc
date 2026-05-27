@@ -34,7 +34,6 @@
 #include <gtest/gtest.h>
 
 #include <array>
-#include <cassert>
 #include <chrono>
 #include <thread>
 
@@ -57,26 +56,6 @@ TEST(DirectorConnection, DerivesCramMd5KeyFromPlaintextPassword)
 }
 
 namespace {
-std::string Md5Hex(const std::string& text)
-{
-  constexpr size_t kMaxHexChars = 64;
-  uint8_t digest[EVP_MAX_MD_SIZE];
-  unsigned int dlen = 0;
-  EVP_MD_CTX* ctx = EVP_MD_CTX_new();
-  EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
-  EVP_DigestUpdate(ctx, text.data(), text.size());
-  EVP_DigestFinal_ex(ctx, digest, &dlen);
-  EVP_MD_CTX_free(ctx);
-
-  assert(dlen * 2 <= kMaxHexChars);
-  std::string hex(kMaxHexChars, '\0');
-  for (unsigned int i = 0; i < dlen; ++i) {
-    snprintf(hex.data() + i * 2, 3, "%02x", digest[i]);
-  }
-  hex.resize(dlen * 2);
-  return hex;
-}
-
 std::array<uint8_t, 16> HmacMd5Digest(const std::string& key,
                                       const std::string& data)
 {
@@ -210,7 +189,7 @@ TEST(DirectorConnection, UsesCompatibleDirectorIdentityResponse)
     ASSERT_EQ(read(peer, response.data(), response.size()),
               static_cast<ssize_t>(response.size()));
 
-    const std::string key = Md5Hex(cfg.password);
+    const std::string key = MakeCramMd5Key(cfg.password);
     auto expected_client_hmac = HmacMd5Digest(key, "<director-challenge>");
     ASSERT_EQ(expected_client_hmac.size(), 16U);
     EXPECT_EQ(response, BareosBase64Encode(expected_client_hmac.data(),
@@ -289,7 +268,7 @@ TEST(DirectorConnection, RejectsUnexpectedPostAuthInfoFrame)
     ASSERT_EQ(read(peer, response.data(), response.size()),
               static_cast<ssize_t>(response.size()));
 
-    const std::string key = Md5Hex(cfg.password);
+    const std::string key = MakeCramMd5Key(cfg.password);
     auto expected_client_hmac = HmacMd5Digest(key, "<director-challenge>");
     ASSERT_EQ(expected_client_hmac.size(), 16U);
     EXPECT_EQ(response, BareosBase64Encode(expected_client_hmac.data(),
