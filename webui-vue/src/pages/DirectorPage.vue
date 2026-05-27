@@ -77,19 +77,22 @@
                         </q-tooltip>
                       </DirectorBadge>
                         <q-chip
-                          v-if="card.config_warnings != null"
+                          v-if="card.config_warnings != null || !card.configStatusAvailable"
                           dense
                           square
-                          clickable
-                          class="director-info-chip director-info-chip--clickable"
-                          :color="card.config_warnings ? 'negative' : 'positive'"
-                          :icon="card.config_warnings ? 'error' : 'check_circle'"
+                          :clickable="card.configStatusAvailable"
+                          :class="[
+                            'director-info-chip',
+                            card.configStatusAvailable ? 'director-info-chip--clickable' : '',
+                          ]"
+                          :color="configStatusChipColor(card)"
+                          :icon="configStatusChipIcon(card)"
                           text-color="white"
-                          @click="showConfigStatus(card.scopeDirector)"
+                          @click="card.configStatusAvailable && showConfigStatus(card.scopeDirector)"
                         >
-                          {{ card.config_warnings ? t('Config Warning') : t('Config OK') }}
+                          {{ configStatusChipLabel(card) }}
                           <q-tooltip>
-                            {{ t('Click to show configuration status for this director') }}
+                            {{ configStatusChipTooltip(card) }}
                           </q-tooltip>
                         </q-chip>
                        <q-chip
@@ -748,6 +751,7 @@ import {
   normaliseJob,
 } from '../composables/useDirectorFetch.js'
 import {
+  fetchAggregatedDirectorConfigStatusAccess,
   fetchAggregatedDirectorMessages,
   fetchAggregatedDirectorStatus,
   normaliseDirectorStatusSnapshot,
@@ -926,6 +930,17 @@ const statusLoading = ref(false)
 const statusError   = ref(null)
 const statusSnapshots = ref([])
 const statusDirectorErrors = ref([])
+const configStatusAccessByDirector = ref({})
+
+function mapConfigStatusAccess(entries) {
+  return Object.fromEntries(entries.map(entry => [
+    entry.director,
+    {
+      available: entry.available === true,
+      message: entry.message ?? '',
+    },
+  ]))
+}
 
 async function refreshStatus() {
   statusLoading.value = true
@@ -934,6 +949,7 @@ async function refreshStatus() {
   try {
     if (activeDirectors.value.length === 0) {
       statusSnapshots.value = []
+      configStatusAccessByDirector.value = {}
       return
     }
 
@@ -943,16 +959,28 @@ async function refreshStatus() {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedDirectorStatus(credentials, activeDirectors.value)
+      const [result, configStatusAccess] = await Promise.all([
+        fetchAggregatedDirectorStatus(credentials, activeDirectors.value),
+        fetchAggregatedDirectorConfigStatusAccess(credentials, activeDirectors.value),
+      ])
       statusSnapshots.value = result.snapshots
       statusDirectorErrors.value = result.directorErrors
+      configStatusAccessByDirector.value = mapConfigStatusAccess(configStatusAccess)
       return
     }
 
     const currentDirector = activeDirectors.value[0]
     await ensureSingleScopeDirector()
-    const result = await director.call('status director')
+    const credentials = auth.getCredentials()
+    if (!credentials?.password) {
+      throw new Error(t('Not logged in.'))
+    }
+    const [result, configStatusAccess] = await Promise.all([
+      director.call('status director'),
+      fetchAggregatedDirectorConfigStatusAccess(credentials, [currentDirector]),
+    ])
     statusSnapshots.value = [normaliseDirectorStatusSnapshot(result, currentDirector)]
+    configStatusAccessByDirector.value = mapConfigStatusAccess(configStatusAccess)
   } catch (e) {
     statusError.value = e.message
   } finally {
@@ -994,6 +1022,8 @@ const statusCards = computed(() => statusSnapshots.value.map(({ director, header
   scopeDirector: director,
   reportedDirector: header?.director || director,
   osIcon: resolveDirectorOsChip(header?.os ?? ''),
+  configStatusAvailable: configStatusAccessByDirector.value[director]?.available === true,
+  configStatusUnavailableReason: configStatusAccessByDirector.value[director]?.message ?? '',
 })))
 const scheduledJobs = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.scheduledJobs))
 const runningJobs = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.runningJobs))
@@ -1008,6 +1038,39 @@ const maxTermFiles = computed(() => Math.max(1, ...terminatedJobs.value.map(j =>
 function levelCode(v) { return resolveJobLevelCode(v) }
 function typeCode(v)  { return resolveJobTypeCode(v) }
 function isWaiting(status) { return typeof status === 'string' && status.includes('is waiting') }
+function isAclPermissionError(message = '') {
+  return /acl|permission|authori[sz]ed/i.test(String(message))
+}
+function configStatusChipColor(card) {
+  if (!card.configStatusAvailable) {
+    return 'grey-6'
+  }
+  return card.config_warnings ? 'negative' : 'positive'
+}
+function configStatusChipIcon(card) {
+  if (!card.configStatusAvailable) {
+    return 'block'
+  }
+  return card.config_warnings ? 'error' : 'check_circle'
+}
+function configStatusChipLabel(card) {
+  if (!card.configStatusAvailable) {
+    return t('Config Unavailable')
+  }
+  return card.config_warnings ? t('Config Warning') : t('Config OK')
+}
+function configStatusChipTooltip(card) {
+  if (card.configStatusAvailable) {
+    return t('Click to show configuration status for this director')
+  }
+  if (isAclPermissionError(card.configStatusUnavailableReason)) {
+    return t('Configuration status unavailable because the required ACL is missing.')
+  }
+  if (card.configStatusUnavailableReason) {
+    return `${t('Configuration status unavailable')}: ${card.configStatusUnavailableReason}`
+  }
+  return t('Configuration status unavailable.')
+}
 
 const scheduledJobCols = computed(() => [
   ...(showDirectorColumn.value
