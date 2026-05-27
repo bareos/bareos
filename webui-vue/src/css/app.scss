@@ -8,6 +8,44 @@ $bareos-blue-dark: #005a96;
     padding: 10px 16px;
     font-size: 0.9rem;
     font-weight: 600;
+
+    .q-field {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .q-field__control,
+    .q-field__native,
+    .q-field__input,
+    .q-field__label,
+    .q-field__marginal,
+    .q-select__dropdown-icon {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .q-field__native::placeholder,
+    .q-field__input::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+      opacity: 1;
+    }
+
+    .q-field--outlined .q-field__control::before,
+    .q-field--outlined .q-field__control::after {
+      border-color: rgba(255, 255, 255, 0.7);
+    }
+
+    .q-field--focused .q-field__label,
+    .q-field--highlighted .q-field__label,
+    .q-field--focused .q-field__marginal,
+    .q-field--highlighted .q-field__marginal,
+    .q-field--focused .q-select__dropdown-icon,
+    .q-field--highlighted .q-select__dropdown-icon {
+      color: white;
+    }
+
+    .q-field--outlined.q-field--focused .q-field__control::after,
+    .q-field--outlined.q-field--highlighted .q-field__control::after {
+      border-color: white;
+    }
   }
 }
 

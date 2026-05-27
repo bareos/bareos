@@ -1097,6 +1097,7 @@ const columns = computed(() => [
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left',   sortable: true },
   { name: 'type',      label: 'Type',     field: 'type',      align: 'center', sortable: true },
   { name: 'level',     label: 'Level',    field: 'level',     align: 'center', sortable: true },
+  { name: 'status',    label: 'Status',   field: 'status',    align: 'center', sortable: true },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',   sortable: true },
   { name: 'duration',  label: 'Duration', field: 'duration',  align: 'right',  sortable: true,
     sort: (a, b) => parseDurationSecs(a) - parseDurationSecs(b) },
@@ -1105,7 +1106,6 @@ const columns = computed(() => [
   { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right', sortable: true,
     sort: (_a, _b, rowA, rowB) => jobSpeedBps(rowA) - jobSpeedBps(rowB) },
   { name: 'errors',    label: 'Errors',   field: 'errors',    align: 'center', sortable: true },
-  { name: 'status',    label: 'Status',   field: 'status',    align: 'center', sortable: true },
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:100px' },
 ].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
 
@@ -1128,11 +1128,11 @@ const rerunColumns = computed(() => [
   { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left',   sortable: true },
   { name: 'level',     label: 'Level',    field: 'level',     align: 'center', sortable: true },
+  { name: 'status',    label: 'Status',   field: 'status',    align: 'center', sortable: true },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',   sortable: true },
   { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right', sortable: true },
   { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right', sortable: true,
     sort: (_a, _b, rowA, rowB) => jobSpeedBps(rowA) - jobSpeedBps(rowB) },
-  { name: 'status',    label: 'Status',   field: 'status',    align: 'center', sortable: true },
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:60px' },
 ].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
 
@@ -1720,20 +1720,6 @@ watch(() => singletonTabDirector.value, async () => {
 
 .jobs-list-header__countdown {
   opacity: 0.7;
-}
-
-.jobs-list-header :deep(.q-field--outlined.q-field--focused .q-field__control:after),
-.jobs-list-header :deep(.q-field--outlined.q-field--highlighted .q-field__control:after) {
-  border-color: rgba(0, 0, 0, 0.7);
-}
-
-.jobs-list-header :deep(.q-field--focused .q-field__label),
-.jobs-list-header :deep(.q-field--highlighted .q-field__label),
-.jobs-list-header :deep(.q-field--focused .q-field__marginal),
-.jobs-list-header :deep(.q-field--highlighted .q-field__marginal),
-.jobs-list-header :deep(.q-field--focused .q-select__dropdown-icon),
-.jobs-list-header :deep(.q-field--highlighted .q-select__dropdown-icon) {
-  color: rgba(0, 0, 0, 0.7);
 }
 
 .animated-spin {

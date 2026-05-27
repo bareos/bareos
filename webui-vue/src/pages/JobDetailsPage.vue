@@ -14,17 +14,10 @@
           no-caps
           class="q-mr-md"
         />
-        <div class="text-h6">Job #{{ job.id }} — {{ job.name }}</div>
-        <q-space />
-        <q-spinner v-if="isRunning" color="primary" size="18px" class="q-mr-sm" :title="t('Auto-refreshing…')" />
-        <span
-          v-if="isWaitingJobStatus(displayJobStatus(job))"
-          class="row items-center no-wrap q-gutter-x-xs"
-        >
-          <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
-          <span class="text-orange-7 text-caption">{{ displayJobStatus(job) }}</span>
-        </span>
-        <JobStatusBadge v-else :status="displayJobStatus(job)" />
+        <div class="row items-center q-gutter-sm">
+          <div class="text-h6">Job #{{ job.id }} — {{ job.name }}</div>
+          <q-spinner v-if="isRunning" color="primary" size="18px" :title="t('Auto-refreshing…')" />
+        </div>
       </div>
 
       <div class="row q-col-gutter-md">
@@ -38,7 +31,17 @@
                 <q-item v-for="row in summaryRows" :key="row.label">
                   <q-item-section class="text-weight-medium" style="max-width:140px">{{ row.label }}</q-item-section>
                   <q-item-section>
-                    <span v-if="row.level">
+                    <span v-if="row.status">
+                      <span
+                        v-if="row.waiting"
+                        class="row items-center no-wrap q-gutter-x-xs"
+                      >
+                        <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
+                        <span class="text-orange-7 text-caption">{{ row.status }}</span>
+                      </span>
+                      <JobStatusBadge v-else :status="row.status" />
+                    </span>
+                    <span v-else-if="row.level">
                       <JobLevelBadge :level="row.level" />
                       <span class="q-ml-xs text-grey-7">{{ row.value }}</span>
                     </span>
@@ -418,7 +421,9 @@ const volumeCols = computed(() => [
 const summaryRows = computed(() => {
   if (!job.value) return []
   const j = job.value
+  const status = displayJobStatus(j)
   return [
+    { label: t('Status'),     status, waiting: isWaitingJobStatus(status) },
     { label: t('Job ID'),     value: j.id },
     { label: t('Job Name'),   value: j.name },
     { label: t('Client'),     value: j.client },
