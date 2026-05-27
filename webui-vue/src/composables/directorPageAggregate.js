@@ -63,6 +63,17 @@ function decorateLogEntries(entries, director) {
   }))
 }
 
+function directorCommandErrorMessage(result) {
+  const messageList = result?.error?.data?.messages?.error
+  if (Array.isArray(messageList) && messageList.length > 0) {
+    return String(messageList[0]).trim()
+  }
+  if (typeof result?.error?.message === 'string' && result.error.message) {
+    return result.error.message
+  }
+  return ''
+}
+
 export function normaliseDirectorStatusSnapshot(data, director) {
   return {
     director,
@@ -83,6 +94,53 @@ export function normaliseDirectorStatusSnapshot(data, director) {
       'jobid'
     ),
   }
+}
+
+export async function fetchAggregatedDirectorConfigStatusAccess(
+  credentials,
+  directors
+) {
+  const results = await Promise.allSettled(directors.map(async (director) => {
+    const client = await createDirectorCommandClient({
+      ...credentials,
+      director,
+    })
+
+    try {
+      const result = await client.call('status configuration')
+      const message = directorCommandErrorMessage(result)
+      if (message) {
+        return {
+          director,
+          available: false,
+          message,
+        }
+      }
+      return {
+        director,
+        available: true,
+        message: '',
+      }
+    } catch (error) {
+      return {
+        director,
+        available: false,
+        message: error?.message ?? 'Configuration status unavailable.',
+      }
+    } finally {
+      client.disconnect()
+    }
+  }))
+
+  return results.map((result, index) => (
+    result.status === 'fulfilled'
+      ? result.value
+      : {
+        director: directors[index],
+        available: false,
+        message: result.reason?.message ?? 'Configuration status unavailable.',
+      }
+  ))
 }
 
 export async function fetchAggregatedDirectorStatus(credentials, directors) {
