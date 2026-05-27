@@ -175,6 +175,7 @@ function buildClientJobDetailsQuery(job) {
     clientJobsAction: typeof route.query.jobsAction === 'string' ? route.query.jobsAction : '',
     clientJobsStatus: typeof route.query.jobsStatus === 'string' ? route.query.jobsStatus : '',
     clientJobsLevel: typeof route.query.jobsLevel === 'string' ? route.query.jobsLevel : '',
+    clientJobsType: typeof route.query.jobsType === 'string' ? route.query.jobsType : '',
     clientJobsSearch: typeof route.query.jobsSearch === 'string' ? route.query.jobsSearch : '',
   })
 }

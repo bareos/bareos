@@ -39,6 +39,7 @@ describe('clients route helpers', () => {
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsLevel: 'F',
+      jobsType: 'B',
       jobsSearch: 'backup',
       dashboardOrigin: true,
     })).toEqual({
@@ -49,6 +50,7 @@ describe('clients route helpers', () => {
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsLevel: 'F',
+      jobsType: 'B',
       jobsSearch: 'backup',
       dashboardOrigin: '1',
     })
@@ -88,11 +90,13 @@ describe('clients route helpers', () => {
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsLevel: 'F',
+      jobsType: 'B',
       jobsSearch: 'backup',
     })).toEqual({
       action: 'timeline',
       status: 'T',
       level: 'F',
+      type: 'B',
       search: 'backup',
     })
 
