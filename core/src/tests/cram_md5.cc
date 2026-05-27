@@ -41,6 +41,7 @@
 #include <map>
 #include <memory>
 #include <signal.h>
+#include <string_view>
 
 static bool InitSignalHandler()
 {
@@ -69,22 +70,22 @@ static std::map<CramMd5Handshake::HandshakeResult, std::string>
 
 /********************** Tests *****************************/
 
-static std::string CreateQualifiedResourceName(const char* r_type_str,
-                                               const char* name)
+static std::string CreateQualifiedResourceName(std::string_view r_type_str,
+                                               std::string_view name)
 {
-  return std::string(r_type_str) + static_cast<char>(0x1e) + std::string(name);
+  return std::string(r_type_str) + static_cast<char>(0x1e)
+         + std::string(name);
 }
 
-static std::string ExtractChallenge(const char* message)
+static std::string ExtractChallenge(std::string_view message)
 {
-  std::string msg(message);
-  const auto prefix_end = msg.find('<');
-  const auto suffix = msg.find(" ssl=");
+  const auto prefix_end = message.find('<');
+  const auto suffix = message.find(" ssl=");
 
-  EXPECT_NE(prefix_end, std::string::npos);
-  EXPECT_NE(suffix, std::string::npos);
+  EXPECT_NE(prefix_end, std::string_view::npos);
+  EXPECT_NE(suffix, std::string_view::npos);
 
-  return msg.substr(prefix_end, suffix - prefix_end);
+  return std::string(message.substr(prefix_end, suffix - prefix_end));
 }
 
 static constexpr bool InitiatedByRemote = true;
