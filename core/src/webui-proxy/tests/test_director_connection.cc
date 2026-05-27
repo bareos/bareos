@@ -51,7 +51,7 @@ TEST(DirectorConnection, FormatsTlsPskIdentityAsQualifiedConsoleName)
   EXPECT_EQ(identity, expected);
 }
 
-TEST(DirectorConnection, BuildsCramMd5KeyFromPassword)
+TEST(DirectorConnection, DerivesCramMd5KeyFromPlaintextPassword)
 {
   EXPECT_EQ(MakeCramMd5Key("secret"), "5ebe2294ecd0e0f08eab7690d2a6ee69");
 }
