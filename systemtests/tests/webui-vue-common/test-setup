@@ -147,6 +147,11 @@ port = ${proxy_port}
 address = 127.0.0.1
 port = ${BAREOS_DIRECTOR_PORT}
 tls_psk_disable = ${proxy_tls_psk_disable}
+
+[bareos-dir-2]
+address = 127.0.0.1
+port = ${BAREOS_DIRECTOR_PORT}
+tls_psk_disable = ${proxy_tls_psk_disable}
 END_OF_PROXY_CONFIG
 
 check_node_version

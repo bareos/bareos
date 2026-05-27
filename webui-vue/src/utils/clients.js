@@ -27,7 +27,6 @@ export function buildClientDetailsQuery({
   jobsStatus,
   jobsLevel,
   jobsSearch,
-  jobsScopeDirector,
   dashboardOrigin,
 } = {}) {
   const query = {}
@@ -58,10 +57,6 @@ export function buildClientDetailsQuery({
 
   if (jobsSearch) {
     query.jobsSearch = jobsSearch
-  }
-
-  if (jobsScopeDirector) {
-    query.jobsScopeDirector = jobsScopeDirector
   }
 
   if (dashboardOrigin) {
@@ -106,10 +101,6 @@ export function resolveClientDetailsJobsOrigin(query) {
 
   if (typeof query?.jobsSearch === 'string' && query.jobsSearch) {
     nextQuery.search = query.jobsSearch
-  }
-
-  if (typeof query?.jobsScopeDirector === 'string' && query.jobsScopeDirector) {
-    nextQuery.scopeDirector = query.jobsScopeDirector
   }
 
   return nextQuery

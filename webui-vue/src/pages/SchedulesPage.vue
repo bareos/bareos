@@ -247,7 +247,6 @@ import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import {
   withJobsSearchQuery,
-  withJobsScopeDirectorQuery,
 } from '../utils/jobs.js'
 import { buildDirectorOptions } from '../utils/director.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
@@ -669,10 +668,7 @@ const scheduleJobRows = computed(() => {
             job: job.name,
             jobEnabled: job.enabled,
             jobScopeKey: `${sched.scopeKey}:${job.name}`,
-            jobsQuery: withJobsScopeDirectorQuery(
-              withJobsSearchQuery({}, job.name),
-              sched.director,
-            ),
+            jobsQuery: withJobsSearchQuery({}, job.name),
             _firstInGroup: index === 0,
           })
       })

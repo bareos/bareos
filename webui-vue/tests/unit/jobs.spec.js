@@ -37,12 +37,10 @@ import {
   resolveJobDetailsVolumeOrigin,
   resolveJobsLevelFilters,
   resolveJobsSearchQuery,
-  resolveJobsScopeDirector,
   resolveJobsStatusFilters,
   resolveJobsListQuery,
   withJobsLevelFilterQuery,
   withJobsSearchQuery,
-  withJobsScopeDirectorQuery,
   withJobsStatusFilterQuery,
 } from '../../src/utils/jobs.js'
 
@@ -128,42 +126,6 @@ describe('jobs filter helpers', () => {
     })
   })
 
-  it('adds and removes the scope director query parameter', () => {
-    expect(withJobsScopeDirectorQuery({ search: 'Backup' }, 'prod-a')).toEqual({
-      search: 'Backup',
-      scopeDirector: 'prod-a',
-    })
-    expect(withJobsScopeDirectorQuery({ search: 'Backup', scopeDirector: 'prod-a' }, '')).toEqual({
-      search: 'Backup',
-    })
-  })
-
-  it('composes a director-scoped search query for drill-downs', () => {
-    expect(withJobsScopeDirectorQuery(
-      withJobsSearchQuery({}, 'BackupCatalog'),
-      'prod-a',
-    )).toEqual({
-      search: 'BackupCatalog',
-      scopeDirector: 'prod-a',
-    })
-  })
-
-  it('composes a director-scoped running-status query for drill-downs', () => {
-    expect(withJobsScopeDirectorQuery(
-      withJobsStatusFilterQuery({}, 'R'),
-      'prod-a',
-    )).toEqual({
-      status: 'R',
-      scopeDirector: 'prod-a',
-    })
-  })
-
-  it('resolves an optional scope director query parameter', () => {
-    expect(resolveJobsScopeDirector({ scopeDirector: 'prod-a' })).toBe('prod-a')
-    expect(resolveJobsScopeDirector({ scopeDirector: 42 })).toBe('')
-    expect(resolveJobsScopeDirector({})).toBe('')
-  })
-
   it('resolves optional multi-status route filters', () => {
     expect(resolveJobsStatusFilters({ status: 'f,E' })).toEqual(['f', 'E'])
     expect(resolveJobsStatusFilters({ status: ['R', 'A', 'invalid'] })).toEqual(['R', 'A'])
@@ -183,7 +145,6 @@ describe('jobs filter helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F,I',
       jobsSearch: 'backup',
-      jobsScopeDirector: 'prod-a',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
@@ -193,7 +154,6 @@ describe('jobs filter helpers', () => {
       clientJobsStatus: 'T',
       clientJobsLevel: 'D',
       clientJobsSearch: 'backup',
-      clientJobsScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
       restoreClient: 'bareos-fd',
@@ -208,7 +168,6 @@ describe('jobs filter helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F,I',
       jobsSearch: 'backup',
-      jobsScopeDirector: 'prod-a',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
@@ -218,7 +177,6 @@ describe('jobs filter helpers', () => {
       clientJobsStatus: 'T',
       clientJobsLevel: 'D',
       clientJobsSearch: 'backup',
-      clientJobsScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
       restoreClient: 'bareos-fd',
@@ -248,13 +206,11 @@ describe('jobs filter helpers', () => {
       jobsStatus: 'f,E',
       jobsLevel: 'F,I',
       jobsSearch: 'backup',
-      jobsScopeDirector: 'prod-a',
     })).toEqual({
       action: 'timeline',
       status: 'f,E',
       level: 'F,I',
       search: 'backup',
-      scopeDirector: 'prod-a',
     })
 
     expect(resolveJobsListQuery({
@@ -271,7 +227,6 @@ describe('jobs filter helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F,I',
       jobsSearch: 'backup',
-      jobsScopeDirector: 'prod-a',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
@@ -281,7 +236,6 @@ describe('jobs filter helpers', () => {
       clientJobsStatus: 'T',
       clientJobsLevel: 'D',
       clientJobsSearch: 'backup',
-      clientJobsScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
       restoreClient: 'bareos-fd',
@@ -297,7 +251,6 @@ describe('jobs filter helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F,I',
       jobsSearch: 'backup',
-      jobsScopeDirector: 'prod-a',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
       clientsTab: 'timeline',
@@ -307,7 +260,6 @@ describe('jobs filter helpers', () => {
       clientJobsStatus: 'T',
       clientJobsLevel: 'D',
       clientJobsSearch: 'backup',
-      clientJobsScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
       restoreClient: 'bareos-fd',
@@ -330,7 +282,6 @@ describe('jobs filter helpers', () => {
       clientJobsStatus: 'T',
       clientJobsLevel: 'F',
       clientJobsSearch: 'backup',
-      clientJobsScopeDirector: 'prod-a',
     })).toEqual({
       name: 'bareos-fd',
       director: 'prod-a',
@@ -341,7 +292,6 @@ describe('jobs filter helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F',
       jobsSearch: 'backup',
-      jobsScopeDirector: 'prod-a',
     })
 
     expect(resolveJobDetailsClientOrigin({
