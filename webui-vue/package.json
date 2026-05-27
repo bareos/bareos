@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Bareos WebUI - Vue/Quasar frontend",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "generate:version": "node scripts/generate-bareos-version.mjs",
     "dev": "npm run generate:version && vite",
