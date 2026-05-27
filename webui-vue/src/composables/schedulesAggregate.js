@@ -25,11 +25,57 @@ function scheduleScopeKey(director, schedule) {
   return `${director}:${schedule}`
 }
 
+function isEnabled(value) {
+  return value !== false && value !== 0
+}
+
+function scheduleNamesFromShow(showResponse) {
+  return Object.values(showResponse?.schedules ?? {})
+    .map(entry => entry?.name ?? '')
+    .filter(Boolean)
+}
+
+function scheduleEnabledByName(scheduleStateResponse) {
+  return new Map(
+    (Array.isArray(scheduleStateResponse?.schedules) ? scheduleStateResponse.schedules : [])
+      .map(entry => [entry?.name ?? '', isEnabled(entry?.enabled)])
+      .filter(([name]) => Boolean(name))
+  )
+}
+
+function scheduleJobsFromConfig(showAllResponse) {
+  const jobsBySchedule = new Map()
+  const clients = showAllResponse?.clients ?? {}
+  const jobDefs = showAllResponse?.jobdefs ?? {}
+
+  function addJob(scheduleName, job) {
+    if (!scheduleName || !job?.name) {
+      return
+    }
+
+    const client = job?.client ? clients[job.client] : null
+    const enabled = isEnabled(job?.enabled) && isEnabled(client?.enabled)
+    const jobs = jobsBySchedule.get(scheduleName) ?? []
+    if (!jobs.some(existing => existing.name === job.name)) {
+      jobs.push({ name: job.name, enabled })
+      jobsBySchedule.set(scheduleName, jobs)
+    }
+  }
+
+  Object.values(showAllResponse?.jobs ?? {}).forEach((job) => {
+    const jobDef = job?.jobdefs ? jobDefs[job.jobdefs] : null
+    const scheduleName = job?.schedule ?? jobDef?.schedule
+    addJob(scheduleName, job)
+  })
+
+  return jobsBySchedule
+}
+
 function normaliseShownSchedule(entry, director) {
   const name = entry?.name ?? ''
   return {
     name,
-    enabled: entry?.enabled !== false && entry?.enabled !== 0,
+    enabled: isEnabled(entry?.enabled),
     run: Array.isArray(entry?.run) ? entry.run : (entry?.run ? [entry.run] : []),
     director,
     scopeKey: scheduleScopeKey(director, name),
@@ -42,7 +88,7 @@ function normaliseStatusSchedule(entry, director) {
   return {
     ...entry,
     name,
-    enabled: entry?.enabled !== false && entry?.enabled !== 0,
+    enabled: isEnabled(entry?.enabled),
     director,
     scopeKey: scheduleScopeKey(director, name),
     displayName: `${director} / ${name}`,
@@ -68,6 +114,54 @@ function sortSchedules(entries) {
   })
 }
 
+export function buildShownSchedules(showResponse, scheduleStateResponse, director) {
+  const enabledByName = scheduleEnabledByName(scheduleStateResponse)
+
+  return sortSchedules(
+    Object.values(showResponse?.schedules ?? {})
+      .map(entry => {
+        const name = entry?.name ?? ''
+        return normaliseShownSchedule({
+          ...entry,
+          enabled: enabledByName.get(name) ?? entry?.enabled,
+        }, director)
+      })
+  )
+}
+
+export function buildStatusSchedules(statusResponse, showResponse, showAllResponse, scheduleStateResponse, director) {
+  const activeSchedules = Array.isArray(statusResponse?.schedules)
+    ? statusResponse.schedules
+    : []
+  const activeByName = new Map(activeSchedules.map(entry => [entry?.name ?? '', entry]))
+  const enabledByName = scheduleEnabledByName(scheduleStateResponse)
+  const jobsBySchedule = scheduleJobsFromConfig(showAllResponse)
+  const scheduleNames = new Set([
+    ...scheduleNamesFromShow(showResponse),
+    ...activeByName.keys(),
+    ...enabledByName.keys(),
+  ])
+
+  return sortSchedules(
+    [...scheduleNames]
+      .filter(Boolean)
+      .map((name) => {
+        const activeEntry = activeByName.get(name)
+        const fallbackJobs = jobsBySchedule.get(name) ?? []
+        const jobs = Array.isArray(activeEntry?.jobs) && activeEntry.jobs.length > 0
+          ? activeEntry.jobs
+          : fallbackJobs
+
+        return normaliseStatusSchedule({
+          ...activeEntry,
+          name,
+          enabled: enabledByName.get(name) ?? activeEntry?.enabled,
+          jobs,
+        }, director)
+      })
+  )
+}
+
 export async function fetchAggregatedSchedulesShow(credentials, directors) {
   const results = await Promise.allSettled(directors.map(async (director) => {
     const client = await createDirectorCommandClient({
@@ -76,10 +170,12 @@ export async function fetchAggregatedSchedulesShow(credentials, directors) {
     })
 
     try {
-      const response = await client.call('show schedules')
-      const shown = Object.values(response?.schedules ?? {})
+      const [showResponse, scheduleStateResponse] = await Promise.all([
+        client.call('show schedules'),
+        client.call('.schedule'),
+      ])
       return {
-        schedules: shown.map(entry => normaliseShownSchedule(entry, director)),
+        schedules: buildShownSchedules(showResponse, scheduleStateResponse, director),
       }
     } finally {
       client.disconnect()
@@ -109,22 +205,20 @@ export async function fetchAggregatedSchedulesStatus(credentials, directors, ran
     })
 
     try {
-      const [statusResponse, showResponse] = await Promise.all([
+      const [statusResponse, showResponse, showAllResponse, scheduleStateResponse] = await Promise.all([
         client.call(`status scheduler days=${range.from},${range.to}`),
         client.call('show schedules'),
+        client.call('show schedules all'),
+        client.call('.schedule'),
       ])
-      const active = Array.isArray(statusResponse?.schedules)
-        ? statusResponse.schedules
-        : []
-      const activeNames = new Set(active.map(item => item.name))
-      const allShown = Object.values(showResponse?.schedules ?? {})
-      const disabled = allShown
-        .filter(item => !activeNames.has(item.name))
-        .map(item => ({ name: item.name, enabled: false, jobs: [] }))
 
       return {
-        schedulesData: sortSchedules(
-          [...active, ...disabled].map(item => normaliseStatusSchedule(item, director))
+        schedulesData: buildStatusSchedules(
+          statusResponse,
+          showResponse,
+          showAllResponse,
+          scheduleStateResponse,
+          director
         ),
         previewData: (Array.isArray(statusResponse?.preview) ? statusResponse.preview : [])
           .map(item => ({

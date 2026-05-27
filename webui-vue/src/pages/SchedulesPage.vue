@@ -226,6 +226,8 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import {
+  buildShownSchedules,
+  buildStatusSchedules,
   fetchAggregatedSchedulesShow,
   fetchAggregatedSchedulesStatus,
 } from '../composables/schedulesAggregate.js'
@@ -377,16 +379,11 @@ async function refreshSchedules() {
 
     const currentDirector = activeDirectors.value[0]
     await ensureSingleScopeDirector()
-    const response = await director.call('show schedules')
-    const shown = Object.values(response?.schedules ?? {})
-    shownSchedules.value = shown.map(item => ({
-      name: item?.name ?? '',
-      enabled: item?.enabled !== false && item?.enabled !== 0,
-      run: Array.isArray(item?.run) ? item.run : (item?.run ? [item.run] : []),
-      director: currentDirector,
-      scopeKey: `${currentDirector}:${item?.name ?? ''}`,
-      displayName: item?.name ?? '',
-    }))
+    const [showResponse, scheduleStateResponse] = await Promise.all([
+      director.call('show schedules'),
+      director.call('.schedule'),
+    ])
+    shownSchedules.value = buildShownSchedules(showResponse, scheduleStateResponse, currentDirector)
   } catch (reason) {
     schedError.value = reason?.message ?? String(reason)
   } finally {
@@ -577,36 +574,19 @@ async function refreshStatus() {
 
     const currentDirector = activeDirectors.value[0]
     await ensureSingleScopeDirector()
-    const [statusResponse, showResponse] = await Promise.all([
+    const [statusResponse, showResponse, showAllResponse, scheduleStateResponse] = await Promise.all([
       director.call(`status scheduler days=${apiDaysRange.value.from},${apiDaysRange.value.to}`),
       director.call('show schedules'),
+      director.call('show schedules all'),
+      director.call('.schedule'),
     ])
-    const active = Array.isArray(statusResponse?.schedules) ? statusResponse.schedules : []
-    const activeNames = new Set(active.map(item => item.name))
-    const allShown = Object.values(showResponse?.schedules ?? {})
-    const disabled = allShown
-      .filter(item => !activeNames.has(item.name))
-      .map(item => ({ name: item.name, enabled: false, jobs: [] }))
-
-    schedulesData.value = [...active, ...disabled].map((item) => {
-      const name = item?.name ?? ''
-      return {
-        ...item,
-        name,
-        enabled: item?.enabled !== false && item?.enabled !== 0,
-        director: currentDirector,
-        scopeKey: `${currentDirector}:${name}`,
-        displayName: name,
-        jobs: Array.isArray(item?.jobs)
-          ? item.jobs.map(job => ({
-            ...job,
-            director: currentDirector,
-            schedule: name,
-            scheduleKey: `${currentDirector}:${name}`,
-          }))
-          : [],
-      }
-    })
+    schedulesData.value = buildStatusSchedules(
+      statusResponse,
+      showResponse,
+      showAllResponse,
+      scheduleStateResponse,
+      currentDirector
+    )
     previewData.value = (Array.isArray(statusResponse?.preview) ? statusResponse.preview : [])
       .map(item => ({
         ...item,
