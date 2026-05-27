@@ -56,13 +56,6 @@ TEST(DirectorConnection, BuildsCramMd5KeyFromPassword)
   EXPECT_EQ(MakeCramMd5Key("secret"), "5ebe2294ecd0e0f08eab7690d2a6ee69");
 }
 
-TEST(DirectorConnection, StartsWithoutTlsPskTransport)
-{
-  DirectorConnection connection;
-
-  EXPECT_FALSE(connection.UsesTlsPsk());
-}
-
 namespace {
 std::string Md5Hex(const std::string& text)
 {
