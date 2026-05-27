@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest'
 import {
   canNavigateRestoreBrowser,
   buildRestoreSourceQuery,
+  dedupeRestoreVersions,
   filterRestoreSourceClients,
   getRestoreBrowserPlaceholder,
   pushRestoreBreadcrumb,
@@ -183,5 +184,27 @@ describe('restore browser placeholder', () => {
     }, {})).toEqual({
       foo: 'bar',
     })
+  })
+
+  it('deduplicates restore versions by file id while preserving order', () => {
+    expect(dedupeRestoreVersions([
+      { fileid: 10, jobid: 1 },
+      { fileid: 10, jobid: 1 },
+      { fileid: 12, jobid: 2 },
+    ])).toEqual([
+      { fileid: 10, jobid: 1 },
+      { fileid: 12, jobid: 2 },
+    ])
+  })
+
+  it('falls back to version metadata when file ids are missing', () => {
+    expect(dedupeRestoreVersions([
+      { jobid: 1, stat: { mtime: 100, size: 20 }, volumename: 'Vol001', md5: 'abc' },
+      { jobid: 1, stat: { mtime: 100, size: 20 }, volumename: 'Vol001', md5: 'abc' },
+      { jobid: 1, stat: { mtime: 101, size: 20 }, volumename: 'Vol001', md5: 'abc' },
+    ])).toEqual([
+      { jobid: 1, stat: { mtime: 100, size: 20 }, volumename: 'Vol001', md5: 'abc' },
+      { jobid: 1, stat: { mtime: 101, size: 20 }, volumename: 'Vol001', md5: 'abc' },
+    ])
   })
 })
