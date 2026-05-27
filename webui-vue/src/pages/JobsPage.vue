@@ -256,7 +256,8 @@
                   <q-btn v-if="isRunning(props.row.status)"
                          flat round dense size="sm" icon="cancel" color="negative" :title="t('Cancel')"
                          @click="confirmCancel(props.row)" class="q-mr-xs" />
-                  <q-btn flat round dense size="sm" icon="restore" color="teal"
+                  <q-btn v-if="canRestoreFromJob(props.row)"
+                         flat round dense size="sm" icon="restore" color="teal"
                          :title="t('Restore this job')"
                          @click="openRestoreDetails(props.row)"
                          class="q-mr-xs" />
@@ -622,6 +623,7 @@ import { buildClientDetailsQuery } from '../utils/clients.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import { buildDirectorOptions } from '../utils/director.js'
 import { formatNumber } from '../utils/locales.js'
+import { resolveJobTypeCode } from '../utils/jobTypes.js'
 import {
   buildJobDetailsQuery,
   encodeJobsLevelFilters,
@@ -737,6 +739,10 @@ function syncSelectedDirectors() {
   if (fallbackDirector) {
     settings.setSelectedDirectors([fallbackDirector])
   }
+}
+
+function canRestoreFromJob(job) {
+  return resolveJobTypeCode(job?.type) !== 'R'
 }
 
 const selectedDirectorsModel = computed({
