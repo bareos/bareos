@@ -72,6 +72,7 @@
               :columns="recentCols"
               row-key="scopeKey"
               dense flat
+              :loading="loadingJobs"
               :pagination="{ rowsPerPage: 10, sortBy: 'starttime', descending: true }"
             >
               <template #body-cell-id="props">
