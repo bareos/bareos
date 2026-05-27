@@ -28,89 +28,93 @@
         <q-spinner-dots color="primary" size="40px" />
       </div>
       <div v-else-if="tlError" class="text-negative q-py-md">{{ tlError }}</div>
-      <div v-else-if="!tlRows.length" class="text-grey text-center q-py-xl">
+      <div v-else-if="!tlGroups.length" class="text-grey text-center q-py-xl">
         {{ t('No jobs in this period.') }}
       </div>
       <div v-else ref="svgContainer" class="tl-container" @mouseleave="hideTooltip">
-        <svg :width="svgW" :height="svgH">
-          <!-- Alternating row backgrounds -->
-          <rect v-for="(row, i) in tlRows" :key="'bg-' + (row.director ?? '') + '-' + row.client + '-' + row.name"
-                x="0" :y="i * TL_ROW_H"
-                :width="svgW" :height="TL_ROW_H"
-                :fill="i % 2 === 0
-                  ? ($q.dark.isActive ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.025)')
-                  : 'transparent'" />
+        <div v-for="group in tlGroups" :key="`group-${group.director ?? 'single'}`" class="tl-group">
+          <div
+            v-if="multiDirectorTimeline"
+            class="text-caption text-weight-bold text-primary q-mb-xs"
+          >
+            {{ group.director }}
+          </div>
+          <svg :width="svgW" :height="group.rows.length * TL_ROW_H + TL_AXIS_H">
+            <!-- Alternating row backgrounds -->
+            <rect v-for="(row, i) in group.rows" :key="'bg-' + (row.director ?? '') + '-' + row.client + '-' + row.name"
+                  x="0" :y="i * TL_ROW_H"
+                  :width="svgW" :height="TL_ROW_H"
+                  :fill="i % 2 === 0
+                    ? ($q.dark.isActive ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.025)')
+                    : 'transparent'" />
 
-          <!-- Vertical grid lines for time axis -->
-          <line v-for="t in tlTicks" :key="'grid-' + t.label"
-                :x1="tlColsW + t.x" y1="0"
-                :x2="tlColsW + t.x" :y2="svgH - TL_AXIS_H"
-                :stroke="$q.dark.isActive ? '#3a3a3a' : '#ebebeb'"
-                stroke-width="1" />
+            <!-- Vertical grid lines for time axis -->
+            <line v-for="t in tlTicks" :key="'grid-' + (group.director ?? '') + '-' + t.label"
+                  :x1="tlColsW + t.x" y1="0"
+                  :x2="tlColsW + t.x" :y2="group.rows.length * TL_ROW_H"
+                  :stroke="$q.dark.isActive ? '#3a3a3a' : '#ebebeb'"
+                  stroke-width="1" />
 
-          <!-- Axis tick labels -->
-          <text v-for="t in tlTicks" :key="'tick-' + t.label"
-                :x="tlColsW + t.x" :y="svgH - 5"
-                font-size="10" text-anchor="middle"
-                :fill="$q.dark.isActive ? '#777' : '#bbb'"
-                style="font-family:sans-serif; user-select:none">
-            {{ t.label }}
-          </text>
+            <!-- Axis tick labels -->
+            <text v-for="t in tlTicks" :key="'tick-' + (group.director ?? '') + '-' + t.label"
+                  :x="tlColsW + t.x" :y="group.rows.length * TL_ROW_H + TL_AXIS_H - 5"
+                  font-size="10" text-anchor="middle"
+                  :fill="$q.dark.isActive ? '#777' : '#bbb'"
+                  style="font-family:sans-serif; user-select:none">
+              {{ t.label }}
+            </text>
 
-          <!-- Client column: label centered over all rows for that client -->
-          <g v-for="span in tlClientSpans" :key="'client-' + (span.director ?? '') + '-' + span.client">
-            <!-- Separator line above each client group (except the first) -->
-            <line v-if="span.startRow > 0"
-                  x1="0" :y1="span.startRow * TL_ROW_H"
-                  :x2="svgW" :y2="span.startRow * TL_ROW_H"
+            <!-- Client column: label centered over all rows for that client -->
+            <g v-for="span in group.clientSpans" :key="'client-' + (span.director ?? '') + '-' + span.client">
+              <line v-if="span.startRow > 0"
+                    x1="0" :y1="span.startRow * TL_ROW_H"
+                    :x2="svgW" :y2="span.startRow * TL_ROW_H"
+                    :stroke="$q.dark.isActive ? '#444' : '#ccc'"
+                    stroke-width="1" />
+              <text :x="TL_CLIENT_W / 2"
+                    :y="span.startRow * TL_ROW_H + span.rowCount * TL_ROW_H / 2 + 4"
+                    font-size="11" text-anchor="middle" font-weight="600"
+                    :fill="$q.dark.isActive ? '#90caf9' : '#1565c0'"
+                    style="font-family:sans-serif; user-select:none; cursor:pointer"
+                    @click="router.push(clientDetailsRoute(span))">
+                {{ span.label.length > 14 ? span.label.slice(0, 13) + '\u2026' : span.label }}
+              </text>
+            </g>
+
+            <line :x1="TL_CLIENT_W" y1="0"
+                  :x2="TL_CLIENT_W" :y2="group.rows.length * TL_ROW_H"
                   :stroke="$q.dark.isActive ? '#444' : '#ccc'"
                   stroke-width="1" />
-            <!-- Client name, vertically centered across its rows -->
-            <text :x="TL_CLIENT_W / 2"
-                  :y="span.startRow * TL_ROW_H + span.rowCount * TL_ROW_H / 2 + 4"
-                  font-size="11" text-anchor="middle" font-weight="600"
-                  :fill="$q.dark.isActive ? '#90caf9' : '#1565c0'"
-                  style="font-family:sans-serif; user-select:none; cursor:pointer"
-                  @click="router.push(clientDetailsRoute(span))">
-              {{ span.label.length > 14 ? span.label.slice(0, 13) + '\u2026' : span.label }}
+
+            <line :x1="tlColsW" y1="0"
+                  :x2="tlColsW" :y2="group.rows.length * TL_ROW_H"
+                  :stroke="$q.dark.isActive ? '#444' : '#ccc'"
+                  stroke-width="1" />
+
+            <!-- Job name labels -->
+            <text v-for="(row, i) in group.rows" :key="'name-' + (row.director ?? '') + '-' + row.client + '-' + row.name"
+                  :x="tlColsW - 6" :y="i * TL_ROW_H + TL_ROW_H / 2 + 4"
+                  font-size="11" text-anchor="end"
+                  :fill="$q.dark.isActive ? '#ccc' : '#555'"
+                  style="font-family:sans-serif; user-select:none">
+              {{ row.name.length > 18 ? row.name.slice(0, 17) + '\u2026' : row.name }}
             </text>
-          </g>
 
-          <!-- Vertical divider between client column and job name column -->
-          <line :x1="TL_CLIENT_W" y1="0"
-                :x2="TL_CLIENT_W" :y2="svgH - TL_AXIS_H"
-                :stroke="$q.dark.isActive ? '#444' : '#ccc'"
-                stroke-width="1" />
-
-          <!-- Vertical divider between job name column and chart area -->
-          <line :x1="tlColsW" y1="0"
-                :x2="tlColsW" :y2="svgH - TL_AXIS_H"
-                :stroke="$q.dark.isActive ? '#444' : '#ccc'"
-                stroke-width="1" />
-
-          <!-- Job name labels -->
-          <text v-for="(row, i) in tlRows" :key="'name-' + (row.director ?? '') + '-' + row.client + '-' + row.name"
-                :x="tlColsW - 6" :y="i * TL_ROW_H + TL_ROW_H / 2 + 4"
-                font-size="11" text-anchor="end"
-                :fill="$q.dark.isActive ? '#ccc' : '#555'"
-                style="font-family:sans-serif; user-select:none">
-            {{ row.name.length > 18 ? row.name.slice(0, 17) + '\u2026' : row.name }}
-          </text>
-
-          <!-- Job bars — all runs for each job name in the same row -->
-          <g v-for="(row, i) in tlRows" :key="'grp-' + (row.director ?? '') + '-' + row.client + '-' + row.name">
-            <rect v-for="run in row.runs" :key="'bar-' + run.id"
-                  :x="tlColsW + tlBarStart(run)"
-                  :y="i * TL_ROW_H + TL_BAR_PAD"
-                  :width="Math.max(2, tlBarWidth(run))"
-                  :height="TL_ROW_H - TL_BAR_PAD * 2"
-                  :fill="tlColorOf(run.status)"
-                  rx="3" style="cursor:pointer"
-                  @click="router.push(jobDetailsRoute(run))"
-                  @mouseenter="(e) => showTlTooltip(e, run)"
-                  @mousemove="moveTlTooltip" />
-          </g>
-        </svg>
+            <!-- Job bars — all runs for each job name in the same row -->
+            <g v-for="(row, i) in group.rows" :key="'grp-' + (row.director ?? '') + '-' + row.client + '-' + row.name">
+              <rect v-for="run in row.runs" :key="'bar-' + run.id"
+                    :x="tlColsW + tlBarStart(run)"
+                    :y="i * TL_ROW_H + TL_BAR_PAD"
+                    :width="Math.max(2, tlBarWidth(run))"
+                    :height="TL_ROW_H - TL_BAR_PAD * 2"
+                    :fill="tlColorOf(run.status)"
+                    rx="3" style="cursor:pointer"
+                    @click="router.push(jobDetailsRoute(run))"
+                    @mouseenter="(e) => showTlTooltip(e, run)"
+                    @mousemove="moveTlTooltip" />
+            </g>
+          </svg>
+        </div>
       </div>
       <div v-if="tlTooltip.visible" class="tl-tooltip"
            :style="`left:${tlTooltip.x}px; top:${tlTooltip.y}px`">
@@ -146,6 +150,7 @@ import { createDirectorCommandClient } from '../composables/directorAggregate.js
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { buildTimelineGroups } from '../utils/jobTimeline.js'
 import { formatNumber } from '../utils/locales.js'
 
 const {
@@ -210,77 +215,17 @@ const tlRange  = computed(() => Date.now() - tlStart.value)
 const svgW     = computed(() => Math.max(containerW.value, 600))
 const tlColsW  = computed(() => TL_CLIENT_W + TL_LABEL_W)
 const tlChartW = computed(() => Math.max(svgW.value - tlColsW.value, 1))
-const svgH     = computed(() => tlRows.value.length * TL_ROW_H + TL_AXIS_H)
-
 // ── Data helpers ──────────────────────────────────────────────────────────────
 function tlParseTS(str) {
   if (!str || str.startsWith('0000')) return null
   return new Date(str.replace(' ', 'T')).getTime()
 }
 
-// Flat rows sorted by client → job name.
-const tlRows = computed(() => {
-  const now = Date.now()
-  const clientGroups = new Map()
-  for (const j of (tlRawJobs.value ?? [])) {
-    const s = tlParseTS(j.starttime)
-    const e = tlParseTS(j.endtime) ?? now
-    if (s === null || e < tlStart.value || s > now) continue
-    const clientKey = multiDirectorTimeline.value
-      ? `${j.director ?? ''}\u0000${j.client}`
-      : j.client
-    const clientLabel = multiDirectorTimeline.value
-      ? `${j.director}: ${j.client}`
-      : j.client
-    if (!clientGroups.has(clientKey)) {
-      clientGroups.set(clientKey, {
-        client: j.client,
-        director: j.director ?? null,
-        label: clientLabel,
-        jobs: new Map(),
-      })
-    }
-    const clientGroup = clientGroups.get(clientKey)
-    const jobMap = clientGroup.jobs
-    if (!jobMap.has(j.name)) {
-      jobMap.set(j.name, {
-        name: j.name,
-        client: j.client,
-        clientLabel,
-        director: j.director ?? null,
-        runs: [],
-      })
-    }
-    jobMap.get(j.name).runs.push(j)
-  }
-  const rows = []
-  for (const [, clientGroup] of [...clientGroups.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-    for (const g of [...clientGroup.jobs.values()].sort((a, b) => a.name.localeCompare(b.name))) {
-      rows.push({ ...g, runs: g.runs.sort((a, b) => (tlParseTS(a.starttime) ?? 0) - (tlParseTS(b.starttime) ?? 0)) })
-    }
-  }
-  return rows
-})
-
-// One span per client for the merged client-column label.
-const tlClientSpans = computed(() => {
-  const spans = []
-  let i = 0
-  while (i < tlRows.value.length) {
-    const client = tlRows.value[i].client
-    const director = tlRows.value[i].director ?? null
-    const label = tlRows.value[i].clientLabel ?? client
-    let count = 0
-    while (
-      i + count < tlRows.value.length
-      && tlRows.value[i + count].client === client
-      && (tlRows.value[i + count].director ?? null) === director
-    ) count++
-    spans.push({ client, director, label, startRow: i, rowCount: count })
-    i += count
-  }
-  return spans
-})
+const tlGroups = computed(() => buildTimelineGroups(tlRawJobs.value, {
+  start: tlStart.value,
+  now: Date.now(),
+  multiDirectorTimeline: multiDirectorTimeline.value,
+}))
 
 function clientDetailsRoute(span) {
   const query = clientDetailsQuery
@@ -434,3 +379,9 @@ watch(() => director.isConnected, (connected) => {
 
 onUnmounted(() => { _tlResizeObs?.disconnect() })
 </script>
+
+<style scoped>
+.tl-group + .tl-group {
+  margin-top: 0.75rem;
+}
+</style>
