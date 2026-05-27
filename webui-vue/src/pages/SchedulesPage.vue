@@ -408,11 +408,12 @@ const schedCols = computed(() => [
 
 async function toggleSchedule(row) {
   const action = row.enabled ? 'disable' : 'enable'
+  const status = t(row.enabled ? 'Disabled' : 'Enabled')
   togglingName.value = row.scopeKey ?? row.name
   try {
     await ensureScheduleActionDirector(row.director)
     await director.call(`${action} schedule=${row.name}`)
-    $q.notify({ type: 'positive', message: t('Schedule "{name}" {action}d', { name: row.name, action }) })
+    $q.notify({ type: 'positive', message: `${t('Schedules')} "${row.name}": ${status}` })
     await Promise.all([refreshSchedules(), refreshStatus()])
   } catch (e) {
     $q.notify({ type: 'negative', message: e.message })
@@ -425,11 +426,12 @@ const togglingJob = ref(null)
 
 async function toggleJob(row) {
   const action = row.jobEnabled ? 'disable' : 'enable'
+  const status = t(row.jobEnabled ? 'Disabled' : 'Enabled')
   togglingJob.value = row.jobScopeKey ?? row.job
   try {
     await ensureScheduleActionDirector(row.director)
     await director.call(`${action} job=${row.job}`)
-    $q.notify({ type: 'positive', message: t('Job "{name}" {action}d', { name: row.job, action }) })
+    $q.notify({ type: 'positive', message: `${t('Job')} "${row.job}": ${status}` })
     await refreshStatus()
   } catch (e) {
     $q.notify({ type: 'negative', message: e.message })
