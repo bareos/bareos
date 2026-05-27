@@ -104,7 +104,8 @@ describe('jobs aggregate helpers', () => {
       ['prod-a', 'prod-b'],
       { page: 1, rowsPerPage: 2 },
       'T',
-      'F'
+      'F',
+      'B'
     )
 
     const socketA = FakeWebSocket.instances[0]
@@ -142,7 +143,7 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsA.get('list jobs count jobstatus=T joblevel=F'),
+        id: commandsA.get('list jobs count jobstatus=T joblevel=F jobtype=B'),
         data: { jobs: [{ count: '2' }] },
       }),
     })
@@ -150,7 +151,7 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsB.get('list jobs count jobstatus=T joblevel=F'),
+        id: commandsB.get('list jobs count jobstatus=T joblevel=F jobtype=B'),
         data: { jobs: [{ count: '2' }] },
       }),
     })
@@ -181,7 +182,7 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsA.get('llist jobs reverse limit=2 offset=0 jobstatus=T joblevel=F'),
+        id: jobsCommandsA.get('llist jobs reverse limit=2 offset=0 jobstatus=T joblevel=F jobtype=B'),
         data: {
           jobs: [
             { jobid: '10', name: 'backup-a', clientname: 'fd-a', jobstatus: 'T', starttime: '2026-04-29 10:00:00' },
@@ -193,7 +194,7 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsB.get('llist jobs reverse limit=2 offset=0 jobstatus=T joblevel=F'),
+        id: jobsCommandsB.get('llist jobs reverse limit=2 offset=0 jobstatus=T joblevel=F jobtype=B'),
         data: {
           jobs: [
             { jobid: '11', name: 'backup-b', clientname: 'fd-b', jobstatus: 'T', starttime: '2026-04-29 11:00:00' },

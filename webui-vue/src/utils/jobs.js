@@ -20,8 +20,10 @@
  */
 
 import { jobStatusMap } from '../mock/index.js'
+import { resolveJobTypeCode } from './jobTypes.js'
 
 const JOB_LEVEL_FILTERS = new Set(['F', 'I', 'D', 'V', 'B'])
+const JOB_TYPE_FILTERS = new Set(['B', 'A', 'V', 'R', 'D', 'C', 'c', 'M', 'g', 'O', 'S', 'U', 'I'])
 
 export function normaliseJobId(value) {
   if (typeof value === 'number') {
@@ -55,6 +57,15 @@ export function normaliseJobLevelFilter(value) {
   }
 
   return JOB_LEVEL_FILTERS.has(value) ? value : ''
+}
+
+export function normaliseJobTypeFilter(value) {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
+  const normalized = resolveJobTypeCode(value) ?? value
+  return JOB_TYPE_FILTERS.has(normalized) ? normalized : ''
 }
 
 export function normaliseJobStatusFilters(value) {
@@ -101,6 +112,28 @@ export function normaliseJobLevelFilters(value) {
   return filters
 }
 
+export function normaliseJobTypeFilters(value) {
+  const rawValues = Array.isArray(value)
+    ? value
+    : (typeof value === 'string' ? value.split(',') : [])
+  const seen = new Set()
+  const filters = []
+
+  for (const rawValue of rawValues) {
+    const type = normaliseJobTypeFilter(
+      typeof rawValue === 'string' ? rawValue.trim() : rawValue
+    )
+    if (!type || seen.has(type)) {
+      continue
+    }
+
+    seen.add(type)
+    filters.push(type)
+  }
+
+  return filters
+}
+
 export function encodeJobsStatusFilters(value) {
   return normaliseJobStatusFilters(value).join(',')
 }
@@ -109,12 +142,20 @@ export function encodeJobsLevelFilters(value) {
   return normaliseJobLevelFilters(value).join(',')
 }
 
+export function encodeJobsTypeFilters(value) {
+  return normaliseJobTypeFilters(value).join(',')
+}
+
 export function resolveJobsStatusFilters(query) {
   return normaliseJobStatusFilters(query?.status)
 }
 
 export function resolveJobsLevelFilters(query) {
   return normaliseJobLevelFilters(query?.level)
+}
+
+export function resolveJobsTypeFilters(query) {
+  return normaliseJobTypeFilters(query?.type)
 }
 
 export function withJobsStatusFilterQuery(query, status) {
@@ -136,6 +177,18 @@ export function withJobsLevelFilterQuery(query, level) {
   delete nextQuery.level
   if (nextLevel) {
     nextQuery.level = nextLevel
+  }
+
+  return nextQuery
+}
+
+export function withJobsTypeFilterQuery(query, type) {
+  const nextQuery = { ...query }
+  const nextType = encodeJobsTypeFilters(type)
+
+  delete nextQuery.type
+  if (nextType) {
+    nextQuery.type = nextType
   }
 
   return nextQuery
@@ -172,6 +225,7 @@ export function buildJobDetailsQuery({
   jobsAction,
   jobsStatus,
   jobsLevel,
+  jobsType,
   jobsSearch,
   clientName,
   clientDirector,
@@ -181,6 +235,7 @@ export function buildJobDetailsQuery({
   clientJobsAction,
   clientJobsStatus,
   clientJobsLevel,
+  clientJobsType,
   clientJobsSearch,
   volumeName,
   volumeDirector,
@@ -209,6 +264,11 @@ export function buildJobDetailsQuery({
   const nextJobsLevel = encodeJobsLevelFilters(jobsLevel)
   if (nextJobsLevel) {
     query.jobsLevel = nextJobsLevel
+  }
+
+  const nextJobsType = encodeJobsTypeFilters(jobsType)
+  if (nextJobsType) {
+    query.jobsType = nextJobsType
   }
 
   if (jobsSearch) {
@@ -247,6 +307,11 @@ export function buildJobDetailsQuery({
   const nextClientJobsLevel = encodeJobsLevelFilters(clientJobsLevel)
   if (nextClientJobsLevel) {
     query.clientJobsLevel = nextClientJobsLevel
+  }
+
+  const nextClientJobsType = encodeJobsTypeFilters(clientJobsType)
+  if (nextClientJobsType) {
+    query.clientJobsType = nextClientJobsType
   }
 
   if (clientJobsSearch) {
@@ -305,6 +370,11 @@ export function resolveJobsListQuery(query) {
     nextQuery.level = nextLevel
   }
 
+  const nextType = encodeJobsTypeFilters(query?.jobsType)
+  if (nextType) {
+    nextQuery.type = nextType
+  }
+
   if (typeof query?.jobsSearch === 'string' && query.jobsSearch) {
     nextQuery.search = query.jobsSearch
   }
@@ -318,6 +388,7 @@ export function resolveJobDetailsQuery(query) {
     jobsAction: typeof query?.jobsAction === 'string' ? query.jobsAction : '',
     jobsStatus: encodeJobsStatusFilters(query?.jobsStatus),
     jobsLevel: encodeJobsLevelFilters(query?.jobsLevel),
+    jobsType: encodeJobsTypeFilters(query?.jobsType),
     jobsSearch: typeof query?.jobsSearch === 'string' ? query.jobsSearch : '',
     clientName: typeof query?.clientName === 'string' ? query.clientName : '',
     clientDirector: typeof query?.clientDirector === 'string' ? query.clientDirector : '',
@@ -327,6 +398,7 @@ export function resolveJobDetailsQuery(query) {
     clientJobsAction: typeof query?.clientJobsAction === 'string' ? query.clientJobsAction : '',
     clientJobsStatus: encodeJobsStatusFilters(query?.clientJobsStatus),
     clientJobsLevel: encodeJobsLevelFilters(query?.clientJobsLevel),
+    clientJobsType: encodeJobsTypeFilters(query?.clientJobsType),
     clientJobsSearch: typeof query?.clientJobsSearch === 'string' ? query.clientJobsSearch : '',
     volumeName: typeof query?.volumeName === 'string' ? query.volumeName : '',
     volumeDirector: typeof query?.volumeDirector === 'string' ? query.volumeDirector : '',
@@ -353,6 +425,7 @@ export function resolveJobDetailsClientOrigin(query) {
     jobsAction: typeof query?.clientJobsAction === 'string' ? query.clientJobsAction : '',
     jobsStatus: encodeJobsStatusFilters(query?.clientJobsStatus),
     jobsLevel: encodeJobsLevelFilters(query?.clientJobsLevel),
+    jobsType: encodeJobsTypeFilters(query?.clientJobsType),
     jobsSearch: typeof query?.clientJobsSearch === 'string' ? query.clientJobsSearch : '',
   }
 }

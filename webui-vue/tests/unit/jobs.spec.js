@@ -24,11 +24,14 @@ import {
   buildJobDetailsQuery,
   encodeJobsLevelFilters,
   encodeJobsStatusFilters,
+  encodeJobsTypeFilters,
   normaliseJobId,
   normaliseJobLevelFilter,
   normaliseJobLevelFilters,
   normaliseJobStatusFilter,
   normaliseJobStatusFilters,
+  normaliseJobTypeFilter,
+  normaliseJobTypeFilters,
   resolveJobDetailsClientOrigin,
   resolveJobDetailsQuery,
   resolveJobDetailsDashboardOrigin,
@@ -38,10 +41,12 @@ import {
   resolveJobsLevelFilters,
   resolveJobsSearchQuery,
   resolveJobsStatusFilters,
+  resolveJobsTypeFilters,
   resolveJobsListQuery,
   withJobsLevelFilterQuery,
   withJobsSearchQuery,
   withJobsStatusFilterQuery,
+  withJobsTypeFilterQuery,
 } from '../../src/utils/jobs.js'
 
 describe('jobs filter helpers', () => {
@@ -57,6 +62,13 @@ describe('jobs filter helpers', () => {
     expect(normaliseJobLevelFilter('V')).toBe('V')
     expect(normaliseJobLevelFilter('Full')).toBe('')
     expect(normaliseJobLevelFilter(undefined)).toBe('')
+  })
+
+  it('accepts supported job type filters only', () => {
+    expect(normaliseJobTypeFilter('B')).toBe('B')
+    expect(normaliseJobTypeFilter('Restore')).toBe('R')
+    expect(normaliseJobTypeFilter('NotAType')).toBe('')
+    expect(normaliseJobTypeFilter(undefined)).toBe('')
   })
 
   it('accepts positive integer job ids only', () => {
@@ -80,6 +92,12 @@ describe('jobs filter helpers', () => {
     expect(normaliseJobLevelFilters('F,I,F,invalid')).toEqual(['F', 'I'])
     expect(normaliseJobLevelFilters(['D', 'V', 'D', 'invalid'])).toEqual(['D', 'V'])
     expect(encodeJobsLevelFilters(['F', 'I', 'F'])).toBe('F,I')
+  })
+
+  it('normalizes and encodes multi-type filters', () => {
+    expect(normaliseJobTypeFilters('B,Restore,B,invalid')).toEqual(['B', 'R'])
+    expect(normaliseJobTypeFilters(['Copy', 'g', 'Copy', 'invalid'])).toEqual(['c', 'g'])
+    expect(encodeJobsTypeFilters(['B', 'Restore', 'B'])).toBe('B,R')
   })
 
   it('adds and removes the status query parameter', () => {
@@ -106,6 +124,20 @@ describe('jobs filter helpers', () => {
       level: 'F,I',
     })
     expect(withJobsLevelFilterQuery({ search: 'Backup', level: 'F' }, '')).toEqual({
+      search: 'Backup',
+    })
+  })
+
+  it('adds and removes the type query parameter', () => {
+    expect(withJobsTypeFilterQuery({ search: 'Backup' }, 'B')).toEqual({
+      search: 'Backup',
+      type: 'B',
+    })
+    expect(withJobsTypeFilterQuery({ search: 'Backup' }, ['B', 'Restore'])).toEqual({
+      search: 'Backup',
+      type: 'B,R',
+    })
+    expect(withJobsTypeFilterQuery({ search: 'Backup', type: 'B' }, '')).toEqual({
       search: 'Backup',
     })
   })
@@ -138,12 +170,19 @@ describe('jobs filter helpers', () => {
     expect(resolveJobsLevelFilters({})).toEqual([])
   })
 
+  it('resolves optional multi-type route filters', () => {
+    expect(resolveJobsTypeFilters({ type: 'B,R' })).toEqual(['B', 'R'])
+    expect(resolveJobsTypeFilters({ type: ['Copy', 'g', 'invalid'] })).toEqual(['c', 'g'])
+    expect(resolveJobsTypeFilters({})).toEqual([])
+  })
+
   it('builds job details query with return-state fields', () => {
     expect(buildJobDetailsQuery({
       director: 'prod-a',
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsLevel: 'F,I',
+      jobsType: 'B,R',
       jobsSearch: 'backup',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
@@ -153,6 +192,7 @@ describe('jobs filter helpers', () => {
       clientJobsAction: 'timeline',
       clientJobsStatus: 'T',
       clientJobsLevel: 'D',
+      clientJobsType: 'c',
       clientJobsSearch: 'backup',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
@@ -167,6 +207,7 @@ describe('jobs filter helpers', () => {
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsLevel: 'F,I',
+      jobsType: 'B,R',
       jobsSearch: 'backup',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
@@ -176,6 +217,7 @@ describe('jobs filter helpers', () => {
       clientJobsAction: 'timeline',
       clientJobsStatus: 'T',
       clientJobsLevel: 'D',
+      clientJobsType: 'c',
       clientJobsSearch: 'backup',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
@@ -192,11 +234,13 @@ describe('jobs filter helpers', () => {
       jobsAction: 'list',
       jobsStatus: ['f', 'E'],
       jobsLevel: 'F',
+      jobsType: ['B', 'Restore'],
       jobsSearch: '',
     })).toEqual({
       director: 'prod-a',
       jobsStatus: 'f,E',
       jobsLevel: 'F',
+      jobsType: 'B,R',
     })
   })
 
@@ -205,11 +249,13 @@ describe('jobs filter helpers', () => {
       jobsAction: 'timeline',
       jobsStatus: 'f,E',
       jobsLevel: 'F,I',
+      jobsType: 'B,R',
       jobsSearch: 'backup',
     })).toEqual({
       action: 'timeline',
       status: 'f,E',
       level: 'F,I',
+      type: 'B,R',
       search: 'backup',
     })
 
@@ -226,6 +272,7 @@ describe('jobs filter helpers', () => {
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsLevel: 'F,I',
+      jobsType: 'B,R',
       jobsSearch: 'backup',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
@@ -235,6 +282,7 @@ describe('jobs filter helpers', () => {
       clientJobsAction: 'timeline',
       clientJobsStatus: 'T',
       clientJobsLevel: 'D',
+      clientJobsType: 'c',
       clientJobsSearch: 'backup',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
@@ -250,6 +298,7 @@ describe('jobs filter helpers', () => {
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsLevel: 'F,I',
+      jobsType: 'B,R',
       jobsSearch: 'backup',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
@@ -259,6 +308,7 @@ describe('jobs filter helpers', () => {
       clientJobsAction: 'timeline',
       clientJobsStatus: 'T',
       clientJobsLevel: 'D',
+      clientJobsType: 'c',
       clientJobsSearch: 'backup',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
@@ -281,6 +331,7 @@ describe('jobs filter helpers', () => {
       clientJobsAction: 'timeline',
       clientJobsStatus: 'T',
       clientJobsLevel: 'F',
+      clientJobsType: 'B',
       clientJobsSearch: 'backup',
     })).toEqual({
       name: 'bareos-fd',
@@ -291,6 +342,7 @@ describe('jobs filter helpers', () => {
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsLevel: 'F',
+      jobsType: 'B',
       jobsSearch: 'backup',
     })
 
