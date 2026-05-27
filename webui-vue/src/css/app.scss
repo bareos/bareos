@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 $bareos-blue: #0075be;
 $bareos-blue-dark: #005a96;
 
@@ -109,7 +111,7 @@ $bareos-blue-dark: #005a96;
 }
 
 .bareos-statusbar {
-  background-color: darken($bareos-blue, 10%) !important;
+  background-color: color.adjust($bareos-blue, $lightness: -10%) !important;
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.72rem;
   height: 22px;
