@@ -60,13 +60,6 @@ TEST(BareosBase64, EncodesKnownCompatibleValue)
   EXPECT_EQ(result, "gIA");
 }
 
-// A known CRAM-MD5 test vector:
-// password="secret", challenge="<1234567890.1609459200@bareos-dir>"
-// key = MD5("secret") = "5ebe2294ecd0e0f08eab7690d2a6ee69"
-// hmac = HMAC-MD5(key, challenge) — 16 bytes
-// expected_b64 = BareosBase64Encode(hmac) — computed with Python
-// We verify the encode function is consistent with itself (not a magic constant
-// test) by comparing with a re-implementation using the same algorithm.
 TEST(BareosBase64, RoundTripConsistency)
 {
   // Encode 16 bytes of the pattern 0x00..0x0F
@@ -121,6 +114,11 @@ std::array<uint8_t, 16> HmacMd5(const std::string& key, const std::string& data)
 
 }  // namespace
 
+// A known CRAM-MD5 test vector:
+// password="secret", challenge="<1234567890.1609459200@bareos-dir>"
+// key = MD5("secret") = "5ebe2294ecd0e0f08eab7690d2a6ee69"
+// hmac = HMAC-MD5(key, challenge) — 16 bytes
+// expected_b64 = BareosBase64Encode(hmac) — computed with Python
 TEST(CramMd5, ResponseMatchesKnownVector)
 {
   const std::string password = "secret";
