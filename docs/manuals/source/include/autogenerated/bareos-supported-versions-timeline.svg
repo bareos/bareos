@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="601" viewBox="0 0 1120 601">
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="601" viewBox="0 0 1120 601"
+data-window-start="2023-05-27" data-window-end="2029-05-27">
   <defs>
     <style type="text/css"><![CDATA[
       .bg { fill: #ffffff; }
@@ -21,7 +22,7 @@
 
   <rect class="bg" x="0" y="0" width="1120" height="601"/>
   <text class="title" x="40" y="36">Bareos supported versions over time</text>
-  <g transform="translate(220,90)">
+  <g id="timeline" transform="translate(220,90)">
     <g class="tick">
       <line class="grid" x1="13.3" y1="0" x2="13.3" y2="360" stroke-dasharray="3 3"/>
       <text x="13.3" y="-12">Jul 2023</text>
@@ -112,7 +113,7 @@
 
   </g>
 
-  <g transform="translate(40,486)">
+  <g id="timeline-legend" transform="translate(40,486)">
     <rect class="development" x="0" y="0" width="18" height="18" rx="3"/>
     <text class="note" x="26" y="14">development branch</text>
     <rect class="supported" x="170" y="0" width="18" height="18" rx="3"/>
