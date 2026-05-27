@@ -544,6 +544,7 @@ const recentCols = computed(() => {
     { name: 'name', label: t('Job Name'), field: 'name', align: 'left', sortable: true },
     { name: 'client', label: t('Client'), field: 'client', align: 'left', sortable: true },
     { name: 'level', label: t('Level'), field: 'level', align: 'center', sortable: true },
+    { name: 'status', label: t('Status'), field: 'status', align: 'center', sortable: true },
     { name: 'starttime', label: t('Start'), field: 'starttime', align: 'left', sortable: true },
     {
       name: 'duration',
@@ -556,7 +557,6 @@ const recentCols = computed(() => {
     { name: 'bytes', label: t('Bytes'), field: 'bytes', align: 'right', sortable: true },
     { name: 'speed', label: t('Speed'), field: 'speed', align: 'right', sortable: true,
       sort: (_a, _b, rowA, rowB) => jobSpeedBps(rowA) - jobSpeedBps(rowB) },
-    { name: 'status', label: t('Status'), field: 'status', align: 'center', sortable: true },
   ]
 
   if (showDirectorColumn.value) {
