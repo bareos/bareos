@@ -2,12 +2,16 @@ $bareos-blue: #0075be;
 $bareos-blue-dark: #005a96;
 
 .bareos-panel {
+  border-radius: 4px;
+  overflow: hidden;
+
   .q-card__section.panel-header {
     background-color: $bareos-blue;
     color: white;
     padding: 10px 16px;
     font-size: 0.9rem;
     font-weight: 600;
+    border-radius: 0;
 
     .q-field {
       color: rgba(255, 255, 255, 0.95);
@@ -46,6 +50,21 @@ $bareos-blue-dark: #005a96;
     .q-field--outlined.q-field--highlighted .q-field__control::after {
       border-color: white;
     }
+  }
+
+  .q-table__container,
+  .q-table__top,
+  .q-table__middle,
+  .q-table__bottom {
+    border-radius: 0;
+  }
+
+  .q-table thead tr:first-child th:first-child {
+    border-top-left-radius: 0;
+  }
+
+  .q-table thead tr:first-child th:last-child {
+    border-top-right-radius: 0;
   }
 }
 
