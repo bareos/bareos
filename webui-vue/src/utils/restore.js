@@ -130,3 +130,31 @@ export function buildRestoreSourceQuery(query, {
 
   return nextQuery
 }
+
+function restoreVersionKey(version) {
+  if (version?.fileid !== null && version?.fileid !== undefined && version?.fileid !== '') {
+    return `fileid:${version.fileid}`
+  }
+
+  return [
+    version?.jobid ?? '',
+    version?.stat?.mtime ?? '',
+    version?.stat?.size ?? '',
+    version?.volumename ?? '',
+    version?.md5 ?? '',
+  ].join('\u0000')
+}
+
+export function dedupeRestoreVersions(versions) {
+  const seen = new Set()
+
+  return (versions ?? []).filter((version) => {
+    const key = restoreVersionKey(version)
+    if (seen.has(key)) {
+      return false
+    }
+
+    seen.add(key)
+    return true
+  })
+}

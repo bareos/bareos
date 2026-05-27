@@ -421,6 +421,7 @@ import { buildDirectorOptions } from '../utils/director.js'
 import {
   canNavigateRestoreBrowser,
   buildRestoreSourceQuery,
+  dedupeRestoreVersions,
   filterRestoreSourceClients,
   getRestoreBrowserPlaceholder,
   pushRestoreBreadcrumb,
@@ -1329,7 +1330,7 @@ async function checkVersionsInBackground(files, dirKey) {
           `.bvfs_versions jobid=${jids} client="${client}" pathid=${f.pathId} fname=${f.name}`
         )
         if (dirKey !== versionCheckDirKey) return
-        const count = directorCollection(r?.versions).length
+        const count = dedupeRestoreVersions(directorCollection(r?.versions)).length
         if (count > 1) {
           const next = new Map(fileHasVersions.value)
           next.set(f.fileId, count)
@@ -1365,7 +1366,7 @@ async function openVersions(row) {
     const r = await director.call(
       `.bvfs_versions jobid=${mergedJobids.value} client="${sourceClientName.value}" pathid=${row.pathId} fname=${row.name}`
     )
-    versionsDialog.value.versions = r?.versions ?? []
+    versionsDialog.value.versions = dedupeRestoreVersions(r?.versions)
   } catch (e) {
     versionsDialog.value.error = e.message
   } finally {
