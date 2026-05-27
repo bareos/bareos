@@ -126,7 +126,6 @@
                 :key="option.key"
                 v-model="visibleScheduleKeys"
                 :val="option.key"
-                :label="option.label"
                 dense
                 :color="scheduleColor(option.label) ? undefined : 'primary'"
               >
@@ -139,7 +138,11 @@
           </q-card-section>
           <q-card-section class="q-pa-sm" style="position:relative">
             <q-inner-loading :showing="statusLoading" />
-            <div class="sched-calendar" :class="viewMode === 'week' ? 'sched-calendar--week' : ''">
+            <div v-if="hasVisibleScheduleSelection && !hasPreviewRuns"
+                 class="text-grey-7 text-center q-py-xl">
+              {{ t('No runs are scheduled in the selected time range.') }}
+            </div>
+            <div v-else class="sched-calendar" :class="viewMode === 'week' ? 'sched-calendar--week' : ''">
               <div v-for="(h, hi) in calendarHeaders" :key="hi" class="sched-cal-header">{{ h }}</div>
               <div v-for="(cell, i) in calendarCells" :key="i"
                    :class="['sched-cal-cell',
@@ -722,6 +725,16 @@ const runsByDate = computed(() => {
   }
   return map
 })
+
+const hasVisibleScheduleSelection = computed(() => {
+  if (allScheduleOptions.value.length === 0) {
+    return false
+  }
+
+  return visibleScheduleKeys.value.some(key => allScheduleOptions.value.some(option => option.key === key))
+})
+
+const hasPreviewRuns = computed(() => Object.keys(runsByDate.value).length > 0)
 
 function makeDateStr(y, m, d) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
