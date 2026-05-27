@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2026 Bareos GmbH & Co. KG
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -27,9 +27,9 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 
-SVG_WIDTH = 960
-SVG_LEFT = 150
-SVG_RIGHT = 50
+SVG_WIDTH = 1120
+SVG_LEFT = 220
+SVG_RIGHT = 70
 TIMELINE_WIDTH = SVG_WIDTH - SVG_LEFT - SVG_RIGHT
 ROW_HEIGHT = 56
 BAR_HEIGHT = 34
@@ -133,24 +133,68 @@ def release_lookup(releases: list[MajorRelease]) -> dict[int, MajorRelease]:
     return {release.major: release for release in releases}
 
 
+def support_end_date(
+    release: MajorRelease,
+    lookup: dict[int, MajorRelease],
+    supported_major_releases: int,
+    window_end: date,
+) -> date:
+    support_end_release = lookup.get(release.major + supported_major_releases)
+    return support_end_release.release_date if support_end_release else window_end
+
+
 def build_rows(
     releases: list[MajorRelease],
     supported_major_releases: int,
-    window_start: date,
+    today: date,
     window_end: date,
 ) -> list[MajorRelease]:
     lookup = release_lookup(releases)
-    rows = []
+    supported_rows = []
+    latest_unsupported_release = None
+    next_projected_release = None
     for release in releases:
-        support_end_release = lookup.get(release.major + supported_major_releases)
-        support_end = (
-            support_end_release.release_date
-            if support_end_release
-            else window_end
+        support_end = support_end_date(
+            release, lookup, supported_major_releases, window_end
         )
-        if support_end > window_start:
-            rows.append(release)
+        if not release.projected and release.release_date <= today < support_end:
+            supported_rows.append(release)
+        elif not release.projected and support_end <= today:
+            latest_unsupported_release = release
+        if (
+            next_projected_release is None
+            and release.projected
+            and release.release_date > today
+        ):
+            next_projected_release = release
+    rows = supported_rows
+    if latest_unsupported_release is not None:
+        rows.insert(0, latest_unsupported_release)
+    if next_projected_release is not None:
+        rows.append(next_projected_release)
     return rows
+
+
+def estimated_label_width(text: str, font_size: int) -> float:
+    return len(text) * font_size * 0.45
+
+
+def append_bar_label(
+    parts: list[str],
+    text_class: str,
+    text_value: str,
+    x: float,
+    width: float,
+    y: float,
+) -> None:
+    padding = 14
+    font_size = 15 if text_class == "label" else 13
+    if estimated_label_width(text_value, font_size) + padding * 2 > width:
+        return
+    parts.append(
+        f'      <text class="{text_class}" x="{x + padding}" '
+        f'y="{y}">{text_value}</text>\n'
+    )
 
 
 def svg_header(height: int) -> str:
@@ -159,7 +203,6 @@ def svg_header(height: int) -> str:
     <style type="text/css"><![CDATA[
       .bg {{ fill: #ffffff; }}
       .title {{ fill: #123047; font: 700 24px sans-serif; }}
-      .subtitle {{ fill: #5c7285; font: 14px sans-serif; }}
       .tick text {{ fill: #7b8d9b; font: 14px sans-serif; text-anchor: middle; }}
       .row-label {{ fill: #4b5d6b; font: 16px sans-serif; text-anchor: end; dominant-baseline: middle; }}
       .grid {{ stroke: #dde6eb; stroke-width: 1; }}
@@ -189,7 +232,7 @@ def render_timeline(
     today = date.today()
     window_start = add_years(today, -3)
     window_end = add_years(today, 3)
-    rows = build_rows(releases, supported_major_releases, window_start, window_end)
+    rows = build_rows(releases, supported_major_releases, today, window_end)
     lookup = release_lookup(releases)
     timeline_height = 24 + ROW_HEIGHT * (len(rows) + 1)
     legend_y = TOP_MARGIN + timeline_height + 36
@@ -197,17 +240,12 @@ def render_timeline(
     svg_height = footer_y + 70
 
     parts = [svg_header(svg_height)]
-    parts.append(f'  <rect class="bg" x="0" y="0" width="{SVG_WIDTH}" height="{svg_height}"/>\n')
+    parts.append(
+        f'  <rect class="bg" x="0" y="0" width="{SVG_WIDTH}" height="{svg_height}"/>\n'
+    )
     parts.append(
         '  <text class="title" x="40" y="36">'
         "Bareos supported versions over time</text>\n"
-    )
-    parts.append(
-        '  <text class="subtitle" x="40" y="60">'
-        f"Window: {window_start.isoformat()} to {window_end.isoformat()} "
-        f"· rule from SECURITY.md: master + {supported_major_releases} "
-        "newest major releases"
-        "</text>\n\n"
     )
     parts.append(f'  <g transform="translate({SVG_LEFT},{TOP_MARGIN})">\n')
     parts.append('    <g class="tick">\n')
@@ -258,24 +296,19 @@ def render_timeline(
         row_y = 24 + ROW_HEIGHT * index
         row_center = row_y + BAR_HEIGHT / 2
         next_release = lookup.get(release.major + 1)
-        support_end_release = lookup.get(release.major + supported_major_releases)
 
         current_end = next_release.release_date if next_release else window_end
-        support_end = (
-            support_end_release.release_date
-            if support_end_release
-            else window_end
+        support_end = support_end_date(
+            release, lookup, supported_major_releases, window_end
         )
 
         label = (
-            f"Bareos {release.major} (projected)"
+            f"Bareos {release.major}"
             if release.projected
             else f"Bareos {release.major}"
         )
         current_class = "projected-current" if release.projected else "current"
-        supported_class = (
-            "projected-supported" if release.projected else "supported"
-        )
+        supported_class = "projected-supported" if release.projected else "supported"
 
         parts.append("    <g>\n")
         parts.append(
@@ -299,22 +332,18 @@ def render_timeline(
                 f'width="{current_width}" height="{BAR_HEIGHT}" rx="4"/>\n'
             )
             text_class = "small-label" if release.projected else "label"
-            text_value = "projected current" if release.projected else "current"
-            parts.append(
-                f'      <text class="{text_class}" x="{current_x + 14}" '
-                f'y="{row_center}">{text_value}</text>\n'
+            text_value = "current" if release.projected else "current"
+            append_bar_label(
+                parts, text_class, text_value, current_x, current_width, row_center
             )
 
         supported_segment = clamp_segment(
             current_end, support_end, window_start, window_end
         )
         if supported_segment:
-            supported_x = x_position(
-                supported_segment[0], window_start, window_end
-            )
+            supported_x = x_position(supported_segment[0], window_start, window_end)
             supported_width = (
-                x_position(supported_segment[1], window_start, window_end)
-                - supported_x
+                x_position(supported_segment[1], window_start, window_end) - supported_x
             )
             parts.append(
                 f'      <rect class="{supported_class}" x="{supported_x}" '
@@ -322,21 +351,21 @@ def render_timeline(
                 f'height="{BAR_HEIGHT}" rx="4"/>\n'
             )
             text_class = "small-label" if release.projected else "label"
-            text_value = (
-                "projected supported" if release.projected else "supported"
-            )
-            parts.append(
-                f'      <text class="{text_class}" x="{supported_x + 14}" '
-                f'y="{row_center}">{text_value}</text>\n'
+            text_value = "supported" if release.projected else "supported"
+            append_bar_label(
+                parts,
+                text_class,
+                text_value,
+                supported_x,
+                supported_width,
+                row_center,
             )
 
         unsupported_segment = clamp_segment(
             support_end, window_end, window_start, window_end
         )
         if unsupported_segment and not release.projected:
-            unsupported_x = x_position(
-                unsupported_segment[0], window_start, window_end
-            )
+            unsupported_x = x_position(unsupported_segment[0], window_start, window_end)
             unsupported_width = (
                 x_position(unsupported_segment[1], window_start, window_end)
                 - unsupported_x
@@ -346,9 +375,13 @@ def render_timeline(
                 f'y="{row_y}" width="{unsupported_width}" '
                 f'height="{BAR_HEIGHT}" rx="4"/>\n'
             )
-            parts.append(
-                f'      <text class="small-label" x="{unsupported_x + 14}" '
-                f'y="{row_center}">unsupported</text>\n'
+            append_bar_label(
+                parts,
+                "small-label",
+                "unsupported",
+                unsupported_x,
+                unsupported_width,
+                row_center,
             )
         parts.append("    </g>\n\n")
 
@@ -374,9 +407,7 @@ def render_timeline(
     parts.append(
         '    <rect class="projected-supported" x="662" y="0" width="18" height="18" rx="3"/>\n'
     )
-    parts.append(
-        '    <text class="note" x="688" y="14">projected future state</text>\n'
-    )
+    parts.append('    <text class="note" x="688" y="14">future state</text>\n')
     parts.append("  </g>\n\n")
 
     actual_summary = ", ".join(
@@ -385,14 +416,13 @@ def render_timeline(
     )
     parts.append(f'  <text class="note" x="40" y="{footer_y}">\n')
     parts.append(
-        "    Actual release starts from GitHub releases: "
-        f"{actual_summary}.\n"
+        "    Actual release starts from GitHub releases: " f"{actual_summary}.\n"
     )
     parts.append("  </text>\n")
     parts.append(f'  <text class="note" x="40" y="{footer_y + 22}">\n')
     parts.append(
         "    Future versions are projections based on the configured "
-        "major-release interval in source/data/bareos-supported-versions.json.\n"
+        "major-release interval.\n"
     )
     parts.append("  </text>\n")
     parts.append("</svg>\n")
@@ -401,9 +431,7 @@ def render_timeline(
 
 def main() -> None:
     args = parse_args()
-    supported_major_releases, interval_days, actual_releases = load_releases(
-        args.input
-    )
+    supported_major_releases, interval_days, actual_releases = load_releases(args.input)
     releases = extend_with_projections(
         actual_releases, add_years(date.today(), 3), interval_days
     )
