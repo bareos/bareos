@@ -203,17 +203,25 @@ async function loadClient() {
   const name = route.params.name
   await ensureClientDirector()
 
-  const [clientRes, jobsRes, defaultsRes] = await Promise.allSettled([
+  const [clientRes, jobsRes, showRes] = await Promise.allSettled([
     director.call(`llist clients`),
     director.call(`list jobs client=${name} reverse`),
-    director.call(`.defaults client=${name}`),
+    director.call(`show client=${name}`),
   ])
   if (clientRes.status === 'fulfilled') {
     const list = directorCollection(clientRes.value?.clients)
     const found = list.find(c => c.name === name)
     if (found) {
-      const defaults = defaultsRes.status === 'fulfilled' ? (defaultsRes.value ?? {}) : {}
-      clientData.value = normaliseClient({ ...found, ...defaults })
+      const shownClient = showRes.status === 'fulfilled'
+        ? showRes.value?.clients?.[name]
+        : null
+      clientData.value = normaliseClient(shownClient
+        ? {
+          ...found,
+          ...shownClient,
+          passive: Object.prototype.hasOwnProperty.call(shownClient, 'passive'),
+        }
+        : found)
     } else {
       clientData.value = null
     }
@@ -271,8 +279,12 @@ const details = computed(() => {
     { label: t('Address'),      value: c.address   || '—' },
     { label: t('Port'),         value: c.port      || '—' },
     { label: t('Status'),       value: c.enabled   ? t('Enabled') : t('Disabled') },
-    { label: t('File Retention'), value: c.fileretention || '—' },
-    { label: t('Job Retention'),  value: c.jobretention  || '—' },
+    {
+      label: t('Passive'),
+      value: c.passive === ''
+        ? '—'
+        : (c.passive ? t('Yes') : t('No')),
+    },
   ]
 })
 
