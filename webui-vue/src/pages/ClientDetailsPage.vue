@@ -142,14 +142,18 @@ const currentClientDirector = computed(() => (
 ))
 const backToClientsQuery = computed(() => resolveClientsListQuery(route.query))
 const jobsOrigin = computed(() => resolveClientDetailsJobsOrigin(route.query))
+const hasJobsOrigin = computed(() => (
+  route.query.jobsOrigin === '1'
+    || Object.keys(jobsOrigin.value).length > 0
+))
 const dashboardOrigin = computed(() => resolveClientDetailsDashboardOrigin(route.query))
 const backLabel = computed(() => (
-  jobsOrigin.value && Object.keys(jobsOrigin.value).length > 0
+  hasJobsOrigin.value
     ? t('Back to Jobs')
     : (dashboardOrigin.value ? t('Back to Dashboard') : t('Back to Clients'))
 ))
 const backLocation = computed(() => (
-  jobsOrigin.value && Object.keys(jobsOrigin.value).length > 0
+  hasJobsOrigin.value
     ? { name: 'jobs', query: jobsOrigin.value }
     : (
       dashboardOrigin.value

@@ -35,6 +35,7 @@ describe('clients route helpers', () => {
       director: 'prod-a',
       clientsTab: 'timeline',
       clientsScopeDirector: 'prod-a',
+      jobsOrigin: true,
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsLevel: 'F',
@@ -44,6 +45,7 @@ describe('clients route helpers', () => {
       director: 'prod-a',
       clientsTab: 'timeline',
       clientsScopeDirector: 'prod-a',
+      jobsOrigin: '1',
       jobsAction: 'timeline',
       jobsStatus: 'T',
       jobsLevel: 'F',
@@ -54,8 +56,10 @@ describe('clients route helpers', () => {
     expect(buildClientDetailsQuery({
       director: 'prod-a',
       clientsTab: 'list',
+      jobsOrigin: true,
     })).toEqual({
       director: 'prod-a',
+      jobsOrigin: '1',
     })
   })
 

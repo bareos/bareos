@@ -23,6 +23,7 @@ export function buildClientDetailsQuery({
   director,
   clientsTab,
   clientsScopeDirector,
+  jobsOrigin,
   jobsAction,
   jobsStatus,
   jobsLevel,
@@ -41,6 +42,10 @@ export function buildClientDetailsQuery({
 
   if (clientsScopeDirector) {
     query.clientsScopeDirector = clientsScopeDirector
+  }
+
+  if (jobsOrigin) {
+    query.jobsOrigin = '1'
   }
 
   if (jobsAction && jobsAction !== 'list') {

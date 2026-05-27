@@ -471,6 +471,7 @@
           :key="activeDirectors.join('\u0000') || 'jobs-timeline'"
           :directors="activeDirectors"
           :client-details-query="buildClientDetailsQuery({
+            jobsOrigin: true,
             clientsTab: 'timeline',
             jobsAction: tab,
             jobsStatus: statusFilters,
@@ -1117,6 +1118,7 @@ async function openClientDetails(job) {
       params: { name: job.client },
       query: buildClientDetailsQuery({
         director: job.director,
+        jobsOrigin: true,
         jobsAction: tab.value,
         jobsStatus: statusFilters.value,
         jobsLevel: encodeJobsLevelFilters(levelFilters.value),
