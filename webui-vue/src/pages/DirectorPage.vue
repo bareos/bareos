@@ -544,7 +544,7 @@
                 <template v-else>
                   <div class="q-pa-sm row items-center q-gutter-sm">
                     <span class="text-caption text-grey-6">
-                      {{ t('{count} job(s) with 0 files and 0 bytes found', { count: emptyJobs.length }) }}
+                      {{ emptyJobsSummaryLabel }}
                     </span>
                     <q-space />
                     <span v-if="!canDeleteEmptyJobs" class="text-caption text-grey-6">
@@ -741,6 +741,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useDirectorAclStore } from '../stores/directorAcl.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { translate } from '../i18n/index.js'
 import {
   directorCollection,
   directorCommandAllowed,
@@ -796,6 +797,7 @@ const director = useDirectorStore()
 const acl = useDirectorAclStore()
 const settings  = useSettingsStore()
 const { t } = useI18n()
+const tr = (msgid, values) => translate(settings.locale, msgid, values)
 
 const directorOptions = computed(() => {
   return buildDirectorOptions({
@@ -1416,9 +1418,15 @@ const canDeleteEmptyJobs = computed(() => (
 ))
 const deleteSelectedLabel = computed(() => (
   selectedEmptyJobs.value.length
-    ? t('Delete {count} selected', { count: selectedEmptyJobs.value.length })
+    ? tr('Delete {count} selected', { count: selectedEmptyJobs.value.length })
     : t('Delete selected')
 ))
+const emptyJobsSummaryLabel = computed(() => {
+  const count = formatNumber(emptyJobs.value.length, settings.locale)
+  return emptyJobs.value.length === 1
+    ? tr('{count} job with 0 files and 0 bytes found', { count })
+    : tr('{count} jobs with 0 files and 0 bytes found', { count })
+})
 const deleteActionDisabled = computed(() => (
   !canDeleteEmptyJobs.value
   || !selectedEmptyJobs.value.length
@@ -1479,7 +1487,7 @@ async function deleteSelected() {
   try {
     await ensureSingletonTabDirector()
     await director.call(`delete jobid=${ids}`)
-    deleteResult.value = { ok: true, msg: t('Deleted job(s) {ids}.', { ids }) }
+    deleteResult.value = { ok: true, msg: tr('Deleted job(s) {ids}.', { ids }) }
     const deleted = new Set(selectedEmptyJobs.value.map(j => j.id))
     emptyJobs.value         = emptyJobs.value.filter(j => !deleted.has(j.id))
     selectedEmptyJobs.value = []
@@ -1497,7 +1505,7 @@ const pruneActions = computed(() => [
   { cmd: 'prune files yes',  label: t('Prune File Records'),
     icon: 'folder_off' },
   { cmd: 'prune stats yes',  label: t('Prune Statistics'),
-    icon: 'bar_chart_off' },
+    icon: 'bar_chart' },
 ])
 const pruneLoading = ref(
   Object.fromEntries(pruneActions.value.map(p => [p.cmd, false]))
@@ -1511,7 +1519,7 @@ async function runPrune(cmd) {
     await ensureSingletonTabDirector()
     await director.call(cmd)
     pruneResults.value.push({ ok: true,
-      msg: t('"{cmd}" completed.', { cmd }) })
+      msg: tr('"{cmd}" completed.', { cmd }) })
   } catch (e) {
     pruneResults.value.push({ ok: false,
       msg: `${cmd}: ${e.message}` })
