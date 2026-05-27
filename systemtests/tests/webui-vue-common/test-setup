@@ -203,3 +203,6 @@ if ! wait_for_http "${BAREOS_WEBUI_BASE_URL}"; then
   cat "${frontend_log}" >&2
   exit 1
 fi
+
+echo "webui-vue proxy listening on ws://127.0.0.1:${proxy_port}"
+echo "webui-vue frontend listening on ${BAREOS_WEBUI_BASE_URL}"
