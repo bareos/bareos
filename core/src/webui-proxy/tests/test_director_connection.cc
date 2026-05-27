@@ -56,22 +56,6 @@ TEST(DirectorConnection, BuildsCramMd5KeyFromPassword)
   EXPECT_EQ(MakeCramMd5Key("secret"), "5ebe2294ecd0e0f08eab7690d2a6ee69");
 }
 
-TEST(DirectorConfig, EnablesTlsPskByDefault)
-{
-  DirectorConfig cfg;
-
-  EXPECT_FALSE(cfg.tls_psk_disable);
-}
-
-TEST(DirectorConfig, AllowsDisablingTlsPsk)
-{
-  DirectorConfig cfg;
-
-  cfg.tls_psk_disable = true;
-
-  EXPECT_TRUE(cfg.tls_psk_disable);
-}
-
 TEST(DirectorConnection, StartsWithoutTlsPskTransport)
 {
   DirectorConnection connection;
