@@ -41,7 +41,7 @@
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 
-TEST(DirectorConnection, BuildsTlsPskIdentityForDirector)
+TEST(DirectorConnection, FormatsTlsPskIdentityAsQualifiedConsoleName)
 {
   const std::string identity = GetTlsPskIdentityForDirector("admin-tls");
   std::string expected = "R_CONSOLE";
