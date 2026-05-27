@@ -437,6 +437,9 @@ const highlightedLines = computed(() => {
   if (!logLines.value) return []
   return logLines.value.split('\n').map(line => {
     const l = line.toLowerCase()
+    if (/\b(?:non-fatal\s+fd\s+errors|sd\s+errors|fd\s+errors|errors|warnings?)\s*:\s*0\b/.test(l)) {
+      return { text: line, type: 'normal' }
+    }
     if (/error|fatal|failed/.test(l))               return { text: line, type: 'error'   }
     if (/warning|warn/.test(l))                      return { text: line, type: 'warning' }
     if (/\bok\b|termination:.*ok|backup ok/.test(l)) return { text: line, type: 'ok'      }
