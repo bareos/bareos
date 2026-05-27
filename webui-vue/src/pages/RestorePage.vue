@@ -297,10 +297,15 @@
   </q-page>
 
   <!-- File Versions Dialog -->
-  <q-dialog v-model="versionsDialog.open" max-width="700px">
-    <q-card style="min-width:500px;max-width:700px">
+  <q-dialog
+    v-model="versionsDialog.open"
+    :maximized="$q.screen.lt.sm"
+    transition-show="slide-up"
+    transition-hide="slide-down"
+  >
+    <q-card class="versions-dialog-card">
       <q-card-section class="panel-header row items-center">
-        <span>{{ t('Versions of') }} {{ versionsDialog.fname }}</span>
+        <span class="versions-dialog__title">{{ t('Versions of') }} {{ versionsDialog.fname }}</span>
         <q-space />
         <q-btn flat round dense icon="close" color="white" v-close-popup />
       </q-card-section>
@@ -315,7 +320,53 @@
           row-key="fileid"
           hide-pagination
           :rows-per-page-options="[0]"
+          :grid="$q.screen.lt.sm"
         >
+          <template #item="props">
+            <div class="col-12">
+              <q-card
+                flat
+                bordered
+                class="versions-dialog__card cursor-pointer"
+                :class="versionsDialog.selectedFileId === props.row.fileid ? 'versions-dialog__card--selected' : ''"
+                @click="selectVersion(props.row)"
+              >
+                <q-card-section class="q-py-sm q-px-md">
+                  <div class="row items-start no-wrap q-gutter-sm">
+                    <q-radio
+                      dense
+                      :model-value="versionsDialog.selectedFileId"
+                      :val="props.row.fileid"
+                      @update:model-value="selectVersion(props.row)"
+                    />
+                    <div class="col">
+                      <div class="row justify-between items-center q-col-gutter-sm">
+                        <div class="col-auto text-weight-medium">
+                          {{ t('Job ID') }} {{ props.row.jobid }}
+                        </div>
+                        <div class="col-auto text-caption text-grey-7">
+                          {{ formatBytes(props.row.stat?.size ?? 0) }}
+                        </div>
+                      </div>
+                      <div class="text-caption text-grey-7 q-mt-xs">
+                        {{ formatMtime(props.row.stat?.mtime) }}
+                      </div>
+                      <div class="text-caption q-mt-sm">
+                        <span class="text-grey-7">{{ t('Volume') }}:</span>
+                        <span class="versions-dialog__value">{{ props.row.volumename || '—' }}</span>
+                      </div>
+                      <div class="text-caption q-mt-xs">
+                        <span class="text-grey-7">{{ t('MD5') }}:</span>
+                        <span class="versions-dialog__value versions-dialog__value--break">
+                          {{ props.row.md5 || '—' }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </template>
           <template #body="props">
             <q-tr
               :props="props"
@@ -357,6 +408,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import { directorCollection } from '../composables/useDirectorFetch.js'
 import { fetchAggregatedClients } from '../composables/clientsAggregate.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
@@ -384,6 +436,7 @@ const director = useDirectorStore()
 const settings = useSettingsStore()
 const route    = useRoute()
 const router   = useRouter()
+const $q       = useQuasar()
 const { t } = useI18n()
 
 // ── Form state ──────────────────────────────────────────────────────────────
@@ -1400,3 +1453,35 @@ watch(() => [route.query.client, route.query.director, route.query.jobid], async
   await applyRouteSourceSelection()
 })
 </script>
+
+<style scoped>
+.versions-dialog-card {
+  width: min(700px, 95vw);
+  max-width: 700px;
+}
+
+.versions-dialog__title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.versions-dialog__card--selected {
+  border-color: var(--q-primary);
+  background: rgba(25, 118, 210, 0.08);
+}
+
+.versions-dialog__value {
+  margin-left: 0.25rem;
+}
+
+.versions-dialog__value--break {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 599px) {
+  .versions-dialog-card {
+    width: 100vw;
+    max-width: none;
+  }
+}
+</style>
