@@ -16,8 +16,6 @@
       .label { fill: #ffffff; font: 600 15px sans-serif; dominant-baseline: middle; }
       .small-label { fill: #334854; font: 13px sans-serif; dominant-baseline: middle; }
       .note { fill: #5c7285; font: 13px sans-serif; }
-      .today { stroke: #123047; stroke-width: 2; stroke-dasharray: 6 4; }
-      .today-text { fill: #123047; font: 600 13px sans-serif; text-anchor: end; }
     ]]></style>
   </defs>
 
@@ -50,9 +48,6 @@
       <line class="grid" x1="774.7" y1="0" x2="774.7" y2="360"/>
       <text x="774.7" y="-12">Jan 2029</text>
     </g>
-
-    <line class="today" x1="415.0" y1="0" x2="415.0" y2="360"/>
-    <text class="today-text" x="409.0" y="377">Today · 2026-05-27</text>
 
     <line class="axis" x1="0" y1="360" x2="830" y2="360"/>
 
