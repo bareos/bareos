@@ -121,7 +121,7 @@ test('opens jobs and job details through the real director connection', async ({
   await login(page)
   await openNav(page, 'nav-jobs', /#\/jobs/)
 
-  await page.getByPlaceholder('Search…').fill('backup-bareos-fd')
+  await page.getByPlaceholder('Search job, client, or ID…').fill('backup-bareos-fd')
   const firstRow = page.locator('tbody tr').first()
   await expect(firstRow).toContainText('backup-bareos-fd')
 
