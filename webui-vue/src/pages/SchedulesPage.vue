@@ -82,8 +82,16 @@
                         style="text-decoration:none"
                       >{{ props.row.job }}</router-link>
                       <q-badge v-if="props.row.jobEnabled !== null"
-                               :color="props.row.jobEnabled ? 'positive' : 'negative'"
-                               :label="props.row.jobEnabled ? t('Enabled') : t('Disabled')" />
+                               :color="jobStatusBadge(props.row).color"
+                               :label="jobStatusBadge(props.row).label">
+                        <q-tooltip v-if="jobStatusBadge(props.row).detail">
+                          {{ jobStatusBadge(props.row).detail }}
+                        </q-tooltip>
+                      </q-badge>
+                      <q-badge v-if="jobStatusBadge(props.row).rawLabel"
+                               outline
+                               color="positive"
+                               :label="jobStatusBadge(props.row).rawLabel" />
                     </div>
                     <span v-else class="text-grey-5">{{ t('no jobs configured') }}</span>
                   </q-td>
@@ -434,6 +442,33 @@ async function toggleJob(row) {
     $q.notify({ type: 'negative', message: e.message })
   } finally {
     togglingJob.value = null
+  }
+}
+
+function jobStatusBadge(row) {
+  if (row.jobEnabled == null) {
+    return {
+      color: 'grey',
+      label: '',
+      rawLabel: null,
+      detail: '',
+    }
+  }
+
+  if (!row.schedEnabled && row.jobEnabled) {
+    return {
+      color: 'negative',
+      label: t('Disabled'),
+      rawLabel: t('Enabled'),
+      detail: `${t('Job')}: ${t('Enabled')}, ${t('Schedules')}: ${t('Disabled')}`,
+    }
+  }
+
+  return {
+    color: row.jobEnabled ? 'positive' : 'negative',
+    label: row.jobEnabled ? t('Enabled') : t('Disabled'),
+    rawLabel: null,
+    detail: '',
   }
 }
 
