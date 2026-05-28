@@ -21,7 +21,16 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  buildCancelJobCommand,
+  buildJobDefaultsCommand,
   buildJobDetailsQuery,
+  buildJobsFilterClause,
+  buildListJobCommand,
+  buildListJobsCommand,
+  buildListJobsCountCommand,
+  buildRerunJobCommand,
+  buildRunJobCommand,
+  buildSetJobEnabledCommand,
   encodeJobsLevelFilters,
   encodeJobsStatusFilters,
   encodeJobsTypeFilters,
@@ -98,6 +107,50 @@ describe('jobs filter helpers', () => {
     expect(normaliseJobTypeFilters('B,Restore,B,invalid')).toEqual(['B', 'R'])
     expect(normaliseJobTypeFilters(['Copy', 'g', 'Copy', 'invalid'])).toEqual(['c', 'g'])
     expect(encodeJobsTypeFilters(['B', 'Restore', 'B'])).toBe('B,R')
+  })
+
+  it('builds list and action commands for jobs', () => {
+    expect(buildJobsFilterClause({
+      statusFilter: ['f', 'E'],
+      levelFilter: ['F', 'I'],
+      typeFilter: ['B', 'Restore'],
+    })).toBe(' jobstatus=f,E joblevel=F,I jobtype=B,R')
+    expect(buildListJobsCountCommand({
+      statusFilter: 'T',
+      levelFilter: 'F',
+      typeFilter: 'B',
+    })).toBe('list jobs count jobstatus=T joblevel=F jobtype=B')
+    expect(buildListJobsCommand({
+      limit: 25,
+      offset: 50,
+      statusFilter: 'T',
+      levelFilter: 'F',
+      typeFilter: 'B',
+    })).toBe('llist jobs reverse limit=25 offset=50 jobstatus=T joblevel=F jobtype=B')
+    expect(buildListJobCommand(42)).toBe('llist jobid=42')
+    expect(buildCancelJobCommand(42)).toBe('cancel jobid=42 yes')
+    expect(buildRerunJobCommand(42)).toBe('rerun jobid=42 yes')
+  })
+
+  it('quotes job command arguments consistently', () => {
+    expect(buildSetJobEnabledCommand('Daily "Backup"', true))
+      .toBe('enable job="Daily \\"Backup\\"" yes')
+    expect(buildJobDefaultsCommand('Daily "Backup"'))
+      .toBe('.defaults job="Daily \\"Backup\\""')
+    expect(buildRunJobCommand({
+      job: 'Daily "Backup"',
+      client: 'fd one',
+      fileset: 'Linux',
+      pool: 'Full',
+      storage: 'File',
+      level: 'Incremental',
+      when: '2026-05-28 12:00:00',
+      priority: 10,
+    })).toBe(
+      'run job="Daily \\"Backup\\"" client="fd one" fileset="Linux" ' +
+      'pool="Full" storage="File" level="Incremental" ' +
+      'when="2026-05-28 12:00:00" priority=10 yes'
+    )
   })
 
   it('adds and removes the status query parameter', () => {

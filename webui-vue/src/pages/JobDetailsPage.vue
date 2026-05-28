@@ -170,7 +170,10 @@ import { quoteDirectorString } from '../utils/directorStrings.js'
 import { buildDirectorPageQuery } from '../utils/director.js'
 import { formatNumber } from '../utils/locales.js'
 import {
+  buildCancelJobCommand,
   buildJobDetailsQuery,
+  buildListJobCommand,
+  buildRerunJobCommand,
   resolveJobDetailsClientOrigin,
   resolveJobDetailsQuery,
   resolveJobDetailsDashboardOrigin,
@@ -315,7 +318,7 @@ async function ensureJobDirector() {
 async function loadJob() {
   await ensureJobDirector()
   const [jobRes, logRes, mediaRes] = await Promise.allSettled([
-    director.call(`llist jobid=${currentJobId.value}`),
+    director.call(buildListJobCommand(currentJobId.value)),
     director.call(`list joblog jobid=${currentJobId.value}`),
     director.call(`list jobmedia jobid=${currentJobId.value}`),
   ])
@@ -503,7 +506,7 @@ function confirmRerun() {
 async function doRerun() {
   rerunLoading.value = true
   try {
-    const res   = await director.call(`rerun jobid=${currentJobId.value} yes`)
+    const res = await director.call(buildRerunJobCommand(currentJobId.value))
     const newId = res?.run?.jobid ?? res?.jobid ?? null
     $q.notify({ type: 'positive', message: newId ? `${t('Job restarted as ID')} ${newId}.` : t('Job restarted.') })
     if (newId) {
@@ -558,7 +561,7 @@ function confirmCancel() {
 async function doCancel() {
   cancelLoading.value = true
   try {
-    await director.call(`cancel jobid=${currentJobId.value} yes`)
+    await director.call(buildCancelJobCommand(currentJobId.value))
     $q.notify({ type: 'positive', message: t('Job {id} cancelled.', { id: currentJobId.value }) })
     await loadJob()
   } catch (e) {
