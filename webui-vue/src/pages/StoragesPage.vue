@@ -327,7 +327,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { useDirectorScope } from '../composables/useDirectorScope.js'
 import {
   fetchAggregatedStoragesState,
   normaliseDirectorStoragesState,
@@ -377,52 +377,19 @@ const reachableDirectors = computed(() => [...new Set([
   settings.directorName,
 ].filter(Boolean))])
 
-const directorOptions = computed(() => (
-  reachableDirectors.value.map(value => ({ label: value, value }))
-))
-
-function syncSelectedDirectors() {
-  const validDirectors = reachableDirectors.value
-  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
-
-  if (selected.length > 0) {
-    if (selected.length !== settings.selectedDirectors.length) {
-      settings.setSelectedDirectors(selected)
-    }
-    return
-  }
-
-  const fallbackDirector = auth.user?.director || settings.directorName
-  if (fallbackDirector) {
-    settings.setSelectedDirectors([fallbackDirector])
-  }
-}
-
-const selectedDirectorsModel = computed({
-  get: () => settings.selectedDirectors,
-  set: (value) => {
-    const selected = Array.isArray(value) ? value : []
-    if (selected.length > 0) {
-      settings.setSelectedDirectors(selected)
-      return
-    }
-
-    const fallbackDirector = auth.user?.director || settings.directorName
-    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
-  },
-})
-
-const activeDirectors = computed(() => {
-  const selected = settings.selectedDirectors.filter(value => (
-    reachableDirectors.value.includes(value)
-  ))
-
-  if (selected.length > 0) {
-    return selected
-  }
-
-  const currentDirector = auth.user?.director || settings.directorName
-  return currentDirector ? [currentDirector] : []
+const {
+  directorOptions,
+  selectedDirectorsModel,
+  activeDirectors,
+  isCommonScope: isCommonStorages,
+  isSingleDirectorScope,
+  scopeLabel: storagesScopeLabel,
+  syncSelectedDirectors,
+  ensureScopeDirector,
+  ensureSingleScopeDirector,
+} = useDirectorScope({
+  t,
+  buildOptions: () => reachableDirectors.value.map(value => ({ label: value, value })),
 })
 
 const storagesListScopeDirector = computed(() => {
@@ -437,14 +404,7 @@ const storagesListScopeDirector = computed(() => {
 const storagesPageDirectors = computed(() => (
   storagesListScopeDirector.value ? [storagesListScopeDirector.value] : activeDirectors.value
 ))
-const isCommonStorages = computed(() => activeDirectors.value.length > 1)
-const isSingleDirectorScope = computed(() => activeDirectors.value.length === 1)
 const showDirectorColumn = computed(() => storagesPageDirectors.value.length > 1)
-const storagesScopeLabel = computed(() => (
-  isCommonStorages.value
-    ? `${activeDirectors.value.length} ${t('directors selected')}`
-    : (activeDirectors.value[0] ?? t('No director selected'))
-))
 
 watch(() => route.query.tab, (value) => {
   const next = normaliseTab(value)
@@ -475,33 +435,12 @@ watch(() => route.query.scopeDirector, (value) => {
   refresh()
 })
 
-async function ensureSingleScopeDirector() {
-  if (!isSingleDirectorScope.value) {
-    return
-  }
-
-  const scopeDirector = activeDirectors.value[0]
-  if (!scopeDirector) {
-    return
-  }
-
-  if (auth.user?.director === scopeDirector && director.isConnected) {
-    return
-  }
-
-  await switchActiveDirector(scopeDirector)
-}
-
 async function switchToRowDirector(row) {
   if (!row?.director) {
     return
   }
 
-  if (auth.user?.director === row.director && director.isConnected) {
-    return
-  }
-
-  await switchActiveDirector(row.director)
+  await ensureScopeDirector(row.director)
 }
 
 function reportRowError(row, reason) {

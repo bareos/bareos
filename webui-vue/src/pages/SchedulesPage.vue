@@ -235,7 +235,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
-import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { useDirectorScope } from '../composables/useDirectorScope.js'
 import {
   buildShownSchedules,
   buildStatusSchedules,
@@ -244,18 +244,15 @@ import {
 } from '../composables/schedulesAggregate.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
-import { useSettingsStore } from '../stores/settings.js'
 import {
   withJobsSearchQuery,
 } from '../utils/jobs.js'
-import { buildDirectorOptions } from '../utils/director.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorScopePanel from '../components/DirectorScopePanel.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
-const settings = useSettingsStore()
 const $q = useQuasar()
 const { t } = useI18n()
 
@@ -269,83 +266,18 @@ const router = useRouter()
 const tab = ref(normaliseTab(route.query.tab))
 const directorErrors = ref([])
 
-const directorOptions = computed(() => {
-  return buildDirectorOptions({
-    availableDirectors: director.availableDirectors,
-    selectedDirectors: settings.selectedDirectors,
-    currentDirector: auth.user?.director,
-    fallbackDirector: settings.directorName,
-  })
-})
+const {
+  directorOptions,
+  selectedDirectorsModel,
+  activeDirectors,
+  isCommonScope: isCommonSchedules,
+  scopeLabel: schedulesScopeLabel,
+  syncSelectedDirectors,
+  ensureScopeDirector,
+  ensureSingleScopeDirector,
+} = useDirectorScope({ t })
 
-function syncSelectedDirectors() {
-  const validDirectors = directorOptions.value.map(option => option.value)
-  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
-
-  if (selected.length > 0) {
-    if (selected.length !== settings.selectedDirectors.length) {
-      settings.setSelectedDirectors(selected)
-    }
-    return
-  }
-
-  const fallbackDirector = auth.user?.director || settings.directorName
-  if (fallbackDirector) {
-    settings.setSelectedDirectors([fallbackDirector])
-  }
-}
-
-const selectedDirectorsModel = computed({
-  get: () => settings.selectedDirectors,
-  set: (value) => {
-    const selected = Array.isArray(value) ? value : []
-    if (selected.length > 0) {
-      settings.setSelectedDirectors(selected)
-      return
-    }
-
-    const fallbackDirector = auth.user?.director || settings.directorName
-    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
-  },
-})
-
-const activeDirectors = computed(() => {
-  const selected = settings.selectedDirectors.filter(value => (
-    directorOptions.value.some(option => option.value === value)
-  ))
-
-  if (selected.length > 0) {
-    return selected
-  }
-
-  const currentDirector = auth.user?.director || settings.directorName
-  return currentDirector ? [currentDirector] : []
-})
-
-const isCommonSchedules = computed(() => activeDirectors.value.length > 1)
 const showDirectorColumn = computed(() => isCommonSchedules.value)
-const schedulesScopeLabel = computed(() => (
-  isCommonSchedules.value
-    ? `${activeDirectors.value.length} ${t('directors selected')}`
-    : (activeDirectors.value[0] ?? t('No director selected'))
-))
-
-async function ensureSingleScopeDirector() {
-  if (activeDirectors.value.length !== 1) {
-    return
-  }
-
-  const scopeDirector = activeDirectors.value[0]
-  if (!scopeDirector) {
-    return
-  }
-
-  if (auth.user?.director === scopeDirector && director.isConnected) {
-    return
-  }
-
-  await switchActiveDirector(scopeDirector)
-}
 
 async function ensureScheduleActionDirector(targetDirector) {
   if (!targetDirector) {
@@ -353,11 +285,7 @@ async function ensureScheduleActionDirector(targetDirector) {
     return
   }
 
-  if (auth.user?.director === targetDirector && director.isConnected) {
-    return
-  }
-
-  await switchActiveDirector(targetDirector)
+  await ensureScopeDirector(targetDirector)
 }
 
 const schedLoading = ref(false)
