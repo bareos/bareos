@@ -19,6 +19,8 @@
    02110-1301, USA.
  */
 
+import { restorePluginHints } from '../data/restorePluginHints.js'
+
 export function getRestoreBrowserPlaceholder({
   browserError,
   loadingBrowser,
@@ -156,6 +158,127 @@ export function buildRestorePluginFilesetMap(filesets) {
   return pluginFilesets
 }
 
+export function parseRestorePluginDefinition(definition) {
+  const raw = String(definition ?? '').trim()
+  const separatorIndex = raw.indexOf(':')
+  const pluginName = separatorIndex === -1 ? raw : raw.slice(0, separatorIndex)
+  const optionKeys = [...raw.matchAll(/:([A-Za-z0-9_.-]+)=/g)]
+    .map((match) => match[1])
+    .filter(Boolean)
+
+  return {
+    raw,
+    pluginName,
+    optionKeys: [...new Set(optionKeys)],
+  }
+}
+
+function normalizeRestorePluginHintAlias(value) {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+function extractRestorePluginDefinitionOption(definition, key) {
+  const raw = String(definition?.raw ?? '')
+  const match = raw.match(new RegExp(`:${key}=([^:]+)`, 'i'))
+  return match?.[1]?.trim() ?? ''
+}
+
+const restorePluginHintAliases = new Map(
+  Object.entries(restorePluginHints).flatMap(([hintId, hint]) => ([
+    [normalizeRestorePluginHintAlias(hintId), hintId],
+    ...(hint.aliases ?? []).map(alias => [normalizeRestorePluginHintAlias(alias), hintId]),
+  ]))
+)
+
+export function resolveRestorePluginHintId(definition) {
+  const moduleName = extractRestorePluginDefinitionOption(definition, 'module_name')
+  const moduleMatch = restorePluginHintAliases.get(
+    normalizeRestorePluginHintAlias(moduleName)
+  )
+  if (moduleMatch) {
+    return moduleMatch
+  }
+
+  const directPluginName = normalizeRestorePluginHintAlias(definition?.pluginName)
+  const directMatch = restorePluginHintAliases.get(directPluginName)
+  if (directMatch) {
+    return directMatch
+  }
+
+  return null
+}
+
+export function buildRestorePluginOptionExample(pluginHint) {
+  const options = Array.isArray(pluginHint?.options) ? pluginHint.options : []
+  const preferredOptions = options.filter(option => option.status === 'required')
+  const exampleOptions = (preferredOptions.length > 0 ? preferredOptions : options)
+    .slice(0, 2)
+    .map(option => `${option.name}=...`)
+
+  return exampleOptions.join(pluginHint?.optionSeparator ?? ':')
+}
+
+export function getRestorePluginHints(pluginInfo) {
+  if (!pluginInfo) {
+    return []
+  }
+
+  const hintIds = [...new Set(
+    (pluginInfo.definitions ?? [])
+      .map(resolveRestorePluginHintId)
+      .filter(Boolean)
+  )]
+
+  return hintIds.map((hintId) => ({
+    id: hintId,
+    ...restorePluginHints[hintId],
+    example: buildRestorePluginOptionExample(restorePluginHints[hintId]),
+  }))
+}
+
+export function getAllRestorePluginHints() {
+  return Object.entries(restorePluginHints)
+    .map(([hintId, hint]) => ({
+      id: hintId,
+      ...hint,
+      example: buildRestorePluginOptionExample(hint),
+    }))
+    .sort((left, right) => left.displayName.localeCompare(right.displayName))
+}
+
+export function buildRestorePluginFilesetDetails(filesets) {
+  const pluginFilesets = new Map()
+
+  if (!filesets || typeof filesets !== 'object') {
+    return pluginFilesets
+  }
+
+  for (const [name, fileset] of Object.entries(filesets)) {
+    const filesetName = fileset?.name ?? fileset?.fileset ?? name
+    const includeEntries = Array.isArray(fileset?.include) ? fileset.include : []
+    const definitions = includeEntries
+      .flatMap((entry) => {
+        if (Array.isArray(entry?.plugin)) {
+          return entry.plugin
+        }
+
+        return entry?.plugin ? [entry.plugin] : []
+      })
+      .map(parseRestorePluginDefinition)
+
+    pluginFilesets.set(filesetName, {
+      filesetName,
+      description: fileset?.description ?? '',
+      hasPlugin: definitions.length > 0,
+      definitions,
+      pluginNames: [...new Set(definitions.map(definition => definition.pluginName).filter(Boolean))],
+      optionKeys: [...new Set(definitions.flatMap(definition => definition.optionKeys))],
+    })
+  }
+
+  return pluginFilesets
+}
+
 export function restoreBackupHasPluginOptions(backup) {
   return backup?.pluginjob === true
     || backup?.pluginjob === 1
@@ -195,6 +318,67 @@ export function shouldShowRestorePluginOptions({
 
     return String(backup?.jobid ?? '') === String(selectedJobId)
   })
+}
+
+export function getRestorePluginInfo({
+  backups,
+  pluginFilesets,
+  selectedJobId,
+  mergedJobids,
+  mergeJobsets,
+}) {
+  if (!selectedJobId) {
+    return null
+  }
+
+  const mergedIds = typeof mergedJobids === 'string' && mergedJobids
+    ? new Set(mergedJobids.split(',').filter(Boolean).map(String))
+    : null
+
+  const relevantBackups = (backups ?? []).filter((backup) => {
+    if (!restoreBackupHasPluginOptions(backup)) {
+      return false
+    }
+
+    if (mergeJobsets && mergedIds) {
+      return mergedIds.has(String(backup?.jobid ?? ''))
+    }
+
+    return String(backup?.jobid ?? '') === String(selectedJobId)
+  })
+
+  if (relevantBackups.length === 0) {
+    return null
+  }
+
+  const filesetDetails = [...new Map(
+    relevantBackups.map((backup) => [backup?.fileset, pluginFilesets.get(backup?.fileset)])
+  ).values()].filter(detail => detail?.hasPlugin)
+
+  if (filesetDetails.length === 0) {
+    return null
+  }
+
+  const definitions = [...new Map(
+    filesetDetails.flatMap((detail) => detail.definitions.map((definition) => [
+      definition.raw,
+      {
+        ...definition,
+        filesetName: detail.filesetName,
+        filesetDescription: detail.description,
+      },
+    ]))
+  ).values()]
+
+  return {
+    backups: relevantBackups,
+    filesetNames: [...new Set(filesetDetails.map(detail => detail.filesetName))],
+    pluginNames: [...new Set(filesetDetails.flatMap(detail => detail.pluginNames))],
+    optionKeys: [...new Set(filesetDetails.flatMap(detail => detail.optionKeys))],
+    definitions,
+    usesMergedJobs: mergeJobsets
+      && relevantBackups.some(backup => String(backup?.jobid ?? '') !== String(selectedJobId)),
+  }
 }
 
 function restoreVersionKey(version) {
