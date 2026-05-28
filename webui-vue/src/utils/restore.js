@@ -131,6 +131,72 @@ export function buildRestoreSourceQuery(query, {
   return nextQuery
 }
 
+export function buildRestorePluginFilesetMap(filesets) {
+  const pluginFilesets = new Map()
+
+  if (!filesets || typeof filesets !== 'object') {
+    return pluginFilesets
+  }
+
+  for (const [name, fileset] of Object.entries(filesets)) {
+    const filesetName = fileset?.name ?? fileset?.fileset ?? name
+    const includeEntries = Array.isArray(fileset?.include) ? fileset.include : []
+    const hasPlugin = includeEntries.some((entry) => {
+      const plugin = entry?.plugin
+      if (Array.isArray(plugin)) {
+        return plugin.length > 0
+      }
+
+      return !!plugin
+    })
+
+    pluginFilesets.set(filesetName, hasPlugin)
+  }
+
+  return pluginFilesets
+}
+
+export function restoreBackupHasPluginOptions(backup) {
+  return backup?.pluginjob === true
+    || backup?.pluginjob === 1
+    || backup?.pluginjob === '1'
+}
+
+export function decorateRestoreBackupsWithPluginJobs(backups, pluginFilesets) {
+  return (backups ?? []).map((backup) => ({
+    ...backup,
+    pluginjob: restoreBackupHasPluginOptions(backup)
+      || pluginFilesets.get(backup?.fileset) === true,
+  }))
+}
+
+export function shouldShowRestorePluginOptions({
+  backups,
+  selectedJobId,
+  mergedJobids,
+  mergeJobsets,
+}) {
+  if (!selectedJobId) {
+    return false
+  }
+
+  const mergedIds = typeof mergedJobids === 'string' && mergedJobids
+    ? new Set(mergedJobids.split(',').filter(Boolean).map(String))
+    : null
+
+  return (backups ?? []).some((backup) => {
+    if (!restoreBackupHasPluginOptions(backup)) {
+      return false
+    }
+
+    if (mergeJobsets && mergedIds) {
+      return mergedIds.has(String(backup?.jobid ?? ''))
+    }
+
+    return String(backup?.jobid ?? '') === String(selectedJobId)
+  })
+}
+
 function restoreVersionKey(version) {
   if (version?.fileid !== null && version?.fileid !== undefined && version?.fileid !== '') {
     return `fileid:${version.fileid}`

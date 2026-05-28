@@ -26,7 +26,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-JobName=backup-bareos-fd
+JobNames=(
+  backup-bareos-fd
+  backup-bareos-fd-pluginoptions
+)
 
 . ./environment
 . "${BAREOS_SCRIPTS_DIR}/functions"
@@ -37,7 +40,9 @@ cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
 messages
 @$out ${tmp}/webui-vue-create-backup.out
-run job=$JobName yes
+run job=${JobNames[0]} yes
+wait
+run job=${JobNames[1]} yes
 wait
 messages
 quit
@@ -48,5 +53,8 @@ run_bconsole
 expect_grep 'Termination:.*Backup OK' \
   "${tmp}/webui-vue-create-backup.out" \
   "Backup did not succeed."
+expect_grep 'backup-bareos-fd-pluginoptions' \
+  "${tmp}/webui-vue-create-backup.out" \
+  "Plugin backup job did not run."
 
 end_test
