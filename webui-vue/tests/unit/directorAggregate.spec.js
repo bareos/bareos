@@ -91,7 +91,9 @@ describe('director aggregate dashboard helpers', () => {
         transport: 'tls',
       }),
     })
-    await Promise.resolve()
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(8)
+    })
 
     const commandIds = new Map(
       socket.sent.slice(1).map((payload) => {
