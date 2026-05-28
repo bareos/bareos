@@ -128,7 +128,10 @@ describe('jobs aggregate helpers', () => {
 
     socketA.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
     socketB.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
-    await Promise.resolve()
+    await vi.waitFor(() => {
+      expect(socketA.sent).toHaveLength(4)
+      expect(socketB.sent).toHaveLength(4)
+    })
 
     const socketCommands = (socket) => new Map(
       socket.sent.slice(1).map((payload) => {
@@ -175,7 +178,6 @@ describe('jobs aggregate helpers', () => {
         },
       }),
     })
-    await Promise.resolve()
     const jobsCommandsA = socketCommands(socketA)
     const jobsCommandsB = socketCommands(socketB)
 
@@ -236,7 +238,10 @@ describe('jobs aggregate helpers', () => {
     socketB.open()
     socketA.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
     socketB.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
-    await Promise.resolve()
+    await vi.waitFor(() => {
+      expect(socketA.sent).toHaveLength(6)
+      expect(socketB.sent).toHaveLength(6)
+    })
 
     const socketCommands = (socket) => new Map(
       socket.sent.slice(1).map((payload) => {
@@ -295,10 +300,6 @@ describe('jobs aggregate helpers', () => {
         },
       }),
     })
-    await Promise.resolve()
-    await Promise.resolve()
-    await Promise.resolve()
-
     const jobsCommandsA = socketCommands(socketA)
     const jobsCommandsB = socketCommands(socketB)
 

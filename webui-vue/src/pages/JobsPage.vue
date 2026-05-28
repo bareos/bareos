@@ -577,11 +577,18 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildClientDetailsQuery } from '../utils/clients.js'
-import { quoteDirectorString } from '../utils/directorStrings.js'
 import { formatNumber } from '../utils/locales.js'
 import { resolveJobTypeCode, resolveJobTypeInfo } from '../utils/jobTypes.js'
 import {
+  buildCancelJobCommand,
+  buildJobDefaultsCommand,
   buildJobDetailsQuery,
+  buildListJobCommand,
+  buildListJobsCommand,
+  buildListJobsCountCommand,
+  buildRerunJobCommand,
+  buildRunJobCommand,
+  buildSetJobEnabledCommand,
   encodeJobsLevelFilters,
   encodeJobsStatusFilters,
   encodeJobsTypeFilters,
@@ -769,10 +776,6 @@ async function fetchPage() {
   const { page, rowsPerPage } = currentPagination
   const offset = (page - 1) * rowsPerPage
   const encodedStatusFilters = encodeJobsStatusFilters(statusFilters.value)
-  const encodedLevelFilters = encodeJobsLevelFilters(levelFilters.value)
-  const encodedTypeFilters = encodeJobsTypeFilters(typeFilters.value)
-  const levelFilter = encodedLevelFilters ? ` joblevel=${encodedLevelFilters}` : ''
-  const typeFilter = encodedTypeFilters ? ` jobtype=${encodedTypeFilters}` : ''
   const useDefaultSorting = usesDefaultJobsSorting(currentPagination)
   try {
     if (activeDirectors.value.length === 0) {
@@ -806,14 +809,23 @@ async function fetchPage() {
     const currentDirector = activeDirectors.value[0]
     await ensureSingleScopeDirector()
     if (!encodedStatusFilters.includes(',')) {
-      const filter = `${encodedStatusFilters ? ` jobstatus=${encodedStatusFilters}` : ''}${levelFilter}${typeFilter}`
-      const countResult = await director.call(`list jobs count${filter}`)
+      const countResult = await director.call(buildListJobsCountCommand({
+        statusFilter: encodedStatusFilters,
+        levelFilter: levelFilters.value,
+        typeFilter: typeFilters.value,
+      }))
       const count = Number(directorCollection(countResult?.jobs)[0]?.count ?? 0)
       const limit = useDefaultSorting
         ? rowsPerPage
         : Math.max(count, 1)
       const pageResult = await director.call(
-        `llist jobs reverse limit=${limit} offset=${useDefaultSorting ? offset : 0}${filter}`
+        buildListJobsCommand({
+          limit,
+          offset: useDefaultSorting ? offset : 0,
+          statusFilter: encodedStatusFilters,
+          levelFilter: levelFilters.value,
+          typeFilter: typeFilters.value,
+        })
       )
       const fetchedJobs = directorCollection(pageResult?.jobs).map((job) => {
         const normalized = normaliseJob(job)
@@ -842,12 +854,22 @@ async function fetchPage() {
 
     const filters = resolveJobsStatusFilters({ status: encodedStatusFilters })
     const countResults = await Promise.allSettled(filters.map(status => (
-      director.call(`list jobs count jobstatus=${status}${levelFilter}${typeFilter}`)
+      director.call(buildListJobsCountCommand({
+        statusFilter: status,
+        levelFilter: levelFilters.value,
+        typeFilter: typeFilters.value,
+      }))
     )))
     const pageResults = await Promise.allSettled(filters.map((status, index) => {
       if (useDefaultSorting) {
         return director.call(
-          `llist jobs reverse limit=${offset + rowsPerPage} offset=0 jobstatus=${status}${levelFilter}${typeFilter}`
+          buildListJobsCommand({
+            limit: offset + rowsPerPage,
+            offset: 0,
+            statusFilter: status,
+            levelFilter: levelFilters.value,
+            typeFilter: typeFilters.value,
+          })
         )
       }
 
@@ -858,11 +880,23 @@ async function fetchPage() {
           return Promise.resolve({ jobs: [] })
         }
 
-        return director.call(`llist jobs reverse limit=${count} offset=0 jobstatus=${status}${levelFilter}${typeFilter}`)
+        return director.call(buildListJobsCommand({
+          limit: count,
+          offset: 0,
+          statusFilter: status,
+          levelFilter: levelFilters.value,
+          typeFilter: typeFilters.value,
+        }))
       }
 
       return director.call(
-        `llist jobs reverse limit=${offset + rowsPerPage} offset=0 jobstatus=${status}${levelFilter}${typeFilter}`
+        buildListJobsCommand({
+          limit: offset + rowsPerPage,
+          offset: 0,
+          statusFilter: status,
+          levelFilter: levelFilters.value,
+          typeFilter: typeFilters.value,
+        })
       )
     }))
     const rejectedPageResult = pageResults.find(result => result.status === 'rejected')
@@ -1210,7 +1244,7 @@ function confirmCancel(job) {
 async function doCancel(job) {
   try {
     await switchToJobDirector(job)
-    await director.call(`cancel jobid=${job.id} yes`)
+    await director.call(buildCancelJobCommand(job.id))
     $q.notify({ type: 'positive', message: t('Job {id} cancelled.', { id: job.id }) })
     refresh()
   } catch (e) {
@@ -1237,13 +1271,13 @@ async function doRerun(job) {
     }
 
     if (!(typeof job === 'object' && job?.name)) {
-      const lookup = await director.call(`llist jobid=${jobId}`)
+      const lookup = await director.call(buildListJobCommand(jobId))
       if (directorCollection(lookup?.jobs).length === 0) {
         throw new Error(`${t('Job')} ${jobId} ${t('was not found.')}`)
       }
     }
 
-    const res = await director.call(`rerun jobid=${jobId} yes`)
+    const res = await director.call(buildRerunJobCommand(jobId))
     const newId = res?.run?.jobid ?? res?.jobid ?? '?'
     $q.notify({ type: 'positive', message: `${t('Job restarted as ID')} ${newId}.` })
     tab.value = 'list'
@@ -1266,7 +1300,7 @@ function cancelAll() {
     const results = await Promise.allSettled(
       runningJobs.value.map(j => (async () => {
         await switchToJobDirector(j)
-        return director.call(`cancel jobid=${j.id} yes`)
+        return director.call(buildCancelJobCommand(j.id))
       })())
     )
     const failed = results.filter(r => r.status === 'rejected').length
@@ -1283,7 +1317,7 @@ function cancelAll() {
 async function enableJob(job) {
   try {
     await switchToJobDirector(job)
-    await director.call(`enable job=${quoteDirectorString(job.name)} yes`)
+    await director.call(buildSetJobEnabledCommand(job.name, true))
     $q.notify({ type: 'positive', message: `Job "${job.name}" enabled.` })
     const j = jobDefs.value.find(d => d.scopeKey === job.scopeKey)
     if (j) j.enabled = true
@@ -1295,7 +1329,7 @@ async function enableJob(job) {
 async function disableJob(job) {
   try {
     await switchToJobDirector(job)
-    await director.call(`disable job=${quoteDirectorString(job.name)} yes`)
+    await director.call(buildSetJobEnabledCommand(job.name, false))
     $q.notify({ type: 'positive', message: `Job "${job.name}" disabled.` })
     const j = jobDefs.value.find(d => d.scopeKey === job.scopeKey)
     if (j) j.enabled = false
@@ -1351,7 +1385,7 @@ async function onJobSelected(name) {
   if (!name) return
   try {
     await ensureSingletonTabDirector()
-    const res = await director.call(`.defaults job=${quoteDirectorString(name)}`)
+    const res = await director.call(buildJobDefaultsCommand(name))
     const d   = res?.defaults ?? res ?? {}
     if (d.client)   runForm.value.client   = d.client
     if (d.fileset)  runForm.value.fileset  = d.fileset
@@ -1365,20 +1399,10 @@ async function onJobSelected(name) {
 async function runJob() {
   const f = runForm.value
   if (!f.job) return
-  let cmd = `run job=${quoteDirectorString(f.job)}`
-  if (f.client)   cmd += ` client=${quoteDirectorString(f.client)}`
-  if (f.fileset)  cmd += ` fileset=${quoteDirectorString(f.fileset)}`
-  if (f.pool)     cmd += ` pool=${quoteDirectorString(f.pool)}`
-  if (f.storage)  cmd += ` storage=${quoteDirectorString(f.storage)}`
-  if (f.level)    cmd += ` level=${quoteDirectorString(f.level)}`
-  if (f.when)     cmd += ` when=${quoteDirectorString(f.when)}`
-  if (f.priority) cmd += ` priority=${f.priority}`
-  cmd += ' yes'
-
   runLoading.value = true
   try {
     await ensureSingletonTabDirector()
-    const res   = await director.call(cmd)
+    const res = await director.call(buildRunJobCommand(f))
     const newId = res?.run?.jobid ?? res?.jobid ?? '?'
     $q.notify({ type: 'positive', message: `Job started — ID ${newId}` })
     tab.value = 'list'
@@ -1432,7 +1456,7 @@ async function submitRerun() {
         director: directorName,
       })
       try {
-        const lookup = await client.call(`llist jobid=${rerunJobIdValue.value}`)
+        const lookup = await client.call(buildListJobCommand(rerunJobIdValue.value))
         if (directorCollection(lookup?.jobs).length > 0) {
           matches.push({ id: rerunJobIdValue.value, director: directorName })
         }
