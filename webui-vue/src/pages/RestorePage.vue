@@ -1246,7 +1246,7 @@ async function loadBackups(client) {
     await ensureScopeDirector(client.director)
     const [r, filesets] = await Promise.all([
       director.call(`llist backups client=${quoteDirectorString(client.name)}`),
-      director.call('show fileset').catch(() => null),
+      director.call('list filesets').catch(() => null),
     ])
     const pluginFilesetFlags = buildRestorePluginFilesetMap(filesets?.filesets)
     pluginFilesets.value = buildRestorePluginFilesetDetails(filesets?.filesets)

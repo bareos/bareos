@@ -252,6 +252,40 @@ describe('restore browser placeholder', () => {
     ]))
   })
 
+  it('extracts plugin fileset metadata from list filesets output', () => {
+    expect(buildRestorePluginFilesetDetails([
+      {
+        fileset: 'PluginOptionsTest',
+        filesettext: `FileSet {\n  Name = "PluginOptionsTest"\n  Description = "Plugin backup"\n  Include {\n    Plugin = "bpipe"\n             ":file=/plugin-options-demo.txt"\n             ":reader=bash /tmp/readprogram"\n             ":writer=bash /tmp/writeprogram"\n  }\n}\n`,
+      },
+      {
+        fileset: 'PlainFS',
+        filesettext: 'FileSet {\n  Name = "PlainFS"\n}\n',
+      },
+    ])).toEqual(new Map([
+      ['PluginOptionsTest', {
+        filesetName: 'PluginOptionsTest',
+        description: 'Plugin backup',
+        hasPlugin: true,
+        definitions: [{
+          raw: 'bpipe:file=/plugin-options-demo.txt:reader=bash /tmp/readprogram:writer=bash /tmp/writeprogram',
+          pluginName: 'bpipe',
+          optionKeys: ['file', 'reader', 'writer'],
+        }],
+        pluginNames: ['bpipe'],
+        optionKeys: ['file', 'reader', 'writer'],
+      }],
+      ['PlainFS', {
+        filesetName: 'PlainFS',
+        description: '',
+        hasPlugin: false,
+        definitions: [],
+        pluginNames: [],
+        optionKeys: [],
+      }],
+    ]))
+  })
+
   it('marks backups as plugin jobs from their fileset metadata', () => {
     expect(decorateRestoreBackupsWithPluginJobs([
       { jobid: 10, fileset: 'PluginFS' },
