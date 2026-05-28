@@ -19,7 +19,11 @@
    02110-1301, USA.
  */
 
-import { createDirectorCommandClient } from './directorAggregate.js'
+import {
+  directorAggregateErrors,
+  fulfilledDirectorValues,
+  runDirectorAggregates,
+} from './directorAggregateRunner.js'
 
 function scheduleScopeKey(director, schedule) {
   return `${director}:${schedule}`
@@ -163,90 +167,52 @@ export function buildStatusSchedules(statusResponse, showResponse, showAllRespon
 }
 
 export async function fetchAggregatedSchedulesShow(credentials, directors) {
-  const results = await Promise.allSettled(directors.map(async (director) => {
-    const client = await createDirectorCommandClient({
-      ...credentials,
-      director,
-    })
-
-    try {
-      const [showResponse, scheduleStateResponse] = await Promise.all([
-        client.call('show schedules'),
-        client.call('.schedule'),
-      ])
-      return {
-        schedules: buildShownSchedules(showResponse, scheduleStateResponse, director),
-      }
-    } finally {
-      client.disconnect()
+  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
+    const [showResponse, scheduleStateResponse] = await Promise.all([
+      client.call('show schedules'),
+      client.call('.schedule'),
+    ])
+    return {
+      schedules: buildShownSchedules(showResponse, scheduleStateResponse, director),
     }
-  }))
+  })
 
   return {
-    schedules: sortSchedules(results
-      .filter(result => result.status === 'fulfilled')
-      .flatMap(result => result.value.schedules)),
-    directorErrors: results.flatMap((result, index) => (
-      result.status === 'rejected'
-        ? [{
-          director: directors[index],
-          message: result.reason?.message ?? 'Failed to load schedules.',
-        }]
-        : []
-    )),
+    schedules: sortSchedules(fulfilledDirectorValues(results).flatMap(value => value.schedules)),
+    directorErrors: directorAggregateErrors(results, directors, 'Failed to load schedules.'),
   }
 }
 
 export async function fetchAggregatedSchedulesStatus(credentials, directors, range) {
-  const results = await Promise.allSettled(directors.map(async (director) => {
-    const client = await createDirectorCommandClient({
-      ...credentials,
-      director,
-    })
+  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
+    const [statusResponse, showResponse, showAllResponse, scheduleStateResponse] = await Promise.all([
+      client.call(`status scheduler days=${range.from},${range.to}`),
+      client.call('show schedules'),
+      client.call('show schedules all'),
+      client.call('.schedule'),
+    ])
 
-    try {
-      const [statusResponse, showResponse, showAllResponse, scheduleStateResponse] = await Promise.all([
-        client.call(`status scheduler days=${range.from},${range.to}`),
-        client.call('show schedules'),
-        client.call('show schedules all'),
-        client.call('.schedule'),
-      ])
-
-      return {
-        schedulesData: buildStatusSchedules(
-          statusResponse,
-          showResponse,
-          showAllResponse,
-          scheduleStateResponse,
-          director
-        ),
-        previewData: (Array.isArray(statusResponse?.preview) ? statusResponse.preview : [])
-          .map(item => ({
-            ...item,
-            director,
-            scheduleKey: scheduleScopeKey(director, item.schedule ?? ''),
-            scheduleDisplay: `${director} / ${item.schedule ?? ''}`,
-          })),
-      }
-    } finally {
-      client.disconnect()
+    return {
+      schedulesData: buildStatusSchedules(
+        statusResponse,
+        showResponse,
+        showAllResponse,
+        scheduleStateResponse,
+        director
+      ),
+      previewData: (Array.isArray(statusResponse?.preview) ? statusResponse.preview : [])
+        .map(item => ({
+          ...item,
+          director,
+          scheduleKey: scheduleScopeKey(director, item.schedule ?? ''),
+          scheduleDisplay: `${director} / ${item.schedule ?? ''}`,
+        })),
     }
-  }))
+  })
 
   return {
-    schedulesData: sortSchedules(results
-      .filter(result => result.status === 'fulfilled')
-      .flatMap(result => result.value.schedulesData)),
-    previewData: results
-      .filter(result => result.status === 'fulfilled')
-      .flatMap(result => result.value.previewData),
-    directorErrors: results.flatMap((result, index) => (
-      result.status === 'rejected'
-        ? [{
-          director: directors[index],
-          message: result.reason?.message ?? 'Failed to load scheduler status.',
-        }]
-        : []
-    )),
+    schedulesData: sortSchedules(fulfilledDirectorValues(results).flatMap(value => value.schedulesData)),
+    previewData: fulfilledDirectorValues(results).flatMap(value => value.previewData),
+    directorErrors: directorAggregateErrors(results, directors, 'Failed to load scheduler status.'),
   }
 }
