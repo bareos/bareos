@@ -23,163 +23,26 @@ import {
   directorCollection,
   normaliseJob,
 } from './useDirectorFetch.js'
+import {
+  createDirectorCommandSession,
+  DIRECTOR_COMMAND_AUTH_TIMEOUT_MS,
+  DIRECTOR_COMMAND_TIMEOUT_MS,
+  DIRECTOR_WS_URL,
+} from '../utils/directorCommandSocket.js'
 
-function defaultWsUrl() {
-  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${proto}//${window.location.host}/ws`
-}
-
-const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultWsUrl()
-const AUTH_TIMEOUT_MS = 8_000
-const CMD_TIMEOUT_MS = 30_000
-
-function rejectPendingCommands(pendingCommands, reason) {
-  for (const { reject, timer } of pendingCommands.values()) {
-    clearTimeout(timer)
-    reject(new Error(reason))
-  }
-  pendingCommands.clear()
-}
-
-export function createDirectorCommandClient(credentials, options = {}) {
-  const wsUrl = options.wsUrl ?? WS_URL
-  const authTimeoutMs = options.authTimeoutMs ?? AUTH_TIMEOUT_MS
-  const commandTimeoutMs = options.commandTimeoutMs ?? CMD_TIMEOUT_MS
-
-  return new Promise((resolve, reject) => {
-    const socket = new WebSocket(wsUrl)
-    const pendingCommands = new Map()
-    let authenticated = false
-    let failed = false
-    let commandId = 0
-    let transport = null
-
-    const authTimer = setTimeout(() => {
-      fail(new Error(`Timed out while connecting to ${credentials.director}`))
-    }, authTimeoutMs)
-
-    function cleanup() {
-      clearTimeout(authTimer)
-    }
-
-    function disconnect() {
-      cleanup()
-      rejectPendingCommands(pendingCommands, 'Disconnected')
-      if (socket.readyState === WebSocket.OPEN
-        || socket.readyState === WebSocket.CONNECTING) {
-        socket.close()
-      }
-    }
-
-    function fail(error) {
-      if (failed) {
-        return
-      }
-
-      failed = true
-      cleanup()
-      rejectPendingCommands(pendingCommands, error.message)
-      if (socket.readyState === WebSocket.OPEN
-        || socket.readyState === WebSocket.CONNECTING) {
-        socket.close()
-      }
-
-      if (!authenticated) {
-        reject(error)
-      }
-    }
-
-    function call(command) {
-      return new Promise((resolveCommand, rejectCommand) => {
-        if (socket.readyState !== WebSocket.OPEN || !authenticated) {
-          rejectCommand(new Error('Not connected to director'))
-          return
-        }
-
-        const id = String(++commandId)
-        const timer = setTimeout(() => {
-          if (!pendingCommands.has(id)) {
-            return
-          }
-
-          pendingCommands.delete(id)
-          rejectCommand(new Error(`Command timed out: ${command}`))
-        }, commandTimeoutMs)
-
-        pendingCommands.set(id, {
-          resolve: resolveCommand,
-          reject: rejectCommand,
-          timer,
-        })
-
-        socket.send(JSON.stringify({ type: 'command', id, command }))
-      })
-    }
-
-    socket.onopen = () => {
-      socket.send(JSON.stringify({
-        type: 'auth',
-        username: credentials.username,
-        password: credentials.password,
-        director: credentials.director,
-      }))
-    }
-
-    socket.onmessage = (event) => {
-      let message
-      try {
-        message = JSON.parse(event.data)
-      } catch {
-        return
-      }
-
-      if (message.type === 'auth_ok') {
-        authenticated = true
-        transport = message.transport ?? null
-        cleanup()
-        resolve({
-          director: credentials.director,
-          transport,
-          call,
-          disconnect,
-        })
-        return
-      }
-
-      if (message.type === 'auth_error') {
-        fail(new Error(message.message ?? `Authentication failed for ${credentials.director}`))
-        return
-      }
-
-      if (message.type === 'response' || message.type === 'error') {
-        const pending = pendingCommands.get(message.id)
-        if (!pending) {
-          return
-        }
-
-        clearTimeout(pending.timer)
-        pendingCommands.delete(message.id)
-
-        if (message.type === 'error') {
-          pending.reject(new Error(message.message ?? 'Director error'))
-        } else {
-          pending.resolve(message.data)
-        }
-      }
-    }
-
-    socket.onerror = () => {
-      fail(new Error(`Cannot connect to proxy at ${wsUrl}`))
-    }
-
-    socket.onclose = () => {
-      cleanup()
-      if (!failed && !authenticated) {
-        reject(new Error(`Disconnected from ${credentials.director}`))
-      }
-      rejectPendingCommands(pendingCommands, 'WebSocket closed')
-    }
+export async function createDirectorCommandClient(credentials, options = {}) {
+  const session = await createDirectorCommandSession(credentials, {
+    wsUrl: options.wsUrl ?? DIRECTOR_WS_URL,
+    authTimeoutMs: options.authTimeoutMs ?? DIRECTOR_COMMAND_AUTH_TIMEOUT_MS,
+    commandTimeoutMs: options.commandTimeoutMs ?? DIRECTOR_COMMAND_TIMEOUT_MS,
   })
+
+  return {
+    director: credentials.director,
+    transport: session.transport,
+    call: session.call,
+    disconnect: session.close,
+  }
 }
 
 function decorateJobs(entries, director) {

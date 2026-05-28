@@ -18,13 +18,14 @@ import {
   DEFAULT_DIRECTOR_NAME,
   useAuthStore,
 } from './auth.js'
+import {
+  createDirectorCommandSession,
+  DIRECTOR_COMMAND_TIMEOUT_MS,
+  DIRECTOR_WS_URL,
+} from '../utils/directorCommandSocket.js'
 
-function defaultWsUrl() {
-  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${proto}//${window.location.host}/ws`
-}
-const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultWsUrl()
-const CMD_TIMEOUT_MS = 30_000
+const WS_URL = DIRECTOR_WS_URL
+const CMD_TIMEOUT_MS = DIRECTOR_COMMAND_TIMEOUT_MS
 const RAW_CMD_TIMEOUT_MS = 300_000
 const DIRECTOR_LIST_TIMEOUT_MS = 5_000
 const KEEPALIVE_INTERVAL_MS = 20_000
@@ -41,21 +42,16 @@ export const useDirectorStore = defineStore('director', () => {
 
   const isConnected = computed(() => status.value === 'connected')
 
-  // Map of command id → { resolve, reject, timer }
-  const _pending = new Map()
-  let _cmdId = 0
   let _keepaliveTimer = null
   let _reconnectTimer = null
   let _manualDisconnect = false
   let _hasAuthenticated = false
   let _lastCredentials = null
   let _availableDirectorsPromise = null
+  let _activeSession = null
+  let _currentConnectAttempt = null
 
   // ── internal helpers ────────────────────────────────────────────────────────
-
-  function _send(obj) {
-    ws.value?.send(JSON.stringify(obj))
-  }
 
   function _clearKeepalive() {
     if (_keepaliveTimer) {
@@ -71,7 +67,7 @@ export const useDirectorStore = defineStore('director', () => {
         _clearKeepalive()
         return
       }
-      _send({ type: 'ping' })
+      _activeSession?.send({ type: 'ping' })
     }, KEEPALIVE_INTERVAL_MS)
   }
 
@@ -94,55 +90,6 @@ export const useDirectorStore = defineStore('director', () => {
       _reconnectTimer = null
       connect(creds)
     }, RECONNECT_DELAY_MS)
-  }
-
-  function _rejectAll(reason) {
-    for (const { reject, timer } of _pending.values()) {
-      clearTimeout(timer)
-      reject(new Error(reason))
-    }
-    _pending.clear()
-  }
-
-  function _onMessage(event) {
-    let msg
-    try { msg = JSON.parse(event.data) } catch { return }
-
-    if (msg.type === 'auth_ok') {
-      status.value = 'connected'
-      errorMsg.value = null
-      transport.value = msg.transport ?? null
-      _hasAuthenticated = true
-      _startKeepalive()
-      _clearReconnect()
-      _manualDisconnect = false
-      return
-    }
-
-    if (msg.type === 'pong') {
-      return
-    }
-
-    if (msg.type === 'auth_error') {
-      status.value = 'error'
-      errorMsg.value = msg.message ?? 'Authentication failed'
-      transport.value = null
-      _clearKeepalive()
-      ws.value?.close()
-      return
-    }
-
-    if (msg.type === 'response' || msg.type === 'error') {
-      const entry = _pending.get(msg.id)
-      if (!entry) return
-      clearTimeout(entry.timer)
-      _pending.delete(msg.id)
-      if (msg.type === 'error') {
-        entry.reject(new Error(msg.message ?? 'Director error'))
-      } else {
-        entry.resolve(msg.data)
-      }
-    }
   }
 
   function fetchAvailableDirectors(options = {}) {
@@ -217,10 +164,7 @@ export const useDirectorStore = defineStore('director', () => {
    * @param {string} credentials.director  configured director id
    */
   function connect(credentials) {
-    if (ws.value
-        && (ws.value.readyState === WebSocket.OPEN
-          || ws.value.readyState === WebSocket.CONNECTING
-          || status.value === 'authenticating')) {
+    if (status.value === 'connecting' || status.value === 'authenticating') {
       return
     }
 
@@ -235,54 +179,76 @@ export const useDirectorStore = defineStore('director', () => {
     status.value = 'connecting'
     errorMsg.value = null
     transport.value = null
+    const attemptToken = Symbol('director-connect')
+    _currentConnectAttempt = attemptToken
 
-    const socket = new WebSocket(WS_URL)
-    ws.value = socket
-
-    socket.onopen = () => {
-      if (ws.value !== socket) {
+    createDirectorCommandSession(_lastCredentials, {
+      wsUrl: WS_URL,
+      commandTimeoutMs: CMD_TIMEOUT_MS,
+      onOpen: () => {
+        if (_currentConnectAttempt === attemptToken) {
+          status.value = 'authenticating'
+        }
+      },
+      onAuthOk: (_message, session) => {
+        if (_currentConnectAttempt !== attemptToken) {
+          session.close('Superseded')
+          return
+        }
+        _activeSession = session
+        ws.value = session.socket
+        status.value = 'connected'
+        errorMsg.value = null
+        transport.value = session.transport
+        _hasAuthenticated = true
+        _startKeepalive()
+        _clearReconnect()
+        _manualDisconnect = false
+      },
+      onSocketError: (error, session, { authenticated }) => {
+        if (_activeSession?.socket !== session.socket && _currentConnectAttempt !== attemptToken) {
+          return
+        }
+        _clearKeepalive()
+        errorMsg.value = error.message
+        if (authenticated) {
+          status.value = 'error'
+        }
+      },
+      onClose: (session) => {
+        if (_activeSession?.socket !== session.socket && _currentConnectAttempt !== attemptToken) {
+          return
+        }
+        _clearKeepalive()
+        _activeSession = null
+        if (_currentConnectAttempt === attemptToken) {
+          _currentConnectAttempt = null
+        }
+        ws.value = null
+        if (status.value === 'connected' || status.value === 'authenticating') {
+          status.value = 'disconnected'
+        }
+        if (!_manualDisconnect) {
+          _scheduleReconnect()
+        }
+      },
+    }).then((session) => {
+      if (_currentConnectAttempt !== attemptToken) {
+        session.close('Superseded')
+      }
+    }).catch((error) => {
+      if (_currentConnectAttempt !== attemptToken) {
         return
       }
-      status.value = 'authenticating'
-      socket.send(JSON.stringify({
-        type:     'auth',
-        username:  credentials.username,
-        password:  credentials.password,
-        director:  credentials.director ?? DEFAULT_DIRECTOR_NAME,
-      }))
-    }
-
-    socket.onmessage = (event) => {
-      if (ws.value !== socket) {
-        return
+      _currentConnectAttempt = null
+      _activeSession = null
+      if (status.value !== 'connected') {
+        ws.value = null
+        status.value = 'error'
+        errorMsg.value = error.message
+        transport.value = null
       }
-      _onMessage(event)
-    }
-
-    socket.onerror = () => {
-      if (ws.value !== socket) {
-        return
-      }
-      _clearKeepalive()
-      status.value = 'error'
-      errorMsg.value = `Cannot connect to proxy at ${WS_URL}`
-      _rejectAll('WebSocket error')
-    }
-
-    socket.onclose = () => {
-      if (ws.value !== socket) {
-        return
-      }
-      _clearKeepalive()
-      ws.value = null
-      if (status.value === 'connected' || status.value === 'authenticating') {
-        status.value = 'disconnected'
-      }
-      _rejectAll('WebSocket closed')
-      if (!_manualDisconnect) {
-        _scheduleReconnect()
-      }
-    }
+    })
   }
 
   function connectAndWait(credentials, timeoutMs = 8_000) {
@@ -318,7 +284,9 @@ export const useDirectorStore = defineStore('director', () => {
     _manualDisconnect = true
     _clearReconnect()
     _clearKeepalive()
-    _rejectAll('Disconnected')
+    _currentConnectAttempt = null
+    _activeSession?.close('Disconnected')
+    _activeSession = null
     ws.value?.close()
     ws.value = null
     status.value = 'disconnected'
@@ -334,23 +302,7 @@ export const useDirectorStore = defineStore('director', () => {
    * @returns {Promise<object>}
    */
   function call(command) {
-    return new Promise((resolve, reject) => {
-      if (!ws.value || ws.value.readyState !== WebSocket.OPEN) {
-        return reject(new Error('Not connected to director'))
-      }
-
-      const id = String(++_cmdId)
-
-      const timer = setTimeout(() => {
-        if (_pending.has(id)) {
-          _pending.delete(id)
-          reject(new Error(`Command timed out: ${command}`))
-        }
-      }, CMD_TIMEOUT_MS)
-
-      _pending.set(id, { resolve, reject, timer })
-      _send({ type: 'command', id, command })
-    })
+    return _activeSession?.call(command) ?? Promise.reject(new Error('Not connected to director'))
   }
 
   /**
