@@ -21,15 +21,21 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  buildRestorePluginFilesetDetails,
   buildRestorePluginFilesetMap,
   canNavigateRestoreBrowser,
   buildRestoreSourceQuery,
   decorateRestoreBackupsWithPluginJobs,
   dedupeRestoreVersions,
   filterRestoreSourceClients,
+  getAllRestorePluginHints,
+  getRestorePluginInfo,
+  getRestorePluginHints,
   getRestoreBrowserPlaceholder,
+  parseRestorePluginDefinition,
   pushRestoreBreadcrumb,
   resolveRestoreSourceClient,
+  resolveRestorePluginHintId,
   resolveRestoreSourceDirector,
   shouldShowRestorePluginOptions,
   truncateRestoreBreadcrumbs,
@@ -203,6 +209,49 @@ describe('restore browser placeholder', () => {
     ]))
   })
 
+  it('extracts plugin names and option keys from backup definitions', () => {
+    expect(parseRestorePluginDefinition(
+      'python:module_path=/tmp/plugin:module_name=test:restore_file=/tmp/out'
+    )).toEqual({
+      raw: 'python:module_path=/tmp/plugin:module_name=test:restore_file=/tmp/out',
+      pluginName: 'python',
+      optionKeys: ['module_path', 'module_name', 'restore_file'],
+    })
+  })
+
+  it('keeps detailed plugin fileset metadata from show fileset', () => {
+    expect(buildRestorePluginFilesetDetails({
+      PluginFS: {
+        description: 'Plugin backup',
+        include: [{ plugin: ['bpipe:file=/data:reader=cat /tmp/in:writer=cat >/tmp/out'] }],
+      },
+      PlainFS: {
+        include: [{ file: '/etc' }],
+      },
+    })).toEqual(new Map([
+      ['PluginFS', {
+        filesetName: 'PluginFS',
+        description: 'Plugin backup',
+        hasPlugin: true,
+        definitions: [{
+          raw: 'bpipe:file=/data:reader=cat /tmp/in:writer=cat >/tmp/out',
+          pluginName: 'bpipe',
+          optionKeys: ['file', 'reader', 'writer'],
+        }],
+        pluginNames: ['bpipe'],
+        optionKeys: ['file', 'reader', 'writer'],
+      }],
+      ['PlainFS', {
+        filesetName: 'PlainFS',
+        description: '',
+        hasPlugin: false,
+        definitions: [],
+        pluginNames: [],
+        optionKeys: [],
+      }],
+    ]))
+  })
+
   it('marks backups as plugin jobs from their fileset metadata', () => {
     expect(decorateRestoreBackupsWithPluginJobs([
       { jobid: 10, fileset: 'PluginFS' },
@@ -238,6 +287,159 @@ describe('restore browser placeholder', () => {
       mergedJobids: '10,11',
       mergeJobsets: true,
     })).toBe(true)
+  })
+
+  it('describes the plugin restore context for the selected backup', () => {
+    expect(getRestorePluginInfo({
+      backups: [
+        { jobid: 10, fileset: 'PluginFS', pluginjob: true, name: 'backup-plugin' },
+        { jobid: 11, fileset: 'PlainFS', pluginjob: false, name: 'backup-plain' },
+      ],
+      pluginFilesets: new Map([
+        ['PluginFS', {
+          filesetName: 'PluginFS',
+          description: 'Plugin backup',
+          hasPlugin: true,
+          definitions: [{
+            raw: 'python:module_path=/tmp/plugin:module_name=test',
+            pluginName: 'python',
+            optionKeys: ['module_path', 'module_name'],
+          }],
+          pluginNames: ['python'],
+          optionKeys: ['module_path', 'module_name'],
+        }],
+      ]),
+      selectedJobId: 10,
+      mergedJobids: '',
+      mergeJobsets: false,
+    })).toEqual({
+      backups: [
+        { jobid: 10, fileset: 'PluginFS', pluginjob: true, name: 'backup-plugin' },
+      ],
+      filesetNames: ['PluginFS'],
+      pluginNames: ['python'],
+      optionKeys: ['module_path', 'module_name'],
+      definitions: [{
+        raw: 'python:module_path=/tmp/plugin:module_name=test',
+        pluginName: 'python',
+        optionKeys: ['module_path', 'module_name'],
+        filesetName: 'PluginFS',
+        filesetDescription: 'Plugin backup',
+      }],
+      usesMergedJobs: false,
+    })
+  })
+
+  it('resolves direct plugin names to static hint entries', () => {
+    expect(resolveRestorePluginHintId({
+      raw: 'bpipe:file=/data:reader=cat /tmp/in:writer=cat >/tmp/out',
+      pluginName: 'bpipe',
+      optionKeys: ['file', 'reader', 'writer'],
+    })).toBe('bpipe')
+  })
+
+  it('resolves python module names to specific plugin hint entries', () => {
+    expect(resolveRestorePluginHintId({
+      raw: 'python:module_path=/tmp/plugins:module_name=bareos-fd-vmware:config_file=/tmp/vmware.ini',
+      pluginName: 'python',
+      optionKeys: ['module_path', 'module_name', 'config_file'],
+    })).toBe('vmware')
+  })
+
+  it('builds static plugin hints for the selected restore plugin', () => {
+    expect(getRestorePluginHints({
+      definitions: [{
+        raw: 'python:module_path=/tmp/plugins:module_name=bareos-fd-vmware:config_file=/tmp/vmware.ini',
+        pluginName: 'python',
+        optionKeys: ['module_path', 'module_name', 'config_file'],
+      }],
+    })).toEqual([
+      expect.objectContaining({
+        id: 'vmware',
+        displayName: 'VMware',
+        example: 'vcserver=...:vcuser=...',
+        manualUrl: 'https://docs.bareos.org/master/TasksAndConcepts/Plugins.html#vmwareplugin',
+      }),
+    ])
+  })
+
+  it('keeps documentation descriptions on static plugin hints', () => {
+    expect(getRestorePluginHints({
+      definitions: [{
+        raw: 'python:module_name=bareos-fd-libcloud:config_file=/etc/bareos/libcloud.ini',
+        pluginName: 'python',
+        optionKeys: ['module_name', 'config_file'],
+      }],
+    })[0]?.options).toContainEqual(expect.objectContaining({
+      name: 'buckets_exclude',
+      description: 'Comma-separated list of buckets to exclude.',
+      source: 'plugin-doc',
+    }))
+  })
+
+  it('marks contrib plugin hints as unsupported contrib entries', () => {
+    expect(getRestorePluginHints({
+      definitions: [{
+        raw: 'python:module_name=bareos_tasks.pgsql:databases=db001,db002',
+        pluginName: 'python',
+        optionKeys: ['module_name', 'databases'],
+      }],
+    })).toEqual([
+      expect.objectContaining({
+        id: 'tasksPgsql',
+        displayName: 'Tasks PostgreSQL',
+        supportLevel: 'contrib',
+      }),
+    ])
+  })
+
+  it('resolves bareos_tasks module names to documented task plugin hints', () => {
+    expect(resolveRestorePluginHintId({
+      raw: 'python:module_name=bareos_tasks.pgsql:databases=db001,db002',
+      pluginName: 'python',
+      optionKeys: ['module_name', 'databases'],
+    })).toBe('tasksPgsql')
+  })
+
+  it('lists all known plugin hints in display-name order', () => {
+    const hints = getAllRestorePluginHints()
+
+    expect(hints[0]).toEqual(expect.objectContaining({
+      displayName: 'BPipe',
+      example: 'file=...:reader=...',
+      manualUrl: 'https://docs.bareos.org/master/TasksAndConcepts/Plugins.html#bpipe',
+    }))
+    expect(hints.at(-1)).toEqual(expect.objectContaining({
+      displayName: 'VMware',
+      example: 'vcserver=...:vcuser=...',
+      manualUrl: 'https://docs.bareos.org/master/TasksAndConcepts/Plugins.html#vmwareplugin',
+    }))
+  })
+
+  it('includes related plugin jobs when merged restore jobsets are enabled', () => {
+    expect(getRestorePluginInfo({
+      backups: [
+        { jobid: 10, fileset: 'PlainFS', pluginjob: false, name: 'backup-plain' },
+        { jobid: 11, fileset: 'PluginFS', pluginjob: true, name: 'backup-plugin' },
+      ],
+      pluginFilesets: new Map([
+        ['PluginFS', {
+          filesetName: 'PluginFS',
+          description: '',
+          hasPlugin: true,
+          definitions: [{
+            raw: 'bpipe:file=/data:reader=cat /tmp/in:writer=cat >/tmp/out',
+            pluginName: 'bpipe',
+            optionKeys: ['file', 'reader', 'writer'],
+          }],
+          pluginNames: ['bpipe'],
+          optionKeys: ['file', 'reader', 'writer'],
+        }],
+      ]),
+      selectedJobId: 10,
+      mergedJobids: '10,11',
+      mergeJobsets: true,
+    })?.usesMergedJobs).toBe(true)
   })
 
   it('deduplicates restore versions by file id while preserving order', () => {
