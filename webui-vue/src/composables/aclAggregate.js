@@ -19,8 +19,12 @@
    02110-1301, USA.
  */
 
-import { createDirectorCommandClient } from './directorAggregate.js'
 import { normaliseDirectorCommandPermissions } from './useDirectorFetch.js'
+import {
+  directorAggregateErrors,
+  fulfilledDirectorValues,
+  runDirectorAggregates,
+} from './directorAggregateRunner.js'
 
 function sortPermissions(commands) {
   return [...commands].sort((left, right) => {
@@ -34,35 +38,21 @@ function sortPermissions(commands) {
 }
 
 export async function fetchAggregatedAcl(credentials, directors) {
-  const results = await Promise.allSettled(directors.map(async (director) => {
-    const client = await createDirectorCommandClient({
-      ...credentials,
+  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
+    const commands = await client.call('.help full=yes')
+    return normaliseDirectorCommandPermissions(commands).map(item => ({
+      ...item,
       director,
-    })
-
-    try {
-      const commands = await client.call('.help full=yes')
-      return normaliseDirectorCommandPermissions(commands).map(item => ({
-        ...item,
-        director,
-        scopeKey: `${director}:${item.command}`,
-      }))
-    } finally {
-      client.disconnect()
-    }
-  }))
+      scopeKey: `${director}:${item.command}`,
+    }))
+  })
 
   return {
-    commands: sortPermissions(results
-      .filter(result => result.status === 'fulfilled')
-      .flatMap(result => result.value)),
-    directorErrors: results.flatMap((result, index) => (
-      result.status === 'rejected'
-        ? [{
-          director: directors[index],
-          message: result.reason?.message ?? 'Failed to load command permissions.',
-        }]
-        : []
-    )),
+    commands: sortPermissions(fulfilledDirectorValues(results).flatMap(value => value)),
+    directorErrors: directorAggregateErrors(
+      results,
+      directors,
+      'Failed to load command permissions.'
+    ),
   }
 }

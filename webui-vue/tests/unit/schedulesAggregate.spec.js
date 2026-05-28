@@ -81,7 +81,10 @@ describe('schedules aggregate helpers', () => {
     socketB.open()
     socketA.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
     socketB.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
-    await Promise.resolve()
+    await vi.waitFor(() => {
+      expect(socketA.sent).toHaveLength(3)
+      expect(socketB.sent).toHaveLength(3)
+    })
 
     const commands = (socket) => new Map(
       socket.sent.slice(1).map((payload) => {
@@ -107,6 +110,24 @@ describe('schedules aggregate helpers', () => {
         id: commandsB.get('show schedules'),
         data: {
           schedules: { Nightly: { name: 'Nightly', enabled: false, run: ['Level=Diff mon-sat at 01:00'] } },
+        },
+      }),
+    })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsA.get('.schedule'),
+        data: {
+          schedules: [{ name: 'Nightly', enabled: true }],
+        },
+      }),
+    })
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('.schedule'),
+        data: {
+          schedules: [{ name: 'Nightly', enabled: false }],
         },
       }),
     })
@@ -143,7 +164,10 @@ describe('schedules aggregate helpers', () => {
     socketB.open()
     socketA.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
     socketB.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
-    await Promise.resolve()
+    await vi.waitFor(() => {
+      expect(socketA.sent).toHaveLength(5)
+      expect(socketB.sent).toHaveLength(5)
+    })
 
     const commands = (socket) => new Map(
       socket.sent.slice(1).map((payload) => {
@@ -171,6 +195,26 @@ describe('schedules aggregate helpers', () => {
         data: { schedules: { Nightly: { name: 'Nightly', enabled: true } } },
       }),
     })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsA.get('show schedules all'),
+        data: {
+          jobs: {},
+          clients: {},
+          jobdefs: {},
+        },
+      }),
+    })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsA.get('.schedule'),
+        data: {
+          schedules: [{ name: 'Nightly', enabled: true }],
+        },
+      }),
+    })
 
     socketB.onmessage?.({
       data: JSON.stringify({
@@ -187,6 +231,26 @@ describe('schedules aggregate helpers', () => {
         type: 'response',
         id: commandsB.get('show schedules'),
         data: { schedules: { Weekly: { name: 'Weekly', enabled: false } } },
+      }),
+    })
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('show schedules all'),
+        data: {
+          jobs: {},
+          clients: {},
+          jobdefs: {},
+        },
+      }),
+    })
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('.schedule'),
+        data: {
+          schedules: [{ name: 'Weekly', enabled: false }],
+        },
       }),
     })
 

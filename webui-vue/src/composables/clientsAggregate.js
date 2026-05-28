@@ -23,7 +23,11 @@ import {
   directorCollection,
   normaliseClient,
 } from './useDirectorFetch.js'
-import { createDirectorCommandClient } from './directorAggregate.js'
+import {
+  directorAggregateErrors,
+  fulfilledDirectorValues,
+  runDirectorAggregates,
+} from './directorAggregateRunner.js'
 
 function decorateClients(entries, enabledMap, director) {
   return directorCollection(entries).map((entry) => {
@@ -51,42 +55,24 @@ function sortClients(clients) {
 }
 
 export async function fetchAggregatedClients(credentials, directors) {
-  const results = await Promise.allSettled(directors.map(async (director) => {
-    const client = await createDirectorCommandClient({
-      ...credentials,
+  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
+    const [listResult, dotResult] = await Promise.all([
+      client.call('llist clients'),
+      client.call('.clients'),
+    ])
+
+    const enabledMap = Object.fromEntries(
+      directorCollection(dotResult?.clients).map(item => [item.name, item.enabled])
+    )
+
+    return {
       director,
-    })
-
-    try {
-      const [listResult, dotResult] = await Promise.all([
-        client.call('llist clients'),
-        client.call('.clients'),
-      ])
-
-      const enabledMap = Object.fromEntries(
-        directorCollection(dotResult?.clients).map(item => [item.name, item.enabled])
-      )
-
-      return {
-        director,
-        clients: decorateClients(listResult?.clients, enabledMap, director),
-      }
-    } finally {
-      client.disconnect()
+      clients: decorateClients(listResult?.clients, enabledMap, director),
     }
-  }))
+  })
 
   return {
-    clients: sortClients(results
-      .filter(result => result.status === 'fulfilled')
-      .flatMap(result => result.value.clients)),
-    directorErrors: results.flatMap((result, index) => (
-      result.status === 'rejected'
-        ? [{
-          director: directors[index],
-          message: result.reason?.message ?? 'Failed to load clients.',
-        }]
-        : []
-    )),
+    clients: sortClients(fulfilledDirectorValues(results).flatMap(value => value.clients)),
+    directorErrors: directorAggregateErrors(results, directors, 'Failed to load clients.'),
   }
 }

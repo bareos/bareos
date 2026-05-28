@@ -90,7 +90,10 @@ describe('director page aggregate helpers', () => {
     socketB.open()
     socketA.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
     socketB.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
-    await Promise.resolve()
+    await vi.waitFor(() => {
+      expect(socketA.sent).toHaveLength(2)
+      expect(socketB.sent).toHaveLength(2)
+    })
 
     const commandsA = commandIds(socketA)
     const commandsB = commandIds(socketB)
@@ -154,7 +157,10 @@ describe('director page aggregate helpers', () => {
     socketB.open()
     socketA.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
     socketB.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
-    await Promise.resolve()
+    await vi.waitFor(() => {
+      expect(socketA.sent).toHaveLength(2)
+      expect(socketB.sent).toHaveLength(2)
+    })
 
     const commandsA = commandIds(socketA)
     const commandsB = commandIds(socketB)
