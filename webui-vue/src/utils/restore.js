@@ -133,14 +133,71 @@ export function buildRestoreSourceQuery(query, {
   return nextQuery
 }
 
+function extractRestoreFilesetDescription(filesetText) {
+  const match = String(filesetText ?? '').match(/^\s*Description\s*=\s*"([^"]*)"/m)
+  return match?.[1] ?? ''
+}
+
+function extractRestorePluginDefinitionsFromFilesetText(filesetText) {
+  const lines = String(filesetText ?? '').split('\n')
+  const definitions = []
+  let currentDefinition = null
+
+  for (const line of lines) {
+    const pluginMatch = line.match(/^\s*Plugin\s*=\s*"([^"]*)"/)
+    if (pluginMatch) {
+      if (currentDefinition) {
+        definitions.push(currentDefinition)
+      }
+      currentDefinition = pluginMatch[1]
+      continue
+    }
+
+    const continuationMatch = line.match(/^\s*"([^"]*)"/)
+    if (continuationMatch && currentDefinition !== null) {
+      currentDefinition += continuationMatch[1]
+      continue
+    }
+
+    if (currentDefinition) {
+      definitions.push(currentDefinition)
+      currentDefinition = null
+    }
+  }
+
+  if (currentDefinition) {
+    definitions.push(currentDefinition)
+  }
+
+  return definitions
+}
+
+function normalizeRestoreFilesetEntries(filesets) {
+  if (!filesets || typeof filesets !== 'object') {
+    return []
+  }
+
+  if (Array.isArray(filesets)) {
+    return filesets.map((fileset) => {
+      const filesetName = fileset?.name ?? fileset?.fileset ?? ''
+      const pluginDefinitions = extractRestorePluginDefinitionsFromFilesetText(fileset?.filesettext)
+
+      return [filesetName, {
+        ...fileset,
+        name: filesetName,
+        description: fileset?.description ?? extractRestoreFilesetDescription(fileset?.filesettext),
+        include: pluginDefinitions.length > 0 ? [{ plugin: pluginDefinitions }] : [],
+      }]
+    })
+  }
+
+  return Object.entries(filesets)
+}
+
 export function buildRestorePluginFilesetMap(filesets) {
   const pluginFilesets = new Map()
 
-  if (!filesets || typeof filesets !== 'object') {
-    return pluginFilesets
-  }
-
-  for (const [name, fileset] of Object.entries(filesets)) {
+  for (const [name, fileset] of normalizeRestoreFilesetEntries(filesets)) {
     const filesetName = fileset?.name ?? fileset?.fileset ?? name
     const includeEntries = Array.isArray(fileset?.include) ? fileset.include : []
     const hasPlugin = includeEntries.some((entry) => {
@@ -249,11 +306,7 @@ export function getAllRestorePluginHints() {
 export function buildRestorePluginFilesetDetails(filesets) {
   const pluginFilesets = new Map()
 
-  if (!filesets || typeof filesets !== 'object') {
-    return pluginFilesets
-  }
-
-  for (const [name, fileset] of Object.entries(filesets)) {
+  for (const [name, fileset] of normalizeRestoreFilesetEntries(filesets)) {
     const filesetName = fileset?.name ?? fileset?.fileset ?? name
     const includeEntries = Array.isArray(fileset?.include) ? fileset.include : []
     const definitions = includeEntries
