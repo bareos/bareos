@@ -24,7 +24,11 @@ import {
   normalisePool,
   normaliseVolume,
 } from './useDirectorFetch.js'
-import { createDirectorCommandClient } from './directorAggregate.js'
+import {
+  directorAggregateErrors,
+  fulfilledDirectorValues,
+  runDirectorAggregates,
+} from './directorAggregateRunner.js'
 
 function storageScopeKey(director, name) {
   return `${director}:${name}`
@@ -114,77 +118,37 @@ export function normaliseDirectorStoragesState(
 }
 
 export async function fetchAggregatedStoragesState(credentials, directors) {
-  const results = await Promise.allSettled(directors.map(async (director) => {
-    const client = await createDirectorCommandClient({
-      ...credentials,
+  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
+    const [storagesResult, poolsResult, volumesResult] = await Promise.all([
+      client.call('list storages'),
+      client.call('llist pools'),
+      client.call('llist volumes'),
+    ])
+
+    return normaliseDirectorStoragesState(
       director,
-    })
-
-    try {
-      const [storagesResult, poolsResult, volumesResult] = await Promise.all([
-        client.call('list storages'),
-        client.call('llist pools'),
-        client.call('llist volumes'),
-      ])
-
-      return normaliseDirectorStoragesState(
-        director,
-        storagesResult?.storages,
-        poolsResult?.pools,
-        volumesResult?.volumes
-      )
-    } finally {
-      client.disconnect()
-    }
-  }))
+      storagesResult?.storages,
+      poolsResult?.pools,
+      volumesResult?.volumes
+    )
+  })
 
   return {
-    storages: sortByNameAndDirector(results
-      .filter(result => result.status === 'fulfilled')
-      .flatMap(result => result.value.storages), 'name'),
-    pools: sortByNameAndDirector(results
-      .filter(result => result.status === 'fulfilled')
-      .flatMap(result => result.value.pools), 'name'),
-    volumes: sortByNameAndDirector(results
-      .filter(result => result.status === 'fulfilled')
-      .flatMap(result => result.value.volumes), 'volumename'),
-    directorErrors: results.flatMap((result, index) => (
-      result.status === 'rejected'
-        ? [{
-          director: directors[index],
-          message: result.reason?.message ?? 'Failed to load storages.',
-        }]
-        : []
-    )),
+    storages: sortByNameAndDirector(fulfilledDirectorValues(results).flatMap(value => value.storages), 'name'),
+    pools: sortByNameAndDirector(fulfilledDirectorValues(results).flatMap(value => value.pools), 'name'),
+    volumes: sortByNameAndDirector(fulfilledDirectorValues(results).flatMap(value => value.volumes), 'volumename'),
+    directorErrors: directorAggregateErrors(results, directors, 'Failed to load storages.'),
   }
 }
 
 export async function fetchAggregatedAutochangerStorages(credentials, directors) {
-  const results = await Promise.allSettled(directors.map(async (director) => {
-    const client = await createDirectorCommandClient({
-      ...credentials,
-      director,
-    })
-
-    try {
-      const storagesResult = await client.call('list storages')
-      return decorateAutochangerStorages(storagesResult?.storages, director)
-    } finally {
-      client.disconnect()
-    }
-  }))
+  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
+    const storagesResult = await client.call('list storages')
+    return decorateAutochangerStorages(storagesResult?.storages, director)
+  })
 
   return {
-    storages: sortByNameAndDirector(results
-      .filter(result => result.status === 'fulfilled')
-      .flatMap(result => result.value), 'name'),
-    directorErrors: results.flatMap((result, index) => (
-      result.status === 'rejected'
-        ? [{
-          director: directors[index],
-          message: result.reason?.message ?? 'Failed to load autochangers.',
-        }]
-        : []
-    )),
+    storages: sortByNameAndDirector(fulfilledDirectorValues(results).flatMap(value => value), 'name'),
+    directorErrors: directorAggregateErrors(results, directors, 'Failed to load autochangers.'),
   }
 }

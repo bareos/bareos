@@ -20,7 +20,11 @@
  */
 
 import { directorCollection, normaliseJob } from './useDirectorFetch.js'
-import { createDirectorCommandClient } from './directorAggregate.js'
+import {
+  directorAggregateErrors,
+  fulfilledDirectorValues,
+  runDirectorAggregates,
+} from './directorAggregateRunner.js'
 
 function decorateJobs(entries, director) {
   return directorCollection(entries).map((entry) => {
@@ -50,31 +54,13 @@ function sortJobs(jobs) {
 }
 
 export async function fetchAggregatedAnalytics(credentials, directors) {
-  const results = await Promise.allSettled(directors.map(async (director) => {
-    const client = await createDirectorCommandClient({
-      ...credentials,
-      director,
-    })
-
-    try {
-      const result = await client.call('list jobs')
-      return decorateJobs(result?.jobs, director)
-    } finally {
-      client.disconnect()
-    }
-  }))
+  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
+    const result = await client.call('list jobs')
+    return decorateJobs(result?.jobs, director)
+  })
 
   return {
-    jobs: sortJobs(results
-      .filter(result => result.status === 'fulfilled')
-      .flatMap(result => result.value)),
-    directorErrors: results.flatMap((result, index) => (
-      result.status === 'rejected'
-        ? [{
-          director: directors[index],
-          message: result.reason?.message ?? 'Failed to load analytics data.',
-        }]
-        : []
-    )),
+    jobs: sortJobs(fulfilledDirectorValues(results).flatMap(value => value)),
+    directorErrors: directorAggregateErrors(results, directors, 'Failed to load analytics data.'),
   }
 }

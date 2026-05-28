@@ -20,7 +20,11 @@
  */
 
 import { directorCollection } from './useDirectorFetch.js'
-import { createDirectorCommandClient } from './directorAggregate.js'
+import {
+directorAggregateErrors,
+fulfilledDirectorValues,
+runDirectorAggregates,
+} from './directorAggregateRunner.js'
 
 function decorateFilesets(entries, director) {
   return directorCollection(entries).map(entry => ({
@@ -48,34 +52,16 @@ function sortFilesets(filesets) {
 }
 
 export async function fetchAggregatedFilesets(credentials, directors) {
-  const results = await Promise.allSettled(directors.map(async (director) => {
-    const client = await createDirectorCommandClient({
-      ...credentials,
+  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
+    const result = await client.call('list filesets')
+    return {
       director,
-    })
-
-    try {
-      const result = await client.call('list filesets')
-      return {
-        director,
-        filesets: decorateFilesets(result?.filesets, director),
-      }
-    } finally {
-      client.disconnect()
+      filesets: decorateFilesets(result?.filesets, director),
     }
-  }))
+  })
 
   return {
-    filesets: sortFilesets(results
-      .filter(result => result.status === 'fulfilled')
-      .flatMap(result => result.value.filesets)),
-    directorErrors: results.flatMap((result, index) => (
-      result.status === 'rejected'
-        ? [{
-          director: directors[index],
-          message: result.reason?.message ?? 'Failed to load filesets.',
-        }]
-        : []
-    )),
+    filesets: sortFilesets(fulfilledDirectorValues(results).flatMap(value => value.filesets)),
+    directorErrors: directorAggregateErrors(results, directors, 'Failed to load filesets.'),
   }
 }

@@ -82,7 +82,10 @@ describe('filesets aggregate helpers', () => {
 
     socketA.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
     socketB.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
-    await Promise.resolve()
+    await vi.waitFor(() => {
+      expect(socketA.sent).toHaveLength(2)
+      expect(socketB.sent).toHaveLength(2)
+    })
 
     const socketCommands = (socket) => new Map(
       socket.sent.slice(1).map((payload) => {

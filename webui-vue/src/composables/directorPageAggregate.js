@@ -19,17 +19,12 @@
    02110-1301, USA.
  */
 
-import { createDirectorCommandClient } from './directorAggregate.js'
 import { directorCollection } from './useDirectorFetch.js'
-
-function directorError(results, directors, index, fallback) {
-  return results[index].status === 'rejected'
-    ? {
-      director: directors[index],
-      message: results[index].reason?.message ?? fallback,
-    }
-    : null
-}
+import {
+  directorAggregateErrors,
+  fulfilledDirectorValues,
+  runDirectorAggregates,
+} from './directorAggregateRunner.js'
 
 function sortByTimestampDescending(entries, field, fallbackField) {
   return [...entries].sort((left, right) => {
@@ -100,12 +95,7 @@ export async function fetchAggregatedDirectorConfigStatusAccess(
   credentials,
   directors
 ) {
-  const results = await Promise.allSettled(directors.map(async (director) => {
-    const client = await createDirectorCommandClient({
-      ...credentials,
-      director,
-    })
-
+  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
     try {
       const result = await client.call('status configuration')
       const message = directorCommandErrorMessage(result)
@@ -127,10 +117,8 @@ export async function fetchAggregatedDirectorConfigStatusAccess(
         available: false,
         message: error?.message ?? 'Configuration status unavailable.',
       }
-    } finally {
-      client.disconnect()
     }
-  }))
+  })
 
   return results.map((result, index) => (
     result.status === 'fulfilled'
@@ -144,65 +132,29 @@ export async function fetchAggregatedDirectorConfigStatusAccess(
 }
 
 export async function fetchAggregatedDirectorStatus(credentials, directors) {
-  const results = await Promise.allSettled(directors.map(async (director) => {
-    const client = await createDirectorCommandClient({
-      ...credentials,
-      director,
-    })
-
-    try {
-      const result = await client.call('status director')
-      return normaliseDirectorStatusSnapshot(result, director)
-    } finally {
-      client.disconnect()
-    }
-  }))
+  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
+    const result = await client.call('status director')
+    return normaliseDirectorStatusSnapshot(result, director)
+  })
 
   return {
-    snapshots: results
-      .filter(result => result.status === 'fulfilled')
-      .map(result => result.value),
-    directorErrors: results
-      .map((_, index) => directorError(
-        results,
-        directors,
-        index,
-        'Failed to load director status.'
-      ))
-      .filter(Boolean),
+    snapshots: fulfilledDirectorValues(results),
+    directorErrors: directorAggregateErrors(results, directors, 'Failed to load director status.'),
   }
 }
 
 export async function fetchAggregatedDirectorMessages(credentials, directors, limit) {
-  const results = await Promise.allSettled(directors.map(async (director) => {
-    const client = await createDirectorCommandClient({
-      ...credentials,
-      director,
-    })
-
-    try {
-      const result = await client.call(`list log limit=${limit}`)
-      return decorateLogEntries(result?.log, director)
-    } finally {
-      client.disconnect()
-    }
-  }))
+  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
+    const result = await client.call(`list log limit=${limit}`)
+    return decorateLogEntries(result?.log, director)
+  })
 
   return {
     logEntries: sortByTimestampDescending(
-      results
-        .filter(result => result.status === 'fulfilled')
-        .flatMap(result => result.value),
+      fulfilledDirectorValues(results).flatMap(value => value),
       'time',
       'logid'
     ),
-    directorErrors: results
-      .map((_, index) => directorError(
-        results,
-        directors,
-        index,
-        'Failed to load director messages.'
-      ))
-      .filter(Boolean),
+    directorErrors: directorAggregateErrors(results, directors, 'Failed to load director messages.'),
   }
 }
