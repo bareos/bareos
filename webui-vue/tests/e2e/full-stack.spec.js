@@ -71,9 +71,14 @@ async function openNav(page, testId, urlPattern) {
 
 async function selectFirstQOption(page, testId) {
   const field = page.locator(`[data-testid="${testId}"]`)
+    .locator('xpath=ancestor::*[contains(@class,"q-field")]')
+    .first()
   await field.click()
-  await page.keyboard.press('ArrowDown')
-  await page.keyboard.press('Enter')
+  const option = page.locator(
+    '.q-menu .q-item, .q-menu [role="option"], .q-virtual-scroll__content .q-item'
+  ).first()
+  await expect(option).toBeVisible()
+  await option.click()
 }
 
 test('logs in and shows the dashboard', async ({ page }) => {
@@ -138,10 +143,14 @@ test('loads the restore workflow selections', async ({ page }) => {
   await login(page)
   await openNav(page, 'nav-restore', /#\/restore/)
 
+  await page.waitForTimeout(4000)
   await selectFirstQOption(page, 'restore-source-client')
   await expect(page.locator('[data-testid="restore-backup-job"]')).toBeVisible()
+  await page.waitForTimeout(2000)
+  await selectFirstQOption(page, 'restore-backup-job')
   await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
   await expect(page.locator('[data-testid="restore-job"]')).toBeVisible()
+  await expect(page.locator('[data-testid="restore-plugin-options"]')).toBeVisible()
   await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
   await expect(page.locator('[data-testid="restore-submit"]')).toBeDisabled()
 })

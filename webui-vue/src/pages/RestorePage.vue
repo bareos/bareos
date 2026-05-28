@@ -98,6 +98,14 @@
                   outlined dense emit-value map-options
                   data-testid="restore-replace-policy"
                 />
+                <q-input
+                  v-if="showPluginOptions"
+                  v-model="form.pluginoptions"
+                  :label="t('Plugin Options')"
+                  outlined dense
+                  placeholder="e.g. python:module_path=/tmp/plugin"
+                  data-testid="restore-plugin-options"
+                />
               </q-card-section>
             </q-card>
           </div>
@@ -421,12 +429,15 @@ import { buildDirectorOptions } from '../utils/director.js'
 import {
   canNavigateRestoreBrowser,
   buildRestoreSourceQuery,
+  buildRestorePluginFilesetMap,
+  decorateRestoreBackupsWithPluginJobs,
   dedupeRestoreVersions,
   filterRestoreSourceClients,
   getRestoreBrowserPlaceholder,
   pushRestoreBreadcrumb,
   resolveRestoreSourceClient,
   resolveRestoreSourceDirector,
+  shouldShowRestorePluginOptions,
   truncateRestoreBreadcrumbs,
 } from '../utils/restore.js'
 import { buildJobDetailsQuery } from '../utils/jobs.js'
@@ -448,6 +459,7 @@ const form = ref({
   jobid:         null,
   where:         '/tmp/bareos-restores',
   replace:       'Always',
+  pluginoptions: '',
   mergeJobsets:  true,
 })
 
@@ -866,6 +878,12 @@ const backupOptions = computed(() =>
     value: b.jobid,
   }))
 )
+const showPluginOptions = computed(() => shouldShowRestorePluginOptions({
+  backups: backups.value,
+  selectedJobId: form.value.jobid,
+  mergedJobids: mergedJobids.value,
+  mergeJobsets: form.value.mergeJobsets,
+}))
 
 async function onClientChange(clientName) {
   form.value.jobid = null
@@ -905,8 +923,15 @@ async function loadBackups(client) {
   loadingBackups.value = true
   try {
     await ensureScopeDirector(client.director)
-    const r = await director.call(`llist backups client=${quoteDirectorString(client.name)}`)
-    backups.value = directorCollection(r?.backups)
+    const [r, filesets] = await Promise.all([
+      director.call(`llist backups client=${quoteDirectorString(client.name)}`),
+      director.call('show fileset').catch(() => null),
+    ])
+    const pluginFilesets = buildRestorePluginFilesetMap(filesets?.filesets)
+    backups.value = decorateRestoreBackupsWithPluginJobs(
+      directorCollection(r?.backups),
+      pluginFilesets
+    )
       .sort((a, b) => Number(b.jobid) - Number(a.jobid))
   } catch (_) {
     backups.value = []
@@ -1163,12 +1188,14 @@ async function doRestore() {
     // Step 2: run restore job
     const src = form.value.client
     const dst = form.value.restoreclient || src
+    const pluginOptions = form.value.pluginoptions.trim()
     const cmd = `restore file=?${bvfsPath}` +
       ` client=${quoteDirectorString(src)}` +
       ` restoreclient=${quoteDirectorString(dst)}` +
       ` restorejob=${quoteDirectorString(form.value.restorejob)}` +
       ` where=${quoteDirectorString(form.value.where)}` +
       ` replace=${quoteDirectorString(form.value.replace)}` +
+      (pluginOptions ? ` pluginoptions=${quoteDirectorString(pluginOptions)}` : '') +
       ` yes`
     const result = await director.call(cmd)
 
@@ -1215,6 +1242,7 @@ function resetAll() {
   form.value.jobid = null
   form.value.where = '/tmp/bareos-restores'
   form.value.replace = 'Always'
+  form.value.pluginoptions = ''
   restoreResult.value = null
   browserReady.value = false
   clearBrowserState()
@@ -1448,6 +1476,20 @@ watch(() => commonSourceDirector.value, async (next, previous) => {
 
 watch(() => [sourceClientKey.value, sourceDirector.value, form.value.jobid], () => {
   syncRouteToSourceSelection()
+})
+
+watch(() => form.value.mergeJobsets, async (next, previous) => {
+  if (next === previous || !form.value.jobid) {
+    return
+  }
+
+  await initBrowser()
+})
+
+watch(showPluginOptions, (visible) => {
+  if (!visible) {
+    form.value.pluginoptions = ''
+  }
 })
 
 watch(() => [route.query.client, route.query.director, route.query.jobid], async () => {

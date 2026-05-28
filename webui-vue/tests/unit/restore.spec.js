@@ -21,14 +21,17 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  buildRestorePluginFilesetMap,
   canNavigateRestoreBrowser,
   buildRestoreSourceQuery,
+  decorateRestoreBackupsWithPluginJobs,
   dedupeRestoreVersions,
   filterRestoreSourceClients,
   getRestoreBrowserPlaceholder,
   pushRestoreBreadcrumb,
   resolveRestoreSourceClient,
   resolveRestoreSourceDirector,
+  shouldShowRestorePluginOptions,
   truncateRestoreBreadcrumbs,
 } from '../../src/utils/restore.js'
 
@@ -184,6 +187,57 @@ describe('restore browser placeholder', () => {
     }, {})).toEqual({
       foo: 'bar',
     })
+  })
+
+  it('detects filesets that require restore plugin options', () => {
+    expect(buildRestorePluginFilesetMap({
+      PluginFS: {
+        include: [{ plugin: 'python:module_path=/tmp/plugin' }],
+      },
+      PlainFS: {
+        include: [{ file: '/etc' }],
+      },
+    })).toEqual(new Map([
+      ['PluginFS', true],
+      ['PlainFS', false],
+    ]))
+  })
+
+  it('marks backups as plugin jobs from their fileset metadata', () => {
+    expect(decorateRestoreBackupsWithPluginJobs([
+      { jobid: 10, fileset: 'PluginFS' },
+      { jobid: 11, fileset: 'PlainFS' },
+    ], new Map([
+      ['PluginFS', true],
+      ['PlainFS', false],
+    ]))).toEqual([
+      { jobid: 10, fileset: 'PluginFS', pluginjob: true },
+      { jobid: 11, fileset: 'PlainFS', pluginjob: false },
+    ])
+  })
+
+  it('shows plugin options for the selected plugin backup', () => {
+    expect(shouldShowRestorePluginOptions({
+      backups: [
+        { jobid: 10, pluginjob: true },
+        { jobid: 11, pluginjob: false },
+      ],
+      selectedJobId: 10,
+      mergedJobids: '',
+      mergeJobsets: false,
+    })).toBe(true)
+  })
+
+  it('shows plugin options when merged restore jobs include a plugin backup', () => {
+    expect(shouldShowRestorePluginOptions({
+      backups: [
+        { jobid: 10, pluginjob: false },
+        { jobid: 11, pluginjob: true },
+      ],
+      selectedJobId: 10,
+      mergedJobids: '10,11',
+      mergeJobsets: true,
+    })).toBe(true)
   })
 
   it('deduplicates restore versions by file id while preserving order', () => {
