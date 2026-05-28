@@ -20,6 +20,7 @@
  */
 
 import { jobStatusMap } from '../mock/index.js'
+import { quoteDirectorString } from './directorStrings.js'
 import { resolveJobTypeCode } from './jobTypes.js'
 
 const JOB_LEVEL_FILTERS = new Set(['F', 'I', 'D', 'V', 'B'])
@@ -144,6 +145,115 @@ export function encodeJobsLevelFilters(value) {
 
 export function encodeJobsTypeFilters(value) {
   return normaliseJobTypeFilters(value).join(',')
+}
+
+export function buildJobsFilterClause({
+  statusFilter = '',
+  levelFilter = '',
+  typeFilter = '',
+} = {}) {
+  const encodedStatus = encodeJobsStatusFilters(statusFilter)
+  const encodedLevels = encodeJobsLevelFilters(levelFilter)
+  const encodedTypes = encodeJobsTypeFilters(typeFilter)
+
+  return `${encodedStatus ? ` jobstatus=${encodedStatus}` : ''}` +
+    `${encodedLevels ? ` joblevel=${encodedLevels}` : ''}` +
+    `${encodedTypes ? ` jobtype=${encodedTypes}` : ''}`
+}
+
+export function buildJobsFilterClauses({
+  statusFilter = '',
+  levelFilter = '',
+  typeFilter = '',
+} = {}) {
+  const statuses = normaliseJobStatusFilters(statusFilter)
+  const sharedFilters = {
+    levelFilter,
+    typeFilter,
+  }
+
+  return statuses.length > 0
+    ? statuses.map(currentStatus => buildJobsFilterClause({
+      ...sharedFilters,
+      statusFilter: currentStatus,
+    }))
+    : [buildJobsFilterClause(sharedFilters)]
+}
+
+export function buildListJobsCommand({
+  limit,
+  offset = 0,
+  statusFilter = '',
+  levelFilter = '',
+  typeFilter = '',
+} = {}) {
+  return `llist jobs reverse limit=${limit} offset=${offset}` +
+    buildJobsFilterClause({ statusFilter, levelFilter, typeFilter })
+}
+
+export function buildListJobsCountCommand({
+  statusFilter = '',
+  levelFilter = '',
+  typeFilter = '',
+} = {}) {
+  return `list jobs count${buildJobsFilterClause({ statusFilter, levelFilter, typeFilter })}`
+}
+
+export function buildListJobCommand(jobId) {
+  return `llist jobid=${jobId}`
+}
+
+export function buildCancelJobCommand(jobId) {
+  return `cancel jobid=${jobId} yes`
+}
+
+export function buildRerunJobCommand(jobId) {
+  return `rerun jobid=${jobId} yes`
+}
+
+export function buildSetJobEnabledCommand(name, enabled) {
+  return `${enabled ? 'enable' : 'disable'} job=${quoteDirectorString(name)} yes`
+}
+
+export function buildJobDefaultsCommand(name) {
+  return `.defaults job=${quoteDirectorString(name)}`
+}
+
+export function buildRunJobCommand({
+  job,
+  client,
+  fileset,
+  pool,
+  storage,
+  level,
+  when,
+  priority,
+} = {}) {
+  let command = `run job=${quoteDirectorString(job)}`
+
+  if (client) {
+    command += ` client=${quoteDirectorString(client)}`
+  }
+  if (fileset) {
+    command += ` fileset=${quoteDirectorString(fileset)}`
+  }
+  if (pool) {
+    command += ` pool=${quoteDirectorString(pool)}`
+  }
+  if (storage) {
+    command += ` storage=${quoteDirectorString(storage)}`
+  }
+  if (level) {
+    command += ` level=${quoteDirectorString(level)}`
+  }
+  if (when) {
+    command += ` when=${quoteDirectorString(when)}`
+  }
+  if (priority !== null && priority !== undefined && priority !== '') {
+    command += ` priority=${priority}`
+  }
+
+  return `${command} yes`
 }
 
 export function resolveJobsStatusFilters(query) {

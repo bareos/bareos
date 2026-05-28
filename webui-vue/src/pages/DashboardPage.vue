@@ -270,7 +270,11 @@ import { useAuthStore } from '../stores/auth.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildClientDetailsQuery } from '../utils/clients.js'
 import { resolveDirectorColors } from '../utils/directorColors.js'
-import { buildJobDetailsQuery, withJobsStatusFilterQuery } from '../utils/jobs.js'
+import {
+  buildCancelJobCommand,
+  buildJobDetailsQuery,
+  withJobsStatusFilterQuery,
+} from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorScopePanel from '../components/DirectorScopePanel.vue'
@@ -429,7 +433,7 @@ async function openClientDetails(row) {
 async function doCancel(job) {
   try {
     await switchActiveDirector(job.director)
-    await director.call(`cancel jobid=${jobId(job)} yes`)
+    await director.call(buildCancelJobCommand(jobId(job)))
     $q.notify({ type: 'positive', message: t('Job {id} cancelled.', { id: jobId(job) }) })
     refresh()
   } catch (e) {

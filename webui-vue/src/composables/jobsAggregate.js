@@ -23,8 +23,8 @@ import { parseDurationSecs } from '../mock/index.js'
 import { directorCollection, normaliseJob } from './useDirectorFetch.js'
 import { createDirectorCommandClient } from './directorAggregate.js'
 import {
-  encodeJobsLevelFilters,
-  encodeJobsTypeFilters,
+  buildListJobsCommand,
+  buildListJobsCountCommand,
   normaliseJobStatusFilters,
 } from '../utils/jobs.js'
 
@@ -147,17 +147,6 @@ function overlayRuntimeStatuses(jobs, runtimeJobs) {
   }))
 }
 
-function jobsFilterCommands(statusFilter, levelFilter, typeFilter) {
-  const filters = normaliseJobStatusFilters(statusFilter)
-  const encodedLevels = encodeJobsLevelFilters(levelFilter)
-  const encodedTypes = encodeJobsTypeFilters(typeFilter)
-  const levelClause = encodedLevels ? ` joblevel=${encodedLevels}` : ''
-  const typeClause = encodedTypes ? ` jobtype=${encodedTypes}` : ''
-  return filters.length
-    ? filters.map(filter => ` jobstatus=${filter}${levelClause}${typeClause}`)
-    : [`${levelClause}${typeClause}`]
-}
-
 export async function fetchAggregatedJobsPage(
   credentials,
   directors,
@@ -169,7 +158,8 @@ export async function fetchAggregatedJobsPage(
   const { page = 1, rowsPerPage = 25 } = pagination ?? {}
   const offset = Math.max(0, (page - 1) * rowsPerPage)
   const fetchLimit = offset + rowsPerPage
-  const filters = jobsFilterCommands(statusFilter, levelFilter, typeFilter)
+  const statusFilters = normaliseJobStatusFilters(statusFilter)
+  const filters = statusFilters.length > 0 ? statusFilters : ['']
   const useDefaultSorting = usesDefaultJobsSorting(pagination)
 
   const results = await Promise.allSettled(directors.map(async (director) => {
@@ -185,23 +175,37 @@ export async function fetchAggregatedJobsPage(
 
       if (useDefaultSorting) {
         [jobsResults, countResults, directorStatusResult] = await Promise.all([
-          Promise.allSettled(filters.map(filter => (
-            client.call(`llist jobs reverse limit=${fetchLimit} offset=0${filter}`)
+          Promise.allSettled(filters.map(currentStatusFilter => (
+            client.call(buildListJobsCommand({
+              limit: fetchLimit,
+              offset: 0,
+              statusFilter: currentStatusFilter,
+              levelFilter,
+              typeFilter,
+            }))
           ))),
-          Promise.allSettled(filters.map(filter => (
-            client.call(`list jobs count${filter}`)
+          Promise.allSettled(filters.map(currentStatusFilter => (
+            client.call(buildListJobsCountCommand({
+              statusFilter: currentStatusFilter,
+              levelFilter,
+              typeFilter,
+            }))
           ))),
           Promise.allSettled([client.call('status director')]),
         ])
       } else {
         [countResults, directorStatusResult] = await Promise.all([
-          Promise.allSettled(filters.map(filter => (
-            client.call(`list jobs count${filter}`)
+          Promise.allSettled(filters.map(currentStatusFilter => (
+            client.call(buildListJobsCountCommand({
+              statusFilter: currentStatusFilter,
+              levelFilter,
+              typeFilter,
+            }))
           ))),
           Promise.allSettled([client.call('status director')]),
         ])
 
-        jobsResults = await Promise.allSettled(filters.map((filter, index) => {
+        jobsResults = await Promise.allSettled(filters.map((currentStatusFilter, index) => {
           const countResult = countResults[index]
           if (countResult?.status === 'fulfilled') {
             const count = numberValue(directorCollection(countResult.value?.jobs)[0]?.count)
@@ -209,10 +213,22 @@ export async function fetchAggregatedJobsPage(
               return Promise.resolve({ jobs: [] })
             }
 
-            return client.call(`llist jobs reverse limit=${count} offset=0${filter}`)
+            return client.call(buildListJobsCommand({
+              limit: count,
+              offset: 0,
+              statusFilter: currentStatusFilter,
+              levelFilter,
+              typeFilter,
+            }))
           }
 
-          return client.call(`llist jobs reverse limit=${fetchLimit} offset=0${filter}`)
+          return client.call(buildListJobsCommand({
+            limit: fetchLimit,
+            offset: 0,
+            statusFilter: currentStatusFilter,
+            levelFilter,
+            typeFilter,
+          }))
         }))
       }
 
