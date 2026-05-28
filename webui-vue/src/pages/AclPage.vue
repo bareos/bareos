@@ -158,19 +158,16 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { fetchAggregatedAcl } from '../composables/aclAggregate.js'
 import { normaliseDirectorCommandPermissions } from '../composables/useDirectorFetch.js'
-import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useDirectorAclStore } from '../stores/directorAcl.js'
-import { useSettingsStore } from '../stores/settings.js'
-import { buildDirectorOptions } from '../utils/director.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorScopePanel from '../components/DirectorScopePanel.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
 const acl = useDirectorAclStore()
-const settings = useSettingsStore()
 const { t } = useI18n()
 
 const search = ref('')
@@ -180,65 +177,15 @@ const aggregateLoading = ref(false)
 const aggregateError = ref(null)
 const directorErrors = ref([])
 
-const directorOptions = computed(() => {
-  return buildDirectorOptions({
-    availableDirectors: director.availableDirectors,
-    selectedDirectors: settings.selectedDirectors,
-    currentDirector: auth.user?.director,
-    fallbackDirector: settings.directorName,
-  })
-})
-
-function syncSelectedDirectors() {
-  const validDirectors = directorOptions.value.map(option => option.value)
-  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
-
-  if (selected.length > 0) {
-    if (selected.length !== settings.selectedDirectors.length) {
-      settings.setSelectedDirectors(selected)
-    }
-    return
-  }
-
-  const fallbackDirector = auth.user?.director || settings.directorName
-  if (fallbackDirector) {
-    settings.setSelectedDirectors([fallbackDirector])
-  }
-}
-
-const selectedDirectorsModel = computed({
-  get: () => settings.selectedDirectors,
-  set: (value) => {
-    const selected = Array.isArray(value) ? value : []
-    if (selected.length > 0) {
-      settings.setSelectedDirectors(selected)
-      return
-    }
-
-    const fallbackDirector = auth.user?.director || settings.directorName
-    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
-  },
-})
-
-const activeDirectors = computed(() => {
-  const selected = settings.selectedDirectors.filter(value => (
-    directorOptions.value.some(option => option.value === value)
-  ))
-
-  if (selected.length > 0) {
-    return selected
-  }
-
-  const currentDirector = auth.user?.director || settings.directorName
-  return currentDirector ? [currentDirector] : []
-})
-
-const isCommonAcl = computed(() => activeDirectors.value.length > 1)
-const aclScopeLabel = computed(() => (
-  isCommonAcl.value
-    ? `${activeDirectors.value.length} ${t('directors selected')}`
-    : (activeDirectors.value[0] ?? t('No director selected'))
-))
+const {
+  directorOptions,
+  selectedDirectorsModel,
+  activeDirectors,
+  isCommonScope: isCommonAcl,
+  scopeLabel: aclScopeLabel,
+  syncSelectedDirectors,
+  ensureSingleScopeDirector,
+} = useDirectorScope({ t })
 
 const loading = computed(() => (
   isCommonAcl.value ? aggregateLoading.value : acl.loading
@@ -251,29 +198,12 @@ const currentCommands = computed(() => (
     ? aggregateCommands.value
     : normaliseDirectorCommandPermissions(acl.commands).map(item => ({
       ...item,
-      director: auth.user?.director ?? settings.directorName ?? '',
-      scopeKey: `${auth.user?.director ?? settings.directorName ?? ''}:${item.command}`,
+      director: auth.user?.director ?? directorOptions.value[0]?.value ?? '',
+      scopeKey: `${auth.user?.director ?? directorOptions.value[0]?.value ?? ''}:${item.command}`,
     }))
 ))
 const allowedCount = computed(() => currentCommands.value.filter(item => item.permission).length)
 const deniedCount = computed(() => currentCommands.value.filter(item => !item.permission).length)
-
-async function ensureSingleScopeDirector() {
-  if (activeDirectors.value.length !== 1) {
-    return
-  }
-
-  const scopeDirector = activeDirectors.value[0]
-  if (!scopeDirector) {
-    return
-  }
-
-  if (auth.user?.director === scopeDirector && director.isConnected) {
-    return
-  }
-
-  await switchActiveDirector(scopeDirector)
-}
 
 async function refresh() {
   directorErrors.value = []

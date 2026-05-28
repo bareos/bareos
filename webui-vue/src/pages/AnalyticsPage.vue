@@ -139,12 +139,11 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { fetchAggregatedAnalytics } from '../composables/analyticsAggregate.js'
 import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
-import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { formatBytes } from '../mock/index.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { buildDirectorOptions } from '../utils/director.js'
 import {
   withJobsSearchQuery,
   withJobsStatusFilterQuery,
@@ -166,85 +165,18 @@ const loading = ref(false)
 const error = ref(null)
 const directorErrors = ref([])
 
-const directorOptions = computed(() => {
-  return buildDirectorOptions({
-    availableDirectors: director.availableDirectors,
-    selectedDirectors: settings.selectedDirectors,
-    currentDirector: auth.user?.director,
-    fallbackDirector: settings.directorName,
-  })
-})
-
-function syncSelectedDirectors() {
-  const validDirectors = directorOptions.value.map(option => option.value)
-  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
-
-  if (selected.length > 0) {
-    if (selected.length !== settings.selectedDirectors.length) {
-      settings.setSelectedDirectors(selected)
-    }
-    return
-  }
-
-  const fallbackDirector = auth.user?.director || settings.directorName
-  if (fallbackDirector) {
-    settings.setSelectedDirectors([fallbackDirector])
-  }
-}
-
-const selectedDirectorsModel = computed({
-  get: () => settings.selectedDirectors,
-  set: (value) => {
-    const selected = Array.isArray(value) ? value : []
-    if (selected.length > 0) {
-      settings.setSelectedDirectors(selected)
-      return
-    }
-
-    const fallbackDirector = auth.user?.director || settings.directorName
-    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
-  },
-})
-
-const activeDirectors = computed(() => {
-  const selected = settings.selectedDirectors.filter(value => (
-    directorOptions.value.some(option => option.value === value)
-  ))
-
-  if (selected.length > 0) {
-    return selected
-  }
-
-  const currentDirector = auth.user?.director || settings.directorName
-  return currentDirector ? [currentDirector] : []
-})
-
-const isCommonAnalytics = computed(() => activeDirectors.value.length > 1)
-const analyticsScopeLabel = computed(() => (
-  isCommonAnalytics.value
-    ? `${activeDirectors.value.length} ${t('directors selected')}`
-    : (activeDirectors.value[0] ?? t('No director selected'))
-))
+const {
+  directorOptions,
+  selectedDirectorsModel,
+  activeDirectors,
+  isCommonScope: isCommonAnalytics,
+  scopeLabel: analyticsScopeLabel,
+  syncSelectedDirectors,
+  ensureSingleScopeDirector,
+} = useDirectorScope({ t })
 
 function formatFileCount(count) {
   return `${formatNumber(count ?? 0, settings.locale)} ${t('files')}`
-}
-
-async function ensureSingleScopeDirector() {
-  if (activeDirectors.value.length !== 1) {
-    return
-  }
-
-  const scopeDirector = activeDirectors.value[0]
-  if (!scopeDirector) {
-    return
-  }
-
-  if (auth.user?.director === scopeDirector && director.isConnected) {
-    return
-  }
-
-  await switchActiveDirector(scopeDirector)
 }
 
 async function refresh() {

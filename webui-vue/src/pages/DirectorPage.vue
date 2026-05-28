@@ -754,10 +754,9 @@ import {
   fetchAggregatedDirectorStatus,
   normaliseDirectorStatusSnapshot,
 } from '../composables/directorPageAggregate.js'
-import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { formatBytes } from '../mock/index.js'
 import {
-  buildDirectorOptions,
   buildDirectorPageQuery,
   isDirectorSingletonTab,
   resolveDirectorTargetQuery,
@@ -799,67 +798,19 @@ const settings  = useSettingsStore()
 const { t } = useI18n()
 const tr = (msgid, values) => translate(settings.locale, msgid, values)
 
-const directorOptions = computed(() => {
-  return buildDirectorOptions({
-    availableDirectors: director.availableDirectors,
-    selectedDirectors: settings.selectedDirectors,
-    currentDirector: auth.user?.director,
-    fallbackDirector: settings.directorName,
-  })
-})
+const {
+  directorOptions,
+  selectedDirectorsModel,
+  activeDirectors,
+  isCommonScope: isCommonDirectorPage,
+  isSingleDirectorScope,
+  scopeLabel: directorScopeLabel,
+  syncSelectedDirectors,
+  ensureScopeDirector,
+  ensureSingleScopeDirector,
+} = useDirectorScope({ t })
 
-function syncSelectedDirectors() {
-  const validDirectors = directorOptions.value.map(option => option.value)
-  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
-
-  if (selected.length > 0) {
-    if (selected.length !== settings.selectedDirectors.length) {
-      settings.setSelectedDirectors(selected)
-    }
-    return
-  }
-
-  const fallbackDirector = auth.user?.director || settings.directorName
-  if (fallbackDirector) {
-    settings.setSelectedDirectors([fallbackDirector])
-  }
-}
-
-const selectedDirectorsModel = computed({
-  get: () => settings.selectedDirectors,
-  set: (value) => {
-    const selected = Array.isArray(value) ? value : []
-    if (selected.length > 0) {
-      settings.setSelectedDirectors(selected)
-      return
-    }
-
-    const fallbackDirector = auth.user?.director || settings.directorName
-    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
-  },
-})
-
-const activeDirectors = computed(() => {
-  const selected = settings.selectedDirectors.filter(value => (
-    directorOptions.value.some(option => option.value === value)
-  ))
-
-  if (selected.length > 0) {
-    return selected
-  }
-
-  const currentDirector = auth.user?.director || settings.directorName
-  return currentDirector ? [currentDirector] : []
-})
-
-const isSingleDirectorScope = computed(() => activeDirectors.value.length === 1)
-const isCommonDirectorPage = computed(() => activeDirectors.value.length > 1)
 const showDirectorColumn = computed(() => isCommonDirectorPage.value)
-const directorScopeLabel = computed(() => (
-  isCommonDirectorPage.value
-    ? `${activeDirectors.value.length} ${t('directors selected')}`
-    : (activeDirectors.value[0] ?? t('No director selected'))
-))
 const singletonTabDirector = ref('')
 const singletonTabDirectorOptions = computed(() => (
   activeDirectors.value.map(value => ({ label: value, value }))
@@ -892,34 +843,13 @@ function syncSingletonTabDirector() {
   singletonTabDirector.value = validDirectors[0]
 }
 
-async function ensureSingleScopeDirector() {
-  if (!isSingleDirectorScope.value) {
-    return
-  }
-
-  const scopeDirector = activeDirectors.value[0]
-  if (!scopeDirector) {
-    return
-  }
-
-  if (auth.user?.director === scopeDirector && director.isConnected) {
-    return
-  }
-
-  await switchActiveDirector(scopeDirector)
-}
-
 async function ensureSingletonTabDirector() {
   const targetDirector = currentSingletonDirector.value
   if (!targetDirector) {
     return null
   }
 
-  if (auth.user?.director === targetDirector && director.isConnected) {
-    return targetDirector
-  }
-
-  await switchActiveDirector(targetDirector)
+  await ensureScopeDirector(targetDirector)
   return targetDirector
 }
 

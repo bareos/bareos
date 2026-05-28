@@ -263,13 +263,13 @@ import {
   aggregateDirectorDashboardSnapshots,
   fetchDirectorDashboardSnapshot,
 } from '../composables/directorAggregate.js'
+import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildClientDetailsQuery } from '../utils/clients.js'
 import { resolveDirectorColors } from '../utils/directorColors.js'
-import { buildDirectorOptions } from '../utils/director.js'
 import { buildJobDetailsQuery, withJobsStatusFilterQuery } from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
@@ -292,65 +292,19 @@ const dashboardSnapshots = ref([])
 const directorErrors = ref([])
 const loadingJobs = ref(false)
 
-const directorOptions = computed(() => {
-  return buildDirectorOptions({
-    availableDirectors: director.availableDirectors,
-    selectedDirectors: settings.selectedDirectors,
-    currentDirector: auth.user?.director,
-    fallbackDirector: settings.directorName,
-  })
+const {
+  directorOptions,
+  selectedDirectorsModel,
+  activeDirectors,
+  isCommonScope: isCommonDashboard,
+  scopeLabel: dashboardScopeLabel,
+  syncSelectedDirectors,
+} = useDirectorScope({
+  t,
+  syncEmptySelection: 'all',
 })
 
-function syncSelectedDirectors() {
-  const validDirectors = directorOptions.value.map(option => option.value)
-  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
-
-  if (selected.length > 0) {
-    if (selected.length !== settings.selectedDirectors.length) {
-      settings.setSelectedDirectors(selected)
-    }
-    return
-  }
-
-  if (validDirectors.length > 0) {
-    settings.setSelectedDirectors(validDirectors)
-  }
-}
-
-const selectedDirectorsModel = computed({
-  get: () => settings.selectedDirectors,
-  set: (value) => {
-    const selected = Array.isArray(value) ? value : []
-    if (selected.length > 0) {
-      settings.setSelectedDirectors(selected)
-      return
-    }
-
-    const fallbackDirector = auth.user?.director || settings.directorName
-    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
-  },
-})
-
-const activeDirectors = computed(() => {
-  const selected = settings.selectedDirectors.filter(value => (
-    directorOptions.value.some(option => option.value === value)
-  ))
-
-  if (selected.length > 0) {
-    return selected
-  }
-
-  const currentDirector = auth.user?.director || settings.directorName
-  return currentDirector ? [currentDirector] : []
-})
-
-const isCommonDashboard = computed(() => activeDirectors.value.length > 1)
 const showDirectorColumn = computed(() => directorOptions.value.length > 1)
-const dashboardScopeLabel = computed(() => (
-  isCommonDashboard.value
-    ? `${activeDirectors.value.length} ${t('directors selected')}`
-    : (activeDirectors.value[0] ?? t('No director selected'))
-))
 
 async function fetchDashboard() {
   const credentials = auth.getCredentials()

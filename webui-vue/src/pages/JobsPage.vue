@@ -572,13 +572,12 @@ import {
   sortJobsByPagination,
   usesDefaultJobsSorting,
 } from '../composables/jobsAggregate.js'
-import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildClientDetailsQuery } from '../utils/clients.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
-import { buildDirectorOptions } from '../utils/director.js'
 import { formatNumber } from '../utils/locales.js'
 import { resolveJobTypeCode, resolveJobTypeInfo } from '../utils/jobTypes.js'
 import {
@@ -685,71 +684,23 @@ function overlayRuntimeStatuses(jobs, runtimeJobs) {
   }))
 }
 
-const directorOptions = computed(() => {
-  return buildDirectorOptions({
-    availableDirectors: director.availableDirectors,
-    selectedDirectors: settings.selectedDirectors,
-    currentDirector: auth.user?.director,
-    fallbackDirector: settings.directorName,
-  })
-})
-
-function syncSelectedDirectors() {
-  const validDirectors = directorOptions.value.map(option => option.value)
-  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
-
-  if (selected.length > 0) {
-    if (selected.length !== settings.selectedDirectors.length) {
-      settings.setSelectedDirectors(selected)
-    }
-    return
-  }
-
-  const fallbackDirector = auth.user?.director || settings.directorName
-  if (fallbackDirector) {
-    settings.setSelectedDirectors([fallbackDirector])
-  }
-}
-
 function canRestoreFromJob(job) {
   return resolveJobTypeCode(job?.type) !== 'R'
 }
 
-const selectedDirectorsModel = computed({
-  get: () => settings.selectedDirectors,
-  set: (value) => {
-    const selected = Array.isArray(value) ? value : []
-    if (selected.length > 0) {
-      settings.setSelectedDirectors(selected)
-      return
-    }
+const {
+  directorOptions,
+  selectedDirectorsModel,
+  activeDirectors,
+  isCommonScope: isCommonJobs,
+  isSingleDirectorScope,
+  scopeLabel: jobsScopeLabel,
+  syncSelectedDirectors,
+  ensureScopeDirector,
+  ensureSingleScopeDirector,
+} = useDirectorScope({ t })
 
-    const fallbackDirector = auth.user?.director || settings.directorName
-    settings.setSelectedDirectors(fallbackDirector ? [fallbackDirector] : [])
-  },
-})
-
-const activeDirectors = computed(() => {
-  const selected = settings.selectedDirectors.filter(value => (
-    directorOptions.value.some(option => option.value === value)
-  ))
-
-  if (selected.length > 0) {
-    return selected
-  }
-
-  const currentDirector = auth.user?.director || settings.directorName
-  return currentDirector ? [currentDirector] : []
-})
-
-const isCommonJobs = computed(() => activeDirectors.value.length > 1)
 const showDirectorColumn = computed(() => activeDirectors.value.length > 1)
-const isSingleDirectorScope = computed(() => activeDirectors.value.length === 1)
-const jobsScopeLabel = computed(() => (
-  isCommonJobs.value
-    ? `${activeDirectors.value.length} ${t('directors selected')}`
-    : (activeDirectors.value[0] ?? t('No director selected'))
-))
 const singletonTabDirector = ref('')
 const singletonTabDirectorOptions = computed(() => (
   activeDirectors.value.map(value => ({ label: value, value }))
@@ -781,34 +732,13 @@ function syncSingletonTabDirector() {
   singletonTabDirector.value = validDirectors[0]
 }
 
-async function ensureSingleScopeDirector() {
-  if (!isSingleDirectorScope.value) {
-    return
-  }
-
-  const scopeDirector = activeDirectors.value[0]
-  if (!scopeDirector) {
-    return
-  }
-
-  if (auth.user?.director === scopeDirector && director.isConnected) {
-    return
-  }
-
-  await switchActiveDirector(scopeDirector)
-}
-
 async function ensureSingletonTabDirector() {
   const targetDirector = currentSingletonDirector.value
   if (!targetDirector) {
     return null
   }
 
-  if (auth.user?.director === targetDirector && director.isConnected) {
-    return targetDirector
-  }
-
-  await switchActiveDirector(targetDirector)
+  await ensureScopeDirector(targetDirector)
   return targetDirector
 }
 
@@ -1204,29 +1134,18 @@ async function switchToJobDirector(job) {
 }
 
 async function openJobDetails(job) {
-  try {
-    await switchToJobDirector(job)
-    await router.push({
-      name: 'job-details',
-      params: { id: job.id },
-        query: buildJobDetailsQuery({
-          director: job.director,
-          jobsAction: tab.value,
-          jobsStatus: statusFilters.value,
-          jobsLevel: levelFilters.value,
-          jobsType: typeFilters.value,
-          jobsSearch: search.value,
-        }),
-    })
-  } catch (error) {
-    $q.notify({
-      type: 'negative',
-      message: t('Could not switch to director {director}: {message}', {
-        director: job.director ?? t('unknown'),
-        message: error.message,
-      }),
-    })
-  }
+  await router.push({
+    name: 'job-details',
+    params: { id: job.id },
+    query: buildJobDetailsQuery({
+      director: job.director,
+      jobsAction: tab.value,
+      jobsStatus: statusFilters.value,
+      jobsLevel: levelFilters.value,
+      jobsType: typeFilters.value,
+      jobsSearch: search.value,
+    }),
+  })
 }
 
 async function openClientDetails(job) {
