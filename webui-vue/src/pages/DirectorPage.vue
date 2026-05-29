@@ -42,174 +42,16 @@
         <template v-else-if="statusCards.length">
           <div class="row q-col-gutter-md">
 
-            <!-- Director Info – single summary line -->
             <div class="col-12">
-                <q-card flat bordered class="bareos-panel">
-                  <q-card-section class="panel-header row items-center">
-                    <span>{{ t('Director Info') }}</span>
-                    <q-space />
-                    <span class="text-white text-caption q-mr-sm panel-refresh-countdown">
-                      <span aria-hidden="true">↻</span>
-                      <span class="panel-refresh-countdown__value">{{ statusCountdown }}s</span>
-                    </span>
-                    <q-btn flat round dense icon="refresh" color="white"
-                           @click="manualRefreshStatus" :loading="statusLoading" />
-                  </q-card-section>
-                <q-card-section class="q-py-sm">
-                  <div class="column q-gutter-md">
-                    <div
-                      v-for="card in statusCards"
-                      :key="card.scopeDirector"
-                      class="row items-center q-gutter-sm text-body2 flex-wrap"
-                    >
-                      <DirectorBadge
-                        :director="card.scopeDirector"
-                        icon="dns"
-                        class="director-info-chip"
-                      >
-                        {{ card.scopeDirector }}
-                        <q-tooltip>
-                          {{
-                            card.reportedDirector && card.reportedDirector !== card.scopeDirector
-                              ? `${t('Configured as')}: ${card.scopeDirector}\n${t('Reported by Director')}: ${card.reportedDirector}`
-                              : `${t('Director')}: ${card.scopeDirector}`
-                          }}
-                        </q-tooltip>
-                      </DirectorBadge>
-                        <q-chip
-                          v-if="card.config_warnings != null || !card.configStatusAvailable"
-                          dense
-                          square
-                          :clickable="card.configStatusAvailable"
-                          :class="[
-                            'director-info-chip',
-                            card.configStatusAvailable ? 'director-info-chip--clickable' : '',
-                          ]"
-                          :color="configStatusChipColor(card)"
-                          :icon="configStatusChipIcon(card)"
-                          text-color="white"
-                          @click="card.configStatusAvailable && showConfigStatus(card.scopeDirector)"
-                        >
-                          {{ configStatusChipLabel(card) }}
-                          <q-tooltip>
-                            {{ configStatusChipTooltip(card) }}
-                          </q-tooltip>
-                        </q-chip>
-                       <q-chip
-                          v-if="card.reportedDirector && card.reportedDirector !== card.scopeDirector"
-                          dense
-                          square
-                          class="director-info-chip"
-                          color="blue-grey-6"
-                          text-color="white"
-                          icon="link"
-                       >
-                         {{ card.reportedDirector }}
-                         <q-tooltip>{{ t('Reported by Director') }}: {{ card.reportedDirector }}</q-tooltip>
-                       </q-chip>
-                      <q-chip
-                        v-if="card.version"
-                        dense
-                        square
-                        class="director-info-chip"
-                        color="blue-7"
-                        text-color="white"
-                        icon="info"
-                      >
-                        {{ card.version }}
-                        <q-tooltip>Version: {{ card.version }}</q-tooltip>
-                      </q-chip>
-                      <q-chip
-                        v-if="card.release_date"
-                        dense
-                        square
-                        class="director-info-chip"
-                        color="blue-grey-6"
-                        text-color="white"
-                        icon="event"
-                      >
-                        {{ card.release_date }}
-                        <q-tooltip>Released: {{ card.release_date }}</q-tooltip>
-                      </q-chip>
-                      <q-chip
-                        v-if="card.binary_info"
-                        dense
-                        square
-                        class="director-info-chip"
-                        color="blue-grey-7"
-                        text-color="white"
-                        icon="build"
-                      >
-                        {{ card.binary_info }}
-                        <q-tooltip>Build: {{ card.binary_info }}</q-tooltip>
-                      </q-chip>
-                      <q-chip
-                        v-if="card.os"
-                        dense
-                        square
-                        class="director-info-chip"
-                        :color="card.osIcon.color"
-                        text-color="white"
-                        :icon="card.osIcon.icon"
-                      >
-                        {{ card.os }}
-                        <q-tooltip>OS: {{ card.os }}</q-tooltip>
-                      </q-chip>
-                      <q-chip
-                        v-if="card.daemon_started"
-                        dense
-                        square
-                        class="director-info-chip"
-                        color="teal-7"
-                        text-color="white"
-                        icon="schedule"
-                      >
-                        {{ settings.relativeTime ? formatDirectorRelativeTime(card.daemon_started, settings.locale) : card.daemon_started }}
-                        <q-tooltip>Started: {{ card.daemon_started }}</q-tooltip>
-                      </q-chip>
-                      <router-link
-                        v-if="card.jobs_run != null"
-                        :to="{ name: 'jobs' }"
-                        class="text-decoration-none"
-                      >
-                        <q-chip
-                          dense
-                          square
-                          clickable
-                          class="director-info-chip director-info-chip--clickable"
-                          color="purple-7"
-                          text-color="white"
-                          icon="check"
-                        >
-                          {{ card.jobs_run }}
-                          <q-tooltip>Jobs Run: {{ card.jobs_run }}</q-tooltip>
-                        </q-chip>
-                      </router-link>
-                      <router-link
-                        v-if="card.jobs_running != null"
-                        :to="{
-                          name: 'jobs',
-                          query: withJobsStatusFilterQuery({}, 'R'),
-                        }"
-                        class="text-decoration-none"
-                      >
-                        <q-chip
-                          dense
-                          square
-                          clickable
-                          class="director-info-chip director-info-chip--clickable"
-                          color="orange-7"
-                          text-color="white"
-                          icon="play_arrow"
-                        >
-                          {{ card.jobs_running }}
-                          <q-tooltip>Running: {{ card.jobs_running }}</q-tooltip>
-                        </q-chip>
-                      </router-link>
-                    </div>
-                  </div>
-                </q-card-section>
-              </q-card>
+              <DirectorInfoCard
+                :status-cards="statusCards"
+                :status-countdown="statusCountdown"
+                :status-loading="statusLoading"
+                :locale="settings.locale"
+                :relative-time="settings.relativeTime"
+                @refresh="manualRefreshStatus"
+                @show-config-status="showConfigStatus"
+              />
             </div>
 
             <!-- Scheduled Jobs card -->
@@ -742,6 +584,7 @@ import { useDirectorStore } from '../stores/director.js'
 import { useDirectorAclStore } from '../stores/directorAcl.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { translate } from '../i18n/index.js'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import {
   directorCollection,
   directorCommandAllowed,
@@ -763,7 +606,6 @@ import {
 } from '../utils/director.js'
 import {
   buildJobDetailsQuery,
-  withJobsStatusFilterQuery,
   withJobsSearchQuery,
 } from '../utils/jobs.js'
 import { buildVolumeDetailsQuery } from '../utils/volumes.js'
@@ -771,10 +613,11 @@ import {
   formatDirectorRelativeTime,
   formatNumber,
 } from '../utils/locales.js'
+import { buildDirectorStatusCards } from '../utils/directorStatus.js'
 import { resolveJobLevelCode } from '../utils/jobLevels.js'
 import { resolveJobTypeCode } from '../utils/jobTypes.js'
-import { resolveOsIcon } from '../utils/osIcon.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
+import DirectorInfoCard from '../components/DirectorInfoCard.vue'
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorScopePanel from '../components/DirectorScopePanel.vue'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -936,23 +779,12 @@ function manualRefreshStatus() {
   statusCountdown.value = settings.refreshInterval
 }
 
-function resolveDirectorOsChip(full = '') {
-  const lower = full.toLowerCase()
-  if (lower.includes('windows') || lower.includes('win'))
-    return resolveOsIcon({ os: 'windows', osInfo: full })
-  if (lower.includes('darwin') || lower.includes('apple') || lower.includes('macos'))
-    return resolveOsIcon({ os: 'macos', osInfo: full })
-  return resolveOsIcon({ os: 'linux', osInfo: full })
-}
-
-const statusCards = computed(() => statusSnapshots.value.map(({ director, header }) => ({
-  ...header,
-  scopeDirector: director,
-  reportedDirector: header?.director || director,
-  osIcon: resolveDirectorOsChip(header?.os ?? ''),
-  configStatusAvailable: configStatusAccessByDirector.value[director]?.available === true,
-  configStatusUnavailableReason: configStatusAccessByDirector.value[director]?.message ?? '',
-})))
+const statusCards = computed(() => (
+  buildDirectorStatusCards(
+    statusSnapshots.value,
+    configStatusAccessByDirector.value
+  )
+))
 const scheduledJobs = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.scheduledJobs))
 const runningJobs = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.runningJobs))
 const terminatedJobs = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.terminatedJobs))
@@ -966,39 +798,6 @@ const maxTermFiles = computed(() => Math.max(1, ...terminatedJobs.value.map(j =>
 function levelCode(v) { return resolveJobLevelCode(v) }
 function typeCode(v)  { return resolveJobTypeCode(v) }
 function isWaiting(status) { return typeof status === 'string' && status.includes('is waiting') }
-function isAclPermissionError(message = '') {
-  return /acl|permission|authori[sz]ed/i.test(String(message))
-}
-function configStatusChipColor(card) {
-  if (!card.configStatusAvailable) {
-    return 'grey-6'
-  }
-  return card.config_warnings ? 'negative' : 'positive'
-}
-function configStatusChipIcon(card) {
-  if (!card.configStatusAvailable) {
-    return 'block'
-  }
-  return card.config_warnings ? 'error' : 'check_circle'
-}
-function configStatusChipLabel(card) {
-  if (!card.configStatusAvailable) {
-    return t('Config Unavailable')
-  }
-  return card.config_warnings ? t('Config Warning') : t('Config OK')
-}
-function configStatusChipTooltip(card) {
-  if (card.configStatusAvailable) {
-    return t('Click to show configuration status for this director')
-  }
-  if (isAclPermissionError(card.configStatusUnavailableReason)) {
-    return t('Configuration status unavailable because the required ACL is missing.')
-  }
-  if (card.configStatusUnavailableReason) {
-    return `${t('Configuration status unavailable')}: ${card.configStatusUnavailableReason}`
-  }
-  return t('Configuration status unavailable.')
-}
 
 const scheduledJobCols = computed(() => [
   ...(showDirectorColumn.value
@@ -1480,15 +1279,6 @@ async function showConfigStatus(targetDirector = activeDirectors.value[0]) {
 </script>
 
 <style scoped>
-.director-info-chip {
-  cursor: default;
-  user-select: none;
-}
-
-.director-info-chip--clickable {
-  cursor: pointer;
-}
-
 .config-status-output {
   background: #1e1e1e;
   color: #d4d4d4;
