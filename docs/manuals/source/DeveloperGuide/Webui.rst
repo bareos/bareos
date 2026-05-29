@@ -4,6 +4,10 @@
 Webui
 =====
 
+This page documents the classic PHP-based WebUI in :file:`webui/`.
+The Vue-based WebUI technical preview is documented separately in
+:ref:`section-dev-webui-vue`.
+
 .. _section-dev-webui-translation:
 
 Translation
