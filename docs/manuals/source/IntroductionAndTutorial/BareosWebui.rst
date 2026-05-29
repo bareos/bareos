@@ -10,6 +10,19 @@ Bareos Webui
 
 Since :sinceVersion:`15.2.0: bareos-webui` |webui| is part of the Bareos project and available for a number of platforms.
 
+Bareos currently provides two WebUI variants:
+
+* the classic PHP-based |webui| documented on this page
+* the new Vue-based WebUI documented in :ref:`section-webui-vue`
+
+.. note::
+
+   The Vue-based WebUI is currently a technical preview.
+   For now, both WebUI variants exist in parallel.
+   The classic PHP WebUI remains the primary documented and supported WebUI,
+   while the Vue WebUI is documented separately so users can evaluate it
+   without treating it as a full replacement yet.
+
 .. image:: /include/images/bareos-webui-jobs.*
    :width: 80.0%
 
