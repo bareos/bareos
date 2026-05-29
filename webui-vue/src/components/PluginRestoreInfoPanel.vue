@@ -297,6 +297,10 @@ function pluginSupportLabel(pluginHint) {
     return t('Contrib plugin')
   }
 
+  if (pluginHint?.supportLevel === 'third-party') {
+    return t('Third-party plugin')
+  }
+
   return t('Bareos plugin')
 }
 
