@@ -4,12 +4,12 @@ Positionals:
     input-archive  
         Specify the input device name (either as name of a Bareos Storage 
         Daemon Device resource or identical to the Archive Device in a Bareos 
-        Storage Daemon Device resource). 
+        Storage Daemon Device resource, or a local file volume path). 
 
     output-archive  
         Specify the output device name (either as name of a Bareos Storage 
         Daemon Device resource or identical to the Archive Device in a Bareos 
-        Storage Daemon Device resource). 
+        Storage Daemon Device resource, or a local file volume path). 
 
 
 Options:
