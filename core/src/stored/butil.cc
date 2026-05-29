@@ -45,8 +45,175 @@
 #include "include/jcr.h"
 
 #include <algorithm>
+#include <cstdio>
+#include <vector>
 
 namespace storagedaemon {
+
+namespace {
+
+struct DeviceResolutionResult {
+  DeviceResource* device_resource{nullptr};
+  std::string detail;
+};
+
+static bool DeviceSupportsAccess(const DeviceResource* device_resource,
+                                 bool readonly)
+{
+  switch (device_resource->access_mode) {
+    case IODirection::READ_WRITE:
+      return true;
+    case IODirection::READ:
+      return readonly;
+    case IODirection::WRITE:
+      return !readonly;
+    case IODirection::NONE:
+    default:
+      return false;
+  }
+}
+
+static std::string StripQuotes(const char* resource_name)
+{
+  std::string normalized{resource_name};
+  if (normalized.size() >= 2 && normalized.front() == '"'
+      && normalized.back() == '"') {
+    normalized.erase(0, 1);
+    normalized.pop_back();
+  }
+
+  return normalized;
+}
+
+static std::string AccessDescription(bool readonly)
+{
+  return readonly ? "reading" : "writing";
+}
+
+static std::string FormatDeviceChoice(const DeviceResource* device_resource)
+{
+  return "\"" + std::string(device_resource->resource_name_) + "\" ("
+         + device_resource->archive_device_string + ")";
+}
+
+static std::string FormatAutochangerSelectionPrompt(
+    const AutochangerResource* autochanger_resource,
+    const std::vector<DeviceResource*>& devices)
+{
+  std::string prompt = T_("Autochanger \"");
+  prompt += autochanger_resource->resource_name_;
+  prompt += T_("\" has multiple suitable devices. Choose one:\n");
+
+  for (std::size_t i = 0; i < devices.size(); ++i) {
+    prompt += "  ";
+    prompt += std::to_string(i + 1);
+    prompt += ") ";
+    prompt += FormatDeviceChoice(devices[i]);
+    if (devices[i]->autoselect) { prompt += " [autoselect]"; }
+    prompt += '\n';
+  }
+
+  prompt += T_("Enter selection number: ");
+  return prompt;
+}
+
+static std::string FormatAutochangerCandidates(
+    const AutochangerResource* autochanger_resource,
+    const std::vector<DeviceResource*>& devices,
+    bool readonly)
+{
+  std::string detail = T_("Autochanger \"");
+  detail += autochanger_resource->resource_name_;
+  detail += T_("\" has multiple devices suitable for ");
+  detail += AccessDescription(readonly);
+  detail += T_(". Please specify one of these Device resources explicitly:\n");
+
+  for (const auto* device_resource : devices) {
+    detail += "  ";
+    detail += FormatDeviceChoice(device_resource);
+    if (device_resource->autoselect) { detail += " [autoselect]"; }
+    detail += '\n';
+  }
+
+  return detail;
+}
+
+static DeviceResource* PromptForAutochangerDevice(
+    const AutochangerResource* autochanger_resource,
+    const std::vector<DeviceResource*>& devices)
+{
+  if (!isatty(fileno(stdin))) { return nullptr; }
+
+  while (true) {
+    auto prompt = FormatAutochangerSelectionPrompt(autochanger_resource, devices);
+    if (fputs(prompt.c_str(), stderr) < 0) { return nullptr; }
+    fflush(stderr);
+
+    char buffer[64];
+    if (!fgets(buffer, sizeof(buffer), stdin)) { return nullptr; }
+
+    char* end = nullptr;
+    errno = 0;
+    auto selection = strtol(buffer, &end, 10);
+    if (errno == 0 && end != buffer && selection >= 1
+        && static_cast<std::size_t>(selection) <= devices.size()) {
+      return devices[selection - 1];
+    }
+
+    if (fputs(T_("Invalid selection.\n"), stderr) < 0) { return nullptr; }
+  }
+}
+
+static DeviceResolutionResult ResolveAutochangerDevice(
+    const AutochangerResource* autochanger_resource,
+    bool readonly)
+{
+  DeviceResolutionResult result;
+  std::vector<DeviceResource*> eligible_devices;
+  std::vector<DeviceResource*> eligible_autoselect_devices;
+
+  DeviceResource* device_resource = nullptr;
+  int i;
+  foreach_alist_index (i, device_resource, autochanger_resource->device_resources)
+  {
+    if (!DeviceSupportsAccess(device_resource, readonly)) { continue; }
+
+    eligible_devices.emplace_back(device_resource);
+    if (device_resource->autoselect) {
+      eligible_autoselect_devices.emplace_back(device_resource);
+    }
+  }
+
+  if (eligible_autoselect_devices.size() == 1) {
+    result.device_resource = eligible_autoselect_devices.front();
+    return result;
+  }
+
+  if (eligible_devices.size() == 1) {
+    result.device_resource = eligible_devices.front();
+    return result;
+  }
+
+  if (eligible_devices.empty()) {
+    result.detail = T_("Autochanger \"");
+    result.detail += autochanger_resource->resource_name_;
+    result.detail += T_("\" has no devices suitable for ");
+    result.detail += AccessDescription(readonly);
+    result.detail += ".\n";
+    return result;
+  }
+
+  result.device_resource
+      = PromptForAutochangerDevice(autochanger_resource, eligible_devices);
+  if (!result.device_resource) {
+    result.detail = FormatAutochangerCandidates(autochanger_resource,
+                                                eligible_devices, readonly);
+  }
+
+  return result;
+}
+
+}  // namespace
 
 /* Forward referenced functions */
 static bool setup_to_access_device(DeviceControlRecord* dcr,
@@ -54,8 +221,8 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
                                    char* dev_name,
                                    const std::string& VolumeName,
                                    bool readonly);
-static DeviceResource* find_device_res(char* archive_device_string,
-                                       bool readonly);
+static DeviceResolutionResult find_device_res(char* archive_device_string,
+                                              bool readonly);
 static void MyFreeJcr(JobControlRecord* jcr);
 
 
@@ -139,9 +306,46 @@ std::string AvailableDevicesListing()
     device_str += ")\n";
     devices.emplace_back(std::move(device_str));
   }
+
+  std::vector<std::string> autochangers;
+  for (BareosResource* resource = nullptr;
+       (resource = my_config->GetNextRes(R_AUTOCHANGER, resource));) {
+    auto* autochanger = dynamic_cast<AutochangerResource*>(resource);
+    std::string autochanger_str;
+    autochanger_str += " \"";
+    autochanger_str += autochanger->resource_name_;
+    autochanger_str += "\"";
+
+    std::vector<std::string> members;
+    DeviceResource* device = nullptr;
+    int i;
+    foreach_alist_index (i, device, autochanger->device_resources)
+    {
+      members.emplace_back(FormatDeviceChoice(device));
+    }
+    std::sort(members.begin(), members.end());
+
+    if (!members.empty()) {
+      autochanger_str += " ->";
+      for (const auto& member : members) {
+        autochanger_str += "\n    ";
+        autochanger_str += member;
+      }
+    }
+    autochanger_str += '\n';
+    autochangers.emplace_back(std::move(autochanger_str));
+  }
+
   std::sort(devices.begin(), devices.end());
+  std::sort(autochangers.begin(), autochangers.end());
   std::string devices_str = "Available Devices:\n";
   for (const std::string& device : devices) { devices_str += device; }
+  if (!autochangers.empty()) {
+    devices_str += "Available Autochangers:\n";
+    for (const std::string& autochanger : autochangers) {
+      devices_str += autochanger;
+    }
+  }
   return devices_str;
 }
 /**
@@ -190,10 +394,17 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
     }
   }
 
-  if ((device_resource = find_device_res(dev_name, readonly)) == NULL) {
-    Jmsg2(jcr, M_FATAL, 0,
-          T_("Cannot find device \"%s\" in config file %s.\n%s"), dev_name,
-          configfile, AvailableDevicesListing().c_str());
+  auto resolved_device = find_device_res(dev_name, readonly);
+  device_resource = resolved_device.device_resource;
+  if (device_resource == NULL) {
+    if (!resolved_device.detail.empty()) {
+      Jmsg3(jcr, M_FATAL, 0, T_("Cannot use device \"%s\" in config file %s.\n%s"),
+            dev_name, configfile, resolved_device.detail.c_str());
+    } else {
+      Jmsg2(jcr, M_FATAL, 0,
+            T_("Cannot find device \"%s\" in config file %s.\n%s"), dev_name,
+            configfile, AvailableDevicesListing().c_str());
+    }
     return false;
   }
 
@@ -282,11 +493,13 @@ static void MyFreeJcr(JobControlRecord* jcr)
  * Returns: NULL on failure
  *          Device resource pointer on success
  */
-static DeviceResource* find_device_res(char* archive_device_string,
-                                       bool readonly)
+static DeviceResolutionResult find_device_res(char* archive_device_string,
+                                              bool readonly)
 {
+  DeviceResolutionResult result;
   bool found = false;
   DeviceResource* device_resource;
+  auto normalized_resource_name = StripQuotes(archive_device_string);
 
   Dmsg0(900, "Enter find_device_res\n");
   foreach_res (device_resource, R_DEVICE) {
@@ -301,16 +514,11 @@ static DeviceResource* find_device_res(char* archive_device_string,
 
   if (!found) {
     /* Search for name of Device resource rather than archive name */
-    if (archive_device_string[0] == '"') {
-      int len = strlen(archive_device_string);
-      bstrncpy(archive_device_string, archive_device_string + 1, len + 1);
-      len--;
-      if (len > 0) { archive_device_string[len - 1] = 0; /* zap trailing " */ }
-    }
     foreach_res (device_resource, R_DEVICE) {
       Dmsg2(900, "Compare %s and %s\n", device_resource->resource_name_,
-            archive_device_string);
-      if (bstrcmp(device_resource->resource_name_, archive_device_string)) {
+            normalized_resource_name.c_str());
+      if (bstrcmp(device_resource->resource_name_,
+                  normalized_resource_name.c_str())) {
         found = true;
         break;
       }
@@ -318,18 +526,38 @@ static DeviceResource* find_device_res(char* archive_device_string,
   }
 
   if (!found) {
-    Pmsg2(0, T_("Could not find device \"%s\" in config file %s.\n"),
-          archive_device_string, configfile);
-    return NULL;
+    AutochangerResource* autochanger_resource;
+    foreach_res (autochanger_resource, R_AUTOCHANGER) {
+      Dmsg2(900, "Compare %s and %s\n", autochanger_resource->resource_name_,
+            normalized_resource_name.c_str());
+      if (bstrcmp(autochanger_resource->resource_name_,
+                  normalized_resource_name.c_str())) {
+        result = ResolveAutochangerDevice(autochanger_resource, readonly);
+        device_resource = result.device_resource;
+        found = (device_resource != nullptr);
+        break;
+      }
+    }
+  }
+
+  if (!found) {
+    if (result.detail.empty()) {
+      Pmsg2(0, T_("Could not find device \"%s\" in config file %s.\n"),
+            archive_device_string, configfile);
+    }
+    return result;
   }
 
   if (readonly) {
-    Pmsg1(0, T_("Using device: \"%s\" for reading.\n"), archive_device_string);
+    Pmsg1(0, T_("Using device: \"%s\" for reading.\n"),
+          device_resource->resource_name_);
   } else {
-    Pmsg1(0, T_("Using device: \"%s\" for writing.\n"), archive_device_string);
+    Pmsg1(0, T_("Using device: \"%s\" for writing.\n"),
+          device_resource->resource_name_);
   }
 
-  return device_resource;
+  result.device_resource = device_resource;
+  return result;
 }
 
 // Device got an error, attempt to analyse it
