@@ -531,6 +531,8 @@ bool BareosDbPostgresql::BootstrapBareosSchema(JobControlRecord* jcr,
     auto create_file = JoinPath(scripts_directory, "ddl/creates/postgresql.sql");
     Jmsg(jcr, M_INFO, 0, T_("Creating Bareos catalog schema in database \"%s\"\n"),
          get_db_name());
+    Pmsg1(000, T_("Creating Bareos catalog schema in database \"%s\"\n"),
+          get_db_name());
     if (!execute_sql_file(create_file)) { return false; }
     return true;
   }
@@ -567,6 +569,10 @@ bool BareosDbPostgresql::BootstrapBareosSchema(JobControlRecord* jcr,
          T_("Upgrading Bareos catalog schema in database \"%s\" from %" PRIu32
             " to %" PRIu32 "\n"),
          get_db_name(), *catalog_version, next_version);
+    Pmsg3(000,
+          T_("Upgrading Bareos catalog schema in database \"%s\" from %" PRIu32
+             " to %" PRIu32 "\n"),
+          get_db_name(), *catalog_version, next_version);
     if (!execute_sql_file(update_file)) { return false; }
 
     catalog_version = get_catalog_version();
