@@ -213,6 +213,22 @@ export const restorePluginHints = Object.freeze({
       option('pctstorage', 'optional', 'Target storage and size for container restore, for example local-lvm\\:8.', 'plugin-doc'),
     ],
   },
+  qumulo: {
+    displayName: 'Qumulo by Yuzuy',
+    supportLevel: 'third-party',
+    manualUrl: manualUrl('TasksAndConcepts/Plugins.html#section-yuzuy-qumulo-plugin'),
+    optionSeparator: ':',
+    aliases: ['qumulo', 'yuzuy-qumulo'],
+    note: 'This is a third-party plugin. Bareos documents it, but the implementation and feature details come from Yuzuy.',
+    options: [
+      option('cluster', 'known', 'Qumulo cluster host name or address.', 'plugin-doc'),
+      option('apikeyfile', 'known', 'Path to the Qumulo API key file.', 'plugin-doc'),
+      option('secretfile', 'known', 'Path to the Qumulo API secret file.', 'plugin-doc'),
+      option('snapdir', 'known', 'Snapshot directory or snapshot handling path.', 'plugin-doc'),
+      option('path', 'known', 'Qumulo path to back up or restore.', 'plugin-doc'),
+      option('exclude', 'optional', 'Exclude pattern or path filter.', 'plugin-doc'),
+    ],
+  },
   python: {
     displayName: 'Python plugin wrapper',
     manualUrl: manualUrl('TasksAndConcepts/Plugins.html#section-python-fd-plugin'),

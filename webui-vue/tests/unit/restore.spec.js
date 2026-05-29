@@ -435,6 +435,21 @@ describe('restore browser placeholder', () => {
     })).toBe('tasksPgsql')
   })
 
+  it('resolves qumulo plugin names to the documented third-party hint entry', () => {
+    expect(getRestorePluginHints({
+      definitions: [{
+        raw: 'qumulo:cluster=qumulo.example.test:path=/data',
+        pluginName: 'qumulo',
+        optionKeys: ['cluster', 'path'],
+      }],
+    })).toContainEqual(expect.objectContaining({
+      id: 'qumulo',
+      displayName: 'Qumulo by Yuzuy',
+      supportLevel: 'third-party',
+      manualUrl: 'https://docs.bareos.org/master/TasksAndConcepts/Plugins.html#section-yuzuy-qumulo-plugin',
+    }))
+  })
+
   it('lists all known plugin hints in display-name order', () => {
     const hints = getAllRestorePluginHints()
 
