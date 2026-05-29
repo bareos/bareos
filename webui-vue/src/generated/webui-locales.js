@@ -19,7 +19,7 @@
    02110-1301, USA.
  */
 
-// One-time locale migration from the legacy WebUI language list.
+// Generated from the legacy PHP WebUI locale list.
 
 export const DEFAULT_WEBUI_LOCALE = 'en_EN'
 
