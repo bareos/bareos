@@ -44,6 +44,7 @@ JobControlRecord* SetupJcr(const char* name,
                            const std::string& VolumeName,
                            bool readonly);
 bool IsDirectLocalVolumePath(const char* device_name);
+void LoadSdConfigForDeviceListingIfAvailable(const char* config_path);
 void DisplayTapeErrorStatus(JobControlRecord* jcr, Device* dev);
 std::string AvailableDevicesListing();
 

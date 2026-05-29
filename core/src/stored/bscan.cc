@@ -242,6 +242,7 @@ int main(int argc, char* argv[])
   ParseBareosApp(bscan_app, argc, argv);
 
   if (device_name.empty()) {
+    LoadSdConfigForDeviceListingIfAvailable(configfile);
     printf(T_("Missing input device. %sNothing done.\n"),
            AvailableDevicesListing().c_str());
     return BEXIT_CLI_PARSING_ERROR;

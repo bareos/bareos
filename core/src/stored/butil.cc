@@ -40,6 +40,7 @@
 #include "stored/device_control_record.h"
 #include "stored/bsr.h"
 #include "stored/sd_backends.h"
+#include "stored/stored_conf.h"
 #include "stored/stored_jcr_impl.h"
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
@@ -350,6 +351,17 @@ bool IsDirectLocalVolumePath(const char* device_name)
   auto normalized_path = StripQuotes(device_name);
   struct stat statp;
   return TryStatPath(normalized_path, statp) && IsDirectLocalVolumeStat(statp);
+}
+
+void LoadSdConfigForDeviceListingIfAvailable(const char* config_path)
+{
+  if (my_config || !config_path || config_path[0] == '\0') { return; }
+
+  struct stat statp;
+  if (stat(config_path, &statp) != 0) { return; }
+
+  my_config = InitSdConfig(config_path, M_CONFIG_ERROR);
+  ParseSdConfig(config_path, M_CONFIG_ERROR);
 }
 
 
