@@ -34,13 +34,13 @@ namespace directordaemon {
 
 static bool OpenCatalogWithBootstrap(CatalogResource* catalog,
                                      BareosDb* db,
-                                     bool allow_bootstrap)
+                                     cat_op mode)
 {
-  if (allow_bootstrap && !db->SupportsBareosSchemaBootstrap()) {
-    allow_bootstrap = false;
-  }
+  bool supports_bootstrap = db->SupportsBareosSchemaBootstrap();
+  bool allow_bootstrap = supports_bootstrap && mode == UPDATE_AND_FIX;
+  bool skip_version_check = supports_bootstrap && mode == CHECK_CONNECTION;
 
-  if (allow_bootstrap) {
+  if (allow_bootstrap || skip_version_check) {
     if (auto err = db->OpenDatabaseWithoutVersionCheck(nullptr)) {
       Pmsg2(000, T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
             catalog->resource_name_, catalog->db_name, err);
@@ -50,8 +50,9 @@ static bool OpenCatalogWithBootstrap(CatalogResource* catalog,
       return false;
     }
 
-    if (!db->BootstrapBareosSchema(nullptr, me->scripts_directory)
-        || !db->CheckTablesVersion(nullptr)) {
+    if (allow_bootstrap
+        && (!db->BootstrapBareosSchema(nullptr, me->scripts_directory)
+            || !db->CheckTablesVersion(nullptr))) {
       Pmsg2(000, T_("Could not bootstrap Catalog \"%s\", database \"%s\".\n"),
             catalog->resource_name_, catalog->db_name);
       Jmsg(nullptr, M_FATAL, 0,
@@ -111,7 +112,7 @@ bool CheckCatalog(cat_op mode)
     }
 
 
-    if (!OpenCatalogWithBootstrap(catalog, db, mode == UPDATE_AND_FIX)) {
+    if (!OpenCatalogWithBootstrap(catalog, db, mode)) {
       db->CloseDatabase(NULL);
       OK = false;
       goto bail_out;

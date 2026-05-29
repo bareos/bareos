@@ -106,14 +106,20 @@ Bareos comes with a number of scripts to prepare and update the databases. All t
 **Script**                        **Stage**      **Description**
 ================================= ============== ===================================================
 :file:`create_bareos_database`    installation   create Bareos database
-:file:`make_bareos_tables`        installation   create Bareos tables
+:file:`make_bareos_tables`        installation   manually create Bareos tables
 :file:`grant_bareos_privileges`   installation   grant database access privileges
-:file:`update_bareos_tables [-f]` update         update the database schema
+:file:`update_bareos_tables [-f]` update         manually update the database schema
 :file:`drop_bareos_tables`        deinstallation remove Bareos database tables
 :file:`drop_bareos_database`      deinstallation remove Bareos database
 :file:`make_catalog_backup`       backup         backup the Bareos database
 :file:`delete_catalog_backup`     backup helper  remove the temporary Bareos database backup file
 ================================= ============== ===================================================
+
+For PostgreSQL, :command:`bareos-dir` can create a fresh catalog schema and
+apply schema updates automatically when it starts, once the database exists and
+the Bareos database user has the required privileges. The
+:command:`make_bareos_tables` and :command:`update_bareos_tables` scripts remain
+available for manual workflows.
 
 The database preparation scripts have following configuration options:
 
@@ -199,8 +205,10 @@ Again, verify that you have specified the correct settings by calling the :comma
 
    su - postgres
    /usr/lib/bareos/scripts/create_bareos_database
-   /usr/lib/bareos/scripts/make_bareos_tables
    /usr/lib/bareos/scripts/grant_bareos_privileges
+
+At the first regular startup, :command:`bareos-dir` creates the PostgreSQL
+catalog contents automatically.
 
 The encoding of the bareos database must be :strong:`SQL_ASCII`. The command :command:`create_bareos_database` automatically creates the database with this encoding. This can be verified by the command :command:`psql -l`, which shows information about existing databases:
 
@@ -217,7 +225,7 @@ The encoding of the bareos database must be :strong:`SQL_ASCII`. The command :co
     template1 | postgres | UTF8
    (4 rows)
 
-The owner of the database may vary. The Bareos database maintenance scripts don’t change the default owner of the Bareos database, so it stays at the PostgreSQL administration user. The :command:`grant_bareos_privileges` script grant the required permissions to the Bareos database user. In contrast, when installing (not updating) using :ref:`dbconfig <section-dbconfig>`, the database owner will be identical with the Bareos database user.
+The owner of the database may vary. The Bareos database maintenance scripts don’t change the default owner of the Bareos database, so it stays at the PostgreSQL administration user. The :command:`grant_bareos_privileges` script grants the permissions the Bareos database user needs, including creating or upgrading the PostgreSQL catalog contents on director startup. In contrast, when installing (not updating) using :ref:`dbconfig <section-dbconfig>`, the database owner will be identical with the Bareos database user.
 
 By default, using PostgreSQL ident, a Unix user can access a database of the same name. Therefore the user **bareos** can access the database :file:`bareos`.
 
@@ -351,7 +359,6 @@ If **dbconfig-common** did not succeed or you choose not to use it, run the Bare
    export PGHOST=bareos-database.example.com
    export PGPASSWORD=dbasecret
    /usr/lib/bareos/scripts/create_bareos_database
-   /usr/lib/bareos/scripts/make_bareos_tables
    /usr/lib/bareos/scripts/grant_bareos_privileges
 
 

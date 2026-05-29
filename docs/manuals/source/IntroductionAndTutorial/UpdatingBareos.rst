@@ -474,18 +474,11 @@ Other Platforms
 This has to be done as database administrator.
 On most platforms Bareos knows only about the credentials to access the Bareos database, but not about the database administrator credentials to modify the database schema.
 
-The task of updating the database schema is done by the scripts :command:`/usr/lib/bareos/scripts/update_bareos_tables` and :command:`/usr/lib/bareos/scripts/grant_bareos_privileges`.
-
-However, this script requires administration access to the database. Depending on your distribution, this requires different preparations.
+For PostgreSQL catalogs, :command:`bareos-dir` updates the database schema
+automatically when it starts. No manual
+:command:`/usr/lib/bareos/scripts/update_bareos_tables` invocation is required
+for the normal upgrade path.
 
 More details can be found in chapter :ref:`Catalog Maintenance <CatMaintenanceChapter>`.
-
-.. code-block:: shell-session
-   :caption: Update PostgreSQL database schema on most Linux distribution
-
-   su postgres -c /usr/lib/bareos/scripts/update_bareos_tables
-   su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
-
-The :command:`grant_bareos_privileges` command is required, if new databases tables are introduced. It does not hurt to run it multiple times.
 
 After this, restart the Bareos Director and verify it starts without problems.

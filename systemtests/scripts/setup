@@ -10,8 +10,13 @@ print_debug "drop database \"${db_name}\""
 print_debug "creating database \"${db_name}\""
 "${BAREOS_SCRIPTS_DIR}/create_bareos_database" 2>&1 >/dev/null
 
-print_debug "making tables  \"${db_name}\""
-"${BAREOS_SCRIPTS_DIR}/make_bareos_tables" 2>&1 >/dev/null
+if [ "${DBTYPE}" = "postgresql" ]; then
+  print_debug \
+    "skipping manual table creation for \"${db_name}\"; bareos-dir bootstraps the catalog contents"
+else
+  print_debug "making tables  \"${db_name}\""
+  "${BAREOS_SCRIPTS_DIR}/make_bareos_tables" 2>&1 >/dev/null
+fi
 
 print_debug "granting privileges database \"${db_name}\""
 "${BAREOS_SCRIPTS_DIR}/grant_bareos_privileges" 2>&1 >/dev/null \
