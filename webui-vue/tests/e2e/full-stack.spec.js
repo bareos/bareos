@@ -192,6 +192,31 @@ test('navigates through client, pool, and volume detail pages', async ({
   await expect(page.getByText('Volume Properties', { exact: true })).toBeVisible()
 })
 
+test('covers schedules and director tabs through the real director connection', async ({
+  page,
+}) => {
+  await login(page)
+
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  await expect(page.getByText('Scheduler Jobs', { exact: true })).toBeVisible()
+  await expect(page.getByText('Scheduler Preview', { exact: true })).toBeVisible()
+
+  await page.getByRole('tab', { name: 'Show' }).click()
+  await expect(
+    page.locator('.q-tab-panel:visible').getByText('Schedules', { exact: true })
+  ).toBeVisible()
+
+  await openNav(page, 'nav-director', /#\/director/)
+  await expect(page.getByText('Director Info', { exact: true })).toBeVisible()
+  await expect(page.getByText('Scheduled Jobs', { exact: true })).toBeVisible()
+
+  await page.getByRole('tab', { name: 'Messages' }).click()
+  await expect(page.getByText('Director Messages', { exact: true })).toBeVisible()
+
+  await page.getByRole('tab', { name: 'Catalog Maintenance' }).click()
+  await expect(page.getByText('Catalog Maintenance Target', { exact: true })).toBeVisible()
+})
+
 test('shows readonly ACL restrictions for the restricted profile', async ({
   page,
 }) => {
