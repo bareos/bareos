@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,6 +39,7 @@
 #include "stored/device.h"
 #include "stored/device_control_record.h"
 #include "stored/bsr.h"
+#include "stored/sd_backends.h"
 #include "stored/stored_jcr_impl.h"
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
@@ -46,7 +47,18 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <limits.h>
+#include <memory>
+#include <string_view>
+#include <sys/stat.h>
 #include <vector>
+#if defined(HAVE_WIN32)
+#  include <windows.h>
+#else
+#  include <unistd.h>
+#endif
+
+extern char* exepath;
 
 namespace storagedaemon {
 
@@ -55,7 +67,10 @@ namespace {
 struct DeviceResolutionResult {
   DeviceResource* device_resource{nullptr};
   std::string detail;
+  std::string inferred_volume_name;
 };
+
+static std::vector<std::unique_ptr<DeviceResource>> synthetic_device_resources;
 
 static bool DeviceSupportsAccess(const DeviceResource* device_resource,
                                  bool readonly)
@@ -88,6 +103,108 @@ static std::string StripQuotes(const char* resource_name)
 static std::string AccessDescription(bool readonly)
 {
   return readonly ? "reading" : "writing";
+}
+
+static bool TryStatPath(const std::string& path, struct stat& statp)
+{
+  return !path.empty() && stat(path.c_str(), &statp) == 0;
+}
+
+static bool IsDirectLocalVolumeStat(const struct stat& statp)
+{
+  return S_ISREG(statp.st_mode) || S_ISDIR(statp.st_mode);
+}
+
+static std::string DirectoryName(const std::string& path)
+{
+  auto separator = path.find_last_of("/\\");
+  if (separator == std::string::npos) { return "."; }
+  if (separator == 0) { return path.substr(0, 1); }
+  return path.substr(0, separator);
+}
+
+static std::string BaseName(const std::string& path)
+{
+  auto separator = path.find_last_of("/\\");
+  if (separator == std::string::npos) { return path; }
+  return path.substr(separator + 1);
+}
+
+static std::string GetExecutableDirectory()
+{
+#if defined(HAVE_WIN32)
+  char path[MAX_PATH];
+  auto len = GetModuleFileNameA(nullptr, path, sizeof(path));
+  if (len > 0 && len < sizeof(path)) {
+    return DirectoryName(std::string(path, len));
+  }
+#else
+  char path[PATH_MAX];
+  auto len = readlink("/proc/self/exe", path, sizeof(path) - 1);
+  if (len > 0) {
+    path[len] = '\0';
+    return DirectoryName(path);
+  }
+#endif
+
+  if (exepath && exepath[0]) { return exepath; }
+  return {};
+}
+
+static bool EnsureFileBackendLoaded()
+{
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  const std::string device_type{DeviceType::B_FILE_DEV};
+  if (ImplementationFactory<Device>::IsRegistered(device_type)) { return true; }
+
+  std::vector<std::string> backend_directories{PATH_BAREOS_BACKENDDIR};
+  auto executable_directory = GetExecutableDirectory();
+  if (!executable_directory.empty()) {
+    std::string build_tree_backend_dir{std::move(executable_directory)};
+    if (!IsPathSeparator(build_tree_backend_dir.back())) {
+      build_tree_backend_dir += PathSeparator;
+    }
+    build_tree_backend_dir += "backends";
+    backend_directories.emplace_back(std::move(build_tree_backend_dir));
+  }
+
+  return LoadStorageBackend(device_type, backend_directories);
+#else
+  return true;
+#endif
+}
+
+static DeviceResolutionResult ResolveDirectLocalVolumePath(std::string path)
+{
+  DeviceResolutionResult result;
+  struct stat statp;
+  if (!TryStatPath(path, statp) || !IsDirectLocalVolumeStat(statp)) {
+    return result;
+  }
+
+  if (!EnsureFileBackendLoaded()) {
+    result.detail = T_(
+        "Cannot load the file storage backend needed for direct "
+        "local volume access.\n");
+    return result;
+  }
+
+  auto device_resource = std::make_unique<DeviceResource>();
+  auto display_path = path;
+  if (S_ISREG(statp.st_mode)) {
+    result.inferred_volume_name = BaseName(path);
+    path = DirectoryName(path);
+  }
+
+  device_resource->resource_name_ = strdup(display_path.c_str());
+  device_resource->archive_device_string = strdup(path.c_str());
+  device_resource->media_type = strdup("");
+  device_resource->device_type = DeviceType::B_FILE_DEV;
+
+  result.device_resource = device_resource.get();
+  synthetic_device_resources.emplace_back(std::move(device_resource));
+
+  return result;
 }
 
 static std::string FormatDeviceChoice(const DeviceResource* device_resource)
@@ -145,7 +262,8 @@ static DeviceResource* PromptForAutochangerDevice(
   if (!isatty(fileno(stdin))) { return nullptr; }
 
   while (true) {
-    auto prompt = FormatAutochangerSelectionPrompt(autochanger_resource, devices);
+    auto prompt
+        = FormatAutochangerSelectionPrompt(autochanger_resource, devices);
     if (fputs(prompt.c_str(), stderr) < 0) { return nullptr; }
     fflush(stderr);
 
@@ -174,8 +292,8 @@ static DeviceResolutionResult ResolveAutochangerDevice(
 
   DeviceResource* device_resource = nullptr;
   int i;
-  foreach_alist_index (i, device_resource, autochanger_resource->device_resources)
-  {
+  foreach_alist_index (i, device_resource,
+                       autochanger_resource->device_resources) {
     if (!DeviceSupportsAccess(device_resource, readonly)) { continue; }
 
     eligible_devices.emplace_back(device_resource);
@@ -224,6 +342,15 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
 static DeviceResolutionResult find_device_res(char* archive_device_string,
                                               bool readonly);
 static void MyFreeJcr(JobControlRecord* jcr);
+
+bool IsDirectLocalVolumePath(const char* device_name)
+{
+  if (!device_name) { return false; }
+
+  auto normalized_path = StripQuotes(device_name);
+  struct stat statp;
+  return TryStatPath(normalized_path, statp) && IsDirectLocalVolumeStat(statp);
+}
 
 
 JobControlRecord* SetupDummyJcr(const char* name,
@@ -275,7 +402,7 @@ JobControlRecord* SetupJcr(const char* name,
 {
   JobControlRecord* jcr = SetupDummyJcr(name, bsr, director);
 
-  InitAutochangers();
+  if (my_config) { InitAutochangers(); }
   CreateVolumeLists();
 
   if (!setup_to_access_device(dcr, jcr, dev_name, VolumeName, readonly)) {
@@ -294,6 +421,12 @@ JobControlRecord* SetupJcr(const char* name,
 
 std::string AvailableDevicesListing()
 {
+  if (!my_config) {
+    return T_(
+        "Direct local file volume paths may be used without an SD "
+        "configuration.\n");
+  }
+
   std::vector<std::string> devices;
   for (BareosResource* resource = nullptr;
        (resource = my_config->GetNextRes(R_DEVICE, resource));) {
@@ -319,8 +452,7 @@ std::string AvailableDevicesListing()
     std::vector<std::string> members;
     DeviceResource* device = nullptr;
     int i;
-    foreach_alist_index (i, device, autochanger->device_resources)
-    {
+    foreach_alist_index (i, device, autochanger->device_resources) {
       members.emplace_back(FormatDeviceChoice(device));
     }
     std::sort(members.begin(), members.end());
@@ -360,7 +492,6 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
                                    bool readonly)
 {
   Device* dev;
-  char* p;
   DeviceResource* device_resource;
   char VolName[MAX_NAME_LENGTH];
 
@@ -381,31 +512,40 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
     VolName[0] = 0;
   }
 
-  if (!jcr->sd_impl->read_session.bsr && VolName[0] == 0) {
-    if (!bstrncmp(dev_name, "/dev/", 5)) {
-      /* Try stripping file part */
-      p = dev_name + strlen(dev_name);
-
-      while (p > dev_name && !IsPathSeparator(*p)) p--;
-      if (IsPathSeparator(*p)) {
-        bstrncpy(VolName, p + 1, sizeof(VolName));
-        *p = 0;
-      }
-    }
-  }
-
   auto resolved_device = find_device_res(dev_name, readonly);
   device_resource = resolved_device.device_resource;
   if (device_resource == NULL) {
     if (!resolved_device.detail.empty()) {
-      Jmsg3(jcr, M_FATAL, 0, T_("Cannot use device \"%s\" in config file %s.\n%s"),
-            dev_name, configfile, resolved_device.detail.c_str());
+      if (configfile) {
+        Jmsg3(jcr, M_FATAL, 0,
+              T_("Cannot use device \"%s\" in config file %s.\n%s"), dev_name,
+              configfile, resolved_device.detail.c_str());
+      } else {
+        Jmsg2(jcr, M_FATAL, 0, T_("Cannot use device \"%s\".\n%s"), dev_name,
+              resolved_device.detail.c_str());
+      }
     } else {
-      Jmsg2(jcr, M_FATAL, 0,
-            T_("Cannot find device \"%s\" in config file %s.\n%s"), dev_name,
-            configfile, AvailableDevicesListing().c_str());
+      if (configfile) {
+        Jmsg2(jcr, M_FATAL, 0,
+              T_("Cannot find device \"%s\" in config file %s.\n%s"), dev_name,
+              configfile, AvailableDevicesListing().c_str());
+      } else {
+        Jmsg2(jcr, M_FATAL, 0, T_("Cannot use device \"%s\".\n%s"), dev_name,
+              AvailableDevicesListing().c_str());
+      }
     }
     return false;
+  }
+
+  if (!jcr->sd_impl->read_session.bsr && VolName[0] == 0) {
+    if (!resolved_device.inferred_volume_name.empty()) {
+      bstrncpy(VolName, resolved_device.inferred_volume_name.c_str(),
+               sizeof(VolName));
+    } else if (!bstrncmp(dev_name, "/dev/", 5)) {
+      auto* p = dev_name + strlen(dev_name);
+      while (p > dev_name && !IsPathSeparator(*p)) p--;
+      if (IsPathSeparator(*p)) { bstrncpy(VolName, p + 1, sizeof(VolName)); }
+    }
   }
 
   dev = FactoryCreateDevice(jcr, device_resource);
@@ -502,46 +642,54 @@ static DeviceResolutionResult find_device_res(char* archive_device_string,
   auto normalized_resource_name = StripQuotes(archive_device_string);
 
   Dmsg0(900, "Enter find_device_res\n");
-  foreach_res (device_resource, R_DEVICE) {
-    Dmsg2(900, "Compare %s and %s\n", device_resource->archive_device_string,
-          archive_device_string);
-    if (bstrcmp(device_resource->archive_device_string,
-                archive_device_string)) {
-      found = true;
-      break;
-    }
-  }
-
-  if (!found) {
-    /* Search for name of Device resource rather than archive name */
+  if (my_config) {
     foreach_res (device_resource, R_DEVICE) {
-      Dmsg2(900, "Compare %s and %s\n", device_resource->resource_name_,
-            normalized_resource_name.c_str());
-      if (bstrcmp(device_resource->resource_name_,
-                  normalized_resource_name.c_str())) {
+      Dmsg2(900, "Compare %s and %s\n", device_resource->archive_device_string,
+            archive_device_string);
+      if (bstrcmp(device_resource->archive_device_string,
+                  archive_device_string)) {
         found = true;
         break;
       }
     }
-  }
 
-  if (!found) {
-    AutochangerResource* autochanger_resource;
-    foreach_res (autochanger_resource, R_AUTOCHANGER) {
-      Dmsg2(900, "Compare %s and %s\n", autochanger_resource->resource_name_,
-            normalized_resource_name.c_str());
-      if (bstrcmp(autochanger_resource->resource_name_,
-                  normalized_resource_name.c_str())) {
-        result = ResolveAutochangerDevice(autochanger_resource, readonly);
-        device_resource = result.device_resource;
-        found = (device_resource != nullptr);
-        break;
+    if (!found) {
+      /* Search for name of Device resource rather than archive name */
+      foreach_res (device_resource, R_DEVICE) {
+        Dmsg2(900, "Compare %s and %s\n", device_resource->resource_name_,
+              normalized_resource_name.c_str());
+        if (bstrcmp(device_resource->resource_name_,
+                    normalized_resource_name.c_str())) {
+          found = true;
+          break;
+        }
+      }
+    }
+
+    if (!found) {
+      AutochangerResource* autochanger_resource;
+      foreach_res (autochanger_resource, R_AUTOCHANGER) {
+        Dmsg2(900, "Compare %s and %s\n", autochanger_resource->resource_name_,
+              normalized_resource_name.c_str());
+        if (bstrcmp(autochanger_resource->resource_name_,
+                    normalized_resource_name.c_str())) {
+          result = ResolveAutochangerDevice(autochanger_resource, readonly);
+          device_resource = result.device_resource;
+          found = (device_resource != nullptr);
+          break;
+        }
       }
     }
   }
 
   if (!found) {
-    if (result.detail.empty()) {
+    result = ResolveDirectLocalVolumePath(normalized_resource_name);
+    device_resource = result.device_resource;
+    found = (device_resource != nullptr);
+  }
+
+  if (!found) {
+    if (result.detail.empty() && configfile) {
       Pmsg2(0, T_("Could not find device \"%s\" in config file %s.\n"),
             archive_device_string, configfile);
     }

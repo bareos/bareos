@@ -148,7 +148,8 @@ int main(int argc, char* argv[])
                   "Specify the input device name "
                   "(either as name of a Bareos Storage Daemon Device resource "
                   "or identical to the "
-                  "Archive Device in a Bareos Storage Daemon Device resource).")
+                  "Archive Device in a Bareos Storage Daemon Device resource, "
+                  "or a local file volume path).")
       ->type_name(" ");
 
   std::string output_archive;
@@ -157,7 +158,8 @@ int main(int argc, char* argv[])
                   "Specify the output device name "
                   "(either as name of a Bareos Storage Daemon Device resource "
                   "or identical to the "
-                  "Archive Device in a Bareos Storage Daemon Device resource).")
+                  "Archive Device in a Bareos Storage Daemon Device resource, "
+                  "or a local file volume path).")
       ->type_name(" ");
 
   ParseBareosApp(bcopy_app, argc, argv);
@@ -168,9 +170,6 @@ int main(int argc, char* argv[])
 
   working_directory = work_dir.c_str();
 
-  my_config = InitSdConfig(configFile.c_str(), M_CONFIG_ERROR);
-  ParseSdConfig(configFile.c_str(), M_CONFIG_ERROR);
-
   if (input_archive.empty()) {
     printf(T_("Missing input device. %sNothing done.\n"),
            AvailableDevicesListing().c_str());
@@ -179,6 +178,20 @@ int main(int argc, char* argv[])
     printf(T_("Missing output device. %sNothing done.\n"),
            AvailableDevicesListing().c_str());
     return BEXIT_CLI_PARSING_ERROR;
+  }
+
+  const bool config_explicit = !configFile.empty();
+  const bool use_sd_config
+      = config_explicit || !IsDirectLocalVolumePath(input_archive.c_str())
+        || !IsDirectLocalVolumePath(output_archive.c_str());
+
+  my_config = nullptr;
+  if (use_sd_config) {
+    my_config = InitSdConfig(configFile.c_str(), M_CONFIG_ERROR);
+    ParseSdConfig(configFile.c_str(), M_CONFIG_ERROR);
+  } else if (!DirectorName.empty()) {
+    Emsg0(M_ERROR_TERM, 0,
+          T_("--director requires a Storage Daemon configuration.\n"));
   }
 
 
@@ -195,10 +208,12 @@ int main(int argc, char* argv[])
     }
   }
 
-  LoadSdPlugins(me->plugin_directory, me->plugin_names);
+  if (my_config) {
+    LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
-  ReadCryptoCache(me->working_directory, "bareos-sd",
-                  GetFirstPortHostOrder(me->SDaddrs));
+    ReadCryptoCache(me->working_directory, "bareos-sd",
+                    GetFirstPortHostOrder(me->SDaddrs));
+  }
 
   // Setup and acquire input device for reading
   Dmsg0(100, "About to setup input jcr\n");

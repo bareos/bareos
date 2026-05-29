@@ -29,6 +29,7 @@
 #if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
+#include <algorithm>
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "include/streams.h"
@@ -209,18 +210,33 @@ int main(int argc, char* argv[])
                   "Specify the input device name "
                   "(either as name of a Bareos Storage Daemon Device resource "
                   "or identical to the "
-                  "Archive Device in a Bareos Storage Daemon Device resource).")
+                  "Archive Device in a Bareos Storage Daemon Device resource, "
+                  "or a local file volume path).")
       ->type_name(" ");
 
   ParseBareosApp(bls_app, argc, argv);
-
-  my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
-  ParseSdConfig(configfile, M_CONFIG_ERROR);
 
   if (device_names.size() == 0) {
     printf(T_("Missing input device. %sNothing done.\n"),
            AvailableDevicesListing().c_str());
     return BEXIT_CLI_PARSING_ERROR;
+  }
+
+  const bool config_explicit = configfile != nullptr;
+  const bool all_direct_local
+      = std::all_of(device_names.begin(), device_names.end(),
+                    [](const std::string& device_name) {
+                      return IsDirectLocalVolumePath(device_name.c_str());
+                    });
+  const bool use_sd_config = config_explicit || !all_direct_local;
+
+  my_config = nullptr;
+  if (use_sd_config) {
+    my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+    ParseSdConfig(configfile, M_CONFIG_ERROR);
+  } else if (!DirectorName.empty()) {
+    Emsg0(M_ERROR_TERM, 0,
+          T_("--director requires a Storage Daemon configuration.\n"));
   }
 
   if (!DirectorName.empty()) {
@@ -235,10 +251,12 @@ int main(int argc, char* argv[])
     }
   }
 
-  LoadSdPlugins(me->plugin_directory, me->plugin_names);
+  if (my_config) {
+    LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
-  ReadCryptoCache(me->working_directory, "bareos-sd",
-                  GetFirstPortHostOrder(me->SDaddrs));
+    ReadCryptoCache(me->working_directory, "bareos-sd",
+                    GetFirstPortHostOrder(me->SDaddrs));
+  }
 
   if (ff->included_files_list == nullptr) { AddFnameToIncludeList(ff, 0, "/"); }
 
