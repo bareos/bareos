@@ -4,8 +4,9 @@ Thank you for installing the Bareos Director!
 please run the following commands to setup the Bareos databases:
 
 su postgres -c /usr/local/lib/bareos/scripts/create_bareos_database
-su postgres -c /usr/local/lib/bareos/scripts/make_bareos_tables
 su postgres -c /usr/local/lib/bareos/scripts/grant_bareos_privileges
+
+The bareos-dir daemon creates the catalog contents on first start.
 
 
 enable the service by running the following commands:
