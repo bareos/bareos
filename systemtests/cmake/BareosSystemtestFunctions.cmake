@@ -89,6 +89,18 @@ macro(create_systemtests_directory)
   file(MAKE_DIRECTORY ${scriptdir})
   file(MAKE_DIRECTORY ${working})
   file(MAKE_DIRECTORY ${archivedir})
+
+  file(CREATE_LINK ${scriptdir}/bareos ${bindir}/bareos SYMBOLIC)
+  file(CREATE_LINK ${scriptdir}/bconsole ${bindir}/bconsole SYMBOLIC)
+
+  foreach(binary_name ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
+    create_variable_binary_name_to_test_for_binary_name(${binary_name})
+    file(CREATE_LINK ${${binary_name_to_test_upcase}} ${sbindir}/${binary_name}
+         SYMBOLIC
+    )
+  endforeach()
+
+  file(CREATE_LINK ${scriptdir}/btraceback ${sbindir}/btraceback SYMBOLIC)
 endmacro()
 
 # create a variable BINARY_NAME_TO_TEST for each binary name bareos-dir ->
@@ -764,6 +776,49 @@ function(add_systemtest name file)
   endif()
 endfunction()
 
+function(configure_director_scripts_directory test_dir scripts_dir)
+  file(
+    GLOB_RECURSE
+    bareos_dir_configs
+    "${PROJECT_BINARY_DIR}/tests/${test_dir}/etc/bareos/bareos-dir.d/director/bareos-dir.conf"
+  )
+  file(GLOB standalone_bareos_dir_configs
+       "${PROJECT_BINARY_DIR}/tests/${test_dir}/etc/bareos/bareos-dir*.conf"
+  )
+  list(APPEND bareos_dir_configs ${standalone_bareos_dir_configs})
+
+  foreach(config_file ${bareos_dir_configs})
+    file(READ "${config_file}" config_contents)
+    if(config_contents MATCHES "[ \t]*ScriptsDirectory[ \t]*=")
+      continue()
+    endif()
+
+    set(updated_config_contents "${config_contents}")
+    string(
+      REGEX
+      REPLACE "([ \t]*WorkingDirectory[ \t]*=[^\n]*\n)"
+              "\\1  ScriptsDirectory = \"${scripts_dir}\"\n"
+              updated_config_contents "${updated_config_contents}"
+    )
+
+    if(updated_config_contents STREQUAL config_contents)
+      string(
+        REGEX
+        REPLACE "\n([ \t]*})" "\n  ScriptsDirectory = \"${scripts_dir}\"\n\\1"
+                updated_config_contents "${updated_config_contents}"
+      )
+    endif()
+
+    if(updated_config_contents STREQUAL config_contents)
+      message(
+        FATAL_ERROR "Could not inject ScriptsDirectory into ${config_file}"
+      )
+    endif()
+
+    file(WRITE "${config_file}" "${updated_config_contents}")
+  endforeach()
+endfunction()
+
 function(init_systemtest_properties test_basename test testfile
          setup_wanted_var
 )
@@ -1063,6 +1118,7 @@ macro(create_enabled_systemtest prefix test_name test_srcdir test_dir
   configurefilestosystemtest(
     "systemtests" "tests/${test_dir}" "*" @ONLY "tests/${test_srcdir}"
   )
+  configure_director_scripts_directory(${test_dir} "${scriptdir}")
 
   if(${ignore_config_warnings})
     set(IGNORE_CONFIG_WARNINGS true)

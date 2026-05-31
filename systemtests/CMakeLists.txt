@@ -429,6 +429,7 @@ else()
     configurefilestosystemtest(
       "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
     )
+    configure_director_scripts_directory(${TEST_NAME} "${scriptdir}")
     configure_file(
       "environment.in" "tests/${TEST_NAME}/environment" @ONLY
       NEWLINE_STYLE UNIX

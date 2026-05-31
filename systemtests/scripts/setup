@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+explicit_sql_ddl_dir="${SQL_DDL_DIR+set}"
 
 . "${BAREOS_SCRIPTS_DIR}/functions"
 
@@ -10,7 +11,7 @@ print_debug "drop database \"${db_name}\""
 print_debug "creating database \"${db_name}\""
 "${BAREOS_SCRIPTS_DIR}/create_bareos_database" 2>&1 >/dev/null
 
-if [ "${DBTYPE}" = "postgresql" ]; then
+if [ "${DBTYPE}" = "postgresql" ] && [ -z "${explicit_sql_ddl_dir}" ]; then
   print_debug \
     "skipping manual table creation for \"${db_name}\"; bareos-dir bootstraps the catalog contents"
 else
