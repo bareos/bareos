@@ -343,7 +343,7 @@
                          :label="t('Enable')"  class="q-mr-xs"
                          :disable="props.row.enabled"
                          @click="enableJob(props.row)" />
-                  <q-btn flat dense no-caps size="sm" icon="pause" color="warning"
+                  <q-btn flat dense no-caps size="sm" icon="pause" color="orange-10"
                          :label="t('Disable')" class="q-mr-xs"
                          :disable="!props.row.enabled"
                          @click="disableJob(props.row)" />
