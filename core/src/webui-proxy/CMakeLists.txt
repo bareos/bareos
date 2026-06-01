@@ -32,9 +32,6 @@ target_sources(
           proxy_session.cc
           ws_codec.cc
 )
-target_compile_definitions(
-  webui-proxy-objects PRIVATE BAREOS_FULL_VERSION="${BAREOS_FULL_VERSION}"
-)
 target_link_libraries(
   webui-proxy-objects PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto
                               Jansson::Jansson Threads::Threads
@@ -49,8 +46,7 @@ add_executable(
 
 target_compile_definitions(
   bareos-webui-proxy
-  PRIVATE BAREOS_FULL_VERSION="${BAREOS_FULL_VERSION}"
-          WEBUI_PROXY_DEFAULT_CONFIG_PATH="${confdir}/bareos-webui-proxy.ini"
+  PRIVATE WEBUI_PROXY_DEFAULT_CONFIG_PATH="${confdir}/bareos-webui-proxy.ini"
 )
 
 target_link_libraries(
@@ -90,9 +86,6 @@ if(BUILD_TESTING AND GTest_FOUND)
     tests/test_proxy_session.cc
     tests/test_ws_codec.cc
     $<TARGET_OBJECTS:webui-proxy-objects>
-  )
-  target_compile_definitions(
-    test_webui_proxy PRIVATE BAREOS_FULL_VERSION="${BAREOS_FULL_VERSION}"
   )
   target_link_libraries(
     test_webui_proxy
