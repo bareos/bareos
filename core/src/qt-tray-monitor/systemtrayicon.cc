@@ -69,6 +69,30 @@ const int kHighlightGreenGreen = 220;
 const int kHighlightGreenBlue = 96;
 const char* kTrayAnimationIcon = ":/images/bareos-logo_128x128.png";
 const char* kTrayErrorIcon = ":/images/W.png";
+
+QPixmap createGreenShieldPixmap(const QPixmap& basePixmap)
+{
+  if (basePixmap.isNull()) { return QPixmap(); }
+
+  QImage image = basePixmap.toImage().convertToFormat(QImage::Format_ARGB32);
+  for (int y = 0; y < image.height(); ++y) {
+    QRgb* scanLine = reinterpret_cast<QRgb*>(image.scanLine(y));
+    for (int x = 0; x < image.width(); ++x) {
+      QColor color = QColor::fromRgba(scanLine[x]);
+      if (color.alpha() == 0
+          || color.hsvSaturation() <= kShieldSaturationThreshold) {
+        continue;
+      }
+
+      QColor recolored;
+      recolored.setHsv(kShieldGreenHue, color.hsvSaturation(), color.value(),
+                       color.alpha());
+      scanLine[x] = recolored.rgba();
+    }
+  }
+
+  return QPixmap::fromImage(image);
+}
 }  // namespace
 
 SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
@@ -76,6 +100,8 @@ SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
     , iconIdx(kNormalIcon)
     , animationFrameIdx(0)
     , animationRequested(false)
+    , baseShieldPixmap(kTrayAnimationIcon)
+    , greenShieldPixmap(createGreenShieldPixmap(baseShieldPixmap))
     , normalIcon(QIcon(createShieldPixmap(0.0, 1.0, false)))
     , errorIcon(kTrayErrorIcon)
     , animationIcons(createAnimationIcons())
@@ -153,7 +179,7 @@ void SystemTrayIcon::updateIcon()
 QList<QIcon> SystemTrayIcon::createAnimationIcons() const
 {
   QList<QIcon> frames;
-  QPixmap basePixmap(createBaseShieldPixmap(true));
+  const QPixmap& basePixmap = getBaseShieldPixmap(true);
 
   if (basePixmap.isNull()) { return frames; }
 
@@ -168,36 +194,16 @@ QList<QIcon> SystemTrayIcon::createAnimationIcons() const
   return frames;
 }
 
-QPixmap SystemTrayIcon::createBaseShieldPixmap(bool recolor_green) const
+const QPixmap& SystemTrayIcon::getBaseShieldPixmap(bool use_green_palette) const
 {
-  QPixmap basePixmap(kTrayAnimationIcon);
-  if (basePixmap.isNull() || !recolor_green) { return basePixmap; }
-
-  QImage image = basePixmap.toImage().convertToFormat(QImage::Format_ARGB32);
-  for (int y = 0; y < image.height(); ++y) {
-    QRgb* scanLine = reinterpret_cast<QRgb*>(image.scanLine(y));
-    for (int x = 0; x < image.width(); ++x) {
-      QColor color = QColor::fromRgba(scanLine[x]);
-      if (color.alpha() == 0
-          || color.hsvSaturation() <= kShieldSaturationThreshold) {
-        continue;
-      }
-
-      QColor recolored;
-      recolored.setHsv(kShieldGreenHue, color.hsvSaturation(), color.value(),
-                       color.alpha());
-      scanLine[x] = recolored.rgba();
-    }
-  }
-
-  return QPixmap::fromImage(image);
+  return use_green_palette ? greenShieldPixmap : baseShieldPixmap;
 }
 
 QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
                                            qreal widthScale,
                                            bool use_green_palette) const
 {
-  QPixmap basePixmap(createBaseShieldPixmap(use_green_palette));
+  const QPixmap& basePixmap = getBaseShieldPixmap(use_green_palette);
   if (basePixmap.isNull()) { return QPixmap(); }
 
   const int shadowRed = use_green_palette ? kShadowGreenRed : kShadowBlueRed;
