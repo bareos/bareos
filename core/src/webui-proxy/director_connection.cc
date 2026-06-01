@@ -398,7 +398,7 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   // the terminating prompt. Otherwise the last .api response can remain queued
   // and shift every subsequent dashboard command by one response.
   if (cfg.json_mode) {
-    Call(".api json compact=yes");
+    Call(".api json");
   }
 }
 

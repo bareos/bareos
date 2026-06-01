@@ -42,7 +42,7 @@
  *  9. Recv:  <director response>
  * 10. Verify director response; send 1000 OK auth\n (or 1999 failed)
  * 11. Recv:  1000 OK: <name> Version: ...         (welcome)
- * 12. (json mode) Send .api json compact=yes\n
+ * 12. (json mode) Send .api json\n
  */
 #ifndef BAREOS_WEBUI_PROXY_DIRECTOR_CONNECTION_H_
 #define BAREOS_WEBUI_PROXY_DIRECTOR_CONNECTION_H_
