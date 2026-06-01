@@ -41,27 +41,25 @@
               {{ dirStatusLabel }}
             </q-item-section>
           </q-item>
-            <q-item-label header class="text-grey-4">
-              {{ t('Active Director') }}
-            </q-item-label>
-            <q-item
-              v-for="directorOption in directorOptions"
-              :key="directorOption.value"
-              clickable
-              v-ripple
-              :disable="switchingDirector || directorOption.value === currentDirector"
-              @click="switchDirector(directorOption.value); drawerOpen = false"
-            >
-              <q-item-section avatar>
-                <q-icon :name="directorOption.value === currentDirector ? 'check_circle' : 'dns'" />
-              </q-item-section>
-              <q-item-section>{{ directorOption.label }}</q-item-section>
-            </q-item>
-            <q-item clickable v-ripple @click="openConsole(); drawerOpen = false">
-              <q-item-section avatar><q-icon name="terminal" /></q-item-section>
-              <q-item-section>{{ t('Console') }}</q-item-section>
-            </q-item>
-          </q-list>
+          <q-item>
+            <q-item-section avatar>
+              <q-icon name="dns" color="white" />
+            </q-item-section>
+            <q-item-section class="text-white text-caption">
+              {{ scopeLabel }}
+            </q-item-section>
+          </q-item>
+          <q-item-label header class="text-grey-4">
+            {{ t('Directors') }}
+          </q-item-label>
+          <DirectorScopeMenuContent
+            v-model="selectedDirectorsModel"
+            :options="directorMenuOptions"
+            :console-directors="scopeConsoleDirectors"
+            data-test-id="director-scope-drawer"
+            @open-console="openConsole($event); drawerOpen = false"
+          />
+        </q-list>
 
         <q-separator dark class="q-my-sm" />
 
@@ -146,32 +144,26 @@
           <q-btn
             flat
             color="white"
-            :label="switchingDirector ? t('Switching…') : (currentDirector || 'director')"
             icon="dns"
             no-caps
-            :loading="switchingDirector"
+            class="director-scope-control"
+            data-testid="director-scope-control"
           >
+            <span class="director-scope-control__label ellipsis">
+              {{ headerScopeLabel }}
+            </span>
+            <q-tooltip>{{ scopeLabel }}</q-tooltip>
             <q-menu>
               <q-list dense style="min-width:160px">
-                <q-item-label header>{{ t('Active Director') }}</q-item-label>
-                <q-item
-                  v-for="directorOption in directorOptions"
-                  :key="directorOption.value"
-                  clickable
-                  v-close-popup
-                  :disable="switchingDirector || directorOption.value === currentDirector"
-                  @click="switchDirector(directorOption.value)"
-                >
-                  <q-item-section avatar>
-                    <q-icon :name="directorOption.value === currentDirector ? 'check_circle' : 'dns'" />
-                  </q-item-section>
-                  <q-item-section>{{ directorOption.label }}</q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item clickable v-close-popup @click="openConsole">
-                  <q-item-section avatar><q-icon name="terminal" /></q-item-section>
-                  <q-item-section>{{ t('Console') }}</q-item-section>
-                </q-item>
+                <q-item-label header>{{ t('Directors') }}</q-item-label>
+                <DirectorScopeMenuContent
+                  v-model="selectedDirectorsModel"
+                  :options="directorMenuOptions"
+                  :console-directors="scopeConsoleDirectors"
+                  :close-on-console="true"
+                  data-test-id="director-scope-menu"
+                  @open-console="openConsole"
+                />
               </q-list>
             </q-menu>
           </q-btn>
@@ -215,23 +207,21 @@
 
     <!-- ── Status bar ─────────────────────────────────────────────────────── -->
     <q-footer class="bareos-statusbar row items-center no-wrap q-px-md q-gutter-x-sm">
-      <!-- connection indicator -->
+      <!-- proxy connection -->
       <q-icon :name="dirStatusIcon" :color="dirStatusColor" size="13px" />
-      <span data-testid="director-status-label">{{ dirStatusLabel }}</span>
-      <span v-if="director.transport" data-testid="director-transport-label" style="opacity:.7">
-        — {{ director.transport }}
+      <span data-testid="director-status-label">
+        {{ dirStatusLabel }}
+        <span style="opacity:.7"> · {{ connectionEndpoint }}</span>
       </span>
-      <span v-if="director.errorMsg" class="text-negative q-ml-xs">— {{ director.errorMsg }}</span>
+      <span v-if="director.errorMsg" class="text-negative q-ml-xs">· {{ director.errorMsg }}</span>
+      <span style="opacity:.4">|</span>
+      <q-icon name="dns" size="13px" style="opacity:.7" />
+      <span>{{ scopeLabel }}</span>
 
       <q-space />
 
-      <!-- director / host info -->
+      <!-- session info -->
       <template v-if="auth.user">
-        <q-icon name="dns" size="13px" style="opacity:.7" />
-        <span>{{ auth.user.director }}
-          <span style="opacity:.6">({{ auth.user.host }}:{{ auth.user.port }})</span>
-        </span>
-        <span style="opacity:.4">|</span>
         <q-icon name="person" size="13px" style="opacity:.7" />
         <span>{{ auth.user.username }}</span>
         <span style="opacity:.4">|</span>
@@ -248,11 +238,12 @@ import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import bareosLogo from '../assets/bareos-logo-small.png'
 import { bareosVersion as appVersion } from '../generated/bareos-version.js'
-import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import DirectorScopeMenuContent from '../components/DirectorScopeMenuContent.vue'
+import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useConsoleSessionsStore } from '../stores/consoleSessions.js'
 import { useDirectorStore } from '../stores/director.js'
-import { buildDirectorOptions } from '../utils/director.js'
+import { DIRECTOR_WS_URL } from '../utils/directorCommandSocket.js'
 import {
   RELEASE_INFO_PAGE_URL,
   useReleaseInfoStore,
@@ -267,12 +258,105 @@ const releaseInfo = useReleaseInfoStore()
 const router   = useRouter()
 const drawerOpen = ref(false)
 const directorVersion = ref('')
-const switchingDirector = ref(false)
 const { t } = useI18n()
+const settings = useSettingsStore()
+const connectionEndpoint = computed(() => {
+  try {
+    return new URL(DIRECTOR_WS_URL, window.location.href).host
+  } catch {
+    return window.location.host
+  }
+})
 
-function openConsole() {
+const currentDirector = computed(() => auth.user?.director || settings.directorName || '')
+const {
+  directorOptions,
+  selectedDirectorsModel,
+  activeDirectors,
+  isCommonScope,
+  scopeLabel,
+  syncSelectedDirectors,
+} = useDirectorScope({ t })
+const headerScopeLabel = computed(() => (
+  isCommonScope.value
+    ? `${activeDirectors.value.length} ${t('directors')}`
+    : (activeDirectors.value[0] ?? t('Directors'))
+))
+
+function connectionCaptionParts(connectionState) {
+  if (!connectionState?.status) {
+    return []
+  }
+
+  if (connectionState.status === 'connected') {
+    return [
+      t('Connected'),
+      ...(connectionState.transport ? [connectionState.transport] : []),
+    ]
+  }
+
+  if (connectionState.status === 'checking' || connectionState.status === 'connecting') {
+    return [t('Connecting…')]
+  }
+
+  if (connectionState.status === 'authenticating') {
+    return [t('Authenticating…')]
+  }
+
+  if (connectionState.status === 'error') {
+    return [t('Error')]
+  }
+
+  if (connectionState.status === 'disconnected') {
+    return [t('Offline')]
+  }
+
+  return []
+}
+
+const directorMenuOptions = computed(() => (
+  directorOptions.value.map((option) => {
+    const value = String(option?.value ?? '').trim()
+    if (!value) {
+      return option
+    }
+
+    if (!activeDirectors.value.includes(value)) {
+      return option
+    }
+
+    const connectionState = value === currentDirector.value
+      ? {
+        status: director.status,
+        transport: director.transport,
+        errorMsg: director.errorMsg,
+      }
+      : director.directorConnections[value]
+    const captionParts = connectionCaptionParts(connectionState)
+    if (captionParts.length === 0) {
+      return option
+    }
+
+    return {
+      ...option,
+      caption: captionParts.join(' · '),
+    }
+  })
+))
+const scopeConsoleDirectors = computed(() => {
+  const validDirectors = directorOptions.value.map(option => option.value)
+  const scopedDirectors = activeDirectors.value.filter(value => validDirectors.includes(value))
+
+  if (scopedDirectors.length > 0) {
+    return scopedDirectors
+  }
+
+  return currentDirector.value ? [currentDirector.value] : []
+})
+
+function openConsole(targetDirector = scopeConsoleDirectors.value[0] || currentDirector.value) {
   const base = window.location.href.replace(/#.*$/, '')
-  const directorName = currentDirector.value || auth.user?.director || settings.directorName
+  const directorName = targetDirector || auth.user?.director || settings.directorName
   const popupName = `bareos-console-${String(directorName).replace(/[^A-Za-z0-9_-]+/g, '-')}`
   window.open(
     `${base}#/console-popup?director=${encodeURIComponent(directorName)}`,
@@ -292,20 +376,14 @@ const mainNavItems = computed(() => [
   { label: t('Analytics'), to: '/analytics', icon: 'bar_chart', testId: 'nav-analytics', drawerTestId: 'drawer-nav-analytics' },
 ])
 
-const settings = useSettingsStore()
-const currentDirector = computed(() => auth.user?.director || settings.directorName || '')
-const directorOptions = computed(() => {
-  return buildDirectorOptions({
-    availableDirectors: director.availableDirectors,
-    selectedDirectors: settings.selectedDirectors,
-    currentDirector: currentDirector.value,
-  })
-})
-
 onMounted(() => {
   $q.dark.set(settings.darkMode)
   releaseInfo.refresh().catch(() => {})
-  director.fetchAvailableDirectors().catch(() => {})
+  director.fetchAvailableDirectors()
+    .then(() => {
+      syncSelectedDirectors()
+    })
+    .catch(() => {})
 })
 
 function toggleDark() {
@@ -313,30 +391,9 @@ function toggleDark() {
   settings.darkMode = $q.dark.isActive
 }
 
-async function switchDirector(targetDirector) {
-  if (!targetDirector || switchingDirector.value) {
-    return
-  }
-
-  switchingDirector.value = true
-  try {
-    await switchActiveDirector(targetDirector)
-  } catch (error) {
-    $q.notify({
-      type: 'negative',
-      message: t('Could not switch to director {director}: {message}', {
-        director: targetDirector,
-        message: error.message,
-      }),
-    })
-  } finally {
-    switchingDirector.value = false
-  }
-}
-
 const dirStatusColor = computed(() => {
   if (director.status === 'connected') {
-    return director.transport === 'cleartext' ? 'warning' : 'positive'
+    return 'positive'
   }
   return ({
     connecting:     'warning',
@@ -374,6 +431,14 @@ async function refreshDirectorVersion() {
     directorVersion.value = ''
   }
 }
+
+watch(
+  () => [...activeDirectors.value],
+  (directors) => {
+    director.refreshDirectorConnections(directors).catch(() => {})
+  },
+  { immediate: true }
+)
 
 watch(
   () => director.status,
@@ -418,3 +483,14 @@ function logout() {
   router.push({ name: 'login' })
 }
 </script>
+
+<style scoped>
+.director-scope-control {
+  max-width: 15rem;
+}
+
+.director-scope-control__label {
+  display: inline-block;
+  max-width: 11rem;
+}
+</style>

@@ -1,14 +1,6 @@
 <template>
   <q-page class="q-pa-md">
-    <DirectorScopePanel
-      v-model="selectedDirectorsModel"
-      :title="t('Jobs Scope')"
-      :summary-label="jobsScopeLabel"
-      :options="directorOptions"
-      :help-text="t('Select the directors that contribute to the jobs list.')"
-      :errors="directorErrors"
-      data-test-id="jobs-directors"
-    />
+    <DirectorErrorsBanner :errors="directorErrors" />
 
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="list"     :label="t('Show')"     no-caps />
@@ -603,7 +595,7 @@ import {
   withJobsTypeFilterQuery,
 } from '../utils/jobs.js'
 import DirectorLabel from '../components/DirectorLabel.vue'
-import DirectorScopePanel from '../components/DirectorScopePanel.vue'
+import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'

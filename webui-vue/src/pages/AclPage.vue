@@ -1,14 +1,6 @@
 <template>
   <q-page class="q-pa-md">
-    <DirectorScopePanel
-      v-model="selectedDirectorsModel"
-      :title="t('ACL Scope')"
-      :summary-label="aclScopeLabel"
-      :options="directorOptions"
-      :help-text="t('Select the directors that contribute to the ACL view.')"
-      :errors="directorErrors"
-      data-test-id="acl-directors"
-    />
+    <DirectorErrorsBanner :errors="directorErrors" />
 
     <div class="row q-col-gutter-md">
       <div class="col-12">
@@ -163,7 +155,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useDirectorAclStore } from '../stores/directorAcl.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
-import DirectorScopePanel from '../components/DirectorScopePanel.vue'
+import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()

@@ -18,6 +18,7 @@ import {
   DEFAULT_DIRECTOR_NAME,
   useAuthStore,
 } from './auth.js'
+import { createDirectorCommandClient } from '../composables/directorAggregate.js'
 import {
   createDirectorCommandSession,
   DIRECTOR_COMMAND_TIMEOUT_MS,
@@ -39,6 +40,7 @@ export const useDirectorStore = defineStore('director', () => {
   const transport = ref(null)
   const availableDirectors = ref([])
   const availableDirectorsLoaded = ref(false)
+  const directorConnections = ref({})
 
   const isConnected = computed(() => status.value === 'connected')
 
@@ -50,6 +52,7 @@ export const useDirectorStore = defineStore('director', () => {
   let _availableDirectorsPromise = null
   let _activeSession = null
   let _currentConnectAttempt = null
+  let _directorConnectionsAttempt = null
 
   // ── internal helpers ────────────────────────────────────────────────────────
 
@@ -151,6 +154,86 @@ export const useDirectorStore = defineStore('director', () => {
     })
 
     return _availableDirectorsPromise
+  }
+
+  function normaliseDirectorNames(directors) {
+    return [...new Set(
+      (Array.isArray(directors) ? directors : [])
+        .map(value => String(value ?? '').trim())
+        .filter(Boolean)
+    )]
+  }
+
+  function updateDirectorConnection(name, data) {
+    directorConnections.value = {
+      ...directorConnections.value,
+      [name]: {
+        ...(directorConnections.value[name] ?? {}),
+        director: name,
+        ...data,
+      },
+    }
+  }
+
+  async function refreshDirectorConnections(directors) {
+    const auth = useAuthStore()
+    const credentials = auth.getCredentials()
+    const targetDirectors = normaliseDirectorNames(directors)
+
+    if (!credentials?.password || targetDirectors.length === 0) {
+      return {}
+    }
+
+    const attemptToken = Symbol('director-connections-refresh')
+    _directorConnectionsAttempt = attemptToken
+
+    for (const directorName of targetDirectors) {
+      updateDirectorConnection(directorName, {
+        status: 'checking',
+        transport: null,
+        errorMsg: null,
+        checkedAt: null,
+      })
+    }
+
+    const results = await Promise.all(targetDirectors.map(async (directorName) => {
+      let client = null
+
+      try {
+        client = await createDirectorCommandClient({
+          ...credentials,
+          director: directorName,
+        })
+
+        return {
+          director: directorName,
+          status: 'connected',
+          transport: client.transport ?? null,
+          errorMsg: null,
+          checkedAt: Date.now(),
+        }
+      } catch (error) {
+        return {
+          director: directorName,
+          status: 'error',
+          transport: null,
+          errorMsg: error?.message ?? `Could not connect to ${directorName}`,
+          checkedAt: Date.now(),
+        }
+      } finally {
+        client?.disconnect()
+      }
+    }))
+
+    if (_directorConnectionsAttempt !== attemptToken) {
+      return directorConnections.value
+    }
+
+    for (const result of results) {
+      updateDirectorConnection(result.director, result)
+    }
+
+    return directorConnections.value
   }
 
   // ── public API ──────────────────────────────────────────────────────────────
@@ -413,11 +496,13 @@ export const useDirectorStore = defineStore('director', () => {
     errorMsg,
     transport,
     availableDirectors,
+    directorConnections,
     isConnected,
     connect,
     connectAndWait,
     disconnect,
     fetchAvailableDirectors,
+    refreshDirectorConnections,
     call,
     rawCall,
   }

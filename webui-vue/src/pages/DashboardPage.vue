@@ -20,15 +20,7 @@
 -->
 <template>
   <q-page class="q-pa-md">
-    <DirectorScopePanel
-      v-model="selectedDirectorsModel"
-      :title="t('Dashboard Scope')"
-      :summary-label="dashboardScopeLabel"
-      :options="directorOptions"
-      :help-text="t('Select the directors that contribute to the common dashboard.')"
-      :errors="directorErrors"
-      data-test-id="dashboard-directors"
-    />
+    <DirectorErrorsBanner :errors="directorErrors" />
 
     <div class="row q-col-gutter-md">
       <!-- Left column: 8/12 -->
@@ -277,7 +269,7 @@ import {
 } from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
-import DirectorScopePanel from '../components/DirectorScopePanel.vue'
+import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import StatNumber from '../components/StatNumber.vue'
