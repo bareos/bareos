@@ -22,6 +22,7 @@
 #ifndef BAREOS_QT_TRAY_MONITOR_SYSTEMTRAYICON_H_
 #define BAREOS_QT_TRAY_MONITOR_SYSTEMTRAYICON_H_
 
+#include <QColor>
 #include <QIcon>
 #include <QList>
 #include <QPixmap>
@@ -43,6 +44,12 @@ class SystemTrayIcon : public QSystemTrayIcon {
   Q_DISABLE_COPY(SystemTrayIcon);
   SystemTrayIcon();
 
+  struct ShieldPalette {
+    const QPixmap* basePixmap;
+    QColor shadow;
+    QColor highlight;
+  };
+
   int iconIdx;
   int animationFrameIdx;
   bool animationRequested;
@@ -55,10 +62,10 @@ class SystemTrayIcon : public QSystemTrayIcon {
 
   void updateIcon();
   QList<QIcon> createAnimationIcons() const;
-  const QPixmap& getBaseShieldPixmap(bool use_green_palette) const;
+  ShieldPalette getShieldPalette(bool use_green_palette) const;
   QPixmap createShieldPixmap(qreal angle,
                              qreal widthScale,
-                             bool use_green_palette) const;
+                             const ShieldPalette& palette) const;
 
  protected:
  public slots:

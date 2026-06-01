@@ -52,23 +52,37 @@ const int kShieldBevelAlpha = 34;
 const int kShieldSpecularAlpha = 30;
 const int kShieldGreenHue = 125;
 const int kShieldSaturationThreshold = 12;
-// RGB components for the shadow/highlight overlays that tint the shield frame.
-// For example, kShadowBlueRed/kShadowBlueGreen/kShadowBlueBlue form the blue
-// shadow color used by the default palette.
-const int kShadowBlueRed = 12;
-const int kShadowBlueGreen = 74;
-const int kShadowBlueBlue = 156;
-const int kHighlightBlueRed = 48;
-const int kHighlightBlueGreen = 150;
-const int kHighlightBlueBlue = 230;
-const int kShadowGreenRed = 12;
-const int kShadowGreenGreen = 120;
-const int kShadowGreenBlue = 30;
-const int kHighlightGreenRed = 72;
-const int kHighlightGreenGreen = 220;
-const int kHighlightGreenBlue = 96;
+const QRgb kDefaultShadowColor = qRgb(12, 74, 156);
+const QRgb kDefaultHighlightColor = qRgb(48, 150, 230);
+const QRgb kGreenShadowColor = qRgb(12, 120, 30);
+const QRgb kGreenHighlightColor = qRgb(72, 220, 96);
 const char* kTrayAnimationIcon = ":/images/bareos-logo_128x128.png";
 const char* kTrayErrorIcon = ":/images/W.png";
+
+QColor WithAlpha(const QColor& color, int alpha)
+{
+  QColor withAlpha(color);
+  withAlpha.setAlpha(alpha);
+  return withAlpha;
+}
+
+QColor AdjustedRgb(const QColor& color, int delta, int alpha)
+{
+  return QColor(std::clamp(color.red() + delta, 0, 255),
+                std::clamp(color.green() + delta, 0, 255),
+                std::clamp(color.blue() + delta, 0, 255), alpha);
+}
+
+QColor ScaledRgb(const QColor& color, qreal factor, int alpha)
+{
+  return QColor(std::clamp(static_cast<int>(std::round(color.red() * factor)),
+                           0, 255),
+                std::clamp(static_cast<int>(std::round(color.green() * factor)),
+                           0, 255),
+                std::clamp(static_cast<int>(std::round(color.blue() * factor)),
+                           0, 255),
+                alpha);
+}
 
 QPixmap createGreenShieldPixmap(const QPixmap& basePixmap)
 {
@@ -102,7 +116,7 @@ SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
     , animationRequested(false)
     , baseShieldPixmap(kTrayAnimationIcon)
     , greenShieldPixmap(createGreenShieldPixmap(baseShieldPixmap))
-    , normalIcon(QIcon(createShieldPixmap(0.0, 1.0, false)))
+    , normalIcon(QIcon(createShieldPixmap(0.0, 1.0, getShieldPalette(false))))
     , errorIcon(kTrayErrorIcon)
     , animationIcons(createAnimationIcons())
     , timer(new QTimer(this))
@@ -179,43 +193,38 @@ void SystemTrayIcon::updateIcon()
 QList<QIcon> SystemTrayIcon::createAnimationIcons() const
 {
   QList<QIcon> frames;
-  const QPixmap& basePixmap = getBaseShieldPixmap(true);
-
-  if (basePixmap.isNull()) { return frames; }
+  const ShieldPalette palette = getShieldPalette(true);
+  if (palette.basePixmap->isNull()) { return frames; }
 
   for (int frame = 0; frame < kAnimationFrameCount; ++frame) {
     const qreal angle
         = (static_cast<qreal>(frame) / kAnimationFrameCount) * 2.0 * M_PI;
     const qreal cosine = std::cos(angle);
     const qreal widthScale = std::max(kMinimumWidthScale, std::abs(cosine));
-    frames << QIcon(createShieldPixmap(angle, widthScale, true));
+    frames << QIcon(createShieldPixmap(angle, widthScale, palette));
   }
 
   return frames;
 }
 
-const QPixmap& SystemTrayIcon::getBaseShieldPixmap(bool use_green_palette) const
+SystemTrayIcon::ShieldPalette SystemTrayIcon::getShieldPalette(
+    bool use_green_palette) const
 {
-  return use_green_palette ? greenShieldPixmap : baseShieldPixmap;
+  if (use_green_palette) {
+    return {&greenShieldPixmap, QColor::fromRgb(kGreenShadowColor),
+            QColor::fromRgb(kGreenHighlightColor)};
+  }
+
+  return {&baseShieldPixmap, QColor::fromRgb(kDefaultShadowColor),
+          QColor::fromRgb(kDefaultHighlightColor)};
 }
 
 QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
                                            qreal widthScale,
-                                           bool use_green_palette) const
+                                           const ShieldPalette& palette) const
 {
-  const QPixmap& basePixmap = getBaseShieldPixmap(use_green_palette);
+  const QPixmap& basePixmap = *palette.basePixmap;
   if (basePixmap.isNull()) { return QPixmap(); }
-
-  const int shadowRed = use_green_palette ? kShadowGreenRed : kShadowBlueRed;
-  const int shadowGreen
-      = use_green_palette ? kShadowGreenGreen : kShadowBlueGreen;
-  const int shadowBlue = use_green_palette ? kShadowGreenBlue : kShadowBlueBlue;
-  const int highlightRed
-      = use_green_palette ? kHighlightGreenRed : kHighlightBlueRed;
-  const int highlightGreen
-      = use_green_palette ? kHighlightGreenGreen : kHighlightBlueGreen;
-  const int highlightBlue
-      = use_green_palette ? kHighlightGreenBlue : kHighlightBlueBlue;
 
   QPixmap scaled = basePixmap.scaled(
       std::max(1, static_cast<int>(basePixmap.width() * widthScale)),
@@ -250,8 +259,7 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
     shadowPainter.drawPixmap(shadowX, kShieldShadowYOffset, shieldPixmap);
     shadowPainter.setCompositionMode(QPainter::CompositionMode_SourceIn);
     shadowPainter.fillRect(shadowOverlay.rect(),
-                           QColor(shadowRed / 2, shadowGreen / 2,
-                                  shadowBlue / 2, kShieldShadowAlpha));
+                           ScaledRgb(palette.shadow, 0.5, kShieldShadowAlpha));
   }
   painter.drawPixmap(0, 0, shadowOverlay);
   painter.drawPixmap(0, 0, shieldPixmap);
@@ -261,14 +269,11 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
   {
     QPainter depthPainter(&depthOverlay);
     QLinearGradient verticalGradient(0, 0, 0, framePixmap.height());
-    verticalGradient.setColorAt(0.0, QColor(highlightRed, highlightGreen,
-                                            highlightBlue, kShieldDepthAlpha));
-    verticalGradient.setColorAt(
-        0.35, QColor(highlightRed, highlightGreen, highlightBlue, 8));
-    verticalGradient.setColorAt(0.7,
-                                QColor(shadowRed, shadowGreen, shadowBlue, 0));
-    verticalGradient.setColorAt(
-        1.0, QColor(shadowRed, shadowGreen, shadowBlue, kShieldDepthAlpha));
+    verticalGradient.setColorAt(0.0,
+                                WithAlpha(palette.highlight, kShieldDepthAlpha));
+    verticalGradient.setColorAt(0.35, WithAlpha(palette.highlight, 8));
+    verticalGradient.setColorAt(0.7, WithAlpha(palette.shadow, 0));
+    verticalGradient.setColorAt(1.0, WithAlpha(palette.shadow, kShieldDepthAlpha));
     depthPainter.fillRect(depthOverlay.rect(), verticalGradient);
     depthPainter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
     depthPainter.drawPixmap(0, 0, shieldPixmap);
@@ -284,23 +289,17 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
     QPainter sidePainter(&sideOverlay);
     QLinearGradient sideGradient(0, 0, framePixmap.width(), 0);
     if (std::sin(angle) >= 0) {
-      sideGradient.setColorAt(
-          0.0, QColor(shadowRed, shadowGreen, shadowBlue, sideShading));
-      sideGradient.setColorAt(0.45,
-                              QColor(shadowRed, shadowGreen, shadowBlue, 0));
-      sideGradient.setColorAt(0.75, QColor(highlightRed, highlightGreen,
-                                           highlightBlue, sideShading / 2));
-      sideGradient.setColorAt(1.0, QColor(highlightRed, highlightGreen,
-                                          highlightBlue, sideShading));
+      sideGradient.setColorAt(0.0, WithAlpha(palette.shadow, sideShading));
+      sideGradient.setColorAt(0.45, WithAlpha(palette.shadow, 0));
+      sideGradient.setColorAt(0.75,
+                              WithAlpha(palette.highlight, sideShading / 2));
+      sideGradient.setColorAt(1.0, WithAlpha(palette.highlight, sideShading));
     } else {
-      sideGradient.setColorAt(0.0, QColor(highlightRed, highlightGreen,
-                                          highlightBlue, sideShading));
-      sideGradient.setColorAt(0.25, QColor(highlightRed, highlightGreen,
-                                           highlightBlue, sideShading / 2));
-      sideGradient.setColorAt(0.55,
-                              QColor(shadowRed, shadowGreen, shadowBlue, 0));
-      sideGradient.setColorAt(
-          1.0, QColor(shadowRed, shadowGreen, shadowBlue, sideShading));
+      sideGradient.setColorAt(0.0, WithAlpha(palette.highlight, sideShading));
+      sideGradient.setColorAt(0.25,
+                              WithAlpha(palette.highlight, sideShading / 2));
+      sideGradient.setColorAt(0.55, WithAlpha(palette.shadow, 0));
+      sideGradient.setColorAt(1.0, WithAlpha(palette.shadow, sideShading));
     }
     sidePainter.fillRect(sideOverlay.rect(), sideGradient);
     sidePainter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
@@ -316,21 +315,18 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
                                      framePixmap.height() * 0.22,
                                      framePixmap.width() * 0.7);
     specularGradient.setColorAt(
-        0.0, QColor(highlightRed + 10, highlightGreen + 10, highlightBlue + 10,
-                    kShieldSpecularAlpha));
-    specularGradient.setColorAt(0.35, QColor(highlightRed, highlightGreen,
-                                             highlightBlue, kShieldBevelAlpha));
-    specularGradient.setColorAt(
-        1.0, QColor(highlightRed, highlightGreen, highlightBlue, 0));
+        0.0, AdjustedRgb(palette.highlight, 10, kShieldSpecularAlpha));
+    specularGradient.setColorAt(0.35,
+                                WithAlpha(palette.highlight, kShieldBevelAlpha));
+    specularGradient.setColorAt(1.0, WithAlpha(palette.highlight, 0));
     bevelPainter.fillRect(bevelOverlay.rect(), specularGradient);
 
     QLinearGradient rimGradient(0, 0, framePixmap.width(),
                                 framePixmap.height());
-    rimGradient.setColorAt(0.0, QColor(highlightRed + 12, highlightGreen + 12,
-                                       highlightBlue + 12, kShieldBevelAlpha));
-    rimGradient.setColorAt(0.45, QColor(0, 0, 0, 0));
     rimGradient.setColorAt(
-        1.0, QColor(shadowRed, shadowGreen, shadowBlue, kShieldBevelAlpha));
+        0.0, AdjustedRgb(palette.highlight, 12, kShieldBevelAlpha));
+    rimGradient.setColorAt(0.45, QColor(0, 0, 0, 0));
+    rimGradient.setColorAt(1.0, WithAlpha(palette.shadow, kShieldBevelAlpha));
     bevelPainter.fillRect(bevelOverlay.rect(), rimGradient);
 
     bevelPainter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
