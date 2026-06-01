@@ -27,10 +27,12 @@
  *     address = <bind address>          (default: localhost)
  *     port = <bind port>                (default: 9104)
  *
- *   [<selector>]                        (at least one section is required)
+ *   [<selector>]                        (at least one unique selector section
+ *                                       is required)
  *     address = <director address>      (default: localhost)
  *     port = <director port>            (default: 9101)
- *     director_name = <director name>   (default: <selector>)
+ *     director_name = <director name>   (default: <selector>; multiple
+ *                                       selectors may point to the same name)
  *     tls_psk_disable = yes|no          (default: no)
  *
  * CLI flags:
