@@ -92,7 +92,7 @@
                 <q-td :props="props" class="text-center">
                    <q-btn flat round dense size="sm"
                           :icon="props.row.enabled ? 'pause' : 'play_arrow'"
-                          :color="props.row.enabled ? 'warning' : 'positive'"
+                          :color="props.row.enabled ? 'orange-10' : 'positive'"
                           :title="props.row.enabled ? t('Disable') : t('Enable')"
                           :loading="toggling === props.row.scopeKey"
                           @click="toggleEnabled(props.row)" />

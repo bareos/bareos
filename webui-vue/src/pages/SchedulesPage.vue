@@ -14,32 +14,13 @@
             <span>{{ t('Scheduler Jobs') }}</span>
           </q-card-section>
           <q-card-section class="q-pa-none">
-            <q-banner v-if="isCommonSchedules" dense rounded class="bg-info text-white q-mb-sm">
-              {{ t('Schedule and job toggles act on the director shown in each schedule group when multiple directors are selected.') }}
-            </q-banner>
             <q-table :rows="scheduleJobRows" :columns="scheduleJobCols"
                      row-key="idx" dense flat :loading="statusLoading"
                      :pagination="{ rowsPerPage: 50 }">
               <template #body="props">
                 <q-tr v-if="props.row._firstInGroup" class="sched-group-header">
-                  <q-td colspan="1" class="q-pl-sm">
+                  <q-td key="job" class="q-pl-sm">
                     <div class="row items-center no-wrap q-gutter-xs">
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        size="sm"
-                        :icon="props.row.schedEnabled ? 'pause' : 'play_arrow'"
-                        :color="props.row.schedEnabled ? 'warning' : 'positive'"
-                        :title="props.row.schedEnabled ? t('Disable schedule') : t('Enable schedule')"
-                        :loading="togglingName === props.row.scheduleKey"
-                        @click="toggleSchedule({
-                          name: props.row.schedule,
-                          enabled: props.row.schedEnabled,
-                          director: props.row.director,
-                          scopeKey: props.row.scheduleKey,
-                        })"
-                      />
                       <span class="text-weight-bold">{{ props.row.schedule }}</span>
                       <q-chip
                         v-if="isCommonSchedules"
@@ -49,43 +30,68 @@
                         text-color="white"
                         :label="props.row.director"
                       />
-                      <q-badge :color="props.row.schedEnabled ? 'positive' : 'negative'"
-                               :label="props.row.schedEnabled ? t('Enabled') : t('Disabled')" />
                     </div>
+                  </q-td>
+                  <q-td key="status" class="text-center">
+                    <q-badge :color="props.row.schedEnabled ? 'positive' : 'negative'"
+                            :label="props.row.schedEnabled ? t('Enabled') : t('Disabled')" />
+                  </q-td>
+                  <q-td key="actions" class="text-right">
+                    <q-btn
+                      flat
+                      dense
+                      size="sm"
+                      no-caps
+                      :icon="props.row.schedEnabled ? 'pause' : 'play_arrow'"
+                      :color="props.row.schedEnabled ? 'orange-10' : 'positive'"
+                      :label="props.row.schedEnabled ? t('Disable schedule') : t('Enable schedule')"
+                      :title="props.row.schedEnabled ? t('Disable schedule') : t('Enable schedule')"
+                      :loading="togglingName === props.row.scheduleKey"
+                      @click="toggleSchedule({
+                       name: props.row.schedule,
+                       enabled: props.row.schedEnabled,
+                       director: props.row.director,
+                       scopeKey: props.row.scheduleKey,
+                      })"
+                    />
                   </q-td>
                 </q-tr>
                 <q-tr :props="props">
                   <q-td key="job" style="padding-left: 48px">
                     <div v-if="props.row.job !== '—'" class="row items-center no-wrap q-gutter-xs">
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        size="sm"
-                        :icon="props.row.jobEnabled ? 'pause' : 'play_arrow'"
-                        :color="props.row.jobEnabled ? 'warning' : 'positive'"
-                        :title="props.row.jobEnabled ? t('Disable job') : t('Enable job')"
-                        :loading="togglingJob === props.row.jobScopeKey"
-                        @click="toggleJob(props.row)"
-                      />
                       <router-link
                         :to="{ name: 'jobs', query: props.row.jobsQuery }"
                         class="text-primary"
                         style="text-decoration:none"
                       >{{ props.row.job }}</router-link>
-                      <q-badge v-if="props.row.jobEnabled !== null"
-                               :color="jobStatusBadge(props.row).color"
-                               :label="jobStatusBadge(props.row).label">
-                        <q-tooltip v-if="jobStatusBadge(props.row).detail">
-                          {{ jobStatusBadge(props.row).detail }}
-                        </q-tooltip>
-                      </q-badge>
-                      <q-badge v-if="jobStatusBadge(props.row).rawLabel"
-                               outline
-                               color="positive"
-                               :label="jobStatusBadge(props.row).rawLabel" />
                     </div>
                     <span v-else class="text-grey-5">{{ t('no jobs configured') }}</span>
+                  </q-td>
+                  <q-td key="status" class="text-center">
+                    <q-badge v-if="props.row.jobEnabled !== null"
+                             :color="jobStatusBadge(props.row).color"
+                             :label="jobStatusBadge(props.row).label">
+                      <q-tooltip v-if="jobStatusBadge(props.row).detail">
+                        {{ jobStatusBadge(props.row).detail }}
+                      </q-tooltip>
+                    </q-badge>
+                    <span v-else class="text-grey-5">—</span>
+                  </q-td>
+                  <q-td key="actions" class="text-right">
+                    <q-btn
+                      v-if="props.row.job !== '—'"
+                      flat
+                      dense
+                      size="sm"
+                      no-caps
+                      :icon="props.row.jobEnabled ? 'pause' : 'play_arrow'"
+                      :color="props.row.jobEnabled ? 'orange-10' : 'positive'"
+                      :label="props.row.jobEnabled ? t('Disable job') : t('Enable job')"
+                      :title="props.row.jobEnabled ? t('Disable job') : t('Enable job')"
+                      :loading="togglingJob === props.row.jobScopeKey"
+                      @click="toggleJob(props.row)"
+                    />
+                    <template v-else>—</template>
                   </q-td>
                 </q-tr>
               </template>
@@ -169,9 +175,6 @@
             <q-btn flat round dense icon="refresh" color="white" @click="refreshSchedules" />
           </q-card-section>
           <q-card-section class="q-pa-none">
-            <q-banner v-if="isCommonSchedules" dense rounded class="bg-info text-white q-mb-sm">
-              {{ t('Schedule toggles act on the director shown in each row when multiple directors are selected.') }}
-            </q-banner>
             <q-banner v-if="schedError" dense class="bg-negative text-white">{{ schedError }}</q-banner>
             <q-table
               :rows="schedules"
@@ -207,7 +210,7 @@
                     dense
                     size="sm"
                     :icon="props.row.enabled ? 'pause' : 'play_arrow'"
-                    :color="props.row.enabled ? 'warning' : 'positive'"
+                    :color="props.row.enabled ? 'orange-10' : 'positive'"
                     :title="props.row.enabled ? t('Disable') : t('Enable')"
                     :loading="togglingName === props.row.scopeKey"
                     @click="toggleSchedule(props.row)"
@@ -223,7 +226,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
@@ -233,13 +236,13 @@ import {
   buildStatusSchedules,
   fetchAggregatedSchedulesShow,
   fetchAggregatedSchedulesStatus,
+  getEffectiveScheduleJobState,
 } from '../composables/schedulesAggregate.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import {
   withJobsSearchQuery,
 } from '../utils/jobs.js'
-import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 
@@ -260,10 +263,8 @@ const directorErrors = ref([])
 
 const {
   directorOptions,
-  selectedDirectorsModel,
   activeDirectors,
   isCommonScope: isCommonSchedules,
-  scopeLabel: schedulesScopeLabel,
   syncSelectedDirectors,
   ensureScopeDirector,
   ensureSingleScopeDirector,
@@ -335,13 +336,17 @@ const schedCols = computed(() => [
 
 async function toggleSchedule(row) {
   const action = row.enabled ? 'disable' : 'enable'
-  const status = t(row.enabled ? 'Disabled' : 'Enabled')
   togglingName.value = row.scopeKey ?? row.name
   try {
     await ensureScheduleActionDirector(row.director)
     await director.call(`${action} schedule=${row.name}`)
-    $q.notify({ type: 'positive', message: `${t('Schedules')} "${row.name}": ${status}` })
     await Promise.all([refreshSchedules(), refreshStatus()])
+    $q.notify({
+      type: 'positive',
+      message: row.enabled
+        ? t('Schedule {name} disabled.', { name: row.name })
+        : t('Schedule {name} enabled.', { name: row.name }),
+    })
   } catch (e) {
     $q.notify({ type: 'negative', message: e.message })
   } finally {
@@ -353,13 +358,33 @@ const togglingJob = ref(null)
 
 async function toggleJob(row) {
   const action = row.jobEnabled ? 'disable' : 'enable'
-  const status = t(row.jobEnabled ? 'Disabled' : 'Enabled')
   togglingJob.value = row.jobScopeKey ?? row.job
   try {
     await ensureScheduleActionDirector(row.director)
     await director.call(`${action} job=${row.job}`)
-    $q.notify({ type: 'positive', message: `${t('Job')} "${row.job}": ${status}` })
-    await refreshStatus()
+    await Promise.all([refreshSchedules(), refreshStatus()])
+    await nextTick()
+
+    const updatedRow = scheduleJobRows.value.find(candidate => candidate.jobScopeKey === row.jobScopeKey)
+    const state = updatedRow
+      ? getEffectiveScheduleJobState(updatedRow.schedEnabled, updatedRow.jobEnabled)
+      : null
+
+    let message = row.jobEnabled
+      ? t('Job {name} disabled.', { name: row.job })
+      : t('Job {name} enabled.', { name: row.job })
+
+    if (updatedRow?.jobEnabled === true) {
+      message = state?.code === 'disabled-schedule'
+        ? t('Job {name} enabled, but the schedule is disabled.', { name: row.job })
+        : t('Job {name} enabled.', { name: row.job })
+    } else if (updatedRow?.jobEnabled === false) {
+      message = state?.code === 'disabled-job-and-schedule'
+        ? t('Job {name} disabled. The schedule is also disabled.', { name: row.job })
+        : t('Job {name} disabled.', { name: row.job })
+    }
+
+    $q.notify({ type: 'positive', message })
   } catch (e) {
     $q.notify({ type: 'negative', message: e.message })
   } finally {
@@ -368,29 +393,47 @@ async function toggleJob(row) {
 }
 
 function jobStatusBadge(row) {
-  if (row.jobEnabled == null) {
+  const state = getEffectiveScheduleJobState(row.schedEnabled, row.jobEnabled)
+
+  if (state.code === 'unknown') {
     return {
       color: 'grey',
       label: '',
-      rawLabel: null,
       detail: '',
     }
   }
 
-  if (!row.schedEnabled && row.jobEnabled) {
-    return {
-      color: 'negative',
-      label: t('Disabled'),
-      rawLabel: t('Enabled'),
-      detail: `${t('Job')}: ${t('Enabled')}, ${t('Schedules')}: ${t('Disabled')}`,
-    }
-  }
-
-  return {
-    color: row.jobEnabled ? 'positive' : 'negative',
-    label: row.jobEnabled ? t('Enabled') : t('Disabled'),
-    rawLabel: null,
-    detail: '',
+  switch (state.code) {
+    case 'enabled':
+      return {
+        color: 'positive',
+        label: t('Enabled'),
+        detail: '',
+      }
+    case 'disabled-job':
+      return {
+        color: 'negative',
+        label: t('Disabled'),
+        detail: t('The job definition is disabled.'),
+      }
+    case 'disabled-schedule':
+      return {
+        color: 'warning',
+        label: t('Enabled, schedule disabled'),
+        detail: t('The schedule is disabled, but the job definition is enabled.'),
+      }
+    case 'disabled-job-and-schedule':
+      return {
+        color: 'negative',
+        label: t('Disabled, schedule disabled'),
+        detail: t('Both the schedule and the job definition are disabled.'),
+      }
+    default:
+      return {
+        color: 'grey',
+        label: '',
+        detail: '',
+      }
   }
 }
 
@@ -599,6 +642,8 @@ const scheduleJobRows = computed(() => {
 
 const scheduleJobCols = computed(() => [
   { name: 'job', label: t('Job'), field: 'job', align: 'left', headerStyle: 'padding-left: 48px', sortable: true },
+  { name: 'status', label: t('Status'), field: 'status', align: 'center' },
+  { name: 'actions', label: t('Actions'), field: 'actions', align: 'right', style: 'width: 1%' },
 ])
 const viewModeOptions = computed(() => [
   { label: t('Month'), value: 'month' },
