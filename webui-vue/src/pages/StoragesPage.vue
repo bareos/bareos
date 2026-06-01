@@ -29,7 +29,7 @@
       {{ error }}
     </q-banner>
 
-    <q-tab-panels v-model="tab" animated swipeable>
+    <q-tab-panels v-model="tab" animated :swipeable="$q.platform.has.touch">
       <!-- DEVICES -->
       <q-tab-panel name="storages" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
@@ -319,6 +319,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import {
   fetchAggregatedStoragesState,
@@ -349,6 +350,7 @@ const router   = useRouter()
 const auth = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
+const $q = useQuasar()
 const { t } = useI18n()
 const validTabs = new Set(['storages', 'pools', 'volumes', 'autochangers'])
 function normaliseTab(value) {

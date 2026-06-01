@@ -7,7 +7,7 @@
       <q-tab name="subscription" :label="t('Subscription')" no-caps />
     </q-tabs>
 
-    <q-tab-panels v-model="tab" animated swipeable>
+    <q-tab-panels v-model="tab" animated :swipeable="$q.platform.has.touch">
       <!-- STATUS -->
       <q-tab-panel name="status" class="q-pa-none">
         <q-banner

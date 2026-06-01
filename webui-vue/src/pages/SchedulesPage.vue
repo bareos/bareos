@@ -7,7 +7,7 @@
       <q-tab name="show" :label="t('Show')" no-caps />
     </q-tabs>
 
-    <q-tab-panels v-model="tab" animated swipeable>
+    <q-tab-panels v-model="tab" animated :swipeable="$q.platform.has.touch">
       <q-tab-panel name="status" class="q-pa-none">
         <q-card flat bordered class="bareos-panel q-mb-md">
           <q-card-section class="panel-header">
