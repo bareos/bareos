@@ -25,7 +25,10 @@ import { createDirectorCommandClient } from './directorAggregate.js'
 import {
   buildListJobsCommand,
   buildListJobsCountCommand,
+  filterJobsBySearch,
   normaliseJobStatusFilters,
+  normaliseJobsSearchTerm,
+  paginateJobs,
 } from '../utils/jobs.js'
 
 function numberValue(value) {
@@ -154,6 +157,9 @@ export async function fetchAggregatedJobsPage(
   statusFilter = '',
   levelFilter = '',
   typeFilter = '',
+  jobFilter = '',
+  clientFilter = '',
+  searchTerm = '',
 ) {
   const { page = 1, rowsPerPage = 25 } = pagination ?? {}
   const offset = Math.max(0, (page - 1) * rowsPerPage)
@@ -161,6 +167,8 @@ export async function fetchAggregatedJobsPage(
   const statusFilters = normaliseJobStatusFilters(statusFilter)
   const filters = statusFilters.length > 0 ? statusFilters : ['']
   const useDefaultSorting = usesDefaultJobsSorting(pagination)
+  const normalizedSearchTerm = normaliseJobsSearchTerm(searchTerm)
+  const fetchAllJobs = rowsPerPage === 0 || !useDefaultSorting || normalizedSearchTerm !== ''
 
   const results = await Promise.allSettled(directors.map(async (director) => {
     const client = await createDirectorCommandClient({
@@ -173,7 +181,7 @@ export async function fetchAggregatedJobsPage(
       let countResults
       let directorStatusResult
 
-      if (useDefaultSorting) {
+      if (useDefaultSorting && !fetchAllJobs) {
         [jobsResults, countResults, directorStatusResult] = await Promise.all([
           Promise.allSettled(filters.map(currentStatusFilter => (
             client.call(buildListJobsCommand({
@@ -182,6 +190,8 @@ export async function fetchAggregatedJobsPage(
               statusFilter: currentStatusFilter,
               levelFilter,
               typeFilter,
+              jobFilter,
+              clientFilter,
             }))
           ))),
           Promise.allSettled(filters.map(currentStatusFilter => (
@@ -189,6 +199,8 @@ export async function fetchAggregatedJobsPage(
               statusFilter: currentStatusFilter,
               levelFilter,
               typeFilter,
+              jobFilter,
+              clientFilter,
             }))
           ))),
           Promise.allSettled([client.call('status director')]),
@@ -200,6 +212,8 @@ export async function fetchAggregatedJobsPage(
               statusFilter: currentStatusFilter,
               levelFilter,
               typeFilter,
+              jobFilter,
+              clientFilter,
             }))
           ))),
           Promise.allSettled([client.call('status director')]),
@@ -214,11 +228,13 @@ export async function fetchAggregatedJobsPage(
             }
 
             return client.call(buildListJobsCommand({
-              limit: count,
+              limit: fetchAllJobs ? count : fetchLimit,
               offset: 0,
               statusFilter: currentStatusFilter,
               levelFilter,
               typeFilter,
+              jobFilter,
+              clientFilter,
             }))
           }
 
@@ -228,6 +244,8 @@ export async function fetchAggregatedJobsPage(
             statusFilter: currentStatusFilter,
             levelFilter,
             typeFilter,
+            jobFilter,
+            clientFilter,
           }))
         }))
       }
@@ -268,10 +286,13 @@ export async function fetchAggregatedJobsPage(
 
   const successful = results.filter(result => result.status === 'fulfilled').map(result => result.value)
   const jobs = sortJobsByPagination(successful.flatMap(result => result.jobs), pagination)
-  const totalJobs = successful.reduce((sum, result) => sum + numberValue(result.count), 0)
+  const filteredJobs = filterJobsBySearch(jobs, normalizedSearchTerm)
+  const totalJobs = normalizedSearchTerm !== ''
+    ? filteredJobs.length
+    : successful.reduce((sum, result) => sum + numberValue(result.count), 0)
 
   return {
-    jobs: jobs.slice(offset, offset + rowsPerPage),
+    jobs: paginateJobs(filteredJobs, pagination),
     totalJobs,
     directorErrors: results.flatMap((result, index) => (
       result.status === 'rejected'
