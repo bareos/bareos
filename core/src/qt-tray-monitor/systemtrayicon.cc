@@ -47,7 +47,6 @@ const qreal kMinimumWidthScale = 0.15;
 const int kMaximumSideShading = 72;
 const int kShieldShadowAlpha = 72;
 const int kShieldShadowYOffset = 5;
-const int kShieldShadowXOffset = 3;
 const int kShieldDepthAlpha = 44;
 const int kShieldBevelAlpha = 34;
 const int kShieldSpecularAlpha = 30;
@@ -238,6 +237,15 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
   QPixmap scaled = basePixmap.scaled(
       std::max(1, static_cast<int>(basePixmap.width() * widthScale)),
       basePixmap.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+  const int xOffset = (basePixmap.width() - scaled.width()) / 2;
+
+  QPixmap shadowPixmap(basePixmap.size());
+  shadowPixmap.fill(Qt::transparent);
+  {
+    QPainter shadowShapePainter(&shadowPixmap);
+    shadowShapePainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    shadowShapePainter.drawPixmap(xOffset, 0, scaled);
+  }
 
   if (std::cos(angle) < 0) {
     scaled = scaled.transformed(QTransform().scale(-1, 1));
@@ -249,7 +257,6 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
   {
     QPainter shieldPainter(&shieldPixmap);
     shieldPainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-    const int xOffset = (shieldPixmap.width() - scaled.width()) / 2;
     shieldPainter.drawPixmap(xOffset, 0, scaled);
   }
 
@@ -264,9 +271,7 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
   shadowOverlay.fill(Qt::transparent);
   {
     QPainter shadowPainter(&shadowOverlay);
-    const int shadowX
-        = static_cast<int>(std::round(std::sin(angle) * kShieldShadowXOffset));
-    shadowPainter.drawPixmap(shadowX, kShieldShadowYOffset, shieldPixmap);
+    shadowPainter.drawPixmap(0, kShieldShadowYOffset, shadowPixmap);
     shadowPainter.setCompositionMode(QPainter::CompositionMode_SourceIn);
     shadowPainter.fillRect(shadowOverlay.rect(),
                            ScaledRgb(palette.shadow, 0.5, kShieldShadowAlpha));
