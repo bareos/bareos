@@ -381,7 +381,7 @@
                     </span>
                     <q-space />
                     <span v-if="!canDeleteEmptyJobs" class="text-caption text-grey-6">
-                      <span v-html="t('Delete is unavailable because the ACL forbids the <code>delete</code> command.')" />
+                      {{ t('Delete is unavailable because the ACL forbids the delete command.') }}
                     </span>
                     <q-btn
                       color="negative" size="sm" no-caps unelevated
@@ -456,7 +456,7 @@
                     />
                   </div>
                 <div v-if="!canPruneCatalog" class="text-caption text-grey-6 q-mt-sm">
-                  <span v-html="t('Prune is unavailable because the ACL forbids the <code>prune</code> command.')" />
+                  {{ t('Prune is unavailable because the ACL forbids the prune command.') }}
                 </div>
                 <div v-if="pruneResults.length" class="q-mt-md column q-gutter-xs">
                   <q-banner
@@ -533,7 +533,7 @@
               </div>
 
                <q-btn color="primary" :label="t('Get Official Support')" icon="open_in_new"
-                     href="https://www.bareos.com/subscription/" target="_blank" no-caps />
+                     href="https://www.bareos.com/subscription/" target="_blank" rel="noopener noreferrer" no-caps />
             </template>
           </q-card-section>
         </q-card>
