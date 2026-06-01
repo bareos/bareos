@@ -23,6 +23,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   fetchAggregatedSchedulesShow,
   fetchAggregatedSchedulesStatus,
+  getEffectiveScheduleJobState,
 } from '../../src/composables/schedulesAggregate.js'
 
 class FakeWebSocket {
@@ -67,6 +68,16 @@ describe('schedules aggregate helpers', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('reports the effective job state for schedule and job toggles', () => {
+    expect(getEffectiveScheduleJobState(true, true)).toEqual({ code: 'enabled' })
+    expect(getEffectiveScheduleJobState(true, false)).toEqual({ code: 'disabled-job' })
+    expect(getEffectiveScheduleJobState(false, true)).toEqual({ code: 'disabled-schedule' })
+    expect(getEffectiveScheduleJobState(false, false)).toEqual({
+      code: 'disabled-job-and-schedule',
+    })
+    expect(getEffectiveScheduleJobState(true, null)).toEqual({ code: 'unknown' })
   })
 
   it('merges shown schedules across directors', async () => {

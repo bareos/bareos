@@ -29,6 +29,26 @@ function scheduleScopeKey(director, schedule) {
   return `${director}:${schedule}`
 }
 
+export function getEffectiveScheduleJobState(scheduleEnabled, jobEnabled) {
+  if (jobEnabled == null) {
+    return { code: 'unknown' }
+  }
+
+  if (scheduleEnabled && jobEnabled) {
+    return { code: 'enabled' }
+  }
+
+  if (!scheduleEnabled && !jobEnabled) {
+    return { code: 'disabled-job-and-schedule' }
+  }
+
+  if (!jobEnabled) {
+    return { code: 'disabled-job' }
+  }
+
+  return { code: 'disabled-schedule' }
+}
+
 function isEnabled(value) {
   return value !== false && value !== 0
 }
