@@ -77,11 +77,15 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useAuthStore }     from '../stores/auth.js'
+import { DEFAULT_DIRECTOR_NAME, useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { useConsoleSessionsStore } from '../stores/consoleSessions.js'
 import { buildDirectorOptions } from '../utils/director.js'
+import {
+  CONSOLE_POPUP_AUTH_REQUEST,
+  CONSOLE_POPUP_AUTH_RESPONSE,
+} from '../utils/consolePopupAuth.js'
 
 const auth     = useAuthStore()
 const director = useDirectorStore()
@@ -111,6 +115,53 @@ function popOut() {
 
 function closePopup() {
   window.close()
+}
+
+async function requestPopupCredentials() {
+  if (!isPopup.value || auth.getCredentials()?.password || !window.opener) {
+    return
+  }
+
+  await new Promise((resolve) => {
+    const timeout = window.setTimeout(() => {
+      window.removeEventListener('message', onMessage)
+      resolve()
+    }, 1500)
+
+    function onMessage(event) {
+      if (event.origin !== window.location.origin) {
+        return
+      }
+
+      if (event.source !== window.opener) {
+        return
+      }
+
+      if (event.data?.type !== CONSOLE_POPUP_AUTH_RESPONSE) {
+        return
+      }
+
+      window.clearTimeout(timeout)
+      window.removeEventListener('message', onMessage)
+
+      const credentials = event.data.credentials
+      if (credentials?.username && credentials?.password) {
+        auth.login(
+          credentials.username,
+          credentials.director || DEFAULT_DIRECTOR_NAME,
+          credentials.password,
+        )
+      }
+
+      resolve()
+    }
+
+    window.addEventListener('message', onMessage)
+    window.opener.postMessage({
+      type: CONSOLE_POPUP_AUTH_REQUEST,
+      director: selectedDirector.value,
+    }, window.location.origin)
+  })
 }
 
 // ── refs ─────────────────────────────────────────────────────────────────────
@@ -265,8 +316,9 @@ function onKeyDown(event) {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────────────
-onMounted(() => {
+onMounted(async () => {
   director.fetchAvailableDirectors().catch(() => {})
+  await requestPopupCredentials()
   ensureSelectedSession()
 })
 

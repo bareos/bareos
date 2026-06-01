@@ -75,12 +75,14 @@
           </q-item>
           <q-item clickable v-ripple
                   tag="a" href="https://docs.bareos.org" target="_blank"
+                  rel="noopener noreferrer"
                   @click="drawerOpen = false">
             <q-item-section avatar><q-icon name="menu_book" /></q-item-section>
             <q-item-section>{{ t('Documentation') }}</q-item-section>
           </q-item>
           <q-item clickable v-ripple
                   tag="a" href="https://github.com/bareos/bareos/issues/" target="_blank"
+                  rel="noopener noreferrer"
                   @click="drawerOpen = false">
             <q-item-section avatar><q-icon name="bug_report" /></q-item-section>
             <q-item-section>{{ t('Issue Tracker') }}</q-item-section>
@@ -180,11 +182,11 @@
                   <q-item-section>{{ t('Settings') }}</q-item-section>
                 </q-item>
                 <q-separator />
-                <q-item clickable tag="a" href="https://docs.bareos.org" target="_blank" v-close-popup>
+                <q-item clickable tag="a" href="https://docs.bareos.org" target="_blank" rel="noopener noreferrer" v-close-popup>
                   <q-item-section avatar><q-icon name="menu_book" /></q-item-section>
                   <q-item-section>{{ t('Documentation') }}</q-item-section>
                 </q-item>
-                <q-item clickable tag="a" href="https://github.com/bareos/bareos/issues/" target="_blank" v-close-popup>
+                <q-item clickable tag="a" href="https://github.com/bareos/bareos/issues/" target="_blank" rel="noopener noreferrer" v-close-popup>
                   <q-item-section avatar><q-icon name="bug_report" /></q-item-section>
                   <q-item-section>{{ t('Issue Tracker') }}</q-item-section>
                 </q-item>

@@ -29,17 +29,14 @@ describe('auth store', () => {
     setActivePinia(createPinia())
   })
 
-  it('persists login credentials for reconnects', () => {
+  it('keeps login credentials in memory only', () => {
     const auth = useAuthStore()
 
     auth.login('admin', 'bareos-dir', 'secret')
 
     expect(auth.isLoggedIn).toBe(true)
-    expect(JSON.parse(sessionStorage.getItem('bareos_user'))).toEqual({
-      username: 'admin',
-      director: 'bareos-dir',
-    })
-    expect(sessionStorage.getItem('bareos_pass')).toBe('secret')
+    expect(sessionStorage.getItem('bareos_user')).toBeNull()
+    expect(sessionStorage.getItem('bareos_pass')).toBeNull()
     expect(auth.getCredentials()).toEqual({
       username: 'admin',
       password: 'secret',
@@ -47,15 +44,26 @@ describe('auth store', () => {
     })
   })
 
+  it('clears legacy stored credentials on startup', () => {
+    sessionStorage.setItem('bareos_user', JSON.stringify({
+      username: 'admin',
+      director: 'bareos-dir',
+    }))
+    sessionStorage.setItem('bareos_pass', 'secret')
+
+    const auth = useAuthStore()
+
+    expect(auth.isLoggedIn).toBe(false)
+    expect(sessionStorage.getItem('bareos_user')).toBeNull()
+    expect(sessionStorage.getItem('bareos_pass')).toBeNull()
+    expect(auth.getCredentials()).toBeNull()
+  })
+
   it('falls back to the default director connection when omitted', () => {
     const auth = useAuthStore()
 
     auth.login('admin', undefined, 'secret')
 
-    expect(JSON.parse(sessionStorage.getItem('bareos_user'))).toEqual({
-      username: 'admin',
-      director: 'bareos-dir',
-    })
     expect(auth.getCredentials()).toEqual({
       username: 'admin',
       password: 'secret',
@@ -75,16 +83,12 @@ describe('auth store', () => {
     expect(auth.getCredentials()).toBeNull()
   })
 
-  it('updates the active director without losing the stored password', () => {
+  it('updates the active director without losing the in-memory password', () => {
     const auth = useAuthStore()
 
     auth.login('admin', 'bareos-dir', 'secret')
     auth.setDirector('bareos-dir-2')
 
-    expect(JSON.parse(sessionStorage.getItem('bareos_user'))).toEqual({
-      username: 'admin',
-      director: 'bareos-dir-2',
-    })
     expect(auth.getCredentials()).toEqual({
       username: 'admin',
       password: 'secret',
