@@ -52,6 +52,9 @@ const int kShieldBevelAlpha = 34;
 const int kShieldSpecularAlpha = 30;
 const int kShieldGreenHue = 125;
 const int kShieldSaturationThreshold = 12;
+// RGB components for the shadow/highlight overlays that tint the shield frame.
+// For example, kShadowBlueRed/kShadowBlueGreen/kShadowBlueBlue form the blue
+// shadow color used by the default palette.
 const int kShadowBlueRed = 12;
 const int kShadowBlueGreen = 74;
 const int kShadowBlueBlue = 156;
@@ -65,6 +68,7 @@ const int kHighlightGreenRed = 72;
 const int kHighlightGreenGreen = 220;
 const int kHighlightGreenBlue = 96;
 const char* kTrayAnimationIcon = ":/images/bareos-logo_128x128.png";
+const char* kTrayErrorIcon = ":/images/W.png";
 }  // namespace
 
 SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
@@ -73,7 +77,7 @@ SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
     , animationFrameIdx(0)
     , animationRequested(false)
     , normalIcon(QIcon(createShieldPixmap(0.0, 1.0, false)))
-    , errorIcon(":/images/W.png")
+    , errorIcon(kTrayErrorIcon)
     , animationIcons(createAnimationIcons())
     , timer(new QTimer(this))
 {
