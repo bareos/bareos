@@ -33,6 +33,18 @@
 #include "lib/ascii_control_characters.h"
 #include "lib/util.h"
 
+namespace {
+constexpr bool PrintfCheckAcceptsValidFormats()
+{
+  printf_check("%s", "test");
+  printf_check("%s %d", "test", 42);
+  printf_check("%p", static_cast<void*>(nullptr));
+  return true;
+}
+
+static_assert(PrintfCheckAcceptsValidFormats());
+}  // namespace
+
 TEST(BStringList, ConstructorsTest)
 {
   BStringList list1;
@@ -254,6 +266,11 @@ TEST(Util, version_number_major_minor)
   BareosVersionToMajorMinor v(version);
   EXPECT_EQ(v.major, 18);
   EXPECT_EQ(v.minor, 2);
+}
+
+TEST(Util, printf_check_accepts_valid_formats)
+{
+  EXPECT_TRUE(PrintfCheckAcceptsValidFormats());
 }
 
 #include "filed/evaluate_job_command.h"
