@@ -124,7 +124,7 @@ SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
     , animationRequested(false)
     , baseShieldPixmap(LoadPixmapOrAssert(kTrayAnimationIcon))
     , greenShieldPixmap(createGreenShieldPixmap(baseShieldPixmap))
-    , normalIcon(QIcon(createShieldPixmap(0.0, 1.0, getShieldPalette(false))))
+    , normalIcon(QIcon(createShieldPixmap(0.0, getShieldPalette(false))))
     , errorIcon(kTrayErrorIcon)
     , animationIcons(createAnimationIcons())
     , timer(new QTimer(this))
@@ -206,9 +206,7 @@ QList<QIcon> SystemTrayIcon::createAnimationIcons() const
   for (int frame = 0; frame < kAnimationFrameCount; ++frame) {
     const qreal angle
         = (static_cast<qreal>(frame) / kAnimationFrameCount) * 2.0 * M_PI;
-    const qreal cosine = std::cos(angle);
-    const qreal widthScale = std::max(kMinimumWidthScale, std::abs(cosine));
-    frames << QIcon(createShieldPixmap(angle, widthScale, palette));
+    frames << QIcon(createShieldPixmap(angle, palette));
   }
 
   return frames;
@@ -227,11 +225,12 @@ SystemTrayIcon::ShieldPalette SystemTrayIcon::getShieldPalette(
 }
 
 QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
-                                           qreal widthScale,
                                            const ShieldPalette& palette) const
 {
   const QPixmap& basePixmap = *palette.basePixmap;
   Q_ASSERT(!basePixmap.isNull());
+  const qreal widthScale
+      = std::max(kMinimumWidthScale, std::abs(std::cos(angle)));
 
   // Simulate a 3D flip by squashing the shield horizontally. When the back
   // side comes into view, mirror the squashed image so the rotation direction
