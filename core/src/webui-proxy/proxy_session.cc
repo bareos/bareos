@@ -145,8 +145,8 @@ std::string JsonDirectorList(const ProxyConfig& config)
   JsonPtr directors = MakeJsonArray();
 
   SetJsonString(obj.get(), "type", "director_list");
-  for (const auto& [id, _] : config.configured_directors) {
-    AppendJsonString(directors.get(), id);
+  for (const auto& [selector, _] : config.configured_directors) {
+    AppendJsonString(directors.get(), selector);
   }
   SetJsonValue(obj.get(), "directors", std::move(directors));
   return DumpJson(obj.get());
@@ -366,15 +366,15 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     cfg.password
         = std::string(RequireJsonStringField(auth_msg.get(), "password"));
     cfg.json_mode = ParseAuthMode(mode);
-    const auto requested_director
+    const auto requested_selector
         = std::string(RequireJsonStringField(auth_msg.get(), "director"));
-    if (requested_director.empty()) {
+    if (requested_selector.empty()) {
       throw std::runtime_error("Proxy config: no director selected");
     }
     const auto director_it
-        = config.configured_directors.find(requested_director);
+        = config.configured_directors.find(requested_selector);
     if (director_it == config.configured_directors.end()) {
-      throw std::runtime_error("Proxy config: director '" + requested_director
+      throw std::runtime_error("Proxy config: director '" + requested_selector
                                + "' is not configured");
     }
     const auto& target = director_it->second;

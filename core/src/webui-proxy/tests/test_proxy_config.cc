@@ -25,7 +25,7 @@
 
 #include <string>
 
-TEST(ProxyConfig, ParsesSelectorsAndDirectorNameOverrides)
+TEST(ProxyConfig, AllowsSharedDirectorNamesAcrossSelectors)
 {
   ProxyConfig cfg;
 
