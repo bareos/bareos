@@ -24,6 +24,7 @@
 
 #include <QIcon>
 #include <QList>
+#include <QPixmap>
 #include <QSystemTrayIcon>
 
 class QMainWindow;
@@ -45,6 +46,8 @@ class SystemTrayIcon : public QSystemTrayIcon {
   int iconIdx;
   int animationFrameIdx;
   bool animationRequested;
+  QPixmap baseShieldPixmap;
+  QPixmap greenShieldPixmap;
   QIcon normalIcon;
   QIcon errorIcon;
   QList<QIcon> animationIcons;
@@ -52,7 +55,7 @@ class SystemTrayIcon : public QSystemTrayIcon {
 
   void updateIcon();
   QList<QIcon> createAnimationIcons() const;
-  QPixmap createBaseShieldPixmap(bool recolor_green) const;
+  const QPixmap& getBaseShieldPixmap(bool use_green_palette) const;
   QPixmap createShieldPixmap(qreal angle,
                              qreal widthScale,
                              bool use_green_palette) const;
