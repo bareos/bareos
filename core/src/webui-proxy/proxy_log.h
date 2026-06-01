@@ -27,8 +27,8 @@
 #include <string_view>
 #include <utility>
 
-#include "include/compiler_macro.h"
 #include "lib/source_location.h"
+#include "lib/util.h"
 
 enum class ProxyLogLevel
 {
@@ -55,9 +55,6 @@ void ProxyLogWrite(ProxyLogLevel level,
                    libbareos::source_location loc
                    = libbareos::source_location::current());
 
-constexpr void ProxyLogPrintfCheck(const char*, ...) PRINTF_LIKE(1, 2);
-constexpr void ProxyLogPrintfCheck(const char*, ...) {}
-
 inline void ProxyLogFormat(ProxyLogLevel level,
                            std::string_view peer,
                            libbareos::source_location loc,
@@ -74,8 +71,8 @@ void ProxyLogFormat(ProxyLogLevel level,
                     First&& first,
                     Rest&&... rest)
 {
-  ProxyLogPrintfCheck(format, std::forward<First>(first),
-                      std::forward<Rest>(rest)...);
+  printf_check(format, std::forward<First>(first),
+               std::forward<Rest>(rest)...);
   const int rendered_size
       = std::snprintf(nullptr, 0, format, std::forward<First>(first),
                       std::forward<Rest>(rest)...);
