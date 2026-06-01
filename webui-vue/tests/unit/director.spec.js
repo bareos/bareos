@@ -202,6 +202,112 @@ describe('director store', () => {
     expect(director.transport).toBe('cleartext')
   })
 
+  it('tracks transport per probed director', async () => {
+    const auth = useAuthStore()
+    const director = useDirectorStore()
+
+    auth.login('admin', 'bareos-dir-a', 'secret')
+
+    const refreshPromise = director.refreshDirectorConnections([
+      'bareos-dir-a',
+      'bareos-dir-b',
+    ])
+
+    expect(director.directorConnections['bareos-dir-a']).toMatchObject({
+      director: 'bareos-dir-a',
+      status: 'checking',
+    })
+    expect(director.directorConnections['bareos-dir-b']).toMatchObject({
+      director: 'bareos-dir-b',
+      status: 'checking',
+    })
+
+    const firstSocket = FakeWebSocket.instances[0]
+    const secondSocket = FakeWebSocket.instances[1]
+
+    firstSocket.open()
+    secondSocket.open()
+
+    expect(JSON.parse(firstSocket.sent[0])).toEqual({
+      type: 'auth',
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir-a',
+    })
+    expect(JSON.parse(secondSocket.sent[0])).toEqual({
+      type: 'auth',
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir-b',
+    })
+
+    firstSocket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        transport: 'TLS-PSK',
+      }),
+    })
+    secondSocket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        transport: 'cleartext',
+      }),
+    })
+
+    await refreshPromise
+
+    expect(director.directorConnections['bareos-dir-a']).toMatchObject({
+      director: 'bareos-dir-a',
+      status: 'connected',
+      transport: 'TLS-PSK',
+      errorMsg: null,
+    })
+    expect(director.directorConnections['bareos-dir-b']).toMatchObject({
+      director: 'bareos-dir-b',
+      status: 'connected',
+      transport: 'cleartext',
+      errorMsg: null,
+    })
+  })
+
+  it('ignores stale director probe results from an older refresh', async () => {
+    const auth = useAuthStore()
+    const director = useDirectorStore()
+
+    auth.login('admin', 'bareos-dir-a', 'secret')
+
+    const firstRefresh = director.refreshDirectorConnections(['bareos-dir-a'])
+    const firstSocket = FakeWebSocket.instances[0]
+    firstSocket.open()
+
+    const secondRefresh = director.refreshDirectorConnections(['bareos-dir-a'])
+    const secondSocket = FakeWebSocket.instances[1]
+    secondSocket.open()
+
+    secondSocket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        transport: 'TLS-PSK',
+      }),
+    })
+    await secondRefresh
+
+    firstSocket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_error',
+        message: 'stale failure',
+      }),
+    })
+    await firstRefresh
+
+    expect(director.directorConnections['bareos-dir-a']).toMatchObject({
+      director: 'bareos-dir-a',
+      status: 'connected',
+      transport: 'TLS-PSK',
+      errorMsg: null,
+    })
+  })
+
   it('sends keepalive pings after authentication', () => {
     const director = useDirectorStore()
 

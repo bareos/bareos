@@ -1,18 +1,9 @@
 <template>
   <q-page class="q-pa-md">
-    <DirectorScopePanel
-      v-model="selectedDirectorsModel"
-      :title="t('Analytics Scope')"
-      :summary-label="analyticsScopeLabel"
-      :options="directorOptions"
-      :help-text="t('Select the directors that contribute to the analytics view.')"
-      :errors="directorErrors"
-      data-test-id="analytics-directors"
-    >
-      <q-banner v-if="error" dense class="bg-negative text-white">
-        {{ error }}
-      </q-banner>
-    </DirectorScopePanel>
+    <DirectorErrorsBanner :errors="directorErrors" />
+    <q-banner v-if="error" dense class="bg-negative text-white q-mb-md">
+      {{ error }}
+    </q-banner>
 
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col-6 col-sm-3 col-md-2" v-for="s in overallStats" :key="s.label">
@@ -149,7 +140,7 @@ import {
   withJobsStatusFilterQuery,
 } from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
-import DirectorScopePanel from '../components/DirectorScopePanel.vue'
+import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
