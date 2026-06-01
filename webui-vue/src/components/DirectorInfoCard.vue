@@ -99,7 +99,7 @@
             icon="info"
           >
             {{ card.version }}
-            <q-tooltip>Version: {{ card.version }}</q-tooltip>
+            <q-tooltip>{{ t('Version') }}: {{ card.version }}</q-tooltip>
           </q-chip>
           <q-chip
             v-if="card.release_date"
@@ -111,7 +111,7 @@
             icon="event"
           >
             {{ card.release_date }}
-            <q-tooltip>Released: {{ card.release_date }}</q-tooltip>
+            <q-tooltip>{{ t('Released') }}: {{ card.release_date }}</q-tooltip>
           </q-chip>
           <q-chip
             v-if="card.binary_info"
@@ -123,7 +123,7 @@
             icon="build"
           >
             {{ card.binary_info }}
-            <q-tooltip>Build: {{ card.binary_info }}</q-tooltip>
+            <q-tooltip>{{ t('Build') }}: {{ card.binary_info }}</q-tooltip>
           </q-chip>
           <q-chip
             v-if="card.os"
@@ -135,7 +135,7 @@
             :icon="card.osIcon.icon"
           >
             {{ card.os }}
-            <q-tooltip>OS: {{ card.os }}</q-tooltip>
+            <q-tooltip>{{ t('OS') }}: {{ card.os }}</q-tooltip>
           </q-chip>
           <q-chip
             v-if="card.daemon_started"
@@ -147,7 +147,7 @@
             icon="schedule"
           >
             {{ relativeTime ? formatDirectorRelativeTime(card.daemon_started, locale) : card.daemon_started }}
-            <q-tooltip>Started: {{ card.daemon_started }}</q-tooltip>
+            <q-tooltip>{{ t('Started') }}: {{ card.daemon_started }}</q-tooltip>
           </q-chip>
           <router-link
             v-if="card.jobs_run != null"
@@ -164,7 +164,7 @@
               icon="check"
             >
               {{ card.jobs_run }}
-              <q-tooltip>Jobs Run: {{ card.jobs_run }}</q-tooltip>
+              <q-tooltip>{{ t('Jobs Run') }}: {{ card.jobs_run }}</q-tooltip>
             </q-chip>
           </router-link>
           <router-link
@@ -185,7 +185,7 @@
               icon="play_arrow"
             >
               {{ card.jobs_running }}
-              <q-tooltip>Running: {{ card.jobs_running }}</q-tooltip>
+              <q-tooltip>{{ t('Running') }}: {{ card.jobs_running }}</q-tooltip>
             </q-chip>
           </router-link>
         </div>
