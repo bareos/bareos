@@ -34,9 +34,11 @@ async function expectConnected(page) {
   )
 
   if (expectedDirectorTransport) {
+    await page.locator('[data-testid="director-scope-control"]').click()
     await expect(
-      page.locator('[data-testid="director-transport-label"]')
+      page.locator('[data-testid="director-scope-menu"]')
     ).toContainText(expectedDirectorTransport)
+    await page.keyboard.press('Escape')
   }
 }
 
@@ -214,7 +216,8 @@ test('covers schedules and director tabs through the real director connection', 
   await expect(page.getByText('Director Messages', { exact: true })).toBeVisible()
 
   await page.getByRole('tab', { name: 'Catalog Maintenance' }).click()
-  await expect(page.getByText('Catalog Maintenance Target', { exact: true })).toBeVisible()
+  await expect(page.getByText('Jobs With No Data', { exact: true })).toBeVisible()
+  await expect(page.getByText('Prune Expired Records', { exact: true })).toBeVisible()
 })
 
 test('shows readonly ACL restrictions for the restricted profile', async ({
@@ -249,13 +252,12 @@ test('keeps the console session when navigating away and back', async ({
   await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
 
-test('restores the logged-in session after a page reload', async ({ page }) => {
+test('requires re-login after a page reload', async ({ page }) => {
   await login(page)
 
   await page.reload()
-  await page.waitForURL(/#\/dashboard$/)
-  await expectConnected(page)
-  await expect(page.getByText('Running Jobs', { exact: true })).toBeVisible()
+  await expect(page.locator('[data-testid="login-form"]')).toBeVisible()
+  await expect(page.getByLabel('Username')).toHaveValue(username)
 })
 
 test('opens the console and runs a raw command through the real proxy', async ({
