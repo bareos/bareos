@@ -15,11 +15,44 @@
       <!-- ── SHOW ─────────────────────────────────────────────────────────── -->
       <q-tab-panel name="list" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header jobs-list-header row items-center no-wrap">
+          <q-card-section class="panel-header jobs-list-header row items-center">
             <span class="jobs-list-header__title">{{ t('Job List') }}</span>
-            <q-space />
             <q-select
-              v-model="statusFilters"
+              :model-value="jobFilter"
+              use-input
+              fill-input
+              hide-selected
+              input-debounce="0"
+              dense
+              outlined
+              clearable
+              :options="visibleJobFilterOptions"
+              :label="t('Job Name')"
+              class="jobs-list-header__filter"
+              @update:model-value="setJobFilter"
+              @filter="filterJobFilterAutocomplete"
+              @blur="applyJobFilterInput()"
+              @keydown.enter.prevent="applyJobFilterInput()"
+            />
+            <q-select
+              :model-value="clientFilter"
+              use-input
+              fill-input
+              hide-selected
+              input-debounce="0"
+              dense
+              outlined
+              clearable
+              :options="visibleClientFilterOptions"
+              :label="t('Client')"
+              class="jobs-list-header__filter"
+              @update:model-value="setClientFilter"
+              @filter="filterClientFilterAutocomplete"
+              @blur="applyClientFilterInput()"
+              @keydown.enter.prevent="applyClientFilterInput()"
+            />
+            <q-select
+              v-model="typeFilters"
               dense
               outlined
               clearable
@@ -27,8 +60,8 @@
               map-options
               multiple
               use-chips
-              :options="jobStatusOptions"
-              :label="t('Status')"
+              :options="jobTypeOptions"
+              :label="t('Type')"
               class="jobs-list-header__filter"
             />
             <q-select
@@ -45,7 +78,7 @@
               class="jobs-list-header__filter"
             />
             <q-select
-              v-model="typeFilters"
+              v-model="statusFilters"
               dense
               outlined
               clearable
@@ -53,8 +86,8 @@
               map-options
               multiple
               use-chips
-              :options="jobTypeOptions"
-              :label="t('Type')"
+              :options="jobStatusOptions"
+              :label="t('Status')"
               class="jobs-list-header__filter"
             />
             <q-input
@@ -62,10 +95,15 @@
               dense
               outlined
               clearable
-              :placeholder="t('Search job, client, or ID…')"
+              :label="t('Search in results')"
               class="jobs-list-header__search"
             >
               <template #prepend><q-icon name="search" /></template>
+              <template #append>
+                <q-icon name="info" size="16px" class="cursor-help">
+                  <q-tooltip>{{ t('Searches only within the jobs already filtered above.') }}</q-tooltip>
+                </q-icon>
+              </template>
             </q-input>
             <div class="jobs-list-header__actions row items-center no-wrap">
               <span class="text-white text-caption jobs-list-header__countdown panel-refresh-countdown">
@@ -77,7 +115,7 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
-            <div v-if="search || (statusFilters?.length ?? 0) || (levelFilters?.length ?? 0) || (typeFilters?.length ?? 0)" class="q-px-md q-pt-sm">
+            <div v-if="search || jobFilter || clientFilter || (statusFilters?.length ?? 0) || (levelFilters?.length ?? 0) || (typeFilters?.length ?? 0)" class="q-px-md q-pt-sm">
               <q-chip
                 v-if="search"
                 removable
@@ -88,6 +126,28 @@
                 @remove="search = ''"
               >
                 {{ t('Search') }}: {{ search }}
+              </q-chip>
+              <q-chip
+                v-if="jobFilter"
+                removable
+                color="deep-purple"
+                text-color="white"
+                icon="work"
+                class="q-mb-xs q-mr-xs"
+                @remove="setJobFilter('')"
+              >
+                {{ t('Job Name') }}: {{ jobFilter }}
+              </q-chip>
+              <q-chip
+                v-if="clientFilter"
+                removable
+                color="cyan-8"
+                text-color="white"
+                icon="computer"
+                class="q-mb-xs q-mr-xs"
+                @remove="setClientFilter('')"
+              >
+                {{ t('Client') }}: {{ clientFilter }}
               </q-chip>
               <q-chip
                 v-for="status in (statusFilters ?? [])"
@@ -127,7 +187,7 @@
               </q-chip>
             </div>
             <q-table
-              :rows="filteredJobs"
+              :rows="jobs"
               :columns="columns"
               row-key="scopeKey"
               binary-state-sort
@@ -154,7 +214,7 @@
                     href="#"
                     class="text-primary"
                     :title="`${t('Job Name')}: ${props.value}`"
-                    @click.prevent="search = props.value ?? ''"
+                    @click.prevent="setJobFilter(props.value ?? '')"
                   >
                     {{ props.value }}
                   </a>
@@ -183,9 +243,26 @@
               </template>
               <template #body-cell-client="props">
                 <q-td :props="props">
-                  <a href="#" class="text-primary" @click.prevent="openClientDetails(props.row)">
-                    {{ props.value }}
-                  </a>
+                  <span v-if="props.value" class="row inline items-center no-wrap q-gutter-x-xs">
+                    <a
+                      href="#"
+                      class="text-primary inline-job-filter"
+                      :title="`${t('Client')}: ${props.value}`"
+                      @click.prevent="applyClientFilter(props.value)"
+                    >
+                      {{ props.value }}
+                    </a>
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      size="sm"
+                      icon="info"
+                      :title="t('Client details')"
+                      @click="openClientDetails(props.row)"
+                    />
+                  </span>
+                  <span v-else>—</span>
                 </q-td>
               </template>
               <template #body-cell-type="props">
@@ -450,9 +527,26 @@
               </template>
               <template #body-cell-client="props">
                 <q-td :props="props">
-                  <a href="#" class="text-primary" @click.prevent="openClientDetails(props.row)">
-                    {{ props.value }}
-                  </a>
+                  <span v-if="props.value" class="row inline items-center no-wrap q-gutter-x-xs">
+                    <a
+                      href="#"
+                      class="text-primary inline-job-filter"
+                      :title="`${t('Client')}: ${props.value}`"
+                      @click.prevent="rerunSearch = props.value ?? ''"
+                    >
+                      {{ props.value }}
+                    </a>
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      size="sm"
+                      icon="info"
+                      :title="t('Client details')"
+                      @click="openClientDetails(props.row)"
+                    />
+                  </span>
+                  <span v-else>—</span>
                 </q-td>
               </template>
               <template #body-cell-level="props">
@@ -536,6 +630,8 @@
             jobsStatus: statusFilters,
             jobsLevel: encodeJobsLevelFilters(levelFilters),
             jobsType: encodeJobsTypeFilters(typeFilters),
+            jobsJob: jobFilter,
+            jobsClient: clientFilter,
             jobsSearch: search,
           })"
           :job-details-query="timelineJobDetailsQuery"
@@ -584,11 +680,21 @@ import {
   encodeJobsLevelFilters,
   encodeJobsStatusFilters,
   encodeJobsTypeFilters,
+  filterJobsBySearch,
+  filterJobsTextOptions,
   normaliseJobId,
+  normaliseJobsSearchTerm,
+  normaliseJobsTextOptions,
+  normaliseJobsTextFilter,
+  paginateJobs,
+  resolveJobsClientQuery,
+  resolveJobsJobQuery,
   resolveJobsLevelFilters,
   resolveJobsSearchQuery,
   resolveJobsStatusFilters,
   resolveJobsTypeFilters,
+  withJobsClientQuery,
+  withJobsJobQuery,
   withJobsSearchQuery,
   withJobsLevelFilterQuery,
   withJobsStatusFilterQuery,
@@ -625,11 +731,21 @@ function jobsTypeFiltersEqual(left, right) {
   return encodeJobsTypeFilters(left) === encodeJobsTypeFilters(right)
 }
 
+function jobsTextFiltersEqual(left, right) {
+  return normaliseJobsTextFilter(left) === normaliseJobsTextFilter(right)
+}
+
 const tab          = ref(normaliseTab(route.query.action))
 const search       = ref(resolveJobsSearchQuery(route.query))
 const statusFilters = ref(resolveJobsStatusFilters(route.query))
 const levelFilters = ref(resolveJobsLevelFilters(route.query))
 const typeFilters = ref(resolveJobsTypeFilters(route.query))
+const jobFilter = ref(resolveJobsJobQuery(route.query))
+const clientFilter = ref(resolveJobsClientQuery(route.query))
+const jobFilterInput = ref(jobFilter.value)
+const clientFilterInput = ref(clientFilter.value)
+const jobFilterOptions = ref([])
+const clientFilterOptions = ref([])
 const directorErrors = ref([])
 const fmtBytes  = formatBytes
 const fmtSpeed  = formatSpeed
@@ -656,6 +772,14 @@ const jobTypeOptions = computed(() => jobTypeOrder.map((value) => {
     label: info.labelKey ? t(info.labelKey) : value,
   }
 }))
+const visibleJobFilterOptions = computed(() => filterJobsTextOptions([
+  ...jobFilterOptions.value,
+  ...jobs.value.map(job => job.name),
+], jobFilterInput.value))
+const visibleClientFilterOptions = computed(() => filterJobsTextOptions([
+  ...clientFilterOptions.value,
+  ...jobs.value.map(job => job.client),
+], clientFilterInput.value))
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -714,6 +838,8 @@ const timelineJobDetailsQuery = computed(() => buildJobDetailsQuery({
   jobsStatus: statusFilters.value,
   jobsLevel: levelFilters.value,
   jobsType: typeFilters.value,
+  jobsJob: jobFilter.value,
+  jobsClient: clientFilter.value,
   jobsSearch: search.value,
 }))
 
@@ -769,6 +895,8 @@ async function fetchPage() {
   const offset = (page - 1) * rowsPerPage
   const encodedStatusFilters = encodeJobsStatusFilters(statusFilters.value)
   const useDefaultSorting = usesDefaultJobsSorting(currentPagination)
+  const normalizedSearchTerm = normaliseJobsSearchTerm(search.value)
+  const fetchAllJobs = rowsPerPage === 0 || !useDefaultSorting || normalizedSearchTerm !== ''
   try {
     if (activeDirectors.value.length === 0) {
       jobs.value = []
@@ -790,6 +918,9 @@ async function fetchPage() {
           statusFilters.value,
           levelFilters.value,
           typeFilters.value,
+          jobFilter.value,
+          clientFilter.value,
+          normalizedSearchTerm,
         )
       jobs.value = result.jobs
       directorErrors.value = result.directorErrors
@@ -805,18 +936,28 @@ async function fetchPage() {
         statusFilter: encodedStatusFilters,
         levelFilter: levelFilters.value,
         typeFilter: typeFilters.value,
+        jobFilter: jobFilter.value,
+        clientFilter: clientFilter.value,
       }))
       const count = Number(directorCollection(countResult?.jobs)[0]?.count ?? 0)
-      const limit = useDefaultSorting
-        ? rowsPerPage
-        : Math.max(count, 1)
+      if (count === 0) {
+        jobs.value = []
+        totalJobs.value = 0
+        pagination.value = { ...pagination.value, rowsNumber: 0 }
+        return
+      }
+      const limit = fetchAllJobs
+        ? Math.max(count, 1)
+        : rowsPerPage
       const pageResult = await director.call(
         buildListJobsCommand({
           limit,
-          offset: useDefaultSorting ? offset : 0,
+          offset: fetchAllJobs ? 0 : offset,
           statusFilter: encodedStatusFilters,
           levelFilter: levelFilters.value,
           typeFilter: typeFilters.value,
+          jobFilter: jobFilter.value,
+          clientFilter: clientFilter.value,
         })
       )
       const fetchedJobs = directorCollection(pageResult?.jobs).map((job) => {
@@ -829,18 +970,23 @@ async function fetchPage() {
       })
       const sortedJobs = useDefaultSorting
         ? fetchedJobs
-        : sortJobsByPagination(fetchedJobs, currentPagination).slice(offset, offset + rowsPerPage)
-      const runningJobIds = sortedJobs.filter(job => isRunning(job.status)).map(job => job.id)
+        : sortJobsByPagination(fetchedJobs, currentPagination)
+      const matchingJobs = filterJobsBySearch(sortedJobs, normalizedSearchTerm)
+      const visibleJobs = fetchAllJobs
+        ? paginateJobs(matchingJobs, currentPagination)
+        : matchingJobs
+      const runningJobIds = visibleJobs.filter(job => isRunning(job.status)).map(job => job.id)
       if (runningJobIds.length > 0) {
         const runtimeStatus = await Promise.allSettled([director.call('status director')])
         jobs.value = runtimeStatus[0].status === 'fulfilled'
-          ? overlayRuntimeStatuses(sortedJobs, runtimeStatus[0].value?.running)
-          : sortedJobs
+          ? overlayRuntimeStatuses(visibleJobs, runtimeStatus[0].value?.running)
+          : visibleJobs
       } else {
-        jobs.value = sortedJobs
+        jobs.value = visibleJobs
       }
-      totalJobs.value = count
-      pagination.value = { ...pagination.value, rowsNumber: count }
+      const filteredCount = normalizedSearchTerm !== '' ? matchingJobs.length : count
+      totalJobs.value = filteredCount
+      pagination.value = { ...pagination.value, rowsNumber: filteredCount }
       return
     }
 
@@ -850,10 +996,12 @@ async function fetchPage() {
         statusFilter: status,
         levelFilter: levelFilters.value,
         typeFilter: typeFilters.value,
+        jobFilter: jobFilter.value,
+        clientFilter: clientFilter.value,
       }))
     )))
     const pageResults = await Promise.allSettled(filters.map((status, index) => {
-      if (useDefaultSorting) {
+      if (useDefaultSorting && !fetchAllJobs) {
         return director.call(
           buildListJobsCommand({
             limit: offset + rowsPerPage,
@@ -861,6 +1009,8 @@ async function fetchPage() {
             statusFilter: status,
             levelFilter: levelFilters.value,
             typeFilter: typeFilters.value,
+            jobFilter: jobFilter.value,
+            clientFilter: clientFilter.value,
           })
         )
       }
@@ -878,6 +1028,8 @@ async function fetchPage() {
           statusFilter: status,
           levelFilter: levelFilters.value,
           typeFilter: typeFilters.value,
+          jobFilter: jobFilter.value,
+          clientFilter: clientFilter.value,
         }))
       }
 
@@ -888,6 +1040,8 @@ async function fetchPage() {
           statusFilter: status,
           levelFilter: levelFilters.value,
           typeFilter: typeFilters.value,
+          jobFilter: jobFilter.value,
+          clientFilter: clientFilter.value,
         })
       )
     }))
@@ -907,7 +1061,8 @@ async function fetchPage() {
         })
         : []
     ))], currentPagination)
-    const visibleJobs = mergedJobs.slice(offset, offset + rowsPerPage)
+    const matchingJobs = filterJobsBySearch(mergedJobs, normalizedSearchTerm)
+    const visibleJobs = paginateJobs(matchingJobs, currentPagination)
     const runningJobIds = visibleJobs.filter(job => isRunning(job.status)).map(job => job.id)
     if (runningJobIds.length > 0) {
       const runtimeStatus = await Promise.allSettled([director.call('status director')])
@@ -924,8 +1079,9 @@ async function fetchPage() {
           : numberOfJobsFromResult(pageResults[index])
       )
     ), 0)
-    totalJobs.value = count
-    pagination.value = { ...pagination.value, rowsNumber: count }
+    const filteredCount = normalizedSearchTerm !== '' ? matchingJobs.length : count
+    totalJobs.value = filteredCount
+    pagination.value = { ...pagination.value, rowsNumber: filteredCount }
   } catch (e) {
     error.value = e.message
   } finally {
@@ -948,19 +1104,9 @@ function onRequest(props) {
   fetchPage()
 }
 
-const filteredJobs = computed(() => {
-  if (!search.value) return jobs.value
-  const q = search.value.toLowerCase()
-  return jobs.value.filter(j =>
-    j.name.toLowerCase().includes(q) ||
-    j.client.toLowerCase().includes(q) ||
-    String(j.id).includes(q)
-  )
-})
-
-const maxBytes    = computed(() => Math.max(1, ...filteredJobs.value.map(j => j.bytes)))
-const maxFiles    = computed(() => Math.max(1, ...filteredJobs.value.map(j => j.files)))
-const maxDuration = computed(() => Math.max(1, ...filteredJobs.value.map(j => parseDurationSecs(j.duration))))
+const maxBytes    = computed(() => Math.max(1, ...jobs.value.map(j => j.bytes)))
+const maxFiles    = computed(() => Math.max(1, ...jobs.value.map(j => j.files)))
+const maxDuration = computed(() => Math.max(1, ...jobs.value.map(j => parseDurationSecs(j.duration))))
 
 function bytesGauge(val)    { return (val || 0) / maxBytes.value }
 function filesGauge(val)    { return (val || 0) / maxFiles.value }
@@ -972,7 +1118,7 @@ function jobSpeedBps(row) {
   const bytes = typeof row.bytes === 'string' ? parseFloat(row.bytes) : (row.bytes || 0)
   return bytes / secs
 }
-const maxSpeed = computed(() => Math.max(1, ...filteredJobs.value
+const maxSpeed = computed(() => Math.max(1, ...jobs.value
   .filter(j => !isRunning(j.status))
   .map(j => jobSpeedBps(j))))
 function speedGauge(row) { return jobSpeedBps(row) / maxSpeed.value }
@@ -1008,6 +1154,52 @@ function applyTypeFilter(type) {
   }
 
   typeFilters.value = [normalized]
+}
+
+function setJobFilter(value) {
+  const normalized = normaliseJobsTextFilter(value)
+  if (!jobsTextFiltersEqual(jobFilter.value, normalized)) {
+    jobFilter.value = normalized
+  }
+  if (!jobsTextFiltersEqual(jobFilterInput.value, normalized)) {
+    jobFilterInput.value = normalized
+  }
+}
+
+function setClientFilter(value) {
+  const normalized = normaliseJobsTextFilter(value)
+  if (!jobsTextFiltersEqual(clientFilter.value, normalized)) {
+    clientFilter.value = normalized
+  }
+  if (!jobsTextFiltersEqual(clientFilterInput.value, normalized)) {
+    clientFilterInput.value = normalized
+  }
+}
+
+function applyJobFilterInput() {
+  setJobFilter(jobFilterInput.value)
+}
+
+function applyClientFilterInput() {
+  setClientFilter(clientFilterInput.value)
+}
+
+function filterJobFilterAutocomplete(value, update) {
+  jobFilterInput.value = normaliseJobsTextFilter(value)
+  update(() => {})
+}
+
+function filterClientFilterAutocomplete(value, update) {
+  clientFilterInput.value = normaliseJobsTextFilter(value)
+  update(() => {})
+}
+
+function applyClientFilter(client) {
+  if (!client) {
+    return
+  }
+
+  setClientFilter(client)
 }
 
 function jobLevelLabel(level) {
@@ -1146,6 +1338,46 @@ async function loadJobDefs() {
   }
 }
 
+async function loadFilterOptions() {
+  try {
+    const credentials = auth.getCredentials()
+    if (!credentials?.password || activeDirectors.value.length === 0) {
+      jobFilterOptions.value = []
+      clientFilterOptions.value = []
+      return
+    }
+
+    const results = await Promise.all(activeDirectors.value.map(async (directorName) => {
+      const client = await createDirectorCommandClient({
+        ...credentials,
+        director: directorName,
+      })
+      try {
+        const [jobsResult, clientsResult] = await Promise.allSettled([
+          client.call('.jobs'),
+          client.call('.clients'),
+        ])
+
+        return {
+          jobs: jobsResult.status === 'fulfilled'
+            ? directorCollection(jobsResult.value?.jobs).map(job => job.name)
+            : [],
+          clients: clientsResult.status === 'fulfilled'
+            ? directorCollection(clientsResult.value?.clients).map(currentClient => currentClient.name)
+            : [],
+        }
+      } finally {
+        client.disconnect()
+      }
+    }))
+
+    jobFilterOptions.value = normaliseJobsTextOptions(results.flatMap(result => result.jobs))
+    clientFilterOptions.value = normaliseJobsTextOptions(results.flatMap(result => result.clients))
+  } catch (e) {
+    console.warn('Could not load jobs filter options:', e.message)
+  }
+}
+
 // ── row-level actions ─────────────────────────────────────────────────────────
 async function switchToJobDirector(job) {
   if (!job?.director) {
@@ -1169,6 +1401,8 @@ async function openJobDetails(job) {
       jobsStatus: statusFilters.value,
       jobsLevel: levelFilters.value,
       jobsType: typeFilters.value,
+      jobsJob: jobFilter.value,
+      jobsClient: clientFilter.value,
       jobsSearch: search.value,
     }),
   })
@@ -1187,6 +1421,8 @@ async function openClientDetails(job) {
         jobsStatus: statusFilters.value,
         jobsLevel: encodeJobsLevelFilters(levelFilters.value),
         jobsType: encodeJobsTypeFilters(typeFilters.value),
+        jobsJob: jobFilter.value,
+        jobsClient: clientFilter.value,
         jobsSearch: search.value,
       }),
     })
@@ -1520,6 +1756,7 @@ onMounted(() => {
   syncSelectedDirectors()
   syncJobsScopeDirectorQuery()
   syncSingletonTabDirector()
+  loadFilterOptions()
   fetchPage()
   if (director.isConnected && (isSingleDirectorScope.value || tab.value === 'actions')) {
     loadJobDefs()
@@ -1531,11 +1768,14 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  jobFilterOptions.value = []
+  clientFilterOptions.value = []
   stopAutoRefresh()
 })
 
 watch(() => director.isConnected, (connected) => {
   if (connected) {
+    loadFilterOptions()
     fetchPage()
     if (isSingleDirectorScope.value || tab.value === 'actions') {
       loadJobDefs()
@@ -1568,6 +1808,26 @@ watch(() => route.query.type, (value) => {
   }
 })
 
+watch(() => route.query.job, (value) => {
+  const next = resolveJobsJobQuery({ job: value })
+  if (!jobsTextFiltersEqual(jobFilter.value, next)) {
+    jobFilter.value = next
+  }
+  if (!jobsTextFiltersEqual(jobFilterInput.value, next)) {
+    jobFilterInput.value = next
+  }
+})
+
+watch(() => route.query.client, (value) => {
+  const next = resolveJobsClientQuery({ client: value })
+  if (!jobsTextFiltersEqual(clientFilter.value, next)) {
+    clientFilter.value = next
+  }
+  if (!jobsTextFiltersEqual(clientFilterInput.value, next)) {
+    clientFilterInput.value = next
+  }
+})
+
 watch(() => route.query.action, (value) => {
   const next = normaliseTab(value)
   if (tab.value !== next) {
@@ -1594,6 +1854,50 @@ watch(search, (next) => {
   if (query.search !== current || route.query.name !== undefined) {
     router.replace({ path: route.path, query })
   }
+  pagination.value = { ...pagination.value, page: 1 }
+  fetchPage()
+})
+
+watch(jobFilterInput, (next) => {
+  if (normaliseJobsTextFilter(next) === '' && !jobsTextFiltersEqual(jobFilter.value, '')) {
+    setJobFilter('')
+  }
+})
+
+watch(clientFilterInput, (next) => {
+  if (normaliseJobsTextFilter(next) === '' && !jobsTextFiltersEqual(clientFilter.value, '')) {
+    setClientFilter('')
+  }
+})
+
+watch(jobFilter, (next) => {
+  const normalized = normaliseJobsTextFilter(next)
+  if (!jobsTextFiltersEqual(next, normalized)) {
+    jobFilter.value = normalized
+    return
+  }
+
+  const query = withJobsJobQuery(route.query, normalized)
+  if ((query.job ?? '') !== (typeof route.query.job === 'string' ? route.query.job : '')) {
+    router.replace({ path: route.path, query })
+  }
+  pagination.value = { ...pagination.value, page: 1 }
+  fetchPage()
+})
+
+watch(clientFilter, (next) => {
+  const normalized = normaliseJobsTextFilter(next)
+  if (!jobsTextFiltersEqual(next, normalized)) {
+    clientFilter.value = normalized
+    return
+  }
+
+  const query = withJobsClientQuery(route.query, normalized)
+  if ((query.client ?? '') !== (typeof route.query.client === 'string' ? route.query.client : '')) {
+    router.replace({ path: route.path, query })
+  }
+  pagination.value = { ...pagination.value, page: 1 }
+  fetchPage()
 })
 
 watch(statusFilters, (next) => {
@@ -1650,6 +1954,7 @@ watch(() => directorOptions.value, () => {
 watch(() => activeDirectors.value.join('\u0000'), () => {
   syncSingletonTabDirector()
   pagination.value = { ...pagination.value, page: 1 }
+   loadFilterOptions()
   fetchPage()
   if (tab.value === 'actions') {
     loadJobDefs()
@@ -1698,15 +2003,19 @@ watch(() => singletonTabDirector.value, async () => {
 }
 
 .jobs-list-header {
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .jobs-list-header__title {
   flex: 0 0 auto;
+  margin-right: auto;
 }
 
 .jobs-list-header__actions {
+  flex: 0 0 auto;
   gap: 8px;
+  margin-left: auto;
 }
 
 .jobs-list-header__filter {

@@ -28,6 +28,8 @@ export function buildClientDetailsQuery({
   jobsStatus,
   jobsLevel,
   jobsType,
+  jobsJob,
+  jobsClient,
   jobsSearch,
   dashboardOrigin,
 } = {}) {
@@ -63,6 +65,14 @@ export function buildClientDetailsQuery({
 
   if (jobsType) {
     query.jobsType = jobsType
+  }
+
+  if (jobsJob) {
+    query.jobsJob = jobsJob
+  }
+
+  if (jobsClient) {
+    query.jobsClient = jobsClient
   }
 
   if (jobsSearch) {
@@ -111,6 +121,14 @@ export function resolveClientDetailsJobsOrigin(query) {
 
   if (typeof query?.jobsType === 'string' && query.jobsType) {
     nextQuery.type = query.jobsType
+  }
+
+  if (typeof query?.jobsJob === 'string' && query.jobsJob) {
+    nextQuery.job = query.jobsJob
+  }
+
+  if (typeof query?.jobsClient === 'string' && query.jobsClient) {
+    nextQuery.client = query.jobsClient
   }
 
   if (typeof query?.jobsSearch === 'string' && query.jobsSearch) {
