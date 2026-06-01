@@ -233,6 +233,9 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
   const QPixmap& basePixmap = *palette.basePixmap;
   Q_ASSERT(!basePixmap.isNull());
 
+  // Simulate a 3D flip by squashing the shield horizontally. When the back
+  // side comes into view, mirror the squashed image so the rotation direction
+  // stays visually consistent across the full turn.
   QPixmap scaled = basePixmap.scaled(
       std::max(1, static_cast<int>(basePixmap.width() * widthScale)),
       basePixmap.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
@@ -257,6 +260,7 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
   QPainter painter(&framePixmap);
   painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
 
+  // Offset a tinted copy to fake a soft drop shadow behind the rotated shield.
   QPixmap shadowOverlay(framePixmap.size());
   shadowOverlay.fill(Qt::transparent);
   {
@@ -271,6 +275,8 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
   painter.drawPixmap(0, 0, shadowOverlay);
   painter.drawPixmap(0, 0, shieldPixmap);
 
+  // Add top-to-bottom highlight and shadow so the flattened shield still keeps
+  // some depth while it spins.
   QPixmap depthOverlay(framePixmap.size());
   depthOverlay.fill(Qt::transparent);
   {
@@ -287,6 +293,8 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
   }
   painter.drawPixmap(0, 0, depthOverlay);
 
+  // Strengthen the leading and trailing edges when the shield is most squashed
+  // so the sideways phase of the rotation stays readable.
   const int sideShading
       = static_cast<int>((1.0 - widthScale) * kMaximumSideShading);
   if (sideShading > 0) {
@@ -314,6 +322,8 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
     painter.drawPixmap(0, 0, sideOverlay);
   }
 
+  // Add a light rim and specular highlight so the shield keeps a glossy look
+  // after the rotation and depth overlays have been applied.
   QPixmap bevelOverlay(framePixmap.size());
   bevelOverlay.fill(Qt::transparent);
   {
