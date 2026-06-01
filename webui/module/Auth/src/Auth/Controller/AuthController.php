@@ -216,7 +216,7 @@ class AuthController extends AbstractActionController
             $bsock->disconnect();
         }
         $this->clearAuthenticationSessionState();
-        // Keep the existing session alive so the login form CSRF token remains valid.
+        // Reset submitted login form data before rendering the form again.
         $form->setData([]);
         return new ViewModel(
             array(
