@@ -118,6 +118,11 @@ void SystemTrayIcon::setIconInternal()
 
 void SystemTrayIcon::animateIcon(bool on)
 {
+  if (animationRequested == on) {
+    if (!animationRequested && !timer->isActive()) { updateIcon(); }
+    return;
+  }
+
   animationRequested = on;
   if (animationRequested && iconIdx != kErrorIcon) {
     animationFrameIdx = 0;
