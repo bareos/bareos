@@ -44,7 +44,7 @@ const int kErrorIcon = 2;
 const int kAnimationIntervalMs = 120;
 const int kAnimationFrameCount = 12;
 const qreal kMinimumWidthScale = 0.15;
-const int kMaximumSideShading = 44;
+const int kMaximumSideShading = 72;
 const int kShieldShadowAlpha = 72;
 const int kShieldShadowYOffset = 5;
 const int kShieldShadowXOffset = 3;
@@ -304,15 +304,16 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
     QLinearGradient sideGradient(0, 0, framePixmap.width(), 0);
     if (std::sin(angle) >= 0) {
       sideGradient.setColorAt(0.0, WithAlpha(palette.shadow, sideShading));
-      sideGradient.setColorAt(0.45, WithAlpha(palette.shadow, 0));
-      sideGradient.setColorAt(0.75,
-                              WithAlpha(palette.highlight, sideShading / 2));
-      sideGradient.setColorAt(1.0, WithAlpha(palette.highlight, sideShading));
+      sideGradient.setColorAt(0.35, WithAlpha(palette.shadow, 0));
+      sideGradient.setColorAt(0.7,
+                              WithAlpha(palette.highlight, sideShading * 3 / 4));
+      sideGradient.setColorAt(1.0,
+                              WithAlpha(palette.highlight, sideShading));
     } else {
       sideGradient.setColorAt(0.0, WithAlpha(palette.highlight, sideShading));
-      sideGradient.setColorAt(0.25,
-                              WithAlpha(palette.highlight, sideShading / 2));
-      sideGradient.setColorAt(0.55, WithAlpha(palette.shadow, 0));
+      sideGradient.setColorAt(
+          0.3, WithAlpha(palette.highlight, sideShading * 3 / 4));
+      sideGradient.setColorAt(0.65, WithAlpha(palette.shadow, 0));
       sideGradient.setColorAt(1.0, WithAlpha(palette.shadow, sideShading));
     }
     sidePainter.fillRect(sideOverlay.rect(), sideGradient);
