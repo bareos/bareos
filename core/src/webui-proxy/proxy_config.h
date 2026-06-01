@@ -92,6 +92,7 @@ struct DirectorTargetConfig {
 struct ProxyConfig {
   std::string bind_address{"localhost"};
   int port{9104};
+  // Keys are client-visible selectors; target.name is the Bareos director name.
   std::map<std::string, DirectorTargetConfig> configured_directors;
 };
 
