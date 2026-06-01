@@ -96,7 +96,9 @@ void SystemTrayIcon::setNewIcon(int icon)
   iconIdx = icon;
   if (iconIdx == kErrorIcon) {
     timer->stop();
+    animationFrameIdx = 0;
   } else if (animationRequested && !timer->isActive()) {
+    animationFrameIdx = 0;
     timer->start();
   }
 
