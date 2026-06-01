@@ -17,7 +17,7 @@
       <q-tab name="timeline" :label="t('Timeline')" no-caps />
     </q-tabs>
 
-    <q-tab-panels v-model="tab" animated swipeable>
+    <q-tab-panels v-model="tab" animated :swipeable="$q.platform.has.touch">
       <!-- SHOW -->
       <q-tab-panel name="list" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
@@ -138,6 +138,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import {
   directorCollection,
   normaliseClient,
@@ -169,6 +170,7 @@ const auth = useAuthStore()
 const director = useDirectorStore()
 const releaseInfo = useReleaseInfoStore()
 const router = useRouter()
+const $q = useQuasar()
 const { t } = useI18n()
 
 const rawClients = ref([])

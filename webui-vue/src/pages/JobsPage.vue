@@ -10,7 +10,7 @@
       <q-tab name="timeline" :label="t('Timeline')" no-caps />
     </q-tabs>
 
-    <q-tab-panels v-model="tab" animated swipeable>
+    <q-tab-panels v-model="tab" animated :swipeable="$q.platform.has.touch">
 
       <!-- ── SHOW ─────────────────────────────────────────────────────────── -->
       <q-tab-panel name="list" class="q-pa-none">
