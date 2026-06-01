@@ -32,6 +32,7 @@
 #include <QRadialGradient>
 #include <QTimer>
 #include <QTransform>
+#include <QtMath>
 
 #include <algorithm>
 #include <cmath>
@@ -42,7 +43,6 @@ const int kErrorIcon = 2;
 const int kAnimationIntervalMs = 120;
 const int kAnimationFrameCount = 12;
 const qreal kMinimumWidthScale = 0.15;
-const qreal kPi = 3.14159265358979323846;
 const int kMaximumSideShading = 44;
 const int kShieldShadowAlpha = 72;
 const int kShieldShadowYOffset = 5;
@@ -155,7 +155,7 @@ QList<QIcon> SystemTrayIcon::createAnimationIcons() const
 
   for (int frame = 0; frame < kAnimationFrameCount; ++frame) {
     const qreal angle
-        = (static_cast<qreal>(frame) / kAnimationFrameCount) * 2.0 * kPi;
+        = (static_cast<qreal>(frame) / kAnimationFrameCount) * 2.0 * M_PI;
     const qreal cosine = std::cos(angle);
     const qreal widthScale = std::max(kMinimumWidthScale, std::abs(cosine));
     frames << QIcon(createShieldPixmap(angle, widthScale, true));
