@@ -22,12 +22,30 @@ cmake_minimum_required(VERSION 3.17)
 find_package(Threads REQUIRED)
 find_package(Jansson REQUIRED)
 
-set(PROXY_SOURCES
-    main.cc bareos_base64.cc director_connection.cc proxy_config.cc
-    proxy_log.cc proxy_session.cc proxy_server.cc ws_codec.cc
+add_library(webui-proxy-objects OBJECT)
+target_sources(
+  webui-proxy-objects
+  PRIVATE bareos_base64.cc
+          director_connection.cc
+          proxy_config.cc
+          proxy_log.cc
+          proxy_session.cc
+          ws_codec.cc
+)
+target_compile_definitions(
+  webui-proxy-objects PRIVATE BAREOS_FULL_VERSION="${BAREOS_FULL_VERSION}"
+)
+target_link_libraries(
+  webui-proxy-objects PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto
+                              Jansson::Jansson Threads::Threads
 )
 
-add_executable(bareos-webui-proxy ${PROXY_SOURCES})
+add_executable(
+  bareos-webui-proxy
+  main.cc
+  proxy_server.cc
+  $<TARGET_OBJECTS:webui-proxy-objects>
+)
 
 target_compile_definitions(
   bareos-webui-proxy
@@ -63,10 +81,6 @@ install(
 if(BUILD_TESTING AND GTest_FOUND)
   include(GoogleTest)
 
-  set(PROXY_LIB_SOURCES bareos_base64.cc director_connection.cc proxy_config.cc
-                        proxy_log.cc
-  )
-
   add_executable(
     test_webui_proxy
     tests/test_bareos_base64.cc
@@ -75,9 +89,7 @@ if(BUILD_TESTING AND GTest_FOUND)
     tests/test_proxy_log.cc
     tests/test_proxy_session.cc
     tests/test_ws_codec.cc
-    proxy_session.cc
-    ws_codec.cc
-    ${PROXY_LIB_SOURCES}
+    $<TARGET_OBJECTS:webui-proxy-objects>
   )
   target_compile_definitions(
     test_webui_proxy PRIVATE BAREOS_FULL_VERSION="${BAREOS_FULL_VERSION}"
