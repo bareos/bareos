@@ -158,12 +158,12 @@ void SystemTrayIcon::setNewIcon(int icon)
 
 void SystemTrayIcon::setIconInternal()
 {
-  if (!animationRequested || iconIdx == kErrorIcon
-      || animationIcons.isEmpty()) {
+  if (iconIdx == kErrorIcon || animationIcons.isEmpty() || !timer->isActive()) {
     return;
   }
 
   animationFrameIdx = (animationFrameIdx + 1) % animationIcons.size();
+  if (!animationRequested && animationFrameIdx == 0) { timer->stop(); }
   updateIcon();
 }
 
@@ -176,11 +176,15 @@ void SystemTrayIcon::animateIcon(bool on)
 
   animationRequested = on;
   if (animationRequested && iconIdx != kErrorIcon) {
-    animationFrameIdx = 0;
-    if (!timer->isActive()) { timer->start(); }
+    if (!timer->isActive()) {
+      animationFrameIdx = 0;
+      timer->start();
+    }
   } else {
-    timer->stop();
-    animationFrameIdx = 0;
+    if (!timer->isActive() || iconIdx == kErrorIcon || animationFrameIdx == 0) {
+      timer->stop();
+      animationFrameIdx = 0;
+    }
   }
 
   updateIcon();
@@ -190,7 +194,7 @@ void SystemTrayIcon::updateIcon()
 {
   if (iconIdx == kErrorIcon) {
     setIcon(errorIcon);
-  } else if (animationRequested && !animationIcons.isEmpty()) {
+  } else if (timer->isActive() && !animationIcons.isEmpty()) {
     setIcon(animationIcons[animationFrameIdx]);
   } else {
     setIcon(normalIcon);
