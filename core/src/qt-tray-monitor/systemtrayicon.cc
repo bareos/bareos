@@ -32,6 +32,7 @@
 #include <QRadialGradient>
 #include <QTimer>
 #include <QTransform>
+#include <QtGlobal>
 #include <QtMath>
 
 #include <algorithm>
@@ -58,6 +59,13 @@ const QRgb kGreenShadowColor = qRgb(12, 120, 30);
 const QRgb kGreenHighlightColor = qRgb(72, 220, 96);
 const char* kTrayAnimationIcon = ":/images/bareos-logo_128x128.png";
 const char* kTrayErrorIcon = ":/images/W.png";
+
+QPixmap LoadPixmapOrAssert(const char* resourcePath)
+{
+  QPixmap pixmap(resourcePath);
+  Q_ASSERT_X(!pixmap.isNull(), "SystemTrayIcon", resourcePath);
+  return pixmap;
+}
 
 QColor WithAlpha(const QColor& color, int alpha)
 {
@@ -86,7 +94,7 @@ QColor ScaledRgb(const QColor& color, qreal factor, int alpha)
 
 QPixmap createGreenShieldPixmap(const QPixmap& basePixmap)
 {
-  if (basePixmap.isNull()) { return QPixmap(); }
+  Q_ASSERT(!basePixmap.isNull());
 
   QImage image = basePixmap.toImage().convertToFormat(QImage::Format_ARGB32);
   for (int y = 0; y < image.height(); ++y) {
@@ -114,7 +122,7 @@ SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
     , iconIdx(kNormalIcon)
     , animationFrameIdx(0)
     , animationRequested(false)
-    , baseShieldPixmap(kTrayAnimationIcon)
+    , baseShieldPixmap(LoadPixmapOrAssert(kTrayAnimationIcon))
     , greenShieldPixmap(createGreenShieldPixmap(baseShieldPixmap))
     , normalIcon(QIcon(createShieldPixmap(0.0, 1.0, getShieldPalette(false))))
     , errorIcon(kTrayErrorIcon)
@@ -194,7 +202,6 @@ QList<QIcon> SystemTrayIcon::createAnimationIcons() const
 {
   QList<QIcon> frames;
   const ShieldPalette palette = getShieldPalette(true);
-  if (palette.basePixmap->isNull()) { return frames; }
 
   for (int frame = 0; frame < kAnimationFrameCount; ++frame) {
     const qreal angle
@@ -224,7 +231,7 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
                                            const ShieldPalette& palette) const
 {
   const QPixmap& basePixmap = *palette.basePixmap;
-  if (basePixmap.isNull()) { return QPixmap(); }
+  Q_ASSERT(!basePixmap.isNull());
 
   QPixmap scaled = basePixmap.scaled(
       std::max(1, static_cast<int>(basePixmap.width() * widthScale)),
