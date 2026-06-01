@@ -22,6 +22,7 @@
 #include "bareos_base64.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/bnet_protocol_signals.h"
+#include "lib/version.h"
 
 #include <algorithm>
 #include <array>
@@ -308,7 +309,8 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
 
   // Step 1: send Hello with version so the director uses the >= 18.2 protocol.
   const std::string hello
-      = "Hello " + cfg.username + " calling version " BAREOS_FULL_VERSION "\n";
+      = "Hello " + cfg.username + " calling version "
+        + kBareosVersionStrings.Full + "\n";
   SendFrame(hello);
 
   // Step 2: receive director's challenge
