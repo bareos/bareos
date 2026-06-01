@@ -1,14 +1,5 @@
 <template>
   <q-page class="q-pa-md">
-    <DirectorScopePanel
-      v-model="selectedDirectorsModel"
-      :title="t('Director Scope')"
-      :summary-label="directorScopeLabel"
-      :options="directorOptions"
-      :help-text="t('Select the directors that contribute to the status and message views.')"
-      data-test-id="director-page-directors"
-    />
-
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="status"       :label="t('Status')"       no-caps />
       <q-tab name="messages"     :label="t('Messages')"     no-caps />
@@ -619,7 +610,6 @@ import { resolveJobTypeCode } from '../utils/jobTypes.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorInfoCard from '../components/DirectorInfoCard.vue'
 import DirectorLabel from '../components/DirectorLabel.vue'
-import DirectorScopePanel from '../components/DirectorScopePanel.vue'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge  from '../components/JobLevelBadge.vue'
 import JobTypeBadge   from '../components/JobTypeBadge.vue'

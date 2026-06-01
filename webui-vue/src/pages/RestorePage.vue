@@ -1,14 +1,6 @@
 <template>
   <q-page class="q-pa-md">
-    <DirectorScopePanel
-      v-model="selectedDirectorsModel"
-      :title="t('Restore Scope')"
-      :summary-label="restoreScopeLabel"
-      :options="directorOptions"
-      :help-text="t('Select the directors that contribute to the restore source choices.')"
-      :errors="directorErrors"
-      data-test-id="restore-directors"
-    />
+    <DirectorErrorsBanner :errors="directorErrors" />
 
     <q-card flat bordered class="bareos-panel">
       <q-card-section class="panel-header">{{ t('Restore Files') }}</q-card-section>
@@ -451,7 +443,7 @@ import {
   truncateRestoreBreadcrumbs,
 } from '../utils/restore.js'
 import { buildJobDetailsQuery } from '../utils/jobs.js'
-import DirectorScopePanel from '../components/DirectorScopePanel.vue'
+import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import PluginRestoreInfoPanel from '../components/PluginRestoreInfoPanel.vue'
 
 const auth = useAuthStore()

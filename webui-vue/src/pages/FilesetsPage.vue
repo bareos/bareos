@@ -1,14 +1,6 @@
 <template>
   <q-page class="q-pa-md">
-    <DirectorScopePanel
-      v-model="selectedDirectorsModel"
-      :title="t('Filesets Scope')"
-      :summary-label="filesetsScopeLabel"
-      :options="directorOptions"
-      :help-text="t('Select the directors that contribute to the filesets list.')"
-      :errors="directorErrors"
-      data-test-id="filesets-directors"
-    />
+    <DirectorErrorsBanner :errors="directorErrors" />
 
     <q-card flat bordered class="bareos-panel">
       <q-card-section class="panel-header row items-center">
@@ -79,7 +71,7 @@ import { fetchAggregatedFilesets } from '../composables/filesetsAggregate.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
-import DirectorScopePanel from '../components/DirectorScopePanel.vue'
+import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()

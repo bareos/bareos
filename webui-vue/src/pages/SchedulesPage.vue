@@ -1,14 +1,6 @@
 <template>
   <q-page class="q-pa-md">
-    <DirectorScopePanel
-      v-model="selectedDirectorsModel"
-      :title="t('Schedules Scope')"
-      :summary-label="schedulesScopeLabel"
-      :options="directorOptions"
-      :help-text="t('Select the directors that contribute to the schedules views.')"
-      :errors="directorErrors"
-      data-test-id="schedules-directors"
-    />
+    <DirectorErrorsBanner :errors="directorErrors" />
 
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="status" :label="t('Status')" no-caps />
@@ -249,7 +241,7 @@ import {
 } from '../utils/jobs.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorLabel from '../components/DirectorLabel.vue'
-import DirectorScopePanel from '../components/DirectorScopePanel.vue'
+import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()

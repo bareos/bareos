@@ -1,16 +1,8 @@
 <template>
   <q-page class="q-pa-md">
-    <DirectorScopePanel
-      v-model="selectedDirectorsModel"
-      :title="t('Clients Scope')"
-      :summary-label="clientsScopeLabel"
-      :options="directorOptions"
-      :help-text="t('Select the directors that contribute to the clients list.')"
-      :errors="directorErrors"
-      data-test-id="clients-directors"
-    >
+    <DirectorErrorsBanner :errors="directorErrors" />
+    <div v-if="clientsListScopeDirector" class="q-mb-md">
       <DirectorBadge
-        v-if="clientsListScopeDirector"
         removable
         icon="dns"
         :director="clientsListScopeDirector"
@@ -18,7 +10,7 @@
       >
         {{ t('Director') }}: {{ clientsListScopeDirector }}
       </DirectorBadge>
-    </DirectorScopePanel>
+    </div>
 
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="list"     :label="t('Show')"     no-caps />
@@ -163,7 +155,7 @@ import { useDirectorStore } from '../stores/director.js'
 import { useReleaseInfoStore } from '../stores/releaseInfo.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorLabel from '../components/DirectorLabel.vue'
-import DirectorScopePanel from '../components/DirectorScopePanel.vue'
+import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import JobTimeline from '../components/JobTimeline.vue'
 
 const validTabs = new Set(['list', 'timeline'])

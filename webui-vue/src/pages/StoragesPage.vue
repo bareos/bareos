@@ -1,16 +1,8 @@
 <template>
   <q-page class="q-pa-md">
-    <DirectorScopePanel
-      v-model="selectedDirectorsModel"
-      :title="t('Storages Scope')"
-      :summary-label="storagesScopeLabel"
-      :options="directorOptions"
-      :help-text="t('Select the directors that contribute to the storages views.')"
-      :errors="directorErrors"
-      data-test-id="storages-directors"
-    >
+    <DirectorErrorsBanner :errors="directorErrors" />
+    <div v-if="storagesListScopeDirector" class="q-mb-md">
       <DirectorBadge
-        v-if="storagesListScopeDirector"
         removable
         icon="dns"
         :director="storagesListScopeDirector"
@@ -18,7 +10,7 @@
       >
         {{ t('Director') }}: {{ storagesListScopeDirector }}
       </DirectorBadge>
-    </DirectorScopePanel>
+    </div>
 
     <!-- Tab bar: Devices | Pools | Volumes | Autochangers -->
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
@@ -348,7 +340,7 @@ import { formatBytes, formatDuration } from '../mock/index.js'
 import BoolIcon from '../components/BoolIcon.vue'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorLabel from '../components/DirectorLabel.vue'
-import DirectorScopePanel from '../components/DirectorScopePanel.vue'
+import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
 import PoolTypeBadge from '../components/PoolTypeBadge.vue'
 
