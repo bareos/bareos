@@ -40,6 +40,8 @@ describe('clients route helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F',
       jobsType: 'B',
+      jobsJob: 'Nightly',
+      jobsClient: 'bareos-fd',
       jobsSearch: 'backup',
       dashboardOrigin: true,
     })).toEqual({
@@ -51,6 +53,8 @@ describe('clients route helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F',
       jobsType: 'B',
+      jobsJob: 'Nightly',
+      jobsClient: 'bareos-fd',
       jobsSearch: 'backup',
       dashboardOrigin: '1',
     })
@@ -91,12 +95,16 @@ describe('clients route helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F',
       jobsType: 'B',
+      jobsJob: 'Nightly',
+      jobsClient: 'bareos-fd',
       jobsSearch: 'backup',
     })).toEqual({
       action: 'timeline',
       status: 'T',
       level: 'F',
       type: 'B',
+      job: 'Nightly',
+      client: 'bareos-fd',
       search: 'backup',
     })
 

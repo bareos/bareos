@@ -34,24 +34,34 @@ import {
   encodeJobsLevelFilters,
   encodeJobsStatusFilters,
   encodeJobsTypeFilters,
+  filterJobsBySearch,
+  filterJobsTextOptions,
   normaliseJobId,
   normaliseJobLevelFilter,
   normaliseJobLevelFilters,
+  normaliseJobsSearchTerm,
+  normaliseJobsTextFilter,
+  normaliseJobsTextOptions,
   normaliseJobStatusFilter,
   normaliseJobStatusFilters,
   normaliseJobTypeFilter,
   normaliseJobTypeFilters,
+  paginateJobs,
   resolveJobDetailsClientOrigin,
   resolveJobDetailsQuery,
   resolveJobDetailsDashboardOrigin,
   resolveJobDetailsDirectorOrigin,
   resolveJobDetailsRestoreOrigin,
   resolveJobDetailsVolumeOrigin,
+  resolveJobsClientQuery,
+  resolveJobsJobQuery,
   resolveJobsLevelFilters,
   resolveJobsSearchQuery,
   resolveJobsStatusFilters,
   resolveJobsTypeFilters,
   resolveJobsListQuery,
+  withJobsClientQuery,
+  withJobsJobQuery,
   withJobsLevelFilterQuery,
   withJobsSearchQuery,
   withJobsStatusFilterQuery,
@@ -91,6 +101,59 @@ describe('jobs filter helpers', () => {
     expect(normaliseJobId(undefined)).toBeNull()
   })
 
+  it('normalizes and applies search terms to jobs', () => {
+    expect(normaliseJobsSearchTerm('  Backup  ')).toBe('Backup')
+    expect(normaliseJobsTextFilter('  bareos-fd  ')).toBe('bareos-fd')
+    expect(normaliseJobsSearchTerm(undefined)).toBe('')
+
+    expect(filterJobsBySearch([
+      { id: 42, name: 'DailyBackup', client: 'bareos-fd' },
+      { id: 7, name: 'Archive', client: 'db-fd' },
+    ], ' bareos ')).toEqual([
+      { id: 42, name: 'DailyBackup', client: 'bareos-fd' },
+    ])
+    expect(filterJobsBySearch([
+      { id: 42, name: 'DailyBackup', client: 'bareos-fd' },
+      { id: 7, name: 'Archive', client: 'db-fd' },
+    ], '42')).toEqual([
+      { id: 42, name: 'DailyBackup', client: 'bareos-fd' },
+    ])
+  })
+
+  it('normalizes and filters text options for autocomplete', () => {
+    expect(normaliseJobsTextOptions([
+      ' Nightly ',
+      'nightly',
+      '',
+      'bareos-fd',
+      ' Bareos-FD ',
+      null,
+    ])).toEqual(['bareos-fd', 'Nightly'])
+
+    expect(filterJobsTextOptions([
+      ' Nightly ',
+      'Weekly',
+      'bareos-fd',
+      'db-fd',
+    ], 'fd')).toEqual(['bareos-fd', 'db-fd'])
+
+    expect(filterJobsTextOptions([
+      'Nightly',
+      'Weekly',
+      'Monthly',
+    ], '', 2)).toEqual(['Monthly', 'Nightly'])
+  })
+
+  it('paginates jobs and keeps all rows for the All option', () => {
+    const jobs = [{ id: 4 }, { id: 3 }, { id: 2 }, { id: 1 }]
+
+    expect(paginateJobs(jobs, { page: 2, rowsPerPage: 2 })).toEqual([
+      { id: 2 },
+      { id: 1 },
+    ])
+    expect(paginateJobs(jobs, { page: 1, rowsPerPage: 0 })).toEqual(jobs)
+  })
+
   it('normalizes and encodes multi-status filters', () => {
     expect(normaliseJobStatusFilters('f,E,f,invalid')).toEqual(['f', 'E'])
     expect(normaliseJobStatusFilters(['R', 'A', 'R', 'invalid'])).toEqual(['R', 'A'])
@@ -114,19 +177,25 @@ describe('jobs filter helpers', () => {
       statusFilter: ['f', 'E'],
       levelFilter: ['F', 'I'],
       typeFilter: ['B', 'Restore'],
-    })).toBe(' jobstatus=f,E joblevel=F,I jobtype=B,R')
+      jobFilter: ' Daily "Backup" ',
+      clientFilter: ' fd one ',
+    })).toBe(' jobstatus=f,E joblevel=F,I jobtype=B,R job="Daily \\"Backup\\"" client="fd one"')
     expect(buildListJobsCountCommand({
       statusFilter: 'T',
       levelFilter: 'F',
       typeFilter: 'B',
-    })).toBe('list jobs count jobstatus=T joblevel=F jobtype=B')
+      jobFilter: 'Daily "Backup"',
+      clientFilter: 'fd one',
+    })).toBe('list jobs count jobstatus=T joblevel=F jobtype=B job="Daily \\"Backup\\"" client="fd one"')
     expect(buildListJobsCommand({
       limit: 25,
       offset: 50,
       statusFilter: 'T',
       levelFilter: 'F',
       typeFilter: 'B',
-    })).toBe('llist jobs reverse limit=25 offset=50 jobstatus=T joblevel=F jobtype=B')
+      jobFilter: 'Daily "Backup"',
+      clientFilter: 'fd one',
+    })).toBe('llist jobs reverse limit=25 offset=50 jobstatus=T joblevel=F jobtype=B job="Daily \\"Backup\\"" client="fd one"')
     expect(buildListJobCommand(42)).toBe('llist jobid=42')
     expect(buildCancelJobCommand(42)).toBe('cancel jobid=42 yes')
     expect(buildRerunJobCommand(42)).toBe('rerun jobid=42 yes')
@@ -195,6 +264,23 @@ describe('jobs filter helpers', () => {
     })
   })
 
+  it('adds and removes the job and client query parameters', () => {
+    expect(withJobsJobQuery({ search: 'Backup' }, ' Daily ')).toEqual({
+      search: 'Backup',
+      job: 'Daily',
+    })
+    expect(withJobsJobQuery({ search: 'Backup', job: 'Daily' }, '')).toEqual({
+      search: 'Backup',
+    })
+    expect(withJobsClientQuery({ search: 'Backup' }, ' bareos-fd ')).toEqual({
+      search: 'Backup',
+      client: 'bareos-fd',
+    })
+    expect(withJobsClientQuery({ search: 'Backup', client: 'bareos-fd' }, '')).toEqual({
+      search: 'Backup',
+    })
+  })
+
   it('prefers the explicit search query and falls back to name', () => {
     expect(resolveJobsSearchQuery({ search: 'Explicit', name: 'Legacy' })).toBe('Explicit')
     expect(resolveJobsSearchQuery({ name: 'Legacy' })).toBe('Legacy')
@@ -229,6 +315,13 @@ describe('jobs filter helpers', () => {
     expect(resolveJobsTypeFilters({})).toEqual([])
   })
 
+  it('resolves optional job and client route filters', () => {
+    expect(resolveJobsJobQuery({ job: ' Daily ' })).toBe('Daily')
+    expect(resolveJobsClientQuery({ client: ' bareos-fd ' })).toBe('bareos-fd')
+    expect(resolveJobsJobQuery({})).toBe('')
+    expect(resolveJobsClientQuery({})).toBe('')
+  })
+
   it('builds job details query with return-state fields', () => {
     expect(buildJobDetailsQuery({
       director: 'prod-a',
@@ -236,6 +329,8 @@ describe('jobs filter helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F,I',
       jobsType: 'B,R',
+      jobsJob: 'Nightly',
+      jobsClient: 'bareos-fd',
       jobsSearch: 'backup',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
@@ -246,6 +341,8 @@ describe('jobs filter helpers', () => {
       clientJobsStatus: 'T',
       clientJobsLevel: 'D',
       clientJobsType: 'c',
+      clientJobsJob: 'Nightly',
+      clientJobsClient: 'bareos-fd',
       clientJobsSearch: 'backup',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
@@ -261,6 +358,8 @@ describe('jobs filter helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F,I',
       jobsType: 'B,R',
+      jobsJob: 'Nightly',
+      jobsClient: 'bareos-fd',
       jobsSearch: 'backup',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
@@ -271,6 +370,8 @@ describe('jobs filter helpers', () => {
       clientJobsStatus: 'T',
       clientJobsLevel: 'D',
       clientJobsType: 'c',
+      clientJobsJob: 'Nightly',
+      clientJobsClient: 'bareos-fd',
       clientJobsSearch: 'backup',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
@@ -288,12 +389,16 @@ describe('jobs filter helpers', () => {
       jobsStatus: ['f', 'E'],
       jobsLevel: 'F',
       jobsType: ['B', 'Restore'],
+      jobsJob: 'Nightly',
+      jobsClient: 'bareos-fd',
       jobsSearch: '',
     })).toEqual({
       director: 'prod-a',
       jobsStatus: 'f,E',
       jobsLevel: 'F',
       jobsType: 'B,R',
+      jobsJob: 'Nightly',
+      jobsClient: 'bareos-fd',
     })
   })
 
@@ -303,12 +408,16 @@ describe('jobs filter helpers', () => {
       jobsStatus: 'f,E',
       jobsLevel: 'F,I',
       jobsType: 'B,R',
+      jobsJob: 'Nightly',
+      jobsClient: 'bareos-fd',
       jobsSearch: 'backup',
     })).toEqual({
       action: 'timeline',
       status: 'f,E',
       level: 'F,I',
       type: 'B,R',
+      job: 'Nightly',
+      client: 'bareos-fd',
       search: 'backup',
     })
 
@@ -326,6 +435,8 @@ describe('jobs filter helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F,I',
       jobsType: 'B,R',
+      jobsJob: 'Nightly',
+      jobsClient: 'bareos-fd',
       jobsSearch: 'backup',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
@@ -336,6 +447,8 @@ describe('jobs filter helpers', () => {
       clientJobsStatus: 'T',
       clientJobsLevel: 'D',
       clientJobsType: 'c',
+      clientJobsJob: 'Nightly',
+      clientJobsClient: 'bareos-fd',
       clientJobsSearch: 'backup',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
@@ -352,6 +465,8 @@ describe('jobs filter helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F,I',
       jobsType: 'B,R',
+      jobsJob: 'Nightly',
+      jobsClient: 'bareos-fd',
       jobsSearch: 'backup',
       clientName: 'bareos-fd',
       clientDirector: 'prod-a',
@@ -362,6 +477,8 @@ describe('jobs filter helpers', () => {
       clientJobsStatus: 'T',
       clientJobsLevel: 'D',
       clientJobsType: 'c',
+      clientJobsJob: 'Nightly',
+      clientJobsClient: 'bareos-fd',
       clientJobsSearch: 'backup',
       volumeName: 'Full-0001',
       volumeDirector: 'prod-a',
@@ -385,6 +502,8 @@ describe('jobs filter helpers', () => {
       clientJobsStatus: 'T',
       clientJobsLevel: 'F',
       clientJobsType: 'B',
+      clientJobsJob: 'Nightly',
+      clientJobsClient: 'bareos-fd',
       clientJobsSearch: 'backup',
     })).toEqual({
       name: 'bareos-fd',
@@ -396,6 +515,8 @@ describe('jobs filter helpers', () => {
       jobsStatus: 'T',
       jobsLevel: 'F',
       jobsType: 'B',
+      jobsJob: 'Nightly',
+      jobsClient: 'bareos-fd',
       jobsSearch: 'backup',
     })
 
