@@ -42,6 +42,7 @@
 #include "lib/crypto.h"
 #include "lib/base64.h"
 #include "lib/source_location.h"
+#include "lib/util.h"
 
 #include <bitset>
 #include <string>
@@ -898,7 +899,24 @@ class BareosDb : public BareosDbQueryEnum {
   const char* get_predefined_query_name(SQL_QUERY query);
   const char* get_predefined_query(SQL_QUERY query);
 
-  void FillQuery(SQL_QUERY predefined_query, ...);
+  static constexpr const char* get_predefined_query(BareosDb::SQL_QUERY query)
+  {
+    return queries[static_cast<int>(query)];
+  }
+
+  template <SQL_QUERY query, typename... Args>
+  void FillQuery(POOLMEM*& storage, Args&&... args)
+  {
+    printf_check(queries[static_cast<int>(query)], args...);
+    FillQuery(storage, query, std::forward<Args>(args)...);
+  }
+
+  template <SQL_QUERY query, typename... Args>
+  void FillQuery(PoolMem& storage, Args&&... args)
+  {
+    printf_check(queries[static_cast<int>(query)], args...);
+    FillQuery(storage, query, std::forward<Args>(args)...);
+  }
   void FillQuery(POOLMEM*& query, SQL_QUERY predefined_query, ...);
   void FillQuery(PoolMem& query, SQL_QUERY predefined_query, ...);
 
