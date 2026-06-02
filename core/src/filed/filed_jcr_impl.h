@@ -83,7 +83,6 @@ struct FiledJcrImpl {
   bool got_metadata{};            /**< Set when found job_metadata */
   bool multi_restore{};           /**< Dir can do multiple storage restore */
   filedaemon::BareosAccurateFilelist* file_list{}; /**< Previous file list (accurate mode) */
-  uint64_t base_size{};           /**< Compute space saved with base job */
   filedaemon::save_pkt* plugin_sp{}; /**< Plugin save packet */
 #ifdef HAVE_WIN32
   VSSClient* pVSSClient{};        /**< VSS Client Instance */
