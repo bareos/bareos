@@ -85,15 +85,16 @@ for query in $(ls ????_* | sed 's#\..*##g' | sort | uniq); do
   queryname=$(sed 's/[0-9]*_//' <<<$query)
   printf '"%s",\n' "$queryname" >>$QUERY_NAMES_FILE
   printf "    %s = %s,\n" "$queryname" "$i" >>$QUERY_ENUM_FILE
-  let i++
   for db in $DATABASES; do
     queryincludefile=$(get_query_include_filename $db)
     queryfile="$query"
+    if [ "$i" -gt 0 ]; then printf '\n' >>$queryincludefile; fi
     printf '/* %s */\nR"SQL(' "$queryfile" >>$queryincludefile
     # remove comments and empty lines
     sed -r -e "/^#/d" -e "/^$/d" <"$queryfile" >>"$queryincludefile"
-    printf ')SQL",\n\n' >>$queryincludefile
+    printf ')SQL",\n' >>$queryincludefile
   done
+  let i++
 done
 
 #
