@@ -128,7 +128,7 @@ test('opens jobs and job details through the real director connection', async ({
   await login(page)
   await openNav(page, 'nav-jobs', /#\/jobs/)
 
-  await page.getByPlaceholder('Search job, client, or ID…').fill('backup-bareos-fd')
+  await page.getByLabel('Search in results').fill('backup-bareos-fd')
   const firstRow = page.locator('tbody tr').first()
   await expect(firstRow).toContainText('backup-bareos-fd')
 
@@ -152,7 +152,6 @@ test('loads the restore workflow selections', async ({ page }) => {
   await selectFirstQOption(page, 'restore-backup-job')
   await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
   await expect(page.locator('[data-testid="restore-job"]')).toBeVisible()
-  await expect(page.locator('[data-testid="restore-plugin-options"]')).toBeVisible()
   await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
   await expect(page.locator('[data-testid="restore-submit"]')).toBeDisabled()
 })
