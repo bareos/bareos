@@ -96,6 +96,7 @@
               outlined
               clearable
               :label="t('Search in results')"
+              data-testid="jobs-results-search"
               class="jobs-list-header__search"
             >
               <template #prepend><q-icon name="search" /></template>
