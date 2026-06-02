@@ -183,7 +183,7 @@ void MainWindow::onStatusChanged(const QString& tabRef, int state)
 
         bRefs[n] = false;
 
-        systemTrayIcon->setNewIcon(2);  // red Icon on Error
+        systemTrayIcon->setNewIcon(IconType::Error);  // red Icon on Error
         ui->tabWidget->setTabIcon(idx, QIcon(":images/W.png"));
         break;
 
@@ -191,7 +191,7 @@ void MainWindow::onStatusChanged(const QString& tabRef, int state)
 
         bRefs[n] = true;
         if (bRefs[(n + 1) % nTabs] && bRefs[(n + 2) % nTabs])  // if all Tabs OK
-          systemTrayIcon->setNewIcon(0);  // shows blue Icon
+          systemTrayIcon->setNewIcon(IconType::Normal);  // shows blue Icon
 
         ui->tabWidget->setTabIcon(idx, QIcon());
         break;

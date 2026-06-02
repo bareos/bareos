@@ -26,48 +26,43 @@
 #include <QIcon>
 #include <QList>
 #include <QPixmap>
+
+#include <QTimer>
 #include <QSystemTrayIcon>
 
 class QMainWindow;
-class QTimer;
+
+enum class IconType
+{
+  Normal,
+  Error,
+};
 
 class SystemTrayIcon : public QSystemTrayIcon {
   Q_OBJECT
 
  public:
   SystemTrayIcon(QMainWindow* mainWindow);
-  virtual ~SystemTrayIcon();
+  virtual ~SystemTrayIcon() = default;
 
   void animateIcon(bool on);
 
  private:
   Q_DISABLE_COPY(SystemTrayIcon);
-  SystemTrayIcon();
 
-  struct ShieldPalette {
-    const QPixmap* basePixmap;
-    QColor shadow;
-    QColor highlight;
-  };
-
-  int iconIdx;
-  int animationFrameIdx;
-  bool animationRequested;
-  QPixmap baseShieldPixmap;
-  QPixmap greenShieldPixmap;
+  IconType currentIcon{IconType::Normal};
+  size_t animationFrameIdx{0};
+  bool animationRequested{false};
   QIcon normalIcon;
   QIcon errorIcon;
   QList<QIcon> animationIcons;
-  QTimer* timer;
+  std::unique_ptr<QTimer> timer;
 
   void updateIcon();
-  QList<QIcon> createAnimationIcons() const;
-  ShieldPalette getShieldPalette(bool use_green_palette) const;
-  QPixmap createShieldPixmap(qreal angle, const ShieldPalette& palette) const;
 
  protected:
  public slots:
-  void setNewIcon(int icon);
+  void setNewIcon(IconType type);
   void setIconInternal();
 };
 
