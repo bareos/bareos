@@ -8,7 +8,6 @@ R"SQL(SELECT JobId, ObjectLength, ObjectFullLength, ObjectIndex, ObjectType, Obj
    AND ObjectType = %d
  ORDER BY ObjectIndex ASC
 )SQL",
-
 /* 0002_cleanup_created_job */
 R"SQL(UPDATE Job
    SET JobStatus = 'f', StartTime = SchedTime, EndTime = SchedTime
@@ -25,12 +24,12 @@ R"SQL(UPDATE Job
 R"SQL(INSERT INTO JobHisto (
 	       JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate,
 	       VolSessionId, VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId,
-	       PriorJobId, PurgedFiles,
+	       PriorJobId, PurgedFiles, HasCache,
 	       Reviewed, Comment
        )
 SELECT JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate, VolSessionId,
        VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId, PriorJobId, PurgedFiles,
-       Reviewed, Comment
+       HasCache, Reviewed, Comment
   FROM Job
  WHERE JobStatus IN ('T','W','f','A','E')
    AND NOT EXISTS (
@@ -1069,4 +1068,3 @@ WHERE
 ORDER BY
   fileset;
 )SQL",
-
