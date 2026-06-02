@@ -8,6 +8,7 @@ R"SQL(SELECT JobId, ObjectLength, ObjectFullLength, ObjectIndex, ObjectType, Obj
    AND ObjectType = %d
  ORDER BY ObjectIndex ASC
 )SQL",
+
 /* 0002_cleanup_created_job */
 R"SQL(UPDATE Job
    SET JobStatus = 'f', StartTime = SchedTime, EndTime = SchedTime
@@ -505,7 +506,8 @@ WHERE Job.JobId IN (%s)
   AND Path.Path = '%s'
   AND Client.Name = '%s'
 ORDER BY File.Name,
-         Job.StartTime DESC
+         Job.StartTime DESC,
+         Job.JobId DESC
 )SQL",
 
 /* 0045_sql_media_order_most_recently_written */
