@@ -51,25 +51,23 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(ENABLE_SANITIZERS "Build with ASan/LSan/UBSan enabled" OFF)
 if(ENABLE_SANITIZERS)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
+    add_compile_options(
+      "$<$<COMPILE_LANGUAGE:C,CXX>:-fsanitize=undefined,address;-fno-sanitize-recover>"
     )
-    set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
+    add_link_options(
+      "$<$<COMPILE_LANGUAGE:C,CXX>:-fsanitize=undefined,address>"
     )
-
     add_compile_definitions(BAREOS_UB_SANITIZER=1 BAREOS_ADDRESS_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
+    add_compile_options(
+      "$<$<COMPILE_LANGUAGE:C,CXX>:-fsanitize=undefined,address;-fno-sanitize-recover>"
     )
-    set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
+    add_link_options(
+      "$<$<COMPILE_LANGUAGE:C,CXX>:-fsanitize=undefined,address>"
     )
     add_compile_definitions(BAREOS_UB_SANITIZER=1 BAREOS_ADDRESS_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
+    add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:/fsanitize=address>")
     add_compile_definitions(BAREOS_ADDRESS_SANITIZER=1)
   else()
     message(

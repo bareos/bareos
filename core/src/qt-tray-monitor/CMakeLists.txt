@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -31,11 +31,11 @@ set(CMAKE_AUTORCC ON)
 if(HAVE_WIN32)
   find_package(
     Qt6 QUIET
-    COMPONENTS Core Widgets
+    COMPONENTS Core Widgets Svg
     REQUIRED
   )
 else()
-  find_package(Qt6 QUIET COMPONENTS Core Widgets)
+  find_package(Qt6 QUIET COMPONENTS Core Widgets Svg)
 endif()
 if(Qt6Widgets_FOUND)
   message(STATUS "Found QT6Widgets")
@@ -93,6 +93,10 @@ endif()
 
 if(TARGET Qt6::Widgets)
   target_link_libraries(bareos-tray-monitor PRIVATE Qt6::Widgets)
+endif()
+
+if(TARGET Qt6::Svg)
+  target_link_libraries(bareos-tray-monitor PRIVATE Qt6::Svg)
 endif()
 
 bareos_configure_file(FILES bareos-tray-monitor.desktop.in)

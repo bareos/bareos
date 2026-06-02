@@ -20,8 +20,10 @@
 */
 
 #include "systemtrayicon.h"
+#include <qnamespace.h>
 #include "traymenu.h"
 #include <QColor>
+#include <QFile>
 #include <QDebug>
 #include <QImage>
 #include <QLinearGradient>
@@ -34,13 +36,12 @@
 #include <QTransform>
 #include <QtGlobal>
 #include <QtMath>
+#include <QSvgRenderer>
 
 #include <algorithm>
 #include <cmath>
 
 namespace {
-const int kNormalIcon = 0;
-const int kErrorIcon = 2;
 const int kAnimationIntervalMs = 120;
 const int kAnimationFrameCount = 12;
 const qreal kMinimumWidthScale = 0.15;
@@ -50,20 +51,86 @@ const int kShieldShadowYOffset = 5;
 const int kShieldDepthAlpha = 44;
 const int kShieldBevelAlpha = 34;
 const int kShieldSpecularAlpha = 30;
-const int kShieldGreenHue = 125;
-const int kShieldSaturationThreshold = 12;
-const QRgb kDefaultShadowColor = qRgb(12, 74, 156);
-const QRgb kDefaultHighlightColor = qRgb(48, 150, 230);
-const QRgb kGreenShadowColor = qRgb(12, 120, 30);
-const QRgb kGreenHighlightColor = qRgb(72, 220, 96);
-const char* kTrayAnimationIcon = ":/images/bareos-logo_128x128.png";
+const char* kTrayBaseIcon = ":/images/baset.svg";
 const char* kTrayErrorIcon = ":/images/W.png";
 
-QPixmap LoadPixmapOrAssert(const char* resourcePath)
+struct palette {
+  QRgb color;
+  QRgb shadow;
+  QRgb highlight;
+};
+
+static constexpr palette IdlePalette
+    = {qRgb(18, 123, 202), qRgb(12, 74, 156), qRgb(48, 150, 230)};
+
+static constexpr palette RunningPalette
+    = {qRgb(0, 191, 17), qRgb(12, 120, 30), qRgb(72, 220, 96)};
+
+static bool RenderSvgElements(QSvgRenderer& renderer,
+                              QPainter& painter,
+                              const QRectF& targetRect,
+                              const QStringList& elementIds)
 {
-  QPixmap pixmap(resourcePath);
-  Q_ASSERT_X(!pixmap.isNull(), "SystemTrayIcon", resourcePath);
-  return pixmap;
+  if (!renderer.isValid()) return false;
+
+  // we assume here that the painter has no world transform
+
+  QRectF viewBox = renderer.viewBoxF();
+  if (viewBox.isEmpty()) {
+    QSize def = renderer.defaultSize();
+    viewBox = QRectF(0, 0, def.width(), def.height());
+  }
+
+  qreal sx = targetRect.width() / viewBox.width();
+  qreal sy = targetRect.height() / viewBox.height();
+
+  qreal dx = targetRect.x() - viewBox.x() * sx;
+  qreal dy = targetRect.y() - viewBox.y() * sy;
+
+  QTransform scaleT = QTransform::fromScale(sx, sy);
+  QTransform translateT = QTransform::fromTranslate(dx, dy);
+
+  for (const QString& id : elementIds) {
+    if (!renderer.elementExists(id)) { return false; }
+
+    QRectF local = renderer.boundsOnElement(id);
+
+    QTransform parentT = renderer.transformForElement(id);
+    QTransform ToViewport = parentT * scaleT * translateT;
+
+    painter.setWorldTransform(ToViewport);
+    renderer.render(&painter, id, local);
+  }
+
+  painter.setWorldTransform(QTransform{});
+
+  return true;
+}
+
+static bool RenderIcon(QPixmap& output, QSvgRenderer& renderer, QRgb color)
+{
+  output.fill(Qt::transparent);
+  QPainter p(&output);
+
+  if (!RenderSvgElements(renderer, p, output.rect(),
+                         {"outer-shield", "inner-shield", "inner-b"})) {
+    return false;
+  }
+
+  // this colors everything that we drew in the given color
+  p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+  p.fillRect(output.rect(), color);
+
+  // the background should always be white and should ofc be drown _below_
+  // our actual logo
+  p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
+  if (!RenderSvgElements(renderer, p, output.rect(), {"background"})) {
+    return false;
+  }
+
+  p.end();
+
+  return true;
 }
 
 QColor WithAlpha(const QColor& color, int alpha)
@@ -82,156 +149,18 @@ QColor AdjustedRgb(const QColor& color, int delta, int alpha)
 
 QColor ScaledRgb(const QColor& color, qreal factor, int alpha)
 {
-  return QColor(std::clamp(static_cast<int>(std::round(color.red() * factor)),
-                           0, 255),
-                std::clamp(static_cast<int>(std::round(color.green() * factor)),
-                           0, 255),
-                std::clamp(static_cast<int>(std::round(color.blue() * factor)),
-                           0, 255),
-                alpha);
+  return QColor(
+      std::clamp(static_cast<int>(std::round(color.red() * factor)), 0, 255),
+      std::clamp(static_cast<int>(std::round(color.green() * factor)), 0, 255),
+      std::clamp(static_cast<int>(std::round(color.blue() * factor)), 0, 255),
+      alpha);
 }
 
-QPixmap createGreenShieldPixmap(const QPixmap& basePixmap)
+bool MakeRotatedIcon(QIcon& icon,
+                     qreal angle,
+                     QPixmap const& basePixmap,
+                     palette ColorPalette)
 {
-  Q_ASSERT(!basePixmap.isNull());
-
-  QImage image = basePixmap.toImage().convertToFormat(QImage::Format_ARGB32);
-  for (int y = 0; y < image.height(); ++y) {
-    QRgb* scanLine = reinterpret_cast<QRgb*>(image.scanLine(y));
-    for (int x = 0; x < image.width(); ++x) {
-      QColor color = QColor::fromRgba(scanLine[x]);
-      if (color.alpha() == 0
-          || color.hsvSaturation() <= kShieldSaturationThreshold) {
-        continue;
-      }
-
-      QColor recolored;
-      recolored.setHsv(kShieldGreenHue, color.hsvSaturation(), color.value(),
-                       color.alpha());
-      scanLine[x] = recolored.rgba();
-    }
-  }
-
-  return QPixmap::fromImage(image);
-}
-}  // namespace
-
-SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
-    : QSystemTrayIcon(mainWindow)
-    , iconIdx(kNormalIcon)
-    , animationFrameIdx(0)
-    , animationRequested(false)
-    , baseShieldPixmap(LoadPixmapOrAssert(kTrayAnimationIcon))
-    , greenShieldPixmap(createGreenShieldPixmap(baseShieldPixmap))
-    , normalIcon(QIcon(createShieldPixmap(0.0, getShieldPalette(false))))
-    , errorIcon(kTrayErrorIcon)
-    , animationIcons(createAnimationIcons())
-    , timer(new QTimer(this))
-{
-  // this object name is used for auto-connection to the MainWindow
-  setObjectName("SystemTrayIcon");
-
-  TrayMenu* menu = new TrayMenu(mainWindow);
-  setContextMenu(menu);
-  updateIcon();
-  setToolTip("Bareos Tray Monitor");
-
-  timer->setInterval(kAnimationIntervalMs);
-  connect(timer, SIGNAL(timeout()), this, SLOT(setIconInternal()));
-}
-
-SystemTrayIcon::~SystemTrayIcon() { timer->stop(); }
-
-void SystemTrayIcon::setNewIcon(int icon)
-{
-  iconIdx = icon;
-  if (iconIdx == kErrorIcon) {
-    timer->stop();
-    animationFrameIdx = 0;
-  } else if (animationRequested && !timer->isActive()) {
-    animationFrameIdx = 0;
-    timer->start();
-  }
-
-  updateIcon();
-}
-
-void SystemTrayIcon::setIconInternal()
-{
-  if (iconIdx == kErrorIcon || animationIcons.isEmpty() || !timer->isActive()) {
-    return;
-  }
-
-  animationFrameIdx = (animationFrameIdx + 1) % animationIcons.size();
-  if (!animationRequested && animationFrameIdx == 0) { timer->stop(); }
-  updateIcon();
-}
-
-void SystemTrayIcon::animateIcon(bool on)
-{
-  if (animationRequested == on) {
-    if (!animationRequested && !timer->isActive()) { updateIcon(); }
-    return;
-  }
-
-  animationRequested = on;
-  if (animationRequested && iconIdx != kErrorIcon) {
-    if (!timer->isActive()) {
-      animationFrameIdx = 0;
-      timer->start();
-    }
-  } else {
-    if (!timer->isActive() || iconIdx == kErrorIcon || animationFrameIdx == 0) {
-      timer->stop();
-      animationFrameIdx = 0;
-    }
-  }
-
-  updateIcon();
-}
-
-void SystemTrayIcon::updateIcon()
-{
-  if (iconIdx == kErrorIcon) {
-    setIcon(errorIcon);
-  } else if (timer->isActive() && !animationIcons.isEmpty()) {
-    setIcon(animationIcons[animationFrameIdx]);
-  } else {
-    setIcon(normalIcon);
-  }
-}
-
-QList<QIcon> SystemTrayIcon::createAnimationIcons() const
-{
-  QList<QIcon> frames;
-  const ShieldPalette palette = getShieldPalette(true);
-
-  for (int frame = 0; frame < kAnimationFrameCount; ++frame) {
-    const qreal angle
-        = (static_cast<qreal>(frame) / kAnimationFrameCount) * 2.0 * M_PI;
-    frames << QIcon(createShieldPixmap(angle, palette));
-  }
-
-  return frames;
-}
-
-SystemTrayIcon::ShieldPalette SystemTrayIcon::getShieldPalette(
-    bool use_green_palette) const
-{
-  if (use_green_palette) {
-    return {&greenShieldPixmap, QColor::fromRgb(kGreenShadowColor),
-            QColor::fromRgb(kGreenHighlightColor)};
-  }
-
-  return {&baseShieldPixmap, QColor::fromRgb(kDefaultShadowColor),
-          QColor::fromRgb(kDefaultHighlightColor)};
-}
-
-QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
-                                           const ShieldPalette& palette) const
-{
-  const QPixmap& basePixmap = *palette.basePixmap;
-  Q_ASSERT(!basePixmap.isNull());
   const qreal widthScale
       = std::max(kMinimumWidthScale, std::abs(std::cos(angle)));
 
@@ -277,8 +206,9 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
     QPainter shadowPainter(&shadowOverlay);
     shadowPainter.drawPixmap(0, kShieldShadowYOffset, shadowPixmap);
     shadowPainter.setCompositionMode(QPainter::CompositionMode_SourceIn);
-    shadowPainter.fillRect(shadowOverlay.rect(),
-                           ScaledRgb(palette.shadow, 0.5, kShieldShadowAlpha));
+    shadowPainter.fillRect(
+        shadowOverlay.rect(),
+        ScaledRgb(ColorPalette.shadow, 0.5, kShieldShadowAlpha));
   }
   painter.drawPixmap(0, 0, shadowOverlay);
   painter.drawPixmap(0, 0, shieldPixmap);
@@ -290,11 +220,12 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
   {
     QPainter depthPainter(&depthOverlay);
     QLinearGradient verticalGradient(0, 0, 0, framePixmap.height());
-    verticalGradient.setColorAt(0.0,
-                                WithAlpha(palette.highlight, kShieldDepthAlpha));
-    verticalGradient.setColorAt(0.35, WithAlpha(palette.highlight, 8));
-    verticalGradient.setColorAt(0.7, WithAlpha(palette.shadow, 0));
-    verticalGradient.setColorAt(1.0, WithAlpha(palette.shadow, kShieldDepthAlpha));
+    verticalGradient.setColorAt(
+        0.0, WithAlpha(ColorPalette.highlight, kShieldDepthAlpha));
+    verticalGradient.setColorAt(0.35, WithAlpha(ColorPalette.highlight, 8));
+    verticalGradient.setColorAt(0.7, WithAlpha(ColorPalette.shadow, 0));
+    verticalGradient.setColorAt(
+        1.0, WithAlpha(ColorPalette.shadow, kShieldDepthAlpha));
     depthPainter.fillRect(depthOverlay.rect(), verticalGradient);
     depthPainter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
     depthPainter.drawPixmap(0, 0, shieldPixmap);
@@ -312,18 +243,19 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
     QPainter sidePainter(&sideOverlay);
     QLinearGradient sideGradient(0, 0, framePixmap.width(), 0);
     if (std::sin(angle) >= 0) {
-      sideGradient.setColorAt(0.0, WithAlpha(palette.shadow, sideShading));
-      sideGradient.setColorAt(0.35, WithAlpha(palette.shadow, 0));
-      sideGradient.setColorAt(0.7,
-                              WithAlpha(palette.highlight, sideShading * 3 / 4));
-      sideGradient.setColorAt(1.0,
-                              WithAlpha(palette.highlight, sideShading));
-    } else {
-      sideGradient.setColorAt(0.0, WithAlpha(palette.highlight, sideShading));
+      sideGradient.setColorAt(0.0, WithAlpha(ColorPalette.shadow, sideShading));
+      sideGradient.setColorAt(0.35, WithAlpha(ColorPalette.shadow, 0));
       sideGradient.setColorAt(
-          0.3, WithAlpha(palette.highlight, sideShading * 3 / 4));
-      sideGradient.setColorAt(0.65, WithAlpha(palette.shadow, 0));
-      sideGradient.setColorAt(1.0, WithAlpha(palette.shadow, sideShading));
+          0.7, WithAlpha(ColorPalette.highlight, sideShading * 3 / 4));
+      sideGradient.setColorAt(1.0,
+                              WithAlpha(ColorPalette.highlight, sideShading));
+    } else {
+      sideGradient.setColorAt(0.0,
+                              WithAlpha(ColorPalette.highlight, sideShading));
+      sideGradient.setColorAt(
+          0.3, WithAlpha(ColorPalette.highlight, sideShading * 3 / 4));
+      sideGradient.setColorAt(0.65, WithAlpha(ColorPalette.shadow, 0));
+      sideGradient.setColorAt(1.0, WithAlpha(ColorPalette.shadow, sideShading));
     }
     sidePainter.fillRect(sideOverlay.rect(), sideGradient);
     sidePainter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
@@ -341,18 +273,19 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
                                      framePixmap.height() * 0.22,
                                      framePixmap.width() * 0.7);
     specularGradient.setColorAt(
-        0.0, AdjustedRgb(palette.highlight, 10, kShieldSpecularAlpha));
-    specularGradient.setColorAt(0.35,
-                                WithAlpha(palette.highlight, kShieldBevelAlpha));
-    specularGradient.setColorAt(1.0, WithAlpha(palette.highlight, 0));
+        0.0, AdjustedRgb(ColorPalette.highlight, 10, kShieldSpecularAlpha));
+    specularGradient.setColorAt(
+        0.35, WithAlpha(ColorPalette.highlight, kShieldBevelAlpha));
+    specularGradient.setColorAt(1.0, WithAlpha(ColorPalette.highlight, 0));
     bevelPainter.fillRect(bevelOverlay.rect(), specularGradient);
 
     QLinearGradient rimGradient(0, 0, framePixmap.width(),
                                 framePixmap.height());
     rimGradient.setColorAt(
-        0.0, AdjustedRgb(palette.highlight, 12, kShieldBevelAlpha));
+        0.0, AdjustedRgb(ColorPalette.highlight, 12, kShieldBevelAlpha));
     rimGradient.setColorAt(0.45, QColor(0, 0, 0, 0));
-    rimGradient.setColorAt(1.0, WithAlpha(palette.shadow, kShieldBevelAlpha));
+    rimGradient.setColorAt(1.0,
+                           WithAlpha(ColorPalette.shadow, kShieldBevelAlpha));
     bevelPainter.fillRect(bevelOverlay.rect(), rimGradient);
 
     bevelPainter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
@@ -360,5 +293,121 @@ QPixmap SystemTrayIcon::createShieldPixmap(qreal angle,
   }
   painter.drawPixmap(0, 0, bevelOverlay);
 
-  return framePixmap;
+  icon = framePixmap;
+  return true;
+}
+
+bool RotateIcon(QList<QIcon>& list,
+                QPixmap const& base,
+                size_t frameCount,
+                palette ColorPalette)
+{
+  for (size_t frame = 0; frame < frameCount; ++frame) {
+    const qreal angle = (static_cast<qreal>(frame) / frameCount) * 2.0 * M_PI;
+
+    QIcon nextIcon;
+    if (!MakeRotatedIcon(nextIcon, angle, base, ColorPalette)) { return false; }
+
+    list << nextIcon;
+  }
+
+  return true;
+}
+}  // namespace
+
+SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
+    : QSystemTrayIcon(mainWindow), timer(std::make_unique<QTimer>(this))
+{
+  QFile logo{kTrayBaseIcon};
+  Q_ASSERT_X(logo.open(QIODevice::ReadOnly), "SystemTrayIcon", kTrayBaseIcon);
+  QByteArray content = logo.readAll();
+  Q_ASSERT(!content.isNull());
+
+  QSvgRenderer renderer(content);
+
+  QPixmap defaultIcon(128, 128);
+  Q_ASSERT(RenderIcon(defaultIcon, renderer, IdlePalette.color));
+
+  QPixmap runningIcon(128, 128);
+  Q_ASSERT(RenderIcon(runningIcon, renderer, RunningPalette.color));
+
+  QList<QIcon> runningAnimation;
+  Q_ASSERT(RotateIcon(runningAnimation, runningIcon, kAnimationFrameCount,
+                      RunningPalette));
+
+  normalIcon = std::move(defaultIcon);
+  errorIcon = QIcon(kTrayErrorIcon);
+  animationIcons = std::move(runningAnimation);
+
+  // this object name is used for auto-connection to the MainWindow
+  setObjectName("SystemTrayIcon");
+
+  TrayMenu* menu = new TrayMenu(mainWindow);
+  setContextMenu(menu);
+  updateIcon();
+  setToolTip("Bareos Tray Monitor");
+
+  timer->setInterval(kAnimationIntervalMs);
+  connect(timer.get(), SIGNAL(timeout()), this, SLOT(setIconInternal()));
+}
+
+void SystemTrayIcon::setNewIcon(IconType type)
+{
+  currentIcon = type;
+  if (currentIcon == IconType::Error) {
+    timer->stop();
+    animationFrameIdx = 0;
+  } else if (animationRequested && !timer->isActive()) {
+    animationFrameIdx = 0;
+    timer->start();
+  }
+
+  updateIcon();
+}
+
+void SystemTrayIcon::setIconInternal()
+{
+  if (currentIcon == IconType::Error || animationIcons.isEmpty()
+      || !timer->isActive()) {
+    return;
+  }
+
+  animationFrameIdx = (animationFrameIdx + 1) % animationIcons.size();
+  if (!animationRequested && animationFrameIdx == 0) { timer->stop(); }
+  updateIcon();
+}
+
+void SystemTrayIcon::animateIcon(bool on)
+{
+  if (animationRequested == on) {
+    if (!animationRequested && !timer->isActive()) { updateIcon(); }
+    return;
+  }
+
+  animationRequested = on;
+  if (animationRequested && currentIcon != IconType::Error) {
+    if (!timer->isActive()) {
+      animationFrameIdx = 0;
+      timer->start();
+    }
+  } else {
+    if (!timer->isActive() || currentIcon == IconType::Error
+        || animationFrameIdx == 0) {
+      timer->stop();
+      animationFrameIdx = 0;
+    }
+  }
+
+  updateIcon();
+}
+
+void SystemTrayIcon::updateIcon()
+{
+  if (currentIcon == IconType::Error) {
+    setIcon(errorIcon);
+  } else if (timer->isActive() && !animationIcons.isEmpty()) {
+    setIcon(animationIcons[animationFrameIdx]);
+  } else {
+    setIcon(normalIcon);
+  }
 }

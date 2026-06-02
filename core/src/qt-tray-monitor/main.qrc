@@ -3,5 +3,6 @@
         <file>images/f.png</file>
         <file>images/W.png</file>
         <file alias="images/bareos-logo_128x128.png">../images/bareos-logo_128x128.png</file>
+        <file alias="images/baset.svg">../images/bareos-logo-transparent-2.svg</file>
     </qresource>
 </RCC>
