@@ -35,7 +35,7 @@ if(HAVE_WIN32)
     REQUIRED
   )
 else()
-  find_package(Qt6 QUIET REQUIRED COMPONENTS Core Widgets Svg)
+  find_package(Qt6 QUIET COMPONENTS Core Widgets Svg)
 endif()
 if(Qt6Widgets_FOUND)
   message(STATUS "Found QT6Widgets")
