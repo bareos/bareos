@@ -40,7 +40,7 @@ bool MainWindow::already_destroyed = false;
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , monitorTabMap(new QMap<QString, MonitorTab*>)
+    , monitorTabMap(new QMap<QString, tab>)
     , systemTrayIcon(new SystemTrayIcon(this))
 {
   /* Init the SystemTrayIcon first to have all its signals
@@ -57,11 +57,6 @@ MainWindow::MainWindow(QWidget* parent)
   // Prepare the tabWidget
   while (ui->tabWidget->count()) { ui->tabWidget->removeTab(0); }
 
-  nTabs = 100;
-  bRefs = new bool[nTabs];
-  for (int i = 0; i < nTabs; i++) bRefs[i] = true;
-
-
   // Now show the tray icon, but leave the MainWindow hidden.
   systemTrayIcon->show();
 }
@@ -70,7 +65,6 @@ MainWindow::~MainWindow()
 {
   delete ui;
   delete monitorTabMap;
-  delete[] bRefs;
 }
 
 MainWindow* MainWindow::instance()
@@ -94,13 +88,12 @@ void MainWindow::destruct()
 
 void MainWindow::addTabs(QStringList tabRefs)
 {
-  tabs = tabRefs;  //
-  nTabs = tabRefs.size();
-
   for (int i = 0; i < tabRefs.count(); i++) {
-    MonitorTab* tab = new MonitorTab(tabRefs[i], this);
-    monitorTabMap->insert(tabRefs[i], tab);  // tabRefs[i] used as reference
-    ui->tabWidget->addTab(tab->getTabWidget(), tabRefs[i]);
+    MonitorTab* mtab = new MonitorTab(tabRefs[i], this);
+    tab actual_tab = {mtab, i, MonitorItem::Idle};
+
+    monitorTabMap->insert(tabRefs[i], actual_tab);
+    ui->tabWidget->addTab(mtab->getTabWidget(), tabRefs[i]);
   }
 }
 
@@ -144,9 +137,11 @@ void MainWindow::on_pushButton_Close_clicked() { hide(); }
 
 QPlainTextEdit* MainWindow::getTextEdit(const QString& tabRef)
 {
-  MonitorTab* tab = monitorTabMap->value(tabRef);
+  if (auto iter = monitorTabMap->find(tabRef); iter != monitorTabMap->end()) {
+    if (iter->tab) { return iter->tab->getTextEdit(); }
+  }
 
-  return (tab) ? tab->getTextEdit() : 0;
+  return nullptr;
 }
 
 void MainWindow::onClearText(const QString& tabRef)
@@ -170,36 +165,41 @@ void MainWindow::onShowStatusbarMessage(QString message)
 
 void MainWindow::onStatusChanged(const QString& tabRef, int state)
 {
-  int n = tabs.indexOf(tabRef);
+  auto iter = monitorTabMap->find(tabRef);
+  if (iter == monitorTabMap->end()) { return; }
 
-  MonitorTab* tab = monitorTabMap->value(tabRef);
+  iter->state = state;
+  switch (state) {
+    case MonitorItem::Error: {
+      ui->tabWidget->setTabIcon(iter->tab_index, QIcon(":images/W.png"));
+    } break;
+    default: {
+      ui->tabWidget->setTabIcon(iter->tab_index, QIcon());
+    } break;
+  }
 
-  if (tab) {
-    int idx = ui->tabWidget->indexOf(tab->getTabWidget());
-    if (idx < 0) { return; }
+  int total_status = MonitorItem::Idle;
 
-    switch (state) {
-      case MonitorItem::Error:
+  for (auto& [_1, _2, tab_state] : *monitorTabMap) {
+    if (tab_state > total_status) { total_status = tab_state; }
+  }
 
-        bRefs[n] = false;
+  switch (total_status) {
+    case MonitorItem::Error: {
+      systemTrayIcon->setNewIcon(IconType::Error);  // red Icon on Error
+    } break;
 
-        systemTrayIcon->setNewIcon(IconType::Error);  // red Icon on Error
-        ui->tabWidget->setTabIcon(idx, QIcon(":images/W.png"));
-        break;
+    case MonitorItem::Running: {
+      systemTrayIcon->setNewIcon(IconType::Normal);  // shows blue Icon
+    } break;
 
-      case MonitorItem::Running:
+    case MonitorItem::Idle: {
+      systemTrayIcon->setNewIcon(IconType::Normal);  // shows blue Icon
+    } break;
 
-        bRefs[n] = true;
-        if (bRefs[(n + 1) % nTabs] && bRefs[(n + 2) % nTabs])  // if all Tabs OK
-          systemTrayIcon->setNewIcon(IconType::Normal);  // shows blue Icon
-
-        ui->tabWidget->setTabIcon(idx, QIcon());
-        break;
-
-      default:
-        break;
-    } /* switch(state) */
-  } /* if (tab) */
+    default:
+      break;
+  } /* switch(state) */
 }
 
 void MainWindow::onFdJobIsRunning(bool running)
