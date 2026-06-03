@@ -280,8 +280,8 @@ expect_grep "JobId             : 1" \
   "BLS jobid not found."
 
 bls_log=$tmp/bls-full_output.log
-sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -V ${volume} ${bareos_tape_device} >"${bls_log}"
-expect_grep "bls JobId 0: Ready to read from volume \"${volume}\" on device \"${bareos_tape_device}\"" \
+sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -V ${volume} ${tape_device} >"${bls_log}"
+expect_grep "bls JobId 0: Ready to read from volume \"${volume}\" on device \"${tape_device}\"" \
   "${bls_log}" \
   "BLS failed to read volume."
 
@@ -290,7 +290,7 @@ rm -rf "${restore_directory}"
 mkdir -p "${restore_directory}" || :
 bextract_log="${tmp}/bextract-output.log"
 # Test volume extraction
-sbin/bextract-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -V ${volume} ${bareos_tape_device} "${restore_directory}" >"${bextract_log}"
+sbin/bextract-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -V ${volume} ${tape_device} "${restore_directory}" >"${bextract_log}"
 expect_grep "Crypto cache read 1 entries" \
   "${bextract_log}" \
   "bextract: no crypto cache entry found."
