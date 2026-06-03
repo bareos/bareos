@@ -67,6 +67,11 @@ function addTodayMarker(svg) {
   const start = parseIsoDate(windowStart);
   const end = parseIsoDate(windowEnd);
   const today = new Date();
+  const localDate = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
   const position =
     ((today.getTime() - start.getTime()) / (end.getTime() - start.getTime())) *
     axisWidth;
@@ -91,7 +96,7 @@ function addTodayMarker(svg) {
     "font-size": "13",
     "font-weight": "600",
   });
-  label.textContent = `Today \u00b7 ${today.toISOString().slice(0, 10)}`;
+  label.textContent = `Today \u00b7 ${localDate}`;
   svg.appendChild(label);
 }
 
