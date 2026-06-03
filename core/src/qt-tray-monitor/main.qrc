@@ -3,5 +3,6 @@
         <file>images/failure.png</file>
         <file>images/warning.png</file>
         <file>images/bareos-logo.svg</file>
+        <file>images/bareos-logo-background.svg</file>
     </qresource>
 </RCC>
