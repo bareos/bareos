@@ -234,8 +234,8 @@ def render_timeline(
     actual_releases: list[MajorRelease],
     releases: list[MajorRelease],
     supported_major_releases: int,
+    today: date,
 ) -> str:
-    today = date.today()
     window_start = add_years(today, -3)
     window_end = add_years(today, 3)
     rows = build_rows(releases, supported_major_releases, today, window_end)
@@ -430,13 +430,12 @@ def render_timeline(
 
 def main() -> None:
     args = parse_args()
+    today = date.today()
     supported_major_releases, interval_days, actual_releases = load_releases(args.input)
-    releases = extend_with_projections(
-        actual_releases, add_years(date.today(), 3), interval_days
-    )
+    releases = extend_with_projections(actual_releases, add_years(today, 3), interval_days)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
-        render_timeline(actual_releases, releases, supported_major_releases)
+        render_timeline(actual_releases, releases, supported_major_releases, today)
     )
 
 
