@@ -37,7 +37,7 @@
 #include <QTransform>
 #include <QtGlobal>
 #include <QtMath>
-#include <QSvgRenderer>
+#include <QtSvg/qsvgrenderer.h>
 
 #include <algorithm>
 #include <cmath>
