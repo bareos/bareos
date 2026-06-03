@@ -20,6 +20,7 @@
 */
 
 #include "systemtrayicon.h"
+#include "resources.h"
 #include <qnamespace.h>
 #include "traymenu.h"
 #include <QColor>
@@ -51,8 +52,6 @@ const int kShieldShadowYOffset = 5;
 const int kShieldDepthAlpha = 44;
 const int kShieldBevelAlpha = 34;
 const int kShieldSpecularAlpha = 30;
-const char* kTrayBaseIcon = ":/images/baset.svg";
-const char* kTrayErrorIcon = ":/images/W.png";
 
 struct palette {
   QRgb color;
@@ -318,8 +317,8 @@ bool RotateIcon(QList<QIcon>& list,
 SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
     : QSystemTrayIcon(mainWindow), timer(std::make_unique<QTimer>(this))
 {
-  QFile logo{kTrayBaseIcon};
-  Q_ASSERT_X(logo.open(QIODevice::ReadOnly), "SystemTrayIcon", kTrayBaseIcon);
+  QFile logo{kRes_BareosIcon};
+  Q_ASSERT_X(logo.open(QIODevice::ReadOnly), "SystemTrayIcon", kRes_BareosIcon);
   QByteArray content = logo.readAll();
   Q_ASSERT(!content.isNull());
 
@@ -336,7 +335,7 @@ SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
                       RunningPalette));
 
   normalIcon = std::move(defaultIcon);
-  errorIcon = QIcon(kTrayErrorIcon);
+  errorIcon = QIcon(kRes_ErrorIcon);
   animationIcons = std::move(runningAnimation);
 
   // this object name is used for auto-connection to the MainWindow

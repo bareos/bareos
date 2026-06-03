@@ -22,6 +22,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "systemtrayicon.h"
+#include "resources.h"
 
 #include <QDebug>
 #include <QPlainTextEdit>
@@ -52,7 +53,7 @@ MainWindow::MainWindow(QWidget* parent)
   ui->setupUi(this);
   setWindowTitle(tr("Bareos Tray Monitor"));
   setWindowIcon(systemTrayIcon->icon());
-  ui->pushButton_Close->setIcon(QIcon(":/images/f.png"));
+  ui->pushButton_Close->setIcon(QIcon(kRes_FailureIcon));
 
   // Prepare the tabWidget
   while (ui->tabWidget->count()) { ui->tabWidget->removeTab(0); }
@@ -171,7 +172,7 @@ void MainWindow::onStatusChanged(const QString& tabRef, int state)
   iter->state = state;
   switch (state) {
     case MonitorItem::Error: {
-      ui->tabWidget->setTabIcon(iter->tab_index, QIcon(":images/W.png"));
+      ui->tabWidget->setTabIcon(iter->tab_index, QIcon(kRes_ErrorIcon));
     } break;
     default: {
       ui->tabWidget->setTabIcon(iter->tab_index, QIcon());
