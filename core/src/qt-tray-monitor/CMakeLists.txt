@@ -35,17 +35,13 @@ if(HAVE_WIN32)
     REQUIRED
   )
 else()
-  find_package(Qt6 QUIET COMPONENTS Core Widgets Svg)
+  find_package(Qt6 QUIET COMPONENTS Core Widgets)
 endif()
 if(Qt6Widgets_FOUND)
   message(STATUS "Found QT6Widgets")
 else()
   message(STATUS "QT6Widgets NOT found, checking for Qt5 ...")
-  find_package(
-    Qt5 QUIET
-    COMPONENTS Core Widgets Svg
-    REQUIRED
-  )
+  find_package(Qt5 QUIET COMPONENTS Core Widgets)
   if(Qt5Widgets_FOUND)
     message(STATUS "Found QT5Widgets")
   else()
@@ -81,21 +77,7 @@ endif()
 
 target_link_libraries(bareos-tray-monitor PRIVATE Bareos::Lib CLI11::CLI11)
 
-if(TARGET Qt5::Widgets)
-  target_link_libraries(bareos-tray-monitor PRIVATE Qt5::Widgets)
-endif()
-
-if(TARGET Qt6::Widgets)
-  target_link_libraries(bareos-tray-monitor PRIVATE Qt6::Widgets)
-endif()
-
-if(TARGET Qt5::Svg)
-  target_link_libraries(bareos-tray-monitor PRIVATE Qt5::Svg)
-endif()
-
-if(TARGET Qt6::Svg)
-  target_link_libraries(bareos-tray-monitor PRIVATE Qt6::Svg)
-endif()
+target_link_libraries(bareos-tray-monitor PRIVATE Qt::Core Qt::Widgets)
 
 bareos_configure_file(FILES bareos-tray-monitor.desktop.in)
 

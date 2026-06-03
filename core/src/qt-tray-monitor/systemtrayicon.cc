@@ -37,7 +37,6 @@
 #include <QTransform>
 #include <QtGlobal>
 #include <QtMath>
-#include <QtSvg/qsvgrenderer.h>
 
 #include <algorithm>
 #include <cmath>
@@ -65,56 +64,15 @@ static constexpr palette IdlePalette
 static constexpr palette RunningPalette
     = {qRgb(0, 191, 17), qRgb(12, 120, 30), qRgb(72, 220, 96)};
 
-static bool RenderSvgElements(QSvgRenderer& renderer,
-                              QPainter& painter,
-                              const QRectF& targetRect,
-                              const QStringList& elementIds)
-{
-  if (!renderer.isValid()) return false;
-
-  // we assume here that the painter has no world transform
-
-  QRectF viewBox = renderer.viewBoxF();
-  if (viewBox.isEmpty()) {
-    QSize def = renderer.defaultSize();
-    viewBox = QRectF(0, 0, def.width(), def.height());
-  }
-
-  qreal sx = targetRect.width() / viewBox.width();
-  qreal sy = targetRect.height() / viewBox.height();
-
-  qreal dx = targetRect.x() - viewBox.x() * sx;
-  qreal dy = targetRect.y() - viewBox.y() * sy;
-
-  QTransform scaleT = QTransform::fromScale(sx, sy);
-  QTransform translateT = QTransform::fromTranslate(dx, dy);
-
-  for (const QString& id : elementIds) {
-    if (!renderer.elementExists(id)) { return false; }
-
-    QRectF local = renderer.boundsOnElement(id);
-
-    QTransform parentT = renderer.transformForElement(id);
-    QTransform ToViewport = parentT * scaleT * translateT;
-
-    painter.setWorldTransform(ToViewport);
-    renderer.render(&painter, id, local);
-  }
-
-  painter.setWorldTransform(QTransform{});
-
-  return true;
-}
-
-static bool RenderIcon(QPixmap& output, QSvgRenderer& renderer, QRgb color)
+static bool RenderIcon(QPixmap& output,
+                       const QPixmap& logo,
+                       const QPixmap& background,
+                       QRgb color)
 {
   output.fill(Qt::transparent);
   QPainter p(&output);
 
-  if (!RenderSvgElements(renderer, p, output.rect(),
-                         {"outer-shield", "inner-shield", "inner-b"})) {
-    return false;
-  }
+  p.drawPixmap(output.rect(), logo);
 
   // this colors everything that we drew in the given color
   p.setCompositionMode(QPainter::CompositionMode_SourceIn);
@@ -123,9 +81,7 @@ static bool RenderIcon(QPixmap& output, QSvgRenderer& renderer, QRgb color)
   // the background should always be white and should ofc be drown _below_
   // our actual logo
   p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
-  if (!RenderSvgElements(renderer, p, output.rect(), {"background"})) {
-    return false;
-  }
+  p.drawPixmap(output.rect(), background);
 
   p.end();
 
@@ -312,23 +268,33 @@ bool RotateIcon(QList<QIcon>& list,
 
   return true;
 }
+
+QPixmap LoadSvg(const char* path, int width, int height)
+{
+  QPixmap px{width, height};
+  if (!px.load(path)) { return {}; }
+  return px;
+}
+
 }  // namespace
 
 SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
     : QSystemTrayIcon(mainWindow), timer(std::make_unique<QTimer>(this))
 {
-  QFile logo{kRes_BareosIcon};
-  Q_ASSERT_X(logo.open(QIODevice::ReadOnly), "SystemTrayIcon", kRes_BareosIcon);
-  QByteArray content = logo.readAll();
-  Q_ASSERT(!content.isNull());
+  constexpr int IconWidth = 128;
+  constexpr int IconHeight = 128;
 
-  QSvgRenderer renderer(content);
+  auto logo = LoadSvg(kRes_LogoIcon, IconWidth, IconHeight);
+  Q_ASSERT_X(!logo.isNull(), "Tray Logo", kRes_LogoIcon);
 
-  QPixmap defaultIcon(128, 128);
-  Q_ASSERT(RenderIcon(defaultIcon, renderer, IdlePalette.color));
+  auto bg = LoadSvg(kRes_LogoBGIcon, IconWidth, IconHeight);
+  Q_ASSERT_X(!bg.isNull(), "Tray Logo Background", kRes_LogoBGIcon);
 
-  QPixmap runningIcon(128, 128);
-  Q_ASSERT(RenderIcon(runningIcon, renderer, RunningPalette.color));
+  QPixmap defaultIcon(IconWidth, IconHeight);
+  Q_ASSERT(RenderIcon(defaultIcon, logo, bg, IdlePalette.color));
+
+  QPixmap runningIcon(IconWidth, IconHeight);
+  Q_ASSERT(RenderIcon(runningIcon, logo, bg, RunningPalette.color));
 
   QList<QIcon> runningAnimation;
   Q_ASSERT(RotateIcon(runningAnimation, runningIcon, kAnimationFrameCount,

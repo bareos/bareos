@@ -22,7 +22,9 @@
 #ifndef BAREOS_QT_TRAY_MONITOR_RESOURCES_H_
 #define BAREOS_QT_TRAY_MONITOR_RESOURCES_H_
 
-constexpr inline const char* kRes_BareosIcon = ":/images/bareos-logo.svg";
+constexpr inline const char* kRes_LogoIcon = ":/images/bareos-logo.svg";
+constexpr inline const char* kRes_LogoBGIcon
+    = ":/images/bareos-logo-background.svg";
 constexpr inline const char* kRes_ErrorIcon = ":/images/warning.png";
 constexpr inline const char* kRes_FailureIcon = ":/images/failure.png";
 
