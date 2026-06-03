@@ -83,6 +83,11 @@ def load_releases(path: Path) -> tuple[int, int, list[MajorRelease]]:
 def extend_with_projections(
     releases: list[MajorRelease], window_end: date, interval_days: int
 ) -> list[MajorRelease]:
+    if not releases:
+        raise ValueError("major_releases must contain at least one release")
+    if interval_days <= 0:
+        raise ValueError("projected_major_release_interval_days must be > 0")
+
     projected_releases = list(releases)
     while True:
         latest = projected_releases[-1]
