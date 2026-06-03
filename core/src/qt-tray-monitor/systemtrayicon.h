@@ -43,7 +43,6 @@ class SystemTrayIcon : public QSystemTrayIcon {
 
  public:
   SystemTrayIcon(QMainWindow* mainWindow);
-  virtual ~SystemTrayIcon() = default;
 
   void animateIcon(bool on);
 
