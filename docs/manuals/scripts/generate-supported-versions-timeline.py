@@ -432,7 +432,9 @@ def main() -> None:
     args = parse_args()
     today = date.today()
     supported_major_releases, interval_days, actual_releases = load_releases(args.input)
-    releases = extend_with_projections(actual_releases, add_years(today, 3), interval_days)
+    releases = extend_with_projections(
+        actual_releases, add_years(today, 3), interval_days
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         render_timeline(actual_releases, releases, supported_major_releases, today)
