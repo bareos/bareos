@@ -25,7 +25,7 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -235,6 +235,7 @@ def render_timeline(
     releases: list[MajorRelease],
     supported_major_releases: int,
     today: date,
+    generated_at: datetime,
 ) -> str:
     window_start = add_years(today, -3)
     window_end = add_years(today, 3)
@@ -424,6 +425,13 @@ def render_timeline(
         "major-release interval.\n"
     )
     parts.append("  </text>\n")
+    generated_label = generated_at.strftime("Generated: %Y-%m-%d %H:%M UTC")
+    parts.append(
+        f'  <text class="note" x="{SVG_WIDTH - 40}" y="{footer_y + 44}" '
+        'text-anchor="end">\n'
+    )
+    parts.append(f"    {generated_label}\n")
+    parts.append("  </text>\n")
     parts.append("</svg>\n")
     return "".join(parts)
 
@@ -431,13 +439,20 @@ def render_timeline(
 def main() -> None:
     args = parse_args()
     today = date.today()
+    generated_at = datetime.now(timezone.utc)
     supported_major_releases, interval_days, actual_releases = load_releases(args.input)
     releases = extend_with_projections(
         actual_releases, add_years(today, 3), interval_days
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
-        render_timeline(actual_releases, releases, supported_major_releases, today)
+        render_timeline(
+            actual_releases,
+            releases,
+            supported_major_releases,
+            today,
+            generated_at,
+        )
     )
 
 
