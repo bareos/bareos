@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -115,6 +115,8 @@ bool MonitorItem::doconnect()
     return true;
   }
 
+  char* name = get_name();
+
   JobControlRecord jcr;
   ZeroBareosSocketInJcr zero_jcr(jcr);
 
@@ -176,8 +178,6 @@ bool MonitorItem::doconnect()
       printf("Error, currentitem is not a Client, a Storage or a Director..\n");
       return false;
   }
-
-  char* name = get_name();
 
   if (d->DSock == NULL) {
     emit showStatusbarMessage("Cannot connect to daemon.");
@@ -298,7 +298,7 @@ bool MonitorItem::docmd(const char* command)
       emit showStatusbarMessage("Error : Connection closed.");
       // fprintf(stderr, "<< STOP >>\n");
       return false; /* error or term */
-    }               /* if (IsBnetStop(d->DSock) */
+    } /* if (IsBnetStop(d->DSock) */
 
   } /* while (1) */
 }

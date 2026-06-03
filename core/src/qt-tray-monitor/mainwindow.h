@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,12 +58,14 @@ class MainWindow : public QMainWindow {
   static bool already_destroyed;
 
   Ui::MainWindow* ui;
-  QMap<QString, MonitorTab*>* monitorTabMap;
+  struct tab {
+    MonitorTab* tab;
+    int tab_index;
+    int state;
+  };
+  QMap<QString, tab>* monitorTabMap;
   SystemTrayIcon* systemTrayIcon;
 
-  QStringList tabs;
-  int nTabs;
-  bool* bRefs;
 
  public slots:
   /* auto-connected slots to the UI                */
