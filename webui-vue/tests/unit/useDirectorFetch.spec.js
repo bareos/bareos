@@ -310,4 +310,28 @@ describe('director data normalisers', () => {
       },
     ])
   })
+
+  it('ignores JSON-RPC wrapper fields in command permission output', () => {
+    expect(normaliseDirectorCommandPermissions({
+      jsonrpc: '2.0',
+      id: null,
+      error: {
+        code: 1,
+        message: 'The full option does not take a value.',
+      },
+      '.help': {
+        description: 'Print parsable information about a command',
+        arguments: '[ all | item=cmd ]',
+        permission: true,
+      },
+    })).toEqual([
+      {
+        command: '.help',
+        description: 'Print parsable information about a command',
+        arguments: '[ all | item=cmd ]',
+        permission: true,
+        category: 'Dot commands',
+      },
+    ])
+  })
 })

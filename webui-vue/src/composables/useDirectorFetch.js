@@ -71,6 +71,15 @@ export function directorCommandCategory(command) {
 
 export function normaliseDirectorCommandPermissions(commands) {
   return Object.entries(commands ?? {})
+    .filter(([, meta]) => (
+      meta
+      && typeof meta === 'object'
+      && (
+        Object.hasOwn(meta, 'permission')
+        || Object.hasOwn(meta, 'description')
+        || Object.hasOwn(meta, 'arguments')
+      )
+    ))
     .map(([command, meta]) => ({
       command,
       description: meta?.description ?? '',
