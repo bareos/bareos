@@ -43,4 +43,12 @@ AliasMatch "^/favicon\.ico$" "@WEBUI_VUE_DIR@/favicon.ico"
         ProxyPass /ws ws://localhost:9104/
         ProxyPassReverse /ws ws://localhost:9104/
     </IfModule>
+    <IfModule mod_proxy_http.c>
+        ProxyPass /api/ http://localhost:9104/api/
+        ProxyPassReverse /api/ http://localhost:9104/api/
+    </IfModule>
+</IfModule>
+
+<IfModule mod_headers.c>
+    RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
 </IfModule>

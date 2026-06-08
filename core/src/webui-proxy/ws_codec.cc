@@ -334,21 +334,45 @@ WsCodec WsCodec::Accept(int fd,
   return codec;
 }
 
-void WsCodec::Handshake()
+WsCodec WsCodec::Accept(int fd,
+                        std::string_view request_headers,
+                        std::string pending_input,
+                        std::chrono::milliseconds io_timeout,
+                        std::chrono::milliseconds handshake_timeout,
+                        size_t max_frame_payload_size,
+                        size_t max_message_size)
+{
+  WsCodec codec(fd, io_timeout, handshake_timeout, max_frame_payload_size,
+                max_message_size);
+  codec.pending_input_ = std::move(pending_input);
+  codec.Handshake(request_headers);
+  return codec;
+}
+
+std::optional<std::string_view> WsCodec::RequestHeader(std::string_view name) const
+{
+  return FindHeaderValue(request_headers_, name);
+}
+
+void WsCodec::Handshake(std::optional<std::string_view> request_headers)
 {
   const auto deadline = MakeDeadline(handshake_timeout_);
   std::string headers;
-  headers.reserve(1024);
-  while (true) {
-    ReadChunk(fd_, pending_input_, deadline, "read handshake data");
-    const auto header_end = pending_input_.find("\r\n\r\n");
-    if (header_end != std::string::npos) {
-      headers.assign(pending_input_.data(), header_end + 4);
-      pending_input_.erase(0, header_end + 4);
-      break;
-    }
-    if (pending_input_.size() > kMaxHttpHeaderSize) {
-      throw std::runtime_error("WebSocket: HTTP headers too large");
+  if (request_headers) {
+    headers.assign(request_headers->data(), request_headers->size());
+  } else {
+    headers.reserve(1024);
+    while (true) {
+      ReadChunk(fd_, pending_input_, deadline, "read handshake data");
+      const auto header_end = pending_input_.find("\r\n\r\n");
+      if (header_end != std::string::npos) {
+        headers.assign(pending_input_.data(), header_end + 4);
+        pending_input_.erase(0, header_end + 4);
+        break;
+      }
+      if (pending_input_.size() > kMaxHttpHeaderSize) {
+        throw std::runtime_error("WebSocket: HTTP headers too large");
+      }
     }
   }
 
@@ -364,6 +388,9 @@ void WsCodec::Handshake()
     FailHandshake(fd_, deadline, "HTTP/1.1 400 Bad Request",
                   "WebSocket: invalid HTTP upgrade request");
   }
+  request_headers_ = headers;
+  request_target_ = std::string(
+      request_line.substr(4, request_line.find(" HTTP/1.1") - 4));
 
   const auto upgrade = FindHeaderValue(headers_view, "Upgrade");
   if (!upgrade || !EqualsIgnoreCase(*upgrade, "websocket")) {

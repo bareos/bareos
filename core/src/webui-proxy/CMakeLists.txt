@@ -26,8 +26,10 @@ add_library(webui-proxy-objects OBJECT)
 target_sources(
   webui-proxy-objects
   PRIVATE bareos_base64.cc
+          http_protocol.cc
           director_connection.cc
           proxy_config.cc
+          proxy_auth_session.cc
           proxy_log.cc
           proxy_session.cc
           ws_codec.cc
@@ -81,6 +83,8 @@ if(BUILD_TESTING AND GTest_FOUND)
     test_webui_proxy
     tests/test_bareos_base64.cc
     tests/test_director_connection.cc
+    tests/test_http_protocol.cc
+    tests/test_proxy_auth_session.cc
     tests/test_proxy_config.cc
     tests/test_proxy_log.cc
     tests/test_proxy_session.cc

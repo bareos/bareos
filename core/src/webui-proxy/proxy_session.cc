@@ -20,6 +20,8 @@
 */
 #include "proxy_session.h"
 #include "director_connection.h"
+#include "http_protocol.h"
+#include "proxy_auth_session.h"
 #include "proxy_log.h"
 #include "ws_codec.h"
 
@@ -152,6 +154,11 @@ std::string JsonDirectorList(const ProxyConfig& config)
   return DumpJson(obj.get());
 }
 
+std::string JsonSessionInfo(std::string_view username, std::string_view director)
+{
+  return JsonObject({{"username", username}, {"director", director}});
+}
+
 std::string JsonAuthOk(std::string_view director,
                        std::string_view mode,
                        std::string_view transport)
@@ -214,6 +221,73 @@ std::string JsonCommandError(std::optional<std::string_view> id,
   SetJsonString(error.get(), "command", command);
   SetJsonString(error.get(), "message", message);
   return DumpJson(error.get());
+}
+
+DirectorTargetConfig RequireDirectorTarget(const ProxyConfig& config,
+                                          std::string_view selector)
+{
+  if (selector.empty()) {
+    throw std::runtime_error("Proxy config: no director selected");
+  }
+
+  const auto director_it = config.configured_directors.find(std::string(selector));
+  if (director_it == config.configured_directors.end()) {
+    throw std::runtime_error("Proxy config: director '" + std::string(selector)
+                             + "' is not configured");
+  }
+
+  return director_it->second;
+}
+
+DirectorConfig BuildDirectorConfig(const ProxyConfig& config,
+                                   std::string_view selector,
+                                   std::string_view username,
+                                   std::string_view password,
+                                   bool json_mode)
+{
+  const auto target = RequireDirectorTarget(config, selector);
+
+  DirectorConfig cfg;
+  cfg.username = std::string(username);
+  cfg.password = std::string(password);
+  cfg.json_mode = json_mode;
+  cfg.director_name = target.name;
+  cfg.host = target.address;
+  cfg.port = target.port;
+  cfg.tls_psk_disable = target.tls_psk_disable;
+  return cfg;
+}
+
+bool RequestUsesHttps(const HttpRequest& request)
+{
+  const auto forwarded_proto = request.HeaderValue("X-Forwarded-Proto");
+  return forwarded_proto && *forwarded_proto == "https";
+}
+
+bool IsAuthenticationFailure(std::string_view message)
+{
+  return message.find("authentication failed") != std::string::npos
+         || message.find("Authorization failed") != std::string::npos
+         || message.find("TLS-PSK handshake failed") != std::string::npos;
+}
+
+std::optional<ProxyAuthSessionRecord> LookupSessionFromRequest(
+    const HttpRequest& request)
+{
+  const auto cookie_header = request.HeaderValue("Cookie");
+  if (!cookie_header) { return std::nullopt; }
+
+  const auto session_id = FindCookieValue(*cookie_header, kProxySessionCookieName);
+  if (!session_id || session_id->empty()) { return std::nullopt; }
+
+  return ProxyAuthSessionStore::Instance().LookupSession(*session_id);
+}
+
+std::optional<std::string_view> LookupSessionIdFromRequest(const HttpRequest& request)
+{
+  const auto cookie_header = request.HeaderValue("Cookie");
+  if (!cookie_header) { return std::nullopt; }
+  return FindCookieValue(*cookie_header, kProxySessionCookieName);
 }
 }  // namespace
 
@@ -298,6 +372,126 @@ std::string FilterRawConsoleChunk(std::string_view command,
   return filtered;
 }
 
+namespace {
+
+void SendJsonResponseWithCookie(int fd,
+                                std::string_view status_line,
+                                std::string_view body,
+                                std::optional<std::string_view> cookie = std::nullopt)
+{
+  if (cookie) {
+    SendHttpResponse(fd, std::chrono::seconds(5), status_line, body,
+                     {{"Content-Type", "application/json"},
+                      {"Cache-Control", "no-store"},
+                      {"Set-Cookie", *cookie}});
+  } else {
+    SendHttpResponse(fd, std::chrono::seconds(5), status_line, body,
+                     {{"Content-Type", "application/json"},
+                      {"Cache-Control", "no-store"}});
+  }
+}
+
+void SendEmptyResponseWithCookie(int fd,
+                                 std::string_view status_line,
+                                 std::optional<std::string_view> cookie
+                                 = std::nullopt)
+{
+  if (cookie) {
+    SendHttpResponse(fd, std::chrono::seconds(5), status_line, "",
+                     {{"Cache-Control", "no-store"}, {"Set-Cookie", *cookie}});
+  } else {
+    SendHttpResponse(fd, std::chrono::seconds(5), status_line, "",
+                     {{"Cache-Control", "no-store"}});
+  }
+}
+
+void HandleSessionLoginRequest(int fd,
+                               const std::string& peer,
+                               const ProxyConfig& config,
+                               const HttpRequest& request)
+{
+  json_error_t error{};
+  JsonPtr body(json_loadb(request.body.data(), request.body.size(), 0, &error));
+  if (!body) {
+    SendJsonResponseWithCookie(
+        fd, "HTTP/1.1 400 Bad Request",
+        JsonObject({{"message", "Expected JSON request body"}}));
+    return;
+  }
+
+  try {
+    const auto username = RequireJsonStringField(body.get(), "username");
+    const auto password = RequireJsonStringField(body.get(), "password");
+    const auto director = RequireJsonStringField(body.get(), "director");
+    const std::string requested_director(director);
+    DirectorConfig cfg
+        = BuildDirectorConfig(config, director, username, password, true);
+
+    DirectorConnection connection;
+    connection.Connect(cfg);
+
+    const auto session_id = ProxyAuthSessionStore::Instance().CreateSession(
+        username, password, requested_director);
+    const auto cookie = BuildProxySessionCookie(session_id, RequestUsesHttps(request));
+
+    PROXY_LOG_INFO(peer, "created session for user=%s director=%s",
+                   cfg.username.c_str(), requested_director.c_str());
+    SendJsonResponseWithCookie(fd, "HTTP/1.1 200 OK",
+                               JsonSessionInfo(username, requested_director),
+                               cookie);
+  } catch (const std::exception& ex) {
+    const std::string_view message = ex.what();
+    const bool authentication_failed = IsAuthenticationFailure(message);
+    const std::string_view status = authentication_failed
+                                        ? std::string_view(
+                                              "HTTP/1.1 401 Unauthorized")
+                                        : std::string_view(
+                                              "HTTP/1.1 400 Bad Request");
+    PROXY_LOG_WARN(peer, "session login failed: %s", ex.what());
+    SendJsonResponseWithCookie(
+        fd, status,
+        JsonObject({{"message", authentication_failed ? "Authentication failed"
+                                                      : "Connection error"}}));
+  }
+}
+
+void HandleSessionInfoRequest(int fd, const HttpRequest& request)
+{
+  const auto session = LookupSessionFromRequest(request);
+  const auto expired_cookie
+      = BuildExpiredProxySessionCookie(RequestUsesHttps(request));
+  if (!session) {
+    SendJsonResponseWithCookie(
+        fd, "HTTP/1.1 401 Unauthorized",
+        JsonObject({{"message", "No active session"}}), expired_cookie);
+    return;
+  }
+
+  SendJsonResponseWithCookie(fd, "HTTP/1.1 200 OK",
+                             JsonSessionInfo(session->username, session->director));
+}
+
+void HandleSessionLogoutRequest(int fd, const HttpRequest& request)
+{
+  if (const auto session_id = LookupSessionIdFromRequest(request)) {
+    ProxyAuthSessionStore::Instance().RemoveSession(*session_id);
+  }
+
+  const auto expired_cookie
+      = BuildExpiredProxySessionCookie(RequestUsesHttps(request));
+  SendEmptyResponseWithCookie(fd, "HTTP/1.1 204 No Content", expired_cookie);
+}
+
+std::optional<std::string> FindSessionId(std::optional<std::string_view> cookie_header)
+{
+  if (!cookie_header) { return std::nullopt; }
+  const auto session_id = FindCookieValue(*cookie_header, kProxySessionCookieName);
+  if (!session_id || session_id->empty()) { return std::nullopt; }
+  return std::string(*session_id);
+}
+
+}  // namespace
+
 // ---------------------------------------------------------------------------
 // Session implementation
 // ---------------------------------------------------------------------------
@@ -312,9 +506,37 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
   PROXY_LOG_INFO(peer, "connected");
 
+  HttpRequest request;
+  try {
+    request = ReadHttpRequest(fd);
+  } catch (const std::exception& ex) {
+    PROXY_LOG_WARN(peer, "read request failed: %s", ex.what());
+    return;
+  }
+
+  if (request.method == "POST" && request.target == "/api/session/login") {
+    HandleSessionLoginRequest(fd, peer, config, request);
+    return;
+  }
+  if (request.method == "GET" && request.target == "/api/session") {
+    HandleSessionInfoRequest(fd, request);
+    return;
+  }
+  if (request.method == "POST" && request.target == "/api/session/logout") {
+    HandleSessionLogoutRequest(fd, request);
+    return;
+  }
+
+  if (!IsWebSocketUpgradeRequest(request)) {
+    SendHttpResponse(fd, std::chrono::seconds(5), "HTTP/1.1 404 Not Found",
+                     "Not Found",
+                     {{"Content-Type", "text/plain; charset=utf-8"}});
+    return;
+  }
+
   auto ws = [&]() -> std::optional<WsCodec> {
     try {
-      return WsCodec::Accept(fd);
+      return WsCodec::Accept(fd, request.raw_headers, std::move(request.pending_input));
     } catch (const std::exception& ex) {
       PROXY_LOG_WARN(peer, "WS handshake failed: %s", ex.what());
       return std::nullopt;
@@ -360,28 +582,39 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   DirectorConfig cfg;
   const std::string mode(
       JsonStringField(auth_msg.get(), "mode").value_or("json"));
+  std::optional<std::string> session_id;
   try {
-    cfg.username
+    const auto username
         = std::string(RequireJsonStringField(auth_msg.get(), "username"));
-    cfg.password
+    const auto password
         = std::string(RequireJsonStringField(auth_msg.get(), "password"));
-    cfg.json_mode = ParseAuthMode(mode);
     const auto requested_selector
         = std::string(RequireJsonStringField(auth_msg.get(), "director"));
-    if (requested_selector.empty()) {
-      throw std::runtime_error("Proxy config: no director selected");
+    const bool json_mode = ParseAuthMode(mode);
+
+    if (password == kProxySessionPasswordPlaceholder) {
+      session_id = FindSessionId(ws->RequestHeader("Cookie"));
+      if (!session_id) {
+        throw std::runtime_error("Proxy session missing; please log in again");
+      }
+
+      const auto session
+          = ProxyAuthSessionStore::Instance().LookupSession(*session_id);
+      if (!session) {
+        throw std::runtime_error("Proxy session expired; please log in again");
+      }
+      if (session->username != username) {
+        throw std::runtime_error(
+            "Proxy session does not match the requested user");
+      }
+
+      cfg = BuildDirectorConfig(config, requested_selector, session->username,
+                                session->password, json_mode);
+    } else {
+      cfg = BuildDirectorConfig(config, requested_selector, username, password,
+                                json_mode);
     }
-    const auto director_it
-        = config.configured_directors.find(requested_selector);
-    if (director_it == config.configured_directors.end()) {
-      throw std::runtime_error("Proxy config: director '" + requested_selector
-                               + "' is not configured");
-    }
-    const auto& target = director_it->second;
-    cfg.director_name = target.name;
-    cfg.host = target.address;
-    cfg.port = target.port;
-    cfg.tls_psk_disable = target.tls_psk_disable;
+
     PROXY_LOG_INFO(peer, "auth: user=%s director=%s host=%s:%d mode=%s",
                    cfg.username.c_str(), cfg.director_name.c_str(),
                    cfg.host.c_str(), cfg.port, mode.c_str());
@@ -399,15 +632,12 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     const std::string_view msg = ex.what();
     PROXY_LOG_WARN(peer, "auth failed: %s", ex.what());
     try {
-      if (msg.find("authentication failed") != std::string::npos
-          || msg.find("Authorization failed") != std::string::npos) {
+      if (IsAuthenticationFailure(msg)) {
         ws->SendText(JsonObject(
-            {{"type", "auth_error"},
-             {"message", std::string("Authentication failed: ") + ex.what()}}));
+            {{"type", "auth_error"}, {"message", "Authentication failed"}}));
       } else {
         ws->SendText(JsonObject(
-            {{"type", "auth_error"},
-             {"message", std::string("Connection error: ") + ex.what()}}));
+            {{"type", "auth_error"}, {"message", "Connection error"}}));
       }
     } catch (...) {
       // Client disconnected before we could report the failure.
@@ -419,6 +649,12 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
       = director.UsesTlsPsk() ? "TLS-PSK" : "cleartext";
 
   PROXY_LOG_INFO(peer, "director transport: %s", director_transport);
+
+  if (session_id) {
+    ProxyAuthSessionStore::Instance().UpdateDirector(
+        *session_id,
+        RequireJsonStringField(auth_msg.get(), "director"));
+  }
 
   try {
     ws->SendText(JsonAuthOk(cfg.director_name, mode, director_transport));

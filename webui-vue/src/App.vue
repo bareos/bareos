@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore }     from './stores/auth.js'
 import { useDirectorStore } from './stores/director.js'
 import {
@@ -41,11 +41,23 @@ function handleConsolePopupAuth(event) {
 
 onMounted(() => {
   window.addEventListener('message', handleConsolePopupAuth)
-  if (auth.isLoggedIn && !director.isConnected) {
-    const creds = auth.getCredentials()
-    if (creds?.password) director.connect(creds)
-  }
 })
+
+watch(
+  () => auth.getCredentials(),
+  (creds) => {
+    if (!creds?.password || director.isConnected) {
+      return
+    }
+
+    if (director.status === 'connecting' || director.status === 'authenticating') {
+      return
+    }
+
+    director.connect(creds)
+  },
+  { immediate: true }
+)
 
 onUnmounted(() => {
   window.removeEventListener('message', handleConsolePopupAuth)

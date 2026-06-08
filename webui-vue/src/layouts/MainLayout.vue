@@ -246,6 +246,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useConsoleSessionsStore } from '../stores/consoleSessions.js'
 import { useDirectorStore } from '../stores/director.js'
 import { DIRECTOR_WS_URL } from '../utils/directorCommandSocket.js'
+import { logoutProxySession } from '../utils/sessionApi.js'
 import {
   RELEASE_INFO_PAGE_URL,
   useReleaseInfoStore,
@@ -478,7 +479,12 @@ const directorUpdateAlert = computed(() => {
   return { color, icon, message }
 })
 
-function logout() {
+async function logout() {
+  try {
+    await logoutProxySession()
+  } catch {
+    // Clear the local state even if the backend session is already gone.
+  }
   consoleSessions.disconnectAll({ reason: 'Disconnected', resetInitialized: true })
   director.disconnect()
   auth.logout()
