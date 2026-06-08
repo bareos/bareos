@@ -300,6 +300,21 @@ export function buildJobDefaultsCommand(name) {
   return `.defaults job=${quoteDirectorString(name)}`
 }
 
+export function resolvePermittedRunJobDefault(options, value) {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const normalizedValue = value.trim()
+  if (!normalizedValue) {
+    return null
+  }
+
+  return Array.isArray(options) && options.includes(normalizedValue)
+    ? normalizedValue
+    : null
+}
+
 export function buildRunJobCommand({
   job,
   client,

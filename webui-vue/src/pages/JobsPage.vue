@@ -688,6 +688,7 @@ import {
   normaliseJobsTextOptions,
   normaliseJobsTextFilter,
   paginateJobs,
+  resolvePermittedRunJobDefault,
   resolveJobsClientQuery,
   resolveJobsJobQuery,
   resolveJobsLevelFilters,
@@ -1616,10 +1617,18 @@ async function onJobSelected(name) {
     await ensureSingletonTabDirector()
     const res = await director.call(buildJobDefaultsCommand(name))
     const d   = res?.defaults ?? res ?? {}
-    if (d.client)   runForm.value.client   = d.client
-    if (d.fileset)  runForm.value.fileset  = d.fileset
-    if (d.pool)     runForm.value.pool     = d.pool
-    if (d.storage)  runForm.value.storage  = d.storage
+    if (Object.hasOwn(d, 'client')) {
+      runForm.value.client = resolvePermittedRunJobDefault(dotClients.value, d.client)
+    }
+    if (Object.hasOwn(d, 'fileset')) {
+      runForm.value.fileset = resolvePermittedRunJobDefault(dotFilesets.value, d.fileset)
+    }
+    if (Object.hasOwn(d, 'pool')) {
+      runForm.value.pool = resolvePermittedRunJobDefault(dotPools.value, d.pool)
+    }
+    if (Object.hasOwn(d, 'storage')) {
+      runForm.value.storage = resolvePermittedRunJobDefault(dotStorages.value, d.storage)
+    }
     if (d.level)    runForm.value.level    = d.level
     if (d.priority) runForm.value.priority = Number(d.priority)
   } catch { /* ignore */ }

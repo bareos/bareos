@@ -31,6 +31,7 @@ import {
   buildRerunJobCommand,
   buildRunJobCommand,
   buildSetJobEnabledCommand,
+  resolvePermittedRunJobDefault,
   encodeJobsLevelFilters,
   encodeJobsStatusFilters,
   encodeJobsTypeFilters,
@@ -220,6 +221,17 @@ describe('jobs filter helpers', () => {
       'pool="Full" storage="File" level="Incremental" ' +
       'when="2026-05-28 12:00:00" priority=10 yes'
     )
+  })
+
+  it('only keeps permitted run job defaults from selectable options', () => {
+    expect(resolvePermittedRunJobDefault(['SelfTest', 'LinuxAll'], 'SelfTest'))
+      .toBe('SelfTest')
+    expect(resolvePermittedRunJobDefault(['LinuxAll'], 'SelfTest'))
+      .toBeNull()
+    expect(resolvePermittedRunJobDefault([], 'SelfTest'))
+      .toBeNull()
+    expect(resolvePermittedRunJobDefault(['LinuxAll'], '  '))
+      .toBeNull()
   })
 
   it('adds and removes the status query parameter', () => {
