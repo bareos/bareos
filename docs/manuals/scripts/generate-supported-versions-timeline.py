@@ -133,7 +133,26 @@ def tick_dates(window_start: date, window_end: date) -> list[date]:
 
 
 def tick_label(value: date) -> str:
-    return value.strftime("%b %Y")
+    return value.strftime("%b")
+
+
+def year_label_positions(window_start: date, window_end: date) -> list[tuple[int, float]]:
+    labels = []
+    for year in range(window_start.year, window_end.year + 1):
+        year_start = max(window_start, date(year, 1, 1))
+        year_end = (
+            window_end if year == window_end.year else min(window_end, date(year + 1, 1, 1))
+        )
+        if year_start >= year_end:
+            continue
+        center = round(
+            (x_position(year_start, window_start, window_end) +
+             x_position(year_end, window_start, window_end))
+            / 2,
+            1,
+        )
+        labels.append((year, center))
+    return labels
 
 
 def release_lookup(releases: list[MajorRelease]) -> dict[int, MajorRelease]:
@@ -212,6 +231,7 @@ data-window-start="{window_start.isoformat()}" data-window-end="{window_end.isof
       .bg {{ fill: #ffffff; }}
       .title {{ fill: #123047; font: 700 24px sans-serif; }}
       .tick text {{ fill: #7b8d9b; font: 14px sans-serif; text-anchor: middle; }}
+      .year-label {{ fill: #4b5d6b; font: 600 14px sans-serif; text-anchor: middle; }}
       .row-label {{ fill: #4b5d6b; font: 16px sans-serif; text-anchor: end; dominant-baseline: middle; }}
       .grid {{ stroke: #dde6eb; stroke-width: 1; }}
       .axis {{ stroke: #96a9b5; stroke-width: 1.2; }}
@@ -257,6 +277,10 @@ def render_timeline(
     parts.append(
         f'  <g id="timeline" transform="translate({SVG_LEFT},{TOP_MARGIN})">\n'
     )
+    parts.append("    <g>\n")
+    for year, x in year_label_positions(window_start, window_end):
+        parts.append(f'      <text class="year-label" x="{x}" y="-34">{year}</text>\n')
+    parts.append("    </g>\n")
     parts.append('    <g class="tick">\n')
     for tick in tick_dates(window_start, window_end):
         x = x_position(tick, window_start, window_end)

@@ -5,6 +5,7 @@ data-window-start="2023-06-03" data-window-end="2029-06-03">
       .bg { fill: #ffffff; }
       .title { fill: #123047; font: 700 24px sans-serif; }
       .tick text { fill: #7b8d9b; font: 14px sans-serif; text-anchor: middle; }
+      .year-label { fill: #4b5d6b; font: 600 14px sans-serif; text-anchor: middle; }
       .row-label { fill: #4b5d6b; font: 16px sans-serif; text-anchor: end; dominant-baseline: middle; }
       .grid { stroke: #dde6eb; stroke-width: 1; }
       .axis { stroke: #96a9b5; stroke-width: 1.2; }
@@ -23,31 +24,40 @@ data-window-start="2023-06-03" data-window-end="2029-06-03">
   <rect class="bg" x="0" y="0" width="1120" height="601"/>
   <text class="title" x="40" y="36">Bareos supported versions over time</text>
   <g id="timeline" transform="translate(220,90)">
+    <g>
+      <text class="year-label" x="40.1" y="-34">2023</text>
+      <text class="year-label" x="149.6" y="-34">2024</text>
+      <text class="year-label" x="288.0" y="-34">2025</text>
+      <text class="year-label" x="426.2" y="-34">2026</text>
+      <text class="year-label" x="564.4" y="-34">2027</text>
+      <text class="year-label" x="702.8" y="-34">2028</text>
+      <text class="year-label" x="801.0" y="-34">2029</text>
+    </g>
     <g class="tick">
       <line class="grid" x1="10.6" y1="0" x2="10.6" y2="360" stroke-dasharray="3 3"/>
-      <text x="10.6" y="-12">Jul 2023</text>
+      <text x="10.6" y="-12">Jul</text>
       <line class="grid" x1="80.3" y1="0" x2="80.3" y2="360"/>
-      <text x="80.3" y="-12">Jan 2024</text>
+      <text x="80.3" y="-12">Jan</text>
       <line class="grid" x1="149.2" y1="0" x2="149.2" y2="360" stroke-dasharray="3 3"/>
-      <text x="149.2" y="-12">Jul 2024</text>
+      <text x="149.2" y="-12">Jul</text>
       <line class="grid" x1="218.9" y1="0" x2="218.9" y2="360"/>
-      <text x="218.9" y="-12">Jan 2025</text>
+      <text x="218.9" y="-12">Jan</text>
       <line class="grid" x1="287.4" y1="0" x2="287.4" y2="360" stroke-dasharray="3 3"/>
-      <text x="287.4" y="-12">Jul 2025</text>
+      <text x="287.4" y="-12">Jul</text>
       <line class="grid" x1="357.1" y1="0" x2="357.1" y2="360"/>
-      <text x="357.1" y="-12">Jan 2026</text>
+      <text x="357.1" y="-12">Jan</text>
       <line class="grid" x1="425.6" y1="0" x2="425.6" y2="360" stroke-dasharray="3 3"/>
-      <text x="425.6" y="-12">Jul 2026</text>
+      <text x="425.6" y="-12">Jul</text>
       <line class="grid" x1="495.3" y1="0" x2="495.3" y2="360"/>
-      <text x="495.3" y="-12">Jan 2027</text>
+      <text x="495.3" y="-12">Jan</text>
       <line class="grid" x1="563.8" y1="0" x2="563.8" y2="360" stroke-dasharray="3 3"/>
-      <text x="563.8" y="-12">Jul 2027</text>
+      <text x="563.8" y="-12">Jul</text>
       <line class="grid" x1="633.5" y1="0" x2="633.5" y2="360"/>
-      <text x="633.5" y="-12">Jan 2028</text>
+      <text x="633.5" y="-12">Jan</text>
       <line class="grid" x1="702.4" y1="0" x2="702.4" y2="360" stroke-dasharray="3 3"/>
-      <text x="702.4" y="-12">Jul 2028</text>
+      <text x="702.4" y="-12">Jul</text>
       <line class="grid" x1="772.1" y1="0" x2="772.1" y2="360"/>
-      <text x="772.1" y="-12">Jan 2029</text>
+      <text x="772.1" y="-12">Jan</text>
     </g>
 
     <line class="axis" x1="0" y1="360" x2="830" y2="360"/>
