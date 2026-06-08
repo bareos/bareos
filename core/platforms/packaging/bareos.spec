@@ -686,6 +686,7 @@ This package contains the Vue-based Bareos Web User Interface.
 %package webui-proxy
 Summary:       Bareos Web User Interface WebSocket proxy
 Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common = %{version}
 
 %description webui-proxy
 %{dscr}
