@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="601" viewBox="0 0 1120 601"
-data-window-start="2023-06-03" data-window-end="2029-06-03">
+data-window-start="2022-12-01" data-window-end="2028-12-01">
   <defs>
     <style type="text/css"><![CDATA[
       .bg { fill: #ffffff; }
@@ -25,39 +25,39 @@ data-window-start="2023-06-03" data-window-end="2029-06-03">
   <text class="title" x="40" y="36">Bareos supported versions over time</text>
   <g id="timeline" transform="translate(220,90)">
     <g>
-      <text class="year-label" x="40.1" y="-34">2023</text>
-      <text class="year-label" x="149.6" y="-34">2024</text>
-      <text class="year-label" x="288.0" y="-34">2025</text>
-      <text class="year-label" x="426.2" y="-34">2026</text>
-      <text class="year-label" x="564.4" y="-34">2027</text>
-      <text class="year-label" x="702.8" y="-34">2028</text>
-      <text class="year-label" x="801.0" y="-34">2029</text>
+      <text class="year-label" x="5.8" y="-34">2022</text>
+      <text class="year-label" x="80.8" y="-34">2023</text>
+      <text class="year-label" x="219.2" y="-34">2024</text>
+      <text class="year-label" x="357.6" y="-34">2025</text>
+      <text class="year-label" x="495.8" y="-34">2026</text>
+      <text class="year-label" x="634.0" y="-34">2027</text>
+      <text class="year-label" x="766.6" y="-34">2028</text>
     </g>
     <g class="tick">
-      <line class="grid" x1="10.6" y1="0" x2="10.6" y2="360" stroke-dasharray="3 3"/>
-      <text x="10.6" y="-12">Jul</text>
-      <line class="grid" x1="80.3" y1="0" x2="80.3" y2="360"/>
-      <text x="80.3" y="-12">Jan</text>
-      <line class="grid" x1="149.2" y1="0" x2="149.2" y2="360" stroke-dasharray="3 3"/>
-      <text x="149.2" y="-12">Jul</text>
-      <line class="grid" x1="218.9" y1="0" x2="218.9" y2="360"/>
-      <text x="218.9" y="-12">Jan</text>
-      <line class="grid" x1="287.4" y1="0" x2="287.4" y2="360" stroke-dasharray="3 3"/>
-      <text x="287.4" y="-12">Jul</text>
-      <line class="grid" x1="357.1" y1="0" x2="357.1" y2="360"/>
-      <text x="357.1" y="-12">Jan</text>
-      <line class="grid" x1="425.6" y1="0" x2="425.6" y2="360" stroke-dasharray="3 3"/>
-      <text x="425.6" y="-12">Jul</text>
-      <line class="grid" x1="495.3" y1="0" x2="495.3" y2="360"/>
-      <text x="495.3" y="-12">Jan</text>
-      <line class="grid" x1="563.8" y1="0" x2="563.8" y2="360" stroke-dasharray="3 3"/>
-      <text x="563.8" y="-12">Jul</text>
-      <line class="grid" x1="633.5" y1="0" x2="633.5" y2="360"/>
-      <text x="633.5" y="-12">Jan</text>
-      <line class="grid" x1="702.4" y1="0" x2="702.4" y2="360" stroke-dasharray="3 3"/>
-      <text x="702.4" y="-12">Jul</text>
-      <line class="grid" x1="772.1" y1="0" x2="772.1" y2="360"/>
-      <text x="772.1" y="-12">Jan</text>
+      <line class="grid" x1="11.7" y1="0" x2="11.7" y2="360"/>
+      <text x="11.7" y="-12">Jan</text>
+      <line class="grid" x1="80.3" y1="0" x2="80.3" y2="360" stroke-dasharray="3 3"/>
+      <text x="80.3" y="-12">Jul</text>
+      <line class="grid" x1="149.9" y1="0" x2="149.9" y2="360"/>
+      <text x="149.9" y="-12">Jan</text>
+      <line class="grid" x1="218.9" y1="0" x2="218.9" y2="360" stroke-dasharray="3 3"/>
+      <text x="218.9" y="-12">Jul</text>
+      <line class="grid" x1="288.5" y1="0" x2="288.5" y2="360"/>
+      <text x="288.5" y="-12">Jan</text>
+      <line class="grid" x1="357.1" y1="0" x2="357.1" y2="360" stroke-dasharray="3 3"/>
+      <text x="357.1" y="-12">Jul</text>
+      <line class="grid" x1="426.7" y1="0" x2="426.7" y2="360"/>
+      <text x="426.7" y="-12">Jan</text>
+      <line class="grid" x1="495.3" y1="0" x2="495.3" y2="360" stroke-dasharray="3 3"/>
+      <text x="495.3" y="-12">Jul</text>
+      <line class="grid" x1="564.9" y1="0" x2="564.9" y2="360"/>
+      <text x="564.9" y="-12">Jan</text>
+      <line class="grid" x1="633.5" y1="0" x2="633.5" y2="360" stroke-dasharray="3 3"/>
+      <text x="633.5" y="-12">Jul</text>
+      <line class="grid" x1="703.2" y1="0" x2="703.2" y2="360"/>
+      <text x="703.2" y="-12">Jan</text>
+      <line class="grid" x1="772.1" y1="0" x2="772.1" y2="360" stroke-dasharray="3 3"/>
+      <text x="772.1" y="-12">Jul</text>
     </g>
 
     <line class="axis" x1="0" y1="360" x2="830" y2="360"/>
@@ -72,52 +72,53 @@ data-window-start="2023-06-03" data-window-end="2029-06-03">
     <g>
       <line class="grid" x1="0" y1="80" x2="830" y2="80"/>
       <text class="row-label" x="-14" y="97.0">Bareos 22</text>
-      <rect class="current" x="0.0" y="80" width="73.1" height="34" rx="4"/>
-      <rect class="supported" x="73.1" y="80" width="272.20000000000005" height="34" rx="4"/>
-      <text class="label" x="87.1" y="97.0">supported</text>
-      <rect class="unsupported" x="345.3" y="80" width="484.7" height="34" rx="4"/>
-      <text class="small-label" x="359.3" y="97.0">unsupported</text>
+      <rect class="current" x="7.6" y="80" width="135.20000000000002" height="34" rx="4"/>
+      <text class="label" x="21.6" y="97.0">current</text>
+      <rect class="supported" x="142.8" y="80" width="272.2" height="34" rx="4"/>
+      <text class="label" x="156.8" y="97.0">supported</text>
+      <rect class="unsupported" x="415.0" y="80" width="415.0" height="34" rx="4"/>
+      <text class="small-label" x="429.0" y="97.0">unsupported</text>
     </g>
 
     <g>
       <line class="grid" x1="0" y1="136" x2="830" y2="136"/>
       <text class="row-label" x="-14" y="153.0">Bareos 23</text>
-      <rect class="current" x="73.1" y="136" width="139.70000000000002" height="34" rx="4"/>
-      <text class="label" x="87.1" y="153.0">current</text>
-      <rect class="supported" x="212.8" y="136" width="270.7" height="34" rx="4"/>
-      <text class="label" x="226.8" y="153.0">supported</text>
-      <rect class="unsupported" x="483.5" y="136" width="346.5" height="34" rx="4"/>
-      <text class="small-label" x="497.5" y="153.0">unsupported</text>
+      <rect class="current" x="142.8" y="136" width="139.7" height="34" rx="4"/>
+      <text class="label" x="156.8" y="153.0">current</text>
+      <rect class="supported" x="282.5" y="136" width="270.70000000000005" height="34" rx="4"/>
+      <text class="label" x="296.5" y="153.0">supported</text>
+      <rect class="unsupported" x="553.2" y="136" width="276.79999999999995" height="34" rx="4"/>
+      <text class="small-label" x="567.2" y="153.0">unsupported</text>
     </g>
 
     <g>
       <line class="grid" x1="0" y1="192" x2="830" y2="192"/>
       <text class="row-label" x="-14" y="209.0">Bareos 24</text>
-      <rect class="current" x="212.8" y="192" width="132.5" height="34" rx="4"/>
-      <text class="label" x="226.8" y="209.0">current</text>
-      <rect class="supported" x="345.3" y="192" width="276.40000000000003" height="34" rx="4"/>
-      <text class="label" x="359.3" y="209.0">supported</text>
-      <rect class="unsupported" x="621.7" y="192" width="208.29999999999995" height="34" rx="4"/>
-      <text class="small-label" x="635.7" y="209.0">unsupported</text>
+      <rect class="current" x="282.5" y="192" width="132.5" height="34" rx="4"/>
+      <text class="label" x="296.5" y="209.0">current</text>
+      <rect class="supported" x="415.0" y="192" width="276.4" height="34" rx="4"/>
+      <text class="label" x="429.0" y="209.0">supported</text>
+      <rect class="unsupported" x="691.4" y="192" width="138.60000000000002" height="34" rx="4"/>
+      <text class="small-label" x="705.4" y="209.0">unsupported</text>
     </g>
 
     <g>
       <line class="grid" x1="0" y1="248" x2="830" y2="248"/>
       <text class="row-label" x="-14" y="265.0">Bareos 25</text>
-      <rect class="current" x="345.3" y="248" width="138.2" height="34" rx="4"/>
-      <text class="label" x="359.3" y="265.0">current</text>
-      <rect class="supported" x="483.5" y="248" width="276.4" height="34" rx="4"/>
-      <text class="label" x="497.5" y="265.0">supported</text>
-      <rect class="unsupported" x="759.9" y="248" width="70.10000000000002" height="34" rx="4"/>
+      <rect class="current" x="415.0" y="248" width="138.20000000000005" height="34" rx="4"/>
+      <text class="label" x="429.0" y="265.0">current</text>
+      <rect class="supported" x="553.2" y="248" width="276.4" height="34" rx="4"/>
+      <text class="label" x="567.2" y="265.0">supported</text>
+      <rect class="unsupported" x="829.6" y="248" width="0.39999999999997726" height="34" rx="4"/>
     </g>
 
     <g>
       <line class="grid" x1="0" y1="304" x2="830" y2="304"/>
       <text class="row-label" x="-14" y="321.0">Bareos 26</text>
-      <rect class="projected-current" x="483.5" y="304" width="138.20000000000005" height="34" rx="4"/>
-      <text class="small-label" x="497.5" y="321.0">current</text>
-      <rect class="projected-supported" x="621.7" y="304" width="208.29999999999995" height="34" rx="4"/>
-      <text class="small-label" x="635.7" y="321.0">supported</text>
+      <rect class="projected-current" x="553.2" y="304" width="138.19999999999993" height="34" rx="4"/>
+      <text class="small-label" x="567.2" y="321.0">current</text>
+      <rect class="projected-supported" x="691.4" y="304" width="138.60000000000002" height="34" rx="4"/>
+      <text class="small-label" x="705.4" y="321.0">supported</text>
     </g>
 
   </g>
@@ -138,8 +139,5 @@ data-window-start="2023-06-03" data-window-end="2029-06-03">
   </text>
   <text class="note" x="40" y="553">
     Future versions are projections based on the configured major-release interval.
-  </text>
-  <text class="note" x="1080" y="575" text-anchor="end">
-    Generated: 2026-06-03 10:34 UTC
   </text>
 </svg>

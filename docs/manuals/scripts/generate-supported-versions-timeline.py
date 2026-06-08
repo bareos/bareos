@@ -25,7 +25,7 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 
@@ -78,6 +78,12 @@ def load_releases(path: Path) -> tuple[int, int, list[MajorRelease]]:
         payload["projected_major_release_interval_days"],
         releases,
     )
+
+
+def timeline_reference_date(releases: list[MajorRelease]) -> date:
+    if not releases:
+        raise ValueError("major_releases must contain at least one release")
+    return releases[-1].release_date
 
 
 def extend_with_projections(
@@ -136,18 +142,24 @@ def tick_label(value: date) -> str:
     return value.strftime("%b")
 
 
-def year_label_positions(window_start: date, window_end: date) -> list[tuple[int, float]]:
+def year_label_positions(
+    window_start: date, window_end: date
+) -> list[tuple[int, float]]:
     labels = []
     for year in range(window_start.year, window_end.year + 1):
         year_start = max(window_start, date(year, 1, 1))
         year_end = (
-            window_end if year == window_end.year else min(window_end, date(year + 1, 1, 1))
+            window_end
+            if year == window_end.year
+            else min(window_end, date(year + 1, 1, 1))
         )
         if year_start >= year_end:
             continue
         center = round(
-            (x_position(year_start, window_start, window_end) +
-             x_position(year_end, window_start, window_end))
+            (
+                x_position(year_start, window_start, window_end)
+                + x_position(year_end, window_start, window_end)
+            )
             / 2,
             1,
         )
@@ -254,12 +266,11 @@ def render_timeline(
     actual_releases: list[MajorRelease],
     releases: list[MajorRelease],
     supported_major_releases: int,
-    today: date,
-    generated_at: datetime,
+    reference_date: date,
 ) -> str:
-    window_start = add_years(today, -3)
-    window_end = add_years(today, 3)
-    rows = build_rows(releases, supported_major_releases, today, window_end)
+    window_start = add_years(reference_date, -3)
+    window_end = add_years(reference_date, 3)
+    rows = build_rows(releases, supported_major_releases, reference_date, window_end)
     lookup = release_lookup(releases)
     timeline_height = 24 + ROW_HEIGHT * (len(rows) + 1)
     legend_y = TOP_MARGIN + timeline_height + 36
@@ -449,24 +460,16 @@ def render_timeline(
         "major-release interval.\n"
     )
     parts.append("  </text>\n")
-    generated_label = generated_at.strftime("Generated: %Y-%m-%d %H:%M UTC")
-    parts.append(
-        f'  <text class="note" x="{SVG_WIDTH - 40}" y="{footer_y + 44}" '
-        'text-anchor="end">\n'
-    )
-    parts.append(f"    {generated_label}\n")
-    parts.append("  </text>\n")
     parts.append("</svg>\n")
     return "".join(parts)
 
 
 def main() -> None:
     args = parse_args()
-    today = date.today()
-    generated_at = datetime.now(timezone.utc)
     supported_major_releases, interval_days, actual_releases = load_releases(args.input)
+    reference_date = timeline_reference_date(actual_releases)
     releases = extend_with_projections(
-        actual_releases, add_years(today, 3), interval_days
+        actual_releases, add_years(reference_date, 3), interval_days
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
@@ -474,8 +477,7 @@ def main() -> None:
             actual_releases,
             releases,
             supported_major_releases,
-            today,
-            generated_at,
+            reference_date,
         )
     )
 
