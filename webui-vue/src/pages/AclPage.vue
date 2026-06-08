@@ -81,6 +81,81 @@
               {{ t('No commands match the current filter.') }}
             </div>
 
+            <div v-else-if="isCommonAcl" class="column q-gutter-lg">
+              <q-card
+                v-for="section in directorCommandSections"
+                :key="section.director"
+                flat
+                bordered
+              >
+                <q-card-section class="row items-center q-py-sm">
+                  <DirectorBadge icon="dns" :director="section.director">
+                    {{ section.director }}
+                  </DirectorBadge>
+                  <q-space />
+                  <q-chip dense square color="positive" text-color="white" icon="check_circle">
+                    {{ section.allowedCount }} {{ t('allowed') }}
+                  </q-chip>
+                  <q-chip dense square color="negative" text-color="white" icon="block">
+                    {{ section.deniedCount }} {{ t('denied') }}
+                  </q-chip>
+                </q-card-section>
+                <q-separator />
+                <q-card-section class="column q-gutter-md">
+                  <q-card
+                    v-for="group in section.groups"
+                    :key="`${section.director}:${group.name}`"
+                    flat
+                    bordered
+                  >
+                    <q-card-section class="row items-center q-py-sm">
+                      <div class="text-subtitle2">{{ group.name }}</div>
+                      <q-space />
+                      <q-chip dense square color="primary" text-color="white">
+                        {{ group.items.length }}
+                      </q-chip>
+                    </q-card-section>
+                    <q-separator />
+                    <q-list separator>
+                      <q-item v-for="item in group.items" :key="item.scopeKey" class="q-py-sm">
+                        <q-item-section avatar top>
+                          <q-icon
+                            :name="item.permission ? 'check_circle' : 'block'"
+                            :color="item.permission ? 'positive' : 'negative'"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label class="text-weight-medium">
+                            <code>{{ item.command }}</code>
+                          </q-item-label>
+                          <q-item-label caption class="text-grey-8">
+                            {{ item.description || t('No description provided.') }}
+                          </q-item-label>
+                          <q-item-label
+                            v-if="item.arguments"
+                            caption
+                            class="text-grey-7 q-mt-xs acl-arguments"
+                          >
+                            {{ item.arguments }}
+                          </q-item-label>
+                        </q-item-section>
+                        <q-item-section side top>
+                          <q-chip
+                            dense
+                            square
+                            :color="item.permission ? 'positive' : 'grey-6'"
+                            text-color="white"
+                          >
+                            {{ item.permission ? t('Allowed') : t('Denied') }}
+                          </q-chip>
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-card>
+                </q-card-section>
+              </q-card>
+            </div>
+
             <div v-else class="column q-gutter-md">
               <q-card
                 v-for="group in commandGroups"
@@ -257,13 +332,31 @@ const filteredCommands = computed(() => {
   })
 })
 
-const commandGroups = computed(() => (
-  [t('Commands'), t('Dot commands'), 'BVFS']
+function buildCommandGroups(items) {
+  return [t('Commands'), t('Dot commands'), 'BVFS']
     .map(name => ({
       name,
-      items: filteredCommands.value.filter(item => t(item.category) === name),
+      items: items.filter(item => t(item.category) === name),
     }))
     .filter(group => group.items.length > 0)
+}
+
+const commandGroups = computed(() => (
+  buildCommandGroups(filteredCommands.value)
+))
+
+const directorCommandSections = computed(() => (
+  activeDirectors.value
+    .map((directorName) => {
+      const items = filteredCommands.value.filter(item => item.director === directorName)
+      return {
+        director: directorName,
+        groups: buildCommandGroups(items),
+        allowedCount: items.filter(item => item.permission).length,
+        deniedCount: items.filter(item => !item.permission).length,
+      }
+    })
+    .filter(section => section.groups.length > 0)
 ))
 
 watch(() => director.isConnected, (connected) => {

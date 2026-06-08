@@ -28,18 +28,23 @@ import {
 
 function sortPermissions(commands) {
   return [...commands].sort((left, right) => {
-    const commandCompare = String(left.command ?? '').localeCompare(String(right.command ?? ''))
-    if (commandCompare !== 0) {
-      return commandCompare
+    const directorCompare = String(left.director ?? '').localeCompare(String(right.director ?? ''))
+    if (directorCompare !== 0) {
+      return directorCompare
     }
 
-    return String(left.director ?? '').localeCompare(String(right.director ?? ''))
+    const categoryCompare = String(left.category ?? '').localeCompare(String(right.category ?? ''))
+    if (categoryCompare !== 0) {
+      return categoryCompare
+    }
+
+    return String(left.command ?? '').localeCompare(String(right.command ?? ''))
   })
 }
 
 export async function fetchAggregatedAcl(credentials, directors) {
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
-    const commands = await client.call('.help full=yes')
+    const commands = await client.call('.help full')
     return normaliseDirectorCommandPermissions(commands).map(item => ({
       ...item,
       director,
