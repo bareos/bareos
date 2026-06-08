@@ -51,6 +51,15 @@ class WsCodec {
                         = std::chrono::seconds(5),
                         size_t max_frame_payload_size = 1024 * 1024,
                         size_t max_message_size = 4 * 1024 * 1024);
+  static WsCodec Accept(int fd,
+                        std::string_view request_headers,
+                        std::string pending_input,
+                        std::chrono::milliseconds io_timeout
+                        = std::chrono::seconds(30),
+                        std::chrono::milliseconds handshake_timeout
+                        = std::chrono::seconds(5),
+                        size_t max_frame_payload_size = 1024 * 1024,
+                        size_t max_message_size = 4 * 1024 * 1024);
 
   /* Read one complete WebSocket message (text frame, possibly fragmented).
    * Transparently handles ping/pong and close frames.
@@ -66,6 +75,8 @@ class WsCodec {
   void SendClose();
 
   bool IsClosed() const { return closed_; }
+  const std::string& RequestTarget() const { return request_target_; }
+  std::optional<std::string_view> RequestHeader(std::string_view name) const;
 
  private:
   WsCodec(int fd,
@@ -73,7 +84,7 @@ class WsCodec {
           std::chrono::milliseconds handshake_timeout,
           size_t max_frame_payload_size,
           size_t max_message_size);
-  void Handshake();
+  void Handshake(std::optional<std::string_view> request_headers = std::nullopt);
 
   int fd_;
   bool closed_ = false;
@@ -82,6 +93,8 @@ class WsCodec {
   size_t max_frame_payload_size_;
   size_t max_message_size_;
   std::string pending_input_;
+  std::string request_headers_;
+  std::string request_target_;
 
   // Frame encode/decode
   struct Frame {

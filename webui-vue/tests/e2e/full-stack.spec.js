@@ -251,12 +251,12 @@ test('keeps the console session when navigating away and back', async ({
   await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
 
-test('requires re-login after a page reload', async ({ page }) => {
+test('keeps the login after a page reload', async ({ page }) => {
   await login(page)
 
   await page.reload()
-  await expect(page.locator('[data-testid="login-form"]')).toBeVisible()
-  await expect(page.getByLabel('Username')).toHaveValue(username)
+  await page.waitForURL(/#\/dashboard$/)
+  await expectConnected(page)
 })
 
 test('opens the console and runs a raw command through the real proxy', async ({

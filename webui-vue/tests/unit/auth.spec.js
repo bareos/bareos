@@ -19,54 +19,65 @@
    02110-1301, USA.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from '../../src/stores/auth.js'
+import { SESSION_AUTH_PASSWORD } from '../../src/utils/sessionApi.js'
 
 describe('auth store', () => {
   beforeEach(() => {
     sessionStorage.clear()
     setActivePinia(createPinia())
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      status: 401,
+      ok: false,
+      text: async () => JSON.stringify({ message: 'No active session' }),
+    })))
   })
 
   it('keeps login credentials in memory only', () => {
     const auth = useAuthStore()
 
-    auth.login('admin', 'bareos-dir', 'secret')
+    auth.login('admin', 'bareos-dir')
 
     expect(auth.isLoggedIn).toBe(true)
     expect(sessionStorage.getItem('bareos_user')).toBeNull()
     expect(sessionStorage.getItem('bareos_pass')).toBeNull()
     expect(auth.getCredentials()).toEqual({
       username: 'admin',
-      password: 'secret',
+      password: SESSION_AUTH_PASSWORD,
       director: 'bareos-dir',
     })
   })
 
-  it('clears legacy stored credentials on startup', () => {
-    sessionStorage.setItem('bareos_user', JSON.stringify({
-      username: 'admin',
-      director: 'bareos-dir',
-    }))
-    sessionStorage.setItem('bareos_pass', 'secret')
-
+  it('restores an active proxy session on startup', async () => {
+    global.fetch.mockResolvedValueOnce({
+      status: 200,
+      ok: true,
+      text: async () => JSON.stringify({
+        username: 'admin',
+        director: 'bareos-dir',
+      }),
+    })
     const auth = useAuthStore()
+    await auth.restoreSession()
 
-    expect(auth.isLoggedIn).toBe(false)
-    expect(sessionStorage.getItem('bareos_user')).toBeNull()
-    expect(sessionStorage.getItem('bareos_pass')).toBeNull()
-    expect(auth.getCredentials()).toBeNull()
+    expect(auth.isLoggedIn).toBe(true)
+    expect(auth.getCredentials()).toEqual({
+      username: 'admin',
+      password: SESSION_AUTH_PASSWORD,
+      director: 'bareos-dir',
+    })
   })
 
   it('falls back to the default director connection when omitted', () => {
     const auth = useAuthStore()
 
-    auth.login('admin', undefined, 'secret')
+    auth.login('admin')
 
     expect(auth.getCredentials()).toEqual({
       username: 'admin',
-      password: 'secret',
+      password: SESSION_AUTH_PASSWORD,
       director: 'bareos-dir',
     })
   })
@@ -86,12 +97,12 @@ describe('auth store', () => {
   it('updates the active director without losing the in-memory password', () => {
     const auth = useAuthStore()
 
-    auth.login('admin', 'bareos-dir', 'secret')
+    auth.login('admin', 'bareos-dir')
     auth.setDirector('bareos-dir-2')
 
     expect(auth.getCredentials()).toEqual({
       username: 'admin',
-      password: 'secret',
+      password: SESSION_AUTH_PASSWORD,
       director: 'bareos-dir-2',
     })
   })
