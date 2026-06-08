@@ -95,18 +95,20 @@ describe('acl aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsA.get('.help full=yes'),
+        id: commandsA.get('.help full'),
         data: {
           '.help': { description: 'help', arguments: '', permission: true },
+          list: { description: 'list', arguments: '', permission: true },
         },
       }),
     })
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsB.get('.help full=yes'),
+        id: commandsB.get('.help full'),
         data: {
           '.help': { description: 'help', arguments: '', permission: false },
+          list: { description: 'list', arguments: '', permission: false },
         },
       }),
     })
@@ -114,10 +116,22 @@ describe('acl aggregate helpers', () => {
     await expect(loading).resolves.toEqual({
       commands: [
         expect.objectContaining({
+          scopeKey: 'prod-a:list',
+          director: 'prod-a',
+          command: 'list',
+          permission: true,
+        }),
+        expect.objectContaining({
           scopeKey: 'prod-a:.help',
           director: 'prod-a',
           command: '.help',
           permission: true,
+        }),
+        expect.objectContaining({
+          scopeKey: 'prod-b:list',
+          director: 'prod-b',
+          command: 'list',
+          permission: false,
         }),
         expect.objectContaining({
           scopeKey: 'prod-b:.help',
