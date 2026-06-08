@@ -169,40 +169,6 @@ function overlayRuntimeStatus(jobs, runtimeJobs) {
   )
 }
 
-function parseDirectorTimestamp(value) {
-  if (typeof value !== 'string' || !value.trim()) {
-    return null
-  }
-
-  const timestamp = Date.parse(value.replace(' ', 'T'))
-  return Number.isFinite(timestamp) ? timestamp : null
-}
-
-function filterJobsStartedWithinPast24Hours(jobs, now = Date.now()) {
-  const cutoff = now - (24 * 60 * 60 * 1000)
-  return sortJobsByStartTime(
-    jobs.filter((job) => {
-      const start = parseDirectorTimestamp(job.starttime)
-      return start != null && start >= cutoff
-    })
-  )
-}
-
-function selectMostRecentJobsByName(jobs) {
-  const sortedJobs = sortJobsByStartTime(jobs)
-  const seenNames = new Set()
-
-  return sortedJobs.filter((job) => {
-    const nameKey = String(job.name ?? '').trim() || job.scopeKey
-    if (seenNames.has(nameKey)) {
-      return false
-    }
-
-    seenNames.add(nameKey)
-    return true
-  })
-}
-
 export async function fetchDirectorDashboardSnapshot(credentials, options = {}) {
   const client = await createDirectorCommandClient(credentials, options)
 
@@ -231,29 +197,12 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
     const runningJobs = runningResult.status === 'fulfilled'
       ? decorateJobs(runningResult.value?.jobs, credentials.director)
       : []
-    let recentJobs = lastResult.status === 'fulfilled'
+    const recentJobs = lastResult.status === 'fulfilled'
       ? decorateJobs(lastResult.value?.jobs, credentials.director)
       : []
-    let jobsPast24h = past24hResult.status === 'fulfilled'
+    const jobsPast24h = past24hResult.status === 'fulfilled'
       ? decorateJobs(past24hResult.value?.jobs, credentials.director)
       : []
-
-    if (past24hResult.status === 'rejected' || lastResult.status === 'rejected') {
-      try {
-        const allJobs = decorateJobs((await client.call('list jobs'))?.jobs,
-                                     credentials.director)
-
-        if (past24hResult.status === 'rejected') {
-          jobsPast24h = filterJobsStartedWithinPast24Hours(allJobs)
-        }
-        if (lastResult.status === 'rejected') {
-          recentJobs = selectMostRecentJobsByName(allJobs)
-        }
-      } catch {
-        // Keep the original partial snapshot data when the fallback is also
-        // not accessible for the current ACL set.
-      }
-    }
 
     return {
       director: credentials.director,
