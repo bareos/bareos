@@ -20,6 +20,7 @@
  */
 
 import { createServer } from 'node:http'
+import http from 'node:http'
 import { promises as fs } from 'node:fs'
 import net from 'node:net'
 import path from 'node:path'
@@ -76,6 +77,39 @@ const {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? `${host}:${port}`}`)
   const requestPath = decodeURIComponent(url.pathname)
+
+  if (requestPath.startsWith('/api/')) {
+    if (!wsProxyHost || !wsProxyPort) {
+      res.writeHead(404)
+      res.end('Not Found')
+      return
+    }
+
+    const upstream = http.request({
+      host: wsProxyHost,
+      port: wsProxyPort,
+      method: req.method,
+      path: req.url,
+      headers: {
+        ...req.headers,
+        'x-forwarded-proto': 'http',
+      },
+    }, (upstreamRes) => {
+      res.writeHead(upstreamRes.statusCode ?? 502, upstreamRes.headers)
+      upstreamRes.pipe(res)
+    })
+
+    upstream.on('error', () => {
+      if (!res.headersSent) {
+        res.writeHead(502)
+      }
+      res.end('Bad Gateway')
+    })
+
+    req.pipe(upstream)
+    return
+  }
+
   const candidate = path.join(root, requestPath)
   const safeCandidate = path.resolve(candidate)
 

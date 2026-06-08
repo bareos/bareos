@@ -92,6 +92,10 @@ import {
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildDirectorOptions } from '../utils/director.js'
+import {
+  loginProxySession,
+  SESSION_AUTH_PASSWORD,
+} from '../utils/sessionApi.js'
 import LanguageSelect from '../components/LanguageSelect.vue'
 import bareosLogo from '../assets/bareos-logo-small.png'
 
@@ -137,11 +141,22 @@ async function doLogin() {
   loading.value = true
   errorMsg.value = null
 
-  // Connect WebSocket proxy → director
+  try {
+    await loginProxySession({
+      username: username.value,
+      password: password.value,
+      director: directorRef.value,
+    })
+  } catch (error) {
+    errorMsg.value = error?.message || t('Could not connect to director. Is the proxy running?')
+    loading.value = false
+    return
+  }
+
   director.connect({
-    username:  username.value,
-    password:  password.value,
-    director:  directorRef.value,
+    username: username.value,
+    password: SESSION_AUTH_PASSWORD,
+    director: directorRef.value,
   })
 
   // Wait up to 8 s for auth result
@@ -163,7 +178,7 @@ async function doLogin() {
   }
 
   settings.setLocale(locale.value)
-  auth.login(username.value, directorRef.value, password.value)
+  auth.login(username.value, directorRef.value)
   loading.value = false
   router.push({ name: 'dashboard' })
 }
