@@ -34,8 +34,16 @@
               <span aria-hidden="true">↻</span>
               <span class="panel-refresh-countdown__value">{{ countdown }}s</span>
             </span>
-            <q-spinner v-if="loadingJobs" color="white" size="18px" class="q-mr-sm" />
-            <q-btn flat round dense icon="refresh" color="white" size="sm" @click="manualRefresh" />
+            <q-btn
+              flat
+              round
+              dense
+              icon="refresh"
+              color="white"
+              size="sm"
+              :loading="loadingJobs"
+              @click="manualRefresh"
+            />
           </q-card-section>
           <q-card-section>
             <div class="row q-col-gutter-md text-center">
@@ -56,7 +64,16 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Most recent job status per job name') }}</span>
             <q-space />
-            <q-btn flat round dense icon="refresh" color="white" size="sm" @click="manualRefresh" />
+            <q-btn
+              flat
+              round
+              dense
+              icon="refresh"
+              color="white"
+              size="sm"
+              :loading="loadingJobs"
+              @click="manualRefresh"
+            />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
@@ -185,7 +202,16 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Running') }} {{ t('Jobs') }}</span>
             <q-space />
-            <q-btn flat round dense icon="refresh" color="white" size="sm" @click="manualRefresh" />
+            <q-btn
+              flat
+              round
+              dense
+              icon="refresh"
+              color="white"
+              size="sm"
+              :loading="loadingJobs"
+              @click="manualRefresh"
+            />
           </q-card-section>
           <q-card-section style="max-height:320px; overflow-y:auto; padding:0">
             <q-list separator>
