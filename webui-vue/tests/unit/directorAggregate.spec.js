@@ -238,6 +238,181 @@ describe('director aggregate dashboard helpers', () => {
     })
   })
 
+  it('falls back to list jobs when restricted ACLs reject llist jobs', async () => {
+    vi.setSystemTime(new Date('2026-03-24T10:00:00'))
+
+    const snapshotPromise = fetchDirectorDashboardSnapshot({
+      username: 'operator',
+      password: 'secret',
+      director: 'prod-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        transport: 'tls',
+      }),
+    })
+
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(8)
+    })
+
+    let commandIds = new Map(
+      socket.sent.slice(1).map((payload) => {
+        const command = JSON.parse(payload)
+        return [command.command, command.id]
+      })
+    )
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'error',
+        id: commandIds.get('llist jobs days=1'),
+        message: 'ACL forbids llist jobs days=1',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get('list jobs jobstatus=R'),
+        data: {
+          jobs: [],
+        },
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'error',
+        id: commandIds.get('llist jobs last'),
+        message: 'ACL forbids llist jobs last',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get('list jobtotals'),
+        data: {
+          jobtotals: {
+            jobs: '10',
+            files: '100',
+            bytes: '1024',
+          },
+        },
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get('list clients'),
+        data: {
+          clients: [{ name: 'bareos-fd' }],
+        },
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get('list storages'),
+        data: {
+          storages: [{ name: 'File' }],
+        },
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get('status director'),
+        data: {
+          running: [],
+        },
+      }),
+    })
+
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(9)
+    })
+
+    commandIds = new Map(
+      socket.sent.slice(1).map((payload) => {
+        const command = JSON.parse(payload)
+        return [command.command, command.id]
+      })
+    )
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get('list jobs'),
+        data: {
+          jobs: [
+            {
+              jobid: '1',
+              name: 'backup-bareos-fd',
+              clientname: 'bareos-fd',
+              jobstatus: 'T',
+              starttime: '2026-03-24 09:00:00',
+              duration: '0:00:01',
+              jobfiles: '86',
+              jobbytes: '145488',
+            },
+            {
+              jobid: '2',
+              name: 'backup-bareos-fd',
+              clientname: 'bareos-fd',
+              jobstatus: 'T',
+              starttime: '2026-03-24 08:00:00',
+              duration: '0:00:00',
+              jobfiles: '0',
+              jobbytes: '0',
+            },
+            {
+              jobid: '3',
+              name: 'RestoreFiles',
+              clientname: 'bareos-fd',
+              jobstatus: 'f',
+              starttime: '2026-03-24 07:00:00',
+              duration: '0:00:00',
+              jobfiles: '0',
+              jobbytes: '0',
+            },
+            {
+              jobid: '4',
+              name: 'older-job',
+              clientname: 'bareos-fd',
+              jobstatus: 'T',
+              starttime: '2026-03-22 07:00:00',
+              duration: '0:00:00',
+              jobfiles: '0',
+              jobbytes: '0',
+            },
+          ],
+        },
+      }),
+    })
+
+    await expect(snapshotPromise).resolves.toMatchObject({
+      director: 'prod-dir',
+      jobsPast24h: [
+        expect.objectContaining({ id: 1, scopeKey: 'prod-dir:1' }),
+        expect.objectContaining({ id: 2, scopeKey: 'prod-dir:2' }),
+        expect.objectContaining({ id: 3, scopeKey: 'prod-dir:3' }),
+      ],
+      recentJobs: [
+        expect.objectContaining({ id: 1, scopeKey: 'prod-dir:1' }),
+        expect.objectContaining({ id: 3, scopeKey: 'prod-dir:3' }),
+        expect.objectContaining({ id: 4, scopeKey: 'prod-dir:4' }),
+      ],
+      jobTotals: {
+        jobs: 10,
+        files: 100,
+        bytes: 1024,
+      },
+    })
+  })
+
   it('merges multiple director snapshots into one dashboard view', () => {
     const aggregate = aggregateDirectorDashboardSnapshots([
       {
