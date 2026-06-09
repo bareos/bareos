@@ -98,11 +98,17 @@
                       </q-item>
                     </template>
                   </q-select>
-                <q-checkbox
-                  v-model="form.mergeJobsets"
-                  :label="t('Include related jobs (Full + Incremental/Differential)')"
-                  dense
-                />
+                  <q-checkbox
+                    v-model="form.mergeJobs"
+                    :label="t('Include related jobs up to the last full backup')"
+                    dense
+                  />
+                  <q-checkbox
+                    v-model="form.mergeFilesets"
+                    :label="t('Include all client filesets')"
+                    dense
+                    :disable="!form.mergeJobs"
+                  />
               </q-card-section>
             </q-card>
           </div>
@@ -481,6 +487,7 @@ import { formatBytes } from '../mock/index.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import {
   buildRestoreBackupOption,
+  buildRestoreBvfsJobidsCommand,
   canNavigateRestoreBrowser,
   buildRestoreSourceQuery,
   buildRestorePluginFilesetMap,
@@ -491,6 +498,7 @@ import {
   getRestorePluginInfo,
   getRestorePluginHints,
   getRestoreBrowserPlaceholder,
+  normaliseRestoreToggle,
   pushRestoreBreadcrumb,
   resolveRestoreBackupOption,
   resolveRestoreSourceClient,
@@ -520,7 +528,8 @@ const form = ref({
   where:         '/tmp/bareos-restores',
   replace:       'Always',
   pluginoptions: '',
-  mergeJobsets:  true,
+  mergeJobs:     true,
+  mergeFilesets: true,
 })
 
 const sourceClientKey = ref('')
@@ -643,16 +652,22 @@ async function syncRouteToSourceSelection() {
     clientName: sourceClientName.value,
     directorName: sourceDirector.value,
     jobid: form.value.jobid,
+    mergeJobs: form.value.mergeJobs,
+    mergeFilesets: form.value.mergeFilesets,
   })
 
   const currentClient = typeof route.query.client === 'string' ? route.query.client : undefined
   const currentDirector = typeof route.query.director === 'string' ? route.query.director : undefined
   const currentJobid = typeof route.query.jobid === 'string' ? route.query.jobid : undefined
+  const currentMergeJobs = typeof route.query.mergejobs === 'string' ? route.query.mergejobs : undefined
+  const currentMergeFilesets = typeof route.query.mergefilesets === 'string' ? route.query.mergefilesets : undefined
 
   if (
     currentClient === query.client
     && currentDirector === query.director
     && currentJobid === query.jobid
+    && currentMergeJobs === query.mergejobs
+    && currentMergeFilesets === query.mergefilesets
   ) {
     return
   }
@@ -667,6 +682,10 @@ async function applyRouteSourceSelection() {
   const qClient = typeof route.query.client === 'string' ? route.query.client : ''
   const qDirector = typeof route.query.director === 'string' ? route.query.director : ''
   const qJobid = typeof route.query.jobid === 'string' ? route.query.jobid : ''
+  form.value.mergeJobs = normaliseRestoreToggle(route.query.mergejobs, true)
+  form.value.mergeFilesets = form.value.mergeJobs
+    ? normaliseRestoreToggle(route.query.mergefilesets, true)
+    : false
   const resolvedDirector = resolveRestoreSourceDirector(activeDirectors.value, qDirector)
 
   if (resolvedDirector) {
@@ -882,14 +901,14 @@ const showPluginOptions = computed(() => shouldShowRestorePluginOptions({
   backups: backups.value,
   selectedJobId: form.value.jobid,
   mergedJobids: mergedJobids.value,
-  mergeJobsets: form.value.mergeJobsets,
+  mergeJobs: form.value.mergeJobs,
 }))
 const pluginRestoreInfo = computed(() => getRestorePluginInfo({
   backups: backups.value,
   pluginFilesets: pluginFilesets.value,
   selectedJobId: form.value.jobid,
   mergedJobids: mergedJobids.value,
-  mergeJobsets: form.value.mergeJobsets,
+  mergeJobs: form.value.mergeJobs,
 }))
 const pluginHints = computed(() => getRestorePluginHints(pluginRestoreInfo.value))
 const pluginOptionsPlaceholder = computed(() => {
@@ -1018,12 +1037,19 @@ async function initBrowser() {
   try {
     await ensureSelectedSourceDirector()
     // Step 1: get merged jobids
-    const flag = form.value.mergeJobsets ? ' all' : ''
+    const command = buildRestoreBvfsJobidsCommand(form.value.jobid, {
+      mergeJobs: form.value.mergeJobs,
+      mergeFilesets: form.value.mergeFilesets,
+    })
     let gjr
-    try {
-      gjr = await director.call(`.bvfs_get_jobids jobid=${form.value.jobid}${flag}`)
-    } catch (e) {
-      // If get_jobids fails, fall back to using only the selected jobid
+    if (command) {
+      try {
+        gjr = await director.call(command)
+      } catch (e) {
+        // If get_jobids fails, fall back to using only the selected jobid
+        gjr = null
+      }
+    } else {
       gjr = null
     }
     const ids = directorCollection(gjr?.jobids).map(j => j.id).filter(Boolean).join(',')
@@ -1509,12 +1535,27 @@ watch(() => commonSourceDirector.value, async (next, previous) => {
   ])
 })
 
-watch(() => [sourceClientKey.value, sourceDirector.value, form.value.jobid], () => {
+watch(() => [
+  sourceClientKey.value,
+  sourceDirector.value,
+  form.value.jobid,
+  form.value.mergeJobs,
+  form.value.mergeFilesets,
+], () => {
   syncRouteToSourceSelection()
 })
 
-watch(() => form.value.mergeJobsets, async (next, previous) => {
-  if (next === previous || !form.value.jobid) {
+watch(() => form.value.mergeJobs, (enabled) => {
+  if (!enabled && form.value.mergeFilesets) {
+    form.value.mergeFilesets = false
+  }
+})
+
+watch(() => [form.value.mergeJobs, form.value.mergeFilesets], async ([nextJobs, nextFilesets], [previousJobs, previousFilesets]) => {
+  if (
+    (nextJobs === previousJobs && nextFilesets === previousFilesets)
+    || !form.value.jobid
+  ) {
     return
   }
 
@@ -1527,7 +1568,7 @@ watch(showPluginOptions, (visible) => {
   }
 })
 
-watch(() => [route.query.client, route.query.director, route.query.jobid], async () => {
+watch(() => [route.query.client, route.query.director, route.query.jobid, route.query.mergejobs, route.query.mergefilesets], async () => {
   await applyRouteSourceSelection()
 })
 </script>

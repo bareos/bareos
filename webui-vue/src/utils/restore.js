@@ -112,12 +112,16 @@ export function buildRestoreSourceQuery(query, {
   clientName,
   directorName,
   jobid,
+  mergeJobs,
+  mergeFilesets,
 } = {}) {
   const nextQuery = { ...query }
 
   delete nextQuery.client
   delete nextQuery.director
   delete nextQuery.jobid
+  delete nextQuery.mergejobs
+  delete nextQuery.mergefilesets
 
   if (clientName) {
     nextQuery.client = clientName
@@ -131,7 +135,55 @@ export function buildRestoreSourceQuery(query, {
     nextQuery.jobid = String(jobid)
   }
 
+  if (typeof mergeJobs === 'boolean') {
+    nextQuery.mergejobs = mergeJobs ? '1' : '0'
+  }
+
+  if (typeof mergeFilesets === 'boolean') {
+    nextQuery.mergefilesets = mergeFilesets ? '1' : '0'
+  }
+
   return nextQuery
+}
+
+export function normaliseRestoreToggle(value, defaultValue = false) {
+  if (typeof value === 'boolean') {
+    return value
+  }
+
+  if (typeof value === 'number') {
+    return value !== 0
+  }
+
+  if (typeof value !== 'string') {
+    return defaultValue
+  }
+
+  const normalizedValue = value.trim().toLowerCase()
+  if (['1', 'true', 'yes', 'on'].includes(normalizedValue)) {
+    return true
+  }
+
+  if (['0', 'false', 'no', 'off'].includes(normalizedValue)) {
+    return false
+  }
+
+  return defaultValue
+}
+
+export function buildRestoreBvfsJobidsCommand(jobid, {
+  mergeJobs = true,
+  mergeFilesets = true,
+} = {}) {
+  if (jobid === null || jobid === undefined || jobid === '') {
+    return ''
+  }
+
+  if (!mergeJobs) {
+    return ''
+  }
+
+  return `.bvfs_get_jobids jobid=${jobid}${mergeFilesets ? ' all' : ''}`
 }
 
 export function buildRestoreBackupOption(
@@ -392,7 +444,7 @@ export function shouldShowRestorePluginOptions({
   backups,
   selectedJobId,
   mergedJobids,
-  mergeJobsets,
+  mergeJobs,
 }) {
   if (!selectedJobId) {
     return false
@@ -407,7 +459,7 @@ export function shouldShowRestorePluginOptions({
       return false
     }
 
-    if (mergeJobsets && mergedIds) {
+    if (mergeJobs && mergedIds) {
       return mergedIds.has(String(backup?.jobid ?? ''))
     }
 
@@ -420,7 +472,7 @@ export function getRestorePluginInfo({
   pluginFilesets,
   selectedJobId,
   mergedJobids,
-  mergeJobsets,
+  mergeJobs,
 }) {
   if (!selectedJobId) {
     return null
@@ -435,7 +487,7 @@ export function getRestorePluginInfo({
       return false
     }
 
-    if (mergeJobsets && mergedIds) {
+    if (mergeJobs && mergedIds) {
       return mergedIds.has(String(backup?.jobid ?? ''))
     }
 
@@ -471,7 +523,7 @@ export function getRestorePluginInfo({
     pluginNames: [...new Set(filesetDetails.flatMap(detail => detail.pluginNames))],
     optionKeys: [...new Set(filesetDetails.flatMap(detail => detail.optionKeys))],
     definitions,
-    usesMergedJobs: mergeJobsets
+    usesMergedJobs: mergeJobs
       && relevantBackups.some(backup => String(backup?.jobid ?? '') !== String(selectedJobId)),
   }
 }
