@@ -146,14 +146,6 @@ class Module
                         if (isset($session['config'])) {
                             $class = isset($session['config']['class']) ? $session['config']['class'] : 'Laminas\Session\Config\SessionConfig';
                             $options = isset($session['config']['options']) ? $session['config']['options'] : array();
-                            if (isset($options['name'])) {
-                                // Keep the legacy config fallback for older installations
-                                // that still set the session name in session.config.options.
-                                if (!$sessionName) {
-                                    $sessionName = $options['name'];
-                                }
-                                unset($options['name']);
-                            }
                             $sessionConfig = new $class();
                             $sessionConfig->setOptions($options);
                         }
