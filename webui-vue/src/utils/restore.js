@@ -20,6 +20,7 @@
  */
 
 import { restorePluginHints } from '../data/restorePluginHints.js'
+import { resolveJobLevelCode } from './jobLevels.js'
 
 export function getRestoreBrowserPlaceholder({
   browserError,
@@ -131,6 +132,47 @@ export function buildRestoreSourceQuery(query, {
   }
 
   return nextQuery
+}
+
+export function buildRestoreBackupOption(
+  backup,
+  {
+    formatBytes = value => String(value),
+    filesLabel = 'files',
+  } = {}
+) {
+  const jobid = backup?.jobid ?? ''
+  const name = backup?.name ?? ''
+  const level = backup?.level ?? ''
+  const starttime = backup?.starttime ?? ''
+  const jobbytes = Number(backup?.jobbytes ?? 0)
+  const jobfiles = Number(backup?.jobfiles ?? 0)
+  const secondary = [
+    jobid !== '' ? `#${jobid}` : '',
+    starttime,
+    Number.isFinite(jobbytes) && jobbytes > 0 ? formatBytes(jobbytes) : '',
+    Number.isFinite(jobfiles) && jobfiles > 0 ? `${jobfiles} ${filesLabel}` : '',
+  ].filter(Boolean).join(' · ')
+
+  return {
+    value: jobid,
+    label: name,
+    name,
+    jobid,
+    level,
+    levelCode: resolveJobLevelCode(level),
+    starttime,
+    secondary,
+  }
+}
+
+export function resolveRestoreBackupOption(options, jobid) {
+  if (!Array.isArray(options) || jobid === null || jobid === undefined || jobid === '') {
+    return null
+  }
+
+  const normalizedJobid = String(jobid)
+  return options.find(option => String(option?.value ?? '') === normalizedJobid) ?? null
 }
 
 function extractRestoreFilesetDescription(filesetText) {
