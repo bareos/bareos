@@ -31,6 +31,7 @@ import {
   buildRerunJobCommand,
   buildRunJobCommand,
   buildSetJobEnabledCommand,
+  filterRunnableJobOptions,
   resolvePermittedRunJobDefault,
   encodeJobsLevelFilters,
   encodeJobsStatusFilters,
@@ -232,6 +233,13 @@ describe('jobs filter helpers', () => {
       .toBeNull()
     expect(resolvePermittedRunJobDefault(['LinuxAll'], '  '))
       .toBeNull()
+  })
+
+  it('filters restore jobs from run job options', () => {
+    expect(filterRunnableJobOptions(
+      ['Nightly', 'RestoreCatalog', 'Weekly', 'nightly'],
+      ['RestoreCatalog']
+    )).toEqual(['Nightly', 'Weekly'])
   })
 
   it('adds and removes the status query parameter', () => {

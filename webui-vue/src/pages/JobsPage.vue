@@ -681,6 +681,7 @@ import {
   encodeJobsLevelFilters,
   encodeJobsStatusFilters,
   encodeJobsTypeFilters,
+  filterRunnableJobOptions,
   filterJobsBySearch,
   filterJobsTextOptions,
   normaliseJobId,
@@ -1593,14 +1594,18 @@ const runForm = ref({ job: null, client: null, fileset: null, pool: null, storag
 async function loadRunOptions() {
   try {
     await ensureSingletonTabDirector()
-    const [j, c, f, p, s] = await Promise.all([
+    const [j, restoreJobs, c, f, p, s] = await Promise.all([
       director.call('.jobs'),
+      director.call('.jobs type=R'),
       director.call('.clients'),
       director.call('.filesets'),
       director.call('.pools'),
       director.call('.storage'),
     ])
-    dotJobs.value = directorCollection(j?.jobs).map(x => x.name).sort()
+    dotJobs.value = filterRunnableJobOptions(
+      directorCollection(j?.jobs).map(x => x.name),
+      directorCollection(restoreJobs?.jobs).map(x => x.name)
+    )
     dotClients.value = directorCollection(c?.clients).map(x => x.name).sort()
     dotFilesets.value = directorCollection(f?.filesets).map(x => x.name).sort()
     dotPools.value = directorCollection(p?.pools).map(x => x.name).sort()
