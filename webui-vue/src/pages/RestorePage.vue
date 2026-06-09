@@ -35,6 +35,8 @@
                   <q-select
                     v-model="form.jobid"
                     :options="backupOptions"
+                    option-label="label"
+                    option-value="value"
                     :label="t('Backup Job')"
                     outlined dense emit-value map-options
                     :loading="loadingBackups"
@@ -43,7 +45,59 @@
                     :hint="t('Select a completed backup job')"
                     data-testid="restore-backup-job"
                     @update:model-value="initBrowser"
-                  />
+                  >
+                    <template #selected-item="scope">
+                      <div class="row items-center no-wrap restore-backup-option restore-backup-option--selected">
+                        <template v-if="selectedBackupOption || scope.opt">
+                          <JobLevelBadge
+                            v-if="(selectedBackupOption ?? scope.opt)?.levelCode"
+                            :level="(selectedBackupOption ?? scope.opt).levelCode"
+                            class="q-mr-sm"
+                          />
+                          <q-avatar
+                            v-else
+                            color="grey-6"
+                            text-color="white"
+                            size="24px"
+                            font-size="12px"
+                            class="q-mr-sm"
+                            style="font-weight:700; user-select:none"
+                          >
+                            {{ (selectedBackupOption ?? scope.opt)?.level || '?' }}
+                          </q-avatar>
+                          <div class="column">
+                            <span class="text-body2">{{ (selectedBackupOption ?? scope.opt)?.name || (selectedBackupOption ?? scope.opt)?.label || '' }}</span>
+                            <span class="text-caption text-grey-6">{{ (selectedBackupOption ?? scope.opt)?.secondary || '' }}</span>
+                          </div>
+                        </template>
+                        <span v-else>{{ scope.opt?.label || '' }}</span>
+                      </div>
+                    </template>
+                    <template #option="scope">
+                      <q-item v-bind="scope.itemProps">
+                        <q-item-section avatar>
+                          <JobLevelBadge
+                            v-if="scope.opt?.levelCode"
+                            :level="scope.opt.levelCode"
+                          />
+                          <q-avatar
+                            v-else
+                            color="grey-6"
+                            text-color="white"
+                            size="24px"
+                            font-size="12px"
+                            style="font-weight:700; user-select:none"
+                          >
+                            {{ scope.opt?.level || '?' }}
+                          </q-avatar>
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label>{{ scope.opt?.name || scope.opt?.label || '' }}</q-item-label>
+                          <q-item-label caption>{{ scope.opt?.secondary || '' }}</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </template>
+                  </q-select>
                 <q-checkbox
                   v-model="form.mergeJobsets"
                   :label="t('Include related jobs (Full + Incremental/Differential)')"
@@ -426,6 +480,7 @@ import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes } from '../mock/index.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import {
+  buildRestoreBackupOption,
   canNavigateRestoreBrowser,
   buildRestoreSourceQuery,
   buildRestorePluginFilesetMap,
@@ -437,6 +492,7 @@ import {
   getRestorePluginHints,
   getRestoreBrowserPlaceholder,
   pushRestoreBreadcrumb,
+  resolveRestoreBackupOption,
   resolveRestoreSourceClient,
   resolveRestoreSourceDirector,
   shouldShowRestorePluginOptions,
@@ -444,6 +500,7 @@ import {
 } from '../utils/restore.js'
 import { buildJobDetailsQuery } from '../utils/jobs.js'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
+import JobLevelBadge from '../components/JobLevelBadge.vue'
 import PluginRestoreInfoPanel from '../components/PluginRestoreInfoPanel.vue'
 
 const auth = useAuthStore()
@@ -816,11 +873,11 @@ const loadingBackups = ref(false)
 const pluginFilesets = ref(new Map())
 
 const backupOptions = computed(() =>
-  backups.value.map(b => ({
-    label: `#${b.jobid}  ${b.name}  [${levelLabel(b.level)}]  ${b.starttime}  (${formatBytes(Number(b.jobbytes ?? 0))}, ${b.jobfiles ?? 0} files)`,
-    value: b.jobid,
-  }))
+  backups.value.map(backup => buildRestoreBackupOption(backup, { formatBytes }))
 )
+const selectedBackupOption = computed(() => (
+  resolveRestoreBackupOption(backupOptions.value, form.value.jobid)
+))
 const showPluginOptions = computed(() => shouldShowRestorePluginOptions({
   backups: backups.value,
   selectedJobId: form.value.jobid,
@@ -1231,10 +1288,6 @@ function resetAll() {
   pluginFilesets.value = new Map()
 }
 
-function levelLabel(l) {
-  return l === 'F' ? 'Full' : l === 'I' ? 'Incremental' : l === 'D' ? 'Differential' : l
-}
-
 function formatMtime(ts) {
   if (!ts) return ''
   const d = new Date(ts * 1000)
@@ -1501,6 +1554,18 @@ watch(() => [route.query.client, route.query.director, route.query.jobid], async
 
 .versions-dialog__value--break {
   overflow-wrap: anywhere;
+}
+
+.restore-backup-option {
+  min-width: 0;
+}
+
+.restore-backup-option--selected {
+  max-width: calc(100% - 24px);
+}
+
+.restore-backup-option .column {
+  min-width: 0;
 }
 
 @media (max-width: 599px) {
