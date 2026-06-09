@@ -124,6 +124,7 @@ import {
   resolveClientDetailsJobsOrigin,
   resolveClientsListQuery,
 } from '../utils/clients.js'
+import { quoteDirectorString } from '../utils/directorStrings.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
@@ -203,13 +204,13 @@ async function ensureClientDirector() {
 }
 
 async function loadClient() {
-  const name = route.params.name
+  const name = typeof route.params.name === 'string' ? route.params.name : ''
   await ensureClientDirector()
 
   const [clientRes, jobsRes, showRes] = await Promise.allSettled([
     director.call(`llist clients`),
-    director.call(`list jobs client=${name} reverse`),
-    director.call(`show client=${name}`),
+    director.call(`list jobs client=${quoteDirectorString(name)} reverse`),
+    director.call(`show client=${quoteDirectorString(name)}`),
   ])
   if (clientRes.status === 'fulfilled') {
     const list = directorCollection(clientRes.value?.clients)

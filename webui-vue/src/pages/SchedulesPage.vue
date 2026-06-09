@@ -240,6 +240,7 @@ import {
 } from '../composables/schedulesAggregate.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
+import { quoteDirectorString } from '../utils/directorStrings.js'
 import {
   withJobsSearchQuery,
 } from '../utils/jobs.js'
@@ -339,7 +340,7 @@ async function toggleSchedule(row) {
   togglingName.value = row.scopeKey ?? row.name
   try {
     await ensureScheduleActionDirector(row.director)
-    await director.call(`${action} schedule=${row.name}`)
+    await director.call(`${action} schedule=${quoteDirectorString(row.name)}`)
     await Promise.all([refreshSchedules(), refreshStatus()])
     $q.notify({
       type: 'positive',
@@ -361,7 +362,7 @@ async function toggleJob(row) {
   togglingJob.value = row.jobScopeKey ?? row.job
   try {
     await ensureScheduleActionDirector(row.director)
-    await director.call(`${action} job=${row.job}`)
+    await director.call(`${action} job=${quoteDirectorString(row.job)}`)
     await Promise.all([refreshSchedules(), refreshStatus()])
     await nextTick()
 
