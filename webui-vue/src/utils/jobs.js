@@ -315,6 +315,11 @@ export function resolvePermittedRunJobDefault(options, value) {
     : null
 }
 
+export function filterRunnableJobOptions(jobOptions, restoreJobOptions) {
+  const restoreJobs = new Set(normaliseJobsTextOptions(restoreJobOptions))
+  return normaliseJobsTextOptions(jobOptions).filter(name => !restoreJobs.has(name))
+}
+
 export function buildRunJobCommand({
   job,
   client,
