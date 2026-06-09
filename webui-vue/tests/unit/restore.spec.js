@@ -21,6 +21,7 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  buildRestoreBackupOption,
   buildRestorePluginFilesetDetails,
   buildRestorePluginFilesetMap,
   canNavigateRestoreBrowser,
@@ -35,6 +36,7 @@ import {
   parseRestorePluginDefinition,
   pushRestoreBreadcrumb,
   resolveRestoreSourceClient,
+  resolveRestoreBackupOption,
   resolveRestorePluginHintId,
   resolveRestoreSourceDirector,
   shouldShowRestorePluginOptions,
@@ -182,6 +184,59 @@ describe('restore browser placeholder', () => {
       director: 'prod-a',
       jobid: '42',
     })
+  })
+
+  it('builds compact restore backup selector options with level metadata', () => {
+    expect(buildRestoreBackupOption({
+      jobid: 42,
+      name: 'backup-bareos-fd',
+      level: 'I',
+      starttime: '2026-06-09 10:00:00',
+      jobbytes: 2048,
+      jobfiles: 12,
+    }, {
+      formatBytes: value => `${value} B`,
+    })).toEqual({
+      value: 42,
+      label: 'backup-bareos-fd',
+      name: 'backup-bareos-fd',
+      jobid: 42,
+      level: 'I',
+      levelCode: 'I',
+      starttime: '2026-06-09 10:00:00',
+      secondary: '#42 · 2026-06-09 10:00:00 · 2048 B · 12 files',
+    })
+  })
+
+  it('omits zero-sized secondary restore backup metrics', () => {
+    expect(buildRestoreBackupOption({
+      jobid: 7,
+      name: 'FullBackup',
+      level: 'F',
+      starttime: '2026-06-09 09:00:00',
+      jobbytes: 0,
+      jobfiles: 0,
+    })).toEqual({
+      value: 7,
+      label: 'FullBackup',
+      name: 'FullBackup',
+      jobid: 7,
+      level: 'F',
+      levelCode: 'F',
+      starttime: '2026-06-09 09:00:00',
+      secondary: '#7 · 2026-06-09 09:00:00',
+    })
+  })
+
+  it('resolves the selected restore backup option across string and number job ids', () => {
+    const options = [
+      buildRestoreBackupOption({ jobid: 7, name: 'FullBackup', level: 'F' }),
+      buildRestoreBackupOption({ jobid: 42, name: 'IncBackup', level: 'I' }),
+    ]
+
+    expect(resolveRestoreBackupOption(options, '42')).toEqual(options[1])
+    expect(resolveRestoreBackupOption(options, 7)).toEqual(options[0])
+    expect(resolveRestoreBackupOption(options, '999')).toBeNull()
   })
 
   it('clears restore source query fields when no source is selected', () => {
