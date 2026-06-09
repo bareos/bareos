@@ -8634,6 +8634,7 @@ export const WEBUI_MESSAGES = {
     "November": "November",
     "October": "October",
     "Offline": "Offline",
+    "OK": "OK",
     "One of the related backup jobs in this restore uses a plugin.": "One of the related backup jobs in this restore uses a plugin.",
     "Open Autochanger": "Open Autochanger",
     "Open in new window": "Open in new window",

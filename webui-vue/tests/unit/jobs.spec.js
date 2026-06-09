@@ -32,7 +32,9 @@ import {
   buildRunJobCommand,
   buildSetJobEnabledCommand,
   filterRunnableJobOptions,
+  formatRunWhenPickerDate,
   resolvePermittedRunJobDefault,
+  resolveRunWhenPickerValue,
   encodeJobsLevelFilters,
   encodeJobsStatusFilters,
   encodeJobsTypeFilters,
@@ -240,6 +242,19 @@ describe('jobs filter helpers', () => {
       ['Nightly', 'RestoreCatalog', 'Weekly', 'nightly'],
       ['RestoreCatalog']
     )).toEqual(['Nightly', 'Weekly'])
+  })
+
+  it('formats picker timestamps for the run when field', () => {
+    expect(formatRunWhenPickerDate(new Date('2026-06-09T08:43:18'))).toBe('2026-06-09 08:43:18')
+  })
+
+  it('uses the current run when value for the picker when it matches the expected format', () => {
+    expect(resolveRunWhenPickerValue(' 2026-05-28 12:00:00 ')).toBe('2026-05-28 12:00:00')
+  })
+
+  it('falls back to a generated picker timestamp for free-form run when text', () => {
+    expect(resolveRunWhenPickerValue('tomorrow 7pm', new Date('2026-06-09T08:43:18')))
+      .toBe('2026-06-09 08:43:18')
   })
 
   it('adds and removes the status query parameter', () => {
