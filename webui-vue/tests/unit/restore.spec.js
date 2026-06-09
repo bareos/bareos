@@ -21,6 +21,7 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  buildRestoreBvfsJobidsCommand,
   buildRestoreBackupOption,
   buildRestorePluginFilesetDetails,
   buildRestorePluginFilesetMap,
@@ -33,6 +34,7 @@ import {
   getRestorePluginInfo,
   getRestorePluginHints,
   getRestoreBrowserPlaceholder,
+  normaliseRestoreToggle,
   parseRestorePluginDefinition,
   pushRestoreBreadcrumb,
   resolveRestoreSourceClient,
@@ -178,11 +180,15 @@ describe('restore browser placeholder', () => {
       clientName: 'bareos-fd',
       directorName: 'prod-a',
       jobid: 42,
+      mergeJobs: true,
+      mergeFilesets: false,
     })).toEqual({
       foo: 'bar',
       client: 'bareos-fd',
       director: 'prod-a',
       jobid: '42',
+      mergejobs: '1',
+      mergefilesets: '0',
     })
   })
 
@@ -237,6 +243,27 @@ describe('restore browser placeholder', () => {
     expect(resolveRestoreBackupOption(options, '42')).toEqual(options[1])
     expect(resolveRestoreBackupOption(options, 7)).toEqual(options[0])
     expect(resolveRestoreBackupOption(options, '999')).toBeNull()
+  })
+
+  it('normalizes restore merge toggle query values', () => {
+    expect(normaliseRestoreToggle('1')).toBe(true)
+    expect(normaliseRestoreToggle('false', true)).toBe(false)
+    expect(normaliseRestoreToggle(undefined, true)).toBe(true)
+  })
+
+  it('builds the BVFS jobids command only when related jobs are enabled', () => {
+    expect(buildRestoreBvfsJobidsCommand(42, {
+      mergeJobs: true,
+      mergeFilesets: true,
+    })).toBe('.bvfs_get_jobids jobid=42 all')
+    expect(buildRestoreBvfsJobidsCommand(42, {
+      mergeJobs: true,
+      mergeFilesets: false,
+    })).toBe('.bvfs_get_jobids jobid=42')
+    expect(buildRestoreBvfsJobidsCommand(42, {
+      mergeJobs: false,
+      mergeFilesets: true,
+    })).toBe('')
   })
 
   it('clears restore source query fields when no source is selected', () => {
@@ -362,7 +389,7 @@ describe('restore browser placeholder', () => {
       ],
       selectedJobId: 10,
       mergedJobids: '',
-      mergeJobsets: false,
+      mergeJobs: false,
     })).toBe(true)
   })
 
@@ -374,7 +401,7 @@ describe('restore browser placeholder', () => {
       ],
       selectedJobId: 10,
       mergedJobids: '10,11',
-      mergeJobsets: true,
+      mergeJobs: true,
     })).toBe(true)
   })
 
@@ -400,7 +427,7 @@ describe('restore browser placeholder', () => {
       ]),
       selectedJobId: 10,
       mergedJobids: '',
-      mergeJobsets: false,
+      mergeJobs: false,
     })).toEqual({
       backups: [
         { jobid: 10, fileset: 'PluginFS', pluginjob: true, name: 'backup-plugin' },
@@ -542,7 +569,7 @@ describe('restore browser placeholder', () => {
       ]),
       selectedJobId: 10,
       mergedJobids: '10,11',
-      mergeJobsets: true,
+      mergeJobs: true,
     })?.usesMergedJobs).toBe(true)
   })
 
