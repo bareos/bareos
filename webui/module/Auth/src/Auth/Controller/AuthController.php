@@ -216,8 +216,6 @@ class AuthController extends AbstractActionController
             $bsock->disconnect();
         }
         $this->clearAuthenticationSessionState();
-        // Reset submitted login form data before rendering the form again.
-        $form->setData([]);
         return new ViewModel(
             array(
                 'form' => $form,
