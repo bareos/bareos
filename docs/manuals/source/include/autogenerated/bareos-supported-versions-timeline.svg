@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="601" viewBox="0 0 1120 601"
+data-window-start="2022-12-01" data-window-end="2028-12-01">
+  <defs>
+    <style type="text/css"><![CDATA[
+      .bg { fill: #ffffff; }
+      .title { fill: #123047; font: 700 24px sans-serif; }
+      .tick text { fill: #7b8d9b; font: 14px sans-serif; text-anchor: middle; }
+      .year-label { fill: #4b5d6b; font: 600 14px sans-serif; text-anchor: middle; }
+      .row-label { fill: #4b5d6b; font: 16px sans-serif; text-anchor: end; dominant-baseline: middle; }
+      .grid { stroke: #dde6eb; stroke-width: 1; }
+      .axis { stroke: #96a9b5; stroke-width: 1.2; }
+      .development { fill: #e39a3b; }
+      .supported { fill: #1f8acb; }
+      .current { fill: #4f9f46; }
+      .unsupported { fill: #bcc7cf; }
+      .projected-supported { fill: #8cc8eb; stroke: #1f8acb; stroke-width: 1.2; stroke-dasharray: 5 4; }
+      .projected-current { fill: #9fd18b; stroke: #4f9f46; stroke-width: 1.2; stroke-dasharray: 5 4; }
+      .label { fill: #ffffff; font: 600 15px sans-serif; dominant-baseline: middle; }
+      .small-label { fill: #334854; font: 13px sans-serif; dominant-baseline: middle; }
+      .note { fill: #5c7285; font: 13px sans-serif; }
+    ]]></style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1120" height="601"/>
+  <text class="title" x="40" y="36">Bareos supported versions over time</text>
+  <g id="timeline" transform="translate(220,90)">
+    <g>
+      <text class="year-label" x="5.8" y="-34">2022</text>
+      <text class="year-label" x="80.8" y="-34">2023</text>
+      <text class="year-label" x="219.2" y="-34">2024</text>
+      <text class="year-label" x="357.6" y="-34">2025</text>
+      <text class="year-label" x="495.8" y="-34">2026</text>
+      <text class="year-label" x="634.0" y="-34">2027</text>
+      <text class="year-label" x="766.6" y="-34">2028</text>
+    </g>
+    <g class="tick">
+      <line class="grid" x1="11.7" y1="0" x2="11.7" y2="360"/>
+      <text x="11.7" y="-12">Jan</text>
+      <line class="grid" x1="80.3" y1="0" x2="80.3" y2="360" stroke-dasharray="3 3"/>
+      <text x="80.3" y="-12">Jul</text>
+      <line class="grid" x1="149.9" y1="0" x2="149.9" y2="360"/>
+      <text x="149.9" y="-12">Jan</text>
+      <line class="grid" x1="218.9" y1="0" x2="218.9" y2="360" stroke-dasharray="3 3"/>
+      <text x="218.9" y="-12">Jul</text>
+      <line class="grid" x1="288.5" y1="0" x2="288.5" y2="360"/>
+      <text x="288.5" y="-12">Jan</text>
+      <line class="grid" x1="357.1" y1="0" x2="357.1" y2="360" stroke-dasharray="3 3"/>
+      <text x="357.1" y="-12">Jul</text>
+      <line class="grid" x1="426.7" y1="0" x2="426.7" y2="360"/>
+      <text x="426.7" y="-12">Jan</text>
+      <line class="grid" x1="495.3" y1="0" x2="495.3" y2="360" stroke-dasharray="3 3"/>
+      <text x="495.3" y="-12">Jul</text>
+      <line class="grid" x1="564.9" y1="0" x2="564.9" y2="360"/>
+      <text x="564.9" y="-12">Jan</text>
+      <line class="grid" x1="633.5" y1="0" x2="633.5" y2="360" stroke-dasharray="3 3"/>
+      <text x="633.5" y="-12">Jul</text>
+      <line class="grid" x1="703.2" y1="0" x2="703.2" y2="360"/>
+      <text x="703.2" y="-12">Jan</text>
+      <line class="grid" x1="772.1" y1="0" x2="772.1" y2="360" stroke-dasharray="3 3"/>
+      <text x="772.1" y="-12">Jul</text>
+    </g>
+
+    <line class="axis" x1="0" y1="360" x2="830" y2="360"/>
+
+    <g>
+      <line class="grid" x1="0" y1="24" x2="830" y2="24"/>
+      <text class="row-label" x="-14" y="41.0">master</text>
+      <rect class="development" x="0" y="24" width="830" height="34" rx="4"/>
+      <text class="label" x="14" y="41.0">development</text>
+    </g>
+
+    <g>
+      <line class="grid" x1="0" y1="80" x2="830" y2="80"/>
+      <text class="row-label" x="-14" y="97.0">Bareos 22</text>
+      <rect class="current" x="7.6" y="80" width="135.20000000000002" height="34" rx="4"/>
+      <text class="label" x="21.6" y="97.0">current</text>
+      <rect class="supported" x="142.8" y="80" width="272.2" height="34" rx="4"/>
+      <text class="label" x="156.8" y="97.0">supported</text>
+      <rect class="unsupported" x="415.0" y="80" width="415.0" height="34" rx="4"/>
+      <text class="small-label" x="429.0" y="97.0">unsupported</text>
+    </g>
+
+    <g>
+      <line class="grid" x1="0" y1="136" x2="830" y2="136"/>
+      <text class="row-label" x="-14" y="153.0">Bareos 23</text>
+      <rect class="current" x="142.8" y="136" width="139.7" height="34" rx="4"/>
+      <text class="label" x="156.8" y="153.0">current</text>
+      <rect class="supported" x="282.5" y="136" width="270.70000000000005" height="34" rx="4"/>
+      <text class="label" x="296.5" y="153.0">supported</text>
+      <rect class="unsupported" x="553.2" y="136" width="276.79999999999995" height="34" rx="4"/>
+      <text class="small-label" x="567.2" y="153.0">unsupported</text>
+    </g>
+
+    <g>
+      <line class="grid" x1="0" y1="192" x2="830" y2="192"/>
+      <text class="row-label" x="-14" y="209.0">Bareos 24</text>
+      <rect class="current" x="282.5" y="192" width="132.5" height="34" rx="4"/>
+      <text class="label" x="296.5" y="209.0">current</text>
+      <rect class="supported" x="415.0" y="192" width="276.4" height="34" rx="4"/>
+      <text class="label" x="429.0" y="209.0">supported</text>
+      <rect class="unsupported" x="691.4" y="192" width="138.60000000000002" height="34" rx="4"/>
+      <text class="small-label" x="705.4" y="209.0">unsupported</text>
+    </g>
+
+    <g>
+      <line class="grid" x1="0" y1="248" x2="830" y2="248"/>
+      <text class="row-label" x="-14" y="265.0">Bareos 25</text>
+      <rect class="current" x="415.0" y="248" width="138.20000000000005" height="34" rx="4"/>
+      <text class="label" x="429.0" y="265.0">current</text>
+      <rect class="supported" x="553.2" y="248" width="276.4" height="34" rx="4"/>
+      <text class="label" x="567.2" y="265.0">supported</text>
+      <rect class="unsupported" x="829.6" y="248" width="0.39999999999997726" height="34" rx="4"/>
+    </g>
+
+    <g>
+      <line class="grid" x1="0" y1="304" x2="830" y2="304"/>
+      <text class="row-label" x="-14" y="321.0">Bareos 26</text>
+      <rect class="projected-current" x="553.2" y="304" width="138.19999999999993" height="34" rx="4"/>
+      <text class="small-label" x="567.2" y="321.0">current</text>
+      <rect class="projected-supported" x="691.4" y="304" width="138.60000000000002" height="34" rx="4"/>
+      <text class="small-label" x="705.4" y="321.0">supported</text>
+    </g>
+
+  </g>
+
+  <g id="timeline-legend" transform="translate(40,486)">
+    <rect class="development" x="0" y="0" width="18" height="18" rx="3"/>
+    <text class="note" x="26" y="14">development branch</text>
+    <rect class="supported" x="170" y="0" width="18" height="18" rx="3"/>
+    <text class="note" x="196" y="14">supported major release</text>
+    <rect class="current" x="405" y="0" width="18" height="18" rx="3"/>
+    <text class="note" x="431" y="14">newest supported major</text>
+    <rect class="projected-supported" x="662" y="0" width="18" height="18" rx="3"/>
+    <text class="note" x="688" y="14">future state</text>
+  </g>
+
+  <text class="note" x="40" y="531">
+    Actual release starts from GitHub releases: 22.0.0 (2022-12-21), 23.0.0 (2023-12-13), 24.0.0 (2024-12-16), 25.0.0 (2025-12-01).
+  </text>
+  <text class="note" x="40" y="553">
+    Future versions are projections based on the configured major-release interval.
+  </text>
+</svg>

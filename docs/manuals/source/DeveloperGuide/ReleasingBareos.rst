@@ -56,6 +56,10 @@ Whenever you release a new major version you will be releasing more or less the 
 
 Before branching, add the new major release to :file:`SECURITY.md`.
 You should also mark no longer supported versions as such.
+If the release changes the supported-major-version timeline, update
+:file:`docs/manuals/source/data/bareos-supported-versions.json` so the
+generated "Bareos supported versions over time" chart reflects the new
+release and support status.
 
 To allow the splitting of the development (i.e. continue working on master, but allowing to work on the newly released version, too) you will have to carry out a few additional steps.
 
