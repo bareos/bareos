@@ -92,6 +92,7 @@ import {
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildDirectorOptions } from '../utils/director.js'
+import { toUserVisibleDirectorError } from '../utils/directorErrors.js'
 import {
   loginProxySession,
   SESSION_AUTH_PASSWORD,
@@ -148,7 +149,10 @@ async function doLogin() {
       director: directorRef.value,
     })
   } catch (error) {
-    errorMsg.value = error?.message || t('Could not connect to director. Is the proxy running?')
+    errorMsg.value = toUserVisibleDirectorError(error?.message, {
+      authenticationMessage: t('Authentication failed'),
+      connectionMessage: t('Could not connect to director. Is the proxy running?'),
+    })
     loading.value = false
     return
   }
@@ -172,7 +176,10 @@ async function doLogin() {
   })
 
   if (!ok) {
-    errorMsg.value = director.errorMsg || t('Could not connect to director. Is the proxy running?')
+    errorMsg.value = toUserVisibleDirectorError(director.errorMsg, {
+      authenticationMessage: t('Authentication failed'),
+      connectionMessage: t('Could not connect to director. Is the proxy running?'),
+    })
     loading.value = false
     return
   }

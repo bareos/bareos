@@ -150,6 +150,7 @@ import {
   resolveClientsScopeDirector,
   withClientsScopeDirectorQuery,
 } from '../utils/clients.js'
+import { quoteDirectorString } from '../utils/directorStrings.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -338,8 +339,8 @@ async function toggleEnabled(client) {
   try {
     await switchToClientDirector(client)
     const cmd = client.enabled
-      ? `disable client=${client.name}`
-      : `enable client=${client.name}`
+      ? `disable client=${quoteDirectorString(client.name)}`
+      : `enable client=${quoteDirectorString(client.name)}`
     await director.call(cmd)
     await refresh()
   } finally {
@@ -355,7 +356,9 @@ async function showStatus(client) {
   statusDialog.value = { open: true, client: client.name, loading: true, text: '' }
   try {
     await switchToClientDirector(client)
-    const result = await director.rawCall(`status client=${client.name}`)
+    const result = await director.rawCall(
+      `status client=${quoteDirectorString(client.name)}`
+    )
     statusDialog.value.text = result
   } catch (e) {
     statusDialog.value.text = `${t('Error')}: ${e.message ?? e}`

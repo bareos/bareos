@@ -215,7 +215,7 @@
         {{ dirStatusLabel }}
         <span style="opacity:.7"> · {{ connectionEndpoint }}</span>
       </span>
-      <span v-if="director.errorMsg" class="text-negative q-ml-xs">· {{ director.errorMsg }}</span>
+      <span v-if="directorStatusError" class="text-negative q-ml-xs">· {{ directorStatusError }}</span>
       <span style="opacity:.4">|</span>
       <q-icon name="dns" size="13px" style="opacity:.7" />
       <span>{{ scopeLabel }}</span>
@@ -246,6 +246,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useConsoleSessionsStore } from '../stores/consoleSessions.js'
 import { useDirectorStore } from '../stores/director.js'
 import { DIRECTOR_WS_URL } from '../utils/directorCommandSocket.js'
+import { toUserVisibleDirectorError } from '../utils/directorErrors.js'
 import { logoutProxySession } from '../utils/sessionApi.js'
 import {
   RELEASE_INFO_PAGE_URL,
@@ -270,6 +271,14 @@ const connectionEndpoint = computed(() => {
     return window.location.host
   }
 })
+const directorStatusError = computed(() => (
+  director.errorMsg
+    ? toUserVisibleDirectorError(director.errorMsg, {
+      authenticationMessage: t('Authentication failed'),
+      connectionMessage: t('Could not connect to director.'),
+    })
+    : ''
+))
 
 const currentDirector = computed(() => auth.user?.director || settings.directorName || '')
 const {
