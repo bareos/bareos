@@ -488,7 +488,23 @@
               <q-select v-model="runForm.storage" :options="dotStorages" :label="t('Storage')"   outlined dense clearable />
               <q-select v-model="runForm.level"   :options="levels"      :label="t('Level')"     outlined dense />
               <q-input  v-model="runForm.when"                           :label="t('When (optional)')" outlined dense
-                        :placeholder="t('YYYY-MM-DD HH:MM:SS')" />
+                        :placeholder="t('YYYY-MM-DD HH:MM:SS')">
+                <template #append>
+                  <q-icon name="event" class="cursor-pointer">
+                    <q-popup-proxy @before-show="prepareRunWhenPicker">
+                      <div class="q-pa-md column q-gutter-md">
+                        <q-date v-model="runWhenPickerValue" mask="YYYY-MM-DD HH:mm:ss" />
+                        <q-time v-model="runWhenPickerValue" mask="YYYY-MM-DD HH:mm:ss" format24h with-seconds />
+                        <div class="row justify-end q-gutter-sm">
+                          <q-btn flat no-caps :label="t('Clear')" v-close-popup @click="clearRunWhen" />
+                          <q-btn flat no-caps :label="t('Cancel')" v-close-popup />
+                          <q-btn color="primary" no-caps :label="t('OK')" v-close-popup @click="applyRunWhenPicker" />
+                        </div>
+                      </div>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
               <q-input  v-model.number="runForm.priority" type="number" :label="t('Priority')" outlined dense style="max-width:140px" />
               <div>
                  <q-btn data-testid="run-job-submit" type="submit" color="primary" :label="t('Run Job')" icon="play_arrow"
@@ -684,12 +700,14 @@ import {
   filterRunnableJobOptions,
   filterJobsBySearch,
   filterJobsTextOptions,
+  formatRunWhenPickerDate,
   normaliseJobId,
   normaliseJobsSearchTerm,
   normaliseJobsTextOptions,
   normaliseJobsTextFilter,
   paginateJobs,
   resolvePermittedRunJobDefault,
+  resolveRunWhenPickerValue,
   resolveJobsClientQuery,
   resolveJobsJobQuery,
   resolveJobsLevelFilters,
@@ -1590,6 +1608,19 @@ const levels      = ['Full', 'Incremental', 'Differential']
 const runLoading  = ref(false)
 
 const runForm = ref({ job: null, client: null, fileset: null, pool: null, storage: null, level: 'Incremental', when: '', priority: 10 })
+const runWhenPickerValue = ref(formatRunWhenPickerDate(new Date()))
+
+function prepareRunWhenPicker() {
+  runWhenPickerValue.value = resolveRunWhenPickerValue(runForm.value.when)
+}
+
+function applyRunWhenPicker() {
+  runForm.value.when = runWhenPickerValue.value
+}
+
+function clearRunWhen() {
+  runForm.value.when = ''
+}
 
 async function loadRunOptions() {
   try {

@@ -320,6 +320,33 @@ export function filterRunnableJobOptions(jobOptions, restoreJobOptions) {
   return normaliseJobsTextOptions(jobOptions).filter(name => !restoreJobs.has(name))
 }
 
+export function formatRunWhenPickerDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  return [
+    date.getFullYear().toString().padStart(4, '0'),
+    (date.getMonth() + 1).toString().padStart(2, '0'),
+    date.getDate().toString().padStart(2, '0'),
+  ].join('-') + ' ' + [
+    date.getHours().toString().padStart(2, '0'),
+    date.getMinutes().toString().padStart(2, '0'),
+    date.getSeconds().toString().padStart(2, '0'),
+  ].join(':')
+}
+
+export function resolveRunWhenPickerValue(value, fallbackDate = new Date()) {
+  if (typeof value === 'string') {
+    const normalizedValue = value.trim()
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(normalizedValue)) {
+      return normalizedValue
+    }
+  }
+
+  return formatRunWhenPickerDate(fallbackDate)
+}
+
 export function buildRunJobCommand({
   job,
   client,
