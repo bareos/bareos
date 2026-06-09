@@ -145,9 +145,12 @@ ProxyAuthSessionStoreImpl& GetStore()
 
 std::string BuildCookie(std::string_view session_id, bool secure, bool expired)
 {
-  std::string cookie = std::string(kProxySessionCookieName) + "=";
+  std::string cookie;
+  cookie.reserve(kProxySessionCookieName.size() + session_id.size() + 64);
+  cookie.append(kProxySessionCookieName);
+  cookie.push_back('=');
   if (!expired) {
-    cookie += std::string(session_id);
+    cookie.append(session_id);
   }
   cookie += "; Path=/; HttpOnly; SameSite=Strict";
   if (secure) { cookie += "; Secure"; }
