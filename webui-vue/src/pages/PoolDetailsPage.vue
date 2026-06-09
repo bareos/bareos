@@ -208,6 +208,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
+import { quoteDirectorString } from '../utils/directorStrings.js'
 import { formatNumber } from '../utils/locales.js'
 import {
   buildPoolVolumeDetailsQuery,
@@ -313,8 +314,8 @@ async function loadPool() {
   await ensurePoolDirector()
 
   const [poolRes, volRes] = await Promise.all([
-    director.call(`list pool=${poolName.value}`),
-    director.call(`llist volumes pool=${poolName.value}`),
+    director.call(`list pool=${quoteDirectorString(poolName.value)}`),
+    director.call(`llist volumes pool=${quoteDirectorString(poolName.value)}`),
   ])
   const pools = poolRes?.pools ?? []
   const rawPool = Array.isArray(pools) ? pools[0] : Object.values(pools)[0]
@@ -370,8 +371,8 @@ async function pruneSelectedVolumes() {
   pruneSelectedLoading.value = true
   const selectedNames = selectedPrunableVolumes.value.map(volume => volume.name)
   const command = [
-    `prune volume pool=${poolName.value}`,
-    ...selectedNames.map(name => `volume=${name}`),
+    `prune volume pool=${quoteDirectorString(poolName.value)}`,
+    ...selectedNames.map(name => `volume=${quoteDirectorString(name)}`),
     'yes',
   ].join(' ')
 

@@ -331,6 +331,7 @@ import {
   resolveStoragesScopeDirector,
   withStoragesScopeDirectorQuery,
 } from '../utils/storagesRoute.js'
+import { quoteDirectorString } from '../utils/directorStrings.js'
 import { buildPoolDetailsQuery } from '../utils/pools.js'
 import { buildVolumeDetailsQuery, volumeHasEncryptionKey } from '../utils/volumes.js'
 import AutochangerPage from './AutochangerPage.vue'
@@ -612,7 +613,9 @@ async function reloadStorageStatus(storage) {
   storageStatusDlg.value.error   = null
   try {
     await switchToRowDirector(storage)
-    const r = await director.rawCall(`status storage=${storage.name}`)
+    const r = await director.rawCall(
+      `status storage=${quoteDirectorString(storage.name)}`
+    )
     storageStatusDlg.value.text = r
   } catch (e) {
     storageStatusDlg.value.error = e.message
