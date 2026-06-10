@@ -39,6 +39,7 @@
 #include "dird/ua_purge.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "dird/next_vol.h"
 
 #include <algorithm>
 
@@ -790,7 +791,8 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
   DbLocker _{ua->db};
 
   /* Prune only Volumes with status "Full", or "Used" */
-  if (bstrcmp(mr->VolStatus, "Full") || bstrcmp(mr->VolStatus, "Used")) {
+  if (bstrcmp(mr->VolStatus, "Full") || bstrcmp(mr->VolStatus, "Used")
+      || HasVolumeExpired(ua->jcr, mr)) {
     Dmsg2(050, "get prune list MediaId=%d Volume %s\n", (int)mr->MediaId,
           mr->VolumeName);
 
