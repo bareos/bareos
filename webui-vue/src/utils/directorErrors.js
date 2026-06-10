@@ -43,5 +43,14 @@ export function toUserVisibleDirectorError(
     return authenticationMessage
   }
 
-  return connectionMessage
+  if (
+    lower.includes('cannot connect to proxy')
+    || lower.includes('timed out while connecting')
+    || lower.includes('could not connect to director')
+    || lower.includes('ws error')
+  ) {
+    return connectionMessage
+  }
+
+  return normalized
 }

@@ -41,6 +41,12 @@ describe('toUserVisibleDirectorError', () => {
       .toBe('Could not connect to director.')
   })
 
+  it('preserves unexpected director errors', () => {
+    expect(
+      toUserVisibleDirectorError('Director resource "bareos-dir" is not configured')
+    ).toBe('Director resource "bareos-dir" is not configured')
+  })
+
   it('uses the provided fallback messages', () => {
     expect(
       toUserVisibleDirectorError('', {
