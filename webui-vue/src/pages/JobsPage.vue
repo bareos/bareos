@@ -677,6 +677,7 @@ import {
   sortJobsByPagination,
   usesDefaultJobsSorting,
 } from '../composables/jobsAggregate.js'
+import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
