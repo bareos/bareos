@@ -736,6 +736,10 @@ static inline void do_vixdisklib_create(const char* key,
   createParams.capacity = (absolute_disk_length / VIXDISKLIB_SECTOR_SIZE);
   if (disktype) {
     createParams.diskType = lookup_disktype();
+  } else if (absolute_disk_length
+             > (uint64_t)2 * 1024 * 1024 * 1024 * 1024ULL) {
+    // >2TiB requires split sparse to avoid 2TB monolithic VMDK limits
+    createParams.diskType = VIXDISKLIB_DISK_SPLIT_SPARSE;
   } else {
     createParams.diskType = VIXDISKLIB_DISK_MONOLITHIC_SPARSE;
   }

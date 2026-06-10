@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: clarify mssql plugin options [PR #2653]
 - dedupable: remove error on flush [PR #2649]
 - filed: log that WIN32 streams are not supported on non-Windows OS [PR #2657]
+- VMware Plugin: Fix local vmdk restore > 2TB [PR #2687]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2309,4 +2310,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2671]: https://github.com/bareos/bareos/pull/2671
 [PR #2681]: https://github.com/bareos/bareos/pull/2681
 [PR #2684]: https://github.com/bareos/bareos/pull/2684
+[PR #2687]: https://github.com/bareos/bareos/pull/2687
 [unreleased]: https://github.com/bareos/bareos/tree/master
