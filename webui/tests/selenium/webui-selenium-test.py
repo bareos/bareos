@@ -257,6 +257,28 @@ class SeleniumTest(unittest.TestCase):
         self.login()
         self.logout()
 
+    def test_login_after_failed_login(self):
+        driver = self.driver
+        driver.get(self.base_url + "/auth/login")
+
+        self.enter_input("consolename", self.username)
+        self.enter_input("password", self.password + "-wrong")
+        Select(self.wait_for_presence(By.ID, "locale")).select_by_visible_text(
+            "English"
+        )
+        self.wait_and_click(By.ID, "submit")
+        self.wait_for_presence(By.XPATH, '//div[@role="alert"]')
+
+        self.enter_input("consolename", self.username)
+        self.enter_input("password", self.password)
+        Select(self.wait_for_presence(By.ID, "locale")).select_by_visible_text(
+            "English"
+        )
+        self.wait_and_click(By.ID, "submit")
+        self.wait_for_spinner_absence()
+        self.wait_for_presence(By.ID, "menu-topnavbar-dashboard")
+        self.logout()
+
     def test_client_link_on_dashboard(self):
         self.login()
         self.select_navbar_element("dashboard")

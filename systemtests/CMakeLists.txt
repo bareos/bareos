@@ -330,6 +330,7 @@ message(STATUS "Looking for webui test requirements ...")
 # Admin selenium test method names (without the "test_" prefix). All run in a
 # single director instance under the webui:admin ctest entry.
 set(ADMIN_WEBUI_SELENIUM_TESTNAMES
+    "login_after_failed_login"
     "client_link_on_dashboard"
     "rerun_job"
     "restore"
@@ -398,23 +399,19 @@ if(NOT ENABLE_WEBUI_SELENIUM_TEST)
     set_tests_properties(
       ${WEBUI_TEST_PREFIX}${profile} PROPERTIES DISABLED true
     )
-    message(STATUS "Disabled test: ${WEBUI_TEST_PREFIX}${profile}")
+    message(
+      STATUS "⛔ ${WEBUI_TEST_PREFIX}${profile} (baseport=${BASEPORT}, SKIPPED)"
+    )
   endforeach()
 else()
   # Helper macro: register one merged webui ctest test for the given profile.
   # All test method names in testnames_var are run in a single Bareos director
   # and PHP server instance.
   macro(register_webui_profile_test profile testnames_var timeout)
-    set(_test_list "")
-    foreach(_name ${${testnames_var}})
-      list(APPEND _test_list "SeleniumTest.test_${_name}")
-    endforeach()
-    list(JOIN _test_list " " BAREOS_WEBUI_TESTS)
-
     set(TEST_NAME "${profile}")
     set(BAREOS_WEBUI_PROFILE "${profile}")
-    set(BAREOS_WEBUI_TESTNAME "")
-    message(STATUS "Configuring test: ${WEBUI_TEST_PREFIX}${TEST_NAME}")
+
+    message(STATUS "✓ ${WEBUI_TEST_PREFIX}${TEST_NAME} (baseport=${BASEPORT})")
 
     prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
     prepare_testdir_for_daemon_run()
@@ -436,14 +433,55 @@ else()
     configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
     configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
 
-    add_test(
-      NAME "${WEBUI_TEST_PREFIX}${TEST_NAME}"
-      COMMAND ${tests_dir}/${TEST_NAME}/testrunner
-      WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
+    add_systemtest(
+      ${WEBUI_TEST_PREFIX}${TEST_NAME}:setup
+      ${tests_dir}/${TEST_NAME}/test-setup
     )
     set_tests_properties(
-      ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT ${timeout} COST 1.0
+      "${WEBUI_TEST_PREFIX}${TEST_NAME}:setup"
+      PROPERTIES FIXTURES_SETUP "${WEBUI_TEST_PREFIX}${TEST_NAME}-fixture"
     )
+    add_systemtest(
+      ${WEBUI_TEST_PREFIX}${TEST_NAME}:create-backup
+      ${tests_dir}/${TEST_NAME}/testrunner-create-backup
+    )
+    set_tests_properties(
+      "${WEBUI_TEST_PREFIX}${TEST_NAME}:create-backup"
+      PROPERTIES FIXTURES_REQUIRED "${WEBUI_TEST_PREFIX}${TEST_NAME}-fixture"
+                 FIXTURES_SETUP
+                 "${WEBUI_TEST_PREFIX}${TEST_NAME}:backup-fixture"
+    )
+
+    foreach(BAREOS_WEBUI_TESTNAME ${${testnames_var}})
+      configure_file(
+        "tests/webui-common/testrunner.in"
+        "tests/${TEST_NAME}/testrunner-${BAREOS_WEBUI_TESTNAME}" @ONLY
+      )
+
+      add_systemtest(
+        ${WEBUI_TEST_PREFIX}${TEST_NAME}:${BAREOS_WEBUI_TESTNAME}
+        ${tests_dir}/${TEST_NAME}/testrunner-${BAREOS_WEBUI_TESTNAME}
+      )
+
+      set_tests_properties(
+        "${WEBUI_TEST_PREFIX}${TEST_NAME}:${BAREOS_WEBUI_TESTNAME}"
+        PROPERTIES
+          FIXTURES_REQUIRED
+          "${WEBUI_TEST_PREFIX}${TEST_NAME}:backup-fixture;${WEBUI_TEST_PREFIX}${TEST_NAME}-fixture"
+          RESOURCE_LOCK
+          "${WEBUI_TEST_PREFIX}${TEST_NAME}-lock"
+      )
+    endforeach()
+
+    add_systemtest(
+      ${WEBUI_TEST_PREFIX}${TEST_NAME}:cleanup
+      ${tests_dir}/${TEST_NAME}/test-cleanup
+    )
+    set_tests_properties(
+      "${WEBUI_TEST_PREFIX}${TEST_NAME}:cleanup"
+      PROPERTIES FIXTURES_CLEANUP "${WEBUI_TEST_PREFIX}${TEST_NAME}-fixture"
+    )
+
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endmacro()
 

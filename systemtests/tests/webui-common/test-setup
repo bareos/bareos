@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,7 +19,37 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-runner_name="$(basename "$0")"
-runner_tmp="${tmp}/${runner_name}"
-mkdir -p "${runner_tmp}"
-rm -rf "${runner_tmp}"/*
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}/functions"
+
+"${BAREOS_SCRIPTS_DIR}/cleanup"
+"${BAREOS_SCRIPTS_DIR}/setup"
+
+# Fill ${BackupDirectory} with data.
+setup_data
+
+bin/bareos start
+bin/bareos status
+
+"${BAREOS_SCRIPTS_DIR}/webui.sh" >"$tmp/php.out" 2>&1 &
+PHP_PID=$!
+
+# make sure php actually started
+sleep 0.2
+if ! kill -0 "${PHP_PID}" 2>/dev/null; then
+  echo "php failed to start"
+  cat "${tmp}/php.out"
+  exit 2
+fi
+
+echo "export PHP_PID=${PHP_PID}" >"${PHP_PID_FILE}"

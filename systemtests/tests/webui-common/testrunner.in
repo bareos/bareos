@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,7 +19,30 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-runner_name="$(basename "$0")"
-runner_tmp="${tmp}/${runner_name}"
-mkdir -p "${runner_tmp}"
-rm -rf "${runner_tmp}"/*
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}/functions"
+
+# Fill ${BackupDirectory} with data.
+setup_data
+
+start_test
+
+check_php_is_running
+
+# run tests
+
+if ! ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/webui/tests/selenium/webui-selenium-test.py -v "SeleniumTest.test_@BAREOS_WEBUI_TESTNAME@" >>"${runner_tmp}/selenium.out" 2>&1; then
+  set_error "$(cat "${runner_tmp}/selenium.out")"
+fi
+
+end_test

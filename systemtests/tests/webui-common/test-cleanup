@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,7 +19,21 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-runner_name="$(basename "$0")"
-runner_tmp="${tmp}/${runner_name}"
-mkdir -p "${runner_tmp}"
-rm -rf "${runner_tmp}"/*
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}/functions"
+
+bin/bareos stop
+
+if [ -f "${PHP_PID_FILE}" ]; then
+  kill "${PHP_PID}"
+  rm "${PHP_PID_FILE}"
+fi
+
+"${BAREOS_SCRIPTS_DIR}/cleanup"
