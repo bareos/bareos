@@ -251,9 +251,11 @@ test('keeps the console session when navigating away and back', async ({
   await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
 
-test('keeps the login after a page reload', async ({ page }) => {
+test('restores the proxy-backed login after a page reload', async ({ page }) => {
   await login(page)
 
+  // Reload clears the SPA state; /api/session must restore the proxy-backed
+  // login from the session cookie so users stay signed in.
   await page.reload()
   await page.waitForURL(/#\/dashboard$/)
   await expectConnected(page)
