@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - mssqlvdi: set default for serveraddress+instance on restore [PR #879]
 - docs: clarify mssql plugin options [PR #2653]
 - dedupable: remove error on flush [PR #2649]
+- filed: log that WIN32 streams are not supported on non-Windows OS [PR #2657]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2300,6 +2301,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2642]: https://github.com/bareos/bareos/pull/2642
 [PR #2649]: https://github.com/bareos/bareos/pull/2649
 [PR #2653]: https://github.com/bareos/bareos/pull/2653
+[PR #2657]: https://github.com/bareos/bareos/pull/2657
 [PR #2663]: https://github.com/bareos/bareos/pull/2663
 [PR #2665]: https://github.com/bareos/bareos/pull/2665
 [PR #2671]: https://github.com/bareos/bareos/pull/2671
