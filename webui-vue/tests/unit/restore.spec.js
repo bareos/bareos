@@ -29,6 +29,7 @@ import {
   buildRestoreSourceQuery,
   decorateRestoreBackupsWithPluginJobs,
   dedupeRestoreVersions,
+  getRestoreVersionsLookupJobId,
   filterRestoreVersionsByJobids,
   filterRestoreSourceClients,
   getAllRestorePluginHints,
@@ -616,5 +617,17 @@ describe('restore browser placeholder', () => {
       { fileid: 10, jobid: 1 },
       { fileid: 12, jobid: 2 },
     ])
+  })
+
+  it('uses the selected job id for version lookups when available', () => {
+    expect(getRestoreVersionsLookupJobId(42, '1,2,3')).toBe('42')
+  })
+
+  it('falls back to the first merged job id for version lookups', () => {
+    expect(getRestoreVersionsLookupJobId(null, ' 10,11,12')).toBe('10')
+  })
+
+  it('uses zero for version lookups when no job ids are available', () => {
+    expect(getRestoreVersionsLookupJobId('', '')).toBe('0')
   })
 })

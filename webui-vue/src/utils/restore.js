@@ -578,3 +578,20 @@ export function filterRestoreVersionsByJobids(versions, jobids) {
 
   return dedupedVersions.filter(version => allowedJobIds.has(String(version?.jobid ?? '').trim()))
 }
+
+export function getRestoreVersionsLookupJobId(selectedJobId, mergedJobids) {
+  if (selectedJobId !== null && selectedJobId !== undefined && selectedJobId !== '') {
+    return String(selectedJobId).trim()
+  }
+
+  if (typeof mergedJobids !== 'string') {
+    return '0'
+  }
+
+  const firstMergedJobId = mergedJobids
+    .split(',')
+    .map(jobid => String(jobid ?? '').trim())
+    .find(Boolean)
+
+  return firstMergedJobId || '0'
+}
