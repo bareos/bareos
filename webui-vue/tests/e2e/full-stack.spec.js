@@ -193,7 +193,7 @@ test('navigates through client, pool, and volume detail pages', async ({
   await expect(page.getByText('Volume Properties', { exact: true })).toBeVisible()
 })
 
-test('covers schedules and director tabs through the real director connection', async ({
+test('covers schedules and director tabs through the director connection', async ({
   page,
 }) => {
   await login(page)
