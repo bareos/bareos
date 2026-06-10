@@ -83,7 +83,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -118,6 +118,7 @@ const password  = ref('')
 const locale    = ref(settings.locale)
 const loading   = ref(false)
 const errorMsg  = ref(null)
+const LOGIN_CONNECT_TIMEOUT_MS = 15000
 const hasAvailableDirectors = computed(() => director.availableDirectors.length > 0)
 const directorOptions = computed(() => (
   buildDirectorOptions({
@@ -157,25 +158,13 @@ async function doLogin() {
     return
   }
 
-  director.connect({
-    username: username.value,
-    password: SESSION_AUTH_PASSWORD,
-    director: directorRef.value,
-  })
-
-  // Wait up to 8 s for auth result
-  const ok = await new Promise((resolve) => {
-    const stop = watch(
-      () => director.status,
-      (s) => {
-        if (s === 'connected')   { stop(); resolve(true)  }
-        if (s === 'error')       { stop(); resolve(false) }
-      }
-    )
-    setTimeout(() => { stop(); resolve(false) }, 8000)
-  })
-
-  if (!ok) {
+  try {
+    await director.connectAndWait({
+      username: username.value,
+      password: SESSION_AUTH_PASSWORD,
+      director: directorRef.value,
+    }, LOGIN_CONNECT_TIMEOUT_MS)
+  } catch {
     errorMsg.value = toUserVisibleDirectorError(director.errorMsg, {
       authenticationMessage: t('Authentication failed'),
       connectionMessage: t('Could not connect to director. Is the proxy running?'),
