@@ -50,6 +50,8 @@ async function login(
     shouldSucceed = true,
   } = {}
 ) {
+  const loginError = page.locator('[data-testid="login-error"]')
+
   await page.goto('/')
   await expect(page.locator('[data-testid="login-form"]')).toBeVisible()
   await page.getByLabel('Username').fill(loginUsername)
@@ -62,7 +64,13 @@ async function login(
     return
   }
 
-  await page.waitForURL(/#\/dashboard$/)
+  await Promise.race([
+    page.waitForURL(/#\/dashboard$/),
+    loginError.waitFor({ state: 'visible' }).then(async () => {
+      const message = (await loginError.textContent())?.trim()
+      throw new Error(`Login failed: ${message || 'Unknown error'}`)
+    }),
+  ])
   await expectConnected(page)
 }
 
