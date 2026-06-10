@@ -555,3 +555,26 @@ export function dedupeRestoreVersions(versions) {
     return true
   })
 }
+
+function normaliseRestoreVersionJobIds(jobids) {
+  const rawJobIds = Array.isArray(jobids)
+    ? jobids
+    : (typeof jobids === 'string' ? jobids.split(',') : [])
+
+  return new Set(
+    rawJobIds
+      .map(jobid => String(jobid ?? '').trim())
+      .filter(Boolean)
+  )
+}
+
+export function filterRestoreVersionsByJobids(versions, jobids) {
+  const dedupedVersions = dedupeRestoreVersions(versions)
+  const allowedJobIds = normaliseRestoreVersionJobIds(jobids)
+
+  if (allowedJobIds.size === 0) {
+    return dedupedVersions
+  }
+
+  return dedupedVersions.filter(version => allowedJobIds.has(String(version?.jobid ?? '').trim()))
+}
