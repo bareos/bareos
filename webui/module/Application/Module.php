@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -135,8 +135,13 @@ class Module
 
                     if (isset($config['session'])) {
                         $session = $config['session'];
+                        $sessionName = null;
 
                         $sessionConfig = null;
+
+                        if (isset($session['name'])) {
+                            $sessionName = $session['name'];
+                        }
 
                         if (isset($session['config'])) {
                             $class = isset($session['config']['class']) ? $session['config']['class'] : 'Laminas\Session\Config\SessionConfig';
@@ -160,6 +165,9 @@ class Module
                         }
 
                         $sessionManager = new SessionManager($sessionConfig, $sessionStorage, $sessionSaveHandler);
+                        if ($sessionName) {
+                            $sessionManager->setName($sessionName);
+                        }
                     } else {
                         $sessionManager = new SessionManager();
                     }
