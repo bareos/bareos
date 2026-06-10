@@ -77,7 +77,7 @@ async function selectFirstQOption(page, testId) {
     .first()
   await field.click()
   const option = page.locator(
-    '.q-menu .q-item, .q-menu [role="option"], .q-virtual-scroll__content .q-item'
+    '.q-menu:visible .q-item, .q-menu:visible [role="option"], .q-menu:visible .q-virtual-scroll__content .q-item'
   ).first()
   await expect(option).toBeVisible()
   await option.click()
