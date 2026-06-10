@@ -493,7 +493,7 @@ import {
   buildRestorePluginFilesetMap,
   buildRestorePluginFilesetDetails,
   decorateRestoreBackupsWithPluginJobs,
-  dedupeRestoreVersions,
+  filterRestoreVersionsByJobids,
   filterRestoreSourceClients,
   getRestorePluginInfo,
   getRestorePluginHints,
@@ -1419,7 +1419,10 @@ async function checkVersionsInBackground(files, dirKey) {
           `.bvfs_versions jobid=${jids} client="${client}" pathid=${f.pathId} fname=${f.name}`
         )
         if (dirKey !== versionCheckDirKey) return
-        const count = dedupeRestoreVersions(directorCollection(r?.versions)).length
+        const count = filterRestoreVersionsByJobids(
+          directorCollection(r?.versions),
+          jids
+        ).length
         if (count > 1) {
           const next = new Map(fileHasVersions.value)
           next.set(f.fileId, count)
@@ -1455,7 +1458,17 @@ async function openVersions(row) {
     const r = await director.call(
       `.bvfs_versions jobid=${mergedJobids.value} client="${sourceClientName.value}" pathid=${row.pathId} fname=${row.name}`
     )
-    versionsDialog.value.versions = dedupeRestoreVersions(r?.versions)
+    versionsDialog.value.versions = filterRestoreVersionsByJobids(
+      directorCollection(r?.versions),
+      mergedJobids.value
+    )
+    if (!versionsDialog.value.versions.some(version => version.fileid === versionsDialog.value.selectedFileId)) {
+      versionsDialog.value.selectedFileId = versionsDialog.value.versions.some(
+        version => version.fileid === row.fileId
+      )
+        ? row.fileId
+        : (versionsDialog.value.versions[0]?.fileid ?? null)
+    }
   } catch (e) {
     versionsDialog.value.error = e.message
   } finally {
