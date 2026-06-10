@@ -980,6 +980,7 @@ check_log()
     -e "jobstatus: E" \
     -e "jobstatus: e" \
     -e "jobstatus: f" \
+    -e "Job failed\." \
     "$LOG"; then
     bstat=1
   fi
