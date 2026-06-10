@@ -26,6 +26,9 @@
  * Bareos File Daemon restore.c Restorefiles.
  */
 
+#include <algorithm>
+#include <vector>
+
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/filetypes.h"
@@ -388,6 +391,8 @@ void DoRestore(JobControlRecord* jcr)
   int non_support_progname = 0;
   int non_support_crypto = 0;
   int non_support_xattr = 0;
+  bool warned_on_windows_data_stream = false;
+  std::vector<int> warned_on_unsupported_data_streams;
 
   rctx.jcr = jcr;
 
@@ -545,10 +550,24 @@ void DoRestore(JobControlRecord* jcr)
                                        sizeof(attr->statp), &attr->LinkFI);
 
         if (!IsRestoreStreamSupported(attr->data_stream)) {
-          if (!non_support_data++) {
+          non_support_data += 1;
+          if (is_win32_stream(attr->data_stream) && !have_win32_api()) {
+            if (!warned_on_windows_data_stream) {
+              Jmsg(jcr, M_WARNING, 0,
+                   T_("The backup was not created with \"Portable = Yes\", "
+                      "so %s stream data cannot be restored on this "
+                      "Client.\n"),
+                   stream_to_ascii(attr->data_stream));
+              warned_on_windows_data_stream = true;
+            }
+          } else if (std::find(std::begin(warned_on_unsupported_data_streams),
+                               std::end(warned_on_unsupported_data_streams),
+                               attr->data_stream)
+                     == std::end(warned_on_unsupported_data_streams)) {
             Jmsg(jcr, M_WARNING, 0,
                  T_("%s stream not supported on this Client.\n"),
                  stream_to_ascii(attr->data_stream));
+            warned_on_unsupported_data_streams.push_back(attr->data_stream);
           }
           continue;
         }
@@ -1042,8 +1061,8 @@ ok_out:
   }
   if (non_support_data > 1 || non_support_attr > 1) {
     Jmsg(jcr, M_WARNING, 0,
-         T_("%d non-supported data streams and %d non-supported attrib streams "
-            "ignored.\n"),
+         T_("%d non-supported data streams and %d non-supported attrib "
+            "streams ignored.\n"),
          non_support_data, non_support_attr);
   }
   if (non_support_rsrc) {
