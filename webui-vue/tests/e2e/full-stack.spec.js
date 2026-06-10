@@ -261,7 +261,7 @@ test('restores the proxy-backed login after a page reload', async ({ page }) => 
   await expectConnected(page)
 })
 
-test('opens the console and runs a raw command through the real proxy', async ({
+test('opens the console and runs a raw command through the proxied director connection', async ({
   page,
 }) => {
   await login(page)
