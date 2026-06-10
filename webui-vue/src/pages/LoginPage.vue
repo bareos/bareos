@@ -164,11 +164,14 @@ async function doLogin() {
       password: SESSION_AUTH_PASSWORD,
       director: directorRef.value,
     }, LOGIN_CONNECT_TIMEOUT_MS)
-  } catch {
-    errorMsg.value = toUserVisibleDirectorError(director.errorMsg, {
+  } catch (error) {
+    errorMsg.value = toUserVisibleDirectorError(
+      error?.message || director.errorMsg,
+      {
       authenticationMessage: t('Authentication failed'),
       connectionMessage: t('Could not connect to director. Is the proxy running?'),
-    })
+      }
+    )
     loading.value = false
     return
   }
