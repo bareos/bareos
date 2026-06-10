@@ -35,25 +35,30 @@
           </q-card-section>
           <q-card-section class="q-pa-sm">
             <div ref="treemapEl" style="position:relative;width:100%;height:280px;overflow:hidden">
-              <component
-                   :is="tile.jobsQuery !== null ? 'router-link' : 'div'"
-                   v-for="tile in treemapTiles" :key="tile.name"
-                   :to="tile.jobsQuery !== null ? { name: 'jobs', query: tile.jobsQuery } : undefined"
-                   :style="tile.style"
-                   style="position:absolute;overflow:hidden;box-sizing:border-box;border:2px solid white;border-radius:4px;transition:opacity .2s;color:inherit;text-decoration:none"
-                    :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${formatFileCount(tile.files)}`">
-                <div style="padding:4px 6px;height:100%;display:flex;flex-direction:column;justify-content:center">
-                  <div class="text-white text-weight-bold" style="font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                    {{ tile.name }}
-                  </div>
-                  <div v-if="tile.h > 36" class="text-white" style="font-size:10px;opacity:.85">
-                    {{ treemapMode === 'bytes' ? fmtBytes(tile.bytes) : formatFileCount(tile.files) }}
-                  </div>
-                </div>
-              </component>
-              <div v-if="!treemapTiles.length" class="flex flex-center text-grey" style="height:100%">
-                <span>{{ t('No data') }}</span>
+              <div v-if="loading" class="flex flex-center" style="height:100%">
+                <q-spinner size="40px" color="primary" />
               </div>
+              <template v-else>
+                <component
+                  :is="tile.jobsQuery !== null ? 'router-link' : 'div'"
+                  v-for="tile in treemapTiles" :key="tile.name"
+                  :to="tile.jobsQuery !== null ? { name: 'jobs', query: tile.jobsQuery } : undefined"
+                  :style="tile.style"
+                  style="position:absolute;overflow:hidden;box-sizing:border-box;border:2px solid white;border-radius:4px;transition:opacity .2s;color:inherit;text-decoration:none"
+                  :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${formatFileCount(tile.files)}`">
+                  <div style="padding:4px 6px;height:100%;display:flex;flex-direction:column;justify-content:center">
+                    <div class="text-white text-weight-bold" style="font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                      {{ tile.name }}
+                    </div>
+                    <div v-if="tile.h > 36" class="text-white" style="font-size:10px;opacity:.85">
+                      {{ treemapMode === 'bytes' ? fmtBytes(tile.bytes) : formatFileCount(tile.files) }}
+                    </div>
+                  </div>
+                </component>
+                <div v-if="!treemapTiles.length" class="flex flex-center text-grey" style="height:100%">
+                  <span>{{ t('No data') }}</span>
+                </div>
+              </template>
             </div>
           </q-card-section>
         </q-card>
@@ -62,7 +67,7 @@
           <q-card-section class="panel-header">{{ t('Job Status Breakdown') }}</q-card-section>
           <q-card-section class="q-pa-none">
             <q-table :rows="statusRows" :columns="statusCols" row-key="label"
-                     dense flat hide-bottom :pagination="{ rowsPerPage: 0 }">
+                     dense flat hide-bottom :pagination="{ rowsPerPage: 0 }" :loading="loading">
               <template #body-cell-bar="props">
                 <q-td :props="props" style="width:200px">
                   <q-linear-progress :value="props.row.count / maxStatusCount || 0"
@@ -90,20 +95,25 @@
         <q-card flat bordered class="bareos-panel q-mb-md">
           <q-card-section class="panel-header">{{ t('Bytes per Client') }}</q-card-section>
           <q-card-section class="q-pa-sm q-gutter-xs">
-            <div v-for="c in clientBytes" :key="c.name" class="q-mb-xs">
-              <div class="row items-center q-mb-xs" style="gap:4px">
-                <router-link
-                  :to="{ name: 'jobs', query: c.jobsQuery }"
-                  class="text-caption ellipsis text-primary"
-                  style="width:110px;min-width:0;text-decoration:none"
-                  :title="c.name"
-                >{{ c.name }}</router-link>
-                <q-linear-progress :value="bytesGauge(c.bytes)" color="primary" track-color="grey-3"
-                                   size="10px" rounded style="flex:1" />
-                <span class="text-caption text-grey-6" style="width:60px;text-align:right">{{ fmtBytes(c.bytes) }}</span>
-              </div>
+            <div v-if="loading" class="text-center q-py-md">
+              <q-spinner size="32px" color="primary" />
             </div>
-            <div v-if="!clientBytes.length" class="text-grey text-caption text-center q-py-md">{{ t('No data') }}</div>
+            <template v-else>
+              <div v-for="c in clientBytes" :key="c.name" class="q-mb-xs">
+                <div class="row items-center q-mb-xs" style="gap:4px">
+                  <router-link
+                    :to="{ name: 'jobs', query: c.jobsQuery }"
+                    class="text-caption ellipsis text-primary"
+                    style="width:110px;min-width:0;text-decoration:none"
+                    :title="c.name"
+                  >{{ c.name }}</router-link>
+                  <q-linear-progress :value="bytesGauge(c.bytes)" color="primary" track-color="grey-3"
+                                     size="10px" rounded style="flex:1" />
+                  <span class="text-caption text-grey-6" style="width:60px;text-align:right">{{ fmtBytes(c.bytes) }}</span>
+                </div>
+              </div>
+              <div v-if="!clientBytes.length" class="text-grey text-caption text-center q-py-md">{{ t('No data') }}</div>
+            </template>
           </q-card-section>
         </q-card>
 
