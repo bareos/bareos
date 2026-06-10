@@ -377,8 +377,11 @@
         <q-btn flat round dense icon="close" color="white" v-close-popup />
       </q-card-section>
       <q-card-section>
-        <q-inner-loading :showing="versionsDialog.loading" />
         <div v-if="versionsDialog.error" class="text-negative">{{ versionsDialog.error }}</div>
+        <div v-else-if="versionsDialog.loading" class="text-center text-grey q-py-xl">
+          <q-spinner size="48px" color="primary" /><br />
+          <span class="text-caption q-mt-sm">{{ t('Loading file list...') }}</span>
+        </div>
         <q-table
           v-else
           flat dense
@@ -495,6 +498,7 @@ import {
   decorateRestoreBackupsWithPluginJobs,
   filterRestoreVersionsByJobids,
   filterRestoreSourceClients,
+  getRestoreVersionsLookupJobId,
   getRestorePluginInfo,
   getRestorePluginHints,
   getRestoreBrowserPlaceholder,
@@ -1111,6 +1115,7 @@ async function fetchDir(pathId) {
   // Reset version counts for the new directory and check in background.
   versionCheckDirKey++
   fileHasVersions.value = new Map()
+  fileVersionsCache.value = new Map()
   const dirKey = versionCheckDirKey
   checkVersionsInBackground(files, dirKey)
 }
@@ -1297,6 +1302,7 @@ function clearBrowserState() {
   selectedDirs.value   = new Map()
   fileVersionOverrides.value = new Map()
   fileHasVersions.value = new Map()
+  fileVersionsCache.value = new Map()
   versionCheckDirKey++
   mergedJobids.value   = ''
   browserError.value   = ''
@@ -1390,13 +1396,19 @@ function toggleVersionCheck() {
     // Clear cached counts when disabling
     versionCheckDirKey++
     fileHasVersions.value = new Map()
+    fileVersionsCache.value = new Map()
   }
 }
 
 // Tracks version counts per file: Map<fileId, number>
 // Populated in background after each directory load.
 const fileHasVersions = ref(new Map())
+const fileVersionsCache = ref(new Map())
 let versionCheckDirKey = 0  // incremented on each directory change to cancel stale checks
+const versionsLookupJobId = computed(() => getRestoreVersionsLookupJobId(
+  form.value.jobid,
+  mergedJobids.value
+))
 
 function hasMultipleVersions(fileId) {
   return (fileHasVersions.value.get(fileId) ?? 0) > 1 || hasVersionOverride(fileId)
@@ -1410,23 +1422,29 @@ async function checkVersionsInBackground(files, dirKey) {
   if (!files.length || !versionCheckEnabled.value) return
   await ensureSelectedSourceDirector()
   const jids = mergedJobids.value
+  const lookupJobId = versionsLookupJobId.value
   const client = sourceClientName.value
   await Promise.allSettled(
     files.map(async (f) => {
       if (dirKey !== versionCheckDirKey || !versionCheckEnabled.value) return
       try {
         const r = await director.call(
-          `.bvfs_versions jobid=${jids} client="${client}" pathid=${f.pathId} fname=${f.name}`
+          `.bvfs_versions jobid=${lookupJobId} client="${client}" pathid=${f.pathId} fname=${f.name}`
         )
         if (dirKey !== versionCheckDirKey) return
-        const count = filterRestoreVersionsByJobids(
+        const versions = filterRestoreVersionsByJobids(
           directorCollection(r?.versions),
           jids
-        ).length
+        )
+        const count = versions.length
         if (count > 1) {
           const next = new Map(fileHasVersions.value)
           next.set(f.fileId, count)
           fileHasVersions.value = next
+
+          const nextVersions = new Map(fileVersionsCache.value)
+          nextVersions.set(f.fileId, versions)
+          fileVersionsCache.value = nextVersions
         }
       } catch { /* ignore */ }
     })
@@ -1455,13 +1473,24 @@ async function openVersions(row) {
   }
   try {
     await ensureSelectedSourceDirector()
-    const r = await director.call(
-      `.bvfs_versions jobid=${mergedJobids.value} client="${sourceClientName.value}" pathid=${row.pathId} fname=${row.name}`
-    )
-    versionsDialog.value.versions = filterRestoreVersionsByJobids(
-      directorCollection(r?.versions),
-      mergedJobids.value
-    )
+    const cachedVersions = fileVersionsCache.value.get(row.fileId)
+    if (Array.isArray(cachedVersions) && cachedVersions.length > 0) {
+      versionsDialog.value.versions = cachedVersions
+    } else {
+      const r = await director.call(
+        `.bvfs_versions jobid=${versionsLookupJobId.value} client="${sourceClientName.value}" pathid=${row.pathId} fname=${row.name}`
+      )
+      const versions = filterRestoreVersionsByJobids(
+        directorCollection(r?.versions),
+        mergedJobids.value
+      )
+      versionsDialog.value.versions = versions
+      if (versions.length > 1) {
+        const nextVersions = new Map(fileVersionsCache.value)
+        nextVersions.set(row.fileId, versions)
+        fileVersionsCache.value = nextVersions
+      }
+    }
     if (!versionsDialog.value.versions.some(version => version.fileid === versionsDialog.value.selectedFileId)) {
       versionsDialog.value.selectedFileId = versionsDialog.value.versions.some(
         version => version.fileid === row.fileId
