@@ -55,8 +55,11 @@ describe('auth store', () => {
       status: 200,
       ok: true,
       text: async () => JSON.stringify({
-        username: 'admin',
-        director: 'bareos-dir',
+        currentDirector: 'site-b',
+        authenticatedDirectors: [
+          { director: 'bareos-dir', username: 'admin' },
+          { director: 'site-b', username: 'ops', current: true },
+        ],
       }),
     })
     const auth = useAuthStore()
@@ -64,6 +67,11 @@ describe('auth store', () => {
 
     expect(auth.isLoggedIn).toBe(true)
     expect(auth.getCredentials()).toEqual({
+      username: 'ops',
+      password: SESSION_AUTH_PASSWORD,
+      director: 'site-b',
+    })
+    expect(auth.getCredentials('bareos-dir')).toEqual({
       username: 'admin',
       password: SESSION_AUTH_PASSWORD,
       director: 'bareos-dir',
@@ -98,12 +106,34 @@ describe('auth store', () => {
     const auth = useAuthStore()
 
     auth.login('admin', 'bareos-dir')
+    auth.loginDirector('ops', 'bareos-dir-2', SESSION_AUTH_PASSWORD, {
+      setCurrent: false,
+    })
     auth.setDirector('bareos-dir-2')
 
     expect(auth.getCredentials()).toEqual({
-      username: 'admin',
+      username: 'ops',
       password: SESSION_AUTH_PASSWORD,
       director: 'bareos-dir-2',
     })
+  })
+
+  it('tracks additional authenticated directors with individual usernames', () => {
+    const auth = useAuthStore()
+
+    auth.login('admin', 'bareos-dir')
+    auth.loginDirector('ops', 'site-b', SESSION_AUTH_PASSWORD, {
+      setCurrent: false,
+    })
+
+    expect(auth.authenticatedDirectors).toEqual(['bareos-dir', 'site-b'])
+    expect(auth.hasDirectorSession('site-b')).toBe(true)
+    expect(auth.getDirectorUsername('site-b')).toBe('ops')
+    expect(auth.getCredentials('site-b')).toEqual({
+      username: 'ops',
+      password: SESSION_AUTH_PASSWORD,
+      director: 'site-b',
+    })
+    expect(auth.user?.director).toBe('bareos-dir')
   })
 })
