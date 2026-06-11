@@ -102,7 +102,7 @@
               <template #prepend><q-icon name="search" /></template>
               <template #append>
                 <q-icon name="info" size="16px" class="cursor-help">
-                  <q-tooltip>{{ t('Searches only within the jobs already filtered above.') }}</q-tooltip>
+                  <q-tooltip>{{ t('Searches only within the jobs already filtered here.') }}</q-tooltip>
                 </q-icon>
               </template>
             </q-input>
