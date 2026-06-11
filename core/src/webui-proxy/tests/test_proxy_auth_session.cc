@@ -31,26 +31,55 @@ TEST(ProxyAuthSessionStore, CreatesLooksUpAndRemovesSessions)
   const auto session = store.LookupSession(session_id);
   ASSERT_TRUE(session);
   EXPECT_EQ(session->session_id, session_id);
-  EXPECT_EQ(session->username, "admin");
-  EXPECT_EQ(session->password, "secret");
-  EXPECT_EQ(session->director, "bareos-dir");
+  EXPECT_EQ(session->current_director, "bareos-dir");
+  ASSERT_EQ(session->directors.size(), 1U);
+  ASSERT_TRUE(session->directors.contains("bareos-dir"));
+  EXPECT_EQ(session->directors.at("bareos-dir").username, "admin");
+  EXPECT_EQ(session->directors.at("bareos-dir").password, "secret");
 
   store.RemoveSession(session_id);
   EXPECT_FALSE(store.LookupSession(session_id));
 }
 
-TEST(ProxyAuthSessionStore, UpdatesPreferredDirector)
+TEST(ProxyAuthSessionStore, StoresAdditionalDirectorCredentials)
 {
   auto& store = ProxyAuthSessionStore::Instance();
   const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
 
-  store.UpdateDirector(session_id, "site-b");
+  ASSERT_TRUE(store.StoreDirectorCredentials(session_id, "site-b", "ops", "site-secret",
+                                             false));
 
   const auto session = store.LookupSession(session_id);
   ASSERT_TRUE(session);
-  EXPECT_EQ(session->director, "site-b");
+  EXPECT_EQ(session->current_director, "bareos-dir");
+  ASSERT_EQ(session->directors.size(), 2U);
+  ASSERT_TRUE(session->directors.contains("site-b"));
+  EXPECT_EQ(session->directors.at("site-b").username, "ops");
+  EXPECT_EQ(session->directors.at("site-b").password, "site-secret");
 
   store.RemoveSession(session_id);
+}
+
+TEST(ProxyAuthSessionStore, SwitchesAndRemovesDirectors)
+{
+  auto& store = ProxyAuthSessionStore::Instance();
+  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(
+      store.StoreDirectorCredentials(session_id, "site-b", "ops", "site-secret", false));
+
+  ASSERT_TRUE(store.SetCurrentDirector(session_id, "site-b"));
+  auto session = store.LookupSession(session_id);
+  ASSERT_TRUE(session);
+  EXPECT_EQ(session->current_director, "site-b");
+
+  ASSERT_TRUE(store.RemoveDirector(session_id, "site-b"));
+  session = store.LookupSession(session_id);
+  ASSERT_TRUE(session);
+  EXPECT_EQ(session->current_director, "bareos-dir");
+  EXPECT_FALSE(session->directors.contains("site-b"));
+
+  ASSERT_TRUE(store.RemoveDirector(session_id, "bareos-dir"));
+  EXPECT_FALSE(store.LookupSession(session_id));
 }
 
 TEST(ProxyAuthSessionStore, BuildsCookieHeaders)

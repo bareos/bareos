@@ -54,9 +54,13 @@ class ProxyAuthSessionStoreImpl {
 
     ProxyAuthSessionRecord record;
     record.session_id = GenerateSessionId();
-    record.username = std::string(username);
-    record.password = std::string(password);
-    record.director = std::string(director);
+    record.current_director = std::string(director);
+    record.directors.emplace(
+        std::string(director),
+        ProxyAuthSessionDirectorRecord{
+            .username = std::string(username),
+            .password = std::string(password),
+        });
 
     sessions_[record.session_id] = StoredSession{
         .record = record,
@@ -79,17 +83,75 @@ class ProxyAuthSessionStoreImpl {
     return it->second.record;
   }
 
-  void UpdateDirector(std::string_view session_id, std::string_view director)
+  bool StoreDirectorCredentials(std::string_view session_id,
+                                std::string_view director,
+                                std::string_view username,
+                                std::string_view password,
+                                bool make_current)
   {
     std::lock_guard guard(mutex_);
     const auto now = Clock::now();
     CleanupExpiredLocked(now);
 
     const auto it = sessions_.find(std::string(session_id));
-    if (it == sessions_.end()) { return; }
+    if (it == sessions_.end()) { return false; }
 
-    it->second.record.director = std::string(director);
+    const auto selector = std::string(director);
+    it->second.record.directors[selector] = ProxyAuthSessionDirectorRecord{
+        .username = std::string(username),
+        .password = std::string(password),
+    };
+    if (make_current || it->second.record.current_director.empty()) {
+      it->second.record.current_director = selector;
+    }
     it->second.last_used_at = now;
+    return true;
+  }
+
+  bool SetCurrentDirector(std::string_view session_id, std::string_view director)
+  {
+    std::lock_guard guard(mutex_);
+    const auto now = Clock::now();
+    CleanupExpiredLocked(now);
+
+    const auto it = sessions_.find(std::string(session_id));
+    if (it == sessions_.end()) { return false; }
+
+    const auto selector = std::string(director);
+    if (it->second.record.directors.find(selector)
+        == it->second.record.directors.end()) {
+      return false;
+    }
+
+    it->second.record.current_director = selector;
+    it->second.last_used_at = now;
+    return true;
+  }
+
+  bool RemoveDirector(std::string_view session_id, std::string_view director)
+  {
+    std::lock_guard guard(mutex_);
+    const auto now = Clock::now();
+    CleanupExpiredLocked(now);
+
+    const auto it = sessions_.find(std::string(session_id));
+    if (it == sessions_.end()) { return false; }
+
+    const auto selector = std::string(director);
+    if (it->second.record.directors.erase(selector) == 0) {
+      return false;
+    }
+
+    if (it->second.record.directors.empty()) {
+      sessions_.erase(it);
+      return true;
+    }
+
+    if (it->second.record.current_director == selector) {
+      it->second.record.current_director = it->second.record.directors.begin()->first;
+    }
+    it->second.last_used_at = now;
+    return true;
   }
 
   void RemoveSession(std::string_view session_id)
@@ -175,16 +237,32 @@ std::string ProxyAuthSessionStore::CreateSession(std::string_view username,
   return GetStore().CreateSession(username, password, director);
 }
 
+bool ProxyAuthSessionStore::StoreDirectorCredentials(std::string_view session_id,
+                                                     std::string_view director,
+                                                     std::string_view username,
+                                                     std::string_view password,
+                                                     bool make_current)
+{
+  return GetStore().StoreDirectorCredentials(session_id, director, username,
+                                             password, make_current);
+}
+
 std::optional<ProxyAuthSessionRecord> ProxyAuthSessionStore::LookupSession(
     std::string_view session_id)
 {
   return GetStore().LookupSession(session_id);
 }
 
-void ProxyAuthSessionStore::UpdateDirector(std::string_view session_id,
+bool ProxyAuthSessionStore::SetCurrentDirector(std::string_view session_id,
+                                               std::string_view director)
+{
+  return GetStore().SetCurrentDirector(session_id, director);
+}
+
+bool ProxyAuthSessionStore::RemoveDirector(std::string_view session_id,
                                            std::string_view director)
 {
-  GetStore().UpdateDirector(session_id, director);
+  return GetStore().RemoveDirector(session_id, director);
 }
 
 void ProxyAuthSessionStore::RemoveSession(std::string_view session_id)
