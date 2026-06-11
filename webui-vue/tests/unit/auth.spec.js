@@ -136,4 +136,46 @@ describe('auth store', () => {
     })
     expect(auth.user?.director).toBe('bareos-dir')
   })
+
+  it('lists authenticated director sessions with the current marker', () => {
+    const auth = useAuthStore()
+
+    auth.login('admin', 'bareos-dir')
+    auth.loginDirector('ops', 'site-b', SESSION_AUTH_PASSWORD, {
+      setCurrent: false,
+    })
+
+    expect(auth.directorSessions).toEqual([
+      { director: 'bareos-dir', username: 'admin', current: true },
+      { director: 'site-b', username: 'ops', current: false },
+    ])
+  })
+
+  it('reports selected directors without stored credentials', () => {
+    const auth = useAuthStore()
+
+    auth.login('admin', 'bareos-dir')
+    auth.loginDirector('ops', 'site-b', SESSION_AUTH_PASSWORD, {
+      setCurrent: false,
+    })
+
+    expect(auth.missingDirectorSessions(['bareos-dir', 'site-b', 'site-c', 'site-c']))
+      .toEqual(['site-c'])
+  })
+
+  it('falls back to another director when removing the current one', () => {
+    const auth = useAuthStore()
+
+    auth.login('admin', 'bareos-dir')
+    auth.loginDirector('ops', 'site-b', SESSION_AUTH_PASSWORD, {
+      setCurrent: false,
+    })
+
+    expect(auth.removeDirector('bareos-dir')).toBe(true)
+    expect(auth.user).toEqual({
+      username: 'ops',
+      director: 'site-b',
+    })
+    expect(auth.authenticatedDirectors).toEqual(['site-b'])
+  })
 })

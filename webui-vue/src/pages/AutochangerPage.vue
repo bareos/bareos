@@ -71,14 +71,14 @@
     </q-banner>
 
     <q-banner
-      v-if="directorErrors.length"
+      v-if="visibleDirectorErrors.length"
       class="bg-warning text-black q-mb-md"
       rounded
     >
       <template #avatar>
         <q-icon name="warning" />
       </template>
-      <div v-for="item in directorErrors" :key="item.director" class="row items-center q-gutter-xs">
+      <div v-for="item in visibleDirectorErrors" :key="item.director" class="row items-center q-gutter-xs">
         <DirectorBadge :director="item.director" size="sm" />
         <span>{{ item.message }}</span>
       </div>
@@ -555,6 +555,7 @@ import {
   resolveAutochangerSelection,
   resolveStoragesScopeDirector,
 } from '../utils/storagesRoute.js'
+import { isDirectorLoginRequiredError } from '../utils/directorErrors.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 
@@ -705,6 +706,9 @@ const emptySlotOptions = computed(() =>
     .filter(s => s.content === 'empty')
     .map(s => ({ label: `Slot ${s.slotnr}`, value: s.slotnr }))
 )
+const visibleDirectorErrors = computed(() => (
+  directorErrors.value.filter(item => !isDirectorLoginRequiredError(item?.message))
+))
 
 function buildAutochangerVolumeDetailsQuery(storage) {
   if (!storage) {

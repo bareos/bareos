@@ -19,6 +19,7 @@
    02110-1301, USA.
  */
 
+import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   aggregateDirectorDashboardSnapshots,
@@ -60,6 +61,7 @@ class FakeWebSocket {
 
 describe('director aggregate dashboard helpers', () => {
   beforeEach(() => {
+    setActivePinia(createPinia())
     FakeWebSocket.instances = []
     vi.stubGlobal('WebSocket', FakeWebSocket)
     vi.useFakeTimers()
