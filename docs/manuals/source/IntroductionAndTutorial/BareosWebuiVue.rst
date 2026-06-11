@@ -47,11 +47,13 @@ The Vue WebUI consists of:
 * the static SPA bundle installed below :file:`/usr/share/bareos-webui-vue`
 * an Apache configuration that exposes the bundle below
   :file:`/bareos-webui-vue`
-* the :command:`bareos-webui-proxy` service, which accepts WebSocket
-  connections and forwards requests to the Bareos Director
+* the :command:`bareos-webui-proxy` service, which accepts both HTTP session
+  requests and WebSocket connections and forwards them to the Bareos Director
 
-The default Apache configuration proxies :file:`/ws` to
-:command:`bareos-webui-proxy` on port **9104**.
+The default Apache configuration proxies both :file:`/ws` and
+:file:`/api/` to :command:`bareos-webui-proxy` on port **9104**.
+The HTTP endpoints are used for session login, restore, and logout, while the
+WebSocket endpoint is used for the interactive director connection.
 
 Installation and access
 -----------------------
@@ -78,7 +80,8 @@ To use it successfully, ensure that:
 * the Vue WebUI bundle is installed
 * the Apache configuration for :file:`/bareos-webui-vue` is enabled
 * :command:`bareos-webui-proxy` is installed and running
-* the WebSocket proxy target on port **9104** is reachable from Apache
+* the HTTP and WebSocket proxy targets on port **9104** are reachable from
+  Apache
 * suitable Bareos Director console credentials exist
 
 What is already available
