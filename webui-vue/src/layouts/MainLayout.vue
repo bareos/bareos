@@ -183,7 +183,7 @@
                   dense
                 >
                   <q-item-section avatar>
-                    <q-icon :name="session.current ? 'check_circle' : 'dns'" />
+                    <q-icon name="dns" />
                   </q-item-section>
                   <q-item-section>
                     <q-item-label>{{ session.username }}</q-item-label>

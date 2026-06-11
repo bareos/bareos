@@ -31,7 +31,7 @@
               autocomplete="current-password"
             />
             <q-select
-              v-if="hasAvailableDirectors && directorOptions.length > 1"
+              v-if="hasAvailableDirectors"
               v-model="directorRef"
               data-testid="login-director"
               :options="directorOptions"
@@ -142,9 +142,14 @@ const isAddDirectorMode = computed(() => (
   auth.isLoggedIn && route.query.mode === 'add'
 ))
 const hasAvailableDirectors = computed(() => director.availableDirectors.length > 0)
+const loginPageDirectors = computed(() => (
+  directorRef.value && !director.availableDirectors.includes(directorRef.value)
+    ? [...director.availableDirectors, directorRef.value]
+    : director.availableDirectors
+))
 const directorOptions = computed(() => (
   buildDirectorOptions({
-    availableDirectors: director.availableDirectors,
+    availableDirectors: loginPageDirectors.value,
     selectedDirectors: auth.authenticatedDirectors,
     currentDirector: directorRef.value,
     fallbackDirector: auth.user?.director || settings.directorName,
