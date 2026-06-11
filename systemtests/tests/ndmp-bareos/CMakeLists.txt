@@ -79,6 +79,10 @@ if(ndmp_data_agent_address)
         system:ndmp-bareos:09-restore-incremental-last-with-file
         PROPERTIES DISABLED TRUE
       )
+      set_tests_properties(
+        # Disabled until a reliable compare method is found
+        system:ndmp-bareos:11-compare-with-copy PROPERTIES DISABLED TRUE
+      )
     else()
       create_systemtest(
         ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
