@@ -291,14 +291,18 @@ SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
   Q_ASSERT_X(!bg.isNull(), "Tray Logo Background", kRes_LogoBGIcon);
 
   QPixmap defaultIcon(IconWidth, IconHeight);
-  Q_ASSERT(RenderIcon(defaultIcon, logo, bg, IdlePalette.color));
+  bool default_icon_ok = RenderIcon(defaultIcon, logo, bg, IdlePalette.color);
+  Q_ASSERT(default_icon_ok);
 
   QPixmap runningIcon(IconWidth, IconHeight);
-  Q_ASSERT(RenderIcon(runningIcon, logo, bg, RunningPalette.color));
+  bool running_icon_ok
+      = RenderIcon(runningIcon, logo, bg, RunningPalette.color);
+  Q_ASSERT(running_icon_ok);
 
   QList<QIcon> runningAnimation;
-  Q_ASSERT(RotateIcon(runningAnimation, runningIcon, kAnimationFrameCount,
-                      RunningPalette));
+  bool running_animation_ok = RotateIcon(runningAnimation, runningIcon,
+                                         kAnimationFrameCount, RunningPalette);
+  Q_ASSERT(running_animation_ok);
 
   normalIcon = std::move(defaultIcon);
   errorIcon = QIcon(kRes_ErrorIcon);
