@@ -60,13 +60,21 @@ Runtime architecture
 
 Unlike the classic PHP WebUI, the Vue WebUI does not talk to the Director
 through PHP.
-Instead it uses :command:`bareos-webui-proxy` for WebSocket-based communication.
+Instead it uses :command:`bareos-webui-proxy` for both HTTP session handling
+and WebSocket-based director communication.
 
 The default Apache configuration:
 
 * serves the SPA from :file:`/bareos-webui-vue`
 * rewrites SPA routes back to :file:`index.html`
 * proxies :file:`/ws` to :command:`bareos-webui-proxy` on port **9104**
+* proxies :file:`/api/` to :command:`bareos-webui-proxy` on port **9104**
+
+The HTTP side currently provides the session endpoints
+:file:`/api/session`, :file:`/api/session/login`, and
+:file:`/api/session/logout`.
+The WebSocket side is then used for the live director connection once the
+session has been established.
 
 Testing
 -------
