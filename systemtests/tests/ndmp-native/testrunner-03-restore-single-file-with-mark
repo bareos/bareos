@@ -38,7 +38,6 @@ export TestName
 
 start_test
 
-
 echo "################ restore single file with mark #####################"
 cleanup_remote
 
@@ -48,6 +47,7 @@ restore jobid=1 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRes
 mark ${NDMP_TEST_PATH}/testfile
 done
 wait
+message
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
