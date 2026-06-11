@@ -207,6 +207,7 @@ describe('director store', () => {
     const director = useDirectorStore()
 
     auth.login('admin', 'bareos-dir-a', 'secret')
+    auth.loginDirector('ops', 'bareos-dir-b', 'secret', { setCurrent: false })
 
     const refreshPromise = director.refreshDirectorConnections([
       'bareos-dir-a',

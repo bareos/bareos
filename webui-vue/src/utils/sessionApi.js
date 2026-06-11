@@ -59,7 +59,7 @@ export async function loginDirectorProxySession({ username, password, director }
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, director }),
   })
 
   const payload = await parseJsonResponse(response)
@@ -95,6 +95,21 @@ export async function logoutProxySession() {
     credentials: 'same-origin',
     cache: 'no-store',
   })
+}
+
+export async function logoutDirectorProxySession({ director }) {
+  const response = await fetch(`/api/session/directors/${encodeURIComponent(director)}`, {
+    method: 'DELETE',
+    credentials: 'same-origin',
+    cache: 'no-store',
+  })
+
+  const payload = await parseJsonResponse(response)
+  if (!response.ok) {
+    throw new Error(payload?.message || 'Could not remove director session')
+  }
+
+  return payload
 }
 
 export async function setCurrentProxySessionDirector({ director }) {

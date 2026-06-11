@@ -179,6 +179,7 @@ export const useDirectorStore = defineStore('director', () => {
     const auth = useAuthStore()
     const credentials = auth.getCredentials()
     const targetDirectors = normaliseDirectorNames(directors)
+    const missingDirectors = new Set(auth.missingDirectorSessions(targetDirectors))
 
     if (!credentials?.password || targetDirectors.length === 0) {
       return {}
@@ -189,14 +190,20 @@ export const useDirectorStore = defineStore('director', () => {
 
     for (const directorName of targetDirectors) {
       updateDirectorConnection(directorName, {
-        status: 'checking',
+        status: missingDirectors.has(directorName) ? 'login_required' : 'checking',
         transport: null,
-        errorMsg: null,
+        errorMsg: missingDirectors.has(directorName)
+          ? `Please log in to director "${directorName}" first.`
+          : null,
         checkedAt: null,
       })
     }
 
-    const results = await Promise.all(targetDirectors.map(async (directorName) => {
+    const authenticatedDirectors = targetDirectors.filter(
+      directorName => !missingDirectors.has(directorName)
+    )
+
+    const results = await Promise.all(authenticatedDirectors.map(async (directorName) => {
       let client = null
 
       try {

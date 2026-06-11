@@ -29,8 +29,18 @@ import {
   DIRECTOR_COMMAND_TIMEOUT_MS,
   DIRECTOR_WS_URL,
 } from '../utils/directorCommandSocket.js'
+import { useAuthStore } from '../stores/auth.js'
+import { SESSION_AUTH_PASSWORD } from '../utils/sessionApi.js'
 
 export async function createDirectorCommandClient(credentials, options = {}) {
+  const auth = useAuthStore()
+  if (
+    credentials?.password === SESSION_AUTH_PASSWORD
+    && !auth.hasDirectorSession(credentials.director)
+  ) {
+    throw new Error(`Please log in to director "${credentials.director}" first.`)
+  }
+
   const session = await createDirectorCommandSession(credentials, {
     wsUrl: options.wsUrl ?? DIRECTOR_WS_URL,
     authTimeoutMs: options.authTimeoutMs ?? DIRECTOR_COMMAND_AUTH_TIMEOUT_MS,
