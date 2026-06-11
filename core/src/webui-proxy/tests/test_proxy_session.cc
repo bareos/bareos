@@ -19,6 +19,7 @@
    02110-1301, USA.
  */
 
+#include "../proxy_auth_session.h"
 #include "../proxy_session.h"
 
 #include <sys/socket.h>
@@ -109,6 +110,23 @@ std::string ReadUntilMarker(int fd, std::string_view marker)
     result.append(buffer.data(), static_cast<size_t>(received));
   }
   return result;
+}
+
+std::string ReadUntilClosed(int fd)
+{
+  std::string result;
+  std::array<char, 256> buffer{};
+  while (true) {
+    const auto received = ::recv(fd, buffer.data(), buffer.size(), 0);
+    if (received < 0) {
+      ADD_FAILURE() << "recv() failed while reading response";
+      return result;
+    }
+    if (received == 0) {
+      return result;
+    }
+    result.append(buffer.data(), static_cast<size_t>(received));
+  }
 }
 
 std::string BuildMaskedFrame(uint8_t opcode,
@@ -240,6 +258,72 @@ std::string ExchangeAuthMessage(std::string_view auth_message)
 {
   const ProxyConfig config;
   return ExchangeMessage(config, auth_message);
+}
+
+std::string ExchangeHttpRequest(const ProxyConfig& config,
+                                std::string_view request_text)
+{
+  SocketPair sockets;
+  const int server_fd = sockets.ReleaseLocal();
+  std::thread session([server_fd, &config]() {
+    RunProxySession(server_fd, "test-peer", config);
+  });
+
+  WriteAll(sockets.peer(), request_text.data(), request_text.size());
+  const auto response = ReadUntilClosed(sockets.peer());
+  session.join();
+  return response;
+}
+
+std::string HttpBody(std::string_view response)
+{
+  const auto header_end = response.find("\r\n\r\n");
+  if (header_end == std::string_view::npos) {
+    ADD_FAILURE() << "missing HTTP header terminator";
+    return {};
+  }
+  return std::string(response.substr(header_end + 4));
+}
+
+std::string HttpStatusLine(std::string_view response)
+{
+  const auto line_end = response.find("\r\n");
+  if (line_end == std::string_view::npos) {
+    ADD_FAILURE() << "missing HTTP status line";
+    return {};
+  }
+  return std::string(response.substr(0, line_end));
+}
+
+std::vector<std::string> GetAuthenticatedDirectors(std::string_view text)
+{
+  json_error_t error{};
+  json_t* root = json_loadb(text.data(), text.size(), 0, &error);
+  if (!root) {
+    ADD_FAILURE() << "failed to parse JSON response";
+    return {};
+  }
+  std::unique_ptr<json_t, decltype(&json_decref)> guard(root, &json_decref);
+  json_t* array = json_object_get(root, "authenticatedDirectors");
+  if (!json_is_array(array)) {
+    ADD_FAILURE() << "missing authenticatedDirectors";
+    return {};
+  }
+
+  std::vector<std::string> directors;
+  size_t index = 0;
+  json_t* entry = nullptr;
+  json_array_foreach(array, index, entry)
+  {
+    const char* director
+        = json_string_value(json_object_get(entry, "director"));
+    if (!director) {
+      ADD_FAILURE() << "missing director entry";
+      return {};
+    }
+    directors.emplace_back(director);
+  }
+  return directors;
 }
 
 }  // namespace
@@ -378,4 +462,98 @@ TEST(ProxySession, RejectsUnsupportedAuthMode)
   EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
   EXPECT_EQ(GetJsonStringField(response, "message"),
             "Auth message has unsupported mode 'json-v2'");
+}
+
+TEST(ProxySession, ReturnsMultiDirectorSessionInfoOverHttp)
+{
+  auto& store = ProxyAuthSessionStore::Instance();
+  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(store.StoreDirectorCredentials(session_id, "site-b", "ops",
+                                             "site-secret", false));
+
+  const std::string request
+      = std::string("GET /api/session HTTP/1.1\r\n"
+                    "Host: localhost\r\n"
+                    "Cookie: bareos_proxy_session=")
+        + session_id + "\r\n\r\n";
+  const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
+
+  EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 200 OK");
+  EXPECT_EQ(GetJsonStringField(HttpBody(response), "director"), "bareos-dir");
+  EXPECT_EQ(GetJsonStringField(HttpBody(response), "currentDirector"),
+            "bareos-dir");
+  EXPECT_EQ(GetJsonStringField(HttpBody(response), "username"), "admin");
+  EXPECT_EQ(GetAuthenticatedDirectors(HttpBody(response)),
+            std::vector<std::string>({"bareos-dir", "site-b"}));
+
+  store.RemoveSession(session_id);
+}
+
+TEST(ProxySession, UpdatesCurrentDirectorOverHttp)
+{
+  auto& store = ProxyAuthSessionStore::Instance();
+  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(store.StoreDirectorCredentials(session_id, "site-b", "ops",
+                                             "site-secret", false));
+
+  const std::string body = R"({"director":"site-b"})";
+  const std::string request
+      = std::string("POST /api/session/current-director HTTP/1.1\r\n"
+                    "Host: localhost\r\n"
+                    "Content-Type: application/json\r\n"
+                    "Cookie: bareos_proxy_session=")
+        + session_id + "\r\nContent-Length: "
+        + std::to_string(body.size()) + "\r\n\r\n" + body;
+  const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
+
+  EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 200 OK");
+  EXPECT_EQ(GetJsonStringField(HttpBody(response), "currentDirector"), "site-b");
+  EXPECT_EQ(GetJsonStringField(HttpBody(response), "username"), "ops");
+
+  store.RemoveSession(session_id);
+}
+
+TEST(ProxySession, RemovesDirectorOverHttp)
+{
+  auto& store = ProxyAuthSessionStore::Instance();
+  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(store.StoreDirectorCredentials(session_id, "site-b", "ops",
+                                             "site-secret", false));
+
+  const std::string request
+      = std::string("DELETE /api/session/directors/site-b HTTP/1.1\r\n"
+                    "Host: localhost\r\n"
+                    "Cookie: bareos_proxy_session=")
+        + session_id + "\r\n\r\n";
+  const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
+
+  EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 200 OK");
+  EXPECT_EQ(GetAuthenticatedDirectors(HttpBody(response)),
+            std::vector<std::string>({"bareos-dir"}));
+
+  store.RemoveSession(session_id);
+}
+
+TEST(ProxySession, ReuseEndpointReportsAlreadyAuthenticatedDirectors)
+{
+  auto& store = ProxyAuthSessionStore::Instance();
+  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(store.StoreDirectorCredentials(session_id, "site-b", "admin",
+                                             "secret", false));
+
+  const std::string body
+      = R"({"directors":["site-b"],"sourceDirector":"bareos-dir"})";
+  const std::string request
+      = std::string("POST /api/session/reuse HTTP/1.1\r\n"
+                    "Host: localhost\r\n"
+                    "Content-Type: application/json\r\n"
+                    "Cookie: bareos_proxy_session=")
+        + session_id + "\r\nContent-Length: "
+        + std::to_string(body.size()) + "\r\n\r\n" + body;
+  const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
+
+  EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 200 OK");
+  EXPECT_NE(HttpBody(response).find("\"already_authenticated\""), std::string::npos);
+
+  store.RemoveSession(session_id);
 }

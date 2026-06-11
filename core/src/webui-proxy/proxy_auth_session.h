@@ -21,15 +21,20 @@
 #ifndef BAREOS_WEBUI_PROXY_PROXY_AUTH_SESSION_H_
 #define BAREOS_WEBUI_PROXY_PROXY_AUTH_SESSION_H_
 
+#include <map>
 #include <optional>
 #include <string>
 #include <string_view>
 
-struct ProxyAuthSessionRecord {
-  std::string session_id;
+struct ProxyAuthSessionDirectorRecord {
   std::string username;
   std::string password;
-  std::string director;
+};
+
+struct ProxyAuthSessionRecord {
+  std::string session_id;
+  std::string current_director;
+  std::map<std::string, ProxyAuthSessionDirectorRecord> directors;
 };
 
 class ProxyAuthSessionStore {
@@ -39,9 +44,15 @@ class ProxyAuthSessionStore {
   std::string CreateSession(std::string_view username,
                             std::string_view password,
                             std::string_view director);
+  bool StoreDirectorCredentials(std::string_view session_id,
+                                std::string_view director,
+                                std::string_view username,
+                                std::string_view password,
+                                bool make_current = true);
   std::optional<ProxyAuthSessionRecord> LookupSession(
       std::string_view session_id);
-  void UpdateDirector(std::string_view session_id, std::string_view director);
+  bool SetCurrentDirector(std::string_view session_id, std::string_view director);
+  bool RemoveDirector(std::string_view session_id, std::string_view director);
   void RemoveSession(std::string_view session_id);
 
  private:
