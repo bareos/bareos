@@ -56,6 +56,18 @@
             {{ option.caption }}
           </q-item-label>
         </q-item-section>
+        <q-item-section side>
+          <q-btn
+            v-if="!isAuthenticated(option.value)"
+            flat
+            round
+            dense
+            size="sm"
+            icon="login"
+            :title="t('Login')"
+            @click.stop="emit('loginDirector', option.value)"
+          />
+        </q-item-section>
       </q-item>
     </q-list>
 
@@ -101,6 +113,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  authenticatedDirectors: {
+    type: Array,
+    default: () => [],
+  },
   closeOnConsole: {
     type: Boolean,
     default: false,
@@ -111,7 +127,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['update:modelValue', 'openConsole'])
+const emit = defineEmits(['update:modelValue', 'openConsole', 'loginDirector'])
 const { t } = useI18n()
 
 const optionValues = computed(() => (
@@ -140,12 +156,22 @@ const consoleOptions = computed(() => {
   return props.options.filter(option => allowed.has(String(option?.value ?? '').trim()))
 })
 
+const authenticatedDirectorValues = computed(() => new Set(
+  (props.authenticatedDirectors ?? [])
+    .map(value => String(value ?? '').trim())
+    .filter(Boolean)
+))
+
 function emitSelected(values) {
   emit('update:modelValue', optionValues.value.filter(value => values.includes(value)))
 }
 
 function isSelected(value) {
   return selectedValues.value.includes(String(value ?? '').trim())
+}
+
+function isAuthenticated(value) {
+  return authenticatedDirectorValues.value.has(String(value ?? '').trim())
 }
 
 function toggleDirector(value) {

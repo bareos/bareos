@@ -71,6 +71,15 @@
               class="full-width"
               :loading="loading"
             />
+            <q-btn
+              v-if="canReuseCurrentCredentials"
+              flat
+              color="primary"
+              class="full-width q-mt-sm"
+              :label="t('Reuse current credentials')"
+              :disable="loading"
+              @click="reuseCurrentCredentials"
+            />
           </q-form>
         </q-card-section>
       </q-card>
@@ -83,8 +92,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   useAuthStore,
@@ -94,14 +103,18 @@ import { useSettingsStore } from '../stores/settings.js'
 import { buildDirectorOptions } from '../utils/director.js'
 import { toUserVisibleDirectorError } from '../utils/directorErrors.js'
 import {
+  loginDirectorProxySession,
   loginProxySession,
+  reuseProxySessionCredentials,
   SESSION_AUTH_PASSWORD,
+  setCurrentProxySessionDirector,
 } from '../utils/sessionApi.js'
 import LanguageSelect from '../components/LanguageSelect.vue'
 import bareosLogo from '../assets/bareos-logo-small.png'
 
 const auth     = useAuthStore()
 const director = useDirectorStore()
+const route    = useRoute()
 const settings = useSettingsStore()
 const router   = useRouter()
 const { t } = useI18n()
@@ -119,19 +132,56 @@ const locale    = ref(settings.locale)
 const loading   = ref(false)
 const errorMsg  = ref(null)
 const LOGIN_CONNECT_TIMEOUT_MS = 15000
+const requestedDirector = computed(() => (
+  typeof route.query.director === 'string' ? route.query.director.trim() : ''
+))
+const returnTo = computed(() => (
+  typeof route.query.returnTo === 'string' ? route.query.returnTo : ''
+))
+const isAddDirectorMode = computed(() => (
+  auth.isLoggedIn && route.query.mode === 'add'
+))
 const hasAvailableDirectors = computed(() => director.availableDirectors.length > 0)
 const directorOptions = computed(() => (
   buildDirectorOptions({
     availableDirectors: director.availableDirectors,
+    selectedDirectors: auth.authenticatedDirectors,
     currentDirector: directorRef.value,
+    fallbackDirector: auth.user?.director || settings.directorName,
   })
 ))
+const canReuseCurrentCredentials = computed(() => (
+  isAddDirectorMode.value
+  && !!auth.user?.director
+  && !!directorRef.value
+  && directorRef.value !== auth.user.director
+))
+
+watch(
+  () => directorRef.value,
+  (value) => {
+    if (!isAddDirectorMode.value) {
+      return
+    }
+
+    username.value = auth.getDirectorUsername(value) || auth.user?.username || settings.loginUsername
+  },
+  { immediate: true }
+)
 
 onMounted(async () => {
+  if (requestedDirector.value) {
+    directorRef.value = requestedDirector.value
+  }
+
   try {
     const available = await director.fetchAvailableDirectors()
     if (available.length > 0 && !available.includes(directorRef.value)) {
-      directorRef.value = available[0]
+      if (isAddDirectorMode.value) {
+        directorRef.value = available.find(value => !auth.hasDirectorSession(value)) || available[0]
+      } else {
+        directorRef.value = available[0]
+      }
     }
   } catch {
     // Leave the manual director input available when the proxy list is not
@@ -139,46 +189,95 @@ onMounted(async () => {
   }
 })
 
+function currentDirectorError(error, fallbackMessage = '') {
+  return toUserVisibleDirectorError(error?.message || fallbackMessage, {
+    authenticationMessage: t('Authentication failed'),
+    connectionMessage: t('Could not connect to director. Is the proxy running?'),
+  })
+}
+
+async function activateDirector(targetDirector) {
+  auth.setDirector(targetDirector)
+  settings.directorName = targetDirector
+  director.disconnect()
+  await setCurrentProxySessionDirector({ director: targetDirector })
+  await director.connectAndWait(auth.getCredentials(targetDirector), LOGIN_CONNECT_TIMEOUT_MS)
+}
+
+function finishLoginRedirect() {
+  settings.setLocale(locale.value)
+  router.push(returnTo.value || { name: 'dashboard' })
+}
+
 async function doLogin() {
   loading.value = true
   errorMsg.value = null
 
   try {
-    await loginProxySession({
-      username: username.value,
-      password: password.value,
-      director: directorRef.value,
-    })
+    if (isAddDirectorMode.value) {
+      await loginDirectorProxySession({
+        username: username.value,
+        password: password.value,
+        director: directorRef.value,
+      })
+    } else {
+      await loginProxySession({
+        username: username.value,
+        password: password.value,
+        director: directorRef.value,
+      })
+    }
   } catch (error) {
-    errorMsg.value = toUserVisibleDirectorError(error?.message, {
-      authenticationMessage: t('Authentication failed'),
-      connectionMessage: t('Could not connect to director. Is the proxy running?'),
-    })
+    errorMsg.value = currentDirectorError(error)
     loading.value = false
     return
   }
+
+  auth.loginDirector(username.value, directorRef.value, SESSION_AUTH_PASSWORD)
 
   try {
-    await director.connectAndWait({
-      username: username.value,
-      password: SESSION_AUTH_PASSWORD,
-      director: directorRef.value,
-    }, LOGIN_CONNECT_TIMEOUT_MS)
+    await activateDirector(directorRef.value)
   } catch (error) {
-    errorMsg.value = toUserVisibleDirectorError(
-      error?.message || director.errorMsg,
-      {
-      authenticationMessage: t('Authentication failed'),
-      connectionMessage: t('Could not connect to director. Is the proxy running?'),
-      }
-    )
+    errorMsg.value = currentDirectorError(error, director.errorMsg)
     loading.value = false
     return
   }
 
-  settings.setLocale(locale.value)
-  auth.login(username.value, directorRef.value)
   loading.value = false
-  router.push({ name: 'dashboard' })
+  finishLoginRedirect()
+}
+
+async function reuseCurrentCredentials() {
+  loading.value = true
+  errorMsg.value = null
+
+  try {
+    const result = await reuseProxySessionCredentials({
+      directors: [directorRef.value],
+      sourceDirector: auth.user?.director,
+    })
+    const reuseResult = result?.results?.find(item => item?.director === directorRef.value)
+    if (!reuseResult || !['authenticated', 'already_authenticated'].includes(reuseResult.status)) {
+      throw new Error(
+        reuseResult?.status === 'authentication_failed'
+          ? t('Authentication failed')
+          : t('Could not connect to director. Is the proxy running?')
+      )
+    }
+
+    if (result?.session) {
+      auth.applySession(result.session, SESSION_AUTH_PASSWORD)
+    } else {
+      await auth.restoreSession(true)
+    }
+    await activateDirector(directorRef.value)
+  } catch (error) {
+    errorMsg.value = currentDirectorError(error, director.errorMsg)
+    loading.value = false
+    return
+  }
+
+  loading.value = false
+  finishLoginRedirect()
 }
 </script>

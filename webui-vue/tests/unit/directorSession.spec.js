@@ -21,6 +21,19 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+
+const { setCurrentProxySessionDirector } = vi.hoisted(() => ({
+  setCurrentProxySessionDirector: vi.fn(),
+}))
+
+vi.mock('../../src/utils/sessionApi.js', async () => {
+  const actual = await vi.importActual('../../src/utils/sessionApi.js')
+  return {
+    ...actual,
+    setCurrentProxySessionDirector,
+  }
+})
+
 import { switchActiveDirector } from '../../src/composables/useDirectorSession.js'
 import { useAuthStore } from '../../src/stores/auth.js'
 import { useDirectorStore } from '../../src/stores/director.js'
@@ -31,6 +44,7 @@ describe('director session switching', () => {
     sessionStorage.clear()
     localStorage.clear()
     setActivePinia(createPinia())
+    setCurrentProxySessionDirector.mockReset().mockResolvedValue(true)
   })
 
   it('switches the active director and reconnects the singleton session', async () => {
@@ -39,6 +53,7 @@ describe('director session switching', () => {
     const director = useDirectorStore()
 
     auth.login('admin', 'bareos-dir-a', 'secret')
+    auth.loginDirector('ops', 'bareos-dir-b', 'secret', { setCurrent: false })
     settings.directorName = 'bareos-dir-a'
     director.disconnect = vi.fn()
     director.connectAndWait = vi.fn().mockResolvedValue(true)
@@ -46,13 +61,33 @@ describe('director session switching', () => {
     await expect(switchActiveDirector('bareos-dir-b')).resolves.toBe(true)
 
     expect(director.disconnect).toHaveBeenCalledOnce()
+    expect(setCurrentProxySessionDirector).toHaveBeenCalledWith({
+      director: 'bareos-dir-b',
+    })
     expect(director.connectAndWait).toHaveBeenCalledWith({
-      username: 'admin',
+      username: 'ops',
       password: 'secret',
       director: 'bareos-dir-b',
     })
     expect(auth.user?.director).toBe('bareos-dir-b')
+    expect(auth.user?.username).toBe('ops')
     expect(settings.directorName).toBe('bareos-dir-b')
+  })
+
+  it('rejects switching to a director without stored credentials', async () => {
+    const auth = useAuthStore()
+    const director = useDirectorStore()
+
+    auth.login('admin', 'bareos-dir-a', 'secret')
+    director.disconnect = vi.fn()
+    director.connectAndWait = vi.fn()
+
+    await expect(switchActiveDirector('bareos-dir-b')).rejects.toThrow(
+      'Please log in to director "bareos-dir-b" first.'
+    )
+
+    expect(setCurrentProxySessionDirector).not.toHaveBeenCalled()
+    expect(director.disconnect).not.toHaveBeenCalled()
   })
 
   it('restores the previous active director when reconnecting fails', async () => {
@@ -61,6 +96,7 @@ describe('director session switching', () => {
     const director = useDirectorStore()
 
     auth.login('admin', 'bareos-dir-a', 'secret')
+    auth.loginDirector('ops', 'bareos-dir-b', 'secret', { setCurrent: false })
     settings.directorName = 'bareos-dir-a'
     director.disconnect = vi.fn()
     director.connectAndWait = vi.fn()
@@ -70,9 +106,16 @@ describe('director session switching', () => {
     await expect(switchActiveDirector('bareos-dir-b')).rejects.toThrow('boom')
 
     expect(auth.user?.director).toBe('bareos-dir-a')
+    expect(auth.user?.username).toBe('admin')
     expect(settings.directorName).toBe('bareos-dir-a')
+    expect(setCurrentProxySessionDirector).toHaveBeenNthCalledWith(1, {
+      director: 'bareos-dir-b',
+    })
+    expect(setCurrentProxySessionDirector).toHaveBeenNthCalledWith(2, {
+      director: 'bareos-dir-a',
+    })
     expect(director.connectAndWait).toHaveBeenNthCalledWith(1, {
-      username: 'admin',
+      username: 'ops',
       password: 'secret',
       director: 'bareos-dir-b',
     })

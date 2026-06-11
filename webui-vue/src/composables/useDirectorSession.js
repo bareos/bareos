@@ -22,6 +22,7 @@
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { setCurrentProxySessionDirector } from '../utils/sessionApi.js'
 
 export async function switchActiveDirector(targetDirector) {
   const auth = useAuthStore()
@@ -39,6 +40,10 @@ export async function switchActiveDirector(targetDirector) {
     throw new Error('Not logged in.')
   }
 
+  if (!auth.hasDirectorSession(targetDirector)) {
+    throw new Error(`Please log in to director "${targetDirector}" first.`)
+  }
+
   if (previousDirector === targetDirector && director.isConnected) {
     return false
   }
@@ -48,13 +53,15 @@ export async function switchActiveDirector(targetDirector) {
   settings.directorName = targetDirector
 
   try {
-    await director.connectAndWait(auth.getCredentials())
+    await setCurrentProxySessionDirector({ director: targetDirector })
+    await director.connectAndWait(auth.getCredentials(targetDirector))
     return true
   } catch (error) {
     if (previousDirector && previousDirector !== targetDirector) {
       auth.setDirector(previousDirector)
       settings.directorName = previousDirector
       try {
+        await setCurrentProxySessionDirector({ director: previousDirector })
         await director.connectAndWait(previousCredentials)
       } catch {
         // Preserve the original switch error.

@@ -56,8 +56,10 @@
             v-model="selectedDirectorsModel"
             :options="directorMenuOptions"
             :console-directors="scopeConsoleDirectors"
+            :authenticated-directors="auth.authenticatedDirectors"
             data-test-id="director-scope-drawer"
             @open-console="openConsole($event); drawerOpen = false"
+            @login-director="openDirectorLogin($event); drawerOpen = false"
           />
         </q-list>
 
@@ -162,9 +164,11 @@
                   v-model="selectedDirectorsModel"
                   :options="directorMenuOptions"
                   :console-directors="scopeConsoleDirectors"
+                  :authenticated-directors="auth.authenticatedDirectors"
                   :close-on-console="true"
                   data-test-id="director-scope-menu"
                   @open-console="openConsole"
+                  @login-director="openDirectorLogin"
                 />
               </q-list>
             </q-menu>
@@ -375,6 +379,21 @@ function openConsole(targetDirector = scopeConsoleDirectors.value[0] || currentD
     popupName,
     'width=960,height=720,resizable=yes,scrollbars=no'
   )
+}
+
+function openDirectorLogin(targetDirector) {
+  if (!targetDirector) {
+    return
+  }
+
+  router.push({
+    name: 'login',
+    query: {
+      mode: 'add',
+      director: targetDirector,
+      returnTo: router.currentRoute.value.fullPath,
+    },
+  })
 }
 
 const mainNavItems = computed(() => [

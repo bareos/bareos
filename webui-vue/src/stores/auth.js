@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   fetchCurrentSession,
   SESSION_AUTH_PASSWORD,
@@ -7,16 +7,95 @@ import {
 
 export const DEFAULT_DIRECTOR_NAME = 'bareos-dir'
 
+function normalizeDirectorName(value) {
+  const director = String(value ?? '').trim()
+  return director || DEFAULT_DIRECTOR_NAME
+}
+
+function normalizeDirectorUsers(session) {
+  const byDirector = {}
+
+  for (const entry of session?.authenticatedDirectors ?? []) {
+    const director = normalizeDirectorName(entry?.director)
+    const username = String(entry?.username ?? '').trim()
+    if (!username) {
+      continue
+    }
+    byDirector[director] = { username }
+  }
+
+  if (Object.keys(byDirector).length === 0) {
+    const username = String(session?.username ?? '').trim()
+    const director = normalizeDirectorName(session?.currentDirector ?? session?.director)
+    if (username) {
+      byDirector[director] = { username }
+    }
+  }
+
+  return byDirector
+}
+
+function firstAuthenticatedDirector(directorUsers) {
+  return Object.keys(directorUsers)[0] ?? ''
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const _password = ref('')
   const initialized = ref(false)
-  const isLoggedIn = computed(() => !!user.value && !!_password.value)
+  const directorUsers = ref({})
+  const authenticatedDirectors = computed(() => Object.keys(directorUsers.value))
+  const isLoggedIn = computed(() => (
+    !!user.value && !!_password.value && authenticatedDirectors.value.length > 0
+  ))
   let restorePromise = null
 
-  function applyLogin(username, director = DEFAULT_DIRECTOR_NAME, password = SESSION_AUTH_PASSWORD) {
-    user.value = { username, director }
+  function setCurrentUser(director = DEFAULT_DIRECTOR_NAME) {
+    const normalizedDirector = normalizeDirectorName(director)
+    const directorUser = directorUsers.value[normalizedDirector]
+    if (!directorUser?.username) {
+      user.value = null
+      return false
+    }
+
+    user.value = {
+      username: directorUser.username,
+      director: normalizedDirector,
+    }
+    return true
+  }
+
+  function applyLogin(username, director = DEFAULT_DIRECTOR_NAME,
+    password = SESSION_AUTH_PASSWORD, options = {}) {
+    const normalizedDirector = normalizeDirectorName(director)
+    const normalizedUsername = String(username ?? '').trim()
+    if (!normalizedUsername) {
+      return
+    }
+
+    directorUsers.value = {
+      ...directorUsers.value,
+      [normalizedDirector]: { username: normalizedUsername },
+    }
     _password.value = password
+    if (options.setCurrent !== false || !user.value) {
+      setCurrentUser(normalizedDirector)
+    }
+    initialized.value = true
+  }
+
+  function applySession(session, password = SESSION_AUTH_PASSWORD) {
+    const nextDirectorUsers = normalizeDirectorUsers(session)
+    directorUsers.value = nextDirectorUsers
+    _password.value = Object.keys(nextDirectorUsers).length > 0 ? password : ''
+    const currentDirector = normalizeDirectorName(
+      session?.currentDirector
+      ?? session?.director
+      ?? firstAuthenticatedDirector(nextDirectorUsers)
+    )
+    if (!setCurrentUser(currentDirector)) {
+      user.value = null
+    }
     initialized.value = true
   }
 
@@ -28,19 +107,55 @@ export const useAuthStore = defineStore('auth', () => {
     applyLogin(username, director, password)
   }
 
+  function loginDirector(
+    username,
+    director = DEFAULT_DIRECTOR_NAME,
+    password = SESSION_AUTH_PASSWORD,
+    options = {},
+  ) {
+    applyLogin(username, director, password, options)
+  }
+
+  function getDirectorUsername(director = DEFAULT_DIRECTOR_NAME) {
+    return directorUsers.value[normalizeDirectorName(director)]?.username ?? ''
+  }
+
+  function hasDirectorSession(director = DEFAULT_DIRECTOR_NAME) {
+    return !!directorUsers.value[normalizeDirectorName(director)]
+  }
+
   function setDirector(director = DEFAULT_DIRECTOR_NAME) {
-    if (!user.value) {
-      return
+    if (!isLoggedIn.value) {
+      return false
     }
 
-    user.value = {
-      ...user.value,
-      director: director || DEFAULT_DIRECTOR_NAME,
+    return setCurrentUser(director)
+  }
+
+  function removeDirector(director = DEFAULT_DIRECTOR_NAME) {
+    const normalizedDirector = normalizeDirectorName(director)
+    if (!directorUsers.value[normalizedDirector]) {
+      return false
     }
+
+    const nextDirectorUsers = { ...directorUsers.value }
+    delete nextDirectorUsers[normalizedDirector]
+    directorUsers.value = nextDirectorUsers
+
+    if (Object.keys(nextDirectorUsers).length === 0) {
+      logout()
+      return true
+    }
+
+    if (user.value?.director === normalizedDirector) {
+      setCurrentUser(firstAuthenticatedDirector(nextDirectorUsers))
+    }
+    return true
   }
 
   function logout() {
     user.value = null
+    directorUsers.value = {}
     _password.value = ''
     initialized.value = true
   }
@@ -57,12 +172,8 @@ export const useAuthStore = defineStore('auth', () => {
     restorePromise = (async () => {
       try {
         const session = await fetchCurrentSession()
-        if (session?.username) {
-          applyLogin(
-            session.username,
-            session.director || DEFAULT_DIRECTOR_NAME,
-            SESSION_AUTH_PASSWORD
-          )
+        if (session) {
+          applySession(session, SESSION_AUTH_PASSWORD)
         } else {
           logout()
         }
@@ -79,24 +190,34 @@ export const useAuthStore = defineStore('auth', () => {
     return restorePromise
   }
 
-  // Returns credentials object suitable for useDirectorStore.connect()
-  function getCredentials() {
-    if (!user.value || !_password.value) return null
+  function getCredentials(director = user.value?.director || DEFAULT_DIRECTOR_NAME) {
+    const normalizedDirector = normalizeDirectorName(director)
+    const username = getDirectorUsername(normalizedDirector)
+    if (!username || !_password.value) {
+      return null
+    }
     return {
-      username:  user.value.username,
-      password:  _password.value,
-      director:  user.value.director || DEFAULT_DIRECTOR_NAME,
+      username,
+      password: _password.value,
+      director: normalizedDirector,
     }
   }
 
   return {
     user,
-    isLoggedIn,
     initialized,
+    isLoggedIn,
+    directorUsers,
+    authenticatedDirectors,
     login,
+    loginDirector,
+    getDirectorUsername,
+    hasDirectorSession,
     setDirector,
+    removeDirector,
     logout,
     restoreSession,
     getCredentials,
+    applySession,
   }
 })

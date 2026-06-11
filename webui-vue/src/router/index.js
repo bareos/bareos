@@ -63,7 +63,7 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth && !auth.isLoggedIn) {
     return { name: 'login' }
   }
-  if (to.name === 'login' && auth.isLoggedIn) {
+  if (to.name === 'login' && auth.isLoggedIn && to.query.mode !== 'add') {
     return { name: 'dashboard' }
   }
 })

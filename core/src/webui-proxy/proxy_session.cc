@@ -509,7 +509,10 @@ void HandleSessionLoginRequest(int fd,
     const DirectorConfig cfg
         = ConnectSessionDirector(config, requested_director, username, password);
 
-    auto session_id = LookupSessionIdFromRequest(request);
+    std::optional<std::string> session_id;
+    if (const auto existing_session_id = LookupSessionIdFromRequest(request)) {
+      session_id = std::string(*existing_session_id);
+    }
     bool new_session = false;
     if (!session_id
         || !ProxyAuthSessionStore::Instance().LookupSession(*session_id)) {
