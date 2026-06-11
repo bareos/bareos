@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - mssqlvdi: set default for serveraddress+instance on restore [PR #2652]
 - dedupable: remove error on flush [PR #2658]
 - docs: clarify mssql plugin options [PR #2659]
+- VMware Plugin: Fix local vmdk restore > 2TB [PR #2691]
 
 ## [25.0.3] - 2026-04-01
 
@@ -2292,6 +2293,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2660]: https://github.com/bareos/bareos/pull/2660
 [PR #2673]: https://github.com/bareos/bareos/pull/2673
 [PR #2686]: https://github.com/bareos/bareos/pull/2686
+[PR #2691]: https://github.com/bareos/bareos/pull/2691
 [PR #2692]: https://github.com/bareos/bareos/pull/2692
 [PR #2693]: https://github.com/bareos/bareos/pull/2693
 [unreleased]: https://github.com/bareos/bareos/tree/master
