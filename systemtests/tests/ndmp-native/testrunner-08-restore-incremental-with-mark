@@ -49,6 +49,7 @@ mark ${NDMP_TEST_PATH}/incremental
 done
 yes
 wait
+message
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
