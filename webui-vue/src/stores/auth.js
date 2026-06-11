@@ -45,6 +45,11 @@ export const useAuthStore = defineStore('auth', () => {
   const initialized = ref(false)
   const directorUsers = ref({})
   const authenticatedDirectors = computed(() => Object.keys(directorUsers.value))
+  const directorSessions = computed(() => authenticatedDirectors.value.map((director) => ({
+    director,
+    username: getDirectorUsername(director),
+    current: user.value?.director === director,
+  })))
   const isLoggedIn = computed(() => (
     !!user.value && !!_password.value && authenticatedDirectors.value.length > 0
   ))
@@ -122,6 +127,14 @@ export const useAuthStore = defineStore('auth', () => {
 
   function hasDirectorSession(director = DEFAULT_DIRECTOR_NAME) {
     return !!directorUsers.value[normalizeDirectorName(director)]
+  }
+
+  function missingDirectorSessions(directors = []) {
+    return [...new Set(
+      (Array.isArray(directors) ? directors : [])
+        .map(value => normalizeDirectorName(value))
+        .filter(Boolean)
+    )].filter(director => !hasDirectorSession(director))
   }
 
   function setDirector(director = DEFAULT_DIRECTOR_NAME) {
@@ -209,10 +222,12 @@ export const useAuthStore = defineStore('auth', () => {
     isLoggedIn,
     directorUsers,
     authenticatedDirectors,
+    directorSessions,
     login,
     loginDirector,
     getDirectorUsername,
     hasDirectorSession,
+    missingDirectorSessions,
     setDirector,
     removeDirector,
     logout,

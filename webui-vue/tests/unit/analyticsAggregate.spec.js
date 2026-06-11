@@ -19,6 +19,7 @@
    02110-1301, USA.
  */
 
+import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fetchAggregatedAnalytics } from '../../src/composables/analyticsAggregate.js'
 
@@ -57,6 +58,7 @@ class FakeWebSocket {
 
 describe('analytics aggregate helpers', () => {
   beforeEach(() => {
+    setActivePinia(createPinia())
     FakeWebSocket.instances = []
     vi.stubGlobal('WebSocket', FakeWebSocket)
     vi.useFakeTimers()

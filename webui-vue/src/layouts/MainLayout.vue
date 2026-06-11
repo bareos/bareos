@@ -174,9 +174,34 @@
             </q-menu>
           </q-btn>
 
-          <q-btn flat color="white" :label="auth.user?.username || 'admin'" icon="person" no-caps>
+          <q-btn flat color="white" :label="accountMenuLabel" icon="person" no-caps>
             <q-menu>
               <q-list dense style="min-width:180px">
+                <q-item
+                  v-for="session in accountDirectorSessions"
+                  :key="session.director"
+                  dense
+                >
+                  <q-item-section avatar>
+                    <q-icon :name="session.current ? 'check_circle' : 'dns'" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>{{ session.username }}</q-item-label>
+                    <q-item-label caption>{{ session.director }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      size="sm"
+                      icon="logout"
+                      :title="t('Logout')"
+                      @click.stop="logoutDirectorSession(session.director)"
+                    />
+                  </q-item-section>
+                </q-item>
+                <q-separator v-if="accountDirectorSessions.length > 0" />
                 <q-item clickable v-close-popup :to="{ name: 'acls' }">
                   <q-item-section avatar><q-icon name="verified_user" /></q-item-section>
                   <q-item-section>{{ t('Command ACL') }}</q-item-section>
@@ -208,6 +233,23 @@
     </q-header>
 
     <q-page-container>
+      <q-banner
+        v-if="missingDirectorLogins.length > 0"
+        class="bg-warning text-black q-ma-md rounded-borders"
+      >
+        <q-btn
+          flat
+          no-caps
+          color="black"
+          class="q-px-none"
+          icon="login"
+          :label="missingDirectorLoginMessage"
+          :aria-label="`${t('Login')}: ${firstMissingDirector}`"
+          @click="openDirectorLogin(firstMissingDirector)"
+        >
+          <q-tooltip>{{ `${t('Login')}: ${firstMissingDirector}` }}</q-tooltip>
+        </q-btn>
+      </q-banner>
       <router-view />
     </q-page-container>
 
@@ -227,9 +269,9 @@
       <q-space />
 
       <!-- session info -->
-      <template v-if="auth.user">
+      <template v-if="accountDirectorSessions.length > 0">
         <q-icon name="person" size="13px" style="opacity:.7" />
-        <span>{{ auth.user.username }}</span>
+        <span>{{ accountMenuLabel }}</span>
         <span style="opacity:.4">|</span>
         <span style="opacity:.7">WebUI {{ appVersion }}</span>
       </template>
@@ -249,9 +291,13 @@ import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useConsoleSessionsStore } from '../stores/consoleSessions.js'
 import { useDirectorStore } from '../stores/director.js'
+import { formatDirectorSessionsSummary } from '../utils/directorSessions.js'
 import { DIRECTOR_WS_URL } from '../utils/directorCommandSocket.js'
 import { toUserVisibleDirectorError } from '../utils/directorErrors.js'
-import { logoutProxySession } from '../utils/sessionApi.js'
+import {
+  logoutDirectorProxySession,
+  logoutProxySession,
+} from '../utils/sessionApi.js'
 import {
   RELEASE_INFO_PAGE_URL,
   useReleaseInfoStore,
@@ -319,6 +365,10 @@ function connectionCaptionParts(connectionState) {
     return [t('Authenticating…')]
   }
 
+  if (connectionState.status === 'login_required') {
+    return [t('Login required')]
+  }
+
   if (connectionState.status === 'error') {
     return [t('Error')]
   }
@@ -369,6 +419,21 @@ const scopeConsoleDirectors = computed(() => {
 
   return currentDirector.value ? [currentDirector.value] : []
 })
+const missingDirectorLogins = computed(() => (
+  auth.missingDirectorSessions(activeDirectors.value)
+))
+const firstMissingDirector = computed(() => missingDirectorLogins.value[0] ?? '')
+const missingDirectorLoginMessage = computed(() => (
+  missingDirectorLogins.value.length === 1
+    ? t('Log in to {director}.', {
+      director: missingDirectorLogins.value[0],
+    })
+    : t('Log in to the selected directors.')
+))
+const accountDirectorSessions = computed(() => auth.directorSessions)
+const accountMenuLabel = computed(() => (
+  formatDirectorSessionsSummary(accountDirectorSessions.value, t)
+))
 
 function openConsole(targetDirector = scopeConsoleDirectors.value[0] || currentDirector.value) {
   const base = window.location.href.replace(/#.*$/, '')
@@ -394,6 +459,23 @@ function openDirectorLogin(targetDirector) {
       returnTo: router.currentRoute.value.fullPath,
     },
   })
+}
+
+function pruneSelectedDirectors(removedDirector) {
+  const remainingSelected = settings.selectedDirectors
+    .filter(value => value !== removedDirector)
+
+  if (remainingSelected.length > 0) {
+    settings.setSelectedDirectors(remainingSelected)
+    return
+  }
+
+  if (auth.user?.director) {
+    settings.setSelectedDirectors([auth.user.director])
+    return
+  }
+
+  settings.setSelectedDirectors([])
 }
 
 const mainNavItems = computed(() => [
@@ -517,6 +599,54 @@ async function logout() {
   director.disconnect()
   auth.logout()
   router.push({ name: 'login' })
+}
+
+async function logoutDirectorSession(targetDirector) {
+  const directorName = String(targetDirector ?? '').trim()
+  if (!directorName || !auth.hasDirectorSession(directorName)) {
+    return
+  }
+
+  const isCurrentDirector = auth.user?.director === directorName
+
+  try {
+    const session = await logoutDirectorProxySession({ director: directorName })
+
+    consoleSessions.disconnectSession(directorName, {
+      reason: 'Disconnected',
+      resetInitialized: true,
+    })
+
+    if (!session) {
+      director.disconnect()
+      auth.logout()
+      settings.setSelectedDirectors([])
+      router.push({ name: 'login' })
+      return
+    }
+
+    auth.applySession(session)
+    settings.directorName = auth.user?.director || settings.directorName
+    pruneSelectedDirectors(directorName)
+
+    if (isCurrentDirector) {
+      director.disconnect()
+      const credentials = auth.getCredentials()
+      if (credentials) {
+        await director.connectAndWait(credentials)
+      }
+    }
+
+    director.refreshDirectorConnections(activeDirectors.value).catch(() => {})
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: toUserVisibleDirectorError(error?.message, {
+        authenticationMessage: t('Authentication failed'),
+        connectionMessage: t('Could not connect to director.'),
+      }),
+    })
+  }
 }
 </script>
 

@@ -19,6 +19,15 @@
    02110-1301, USA.
  */
 
+export function isDirectorLoginRequiredError(message) {
+  const normalized = String(message ?? '').trim()
+  if (!normalized) {
+    return false
+  }
+
+  return /^Please log in to director ".+" first\.$/.test(normalized)
+}
+
 export function toUserVisibleDirectorError(
   message,
   {

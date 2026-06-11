@@ -20,7 +20,7 @@
 -->
 <template>
   <q-banner
-    v-if="errors.length"
+    v-if="visibleErrors.length"
     rounded
     dense
     class="bg-warning text-black q-mb-md"
@@ -29,7 +29,7 @@
       <q-icon name="warning" />
     </template>
     <div
-      v-for="item in errors"
+      v-for="item in visibleErrors"
       :key="`${item.director}\u0000${item.message}`"
       class="row items-center q-gutter-xs q-mb-xs"
     >
@@ -40,12 +40,18 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import DirectorBadge from './DirectorBadge.vue'
+import { isDirectorLoginRequiredError } from '../utils/directorErrors.js'
 
-defineProps({
+const props = defineProps({
   errors: {
     type: Array,
     default: () => [],
   },
 })
+
+const visibleErrors = computed(() => (
+  (props.errors ?? []).filter(item => !isDirectorLoginRequiredError(item?.message))
+))
 </script>

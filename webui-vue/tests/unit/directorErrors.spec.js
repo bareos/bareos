@@ -20,7 +20,10 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { toUserVisibleDirectorError } from '../../src/utils/directorErrors.js'
+import {
+  isDirectorLoginRequiredError,
+  toUserVisibleDirectorError,
+} from '../../src/utils/directorErrors.js'
 
 describe('toUserVisibleDirectorError', () => {
   it('normalizes authentication failures', () => {
@@ -54,5 +57,12 @@ describe('toUserVisibleDirectorError', () => {
         connectionMessage: 'Proxy unavailable',
       })
     ).toBe('Proxy unavailable')
+  })
+
+  it('detects missing per-director login errors', () => {
+    expect(isDirectorLoginRequiredError('Please log in to director "bareos-dir-2" first.'))
+      .toBe(true)
+    expect(isDirectorLoginRequiredError('Authentication failed'))
+      .toBe(false)
   })
 })

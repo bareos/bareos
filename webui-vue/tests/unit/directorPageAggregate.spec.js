@@ -19,6 +19,7 @@
    02110-1301, USA.
  */
 
+import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   fetchAggregatedDirectorMessages,
@@ -69,6 +70,7 @@ function commandIds(socket) {
 
 describe('director page aggregate helpers', () => {
   beforeEach(() => {
+    setActivePinia(createPinia())
     FakeWebSocket.instances = []
     vi.stubGlobal('WebSocket', FakeWebSocket)
     vi.useFakeTimers()
