@@ -52,6 +52,24 @@ export async function loginProxySession({ username, password, director }) {
   return payload
 }
 
+export async function loginDirectorProxySession({ username, password, director }) {
+  const response = await fetch(`/api/session/directors/${encodeURIComponent(director)}/login`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, password }),
+  })
+
+  const payload = await parseJsonResponse(response)
+  if (!response.ok) {
+    throw new Error(payload?.message || 'Authentication failed')
+  }
+
+  return payload
+}
+
 export async function fetchCurrentSession() {
   const response = await fetch('/api/session', {
     method: 'GET',
@@ -77,4 +95,45 @@ export async function logoutProxySession() {
     credentials: 'same-origin',
     cache: 'no-store',
   })
+}
+
+export async function setCurrentProxySessionDirector({ director }) {
+  const response = await fetch('/api/session/current-director', {
+    method: 'POST',
+    credentials: 'same-origin',
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ director }),
+  })
+
+  const payload = await parseJsonResponse(response)
+  if (!response.ok) {
+    throw new Error(payload?.message || 'Could not update director session')
+  }
+
+  return payload
+}
+
+export async function reuseProxySessionCredentials({ directors, sourceDirector }) {
+  const response = await fetch('/api/session/reuse', {
+    method: 'POST',
+    credentials: 'same-origin',
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      directors,
+      ...(sourceDirector ? { sourceDirector } : {}),
+    }),
+  })
+
+  const payload = await parseJsonResponse(response)
+  if (!response.ok) {
+    throw new Error(payload?.message || 'Could not reuse current credentials')
+  }
+
+  return payload
 }
