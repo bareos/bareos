@@ -863,8 +863,10 @@ static bool ResetRestoreContext(UaContext* ua,
   if (rc.when) {
     jcr->sched_time = StrToUtime(rc.when);
     if (jcr->sched_time == 0) {
-      ua->SendMsg(T_("Invalid time, using current time.\n"));
-      jcr->sched_time = time(NULL);
+      ua->SendMsg(
+          T_("Invalid time specification in when; expected: \"YYYY-MM-DD "
+             "HH:MM:SS\"\n"));
+      return false;
     }
     rc.when = NULL;
   }
