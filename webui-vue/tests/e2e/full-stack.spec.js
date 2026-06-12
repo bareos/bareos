@@ -85,12 +85,34 @@ async function selectFirstQOption(page, testId) {
   const field = page.locator(`[data-testid="${testId}"]`)
     .locator('xpath=ancestor::*[contains(@class,"q-field")]')
     .first()
-  await field.click()
-  const option = page.locator(
-    '.q-menu:visible .q-item, .q-menu:visible [role="option"], .q-menu:visible .q-virtual-scroll__content .q-item'
-  ).first()
-  await expect(option).toBeVisible()
-  await option.click()
+  await expect(field).toBeVisible({ timeout: 20000 })
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await field.click()
+    const option = page.locator(
+      '.q-menu:visible [role="option"], .q-menu:visible .q-item, .q-menu:visible .q-virtual-scroll__content .q-item, .q-popup-proxy:visible .q-item'
+    ).first()
+
+    try {
+      await expect(option).toBeVisible({ timeout: 10000 })
+      await option.click()
+      return
+    } catch {
+      await page.keyboard.press('Escape')
+      await page.waitForTimeout(300)
+    }
+  }
+
+  throw new Error(`Could not open option menu for ${testId}`)
+}
+
+async function waitForQSelectReady(page, testId) {
+  const field = page.locator(`[data-testid="${testId}"]`)
+    .locator('xpath=ancestor::*[contains(@class,"q-field")]')
+    .first()
+  await expect(field).toBeVisible({ timeout: 20000 })
+  await expect(field).not.toHaveClass(/q-field--loading/, { timeout: 20000 })
+  await expect(field).not.toHaveClass(/q-field--disabled/, { timeout: 20000 })
 }
 
 test('logs in and shows the dashboard', async ({ page }) => {
@@ -180,10 +202,10 @@ test('loads the restore workflow selections', async ({ page }) => {
   await login(page)
   await openNav(page, 'nav-restore', /#\/restore/)
 
-  await page.waitForTimeout(4000)
+  await waitForQSelectReady(page, 'restore-source-client')
   await selectFirstQOption(page, 'restore-source-client')
   await expect(page.locator('[data-testid="restore-backup-job"]')).toBeVisible()
-  await page.waitForTimeout(2000)
+  await waitForQSelectReady(page, 'restore-backup-job')
   await selectFirstQOption(page, 'restore-backup-job')
   await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
   await expect(page.locator('[data-testid="restore-job"]')).toBeVisible()
