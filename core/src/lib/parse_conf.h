@@ -172,6 +172,12 @@ enum
   CFG_TYPE_CIPHER = 301 /* Encryption Cipher */
 };
 
+enum string_type : int
+{
+  CFG_STR_TYPE_DEFAULT,
+  CFG_STR_TYPE_LABEL_FORMAT,
+};
+
 struct DatatypeName {
   const int number;
   const char* name;
