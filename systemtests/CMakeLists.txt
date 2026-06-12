@@ -554,6 +554,7 @@ endif()
 
 set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS admin-smoke readonly-smoke
                                          testuser-smoke testuser-tls-psk-smoke
+                                         admin-smoke-multi-director
 )
 
 if(NODE
@@ -615,6 +616,7 @@ else()
     set(BAREOS_WEBUI_PASSWORD admin)
     set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT TLS-PSK)
     set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK 0)
+    set(BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR 0)
 
     if(TEST_NAME STREQUAL "testuser-smoke")
       set(BAREOS_WEBUI_PROFILE testuser)
@@ -632,6 +634,12 @@ else()
       set(BAREOS_WEBUI_USERNAME testuser)
       set(BAREOS_WEBUI_PASSWORD testuser)
       set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT TLS-PSK)
+    elseif(TEST_NAME STREQUAL "admin-smoke-multi-director")
+      set(BAREOS_WEBUI_PROFILE admin)
+      set(BAREOS_WEBUI_USERNAME admin)
+      set(BAREOS_WEBUI_PASSWORD admin)
+      set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT TLS-PSK)
+      set(BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR 1)
     endif()
 
     configurefilestosystemtest(
@@ -705,6 +713,7 @@ else()
   set(BAREOS_WEBUI_PASSWORD "")
   set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT "")
   set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK "")
+  set(BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR "")
   set(BAREOS_WEBUI_TESTNAME "")
 endif()
 
