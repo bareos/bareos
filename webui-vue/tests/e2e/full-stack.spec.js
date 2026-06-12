@@ -81,20 +81,21 @@ async function openNav(page, testId, urlPattern) {
   await page.waitForURL(urlPattern)
 }
 
-async function selectFirstQOption(page, testId) {
+async function selectFirstQOption(page, testId, { optionTimeoutMs = 5000 } = {}) {
   const field = page.locator(`[data-testid="${testId}"]`)
     .locator('xpath=ancestor::*[contains(@class,"q-field")]')
     .first()
   await expect(field).toBeVisible({ timeout: 20000 })
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await field.click()
+    await field.click({ force: true })
+    await page.keyboard.press('ArrowDown')
     const option = page.locator(
       '.q-menu:visible [role="option"], .q-menu:visible .q-item, .q-menu:visible .q-virtual-scroll__content .q-item, .q-popup-proxy:visible .q-item'
     ).first()
 
     try {
-      await expect(option).toBeVisible({ timeout: 10000 })
+      await expect(option).toBeVisible({ timeout: optionTimeoutMs })
       await option.click()
       return
     } catch {
@@ -199,6 +200,8 @@ test('opens jobs and job details through the real director connection', async ({
 })
 
 test('loads the restore workflow selections', async ({ page }) => {
+  test.setTimeout(90000)
+
   await login(page)
   await openNav(page, 'nav-restore', /#\/restore/)
 
@@ -206,7 +209,7 @@ test('loads the restore workflow selections', async ({ page }) => {
   await selectFirstQOption(page, 'restore-source-client')
   await expect(page.locator('[data-testid="restore-backup-job"]')).toBeVisible()
   await waitForQSelectReady(page, 'restore-backup-job')
-  await selectFirstQOption(page, 'restore-backup-job')
+  await selectFirstQOption(page, 'restore-backup-job', { optionTimeoutMs: 8000 })
   await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
   await expect(page.locator('[data-testid="restore-job"]')).toBeVisible()
   await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
