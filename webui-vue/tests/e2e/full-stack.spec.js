@@ -114,7 +114,7 @@ test('shows a login error for invalid credentials', async ({ page }) => {
     shouldSucceed: false,
   })
   await expect(page.locator('[data-testid="login-error"]')).toContainText(
-    /Authentication failed|Connection error/i
+    /Authentication failed|Connection error|Could not log in to any configured director/i
   )
 })
 

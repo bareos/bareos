@@ -30,8 +30,35 @@
               class="q-mb-sm"
               autocomplete="current-password"
             />
+            <q-banner
+              v-if="isMultiDirectorLogin"
+              dense
+              class="bg-grey-2 text-grey-9 q-mb-md rounded-borders"
+            >
+              <template #avatar><q-icon name="dns" /></template>
+              <div>{{ multiDirectorLoginMessage }}</div>
+              <div
+                v-if="multiDirectorTargets.length > 0"
+                class="q-mt-xs"
+                data-testid="login-target-directors"
+              >
+                <strong>{{ t('Directors') }}:</strong> {{ multiDirectorTargets.join(', ') }}
+              </div>
+              <div
+                v-if="remainingDirectorFailures.length > 0"
+                class="q-mt-xs"
+                data-testid="login-remaining-directors"
+              >
+                <div
+                  v-for="attempt in remainingDirectorFailures"
+                  :key="attempt.director"
+                >
+                  {{ attempt.director }}: {{ attempt.message }}
+                </div>
+              </div>
+            </q-banner>
             <q-select
-              v-if="hasAvailableDirectors"
+              v-if="showDirectorField && hasAvailableDirectors"
               v-model="directorRef"
               data-testid="login-director"
               :options="directorOptions"
@@ -40,24 +67,23 @@
               emit-value
               map-options
               :label="t('Director')"
+              :error="!!directorLoadError"
+              :error-message="directorLoadError"
+              bottom-slots
               outlined dense
-              class="q-mb-sm"
+              class="login-director-field q-mb-lg"
             />
             <q-input
-              v-else-if="!hasAvailableDirectors"
+              v-else-if="showDirectorField && !hasAvailableDirectors"
               v-model="directorRef"
               data-testid="login-director"
               :label="t('Director')"
+              :error="!!directorLoadError"
+              :error-message="directorLoadError"
+              bottom-slots
               outlined dense
-              class="q-mb-sm"
+              class="login-director-field q-mb-lg"
             />
-            <LanguageSelect
-              v-model="locale"
-              data-testid="login-language"
-              :label="t('Language')"
-              class="q-mb-md"
-            />
-
             <q-banner v-if="errorMsg" data-testid="login-error" dense class="bg-negative text-white q-mb-md rounded-borders">
               <template #avatar><q-icon name="error" /></template>
               {{ errorMsg }}
@@ -66,10 +92,19 @@
             <q-btn
               data-testid="login-submit"
               type="submit"
-              :label="t('Login')"
+              :label="submitLabel"
               color="primary"
               class="full-width"
               :loading="loading"
+            />
+            <q-btn
+              v-if="canSkipRemainingDirectors"
+              flat
+              color="primary"
+              class="full-width q-mt-sm"
+              :label="t('Skip failed directors')"
+              :disable="loading"
+              @click="skipFailedDirectors"
             />
             <q-btn
               v-if="canReuseCurrentCredentials"
@@ -101,7 +136,17 @@ import {
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildDirectorOptions } from '../utils/director.js'
+import {
+  directorListLoadErrorMessage,
+  shouldAutoLoginAllDirectors,
+  summarizeDirectorLoginAttempts,
+} from '../utils/directorLogin.js'
 import { toUserVisibleDirectorError } from '../utils/directorErrors.js'
+import {
+  canReuseDirectorCredentials,
+  getDirectorReuseResult,
+  isSuccessfulDirectorReuse,
+} from '../utils/directorSessionReuse.js'
 import {
   loginDirectorProxySession,
   loginProxySession,
@@ -109,7 +154,6 @@ import {
   SESSION_AUTH_PASSWORD,
   setCurrentProxySessionDirector,
 } from '../utils/sessionApi.js'
-import LanguageSelect from '../components/LanguageSelect.vue'
 import bareosLogo from '../assets/bareos-logo-small.png'
 
 const auth     = useAuthStore()
@@ -128,10 +172,13 @@ const directorRef = computed({
   set: (value) => { settings.directorName = value },
 })
 const password  = ref('')
-const locale    = ref(settings.locale)
 const loading   = ref(false)
 const errorMsg  = ref(null)
+const directorLoadError = ref('')
 const LOGIN_CONNECT_TIMEOUT_MS = 15000
+const autoReusedDirectors = new Set()
+const primaryDirector = ref('')
+const remainingDirectorFailures = ref([])
 const requestedDirector = computed(() => (
   typeof route.query.director === 'string' ? route.query.director.trim() : ''
 ))
@@ -140,6 +187,9 @@ const returnTo = computed(() => (
 ))
 const isAddDirectorMode = computed(() => (
   auth.isLoggedIn && route.query.mode === 'add'
+))
+const configuredDirectors = computed(() => (
+  [...new Set(director.availableDirectors.map(value => String(value ?? '').trim()).filter(Boolean))]
 ))
 const hasAvailableDirectors = computed(() => director.availableDirectors.length > 0)
 const loginPageDirectors = computed(() => (
@@ -155,11 +205,53 @@ const directorOptions = computed(() => (
     fallbackDirector: auth.user?.director || settings.directorName,
   })
 ))
+const isMultiDirectorLogin = computed(() => (
+  shouldAutoLoginAllDirectors({
+    isAddDirectorMode: isAddDirectorMode.value,
+    requestedDirector: requestedDirector.value,
+    availableDirectors: configuredDirectors.value,
+  })
+))
+const showDirectorField = computed(() => !isMultiDirectorLogin.value)
 const canReuseCurrentCredentials = computed(() => (
-  isAddDirectorMode.value
-  && !!auth.user?.director
-  && !!directorRef.value
-  && directorRef.value !== auth.user.director
+  canReuseDirectorCredentials({
+    isAddDirectorMode: isAddDirectorMode.value,
+    sourceDirector: auth.user?.director,
+    targetDirector: directorRef.value,
+  })
+))
+const canSkipRemainingDirectors = computed(() => (
+  isMultiDirectorLogin.value
+  && remainingDirectorFailures.value.length > 0
+  && auth.authenticatedDirectors.length > 0
+))
+const submitLabel = computed(() => (
+  remainingDirectorFailures.value.length > 0
+    ? t('Retry remaining directors')
+    : t('Login')
+))
+const multiDirectorLoginMessage = computed(() => {
+  if (!isMultiDirectorLogin.value) {
+    return ''
+  }
+
+  if (remainingDirectorFailures.value.length > 0) {
+    return canSkipRemainingDirectors.value
+      ? t('Retry the remaining directors or skip them.')
+      : t('Retry the remaining directors.')
+  }
+
+  return t('The entered credentials will be tried on all configured directors.')
+})
+const multiDirectorTargets = computed(() => (
+  [...new Set(
+    (remainingDirectorFailures.value.length > 0
+      ? remainingDirectorFailures.value.map(attempt => attempt.director)
+      : configuredDirectors.value
+    )
+      .map(value => String(value ?? '').trim())
+      .filter(Boolean)
+  )]
 ))
 
 watch(
@@ -181,6 +273,7 @@ onMounted(async () => {
 
   try {
     const available = await director.fetchAvailableDirectors()
+    directorLoadError.value = ''
     if (available.length > 0 && !available.includes(directorRef.value)) {
       if (isAddDirectorMode.value) {
         directorRef.value = available.find(value => !auth.hasDirectorSession(value)) || available[0]
@@ -188,10 +281,11 @@ onMounted(async () => {
         directorRef.value = available[0]
       }
     }
-  } catch {
-    // Leave the manual director input available when the proxy list is not
-    // reachable.
+  } catch (error) {
+    directorLoadError.value = directorListLoadErrorMessage(error, t)
   }
+
+  await autoReuseCurrentCredentials()
 })
 
 function currentDirectorError(error, fallbackMessage = '') {
@@ -210,13 +304,114 @@ async function activateDirector(targetDirector) {
 }
 
 function finishLoginRedirect() {
-  settings.setLocale(locale.value)
   router.push(returnTo.value || { name: 'dashboard' })
+}
+
+async function finalizeSuccessfulLogin(targetDirector = primaryDirector.value || auth.authenticatedDirectors[0]) {
+  if (!targetDirector) {
+    errorMsg.value = t('Authentication failed')
+    loading.value = false
+    return false
+  }
+
+  try {
+    await activateDirector(targetDirector)
+  } catch (error) {
+    errorMsg.value = currentDirectorError(error, director.errorMsg)
+    loading.value = false
+    return false
+  }
+
+  remainingDirectorFailures.value = []
+  loading.value = false
+  finishLoginRedirect()
+  return true
+}
+
+async function attemptDirectorLogins(targetDirectors) {
+  const attempts = []
+  let hasSession = auth.isLoggedIn
+
+  for (const targetDirector of targetDirectors) {
+    try {
+      const payload = hasSession
+        ? await loginDirectorProxySession({
+          username: username.value,
+          password: password.value,
+          director: targetDirector,
+        })
+        : await loginProxySession({
+          username: username.value,
+          password: password.value,
+          director: targetDirector,
+        })
+      hasSession = true
+      auth.applySession(payload, SESSION_AUTH_PASSWORD)
+      if (!primaryDirector.value) {
+        primaryDirector.value = targetDirector
+      }
+      attempts.push({
+        director: targetDirector,
+        success: true,
+      })
+    } catch (error) {
+      attempts.push({
+        director: targetDirector,
+        success: false,
+        message: currentDirectorError(error),
+      })
+    }
+  }
+
+  return attempts
+}
+
+async function doMultiDirectorLogin() {
+  const targetDirectors = remainingDirectorFailures.value.length > 0
+    ? remainingDirectorFailures.value.map(attempt => attempt.director)
+    : configuredDirectors.value
+
+  if (targetDirectors.length === 0) {
+    errorMsg.value = t('Could not load the configured directors.')
+    loading.value = false
+    return
+  }
+
+  const {
+    successfulDirectors,
+    failedAttempts,
+  } = summarizeDirectorLoginAttempts(await attemptDirectorLogins(targetDirectors))
+
+  remainingDirectorFailures.value = failedAttempts
+
+  if (successfulDirectors.length === 0 && failedAttempts.length > 0) {
+    errorMsg.value = t('Could not log in to any configured director. Retry the remaining directors.')
+    password.value = ''
+    loading.value = false
+    return
+  }
+
+  errorMsg.value = null
+
+  if (failedAttempts.length > 0) {
+    password.value = ''
+    loading.value = false
+    return
+  }
+
+  await finalizeSuccessfulLogin()
 }
 
 async function doLogin() {
   loading.value = true
-  errorMsg.value = null
+  if (!isMultiDirectorLogin.value) {
+    errorMsg.value = null
+  }
+
+  if (isMultiDirectorLogin.value) {
+    await doMultiDirectorLogin()
+    return
+  }
 
   try {
     if (isAddDirectorMode.value) {
@@ -239,30 +434,25 @@ async function doLogin() {
   }
 
   auth.loginDirector(username.value, directorRef.value, SESSION_AUTH_PASSWORD)
+  primaryDirector.value = directorRef.value
 
-  try {
-    await activateDirector(directorRef.value)
-  } catch (error) {
-    errorMsg.value = currentDirectorError(error, director.errorMsg)
-    loading.value = false
-    return
-  }
-
-  loading.value = false
-  finishLoginRedirect()
+  await finalizeSuccessfulLogin(directorRef.value)
 }
 
-async function reuseCurrentCredentials() {
+async function reuseCurrentCredentials(options = {}) {
+  const { silent = false } = options
   loading.value = true
-  errorMsg.value = null
+  if (!silent) {
+    errorMsg.value = null
+  }
 
   try {
     const result = await reuseProxySessionCredentials({
       directors: [directorRef.value],
       sourceDirector: auth.user?.director,
     })
-    const reuseResult = result?.results?.find(item => item?.director === directorRef.value)
-    if (!reuseResult || !['authenticated', 'already_authenticated'].includes(reuseResult.status)) {
+    const reuseResult = getDirectorReuseResult(result, directorRef.value)
+    if (!isSuccessfulDirectorReuse(result, directorRef.value)) {
       throw new Error(
         reuseResult?.status === 'authentication_failed'
           ? t('Authentication failed')
@@ -277,12 +467,40 @@ async function reuseCurrentCredentials() {
     }
     await activateDirector(directorRef.value)
   } catch (error) {
-    errorMsg.value = currentDirectorError(error, director.errorMsg)
+    if (!silent) {
+      errorMsg.value = currentDirectorError(error, director.errorMsg)
+    }
     loading.value = false
-    return
+    return false
   }
 
   loading.value = false
   finishLoginRedirect()
+  return true
+}
+
+async function autoReuseCurrentCredentials() {
+  if (!canReuseCurrentCredentials.value || autoReusedDirectors.has(directorRef.value)) {
+    return false
+  }
+
+  autoReusedDirectors.add(directorRef.value)
+  return reuseCurrentCredentials({ silent: true })
+}
+
+async function skipFailedDirectors() {
+  if (!canSkipRemainingDirectors.value) {
+    return
+  }
+
+  loading.value = true
+  errorMsg.value = null
+  await finalizeSuccessfulLogin()
 }
 </script>
+
+<style scoped>
+.login-director-field :deep(.q-field__bottom) {
+  min-height: 2.8em;
+}
+</style>
