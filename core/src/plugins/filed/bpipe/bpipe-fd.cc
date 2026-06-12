@@ -49,7 +49,7 @@ static const int debuglevel = 150;
 #define PLUGIN_VERSION "2"
 #define PLUGIN_DESCRIPTION "Bareos Pipe File Daemon Plugin"
 #define PLUGIN_USAGE                                                   \
-  "bpipe:file=<filepath>:reader=<readprogram>:writer=<writeprogram>[:usesuffix=true|false]\n" \
+  "bpipe:file=<filepath>:reader=<readprogram>:writer=<writeprogram>[:usesuffix=yes|no]\n" \
   " readprogram runs on backup and its stdout is saved\n"              \
   " writeprogram runs on restore and gets restored data into stdin\n"  \
   " usesuffix add unique suffix to filepath (optional)\n" \
@@ -539,11 +539,11 @@ static inline bool ParseBoolean(const char* argument_value)
   }
 }
 
-static bool is_equal(std::string& a, const char *b) {
+static bool is_equal(const std::string& a, const char *b) {
   return Bstrcasecmp(a.c_str(), b);
 }
 
-static bRC parse_single_option(std::string& key, std::string& value, plugin_ctx* p_ctx) {
+static bRC parse_single_option(const std::string& key, const std::string& value, plugin_ctx* p_ctx) {
   const char *c_str = value.c_str();
 
   if (is_equal(key, "file")) {

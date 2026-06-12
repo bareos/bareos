@@ -38,14 +38,14 @@ Since Bareos :sinceVersion:`20: Multiline Strings` the plugin string can be spre
 .. code-block:: bareosconfig
    :caption: bpipe directive
 
-   Plugin = "<plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>:usesuffix=true|false"
+   Plugin = "<plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>[:usesuffix=yes|no]"
 
 plugin
    is the name of the plugin with the trailing -fd.so stripped off, so in this case, we would put bpipe in the field.
 
 filepath
    specifies the namespace, which for bpipe is the pseudo path and filename under which the backup will be saved. This pseudo path and filename will be seen by the user in the restore file tree. For example, if the value is :strong:`/MySQL/mydump.sql`, the data backed up by the plugin will be put under that "pseudo" path and filename. You must be careful to choose a naming convention that is unique to avoid a conflict with a path and filename that actually
-   exists on your system.
+   exists on your system. The path must start with a :code:`/` character.
 usesuffix
    Optional boolean argument that enables the automatic creation of a unique pseudo filename.
    If **usesuffix** is :code:`true`, a unique suffix is appended to **filepath**, containing the job name, the backup level and the job id. This makes incremental backups with the bpipe plugin possible. Otherwise, on a restore the plugin would just be called once with the data from the latest job, and earlier incremental and full backup jobs would be ignored.
@@ -83,6 +83,6 @@ BareosWhere      The **where** setting for a restore job
 BareosReplace    The **replace** setting for a restore job
 ================ =================================================
 
-The BareosSinceTime is 0 during full backups and restores.
-The BareosjobLevel is the space character (" ") during restores.
-BareosReplace contains a single letter that is "a" for "always", "w" for "ifnewer", "o" for "ifolder", "n" for "never".
+**BareosSinceTime** is 0 during full backups and restores.
+**BareosjobLevel** is the space character (" ") during restores.
+**BareosReplace** is either "a" for "always", "w" for "ifnewer", "o" for "ifolder" or "n" for "never" during restore, and a space character (" ") during a backup.
