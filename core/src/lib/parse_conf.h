@@ -78,6 +78,8 @@ struct ResourceTable {
     std::string name, group_name;
   };
   std::vector<Alias> aliases = {}; /* Resource name and group name aliases */
+
+  bool deprecated = false;
 };
 
 // Common Resource definitions

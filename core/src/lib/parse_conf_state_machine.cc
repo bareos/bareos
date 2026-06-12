@@ -232,6 +232,13 @@ ConfigParserStateMachine::ParserInitResource(int token)
     return ParseInternalReturnCode::kError;
   }
 
+  if (resource_table->deprecated && parser_pass_number_ == 1) {
+    my_config_.AddWarning(std::string("using deprecated resource type \"")
+                          + resource_table->name + "\" on line "
+                          + std::to_string(lexical_parser_->line_no)
+                          + " of file " + lexical_parser_->fname);
+  }
+
   bool init_done = false;
 
   if (resource_table && resource_table->items) {

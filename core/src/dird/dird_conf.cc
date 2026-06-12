@@ -466,14 +466,15 @@ static ResourceTable dird_resource_tables[] = {
   { "Messages", "Messages", msgs_items, R_MSGS, sizeof(MessagesResource),
       [] (){ res_msgs = new MessagesResource(); }, reinterpret_cast<BareosResource**>(&res_msgs) },
   { "Counter", "Counters", counter_items, R_COUNTER, sizeof(CounterResource),
-      [] (){ res_counter = new CounterResource(); }, reinterpret_cast<BareosResource**>(&res_counter) },
+    [] (){ res_counter = new CounterResource(); }, reinterpret_cast<BareosResource**>(&res_counter),
+    {}, true },
   { "Profile", "Profiles", profile_items, R_PROFILE, sizeof(ProfileResource),
       [] (){ res_profile = new ProfileResource(); }, reinterpret_cast<BareosResource**>(&res_profile) },
   { "Console", "Consoles", con_items, R_CONSOLE, sizeof(ConsoleResource),
       [] (){ res_con = new ConsoleResource(); }, reinterpret_cast<BareosResource**>(&res_con) },
   { "User", "Users", user_items, R_USER, sizeof(UserResource),
       [] (){ res_user = new UserResource(); }, reinterpret_cast<BareosResource**>(&res_user) },
-  { nullptr, nullptr, nullptr, 0, 0, nullptr, nullptr }
+  { }
 };
 
 /**
