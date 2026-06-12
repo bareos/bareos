@@ -43,6 +43,7 @@
 
 #include "proxy_log.h"
 #include "proxy_server.h"
+#include "proxy_auth_session.h"
 
 #include <CLI/CLI.hpp>
 #include <csignal>
@@ -84,6 +85,11 @@ int main(int argc, char* argv[])
 
     ProxyConfig cfg;
     LoadProxyConfigFile(config_file, cfg);
+
+    // Apply session timeout configuration
+    ProxyAuthSessionStore::Instance().SetSessionTimeouts(
+        cfg.session_idle_timeout_minutes,
+        cfg.session_absolute_lifetime_hours);
 
     g_proxy_shutdown_requested = 0;
     std::signal(SIGINT, HandleSignal);

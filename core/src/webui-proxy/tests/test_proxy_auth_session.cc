@@ -22,6 +22,7 @@
 #include "../proxy_auth_session.h"
 
 #include <gtest/gtest.h>
+#include <thread>
 
 TEST(ProxyAuthSessionStore, CreatesLooksUpAndRemovesSessions)
 {
@@ -93,4 +94,79 @@ TEST(ProxyAuthSessionStore, BuildsCookieHeaders)
   const auto expired_cookie = BuildExpiredProxySessionCookie(false);
   EXPECT_NE(expired_cookie.find("Max-Age=0"), std::string::npos);
   EXPECT_EQ(expired_cookie.find("Secure"), std::string::npos);
+}
+
+TEST(ProxyAuthSessionStore, AppliesConfigurableTimeouts)
+{
+  auto& store = ProxyAuthSessionStore::Instance();
+
+  // Set custom timeouts: 1 minute idle, 2 hours absolute
+  store.SetSessionTimeouts(1, 2);
+
+  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
+  const auto session = store.LookupSession(session_id);
+  ASSERT_TRUE(session);
+  EXPECT_EQ(session->session_id, session_id);
+
+  // Verify session is still accessible (just created)
+  EXPECT_TRUE(store.LookupSession(session_id));
+
+  // Reset to defaults for next tests
+  store.SetSessionTimeouts(30, 8);
+  store.RemoveSession(session_id);
+}
+
+TEST(ProxyAuthSessionStore, ExpiresIdleSessionsWithConfiguredTimeout)
+{
+  auto& store = ProxyAuthSessionStore::Instance();
+
+  // Set very short timeouts for testing: 100ms idle, 1 second absolute
+  store.SetSessionTimeoutsForTesting(std::chrono::milliseconds(100),
+                                      std::chrono::seconds(1));
+
+  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
+  
+  // Session should be available immediately after creation
+  EXPECT_TRUE(store.LookupSession(session_id));
+
+  // Wait for idle timeout to trigger (>100ms)
+  std::this_thread::sleep_for(std::chrono::milliseconds(150));
+
+  // Session should now be expired due to idle timeout
+  EXPECT_FALSE(store.LookupSession(session_id));
+
+  // Reset to defaults for next tests
+  store.SetSessionTimeouts(30, 8);
+}
+
+TEST(ProxyAuthSessionStore, ExpiresAbsoluteLifetimeSessionsWithConfiguredTimeout)
+{
+  auto& store = ProxyAuthSessionStore::Instance();
+
+  // Set very short absolute lifetime: 100ms idle (won't trigger), 150ms absolute
+  store.SetSessionTimeoutsForTesting(std::chrono::seconds(10),
+                                      std::chrono::milliseconds(150));
+
+  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
+  
+  // Session should be available immediately after creation
+  EXPECT_TRUE(store.LookupSession(session_id));
+
+  // Wait for absolute lifetime to trigger (>150ms)
+  // We repeatedly lookup to keep the idle timeout from triggering
+  auto start = std::chrono::steady_clock::now();
+  bool found_after_lifetime = true;
+  while (std::chrono::steady_clock::now() - start < std::chrono::milliseconds(200)) {
+    if (!store.LookupSession(session_id)) {
+      found_after_lifetime = false;
+      break;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  // Session should have expired due to absolute lifetime
+  EXPECT_FALSE(found_after_lifetime);
+
+  // Reset to defaults for next tests
+  store.SetSessionTimeouts(30, 8);
 }

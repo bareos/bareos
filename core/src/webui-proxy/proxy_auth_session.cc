@@ -34,8 +34,14 @@
 namespace {
 
 using Clock = std::chrono::steady_clock;
-constexpr auto kSessionIdleTimeout = std::chrono::minutes(30);
-constexpr auto kSessionAbsoluteLifetime = std::chrono::hours(8);
+
+struct SessionTimeouts {
+  std::chrono::steady_clock::duration idle_timeout{std::chrono::minutes(30)};
+  std::chrono::steady_clock::duration absolute_lifetime{std::chrono::hours(8)};
+};
+
+// Global timeouts with defaults
+SessionTimeouts g_session_timeouts;
 
 struct StoredSession {
   ProxyAuthSessionRecord record;
@@ -45,6 +51,24 @@ struct StoredSession {
 
 class ProxyAuthSessionStoreImpl {
  public:
+  void SetSessionTimeouts(int idle_timeout_minutes,
+                          int absolute_lifetime_hours)
+  {
+    std::lock_guard guard(mutex_);
+    g_session_timeouts.idle_timeout
+        = std::chrono::minutes(idle_timeout_minutes);
+    g_session_timeouts.absolute_lifetime
+        = std::chrono::hours(absolute_lifetime_hours);
+  }
+
+  void SetSessionTimeoutsForTesting(
+      std::chrono::steady_clock::duration idle_timeout,
+      std::chrono::steady_clock::duration absolute_lifetime)
+  {
+    std::lock_guard guard(mutex_);
+    g_session_timeouts.idle_timeout = idle_timeout;
+    g_session_timeouts.absolute_lifetime = absolute_lifetime;
+  }
   std::string CreateSession(std::string_view username,
                             std::string_view password,
                             std::string_view director)
@@ -180,8 +204,8 @@ class ProxyAuthSessionStoreImpl {
 
   static bool IsExpired(const StoredSession& session, Clock::time_point now)
   {
-    return now - session.last_used_at > kSessionIdleTimeout
-           || now - session.created_at > kSessionAbsoluteLifetime;
+    return now - session.last_used_at > g_session_timeouts.idle_timeout
+           || now - session.created_at > g_session_timeouts.absolute_lifetime;
   }
 
   void CleanupExpiredLocked(Clock::time_point now)
@@ -278,4 +302,19 @@ std::string BuildProxySessionCookie(std::string_view session_id, bool secure)
 std::string BuildExpiredProxySessionCookie(bool secure)
 {
   return BuildCookie("", secure, true);
+}
+
+void ProxyAuthSessionStore::SetSessionTimeouts(int idle_timeout_minutes,
+                                               int absolute_lifetime_hours)
+{
+  return GetStore().SetSessionTimeouts(idle_timeout_minutes,
+                                       absolute_lifetime_hours);
+}
+
+void ProxyAuthSessionStore::SetSessionTimeoutsForTesting(
+    std::chrono::steady_clock::duration idle_timeout,
+    std::chrono::steady_clock::duration absolute_lifetime)
+{
+  return GetStore().SetSessionTimeoutsForTesting(idle_timeout,
+                                                 absolute_lifetime);
 }

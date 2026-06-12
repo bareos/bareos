@@ -137,6 +137,12 @@ void ApplyProxySetting(ProxyConfig& cfg,
     cfg.bind_address = value;
   } else if (key == "port") {
     cfg.port = ParseInteger(value, key, line_number);
+  } else if (key == "session_idle_timeout_minutes") {
+    cfg.session_idle_timeout_minutes
+        = ParseInteger(value, key, line_number);
+  } else if (key == "session_absolute_lifetime_hours") {
+    cfg.session_absolute_lifetime_hours
+        = ParseInteger(value, key, line_number);
   } else {
     throw ProxyConfigUnknownKeyError(
         FormatUnknownKeyError("listen", key, line_number));

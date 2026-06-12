@@ -21,6 +21,7 @@
 #ifndef BAREOS_WEBUI_PROXY_PROXY_AUTH_SESSION_H_
 #define BAREOS_WEBUI_PROXY_PROXY_AUTH_SESSION_H_
 
+#include <chrono>
 #include <map>
 #include <optional>
 #include <string>
@@ -40,6 +41,14 @@ struct ProxyAuthSessionRecord {
 class ProxyAuthSessionStore {
  public:
   static ProxyAuthSessionStore& Instance();
+
+  void SetSessionTimeouts(int idle_timeout_minutes,
+                          int absolute_lifetime_hours);
+
+  // Test-only method: set timeouts with chrono durations for faster testing
+  void SetSessionTimeoutsForTesting(
+      std::chrono::steady_clock::duration idle_timeout,
+      std::chrono::steady_clock::duration absolute_lifetime);
 
   std::string CreateSession(std::string_view username,
                             std::string_view password,
