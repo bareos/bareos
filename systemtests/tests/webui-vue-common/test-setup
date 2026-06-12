@@ -138,6 +138,15 @@ if [[ "${BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK}" = "1" ]]; then
   proxy_tls_psk_disable=yes
 fi
 
+proxy_config_extra=""
+if [[ "${BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR}" = "1" ]]; then
+  proxy_config_extra="
+[bareos-dir-2]
+address = 127.0.0.1
+port = ${BAREOS_DIRECTOR_PORT}
+tls_psk_disable = ${proxy_tls_psk_disable}"
+fi
+
 cat >"${proxy_config}" <<END_OF_PROXY_CONFIG
 [listen]
 address = 127.0.0.1
@@ -146,7 +155,7 @@ port = ${proxy_port}
 [bareos-dir]
 address = 127.0.0.1
 port = ${BAREOS_DIRECTOR_PORT}
-tls_psk_disable = ${proxy_tls_psk_disable}
+tls_psk_disable = ${proxy_tls_psk_disable}${proxy_config_extra}
 END_OF_PROXY_CONFIG
 
 check_node_version

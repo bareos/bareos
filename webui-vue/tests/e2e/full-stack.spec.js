@@ -27,6 +27,8 @@ const password = process.env.BAREOS_WEBUI_PASSWORD ?? 'admin'
 const expectedDirectorTransport
   = process.env.BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT
 const isReadonlyProfile = profile === 'readonly'
+const isMultiDirectorProfile
+  = process.env.BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR === '1'
 
 async function expectConnected(page) {
   await expect(page.locator('[data-testid="director-status-label"]')).toContainText(
@@ -116,6 +118,31 @@ test('shows a login error for invalid credentials', async ({ page }) => {
   await expect(page.locator('[data-testid="login-error"]')).toContainText(
     /Authentication failed|Connection error|Could not log in to any configured director/i
   )
+})
+
+test('shows all configured directors in multi-director login mode', async ({
+  page,
+}) => {
+  test.skip(
+    !isMultiDirectorProfile,
+    'multi-director login checks only apply to multi-director smoke'
+  )
+
+  await page.goto('/')
+  await expect(page.locator('[data-testid="login-form"]')).toBeVisible()
+
+  const targetDirectors = page.locator('[data-testid="login-target-directors"]')
+  await expect(targetDirectors).toBeVisible()
+  await expect(targetDirectors).toContainText('bareos-dir')
+  await expect(targetDirectors).toContainText('bareos-dir-2')
+  await expect(targetDirectors).toContainText('Not yet logged in')
+  await expect(page.locator('[data-testid="login-director"]')).toHaveCount(0)
+
+  await page.getByLabel('Username').fill(username)
+  await page.getByLabel('Password').fill(password)
+  await page.getByRole('button', { name: 'Login' }).click()
+  await page.waitForURL(/#\/dashboard$/)
+  await expectConnected(page)
 })
 
 test('reconnects the console session on demand', async ({ page }) => {
