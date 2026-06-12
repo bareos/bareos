@@ -1,57 +1,74 @@
 <template>
-  <q-page class="flex flex-center">
-    <div style="width: 380px; padding: 24px">
+  <q-page class="login-page flex flex-center">
+    <div class="login-shell">
       <div class="text-center q-mb-lg">
-        <img :src="bareosLogo" alt="Bareos" style="height:48px" />
-        <div class="text-h5 text-white text-weight-bold q-mt-sm">BAREOS</div>
+        <img :src="bareosLogo" alt="Bareos" class="login-logo" />
+        <div class="text-h5 text-weight-bold text-white q-mt-sm">BAREOS</div>
         <div class="text-subtitle2 text-white">{{ t('Backup Archiving Recovery Open Sourced') }}</div>
       </div>
 
-      <q-card flat bordered>
-        <q-card-section class="bg-primary text-white">
-          <div class="text-h6">{{ t('Login') }}</div>
+      <q-card flat bordered class="login-card">
+        <q-card-section class="login-card-header">
+          <q-icon name="lock" size="20px" />
+          <div class="text-h6 text-weight-medium q-ml-sm">{{ t('Login') }}</div>
         </q-card-section>
-        <q-card-section>
+        <q-card-section class="q-pt-md">
           <q-form data-testid="login-form" @submit.prevent="doLogin">
             <q-input
               v-model="username"
               data-testid="login-username"
               :label="t('Username')"
-              outlined dense
-              class="q-mb-sm"
+              outlined
+              class="login-input q-mb-sm"
               autocomplete="username"
-            />
+            >
+              <template #prepend><q-icon name="person" /></template>
+            </q-input>
             <q-input
               v-model="password"
               data-testid="login-password"
               :label="t('Password')"
               type="password"
-              outlined dense
-              class="q-mb-sm"
+              outlined
+              class="login-input q-mb-sm"
               autocomplete="current-password"
-            />
+            >
+              <template #prepend><q-icon name="key" /></template>
+            </q-input>
             <q-banner
               v-if="isMultiDirectorLogin"
               dense
-              class="bg-grey-2 text-grey-9 q-mb-md rounded-borders"
+              class="login-multi-banner q-mb-md rounded-borders"
             >
               <template #avatar><q-icon name="dns" /></template>
-              <div>{{ multiDirectorLoginMessage }}</div>
+              <div class="text-weight-medium">{{ multiDirectorLoginMessage }}</div>
               <div
                 v-if="multiDirectorTargets.length > 0"
-                class="q-mt-xs"
+                class="q-mt-sm"
                 data-testid="login-target-directors"
               >
-                <strong>{{ t('Directors') }}:</strong> {{ multiDirectorTargets.join(', ') }}
+                <div class="text-caption text-grey-7 q-mb-xs">{{ t('Directors') }}</div>
+                <div class="row q-gutter-xs">
+                  <q-chip
+                    v-for="target in multiDirectorTargets"
+                    :key="target"
+                    dense
+                    square
+                    color="grey-3"
+                    text-color="grey-9"
+                    :label="target"
+                  />
+                </div>
               </div>
               <div
                 v-if="remainingDirectorFailures.length > 0"
-                class="q-mt-xs"
+                class="q-mt-sm"
                 data-testid="login-remaining-directors"
               >
                 <div
                   v-for="attempt in remainingDirectorFailures"
                   :key="attempt.director"
+                  class="text-negative text-caption"
                 >
                   {{ attempt.director }}: {{ attempt.message }}
                 </div>
@@ -70,9 +87,11 @@
               :error="!!directorLoadError"
               :error-message="directorLoadError"
               bottom-slots
-              outlined dense
+              outlined
               class="login-director-field q-mb-lg"
-            />
+            >
+              <template #prepend><q-icon name="dns" /></template>
+            </q-select>
             <q-input
               v-else-if="showDirectorField && !hasAvailableDirectors"
               v-model="directorRef"
@@ -81,9 +100,11 @@
               :error="!!directorLoadError"
               :error-message="directorLoadError"
               bottom-slots
-              outlined dense
+              outlined
               class="login-director-field q-mb-lg"
-            />
+            >
+              <template #prepend><q-icon name="dns" /></template>
+            </q-input>
             <q-banner v-if="errorMsg" data-testid="login-error" dense class="bg-negative text-white q-mb-md rounded-borders">
               <template #avatar><q-icon name="error" /></template>
               {{ errorMsg }}
@@ -94,7 +115,8 @@
               type="submit"
               :label="submitLabel"
               color="primary"
-              class="full-width"
+              unelevated
+              class="full-width login-submit"
               :loading="loading"
             />
             <q-btn
@@ -119,7 +141,7 @@
         </q-card-section>
       </q-card>
 
-      <div class="text-center text-white q-mt-md" style="font-size:0.75rem; opacity:0.7">
+      <div class="login-footer text-center q-mt-md">
         Bareos WebUI &copy; 2013–2026 Bareos GmbH &amp; Co. KG
       </div>
     </div>
@@ -500,7 +522,65 @@ async function skipFailedDirectors() {
 </script>
 
 <style scoped>
+.login-page {
+  background: #1d1d1d;
+}
+
+.login-shell {
+  width: min(420px, calc(100vw - 32px));
+  padding: 24px;
+}
+
+.login-logo {
+  height: 48px;
+}
+
+.login-card {
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+}
+
+.login-card-header {
+  display: flex;
+  align-items: center;
+  color: white;
+  border-radius: 8px 8px 0 0;
+  background: var(--q-primary);
+}
+
+.login-input,
+.login-director-field {
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.login-input :deep(.q-field__control),
+.login-director-field :deep(.q-field__control) {
+  border-radius: 6px;
+  min-height: 44px;
+}
+
+.login-input:focus-within,
+.login-director-field:focus-within {
+  transform: translateY(-1px);
+}
+
+.login-multi-banner {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #f5f7fa;
+}
+
 .login-director-field :deep(.q-field__bottom) {
   min-height: 2.8em;
+}
+
+.login-submit {
+  min-height: 42px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.login-footer {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.75);
 }
 </style>
