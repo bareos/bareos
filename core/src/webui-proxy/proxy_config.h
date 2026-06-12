@@ -92,6 +92,10 @@ struct DirectorTargetConfig {
 struct ProxyConfig {
   std::string bind_address{"localhost"};
   int port{9104};
+  // Session idle timeout in minutes (default 30)
+  int session_idle_timeout_minutes{30};
+  // Session absolute lifetime in hours (default 8)
+  int session_absolute_lifetime_hours{8};
   // Keys are client-visible selectors; target.name is the Bareos director name.
   std::map<std::string, DirectorTargetConfig> configured_directors;
 };

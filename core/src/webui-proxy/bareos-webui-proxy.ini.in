@@ -9,6 +9,10 @@
 [listen]
 address = localhost
 port = 9104
+# Session idle timeout in minutes (default: 30)
+# session_idle_timeout_minutes = 30
+# Session absolute lifetime in hours (default: 8)
+# session_absolute_lifetime_hours = 8
 
 [bareos-dir]
 address = localhost
