@@ -25,6 +25,7 @@
 #include "proxy_log.h"
 #include "ws_codec.h"
 
+#include <algorithm>
 #include <cctype>
 #include <cstdlib>
 #include <memory>
@@ -293,9 +294,14 @@ bool RequestUsesHttps(const HttpRequest& request)
 
 bool IsAuthenticationFailure(std::string_view message)
 {
-  return message.find("authentication failed") != std::string::npos
-         || message.find("Authorization failed") != std::string::npos
-         || message.find("TLS-PSK handshake failed") != std::string::npos;
+  std::string normalized(message);
+  std::transform(
+      normalized.begin(), normalized.end(), normalized.begin(),
+      [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+  return normalized.find("authentication failed") != std::string::npos
+         || normalized.find("authorization failed") != std::string::npos
+         || normalized.find("tls-psk handshake failed") != std::string::npos;
 }
 
 std::optional<ProxyAuthSessionRecord> LookupSessionFromRequest(
@@ -499,13 +505,14 @@ void HandleSessionLoginRequest(int fd,
                                std::optional<std::string_view> target_director
                                = std::nullopt)
 {
+  std::string requested_director;
   try {
     JsonPtr body = ParseJsonBody(request);
     const auto username = RequireJsonStringField(body.get(), "username");
     const auto password = RequireJsonStringField(body.get(), "password");
     const auto director
         = target_director.value_or(RequireJsonStringField(body.get(), "director"));
-    const std::string requested_director(director);
+    requested_director = std::string(director);
     const DirectorConfig cfg
         = ConnectSessionDirector(config, requested_director, username, password);
 
@@ -548,12 +555,17 @@ void HandleSessionLoginRequest(int fd,
                                         ? std::string_view(
                                               "HTTP/1.1 401 Unauthorized")
                                         : std::string_view(
-                                              "HTTP/1.1 400 Bad Request");
+                                              "HTTP/1.1 502 Bad Gateway");
+    const std::string response_message
+        = authentication_failed
+        ? "Authentication failed"
+        : requested_director.empty()
+            ? "Connection error: " + std::string(message)
+            : "Connection to director '" + requested_director + "' failed: "
+                  + std::string(message);
     PROXY_LOG_WARN(peer, "session login failed: %s", ex.what());
     SendJsonResponseWithCookie(
-        fd, status,
-        JsonObject({{"message", authentication_failed ? "Authentication failed"
-                                                      : "Connection error"}}));
+        fd, status, JsonObject({{"message", response_message}}));
   }
 }
 

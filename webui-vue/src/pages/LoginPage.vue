@@ -3,8 +3,8 @@
     <div class="login-shell">
       <div class="text-center q-mb-lg">
         <img :src="bareosLogo" alt="Bareos" class="login-logo" />
-        <div class="text-h5 text-weight-bold text-white q-mt-sm">BAREOS</div>
-        <div class="text-subtitle2 text-white">{{ t('Backup Archiving Recovery Open Sourced') }}</div>
+        <div class="text-h5 text-weight-bold text-white q-mt-sm login-brand-title">BAREOS</div>
+        <div class="text-subtitle2 text-white login-brand-subtitle">{{ t('Backup Archiving Recovery Open Sourced') }}</div>
       </div>
 
       <q-card flat bordered class="login-card">
@@ -43,34 +43,29 @@
               <template #avatar><q-icon name="dns" /></template>
               <div class="text-weight-medium">{{ multiDirectorLoginMessage }}</div>
               <div
-                v-if="multiDirectorTargets.length > 0"
+                v-if="multiDirectorStatuses.length > 0"
                 class="q-mt-sm"
                 data-testid="login-target-directors"
               >
                 <div class="text-caption text-grey-7 q-mb-xs">{{ t('Directors') }}</div>
-                <div class="row q-gutter-xs">
-                  <q-chip
-                    v-for="target in multiDirectorTargets"
-                    :key="target"
-                    dense
-                    square
-                    color="grey-3"
-                    text-color="grey-9"
-                    :label="target"
-                  />
-                </div>
-              </div>
-              <div
-                v-if="remainingDirectorFailures.length > 0"
-                class="q-mt-sm"
-                data-testid="login-remaining-directors"
-              >
-                <div
-                  v-for="attempt in remainingDirectorFailures"
-                  :key="attempt.director"
-                  class="text-negative text-caption"
-                >
-                  {{ attempt.director }}: {{ attempt.message }}
+                <div class="column q-gutter-xs">
+                  <div
+                    v-for="entry in multiDirectorStatuses"
+                    :key="entry.director"
+                    class="director-login-status"
+                  >
+                    <div class="row items-center no-wrap">
+                      <q-icon :name="entry.icon" :color="entry.color" size="16px" class="q-mr-sm" />
+                      <span class="text-weight-medium q-mr-sm">{{ entry.director }}</span>
+                      <span :class="entry.statusClass">{{ entry.statusText }}</span>
+                    </div>
+                    <div
+                      v-if="entry.failureMessage"
+                      class="text-negative text-caption q-ml-lg"
+                    >
+                      {{ entry.failureMessage }}
+                    </div>
+                  </div>
                 </div>
               </div>
             </q-banner>
@@ -265,15 +260,51 @@ const multiDirectorLoginMessage = computed(() => {
 
   return t('The entered credentials will be tried on all configured directors.')
 })
-const multiDirectorTargets = computed(() => (
-  [...new Set(
-    (remainingDirectorFailures.value.length > 0
-      ? remainingDirectorFailures.value.map(attempt => attempt.director)
-      : configuredDirectors.value
-    )
-      .map(value => String(value ?? '').trim())
-      .filter(Boolean)
-  )]
+const multiDirectorFailureByDirector = computed(() => {
+  const failureMap = {}
+  for (const attempt of remainingDirectorFailures.value) {
+    const directorName = String(attempt?.director ?? '').trim()
+    if (!directorName) {
+      continue
+    }
+    failureMap[directorName] = String(attempt?.message ?? '').trim()
+  }
+  return failureMap
+})
+const multiDirectorStatuses = computed(() => (
+  configuredDirectors.value.map((directorName) => {
+    const failureMessage = multiDirectorFailureByDirector.value[directorName] || ''
+    if (failureMessage) {
+      return {
+        director: directorName,
+        icon: 'cancel',
+        color: 'negative',
+        statusClass: 'text-negative',
+        statusText: t('Login failure'),
+        failureMessage,
+      }
+    }
+
+    if (auth.hasDirectorSession(directorName)) {
+      return {
+        director: directorName,
+        icon: 'check_circle',
+        color: 'positive',
+        statusClass: 'text-positive',
+        statusText: t('Successfully logged in'),
+        failureMessage: '',
+      }
+    }
+
+    return {
+      director: directorName,
+      icon: 'radio_button_unchecked',
+      color: 'grey-7',
+      statusClass: 'text-grey-8',
+      statusText: t('Not yet logged in'),
+      failureMessage: '',
+    }
+  })
 ))
 
 watch(
@@ -523,7 +554,7 @@ async function skipFailedDirectors() {
 
 <style scoped>
 .login-page {
-  background: #1d1d1d;
+  background: transparent;
 }
 
 .login-shell {
@@ -535,9 +566,18 @@ async function skipFailedDirectors() {
   height: 48px;
 }
 
+.login-brand-title {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.login-brand-subtitle {
+  color: #f6fbff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+}
+
 .login-card {
   border-radius: 8px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
 }
 
 .login-card-header {
@@ -567,6 +607,10 @@ async function skipFailedDirectors() {
 .login-multi-banner {
   border: 1px solid rgba(0, 0, 0, 0.08);
   background: #f5f7fa;
+}
+
+.director-login-status {
+  padding: 4px 0;
 }
 
 .login-director-field :deep(.q-field__bottom) {
