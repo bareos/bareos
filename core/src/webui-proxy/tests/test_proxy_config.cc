@@ -317,3 +317,33 @@ TEST(ProxyConfig, RejectsMissingFilesWithTypedError)
   EXPECT_THROW(LoadProxyConfigFile("/definitely/missing/proxy.ini"),
                ProxyConfigFileError);
 }
+
+TEST(ProxyConfig, ParsesMaxUnauthenticatedConnections)
+{
+  ProxyConfig cfg = LoadProxyConfigFromString(
+      R"ini(
+[listen]
+address = 127.0.0.1
+port = 18765
+max_unauthenticated_connections = 250
+
+[bareos-dir]
+address = prod.example.test
+)ini");
+
+  EXPECT_EQ(cfg.max_unauthenticated_connections, 250);
+}
+
+TEST(ProxyConfig, DefaultMaxUnauthenticatedConnections)
+{
+  ProxyConfig cfg = LoadProxyConfigFromString(
+      R"ini(
+[listen]
+address = 127.0.0.1
+
+[bareos-dir]
+address = prod.example.test
+)ini");
+
+  EXPECT_EQ(cfg.max_unauthenticated_connections, 100);
+}
