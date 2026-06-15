@@ -22,6 +22,7 @@
 #include "proxy_log.h"
 #include "proxy_session.h"
 
+#include <atomic>
 #include <cstdio>
 #include <cstring>
 #include <stdexcept>
@@ -105,6 +106,19 @@ bool IsTransientAcceptError(int err)
   }
 }
 
+bool SendHttpServiceUnavailable(int fd)
+{
+  const char response[] =
+      "HTTP/1.1 503 Service Unavailable\r\n"
+      "Content-Type: text/plain\r\n"
+      "Content-Length: 27\r\n"
+      "Connection: close\r\n"
+      "\r\n"
+      "Connection limit exceeded.\r\n";
+
+  return ::send(fd, response, sizeof(response) - 1, MSG_NOSIGNAL) > 0;
+}
+
 }  // namespace
 
 volatile std::sig_atomic_t g_proxy_shutdown_requested = 0;
@@ -162,6 +176,9 @@ void RunProxyServer(const ProxyConfig& cfg)
   pfds.reserve(listen_fds.size());
   for (const auto& fd : listen_fds) { pfds.push_back({fd.get(), POLLIN, 0}); }
 
+  // Track unauthenticated connections to enforce DoS limit
+  std::atomic<int> unauthenticated_connection_count(0);
+
   // Accept loop: poll all listen sockets, accept on whichever is ready.
   while (true) {
     if (g_proxy_shutdown_requested) { break; }
@@ -212,13 +229,26 @@ void RunProxyServer(const ProxyConfig& cfg)
                   NI_NUMERICHOST | NI_NUMERICSERV);
       std::string peer = std::string(host_buf) + ":" + port_buf;
 
+      // Check unauthenticated connection limit for DoS protection
+      if (unauthenticated_connection_count.load() >=
+          cfg.max_unauthenticated_connections) {
+        PROXY_LOG_DEBUG(peer, "rejecting connection (unauthenticated limit %d)",
+                        cfg.max_unauthenticated_connections);
+        SendHttpServiceUnavailable(client_fd);
+        ::close(client_fd);
+        continue;
+      }
+
       // Prepare socket descriptor and config for the detached thread.
       // Each thread needs its own copy of the config so it can be captured
       // and owned independently for the lifetime of the detached thread.
       int cfd = client_fd;
       ProxyConfig session_cfg = cfg;
       try {
-        std::thread([cfd, peer, session_cfg]() {
+        // Increment counter; it will be decremented when thread exits
+        unauthenticated_connection_count.fetch_add(1);
+        std::thread([cfd, peer, session_cfg,
+                     &unauthenticated_connection_count]() {
           try {
             RunProxySession(cfd, peer, session_cfg);
           } catch (const std::exception& ex) {
@@ -226,9 +256,12 @@ void RunProxyServer(const ProxyConfig& cfg)
           } catch (...) {
             PROXY_LOG_ERROR(peer, "session aborted (unknown exception)");
           }
+          // Decrement when session ends (whether auth succeeded or not)
+          unauthenticated_connection_count.fetch_sub(1);
         }).detach();
       } catch (const std::system_error& ex) {
         PROXY_LOG_ERROR(peer, "failed to start session thread: %s", ex.what());
+        unauthenticated_connection_count.fetch_sub(1);
         ::close(cfd);
         continue;
       }
