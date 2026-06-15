@@ -101,6 +101,24 @@ address = 127.0.0.1
                ProxyConfigMissingDirectorSectionError);
 }
 
+TEST(ProxyConfig, RejectsMissingListenSection)
+{
+  ProxyConfig cfg;
+
+  EXPECT_THROW(LoadProxyConfigFromString(
+                  R"ini(
+[listem]
+address = localhost
+port = 9204
+
+[bareos-dir]
+address = localhost
+tls_psk_disable = no
+)ini",
+                  cfg),
+               ProxyConfigMissingListenSectionError);
+}
+
 TEST(ProxyConfig, RejectsNonYesNoBooleanValues)
 {
   ProxyConfig cfg;

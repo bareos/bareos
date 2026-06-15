@@ -186,6 +186,7 @@ void ParseProxyConfig(const std::string& ini, ProxyConfig& cfg)
   size_t line_number = 0;
   std::map<std::string, size_t> seen_sections;
   std::map<std::string, DirectorTargetConfig> parsed_directors;
+  bool seen_listen = false;
 
   while (std::getline(input, line)) {
     ++line_number;
@@ -211,6 +212,7 @@ void ParseProxyConfig(const std::string& ini, ProxyConfig& cfg)
       current_director_selector.clear();
       if (Bstrcasecmp(current_section.c_str(), "listen")) {
         current_section_kind = SectionKind::kListen;
+        seen_listen = true;
       } else {
         current_section_kind = SectionKind::kDirector;
         current_director_selector = current_section;
@@ -247,6 +249,11 @@ void ParseProxyConfig(const std::string& ini, ProxyConfig& cfg)
 
     throw ProxyConfigUnknownSectionError(FormatConfigError(
         line_number, "unknown section '" + current_section + "'"));
+  }
+
+  if (!seen_listen) {
+    throw ProxyConfigMissingListenSectionError(
+        "Proxy config: a [listen] section is required");
   }
 
   if (parsed_directors.empty()) {

@@ -82,6 +82,11 @@ class ProxyConfigMissingDirectorSectionError : public ProxyConfigParseError {
   using ProxyConfigParseError::ProxyConfigParseError;
 };
 
+class ProxyConfigMissingListenSectionError : public ProxyConfigParseError {
+ public:
+  using ProxyConfigParseError::ProxyConfigParseError;
+};
+
 struct DirectorTargetConfig {
   std::string address{"localhost"};
   int port{9101};
