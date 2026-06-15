@@ -584,13 +584,15 @@ void HandleSessionLogoutRequest(int fd, const HttpRequest& request)
 {
   if (const auto session_id = LookupSessionIdFromRequest(request)) {
     ProxyAuthSessionStore::RemoveSession(*session_id);
+    // Tell the browser to drop the proxy session cookie together with the
+    // server-side session so stale credentials are not reused.
+    SendEmptyResponseWithCookie(
+        fd, "HTTP/1.1 204 No Content",
+        BuildExpiredProxySessionCookie(RequestUsesHttps(request)));
+    return;
   }
 
-  // Tell the browser to drop the proxy session cookie together with the
-  // server-side session so stale credentials are not reused.
-  const auto expired_cookie
-      = BuildExpiredProxySessionCookie(RequestUsesHttps(request));
-  SendEmptyResponseWithCookie(fd, "HTTP/1.1 204 No Content", expired_cookie);
+  SendEmptyResponseWithCookie(fd, "HTTP/1.1 204 No Content");
 }
 
 void HandleCurrentDirectorRequest(int fd, const HttpRequest& request)
