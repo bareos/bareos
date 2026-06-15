@@ -184,6 +184,12 @@ class ProxyAuthSessionStoreImpl {
     sessions_.erase(std::string(session_id));
   }
 
+  std::chrono::steady_clock::duration GetAbsoluteLifetime()
+  {
+    std::lock_guard guard(mutex_);
+    return g_session_timeouts.absolute_lifetime;
+  }
+
  private:
   static std::string GenerateSessionId()
   {
@@ -238,6 +244,10 @@ std::string BuildCookie(std::string_view session_id, bool secure, bool expired)
   if (secure) { cookie += "; Secure"; }
   if (expired) {
     cookie += "; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  } else {
+    const auto max_age = std::chrono::duration_cast<std::chrono::seconds>(
+        GetStore().GetAbsoluteLifetime());
+    cookie += "; Max-Age=" + std::to_string(max_age.count());
   }
   return cookie;
 }
