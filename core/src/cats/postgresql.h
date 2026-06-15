@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -98,7 +98,7 @@ class BareosDbPostgresql : public BareosDb {
   bool SqlBatchInsertFileTable(JobControlRecord* jcr,
                                AttributesDbRecord* ar) override;
 
-  bool CheckDatabaseEncoding(JobControlRecord* jcr);
+  bool CheckDatabaseEncoding();
 
   bool fields_fetched_
       = false;         /**< Marker, if field descriptions are already fetched */
