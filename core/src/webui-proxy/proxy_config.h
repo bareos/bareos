@@ -101,6 +101,8 @@ struct ProxyConfig {
   int session_idle_timeout_minutes{30};
   // Session absolute lifetime in hours (default 8)
   int session_absolute_lifetime_hours{8};
+  // Maximum number of concurrent unauthenticated connections (default 100)
+  int max_unauthenticated_connections{100};
   // Keys are client-visible selectors; target.name is the Bareos director name.
   std::map<std::string, DirectorTargetConfig> configured_directors;
 };
