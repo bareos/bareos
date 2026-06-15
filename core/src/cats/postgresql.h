@@ -98,7 +98,7 @@ class BareosDbPostgresql : public BareosDb {
   bool SqlBatchInsertFileTable(JobControlRecord* jcr,
                                AttributesDbRecord* ar) override;
 
-  bool CheckDatabaseEncoding(JobControlRecord* jcr);
+  bool CheckDatabaseEncoding();
 
   bool fields_fetched_
       = false;         /**< Marker, if field descriptions are already fetched */

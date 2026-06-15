@@ -177,37 +177,45 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord*,
 BareosDbPostgresql::~BareosDbPostgresql() {}
 
 // Check that the database correspond to the encoding we want
-bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
+bool BareosDbPostgresql::CheckDatabaseEncoding()
 {
-  SQL_ROW row;
-  bool retval = false;
-
   if (!SqlQueryWithoutHandler("SELECT getdatabaseencoding()")) {
-    Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
+    Mmsg(errmsg, "Cannot check database encoding: %s\n", sql_strerror());
+    Dmsg1(50, "%s", errmsg);
     return false;
   }
 
-  if ((row = SqlFetchRow()) == NULL) {
-    Mmsg1(errmsg, T_("error fetching row: %s\n"), errmsg);
-    Jmsg(jcr, M_ERROR, 0, "Can't check database encoding %s", errmsg);
-  } else {
-    retval = bstrcmp(row[0], "SQL_ASCII");
-
-    if (retval) {
-      /* If we are in SQL_ASCII, we can force the client_encoding to SQL_ASCII
-       * too */
-      SqlQueryWithoutHandler("SET client_encoding TO 'SQL_ASCII'");
-    } else {
-      // Something is wrong with database encoding
-      Mmsg(errmsg,
-           T_("Encoding error for database \"%s\". Wanted SQL_ASCII, got %s\n"),
-           get_db_name(), row[0]);
-      Jmsg(jcr, M_WARNING, 0, "%s", errmsg);
-      Dmsg1(50, "%s", errmsg);
-    }
+  SQL_ROW row = SqlFetchRow();
+  if (row == NULL) {
+    PmStrcpy(
+        errmsg,
+        "Cannot check database encoding: could not fetch database encoding\n");
+    Dmsg1(50, "%s", errmsg);
+    SqlFreeResult();
+    return false;
   }
 
-  return retval;
+  if (!bstrcmp(row[0], "SQL_ASCII")) {
+    // Something is wrong with database encoding
+    Mmsg(errmsg,
+         "Encoding error for database \"%s\". Wanted SQL_ASCII, got %s\n",
+         get_db_name(), row[0]);
+    Dmsg1(50, "%s", errmsg);
+    SqlFreeResult();
+    return false;
+  }
+
+  /* If we are in SQL_ASCII, we can force the client_encoding to SQL_ASCII
+   * too */
+  if (!SqlQueryWithoutHandler("SET client_encoding TO 'SQL_ASCII'")) {
+    Mmsg(errmsg, "Cannot set client encoding: %s\n", sql_strerror());
+    Dmsg1(50, "%s", errmsg);
+    SqlFreeResult();
+    return false;
+  }
+
+  SqlFreeResult();
+  return true;
 }
 
 /**
@@ -320,7 +328,7 @@ const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
   SqlQueryWithoutHandler("SET standard_conforming_strings=on");
 
   // Check that encoding is SQL_ASCII
-  CheckDatabaseEncoding(jcr);
+  if (!CheckDatabaseEncoding()) { return errmsg; }
 
   return nullptr;
 }
