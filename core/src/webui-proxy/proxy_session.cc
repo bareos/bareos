@@ -962,13 +962,19 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
       }
 
       const auto req_type = JsonStringField(req.get(), "type");
-      if (req_type && *req_type == "ping") {
+      if (!req_type) {
+        ws->SendText(JsonObject(
+            {{"type", "error"}, {"message", "Expected type=ping or command"}}));
+        continue;
+      }
+
+      if (*req_type == "ping") {
         ws->SendText(JsonObject({{"type", "pong"}}));
         continue;
       }
-      if (!req_type || *req_type != "command") {
+      if (*req_type != "command") {
         ws->SendText(JsonObject(
-            {{"type", "error"}, {"message", "Expected type=command"}}));
+            {{"type", "error"}, {"message", "Expected type=ping or command"}}));
         continue;
       }
 
