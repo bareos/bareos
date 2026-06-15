@@ -169,8 +169,9 @@ void ApplyDirectorSetting(DirectorTargetConfig& cfg,
   }
 }
 
-void ParseProxyConfig(const std::string& ini, ProxyConfig& cfg)
+ProxyConfig ParseProxyConfig(const std::string& ini)
 {
+  ProxyConfig cfg;
   enum class SectionKind
   {
     kUnknown,
@@ -262,11 +263,12 @@ void ParseProxyConfig(const std::string& ini, ProxyConfig& cfg)
   }
 
   cfg.configured_directors = std::move(parsed_directors);
+  return cfg;
 }
 
 }  // namespace
 
-void LoadProxyConfigFile(const std::string& path, ProxyConfig& cfg)
+ProxyConfig LoadProxyConfigFile(const std::string& path)
 {
   std::ifstream input(path);
   if (!input) {
@@ -274,10 +276,10 @@ void LoadProxyConfigFile(const std::string& path, ProxyConfig& cfg)
   }
   std::ostringstream contents;
   contents << input.rdbuf();
-  ParseProxyConfig(contents.str(), cfg);
+  return ParseProxyConfig(contents.str());
 }
 
-void LoadProxyConfigFromString(const std::string& ini, ProxyConfig& cfg)
+ProxyConfig LoadProxyConfigFromString(const std::string& ini)
 {
-  ParseProxyConfig(ini, cfg);
+  return ParseProxyConfig(ini);
 }
