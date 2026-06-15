@@ -454,6 +454,29 @@ TEST(ProxySession, ConnectsWsWithSessionCookie)
   ProxyAuthSessionStore::RemoveSession(session_id);
 }
 
+TEST(ProxySession, RejectsUnsupportedWsMode)
+{
+  ProxyConfig config;
+  config.configured_directors.emplace(
+      "bareos-dir",
+      DirectorTargetConfig{
+          .address = "prod.example.test", .port = 19101, .name = "bareos-dir"});
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
+      session_id, "bareos-dir", "admin", "secret", true));
+
+  const auto response = ExchangeWsSession(
+      config,
+      std::string("bareos_proxy_session=") + session_id,
+      R"({"type":"session","director":"bareos-dir","mode":"json-v2"})");
+
+  EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
+  EXPECT_NE(GetJsonStringField(response, "message").find("unsupported mode"),
+            std::string::npos);
+  ProxyAuthSessionStore::RemoveSession(session_id);
+}
+
 TEST(ProxySession, ReturnsNotFoundForNonWsTargets)
 {
   const auto response = ExchangeHttpRequest(
