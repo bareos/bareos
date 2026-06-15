@@ -155,6 +155,20 @@ std::string JsonDirectorList(const ProxyConfig& config)
   return DumpJson(obj.get());
 }
 
+const char* DirectorPromptToString(DirectorPrompt prompt)
+{
+  switch (prompt) {
+    case DirectorPrompt::Select:
+      return "select";
+    case DirectorPrompt::Sub:
+      return "sub";
+    case DirectorPrompt::Other:
+      return "other";
+    default:
+      return "main";
+  }
+}
+
 JsonPtr MakeSessionInfoJson(const ProxyAuthSessionRecord& session)
 {
   JsonPtr obj = MakeJsonObject();
@@ -990,18 +1004,6 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
                      static_cast<int>(req_id.value_or("").size()),
                      req_id.value_or("").data(), command.c_str());
 
-      auto prompt_to_string = [](DirectorPrompt prompt) {
-        switch (prompt) {
-          case DirectorPrompt::Select:
-            return "select";
-          case DirectorPrompt::Sub:
-            return "sub";
-          case DirectorPrompt::Other:
-            return "other";
-          default:
-            return "main";
-        }
-      };
       auto send_raw_response
           = [&](std::string_view text, const char* prompt_str) {
               ws->SendText(JsonRawResponse(
@@ -1066,7 +1068,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
           // Raw mode: {"type":"raw_response","id":...,"command":...,"text":"...",
           //            "prompt":"main"|"sub"|"select"|"other"|"more"}
           current_prompt = result.prompt;
-          const char* prompt_str = prompt_to_string(result.prompt);
+          const char* prompt_str = DirectorPromptToString(result.prompt);
           send_command_state(is_terminal_prompt(result.prompt)
                                  ? "completed"
                                  : "waiting_for_input",
