@@ -66,6 +66,13 @@ class SocketPair {
     return fd;
   }
 
+  int ReleasePeer()
+  {
+    const int fd = fds_[1];
+    fds_[1] = -1;
+    return fd;
+  }
+
  private:
   int fds_[2] = {-1, -1};
 };
@@ -232,7 +239,18 @@ std::vector<std::string> GetJsonStringArrayField(std::string_view text,
   return values;
 }
 
-std::string ExchangeMessage(const ProxyConfig& config, std::string_view message)
+std::string BuildWsHandshakeRequest(std::string_view cookie_header = {})
+{
+  std::string request(kValidHandshakeRequest);
+  if (!cookie_header.empty()) {
+    request.insert(request.size() - 4, std::string("Cookie: ") + std::string(cookie_header) + "\r\n");
+  }
+  return request;
+}
+
+std::string ExchangeWsSession(const ProxyConfig& config,
+                              std::string_view cookie_header,
+                              std::string_view session_message)
 {
   SocketPair sockets;
   const int server_fd = sockets.ReleaseLocal();
@@ -240,24 +258,22 @@ std::string ExchangeMessage(const ProxyConfig& config, std::string_view message)
     RunProxySession(server_fd, "test-peer", config);
   });
 
-  WriteAll(sockets.peer(), kValidHandshakeRequest.data(),
-           kValidHandshakeRequest.size());
+  const auto request = BuildWsHandshakeRequest(cookie_header);
+  WriteAll(sockets.peer(), request.data(), request.size());
   const auto handshake = ReadUntilMarker(sockets.peer(), "\r\n\r\n");
-  EXPECT_NE(handshake.find("HTTP/1.1 101 Switching Protocols"),
-            std::string::npos);
+  if (handshake.find("HTTP/1.1 101 Switching Protocols") == std::string::npos) {
+    ::close(sockets.ReleasePeer());
+    session.join();
+    return handshake;
+  }
 
-  const auto frame = BuildMaskedFrame(0x1u, message);
+  const auto frame = BuildMaskedFrame(0x1u, session_message);
   WriteAll(sockets.peer(), frame.data(), frame.size());
 
   const auto response = ReadServerTextFrame(sockets.peer());
+  ::close(sockets.ReleasePeer());
   session.join();
   return response;
-}
-
-std::string ExchangeAuthMessage(std::string_view auth_message)
-{
-  const ProxyConfig config;
-  return ExchangeMessage(config, auth_message);
 }
 
 std::string ExchangeHttpRequest(const ProxyConfig& config,
@@ -393,75 +409,49 @@ TEST(ProxySession, ListsConfiguredDirectors)
       DirectorTargetConfig{
           .address = "dr.example.test", .port = 29101, .name = "bareos-dir"});
 
-  const auto response = ExchangeMessage(config, R"({"type":"list_directors"})");
+  const auto response = ExchangeHttpRequest(config,
+                                            "GET /api/directors HTTP/1.1\r\n"
+                                            "Host: localhost\r\n\r\n");
 
-  EXPECT_EQ(GetJsonStringField(response, "type"), "director_list");
-  EXPECT_EQ(GetJsonStringArrayField(response, "directors"),
+  EXPECT_EQ(GetJsonStringField(HttpBody(response), "type"), "director_list");
+  EXPECT_EQ(GetJsonStringArrayField(HttpBody(response), "directors"),
             std::vector<std::string>({"bareos-dir", "site-b"}));
 }
 
-TEST(ProxySession, RequiresExplicitUsernameInAuthMessage)
+TEST(ProxySession, RejectsWsWithoutSessionCookie)
 {
-  const auto response = ExchangeAuthMessage(
-      R"({"type":"auth","password":"secret","mode":"json"})");
+  const auto response = ExchangeHttpRequest(
+      ProxyConfig{},
+      "GET /ws HTTP/1.1\r\n"
+      "Host: localhost\r\n"
+      "Upgrade: websocket\r\n"
+      "Connection: Upgrade\r\n"
+      "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+      "Sec-WebSocket-Version: 13\r\n\r\n");
 
-  EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
-  EXPECT_EQ(GetJsonStringField(response, "message"),
-            "Auth message requires string field 'username'");
+  EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 401 Unauthorized");
 }
 
-TEST(ProxySession, RequiresExplicitPasswordInAuthMessage)
-{
-  const auto response = ExchangeAuthMessage(
-      R"({"type":"auth","username":"admin","mode":"json"})");
-
-  EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
-  EXPECT_EQ(GetJsonStringField(response, "message"),
-            "Auth message requires string field 'password'");
-}
-
-TEST(ProxySession, RejectsEmptyDirectorInAuthMessage)
+TEST(ProxySession, ConnectsWsWithSessionCookie)
 {
   ProxyConfig config;
   config.configured_directors.emplace(
       "bareos-dir",
       DirectorTargetConfig{
           .address = "prod.example.test", .port = 19101, .name = "bareos-dir"});
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
+      session_id, "bareos-dir", "admin", "secret", true));
 
-  const auto response = ExchangeMessage(
+  const auto response = ExchangeWsSession(
       config,
-      R"({"type":"auth","username":"admin","password":"secret","director":"","mode":"json"})");
+      std::string("bareos_proxy_session=") + session_id,
+      R"({"type":"session","director":"bareos-dir","mode":"json"})");
 
-  EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
-  EXPECT_EQ(GetJsonStringField(response, "message"),
-            "Proxy config: no director selected");
-}
-
-TEST(ProxySession, RejectsUnknownDirectorInAuthMessage)
-{
-  ProxyConfig config;
-  config.configured_directors.emplace(
-      "bareos-dir",
-      DirectorTargetConfig{
-          .address = "prod.example.test", .port = 19101, .name = "bareos-dir"});
-
-  const auto response = ExchangeMessage(
-      config,
-      R"({"type":"auth","username":"admin","password":"secret","director":"other-dir","mode":"json"})");
-
-  EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
-  EXPECT_EQ(GetJsonStringField(response, "message"),
-            "Proxy config: director 'other-dir' is not configured");
-}
-
-TEST(ProxySession, RejectsUnsupportedAuthMode)
-{
-  const auto response = ExchangeAuthMessage(
-      R"({"type":"auth","username":"admin","password":"secret","director":"bareos-dir","mode":"json-v2"})");
-
-  EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
-  EXPECT_EQ(GetJsonStringField(response, "message"),
-            "Auth message has unsupported mode 'json-v2'");
+  EXPECT_EQ(GetJsonStringField(response, "type"), "auth_ok");
+  EXPECT_EQ(GetJsonStringField(response, "director"), "bareos-dir");
+  ProxyAuthSessionStore::RemoveSession(session_id);
 }
 
 TEST(ProxySession, ReturnsNotFoundForNonWsTargets)

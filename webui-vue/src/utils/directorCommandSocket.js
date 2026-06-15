@@ -40,6 +40,7 @@ export function createDirectorCommandSession(credentials, options = {}) {
   const wsUrl = options.wsUrl ?? DIRECTOR_WS_URL
   const authTimeoutMs = options.authTimeoutMs ?? DIRECTOR_COMMAND_AUTH_TIMEOUT_MS
   const commandTimeoutMs = options.commandTimeoutMs ?? DIRECTOR_COMMAND_TIMEOUT_MS
+  const sessionMode = options.mode ?? 'json'
   const connectErrorMessage = options.connectErrorMessage ?? `Cannot connect to proxy at ${wsUrl}`
   const disconnectErrorMessage = options.disconnectErrorMessage
     ?? `Disconnected from ${credentials.director}`
@@ -147,9 +148,8 @@ export function createDirectorCommandSession(credentials, options = {}) {
     socket.onopen = () => {
       options.onOpen?.(session)
       session.send({
-        type: 'auth',
-        username: credentials.username,
-        password: credentials.password,
+        type: 'session',
+        mode: sessionMode,
         director: credentials.director,
       })
     }

@@ -595,6 +595,11 @@ void HandleSessionLogoutRequest(int fd, const HttpRequest& request)
   SendEmptyResponseWithCookie(fd, "HTTP/1.1 204 No Content");
 }
 
+void HandleDirectorsRequest(int fd, const ProxyConfig& config)
+{
+  SendJsonResponseWithCookie(fd, "HTTP/1.1 200 OK", JsonDirectorList(config));
+}
+
 void HandleCurrentDirectorRequest(int fd, const HttpRequest& request)
 {
   const auto session_id = LookupSessionIdFromRequest(request);
@@ -774,6 +779,10 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     HandleSessionLoginRequest(fd, peer, config, request);
     return;
   }
+  if (request.method == "GET" && request.target == "/api/directors") {
+    HandleDirectorsRequest(fd, config);
+    return;
+  }
   if (request.method == "POST"
       && request.target == "/api/session/current-director") {
     HandleCurrentDirectorRequest(fd, request);
@@ -820,6 +829,24 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     return;
   }
 
+  const auto session_id = LookupSessionIdFromRequest(request);
+  if (!session_id) {
+    SendHttpResponse(fd, std::chrono::seconds(5),
+                     "HTTP/1.1 401 Unauthorized", "Authentication required",
+                     {{"Content-Type", "text/plain; charset=utf-8"},
+                      {"Cache-Control", "no-store"}});
+    return;
+  }
+
+  const auto session = ProxyAuthSessionStore::LookupSession(*session_id);
+  if (!session) {
+    SendHttpResponse(fd, std::chrono::seconds(5),
+                     "HTTP/1.1 401 Unauthorized", "Authentication expired",
+                     {{"Content-Type", "text/plain; charset=utf-8"},
+                      {"Cache-Control", "no-store"}});
+    return;
+  }
+
   auto ws = [&]() -> std::optional<WsCodec> {
     try {
       return WsCodec::Accept(fd, request.raw_headers, std::move(request.pending_input));
@@ -830,17 +857,17 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   }();
   if (!ws) { return; }
 
-  // ── Step 1: receive auth message ─────────────────────────────────────────
+  // ── Step 1: receive session setup message ─────────────────────────────────
   std::string raw_auth;
   try {
     raw_auth = ws->RecvMessage();
   } catch (const std::exception& ex) {
-    PROXY_LOG_WARN(peer, "recv auth: %s", ex.what());
+    PROXY_LOG_WARN(peer, "recv session setup: %s", ex.what());
     return;
   }
 
   if (raw_auth.empty()) {
-    PROXY_LOG_INFO(peer, "WS closed before auth");
+    PROXY_LOG_INFO(peer, "WS closed before session setup");
     return;
   }
 
@@ -848,63 +875,50 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   JsonPtr auth_msg(json_loads(raw_auth.c_str(), 0, &jerr));
   if (!auth_msg) {
     ws->SendText(
-        JsonObject({{"type", "error"}, {"message", "Expected JSON auth"}}));
+        JsonObject({{"type", "error"},
+                    {"message", "Expected JSON session setup"}}));
     return;
   }
 
   const auto type = JsonStringField(auth_msg.get(), "type");
-  if (type && *type == "list_directors") {
-    ws->SendText(JsonDirectorList(config));
-    return;
-  }
-  if (!type || *type != "auth") {
+  if (!type || *type != "session") {
     ws->SendText(JsonObject(
         {{"type", "error"},
          {"message",
-          "First message must be type=auth or type=list_directors"}}));
+          "First message must be type=session"}}));
     return;
   }
 
   DirectorConfig cfg;
-  const std::string mode(
-      JsonStringField(auth_msg.get(), "mode").value_or("json"));
-  std::optional<std::string> session_id;
+  std::string mode;
   try {
-    const auto username
-        = std::string(RequireJsonStringField(auth_msg.get(), "username"));
-    const auto password
-        = std::string(RequireJsonStringField(auth_msg.get(), "password"));
     const auto requested_selector
-        = std::string(RequireJsonStringField(auth_msg.get(), "director"));
+        = std::string(JsonStringField(auth_msg.get(), "director")
+                          .value_or(session->current_director));
+    mode = std::string(JsonStringField(auth_msg.get(), "mode").value_or("json"));
     const bool json_mode = ParseAuthMode(mode);
-
-    if (password == kProxySessionPasswordPlaceholder) {
-      session_id = FindSessionId(ws->RequestHeader("Cookie"));
-      if (!session_id) {
-        throw std::runtime_error("Proxy session missing; please log in again");
-      }
-
-      const auto session
-          = ProxyAuthSessionStore::LookupSession(*session_id);
-      if (!session) {
-        throw std::runtime_error("Proxy session expired; please log in again");
-      }
-      const auto credentials
-          = LookupDirectorCredentials(*session, requested_selector);
-      if (!credentials) {
+    if (requested_selector != session->current_director) {
+      if (!ProxyAuthSessionStore::SetCurrentDirector(*session_id,
+                                                     requested_selector)) {
         throw std::runtime_error("Proxy session has no credentials for director '"
                                  + requested_selector + "'");
       }
-
-      cfg = BuildDirectorConfig(config, requested_selector,
-                                credentials->username, credentials->password,
-                                json_mode);
-    } else {
-      cfg = BuildDirectorConfig(config, requested_selector, username, password,
-                                json_mode);
     }
+    const auto selected_session
+        = ProxyAuthSessionStore::LookupSession(*session_id);
+    if (!selected_session) {
+      throw std::runtime_error("Proxy session expired; please log in again");
+    }
+    const auto credentials
+        = LookupDirectorCredentials(*selected_session, requested_selector);
+    if (!credentials) {
+      throw std::runtime_error("Proxy session has no credentials for director '"
+                               + requested_selector + "'");
+    }
+    cfg = BuildDirectorConfig(config, requested_selector, credentials->username,
+                              credentials->password, json_mode);
 
-    PROXY_LOG_INFO(peer, "auth: user=%s director=%s host=%s:%d mode=%s",
+    PROXY_LOG_INFO(peer, "session: user=%s director=%s host=%s:%d mode=%s",
                    cfg.username.c_str(), cfg.director_name.c_str(),
                    cfg.host.c_str(), cfg.port, mode.c_str());
 
@@ -921,10 +935,6 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
         = director.UsesTlsPsk() ? "TLS-PSK" : "cleartext";
 
     PROXY_LOG_INFO(peer, "director transport: %s", director_transport);
-    if (session_id) {
-      ProxyAuthSessionStore::SetCurrentDirector(
-          *session_id, RequireJsonStringField(auth_msg.get(), "director"));
-    }
 
     try {
       ws->SendText(JsonAuthOk(cfg.director_name, mode, director_transport));

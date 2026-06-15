@@ -45,6 +45,7 @@ export async function createDirectorCommandClient(credentials, options = {}) {
     wsUrl: options.wsUrl ?? DIRECTOR_WS_URL,
     authTimeoutMs: options.authTimeoutMs ?? DIRECTOR_COMMAND_AUTH_TIMEOUT_MS,
     commandTimeoutMs: options.commandTimeoutMs ?? DIRECTOR_COMMAND_TIMEOUT_MS,
+    mode: options.mode ?? 'json',
   })
 
   return {
