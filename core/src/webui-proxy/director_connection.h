@@ -86,9 +86,8 @@ std::string MakeCramMd5Key(const std::string& password);
 class DirectorConnection {
  public:
   /* Connect to the director and perform full authentication.
-   * After return the connection is ready for Call() / CallStreamed().
-   * Throws std::runtime_error on any failure. */
-  void Connect(const DirectorConfig& cfg);
+   * Returns a ready-to-use connection or throws std::runtime_error on failure. */
+  static DirectorConnection Connect(const DirectorConfig& cfg);
 
   /* Send a command and stream each received data chunk to @p on_data.
    * Returns the prompt type that terminated the response so callers can update
@@ -114,7 +113,14 @@ class DirectorConnection {
 
   ~DirectorConnection() { Disconnect(); }
 
+  DirectorConnection(const DirectorConnection&) = delete;
+  DirectorConnection& operator=(const DirectorConnection&) = delete;
+  DirectorConnection(DirectorConnection&&) = default;
+  DirectorConnection& operator=(DirectorConnection&&) = default;
+
  private:
+  DirectorConnection() = default;
+
   friend unsigned int TlsPskClientCallback(ssl_st* ssl,
                                            const char* hint,
                                            char* identity,
