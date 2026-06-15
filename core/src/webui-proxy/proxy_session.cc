@@ -1027,6 +1027,10 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
                        : std::nullopt,
             message ? std::optional<std::string_view>(message) : std::nullopt));
       };
+      const bool should_close_console_session
+          = !cfg.json_mode
+            && IsExpectedConsoleExitCommand(
+                current_prompt == DirectorPrompt::Main, command);
 
       try {
         CallResult result;
@@ -1055,9 +1059,6 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
           ws->SendText(JsonCommandResponse(req_id, command, std::move(data)));
         } else {
           send_command_state("running");
-          const bool should_close_console_session
-              = IsExpectedConsoleExitCommand(
-                  current_prompt == DirectorPrompt::Main, command);
 
           if (stream_raw) {
             result.prompt
@@ -1087,11 +1088,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
           if (should_close_console_session) { break; }
         }
       } catch (const std::exception& ex) {
-        if (IsExpectedConsoleExitCommand(
-                !cfg.json_mode && current_prompt == DirectorPrompt::Main,
-                command)) {
-          break;
-        }
+        if (should_close_console_session) { break; }
         if (!cfg.json_mode) {
           try {
             send_command_state("failed", nullptr, ex.what());
