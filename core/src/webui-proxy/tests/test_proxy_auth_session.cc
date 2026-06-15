@@ -90,6 +90,7 @@ TEST(ProxyAuthSessionStore, BuildsCookieHeaders)
   EXPECT_NE(session_cookie.find("HttpOnly"), std::string::npos);
   EXPECT_NE(session_cookie.find("SameSite=Strict"), std::string::npos);
   EXPECT_NE(session_cookie.find("Secure"), std::string::npos);
+  EXPECT_NE(session_cookie.find("Max-Age="), std::string::npos);
 
   const auto expired_cookie = BuildExpiredProxySessionCookie(false);
   EXPECT_NE(expired_cookie.find("Max-Age=0"), std::string::npos);
