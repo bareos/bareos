@@ -2,7 +2,7 @@
  * Pinia store: Bareos Director WebSocket connection.
  *
  * Protocol:
- *   1. Call connect(credentials) — opens WS and authenticates.
+ *   1. Call connect(credentials) — opens WS and sends the session setup.
  *   2. Call call(command) — returns a Promise<dict> resolved when the
  *      director responds.  Rejects on timeout (30 s) or WS error.
  *   3. Call disconnect() on logout.
@@ -107,7 +107,6 @@ export const useDirectorStore = defineStore('director', () => {
     }
 
     _availableDirectorsPromise = new Promise((resolve, reject) => {
-      const sock = new WebSocket(WS_URL)
       let settled = false
       const finish = (handler, value) => {
         if (settled) {
@@ -116,41 +115,29 @@ export const useDirectorStore = defineStore('director', () => {
         settled = true
         clearTimeout(timer)
         _availableDirectorsPromise = null
-        sock.close()
         handler(value)
       }
       const timer = setTimeout(() => {
         finish(reject, new Error('Timed out while loading directors'))
       }, DIRECTOR_LIST_TIMEOUT_MS)
 
-      sock.onopen = () => {
-        sock.send(JSON.stringify({ type: 'list_directors' }))
-      }
-
-      sock.onmessage = (event) => {
-        let msg
-        try { msg = JSON.parse(event.data) } catch {
-          finish(reject, new Error('Invalid director list response'))
+      fetch('/api/directors', {
+        method: 'GET',
+        credentials: 'same-origin',
+        cache: 'no-store',
+      }).then(async (response) => {
+        const payload = await response.json().catch(() => null)
+        if (!response.ok || !payload || payload.type !== 'director_list' || !Array.isArray(payload.directors)) {
+          finish(reject, new Error(payload?.message ?? 'Failed to load directors'))
           return
         }
 
-        if (msg.type !== 'director_list' || !Array.isArray(msg.directors)) {
-          finish(reject, new Error(msg.message ?? 'Failed to load directors'))
-          return
-        }
-
-        availableDirectors.value = [...msg.directors]
+        availableDirectors.value = [...payload.directors]
         availableDirectorsLoaded.value = true
         finish(resolve, [...availableDirectors.value])
-      }
-
-      sock.onerror = () => {
+      }).catch(() => {
         finish(reject, new Error(`Cannot connect to proxy at ${WS_URL}`))
-      }
-
-      sock.onclose = () => {
-        clearTimeout(timer)
-      }
+      })
     })
 
     return _availableDirectorsPromise
@@ -246,7 +233,7 @@ export const useDirectorStore = defineStore('director', () => {
   // ── public API ──────────────────────────────────────────────────────────────
 
   /**
-   * Open a WebSocket connection and authenticate.
+   * Open a WebSocket connection for the current authenticated session.
    *
    * @param {object} credentials
    * @param {string} credentials.username
@@ -441,9 +428,8 @@ export const useDirectorStore = defineStore('director', () => {
 
       sock.onopen = () => {
         sock.send(JSON.stringify({
-          type: 'auth', mode: 'raw',
-          username: creds.username,
-          password: creds.password,
+          type: 'session',
+          mode: 'raw',
           director: creds.director ?? DEFAULT_DIRECTOR_NAME,
         }))
       }
