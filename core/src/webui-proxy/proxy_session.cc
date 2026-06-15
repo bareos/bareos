@@ -892,16 +892,15 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   DirectorConfig cfg;
   std::string mode;
   try {
-    const auto requested_selector
+    const auto director
         = std::string(JsonStringField(auth_msg.get(), "director")
                           .value_or(session->current_director));
     mode = std::string(JsonStringField(auth_msg.get(), "mode").value_or("json"));
     const bool json_mode = ParseAuthMode(mode);
-    if (requested_selector != session->current_director) {
-      if (!ProxyAuthSessionStore::SetCurrentDirector(*session_id,
-                                                     requested_selector)) {
+    if (director != session->current_director) {
+      if (!ProxyAuthSessionStore::SetCurrentDirector(*session_id, director)) {
         throw std::runtime_error("Proxy session has no credentials for director '"
-                                 + requested_selector + "'");
+                                 + director + "'");
       }
     }
     const auto selected_session
@@ -909,13 +908,12 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     if (!selected_session) {
       throw std::runtime_error("Proxy session expired; please log in again");
     }
-    const auto credentials
-        = LookupDirectorCredentials(*selected_session, requested_selector);
+    const auto credentials = LookupDirectorCredentials(*selected_session, director);
     if (!credentials) {
       throw std::runtime_error("Proxy session has no credentials for director '"
-                               + requested_selector + "'");
+                               + director + "'");
     }
-    cfg = BuildDirectorConfig(config, requested_selector, credentials->username,
+    cfg = BuildDirectorConfig(config, director, credentials->username,
                               credentials->password, json_mode);
 
     PROXY_LOG_INFO(peer, "session: user=%s director=%s host=%s:%d mode=%s",
