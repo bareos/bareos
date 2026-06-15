@@ -210,13 +210,9 @@ class ProxyAuthSessionStoreImpl {
 
   void CleanupExpiredLocked(Clock::time_point now)
   {
-    for (auto it = sessions_.begin(); it != sessions_.end();) {
-      if (IsExpired(it->second, now)) {
-        it = sessions_.erase(it);
-      } else {
-        ++it;
-      }
-    }
+    std::erase_if(sessions_, [this, now](const auto& pair) {
+      return IsExpired(pair.second, now);
+    });
   }
 
   std::mutex mutex_;
