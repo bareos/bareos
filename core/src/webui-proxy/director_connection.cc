@@ -406,22 +406,25 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
 // Public interface
 // ---------------------------------------------------------------------------
 
-void DirectorConnection::Connect(const DirectorConfig& cfg)
+DirectorConnection DirectorConnection::Connect(const DirectorConfig& cfg)
 {
-  json_mode_ = cfg.json_mode;
-  tls_psk_active_ = false;
-  tls_psk_identity_ = GetTlsPskIdentityForDirector(cfg.username);
-  tls_psk_secret_ = MakeCramMd5Key(cfg.password);
+  DirectorConnection connection;
+  connection.json_mode_ = cfg.json_mode;
+  connection.tls_psk_active_ = false;
+  connection.tls_psk_identity_ = GetTlsPskIdentityForDirector(cfg.username);
+  connection.tls_psk_secret_ = MakeCramMd5Key(cfg.password);
   const bool use_tls_psk = !cfg.tls_psk_disable;
 
   try {
-    ConnectTcp(cfg);
-    if (use_tls_psk) { ConnectTlsPsk(cfg); }
-    Authenticate(cfg);
+    connection.ConnectTcp(cfg);
+    if (use_tls_psk) { connection.ConnectTlsPsk(cfg); }
+    connection.Authenticate(cfg);
   } catch (...) {
-    Disconnect();
+    connection.Disconnect();
     throw;
   }
+
+  return connection;
 }
 
 void DirectorConnection::ConnectTcp(const DirectorConfig& cfg)
@@ -498,6 +501,27 @@ void DirectorConnection::ConnectTlsPsk(const DirectorConfig& cfg)
                              + GetOpenSslError());
   }
   tls_psk_active_ = true;
+}
+
+void DirectorConnection::Disconnect()
+{
+  if (ssl_) {
+    SSL_shutdown(ssl_);
+    SSL_free(ssl_);
+    ssl_ = nullptr;
+  }
+  if (ssl_ctx_) {
+    SSL_CTX_free(ssl_ctx_);
+    ssl_ctx_ = nullptr;
+  }
+  if (fd_ >= 0) {
+    ::close(fd_);
+    fd_ = -1;
+  }
+  tls_psk_active_ = false;
+  json_mode_ = true;
+  tls_psk_identity_.clear();
+  tls_psk_secret_.clear();
 }
 
 DirectorPrompt DirectorConnection::CallStreamed(
