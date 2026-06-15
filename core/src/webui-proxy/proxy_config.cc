@@ -169,7 +169,7 @@ void ApplyDirectorSetting(DirectorTargetConfig& cfg,
   }
 }
 
-void ParseAndApplyProxyConfig(const std::string& ini, ProxyConfig& cfg)
+void ParseProxyConfig(const std::string& ini, ProxyConfig& cfg)
 {
   enum class SectionKind
   {
@@ -272,10 +272,10 @@ void LoadProxyConfigFile(const std::string& path, ProxyConfig& cfg)
   }
   std::ostringstream contents;
   contents << input.rdbuf();
-  ParseAndApplyProxyConfig(contents.str(), cfg);
+  ParseProxyConfig(contents.str(), cfg);
 }
 
 void LoadProxyConfigFromString(const std::string& ini, ProxyConfig& cfg)
 {
-  ParseAndApplyProxyConfig(ini, cfg);
+  ParseProxyConfig(ini, cfg);
 }
