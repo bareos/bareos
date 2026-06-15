@@ -902,9 +902,182 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   }
 
   // ── Step 2: connect and authenticate to director ─────────────────────────
-  DirectorConnection director;
   try {
-    director.Connect(cfg);
+    DirectorConnection director = DirectorConnection::Connect(cfg);
+
+    const char* director_transport
+        = director.UsesTlsPsk() ? "TLS-PSK" : "cleartext";
+
+    PROXY_LOG_INFO(peer, "director transport: %s", director_transport);
+    if (session_id) {
+      ProxyAuthSessionStore::Instance().SetCurrentDirector(
+          *session_id, RequireJsonStringField(auth_msg.get(), "director"));
+    }
+
+    try {
+      ws->SendText(JsonAuthOk(cfg.director_name, mode, director_transport));
+    } catch (...) {
+      return;  // Client disconnected right after authentication succeeded.
+    }
+
+    PROXY_LOG_INFO(peer, "authenticated as %s on %s (mode=%s, transport=%s)",
+                   cfg.username.c_str(), cfg.director_name.c_str(),
+                   mode.c_str(), director_transport);
+
+    // ── Step 3: command loop ─────────────────────────────────────────────────
+    auto current_prompt = DirectorPrompt::Main;
+    while (!ws->IsClosed()) {
+      std::string raw_msg;
+      try {
+        raw_msg = ws->RecvMessage();
+      } catch (const std::exception& ex) {
+        PROXY_LOG_WARN(peer, "recv: %s", ex.what());
+        break;
+      }
+
+      if (raw_msg.empty()) { break; }  // clean WebSocket close
+
+      json_error_t jerr2{};
+      JsonPtr req(json_loads(raw_msg.c_str(), 0, &jerr2));
+      if (!req) {
+        ws->SendText(
+            JsonObject({{"type", "error"}, {"message", "Invalid JSON"}}));
+        continue;
+      }
+
+      const auto req_type = JsonStringField(req.get(), "type");
+      if (req_type && *req_type == "ping") {
+        ws->SendText(JsonObject({{"type", "pong"}}));
+        continue;
+      }
+      if (!req_type || *req_type != "command") {
+        ws->SendText(JsonObject(
+            {{"type", "error"}, {"message", "Expected type=command"}}));
+        continue;
+      }
+
+      const auto req_id = JsonStringField(req.get(), "id");
+      const bool stream_raw = json_is_true(json_object_get(req.get(), "stream"));
+      const std::string_view command_raw
+          = JsonStringField(req.get(), "command").value_or("");
+      std::string command = NormalizeRawConsoleCommand(command_raw);
+
+      if (command.empty()) { continue; }
+
+      PROXY_LOG_INFO(peer, "command [id=%.*s]: %s",
+                     static_cast<int>(req_id.value_or("").size()),
+                     req_id.value_or("").data(), command.c_str());
+
+      auto prompt_to_string = [](DirectorPrompt prompt) {
+        switch (prompt) {
+          case DirectorPrompt::Select:
+            return "select";
+          case DirectorPrompt::Sub:
+            return "sub";
+          case DirectorPrompt::Other:
+            return "other";
+          default:
+            return "main";
+        }
+      };
+      auto send_raw_response
+          = [&](std::string_view text, const char* prompt_str) {
+              ws->SendText(JsonRawResponse(
+                  req_id, command, text,
+                  prompt_str ? std::optional<std::string_view>(prompt_str)
+                             : std::nullopt));
+            };
+      auto is_terminal_prompt = [](DirectorPrompt prompt) {
+        return prompt == DirectorPrompt::Main || prompt == DirectorPrompt::Other;
+      };
+      auto send_command_state = [&](const char* status,
+                                    const char* prompt_str = nullptr,
+                                    const char* message = nullptr) {
+        ws->SendText(JsonCommandState(
+            req_id, command, status,
+            prompt_str ? std::optional<std::string_view>(prompt_str)
+                       : std::nullopt,
+            message ? std::optional<std::string_view>(message) : std::nullopt));
+      };
+
+      try {
+        if (!cfg.json_mode) { send_command_state("running"); }
+
+        const bool should_close_console_session
+            = !cfg.json_mode
+              && IsExpectedConsoleExitCommand(
+                  current_prompt == DirectorPrompt::Main, command);
+        CallResult result;
+        if (!cfg.json_mode && stream_raw) {
+          result.prompt
+              = director.CallStreamed(command, [&](std::string_view chunk) {
+                  auto filtered = FilterRawConsoleChunk(command, chunk);
+                  if (filtered.empty()) { return; }
+                  send_raw_response(filtered, "more");
+                });
+        } else {
+          result = director.Call(command);
+        }
+
+        if (cfg.json_mode) {
+          // Parse and re-emit as
+          // {"type":"response","id":...,"command":...,"data":{...}} The director
+          // returns a jsonrpc envelope: {"jsonrpc":"2.0","result":{...}}. Unwrap
+          // it so callers receive {"key": value} directly, matching the behaviour
+          // of the python-bareos director.call() method.
+          json_error_t jerr3{};
+          JsonPtr data(json_loads(result.text.c_str(), 0, &jerr3));
+          if (!data) { data = MakeJsonString(result.text); }
+
+          // Unwrap jsonrpc envelope when present.
+          if (json_is_object(data.get())
+              && json_object_get(data.get(), "jsonrpc")) {
+            json_t* inner = json_object_get(data.get(), "result");
+            if (inner) {
+              json_incref(inner);
+              data.reset(inner);
+            }
+          }
+
+          ws->SendText(JsonCommandResponse(req_id, command, std::move(data)));
+        } else {
+          // Raw mode: {"type":"raw_response","id":...,"command":...,"text":"...",
+          //            "prompt":"main"|"sub"|"select"|"other"|"more"}
+          current_prompt = result.prompt;
+          const char* prompt_str = prompt_to_string(result.prompt);
+          send_command_state(is_terminal_prompt(result.prompt)
+                                 ? "completed"
+                                 : "waiting_for_input",
+                             prompt_str);
+          if (stream_raw) {
+            send_raw_response("", prompt_str);
+          } else {
+            result.text = FilterRawConsoleChunk(command, result.text);
+            send_raw_response(result.text, prompt_str);
+          }
+          if (should_close_console_session) { break; }
+        }
+      } catch (const std::exception& ex) {
+        if (IsExpectedConsoleExitCommand(
+                !cfg.json_mode && current_prompt == DirectorPrompt::Main,
+                command)) {
+          break;
+        }
+        if (!cfg.json_mode) {
+          try {
+            send_command_state("failed", nullptr, ex.what());
+          } catch (...) {
+            break;
+          }
+        }
+        PROXY_LOG_ERROR(peer, "director error: %s", ex.what());
+        try {
+          ws->SendText(JsonCommandError(req_id, command, ex.what()));
+        } catch (...) {
+          break;  // Client disconnected — end session.
+        }
+      }
+    }
   } catch (const std::exception& ex) {
     const std::string_view msg = ex.what();
     PROXY_LOG_WARN(peer, "auth failed: %s", ex.what());
@@ -920,180 +1093,6 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
       // Client disconnected before we could report the failure.
     }
     return;
-  }
-
-  const char* director_transport
-      = director.UsesTlsPsk() ? "TLS-PSK" : "cleartext";
-
-  PROXY_LOG_INFO(peer, "director transport: %s", director_transport);
-  if (session_id) {
-    ProxyAuthSessionStore::Instance().SetCurrentDirector(
-        *session_id, RequireJsonStringField(auth_msg.get(), "director"));
-  }
-
-  try {
-    ws->SendText(JsonAuthOk(cfg.director_name, mode, director_transport));
-  } catch (...) {
-    return;  // Client disconnected right after authentication succeeded.
-  }
-
-  PROXY_LOG_INFO(peer, "authenticated as %s on %s (mode=%s, transport=%s)",
-                 cfg.username.c_str(), cfg.director_name.c_str(), mode.c_str(),
-                 director_transport);
-
-  // ── Step 3: command loop ─────────────────────────────────────────────────
-  auto current_prompt = DirectorPrompt::Main;
-  while (!ws->IsClosed()) {
-    std::string raw_msg;
-    try {
-      raw_msg = ws->RecvMessage();
-    } catch (const std::exception& ex) {
-      PROXY_LOG_WARN(peer, "recv: %s", ex.what());
-      break;
-    }
-
-    if (raw_msg.empty()) { break; }  // clean WebSocket close
-
-    json_error_t jerr2{};
-    JsonPtr req(json_loads(raw_msg.c_str(), 0, &jerr2));
-    if (!req) {
-      ws->SendText(
-          JsonObject({{"type", "error"}, {"message", "Invalid JSON"}}));
-      continue;
-    }
-
-    const auto req_type = JsonStringField(req.get(), "type");
-    if (req_type && *req_type == "ping") {
-      ws->SendText(JsonObject({{"type", "pong"}}));
-      continue;
-    }
-    if (!req_type || *req_type != "command") {
-      ws->SendText(JsonObject(
-          {{"type", "error"}, {"message", "Expected type=command"}}));
-      continue;
-    }
-
-    const auto req_id = JsonStringField(req.get(), "id");
-    const bool stream_raw = json_is_true(json_object_get(req.get(), "stream"));
-    const std::string_view command_raw
-        = JsonStringField(req.get(), "command").value_or("");
-    std::string command = NormalizeRawConsoleCommand(command_raw);
-
-    if (command.empty()) { continue; }
-
-    PROXY_LOG_INFO(peer, "command [id=%.*s]: %s",
-                   static_cast<int>(req_id.value_or("").size()),
-                   req_id.value_or("").data(), command.c_str());
-
-    auto prompt_to_string = [](DirectorPrompt prompt) {
-      switch (prompt) {
-        case DirectorPrompt::Select:
-          return "select";
-        case DirectorPrompt::Sub:
-          return "sub";
-        case DirectorPrompt::Other:
-          return "other";
-        default:
-          return "main";
-      }
-    };
-    auto send_raw_response
-        = [&](std::string_view text, const char* prompt_str) {
-            ws->SendText(JsonRawResponse(
-                req_id, command, text,
-                prompt_str ? std::optional<std::string_view>(prompt_str)
-                           : std::nullopt));
-          };
-    auto is_terminal_prompt = [](DirectorPrompt prompt) {
-      return prompt == DirectorPrompt::Main || prompt == DirectorPrompt::Other;
-    };
-    auto send_command_state = [&](const char* status,
-                                  const char* prompt_str = nullptr,
-                                  const char* message = nullptr) {
-      ws->SendText(JsonCommandState(
-          req_id, command, status,
-          prompt_str ? std::optional<std::string_view>(prompt_str)
-                     : std::nullopt,
-          message ? std::optional<std::string_view>(message) : std::nullopt));
-    };
-
-    try {
-      if (!cfg.json_mode) { send_command_state("running"); }
-
-      const bool should_close_console_session
-          = !cfg.json_mode
-            && IsExpectedConsoleExitCommand(
-                current_prompt == DirectorPrompt::Main, command);
-      CallResult result;
-      if (!cfg.json_mode && stream_raw) {
-        result.prompt
-            = director.CallStreamed(command, [&](std::string_view chunk) {
-                auto filtered = FilterRawConsoleChunk(command, chunk);
-                if (filtered.empty()) { return; }
-                send_raw_response(filtered, "more");
-              });
-      } else {
-        result = director.Call(command);
-      }
-
-      if (cfg.json_mode) {
-        // Parse and re-emit as
-        // {"type":"response","id":...,"command":...,"data":{...}} The director
-        // returns a jsonrpc envelope: {"jsonrpc":"2.0","result":{...}}. Unwrap
-        // it so callers receive {"key": value} directly, matching the behaviour
-        // of the python-bareos director.call() method.
-        json_error_t jerr3{};
-        JsonPtr data(json_loads(result.text.c_str(), 0, &jerr3));
-        if (!data) { data = MakeJsonString(result.text); }
-
-        // Unwrap jsonrpc envelope when present.
-        if (json_is_object(data.get())
-            && json_object_get(data.get(), "jsonrpc")) {
-          json_t* inner = json_object_get(data.get(), "result");
-          if (inner) {
-            json_incref(inner);
-            data.reset(inner);
-          }
-        }
-
-        ws->SendText(JsonCommandResponse(req_id, command, std::move(data)));
-      } else {
-        // Raw mode: {"type":"raw_response","id":...,"command":...,"text":"...",
-        //            "prompt":"main"|"sub"|"select"|"other"|"more"}
-        current_prompt = result.prompt;
-        const char* prompt_str = prompt_to_string(result.prompt);
-        send_command_state(is_terminal_prompt(result.prompt)
-                               ? "completed"
-                               : "waiting_for_input",
-                           prompt_str);
-        if (stream_raw) {
-          send_raw_response("", prompt_str);
-        } else {
-          result.text = FilterRawConsoleChunk(command, result.text);
-          send_raw_response(result.text, prompt_str);
-        }
-        if (should_close_console_session) { break; }
-      }
-    } catch (const std::exception& ex) {
-      if (IsExpectedConsoleExitCommand(
-              !cfg.json_mode && current_prompt == DirectorPrompt::Main,
-              command)) {
-        break;
-      }
-      if (!cfg.json_mode) {
-        try {
-          send_command_state("failed", nullptr, ex.what());
-        } catch (...) {
-          break;
-        }
-      }
-      PROXY_LOG_ERROR(peer, "director error: %s", ex.what());
-      try {
-        ws->SendText(JsonCommandError(req_id, command, ex.what()));
-      } catch (...) {
-        break;  // Client disconnected — end session.
-      }
-    }
   }
 
   PROXY_LOG_INFO(peer, "session ended");
