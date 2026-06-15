@@ -47,6 +47,7 @@ python3 -m pip install python_bareos ConfigArgParse
 > The helper script `media_vault.sh` assumes that the venv is stored in the path used in the example above.
 > If you choose a different path, then you need to update `media_vault.sh` to reflect that.
 
+
 > [!NOTE]
 > TLS-PSK native support requires Python version >= 3.12. Alternatively,
 > the ``sslpsk`` module can be used for python versions <= 3.9, but it requires gcc.
