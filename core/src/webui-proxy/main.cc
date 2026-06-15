@@ -79,8 +79,7 @@ int main(int argc, char* argv[])
     std::signal(SIGTERM, HandleSignal);
     std::signal(SIGPIPE, SIG_IGN);  // prevent crash on broken pipe
 
-    ProxyServer server(cfg);
-    server.Run();
+    RunProxyServer(cfg);
   } catch (const std::exception& ex) {
     PROXY_LOG_ERROR("", "fatal: %s", ex.what());
     return 1;
