@@ -40,7 +40,7 @@
 
 namespace {
 
-constexpr int kListenBacklog = 16;
+constexpr int kListenBacklog = SOMAXCONN;
 
 struct FdGuard {
   FdGuard() = default;

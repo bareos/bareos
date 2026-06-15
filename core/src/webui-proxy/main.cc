@@ -62,9 +62,8 @@ int main(int argc, char* argv[])
   std::string config_file = WEBUI_PROXY_DEFAULT_CONFIG_PATH;
   std::string log_file;
   std::string log_level = "info";
-  app.add_option("--config", config_file,
-                 "Proxy config file (default: " WEBUI_PROXY_DEFAULT_CONFIG_PATH
-                 ")");
+  app.add_option("--config", config_file, "Proxy config file")
+      ->capture_default_str();
   app.add_option("--log-file", log_file, "Append proxy logs to this file");
   app.add_option("--log-level", log_level,
                  "Minimum proxy log level: debug, info, warn, error");
