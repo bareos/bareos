@@ -20,8 +20,13 @@
  */
 
 #include "../proxy_auth_session.h"
+#include "../director_connection.h"
 #include "../proxy_session.h"
+#include "../bareos_base64.h"
 
+#include "lib/bnet_protocol_signals.h"
+
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -29,11 +34,17 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <memory>
+#include <netinet/in.h>
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
 #include <string>
 #include <string_view>
+#include <stdexcept>
 #include <thread>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -75,6 +86,16 @@ class SocketPair {
 
  private:
   int fds_[2] = {-1, -1};
+};
+
+struct TcpListener {
+  int fd{-1};
+  uint16_t port{0};
+
+  ~TcpListener()
+  {
+    if (fd >= 0) { close(fd); }
+  }
 };
 
 void WriteAll(int fd, const void* data, size_t size)
@@ -190,6 +211,119 @@ std::string ReadServerTextFrame(int fd)
   return ReadExact(fd, static_cast<size_t>(payload_size));
 }
 
+std::array<uint8_t, 16> HmacMd5Digest(const std::string& key,
+                                      const std::string& data)
+{
+  std::array<uint8_t, 16> out{};
+  unsigned int len = 16;
+  HMAC(EVP_md5(), key.data(), static_cast<int>(key.size()),
+       reinterpret_cast<const uint8_t*>(data.data()), data.size(), out.data(),
+       &len);
+  return out;
+}
+
+TcpListener CreateMockDirectorListener()
+{
+  TcpListener listener;
+  listener.fd = ::socket(AF_INET, SOCK_STREAM, 0);
+  if (listener.fd < 0) {
+    throw std::runtime_error("failed to create mock director socket");
+  }
+
+  int reuse = 1;
+  if (setsockopt(listener.fd, SOL_SOCKET, SO_REUSEADDR, &reuse,
+                 sizeof(reuse)) != 0) {
+    throw std::runtime_error("failed to configure mock director socket");
+  }
+
+  sockaddr_in addr{};
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  addr.sin_port = 0;
+  if (bind(listener.fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
+    throw std::runtime_error("failed to bind mock director socket");
+  }
+
+  socklen_t len = sizeof(addr);
+  if (getsockname(listener.fd, reinterpret_cast<sockaddr*>(&addr), &len) != 0) {
+    throw std::runtime_error("failed to query mock director port");
+  }
+  listener.port = ntohs(addr.sin_port);
+
+  if (listen(listener.fd, 1) != 0) {
+    throw std::runtime_error("failed to listen on mock director socket");
+  }
+
+  return listener;
+}
+
+std::thread StartMockDirectorSession(const TcpListener& listener,
+                                     std::string password)
+{
+  return std::thread([fd = listener.fd, password = std::move(password)]() {
+    const int peer = ::accept(fd, nullptr, nullptr);
+    ASSERT_GE(peer, 0);
+
+    auto read_frame = [peer]() {
+      const auto header = ReadExact(peer, 4);
+      const auto size = static_cast<int32_t>(
+          (static_cast<uint32_t>(static_cast<unsigned char>(header[0])) << 24)
+          | (static_cast<uint32_t>(static_cast<unsigned char>(header[1])) << 16)
+          | (static_cast<uint32_t>(static_cast<unsigned char>(header[2])) << 8)
+          | static_cast<uint32_t>(static_cast<unsigned char>(header[3])));
+      if (size <= 0) {
+        return std::string();
+      }
+      return ReadExact(peer, static_cast<size_t>(size));
+    };
+
+    auto write_frame = [peer](std::string_view payload) {
+      const int32_t header = htonl(static_cast<int32_t>(payload.size()));
+      WriteAll(peer, &header, sizeof(header));
+      if (!payload.empty()) { WriteAll(peer, payload.data(), payload.size()); }
+    };
+
+    const std::string hello = read_frame();
+    EXPECT_NE(hello.find("Hello admin calling version "), std::string::npos);
+
+    const std::string key = MakeCramMd5Key(password);
+    const std::string director_challenge = "<director-challenge>";
+    write_frame("auth cram-md5 " + director_challenge + " ssl=0\n");
+
+    const std::string response = read_frame();
+    auto expected_client_hmac = HmacMd5Digest(key, director_challenge);
+    EXPECT_EQ(response, BareosBase64Encode(expected_client_hmac.data(),
+                                           expected_client_hmac.size()));
+
+    write_frame("1000 OK auth\n");
+
+    const std::string challenge_msg = read_frame();
+    const std::string prefix = "auth cram-md5c ";
+    const auto challenge_begin = challenge_msg.find(prefix);
+    EXPECT_NE(challenge_begin, std::string::npos);
+    const auto challenge_end = challenge_msg.find(" ssl=", challenge_begin);
+    EXPECT_NE(challenge_end, std::string::npos);
+    const std::string challenge = challenge_msg.substr(
+        challenge_begin + prefix.size(),
+        challenge_end - (challenge_begin + prefix.size()));
+
+    auto expected_director_hmac = HmacMd5Digest(key, challenge);
+    write_frame(BareosBase64Encode(expected_director_hmac.data(),
+                                   expected_director_hmac.size()));
+
+    const std::string auth_ok = read_frame();
+    EXPECT_EQ(auth_ok, "1000 OK auth\n");
+
+    write_frame("1000 OK: bareos-dir Version: 26.0.0\n");
+    write_frame("1002 additional info\n");
+    const auto command = read_frame();
+    EXPECT_EQ(command, ".api json\n");
+    const int32_t main_prompt = htonl(BNET_MAIN_PROMPT);
+    WriteAll(peer, &main_prompt, sizeof(main_prompt));
+    ::close(peer);
+  });
+}
+
 std::string GetJsonStringField(std::string_view text, const char* key)
 {
   json_error_t error{};
@@ -243,7 +377,9 @@ std::string BuildWsHandshakeRequest(std::string_view cookie_header = {})
 {
   std::string request(kValidHandshakeRequest);
   if (!cookie_header.empty()) {
-    request.insert(request.size() - 4, std::string("Cookie: ") + std::string(cookie_header) + "\r\n");
+    request.insert(request.size() - 2,
+                   std::string("Cookie: ") + std::string(cookie_header)
+                       + "\r\n");
   }
   return request;
 }
@@ -434,21 +570,28 @@ TEST(ProxySession, RejectsWsWithoutSessionCookie)
 
 TEST(ProxySession, ConnectsWsWithSessionCookie)
 {
+  const auto listener = CreateMockDirectorListener();
+
   ProxyConfig config;
   config.configured_directors.emplace(
       "bareos-dir",
       DirectorTargetConfig{
-          .address = "prod.example.test", .port = 19101, .name = "bareos-dir"});
+          .address = "127.0.0.1",
+          .port = static_cast<int>(listener.port),
+          .name = "bareos-dir",
+          .tls_psk_disable = true});
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
   ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
       session_id, "bareos-dir", "admin", "secret", true));
 
+  auto director = StartMockDirectorSession(listener, "secret");
   const auto response = ExchangeWsSession(
       config,
       std::string("bareos_proxy_session=") + session_id,
       R"({"type":"session","director":"bareos-dir","mode":"json"})");
 
+  director.join();
   EXPECT_EQ(GetJsonStringField(response, "type"), "auth_ok");
   EXPECT_EQ(GetJsonStringField(response, "director"), "bareos-dir");
   ProxyAuthSessionStore::RemoveSession(session_id);
@@ -460,7 +603,7 @@ TEST(ProxySession, RejectsUnsupportedWsMode)
   config.configured_directors.emplace(
       "bareos-dir",
       DirectorTargetConfig{
-          .address = "prod.example.test", .port = 19101, .name = "bareos-dir"});
+          .address = "127.0.0.1", .port = 19101, .name = "bareos-dir"});
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
   ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
