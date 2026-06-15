@@ -49,10 +49,11 @@ static const int debuglevel = 150;
 #define PLUGIN_VERSION "2"
 #define PLUGIN_DESCRIPTION "Bareos Pipe File Daemon Plugin"
 #define PLUGIN_USAGE                                                   \
-  "bpipe:file=<filepath>:reader=<readprogram>:writer=<writeprogram>[:usesuffix=yes|no]\n" \
+  "bpipe:file=<filepath>:reader=<readprogram>:writer=<writeprogram>[:" \
+  "usesuffix=yes|no]\n"                                                \
   " readprogram runs on backup and its stdout is saved\n"              \
   " writeprogram runs on restore and gets restored data into stdin\n"  \
-  " usesuffix add unique suffix to filepath (optional)\n" \
+  " usesuffix add unique suffix to filepath (optional)\n"              \
   " the data is internally stored as filepath (e.g. mybackup/backup1)"
 
 /* Forward referenced functions */
@@ -109,7 +110,7 @@ struct plugin_ctx {
   char* fname;          /* Filename to "backup/restore" */
   char* reader;         /* Reader program for backup */
   char* writer;         /* Writer program for backup */
-  bool  usesuffix;     /* append unique suffix to fname */
+  bool usesuffix;       /* append unique suffix to fname */
 
   char where[512];
   int replace;
@@ -250,7 +251,7 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
   p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
   if (!p_ctx) { return bRC_Error; }
 
-  if(p_ctx->usesuffix) { set_unique_name(ctx); }
+  if (p_ctx->usesuffix) { set_unique_name(ctx); }
 
   now = time(NULL);
   sp->fname = p_ctx->fname;
@@ -299,7 +300,7 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
         int env_since_time;
         bareos_core_functions->getBareosValue(ctx, bVarSinceTime,
                                               &env_since_time);
-	int env_replace = env_job_type == 'R' ? p_ctx->replace : ' ';
+        int env_replace = env_job_type == 'R' ? p_ctx->replace : ' ';
 
         std::unordered_map<std::string, std::string> env{
             {"BareosClientName", std::string{env_client_name}},
@@ -495,17 +496,24 @@ static inline void SetString(char** destination, const char* value)
   StripBackSlashes(*destination);
 }
 
-static char get_level_letter(int level) {
-     switch (level) {
-        case L_FULL: return 'F';
-        case L_DIFFERENTIAL: return 'D';
-        case L_INCREMENTAL: return 'I';
-        case L_NONE: return 'N';
-        default: return 'E';
-      }
+static char get_level_letter(int level)
+{
+  switch (level) {
+    case L_FULL:
+      return 'F';
+    case L_DIFFERENTIAL:
+      return 'D';
+    case L_INCREMENTAL:
+      return 'I';
+    case L_NONE:
+      return 'N';
+    default:
+      return 'E';
+  }
 }
 
-static void set_unique_name(PluginContext* ctx) {
+static void set_unique_name(PluginContext* ctx)
+{
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   int job_id = 0;
@@ -518,12 +526,8 @@ static void set_unique_name(PluginContext* ctx) {
   bareos_core_functions->getBareosValue(ctx, bVarJobName, &job_name);
   bareos_core_functions->getBareosValue(ctx, bVarLevel, &job_level);
 
-  snprintf(new_fname, sizeof(new_fname),
-    "%s.%s.%c.%d",
-    p_ctx->fname,
-    job_name,
-    get_level_letter(job_level),
-    job_id);
+  snprintf(new_fname, sizeof(new_fname), "%s.%s.%c.%d", p_ctx->fname, job_name,
+           get_level_letter(job_level), job_id);
   Dmsg(ctx, 100, "renamed pseudo file '%s' to '%s'\n", p_ctx->fname, new_fname);
   free(p_ctx->fname);
   p_ctx->fname = strdup(new_fname);
@@ -540,12 +544,16 @@ static inline bool ParseBoolean(const char* argument_value)
   }
 }
 
-static bool is_equal(const std::string& a, const char *b) {
+static bool is_equal(const std::string& a, const char* b)
+{
   return Bstrcasecmp(a.c_str(), b);
 }
 
-static bRC parse_single_option(const std::string& key, const std::string& value, plugin_ctx* p_ctx) {
-  const char *c_str = value.c_str();
+static bRC parse_single_option(const std::string& key,
+                               const std::string& value,
+                               plugin_ctx* p_ctx)
+{
+  const char* c_str = value.c_str();
 
   if (is_equal(key, "file")) {
     SetString(&p_ctx->fname, c_str);
@@ -555,15 +563,17 @@ static bRC parse_single_option(const std::string& key, const std::string& value,
     SetString(&p_ctx->writer, c_str);
   } else if (is_equal(key, "usesuffix")) {
     p_ctx->usesuffix = ParseBoolean(c_str);
-  }
-  else {
+  } else {
     return bRC_Error;
   }
 
   return bRC_OK;
 }
 
-static void log_config_error(PluginContext *ctx, std::string& key, std::string& value) {
+static void log_config_error(PluginContext* ctx,
+                             std::string& key,
+                             std::string& value)
+{
   Jmsg(ctx, M_FATAL,
        "bpipe-fd: Illegal argument %s with value %s in plugin "
        "definition\n",
@@ -587,7 +597,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* plugindef)
 
   if (!p_ctx || !plugindef) { return bRC_Error; }
 
-  std::istringstream input((char *) plugindef);
+  std::istringstream input((char*)plugindef);
 
   std::string part;
 
@@ -602,13 +612,13 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* plugindef)
     std::getline(partin, value);
 
     if (key.empty()) {
-        log_config_error(ctx, key, value);
-        return bRC_Error;
+      log_config_error(ctx, key, value);
+      return bRC_Error;
     }
 
     if (parse_single_option(key, value, p_ctx) != bRC_OK) {
-        log_config_error(ctx, key, value);
-        return bRC_Error;
+      log_config_error(ctx, key, value);
+      return bRC_Error;
     }
   }
 
@@ -628,13 +638,13 @@ static bRC plugin_has_valid_arguments(PluginContext* ctx)
     retval = bRC_Error;
   } else if (!PathContainsDirectory(p_ctx->fname)) {
     Jmsg(ctx, M_FATAL,
-      "bpipe-fd: file argument (%s) must contain a directory "
-      "structure. Please fix your plugin definition\n",
-      p_ctx->fname);
+         "bpipe-fd: file argument (%s) must contain a directory "
+         "structure. Please fix your plugin definition\n",
+         p_ctx->fname);
     Dmsg(ctx, debuglevel,
-      "bpipe-fd: file argument (%s) must contain a directory "
-      "structure. Please fix your plugin definition\n",
-      p_ctx->fname);
+         "bpipe-fd: file argument (%s) must contain a directory "
+         "structure. Please fix your plugin definition\n",
+         p_ctx->fname);
     retval = bRC_Error;
   }
 
