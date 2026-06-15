@@ -27,9 +27,7 @@
 
 TEST(ProxyConfig, AllowsSharedDirectorNamesAcrossSelectors)
 {
-  ProxyConfig cfg;
-
-  LoadProxyConfigFromString(
+  ProxyConfig cfg = LoadProxyConfigFromString(
       R"ini(
 [listen]
 address = 127.0.0.1
@@ -43,8 +41,7 @@ address = dr.example.test
 port = 29101
 director_name = bareos-dir
 tls_psk_disable = yes
-)ini",
-      cfg);
+)ini");
 
   EXPECT_EQ(cfg.bind_address, "127.0.0.1");
   EXPECT_EQ(cfg.port, 18765);
@@ -61,8 +58,6 @@ tls_psk_disable = yes
 
 TEST(ProxyConfig, RejectsDuplicateSectionNames)
 {
-  ProxyConfig cfg;
-
   EXPECT_THROW(LoadProxyConfigFromString(
                    R"ini(
 [bareos-dir]
@@ -70,41 +65,32 @@ address = prod.example.test
 
 [bareos-dir]
 address = dr.example.test
-)ini",
-                   cfg),
+)ini"),
                ProxyConfigDuplicateSectionError);
 }
 
 TEST(ProxyConfig, RejectsEmptySectionNames)
 {
-  ProxyConfig cfg;
-
   EXPECT_THROW(LoadProxyConfigFromString(
                    R"ini(
 []
 address = prod.example.test
-)ini",
-                   cfg),
+)ini"),
                ProxyConfigParseError);
 }
 
 TEST(ProxyConfig, RejectsMissingDirectorSections)
 {
-  ProxyConfig cfg;
-
   EXPECT_THROW(LoadProxyConfigFromString(
                    R"ini(
 [listen]
 address = 127.0.0.1
-)ini",
-                   cfg),
+)ini"),
                ProxyConfigMissingDirectorSectionError);
 }
 
 TEST(ProxyConfig, RejectsMissingListenSection)
 {
-  ProxyConfig cfg;
-
   EXPECT_THROW(LoadProxyConfigFromString(
                   R"ini(
 [listem]
@@ -114,15 +100,12 @@ port = 9204
 [bareos-dir]
 address = localhost
 tls_psk_disable = no
-)ini",
-                  cfg),
+)ini"),
                ProxyConfigMissingListenSectionError);
 }
 
 TEST(ProxyConfig, RejectsNonYesNoBooleanValues)
 {
-  ProxyConfig cfg;
-
   EXPECT_THROW(LoadProxyConfigFromString(
                    R"ini(
 [listen]
@@ -132,15 +115,12 @@ port = 18765
 [bareos-dir]
 address = prod.example.test
 tls_psk_disable = true
-)ini",
-                   cfg),
+)ini"),
                ProxyConfigInvalidBooleanError);
 }
 
 TEST(ProxyConfig, ReportsLineNumberInParseErrors)
 {
-  ProxyConfig cfg;
-
   try {
     LoadProxyConfigFromString(
         R"ini(
@@ -150,8 +130,7 @@ invalid
 
 [bareos-dir]
 address = prod.example.test
-)ini",
-        cfg);
+)ini");
     FAIL() << "expected ProxyConfigParseError";
   } catch (const ProxyConfigParseError& error) {
     EXPECT_NE(std::string(error.what()).find("line 4"), std::string::npos);
@@ -162,8 +141,6 @@ address = prod.example.test
 
 TEST(ProxyConfig, RejectsUnknownListenKeysWithConsistentError)
 {
-  ProxyConfig cfg;
-
   try {
     LoadProxyConfigFromString(
         R"ini(
@@ -172,8 +149,7 @@ unexpected = 127.0.0.1
 
 [bareos-dir]
 address = prod.example.test
-)ini",
-        cfg);
+)ini");
     FAIL() << "expected ProxyConfigUnknownKeyError";
   } catch (const ProxyConfigUnknownKeyError& error) {
     EXPECT_NE(std::string(error.what()).find("line 3"), std::string::npos);
@@ -184,8 +160,6 @@ address = prod.example.test
 
 TEST(ProxyConfig, RejectsUnknownDirectorKeysWithConsistentError)
 {
-  ProxyConfig cfg;
-
   try {
     LoadProxyConfigFromString(
         R"ini(
@@ -194,8 +168,7 @@ address = 127.0.0.1
 
 [site-b]
 unexpected = prod.example.test
-)ini",
-        cfg);
+)ini");
     FAIL() << "expected ProxyConfigUnknownKeyError";
   } catch (const ProxyConfigUnknownKeyError& error) {
     EXPECT_NE(std::string(error.what()).find("line 6"), std::string::npos);
@@ -206,8 +179,6 @@ unexpected = prod.example.test
 
 TEST(ProxyConfig, RejectsNonAsciiValuesWithLineNumber)
 {
-  ProxyConfig cfg;
-
   try {
     LoadProxyConfigFromString(
         "[listen]\n"
@@ -216,8 +187,7 @@ TEST(ProxyConfig, RejectsNonAsciiValuesWithLineNumber)
         "\n"
         "[bareos-dir]\n"
         "address = prod.example.test\n"
-        "director_name = bar\xC3\xA4os-dir\n",
-        cfg);
+        "director_name = bar\xC3\xA4os-dir\n");
     FAIL() << "expected ProxyConfigInvalidCharacterError";
   } catch (const ProxyConfigInvalidCharacterError& error) {
     EXPECT_NE(std::string(error.what()).find("line 7"), std::string::npos);
@@ -229,8 +199,6 @@ TEST(ProxyConfig, RejectsNonAsciiValuesWithLineNumber)
 
 TEST(ProxyConfig, RejectsNonAsciiSectionNamesWithLineNumber)
 {
-  ProxyConfig cfg;
-
   try {
     LoadProxyConfigFromString(
         "[listen]\n"
@@ -239,8 +207,7 @@ TEST(ProxyConfig, RejectsNonAsciiSectionNamesWithLineNumber)
         "\n"
         "[pr\xC3\xB6"
         "d]\n"
-        "address = prod.example.test\n",
-        cfg);
+        "address = prod.example.test\n");
     FAIL() << "expected ProxyConfigInvalidCharacterError";
   } catch (const ProxyConfigInvalidCharacterError& error) {
     EXPECT_NE(std::string(error.what()).find("line 5"), std::string::npos);
@@ -253,8 +220,6 @@ TEST(ProxyConfig, RejectsNonAsciiSectionNamesWithLineNumber)
 
 TEST(ProxyConfig, RejectsNonAsciiKeysWithLineNumber)
 {
-  ProxyConfig cfg;
-
   try {
     LoadProxyConfigFromString(
         "[listen]\n"
@@ -263,8 +228,7 @@ TEST(ProxyConfig, RejectsNonAsciiKeysWithLineNumber)
         "port = 18765\n"
         "\n"
         "[bareos-dir]\n"
-        "address = prod.example.test\n",
-        cfg);
+        "address = prod.example.test\n");
     FAIL() << "expected ProxyConfigInvalidCharacterError";
   } catch (const ProxyConfigInvalidCharacterError& error) {
     EXPECT_NE(std::string(error.what()).find("line 2"), std::string::npos);
@@ -276,8 +240,6 @@ TEST(ProxyConfig, RejectsNonAsciiKeysWithLineNumber)
 
 TEST(ProxyConfig, RejectsNonIntegerValues)
 {
-  ProxyConfig cfg;
-
   EXPECT_THROW(LoadProxyConfigFromString(
                    R"ini(
 [listen]
@@ -286,16 +248,13 @@ port = invalid
 
 [bareos-dir]
 address = prod.example.test
-)ini",
-                   cfg),
+)ini"),
                ProxyConfigInvalidIntegerError);
 }
 
 TEST(ProxyConfig, ParsesEscapedQuotedValues)
 {
-  ProxyConfig cfg;
-
-  LoadProxyConfigFromString(
+  ProxyConfig cfg = LoadProxyConfigFromString(
       R"ini(
 [listen]
 address = "127.0.0.1"
@@ -304,8 +263,7 @@ port = 18765
 [bareos-dir]
 address = "prod\"backup\\node"
 director_name = "bareos-dir"
-)ini",
-      cfg);
+)ini");
 
   ASSERT_EQ(cfg.configured_directors.size(), 1U);
   EXPECT_EQ(cfg.bind_address, "127.0.0.1");
@@ -316,8 +274,6 @@ director_name = "bareos-dir"
 
 TEST(ProxyConfig, RejectsUnmatchedQuotedValuesWithLineNumber)
 {
-  ProxyConfig cfg;
-
   try {
     LoadProxyConfigFromString(
         R"ini(
@@ -327,8 +283,7 @@ port = 18765
 
 [bareos-dir]
 address = prod.example.test
-)ini",
-        cfg);
+)ini");
     FAIL() << "expected ProxyConfigQuotedValueError";
   } catch (const ProxyConfigQuotedValueError& error) {
     EXPECT_NE(std::string(error.what()).find("line 3"), std::string::npos);
@@ -339,8 +294,6 @@ address = prod.example.test
 
 TEST(ProxyConfig, RejectsInvalidQuotedEscapesWithLineNumber)
 {
-  ProxyConfig cfg;
-
   try {
     LoadProxyConfigFromString(
         R"ini(
@@ -350,8 +303,7 @@ port = 18765
 
 [bareos-dir]
 address = "prod\backup"
-)ini",
-        cfg);
+)ini");
     FAIL() << "expected ProxyConfigQuotedValueError";
   } catch (const ProxyConfigQuotedValueError& error) {
     EXPECT_NE(std::string(error.what()).find("line 7"), std::string::npos);
@@ -362,8 +314,6 @@ address = "prod\backup"
 
 TEST(ProxyConfig, RejectsMissingFilesWithTypedError)
 {
-  ProxyConfig cfg;
-
-  EXPECT_THROW(LoadProxyConfigFile("/definitely/missing/proxy.ini", cfg),
+  EXPECT_THROW(LoadProxyConfigFile("/definitely/missing/proxy.ini"),
                ProxyConfigFileError);
 }
