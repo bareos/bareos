@@ -82,8 +82,7 @@ int main(int argc, char* argv[])
     logger_cfg.log_file = log_file;
     ConfigureProxyLogger(logger_cfg);
 
-    ProxyConfig cfg;
-    LoadProxyConfigFile(config_file, cfg);
+    ProxyConfig cfg = LoadProxyConfigFile(config_file);
 
     // Apply session timeout configuration
     ProxyAuthSessionStore::Instance().SetSessionTimeouts(

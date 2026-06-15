@@ -105,7 +105,7 @@ struct ProxyConfig {
   std::map<std::string, DirectorTargetConfig> configured_directors;
 };
 
-void LoadProxyConfigFile(const std::string& path, ProxyConfig& cfg);
-void LoadProxyConfigFromString(const std::string& ini, ProxyConfig& cfg);
+ProxyConfig LoadProxyConfigFile(const std::string& path);
+ProxyConfig LoadProxyConfigFromString(const std::string& ini);
 
 #endif  // BAREOS_WEBUI_PROXY_PROXY_CONFIG_H_
