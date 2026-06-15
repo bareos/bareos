@@ -460,10 +460,8 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
 
     ws.onopen = () => {
       ws.send(JSON.stringify({
-        type: 'auth',
+        type: 'session',
         mode: 'raw',
-        username: creds.username,
-        password: creds.password,
         director: director || creds.director || DEFAULT_DIRECTOR_NAME,
       }))
     }
