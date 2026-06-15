@@ -27,7 +27,6 @@
 
 #include "proxy_config.h"
 #include <csignal>
-#include <string>
 
 /**
  * Global shutdown flag for the proxy process. Signal handlers set this directly
@@ -40,15 +39,6 @@ extern volatile std::sig_atomic_t g_proxy_shutdown_requested;
  * occurs. Each accepted connection is handed to RunProxySession() in a
  * detached std::thread.
  */
-class ProxyServer {
- public:
-  explicit ProxyServer(const ProxyConfig& cfg) : cfg_(cfg) {}
-
-  /** Blocking: accept loop. Returns when shutdown is requested. */
-  void Run();
-
- private:
-  ProxyConfig cfg_;
-};
+void RunProxyServer(const ProxyConfig& cfg);
 
 #endif  // BAREOS_WEBUI_PROXY_PROXY_SERVER_H_
