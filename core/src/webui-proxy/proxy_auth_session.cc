@@ -216,7 +216,7 @@ class ProxyAuthSessionStoreImpl {
 
   void CleanupExpiredLocked(Clock::time_point now)
   {
-    std::erase_if(sessions_, [this, now](const auto& pair) {
+    std::erase_if(sessions_, [now](const auto& pair) {
       return IsExpired(pair.second, now);
     });
   }
