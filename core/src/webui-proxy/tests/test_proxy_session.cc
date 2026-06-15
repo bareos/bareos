@@ -466,10 +466,10 @@ TEST(ProxySession, RejectsUnsupportedAuthMode)
 
 TEST(ProxySession, ReturnsMultiDirectorSessionInfoOverHttp)
 {
-  auto& store = ProxyAuthSessionStore::Instance();
-  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
-  ASSERT_TRUE(store.StoreDirectorCredentials(session_id, "site-b", "ops",
-                                             "site-secret", false));
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
+      session_id, "site-b", "ops", "site-secret", false));
 
   const std::string request
       = std::string("GET /api/session HTTP/1.1\r\n"
@@ -486,15 +486,15 @@ TEST(ProxySession, ReturnsMultiDirectorSessionInfoOverHttp)
   EXPECT_EQ(GetAuthenticatedDirectors(HttpBody(response)),
             std::vector<std::string>({"bareos-dir", "site-b"}));
 
-  store.RemoveSession(session_id);
+  ProxyAuthSessionStore::RemoveSession(session_id);
 }
 
 TEST(ProxySession, UpdatesCurrentDirectorOverHttp)
 {
-  auto& store = ProxyAuthSessionStore::Instance();
-  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
-  ASSERT_TRUE(store.StoreDirectorCredentials(session_id, "site-b", "ops",
-                                             "site-secret", false));
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
+      session_id, "site-b", "ops", "site-secret", false));
 
   const std::string body = R"({"director":"site-b"})";
   const std::string request
@@ -510,15 +510,15 @@ TEST(ProxySession, UpdatesCurrentDirectorOverHttp)
   EXPECT_EQ(GetJsonStringField(HttpBody(response), "currentDirector"), "site-b");
   EXPECT_EQ(GetJsonStringField(HttpBody(response), "username"), "ops");
 
-  store.RemoveSession(session_id);
+  ProxyAuthSessionStore::RemoveSession(session_id);
 }
 
 TEST(ProxySession, RemovesDirectorOverHttp)
 {
-  auto& store = ProxyAuthSessionStore::Instance();
-  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
-  ASSERT_TRUE(store.StoreDirectorCredentials(session_id, "site-b", "ops",
-                                             "site-secret", false));
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
+      session_id, "site-b", "ops", "site-secret", false));
 
   const std::string request
       = std::string("DELETE /api/session/directors/site-b HTTP/1.1\r\n"
@@ -531,15 +531,15 @@ TEST(ProxySession, RemovesDirectorOverHttp)
   EXPECT_EQ(GetAuthenticatedDirectors(HttpBody(response)),
             std::vector<std::string>({"bareos-dir"}));
 
-  store.RemoveSession(session_id);
+  ProxyAuthSessionStore::RemoveSession(session_id);
 }
 
 TEST(ProxySession, ReuseEndpointReportsAlreadyAuthenticatedDirectors)
 {
-  auto& store = ProxyAuthSessionStore::Instance();
-  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
-  ASSERT_TRUE(store.StoreDirectorCredentials(session_id, "site-b", "admin",
-                                             "secret", false));
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
+      session_id, "site-b", "admin", "secret", false));
 
   const std::string body
       = R"({"directors":["site-b"],"sourceDirector":"bareos-dir"})";
@@ -555,5 +555,5 @@ TEST(ProxySession, ReuseEndpointReportsAlreadyAuthenticatedDirectors)
   EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 200 OK");
   EXPECT_NE(HttpBody(response).find("\"already_authenticated\""), std::string::npos);
 
-  store.RemoveSession(session_id);
+  ProxyAuthSessionStore::RemoveSession(session_id);
 }

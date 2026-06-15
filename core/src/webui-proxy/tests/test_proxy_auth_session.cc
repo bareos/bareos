@@ -26,10 +26,10 @@
 
 TEST(ProxyAuthSessionStore, CreatesLooksUpAndRemovesSessions)
 {
-  auto& store = ProxyAuthSessionStore::Instance();
-  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
 
-  const auto session = store.LookupSession(session_id);
+  const auto session = ProxyAuthSessionStore::LookupSession(session_id);
   ASSERT_TRUE(session);
   EXPECT_EQ(session->session_id, session_id);
   EXPECT_EQ(session->current_director, "bareos-dir");
@@ -38,19 +38,19 @@ TEST(ProxyAuthSessionStore, CreatesLooksUpAndRemovesSessions)
   EXPECT_EQ(session->directors.at("bareos-dir").username, "admin");
   EXPECT_EQ(session->directors.at("bareos-dir").password, "secret");
 
-  store.RemoveSession(session_id);
-  EXPECT_FALSE(store.LookupSession(session_id));
+  ProxyAuthSessionStore::RemoveSession(session_id);
+  EXPECT_FALSE(ProxyAuthSessionStore::LookupSession(session_id));
 }
 
 TEST(ProxyAuthSessionStore, StoresAdditionalDirectorCredentials)
 {
-  auto& store = ProxyAuthSessionStore::Instance();
-  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
 
-  ASSERT_TRUE(store.StoreDirectorCredentials(session_id, "site-b", "ops", "site-secret",
-                                             false));
+  ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
+      session_id, "site-b", "ops", "site-secret", false));
 
-  const auto session = store.LookupSession(session_id);
+  const auto session = ProxyAuthSessionStore::LookupSession(session_id);
   ASSERT_TRUE(session);
   EXPECT_EQ(session->current_director, "bareos-dir");
   ASSERT_EQ(session->directors.size(), 2U);
@@ -58,29 +58,29 @@ TEST(ProxyAuthSessionStore, StoresAdditionalDirectorCredentials)
   EXPECT_EQ(session->directors.at("site-b").username, "ops");
   EXPECT_EQ(session->directors.at("site-b").password, "site-secret");
 
-  store.RemoveSession(session_id);
+  ProxyAuthSessionStore::RemoveSession(session_id);
 }
 
 TEST(ProxyAuthSessionStore, SwitchesAndRemovesDirectors)
 {
-  auto& store = ProxyAuthSessionStore::Instance();
-  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
-  ASSERT_TRUE(
-      store.StoreDirectorCredentials(session_id, "site-b", "ops", "site-secret", false));
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
+      session_id, "site-b", "ops", "site-secret", false));
 
-  ASSERT_TRUE(store.SetCurrentDirector(session_id, "site-b"));
-  auto session = store.LookupSession(session_id);
+  ASSERT_TRUE(ProxyAuthSessionStore::SetCurrentDirector(session_id, "site-b"));
+  auto session = ProxyAuthSessionStore::LookupSession(session_id);
   ASSERT_TRUE(session);
   EXPECT_EQ(session->current_director, "site-b");
 
-  ASSERT_TRUE(store.RemoveDirector(session_id, "site-b"));
-  session = store.LookupSession(session_id);
+  ASSERT_TRUE(ProxyAuthSessionStore::RemoveDirector(session_id, "site-b"));
+  session = ProxyAuthSessionStore::LookupSession(session_id);
   ASSERT_TRUE(session);
   EXPECT_EQ(session->current_director, "bareos-dir");
   EXPECT_FALSE(session->directors.contains("site-b"));
 
-  ASSERT_TRUE(store.RemoveDirector(session_id, "bareos-dir"));
-  EXPECT_FALSE(store.LookupSession(session_id));
+  ASSERT_TRUE(ProxyAuthSessionStore::RemoveDirector(session_id, "bareos-dir"));
+  EXPECT_FALSE(ProxyAuthSessionStore::LookupSession(session_id));
 }
 
 TEST(ProxyAuthSessionStore, BuildsCookieHeaders)
@@ -98,66 +98,63 @@ TEST(ProxyAuthSessionStore, BuildsCookieHeaders)
 
 TEST(ProxyAuthSessionStore, AppliesConfigurableTimeouts)
 {
-  auto& store = ProxyAuthSessionStore::Instance();
-
   // Set custom timeouts: 1 minute idle, 2 hours absolute
-  store.SetSessionTimeouts(1, 2);
+  ProxyAuthSessionStore::SetSessionTimeouts(1, 2);
 
-  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
-  const auto session = store.LookupSession(session_id);
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
+  const auto session = ProxyAuthSessionStore::LookupSession(session_id);
   ASSERT_TRUE(session);
   EXPECT_EQ(session->session_id, session_id);
 
   // Verify session is still accessible (just created)
-  EXPECT_TRUE(store.LookupSession(session_id));
+  EXPECT_TRUE(ProxyAuthSessionStore::LookupSession(session_id));
 
   // Reset to defaults for next tests
-  store.SetSessionTimeouts(30, 8);
-  store.RemoveSession(session_id);
+  ProxyAuthSessionStore::SetSessionTimeouts(30, 8);
+  ProxyAuthSessionStore::RemoveSession(session_id);
 }
 
 TEST(ProxyAuthSessionStore, ExpiresIdleSessionsWithConfiguredTimeout)
 {
-  auto& store = ProxyAuthSessionStore::Instance();
-
   // Set very short timeouts for testing: 100ms idle, 1 second absolute
-  store.SetSessionTimeoutsForTesting(std::chrono::milliseconds(100),
-                                      std::chrono::seconds(1));
+  ProxyAuthSessionStore::SetSessionTimeoutsForTesting(
+      std::chrono::milliseconds(100), std::chrono::seconds(1));
 
-  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
   
   // Session should be available immediately after creation
-  EXPECT_TRUE(store.LookupSession(session_id));
+  EXPECT_TRUE(ProxyAuthSessionStore::LookupSession(session_id));
 
   // Wait for idle timeout to trigger (>100ms)
   std::this_thread::sleep_for(std::chrono::milliseconds(150));
 
   // Session should now be expired due to idle timeout
-  EXPECT_FALSE(store.LookupSession(session_id));
+  EXPECT_FALSE(ProxyAuthSessionStore::LookupSession(session_id));
 
   // Reset to defaults for next tests
-  store.SetSessionTimeouts(30, 8);
+  ProxyAuthSessionStore::SetSessionTimeouts(30, 8);
 }
 
 TEST(ProxyAuthSessionStore, ExpiresAbsoluteLifetimeSessionsWithConfiguredTimeout)
 {
-  auto& store = ProxyAuthSessionStore::Instance();
-
   // Set very short absolute lifetime: 100ms idle (won't trigger), 150ms absolute
-  store.SetSessionTimeoutsForTesting(std::chrono::seconds(10),
-                                      std::chrono::milliseconds(150));
+  ProxyAuthSessionStore::SetSessionTimeoutsForTesting(
+      std::chrono::seconds(10), std::chrono::milliseconds(150));
 
-  const auto session_id = store.CreateSession("admin", "secret", "bareos-dir");
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
   
   // Session should be available immediately after creation
-  EXPECT_TRUE(store.LookupSession(session_id));
+  EXPECT_TRUE(ProxyAuthSessionStore::LookupSession(session_id));
 
   // Wait for absolute lifetime to trigger (>150ms)
   // We repeatedly lookup to keep the idle timeout from triggering
   auto start = std::chrono::steady_clock::now();
   bool found_after_lifetime = true;
   while (std::chrono::steady_clock::now() - start < std::chrono::milliseconds(200)) {
-    if (!store.LookupSession(session_id)) {
+    if (!ProxyAuthSessionStore::LookupSession(session_id)) {
       found_after_lifetime = false;
       break;
     }
@@ -168,5 +165,5 @@ TEST(ProxyAuthSessionStore, ExpiresAbsoluteLifetimeSessionsWithConfiguredTimeout
   EXPECT_FALSE(found_after_lifetime);
 
   // Reset to defaults for next tests
-  store.SetSessionTimeouts(30, 8);
+  ProxyAuthSessionStore::SetSessionTimeouts(30, 8);
 }

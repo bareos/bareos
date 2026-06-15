@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
     ProxyConfig cfg = LoadProxyConfigFile(config_file);
 
     // Apply session timeout configuration
-    ProxyAuthSessionStore::Instance().SetSessionTimeouts(
+    ProxyAuthSessionStore::SetSessionTimeouts(
         cfg.session_idle_timeout_minutes,
         cfg.session_absolute_lifetime_hours);
 
