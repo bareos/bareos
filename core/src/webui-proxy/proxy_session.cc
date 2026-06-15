@@ -533,7 +533,7 @@ void HandleSessionLoginRequest(int fd,
 
     ProxyAuthSessionStore::SetCurrentDirector(*session_id,
                                                          requested_director);
-    const auto session = ProxyAuthSessionStore::LookupSession(*session_id);
+    auto session = ProxyAuthSessionStore::LookupSession(*session_id);
     if (!session) {
       throw std::runtime_error("Proxy session expired; please log in again");
     }
@@ -619,7 +619,7 @@ void HandleCurrentDirectorRequest(int fd, const HttpRequest& request)
       return;
     }
 
-    const auto session = ProxyAuthSessionStore::LookupSession(*session_id);
+    auto session = ProxyAuthSessionStore::LookupSession(*session_id);
     if (!session) {
       SendSessionMissingResponse(fd, request);
       return;
@@ -650,7 +650,7 @@ void HandleDirectorLogoutRequest(int fd,
     return;
   }
 
-  const auto session = ProxyAuthSessionStore::LookupSession(*session_id);
+  auto session = ProxyAuthSessionStore::LookupSession(*session_id);
   if (!session) {
     SendEmptyResponseWithCookie(
         fd, "HTTP/1.1 204 No Content",
@@ -838,7 +838,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     return;
   }
 
-  const auto session = ProxyAuthSessionStore::LookupSession(*session_id);
+  auto session = ProxyAuthSessionStore::LookupSession(*session_id);
   if (!session) {
     SendHttpResponse(fd, std::chrono::seconds(5),
                      "HTTP/1.1 401 Unauthorized", "Authentication expired",
@@ -903,12 +903,8 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
                                  + director + "'");
       }
     }
-    const auto selected_session
-        = ProxyAuthSessionStore::LookupSession(*session_id);
-    if (!selected_session) {
-      throw std::runtime_error("Proxy session expired; please log in again");
-    }
-    const auto credentials = LookupDirectorCredentials(*selected_session, director);
+    session->current_director = director;
+    const auto credentials = LookupDirectorCredentials(*session, director);
     if (!credentials) {
       throw std::runtime_error("Proxy session has no credentials for director '"
                                + director + "'");
