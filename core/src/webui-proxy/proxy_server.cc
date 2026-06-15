@@ -212,7 +212,9 @@ void RunProxyServer(const ProxyConfig& cfg)
                   NI_NUMERICHOST | NI_NUMERICSERV);
       std::string peer = std::string(host_buf) + ":" + port_buf;
 
-      // Move fd and defaults into a detached thread — thread owns the socket.
+      // Prepare socket descriptor and config for the detached thread.
+      // Each thread needs its own copy of the config so it can be captured
+      // and owned independently for the lifetime of the detached thread.
       int cfd = client_fd;
       ProxyConfig session_cfg = cfg;
       try {
