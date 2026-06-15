@@ -801,10 +801,18 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     }
   }
 
-  if (!IsWebSocketUpgradeRequest(request)) {
+  if (request.target != "/ws") {
     SendHttpResponse(fd, std::chrono::seconds(5), "HTTP/1.1 404 Not Found",
                      "Not Found",
                      {{"Content-Type", "text/plain; charset=utf-8"}});
+    return;
+  }
+
+  if (!IsWebSocketUpgradeRequest(request)) {
+    SendHttpResponse(fd, std::chrono::seconds(5),
+                     "HTTP/1.1 426 Upgrade Required", "Upgrade Required",
+                     {{"Content-Type", "text/plain; charset=utf-8"},
+                      {"Upgrade", "websocket"}});
     return;
   }
 
