@@ -241,6 +241,17 @@ std::string JsonCommandState(std::optional<std::string_view> id,
   return DumpJson(response.get());
 }
 
+void SendRawResponse(WsCodec& ws,
+                     std::optional<std::string_view> id,
+                     std::string_view command,
+                     std::string_view text,
+                     const char* prompt_str)
+{
+  ws.SendText(JsonRawResponse(id, command, text,
+                              prompt_str ? std::optional<std::string_view>(prompt_str)
+                                         : std::nullopt));
+}
+
 std::string JsonCommandResponse(std::optional<std::string_view> id,
                                 std::string_view command,
                                 JsonPtr data)
@@ -1004,13 +1015,6 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
                      static_cast<int>(req_id.value_or("").size()),
                      req_id.value_or("").data(), command.c_str());
 
-      auto send_raw_response
-          = [&](std::string_view text, const char* prompt_str) {
-              ws->SendText(JsonRawResponse(
-                  req_id, command, text,
-                  prompt_str ? std::optional<std::string_view>(prompt_str)
-                             : std::nullopt));
-            };
       auto is_terminal_prompt = [](DirectorPrompt prompt) {
         return prompt == DirectorPrompt::Main || prompt == DirectorPrompt::Other;
       };
@@ -1025,25 +1029,10 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
       };
 
       try {
-        if (!cfg.json_mode) { send_command_state("running"); }
-
-        const bool should_close_console_session
-            = !cfg.json_mode
-              && IsExpectedConsoleExitCommand(
-                  current_prompt == DirectorPrompt::Main, command);
         CallResult result;
-        if (!cfg.json_mode && stream_raw) {
-          result.prompt
-              = director.CallStreamed(command, [&](std::string_view chunk) {
-                  auto filtered = FilterRawConsoleChunk(command, chunk);
-                  if (filtered.empty()) { return; }
-                  send_raw_response(filtered, "more");
-                });
-        } else {
-          result = director.Call(command);
-        }
-
         if (cfg.json_mode) {
+          result = director.Call(command);
+
           // Parse and re-emit as
           // {"type":"response","id":...,"command":...,"data":{...}} The director
           // returns a jsonrpc envelope: {"jsonrpc":"2.0","result":{...}}. Unwrap
@@ -1065,6 +1054,22 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
           ws->SendText(JsonCommandResponse(req_id, command, std::move(data)));
         } else {
+          send_command_state("running");
+          const bool should_close_console_session
+              = IsExpectedConsoleExitCommand(
+                  current_prompt == DirectorPrompt::Main, command);
+
+          if (stream_raw) {
+            result.prompt
+                = director.CallStreamed(command, [&](std::string_view chunk) {
+                    auto filtered = FilterRawConsoleChunk(command, chunk);
+                    if (filtered.empty()) { return; }
+                    SendRawResponse(*ws, req_id, command, filtered, "more");
+                  });
+          } else {
+            result = director.Call(command);
+          }
+
           // Raw mode: {"type":"raw_response","id":...,"command":...,"text":"...",
           //            "prompt":"main"|"sub"|"select"|"other"|"more"}
           current_prompt = result.prompt;
@@ -1074,10 +1079,10 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
                                  : "waiting_for_input",
                              prompt_str);
           if (stream_raw) {
-            send_raw_response("", prompt_str);
+            SendRawResponse(*ws, req_id, command, "", prompt_str);
           } else {
             result.text = FilterRawConsoleChunk(command, result.text);
-            send_raw_response(result.text, prompt_str);
+            SendRawResponse(*ws, req_id, command, result.text, prompt_str);
           }
           if (should_close_console_session) { break; }
         }
