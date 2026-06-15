@@ -211,11 +211,6 @@ void ParseProxyConfig(const std::string& ini, ProxyConfig& cfg)
       current_director_selector.clear();
       if (Bstrcasecmp(current_section.c_str(), "listen")) {
         current_section_kind = SectionKind::kListen;
-      } else if (current_section.rfind("director:", 0) == 0) {
-        throw ProxyConfigUnknownSectionError(
-            FormatConfigError(line_number,
-                              "director sections no longer use the "
-                              "'director:' prefix"));
       } else {
         current_section_kind = SectionKind::kDirector;
         current_director_selector = current_section;

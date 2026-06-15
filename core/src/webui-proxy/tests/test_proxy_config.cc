@@ -75,19 +75,6 @@ address = dr.example.test
                ProxyConfigDuplicateSectionError);
 }
 
-TEST(ProxyConfig, RejectsLegacyDirectorPrefixSections)
-{
-  ProxyConfig cfg;
-
-  EXPECT_THROW(LoadProxyConfigFromString(
-                   R"ini(
-[director:prod]
-address = prod.example.test
-)ini",
-                   cfg),
-               ProxyConfigUnknownSectionError);
-}
-
 TEST(ProxyConfig, RejectsEmptySectionNames)
 {
   ProxyConfig cfg;
