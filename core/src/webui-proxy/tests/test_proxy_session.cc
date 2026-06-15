@@ -464,6 +464,24 @@ TEST(ProxySession, RejectsUnsupportedAuthMode)
             "Auth message has unsupported mode 'json-v2'");
 }
 
+TEST(ProxySession, ReturnsNotFoundForNonWsTargets)
+{
+  const auto response = ExchangeHttpRequest(
+      ProxyConfig{},
+      "GET /not-ws HTTP/1.1\r\nHost: localhost\r\n\r\n");
+
+  EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 404 Not Found");
+}
+
+TEST(ProxySession, RequiresWebSocketUpgradeForWsTarget)
+{
+  const auto response = ExchangeHttpRequest(
+      ProxyConfig{}, "GET /ws HTTP/1.1\r\nHost: localhost\r\n\r\n");
+
+  EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 426 Upgrade Required");
+  EXPECT_NE(response.find("Upgrade: websocket"), std::string::npos);
+}
+
 TEST(ProxySession, ReturnsMultiDirectorSessionInfoOverHttp)
 {
   const auto session_id
