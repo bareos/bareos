@@ -19,6 +19,7 @@
    02110-1301, USA.
  */
 #include "ws_codec.h"
+#include "http_protocol.h"
 
 #include <algorithm>
 #include <array>
@@ -56,54 +57,6 @@ constexpr size_t kHandshakeReadChunkSize = 1024;
 constexpr std::string_view kSupportedWsVersion = "13";
 
 using Clock = std::chrono::steady_clock;
-
-int RemainingTimeoutMs(Clock::time_point deadline)
-{
-  const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(
-      deadline - Clock::now());
-  return remaining.count() > 0 ? static_cast<int>(remaining.count()) : 0;
-}
-
-void WaitForSocket(int fd,
-                   short events,
-                   Clock::time_point deadline,
-                   std::string_view action)
-{
-  const auto wait_for_fd = [fd, events](int timeout_ms) {
-    if (events == POLLIN) { return WaitForReadableFd(fd, timeout_ms, true); }
-    if (events == POLLOUT) { return WaitForWritableFd(fd, timeout_ms, true); }
-    throw std::runtime_error("WebSocket: unsupported wait event");
-  };
-
-  auto socket_has_error = [fd, events]() {
-    struct pollfd pfd{fd, events, 0};
-    if (::poll(&pfd, 1, 0) <= 0) { return false; }
-    return (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) != 0;
-  };
-
-  while (true) {
-    switch (wait_for_fd(RemainingTimeoutMs(deadline))) {
-      case 1:
-        if (socket_has_error()) {
-          throw std::runtime_error("WebSocket: socket error while waiting to "
-                                   + std::string(action));
-        }
-        return;
-      case 0:
-        if (socket_has_error()) {
-          throw std::runtime_error("WebSocket: socket error while waiting to "
-                                   + std::string(action));
-        }
-        throw std::runtime_error("WebSocket: timeout while waiting to "
-                                 + std::string(action));
-      case -1:
-        throw std::runtime_error("WebSocket: socket error while waiting to "
-                                 + std::string(action));
-      default:
-        throw std::runtime_error("WebSocket: invalid wait result");
-    }
-  }
-}
 
 void WriteAll(int fd, const void* buf, size_t len, Clock::time_point deadline)
 {
@@ -143,7 +96,10 @@ void ReadAll(int fd,
     const ssize_t n = ::recv(fd, p, len, 0);
     if (n < 0) {
       if (errno == EINTR) { continue; }
-      if (errno == EAGAIN || errno == EWOULDBLOCK) { continue; }
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        WaitForSocket(fd, POLLIN, deadline, action);
+        continue;
+      }
       throw std::runtime_error("WebSocket: recv failed");
     }
     if (n == 0) {

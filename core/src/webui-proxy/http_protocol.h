@@ -58,4 +58,9 @@ void SendHttpResponse(
 std::optional<std::string_view> FindCookieValue(std::string_view cookie_header,
                                                 std::string_view name);
 
+void WaitForSocket(int fd,
+                   short events,
+                   std::chrono::steady_clock::time_point deadline,
+                   std::string_view action);
+
 #endif  // BAREOS_WEBUI_PROXY_HTTP_PROTOCOL_H_

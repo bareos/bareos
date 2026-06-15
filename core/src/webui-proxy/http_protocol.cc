@@ -47,33 +47,6 @@ int RemainingTimeoutMs(Clock::time_point deadline)
   return remaining.count() > 0 ? static_cast<int>(remaining.count()) : 0;
 }
 
-void WaitForSocket(int fd,
-                   short events,
-                   Clock::time_point deadline,
-                   std::string_view action)
-{
-  const auto wait_for_fd = [fd, events](int timeout_ms) {
-    if (events == POLLIN) { return WaitForReadableFd(fd, timeout_ms, true); }
-    if (events == POLLOUT) { return WaitForWritableFd(fd, timeout_ms, true); }
-    throw std::runtime_error("HTTP: unsupported wait event");
-  };
-
-  while (true) {
-    switch (wait_for_fd(RemainingTimeoutMs(deadline))) {
-      case 1:
-        return;
-      case 0:
-        throw std::runtime_error("HTTP: timeout while waiting to "
-                                 + std::string(action));
-      case -1:
-        throw std::runtime_error("HTTP: socket error while waiting to "
-                                 + std::string(action));
-      default:
-        throw std::runtime_error("HTTP: invalid wait result");
-    }
-  }
-}
-
 Clock::time_point MakeDeadline(std::chrono::milliseconds timeout)
 {
   return Clock::now() + timeout;
@@ -209,6 +182,33 @@ size_t ParseContentLength(const HttpRequest& request, size_t max_body_size)
 }
 
 }  // namespace
+
+void WaitForSocket(int fd,
+                   short events,
+                   Clock::time_point deadline,
+                   std::string_view action)
+{
+  const auto wait_for_fd = [fd, events](int timeout_ms) {
+    if (events == POLLIN) { return WaitForReadableFd(fd, timeout_ms, true); }
+    if (events == POLLOUT) { return WaitForWritableFd(fd, timeout_ms, true); }
+    throw std::runtime_error("HTTP: unsupported wait event");
+  };
+
+  while (true) {
+    switch (wait_for_fd(RemainingTimeoutMs(deadline))) {
+      case 1:
+        return;
+      case 0:
+        throw std::runtime_error("HTTP: timeout while waiting to "
+                                 + std::string(action));
+      case -1:
+        throw std::runtime_error("HTTP: socket error while waiting to "
+                                 + std::string(action));
+      default:
+        throw std::runtime_error("HTTP: invalid wait result");
+    }
+  }
+}
 
 std::optional<std::string_view> HttpRequest::HeaderValue(std::string_view name) const
 {
