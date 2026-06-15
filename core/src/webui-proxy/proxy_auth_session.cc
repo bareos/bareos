@@ -244,48 +244,41 @@ std::string BuildCookie(std::string_view session_id, bool secure, bool expired)
 
 }  // namespace
 
-ProxyAuthSessionStore& ProxyAuthSessionStore::Instance()
-{
-  static ProxyAuthSessionStore instance;
-  return instance;
-}
+namespace ProxyAuthSessionStore {
 
-std::string ProxyAuthSessionStore::CreateSession(std::string_view username,
-                                                 std::string_view password,
-                                                 std::string_view director)
+std::string CreateSession(std::string_view username,
+                          std::string_view password,
+                          std::string_view director)
 {
   return GetStore().CreateSession(username, password, director);
 }
 
-bool ProxyAuthSessionStore::StoreDirectorCredentials(std::string_view session_id,
-                                                     std::string_view director,
-                                                     std::string_view username,
-                                                     std::string_view password,
-                                                     bool make_current)
+bool StoreDirectorCredentials(std::string_view session_id,
+                              std::string_view director,
+                              std::string_view username,
+                              std::string_view password,
+                              bool make_current)
 {
   return GetStore().StoreDirectorCredentials(session_id, director, username,
                                              password, make_current);
 }
 
-std::optional<ProxyAuthSessionRecord> ProxyAuthSessionStore::LookupSession(
-    std::string_view session_id)
+std::optional<ProxyAuthSessionRecord> LookupSession(std::string_view session_id)
 {
   return GetStore().LookupSession(session_id);
 }
 
-bool ProxyAuthSessionStore::SetCurrentDirector(std::string_view session_id,
-                                               std::string_view director)
+bool SetCurrentDirector(std::string_view session_id, std::string_view director)
 {
   return GetStore().SetCurrentDirector(session_id, director);
 }
 
-bool ProxyAuthSessionStore::RemoveDirector(std::string_view session_id,
-                                           std::string_view director)
+bool RemoveDirector(std::string_view session_id, std::string_view director)
 {
   return GetStore().RemoveDirector(session_id, director);
 }
 
-void ProxyAuthSessionStore::RemoveSession(std::string_view session_id)
+void RemoveSession(std::string_view session_id)
 {
   GetStore().RemoveSession(session_id);
 }
@@ -300,17 +293,18 @@ std::string BuildExpiredProxySessionCookie(bool secure)
   return BuildCookie("", secure, true);
 }
 
-void ProxyAuthSessionStore::SetSessionTimeouts(int idle_timeout_minutes,
-                                               int absolute_lifetime_hours)
+void SetSessionTimeouts(int idle_timeout_minutes, int absolute_lifetime_hours)
 {
   return GetStore().SetSessionTimeouts(idle_timeout_minutes,
                                        absolute_lifetime_hours);
 }
 
-void ProxyAuthSessionStore::SetSessionTimeoutsForTesting(
+void SetSessionTimeoutsForTesting(
     std::chrono::steady_clock::duration idle_timeout,
     std::chrono::steady_clock::duration absolute_lifetime)
 {
   return GetStore().SetSessionTimeoutsForTesting(idle_timeout,
                                                  absolute_lifetime);
 }
+
+}  // namespace ProxyAuthSessionStore

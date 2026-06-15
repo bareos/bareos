@@ -38,39 +38,34 @@ struct ProxyAuthSessionRecord {
   std::map<std::string, ProxyAuthSessionDirectorRecord> directors;
 };
 
-class ProxyAuthSessionStore {
- public:
-  static ProxyAuthSessionStore& Instance();
+namespace ProxyAuthSessionStore {
 
-  void SetSessionTimeouts(int idle_timeout_minutes,
-                          int absolute_lifetime_hours);
+void SetSessionTimeouts(int idle_timeout_minutes, int absolute_lifetime_hours);
 
-  // Test-only method: set timeouts with chrono durations for faster testing
-  void SetSessionTimeoutsForTesting(
-      std::chrono::steady_clock::duration idle_timeout,
-      std::chrono::steady_clock::duration absolute_lifetime);
+// Test-only method: set timeouts with chrono durations for faster testing.
+void SetSessionTimeoutsForTesting(
+    std::chrono::steady_clock::duration idle_timeout,
+    std::chrono::steady_clock::duration absolute_lifetime);
 
-  std::string CreateSession(std::string_view username,
-                            std::string_view password,
-                            std::string_view director);
-  bool StoreDirectorCredentials(std::string_view session_id,
-                                std::string_view director,
-                                std::string_view username,
-                                std::string_view password,
-                                bool make_current = true);
-  std::optional<ProxyAuthSessionRecord> LookupSession(
-      std::string_view session_id);
-  bool SetCurrentDirector(std::string_view session_id, std::string_view director);
-  bool RemoveDirector(std::string_view session_id, std::string_view director);
-  void RemoveSession(std::string_view session_id);
+std::string CreateSession(std::string_view username,
+                          std::string_view password,
+                          std::string_view director);
+bool StoreDirectorCredentials(std::string_view session_id,
+                              std::string_view director,
+                              std::string_view username,
+                              std::string_view password,
+                              bool make_current = true);
+std::optional<ProxyAuthSessionRecord> LookupSession(std::string_view session_id);
+bool SetCurrentDirector(std::string_view session_id, std::string_view director);
+bool RemoveDirector(std::string_view session_id, std::string_view director);
+void RemoveSession(std::string_view session_id);
 
- private:
-  ProxyAuthSessionStore() = default;
-};
+}  // namespace ProxyAuthSessionStore
 
+// Session cookie name used by the WebUI proxy for browser-side auth state.
 constexpr std::string_view kProxySessionCookieName = "bareos_proxy_session";
-constexpr std::string_view kProxySessionPasswordPlaceholder
-    = "__proxy_session__";
+// Placeholder password value that tells the proxy to reuse an existing session.
+constexpr std::string_view kProxySessionPasswordPlaceholder = "__proxy_session__";
 
 std::string BuildProxySessionCookie(std::string_view session_id, bool secure);
 std::string BuildExpiredProxySessionCookie(bool secure);

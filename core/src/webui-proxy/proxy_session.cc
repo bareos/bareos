@@ -313,7 +313,7 @@ std::optional<ProxyAuthSessionRecord> LookupSessionFromRequest(
   const auto session_id = FindCookieValue(*cookie_header, kProxySessionCookieName);
   if (!session_id || session_id->empty()) { return std::nullopt; }
 
-  return ProxyAuthSessionStore::Instance().LookupSession(*session_id);
+  return ProxyAuthSessionStore::LookupSession(*session_id);
 }
 
 std::optional<ProxyAuthSessionDirectorRecord> LookupDirectorCredentials(
@@ -522,18 +522,18 @@ void HandleSessionLoginRequest(int fd,
     }
     bool new_session = false;
     if (!session_id
-        || !ProxyAuthSessionStore::Instance().LookupSession(*session_id)) {
-      session_id = ProxyAuthSessionStore::Instance().CreateSession(
+        || !ProxyAuthSessionStore::LookupSession(*session_id)) {
+      session_id = ProxyAuthSessionStore::CreateSession(
           username, password, requested_director);
       new_session = true;
     } else {
-      ProxyAuthSessionStore::Instance().StoreDirectorCredentials(
+      ProxyAuthSessionStore::StoreDirectorCredentials(
           *session_id, requested_director, username, password);
     }
 
-    ProxyAuthSessionStore::Instance().SetCurrentDirector(*session_id,
+    ProxyAuthSessionStore::SetCurrentDirector(*session_id,
                                                          requested_director);
-    const auto session = ProxyAuthSessionStore::Instance().LookupSession(*session_id);
+    const auto session = ProxyAuthSessionStore::LookupSession(*session_id);
     if (!session) {
       throw std::runtime_error("Proxy session expired; please log in again");
     }
@@ -583,7 +583,7 @@ void HandleSessionInfoRequest(int fd, const HttpRequest& request)
 void HandleSessionLogoutRequest(int fd, const HttpRequest& request)
 {
   if (const auto session_id = LookupSessionIdFromRequest(request)) {
-    ProxyAuthSessionStore::Instance().RemoveSession(*session_id);
+    ProxyAuthSessionStore::RemoveSession(*session_id);
   }
 
   const auto expired_cookie
@@ -602,7 +602,7 @@ void HandleCurrentDirectorRequest(int fd, const HttpRequest& request)
   try {
     JsonPtr body = ParseJsonBody(request);
     const auto director = RequireJsonStringField(body.get(), "director");
-    if (!ProxyAuthSessionStore::Instance().SetCurrentDirector(*session_id,
+    if (!ProxyAuthSessionStore::SetCurrentDirector(*session_id,
                                                               director)) {
       SendJsonResponseWithCookie(
           fd, "HTTP/1.1 400 Bad Request",
@@ -610,7 +610,7 @@ void HandleCurrentDirectorRequest(int fd, const HttpRequest& request)
       return;
     }
 
-    const auto session = ProxyAuthSessionStore::Instance().LookupSession(*session_id);
+    const auto session = ProxyAuthSessionStore::LookupSession(*session_id);
     if (!session) {
       SendSessionMissingResponse(fd, request);
       return;
@@ -634,14 +634,14 @@ void HandleDirectorLogoutRequest(int fd,
   }
 
   const auto removed
-      = ProxyAuthSessionStore::Instance().RemoveDirector(*session_id, director);
+      = ProxyAuthSessionStore::RemoveDirector(*session_id, director);
   if (!removed) {
     SendJsonResponseWithCookie(fd, "HTTP/1.1 404 Not Found",
                                JsonObject({{"message", "Director is not authenticated"}}));
     return;
   }
 
-  const auto session = ProxyAuthSessionStore::Instance().LookupSession(*session_id);
+  const auto session = ProxyAuthSessionStore::LookupSession(*session_id);
   if (!session) {
     SendEmptyResponseWithCookie(
         fd, "HTTP/1.1 204 No Content",
@@ -704,7 +704,7 @@ void HandleReuseCredentialsRequest(int fd,
       try {
         ConnectSessionDirector(config, selector, source_credentials->username,
                                source_credentials->password);
-        ProxyAuthSessionStore::Instance().StoreDirectorCredentials(
+        ProxyAuthSessionStore::StoreDirectorCredentials(
             *session_id, selector, source_credentials->username,
             source_credentials->password, false);
         SetJsonString(result.get(), "status", "authenticated");
@@ -721,7 +721,7 @@ void HandleReuseCredentialsRequest(int fd,
     JsonPtr response = MakeJsonObject();
     SetJsonValue(response.get(), "results", std::move(results));
     const auto updated_session
-        = ProxyAuthSessionStore::Instance().LookupSession(*session_id);
+        = ProxyAuthSessionStore::LookupSession(*session_id);
     if (updated_session) {
       json_object_set_new(response.get(), "session",
                           MakeSessionInfoJson(*updated_session).release());
@@ -873,7 +873,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
       }
 
       const auto session
-          = ProxyAuthSessionStore::Instance().LookupSession(*session_id);
+          = ProxyAuthSessionStore::LookupSession(*session_id);
       if (!session) {
         throw std::runtime_error("Proxy session expired; please log in again");
       }
@@ -910,7 +910,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
     PROXY_LOG_INFO(peer, "director transport: %s", director_transport);
     if (session_id) {
-      ProxyAuthSessionStore::Instance().SetCurrentDirector(
+      ProxyAuthSessionStore::SetCurrentDirector(
           *session_id, RequireJsonStringField(auth_msg.get(), "director"));
     }
 
