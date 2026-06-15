@@ -20,25 +20,7 @@
  */
 /**
  * @file
- * bareos-webui-proxy entry point.
- *
- * Reads configuration from an INI file with:
- *   [listen]
- *     address = <bind address>          (default: localhost)
- *     port = <bind port>                (default: 9104)
- *
- *   [<selector>]                        (at least one unique selector section
- *                                       is required)
- *     address = <director address>      (default: localhost)
- *     port = <director port>            (default: 9101)
- *     director_name = <director name>   (default: <selector>; multiple
- *                                       selectors may point to the same name)
- *     tls_psk_disable = yes|no          (default: no)
- *
- * CLI flags:
- *   --config <path>
- *   --log-file <path>
- *   --log-level <debug|info|warn|error>
+ * bareos-webui-proxy entry point and main() function.
  */
 
 #include "proxy_log.h"
