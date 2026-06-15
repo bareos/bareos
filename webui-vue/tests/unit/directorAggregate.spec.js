@@ -81,9 +81,8 @@ describe('director aggregate dashboard helpers', () => {
     const socket = FakeWebSocket.instances[0]
     socket.open()
     expect(JSON.parse(socket.sent[0])).toEqual({
-      type: 'auth',
-      username: 'admin',
-      password: 'secret',
+      type: 'session',
+      mode: 'json',
       director: 'prod-dir',
     })
 

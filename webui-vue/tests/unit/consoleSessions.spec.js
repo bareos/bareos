@@ -84,17 +84,13 @@ describe('console session store', () => {
     socketB.open()
 
     expect(JSON.parse(socketA.sent[0])).toEqual({
-      type: 'auth',
+      type: 'session',
       mode: 'raw',
-      username: 'admin',
-      password: 'secret',
       director: 'bareos-dir-a',
     })
     expect(JSON.parse(socketB.sent[0])).toEqual({
-      type: 'auth',
+      type: 'session',
       mode: 'raw',
-      username: 'admin',
-      password: 'secret',
       director: 'bareos-dir-b',
     })
 

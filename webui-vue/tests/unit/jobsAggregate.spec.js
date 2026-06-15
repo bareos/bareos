@@ -118,15 +118,13 @@ describe('jobs aggregate helpers', () => {
     socketB.open()
 
     expect(JSON.parse(socketA.sent[0])).toEqual({
-      type: 'auth',
-      username: 'admin',
-      password: 'secret',
+      type: 'session',
+      mode: 'json',
       director: 'prod-a',
     })
     expect(JSON.parse(socketB.sent[0])).toEqual({
-      type: 'auth',
-      username: 'admin',
-      password: 'secret',
+      type: 'session',
+      mode: 'json',
       director: 'prod-b',
     })
 

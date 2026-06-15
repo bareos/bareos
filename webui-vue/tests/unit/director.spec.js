@@ -58,16 +58,30 @@ class FakeWebSocket {
 }
 
 describe('director store', () => {
+  let fetchMock
+
   beforeEach(() => {
     sessionStorage.clear()
     setActivePinia(createPinia())
     FakeWebSocket.instances = []
     vi.stubGlobal('WebSocket', FakeWebSocket)
+    fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
     vi.useFakeTimers()
-})
+  })
   afterEach(() => {
     vi.useRealTimers()
   })
+
+  function mockDirectorList(directors = ['bareos-dir', 'bareos-dir-2']) {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        type: 'director_list',
+        directors,
+      }),
+    })
+  }
 
   it('sends the selected director during websocket auth', () => {
     const director = useDirectorStore()
@@ -83,101 +97,60 @@ describe('director store', () => {
 
     expect(socket.sent).toHaveLength(1)
     expect(JSON.parse(socket.sent[0])).toEqual({
-      type: 'auth',
-      username: 'admin',
-      password: 'secret',
+      type: 'session',
+      mode: 'json',
       director: 'bareos-dir',
     })
   })
 
   it('loads the available directors from the proxy', async () => {
     const director = useDirectorStore()
+    mockDirectorList()
 
     const loading = director.fetchAvailableDirectors()
-    const socket = FakeWebSocket.instances[0]
-    socket.open()
-
-    expect(JSON.parse(socket.sent[0])).toEqual({ type: 'list_directors' })
-
-    socket.onmessage?.({
-      data: JSON.stringify({
-        type: 'director_list',
-        directors: ['bareos-dir', 'bareos-dir-2'],
-      }),
-    })
 
     await expect(loading).resolves.toEqual(['bareos-dir', 'bareos-dir-2'])
     expect(director.availableDirectors).toEqual(['bareos-dir', 'bareos-dir-2'])
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('deduplicates concurrent director list requests', async () => {
     const director = useDirectorStore()
+    mockDirectorList()
 
     const firstLoading = director.fetchAvailableDirectors()
     const secondLoading = director.fetchAvailableDirectors()
 
-    expect(FakeWebSocket.instances).toHaveLength(1)
-
-    const socket = FakeWebSocket.instances[0]
-    socket.open()
-    socket.onmessage?.({
-      data: JSON.stringify({
-        type: 'director_list',
-        directors: ['bareos-dir', 'bareos-dir-2'],
-      }),
-    })
-
     await expect(firstLoading).resolves.toEqual(['bareos-dir', 'bareos-dir-2'])
     await expect(secondLoading).resolves.toEqual(['bareos-dir', 'bareos-dir-2'])
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('reuses the cached director list after it has been loaded', async () => {
     const director = useDirectorStore()
+    mockDirectorList()
 
     const initialLoading = director.fetchAvailableDirectors()
-    const socket = FakeWebSocket.instances[0]
-    socket.open()
-    socket.onmessage?.({
-      data: JSON.stringify({
-        type: 'director_list',
-        directors: ['bareos-dir', 'bareos-dir-2'],
-      }),
-    })
     await initialLoading
 
     await expect(director.fetchAvailableDirectors()).resolves.toEqual([
       'bareos-dir',
       'bareos-dir-2',
     ])
-    expect(FakeWebSocket.instances).toHaveLength(1)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('reloads the director list when forced', async () => {
     const director = useDirectorStore()
+    mockDirectorList(['bareos-dir'])
 
     const firstLoading = director.fetchAvailableDirectors()
-    const firstSocket = FakeWebSocket.instances[0]
-    firstSocket.open()
-    firstSocket.onmessage?.({
-      data: JSON.stringify({
-        type: 'director_list',
-        directors: ['bareos-dir'],
-      }),
-    })
     await firstLoading
 
+    mockDirectorList(['bareos-dir', 'bareos-dir-2'])
     const secondLoading = director.fetchAvailableDirectors({ forceReload: true })
-    const secondSocket = FakeWebSocket.instances[1]
-    secondSocket.open()
-    secondSocket.onmessage?.({
-      data: JSON.stringify({
-        type: 'director_list',
-        directors: ['bareos-dir', 'bareos-dir-2'],
-      }),
-    })
-
     await expect(secondLoading).resolves.toEqual(['bareos-dir', 'bareos-dir-2'])
-    expect(FakeWebSocket.instances).toHaveLength(2)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
   it('stores director transport from auth_ok', () => {
@@ -230,15 +203,13 @@ describe('director store', () => {
     secondSocket.open()
 
     expect(JSON.parse(firstSocket.sent[0])).toEqual({
-      type: 'auth',
-      username: 'admin',
-      password: 'secret',
+      type: 'session',
+      mode: 'json',
       director: 'bareos-dir-a',
     })
     expect(JSON.parse(secondSocket.sent[0])).toEqual({
-      type: 'auth',
-      username: 'admin',
-      password: 'secret',
+      type: 'session',
+      mode: 'json',
       director: 'bareos-dir-b',
     })
 
@@ -356,9 +327,8 @@ describe('director store', () => {
     secondSocket.open()
 
     expect(JSON.parse(secondSocket.sent[0])).toEqual({
-      type: 'auth',
-      username: 'admin',
-      password: 'secret',
+      type: 'session',
+      mode: 'json',
       director: 'bareos-dir',
     })
   })
@@ -442,9 +412,8 @@ describe('director store', () => {
     socket.open()
 
     expect(JSON.parse(socket.sent[0])).toEqual({
-      type: 'auth',
-      username: 'admin',
-      password: 'secret',
+      type: 'session',
+      mode: 'json',
       director: 'bareos-dir',
     })
   })
