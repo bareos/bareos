@@ -157,13 +157,14 @@ void RunProxyServer(const ProxyConfig& cfg)
   PROXY_LOG_INFO("", "configured directors: %zu",
                  cfg.configured_directors.size());
 
+  // Build the pollfd array once; it doesn't change.
+  std::vector<struct pollfd> pfds;
+  pfds.reserve(listen_fds.size());
+  for (const auto& fd : listen_fds) { pfds.push_back({fd.get(), POLLIN, 0}); }
+
   // Accept loop: poll all listen sockets, accept on whichever is ready.
   while (true) {
     if (g_proxy_shutdown_requested) { break; }
-
-    std::vector<struct pollfd> pfds;
-    pfds.reserve(listen_fds.size());
-    for (const auto& fd : listen_fds) { pfds.push_back({fd.get(), POLLIN, 0}); }
 
     int nready = ::poll(pfds.data(), static_cast<nfds_t>(pfds.size()), 1000);
     if (nready < 0) {
