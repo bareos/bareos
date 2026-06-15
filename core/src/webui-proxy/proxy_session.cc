@@ -510,8 +510,7 @@ DirectorConfig ConnectSessionDirector(const ProxyConfig& config,
 {
   DirectorConfig cfg
       = BuildDirectorConfig(config, selector, username, password, true);
-  DirectorConnection connection;
-  connection.Connect(cfg);
+  DirectorConnection::Connect(cfg);
   return cfg;
 }
 
@@ -766,14 +765,6 @@ void HandleReuseCredentialsRequest(int fd,
     SendJsonResponseWithCookie(fd, "HTTP/1.1 400 Bad Request",
                                JsonObject({{"message", "Expected JSON request body"}}));
   }
-}
-
-std::optional<std::string> FindSessionId(std::optional<std::string_view> cookie_header)
-{
-  if (!cookie_header) { return std::nullopt; }
-  const auto session_id = FindCookieValue(*cookie_header, kProxySessionCookieName);
-  if (!session_id || session_id->empty()) { return std::nullopt; }
-  return std::string(*session_id);
 }
 
 }  // namespace

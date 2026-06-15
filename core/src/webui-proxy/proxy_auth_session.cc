@@ -293,16 +293,6 @@ void RemoveSession(std::string_view session_id)
   GetStore().RemoveSession(session_id);
 }
 
-std::string BuildProxySessionCookie(std::string_view session_id, bool secure)
-{
-  return BuildCookie(session_id, secure, false);
-}
-
-std::string BuildExpiredProxySessionCookie(bool secure)
-{
-  return BuildCookie("", secure, true);
-}
-
 void SetSessionTimeouts(int idle_timeout_minutes, int absolute_lifetime_hours)
 {
   return GetStore().SetSessionTimeouts(idle_timeout_minutes,
@@ -318,3 +308,13 @@ void SetSessionTimeoutsForTesting(
 }
 
 }  // namespace ProxyAuthSessionStore
+
+std::string BuildProxySessionCookie(std::string_view session_id, bool secure)
+{
+  return BuildCookie(session_id, secure, false);
+}
+
+std::string BuildExpiredProxySessionCookie(bool secure)
+{
+  return BuildCookie("", secure, true);
+}

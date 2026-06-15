@@ -505,18 +505,25 @@ void DirectorConnection::ConnectTlsPsk(const DirectorConfig& cfg)
 
 void DirectorConnection::Disconnect()
 {
-  if (ssl_) {
-    SSL_shutdown(ssl_);
-    SSL_free(ssl_);
-    ssl_ = nullptr;
-  }
-  if (ssl_ctx_) {
-    SSL_CTX_free(ssl_ctx_);
-    ssl_ctx_ = nullptr;
-  }
-  if (fd_ >= 0) {
-    ::close(fd_);
-    fd_ = -1;
+  if (fd_ >= 0 || ssl_ || ssl_ctx_) {
+    // Best-effort: send quit command.
+    try {
+      if (fd_ >= 0) { SendFrame("quit\n"); }
+    } catch (...) {
+    }
+    if (ssl_) {
+      SSL_shutdown(ssl_);
+      SSL_free(ssl_);
+      ssl_ = nullptr;
+    }
+    if (ssl_ctx_) {
+      SSL_CTX_free(ssl_ctx_);
+      ssl_ctx_ = nullptr;
+    }
+    if (fd_ >= 0) {
+      ::close(fd_);
+      fd_ = -1;
+    }
   }
   tls_psk_active_ = false;
   json_mode_ = true;
@@ -585,29 +592,4 @@ CallResult DirectorConnection::Call(const std::string& command)
     result.text.append(chunk.data(), chunk.size());
   });
   return result;
-}
-
-void DirectorConnection::Disconnect()
-{
-  if (fd_ >= 0 || ssl_ || ssl_ctx_) {
-    // Best-effort: send quit command
-    try {
-      if (fd_ >= 0) { SendFrame("quit\n"); }
-    } catch (...) {
-    }
-    if (ssl_) {
-      SSL_shutdown(ssl_);
-      SSL_free(ssl_);
-      ssl_ = nullptr;
-    }
-    if (ssl_ctx_) {
-      SSL_CTX_free(ssl_ctx_);
-      ssl_ctx_ = nullptr;
-    }
-    if (fd_ >= 0) {
-      ::close(fd_);
-      fd_ = -1;
-    }
-  }
-  tls_psk_active_ = false;
 }
