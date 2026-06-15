@@ -400,11 +400,13 @@ find_program(
   GOOGLE_CHROME NAMES google-chrome google-chrome-stable chromium
                       chromium-browser chrome
 )
+unset(WEBUI_VUE_PLAYWRIGHT CACHE)
 find_program(
   WEBUI_VUE_PLAYWRIGHT
   NAMES playwright playwright.cmd
   HINTS "${CMAKE_SOURCE_DIR}/webui-vue/node_modules/.bin"
 )
+unset(WEBUI_VUE_VITE CACHE)
 find_program(
   WEBUI_VUE_VITE
   NAMES vite vite.cmd
