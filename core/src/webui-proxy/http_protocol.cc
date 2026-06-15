@@ -248,6 +248,9 @@ HttpRequest ReadHttpRequest(int fd,
   }
 
   const auto request_line = headers_view.substr(0, request_line_end);
+  // HTTP request line format: METHOD SP target SP HTTP-version CRLF
+  // RFC 7230 Section 3.1.1: find first space (after method) and last space
+  // (after target). If they're the same or missing, the line is malformed.
   const auto first_space = request_line.find(' ');
   const auto second_space = request_line.rfind(' ');
   if (first_space == std::string_view::npos || second_space == std::string_view::npos
