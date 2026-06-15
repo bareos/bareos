@@ -43,24 +43,27 @@ int main(int argc, char* argv[])
   CLI::App app{"Bareos Director WebSocket Proxy"};
   std::string config_file = WEBUI_PROXY_DEFAULT_CONFIG_PATH;
   std::string log_file;
-  std::string log_level = "info";
+  ProxyLogLevel log_level = ProxyLogLevel::Info;
+
   app.add_option("--config", config_file, "Proxy config file")
       ->capture_default_str();
   app.add_option("--log-file", log_file, "Append proxy logs to this file");
   app.add_option("--log-level", log_level,
-                 "Minimum proxy log level: debug, info, warn, error");
+                 "Minimum proxy log level: debug, info, warn, error")
+      ->transform(CLI::CheckedTransformer(std::map<std::string, ProxyLogLevel>{
+          {"debug", ProxyLogLevel::Debug},
+          {"info", ProxyLogLevel::Info},
+          {"warn", ProxyLogLevel::Warn},
+          {"warning", ProxyLogLevel::Warn},
+          {"error", ProxyLogLevel::Error},
+      },
+          CLI::ignore_case));
 
   CLI11_PARSE(app, argc, argv);
 
   try {
-    ProxyLogLevel min_level;
-    if (!ParseProxyLogLevel(log_level, min_level)) {
-      throw CLI::ValidationError("--log-level",
-                                 "must be one of: debug, info, warn, error");
-    }
-
     ProxyLoggerConfig logger_cfg;
-    logger_cfg.min_level = min_level;
+    logger_cfg.min_level = log_level;
     logger_cfg.log_file = log_file;
     ConfigureProxyLogger(logger_cfg);
 
