@@ -1092,6 +1092,10 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
         if (!cfg.json_mode) {
           try {
             send_command_state("failed", nullptr, ex.what());
+          } catch (const std::exception& send_ex) {
+            PROXY_LOG_ERROR(peer, "failed to send command state: %s",
+                            send_ex.what());
+            break;
           } catch (...) {
             break;
           }
