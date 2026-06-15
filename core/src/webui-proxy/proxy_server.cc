@@ -109,7 +109,7 @@ bool IsTransientAcceptError(int err)
 
 volatile std::sig_atomic_t g_proxy_shutdown_requested = 0;
 
-void ProxyServer::Run()
+void RunProxyServer(const ProxyConfig& cfg)
 {
   struct addrinfo hints{};
   hints.ai_family = AF_UNSPEC;
@@ -117,9 +117,9 @@ void ProxyServer::Run()
   hints.ai_flags = AI_PASSIVE;
 
   struct addrinfo* res = nullptr;
-  const std::string port_str = std::to_string(cfg_.port);
+  const std::string port_str = std::to_string(cfg.port);
   int rc = getaddrinfo(
-      cfg_.bind_address.empty() ? nullptr : cfg_.bind_address.c_str(),
+      cfg.bind_address.empty() ? nullptr : cfg.bind_address.c_str(),
       port_str.c_str(), &hints, &res);
   if (rc != 0) {
     throw std::runtime_error(std::string("ProxyServer: getaddrinfo: ")
@@ -149,13 +149,13 @@ void ProxyServer::Run()
 
   if (listen_fds.empty()) {
     throw std::runtime_error("ProxyServer: could not bind to any address for "
-                             + cfg_.bind_address + ":" + port_str);
+                             + cfg.bind_address + ":" + port_str);
   }
 
   PROXY_LOG_INFO("", "listening on ws://%s:%d (%zu socket(s))",
-                 cfg_.bind_address.c_str(), cfg_.port, listen_fds.size());
+                 cfg.bind_address.c_str(), cfg.port, listen_fds.size());
   PROXY_LOG_INFO("", "configured directors: %zu",
-                 cfg_.configured_directors.size());
+                 cfg.configured_directors.size());
 
   // Accept loop: poll all listen sockets, accept on whichever is ready.
   while (true) {
@@ -213,11 +213,11 @@ void ProxyServer::Run()
 
       // Move fd and defaults into a detached thread — thread owns the socket.
       int cfd = client_fd;
-      ProxyConfig cfg = cfg_;
+      ProxyConfig session_cfg = cfg;
       try {
-        std::thread([cfd, peer, cfg]() {
+        std::thread([cfd, peer, session_cfg]() {
           try {
-            RunProxySession(cfd, peer, cfg);
+            RunProxySession(cfd, peer, session_cfg);
           } catch (const std::exception& ex) {
             PROXY_LOG_ERROR(peer, "session aborted: %s", ex.what());
           } catch (...) {
