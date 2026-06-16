@@ -321,12 +321,10 @@ int main(int argc, char* argv[])
   if (db == nullptr) {
     Emsg0(M_ERROR_TERM, 0, T_("Could not init Bareos database\n"));
   }
-  if (auto err = db->OpenDatabase(nullptr)) {
-    Emsg0(M_ERROR_TERM, 0, "%s", err);
-  }
+  if (auto err = db->OpenDatabase()) { Emsg0(M_ERROR_TERM, 0, "%s", err); }
   Dmsg0(200, "Database opened\n");
   if (g_verbose) {
-    Pmsg2(000, T_("Using Database: %s, User: %s\n"), db_name.c_str(),
+    Pmsg2(000, "Using Database: %s, User: %s\n", db_name.c_str(),
           db_user.c_str());
   }
 
