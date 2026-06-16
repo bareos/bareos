@@ -9,7 +9,7 @@
  *
  * The WebSocket URL is read from VITE_DIRECTOR_WS_URL.  When not set the URL
  * is derived from the current page location so that the connection goes
- * through the Apache reverse-proxy at /ws.
+ * through the Apache reverse-proxy at <app-base>/ws.
  */
 
 import { defineStore } from 'pinia'
@@ -23,6 +23,7 @@ import {
   createDirectorCommandSession,
   DIRECTOR_COMMAND_TIMEOUT_MS,
   DIRECTOR_WS_URL,
+  API_BASE_URL,
 } from '../utils/directorCommandSocket.js'
 
 const WS_URL = DIRECTOR_WS_URL
@@ -121,7 +122,7 @@ export const useDirectorStore = defineStore('director', () => {
         finish(reject, new Error('Timed out while loading directors'))
       }, DIRECTOR_LIST_TIMEOUT_MS)
 
-      fetch('/api/directors', {
+      fetch(`${API_BASE_URL}/directors`, {
         method: 'GET',
         credentials: 'same-origin',
         cache: 'no-store',
