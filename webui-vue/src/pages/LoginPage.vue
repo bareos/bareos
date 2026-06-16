@@ -400,7 +400,7 @@ async function attemptDirectorLogins(targetDirectors) {
           director: targetDirector,
         })
       hasSession = true
-      auth.applySession(payload, SESSION_AUTH_PASSWORD)
+      auth.applySession(payload, SESSION_AUTH_PASSWORD, { merge: true })
       attempts.push({
         director: targetDirector,
         success: true,
