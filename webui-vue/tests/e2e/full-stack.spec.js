@@ -180,6 +180,27 @@ test('reconnects the console session on demand', async ({ page }) => {
   await expect(consoleOutput).toContainText('Connected to bareos-dir')
 })
 
+test('reconnects the console after typing exit', async ({ page }) => {
+  await login(page)
+
+  await page.goto('/#/console-popup')
+  const consoleOutput = page.locator('[data-testid="console-output"]')
+  await expect(consoleOutput).toContainText('Connected to bareos-dir')
+
+  await consoleOutput.click()
+  await page.keyboard.type('exit')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('Console disconnected.')
+
+  await page.getByTitle('Reconnect').click()
+  await expect(consoleOutput).toContainText('Connected to bareos-dir')
+
+  await consoleOutput.click()
+  await page.keyboard.type('status director')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('status director')
+})
+
 test('opens jobs and job details through the real director connection', async ({
   page,
 }) => {
