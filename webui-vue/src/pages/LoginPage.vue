@@ -343,8 +343,22 @@ onMounted(async () => {
   await autoReuseCurrentCredentials()
 })
 
-function currentDirectorError(error, fallbackMessage = '') {
-  return toUserVisibleDirectorError(error?.message || fallbackMessage, {
+function currentDirectorError(error, fallbackMessage = '', { loginSucceeded = false } = {}) {
+  const errorMsg = error?.message || fallbackMessage
+
+  // If login succeeded (HTTP API works) but WebSocket failed,
+  // show a specific message about WebSocket connection
+  if (loginSucceeded && errorMsg?.includes('Could not connect to director')) {
+    return toUserVisibleDirectorError(
+      t('WebSocket connection failed. Check proxy configuration or firewall.'),
+      {
+        authenticationMessage: t('Authentication failed'),
+        connectionMessage: t('WebSocket connection failed'),
+      }
+    )
+  }
+
+  return toUserVisibleDirectorError(errorMsg, {
     authenticationMessage: t('Authentication failed'),
     connectionMessage: t('Could not connect to director. Is the proxy running?'),
   })
@@ -498,6 +512,8 @@ async function reuseCurrentCredentials(options = {}) {
     errorMsg.value = null
   }
 
+  let httpLoginSucceeded = false
+
   try {
     const result = await reuseProxySessionCredentials({
       directors: [directorRef.value],
@@ -508,6 +524,8 @@ async function reuseCurrentCredentials(options = {}) {
       throw new Error(getDirectorReuseErrorMessage(reuseResult))
     }
 
+    httpLoginSucceeded = true
+
     if (result?.session) {
       auth.applySession(result.session, SESSION_AUTH_PASSWORD)
     } else {
@@ -516,7 +534,9 @@ async function reuseCurrentCredentials(options = {}) {
     await activateDirector(directorRef.value)
   } catch (error) {
     if (!silent) {
-      errorMsg.value = currentDirectorError(error, director.errorMsg)
+      errorMsg.value = currentDirectorError(error, director.errorMsg, {
+        loginSucceeded: httpLoginSucceeded,
+      })
     }
     loading.value = false
     return false
