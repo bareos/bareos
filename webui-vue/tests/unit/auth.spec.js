@@ -178,4 +178,45 @@ describe('auth store', () => {
     })
     expect(auth.authenticatedDirectors).toEqual(['site-b'])
   })
+
+  it('merges sessions when applying multiple director sessions sequentially', () => {
+    const auth = useAuthStore()
+
+    auth.applySession({
+      director: 'bareos-dir',
+      username: 'admin',
+    }, SESSION_AUTH_PASSWORD, { merge: false })
+
+    expect(auth.authenticatedDirectors).toEqual(['bareos-dir'])
+    expect(auth.getDirectorUsername('bareos-dir')).toBe('admin')
+
+    auth.applySession({
+      director: 'site-b',
+      username: 'ops',
+    }, SESSION_AUTH_PASSWORD, { merge: true })
+
+    expect(auth.authenticatedDirectors).toContain('bareos-dir')
+    expect(auth.authenticatedDirectors).toContain('site-b')
+    expect(auth.getDirectorUsername('bareos-dir')).toBe('admin')
+    expect(auth.getDirectorUsername('site-b')).toBe('ops')
+  })
+
+  it('replaces sessions when merge option is not set', () => {
+    const auth = useAuthStore()
+
+    auth.applySession({
+      director: 'bareos-dir',
+      username: 'admin',
+    }, SESSION_AUTH_PASSWORD)
+
+    expect(auth.authenticatedDirectors).toEqual(['bareos-dir'])
+
+    auth.applySession({
+      director: 'site-b',
+      username: 'ops',
+    }, SESSION_AUTH_PASSWORD)
+
+    expect(auth.authenticatedDirectors).toEqual(['site-b'])
+  })
 })
+
