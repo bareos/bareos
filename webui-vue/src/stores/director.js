@@ -9,7 +9,7 @@
  *
  * The WebSocket URL is read from VITE_DIRECTOR_WS_URL.  When not set the URL
  * is derived from the current page location so that the connection goes
- * through the reverse-proxy at <app-base>/ws.
+ * through the Apache reverse-proxy at /ws.
  */
 
 import { defineStore } from 'pinia'
