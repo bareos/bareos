@@ -22,9 +22,13 @@
 import { computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import { DEFAULT_DIRECTOR_NAME, useAuthStore } from './auth.js'
-import { defaultDirectorWsUrl } from '../utils/directorCommandSocket.js'
 
-const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultDirectorWsUrl()
+function defaultWsUrl() {
+  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${proto}//${window.location.host}/ws`
+}
+
+const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultWsUrl()
 const RAW_CMD_TIMEOUT_MS = 300_000
 const COMPLETION_TIMEOUT_MS = 5_000
 const COMPLETION_NOISE_PREFIXES = [
