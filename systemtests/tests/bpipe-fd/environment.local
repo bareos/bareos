@@ -9,3 +9,8 @@ export BareosJobType='-1'
 
 # this should be preserved inside bpipe-fd
 export my_env_variable="still there"
+
+runner_name="$(basename "$0")"
+runner_tmp="${tmp}/${runner_name}"
+mkdir -p "${runner_tmp}"
+rm -rf "${runner_tmp}"/*

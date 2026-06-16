@@ -1,7 +1,7 @@
 FileSet {
   Name = "SelfTest"
-  Description = "fileset just to backup some files for selftest"
   Enable VSS = No
+
   Include {
     Options {
       Signature = XXH128
@@ -10,5 +10,22 @@ FileSet {
              ":file=/bpipe"
              ":reader=bash ./readprogram"
              ":writer=bash ./writeprogram"
+  }
+}
+
+FileSet {
+  Name = bpipe-unique
+  Enable VSS = No
+
+  Include {
+    Options {
+       Signature = XXH128
+    }
+
+    Plugin = "bpipe"
+             ":file=/bpipe"
+             ":reader=bash ./readprogram"
+             ":writer=bash ./writeprogram"
+             ":usesuffix=true"
   }
 }
