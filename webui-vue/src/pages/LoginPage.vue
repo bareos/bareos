@@ -400,9 +400,7 @@ async function attemptDirectorLogins(targetDirectors) {
         })
       hasSession = true
       auth.applySession(payload, SESSION_AUTH_PASSWORD)
-      if (!primaryDirector.value) {
-        primaryDirector.value = targetDirector
-      }
+      primaryDirector.value = targetDirector
       attempts.push({
         director: targetDirector,
         success: true,
@@ -430,14 +428,13 @@ async function doMultiDirectorLogin() {
     return
   }
 
+  const attempts = await attemptDirectorLogins(targetDirectors)
   const {
     successfulDirectors,
     failedAttempts,
-  } = summarizeDirectorLoginAttempts(await attemptDirectorLogins(targetDirectors))
+  } = summarizeDirectorLoginAttempts(attempts)
 
-  remainingDirectorFailures.value = failedAttempts
-
-  if (successfulDirectors.length === 0 && failedAttempts.length > 0) {
+  if (successfulDirectors.length === 0) {
     errorMsg.value = t('Could not log in to any configured director. Retry the remaining directors.')
     password.value = ''
     loading.value = false
@@ -448,10 +445,9 @@ async function doMultiDirectorLogin() {
 
   if (failedAttempts.length > 0) {
     password.value = ''
-    loading.value = false
-    return
   }
 
+  remainingDirectorFailures.value = failedAttempts
   await finalizeSuccessfulLogin()
 }
 
