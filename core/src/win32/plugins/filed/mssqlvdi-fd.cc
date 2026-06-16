@@ -525,6 +525,8 @@ static inline bool ParseUnsignedInt(const char* argument_value,
     return true;
   } catch (std::invalid_argument&) {
     return false;
+  } catch (std::out_of_range&) {
+    return false;
   }
 }
 

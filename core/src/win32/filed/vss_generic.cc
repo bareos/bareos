@@ -88,10 +88,6 @@ using namespace std;
 #    include <strsafe.h>
 #  endif
 
-#  ifdef HAVE_MINGW
-class IXMLDOMDocument;
-#  endif
-
 #  define VSSClientGeneric VSSClientVista
 #  include "vss_client.h"
 #  include <vswriter.h>
