@@ -12,6 +12,7 @@ exit_with_error()
 setup_config()
 {
   rm -f "${config_directory_dir_additional_test_config}"/*
+  set_catalog_database_name "${db_name}"
 }
 
 stop_director()
@@ -21,6 +22,7 @@ stop_director()
 
 start_director()
 {
+  set_catalog_database_name "${db_name}"
   "${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir" start "$director_debug_level"
   if ! "${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir" status; then
     exit_with_error "Bareos director could not be started"
@@ -92,9 +94,32 @@ find_error_string_in_console_log()
   fi
 }
 
+set_catalog_database_name()
+{
+local new_db_name="$1"
+local catalog_config_file="${BAREOS_CONFIG_DIR}/bareos-dir.d/catalog/MyCatalog.conf"
+
+"${PERL}" -0pi -e \
+  "s|^  dbname = \".*\"$|  dbname = \"${new_db_name}\"|m" \
+  "${catalog_config_file}"
+}
+
+create_utf8_catalog_database()
+{
+local bad_db_name="$1"
+
+"${POSTGRES_BIN_PATH}/psql" --no-psqlrc -d postgres -v ON_ERROR_STOP=1 \
+  -c "DROP DATABASE IF EXISTS \"${bad_db_name}\""
+"${POSTGRES_BIN_PATH}/psql" --no-psqlrc -d postgres -v ON_ERROR_STOP=1 \
+  -c "CREATE DATABASE \"${bad_db_name}\" ENCODING 'UTF8' TEMPLATE template0"
+db_name="${bad_db_name}" "${BAREOS_SCRIPTS_DIR}/make_bareos_tables"
+db_name="${bad_db_name}" "${BAREOS_SCRIPTS_DIR}/grant_bareos_privileges" \
+  || :
+}
+
 add_duplicate_job_to_config()
 {
-  cat <<END_OF_DATA2 >"${temporary_job_config_file}"
+cat <<END_OF_DATA2 >"${temporary_job_config_file}"
 Job {
   Name = "backup-bareos-fd"
   JobDefs = "DefaultJob"

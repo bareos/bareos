@@ -1,0 +1,56 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+. ./reload_test_functions
+
+TestName="$(get_test_name "$0")"
+export TestName
+export estat
+
+bad_db_name="bad_encoding_${TestName##*/}"
+startup_log="${tmp}/bareos-dir-startup-bad-encoding.out"
+console_logfile="${tmp}/console.log"
+
+start_test
+
+remove_console_logfile
+trap 'set_catalog_database_name "${db_name}"' EXIT
+create_utf8_catalog_database "${bad_db_name}"
+set_catalog_database_name "${bad_db_name}"
+
+if "${BAREOS_DIRECTOR_BINARY}" -d50 -t --config "${BAREOS_CONFIG_DIR}" \
+  >"${startup_log}" 2>&1; then
+  exit_with_error "Bareos Director unexpectedly accepted a UTF8 catalog"
+fi
+
+if ! grep -q "Wanted SQL_ASCII, got UTF8" "${startup_log}"; then
+  cat "${startup_log}"
+  exit_with_error "Could not find database encoding error in director output"
+fi
+
+end_test
