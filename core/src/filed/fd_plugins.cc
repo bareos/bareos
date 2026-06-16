@@ -1771,8 +1771,6 @@ static void DumpFdPlugins(FILE* fp) { DumpPlugins(fd_plugin_list, fp); }
  */
 void LoadFdPlugins(const char* plugin_dir, alist<const char*>* plugin_names)
 {
-  Plugin* plugin;
-
   if (!plugin_dir) {
     Dmsg0(debuglevel, "plugin dir is NULL\n");
     return;
@@ -1799,8 +1797,7 @@ void LoadFdPlugins(const char* plugin_dir, alist<const char*>* plugin_names)
   plugin_blseek = MyPluginBlseek;
 
   // Verify that the plugin is acceptable, and print information about it.
-  int i{0};
-  foreach_alist_index (i, plugin, fd_plugin_list) {
+  for (auto* plugin : *fd_plugin_list) {
     Dmsg1(debuglevel, "Loaded plugin: %s\n", plugin->file);
   }
 
@@ -1896,8 +1893,6 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
  */
 void NewPlugins(JobControlRecord* jcr)
 {
-  Plugin* plugin;
-
   if (!fd_plugin_list) {
     Dmsg0(debuglevel, "plugin list is NULL\n");
     return;
@@ -1916,8 +1911,7 @@ void NewPlugins(JobControlRecord* jcr)
   Dmsg2(debuglevel, "Instantiate plugin_ctx=%p JobId=%" PRIu32 "\n",
         jcr->plugin_ctx_list, jcr->JobId);
 
-  int i{};
-  foreach_alist_index (i, plugin, fd_plugin_list) {
+  for (auto* plugin : *fd_plugin_list) {
     // Start a new instance of each plugin
     instantiate_plugin(jcr, plugin, 0);
   }

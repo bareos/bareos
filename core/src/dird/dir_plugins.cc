@@ -265,9 +265,6 @@ static void DumpDirPlugins(FILE* fp) { DumpPlugins(dird_plugin_list, fp); }
  */
 void LoadDirPlugins(const char* plugin_dir, alist<const char*>* plugin_names)
 {
-  Plugin* plugin;
-  int i;
-
   Dmsg0(debuglevel, "Load dir plugins\n");
   if (!plugin_dir) {
     Dmsg0(debuglevel, "No dir plugin dir!\n");
@@ -288,7 +285,7 @@ void LoadDirPlugins(const char* plugin_dir, alist<const char*>* plugin_names)
   }
   /* Verify that the plugin is acceptable, and print information
    *  about it. */
-  foreach_alist_index (i, plugin, dird_plugin_list) {
+  for (auto* plugin : *dird_plugin_list) {
     Dmsg1(debuglevel, "Loaded plugin: %s\n", plugin->file);
   }
 
@@ -486,8 +483,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 // Create a new instance of each plugin for this Job
 void NewPlugins(JobControlRecord* jcr)
 {
-  int i, num;
-  Plugin* plugin;
+  int num;
 
   Dmsg0(debuglevel, "=== enter NewPlugins ===\n");
   if (!dird_plugin_list) {
@@ -501,7 +497,7 @@ void NewPlugins(JobControlRecord* jcr)
   if (num == 0) { return; }
 
   jcr->plugin_ctx_list = new alist<PluginContext*>(10, owned_by_alist);
-  foreach_alist_index (i, plugin, dird_plugin_list) {
+  for (auto* plugin : *dird_plugin_list) {
     // Start a new instance of each plugin
     instantiate_plugin(jcr, plugin, 0);
   }
