@@ -455,6 +455,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     runtime.ws = ws
 
     ws.onopen = () => {
+      if (runtime.ws !== ws) {
+        return
+      }
       ws.send(JSON.stringify({
         type: 'session',
         mode: 'raw',
@@ -463,6 +466,10 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     }
 
     ws.onmessage = (event) => {
+      if (runtime.ws !== ws) {
+        return
+      }
+
       let msg
       try {
         msg = JSON.parse(event.data)
@@ -528,12 +535,20 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     }
 
     ws.onerror = () => {
+      if (runtime.ws !== ws) {
+        return
+      }
+
       session.status = 'error'
       appendErr(director, `Cannot connect to proxy at ${WS_URL}`)
       rejectAll(director, 'WebSocket error')
     }
 
     ws.onclose = () => {
+      if (runtime.ws !== ws) {
+        return
+      }
+
       if (session.status !== 'disconnected') {
         session.status = 'disconnected'
         appendInfo(director, 'Console disconnected.')
