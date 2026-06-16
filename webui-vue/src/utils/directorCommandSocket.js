@@ -21,7 +21,12 @@
 
 export function defaultDirectorWsUrl() {
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${proto}//${window.location.host}/ws`
+  const path = window.location.pathname || '/'
+  const basePath = path.endsWith('/')
+    ? path
+    : path.slice(0, path.lastIndexOf('/') + 1)
+  const wsPath = `${basePath}ws`.replace(/\/{2,}/g, '/')
+  return `${proto}//${window.location.host}${wsPath}`
 }
 
 export const DIRECTOR_WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultDirectorWsUrl()
