@@ -231,7 +231,7 @@ bool BareosDbPostgresql::CheckDatabaseEncoding()
  *
  * DO NOT close the database or delete mdb here !!!!
  */
-const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
+const char* BareosDbPostgresql::OpenDatabase()
 {
   int errstat;
   char buf[10], *port;
@@ -323,12 +323,11 @@ const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
   if (!db_handle_) { return errmsg; }
 
   connected_ = true;
-  if (!CheckTablesVersion(jcr)) { return errmsg; }
-
 
   // Check that encoding is SQL_ASCII
   if (!SetClientOptions()) { return errmsg; }
   if (!CheckDatabaseEncoding()) { return errmsg; }
+  if (!CheckTablesVersion()) { return errmsg; }
 
   return nullptr;
 }
