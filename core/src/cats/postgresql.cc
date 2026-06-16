@@ -212,15 +212,6 @@ bool BareosDbPostgresql::CheckDatabaseEncoding()
     return false;
   }
 
-  /* If we are in SQL_ASCII, we can force the client_encoding to SQL_ASCII
-   * too */
-  if (!SqlQueryWithoutHandler("SET client_encoding TO 'SQL_ASCII'")) {
-    Mmsg(errmsg, "Cannot set client encoding: %s\n", sql_strerror());
-    Dmsg1(50, "%s", errmsg);
-    SqlFreeResult();
-    return false;
-  }
-
   SqlFreeResult();
   return true;
 }
@@ -288,6 +279,9 @@ const char* BareosDbPostgresql::OpenDatabase()
   }
   keys.emplace_back("sslmode");
   values.emplace_back("disable");
+
+  keys.emplace_back("client_encoding");
+  values.emplace_back("SQL_ASCII");
 
   keys.emplace_back(nullptr);
   values.emplace_back(nullptr);
