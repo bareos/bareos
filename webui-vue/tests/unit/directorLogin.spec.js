@@ -22,6 +22,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   directorListLoadErrorMessage,
+  getLastSuccessfulDirector,
   shouldAutoLoginAllDirectors,
   summarizeDirectorLoginAttempts,
 } from '../../src/utils/directorLogin.js'
@@ -70,5 +71,18 @@ describe('director login helpers', () => {
       ],
       failedDirectors: ['site-b', 'site-c'],
     })
+  })
+
+  it('uses the last successful director for post-login activation', () => {
+    expect(getLastSuccessfulDirector([
+      { director: 'bareos-dir', success: true },
+      { director: 'site-b', success: false, message: 'Authentication failed' },
+      { director: 'site-c', success: true },
+    ])).toBe('site-c')
+
+    expect(getLastSuccessfulDirector([
+      { director: 'bareos-dir', success: false, message: 'Connection error' },
+      { director: 'site-b', success: false, message: 'Connection error' },
+    ])).toBe('')
   })
 })

@@ -67,3 +67,18 @@ export function summarizeDirectorLoginAttempts(attempts = []) {
     failedDirectors: failedAttempts.map(attempt => attempt.director),
   }
 }
+
+export function getLastSuccessfulDirector(attempts = []) {
+  let lastSuccessfulDirector = ''
+
+  for (const attempt of Array.isArray(attempts) ? attempts : []) {
+    if (attempt?.success) {
+      const director = String(attempt?.director ?? '').trim()
+      if (director) {
+        lastSuccessfulDirector = director
+      }
+    }
+  }
+
+  return lastSuccessfulDirector
+}
