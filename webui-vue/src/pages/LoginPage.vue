@@ -163,6 +163,7 @@ import { toUserVisibleDirectorError } from '../utils/directorErrors.js'
 import {
   canReuseDirectorCredentials,
   getDirectorReuseResult,
+  getDirectorReuseErrorMessage,
   isSuccessfulDirectorReuse,
 } from '../utils/directorSessionReuse.js'
 import {
@@ -504,11 +505,7 @@ async function reuseCurrentCredentials(options = {}) {
     })
     const reuseResult = getDirectorReuseResult(result, directorRef.value)
     if (!isSuccessfulDirectorReuse(result, directorRef.value)) {
-      throw new Error(
-        reuseResult?.status === 'authentication_failed'
-          ? t('Authentication failed')
-          : t('Could not connect to director. Is the proxy running?')
-      )
+      throw new Error(getDirectorReuseErrorMessage(reuseResult))
     }
 
     if (result?.session) {
