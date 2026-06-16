@@ -556,7 +556,7 @@ static inline PyIoPacket* NativeToPyIoPacket(io_pkt* io)
     pIoPkt->whence = io->whence;
     pIoPkt->offset = io->offset;
 #if HAVE_WIN32
-    pIoPkt->filedes = static_cast<int>(reinterpret_cast<intptr_t>(io->hndl));
+    pIoPkt->filedes = reinterpret_cast<intptr_t>(io->hndl);
 #else
     pIoPkt->filedes = io->filedes;
 #endif
@@ -769,8 +769,7 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->replace = rp->replace;
     pRestorePacket->create_status = rp->create_status;
 #if HAVE_WIN32
-    pRestorePacket->filedes
-        = static_cast<int>(reinterpret_cast<intptr_t>(rp->hndl));
+    pRestorePacket->filedes = reinterpret_cast<intptr_t>(rp->hndl);
 #else
     pRestorePacket->filedes = rp->filedes;
 #endif
@@ -2254,12 +2253,12 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
        "IoPacket(func=%d, count=%" PRId32 ", flags=%" PRId32
        ", mode=%04o, buf=\"%s\", fname=\"%s\", status=%" PRId32
        ", io_errno=%" PRId32 ", lerror=%" PRId32 ", whence=%" PRId32
-       ", offset=%" PRId64 ", win32=%d, filedes=%d)",
+       ", offset=%" PRId64 ", win32=%d, filedes=%" PRIdPTR ")",
        self->func, self->count, self->flags,
        static_cast<unsigned int>(self->mode & ~S_IFMT),
        PyGetByteArrayValue(self->buf), self->fname, self->status,
        self->io_errno, self->lerror, self->whence, self->offset, self->win32,
-       self->filedes);
+       static_cast<intptr_t>(self->filedes));
   s = PyUnicode_FromString(buf.c_str());
 
   return s;
@@ -2290,6 +2289,17 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   self->win32 = false;
   self->filedes = kInvalidFiledescriptor;
 
+#if HAVE_WIN32
+  long long parsed_filedes = static_cast<long long>(self->filedes);
+  if (!PyArg_ParseTupleAndKeywords(
+          args, kwds, "|HiiiosiiiilcL", kwlist, &self->func, &self->count,
+          &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
+          &self->io_errno, &self->lerror, &self->whence, &self->offset,
+          &self->win32, &parsed_filedes)) {
+    return -1;
+  }
+  self->filedes = static_cast<intptr_t>(parsed_filedes);
+#else
   if (!PyArg_ParseTupleAndKeywords(
           args, kwds, "|Hiiiosiiiilci", kwlist, &self->func, &self->count,
           &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
@@ -2297,6 +2307,7 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
           &self->win32, &self->filedes)) {
     return -1;
   }
+#endif
 
   return 0;
 }

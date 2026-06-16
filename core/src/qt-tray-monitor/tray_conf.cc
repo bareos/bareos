@@ -188,7 +188,6 @@ static void DumpResource(int type,
                          bool hide_sensitive_data,
                          bool verbose)
 {
-  PoolMem buf;
   bool recurse = true;
   OutputFormatter output_formatter
       = OutputFormatter(sendit, sock, nullptr, nullptr);
@@ -206,7 +205,6 @@ static void DumpResource(int type,
   }
   res->PrintConfig(output_formatter_resource, *my_config, hide_sensitive_data,
                    verbose);
-  sendit(sock, "%s", buf.c_str());
 
   if (recurse && res->next_) {
     DumpResource(type, res->next_, sendit, sock, hide_sensitive_data, verbose);
