@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - refactor systemtests autochanger [PR #2601]
 - fix reverse-history-search crash on windows [PR #2614]
 - webui: fix legacy session name setup on new PHP [PR #2670]
+- contrib: media_vault use scriptdir [PR #2689]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2311,4 +2312,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2681]: https://github.com/bareos/bareos/pull/2681
 [PR #2684]: https://github.com/bareos/bareos/pull/2684
 [PR #2687]: https://github.com/bareos/bareos/pull/2687
+[PR #2689]: https://github.com/bareos/bareos/pull/2689
 [unreleased]: https://github.com/bareos/bareos/tree/master
