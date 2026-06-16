@@ -38,3 +38,20 @@ export function isSuccessfulDirectorReuse(reuseResponse, director) {
   const status = getDirectorReuseResult(reuseResponse, director)?.status
   return ['authenticated', 'already_authenticated'].includes(status)
 }
+
+export function getDirectorReuseErrorMessage(reuseResult) {
+  const status = reuseResult?.status
+  const message = reuseResult?.message
+
+  // Map known status values to user-friendly messages
+  const statusMessages = {
+    'authentication_failed': 'Authentication failed',
+    'connection_error': `Cannot connect to director (${message || 'unknown error'})`,
+    'invalid_credentials': 'Invalid credentials for this director',
+    'director_not_found': 'Director not found',
+    'unknown_error': `Credential reuse failed (${message || 'unknown error'})`,
+  }
+
+  // Return mapped message or include status in generic message
+  return statusMessages[status] || `Credential reuse failed (status: ${status}, ${message || 'no details'})`
+}
