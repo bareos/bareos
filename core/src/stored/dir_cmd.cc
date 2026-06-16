@@ -1328,7 +1328,8 @@ static bool BootstrapCmd(JobControlRecord* jcr)
 // Autochanger command from Director
 static bool ChangerCmd(JobControlRecord* jcr)
 {
-  slot_number_t src_slot, dst_slot;
+  slot_number_t src_slot = 0;
+  slot_number_t dst_slot = 0;
   PoolMem devname;
   BareosSocket* dir = jcr->dir_bsock;
   Device* dev;

@@ -552,7 +552,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
                            plugin_ctx_list, &unused, &rc);
     }
   } else {
-    PluginContext* ctx;
+    PluginContext* ctx = nullptr;
     int i{};
     foreach_alist_index (i, ctx, plugin_ctx_list) {
       if (!IsEventForThisPlugin(ctx->plugin, name, len)) {
@@ -1359,7 +1359,7 @@ int PluginCreateFile(JobControlRecord* jcr,
   int flags;
   int retval;
   int status;
-  Plugin* plugin;
+  Plugin* plugin = nullptr;
   restore_pkt rp;
   PluginContext* ctx = jcr->plugin_ctx;
   FiledPluginContext* b_ctx
@@ -1466,7 +1466,7 @@ bool PluginSetAttributes(JobControlRecord* jcr,
                          Attributes* attr,
                          BareosFilePacket* ofd)
 {
-  Plugin* plugin;
+  Plugin* plugin = nullptr;
   restore_pkt rp;
 
   Dmsg0(debuglevel, "PluginSetAttributes\n");

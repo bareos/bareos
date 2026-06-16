@@ -31,7 +31,7 @@ struct DateTime {
 
   int WeekOfMonth() const;
   bool OnLast7DaysOfMonth() const;
-  void PrintDebugMessage(int debug_level) const;
+  void PrintDebugMessage(int dlevel) const;
 
   int year{0};
   int month{0};

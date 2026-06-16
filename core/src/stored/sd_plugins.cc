@@ -303,7 +303,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
                         void* value,
                         bool reverse)
 {
-  int i;
+  int i{};
   bSdEvent event;
   alist<PluginContext*>* plugin_ctx_list;
   bRC rc = bRC_OK;
@@ -332,7 +332,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
 
   // See if we need to trigger the loaded plugins in reverse order.
   if (reverse) {
-    PluginContext* ctx;
+    PluginContext* ctx = nullptr;
 
     foreach_alist_rindex (i, ctx, plugin_ctx_list) {
       if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
@@ -341,7 +341,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       }
     }
   } else {
-    PluginContext* ctx;
+    PluginContext* ctx = nullptr;
 
     foreach_alist_index (i, ctx, plugin_ctx_list) {
       if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
@@ -505,13 +505,15 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
  */
 void DispatchNewPluginOptions(JobControlRecord* jcr)
 {
-  int i, j, len;
-  Plugin* plugin;
+  int i{}, j{}, len{};
+  Plugin* plugin = nullptr;
   uint32_t instance;
   bSdEvent event;
   bSdEventType eventType;
-  char *bp, *plugin_name, *option;
-  const char* plugin_options;
+  char* bp = nullptr;
+  char* plugin_name = nullptr;
+  char* option = nullptr;
+  const char* plugin_options = nullptr;
   PoolMem priv_plugin_options(PM_MESSAGE);
 
   if (!sd_plugin_list || sd_plugin_list->empty()) { return; }

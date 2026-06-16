@@ -204,12 +204,8 @@ static void DumpResource(int type,
     type = -type;
     recurse = false;
   }
-  switch (type) {
-    default:
-      res->PrintConfig(output_formatter_resource, *my_config,
-                       hide_sensitive_data, verbose);
-      break;
-  }
+  res->PrintConfig(output_formatter_resource, *my_config, hide_sensitive_data,
+                   verbose);
   sendit(sock, "%s", buf.c_str());
 
   if (recurse && res->next_) {

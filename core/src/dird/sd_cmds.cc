@@ -898,9 +898,9 @@ bool DoStorageResolve(UaContext* ua, StorageResource* store)
 
 bool SendStoragePluginOptions(JobControlRecord* jcr)
 {
-  int i;
+  int i{};
   PoolMem cur_plugin_options(PM_MESSAGE);
-  const char* plugin_options;
+  const char* plugin_options = nullptr;
   BareosSocket* sd = jcr->store_bsock;
 
   if (jcr->dir_impl->res.job && jcr->dir_impl->res.job->SdPluginOptions

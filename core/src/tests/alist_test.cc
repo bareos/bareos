@@ -77,7 +77,7 @@ void TestForeachAlist(alist<const char*>* list)
     i++;
   }
 
-  const char* str;
+  const char* str = nullptr;
   foreach_alist_index (i, str, list) {
     sprintf(buf, "%d", i);
     EXPECT_STREQ(str, buf);

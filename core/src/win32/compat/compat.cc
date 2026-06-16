@@ -1309,13 +1309,13 @@ static int GetWindowsFileInfo(const char* filename,
   HANDLE fh = INVALID_HANDLE_VALUE;
 
   // Cache some common vars to make code more transparent.
-  DWORD* pdwFileAttributes;
-  DWORD* pnFileSizeHigh;
-  DWORD* pnFileSizeLow;
-  DWORD* pdwReserved0;
-  FILETIME* pftLastAccessTime;
-  FILETIME* pftLastWriteTime;
-  FILETIME* pftChangeTime;
+  DWORD* pdwFileAttributes = &info_a.dwFileAttributes;
+  DWORD* pnFileSizeHigh = &info_a.nFileSizeHigh;
+  DWORD* pnFileSizeLow = &info_a.nFileSizeLow;
+  DWORD* pdwReserved0 = &info_a.dwReserved0;
+  FILETIME* pftLastAccessTime = &info_a.ftLastAccessTime;
+  FILETIME* pftLastWriteTime = &info_a.ftLastWriteTime;
+  FILETIME* pftChangeTime = &info_a.ftLastWriteTime;
 
 
   // First get a findhandle and a file handle to the file.
@@ -1339,7 +1339,7 @@ static int GetWindowsFileInfo(const char* filename,
     Dmsg1(debuglevel, "FindFirstFileA=%s\n", win32_fname.c_str());
     fh = p_FindFirstFileA(win32_fname.c_str(), &info_a);
 #if (_WIN32_WINNT >= 0x0600)
-    if (h != INVALID_HANDLE_VALUE) {
+    if (fh != INVALID_HANDLE_VALUE) {
       h = CreateFileA(win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                       OPEN_EXISTING,
                       FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */

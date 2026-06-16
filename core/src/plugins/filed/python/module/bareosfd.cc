@@ -27,9 +27,23 @@
 
 #if defined(HAVE_WIN32)
 #  include "include/bareos.h"
+#  if defined(_MSC_VER)
+#    pragma warning(push)
+#    pragma warning(disable : 4005 4100)
+#  endif
 #  include <Python.h>
+#  if defined(_MSC_VER)
+#    pragma warning(pop)
+#  endif
 #else
+#  if defined(_MSC_VER)
+#    pragma warning(push)
+#    pragma warning(disable : 4005 4100)
+#  endif
 #  include <Python.h>
+#  if defined(_MSC_VER)
+#    pragma warning(pop)
+#  endif
 #  include "include/bareos.h"
 #endif
 
@@ -542,7 +556,7 @@ static inline PyIoPacket* NativeToPyIoPacket(io_pkt* io)
     pIoPkt->whence = io->whence;
     pIoPkt->offset = io->offset;
 #if HAVE_WIN32
-    pIoPkt->filedes = reinterpret_cast<int>(io->hndl);
+    pIoPkt->filedes = static_cast<int>(reinterpret_cast<intptr_t>(io->hndl));
 #else
     pIoPkt->filedes = io->filedes;
 #endif
@@ -577,7 +591,7 @@ static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, io_pkt* io)
   io->win32 = pIoPkt->win32;
   io->status = pIoPkt->status;
 #if HAVE_WIN32
-  io->hndl = reinterpret_cast<HANDLE>(pIoPkt->filedes);
+  io->hndl = reinterpret_cast<HANDLE>(static_cast<intptr_t>(pIoPkt->filedes));
 #else
   io->filedes = pIoPkt->filedes;
 #endif
@@ -755,7 +769,8 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->replace = rp->replace;
     pRestorePacket->create_status = rp->create_status;
 #if HAVE_WIN32
-    pRestorePacket->filedes = reinterpret_cast<int>(rp->hndl);
+    pRestorePacket->filedes
+        = static_cast<int>(reinterpret_cast<intptr_t>(rp->hndl));
 #else
     pRestorePacket->filedes = rp->filedes;
 #endif
@@ -773,7 +788,8 @@ static inline void PyRestorePacketToNative(PyRestorePacket* pRestorePacket,
   // Only copy back the fields that are allowed to be changed.
   rp->create_status = pRestorePacket->create_status;
 #if HAVE_WIN32
-  rp->hndl = reinterpret_cast<HANDLE>(pRestorePacket->filedes);
+  rp->hndl
+      = reinterpret_cast<HANDLE>(static_cast<intptr_t>(pRestorePacket->filedes));
 #else
   rp->filedes = pRestorePacket->filedes;
 #endif

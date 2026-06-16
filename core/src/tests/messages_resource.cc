@@ -80,7 +80,7 @@ static void SyslogCallback_(int, const char* msg)
     FILE* fp = LogFiles::list_of_filepointers.at("syslog");
     // fake-write a syslog entry
     if (fp) { fputs(msg, fp); }
-  } catch (const std::out_of_range& e) {
+  } catch (const std::out_of_range&) {
     std::cout << "Could not find <syslog> filepointer";
   }
 }
@@ -91,7 +91,7 @@ static bool DbLogInsertCallback_(JobControlRecord*, utime_t, const char* msg)
     FILE* fp = LogFiles::list_of_filepointers.at("dblog");
     // fake-write a db log entry
     if (fp) { fputs(msg, fp); }
-  } catch (const std::out_of_range& e) {
+  } catch (const std::out_of_range&) {
     std::cout << "Could not find <dblog> filepointer";
   }
 

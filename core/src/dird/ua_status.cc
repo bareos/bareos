@@ -982,7 +982,7 @@ static void ListRunningJobs(UaContext* ua)
   JobControlRecord* jcr;
   int njobs = 0;
   const char* msg;
-  char* emsg; /* edited message */
+  char* emsg = nullptr; /* edited message */
   char level[10];
   bool pool_mem = false;
 

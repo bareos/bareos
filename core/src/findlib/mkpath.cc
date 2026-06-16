@@ -130,7 +130,7 @@ bool makepath(Attributes* attr,
   char* p;
   int len;
   bool ok = false;
-  int created;
+  int created = 0;
   char new_dir[5000];
   int ndir = 0;
   int i = 0;

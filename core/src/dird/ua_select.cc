@@ -73,8 +73,6 @@ bool ConfirmRetention(UaContext* ua, utime_t* ret, const char* msg)
 
     if (IsYesno(ua->cmd, &retval)) { return retval; }
   }
-
-  return true;
 }
 
 /**

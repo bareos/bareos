@@ -523,7 +523,7 @@ static inline bool ParseUnsignedInt(const char* argument_value,
   try {
     value_out = std::stoul(argument_value);
     return true;
-  } catch (std::invalid_argument& e) {
+  } catch (std::invalid_argument&) {
     return false;
   }
 }

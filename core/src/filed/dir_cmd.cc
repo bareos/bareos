@@ -1654,7 +1654,7 @@ bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher)
 static bool BackupCmd(JobControlRecord* jcr)
 {
   int ok = 0;
-  int SDJobStatus;
+  int SDJobStatus = 0;
   int32_t FileIndex;
   BareosSocket* dir = jcr->dir_bsock;
   BareosSocket* sd = jcr->store_bsock;

@@ -343,7 +343,8 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
   state = s_none;
   set_defaults(res_run);
 
-  for (; token != BCT_EOL; (token = LexGetToken(lc, BCT_ALL))) {
+  for (token = LexGetToken(lc, BCT_ALL); token != BCT_EOL;
+       token = LexGetToken(lc, BCT_ALL)) {
     int len;
     bool pm = false;
     bool am = false;
