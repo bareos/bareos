@@ -155,6 +155,7 @@ import { useSettingsStore } from '../stores/settings.js'
 import { buildDirectorOptions } from '../utils/director.js'
 import {
   directorListLoadErrorMessage,
+  getLastSuccessfulDirector,
   shouldAutoLoginAllDirectors,
   summarizeDirectorLoginAttempts,
 } from '../utils/directorLogin.js'
@@ -400,7 +401,6 @@ async function attemptDirectorLogins(targetDirectors) {
         })
       hasSession = true
       auth.applySession(payload, SESSION_AUTH_PASSWORD)
-      primaryDirector.value = targetDirector
       attempts.push({
         director: targetDirector,
         success: true,
@@ -433,6 +433,7 @@ async function doMultiDirectorLogin() {
     successfulDirectors,
     failedAttempts,
   } = summarizeDirectorLoginAttempts(attempts)
+  const finalDirector = getLastSuccessfulDirector(attempts)
 
   if (successfulDirectors.length === 0) {
     errorMsg.value = t('Could not log in to any configured director. Retry the remaining directors.')
@@ -447,8 +448,9 @@ async function doMultiDirectorLogin() {
     password.value = ''
   }
 
+  primaryDirector.value = finalDirector
   remainingDirectorFailures.value = failedAttempts
-  await finalizeSuccessfulLogin()
+  await finalizeSuccessfulLogin(finalDirector)
 }
 
 async function doLogin() {
