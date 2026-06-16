@@ -89,14 +89,17 @@ export const useAuthStore = defineStore('auth', () => {
     initialized.value = true
   }
 
-  function applySession(session, password = SESSION_AUTH_PASSWORD) {
+  function applySession(session, password = SESSION_AUTH_PASSWORD, options = {}) {
     const nextDirectorUsers = normalizeDirectorUsers(session)
-    directorUsers.value = nextDirectorUsers
-    _password.value = Object.keys(nextDirectorUsers).length > 0 ? password : ''
+    const mergeMode = options.merge === true
+    directorUsers.value = mergeMode
+      ? { ...directorUsers.value, ...nextDirectorUsers }
+      : nextDirectorUsers
+    _password.value = Object.keys(directorUsers.value).length > 0 ? password : ''
     const currentDirector = normalizeDirectorName(
       session?.currentDirector
       ?? session?.director
-      ?? firstAuthenticatedDirector(nextDirectorUsers)
+      ?? firstAuthenticatedDirector(directorUsers.value)
     )
     if (!setCurrentUser(currentDirector)) {
       user.value = null
