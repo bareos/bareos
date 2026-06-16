@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -321,12 +321,10 @@ int main(int argc, char* argv[])
   if (db == nullptr) {
     Emsg0(M_ERROR_TERM, 0, T_("Could not init Bareos database\n"));
   }
-  if (auto err = db->OpenDatabase(nullptr)) {
-    Emsg0(M_ERROR_TERM, 0, "%s", err);
-  }
+  if (auto err = db->OpenDatabase()) { Emsg0(M_ERROR_TERM, 0, "%s", err); }
   Dmsg0(200, "Database opened\n");
   if (g_verbose) {
-    Pmsg2(000, T_("Using Database: %s, User: %s\n"), db_name.c_str(),
+    Pmsg2(000, "Using Database: %s, User: %s\n", db_name.c_str(),
           db_user.c_str());
   }
 

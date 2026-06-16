@@ -587,7 +587,6 @@ class BareosDb : public BareosDbQueryEnum {
   char* strerror(libbareos::source_location loc
                  = libbareos::source_location::current());
   bool CheckMaxConnections(JobControlRecord* jcr, uint32_t max_concurrent_jobs);
-  bool CheckTablesVersion(JobControlRecord* jcr);
   bool QueryDb(JobControlRecord* jcr,
                const char* select_cmd,
                libbareos::source_location loc
@@ -962,7 +961,7 @@ class BareosDb : public BareosDbQueryEnum {
 
   /* Pure virtual low level methods */
   // returns an error string on error
-  virtual const char* OpenDatabase(JobControlRecord* jcr) = 0;
+  virtual const char* OpenDatabase() = 0;
   virtual void CloseDatabase(JobControlRecord* jcr) = 0;
   virtual void StartTransaction(JobControlRecord* jcr) = 0;
   virtual void EndTransaction(JobControlRecord* jcr) = 0;
@@ -1044,6 +1043,8 @@ class BareosDb : public BareosDbQueryEnum {
   {
     if (!is_private_) { RwlCheckWriterIsMe(&lock_, l); }
   }
+
+  bool CheckTablesVersion();
 };
 
 BareosDb* db_init_database(JobControlRecord* jcr,
