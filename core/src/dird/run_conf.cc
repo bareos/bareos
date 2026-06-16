@@ -171,7 +171,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
   char* p;
   int i, j;
   auto options = lc->options;
-  int token, state, state2 = 0, code = 0, code2 = 0;
+  int token = BCT_ERROR, state, state2 = 0, code = 0, code2 = 0;
   bool found;
   utime_t utime;
   BareosResource* res;
@@ -343,8 +343,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
   state = s_none;
   set_defaults(res_run);
 
-  for (token = LexGetToken(lc, BCT_ALL); token != BCT_EOL;
-       token = LexGetToken(lc, BCT_ALL)) {
+  for (; token != BCT_EOL; (token = LexGetToken(lc, BCT_ALL))) {
     int len;
     bool pm = false;
     bool am = false;
