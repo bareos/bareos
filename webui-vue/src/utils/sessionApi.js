@@ -19,6 +19,8 @@
    02110-1301, USA.
  */
 
+import { API_BASE_URL } from './directorCommandSocket.js'
+
 export const SESSION_AUTH_PASSWORD = '__proxy_session__'
 
 async function parseJsonResponse(response) {
@@ -35,7 +37,7 @@ async function parseJsonResponse(response) {
 }
 
 export async function loginProxySession({ username, password, director }) {
-  const response = await fetch('/api/session/login', {
+  const response = await fetch(`${API_BASE_URL}/session/login`, {
     method: 'POST',
     credentials: 'same-origin',
     headers: {
@@ -53,7 +55,7 @@ export async function loginProxySession({ username, password, director }) {
 }
 
 export async function loginDirectorProxySession({ username, password, director }) {
-  const response = await fetch(`/api/session/directors/${encodeURIComponent(director)}/login`, {
+  const response = await fetch(`${API_BASE_URL}/session/directors/${encodeURIComponent(director)}/login`, {
     method: 'POST',
     credentials: 'same-origin',
     headers: {
@@ -71,7 +73,7 @@ export async function loginDirectorProxySession({ username, password, director }
 }
 
 export async function fetchCurrentSession() {
-  const response = await fetch('/api/session', {
+  const response = await fetch(`${API_BASE_URL}/session`, {
     method: 'GET',
     credentials: 'same-origin',
     cache: 'no-store',
@@ -90,7 +92,7 @@ export async function fetchCurrentSession() {
 }
 
 export async function logoutProxySession() {
-  await fetch('/api/session/logout', {
+  await fetch(`${API_BASE_URL}/session/logout`, {
     method: 'POST',
     credentials: 'same-origin',
     cache: 'no-store',
@@ -98,7 +100,7 @@ export async function logoutProxySession() {
 }
 
 export async function logoutDirectorProxySession({ director }) {
-  const response = await fetch(`/api/session/directors/${encodeURIComponent(director)}`, {
+  const response = await fetch(`${API_BASE_URL}/session/directors/${encodeURIComponent(director)}`, {
     method: 'DELETE',
     credentials: 'same-origin',
     cache: 'no-store',
@@ -113,7 +115,7 @@ export async function logoutDirectorProxySession({ director }) {
 }
 
 export async function setCurrentProxySessionDirector({ director }) {
-  const response = await fetch('/api/session/current-director', {
+  const response = await fetch(`${API_BASE_URL}/session/current-director`, {
     method: 'POST',
     credentials: 'same-origin',
     cache: 'no-store',
@@ -132,7 +134,7 @@ export async function setCurrentProxySessionDirector({ director }) {
 }
 
 export async function reuseProxySessionCredentials({ directors, sourceDirector }) {
-  const response = await fetch('/api/session/reuse', {
+  const response = await fetch(`${API_BASE_URL}/session/reuse`, {
     method: 'POST',
     credentials: 'same-origin',
     cache: 'no-store',

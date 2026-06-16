@@ -19,12 +19,24 @@
    02110-1301, USA.
  */
 
+export function getAppBasePath() {
+  const path = window.location.pathname || '/'
+  return path.endsWith('/') ? path : path + '/'
+}
+
 export function defaultDirectorWsUrl() {
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${proto}//${window.location.host}/ws`
+  const basePath = getAppBasePath()
+  return `${proto}//${window.location.host}${basePath}ws`
+}
+
+export function getApiBaseUrl() {
+  const basePath = getAppBasePath()
+  return `${window.location.protocol}//${window.location.host}${basePath}api`
 }
 
 export const DIRECTOR_WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultDirectorWsUrl()
+export const API_BASE_URL = getApiBaseUrl()
 export const DIRECTOR_COMMAND_AUTH_TIMEOUT_MS = 8_000
 export const DIRECTOR_COMMAND_TIMEOUT_MS = 30_000
 
