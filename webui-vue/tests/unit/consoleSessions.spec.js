@@ -622,4 +622,90 @@ describe('console session store', () => {
     expect(socketA.readyState).toBe(FakeWebSocket.CLOSED)
     expect(socketB.readyState).toBe(FakeWebSocket.CLOSED)
   })
+
+  it('can reconnect and continue after exit closes the console session', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    const credentials = {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    }
+
+    consoleSessions.connectSession('bareos-dir', credentials)
+    const firstSocket = FakeWebSocket.instances[0]
+    firstSocket.open()
+    firstSocket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    expect(consoleSessions.sendCommand('bareos-dir', 'exit')).toBe(true)
+    expect(JSON.parse(firstSocket.sent[1])).toEqual({
+      type: 'command',
+      id: '1',
+      command: 'exit',
+      stream: true,
+    })
+
+    firstSocket.onclose?.()
+    expect(consoleSessions.getSession('bareos-dir').status).toBe('disconnected')
+
+    consoleSessions.connectSession('bareos-dir', credentials)
+    const secondSocket = FakeWebSocket.instances[1]
+    secondSocket.open()
+    secondSocket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    expect(consoleSessions.sendCommand('bareos-dir', 'status director')).toBe(true)
+    expect(JSON.parse(secondSocket.sent[1])).toEqual({
+      type: 'command',
+      id: '2',
+      command: 'status director',
+      stream: true,
+    })
+  })
+
+  it('ignores late close events from a stale socket after reconnect', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    const credentials = {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    }
+
+    consoleSessions.connectSession('bareos-dir', credentials)
+    const firstSocket = FakeWebSocket.instances[0]
+    firstSocket.open()
+    firstSocket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    firstSocket.close = function closeWithoutEvent() {
+      this.readyState = FakeWebSocket.CLOSED
+    }
+
+    consoleSessions.disconnectSession('bareos-dir', { reason: 'Disconnected' })
+    consoleSessions.connectSession('bareos-dir', credentials)
+
+    const secondSocket = FakeWebSocket.instances[1]
+    secondSocket.open()
+    secondSocket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    firstSocket.onclose?.()
+
+    expect(consoleSessions.getSession('bareos-dir').status).toBe('connected')
+
+    const sent = consoleSessions.sendCommand('bareos-dir', 'status director')
+    expect(sent).toBe(true)
+    expect(JSON.parse(secondSocket.sent[1])).toEqual({
+      type: 'command',
+      id: '1',
+      command: 'status director',
+      stream: true,
+    })
+  })
 })
