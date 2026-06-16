@@ -18,8 +18,8 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 #
-# this helper placed in /usr/lib/bareos/scripts/ use the python 
+# this helper placed in @scriptdir@ use the python
 # virtualenv by default. If you are not using it comment source
 # line below.
 source ~/.local/share/virtualenvs/bareos_media_vault/bin/activate
-@plugindir@/media_vault.py --config @confdir@/media_vault.ini $@
+python3 "@scriptdir@/media_vault.py" --config @confdir@/media_vault.ini "$@"

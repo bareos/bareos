@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ktls: fix daemons getting stuck on reading [PR #2606]
 - fix reverse-history-search crash on windows [PR #2639]
 - webui: fix legacy session name setup on new PHP [PR #2693]
+- contrib: media_vault use scriptdir [PR #2697]
 
 ### Documentation
 - Add documentation for the barri image file format [PR #2608]
@@ -2296,4 +2297,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2691]: https://github.com/bareos/bareos/pull/2691
 [PR #2692]: https://github.com/bareos/bareos/pull/2692
 [PR #2693]: https://github.com/bareos/bareos/pull/2693
+[PR #2697]: https://github.com/bareos/bareos/pull/2697
 [unreleased]: https://github.com/bareos/bareos/tree/master

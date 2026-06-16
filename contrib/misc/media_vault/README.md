@@ -3,13 +3,13 @@
 This utility helps administrators to select and export tapes from an
 autoloader for placement into an external vault location.
 
-It is written in Python 3 (minimum version 3.6) and uses the 
+It is written in Python 3 (minimum version 3.6) and uses the
 ``python_bareos`` module to interact with the Director.
 
 
 ## Manual Installation
 
-Install the script into the bareos scripts directory (e.g `/usr/lib/bareos/scripts`
+Install the script into the bareos scripts directory (`/usr/lib/bareos/scripts`)
 
 ```bash
 cp media_vault.py /usr/lib/bareos/scripts/
@@ -25,6 +25,12 @@ chmod 0755 /usr/lib/bareos/scripts/media_vault.sh
 chown root:root /usr/lib/bareos/scripts/media_vault.sh
 ```
 
+## Package installation
+
+Install bareos-contrib-tools into your system, the help and main script will be placed into
+bareos scripts directory (`/usr/lib/bareos/scripts`)
+
+
 ### Virtualenv
 
 Prepare a Python 3 venv with ``python_bareos`` in it.
@@ -37,11 +43,16 @@ python3 -m venv ~/.local/share/virtualenvs/bareos_media_vault
 python3 -m pip install python_bareos ConfigArgParse
 ```
 
-.. note:
-   TLS-PSK native support requires Python version >= 3.12. Alternatively,
-   the ``sslpsk`` module can be used for python versions <= 3.9, but it requires gcc.
-   It can also be installed from github repository
-   to support Python version up to 3.10.
+> [!IMPORTANT]
+> The helper script `media_vault.sh` assumes that the venv is stored in the path used in the example above.
+> If you choose a different path, then you need to update `media_vault.sh` to reflect that.
+
+
+> [!NOTE]
+> TLS-PSK native support requires Python version >= 3.12. Alternatively,
+> the ``sslpsk`` module can be used for python versions <= 3.9, but it requires gcc.
+> It can also be installed from github repository to support Python version up to 3.10.
+
 
 ### Without Virtualenv
 
@@ -55,12 +66,26 @@ you can install them directly with your package manager as root.
 dnf install python3-bareos python313-configargparse.noarch
 ```
 
+> [!IMPORTANT]
+> Remember to remove the call to `venv` in the helper script `media_vault.sh`.
+
+
 ## Configuration & installation
 
 ### bareos dir dedicated console and acl profile
 
 To protect your director, it is recommended to create a restricted console,
 dedicated to the tool, with restricted acls.
+
+#### Installation of the console
+
+You can copy the given example
+
+```bash
+cp /usr/lib/bareos/defaultconfigs/bareos-dir.d/console/console_media_vault.conf.example /etc/bareos/bareos-dir.d/console/media_vault.conf
+chmod 0640 /etc/bareos/bareos-dir.d/console/media_vault.conf
+chown bareos:bareos /etc/bareos/bareos-dir.d/console/media_vault.conf
+```
 
 #### Example of console
 
@@ -69,7 +94,7 @@ dedicated to the tool, with restricted acls.
 ```conf
 Console {
   Name = "media_vault"
-  Password = "" 
+  Password = ""
   Description = "Restricted console used by media_vault.py script"
   Profile = "media_vault"
 
@@ -82,16 +107,15 @@ Console {
 }
 ```
 
-Update the password to the on you setup in the configuration ``media_vault.ini`` file.
+**Update the password** in this console, and in the configuration file ``media_vault.ini``.
 
-#### Installation of the console
 
-You can copy the given example
+#### installation of dedicated profile for restricted console
 
 ```bash
-cp console_media_vault.conf.example /etc/bareos/bareos-dir.d/console/media_vault.conf
-chmod 0640 /etc/bareos/bareos-dir.d/console/media_vault.conf
-chown bareos:bareos /etc/bareos/bareos-dir.d/console/media_vault.conf
+cp /usr/lib/bareos/defaultconfigs/bareos-dir.d/profile/profile_media_vault.conf.example /etc/bareos/bareos-dir.d/profile/media_vault.conf
+chmod 0640 /etc/bareos/bareos-dir.d/profile/media_vault.conf
+chown bareos:bareos /etc/bareos/bareos-dir.d/profile/media_vault.conf
 ```
 
 #### Example of profile for restricted console
@@ -118,13 +142,6 @@ Profile {
 }
 ```
 
-#### installation of dedicated profile for restricted console
-
-```bash
-cp profile_media_vault.conf.example /etc/bareos/bareos-dir.d/profile/media_vault.conf
-chmod 0640 /etc/bareos/bareos-dir.d/profile/media_vault.conf
-chown bareos:bareos /etc/bareos/bareos-dir.d/profile/media_vault.conf
-```
 
 ### configuration file and parameters for run
 
@@ -133,26 +150,26 @@ in its associated configuration file ``media_vault.ini``
 
 The tool will try to read first an existing configuration file in the default
 location ``/etc/bareos/media_vault.ini``. It will then try to find a file in
-the current path. 
+the current path.
 if ``--config`` parameter is specified: only this file will be considered.
 We highly recommend to use the ``--config`` parameter to specify a fully
-qualified path for the configuration file. 
+qualified path for the configuration file.
 
 Remember to verify that the file is readable by running user ``bareos``.
 
-
 Any parameter given at run time will overwrite the one defined in configuration file.
-Run ```media_vault.py --help``` to see all parameters available.
+Run `python3 /usr/lib/bareos/scripts/media_vault.py --help` to see all parameters.
 
 #### Installation of a default configuration file
 
 ```bash
-cp media_vault.ini.example.in /etc/bareos/media_vault.ini
+cp /usr/lib/bareos/defaultconfigs/media_vault.ini.example /etc/bareos/media_vault.ini
 chmod 640 /etc/bareos/media_vault.ini
 chown root:bareos /etc/bareos/media_vault.ini
 ```
 
-Then edit and adapt parameters to your needs.
+Then edit and adapt parameters to your needs. Especially the director password that need to match
+the one defined in the restricted console.
 
 ### reload the bareos director
 
@@ -171,7 +188,7 @@ To run the script execute the following
 ```bash
 su bareos -l -s /bin/bash
 source ~/.local/share/virtualenvs/bareos_media_vault/bin/activate && \
-/usr/lib/bareos/scripts/media_vault.py --config /etc/bareos/media_vault.ini && \
+python3 /usr/lib/bareos/scripts/media_vault.py --config /etc/bareos/media_vault.ini && \
 deactivate
 ```
 
@@ -229,13 +246,13 @@ prepare as much as available export slots, a list of volume to export.
 
 The script will try to export/eject this list of volumes.
 
-- If the export succeed the optional report file is prepared in its 
+- If the export succeed the optional report file is prepared in its
   dedicated location and specific format.
 - If the export failed for any reason, none of the volume will
   be ejected.
 
 If the list of volumes to be ejected exceed the number of available
-export slots, the operator can run the script again as long as 
+export slots, the operator can run the script again as long as
 candidate are found by the script, of course after emptying manually
 each time the export slots.
 
@@ -246,13 +263,13 @@ the list of exported volumes. An additional logging mechanism exists
 and will trace the informal information in its own log related to the
 ``log_dir`` parameter.
 
-A debug flag ``--debug`` can be used to display more detailed 
+A debug flag ``--debug`` can be used to display more detailed
 informations for debugging purpose.
 
 ## Run as admin job in bareos
 
 Once all the previous described steps installation and configuration
-are done. You will be able to run the job manually or adapt its 
+are done. You will be able to run the job manually or adapt its
 configuration to match your needs.
 
 The typical record for this admin job will be similar to
@@ -318,9 +335,9 @@ For example:
 
 ```bash
 su bareos -l -s /bin/bash
-source ~/.local/share/virtualenvs/bareos_media_vault/bin/activate && \
-/usr/lib/bareos/scripts/media_vault.py --config /etc/bareos/media_vault_autochanger-0.ini && \
-/usr/lib/bareos/scripts/media_vault.py --config /etc/bareos/media_vault_autochanger-1.ini
+source ~/.local/share/virtualenvs/bareos_media_vault/bin/activate
+python3 /usr/lib/bareos/scripts/media_vault.py --config /etc/bareos/media_vault_autochanger-0.ini
+python3 /usr/lib/bareos/scripts/media_vault.py --config /etc/bareos/media_vault_autochanger-1.ini
 ```
 
 - Pros: only one job and one wrapper script to maintain.

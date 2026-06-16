@@ -369,15 +369,32 @@ class MediaVault():
     def _bconsole_set_volstatus(self):
         """run update volstatus command"""
         logger.debug("entering _bconsole_set_volstatus()\n")
+        updated_any = False
         for vol in self.volumes_exported:
-            try:
-                result = self.dcj.call(
-                        f"update volume={vol['volumename']} volstatus=Archive yes"
-                    )
-                logger.debug("result:'%s'\n",result)
-            except bareos.exceptions.Error as berr:
-                logger.error("Set volstatus error: %s\n",berr, exc_info=True)
-                raise
+            volume_status = None
+            if vol["volstatus"] == "Append":
+                volume_status = "Used"
+            if self.volstatus_to_archive:
+                volume_status = "Archive"
+            if volume_status:
+                try:
+                    result = self.dcj.call(
+                            f"update volume={vol['volumename']} volstatus={volume_status} yes"
+                        )
+                    logger.debug("result:'%s'\n",result)
+                    msg = f"volume {vol['volumename']} updated to '{volume_status}'"
+                    print(msg)
+                    logger.debug(msg)
+                    updated_any = True
+                except bareos.exceptions.Error as berr:
+                    logger.error("Set volstatus error: %s\n",berr, exc_info=True)
+                    raise
+
+
+        if not updated_any:
+            msg = "No volume updated\n"
+            print(msg)
+            logger.debug(msg)
 
         logger.debug("leaving _bconsole_set_volstatus()\n")
 
@@ -595,21 +612,17 @@ class MediaVault():
 
         logger.debug("Volumes exported: %s\n",str(self.volumes_exported))
 
-        if self.volstatus_to_archive:
-            logger.debug("Entering volstatus to 'Archive'\n")
-            try:
-                self._bconsole_set_volstatus()
-                msg = "Volstatus updated to 'Archive'\n"
-                print(msg)
-                logger.debug(msg)
-            except bareos.exceptions.Error as berr:
-                logger.error("Bareos Exception %s\n", berr, exc_info=True)
-                return False
-            except RuntimeError as error:
-                logger.error(" -- Runtime unknown error -- %s\n",error, exc_info=True)
-                return False
-        else:
-            logger.debug("Volume status not updated to 'Archive'\n")
+        logger.debug("Entering _bconsole_set_volstatus\n")
+        try:
+            self._bconsole_set_volstatus()
+        except bareos.exceptions.Error as berr:
+            logger.error("Bareos Exception %s\n", berr, exc_info=True)
+            return False
+        except RuntimeError as error:
+            logger.error(" -- Runtime unknown error -- %s\n",error, exc_info=True)
+            return False
+
+        logger.debug("Leaving _bconsole_set_volstatus\n")
 
         logger.debug("End of run\n")
         return True
@@ -634,7 +647,7 @@ class MediaVault():
         sql = f"""
               select volumename, slot, storageid, volbytes, lastwritten, volretention,
                 to_char (lastwritten + interval '{self.return_time} days',
-                         '{self.returndate_format}') as returndate
+                         '{self.returndate_format}') as returndate, volstatus
               from media m
               where
                m.poolid in (select poolid from pool where name in ({s_p}))
@@ -684,7 +697,8 @@ class MediaVault():
                 "volbytes": volume["volbytes"],
                 "lastwritten": volume["lastwritten"],
                 "volretention": volume["volretention"],
-                "returndate": volume["returndate"]
+                "returndate": volume["returndate"],
+                "volstatus": volume["volstatus"]
                 }
             )
 
