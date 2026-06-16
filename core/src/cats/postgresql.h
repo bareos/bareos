@@ -99,6 +99,7 @@ class BareosDbPostgresql : public BareosDb {
                                AttributesDbRecord* ar) override;
 
   bool CheckDatabaseEncoding();
+  bool SetClientOptions();
 
   bool fields_fetched_
       = false;         /**< Marker, if field descriptions are already fetched */

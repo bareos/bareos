@@ -318,16 +318,9 @@ const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
   connected_ = true;
   if (!CheckTablesVersion(jcr)) { return errmsg; }
 
-  SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
-  SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
-  SqlQueryWithoutHandler("SET client_min_messages TO WARNING");
-
-  /* Tell PostgreSQL we are using standard conforming strings
-   * and avoid warnings such as:
-   *  WARNING:  nonstandard use of \\ in a string literal */
-  SqlQueryWithoutHandler("SET standard_conforming_strings=on");
 
   // Check that encoding is SQL_ASCII
+  if (!SetClientOptions()) { return errmsg; }
   if (!CheckDatabaseEncoding()) { return errmsg; }
 
   return nullptr;
@@ -1149,6 +1142,31 @@ bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord*,
   }
 
   Dmsg0(500, "SqlBatchInsertFileTable finishing\n");
+
+  return true;
+}
+
+bool BareosDbPostgresql::SetClientOptions()
+{
+  if (!SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'")) {
+    Mmsg(errmsg, "Could not set correct datestyle: %s\n", sql_strerror());
+    return false;
+  } else if (!SqlQueryWithoutHandler("SET cursor_tuple_fraction=1")) {
+    Mmsg(errmsg, "Could not set cursor_tuple_fraction: %s\n", sql_strerror());
+    return false;
+  } else if (!SqlQueryWithoutHandler("SET client_min_messages TO WARNING")) {
+    Mmsg(errmsg, "Could not set client_min_messages: %s\n", sql_strerror());
+    return false;
+  }
+
+  /* Tell PostgreSQL we are using standard conforming strings
+   * and avoid warnings such as:
+   *  WARNING:  nonstandard use of \\ in a string literal */
+  else if (!SqlQueryWithoutHandler("SET standard_conforming_strings=on")) {
+    Mmsg(errmsg, "Could not enable standard_conforming_strings: %s\n",
+         sql_strerror());
+    return false;
+  }
 
   return true;
 }
