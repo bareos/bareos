@@ -287,7 +287,7 @@ static inline void conv_unix_to_vss_win32_path(const char* name,
     *win32_name++ = '\\';
 
     name += 4;
-  } else if (g_platform_id != VER_PLATFORM_WIN32_WINDOWS) {
+  } else {
     // Allow path to be 32767 bytes
     *win32_name++ = '\\';
     *win32_name++ = '\\';
