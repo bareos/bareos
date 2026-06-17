@@ -1599,7 +1599,6 @@ int fstat(intptr_t fd, struct stat* sb)
   sb->st_blksize = 4096;
   sb->st_blocks = (uint32_t)(sb->st_size + 4095) / 4096;
 
-#if (_WIN32_WINNT >= 0x0600)
   if (p_GetFileInformationByHandleEx) {
     FILE_BASIC_INFO basic_info;
 
@@ -1623,7 +1622,6 @@ int fstat(intptr_t fd, struct stat* sb)
       use_fallback_data = false;
     }
   }
-#endif
 
   if (use_fallback_data) {
     sb->st_atime = CvtFtimeToUtime(info.ftLastAccessTime);
@@ -1934,7 +1932,6 @@ ssize_t readlink(const char* path, char* buf, size_t bufsiz)
 // Create a directory symlink / file symlink/junction
 int win32_symlink(const char* name1, const char* name2, _dev_t st_rdev)
 {
-#if (_WIN32_WINNT >= 0x0600)
   int dwFlags = 0x0;
 
   if (st_rdev & FILE_ATTRIBUTES_JUNCTION_POINT) {
@@ -1990,10 +1987,6 @@ int win32_symlink(const char* name1, const char* name2, _dev_t st_rdev)
 
 bail_out:
   return -1;
-#else
-  errno = ENOSYS;
-  return -1;
-#endif
 }
 
 // Create a hardlink
