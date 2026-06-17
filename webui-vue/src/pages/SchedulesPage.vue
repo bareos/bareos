@@ -105,8 +105,9 @@
             <q-space />
             <q-btn-toggle v-model="viewMode" dense unelevated no-caps
                           :options="viewModeOptions"
-                          color="white" text-color="white"
+                          text-color="grey-8"
                           toggle-color="primary" toggle-text-color="white"
+                          color="white"
                           class="q-mr-sm sched-view-toggle" />
             <q-btn flat round dense icon="chevron_left" color="white" @click="prevPeriod" />
             <span class="text-white q-mx-sm" style="min-width:160px;text-align:center">{{ periodLabel }}</span>
@@ -786,26 +787,33 @@ onMounted(() => {
   padding-bottom: 4px !important;
 }
 
-:deep(.sched-view-toggle .q-btn) {
-  min-width: 92px;
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
+.sched-view-toggle {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.sched-view-toggle :deep(.q-btn) {
+  min-width: 5.25rem;
+  padding-inline: 0.75rem;
   font-weight: 600;
 }
 
-:deep(.sched-view-toggle .q-btn:not(.q-btn--active):hover) {
-  background: rgba(255, 255, 255, 0.24);
+.sched-view-toggle :deep(.q-btn + .q-btn) {
+  border-left: 1px solid rgba(21, 101, 192, 0.16);
 }
 
-:deep(.sched-view-toggle .q-btn.q-btn--active) {
-  background: #fff;
-  color: var(--q-primary);
-  border-color: #fff;
+.sched-view-toggle :deep(.q-btn:not(.q-btn--active)) {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.sched-view-toggle :deep(.q-btn--active) {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
 
 :deep(.sched-view-toggle .q-btn:focus-visible) {
-  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline: 2px solid rgba(0, 0, 0, 0.55);
   outline-offset: 2px;
 }
 </style>
