@@ -423,9 +423,12 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     clearTimeout(runtime.exitDisconnectTimer)
     runtime.exitDisconnectTimer = null
     rejectAll(director, options.reason ?? 'Disconnected')
+    runtime.closing = true
+    if (session.status !== 'disconnected') {
+      appendInfo(director, 'Console disconnected.')
+    }
     runtime.ws?.close()
     runtime.ws = null
-    runtime.closing = false
     session.status = 'disconnected'
     session.currentPrompt = '* '
     if (options.resetInitialized) {
@@ -563,7 +566,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
 
       if (session.status !== 'disconnected') {
         session.status = 'disconnected'
-        appendInfo(director, 'Console disconnected.')
+        if (!runtime.closing) {
+          appendInfo(director, 'Console disconnected.')
+        }
       }
       rejectAll(director, 'WebSocket closed')
       clearTimeout(runtime.exitDisconnectTimer)
@@ -615,6 +620,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       || normalizedCommand === '.quit') {
       runtime.closing = true
       session.status = 'disconnecting'
+      appendInfo(director, 'Console disconnected.')
       clearTimeout(runtime.exitDisconnectTimer)
       runtime.exitDisconnectTimer = setTimeout(() => {
         if (runtime.ws !== null && runtime.closing) {
