@@ -391,7 +391,7 @@ static const ResourceItem pool_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_pool, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_pool, description_), {}},
   { "PoolType", CFG_TYPE_POOLTYPE, ITEM(res_pool, pool_type), {config::DefaultValue{"Backup"}}},
-  { "LabelFormat", CFG_TYPE_STRNAME, ITEM(res_pool, label_format), {}},
+  { "LabelFormat", CFG_TYPE_STRNAME, ITEM(res_pool, label_format), {config::Code{CFG_STR_TYPE_LABEL_FORMAT}}},
   { "LabelType", CFG_TYPE_LABEL, ITEM(res_pool, LabelType), {config::DeprecatedSince{23, 0, 0}}},
   { "CleaningPrefix", CFG_TYPE_STRNAME, ITEM(res_pool, cleaning_prefix), {config::DefaultValue{"CLN"}}},
   { "UseCatalog", CFG_TYPE_BOOL, ITEM(res_pool, use_catalog), {config::DefaultValue{"true"}}},
@@ -466,14 +466,15 @@ static ResourceTable dird_resource_tables[] = {
   { "Messages", "Messages", msgs_items, R_MSGS, sizeof(MessagesResource),
       [] (){ res_msgs = new MessagesResource(); }, reinterpret_cast<BareosResource**>(&res_msgs) },
   { "Counter", "Counters", counter_items, R_COUNTER, sizeof(CounterResource),
-      [] (){ res_counter = new CounterResource(); }, reinterpret_cast<BareosResource**>(&res_counter) },
+    [] (){ res_counter = new CounterResource(); }, reinterpret_cast<BareosResource**>(&res_counter),
+    {}, true },
   { "Profile", "Profiles", profile_items, R_PROFILE, sizeof(ProfileResource),
       [] (){ res_profile = new ProfileResource(); }, reinterpret_cast<BareosResource**>(&res_profile) },
   { "Console", "Consoles", con_items, R_CONSOLE, sizeof(ConsoleResource),
       [] (){ res_con = new ConsoleResource(); }, reinterpret_cast<BareosResource**>(&res_con) },
   { "User", "Users", user_items, R_USER, sizeof(UserResource),
       [] (){ res_user = new UserResource(); }, reinterpret_cast<BareosResource**>(&res_user) },
-  { nullptr, nullptr, nullptr, 0, 0, nullptr, nullptr }
+  { }
 };
 
 /**

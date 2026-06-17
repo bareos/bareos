@@ -9,3 +9,6 @@ If no variable expansion characters are found in the string, the Volume name wil
 **File-0002**, ...
 
 In almost all cases, you should enclose the format specification (part after the equal sign) in double quotes (:file:`"`).
+
+.. warning::
+   Variable expansion is deprecated since :sinceVersion:`26.0.0: deprecate variable expansion in label format`.

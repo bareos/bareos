@@ -443,6 +443,21 @@ void ConfigurationParser::StoreStrname(lexer* lc,
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
+    if (item->code == CFG_STR_TYPE_LABEL_FORMAT) {
+      // it would be better to do this by adding a new config type
+      // but as this is only very temporary, and adding a type correctly
+      // is very hard, this way was chosen instead
+
+      // as only the director knows about label formats, we have to do it this
+      // way
+      if (strchr(lc->str, '$') != nullptr || strchr(lc->str, '[') != nullptr) {
+        AddWarning(std::string("use of variable substitutions in ") + item->name
+                   + " on line " + std::to_string(lc->line_no) + " of file "
+                   + lc->fname + " is deprecated");
+      }
+    }
+
+
     char** p = GetItemVariablePointer<char**>(*item);
     if (*p) { free(*p); }
     *p = strdup(lc->str);

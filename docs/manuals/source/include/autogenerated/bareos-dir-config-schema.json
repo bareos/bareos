@@ -2096,7 +2096,7 @@
         },
         "LabelFormat": {
           "datatype": "STRNAME",
-          "code": 0,
+          "code": 1,
           "equals": true
         },
         "LabelType": {

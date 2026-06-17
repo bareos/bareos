@@ -637,15 +637,20 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         break;
       case 6:
         /* When */
-        if (GetCmd(ua, T_("Please enter desired start time as YYYY-MM-DD "
-                          "HH:MM:SS (return for now): "))) {
+        for (;;) {
+          if (!GetCmd(ua, T_("Please enter desired start time as YYYY-MM-DD "
+                             "HH:MM:SS (return for now): "))) {
+            break;
+          }
           if (ua->cmd[0] == 0) {
             jcr->sched_time = time(NULL);
           } else {
-            jcr->sched_time = StrToUtime(ua->cmd);
-            if (jcr->sched_time == 0) {
-              ua->SendMsg(T_("Invalid time, using current time.\n"));
-              jcr->sched_time = time(NULL);
+            auto parsed = StrToUtime(ua->cmd);
+            if (parsed == 0) {
+              ua->SendMsg(T_("Invalid time specification.\n"));
+              continue;
+            } else {
+              jcr->sched_time = parsed;
             }
           }
           goto try_again;
@@ -863,8 +868,10 @@ static bool ResetRestoreContext(UaContext* ua,
   if (rc.when) {
     jcr->sched_time = StrToUtime(rc.when);
     if (jcr->sched_time == 0) {
-      ua->SendMsg(T_("Invalid time, using current time.\n"));
-      jcr->sched_time = time(NULL);
+      ua->SendMsg(
+          T_("Invalid time specification in when; expected: \"YYYY-MM-DD "
+             "HH:MM:SS\"\n"));
+      return false;
     }
     rc.when = NULL;
   }

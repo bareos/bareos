@@ -78,6 +78,8 @@ struct ResourceTable {
     std::string name, group_name;
   };
   std::vector<Alias> aliases = {}; /* Resource name and group name aliases */
+
+  bool deprecated = false;
 };
 
 // Common Resource definitions
@@ -168,6 +170,12 @@ enum
 
   // File daemon resource types
   CFG_TYPE_CIPHER = 301 /* Encryption Cipher */
+};
+
+enum string_type : int
+{
+  CFG_STR_TYPE_DEFAULT,
+  CFG_STR_TYPE_LABEL_FORMAT,
 };
 
 struct DatatypeName {
