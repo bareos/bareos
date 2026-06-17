@@ -89,12 +89,13 @@
                     </template>
                     <template #body-cell-volume="props">
                       <td>
-                        <a v-if="props.value"
+                        <a v-if="props.value && props.value !== '*unknown*'"
                            href="#"
                            class="text-primary"
                            @click.prevent="openVolumeDetails(props.row)">
                           {{ props.value }}
                         </a>
+                        <span v-else-if="props.value">{{ props.value }}</span>
                         <span v-else>—</span>
                       </td>
                     </template>
