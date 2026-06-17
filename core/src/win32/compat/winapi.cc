@@ -68,9 +68,7 @@ t_CloseEncryptedFileRaw p_CloseEncryptedFileRaw = NULL;
 t_wunlink p_wunlink = NULL;
 t_wmkdir p_wmkdir = NULL;
 
-#if (_WIN32_WINNT >= 0x0600)
 t_GetFileInformationByHandleEx p_GetFileInformationByHandleEx = NULL;
-#endif
 
 t_GetFileAttributesA p_GetFileAttributesA = NULL;
 t_GetFileAttributesW p_GetFileAttributesW = NULL;
@@ -139,10 +137,8 @@ void InitWinAPIWrapper()
     SET_API_POINTER(CreateDirectoryA);
     SET_API_POINTER(CreateSymbolicLinkA);
 
-#if (_WIN32_WINNT >= 0x0600)
     // File Information calls
     SET_API_POINTER(GetFileInformationByHandleEx);
-#endif
 
     // Attribute calls
     SET_API_POINTER(GetFileAttributesA);
