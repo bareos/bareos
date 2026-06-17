@@ -32,25 +32,21 @@ TestName="$(get_test_name "$0")"
 export TestName
 export estat
 
-bad_db_name="bad_encoding_${TestName##*/}"
+temporary_config_file="${config_directory_dir_additional_test_config}/bad_encoding.conf"
 startup_log="${tmp}/bareos-dir-startup-bad-encoding.out"
-console_logfile="${tmp}/console.log"
 
 start_test
 
-remove_console_logfile
-trap 'set_catalog_database_name "${db_name}"' EXIT
-create_utf8_catalog_database "${bad_db_name}"
-set_catalog_database_name "${bad_db_name}"
+setup_config
+add_bad_encoded_catalog
 
 if "${BAREOS_DIRECTOR_BINARY}" -d50 -t --config "${BAREOS_CONFIG_DIR}" \
   >"${startup_log}" 2>&1; then
   exit_with_error "Bareos Director unexpectedly accepted a UTF8 catalog"
 fi
 
-if ! grep -q "Wanted SQL_ASCII, got UTF8" "${startup_log}"; then
-  cat "${startup_log}"
-  exit_with_error "Could not find database encoding error in director output"
-fi
+expect_grep "Wanted SQL_ASCII, got UTF8" \
+  "${startup_log}" \
+  "Could not find database encoding error in director output"
 
 end_test

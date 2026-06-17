@@ -12,7 +12,6 @@ exit_with_error()
 setup_config()
 {
   rm -f "${config_directory_dir_additional_test_config}"/*
-  set_catalog_database_name "${db_name}"
 }
 
 stop_director()
@@ -22,7 +21,6 @@ stop_director()
 
 start_director()
 {
-  set_catalog_database_name "${db_name}"
   "${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir" start "$director_debug_level"
   if ! "${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir" status; then
     exit_with_error "Bareos director could not be started"
@@ -43,6 +41,8 @@ EOF
 
 test_reload_will_not_crash_director()
 {
+  bconsole_command_file="${bconsole_command_file-${tmp}/bconsole_reload_command}"
+
   create_console_command_file
 
   if ! "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}"/bconsole.conf <"${bconsole_command_file}" 2>&1 >>/dev/null; then
@@ -73,18 +73,6 @@ find_added_client_in_config()
   fi
 }
 
-add_another_client()
-{
-  cat <<END_OF_DATA >"${temporary_config_file}"
-Client {
-  Name = bareos-fd-2
-  Description = "Another Client resource."
-  Address = localhost
-  Password = "@fd_password@"
-}
-END_OF_DATA
-}
-
 find_error_string_in_console_log()
 {
   local err
@@ -94,66 +82,45 @@ find_error_string_in_console_log()
   fi
 }
 
-set_catalog_database_name()
-{
-local new_db_name="$1"
-local catalog_config_file="${BAREOS_CONFIG_DIR}/bareos-dir.d/catalog/MyCatalog.conf"
-
-"${PERL}" -0pi -e \
-  "s|^  dbname = \".*\"$|  dbname = \"${new_db_name}\"|m" \
-  "${catalog_config_file}"
-}
-
 create_utf8_catalog_database()
 {
-local bad_db_name="$1"
+  local bad_db_name="${db_name}-UTF8"
 
-"${POSTGRES_BIN_PATH}/psql" --no-psqlrc -d postgres -v ON_ERROR_STOP=1 \
-  -c "DROP DATABASE IF EXISTS \"${bad_db_name}\""
-"${POSTGRES_BIN_PATH}/psql" --no-psqlrc -d postgres -v ON_ERROR_STOP=1 \
-  -c "CREATE DATABASE \"${bad_db_name}\" ENCODING 'UTF8' TEMPLATE template0"
-db_name="${bad_db_name}" "${BAREOS_SCRIPTS_DIR}/make_bareos_tables"
-db_name="${bad_db_name}" "${BAREOS_SCRIPTS_DIR}/grant_bareos_privileges" \
-  || :
+  "${POSTGRES_BIN_PATH}/psql" --no-psqlrc -d postgres -v ON_ERROR_STOP=1 \
+    -c "DROP DATABASE IF EXISTS \"${bad_db_name}\""
+  "${POSTGRES_BIN_PATH}/psql" --no-psqlrc -d postgres -v ON_ERROR_STOP=1 \
+    -c "CREATE DATABASE \"${bad_db_name}\" ENCODING 'UTF8' TEMPLATE template0"
+  db_name="${bad_db_name}" "${BAREOS_SCRIPTS_DIR}/make_bareos_tables"
+  db_name="${bad_db_name}" "${BAREOS_SCRIPTS_DIR}/grant_bareos_privileges" \
+    || :
+}
+
+add_another_client()
+{
+  cp "${current_test_directory}/additional-config/SecondClient.conf" "${temporary_config_file}"
+}
+
+add_bad_encoded_catalog()
+{
+  cp "${current_test_directory}/additional-config/BadEncoding.conf" "${temporary_config_file}"
 }
 
 add_duplicate_job_to_config()
 {
-cat <<END_OF_DATA2 >"${temporary_job_config_file}"
-Job {
-  Name = "backup-bareos-fd"
-  JobDefs = "DefaultJob"
-  Client = "bareos-fd"
-}
-END_OF_DATA2
+  cp "${current_test_directory}/additional-config/DuplicateJob.conf" "${temporary_config_file}"
 }
 
 add_empty_job_to_config()
 {
-  cat <<END_OF_DATA3 >"${temporary_job_config_file}"
-Job {
-}
-END_OF_DATA3
+  cp "${current_test_directory}/additional-config/EmptyJob.conf" "${temporary_config_file}"
 }
 
 add_duplicate_dir_to_config()
 {
-  cat <<END_OF_DATA4 >"${temporary_director_config_file}"
-Director {                            # define myself
-  Name = bareos-dir-2
-  QueryFile = "@scriptdir@/query.sql"
-  Maximum Concurrent Jobs = 10
-  Password = "@dir_password@"         # Console password
-  Messages = Daemon
-  Auditing = yes
-  Working Directory =  "@working_dir@"
-}
-END_OF_DATA4
+  cp "${current_test_directory}/additional-config/SecondDir.conf" "${temporary_config_file}"
 }
 
 add_uncommented_string_to_config()
 {
-  cat <<END_OF_DATA5 >"${temporary_config_file}"
-This is an uncommented string that causes a config abort.
-END_OF_DATA5
+  cp "${current_test_directory}/additional-config/UncommentedString.conf" "${temporary_config_file}"
 }

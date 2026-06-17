@@ -1,0 +1,6 @@
+Client {
+  Name = bareos-fd-2
+  Description = "Another Client resource."
+  Address = localhost
+  Password = "@fd_password@"
+}

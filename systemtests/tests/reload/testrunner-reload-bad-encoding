@@ -32,7 +32,7 @@ TestName="$(get_test_name "$0")"
 export TestName
 export estat
 
-bad_db_name="bad_encoding_${TestName##*/}"
+temporary_config_file="${config_directory_dir_additional_test_config}/bad_encoding.conf"
 console_logfile="${tmp}/console.log"
 bconsole_command_file="${tmp}/bconsole_reload_command"
 
@@ -40,16 +40,19 @@ bconsole_command_file="${tmp}/bconsole_reload_command"
 start_test
 ############################################
 
+setup_config
 remove_console_logfile
-trap 'set_catalog_database_name "${db_name}"' EXIT
-create_utf8_catalog_database "${bad_db_name}"
-set_catalog_database_name "${bad_db_name}"
+add_bad_encoded_catalog
 
 test_reload_will_not_crash_director
 
 if ! "${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir" status; then
   exit_with_error "Bareos Director stopped after reloading a bad catalog"
 fi
+
+expect_grep "Wanted SQL_ASCII, got UTF8" \
+  "${console_logfile}" \
+  "Could not find database encoding error in director reload output"
 
 ############################################
 end_test
