@@ -103,11 +103,11 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Scheduler Preview') }}</span>
             <q-space />
-            <q-btn-toggle v-model="viewMode" dense flat unelevated
+            <q-btn-toggle v-model="viewMode" dense unelevated no-caps
                           :options="viewModeOptions"
                           color="white" text-color="white"
                           toggle-color="primary" toggle-text-color="white"
-                          class="q-mr-sm" />
+                          class="q-mr-sm sched-view-toggle" />
             <q-btn flat round dense icon="chevron_left" color="white" @click="prevPeriod" />
             <span class="text-white q-mx-sm" style="min-width:160px;text-align:center">{{ periodLabel }}</span>
             <q-btn flat round dense icon="chevron_right" color="white" @click="nextPeriod" />
@@ -647,8 +647,8 @@ const scheduleJobCols = computed(() => [
   { name: 'actions', label: t('Actions'), field: 'actions', align: 'right', style: 'width: 1%' },
 ])
 const viewModeOptions = computed(() => [
-  { label: t('Month'), value: 'month' },
-  { label: t('Week'), value: 'week' },
+  { label: t('Month'), value: 'month', icon: 'calendar_month' },
+  { label: t('Week'), value: 'week', icon: 'view_week' },
 ])
 
 const allScheduleOptions = computed(() =>
@@ -784,5 +784,28 @@ onMounted(() => {
   border-top: 2px solid rgba(0, 0, 0, 0.15) !important;
   padding-top: 4px !important;
   padding-bottom: 4px !important;
+}
+
+:deep(.sched-view-toggle .q-btn) {
+  min-width: 92px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-weight: 600;
+}
+
+:deep(.sched-view-toggle .q-btn:not(.q-btn--active):hover) {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+:deep(.sched-view-toggle .q-btn.q-btn--active) {
+  background: #fff;
+  color: var(--q-primary);
+  border-color: #fff;
+}
+
+:deep(.sched-view-toggle .q-btn:focus-visible) {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 2px;
 }
 </style>
