@@ -44,6 +44,10 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  hideLabel: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -54,7 +58,12 @@ const model = computed({
   set: (value) => emit('update:modelValue', value),
 })
 
-const label = computed(() => props.label || t('Language'))
+const label = computed(() => {
+  if (props.hideLabel) {
+    return null
+  }
+  return props.label || t('Language')
+})
 </script>
 
 <style scoped>
