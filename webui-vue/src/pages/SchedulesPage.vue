@@ -154,6 +154,7 @@
                 <div v-if="cell.day" class="sched-cal-day-num">{{ cell.day }}</div>
                 <div v-for="(run, j) in cell.runs" :key="j" class="sched-cal-run"
                      :style="{ background: scheduleColor(run.displaySchedule) }">
+                  <JobLevelBadge v-if="run.level" :level="run.level" class="sched-cal-run-level" />
                   <span class="sched-cal-run-time">{{ run.time }}</span>
                   <span class="sched-cal-run-name">{{ run.displaySchedule }}</span>
                   <q-tooltip max-width="260px">
@@ -250,6 +251,7 @@ import {
 } from '../utils/jobs.js'
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
+import JobLevelBadge from '../components/JobLevelBadge.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
@@ -735,11 +737,15 @@ const calendarCells = computed(() => {
   return cells
 })
 
-const SCHED_COLORS = ['#1565c0', '#2e7d32', '#c62828', '#6a1b9a', '#e65100', '#00695c', '#283593', '#558b2f', '#4e342e', '#00838f']
 function scheduleColor(name) {
+  const text = String(name ?? '')
   let h = 0
-  for (let i = 0; i < name.length; i++) h = Math.imul(31, h) + name.charCodeAt(i) | 0
-  return SCHED_COLORS[Math.abs(h) % SCHED_COLORS.length]
+  for (let i = 0; i < text.length; i++) h = Math.imul(31, h) + text.charCodeAt(i) | 0
+  const unsigned = h >>> 0
+  const hue = unsigned % 360
+  const saturation = 60 + ((unsigned >>> 9) % 20)
+  const lightness = 35 + ((unsigned >>> 17) % 20)
+  return `hsl(${hue} ${saturation}% ${lightness}%)`
 }
 
 watch(tab, (value) => {
