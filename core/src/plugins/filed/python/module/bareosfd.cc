@@ -36,14 +36,7 @@
 #    pragma warning(pop)
 #  endif
 #else
-#  if defined(_MSC_VER)
-#    pragma warning(push)
-#    pragma warning(disable : 4005 4100)
-#  endif
 #  include <Python.h>
-#  if defined(_MSC_VER)
-#    pragma warning(pop)
-#  endif
 #  include "include/bareos.h"
 #endif
 
@@ -556,7 +549,8 @@ static inline PyIoPacket* NativeToPyIoPacket(io_pkt* io)
     pIoPkt->whence = io->whence;
     pIoPkt->offset = io->offset;
 #if HAVE_WIN32
-    pIoPkt->filedes = reinterpret_cast<intptr_t>(io->hndl);
+    pIoPkt->filedes
+        = static_cast<long long>(reinterpret_cast<intptr_t>(io->hndl));
 #else
     pIoPkt->filedes = io->filedes;
 #endif
@@ -769,7 +763,8 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->replace = rp->replace;
     pRestorePacket->create_status = rp->create_status;
 #if HAVE_WIN32
-    pRestorePacket->filedes = reinterpret_cast<intptr_t>(rp->hndl);
+    pRestorePacket->filedes
+        = static_cast<long long>(reinterpret_cast<intptr_t>(rp->hndl));
 #else
     pRestorePacket->filedes = rp->filedes;
 #endif

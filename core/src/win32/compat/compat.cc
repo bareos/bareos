@@ -1302,10 +1302,8 @@ static int GetWindowsFileInfo(const char* filename,
   bool use_fallback_data = true;
   WIN32_FIND_DATAW info_w;  // window's file info
   WIN32_FIND_DATAA info_a;  // window's file info
-#if (_WIN32_WINNT >= 0x0600)
   FILE_BASIC_INFO basic_info;  // window's basic file info
   HANDLE h = INVALID_HANDLE_VALUE;
-#endif
   HANDLE fh = INVALID_HANDLE_VALUE;
 
   // Cache some common vars to make code more transparent.
@@ -1324,28 +1322,24 @@ static int GetWindowsFileInfo(const char* filename,
 
     Dmsg1(debuglevel, "FindFirstFileW=%ls\n", utf16.c_str());
     fh = p_FindFirstFileW(utf16.c_str(), &info_w);
-#if (_WIN32_WINNT >= 0x0600)
     if (fh != INVALID_HANDLE_VALUE) {
       h = p_CreateFileW(
           utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
           FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
           NULL);
     }
-#endif
 
   } else if (p_FindFirstFileA) {  // use ASCII
     PoolMem win32_fname(PM_FNAME);
     unix_name_to_win32(win32_fname.addr(), filename);
     Dmsg1(debuglevel, "FindFirstFileA=%s\n", win32_fname.c_str());
     fh = p_FindFirstFileA(win32_fname.c_str(), &info_a);
-#if (_WIN32_WINNT >= 0x0600)
     if (fh != INVALID_HANDLE_VALUE) {
       h = CreateFileA(win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                       OPEN_EXISTING,
                       FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
                       NULL);
     }
-#endif
   } else {
     Dmsg0(debuglevel, "No findFirstFile A or W found\n");
   }
@@ -1364,7 +1358,6 @@ static int GetWindowsFileInfo(const char* filename,
       pnFileSizeLow = &info_a.nFileSizeLow;
     }
 
-#if (_WIN32_WINNT >= 0x0600)
     // As this is retrieved by handle it has no specific A or W call.
     if (h != INVALID_HANDLE_VALUE) {
       if (p_GetFileInformationByHandleEx) {
@@ -1388,7 +1381,6 @@ static int GetWindowsFileInfo(const char* filename,
       }
       CloseHandle(h);
     }
-#endif
 
     /* See if we got anything from the GetFileInformationByHandleEx() call if
      * not fallback to the normal info data returned by FindFirstFileW() or

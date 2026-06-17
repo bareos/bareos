@@ -483,8 +483,6 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 // Create a new instance of each plugin for this Job
 void NewPlugins(JobControlRecord* jcr)
 {
-  int num;
-
   Dmsg0(debuglevel, "=== enter NewPlugins ===\n");
   if (!dird_plugin_list) {
     Dmsg0(debuglevel, "No dir plugin list!\n");
@@ -492,7 +490,7 @@ void NewPlugins(JobControlRecord* jcr)
   }
   if (jcr->IsJobCanceled()) { return; }
 
-  num = dird_plugin_list->size();
+  int num = dird_plugin_list->size();
   Dmsg1(debuglevel, "dir-plugin-list size=%d\n", num);
   if (num == 0) { return; }
 

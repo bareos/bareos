@@ -593,8 +593,6 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 // Create a new instance of each plugin for this Job
 void NewPlugins(JobControlRecord* jcr)
 {
-  int num;
-
   Dmsg0(debuglevel, "=== enter NewPlugins ===\n");
   if (!sd_plugin_list) {
     Dmsg0(debuglevel, "No sd plugin list!\n");
@@ -604,7 +602,7 @@ void NewPlugins(JobControlRecord* jcr)
   // If plugins already loaded, just return
   if (jcr->plugin_ctx_list) { return; }
 
-  num = sd_plugin_list->size();
+  int num = sd_plugin_list->size();
   Dmsg1(debuglevel, "sd-plugin-list size=%d\n", num);
   if (num == 0) { return; }
 

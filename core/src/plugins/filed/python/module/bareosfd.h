@@ -297,7 +297,7 @@ typedef struct {
   int replace;                  /* Replace flag */
   int create_status;            /* Status from createFile() */
 #if HAVE_WIN32
-  intptr_t filedes;             /* HANDLE bridge for read/write in core */
+  long long filedes;            /* HANDLE bridge for read/write in core */
 #else
   int filedes;                  /* filedescriptor for read/write in core */
 #endif
@@ -391,7 +391,7 @@ typedef struct {
   int64_t offset;              /* Lseek argument */
   bool win32;                  /* Win32 GetLastError returned */
 #if HAVE_WIN32
-  intptr_t filedes;            /* HANDLE bridge for read/write in core */
+  long long filedes;           /* HANDLE bridge for read/write in core */
 #else
   int filedes;                 /* filedescriptor for read/write in core */
 #endif
