@@ -30,7 +30,6 @@ set -u
 . ./environment
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
-. ./reload_test_functions
 
 TestName="$(get_test_name "$0")"
 export TestName
