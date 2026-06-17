@@ -20,8 +20,8 @@
  */
 
 const JOB_LEVEL_INFO = {
-  F: { badge: 'F', color: 'primary', labelKey: 'Full' },
-  I: { badge: 'I', color: 'teal', labelKey: 'Incremental' },
+  F: { badge: 'F', color: 'positive', labelKey: 'Full' },
+  I: { badge: 'I', color: 'blue-10', labelKey: 'Incremental' },
   D: { badge: 'D', color: 'orange', labelKey: 'Differential' },
   V: { badge: 'V', color: 'purple', labelKey: 'Virtual Full' },
   B: { badge: 'B', color: 'grey', labelKey: 'Base' },
