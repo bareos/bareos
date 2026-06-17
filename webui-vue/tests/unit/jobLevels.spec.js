@@ -43,7 +43,7 @@ describe('job level helpers', () => {
   it('returns badge metadata for normalized levels', () => {
     expect(resolveJobLevelInfo('Increme')).toMatchObject({
       badge: 'I',
-      color: 'teal',
+      color: 'blue-10',
       labelKey: 'Incremental',
     })
     expect(resolveJobLevelInfo('Differe')).toMatchObject({
