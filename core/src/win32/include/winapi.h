@@ -113,12 +113,10 @@ typedef BOOL(WINAPI* t_GetFileAttributesExW)(LPCWSTR,
                                              GET_FILEEX_INFO_LEVELS,
                                              LPVOID);
 
-#  if (_WIN32_WINNT >= 0x0600)
 typedef DWORD(WINAPI* t_GetFileInformationByHandleEx)(HANDLE,
                                                       FILE_INFO_BY_HANDLE_CLASS,
                                                       LPVOID,
                                                       DWORD);
-#  endif
 
 typedef DWORD(WINAPI* t_GetFileAttributesA)(LPCSTR);
 typedef DWORD(WINAPI* t_GetFileAttributesW)(LPCWSTR);
@@ -215,9 +213,7 @@ typedef BOOL(WINAPI* t_CreateProcessW)(LPCWSTR,
 extern t_CreateProcessA p_CreateProcessA;
 extern t_CreateProcessW p_CreateProcessW;
 
-#  if (_WIN32_WINNT >= 0x0600)
 extern t_GetFileInformationByHandleEx p_GetFileInformationByHandleEx;
-#  endif
 
 BAREOS_IMPORT t_GetFileAttributesA p_GetFileAttributesA;
 BAREOS_IMPORT t_GetFileAttributesW p_GetFileAttributesW;
