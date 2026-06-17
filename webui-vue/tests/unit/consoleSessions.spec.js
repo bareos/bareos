@@ -666,6 +666,53 @@ describe('console session store', () => {
     })
   })
 
+  it('does not send follow-up commands while exit is disconnecting', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    const credentials = {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    }
+
+    consoleSessions.connectSession('bareos-dir', credentials)
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    expect(consoleSessions.sendCommand('bareos-dir', 'exit')).toBe(true)
+    expect(consoleSessions.getSession('bareos-dir').status).toBe('disconnecting')
+
+    expect(consoleSessions.sendCommand('bareos-dir', 'status director')).toBe(false)
+    expect(socket.sent).toHaveLength(2)
+  })
+
+  it('forces disconnect after exit if server does not close the socket', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    const credentials = {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    }
+
+    consoleSessions.connectSession('bareos-dir', credentials)
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    expect(consoleSessions.sendCommand('bareos-dir', 'exit')).toBe(true)
+    expect(consoleSessions.getSession('bareos-dir').status).toBe('disconnecting')
+
+    vi.advanceTimersByTime(1_500)
+    expect(consoleSessions.getSession('bareos-dir').status).toBe('disconnected')
+    expect(socket.readyState).toBe(FakeWebSocket.CLOSED)
+  })
+
   it('ignores late close events from a stale socket after reconnect', () => {
     const consoleSessions = useConsoleSessionsStore()
 
