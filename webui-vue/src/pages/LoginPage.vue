@@ -1,16 +1,10 @@
 <template>
   <q-page class="login-page flex flex-center">
     <div class="login-shell">
-      <div class="text-center q-mb-lg">
-        <img :src="bareosLogo" alt="Bareos" class="login-logo" />
-        <div class="text-h5 text-weight-bold text-white q-mt-sm login-brand-title">BAREOS</div>
-        <div class="text-subtitle2 text-white login-brand-subtitle">{{ t('Backup Archiving Recovery Open Sourced') }}</div>
-      </div>
-
       <q-card flat bordered class="login-card">
         <q-card-section class="login-card-header">
-          <q-icon name="lock" size="20px" />
-          <div class="text-h6 text-weight-medium q-ml-sm">{{ t('Login') }}</div>
+          <img :src="bareosLogo" alt="Bareos" class="login-card-logo" />
+          <div class="text-h6 text-weight-medium q-ml-sm">{{ t('Log in to Bareos') }}</div>
         </q-card-section>
         <q-card-section class="q-pt-md">
           <q-form data-testid="login-form" @submit.prevent="doLogin">
@@ -40,8 +34,10 @@
               dense
               class="login-multi-banner q-mb-md rounded-borders"
             >
-              <template #avatar><q-icon name="dns" /></template>
-              <div class="text-weight-medium">{{ multiDirectorLoginMessage }}</div>
+              <div class="row items-center no-wrap text-weight-medium">
+                <q-icon name="dns" class="q-mr-sm" />
+                <span>{{ multiDirectorLoginMessage }}</span>
+              </div>
               <div
                 v-if="multiDirectorStatuses.length > 0"
                 class="q-mt-sm"
@@ -70,7 +66,7 @@
               </div>
             </q-banner>
             <q-select
-              v-if="showDirectorField && hasAvailableDirectors"
+              v-if="showDirectorSelect"
               v-model="directorRef"
               data-testid="login-director"
               :options="directorOptions"
@@ -88,7 +84,7 @@
               <template #prepend><q-icon name="dns" /></template>
             </q-select>
             <q-input
-              v-else-if="showDirectorField && !hasAvailableDirectors"
+              v-else-if="showDirectorTextInput"
               v-model="directorRef"
               data-testid="login-director"
               :label="t('Director')"
@@ -135,10 +131,10 @@
           </q-form>
         </q-card-section>
       </q-card>
+    </div>
 
-      <div class="login-footer text-center q-mt-md">
-        Bareos WebUI &copy; 2013–2026 Bareos GmbH &amp; Co. KG
-      </div>
+    <div class="login-language-anchor">
+      <LanguageSelect v-model="localeRef" hide-label class="login-language-select" />
     </div>
   </q-page>
 </template>
@@ -173,6 +169,7 @@ import {
   SESSION_AUTH_PASSWORD,
   setCurrentProxySessionDirector,
 } from '../utils/sessionApi.js'
+import LanguageSelect from '../components/LanguageSelect.vue'
 import bareosLogo from '../assets/bareos-logo-small.png'
 
 const auth     = useAuthStore()
@@ -189,6 +186,10 @@ const username = computed({
 const directorRef = computed({
   get: () => settings.directorName,
   set: (value) => { settings.directorName = value },
+})
+const localeRef = computed({
+  get: () => settings.locale,
+  set: (value) => { settings.setLocale(value) },
 })
 const password  = ref('')
 const loading   = ref(false)
@@ -231,7 +232,12 @@ const isMultiDirectorLogin = computed(() => (
     availableDirectors: configuredDirectors.value,
   })
 ))
-const showDirectorField = computed(() => !isMultiDirectorLogin.value)
+const showDirectorSelect = computed(() => (
+  !isMultiDirectorLogin.value && directorOptions.value.length > 1
+))
+const showDirectorTextInput = computed(() => (
+  !isMultiDirectorLogin.value && !hasAvailableDirectors.value
+))
 const canReuseCurrentCredentials = computed(() => (
   canReuseDirectorCredentials({
     isAddDirectorMode: isAddDirectorMode.value,
@@ -577,19 +583,6 @@ async function skipFailedDirectors() {
   padding: 24px;
 }
 
-.login-logo {
-  height: 48px;
-}
-
-.login-brand-title {
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
-}
-
-.login-brand-subtitle {
-  color: #f6fbff;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
-}
-
 .login-card {
   border-radius: 8px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
@@ -601,6 +594,10 @@ async function skipFailedDirectors() {
   color: white;
   border-radius: 8px 8px 0 0;
   background: var(--q-primary);
+}
+
+.login-card-logo {
+  height: 28px;
 }
 
 .login-input,
@@ -638,8 +635,36 @@ async function skipFailedDirectors() {
   letter-spacing: 0;
 }
 
-.login-footer {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.75);
+.login-language-anchor {
+  position: fixed;
+  left: 12px;
+  bottom: 0;
+  z-index: 10;
+  padding: 10px 0;
+  opacity: 0.78;
+  transition: opacity 0.2s ease;
 }
+
+.login-language-anchor:hover,
+.login-language-anchor:focus-within {
+  opacity: 1;
+}
+
+.login-language-select {
+  min-width: 156px;
+  font-size: 0.85rem;
+}
+
+.login-language-select :deep(.q-field__control) {
+  min-height: 30px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.login-language-select :deep(.q-field__label),
+.login-language-select :deep(.q-field__native span),
+.login-language-select :deep(.q-item__label) {
+  font-size: 0.8rem;
+}
+
 </style>
