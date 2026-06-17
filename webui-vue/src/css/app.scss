@@ -231,9 +231,17 @@ $bareos-blue-dark: #005a96;
   padding: 1px 4px;
   margin-bottom: 2px;
   display: flex;
+  align-items: center;
   gap: 3px;
   overflow: hidden;
   cursor: default;
+}
+
+.sched-cal-run-level {
+  flex-shrink: 0;
+  transform: scale(0.78);
+  transform-origin: left center;
+  margin-right: -2px;
 }
 
 .sched-cal-run-time {
