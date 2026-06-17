@@ -7,10 +7,10 @@
         v-model="tlDays"
         dense unelevated no-caps
         :options="timelineRangeOptions"
-        text-color="grey-8"
+        text-color="grey-9"
+        color="grey-3"
         toggle-color="primary"
         toggle-text-color="white"
-        color="white"
         class="q-mr-sm job-timeline-range-toggle"
       />
       <q-btn flat round dense icon="refresh" color="white" @click="tlRefresh" />
@@ -397,14 +397,6 @@ onUnmounted(() => { _tlResizeObs?.disconnect() })
 
 .job-timeline-range-toggle :deep(.q-btn + .q-btn) {
   border-left: 1px solid rgba(21, 101, 192, 0.16);
-}
-
-.job-timeline-range-toggle :deep(.q-btn:not(.q-btn--active)) {
-  background: rgba(255, 255, 255, 0.96);
-}
-
-.job-timeline-range-toggle :deep(.q-btn--active) {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
 
 .tl-group + .tl-group {
