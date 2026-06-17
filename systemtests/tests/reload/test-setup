@@ -19,4 +19,6 @@ stop_director
 ${BAREOS_SCRIPTS_DIR}/cleanup
 ${BAREOS_SCRIPTS_DIR}/setup
 
+create_utf8_catalog_database
+
 start_director
