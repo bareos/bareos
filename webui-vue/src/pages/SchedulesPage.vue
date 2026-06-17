@@ -105,13 +105,16 @@
             <q-space />
             <q-btn-toggle v-model="viewMode" dense unelevated no-caps
                           :options="viewModeOptions"
-                          text-color="grey-8"
-                          toggle-color="primary" toggle-text-color="white"
-                          color="white"
+                          text-color="grey-9"
+                          color="grey-3"
+                          toggle-color="primary"
+                          toggle-text-color="white"
                           class="q-mr-sm sched-view-toggle" />
-            <q-btn flat round dense icon="chevron_left" color="white" @click="prevPeriod" />
-            <span class="text-white q-mx-sm" style="min-width:160px;text-align:center">{{ periodLabel }}</span>
-            <q-btn flat round dense icon="chevron_right" color="white" @click="nextPeriod" />
+            <div class="row items-center no-wrap sched-period-nav">
+              <q-btn flat round dense icon="chevron_left" color="white" @click="prevPeriod" />
+              <span class="text-white sched-period-label">{{ periodLabel }}</span>
+              <q-btn flat round dense icon="chevron_right" color="white" @click="nextPeriod" />
+            </div>
             <q-btn flat round dense icon="today" color="white" class="q-ml-sm" :title="t('Go to today')" @click="goToday" />
           </q-card-section>
           <q-card-section v-if="statusError" class="q-pa-none">
@@ -804,16 +807,21 @@ onMounted(() => {
   border-left: 1px solid rgba(21, 101, 192, 0.16);
 }
 
-.sched-view-toggle :deep(.q-btn:not(.q-btn--active)) {
-  background: rgba(255, 255, 255, 0.96);
-}
-
-.sched-view-toggle :deep(.q-btn--active) {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
-}
-
 :deep(.sched-view-toggle .q-btn:focus-visible) {
   outline: 2px solid rgba(0, 0, 0, 0.55);
   outline-offset: 2px;
+}
+
+.sched-period-nav {
+  gap: 0.125rem;
+}
+
+.sched-period-label {
+  display: inline-block;
+  min-width: 9rem;
+  margin: 0;
+  padding: 0 0.125rem;
+  text-align: center;
+  white-space: nowrap;
 }
 </style>
