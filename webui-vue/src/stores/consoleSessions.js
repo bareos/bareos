@@ -27,6 +27,7 @@ import { defaultDirectorWsUrl } from '../utils/directorCommandSocket.js'
 const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultDirectorWsUrl()
 const RAW_CMD_TIMEOUT_MS = 300_000
 const COMPLETION_TIMEOUT_MS = 5_000
+const EXIT_DISCONNECT_TIMEOUT_MS = 1_500
 const COMPLETION_NOISE_PREFIXES = [
   'Automatically selected Catalog:',
   'Using Catalog ',
@@ -82,6 +83,8 @@ function createSession(director) {
 function createRuntime() {
   return {
     ws: null,
+    closing: false,
+    exitDisconnectTimer: null,
     cmdSeq: 0,
     pendingCmds: new Map(),
     completionRequests: new Map(),
@@ -417,9 +420,12 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     const session = getSession(director)
     const runtime = getRuntime(director)
 
+    clearTimeout(runtime.exitDisconnectTimer)
+    runtime.exitDisconnectTimer = null
     rejectAll(director, options.reason ?? 'Disconnected')
     runtime.ws?.close()
     runtime.ws = null
+    runtime.closing = false
     session.status = 'disconnected'
     session.currentPrompt = '* '
     if (options.resetInitialized) {
@@ -478,6 +484,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       }
 
       if (msg.type === 'auth_ok') {
+        clearTimeout(runtime.exitDisconnectTimer)
+        runtime.exitDisconnectTimer = null
+        runtime.closing = false
         session.status = 'connected'
         appendInfo(
           director,
@@ -542,6 +551,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       session.status = 'error'
       appendErr(director, `Cannot connect to proxy at ${WS_URL}`)
       rejectAll(director, 'WebSocket error')
+      clearTimeout(runtime.exitDisconnectTimer)
+      runtime.exitDisconnectTimer = null
+      runtime.closing = false
     }
 
     ws.onclose = () => {
@@ -554,6 +566,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
         appendInfo(director, 'Console disconnected.')
       }
       rejectAll(director, 'WebSocket closed')
+      clearTimeout(runtime.exitDisconnectTimer)
+      runtime.exitDisconnectTimer = null
+      runtime.closing = false
       runtime.ws = null
     }
 
@@ -571,9 +586,15 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     const session = getSession(director)
     const runtime = getRuntime(director)
     const previousPrompt = session.currentPrompt
+    const normalizedCommand = String(command ?? '').trim().toLowerCase()
 
     if (!runtime.ws || runtime.ws.readyState !== WebSocket.OPEN) {
       appendErr(director, 'Not connected to director.')
+      return false
+    }
+
+    if (runtime.closing) {
+      appendInfo(director, 'Console is disconnecting. Reconnect before sending commands.')
       return false
     }
 
@@ -589,10 +610,24 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
 
     runtime.pendingCmds.set(id, { timer })
     runtime.ws.send(JSON.stringify({ type: 'command', id, command, stream: true }))
+    if (normalizedCommand === 'exit'
+      || normalizedCommand === 'quit'
+      || normalizedCommand === '.quit') {
+      runtime.closing = true
+      session.status = 'disconnecting'
+      clearTimeout(runtime.exitDisconnectTimer)
+      runtime.exitDisconnectTimer = setTimeout(() => {
+        if (runtime.ws !== null && runtime.closing) {
+          runtime.ws.close()
+        }
+      }, EXIT_DISCONNECT_TIMEOUT_MS)
+    }
     if (isInteractivePrompt(previousPrompt)) {
       session.currentPrompt = ''
     }
-    session.status = 'connected'
+    if (!runtime.closing) {
+      session.status = 'connected'
+    }
     return true
   }
 
@@ -600,7 +635,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     const session = getSession(director)
     const runtime = getRuntime(director)
 
-    if (!runtime.ws || runtime.ws.readyState !== WebSocket.OPEN) {
+    if (!runtime.ws || runtime.ws.readyState !== WebSocket.OPEN || runtime.closing) {
       return false
     }
 

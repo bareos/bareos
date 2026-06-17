@@ -1021,7 +1021,9 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
       const bool should_close_console_session
           = !cfg.json_mode
             && IsExpectedConsoleExitCommand(
-                current_prompt == DirectorPrompt::Main, command);
+                current_prompt == DirectorPrompt::Main
+                    || current_prompt == DirectorPrompt::Other,
+                command);
 
       try {
         CallResult result;
