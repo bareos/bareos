@@ -286,7 +286,19 @@ int main(int argc, char* argv[])
   if (!work_dir.empty()) {
     working_directory = work_dir.c_str();
   } else if (!my_config) {
+#if defined(HAVE_WIN32)
+    static char temp_directory[MAX_PATH];
+    auto temp_directory_length
+        = GetTempPathA(sizeof(temp_directory), temp_directory);
+    if (temp_directory_length > 0
+        && temp_directory_length < sizeof(temp_directory)) {
+      working_directory = temp_directory;
+    } else {
+      working_directory = "C:\\Windows\\Temp";
+    }
+#else
     working_directory = "/tmp";
+#endif
   } else if (!me->working_directory) {
     Emsg1(M_ERROR_TERM, 0,
           T_("No Working Directory defined in %s. Cannot continue.\n"),
