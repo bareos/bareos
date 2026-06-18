@@ -440,6 +440,7 @@ static std::string ListDevicesInConfig(const ConfigurationParser* config)
   for (BareosResource* resource = nullptr;
        (resource = config->GetNextRes(R_DEVICE, resource));) {
     DeviceResource* device = dynamic_cast<DeviceResource*>(resource);
+    if (device->changer_res) { continue; }
     std::string device_str;
     device_str += " \"";
     device_str += device->resource_name_;
