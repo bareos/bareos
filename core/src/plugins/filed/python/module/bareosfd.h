@@ -296,11 +296,11 @@ typedef struct {
   const char* RegexWhere;       /* Regex where */
   int replace;                  /* Replace flag */
   int create_status;            /* Status from createFile() */
-#if HAVE_WIN32
-  long long filedes;            /* HANDLE bridge for read/write in core */
-#else
-  int filedes;                  /* filedescriptor for read/write in core */
-#endif
+#  if HAVE_WIN32
+  long long filedes; /* HANDLE bridge for read/write in core */
+#  else
+  int filedes; /* filedescriptor for read/write in core */
+#  endif
 
   const char* original_file_name;
   const char* original_link_name;
@@ -345,11 +345,11 @@ static PyMemberDef PyRestorePacket_members[] = {
      (char*)"Replace flag"},
     {(char*)"create_status", T_INT, offsetof(PyRestorePacket, create_status), 0,
      (char*)"Status from createFile()"},
-#if HAVE_WIN32
+#  if HAVE_WIN32
     {(char*)"filedes", T_LONGLONG, offsetof(PyRestorePacket, filedes), 0,
-#else
+#  else
     {(char*)"filedes", T_INT, offsetof(PyRestorePacket, filedes), 0,
-#endif
+#  endif
      (char*)"file descriptor of current file"},
     {(char*)"original_file_name", T_STRING,
      offsetof(PyRestorePacket, original_file_name), 0,
@@ -390,11 +390,11 @@ typedef struct {
   int32_t whence;              /* Lseek argument */
   int64_t offset;              /* Lseek argument */
   bool win32;                  /* Win32 GetLastError returned */
-#if HAVE_WIN32
-  long long filedes;           /* HANDLE bridge for read/write in core */
-#else
-  int filedes;                 /* filedescriptor for read/write in core */
-#endif
+#  if HAVE_WIN32
+  long long filedes; /* HANDLE bridge for read/write in core */
+#  else
+  int filedes; /* filedescriptor for read/write in core */
+#  endif
 } PyIoPacket;
 
 // Forward declarations of type specific functions.
@@ -431,11 +431,11 @@ static PyMemberDef PyIoPacket_members[]
         (char*)"Lseek argument"},
        {(char*)"win32", T_BOOL, offsetof(PyIoPacket, win32), 0,
         (char*)"Win32 GetLastError returned"},
-#if HAVE_WIN32
+#  if HAVE_WIN32
        {(char*)"filedes", T_LONGLONG, offsetof(PyIoPacket, filedes), 0,
-#else
+#  else
        {(char*)"filedes", T_INT, offsetof(PyIoPacket, filedes), 0,
-#endif
+#  endif
         (char*)"file descriptor of current file"},
        {NULL, 0, 0, 0, NULL}};
 

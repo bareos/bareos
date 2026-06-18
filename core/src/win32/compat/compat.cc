@@ -1300,8 +1300,8 @@ static int GetWindowsFileInfo(const char* filename,
                               bool is_directory)
 {
   bool use_fallback_data = true;
-  WIN32_FIND_DATAW info_w;  // window's file info
-  WIN32_FIND_DATAA info_a;  // window's file info
+  WIN32_FIND_DATAW info_w;     // window's file info
+  WIN32_FIND_DATAA info_a;     // window's file info
   FILE_BASIC_INFO basic_info;  // window's basic file info
   HANDLE h = INVALID_HANDLE_VALUE;
   HANDLE fh = INVALID_HANDLE_VALUE;

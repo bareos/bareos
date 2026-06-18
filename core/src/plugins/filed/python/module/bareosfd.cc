@@ -778,8 +778,8 @@ static inline void PyRestorePacketToNative(PyRestorePacket* pRestorePacket,
   // Only copy back the fields that are allowed to be changed.
   rp->create_status = pRestorePacket->create_status;
 #if HAVE_WIN32
-  rp->hndl
-      = reinterpret_cast<HANDLE>(static_cast<intptr_t>(pRestorePacket->filedes));
+  rp->hndl = reinterpret_cast<HANDLE>(
+      static_cast<intptr_t>(pRestorePacket->filedes));
 #else
   rp->filedes = pRestorePacket->filedes;
 #endif
