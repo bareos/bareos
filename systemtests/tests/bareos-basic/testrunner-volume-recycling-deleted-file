@@ -1,0 +1,116 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Recycle a file volume after deleting its backing file.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+runner_tmp="${tmp}/${TestName}"
+mkdir -p "${runner_tmp}"
+
+file_size()
+{
+  if [ "$(uname)" = FreeBSD ]; then
+    stat -f %z "$@"
+  else
+    stat -c %s "$@"
+  fi
+}
+
+start_test
+
+first_backup_log="${runner_tmp}/first-backup.out"
+second_backup_log="${runner_tmp}/second-backup.out"
+second_backup_joblog="${runner_tmp}/second-backup-joblog.out"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${first_backup_log}
+run job=recyclejob level=Full yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+
+volume_name=$(
+  awk '/Labeled new Volume "/ {
+         gsub(/^.*Labeled new Volume "/, "");
+         gsub(/" on device .*$/, "");
+         print;
+         exit
+       }' "${first_backup_log}"
+)
+
+if [ -z "${volume_name}" ]; then
+  echo "Failed to detect recycled volume name." >&2
+  exit 1
+fi
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${runner_tmp}/purge.out
+purge volume=${volume_name} yes
+messages
+quit
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+
+rm -f "storage/${volume_name}"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${second_backup_log}
+run job=recyclejob level=Full yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+
+if [ ! -f "storage/${volume_name}" ]; then
+  echo "Recycled volume file was not recreated." >&2
+  exit 1
+fi
+
+if [ "$(file_size "storage/${volume_name}")" -le 0 ]; then
+  echo "Recycled volume file is empty after recreation." >&2
+  exit 1
+fi
+
+second_jobid=$(
+  grep 'Job queued. JobId=' "${second_backup_log}" |
+    sed -n -e 's/^.*JobId=//p' |
+    tail -n1
+)
+
+if [ -z "${second_jobid}" ]; then
+  echo "Failed to detect second job id." >&2
+  exit 1
+fi
+
+bin/bconsole <<<"list joblog jobid=${second_jobid}" >"${second_backup_joblog}"
+
+expect_grep "Recycled volume \"${volume_name}\"" \
+  "${second_backup_log}" \
+  "Recycled volume was not reused."
+
+expect_grep "Recreating file" \
+  "${second_backup_joblog}" \
+  "Missing joblog message for recreated file."
+
+expect_not_grep "The sizes do not match!" \
+  "${second_backup_log}" \
+  "Catalog still reports the wrong volume size."
+
+end_test
