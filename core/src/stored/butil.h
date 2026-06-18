@@ -49,6 +49,10 @@ void LoadSdConfigIfAvailable(const char* config_path);
 void DisplayTapeErrorStatus(JobControlRecord* jcr, Device* dev);
 std::string AvailableDevicesListing();
 
+#if defined(HAVE_WIN32) && defined(BUILD_TESTING)
+std::string DirectoryNameForTest(const std::string& path);
+#endif
+
 } /* namespace storagedaemon */
 
 #endif  // BAREOS_STORED_BUTIL_H_

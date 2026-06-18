@@ -117,8 +117,21 @@ static std::string DirectoryName(const std::string& path)
   auto separator = path.find_last_of("/\\");
   if (separator == std::string::npos) { return "."; }
   if (separator == 0) { return path.substr(0, 1); }
+#if defined(HAVE_WIN32)
+  if (separator == 2 && path.size() >= 3 && path[1] == ':'
+      && IsPathSeparator(path[2])) {
+    return path.substr(0, 3);
+  }
+#endif
   return path.substr(0, separator);
 }
+
+#if defined(HAVE_WIN32) && defined(BUILD_TESTING)
+std::string DirectoryNameForTest(const std::string& path)
+{
+  return DirectoryName(path);
+}
+#endif
 
 static std::string BaseName(const std::string& path)
 {

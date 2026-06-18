@@ -163,3 +163,10 @@ TEST(SdButil, IsLocalFilesystemVolumePath)
   EXPECT_TRUE(
       storagedaemon::IsLocalFilesystemVolumePath(quoted_file_path.c_str()));
 }
+
+#if defined(HAVE_WIN32)
+TEST(SdButil, DirectoryNameKeepsWindowsDriveRoot)
+{
+  EXPECT_EQ(storagedaemon::DirectoryNameForTest("C:\\FileInRoot"), "C:\\");
+}
+#endif
