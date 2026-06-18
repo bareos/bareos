@@ -27,14 +27,10 @@
 
 #if defined(HAVE_WIN32)
 #  include "include/bareos.h"
-#  if defined(_MSC_VER)
-#    pragma warning(push)
-#    pragma warning(disable : 4005 4100)
-#  endif
+#  pragma warning(push)
+#  pragma warning(disable : 4005 4100)
 #  include <Python.h>
-#  if defined(_MSC_VER)
-#    pragma warning(pop)
-#  endif
+#  pragma warning(pop)
 #else
 #  include <Python.h>
 #  include "include/bareos.h"
