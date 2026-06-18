@@ -44,12 +44,26 @@ END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 
 volume_name=$(
-  awk '/Labeled new Volume "/ {
-         gsub(/^.*Labeled new Volume "/, "");
-         gsub(/" on device .*$/, "");
-         print;
-         exit
-       }' "${first_backup_log}"
+  awk '
+    /Volume name\(s\):/ {
+      gsub(/^.*Volume name\(s\):[[:space:]]*/, "");
+      split($0, volumes, /\|/);
+      print volumes[1];
+      exit
+    }
+    /Recycled volume "/ {
+      gsub(/^.*Recycled volume "/, "");
+      gsub(/" on device .*$/, "");
+      print;
+      exit
+    }
+    /Labeled new Volume "/ {
+      gsub(/^.*Labeled new Volume "/, "");
+      gsub(/" on device .*$/, "");
+      print;
+      exit
+    }
+  ' "${first_backup_log}"
 )
 
 if [ -z "${volume_name}" ]; then
