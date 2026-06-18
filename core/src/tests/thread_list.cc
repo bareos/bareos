@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -75,6 +75,7 @@ class WaitCondition {
 static std::atomic<int> thread_counter(0);
 static std::vector<std::unique_ptr<WaitCondition>> list_of_wait_conditions;
 
+#if !defined(HAVE_WIN32)
 static void* ThreadHandler(ConfigurationParser*, void* data)
 {
   WaitCondition* cond = reinterpret_cast<WaitCondition*>(data);
@@ -89,6 +90,7 @@ static void* ShutdownCallback(void* data)
   cond->NotifyOne();
   return nullptr;
 }
+#endif
 
 static constexpr int maximum_thread_count = 10;
 

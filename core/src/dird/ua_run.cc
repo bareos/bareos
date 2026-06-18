@@ -797,8 +797,6 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
   }
   return 1;
 
-  return -1;
-
 try_again:
   return 0;
 }

@@ -185,7 +185,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
                         void* value,
                         bool reverse)
 {
-  int i;
+  int i{};
   bDirEvent event;
   alist<PluginContext*>* plugin_ctx_list;
   bRC rc = bRC_OK;
@@ -214,7 +214,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
 
   // See if we need to trigger the loaded plugins in reverse order.
   if (reverse) {
-    PluginContext* ctx;
+    PluginContext* ctx = nullptr;
 
     foreach_alist_rindex (i, ctx, plugin_ctx_list) {
       if (trigger_plugin_event(eventType, &event, ctx, value, &i, &rc)) {
@@ -222,7 +222,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       }
     }
   } else {
-    PluginContext* ctx;
+    PluginContext* ctx = nullptr;
 
     foreach_alist_index (i, ctx, plugin_ctx_list) {
       if (trigger_plugin_event(eventType, &event, ctx, value, &i, &rc)) {
@@ -265,9 +265,6 @@ static void DumpDirPlugins(FILE* fp) { DumpPlugins(dird_plugin_list, fp); }
  */
 void LoadDirPlugins(const char* plugin_dir, alist<const char*>* plugin_names)
 {
-  Plugin* plugin;
-  int i;
-
   Dmsg0(debuglevel, "Load dir plugins\n");
   if (!plugin_dir) {
     Dmsg0(debuglevel, "No dir plugin dir!\n");
@@ -288,7 +285,7 @@ void LoadDirPlugins(const char* plugin_dir, alist<const char*>* plugin_names)
   }
   /* Verify that the plugin is acceptable, and print information
    *  about it. */
-  foreach_alist_index (i, plugin, dird_plugin_list) {
+  for (auto* plugin : *dird_plugin_list) {
     Dmsg1(debuglevel, "Loaded plugin: %s\n", plugin->file);
   }
 
@@ -393,13 +390,15 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
  */
 void DispatchNewPluginOptions(JobControlRecord* jcr)
 {
-  int i, j, len;
-  Plugin* plugin;
+  int i{}, j{}, len{};
+  Plugin* plugin = nullptr;
   uint32_t instance;
   bDirEvent event;
   bDirEventType eventType;
-  char *bp, *plugin_name, *option;
-  const char* plugin_options;
+  char* bp = nullptr;
+  char* plugin_name = nullptr;
+  char* option = nullptr;
+  const char* plugin_options = nullptr;
   PoolMem priv_plugin_options(PM_MESSAGE);
 
   if (!dird_plugin_list || dird_plugin_list->empty()) { return; }
@@ -484,9 +483,6 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 // Create a new instance of each plugin for this Job
 void NewPlugins(JobControlRecord* jcr)
 {
-  int i, num;
-  Plugin* plugin;
-
   Dmsg0(debuglevel, "=== enter NewPlugins ===\n");
   if (!dird_plugin_list) {
     Dmsg0(debuglevel, "No dir plugin list!\n");
@@ -494,12 +490,12 @@ void NewPlugins(JobControlRecord* jcr)
   }
   if (jcr->IsJobCanceled()) { return; }
 
-  num = dird_plugin_list->size();
+  int num = dird_plugin_list->size();
   Dmsg1(debuglevel, "dir-plugin-list size=%d\n", num);
   if (num == 0) { return; }
 
   jcr->plugin_ctx_list = new alist<PluginContext*>(10, owned_by_alist);
-  foreach_alist_index (i, plugin, dird_plugin_list) {
+  for (auto* plugin : *dird_plugin_list) {
     // Start a new instance of each plugin
     instantiate_plugin(jcr, plugin, 0);
   }

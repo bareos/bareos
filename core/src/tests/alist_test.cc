@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -77,7 +77,7 @@ void TestForeachAlist(alist<const char*>* list)
     i++;
   }
 
-  const char* str;
+  const char* str = nullptr;
   foreach_alist_index (i, str, list) {
     sprintf(buf, "%d", i);
     EXPECT_STREQ(str, buf);

@@ -171,7 +171,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
   char* p;
   int i, j;
   auto options = lc->options;
-  int token, state, state2 = 0, code = 0, code2 = 0;
+  int token = BCT_ERROR, state, state2 = 0, code = 0, code2 = 0;
   bool found;
   utime_t utime;
   BareosResource* res;

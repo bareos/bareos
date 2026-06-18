@@ -670,7 +670,8 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
   int32_t n = 0;
   BareosSocket* fd = jcr->file_bsock;
   bool fd_ok = false;
-  uint32_t JobFiles, JobErrors;
+  uint32_t JobFiles = 0;
+  uint32_t JobErrors = 0;
   uint32_t JobWarnings = 0;
   uint64_t ReadBytes = 0;
   uint64_t JobBytes = 0;

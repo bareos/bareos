@@ -430,7 +430,7 @@ class DiskHandles : public OutputHandleGenerator {
      * and just continue on, but I am not sure if Windows even allows us to
      * write to the disk in that case. */
 
-    std::vector<open_volume> volumes;
+    std::vector<open_volume> found_volumes;
 
     wchar_t volume_guid[MAX_PATH];
     HANDLE iter = FindFirstVolumeW(volume_guid, std::size(volume_guid));
@@ -600,7 +600,7 @@ class DiskHandles : public OutputHandleGenerator {
             CloseHandle(hndl);
           } else if (requested_disk_id && !not_requested_disk_id) {
             logger->Trace("volume {} => kept", FromUtf16(guid));
-            volumes.emplace_back(std::move(guid), hndl);
+            found_volumes.emplace_back(std::move(guid), hndl);
           } else {
             // ignore (see above)
             logger->Trace("volume {} => ignored (no extents)", FromUtf16(guid));
@@ -619,7 +619,7 @@ class DiskHandles : public OutputHandleGenerator {
 
     FindVolumeClose(iter);
 
-    return volumes;
+    return found_volumes;
   }
 
   void DismountVolume(const open_volume& volume)
@@ -646,12 +646,12 @@ class DiskHandles : public OutputHandleGenerator {
     logger->Trace("volume {} was dismounted", FromUtf16(volume.guid));
   }
 
-  std::vector<HANDLE> OpenAll(std::span<std::size_t> ids)
+  std::vector<HANDLE> OpenAll(std::span<std::size_t> disk_ids)
   {
     std::vector<HANDLE> result;
-    result.reserve(ids.size());
+    result.reserve(disk_ids.size());
 
-    for (auto id : ids) {
+    for (auto id : disk_ids) {
       logger->Trace("looking at \\\\.\\PhysicalDrive{}", id);
       auto disk_path = libbareos::format(L"\\\\.\\PhysicalDrive{}", id);
       HANDLE output

@@ -27,7 +27,10 @@
 
 #if defined(HAVE_WIN32)
 #  include "include/bareos.h"
+#  pragma warning(push)
+#  pragma warning(disable : 4005 4100)
 #  include <Python.h>
+#  pragma warning(pop)
 #else
 #  include <Python.h>
 #  include "include/bareos.h"
@@ -542,7 +545,8 @@ static inline PyIoPacket* NativeToPyIoPacket(io_pkt* io)
     pIoPkt->whence = io->whence;
     pIoPkt->offset = io->offset;
 #if HAVE_WIN32
-    pIoPkt->filedes = reinterpret_cast<int>(io->hndl);
+    pIoPkt->filedes
+        = static_cast<long long>(reinterpret_cast<intptr_t>(io->hndl));
 #else
     pIoPkt->filedes = io->filedes;
 #endif
@@ -577,7 +581,7 @@ static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, io_pkt* io)
   io->win32 = pIoPkt->win32;
   io->status = pIoPkt->status;
 #if HAVE_WIN32
-  io->hndl = reinterpret_cast<HANDLE>(pIoPkt->filedes);
+  io->hndl = reinterpret_cast<HANDLE>(static_cast<intptr_t>(pIoPkt->filedes));
 #else
   io->filedes = pIoPkt->filedes;
 #endif
@@ -755,7 +759,8 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->replace = rp->replace;
     pRestorePacket->create_status = rp->create_status;
 #if HAVE_WIN32
-    pRestorePacket->filedes = reinterpret_cast<int>(rp->hndl);
+    pRestorePacket->filedes
+        = static_cast<long long>(reinterpret_cast<intptr_t>(rp->hndl));
 #else
     pRestorePacket->filedes = rp->filedes;
 #endif
@@ -773,7 +778,8 @@ static inline void PyRestorePacketToNative(PyRestorePacket* pRestorePacket,
   // Only copy back the fields that are allowed to be changed.
   rp->create_status = pRestorePacket->create_status;
 #if HAVE_WIN32
-  rp->hndl = reinterpret_cast<HANDLE>(pRestorePacket->filedes);
+  rp->hndl = reinterpret_cast<HANDLE>(
+      static_cast<intptr_t>(pRestorePacket->filedes));
 #else
   rp->filedes = pRestorePacket->filedes;
 #endif
@@ -2238,12 +2244,12 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
        "IoPacket(func=%d, count=%" PRId32 ", flags=%" PRId32
        ", mode=%04o, buf=\"%s\", fname=\"%s\", status=%" PRId32
        ", io_errno=%" PRId32 ", lerror=%" PRId32 ", whence=%" PRId32
-       ", offset=%" PRId64 ", win32=%d, filedes=%d)",
+       ", offset=%" PRId64 ", win32=%d, filedes=%" PRIdPTR ")",
        self->func, self->count, self->flags,
        static_cast<unsigned int>(self->mode & ~S_IFMT),
        PyGetByteArrayValue(self->buf), self->fname, self->status,
        self->io_errno, self->lerror, self->whence, self->offset, self->win32,
-       self->filedes);
+       static_cast<intptr_t>(self->filedes));
   s = PyUnicode_FromString(buf.c_str());
 
   return s;
@@ -2274,13 +2280,33 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   self->win32 = false;
   self->filedes = kInvalidFiledescriptor;
 
+#if HAVE_WIN32
+  long long parsed_offset = static_cast<long long>(self->offset);
+  int parsed_win32 = self->win32 ? 1 : 0;
+  long long parsed_filedes = static_cast<long long>(self->filedes);
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|Hiiiosiiiilci", kwlist, &self->func, &self->count,
+          args, kwds, "|HiiiosiiiiLpL", kwlist, &self->func, &self->count,
           &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
-          &self->io_errno, &self->lerror, &self->whence, &self->offset,
-          &self->win32, &self->filedes)) {
+          &self->io_errno, &self->lerror, &self->whence, &parsed_offset,
+          &parsed_win32, &parsed_filedes)) {
     return -1;
   }
+  self->offset = static_cast<int64_t>(parsed_offset);
+  self->win32 = parsed_win32 != 0;
+  self->filedes = static_cast<intptr_t>(parsed_filedes);
+#else
+  long long parsed_offset = static_cast<long long>(self->offset);
+  int parsed_win32 = self->win32 ? 1 : 0;
+  if (!PyArg_ParseTupleAndKeywords(
+          args, kwds, "|HiiiosiiiiLpi", kwlist, &self->func, &self->count,
+          &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
+          &self->io_errno, &self->lerror, &self->whence, &parsed_offset,
+          &parsed_win32, &self->filedes)) {
+    return -1;
+  }
+  self->offset = static_cast<int64_t>(parsed_offset);
+  self->win32 = parsed_win32 != 0;
+#endif
 
   return 0;
 }
