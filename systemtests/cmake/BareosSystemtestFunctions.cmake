@@ -800,6 +800,10 @@ function(add_systemtest_from_directory test_dir test_basename)
     CONFIGURE_DEPENDS "${test_dir}/testrunner-*"
   )
   foreach(testfilename ${all_tests})
+    if(NOT EXISTS "${test_dir}/${testfilename}")
+      message(DEBUG "Skipping out-of-date testrunner ${testfilename}")
+      continue()
+    endif()
     string(REPLACE "testrunner-" "" test ${testfilename})
     add_systemtest(${test_basename}:${test} ${test_dir}/${testfilename})
     set_tests_properties(
