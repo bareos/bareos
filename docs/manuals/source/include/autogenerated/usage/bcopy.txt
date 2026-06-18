@@ -28,6 +28,7 @@ Options:
     -D,--director <director>
         Specify a director name specified in the storage. Configuration file 
         for the Key Encryption Key selection. 
+        Needs: -c,--config
 
     -d,--debug-level <level>
         Set debug level to <level>. 

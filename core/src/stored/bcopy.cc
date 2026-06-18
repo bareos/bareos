@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
       ->type_name("<bootstrap>");
 
   std::string configFile;
-  bcopy_app
+  auto config_option = bcopy_app
       .add_option("-c,--config", configFile,
                   "Use <path> as configuration file or directory.")
       ->check(CLI::ExistingPath)
@@ -108,6 +108,7 @@ int main(int argc, char* argv[])
       .add_option("-D,--director", DirectorName,
                   "Specify a director name specified in the storage. "
                   "Configuration file for the Key Encryption Key selection.")
+      ->needs(config_option)
       ->type_name("<director>");
 
   AddDebugOptions(bcopy_app);
@@ -189,9 +190,6 @@ int main(int argc, char* argv[])
   if (use_sd_config) {
     my_config = InitSdConfig(configFile.c_str(), M_CONFIG_ERROR);
     ParseSdConfig(configFile.c_str(), M_CONFIG_ERROR);
-  } else if (!DirectorName.empty()) {
-    Emsg0(M_ERROR_TERM, 0,
-          T_("--director requires a Storage Daemon configuration.\n"));
   }
 
 
