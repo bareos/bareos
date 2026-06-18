@@ -113,6 +113,8 @@ static bool TryStatPath(const std::string& path, struct stat& statp)
 
 static std::string DirectoryName(const std::string& path)
 {
+  // Return the parent path component. A trailing separator is ignored, and the
+  // root path stays rooted instead of becoming empty.
   auto separator = path.find_last_of("/\\");
   if (separator == std::string::npos) { return "."; }
   if (separator == 0) { return path.substr(0, 1); }
@@ -121,6 +123,8 @@ static std::string DirectoryName(const std::string& path)
 
 static std::string BaseName(const std::string& path)
 {
+  // Return the final path component. If the input ends in a separator or is
+  // the root path, the basename is empty.
   auto separator = path.find_last_of("/\\");
   if (separator == std::string::npos) { return path; }
   return path.substr(separator + 1);
