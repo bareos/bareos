@@ -89,16 +89,15 @@ static bool DeviceSupportsAccess(const DeviceResource* device_resource,
   }
 }
 
-static std::string StripQuotes(const char* resource_name)
+static std::string StripQuotes(std::string_view resource_name)
 {
-  std::string normalized{resource_name};
-  if (normalized.size() >= 2 && normalized.front() == '"'
-      && normalized.back() == '"') {
-    normalized.erase(0, 1);
-    normalized.pop_back();
+  if (resource_name.size() >= 2 && resource_name.front() == '"'
+      && resource_name.back() == '"') {
+    resource_name.remove_prefix(1);
+    resource_name.remove_suffix(1);
   }
 
-  return normalized;
+  return std::string(resource_name);
 }
 
 static const char* AccessDescription(bool readonly)
