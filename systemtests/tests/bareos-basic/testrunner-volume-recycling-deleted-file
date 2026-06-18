@@ -80,7 +80,7 @@ END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
-rm -f "${current_test_directory}/storage/${volume_name}"
+rm -f "storage/${volume_name}"
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${second_backup_log}
@@ -92,12 +92,12 @@ END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
-if [ ! -f "${current_test_directory}/storage/${volume_name}" ]; then
+if [ ! -f "storage/${volume_name}" ]; then
   echo "Recycled volume file was not recreated." >&2
   exit 1
 fi
 
-if [ "$(file_size "${current_test_directory}/storage/${volume_name}")" -le 0 ]; then
+if [ "$(file_size "storage/${volume_name}")" -le 0 ]; then
   echo "Recycled volume file is empty after recreation." >&2
   exit 1
 fi
