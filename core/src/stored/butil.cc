@@ -694,7 +694,7 @@ static DeviceResolutionResult find_device_res(char* archive_device_string,
     }
   }
 
-  if (!found) {
+  if (!found && result.detail.empty()) {
     result = ResolveDirectLocalVolumePath(normalized_resource_name);
     device_resource = result.device_resource;
     found = (device_resource != nullptr);
