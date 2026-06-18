@@ -170,12 +170,12 @@ int main(int argc, char* argv[])
   working_directory = work_dir.c_str();
 
   if (input_archive.empty()) {
-    LoadSdConfigForDeviceListingIfAvailable(configFile.c_str());
+    LoadSdConfigIfAvailable(configFile.c_str());
     printf(T_("Missing input device. %sNothing done.\n"),
            AvailableDevicesListing().c_str());
     return BEXIT_CLI_PARSING_ERROR;
   } else if (output_archive.empty()) {
-    LoadSdConfigForDeviceListingIfAvailable(configFile.c_str());
+    LoadSdConfigIfAvailable(configFile.c_str());
     printf(T_("Missing output device. %sNothing done.\n"),
            AvailableDevicesListing().c_str());
     return BEXIT_CLI_PARSING_ERROR;

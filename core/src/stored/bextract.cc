@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
   ParseBareosApp(bextract_app, argc, argv);
 
   if (archive_device_name.empty()) {
-    LoadSdConfigForDeviceListingIfAvailable(configfile);
+    LoadSdConfigIfAvailable(configfile);
     printf(T_("Missing device. %sNothing done.\n"),
            AvailableDevicesListing().c_str());
     return BEXIT_CLI_PARSING_ERROR;

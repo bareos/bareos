@@ -356,7 +356,7 @@ bool IsLocalFilesystemVolumePath(const char* device_name)
       && (S_ISREG(statp.st_mode) || S_ISDIR(statp.st_mode));
 }
 
-void LoadSdConfigForDeviceListingIfAvailable(const char* config_path)
+void LoadSdConfigIfAvailable(const char* config_path)
 {
   if (my_config || !config_path || config_path[0] == '\0') { return; }
 
