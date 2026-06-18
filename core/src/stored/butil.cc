@@ -111,11 +111,6 @@ static bool TryStatPath(const std::string& path, struct stat& statp)
   return !path.empty() && stat(path.c_str(), &statp) == 0;
 }
 
-static bool IsDirectLocalVolumeStat(const struct stat& statp)
-{
-  return S_ISREG(statp.st_mode) || S_ISDIR(statp.st_mode);
-}
-
 static std::string DirectoryName(const std::string& path)
 {
   auto separator = path.find_last_of("/\\");
@@ -179,7 +174,8 @@ static DeviceResolutionResult ResolveDirectLocalVolumePath(std::string path)
 {
   DeviceResolutionResult result;
   struct stat statp;
-  if (!TryStatPath(path, statp) || !IsDirectLocalVolumeStat(statp)) {
+  if (!TryStatPath(path, statp)
+      || (!S_ISREG(statp.st_mode) && !S_ISDIR(statp.st_mode))) {
     return result;
   }
 
@@ -350,7 +346,8 @@ bool IsDirectLocalVolumePath(const char* device_name)
 
   auto normalized_path = StripQuotes(device_name);
   struct stat statp;
-  return TryStatPath(normalized_path, statp) && IsDirectLocalVolumeStat(statp);
+  return TryStatPath(normalized_path, statp)
+      && (S_ISREG(statp.st_mode) || S_ISDIR(statp.st_mode));
 }
 
 void LoadSdConfigForDeviceListingIfAvailable(const char* config_path)
