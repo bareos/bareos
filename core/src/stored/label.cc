@@ -1035,10 +1035,24 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
   dev->SetLabelBlocksize(dcr);
 
   if (!dev->open(dcr, DeviceMode::OPEN_READ_WRITE)) {
-    Jmsg3(jcr, M_WARNING, 0,
-          T_("Open device %s Volume \"%s\" failed: ERR=%s\n"),
-          dev->print_name(), dcr->VolumeName, dev->bstrerror());
-    return false;
+    /* If device is not tape, attempt to create it */
+    if (dev->IsTape() || !dev->open(dcr, DeviceMode::CREATE_READ_WRITE)) {
+      Jmsg3(jcr, M_WARNING, 0,
+            T_("Open device %s Volume \"%s\" failed: ERR=%s\n"),
+            dev->print_name(), dcr->VolumeName, dev->bstrerror());
+      return false;
+    }
+    if (!dev->IsTape()) {
+      std::string archive_name = dev->archive_device_string;
+      if (!archive_name.empty()
+          && !IsPathSeparator(archive_name.back())) {
+        archive_name += '/';
+      }
+      archive_name += dcr->VolumeName;
+      Jmsg(dcr->jcr, M_INFO, 0,
+           T_("Recreating file %s for Volume %s.\n"), archive_name.c_str(),
+           dcr->VolumeName);
+    }
   }
 
   Dmsg2(190, "set append found freshly labeled volume. fd=%d dev=%p\n", dev->fd,
