@@ -346,6 +346,8 @@ static void MyFreeJcr(JobControlRecord* jcr);
 
 bool IsLocalFilesystemVolumePath(const char* device_name)
 {
+  // Direct local paths are regular files or directories that can be used
+  // without an SD device resource.
   if (!device_name) { return false; }
 
   auto normalized_path = StripQuotes(device_name);

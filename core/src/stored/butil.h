@@ -43,6 +43,7 @@ JobControlRecord* SetupJcr(const char* name,
                            DeviceControlRecord* dcr,
                            const std::string& VolumeName,
                            bool readonly);
+// Return true for a directly stat-able local file or directory path.
 bool IsLocalFilesystemVolumePath(const char* device_name);
 void LoadSdConfigForDeviceListingIfAvailable(const char* config_path);
 void DisplayTapeErrorStatus(JobControlRecord* jcr, Device* dev);
