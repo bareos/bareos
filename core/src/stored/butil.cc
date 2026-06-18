@@ -101,7 +101,7 @@ static std::string StripQuotes(const char* resource_name)
   return normalized;
 }
 
-static std::string AccessDescription(bool readonly)
+static const char* AccessDescription(bool readonly)
 {
   return readonly ? "reading" : "writing";
 }
