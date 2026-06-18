@@ -297,7 +297,6 @@ Linux
    :caption: Setup Bareos catalog with PostgreSQL (Linux)
 
    su postgres -c /usr/lib/bareos/scripts/create_bareos_database
-   su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
    su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
 
 FreeBSD
@@ -307,8 +306,10 @@ FreeBSD
    :caption: Setup Bareos catalog with PostgreSQL (FreeBSD)
 
    su postgres -c /usr/local/lib/bareos/scripts/create_bareos_database
-   su postgres -c /usr/local/lib/bareos/scripts/make_bareos_tables
    su postgres -c /usr/local/lib/bareos/scripts/grant_bareos_privileges
+
+At the first regular startup, :command:`bareos-dir` creates the PostgreSQL
+catalog contents automatically.
 
 
 .. _section-StartDaemons:

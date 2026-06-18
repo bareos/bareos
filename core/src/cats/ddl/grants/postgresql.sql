@@ -1,4 +1,9 @@
-CREATE USER @DB_USER@ @DB_PASS@;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '@DB_USER@') THEN
+    CREATE USER @DB_USER@ @DB_PASS@;
+  END IF;
+END $$;
 
 -- For schema
 GRANT ALL ON SCHEMA public TO @DB_USER@;

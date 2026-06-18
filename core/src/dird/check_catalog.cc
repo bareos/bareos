@@ -32,6 +32,50 @@
 
 namespace directordaemon {
 
+static bool OpenCatalogWithBootstrap(CatalogResource* catalog,
+                                     BareosDb* db,
+                                     cat_op mode)
+{
+  bool supports_bootstrap = db->SupportsBareosSchemaBootstrap();
+  bool allow_bootstrap = supports_bootstrap && mode == UPDATE_AND_FIX;
+  bool skip_version_check = supports_bootstrap && mode == CHECK_CONNECTION;
+
+  if (allow_bootstrap || skip_version_check) {
+    if (auto err = db->OpenDatabaseWithoutVersionCheck(nullptr)) {
+      Pmsg2(000, T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
+            catalog->resource_name_, catalog->db_name, err);
+      Jmsg(nullptr, M_FATAL, 0,
+           T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
+           catalog->resource_name_, catalog->db_name, err);
+      return false;
+    }
+
+    if (allow_bootstrap
+        && (!db->BootstrapBareosSchema(nullptr, me->scripts_directory)
+            || !db->CheckTablesVersion(nullptr))) {
+      Pmsg2(000, T_("Could not bootstrap Catalog \"%s\", database \"%s\".\n"),
+            catalog->resource_name_, catalog->db_name);
+      Jmsg(nullptr, M_FATAL, 0,
+           T_("Could not bootstrap Catalog \"%s\", database \"%s\".\n"),
+           catalog->resource_name_, catalog->db_name);
+      return false;
+    }
+
+    return true;
+  }
+
+  if (auto err = db->OpenDatabase(nullptr)) {
+    Pmsg2(000, T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
+          catalog->resource_name_, catalog->db_name, err);
+    Jmsg(nullptr, M_FATAL, 0,
+         T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
+         catalog->resource_name_, catalog->db_name, err);
+    return false;
+  }
+
+  return true;
+}
+
 /**
  * In this routine,
  *  - we can check the connection (mode=CHECK_CONNECTION)
@@ -67,13 +111,7 @@ bool CheckCatalog(cat_op mode)
       goto bail_out;
     }
 
-
-    if (auto err = db->OpenDatabase(NULL)) {
-      Pmsg2(000, T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
-            catalog->resource_name_, catalog->db_name, err);
-      Jmsg(NULL, M_FATAL, 0,
-           T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
-           catalog->resource_name_, catalog->db_name, err);
+    if (!OpenCatalogWithBootstrap(catalog, db, mode)) {
       db->CloseDatabase(NULL);
       OK = false;
       goto bail_out;

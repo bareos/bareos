@@ -55,12 +55,18 @@ class BareosDbPostgresql : public BareosDb {
                      bool need_private);
   ~BareosDbPostgresql();
 
+  bool SupportsBareosSchemaBootstrap(void) override { return true; }
+  const char* OpenDatabaseWithoutVersionCheck(JobControlRecord* jcr) override;
+  bool BootstrapBareosSchema(JobControlRecord* jcr,
+                             const char* scripts_directory) override;
+
   dlink<BareosDbPostgresql> link; /**< Queue control */
 
  private:
   void SqlFieldSeek(int field) override { field_number_ = field; }
   int SqlNumFields(void) override { return num_fields_; }
   const char* OpenDatabase(JobControlRecord* jcr) override;
+  const char* OpenDatabase(JobControlRecord* jcr, bool check_tables_version);
   void CloseDatabase(JobControlRecord* jcr) override;
   void EscapeString(JobControlRecord* jcr,
                     char* snew,
@@ -99,6 +105,7 @@ class BareosDbPostgresql : public BareosDb {
                                AttributesDbRecord* ar) override;
 
   bool CheckDatabaseEncoding(JobControlRecord* jcr);
+  void SetConnectionOptions();
 
   bool fields_fetched_
       = false;         /**< Marker, if field descriptions are already fetched */

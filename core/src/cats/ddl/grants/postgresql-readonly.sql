@@ -1,5 +1,10 @@
 -- read-only access for third party applications
-CREATE USER @DB_USER@ @DB_PASS@;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '@DB_USER@') THEN
+    CREATE USER @DB_USER@ @DB_PASS@;
+  END IF;
+END $$;
 
 -- Allow access to used schema
 GRANT USAGE ON SCHEMA public TO @DB_USER@;

@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -36,7 +36,9 @@ export TestName
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 # recreate the database, so we can start with a clean one
+export SQL_DDL_DIR="${BAREOS_SCRIPTS_DIR}/ddl"
 "${BAREOS_SCRIPTS_DIR}"/setup
+unset SQL_DDL_DIR
 
 start_test
 
