@@ -49,6 +49,45 @@ static void CreateVolumeLabelRecord(DeviceControlRecord* dcr,
                                     DeviceRecord* rec);
 
 /**
+ * Try to open or create a volume file. Attempts to open for reading/writing
+ * first. If the file doesn't exist, attempts to create it and logs the
+ * recreation for non-tape devices.
+ *
+ * Returns: true if opened/created successfully
+ *          false if unable to open or create
+ */
+static bool TryOpenOrCreateVolumeFile(DeviceControlRecord* dcr)
+{
+  Device* dev = dcr->dev;
+  JobControlRecord* jcr = dcr->jcr;
+
+  if (dev->open(dcr, DeviceMode::OPEN_READ_WRITE)) {
+    return true;
+  }
+
+  /* If device is not tape, attempt to create it */
+  if (dev->IsTape() || !dev->open(dcr, DeviceMode::CREATE_READ_WRITE)) {
+    Jmsg3(jcr, M_WARNING, 0,
+          T_("Open device %s Volume \"%s\" failed: ERR=%s\n"),
+          dev->print_name(), dcr->VolumeName, dev->bstrerror());
+    return false;
+  }
+
+  if (!dev->IsTape()) {
+    std::string archive_name = dev->archive_device_string;
+    if (!archive_name.empty() && !IsPathSeparator(archive_name.back())) {
+      archive_name += '/';
+    }
+    archive_name += dcr->VolumeName;
+    Jmsg(jcr, M_INFO, 0,
+         T_("Recreating file %s for Volume %s.\n"), archive_name.c_str(),
+         dcr->VolumeName);
+  }
+
+  return true;
+}
+
+/**
  * Read the volume label
  *
  * If dcr->VolumeName == NULL, we accept any Bareos Volume
@@ -356,25 +395,8 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
   Dmsg1(150, "New VolName=%s\n", VolName);
 
 
-  if (!dev->open(dcr, DeviceMode::OPEN_READ_WRITE)) {
-    /* If device is not tape, attempt to create it */
-    if (dev->IsTape() || !dev->open(dcr, DeviceMode::CREATE_READ_WRITE)) {
-      Jmsg3(jcr, M_WARNING, 0,
-            T_("Open device %s Volume \"%s\" failed: ERR=%s\n"),
-            dev->print_name(), dcr->VolumeName, dev->bstrerror());
-      goto bail_out;
-    }
-    if (!dev->IsTape()) {
-      std::string archive_name = dev->archive_device_string;
-      if (!archive_name.empty()
-          && !IsPathSeparator(archive_name.back())) {
-        archive_name += '/';
-      }
-      archive_name += dcr->VolumeName;
-      Jmsg(dcr->jcr, M_INFO, 0,
-           T_("Recreating file %s for Volume %s.\n"), archive_name.c_str(),
-           dcr->VolumeName);
-    }
+  if (!TryOpenOrCreateVolumeFile(dcr)) {
+    goto bail_out;
   }
   Dmsg1(150, "Label type=%d\n", dev->label_type);
 
@@ -1034,25 +1056,8 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
   // Set the label blocksize to write the label
   dev->SetLabelBlocksize(dcr);
 
-  if (!dev->open(dcr, DeviceMode::OPEN_READ_WRITE)) {
-    /* If device is not tape, attempt to create it */
-    if (dev->IsTape() || !dev->open(dcr, DeviceMode::CREATE_READ_WRITE)) {
-      Jmsg3(jcr, M_WARNING, 0,
-            T_("Open device %s Volume \"%s\" failed: ERR=%s\n"),
-            dev->print_name(), dcr->VolumeName, dev->bstrerror());
-      return false;
-    }
-    if (!dev->IsTape()) {
-      std::string archive_name = dev->archive_device_string;
-      if (!archive_name.empty()
-          && !IsPathSeparator(archive_name.back())) {
-        archive_name += '/';
-      }
-      archive_name += dcr->VolumeName;
-      Jmsg(dcr->jcr, M_INFO, 0,
-           T_("Recreating file %s for Volume %s.\n"), archive_name.c_str(),
-           dcr->VolumeName);
-    }
+  if (!TryOpenOrCreateVolumeFile(dcr)) {
+    return false;
   }
 
   Dmsg2(190, "set append found freshly labeled volume. fd=%d dev=%p\n", dev->fd,
