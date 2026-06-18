@@ -137,7 +137,7 @@ static std::string GetExecutableDirectory()
   if (len > 0 && len < sizeof(path)) {
     return DirectoryName(std::string(path, len));
   }
-#else
+#elif defined(HAVE_LINUX_OS)
   char path[PATH_MAX];
   auto len = readlink("/proc/self/exe", path, sizeof(path) - 1);
   if (len > 0) {
