@@ -146,20 +146,18 @@ int main(int argc, char* argv[])
   bcopy_app
       .add_option("input-archive", input_archive,
                   "Specify the input device name "
-                  "(either as name of a Bareos Storage Daemon Device resource "
-                  "or identical to the "
-                  "Archive Device in a Bareos Storage Daemon Device resource, "
-                  "or a local file volume path).")
+                  "(either the name of a Bareos Storage Daemon Device "
+                  "resource, the Archive Device in such a resource, or a "
+                  "local file volume path).")
       ->type_name(" ");
 
   std::string output_archive;
   bcopy_app
       .add_option("output-archive", output_archive,
                   "Specify the output device name "
-                  "(either as name of a Bareos Storage Daemon Device resource "
-                  "or identical to the "
-                  "Archive Device in a Bareos Storage Daemon Device resource, "
-                  "or a local file volume path).")
+                  "(either the name of a Bareos Storage Daemon Device "
+                  "resource, the Archive Device in such a resource, or a "
+                  "local file volume path).")
       ->type_name(" ");
 
   ParseBareosApp(bcopy_app, argc, argv);
