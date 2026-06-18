@@ -126,7 +126,7 @@ static std::string DirectoryName(const std::string& path)
   return path.substr(0, separator);
 }
 
-#if defined(HAVE_WIN32) && defined(BUILD_TESTING)
+#if defined(HAVE_WIN32)
 std::string DirectoryNameForTest(const std::string& path)
 {
   return DirectoryName(path);

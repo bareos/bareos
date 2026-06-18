@@ -49,7 +49,7 @@ void LoadSdConfigIfAvailable(const char* config_path);
 void DisplayTapeErrorStatus(JobControlRecord* jcr, Device* dev);
 std::string AvailableDevicesListing();
 
-#if defined(HAVE_WIN32) && defined(BUILD_TESTING)
+#if defined(HAVE_WIN32)
 std::string DirectoryNameForTest(const std::string& path);
 #endif
 
