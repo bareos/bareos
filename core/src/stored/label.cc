@@ -364,6 +364,17 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
             dev->print_name(), dcr->VolumeName, dev->bstrerror());
       goto bail_out;
     }
+    if (!dev->IsTape()) {
+      std::string archive_name = dev->archive_device_string;
+      if (!archive_name.empty()
+          && !IsPathSeparator(archive_name.back())) {
+        archive_name += '/';
+      }
+      archive_name += dcr->VolumeName;
+      Jmsg(dcr->jcr, M_INFO, 0,
+           T_("Recreating file %s for Volume %s.\n"), archive_name.c_str(),
+           dcr->VolumeName);
+    }
   }
   Dmsg1(150, "Label type=%d\n", dev->label_type);
 
