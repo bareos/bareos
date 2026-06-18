@@ -432,17 +432,11 @@ JobControlRecord* SetupJcr(const char* name,
   return jcr;
 }
 
-std::string AvailableDevicesListing()
+static std::string ListDevicesInConfig(const ConfigurationParser* config)
 {
-  if (!my_config) {
-    return T_(
-        "Direct local file volume paths may be used without an SD "
-        "configuration.\n");
-  }
-
   std::vector<std::string> devices;
   for (BareosResource* resource = nullptr;
-       (resource = my_config->GetNextRes(R_DEVICE, resource));) {
+       (resource = config->GetNextRes(R_DEVICE, resource));) {
     DeviceResource* device = dynamic_cast<DeviceResource*>(resource);
     std::string device_str;
     device_str += " \"";
@@ -455,7 +449,7 @@ std::string AvailableDevicesListing()
 
   std::vector<std::string> autochangers;
   for (BareosResource* resource = nullptr;
-       (resource = my_config->GetNextRes(R_AUTOCHANGER, resource));) {
+       (resource = config->GetNextRes(R_AUTOCHANGER, resource));) {
     auto* autochanger = dynamic_cast<AutochangerResource*>(resource);
     std::string autochanger_str;
     autochanger_str += " \"";
@@ -492,6 +486,17 @@ std::string AvailableDevicesListing()
     }
   }
   return devices_str;
+}
+
+std::string AvailableDevicesListing()
+{
+  if (!my_config) {
+    return T_(
+        "Direct local file volume paths may be used without an SD "
+        "configuration.\n");
+  }
+
+  return ListDevicesInConfig(my_config);
 }
 /**
  * Setup device, jcr, and prepare to access device.
