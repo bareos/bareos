@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
   const bool config_explicit = configfile != nullptr;
   const bool use_sd_config
       = config_explicit
-        || !IsDirectLocalVolumePath(archive_device_name.c_str());
+        || !IsLocalFilesystemVolumePath(archive_device_name.c_str());
 
   my_config = nullptr;
   if (use_sd_config) {

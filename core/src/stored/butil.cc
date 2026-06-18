@@ -146,6 +146,7 @@ static std::string GetExecutableDirectory()
   }
 #endif
 
+  // Non-Linux platforms use the path captured during startup by MyNameIs().
   if (exepath && exepath[0]) { return exepath; }
   return {};
 }
@@ -343,7 +344,7 @@ static DeviceResolutionResult find_device_res(char* archive_device_string,
                                               bool readonly);
 static void MyFreeJcr(JobControlRecord* jcr);
 
-bool IsDirectLocalVolumePath(const char* device_name)
+bool IsLocalFilesystemVolumePath(const char* device_name)
 {
   if (!device_name) { return false; }
 

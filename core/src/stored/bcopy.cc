@@ -183,8 +183,9 @@ int main(int argc, char* argv[])
 
   const bool config_explicit = !configFile.empty();
   const bool use_sd_config
-      = config_explicit || !IsDirectLocalVolumePath(input_archive.c_str())
-        || !IsDirectLocalVolumePath(output_archive.c_str());
+      = config_explicit
+        || !IsLocalFilesystemVolumePath(input_archive.c_str())
+        || !IsLocalFilesystemVolumePath(output_archive.c_str());
 
   my_config = nullptr;
   if (use_sd_config) {

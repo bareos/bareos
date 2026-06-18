@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
   const bool all_direct_local
       = std::all_of(device_names.begin(), device_names.end(),
                     [](const std::string& device_name) {
-                      return IsDirectLocalVolumePath(device_name.c_str());
+                      return IsLocalFilesystemVolumePath(device_name.c_str());
                     });
   const bool use_sd_config = config_explicit || !all_direct_local;
 

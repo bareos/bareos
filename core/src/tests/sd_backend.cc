@@ -131,11 +131,11 @@ TEST_F(sd, backend_load_unload)
   FreeJcr(jcr);
 }
 
-TEST(SdButil, IsDirectLocalVolumePath)
+TEST(SdButil, IsLocalFilesystemVolumePath)
 {
-  EXPECT_FALSE(storagedaemon::IsDirectLocalVolumePath(nullptr));
-  EXPECT_FALSE(storagedaemon::IsDirectLocalVolumePath(""));
-  EXPECT_FALSE(storagedaemon::IsDirectLocalVolumePath(
+  EXPECT_FALSE(storagedaemon::IsLocalFilesystemVolumePath(nullptr));
+  EXPECT_FALSE(storagedaemon::IsLocalFilesystemVolumePath(""));
+  EXPECT_FALSE(storagedaemon::IsLocalFilesystemVolumePath(
       "/path/that/does/not/exist/anywhere"));
 
   TempDirectory temp_directory;
@@ -154,10 +154,12 @@ TEST(SdButil, IsDirectLocalVolumePath)
         + std::string(1, std::filesystem::path::preferred_separator);
   const auto quoted_file_path = "\"" + file_path.string() + "\"";
 
-  EXPECT_TRUE(storagedaemon::IsDirectLocalVolumePath(directory_path.c_str()));
   EXPECT_TRUE(
-      storagedaemon::IsDirectLocalVolumePath(directory_with_separator.c_str()));
-  EXPECT_TRUE(storagedaemon::IsDirectLocalVolumePath(file_path.c_str()));
+      storagedaemon::IsLocalFilesystemVolumePath(directory_path.c_str()));
   EXPECT_TRUE(
-      storagedaemon::IsDirectLocalVolumePath(quoted_file_path.c_str()));
+      storagedaemon::IsLocalFilesystemVolumePath(
+          directory_with_separator.c_str()));
+  EXPECT_TRUE(storagedaemon::IsLocalFilesystemVolumePath(file_path.c_str()));
+  EXPECT_TRUE(
+      storagedaemon::IsLocalFilesystemVolumePath(quoted_file_path.c_str()));
 }
