@@ -478,7 +478,9 @@ static std::string ListDevicesInConfig(const ConfigurationParser* config)
   std::string devices_str = "Available Devices:\n";
   for (const std::string& device : devices) { devices_str += device; }
   if (!autochangers.empty()) {
-    devices_str += "Available Autochangers:\n";
+    devices_str
+        += "Available Autochangers (select one of the listed Device "
+           "resources):\n";
     for (const std::string& autochanger : autochangers) {
       devices_str += autochanger;
     }
