@@ -929,7 +929,7 @@ int main(int argc, char* argv[])
   db = db_init_database(nullptr, db_driver, db_name.c_str(), user.c_str(),
                         password.c_str(), dbhost.c_str(), dbport, nullptr,
                         false, false, false, false);
-  if (auto err = db->OpenDatabase(nullptr)) {
+  if (auto err = db->OpenDatabase()) {
     Emsg1(M_FATAL, 0, "%s", err);
     return 1;
   }

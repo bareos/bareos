@@ -68,7 +68,7 @@ bool CheckCatalog(cat_op mode)
     }
 
 
-    if (auto err = db->OpenDatabase(NULL)) {
+    if (auto err = db->OpenDatabase()) {
       Pmsg2(000, T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
             catalog->resource_name_, catalog->db_name, err);
       Jmsg(NULL, M_FATAL, 0,
