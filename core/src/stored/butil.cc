@@ -457,9 +457,7 @@ static std::string ListDevicesInConfig(const ConfigurationParser* config)
     autochanger_str += "\"";
 
     std::vector<std::string> members;
-    DeviceResource* device = nullptr;
-    int i;
-    foreach_alist_index (i, device, autochanger->device_resources) {
+    for (auto* device : autochanger->device_resources) {
       members.emplace_back(FormatDeviceChoice(device));
     }
     std::sort(members.begin(), members.end());
