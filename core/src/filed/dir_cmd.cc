@@ -68,6 +68,10 @@
 #  include <systemd/sd-bus.h>
 #  include <unistd.h>
 #endif
+#if defined(HAVE_DARWIN_OS)
+#  include <CoreFoundation/CoreFoundation.h>
+#  include <IOKit/pwr_mgt/IOPMLib.h>
+#endif
 
 #include <atomic>
 
@@ -218,6 +222,47 @@ static void DeactivateLinuxSleepInhibition(int& inhibitor_fd)
   if (inhibitor_fd >= 0) {
     close(inhibitor_fd);
     inhibitor_fd = -1;
+  }
+}
+#endif
+
+#if defined(HAVE_DARWIN_OS)
+static void WarnDarwinSleepInhibitFailure(JobControlRecord* jcr,
+                                          bool& warning_logged,
+                                          IOReturn status)
+{
+  if (warning_logged) { return; }
+
+  Jmsg(jcr, M_WARNING, 0,
+       T_("Failed to inhibit system sleep on macOS (IOKit status %d). "
+          "Continuing without sleep inhibition.\n"),
+       status);
+  warning_logged = true;
+}
+
+static bool ActivateDarwinSleepInhibition(JobControlRecord* jcr,
+                                          IOPMAssertionID& assertion_id,
+                                          bool& warning_logged)
+{
+  if (assertion_id != kIOPMNullAssertionID) { return true; }
+
+  IOReturn status = IOPMAssertionCreateWithName(
+      kIOPMAssertionTypePreventUserIdleSystemSleep, kIOPMAssertionLevelOn,
+      CFSTR("Bareos backup or restore running"), &assertion_id);
+  if (status != kIOReturnSuccess) {
+    assertion_id = kIOPMNullAssertionID;
+    WarnDarwinSleepInhibitFailure(jcr, warning_logged, status);
+    return false;
+  }
+
+  return true;
+}
+
+static void DeactivateDarwinSleepInhibition(IOPMAssertionID& assertion_id)
+{
+  if (assertion_id != kIOPMNullAssertionID) {
+    IOPMAssertionRelease(assertion_id);
+    assertion_id = kIOPMNullAssertionID;
   }
 }
 #endif
@@ -458,6 +503,10 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
   int linux_sleep_inhibitor_fd = -1;
   bool linux_sleep_inhibit_warning_logged = false;
 #endif
+#if defined(HAVE_DARWIN_OS)
+  IOPMAssertionID darwin_sleep_assertion_id = kIOPMNullAssertionID;
+  bool darwin_sleep_inhibit_warning_logged = false;
+#endif
 
   // only do the cleanup if dir is not authenticated
   if (jcr->authenticated) {
@@ -487,18 +536,25 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
       }
 
       Dmsg1(100, "Executing %s command.\n", to_execute->cmd);
+      const bool is_backup_or_restore_command
+          = (to_execute->func == BackupCmd || to_execute->func == RestoreCmd);
 
 #ifdef HAVE_WIN32
-      if (!sleep_prevention_active
-          && (to_execute->func == BackupCmd || to_execute->func == RestoreCmd)) {
+      if (!sleep_prevention_active && is_backup_or_restore_command) {
         PreventOsSuspensions();
         sleep_prevention_active = true;
       }
 #endif
 #if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
-      if (to_execute->func == BackupCmd || to_execute->func == RestoreCmd) {
+      if (is_backup_or_restore_command) {
         ActivateLinuxSleepInhibition(jcr, linux_sleep_inhibitor_fd,
                                      linux_sleep_inhibit_warning_logged);
+      }
+#endif
+#if defined(HAVE_DARWIN_OS)
+      if (is_backup_or_restore_command) {
+        ActivateDarwinSleepInhibition(jcr, darwin_sleep_assertion_id,
+                                      darwin_sleep_inhibit_warning_logged);
       }
 #endif
 
@@ -554,6 +610,9 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 #endif
 #if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
   DeactivateLinuxSleepInhibition(linux_sleep_inhibitor_fd);
+#endif
+#if defined(HAVE_DARWIN_OS)
+  DeactivateDarwinSleepInhibition(darwin_sleep_assertion_id);
 #endif
 
   return nullptr;
