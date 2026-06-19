@@ -247,7 +247,7 @@ static bool ActivateDarwinSleepInhibition(JobControlRecord* jcr,
   if (assertion_id != kIOPMNullAssertionID) { return true; }
 
   IOReturn status = IOPMAssertionCreateWithName(
-      kIOPMAssertionTypePreventUserIdleSystemSleep, kIOPMAssertionLevelOn,
+      kIOPMAssertionTypePreventSystemSleep, kIOPMAssertionLevelOn,
       CFSTR("Bareos backup or restore running"), &assertion_id);
   if (status != kIOReturnSuccess) {
     assertion_id = kIOPMNullAssertionID;
