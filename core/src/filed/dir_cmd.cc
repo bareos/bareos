@@ -63,6 +63,12 @@
 #  include "vss.h"
 #endif
 
+#if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
+#  include <fcntl.h>
+#  include <systemd/sd-bus.h>
+#  include <unistd.h>
+#endif
+
 #include <atomic>
 
 namespace filedaemon {
@@ -132,6 +138,89 @@ static bool OpenSdReadSession(JobControlRecord* jcr);
 static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
                                           char* key,
                                           TlsPolicy policy);
+
+#if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
+static void WarnLinuxSleepInhibitFailure(JobControlRecord* jcr,
+                                         bool& warning_logged,
+                                         const char* reason)
+{
+  if (warning_logged) { return; }
+
+  Jmsg(jcr, M_WARNING, 0,
+       T_("Failed to inhibit system sleep on Linux: %s. "
+          "Continuing without sleep inhibition.\n"),
+       reason);
+  warning_logged = true;
+}
+
+static bool ActivateLinuxSleepInhibition(JobControlRecord* jcr,
+                                         int& inhibitor_fd,
+                                         bool& warning_logged)
+{
+  if (inhibitor_fd >= 0) { return true; }
+
+  sd_bus* bus = nullptr;
+  sd_bus_message* reply = nullptr;
+  sd_bus_error error = SD_BUS_ERROR_NULL;
+
+  auto cleanup = [&]() {
+    sd_bus_error_free(&error);
+    sd_bus_message_unref(reply);
+    sd_bus_unref(bus);
+  };
+
+  auto warn_and_fail = [&](const char* reason) {
+    WarnLinuxSleepInhibitFailure(jcr, warning_logged, reason);
+    cleanup();
+    return false;
+  };
+
+  int status = sd_bus_open_system(&bus);
+  if (status < 0) {
+    BErrNo be;
+    return warn_and_fail(be.bstrerror(-status));
+  }
+
+  status = sd_bus_call_method(bus, "org.freedesktop.login1",
+                              "/org/freedesktop/login1",
+                              "org.freedesktop.login1.Manager", "Inhibit",
+                              &error, &reply, "ssss", "sleep", "bareos-fd",
+                              "Backup or restore running", "block");
+  if (status < 0) {
+    if (error.message != nullptr) {
+      return warn_and_fail(error.message);
+    } else {
+      BErrNo be;
+      return warn_and_fail(be.bstrerror(-status));
+    }
+  }
+
+  int fd = -1;
+  status = sd_bus_message_read(reply, "h", &fd);
+  if (status < 0 || fd < 0) {
+    BErrNo be;
+    return warn_and_fail(be.bstrerror((status < 0) ? -status : EINVAL));
+  }
+
+  int dupfd = fcntl(fd, F_DUPFD_CLOEXEC, 3);
+  if (dupfd < 0) {
+    BErrNo be;
+    return warn_and_fail(be.bstrerror());
+  }
+
+  inhibitor_fd = dupfd;
+  cleanup();
+  return true;
+}
+
+static void DeactivateLinuxSleepInhibition(int& inhibitor_fd)
+{
+  if (inhibitor_fd >= 0) {
+    close(inhibitor_fd);
+    inhibitor_fd = -1;
+  }
+}
+#endif
 
 /* Exported functions */
 
@@ -346,7 +435,7 @@ void* process_fd_initiated_director_commands(void* p_jcr)
 
   SetJcrInThreadSpecificData(jcr);
 
-  return process_director_commands(jcr, jcr->dir_bsock, true);
+  return process_director_commands(jcr, jcr->dir_bsock);
 }
 
 static s_fd_dir_cmds* SelectCommandByName(const char* name)
@@ -360,13 +449,14 @@ static s_fd_dir_cmds* SelectCommandByName(const char* name)
   return nullptr;
 }
 
-void* process_director_commands(JobControlRecord* jcr,
-                                BareosSocket* dir,
-                                [[maybe_unused]]
-                                bool is_client_initiated_connection)
+void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 {
 #ifdef HAVE_WIN32
   bool sleep_prevention_active = false;
+#endif
+#if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
+  int linux_sleep_inhibitor_fd = -1;
+  bool linux_sleep_inhibit_warning_logged = false;
 #endif
 
   // only do the cleanup if dir is not authenticated
@@ -399,10 +489,16 @@ void* process_director_commands(JobControlRecord* jcr,
       Dmsg1(100, "Executing %s command.\n", to_execute->cmd);
 
 #ifdef HAVE_WIN32
-      if (is_client_initiated_connection && !sleep_prevention_active
+      if (!sleep_prevention_active
           && (to_execute->func == BackupCmd || to_execute->func == RestoreCmd)) {
         PreventOsSuspensions();
         sleep_prevention_active = true;
+      }
+#endif
+#if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
+      if (to_execute->func == BackupCmd || to_execute->func == RestoreCmd) {
+        ActivateLinuxSleepInhibition(jcr, linux_sleep_inhibitor_fd,
+                                     linux_sleep_inhibit_warning_logged);
       }
 #endif
 
@@ -455,6 +551,9 @@ void* process_director_commands(JobControlRecord* jcr,
 
 #ifdef HAVE_WIN32
   AllowOsSuspensions();
+#endif
+#if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
+  DeactivateLinuxSleepInhibition(linux_sleep_inhibitor_fd);
 #endif
 
   return nullptr;
@@ -518,7 +617,7 @@ void* handle_director_connection(BareosSocket* dir)
   Dmsg0(120, "Calling Authenticate\n");
   if (AuthenticateDirector(jcr)) { Dmsg0(120, "OK Authenticate\n"); }
 
-  return process_director_commands(jcr, dir, false);
+  return process_director_commands(jcr, dir);
 }
 
 static bool ParseOkVersion(const char* string)
