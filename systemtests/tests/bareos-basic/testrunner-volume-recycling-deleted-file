@@ -48,20 +48,26 @@ volume_name=$(
     /Volume name\(s\):/ {
       gsub(/^.*Volume name\(s\):[[:space:]]*/, "");
       split($0, volumes, /\|/);
+      found_primary = 1;
       print volumes[1];
       exit
     }
     /Recycled volume "/ {
       gsub(/^.*Recycled volume "/, "");
-      gsub(/" on device .*$/, "");
-      print;
-      exit
+      gsub(/".*$/, "");
+      fallback = $0;
+      next
     }
     /Labeled new Volume "/ {
       gsub(/^.*Labeled new Volume "/, "");
-      gsub(/" on device .*$/, "");
-      print;
-      exit
+      gsub(/".*$/, "");
+      fallback = $0;
+      next
+    }
+    END {
+      if (!found_primary && fallback != "") {
+        print fallback;
+      }
     }
   ' "${first_backup_log}"
 )
