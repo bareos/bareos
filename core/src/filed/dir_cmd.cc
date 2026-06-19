@@ -541,7 +541,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
       }
 
       Dmsg1(100, "Executing %s command.\n", to_execute->cmd);
-      const bool is_backup_or_restore_command
+      [[maybe_unused]] const bool is_backup_or_restore_command
           = (to_execute->func == BackupCmd || to_execute->func == RestoreCmd);
 
 #ifdef HAVE_WIN32
