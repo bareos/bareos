@@ -30,7 +30,10 @@ class BareosSocket;
 namespace filedaemon {
 
 JobControlRecord* create_new_director_session(BareosSocket* dir);
-void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir);
+void* process_director_commands(JobControlRecord* jcr,
+                                BareosSocket* dir,
+                                [[maybe_unused]]
+                                bool is_client_initiated_connection);
 void* handle_director_connection(BareosSocket* dir);
 bool StartConnectToDirectorThreads();
 bool StopConnectToDirectorThreads(bool wait = false);
