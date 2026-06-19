@@ -48,7 +48,7 @@ add_executable(
 
 target_compile_definitions(
   bareos-webui-proxy
-  PRIVATE WEBUI_PROXY_DEFAULT_CONFIG_PATH="/etc/bareos-webui-proxy/bareos-webui-proxy.ini"
+  PRIVATE WEBUI_PROXY_DEFAULT_CONFIG_PATH="${sysconfdir}/bareos-webui-proxy/bareos-webui-proxy.ini"
 )
 
 target_link_libraries(
@@ -69,7 +69,7 @@ install(
 
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-webui-proxy.ini
-  DESTINATION "/etc/bareos-webui-proxy"
+  DESTINATION "${sysconfdir}/bareos-webui-proxy"
   COMPONENT webui
 )
 
