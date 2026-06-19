@@ -43,6 +43,8 @@ void Base64Init(void)
   int i;
   memset(base64_map, 0, sizeof(base64_map));
   for (i = 0; i < 64; i++) base64_map[(uint8_t)base64_digits[i]] = i;
+  base64_map['-'] = base64_map['+'];
+  base64_map['_'] = base64_map['/'];
   base64_inited = 1;
 }
 
