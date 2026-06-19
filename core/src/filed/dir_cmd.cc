@@ -346,7 +346,7 @@ void* process_fd_initiated_director_commands(void* p_jcr)
 
   SetJcrInThreadSpecificData(jcr);
 
-  return process_director_commands(jcr, jcr->dir_bsock);
+  return process_director_commands(jcr, jcr->dir_bsock, true);
 }
 
 static s_fd_dir_cmds* SelectCommandByName(const char* name)
@@ -360,8 +360,15 @@ static s_fd_dir_cmds* SelectCommandByName(const char* name)
   return nullptr;
 }
 
-void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
+void* process_director_commands(JobControlRecord* jcr,
+                                BareosSocket* dir,
+                                [[maybe_unused]]
+                                bool is_client_initiated_connection)
 {
+#ifdef HAVE_WIN32
+  bool sleep_prevention_active = false;
+#endif
+
   // only do the cleanup if dir is not authenticated
   if (jcr->authenticated) {
     /**********FIXME******* add command handler error code */
@@ -390,6 +397,14 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
       }
 
       Dmsg1(100, "Executing %s command.\n", to_execute->cmd);
+
+#ifdef HAVE_WIN32
+      if (is_client_initiated_connection && !sleep_prevention_active
+          && (to_execute->func == BackupCmd || to_execute->func == RestoreCmd)) {
+        PreventOsSuspensions();
+        sleep_prevention_active = true;
+      }
+#endif
 
       if (!to_execute->func(jcr)) { /* do command */
         Dmsg1(100, "Quit command loop. Canceled=%d\n", jcr->IsJobCanceled());
@@ -503,7 +518,7 @@ void* handle_director_connection(BareosSocket* dir)
   Dmsg0(120, "Calling Authenticate\n");
   if (AuthenticateDirector(jcr)) { Dmsg0(120, "OK Authenticate\n"); }
 
-  return process_director_commands(jcr, dir);
+  return process_director_commands(jcr, dir, false);
 }
 
 static bool ParseOkVersion(const char* string)
