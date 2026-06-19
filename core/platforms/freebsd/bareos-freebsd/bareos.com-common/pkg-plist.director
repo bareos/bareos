@@ -30,5 +30,5 @@ sbin/bareos-dir
 sbin/bareos-webui-proxy
 share/man/man8/bareos-dir.8.gz
 share/man/man8/bareos.8.gz
-@sample /usr/local/etc/bareos-webui-proxy/bareos-webui-proxy.ini.sample
+@sample %%PREFIX%%/etc/bareos-webui-proxy/bareos-webui-proxy.ini.sample
 etc/rc.d/bareos-dir
