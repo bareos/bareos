@@ -152,7 +152,7 @@ static void WarnLinuxSleepInhibitFailure(JobControlRecord* jcr,
 {
   if (warning_logged) { return; }
 
-  Qmsg(jcr, M_WARNING, 0,
+  Qmsg(jcr, M_INFO, 0,
        T_("Failed to inhibit system sleep on Linux: %s. "
           "Continuing without sleep inhibition.\n"),
        reason);
@@ -235,7 +235,7 @@ static void WarnDarwinSleepInhibitFailure(JobControlRecord* jcr,
 {
   if (warning_logged) { return; }
 
-  Qmsg(jcr, M_WARNING, 0,
+  Qmsg(jcr, M_INFO, 0,
        T_("Failed to inhibit system sleep on macOS (IOKit status %d). "
           "Continuing without sleep inhibition.\n"),
        status);
