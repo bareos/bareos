@@ -20,6 +20,12 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(BareosConfigureFile)
 include(BareosWindowsResource)
+include(CheckIncludeFiles)
+
+option(fd-client-sleep-inhibition
+       "Enable FD sleep inhibition during backup/restore jobs"
+       ON
+)
 
 if(HAVE_WIN32)
   include_directories(
@@ -27,6 +33,29 @@ if(HAVE_WIN32)
     ${PROJECT_SOURCE_DIR}/src/win32/filed
     ${PROJECT_SOURCE_DIR}/src/win32/vss/include
   )
+endif()
+
+if(fd-client-sleep-inhibition AND HAVE_LINUX_OS)
+  if(NOT HAVE_SYSTEMD)
+    message(
+      FATAL_ERROR
+        "fd-client-sleep-inhibition requires systemd support on Linux. "
+        "Set -Dfd-client-sleep-inhibition=OFF to disable manually."
+    )
+  endif()
+  set(_previous_required_includes "${CMAKE_REQUIRED_INCLUDES}")
+  set(CMAKE_REQUIRED_INCLUDES ${SYSTEMD_INCLUDE_DIRS})
+  check_include_files("systemd/sd-bus.h" HAVE_SYSTEMD_SD_BUS_H)
+  set(CMAKE_REQUIRED_INCLUDES "${_previous_required_includes}")
+  unset(_previous_required_includes)
+  if(NOT HAVE_SYSTEMD_SD_BUS_H)
+    message(
+      FATAL_ERROR
+        "fd-client-sleep-inhibition requires <systemd/sd-bus.h> on Linux. "
+        "Install systemd development headers or set "
+        "-Dfd-client-sleep-inhibition=OFF to disable manually."
+    )
+  endif()
 endif()
 
 add_library(fd_objects_common OBJECT)
@@ -59,7 +88,12 @@ target_link_libraries(
   fd_objects_common PRIVATE Bareos::Lib Bareos::Findlib Bareos::Fastlz
                             ZLIB::ZLIB
 )
-if(HAVE_SYSTEMD)
+if(fd-client-sleep-inhibition)
+  target_compile_definitions(fd_objects_common
+                             PRIVATE HAVE_FD_CLIENT_SLEEP_INHIBITION=1
+  )
+endif()
+if(HAVE_SYSTEMD AND fd-client-sleep-inhibition)
   target_include_directories(fd_objects_common PRIVATE ${SYSTEMD_INCLUDE_DIRS})
   target_compile_options(fd_objects_common PRIVATE ${SYSTEMD_CFLAGS_OTHER})
   if(SYSTEMD_LIBRARIES)

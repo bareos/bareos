@@ -49,6 +49,7 @@ Build-Depends: acl-dev,
  pkg-config,
  po-debconf (>= 0.8.2),
  python3-dev,
+ libsystemd-dev [linux-any],
  zlib1g-dev,
  systemd
 Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools, libqt4-dev
@@ -504,5 +505,4 @@ Description: Backup Archiving Recovery Open Sourced - contributed tools
  data across a network of computers of different kinds.
  .
  This package provides some additional tools, not part of the Bareos project.
-
 
