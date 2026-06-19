@@ -24,6 +24,40 @@ exit_with_error()
   exit 1
 }
 
+assert_fd_not_listening()
+{
+  local port
+  port="${BAREOS_FD_PORT}"
+
+  if "${PYTHON_EXECUTABLE}" - "${port}" <<'PY'
+import socket
+import sys
+
+port = int(sys.argv[1])
+targets = [("127.0.0.1", socket.AF_INET), ("::1", socket.AF_INET6)]
+
+for host, family in targets:
+    try:
+        sock = socket.socket(family, socket.SOCK_STREAM)
+        sock.settimeout(0.5)
+        rc = sock.connect_ex((host, port))
+        sock.close()
+        if rc == 0:
+            print(f"FD listener accepts connections on {host}:{port}")
+            sys.exit(1)
+    except OSError:
+        pass
+
+sys.exit(0)
+PY
+  then
+    return 0
+  fi
+
+  exit_with_error \
+    "Filedaemon is listening on port ${port} but client-initiated-only mode requires no listener"
+}
+
 stop_bareos_daemons()
 {
   stop_bareos
@@ -86,6 +120,7 @@ until echo "status dir" \
 done
 
 echo "Filedaemon is connected, running backup and restore"
+assert_fd_not_listening
 
 run_bconsole "${tmp}/bconcmds"
 
