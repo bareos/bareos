@@ -65,8 +65,13 @@
 
 #if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
 #  include <fcntl.h>
-#  include <systemd/sd-bus.h>
 #  include <unistd.h>
+#  if defined(__has_include)
+#    if __has_include(<systemd/sd-bus.h>)
+#      include <systemd/sd-bus.h>
+#      define HAVE_LINUX_SYSTEMD_SLEEP_INHIBITION 1
+#    endif
+#  endif
 #endif
 #if defined(HAVE_DARWIN_OS)
 #  include <CoreFoundation/CoreFoundation.h>
@@ -143,7 +148,7 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
                                           char* key,
                                           TlsPolicy policy);
 
-#if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
+#if defined(HAVE_LINUX_OS) && defined(HAVE_LINUX_SYSTEMD_SLEEP_INHIBITION)
 static void WarnLinuxSleepInhibitFailure(JobControlRecord* jcr,
                                          bool& warning_logged,
                                          const char* reason)
@@ -499,7 +504,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 #ifdef HAVE_WIN32
   bool sleep_prevention_active = false;
 #endif
-#if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
+#if defined(HAVE_LINUX_OS) && defined(HAVE_LINUX_SYSTEMD_SLEEP_INHIBITION)
   int linux_sleep_inhibitor_fd = -1;
   bool linux_sleep_inhibit_warning_logged = false;
 #endif
@@ -545,7 +550,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
         sleep_prevention_active = true;
       }
 #endif
-#if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
+#if defined(HAVE_LINUX_OS) && defined(HAVE_LINUX_SYSTEMD_SLEEP_INHIBITION)
       if (is_backup_or_restore_command) {
         ActivateLinuxSleepInhibition(jcr, linux_sleep_inhibitor_fd,
                                      linux_sleep_inhibit_warning_logged);
@@ -608,7 +613,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 #ifdef HAVE_WIN32
   AllowOsSuspensions();
 #endif
-#if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
+#if defined(HAVE_LINUX_OS) && defined(HAVE_LINUX_SYSTEMD_SLEEP_INHIBITION)
   DeactivateLinuxSleepInhibition(linux_sleep_inhibitor_fd);
 #endif
 #if defined(HAVE_DARWIN_OS)

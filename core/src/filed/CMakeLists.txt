@@ -60,9 +60,9 @@ target_link_libraries(
                             ZLIB::ZLIB
 )
 if(HAVE_SYSTEMD)
+  target_include_directories(fd_objects_common PRIVATE ${SYSTEMD_INCLUDE_DIRS})
+  target_compile_options(fd_objects_common PRIVATE ${SYSTEMD_CFLAGS_OTHER})
   if(SYSTEMD_LIBRARIES)
-    target_include_directories(fd_objects_common PRIVATE ${SYSTEMD_INCLUDE_DIRS})
-    target_compile_options(fd_objects_common PRIVATE ${SYSTEMD_CFLAGS_OTHER})
     target_link_libraries(fd_objects_common PRIVATE ${SYSTEMD_LIBRARIES})
   else()
     target_link_libraries(fd_objects_common PRIVATE systemd)
