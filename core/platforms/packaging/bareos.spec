@@ -110,6 +110,14 @@ BuildRequires: devtoolset-8-gcc
 BuildRequires: devtoolset-8-gcc-c++
 %endif
 
+# use modernized GCC 15 toolchain for C++20 support
+%if 0%{?rhel} && 0%{?rhel} > 7 && 0%{?rhel} <= 10
+BuildRequires: gcc-toolset-15-gcc
+BuildRequires: gcc-toolset-15-gcc-plugin-annobin
+BuildRequires: gcc-toolset-15-gcc-c++
+%endif
+
+
 %if 0%{?suse_version} < 1500 && 0%{?suse_version} >= 1210
 BuildRequires: gcc9
 BuildRequires: gcc9-c++
@@ -846,6 +854,15 @@ pushd %{CMAKE_BUILDDIR}
 # use Developer Toolset 8 compiler as standard is too old
 %if 0%{?rhel} == 7
 source /opt/rh/devtoolset-8/enable
+%endif
+
+# use modernized GCC toolchain for C++20 support
+%if 0%{?rhel} && 0%{?rhel} > 7 && 0%{?rhel} < 10
+source /opt/rh/gcc-toolset-15/enable
+%endif
+
+%if 0%{?rhel} && 0%{?rhel} >= 10
+source /usr/lib/gcc-toolset/15-env.source
 %endif
 
 # use modern compiler on suse
