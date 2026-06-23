@@ -1379,6 +1379,56 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
       }
       break;
     }
+    case bVarAccurateOptions: {
+      uint64_t value = 0;
+      if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
+          == bRC_OK) {
+        PyObject* mutable_set = PySet_New(NULL);
+        if (!mutable_set) { return NULL; }
+
+        auto add_option = [&](int option) -> bool {
+          PyObject* py_option = PyLong_FromLong(option);
+          if (!py_option) { return false; }
+          const int add_rc = PySet_Add(mutable_set, py_option);
+          Py_DECREF(py_option);
+          return add_rc == 0;
+        };
+
+        if (((value & static_cast<uint64_t>(bAccurateOptionInode))
+             && !add_option(bAccurateOptionInode))
+            || ((value & static_cast<uint64_t>(bAccurateOptionPermissions))
+                && !add_option(bAccurateOptionPermissions))
+            || ((value & static_cast<uint64_t>(bAccurateOptionNlink))
+                && !add_option(bAccurateOptionNlink))
+            || ((value & static_cast<uint64_t>(bAccurateOptionUid))
+                && !add_option(bAccurateOptionUid))
+            || ((value & static_cast<uint64_t>(bAccurateOptionGid))
+                && !add_option(bAccurateOptionGid))
+            || ((value & static_cast<uint64_t>(bAccurateOptionSize))
+                && !add_option(bAccurateOptionSize))
+            || ((value & static_cast<uint64_t>(bAccurateOptionAtime))
+                && !add_option(bAccurateOptionAtime))
+            || ((value & static_cast<uint64_t>(bAccurateOptionMtime))
+                && !add_option(bAccurateOptionMtime))
+            || ((value & static_cast<uint64_t>(bAccurateOptionCtime))
+                && !add_option(bAccurateOptionCtime))
+            || ((value & static_cast<uint64_t>(bAccurateOptionSizeDecrease))
+                && !add_option(bAccurateOptionSizeDecrease))
+            || ((value & static_cast<uint64_t>(bAccurateOptionAlways))
+                && !add_option(bAccurateOptionAlways))
+            || ((value & static_cast<uint64_t>(bAccurateOptionMd5))
+                && !add_option(bAccurateOptionMd5))
+            || ((value & static_cast<uint64_t>(bAccurateOptionSha1))
+                && !add_option(bAccurateOptionSha1))) {
+          Py_DECREF(mutable_set);
+          return NULL;
+        }
+
+        pRetVal = PyFrozenSet_New(mutable_set);
+        Py_DECREF(mutable_set);
+      }
+      break;
+    }
     case bVarFileSeen:
       break; /* a write only variable, ignore read request */
     default:

@@ -722,7 +722,29 @@ MOD_INIT(bareosfd)
   EXPORT_ENUM_VALUE(pDictbVariable, bVarPrefixLinks);
   EXPORT_ENUM_VALUE(pDictbVariable, bVarCheckChanges);
   EXPORT_ENUM_VALUE(pDictbVariable, bVarUsedConfig);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarAccurateOptions);
   if (PyModule_AddObject(m, bVariable, pDictbVariable)) {
+    return MOD_ERROR_VAL;
+  }
+
+  const char* bAccurateOption = "bAccurateOption";
+  PyObject* pDictbAccurateOption = NULL;
+  pDictbAccurateOption = PyDict_New();
+  if (!pDictbAccurateOption) { return MOD_ERROR_VAL; }
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionInode);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionPermissions);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionNlink);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionUid);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionGid);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionSize);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionAtime);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionMtime);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionCtime);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionSizeDecrease);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionAlways);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionMd5);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionSha1);
+  if (PyModule_AddObject(m, bAccurateOption, pDictbAccurateOption)) {
     return MOD_ERROR_VAL;
   }
 
