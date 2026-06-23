@@ -27,6 +27,8 @@ if(ENABLE_GRPC)
     )
   endif()
 
+  set(_grpc_gcc_no_error_cpp "$<$<CXX_COMPILER_ID:GNU>:-Wno-error=cpp>")
+
   set(PROTO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/proto")
   make_directory(${PROTO_OUTPUT_DIR})
   # Proto file
@@ -82,6 +84,10 @@ if(ENABLE_GRPC)
   target_add_proto_sources(
     grpc-proto "proto/plugin.proto" "proto/events.proto" "proto/bareos.proto"
     "proto/common.proto"
+  )
+  target_compile_options(
+    grpc-proto PUBLIC
+      ${_grpc_gcc_no_error_cpp}
   )
   target_link_libraries(
     grpc-proto PUBLIC gRPC::grpc++_reflection gRPC::grpc++
