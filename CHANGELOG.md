@@ -100,7 +100,7 @@ Setting up a virtual disk changer to backup as many parallel jobs into the same 
 
 If the `Count` directive is specified with a value > 1,
 duplicated devices will be created starting from serial-number 0000 up to `Count`.
-The 0000 device is automatically assigned `Autoselect=No`. 
+The 0000 device is automatically assigned `Autoselect=No`.
 Additionally, an autochanger resource is created with the name of the device the `Count` directive is specified for.
 The duplicated devices will be assigned to this autochanger unless they are used in another autochanger already.
 
@@ -529,7 +529,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
    * Director daemon
      * `Pid Directory`
      * `Maximum Connections`
-     
+
    * File daemon
      * `Pid Directory`
      * `Compatible`
@@ -599,7 +599,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - dird: `list jobs`: add `level` keyword and accept a list of job levels [PR #1548]
 - consolidate: make virtualfull jobs spawned by consolidate job inherit same priority and max concurrent jobs [PR #1530]
 - database: improve subscription view [PR #1542]
-- update `Maximum Concurrent Jobs` default value to 1 [PR #1426] 
+- update `Maximum Concurrent Jobs` default value to 1 [PR #1426]
 - stored: change default block size to 1 MiB [PR #1396]
 - stored: add AccessMode SD->Device directive to reserve devices exclusively for reading or writing [PR #1464]
 - stored: automatically increment tape block size in case the buffer is too small [PR #1496]
@@ -653,7 +653,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - cats: remove remains of deprecated databases [PR #1377]
 - dird: filed: stored: remove deprecated `maximumconnections` option from configuration [PR #1340]
 - filed: stored: remove deprecated `compatible` option from configuration  [PR #1341]
-- daemons: remove deprecated `Pid Directory` config option [PR #1426] 
+- daemons: remove deprecated `Pid Directory` config option [PR #1426]
 - core: remove deprecated make_catalog_backup.pl [PR #1378]
 - build: remove python2 support [PR #1520]
 - build: disable building for Windows 32-bit [PR #1582]
@@ -1330,48 +1330,48 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [23.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F23.0.0
 [24.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.0
 [25.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F25.0.0
-[Issue #579]: https://bugs.bareos.org/view.php?id=579
-[Issue #847]: https://bugs.bareos.org/view.php?id=847
-[Issue #871]: https://bugs.bareos.org/view.php?id=871
-[Issue #971]: https://bugs.bareos.org/view.php?id=971
-[Issue #1020]: https://bugs.bareos.org/view.php?id=1020
-[Issue #1039]: https://bugs.bareos.org/view.php?id=1039
-[Issue #1174]: https://bugs.bareos.org/view.php?id=1174
-[Issue #1175]: https://bugs.bareos.org/view.php?id=1175
-[Issue #1176]: https://bugs.bareos.org/view.php?id=1176
-[Issue #1184]: https://bugs.bareos.org/view.php?id=1184
-[Issue #1190]: https://bugs.bareos.org/view.php?id=1190
-[Issue #1191]: https://bugs.bareos.org/view.php?id=1191
-[Issue #1192]: https://bugs.bareos.org/view.php?id=1192
-[Issue #1194]: https://bugs.bareos.org/view.php?id=1194
-[Issue #1205]: https://bugs.bareos.org/view.php?id=1205
-[Issue #1206]: https://bugs.bareos.org/view.php?id=1206
-[Issue #1210]: https://bugs.bareos.org/view.php?id=1210
-[Issue #1211]: https://bugs.bareos.org/view.php?id=1211
-[Issue #1220]: https://bugs.bareos.org/view.php?id=1220
-[Issue #1227]: https://bugs.bareos.org/view.php?id=1227
-[Issue #1232]: https://bugs.bareos.org/view.php?id=1232
-[Issue #1246]: https://bugs.bareos.org/view.php?id=1246
-[Issue #1251]: https://bugs.bareos.org/view.php?id=1251
-[Issue #1257]: https://bugs.bareos.org/view.php?id=1257
-[Issue #1281]: https://bugs.bareos.org/view.php?id=1281
-[Issue #1300]: https://bugs.bareos.org/view.php?id=1300
-[Issue #1316]: https://bugs.bareos.org/view.php?id=1316
-[Issue #1324]: https://bugs.bareos.org/view.php?id=1324
-[Issue #1329]: https://bugs.bareos.org/view.php?id=1329
-[Issue #1334]: https://bugs.bareos.org/view.php?id=1334
-[Issue #1369]: https://bugs.bareos.org/view.php?id=1369
-[Issue #1374]: https://bugs.bareos.org/view.php?id=1374
-[Issue #1429]: https://bugs.bareos.org/view.php?id=1429
-[Issue #1445]: https://bugs.bareos.org/view.php?id=1445
-[Issue #1450]: https://bugs.bareos.org/view.php?id=1450
-[Issue #1452]: https://bugs.bareos.org/view.php?id=1452
-[Issue #1456]: https://bugs.bareos.org/view.php?id=1456
-[Issue #1466]: https://bugs.bareos.org/view.php?id=1466
-[Issue #1477]: https://bugs.bareos.org/view.php?id=1477
-[Issue #1480]: https://bugs.bareos.org/view.php?id=1480
-[Issue #1489]: https://bugs.bareos.org/view.php?id=1489
-[Issue #1965]: https://bugs.bareos.org/view.php?id=1965
+Issue #579 bugs.bareos.org/view.php?id=579
+Issue #847 bugs.bareos.org/view.php?id=847
+Issue #871 bugs.bareos.org/view.php?id=871
+Issue #971 bugs.bareos.org/view.php?id=971
+Issue #1020 bugs.bareos.org/view.php?id=1020
+Issue #1039 bugs.bareos.org/view.php?id=1039
+Issue #1174 bugs.bareos.org/view.php?id=1174
+Issue #1175 bugs.bareos.org/view.php?id=1175
+Issue #1176 bugs.bareos.org/view.php?id=1176
+Issue #1184 bugs.bareos.org/view.php?id=1184
+Issue #1190 bugs.bareos.org/view.php?id=1190
+Issue #1191 bugs.bareos.org/view.php?id=1191
+Issue #1192 bugs.bareos.org/view.php?id=1192
+Issue #1194 bugs.bareos.org/view.php?id=1194
+Issue #1205 bugs.bareos.org/view.php?id=1205
+Issue #1206 bugs.bareos.org/view.php?id=1206
+Issue #1210 bugs.bareos.org/view.php?id=1210
+Issue #1211 bugs.bareos.org/view.php?id=1211
+Issue #1220 bugs.bareos.org/view.php?id=1220
+Issue #1227 bugs.bareos.org/view.php?id=1227
+Issue #1232 bugs.bareos.org/view.php?id=1232
+Issue #1246 bugs.bareos.org/view.php?id=1246
+Issue #1251 bugs.bareos.org/view.php?id=1251
+Issue #1257 bugs.bareos.org/view.php?id=1257
+Issue #1281 bugs.bareos.org/view.php?id=1281
+Issue #1300 bugs.bareos.org/view.php?id=1300
+Issue #1316 bugs.bareos.org/view.php?id=1316
+Issue #1324 bugs.bareos.org/view.php?id=1324
+Issue #1329 bugs.bareos.org/view.php?id=1329
+Issue #1334 bugs.bareos.org/view.php?id=1334
+Issue #1369 bugs.bareos.org/view.php?id=1369
+Issue #1374 bugs.bareos.org/view.php?id=1374
+Issue #1429 bugs.bareos.org/view.php?id=1429
+Issue #1445 bugs.bareos.org/view.php?id=1445
+Issue #1450 bugs.bareos.org/view.php?id=1450
+Issue #1452 bugs.bareos.org/view.php?id=1452
+Issue #1456 bugs.bareos.org/view.php?id=1456
+Issue #1466 bugs.bareos.org/view.php?id=1466
+Issue #1477 bugs.bareos.org/view.php?id=1477
+Issue #1480 bugs.bareos.org/view.php?id=1480
+Issue #1489 bugs.bareos.org/view.php?id=1489
+Issue #1965 bugs.bareos.org/view.php?id=1965
 [PR #383]: https://github.com/bareos/bareos/pull/383
 [PR #384]: https://github.com/bareos/bareos/pull/384
 [PR #385]: https://github.com/bareos/bareos/pull/385
