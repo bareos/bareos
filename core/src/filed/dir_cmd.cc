@@ -665,10 +665,6 @@ void* handle_director_connection(BareosSocket* dir)
 {
   JobControlRecord* jcr;
 
-#ifdef HAVE_WIN32
-  PreventOsSuspensions();
-#endif
-
   if (AreMaxConcurrentJobsExceeded()) {
     Emsg0(M_ERROR, 0,
           T_("Number of Jobs exhausted, please increase "
