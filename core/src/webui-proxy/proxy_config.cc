@@ -286,3 +286,12 @@ ProxyConfig LoadProxyConfigFromString(const std::string& ini)
 {
   return ParseProxyConfig(ini);
 }
+
+ProxyConfig LoadBuiltInDefaultProxyConfig()
+{
+  ProxyConfig cfg;
+  DirectorTargetConfig director_cfg;
+  director_cfg.name = "bareos-dir";
+  cfg.configured_directors.emplace("bareos-dir", std::move(director_cfg));
+  return cfg;
+}
