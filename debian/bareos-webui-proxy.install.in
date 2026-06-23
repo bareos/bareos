@@ -1,2 +1,2 @@
 /usr/sbin/bareos-webui-proxy
-/etc/bareos-webui-proxy/bareos-webui-proxy.ini
+@configtemplatedir@/bareos-webui-proxy.ini

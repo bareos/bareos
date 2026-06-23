@@ -19,10 +19,6 @@ post-patch:
 post-install:
 	@echo post-install ${PORTNAME}${PKGNAMESUFFIX} via master package in ${MASTERDIR}
 	mv -v ${STAGEDIR}/usr/local/etc/bareos/mtx-changer.conf ${STAGEDIR}/usr/local/etc/bareos/mtx-changer.conf.sample
-	@${MKDIR} ${STAGEDIR}${PREFIX}/etc/bareos-webui-proxy
-	if [ -f ${STAGEDIR}${PREFIX}/etc/bareos-webui-proxy/bareos-webui-proxy.ini ]; then \
-		mv -v ${STAGEDIR}${PREFIX}/etc/bareos-webui-proxy/bareos-webui-proxy.ini ${STAGEDIR}${PREFIX}/etc/bareos-webui-proxy/bareos-webui-proxy.ini.sample; \
-	fi
 	@${MKDIR} ${STAGEDIR}/usr/local/etc/bareos/bareos-dir-export/client/
 	@${MKDIR} ${STAGEDIR}/var/lib/bareos/storage
 	@${MKDIR} ${STAGEDIR}/var/log/bareos

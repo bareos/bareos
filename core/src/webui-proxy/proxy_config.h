@@ -109,5 +109,6 @@ struct ProxyConfig {
 
 ProxyConfig LoadProxyConfigFile(const std::string& path);
 ProxyConfig LoadProxyConfigFromString(const std::string& ini);
+ProxyConfig LoadBuiltInDefaultProxyConfig();
 
 #endif  // BAREOS_WEBUI_PROXY_PROXY_CONFIG_H_

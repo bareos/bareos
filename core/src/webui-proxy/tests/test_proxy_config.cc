@@ -347,3 +347,22 @@ address = prod.example.test
 
   EXPECT_EQ(cfg.max_unauthenticated_connections, 100);
 }
+
+TEST(ProxyConfig, BuiltInDefaultsMatchTemplateDefaults)
+{
+  ProxyConfig cfg = LoadBuiltInDefaultProxyConfig();
+
+  EXPECT_EQ(cfg.bind_address, "localhost");
+  EXPECT_EQ(cfg.port, 9104);
+  EXPECT_EQ(cfg.session_idle_timeout_minutes, 30);
+  EXPECT_EQ(cfg.session_absolute_lifetime_hours, 8);
+  EXPECT_EQ(cfg.max_unauthenticated_connections, 100);
+  ASSERT_EQ(cfg.configured_directors.size(), 1U);
+  ASSERT_TRUE(cfg.configured_directors.contains("bareos-dir"));
+
+  const auto& director_cfg = cfg.configured_directors.at("bareos-dir");
+  EXPECT_EQ(director_cfg.address, "localhost");
+  EXPECT_EQ(director_cfg.port, 9101);
+  EXPECT_EQ(director_cfg.name, "bareos-dir");
+  EXPECT_FALSE(director_cfg.tls_psk_disable);
+}

@@ -29,6 +29,7 @@
 
 #include <CLI/CLI.hpp>
 #include <csignal>
+#include <filesystem>
 #include <stdexcept>
 #include <string>
 
@@ -42,11 +43,12 @@ int main(int argc, char* argv[])
 {
   CLI::App app{"Bareos Director WebSocket Proxy"};
   std::string config_file = WEBUI_PROXY_DEFAULT_CONFIG_PATH;
+  CLI::Option* config_option = nullptr;
   std::string log_file;
   ProxyLogLevel log_level = ProxyLogLevel::Info;
 
-  app.add_option("--config", config_file, "Proxy config file")
-      ->capture_default_str();
+  config_option = app.add_option("--config", config_file, "Proxy config file")
+                      ->capture_default_str();
   app.add_option("--log-file", log_file, "Append proxy logs to this file");
   app.add_option("--log-level", log_level,
                  "Minimum proxy log level: debug, info, warn, error")
@@ -67,7 +69,30 @@ int main(int argc, char* argv[])
     logger_cfg.log_file = log_file;
     ConfigureProxyLogger(logger_cfg);
 
-    ProxyConfig cfg = LoadProxyConfigFile(config_file);
+    ProxyConfig cfg;
+    if (config_option->count() > 0) {
+      cfg = LoadProxyConfigFile(config_file);
+      PROXY_LOG_INFO("", "loaded proxy config from '%s' (--config)",
+                     config_file.c_str());
+    } else {
+      std::error_code fs_error;
+      const bool has_default_config
+          = std::filesystem::exists(config_file, fs_error);
+      if (fs_error) {
+        throw ProxyConfigFileError("Proxy config: cannot check '" + config_file
+                                   + "'");
+      }
+      if (has_default_config) {
+        cfg = LoadProxyConfigFile(config_file);
+        PROXY_LOG_INFO("", "loaded proxy config from '%s' (default path)",
+                       config_file.c_str());
+      } else {
+        cfg = LoadBuiltInDefaultProxyConfig();
+        PROXY_LOG_INFO("", "proxy config file '%s' not found; using built-in "
+                           "defaults",
+                       config_file.c_str());
+      }
+    }
 
     // Apply session timeout configuration
     ProxyAuthSessionStore::SetSessionTimeouts(
