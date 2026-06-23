@@ -76,6 +76,16 @@ The HTTP side currently provides the session endpoints
 The WebSocket side is then used for the live director connection once the
 session has been established.
 
+The proxy configuration behavior is:
+
+* without :option:`--config`, it first tries
+  :file:`/etc/bareos-webui-proxy/bareos-webui-proxy.ini`
+* if that file is missing, it uses built-in defaults
+* with explicit :option:`--config`, the specified file is required
+
+The default configuration template is installed as
+:file:`bareos-webui-proxy.ini` in :file:`${configtemplatedir}`.
+
 Testing
 -------
 
