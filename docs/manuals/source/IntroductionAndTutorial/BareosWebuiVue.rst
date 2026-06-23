@@ -55,6 +55,15 @@ The default Apache configuration proxies both :file:`/ws` and
 The HTTP endpoints are used for session login, restore, and logout, while the
 WebSocket endpoint is used for the interactive director connection.
 
+By default, :command:`bareos-webui-proxy` starts without an explicit config
+file. If :file:`/etc/bareos-webui-proxy/bareos-webui-proxy.ini` exists, it is
+loaded. Otherwise built-in defaults are used.
+The package ships a default template
+:file:`bareos-webui-proxy.ini` in the Bareos config template directory
+(for example :file:`/usr/lib/bareos/defaultconfigs/`), so administrators can
+copy and adapt it into :file:`/etc/bareos-webui-proxy/` when needed.
+When :option:`--config` is used explicitly, the given file must exist.
+
 Installation and access
 -----------------------
 
