@@ -78,9 +78,18 @@ using namespace filedaemon;
 bRC bareosRegisterEvents(PluginContext*, int, ...) { return bRC_OK; };
 bRC bareosUnRegisterEvents(PluginContext*, int, ...) { return bRC_OK; };
 bRC bareosGetInstanceCount(PluginContext*, int*) { return bRC_OK; };
-bRC bareosGetValue(PluginContext*, filedaemon::bVariable, void*)
+bRC bareosGetValue(PluginContext*, filedaemon::bVariable var, void* value)
 {
-  return bRC_OK;
+  switch (var) {
+    case bVarAccurateOptions:
+      *static_cast<uint64_t*>(value)
+          = static_cast<uint64_t>(bAccurateOptionMtime)
+            | static_cast<uint64_t>(bAccurateOptionCtime)
+            | static_cast<uint64_t>(bAccurateOptionSize);
+      return bRC_OK;
+    default:
+      return bRC_OK;
+  }
 };
 bRC bareosSetValue(PluginContext*, filedaemon::bVariable, const void*)
 {

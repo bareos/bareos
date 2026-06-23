@@ -52,6 +52,16 @@ class TestBareosFd(unittest.TestCase):
         print(bareosfd.bCFs)
         print(bareosfd.CF_ERROR)
 
+    def test_AccurateOptionConstants(self):
+        self.assertIn(b"bAccurateOptionMtime", bareosfd.bAccurateOption)
+        self.assertEqual(
+            bareosfd.bAccurateOption[b"bAccurateOptionMtime"],
+            bareosfd.bAccurateOptionMtime,
+        )
+        self.assertTrue(
+            bareosfd.bAccurateOptionMtime & bareosfd.bAccurateOptionCtime == 0
+        )
+
     #     print bCFs
     #     bEventType
     #     bFileType

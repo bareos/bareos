@@ -266,6 +266,7 @@ enum BareosIntVariable {
   BV_SinceTime = 5;
   BV_Accurate = 6;
   BV_PrefixLinks = 7;
+  BV_AccurateOptions = 8;
 };
 
 message SetIntRequest {

@@ -466,6 +466,8 @@ class BareosCore : public bc::Core::Service {
         return filedaemon::bVarAccurate;
       case bc::BV_PrefixLinks:
         return filedaemon::bVarPrefixLinks;
+      case bc::BV_AccurateOptions:
+        return filedaemon::bVarAccurateOptions;
       case bareos::core::BAREOS_INT_VARIABLE_UNSPECIFIED:
       case bareos::core::BareosIntVariable_INT_MIN_SENTINEL_DO_NOT_USE_:
       case bareos::core::BareosIntVariable_INT_MAX_SENTINEL_DO_NOT_USE_:

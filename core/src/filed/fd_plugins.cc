@@ -120,6 +120,67 @@ static bRC bareosSetSeenBitmap(PluginContext* ctx, bool all, char* fname);
 static bRC bareosClearSeenBitmap(PluginContext* ctx, bool all, char* fname);
 static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret);
 
+uint64_t AccurateOptionsToBitmask(const char* accurate_options)
+{
+  if (!accurate_options) { return 0; }
+
+  uint64_t mask = 0;
+  for (const char* option = accurate_options; *option; ++option) {
+    switch (*option) {
+      case 'i':
+        mask |= static_cast<uint64_t>(bAccurateOptionInode);
+        break;
+      case 'p':
+        mask |= static_cast<uint64_t>(bAccurateOptionPermissions);
+        break;
+      case 'n':
+        mask |= static_cast<uint64_t>(bAccurateOptionNlink);
+        break;
+      case 'u':
+        mask |= static_cast<uint64_t>(bAccurateOptionUid);
+        break;
+      case 'g':
+        mask |= static_cast<uint64_t>(bAccurateOptionGid);
+        break;
+      case 's':
+        mask |= static_cast<uint64_t>(bAccurateOptionSize);
+        break;
+      case 'a':
+        mask |= static_cast<uint64_t>(bAccurateOptionAtime);
+        break;
+      case 'm':
+        mask |= static_cast<uint64_t>(bAccurateOptionMtime);
+        break;
+      case 'c':
+        mask |= static_cast<uint64_t>(bAccurateOptionCtime);
+        break;
+      case 'd':
+        mask |= static_cast<uint64_t>(bAccurateOptionSizeDecrease);
+        break;
+      case 'A':
+        mask |= static_cast<uint64_t>(bAccurateOptionAlways);
+        break;
+      case '5':
+        mask |= static_cast<uint64_t>(bAccurateOptionMd5);
+        break;
+      case '1':
+        mask |= static_cast<uint64_t>(bAccurateOptionSha1);
+        break;
+      case 'C':
+      case 'J':
+      case ':':
+        break;
+      default:
+        Dmsg1(debuglevel,
+              "fd-plugin: ignoring unknown accurate option character '%c'\n",
+              *option);
+        break;
+    }
+  }
+
+  return mask;
+}
+
 // These will be plugged into the global pointer structure for the findlib.
 static int MyPluginBopen(BareosFilePacket* bfd,
                          const char* fname,
@@ -2309,6 +2370,13 @@ static bRC bareosGetValue(PluginContext* ctx, bVariable var, void* value)
         *(int*)value = (int)jcr->prefix_links;
         Dmsg1(debuglevel, "fd-plugin: return bVarPrefixLinks=%d\n",
               (int)jcr->prefix_links);
+        break;
+      case bVarAccurateOptions:
+        if (!jcr->fd_impl || !jcr->fd_impl->ff) { return bRC_Error; }
+        *static_cast<uint64_t*>(value)
+            = AccurateOptionsToBitmask(jcr->fd_impl->ff->AccurateOpts);
+        Dmsg1(debuglevel, "fd-plugin: return bVarAccurateOptions=%" PRIu64 "\n",
+              *static_cast<uint64_t*>(value));
         break;
       default:
         break;
