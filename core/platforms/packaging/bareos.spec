@@ -57,11 +57,11 @@ Vendor:     The Bareos Team
 %define glusterfs 1
 %endif
 
-# use modernized GCC 14 toolchain for C++20 support
-%if 0%{?rhel} && 0%{?rhel} <= 9
-BuildRequires: gcc-toolset-14-gcc
-BuildRequires: gcc-toolset-14-annobin-plugin-gcc
-BuildRequires: gcc-toolset-14-gcc-c++
+# use modernized GCC 15 toolchain for C++20 support
+%if 0%{?rhel} && 0%{?rhel} <= 10
+BuildRequires: gcc-toolset-15-gcc
+BuildRequires: gcc-toolset-15-gcc-plugin-annobin
+BuildRequires: gcc-toolset-15-gcc-c++
 %define glusterfs 1
 # rhel <=8 does not have grpc
 %if 0%{?rhel} && 0%{?rhel} <= 8
@@ -839,9 +839,13 @@ export MTX=/usr/sbin/mtx
 mkdir %{CMAKE_BUILDDIR}
 pushd %{CMAKE_BUILDDIR}
 
-# use modernized GCC 14 toolchain for C++20 support
-%if 0%{?rhel} && 0%{?rhel} <= 9
-source /opt/rh/gcc-toolset-14/enable
+# use modernized GCC toolchain for C++20 support
+%if 0%{?rhel} && 0%{?rhel} < 10
+source /opt/rh/gcc-toolset-15/enable
+%endif
+
+%if 0%{?rhel} && 0%{?rhel} >= 10
+source /usr/lib/gcc-toolset/15-env.source
 %endif
 
 # use modern compiler on suse 15
