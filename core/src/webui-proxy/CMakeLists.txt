@@ -69,7 +69,7 @@ install(
 
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-webui-proxy.ini
-  DESTINATION "${sysconfdir}/bareos-webui-proxy"
+  DESTINATION "${configtemplatedir}"
   COMPONENT webui
 )
 
