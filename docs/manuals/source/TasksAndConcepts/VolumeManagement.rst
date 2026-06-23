@@ -158,7 +158,7 @@ Automatic Volume labeling is enabled by making a change to both the
 :config:option:`Dir/Pool`\  resource and to the :config:option:`Sd/Device`\  resource shown above.
 In the case of the Pool resource, you must provide Bareos with a label format that it will use to
 create new names. In the simplest form, the label format is simply the Volume name, to which Bareos
-will append a four digit number. This number starts at 0001 and is incremented for each Volume the
+will append a digit number. This number starts at 0001 and is incremented for each Volume the
 catalog contains.
 
 Thus if you modify your Pool resource to be:
@@ -174,8 +174,6 @@ Thus if you modify your Pool resource to be:
    }
 
 Bareos will create Volume names **Vol0001**, **Vol0002**, and so on when new Volumes are needed.
-Much more complex and elaborate labels can be created using variable expansion defined in the
-:ref:`Variable Expansion <VarsChapter>` chapter of this manual.
 
 The second change that is necessary to make automatic labeling work is to give the
 Storage Device permission to automatically label Volumes.
