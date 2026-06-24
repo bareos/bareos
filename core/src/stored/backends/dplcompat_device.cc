@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -216,17 +216,25 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
   std::string program;
   uint32_t program_timeout{0};
 
-  if (auto conversion_result
-      = tl::expected<utl::options*, std::string>{&options}
-            .and_then(get_value_converter("iothreads", io_threads_))
-            .and_then(get_value_converter("ioslots", io_slots_))
-            .and_then(get_value_converter("retries", retries_))
-            .and_then(get_size_converter("chunksize", chunk_size_))
-            .and_then(get_value_converter("program", program))
-            .and_then(get_value_converter("program_timeout", program_timeout));
-      !conversion_result) {
-    return tl::unexpected(conversion_result.error());
-  }
+  auto conversion_result = convert(&options, "iothreads", io_threads_);
+  if (!conversion_result) { return tl::unexpected(conversion_result.error()); }
+
+  conversion_result = convert(*conversion_result, "ioslots", io_slots_);
+  if (!conversion_result) { return tl::unexpected(conversion_result.error()); }
+
+  conversion_result = convert(*conversion_result, "retries", retries_);
+  if (!conversion_result) { return tl::unexpected(conversion_result.error()); }
+
+  conversion_result = convert(*conversion_result, "chunksize", chunk_size_,
+                              std::function{convert_size});
+  if (!conversion_result) { return tl::unexpected(conversion_result.error()); }
+
+  conversion_result = convert(*conversion_result, "program", program);
+  if (!conversion_result) { return tl::unexpected(conversion_result.error()); }
+
+  conversion_result
+      = convert(*conversion_result, "program_timeout", program_timeout);
+  if (!conversion_result) { return tl::unexpected(conversion_result.error()); }
 
   if (program.empty()) {
     return tl::unexpected("Option 'program' is required\n"s);
