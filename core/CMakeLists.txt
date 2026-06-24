@@ -668,7 +668,7 @@ else()
   message(STATUS "installing ${logdir}")
 
   install(DIRECTORY DESTINATION ${workingdir})
-  message(STATUS "installing ${woringdir}")
+  message(STATUS "installing ${workingdir}")
 endif()
 
 include(BareosConfigureFile)
