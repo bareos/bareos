@@ -153,7 +153,7 @@ SUSE Linux Enterprise Server (SLES), openSUSE
 
 Download the matching :file:`add_bareos_repositories.sh` script from
 https://download.bareos.com/bareos/release/,
-https://download.bareos.org/current/ or https://download.bareos.com/next/,
+https://download.bareos.org/current/ or https://download.bareos.org/next/,
 copy it to the target system and execute it:
 
 .. code-block:: shell-session
@@ -185,7 +185,7 @@ Debian / Ubuntu / Univention Corporate Server (UCS)
 
 Download the matching :file:`add_bareos_repositories.sh` script from
 https://download.bareos.com/bareos/release/,
-https://download.bareos.org/current/ or https://download.bareos.com/next/,
+https://download.bareos.org/current/ or https://download.bareos.org/next/,
 copy it to the target system and execute it:
 
 .. code-block:: shell-session
@@ -241,7 +241,7 @@ Install on FreeBSD based Distributions
 
 Download the matching :file:`add_bareos_repositories.sh` script from
 https://download.bareos.com/bareos/release/,
-https://download.bareos.org/current/ or https://download.bareos.com/next/,
+https://download.bareos.org/current/ or https://download.bareos.org/next/,
 copy it to the target system and execute it:
 
 .. code-block:: shell-session

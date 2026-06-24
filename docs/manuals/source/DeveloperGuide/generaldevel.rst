@@ -296,9 +296,9 @@ Do's
 - get in touch with us, preferably as `GitHub discussion`_
 
 
-.. _RAII:                      https://en.cppreference.com/w/cpp/language/raii.html
-.. _Rule of three:             https://en.cppreference.com/w/cpp/language/rule_of_three.html
-.. _fixed width integer types: https://en.cppreference.com/w/cpp/types/integer.html
+.. _RAII:                      https://en.cppreference.com/cpp/language/raii
+.. _Rule of three:             https://en.cppreference.com/cpp/language/rule_of_three
+.. _fixed width integer types: https://en.cppreference.com/cpp/types/integer
 .. _Google C++ Style Guide:    https://google.github.io/styleguide/cppguide.html
 .. _C++ Core Guidelines:       https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines
 .. _GitHub discussion:         https://github.com/bareos/bareos/discussions
