@@ -19,18 +19,6 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
-set(ndmp_data_agent_address
-    ""
-    CACHE STRING "address of the ndmp data agent"
-)
-set(ndmp_data_agent_user
-    "ndmpadmin"
-    CACHE STRING "user to access the ndmp data agent"
-)
-set(ndmp_data_agent_password
-    "test"
-    CACHE STRING "password to access the ndmp data agent"
-)
 set(ndmp_tape_and_robot_agent_address
     CACHE STRING "address of the ndmp robot and tape agents"
 )
@@ -50,13 +38,13 @@ set(ndmp_tape_and_robot_agent_tape_device
     ""
     CACHE STRING "list of tape device of the ndmp robot agent"
 )
-if(ndmp_data_agent_address)
+if(ndmp_tape_and_robot_agent_address)
 
   find_program(IP_COMMAND ip)
   if(IP_COMMAND)
     execute_process(
-      COMMAND ${IP_COMMAND} route get ${ndmp_data_agent_address}
-      OUTPUT_VARIABLE ROUTE_INFO_TO_ACCESS_NDMP_DATA_AGENT
+      COMMAND ${IP_COMMAND} route get ${ndmp_tape_and_robot_agent_address}
+      OUTPUT_VARIABLE ROUTE_INFO_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT
     )
 
     # cmake-format: off
@@ -66,33 +54,35 @@ if(ndmp_data_agent_address)
     string(
       REGEX REPLACE ".* src ([^ ]+).*"
       \\1
-      IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT
-      ${ROUTE_INFO_TO_ACCESS_NDMP_DATA_AGENT}
+      IP_ADDRESS_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT
+      ${ROUTE_INFO_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT}
     )
     # cmake-format: on
     # validation after extraction
-    if(IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT)
+    if(IP_ADDRESS_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT)
       string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$" IP_VALID
-                   "${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}"
+                   "${IP_ADDRESS_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT}"
       )
       if(NOT IP_VALID)
         message(DEBUG "ERROR NDMP ROUTE INFO INVALID")
-        set(IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT "")
+        set(IP_ADDRESS_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT "")
       endif()
     endif()
-    message(DEBUG "NDMP ROUTE INFO: ${ROUTE_INFO_TO_ACCESS_NDMP_DATA_AGENT}")
+    message(DEBUG
+            "NDMP ROUTE INFO: ${ROUTE_INFO_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT}"
+    )
 
     message(
       STATUS
-        "IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT (${ndmp_data_agent_address})=${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}"
+        "IP_ADDRESS_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT (${ndmp_tape_and_robot_agent_address})=${IP_ADDRESS_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT}"
     )
 
-    if(IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT)
-      if(NOT ndmp_data_agent_user)
-        set(ndmp_data_agent_user ndmpadmin)
+    if(IP_ADDRESS_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT)
+      if(NOT ndmp_tape_and_robot_agent_user)
+        set(ndmp_tape_and_robot_agent_user ndmpadmin)
       endif()
-      if(NOT ndmp_data_agent_password)
-        set(ndmp_data_agent_password test)
+      if(NOT ndmp_tape_and_robot_agent_password)
+        set(ndmp_tape_and_robot_agent_password test)
       endif()
       if(NOT ndmp_tape_and_robot_agent_auth_type)
         set(ndmp_tape_and_robot_agent_auth_type Clear)
@@ -128,7 +118,7 @@ if(ndmp_data_agent_address)
     else()
       create_systemtest(
         ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
-        "failed to get IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT"
+        "failed to get IP_ADDRESS_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT"
       )
     endif()
   else()
@@ -139,6 +129,6 @@ if(ndmp_data_agent_address)
 else()
   create_systemtest(
     ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
-    "ndmp_data_agent_address not given"
+    "ndmp_tape_and_robot_agent_address not given"
   )
 endif()
