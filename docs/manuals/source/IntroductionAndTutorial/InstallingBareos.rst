@@ -73,18 +73,17 @@ For example the script URL Debian 11 of the community current repository is:
 For Bareos Subscription customers the URL of the bareos-22 release for Debian 11 is:
 
 * https://download.bareos.com/bareos/release/22/Debian_11/add_bareos_repositories.sh
-* .. note::
 
-     Bareos Subscription customers have credentials to authenticate against https://download.bareos.com.
-     Some files can be accessed without authentication,
-     but to use the repositories,
-     authentication is mandatory.
-     When downloading the file :file:`add_bareos_repositories.sh`,
-     it is ready to use,
-     because it contains your personal authentication credentials.
-     Therefore downloading this file requires authentication.
-     If this is inconvenient, you can alternatively download :file:`add_bareos_repository_template.sh`
-     and set ``BAREOS_USERNAME`` and ``BAREOS_PASSWORD`` manually.
+
+.. note::
+
+   Bareos Subscription customers have credentials to authenticate against https://download.bareos.com.
+   Some files can be accessed without authentication, but to use the repositories,
+   authentication is mandatory. When downloading the file :file:`add_bareos_repositories.sh`,
+   it is ready to use, because it contains your personal authentication credentials.
+   Therefore downloading this file requires authentication.
+   If this is inconvenient, you can alternatively download :file:`add_bareos_repository_template.sh`
+   and set ``BAREOS_USERNAME`` and ``BAREOS_PASSWORD`` manually.
 
 
 
