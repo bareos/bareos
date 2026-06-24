@@ -327,6 +327,10 @@ linkcheck_retries = 2  # default 1
 linkcheck_timeout = 10  # default 300
 linkcheck_workers = 2  # default 5
 linkcheck_anchors = True
+linkcheck_anchors_ignore = [
+    r"L\d+",  # ignore github line anchors, as they do not work with linkcheck
+    ".*/.*",  # if it contains a slash, its probably not an anchor
+]
 linkcheck_ignore = [
     r"\.\./*",
     r"http://localhost:*/",
@@ -338,11 +342,11 @@ linkcheck_ignore = [
     "http://bucket.s3_server/object",
     "http://127.0.0.1:8000/docs",
     "http://127.0.0.1:8000/redoc",
-    "https://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/*",
     r"https://github\.com/bareos/bareos/pull/\d+",
     "https://www.sphinx-doc.org/en/1.7/intro.html#",
     "https://www.snia.org/ndmp",  # cloudflare protected
-    "https://www.dell.com/support/*",  # client protected
+    "https://www.dell.com/support.*",  # client protected
+    "https://bugs.bareos.org.*",  # does not exist anymore
 ]
 # linkcheck_auth = [
 #  ('https://foo\.yourcompany\.com/.+', ('johndoe', 'secret')),
