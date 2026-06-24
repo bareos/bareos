@@ -104,7 +104,7 @@ A gpt partition on the actual disk starts with a header in the second block.  Th
 ``disk guid`` is the guid assigned to this disk.  This is a way of identifying it.
 The ``bootstrap`` is the actual code that sits at the start of the disk that loads up the actual bootloader thats stored somewhere else on the disk.
 
-See https://en.wikipedia.org/wiki/GUID_Partition_Table#Partition_table_header_(LBA_1)
+See https://en.wikipedia.org/wiki/GUID_Partition_Table#Partition_table_header_%28LBA_1%29
 for reference.
 
 The partition table entries look like so:

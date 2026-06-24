@@ -844,7 +844,7 @@ Configure your Bareos Server in :file:`api.ini` adapting these 3 lines of config
    Port=9101
 
 To configure the webserver uvicorn (e.g. adapt used network interfaces, ports), read the `uvicorn
-documentation <https://www.uvicorn.org/>`_. The default port is 8000 and the default interface is the loopback device.
+documentation <https://uvicorn.dev/>`_. The default port is 8000 and the default interface is the loopback device.
 
 Start the backend server
 ~~~~~~~~~~~~~~~~~~~~~~~~
