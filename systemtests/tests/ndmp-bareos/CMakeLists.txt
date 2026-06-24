@@ -18,6 +18,18 @@
 #   02110-1301, USA.
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+set(ndmp_data_agent_address
+    ""
+    CACHE STRING "address of the ndmp data agent"
+)
+set(ndmp_data_agent_user
+    "ndmpadmin"
+    CACHE STRING "user to access the ndmp data agent"
+)
+set(ndmp_data_agent_password
+    "test"
+    CACHE STRING "password to access the ndmp data agent"
+)
 if(ndmp_data_agent_address)
 
   find_program(IP_COMMAND ip)

@@ -32,6 +32,7 @@ set(ndmp_data_agent_password
     CACHE STRING "password to access the ndmp data agent"
 )
 set(ndmp_tape_and_robot_agent_address
+    ""
     CACHE STRING "address of the ndmp robot and tape agents"
 )
 set(ndmp_tape_and_robot_agent_user
