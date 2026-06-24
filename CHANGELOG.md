@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bpipe plugin: add unique suffix to file name [PR #2613]
 - deprecate: FD alias, Counter res,  var substitutions in label format  and fix when= handling [PR #2695]
 - build: remove windows warnings [PR #2698]
+- spec: use gcc-15 for rhel builds [PR #2705]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2321,4 +2322,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2695]: https://github.com/bareos/bareos/pull/2695
 [PR #2696]: https://github.com/bareos/bareos/pull/2696
 [PR #2698]: https://github.com/bareos/bareos/pull/2698
+[PR #2705]: https://github.com/bareos/bareos/pull/2705
 [unreleased]: https://github.com/bareos/bareos/tree/master
