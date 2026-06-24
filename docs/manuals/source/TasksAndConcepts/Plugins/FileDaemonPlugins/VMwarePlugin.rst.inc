@@ -411,7 +411,9 @@ Since :sinceVersion:`22.1.1: VMware Plugin: enable_cbt` the plugin will try to
 enable CBT automatically when the plugin option **enable_cbt=yes** is set (see below).
 Since :sinceVersion:`23.0.0: VMware Plugin: enable_cbt` this option is set to **yes** by default.
 
-As of https://knowledge.broadcom.com/external/article?legacyId=2075984 manually enabling CBT is currently not working properly. The API however works properly. To enable CBT use the Script :command:`vmware_cbt_tool.py`, it is packaged in the bareos-vmware-plugin package:
+Some bugs in older versions of vSphere, i.e. 5.5, prevented this mechanism from working.
+You can use the script :command:`vmware_cbt_tool.py` even in those cases.
+It is packaged in the bareos-vmware-plugin package:
 
 .. code-block:: shell-session
    :caption: usage of vmware\_cbt\_tool.py
