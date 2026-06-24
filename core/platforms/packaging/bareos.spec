@@ -57,12 +57,15 @@ Vendor:     The Bareos Team
 %define glusterfs 1
 %endif
 
+%if 0%{?rhel} && 0%{?rhel} <= 9
+
+%define glusterfs 1
+%endif
 # use modernized GCC 15 toolchain for C++20 support
 %if 0%{?rhel} && 0%{?rhel} <= 10
 BuildRequires: gcc-toolset-15-gcc
 BuildRequires: gcc-toolset-15-gcc-plugin-annobin
 BuildRequires: gcc-toolset-15-gcc-c++
-%define glusterfs 1
 # rhel <=8 does not have grpc
 %if 0%{?rhel} && 0%{?rhel} <= 8
 %define enable_grpc 0
