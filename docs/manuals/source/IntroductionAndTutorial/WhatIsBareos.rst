@@ -305,7 +305,7 @@ For a simple comparison of the two editions, please see the following table:
 +-------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Issue tracker           | `GitHub Issues <https://github.com/bareos/bareos/issues/>`_                                                                                                   |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
-| New features            | `Join in <https://www.bareos.com/community/join-in/>`_                       | `Co-Funding         <https://www.bareos.com/pricing/#co-funding>`_             |
+| New features            | `Join in <https://www.bareos.com/community/join-in/>`_                       | `Co-Funding         <https://www.bareos.com/funded-development>`_              |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
 
 This binary release policy is in place since Bareos >= 22.
