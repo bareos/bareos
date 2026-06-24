@@ -174,8 +174,6 @@ Thus if you modify your Pool resource to be:
    }
 
 Bareos will create Volume names **Vol0001**, **Vol0002**, and so on when new Volumes are needed.
-Much more complex and elaborate labels can be created using variable expansion defined in the
-:ref:`Variable Expansion <VarsChapter>` chapter of this manual.
 
 The second change that is necessary to make automatic labeling work is to give the
 Storage Device permission to automatically label Volumes.
