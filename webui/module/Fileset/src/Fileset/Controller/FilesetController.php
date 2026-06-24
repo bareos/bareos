@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -118,13 +118,21 @@ class FilesetController extends AbstractActionController
         }
 
         $filesetid = $this->params()->fromRoute('id', 0);
+        $fileset = null;
 
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
             $fileset = $this->getFilesetModel()->getFileset($this->bsock, $filesetid);
-            $this->bsock->disconnect();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
+        } finally {
+            if ($this->bsock) {
+                try {
+                    $this->bsock->disconnect();
+                } catch (Exception $e) {
+                    error_log($e->getMessage());
+                }
+            }
         }
 
         return new ViewModel(

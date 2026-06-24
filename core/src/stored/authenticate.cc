@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -73,7 +73,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
   dirname = GetPoolMemory(PM_MESSAGE);
   dirname = CheckPoolMemorySize(dirname, dir->message_length);
 
-  if (sscanf(dir->msg, "Hello Director %127s calling", dirname) != 1) {
+  if (bsscanf(dir->msg, "Hello Director %127s calling", dirname) != 1) {
     dir->msg[100] = 0;
     Dmsg2(debuglevel, "Bad Hello command from Director at %s: %s\n", dir->who(),
           dir->msg);

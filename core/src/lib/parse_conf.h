@@ -78,6 +78,8 @@ struct ResourceTable {
     std::string name, group_name;
   };
   std::vector<Alias> aliases = {}; /* Resource name and group name aliases */
+
+  bool deprecated = false;
 };
 
 // Common Resource definitions
@@ -170,6 +172,12 @@ enum
   CFG_TYPE_CIPHER = 301 /* Encryption Cipher */
 };
 
+enum string_type : int
+{
+  CFG_STR_TYPE_DEFAULT,
+  CFG_STR_TYPE_LABEL_FORMAT,
+};
+
 struct DatatypeName {
   const int number;
   const char* name;
@@ -196,10 +204,7 @@ class ConfigurationParser {
                                 bool inherited,
                                 bool verbose);
 
-  std::string cf_;                            /* Config file parameter */
-  lexer::error_handler* scan_error_{nullptr}; /* Error handler if non-null */
-  lexer::warning_handler* scan_warning_{
-      nullptr}; /* Warning handler if non-null */
+  std::string cf_; /* Config file parameter */
   resource_initer* init_res_{
       nullptr}; /* Init resource handler for non default types if non-null */
   resource_storer* store_res_{
@@ -225,8 +230,6 @@ class ConfigurationParser {
 
   ConfigurationParser();
   ConfigurationParser(const char* cf,
-                      lexer::error_handler* scan_error,
-                      lexer::warning_handler* scan_warning,
                       resource_initer* init_res,
                       resource_storer* store_res,
                       resource_printer* print_res,

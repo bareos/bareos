@@ -57,15 +57,27 @@ using namespace std;
 #  include <objbase.h>
 
 // Kludges to get Vista code to compile.
-#  define __in IN
-#  define __out OUT
-#  define __RPC_unique_pointer
-#  define __RPC_string
+#  ifndef __in
+#    define __in IN
+#  endif
+#  ifndef __out
+#    define __out OUT
+#  endif
+#  ifndef __RPC_unique_pointer
+#    define __RPC_unique_pointer
+#  endif
+#  ifndef __RPC_string
+#    define __RPC_string
+#  endif
 #  ifndef __RPC__out_ecount_part
 #    define __RPC__out_ecount_part(x, y)
 #  endif
-#  define __RPC__deref_inout_opt
-#  define __RPC__out
+#  ifndef __RPC__deref_inout_opt
+#    define __RPC__deref_inout_opt
+#  endif
+#  ifndef __RPC__out
+#    define __RPC__out
+#  endif
 
 #  if !defined(ENABLE_NLS)
 #    define setlocale(p, d)
@@ -74,10 +86,6 @@ using namespace std;
 #  ifdef HAVE_STRSAFE_H
 // Used for safe string manipulation
 #    include <strsafe.h>
-#  endif
-
-#  ifdef HAVE_MINGW
-class IXMLDOMDocument;
 #  endif
 
 #  define VSSClientGeneric VSSClientVista

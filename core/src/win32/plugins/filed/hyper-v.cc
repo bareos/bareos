@@ -730,7 +730,7 @@ struct variant_type {
 struct cim_type {
 #define DEFINE_CIM_TYPE(name, vtype, ctype)        \
   struct name {                                    \
-    using v_type = variant_type::##vtype;          \
+    using v_type = variant_type::vtype;            \
     static constexpr CIMTYPE c_type = CIM_##ctype; \
   }
 
@@ -3454,7 +3454,6 @@ static void prepare_restore_object(PluginContext* ctx)
   auto& prepared = std::get<plugin_ctx::backup::prepared_backup>(bstate.state);
 
   const auto& srvc = p_ctx->virt_service;
-  const auto& system_srvc = bstate.system_srvc;
   const auto& snapshot_srvc = bstate.snapshot_srvc;
 
   TRCC(ctx, "pre pointer = {}", fmt_as_ptr(prepared.vm_snapshot.ptr.p));
@@ -4348,7 +4347,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
 }
 
 static bRC pluginBackupIO(PluginContext* ctx,
-                          plugin_ctx* p_ctx,
+                          plugin_ctx* /*p_ctx*/,
                           plugin_ctx::backup& bstate,
                           io_pkt* io)
 {
@@ -4539,8 +4538,6 @@ static bRC pluginBackupIO(PluginContext* ctx,
     } break;
     case filedaemon::IO_CLOSE: {
       if (prepared.files_to_backup.size() > 0) {
-        auto& current_file = prepared.files_to_backup.back();
-
         auto res = CloseHandle(io->hndl);
 
         io->hndl = INVALID_HANDLE_VALUE;
@@ -4622,7 +4619,7 @@ static bool WriteFile_All(HANDLE handle,
 }
 
 static bRC pluginRestoreIO(PluginContext* ctx,
-                           plugin_ctx* p_ctx,
+                           plugin_ctx* /*p_ctx*/,
                            plugin_ctx::restore& restore_ctx,
                            io_pkt* io)
 {

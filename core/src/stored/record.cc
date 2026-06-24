@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -138,8 +138,8 @@ static const char* record_compression_to_str(PoolMem& resultbuffer,
       UnserEnd(buf, sizeof(comp_stream_header));
 
       Dmsg4(400,
-            "Compressed data stream found: magic=0x%x, len=%d, level=%d, "
-            "ver=0x%x\n",
+            "Compressed data stream found: magic=0x%" PRIx32 ", len=%" PRIu32
+            ", level=%d, ver=0x%x\n",
             comp_magic, comp_len, comp_level, comp_version);
 
       switch (comp_magic) {
@@ -481,7 +481,7 @@ const char* record_to_str(PoolMem& resultbuffer,
   char stream_buf[100];
 
   resultbuffer.bsprintf(
-      "FileIndex=%-5d Stream=%-2d %-25s DataLen=%-5d", rec->FileIndex,
+      "FileIndex=%-5d Stream=%-2d %-25s DataLen=%-5u", rec->FileIndex,
       rec->Stream, stream_to_ascii(stream_buf, rec->Stream, rec->FileIndex),
       rec->data_len);
   IndentMultilineString(
@@ -511,10 +511,10 @@ void DumpRecord(const char* tag, const DeviceRecord* rec)
   Dmsg2(100, "%-14s %u\n", "remainder", rec->remainder);
   for (unsigned int i = 0;
        i < (sizeof(rec->state_bits) / sizeof(rec->state_bits[0])); i++) {
-    Dmsg3(100, "%-11s[%d]        %2.2x\n", "state_bits", i,
+    Dmsg3(100, "%-11s[%u]        %2.2x\n", "state_bits", i,
           (uint8_t)rec->state_bits[i]);
   }
-  Dmsg3(100, "%-14s %u (%s)\n", "state", rec->state,
+  Dmsg3(100, "%-14s %d (%s)\n", "state", rec->state,
         record_state_to_ascii(rec->state));
   Dmsg2(100, "%-14s %p\n", "bsr", rec->bsr);
   Dmsg2(100, "%-14s %p\n", "data", rec->data);
@@ -662,8 +662,8 @@ bool DeviceControlRecord::WriteRecord()
   }
 
   while (!WriteRecordToBlock(this, after_rec)) {
-    Dmsg2(850, "!WriteRecordToBlock data_len=%d rem=%d\n", after_rec->data_len,
-          after_rec->remainder);
+    Dmsg2(850, "!WriteRecordToBlock data_len=%" PRIu32 " rem=%" PRIu32 "\n",
+          after_rec->data_len, after_rec->remainder);
     if (!WriteBlockToDevice()) {
       Dmsg2(90, "Got WriteBlockToDev error on device %s. %s\n",
             dev->print_name(), dev->bstrerror());
@@ -678,7 +678,7 @@ bool DeviceControlRecord::WriteRecord()
     goto bail_out;
   }
 
-  Dmsg4(850, "WriteRecord FI=%s SessId=%d Strm=%s len=%d\n",
+  Dmsg4(850, "WriteRecord FI=%s SessId=%" PRIu32 " Strm=%s len=%" PRIu32 "\n",
         FI_to_ascii(buf1, after_rec->FileIndex), after_rec->VolSessionId,
         stream_to_ascii(buf2, after_rec->Stream, after_rec->FileIndex),
         after_rec->data_len);
@@ -723,8 +723,8 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
     ASSERT(block->buf_len >= block->binbuf);
 
     Dmsg9(890,
-          "%s() state=%d (%s) FI=%s SessId=%d Strm=%s len=%d "
-          "block_navail=%d remainder=%d\n",
+          "%s() state=%d (%s) FI=%s SessId=%" PRIu32 " Strm=%s len=%" PRIu32
+          " block_navail=%" PRIu32 " remainder=%" PRIu32 "\n",
           __PRETTY_FUNCTION__, rec->state, record_state_to_ascii(rec->state),
           FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
           stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len,
@@ -869,7 +869,7 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
 
   /* Get the header. There is always a full header, otherwise we find it in the
    * next block. */
-  Dmsg3(450, "Block=%d Ver=%d size=%u\n", dcr->block->BlockNumber,
+  Dmsg3(450, "Block=%" PRIu32 " Ver=%d size=%u\n", dcr->block->BlockNumber,
         dcr->block->BlockVer, dcr->block->block_len);
   if (dcr->block->BlockVer == 1) {
     rhl = RECHDR1_LENGTH;
@@ -878,7 +878,8 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
   }
   if (remlen >= rhl) {
     Dmsg4(450,
-          "Enter read_record_block: remlen=%d data_len=%d rem=%d blkver=%d\n",
+          "Enter read_record_block: remlen=%" PRIu32 " data_len=%" PRIu32
+          " rem=%" PRIu32 " blkver=%d\n",
           remlen, rec->data_len, rec->remainder, dcr->block->BlockVer);
 
     UnserBegin(dcr->block->bufp, WRITE_RECHDR_LENGTH);
@@ -910,7 +911,7 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
     /* If Stream is negative, it means that this is a continuation
      * of a previous partially written record. */
     if (Stream < 0) { /* continuation record? */
-      Dmsg1(500, "Got negative Stream => continuation. remainder=%d\n",
+      Dmsg1(500, "Got negative Stream => continuation. remainder=%" PRIu32 "\n",
             rec->remainder);
       SetBit(REC_CONTINUATION, rec->state_bits);
       if (!rec->remainder) { /* if we didn't read previously */
@@ -935,8 +936,9 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
     }
 
     Dmsg6(450,
-          "rd_rec_blk() got FI=%s SessId=%d Strm=%s len=%u "
-          "remlen=%d data_len=%d\n",
+          "rd_rec_blk() got FI=%s SessId=%" PRIu32
+          " Strm=%s len=%u "
+          "remlen=%" PRIu32 " data_len=%" PRIu32 "\n",
           FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
           stream_to_ascii(buf2, rec->Stream, rec->FileIndex), data_bytes,
           remlen, rec->data_len);
@@ -962,7 +964,8 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
     SetBit(REC_BLOCK_EMPTY, rec->state_bits);
     EmptyBlock(dcr->block);
     Jmsg2(dcr->jcr, M_WARNING, 0,
-          T_("Sanity check failed. maxlen=%d datalen=%d. Block discarded.\n"),
+          T_("Sanity check failed. maxlen=%d datalen=%" PRIu32
+             ". Block discarded.\n"),
           MAX_BLOCK_LENGTH, data_bytes);
     return false;
   }
@@ -988,14 +991,17 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
     dcr->block->binbuf -= remlen;
     rec->data_len += remlen;
     rec->remainder = 1; /* partial record transferred */
-    Dmsg1(450, "read_record_block: partial xfered=%d\n", rec->data_len);
+    Dmsg1(450, "read_record_block: partial xfered=%" PRIu32 "\n",
+          rec->data_len);
     SetBit(REC_PARTIAL_RECORD, rec->state_bits);
     SetBit(REC_BLOCK_EMPTY, rec->state_bits);
     return true;
   }
   rec->remainder = 0;
 
-  Dmsg4(450, "Rtn full rd_rec_blk FI=%s SessId=%d Strm=%s len=%d\n",
+  Dmsg4(450,
+        "Rtn full rd_rec_blk FI=%s SessId=%" PRIu32 " Strm=%s len=%" PRIu32
+        "\n",
         FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
         stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
 

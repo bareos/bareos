@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,8 +26,6 @@
 #include "lib/message.h"
 #include "lib/edit.h"
 #include "include/exit_codes.h"
-
-#include <regex>
 
 class BareosCliFormatter : public CLI::Formatter {
  public:
@@ -81,11 +79,29 @@ class BareosCliFormatter : public CLI::Formatter {
   {
     std::stringstream out;
 
-    std::string name = make_option_name(opt, is_positional);
+    std::string orig_name = make_option_name(opt, is_positional);
     // remove option values from string, eg.
     //    -s{false},--no-signals{false}
     // => -s,--no-signals
-    name = std::regex_replace(name, std::regex("\\{[^}]*\\}"), "");
+
+    std::string name;
+    name.reserve(orig_name.size());
+
+    {
+      std::string_view to_parse = orig_name;
+      while (!to_parse.empty()) {
+        auto start_pos = to_parse.find('{');
+        if (start_pos == to_parse.npos) { break; }
+        auto end_pos = to_parse.find('}', start_pos);
+        if (end_pos == to_parse.npos) { break; }
+
+        name.append(to_parse.substr(0, start_pos));
+        to_parse = to_parse.substr(end_pos + 1);
+      }
+
+      name.append(to_parse);
+    }
+
     out << indent << name;
 
     out << make_option_opts(opt);

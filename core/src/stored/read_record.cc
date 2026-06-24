@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -79,11 +79,11 @@ static void HandleSessionRecord(Device* dev,
       rtype = buf;
       break;
   }
-  Dmsg5(
-      debuglevel,
-      T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
-      rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
-      rec->data_len);
+  Dmsg5(debuglevel,
+        T_("%s Record: VolSessionId=%" PRIu32 " VolSessionTime=%" PRIu32
+           " JobId=%d DataLen=%" PRIu32 "\n"),
+        rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
+        rec->data_len);
 }
 
 static char* rec_state_bits_to_str(DeviceRecord* rec)
@@ -167,7 +167,7 @@ void ReadContextSetRecord(DeviceControlRecord* dcr, READ_CTX* rctx)
   if (!found) {
     rec = new_record();
     rctx->recs->prepend(rec);
-    Dmsg3(debuglevel, "New record for state=%s SI=%d ST=%d\n",
+    Dmsg3(debuglevel, "New record for state=%s SI=%" PRIu32 " ST=%" PRIu32 "\n",
           rec_state_bits_to_str(rec), dcr->block->VolSessionId,
           dcr->block->VolSessionTime);
   }
@@ -287,12 +287,14 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
 
   while (1) {
     if (!ReadRecordFromBlock(dcr, rec)) {
-      Dmsg3(400, "!read-break. state_bits=%s blk=%d rem=%d\n",
+      Dmsg3(400, "!read-break. state_bits=%s blk=%" PRIu32 " rem=%" PRIu32 "\n",
             rec_state_bits_to_str(rec), block->BlockNumber, rec->remainder);
       return false;
     }
 
-    Dmsg5(debuglevel, "read-OK. state_bits=%s blk=%d rem=%d file:block=%u:%u\n",
+    Dmsg5(debuglevel,
+          "read-OK. state_bits=%s blk=%" PRIu32 " rem=%" PRIu32
+          " file:block=%u:%u\n",
           rec_state_bits_to_str(rec), block->BlockNumber, rec->remainder,
           dev->file, dev->block_num);
 
@@ -301,7 +303,9 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
      *  before accessing the record, we may need to read again to
      *  get all the data. */
     rctx->records_processed++;
-    Dmsg6(debuglevel, "recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
+    Dmsg6(debuglevel,
+          "recno=%" PRIu32 " state_bits=%s blk=%" PRIu32 " SI=%" PRIu32
+          " ST=%" PRIu32 " FI=%d\n",
           rctx->records_processed, rec_state_bits_to_str(rec),
           block->BlockNumber, rec->VolSessionId, rec->VolSessionTime,
           rec->FileIndex);
@@ -336,7 +340,8 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
         return false;
       } else if (rec->match_stat == 0) { /* no match */
         Dmsg4(debuglevel,
-              "BootStrapRecord no match: clear rem=%d FI=%d before SetEof pos "
+              "BootStrapRecord no match: clear rem=%" PRIu32
+              " FI=%d before SetEof pos "
               "%u:%u\n",
               rec->remainder, rec->FileIndex, dev->file, dev->block_num);
         rec->remainder = 0;
@@ -350,7 +355,8 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
 
     if (IsPartialRecord(rec)) {
       Dmsg6(debuglevel,
-            "Partial, break. recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
+            "Partial, break. recno=%" PRIu32 " state_bits=%s blk=%" PRIu32
+            " SI=%" PRIu32 " ST=%" PRIu32 " FI=%d\n",
             rctx->records_processed, rec_state_bits_to_str(rec),
             block->BlockNumber, rec->VolSessionId, rec->VolSessionTime,
             rec->FileIndex);
@@ -418,7 +424,8 @@ bool ReadRecords(DeviceControlRecord* dcr,
       ReadContextSetRecord(dcr, rctx);
     }
 
-    Dmsg3(debuglevel, "Before read rec loop. stat=%s blk=%d rem=%d\n",
+    Dmsg3(debuglevel,
+          "Before read rec loop. stat=%s blk=%" PRIu32 " rem=%" PRIu32 "\n",
           rec_state_bits_to_str(rctx->rec), dcr->block->BlockNumber,
           rctx->rec->remainder);
 
@@ -440,7 +447,8 @@ bool ReadRecords(DeviceControlRecord* dcr,
         ok = RecordCb(dcr, rctx->rec, user_data);
       } else {
         Dmsg6(debuglevel,
-              "OK callback. recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
+              "OK callback. recno=%" PRIu32 " state_bits=%s blk=%" PRIu32
+              " SI=%" PRIu32 " ST=%" PRIu32 " FI=%d\n",
               rctx->records_processed, rec_state_bits_to_str(rctx->rec),
               dcr->block->BlockNumber, rctx->rec->VolSessionId,
               rctx->rec->VolSessionTime, rctx->rec->FileIndex);

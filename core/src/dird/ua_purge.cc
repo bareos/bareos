@@ -648,7 +648,7 @@ static void do_truncate_on_purge(UaContext* ua,
   // Send relabel command, and check for valid response
   while (sd->recv() >= 0) {
     ua->SendMsg("%s", sd->msg);
-    if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {
+    if (bsscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {
       ok = true;
     }
   }
@@ -823,7 +823,7 @@ bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr)
         // Check if destination pool size is ok
         if (newpr.MaxVols > 0 && newpr.NumVols >= newpr.MaxVols) {
           ua->ErrorMsg(T_("Unable move recycled Volume in full "
-                          "Pool \"%s\" MaxVols=%d\n"),
+                          "Pool \"%s\" MaxVols=%" PRIu32 "\n"),
                        newpr.Name, newpr.MaxVols);
 
         } else { /* move media */

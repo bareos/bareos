@@ -35,7 +35,7 @@
 #include "lib/bnet.h"
 #include "lib/bpoll.h"
 #include "lib/btimers.h"
-#include "lib/tls_openssl.h"
+#include "lib/tls/openssl.h"
 #include "lib/bsock_tcp.h"
 #include "lib/berrno.h"
 
@@ -774,10 +774,11 @@ bool BareosSocketTCP::SetBufferSize(uint32_t size, int rw)
       Qmsg1(get_jcr(), M_ERROR, 0, T_("sockopt error: %s\n"), be.bstrerror());
       dbuf_size -= TAPE_BSIZE;
     }
-    Dmsg1(200, "set network buffer size=%d\n", dbuf_size);
+    Dmsg1(200, "set network buffer size=%" PRIu32 "\n", dbuf_size);
     if (dbuf_size != start_size) {
       Qmsg1(get_jcr(), M_WARNING, 0,
-            T_("Warning network buffer = %d bytes not max size.\n"), dbuf_size);
+            T_("Warning network buffer = %" PRIu32 " bytes not max size.\n"),
+            dbuf_size);
     }
   }
   if (size != 0) {
@@ -795,10 +796,11 @@ bool BareosSocketTCP::SetBufferSize(uint32_t size, int rw)
       Qmsg1(get_jcr(), M_ERROR, 0, T_("sockopt error: %s\n"), be.bstrerror());
       dbuf_size -= TAPE_BSIZE;
     }
-    Dmsg1(900, "set network buffer size=%d\n", dbuf_size);
+    Dmsg1(900, "set network buffer size=%" PRIu32 "\n", dbuf_size);
     if (dbuf_size != start_size) {
       Qmsg1(get_jcr(), M_WARNING, 0,
-            T_("Warning network buffer = %d bytes not max size.\n"), dbuf_size);
+            T_("Warning network buffer = %" PRIu32 " bytes not max size.\n"),
+            dbuf_size);
     }
   }
 

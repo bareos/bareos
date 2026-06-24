@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -212,6 +212,7 @@ echo '</strong>';
       </div>
 
 <?php
+   echo $this->formHidden($form->get('csrf'));
    echo $this->form()->closeTag($form);
 ?>
 
@@ -303,14 +304,22 @@ echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jstree.min.c
    }
 
    function updateModalRestoreParamsTable(client, restoreclient, replace, where, pluginoptions, selectedNumberOfDirectories, selectedNumberOfFiles) {
+      function appendRestoreParamRow(label, value) {
+         $('#restore-params-table').append(
+            $('<tr>')
+               .append($('<td>').append($('<b>').text(label)))
+               .append($('<td>').text(value))
+         );
+      }
+
       $('#restore-params-table').empty();
-      $('#restore-params-table').append("<tr><td><b>Client:</b></td><td>" + client + "</td></tr>");
-      $('#restore-params-table').append("<tr><td><b>Restore to client:</b></td><td>" + restoreclient + "</td></tr>");
-      $('#restore-params-table').append("<tr><td><b>Replace files on client:</b></td><td>" + replace + "</td></tr>");
-      $('#restore-params-table').append("<tr><td><b>Restore location on client:</b></td><td>" + where + "</td></tr>");
-      $('#restore-params-table').append("<tr><td><b>Plugin Options:</b></td><td>" + pluginoptions + "</td></tr>");
-      $('#restore-params-table').append("<tr><td><b>Directories selected:</b></td><td>" + selectedNumberOfDirectories + "</td></tr>");
-      $('#restore-params-table').append("<tr><td><b>Files selected:</b></td><td>" + selectedNumberOfFiles + "</td></tr>");
+      appendRestoreParamRow('Client:', client);
+      appendRestoreParamRow('Restore to client:', restoreclient);
+      appendRestoreParamRow('Replace files on client:', replace);
+      appendRestoreParamRow('Restore location on client:', where);
+      appendRestoreParamRow('Plugin Options:', pluginoptions);
+      appendRestoreParamRow('Directories selected:', selectedNumberOfDirectories);
+      appendRestoreParamRow('Files selected:', selectedNumberOfFiles);
    }
 
    function updateRestoreParams(k, v) {

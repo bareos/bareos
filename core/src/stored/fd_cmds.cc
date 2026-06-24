@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -88,13 +88,14 @@ inline constexpr const char NO_open[] = "3901 Error session already open\n";
 inline constexpr const char NOT_opened[] = "3902 Error session not opened\n";
 inline constexpr const char OK_end[] = "3000 OK end\n";
 inline constexpr const char OK_close[] = "3000 OK close Status = %d\n";
-inline constexpr const char OK_open[] = "3000 OK open ticket = %d\n";
+inline constexpr const char OK_open[] = "3000 OK open ticket = %" PRIu32 "\n";
 inline constexpr const char ERROR_append[] = "3903 Error append data\n";
 
 /* Responses sent to the Director */
 inline constexpr const char Job_start[] = "3010 Job %s start\n";
 inline constexpr const char Job_end[]
-    = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+    = "3099 Job %s end JobStatus=%d JobFiles=%" PRIu32
+      " JobBytes=%s JobErrors=%" PRIu32 "\n";
 }  // namespace
 
 /**
@@ -141,7 +142,7 @@ void* HandleFiledConnection(BareosSocket* fd, char* job_name)
     utime_t now;
 
     *jcr->sd_impl->client_available.lock() = true;
-    Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,
+    Dmsg2(50, "OK Authentication jid=%" PRIu32 " Job %s\n", jcr->JobId,
           jcr->Job);
 
     // Update the initial Job Statistics.
@@ -370,13 +371,13 @@ static bool ReadOpenSession(JobControlRecord* jcr)
     return false;
   }
 
-  if (sscanf(fd->msg, read_open, jcr->sd_impl->read_dcr->VolumeName,
-             &jcr->sd_impl->read_session.read_VolSessionId,
-             &jcr->sd_impl->read_session.read_VolSessionTime,
-             &jcr->sd_impl->read_session.read_StartFile,
-             &jcr->sd_impl->read_session.read_EndFile,
-             &jcr->sd_impl->read_session.read_StartBlock,
-             &jcr->sd_impl->read_session.read_EndBlock)
+  if (bsscanf(fd->msg, read_open, jcr->sd_impl->read_dcr->VolumeName,
+              &jcr->sd_impl->read_session.read_VolSessionId,
+              &jcr->sd_impl->read_session.read_VolSessionTime,
+              &jcr->sd_impl->read_session.read_StartFile,
+              &jcr->sd_impl->read_session.read_EndFile,
+              &jcr->sd_impl->read_session.read_StartBlock,
+              &jcr->sd_impl->read_session.read_EndBlock)
       == 7) {
     if (jcr->sd_impl->session_opened) {
       PmStrcpy(jcr->errmsg, T_("Attempt to open read on non-open session.\n"));
@@ -384,7 +385,7 @@ static bool ReadOpenSession(JobControlRecord* jcr)
       return false;
     }
     Dmsg4(100,
-          "ReadOpenSession got: JobId=%d Vol=%s VolSessId=%" PRId32
+          "ReadOpenSession got: JobId=%" PRIu32 " Vol=%s VolSessId=%" PRIu32
           " VolSessT=%" PRIu32 "\n",
           jcr->JobId, jcr->sd_impl->read_dcr->VolumeName,
           jcr->sd_impl->read_session.read_VolSessionId,

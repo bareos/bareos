@@ -342,7 +342,8 @@ void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
               inc->level = 1; /* Not used with libfzlib */
             }
           }
-          Dmsg2(200, "Compression alg=%d level=%d\n", inc->algo, inc->level);
+          Dmsg2(200, "Compression alg=%" PRIu32 " level=%d\n", inc->algo,
+                inc->level);
           break;
         case 'z': /* Min, Max or Approx size or Size range */
           rp++;   /* Skip z */
@@ -405,7 +406,9 @@ void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
     for (next = ff->included_files_list; next->next; next = next->next) {}
     next->next = inc;
   }
-  Dmsg4(100, "add_fname_to_include prefix=%d compress=%d alg= %d fname=%s\n",
+  Dmsg4(100,
+        "add_fname_to_include prefix=%d compress=%d alg= %" PRIu32
+        " fname=%s\n",
         prefixed, BitIsSet(FO_COMPRESS, inc->options), inc->algo, inc->fname);
 }
 

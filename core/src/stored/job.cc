@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,7 +63,8 @@ inline constexpr const char OK_nextrun[] = "3000 OK Job Authorization=%s\n";
 inline constexpr const char BAD_job[]
     = "3915 Bad Job command. stat=%d CMD: %s\n";
 inline constexpr const char Job_end[]
-    = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+    = "3099 Job %s end JobStatus=%d JobFiles=%" PRIu32
+      " JobBytes=%s JobErrors=%" PRIu32 "\n";
 
 /**
  * Director requests us to start a job
@@ -91,12 +92,12 @@ bool job_cmd(JobControlRecord* jcr)
   // Get JobId and permissions from Director
   Dmsg1(100, "<dird: %s", dir->msg);
   bstrncpy(spool_size, "0", sizeof(spool_size));
-  status = sscanf(dir->msg, jobcmd, &JobId, job.c_str(), job_name.c_str(),
-                  client_name.c_str(), &JobType, &level, fileset_name.c_str(),
-                  &no_attributes, &spool_attributes, fileset_md5.c_str(),
-                  &spool_data, &PreferMountedVols, spool_size, &rerunning,
-                  &jcr->VolSessionId, &jcr->VolSessionTime, &quota, &protocol,
-                  backup_format.c_str());
+  status = bsscanf(dir->msg, jobcmd, &JobId, job.c_str(), job_name.c_str(),
+                   client_name.c_str(), &JobType, &level, fileset_name.c_str(),
+                   &no_attributes, &spool_attributes, fileset_md5.c_str(),
+                   &spool_data, &PreferMountedVols, spool_size, &rerunning,
+                   &jcr->VolSessionId, &jcr->VolSessionTime, &quota, &protocol,
+                   backup_format.c_str());
   if (status != 19) {
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(BAD_job, status, jcr->errmsg);
@@ -108,7 +109,9 @@ bool job_cmd(JobControlRecord* jcr)
   jcr->rerunning = (rerunning) ? true : false;
   jcr->setJobProtocol(protocol);
 
-  Dmsg4(100, "rerunning=%d VolSesId=%d VolSesTime=%d Protocol=%d\n",
+  Dmsg4(100,
+        "rerunning=%d VolSesId=%" PRIu32 " VolSesTime=%" PRIu32
+        " Protocol=%d\n",
         jcr->rerunning, jcr->VolSessionId, jcr->VolSessionTime,
         jcr->getJobProtocol());
   /* Since this job could be rescheduled, we
@@ -121,7 +124,7 @@ bool job_cmd(JobControlRecord* jcr)
     FreeJcr(ojcr);
   }
   jcr->JobId = JobId;
-  Dmsg2(800, "Start JobId=%d %p\n", JobId, jcr);
+  Dmsg2(800, "Start JobId=%" PRId32 " %p\n", JobId, jcr);
   /* If job rescheduled because previous was incomplete,
    * the Resched flag is set and VolSessionId and VolSessionTime
    * are given to us (same as restarted job). */
@@ -165,7 +168,7 @@ bool job_cmd(JobControlRecord* jcr)
   jcr->sd_auth_key = strdup(auth_key);
   dir->fsend(OK_job, jcr->VolSessionId, jcr->VolSessionTime, auth_key);
   memset(auth_key, 0, sizeof(auth_key));
-  Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);
+  Dmsg2(50, ">dird jid=%" PRIu32 ": %s", jcr->JobId, dir->msg);
 
   DispatchNewPluginOptions(jcr);
   GeneratePluginEvent(jcr, bSdEventJobStart, (void*)"JobStart");
@@ -200,7 +203,7 @@ static void WaitFD(JobControlRecord* jcr)
 
   Dmsg3(50, "%s waiting %" PRId64 " sec for FD to contact SD key=%s\n",
         jcr->Job, wait_time, jcr->sd_auth_key);
-  Dmsg2(800, "Wait FD for jid=%d %p\n", jcr->JobId, jcr);
+  Dmsg2(800, "Wait FD for jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
   /* Wait for the File daemon to contact us to start the Job,
    * when he does, we will be released, unless the me->client_wait seconds
@@ -218,21 +221,22 @@ bool DoJobRun(JobControlRecord* jcr)
   switch (jcr->getJobProtocol()) {
     case PT_NDMP_BAREOS:
       if (jcr->authenticated && !jcr->IsJobCanceled()) {
-        Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
+        Dmsg2(800, "Running jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
         /* Wait for the Job to finish. As we want exclusive access to
          * things like the connection to the director we suspend this
          * thread and let the actual NDMP connection wake us after it
          * has performed the backup. E.g. instead of doing a busy wait
          * we just hang on a conditional variable. */
-        Dmsg2(800, "Wait for end job jid=%d %p\n", jcr->JobId, jcr);
+        Dmsg2(800, "Wait for end job jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
         lock_mutex(mutex);
         pthread_cond_wait(&jcr->sd_impl->job_end_wait, &mutex);
         unlock_mutex(mutex);
       } else {
-        Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
+        Dmsg2(800, "Auth fail or cancel for jid=%" PRIu32 " %p\n", jcr->JobId,
+              jcr);
       }
-      Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
+      Dmsg2(800, "Done jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
       /* For a NDMP backup we expect the protocol to send us either a nextrun
        * cmd or a finish cmd to let us know they are finished. */
@@ -240,12 +244,13 @@ bool DoJobRun(JobControlRecord* jcr)
     default:
       // Handle the file daemon session.
       if (jcr->authenticated && !jcr->IsJobCanceled()) {
-        Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
+        Dmsg2(800, "Running jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
         RunJob(jcr); /* Run the job */
       } else {
-        Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
+        Dmsg2(800, "Auth fail or cancel for jid=%" PRIu32 " %p\n", jcr->JobId,
+              jcr);
       }
-      Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
+      Dmsg2(800, "Done jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
       /* After a run cmd of a native backup we are done e.g.
        * return false. */
@@ -274,26 +279,27 @@ bool nextRunCmd(JobControlRecord* jcr)
       jcr->sd_auth_key = strdup(auth_key);
       dir->fsend(OK_nextrun, auth_key);
       memset(auth_key, 0, sizeof(auth_key));
-      Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);
+      Dmsg2(50, ">dird jid=%" PRIu32 ": %s", jcr->JobId, dir->msg);
 
       WaitFD(jcr);
 
       if (jcr->authenticated && !jcr->IsJobCanceled()) {
-        Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
+        Dmsg2(800, "Running jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
         /* Wait for the Job to finish. As we want exclusive access to
          * things like the connection to the director we suspend this
          * thread and let the actual NDMP connection wake us after it
          * has performed the backup. E.g. instead of doing a busy wait
          * we just hang on a conditional variable. */
-        Dmsg2(800, "Wait for end job jid=%d %p\n", jcr->JobId, jcr);
+        Dmsg2(800, "Wait for end job jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
         lock_mutex(mutex);
         pthread_cond_wait(&jcr->sd_impl->job_end_wait, &mutex);
         unlock_mutex(mutex);
       } else {
-        Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
+        Dmsg2(800, "Auth fail or cancel for jid=%" PRIu32 " %p\n", jcr->JobId,
+              jcr);
       }
-      Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
+      Dmsg2(800, "Done jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
       /* For a NDMP backup we expect the protocol to send us either a nextrun
        * cmd or a finish cmd to let us know they are finished. */
@@ -343,7 +349,7 @@ bool FinishCmd(JobControlRecord* jcr)
 
       FreePlugins(jcr); /* release instantiated plugins */
 
-      Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
+      Dmsg2(800, "Done jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
       return false; /* Continue DIR session ? */
     default:
@@ -363,10 +369,10 @@ bool FinishCmd(JobControlRecord* jcr)
 void StoredFreeJcr(JobControlRecord* jcr)
 {
   Dmsg0(200, "Start stored FreeJcr\n");
-  Dmsg2(800, "End Job JobId=%u %p\n", jcr->JobId, jcr);
+  Dmsg2(800, "End Job JobId=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
   if (jcr->dir_bsock) {
-    Dmsg2(800, "Send Terminate jid=%d %p\n", jcr->JobId, jcr);
+    Dmsg2(800, "Send Terminate jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
     jcr->dir_bsock->signal(BNET_EOD);
     jcr->dir_bsock->signal(BNET_TERMINATE);
   }

@@ -26,8 +26,8 @@ FROM
            PathId = %s
       ) AS tmp
       GROUP BY PathId, Name
-      LIMIT %lld
-      OFFSET %lld
+      LIMIT %" PRId64 "
+      OFFSET %" PRId64 "
    ) AS T1
 WHERE
    T1.JobTDate = Job.JobTDate AND

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -182,7 +182,7 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
     /* If we get here, it must be a request.  Either
      *  a message to dispatch, or a catalog request.
      *  Try to fulfill it. */
-    if (sscanf(bs->msg, "%020s Job=%127s ", MsgType, Job) != 2) {
+    if (bsscanf(bs->msg, "%020s Job=%127s ", MsgType, Job) != 2) {
       /* If the special flag allow_any_message is given ignore
        * the error and just return it as normal data. */
       if (allow_any_message) {
@@ -204,8 +204,8 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
      * Note, level should really be mtime, but that changes
      *   the protocol. */
     if (bs->msg[0] == 'J') { /* Job message */
-      if (sscanf(bs->msg, "Jmsg Job=%127s type=%d level=%lld", Job, &type,
-                 &mtime)
+      if (bsscanf(bs->msg, "Jmsg Job=%127s type=%d level=%lld", Job, &type,
+                  &mtime)
           != 3) {
         Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), bs->msg);
         continue;
@@ -235,7 +235,7 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
     if (bs->msg[0] == 'B') { /* SD sending file spool attributes */
       Dmsg2(100, "Blast attributes jcr %p: %s", jcr, bs->msg);
       char filename[256];
-      if (sscanf(bs->msg, "BlastAttr Job=%127s File=%255s", Job, filename)
+      if (bsscanf(bs->msg, "BlastAttr Job=%127s File=%255s", Job, filename)
           != 2) {
         Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), bs->msg);
         continue;
@@ -251,7 +251,7 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
     if (bs->msg[0] == 'S') { /* Status change */
       int JobStatus;
       char unused_job_buf[MAX_NAME_LENGTH];
-      if (sscanf(bs->msg, Job_status, &unused_job_buf, &JobStatus) == 2) {
+      if (bsscanf(bs->msg, Job_status, &unused_job_buf, &JobStatus) == 2) {
         SetJcrSdJobStatus(jcr, JobStatus); /* current status */
       } else {
         Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), bs->msg);

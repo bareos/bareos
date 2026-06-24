@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -593,7 +593,7 @@ static
       if (fd) {
         fd->SetTimedOut();
         jcr->MyThreadSendSignal(kTimeoutSignal);
-        Dmsg1(100, "term_stored killing JobId=%d\n", jcr->JobId);
+        Dmsg1(100, "term_stored killing JobId=%" PRIu32 "\n", jcr->JobId);
         /* ***FIXME*** wiffle through all dcrs */
         if (jcr->sd_impl->dcr && jcr->sd_impl->dcr->dev
             && jcr->sd_impl->dcr->dev->blocked()) {

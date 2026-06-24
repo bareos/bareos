@@ -802,7 +802,7 @@ static bool re_read_block_test()
     Pmsg0(0, T_("Error writing block to device.\n"));
     goto bail_out;
   } else {
-    Pmsg1(0, T_("Wrote first record of %d bytes.\n"), rec->data_len);
+    Pmsg1(0, T_("Wrote first record of %" PRIu32 " bytes.\n"), rec->data_len);
   }
   memset(rec->data, 2, rec->data_len);
   if (!WriteRecordToBlock(g_dcr, rec)) {
@@ -813,7 +813,7 @@ static bool re_read_block_test()
     Pmsg0(0, T_("Error writing block to device.\n"));
     goto bail_out;
   } else {
-    Pmsg1(0, T_("Wrote second record of %d bytes.\n"), rec->data_len);
+    Pmsg1(0, T_("Wrote second record of %" PRIu32 " bytes.\n"), rec->data_len);
   }
   memset(rec->data, 3, rec->data_len);
   if (!WriteRecordToBlock(g_dcr, rec)) {
@@ -824,7 +824,7 @@ static bool re_read_block_test()
     Pmsg0(0, T_("Error writing block to device.\n"));
     goto bail_out;
   } else {
-    Pmsg1(0, T_("Wrote third record of %d bytes.\n"), rec->data_len);
+    Pmsg1(0, T_("Wrote third record of %" PRIu32 " bytes.\n"), rec->data_len);
   }
   weofcmd();
   if (g_dev->HasCap(CAP_TWOEOF)) { weofcmd(); }
@@ -892,7 +892,9 @@ static bool SpeedTestRaw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
   init_total_speed();
   FillBuffer(mode, block->buf, block->buf_len);
 
-  Pmsg3(0, T_("Begin writing %i files of %sB with raw blocks of %u bytes.\n"),
+  Pmsg3(0,
+        T_("Begin writing %" PRIu32
+           " files of %sB with raw blocks of %u bytes.\n"),
         nb, edit_uint64_with_suffix(nb_gb, ed1), block->buf_len);
 
   for (uint32_t j = 0; j < nb; j++) {
@@ -947,8 +949,9 @@ static bool SpeedTestBareos(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
 
   FillBuffer(mode, rec->data, rec->data_len);
 
-  Pmsg3(0, T_("Begin writing %i files of %sB with blocks of %u bytes.\n"), nb,
-        edit_uint64_with_suffix(nb_gb, ed1), block->buf_len);
+  Pmsg3(0,
+        T_("Begin writing %" PRIu32 " files of %sB with blocks of %u bytes.\n"),
+        nb, edit_uint64_with_suffix(nb_gb, ed1), block->buf_len);
 
   for (uint32_t j = 0; j < nb; j++) {
     written = 0;
@@ -1203,14 +1206,14 @@ static bool write_read_test()
         Pmsg0(-1, T_("Got EOF on tape.\n"));
         if (i == num_recs + 1) { goto read_again; }
       }
-      Pmsg2(0, T_("Read block %d failed! ERR=%s\n"), i,
+      Pmsg2(0, T_("Read block %" PRIu32 " failed! ERR=%s\n"), i,
             be.bstrerror(g_dev->dev_errno));
       goto bail_out;
     }
     memset(rec->data, 0, rec->data_len);
     if (!ReadRecordFromBlock(g_dcr, rec)) {
       BErrNo be;
-      Pmsg2(0, T_("Read record failed. Block %d! ERR=%s\n"), i,
+      Pmsg2(0, T_("Read record failed. Block %" PRIu32 "! ERR=%s\n"), i,
             be.bstrerror(g_dev->dev_errno));
       goto bail_out;
     }
@@ -1218,7 +1221,8 @@ static bool write_read_test()
     for (uint32_t j = 0; j < len; j++) {
       if (*p != i) {
         Pmsg3(0,
-              T_("Bad data in record. Expected %d, got %d at byte %d. Test "
+              T_("Bad data in record. Expected %" PRIu32 ", got %" PRIu32
+                 " at byte %" PRIu32 ". Test "
                  "failed!\n"),
               i, *p, j);
         goto bail_out;
@@ -1401,7 +1405,8 @@ static int append_test()
   rewindcmd();
   Pmsg0(0, T_("Now moving to end of medium.\n"));
   eodcmd();
-  Pmsg2(-1, T_("We should be in file 3. I am at file %d. %s\n"), g_dev->file,
+  Pmsg2(-1, T_("We should be in file 3. I am at file %" PRIu32 ". %s\n"),
+        g_dev->file,
         g_dev->file == 3 ? T_("This is correct!")
                          : T_("This is NOT correct!!!!"));
 
@@ -1417,7 +1422,8 @@ static int append_test()
   Pmsg0(-1, T_("Doing Bareos scan of blocks:\n"));
   scan_blocks();
   Pmsg0(-1, T_("End scanning the tape.\n"));
-  Pmsg2(-1, T_("We should be in file 4. I am at file %d. %s\n"), g_dev->file,
+  Pmsg2(-1, T_("We should be in file 4. I am at file %" PRIu32 ". %s\n"),
+        g_dev->file,
         g_dev->file == 4 ? T_("This is correct!")
                          : T_("This is NOT correct!!!!"));
 
@@ -1608,7 +1614,8 @@ test_again:
     Pmsg1(0, T_("Bad status from fsr. ERR=%s\n"), g_dev->bstrerror());
     goto bail_out;
   }
-  Pmsg2(-1, T_("We should be in file 1. I am at file %d. %s\n"), g_dev->file,
+  Pmsg2(-1, T_("We should be in file 1. I am at file %" PRIu32 ". %s\n"),
+        g_dev->file,
         g_dev->file == 1 ? T_("This is correct!")
                          : T_("This is NOT correct!!!!"));
 
@@ -1619,7 +1626,8 @@ test_again:
     Pmsg1(0, T_("Bad status from fsr. ERR=%s\n"), g_dev->bstrerror());
     goto bail_out;
   }
-  Pmsg2(-1, T_("We should be in file 3. I am at file %d. %s\n"), g_dev->file,
+  Pmsg2(-1, T_("We should be in file 3. I am at file %" PRIu32 ". %s\n"),
+        g_dev->file,
         g_dev->file == 3 ? T_("This is correct!")
                          : T_("This is NOT correct!!!!"));
 
@@ -1631,7 +1639,8 @@ test_again:
     Pmsg1(0, T_("Bad status from fsr. ERR=%s\n"), g_dev->bstrerror());
     goto bail_out;
   }
-  Pmsg2(-1, T_("We should be in file 4. I am at file %d. %s\n"), g_dev->file,
+  Pmsg2(-1, T_("We should be in file 4. I am at file %" PRIu32 ". %s\n"),
+        g_dev->file,
         g_dev->file == 4 ? T_("This is correct!")
                          : T_("This is NOT correct!!!!"));
 
@@ -1647,7 +1656,8 @@ test_again:
   if (!g_dev->fsf(1)) {
     Pmsg1(0, T_("Bad status from fsr. ERR=%s\n"), g_dev->bstrerror());
   }
-  Pmsg2(-1, T_("We should be in file 5. I am at file %d. %s\n"), g_dev->file,
+  Pmsg2(-1, T_("We should be in file 5. I am at file %" PRIu32 ". %s\n"),
+        g_dev->file,
         g_dev->file == 5 ? T_("This is correct!")
                          : T_("This is NOT correct!!!!"));
   if (g_dev->file != 5) { goto bail_out; }
@@ -1915,11 +1925,11 @@ static void scancmd()
             g_dev->bstrerror());
       if (blocks > 0) {
         if (blocks == 1) {
-          printf(T_("1 block of %d bytes in file %d\n"), block_size,
-                 g_dev->file);
+          printf(T_("1 block of %" PRIu32 " bytes in file %" PRIu32 "\n"),
+                 static_cast<uint32_t>(block_size), g_dev->file);
         } else {
-          printf(T_("%d blocks of %d bytes in file %d\n"), blocks, block_size,
-                 g_dev->file);
+          printf(T_("%d blocks of %" PRIu32 " bytes in file %" PRIu32 "\n"),
+                 blocks, static_cast<uint32_t>(block_size), g_dev->file);
         }
       }
       return;
@@ -1930,11 +1940,11 @@ static void scancmd()
       g_dev->UpdatePos(g_dcr);
       if (blocks > 0) {
         if (blocks == 1) {
-          printf(T_("1 block of %d bytes in file %d\n"), block_size,
-                 g_dev->file);
+          printf(T_("1 block of %" PRIu32 " bytes in file %" PRIu32 "\n"),
+                 static_cast<uint32_t>(block_size), g_dev->file);
         } else {
-          printf(T_("%d blocks of %d bytes in file %d\n"), blocks, block_size,
-                 g_dev->file);
+          printf(T_("%d blocks of %" PRIu32 " bytes in file %" PRIu32 "\n"),
+                 blocks, static_cast<uint32_t>(block_size), g_dev->file);
         }
         blocks = 0;
       }
@@ -1997,11 +2007,11 @@ static void scan_blocks()
       case DeviceControlRecord::ReadStatus::EndOfTape:
         if (blocks > 0) {
           if (blocks == 1) {
-            printf(T_("1 block of %d bytes in file %d\n"), block_size,
-                   g_dev->file);
+            printf(T_("1 block of %" PRIu32 " bytes in file %" PRIu32 "\n"),
+                   block_size, g_dev->file);
           } else {
-            printf(T_("%d blocks of %d bytes in file %d\n"), blocks, block_size,
-                   g_dev->file);
+            printf(T_("%d blocks of %" PRIu32 " bytes in file %" PRIu32 "\n"),
+                   blocks, block_size, g_dev->file);
           }
           blocks = 0;
         }
@@ -2009,11 +2019,11 @@ static void scan_blocks()
       case DeviceControlRecord::ReadStatus::EndOfFile:
         if (blocks > 0) {
           if (blocks == 1) {
-            printf(T_("1 block of %d bytes in file %d\n"), block_size,
-                   g_dev->file);
+            printf(T_("1 block of %" PRIu32 " bytes in file %" PRIu32 "\n"),
+                   block_size, g_dev->file);
           } else {
-            printf(T_("%d blocks of %d bytes in file %d\n"), blocks, block_size,
-                   g_dev->file);
+            printf(T_("%d blocks of %" PRIu32 " bytes in file %" PRIu32 "\n"),
+                   blocks, block_size, g_dev->file);
           }
           blocks = 0;
         }
@@ -2024,11 +2034,11 @@ static void scan_blocks()
         if (BitIsSet(ST_SHORT, g_dev->state)) {
           if (blocks > 0) {
             if (blocks == 1) {
-              printf(T_("1 block of %d bytes in file %d\n"), block_size,
-                     g_dev->file);
-            } else {
-              printf(T_("%d blocks of %d bytes in file %d\n"), blocks,
+              printf(T_("1 block of %" PRIu32 " bytes in file %" PRIu32 "\n"),
                      block_size, g_dev->file);
+            } else {
+              printf(T_("%d blocks of %" PRIu32 " bytes in file %" PRIu32 "\n"),
+                     blocks, block_size, g_dev->file);
             }
             blocks = 0;
           }
@@ -2041,11 +2051,11 @@ static void scan_blocks()
     if (block->block_len != block_size) {
       if (blocks > 0) {
         if (blocks == 1) {
-          printf(T_("1 block of %d bytes in file %d\n"), block_size,
-                 g_dev->file);
+          printf(T_("1 block of %" PRIu32 " bytes in file %" PRIu32 "\n"),
+                 block_size, g_dev->file);
         } else {
-          printf(T_("%d blocks of %d bytes in file %d\n"), blocks, block_size,
-                 g_dev->file);
+          printf(T_("%d blocks of %" PRIu32 " bytes in file %" PRIu32 "\n"),
+                 blocks, block_size, g_dev->file);
         }
         blocks = 0;
       }
@@ -2063,7 +2073,7 @@ static void scan_blocks()
       ReadRecordFromBlock(g_dcr, rec);
       Pmsg9(-1,
             T_("Block=%u file,blk=%u,%u blen=%u First rec FI=%s SessId=%u "
-               "SessTim=%u Strm=%s rlen=%d\n"),
+               "SessTim=%u Strm=%s rlen=%" PRIu32 "\n"),
             block->BlockNumber, g_dev->file, g_dev->block_num, block->block_len,
             FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
             rec->VolSessionTime,
@@ -2219,14 +2229,14 @@ static void fillcmd()
     /* Mix up the data just a bit */
     MixBuffer(FILL_RANDOM, rec.data, rec.data_len);
 
-    Dmsg4(250, "before write_rec FI=%d SessId=%d Strm=%s len=%d\n",
+    Dmsg4(250, "before write_rec FI=%d SessId=%u Strm=%s len=%" PRIu32 "\n",
           rec.FileIndex, rec.VolSessionId,
           stream_to_ascii(buf1, rec.Stream, rec.FileIndex), rec.data_len);
 
     while (!WriteRecordToBlock(g_dcr, &rec)) {
       // When we get here we have just filled a block
-      Dmsg2(150, "!WriteRecordToBlock data_len=%d rem=%d\n", rec.data_len,
-            rec.remainder);
+      Dmsg2(150, "!WriteRecordToBlock data_len=%" PRIu32 " rem=%" PRIu32 "\n",
+            rec.data_len, rec.remainder);
 
       /* Write block to tape */
       if (!FlushBlock(block)) {
@@ -2268,7 +2278,7 @@ static void fillcmd()
       break;
     }
     g_jcr->JobBytes += rec.data_len; /* increment bytes of this job */
-    Dmsg4(190, "WriteRecord FI=%s SessId=%d Strm=%s len=%d\n",
+    Dmsg4(190, "WriteRecord FI=%s SessId=%u Strm=%s len=%" PRIu32 "\n",
           FI_to_ascii(buf1, rec.FileIndex), rec.VolSessionId,
           stream_to_ascii(buf2, rec.Stream, rec.FileIndex), rec.data_len);
 
@@ -2325,7 +2335,9 @@ static void fillcmd()
     write_with_check(fd, last_block2->buf, last_block2->buf_len);
     write_with_check(fd, first_block->buf, first_block->buf_len);
     close(fd);
-    Pmsg2(0, T_("Wrote state file last_block_num1=%d last_block_num2=%d\n"),
+    Pmsg2(0,
+          T_("Wrote state file last_block_num1=%" PRIu32
+             " last_block_num2=%" PRIu32 "\n"),
           last_block_num1, last_block_num2);
   } else {
     BErrNo be;
@@ -2341,13 +2353,15 @@ static void fillcmd()
   if (g_ok) {
     if (simple) {
       Pmsg3(0,
-            T_("\n\n%s Done filling tape at %d:%d. Now beginning re-read of "
+            T_("\n\n%s Done filling tape at %" PRIu32 ":%" PRIu32
+               ". Now beginning re-read of "
                "tape ...\n"),
             buf1, g_jcr->sd_impl->dcr->dev->file,
             g_jcr->sd_impl->dcr->dev->block_num);
     } else {
       Pmsg3(0,
-            T_("\n\n%s Done filling tapes at %d:%d. Now beginning re-read of "
+            T_("\n\n%s Done filling tapes at %" PRIu32 ":%" PRIu32
+               ". Now beginning re-read of "
                "first tape ...\n"),
             buf1, g_jcr->sd_impl->dcr->dev->file,
             g_jcr->sd_impl->dcr->dev->block_num);
@@ -2554,7 +2568,7 @@ static bool do_unfill()
     Pmsg1(-1, T_("Reposition error. ERR=%s\n"), g_dev->bstrerror());
     goto bail_out;
   }
-  Pmsg1(-1, T_("Reading block %d.\n"), g_dev->block_num);
+  Pmsg1(-1, T_("Reading block %" PRIu32 ".\n"), g_dev->block_num);
   if (DeviceControlRecord::ReadStatus::Ok
       != g_dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK)) {
     Pmsg1(-1, T_("Error reading block: ERR=%s\n"), g_dev->bstrerror());
@@ -2571,7 +2585,7 @@ static bool do_unfill()
     Pmsg1(-1, T_("Reposition error. ERR=%s\n"), g_dev->bstrerror());
     goto bail_out;
   }
-  Pmsg1(-1, T_("Reading block %d.\n"), g_dev->block_num);
+  Pmsg1(-1, T_("Reading block %" PRIu32 ".\n"), g_dev->block_num);
   if (DeviceControlRecord::ReadStatus::Ok
       != g_dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK)) {
     Pmsg1(-1, T_("Error reading block: ERR=%s\n"), g_dev->bstrerror());
@@ -2602,8 +2616,8 @@ static bool QuickieCb(DeviceControlRecord* t_dcr, DeviceRecord*)
   Device* dev = t_dcr->dev;
   quickie_count++;
   if (quickie_count == 10'000) {
-    Pmsg2(-1, T_("10'000 records read now at %d:%d\n"), dev->file,
-          dev->block_num);
+    Pmsg2(-1, T_("10'000 records read now at %" PRIu32 ":%" PRIu32 "\n"),
+          dev->file, dev->block_num);
   }
   return quickie_count < 10'000;
 }
@@ -2666,8 +2680,8 @@ static int FlushBlock(DeviceBlock* block)
   thIsFile = g_dev->file;
   this_block_num = g_dev->block_num;
   if (!g_dcr->WriteBlockToDev()) {
-    Pmsg3(000, T_("Last block at: %u:%u this_dev_block_num=%d\n"), last_file,
-          last_block_num, this_block_num);
+    Pmsg3(000, T_("Last block at: %u:%u this_dev_block_num=%" PRIu32 "\n"),
+          last_file, last_block_num, this_block_num);
     if (vol_num == 1) {
       /* This is 1st tape, so save first tape info separate
        *  from second tape info */
@@ -2695,7 +2709,9 @@ static int FlushBlock(DeviceBlock* block)
     if (now <= 0) { now = 1; /* don't divide by zero */ }
     rate = g_dev->VolCatInfo.VolCatBytes / now;
     vol_size = g_dev->VolCatInfo.VolCatBytes;
-    Pmsg4(000, T_("End of tape %d:%d. Volume Bytes=%s. Write rate = %sB/s\n"),
+    Pmsg4(000,
+          T_("End of tape %" PRIu32 ":%" PRIu32
+             ". Volume Bytes=%s. Write rate = %sB/s\n"),
           g_dev->file, g_dev->block_num,
           edit_uint64_with_commas(g_dev->VolCatInfo.VolCatBytes, ec1),
           edit_uint64_with_suffix(rate, ec2));

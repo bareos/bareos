@@ -127,9 +127,9 @@ bool CryptoSessionSend(JobControlRecord* jcr, BareosSocket* sd)
   POOLMEM* msgsave;
 
   /** Send our header */
-  Dmsg2(100, "Send hdr fi=%d stream=%d\n", jcr->JobFiles,
+  Dmsg2(100, "Send hdr fi=%" PRIu32 " stream=%d\n", jcr->JobFiles,
         STREAM_ENCRYPTED_SESSION_DATA);
-  sd->fsend("%d %d 0", jcr->JobFiles, STREAM_ENCRYPTED_SESSION_DATA);
+  sd->fsend("%" PRIu32 " %d 0", jcr->JobFiles, STREAM_ENCRYPTED_SESSION_DATA);
 
   msgsave = sd->msg;
   sd->msg = jcr->fd_impl->crypto.pki_session_encoded;
@@ -288,12 +288,13 @@ again:
                             (uint8_t*)&cipher_ctx->buf[cipher_ctx->buf_len],
                             &decrypted_len)) {
     // Writing out the final, buffered block failed. Shouldn't happen.
-    Jmsg3(jcr, M_ERROR, 0,
-          T_("Decryption error. buf_len=%d decrypt_len=%d on file %s\n"),
-          cipher_ctx->buf_len, decrypted_len, jcr->fd_impl->last_fname);
+    Jmsg3(
+        jcr, M_ERROR, 0,
+        T_("Decryption error. buf_len=%d decrypt_len=%" PRIu32 " on file %s\n"),
+        cipher_ctx->buf_len, decrypted_len, jcr->fd_impl->last_fname);
   }
 
-  Dmsg2(130, "Flush decrypt len=%d buf_len=%d\n", decrypted_len,
+  Dmsg2(130, "Flush decrypt len=%" PRIu32 " buf_len=%d\n", decrypted_len,
         cipher_ctx->buf_len);
   // If nothing new was decrypted, and our output buffer is empty, return
   if (decrypted_len == 0 && cipher_ctx->buf_len == 0) { return true; }
@@ -309,7 +310,7 @@ again:
   cipher_ctx->buf_len -= cipher_ctx->packet_len;
   Dmsg2(
       130,
-      "Encryption writing full block, %u bytes, remaining %u bytes in buffer\n",
+      "Encryption writing full block, %u bytes, remaining %d bytes in buffer\n",
       wsize, cipher_ctx->buf_len);
 
   if (BitIsSet(FO_SPARSE, flags) || BitIsSet(FO_OFFSETS, flags)) {
@@ -333,7 +334,7 @@ again:
 
   // Move any remaining data to start of buffer
   if (cipher_ctx->buf_len > 0) {
-    Dmsg1(130, "Moving %u buffered bytes to start of buffer\n",
+    Dmsg1(130, "Moving %d buffered bytes to start of buffer\n",
           cipher_ctx->buf_len);
     memmove(cipher_ctx->buf, &cipher_ctx->buf[cipher_ctx->packet_len],
             cipher_ctx->buf_len);
@@ -472,7 +473,7 @@ bool EncryptData(b_ctx* bctx, bool* need_more_data)
 
   SerBegin(packet_len, sizeof(uint32_t));
   ser_uint32(bctx->cipher_input_len); /* store data len in begin of buffer */
-  Dmsg1(20, "Encrypt len=%d\n", bctx->cipher_input_len);
+  Dmsg1(20, "Encrypt len=%" PRIu32 "\n", bctx->cipher_input_len);
 
   if (!CryptoCipherUpdate(bctx->cipher_ctx, packet_len, sizeof(packet_len),
                           (uint8_t*)bctx->jcr->fd_impl->crypto.crypto_buf,
@@ -493,8 +494,8 @@ bool EncryptData(b_ctx* bctx, bool* need_more_data)
       goto bail_out;
     }
 
-    Dmsg2(400, "encrypted len=%d unencrypted len=%d\n", bctx->encrypted_len,
-          bctx->jcr->store_bsock->message_length);
+    Dmsg2(400, "encrypted len=%" PRIu32 " unencrypted len=%d\n",
+          bctx->encrypted_len, bctx->jcr->store_bsock->message_length);
 
     bctx->jcr->store_bsock->message_length
         = initial_len + bctx->encrypted_len; /* set encrypted length */
@@ -543,7 +544,8 @@ bool DecryptData(JobControlRecord* jcr,
     return true;
   }
 
-  Dmsg2(200, "decrypted len=%d encrypted len=%d\n", decrypted_len, *length);
+  Dmsg2(200, "decrypted len=%" PRIu32 " encrypted len=%" PRIu32 "\n",
+        decrypted_len, *length);
 
   cipher_ctx->buf_len += decrypted_len;
   *data = cipher_ctx->buf;
@@ -569,7 +571,7 @@ bool DecryptData(JobControlRecord* jcr,
   cipher_ctx->buf_len -= cipher_ctx->packet_len;
   Dmsg2(
       130,
-      "Encryption writing full block, %u bytes, remaining %u bytes in buffer\n",
+      "Encryption writing full block, %u bytes, remaining %d bytes in buffer\n",
       *length, cipher_ctx->buf_len);
 
   return true;

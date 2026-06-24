@@ -30,8 +30,6 @@ export TestName
 
 #shellcheck source=../../environment.in
 . ./environment
-#shellcheck source=test-config.in
-. ./test-config
 
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions

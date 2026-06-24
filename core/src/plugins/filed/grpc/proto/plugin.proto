@@ -166,6 +166,9 @@ message createFileRequest {
   optional int64 delta_seq = 4;
   bareos.common.ReplaceType replace = 5;
   optional bytes where = 7; // needed by the vmware plugin
+
+  bytes original_name = 8;
+  bytes original_link = 9;
 };
 
 enum CreateFileStatus {
@@ -189,6 +192,9 @@ message setFileAttributesRequest {
   bytes stats = 2;
   bytes extended_attributes = 3;
   bytes where = 4; // sadly some plugins actually want this ...
+
+  bytes original_name = 8;
+  bytes original_link = 9;
 };
 
 message setFileAttributesResponse {

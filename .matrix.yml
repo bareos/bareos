@@ -8,15 +8,6 @@ OS:
       ARCH:
         - x86_64
   ULC_rpm:
-    "OpenSSL_1.1":
-      TYPE: scripted
-      IMAGE: "rhel8"
-      BUILD_SCRIPT: CD/rpm/build-ulc.sh
-      FINISH_SCRIPT: CD/rpm/finish-ulc.sh
-      CUSTOM_TEST_IMAGES: [ Rocky-9, SLE-15_sp6 ]
-      ARCH:
-        - x86_64
-        - aarch64
     "OpenSSL_3.0":
       TYPE: scripted
       IMAGE: "rhel9"
@@ -27,15 +18,6 @@ OS:
         - x86_64
         - aarch64
   ULC_deb:
-    "OpenSSL_1.1":
-      TYPE: scripted
-      IMAGE: "ubuntu20.04"
-      BUILD_SCRIPT: CD/deb/build-ulc.sh
-      FINISH_SCRIPT: CD/deb/finish-ulc.sh
-      CUSTOM_TEST_IMAGES: [ "Debian-11" ]
-      ARCH:
-        - x86_64
-        - aarch64
     "OpenSSL_3.0":
       TYPE: scripted
       IMAGE: "ubuntu22.04"
@@ -46,6 +28,11 @@ OS:
         - x86_64
         - aarch64
   xUbuntu:
+    "26.04":
+      TYPE: deb
+      IMAGE: "ubuntu26.04"
+      ARCH:
+        - x86_64
     "24.04":
       TYPE: deb
       IMAGE: "ubuntu24.04"
@@ -98,7 +85,6 @@ OS:
       CUSTOM_TEST_IMAGES: [ RHEL ]
       ARCH:
         - x86_64
-        - aarch64
     "9":
       TYPE: rpm
       IMAGE: rhel9

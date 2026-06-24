@@ -110,6 +110,14 @@ class StorageForm extends Form
                 'id' => 'submit'
             )
         ));
+
+        $this->add(array(
+            'name' => 'csrf',
+            'type' => 'Laminas\Form\Element\Csrf',
+            'options' => array(
+                'csrf_options' => array('timeout' => 3600),
+            ),
+        ));
     }
 
     private function getPoolList()

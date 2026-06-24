@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -74,10 +74,11 @@ DateTime::DateTime(time_t time_) : time(time_)
   year = tm.tm_year;
 }
 
-void DateTime::PrintDebugMessage(int debug_level) const
+void DateTime::PrintDebugMessage(int dlevel) const
 {
-  Dmsg8(debug_level, "now = %lx: h=%d m=%d md=%d wd=%d woy=%d yday=%d\n ", time,
-        hour, month, day_of_month, day_of_week, week_of_year, day_of_year);
+  Dmsg8(dlevel, "now = %lx: h=%d m=%d md=%d wd=%d woy=%d yday=%d\n ",
+        static_cast<unsigned long>(time), hour, month, day_of_month,
+        day_of_week, week_of_year, day_of_year);
 }
 
 }  // namespace directordaemon

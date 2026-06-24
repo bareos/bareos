@@ -1,4 +1,24 @@
 #!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
 set -e
 set -o pipefail
 set -u
@@ -8,9 +28,6 @@ export TestName
 
 #shellcheck source=../../environment.in
 . ./environment
-#shellcheck source=test-config.in
-. ./test-config
-
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 #shellcheck source=../../../core/scripts/bareos-config-lib.sh.in
@@ -101,7 +118,7 @@ sleep 1
 #   Logical Block encryption parameters: No report
 # or with quadstor vtl
 #   Logical Block encryption parameters: Drive Managed
-drive_state="$(${mybsc} --drive-encryption-status "${ltodrive}" | awk -F ':' '/[De,En]cryption Mode:/ {gsub("^ ","",$2);print $2}' | xargs | sed -e 's/\n/ /g')"
+drive_state="$(${mybsc} --drive-encryption-status "${ltodrive}" | ${AWK} -F ':' '/[De,En]cryption Mode:/ {gsub("^ ","",$2);print $2}' | xargs | sed -e 's/\n/ /g')"
 if [ "${drive_state}" != "Disabled Disabled" ]; then
   printf "Drive state [%s] differs from expected [Disabled Disabled] \n" "${drive_state}"
   export estat=1
@@ -123,7 +140,7 @@ fi
 #   Raw Decryption Mode Disabled Status (RDMDS): Disabled
 #   Encryption Mode External Status (EMES): Disabled
 
-tape_state="$(${mybsc} --volume-encryption-status "${ltodrive}" | awk -F ':' '/Encryption Status:/ {gsub("^ ","",$2);print $2}' | xargs | sed -e 's/\n/ /g')"
+tape_state="$(${mybsc} --volume-encryption-status "${ltodrive}" | ${AWK} -F ':' '/Encryption Status:/ {gsub("^ ","",$2);print $2}' | xargs | sed -e 's/\n/ /g')"
 if ([ "${tape_state}" != "Illegal logical block" ] && [ "$tape_state" != "Unavailable" ]); then
   printf "Tape state [%s] differs from expected [Illegal logical block] or [Unavailable] \n" "${tape_state}"
   export estat=1
@@ -162,7 +179,7 @@ END_OF_DATA
 
 run_bconsole
 
-volume=$(awk '/^.*Volume name\(s\):.*/ {print $3}' ${backup_log})
+volume=$(${AWK} '/^.*Volume name\(s\):.*/ {print $3}' ${backup_log})
 
 # Test a restore
 cat <<END_OF_DATA >$tmp/bconcmds
@@ -249,11 +266,11 @@ fi
 # export confdir for mtx-changer so mtx-changer find it.
 export confdir=$(pwd)/etc/bareos
 # load the tape into the drive
-slot=$(mtx -f $changer status | awk -F ":" "/VolumeTag=${volume}/ {gsub(\"Storage Element\",\"\",\$1);gsub(\" \",\"\",\$1); print \$1}")
+slot=$(mtx -f $changer status | ${AWK} -F ":" "/VolumeTag=${volume}/ {gsub(\"Storage Element\",\"\",\$1);gsub(\" \",\"\",\$1); print \$1}")
 /usr/sbin/mtx -f "${changer}" load ${slot} 0 || :
 /usr/bin/mt -f "${ltodrive}" rewind || :
 bls_lj_log=$tmp/bls-label_job_output.log
-tape_device=$(awk -F '=' '/^ .*Name.*=.*tapedrive-0.*/ {gsub(" ","",$2);gsub("\"","",$2);print $2}' etc/bareos/bareos-sd.d/device/tape_devices.conf)
+tape_device=$(${AWK} -F '=' '/^ .*Name.*=.*tapedrive[0-9]+-0.*/ {gsub(" ","",$2);gsub("\"","",$2);print $2;exit}' etc/bareos/bareos-sd.d/device/tape_devices.conf)
 sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -L -j -V ${volume} ${tape_device} >"${bls_lj_log}"
 
 expect_grep "Crypto cache read 1 entries" \

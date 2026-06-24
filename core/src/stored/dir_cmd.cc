@@ -101,7 +101,7 @@ inline constexpr const char releasecmd[] = "release %127s drive=%hd";
 inline constexpr const char readlabelcmd[]
     = "readlabel %127s Slot=%hd drive=%hd";
 inline constexpr const char replicatecmd[]
-    = "replicate JobId=%d Job=%127s address=%s port=%d ssl=%d "
+    = "replicate JobId=%lu Job=%127s address=%s port=%d ssl=%lu "
       "Authorization=%100s";
 inline constexpr const char passiveclientcmd[]
     = "passive client address=%s port=%d ssl=%d";
@@ -354,7 +354,7 @@ static bool SetbandwidthCmd(JobControlRecord* jcr)
   char Job[MAX_NAME_LENGTH];
 
   *Job = 0;
-  if (sscanf(dir->msg, setbandwidth, &bw, Job) != 2 || bw < 0) {
+  if (bsscanf(dir->msg, setbandwidth, &bw, Job) != 2 || bw < 0) {
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(T_("2991 Bad setbandwidth command: %s\n"), jcr->errmsg);
     return false;
@@ -386,9 +386,9 @@ static bool SetdebugCmd(JobControlRecord* jcr)
   int scan;
 
   Dmsg1(10, "SetdebugCmd: %s\n", dir->msg);
-  scan = sscanf(dir->msg, setdebugv1cmd, &level, &trace_flag, &timestamp_flag);
+  scan = bsscanf(dir->msg, setdebugv1cmd, &level, &trace_flag, &timestamp_flag);
   if (scan != 3) {
-    scan = sscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
+    scan = bsscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
   }
   if ((scan != 3 && scan != 2) || level < 0) {
     std::string cpy{dir->msg};
@@ -428,8 +428,8 @@ static bool SetdeviceCmd(JobControlRecord* jcr)
 
   std::vector<char> device_name(MAX_SETDEVICE_NAME_LENGTH);
   int autoselect_value = 0;
-  int scan = sscanf(dir->msg, setdevice_autoselect, device_name.data(),
-                    &autoselect_value);
+  int scan = bsscanf(dir->msg, setdevice_autoselect, device_name.data(),
+                     &autoselect_value);
   if (scan != 2) {
     std::string cpy{dir->msg};
     dir->fsend(BADcmd, "setdevice", cpy.c_str());
@@ -465,7 +465,7 @@ static bool CancelCmd(JobControlRecord* cjcr)
   int status;
   const char* reason;
 
-  if (sscanf(dir->msg, cancelcmd, Job) == 1) {
+  if (bsscanf(dir->msg, cancelcmd, Job) == 1) {
     status = JS_Canceled;
     reason = "canceled";
   } else {
@@ -490,7 +490,7 @@ static bool CancelCmd(JobControlRecord* cjcr)
   oldStatus = jcr->getJobStatus();
   jcr->setJobStatusWithPriorityCheck(status);
 
-  Dmsg2(800, "Cancel JobId=%d %p\n", jcr->JobId, jcr);
+  Dmsg2(800, "Cancel JobId=%" PRIu32 " %p\n", jcr->JobId, jcr);
   if (!jcr->authenticated
       && (oldStatus == JS_WaitFD || oldStatus == JS_WaitSD)) {
     jcr->sd_impl->job_start_wait.notify_one(); /* wake waiting thread */
@@ -499,12 +499,12 @@ static bool CancelCmd(JobControlRecord* cjcr)
   if (jcr->file_bsock) {
     jcr->file_bsock->SetTerminated();
     jcr->file_bsock->SetTimedOut();
-    Dmsg2(800, "Term bsock jid=%d %p\n", jcr->JobId, jcr);
+    Dmsg2(800, "Term bsock jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
   } else {
     if (oldStatus != JS_WaitSD) {
       // Still waiting for FD to connect, release it
       jcr->sd_impl->job_start_wait.notify_one(); /* wake waiting job */
-      Dmsg2(800, "Signal FD connect jid=%d %p\n", jcr->JobId, jcr);
+      Dmsg2(800, "Signal FD connect jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
     }
   }
 
@@ -512,16 +512,14 @@ static bool CancelCmd(JobControlRecord* cjcr)
   if (jcr->sd_impl->dcr && jcr->sd_impl->dcr->dev
       && jcr->sd_impl->dcr->dev->waiting_for_mount()) {
     pthread_cond_broadcast(&jcr->sd_impl->dcr->dev->wait_next_vol);
-    Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
-          (uint32_t)jcr->JobId);
+    Dmsg1(100, "JobId=%" PRIu32 " broadcast wait_device_release\n", jcr->JobId);
     ReleaseDeviceCond();
   }
 
   if (jcr->sd_impl->read_dcr && jcr->sd_impl->read_dcr->dev
       && jcr->sd_impl->read_dcr->dev->waiting_for_mount()) {
     pthread_cond_broadcast(&jcr->sd_impl->read_dcr->dev->wait_next_vol);
-    Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
-          (uint32_t)jcr->JobId);
+    Dmsg1(100, "JobId=%" PRIu32 " broadcast wait_device_release\n", jcr->JobId);
     ReleaseDeviceCond();
   }
 
@@ -562,7 +560,7 @@ static bool ResolveCmd(JobControlRecord* jcr)
   char addresses[2048];
   char hostname[2048];
 
-  sscanf(dir->msg, resolvecmd, &hostname);
+  bsscanf(dir->msg, resolvecmd, &hostname);
 
   if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == NULL) {
     dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname);
@@ -614,17 +612,17 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
   short int drive_input = -1;
 
   if (relabel) {
-    if (sscanf(dir->msg, relabelcmd, dev_name.c_str(), oldname, newname,
-               poolname, mediatype, &slot, &drive_input,
-               &blocksizes.min_block_size, &blocksizes.max_block_size)
+    if (bsscanf(dir->msg, relabelcmd, dev_name.c_str(), oldname, newname,
+                poolname, mediatype, &slot, &drive_input,
+                &blocksizes.min_block_size, &blocksizes.max_block_size)
         == 9) {
       ok = true;
     }
   } else {
     *oldname = 0;
-    if (sscanf(dir->msg, labelcmd, dev_name.c_str(), newname, poolname,
-               mediatype, &slot, &drive_input, &blocksizes.min_block_size,
-               &blocksizes.max_block_size)
+    if (bsscanf(dir->msg, labelcmd, dev_name.c_str(), newname, poolname,
+                mediatype, &slot, &drive_input, &blocksizes.min_block_size,
+                &blocksizes.max_block_size)
         == 8) {
       ok = true;
     }
@@ -943,11 +941,12 @@ static bool MountCmd(JobControlRecord* jcr)
   slot_number_t slot = 0;
 
   short int drive_input = -1;
-  bool ok = sscanf(dir->msg, mountslotcmd, devname.c_str(), &drive_input, &slot)
-            == 3;
+  bool ok
+      = bsscanf(dir->msg, mountslotcmd, devname.c_str(), &drive_input, &slot)
+        == 3;
 
   if (!ok) {
-    ok = sscanf(dir->msg, mountcmd, devname.c_str(), &drive_input) == 2;
+    ok = bsscanf(dir->msg, mountcmd, devname.c_str(), &drive_input) == 2;
   }
 
   Dmsg3(100, "ok=%d drive=%hd slot=%hd\n", ok, drive_input, slot);
@@ -968,8 +967,8 @@ static bool MountCmd(JobControlRecord* jcr)
                      (slot > 0) ? T_("Specified slot ignored. ") : "",
                      dev->print_name());
           pthread_cond_broadcast(&dev->wait_next_vol);
-          Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
-                (uint32_t)dcr->jcr->JobId);
+          Dmsg1(100, "JobId=%" PRIu32 " broadcast wait_device_release\n",
+                dcr->jcr->JobId);
           ReleaseDeviceCond();
           break;
 
@@ -1014,8 +1013,8 @@ static bool MountCmd(JobControlRecord* jcr)
                 dev->print_name());
           }
           pthread_cond_broadcast(&dev->wait_next_vol);
-          Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
-                (uint32_t)dcr->jcr->JobId);
+          Dmsg1(100, "JobId=%" PRIu32 " broadcast wait_device_release\n",
+                dcr->jcr->JobId);
           ReleaseDeviceCond();
           break;
 
@@ -1077,8 +1076,8 @@ static bool MountCmd(JobControlRecord* jcr)
             dir->fsend(T_("3906 File device %s is always mounted.\n"),
                        dev->print_name());
             pthread_cond_broadcast(&dev->wait_next_vol);
-            Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
-                  (uint32_t)dcr->jcr->JobId);
+            Dmsg1(100, "JobId=%" PRIu32 " broadcast wait_device_release\n",
+                  dcr->jcr->JobId);
             ReleaseDeviceCond();
           }
           break;
@@ -1115,7 +1114,7 @@ static bool UnmountCmd(JobControlRecord* jcr)
   DeviceControlRecord* dcr;
 
   short int drive_input = -1;
-  if (sscanf(dir->msg, unmountcmd, devname.c_str(), &drive_input) == 2) {
+  if (bsscanf(dir->msg, unmountcmd, devname.c_str(), &drive_input) == 2) {
     drive_number_t drive = IntToDriveNumber(drive_input);
     dcr = FindDevice(jcr, devname, drive, NULL);
     if (dcr) {
@@ -1209,7 +1208,7 @@ static bool ReleaseCmd(JobControlRecord* jcr)
   DeviceControlRecord* dcr;
   short int drive_input = -1;
 
-  if (sscanf(dir->msg, releasecmd, devname.c_str(), &drive_input) == 2) {
+  if (bsscanf(dir->msg, releasecmd, devname.c_str(), &drive_input) == 2) {
     drive_number_t drive = IntToDriveNumber(drive_input);
     dcr = FindDevice(jcr, devname, drive, NULL);
     if (dcr) {
@@ -1278,7 +1277,7 @@ static inline bool GetBootstrapFile(JobControlRecord* jcr, BareosSocket* sock)
   }
   lock_mutex(bsr_mutex);
   bsr_uniq++;
-  Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory,
+  Mmsg(fname, "%s/%s.%s.%" PRIu32 ".bootstrap", me->working_directory,
        me->resource_name_, jcr->Job, bsr_uniq);
   unlock_mutex(bsr_mutex);
   Dmsg1(400, "bootstrap=%s\n", fname);
@@ -1329,7 +1328,8 @@ static bool BootstrapCmd(JobControlRecord* jcr)
 // Autochanger command from Director
 static bool ChangerCmd(JobControlRecord* jcr)
 {
-  slot_number_t src_slot, dst_slot;
+  slot_number_t src_slot = 0;
+  slot_number_t dst_slot = 0;
   PoolMem devname;
   BareosSocket* dir = jcr->dir_bsock;
   Device* dev;
@@ -1341,22 +1341,23 @@ static bool ChangerCmd(JobControlRecord* jcr)
    *    slots so it can be done at the same time that the drive is open. */
   bool safe_cmd = false;
 
-  if (sscanf(dir->msg, "autochanger listall %127s", devname.c_str()) == 1) {
+  if (bsscanf(dir->msg, "autochanger listall %127s", devname.c_str()) == 1) {
     cmd = "listall";
     safe_cmd = ok = true;
-  } else if (sscanf(dir->msg, "autochanger list %127s", devname.c_str()) == 1) {
+  } else if (bsscanf(dir->msg, "autochanger list %127s", devname.c_str())
+             == 1) {
     cmd = "list";
     safe_cmd = ok = true;
-  } else if (sscanf(dir->msg, "autochanger slots %127s", devname.c_str())
+  } else if (bsscanf(dir->msg, "autochanger slots %127s", devname.c_str())
              == 1) {
     cmd = "slots";
     safe_cmd = ok = true;
-  } else if (sscanf(dir->msg, "autochanger drives %127s", devname.c_str())
+  } else if (bsscanf(dir->msg, "autochanger drives %127s", devname.c_str())
              == 1) {
     cmd = "drives";
     safe_cmd = ok = true;
-  } else if (sscanf(dir->msg, "autochanger transfer %127s %hd %hd",
-                    devname.c_str(), &src_slot, &dst_slot)
+  } else if (bsscanf(dir->msg, "autochanger transfer %127s %hd %hd",
+                     devname.c_str(), &src_slot, &dst_slot)
              == 3) {
     cmd = "transfer";
     safe_cmd = ok = true;
@@ -1412,7 +1413,7 @@ static bool ReadlabelCmd(JobControlRecord* jcr)
   slot_number_t slot;
   short int drive_input = -1;
 
-  if (sscanf(dir->msg, readlabelcmd, devname.c_str(), &slot, &drive_input)
+  if (bsscanf(dir->msg, readlabelcmd, devname.c_str(), &slot, &drive_input)
       == 3) {
     drive_number_t drive = IntToDriveNumber(drive_input);
     dcr = FindDevice(jcr, devname, drive, NULL);
@@ -1561,7 +1562,7 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
   Dmsg0(5, "set sd auth key\n");
 
   jcr->sd_tls_policy = policy;
-  Dmsg1(5, "set sd ssl_policy to %d\n", policy);
+  Dmsg1(5, "set sd ssl_policy to %u\n", policy);
 }
 
 // Listen for incoming replication session from other SD.
@@ -1616,8 +1617,8 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   Dmsg1(100, "ReplicateCmd: %s", dir->msg);
   sd_auth_key.check_size(dir->message_length);
 
-  if (sscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr, &stored_port,
-             &tls_policy, sd_auth_key.c_str())
+  if (bsscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr,
+              &stored_port, &tls_policy, sd_auth_key.c_str())
       != 6) {
     std::string cpy{dir->msg};
     dir->fsend(BADcmd, "replicate", cpy.c_str());
@@ -1626,7 +1627,7 @@ static bool ReplicateCmd(JobControlRecord* jcr)
 
   SetStorageAuthKeyAndTlsPolicy(jcr, sd_auth_key.c_str(), tls_policy);
 
-  Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port,
+  Dmsg3(110, "Open storage: %s:%d ssl=%u\n", stored_addr, stored_port,
         tls_policy);
 
   storage_daemon_socket->SetSourceAddress(me->SDsrc_addr);
@@ -1720,15 +1721,15 @@ static bool PassiveCmd(JobControlRecord* jcr)
   std::string cpy{dir->msg};
 
   Dmsg1(100, "PassiveClientCmd: %s", cpy.c_str());
-  if (sscanf(cpy.c_str(), passiveclientcmd, filed_addr, &filed_port,
-             &tls_policy)
+  if (bsscanf(cpy.c_str(), passiveclientcmd, filed_addr, &filed_port,
+              &tls_policy)
       != 3) {
     PmStrcpy(jcr->errmsg, cpy.c_str());
     Jmsg(jcr, M_FATAL, 0, T_("Bad passiveclientcmd command: %s"), jcr->errmsg);
     goto bail_out;
   }
 
-  Dmsg3(110, "PassiveClientCmd: %s:%d ssl=%d\n", filed_addr, filed_port,
+  Dmsg3(110, "PassiveClientCmd: %s:%d ssl=%u\n", filed_addr, filed_port,
         tls_policy);
 
   jcr->passive_client = true;
@@ -1802,7 +1803,7 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
   std::string cpy{dir->msg};
 
   Dmsg1(100, "PluginOptionsCmd: %s", cpy.c_str());
-  if (sscanf(cpy.c_str(), pluginoptionscmd, plugin_options) != 1) {
+  if (bsscanf(cpy.c_str(), pluginoptionscmd, plugin_options) != 1) {
     PmStrcpy(jcr->errmsg, cpy.c_str());
     Jmsg(jcr, M_FATAL, 0, T_("Bad pluginoptionscmd command: %s"), jcr->errmsg);
     goto bail_out;

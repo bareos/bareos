@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,8 @@ void* handle_stored_connection(BareosSocket* sd)
     return NULL;
   }
 
-  if (sscanf(sd->msg, "Hello Storage calling Start Job %127s", job_name) != 1) {
+  if (bsscanf(sd->msg, "Hello Storage calling Start Job %127s", job_name)
+      != 1) {
     char addr[64];
     char* who = BnetGetPeer(sd, addr, sizeof(addr)) ? sd->who() : addr;
 
@@ -86,7 +87,7 @@ void* handle_stored_connection(BareosSocket* sd)
     Jmsg(jcr, M_FATAL, 0, T_("Unable to authenticate Storage daemon\n"));
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   } else {
-    Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,
+    Dmsg2(50, "OK Authentication jid=%" PRIu32 " Job %s\n", jcr->JobId,
           jcr->Job);
   }
 

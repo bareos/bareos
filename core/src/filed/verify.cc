@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -225,20 +225,21 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
    * For a directory, link is the same as fname, but with trailing
    * slash. For a linked file, link is the link. */
   // Send file attributes to Director (note different format than for Storage)
-  Dmsg2(400, "send Attributes inx=%d fname=%s\n", jcr->JobFiles, ff_pkt->fname);
+  Dmsg2(400, "send Attributes inx=%" PRIu32 " fname=%s\n", jcr->JobFiles,
+        ff_pkt->fname);
   if (ff_pkt->type == FT_LNK || ff_pkt->type == FT_LNKSAVED) {
     status
-        = dir->fsend("%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
+        = dir->fsend("%" PRIu32 " %d %s %s%c%s%c%s%c", jcr->JobFiles,
                      STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->fname,
                      0, attribs.c_str(), 0, ff_pkt->link_or_dir, 0);
   } else if (ff_pkt->type == FT_DIREND || ff_pkt->type == FT_REPARSE
              || ff_pkt->type == FT_JUNCTION) {
     // Here link is the canonical filename (i.e. with trailing slash)
-    status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
+    status = dir->fsend("%" PRIu32 " %d %s %s%c%s%c%c", jcr->JobFiles,
                         STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts,
                         ff_pkt->link_or_dir, 0, attribs.c_str(), 0, 0);
   } else {
-    status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
+    status = dir->fsend("%" PRIu32 " %d %s %s%c%s%c%c", jcr->JobFiles,
                         STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts,
                         ff_pkt->fname, 0, attribs.c_str(), 0, 0);
   }
@@ -272,10 +273,10 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         Jmsg(jcr, M_WARNING, 0, T_("%s digest initialization failed\n"),
              stream_to_ascii(digest_stream));
       } else if (digest && digest_buf) {
-        Dmsg3(400, "send inx=%d %s=%s\n", jcr->JobFiles, digest_name,
+        Dmsg3(400, "send inx=%" PRIu32 " %s=%s\n", jcr->JobFiles, digest_name,
               digest_buf);
-        dir->fsend("%d %d %s *%s-%d*", jcr->JobFiles, digest_stream, digest_buf,
-                   digest_name, jcr->JobFiles);
+        dir->fsend("%" PRIu32 " %d %s *%s-%" PRIu32 "*", jcr->JobFiles,
+                   digest_stream, digest_buf, digest_name, jcr->JobFiles);
         Dmsg3(20, "filed>dir: %s len=%d: msg=%s\n", digest_name,
               dir->message_length, dir->msg);
       }

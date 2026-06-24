@@ -39,6 +39,7 @@
 #include "dird/ua_purge.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "dird/next_vol.h"
 
 #include <algorithm>
 
@@ -560,19 +561,19 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
 
 static void DropTempTables(UaContext* ua)
 {
-  ua->db->SqlQuery(BareosDb::SQL_QUERY::drop_deltabs);
+  ua->db->SqlQuery<BareosDb::SQL_QUERY::drop_deltabs>();
 }
 
 static bool CreateTempTables(UaContext* ua)
 {
   /* Create temp tables and indices */
-  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY::create_deltabs)) {
+  if (!ua->db->SqlQuery<BareosDb::SQL_QUERY::create_deltabs>()) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "create DelTables table failed\n");
     return false;
   }
 
-  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY::create_delindex)) {
+  if (!ua->db->SqlQuery<BareosDb::SQL_QUERY::create_delindex>()) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "create DelInx1 index failed\n");
     return false;
@@ -787,10 +788,20 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
     return false; /* Cannot prune archived volumes */
   }
 
+  bool VolumeIsEmpty = (mr->FirstWritten == 0 && mr->LastWritten == 0);
+
   DbLocker _{ua->db};
 
   /* Prune only Volumes with status "Full", or "Used" */
-  if (bstrcmp(mr->VolStatus, "Full") || bstrcmp(mr->VolStatus, "Used")) {
+  if (bstrcmp(mr->VolStatus, "Full") || bstrcmp(mr->VolStatus, "Used")
+      || HasVolumeExpired(ua->jcr, mr)) {
+    if (VolumeIsEmpty) {
+      ua->SendMsg(T_("Volume \"%s\" seems to be empty.  Make sure that it is "
+                     "not currently in use, then call 'purge volume=\"%s\"'"),
+                  mr->VolumeName, mr->VolumeName);
+      return false;
+    }
+
     Dmsg2(050, "get prune list MediaId=%d Volume %s\n", (int)mr->MediaId,
           mr->VolumeName);
 
@@ -837,9 +848,8 @@ int GetPruneListForVolume(UaContext* ua,
   // Now add to the  list of JobIds for Jobs written to this Volume
   utime_t VolRetention = mr->VolRetention;
   now = (utime_t)time(NULL);
-  ua->db->FillQuery(query, BareosDb::SQL_QUERY::sel_JobMedia,
-                    edit_int64(mr->MediaId, ed1),
-                    edit_int64(now - VolRetention, ed2));
+  ua->db->FillQuery<BareosDb::SQL_QUERY::sel_JobMedia>(
+      query, edit_int64(mr->MediaId, ed1), edit_int64(now - VolRetention, ed2));
 
   Dmsg3(250, "Now=%d VolRetention=%d now-VolRetention=%s\n", (int)now,
         (int)VolRetention, ed2);

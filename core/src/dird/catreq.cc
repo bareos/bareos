@@ -80,7 +80,8 @@ inline constexpr const char OK_media[]
       " MaxVolBytes=%s VolCapacityBytes=%s VolStatus=%s Slot=%d"
       " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
       " VolWriteTime=%s EndFile=%u EndBlock=%u LabelType=%d"
-      " MediaId=%s EncryptionKey=%s MinBlocksize=%d MaxBlocksize=%d\n";
+      " MediaId=%s EncryptionKey=%s MinBlocksize=%" PRIu32
+      " MaxBlocksize=%" PRIu32 "\n";
 inline constexpr const char OK_create[] = "1000 OK CreateJobMedia\n";
 inline constexpr const char OK_delete[] = "1000 OK DeleteNullJobmediaRecords\n";
 
@@ -147,8 +148,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
 
   // Find next appendable medium for SD
   unwanted_volumes.check_size(bs->message_length);
-  if (sscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType,
-             unwanted_volumes.c_str())
+  if (bsscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType,
+              unwanted_volumes.c_str())
       == 5) {
     PoolDbRecord pr;
     bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
@@ -169,7 +170,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       bs->fsend(T_("1901 No Media.\n"));
       Dmsg0(500, "1901 No Media.\n");
     }
-  } else if (sscanf(bs->msg, Get_Vol_Info, &Job, &mr.VolumeName, &writing)
+  } else if (bsscanf(bs->msg, Get_Vol_Info, &Job, &mr.VolumeName, &writing)
              == 3) {
     // Request to find specific Volume information
     Dmsg1(100, "CatReq GetVolInfo Vol=%s\n", mr.VolumeName);
@@ -213,12 +214,12 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       bs->fsend(T_("1997 Volume \"%s\" not in catalog.\n"), mr.VolumeName);
       Dmsg1(100, "1997 Volume \"%s\" not in catalog.\n", mr.VolumeName);
     }
-  } else if (sscanf(bs->msg, Update_media, &Job, &sdmr.VolumeName,
-                    &sdmr.VolJobs, &sdmr.VolFiles, &sdmr.VolBlocks,
-                    &sdmr.VolBytes, &sdmr.VolMounts, &sdmr.VolErrors,
-                    &sdmr.VolWrites, &sdmr.MaxVolBytes, &VolLastWritten,
-                    &sdmr.VolStatus, &sdmr.Slot, &label, &sdmr.InChanger,
-                    &sdmr.VolReadTime, &sdmr.VolWriteTime, &VolFirstWritten)
+  } else if (bsscanf(bs->msg, Update_media, &Job, &sdmr.VolumeName,
+                     &sdmr.VolJobs, &sdmr.VolFiles, &sdmr.VolBlocks,
+                     &sdmr.VolBytes, &sdmr.VolMounts, &sdmr.VolErrors,
+                     &sdmr.VolWrites, &sdmr.MaxVolBytes, &VolLastWritten,
+                     &sdmr.VolStatus, &sdmr.Slot, &label, &sdmr.InChanger,
+                     &sdmr.VolReadTime, &sdmr.VolWriteTime, &VolFirstWritten)
              == 18) {
     /* Request to update Media record. Comes typically at the end
      * of a Storage daemon Job Session, when labeling/relabeling a
@@ -254,8 +255,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       mr.LabelDate = jcr->start_time;
       mr.set_label_date = true;
       if (mr.InitialWrite == 0) { mr.InitialWrite = jcr->start_time; }
-      Dmsg2(400, "label=%d labeldate=%lld\n", label,
-            static_cast<long long int>(mr.LabelDate));
+      Dmsg2(400, "label=%d labeldate=%" PRItime "\n", label, mr.LabelDate);
     } else {
       // Sanity check for VolFiles to be increasing
       if (sdmr.VolFiles < mr.VolFiles) {
@@ -344,9 +344,9 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     Dmsg1(400, ">CatReq response: %s", bs->msg);
     Dmsg1(400, "Leave catreq jcr %p\n", jcr);
     return;
-  } else if (sscanf(bs->msg, Create_job_media, &Job, &jm.FirstIndex,
-                    &jm.LastIndex, &jm.StartFile, &jm.EndFile, &jm.StartBlock,
-                    &jm.EndBlock, &Copy, &Stripe, &MediaId)
+  } else if (bsscanf(bs->msg, Create_job_media, &Job, &jm.FirstIndex,
+                     &jm.LastIndex, &jm.StartFile, &jm.EndFile, &jm.StartBlock,
+                     &jm.EndBlock, &Copy, &Stripe, &MediaId)
              == 10) {
     // Request to create a JobMedia record
     if (jcr->dir_impl->mig_jcr) {
@@ -355,7 +355,9 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       jm.JobId = jcr->JobId;
     }
     jm.MediaId = MediaId;
-    Dmsg6(400, "create_jobmedia JobId=%d MediaId=%d SF=%d EF=%d FI=%d LI=%d\n",
+    Dmsg6(400,
+          "create_jobmedia JobId=%" PRIu32 " MediaId=%" PRIdbid " SF=%" PRIu32
+          " EF=%" PRIu32 " FI=%" PRIu32 " LI=%" PRIu32 "\n",
           jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex,
           jm.LastIndex);
     DbLocker _{jcr->db};
@@ -367,7 +369,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       Dmsg0(400, "JobMedia record created\n");
       bs->fsend(OK_create);
     }
-  } else if (sscanf(bs->msg, Update_filelist, &Job) == 1) {
+  } else if (bsscanf(bs->msg, Update_filelist, &Job) == 1) {
     Dmsg0(0, "Updating filelist\n");
 
     if (jcr->db_batch) {
@@ -382,8 +384,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
             "No batch database connection exists, no files have been added to "
             "the batch (yet).\n");
     }
-  } else if (sscanf(bs->msg, Update_jobrecord, &Job, &update_jobfiles,
-                    &update_jobbytes)
+  } else if (bsscanf(bs->msg, Update_jobrecord, &Job, &update_jobfiles,
+                     &update_jobbytes)
              == 3) {
     Dmsg0(0, "Updating job record\n");
 
@@ -395,7 +397,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
            jcr->db->strerror());
       bs->fsend(T_("1992 Update job record error\n"));
     }
-  } else if (sscanf(bs->msg, Delete_nulljobmediarecord, &Job, &jobid) == 2) {
+  } else if (bsscanf(bs->msg, Delete_nulljobmediarecord, &Job, &jobid) == 2) {
     int numrows = jcr->db->DeleteNullJobmediaRecords(jcr, jobid);
     Dmsg1(400, "Deleted %d rows.\n", numrows);
     if (numrows == -1) {
@@ -486,7 +488,9 @@ static void UpdateAttribute(JobControlRecord* jcr,
    *   Binary Object data */
 
   Dmsg1(400, "UpdCat msg=%s\n", msg);
-  Dmsg5(400, "UpdCat VolSessId=%d VolSessT=%d FI=%d Strm=%d reclen=%d\n",
+  Dmsg5(400,
+        "UpdCat VolSessId=%" PRIu32 " VolSessT=%" PRIu32 " FI=%" PRIu32
+        " Strm=%d reclen=%" PRIu32 "\n",
         VolSessionId, VolSessionTime, FileIndex, Stream, reclen);
 
   jcr->dir_impl->SDJobBytes
@@ -496,7 +500,8 @@ static void UpdateAttribute(JobControlRecord* jcr,
     case STREAM_UNIX_ATTRIBUTES:
     case STREAM_UNIX_ATTRIBUTES_EX:
       if (jcr->cached_attribute) {
-        Dmsg2(400, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname);
+        Dmsg2(400, "Cached attr. Stream=%" PRIu32 " fname=%s\n", ar->Stream,
+              ar->fname);
         if (DbLocker _{jcr->db}; !jcr->db->CreateAttributesRecord(jcr, ar)) {
           Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error: ERR=%s"),
                 jcr->db->strerror());
@@ -599,7 +604,8 @@ static void UpdateAttribute(JobControlRecord* jcr,
           = 0; /* add zero for those who attempt printing */
 
       Dmsg7(100,
-            "oname=%s stream=%d FT=%d FI=%d JobId=%d, obj_len=%d\nobj=\"%s\"\n",
+            "oname=%s stream=%" PRIu32 " FT=%" PRIu32 " FI=%" PRIu32
+            " JobId=%" PRIu32 ", obj_len=%" PRIu32 "\nobj=\"%s\"\n",
             ro.object_name, ro.Stream, ro.FileType, ro.FileIndex, ro.JobId,
             ro.object_len, ro.object);
 
@@ -614,7 +620,8 @@ static void UpdateAttribute(JobControlRecord* jcr,
       if (CryptoDigestStreamType(Stream) != CRYPTO_DIGEST_NONE) {
         fname = p;
         if (ar->FileIndex != FileIndex) {
-          Jmsg3(jcr, M_WARNING, 0, T_("%s not same File=%d as attributes=%d\n"),
+          Jmsg3(jcr, M_WARNING, 0,
+                T_("%s not same File=%" PRIu32 " as attributes=%" PRIu32 "\n"),
                 stream_to_ascii(Stream), FileIndex, ar->FileIndex);
         } else {
           // Update digest in catalog
@@ -659,7 +666,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
             ar->Digest = digestbuf;
             ar->DigestType = type;
 
-            Dmsg2(400, "Cached attr with digest. Stream=%d fname=%s\n",
+            Dmsg2(400, "Cached attr with digest. Stream=%" PRIu32 " fname=%s\n",
                   ar->Stream, ar->fname);
 
             // Update BaseFile table

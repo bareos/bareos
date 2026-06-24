@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
 
    This program is Free Software; you can redistribute it and/or
@@ -52,7 +52,7 @@ inline constexpr const char qstatus[] = ".status %s\n";
 
 inline constexpr const char OKqstatus[] = "2000 OK .status\n";
 inline constexpr const char DotStatusJob[]
-    = "JobId=%d JobStatus=%c JobErrors=%d\n";
+    = "JobId=%" PRIu32 " JobStatus=%c JobErrors=%" PRIu32 "\n";
 
 #if defined(HAVE_WIN32)
 static int privs = 0;
@@ -169,7 +169,7 @@ static void ListRunningJobsPlain(StatusPacket* sp)
   foreach_jcr (njcr) {
     bstrftime_nc(dt, sizeof(dt), njcr->start_time);
     if (njcr->JobId > 0) {
-      len = Mmsg(msg, T_("JobId %d Job %s is running.\n"), njcr->JobId,
+      len = Mmsg(msg, T_("JobId %" PRIu32 " Job %s is running.\n"), njcr->JobId,
                  njcr->Job);
       sp->send(msg, len);
 #ifdef WIN32_VSS
@@ -199,7 +199,7 @@ static void ListRunningJobsPlain(StatusPacket* sp)
     if (sec <= 0) { sec = 1; }
     bps = (int)(njcr->JobBytes / sec);
     len = Mmsg(msg,
-               T_("    Files=%s Bytes=%s Bytes/sec=%s Errors=%d\n"
+               T_("    Files=%s Bytes=%s Bytes/sec=%s Errors=%u\n"
                   "    Bwlimit=%s\n"),
                edit_uint64_with_commas(njcr->JobFiles, b1),
                edit_uint64_with_commas(njcr->JobBytes, b2),
@@ -252,7 +252,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
     if (njcr->JobId == 0) {
       len = Mmsg(msg, "DirectorConnected=%s\n", dt);
     } else {
-      len = Mmsg(msg, "JobId=%d\n Job=%s\n", njcr->JobId, njcr->Job);
+      len = Mmsg(msg, "JobId=%" PRIu32 "\n Job=%s\n", njcr->JobId, njcr->Job);
       sp->send(msg, len);
 #ifdef WIN32_VSS
       len = Mmsg(msg, " VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n",
@@ -272,7 +272,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
     if (sec <= 0) { sec = 1; }
     bps = (int)(njcr->JobBytes / sec);
     len = Mmsg(msg,
-               " Files=%s\n Bytes=%s\n Bytes/sec=%s\n Errors=%d\n"
+               " Files=%s\n Bytes=%s\n Bytes/sec=%s\n Errors=%u\n"
                " Bwlimit=%s\n",
                edit_uint64(njcr->JobFiles, b1), edit_uint64(njcr->JobBytes, b2),
                edit_uint64(bps, b3), njcr->JobErrors,
@@ -387,12 +387,12 @@ static void ListTerminatedJobs(StatusPacket* sp)
     }
 
     if (sp->api) {
-      len = Mmsg(msg, T_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
+      len = Mmsg(msg, T_("%6u\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
                  level, edit_uint64_with_commas(je.JobFiles, b1),
                  edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
                  JobName);
     } else {
-      len = Mmsg(msg, T_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId,
+      len = Mmsg(msg, T_("%6u  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId,
                  level, edit_uint64_with_commas(je.JobFiles, b1),
                  edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
                  JobName);
@@ -432,7 +432,7 @@ bool QstatusCmd(JobControlRecord* jcr)
   sp.bs = dir;
   cmd = GetMemory(dir->message_length + 1);
 
-  if (sscanf(dir->msg, qstatus, cmd) != 1) {
+  if (bsscanf(dir->msg, qstatus, cmd) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
     Jmsg1(jcr, M_FATAL, 0, T_("Bad .status command: %s\n"), jcr->errmsg);
     dir->fsend(T_("2900 Bad .status command, missing argument.\n"));
@@ -456,7 +456,8 @@ bool QstatusCmd(JobControlRecord* jcr)
     if (RecentJobResultsList::Count() > 0) {
       RecentJobResultsList::JobResult job
           = RecentJobResultsList::GetMostRecentJobResult();
-      dir->fsend(DotStatusJob, job.JobId, job.JobStatus, job.Errors);
+      dir->fsend(DotStatusJob, job.JobId, job.JobStatus,
+                 static_cast<uint32_t>(job.Errors));
     }
   } else if (Bstrcasecmp(cmd, "header")) {
     sp.api = true;

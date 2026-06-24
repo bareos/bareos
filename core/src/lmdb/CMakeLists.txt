@@ -28,6 +28,11 @@ add_library(bareoslmdb SHARED mdb.c midl.c)
 bareos_disable_warnings(TARGET bareoslmdb WARNINGS -Wunused-parameter -Wimplicit-fallthrough -Wstringop-overflow -Wshadow C_ONLY)
 if(HAVE_WIN32)
   bareos_disable_warnings(TARGET bareoslmdb WARNINGS -Wreturn-local-addr C_ONLY)
+  set_source_files_properties(
+    mdb.c
+    PROPERTIES COMPILE_OPTIONS
+               "/wd4100;/wd4146;/wd4172;/wd4333;/wd4456;/wd4457;/wd4701;/wd4996"
+  )
 endif()
 
 # empty the include_directories

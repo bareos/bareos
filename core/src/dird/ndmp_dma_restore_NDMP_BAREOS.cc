@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -661,7 +661,7 @@ bool DoNdmpRestore(JobControlRecord* jcr)
   }
   Dmsg0(20, "Updated job start record\n");
 
-  Dmsg1(20, "RestoreJobId=%d\n", jcr->dir_impl->res.job->RestoreJobId);
+  Dmsg1(20, "RestoreJobId=%" PRIu32 "\n", jcr->dir_impl->res.job->RestoreJobId);
 
   // Validate the Job to have a NDMP client.
   if (!NdmpValidateClient(jcr)) { return false; }

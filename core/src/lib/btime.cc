@@ -168,9 +168,10 @@ utime_t StrToUtime(const char* str)
   // Check for bad argument
   if (!str || *str == 0) { return 0; }
 
-  if ((sscanf(str, "%u-%u-%u %u:%u:%u%15s", &datetime.tm_year, &datetime.tm_mon,
-              &datetime.tm_mday, &datetime.tm_hour, &datetime.tm_min,
-              &datetime.tm_sec, trailinggarbage)
+  // we want the real bsscanf() and not bbsscanf()
+  if ((bsscanf(str, "%u-%u-%u %u:%u:%u%15s", &datetime.tm_year,
+               &datetime.tm_mon, &datetime.tm_mday, &datetime.tm_hour,
+               &datetime.tm_min, &datetime.tm_sec, trailinggarbage)
        != 7)
       || trailinggarbage[0] != '\0') {
     return 0;

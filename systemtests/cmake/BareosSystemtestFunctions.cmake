@@ -693,10 +693,10 @@ function(add_disabled_systemtest PREFIX TEST_NAME COMMENT)
     add_test(NAME ${FULL_TEST_NAME} COMMAND false)
   endif()
   set_tests_properties(${FULL_TEST_NAME} PROPERTIES DISABLED true)
-  if(${COMMENT})
-    message(STATUS "✘ ${FULL_TEST_NAME} => disabled (${COMMENT})")
-  else()
+  if("${COMMENT}" STREQUAL "")
     message(STATUS "✘ ${FULL_TEST_NAME} => disabled")
+  else()
+    message(STATUS "✘ ${FULL_TEST_NAME} => disabled (${COMMENT})")
   endif()
 endfunction()
 
@@ -981,6 +981,10 @@ function(add_systemtest_from_directory test_dir test_basename)
     CONFIGURE_DEPENDS "${test_dir}/testrunner-*"
   )
   foreach(testfilename ${all_tests})
+    if(NOT EXISTS "${test_dir}/${testfilename}")
+      message(DEBUG "Skipping out-of-date testrunner ${testfilename}")
+      continue()
+    endif()
     string(REPLACE "testrunner-" "" test ${testfilename})
     add_systemtest(${test_basename}:${test} ${test_dir}/${testfilename})
 
@@ -1099,7 +1103,7 @@ macro(create_systemtest prefix test_subdir)
   #
   # cmake-format: on
   cmake_parse_arguments(
-    ARG "DISABLED;IGNORE_CONFIG_WARNINGS" "COMMENT" "" ${ARGN}
+    ARG "DISABLED;IGNORE_CONFIG_WARNINGS;NO_GRPC" "COMMENT" "" ${ARGN}
   )
   set(test_basename "${prefix}${test_subdir}")
   if(ARG_DISABLED)
@@ -1111,7 +1115,10 @@ macro(create_systemtest prefix test_subdir)
     else()
       string(REGEX MATCH "^py3.*-fd" is_fd_python "${test_subdir}")
 
-      if(is_fd_python AND ENABLE_GRPC)
+      if(is_fd_python
+         AND ENABLE_GRPC
+         AND NOT ARG_NO_GRPC
+      )
         create_enabled_systemtest(
           ${prefix} ${test_subdir} ${test_subdir} ${test_subdir}
           ${ARG_IGNORE_CONFIG_WARNINGS}

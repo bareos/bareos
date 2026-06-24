@@ -110,7 +110,8 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
 
   if (dev->num_writers > 0) {
     Jmsg2(jcr, M_FATAL, 0,
-          T_("Acquire read: num_writers=%d not zero. Job %d canceled.\n"),
+          T_("Acquire read: num_writers=%d not zero. Job %" PRIu32
+             " canceled.\n"),
           dev->num_writers, jcr->JobId);
     goto get_out;
   }
@@ -434,7 +435,7 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
     dev->rLock(true);
     BlockDevice(dev, BST_DOING_ACQUIRE);
     dev->Unlock();
-    Dmsg1(190, "jid=%u Do mount_next_write_vol\n", (uint32_t)jcr->JobId);
+    Dmsg1(190, "jid=%" PRIu32 " Do mount_next_write_vol\n", jcr->JobId);
     if (!dcr->MountNextWriteVolume()) {
       if (!jcr->IsJobCanceled()) {
         /* Reduce "noise" -- don't print if job canceled */
@@ -455,8 +456,9 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
   dev->num_writers++; /* we are now a writer */
   if (jcr->sd_impl->NumWriteVolumes == 0) { jcr->sd_impl->NumWriteVolumes = 1; }
   dev->VolCatInfo.VolCatJobs++; /* increment number of jobs on vol */
-  Dmsg4(100, "=== nwriters=%d nres=%d vcatjob=%d dev=%s\n", dev->num_writers,
-        dev->NumReserved(), dev->VolCatInfo.VolCatJobs, dev->print_name());
+  Dmsg4(100, "=== nwriters=%d nres=%d vcatjob=%" PRIu32 " dev=%s\n",
+        dev->num_writers, dev->NumReserved(), dev->VolCatInfo.VolCatJobs,
+        dev->print_name());
   dcr->DirUpdateVolumeInfo(
       is_labeloperation::False); /* send Volume info to Director */
   retval = true;
@@ -634,9 +636,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   }
 
   pthread_cond_broadcast(&dev->wait_next_vol);
-  Dmsg2(100, "JobId=%u broadcast wait_device_release at %s\n",
-        (uint32_t)jcr->JobId,
-        bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+  Dmsg2(100, "JobId=%" PRIu32 " broadcast wait_device_release at %s\n",
+        jcr->JobId, bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
   ReleaseDeviceCond();
 
   // If we are the thread that blocked the device, then unblock it
@@ -654,8 +655,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
     FreeDeviceControlRecord(dcr);
   }
 
-  Dmsg2(100, "Device %s released by JobId=%u\n", dev->print_name(),
-        (uint32_t)jcr->JobId);
+  Dmsg2(100, "Device %s released by JobId=%" PRIu32 "\n", dev->print_name(),
+        jcr->JobId);
 
   return retval;
 }

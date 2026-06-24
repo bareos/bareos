@@ -126,7 +126,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
   const char* storage_source;
 
   if (!GetOrCreateFilesetRecord(jcr)) {
-    Dmsg1(dbglevel, "JobId=%d no FileSet\n", (int)jcr->JobId);
+    Dmsg1(dbglevel, "JobId=%" PRIu32 " no FileSet\n", jcr->JobId);
     return false;
   }
 
@@ -137,7 +137,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
   jcr->dir_impl->jr.PoolId
       = GetOrCreatePoolRecord(jcr, jcr->dir_impl->res.pool->resource_name_);
   if (jcr->dir_impl->jr.PoolId == 0) {
-    Dmsg1(dbglevel, "JobId=%d no PoolId\n", (int)jcr->JobId);
+    Dmsg1(dbglevel, "JobId=%" PRIu32 " no PoolId\n", jcr->JobId);
     Jmsg(jcr, M_FATAL, 0, T_("Could not get or create a Pool record.\n"));
     return false;
   }
@@ -296,7 +296,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   }
 
   int JobLevel_of_first_job = tmp_jr.JobLevel;
-  Dmsg2(10, "Level of first consolidated job %d: %s\n", tmp_jr.JobId,
+  Dmsg2(10, "Level of first consolidated job %" PRIu32 ": %s\n", tmp_jr.JobId,
         job_level_to_str(JobLevel_of_first_job));
 
   /* Now we find the newest job that ran and store its info in
@@ -322,7 +322,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
     return false;
   }
 
-  Jmsg(jcr, M_INFO, 0, T_("Consolidating JobIds %s containing %d files\n"),
+  Jmsg(jcr, M_INFO, 0,
+       T_("Consolidating JobIds %s containing %" PRIu32 " files\n"),
        jobids.c_str(), jcr->dir_impl->ExpectedFiles);
 
   /* Open a message channel connection with the Storage
@@ -461,14 +462,12 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   if (jcr->dir_impl->vf_jobids && jcr->dir_impl->vf_jobids[0] != '\0') {
     using namespace std::string_literals;
     Jmsg(jcr, M_INFO, 0,
-         "Replicating deleted files from jobids %s to jobid %d\n",
+         "Replicating deleted files from jobids %s to jobid %" PRIu32 "\n",
          jcr->dir_impl->vf_jobids, jcr->JobId);
     PoolMem inner_query(PM_MESSAGE);
-    jcr->db->FillQuery(
-        inner_query,
-        BareosDbQueryEnum::SQL_QUERY::select_recent_version_with_basejob,
-        jcr->dir_impl->vf_jobids, jcr->dir_impl->vf_jobids,
-        jcr->dir_impl->vf_jobids, jcr->dir_impl->vf_jobids);
+    jcr->db->FillQuery<
+        BareosDbQueryEnum::SQL_QUERY::select_recent_version_with_basejob>(
+        inner_query, jcr->dir_impl->vf_jobids, jcr->dir_impl->vf_jobids);
     std::string outer_query
         = "INSERT INTO File (FileIndex, JobId, PathId, LStat, MD5, Name) "s
           + "SELECT FileIndex, "s + std::to_string(jcr->JobId) + " AS JobId, "s
@@ -582,7 +581,8 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
   UaContext* ua = new_ua_context(&jcr);
   AddVolumeInformationToBsr(ua, rx.bsr.get());
   jcr.dir_impl->ExpectedFiles = WriteBsrFile(ua, rx);
-  Dmsg1(10, "Found %d files to consolidate.\n", jcr.dir_impl->ExpectedFiles);
+  Dmsg1(10, "Found %" PRIu32 " files to consolidate.\n",
+        jcr.dir_impl->ExpectedFiles);
   FreeUaContext(ua);
   rx.bsr.reset(nullptr);
   return jcr.dir_impl->ExpectedFiles != 0;

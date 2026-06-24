@@ -303,7 +303,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
                         void* value,
                         bool reverse)
 {
-  int i;
+  int i{};
   bSdEvent event;
   alist<PluginContext*>* plugin_ctx_list;
   bRC rc = bRC_OK;
@@ -327,12 +327,12 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
   plugin_ctx_list = jcr->plugin_ctx_list;
   event.eventType = eventType;
 
-  Dmsg2(debuglevel, "sd-plugin_ctx_list=%p JobId=%d\n", plugin_ctx_list,
-        jcr->JobId);
+  Dmsg2(debuglevel, "sd-plugin_ctx_list=%p JobId=%" PRIu32 "\n",
+        plugin_ctx_list, jcr->JobId);
 
   // See if we need to trigger the loaded plugins in reverse order.
   if (reverse) {
-    PluginContext* ctx;
+    PluginContext* ctx = nullptr;
 
     foreach_alist_rindex (i, ctx, plugin_ctx_list) {
       if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
@@ -341,7 +341,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       }
     }
   } else {
-    PluginContext* ctx;
+    PluginContext* ctx = nullptr;
 
     foreach_alist_index (i, ctx, plugin_ctx_list) {
       if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
@@ -368,7 +368,7 @@ void DumpSdPlugin(Plugin* plugin, FILE* fp)
   if (!plugin) { return; }
 
   info = (PluginInformation*)plugin->plugin_information;
-  fprintf(fp, "\tversion=%d\n", info->version);
+  fprintf(fp, "\tversion=%" PRIu32 "\n", info->version);
   fprintf(fp, "\tdate=%s\n", NPRTB(info->plugin_date));
   fprintf(fp, "\tmagic=%s\n", NPRTB(info->plugin_magic));
   fprintf(fp, "\tauthor=%s\n", NPRTB(info->plugin_author));
@@ -385,9 +385,6 @@ static void DumpSdPlugins(FILE* fp) { DumpPlugins(sd_plugin_list, fp); }
  */
 void LoadSdPlugins(const char* plugin_dir, alist<const char*>* plugin_names)
 {
-  Plugin* plugin;
-  int i;
-
   Dmsg0(debuglevel, "Load sd plugins\n");
   if (!plugin_dir) {
     Dmsg0(debuglevel, "No sd plugin dir!\n");
@@ -406,7 +403,7 @@ void LoadSdPlugins(const char* plugin_dir, alist<const char*>* plugin_names)
     }
   }
   // Verify that the plugin is acceptable, and print information about it.
-  foreach_alist_index (i, plugin, sd_plugin_list) {
+  for (auto* plugin : *sd_plugin_list) {
     Dmsg1(debuglevel, "Loaded plugin: %s\n", plugin->file);
   }
 
@@ -444,9 +441,9 @@ static bool IsPluginCompatible(Plugin* plugin)
   }
   if (info->version != SD_PLUGIN_INTERFACE_VERSION) {
     Jmsg(NULL, M_ERROR, 0,
-         T_("Plugin version incorrect. Plugin=%s wanted=%d got=%d\n"),
+         T_("Plugin version incorrect. Plugin=%s wanted=%d got=%" PRIu32 "\n"),
          plugin->file, SD_PLUGIN_INTERFACE_VERSION, info->version);
-    Dmsg3(50, "Plugin version incorrect. Plugin=%s wanted=%d got=%d\n",
+    Dmsg3(50, "Plugin version incorrect. Plugin=%s wanted=%d got=%" PRIu32 "\n",
           plugin->file, SD_PLUGIN_INTERFACE_VERSION, info->version);
     return false;
   }
@@ -483,7 +480,7 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
   b_ctx->jcr = jcr;
   b_ctx->plugin = plugin;
 
-  Dmsg2(debuglevel, "Instantiate dir-plugin_ctx_list=%p JobId=%d\n",
+  Dmsg2(debuglevel, "Instantiate dir-plugin_ctx_list=%p JobId=%" PRIu32 "\n",
         jcr->plugin_ctx_list, jcr->JobId);
 
   ctx = (PluginContext*)malloc(sizeof(PluginContext));
@@ -505,13 +502,15 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
  */
 void DispatchNewPluginOptions(JobControlRecord* jcr)
 {
-  int i, j, len;
-  Plugin* plugin;
+  int i{}, j{}, len{};
+  Plugin* plugin = nullptr;
   uint32_t instance;
   bSdEvent event;
   bSdEventType eventType;
-  char *bp, *plugin_name, *option;
-  const char* plugin_options;
+  char* bp = nullptr;
+  char* plugin_name = nullptr;
+  char* option = nullptr;
+  const char* plugin_options = nullptr;
   PoolMem priv_plugin_options(PM_MESSAGE);
 
   if (!sd_plugin_list || sd_plugin_list->empty()) { return; }
@@ -549,10 +548,11 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
       }
 
       if (instance > HIGHEST_PLUGIN_INSTANCE) {
-        Jmsg(NULL, M_ERROR, 0,
-             T_("Illegal SD plugin options encountered, %s instance %d "
-                "skipping\n"),
-             plugin_options, instance);
+        Jmsg(
+            NULL, M_ERROR, 0,
+            T_("Illegal SD plugin options encountered, %s instance %" PRIu32 " "
+               "skipping\n"),
+            plugin_options, instance);
         continue;
       }
 
@@ -593,9 +593,6 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 // Create a new instance of each plugin for this Job
 void NewPlugins(JobControlRecord* jcr)
 {
-  Plugin* plugin;
-  int i, num;
-
   Dmsg0(debuglevel, "=== enter NewPlugins ===\n");
   if (!sd_plugin_list) {
     Dmsg0(debuglevel, "No sd plugin list!\n");
@@ -605,12 +602,12 @@ void NewPlugins(JobControlRecord* jcr)
   // If plugins already loaded, just return
   if (jcr->plugin_ctx_list) { return; }
 
-  num = sd_plugin_list->size();
+  int num = sd_plugin_list->size();
   Dmsg1(debuglevel, "sd-plugin-list size=%d\n", num);
   if (num == 0) { return; }
 
   jcr->plugin_ctx_list = new alist<PluginContext*>(10, owned_by_alist);
-  foreach_alist_index (i, plugin, sd_plugin_list) {
+  for (auto* plugin : *sd_plugin_list) {
     // Start a new instance of each plugin
     instantiate_plugin(jcr, plugin, 0);
   }
@@ -621,7 +618,7 @@ void FreePlugins(JobControlRecord* jcr)
 {
   if (!sd_plugin_list || !jcr->plugin_ctx_list) { return; }
 
-  Dmsg2(debuglevel, "Free instance dir-plugin_ctx_list=%p JobId=%d\n",
+  Dmsg2(debuglevel, "Free instance dir-plugin_ctx_list=%p JobId=%" PRIu32 "\n",
         jcr->plugin_ctx_list, jcr->JobId);
   for (auto* ctx : jcr->plugin_ctx_list) {
     // Free the plugin instance
@@ -679,7 +676,8 @@ static bRC bareosGetValue(PluginContext* ctx, bsdrVariable var, void* value)
         break;
       case bsdVarJobId:
         *((int*)value) = jcr->JobId;
-        Dmsg1(debuglevel, "sd-plugin: return bsdVarJobId=%d\n", jcr->JobId);
+        Dmsg1(debuglevel, "sd-plugin: return bsdVarJobId=%" PRIu32 "\n",
+              jcr->JobId);
         break;
       case bsdVarClient:
         *((char**)value) = jcr->client_name;
@@ -745,12 +743,12 @@ static bRC bareosGetValue(PluginContext* ctx, bsdrVariable var, void* value)
         break;
       case bsdVarJobErrors:
         *((int*)value) = jcr->JobErrors;
-        Dmsg1(debuglevel, "sd-plugin: return bsdVarJobErrors=%d\n",
+        Dmsg1(debuglevel, "sd-plugin: return bsdVarJobErrors=%" PRIu32 "\n",
               jcr->JobErrors);
         break;
       case bsdVarJobFiles:
         *((int*)value) = jcr->JobFiles;
-        Dmsg1(debuglevel, "sd-plugin: return bsdVarJobFiles=%d\n",
+        Dmsg1(debuglevel, "sd-plugin: return bsdVarJobFiles=%" PRIu32 "\n",
               jcr->JobFiles);
         break;
       case bsdVarJobBytes:

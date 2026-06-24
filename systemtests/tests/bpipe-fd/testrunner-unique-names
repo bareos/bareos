@@ -1,0 +1,137 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+#
+# Check that the usesuffix option actually causes all names to be unique.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+run_bconsole - <<END_OF_DATA
+@$out ${NULL_DEV}
+messages
+
+@$out ${runner_tmp}/full.out
+run job=backup-bareos-fd fileset=bpipe-unique level=Full yes
+wait
+messages
+END_OF_DATA
+
+check_log "${runner_tmp}/full.out"
+
+full_job_id=$(last_jobid_or_zero)
+
+run_bconsole - <<EOF
+@$out ${runner_tmp}/diff.out
+run job=backup-bareos-fd fileset=bpipe-unique level=Differential yes
+wait
+messages
+quit
+EOF
+
+check_log "${runner_tmp}/diff.out"
+
+diff_job_id=$(last_jobid_or_zero)
+
+run_bconsole - <<EOF
+@$out ${runner_tmp}/incr.out
+run job=backup-bareos-fd fileset=bpipe-unique level=Incremental yes
+wait
+messages
+quit
+EOF
+
+check_log "${runner_tmp}/incr.out"
+
+incr_job_id=$(last_jobid_or_zero)
+
+run_bconsole - <<END_OF_DATA
+@$out ${NULL_DEV}
+messages
+
+@$out ${runner_tmp}/full-2.out
+run job=backup-bareos-fd fileset=bpipe-unique level=Full yes
+wait
+messages
+END_OF_DATA
+
+check_log "${runner_tmp}/full-2.out"
+
+full2_job_id=$(last_jobid_or_zero)
+
+run_bconsole - <<EOF
+@$out ${runner_tmp}/diff-2.out
+run job=backup-bareos-fd fileset=bpipe-unique level=Differential yes
+wait
+messages
+quit
+EOF
+
+check_log "${runner_tmp}/diff-2.out"
+
+diff2_job_id=$(last_jobid_or_zero)
+
+run_bconsole - <<EOF
+@$out ${runner_tmp}/incr-2.out
+run job=backup-bareos-fd fileset=bpipe-unique level=Incremental yes
+wait
+messages
+quit
+EOF
+
+check_log "${runner_tmp}/incr-2.out"
+
+incr2_job_id=$(last_jobid_or_zero)
+
+# This basically returns a list of name + count pairs with count > 1
+# from the just created jobs.  As all names are supposed to be unique,
+# it should be empty.
+query=(
+  "SELECT name, count(*) as count FROM file"
+  "WHERE jobid IN"
+  "(${full_job_id},${diff_job_id},${incr_job_id},"
+  "${full2_job_id},${diff2_job_id},${incr2_job_id})"
+  "GROUP BY name"
+  "HAVING count(*) > 1"
+)
+
+run_bconsole - <<END_OF_DATA
+@$out ${runner_tmp}/query.out
+.sql query="${query[*]}"
+END_OF_DATA
+
+expect_grep "No results to list." \
+  "${runner_tmp}/query.out" \
+  "Duplicate names were found"
+
+end_test

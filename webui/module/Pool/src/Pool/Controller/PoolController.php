@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ namespace Pool\Controller;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Exception;
+use Throwable;
 
 class PoolController extends AbstractActionController
 {
@@ -76,12 +77,27 @@ class PoolController extends AbstractActionController
             );
         }
 
+        $pools = array();
+
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
             $pools = $this->getPoolModel()->getPools($this->bsock);
-            $this->bsock->disconnect();
-        } catch (Exception $e) {
-            echo $e->getMessage();
+        } catch (Throwable $e) {
+            error_log($e->getMessage());
+            return new ViewModel(
+                array(
+                    'pools' => $pools,
+                    'error' => 'Failed to load pools',
+                )
+            );
+        } finally {
+            if ($this->bsock) {
+                try {
+                    $this->bsock->disconnect();
+                } catch (Throwable $e) {
+                    error_log($e->getMessage());
+                }
+            }
         }
 
         return new ViewModel(
@@ -133,10 +149,23 @@ class PoolController extends AbstractActionController
 
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $pool = $this->getPoolModel()->getPool($this->bsock, $poolname);
-            $this->bsock->disconnect();
-        } catch (Exception $e) {
-            echo $e->getMessage();
+            $this->getPoolModel()->getPool($this->bsock, $poolname);
+        } catch (Throwable $e) {
+            error_log($e->getMessage());
+            return new ViewModel(
+                array(
+                    'pool' => $poolname,
+                    'error' => 'Failed to load pool',
+                )
+            );
+        } finally {
+            if ($this->bsock) {
+                try {
+                    $this->bsock->disconnect();
+                } catch (Throwable $e) {
+                    error_log($e->getMessage());
+                }
+            }
         }
 
         return new ViewModel(

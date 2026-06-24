@@ -350,7 +350,8 @@ static int GetJobidFromCmdline(UaContext* ua)
           jr.Job);
   } else if (const char* jobid = GetArgValue(ua, NT_("jobid"))) {
     jr.JobId = str_to_int64(jobid);
-    Dmsg1(200, "GetJobidFromCmdline: Selecting jobid %d from cmdline.\n",
+    Dmsg1(200,
+          "GetJobidFromCmdline: Selecting jobid %" PRIu32 " from cmdline.\n",
           jr.JobId);
   } else {
     Dmsg0(200, "GetJobidFromCmdline: No jobid specified on cmdline.\n");
@@ -362,7 +363,7 @@ static int GetJobidFromCmdline(UaContext* ua)
     return -1;
   }
 
-  Dmsg1(200, "GetJobidFromCmdline: Found job record with jobid %d.\n",
+  Dmsg1(200, "GetJobidFromCmdline: Found job record with jobid %" PRIu32 ".\n",
         jr.JobId);
 
   if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
@@ -374,10 +375,10 @@ static int GetJobidFromCmdline(UaContext* ua)
     ClientDbRecord cr{};
     cr.ClientId = jr.ClientId;
     if (!ua->db->GetClientRecord(ua->jcr, &cr)) {
-      Dmsg1(
-          200,
-          "GetJobidFromCmdline: Failed to get client record for ClientId %d\n",
-          jr.ClientId);
+      Dmsg1(200,
+            "GetJobidFromCmdline: Failed to get client record for ClientId "
+            "%" PRIdbid "\n",
+            jr.ClientId);
       return -1;
     }
 
@@ -1107,10 +1108,11 @@ static inline bool parse_level_selection_param(PoolMem& selection,
             && bstrncasecmp(joblevels[i].level_name, cur_level,
                             strlen(cur_level))) {
           if (cnt == 0) {
-            Mmsg(temp, " AND Level IN ('%c'", joblevels[i].level);
+            Mmsg(temp, " AND Level IN ('%c'",
+                 static_cast<int>(joblevels[i].level));
             PmStrcat(selection, temp.c_str());
           } else {
-            Mmsg(temp, ",'%c'", joblevels[i].level);
+            Mmsg(temp, ",'%c'", static_cast<int>(joblevels[i].level));
             PmStrcat(selection, temp.c_str());
           }
         }
@@ -1209,11 +1211,11 @@ static bool ParseListBackupsCmd(UaContext* ua,
   PmStrcat(criteria, range);
 
   if (llist == VERT_LIST) {
-    ua->db->FillQuery(ua->cmd, BareosDb::SQL_QUERY::list_jobs_long,
-                      selection.c_str(), criteria.c_str());
+    ua->db->FillQuery<BareosDb::SQL_QUERY::list_jobs_long>(
+        ua->cmd, selection.c_str(), criteria.c_str());
   } else {
-    ua->db->FillQuery(ua->cmd, BareosDb::SQL_QUERY::list_jobs,
-                      selection.c_str(), criteria.c_str());
+    ua->db->FillQuery<BareosDb::SQL_QUERY::list_jobs>(
+        ua->cmd, selection.c_str(), criteria.c_str());
   }
 
   return true;

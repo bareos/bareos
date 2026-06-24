@@ -116,7 +116,7 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
     heart_beat = me->heartbeat_interval;
   }
 
-  Dmsg2(100, "bNetConnect to Storage daemon %s:%d\n", store->address,
+  Dmsg2(100, "bNetConnect to Storage daemon %s:%" PRIu32 "\n", store->address,
         store->SDport);
   std::unique_ptr<BareosSocket> sd(new BareosSocketTCP);
   if (!sd) { return false; }
@@ -172,7 +172,7 @@ BareosSocket* open_sd_bsock(UaContext* ua)
   }
 
   if (!ua->jcr->store_bsock) {
-    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d ...\n"),
+    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 " ...\n"),
                 store->resource_name_, store->address, store->SDport);
     /* the next call will set ua->jcr->store_bsock */
     if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
@@ -218,7 +218,7 @@ char* get_volume_name_from_SD(UaContext* ua,
     Dmsg1(100, "Got: %s", sd->msg);
     if (strncmp(sd->msg, NT_("3001 Volume="), 12) == 0) {
       VolName = (char*)malloc(sd->message_length);
-      if (sscanf(sd->msg, readlabelresponse, VolName, &rtn_slot) == 2) {
+      if (bsscanf(sd->msg, readlabelresponse, VolName, &rtn_slot) == 2) {
         break;
       }
       free(VolName);
@@ -542,7 +542,7 @@ slot_number_t NativeGetNumSlots(UaContext* ua, StorageResource* store)
   // Ask for autochanger number of slots
   sd->fsend(changerslotscmd, dev_name);
   while (sd->recv() >= 0) {
-    if (sscanf(sd->msg, changerslotsresponse, &slots) == 1) {
+    if (bsscanf(sd->msg, changerslotsresponse, &slots) == 1) {
       break;
     } else {
       ua->SendMsg("%s", sd->msg);
@@ -570,7 +570,7 @@ drive_number_t NativeGetNumDrives(UaContext* ua, StorageResource* store)
   // Ask for autochanger number of drives
   sd->fsend(changerdrivescmd, dev_name);
   while (sd->recv() >= 0) {
-    if (sscanf(sd->msg, changerdrivesresponse, &drives) == 1) {
+    if (bsscanf(sd->msg, changerdrivesresponse, &drives) == 1) {
       break;
     } else {
       ua->SendMsg("%s", sd->msg);
@@ -698,7 +698,7 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   SetWstorage(ua->jcr, &lstore);
 
   if (!ua->api) {
-    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
+    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
                 store->resource_name_, store->address, store->SDport);
   }
 
@@ -843,7 +843,7 @@ bool SendSecureEraseReqToSd(JobControlRecord* jcr)
   while ((n = BgetDirmsg(sd)) >= 0) {
     jcr->dir_impl->SDSecureEraseCmd = CheckPoolMemorySize(
         jcr->dir_impl->SDSecureEraseCmd, sd->message_length);
-    if (sscanf(sd->msg, OKSecureEraseCmd, jcr->dir_impl->SDSecureEraseCmd)
+    if (bsscanf(sd->msg, OKSecureEraseCmd, jcr->dir_impl->SDSecureEraseCmd)
         == 1) {
       Dmsg1(421, "Got SD Secure Erase Cmd: %s\n",
             jcr->dir_impl->SDSecureEraseCmd);
@@ -898,9 +898,9 @@ bool DoStorageResolve(UaContext* ua, StorageResource* store)
 
 bool SendStoragePluginOptions(JobControlRecord* jcr)
 {
-  int i;
+  int i{};
   PoolMem cur_plugin_options(PM_MESSAGE);
-  const char* plugin_options;
+  const char* plugin_options = nullptr;
   BareosSocket* sd = jcr->store_bsock;
 
   if (jcr->dir_impl->res.job && jcr->dir_impl->res.job->SdPluginOptions

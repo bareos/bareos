@@ -51,7 +51,7 @@ inline constexpr const char dotstatuscmd[] = ".status %127s\n";
 
 inline constexpr const char OKdotstatus[] = "3000 OK .status\n";
 inline constexpr const char DotStatusJob[]
-    = "JobId=%d JobStatus=%c JobErrors=%d\n";
+    = "JobId=%" PRIu32 " JobStatus=%c JobErrors=%" PRIu32 "\n";
 
 /* Forward referenced functions */
 static void SendBlockedStatus(Device* dev, StatusPacket* sp);
@@ -384,10 +384,12 @@ static void ListVolumes(StatusPacket* sp, const char* devicenames)
       len = Mmsg(msg, "Read volume: %s on device %s\n", vol->vol_name,
                  dev->print_name());
       sp->send(msg, len);
-      len = Mmsg(msg,
-                 "    Reader=%d writers=%d reserves=%d volinuse=%d JobId=%d\n",
-                 dev->CanRead() ? 1 : 0, dev->num_writers, dev->NumReserved(),
-                 vol->IsInUse(), vol->GetJobid());
+      len = Mmsg(
+          msg,
+          "    Reader=%d writers=%d reserves=%d volinuse=%d JobId=%" PRIu32
+          "\n",
+          dev->CanRead() ? 1 : 0, dev->num_writers, dev->NumReserved(),
+          vol->IsInUse(), vol->GetJobid());
       sp->send(msg, len);
     } else {
       len = Mmsg(msg, "Read Volume: %s no device. volinuse= %d\n",
@@ -660,7 +662,8 @@ static void ListRunningJobs(StatusPacket* sp)
       for (int i = 0; i < 3; i++) {
         if ((p = strrchr(JobName, '.')) != NULL) { *p = 0; }
       }
-      len = Mmsg(msg, T_("JobId=%d Level=%s Type=%s Name=%s Status=%s\n"),
+      len = Mmsg(msg,
+                 T_("JobId=%" PRIu32 " Level=%s Type=%s Name=%s Status=%s\n"),
                  jcr->JobId, job_level_to_str(jcr->getJobLevel()),
                  job_type_to_str(jcr->getJobType()), JobName,
                  JobstatusToAscii(jcr->getJobStatus()).c_str());
@@ -700,7 +703,7 @@ static void ListRunningJobs(StatusPacket* sp)
 
       found = true;
       if (jcr->file_bsock) {
-        len = Mmsg(msg, T_("    FDReadSeqNo=%s in_msg=%u out_msg=%d fd=%d\n\n"),
+        len = Mmsg(msg, T_("    FDReadSeqNo=%s in_msg=%u out_msg=%u fd=%d\n\n"),
                    edit_uint64_with_commas(jcr->file_bsock->read_seqno, b1),
                    jcr->file_bsock->in_msg_no, jcr->file_bsock->out_msg_no,
                    jcr->file_bsock->fd_);
@@ -838,12 +841,12 @@ static void ListTerminatedJobs(StatusPacket* sp)
       if ((p = strrchr(JobName, '.')) != NULL) { *p = 0; }
     }
     if (sp->api) {
-      len = Mmsg(msg, T_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
+      len = Mmsg(msg, T_("%6u\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
                  level, edit_uint64_with_commas(je.JobFiles, b1),
                  edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
                  JobName);
     } else {
-      len = Mmsg(msg, T_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId,
+      len = Mmsg(msg, T_("%6u  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId,
                  level, edit_uint64_with_commas(je.JobFiles, b1),
                  edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
                  JobName);
@@ -912,7 +915,7 @@ bool StatusCmd(JobControlRecord* jcr)
 
   sp.bs = dir;
   devicenames.check_size(dir->message_length);
-  if (sscanf(dir->msg, statuscmd, devicenames.c_str()) != 1) {
+  if (bsscanf(dir->msg, statuscmd, devicenames.c_str()) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(T_("3900 No arg in status command: %s\n"), jcr->errmsg);
     dir->signal(BNET_EOD);
@@ -938,7 +941,7 @@ bool DotstatusCmd(JobControlRecord* jcr)
 
   sp.bs = dir;
   cmd.check_size(dir->message_length);
-  if (sscanf(dir->msg, dotstatuscmd, cmd.c_str()) != 1) {
+  if (bsscanf(dir->msg, dotstatuscmd, cmd.c_str()) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(T_("3900 No arg in .status command: %s\n"), jcr->errmsg);
     dir->signal(BNET_EOD);
@@ -963,7 +966,8 @@ bool DotstatusCmd(JobControlRecord* jcr)
     if (RecentJobResultsList::Count() > 0) {
       RecentJobResultsList::JobResult job
           = RecentJobResultsList::GetMostRecentJobResult();
-      dir->fsend(DotStatusJob, job.JobId, job.JobStatus, job.Errors);
+      dir->fsend(DotStatusJob, job.JobId, job.JobStatus,
+                 static_cast<unsigned int>(job.Errors));
     }
   } else if (Bstrcasecmp(cmd.c_str(), "header")) {
     sp.api = true;

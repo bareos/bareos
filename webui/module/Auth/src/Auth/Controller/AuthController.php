@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -106,11 +106,20 @@ class AuthController extends AbstractActionController
         $this->bsock->set_config($config['directors'][$director]);
         $this->bsock->set_user_credentials($username, $password);
 
-        if (!$this->bsock->connect_and_authenticate()) {
+        try {
+            $authenticated = $this->bsock->connect_and_authenticate();
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+            error_log($e->getTraceAsString());
+            $authenticated = false;
+        }
+
+        if (!$authenticated) {
             $err_msg = "Sorry, cannot authenticate. Wrong username, password or SSL/TLS handshake failed.";
             return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
         }
 
+        $session->getManager()->regenerateId(true);
         $session->offsetSet('director', $director);
         $session->offsetSet('username', $username);
         $session->offsetSet('password', $password);
@@ -206,7 +215,7 @@ class AuthController extends AbstractActionController
         if ($bsock != null) {
             $bsock->disconnect();
         }
-        session_destroy();
+        $this->clearAuthenticationSessionState();
         return new ViewModel(
             array(
                 'form' => $form,
@@ -214,6 +223,24 @@ class AuthController extends AbstractActionController
                 'err_msg' => $err_msg
             )
         );
+    }
+
+    private function clearAuthenticationSessionState()
+    {
+        $session = new Container('bareos');
+        $session->offsetSet('authenticated', false);
+
+        foreach (array(
+            'director',
+            'username',
+            'password',
+            'idletime',
+            'commands',
+            'product-updates',
+            'dird-update-info',
+        ) as $key) {
+            $session->offsetUnset($key);
+        }
     }
 
     /**
@@ -274,7 +301,7 @@ class AuthController extends AbstractActionController
         try {
             $commands = $this->getDirectorModel()->getAvailableCommands($this->bsock);
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         if ($commands['.help']['permission'] == 0) {
@@ -300,7 +327,7 @@ class AuthController extends AbstractActionController
                 $dird_version = $dird_version_array['version'];
             }
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         if (isset($dird_version)) {

@@ -188,7 +188,6 @@ static void DumpResource(int type,
                          bool hide_sensitive_data,
                          bool verbose)
 {
-  PoolMem buf;
   bool recurse = true;
   OutputFormatter output_formatter
       = OutputFormatter(sendit, sock, nullptr, nullptr);
@@ -204,13 +203,8 @@ static void DumpResource(int type,
     type = -type;
     recurse = false;
   }
-  switch (type) {
-    default:
-      res->PrintConfig(output_formatter_resource, *my_config,
-                       hide_sensitive_data, verbose);
-      break;
-  }
-  sendit(sock, "%s", buf.c_str());
+  res->PrintConfig(output_formatter_resource, *my_config, hide_sensitive_data,
+                   verbose);
 
   if (recurse && res->next_) {
     DumpResource(type, res->next_, sendit, sock, hide_sensitive_data, verbose);
@@ -377,7 +371,7 @@ static void ConfigReadyCallback(ConfigurationParser&) {}
 ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
-      configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code, R_NUM,
+      configfile, nullptr, nullptr, nullptr, exit_code, R_NUM,
       resource_definitions, default_config_filename.c_str(), "tray-monitor.d",
       ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
       FreeResource);

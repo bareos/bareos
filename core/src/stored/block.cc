@@ -96,8 +96,8 @@ void DumpBlock(DeviceBlock* b, const char* msg)
   BlockCheckSum = crc32_fast((uint8_t*)b->buf + BLKHDR_CS_LENGTH,
                              block_len - BLKHDR_CS_LENGTH);
   Pmsg6(000,
-        T_("Dump block %s %p: size=%d BlkNum=%d\n"
-           "               Hdrcksum=%x cksum=%x\n"),
+        T_("Dump block %s %p: size=%" PRIu32 " BlkNum=%" PRIu32 "\n"
+           "               Hdrcksum=%" PRIx32 " cksum=%" PRIx32 "\n"),
         msg, b, block_len, BlockNumber, CheckSum, BlockCheckSum);
   p = b->buf + bhl;
   while (p < (b->buf + block_len + WRITE_RECHDR_LENGTH)) {
@@ -110,8 +110,8 @@ void DumpBlock(DeviceBlock* b, const char* msg)
     unser_int32(Stream);
     unser_uint32(data_len);
     Pmsg6(000,
-          T_("   Rec: VId=%" PRIu32 " VT=%" PRIu32
-             " FI=%s Strm=%s len=%d p=%p\n"),
+          T_("   Rec: VId=%" PRIu32 " VT=%" PRIu32 " FI=%s Strm=%s len=%" PRIu32
+             " p=%p\n"),
           VolSessionId, VolSessionTime, FI_to_ascii(buf1, FileIndex),
           stream_to_ascii(buf2, Stream, FileIndex), data_len, p);
     p += data_len + rhl;
@@ -132,12 +132,14 @@ DeviceBlock* new_block(Device* dev)
   if (dev->max_block_size == 0) {
     block->buf_len = dev->device_resource->label_block_size;
     Dmsg1(100,
-          "created new block of blocksize %d (dev->device->label_block_size) "
+          "created new block of blocksize %" PRIu32
+          " (dev->device->label_block_size) "
           "as dev->max_block_size is zero\n",
           block->buf_len);
   } else {
     block->buf_len = dev->max_block_size;
-    Dmsg1(100, "created new block of blocksize %d (dev->max_block_size)\n",
+    Dmsg1(100,
+          "created new block of blocksize %" PRIu32 " (dev->max_block_size)\n",
           block->buf_len);
   }
   block->dev = dev;
@@ -168,7 +170,7 @@ DeviceBlock* dup_block(DeviceBlock* eblock)
 void PrintBlockReadErrors(JobControlRecord* jcr, DeviceBlock* block)
 {
   if (block->read_errors > 1) {
-    Jmsg(jcr, M_ERROR, 0, T_("%d block read errors not printed.\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("%" PRIu32 " block read errors not printed.\n"),
          block->read_errors);
   }
 }
@@ -206,7 +208,7 @@ static uint32_t SerBlockHeader(DeviceBlock* block, bool DoChecksum)
   uint32_t CheckSum = 0;
   uint32_t block_len = block->binbuf;
 
-  Dmsg1(1390, "SerBlockHeader: block_len=%d\n", block_len);
+  Dmsg1(1390, "SerBlockHeader: block_len=%" PRIu32 "\n", block_len);
   SerBegin(block->buf, BLKHDR2_LENGTH);
   ser_uint32(CheckSum);
   ser_uint32(block_len);
@@ -320,7 +322,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
     return false;
   }
 
-  Dmsg1(390, "unSerBlockHeader block_len=%d\n", block_len);
+  Dmsg1(390, "unSerBlockHeader block_len=%" PRIu32 "\n", block_len);
   // Find end of block or end of buffer whichever is smaller
   if (block_len > block->read_len) {
     block_end = block->read_len;
@@ -330,8 +332,8 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
   block->binbuf = block_end - bhl;
   block->block_len = block_len;
   block->BlockNumber = BlockNumber;
-  Dmsg3(390, "Read binbuf = %d %d block_len=%d\n", block->binbuf, bhl,
-        block_len);
+  Dmsg3(390, "Read binbuf = %" PRIu32 " %d block_len=%" PRIu32 "\n",
+        block->binbuf, bhl, block_len);
   if (block_len <= block->read_len && dev->DoChecksum()) {
     BlockCheckSum = crc32_fast((uint8_t*)block->buf + BLKHDR_CS_LENGTH,
                                block_len - BLKHDR_CS_LENGTH);
@@ -339,7 +341,8 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
       dev->dev_errno = EIO;
       Mmsg6(dev->errmsg,
             T_("Volume data error at %u:%u!\n"
-               "Block checksum mismatch in block=%u len=%d: calc=%x blk=%x\n"),
+               "Block checksum mismatch in block=%u len=%" PRIu32
+               ": calc=%" PRIx32 " blk=%" PRIx32 "\n"),
             dev->file, dev->block_num, (unsigned)BlockNumber, block_len,
             BlockCheckSum, CheckSum);
       if (block->read_errors == 0 || g_verbose >= 2) {
@@ -613,7 +616,8 @@ bool DeviceControlRecord::WriteBlockToDev()
   if (wlen != block->buf_len) {
     uint32_t blen = wlen; /* current buffer length */
 
-    Dmsg2(250, "binbuf=%d buf_len=%d\n", block->binbuf, block->buf_len);
+    Dmsg2(250, "binbuf=%" PRIu32 " buf_len=%" PRIu32 "\n", block->binbuf,
+          block->buf_len);
 
     if (!dev->HasCap(CAP_ADJWRITESIZE)) {
       Dmsg1(400, "%s: block write size is not adjustable", dev->print_name());
@@ -638,8 +642,8 @@ bool DeviceControlRecord::WriteBlockToDev()
   }
 
   Dmsg5(400,
-        "dev=%s: writing %d bytes as block of %d bytes. Block sizes: min=%d, "
-        "max=%d\n",
+        "dev=%s: writing %" PRIu32 " bytes as block of %" PRIu32
+        " bytes. Block sizes: min=%" PRIu32 ", max=%" PRIu32 "\n",
         dev->print_name(), block->binbuf, wlen, dev->min_block_size,
         dev->max_block_size);
 
@@ -784,8 +788,9 @@ bool DeviceControlRecord::WriteBlockToDev()
 
       be.SetErrno(dev->dev_errno);
       Dmsg7(100,
-            "=== Write error. fd=%d size=%u rtn=%" PRIiz
-            " dev_blk=%d blk_blk=%d "
+            "=== Write error. fd=%d size=%u rtn=%" PRIiz " dev_blk=%" PRIu32
+            " blk_blk=%" PRIu32
+            " "
             "errno=%d: ERR=%s\n",
             dev->fd, wlen, status, dev->block_num, block->BlockNumber,
             dev->dev_errno, be.bstrerror(dev->dev_errno));
@@ -849,7 +854,8 @@ bool DeviceControlRecord::WriteBlockToDev()
   dev->file_addr += wlen; /* update file address */
   dev->file_size += wlen;
 
-  Dmsg2(1300, "WriteBlock: wrote block %d bytes=%d\n", dev->block_num, wlen);
+  Dmsg2(1300, "WriteBlock: wrote block %" PRIu32 " bytes=%" PRIu32 "\n",
+        dev->block_num, wlen);
   EmptyBlock(block);
   return true;
 }
@@ -960,7 +966,8 @@ DeviceControlRecord::ReadStatus DeviceControlRecord::ReadBlockFromDev(bool)
     return ReadStatus::EndOfTape;
   }
   looping = 0;
-  Dmsg1(250, "Full read in ReadBlockFromDevice() len=%d\n", block->buf_len);
+  Dmsg1(250, "Full read in ReadBlockFromDevice() len=%" PRIu32 "\n",
+        block->buf_len);
 
   if (!dev->IsOpen()) {
     Mmsg4(dev->errmsg,
@@ -1052,13 +1059,14 @@ reread:
   if (block->read_len < BLKHDR2_LENGTH) {
     dev->dev_errno = EIO;
     Mmsg4(dev->errmsg,
-          T_("Volume data error at %u:%u! Very short block of %d bytes on "
+          T_("Volume data error at %u:%u! Very short block of %" PRIu32
+             " bytes on "
              "device %s discarded.\n"),
           dev->file, dev->block_num, block->read_len, dev->print_name());
     Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
     dev->SetShortBlock();
     block->read_len = block->binbuf = 0;
-    Dmsg2(200, "set block=%p binbuf=%d\n", block, block->binbuf);
+    Dmsg2(200, "set block=%p binbuf=%" PRIu32 "\n", block, block->binbuf);
     return ReadStatus::Error;
   }
 
@@ -1119,8 +1127,8 @@ reread:
   if (block->block_len > block->read_len) {
     dev->dev_errno = EIO;
     Mmsg4(dev->errmsg,
-          T_("Volume data error at %u:%u! Short block of %d bytes on device %s "
-             "discarded.\n"),
+          T_("Volume data error at %u:%u! Short block of %" PRIu32
+             " bytes on device %s discarded.\n"),
           dev->file, dev->block_num, block->read_len, dev->print_name());
     Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
     dev->SetShortBlock();
@@ -1173,13 +1181,13 @@ reread:
     Dmsg1(250, "Current lseek pos=%s\n", edit_int64(pos, ed1));
     pos -= (block->read_len - block->block_len);
     dev->d_lseek(dcr, pos, SEEK_SET);
-    Dmsg3(250, "Did lseek pos=%s blk_size=%d rdlen=%d\n", edit_int64(pos, ed1),
-          block->block_len, block->read_len);
+    Dmsg3(250, "Did lseek pos=%s blk_size=%" PRIu32 " rdlen=%" PRIu32 "\n",
+          edit_int64(pos, ed1), block->block_len, block->read_len);
     dev->file_addr = pos;
     dev->file_size = pos;
   }
-  Dmsg2(250, "Exit read_block read_len=%d block_len=%d\n", block->read_len,
-        block->block_len);
+  Dmsg2(250, "Exit read_block read_len=%" PRIu32 " block_len=%" PRIu32 "\n",
+        block->read_len, block->block_len);
   block->block_read = true;
   return ReadStatus::Ok;
 }

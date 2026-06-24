@@ -46,9 +46,7 @@ namespace storagedaemon {
 /* Forward referenced functions */
 static bool LockChanger(DeviceControlRecord* dcr);
 static bool UnlockChanger(DeviceControlRecord* dcr);
-static bool UnloadOtherDrive(DeviceControlRecord* dcr,
-                             slot_number_t slot,
-                             bool lock_set);
+static Device* FindDriveForSlot(DeviceControlRecord* dcr, slot_number_t slot);
 static char* transfer_edit_device_codes(DeviceControlRecord* dcr,
                                         POOLMEM*& omsg,
                                         const char* imsg,
@@ -204,10 +202,42 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
         goto bail_out;
       }
 
-      // Make sure desired slot is unloaded
-      if (!UnloadOtherDrive(dcr, wanted_slot, true)) {
-        UnlockChanger(dcr);
-        goto bail_out;
+      auto* other_device = FindDriveForSlot(dcr, wanted_slot);
+      if (other_device) {
+        int retries = 0;
+        while (retries < 3
+               && (other_device->IsBusy() || other_device->IsBlocked())) {
+          // we unlock the changer to make it possible for the other device
+          // to actually unload the device on its own
+          UnlockChanger(dcr);
+          WaitForDevice(dcr->jcr, retries);
+          if (!LockChanger(dcr)) {
+            rtn_stat = -2;
+            goto bail_out;
+          }
+        }
+
+        if (other_device->IsBusy() || other_device->IsBlocked()) {
+          Jmsg(dcr->jcr, M_WARNING, 0,
+               T_("Volume \"%s\" wanted on %s is in use by device %s\n"),
+               dcr->VolumeName, dcr->dev->print_name(),
+               other_device->print_name());
+          Dmsg4(100, "Vol %s for dev=%s is busy dev=%s slot=%hd\n",
+                dcr->VolumeName, dcr->dev->print_name(),
+                other_device->print_name(), other_device->GetSlot());
+          Dmsg2(100, "num_writ=%d reserved=%d\n", other_device->num_writers,
+                other_device->NumReserved());
+          VolumeUnused(dcr);
+
+          UnlockChanger(dcr);
+          goto bail_out;
+        }
+
+        // Make sure desired slot is unloaded
+        if (!UnloadDev(dcr, other_device, true)) {
+          UnlockChanger(dcr);
+          goto bail_out;
+        }
       }
 
       // Load the desired volume.
@@ -493,19 +523,12 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
   return retval;
 }
 
-// Unload the slot if mounted in a different drive
-static bool UnloadOtherDrive(DeviceControlRecord* dcr,
-                             slot_number_t slot,
-                             bool lock_set)
+static Device* FindDriveForSlot(DeviceControlRecord* dcr, slot_number_t slot)
 {
   Device* dev = NULL;
   Device* dev_save;
-  bool found = false;
   AutochangerResource* changer = dcr->dev->device_resource->changer_res;
-  int retries = 0; /* wait for device retries */
-
-  if (!changer) { return false; }
-  if (changer->device_resources->size() == 1) { return true; }
+  if (!changer) { return nullptr; }
 
   /* We look for the slot number corresponding to the tape
    * we want in other drives, and if possible, unload it. */
@@ -518,7 +541,7 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
 
     bool slotnumber_not_set = !IsSlotNumberValid(dev->GetSlot());
     bool slot_not_loaded_in_autochanger
-        = !IsSlotNumberValid(GetAutochangerLoadedSlot(dcr, lock_set));
+        = !IsSlotNumberValid(GetAutochangerLoadedSlot(dcr, true));
 
     if (slotnumber_not_set && slot_not_loaded_in_autochanger) {
       dcr->SetDev(dev_save);
@@ -527,45 +550,12 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
 
     dcr->SetDev(dev_save);
     if (dev->GetSlot() == slot) {
-      found = true;
-      break;
+      Dmsg1(100, "Slot=%hd found in another device\n", slot);
+      return dev;
     }
   }
-  if (!found) {
-    Dmsg1(100, "Slot=%hd not found in another device\n", slot);
-    return true;
-  } else {
-    Dmsg1(100, "Slot=%hd found in another device\n", slot);
-  }
-
-  // The Volume we want is on another device.
-  if (dev->IsBusy() || dev->IsBlocked()) {
-    Dmsg4(100, "Vol %s for dev=%s in use dev=%s slot=%hd\n", dcr->VolumeName,
-          dcr->dev->print_name(), dev->print_name(), slot);
-  }
-
-  for (int i = 0; i < 3; i++) {
-    if (dev->IsBusy() || dev->IsBlocked()) {
-      WaitForDevice(dcr->jcr, retries);
-      continue;
-    }
-    break;
-  }
-
-  if (dev->IsBusy() || dev->IsBlocked()) {
-    Jmsg(dcr->jcr, M_WARNING, 0,
-         T_("Volume \"%s\" wanted on %s is in use by device %s\n"),
-         dcr->VolumeName, dcr->dev->print_name(), dev->print_name());
-    Dmsg4(100, "Vol %s for dev=%s is busy dev=%s slot=%hd\n", dcr->VolumeName,
-          dcr->dev->print_name(), dev->print_name(), dev->GetSlot());
-    Dmsg2(100, "num_writ=%d reserved=%d\n", dev->num_writers,
-          dev->NumReserved());
-    VolumeUnused(dcr);
-
-    return false;
-  }
-
-  return UnloadDev(dcr, dev, lock_set);
+  Dmsg1(100, "Slot=%hd not found in another device\n", slot);
+  return nullptr;
 }
 
 // Unconditionally unload a specified drive

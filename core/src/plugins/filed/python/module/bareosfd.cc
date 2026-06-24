@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,7 +27,10 @@
 
 #if defined(HAVE_WIN32)
 #  include "include/bareos.h"
+#  pragma warning(push)
+#  pragma warning(disable : 4005 4100)
 #  include <Python.h>
+#  pragma warning(pop)
 #else
 #  include <Python.h>
 #  include "include/bareos.h"
@@ -341,53 +344,66 @@ static inline bool PySavePacketToNative(
     // Special code for handling restore objects.
     if (IS_FT_OBJECT(sp->type)) {
       // See if a proper restore object was created.
-      if (pSavePkt->object_len > 0) {
-        /* As this has to linger as long as the backup is running we save it
-         * in our plugin context. */
-        bool object_name_exists = pSavePkt->object_name;
-        bool object_name_is_unicode = PyUnicode_Check(pSavePkt->object_name);
-        bool object_exists = pSavePkt->object;
-        bool object_is_bytearray = PyByteArray_Check(pSavePkt->object);
-        if (object_name_exists && object_name_is_unicode && object_exists
-            && object_is_bytearray) {
-          char* buf;
-
-          if (plugin_priv_ctx->object_name) {
-            free(plugin_priv_ctx->object_name);
-          }
-          plugin_priv_ctx->object_name
-              = strdup(PyUnicode_AsUTF8(pSavePkt->object_name));
-          sp->object_name = plugin_priv_ctx->object_name;
-
-          sp->object_len = pSavePkt->object_len;
-          sp->index = pSavePkt->object_index;
-
-          if ((buf = PyByteArray_AsString(pSavePkt->object))) {
-            if (plugin_priv_ctx->object) { free(plugin_priv_ctx->object); }
-            plugin_priv_ctx->object = (char*)malloc(pSavePkt->object_len);
-            memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
-            sp->object = plugin_priv_ctx->object;
-          } else {
-            return false;
-          }
-        } else {
-          std::string err_string{};
-          if (!object_name_exists) { err_string = "object name missing"; };
-          if (!object_name_is_unicode) {
-            err_string = "object name must be unicode type";
-          };
-          if (!object_exists) { err_string = "object missing"; };
-          if (!object_is_bytearray) {
-            err_string = "object needs to be of type bytearray";
-          };
-
-          PyErr_SetString(PyExc_RuntimeError, err_string.c_str());
-          return false;
-        }
-      } else {
+      if (pSavePkt->object_len <= 0) {
         PyErr_SetString(PyExc_RuntimeError, "pSavePkt->object_len is <=0");
         return false;
       }
+
+      /* As this has to linger as long as the backup is running we save it
+       * in our plugin context. */
+      if (!pSavePkt->object_name) {
+        PyErr_SetString(PyExc_RuntimeError, "object name missing");
+        return false;
+      }
+      if (!PyUnicode_Check(pSavePkt->object_name)) {
+        PyErr_SetString(PyExc_RuntimeError, "object name must be unicode type");
+        return false;
+      }
+      if (!pSavePkt->object) {
+        PyErr_SetString(PyExc_RuntimeError, "object missing");
+        return false;
+      }
+      if (!PyByteArray_Check(pSavePkt->object)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "object needs to be of type bytearray");
+        return false;
+      }
+
+      char* buf = PyByteArray_AsString(pSavePkt->object);
+
+      if (!buf) {
+        /* if PyByteArray_AsString() fails even though PyByteArray_Check()
+         * succeeds, then python should have already set an exception itself.
+         * As such we do not set our own exception here to not mask that one. */
+        return false;
+      }
+
+      auto array_size = PyByteArray_Size(pSavePkt->object);
+
+      if (array_size < pSavePkt->object_len) {
+        PyErr_SetString(PyExc_RuntimeError, "object_len >= len(object)");
+        return false;
+      }
+
+      auto* object_name = PyUnicode_AsUTF8(pSavePkt->object_name);
+
+      if (!object_name) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "could not convert object name to c-string");
+        return false;
+      }
+
+      if (plugin_priv_ctx->object_name) { free(plugin_priv_ctx->object_name); }
+      plugin_priv_ctx->object_name = strdup(object_name);
+      sp->object_name = plugin_priv_ctx->object_name;
+
+      sp->object_len = pSavePkt->object_len;
+      sp->index = pSavePkt->object_index;
+
+      if (plugin_priv_ctx->object) { free(plugin_priv_ctx->object); }
+      plugin_priv_ctx->object = (char*)malloc(pSavePkt->object_len);
+      memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
+      sp->object = plugin_priv_ctx->object;
     } else {
       sp->no_read = pSavePkt->no_read;
       sp->delta_seq = pSavePkt->delta_seq;
@@ -398,25 +414,23 @@ static inline bool PySavePacketToNative(
     sp->delta_seq = pSavePkt->delta_seq;
     sp->save_time = pSavePkt->save_time;
 
-    if (PyByteArray_Check(pSavePkt->flags)) {
-      char* flags;
-
-      if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
-        PyErr_SetString(PyExc_RuntimeError, "PyByteArray_Size(flags) failed");
-        return false;
-      }
-
-      if ((flags = PyByteArray_AsString(pSavePkt->flags))) {
-        memcpy(sp->flags, flags, sizeof(sp->flags));
-      } else {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "PyByteArray_AsString(flags) failed");
-        return false;
-      }
-    } else {
+    if (!PyByteArray_Check(pSavePkt->flags)) {
       PyErr_SetString(PyExc_TypeError, "flags need to be of type bytearray");
       return false;
     }
+
+    if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
+      PyErr_SetString(PyExc_RuntimeError, "PyByteArray_Size(flags) failed");
+      return false;
+    }
+
+    char* flags = PyByteArray_AsString(pSavePkt->flags);
+    if (!flags) {
+      PyErr_SetString(PyExc_RuntimeError, "PyByteArray_AsString(flags) failed");
+      return false;
+    }
+
+    memcpy(sp->flags, flags, sizeof(sp->flags));
   }
   return true;
 }
@@ -531,7 +545,8 @@ static inline PyIoPacket* NativeToPyIoPacket(io_pkt* io)
     pIoPkt->whence = io->whence;
     pIoPkt->offset = io->offset;
 #if HAVE_WIN32
-    pIoPkt->filedes = reinterpret_cast<int>(io->hndl);
+    pIoPkt->filedes
+        = static_cast<long long>(reinterpret_cast<intptr_t>(io->hndl));
 #else
     pIoPkt->filedes = io->filedes;
 #endif
@@ -566,7 +581,7 @@ static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, io_pkt* io)
   io->win32 = pIoPkt->win32;
   io->status = pIoPkt->status;
 #if HAVE_WIN32
-  io->hndl = reinterpret_cast<HANDLE>(pIoPkt->filedes);
+  io->hndl = reinterpret_cast<HANDLE>(static_cast<intptr_t>(pIoPkt->filedes));
 #else
   io->filedes = pIoPkt->filedes;
 #endif
@@ -744,10 +759,14 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->replace = rp->replace;
     pRestorePacket->create_status = rp->create_status;
 #if HAVE_WIN32
-    pRestorePacket->filedes = reinterpret_cast<int>(rp->hndl);
+    pRestorePacket->filedes
+        = static_cast<long long>(reinterpret_cast<intptr_t>(rp->hndl));
 #else
     pRestorePacket->filedes = rp->filedes;
 #endif
+
+    pRestorePacket->original_file_name = rp->original_file_name;
+    pRestorePacket->original_link_name = rp->original_link_name;
   }
 
   return pRestorePacket;
@@ -759,7 +778,8 @@ static inline void PyRestorePacketToNative(PyRestorePacket* pRestorePacket,
   // Only copy back the fields that are allowed to be changed.
   rp->create_status = pRestorePacket->create_status;
 #if HAVE_WIN32
-  rp->hndl = reinterpret_cast<HANDLE>(pRestorePacket->filedes);
+  rp->hndl = reinterpret_cast<HANDLE>(
+      static_cast<intptr_t>(pRestorePacket->filedes));
 #else
   rp->filedes = pRestorePacket->filedes;
 #endif
@@ -1958,10 +1978,10 @@ static PyObject* PyStatPacket_repr(PyStatPacket* self)
        ", uid=%" PRIu32 ", gid=%" PRIu32 ", rdev=%" PRIu32 ", size=%" PRIu64
        ", atime=%lld, mtime=%lld, ctime=%lld, blksize=%" PRIu32
        ", blocks=%" PRIu64 ")",
-       self->dev, self->ino, (self->mode & ~S_IFMT), self->nlink, self->uid,
-       self->gid, self->rdev, self->size, static_cast<long long>(self->atime),
-       static_cast<long long>(self->mtime), static_cast<long long>(self->ctime),
-       self->blksize, self->blocks);
+       self->dev, self->ino, static_cast<unsigned int>(self->mode & ~S_IFMT),
+       self->nlink, self->uid, self->gid, self->rdev, self->size,
+       static_cast<long long>(self->atime), static_cast<long long>(self->mtime),
+       static_cast<long long>(self->ctime), self->blksize, self->blocks);
 
   s = PyUnicode_FromString(buf.c_str());
 
@@ -2135,11 +2155,12 @@ static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
        ", file_index=%" PRId32 ", linkFI=%" PRId32 ", uid=%" PRIu32
        ", statp=\"%s\", attrEx=\"%s\", ofname=\"%s\""
        ", olname=\"%s\", where=\"%s\", RegexWhere=\"%s\", replace=%d"
-       ", create_status=%d)",
+       ", create_status=%d, original_file_name=\"%s\""
+       ", original_link_name=\"%s\")",
        self->stream, self->data_stream, self->type, self->file_index,
        self->LinkFI, self->uid, PyGetStringValue(stat_repr), self->attrEx,
        self->ofname, self->olname, self->where, self->RegexWhere, self->replace,
-       self->create_status);
+       self->create_status, self->original_file_name, self->original_link_name);
 
   s = PyUnicode_FromString(buf.c_str());
   Py_DECREF(stat_repr);
@@ -2152,13 +2173,27 @@ static int PyRestorePacket_init(PyRestorePacket* self,
                                 PyObject* args,
                                 PyObject* kwds)
 {
-  static char* kwlist[]
-      = {(char*)"stream",     (char*)"data_stream",   (char*)"type",
-         (char*)"file_index", (char*)"linkFI",        (char*)"uid",
-         (char*)"statp",      (char*)"attrEX",        (char*)"ofname",
-         (char*)"olname",     (char*)"where",         (char*)"regexwhere",
-         (char*)"replace",    (char*)"create_status", NULL};
+  static char* kwlist[] = {(char*)"stream",
+                           (char*)"data_stream",
+                           (char*)"type",
+                           (char*)"file_index",
+                           (char*)"linkFI",
+                           (char*)"uid",
+                           (char*)"statp",
+                           (char*)"attrEX",
+                           (char*)"ofname",
+                           (char*)"olname",
+                           (char*)"where",
+                           (char*)"regexwhere",
+                           (char*)"replace",
+                           (char*)"create_status",
+                           (char*)"filedes",
+                           (char*)"original_file_name",
+                           (char*)"original_link_name",
+                           NULL};
 
+  // this has to be done like so, as we cannot overwrite the
+  // python object header
   self->stream = 0;
   self->data_stream = 0;
   self->type = 0;
@@ -2174,12 +2209,17 @@ static int PyRestorePacket_init(PyRestorePacket* self,
   self->replace = 0;
   self->create_status = 0;
 
+  self->filedes = kInvalidFiledescriptor;
+  self->original_file_name = nullptr;
+  self->original_link_name = nullptr;
+
   if (!PyArg_ParseTupleAndKeywords(
           args, kwds, "|iiiiiIosssssii", kwlist, &self->stream,
           &self->data_stream, &self->type, &self->file_index, &self->LinkFI,
           &self->uid, &self->statp, &self->attrEx, &self->ofname, &self->olname,
-          &self->where, &self->RegexWhere, &self->replace,
-          &self->create_status)) {
+          &self->where, &self->RegexWhere, &self->replace, &self->create_status,
+          &self->filedes, &self->original_file_name,
+          &self->original_link_name)) {
     return -1;
   }
 
@@ -2204,11 +2244,12 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
        "IoPacket(func=%d, count=%" PRId32 ", flags=%" PRId32
        ", mode=%04o, buf=\"%s\", fname=\"%s\", status=%" PRId32
        ", io_errno=%" PRId32 ", lerror=%" PRId32 ", whence=%" PRId32
-       ", offset=%" PRId64 ", win32=%d, filedes=%d)",
-       self->func, self->count, self->flags, (self->mode & ~S_IFMT),
+       ", offset=%" PRId64 ", win32=%d, filedes=%" PRIdPTR ")",
+       self->func, self->count, self->flags,
+       static_cast<unsigned int>(self->mode & ~S_IFMT),
        PyGetByteArrayValue(self->buf), self->fname, self->status,
        self->io_errno, self->lerror, self->whence, self->offset, self->win32,
-       self->filedes);
+       static_cast<intptr_t>(self->filedes));
   s = PyUnicode_FromString(buf.c_str());
 
   return s;
@@ -2239,13 +2280,33 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   self->win32 = false;
   self->filedes = kInvalidFiledescriptor;
 
+#if HAVE_WIN32
+  long long parsed_offset = static_cast<long long>(self->offset);
+  int parsed_win32 = self->win32 ? 1 : 0;
+  long long parsed_filedes = static_cast<long long>(self->filedes);
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|Hiiiosiiiilci", kwlist, &self->func, &self->count,
+          args, kwds, "|HiiiosiiiiLpL", kwlist, &self->func, &self->count,
           &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
-          &self->io_errno, &self->lerror, &self->whence, &self->offset,
-          &self->win32, &self->filedes)) {
+          &self->io_errno, &self->lerror, &self->whence, &parsed_offset,
+          &parsed_win32, &parsed_filedes)) {
     return -1;
   }
+  self->offset = static_cast<int64_t>(parsed_offset);
+  self->win32 = parsed_win32 != 0;
+  self->filedes = static_cast<intptr_t>(parsed_filedes);
+#else
+  long long parsed_offset = static_cast<long long>(self->offset);
+  int parsed_win32 = self->win32 ? 1 : 0;
+  if (!PyArg_ParseTupleAndKeywords(
+          args, kwds, "|HiiiosiiiiLpi", kwlist, &self->func, &self->count,
+          &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
+          &self->io_errno, &self->lerror, &self->whence, &parsed_offset,
+          &parsed_win32, &self->filedes)) {
+    return -1;
+  }
+  self->offset = static_cast<int64_t>(parsed_offset);
+  self->win32 = parsed_win32 != 0;
+#endif
 
   return 0;
 }

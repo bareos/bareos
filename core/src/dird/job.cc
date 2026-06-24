@@ -205,7 +205,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
   }
 
   jcr->JobId = jcr->dir_impl->jr.JobId;
-  Dmsg4(100, "Created job record JobId=%d Name=%s Type=%c Level=%c\n",
+  Dmsg4(100, "Created job record JobId=%" PRIu32 " Name=%s Type=%c Level=%c\n",
         jcr->JobId, jcr->Job, jcr->dir_impl->jr.JobType,
         jcr->dir_impl->jr.JobLevel);
 
@@ -652,7 +652,7 @@ void SdMsgThreadSendSignal(JobControlRecord* jcr,
   ASSERT(lock.mutex() == &jcr->mutex_guard());
   if (!jcr->dir_impl->sd_msg_thread_done && jcr->dir_impl->SD_msg_chan_started
       && !pthread_equal(jcr->dir_impl->SD_msg_chan, pthread_self())) {
-    Dmsg1(800, "Send kill to SD msg chan jid=%d\n", jcr->JobId);
+    Dmsg1(800, "Send kill to SD msg chan jid=%" PRIu32 "\n", jcr->JobId);
     pthread_kill(jcr->dir_impl->SD_msg_chan, sig);
   }
 }
@@ -757,13 +757,13 @@ static void JobMonitorWatchdog(watchdog_t* self)
     }
 
     if (cancel) {
-      Dmsg3(800, "Cancelling JobControlRecord %p jobid %d (%s)\n", jcr,
+      Dmsg3(800, "Cancelling JobControlRecord %p jobid %" PRIu32 " (%s)\n", jcr,
             jcr->JobId, jcr->Job);
       UaContext* ua = new_ua_context(jcr);
       ua->jcr = control_jcr;
       CancelJob(ua, jcr);
       FreeUaContext(ua);
-      Dmsg2(800, "Have cancelled JobControlRecord %p Job=%d\n", jcr,
+      Dmsg2(800, "Have cancelled JobControlRecord %p Job=%" PRIu32 "\n", jcr,
             jcr->JobId);
     }
   }
@@ -785,7 +785,7 @@ static bool JobCheckMaxwaittime(JobControlRecord* jcr)
 
   if (jcr->wait_time) { current = watchdog_time - jcr->wait_time; }
 
-  Dmsg2(200, "check maxwaittime %" PRIu64 " >= %" PRIu64 "\n",
+  Dmsg2(200, "check maxwaittime %" PRId64 " >= %" PRId64 "\n",
         current + jcr->wait_time_sum, job->MaxWaitTime);
   if (job->MaxWaitTime != 0
       && (current + jcr->wait_time_sum) >= job->MaxWaitTime) {
@@ -812,9 +812,9 @@ static bool JobCheckMaxruntime(JobControlRecord* jcr)
   }
   run_time = watchdog_time - jcr->start_time;
   Dmsg7(200,
-        "check_maxruntime %" PRId64 "-%lld=%" PRId64 " >= %" PRId64 "|%" PRId64
-        "|%" PRId64 "|%" PRId64 "\n",
-        watchdog_time, static_cast<long long>(jcr->start_time), run_time,
+        "check_maxruntime %" PRId64 "-%" PRId64 "=%" PRId64 " >= %" PRId64
+        "|%" PRId64 "|%" PRId64 "|%" PRId64 "\n",
+        watchdog_time, static_cast<int64_t>(jcr->start_time), run_time,
         job->MaxRunTime, job->FullMaxRunTime, job->IncMaxRunTime,
         job->DiffMaxRunTime);
 
@@ -931,8 +931,9 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
                    djcr->dir_impl->res.fileset->resource_name_)) {
       jcr->setJobStatusWithPriorityCheck(JS_Canceled);
       Jmsg(jcr, M_FATAL, 0,
-           T_("JobId %d already running. Duplicate consolidation job of Client "
-              "\"%s\" and FileSet \"%s\" not allowed.\n"),
+           T_("JobId %" PRIu32
+              " already running. Duplicate consolidation job of Client \"%s\" "
+              "and FileSet \"%s\" not allowed.\n"),
            djcr->JobId, jcr->dir_impl->res.client->resource_name_,
            jcr->dir_impl->res.fileset->resource_name_);
       break; /* get out of foreach_jcr */
@@ -973,7 +974,8 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
           /* Zap current job */
           jcr->setJobStatusWithPriorityCheck(JS_Canceled);
           Jmsg(jcr, M_FATAL, 0,
-               T_("JobId %d already running. Duplicate job not allowed.\n"),
+               T_("JobId %" PRIu32
+                  " already running. Duplicate job not allowed.\n"),
                djcr->JobId);
           break; /* get out of foreach_jcr */
         }
@@ -1000,24 +1002,26 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
       if (cancel_dup || job->CancelRunningDuplicates) {
         // Zap the duplicated job djcr
         UaContext* ua = new_ua_context(jcr);
-        Jmsg(jcr, M_INFO, 0, T_("Cancelling duplicate JobId=%d.\n"),
+        Jmsg(jcr, M_INFO, 0, T_("Cancelling duplicate JobId=%" PRIu32 ".\n"),
              djcr->JobId);
         CancelJob(ua, djcr);
         Bmicrosleep(0, 500000);
         djcr->setJobStatusWithPriorityCheck(JS_Canceled);
         CancelJob(ua, djcr);
         FreeUaContext(ua);
-        Dmsg2(800, "Cancel dup %p JobId=%d\n", djcr, djcr->JobId);
+        Dmsg2(800, "Cancel dup %p JobId=%" PRIu32 "\n", djcr, djcr->JobId);
       } else {
         // Zap current job
         jcr->setJobStatusWithPriorityCheck(JS_Canceled);
         Jmsg(jcr, M_FATAL, 0,
-             T_("JobId %d already running. Duplicate job not allowed.\n"),
+             T_("JobId %" PRIu32
+                " already running. Duplicate job not allowed.\n"),
              djcr->JobId);
-        Dmsg2(800, "Cancel me %p JobId=%d\n", jcr, jcr->JobId);
+        Dmsg2(800, "Cancel me %p JobId=%" PRIu32 "\n", jcr, jcr->JobId);
       }
-      Dmsg4(800, "curJobId=%d use_cnt=%d dupJobId=%d use_cnt=%d\n", jcr->JobId,
-            jcr->UseCount(), djcr->JobId, djcr->UseCount());
+      Dmsg4(800,
+            "curJobId=%" PRIu32 " use_cnt=%d dupJobId=%" PRIu32 " use_cnt=%d\n",
+            jcr->JobId, jcr->UseCount(), djcr->JobId, djcr->UseCount());
       break; /* did our work, get out of foreach loop */
     }
   }
@@ -1364,7 +1368,7 @@ bool GetOrCreateClientRecord(JobControlRecord* jcr)
     }
     PmStrcpy(jcr->dir_impl->client_uname, cr.Uname);
   }
-  Dmsg2(100, "Created Client %s record %d\n",
+  Dmsg2(100, "Created Client %s record %" PRIdbid "\n",
         jcr->dir_impl->res.client->resource_name_, jcr->dir_impl->jr.ClientId);
   return true;
 }
@@ -1517,7 +1521,7 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
   for (p = jcr->Job; *p; p++) {
     if (*p == ' ') { *p = '_'; }
   }
-  Dmsg2(100, "JobId=%u created Job=%s\n", jcr->JobId, jcr->Job);
+  Dmsg2(100, "JobId=%" PRIu32 " created Job=%s\n", jcr->JobId, jcr->Job);
 }
 
 // Called directly from job rescheduling
@@ -1799,7 +1803,7 @@ void CreateClones(JobControlRecord* jcr)
         Jmsg(jcr, M_ERROR, 0, T_("Could not start clone job: \"%s\".\n"),
              ua->cmd);
       } else {
-        Jmsg(jcr, M_INFO, 0, T_("Clone JobId %d started.\n"), jobid);
+        Jmsg(jcr, M_INFO, 0, T_("Clone JobId %" PRIu32 " started.\n"), jobid);
       }
     }
     FreeUaContext(ua);

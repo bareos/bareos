@@ -2,7 +2,7 @@
    BAREOS - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -80,12 +80,13 @@ inline constexpr const char NOT_opened[]
 inline constexpr const char ERROR_replicate[] = "3903 Error replicate data\n";
 inline constexpr const char OK_end_replicate[] = "3000 OK end replicate\n";
 inline constexpr const char OK_start_replicate[]
-    = "3000 OK start replicate ticket = %d\n";
+    = "3000 OK start replicate ticket = %" PRIu32 "\n";
 
 // Responses sent to the Director
 inline constexpr const char Job_start[] = "3010 Job %s start\n";
 inline constexpr const char Job_end[]
-    = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+    = "3099 Job %s end JobStatus=%d JobFiles=%" PRIu32
+      " JobBytes=%s JobErrors=%" PRIu32 "\n";
 }  // namespace
 
 /**
@@ -131,7 +132,7 @@ void* handle_stored_connection(BareosSocket* sd, char* job_name)
     Jmsg(jcr, M_FATAL, 0, T_("Unable to authenticate Storage daemon\n"));
   } else {
     *jcr->sd_impl->client_available.lock() = true;
-    Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,
+    Dmsg2(50, "OK Authentication jid=%" PRIu32 " Job %s\n", jcr->JobId,
           jcr->Job);
   }
 
@@ -218,7 +219,7 @@ bool DoListenRun(JobControlRecord* jcr)
 
   Dmsg2(50, "%s waiting for SD to contact SD key=%s\n", jcr->Job,
         jcr->sd_auth_key);
-  Dmsg2(800, "Wait SD for jid=%d %p\n", jcr->JobId, jcr);
+  Dmsg2(800, "Wait SD for jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
   /* Wait for the Storage daemon to contact us to start the Job, when he does,
    * we will be released. */
@@ -231,7 +232,7 @@ bool DoListenRun(JobControlRecord* jcr)
   Dmsg3(50, "Auth=%d canceled=%d\n", jcr->authenticated, jcr->IsJobCanceled());
 
   if (!jcr->authenticated || !jcr->store_bsock) {
-    Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
+    Dmsg2(800, "Auth fail or cancel for jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
     DequeueMessages(jcr); /* send any queued messages */
 
     goto cleanup;

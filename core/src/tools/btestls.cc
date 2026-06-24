@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -264,14 +264,14 @@ static void PrintLsOutput(char* fname, char* link, int type, struct stat* statp)
     statp->st_mode |= 0777;
   }
   p = encode_mode(statp->st_mode, buf);
-  n = sprintf(p, " %2d ", (uint32_t)statp->st_nlink);
+  n = sprintf(p, " %2" PRIu32 " ", (uint32_t)statp->st_nlink);
   p += n;
   n = sprintf(p, "%-4d %-4d", (int)statp->st_uid, (int)statp->st_gid);
   p += n;
   n = sprintf(p, "%10.10s ", edit_uint64(statp->st_size, ec1));
   p += n;
   if (S_ISCHR(statp->st_mode) || S_ISBLK(statp->st_mode)) {
-    n = sprintf(p, "%4x ", (int)statp->st_rdev);
+    n = sprintf(p, "%4x ", (unsigned int)statp->st_rdev);
   } else {
     n = sprintf(p, "     ");
   }

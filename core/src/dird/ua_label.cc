@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -163,11 +163,11 @@ static inline bool native_send_label_request(UaContext* ua,
   uint64_t VolBytes{0};
   while (BgetDirmsg(sd, true) >= 0) {
     ua->SendMsg("%s", sd->msg);
-    if (sscanf(sd->msg, "3000 OK label. VolFiles=%lu VolBytes=%llu ", &VolFiles,
-               &VolBytes)
+    if (bsscanf(sd->msg, "3000 OK label. VolFiles=%lu VolBytes=%llu ",
+                &VolFiles, &VolBytes)
         == 2) {
       retval = true;
-    } else if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes)
+    } else if (bsscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes)
                == 1) {
       retval = true;
     }

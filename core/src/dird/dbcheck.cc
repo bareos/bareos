@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,7 @@
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "cats/cats.h"
+#include "lib/bool_string.h"
 #include "lib/runscript.h"
 #include "lib/cli.h"
 #include "dird/dird_conf.h"
@@ -128,7 +129,15 @@ static bool yes_no(const char* prompt, bool batchvalue = true)
     quit = true;
     return false;
   }
-  return (Bstrcasecmp(cmd, "yes")) || (Bstrcasecmp(cmd, T_("yes")));
+
+  switch (parse_user_bool(cmd)) {
+    case parse_bool_result::True: {
+      return true;
+    } break;
+    default: {
+      return false;
+    } break;
+  }
 }
 
 static void set_quit() { quit = true; }
@@ -355,7 +364,7 @@ static void eliminate_orphaned_path_records()
   lctx.count = 0;
   idx_tmp_name = nullptr;
 
-  db->FillQuery(query, BareosDb::SQL_QUERY::get_orphaned_paths_0);
+  db->FillQuery<BareosDb::SQL_QUERY::get_orphaned_paths_0>(query);
 
   printf(T_("Checking for orphaned Path entries. This may take some time!\n"));
   fflush(stdout);
@@ -669,7 +678,7 @@ static void repair_bad_paths()
   int i;
 
   printf(T_("Checking for Paths without a trailing slash\n"));
-  db->FillQuery(query, BareosDb::SQL_QUERY::get_bad_paths_0);
+  db->FillQuery<BareosDb::SQL_QUERY::get_bad_paths_0>(query);
   fflush(stdout);
   if (!MakeIdList(db, query.c_str(), &id_list)) { exit(BEXIT_FAILURE); }
   printf(T_("Found %d bad Path records.\n"), id_list.num_ids);
@@ -920,7 +929,7 @@ int main(int argc, char* argv[])
   db = db_init_database(nullptr, db_driver, db_name.c_str(), user.c_str(),
                         password.c_str(), dbhost.c_str(), dbport, nullptr,
                         false, false, false, false);
-  if (auto err = db->OpenDatabase(nullptr)) {
+  if (auto err = db->OpenDatabase()) {
     Emsg1(M_FATAL, 0, "%s", err);
     return 1;
   }

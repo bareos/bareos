@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,9 +57,9 @@ namespace {
 /* Commands sent to File daemon */
 inline constexpr const char verifycmd[] = "verify level=%s\n";
 inline constexpr const char storaddrcmd[]
-    = "storage address=%s port=%d ssl=%d Authorization=%s\n";
+    = "storage address=%s port=%" PRIu32 " ssl=%u Authorization=%s\n";
 inline constexpr const char passiveclientcmd[]
-    = "passive client address=%s port=%d ssl=%d\n";
+    = "passive client address=%s port=%" PRIu32 " ssl=%u\n";
 
 /* Responses received from File daemon */
 inline constexpr const char OKverify[] = "2000 OK verify\n";
@@ -152,7 +152,7 @@ bool DoVerify(JobControlRecord* jcr)
       // See if user supplied a jobid= as run argument or from menu
       if (jcr->dir_impl->VerifyJobId) {
         verify_jobid = jcr->dir_impl->VerifyJobId;
-        Dmsg1(100, "Supplied jobid=%d\n", verify_jobid);
+        Dmsg1(100, "Supplied jobid=%" PRIu32 "\n", verify_jobid);
 
       } else {
         if (!jcr->db->FindLastJobid(jcr, Name, &jr)) {
@@ -169,7 +169,7 @@ bool DoVerify(JobControlRecord* jcr)
         }
         verify_jobid = jr.JobId;
       }
-      Dmsg1(100, "Last full jobid=%d\n", verify_jobid);
+      Dmsg1(100, "Last full jobid=%" PRIu32 "\n", verify_jobid);
 
       /* Now get the job record for the previous backup that interests
        *   us. We use the verify_jobid that we found above. */
@@ -183,11 +183,12 @@ bool DoVerify(JobControlRecord* jcr)
       if (!(prev_jr.JobStatus == JS_Terminated
             || prev_jr.JobStatus == JS_Warnings)) {
         Jmsg(jcr, M_FATAL, 0,
-             T_("Last Job %d did not Terminate normally. JobStatus=%c\n"),
+             T_("Last Job %" PRIu32
+                " did not Terminate normally. JobStatus=%c\n"),
              verify_jobid, prev_jr.JobStatus);
         return false;
       }
-      Jmsg(jcr, M_INFO, 0, T_("Verifying against JobId=%d Job=%s\n"),
+      Jmsg(jcr, M_INFO, 0, T_("Verifying against JobId=%" PRIu32 " Job=%s\n"),
            prev_jr.JobId, prev_jr.Job);
   }
 
@@ -316,10 +317,11 @@ bool DoVerify(JobControlRecord* jcr)
                                                 : TlsPolicy::kBnetTlsNone;
         }
 
-        Dmsg1(200, "Tls Policy for active client is: %d\n", tls_policy);
+        Dmsg1(200, "Tls Policy for active client is: %u\n",
+              static_cast<unsigned int>(tls_policy));
 
-        fd->fsend(storaddrcmd, store->address, store->SDport, tls_policy,
-                  jcr->sd_auth_key);
+        fd->fsend(storaddrcmd, store->address, store->SDport,
+                  static_cast<unsigned int>(tls_policy), jcr->sd_auth_key);
         if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
           goto bail_out;
         }
@@ -335,11 +337,12 @@ bool DoVerify(JobControlRecord* jcr)
                                                  : TlsPolicy::kBnetTlsNone;
         }
 
-        Dmsg1(200, "Tls Policy for passive client is: %d\n", tls_policy);
+        Dmsg1(200, "Tls Policy for passive client is: %u\n",
+              static_cast<unsigned int>(tls_policy));
 
         // Tell the SD to connect to the FD.
         sd->fsend(passiveclientcmd, client->address, client->FDport,
-                  tls_policy);
+                  static_cast<unsigned int>(tls_policy));
         Bmicrosleep(2, 0);
         if (!response(jcr, sd, OKpassiveclient, "Passive client",
                       DISPLAY_ERROR)) {
@@ -503,18 +506,18 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
       Jmsg(jcr, msg_type, 0,
            T_("%s %s %s (%s):\n"
               "  OS Information:         %s\n"
-              "  JobId:                  %d\n"
+              "  JobId:                  %" PRIu32 "\n"
               "  Job:                    %s\n"
               "  FileSet:                %s\n"
               "  Verify Level:           %s\n"
               "  Client:                 %s\n"
-              "  Verify JobId:           %d\n"
+              "  Verify JobId:           %" PRIu32 "\n"
               "  Verify Job:             %s\n"
               "  Start time:             %s\n"
               "  End time:               %s\n"
               "  Files Expected:         %s\n"
               "  Files Examined:         %s\n"
-              "  Non-fatal FD errors:    %d\n"
+              "  Non-fatal FD errors:    %" PRIu32 "\n"
               "  FD termination status:  %s\n"
               "  SD termination status:  %s\n"
               "  Bareos binary info:     %s\n"
@@ -536,17 +539,17 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
       Jmsg(jcr, msg_type, 0,
            T_("%s %s %s (%s):\n"
               "  Build:                  %s\n"
-              "  JobId:                  %d\n"
+              "  JobId:                  %" PRIu32 "\n"
               "  Job:                    %s\n"
               "  FileSet:                %s\n"
               "  Verify Level:           %s\n"
               "  Client:                 %s\n"
-              "  Verify JobId:           %d\n"
+              "  Verify JobId:           %" PRIu32 "\n"
               "  Verify Job:             %s\n"
               "  Start time:             %s\n"
               "  End time:               %s\n"
               "  Files Examined:         %s\n"
-              "  Non-fatal FD errors:    %d\n"
+              "  Non-fatal FD errors:    %" PRIu32 "\n"
               "  FD termination status:  %s\n"
               "  Bareos binary info:     %s\n"
               "  Job triggered by:       %s\n"
@@ -602,7 +605,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr,
     fname = CheckPoolMemorySize(fname, fd->message_length);
     jcr->dir_impl->fname.check_size(fd->message_length);
     Dmsg1(200, "Atts+Digest=%s\n", fd->msg);
-    if ((len = sscanf(fd->msg, "%ld %d %100s", &file_index, &stream, fname))
+    if ((len = bsscanf(fd->msg, "%ld %d %100s", &file_index, &stream, fname))
         != 3) {
       Jmsg3(jcr, M_FATAL, 0,
             T_("dird<filed: bad attributes, expected 3 fields got %d\n"
@@ -694,7 +697,8 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr,
               if (statc.st_nlink != statf.st_nlink) {
                 PrtFname(jcr);
                 Jmsg(jcr, M_INFO, 0,
-                     T_("      st_nlink differ. Cat: %d File: %d\n"),
+                     T_("      st_nlink differ. Cat: %" PRIu32 " File: %" PRIu32
+                        "\n"),
                      (uint32_t)statc.st_nlink, (uint32_t)statf.st_nlink);
                 jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
@@ -787,7 +791,8 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr,
            * preceded by an attributes record, which sets attr_file_index */
           if (jcr->dir_impl->FileIndex != (uint32_t)file_index) {
             Jmsg2(jcr, M_FATAL, 0,
-                  T_("MD5/SHA1 index %d not same as attributes %d\n"),
+                  T_("MD5/SHA1 index %" PRId32
+                     " not same as attributes %" PRIu32 "\n"),
                   file_index, jcr->dir_impl->FileIndex);
             goto bail_out;
           }
@@ -822,8 +827,9 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr,
   jcr->dir_impl->fn_printed = false;
   Mmsg(buf,
        "SELECT Path.Path,File.Name FROM File,Path "
-       "WHERE File.JobId=%d AND File.FileIndex > 0 "
-       "AND File.MarkId!=%d AND File.PathId=Path.PathId ",
+       "WHERE File.JobId=%" PRIu32
+       " AND File.FileIndex > 0 "
+       "AND File.MarkId!=%" PRIu32 " AND File.PathId=Path.PathId ",
        prev_jr->JobId, jcr->JobId);
   /* MissingHandler is called for each file found */
   jcr->db->SqlQuery(buf.c_str(), MissingHandler, (void*)jcr);

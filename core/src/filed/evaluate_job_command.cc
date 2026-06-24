@@ -1,7 +1,7 @@
 /**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,9 +25,9 @@
 namespace filedaemon {
 
 const std::string JobCommand::jobcmd_{
-    "JobId=%d Job=%127s SDid=%u SDtime=%u Authorization=%100s"};
+    "JobId=%lu Job=%127s SDid=%lu SDtime=%lu Authorization=%100s"};
 const std::string JobCommand::jobcmdssl_{
-    "JobId=%d Job=%127s SDid=%u SDtime=%u Authorization=%100s ssl=%d\n"};
+    "JobId=%lu Job=%127s SDid=%lu SDtime=%lu Authorization=%100s ssl=%lu\n"};
 
 JobCommand::JobCommand(const char* msg) : job_{0}, sd_auth_key_{0}
 {
@@ -39,15 +39,15 @@ JobCommand::JobCommand(const char* msg) : job_{0}, sd_auth_key_{0}
   for (auto protocol_try : fd_implemented_protocols) {
     switch (protocol_try) {
       case ProtocolVersion::kVersionFrom_18_2:
-        if (sscanf(msg, jobcmdssl_.c_str(), &job_id_, job_, &vol_session_id_,
-                   &vol_session_time_, sd_auth_key_, &tls_policy_)
+        if (bsscanf(msg, jobcmdssl_.c_str(), &job_id_, job_, &vol_session_id_,
+                    &vol_session_time_, sd_auth_key_, &tls_policy_)
             == 6) {
           protocol = protocol_try;
         }
         break;
       case ProtocolVersion::KVersionBefore_18_2:
-        if (sscanf(msg, jobcmd_.c_str(), &job_id_, job_, &vol_session_id_,
-                   &vol_session_time_, sd_auth_key_)
+        if (bsscanf(msg, jobcmd_.c_str(), &job_id_, job_, &vol_session_id_,
+                    &vol_session_time_, sd_auth_key_)
             == 5) {
           protocol = protocol_try;
         }

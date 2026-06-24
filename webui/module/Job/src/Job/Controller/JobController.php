@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -85,7 +85,12 @@ class JobController extends AbstractActionController
             $jobs = $this->getJobModel()->getJobsByType($this->bsock, null);
             array_push($jobs, array('name' => 'all'));
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
+            return new ViewModel(['error' => 'Failed to connect to director']);
+        }
+
+        if (!$this->bsock) {
+            return new ViewModel(['error' => 'Failed to connect to director']);
         }
 
         $form = new JobForm($jobs, $jobname, $period, $status);
@@ -105,7 +110,12 @@ class JobController extends AbstractActionController
             try {
                 $this->bsock = $this->getServiceLocator()->get('director');
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
+                return new ViewModel(['error' => 'Failed to connect to director']);
+            }
+
+            if (!$this->bsock) {
+                return new ViewModel(['error' => 'Failed to connect to director']);
             }
 
             if ($action == "rerun") {
@@ -117,6 +127,9 @@ class JobController extends AbstractActionController
                     );
                     if (count($invalid_commands) > 0 && in_array('rerun', $invalid_commands)) {
                         $this->acl_alert = true;
+                        if ($this->bsock) {
+                            $this->bsock->disconnect();
+                        }
                         return new ViewModel(
                             array(
                                 'acl_alert' => $this->acl_alert,
@@ -127,18 +140,21 @@ class JobController extends AbstractActionController
                         $result = $this->getJobModel()->rerunJob($this->bsock, $jobid);
                         if (!preg_match("/authorization/i", $result)) {
                             $jobid = rtrim(substr($result, strrpos($result, "=") + 1));
+                            $this->bsock->disconnect();
                             return $this->redirect()->toRoute('job', array('action' => 'details', 'id' => $jobid));
                         }
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             }
 
-            try {
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
+            if ($this->bsock) {
+                try {
+                    $this->bsock->disconnect();
+                } catch (Exception $e) {
+                    error_log($e->getMessage());
+                }
             }
 
             return new ViewModel(
@@ -192,7 +208,7 @@ class JobController extends AbstractActionController
             $this->bsock = $this->getServiceLocator()->get('director');
             $this->bsock->disconnect();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(array(
@@ -242,7 +258,7 @@ class JobController extends AbstractActionController
             $result = $this->getJobModel()->cancelJob($this->bsock, $jobid);
             $this->bsock->disconnect();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(
@@ -295,7 +311,12 @@ class JobController extends AbstractActionController
             try {
                 $this->bsock = $this->getServiceLocator()->get('director');
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
+                return new ViewModel(['error' => 'Failed to connect to director']);
+            }
+
+            if (!$this->bsock) {
+                return new ViewModel(['error' => 'Failed to connect to director']);
             }
 
             if ($action == "queue") {
@@ -317,7 +338,7 @@ class JobController extends AbstractActionController
                         $result = $this->getJobModel()->runJob($this->bsock, $jobname);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } elseif ($action == "enable") {
                 $jobname = $this->params()->fromQuery('job');
@@ -338,7 +359,7 @@ class JobController extends AbstractActionController
                         $result = $this->getJobModel()->enableJob($this->bsock, $jobname);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } elseif ($action == "disable") {
                 $jobname = $this->params()->fromQuery('job');
@@ -359,14 +380,16 @@ class JobController extends AbstractActionController
                         $result = $this->getJobModel()->disableJob($this->bsock, $jobname);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             }
 
-            try {
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
+            if ($this->bsock) {
+                try {
+                    $this->bsock->disconnect();
+                } catch (Exception $e) {
+                    error_log($e->getMessage());
+                }
             }
 
             return new ViewModel(
@@ -496,7 +519,7 @@ class JobController extends AbstractActionController
                         return $this->redirect()->toRoute('job', array('action' => 'details', 'id' => $filtered[0]));
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } else {
                 $this->bsock->disconnect();

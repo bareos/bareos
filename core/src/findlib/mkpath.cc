@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -130,7 +130,7 @@ bool makepath(Attributes* attr,
   char* p;
   int len;
   bool ok = false;
-  int created;
+  int created = 0;
   char new_dir[5000];
   int ndir = 0;
   int i = 0;

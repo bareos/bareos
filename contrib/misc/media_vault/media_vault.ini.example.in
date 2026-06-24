@@ -28,7 +28,7 @@ returndate_format=YYYYMMDD
 ; run update slots before any other action to update autoloader status
 ; default True
 update_slots_before = True
-; This flag if present will order to update the volstatus to Archive afterwards
+; if present will update the volstatus to Archive after a successful export
 ; default False
 volstatus_to_archive = False
 ;; iron account number uncomment if you want to create an export report

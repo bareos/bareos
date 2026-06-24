@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -113,12 +113,10 @@ typedef BOOL(WINAPI* t_GetFileAttributesExW)(LPCWSTR,
                                              GET_FILEEX_INFO_LEVELS,
                                              LPVOID);
 
-#  if (_WIN32_WINNT >= 0x0600)
 typedef DWORD(WINAPI* t_GetFileInformationByHandleEx)(HANDLE,
                                                       FILE_INFO_BY_HANDLE_CLASS,
                                                       LPVOID,
                                                       DWORD);
-#  endif
 
 typedef DWORD(WINAPI* t_GetFileAttributesA)(LPCSTR);
 typedef DWORD(WINAPI* t_GetFileAttributesW)(LPCWSTR);
@@ -215,9 +213,7 @@ typedef BOOL(WINAPI* t_CreateProcessW)(LPCWSTR,
 extern t_CreateProcessA p_CreateProcessA;
 extern t_CreateProcessW p_CreateProcessW;
 
-#  if (_WIN32_WINNT >= 0x0600)
 extern t_GetFileInformationByHandleEx p_GetFileInformationByHandleEx;
-#  endif
 
 BAREOS_IMPORT t_GetFileAttributesA p_GetFileAttributesA;
 BAREOS_IMPORT t_GetFileAttributesW p_GetFileAttributesW;

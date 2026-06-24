@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,7 +31,7 @@ struct DateTime {
 
   int WeekOfMonth() const;
   bool OnLast7DaysOfMonth() const;
-  void PrintDebugMessage(int debug_level) const;
+  void PrintDebugMessage(int dlevel) const;
 
   int year{0};
   int month{0};

@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+ * @copyright Copyright (C) 2014-2026 Bareos GmbH & Co. KG
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -62,6 +62,9 @@ class BareosBSock implements BareosBSockInterface
 
     public const DIR_OK_AUTH = "1000 OK auth\n";
     public const DIR_AUTH_FAILED = "1999 Authorization failed.\n";
+    public const DEFAULT_SOCKET_READ_TIMEOUT = 60;
+    public const DEFAULT_RECEIVE_MESSAGE_TIMEOUT = 300;
+    public const DEFAULT_RECEIVE_MESSAGE_MAX_ITERATIONS = 100000;
 
     protected $config = array(
        'debug' => false,
@@ -275,16 +278,47 @@ class BareosBSock implements BareosBSockInterface
     {
         $msg = "";
         $buffer = "";
+        $receive_timeout = self::DEFAULT_RECEIVE_MESSAGE_TIMEOUT;
+        $receive_deadline = microtime(true) + $receive_timeout;
 
         if (!$this->socket) {
             return $msg;
         }
 
+        $max_iterations = self::DEFAULT_RECEIVE_MESSAGE_MAX_ITERATIONS;
+        $iteration = 0;
         while (true) {
+            if (microtime(true) > $receive_deadline) {
+                $message = sprintf(
+                    '%s: receive timeout exceeded after %d seconds at iteration %d',
+                    __FUNCTION__,
+                    $receive_timeout,
+                    $iteration
+                );
+                error_log($message);
+                throw new \RuntimeException($message);
+            }
+            if (++$iteration > $max_iterations) {
+                $message = sprintf(
+                    '%s: max iteration limit reached at iteration %d',
+                    __FUNCTION__,
+                    $iteration
+                );
+                error_log($message);
+                throw new \RuntimeException($message);
+            }
             $buffer = stream_get_contents($this->socket, 4);
 
             if ($buffer === false) {
                 throw new \Exception("Error reading socket. " . socket_strerror(socket_last_error()) . "\n");
+            }
+
+            $metadata = stream_get_meta_data($this->socket);
+            if ($metadata['timed_out']) {
+                throw new \RuntimeException('Error reading socket: read timed out.');
+            }
+            if (strlen($buffer) !== 4) {
+                throw new \RuntimeException('Error reading socket header.');
             }
 
             $len = self::ntohl($buffer);
@@ -293,7 +327,20 @@ class BareosBSock implements BareosBSockInterface
                 break;
             }
             if ($len > 0) {
-                $msg .= stream_get_contents($this->socket, $len);
+                $payload = stream_get_contents($this->socket, $len);
+                if ($payload === false) {
+                    throw new \Exception("Error reading socket. " . socket_strerror(socket_last_error()) . "\n");
+                }
+
+                $metadata = stream_get_meta_data($this->socket);
+                if ($metadata['timed_out']) {
+                    throw new \RuntimeException('Error reading socket: read timed out.');
+                }
+                if (strlen($payload) !== $len) {
+                    throw new \RuntimeException('Error reading socket payload.');
+                }
+
+                $msg .= $payload;
             } elseif ($len < 0) {
                 // signal received
                 switch ($len) {
@@ -449,6 +496,16 @@ class BareosBSock implements BareosBSockInterface
         return $msg;
     }
 
+    private function receive_message_or_throw($context)
+    {
+        try {
+            return self::receive_message();
+        } catch (\Exception $e) {
+            error_log(sprintf('%s: %s failed: %s', __METHOD__, $context, $e->getMessage()));
+            throw $e;
+        }
+    }
+
 
     /**
      * Connect to a Bareos Director, authenticate the session and establish TLS if needed.
@@ -481,10 +538,11 @@ class BareosBSock implements BareosBSockInterface
             if (!$this->socket) {
                 throw new \Exception("Error: " . $errstr . ", director seems to be down or blocking our request.");
             }
+            stream_set_timeout($this->socket, self::DEFAULT_SOCKET_READ_TIMEOUT);
             // socket_set_nonblock($this->socket);
         } catch(\Exception $e) {
-            echo $e->getMessage();
-            exit;
+            error_log($e->getMessage());
+            throw $e;
         }
         if ($this->config['debug']) {
             echo "Connected to " . $this->config['host'] . " on port " . $this->config['port'] . "\n";
@@ -906,31 +964,26 @@ class BareosBSock implements BareosBSockInterface
             case 2:
                 // Enable api 2 with compact mode enabled
                 self::send(".api 2 compact=yes");
-                try {
-                    $debug = self::receive_message();
-                } catch(\Exception $e) {
-                    echo $e->getMessage();
-                    exit;
-                }
+                $debug = self::receive_message_or_throw('.api 2 compact=yes');
                 break;
             case 1:
                 self::send(".api 1");
-                $debug = self::receive_message();
+                $debug = self::receive_message_or_throw('.api 1');
                 break;
             default:
                 self::send(".api 0");
-                $debug = self::receive_message();
+                $debug = self::receive_message_or_throw('.api 0');
                 break;
         }
 
         if (isset($this->config['catalog'])) {
             if (self::send("use catalog=" . $this->config['catalog'])) {
-                $debug = self::receive_message();
+                $debug = self::receive_message_or_throw('use catalog=' . $this->config['catalog']);
             }
         }
 
         if (self::send($cmd)) {
-            $result = self::receive_message();
+            $result = self::receive_message_or_throw($cmd);
         }
 
         return $result;
@@ -1026,11 +1079,11 @@ class BareosBSock implements BareosBSockInterface
         $rnd = rand(1000, 1000000);
 
         if (self::send(".api 0")) {
-            $debug = self::receive_message();
+            $debug = self::receive_message_or_throw('.api 0');
         }
 
         if (self::send(".bvfs_restore jobid=$jobids fileid=$fileid dirid=$dirid path=b2000$rnd")) {
-            $debug = self::receive_message();
+            $debug = self::receive_message_or_throw(".bvfs_restore path=b2000$rnd");
         }
 
         $restore_cmd = 'restore file=?b2000'.$rnd.' client="'.$client.'" restoreclient="'.$restoreclient.'" restorejob="'.$restorejob.'" where="'.$where.'" replace="'.$replace.'"';
@@ -1040,11 +1093,11 @@ class BareosBSock implements BareosBSockInterface
         }
 
         if (self::send($restore_cmd.' yes')) {
-            $result = self::receive_message();
+            $result = self::receive_message_or_throw($restore_cmd . ' yes');
         }
 
         if (self::send(".bvfs_cleanup path=b2000$rnd")) {
-            $debug = self::receive_message();
+            $debug = self::receive_message_or_throw(".bvfs_cleanup path=b2000$rnd");
         }
 
         return $result;

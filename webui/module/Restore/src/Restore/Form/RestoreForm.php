@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,6 +39,9 @@ class RestoreForm extends Form
     public function __construct($restore_params = null, $restore_source_clients = null, $restore_target_clients = null, $restorejobresources = null, $jobids = null, $backups = null)
     {
         parent::__construct('restore');
+
+        $restore_params = $restore_params ?? array();
+        $backups = $backups ?? array();
 
         $this->restore_params = $restore_params;
         $this->restore_source_clients = $this->getNameOptionsMap($restore_source_clients);
@@ -119,239 +122,34 @@ class RestoreForm extends Form
         ));
 
         // Merge filesets
-        if (isset($restore_params['client']) && isset($restore_params['mergefilesets'])) {
-            $this->add(
-                array(
-                    'name' => 'mergefilesets',
-                    'type' => 'select',
-                    'options' => array(
-                        'label' => _('Merge all client filesets'),
-                        'value_options' => array(
-                            '1' => _('Yes'),
-                            '0' => _('No')
-                        )
-                    ),
-                    'attributes' => array(
-                        'class' => 'form-control selectpicker show-tick',
-                        'id' => 'mergefilesets',
-                        'value' => $restore_params['mergefilesets']
-                    )
-                )
-            );
-        } else {
-            $this->add(
-                array(
-                    'name' => 'mergefilesets',
-                    'type' => 'select',
-                    'options' => array(
-                        'label' => _('Merge all client filesets'),
-                        'value_options' => array(
-                            '1' => _('Yes'),
-                            '0' => _('No')
-                        )
-                    ),
-                    'attributes' => array(
-                        'class' => 'form-control selectpicker show-tick',
-                        'id' => 'mergefilesets',
-                        'value' => $_SESSION['bareos']['merge_filesets'] ? 1 : 0,
-                        'disabled' => true
-                    )
-                )
-            );
-        }
+        $this->addYesNoSelect(
+            'mergefilesets',
+            _('Merge all client filesets'),
+            'mergefilesets',
+            isset($restore_params['client']) && isset($restore_params['mergefilesets'])
+                ? $restore_params['mergefilesets']
+                : ($_SESSION['bareos']['merge_filesets'] ? 1 : 0),
+            !(isset($restore_params['client']) && isset($restore_params['mergefilesets']))
+        );
 
         // Merge jobs
-        if (isset($restore_params['client']) && isset($restore_params['mergejobs'])) {
-            $this->add(
-                array(
-                    'name' => 'mergejobs',
-                    'type' => 'select',
-                    'options' => array(
-                        'label' => _('Merge all related jobs to last full backup of selected backup job'),
-                        'value_options' => array(
-                            '1' => _('Yes'),
-                            '0' => _('No')
-                        )
-                    ),
-                    'attributes' => array(
-                        'class' => 'form-control selectpicker show-tick',
-                        'id' => 'mergejobs',
-                        'value' => $restore_params['mergejobs']
-                    )
-                )
-            );
-        } else {
-            $this->add(
-                array(
-                    'name' => 'mergejobs',
-                    'type' => 'select',
-                    'options' => array(
-                        'label' => _('Merge jobs'),
-                        'value_options' => array(
-                            '1' => _('Yes'),
-                            '0' => _('No')
-                        )
-                    ),
-                    'attributes' => array(
-                        'class' => 'form-control selectpicker show-tick',
-                        'id' => 'mergejobs',
-                        'value' => $_SESSION['bareos']['merge_jobs'] ? 1 : 0,
-                        'disabled' => true
-                    )
-                )
-            );
-        }
+        $this->addYesNoSelect(
+            'mergejobs',
+            isset($restore_params['client']) && isset($restore_params['mergejobs'])
+                ? _('Merge all related jobs to last full backup of selected backup job')
+                : _('Merge jobs'),
+            'mergejobs',
+            isset($restore_params['client']) && isset($restore_params['mergejobs'])
+                ? $restore_params['mergejobs']
+                : ($_SESSION['bareos']['merge_jobs'] ? 1 : 0),
+            !(isset($restore_params['client']) && isset($restore_params['mergejobs']))
+        );
 
         // Replace
-        if (isset($restore_params['restorejob'])) {
-            $this->add(
-                array(
-                    'name' => 'replace',
-                    'type' => 'select',
-                    'options' => array(
-                        'label' => _('Replace files on client'),
-                        'value_options' => array(
-                            'always' => _('always'),
-                            'never' => _('never'),
-                            'ifolder' => _('if file being restored is older than existing file'),
-                            'ifnewer' => _('if file being restored is newer than existing file')
-                        )
-                    ),
-                    'attributes' => array(
-                        'class' => 'form-control selectpicker show-tick',
-                        'id' => 'replace',
-                        'value' => $this->determineReplaceDirective($restore_params['restorejob'])
-                    )
-                )
-            );
-        } else {
-            if (isset($restore_params['client']) && count($this->getRestoreJobList()) > 0) {
-                $this->add(
-                    array(
-                        'name' => 'replace',
-                        'type' => 'select',
-                        'options' => array(
-                            'label' => _('Replace files on client'),
-                            'value_options' => array(
-                                'always' => _('always'),
-                                'never' => _('never'),
-                                'ifolder' => _('if file being restored is older than existing file'),
-                                'ifnewer' => _('if file being restored is newer than existing file')
-                            )
-                        ),
-                        'attributes' => array(
-                            'class' => 'form-control selectpicker show-tick',
-                            'id' => 'replace',
-                            'value' => @array_pop($this->getRestoreJobReplaceDirectives()),
-                        )
-                    )
-                );
-            } else {
-                $this->add(
-                    array(
-                        'name' => 'replace',
-                        'type' => 'select',
-                        'options' => array(
-                            'label' => _('Replace files on client'),
-                            'value_options' => array(
-                                'always' => _('always'),
-                                'never' => _('never'),
-                                'ifolder' => _('if file being restored is older than existing file'),
-                                'ifnewer' => _('if file being restored is newer than existing file')
-                            )
-                        ),
-                        'attributes' => array(
-                            'class' => 'form-control selectpicker show-tick',
-                            'id' => 'replace',
-                            'value' => 'always',
-                            'disabled' => true
-                        )
-                    )
-                );
-            }
-        }
+        $this->addReplaceSelect($restore_params);
 
         // Plugin Options
-        $pluginoptions_placeholder = _('e.g. <plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>');
-        if ($restore_params['mergefilesets'] == 0) {
-            $pluginjobs = false;
-            foreach ($backups as $backup) {
-                if ($backup['pluginjob']) {
-                    $pluginjobs = true;
-                }
-            }
-            if ($pluginjobs) {
-                $this->add(
-                    array(
-                        'name' => 'pluginoptions',
-                        'type' => 'text',
-                        'options' => array(
-                            'label' => _('Plugin Options')
-                        ),
-                        'attributes' => array(
-                            'class' => 'form-control selectpicker show-tick',
-                            'value' => '',
-                            'id' => 'pluginoptions',
-                            'size' => '30',
-                            'placeholder' => $pluginoptions_placeholder,
-                            'required' => false
-                        )
-                    )
-                );
-            } else {
-                $this->add(
-                    array(
-                        'name' => 'pluginoptions',
-                        'type' => 'Laminas\Form\Element\Hidden',
-                        'attributes' => array(
-                            'value' => '',
-                            'id' => 'pluginoptions',
-                            'required' => false,
-                            'disabled' => true
-                        )
-                    )
-                );
-            }
-        }
-
-        if ($restore_params['mergefilesets'] == 1) {
-            if (isset($restore_params['jobid'])) {
-                foreach ($backups as $backup) {
-                    if ($backup['jobid'] === $restore_params['jobid'] && $backup['pluginjob']) {
-                        $this->add(
-                            array(
-                                'name' => 'pluginoptions',
-                                'type' => 'text',
-                                'options' => array(
-                                    'label' => _('Plugin Options')
-                                ),
-                                'attributes' => array(
-                                    'class' => 'form-control selectpicker show-tick',
-                                    'value' => '',
-                                    'id' => 'pluginoptions',
-                                    'size' => '30',
-                                    'placeholder' => $pluginoptions_placeholder,
-                                    'required' => false
-                                )
-                            )
-                        );
-                    }
-                }
-            } else {
-                $this->add(
-                    array(
-                        'name' => 'pluginoptions',
-                        'type' => 'Laminas\Form\Element\Hidden',
-                        'attributes' => array(
-                            'value' => '',
-                            'id' => 'pluginoptions',
-                            'required' => false,
-                            'disabled' => true
-                        )
-                    )
-                );
-            }
-        }
+        $this->addPluginOptionsElement($restore_params, $backups);
 
         // Where
         $where = null;
@@ -450,6 +248,139 @@ class RestoreForm extends Form
             )
         ));
 
+        $this->add(array(
+            'name' => 'csrf',
+            'type' => 'Laminas\Form\Element\Csrf',
+            'options' => array(
+                'csrf_options' => array('timeout' => 3600),
+            ),
+        ));
+
+    }
+
+    /**
+     * Add a Yes/No select element.
+     */
+    private function addYesNoSelect(string $name, string $label, string $id, $value, bool $disabled = false): void
+    {
+        $attrs = array(
+            'class' => 'form-control selectpicker show-tick',
+            'id' => $id,
+            'value' => $value,
+        );
+        if ($disabled) {
+            $attrs['disabled'] = true;
+        }
+        $this->add(array(
+            'name' => $name,
+            'type' => 'select',
+            'options' => array(
+                'label' => $label,
+                'value_options' => array('1' => _('Yes'), '0' => _('No')),
+            ),
+            'attributes' => $attrs,
+        ));
+    }
+
+    /**
+     * Add the replace-files select element, consolidating the three-branch conditional.
+     */
+    private function addReplaceSelect(array $restore_params): void
+    {
+        $replaceOptions = array(
+            'always'  => _('always'),
+            'never'   => _('never'),
+            'ifolder' => _('if file being restored is older than existing file'),
+            'ifnewer' => _('if file being restored is newer than existing file'),
+        );
+
+        if (isset($restore_params['restorejob'])) {
+            $value    = $this->determineReplaceDirective($restore_params['restorejob']);
+            $disabled = false;
+        } elseif (isset($restore_params['client']) && count($this->getRestoreJobList()) > 0) {
+            $directives = $this->getRestoreJobReplaceDirectives();
+            $value      = end($directives) ?: 'always';
+            $disabled   = false;
+        } else {
+            $value    = 'always';
+            $disabled = true;
+        }
+
+        $attrs = array(
+            'class' => 'form-control selectpicker show-tick',
+            'id'    => 'replace',
+            'value' => $value,
+        );
+        if ($disabled) {
+            $attrs['disabled'] = true;
+        }
+
+        $this->add(array(
+            'name'       => 'replace',
+            'type'       => 'select',
+            'options'    => array(
+                'label'         => _('Replace files on client'),
+                'value_options' => $replaceOptions,
+            ),
+            'attributes' => $attrs,
+        ));
+    }
+
+    /**
+     * Add the pluginoptions element, consolidating the two-block conditional.
+     *
+     * Shows a text field when any backup in the selected set is a plugin job;
+     * otherwise adds a disabled hidden field.
+     */
+    private function addPluginOptionsElement(array $restore_params, ?array $backups): void
+    {
+        $placeholder = _('e.g. <plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>');
+        $showText    = false;
+
+        if ($backups === null) {
+            // No client selected yet; skip plugin-options detection.
+        } elseif ($restore_params['mergefilesets'] == 0) {
+            foreach ($backups as $backup) {
+                if ($backup['pluginjob']) {
+                    $showText = true;
+                    break;
+                }
+            }
+        } elseif ($restore_params['mergefilesets'] == 1 && isset($restore_params['jobid'])) {
+            foreach ($backups as $backup) {
+                if ($backup['jobid'] === $restore_params['jobid'] && $backup['pluginjob']) {
+                    $showText = true;
+                    break;
+                }
+            }
+        }
+
+        if ($showText) {
+            $this->add(array(
+                'name'       => 'pluginoptions',
+                'type'       => 'text',
+                'options'    => array('label' => _('Plugin Options')),
+                'attributes' => array(
+                    'class'       => 'form-control selectpicker show-tick',
+                    'value'       => '',
+                    'id'          => 'pluginoptions',
+                    'size'        => '30',
+                    'placeholder' => $placeholder,
+                    'required'    => false,
+                ),
+            ));
+        } else {
+            $this->add(array(
+                'name'       => 'pluginoptions',
+                'type'       => 'Laminas\Form\Element\Hidden',
+                'attributes' => array(
+                    'value'    => '',
+                    'id'       => 'pluginoptions',
+                    'required' => false,
+                    'disabled' => true,
+                ),
+            ));
+        }
     }
 
     /**

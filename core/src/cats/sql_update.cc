@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -132,7 +132,7 @@ int BareosDb::UpdateStats(JobControlRecord* jcr, utime_t age)
   DbLocker _{this};
 
   edit_uint64(now - age, ed1);
-  FillQuery(SQL_QUERY::fill_jobhisto, ed1);
+  FillQuery<SQL_QUERY::fill_jobhisto>(cmd, ed1);
   if (QueryDb(jcr, cmd)) {
     rows = SqlAffectedRows();
   } else {
@@ -180,7 +180,7 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
       "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,"
       "VolSessionId=%u,"
       "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
-      "RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE JobId=%s",
+      "RealEndTime='%s',PriorJobId=%s,HasBase=%d,PurgedFiles=%d WHERE JobId=%s",
       (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,
       edit_uint64(jr->JobBytes, ed1), edit_uint64(jr->ReadBytes, ed4),
       jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
@@ -230,8 +230,8 @@ bool BareosDb::UpdateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
   DbLocker _{this};
 
   EscapeString(jcr, esc, cr->Counter, strlen(cr->Counter));
-  FillQuery(SQL_QUERY::update_counter_values, cr->MinValue, cr->MaxValue,
-            cr->CurrentValue, cr->WrapCounter, esc);
+  FillQuery<SQL_QUERY::update_counter_values>(
+      cmd, cr->MinValue, cr->MaxValue, cr->CurrentValue, cr->WrapCounter, esc);
   retval = UpdateDb(jcr, cmd) > 0;
 
   return retval;
@@ -248,14 +248,14 @@ bool BareosDb::UpdatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
   Mmsg(cmd, "SELECT count(*) from Media WHERE PoolId=%s",
        edit_int64(pr->PoolId, ed4));
   pr->NumVols = GetSqlRecordMax(jcr);
-  Dmsg1(400, "NumVols=%d\n", pr->NumVols);
+  Dmsg1(400, "NumVols=%" PRIu32 "\n", pr->NumVols);
 
   Mmsg(cmd,
        "UPDATE Pool SET NumVols=%u,MaxVols=%u,UseOnce=%d,UseCatalog=%d,"
        "AcceptAnyVolume=%d,VolRetention='%s',VolUseDuration='%s',"
        "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,Recycle=%d,"
        "AutoPrune=%d,LabelType=%d,LabelFormat='%s',RecyclePoolId=%s,"
-       "ScratchPoolId=%s,ActionOnPurge=%d,MinBlockSize=%d,MaxBlockSize=%d "
+       "ScratchPoolId=%s,ActionOnPurge=%u,MinBlockSize=%u,MaxBlockSize=%u "
        "WHERE PoolId=%s",
        pr->NumVols, pr->MaxVols, pr->UseOnce, pr->UseCatalog,
        pr->AcceptAnyVolume, edit_uint64(pr->VolRetention, ed1),
@@ -295,8 +295,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   char esc_medianame[MAX_ESCAPE_NAME_LENGTH];
   char esc_status[MAX_ESCAPE_NAME_LENGTH];
 
-  Dmsg1(100, "update_media: FirstWritten=%lld\n",
-        static_cast<long long>(mr->FirstWritten));
+  Dmsg1(100, "update_media: FirstWritten=%" PRItime "\n", mr->FirstWritten);
   DbLocker _{this};
   EscapeString(jcr, esc_medianame, mr->VolumeName, strlen(mr->VolumeName));
   EscapeString(jcr, esc_status, mr->VolStatus, strlen(mr->VolStatus));
@@ -310,7 +309,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
          "WHERE VolumeName='%s'",
          dt, esc_medianame);
     UpdateDb(jcr, cmd);
-    Dmsg1(400, "Firstwritten=%lld\n", static_cast<long long>(mr->FirstWritten));
+    Dmsg1(400, "Firstwritten=%" PRItime "\n", mr->FirstWritten);
   }
 
   /* Label just done? */
@@ -341,9 +340,9 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        "VolWrites=%u,MaxVolBytes=%s,VolStatus='%s',"
        "Slot=%d,InChanger=%d,VolReadTime=%s,VolWriteTime=%s,"
        "LabelType=%d,StorageId=%s,PoolId=%s,VolRetention=%s,VolUseDuration=%s,"
-       "MaxVolJobs=%d,MaxVolFiles=%d,Enabled=%d,LocationId=%s,"
-       "ScratchPoolId=%s,RecyclePoolId=%s,RecycleCount=%d,Recycle=%d,"
-       "ActionOnPurge=%d,"
+       "MaxVolJobs=%u,MaxVolFiles=%u,Enabled=%d,LocationId=%s,"
+       "ScratchPoolId=%s,RecyclePoolId=%s,RecycleCount=%u,Recycle=%d,"
+       "ActionOnPurge=%u,"
        "MinBlocksize=%u,MaxBlocksize=%u "
        "WHERE VolumeName='%s'",
        mr->VolJobs, mr->VolFiles, mr->VolBlocks, edit_uint64(mr->VolBytes, ed1),
@@ -384,9 +383,9 @@ bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
     EscapeString(jcr, esc, mr->VolumeName, strlen(mr->VolumeName));
     Mmsg(cmd,
          "UPDATE Media SET "
-         "ActionOnPurge=%d,Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
+         "ActionOnPurge=%u,Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
          "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s,"
-         "MinBlocksize=%d,MaxBlocksize=%d "
+         "MinBlocksize=%u,MaxBlocksize=%u "
          "WHERE VolumeName='%s'",
          mr->ActionOnPurge, mr->Recycle, edit_uint64(mr->VolRetention, ed1),
          edit_uint64(mr->VolUseDuration, ed2), mr->MaxVolJobs, mr->MaxVolFiles,
@@ -395,9 +394,9 @@ bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
   } else {
     Mmsg(cmd,
          "UPDATE Media SET "
-         "ActionOnPurge=%d,Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
+         "ActionOnPurge=%u,Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
          "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s,"
-         "MinBlocksize=%d,MaxBlocksize=%d "
+         "MinBlocksize=%u,MaxBlocksize=%u "
          "WHERE PoolId=%s",
          mr->ActionOnPurge, mr->Recycle, edit_uint64(mr->VolRetention, ed1),
          edit_uint64(mr->VolUseDuration, ed2), mr->MaxVolJobs, mr->MaxVolFiles,
@@ -555,8 +554,8 @@ void BareosDb::UpgradeCopies(const char* jobids)
   DbLocker _{this};
 
   /* Do it in two times for mysql */
-  FillQuery(query, BareosDb::SQL_QUERY::uap_upgrade_copies_oldest_job,
-            JT_JOB_COPY, jobids, jobids);
+  FillQuery<BareosDb::SQL_QUERY::uap_upgrade_copies_oldest_job>(
+      query, JT_JOB_COPY, jobids, jobids);
 
   SqlQuery(query.c_str());
 

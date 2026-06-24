@@ -103,7 +103,7 @@ char* ChunkedDevice::allocate_chunkbuffer()
 {
   char* buffer = (char*)malloc(current_chunk_->chunk_size);
 
-  Dmsg2(100, "New allocated buffer of %" PRIuz " bytes at %p\n",
+  Dmsg2(100, "New allocated buffer of %zd bytes at %p\n",
         current_chunk_->chunk_size, buffer);
 
   return buffer;
@@ -112,8 +112,8 @@ char* ChunkedDevice::allocate_chunkbuffer()
 // Free a chunk buffer.
 void ChunkedDevice::FreeChunkbuffer(char* buffer)
 {
-  Dmsg2(100, "Freeing buffer of %" PRIuz " bytes at %p\n",
-        current_chunk_->chunk_size, buffer);
+  Dmsg2(100, "Freeing buffer of %zd bytes at %p\n", current_chunk_->chunk_size,
+        buffer);
 
   free(buffer);
 }
@@ -121,7 +121,7 @@ void ChunkedDevice::FreeChunkbuffer(char* buffer)
 // Free a chunk_io_request.
 void ChunkedDevice::FreeChunkIoRequest(chunk_io_request* request)
 {
-  Dmsg2(100, "Freeing chunk io request of %" PRIuz " bytes at %p\n",
+  Dmsg2(100, "Freeing chunk io request of %zu bytes at %p\n",
         sizeof(chunk_io_request), request);
 
   if (request->release) { FreeChunkbuffer(request->buffer); }
@@ -342,8 +342,8 @@ bool ChunkedDevice::EnqueueChunk(chunk_io_request* request)
 {
   chunk_io_request *new_request, *enqueued_request;
 
-  Dmsg2(100, "Enqueueing chunk %d of volume %s (%d bytes)\n", request->chunk,
-        request->volname, request->wbuflen);
+  Dmsg2(100, "Enqueueing chunk %" PRIu16 " of volume %s (%" PRIu32 " bytes)\n",
+        request->chunk, request->volname, request->wbuflen);
 
   if (!io_threads_started_) {
     if (!StartIoThreads()) { return false; }
@@ -715,11 +715,11 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
                            ((ssize_t)current_chunk_->buflen - wanted_offset));
 
           if (bytes_left > 0) {
-            Dmsg2(200,
-                  "Reading %" PRIiz " bytes of %" PRIuz
-                  " byte read-request from end of chunk "
-                  "at offset %" PRIuz "\n",
-                  bytes_left, count, wanted_offset);
+            Dmsg2(
+                200,
+                "Reading %zd bytes of %zu byte read-request from end of chunk "
+                "at offset %zd\n",
+                bytes_left, count, wanted_offset);
 
             memcpy(((char*)buffer + offset),
                    current_chunk_->buffer + wanted_offset, bytes_left);

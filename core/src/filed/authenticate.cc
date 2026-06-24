@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -103,9 +103,8 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
-
-  if (sscanf(dir->msg, "Hello Director %s calling",
-             dirname.check_size(dir->message_length))
+  if (bsscanf(dir->msg, "Hello Director %s calling",
+              dirname.check_size(dir->message_length))
       != 1) {
     char addr[64];
     char* who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;

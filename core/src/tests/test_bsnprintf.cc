@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -162,13 +162,13 @@ TEST(bsnprintf, integers)
   EXPECT_EQ(Bsnprintf(dest, 100, "%" PRIuz, s_int), 3);
   EXPECT_STREQ(dest, "123");
 
-  EXPECT_EQ(Bsnprintf(dest, 100, "%o", 8), 2);
+  EXPECT_EQ(Bsnprintf(dest, 100, "%o", 8u), 2);
   EXPECT_STREQ(dest, "10");
 
-  EXPECT_EQ(Bsnprintf(dest, 100, "%x", 255), 2);
+  EXPECT_EQ(Bsnprintf(dest, 100, "%x", 255u), 2);
   EXPECT_STREQ(dest, "ff");
 
-  EXPECT_EQ(Bsnprintf(dest, 100, "%X", 255), 2);
+  EXPECT_EQ(Bsnprintf(dest, 100, "%X", 255u), 2);
   EXPECT_STREQ(dest, "FF");
 }
 

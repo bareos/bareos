@@ -627,11 +627,12 @@ static bool add_cmd(UaContext* ua, const char*)
 
   if (!GetPoolDbr(ua, &pr)) { return true; }
 
-  Dmsg4(120, "id=%d Num=%d Max=%d type=%s\n", pr.PoolId, pr.NumVols, pr.MaxVols,
-        pr.PoolType);
+  Dmsg4(120, "id=%" PRIdbid " Num=%" PRIu32 " Max=%" PRIu32 " type=%s\n",
+        pr.PoolId, pr.NumVols, pr.MaxVols, pr.PoolType);
 
   while (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
-    ua->WarningMsg(T_("Pool already has maximum volumes=%d\n"), pr.MaxVols);
+    ua->WarningMsg(T_("Pool already has maximum volumes=%" PRIu32 "\n"),
+                   pr.MaxVols);
     if (!GetPint(ua, T_("Enter new maximum (zero for unlimited): "))) {
       return true;
     }
@@ -856,8 +857,8 @@ static inline bool SetbwlimitFiled(UaContext* ua,
   ua->jcr->max_bandwidth = limit;
 
   // Try to connect for 15 seconds
-  ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
-              client->address, client->FDport);
+  ua->SendMsg(T_("Connecting to Client %s at %s:%" PRIu32 "\n"),
+              client->resource_name_, client->address, client->FDport);
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Client.\n"));
@@ -905,7 +906,7 @@ static inline bool setbwlimit_stored(UaContext* ua,
   ua->jcr->max_bandwidth = limit;
 
   // Try to connect for 15 seconds
-  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
+  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
               store->resource_name_, store->address, store->SDport);
 
   if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
@@ -1138,7 +1139,7 @@ static void DoStorageSetdebug(UaContext* ua,
   SetWstorage(jcr, &lstore);
 
   // Try connecting for up to 15 seconds
-  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
+  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
               store->resource_name_, store->address, store->SDport);
 
   if (!ConnectToStorageDaemon(jcr, 1, 15, false)) {
@@ -1192,8 +1193,8 @@ static void DoClientSetdebug(UaContext* ua,
   ua->jcr->dir_impl->res.client = client;
 
   // Try to connect for 15 seconds
-  ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
-              client->address, client->FDport);
+  ua->SendMsg(T_("Connecting to Client %s at %s:%" PRIu32 "\n"),
+              client->resource_name_, client->address, client->FDport);
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Client.\n"));
@@ -1261,7 +1262,7 @@ static void AllStorageSetdebug(UaContext* ua,
       }
       if (!is_duplicate_address) {
         storages_with_unique_address.push_back(storage_in_config);
-        Dmsg2(140, "Stuffing: %s:%d\n", storage_in_config->address,
+        Dmsg2(140, "Stuffing: %s:%" PRIu32 "\n", storage_in_config->address,
               storage_in_config->SDport);
       }
     }
@@ -1316,7 +1317,7 @@ static void AllClientSetdebug(UaContext* ua,
       }
       if (!is_duplicate_address) {
         clients_with_unique_address.push_back(client_in_config);
-        Dmsg2(140, "Stuffing: %s:%d\n", client_in_config->address,
+        Dmsg2(140, "Stuffing: %s:%" PRIu32 "\n", client_in_config->address,
               client_in_config->FDport);
       }
     }
@@ -1507,37 +1508,52 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
   return true;
 }
 
-SetDeviceCommand::ArgumentsList SetDeviceCommand::ScanCommandLine(UaContext* ua)
+auto SetDeviceCommand::ScanCommandLine(UaContext* ua)
+    -> std::optional<ArgumentsList>
 {
-  ArgumentsList arguments{{"storage", ""}, {"device", ""}, {"autoselect", ""}};
+  const char* argument_name[] = {
+      "storage",
+      "device",
+      "autoselect",
+  };
+
+  const char* argument_value[std::size(argument_name)] = {};
 
   for (int i = 1; i < ua->argc; i++) {
-    try {
-      auto& value = arguments.at(ua->argk[i]);
-      int idx = FindArgWithValue(ua, NT_(ua->argk[i]));
-      if (idx >= 0) { value = ua->argv[idx]; }
-    } catch (std::out_of_range& e) {
-      ua->ErrorMsg("Wrong argument: %s\n", ua->argk[i]);
-      return ArgumentsList();
+    for (size_t argument_idx = 0; argument_idx < std::size(argument_name);
+         ++argument_idx) {
+      if (Bstrcasecmp(ua->argk[i], argument_name[argument_idx])) {
+        argument_value[argument_idx] = ua->argv[i];
+      }
     }
   }
 
-  bool argument_missing = false;
-  for (const auto& arg : arguments) {
-    if (arg.second.empty()) {  // value
-      ua->ErrorMsg("Argument missing: %s\n", arg.first.c_str());
-      argument_missing = true;
+  for (size_t argument_idx = 0; argument_idx < std::size(argument_name);
+       ++argument_idx) {
+    if (!argument_value[argument_idx]) {
+      ua->ErrorMsg("Argument missing: %s\n", argument_name[argument_idx]);
+      return std::nullopt;
     }
   }
-  if (argument_missing) { return ArgumentsList(); }
 
-  try {
-    BoolString s{arguments["autoselect"].data()};  // throws
-    arguments["autoselect"].clear();
-    arguments["autoselect"] = s.get<bool>() == true ? "1" : "0";
-  } catch (const std::out_of_range& e) {
-    ua->ErrorMsg("Wrong argument: %s\n", arguments["autoselect"].c_str());
-    return ArgumentsList();
+  std::optional<ArgumentsList> arguments = {};
+  arguments.emplace();
+
+  arguments->storage = argument_value[0];
+  arguments->device = argument_value[1];
+
+  switch (parse_user_bool(argument_value[2])) {
+    case parse_bool_result::True: {
+      arguments->autoselect = true;
+    } break;
+    case parse_bool_result::False: {
+      arguments->autoselect = false;
+    } break;
+    case parse_bool_result::Error: {
+      ua->ErrorMsg("Bad value for argument %s: %s (expected YES or NO)\n",
+                   argument_name[2], argument_value[2]);
+      return std::nullopt;
+    } break;
   }
 
   return arguments;
@@ -1562,7 +1578,7 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
   SetWstorage(ua->jcr, &lstore);
 
   // Try connecting for up to 15 seconds
-  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
+  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
               store->resource_name_, store->address, store->SDport);
 
   if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
@@ -1572,8 +1588,8 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
 
   Dmsg0(120, T_("Connected to storage daemon\n"));
   ua->jcr->store_bsock->fsend("setdevice device=%s autoselect=%d",
-                              arguments.at("device").c_str(),
-                              std::stoi(arguments.at("autoselect")));
+                              arguments.device.c_str(),
+                              arguments.autoselect ? 1 : 0);
   if (ua->jcr->store_bsock->recv() >= 0) {
     ua->SendMsg("%s", ua->jcr->store_bsock->msg);
   }
@@ -1590,27 +1606,28 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
 // setdevice storage=<storage-name> device=<device-name> autoselect=<bool>
 bool SetDeviceCommand::Cmd(UaContext* ua, const char*)
 {
-  auto arguments = ScanCommandLine(ua);
+  auto arguments_opt = ScanCommandLine(ua);
 
-  if (arguments.empty()) {
+  if (!arguments_opt) {
     ua->SendCmdUsage("");
     return false;
   }
 
+  auto& arguments = *arguments_opt;
+
   if (ua->AclHasRestrictions(Storage_ACL)) {
-    if (!ua->AclAccessOk(Storage_ACL, arguments["storage"].c_str())) {
+    if (!ua->AclAccessOk(Storage_ACL, arguments.storage.c_str())) {
       std::string err{"Access to storage "};
-      err += "\"" + arguments["storage"] + "\" forbidden\n";
+      err += "\"" + arguments.storage + "\" forbidden\n";
       ua->ErrorMsg("%s", err.c_str());
       return false;
     }
   }
 
-  StorageResource* sd = ua->GetStoreResWithName(arguments["storage"].c_str());
+  StorageResource* sd = ua->GetStoreResWithName(arguments.storage.c_str());
 
   if (sd == nullptr) {
-    ua->ErrorMsg(T_("Storage \"%s\" not found.\n"),
-                 arguments["storage"].c_str());
+    ua->ErrorMsg(T_("Storage \"%s\" not found.\n"), arguments.storage.c_str());
     return false;
   }
 
@@ -1792,12 +1809,21 @@ static bool EstimateCmd(UaContext* ua, const char*)
 
     if (Bstrcasecmp(ua->argk[i], NT_("accurate"))) {
       if (ua->argv[i]) {
-        if (!IsYesno(ua->argv[i], &accurate)) {
-          ua->ErrorMsg(
-              T_("Invalid value for accurate. "
-                 "It must be yes or no.\n"));
+        switch (parse_user_bool(ua->argv[i])) {
+          case parse_bool_result::True: {
+            accurate_set = true;
+            accurate = true;
+          } break;
+          case parse_bool_result::False: {
+            accurate_set = true;
+            accurate = false;
+          } break;
+          case parse_bool_result::Error: {
+            ua->ErrorMsg(
+                T_("Invalid value for accurate.  It must be YES or NO.\n"));
+            return false;
+          } break;
         }
-        accurate_set = true;
         continue;
       } else {
         ua->ErrorMsg(T_("Accurate value missing.\n"));
@@ -1872,7 +1898,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
 
   GetLevelSinceTime(jcr);
 
-  ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"),
+  ua->SendMsg(T_("Connecting to Client %s at %s:%" PRIu32 "\n"),
               jcr->dir_impl->res.client->resource_name_,
               jcr->dir_impl->res.client->address,
               jcr->dir_impl->res.client->FDport);
@@ -2394,7 +2420,8 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok)
        * ask the user for confirmation. */
       if ((!ua->batch) && ((j2 - j1) > 25)) {
         Bsnprintf(buf, sizeof(buf),
-                  T_("Are you sure you want to delete %d JobIds ? (yes/no): "),
+                  T_("Are you sure you want to delete %" PRIu32
+                     " JobIds ? (yes/no): "),
                   j2 - j1);
         if (!GetYesno(ua, buf) || !ua->pint32_val) { return true; }
       }

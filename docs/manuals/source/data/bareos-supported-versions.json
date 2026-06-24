@@ -1,0 +1,22 @@
+{
+  "supported_major_releases": 3,
+  "projected_major_release_interval_days": 365,
+  "major_releases": [
+    {
+      "major": 22,
+      "release_date": "2022-12-21"
+    },
+    {
+      "major": 23,
+      "release_date": "2023-12-13"
+    },
+    {
+      "major": 24,
+      "release_date": "2024-12-16"
+    },
+    {
+      "major": 25,
+      "release_date": "2025-12-01"
+    }
+  ]
+}

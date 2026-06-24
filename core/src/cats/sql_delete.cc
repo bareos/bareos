@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -82,15 +82,15 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
   }
 
   /* Delete Media owned by this pool */
-  Mmsg(cmd, "DELETE FROM Media WHERE Media.PoolId = %d", pr->PoolId);
+  Mmsg(cmd, "DELETE FROM Media WHERE Media.PoolId = %" PRIdbid, pr->PoolId);
 
   pr->NumVols = DeleteDb(jcr, cmd);
-  Dmsg1(200, "Deleted %d Media records\n", pr->NumVols);
+  Dmsg1(200, "Deleted %" PRIu32 " Media records\n", pr->NumVols);
 
   /* Delete Pool */
-  Mmsg(cmd, "DELETE FROM Pool WHERE Pool.PoolId = %d", pr->PoolId);
+  Mmsg(cmd, "DELETE FROM Pool WHERE Pool.PoolId = %" PRIdbid, pr->PoolId);
   pr->PoolId = DeleteDb(jcr, cmd);
-  Dmsg1(200, "Deleted %d Pool records\n", pr->PoolId);
+  Dmsg1(200, "Deleted %" PRIdbid " Pool records\n", pr->PoolId);
 
   return true;
 }
@@ -155,7 +155,8 @@ static int DoMediaPurge(BareosDb* mdb, MediaDbRecord* mr)
   struct s_del_ctx del{};
   PoolMem query(PM_MESSAGE);
 
-  Mmsg(query, "SELECT JobId from JobMedia WHERE MediaId=%d", mr->MediaId);
+  Mmsg(query, "SELECT JobId from JobMedia WHERE MediaId=%" PRIdbid,
+       mr->MediaId);
 
   if (mr->VolJobs) {
     del.ids.reserve(100);
@@ -168,7 +169,7 @@ static int DoMediaPurge(BareosDb* mdb, MediaDbRecord* mr)
   mdb->SqlQuery(query.c_str(), DeleteHandler, (void*)&del);
 
   for (auto jobid : del.ids) {
-    Dmsg1(400, "Delete JobId=%d\n", jobid);
+    Dmsg1(400, "Delete JobId=%" PRIu32 "\n", jobid);
     Mmsg(query, "DELETE FROM Job WHERE JobId=%s", edit_int64(jobid, ed1));
     mdb->SqlQuery(query.c_str());
 
@@ -197,7 +198,7 @@ bool BareosDb::DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
     DoMediaPurge(this, mr);
   }
 
-  Mmsg(cmd, "DELETE FROM Media WHERE MediaId=%d", mr->MediaId);
+  Mmsg(cmd, "DELETE FROM Media WHERE MediaId=%" PRIdbid, mr->MediaId);
   return DeleteDb(jcr, cmd) != -1;
 }
 

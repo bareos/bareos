@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -68,9 +68,7 @@ t_CloseEncryptedFileRaw p_CloseEncryptedFileRaw = NULL;
 t_wunlink p_wunlink = NULL;
 t_wmkdir p_wmkdir = NULL;
 
-#if (_WIN32_WINNT >= 0x0600)
 t_GetFileInformationByHandleEx p_GetFileInformationByHandleEx = NULL;
-#endif
 
 t_GetFileAttributesA p_GetFileAttributesA = NULL;
 t_GetFileAttributesW p_GetFileAttributesW = NULL;
@@ -139,10 +137,8 @@ void InitWinAPIWrapper()
     SET_API_POINTER(CreateDirectoryA);
     SET_API_POINTER(CreateSymbolicLinkA);
 
-#if (_WIN32_WINNT >= 0x0600)
     // File Information calls
     SET_API_POINTER(GetFileInformationByHandleEx);
-#endif
 
     // Attribute calls
     SET_API_POINTER(GetFileAttributesA);
@@ -164,52 +160,46 @@ void InitWinAPIWrapper()
     SET_API_POINTER(GetCurrentDirectoryA);
     SET_API_POINTER(SetCurrentDirectoryA);
 
-    if (g_platform_id != VER_PLATFORM_WIN32_WINDOWS) {
-      SET_API_POINTER(CreateFileW);
-      SET_API_POINTER(CreateDirectoryW);
-      SET_API_POINTER(CreateSymbolicLinkW);
+    SET_API_POINTER(CreateFileW);
+    SET_API_POINTER(CreateDirectoryW);
+    SET_API_POINTER(CreateSymbolicLinkW);
 
-      // Backup calls
-      SET_API_POINTER(BackupRead);
-      SET_API_POINTER(BackupWrite);
+    // Backup calls
+    SET_API_POINTER(BackupRead);
+    SET_API_POINTER(BackupWrite);
 
-      SET_API_POINTER(GetFileAttributesW);
-      SET_API_POINTER(GetFileAttributesExW);
-      SET_API_POINTER(SetFileAttributesW);
-      SET_API_POINTER(FindFirstFileW);
-      SET_API_POINTER(FindNextFileW);
-      SET_API_POINTER(GetCurrentDirectoryW);
-      SET_API_POINTER(SetCurrentDirectoryW);
+    SET_API_POINTER(GetFileAttributesW);
+    SET_API_POINTER(GetFileAttributesExW);
+    SET_API_POINTER(SetFileAttributesW);
+    SET_API_POINTER(FindFirstFileW);
+    SET_API_POINTER(FindNextFileW);
+    SET_API_POINTER(GetCurrentDirectoryW);
+    SET_API_POINTER(SetCurrentDirectoryW);
 
-      /* Some special stuff we need for VSS
-       * but static linkage doesn't work on Win 9x */
-      SET_API_POINTER(GetVolumePathNameW);
-      SET_API_POINTER(GetVolumeNameForVolumeMountPointW);
+    SET_API_POINTER(GetVolumePathNameW);
+    SET_API_POINTER(GetVolumeNameForVolumeMountPointW);
 
-      SET_API_POINTER(AttachConsole);
-    }
+    SET_API_POINTER(AttachConsole);
   }
 
-  if (g_platform_id != VER_PLATFORM_WIN32_WINDOWS) {
-    hLib = LoadLibraryA("MSVCRT.DLL");
-    if (hLib) {
-      SET_API_POINTER_EX(wunlink, _wunlink);
-      SET_API_POINTER_EX(wmkdir, _wmkdir);
-    }
+  hLib = LoadLibraryA("MSVCRT.DLL");
+  if (hLib) {
+    SET_API_POINTER_EX(wunlink, _wunlink);
+    SET_API_POINTER_EX(wmkdir, _wmkdir);
+  }
 
-    hLib = LoadLibraryA("ADVAPI32.DLL");
-    if (hLib) {
-      SET_API_POINTER(OpenProcessToken);
-      SET_API_POINTER(AdjustTokenPrivileges);
-      SET_API_POINTER_EX(LookupPrivilegeValue, LookupPrivilegeValueA);
+  hLib = LoadLibraryA("ADVAPI32.DLL");
+  if (hLib) {
+    SET_API_POINTER(OpenProcessToken);
+    SET_API_POINTER(AdjustTokenPrivileges);
+    SET_API_POINTER_EX(LookupPrivilegeValue, LookupPrivilegeValueA);
 
-      // EFS calls
-      SET_API_POINTER(OpenEncryptedFileRawA);
-      SET_API_POINTER(OpenEncryptedFileRawW);
-      SET_API_POINTER(ReadEncryptedFileRaw);
-      SET_API_POINTER(WriteEncryptedFileRaw);
-      SET_API_POINTER(CloseEncryptedFileRaw);
-    }
+    // EFS calls
+    SET_API_POINTER(OpenEncryptedFileRawA);
+    SET_API_POINTER(OpenEncryptedFileRawW);
+    SET_API_POINTER(ReadEncryptedFileRaw);
+    SET_API_POINTER(WriteEncryptedFileRaw);
+    SET_API_POINTER(CloseEncryptedFileRaw);
   }
 
   dyn::LoadDynamicFunctions();

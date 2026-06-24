@@ -380,8 +380,8 @@ static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx)
     PoolMem query(PM_MESSAGE);
 
     ua->SendMsg(T_("The restore will use the following job(s) as Base\n"));
-    ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_print_jobs,
-                      jobids.GetAsString().c_str());
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_print_jobs>(
+        query, jobids.GetAsString().c_str());
     ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
   }
   PmStrcpy(rx->BaseJobIds, jobids.GetAsString().c_str());
@@ -786,8 +786,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       case 0: /* list last 20 Jobs run */
       {
         PoolMem query;
-        ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_list_jobs,
-                          filter_name);
+        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_list_jobs>(query,
+                                                              filter_name);
         if (!ua->AclAccessOk(Command_ACL, NT_("sqlquery"), true)) {
           ua->ErrorMsg(T_("SQL query not authorized.\n"));
           return 0;
@@ -804,8 +804,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         len = strlen(ua->cmd);
         fname = (char*)malloc(len * 2 + 1);
         ua->db->EscapeString(ua->jcr, fname, ua->cmd, len);
-        ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_file,
-                          rx->ClientName, fname);
+        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_file>(rx->query,
+                                                         rx->ClientName, fname);
         free(fname);
         gui_save = ua->jcr->gui;
         ua->jcr->gui = true;
@@ -1013,24 +1013,24 @@ std::string CompensateShortDate(const char* cmd)
   tm datetime{};
   char trailinggarbage[16]{""};
 
-  if ((sscanf(cmd, "%u-%u-%u %u:%u:%u%15s", &datetime.tm_year, &datetime.tm_mon,
-              &datetime.tm_mday, &datetime.tm_hour, &datetime.tm_min,
-              &datetime.tm_sec, trailinggarbage)
+  if ((bsscanf(cmd, "%u-%u-%u %u:%u:%u%15s", &datetime.tm_year,
+               &datetime.tm_mon, &datetime.tm_mday, &datetime.tm_hour,
+               &datetime.tm_min, &datetime.tm_sec, trailinggarbage)
            == 7
-       || sscanf(cmd, "%u-%u-%u %u:%u%15s", &datetime.tm_year, &datetime.tm_mon,
-                 &datetime.tm_mday, &datetime.tm_hour, &datetime.tm_min,
-                 trailinggarbage)
+       || bsscanf(cmd, "%u-%u-%u %u:%u%15s", &datetime.tm_year,
+                  &datetime.tm_mon, &datetime.tm_mday, &datetime.tm_hour,
+                  &datetime.tm_min, trailinggarbage)
               == 6
-       || sscanf(cmd, "%u-%u-%u %u%15s", &datetime.tm_year, &datetime.tm_mon,
-                 &datetime.tm_mday, &datetime.tm_hour, trailinggarbage)
+       || bsscanf(cmd, "%u-%u-%u %u%15s", &datetime.tm_year, &datetime.tm_mon,
+                  &datetime.tm_mday, &datetime.tm_hour, trailinggarbage)
               == 5
-       || sscanf(cmd, "%u-%u-%u%15s", &datetime.tm_year, &datetime.tm_mon,
-                 &datetime.tm_mday, trailinggarbage)
+       || bsscanf(cmd, "%u-%u-%u%15s", &datetime.tm_year, &datetime.tm_mon,
+                  &datetime.tm_mday, trailinggarbage)
               == 4
-       || sscanf(cmd, "%u-%u%15s", &datetime.tm_year, &datetime.tm_mon,
-                 trailinggarbage)
+       || bsscanf(cmd, "%u-%u%15s", &datetime.tm_year, &datetime.tm_mon,
+                  trailinggarbage)
               == 3
-       || sscanf(cmd, "%u%s", &datetime.tm_year, trailinggarbage) == 2)
+       || bsscanf(cmd, "%u%s", &datetime.tm_year, trailinggarbage) == 2)
       && (trailinggarbage[0] == '\0')) {
     if (datetime.tm_mon == 0) { datetime.tm_mon = 1; }
     if (datetime.tm_mday == 0) { datetime.tm_mday = 1; }
@@ -1114,12 +1114,12 @@ static bool InsertFileIntoFindexList(UaContext* ua,
 
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
   if (*rx->JobIds == 0) {
-    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_jobid_fileindex, date,
-                      rx->path, rx->fname, rx->ClientName, filter_name);
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_jobid_fileindex>(
+        rx->query, date, rx->path, rx->fname, rx->ClientName, filter_name);
   } else {
-    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_jobids_fileindex,
-                      rx->JobIds, date, rx->path, rx->fname, rx->ClientName,
-                      filter_name);
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_jobids_fileindex>(
+        rx->query, rx->JobIds, date, rx->path, rx->fname, rx->ClientName,
+        filter_name);
   }
 
   // Find and insert jobid and File Index
@@ -1148,9 +1148,8 @@ static bool InsertDirIntoFindexList(UaContext* ua,
     ua->ErrorMsg(T_("No JobId specified cannot continue.\n"));
     return false;
   } else {
-    ua->db->FillQuery(rx->query,
-                      BareosDb::SQL_QUERY::uar_jobid_fileindex_from_dir,
-                      rx->JobIds, dir, rx->ClientName);
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_jobid_fileindex_from_dir>(
+        rx->query, rx->JobIds, dir, rx->ClientName);
   }
 
   // Find and insert jobid and File Index
@@ -1173,8 +1172,8 @@ static bool InsertTableIntoFindexList(UaContext* ua,
 {
   StripTrailingJunk(table);
 
-  ua->db->FillQuery(rx->query,
-                    BareosDb::SQL_QUERY::uar_jobid_fileindex_from_table, table);
+  ua->db->FillQuery<BareosDb::SQL_QUERY::uar_jobid_fileindex_from_table>(
+      rx->query, table);
 
   // Find and insert jobid and File Index
   rx->found = false;
@@ -1326,8 +1325,8 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 
   if (GetNextJobidFromList(&p, &JobId) > 0) {
     // Use first JobId as estimate of the number of files to restore
-    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_count_files,
-                      edit_int64(JobId, ed1));
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_count_files>(
+        rx->query, edit_int64(JobId, ed1));
     rx->found = false;
     if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, (void*)rx)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
@@ -1397,7 +1396,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     if (OK) {
       for (tree_node* node = FirstTreeNode(tree.root); node;
            node = NextTreeNode(node)) {
-        Dmsg2(400, "FI=%" PRIu32 " node=%p\n", node->FileIndex, node);
+        Dmsg2(400, "FI=%" PRId32 " node=%p\n", node->FileIndex, node);
         if (node->extract) {
           Dmsg3(400, "JobId=%" PRIu32 " type=%d FI=%" PRId32 "\n", node->JobId,
                 to_underlying(node->type), node->FileIndex);
@@ -1437,16 +1436,16 @@ static bool InsertLastFullBackupOfType(UaContext* ua,
   char filter_name = RestoreContext::FilterIdentifier(filter);
   // Find JobId of last Full backup for this client, fileset
   if (pool_select && pool_select[0]) {
-    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_last_full, client_id,
-                      date, filter_name, file_set, pool_select);
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_last_full>(
+        rx->query, client_id, date, filter_name, file_set, pool_select);
 
     if (!ua->db->SqlQuery(rx->query)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
       return false;
     }
   } else {
-    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_last_full_no_pool,
-                      client_id, date, filter_name, file_set);
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_last_full_no_pool>(
+        rx->query, client_id, date, filter_name, file_set);
     if (!ua->db->SqlQuery(rx->query)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
       return false;
@@ -1454,7 +1453,7 @@ static bool InsertLastFullBackupOfType(UaContext* ua,
   }
 
   // Find all Volumes used by that JobId
-  ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_full, filter_name);
+  ua->db->FillQuery<BareosDb::SQL_QUERY::uar_full>(rx->query, filter_name);
   if (!ua->db->SqlQuery(rx->query)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
     return false;
@@ -1481,13 +1480,13 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
 
   // Create temp tables
-  ua->db->SqlQuery(BareosDb::SQL_QUERY::uar_del_temp);
-  ua->db->SqlQuery(BareosDb::SQL_QUERY::uar_del_temp1);
+  ua->db->SqlQuery<BareosDb::SQL_QUERY::uar_del_temp>();
+  ua->db->SqlQuery<BareosDb::SQL_QUERY::uar_del_temp1>();
 
-  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY::uar_create_temp)) {
+  if (!ua->db->SqlQuery<BareosDb::SQL_QUERY::uar_create_temp>()) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
   }
-  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY::uar_create_temp1)) {
+  if (!ua->db->SqlQuery<BareosDb::SQL_QUERY::uar_create_temp1>()) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
   }
   // Select Client from the Catalog
@@ -1510,8 +1509,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   }
 
   if (i < 0) { /* fileset not found */
-    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_fileset,
-                      edit_int64(cr.ClientId, ed1), ed1);
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_fileset>(
+        rx->query, edit_int64(cr.ClientId, ed1), ed1);
 
     StartPrompt(ua, T_("The defined FileSet resources are:\n"));
     if (!ua->db->SqlQuery(rx->query, FilesetHandler, (void*)ua)) {
@@ -1557,7 +1556,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   /* Note, this is needed because I don't seem to get the callback from the call
    * just above. */
   rx->JobTDate = 0;
-  ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_all_temp1);
+  ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_all_temp1>(rx->query);
   if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
@@ -1584,7 +1583,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     if (InsertLastFullBackupOfType(ua, rx, opposite,
                                    edit_int64(cr.ClientId, ed1), date,
                                    fsr.FileSet, pool_select)) {
-      ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_all_temp1);
+      ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_all_temp1>(rx->query);
       if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
         // ignore warnings here, since they would not make any sense
         // to the end user
@@ -1608,25 +1607,23 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   }
 
   // Now find most recent Differential Job after Full save, if any
-  ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_dif,
-                    edit_uint64(rx->JobTDate, ed1), date,
-                    edit_int64(cr.ClientId, ed2), filter_name, fsr.FileSet,
-                    pool_select);
+  ua->db->FillQuery<BareosDb::SQL_QUERY::uar_dif>(
+      rx->query, edit_uint64(rx->JobTDate, ed1), date,
+      edit_int64(cr.ClientId, ed2), filter_name, fsr.FileSet, pool_select);
   if (!ua->db->SqlQuery(rx->query)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
 
   // Now update JobTDate to look into Differential, if any
-  ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_all_temp);
+  ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_all_temp>(rx->query);
   if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
 
   // Now find all Incremental Jobs after Full/dif save
-  ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_inc,
-                    edit_uint64(rx->JobTDate, ed1), date,
-                    edit_int64(cr.ClientId, ed2), filter_name, fsr.FileSet,
-                    pool_select);
+  ua->db->FillQuery<BareosDb::SQL_QUERY::uar_inc>(
+      rx->query, edit_uint64(rx->JobTDate, ed1), date,
+      edit_int64(cr.ClientId, ed2), filter_name, fsr.FileSet, pool_select);
   if (!ua->db->SqlQuery(rx->query)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
@@ -1634,7 +1631,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   // Get the JobIds from that list
   rx->last_jobid[0] = rx->JobIds[0] = 0;
 
-  ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_jobid_temp);
+  ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_jobid_temp>(rx->query);
   if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
@@ -1658,8 +1655,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
          * Job. */
         PmStrcpy(JobIds, rx->JobIds);
         rx->last_jobid[0] = rx->JobIds[0] = 0;
-        ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_jobid_copies,
-                          JobIds.c_str());
+        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_jobid_copies>(
+            rx->query, JobIds.c_str());
         if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
           ua->WarningMsg("%s\n", ua->db->strerror());
         }
@@ -1667,8 +1664,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     }
 
     // Display a list of Jobs selected for this restore
-    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_list_jobs_by_idlist,
-                      rx->JobIds);
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_list_jobs_by_idlist>(rx->query,
+                                                                    rx->JobIds);
     ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
 
     ok = true;
@@ -1677,8 +1674,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   }
 
 bail_out:
-  ua->db->SqlQuery(BareosDb::SQL_QUERY::drop_deltabs);
-  ua->db->SqlQuery(BareosDb::SQL_QUERY::uar_del_temp1);
+  ua->db->SqlQuery<BareosDb::SQL_QUERY::drop_deltabs>();
+  ua->db->SqlQuery<BareosDb::SQL_QUERY::uar_del_temp1>();
 
   return ok;
 }

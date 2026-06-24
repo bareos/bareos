@@ -3,7 +3,7 @@
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -325,7 +325,7 @@ void DumpPluginfo(progdata* pdata)
   printf("Plugin licence:\t\t%s\n", NPRT(plugin_information->plugin_license));
   printf("Plugin description:\t%s\n",
          NPRT(plugin_information->plugin_description));
-  printf("Plugin API version:\t%d\n", plugin_information->version);
+  printf("Plugin API version:\t%" PRIu32 "\n", plugin_information->version);
   if (plugin_information->plugin_usage) {
     printf("Plugin usage:\n%s\n", plugin_information->plugin_usage);
   }

@@ -1,0 +1,67 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+# Common functions for NDMP Testing
+
+# TestName needs to be defined including in test-setup
+
+# StrictHostKeyChecking disabled for automated testing - not for production use
+SSH="ssh root@${NDMP_DATA_AGENT_ADDRESS} -o StrictHostKeyChecking=no"
+export SSH
+
+cleanup_remote()
+{
+  ${SSH} rm -Rf "${NDMP_TEST_PATH}"
+  ${SSH} rm -Rf "${NDMP_MOUNTPOINT}/data/${NDMP_TEST_PATH}"
+}
+
+make_remote_data_full()
+{
+  ${SSH} mkdir -p "${NDMP_TEST_PATH}"
+  ${SSH} dd if=/dev/zero of="${NDMP_TEST_PATH}/full" bs=1M count=20
+  ${SSH} "echo \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}\" >> \"${NDMP_TEST_PATH}/full\""
+  local dir_file
+  dir_file="$(readlink sbin/bareos_dir-* 2>/dev/null | head -1)"
+  if [ -z "$dir_file" ] || [ ! -f "$dir_file" ]; then
+    echo "ERROR: Could not resolve bareos_dir-* symlink" >&2
+    return 1
+  fi
+  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile\"" <"$dir_file"
+  # we need an additional file, so the restore doesn't pick the last file of the volume and data stream
+  local sd_file
+  sd_file="$(readlink sbin/bareos_sd-* 2>/dev/null | head -1)"
+  if [ -z "$sd_file" ] || [ ! -f "$sd_file" ]; then
+    echo "ERROR: Could not resolve bareos_sd-* symlink" >&2
+    return 1
+  fi
+  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile2\"" <"$sd_file"
+}
+
+make_remote_data_incremental()
+{
+  ${SSH} dd if=/dev/zero of="${NDMP_TEST_PATH}/incremental" bs=1M count=2
+}
+
+make_remote_subdata_incremental()
+{
+  ${SSH} mkdir -p "${NDMP_TEST_PATH}/subdir"
+  ${SSH} cp -a "${NDMP_TEST_PATH}/testfile" "${NDMP_TEST_PATH}/subdir/subtestfile1"
+  ${SSH} cp -a "${NDMP_TEST_PATH}/testfile2" "${NDMP_TEST_PATH}/subdir/subtestfile2"
+}

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -359,7 +359,7 @@ static void DoBlocks(char*)
       ReadRecordFromBlock(dcr, rec);
       Pmsg9(-1,
             T_("File:blk=%u:%u blk_num=%u blen=%u First rec FI=%s SessId=%u "
-               "SessTim=%u Strm=%s rlen=%d\n"),
+               "SessTim=%u Strm=%s rlen=%" PRIu32 "\n"),
             dev->file, dev->block_num, block->BlockNumber, block->block_len,
             FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
             rec->VolSessionTime,
@@ -368,7 +368,8 @@ static void DoBlocks(char*)
     } else if (g_verbose > 1) {
       DumpBlock(block, "");
     } else {
-      printf(T_("Block: %d size=%d\n"), block->BlockNumber, block->block_len);
+      printf(T_("Block: %" PRIu32 " size=%" PRIu32 "\n"), block->BlockNumber,
+             block->block_len);
     }
   }
   return;
@@ -490,13 +491,14 @@ static void GetSessionRecord(Device* t_dev,
       break;
   }
   Dmsg5(10,
-        "%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n",
+        "%s Record: VolSessionId=%" PRIu32 " VolSessionTime=%" PRIu32
+        " JobId=%d DataLen=%" PRIu32 "\n",
         rtype, t_rec->VolSessionId, t_rec->VolSessionTime, t_rec->Stream,
         t_rec->data_len);
   if (g_verbose) {
     Pmsg5(-1,
-          T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d "
-             "DataLen=%d\n"),
+          T_("%s Record: VolSessionId=%" PRIu32 " VolSessionTime=%" PRIu32
+             " JobId=%d DataLen=%" PRIu32 "\n"),
           rtype, t_rec->VolSessionId, t_rec->VolSessionTime, t_rec->Stream,
           t_rec->data_len);
   }

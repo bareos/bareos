@@ -56,6 +56,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:py3plug-fd-basic:config
       system:py3plug-fd-basic:forcebackup
       system:py3plug-fd-basic:jobmsg
+      system:py3plug-fd-incus
       system:py3plug-fd-proxmox
       system:restore:archive-full-restore
       system:restore:full-restore
@@ -326,23 +327,44 @@ endif()
 
 message(STATUS "Looking for webui test requirements ...")
 
-set(AVAILABLE_WEBUI_SELENIUM_TESTS
-    "admin-client_link_on_dashboard"
-    "admin-client_disabling"
-    "admin-rerun_job"
-    "admin-restore"
-    "admin-run_configured_job"
-    "admin-run_default_job"
-    "readonly-client_disabling"
-    "readonly-rerun_job"
-    "readonly-restore"
-    "readonly-run_configured_job"
-    "readonly-run_default_job"
+# Admin selenium test method names (without the "test_" prefix). All run in a
+# single director instance under the webui:admin ctest entry.
+set(ADMIN_WEBUI_SELENIUM_TESTNAMES
+    "login_after_failed_login"
+    "client_link_on_dashboard"
+    "rerun_job"
+    "restore"
+    "run_configured_job"
+    "run_default_job"
+    "job_list_page"
+    "job_timeline_page"
+    "schedule_page"
+    "schedule_overview_page"
+    "schedule_status_page"
+    "storage_devices_page"
+    "pool_page"
+    "media_page"
+    "director_status_page"
+    "director_messages_page"
+    "fileset_page"
+    "console_page"
+    "analytics_page"
 )
 
-set(WEBUI_TESTS_BROKEN
-    admin-client_disabling # sometimes fails with a find_element exception
-    readonly-client_disabling # sometimes fails with a find_element exception
+# Readonly selenium test method names (without the "test_" prefix). All run in a
+# single director instance under the webui:readonly ctest entry.
+set(READONLY_WEBUI_SELENIUM_TESTNAMES
+    "client_disabling"
+    "rerun_job"
+    "restore"
+    "run_configured_job"
+    "run_default_job"
+    "job_list_page"
+    "schedule_page"
+    "storage_devices_page"
+    "pool_page"
+    "media_page"
+    "fileset_page"
 )
 
 find_program(PHP php)
@@ -371,31 +393,30 @@ endif()
 
 set(WEBUI_TEST_PREFIX "webui:")
 if(NOT ENABLE_WEBUI_SELENIUM_TEST)
-  set(WEBUI_SELENIUM_TESTS)
-  foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_SELENIUM_TESTS})
-    add_test(NAME ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED} COMMAND false)
+  # Disable both merged tests when requirements are missing.
+  foreach(profile admin readonly)
+    add_test(NAME ${WEBUI_TEST_PREFIX}${profile} COMMAND false)
     set_tests_properties(
-      ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED} PROPERTIES DISABLED true
+      ${WEBUI_TEST_PREFIX}${profile} PROPERTIES DISABLED true
     )
-    message(STATUS "Disabled test: ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}")
+    message(
+      STATUS "⛔ ${WEBUI_TEST_PREFIX}${profile} (baseport=${BASEPORT}, SKIPPED)"
+    )
   endforeach()
 else()
-  # webui specific settings
-  set(WEBUI_SELENIUM_TESTS ${AVAILABLE_WEBUI_SELENIUM_TESTS})
-  foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
-    message(STATUS "Configuring test: ${WEBUI_TEST_PREFIX}${TEST_NAME}")
+  # Helper macro: register one merged webui ctest test for the given profile.
+  # All test method names in testnames_var are run in a single Bareos director
+  # and PHP server instance.
+  macro(register_webui_profile_test profile testnames_var timeout)
+    set(TEST_NAME "${profile}")
+    set(BAREOS_WEBUI_PROFILE "${profile}")
+
+    message(STATUS "✓ ${WEBUI_TEST_PREFIX}${TEST_NAME} (baseport=${BASEPORT})")
 
     prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
     prepare_testdir_for_daemon_run()
-    # split WEBUI_TEST_NAME into PROFILE and TESTNAME
-    string(REPLACE "-" ";" SELENIUM_TESTCOMPONENTS ${TEST_NAME})
-    # "webui-admin-restore"
-    list(GET SELENIUM_TESTCOMPONENTS 0 BAREOS_WEBUI_PROFILE)
-    list(GET SELENIUM_TESTCOMPONENTS 1 BAREOS_WEBUI_TESTNAME)
 
-    set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui) # used for test
-                                                                 # environment
-                                                                 # settings
+    set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui)
     file(MAKE_DIRECTORY ${WEBUICONFDIR})
     configure_file(
       "${CMAKE_SOURCE_DIR}/webui/config/autoload/global.php.in"
@@ -405,36 +426,73 @@ else()
     configurefilestosystemtest(
       "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
     )
-
     configure_file(
       "environment.in" "tests/${TEST_NAME}/environment" @ONLY
       NEWLINE_STYLE UNIX
     )
-
-    # create a bin/bareos and bin/bconsole script in every testdir for
-    # start/stop and bconsole file(MAKE_DIRECTORY
-    # "${CMAKE_BINARY_DIR}/tests/${TEST_NAME}/bin")
     configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
     configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
 
-    add_test(
-      NAME "${WEBUI_TEST_PREFIX}${TEST_NAME}"
-      COMMAND ${tests_dir}/${TEST_NAME}/testrunner
-      WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
+    add_systemtest(
+      ${WEBUI_TEST_PREFIX}${TEST_NAME}:setup
+      ${tests_dir}/${TEST_NAME}/test-setup
     )
-    if(${TEST_NAME} IN_LIST WEBUI_TESTS_BROKEN)
-      set_tests_properties(
-        ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES LABELS "broken"
-      )
-    endif()
     set_tests_properties(
-      ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 120 COST 1.0
+      "${WEBUI_TEST_PREFIX}${TEST_NAME}:setup"
+      PROPERTIES FIXTURES_SETUP "${WEBUI_TEST_PREFIX}${TEST_NAME}-fixture"
     )
+    add_systemtest(
+      ${WEBUI_TEST_PREFIX}${TEST_NAME}:create-backup
+      ${tests_dir}/${TEST_NAME}/testrunner-create-backup
+    )
+    set_tests_properties(
+      "${WEBUI_TEST_PREFIX}${TEST_NAME}:create-backup"
+      PROPERTIES FIXTURES_REQUIRED "${WEBUI_TEST_PREFIX}${TEST_NAME}-fixture"
+                 FIXTURES_SETUP
+                 "${WEBUI_TEST_PREFIX}${TEST_NAME}:backup-fixture"
+    )
+
+    foreach(BAREOS_WEBUI_TESTNAME ${${testnames_var}})
+      configure_file(
+        "tests/webui-common/testrunner.in"
+        "tests/${TEST_NAME}/testrunner-${BAREOS_WEBUI_TESTNAME}" @ONLY
+      )
+
+      add_systemtest(
+        ${WEBUI_TEST_PREFIX}${TEST_NAME}:${BAREOS_WEBUI_TESTNAME}
+        ${tests_dir}/${TEST_NAME}/testrunner-${BAREOS_WEBUI_TESTNAME}
+      )
+
+      set_tests_properties(
+        "${WEBUI_TEST_PREFIX}${TEST_NAME}:${BAREOS_WEBUI_TESTNAME}"
+        PROPERTIES
+          FIXTURES_REQUIRED
+          "${WEBUI_TEST_PREFIX}${TEST_NAME}:backup-fixture;${WEBUI_TEST_PREFIX}${TEST_NAME}-fixture"
+          RESOURCE_LOCK
+          "${WEBUI_TEST_PREFIX}${TEST_NAME}-lock"
+      )
+    endforeach()
+
+    add_systemtest(
+      ${WEBUI_TEST_PREFIX}${TEST_NAME}:cleanup
+      ${tests_dir}/${TEST_NAME}/test-cleanup
+    )
+    set_tests_properties(
+      "${WEBUI_TEST_PREFIX}${TEST_NAME}:cleanup"
+      PROPERTIES FIXTURES_CLEANUP "${WEBUI_TEST_PREFIX}${TEST_NAME}-fixture"
+    )
+
     math(EXPR BASEPORT "${BASEPORT} + 10")
-  endforeach()
+  endmacro()
+
+  # One director instance for all admin tests, one for all readonly tests.
+  register_webui_profile_test(admin ADMIN_WEBUI_SELENIUM_TESTNAMES 600)
+  register_webui_profile_test(readonly READONLY_WEBUI_SELENIUM_TESTNAMES 600)
+
   # unset variables, so that they are not set in other environments.
   set(BAREOS_WEBUI_PROFILE "")
   set(BAREOS_WEBUI_TESTNAME "")
+  set(BAREOS_WEBUI_TESTS "")
 endif()
 
 #

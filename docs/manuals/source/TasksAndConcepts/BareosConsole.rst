@@ -260,8 +260,7 @@ directory
 
 enabled
    This keyword can appear on the :bcommand:`update volume` as well as the :bcommand:`update slots`
-   commands, and can allows one of the following arguments: yes, true, no, false, archived, 0, 1, 2.
-   Where 0 corresponds to no or false, 1 corresponds to yes or true, and 2 corresponds to archived.
+   commands, and can allows one of the following arguments: yes, true, no, false, archived.
    Archived volumes will not be used, nor will the Media record in the catalog be pruned.
    Volumes that are not enabled, will not be used for backup or restore.
 

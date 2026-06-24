@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -89,8 +89,7 @@ target_sources(
           thread_specific_data.cc
           tls.cc
           tls_conf.cc
-          tls_openssl.cc
-          tls_openssl_private.cc
+          tls/openssl/impl.cc
           tree.cc
           try_tls_handshake_as_a_server.cc
           compression.cc

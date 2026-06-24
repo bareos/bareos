@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -116,10 +116,10 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
   if (rec->FileIndex < 0) { return true; }
 
-  Dmsg5(400, "Send to FD: SessId=%u SessTim=%u FI=%s Strm=%s, len=%d\n",
-        rec->VolSessionId, rec->VolSessionTime,
-        FI_to_ascii(ec1, rec->FileIndex),
-        stream_to_ascii(ec2, rec->Stream, rec->FileIndex), rec->data_len);
+  Dmsg5(
+      400, "Send to FD: SessId=%u SessTim=%u FI=%s Strm=%s, len=%" PRIu32 "\n",
+      rec->VolSessionId, rec->VolSessionTime, FI_to_ascii(ec1, rec->FileIndex),
+      stream_to_ascii(ec2, rec->Stream, rec->FileIndex), rec->data_len);
 
   // Send record header to File daemon
   if (!fd->fsend("rechdr %" PRIu32 " %" PRIu32 " %" PRId32 " %" PRId32

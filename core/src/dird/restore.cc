@@ -63,11 +63,11 @@ inline constexpr const char restorecmd[]
 inline constexpr const char restorecmdR[]
     = "restore replace=%c prelinks=%d regexwhere=%s\n";
 inline constexpr const char storaddrcmd[]
-    = "storage address=%s port=%d ssl=%d Authorization=%s\n";
+    = "storage address=%s port=%" PRIu32 " ssl=%u Authorization=%s\n";
 inline constexpr const char setauthorizationcmd[]
     = "setauthorization Authorization=%s\n";
 inline constexpr const char passiveclientcmd[]
-    = "passive client address=%s port=%d ssl=%d\n";
+    = "passive client address=%s port=%" PRIu32 " ssl=%u\n";
 
 /* Responses received from File daemon */
 inline constexpr const char OKrestore[] = "2000 OK restore\n";
@@ -238,7 +238,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
                                               : TlsPolicy::kBnetTlsNone;
       }
 
-      Dmsg1(200, "Tls Policy for active client is: %d\n", tls_policy);
+      Dmsg1(200, "Tls Policy for active client is: %u\n", tls_policy);
 
       connection_target_address = StorageAddressToContact(client, store);
 
@@ -272,7 +272,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
                                                : TlsPolicy::kBnetTlsNone;
       }
 
-      Dmsg1(200, "Tls Policy for passive client is: %d\n", tls_policy);
+      Dmsg1(200, "Tls Policy for passive client is: %u\n", tls_policy);
 
       connection_target_address = ClientAddressToContact(client, store);
       // Tell the SD to connect to the FD.
@@ -390,7 +390,7 @@ bool DoNativeRestore(JobControlRecord* jcr)
   }
   Dmsg0(20, "Updated job start record\n");
 
-  Dmsg1(20, "RestoreJobId=%d\n", jcr->dir_impl->res.job->RestoreJobId);
+  Dmsg1(20, "RestoreJobId=%" PRIu32 "\n", jcr->dir_impl->res.job->RestoreJobId);
 
   if (!jcr->RestoreBootstrap) {
     Jmsg(jcr, M_FATAL, 0,
@@ -524,7 +524,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
       Jmsg(jcr, msg_type, 0,
            T_("%s %s %s (%s):\n"
               "  OS Information:         %s\n"
-              "  JobId:                  %d\n"
+              "  JobId:                  %" PRIu32 "\n"
               "  Job:                    %s\n"
               "  Restore Client:         \"%s\" %s\n"
               "  Start time:             %s\n"
@@ -569,7 +569,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
       Jmsg(jcr, msg_type, 0,
            T_("%s %s %s (%s):\n"
               "  OS Information:         %s\n"
-              "  JobId:                  %d\n"
+              "  JobId:                  %" PRIu32 "\n"
               "  Job:                    %s\n"
               "  Restore Client:         \"%s\" %s\n"
               "  Start time:             %s\n"
@@ -579,7 +579,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
               "  Files Restored:         %s\n"
               "  Bytes Restored:         %s\n"
               "  Rate:                   %.1f KB/s\n"
-              "  FD Errors:              %d\n"
+              "  FD Errors:              %" PRIu32 "\n"
               "  FD termination status:  %s\n"
               "  SD termination status:  %s\n"
               "%s"

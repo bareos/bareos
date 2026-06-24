@@ -285,12 +285,16 @@ Do's
 - write unit tests for your code
 - use RAII_ whenever possible
 - honor `Rule of three`_/`Rule of five`/`Rule of zero`
-- use ``std::string`` instead of ``char*`` for strings where possible
+- use ``std::string`` or ``std::string_view`` instead of ``char*`` for strings where possible
 - use `fixed width integer types`_ if the size of your integer matters
+- use the correct printf specifiers for the types you are printing.
+  This includes the standard macros like ``PRId64`` for fixed sizes types, as well as
+  our own macros like ``PRIdbid`` for our types like ``DBId_t``.
 - when in doubt always prefer the standard library over a custom implementation
 - follow the `Google C++ Style Guide`_
 - follow the `C++ Core Guidelines`_
 - get in touch with us, preferably as `GitHub discussion`_
+
 
 .. _RAII:                      https://en.cppreference.com/w/cpp/language/raii.html
 .. _Rule of three:             https://en.cppreference.com/w/cpp/language/rule_of_three.html
@@ -314,7 +318,7 @@ don't transfer ownership of heap memory without move semantics
   No returning of raw pointers where the caller is supposed to free the resource.
 
 don't use C string functions
-  If you can, use ``std::string`` and don't rely on C string functions.
+  If you can, use ``std::string`` or ``std::string_view`` and don't rely on C string functions.
 
 don't use the bareos replacements for C string functions.
   These are deprecated.

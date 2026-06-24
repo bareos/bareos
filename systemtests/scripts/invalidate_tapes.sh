@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,7 +22,7 @@ set -e
 set -u
 
 . ./environment
-. ./test-config
+
 . "${BAREOS_SCRIPTS_DIR}/redirect_output"
 
 echo "=== $0 Running ==="
@@ -39,18 +39,21 @@ invalidate_slots_on_autochanger()
   fi
 
   # check that the tape device is present
-  if ! mt -f "$tape_device" status; then
-    echo "Could not query $tape_device."
-    exit 1
+  # work only on mt-st utility
+  if ! mt --version | head -n 1 | grep -q cpio; then
+    if ! mt -f "$tape_device" status; then
+      echo "Could not query $tape_device."
+      exit 1
+    fi
   fi
 
   # remove tapes from all drives
   while read -r line; do
-    changer_status=$(echo "$line" \
+    changer_status=$(echo "${line}" \
       | sed -e 's/Data Transfer Element \([0-9]\):Full (Storage Element \([0-9]*\).*/\1:\2/')
-    if [ -n "$changer_status" ]; then
-      dte=$(echo "${changer_status}" | awk -F: '{print $1}')
-      se=$(echo "${changer_status}" | awk -F: '{print $2}')
+    if [ -n "${changer_status}" ]; then
+      dte=$(echo "${changer_status}" | "${AWK}" -F: '{print $1}')
+      se=$(echo "${changer_status}" | "${AWK}" -F: '{print $2}')
       mtx -f "${changer_device}" unload "${se}" "${dte}"
     fi
   done <<<"$(mtx -f "${changer_device}" status | grep "Full (Storage")"
@@ -59,28 +62,30 @@ invalidate_slots_on_autochanger()
 
   # invalidate tape label
   i="${FIRST_SLOT_NUMBER}"
-  mtx -f "${changer_device}" status | {
-    while read -r line && [ "${i}" -le "$LAST_SLOT_NUMBER" ]; do
-      if echo "${line}" | grep "$(printf 'Storage Element %d:Full\n' ${i})"; then
-        set -x
-        mtx -f "${changer_device}" load "${i}" "${USE_TAPE_DEVICE}" \
-          && mt -f "${tape_device}" rewind \
-          && mt -f "${tape_device}" weof \
-          && mtx -f "${changer_device}" unload "${i}" "${USE_TAPE_DEVICE}"
+  while read -r line && [ "${i}" -le "$LAST_SLOT_NUMBER" ]; do
+    if echo "${line}" | grep "$(printf 'Storage Element %d:Full\n' ${i})"; then
+      set -x
+      if mtx -f "${changer_device}" load "${i}" "${USE_TAPE_DEVICE}" \
+        && mt -f "${tape_device}" rewind \
+        && mt -f "${tape_device}" weof \
+        && mtx -f "${changer_device}" unload "${i}" "${USE_TAPE_DEVICE}"; then
         set +x
         echo
         ((i = i + 1))
+      else
+        echo "error $?"
+        exit 1
       fi
-    done
-
-    slots_ready=$((i - 1))
-
-    if [ ${slots_ready} -eq 0 ]; then
-      echo "Could not invalidate any tape"
-    else
-      echo "Invalidated ${slots_ready} tapes of autochanger ${changer_device}."
     fi
-  }
+  done < <(mtx -f "${changer_device}" status)
+
+  slots_ready=$((i - 1))
+
+  if [ ${slots_ready} -eq ${LAST_SLOT_NUMBER} ]; then
+    echo "Invalidated ${slots_ready} tapes of autochanger ${changer_device}."
+  else
+    echo "Could not invalidate some tape"
+  fi
 }
 
 for i in {0..9}; do

@@ -1,0 +1,162 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+#
+set -e
+set -o pipefail
+set -u
+
+#
+# Check if the volume blocks really use the configured block sizes.
+# Runs backups to File and Tape,
+# but only Tape has MaximumBlockSize larger than the Default Block Size.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+# set other test specific variables
+Client=bareos-fd
+JobName=backup-bareos-fd
+
+#shellcheck source=../../environment.in
+. ./environment
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+VolumeName=TestVolume001
+# VolumePath=storage/${VolumeName}
+DEFAULT_BLOCK_SIZE=64512
+
+bls_blocks()
+{
+  DEVICE="$1"
+  VOLUME="${2:-*}"
+  ${BAREOS_BLS_BINARY} -c ${BAREOS_CONFIG_DIR} ${DEVICE} -V"${VOLUME}" -k -d 250
+}
+
+get_block_size()
+{
+  # block 1 and 2 are label blocks.
+  # blocks >= 3 are data blocks.
+  # Parameter 2 is the block of interest. Default is block 1.
+  DATA="$1"
+  LINE=${2:-1}
+  echo "$DATA" | sed -r -n -e "s/^bls .* Exit read_block read_len=([0-9]+) block_len=[0-9]*/\1/p" | sed "${LINE}q;d"
+}
+
+get_data_size()
+{
+  # block 1 and 2 are label blocks.
+  # blocks >= 3 are data blocks.
+  # Parameter 2 is the block of interest. Default is block 1.
+  DATA="$1"
+  LINE=${2:-1}
+  echo "$DATA" | sed -r -n -e "s/^bls .* Exit read_block read_len=[0-9]+ block_len=([0-9]*)/\1/p" | sed "${LINE}q;d"
+}
+
+# start the test
+start_test
+cat <<END_OF_DATA >tmp/bconcmds
+@$out tmp/log1.out
+label storage=File1 pool=File volume=${VolumeName} yes
+label barcodes storage=Tape-0 pool=Tape drive=0 slot=1 yes
+run job=${JobName} level=Full pool=File yes
+run job=${JobName} level=Full pool=Tape yes
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out ${tmp}/log2.out w
+restore client=${Client} pool=Tape where=${tmp}/bareos-restores select
+unmark *
+mark *
+done
+yes
+wait
+release storage=Tape-0 drive=0
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+# verify that all are terminated
+if ! check_for_zombie_jobs storage=File1 client=${Client}; then
+  set_error "zombie jobs File1"
+fi
+
+if ! check_for_zombie_jobs storage=Tape-0 client=${Client}; then
+  set_error "zombie jobs Tape-0"
+fi
+
+# check log files for common error messages
+check_log ${tmp}/log1.out
+check_log ${tmp}/log2.out
+
+# check tmp/log1.out and tmp/log2.out for errors
+check_two_logs
+
+# check for differences between original files and restored files
+check_restore_diff ${BackupDirectory}
+
+# do some manual testing
+if [ ! -d ${BackupDirectory} ]; then
+  set_error "Directory ${BackupDirectory} does not exists any more."
+fi
+
+file_out=$(bls_blocks File1 ${VolumeName})
+blocksize_label=$(get_block_size "${file_out}" 1)
+print_debug "File Label block size: $blocksize_label"
+if [ "$blocksize_label" != $DEFAULT_BLOCK_SIZE ]; then
+  set_error "Wrong label block size: expected: $DEFAULT_BLOCK_SIZE, got: $blocksize_label"
+fi
+
+blocksize_data=$(get_block_size "${file_out}" 3)
+print_debug "File Data block size (block 3): $blocksize_data"
+if [ "$blocksize_data" != $DEFAULT_BLOCK_SIZE ]; then
+  set_error "Wrong data block size (block 3): expected: $DEFAULT_BLOCK_SIZE, got: $blocksize_data"
+fi
+
+mtx -f ${CHANGER_DEVICE0} load 1 ${USE_TAPE_DEVICE}
+tape_out=$(bls_blocks tapedrive0-0 "*")
+blocksize_label=$(get_block_size "${tape_out}" 1)
+mtx -f ${CHANGER_DEVICE0} unload 1 ${USE_TAPE_DEVICE}
+if [[ -z "$blocksize_data" ]]; then
+  set_error "Could not read the label blocksize"
+fi
+print_debug "Tape Label block size: $blocksize_label"
+if [ "$blocksize_label" != $DEFAULT_BLOCK_SIZE ]; then
+  set_error "Wrong label block size: expected: $DEFAULT_BLOCK_SIZE, got: $blocksize_label"
+fi
+
+blocksize_data=$(get_block_size "${tape_out}" 3)
+if [[ -z "$blocksize_data" ]]; then
+  set_error "Could not read the data blocksize"
+fi
+print_debug "Tape Data block size (block 3): $blocksize_data"
+if [ "$blocksize_data" -lt $DEFAULT_BLOCK_SIZE ]; then
+  set_error "Wrong data block size (block 3): expected: $DEFAULT_BLOCK_SIZE, got: $blocksize_data"
+fi
+
+# end tests and check for error codes
+end_test

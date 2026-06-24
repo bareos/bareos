@@ -4,7 +4,7 @@
 Make sure you check/merge the PR using `devtools/pr-tool` to have some simple automated checks run and a proper changelog record added.
 
 ##### General
-- [ ] Correct milestone is set
+- If a release should wait for this PR to be finished, set that release's milestone.
 
 ##### Source code quality (if there were changes to the original PR)
 - [ ] Source code changes are understandable

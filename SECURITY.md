@@ -1,34 +1,33 @@
 # Security Policy
 
-## Supported Versions
-
-| Version | GitHub Sources     | Binary Packages    |
-| ------- | ------------------ |------------------- |
-| master  | :heavy_check_mark: | :heavy_check_mark: |
-| 25.x.y  | :heavy_check_mark: | :heavy_check_mark: |
-| 24.x.y  | :heavy_check_mark: | :white_check_mark: |
-| 23.x.y  | :heavy_check_mark: | :white_check_mark: |
-| 22.x.y  | :x:                | :x:                |
-| 21.x.y  | :x:                | :x:                |
-| 20.x.y  | :x:                | :x:                |
-| 19.2.x  | :x:                | :x:                |
-| 18.2.x  | :x:                | :x:                |
-| 17.2.x  | :x:                | :x:                |
-| 16.2.x  | :x:                | :x:                |
-| 15.2.x  | :x:                | :x:                |
-| 14.2.x  | :x:                | :x:                |
-| 13.2.x  | :x:                | :x:                |
-| 12.4.x  | :x:                | :x:                |
-
-Besides the master-branch of the project, we maintain the three newest major releases.
-Binary packages of maintenance releases for the major-branches are usually only shipped to customers with a subscription.
-However, if such a release fixes a critical issue, we may consider releasing binary packages to the general public.
-
 ## Reporting a security issue
 
-If you find a security-related problem in Bareos, please report it via e-mail to security@bareos.org.
+If you find a security-related problem in Bareos, please report it via e-mail to
+security@bareos.org.
 We will try to respond to you within two days.
 Please be patient with us.
 
-Together with you, we will then determine a CVSS score and find out which versions of Bareos are vulnerable.
+Together with you, we will then determine a CVSS score and find out which
+versions of Bareos are vulnerable.
 Based on that information we will decide what actions we will take.
+
+## Supported Versions
+
+Besides the `master`-branch of the project in the `next` repository, we maintain the
+three newest major releases.
+Binary packages of maintenance releases for the major-branches are only shipped
+to customers with a subscription.
+However, binary packages of the latest pre-release - which will also contain
+every released fix - will be available to the general public.
+
+| Repository                                           | Description           | Maintained         |
+| ----------                                           | -----------           | ------------------ |
+| [25](https://download.bareos.com/bareos/release/25/) | Bareos 25 releases    | :heavy_check_mark: |
+| [24](https://download.bareos.com/bareos/release/24/) | Bareos 24 releases    | :heavy_check_mark: |
+| [23](https://download.bareos.com/bareos/release/23/) | Bareos 23 releases    | :heavy_check_mark: |
+| <= 22                                                | Older Bareos releases | :x:                | 
+| [current](https://download.bareos.org/current/)      | latest pre-release    | :heavy_check_mark: |
+| [next](https://download.bareos.org/next/)            | nightly build         | :heavy_check_mark: |
+
+You can find an overview of previously fixed vulnerabilities in the project's
+[Security Advisories](https://github.com/bareos/bareos/security/advisories).

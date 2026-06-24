@@ -26,6 +26,9 @@
  * Bareos File Daemon restore.c Restorefiles.
  */
 
+#include <algorithm>
+#include <vector>
+
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/filetypes.h"
@@ -388,6 +391,8 @@ void DoRestore(JobControlRecord* jcr)
   int non_support_progname = 0;
   int non_support_crypto = 0;
   int non_support_xattr = 0;
+  bool warned_on_windows_data_stream = false;
+  std::vector<int> warned_on_unsupported_data_streams;
 
   rctx.jcr = jcr;
 
@@ -461,18 +466,17 @@ void DoRestore(JobControlRecord* jcr)
     rctx.prev_stream = rctx.stream;
 
     // First we expect a Stream Record Header
-    if (sscanf(sd->msg,
-               "rechdr %" SCNu32 " %" SCNu32 " %" SCNd32 " %" SCNd32
-               " %" SCNu32,
-               &VolSessionId, &VolSessionTime, &file_index, &rctx.full_stream,
-               &rctx.size)
+    if (bsscanf(sd->msg, "rechdr %lu %lu %ld %ld %lu", &VolSessionId,
+                &VolSessionTime, &file_index, &rctx.full_stream, &rctx.size)
         != 5) {
       Jmsg1(jcr, M_FATAL, 0, T_("Record header scan error: %s\n"), sd->msg);
       goto bail_out;
     }
     /* Strip off new stream high bits */
     rctx.stream = rctx.full_stream & STREAMMASK_TYPE;
-    Dmsg5(150, "Got hdr: Files=%d FilInx=%d size=%d Stream=%d, %s.\n",
+    Dmsg5(150,
+          "Got hdr: Files=%" PRIu32 " FilInx=%d size=%" PRIu32
+          " Stream=%d, %s.\n",
           jcr->JobFiles, file_index, rctx.size, rctx.stream,
           stream_to_ascii(rctx.stream));
 
@@ -483,9 +487,10 @@ void DoRestore(JobControlRecord* jcr)
       goto bail_out;
     }
     if (rctx.size != (uint32_t)sd->message_length) {
-      Jmsg2(jcr, M_FATAL, 0, T_("Actual data size %d not same as header %d\n"),
+      Jmsg2(jcr, M_FATAL, 0,
+            T_("Actual data size %d not same as header %" PRIu32 "\n"),
             sd->message_length, rctx.size);
-      Dmsg2(50, "Actual data size %d not same as header %d\n",
+      Dmsg2(50, "Actual data size %d not same as header %" PRIu32 "\n",
             sd->message_length, rctx.size);
       goto bail_out;
     }
@@ -545,10 +550,24 @@ void DoRestore(JobControlRecord* jcr)
                                        sizeof(attr->statp), &attr->LinkFI);
 
         if (!IsRestoreStreamSupported(attr->data_stream)) {
-          if (!non_support_data++) {
+          non_support_data += 1;
+          if (is_win32_stream(attr->data_stream) && !have_win32_api()) {
+            if (!warned_on_windows_data_stream) {
+              Jmsg(jcr, M_WARNING, 0,
+                   T_("The backup was not created with \"Portable = Yes\", "
+                      "so %s stream data cannot be restored on this "
+                      "Client.\n"),
+                   stream_to_ascii(attr->data_stream));
+              warned_on_windows_data_stream = true;
+            }
+          } else if (std::find(std::begin(warned_on_unsupported_data_streams),
+                               std::end(warned_on_unsupported_data_streams),
+                               attr->data_stream)
+                     == std::end(warned_on_unsupported_data_streams)) {
             Jmsg(jcr, M_WARNING, 0,
                  T_("%s stream not supported on this Client.\n"),
                  stream_to_ascii(attr->data_stream));
+            warned_on_unsupported_data_streams.push_back(attr->data_stream);
           }
           continue;
         }
@@ -1028,7 +1047,7 @@ ok_out:
 #endif
 
   // First output the statistics.
-  Dmsg2(10, "End Do Restore. Files=%d Bytes=%s\n", jcr->JobFiles,
+  Dmsg2(10, "End Do Restore. Files=%" PRIu32 " Bytes=%s\n", jcr->JobFiles,
         edit_uint64(jcr->JobBytes, ec1));
   if (have_acl && jcr->fd_impl->acl_data->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
@@ -1042,8 +1061,8 @@ ok_out:
   }
   if (non_support_data > 1 || non_support_attr > 1) {
     Jmsg(jcr, M_WARNING, 0,
-         T_("%d non-supported data streams and %d non-supported attrib streams "
-            "ignored.\n"),
+         T_("%d non-supported data streams and %d non-supported attrib "
+            "streams ignored.\n"),
          non_support_data, non_support_attr);
   }
   if (non_support_rsrc) {
@@ -1244,7 +1263,7 @@ int32_t ExtractData(JobControlRecord* jcr,
   if (BitIsSet(FO_ENCRYPT, flags)) {
     // Move any remaining data to start of buffer
     if (cipher_ctx->buf_len > 0) {
-      Dmsg1(130, "Moving %u buffered bytes to start of buffer\n",
+      Dmsg1(130, "Moving %d buffered bytes to start of buffer\n",
             cipher_ctx->buf_len);
       memmove(cipher_ctx->buf, &cipher_ctx->buf[cipher_ctx->packet_len],
               cipher_ctx->buf_len);
@@ -1269,7 +1288,7 @@ static bool ClosePreviousStream(JobControlRecord* jcr, r_ctx& rctx)
     if (rctx.size > 0 && !IsBopen(&rctx.bfd)) {
       Jmsg0(rctx.jcr, M_ERROR, 0,
             T_("Logic error: output file should be open\n"));
-      Dmsg2(000, "=== logic error size=%d bopen=%d\n", rctx.size,
+      Dmsg2(000, "=== logic error size=%" PRIu32 " bopen=%d\n", rctx.size,
             IsBopen(&rctx.bfd));
     }
 

@@ -1559,6 +1559,9 @@ class PluginClient {
     req.set_delta_seq(pkt->delta_seq);
     if (pkt->where) { req.set_where(pkt->where); }
 
+    req.set_original_name(pkt->original_file_name);
+    req.set_original_link(pkt->original_link_name);
+
     bp::createFileResponse resp;
     grpc::ClientContext ctx;
     grpc::Status status = stub_->createFile(&ctx, req, &resp);
@@ -1591,6 +1594,8 @@ class PluginClient {
                         const struct stat& statp,
                         std::string_view extended_attributes,
                         std::string_view where,
+                        std::string_view original_file,
+                        std::string_view original_link,
                         bool* do_in_core)
   {
     bp::setFileAttributesRequest req;
@@ -1599,6 +1604,9 @@ class PluginClient {
     req.set_extended_attributes(extended_attributes.data(),
                                 extended_attributes.size());
     req.set_where(where.data(), where.size());
+
+    req.set_original_name(original_file.data(), original_file.size());
+    req.set_original_link(original_link.data(), original_link.size());
 
     bp::setFileAttributesResponse resp;
     grpc::ClientContext ctx;
@@ -2671,7 +2679,8 @@ bRC grpc_connection::setFileAttributes(filedaemon::restore_pkt* pkt)
   std::string_view ofname = pkt->ofname ? pkt->ofname : "";
 
   auto res = client->setFileAttributes(ofname, pkt->statp, attrEx, where,
-                                       &do_in_core);
+                                       pkt->original_file_name,
+                                       pkt->original_link_name, &do_in_core);
   if (res != bRC_Error && do_in_core) { pkt->create_status = CF_CORE; }
 
   return res;

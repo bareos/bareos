@@ -1082,6 +1082,8 @@ Depending on the directive, Bareos will expand to the following variables:
 Variable Expansion on Volume Labels
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. deprecated:: 26.0.0
+
 When labeling a new volume (see :config:option:`dir/pool/LabelFormat`\ ), following Bareos internal variables can be used:
 
 ===================== ========================================

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -80,7 +80,7 @@ static void SyslogCallback_(int, const char* msg)
     FILE* fp = LogFiles::list_of_filepointers.at("syslog");
     // fake-write a syslog entry
     if (fp) { fputs(msg, fp); }
-  } catch (const std::out_of_range& e) {
+  } catch (const std::out_of_range&) {
     std::cout << "Could not find <syslog> filepointer";
   }
 }
@@ -91,7 +91,7 @@ static bool DbLogInsertCallback_(JobControlRecord*, utime_t, const char* msg)
     FILE* fp = LogFiles::list_of_filepointers.at("dblog");
     // fake-write a db log entry
     if (fp) { fputs(msg, fp); }
-  } catch (const std::out_of_range& e) {
+  } catch (const std::out_of_range&) {
     std::cout << "Could not find <dblog> filepointer";
   }
 

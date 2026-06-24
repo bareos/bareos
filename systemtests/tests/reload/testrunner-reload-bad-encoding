@@ -1,0 +1,58 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+TestName="$(get_test_name "$0")"
+export TestName
+export estat
+
+temporary_config_file="${config_directory_dir_additional_test_config}/bad_encoding.conf"
+console_logfile="${tmp}/console.log"
+bconsole_command_file="${tmp}/bconsole_reload_command"
+
+############################################
+start_test
+############################################
+
+setup_config
+remove_console_logfile
+add_bad_encoded_catalog
+
+test_reload_will_not_crash_director
+
+if ! "${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir" status; then
+  exit_with_error "Bareos Director stopped after reloading a bad catalog"
+fi
+
+expect_grep "Wanted SQL_ASCII, got UTF8" \
+  "${console_logfile}" \
+  "Could not find database encoding error in director reload output"
+
+############################################
+end_test
+############################################

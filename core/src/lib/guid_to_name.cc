@@ -122,12 +122,13 @@ static void GetGidname(gid_t gid, guitem* item)
 
 char* guid_list::uid_to_name(uid_t uid, char* name, int maxlen)
 {
+  static_assert(sizeof(uid_t) <= sizeof(uint64_t), "fix the debug messages");
   guitem sitem, *item, *fitem;
   sitem.uid = uid;
   char buf[50];
 
   item = (guitem*)uid_list->binary_search(&sitem, UidCompare);
-  Dmsg2(900, "uid=%d item=%p\n", uid, item);
+  Dmsg2(900, "uid=%" PRIu64 " item=%p\n", static_cast<uint64_t>(uid), item);
   if (!item) {
     item = (guitem*)malloc(sizeof(guitem));
     item->uid = uid;
@@ -135,7 +136,8 @@ char* guid_list::uid_to_name(uid_t uid, char* name, int maxlen)
     GetUidname(uid, item);
     if (!item->name) {
       item->name = strdup(edit_int64(uid, buf));
-      Dmsg2(900, "set uid=%d name=%s\n", uid, item->name);
+      Dmsg2(900, "set uid=%" PRIu64 " name=%s\n", static_cast<uint64_t>(uid),
+            item->name);
     }
     fitem = (guitem*)uid_list->binary_insert(item, UidCompare);
     if (fitem != item) { /* item already there this shouldn't happen */

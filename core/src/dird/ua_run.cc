@@ -34,6 +34,7 @@
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
 #include "dird/ua_run.h"
+#include "lib/bool_string.h"
 #include "lib/breg.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
@@ -74,7 +75,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
   PoolMem cmdline(PM_MESSAGE);
 
   jr.JobId = JobId;
-  ua->SendMsg("rerunning jobid %d\n", jr.JobId);
+  ua->SendMsg("rerunning jobid %" PRIu32 "\n", jr.JobId);
   if (DbLocker _{ua->db}; !ua->db->GetJobRecord(ua->jcr, &jr)) {
     Jmsg(ua->jcr, M_WARNING, 0,
          T_("Error getting Job record for Job rerun: ERR=%s\n"),
@@ -327,9 +328,9 @@ bool reRunCmd(UaContext* ua, const char*)
       ua->SendMsg("The following ids were selected for rerun:\n");
       for (int i = 0; i < ids.num_ids; i++) {
         if (i > 0) {
-          ua->SendMsg(",%d", ids.DBId[i]);
+          ua->SendMsg(",%" PRIdbid, ids.DBId[i]);
         } else {
-          ua->SendMsg("%d", ids.DBId[i]);
+          ua->SendMsg("%" PRIdbid, ids.DBId[i]);
         }
       }
       ua->SendMsg("\n");
@@ -484,15 +485,16 @@ try_again:
     Dmsg1(800, "Calling RunJob job=%p\n", jcr->dir_impl->res.job);
 
   start_job:
-    Dmsg3(100, "JobId=%u using pool %s priority=%d\n", (int)jcr->JobId,
+    Dmsg3(100, "JobId=%" PRIu32 " using pool %s priority=%d\n", jcr->JobId,
           jcr->dir_impl->res.pool->resource_name_, jcr->JobPriority);
     Dmsg1(900, "Running a job; its spool_data = %d\n",
           jcr->dir_impl->spool_data);
 
     JobId = RunJob(jcr);
 
-    Dmsg4(100, "JobId=%u NewJobId=%d using pool %s priority=%d\n",
-          (int)jcr->JobId, JobId, jcr->dir_impl->res.pool->resource_name_,
+    Dmsg4(100,
+          "JobId=%" PRIu32 " NewJobId=%" PRIu32 " using pool %s priority=%d\n",
+          jcr->JobId, JobId, jcr->dir_impl->res.pool->resource_name_,
           jcr->JobPriority);
 
     jcr->dir_impl->job_trigger = JobTrigger::kUser;
@@ -635,15 +637,20 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         break;
       case 6:
         /* When */
-        if (GetCmd(ua, T_("Please enter desired start time as YYYY-MM-DD "
-                          "HH:MM:SS (return for now): "))) {
+        for (;;) {
+          if (!GetCmd(ua, T_("Please enter desired start time as YYYY-MM-DD "
+                             "HH:MM:SS (return for now): "))) {
+            break;
+          }
           if (ua->cmd[0] == 0) {
             jcr->sched_time = time(NULL);
           } else {
-            jcr->sched_time = StrToUtime(ua->cmd);
-            if (jcr->sched_time == 0) {
-              ua->SendMsg(T_("Invalid time, using current time.\n"));
-              jcr->sched_time = time(NULL);
+            auto parsed = StrToUtime(ua->cmd);
+            if (parsed == 0) {
+              ua->SendMsg(T_("Invalid time specification.\n"));
+              continue;
+            } else {
+              jcr->sched_time = parsed;
             }
           }
           goto try_again;
@@ -790,8 +797,6 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
   }
   return 1;
 
-  return -1;
-
 try_again:
   return 0;
 }
@@ -861,8 +866,10 @@ static bool ResetRestoreContext(UaContext* ua,
   if (rc.when) {
     jcr->sched_time = StrToUtime(rc.when);
     if (jcr->sched_time == 0) {
-      ua->SendMsg(T_("Invalid time, using current time.\n"));
-      jcr->sched_time = time(NULL);
+      ua->SendMsg(
+          T_("Invalid time specification in when; expected: \"YYYY-MM-DD "
+             "HH:MM:SS\"\n"));
+      return false;
     }
     rc.when = NULL;
   }
@@ -1503,7 +1510,7 @@ static bool DisplayJobParameters(UaContext* ua,
         }
       }
       jcr->setJobLevel(L_FULL); /* default level */
-      Dmsg1(800, "JobId to restore=%d\n", jcr->dir_impl->RestoreJobId);
+      Dmsg1(800, "JobId to restore=%" PRIu32 "\n", jcr->dir_impl->RestoreJobId);
       if (jcr->dir_impl->RestoreJobId == 0) {
         /* RegexWhere is take before RestoreWhere */
         if (jcr->RegexWhere || (job->RegexWhere && !jcr->where)) {
@@ -2025,11 +2032,20 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               ua->SendMsg(T_("Spool flag specified twice.\n"));
               return false;
             }
-            if (IsYesno(ua->argv[i], &rc.spool_data)) {
-              rc.spool_data_set = true;
-              kw_ok = true;
-            } else {
-              ua->SendMsg(T_("Invalid spooldata flag.\n"));
+            switch (parse_user_bool(ua->argv[i])) {
+              case parse_bool_result::True: {
+                rc.spool_data_set = true;
+                rc.spool_data = true;
+                kw_ok = true;
+              } break;
+              case parse_bool_result::False: {
+                rc.spool_data_set = true;
+                rc.spool_data = false;
+                kw_ok = true;
+              } break;
+              case parse_bool_result::Error: {
+                ua->SendMsg(T_("Invalid spooldata flag.\n"));
+              } break;
             }
             break;
           case 28: /* comment */
@@ -2041,11 +2057,20 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               ua->SendMsg(T_("IgnoreDuplicateCheck flag specified twice.\n"));
               return false;
             }
-            if (IsYesno(ua->argv[i], &rc.ignoreduplicatecheck)) {
-              rc.ignoreduplicatecheck_set = true;
-              kw_ok = true;
-            } else {
-              ua->SendMsg(T_("Invalid ignoreduplicatecheck flag.\n"));
+            switch (parse_user_bool(ua->argv[i])) {
+              case parse_bool_result::True: {
+                rc.ignoreduplicatecheck_set = true;
+                rc.ignoreduplicatecheck = true;
+                kw_ok = true;
+              } break;
+              case parse_bool_result::False: {
+                rc.ignoreduplicatecheck_set = true;
+                rc.ignoreduplicatecheck = false;
+                kw_ok = true;
+              } break;
+              case parse_bool_result::Error: {
+                ua->SendMsg(T_("Invalid ignoreduplicatecheck flag.\n"));
+              } break;
             }
             break;
           case 30: /* accurate */
@@ -2053,11 +2078,20 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               ua->SendMsg(T_("Accurate flag specified twice.\n"));
               return false;
             }
-            if (IsYesno(ua->argv[i], &rc.accurate)) {
-              rc.accurate_set = true;
-              kw_ok = true;
-            } else {
-              ua->SendMsg(T_("Invalid accurate flag.\n"));
+            switch (parse_user_bool(ua->argv[i])) {
+              case parse_bool_result::True: {
+                rc.accurate_set = true;
+                kw_ok = true;
+                rc.accurate = true;
+              } break;
+              case parse_bool_result::False: {
+                rc.accurate_set = true;
+                kw_ok = true;
+                rc.accurate = false;
+              } break;
+              case parse_bool_result::Error: {
+                ua->SendMsg(T_("Invalid accurate flag.\n"));
+              } break;
             }
             break;
           case 31: /* backupformat */
@@ -2301,7 +2335,8 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
       ua->ErrorMsg(T_("Invalid Consolidate Job \"%s\". Job type is \"%c\" but "
                       "expected \"%c\".\n"),
                    rc.consolidate_job->resource_name_,
-                   rc.consolidate_job->JobType, JT_CONSOLIDATE);
+                   static_cast<int>(rc.consolidate_job->JobType),
+                   static_cast<int>(JT_CONSOLIDATE));
       return false;
     }
   }

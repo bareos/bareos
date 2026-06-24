@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -451,8 +451,11 @@ int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...)
 #undef fgets
 #define fgets(x, y, z) bfgets((x), (y), (z))
 
-/** Use our sscanf, which is safer and works with known sizes */
-#define sscanf bsscanf
+/** Make sure we always use our sscanf, which is supposedly better */
+#define sscanf            \
+  do {                    \
+    static_assert(false); \
+  } while (0)
 
 /** Macro to simplify free/reset pointers */
 #define BfreeAndNull(a) \

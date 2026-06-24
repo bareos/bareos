@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -572,7 +572,8 @@ bool StatsCmd(JobControlRecord* jcr)
 
       if (!have_jcr_for_jobid(job_stats->JobId)) {
         lock_mutex(mutex);
-        Dmsg1(200, "Removing jobid %d from job_statistics\n", job_stats->JobId);
+        Dmsg1(200, "Removing jobid %" PRIu32 " from job_statistics\n",
+              job_stats->JobId);
         job_statistics->remove(job_stats);
         unlock_mutex(mutex);
       }

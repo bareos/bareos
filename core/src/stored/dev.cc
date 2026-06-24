@@ -251,7 +251,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
   }
   if (dev->max_block_size > MAX_BLOCK_LENGTH) {
     Jmsg3(jcr, M_ERROR, 0,
-          T_("Block size %u on device %s is too large, using default %u\n"),
+          T_("Block size %u on device %s is too large, using default %d\n"),
           dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
     dev->max_block_size = 0;
   }
@@ -433,7 +433,7 @@ void Device::SetBlocksizes(DeviceControlRecord* dcr)
 
   if (dev->max_block_size > MAX_BLOCK_LENGTH) {
     Jmsg3(jcr, M_ERROR, 0,
-          T_("Block size %u on device %s is too large, using default %u\n"),
+          T_("Block size %u on device %s is too large, using default %d\n"),
           dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
     dev->max_block_size = 0;
   }
@@ -451,7 +451,9 @@ void Device::SetBlocksizes(DeviceControlRecord* dcr)
          dev->print_name());
   }
 
-  Dmsg3(100, "set minblocksize to %d, maxblocksize to %d on device %s\n",
+  Dmsg3(100,
+        "set minblocksize to %" PRIu32 ", maxblocksize to %" PRIu32
+        " on device %s\n",
         dev->min_block_size, dev->max_block_size, dev->print_name());
 
   /* If blocklen is not dev->max_block_size create a new block with the right
@@ -619,7 +621,7 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   set_mode(omode);
 
   Dmsg3(100, "open archive: mode=%s open(%s, %08o, 0640)\n", mode_to_str(omode),
-        archive_name.c_str(), oflags);
+        archive_name.c_str(), static_cast<unsigned int>(oflags));
 
   if ((fd = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
     BErrNo be;

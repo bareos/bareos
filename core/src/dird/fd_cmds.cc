@@ -65,11 +65,11 @@ inline constexpr const char filesetcmd[] = "fileset%s\n"; /* set full fileset */
 inline constexpr const char jobcmd[]
     = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
 inline constexpr const char jobcmdssl[]
-    = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s ssl=%d\n";
+    = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s ssl=%u\n";
 /* Note, mtime_only is not used here -- implemented as file option */
 inline constexpr const char levelcmd[] = "level = %s%s%s mtime_only=%d %s%s\n";
 inline constexpr const char runscriptcmd[]
-    = "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
+    = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s\n";
 inline constexpr const char runbeforenowcmd[] = "RunBeforeNow\n";
 inline constexpr const char restoreobjectendcmd[] = "restoreobject end\n";
 inline constexpr const char bandwidthcmd[]
@@ -470,7 +470,7 @@ bool SendSecureEraseReqToFd(JobControlRecord* jcr)
     while ((n = BgetDirmsg(fd)) >= 0) {
       jcr->dir_impl->FDSecureEraseCmd = CheckPoolMemorySize(
           jcr->dir_impl->FDSecureEraseCmd, fd->message_length);
-      if (sscanf(fd->msg, OKgetSecureEraseCmd, jcr->dir_impl->FDSecureEraseCmd)
+      if (bsscanf(fd->msg, OKgetSecureEraseCmd, jcr->dir_impl->FDSecureEraseCmd)
           == 1) {
         Dmsg1(400, "Got FD Secure Erase Cmd: %s\n",
               jcr->dir_impl->FDSecureEraseCmd);
@@ -735,9 +735,9 @@ static int RestoreObjectHandler(void* ctx, int, char** row)
 bool SendPluginOptions(JobControlRecord* jcr)
 {
   BareosSocket* fd = jcr->file_bsock;
-  int i;
+  int i{};
   PoolMem cur_plugin_options(PM_MESSAGE);
-  const char* plugin_options;
+  const char* plugin_options = nullptr;
   POOLMEM* msg;
 
   if (jcr->dir_impl->plugin_options) {
@@ -781,17 +781,17 @@ static void SendGlobalRestoreObjects(JobControlRecord* jcr,
   if (!jcr->JobIds || !jcr->JobIds[0]) { return; }
 
   // Send restore objects for all jobs involved
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
-                     jcr->JobIds, FT_RESTORE_FIRST);
+  jcr->db->FillQuery<BareosDb::SQL_QUERY::get_restore_objects>(
+      query, jcr->JobIds, FT_RESTORE_FIRST);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
-                     jcr->JobIds, FT_PLUGIN_CONFIG);
+  jcr->db->FillQuery<BareosDb::SQL_QUERY::get_restore_objects>(
+      query, jcr->JobIds, FT_PLUGIN_CONFIG);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 
   // Send config objects for the current restore job
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
-                     edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
+  jcr->db->FillQuery<BareosDb::SQL_QUERY::get_restore_objects>(
+      query, edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 }
 
@@ -803,12 +803,12 @@ static void SendJobSpecificRestoreObjects(JobControlRecord* jcr,
   PoolMem query(PM_MESSAGE);
 
   // Send restore objects for specific JobId.
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
-                     edit_uint64(JobId, ed1), FT_RESTORE_FIRST);
+  jcr->db->FillQuery<BareosDb::SQL_QUERY::get_restore_objects>(
+      query, edit_uint64(JobId, ed1), FT_RESTORE_FIRST);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
-                     edit_uint64(JobId, ed1), FT_PLUGIN_CONFIG);
+  jcr->db->FillQuery<BareosDb::SQL_QUERY::get_restore_objects>(
+      query, edit_uint64(JobId, ed1), FT_PLUGIN_CONFIG);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 }
 
@@ -869,7 +869,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
     PoolMem Digest(PM_MESSAGE); /* Either Verify opts or MD5/SHA1 digest */
     Digest.check_size(fd->message_length);
     if ((len
-         = sscanf(fd->msg, "%ld %d %s", &file_index, &stream, Digest.c_str()))
+         = bsscanf(fd->msg, "%ld %d %s", &file_index, &stream, Digest.c_str()))
         != 3) {
       Jmsg(jcr, M_FATAL, 0,
            T_("<filed: bad attributes, expected 3 fields got %d\n"
@@ -891,8 +891,8 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
     if (stream == STREAM_UNIX_ATTRIBUTES
         || stream == STREAM_UNIX_ATTRIBUTES_EX) {
       if (jcr->cached_attribute) {
-        Dmsg3(debuglevel, "Cached attr. Stream=%d fname=%s\n", ar->Stream,
-              ar->fname);
+        Dmsg3(debuglevel, "Cached attr. Stream=%" PRIu32 " fname=%s\n",
+              ar->Stream, ar->fname);
         if (DbLocker _{jcr->db};
             !jcr->db->CreateFileAttributesRecord(jcr, ar)) {
           Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error. %s"),
@@ -933,7 +933,8 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
        * it (or not) When we get a new STREAM_UNIX_ATTRIBUTES, we known that we
        * can add file to the catalog At the end, we have to add the last file */
       if (jcr->dir_impl->FileIndex != (uint32_t)file_index) {
-        Jmsg3(jcr, M_ERROR, 0, T_("%s index %d not same as attributes %d\n"),
+        Jmsg3(jcr, M_ERROR, 0,
+              T_("%s index %" PRIu32 " not same as attributes %" PRIu32 "\n"),
               stream_to_ascii(stream), file_index, jcr->dir_impl->FileIndex);
         continue;
       }
@@ -958,7 +959,8 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
   }
 
   if (jcr->cached_attribute) {
-    Dmsg3(debuglevel, "Cached attr with digest. Stream=%d fname=%s attr=%s\n",
+    Dmsg3(debuglevel,
+          "Cached attr with digest. Stream=%" PRIu32 " fname=%s attr=%s\n",
           ar->Stream, ar->fname, ar->attr);
     if (DbLocker _{jcr->db}; !jcr->db->CreateFileAttributesRecord(jcr, ar)) {
       Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error. %s"),
@@ -1005,7 +1007,7 @@ void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd)
 
   // Try to connect for 15 seconds
   if (!ua->api) {
-    ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"),
+    ua->SendMsg(T_("Connecting to Client %s at %s:%" PRIu32 "\n"),
                 client->resource_name_, client->address, client->FDport);
   }
 
@@ -1048,7 +1050,7 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
 
   // Try to connect for 15 seconds
   if (!ua->api) {
-    ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"),
+    ua->SendMsg(T_("Connecting to Client %s at %s:%" PRIu32 "\n"),
                 client->resource_name_, client->address, client->FDport);
   }
 

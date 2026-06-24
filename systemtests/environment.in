@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# make sure that this is only included once
+# this allows the usage of "readonly" variables
+if [ -n "${ENVIRONMENT_INCLUDE_GUARD+x}" ]; then
+  return
+else
+  readonly ENVIRONMENT_INCLUDE_GUARD=1
+fi
+
 CMAKE_SOURCE_DIR=@CMAKE_SOURCE_DIR@
 CMAKE_BINARY_DIR=@CMAKE_BINARY_DIR@
 PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
@@ -17,7 +25,7 @@ export HAVE_AIX_OS=@HAVE_AIX_OS@
 
 BAREOS_UNITTESTS_BINARY_DIR=$CMAKE_BINARY_DIR/core/src/tests
 
-current_test_directory=${PROJECT_BINARY_DIR}/tests/@TEST_NAME@
+current_test_directory="@current_test_directory@"
 
 export config_directory_dir_additional_test_config=@config_directory_dir_additional_test_config@
 
@@ -109,6 +117,7 @@ export PAM_WRAPPER_LIBRARIES=@PAM_WRAPPER_LIBRARIES@
 #
 export BAREOS_WEBUI_TESTNAME=@BAREOS_WEBUI_TESTNAME@
 export BAREOS_WEBUI_PROFILE=@BAREOS_WEBUI_PROFILE@
+export BAREOS_WEBUI_TESTS="@BAREOS_WEBUI_TESTS@"
 export BAREOS_WEBUI_CONFDIR=@WEBUICONFDIR@
 export BAREOS_WEBUI_BROWSER=chrome
 export BAREOS_WEBUI_CHROMEDRIVER_PATH=@CHROMEDRIVER@
@@ -118,7 +127,7 @@ export BAREOS_WEBUI_PASSWORD=@BAREOS_WEBUI_PROFILE@
 export BAREOS_WEBUI_CLIENT_NAME=bareos-fd
 export BAREOS_WEBUI_RESTOREFILE=${PROJECT_BINARY_DIR}
 export BAREOS_WEBUI_LOG_PATH=${logdir}
-export BAREOS_WEBUI_DELAY=1
+export BAREOS_WEBUI_DELAY=0
 export BAREOS_WEBUI_PUBLIC_DIR=@BAREOS_WEBUI_PUBLIC_DIR@
 
 export PHP_EXECUTABLE="@PHP@"
@@ -170,6 +179,9 @@ NDMP_DATA_AGENT_ADDRESS=@ndmp_data_agent_address@
 export IGNORE_CONFIG_WARNINGS=@IGNORE_CONFIG_WARNINGS@
 export SQLCMD="@SQLCMD@"
 export PERL="@PERL@"
+export AWK="@AWK@"
+
+export CIUID="@CIUID@"
 
 if [ -f environment.local ]; then
   source environment.local

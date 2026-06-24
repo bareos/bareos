@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,7 +53,7 @@ CramMd5Handshake::CompareChallengeWithOwnQualifiedName(
   uint32_t a, b;
   char buffer[MAXHOSTNAMELEN]{"?"};  // at least one character
 
-  bool scan_success = sscanf(challenge, "<%u.%u@%s", &a, &b, buffer) == 3;
+  bool scan_success = bsscanf(challenge, "<%u.%u@%s", &a, &b, buffer) == 3;
 
   // string contains the closing ">" of the challenge
   std::string challenge_qualified_name(buffer, strlen(buffer) - 1);
@@ -92,21 +92,23 @@ bool CramMd5Handshake::CramMd5Challenge()
        own_qualified_name_bashed_spaces_.c_str());
 
   if (bs_->IsBnetDumpEnabled()) {
-    Dmsg2(debuglevel_, "send: auth cram-md5 %s ssl=%d qualified-name=%s\n",
+    Dmsg2(debuglevel_,
+          "send: auth cram-md5 %s ssl=%" PRIu32 " qualified-name=%s\n",
           chal.c_str(), local_tls_policy_, own_qualified_name_.c_str());
 
-    if (!bs_->fsend("auth cram-md5 %s ssl=%d qualified-name=%s\n", chal.c_str(),
-                    local_tls_policy_, own_qualified_name_.c_str())) {
+    if (!bs_->fsend("auth cram-md5 %s ssl=%" PRIu32 " qualified-name=%s\n",
+                    chal.c_str(), local_tls_policy_,
+                    own_qualified_name_.c_str())) {
       Dmsg1(debuglevel_, "Bnet send challenge comm error. ERR=%s\n",
             bs_->bstrerror());
       result = HandshakeResult::NETWORK_ERROR;
       return false;
     }
   } else {  // network dump disabled
-    Dmsg2(debuglevel_, "send: auth cram-md5 %s ssl=%d\n", chal.c_str(),
+    Dmsg2(debuglevel_, "send: auth cram-md5 %s ssl=%" PRIu32 "\n", chal.c_str(),
           local_tls_policy_);
 
-    if (!bs_->fsend("auth cram-md5 %s ssl=%d\n", chal.c_str(),
+    if (!bs_->fsend("auth cram-md5 %s ssl=%" PRIu32 "\n", chal.c_str(),
                     local_tls_policy_)) {
       Dmsg1(debuglevel_, "Bnet send challenge comm error. ERR=%s\n",
             bs_->bstrerror());
@@ -168,16 +170,16 @@ bool CramMd5Handshake::CramMd5Response()
   chal.check_size(bs_->message_length);
   if (bs_->IsBnetDumpEnabled()) {
     std::vector<char> destination_qualified_name(256);
-    if (sscanf(bs_->msg, "auth cram-md5c %s ssl=%d qualified-name=%s",
-               chal.c_str(), &remote_tls_policy_,
-               destination_qualified_name.data())
+    if (bsscanf(bs_->msg, "auth cram-md5c %s ssl=%d qualified-name=%s",
+                chal.c_str(), &remote_tls_policy_,
+                destination_qualified_name.data())
         >= 2) {
       compatible_ = true;
-    } else if (sscanf(bs_->msg, "auth cram-md5 %s ssl=%d qualified-name=%s",
-                      chal.c_str(), &remote_tls_policy_,
-                      destination_qualified_name.data())
+    } else if (bsscanf(bs_->msg, "auth cram-md5 %s ssl=%d qualified-name=%s",
+                       chal.c_str(), &remote_tls_policy_,
+                       destination_qualified_name.data())
                < 2) {  // minimum 2
-      if (sscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
+      if (bsscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
         Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
         bs_->fsend(T_("1999 Authorization failed.\n"));
         Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
@@ -187,14 +189,14 @@ bool CramMd5Handshake::CramMd5Response()
     }
     bs_->SetBnetDumpDestinationQualifiedName(destination_qualified_name.data());
   } else {  // network dump disabled
-    if (sscanf(bs_->msg, "auth cram-md5c %s ssl=%d", chal.c_str(),
-               &remote_tls_policy_)
+    if (bsscanf(bs_->msg, "auth cram-md5c %s ssl=%d", chal.c_str(),
+                &remote_tls_policy_)
         == 2) {
       compatible_ = true;
-    } else if (sscanf(bs_->msg, "auth cram-md5 %s ssl=%d", chal.c_str(),
-                      &remote_tls_policy_)
+    } else if (bsscanf(bs_->msg, "auth cram-md5 %s ssl=%d", chal.c_str(),
+                       &remote_tls_policy_)
                != 2) {
-      if (sscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
+      if (bsscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
         Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
         bs_->fsend(T_("1999 Authorization failed.\n"));
         Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);

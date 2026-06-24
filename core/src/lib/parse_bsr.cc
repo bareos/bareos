@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -235,7 +235,7 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
         token = LexGetToken(lc, BCT_ALL);
         Dmsg1(300, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
         if (token != BCT_EQUALS) {
-          scan_err1(lc, "expected an equals, got: %s", lc->str);
+          scan_err(lc, "expected an equals, got: %s", lc->str);
           bsr = NULL;
           break;
         }
@@ -248,7 +248,7 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
     }
     if (i >= 0) {
       Dmsg1(300, "Keyword = %s\n", lc->str);
-      scan_err1(lc, "Keyword %s not found", lc->str);
+      scan_err(lc, "Keyword %s not found", lc->str);
       bsr = NULL;
       break;
     }
@@ -734,7 +734,7 @@ static storagedaemon::BootStrapRecord* store_slot(
   token = LexGetToken(lc, BCT_PINT32);
   if (token == BCT_ERROR) { return NULL; }
   if (!bsr->volume) {
-    Emsg1(M_ERROR, 0, T_("Slot %d in bsr at inappropriate place.\n"),
+    Emsg1(M_ERROR, 0, T_("Slot %" PRIu32 " in bsr at inappropriate place.\n"),
           lc->u.pint32_val);
     return bsr;
   }
@@ -788,10 +788,10 @@ static inline void DumpFindex(storagedaemon::BsrFileIndex* FileIndex)
 {
   if (FileIndex) {
     if (FileIndex->findex == FileIndex->findex2) {
-      Pmsg1(-1, T_("FileIndex   : %u\n"), FileIndex->findex);
+      Pmsg1(-1, T_("FileIndex   : %" PRId32 "\n"), FileIndex->findex);
     } else {
-      Pmsg2(-1, T_("FileIndex   : %u-%u\n"), FileIndex->findex,
-            FileIndex->findex2);
+      Pmsg2(-1, T_("FileIndex   : %" PRId32 "-%" PRId32 "\n"),
+            FileIndex->findex, FileIndex->findex2);
     }
     DumpFindex(FileIndex->next);
   }

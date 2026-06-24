@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -373,12 +373,15 @@ bool IsThisBsrDone(BootStrapRecord*, DeviceRecord* rec)
   if (rbsr->count && rbsr->found >= rbsr->count) {
     rbsr->done = true;
     rbsr->root->Reposition = true;
-    Dmsg2(dbglevel, "is_end_this_bsr set Reposition=1 count=%d found=%d\n",
+    Dmsg2(dbglevel,
+          "is_end_this_bsr set Reposition=1 count=%" PRIu32 " found=%" PRIu32
+          "\n",
           rbsr->count, rbsr->found);
     return true;
   }
-  Dmsg2(dbglevel, "is_end_this_bsr not done count=%d found=%d\n", rbsr->count,
-        rbsr->found);
+  Dmsg2(dbglevel,
+        "is_end_this_bsr not done count=%" PRIu32 " found=%" PRIu32 "\n",
+        rbsr->count, rbsr->found);
   return false;
 }
 

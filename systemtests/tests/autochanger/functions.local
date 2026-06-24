@@ -21,6 +21,7 @@
 set -e
 set -u
 
+#shellcheck source=../../environment.in
 . ./environment
 
 TestName="$(basename "$(pwd)")"

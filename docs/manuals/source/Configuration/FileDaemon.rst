@@ -30,7 +30,7 @@ Client Resource
    single: Resource; Client
    single: Client Resource
 
-The Client (or File Daemon) resource defines the name of the Client (as used by the Director) as
+The Client resource defines the name of the Client (as used by the Director) as
 well as the port on which the Client listens for Director connections.
 
 Start of the Client records. There must be one and only one Client resource in the configuration

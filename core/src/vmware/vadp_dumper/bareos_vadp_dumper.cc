@@ -25,6 +25,7 @@
  */
 #include <stdio.h>
 #include <stdint.h>
+#include <cinttypes>
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
@@ -735,6 +736,10 @@ static inline void do_vixdisklib_create(const char* key,
   createParams.capacity = (absolute_disk_length / VIXDISKLIB_SECTOR_SIZE);
   if (disktype) {
     createParams.diskType = lookup_disktype();
+  } else if (absolute_disk_length
+             > (uint64_t)2 * 1024 * 1024 * 1024 * 1024ULL) {
+    // >2TiB requires split sparse to avoid 2TB monolithic VMDK limits
+    createParams.diskType = VIXDISKLIB_DISK_SPLIT_SPARSE;
   } else {
     createParams.diskType = VIXDISKLIB_DISK_MONOLITHIC_SPARSE;
   }
@@ -1120,7 +1125,8 @@ static inline bool process_meta_data(bool validate_only)
 
     key = (char*)malloc(rmde.meta_key_length);
     if (!key) {
-      fprintf(stderr, "Failed to allocate %d bytes for meta data key\n",
+      fprintf(stderr,
+              "Failed to allocate %" PRIu32 " bytes for meta data key\n",
               rmde.meta_key_length);
       goto bail_out;
     }
@@ -1132,8 +1138,8 @@ static inline bool process_meta_data(bool validate_only)
     }
 
     buffer = (char*)malloc(rmde.meta_data_length);
-    if (!key) {
-      fprintf(stderr, "Failed to allocate %d bytes for meta data\n",
+    if (!buffer) {
+      fprintf(stderr, "Failed to allocate %" PRIu32 " bytes for meta data\n",
               rmde.meta_data_length);
       goto bail_out;
     }

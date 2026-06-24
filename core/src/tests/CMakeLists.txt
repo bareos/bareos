@@ -431,6 +431,11 @@ bareos_add_test(
 bareos_add_test(job_control_record LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 bareos_add_test(
+  restore_stream_support_test LINK_LIBRARIES Bareos::Lib Bareos::Findlib
+                                             GTest::gtest_main
+)
+
+bareos_add_test(
   test_acl_entry_syntax LINK_LIBRARIES Bareos::Lib GTest::gtest_main
 )
 

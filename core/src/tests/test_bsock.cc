@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,12 +30,15 @@
 #include "create_resource.h"
 #include "tests/bareos_test_sockets.h"
 #include "tests/init_openssl.h"
+#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <string_view>
 
 #include <thread>
 #include <future>
+#include <unistd.h>
 
 #include "console/console.h"
 #include "console/console_conf.h"
@@ -44,13 +47,18 @@
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
 
-#include "lib/tls_openssl.h"
+#include "lib/tls/openssl.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bnet.h"
 #include "lib/bstringlist.h"
 #include "lib/version.h"
 
 #include "include/jcr.h"
+
+#include <openssl/err.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
+#include <openssl/x509v3.h>
 
 #define CLIENT_AS_A_THREAD 0
 
@@ -68,6 +76,354 @@ static std::unique_ptr<directordaemon::ConsoleResource> dir_cons_config;
 static std::unique_ptr<directordaemon::DirectorResource> dir_dir_config;
 static std::unique_ptr<console::DirectorResource> cons_dir_config;
 static std::unique_ptr<console::ConsoleResource> cons_cons_config;
+
+namespace {
+using EvpPkeyPtr = std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)>;
+using EvpPkeyCtxPtr
+    = std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)>;
+using X509Ptr = std::unique_ptr<X509, decltype(&X509_free)>;
+using X509CrlPtr = std::unique_ptr<X509_CRL, decltype(&X509_CRL_free)>;
+using X509RevokedPtr
+    = std::unique_ptr<X509_REVOKED, decltype(&X509_REVOKED_free)>;
+using Asn1IntegerPtr
+    = std::unique_ptr<ASN1_INTEGER, decltype(&ASN1_INTEGER_free)>;
+using Asn1TimePtr = std::unique_ptr<ASN1_TIME, decltype(&ASN1_TIME_free)>;
+using X509ExtensionPtr
+    = std::unique_ptr<X509_EXTENSION, decltype(&X509_EXTENSION_free)>;
+
+struct GeneratedTlsArtifacts {
+  std::filesystem::path directory;
+  std::filesystem::path ca_cert;
+  std::filesystem::path server_cert;
+  std::filesystem::path server_key;
+  std::filesystem::path client_cert;
+  std::filesystem::path client_key;
+  std::filesystem::path crl;
+
+  GeneratedTlsArtifacts() = default;
+  GeneratedTlsArtifacts(const GeneratedTlsArtifacts&) = delete;
+  GeneratedTlsArtifacts& operator=(const GeneratedTlsArtifacts&) = delete;
+  GeneratedTlsArtifacts(GeneratedTlsArtifacts&&) = default;
+  GeneratedTlsArtifacts& operator=(GeneratedTlsArtifacts&&) = default;
+
+  ~GeneratedTlsArtifacts()
+  {
+    if (!directory.empty()) {
+      std::error_code ec;
+      std::filesystem::remove_all(directory, ec);
+    }
+  }
+};
+
+std::string GetOpenSslError()
+{
+  const unsigned long error = ERR_get_error();
+  if (!error) { return "unknown OpenSSL error"; }
+
+  char buffer[256];
+  ERR_error_string_n(error, buffer, sizeof(buffer));
+  return buffer;
+}
+
+bool WritePrivateKeyPem(const std::filesystem::path& path,
+                        EVP_PKEY* key,
+                        std::string* error)
+{
+  FILE* file = fopen(path.c_str(), "wb");
+  if (!file) {
+    *error = "Could not open " + path.string() + " for writing";
+    return false;
+  }
+
+  const bool ok
+      = PEM_write_PrivateKey(file, key, nullptr, nullptr, 0, nullptr, nullptr)
+        == 1;
+  fclose(file);
+
+  if (!ok) {
+    *error = "Could not write private key " + path.string() + ": "
+             + GetOpenSslError();
+  }
+
+  return ok;
+}
+
+bool WriteCertificatePem(const std::filesystem::path& path,
+                         X509* cert,
+                         std::string* error)
+{
+  FILE* file = fopen(path.c_str(), "wb");
+  if (!file) {
+    *error = "Could not open " + path.string() + " for writing";
+    return false;
+  }
+
+  const bool ok = PEM_write_X509(file, cert) == 1;
+  fclose(file);
+
+  if (!ok) {
+    *error = "Could not write certificate " + path.string() + ": "
+             + GetOpenSslError();
+  }
+
+  return ok;
+}
+
+bool WriteCrlPem(const std::filesystem::path& path,
+                 X509_CRL* crl,
+                 std::string* error)
+{
+  FILE* file = fopen(path.c_str(), "wb");
+  if (!file) {
+    *error = "Could not open " + path.string() + " for writing";
+    return false;
+  }
+
+  const bool ok = PEM_write_X509_CRL(file, crl) == 1;
+  fclose(file);
+
+  if (!ok) {
+    *error = "Could not write CRL " + path.string() + ": " + GetOpenSslError();
+  }
+
+  return ok;
+}
+
+EvpPkeyPtr GenerateRsaKey(std::string* error)
+{
+  EvpPkeyCtxPtr ctx(EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr),
+                    EVP_PKEY_CTX_free);
+  if (!ctx) {
+    *error = "Could not create key generation context: " + GetOpenSslError();
+    return {nullptr, EVP_PKEY_free};
+  }
+
+  if (EVP_PKEY_keygen_init(ctx.get()) <= 0
+      || EVP_PKEY_CTX_set_rsa_keygen_bits(ctx.get(), 2048) <= 0) {
+    *error = "Could not initialize RSA key generation: " + GetOpenSslError();
+    return {nullptr, EVP_PKEY_free};
+  }
+
+  EVP_PKEY* raw_key = nullptr;
+  if (EVP_PKEY_keygen(ctx.get(), &raw_key) <= 0) {
+    *error = "Could not generate RSA key: " + GetOpenSslError();
+    return {nullptr, EVP_PKEY_free};
+  }
+
+  return EvpPkeyPtr(raw_key, EVP_PKEY_free);
+}
+
+bool AddExtension(X509* cert,
+                  X509* issuer_cert,
+                  int nid,
+                  const char* value,
+                  std::string* error)
+{
+  X509V3_CTX ctx;
+  X509V3_set_ctx_nodb(&ctx);
+  X509V3_set_ctx(&ctx, issuer_cert ? issuer_cert : cert, cert, nullptr, nullptr,
+                 0);
+
+  X509ExtensionPtr extension(
+      X509V3_EXT_conf_nid(nullptr, &ctx, nid, const_cast<char*>(value)),
+      X509_EXTENSION_free);
+  if (!extension) {
+    *error = "Could not create X509 extension: " + GetOpenSslError();
+    return false;
+  }
+
+  if (X509_add_ext(cert, extension.get(), -1) != 1) {
+    *error = "Could not add X509 extension: " + GetOpenSslError();
+    return false;
+  }
+
+  return true;
+}
+
+X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
+                            std::string_view common_name,
+                            long serial,
+                            int valid_days,
+                            EVP_PKEY* issuer_key,
+                            X509* issuer_cert,
+                            bool is_ca,
+                            const char* extended_key_usage,
+                            std::string* error)
+{
+  X509Ptr cert(X509_new(), X509_free);
+  if (!cert) {
+    *error = "Could not create X509 certificate: " + GetOpenSslError();
+    return {nullptr, X509_free};
+  }
+
+  if (X509_set_version(cert.get(), 2) != 1
+      || ASN1_INTEGER_set(X509_get_serialNumber(cert.get()), serial) != 1
+      || X509_gmtime_adj(X509_get_notBefore(cert.get()), 0) == nullptr
+      || X509_gmtime_adj(X509_get_notAfter(cert.get()),
+                         60L * 60 * 24 * valid_days)
+             == nullptr
+      || X509_set_pubkey(cert.get(), subject_key) != 1) {
+    *error = "Could not initialize X509 certificate: " + GetOpenSslError();
+    return {nullptr, X509_free};
+  }
+
+  X509_NAME* subject = X509_get_subject_name(cert.get());
+  if (!subject
+      || X509_NAME_add_entry_by_txt(
+             subject, "CN", MBSTRING_ASC,
+             reinterpret_cast<const unsigned char*>(common_name.data()), -1, -1,
+             0)
+             != 1) {
+    *error = "Could not set certificate subject: " + GetOpenSslError();
+    return {nullptr, X509_free};
+  }
+
+  X509_NAME* issuer_name = issuer_cert ? X509_get_subject_name(issuer_cert)
+                                       : X509_get_subject_name(cert.get());
+  if (!issuer_name || X509_set_issuer_name(cert.get(), issuer_name) != 1) {
+    *error = "Could not set certificate issuer: " + GetOpenSslError();
+    return {nullptr, X509_free};
+  }
+
+  if (is_ca) {
+    if (!AddExtension(cert.get(), issuer_cert, NID_basic_constraints,
+                      "critical,CA:TRUE", error)
+        || !AddExtension(cert.get(), issuer_cert, NID_key_usage,
+                         "critical,keyCertSign,cRLSign", error)) {
+      return {nullptr, X509_free};
+    }
+  } else {
+    if (!AddExtension(cert.get(), issuer_cert, NID_basic_constraints,
+                      "critical,CA:FALSE", error)
+        || !AddExtension(cert.get(), issuer_cert, NID_key_usage,
+                         "critical,digitalSignature,keyEncipherment", error)
+        || !AddExtension(cert.get(), issuer_cert, NID_ext_key_usage,
+                         extended_key_usage, error)) {
+      return {nullptr, X509_free};
+    }
+  }
+
+  if (X509_sign(cert.get(), issuer_key ? issuer_key : subject_key, EVP_sha256())
+      <= 0) {
+    *error = "Could not sign certificate: " + GetOpenSslError();
+    return {nullptr, X509_free};
+  }
+
+  return cert;
+}
+
+X509CrlPtr GenerateCrl(X509* ca_cert,
+                       EVP_PKEY* ca_key,
+                       long revoked_serial,
+                       std::string* error)
+{
+  X509CrlPtr crl(X509_CRL_new(), X509_CRL_free);
+  if (!crl) {
+    *error = "Could not create X509 CRL: " + GetOpenSslError();
+    return {nullptr, X509_CRL_free};
+  }
+
+  Asn1TimePtr last_update(ASN1_TIME_new(), ASN1_TIME_free);
+  Asn1TimePtr next_update(ASN1_TIME_new(), ASN1_TIME_free);
+  Asn1TimePtr revocation_date(ASN1_TIME_new(), ASN1_TIME_free);
+  if (!last_update || !next_update || !revocation_date) {
+    *error = "Could not allocate ASN1_TIME objects";
+    return {nullptr, X509_CRL_free};
+  }
+
+  if (X509_CRL_set_version(crl.get(), 1) != 1
+      || X509_CRL_set_issuer_name(crl.get(), X509_get_subject_name(ca_cert))
+             != 1
+      || ASN1_TIME_adj(last_update.get(), time(nullptr), 0, 0) == nullptr
+      || ASN1_TIME_adj(next_update.get(), time(nullptr), 7, 0) == nullptr
+      || ASN1_TIME_adj(revocation_date.get(), time(nullptr), 0, 0) == nullptr
+      || X509_CRL_set1_lastUpdate(crl.get(), last_update.get()) != 1
+      || X509_CRL_set1_nextUpdate(crl.get(), next_update.get()) != 1) {
+    *error = "Could not initialize CRL: " + GetOpenSslError();
+    return {nullptr, X509_CRL_free};
+  }
+
+  X509RevokedPtr revoked(X509_REVOKED_new(), X509_REVOKED_free);
+  Asn1IntegerPtr serial_number(ASN1_INTEGER_new(), ASN1_INTEGER_free);
+  if (!revoked || !serial_number) {
+    *error = "Could not allocate revoked certificate entry";
+    return {nullptr, X509_CRL_free};
+  }
+
+  if (ASN1_INTEGER_set(serial_number.get(), revoked_serial) != 1
+      || X509_REVOKED_set_serialNumber(revoked.get(), serial_number.get()) != 1
+      || X509_REVOKED_set_revocationDate(revoked.get(), revocation_date.get())
+             != 1
+      || X509_CRL_add0_revoked(crl.get(), revoked.get()) != 1) {
+    *error = "Could not add revoked certificate to CRL: " + GetOpenSslError();
+    return {nullptr, X509_CRL_free};
+  }
+  revoked.release();
+
+  if (X509_CRL_sort(crl.get()) != 1
+      || X509_CRL_sign(crl.get(), ca_key, EVP_sha256()) <= 0) {
+    *error = "Could not sign CRL: " + GetOpenSslError();
+    return {nullptr, X509_CRL_free};
+  }
+
+  return crl;
+}
+
+bool GenerateTlsArtifactsForRevocationTest(GeneratedTlsArtifacts* artifacts,
+                                           std::string* error)
+{
+  char temp_directory[] = "/tmp/bsock-crl-XXXXXX";
+  char* created_directory = mkdtemp(temp_directory);
+  if (!created_directory) {
+    *error = "Could not create temporary directory";
+    return false;
+  }
+
+  artifacts->directory = created_directory;
+  artifacts->ca_cert = artifacts->directory / "ca-cert.pem";
+  artifacts->server_cert = artifacts->directory / "server-cert.pem";
+  artifacts->server_key = artifacts->directory / "server-key.pem";
+  artifacts->client_cert = artifacts->directory / "client-cert.pem";
+  artifacts->client_key = artifacts->directory / "client-key.pem";
+  artifacts->crl = artifacts->directory / "revoked-client.crl.pem";
+
+  auto ca_key = GenerateRsaKey(error);
+  if (!ca_key) { return false; }
+
+  auto ca_cert
+      = GenerateCertificate(ca_key.get(), "Bareos Test CA", 1, 30, ca_key.get(),
+                            nullptr, true, nullptr, error);
+  if (!ca_cert) { return false; }
+
+  auto server_key = GenerateRsaKey(error);
+  if (!server_key) { return false; }
+
+  auto server_cert = GenerateCertificate(server_key.get(), "bareos-server", 2,
+                                         30, ca_key.get(), ca_cert.get(), false,
+                                         "serverAuth", error);
+  if (!server_cert) { return false; }
+
+  auto client_key = GenerateRsaKey(error);
+  if (!client_key) { return false; }
+
+  auto client_cert = GenerateCertificate(client_key.get(), "bareos-client", 3,
+                                         30, ca_key.get(), ca_cert.get(), false,
+                                         "clientAuth", error);
+  if (!client_cert) { return false; }
+
+  auto crl = GenerateCrl(ca_cert.get(), ca_key.get(), 3, error);
+  if (!crl) { return false; }
+
+  return WritePrivateKeyPem(artifacts->server_key, server_key.get(), error)
+         && WriteCertificatePem(artifacts->server_cert, server_cert.get(),
+                                error)
+         && WritePrivateKeyPem(artifacts->client_key, client_key.get(), error)
+         && WriteCertificatePem(artifacts->client_cert, client_cert.get(),
+                                error)
+         && WriteCertificatePem(artifacts->ca_cert, ca_cert.get(), error)
+         && WriteCrlPem(artifacts->crl, crl.get(), error);
+}
+}  // namespace
 
 static void InitSignalHandler()
 {
@@ -400,6 +756,57 @@ TEST(bsock, auth_works_with_tls_cert)
 
   EXPECT_TRUE(cipher_server == cipher_client);
   EXPECT_TRUE(future.get());
+}
+
+TEST(bsock, auth_fails_with_revoked_tls_cert)
+{
+  std::promise<bool> promise;
+  std::future<bool> future = promise.get_future();
+
+  client_cons_name = "clientname";
+  client_cons_password = "verysecretpassword";
+
+  server_cons_name = client_cons_name;
+  server_cons_password = client_cons_password;
+
+  InitForTest();
+
+  GeneratedTlsArtifacts artifacts;
+  std::string error;
+  ASSERT_TRUE(GenerateTlsArtifactsForRevocationTest(&artifacts, &error))
+      << error;
+
+  cipher_server.clear();
+  cipher_client.clear();
+
+  cons_dir_config->tls_enable_ = true;
+  cons_dir_config->tls_cert_.verify_peer_ = false;
+  cons_dir_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
+  cons_dir_config->tls_cert_.certfile_ = artifacts.client_cert.string();
+  cons_dir_config->tls_cert_.keyfile_ = artifacts.client_key.string();
+  cons_dir_config->tls_cert_.crlfile_.clear();
+
+  dir_cons_config->tls_enable_ = true;
+  dir_cons_config->tls_cert_.verify_peer_ = true;
+  dir_cons_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
+  dir_cons_config->tls_cert_.certfile_ = artifacts.server_cert.string();
+  dir_cons_config->tls_cert_.keyfile_ = artifacts.server_key.string();
+  dir_cons_config->tls_cert_.crlfile_ = artifacts.crl.string();
+  dir_cons_config->tls_cert_.allowed_certificate_common_names_.clear();
+
+  auto ls = create_listening_socket();
+  ASSERT_NE(ls, std::nullopt);
+
+  Dmsg0(10, "starting listen thread...\n");
+  std::thread server_thread(start_bareos_server, &promise, server_cons_name,
+                            server_cons_password, HOST, std::ref(*ls));
+
+  Dmsg0(10, "connecting to server\n");
+  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST,
+                                 ls->port));
+
+  server_thread.join();
+  EXPECT_FALSE(future.get());
 }
 
 class BareosSocketTCPMock : public BareosSocketTCP {

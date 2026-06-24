@@ -46,9 +46,10 @@ uint64_t FetchRemainingQuotas(JobControlRecord* jcr)
   // Quotas not being used ?
   if (!jcr->dir_impl->HasQuota) { return 0; }
 
-  Dmsg2(debuglevel, "JobSumTotalBytes for JobId %d is %" PRIu64 "\n",
+  Dmsg2(debuglevel, "JobSumTotalBytes for JobId %" PRIu32 " is %" PRIu64 "\n",
         jcr->JobId, jcr->dir_impl->jr.JobSumTotalBytes);
-  Dmsg1(debuglevel, "Fetching remaining quotas for JobId %d\n", jcr->JobId);
+  Dmsg1(debuglevel, "Fetching remaining quotas for JobId %" PRIu32 "\n",
+        jcr->JobId);
 
   // If strict quotas on and grace exceeded, enforce the softquota
   if (jcr->dir_impl->res.client->StrictQuotas
@@ -111,7 +112,7 @@ bool CheckHardquotas(JobControlRecord* jcr)
   // Do not check if hardquota is not set
   if (jcr->dir_impl->res.client->HardQuota == 0) { goto bail_out; }
 
-  Dmsg1(debuglevel, "Checking hard quotas for JobId %d\n", jcr->JobId);
+  Dmsg1(debuglevel, "Checking hard quotas for JobId %" PRIu32 "\n", jcr->JobId);
   if (!jcr->dir_impl->HasQuota) {
     if (jcr->dir_impl->res.client->QuotaIncludeFailedJobs) {
       if (DbLocker _{jcr->db}; !jcr->db->get_quota_jobbytes(
@@ -139,7 +140,7 @@ bool CheckHardquotas(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  Dmsg2(debuglevel, "Quota for JobID: %d is %" PRIu64 "\n",
+  Dmsg2(debuglevel, "Quota for JobID: %" PRIu32 " is %" PRIu64 "\n",
         jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.JobSumTotalBytes);
 
 bail_out:
@@ -170,7 +171,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
   // Do not check if the softquota is not set
   if (jcr->dir_impl->res.client->SoftQuota == 0) { goto bail_out; }
 
-  Dmsg1(debuglevel, "Checking soft quotas for JobId %d\n", jcr->JobId);
+  Dmsg1(debuglevel, "Checking soft quotas for JobId %" PRIu32 "\n", jcr->JobId);
   if (!jcr->dir_impl->HasQuota) {
     if (jcr->dir_impl->res.client->QuotaIncludeFailedJobs) {
       if (DbLocker _{jcr->db}; !jcr->db->get_quota_jobbytes(
@@ -205,7 +206,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
   Dmsg2(debuglevel, "SoftQuota Grace Period for %s is %" PRId64 "\n",
         jcr->dir_impl->jr.Name,
         jcr->dir_impl->res.client->SoftQuotaGracePeriod);
-  Dmsg2(debuglevel, "SoftQuota Grace Time for %s is %" PRId64 "\n",
+  Dmsg2(debuglevel, "SoftQuota Grace Time for %s is %" PRIu64 "\n",
         jcr->dir_impl->jr.Name, jcr->dir_impl->res.client->GraceTime);
 
   if ((jcr->dir_impl->jr.JobSumTotalBytes + jcr->dir_impl->SDJobBytes)
@@ -214,7 +215,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
      * Check if gracetime has been set */
     if (jcr->dir_impl->res.client->GraceTime == 0
         && jcr->dir_impl->res.client->SoftQuotaGracePeriod) {
-      Dmsg1(debuglevel, "UpdateQuotaGracetime: %" PRId64 "\n", now);
+      Dmsg1(debuglevel, "UpdateQuotaGracetime: %" PRIu64 "\n", now);
       if (DbLocker _{jcr->db};
           !jcr->db->UpdateQuotaGracetime(jcr, &jcr->dir_impl->jr)) {
         Jmsg(jcr, M_WARNING, 0, T_("Error setting Quota gracetime: ERR=%s\n"),

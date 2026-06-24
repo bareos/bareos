@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -98,7 +98,7 @@ bool BareosAccurateFilelistLmdb::init()
       goto bail_out;
     }
 
-    Mmsg(lmdb_name_, "%s/.accurate_lmdb.%d", me->working_directory,
+    Mmsg(lmdb_name_, "%s/.accurate_lmdb.%" PRIu32, me->working_directory,
          jcr_->JobId);
     result = mdb_env_open(env, lmdb_name_,
                           MDB_NOSUBDIR | MDB_NOLOCK | MDB_NOSYNC, 0600);

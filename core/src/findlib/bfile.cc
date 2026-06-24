@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -960,18 +960,20 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_MACOS_FORK_DATA:
     case STREAM_HFSPLUS_ATTRIBUTES:
 #  endif
+    case STREAM_WIN32_DATA:
+    case STREAM_WIN32_GZIP_DATA:
+    case STREAM_WIN32_COMPRESSED_DATA:
+    case STREAM_ENCRYPTED_WIN32_DATA:
+    case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
+    case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA:
       return false;
 
       /* Known streams */
     case STREAM_GZIP_DATA:
     case STREAM_SPARSE_GZIP_DATA:
-    case STREAM_WIN32_GZIP_DATA:
     case STREAM_COMPRESSED_DATA:
     case STREAM_SPARSE_COMPRESSED_DATA:
-    case STREAM_WIN32_COMPRESSED_DATA:
     case STREAM_ENCRYPTED_FILE_COMPRESSED_DATA:
-    case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA:
-    case STREAM_WIN32_DATA:
     case STREAM_UNIX_ATTRIBUTES:
     case STREAM_FILE_DATA:
     case STREAM_MD5_DIGEST:
@@ -988,8 +990,6 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_SIGNED_DIGEST:
     case STREAM_ENCRYPTED_FILE_DATA:
     case STREAM_ENCRYPTED_FILE_GZIP_DATA:
-    case STREAM_ENCRYPTED_WIN32_DATA:
-    case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
 #  ifdef HAVE_DARWIN_OS
     case STREAM_MACOS_FORK_DATA:
     case STREAM_HFSPLUS_ATTRIBUTES:
@@ -1007,8 +1007,10 @@ int bopen(BareosFilePacket* bfd,
           mode_t mode,
           dev_t rdev)
 {
-  Dmsg4(100, "bopen: fname %s, flags %08o, mode %04o, rdev %llu\n", fname,
-        flags, (mode & ~S_IFMT), static_cast<long long unsigned>(rdev));
+  Dmsg4(100, "bopen: fname %s, flags %08o, mode %04o, rdev %" PRIuMAX "\n",
+        fname, static_cast<unsigned int>(flags),
+        static_cast<unsigned int>(mode & ~S_IFMT),
+        static_cast<uintmax_t>(rdev));
 
   if (bfd->cmd_plugin && plugin_bopen) {
     Dmsg1(400, "call plugin_bopen fname=%s\n", fname);

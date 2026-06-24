@@ -34,6 +34,9 @@ if(Python3_FOUND)
   target_compile_definitions(
     python3-fd PUBLIC PY3MODDIR=\"${Python3_SITEARCH}\"
   )
+  if(MSVC)
+    target_compile_options(python3-fd PRIVATE /wd4005 /wd4100)
+  endif()
   add_dependencies(bareos-fd python3-fd)
   add_dependencies(python3-fd bareosfd-python3-module)
 endif()
@@ -93,6 +96,9 @@ if(Python3_FOUND)
   target_link_libraries(
     bareosfd-python3-module Bareos::Lib ${Python3_LIBRARIES}
   )
+  if(MSVC)
+    target_compile_options(bareosfd-python3-module PRIVATE /wd4005 /wd4100)
+  endif()
 
   if(NOT MSVC) # TODO: fix on MSVC
     add_test(
@@ -141,6 +147,7 @@ set(PYFILES
     vmware/bareos-fd-vmware.py
     libcloud/BareosLibcloudApi.py
     libcloud/bareos-fd-libcloud.py
+    incus/bareos-fd-incus.py
 )
 
 include(CMakeDependentOption)

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -296,7 +296,14 @@ typedef struct {
   const char* RegexWhere;       /* Regex where */
   int replace;                  /* Replace flag */
   int create_status;            /* Status from createFile() */
-  int filedes;                  /* filedescriptor for read/write in core */
+#  if HAVE_WIN32
+  long long filedes; /* HANDLE bridge for read/write in core */
+#  else
+  int filedes; /* filedescriptor for read/write in core */
+#  endif
+
+  const char* original_file_name;
+  const char* original_link_name;
 } PyRestorePacket;
 
 // Forward declarations of type specific functions.
@@ -338,9 +345,19 @@ static PyMemberDef PyRestorePacket_members[] = {
      (char*)"Replace flag"},
     {(char*)"create_status", T_INT, offsetof(PyRestorePacket, create_status), 0,
      (char*)"Status from createFile()"},
+#  if HAVE_WIN32
+    {(char*)"filedes", T_LONGLONG, offsetof(PyRestorePacket, filedes), 0,
+#  else
     {(char*)"filedes", T_INT, offsetof(PyRestorePacket, filedes), 0,
+#  endif
      (char*)"file descriptor of current file"},
-    {NULL, 0, 0, 0, NULL}};
+    {(char*)"original_file_name", T_STRING,
+     offsetof(PyRestorePacket, original_file_name), 0,
+     (char*)"filename at backup time"},
+    {(char*)"original_link_name", T_STRING,
+     offsetof(PyRestorePacket, original_link_name), 0,
+     (char*)"link name at backup time"},
+    {}};
 
 IGNORE_MISSING_INITIALIZERS_ON
 /* clang-format off */
@@ -373,7 +390,11 @@ typedef struct {
   int32_t whence;              /* Lseek argument */
   int64_t offset;              /* Lseek argument */
   bool win32;                  /* Win32 GetLastError returned */
-  int filedes;                 /* filedescriptor for read/write in core */
+#  if HAVE_WIN32
+  long long filedes; /* HANDLE bridge for read/write in core */
+#  else
+  int filedes; /* filedescriptor for read/write in core */
+#  endif
 } PyIoPacket;
 
 // Forward declarations of type specific functions.
@@ -410,7 +431,11 @@ static PyMemberDef PyIoPacket_members[]
         (char*)"Lseek argument"},
        {(char*)"win32", T_BOOL, offsetof(PyIoPacket, win32), 0,
         (char*)"Win32 GetLastError returned"},
+#  if HAVE_WIN32
+       {(char*)"filedes", T_LONGLONG, offsetof(PyIoPacket, filedes), 0,
+#  else
        {(char*)"filedes", T_INT, offsetof(PyIoPacket, filedes), 0,
+#  endif
         (char*)"file descriptor of current file"},
        {NULL, 0, 0, 0, NULL}};
 

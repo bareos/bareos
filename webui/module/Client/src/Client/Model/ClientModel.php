@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@ class ClientModel
      *
      * @return array
      */
-    public function getClients(&$bsock = null)
+    public function getClients(&$bsock = null): array
     {
         if (!isset($bsock)) {
             throw new \Exception('Missing argument.');
@@ -51,7 +51,7 @@ class ClientModel
      *
      * @return array
      */
-    public function getDotClients(&$bsock = null)
+    public function getDotClients(&$bsock = null): array
     {
         if (!isset($bsock)) {
             throw new \Exception('Missing argument.');
@@ -68,7 +68,7 @@ class ClientModel
      *
      * @return array
      */
-    public function getClientsWithBackups(&$bsock = null)
+    public function getClientsWithBackups(&$bsock = null): array
     {
         if (!isset($bsock)) {
             throw new \Exception('Missing argument.');
@@ -86,9 +86,9 @@ class ClientModel
      *
      * @return array
      */
-    public function getClient(&$bsock = null, $client)
+    public function getClient($client, &$bsock = null): array
     {
-        if (!isset($bsock)) {
+        if (!isset($bsock, $client)) {
             throw new \Exception('Missing argument.');
         }
 
@@ -108,7 +108,7 @@ class ClientModel
      *
      * @return array
      */
-    public function getClientBackups(&$bsock = null, $client = null, $fileset = null, $order = null, $limit = null)
+    public function getClientBackups(&$bsock = null, $client = null, $fileset = null, $order = null, $limit = null): array
     {
         if (isset($bsock, $client)) {
             $cmd = 'llist backups client="' . $client . '"';
@@ -125,18 +125,31 @@ class ClientModel
             $backups = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
 
             if (!isset($limit)) {
-                $filesets_pluginjob = array();
+                $all_filesets_result = \Laminas\Json\Json::decode(
+                    $bsock->send_command('show fileset', 2),
+                    \Laminas\Json\Json::TYPE_ARRAY
+                );
+                $filesets_all = $all_filesets_result['result']['filesets'] ?? [];
+
+                $fileset_plugin_map = [];
+                foreach ($filesets_all as $fs_name => $fs) {
+                    $fileset_plugin_map[$fs_name] = !empty($fs['include'][0]['plugin']);
+                }
+
                 foreach ($backups['result']['backups'] as $key => $backup) {
-                    if (!array_key_exists($backup['fileset'], $filesets_pluginjob)) {
-                        $cmd = 'show fileset="' . $backup['fileset'] . '"';
-                        $result = $bsock->send_command($cmd, 2);
-                        $fileset = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
-                        $filesets_pluginjob[$backup['fileset']] = false;
-                        if (!empty($fileset['result']['filesets'][$backup['fileset']]['include'][0]['plugin'])) {
-                            $filesets_pluginjob[$backup['fileset']] = true;
-                        }
+                    if (
+                        isset($backup['fileset'])
+                        && array_key_exists($backup['fileset'], $fileset_plugin_map)
+                    ) {
+                        $backups['result']['backups'][$key]['pluginjob']
+                            = $fileset_plugin_map[$backup['fileset']];
+                    } elseif (isset($backup['fileset'])) {
+                        error_log(
+                            'getClientBackups: missing fileset metadata for "'
+                            . $backup['fileset']
+                            . '"'
+                        );
                     }
-                    $backups['result']['backups'][$key]['pluginjob'] = $filesets_pluginjob[$backup['fileset']];
                 }
             }
             return $backups['result']['backups'];
@@ -156,7 +169,7 @@ class ClientModel
      *
      * @return array
      */
-    public function getClientJobs(&$bsock = null, $client = null, $fileset = null, $order = null, $limit = null)
+    public function getClientJobs(&$bsock = null, $client = null, $fileset = null, $order = null, $limit = null): array
     {
         if (isset($bsock, $client)) {
             $cmd = 'llist jobs client="' . $client . '"';
@@ -185,10 +198,10 @@ class ClientModel
      *
      * @return string
      */
-    public function statusClient(&$bsock = null, $name = null)
+    public function statusClient(&$bsock = null, $name = null): string
     {
         if (isset($bsock, $name)) {
-            $cmd = 'status client="' . $name;
+            $cmd = 'status client="' . $name . '"';
             $result = $bsock->send_command($cmd, 0);
             return $result;
         } else {
@@ -204,7 +217,7 @@ class ClientModel
      *
      * @return string
      */
-    public function enableClient(&$bsock = null, $name = null)
+    public function enableClient(&$bsock = null, $name = null): string
     {
         if (isset($bsock, $name)) {
             $cmd = 'enable client="' . $name . '" yes';
@@ -223,7 +236,7 @@ class ClientModel
      *
      * @return string
      */
-    public function disableClient(&$bsock = null, $name = null)
+    public function disableClient(&$bsock = null, $name = null): string
     {
         if (isset($bsock, $name)) {
             $cmd = 'disable client="' . $name . '" yes';

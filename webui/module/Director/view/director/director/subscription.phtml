@@ -69,7 +69,18 @@ Please request a quote by sending the downloadable backup unit report via e-mail
 
    $panelcontent = "";
 
-   if (!$this->directorOutput) {
+   if (!empty($this->error)) {
+      $panelcontent .= '<div class="container-fluid">';
+      $panelcontent .= '<div class="row">';
+      $panelcontent .= '<div class="col-md-6">';
+      $panelcontent .= '<div class="alert alert-danger">';
+      $panelcontent .= $this->escapeHtml($this->error);
+      $panelcontent .= '</div>';
+      $panelcontent .= '</div>';
+      $panelcontent .= '<div class="col-md-6"></div>';
+      $panelcontent .= '</div>';
+      $panelcontent .= '</div>';
+   } elseif (!$this->directorOutput) {
       $panelcontent .= '<div class="container-fluid">';
       $panelcontent .= '<div class="row">';
       $panelcontent .= '<div class="col-md-6">';

@@ -355,7 +355,7 @@ char* edit_utime(utime_t val, char* buf, int buf_len)
   if (val == 0 && strlen(buf) == 0) {
     bstrncat(buf, "0 secs", buf_len);
   } else if (val != 0) {
-    Bsnprintf(mybuf, sizeof(mybuf), "%d sec%s", (uint32_t)val,
+    Bsnprintf(mybuf, sizeof(mybuf), "%" PRIu32 " sec%s", (uint32_t)val,
               val > 1 ? "s" : "");
     bstrncat(buf, mybuf, buf_len);
   }

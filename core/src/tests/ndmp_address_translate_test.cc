@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,10 +32,10 @@
 
 void print_smc_aa(smc_element_address_assignment smc_elem_aa)
 {
-  printf("drive: %d, %d\n", smc_elem_aa.dte_addr, smc_elem_aa.dte_count);
-  printf("robot: %d, %d\n", smc_elem_aa.mte_addr, smc_elem_aa.mte_count);
-  printf("ie: %d, %d\n", smc_elem_aa.iee_addr, smc_elem_aa.iee_count);
-  printf("slot: %d, %d\n\n", smc_elem_aa.se_addr, smc_elem_aa.se_count);
+  printf("drive: %u, %u\n", smc_elem_aa.dte_addr, smc_elem_aa.dte_count);
+  printf("robot: %u, %u\n", smc_elem_aa.mte_addr, smc_elem_aa.mte_count);
+  printf("ie: %u, %u\n", smc_elem_aa.iee_addr, smc_elem_aa.iee_count);
+  printf("slot: %u, %u\n\n", smc_elem_aa.se_addr, smc_elem_aa.se_count);
 }
 
 void init_smc_aa(smc_element_address_assignment& smc_elem_aa)

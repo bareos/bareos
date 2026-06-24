@@ -119,14 +119,14 @@ static bool DoGetVolumeInfo(DeviceControlRecord* dcr)
   }
   VolumeCatalogInfo vol;
   Dmsg1(debuglevel, "<dird %s", dir->msg);
-  n = sscanf(dir->msg, OK_media, vol.VolCatName, &vol.VolCatJobs,
-             &vol.VolCatFiles, &vol.VolCatBlocks, &vol.VolCatBytes,
-             &vol.VolCatMounts, &vol.VolCatErrors, &vol.VolCatWrites,
-             &vol.VolCatMaxBytes, &vol.VolCatCapacityBytes, vol.VolCatStatus,
-             &vol.Slot, &vol.VolCatMaxJobs, &vol.VolCatMaxFiles, &InChanger,
-             &vol.VolReadTime, &vol.VolWriteTime, &vol.EndFile, &vol.EndBlock,
-             &vol.LabelType, &vol.VolMediaId, vol.VolEncrKey,
-             &vol.VolMinBlocksize, &vol.VolMaxBlocksize);
+  n = bsscanf(dir->msg, OK_media, vol.VolCatName, &vol.VolCatJobs,
+              &vol.VolCatFiles, &vol.VolCatBlocks, &vol.VolCatBytes,
+              &vol.VolCatMounts, &vol.VolCatErrors, &vol.VolCatWrites,
+              &vol.VolCatMaxBytes, &vol.VolCatCapacityBytes, vol.VolCatStatus,
+              &vol.Slot, &vol.VolCatMaxJobs, &vol.VolCatMaxFiles, &InChanger,
+              &vol.VolReadTime, &vol.VolWriteTime, &vol.EndFile, &vol.EndBlock,
+              &vol.LabelType, &vol.VolMediaId, vol.VolEncrKey,
+              &vol.VolMinBlocksize, &vol.VolMaxBlocksize);
   if (n != 24) {
     Dmsg3(debuglevel, "Bad response from Dir fields=%d, len=%d: %s", n,
           dir->message_length, dir->msg);
@@ -399,7 +399,7 @@ bool StorageDaemonDeviceControlRecord::DirCreateJobmediaRecord(bool zero)
   WroteVol = false;
   if (zero) {
     // Send dummy place holder to avoid purging
-    dir->fsend(Create_job_media, jcr->Job, 0, 0, 0, 0, 0, 0, 0, 0,
+    dir->fsend(Create_job_media, jcr->Job, 0u, 0u, 0u, 0u, 0u, 0u, 0, 0,
                edit_uint64(VolMediaId, ed1));
   } else {
     dir->fsend(Create_job_media, jcr->Job, VolFirstIndex, VolLastIndex,

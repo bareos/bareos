@@ -147,7 +147,7 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
   PoolMem query(PM_MESSAGE);
 
   // Check max_connections setting
-  FillQuery(query, SQL_QUERY::sql_get_max_connections);
+  FillQuery<SQL_QUERY::sql_get_max_connections>(query);
   if (!SqlQueryWithHandler(query.c_str(), DbMaxConnectionsHandler, &context)) {
     Jmsg(jcr, M_ERROR, 0, "Can't verify max_connections settings %s", errmsg);
     return false;
@@ -158,9 +158,9 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
     DbLocker _{this};
     Mmsg(errmsg,
          T_("Potential performance problem:\n"
-            "max_connections=%d set for %s database \"%s\" should be larger "
-            "than Director's "
-            "MaxConcurrentJobs=%d\n"),
+            "max_connections=%" PRIu32
+            " set for %s database \"%s\" should be larger than Director's "
+            "MaxConcurrentJobs=%" PRIu32 "\n"),
          context.nr_connections, GetType(), get_db_name(), max_concurrent_jobs);
     Jmsg(jcr, M_WARNING, 0, "%s", errmsg);
     return false;
@@ -169,21 +169,24 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
   return true;
 }
 
-bool BareosDb::CheckTablesVersion(JobControlRecord* jcr)
+bool BareosDb::CheckTablesVersion()
 {
   uint32_t bareos_db_version = 0;
   const char* query = "SELECT VersionId FROM Version";
 
+  // clear error
+  PmStrcpy(errmsg, "");
+
   if (!SqlQueryWithHandler(query, DbIntHandler, (void*)&bareos_db_version)) {
-    Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
+    Mmsg(errmsg, "Could not query the database version: %s\n", sql_strerror());
     return false;
   }
 
   if (bareos_db_version != BDB_VERSION) {
-    DbLocker _{this};
-    Mmsg(errmsg, "Version error for database \"%s\". Wanted %d, got %d\n",
-         get_db_name(), BDB_VERSION, bareos_db_version);
-    Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
+    Mmsg(errmsg,
+         "Version error for database \"%s\". Wanted %" PRIu32 ", got %" PRIu32
+         "\n",
+         get_db_name(), static_cast<uint32_t>(BDB_VERSION), bareos_db_version);
     return false;
   }
 
