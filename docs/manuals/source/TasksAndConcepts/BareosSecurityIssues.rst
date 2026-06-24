@@ -106,8 +106,8 @@ Some `Enterprise grade` distributions like RHEL or SLES can be run in FIPS mode,
 To run Bareos on an OS that is running in `FIPS` mode, some adjustment need to be made so that Bareos only uses algorithms and protocols that are available in the `FIPS` mode.
 
 
-RedHat RHEL 8
-^^^^^^^^^^^^^
+RedHat RHEL
+^^^^^^^^^^^
 
 For RedHat RHEL 8 follow the editor instructions located at:
 https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/security_hardening/switching-rhel-to-fips-mode_security-hardening
