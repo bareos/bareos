@@ -131,19 +131,19 @@ struct findFOPTS {
   int StripPath{};          /**< Strip path count */
   struct s_sz_matching* size_match{}; /**< Perform size matching ? */
   b_fileset_shadow_type shadow_type{
-      check_shadow_none};        /**< Perform fileset shadowing check ? */
-  char VerifyOpts[MAX_OPTS]{};   /**< Verify options */
-  char AccurateOpts[MAX_OPTS]{}; /**< Accurate mode options */
-  char* plugin{};                /**< Plugin that handle this section */
-  alist<regex_t*> regex;         /**< Regex string(s) */
-  alist<regex_t*> regexdir;      /**< Regex string(s) for directories */
-  alist<regex_t*> regexfile;     /**< Regex string(s) for files */
-  alist<const char*> wild;       /**< Wild card strings */
-  alist<const char*> wilddir;    /**< Wild card strings for directories */
-  alist<const char*> wildfile;   /**< Wild card strings for files */
-  alist<const char*> wildbase;   /**< Wild card strings for basenames */
-  alist<const char*> fstype;     /**< File system type limitation */
-  alist<const char*> Drivetype;  /**< Drive type limitation */
+      check_shadow_none};       /**< Perform fileset shadowing check ? */
+  char VerifyOpts[MAX_OPTS]{};  /**< Verify options */
+  uint64_t accurate_opts{};     /**< Accurate mode options */
+  char* plugin{};               /**< Plugin that handle this section */
+  alist<regex_t*> regex;        /**< Regex string(s) */
+  alist<regex_t*> regexdir;     /**< Regex string(s) for directories */
+  alist<regex_t*> regexfile;    /**< Regex string(s) for files */
+  alist<const char*> wild;      /**< Wild card strings */
+  alist<const char*> wilddir;   /**< Wild card strings for directories */
+  alist<const char*> wildfile;  /**< Wild card strings for files */
+  alist<const char*> wildbase;  /**< Wild card strings for basenames */
+  alist<const char*> fstype;    /**< File system type limitation */
+  alist<const char*> Drivetype; /**< Drive type limitation */
 };
 
 // This is either an include item or an exclude item
@@ -189,7 +189,7 @@ typedef enum
   accurate_sha1 = 1 << 12,
 } accurate_check;
 
-uint64_t AccurateOptionsToBitmask(const char* accurate_options);
+uint64_t AccurateOptionsToBitmask(char accurate_opt);
 std::string accurate_opts_as_str(std::uint64_t);
 
 

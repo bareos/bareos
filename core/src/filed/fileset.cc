@@ -333,11 +333,10 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
         break;
       case 'C': /* Accurate options */
         // Copy Accurate Options
-        for (j = 0; *p && *p != ':'; p++) {
-          fo->AccurateOpts[j] = *p;
-          if (j < (int)sizeof(fo->AccurateOpts) - 1) { j++; }
+        while (*p && *p != ':') {
+          fo->accurate_opts |= AccurateOptionsToBitmask(*p);
+          p += 1;
         }
-        fo->AccurateOpts[j] = 0;
         // skip ':' but do not skip '\0'
         // p currently points at one of them
         if (*p == '\0') {

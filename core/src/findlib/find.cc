@@ -210,9 +210,7 @@ int FindFiles(JobControlRecord* jcr,
         }
         bstrncat(ff->VerifyOpts, fo->VerifyOpts,
                  sizeof(ff->VerifyOpts)); /* TODO: Concat or replace? */
-        if (fo->AccurateOpts[0]) {
-          ff->accurate_opts = AccurateOptionsToBitmask(fo->AccurateOpts);
-        }
+        if (fo->accurate_opts) { ff->accurate_opts = fo->accurate_opts; }
       }
 
       Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%s>\n",
@@ -594,64 +592,59 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   ff->fileset->state = state_options;
 }
 
-uint64_t AccurateOptionsToBitmask(const char* accurate_options)
+uint64_t AccurateOptionsToBitmask(char accurate_opt)
 {
-  if (!accurate_options) { return 0; }
-
   uint64_t mask = 0;
-  for (const char* option = accurate_options; *option; ++option) {
-    switch (*option) {
-      case 'i':
-        mask |= accurate_inode;
-        break;
-      case 'p':
-        mask |= accurate_permissions;
-        break;
-      case 'n':
-        mask |= accurate_nlink;
-        break;
-      case 'u':
-        mask |= accurate_uid;
-        break;
-      case 'g':
-        mask |= accurate_gid;
-        break;
-      case 's':
-        mask |= accurate_size;
-        break;
-      case 'a':
-        mask |= accurate_atime;
-        break;
-      case 'm':
-        mask |= accurate_mtime;
-        break;
-      case 'c':
-        mask |= accurate_ctime;
-        break;
-      case 'd':
-        mask |= accurate_size_decrease;
-        break;
-      case 'A':
-        mask |= accurate_always;
-        break;
-      case '5':
-        mask |= accurate_md5;
-        break;
-      case '1':
-        mask |= accurate_sha1;
-        break;
-      case 'C':
-      case 'J':
-      case ':':
-        break;
-      default:
-        Dmsg1(debuglevel,
-              "fd-plugin: ignoring unknown accurate option character '%c'\n",
-              *option);
-        break;
-    }
+  switch (accurate_opt) {
+    case 'i':
+      mask |= accurate_inode;
+      break;
+    case 'p':
+      mask |= accurate_permissions;
+      break;
+    case 'n':
+      mask |= accurate_nlink;
+      break;
+    case 'u':
+      mask |= accurate_uid;
+      break;
+    case 'g':
+      mask |= accurate_gid;
+      break;
+    case 's':
+      mask |= accurate_size;
+      break;
+    case 'a':
+      mask |= accurate_atime;
+      break;
+    case 'm':
+      mask |= accurate_mtime;
+      break;
+    case 'c':
+      mask |= accurate_ctime;
+      break;
+    case 'd':
+      mask |= accurate_size_decrease;
+      break;
+    case 'A':
+      mask |= accurate_always;
+      break;
+    case '5':
+      mask |= accurate_md5;
+      break;
+    case '1':
+      mask |= accurate_sha1;
+      break;
+    case 'C':
+    case 'J':
+    case ':':
+      break;
+    default:
+      Dmsg1(debuglevel,
+            "fd-plugin: ignoring unknown accurate option character '%c'\n",
+            accurate_opt);
+      break;
   }
-
   return mask;
 }
 

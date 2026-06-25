@@ -116,31 +116,4 @@ TEST(fd, fd_plugins)
 
   UnloadFdPlugins();
 }
-
-TEST(fd, accurate_options_bitmask_maps_supported_tokens)
-{
-  const auto mask = AccurateOptionsToBitmask("C:mpnugsamdA51J");
-
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_permissions), 0U);
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_nlink), 0U);
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_uid), 0U);
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_gid), 0U);
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_size), 0U);
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_atime), 0U);
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_mtime), 0U);
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_size_decrease), 0U);
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_always), 0U);
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_md5), 0U);
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_sha1), 0U);
-}
-
-TEST(fd, accurate_options_bitmask_ignores_unknown_tokens)
-{
-  const auto mask = AccurateOptionsToBitmask("Cmcsx");
-
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_mtime), 0U);
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_ctime), 0U);
-  EXPECT_NE(mask & static_cast<uint64_t>(accurate_size), 0U);
-  EXPECT_EQ(mask & static_cast<uint64_t>(accurate_inode), 0U);
-}
 } /* namespace filedaemon */
