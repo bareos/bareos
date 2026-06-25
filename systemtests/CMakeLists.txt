@@ -401,12 +401,15 @@ find_program(
   GOOGLE_CHROME NAMES google-chrome google-chrome-stable chromium
                       chromium-browser chrome
 )
+# The lookup cache must be cleared before re-searching because these
+# executables can be provided by the build tree or the system PATH.
 unset(WEBUI_VUE_PLAYWRIGHT CACHE)
 find_program(
   WEBUI_VUE_PLAYWRIGHT
   NAMES playwright playwright.cmd
   HINTS "${CMAKE_SOURCE_DIR}/webui-vue/node_modules/.bin"
 )
+# Same cache-clearing pattern as above for the Vite executable.
 unset(WEBUI_VUE_VITE CACHE)
 find_program(
   WEBUI_VUE_VITE
