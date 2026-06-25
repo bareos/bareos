@@ -7,7 +7,7 @@
     style="font-weight:700; user-select:none"
   >
     {{ info.badge }}
-    <q-tooltip>{{ info.label }}</q-tooltip>
+    <q-tooltip>{{ t('Level') }}: {{ info.label }}</q-tooltip>
   </q-avatar>
 </template>
 
