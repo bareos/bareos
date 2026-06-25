@@ -240,18 +240,13 @@ void RunProxyServer(const ProxyConfig& cfg)
         continue;
       }
 
-      // Prepare socket descriptor and config for the detached thread.
-      // Each thread needs its own copy of the config so it can be captured
-      // and owned independently for the lifetime of the detached thread.
-      int cfd = client_fd;
-      ProxyConfig session_cfg = cfg;
       try {
         // Increment counter; it will be decremented when thread exits
         unauthenticated_connection_count.fetch_add(1);
-        std::thread([cfd, peer, session_cfg,
+        std::thread([client_fd, peer, cfg,
                      &unauthenticated_connection_count]() {
           try {
-            RunProxySession(cfd, peer, session_cfg);
+            RunProxySession(client_fd, peer, cfg);
           } catch (const std::exception& ex) {
             PROXY_LOG_ERROR(peer, "session aborted: %s", ex.what());
           } catch (...) {
@@ -263,7 +258,7 @@ void RunProxyServer(const ProxyConfig& cfg)
       } catch (const std::system_error& ex) {
         PROXY_LOG_ERROR(peer, "failed to start session thread: %s", ex.what());
         unauthenticated_connection_count.fetch_sub(1);
-        ::close(cfd);
+        ::close(client_fd);
         continue;
       }
     }
