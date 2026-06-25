@@ -45,6 +45,7 @@
 #ifdef BAREOSFD_MODULE
 
 #  include "include/filetypes.h"
+#  include "findlib/find.h"
 /* This section is used when compiling bareosfd.cc */
 
 namespace filedaemon {
@@ -731,19 +732,19 @@ MOD_INIT(bareosfd)
   PyObject* pDictbAccurateOption = NULL;
   pDictbAccurateOption = PyDict_New();
   if (!pDictbAccurateOption) { return MOD_ERROR_VAL; }
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionInode);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionPermissions);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionNlink);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionUid);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionGid);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionSize);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionAtime);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionMtime);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionCtime);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionSizeDecrease);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionAlways);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionMd5);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionSha1);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionInode, accurate_inode);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionPermissions, accurate_permissions);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionNlink, accurate_nlink);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionUid, accurate_uid);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionGid, accurate_gid);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionSize, accurate_size);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionAtime, accurate_atime);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionMtime, accurate_mtime);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionCtime, accurate_ctime);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionSizeDecrease, accurate_size_decrease);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionAlways, accurate_always);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionMD5, accurate_md5);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionSha1, accurate_sha1);
   if (PyModule_AddObject(m, bAccurateOption, pDictbAccurateOption)) {
     return MOD_ERROR_VAL;
   }
