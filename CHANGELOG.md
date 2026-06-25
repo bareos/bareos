@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dedupable: remove error on flush [PR #2658]
 - docs: clarify mssql plugin options [PR #2659]
 - VMware Plugin: Fix local vmdk restore > 2TB [PR #2691]
+- spec: use gcc-15 for rhel builds [PR #2707]
 
 ## [25.0.3] - 2026-04-01
 
@@ -2298,4 +2299,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2692]: https://github.com/bareos/bareos/pull/2692
 [PR #2693]: https://github.com/bareos/bareos/pull/2693
 [PR #2697]: https://github.com/bareos/bareos/pull/2697
+[PR #2707]: https://github.com/bareos/bareos/pull/2707
 [unreleased]: https://github.com/bareos/bareos/tree/master
