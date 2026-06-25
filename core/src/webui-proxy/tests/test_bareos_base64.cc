@@ -55,10 +55,10 @@ TEST(BareosBase64, EncodesKnownCompatibleValue)
 
 TEST(BareosBase64, UsesOnlyBase64Alphabet)
 {
-  // Encode 16 bytes of the pattern 0x00..0x0F
-  uint8_t data[16];
-  for (int i = 0; i < 16; ++i) { data[i] = static_cast<uint8_t>(i); }
-  std::string result = BareosBase64Encode(data, 16);
+  // Encode the full byte range so the alphabet check exercises all values.
+  uint8_t data[256];
+  for (int i = 0; i < 256; ++i) { data[i] = static_cast<uint8_t>(i); }
+  std::string result = BareosBase64Encode(data, 256);
   // Result must be non-empty and contain only valid base64 chars
   for (char c : result) {
     bool valid = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
