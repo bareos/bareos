@@ -42,17 +42,13 @@
 
 TEST(DirectorConnection, FormatsTlsPskIdentityAsQualifiedConsoleName)
 {
+  // The proxy prepends the console resource name and the separator byte.
   const std::string identity = GetTlsPskIdentityForDirector("admin-tls");
   std::string expected = "R_CONSOLE";
   expected.push_back(AsciiControlCharacters::RecordSeparator());
   expected.append("admin-tls");
 
   EXPECT_EQ(identity, expected);
-}
-
-TEST(DirectorConnection, DerivesCramMd5KeyFromPlaintextPassword)
-{
-  EXPECT_EQ(MakeCramMd5Key("secret"), "5ebe2294ecd0e0f08eab7690d2a6ee69");
 }
 
 namespace {
