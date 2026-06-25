@@ -87,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: correct TlsRequire default in docs [PR #2671]
 - docs: Update MSSPlugin instructions [PR #2684]
 - docs: show bareos supported versions in a chart [PR #2681]
+- docs: fix sphinx-linkcheck warnings in our docs [PR #2706]
 
 ## [25.0.0] - 2025-12-01
 
@@ -2323,4 +2324,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2696]: https://github.com/bareos/bareos/pull/2696
 [PR #2698]: https://github.com/bareos/bareos/pull/2698
 [PR #2705]: https://github.com/bareos/bareos/pull/2705
+[PR #2706]: https://github.com/bareos/bareos/pull/2706
 [unreleased]: https://github.com/bareos/bareos/tree/master

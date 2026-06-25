@@ -87,6 +87,8 @@ The commit that contains the above changes should then be tagged as the new WIP-
 For example ``git add CHANGELOG.md docs/manuals/source/conf.py`` followed by ``git commit -m 'Start development of X.Y.Z'``.
 That commit can now be tagged with a new WIP-tag using ``git tag WIP/X.Y.Z-pre``.
 
+Update the version used in :ref:`section-AddSoftwareRepository` to make sure that it is always a supported version.
+
 .. _publishing-the-release:
 
 Publishing the release
