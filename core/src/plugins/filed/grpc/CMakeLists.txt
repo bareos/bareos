@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,8 @@ if(ENABLE_GRPC)
       FATAL_ERROR "The grpc plugin is currently not compatible with windows"
     )
   endif()
+
+  set(_grpc_gcc_no_error_cpp "$<$<CXX_COMPILER_ID:GNU>:-Wno-error=cpp>")
 
   set(PROTO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/proto")
   make_directory(${PROTO_OUTPUT_DIR})
@@ -83,6 +85,7 @@ if(ENABLE_GRPC)
     grpc-proto "proto/plugin.proto" "proto/events.proto" "proto/bareos.proto"
     "proto/common.proto"
   )
+  target_compile_options(grpc-proto PUBLIC ${_grpc_gcc_no_error_cpp})
   target_link_libraries(
     grpc-proto PUBLIC gRPC::grpc++_reflection gRPC::grpc++
                       protobuf::libprotobuf
