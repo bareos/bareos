@@ -20,6 +20,7 @@
 */
 #include "director_connection.h"
 #include "bareos_base64.h"
+#include "lib/cram_md5.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/bnet_protocol_signals.h"
 #include "proxy_log.h"
@@ -46,31 +47,6 @@
 #include <openssl/rand.h>
 #include <openssl/ssl.h>
 
-constexpr unsigned int kMd5DigestBytes = 16;
-
-// Compute MD5(text) and return it as a lowercase hex string.
-std::string MakeCramMd5Key(const std::string& password)
-{
-  uint8_t digest[EVP_MAX_MD_SIZE];
-  unsigned int dlen = 0;
-
-  EVP_MD_CTX* ctx = EVP_MD_CTX_new();
-  EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
-  EVP_DigestUpdate(ctx, password.data(), password.size());
-  EVP_DigestFinal_ex(ctx, digest, &dlen);
-  EVP_MD_CTX_free(ctx);
-
-  if (dlen > kMd5DigestBytes) {
-    throw std::runtime_error("Director: unexpected MD5 digest length");
-  }
-
-  std::string hex(dlen * 2, '\0');
-  for (unsigned int i = 0; i < dlen; ++i) {
-    snprintf(hex.data() + i * 2, 3, "%02x", digest[i]);
-  }
-  return hex;
-}
-
 std::string GetTlsPskIdentityForDirector(const std::string& console_name)
 {
   std::string identity = "R_CONSOLE";
@@ -81,6 +57,8 @@ std::string GetTlsPskIdentityForDirector(const std::string& console_name)
 }
 
 namespace {
+
+constexpr size_t kHmacMd5DigestBytes = 16;
 
 /**
  * Compute HMAC-MD5(key, data) and return the 16-byte raw digest.
@@ -325,9 +303,9 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   }
   // Challenge format: "auth cram-md5 <token> ssl=<n>\n"
   char token_buf[512] = {};
-  int ssl_val = 0;
-  if (sscanf(challenge_msg.c_str(), "auth cram-md5 %511s ssl=%d", token_buf,
-             &ssl_val)
+  [[maybe_unused]] int ssl_val = 0;
+  if (bsscanf(challenge_msg.c_str(), "auth cram-md5 %511s ssl=%d", token_buf,
+              &ssl_val)
       < 1) {
     throw std::runtime_error("Director: unexpected response to Hello: "
                              + challenge_msg);
@@ -336,7 +314,7 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
 
   // Step 3: compute and send our CRAM-MD5 response (no trailing newline)
   auto hmac = HmacMd5(key, director_challenge);
-  assert(hmac.size() == kMd5DigestBytes);
+  assert(hmac.size() == kHmacMd5DigestBytes);
   std::string response = BareosBase64Encode(hmac.data(), hmac.size());
   SendFrame(response);
 
@@ -370,7 +348,7 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
 
   // Step 7: verify director response against the Bareos-compatible variant.
   auto expected_hmac = HmacMd5(key, our_challenge);
-  assert(expected_hmac.size() == kMd5DigestBytes);
+  assert(expected_hmac.size() == kHmacMd5DigestBytes);
   std::string expected
       = BareosBase64Encode(expected_hmac.data(), expected_hmac.size());
 

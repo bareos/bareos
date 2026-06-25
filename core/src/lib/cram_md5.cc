@@ -32,6 +32,36 @@
 #include "lib/util.h"
 #include "lib/base64.h"
 
+#include <openssl/evp.h>
+
+namespace {
+
+constexpr unsigned int kMd5DigestBytes = 16;
+
+}  // namespace
+
+// Compute MD5(text) and return it as a lowercase hex string.
+std::string MakeCramMd5Key(const std::string& password)
+{
+  uint8_t digest[EVP_MAX_MD_SIZE];
+  unsigned int dlen = 0;
+
+  EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+  EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
+  EVP_DigestUpdate(ctx, password.data(), password.size());
+  EVP_DigestFinal_ex(ctx, digest, &dlen);
+  EVP_MD_CTX_free(ctx);
+
+  if (dlen > kMd5DigestBytes) {
+    throw std::runtime_error("Could not calculate cram-md5 key");
+  }
+
+  std::string hex(dlen * 2, '\0');
+  for (unsigned int i = 0; i < dlen; ++i) {
+    snprintf(hex.data() + i * 2, 3, "%02x", digest[i]);
+  }
+  return hex;
+}
 
 CramMd5Handshake::CramMd5Handshake(BareosSocket* bs,
                                    const char* password,

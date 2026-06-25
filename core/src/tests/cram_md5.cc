@@ -91,7 +91,7 @@ static std::string ExtractChallenge(std::string_view message)
 
 static constexpr bool InitiatedByRemote = true;
 
-TEST(cram_md5, makes_cram_md5_key_from_plaintext_password)
+TEST(cram_md5, derives_cram_md5_key_from_plaintext_password)
 {
   EXPECT_EQ(MakeCramMd5Key("secret"), "5ebe2294ecd0e0f08eab7690d2a6ee69");
 }

@@ -81,7 +81,6 @@ struct DirectorConfig {
 };
 
 std::string GetTlsPskIdentityForDirector(const std::string& console_name);
-std::string MakeCramMd5Key(const std::string& password);
 
 class DirectorConnection {
  public:

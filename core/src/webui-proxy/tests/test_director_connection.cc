@@ -24,6 +24,7 @@
 #undef private
 
 #include "../bareos_base64.h"
+#include "lib/cram_md5.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/bnet_protocol_signals.h"
 
