@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,18 +21,15 @@
 
 /* Load the python-fd extension module and test it */
 
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#endif
-
 #include "Python.h"
 #include <inttypes.h>
 class PoolMem;
-#define NbytesForBits(n) ((((n)-1) >> 3) + 1)
+#define NbytesForBits(n) ((((n) - 1) >> 3) + 1)
 typedef off_t boffset_t;
 
 #include "lib/plugins.h"
 #include "filed/fd_plugins.h"
+#include "findlib/find.h"
 #include "../module/bareosfd.h"
 static void PyErrorHandler()
 {
@@ -82,10 +79,9 @@ bRC bareosGetValue(PluginContext*, filedaemon::bVariable var, void* value)
 {
   switch (var) {
     case bVarAccurateOptions:
-      *static_cast<uint64_t*>(value)
-          = static_cast<uint64_t>(bAccurateOptionMtime)
-            | static_cast<uint64_t>(bAccurateOptionCtime)
-            | static_cast<uint64_t>(bAccurateOptionSize);
+      *static_cast<uint64_t*>(value) = static_cast<uint64_t>(accurate_mtime)
+                                       | static_cast<uint64_t>(accurate_ctime)
+                                       | static_cast<uint64_t>(accurate_size);
       return bRC_OK;
     default:
       return bRC_OK;

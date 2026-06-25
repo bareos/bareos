@@ -45,6 +45,7 @@
 #ifdef BAREOSFD_MODULE
 
 #  include "include/filetypes.h"
+#  include "findlib/find.h"
 /* This section is used when compiling bareosfd.cc */
 
 namespace filedaemon {
@@ -731,19 +732,19 @@ MOD_INIT(bareosfd)
   PyObject* pDictbAccurateOption = NULL;
   pDictbAccurateOption = PyDict_New();
   if (!pDictbAccurateOption) { return MOD_ERROR_VAL; }
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionInode);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionPermissions);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionNlink);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionUid);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionGid);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionSize);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionAtime);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionMtime);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionCtime);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionSizeDecrease);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionAlways);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionMd5);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, bAccurateOptionSha1);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_inode);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_permissions);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_nlink);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_uid);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_gid);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_size);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_atime);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_mtime);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_ctime);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_size_decrease);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_always);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_md5);
+  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_sha1);
   if (PyModule_AddObject(m, bAccurateOption, pDictbAccurateOption)) {
     return MOD_ERROR_VAL;
   }

@@ -170,6 +170,29 @@ struct HfsPlusInfo {
   off_t rsrclength{0};     /**< Size of resource fork */
 };
 
+/* Accurate comparison option bit values returned by bVarAccurateOptions. */
+typedef enum
+    : std::uint64_t
+{
+  accurate_inode = 1 << 0,
+  accurate_permissions = 1 << 1,
+  accurate_nlink = 1 << 2,
+  accurate_uid = 1 << 3,
+  accurate_gid = 1 << 4,
+  accurate_size = 1 << 5,
+  accurate_atime = 1 << 6,
+  accurate_mtime = 1 << 7,
+  accurate_ctime = 1 << 8,
+  accurate_size_decrease = 1 << 9,
+  accurate_always = 1 << 10,
+  accurate_md5 = 1 << 11,
+  accurate_sha1 = 1 << 12,
+} accurate_check;
+
+uint64_t AccurateOptionsToBitmask(const char* accurate_options);
+std::string accurate_opts_as_str(std::uint64_t);
+
+
 /**
  * Definition of the FindFiles packet passed as the
  * first argument to the FindFiles callback subroutine.
@@ -205,8 +228,8 @@ struct FindFilesPacket {
   bool incremental{false};        /**< Incremental save */
   bool no_read{false};            /**< Do not read this file when using Plugin */
   char VerifyOpts[MAX_OPTS]{};
-  char AccurateOpts[MAX_OPTS]{};
-  char BaseJobOpts[MAX_OPTS]{};
+  uint64_t accurate_opts{};
+  uint64_t base_job_opts{};
   struct s_included_file* included_files_list{nullptr};
   struct s_excluded_file* excluded_files_list{nullptr};
   struct s_excluded_file* excluded_paths_list{nullptr};

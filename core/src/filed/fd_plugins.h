@@ -243,27 +243,6 @@ typedef enum
   bVarAccurateOptions = 23,
 } bVariable;
 
-/* Accurate comparison option bit values returned by bVarAccurateOptions. */
-typedef enum
-    : int
-{
-  bAccurateOptionInode = 1 << 0,
-  bAccurateOptionPermissions = 1 << 1,
-  bAccurateOptionNlink = 1 << 2,
-  bAccurateOptionUid = 1 << 3,
-  bAccurateOptionGid = 1 << 4,
-  bAccurateOptionSize = 1 << 5,
-  bAccurateOptionAtime = 1 << 6,
-  bAccurateOptionMtime = 1 << 7,
-  bAccurateOptionCtime = 1 << 8,
-  bAccurateOptionSizeDecrease = 1 << 9,
-  bAccurateOptionAlways = 1 << 10,
-  bAccurateOptionMd5 = 1 << 11,
-  bAccurateOptionSha1 = 1 << 12,
-} bAccurateOption;
-
-uint64_t AccurateOptionsToBitmask(const char* accurate_options);
-
 // Events that are passed to plugin
 typedef enum
 {
