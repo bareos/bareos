@@ -8,6 +8,7 @@ Requires=network.target
 After=network-online.target
 # Limit the number of restart per day
 StartLimitIntervalSec=1d
+StartLimitBurst=10
 
 [Service]
 Type=simple
@@ -18,8 +19,6 @@ ExecStart=@sbindir@/bareos-webui-proxy
 # Restart on failure, wait 30 seconds
 Restart=on-failure
 RestartSec=30
-# Limit the number of restarts to 10; reset with systemctl reset-failed
-StartLimitBurst=10
 
 [Install]
 WantedBy=multi-user.target
