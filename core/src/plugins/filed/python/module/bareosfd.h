@@ -732,19 +732,19 @@ MOD_INIT(bareosfd)
   PyObject* pDictbAccurateOption = NULL;
   pDictbAccurateOption = PyDict_New();
   if (!pDictbAccurateOption) { return MOD_ERROR_VAL; }
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_inode);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_permissions);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_nlink);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_uid);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_gid);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_size);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_atime);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_mtime);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_ctime);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_size_decrease);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_always);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_md5);
-  EXPORT_ENUM_VALUE(pDictbAccurateOption, accurate_sha1);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionInode, accurate_inode);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionPermissions, accurate_permissions);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionNlink, accurate_nlink);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionUid, accurate_uid);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionGid, accurate_gid);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionSize, accurate_size);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionAtime, accurate_atime);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionMtime, accurate_mtime);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionCtime, accurate_ctime);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionSizeDecrease, accurate_size_decrease);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionAlways, accurate_always);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionMD5, accurate_md5);
+  ConstSet_StrLong(pDictbAccurateOption, bAccurateOptionSha1, accurate_sha1);
   if (PyModule_AddObject(m, bAccurateOption, pDictbAccurateOption)) {
     return MOD_ERROR_VAL;
   }
