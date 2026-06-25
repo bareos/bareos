@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: correct TlsRequire default in docs [PR #2673]
 - docs: Update MSSPlugin instructions [PR #2686]
 - docs: show bareos supported versions in a chart [PR #2692]
+- docs: fix sphinx-linkcheck warnings in our docs [PR #2710]
 
 ### Changed
 - matrix.yml: add Fedora 44 [PR #2617]
@@ -2300,4 +2301,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2693]: https://github.com/bareos/bareos/pull/2693
 [PR #2697]: https://github.com/bareos/bareos/pull/2697
 [PR #2707]: https://github.com/bareos/bareos/pull/2707
+[PR #2710]: https://github.com/bareos/bareos/pull/2710
 [unreleased]: https://github.com/bareos/bareos/tree/master
