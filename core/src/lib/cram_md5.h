@@ -21,6 +21,9 @@
 #ifndef BAREOS_LIB_CRAM_MD5_H_
 #define BAREOS_LIB_CRAM_MD5_H_
 
+#include <cstdint>
+#include <string>
+
 #include "lib/tls_conf.h"
 
 class BareosSocket;
@@ -70,6 +73,9 @@ class CramMd5Handshake {
   ComparisonResult CompareChallengeWithOwnQualifiedName(
       const char* challenge) const;
 };
+
+// Compute MD5(text) and return it as a lowercase hex string.
+std::string MakeCramMd5Key(const std::string& password);
 
 void hmac_md5(uint8_t* text,
               int text_len,

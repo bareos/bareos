@@ -24,6 +24,7 @@
 #include "../proxy_session.h"
 #include "../bareos_base64.h"
 
+#include "lib/cram_md5.h"
 #include "lib/bnet_protocol_signals.h"
 
 #include <arpa/inet.h>
