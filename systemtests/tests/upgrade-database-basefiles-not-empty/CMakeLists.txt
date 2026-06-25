@@ -18,10 +18,4 @@
 #   02110-1301, USA.
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
-if(postgresql)
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-else()
-  create_systemtest(
-    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT "requires postgresql"
-  )
-endif()
+create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
