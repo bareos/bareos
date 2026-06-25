@@ -18,11 +18,6 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
  */
-/**
- * @file
- * bareos-webui-proxy entry point and main() function.
- */
-
 #include "proxy_log.h"
 #include "proxy_server.h"
 #include "proxy_auth_session.h"
@@ -48,7 +43,8 @@ int main(int argc, char* argv[])
   ProxyLogLevel log_level = ProxyLogLevel::Info;
 
   config_option = app.add_option("--config", config_file, "Proxy config file")
-                      ->capture_default_str();
+                      ->capture_default_str()
+                      ->check(CLI::ExistingFile);
   app.add_option("--log-file", log_file, "Append proxy logs to this file");
   app.add_option("--log-level", log_level,
                  "Minimum proxy log level: debug, info, warn, error")
@@ -70,28 +66,24 @@ int main(int argc, char* argv[])
     ConfigureProxyLogger(logger_cfg);
 
     ProxyConfig cfg;
-    if (config_option->count() > 0) {
+    std::error_code fs_error;
+    const bool explicit_config = config_option->count() > 0;
+    const bool has_default_config
+        = std::filesystem::exists(config_file, fs_error);
+    if (fs_error) {
+      throw ProxyConfigFileError(
+          "Proxy config: cannot check '" + config_file + "'");
+    }
+    if (explicit_config || has_default_config) {
       cfg = LoadProxyConfigFile(config_file);
-      PROXY_LOG_INFO("", "loaded proxy config from '%s' (--config)",
-                     config_file.c_str());
+      PROXY_LOG_INFO("", "loaded proxy config from '%s'%s",
+                     config_file.c_str(),
+                     explicit_config ? " (--config)" : " (default path)");
     } else {
-      std::error_code fs_error;
-      const bool has_default_config
-          = std::filesystem::exists(config_file, fs_error);
-      if (fs_error) {
-        throw ProxyConfigFileError("Proxy config: cannot check '" + config_file
-                                   + "'");
-      }
-      if (has_default_config) {
-        cfg = LoadProxyConfigFile(config_file);
-        PROXY_LOG_INFO("", "loaded proxy config from '%s' (default path)",
-                       config_file.c_str());
-      } else {
-        cfg = LoadBuiltInDefaultProxyConfig();
-        PROXY_LOG_INFO("", "proxy config file '%s' not found; using built-in "
-                           "defaults",
-                       config_file.c_str());
-      }
+      cfg = LoadBuiltInDefaultProxyConfig();
+      PROXY_LOG_INFO("", "proxy config file '%s' not found; using built-in "
+                         "defaults",
+                     config_file.c_str());
     }
 
     // Apply session timeout configuration
