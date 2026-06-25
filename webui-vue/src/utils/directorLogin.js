@@ -31,13 +31,24 @@ export function shouldAutoLoginAllDirectors({
   availableDirectors = [],
 } = {}) {
   const director = String(requestedDirector ?? '').trim()
-  const directors = [...new Set(
-    (Array.isArray(availableDirectors) ? availableDirectors : [])
-      .map(value => String(value ?? '').trim())
-      .filter(Boolean)
-  )]
+  if (isAddDirectorMode || director) {
+    return false
+  }
 
-  return !isAddDirectorMode && !director && directors.length > 1
+  const seenDirectors = new Set()
+  for (const value of Array.isArray(availableDirectors)
+    ? availableDirectors
+    : []) {
+    const candidate = String(value ?? '').trim()
+    if (candidate) {
+      seenDirectors.add(candidate)
+      if (seenDirectors.size > 1) {
+        return true
+      }
+    }
+  }
+
+  return false
 }
 
 export function summarizeDirectorLoginAttempts(attempts = []) {
