@@ -1948,6 +1948,7 @@ a2enmod fcgid &> /dev/null || true
 a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
 a2enmod proxy_wstunnel &> /dev/null || true
+apachectl graceful &> /dev/null || true
 %endif
 %logging_end
 
