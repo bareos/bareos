@@ -170,7 +170,15 @@
           {{ t('All known plugin hints') }}
         </span>
         <q-space />
-        <q-btn flat round dense icon="close" color="white" v-close-popup />
+        <q-btn
+          flat
+          round
+          dense
+          icon="close"
+          color="white"
+          v-close-popup
+          :aria-label="t('Close')"
+        />
       </q-card-section>
       <q-card-section class="q-gutter-md plugin-hints-dialog__body">
         <div class="text-caption">
