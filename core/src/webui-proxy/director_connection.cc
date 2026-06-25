@@ -445,6 +445,8 @@ void DirectorConnection::ConnectTcp(const DirectorConfig& cfg)
     fd_ = ::socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
     if (fd_ < 0) { continue; }
     if (::connect(fd_, ai->ai_addr, ai->ai_addrlen) == 0) { break; }
+    PROXY_LOG_DEBUG("", "Director: connect to %s:%d failed: %s",
+                    cfg.host.c_str(), cfg.port, std::strerror(errno));
     ::close(fd_);
     fd_ = -1;
   }
