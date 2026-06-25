@@ -28,6 +28,7 @@
 #  include "include/bareos.h"
 #endif
 
+#include "webui-proxy/director_connection.h"
 #include "lib/bsock.h"
 #include "lib/bsock_tcp.h"
 #include "lib/base64.h"
@@ -89,6 +90,11 @@ static std::string ExtractChallenge(std::string_view message)
 }
 
 static constexpr bool InitiatedByRemote = true;
+
+TEST(cram_md5, makes_cram_md5_key_from_plaintext_password)
+{
+  EXPECT_EQ(MakeCramMd5Key("secret"), "5ebe2294ecd0e0f08eab7690d2a6ee69");
+}
 
 class CramSockets {
  public:
