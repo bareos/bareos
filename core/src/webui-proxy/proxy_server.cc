@@ -174,6 +174,7 @@ void RunProxyServer(const ProxyConfig& cfg)
   // Build the pollfd array once; it doesn't change.
   std::vector<struct pollfd> pfds;
   pfds.reserve(listen_fds.size());
+  // poll() overwrites revents on each call, so there is no need to clear it.
   for (const auto& fd : listen_fds) { pfds.push_back({fd.get(), POLLIN, 0}); }
 
   // Track unauthenticated connections to enforce DoS limit
