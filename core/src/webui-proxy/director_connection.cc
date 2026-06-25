@@ -22,6 +22,7 @@
 #include "bareos_base64.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/bnet_protocol_signals.h"
+#include "proxy_log.h"
 #include "lib/version.h"
 
 #include <algorithm>
