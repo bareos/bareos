@@ -151,9 +151,7 @@ import { useSettingsStore } from '../stores/settings.js'
 import { buildDirectorOptions } from '../utils/director.js'
 import {
   directorListLoadErrorMessage,
-  getLastSuccessfulDirector,
   shouldAutoLoginAllDirectors,
-  summarizeDirectorLoginAttempts,
 } from '../utils/directorLogin.js'
 import { toUserVisibleDirectorError } from '../utils/directorErrors.js'
 import {
@@ -404,7 +402,8 @@ async function finalizeSuccessfulLogin(targetDirector = primaryDirector.value ||
 }
 
 async function attemptDirectorLogins(targetDirectors) {
-  const attempts = []
+  const successfulDirectors = []
+  const failedAttempts = []
   let hasSession = auth.isLoggedIn
 
   for (const targetDirector of targetDirectors) {
@@ -422,20 +421,19 @@ async function attemptDirectorLogins(targetDirectors) {
         })
       hasSession = true
       auth.applySession(payload, SESSION_AUTH_PASSWORD, { merge: true })
-      attempts.push({
-        director: targetDirector,
-        success: true,
-      })
+      successfulDirectors.push(targetDirector)
     } catch (error) {
-      attempts.push({
+      failedAttempts.push({
         director: targetDirector,
-        success: false,
         message: currentDirectorError(error),
       })
     }
   }
 
-  return attempts
+  return {
+    successfulDirectors,
+    failedAttempts,
+  }
 }
 
 async function doMultiDirectorLogin() {
@@ -449,12 +447,11 @@ async function doMultiDirectorLogin() {
     return
   }
 
-  const attempts = await attemptDirectorLogins(targetDirectors)
   const {
     successfulDirectors,
     failedAttempts,
-  } = summarizeDirectorLoginAttempts(attempts)
-  const finalDirector = getLastSuccessfulDirector(attempts)
+  } = await attemptDirectorLogins(targetDirectors)
+  const finalDirector = successfulDirectors.at(-1) ?? ''
 
   if (successfulDirectors.length === 0) {
     errorMsg.value = t('Could not log in to any configured director. Retry the remaining directors.')
