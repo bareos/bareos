@@ -1426,6 +1426,7 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
 
         pRetVal = PyFrozenSet_New(mutable_set);
         Py_DECREF(mutable_set);
+        if (!pRetVal) { return NULL; }
       }
       break;
     }
