@@ -38,14 +38,19 @@ Decide about the Bareos release to use
 
 There are different types of Bareos repositories:
 
-#. Bareos Subscription repositories on https://download.bareos.com/
+1. Bareos Subscription repositories on https://download.bareos.com/
 
    * Contain the repositories for the Bareos Subscription customers.
    * The last three major releases are maintained, https://download.bareos.com/bareos/release/
    * Older versions stay available.
    * While the repository can be browsed, using them do require authentication credentials, which come with a Bareos subscription.
 
-#. Bareos Community repositories on https://download.bareos.org/ with
+.. note::
+
+   Interested in the subscription repositories? Start with a Bareos Evaluation Subscription at
+   https://bareos.com/try.
+
+2. Bareos Community repositories on https://download.bareos.org/ with
 
    * latest build of the most recent Bareos stable branch at https://download.bareos.org/current/
    * latest build of the Bareos master branch at https://download.bareos.org/next/
