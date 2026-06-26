@@ -210,7 +210,9 @@ int FindFiles(JobControlRecord* jcr,
         }
         bstrncat(ff->VerifyOpts, fo->VerifyOpts,
                  sizeof(ff->VerifyOpts)); /* TODO: Concat or replace? */
-        if (fo->accurate_opts) { ff->accurate_opts = fo->accurate_opts; }
+        if (fo->accurate_opts) {
+          ff->accurate_opts = fo->accurate_opts & ~accurate_options_set;
+        }
       }
 
       Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%s>\n",

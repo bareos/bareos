@@ -332,6 +332,7 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
       case '0': /* No option */
         break;
       case 'C': /* Accurate options */
+        fo->accurate_opts = accurate_options_set;
         // Copy Accurate Options
         while (*p && *p != ':') {
           fo->accurate_opts |= AccurateOptionsToBitmask(*p);

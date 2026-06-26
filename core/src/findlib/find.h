@@ -189,6 +189,12 @@ typedef enum
   accurate_sha1 = 1 << 12,
 } accurate_check;
 
+
+// This flag is not an accurate option in and of itself, but instead
+// used to signal that the `accurate_option` was set at all, so testing
+// for 0 tells you to use the default values instead
+static constexpr std::uint64_t accurate_options_set = 1ULL << 63;
+
 uint64_t AccurateOptionsToBitmask(char accurate_opt);
 std::string accurate_opts_as_str(std::uint64_t);
 
