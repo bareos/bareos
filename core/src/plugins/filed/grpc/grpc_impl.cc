@@ -725,11 +725,31 @@ class BareosCore : public bc::Core::Service {
     }
 
     int value{0};
+    switch (*bareos_var) {
+      case filedaemon::bVarAccurateOptions: {
+        std::uint64_t v64{0};
+        if (!GetBareosValue(core, *bareos_var, &v64)) {
+          return grpc::Status(
+              grpc::StatusCode::INVALID_ARGUMENT,
+              fmt::format(FMT_STRING("get not supported for {}"), int(var)));
+        }
 
-    if (!GetBareosValue(core, *bareos_var, &value)) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
-          fmt::format(FMT_STRING("get not supported for {}"), int(var)));
+        if (v64 > std::numeric_limits<decltype(value)>::max()) {
+          return grpc::Status(
+              grpc::StatusCode::INTERNAL,
+              fmt::format(FMT_STRING("Value for {} is too big"), int(var)));
+        }
+
+        value = static_cast<int>(v64);
+      } break;
+
+      default: {
+        if (!GetBareosValue(core, *bareos_var, &value)) {
+          return grpc::Status(
+              grpc::StatusCode::INVALID_ARGUMENT,
+              fmt::format(FMT_STRING("get not supported for {}"), int(var)));
+        }
+      } break;
     }
 
     response->set_value(value);
