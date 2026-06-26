@@ -232,7 +232,21 @@ The Bareos project is fully committed to open-source.
 
 There are different types of Bareos binaries:
 
-#. Bareos Community binaries on https://download.bareos.org/:
+1. Bareos Subscription binaries on https://download.bareos.com/
+
+   * Available in the Bareos Subscription customers repositories.
+   * The last three major releases are maintained in https://download.bareos.com/bareos/release/
+   * The repositories contain the whole binary history of each release, so that downgrades are
+     possible if required.
+   * Repositories of discontinued versions stay available.
+   * While the repository can be browsed, accessing the binaries requires a Bareos Subscription.
+
+.. note::
+
+   Interested in the subscription repositories? Start with a Bareos Evaluation Subscription at
+   https://bareos.com/try.
+
+2. Bareos Community binaries on https://download.bareos.org/:
 
    * Publicly accessible
    * Latest build of the current Bareos stable branch at https://download.bareos.org/current/
@@ -250,15 +264,6 @@ There are different types of Bareos binaries:
         published after passing an automated testing process.
       * When the development of a new Bareos major version starts, this repository will also change
         to the new **next** version.
-
-#. Bareos Subscription binaries on https://download.bareos.com/
-
-   * Available in the Bareos Subscription customers repositories.
-   * The last three major releases are maintained in https://download.bareos.com/bareos/release/
-   * The repositories contain the whole binary history of each release, so that downgrades are
-     possible if required.
-   * Repositories of discontinued versions stay available.
-   * While the repository can be browsed, accessing the binaries requires a Bareos Subscription.
 
 The software in both types of repositories is based on the same source code freely available in
 https://github.com/bareos/bareos/. There are no hidden nor open core components.
