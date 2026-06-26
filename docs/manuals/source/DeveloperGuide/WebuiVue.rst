@@ -78,10 +78,10 @@ session has been established.
 
 The proxy configuration behavior is:
 
-* without :option:`--config`, it first tries
+* without ``--config``, it first tries
   :file:`/etc/bareos-webui-proxy/bareos-webui-proxy.ini`
 * if that file is missing, it uses built-in defaults
-* with explicit :option:`--config`, the specified file is required
+* with explicit ``--config``, the specified file is required
 
 The default configuration template is installed as
 :file:`bareos-webui-proxy.ini` in :file:`${configtemplatedir}`.

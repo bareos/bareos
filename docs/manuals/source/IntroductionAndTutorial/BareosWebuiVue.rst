@@ -62,7 +62,7 @@ The package ships a default template
 :file:`bareos-webui-proxy.ini` in the Bareos config template directory
 (for example :file:`/usr/lib/bareos/defaultconfigs/`), so administrators can
 copy and adapt it into :file:`/etc/bareos-webui-proxy/` when needed.
-When :option:`--config` is used explicitly, the given file must exist.
+When ``--config`` is used explicitly, the given file must exist.
 
 Installation and access
 -----------------------
