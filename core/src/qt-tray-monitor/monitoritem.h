@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,8 +41,7 @@ class MonitorItem : public QObject {
   {
     Idle = 0,
     Running = 1,
-    Warn = 2,
-    Error = 3
+    Error = 2,
   };
 
   class JobDefaults {

@@ -268,6 +268,8 @@ int main(int argc, char* argv[])
   } else {
     MainWindow::instance()->addTabs(tabRefs);
 
+    MonitorItemThread::instance()->onRefreshItems();
+
     MonitorItemThread::instance()->start();
 
     ret = app->exec();
