@@ -56,6 +56,21 @@ Vendor:     The Bareos Team
 BuildConflicts: libtirpc-devel
 %endif
 
+#
+# RedHat (CentOS, Fedora, RHEL) specific settings
+#
+
+# use modernized GCC 15 toolchain for C++20 support
+%if 0%{?rhel} && 0%{?rhel} <= 10
+BuildRequires: gcc-toolset-15-gcc
+BuildRequires: gcc-toolset-15-gcc-plugin-annobin
+BuildRequires: gcc-toolset-15-gcc-c++
+%endif
+# rhel <=8 does not have grpc
+%if 0%{?rhel} && 0%{?rhel} <= 8
+%define enable_grpc 0
+%endif
+
 # fedora 28: rpc was removed from libc
 %if 0%{?fedora} >= 28 || 0%{?rhel} > 7 || 0%{?suse_version} >= 1550 || 0%{?sle_version} >= 150300
 BuildRequires: rpcgen
@@ -880,6 +895,15 @@ pushd %{CMAKE_BUILDDIR}
 # use Developer Toolset 8 compiler as standard is too old
 %if 0%{?rhel} == 7
 source /opt/rh/devtoolset-8/enable
+%endif
+
+# use modernized GCC toolchain for C++20 support
+%if 0%{?rhel} && 0%{?rhel} >= 8 && 0%{?rhel} < 10
+source /opt/rh/gcc-toolset-15/enable
+%endif
+
+%if 0%{?rhel} && 0%{?rhel} >= 10
+source /usr/lib/gcc-toolset/15-env.source
 %endif
 
 # use modern compiler on suse

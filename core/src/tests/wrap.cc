@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -280,6 +280,13 @@ TEST(Aes, unwrap)
 
   ASSERT_NE(wrapped.size(), 0);
   ASSERT_EQ(wrapped.size() % 8, 0);
+
+  // gcc may complain that payload_size is smaller than 8 if we omit this
+  // check. ASSERT_GE is somehow not enough !?
+  if (wrapped.size() < 8u) {
+    FAIL() << "wrapped payload too small";
+    return;
+  }
 
   auto payload_size = wrapped.size() - 8;
 
