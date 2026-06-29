@@ -8,6 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Documentation
 - docs: correct TlsRequire default in docs [PR #2675]
 
+### Changed
+- spec: use gcc-15 for rhel builds [PR #2709]
+
 ## [23.1.7] - 2026-04-01
 
 ### Changed
@@ -1776,4 +1779,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2518]: https://github.com/bareos/bareos/pull/2518
 [PR #2551]: https://github.com/bareos/bareos/pull/2551
 [PR #2675]: https://github.com/bareos/bareos/pull/2675
+[PR #2709]: https://github.com/bareos/bareos/pull/2709
 [unreleased]: https://github.com/bareos/bareos/tree/master
