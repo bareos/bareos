@@ -42,7 +42,7 @@ const JOB_LEVEL_CODE_BY_NAME = {
 }
 
 export function resolveJobLevelCode(level) {
-  if (typeof level !== 'string' || !level) {
+  if (typeof level !== 'string' || !level.trim()) {
     return null
   }
 
@@ -60,9 +60,10 @@ export function resolveJobLevelInfo(level) {
     return JOB_LEVEL_INFO[code]
   }
 
+  const badge = typeof level === 'string' ? level.trim() : ''
   return {
-    badge: typeof level === 'string' ? level : '',
+    badge,
     color: 'grey',
-    labelKey: typeof level === 'string' ? level : '',
+    labelKey: badge,
   }
 }

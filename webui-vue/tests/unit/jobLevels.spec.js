@@ -52,4 +52,13 @@ describe('job level helpers', () => {
       labelKey: 'Differential',
     })
   })
+
+  it('returns null code and empty badge for space/empty levels (Admin, Restore)', () => {
+    expect(resolveJobLevelCode(' ')).toBeNull()
+    expect(resolveJobLevelCode('')).toBeNull()
+    expect(resolveJobLevelCode(null)).toBeNull()
+
+    expect(resolveJobLevelInfo(' ')).toMatchObject({ badge: '' })
+    expect(resolveJobLevelInfo('')).toMatchObject({ badge: '' })
+  })
 })
