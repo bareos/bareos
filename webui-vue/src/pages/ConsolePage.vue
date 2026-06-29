@@ -80,7 +80,7 @@ import { useI18n } from 'vue-i18n'
 import { DEFAULT_DIRECTOR_NAME, useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { useConsoleSessionsStore } from '../stores/consoleSessions.js'
+import { useConsoleSessionsStore, applyConsoleKey } from '../stores/consoleSessions.js'
 import { buildDirectorOptions } from '../utils/director.js'
 import {
   CONSOLE_POPUP_AUTH_REQUEST,
@@ -274,8 +274,8 @@ function sendTab() {
 function onKeyDown(event) {
   const session = currentSession.value
 
-  // Don't interfere with browser shortcuts (Ctrl+R, Ctrl+T, etc.)
-  if (event.ctrlKey && event.key !== 'c' && event.key !== 'l' && event.key !== 'a' && event.key !== 'e' && event.key !== 'k' && event.key !== 'u') return
+  // Don't interfere with unhandled browser shortcuts
+  if (event.ctrlKey && !['c', 'l', 'a', 'e', 'k', 'u'].includes(event.key)) return
 
   if (event.key === 'Tab') {
     event.preventDefault()
@@ -283,38 +283,6 @@ function onKeyDown(event) {
   } else if (event.key === 'Enter') {
     event.preventDefault()
     send()
-  } else if (event.key === 'Backspace') {
-    event.preventDefault()
-    if (session.cursorPos > 0) {
-      session.cmd = session.cmd.slice(0, session.cursorPos - 1) + session.cmd.slice(session.cursorPos)
-      session.cursorPos--
-    }
-  } else if (event.key === 'Delete') {
-    event.preventDefault()
-    if (session.cursorPos < session.cmd.length) {
-      session.cmd = session.cmd.slice(0, session.cursorPos) + session.cmd.slice(session.cursorPos + 1)
-    }
-  } else if (event.key === 'ArrowLeft') {
-    event.preventDefault()
-    if (session.cursorPos > 0) session.cursorPos--
-  } else if (event.key === 'ArrowRight') {
-    event.preventDefault()
-    if (session.cursorPos < session.cmd.length) session.cursorPos++
-  } else if (event.key === 'Home' || (event.ctrlKey && event.key === 'a')) {
-    event.preventDefault()
-    session.cursorPos = 0
-  } else if (event.key === 'End' || (event.ctrlKey && event.key === 'e')) {
-    event.preventDefault()
-    session.cursorPos = session.cmd.length
-  } else if (event.ctrlKey && event.key === 'k') {
-    // kill to end of line
-    event.preventDefault()
-    session.cmd = session.cmd.slice(0, session.cursorPos)
-  } else if (event.ctrlKey && event.key === 'u') {
-    // kill to start of line
-    event.preventDefault()
-    session.cmd = session.cmd.slice(session.cursorPos)
-    session.cursorPos = 0
   } else if (event.key === 'ArrowUp') {
     event.preventDefault()
     if (session.history.length === 0) return
@@ -339,11 +307,8 @@ function onKeyDown(event) {
   } else if (event.ctrlKey && event.key === 'l') {
     event.preventDefault()
     clearOutput()
-  } else if (event.key.length === 1 && !event.altKey) {
-    // printable character — insert at cursor
+  } else if (applyConsoleKey(session, event)) {
     event.preventDefault()
-    session.cmd = session.cmd.slice(0, session.cursorPos) + event.key + session.cmd.slice(session.cursorPos)
-    session.cursorPos++
   }
 }
 
