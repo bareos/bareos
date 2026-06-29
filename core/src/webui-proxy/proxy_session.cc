@@ -526,8 +526,7 @@ void HandleSessionLoginRequest(int fd,
                                const std::string& peer,
                                const ProxyConfig& config,
                                const HttpRequest& request,
-                               std::optional<std::string_view> target_director
-                               = std::nullopt)
+                               std::string_view target_director)
 {
   // If a session cookie is present it must still reference a live session.
   // A stale cookie means the session has expired; silently creating a new
@@ -543,14 +542,11 @@ void HandleSessionLoginRequest(int fd,
     }
   }
 
-  std::string requested_director;
+  std::string requested_director = std::string(target_director);
   try {
     JsonPtr body = ParseJsonBody(request);
     const auto username = RequireJsonStringField(body.get(), "username");
     const auto password = RequireJsonStringField(body.get(), "password");
-    const auto director
-        = target_director.value_or(RequireJsonStringField(body.get(), "director"));
-    requested_director = std::string(director);
     const DirectorConfig cfg
         = ConnectSessionDirector(config, requested_director, username, password);
 
@@ -614,7 +610,7 @@ void HandleSessionInfoRequest(int fd, const HttpRequest& request)
   SendJsonResponseWithCookie(fd, "HTTP/1.1 200 OK", JsonSessionInfo(*session));
 }
 
-void HandleSessionLogoutRequest(int fd, const HttpRequest& request)
+void HandleDeleteSessionRequest(int fd, const HttpRequest& request)
 {
   if (const auto session_id = LookupSessionIdFromRequest(request)) {
     ProxyAuthSessionStore::RemoveSession(*session_id);
@@ -632,67 +628,6 @@ void HandleSessionLogoutRequest(int fd, const HttpRequest& request)
 void HandleDirectorsRequest(int fd, const ProxyConfig& config)
 {
   SendJsonResponseWithCookie(fd, "HTTP/1.1 200 OK", JsonDirectorList(config));
-}
-
-void HandleCurrentDirectorRequest(int fd, const HttpRequest& request)
-{
-  const auto session_id = LookupSessionIdFromRequest(request);
-  if (!session_id) {
-    SendSessionMissingResponse(fd, request);
-    return;
-  }
-
-  try {
-    JsonPtr body = ParseJsonBody(request);
-    const auto director = RequireJsonStringField(body.get(), "director");
-    if (!ProxyAuthSessionStore::SetCurrentDirector(*session_id,
-                                                              director)) {
-      SendJsonResponseWithCookie(
-          fd, "HTTP/1.1 400 Bad Request",
-          JsonObject({{"message", "Director is not authenticated"}}));
-      return;
-    }
-
-    auto session = ProxyAuthSessionStore::LookupSession(*session_id);
-    if (!session) {
-      SendSessionMissingResponse(fd, request);
-      return;
-    }
-
-    SendJsonResponseWithCookie(fd, "HTTP/1.1 200 OK", JsonSessionInfo(*session));
-  } catch (const std::exception&) {
-    SendJsonResponseWithCookie(fd, "HTTP/1.1 400 Bad Request",
-                               JsonObject({{"message", "Expected JSON request body"}}));
-  }
-}
-
-void HandleDirectorLogoutRequest(int fd,
-                                 const HttpRequest& request,
-                                 std::string_view director)
-{
-  const auto session_id = LookupSessionIdFromRequest(request);
-  if (!session_id) {
-    SendSessionMissingResponse(fd, request);
-    return;
-  }
-
-  const auto removed
-      = ProxyAuthSessionStore::RemoveDirector(*session_id, director);
-  if (!removed) {
-    SendJsonResponseWithCookie(fd, "HTTP/1.1 404 Not Found",
-                               JsonObject({{"message", "Director is not authenticated"}}));
-    return;
-  }
-
-  auto session = ProxyAuthSessionStore::LookupSession(*session_id);
-  if (!session) {
-    SendEmptyResponseWithCookie(
-        fd, "HTTP/1.1 204 No Content",
-        BuildExpiredProxySessionCookie(RequestUsesHttps(request)));
-    return;
-  }
-
-  SendJsonResponseWithCookie(fd, "HTTP/1.1 200 OK", JsonSessionInfo(*session));
 }
 
 void HandleReuseCredentialsRequest(int fd,
@@ -801,17 +736,8 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     return;
   }
 
-  if (request.method == "POST" && request.target == "/api/session/login") {
-    HandleSessionLoginRequest(fd, peer, config, request);
-    return;
-  }
   if (request.method == "GET" && request.target == "/api/directors") {
     HandleDirectorsRequest(fd, config);
-    return;
-  }
-  if (request.method == "POST"
-      && request.target == "/api/session/current-director") {
-    HandleCurrentDirectorRequest(fd, request);
     return;
   }
   if (request.method == "POST" && request.target == "/api/session/reuse") {
@@ -822,20 +748,14 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     HandleSessionInfoRequest(fd, request);
     return;
   }
-  if (request.method == "POST" && request.target == "/api/session/logout") {
-    HandleSessionLogoutRequest(fd, request);
+  if (request.method == "DELETE" && request.target == "/api/session") {
+    HandleDeleteSessionRequest(fd, request);
     return;
   }
   if (request.method == "POST") {
     if (const auto director
         = MatchSessionDirectorPath(request.target, "/login")) {
       HandleSessionLoginRequest(fd, peer, config, request, *director);
-      return;
-    }
-  }
-  if (request.method == "DELETE") {
-    if (const auto director = MatchSessionDirectorPath(request.target)) {
-      HandleDirectorLogoutRequest(fd, request, *director);
       return;
     }
   }
