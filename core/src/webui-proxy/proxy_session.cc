@@ -529,6 +529,20 @@ void HandleSessionLoginRequest(int fd,
                                std::optional<std::string_view> target_director
                                = std::nullopt)
 {
+  // If a session cookie is present it must still reference a live session.
+  // A stale cookie means the session has expired; silently creating a new
+  // session under the old cookie value would confuse the client.  The client
+  // must perform a fresh login without a cookie instead.
+  if (const auto stale_id = LookupSessionIdFromRequest(request)) {
+    if (!ProxyAuthSessionStore::LookupSession(*stale_id)) {
+      SendJsonResponseWithCookie(
+          fd, "HTTP/1.1 401 Unauthorized",
+          JsonObject({{"message", "Session expired; please log in again"}}),
+          BuildExpiredProxySessionCookie(RequestUsesHttps(request)));
+      return;
+    }
+  }
+
   std::string requested_director;
   try {
     JsonPtr body = ParseJsonBody(request);
@@ -540,30 +554,26 @@ void HandleSessionLoginRequest(int fd,
     const DirectorConfig cfg
         = ConnectSessionDirector(config, requested_director, username, password);
 
-    std::optional<std::string> session_id;
-    if (const auto existing_session_id = LookupSessionIdFromRequest(request)) {
+    const auto existing_session_id = LookupSessionIdFromRequest(request);
+    bool new_session = !existing_session_id.has_value();
+    std::string session_id;
+    if (!new_session) {
       session_id = std::string(*existing_session_id);
-    }
-    bool new_session = false;
-    if (!session_id
-        || !ProxyAuthSessionStore::LookupSession(*session_id)) {
+      ProxyAuthSessionStore::StoreDirectorCredentials(
+          session_id, requested_director, username, password);
+    } else {
       session_id = ProxyAuthSessionStore::CreateSession(
           username, password, requested_director);
-      new_session = true;
-    } else {
-      ProxyAuthSessionStore::StoreDirectorCredentials(
-          *session_id, requested_director, username, password);
     }
 
-    ProxyAuthSessionStore::SetCurrentDirector(*session_id,
-                                                         requested_director);
-    auto session = ProxyAuthSessionStore::LookupSession(*session_id);
+    ProxyAuthSessionStore::SetCurrentDirector(session_id, requested_director);
+    auto session = ProxyAuthSessionStore::LookupSession(session_id);
     if (!session) {
       throw std::runtime_error("Proxy session expired; please log in again");
     }
     const auto cookie = new_session
         ? std::optional<std::string>(
-              BuildProxySessionCookie(*session_id, RequestUsesHttps(request)))
+              BuildProxySessionCookie(session_id, RequestUsesHttps(request)))
         : std::nullopt;
 
     PROXY_LOG_INFO(peer, "stored session login for user=%s director=%s",

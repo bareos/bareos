@@ -621,6 +621,24 @@ TEST(ProxySession, RejectsUnsupportedWsMode)
   ProxyAuthSessionStore::RemoveSession(session_id);
 }
 
+TEST(ProxySession, RejectsLoginWithExpiredSessionCookie)
+{
+  // Simulate an expired session: cookie is present but session is gone.
+  const std::string body
+      = R"({"username":"admin","password":"secret","director":"bareos-dir"})";
+  const std::string request
+      = std::string("POST /api/session/login HTTP/1.1\r\n"
+                    "Host: localhost\r\n"
+                    "Content-Type: application/json\r\n"
+                    "Cookie: bareos_proxy_session=nonexistent-session-id\r\n"
+                    "Content-Length: ")
+        + std::to_string(body.size()) + "\r\n\r\n" + body;
+  const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
+
+  EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 401 Unauthorized");
+  EXPECT_NE(response.find("Max-Age=0"), std::string::npos);
+}
+
 TEST(ProxySession, ReturnsNotFoundForNonWsTargets)
 {
   const auto response = ExchangeHttpRequest(
