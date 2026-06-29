@@ -584,7 +584,7 @@ TEST(ProxySession, ConnectsWsWithSessionCookie)
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
   ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
-      session_id, "bareos-dir", "admin", "secret", true));
+      session_id, "bareos-dir", "admin", "secret"));
 
   auto director = StartMockDirectorSession(listener, "secret");
   const auto response = ExchangeWsSession(
@@ -608,7 +608,7 @@ TEST(ProxySession, RejectsUnsupportedWsMode)
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
   ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
-      session_id, "bareos-dir", "admin", "secret", true));
+      session_id, "bareos-dir", "admin", "secret"));
 
   const auto response = ExchangeWsSession(
       config,
@@ -663,7 +663,7 @@ TEST(ProxySession, ReturnsMultiDirectorSessionInfoOverHttp)
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
   ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
-      session_id, "site-b", "ops", "site-secret", false));
+      session_id, "site-b", "ops", "site-secret"));
 
   const std::string request
       = std::string("GET /api/session HTTP/1.1\r\n"
@@ -701,7 +701,7 @@ TEST(ProxySession, ReuseEndpointReportsAlreadyAuthenticatedDirectors)
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
   ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
-      session_id, "site-b", "admin", "secret", false));
+      session_id, "site-b", "admin", "secret"));
 
   const std::string body
       = R"({"directors":["site-b"],"sourceDirector":"bareos-dir"})";

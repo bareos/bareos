@@ -32,7 +32,6 @@ TEST(ProxyAuthSessionStore, CreatesLooksUpAndRemovesSessions)
   const auto session = ProxyAuthSessionStore::LookupSession(session_id);
   ASSERT_TRUE(session);
   EXPECT_EQ(session->session_id, session_id);
-  EXPECT_EQ(session->current_director, "bareos-dir");
   ASSERT_EQ(session->directors.size(), 1U);
   ASSERT_TRUE(session->directors.contains("bareos-dir"));
   EXPECT_EQ(session->directors.at("bareos-dir").username, "admin");
@@ -48,11 +47,10 @@ TEST(ProxyAuthSessionStore, StoresAdditionalDirectorCredentials)
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
 
   ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
-      session_id, "site-b", "ops", "site-secret", false));
+      session_id, "site-b", "ops", "site-secret"));
 
   const auto session = ProxyAuthSessionStore::LookupSession(session_id);
   ASSERT_TRUE(session);
-  EXPECT_EQ(session->current_director, "bareos-dir");
   ASSERT_EQ(session->directors.size(), 2U);
   ASSERT_TRUE(session->directors.contains("site-b"));
   EXPECT_EQ(session->directors.at("site-b").username, "ops");
@@ -61,22 +59,16 @@ TEST(ProxyAuthSessionStore, StoresAdditionalDirectorCredentials)
   ProxyAuthSessionStore::RemoveSession(session_id);
 }
 
-TEST(ProxyAuthSessionStore, SwitchesAndRemovesDirectors)
+TEST(ProxyAuthSessionStore, RemovesDirectors)
 {
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
   ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
-      session_id, "site-b", "ops", "site-secret", false));
-
-  ASSERT_TRUE(ProxyAuthSessionStore::SetCurrentDirector(session_id, "site-b"));
-  auto session = ProxyAuthSessionStore::LookupSession(session_id);
-  ASSERT_TRUE(session);
-  EXPECT_EQ(session->current_director, "site-b");
+      session_id, "site-b", "ops", "site-secret"));
 
   ASSERT_TRUE(ProxyAuthSessionStore::RemoveDirector(session_id, "site-b"));
-  session = ProxyAuthSessionStore::LookupSession(session_id);
+  auto session = ProxyAuthSessionStore::LookupSession(session_id);
   ASSERT_TRUE(session);
-  EXPECT_EQ(session->current_director, "bareos-dir");
   EXPECT_FALSE(session->directors.contains("site-b"));
 
   ASSERT_TRUE(ProxyAuthSessionStore::RemoveDirector(session_id, "bareos-dir"));

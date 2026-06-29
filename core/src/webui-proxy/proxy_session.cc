@@ -174,21 +174,10 @@ JsonPtr MakeSessionInfoJson(const ProxyAuthSessionRecord& session)
   JsonPtr obj = MakeJsonObject();
   JsonPtr directors = MakeJsonArray();
 
-  SetJsonString(obj.get(), "director", session.current_director);
-  SetJsonString(obj.get(), "currentDirector", session.current_director);
-
-  const auto current = session.directors.find(session.current_director);
-  if (current != session.directors.end()) {
-    SetJsonString(obj.get(), "username", current->second.username);
-  }
-
   for (const auto& [selector, credentials] : session.directors) {
     JsonPtr entry = MakeJsonObject();
     SetJsonString(entry.get(), "director", selector);
     SetJsonString(entry.get(), "username", credentials.username);
-    if (selector == session.current_director) {
-      json_object_set_new(entry.get(), "current", json_true());
-    }
     json_array_append_new(directors.get(), entry.release());
   }
 
@@ -555,14 +544,13 @@ void HandleSessionLoginRequest(int fd,
     std::string session_id;
     if (!new_session) {
       session_id = std::string(*existing_session_id);
-      ProxyAuthSessionStore::StoreDirectorCredentials(
+    ProxyAuthSessionStore::StoreDirectorCredentials(
           session_id, requested_director, username, password);
     } else {
       session_id = ProxyAuthSessionStore::CreateSession(
           username, password, requested_director);
     }
 
-    ProxyAuthSessionStore::SetCurrentDirector(session_id, requested_director);
     auto session = ProxyAuthSessionStore::LookupSession(session_id);
     if (!session) {
       throw std::runtime_error("Proxy session expired; please log in again");
@@ -643,8 +631,14 @@ void HandleReuseCredentialsRequest(int fd,
 
   try {
     JsonPtr body = ParseJsonBody(request);
-    const auto source_director = JsonStringField(body.get(), "sourceDirector")
-        .value_or(session->current_director);
+    const auto source_director_opt = JsonStringField(body.get(), "sourceDirector");
+    if (!source_director_opt || source_director_opt->empty()) {
+      SendJsonResponseWithCookie(
+          fd, "HTTP/1.1 400 Bad Request",
+          JsonObject({{"message", "sourceDirector is required"}}));
+      return;
+    }
+    const auto source_director = std::string(*source_director_opt);
     const auto source_credentials = LookupDirectorCredentials(*session,
                                                               source_director);
     if (!source_credentials) {
@@ -684,7 +678,7 @@ void HandleReuseCredentialsRequest(int fd,
                                source_credentials->password);
         ProxyAuthSessionStore::StoreDirectorCredentials(
             *session_id, selector, source_credentials->username,
-            source_credentials->password, false);
+            source_credentials->password);
         SetJsonString(result.get(), "status", "authenticated");
       } catch (const std::exception& ex) {
         SetJsonString(result.get(), "status",
@@ -838,18 +832,14 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   DirectorConfig cfg;
   std::string mode;
   try {
-    const auto director
-        = std::string(JsonStringField(auth_msg.get(), "director")
-                          .value_or(session->current_director));
+    const auto director_opt = JsonStringField(auth_msg.get(), "director");
+    if (!director_opt || director_opt->empty()) {
+      throw std::runtime_error(
+          "Session message must include a non-empty 'director' field");
+    }
+    const auto director = std::string(*director_opt);
     mode = std::string(JsonStringField(auth_msg.get(), "mode").value_or("json"));
     const bool json_mode = ParseAuthMode(mode);
-    if (director != session->current_director) {
-      if (!ProxyAuthSessionStore::SetCurrentDirector(*session_id, director)) {
-        throw std::runtime_error("Proxy session has no credentials for director '"
-                                 + director + "'");
-      }
-    }
-    session->current_director = director;
     const auto credentials = LookupDirectorCredentials(*session, director);
     if (!credentials) {
       throw std::runtime_error("Proxy session has no credentials for director '"
