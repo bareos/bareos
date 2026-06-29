@@ -760,7 +760,11 @@ int ndmconn_xdr_nmb(struct ndmconn* conn,
     xdr_body = ndmnmb_find_xdrproc(nmb);
 
     if (nmb->header.error == NDMP0_NO_ERR && !xdr_body) {
-      return ndmconn_set_err_msg(conn, "unknown-body");
+      /* No body handler registered for this message (e.g. CONNECT_CLOSE
+       * has xdr_reply == 0 after the server may still send a reply).
+       * Skip the body and return success; xdrrec_skiprecord in the next
+       * call will flush any remaining bytes. */
+      return 0;
     }
   }
   if (nmb->header.error == NDMP0_NO_ERR) {

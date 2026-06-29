@@ -43,7 +43,7 @@
 
 
 #define xdr_ndmp2_connect_close_request xdr_void
-#define xdr_ndmp2_connect_close_reply xdr_void
+#define xdr_ndmp2_connect_close_reply 0
 #define xdr_ndmp2_config_get_host_info_request xdr_void
 #define xdr_ndmp2_config_get_mover_type_request xdr_void
 #define xdr_ndmp2_scsi_close_request xdr_void
