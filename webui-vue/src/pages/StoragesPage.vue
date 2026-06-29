@@ -238,7 +238,7 @@
               </template>
               <template #body-cell-pool="props">
                 <q-td :props="props">
-                  <a href="#" class="text-primary" @click.prevent="openPoolDetails(props.row)">
+                  <a href="#" class="text-primary" @click.prevent="openPoolDetails({ name: props.row.pool, director: props.row.director })">
                     {{ props.value }}
                   </a>
                 </q-td>
