@@ -53,7 +53,7 @@ struct ndmp_xdr_message_table ndmp9_xdr_message_table[] = {
     {
         NDMP9_CONNECT_CLOSE,
         xdr_ndmp9_connect_close_request,
-        xdr_ndmp9_connect_close_reply,
+        0,
     },
     {
         NDMP9_CONNECT_SERVER_AUTH,

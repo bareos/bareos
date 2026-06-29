@@ -43,7 +43,7 @@
 
 
 #define xdr_ndmp3_connect_close_request xdr_void
-#define xdr_ndmp3_connect_close_reply xdr_void
+#define xdr_ndmp3_connect_close_reply 0
 #define xdr_ndmp3_config_get_host_info_request xdr_void
 #define xdr_ndmp3_config_get_connection_type_request xdr_void
 #define xdr_ndmp3_config_get_butype_info_request xdr_void
