@@ -284,13 +284,13 @@ https://github.com/bareos/bareos/. There are no hidden nor open core components.
 For a simple comparison of the two editions, please see the following table:
 
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
-|                         |  Community Edition                                                           |    Bareos Subscription                                                         |
+|                         |  Bareos Subscription                                                         |    Community Edition                                                           |
 +=========================+==============================================================================+================================================================================+
 |  **Packages**                                                                                                                                                                           |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
-| Previous major releases | (Source code only)                                                           | `Subscription repository <https://download.bareos.com/bareos/release/>`_       |
+| Previous major releases | `Subscription repository <https://download.bareos.com/bareos/release/>`_     | (Source code only)                                                             |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
-| Current major release   | `Community repository <https://download.bareos.org/current/>`_               | `Subscription repository <https://download.bareos.com/bareos/release/>`_       |
+| Current major release   | `Subscription repository <https://download.bareos.com/bareos/release/>`_     | `Community repository <https://download.bareos.org/current/>`_                 |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
 | Development binaries    | https://download.bareos.org/next/                                                                                                                             |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
@@ -300,9 +300,9 @@ For a simple comparison of the two editions, please see the following table:
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
 |  **Support**                                                                                                                                                                            |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
-| without service level   |                                                                              | Available at https://www.bareos.com/product/support/                           |
+| without service level   | Available at https://www.bareos.com/product/support/                         |                                                                                |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
-| with service level      |                                                                              | Available at https://www.bareos.com/product/support/                           |
+| with service level      | Available at https://www.bareos.com/product/support/                         |                                                                                |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
 |  **Development**                                                                                                                                                                        |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
@@ -310,7 +310,7 @@ For a simple comparison of the two editions, please see the following table:
 +-------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Issue tracker           | `GitHub Issues <https://github.com/bareos/bareos/issues/>`_                                                                                                   |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
-| New features            | `Join in <https://www.bareos.com/community/join-in/>`_                       | `Co-Funding         <https://www.bareos.com/funded-development>`_              |
+| New features            | `Co-Funding         <https://www.bareos.com/funded-development>`_            | `Join in <https://www.bareos.com/community/join-in/>`_                         |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
 
 This binary release policy is in place since Bareos >= 22.
