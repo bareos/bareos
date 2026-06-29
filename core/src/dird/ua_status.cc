@@ -1557,8 +1557,7 @@ static void ListTerminatedJobs(UaContext* ua)
       ua->send->ObjectEnd();
     } else if (ua->api) {
       ua->SendMsg(T_("%6" PRIu32 "\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
-                  je.JobId, level,
-                  edit_uint64_with_commas(je.JobFiles, b1),
+                  je.JobId, level, edit_uint64_with_commas(je.JobFiles, b1),
                   edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
                   JobName);
     } else {

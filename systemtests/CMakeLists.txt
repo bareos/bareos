@@ -378,8 +378,7 @@ if(NODE)
   execute_process(
     COMMAND "${NODE}" --version
     OUTPUT_VARIABLE NODE_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
   )
   if("${NODE_VERSION}" MATCHES "^v([0-9]+)\\.")
     set(NODE_VERSION_MAJOR "${CMAKE_MATCH_1}")
@@ -393,7 +392,8 @@ set(WEBUI_VUE_PREFER_PREBUILT_DIST FALSE)
 if(EXISTS "${PROJECT_BINARY_DIR}/webui-vue/dist/index.html")
   set(WEBUI_VUE_TEST_DIST "${PROJECT_BINARY_DIR}/webui-vue/dist")
 elseif(EXISTS "${CMAKE_SOURCE_DIR}/webui-vue/dist/index.html"
-       AND NOT EXISTS "${CMAKE_SOURCE_DIR}/.git")
+       AND NOT EXISTS "${CMAKE_SOURCE_DIR}/.git"
+)
   set(WEBUI_VUE_TEST_DIST "${CMAKE_SOURCE_DIR}/webui-vue/dist")
   set(WEBUI_VUE_PREFER_PREBUILT_DIST TRUE)
 endif()
@@ -401,8 +401,8 @@ find_program(
   GOOGLE_CHROME NAMES google-chrome google-chrome-stable chromium
                       chromium-browser chrome
 )
-# The lookup cache must be cleared before re-searching because these
-# executables can be provided by the build tree or the system PATH.
+# The lookup cache must be cleared before re-searching because these executables
+# can be provided by the build tree or the system PATH.
 unset(WEBUI_VUE_PLAYWRIGHT CACHE)
 find_program(
   WEBUI_VUE_PLAYWRIGHT
@@ -558,9 +558,9 @@ endif()
 # webui: end
 #
 
-set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS admin-smoke readonly-smoke
-                                         testuser-smoke testuser-tls-psk-smoke
-                                         admin-smoke-multi-director
+set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS
+    admin-smoke readonly-smoke testuser-smoke testuser-tls-psk-smoke
+    admin-smoke-multi-director
 )
 
 if(NODE

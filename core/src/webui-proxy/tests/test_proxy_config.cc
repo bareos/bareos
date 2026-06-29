@@ -92,7 +92,7 @@ address = 127.0.0.1
 TEST(ProxyConfig, RejectsMissingListenSection)
 {
   EXPECT_THROW(LoadProxyConfigFromString(
-                  R"ini(
+                   R"ini(
 [listem]
 address = localhost
 port = 9204

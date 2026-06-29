@@ -35,11 +35,13 @@ start_test
 
 readonly expected_robot_delay="${AUTOCHANGER_ROBOT_DELAY:-10}"
 
-run_changer() {
+run_changer()
+{
   ./mtx-changer never_used "$1" "$2" "$3" "$4"
 }
 
-run_changer_with_delay_check() {
+run_changer_with_delay_check()
+{
   local operation="$1"
   shift
   local duration
@@ -52,7 +54,8 @@ run_changer_with_delay_check() {
   fi
 }
 
-capture_failure() {
+capture_failure()
+{
   local logfile="$1"
   shift
   if "$@" >"${logfile}" 2>&1; then
