@@ -1,5 +1,6 @@
 <template>
   <q-avatar
+    v-if="info.badge"
     :color="info.color"
     text-color="white"
     size="24px"
