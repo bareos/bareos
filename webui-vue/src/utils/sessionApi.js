@@ -91,7 +91,7 @@ export async function reuseProxySessionCredentials({ directors, sourceDirector }
     },
     body: JSON.stringify({
       directors,
-      ...(sourceDirector ? { sourceDirector } : {}),
+      sourceDirector,
     }),
   })
 

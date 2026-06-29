@@ -59,7 +59,9 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
-  await auth.restoreSession()
+  const { useSettingsStore } = await import('../stores/settings.js')
+  const settings = useSettingsStore()
+  await auth.restoreSession(false, settings.directorName)
   if (to.meta.requiresAuth && !auth.isLoggedIn) {
     return { name: 'login' }
   }

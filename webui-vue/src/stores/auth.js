@@ -24,14 +24,6 @@ function normalizeDirectorUsers(session) {
     byDirector[director] = { username }
   }
 
-  if (Object.keys(byDirector).length === 0) {
-    const username = String(session?.username ?? '').trim()
-    const director = normalizeDirectorName(session?.currentDirector ?? session?.director)
-    if (username) {
-      byDirector[director] = { username }
-    }
-  }
-
   return byDirector
 }
 
@@ -97,8 +89,7 @@ export const useAuthStore = defineStore('auth', () => {
       : nextDirectorUsers
     _password.value = Object.keys(directorUsers.value).length > 0 ? password : ''
     const currentDirector = normalizeDirectorName(
-      session?.currentDirector
-      ?? session?.director
+      options.preferredDirector
       ?? firstAuthenticatedDirector(directorUsers.value)
     )
     if (!setCurrentUser(currentDirector)) {
@@ -176,7 +167,7 @@ export const useAuthStore = defineStore('auth', () => {
     initialized.value = true
   }
 
-  async function restoreSession(force = false) {
+  async function restoreSession(force = false, preferredDirector = '') {
     if (initialized.value && !force) {
       return isLoggedIn.value
     }
@@ -189,7 +180,8 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         const session = await fetchCurrentSession()
         if (session) {
-          applySession(session, SESSION_AUTH_PASSWORD)
+          applySession(session, SESSION_AUTH_PASSWORD,
+            preferredDirector ? { preferredDirector } : {})
         } else {
           logout()
         }

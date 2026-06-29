@@ -515,7 +515,7 @@ async function reuseCurrentCredentials(options = {}) {
     if (result?.session) {
       auth.applySession(result.session, SESSION_AUTH_PASSWORD)
     } else {
-      await auth.restoreSession(true)
+      await auth.restoreSession(true, settings.directorName)
     }
     await activateDirector(directorRef.value)
   } catch (error) {
