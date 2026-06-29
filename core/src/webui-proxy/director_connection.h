@@ -85,7 +85,8 @@ std::string GetTlsPskIdentityForDirector(const std::string& console_name);
 class DirectorConnection {
  public:
   /* Connect to the director and perform full authentication.
-   * Returns a ready-to-use connection or throws std::runtime_error on failure. */
+   * Returns a ready-to-use connection or throws std::runtime_error on failure.
+   */
   static DirectorConnection Connect(const DirectorConfig& cfg);
 
   /* Send a command and stream each received data chunk to @p on_data.

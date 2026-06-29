@@ -85,7 +85,8 @@ class WsCodec {
           std::chrono::milliseconds handshake_timeout,
           size_t max_frame_payload_size,
           size_t max_message_size);
-  void Handshake(std::optional<std::string_view> request_headers = std::nullopt);
+  void Handshake(std::optional<std::string_view> request_headers
+                 = std::nullopt);
 
   int fd_;
   bool closed_ = false;

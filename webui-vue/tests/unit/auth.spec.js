@@ -214,4 +214,3 @@ describe('auth store', () => {
     expect(auth.authenticatedDirectors).toEqual(['site-b'])
   })
 })
-

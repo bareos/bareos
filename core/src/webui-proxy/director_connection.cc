@@ -287,9 +287,8 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   const std::string key = MakeCramMd5Key(cfg.password);
 
   // Step 1: send Hello with version so the director uses the >= 18.2 protocol.
-  const std::string hello
-      = "Hello " + cfg.username + " calling version "
-        + kBareosVersionStrings.Full + "\n";
+  const std::string hello = "Hello " + cfg.username + " calling version "
+                            + kBareosVersionStrings.Full + "\n";
   SendFrame(hello);
 
   // Step 2: receive director's challenge
@@ -376,9 +375,7 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   // Use the normal Call() path here so we consume both the data response and
   // the terminating prompt. Otherwise the last .api response can remain queued
   // and shift every subsequent dashboard command by one response.
-  if (cfg.json_mode) {
-    Call(".api json");
-  }
+  if (cfg.json_mode) { Call(".api json"); }
 }
 
 // ---------------------------------------------------------------------------

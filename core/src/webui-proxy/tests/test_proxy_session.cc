@@ -151,9 +151,7 @@ std::string ReadUntilClosed(int fd)
       ADD_FAILURE() << "recv() failed while reading response";
       return result;
     }
-    if (received == 0) {
-      return result;
-    }
+    if (received == 0) { return result; }
     result.append(buffer.data(), static_cast<size_t>(received));
   }
 }
@@ -232,8 +230,8 @@ TcpListener CreateMockDirectorListener()
   }
 
   int reuse = 1;
-  if (setsockopt(listener.fd, SOL_SOCKET, SO_REUSEADDR, &reuse,
-                 sizeof(reuse)) != 0) {
+  if (setsockopt(listener.fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))
+      != 0) {
     throw std::runtime_error("failed to configure mock director socket");
   }
 
@@ -241,7 +239,8 @@ TcpListener CreateMockDirectorListener()
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   addr.sin_port = 0;
-  if (bind(listener.fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
+  if (bind(listener.fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr))
+      != 0) {
     throw std::runtime_error("failed to bind mock director socket");
   }
 
@@ -272,9 +271,7 @@ std::thread StartMockDirectorSession(const TcpListener& listener,
           | (static_cast<uint32_t>(static_cast<unsigned char>(header[1])) << 16)
           | (static_cast<uint32_t>(static_cast<unsigned char>(header[2])) << 8)
           | static_cast<uint32_t>(static_cast<unsigned char>(header[3])));
-      if (size <= 0) {
-        return std::string();
-      }
+      if (size <= 0) { return std::string(); }
       return ReadExact(peer, static_cast<size_t>(size));
     };
 
@@ -378,9 +375,9 @@ std::string BuildWsHandshakeRequest(std::string_view cookie_header = {})
 {
   std::string request(kValidHandshakeRequest);
   if (!cookie_header.empty()) {
-    request.insert(request.size() - 2,
-                   std::string("Cookie: ") + std::string(cookie_header)
-                       + "\r\n");
+    request.insert(
+        request.size() - 2,
+        std::string("Cookie: ") + std::string(cookie_header) + "\r\n");
   }
   return request;
 }
@@ -557,14 +554,14 @@ TEST(ProxySession, ListsConfiguredDirectors)
 
 TEST(ProxySession, RejectsWsWithoutSessionCookie)
 {
-  const auto response = ExchangeHttpRequest(
-      ProxyConfig{},
-      "GET /ws HTTP/1.1\r\n"
-      "Host: localhost\r\n"
-      "Upgrade: websocket\r\n"
-      "Connection: Upgrade\r\n"
-      "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
-      "Sec-WebSocket-Version: 13\r\n\r\n");
+  const auto response
+      = ExchangeHttpRequest(ProxyConfig{},
+                            "GET /ws HTTP/1.1\r\n"
+                            "Host: localhost\r\n"
+                            "Upgrade: websocket\r\n"
+                            "Connection: Upgrade\r\n"
+                            "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+                            "Sec-WebSocket-Version: 13\r\n\r\n");
 
   EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 401 Unauthorized");
 }
@@ -576,11 +573,10 @@ TEST(ProxySession, ConnectsWsWithSessionCookie)
   ProxyConfig config;
   config.configured_directors.emplace(
       "bareos-dir",
-      DirectorTargetConfig{
-          .address = "127.0.0.1",
-          .port = static_cast<int>(listener.port),
-          .name = "bareos-dir",
-          .tls_psk_disable = true});
+      DirectorTargetConfig{.address = "127.0.0.1",
+                           .port = static_cast<int>(listener.port),
+                           .name = "bareos-dir",
+                           .tls_psk_disable = true});
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
   ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
@@ -588,8 +584,7 @@ TEST(ProxySession, ConnectsWsWithSessionCookie)
 
   auto director = StartMockDirectorSession(listener, "secret");
   const auto response = ExchangeWsSession(
-      config,
-      std::string("bareos_proxy_session=") + session_id,
+      config, std::string("bareos_proxy_session=") + session_id,
       R"({"type":"session","director":"bareos-dir","mode":"json"})");
 
   director.join();
@@ -611,8 +606,7 @@ TEST(ProxySession, RejectsUnsupportedWsMode)
       session_id, "bareos-dir", "admin", "secret"));
 
   const auto response = ExchangeWsSession(
-      config,
-      std::string("bareos_proxy_session=") + session_id,
+      config, std::string("bareos_proxy_session=") + session_id,
       R"({"type":"session","director":"bareos-dir","mode":"json-v2"})");
 
   EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
@@ -624,8 +618,7 @@ TEST(ProxySession, RejectsUnsupportedWsMode)
 TEST(ProxySession, RejectsLoginWithExpiredSessionCookie)
 {
   // Simulate an expired session: cookie is present but session is gone.
-  const std::string body
-      = R"({"username":"admin","password":"secret"})";
+  const std::string body = R"({"username":"admin","password":"secret"})";
   const std::string request
       = std::string(
             "POST /api/session/directors/bareos-dir/login HTTP/1.1\r\n"
@@ -643,8 +636,7 @@ TEST(ProxySession, RejectsLoginWithExpiredSessionCookie)
 TEST(ProxySession, ReturnsNotFoundForNonWsTargets)
 {
   const auto response = ExchangeHttpRequest(
-      ProxyConfig{},
-      "GET /not-ws HTTP/1.1\r\nHost: localhost\r\n\r\n");
+      ProxyConfig{}, "GET /not-ws HTTP/1.1\r\nHost: localhost\r\n\r\n");
 
   EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 404 Not Found");
 }
@@ -665,11 +657,11 @@ TEST(ProxySession, ReturnsMultiDirectorSessionInfoOverHttp)
   ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
       session_id, "site-b", "ops", "site-secret"));
 
-  const std::string request
-      = std::string("GET /api/session HTTP/1.1\r\n"
-                    "Host: localhost\r\n"
-                    "Cookie: bareos_proxy_session=")
-        + session_id + "\r\n\r\n";
+  const std::string request = std::string(
+                                  "GET /api/session HTTP/1.1\r\n"
+                                  "Host: localhost\r\n"
+                                  "Cookie: bareos_proxy_session=")
+                              + session_id + "\r\n\r\n";
   const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
 
   EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 200 OK");
@@ -684,11 +676,11 @@ TEST(ProxySession, DeleteSessionEndsTheWholeSession)
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
 
-  const std::string request
-      = std::string("DELETE /api/session HTTP/1.1\r\n"
-                    "Host: localhost\r\n"
-                    "Cookie: bareos_proxy_session=")
-        + session_id + "\r\n\r\n";
+  const std::string request = std::string(
+                                  "DELETE /api/session HTTP/1.1\r\n"
+                                  "Host: localhost\r\n"
+                                  "Cookie: bareos_proxy_session=")
+                              + session_id + "\r\n\r\n";
   const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
 
   EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 204 No Content");
@@ -705,17 +697,18 @@ TEST(ProxySession, ReuseEndpointReportsAlreadyAuthenticatedDirectors)
 
   const std::string body
       = R"({"directors":["site-b"],"sourceDirector":"bareos-dir"})";
-  const std::string request
-      = std::string("POST /api/session/reuse HTTP/1.1\r\n"
-                    "Host: localhost\r\n"
-                    "Content-Type: application/json\r\n"
-                    "Cookie: bareos_proxy_session=")
-        + session_id + "\r\nContent-Length: "
-        + std::to_string(body.size()) + "\r\n\r\n" + body;
+  const std::string request = std::string(
+                                  "POST /api/session/reuse HTTP/1.1\r\n"
+                                  "Host: localhost\r\n"
+                                  "Content-Type: application/json\r\n"
+                                  "Cookie: bareos_proxy_session=")
+                              + session_id + "\r\nContent-Length: "
+                              + std::to_string(body.size()) + "\r\n\r\n" + body;
   const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
 
   EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 200 OK");
-  EXPECT_NE(HttpBody(response).find("\"already_authenticated\""), std::string::npos);
+  EXPECT_NE(HttpBody(response).find("\"already_authenticated\""),
+            std::string::npos);
 
   ProxyAuthSessionStore::RemoveSession(session_id);
 }

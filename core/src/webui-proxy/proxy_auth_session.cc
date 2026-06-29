@@ -51,8 +51,7 @@ struct StoredSession {
 
 class ProxyAuthSessionStoreImpl {
  public:
-  void SetSessionTimeouts(int idle_timeout_minutes,
-                          int absolute_lifetime_hours)
+  void SetSessionTimeouts(int idle_timeout_minutes, int absolute_lifetime_hours)
   {
     std::lock_guard guard(mutex_);
     g_session_timeouts.idle_timeout
@@ -78,12 +77,11 @@ class ProxyAuthSessionStoreImpl {
 
     ProxyAuthSessionRecord record;
     record.session_id = GenerateSessionId();
-    record.directors.emplace(
-        std::string(director),
-        ProxyAuthSessionDirectorRecord{
-            .username = std::string(username),
-            .password = std::string(password),
-        });
+    record.directors.emplace(std::string(director),
+                             ProxyAuthSessionDirectorRecord{
+                                 .username = std::string(username),
+                                 .password = std::string(password),
+                             });
 
     sessions_[record.session_id] = StoredSession{
         .record = record,
@@ -93,7 +91,8 @@ class ProxyAuthSessionStoreImpl {
     return record.session_id;
   }
 
-  std::optional<ProxyAuthSessionRecord> LookupSession(std::string_view session_id)
+  std::optional<ProxyAuthSessionRecord> LookupSession(
+      std::string_view session_id)
   {
     std::lock_guard guard(mutex_);
     const auto now = Clock::now();
@@ -137,9 +136,7 @@ class ProxyAuthSessionStoreImpl {
     if (it == sessions_.end()) { return false; }
 
     const auto selector = std::string(director);
-    if (it->second.record.directors.erase(selector) == 0) {
-      return false;
-    }
+    if (it->second.record.directors.erase(selector) == 0) { return false; }
 
     if (it->second.record.directors.empty()) {
       sessions_.erase(it);
@@ -209,9 +206,7 @@ std::string BuildCookie(std::string_view session_id, bool secure, bool expired)
   cookie.reserve(kProxySessionCookieName.size() + session_id.size() + 64);
   cookie.append(kProxySessionCookieName);
   cookie.push_back('=');
-  if (!expired) {
-    cookie.append(session_id);
-  }
+  if (!expired) { cookie.append(session_id); }
   cookie += "; Path=/; HttpOnly; SameSite=Strict";
   if (secure) { cookie += "; Secure"; }
   if (expired) {
@@ -241,7 +236,7 @@ bool StoreDirectorCredentials(std::string_view session_id,
                               std::string_view password)
 {
   return GetStore().StoreDirectorCredentials(session_id, director, username,
-                                            password);
+                                             password);
 }
 
 std::optional<ProxyAuthSessionRecord> LookupSession(std::string_view session_id)

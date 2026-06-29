@@ -48,13 +48,14 @@ int main(int argc, char* argv[])
   app.add_option("--log-file", log_file, "Append proxy logs to this file");
   app.add_option("--log-level", log_level,
                  "Minimum proxy log level: debug, info, warn, error")
-      ->transform(CLI::CheckedTransformer(std::map<std::string, ProxyLogLevel>{
-          {"debug", ProxyLogLevel::Debug},
-          {"info", ProxyLogLevel::Info},
-          {"warn", ProxyLogLevel::Warn},
-          {"warning", ProxyLogLevel::Warn},
-          {"error", ProxyLogLevel::Error},
-      },
+      ->transform(CLI::CheckedTransformer(
+          std::map<std::string, ProxyLogLevel>{
+              {"debug", ProxyLogLevel::Debug},
+              {"info", ProxyLogLevel::Info},
+              {"warn", ProxyLogLevel::Warn},
+              {"warning", ProxyLogLevel::Warn},
+              {"error", ProxyLogLevel::Error},
+          },
           CLI::ignore_case));
 
   CLI11_PARSE(app, argc, argv);
@@ -71,25 +72,24 @@ int main(int argc, char* argv[])
     const bool has_default_config
         = std::filesystem::exists(config_file, fs_error);
     if (fs_error) {
-      throw ProxyConfigFileError(
-          "Proxy config: cannot check '" + config_file + "'");
+      throw ProxyConfigFileError("Proxy config: cannot check '" + config_file
+                                 + "'");
     }
     if (explicit_config || has_default_config) {
       cfg = LoadProxyConfigFile(config_file);
-      PROXY_LOG_INFO("", "loaded proxy config from '%s'%s",
-                     config_file.c_str(),
+      PROXY_LOG_INFO("", "loaded proxy config from '%s'%s", config_file.c_str(),
                      explicit_config ? " (--config)" : " (default path)");
     } else {
       cfg = LoadBuiltInDefaultProxyConfig();
-      PROXY_LOG_INFO("", "proxy config file '%s' not found; using built-in "
-                         "defaults",
+      PROXY_LOG_INFO("",
+                     "proxy config file '%s' not found; using built-in "
+                     "defaults",
                      config_file.c_str());
     }
 
     // Apply session timeout configuration
     ProxyAuthSessionStore::SetSessionTimeouts(
-        cfg.session_idle_timeout_minutes,
-        cfg.session_absolute_lifetime_hours);
+        cfg.session_idle_timeout_minutes, cfg.session_absolute_lifetime_hours);
 
     g_proxy_shutdown_requested = 0;
     std::signal(SIGINT, HandleSignal);

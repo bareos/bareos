@@ -236,9 +236,9 @@ void SendRawResponse(WsCodec& ws,
                      std::string_view text,
                      const char* prompt_str)
 {
-  ws.SendText(JsonRawResponse(id, command, text,
-                              prompt_str ? std::optional<std::string_view>(prompt_str)
-                                         : std::nullopt));
+  ws.SendText(JsonRawResponse(
+      id, command, text,
+      prompt_str ? std::optional<std::string_view>(prompt_str) : std::nullopt));
 }
 
 std::string JsonCommandResponse(std::optional<std::string_view> id,
@@ -266,13 +266,14 @@ std::string JsonCommandError(std::optional<std::string_view> id,
 }
 
 DirectorTargetConfig RequireDirectorTarget(const ProxyConfig& config,
-                                          std::string_view selector)
+                                           std::string_view selector)
 {
   if (selector.empty()) {
     throw std::runtime_error("Proxy config: no director selected");
   }
 
-  const auto director_it = config.configured_directors.find(std::string(selector));
+  const auto director_it
+      = config.configured_directors.find(std::string(selector));
   if (director_it == config.configured_directors.end()) {
     throw std::runtime_error("Proxy config: director '" + std::string(selector)
                              + "' is not configured");
@@ -324,7 +325,8 @@ std::optional<ProxyAuthSessionRecord> LookupSessionFromRequest(
   const auto cookie_header = request.HeaderValue("Cookie");
   if (!cookie_header) { return std::nullopt; }
 
-  const auto session_id = FindCookieValue(*cookie_header, kProxySessionCookieName);
+  const auto session_id
+      = FindCookieValue(*cookie_header, kProxySessionCookieName);
   if (!session_id || session_id->empty()) { return std::nullopt; }
 
   return ProxyAuthSessionStore::LookupSession(*session_id);
@@ -339,7 +341,8 @@ std::optional<ProxyAuthSessionDirectorRecord> LookupDirectorCredentials(
   return it->second;
 }
 
-std::optional<std::string_view> LookupSessionIdFromRequest(const HttpRequest& request)
+std::optional<std::string_view> LookupSessionIdFromRequest(
+    const HttpRequest& request)
 {
   const auto cookie_header = request.HeaderValue("Cookie");
   if (!cookie_header) { return std::nullopt; }
@@ -347,18 +350,15 @@ std::optional<std::string_view> LookupSessionIdFromRequest(const HttpRequest& re
 }
 
 std::optional<std::string> MatchSessionDirectorPath(std::string_view target,
-                                                    std::string_view suffix = {})
+                                                    std::string_view suffix
+                                                    = {})
 {
   constexpr std::string_view kPrefix = "/api/session/directors/";
-  if (!target.starts_with(kPrefix)) {
-    return std::nullopt;
-  }
+  if (!target.starts_with(kPrefix)) { return std::nullopt; }
 
   auto remainder = target.substr(kPrefix.size());
   if (!suffix.empty()) {
-    if (!remainder.ends_with(suffix)) {
-      return std::nullopt;
-    }
+    if (!remainder.ends_with(suffix)) { return std::nullopt; }
     remainder.remove_suffix(suffix.size());
   }
 
@@ -456,7 +456,8 @@ namespace {
 void SendJsonResponseWithCookie(int fd,
                                 std::string_view status_line,
                                 std::string_view body,
-                                std::optional<std::string_view> cookie = std::nullopt)
+                                std::optional<std::string_view> cookie
+                                = std::nullopt)
 {
   if (cookie) {
     SendHttpResponse(fd, std::chrono::seconds(5), status_line, body,
@@ -464,9 +465,9 @@ void SendJsonResponseWithCookie(int fd,
                       {"Cache-Control", "no-store"},
                       {"Set-Cookie", *cookie}});
   } else {
-    SendHttpResponse(fd, std::chrono::seconds(5), status_line, body,
-                     {{"Content-Type", "application/json"},
-                      {"Cache-Control", "no-store"}});
+    SendHttpResponse(
+        fd, std::chrono::seconds(5), status_line, body,
+        {{"Content-Type", "application/json"}, {"Cache-Control", "no-store"}});
   }
 }
 
@@ -536,54 +537,50 @@ void HandleSessionLoginRequest(int fd,
     JsonPtr body = ParseJsonBody(request);
     const auto username = RequireJsonStringField(body.get(), "username");
     const auto password = RequireJsonStringField(body.get(), "password");
-    const DirectorConfig cfg
-        = ConnectSessionDirector(config, requested_director, username, password);
+    const DirectorConfig cfg = ConnectSessionDirector(
+        config, requested_director, username, password);
 
     const auto existing_session_id = LookupSessionIdFromRequest(request);
     bool new_session = !existing_session_id.has_value();
     std::string session_id;
     if (!new_session) {
       session_id = std::string(*existing_session_id);
-    ProxyAuthSessionStore::StoreDirectorCredentials(
+      ProxyAuthSessionStore::StoreDirectorCredentials(
           session_id, requested_director, username, password);
     } else {
-      session_id = ProxyAuthSessionStore::CreateSession(
-          username, password, requested_director);
+      session_id = ProxyAuthSessionStore::CreateSession(username, password,
+                                                        requested_director);
     }
 
     auto session = ProxyAuthSessionStore::LookupSession(session_id);
     if (!session) {
       throw std::runtime_error("Proxy session expired; please log in again");
     }
-    const auto cookie = new_session
-        ? std::optional<std::string>(
-              BuildProxySessionCookie(session_id, RequestUsesHttps(request)))
-        : std::nullopt;
+    const auto cookie
+        = new_session ? std::optional<std::string>(BuildProxySessionCookie(
+                            session_id, RequestUsesHttps(request)))
+                      : std::nullopt;
 
     PROXY_LOG_INFO(peer, "stored session login for user=%s director=%s",
                    cfg.username.c_str(), requested_director.c_str());
-    SendJsonResponseWithCookie(fd, "HTTP/1.1 200 OK",
-                               JsonSessionInfo(*session),
-                               cookie ? std::optional<std::string_view>(*cookie)
-                                      : std::nullopt);
+    SendJsonResponseWithCookie(
+        fd, "HTTP/1.1 200 OK", JsonSessionInfo(*session),
+        cookie ? std::optional<std::string_view>(*cookie) : std::nullopt);
   } catch (const std::exception& ex) {
     const std::string_view message = ex.what();
     const bool authentication_failed = IsAuthenticationFailure(message);
-    const std::string_view status = authentication_failed
-                                        ? std::string_view(
-                                              "HTTP/1.1 401 Unauthorized")
-                                        : std::string_view(
-                                              "HTTP/1.1 502 Bad Gateway");
+    const std::string_view status
+        = authentication_failed ? std::string_view("HTTP/1.1 401 Unauthorized")
+                                : std::string_view("HTTP/1.1 502 Bad Gateway");
     const std::string response_message
-        = authentication_failed
-        ? "Authentication failed"
-        : requested_director.empty()
-            ? "Connection error: " + std::string(message)
-            : "Connection to director '" + requested_director + "' failed: "
-                  + std::string(message);
+        = authentication_failed ? "Authentication failed"
+          : requested_director.empty()
+              ? "Connection error: " + std::string(message)
+              : "Connection to director '" + requested_director
+                    + "' failed: " + std::string(message);
     PROXY_LOG_WARN(peer, "session login failed: %s", ex.what());
-    SendJsonResponseWithCookie(
-        fd, status, JsonObject({{"message", response_message}}));
+    SendJsonResponseWithCookie(fd, status,
+                               JsonObject({{"message", response_message}}));
   }
 }
 
@@ -631,7 +628,8 @@ void HandleReuseCredentialsRequest(int fd,
 
   try {
     JsonPtr body = ParseJsonBody(request);
-    const auto source_director_opt = JsonStringField(body.get(), "sourceDirector");
+    const auto source_director_opt
+        = JsonStringField(body.get(), "sourceDirector");
     if (!source_director_opt || source_director_opt->empty()) {
       SendJsonResponseWithCookie(
           fd, "HTTP/1.1 400 Bad Request",
@@ -639,8 +637,8 @@ void HandleReuseCredentialsRequest(int fd,
       return;
     }
     const auto source_director = std::string(*source_director_opt);
-    const auto source_credentials = LookupDirectorCredentials(*session,
-                                                              source_director);
+    const auto source_credentials
+        = LookupDirectorCredentials(*session, source_director);
     if (!source_credentials) {
       SendJsonResponseWithCookie(
           fd, "HTTP/1.1 400 Bad Request",
@@ -659,9 +657,7 @@ void HandleReuseCredentialsRequest(int fd,
     json_array_foreach(directors, index, entry)
     {
       const char* director_value = json_string_value(entry);
-      if (!director_value || *director_value == '\0') {
-        continue;
-      }
+      if (!director_value || *director_value == '\0') { continue; }
 
       const std::string selector(director_value);
       JsonPtr result = MakeJsonObject();
@@ -701,8 +697,9 @@ void HandleReuseCredentialsRequest(int fd,
 
     SendJsonResponseWithCookie(fd, "HTTP/1.1 200 OK", DumpJson(response.get()));
   } catch (const std::exception&) {
-    SendJsonResponseWithCookie(fd, "HTTP/1.1 400 Bad Request",
-                               JsonObject({{"message", "Expected JSON request body"}}));
+    SendJsonResponseWithCookie(
+        fd, "HTTP/1.1 400 Bad Request",
+        JsonObject({{"message", "Expected JSON request body"}}));
   }
 }
 
@@ -771,8 +768,8 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
   const auto session_id = LookupSessionIdFromRequest(request);
   if (!session_id) {
-    SendHttpResponse(fd, std::chrono::seconds(5),
-                     "HTTP/1.1 401 Unauthorized", "Authentication required",
+    SendHttpResponse(fd, std::chrono::seconds(5), "HTTP/1.1 401 Unauthorized",
+                     "Authentication required",
                      {{"Content-Type", "text/plain; charset=utf-8"},
                       {"Cache-Control", "no-store"}});
     return;
@@ -780,8 +777,8 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
   auto session = ProxyAuthSessionStore::LookupSession(*session_id);
   if (!session) {
-    SendHttpResponse(fd, std::chrono::seconds(5),
-                     "HTTP/1.1 401 Unauthorized", "Authentication expired",
+    SendHttpResponse(fd, std::chrono::seconds(5), "HTTP/1.1 401 Unauthorized",
+                     "Authentication expired",
                      {{"Content-Type", "text/plain; charset=utf-8"},
                       {"Cache-Control", "no-store"}});
     return;
@@ -789,7 +786,8 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
   auto ws = [&]() -> std::optional<WsCodec> {
     try {
-      return WsCodec::Accept(fd, request.raw_headers, std::move(request.pending_input));
+      return WsCodec::Accept(fd, request.raw_headers,
+                             std::move(request.pending_input));
     } catch (const std::exception& ex) {
       PROXY_LOG_WARN(peer, "WS handshake failed: %s", ex.what());
       return std::nullopt;
@@ -814,18 +812,16 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   json_error_t jerr{};
   JsonPtr auth_msg(json_loads(raw_auth.c_str(), 0, &jerr));
   if (!auth_msg) {
-    ws->SendText(
-        JsonObject({{"type", "error"},
-                    {"message", "Expected JSON session setup"}}));
+    ws->SendText(JsonObject(
+        {{"type", "error"}, {"message", "Expected JSON session setup"}}));
     return;
   }
 
   const auto type = JsonStringField(auth_msg.get(), "type");
   if (!type || *type != "session") {
-    ws->SendText(JsonObject(
-        {{"type", "error"},
-         {"message",
-          "First message must be type=session"}}));
+    ws->SendText(
+        JsonObject({{"type", "error"},
+                    {"message", "First message must be type=session"}}));
     return;
   }
 
@@ -838,7 +834,8 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
           "Session message must include a non-empty 'director' field");
     }
     const auto director = std::string(*director_opt);
-    mode = std::string(JsonStringField(auth_msg.get(), "mode").value_or("json"));
+    mode
+        = std::string(JsonStringField(auth_msg.get(), "mode").value_or("json"));
     const bool json_mode = ParseAuthMode(mode);
     const auto credentials = LookupDirectorCredentials(*session, director);
     if (!credentials) {
@@ -915,7 +912,8 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
       }
 
       const auto req_id = JsonStringField(req.get(), "id");
-      const bool stream_raw = json_is_true(json_object_get(req.get(), "stream"));
+      const bool stream_raw
+          = json_is_true(json_object_get(req.get(), "stream"));
       const std::string_view command_raw
           = JsonStringField(req.get(), "command").value_or("");
       std::string command = NormalizeRawConsoleCommand(command_raw);
@@ -927,7 +925,8 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
                      req_id.value_or("").data(), command.c_str());
 
       auto is_terminal_prompt = [](DirectorPrompt prompt) {
-        return prompt == DirectorPrompt::Main || prompt == DirectorPrompt::Other;
+        return prompt == DirectorPrompt::Main
+               || prompt == DirectorPrompt::Other;
       };
       auto send_command_state = [&](const char* status,
                                     const char* prompt_str = nullptr,
@@ -951,10 +950,11 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
           result = director.Call(command);
 
           // Parse and re-emit as
-          // {"type":"response","id":...,"command":...,"data":{...}} The director
-          // returns a jsonrpc envelope: {"jsonrpc":"2.0","result":{...}}. Unwrap
-          // it so callers receive {"key": value} directly, matching the behaviour
-          // of the python-bareos director.call() method.
+          // {"type":"response","id":...,"command":...,"data":{...}} The
+          // director returns a jsonrpc envelope:
+          // {"jsonrpc":"2.0","result":{...}}. Unwrap it so callers receive
+          // {"key": value} directly, matching the behaviour of the
+          // python-bareos director.call() method.
           json_error_t jerr3{};
           JsonPtr data(json_loads(result.text.c_str(), 0, &jerr3));
           if (!data) { data = MakeJsonString(result.text); }
@@ -984,7 +984,8 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
             result = director.Call(command);
           }
 
-          // Raw mode: {"type":"raw_response","id":...,"command":...,"text":"...",
+          // Raw mode:
+          // {"type":"raw_response","id":...,"command":...,"text":"...",
           //            "prompt":"main"|"sub"|"select"|"other"|"more"}
           current_prompt = result.prompt;
           const char* prompt_str = DirectorPromptToString(result.prompt);

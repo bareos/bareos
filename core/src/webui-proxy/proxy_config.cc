@@ -138,14 +138,11 @@ void ApplyProxySetting(ProxyConfig& cfg,
   } else if (key == "port") {
     cfg.port = ParseInteger(value, key, line_number);
   } else if (key == "session_idle_timeout_minutes") {
-    cfg.session_idle_timeout_minutes
-        = ParseInteger(value, key, line_number);
+    cfg.session_idle_timeout_minutes = ParseInteger(value, key, line_number);
   } else if (key == "session_absolute_lifetime_hours") {
-    cfg.session_absolute_lifetime_hours
-        = ParseInteger(value, key, line_number);
+    cfg.session_absolute_lifetime_hours = ParseInteger(value, key, line_number);
   } else if (key == "max_unauthenticated_connections") {
-    cfg.max_unauthenticated_connections
-        = ParseInteger(value, key, line_number);
+    cfg.max_unauthenticated_connections = ParseInteger(value, key, line_number);
   } else {
     throw ProxyConfigUnknownKeyError(
         FormatUnknownKeyError("listen", key, line_number));

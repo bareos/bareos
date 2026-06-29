@@ -108,13 +108,13 @@ bool IsTransientAcceptError(int err)
 
 bool SendHttpServiceUnavailable(int fd)
 {
-  const char response[] =
-      "HTTP/1.1 503 Service Unavailable\r\n"
-      "Content-Type: text/plain\r\n"
-      "Content-Length: 27\r\n"
-      "Connection: close\r\n"
-      "\r\n"
-      "Connection limit exceeded.\r\n";
+  const char response[]
+      = "HTTP/1.1 503 Service Unavailable\r\n"
+        "Content-Type: text/plain\r\n"
+        "Content-Length: 27\r\n"
+        "Connection: close\r\n"
+        "\r\n"
+        "Connection limit exceeded.\r\n";
 
   return ::send(fd, response, sizeof(response) - 1, MSG_NOSIGNAL) > 0;
 }
@@ -231,8 +231,8 @@ void RunProxyServer(const ProxyConfig& cfg)
       std::string peer = std::string(host_buf) + ":" + port_buf;
 
       // Check unauthenticated connection limit for DoS protection
-      if (unauthenticated_connection_count.load() >=
-          cfg.max_unauthenticated_connections) {
+      if (unauthenticated_connection_count.load()
+          >= cfg.max_unauthenticated_connections) {
         PROXY_LOG_DEBUG(peer, "rejecting connection (unauthenticated limit %d)",
                         cfg.max_unauthenticated_connections);
         SendHttpServiceUnavailable(client_fd);

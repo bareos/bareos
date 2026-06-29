@@ -53,7 +53,8 @@ bool StoreDirectorCredentials(std::string_view session_id,
                               std::string_view director,
                               std::string_view username,
                               std::string_view password);
-std::optional<ProxyAuthSessionRecord> LookupSession(std::string_view session_id);
+std::optional<ProxyAuthSessionRecord> LookupSession(
+    std::string_view session_id);
 bool RemoveDirector(std::string_view session_id, std::string_view director);
 void RemoveSession(std::string_view session_id);
 
@@ -62,7 +63,8 @@ void RemoveSession(std::string_view session_id);
 // Session cookie name used by the WebUI proxy for browser-side auth state.
 constexpr std::string_view kProxySessionCookieName = "bareos_proxy_session";
 // Placeholder password value that tells the proxy to reuse an existing session.
-constexpr std::string_view kProxySessionPasswordPlaceholder = "__proxy_session__";
+constexpr std::string_view kProxySessionPasswordPlaceholder
+    = "__proxy_session__";
 
 std::string BuildProxySessionCookie(std::string_view session_id, bool secure);
 std::string BuildExpiredProxySessionCookie(bool secure);

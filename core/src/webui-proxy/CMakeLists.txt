@@ -25,13 +25,8 @@ find_package(Jansson REQUIRED)
 add_library(webui-proxy-objects OBJECT)
 target_sources(
   webui-proxy-objects
-  PRIVATE bareos_base64.cc
-          http_protocol.cc
-          director_connection.cc
-          proxy_config.cc
-          proxy_auth_session.cc
-          proxy_log.cc
-          proxy_session.cc
+  PRIVATE bareos_base64.cc http_protocol.cc director_connection.cc
+          proxy_config.cc proxy_auth_session.cc proxy_log.cc proxy_session.cc
           ws_codec.cc
 )
 target_link_libraries(
@@ -40,15 +35,14 @@ target_link_libraries(
 )
 
 add_executable(
-  bareos-webui-proxy
-  main.cc
-  proxy_server.cc
-  $<TARGET_OBJECTS:webui-proxy-objects>
+  bareos-webui-proxy main.cc proxy_server.cc
+                     $<TARGET_OBJECTS:webui-proxy-objects>
 )
 
 target_compile_definitions(
   bareos-webui-proxy
-  PRIVATE WEBUI_PROXY_DEFAULT_CONFIG_PATH="${sysconfdir}/bareos-webui-proxy/bareos-webui-proxy.ini"
+  PRIVATE
+    WEBUI_PROXY_DEFAULT_CONFIG_PATH="${sysconfdir}/bareos-webui-proxy/bareos-webui-proxy.ini"
 )
 
 target_link_libraries(
