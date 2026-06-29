@@ -78,7 +78,8 @@ TEST(ProxyAuthSessionStore, RemovesDirectors)
 TEST(ProxyAuthSessionStore, BuildsCookieHeaders)
 {
   const auto session_cookie = BuildProxySessionCookie("abc123", true);
-  EXPECT_NE(session_cookie.find("bareos_proxy_session=abc123"), std::string::npos);
+  EXPECT_NE(session_cookie.find("bareos_proxy_session=abc123"),
+            std::string::npos);
   EXPECT_NE(session_cookie.find("HttpOnly"), std::string::npos);
   EXPECT_NE(session_cookie.find("SameSite=Strict"), std::string::npos);
   EXPECT_NE(session_cookie.find("Secure"), std::string::npos);
@@ -116,7 +117,7 @@ TEST(ProxyAuthSessionStore, ExpiresIdleSessionsWithConfiguredTimeout)
 
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
-  
+
   // Session should be available immediately after creation
   EXPECT_TRUE(ProxyAuthSessionStore::LookupSession(session_id));
 
@@ -130,15 +131,17 @@ TEST(ProxyAuthSessionStore, ExpiresIdleSessionsWithConfiguredTimeout)
   ProxyAuthSessionStore::SetSessionTimeouts(30, 8);
 }
 
-TEST(ProxyAuthSessionStore, ExpiresAbsoluteLifetimeSessionsWithConfiguredTimeout)
+TEST(ProxyAuthSessionStore,
+     ExpiresAbsoluteLifetimeSessionsWithConfiguredTimeout)
 {
-  // Set very short absolute lifetime: 100ms idle (won't trigger), 150ms absolute
+  // Set very short absolute lifetime: 100ms idle (won't trigger), 150ms
+  // absolute
   ProxyAuthSessionStore::SetSessionTimeoutsForTesting(
       std::chrono::seconds(10), std::chrono::milliseconds(150));
 
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
-  
+
   // Session should be available immediately after creation
   EXPECT_TRUE(ProxyAuthSessionStore::LookupSession(session_id));
 
@@ -146,7 +149,8 @@ TEST(ProxyAuthSessionStore, ExpiresAbsoluteLifetimeSessionsWithConfiguredTimeout
   // We repeatedly lookup to keep the idle timeout from triggering
   auto start = std::chrono::steady_clock::now();
   bool found_after_lifetime = true;
-  while (std::chrono::steady_clock::now() - start < std::chrono::milliseconds(200)) {
+  while (std::chrono::steady_clock::now() - start
+         < std::chrono::milliseconds(200)) {
     if (!ProxyAuthSessionStore::LookupSession(session_id)) {
       found_after_lifetime = false;
       break;

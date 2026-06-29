@@ -74,8 +74,7 @@ static std::map<CramMd5Handshake::HandshakeResult, std::string>
 static std::string CreateQualifiedResourceName(std::string_view r_type_str,
                                                std::string_view name)
 {
-  return std::string(r_type_str) + static_cast<char>(0x1e)
-         + std::string(name);
+  return std::string(r_type_str) + static_cast<char>(0x1e) + std::string(name);
 }
 
 static std::string ExtractChallenge(std::string_view message)

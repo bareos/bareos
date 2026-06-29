@@ -81,7 +81,8 @@ TEST(HttpProtocol, ReadsJsonRequestBodyAndPendingInput)
         "{\"hello\":\"x\"}EXTRA";
   WriteAll(sockets.peer(), request.data(), request.size());
 
-  const auto parsed = ReadHttpRequest(sockets.local(), std::chrono::milliseconds(50));
+  const auto parsed
+      = ReadHttpRequest(sockets.local(), std::chrono::milliseconds(50));
 
   EXPECT_EQ(parsed.method, "POST");
   EXPECT_EQ(parsed.target, "/api/session/login");
@@ -101,16 +102,17 @@ TEST(HttpProtocol, DetectsWebSocketUpgradeRequests)
         "Connection: keep-alive, Upgrade\r\n\r\n";
   WriteAll(sockets.peer(), request.data(), request.size());
 
-  const auto parsed = ReadHttpRequest(sockets.local(), std::chrono::milliseconds(50));
+  const auto parsed
+      = ReadHttpRequest(sockets.local(), std::chrono::milliseconds(50));
 
   EXPECT_TRUE(IsWebSocketUpgradeRequest(parsed));
 }
 
 TEST(HttpProtocol, FindsNamedCookieValues)
 {
-  const auto value = FindCookieValue(
-      "foo=bar; bareos_proxy_session=session123; baz=qux",
-      "bareos_proxy_session");
+  const auto value
+      = FindCookieValue("foo=bar; bareos_proxy_session=session123; baz=qux",
+                        "bareos_proxy_session");
 
   ASSERT_TRUE(value);
   EXPECT_EQ(*value, "session123");

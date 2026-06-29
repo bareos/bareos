@@ -305,7 +305,8 @@ WsCodec WsCodec::Accept(int fd,
   return codec;
 }
 
-std::optional<std::string_view> WsCodec::RequestHeader(std::string_view name) const
+std::optional<std::string_view> WsCodec::RequestHeader(
+    std::string_view name) const
 {
   return FindHeaderValue(request_headers_, name);
 }
@@ -345,8 +346,8 @@ void WsCodec::Handshake(std::optional<std::string_view> request_headers)
                   "WebSocket: invalid HTTP upgrade request");
   }
   request_headers_ = headers;
-  request_target_ = std::string(
-      request_line.substr(4, request_line.find(" HTTP/1.1") - 4));
+  request_target_
+      = std::string(request_line.substr(4, request_line.find(" HTTP/1.1") - 4));
 
   const auto upgrade = FindHeaderValue(headers_view, "Upgrade");
   if (!upgrade || !EqualsIgnoreCase(*upgrade, "websocket")) {

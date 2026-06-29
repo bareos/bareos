@@ -17,7 +17,9 @@ if(NOT DEFINED DIST_DIR)
   set(DIST_DIR "${SOURCE_DIST_DIR}")
 endif()
 
-if(EXISTS "${SOURCE_DIST_DIR}/index.html" AND NOT EXISTS "${REPO_ROOT_DIR}/.git")
+if(EXISTS "${SOURCE_DIST_DIR}/index.html" AND NOT EXISTS
+                                              "${REPO_ROOT_DIR}/.git"
+)
   message(STATUS "Using prebuilt webui-vue dist from ${SOURCE_DIST_DIR}")
   if(NOT DIST_DIR STREQUAL SOURCE_DIST_DIR)
     file(REMOVE_RECURSE "${DIST_DIR}")

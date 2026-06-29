@@ -71,8 +71,7 @@ void ProxyLogFormat(ProxyLogLevel level,
                     First&& first,
                     Rest&&... rest)
 {
-  printf_check(format, std::forward<First>(first),
-               std::forward<Rest>(rest)...);
+  printf_check(format, std::forward<First>(first), std::forward<Rest>(rest)...);
   const int rendered_size
       = std::snprintf(nullptr, 0, format, std::forward<First>(first),
                       std::forward<Rest>(rest)...);

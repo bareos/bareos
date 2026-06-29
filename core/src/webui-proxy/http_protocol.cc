@@ -80,7 +80,8 @@ size_t ReadChunk(int fd,
   target.resize(original_size + kReadChunkSize);
 
   while (true) {
-    const ssize_t n = ::recv(fd, target.data() + original_size, kReadChunkSize, 0);
+    const ssize_t n
+        = ::recv(fd, target.data() + original_size, kReadChunkSize, 0);
     if (n < 0) {
       if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
         WaitForSocket(fd, POLLIN, deadline, action);
@@ -164,9 +165,7 @@ bool HeaderHasToken(std::string_view value, std::string_view expected)
 size_t ParseContentLength(const HttpRequest& request, size_t max_body_size)
 {
   const auto content_length = request.HeaderValue("Content-Length");
-  if (!content_length) {
-    return 0;
-  }
+  if (!content_length) { return 0; }
 
   size_t body_size = 0;
   for (const char ch : *content_length) {
@@ -210,7 +209,8 @@ void WaitForSocket(int fd,
   }
 }
 
-std::optional<std::string_view> HttpRequest::HeaderValue(std::string_view name) const
+std::optional<std::string_view> HttpRequest::HeaderValue(
+    std::string_view name) const
 {
   return FindHeaderValue(raw_headers, name);
 }
@@ -239,7 +239,8 @@ HttpRequest ReadHttpRequest(int fd,
 
   HttpRequest request;
   request.raw_headers.assign(input.data(), header_end);
-  request.pending_input.assign(input.data() + header_end, input.size() - header_end);
+  request.pending_input.assign(input.data() + header_end,
+                               input.size() - header_end);
 
   const std::string_view headers_view(request.raw_headers);
   const auto request_line_end = headers_view.find("\r\n");
@@ -253,7 +254,8 @@ HttpRequest ReadHttpRequest(int fd,
   // (after target). If they're the same or missing, the line is malformed.
   const auto first_space = request_line.find(' ');
   const auto second_space = request_line.rfind(' ');
-  if (first_space == std::string_view::npos || second_space == std::string_view::npos
+  if (first_space == std::string_view::npos
+      || second_space == std::string_view::npos
       || first_space == second_space) {
     throw std::runtime_error("HTTP: malformed request line");
   }
@@ -287,7 +289,8 @@ void SendHttpResponse(
     std::chrono::milliseconds timeout,
     std::string_view status_line,
     std::string_view body,
-    std::initializer_list<std::pair<std::string_view, std::string_view>> headers)
+    std::initializer_list<std::pair<std::string_view, std::string_view>>
+        headers)
 {
   const auto deadline = MakeDeadline(timeout);
   std::string response;
@@ -318,8 +321,7 @@ std::optional<std::string_view> FindCookieValue(std::string_view cookie_header,
       cookie.remove_prefix(1);
     }
     const auto equals = cookie.find('=');
-    if (equals != std::string_view::npos
-        && cookie.substr(0, equals) == name) {
+    if (equals != std::string_view::npos && cookie.substr(0, equals) == name) {
       return cookie.substr(equals + 1);
     }
     if (separator == std::string_view::npos) { break; }
