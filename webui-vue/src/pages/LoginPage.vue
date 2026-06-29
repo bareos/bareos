@@ -162,10 +162,8 @@ import {
 } from '../utils/directorSessionReuse.js'
 import {
   loginDirectorProxySession,
-  loginProxySession,
   reuseProxySessionCredentials,
   SESSION_AUTH_PASSWORD,
-  setCurrentProxySessionDirector,
 } from '../utils/sessionApi.js'
 import LanguageSelect from '../components/LanguageSelect.vue'
 import bareosLogo from '../assets/bareos-logo-small.png'
@@ -372,7 +370,6 @@ async function activateDirector(targetDirector) {
   auth.setDirector(targetDirector)
   settings.directorName = targetDirector
   director.disconnect()
-  await setCurrentProxySessionDirector({ director: targetDirector })
   await director.connectAndWait(auth.getCredentials(targetDirector), LOGIN_CONNECT_TIMEOUT_MS)
 }
 
@@ -408,17 +405,11 @@ async function attemptDirectorLogins(targetDirectors) {
 
   for (const targetDirector of targetDirectors) {
     try {
-      const payload = hasSession
-        ? await loginDirectorProxySession({
-          username: username.value,
-          password: password.value,
-          director: targetDirector,
-        })
-        : await loginProxySession({
-          username: username.value,
-          password: password.value,
-          director: targetDirector,
-        })
+      const payload = await loginDirectorProxySession({
+        username: username.value,
+        password: password.value,
+        director: targetDirector,
+      })
       hasSession = true
       auth.applySession(payload, SESSION_AUTH_PASSWORD, { merge: true })
       successfulDirectors.push(targetDirector)
@@ -483,19 +474,11 @@ async function doLogin() {
   }
 
   try {
-    if (isAddDirectorMode.value) {
-      await loginDirectorProxySession({
-        username: username.value,
-        password: password.value,
-        director: directorRef.value,
-      })
-    } else {
-      await loginProxySession({
-        username: username.value,
-        password: password.value,
-        director: directorRef.value,
-      })
-    }
+    await loginDirectorProxySession({
+      username: username.value,
+      password: password.value,
+      director: directorRef.value,
+    })
   } catch (error) {
     errorMsg.value = currentDirectorError(error)
     loading.value = false

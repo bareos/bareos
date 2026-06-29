@@ -625,13 +625,14 @@ TEST(ProxySession, RejectsLoginWithExpiredSessionCookie)
 {
   // Simulate an expired session: cookie is present but session is gone.
   const std::string body
-      = R"({"username":"admin","password":"secret","director":"bareos-dir"})";
+      = R"({"username":"admin","password":"secret"})";
   const std::string request
-      = std::string("POST /api/session/login HTTP/1.1\r\n"
-                    "Host: localhost\r\n"
-                    "Content-Type: application/json\r\n"
-                    "Cookie: bareos_proxy_session=nonexistent-session-id\r\n"
-                    "Content-Length: ")
+      = std::string(
+            "POST /api/session/directors/bareos-dir/login HTTP/1.1\r\n"
+            "Host: localhost\r\n"
+            "Content-Type: application/json\r\n"
+            "Cookie: bareos_proxy_session=nonexistent-session-id\r\n"
+            "Content-Length: ")
         + std::to_string(body.size()) + "\r\n\r\n" + body;
   const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
 
@@ -672,59 +673,27 @@ TEST(ProxySession, ReturnsMultiDirectorSessionInfoOverHttp)
   const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
 
   EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 200 OK");
-  EXPECT_EQ(GetJsonStringField(HttpBody(response), "director"), "bareos-dir");
-  EXPECT_EQ(GetJsonStringField(HttpBody(response), "currentDirector"),
-            "bareos-dir");
-  EXPECT_EQ(GetJsonStringField(HttpBody(response), "username"), "admin");
   EXPECT_EQ(GetAuthenticatedDirectors(HttpBody(response)),
             std::vector<std::string>({"bareos-dir", "site-b"}));
 
   ProxyAuthSessionStore::RemoveSession(session_id);
 }
 
-TEST(ProxySession, UpdatesCurrentDirectorOverHttp)
+TEST(ProxySession, DeleteSessionEndsTheWholeSession)
 {
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
-  ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
-      session_id, "site-b", "ops", "site-secret", false));
-
-  const std::string body = R"({"director":"site-b"})";
-  const std::string request
-      = std::string("POST /api/session/current-director HTTP/1.1\r\n"
-                    "Host: localhost\r\n"
-                    "Content-Type: application/json\r\n"
-                    "Cookie: bareos_proxy_session=")
-        + session_id + "\r\nContent-Length: "
-        + std::to_string(body.size()) + "\r\n\r\n" + body;
-  const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
-
-  EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 200 OK");
-  EXPECT_EQ(GetJsonStringField(HttpBody(response), "currentDirector"), "site-b");
-  EXPECT_EQ(GetJsonStringField(HttpBody(response), "username"), "ops");
-
-  ProxyAuthSessionStore::RemoveSession(session_id);
-}
-
-TEST(ProxySession, RemovesDirectorOverHttp)
-{
-  const auto session_id
-      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
-  ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
-      session_id, "site-b", "ops", "site-secret", false));
 
   const std::string request
-      = std::string("DELETE /api/session/directors/site-b HTTP/1.1\r\n"
+      = std::string("DELETE /api/session HTTP/1.1\r\n"
                     "Host: localhost\r\n"
                     "Cookie: bareos_proxy_session=")
         + session_id + "\r\n\r\n";
   const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
 
-  EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 200 OK");
-  EXPECT_EQ(GetAuthenticatedDirectors(HttpBody(response)),
-            std::vector<std::string>({"bareos-dir"}));
-
-  ProxyAuthSessionStore::RemoveSession(session_id);
+  EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 204 No Content");
+  EXPECT_NE(response.find("Max-Age=0"), std::string::npos);
+  EXPECT_FALSE(ProxyAuthSessionStore::LookupSession(session_id));
 }
 
 TEST(ProxySession, ReuseEndpointReportsAlreadyAuthenticatedDirectors)

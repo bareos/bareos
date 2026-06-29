@@ -189,17 +189,6 @@
                     <q-item-label>{{ session.username }}</q-item-label>
                     <q-item-label caption>{{ session.director }}</q-item-label>
                   </q-item-section>
-                  <q-item-section side>
-                    <q-btn
-                      flat
-                      round
-                      dense
-                      size="sm"
-                      icon="logout"
-                      :title="t('Logout')"
-                      @click.stop="logoutDirectorSession(session.director)"
-                    />
-                  </q-item-section>
                 </q-item>
                 <q-separator v-if="accountDirectorSessions.length > 0" />
                 <q-item clickable v-close-popup :to="{ name: 'acls' }">
@@ -295,8 +284,7 @@ import { formatDirectorSessionsSummary } from '../utils/directorSessions.js'
 import { DIRECTOR_WS_URL } from '../utils/directorCommandSocket.js'
 import { toUserVisibleDirectorError } from '../utils/directorErrors.js'
 import {
-  logoutDirectorProxySession,
-  logoutProxySession,
+  deleteProxySession,
 } from '../utils/sessionApi.js'
 import {
   RELEASE_INFO_PAGE_URL,
@@ -591,7 +579,7 @@ const directorUpdateAlert = computed(() => {
 
 async function logout() {
   try {
-    await logoutProxySession()
+    await deleteProxySession()
   } catch {
     // Clear the local state even if the backend session is already gone.
   }
@@ -599,54 +587,6 @@ async function logout() {
   director.disconnect()
   auth.logout()
   router.push({ name: 'login' })
-}
-
-async function logoutDirectorSession(targetDirector) {
-  const directorName = String(targetDirector ?? '').trim()
-  if (!directorName || !auth.hasDirectorSession(directorName)) {
-    return
-  }
-
-  const isCurrentDirector = auth.user?.director === directorName
-
-  try {
-    const session = await logoutDirectorProxySession({ director: directorName })
-
-    consoleSessions.disconnectSession(directorName, {
-      reason: 'Disconnected',
-      resetInitialized: true,
-    })
-
-    if (!session) {
-      director.disconnect()
-      auth.logout()
-      settings.setSelectedDirectors([])
-      router.push({ name: 'login' })
-      return
-    }
-
-    auth.applySession(session)
-    settings.directorName = auth.user?.director || settings.directorName
-    pruneSelectedDirectors(directorName)
-
-    if (isCurrentDirector) {
-      director.disconnect()
-      const credentials = auth.getCredentials()
-      if (credentials) {
-        await director.connectAndWait(credentials)
-      }
-    }
-
-    director.refreshDirectorConnections(activeDirectors.value).catch(() => {})
-  } catch (error) {
-    $q.notify({
-      type: 'negative',
-      message: toUserVisibleDirectorError(error?.message, {
-        authenticationMessage: t('Authentication failed'),
-        connectionMessage: t('Could not connect to director.'),
-      }),
-    })
-  }
 }
 </script>
 
