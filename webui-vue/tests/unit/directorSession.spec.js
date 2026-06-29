@@ -22,18 +22,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
-const { setCurrentProxySessionDirector } = vi.hoisted(() => ({
-  setCurrentProxySessionDirector: vi.fn(),
-}))
-
-vi.mock('../../src/utils/sessionApi.js', async () => {
-  const actual = await vi.importActual('../../src/utils/sessionApi.js')
-  return {
-    ...actual,
-    setCurrentProxySessionDirector,
-  }
-})
-
 import { switchActiveDirector } from '../../src/composables/useDirectorSession.js'
 import { useAuthStore } from '../../src/stores/auth.js'
 import { useDirectorStore } from '../../src/stores/director.js'
@@ -44,7 +32,6 @@ describe('director session switching', () => {
     sessionStorage.clear()
     localStorage.clear()
     setActivePinia(createPinia())
-    setCurrentProxySessionDirector.mockReset().mockResolvedValue(true)
   })
 
   it('switches the active director and reconnects the singleton session', async () => {
@@ -61,9 +48,6 @@ describe('director session switching', () => {
     await expect(switchActiveDirector('bareos-dir-b')).resolves.toBe(true)
 
     expect(director.disconnect).toHaveBeenCalledOnce()
-    expect(setCurrentProxySessionDirector).toHaveBeenCalledWith({
-      director: 'bareos-dir-b',
-    })
     expect(director.connectAndWait).toHaveBeenCalledWith({
       username: 'ops',
       password: 'secret',
@@ -86,7 +70,6 @@ describe('director session switching', () => {
       'Please log in to director "bareos-dir-b" first.'
     )
 
-    expect(setCurrentProxySessionDirector).not.toHaveBeenCalled()
     expect(director.disconnect).not.toHaveBeenCalled()
   })
 
@@ -108,12 +91,6 @@ describe('director session switching', () => {
     expect(auth.user?.director).toBe('bareos-dir-a')
     expect(auth.user?.username).toBe('admin')
     expect(settings.directorName).toBe('bareos-dir-a')
-    expect(setCurrentProxySessionDirector).toHaveBeenNthCalledWith(1, {
-      director: 'bareos-dir-b',
-    })
-    expect(setCurrentProxySessionDirector).toHaveBeenNthCalledWith(2, {
-      director: 'bareos-dir-a',
-    })
     expect(director.connectAndWait).toHaveBeenNthCalledWith(1, {
       username: 'ops',
       password: 'secret',

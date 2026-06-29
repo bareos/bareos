@@ -36,24 +36,6 @@ async function parseJsonResponse(response) {
   }
 }
 
-export async function loginProxySession({ username, password, director }) {
-  const response = await fetch(`${API_BASE_URL}/session/login`, {
-    method: 'POST',
-    credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ username, password, director }),
-  })
-
-  const payload = await parseJsonResponse(response)
-  if (!response.ok) {
-    throw new Error(payload?.message || 'Authentication failed')
-  }
-
-  return payload
-}
-
 export async function loginDirectorProxySession({ username, password, director }) {
   const response = await fetch(`${API_BASE_URL}/session/directors/${encodeURIComponent(director)}/login`, {
     method: 'POST',
@@ -61,7 +43,7 @@ export async function loginDirectorProxySession({ username, password, director }
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ username, password, director }),
+    body: JSON.stringify({ username, password }),
   })
 
   const payload = await parseJsonResponse(response)
@@ -91,46 +73,12 @@ export async function fetchCurrentSession() {
   return payload
 }
 
-export async function logoutProxySession() {
-  await fetch(`${API_BASE_URL}/session/logout`, {
-    method: 'POST',
-    credentials: 'same-origin',
-    cache: 'no-store',
-  })
-}
-
-export async function logoutDirectorProxySession({ director }) {
-  const response = await fetch(`${API_BASE_URL}/session/directors/${encodeURIComponent(director)}`, {
+export async function deleteProxySession() {
+  await fetch(`${API_BASE_URL}/session`, {
     method: 'DELETE',
     credentials: 'same-origin',
     cache: 'no-store',
   })
-
-  const payload = await parseJsonResponse(response)
-  if (!response.ok) {
-    throw new Error(payload?.message || 'Could not remove director session')
-  }
-
-  return payload
-}
-
-export async function setCurrentProxySessionDirector({ director }) {
-  const response = await fetch(`${API_BASE_URL}/session/current-director`, {
-    method: 'POST',
-    credentials: 'same-origin',
-    cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ director }),
-  })
-
-  const payload = await parseJsonResponse(response)
-  if (!response.ok) {
-    throw new Error(payload?.message || 'Could not update director session')
-  }
-
-  return payload
 }
 
 export async function reuseProxySessionCredentials({ directors, sourceDirector }) {
