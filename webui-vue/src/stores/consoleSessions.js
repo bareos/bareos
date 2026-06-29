@@ -692,3 +692,62 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     requestCompletion,
   }
 })
+
+/**
+ * Apply a keydown event to console session editing state (cmd + cursorPos).
+ * Returns true if the event was handled (caller should call preventDefault),
+ * false if it should be passed through (e.g. Tab, Enter, Ctrl+C handled by
+ * the caller, or unrecognised shortcuts).
+ *
+ * @param {object} session  - reactive session with { cmd, cursorPos }
+ * @param {{ key: string, ctrlKey?: boolean, altKey?: boolean }} event
+ * @returns {boolean}
+ */
+export function applyConsoleKey(session, event) {
+  const { key, ctrlKey = false, altKey = false } = event
+
+  if (key === 'ArrowLeft') {
+    if (session.cursorPos > 0) session.cursorPos--
+    return true
+  }
+  if (key === 'ArrowRight') {
+    if (session.cursorPos < session.cmd.length) session.cursorPos++
+    return true
+  }
+  if (key === 'Home' || (ctrlKey && key === 'a')) {
+    session.cursorPos = 0
+    return true
+  }
+  if (key === 'End' || (ctrlKey && key === 'e')) {
+    session.cursorPos = session.cmd.length
+    return true
+  }
+  if (key === 'Backspace') {
+    if (session.cursorPos > 0) {
+      session.cmd = session.cmd.slice(0, session.cursorPos - 1) + session.cmd.slice(session.cursorPos)
+      session.cursorPos--
+    }
+    return true
+  }
+  if (key === 'Delete') {
+    if (session.cursorPos < session.cmd.length) {
+      session.cmd = session.cmd.slice(0, session.cursorPos) + session.cmd.slice(session.cursorPos + 1)
+    }
+    return true
+  }
+  if (ctrlKey && key === 'k') {
+    session.cmd = session.cmd.slice(0, session.cursorPos)
+    return true
+  }
+  if (ctrlKey && key === 'u') {
+    session.cmd = session.cmd.slice(session.cursorPos)
+    session.cursorPos = 0
+    return true
+  }
+  if (key.length === 1 && !ctrlKey && !altKey) {
+    session.cmd = session.cmd.slice(0, session.cursorPos) + key + session.cmd.slice(session.cursorPos)
+    session.cursorPos++
+    return true
+  }
+  return false
+}
