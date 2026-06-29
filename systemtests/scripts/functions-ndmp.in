@@ -23,7 +23,7 @@
 # TestName needs to be defined including in test-setup
 
 # StrictHostKeyChecking disabled for automated testing - not for production use
-SSH="ssh root@${NDMP_DATA_AGENT_ADDRESS} -o StrictHostKeyChecking=no"
+SSH="ssh root@${NDMP_HOST_ADDRESS} -o StrictHostKeyChecking=no"
 export SSH
 
 cleanup_remote()
@@ -36,7 +36,7 @@ make_remote_data_full()
 {
   ${SSH} mkdir -p "${NDMP_TEST_PATH}"
   ${SSH} dd if=/dev/zero of="${NDMP_TEST_PATH}/full" bs=1M count=20
-  ${SSH} "echo \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}\" >> \"${NDMP_TEST_PATH}/full\""
+  ${SSH} "echo \"${NDMP_HOST_ADDRESS}\" >> \"${NDMP_TEST_PATH}/full\""
   local dir_file
   dir_file="$(readlink sbin/bareos_dir-* 2>/dev/null | head -1)"
   if [ -z "$dir_file" ] || [ ! -f "$dir_file" ]; then
