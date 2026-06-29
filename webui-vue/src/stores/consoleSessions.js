@@ -74,6 +74,7 @@ function createSession(director) {
     output: [],
     outputLineOpen: false,
     cmd: '',
+    cursorPos: 0,
     history: [],
     historyIdx: -1,
     initialized: false,
@@ -254,12 +255,14 @@ function applyCompletionResult(session, director, appendLines, request, text) {
       || request.suppressAppend
     ) ? item : `${item} `
     session.cmd = replaceCompletionText(session.cmd, request, replacement)
+    session.cursorPos = session.cmd.length
     return
   }
 
   const commonPrefix = longestCommonPrefix(items)
   if (commonPrefix.length > request.text.length) {
     session.cmd = replaceCompletionText(session.cmd, request, commonPrefix)
+    session.cursorPos = session.cmd.length
   }
   appendLines(director, items.join('\n'))
 }
@@ -646,6 +649,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     }
 
     session.cmd = command
+    session.cursorPos = command.length
     const request = (
       isRestoreTreePrompt(session)
         ? buildRestoreTreeCompletionRequest(command)
