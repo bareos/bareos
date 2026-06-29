@@ -21,12 +21,13 @@
 
 # omnios/isilon
 set(ndmp_test "omnios")
+# export for omnios / ifs for isilon
+set(ndmp_data_mountpoint "/export")
+
 set(ndmp_data_agent_address "[REPLACE_REMOTE_NDMP_IP]")
 set(ndmp_data_agent_user "[REPLACE_ADMIN_USERNAME]")
 set(ndmp_data_agent_password "[REPLACE_ADMIN_PASSWORD]")
 set(ndmp_data_agent_auth_type "MD5")
-# export for omnios / ifs for isilon
-set(ndmp_data_mountpoint "/export")
 
 # following value are used in ndmp-native test
 set(ndmp_tape_and_robot_agent_address "[REPLACE_REMOTE_NDMP_IP]")
