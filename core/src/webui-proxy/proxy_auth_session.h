@@ -34,7 +34,6 @@ struct ProxyAuthSessionDirectorRecord {
 
 struct ProxyAuthSessionRecord {
   std::string session_id;
-  std::string current_director;
   std::map<std::string, ProxyAuthSessionDirectorRecord> directors;
 };
 
@@ -53,10 +52,8 @@ std::string CreateSession(std::string_view username,
 bool StoreDirectorCredentials(std::string_view session_id,
                               std::string_view director,
                               std::string_view username,
-                              std::string_view password,
-                              bool make_current = true);
+                              std::string_view password);
 std::optional<ProxyAuthSessionRecord> LookupSession(std::string_view session_id);
-bool SetCurrentDirector(std::string_view session_id, std::string_view director);
 bool RemoveDirector(std::string_view session_id, std::string_view director);
 void RemoveSession(std::string_view session_id);
 

@@ -78,7 +78,6 @@ class ProxyAuthSessionStoreImpl {
 
     ProxyAuthSessionRecord record;
     record.session_id = GenerateSessionId();
-    record.current_director = std::string(director);
     record.directors.emplace(
         std::string(director),
         ProxyAuthSessionDirectorRecord{
@@ -110,8 +109,7 @@ class ProxyAuthSessionStoreImpl {
   bool StoreDirectorCredentials(std::string_view session_id,
                                 std::string_view director,
                                 std::string_view username,
-                                std::string_view password,
-                                bool make_current)
+                                std::string_view password)
   {
     std::lock_guard guard(mutex_);
     const auto now = Clock::now();
@@ -125,29 +123,6 @@ class ProxyAuthSessionStoreImpl {
         .username = std::string(username),
         .password = std::string(password),
     };
-    if (make_current || it->second.record.current_director.empty()) {
-      it->second.record.current_director = selector;
-    }
-    it->second.last_used_at = now;
-    return true;
-  }
-
-  bool SetCurrentDirector(std::string_view session_id, std::string_view director)
-  {
-    std::lock_guard guard(mutex_);
-    const auto now = Clock::now();
-    CleanupExpiredLocked(now);
-
-    const auto it = sessions_.find(std::string(session_id));
-    if (it == sessions_.end()) { return false; }
-
-    const auto selector = std::string(director);
-    if (it->second.record.directors.find(selector)
-        == it->second.record.directors.end()) {
-      return false;
-    }
-
-    it->second.record.current_director = selector;
     it->second.last_used_at = now;
     return true;
   }
@@ -171,9 +146,6 @@ class ProxyAuthSessionStoreImpl {
       return true;
     }
 
-    if (it->second.record.current_director == selector) {
-      it->second.record.current_director = it->second.record.directors.begin()->first;
-    }
     it->second.last_used_at = now;
     return true;
   }
@@ -266,21 +238,15 @@ std::string CreateSession(std::string_view username,
 bool StoreDirectorCredentials(std::string_view session_id,
                               std::string_view director,
                               std::string_view username,
-                              std::string_view password,
-                              bool make_current)
+                              std::string_view password)
 {
   return GetStore().StoreDirectorCredentials(session_id, director, username,
-                                             password, make_current);
+                                            password);
 }
 
 std::optional<ProxyAuthSessionRecord> LookupSession(std::string_view session_id)
 {
   return GetStore().LookupSession(session_id);
-}
-
-bool SetCurrentDirector(std::string_view session_id, std::string_view director)
-{
-  return GetStore().SetCurrentDirector(session_id, director);
 }
 
 bool RemoveDirector(std::string_view session_id, std::string_view director)

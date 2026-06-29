@@ -55,15 +55,14 @@ describe('auth store', () => {
       status: 200,
       ok: true,
       text: async () => JSON.stringify({
-        currentDirector: 'site-b',
         authenticatedDirectors: [
           { director: 'bareos-dir', username: 'admin' },
-          { director: 'site-b', username: 'ops', current: true },
+          { director: 'site-b', username: 'ops' },
         ],
       }),
     })
     const auth = useAuthStore()
-    await auth.restoreSession()
+    await auth.restoreSession(false, 'site-b')
 
     expect(auth.isLoggedIn).toBe(true)
     expect(auth.getCredentials()).toEqual({
@@ -183,16 +182,14 @@ describe('auth store', () => {
     const auth = useAuthStore()
 
     auth.applySession({
-      director: 'bareos-dir',
-      username: 'admin',
+      authenticatedDirectors: [{ director: 'bareos-dir', username: 'admin' }],
     }, SESSION_AUTH_PASSWORD, { merge: false })
 
     expect(auth.authenticatedDirectors).toEqual(['bareos-dir'])
     expect(auth.getDirectorUsername('bareos-dir')).toBe('admin')
 
     auth.applySession({
-      director: 'site-b',
-      username: 'ops',
+      authenticatedDirectors: [{ director: 'site-b', username: 'ops' }],
     }, SESSION_AUTH_PASSWORD, { merge: true })
 
     expect(auth.authenticatedDirectors).toContain('bareos-dir')
@@ -205,15 +202,13 @@ describe('auth store', () => {
     const auth = useAuthStore()
 
     auth.applySession({
-      director: 'bareos-dir',
-      username: 'admin',
+      authenticatedDirectors: [{ director: 'bareos-dir', username: 'admin' }],
     }, SESSION_AUTH_PASSWORD)
 
     expect(auth.authenticatedDirectors).toEqual(['bareos-dir'])
 
     auth.applySession({
-      director: 'site-b',
-      username: 'ops',
+      authenticatedDirectors: [{ director: 'site-b', username: 'ops' }],
     }, SESSION_AUTH_PASSWORD)
 
     expect(auth.authenticatedDirectors).toEqual(['site-b'])
