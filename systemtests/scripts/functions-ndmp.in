@@ -19,9 +19,10 @@
 #   02110-1301, USA.
 
 # Common functions for NDMP Testing
-
 # TestName needs to be defined including in test-setup
 
+# Avoid unbound variable in other tests
+NDMP_HOST_ADDRESS=${NDMP_HOST_ADDRESS:-localhost}
 # StrictHostKeyChecking disabled for automated testing - not for production use
 SSH="ssh root@${NDMP_HOST_ADDRESS} -o StrictHostKeyChecking=no"
 export SSH
