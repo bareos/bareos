@@ -143,7 +143,7 @@ describe('director aggregate dashboard helpers', () => {
     socket.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandIds.get('llist jobs last'),
+        id: commandIds.get('llist jobs last current enabled'),
         data: {
           jobs: [{
             jobid: '8',
