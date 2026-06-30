@@ -28,6 +28,7 @@ const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultDirectorWsUrl()
 const RAW_CMD_TIMEOUT_MS = 300_000
 const COMPLETION_TIMEOUT_MS = 5_000
 const EXIT_DISCONNECT_TIMEOUT_MS = 1_500
+const KEEPALIVE_INTERVAL_MS = 20_000
 const COMPLETION_NOISE_PREFIXES = [
   'Automatically selected Catalog:',
   'Using Catalog ',
@@ -85,6 +86,7 @@ function createRuntime() {
   return {
     ws: null,
     closing: false,
+    keepaliveTimer: null,
     exitDisconnectTimer: null,
     cmdSeq: 0,
     pendingCmds: new Map(),
@@ -419,10 +421,31 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     runtime.completionRequests.clear()
   }
 
+  function clearKeepalive(director) {
+    const runtime = getRuntime(director)
+    if (runtime.keepaliveTimer) {
+      clearInterval(runtime.keepaliveTimer)
+      runtime.keepaliveTimer = null
+    }
+  }
+
+  function startKeepalive(director) {
+    const runtime = getRuntime(director)
+    clearKeepalive(director)
+    runtime.keepaliveTimer = setInterval(() => {
+      if (!runtime.ws || runtime.ws.readyState !== WebSocket.OPEN) {
+        clearKeepalive(director)
+        return
+      }
+      runtime.ws.send(JSON.stringify({ type: 'ping' }))
+    }, KEEPALIVE_INTERVAL_MS)
+  }
+
   function disconnectSession(director, options = {}) {
     const session = getSession(director)
     const runtime = getRuntime(director)
 
+    clearKeepalive(director)
     clearTimeout(runtime.exitDisconnectTimer)
     runtime.exitDisconnectTimer = null
     rejectAll(director, options.reason ?? 'Disconnected')
@@ -493,6 +516,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
         clearTimeout(runtime.exitDisconnectTimer)
         runtime.exitDisconnectTimer = null
         runtime.closing = false
+        startKeepalive(director)
         session.status = 'connected'
         appendInfo(
           director,
@@ -554,6 +578,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
         return
       }
 
+      clearKeepalive(director)
       session.status = 'error'
       appendErr(director, `Cannot connect to proxy at ${WS_URL}`)
       rejectAll(director, 'WebSocket error')
@@ -567,6 +592,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
         return
       }
 
+      clearKeepalive(director)
       if (session.status !== 'disconnected') {
         session.status = 'disconnected'
         if (!runtime.closing) {
