@@ -97,6 +97,16 @@ function sortJobsByStartTime(jobs) {
   })
 }
 
+function sortJobsById(jobs) {
+  return [...jobs].sort((left, right) => {
+    const idCompare = numberValue(right.id) - numberValue(left.id)
+    if (idCompare !== 0) {
+      return idCompare
+    }
+    return String(left.director ?? '').localeCompare(String(right.director ?? ''))
+  })
+}
+
 function decorateRuntimeJobs(entries, director) {
   return directorCollection(entries).map((entry, index) => {
     const id = optionalNumberValue(entry.jobid ?? entry.id)
@@ -195,7 +205,7 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
     ] = await Promise.allSettled([
       client.call('llist jobs days=1'),
       client.call('list jobs jobstatus=R'),
-      client.call('llist jobs last'),
+      client.call('llist jobs last current enabled'),
       client.call('list jobtotals'),
       client.call('list clients'),
       client.call('list storages'),
@@ -254,7 +264,7 @@ export function aggregateDirectorDashboardSnapshots(snapshots) {
       ...aggregate.runningJobs,
       ...(snapshot.runningJobs ?? []),
     ]),
-    recentJobs: sortJobsByStartTime([
+    recentJobs: sortJobsById([
       ...aggregate.recentJobs,
       ...(snapshot.recentJobs ?? []),
     ]),
