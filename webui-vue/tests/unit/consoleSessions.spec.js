@@ -557,6 +557,34 @@ describe('console session store', () => {
     ])
   })
 
+  it('sends keepalive pings while the console is connected', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    expect(socket.sent).toHaveLength(1)
+
+    vi.advanceTimersByTime(20_000)
+    expect(JSON.parse(socket.sent[1])).toEqual({ type: 'ping' })
+
+    vi.advanceTimersByTime(20_000)
+    expect(JSON.parse(socket.sent[2])).toEqual({ type: 'ping' })
+
+    consoleSessions.disconnectSession('bareos-dir', { reason: 'Disconnected' })
+    vi.advanceTimersByTime(20_000)
+    expect(socket.sent).toHaveLength(3)
+  })
+
   it('suppresses standalone director message notifications in console output', () => {
     const consoleSessions = useConsoleSessionsStore()
 
