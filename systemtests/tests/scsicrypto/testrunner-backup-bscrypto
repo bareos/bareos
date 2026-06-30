@@ -263,8 +263,6 @@ fi
 # (defined in bareos-sd.d/director resource)
 
 # Test volume content listing
-# export confdir for mtx-changer so mtx-changer find it.
-export confdir=$(pwd)/etc/bareos
 # load the tape into the drive
 slot=$(mtx -f $changer status | ${AWK} -F ":" "/VolumeTag=${volume}/ {gsub(\"Storage Element\",\"\",\$1);gsub(\" \",\"\",\$1); print \$1}")
 /usr/sbin/mtx -f "${changer}" load ${slot} 0 || :

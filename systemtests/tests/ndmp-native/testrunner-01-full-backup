@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -24,7 +24,7 @@ set -o pipefail
 set -u
 
 #
-# make sure we can copy ndmp jobs, and also restore them afterwards
+# run a full backup job
 #
 
 TestName="$(basename "$(pwd)")"
@@ -38,47 +38,22 @@ export TestName
 
 start_test
 
-# remove files
-${SSH} rm -Rf "/ifs/home/regress/${NDMP_FILESYSTEM}"
-
-# first run the copy jobs
-
 cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/copy.out
-run job=ndmp-copy-$NDMPCLIENT yes
+setdebug level=250 trace=1 timestamp=1 dir
+@$out ${log_home}/full.out
+run job=ndmp-native fileset=${NDMP_CLIENT}-fileset level=Full yes
 wait
-messages
+message
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
-check_log "${log_home}/copy.out"
 
-# then restore a full copy
-
-cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/restore-full.out
-restore jobid=19 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump all done yes
-wait
-messages
-END_OF_DATA
-
+echo "setdebug level=0 trace=0 timestamp=0 dir" >"${tmp}/bconcmds"
 run_bconsole "${tmp}/bconcmds"
-check_log "${log_home}/restore-full.out"
-${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/full" | grep "${NDMP_FILESYSTEM}"
 
-# afterwards restore an incremental copy
+check_log "${log_home}/full.out"
 
-cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/restore-incr.out
-restore jobid=29 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump all done yes
-wait
-messages
-END_OF_DATA
-
-run_bconsole "${tmp}/bconcmds"
-check_log "${log_home}/restore-incr.out"
-${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/incremental" | grep "${NDMP_FILESYSTEM}"
-
-check_for_zombie_jobs storage=isilonfile client=bareos-fd
+# When fixed uncomment
+#check_for_zombie_jobs storage=ndmp client=ndmp-fd
 
 end_test

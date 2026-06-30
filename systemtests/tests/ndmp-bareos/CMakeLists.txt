@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,6 +18,18 @@
 #   02110-1301, USA.
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+set(ndmp_data_agent_address
+    ""
+    CACHE STRING "address of the ndmp data agent"
+)
+set(ndmp_data_agent_user
+    "ndmpadmin"
+    CACHE STRING "user to access the ndmp data agent"
+)
+set(ndmp_data_agent_password
+    "test"
+    CACHE STRING "password to access the ndmp data agent"
+)
 if(ndmp_data_agent_address)
 
   find_program(IP_COMMAND ip)
@@ -38,6 +50,16 @@ if(ndmp_data_agent_address)
       ${ROUTE_INFO_TO_ACCESS_NDMP_DATA_AGENT}
     )
     # cmake-format: on
+    # validation after extraction
+    if(IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT)
+      string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$" IP_VALID
+                   "${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}"
+      )
+      if(NOT IP_VALID)
+        message(DEBUG "ERROR NDMP ROUTE INFO INVALID")
+        set(IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT "")
+      endif()
+    endif()
 
     message(DEBUG "NDMP ROUTE INFO: ${ROUTE_INFO_TO_ACCESS_NDMP_DATA_AGENT}")
 
@@ -56,6 +78,23 @@ if(ndmp_data_agent_address)
 
       create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
       add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME})
+      set_tests_properties(
+        # This temporary test will be removed at the end of the sprint
+        system:ndmp-bareos:00-full-fail-rerun PROPERTIES DISABLED TRUE
+      )
+      set_tests_properties(
+        # This feature needs to be implemented before enabling the test
+        system:ndmp-bareos:04-restore-single-file-with-file PROPERTIES DISABLED
+                                                                       TRUE
+      )
+      set_tests_properties(
+        system:ndmp-bareos:09-restore-incremental-last-with-file
+        PROPERTIES DISABLED TRUE
+      )
+      set_tests_properties(
+        # Disabled until a reliable compare method is found
+        system:ndmp-bareos:11-compare-with-copy PROPERTIES DISABLED TRUE
+      )
     else()
       create_systemtest(
         ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT

@@ -19,13 +19,15 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-cleanup_isilon()
-{
-  ${SSH} rm -Rf /ifs/home/regress/${NDMP_FILESYSTEM}
-  ${SSH} rm -Rf /ifs/home/regress/bareos-restores-${NDMP_FILESYSTEM}
-  ${SSH} rm -Rf /ifs/data/bareos-restores-${NDMP_FILESYSTEM}
-}
+runner_name="$(basename "$0")"
+export log_home="${tmp}/${runner_name}"
+mkdir -p "${log_home}"
 
-if [ -f "${BAREOS_SCRIPTS_DIR}"/functions-ndmp ]; then
-  source "$BAREOS_SCRIPTS_DIR"/functions-ndmp
-fi
+IP_ADDRESS_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT=@IP_ADDRESS_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT@
+NDMP_TEST=@ndmp_test@
+NDMP_CLIENT=@ndmp_test@
+NDMP_TAPE_AND_ROBOT_AGENT_ADDRESS=@ndmp_tape_and_robot_agent_address@
+NDMP_MOUNTPOINT=@ndmp_data_mountpoint@
+NDMP_TEST_PATH=${NDMP_MOUNTPOINT}/home/regress/${IP_ADDRESS_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT}/${TestName}
+export NDMP_HOST_ADDRESS=${NDMP_TAPE_AND_ROBOT_AGENT_ADDRESS}
+export NDMP_TEST_PATH

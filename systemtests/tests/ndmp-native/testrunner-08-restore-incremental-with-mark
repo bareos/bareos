@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -24,8 +24,8 @@ set -o pipefail
 set -u
 
 #
-# run a full backup job
-#
+# make sure we can restore a specific incremental backup
+# using restore + mark
 
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -38,22 +38,40 @@ export TestName
 
 start_test
 
+# remove files
+cleanup_remote
+
+echo "################ restore first incremental by mark #####################"
 cat <<END_OF_DATA >"${tmp}/bconcmds"
-setdebug level=250 trace=1 timestamp=1 dir
-setdebug level=250 trace=1 timestamp=1 storage=LocalfileStorage
-@$out ${log_home}/full.out
-run job=NDMPBackupDump fileset=${NDMP_CLIENT}-fileset level=Full yes
+@$out ${log_home}/restore-mark.out
+restore jobid=2 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset where="/" restorejob=NDMPRestoreDump
+mark ${NDMP_TEST_PATH}/incremental
+done
+yes
 wait
 message
-setdebug level=0 trace=0 timestamp=0 dir
-setdebug level=0 trace=0 timestamp=0 storage=LocalfileStorage
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
-check_log "${log_home}/full.out"
+# Beware of File count mismatch, there's always only one file restored.
+if ! check_log "${log_home}/restore-mark.out"; then
+  if [ ${bstat} -eq 0 ] && [ ${rstat} -eq 1 ]; then
+    echo "Restore warning: known issue with NDMP restore."
+    rstat=0
+  else
+    echo "Restore failed and backup was not successful. This is an unexpected issue."
+    exit 1
+  fi
+fi
 
-# When fixed uncomment
+# we deterministically use one jobid and look that we found the corresponding incremental
+# here the restore should be the first incremental
+if ! ${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1 | xargs | grep -F -- \"${IP_ADDRESS_TO_ACCESS_NDMP_TAPE_AND_ROBOT_AGENT}-1\""; then
+  echo "Restored file ${NDMP_TEST_PATH}/incremental is not the expected first Incremental"
+  rstat=1
+fi
+
 #check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 
 end_test

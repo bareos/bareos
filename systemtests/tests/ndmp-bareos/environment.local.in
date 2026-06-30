@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,19 +19,15 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-set -e
-set -o pipefail
-set -u
+runner_name="$(basename "$0")"
+export log_home="${tmp}/${runner_name}"
+mkdir -p "${log_home}"
 
-TestName="$(basename "$(pwd)")"
-export TestName
-
-#shellcheck source=../../environment.in
-. ./environment
-
-#shellcheck source=../../scripts/functions
-. "${BAREOS_SCRIPTS_DIR}"/functions
-
-cleanup_remote
-
-"${BAREOS_SCRIPTS_DIR}"/cleanup
+IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT=@IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
+NDMP_TEST=@ndmp_test@
+NDMP_CLIENT=@ndmp_test@
+NDMP_DATA_AGENT_ADDRESS=@ndmp_data_agent_address@
+NDMP_MOUNTPOINT=@ndmp_data_mountpoint@
+NDMP_TEST_PATH=${NDMP_MOUNTPOINT}/home/regress/${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}/${TestName}
+export NDMP_HOST_ADDRESS=${NDMP_DATA_AGENT_ADDRESS}
+export NDMP_TEST_PATH

@@ -760,7 +760,11 @@ int ndmconn_xdr_nmb(struct ndmconn* conn,
     xdr_body = ndmnmb_find_xdrproc(nmb);
 
     if (nmb->header.error == NDMP0_NO_ERR && !xdr_body) {
-      return ndmconn_set_err_msg(conn, "unknown-body");
+      /* No body handler registered for this message (e.g. CONNECT_CLOSE
+       * has xdr_reply == 0 after the server may still send a reply).
+       * Skip the body and return success; xdrrec_skiprecord in the next
+       * call will flush any remaining bytes. */
+      return 0;
     }
   }
   if (nmb->header.error == NDMP0_NO_ERR) {
@@ -819,10 +823,10 @@ int ndmconn_readit(void* a_conn, char* buf, int len)
       if (rc <= 0) { return rc; }
       i += rc;
     }
-    conn->frag_resid = conn->frag_hdr_buf[0] << 24;
-    conn->frag_resid |= conn->frag_hdr_buf[1] << 16;
-    conn->frag_resid |= conn->frag_hdr_buf[2] << 8;
-    conn->frag_resid |= conn->frag_hdr_buf[3];
+    conn->frag_resid = (uint32_t)conn->frag_hdr_buf[0] << 24;
+    conn->frag_resid |= (uint32_t)conn->frag_hdr_buf[1] << 16;
+    conn->frag_resid |= (uint32_t)conn->frag_hdr_buf[2] << 8;
+    conn->frag_resid |= (uint32_t)conn->frag_hdr_buf[3];
     conn->frag_resid &= 0xFFFFFF;
     conn->fhb_off = 0;
   }

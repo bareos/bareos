@@ -19,10 +19,19 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-export NDMPCLIENT=isilon
-export SSH="ssh root@${NDMP_DATA_AGENT_ADDRESS} -o StrictHostKeyChecking=no"
-export NDMP_FILESYSTEM=$IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT
+set -e
+set -o pipefail
+set -u
 
-runner_name="$(basename "$0")"
-export log_home="${tmp}/${runner_name}"
-mkdir -p "${log_home}"
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+cleanup_remote
+
+"${BAREOS_SCRIPTS_DIR}"/cleanup
