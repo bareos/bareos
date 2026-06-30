@@ -56,7 +56,7 @@
         <!-- live input line -->
         <div class="console-line console-input-line">
           <span class="console-prompt">{{ currentSession.currentPrompt }}</span>
-          <span>{{ currentSession.cmd.slice(0, currentSession.cursorPos) }}</span><span :class="['console-cursor', { blink: focused }]">█</span><span>{{ currentSession.cmd.slice(currentSession.cursorPos) }}</span>
+          <span>{{ currentSession.cmd.slice(0, currentSession.cursorPos) }}</span><span :class="['console-cursor', { blink: focused }]"></span><span>{{ currentSession.cmd.slice(currentSession.cursorPos) }}</span>
         </div>
       </div>
 
@@ -387,7 +387,14 @@ watch(() => currentSession.value.output.length, () => {
 .console-cmd          { color: #80cbc4; }
 .console-err          { color: #ef9a9a; }
 .console-prompt       { color: #80cbc4; }
-.console-cursor       { opacity: 0.2; }
+.console-cursor {
+  display: inline-block;
+  width: 0;
+  border-left: 2px solid #80cbc4;
+  height: 1em;
+  vertical-align: text-bottom;
+  opacity: 0.3;
+}
 .console-cursor.blink { animation: blink 1s step-end infinite; }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 </style>
