@@ -82,7 +82,7 @@
               row-key="scopeKey"
               dense flat
               :loading="loadingJobs"
-              :pagination="{ rowsPerPage: 10, sortBy: 'starttime', descending: true }"
+              :pagination="{ rowsPerPage: 10, sortBy: 'id', descending: true }"
             >
               <template #body-cell-id="props">
                 <q-td :props="props" class="text-right">
