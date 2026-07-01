@@ -60,7 +60,7 @@
              :disable="!selectedStorageName || commandRunning" @click="doUpdateSlots" />
 
       <q-btn outline color="primary" icon="label" :label="t('Label barcodes')"
-             :disable="!selectedStorageName || commandRunning" @click="labelDialog = true" />
+             :disable="!selectedStorageName || commandRunning" @click="openLabelDialog" />
 
       <q-btn outline color="primary" icon="monitor_heart" :label="t('Status')"
              :disable="!selectedStorageName || commandRunning" @click="showStatus" />
@@ -383,9 +383,15 @@
           <q-select v-model="labelForm.pool"
                     :options="poolNames"
                     :label="t('Pool')" outlined dense />
-          <q-input v-model="labelForm.drive"
-                   :label="t('Drive (number)')" outlined dense type="number"
-                   :min="0" />
+          <q-select
+            v-model="labelForm.drive"
+            :options="driveOptions"
+            :label="t('Drive (number)')"
+            outlined
+            dense
+            emit-value
+            map-options
+          />
           <q-input v-model="labelForm.slots"
                    label='Slots (e.g. "1-10" or leave blank)'
                    outlined dense />
@@ -467,9 +473,15 @@
           <q-select v-model="slotLabelForm.pool"
                     :options="poolNames"
                     :label="t('Pool')" outlined dense />
-          <q-input v-model="slotLabelForm.drive"
-                   :label="t('Drive (number)')" outlined dense type="number"
-                   :min="0" />
+          <q-select
+            v-model="slotLabelForm.drive"
+            :options="driveOptions"
+            :label="t('Drive (number)')"
+            outlined
+            dense
+            emit-value
+            map-options
+          />
           <q-checkbox
             v-model="slotLabelForm.encrypted"
             :label="t('encrypt newly labeled volumes')"
@@ -688,6 +700,12 @@ const drives = computed(() =>
   allSlots.value.filter(s => s.type === 'drive')
     .sort((a, b) => a.slotnr - b.slotnr)
 )
+const driveOptions = computed(() => (
+  drives.value.map(drive => ({
+    label: String(drive.slotnr),
+    value: drive.slotnr,
+  }))
+))
 
 const importSlots = computed(() =>
   allSlots.value.filter(s => s.type === 'import_slot')
@@ -1078,6 +1096,20 @@ async function doUpdateSlots() {
   if (shouldReloadAutochangerAfterCommand(result?.status)) {
     await loadSlots()
   }
+
+  function defaultDriveNumber() {
+    return driveOptions.value[0]?.value ?? 0
+  }
+
+  function openLabelDialog() {
+    labelForm.value = {
+      pool: poolNames.value[0] ?? '',
+      drive: defaultDriveNumber(),
+      slots: '',
+      encrypted: false,
+    }
+    labelDialog.value = true
+  }
 }
 
 async function doImportAll() {
@@ -1134,7 +1166,7 @@ function openSlotMountDialog(slotNr) {
   const firstEmptyDrive = drives.value.find(d => d.content === 'empty')
   mountForm.value = {
     slot: slotNr,
-    drive: firstEmptyDrive?.slotnr ?? 0,
+    drive: firstEmptyDrive?.slotnr ?? defaultDriveNumber(),
     slotFixed: true,
     driveFixed: false,
   }
@@ -1211,7 +1243,7 @@ function openSlotLabelDialog(slotNr) {
   slotLabelForm.value = {
     slot: slotNr,
     pool: poolNames.value[0] ?? '',
-    drive: 0,
+    drive: defaultDriveNumber(),
     encrypted: false,
   }
   slotLabelDialog.value = true
