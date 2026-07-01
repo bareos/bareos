@@ -134,7 +134,7 @@ expect_grep "computed_virtual.*[1-9][0-9]*" \
   "${test_home}/primary-data.out" \
   "VirtualFull Job.PrimaryDataBytes was not persisted as a positive value."
 
-expected_primary_bytes=$(find "${BackupDirectory}" -type f -printf '%s\n' | awk '{sum += $1} END {print sum + 0}')
+expected_primary_bytes=$(find "${BackupDirectory}" -type f -ls 2>/dev/null | awk '{sum += $7} END {print sum + 0}')
 actual_primary_bytes=$(awk '/computed_virtual/ {for (i = NF; i >= 1; i--) {token = $i; gsub(/[^0-9]/, "", token); if (token != "") {print token; break}}}' "${test_home}/primary-data.out" | tail -n 1)
 
 if [ -z "${actual_primary_bytes}" ] || [ "${actual_primary_bytes}" != "${expected_primary_bytes}" ]; then
