@@ -958,7 +958,7 @@ PluginFunctions pluginFuncs
        getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
        endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
        setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr,
-       nullptr};
+       nullptr}; /* postBackupFile */
 
 }  // namespace
 
