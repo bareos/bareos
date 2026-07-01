@@ -100,6 +100,7 @@ target_sources(
           var.cc
           watchdog.cc
           xxhash.cc
+          bauth.cc
 )
 
 if(HAVE_WIN32)
