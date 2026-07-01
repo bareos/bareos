@@ -1,0 +1,16 @@
+FileSet {
+  Name = "bpipe-no-warning-empty-test"
+  Enable VSS = No
+
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    # reader writes no payload. This must not trigger the post-write size
+    # warning, because warning conditions require bytes actually written.
+    Plugin = "bpipe"
+             ":file=/bpipe-no-warning-empty-test"
+             ":reader=/bin/true"
+             ":writer=/bin/cat"
+  }
+}
