@@ -128,7 +128,8 @@ void StartSocketServer(dlist<IPADDR>* addrs)
   if (bound_sockets.size()) {
     server_running = true;
     BnetThreadServerTcp(std::move(bound_sockets), thread_list,
-                        HandleConnectionRequest, my_config, nullptr,
+                        HandleConnectionRequest, my_config,
+                        me->heartbeat_interval, nullptr,
                         UserAgentShutdownCallback);
   }
 }
