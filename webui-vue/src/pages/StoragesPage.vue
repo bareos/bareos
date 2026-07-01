@@ -42,7 +42,7 @@
               dense
               flat
               :loading="loading"
-              :pagination="{ rowsPerPage: 15 }"
+              v-model:pagination="devicesPagination"
             >
               <template #body-cell-director="props">
                 <q-td :props="props">
@@ -93,7 +93,7 @@
               dense
               flat
               :loading="loading"
-              :pagination="{ rowsPerPage: 15 }"
+              v-model:pagination="poolsPagination"
             >
               <template #body-cell-name="props">
                 <q-td :props="props">
@@ -207,7 +207,7 @@
               flat
               :loading="loading"
               :filter="volSearch"
-              :pagination="{ rowsPerPage: 15 }"
+              v-model:pagination="volumesPagination"
             >
               <template #body-cell-volumename="props">
                 <q-td :props="props">
@@ -321,6 +321,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
+import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import {
   fetchAggregatedStoragesState,
   normaliseDirectorStoragesState,
@@ -353,6 +354,15 @@ const director = useDirectorStore()
 const settings = useSettingsStore()
 const $q = useQuasar()
 const { t } = useI18n()
+const devicesPagination = usePersistedTablePagination('storages.devices', {
+  rowsPerPage: 15,
+})
+const poolsPagination = usePersistedTablePagination('storages.pools', {
+  rowsPerPage: 15,
+})
+const volumesPagination = usePersistedTablePagination('storages.volumes', {
+  rowsPerPage: 15,
+})
 const validTabs = new Set(['storages', 'pools', 'volumes', 'autochangers'])
 function normaliseTab(value) {
   return validTabs.has(value) ? value : 'storages'

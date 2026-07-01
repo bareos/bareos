@@ -188,7 +188,7 @@
               dense
               flat
               :loading="schedLoading"
-              :pagination="{ rowsPerPage: 20 }"
+              v-model:pagination="schedulesPagination"
             >
               <template #body-cell-director="props">
                 <q-td :props="props">
@@ -236,6 +236,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
+import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import {
   buildShownSchedules,
   buildStatusSchedules,
@@ -257,6 +258,9 @@ const auth = useAuthStore()
 const director = useDirectorStore()
 const $q = useQuasar()
 const { t } = useI18n()
+const schedulesPagination = usePersistedTablePagination('schedules.list', {
+  rowsPerPage: 20,
+})
 
 const validTabs = new Set(['status', 'show'])
 function normaliseTab(value) {
