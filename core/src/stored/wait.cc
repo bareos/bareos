@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +32,7 @@
 #include "stored/stored.h"  /* pull in Storage Daemon headers */
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/wait.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
@@ -41,9 +42,33 @@
 namespace storagedaemon {
 
 const int debuglevel = 400;
+static constexpr int kDefaultWaitForDeviceTimeout = 60;
 
 static pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
+static int wait_for_device_timeout = kDefaultWaitForDeviceTimeout;
+
+static bool AdvanceWaitBudget(DeviceWaitTimes& wait_times)
+{
+  wait_times.wait_sec *= 2;
+  if (wait_times.wait_sec > wait_times.max_wait) {
+    wait_times.wait_sec = wait_times.max_wait;
+  }
+  wait_times.num_wait++;
+  wait_times.rem_wait_sec = wait_times.wait_sec;
+
+  return wait_times.num_wait < wait_times.max_num_wait;
+}
+
+void SetWaitForDeviceTimeoutForTesting(int timeout_in_seconds)
+{
+  wait_for_device_timeout = timeout_in_seconds >= 0 ? timeout_in_seconds : 0;
+}
+
+void ResetWaitForDeviceTimeoutForTesting()
+{
+  wait_for_device_timeout = kDefaultWaitForDeviceTimeout;
+}
 
 /**
  * Wait for SysOp to mount a tape on a specific device
@@ -208,8 +233,8 @@ int WaitForSysop(DeviceControlRecord* dcr)
  * of 1 minute then retry just in case a broadcast was lost, and
  * we return to rescan the devices.
  *
- * Returns: true  if a device has changed state
- *          false if the total wait time has expired.
+ * Returns: true  if the caller should rescan devices
+ *          false if the total wait budget has expired or an error occurred.
  */
 bool WaitForDevice(JobControlRecord* jcr, int& retries)
 {
@@ -217,8 +242,9 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
   struct timespec timeout;
   int status = 0;
   bool ok = true;
-  const int max_wait_time = 1 * 60; /* wait 1 minute */
   char ed1[50];
+  auto& wait_times = jcr->sd_impl->device_wait_times;
+  int current_wait = wait_for_device_timeout;
 
   Dmsg0(debuglevel, "Enter WaitForDevice\n");
   lock_mutex(device_release_mutex);
@@ -229,9 +255,15 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
          edit_uint64(jcr->JobId, ed1), jcr->Job);
   }
 
+  if (wait_times.rem_wait_sec > 0) {
+    current_wait = std::min(current_wait, wait_times.rem_wait_sec);
+  } else if (wait_for_device_timeout > 0) {
+    current_wait = wait_for_device_timeout;
+  }
+
   gettimeofday(&tv, NULL);
   timeout.tv_nsec = tv.tv_usec * 1000;
-  timeout.tv_sec = tv.tv_sec + max_wait_time;
+  timeout.tv_sec = tv.tv_sec + current_wait;
 
   Dmsg0(debuglevel, "Going to wait for a device.\n");
 
@@ -239,6 +271,19 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
   status = pthread_cond_timedwait(&wait_device_release, &device_release_mutex,
                                   &timeout);
   Dmsg1(debuglevel, "Wokeup from sleep on device status=%d\n", status);
+  if (status == ETIMEDOUT) {
+    if (current_wait == 0 || wait_times.rem_wait_sec <= current_wait) {
+      wait_times.rem_wait_sec = 0;
+      ok = AdvanceWaitBudget(wait_times);
+    } else {
+      wait_times.rem_wait_sec -= current_wait;
+    }
+  } else if (status != 0) {
+    BErrNo be;
+    Dmsg2(debuglevel, "Device wait failed status=%d ERR=%s\n", status,
+          be.bstrerror(status));
+    ok = false;
+  }
 
   unlock_mutex(device_release_mutex);
   Dmsg1(debuglevel, "Return from wait_device ok=%d\n", ok);
