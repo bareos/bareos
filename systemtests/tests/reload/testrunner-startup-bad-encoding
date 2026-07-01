@@ -1,8 +1,7 @@
 #!/bin/bash
-
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,7 +21,6 @@
 set -e
 set -o pipefail
 set -u
-#trap read debug
 
 #shellcheck source=../../environment.in
 . ./environment
@@ -33,22 +31,21 @@ TestName="$(get_test_name "$0")"
 export TestName
 export estat
 
-export temporary_config_file="${config_directory_dir_additional_test_config}/new_empty_job_definition.conf"
-export bconsole_command_file="${tmp}/bconsole_reload_command"
-export console_logfile="${tmp}/console.log"
+temporary_config_file="${config_directory_dir_additional_test_config}/bad_encoding.conf"
+startup_log="${tmp}/bareos-dir-startup-bad-encoding.out"
 
-############################################
 start_test
-############################################
-
-remove_console_logfile
 
 setup_config
-#reload modified config
-add_empty_job_to_config
-test_reload_will_not_crash_director
-find_error_string_in_console_log 'Config error: Name not specified for resource'
+add_bad_encoded_catalog
 
-############################################
+if "${BAREOS_DIRECTOR_BINARY}" -d50 -t --config "${BAREOS_CONFIG_DIR}" \
+  >"${startup_log}" 2>&1; then
+  exit_with_error "Bareos Director unexpectedly accepted a UTF8 catalog"
+fi
+
+expect_grep "Wanted SQL_ASCII, got UTF8" \
+  "${startup_log}" \
+  "Could not find database encoding error in director output"
+
 end_test
-############################################

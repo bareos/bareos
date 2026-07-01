@@ -184,37 +184,36 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord*,
 BareosDbPostgresql::~BareosDbPostgresql() {}
 
 // Check that the database correspond to the encoding we want
-bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
+bool BareosDbPostgresql::CheckDatabaseEncoding()
 {
-  SQL_ROW row;
-  bool retval = false;
-
   if (!SqlQueryWithoutHandler("SELECT getdatabaseencoding()")) {
-    Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
+    Mmsg(errmsg, "Cannot check database encoding: %s\n", sql_strerror());
+    Dmsg1(50, "%s", errmsg);
     return false;
   }
 
-  if ((row = SqlFetchRow()) == NULL) {
-    Mmsg1(errmsg, T_("error fetching row: %s\n"), errmsg);
-    Jmsg(jcr, M_ERROR, 0, "Can't check database encoding %s", errmsg);
-  } else {
-    retval = bstrcmp(row[0], "SQL_ASCII");
-
-    if (retval) {
-      /* If we are in SQL_ASCII, we can force the client_encoding to SQL_ASCII
-       * too */
-      SqlQueryWithoutHandler("SET client_encoding TO 'SQL_ASCII'");
-    } else {
-      // Something is wrong with database encoding
-      Mmsg(errmsg,
-           T_("Encoding error for database \"%s\". Wanted SQL_ASCII, got %s\n"),
-           get_db_name(), row[0]);
-      Jmsg(jcr, M_WARNING, 0, "%s", errmsg);
-      Dmsg1(50, "%s", errmsg);
-    }
+  SQL_ROW row = SqlFetchRow();
+  if (row == NULL) {
+    PmStrcpy(
+        errmsg,
+        "Cannot check database encoding: could not fetch database encoding\n");
+    Dmsg1(50, "%s", errmsg);
+    SqlFreeResult();
+    return false;
   }
 
-  return retval;
+  if (!bstrcmp(row[0], "SQL_ASCII")) {
+    // Something is wrong with database encoding
+    Mmsg(errmsg,
+         "Encoding error for database \"%s\". Wanted SQL_ASCII, got %s\n",
+         get_db_name(), row[0]);
+    Dmsg1(50, "%s", errmsg);
+    SqlFreeResult();
+    return false;
+  }
+
+  SqlFreeResult();
+  return true;
 }
 
 /**
@@ -223,7 +222,7 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
  *
  * DO NOT close the database or delete mdb here !!!!
  */
-const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
+const char* BareosDbPostgresql::OpenDatabase()
 {
   int errstat;
   char buf[10], *port;
@@ -281,6 +280,9 @@ const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
   keys.emplace_back("sslmode");
   values.emplace_back("disable");
 
+  keys.emplace_back("client_encoding");
+  values.emplace_back("SQL_ASCII");
+
   keys.emplace_back(nullptr);
   values.emplace_back(nullptr);
   ASSERT(keys.size() == values.size());
@@ -315,19 +317,11 @@ const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
   if (!db_handle_) { return errmsg; }
 
   connected_ = true;
-  if (!CheckTablesVersion(jcr)) { return errmsg; }
-
-  SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
-  SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
-  SqlQueryWithoutHandler("SET client_min_messages TO WARNING");
-
-  /* Tell PostgreSQL we are using standard conforming strings
-   * and avoid warnings such as:
-   *  WARNING:  nonstandard use of \\ in a string literal */
-  SqlQueryWithoutHandler("SET standard_conforming_strings=on");
 
   // Check that encoding is SQL_ASCII
-  CheckDatabaseEncoding(jcr);
+  if (!SetClientOptions()) { return errmsg; }
+  if (!CheckDatabaseEncoding()) { return errmsg; }
+  if (!CheckTablesVersion()) { return errmsg; }
 
   return nullptr;
 }
@@ -1148,6 +1142,31 @@ bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord*,
   }
 
   Dmsg0(500, "SqlBatchInsertFileTable finishing\n");
+
+  return true;
+}
+
+bool BareosDbPostgresql::SetClientOptions()
+{
+  if (!SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'")) {
+    Mmsg(errmsg, "Could not set correct datestyle: %s\n", sql_strerror());
+    return false;
+  } else if (!SqlQueryWithoutHandler("SET cursor_tuple_fraction=1")) {
+    Mmsg(errmsg, "Could not set cursor_tuple_fraction: %s\n", sql_strerror());
+    return false;
+  } else if (!SqlQueryWithoutHandler("SET client_min_messages TO WARNING")) {
+    Mmsg(errmsg, "Could not set client_min_messages: %s\n", sql_strerror());
+    return false;
+  }
+
+  /* Tell PostgreSQL we are using standard conforming strings
+   * and avoid warnings such as:
+   *  WARNING:  nonstandard use of \\ in a string literal */
+  else if (!SqlQueryWithoutHandler("SET standard_conforming_strings=on")) {
+    Mmsg(errmsg, "Could not enable standard_conforming_strings: %s\n",
+         sql_strerror());
+    return false;
+  }
 
   return true;
 }
