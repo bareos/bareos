@@ -453,7 +453,7 @@ const statusError = ref(null)
 const schedulesData = ref([])
 const previewData = ref([])
 
-const viewMode = ref('month')
+const viewMode = ref('week')
 
 function startOfToday() {
   const d = new Date()
@@ -471,7 +471,7 @@ function firstOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1)
 }
 
-const viewAnchor = ref(firstOfMonth(new Date()))
+const viewAnchor = ref(mondayOf(new Date()))
 
 const apiDaysRange = computed(() => {
   const today = startOfToday()
