@@ -16,7 +16,7 @@
           row-key="scopeKey"
           dense flat
           :loading="loading"
-          :pagination="{ rowsPerPage: 15 }"
+          v-model:pagination="filesetsPagination"
         >
           <template #body="props">
             <q-tr :props="props">
@@ -69,6 +69,7 @@ import { useI18n } from 'vue-i18n'
 import { directorCollection } from '../composables/useDirectorFetch.js'
 import { fetchAggregatedFilesets } from '../composables/filesetsAggregate.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
+import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
@@ -80,6 +81,9 @@ const rawFilesets = ref([])
 const loading = ref(false)
 const error = ref(null)
 const directorErrors = ref([])
+const filesetsPagination = usePersistedTablePagination('filesets.list', {
+  rowsPerPage: 15,
+})
 
 const {
   directorOptions,

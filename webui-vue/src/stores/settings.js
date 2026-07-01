@@ -18,6 +18,7 @@ const DEFAULTS = {
   loginUsername: 'admin',
   directorName: DEFAULT_DIRECTOR_NAME,
   selectedDirectors: [],
+  tableRowsPerPage: {},
 }
 
 function normalizeSelectedDirectors(value) {
@@ -30,6 +31,18 @@ function normalizeSelectedDirectors(value) {
       .map(item => String(item ?? '').trim())
       .filter(Boolean)
   )]
+}
+
+function normalizeTableRowsPerPage(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {}
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, rowsPerPage]) => [String(key).trim(), Number(rowsPerPage)])
+      .filter(([key, rowsPerPage]) => key && Number.isInteger(rowsPerPage) && rowsPerPage >= 0)
+  )
 }
 
 function loadFromStorage() {
@@ -50,6 +63,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const loginUsername   = ref(saved.loginUsername)
   const directorName    = ref(saved.directorName)
   const selectedDirectors = ref(normalizeSelectedDirectors(saved.selectedDirectors))
+  const tableRowsPerPage = ref(normalizeTableRowsPerPage(saved.tableRowsPerPage))
 
   function save() {
     localStorage.setItem(LS_KEY, JSON.stringify({
@@ -60,6 +74,7 @@ export const useSettingsStore = defineStore('settings', () => {
       loginUsername:   loginUsername.value,
       directorName:    directorName.value,
       selectedDirectors: selectedDirectors.value,
+      tableRowsPerPage: tableRowsPerPage.value,
     }))
   }
 
@@ -71,12 +86,42 @@ export const useSettingsStore = defineStore('settings', () => {
     selectedDirectors.value = normalizeSelectedDirectors(value)
   }
 
+  function getTableRowsPerPage(key, fallback) {
+    const normalizedKey = String(key ?? '').trim()
+    if (!normalizedKey) {
+      return fallback
+    }
+
+    const value = tableRowsPerPage.value[normalizedKey]
+    return Number.isInteger(value) && value >= 0 ? value : fallback
+  }
+
+  function setTableRowsPerPage(key, value) {
+    const normalizedKey = String(key ?? '').trim()
+    if (!normalizedKey) {
+      return
+    }
+
+    const normalizedValue = Number(value)
+    if (Number.isInteger(normalizedValue) && normalizedValue >= 0) {
+      tableRowsPerPage.value = {
+        ...tableRowsPerPage.value,
+        [normalizedKey]: normalizedValue,
+      }
+      return
+    }
+
+    const { [normalizedKey]: _removed, ...rest } = tableRowsPerPage.value
+    tableRowsPerPage.value = rest
+  }
+
   watch(refreshInterval, save)
   watch(darkMode, save)
   watch(relativeTime, save)
   watch(loginUsername, save)
   watch(directorName, save)
   watch(selectedDirectors, save, { deep: true })
+  watch(tableRowsPerPage, save, { deep: true })
   watch(locale, (value) => {
     applyDocumentLocale(value)
     setI18nLocale(value)
@@ -91,7 +136,10 @@ export const useSettingsStore = defineStore('settings', () => {
     loginUsername,
     directorName,
     selectedDirectors,
+    tableRowsPerPage,
     setLocale,
     setSelectedDirectors,
+    getTableRowsPerPage,
+    setTableRowsPerPage,
   }
 })

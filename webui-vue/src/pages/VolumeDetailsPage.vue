@@ -198,7 +198,7 @@
             </q-card-section>
             <q-card-section class="q-pa-none">
               <q-table :rows="jobs" :columns="jobCols" row-key="jobid"
-                       dense flat :pagination="{ rowsPerPage: 15, sortBy: 'jobid', descending: true }">
+                       dense flat v-model:pagination="jobsPagination">
                 <template #body-cell-jobid="props">
                   <q-td :props="props">
                     <router-link
@@ -240,6 +240,7 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import { buildDirectorPageQuery } from '../utils/director.js'
 import { buildJobDetailsQuery, resolveJobDetailsQuery } from '../utils/jobs.js'
@@ -265,6 +266,11 @@ const auth       = useAuthStore()
 const director   = useDirectorStore()
 const settings   = useSettingsStore()
 const { t } = useI18n()
+const jobsPagination = usePersistedTablePagination('volume-details.jobs', {
+  rowsPerPage: 15,
+  sortBy: 'jobid',
+  descending: true,
+})
 const volumeName = computed(() => route.params.name)
 const requestedDirector = computed(() => (
   typeof route.query.director === 'string' ? route.query.director : ''

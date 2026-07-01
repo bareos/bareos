@@ -51,7 +51,7 @@
             </q-card-section>
             <q-card-section class="q-pa-none">
               <q-table :rows="volumes" :columns="volumeCols" row-key="volumename"
-                       dense flat :pagination="{ rowsPerPage: 10 }">
+                       dense flat v-model:pagination="volumesPagination">
                 <template #body-cell-volumename="props">
                   <q-td :props="props">
                     <VolumeNameLink
@@ -137,7 +137,7 @@
             <q-card-section v-else class="q-pa-none">
               <q-table :rows="pruneReport.volumes" :columns="prunableVolumeCols" row-key="name"
                        dense flat selection="multiple" v-model:selected="selectedPrunableVolumes"
-                       :pagination="{ rowsPerPage: 10 }">
+                       v-model:pagination="prunableVolumesPagination">
                 <template #body-cell-name="props">
                   <q-td :props="props">
                     <VolumeNameLink
@@ -177,7 +177,7 @@
             </q-card-section>
             <q-card-section v-else class="q-pa-none">
               <q-table :rows="pruneReport.jobs" :columns="prunableJobCols" row-key="jobid"
-                       dense flat :pagination="{ rowsPerPage: 10 }">
+                       dense flat v-model:pagination="prunableJobsPagination">
                 <template #body-cell-bytes="props">
                   <q-td :props="props" class="text-right">
                     {{ formatBytes(props.value) }}
@@ -203,6 +203,7 @@ import {
   normaliseVolume,
 } from '../composables/useDirectorFetch.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -228,6 +229,15 @@ const auth      = useAuthStore()
 const director  = useDirectorStore()
 const settings  = useSettingsStore()
 const { t } = useI18n()
+const volumesPagination = usePersistedTablePagination('pool-details.volumes', {
+  rowsPerPage: 10,
+})
+const prunableVolumesPagination = usePersistedTablePagination('pool-details.prunable', {
+  rowsPerPage: 10,
+})
+const prunableJobsPagination = usePersistedTablePagination('pool-details.prunable-jobs', {
+  rowsPerPage: 10,
+})
 const $q = useQuasar()
 const poolName = computed(() => route.params.name)
 const requestedDirector = computed(() => (

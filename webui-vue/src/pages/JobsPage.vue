@@ -399,7 +399,7 @@
               row-key="scopeKey"
               dense flat
               :loading="loadingDefs"
-              :pagination="{ rowsPerPage: 15 }"
+              v-model:pagination="jobDefsPagination"
             >
               <template #body-cell-director="props">
                 <q-td :props="props">
@@ -679,6 +679,7 @@ import {
 } from '../composables/jobsAggregate.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
+import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -771,6 +772,16 @@ const clientFilterOptions = ref([])
 const directorErrors = ref([])
 const fmtBytes  = formatBytes
 const fmtSpeed  = formatSpeed
+const pagination = usePersistedTablePagination('jobs.list', {
+  page: 1,
+  rowsPerPage: 25,
+  sortBy: 'id',
+  descending: true,
+  rowsNumber: 0,
+})
+const jobDefsPagination = usePersistedTablePagination('jobs.defs', {
+  rowsPerPage: 15,
+})
 const jobStatusOptions = computed(() => Object.entries(jobStatusMap).map(([value, meta]) => ({
   value,
   label: t(meta.label),
@@ -904,10 +915,6 @@ const jobs       = ref([])
 const totalJobs  = ref(0)
 const loading    = ref(false)
 const error      = ref(null)
-// rowsNumber must live inside the pagination object for Quasar's server-side
-// pagination controls to render correctly.
-const pagination = ref({ page: 1, rowsPerPage: 25, sortBy: 'id', descending: true, rowsNumber: 0 })
-
 async function fetchPage() {
   loading.value = true
   error.value   = null

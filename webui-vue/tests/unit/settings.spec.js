@@ -80,4 +80,34 @@ describe('settings store', () => {
     const restored = useSettingsStore()
     expect(restored.selectedDirectors).toEqual(['alpha-dir', 'beta-dir'])
   })
+
+  it('persists and restores table rows per page settings', async () => {
+    const settings = useSettingsStore()
+
+    settings.setTableRowsPerPage('jobs.list', 42)
+    settings.setTableRowsPerPage('storages.pools', 18)
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
+      expect.objectContaining({
+        tableRowsPerPage: {
+          'jobs.list': 42,
+          'storages.pools': 18,
+        },
+      })
+    )
+
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      tableRowsPerPage: {
+        'jobs.list': 33,
+        'storages.pools': 11,
+      },
+    }))
+
+    setActivePinia(createPinia())
+    const restored = useSettingsStore()
+    expect(restored.getTableRowsPerPage('jobs.list', 15)).toBe(33)
+    expect(restored.getTableRowsPerPage('storages.pools', 15)).toBe(11)
+  })
 })

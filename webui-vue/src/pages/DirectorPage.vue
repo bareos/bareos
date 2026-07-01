@@ -400,7 +400,7 @@
                     dense flat
                     selection="multiple"
                     v-model:selected="selectedEmptyJobs"
-                    :pagination="{ rowsPerPage: 20 }"
+                    v-model:pagination="statusPagination"
                     :no-data-label="t('No empty jobs found')"
                   >
                     <template #body-cell-id="props">
@@ -590,6 +590,7 @@ import {
   normaliseDirectorStatusSnapshot,
 } from '../composables/directorPageAggregate.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
+import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import { formatBytes } from '../mock/index.js'
 import {
   buildDirectorPageQuery,
@@ -631,6 +632,9 @@ const acl = useDirectorAclStore()
 const settings  = useSettingsStore()
 const { t } = useI18n()
 const tr = (msgid, values) => translate(settings.locale, msgid, values)
+const statusPagination = usePersistedTablePagination('director.status', {
+  rowsPerPage: 20,
+})
 
 const {
   directorOptions,
