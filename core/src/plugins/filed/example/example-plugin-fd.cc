@@ -67,7 +67,8 @@ static PluginFunctions pluginFuncs
        freePlugin, /* free plugin instance */
        getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
        endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
-       setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
+       setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr,
+       nullptr};
 
 #ifdef __cplusplus
 extern "C" {

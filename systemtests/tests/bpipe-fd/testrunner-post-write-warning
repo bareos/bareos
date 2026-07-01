@@ -1,0 +1,61 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+#
+# Verify that the file daemon emits a post-write size warning for bpipe
+# jobs: bpipe always starts at st_size=0 and writes data without
+# implementing the postBackupFile callback, so the FD should log a
+# warning about plugins that never reported a post-write size update.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+backup_log="${runner_tmp}/backup.out"
+
+run_bconsole - <<END_OF_DATA
+@$out ${NULL_DEV}
+messages
+
+@$out ${backup_log}
+run job=backup-bareos-fd fileset=bpipe-warning-test level=Full yes
+wait
+messages
+END_OF_DATA
+
+check_log "${backup_log}"
+
+expect_grep 'Plugin "bpipe" backed up' \
+  "${backup_log}" \
+  "Expected post-write size warning from bpipe plugin was not found in job messages"
+
+end_test

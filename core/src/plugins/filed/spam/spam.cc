@@ -111,7 +111,7 @@ PluginFunctions pluginFuncs = {sizeof(pluginFuncs),
                                &getAcl,
                                &setAcl,
                                &getXattr,
-                               &setXattr};
+                               &setXattr, nullptr};
 };  // namespace
 
 extern "C" {

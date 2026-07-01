@@ -45,6 +45,9 @@
 #include "lib/plugins.h"
 #include "lib/parse_conf.h"
 
+#include <cctype>
+#include <cstddef>
+
 // Function pointers to be set here (findlib)
 BAREOS_IMPORT int (*plugin_bopen)(BareosFilePacket* bfd,
                                   const char* fname,
@@ -119,6 +122,11 @@ static bRC bareosAcceptFile(PluginContext* ctx, save_pkt* sp);
 static bRC bareosSetSeenBitmap(PluginContext* ctx, bool all, char* fname);
 static bRC bareosClearSeenBitmap(PluginContext* ctx, bool all, char* fname);
 static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret);
+static std::string PluginCommandName(const char* cmd);
+static bool HasPostBackupFileCallback(Plugin* plugin);
+static void RecordPluginPostWriteWarning(JobControlRecord* jcr,
+                                         const char* plugin_name);
+void EmitPluginPostWriteWarnings(JobControlRecord* jcr);
 
 // These will be plugged into the global pointer structure for the findlib.
 static int MyPluginBopen(BareosFilePacket* bfd,
@@ -216,6 +224,55 @@ static bool IsCtxGood(PluginContext* ctx,
   if (!jcr) { return false; }
 
   return true;
+}
+
+static std::string PluginCommandName(const char* cmd)
+{
+  if (!cmd || *cmd == '\0') { return {}; }
+
+  const char* end = cmd;
+  while (*end != '\0' && *end != ':'
+         && !isspace(static_cast<unsigned char>(*end))) {
+    ++end;
+  }
+
+  return std::string(cmd, end);
+}
+
+static bool HasPostBackupFileCallback(Plugin* plugin)
+{
+  auto* funcs = plugin ? PlugFunc(plugin) : nullptr;
+  if (!funcs) { return false; }
+
+  return funcs->size >= offsetof(PluginFunctions, postBackupFile)
+         + sizeof(funcs->postBackupFile)
+         && funcs->postBackupFile != nullptr;
+}
+
+static void RecordPluginPostWriteWarning(JobControlRecord* jcr,
+                                         const char* plugin_name)
+{
+  if (!jcr || !jcr->fd_impl || !plugin_name || *plugin_name == '\0') {
+    return;
+  }
+
+  jcr->fd_impl->plugin_postwrite_warnings[plugin_name]++;
+}
+
+void EmitPluginPostWriteWarnings(JobControlRecord* jcr)
+{
+  if (!jcr || !jcr->fd_impl) { return; }
+
+  for (const auto& [plugin_name, count] : jcr->fd_impl->plugin_postwrite_warnings) {
+    if (count == 0) { continue; }
+
+    Jmsg(jcr, M_WARNING, 0,
+         T_("Plugin \"%s\" backed up %u file(s) with unknown or zero initial "
+            "size and never reported a post-write size update.\n"),
+         plugin_name.c_str(), count);
+  }
+
+  jcr->fd_impl->plugin_postwrite_warnings.clear();
 }
 
 // Test if event is for this plugin
@@ -678,6 +735,39 @@ void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, save_pkt* sp)
   }
 
   SetBit(FO_PLUGIN, ff_pkt->flags); /* data from plugin */
+}
+
+bool PluginPostBackupFile(JobControlRecord* jcr,
+                          FindFilesPacket* ff_pkt,
+                          uint64_t read_bytes_before)
+{
+  auto* sp = jcr && jcr->fd_impl ? jcr->fd_impl->plugin_sp : nullptr;
+  if (!jcr || !ff_pkt || !sp || !jcr->plugin_ctx) { return true; }
+
+  auto* plugin = jcr->plugin_ctx->plugin;
+  // st_size < 1 covers both "zero" (0) and "unknown" (-1) as set by plugins
+  // like bpipe-fd that cannot know the size before streaming.
+  const bool initial_unknown_size
+      = S_ISREG(ff_pkt->statp.st_mode) && ff_pkt->statp.st_size < 1;
+  const char* plugin_name = sp->cmd ? sp->cmd : ff_pkt->plugin;
+  const auto plugin_label = PluginCommandName(plugin_name);
+
+  if (HasPostBackupFileCallback(plugin)) {
+    bRC rc = PlugFunc(plugin)->postBackupFile(jcr->plugin_ctx, sp);
+    if (rc != bRC_OK) {
+      Jmsg2(jcr, M_WARNING, 0, T_("Plugin \"%s\" postBackupFile returned %d\n"),
+            plugin_label.c_str(), rc);
+    }
+  }
+
+  ff_pkt->statp = sp->statp;
+
+  if (initial_unknown_size && sp->statp.st_size < 1
+      && jcr->ReadBytes > read_bytes_before) {
+    RecordPluginPostWriteWarning(jcr, plugin_label.c_str());
+  }
+
+  return true;
 }
 
 // Ask to a Option Plugin what to do with the current file
@@ -1924,6 +2014,7 @@ void FreePlugins(JobControlRecord* jcr)
 
   Dmsg2(debuglevel, "Free instance fd-plugin_ctx_list=%p JobId=%" PRIu32 "\n",
         jcr->plugin_ctx_list, jcr->JobId);
+
   for (auto* ctx : jcr->plugin_ctx_list) {
     // Free the plugin instance
     PlugFunc(ctx->plugin)->freePlugin(ctx);
