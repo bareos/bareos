@@ -28,12 +28,13 @@
  * This file handles external connections made to the File daemon.
  */
 
-#include "filed/filed_conf.h"
 #include "include/bareos.h"
+#include "filed/filed_conf.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "filed/dir_cmd.h"
 #include "filed/sd_cmds.h"
+#include "include/version_hex.h"
 #include "lib/bsock.h"
 #include "lib/bnet_server_tcp.h"
 #include "lib/thread_list.h"
@@ -89,7 +90,12 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   char tbuf[100];
   char name[128];
 
-  if (bsscanf(bs->msg, "Hello Director %127s calling", name) == 1) {
+  unsigned major{}, minor{}, patch{};
+
+  if (bsscanf(bs->msg, "Hello Director %127s calling Version=\"%u.%u.%u\"",
+              name, &major, &minor, &patch)
+          == 4
+      || bsscanf(bs->msg, "Hello Director %127s calling", name) == 1) {
     Dmsg1(110, "Got a DIR connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
 
@@ -105,11 +111,17 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
       return NULL;
     }
 
+    bs->remote_version = VERSION_HEX(major, minor, patch);
+
     return handle_director_connection(bs);
   }
 
   // See if its a storage daemon making a connection.
-  if (bsscanf(bs->msg, "Hello Storage calling Start Job %127s", name) == 1) {
+  if (bsscanf(bs->msg,
+              "Hello Storage calling Start Job %127s Version=\"%u.%u.%u\"",
+              name, &major, &minor, &patch)
+          == 4
+      || bsscanf(bs->msg, "Hello Storage calling Start Job %127s", name) == 1) {
     Dmsg1(110, "Got a SD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
 
@@ -122,6 +134,8 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
       delete bs;
       return NULL;
     }
+
+    bs->remote_version = VERSION_HEX(major, minor, patch);
 
     return handle_stored_connection(bs);
   }

@@ -86,6 +86,9 @@ class BareosSocket {
   int sleep_time_after_authentication_error;
   bool enable_ktls_{false};
 
+  unsigned remote_version{}; /* version hex of remote version; only for inbound;
+                                0 if unknown */
+
   struct sockaddr_storage client_addr; /* Client's IP address */
   struct sockaddr_storage peer_addr;   /* Peer's IP address */
   void SetTlsEstablished() { tls_established_ = true; }

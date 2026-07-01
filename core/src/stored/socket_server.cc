@@ -42,6 +42,7 @@
 #include "lib/bsock.h"
 #include "lib/thread_list.h"
 #include "lib/try_tls_handshake_as_a_server.h"
+#include "include/version_hex.h"
 
 namespace storagedaemon {
 
@@ -105,7 +106,15 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   Dmsg1(110, "Conn: %s", bs->msg);
 
-  if (bsscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
+  unsigned major = 0;
+  unsigned minor = 0;
+  unsigned patch = 0;
+
+  if (bsscanf(bs->msg, "Hello Start Job %127s Version=\"%u.%u.%u\"", name,
+              &major, &minor, &patch)
+          == 4
+      || bsscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
+    bs->remote_version = VERSION_HEX(major, minor, patch);
     Dmsg1(110, "Got a FD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
 
@@ -120,7 +129,12 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
     }
 
     return HandleFiledConnection(bs, name);
-  } else if (bsscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
+  } else if (bsscanf(bs->msg,
+                     "Hello Start Storage Job %127s Version=\"%u.%u.%u\"", name,
+                     &major, &minor, &patch)
+                 == 4
+             || bsscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
+    bs->remote_version = VERSION_HEX(major, minor, patch);
     Dmsg1(110, "Got a SD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
 
@@ -135,7 +149,12 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
     }
 
     return handle_stored_connection(bs, name);
-  } else if (bsscanf(bs->msg, "Hello Director %127s calling", name) == 1) {
+  } else if (bsscanf(bs->msg,
+                     "Hello Director %127s calling Version=\"%u.%u.%u\"", name,
+                     &major, &minor, &patch)
+                 == 4
+             || bsscanf(bs->msg, "Hello Director %127s calling", name) == 1) {
+    bs->remote_version = VERSION_HEX(major, minor, patch);
     Dmsg1(110, "Got a DIR connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
 
@@ -162,6 +181,11 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
     delete bs;
     return NULL;
   }
+  Dmsg1(110, "Got a DIR connection at %s\n",
+        bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+
+  bs->remote_version = VERSION_HEX(major, minor, patch);
+  return HandleDirectorConnection(bs);
 }
 
 static void* UserAgentShutdownCallback(void* bsock)

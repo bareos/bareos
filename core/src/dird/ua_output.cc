@@ -102,7 +102,7 @@ static bool QueryPoolListRows(UaContext* ua,
     OutputFormatter* send;
     bool filters_enabled;
     std::vector<PoolListRow>* rows;
-  } ctx{ua->send, ua->send->HasFilters(), rows};
+  } ctx{ua->send.get(), ua->send->HasFilters(), rows};
 
   auto handler = [](void* c, int, char** row) {
     auto* handler_ctx = static_cast<PoolListHandlerContext*>(c);
@@ -932,8 +932,8 @@ static bool ListJobs(UaContext* ua,
   ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
                          optionslist.jobstatuslist, optionslist.joblevel_list,
                          optionslist.jobtypes, volumename, poolname, schedtime,
-                         optionslist.last, optionslist.count, ua->send.get(), llist,
-                         descending);
+                         optionslist.last, optionslist.count, ua->send.get(),
+                         llist, descending);
 
   return true;
 }

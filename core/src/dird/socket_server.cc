@@ -38,10 +38,14 @@
 #include "lib/thread_list.h"
 #include "lib/thread_specific_data.h"
 #include "lib/try_tls_handshake_as_a_server.h"
+#include "include/version_hex.h"
 
 #include <atomic>
 
 namespace directordaemon {
+
+inline constexpr const char hello_client_with_version_v2[]
+    = "Hello Client %127s FdProtocolVersion=%d calling Version=\"%u.%u.%u\"";
 
 inline constexpr const char hello_client_with_version[]
     = "Hello Client %127s FdProtocolVersion=%d calling";
@@ -49,6 +53,8 @@ inline constexpr const char hello_client_with_version[]
 inline constexpr const char hello_client[] = "Hello Client %127s calling";
 
 inline constexpr const char hello_console[] = "Hello %127s calling";
+inline constexpr const char hello_console_with_version[]
+    = "Hello %127s calling version %127s Version=\"%u.%u.%u\"";
 
 /* Global variables */
 static ThreadList thread_list;
@@ -73,6 +79,7 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 {
   BareosSocket* bs = (BareosSocket*)arg;
   char name[MAX_NAME_LENGTH];
+  char version[MAX_NAME_LENGTH];
   char tbuf[MAX_TIME_LENGTH];
   int fd_protocol_version = 0;
 
@@ -109,9 +116,14 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   Dmsg1(110, "Conn: %s", bs->msg);
 
-  if ((bsscanf(bs->msg, hello_client_with_version, name, &fd_protocol_version)
-       == 2)
-      || (bsscanf(bs->msg, hello_client, name) == 1)) {
+  unsigned major = 0;
+  unsigned minor = 0;
+  unsigned patch = 0;
+
+  if (bsscanf(bs->msg, hello_client_with_version_v2, name, &fd_protocol_version,
+              &major, &minor, &patch)
+      == 5) {
+    bs->remote_version = VERSION_HEX(major, minor, patch);
     Dmsg1(110, "Got a FD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
 
@@ -129,7 +141,44 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
     return HandleFiledConnection(*client_connections.get(), bs, name,
                                  fd_protocol_version);
-  } else if (bsscanf(bs->msg, hello_console, name) == 1) {
+  } else if (bsscanf(bs->msg, hello_client_with_version, name,
+                     &fd_protocol_version)
+             == 2) {
+    Dmsg1(110, "Got a FD connection at %s\n",
+          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+    if (auto error
+        = tls_secret_provider.is_resource_name_different_from_tls_name(R_CLIENT,
+                                                                       name)) {
+      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
+            error->c_str());
+      Bmicrosleep(5, 0); /* make user wait 5 seconds */
+      bs->signal(BNET_TERMINATE);
+      bs->close();
+      delete bs;
+      return NULL;
+    }
+    return HandleFiledConnection(*client_connections.get(), bs, name,
+                                 fd_protocol_version);
+  } else if (bsscanf(bs->msg, hello_client, name) == 1) {
+    Dmsg1(110, "Got a FD connection at %s\n",
+          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+    if (auto error
+        = tls_secret_provider.is_resource_name_different_from_tls_name(R_CLIENT,
+                                                                       name)) {
+      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
+            error->c_str());
+      Bmicrosleep(5, 0); /* make user wait 5 seconds */
+      bs->signal(BNET_TERMINATE);
+      bs->close();
+      delete bs;
+      return NULL;
+    }
+    return HandleFiledConnection(*client_connections.get(), bs, name,
+                                 fd_protocol_version);
+  } else if (bsscanf(bs->msg, hello_console_with_version, name, version, &major,
+                     &minor, &patch)
+                 == 5
+             || bsscanf(bs->msg, hello_console, name) == 1) {
     if (auto error
         = tls_secret_provider.is_resource_name_different_from_tls_name(
             R_CONSOLE, name)) {
@@ -141,6 +190,8 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
       delete bs;
       return NULL;
     }
+
+    bs->remote_version = VERSION_HEX(major, minor, patch);
     return HandleUserAgentClientRequest(bs);
   }
 
