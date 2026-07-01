@@ -1445,6 +1445,11 @@ void InitJcrJobRecord(JobControlRecord* jcr)
 // Write status and such in DB
 void UpdateJobEndRecord(JobControlRecord* jcr)
 {
+  const bool has_precomputed_virtual_primary
+      = jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL)
+        && jcr->dir_impl->jr.PrimaryDataBytes >= 0
+        && jcr->dir_impl->jr.PrimaryDataSource[0] != '\0';
+
   jcr->dir_impl->jr.EndTime = time(NULL);
   jcr->end_time = jcr->dir_impl->jr.EndTime;
   jcr->dir_impl->jr.JobId = jcr->JobId;
@@ -1452,10 +1457,12 @@ void UpdateJobEndRecord(JobControlRecord* jcr)
   jcr->dir_impl->jr.JobFiles = jcr->JobFiles;
   jcr->dir_impl->jr.JobBytes = jcr->JobBytes;
   jcr->dir_impl->jr.ReadBytes = jcr->ReadBytes;
-  jcr->dir_impl->jr.PrimaryDataBytes = -1;
-  jcr->dir_impl->jr.PrimaryDataSource[0] = '\0';
+  if (!has_precomputed_virtual_primary) {
+    jcr->dir_impl->jr.PrimaryDataBytes = -1;
+    jcr->dir_impl->jr.PrimaryDataSource[0] = '\0';
+  }
   if (jcr->is_JobType(JT_BACKUP) && !jcr->is_JobLevel(L_VIRTUAL_FULL)
-      && jcr->file_bsock != nullptr) {
+      && jcr->file_bsock != nullptr && !has_precomputed_virtual_primary) {
     jcr->dir_impl->jr.PrimaryDataBytes = jcr->ReadBytes;
     bstrncpy(jcr->dir_impl->jr.PrimaryDataSource, "reported",
              sizeof(jcr->dir_impl->jr.PrimaryDataSource));

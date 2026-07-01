@@ -69,6 +69,12 @@ messages
 END_OF_DATA
 run_bconsole
 
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/virtualfull_primarydata.out
+.sql query="SELECT JobId,PrimaryDataSource,PrimaryDataBytes FROM Job WHERE JobId=${jobid}"
+END_OF_DATA
+run_bconsole
+
 expect_grep "0	0	A A A A A A A A A A A A A A	.*/" \
   "$tmp/virtualfull_bvfs.out" \
   "bvfs_update did not take into consideration VirtualFull Archive."
@@ -76,5 +82,17 @@ expect_grep "0	0	A A A A A A A A A A A A A A	.*/" \
 expect_grep "x9mlMotNz6zXMPiL2rDLrg	AI-Longterm" \
   "$tmp/virtualfull_bvfs.out" \
   ".bvfs_versions did not find a file backup up by a VirtualFull Archive."
+
+expect_grep "Virtual job will contain .* bytes primary data" \
+  "$tmp/virtualfull_messages.out" \
+  "VirtualFull primary-data summary message was not emitted."
+
+expect_grep "computed_virtual" \
+  "$tmp/virtualfull_primarydata.out" \
+  "VirtualFull Job.PrimaryDataSource was not set to computed_virtual."
+
+expect_grep "computed_virtual.*[1-9][0-9]*" \
+  "$tmp/virtualfull_primarydata.out" \
+  "VirtualFull Job.PrimaryDataBytes was not persisted as a positive value."
 
 end_test
