@@ -87,7 +87,7 @@ bool RecycleVolume(JobControlRecord* jcr, MediaDbRecord* mr)
 {
   bstrncpy(mr->VolStatus, "Recycle", sizeof(mr->VolStatus));
   mr->VolJobs = mr->VolFiles = mr->VolBlocks = mr->VolErrors = 0;
-  mr->VolBytes = 1;
+  mr->VolBytes = 0;
   mr->FirstWritten = mr->LastWritten = 0;
   mr->RecycleCount++;
   mr->set_first_written = true;
