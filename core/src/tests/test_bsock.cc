@@ -23,6 +23,7 @@
 
 #include "bsock_test.h"
 #include "create_resource.h"
+#include "lib/bauth.h"
 #include "lib/s_password.h"
 #include "lib/global_resource.h"
 #include "tests/bareos_test_sockets.h"

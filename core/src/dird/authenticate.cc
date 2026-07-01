@@ -33,6 +33,7 @@
 #include "dird.h"
 #include "include/version_hex.h"
 #include "include/version_numbers.h"
+#include "lib/bauth.h"
 #include "lib/default_console.h"
 #include "lib/hello.h"
 #include "lib/s_password.h"

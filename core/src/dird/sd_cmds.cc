@@ -40,6 +40,7 @@
 #include "dird/storage.h"
 #include "dird/ua_label.h"
 #include "dird/ua_server.h"
+#include "lib/bauth.h"
 #include "lib/bsock.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bnet.h"

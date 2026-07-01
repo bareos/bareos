@@ -26,6 +26,7 @@
  * Nicolas Boichat, August MMIV
  */
 
+#include "lib/bauth.h"
 #include "lib/hello.h"
 #include "monitoritem.h"
 #include "authenticate.h"
