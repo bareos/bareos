@@ -40,7 +40,7 @@
                 {{ t('Director') }}: {{ clientsListScopeDirector }}
               </q-chip>
             </div>
-            <q-table :rows="clients" :columns="columns" row-key="scopeKey" dense flat :loading="loading" :pagination="{ rowsPerPage: 15 }">
+            <q-table :rows="clients" :columns="columns" row-key="scopeKey" dense flat :loading="loading" v-model:pagination="clientsPagination">
               <template #body-cell-name="props">
                 <q-td :props="props">
                   <a href="#" class="text-primary" @click.prevent="openClientDetails(props.row)">
@@ -155,6 +155,7 @@ import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useReleaseInfoStore } from '../stores/releaseInfo.js'
+import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
@@ -173,6 +174,9 @@ const releaseInfo = useReleaseInfoStore()
 const router = useRouter()
 const $q = useQuasar()
 const { t } = useI18n()
+const clientsPagination = usePersistedTablePagination('clients.list', {
+  rowsPerPage: 15,
+})
 
 const rawClients = ref([])
 const loading    = ref(false)

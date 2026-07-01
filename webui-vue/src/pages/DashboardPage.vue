@@ -82,7 +82,7 @@
               row-key="scopeKey"
               dense flat
               :loading="loadingJobs"
-              :pagination="{ rowsPerPage: 10, sortBy: 'id', descending: true }"
+              v-model:pagination="recentJobsPagination"
             >
               <template #body-cell-id="props">
                 <q-td :props="props" class="text-right">
@@ -294,6 +294,7 @@ import {
   withJobsStatusFilterQuery,
 } from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
+import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -306,6 +307,11 @@ const settings = useSettingsStore()
 const $q = useQuasar()
 const router = useRouter()
 const { t } = useI18n()
+const recentJobsPagination = usePersistedTablePagination('dashboard.recentJobs', {
+  rowsPerPage: 10,
+  sortBy: 'id',
+  descending: true,
+})
 const fmtBytes = formatBytes
 const fmtSpeed = formatSpeed
 
