@@ -52,6 +52,30 @@ using namespace filedaemon;
 /* Imported Functions */
 extern void* handle_connection_request(void* dir_sock);
 
+static bool IsClientInitiatedOnlyModeConfigured()
+{
+  BareosResource* resource = nullptr;
+  bool has_outbound_director = false;
+  bool has_inbound_director = false;
+
+  while ((resource = my_config->GetNextRes(R_DIRECTOR, resource)) != nullptr) {
+    auto* director = dynamic_cast<DirectorResource*>(resource);
+    if (!director) { continue; }
+
+    if (director->conn_from_fd_to_dir) { has_outbound_director = true; }
+    if (director->conn_from_dir_to_fd) { has_inbound_director = true; }
+  }
+
+  return has_outbound_director && !has_inbound_director;
+}
+
+static void WaitUntilTerminated()
+{
+  // Without a listening socket server we still need to keep the daemon process
+  // alive so client-initiated connection threads can run.
+  for (;;) { Bmicrosleep(30, 0); }
+}
+
 
 static std::string pidfile_path{};
 
@@ -238,8 +262,14 @@ int main(int argc, char* argv[])
   // if configured, start threads and connect to Director.
   StartConnectToDirectorThreads();
 
-  // start socket server to listen for new connections.
-  StartSocketServer(me->FDaddrs);
+  // Start socket server only when inbound director connections are enabled.
+  if (IsClientInitiatedOnlyModeConfigured()) {
+    Pmsg0(000, T_("Client-initiated-only mode detected; "
+                  "skipping socket listener startup.\n"));
+    WaitUntilTerminated();
+  } else {
+    StartSocketServer(me->FDaddrs);
+  }
 
   TerminateFiled(BEXIT_SUCCESS);
   return BEXIT_SUCCESS;
