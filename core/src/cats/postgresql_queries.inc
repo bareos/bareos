@@ -1053,6 +1053,12 @@ client_detail AS (
     'Client ' || c.clientid AS client_anon,
     c.clientid AS client_id,
     f.fileset AS fileset,
+    CASE
+      WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+        THEN j.primarydatabytes::bigint
+      ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+    END AS primary_bytes,
+    GREATEST(j.jobbytes::bigint, 0) AS stored_bytes,
     (
       CASE
         WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
@@ -1065,6 +1071,49 @@ client_detail AS (
         THEN COALESCE(NULLIF(j.primarydatasource, ''), 'reported')
       ELSE 'legacy_fallback'
     END AS size_source,
+    CASE
+      WHEN (
+        CASE
+          WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+            THEN j.primarydatabytes::bigint
+          ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+        END
+      ) > 0
+        THEN GREATEST(j.jobbytes::bigint, 0)::NUMERIC
+             / (
+               CASE
+                 WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+                   THEN j.primarydatabytes::bigint
+                 ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+               END
+             )::NUMERIC
+      ELSE NULL
+    END AS effective_ratio,
+    CASE
+      WHEN (
+        CASE
+          WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+            THEN j.primarydatabytes::bigint
+          ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+        END
+      ) > 0
+        THEN 100.0
+             * (
+               1.0
+               - (
+                 GREATEST(j.jobbytes::bigint, 0)::NUMERIC
+                 / (
+                   CASE
+                     WHEN j.primarydatabytes IS NOT NULL
+                          AND j.primarydatabytes >= 0
+                       THEN j.primarydatabytes::bigint
+                     ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+                   END
+                 )::NUMERIC
+               )
+             )
+      ELSE NULL
+    END AS space_saving_percent,
     f.plugin AS plugin
   FROM job j
   INNER JOIN client c
@@ -1099,6 +1148,8 @@ client_aggregated AS (
       WHEN plugin IS NULL THEN 1
       ELSE COUNT(fileset)
     END as count,
+    SUM(primary_bytes) as primary_bytes,
+    SUM(stored_bytes) as stored_bytes,
     SUM(size_gb) as size_gb,
     CASE
       WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
@@ -1112,6 +1163,8 @@ plugin_aggregated AS (
   SELECT
     COALESCE(plugin, 'none (file data)') as plugin,
     SUM(count) as count,
+    SUM(primary_bytes) as primary_bytes,
+    SUM(stored_bytes) as stored_bytes,
     SUM(size_gb) as size_gb,
     CASE
       WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
@@ -1131,12 +1184,23 @@ SELECT
     ELSE 'count-based (' || t.size_units || ' volume-based < ' || t.count_units || ' count-based)'
   END AS accounting_mode,
   t.size_source,
+  CASE
+    WHEN t.primary_bytes > 0 THEN t.stored_bytes::NUMERIC / t.primary_bytes::NUMERIC
+    ELSE NULL
+  END AS effective_ratio,
+  CASE
+    WHEN t.primary_bytes > 0
+      THEN 100.0 * (1.0 - (t.stored_bytes::NUMERIC / t.primary_bytes::NUMERIC))
+    ELSE NULL
+  END AS space_saving_percent,
   GREATEST(t.count_units, t.size_units) AS used,
   configured_units as configured,
   configured_units - GREATEST(t.count_units, t.size_units) as remaining
 FROM (
   SELECT
     COALESCE(SUM(count), 0) AS count_units,
+    COALESCE(SUM(primary_bytes), 0) AS primary_bytes,
+    COALESCE(SUM(stored_bytes), 0) AS stored_bytes,
     CEIL(COALESCE(SUM(size_gb)/1000, 0.0)) AS size_units,
     CASE
       WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
@@ -1149,13 +1213,30 @@ FROM (
 
 /* 0082_subscription_units_3 */
 R"SQL(%s
-SELECT %s as client, plugin, count, size_gb::NUMERIC(20,2), size_source FROM (
+SELECT
+  %s as client,
+  plugin,
+  count,
+  size_gb::NUMERIC(20,2),
+  size_source,
+  CASE
+    WHEN primary_bytes > 0 THEN stored_bytes::NUMERIC / primary_bytes::NUMERIC
+    ELSE NULL
+  END AS effective_ratio,
+  CASE
+    WHEN primary_bytes > 0
+      THEN 100.0 * (1.0 - (stored_bytes::NUMERIC / primary_bytes::NUMERIC))
+    ELSE NULL
+  END AS space_saving_percent
+FROM (
   SELECT
     client_name,
     client_anon,
     client_id,
     plugin,
     SUM(count) AS count,
+    SUM(primary_bytes) AS primary_bytes,
+    SUM(stored_bytes) AS stored_bytes,
     SUM(size_gb) AS size_gb,
     CASE
       WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
@@ -1171,6 +1252,8 @@ SELECT %s as client, plugin, count, size_gb::NUMERIC(20,2), size_source FROM (
     0 as client_id,
     NULL AS plugin,
     SUM(count) AS count,
+    SUM(primary_bytes) AS primary_bytes,
+    SUM(stored_bytes) AS stored_bytes,
     SUM(size_gb) AS size_gb,
     CASE
       WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
@@ -1184,12 +1267,28 @@ ORDER BY t.order, t.%s, t.plugin;
 
 /* 0083_subscription_units_client_total_3 */
 R"SQL(%s
-SELECT %s as client, count, size_gb::NUMERIC(20,2), size_source FROM (
+SELECT
+  %s as client,
+  count,
+  size_gb::NUMERIC(20,2),
+  size_source,
+  CASE
+    WHEN primary_bytes > 0 THEN stored_bytes::NUMERIC / primary_bytes::NUMERIC
+    ELSE NULL
+  END AS effective_ratio,
+  CASE
+    WHEN primary_bytes > 0
+      THEN 100.0 * (1.0 - (stored_bytes::NUMERIC / primary_bytes::NUMERIC))
+    ELSE NULL
+  END AS space_saving_percent
+FROM (
   SELECT
     client_name,
     client_anon,
     client_id,
     SUM(count) AS count,
+    SUM(primary_bytes) AS primary_bytes,
+    SUM(stored_bytes) AS stored_bytes,
     SUM(size_gb) AS size_gb,
     CASE
       WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
@@ -1204,6 +1303,8 @@ SELECT %s as client, count, size_gb::NUMERIC(20,2), size_source FROM (
     'TOTAL' AS client_anon,
     0 as client_id,
     SUM(count) AS count,
+    SUM(primary_bytes) AS primary_bytes,
+    SUM(stored_bytes) AS stored_bytes,
     SUM(size_gb) AS size_gb,
     CASE
       WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
@@ -1221,11 +1322,22 @@ SELECT
   plugin,
   count,
   size_gb::NUMERIC(20,2),
-  size_source
+  size_source,
+  CASE
+    WHEN primary_bytes > 0 THEN stored_bytes::NUMERIC / primary_bytes::NUMERIC
+    ELSE NULL
+  END AS effective_ratio,
+  CASE
+    WHEN primary_bytes > 0
+      THEN 100.0 * (1.0 - (stored_bytes::NUMERIC / primary_bytes::NUMERIC))
+    ELSE NULL
+  END AS space_saving_percent
 FROM (
   SELECT
     plugin,
     count,
+    primary_bytes,
+    stored_bytes,
     size_gb,
     size_source,
     1 AS order 
@@ -1234,6 +1346,8 @@ FROM (
   SELECT
     'TOTAL' as plugin,
     SUM(count) as count,
+    SUM(primary_bytes) AS primary_bytes,
+    SUM(stored_bytes) AS stored_bytes,
     SUM(size_gb) AS size_gb,
     CASE
       WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
@@ -1251,7 +1365,9 @@ SELECT
   fileset,
   COALESCE(plugin, 'none (file data)') as plugin,
   size_gb::NUMERIC(20,2),
-  size_source
+  size_source,
+  effective_ratio::NUMERIC(20,2),
+  space_saving_percent::NUMERIC(20,2)
 FROM
   client_detail
 WHERE

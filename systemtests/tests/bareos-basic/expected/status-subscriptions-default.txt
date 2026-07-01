@@ -1,39 +1,41 @@
 status subscriptions
 
 Detailed backup unit report:
-+------------------+---------------------+-------+---------------+-----------------+
-| client           | plugin              | count | size_gb       | size_source     |
-+------------------+---------------------+-------+---------------+-----------------+
-| file-and-plugins | barri               |     1 |          1.00 | legacy_fallback |
-| file-and-plugins | bpipe               |     1 |          1.00 | legacy_fallback |
-| file-and-plugins | none (file data)    |     1 |          2.00 | legacy_fallback |
-| file-only        | none (file data)    |     1 |          3.00 | legacy_fallback |
-| native-plugins   | barri               |     2 |         11.00 | legacy_fallback |
-| native-plugins   | bpipe               |     1 |          1.00 | legacy_fallback |
-| native-plugins   | hyper-v             |     3 |        111.00 | legacy_fallback |
-| native-plugins   | mssqlvdi            |     4 |       1111.00 | legacy_fallback |
-| python-plugins   | ldap                |     1 |          0.09 | legacy_fallback |
-| python-plugins   | libcloud            |     1 |          0.80 | legacy_fallback |
-| python-plugins   | mariabackup         |     1 |          7.00 | legacy_fallback |
-| python-plugins   | ovirt               |     1 |         60.00 | legacy_fallback |
-| python-plugins   | percona             |     1 |        500.00 | legacy_fallback |
-| python-plugins   | postgres            |     1 |       4000.00 | legacy_fallback |
-| python-plugins   | proxmox             |     1 |      30000.00 | legacy_fallback |
-| python-plugins   | qumulo              |     1 |     200000.00 | legacy_fallback |
-| python-plugins   | vmware              |     1 |    1000000.00 | legacy_fallback |
-| special-syntax   | bridged             |     1 |          1.00 | legacy_fallback |
-| special-syntax   | custom-plugin       |     1 |          1.00 | legacy_fallback |
-| special-syntax   | my-gprc-plugin      |     1 |          1.00 | legacy_fallback |
-| special-syntax   | noprefix            |     1 |          1.00 | legacy_fallback |
-| special-syntax   | other python plugin |     1 |          1.00 | legacy_fallback |
-| two-barri-jobs   | barri               |     2 |          2.00 | legacy_fallback |
-| TOTAL            |                     |    30 |    1235815.89 | legacy_fallback |
-+------------------+---------------------+-------+---------------+-----------------+
++------------------+---------------------+-------+---------------+-----------------+-----------------------------------------------+-------------------------------------------------+
+| client           | plugin              | count | size_gb       | size_source     | effective_ratio                               | space_saving_percent                            |
++------------------+---------------------+-------+---------------+-----------------+-----------------------------------------------+-------------------------------------------------+
+| file-and-plugins | barri               |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| file-and-plugins | bpipe               |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| file-and-plugins | none (file data)    |     1 |          2.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| file-only        | none (file data)    |     1 |          3.00 | legacy_fallback |                        0.33333400000000000000 |                        66.666600000000000000000 |
+| native-plugins   | barri               |     2 |         11.00 | legacy_fallback |                    0.000000181818181818181818 |                    99.9999818181818181818182000 |
+| native-plugins   | bpipe               |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| native-plugins   | hyper-v             |     3 |        111.00 | legacy_fallback |                    0.000000027027027027027027 |                    99.9999972972972972972973000 |
+| native-plugins   | mssqlvdi            |     4 |       1111.00 | legacy_fallback |                0.0000000036003600360036003600 |                99.99999963996399639963996400000 |
+| python-plugins   | ldap                |     1 |          0.09 | legacy_fallback |                    0.000011111111111111111111 |                    99.9988888888888888888889000 |
+| python-plugins   | libcloud            |     1 |          0.80 | legacy_fallback |                    0.000001250000000000000000 |                    99.9998750000000000000000000 |
+| python-plugins   | mariabackup         |     1 |          7.00 | legacy_fallback |                    0.000000142857142857142857 |                    99.9999857142857142857143000 |
+| python-plugins   | ovirt               |     1 |         60.00 | legacy_fallback |                    0.000000016666666666666667 |                    99.9999983333333333333333000 |
+| python-plugins   | percona             |     1 |        500.00 | legacy_fallback |                0.0000000020000000000000000000 |                99.99999980000000000000000000000 |
+| python-plugins   | postgres            |     1 |       4000.00 | legacy_fallback |                0.0000000002500000000000000000 |                99.99999997500000000000000000000 |
+| python-plugins   | proxmox             |     1 |      30000.00 | legacy_fallback |                0.0000000000333333333333333333 |                99.99999999666666666666666667000 |
+| python-plugins   | qumulo              |     1 |     200000.00 | legacy_fallback |                0.0000000000050000000000000000 |                99.99999999950000000000000000000 |
+| python-plugins   | vmware              |     1 |    1000000.00 | legacy_fallback |            0.00000000000100000000000000000000 |            99.999999999900000000000000000000000 |
+| special-syntax   | bridged             |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| special-syntax   | custom-plugin       |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| special-syntax   | my-gprc-plugin      |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| special-syntax   | noprefix            |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| special-syntax   | other python plugin |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| two-barri-jobs   | barri               |     2 |          2.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| TOTAL            |                     |    30 |    1235815.89 | legacy_fallback |                    0.000000809207915266407523 |                    99.9999190792084733592477000 |
++------------------+---------------------+-------+---------------+-----------------+-----------------------------------------------+-------------------------------------------------+
 
 Backup unit summary:
- accounting_mode: volume-based (1236 volume-based units >= 30 count-based units)
-     size_source: legacy_fallback
-            used: 1,236
-      configured: 1,240
-       remaining: 4
+      accounting_mode: volume-based (1236 volume-based units >= 30 count-based units)
+          size_source: legacy_fallback
+      effective_ratio: 0.000000809207915266407523
+ space_saving_percent: 99.9999190792084733592477000
+                 used: 1,236
+           configured: 1,240
+            remaining: 4
 

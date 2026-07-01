@@ -8,25 +8,33 @@ status subscriptions client=file-and-plugins
         "fileset": "barri1",
         "plugin": "barri",
         "size_gb": "1.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.00",
+        "space_saving_percent": "100.00"
       },
       {
         "fileset": "bpipe1",
         "plugin": "bpipe",
         "size_gb": "1.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.00",
+        "space_saving_percent": "100.00"
       },
       {
         "fileset": "file1",
         "plugin": "none (file data)",
         "size_gb": "1.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.00",
+        "space_saving_percent": "100.00"
       },
       {
         "fileset": "file2",
         "plugin": "none (file data)",
         "size_gb": "1.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.00",
+        "space_saving_percent": "100.00"
       }
     ]
   }

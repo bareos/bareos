@@ -9,173 +9,223 @@ status subscriptions
         "plugin": "barri",
         "count": "1",
         "size_gb": "1.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001000000000000000000",
+        "space_saving_percent": "99.9999000000000000000000000"
       },
       {
         "client": "file-and-plugins",
         "plugin": "bpipe",
         "count": "1",
         "size_gb": "1.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001000000000000000000",
+        "space_saving_percent": "99.9999000000000000000000000"
       },
       {
         "client": "file-and-plugins",
         "plugin": "none (file data)",
         "count": "1",
         "size_gb": "2.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001000000000000000000",
+        "space_saving_percent": "99.9999000000000000000000000"
       },
       {
         "client": "file-only",
         "plugin": "none (file data)",
         "count": "1",
         "size_gb": "3.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.33333400000000000000",
+        "space_saving_percent": "66.666600000000000000000"
       },
       {
         "client": "native-plugins",
         "plugin": "barri",
         "count": "2",
         "size_gb": "11.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000000181818181818181818",
+        "space_saving_percent": "99.9999818181818181818182000"
       },
       {
         "client": "native-plugins",
         "plugin": "bpipe",
         "count": "1",
         "size_gb": "1.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001000000000000000000",
+        "space_saving_percent": "99.9999000000000000000000000"
       },
       {
         "client": "native-plugins",
         "plugin": "hyper-v",
         "count": "3",
         "size_gb": "111.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000000027027027027027027",
+        "space_saving_percent": "99.9999972972972972972973000"
       },
       {
         "client": "native-plugins",
         "plugin": "mssqlvdi",
         "count": "4",
         "size_gb": "1111.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.0000000036003600360036003600",
+        "space_saving_percent": "99.99999963996399639963996400000"
       },
       {
         "client": "python-plugins",
         "plugin": "ldap",
         "count": "1",
         "size_gb": "0.09",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000011111111111111111111",
+        "space_saving_percent": "99.9988888888888888888889000"
       },
       {
         "client": "python-plugins",
         "plugin": "libcloud",
         "count": "1",
         "size_gb": "0.80",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001250000000000000000",
+        "space_saving_percent": "99.9998750000000000000000000"
       },
       {
         "client": "python-plugins",
         "plugin": "mariabackup",
         "count": "1",
         "size_gb": "7.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000000142857142857142857",
+        "space_saving_percent": "99.9999857142857142857143000"
       },
       {
         "client": "python-plugins",
         "plugin": "ovirt",
         "count": "1",
         "size_gb": "60.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000000016666666666666667",
+        "space_saving_percent": "99.9999983333333333333333000"
       },
       {
         "client": "python-plugins",
         "plugin": "percona",
         "count": "1",
         "size_gb": "500.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.0000000020000000000000000000",
+        "space_saving_percent": "99.99999980000000000000000000000"
       },
       {
         "client": "python-plugins",
         "plugin": "postgres",
         "count": "1",
         "size_gb": "4000.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.0000000002500000000000000000",
+        "space_saving_percent": "99.99999997500000000000000000000"
       },
       {
         "client": "python-plugins",
         "plugin": "proxmox",
         "count": "1",
         "size_gb": "30000.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.0000000000333333333333333333",
+        "space_saving_percent": "99.99999999666666666666666667000"
       },
       {
         "client": "python-plugins",
         "plugin": "qumulo",
         "count": "1",
         "size_gb": "200000.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.0000000000050000000000000000",
+        "space_saving_percent": "99.99999999950000000000000000000"
       },
       {
         "client": "python-plugins",
         "plugin": "vmware",
         "count": "1",
         "size_gb": "1000000.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.00000000000100000000000000000000",
+        "space_saving_percent": "99.999999999900000000000000000000000"
       },
       {
         "client": "special-syntax",
         "plugin": "bridged",
         "count": "1",
         "size_gb": "1.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001000000000000000000",
+        "space_saving_percent": "99.9999000000000000000000000"
       },
       {
         "client": "special-syntax",
         "plugin": "custom-plugin",
         "count": "1",
         "size_gb": "1.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001000000000000000000",
+        "space_saving_percent": "99.9999000000000000000000000"
       },
       {
         "client": "special-syntax",
         "plugin": "my-gprc-plugin",
         "count": "1",
         "size_gb": "1.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001000000000000000000",
+        "space_saving_percent": "99.9999000000000000000000000"
       },
       {
         "client": "special-syntax",
         "plugin": "noprefix",
         "count": "1",
         "size_gb": "1.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001000000000000000000",
+        "space_saving_percent": "99.9999000000000000000000000"
       },
       {
         "client": "special-syntax",
         "plugin": "other python plugin",
         "count": "1",
         "size_gb": "1.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001000000000000000000",
+        "space_saving_percent": "99.9999000000000000000000000"
       },
       {
         "client": "two-barri-jobs",
         "plugin": "barri",
         "count": "2",
         "size_gb": "2.00",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001000000000000000000",
+        "space_saving_percent": "99.9999000000000000000000000"
       },
       {
         "client": "TOTAL",
         "plugin": "",
         "count": "30",
         "size_gb": "1235815.89",
-        "size_source": "legacy_fallback"
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000000809207915266407523",
+        "space_saving_percent": "99.9999190792084733592477000"
       }
     ],
     "unit-summary": {
       "accounting_mode": "volume-based (1236 volume-based units >= 30 count-based units)",
       "size_source": "legacy_fallback",
+      "effective_ratio": "0.000000809207915266407523",
+      "space_saving_percent": "99.9999190792084733592477000",
       "used": "1236",
       "configured": "1240",
       "remaining": "4"

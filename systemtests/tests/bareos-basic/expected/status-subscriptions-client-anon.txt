@@ -1,23 +1,25 @@
 status subscriptions clients anonymize
 
 Backup unit report aggregated by client:
-+--------------+-------+---------------+-----------------+
-| client       | count | size_gb       | size_source     |
-+--------------+-------+---------------+-----------------+
-| Client 10000 |     1 |          3.00 | legacy_fallback |
-| Client 10001 |     2 |          2.00 | legacy_fallback |
-| Client 10002 |     3 |          4.00 | legacy_fallback |
-| Client 10003 |    10 |       1234.00 | legacy_fallback |
-| Client 10004 |     9 |    1234567.89 | legacy_fallback |
-| Client 10005 |     5 |          5.00 | legacy_fallback |
-| TOTAL        |    30 |    1235815.89 | legacy_fallback |
-+--------------+-------+---------------+-----------------+
++--------------+-------+---------------+-----------------+-----------------------------------------+--------------------------------------------+
+| client       | count | size_gb       | size_source     | effective_ratio                         | space_saving_percent                       |
++--------------+-------+---------------+-----------------+-----------------------------------------+--------------------------------------------+
+| Client 10000 |     1 |          3.00 | legacy_fallback |                  0.33333400000000000000 |                   66.666600000000000000000 |
+| Client 10001 |     2 |          2.00 | legacy_fallback |              0.000001000000000000000000 |               99.9999000000000000000000000 |
+| Client 10002 |     3 |          4.00 | legacy_fallback |              0.000001000000000000000000 |               99.9999000000000000000000000 |
+| Client 10003 |    10 |       1234.00 | legacy_fallback |          0.0000000081037277147487844408 |           99.99999918962722852512155592000 |
+| Client 10004 |     9 |    1234567.89 | legacy_fallback |          0.0000000000072900000663390006 |           99.99999999927099999336609994000 |
+| Client 10005 |     5 |          5.00 | legacy_fallback |              0.000001000000000000000000 |               99.9999000000000000000000000 |
+| TOTAL        |    30 |    1235815.89 | legacy_fallback |              0.000000809207915266407523 |               99.9999190792084733592477000 |
++--------------+-------+---------------+-----------------+-----------------------------------------+--------------------------------------------+
 For a detailed per-client report run 'status subscriptions client=<client-name>'
 
 Backup unit summary:
- accounting_mode: volume-based (1236 volume-based units >= 30 count-based units)
-     size_source: legacy_fallback
-            used: 1,236
-      configured: 1,240
-       remaining: 4
+      accounting_mode: volume-based (1236 volume-based units >= 30 count-based units)
+          size_source: legacy_fallback
+      effective_ratio: 0.000000809207915266407523
+ space_saving_percent: 99.9999190792084733592477000
+                 used: 1,236
+           configured: 1,240
+            remaining: 4
 

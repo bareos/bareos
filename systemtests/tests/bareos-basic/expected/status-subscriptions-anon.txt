@@ -1,39 +1,41 @@
 status subscriptions anonymize
 
 Detailed backup unit report:
-+--------------+---------------------+-------+---------------+-----------------+
-| client       | plugin              | count | size_gb       | size_source     |
-+--------------+---------------------+-------+---------------+-----------------+
-| Client 10000 | none (file data)    |     1 |          3.00 | legacy_fallback |
-| Client 10001 | barri               |     2 |          2.00 | legacy_fallback |
-| Client 10002 | barri               |     1 |          1.00 | legacy_fallback |
-| Client 10002 | bpipe               |     1 |          1.00 | legacy_fallback |
-| Client 10002 | none (file data)    |     1 |          2.00 | legacy_fallback |
-| Client 10003 | barri               |     2 |         11.00 | legacy_fallback |
-| Client 10003 | bpipe               |     1 |          1.00 | legacy_fallback |
-| Client 10003 | hyper-v             |     3 |        111.00 | legacy_fallback |
-| Client 10003 | mssqlvdi            |     4 |       1111.00 | legacy_fallback |
-| Client 10004 | ldap                |     1 |          0.09 | legacy_fallback |
-| Client 10004 | libcloud            |     1 |          0.80 | legacy_fallback |
-| Client 10004 | mariabackup         |     1 |          7.00 | legacy_fallback |
-| Client 10004 | ovirt               |     1 |         60.00 | legacy_fallback |
-| Client 10004 | percona             |     1 |        500.00 | legacy_fallback |
-| Client 10004 | postgres            |     1 |       4000.00 | legacy_fallback |
-| Client 10004 | proxmox             |     1 |      30000.00 | legacy_fallback |
-| Client 10004 | qumulo              |     1 |     200000.00 | legacy_fallback |
-| Client 10004 | vmware              |     1 |    1000000.00 | legacy_fallback |
-| Client 10005 | bridged             |     1 |          1.00 | legacy_fallback |
-| Client 10005 | custom-plugin       |     1 |          1.00 | legacy_fallback |
-| Client 10005 | my-gprc-plugin      |     1 |          1.00 | legacy_fallback |
-| Client 10005 | noprefix            |     1 |          1.00 | legacy_fallback |
-| Client 10005 | other python plugin |     1 |          1.00 | legacy_fallback |
-| TOTAL        |                     |    30 |    1235815.89 | legacy_fallback |
-+--------------+---------------------+-------+---------------+-----------------+
++--------------+---------------------+-------+---------------+-----------------+-----------------------------------------------+-------------------------------------------------+
+| client       | plugin              | count | size_gb       | size_source     | effective_ratio                               | space_saving_percent                            |
++--------------+---------------------+-------+---------------+-----------------+-----------------------------------------------+-------------------------------------------------+
+| Client 10000 | none (file data)    |     1 |          3.00 | legacy_fallback |                        0.33333400000000000000 |                        66.666600000000000000000 |
+| Client 10001 | barri               |     2 |          2.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| Client 10002 | barri               |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| Client 10002 | bpipe               |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| Client 10002 | none (file data)    |     1 |          2.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| Client 10003 | barri               |     2 |         11.00 | legacy_fallback |                    0.000000181818181818181818 |                    99.9999818181818181818182000 |
+| Client 10003 | bpipe               |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| Client 10003 | hyper-v             |     3 |        111.00 | legacy_fallback |                    0.000000027027027027027027 |                    99.9999972972972972972973000 |
+| Client 10003 | mssqlvdi            |     4 |       1111.00 | legacy_fallback |                0.0000000036003600360036003600 |                99.99999963996399639963996400000 |
+| Client 10004 | ldap                |     1 |          0.09 | legacy_fallback |                    0.000011111111111111111111 |                    99.9988888888888888888889000 |
+| Client 10004 | libcloud            |     1 |          0.80 | legacy_fallback |                    0.000001250000000000000000 |                    99.9998750000000000000000000 |
+| Client 10004 | mariabackup         |     1 |          7.00 | legacy_fallback |                    0.000000142857142857142857 |                    99.9999857142857142857143000 |
+| Client 10004 | ovirt               |     1 |         60.00 | legacy_fallback |                    0.000000016666666666666667 |                    99.9999983333333333333333000 |
+| Client 10004 | percona             |     1 |        500.00 | legacy_fallback |                0.0000000020000000000000000000 |                99.99999980000000000000000000000 |
+| Client 10004 | postgres            |     1 |       4000.00 | legacy_fallback |                0.0000000002500000000000000000 |                99.99999997500000000000000000000 |
+| Client 10004 | proxmox             |     1 |      30000.00 | legacy_fallback |                0.0000000000333333333333333333 |                99.99999999666666666666666667000 |
+| Client 10004 | qumulo              |     1 |     200000.00 | legacy_fallback |                0.0000000000050000000000000000 |                99.99999999950000000000000000000 |
+| Client 10004 | vmware              |     1 |    1000000.00 | legacy_fallback |            0.00000000000100000000000000000000 |            99.999999999900000000000000000000000 |
+| Client 10005 | bridged             |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| Client 10005 | custom-plugin       |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| Client 10005 | my-gprc-plugin      |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| Client 10005 | noprefix            |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| Client 10005 | other python plugin |     1 |          1.00 | legacy_fallback |                    0.000001000000000000000000 |                    99.9999000000000000000000000 |
+| TOTAL        |                     |    30 |    1235815.89 | legacy_fallback |                    0.000000809207915266407523 |                    99.9999190792084733592477000 |
++--------------+---------------------+-------+---------------+-----------------+-----------------------------------------------+-------------------------------------------------+
 
 Backup unit summary:
- accounting_mode: volume-based (1236 volume-based units >= 30 count-based units)
-     size_source: legacy_fallback
-            used: 1,236
-      configured: 1,240
-       remaining: 4
+      accounting_mode: volume-based (1236 volume-based units >= 30 count-based units)
+          size_source: legacy_fallback
+      effective_ratio: 0.000000809207915266407523
+ space_saving_percent: 99.9999190792084733592477000
+                 used: 1,236
+           configured: 1,240
+            remaining: 4
 
