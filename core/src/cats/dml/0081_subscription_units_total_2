@@ -10,6 +10,7 @@ SELECT
     WHEN t.size_units >= t.count_units THEN 'volume-based (' || t.size_units || ' volume-based units >= ' || t.count_units || ' count-based units)'
     ELSE 'count-based (' || t.size_units || ' volume-based < ' || t.count_units || ' count-based)'
   END AS accounting_mode,
+  t.size_source,
   GREATEST(t.count_units, t.size_units) AS used,
   configured_units as configured,
   configured_units - GREATEST(t.count_units, t.size_units) as remaining
@@ -17,6 +18,10 @@ FROM (
   SELECT
     COALESCE(SUM(count), 0) AS count_units,
     CEIL(COALESCE(SUM(size_gb)/1000, 0.0)) AS size_units,
+    CASE
+      WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
+      ELSE 'mixed'
+    END AS size_source,
     %u AS configured_units
   FROM client_aggregated
 ) t

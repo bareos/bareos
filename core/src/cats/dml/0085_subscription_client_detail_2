@@ -8,7 +8,8 @@
 SELECT
   fileset,
   COALESCE(plugin, 'none (file data)') as plugin,
-  size_gb::NUMERIC(20,2)
+  size_gb::NUMERIC(20,2),
+  size_source
 FROM
   client_detail
 WHERE

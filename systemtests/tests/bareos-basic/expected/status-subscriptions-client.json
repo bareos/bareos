@@ -7,41 +7,49 @@ status subscriptions clients
       {
         "client": "file-and-plugins",
         "count": "3",
-        "size_gb": "4.00"
+        "size_gb": "4.00",
+        "size_source": "legacy_fallback"
       },
       {
         "client": "file-only",
         "count": "1",
-        "size_gb": "3.00"
+        "size_gb": "3.00",
+        "size_source": "legacy_fallback"
       },
       {
         "client": "native-plugins",
         "count": "10",
-        "size_gb": "1234.00"
+        "size_gb": "1234.00",
+        "size_source": "legacy_fallback"
       },
       {
         "client": "python-plugins",
         "count": "9",
-        "size_gb": "1234567.89"
+        "size_gb": "1234567.89",
+        "size_source": "legacy_fallback"
       },
       {
         "client": "special-syntax",
         "count": "5",
-        "size_gb": "5.00"
+        "size_gb": "5.00",
+        "size_source": "legacy_fallback"
       },
       {
         "client": "two-barri-jobs",
         "count": "2",
-        "size_gb": "2.00"
+        "size_gb": "2.00",
+        "size_source": "legacy_fallback"
       },
       {
         "client": "TOTAL",
         "count": "30",
-        "size_gb": "1235815.89"
+        "size_gb": "1235815.89",
+        "size_source": "legacy_fallback"
       }
     ],
     "unit-summary": {
       "accounting_mode": "volume-based (1236 volume-based units >= 30 count-based units)",
+      "size_source": "legacy_fallback",
       "used": "1236",
       "configured": "1240",
       "remaining": "4"

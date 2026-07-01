@@ -48,6 +48,8 @@ Primary data accounting correction plan
 7. Tests and fixtures
 - Update status subscriptions tests and expected text/json fixtures.
 - Add coverage for virtual primary computation and source labels.
+- Add a deterministic virtual-job accounting test that verifies the exact
+  expected primary-byte total (not just non-zero or source label presence).
 - Add plugin migration tests and warning trigger checks.
 - Add stream-order tests for metadata packets written after payload.
 - Add explicit catalog-upgrade validation for existing databases:

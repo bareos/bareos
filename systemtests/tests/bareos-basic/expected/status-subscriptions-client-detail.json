@@ -7,22 +7,26 @@ status subscriptions client=file-and-plugins
       {
         "fileset": "barri1",
         "plugin": "barri",
-        "size_gb": "1.00"
+        "size_gb": "1.00",
+        "size_source": "legacy_fallback"
       },
       {
         "fileset": "bpipe1",
         "plugin": "bpipe",
-        "size_gb": "1.00"
+        "size_gb": "1.00",
+        "size_source": "legacy_fallback"
       },
       {
         "fileset": "file1",
         "plugin": "none (file data)",
-        "size_gb": "1.00"
+        "size_gb": "1.00",
+        "size_source": "legacy_fallback"
       },
       {
         "fileset": "file2",
         "plugin": "none (file data)",
-        "size_gb": "1.00"
+        "size_gb": "1.00",
+        "size_source": "legacy_fallback"
       }
     ]
   }

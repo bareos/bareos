@@ -1053,7 +1053,18 @@ client_detail AS (
     'Client ' || c.clientid AS client_anon,
     c.clientid AS client_id,
     f.fileset AS fileset,
-    GREATEST(j.readbytes::bigint, j.jobbytes::bigint) / 10^9 AS size_gb,
+    (
+      CASE
+        WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+          THEN j.primarydatabytes::bigint
+        ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+      END
+    ) / 10^9 AS size_gb,
+    CASE
+      WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+        THEN COALESCE(NULLIF(j.primarydatasource, ''), 'reported')
+      ELSE 'legacy_fallback'
+    END AS size_source,
     f.plugin AS plugin
   FROM job j
   INNER JOIN client c
@@ -1069,7 +1080,13 @@ client_detail AS (
     WHERE level = 'F'
       AND j.jobstatus IN ('T','W')
       AND j.type = 'B'
-      AND j.jobbytes > 0
+      AND (
+        CASE
+          WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+            THEN j.primarydatabytes::bigint
+          ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+        END
+      ) > 0
     GROUP BY j.clientid, f.fileset
   )
 ),
@@ -1083,6 +1100,10 @@ client_aggregated AS (
       ELSE COUNT(fileset)
     END as count,
     SUM(size_gb) as size_gb,
+    CASE
+      WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
+      ELSE 'mixed'
+    END as size_source,
     COALESCE(plugin, 'none (file data)') as plugin
   FROM client_detail
   GROUP BY client_name, client_anon, client_id, plugin
@@ -1091,7 +1112,11 @@ plugin_aggregated AS (
   SELECT
     COALESCE(plugin, 'none (file data)') as plugin,
     SUM(count) as count,
-    SUM(size_gb) as size_gb
+    SUM(size_gb) as size_gb,
+    CASE
+      WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
+      ELSE 'mixed'
+    END as size_source
   FROM client_aggregated
   GROUP BY plugin
   ORDER BY plugin
@@ -1105,6 +1130,7 @@ SELECT
     WHEN t.size_units >= t.count_units THEN 'volume-based (' || t.size_units || ' volume-based units >= ' || t.count_units || ' count-based units)'
     ELSE 'count-based (' || t.size_units || ' volume-based < ' || t.count_units || ' count-based)'
   END AS accounting_mode,
+  t.size_source,
   GREATEST(t.count_units, t.size_units) AS used,
   configured_units as configured,
   configured_units - GREATEST(t.count_units, t.size_units) as remaining
@@ -1112,6 +1138,10 @@ FROM (
   SELECT
     COALESCE(SUM(count), 0) AS count_units,
     CEIL(COALESCE(SUM(size_gb)/1000, 0.0)) AS size_units,
+    CASE
+      WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
+      ELSE 'mixed'
+    END AS size_source,
     %u AS configured_units
   FROM client_aggregated
 ) t
@@ -1119,7 +1149,7 @@ FROM (
 
 /* 0082_subscription_units_3 */
 R"SQL(%s
-SELECT %s as client, plugin, count, size_gb::NUMERIC(20,2) FROM (
+SELECT %s as client, plugin, count, size_gb::NUMERIC(20,2), size_source FROM (
   SELECT
     client_name,
     client_anon,
@@ -1127,6 +1157,10 @@ SELECT %s as client, plugin, count, size_gb::NUMERIC(20,2) FROM (
     plugin,
     SUM(count) AS count,
     SUM(size_gb) AS size_gb,
+    CASE
+      WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
+      ELSE 'mixed'
+    END AS size_source,
     1 AS order
   FROM client_aggregated
   GROUP BY client_name, client_anon, client_id, plugin
@@ -1138,6 +1172,10 @@ SELECT %s as client, plugin, count, size_gb::NUMERIC(20,2) FROM (
     NULL AS plugin,
     SUM(count) AS count,
     SUM(size_gb) AS size_gb,
+    CASE
+      WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
+      ELSE 'mixed'
+    END AS size_source,
     2 AS order
   FROM client_aggregated
 ) t
@@ -1146,13 +1184,17 @@ ORDER BY t.order, t.%s, t.plugin;
 
 /* 0083_subscription_units_client_total_3 */
 R"SQL(%s
-SELECT %s as client, count, size_gb::NUMERIC(20,2) FROM (
+SELECT %s as client, count, size_gb::NUMERIC(20,2), size_source FROM (
   SELECT
     client_name,
     client_anon,
     client_id,
     SUM(count) AS count,
     SUM(size_gb) AS size_gb,
+    CASE
+      WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
+      ELSE 'mixed'
+    END AS size_source,
     1 AS order
   FROM client_aggregated
   GROUP BY client_name, client_anon, client_id
@@ -1163,6 +1205,10 @@ SELECT %s as client, count, size_gb::NUMERIC(20,2) FROM (
     0 as client_id,
     SUM(count) AS count,
     SUM(size_gb) AS size_gb,
+    CASE
+      WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
+      ELSE 'mixed'
+    END AS size_source,
     2 AS order
   FROM client_aggregated
 ) t
@@ -1174,12 +1220,14 @@ R"SQL(%s
 SELECT
   plugin,
   count,
-  size_gb::NUMERIC(20,2)
+  size_gb::NUMERIC(20,2),
+  size_source
 FROM (
   SELECT
     plugin,
     count,
     size_gb,
+    size_source,
     1 AS order 
   FROM plugin_aggregated
   UNION
@@ -1187,6 +1235,10 @@ FROM (
     'TOTAL' as plugin,
     SUM(count) as count,
     SUM(size_gb) AS size_gb,
+    CASE
+      WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
+      ELSE 'mixed'
+    END AS size_source,
     2 AS order
   FROM plugin_aggregated
 ) t
@@ -1198,7 +1250,8 @@ R"SQL(%s
 SELECT
   fileset,
   COALESCE(plugin, 'none (file data)') as plugin,
-  size_gb::NUMERIC(20,2)
+  size_gb::NUMERIC(20,2),
+  size_source
 FROM
   client_detail
 WHERE
