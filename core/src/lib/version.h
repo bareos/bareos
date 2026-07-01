@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2010-2017 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,13 +24,15 @@
 #ifndef BAREOS_LIB_VERSION_H_
 #define BAREOS_LIB_VERSION_H_
 
+#include <charconv>
+#include <cstdint>
+#include <optional>
+#include <stdexcept>
+#include <string>
 #include <stddef.h>
 #include <stdio.h>
+#include <tuple>
 #include "include/dll_import_export.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 struct BareosVersionStrings {
   const char* Full;
@@ -50,9 +52,86 @@ struct BareosVersionStrings {
 };
 BAREOS_IMPORT const struct BareosVersionStrings kBareosVersionStrings;
 
-#ifdef __cplusplus
+struct BareosVersion {
+  std::uint8_t Major;
+  std::uint8_t Minor;
+  std::uint8_t Patch;
+  std::string prerelease_version{};
+
+  auto operator<=>(const BareosVersion&) const = default;
+
+  static std::optional<BareosVersion> try_parse(std::string_view full_version)
+  {
+    // the format of the full version is
+    // $Major.$Minor.$Patch[~pre$PreRelease][.dirty]
+
+    auto split = [](std::string_view v, char c, bool* found = nullptr)
+        -> std::pair<std::string_view, std::string_view> {
+      auto pos = v.find(c);
+
+      if (found) { *found = pos != v.npos; }
+
+      if (pos == v.npos) { return {v, std::string_view{}}; }
+
+      return {v.substr(0, pos), v.substr(pos + 1)};
+    };
+
+    std::string_view rest = full_version;
+    std::string_view major, minor, patch, prerelease;
+
+    constexpr std::string_view dirty_suffix = ".dirty";
+    if (rest.ends_with(dirty_suffix)) {
+      // we do not care about dirty/not dirty
+      rest.remove_suffix(dirty_suffix.size());
+    }
+
+    std::tie(major, rest) = split(rest, '.');
+    std::tie(minor, rest) = split(rest, '.');
+
+    bool prerelease_expected = false;
+    std::tie(patch, prerelease) = split(rest, '~', &prerelease_expected);
+
+    if (major.empty() || minor.empty() || patch.empty()) {
+      // these parts are required
+      return std::nullopt;
+    }
+
+    if (prerelease_expected) {
+      if (!prerelease.starts_with("pre")) { return std::nullopt; }
+      prerelease.remove_prefix(3);
+      if (prerelease.empty()) { return std::nullopt; }
+    }
+
+    auto full_parse = [](std::string_view v, std::uint8_t& value) -> bool {
+      auto res = std::from_chars(v.data(), v.data() + v.size(), value);
+
+      if (res.ec != std::errc{} || res.ptr != v.data() + v.size()) {
+        return false;
+      }
+      return true;
+    };
+
+    BareosVersion result;
+    result.prerelease_version = std::string{prerelease};
+
+    if (!full_parse(major, result.Major) || !full_parse(minor, result.Minor)
+        || !full_parse(patch, result.Patch)) {
+      return std::nullopt;
+    }
+
+    return std::optional{std::move(result)};
+  }
+
+  static BareosVersion parse(std::string_view full_version)
+  {
+    std::optional version = try_parse(full_version);
+    if (!version) { throw std::runtime_error{"Bad full version"}; }
+
+    return std::move(*version);
+  }
 };
-#endif
+
+BAREOS_IMPORT const BareosVersion kBareosVersion;
 
 /* Debug flags not normally turned on */
 
