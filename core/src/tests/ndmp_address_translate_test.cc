@@ -27,8 +27,13 @@
 #  include "include/bareos.h"
 #endif
 
+#include <cstring>
+
 #include "dird/dird.h"
 #include "dird/storage.h"
+#include "ndmp/ndmp4.h"
+#include "ndmp/ndmp9.h"
+#include "ndmp/ndmp4_translate.h"
 
 void print_smc_aa(smc_element_address_assignment smc_elem_aa)
 {
@@ -193,4 +198,46 @@ TEST(ndmp, element_addr_to_slot)
       kInvalidSlotNumber,
       directordaemon::GetBareosSlotNumberByElementAddress(
           &smc_elem_aa, directordaemon::slot_type_t::kSlotTypeStorage, 4010));
+}
+
+TEST(ndmp, ipv6_addr_roundtrip)
+{
+  constexpr unsigned char ipv6_addr_bytes[16] = {0x20, 0x01, 0x0d, 0xb8,
+                                                  0x00, 0x00, 0x00, 0x00,
+                                                  0x00, 0x00, 0x00, 0x00,
+                                                  0x00, 0x00, 0x00, 0x42};
+  ndmp4_tcp_ipv6_addr tcp_ipv6_addr[1] = {};
+  ndmp4_addr addr4 = {};
+  ndmp9_addr addr9 = {};
+  ndmp4_addr roundtrip_addr4 = {};
+
+  std::memcpy(tcp_ipv6_addr[0].ipv6_addr.ipv6_addr, ipv6_addr_bytes,
+              sizeof(ipv6_addr_bytes));
+  tcp_ipv6_addr[0].port = 10000;
+
+  addr4.addr_type = NDMP4_ADDR_TCP_IPV6;
+  addr4.ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_len = 1;
+  addr4.ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_val = tcp_ipv6_addr;
+
+  EXPECT_EQ(0, ndmp_4to9_addr(&addr4, &addr9));
+  ASSERT_EQ(NDMP9_ADDR_TCP_IPV6, addr9.addr_type);
+  EXPECT_EQ(10000, addr9.ndmp9_addr_u.tcp_ipv6_addr.port);
+  EXPECT_EQ(0,
+            std::memcmp(addr9.ndmp9_addr_u.tcp_ipv6_addr.ipv6_addr,
+                        ipv6_addr_bytes, sizeof(ipv6_addr_bytes)));
+
+  EXPECT_EQ(0, ndmp_9to4_addr(&addr9, &roundtrip_addr4));
+  ASSERT_EQ(NDMP4_ADDR_TCP_IPV6, roundtrip_addr4.addr_type);
+  ASSERT_EQ(1,
+            roundtrip_addr4.ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_len);
+  EXPECT_EQ(
+      10000,
+      roundtrip_addr4.ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_val[0].port);
+  EXPECT_EQ(0,
+            std::memcmp(roundtrip_addr4.ndmp4_addr_u.tcp_ipv6_addr
+                            .tcp_ipv6_addr_val[0]
+                            .ipv6_addr.ipv6_addr,
+                        ipv6_addr_bytes, sizeof(ipv6_addr_bytes)));
+
+  EXPECT_EQ(0, ndmp_9to4_addr_free(&roundtrip_addr4));
 }

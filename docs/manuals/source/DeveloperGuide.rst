@@ -13,6 +13,7 @@ Developer Guide
    DeveloperGuide/PythonPluginAPI.rst
    DeveloperGuide/platformsupport.rst
    DeveloperGuide/daemonprotocol.rst
+   DeveloperGuide/ndmp-cab-techdoc.rst
    DeveloperGuide/file.rst
    DeveloperGuide/storage.rst
    DeveloperGuide/catalog.rst

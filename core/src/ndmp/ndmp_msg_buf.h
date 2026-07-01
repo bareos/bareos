@@ -271,6 +271,9 @@ struct ndmp_msg_buf {
     ndmp4_config_get_tape_info_reply ndmp4_config_get_tape_info_reply_body;
     ndmp4_config_get_scsi_info_reply ndmp4_config_get_scsi_info_reply_body;
     ndmp4_config_get_server_info_reply ndmp4_config_get_server_info_reply_body;
+    ndmp4_config_get_ext_list_reply ndmp4_config_get_ext_list_reply_body;
+    ndmp4_config_set_ext_list_request ndmp4_config_set_ext_list_request_body;
+    ndmp4_config_set_ext_list_reply ndmp4_config_set_ext_list_reply_body;
     ndmp4_scsi_open_request ndmp4_scsi_open_request_body;
     ndmp4_scsi_open_reply ndmp4_scsi_open_reply_body;
     ndmp4_scsi_close_reply ndmp4_scsi_close_reply_body;
@@ -293,6 +296,8 @@ struct ndmp_msg_buf {
     ndmp4_data_get_state_reply ndmp4_data_get_state_reply_body;
     ndmp4_data_start_backup_request ndmp4_data_start_backup_request_body;
     ndmp4_data_start_backup_reply ndmp4_data_start_backup_reply_body;
+    ndmp4_data_start_backup_request ndmp4_cab_data_conn_prepare_request_body;
+    ndmp4_data_start_backup_reply ndmp4_cab_data_conn_prepare_reply_body;
     ndmp4_data_start_recover_request ndmp4_data_start_recover_request_body;
     ndmp4_data_start_recover_reply ndmp4_data_start_recover_reply_body;
     ndmp4_data_abort_reply ndmp4_data_abort_reply_body;
@@ -566,6 +571,8 @@ struct ndmp_xa_buf {
 #define MT_ndmp4_config_get_tape_info NDMP4_CONFIG_GET_TAPE_INFO
 #define MT_ndmp4_config_get_scsi_info NDMP4_CONFIG_GET_SCSI_INFO
 #define MT_ndmp4_config_get_server_info NDMP4_CONFIG_GET_SERVER_INFO
+#define MT_ndmp4_config_get_ext_list NDMP4_CONFIG_GET_EXT_LIST
+#define MT_ndmp4_config_set_ext_list NDMP4_CONFIG_SET_EXT_LIST
 #define MT_ndmp4_scsi_open NDMP4_SCSI_OPEN
 #define MT_ndmp4_scsi_close NDMP4_SCSI_CLOSE
 #define MT_ndmp4_scsi_get_state NDMP4_SCSI_GET_STATE
@@ -580,6 +587,7 @@ struct ndmp_xa_buf {
 #define MT_ndmp4_tape_execute_cdb NDMP4_TAPE_EXECUTE_CDB
 #define MT_ndmp4_data_get_state NDMP4_DATA_GET_STATE
 #define MT_ndmp4_data_start_backup NDMP4_DATA_START_BACKUP
+#define MT_ndmp4_cab_data_conn_prepare NDMP4_CAB_DATA_CONN_PREPARE
 #define MT_ndmp4_data_start_recover NDMP4_DATA_START_RECOVER
 #define MT_ndmp4_data_start_recover_filehist NDMP4_DATA_START_RECOVER_FILEHIST
 #define MT_ndmp4_data_abort NDMP4_DATA_ABORT

@@ -316,6 +316,8 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
 
   // copy our prepared ndmp_job into the session
   memcpy(&ndmp_sess.control_acb->job, &ndmp_job, sizeof(struct ndm_job_param));
+  ndmp_sess.control_acb->job.use_cab_extensions
+      = jcr->dir_impl->res.client->ndmp_cab;
 
 
   if (!fill_restore_environment_ndmp_native(jcr, current_fi,

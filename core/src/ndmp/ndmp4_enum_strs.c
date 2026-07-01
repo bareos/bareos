@@ -144,6 +144,8 @@ struct ndmp_enum_str_table ndmp4_message_table[] = {
         { "NDMP4_CONFIG_GET_TAPE_INFO", NDMP4_CONFIG_GET_TAPE_INFO, },
         { "NDMP4_CONFIG_GET_SCSI_INFO", NDMP4_CONFIG_GET_SCSI_INFO, },
         { "NDMP4_CONFIG_GET_SERVER_INFO",NDMP4_CONFIG_GET_SERVER_INFO, },
+        { "NDMP4_CONFIG_SET_EXT_LIST",  NDMP4_CONFIG_SET_EXT_LIST, },
+        { "NDMP4_CONFIG_GET_EXT_LIST",  NDMP4_CONFIG_GET_EXT_LIST, },
         { "NDMP4_SCSI_OPEN",            NDMP4_SCSI_OPEN, },
         { "NDMP4_SCSI_CLOSE",           NDMP4_SCSI_CLOSE, },
         { "NDMP4_SCSI_GET_STATE",       NDMP4_SCSI_GET_STATE, },
@@ -160,6 +162,7 @@ struct ndmp_enum_str_table ndmp4_message_table[] = {
         { "NDMP4_TAPE_EXECUTE_CDB",     NDMP4_TAPE_EXECUTE_CDB, },
         { "NDMP4_DATA_GET_STATE",       NDMP4_DATA_GET_STATE, },
         { "NDMP4_DATA_START_BACKUP",    NDMP4_DATA_START_BACKUP, },
+        { "NDMP4_CAB_DATA_CONN_PREPARE",NDMP4_CAB_DATA_CONN_PREPARE, },
         { "NDMP4_DATA_START_RECOVER",   NDMP4_DATA_START_RECOVER, },
         { "NDMP4_DATA_START_RECOVER_FILEHIST",
                                         NDMP4_DATA_START_RECOVER_FILEHIST, },
@@ -238,6 +241,7 @@ int ndmp4_addr_type_from_str(ndmp4_addr_type* valp, char* str)
 struct ndmp_enum_str_table ndmp4_addr_type_table[] = {
         { "NDMP4_ADDR_LOCAL",           NDMP4_ADDR_LOCAL, },
         { "NDMP4_ADDR_TCP",             NDMP4_ADDR_TCP, },
+        { "NDMP4_ADDR_TCP_IPV6",        NDMP4_ADDR_TCP_IPV6, },
         { "NDMP4_ADDR_RESERVED",        NDMP4_ADDR_RESERVED, },
         { "NDMP4_ADDR_IPC",             NDMP4_ADDR_IPC, },
         { 0 }

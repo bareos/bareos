@@ -87,6 +87,14 @@ ndmp_backup_format_option* ndmp_lookup_backup_format_options(
 // Validation functions.
 bool NdmpValidateClient(JobControlRecord* jcr)
 {
+  if (jcr->dir_impl->res.client->ndmp_cab
+      && jcr->dir_impl->res.client->Protocol != APT_NDMPV4) {
+    Jmsg(jcr, M_FATAL, 0,
+         T_("Client %s enables NdmpCab, but CAB requires NDMPv4.\n"),
+         jcr->dir_impl->res.client->resource_name_);
+    return false;
+  }
+
   switch (jcr->dir_impl->res.client->Protocol) {
     case APT_NDMPV2:
     case APT_NDMPV3:

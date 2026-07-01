@@ -280,6 +280,7 @@ class ClientResource
       = false; /* Ignore failed jobs when calculating quota */
   bool ndmp_use_lmdb
       = false; /* NDMP Protocol specific use LMDB for the FHDB or not */
+  bool ndmp_cab = false; /* Enable NetApp NDMP CAB on NDMPv4 clients */
   int64_t max_bandwidth = 0;                  /* Limit speed on this client */
   std::shared_ptr<RuntimeClientStatus> rcs{}; /* Runtime Client Status */
   ClientConnectionHandshakeMode connection_successful_handshake_

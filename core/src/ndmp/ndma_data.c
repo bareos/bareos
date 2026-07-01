@@ -741,6 +741,7 @@ void ndmda_send_data_read(struct ndm_session* sess,
 
   switch (addr_type) {
     case NDMP9_ADDR_TCP:
+    case NDMP9_ADDR_TCP_IPV6:
       ndma_notify_data_read(sess, offset, length);
       break;
 
