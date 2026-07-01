@@ -36,6 +36,7 @@
 #include "filed/dir_cmd.h"
 #include "filed/sd_cmds.h"
 #include "include/version_hex.h"
+#include "lib/bauth.h"
 #include "lib/bsock.h"
 #include "lib/bnet_server_tcp.h"
 #include "lib/thread_list.h"
