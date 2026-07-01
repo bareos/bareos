@@ -29,7 +29,9 @@
 
 
 #include <chrono>
+#include <filesystem>
 #include <future>
+#include <fstream>
 
 #define STORAGE_DAEMON 1
 #include "include/jcr.h"
@@ -52,6 +54,44 @@
 
 using namespace storagedaemon;
 
+namespace {
+
+std::filesystem::path CreateTempDirectory()
+{
+  const auto base = std::filesystem::temp_directory_path();
+  for (int i = 0; i < 100; ++i) {
+    const auto candidate = base / ("bareos-sd-backend-"
+                                   + std::to_string(
+                                       std::chrono::steady_clock::now()
+                                           .time_since_epoch()
+                                           .count())
+                                   + "-" + std::to_string(i));
+    std::error_code ec;
+    if (std::filesystem::create_directory(candidate, ec)) { return candidate; }
+  }
+
+  return {};
+}
+
+class TempDirectory {
+ public:
+  TempDirectory() : directory_(CreateTempDirectory()) {}
+  ~TempDirectory()
+  {
+    if (!directory_.empty()) {
+      std::error_code ec;
+      std::filesystem::remove_all(directory_, ec);
+    }
+  }
+
+  const std::filesystem::path& path() const { return directory_; }
+  bool valid() const { return !directory_.empty(); }
+
+ private:
+  std::filesystem::path directory_;
+};
+
+}  // namespace
 
 // Test that load and unloads a tape device.
 TEST_F(sd, backend_load_unload)
@@ -90,3 +130,43 @@ TEST_F(sd, backend_load_unload)
   Dmsg0(100, "cleanup\n");
   FreeJcr(jcr);
 }
+
+TEST(SdButil, IsLocalFilesystemVolumePath)
+{
+  EXPECT_FALSE(storagedaemon::IsLocalFilesystemVolumePath(nullptr));
+  EXPECT_FALSE(storagedaemon::IsLocalFilesystemVolumePath(""));
+  EXPECT_FALSE(storagedaemon::IsLocalFilesystemVolumePath(
+      "/path/that/does/not/exist/anywhere"));
+
+  TempDirectory temp_directory;
+  ASSERT_TRUE(temp_directory.valid());
+
+  const auto directory_path = temp_directory.path();
+  const auto file_path = directory_path / "direct-volume";
+  {
+    std::ofstream file(file_path);
+    ASSERT_TRUE(file.is_open());
+    file << "bareos";
+  }
+
+  const auto directory_with_separator
+      = directory_path.string()
+        + std::string(1, std::filesystem::path::preferred_separator);
+  const auto quoted_file_path = "\"" + file_path.string() + "\"";
+
+  EXPECT_TRUE(
+      storagedaemon::IsLocalFilesystemVolumePath(directory_path.c_str()));
+  EXPECT_TRUE(
+      storagedaemon::IsLocalFilesystemVolumePath(
+          directory_with_separator.c_str()));
+  EXPECT_TRUE(storagedaemon::IsLocalFilesystemVolumePath(file_path.c_str()));
+  EXPECT_TRUE(
+      storagedaemon::IsLocalFilesystemVolumePath(quoted_file_path.c_str()));
+}
+
+#if defined(HAVE_WIN32)
+TEST(SdButil, DirectoryNameKeepsWindowsDriveRoot)
+{
+  EXPECT_EQ(storagedaemon::DirectoryNameForTest("C:\\FileInRoot"), "C:\\");
+}
+#endif

@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
       ->type_name("<bootstrap>");
 
   std::string configFile;
-  bcopy_app
+  auto config_option = bcopy_app
       .add_option("-c,--config", configFile,
                   "Use <path> as configuration file or directory.")
       ->check(CLI::ExistingPath)
@@ -108,6 +108,7 @@ int main(int argc, char* argv[])
       .add_option("-D,--director", DirectorName,
                   "Specify a director name specified in the storage. "
                   "Configuration file for the Key Encryption Key selection.")
+      ->needs(config_option)
       ->type_name("<director>");
 
   AddDebugOptions(bcopy_app);
@@ -146,18 +147,18 @@ int main(int argc, char* argv[])
   bcopy_app
       .add_option("input-archive", input_archive,
                   "Specify the input device name "
-                  "(either as name of a Bareos Storage Daemon Device resource "
-                  "or identical to the "
-                  "Archive Device in a Bareos Storage Daemon Device resource).")
+                  "(either the name of a Bareos Storage Daemon Device "
+                  "resource, the Archive Device in such a resource, or a "
+                  "local file volume path).")
       ->type_name(" ");
 
   std::string output_archive;
   bcopy_app
       .add_option("output-archive", output_archive,
                   "Specify the output device name "
-                  "(either as name of a Bareos Storage Daemon Device resource "
-                  "or identical to the "
-                  "Archive Device in a Bareos Storage Daemon Device resource).")
+                  "(either the name of a Bareos Storage Daemon Device "
+                  "resource, the Archive Device in such a resource, or a "
+                  "local file volume path).")
       ->type_name(" ");
 
   ParseBareosApp(bcopy_app, argc, argv);
@@ -168,17 +169,28 @@ int main(int argc, char* argv[])
 
   working_directory = work_dir.c_str();
 
-  my_config = InitSdConfig(configFile.c_str(), M_CONFIG_ERROR);
-  ParseSdConfig(configFile.c_str(), M_CONFIG_ERROR);
-
   if (input_archive.empty()) {
+    LoadSdConfigIfAvailable(configFile.c_str());
     printf(T_("Missing input device. %sNothing done.\n"),
            AvailableDevicesListing().c_str());
     return BEXIT_CLI_PARSING_ERROR;
   } else if (output_archive.empty()) {
+    LoadSdConfigIfAvailable(configFile.c_str());
     printf(T_("Missing output device. %sNothing done.\n"),
            AvailableDevicesListing().c_str());
     return BEXIT_CLI_PARSING_ERROR;
+  }
+
+  const bool config_explicit = !configFile.empty();
+  const bool use_sd_config
+      = config_explicit
+        || !IsLocalFilesystemVolumePath(input_archive.c_str())
+        || !IsLocalFilesystemVolumePath(output_archive.c_str());
+
+  my_config = nullptr;
+  if (use_sd_config) {
+    my_config = InitSdConfig(configFile.c_str(), M_CONFIG_ERROR);
+    ParseSdConfig(configFile.c_str(), M_CONFIG_ERROR);
   }
 
 
@@ -195,10 +207,12 @@ int main(int argc, char* argv[])
     }
   }
 
-  LoadSdPlugins(me->plugin_directory, me->plugin_names);
+  if (my_config) {
+    LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
-  ReadCryptoCache(me->working_directory, "bareos-sd",
-                  GetFirstPortHostOrder(me->SDaddrs));
+    ReadCryptoCache(me->working_directory, "bareos-sd",
+                    GetFirstPortHostOrder(me->SDaddrs));
+  }
 
   // Setup and acquire input device for reading
   Dmsg0(100, "About to setup input jcr\n");
