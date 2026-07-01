@@ -531,6 +531,16 @@ TEST(ProxySession, FiltersMessagesNotificationFromCommandOutput)
             "You have messages.\n");
 }
 
+TEST(ProxySession, NormalizesConsoleTextForJson)
+{
+  std::string invalid_utf8 = "media ";
+  invalid_utf8.push_back(static_cast<char>(0xC3));
+  invalid_utf8.push_back('(');
+  invalid_utf8.push_back('\0');
+  invalid_utf8 += "name";
+  EXPECT_EQ(NormalizeJsonText(invalid_utf8), "media \xEF\xBF\xBD( name");
+}
+
 TEST(ProxySession, ListsConfiguredDirectors)
 {
   ProxyConfig config;
