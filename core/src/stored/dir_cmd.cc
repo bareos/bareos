@@ -74,6 +74,7 @@
 #include "lib/util.h"
 #include "lib/watchdog.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/version.h"
 #include "include/jcr.h"
 
 #include <memory>
@@ -1678,7 +1679,9 @@ static bool ReplicateCmd(JobControlRecord* jcr)
 
   storage_daemon_socket->InitBnetDump(
       my_config->CreateOwnQualifiedNameForNetworkDump());
-  storage_daemon_socket->fsend("Hello Start Storage Job %s\n", JobName);
+  storage_daemon_socket->fsend(
+      "Hello Start Storage Job %s Version=\"%u.%u.%u\"\n", JobName,
+      kBareosVersion.Major, kBareosVersion.Minor, kBareosVersion.Patch);
 
   if (!AuthenticateWithStoragedaemon(jcr)) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate Storage daemon.\n"));
@@ -1765,7 +1768,9 @@ static bool PassiveCmd(JobControlRecord* jcr)
 
   jcr->file_bsock = fd;
   fd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
-  fd->fsend("Hello Storage calling Start Job %s\n", jcr->Job);
+  fd->fsend("Hello Storage calling Start Job %s Version=\"%u.%u.%u\"\n",
+            jcr->Job, kBareosVersion.Major, kBareosVersion.Minor,
+            kBareosVersion.Patch);
   if (!AuthenticateWithFiledaemon(jcr)) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate File daemon.\n"));
     delete fd;

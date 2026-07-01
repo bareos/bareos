@@ -178,7 +178,7 @@ static struct s_fd_dir_cmds cmds[] = {
 
 // Commands send to director
 inline constexpr const char hello_client[]
-    = "Hello Client %s FdProtocolVersion=%d calling\n";
+    = "Hello Client %s FdProtocolVersion=%d calling Version=\"%u.%u.%u\"\n";
 
 // Responses received from the director
 inline constexpr const char OKversion[] = "1000 OK: %s Version: %s (%u %s %u)";
@@ -1461,7 +1461,9 @@ static bool StorageCmd(JobControlRecord* jcr)
 
   storage_daemon_socket->InitBnetDump(
       my_config->CreateOwnQualifiedNameForNetworkDump());
-  storage_daemon_socket->fsend("Hello Start Job %s\n", jcr->Job);
+  storage_daemon_socket->fsend("Hello Start Job %s Version=\"%u.%u.%u\"\n",
+                               jcr->Job, kBareosVersion.Major,
+                               kBareosVersion.Minor, kBareosVersion.Patch);
   if (!AuthenticateWithStoragedaemon(jcr)) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate Storage daemon.\n"));
     goto bail_out;
@@ -2043,7 +2045,9 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
 
   director_socket->InitBnetDump(
       my_config->CreateOwnQualifiedNameForNetworkDump());
-  director_socket->fsend(hello_client, my_name, FD_PROTOCOL_VERSION);
+  director_socket->fsend(hello_client, my_name, FD_PROTOCOL_VERSION,
+                         kBareosVersion.Major, kBareosVersion.Minor,
+                         kBareosVersion.Patch);
   if (!AuthenticateWithDirector(jcr, dir_res)) {
     jcr->dir_bsock = nullptr;
     return nullptr;
