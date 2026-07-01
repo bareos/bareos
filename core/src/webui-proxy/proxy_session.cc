@@ -75,7 +75,9 @@ JsonPtr MakeJsonArray()
 
 JsonPtr MakeJsonString(std::string_view value)
 {
-  JsonPtr string(json_stringn(value.data(), static_cast<size_t>(value.size())));
+  const std::string normalized = NormalizeJsonText(value);
+  JsonPtr string(
+      json_stringn(normalized.data(), static_cast<size_t>(normalized.size())));
   if (!string) { throw std::runtime_error("Failed to allocate JSON string"); }
   return string;
 }
@@ -105,6 +107,70 @@ std::string DumpJson(json_t* value)
   JsonDumpPtr raw(json_dumps(value, JSON_COMPACT));
   if (!raw) { throw std::runtime_error("Failed to serialize JSON"); }
   return raw.get();
+}
+
+std::string NormalizeJsonTextImpl(std::string_view text)
+{
+  constexpr char kReplacement[] = "\xEF\xBF\xBD";
+  std::string normalized;
+  normalized.reserve(text.size());
+
+  for (size_t i = 0; i < text.size();) {
+    const unsigned char c = static_cast<unsigned char>(text[i]);
+    if (c == 0x00) {
+      normalized.push_back(' ');
+      ++i;
+      continue;
+    }
+    if (c < 0x80) {
+      normalized.push_back(static_cast<char>(c));
+      ++i;
+      continue;
+    }
+
+    size_t sequence_length = 0;
+    bool valid = false;
+    unsigned char second = 0;
+    if (c >= 0xC2 && c <= 0xDF) {
+      sequence_length = 2;
+      valid = i + 1 < text.size();
+    } else if (c >= 0xE0 && c <= 0xEF) {
+      sequence_length = 3;
+      valid = i + 2 < text.size();
+    } else if (c >= 0xF0 && c <= 0xF4) {
+      sequence_length = 4;
+      valid = i + 3 < text.size();
+    }
+
+    if (valid) {
+      second = static_cast<unsigned char>(text[i + 1]);
+      valid = second >= 0x80 && second <= 0xBF;
+      if (valid && c == 0xE0) {
+        valid = second >= 0xA0;
+      } else if (valid && c == 0xED) {
+        valid = second <= 0x9F;
+      } else if (valid && c == 0xF0) {
+        valid = second >= 0x90;
+      } else if (valid && c == 0xF4) {
+        valid = second <= 0x8F;
+      }
+
+      for (size_t j = 2; valid && j < sequence_length; ++j) {
+        const unsigned char continuation
+            = static_cast<unsigned char>(text[i + j]);
+        valid = continuation >= 0x80 && continuation <= 0xBF;
+      }
+    }
+
+    if (valid) {
+      normalized.append(text.substr(i, sequence_length));
+      i += sequence_length;
+    } else {
+      normalized.append(kReplacement);
+      ++i;
+    }
+  }
+  return normalized;
 }
 
 std::optional<std::string_view> JsonStringField(const json_t* object,
@@ -704,6 +770,11 @@ void HandleReuseCredentialsRequest(int fd,
 }
 
 }  // namespace
+
+std::string NormalizeJsonText(std::string_view text)
+{
+  return NormalizeJsonTextImpl(text);
+}
 
 // ---------------------------------------------------------------------------
 // Session implementation
