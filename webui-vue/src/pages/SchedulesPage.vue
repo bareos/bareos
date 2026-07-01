@@ -669,13 +669,18 @@ const allScheduleOptions = computed(() =>
 )
 
 const visibleScheduleKeys = ref([])
+const scheduleSelectionInitialized = ref(false)
 
 watch(allScheduleOptions, (options) => {
-  for (const option of options) {
-    if (!visibleScheduleKeys.value.includes(option.key)) {
-      visibleScheduleKeys.value.push(option.key)
-    }
+  const optionKeys = new Set(options.map(option => option.key))
+
+  if (!scheduleSelectionInitialized.value) {
+    visibleScheduleKeys.value = options.map(option => option.key)
+    scheduleSelectionInitialized.value = true
+    return
   }
+
+  visibleScheduleKeys.value = visibleScheduleKeys.value.filter(key => optionKeys.has(key))
 })
 
 const runsByDate = computed(() => {
