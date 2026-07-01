@@ -1452,6 +1452,14 @@ void UpdateJobEndRecord(JobControlRecord* jcr)
   jcr->dir_impl->jr.JobFiles = jcr->JobFiles;
   jcr->dir_impl->jr.JobBytes = jcr->JobBytes;
   jcr->dir_impl->jr.ReadBytes = jcr->ReadBytes;
+  jcr->dir_impl->jr.PrimaryDataBytes = -1;
+  jcr->dir_impl->jr.PrimaryDataSource[0] = '\0';
+  if (jcr->is_JobType(JT_BACKUP) && !jcr->is_JobLevel(L_VIRTUAL_FULL)
+      && jcr->file_bsock != nullptr) {
+    jcr->dir_impl->jr.PrimaryDataBytes = jcr->ReadBytes;
+    bstrncpy(jcr->dir_impl->jr.PrimaryDataSource, "reported",
+             sizeof(jcr->dir_impl->jr.PrimaryDataSource));
+  }
   jcr->dir_impl->jr.VolSessionId = jcr->VolSessionId;
   jcr->dir_impl->jr.VolSessionTime = jcr->VolSessionTime;
   jcr->dir_impl->jr.JobErrors = jcr->JobErrors;

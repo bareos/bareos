@@ -124,6 +124,8 @@ struct JobDbRecord {
   uint32_t JobMissingFiles = 0;
   uint64_t JobBytes = 0;
   uint64_t ReadBytes = 0;
+  int64_t PrimaryDataBytes = -1; /**< <0 means NULL in catalog */
+  char PrimaryDataSource[32]{0};
   uint64_t JobSumTotalBytes = 0; /**< All jobs but this one */
   int PurgedFiles = 0;
   int HasBase = 0;
