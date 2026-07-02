@@ -640,18 +640,24 @@ Conflicts: mod_php_any
 %define www_daemon_group www
 %endif
 
-%description webui
+%package webui-php
+Summary:       Bareos Web User Interface
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common = %{version}
+Requires:      php-cli
+
+%description webui-php
 %{dscr}
 
 This package contains the webui (Bareos Web User Interface).
 
-%package webui-vue
+%package webui
 Summary:       Bareos Web User Interface (Vue)
 Group:         Productivity/Archiving/Backup
 Requires:      %{name}-webui-proxy = %{version}
 Requires:      httpd
 
-%description webui-vue
+%description webui
 %{dscr}
 
 This package contains the Vue-based Bareos Web User Interface.
@@ -1030,7 +1036,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %config(noreplace) /etc/bareos-webui/configuration.ini
 %config(noreplace) %{_apache_conf_dir}/bareos-webui-php.conf
 
-%files webui-vue
+%files webui
 %defattr(-,root,root,-)
 %doc webui-vue/tests/selenium
 %{_datadir}/%{name}-webui-vue/
