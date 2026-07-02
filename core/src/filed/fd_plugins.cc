@@ -752,6 +752,14 @@ bool PluginPostBackupFile(JobControlRecord* jcr,
   const char* plugin_name = sp->cmd ? sp->cmd : ff_pkt->plugin;
   const auto plugin_label = PluginCommandName(plugin_name);
 
+  Jmsg(jcr, M_WARNING, 0,
+       "TEMP bpipe debug: PluginPostBackupFile plugin=%s initial_size=%" PRId64
+       " final_size=%" PRId64 " read_before=%" PRIu64
+       " read_after=%" PRIu64 " unknown=%d\n",
+       plugin_label.c_str(), (int64_t)ff_pkt->statp.st_size,
+       (int64_t)sp->statp.st_size, read_bytes_before, jcr->ReadBytes,
+       initial_unknown_size);
+
   if (HasPostBackupFileCallback(plugin)) {
     bRC rc = PlugFunc(plugin)->postBackupFile(jcr->plugin_ctx, sp);
     if (rc != bRC_OK) {
@@ -761,6 +769,12 @@ bool PluginPostBackupFile(JobControlRecord* jcr,
   }
 
   ff_pkt->statp = sp->statp;
+
+  Jmsg(jcr, M_WARNING, 0,
+       "TEMP bpipe debug: PluginPostBackupFile after copy plugin=%s final_size=%"
+       PRId64 " read_delta=%" PRIu64 "\n",
+       plugin_label.c_str(), (int64_t)sp->statp.st_size,
+       jcr->ReadBytes - read_bytes_before);
 
   if (initial_unknown_size && sp->statp.st_size < 1
       && jcr->ReadBytes > read_bytes_before) {
@@ -2151,6 +2165,10 @@ static int MyPluginBclose(BareosFilePacket* bfd)
 
   PlugFunc(plugin)->pluginIO(jcr->plugin_ctx, &io);
   bfd->BErrNo = io.io_errno;
+  Jmsg(jcr, M_WARNING, 0,
+       "TEMP bpipe debug: plugin_bclose io status=%d errno=%d win32=%d "
+       "do_io_in_core=%d\n",
+       io.status, io.io_errno, io.win32, bfd->do_io_in_core);
 
   if (io.win32) {
     errno = b_errno_win32;

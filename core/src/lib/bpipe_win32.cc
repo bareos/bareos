@@ -531,6 +531,7 @@ int CloseBpipe(Bpipe* bpipe)
 {
   int rval = 0;
   int32_t remaining_wait = bpipe->wait;
+  DWORD exitCode = STILL_ACTIVE;
 
   // Close pipes
   if (bpipe->rfd) {
@@ -546,7 +547,6 @@ int CloseBpipe(Bpipe* bpipe)
     remaining_wait = INT32_MAX;
   }
   for (;;) {
-    DWORD exitCode;
     if (!GetExitCodeProcess((HANDLE)bpipe->worker_pid, &exitCode)) {
       const char* err = errorString();
 
@@ -572,6 +572,9 @@ int CloseBpipe(Bpipe* bpipe)
   }
 
   if (bpipe->timer_id) { StopChildTimer(bpipe->timer_id); }
+
+  Dmsg3(debuglevel, "CloseBpipe exitCode=%lu rval=%d wait=%d\n", exitCode,
+        rval, bpipe->wait);
 
   if (bpipe->rfd) { fclose(bpipe->rfd); }
 
