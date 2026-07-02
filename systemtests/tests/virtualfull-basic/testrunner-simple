@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -85,6 +85,14 @@ run_bconsole "${tmp}/bconcmds"
 
 check_log "${test_home}/virtual.out"
 
+virtual_jobid=$(grep -oE 'JobId=[0-9]+' "${test_home}/virtual.out" | tail -n 1 | cut -d= -f2)
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${test_home}/primary-data.out
+.sql query="SELECT JobId,PrimaryDataSource,PrimaryDataBytes FROM Job WHERE JobId=${virtual_jobid}"
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @# make sure we really restore the virtualfull
 @$out ${test_home}/restore.out
@@ -113,5 +121,24 @@ fi
 expect_grep "Consolidating JobIds 1,2 containing ${expected_file_count} files" \
   "${test_home}/virtual.out" \
   "Consolidation message was not emitted"
+
+expect_grep "Virtual job will contain .* bytes primary data" \
+  "${test_home}/virtual.out" \
+  "VirtualFull primary-data summary message was not emitted."
+
+expect_grep "computed_virtual" \
+  "${test_home}/primary-data.out" \
+  "VirtualFull Job.PrimaryDataSource was not set to computed_virtual."
+
+expect_grep "computed_virtual.*[1-9][0-9]*" \
+  "${test_home}/primary-data.out" \
+  "VirtualFull Job.PrimaryDataBytes was not persisted as a positive value."
+
+expected_primary_bytes=$(find "${BackupDirectory}" -type f -ls 2>/dev/null | awk '{sum += $7} END {print sum + 0}')
+actual_primary_bytes=$(awk '/computed_virtual/ {for (i = NF; i >= 1; i--) {token = $i; gsub(/[^0-9]/, "", token); if (token != "") {print token; break}}}' "${test_home}/primary-data.out" | tail -n 1)
+
+if [ -z "${actual_primary_bytes}" ] || [ "${actual_primary_bytes}" != "${expected_primary_bytes}" ]; then
+  set_error "VirtualFull Job.PrimaryDataBytes mismatch: expected ${expected_primary_bytes}, got ${actual_primary_bytes:-<empty>}"
+fi
 
 end_test

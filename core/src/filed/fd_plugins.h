@@ -333,6 +333,10 @@ void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, save_pkt* sp);
 bRC PluginOptionHandleFile(JobControlRecord* jcr,
                            FindFilesPacket* ff_pkt,
                            save_pkt* sp);
+bool PluginPostBackupFile(JobControlRecord* jcr,
+                          FindFilesPacket* ff_pkt,
+                          uint64_t read_bytes_before);
+void EmitPluginPostWriteWarnings(JobControlRecord* jcr);
 #endif
 
 #ifdef __cplusplus
@@ -420,6 +424,7 @@ typedef struct s_pluginFuncs {
   bRC (*setAcl)(PluginContext* ctx, acl_pkt* ap);
   bRC (*getXattr)(PluginContext* ctx, xattr_pkt* xp);
   bRC (*setXattr)(PluginContext* ctx, xattr_pkt* xp);
+  bRC (*postBackupFile)(PluginContext* ctx, save_pkt* sp);
 } PluginFunctions;
 
 #define PlugFunc(plugin) ((PluginFunctions*)(plugin->plugin_functions))

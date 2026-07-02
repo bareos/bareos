@@ -58,6 +58,7 @@
 #include "include/jcr.h"
 #include "lib/compression.h"
 #include "lib/serial.h"
+#include <unordered_map>
 
 namespace storagedaemon {
 extern bool ParseSdConfig(const char* configfile, int exit_code);
@@ -92,6 +93,16 @@ static alist<DelayedDataStream*>* delayed_streams = nullptr;
 static char* wbuf;            /* write buffer address */
 static uint32_t wsize;        /* write size */
 static uint64_t fileAddr = 0; /* file write address */
+
+/* Phase 8: Track metadata state per (session, file index). */
+static std::unordered_map<uint64_t, bool> hasInitialMetadata;
+static std::unordered_map<uint64_t, bool> sawDataBeforeInitialMetadata;
+
+static uint64_t MetadataKey(const DeviceRecord* rec)
+{
+  return (static_cast<uint64_t>(rec->VolSessionId) << 32)
+         | static_cast<uint32_t>(rec->FileIndex);
+}
 
 
 int main(int argc, char* argv[])
@@ -516,7 +527,17 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
   switch (rec->maskedStream) {
     case STREAM_UNIX_ATTRIBUTES:
-    case STREAM_UNIX_ATTRIBUTES_EX:
+    case STREAM_UNIX_ATTRIBUTES_EX: {
+      auto key = MetadataKey(rec);
+      bool has_initial_metadata = hasInitialMetadata[key];
+      bool saw_data_before_initial = sawDataBeforeInitialMetadata[key];
+      if (!has_initial_metadata && saw_data_before_initial) { return true; }
+      if (has_initial_metadata) {
+        Pmsg1(000, T_("Info: Late metadata for FileIndex %d\n"),
+              rec->FileIndex);
+      } else {
+        hasInitialMetadata[key] = true;
+      }
 
       /* If extracting, it was from previous stream, so
        * close the output file.
@@ -578,6 +599,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         }
       }
       break;
+    }
 
     case STREAM_RESTORE_OBJECT:
       /* nothing to do */
@@ -587,6 +609,11 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_FILE_DATA:
     case STREAM_SPARSE_DATA:
     case STREAM_WIN32_DATA:
+      /* Phase 8: Skip data if we haven't seen initial metadata for this file */
+      if (!hasInitialMetadata[MetadataKey(rec)]) {
+        sawDataBeforeInitialMetadata[MetadataKey(rec)] = true;
+        break;
+      }
 
       if (extract) {
         if (rec->maskedStream == STREAM_SPARSE_DATA) {
@@ -621,6 +648,10 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_COMPRESSED_DATA:
     case STREAM_SPARSE_COMPRESSED_DATA:
     case STREAM_WIN32_COMPRESSED_DATA:
+      if (!hasInitialMetadata[MetadataKey(rec)]) {
+        sawDataBeforeInitialMetadata[MetadataKey(rec)] = true;
+        break;
+      }
       if (extract) {
         if (rec->maskedStream == STREAM_SPARSE_GZIP_DATA
             || rec->maskedStream == STREAM_SPARSE_COMPRESSED_DATA) {

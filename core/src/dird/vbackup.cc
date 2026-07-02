@@ -48,11 +48,13 @@
 #include "dird/ua_server.h"
 #include "dird/ua_purge.h"
 #include "dird/vbackup.h"
+#include "lib/attribs.h"
 #include "lib/edit.h"
 #include "lib/util.h"
 #include "cats/sql.h"
 
 #include <algorithm>
+#include <limits>
 #include <vector>
 #include <string>
 
@@ -62,6 +64,27 @@ static const int dbglevel = 10;
 
 static bool CreateBootstrapFile(JobControlRecord& jcr,
                                 const std::string& jobids);
+
+namespace {
+struct VirtualBootstrapContext {
+  RestoreContext restore;
+  uint64_t primary_data_bytes = 0;
+};
+
+static bool IsPayloadBearingVirtualFile(const struct stat& statp)
+{
+  if (S_ISREG(statp.st_mode)) { return true; }
+
+  if (statp.st_size <= 0) { return false; }
+
+  return S_ISBLK(statp.st_mode) || S_ISCHR(statp.st_mode)
+         || S_ISFIFO(statp.st_mode)
+#ifdef S_ISSOCK
+         || S_ISSOCK(statp.st_mode)
+#endif
+      ;
+}
+}  // namespace
 
 class JobConsistencyChecker {
   enum
@@ -317,9 +340,19 @@ bool DoNativeVbackup(JobControlRecord* jcr)
     jcr->dir_impl->previous_jr.emplace(std::move(jr));
   }
 
+  jcr->dir_impl->jr.PrimaryDataBytes = -1;
+  jcr->dir_impl->jr.PrimaryDataSource[0] = '\0';
+
   if (!CreateBootstrapFile(*jcr, jobids)) {
     Jmsg(jcr, M_FATAL, 0, T_("Could not create bootstrap file\n"));
     return false;
+  }
+
+  if (jcr->dir_impl->jr.PrimaryDataBytes >= 0) {
+    Jmsg(jcr, M_INFO, 0,
+         "Virtual job will contain %" PRIu32 " files with %" PRIi64
+         " bytes primary data.\n",
+         jcr->dir_impl->ExpectedFiles, jcr->dir_impl->jr.PrimaryDataBytes);
   }
 
   Jmsg(jcr, M_INFO, 0,
@@ -540,15 +573,28 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
  */
 static int InsertBootstrapHandler(void* ctx, int, char** row)
 {
-  auto* rx = static_cast<RestoreContext*>(ctx);
-  RestoreBootstrapRecord* bsr = rx->bsr.get();
+  auto* vctx = static_cast<VirtualBootstrapContext*>(ctx);
+  RestoreBootstrapRecord* bsr = vctx->restore.bsr.get();
 
   // at least one file is found
-  rx->found = true;
+  vctx->restore.found = true;
 
   JobId_t JobId = str_to_int64(row[3]);
   int FileIndex = str_to_int64(row[2]);
   AddFindex(bsr, JobId, FileIndex);
+
+  if (FileIndex != 0 && row[4] && row[4][0] != '\0') {
+    struct stat statp{};
+    int32_t link_fi = 0;
+    DecodeStat(row[4], &statp, sizeof(statp), &link_fi);
+    if (IsPayloadBearingVirtualFile(statp) && statp.st_size > 0) {
+      auto size = static_cast<uint64_t>(statp.st_size);
+      auto remaining
+          = std::numeric_limits<uint64_t>::max() - vctx->primary_data_bytes;
+      vctx->primary_data_bytes += std::min(size, remaining);
+    }
+  }
+
   return 0;
 }
 
@@ -561,30 +607,37 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
   }
 
   PoolMem jobids_pm{jobids};
-  RestoreContext rx = {};
-  rx.bsr = std::make_unique<RestoreBootstrapRecord>();
-  rx.JobIds = jobids_pm.addr();
-
-  rx.found = false;
+  VirtualBootstrapContext vctx{};
+  vctx.restore.bsr = std::make_unique<RestoreBootstrapRecord>();
+  vctx.restore.JobIds = jobids_pm.addr();
+  vctx.restore.found = false;
 
   if (DbLocker _{jcr.db_batch}; !jcr.db_batch->GetFileList(
-          &jcr, rx.JobIds, false /* don't use md5 */, true /* use delta */,
-          InsertBootstrapHandler, &rx)) {
+          &jcr, vctx.restore.JobIds, false /* don't use md5 */,
+          true /* use delta */, InsertBootstrapHandler, &vctx)) {
     Jmsg(&jcr, M_ERROR, 0, "%s\n", jcr.db_batch->strerror());
   }
 
-  if (!rx.found) {
-    Jmsg(&jcr, M_ERROR, 0, "No files were found in the jobids %s\n", rx.JobIds);
+  if (!vctx.restore.found) {
+    Jmsg(&jcr, M_ERROR, 0, "No files were found in the jobids %s\n",
+         vctx.restore.JobIds);
     return false;
   }
 
   UaContext* ua = new_ua_context(&jcr);
-  AddVolumeInformationToBsr(ua, rx.bsr.get());
-  jcr.dir_impl->ExpectedFiles = WriteBsrFile(ua, rx);
+  AddVolumeInformationToBsr(ua, vctx.restore.bsr.get());
+  jcr.dir_impl->ExpectedFiles = WriteBsrFile(ua, vctx.restore);
   Dmsg1(10, "Found %" PRIu32 " files to consolidate.\n",
         jcr.dir_impl->ExpectedFiles);
   FreeUaContext(ua);
-  rx.bsr.reset(nullptr);
+  vctx.restore.bsr.reset(nullptr);
+
+  auto max_primary = static_cast<uint64_t>(std::numeric_limits<int64_t>::max());
+  jcr.dir_impl->jr.PrimaryDataBytes
+      = static_cast<int64_t>(std::min(vctx.primary_data_bytes, max_primary));
+  bstrncpy(jcr.dir_impl->jr.PrimaryDataSource, "computed_virtual",
+           sizeof(jcr.dir_impl->jr.PrimaryDataSource));
+
   return jcr.dir_impl->ExpectedFiles != 0;
 }
 

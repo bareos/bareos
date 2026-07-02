@@ -530,6 +530,7 @@ constexpr filedaemon::PluginFunctions my_functions = {
     .setAcl = &setAcl,
     .getXattr = &getXattr,
     .setXattr = &setXattr,
+    .postBackupFile = nullptr,
 };
 
 bool AmICompatibleWith(filedaemon::PluginApiDefinition* core_info)

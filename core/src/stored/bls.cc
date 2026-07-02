@@ -55,6 +55,7 @@
 #include "lib/parse_conf.h"
 #include "lib/compression.h"
 #include "lib/bareos_universal_initialiser.h"
+#include <unordered_map>
 
 namespace storagedaemon {
 extern bool ParseSdConfig(const char* configfile, int exit_code);
@@ -82,6 +83,15 @@ static Attributes* attr;
 
 static FindFilesPacket* ff;
 static BootStrapRecord* bsr = nullptr;
+
+/* Phase 8: Track metadata state per (session, file index). */
+static std::unordered_map<uint64_t, bool> hasInitialMetadata;
+
+static uint64_t MetadataKey(const DeviceRecord* record)
+{
+  return (static_cast<uint64_t>(record->VolSessionId) << 32)
+         | static_cast<uint32_t>(record->FileIndex);
+}
 
 int main(int argc, char* argv[])
 {
@@ -410,7 +420,16 @@ static bool RecordCb(DeviceControlRecord*, DeviceRecord* t_rec)
   // File Attributes stream
   switch (t_rec->maskedStream) {
     case STREAM_UNIX_ATTRIBUTES:
-    case STREAM_UNIX_ATTRIBUTES_EX:
+    case STREAM_UNIX_ATTRIBUTES_EX: {
+      auto key = MetadataKey(t_rec);
+      bool is_late_metadata = hasInitialMetadata[key];
+      if (is_late_metadata) {
+        Pmsg1(000, T_("Info: Late metadata for FileIndex %d\n"),
+              t_rec->FileIndex);
+      } else {
+        hasInitialMetadata[key] = true;
+      }
+
       if (!UnpackAttributesRecord(jcr, t_rec->Stream, t_rec->data,
                                   t_rec->data_len, attr)) {
         if (!forge_on) {
@@ -435,6 +454,7 @@ static bool RecordCb(DeviceControlRecord*, DeviceRecord* t_rec)
         num_files++;
       }
       break;
+    }
     default:
       if (g_verbose) {
         Pmsg1(-1, "%s\n", record_to_str(record_str, jcr, t_rec));

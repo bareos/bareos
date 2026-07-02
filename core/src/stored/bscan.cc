@@ -56,6 +56,7 @@
 #include "lib/util.h"
 #include "lib/version.h"
 #include "lib/compression.h"
+#include <unordered_map>
 
 /* Dummy functions */
 namespace storagedaemon {
@@ -130,6 +131,16 @@ static int num_pools = 0;
 static int num_media = 0;
 static int num_files = 0;
 static int num_restoreobjects = 0;
+
+/* Phase 8: Track metadata state per (session, file index). */
+static std::unordered_map<uint64_t, bool> hasInitialMetadata;
+static std::unordered_map<uint64_t, bool> sawDataBeforeInitialMetadata;
+
+static uint64_t MetadataKey(const DeviceRecord* rec)
+{
+  return (static_cast<uint64_t>(rec->VolSessionId) << 32)
+         | static_cast<uint32_t>(rec->FileIndex);
+}
 
 int main(int argc, char* argv[])
 {
@@ -768,7 +779,23 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
   // File Attributes stream
   switch (rec->maskedStream) {
     case STREAM_UNIX_ATTRIBUTES:
-    case STREAM_UNIX_ATTRIBUTES_EX:
+    case STREAM_UNIX_ATTRIBUTES_EX: {
+      auto key = MetadataKey(rec);
+      bool has_initial_metadata = hasInitialMetadata[key];
+      bool saw_data_before_initial = sawDataBeforeInitialMetadata[key];
+
+      if (!has_initial_metadata && saw_data_before_initial) {
+        FreeJcr(mjcr);
+        break;
+      }
+
+      if (has_initial_metadata) {
+        Pmsg1(000, T_("Info: Late metadata for FileIndex %d\n"),
+              rec->FileIndex);
+      } else {
+        hasInitialMetadata[key] = true;
+      }
+
       if (!UnpackAttributesRecord(my_bjcr, rec->Stream, rec->data,
                                   rec->data_len, attr)) {
         Emsg0(M_ERROR_TERM, 0, T_("Cannot continue.\n"));
@@ -795,6 +822,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
                                  attr->attr, rec);
       FreeJcr(mjcr);
       break;
+    }
 
     case STREAM_RESTORE_OBJECT:
       if (!UnpackRestoreObject(my_bjcr, rec->Stream, rec->data, rec->data_len,
@@ -821,6 +849,12 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_ENCRYPTED_FILE_DATA:
     case STREAM_ENCRYPTED_WIN32_DATA:
     case STREAM_ENCRYPTED_MACOS_FORK_DATA:
+      /* Phase 8: Skip data if we haven't seen initial metadata for this file */
+      if (!hasInitialMetadata[MetadataKey(rec)]) {
+        sawDataBeforeInitialMetadata[MetadataKey(rec)] = true;
+        FreeJcr(mjcr);
+        break;
+      }
       /* For encrypted stream, this is an approximation.
        * The data must be decrypted to know the correct length. */
       mjcr->JobBytes += rec->data_len;
@@ -837,6 +871,11 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_ENCRYPTED_FILE_COMPRESSED_DATA:
     case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
     case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA:
+      if (!hasInitialMetadata[MetadataKey(rec)]) {
+        sawDataBeforeInitialMetadata[MetadataKey(rec)] = true;
+        FreeJcr(mjcr);
+        break;
+      }
       // Not correct, we should (decrypt and) expand it.
       mjcr->JobBytes += rec->data_len;
       FreeJcr(mjcr);
@@ -844,6 +883,11 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
     case STREAM_SPARSE_GZIP_DATA:
     case STREAM_SPARSE_COMPRESSED_DATA:
+      if (!hasInitialMetadata[MetadataKey(rec)]) {
+        sawDataBeforeInitialMetadata[MetadataKey(rec)] = true;
+        FreeJcr(mjcr);
+        break;
+      }
       mjcr->JobBytes
           += rec->data_len
              - sizeof(uint64_t); /* Not correct, we should expand it */
