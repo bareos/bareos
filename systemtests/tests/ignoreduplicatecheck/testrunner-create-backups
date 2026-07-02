@@ -33,6 +33,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out ${NULL_DEV}
 messages
 @$out $tmp/full.out
+@exec "sh -c 'dd if=/dev/zero of=${tmp}/data/weird-files/migrate-padding.bin bs=1M count=32 status=none'"
 label volume=TestVolume001 storage=File pool=Full
 run job=ai-backup-bareos-fd level=Full yes
 wait jobid=${full_id}
