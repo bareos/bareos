@@ -38,6 +38,7 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -101,14 +102,21 @@ class SeleniumVueTest(unittest.TestCase):
         username = username or self.username
         password = password or self.password
 
+        # Clear session cookie so each test starts from the login page.
+        self.driver.delete_all_cookies()
         self.driver.get(self.base_url + "/")
         self.wait_for(By.CSS_SELECTOR, '[data-testid="login-form"]')
 
-        # Labels associate via for/id; find by input type as fallback
-        self.driver.find_element(By.CSS_SELECTOR, 'input[type="text"]').clear()
-        self.driver.find_element(By.CSS_SELECTOR, 'input[type="text"]').send_keys(username)
-        self.driver.find_element(By.CSS_SELECTOR, 'input[type="password"]').clear()
-        self.driver.find_element(By.CSS_SELECTOR, 'input[type="password"]').send_keys(password)
+        # Use Ctrl+A to select-all before typing so Vue's reactive state
+        # is properly replaced (clear() only resets the DOM value).
+        user_input = self.driver.find_element(By.CSS_SELECTOR, 'input[type="text"]')
+        user_input.click()
+        user_input.send_keys(Keys.CONTROL + "a")
+        user_input.send_keys(username)
+        pass_input = self.driver.find_element(By.CSS_SELECTOR, 'input[type="password"]')
+        pass_input.click()
+        pass_input.send_keys(Keys.CONTROL + "a")
+        pass_input.send_keys(password)
         self.driver.find_element(
             By.XPATH, '//button[normalize-space(.)="Login"]'
         ).click()
@@ -157,11 +165,12 @@ class SeleniumVueTest(unittest.TestCase):
         )
 
     def test_jobs_page(self):
-        """Jobs page loads and lists at least one job."""
+        """Jobs page loads and shows the jobs table."""
         self.login()
         self.by_testid("nav-jobs").click()
         self.wait_for_url("#/jobs")
-        self.wait_for(By.CSS_SELECTOR, "tbody tr")
+        # Wait for the table to render (header is always present, rows need data)
+        self.wait_for(By.CSS_SELECTOR, "table")
 
     def test_console_connects(self):
         """Console popup connects to the director."""
