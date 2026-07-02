@@ -173,12 +173,8 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
   Mmsg(cmd,
        "INSERT INTO PathVisibility (PathId, JobId) "
        "SELECT DISTINCT PathId, JobId "
-       "FROM (SELECT PathId, JobId FROM File WHERE JobId = %s "
-       "UNION "
-       "SELECT PathId, BaseFiles.JobId "
-       "FROM BaseFiles JOIN File AS F USING (FileId) "
-       "WHERE BaseFiles.JobId = %s) AS B",
-       jobid, jobid);
+       "FROM File WHERE JobId = %s",
+       jobid);
 
   if (!QueryDb(jcr, cmd)) {
     Dmsg1(dbglevel, "Can't fill PathVisibility %" PRIu32 "\n",
@@ -591,8 +587,8 @@ static void build_ls_files_query(JobControlRecord*,
                                  int64_t limit,
                                  int64_t offset)
 {
-  db->FillQuery<BareosDb::SQL_QUERY::bvfs_list_files>(
-      query, JobId, PathId, JobId, PathId, filter, limit, offset);
+  db->FillQuery<BareosDb::SQL_QUERY::bvfs_list_files>(query, JobId, PathId,
+                                                      filter, limit, offset);
 }
 
 // Returns true if we have files to read
@@ -763,20 +759,6 @@ bool Bvfs::compute_restore_list(char* fileid,
          tmp2.c_str(), jobids);
     query.strcat(tmp.c_str());
     init = true;
-
-    query.strcat(" UNION ");
-
-    /* A directory can have files from a BaseJob */
-    Mmsg(tmp,
-         "SELECT File.JobId, JobTDate, BaseFiles.FileIndex, "
-         "File.Name, File.PathId, BaseFiles.FileId "
-         "FROM BaseFiles "
-         "JOIN File USING (FileId) "
-         "JOIN Job ON (BaseFiles.JobId = Job.JobId) "
-         "JOIN Path USING (PathId) "
-         "WHERE Path.Path LIKE '%s' AND BaseFiles.JobId IN (%s) ",
-         tmp2.c_str(), jobids);
-    query.strcat(tmp.c_str());
   }
 
   /* expect jobid,fileindex */

@@ -126,7 +126,6 @@ struct JobDbRecord {
   uint64_t ReadBytes = 0;
   uint64_t JobSumTotalBytes = 0; /**< All jobs but this one */
   int PurgedFiles = 0;
-  int HasBase = 0;
 
   /* Note, FirstIndex, LastIndex, Start/End File and Block
    * are only used in the JobMedia record.
@@ -455,12 +454,6 @@ typedef enum
   SQL_INTERFACE_TYPE_UNKNOWN = 99
 } SQL_INTERFACETYPE;
 
-typedef enum
-{
-  SQL_TYPE_POSTGRESQL = 1,
-  SQL_TYPE_UNKNOWN = 99
-} SQL_DBTYPE;
-
 typedef void(DB_LIST_HANDLER)(void*, const char*);
 typedef int(DB_RESULT_HANDLER)(void*, int, char**);
 
@@ -471,7 +464,7 @@ class pathid_cache;
 #define QUERY_HTABLE_PAGES 128
 
 // Current database version number schema = 2000 + 10 * Major + Minor
-#define BDB_VERSION 2250
+#define BDB_VERSION 2260
 
 typedef char** SQL_ROW;
 
@@ -491,20 +484,19 @@ class BareosDb : public BareosDbQueryEnum {
  protected:
   brwlock_t lock_; /**< Transaction lock */
   SQL_INTERFACETYPE db_interface_type_
-      = SQL_INTERFACE_TYPE_UNKNOWN;       /**< Type of backend used */
-  SQL_DBTYPE db_type_ = SQL_TYPE_UNKNOWN; /**< Database type */
-  uint32_t ref_count_ = 0;                /**< Reference count */
-  bool connected_ = false;                /**< Connection made to db */
-  bool have_batch_insert_ = false;        /**< Have batch insert support ? */
-  bool try_reconnect_ = true;    /**< Try reconnecting DB connection ? */
-  bool exit_on_fatal_ = false;   /**< Exit on FATAL DB errors ? */
-  char* db_driver_ = nullptr;    /**< Database driver */
-  char* db_driverdir_ = nullptr; /**< Database driver dir */
-  char* db_name_ = nullptr;      /**< Database name */
-  char* db_user_ = nullptr;      /**< Database user */
-  char* db_address_ = nullptr;   /**< Host name address */
-  char* db_socket_ = nullptr;    /**< Socket for local access */
-  char* db_password_ = nullptr;  /**< Database password */
+      = SQL_INTERFACE_TYPE_UNKNOWN; /**< Type of backend used */
+  uint32_t ref_count_ = 0;          /**< Reference count */
+  bool connected_ = false;          /**< Connection made to db */
+  bool have_batch_insert_ = false;  /**< Have batch insert support ? */
+  bool try_reconnect_ = true;       /**< Try reconnecting DB connection ? */
+  bool exit_on_fatal_ = false;      /**< Exit on FATAL DB errors ? */
+  char* db_driver_ = nullptr;       /**< Database driver */
+  char* db_driverdir_ = nullptr;    /**< Database driver dir */
+  char* db_name_ = nullptr;         /**< Database name */
+  char* db_user_ = nullptr;         /**< Database user */
+  char* db_address_ = nullptr;      /**< Host name address */
+  char* db_socket_ = nullptr;       /**< Socket for local access */
+  char* db_password_ = nullptr;     /**< Database password */
   char* last_query_text_
       = nullptr;           /**< Last query text obtained from query table */
   int db_port_ = 0;        /**< Port for host name address */
@@ -618,7 +610,6 @@ class BareosDb : public BareosDbQueryEnum {
  private:
   bool CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
   bool CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
-  void CleanupBaseFile(JobControlRecord* jcr);
 
  public:
   bool CreateFileAttributesRecord(JobControlRecord* jcr,
@@ -638,10 +629,6 @@ class BareosDb : public BareosDbQueryEnum {
   bool CreateAttributesRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
   bool CreateRestoreObjectRecord(JobControlRecord* jcr,
                                  RestoreObjectDbRecord* ar);
-  bool CreateBaseFileAttributesRecord(JobControlRecord* jcr,
-                                      AttributesDbRecord* ar);
-  bool CommitBaseFileAttributesRecord(JobControlRecord* jcr);
-  bool CreateBaseFileList(JobControlRecord* jcr, const char* jobids);
   bool CreateQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr);
   bool CreateNdmpLevelMapping(JobControlRecord* jcr,
                               JobDbRecord* jr,
@@ -708,10 +695,6 @@ class BareosDb : public BareosDbQueryEnum {
  public:
   bool GetVolumeJobids(MediaDbRecord* mr, db_list_ctx* lst);
   bool GetMediaIdsInPool(PoolDbRecord* pool_record, std::vector<DBId_t>* lst);
-  bool GetBaseFileList(JobControlRecord* jcr,
-                       bool use_md5,
-                       DB_RESULT_HANDLER* ResultHandler,
-                       void* ctx);
   int GetPathRecord(JobControlRecord* jcr, const char* new_path);
   bool GetPoolRecord(JobControlRecord* jcr, PoolDbRecord* pdbr);
   bool GetStorageRecord(JobControlRecord* jcr, StorageDbRecord* sdbr);
@@ -751,14 +734,10 @@ class BareosDb : public BareosDbQueryEnum {
                    bool use_delta,
                    DB_RESULT_HANDLER* ResultHandler,
                    void* ctx);
-  bool GetBaseJobid(JobControlRecord* jcr, JobDbRecord* jr, JobId_t* jobid);
   bool AccurateGetJobids(JobControlRecord* jcr,
                          JobDbRecord* jr,
                          db_list_ctx* jobids);
   db_list_ctx FilterZeroFileJobs(db_list_ctx& jobids);
-  bool GetUsedBaseJobids(JobControlRecord* jcr,
-                         const char* jobids,
-                         db_list_ctx* result);
   bool GetQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr);
   bool get_quota_jobbytes(JobControlRecord* jcr,
                           JobDbRecord* jr,
@@ -879,10 +858,6 @@ class BareosDb : public BareosDbQueryEnum {
                          const char* jobids,
                          OutputFormatter* sendit,
                          e_list_type type);
-  void ListBaseFilesForJob(JobControlRecord* jcr,
-                           JobId_t jobid,
-                           OutputFormatter* sendit);
-
   /* sql_query.cc */
   static constexpr const char* get_predefined_query_name(
       BareosDb::SQL_QUERY query)
@@ -900,14 +875,18 @@ class BareosDb : public BareosDbQueryEnum {
   template <SQL_QUERY query, typename... Args>
   void FillQuery(POOLMEM*& storage, Args&&... args)
   {
-    printf_check(queries[static_cast<int>(query)], args...);
+    if constexpr (sizeof...(Args) > 0) {
+      printf_check(queries[static_cast<int>(query)], args...);
+    }
     FillQuery(storage, query, std::forward<Args>(args)...);
   }
 
   template <SQL_QUERY query, typename... Args>
   void FillQuery(PoolMem& storage, Args&&... args)
   {
-    printf_check(queries[static_cast<int>(query)], args...);
+    if constexpr (sizeof...(Args) > 0) {
+      printf_check(queries[static_cast<int>(query)], args...);
+    }
     FillQuery(storage, query, std::forward<Args>(args)...);
   }
 
@@ -964,7 +943,6 @@ class BareosDb : public BareosDbQueryEnum {
                                     bool mult_db_connections,
                                     bool get_pooled_connection = true,
                                     bool need_private = false);
-  int GetTypeIndex(void) { return db_type_; }
   const char* GetType(void);
   void LockDb(const char* file, int line);
   void UnlockDb(const char* file, int line);

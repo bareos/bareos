@@ -25,13 +25,12 @@ R"SQL(UPDATE Job
 R"SQL(INSERT INTO JobHisto (
 	       JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate,
 	       VolSessionId, VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId,
-	       PriorJobId, PurgedFiles,
-	       HasBase, Reviewed, Comment
+	       PriorJobId, PurgedFiles, HasCache,
+	       Reviewed, Comment
        )
 SELECT JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate, VolSessionId,
        VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId, PriorJobId, PurgedFiles,
-       HasBase,
-       Reviewed, Comment
+       HasCache, Reviewed, Comment
   FROM Job
  WHERE JobStatus IN ('T','W','f','A','E')
    AND NOT EXISTS (
@@ -171,11 +170,11 @@ R"SQL(SELECT DISTINCT JobMedia.JobId
    ORDER BY JobId
 )SQL",
 
-/* 0012_drop_deltabs.postgresql */
+/* 0012_drop_deltabs */
 R"SQL(DROP TABLE IF EXISTS DelCandidates
 )SQL",
 
-/* 0013_create_deltabs.postgresql */
+/* 0013_create_deltabs */
 R"SQL(CREATE TEMPORARY TABLE
        DelCandidates ( JobId INTEGER NOT NULL, PurgedFiles SMALLINT, FileSetId INTEGER, JobFiles INTEGER, JobStatus char(1))
 )SQL",
@@ -197,17 +196,6 @@ R"SQL(SELECT JobId, Client.Name as Client, StartTime, Level as JobLevel, JobFile
    AND JobStatus IN ('T','W')
    AND Type            = '%c'
  ORDER BY StartTime DESC LIMIT 20
-)SQL",
-
-/* 0017_uar_print_jobs */
-R"SQL(SELECT DISTINCT JobId, Level, JobFiles, JobBytes, StartTime, VolumeName
-  FROM Job
-  JOIN JobMedia
- USING (JobId)
-  JOIN Media
- USING (MediaId)
- WHERE JobId IN (%s)
- ORDER BY StartTime ASC
 )SQL",
 
 /* 0018_uar_del_temp */
@@ -391,116 +379,48 @@ R"SQL(SELECT JobId, FileIndex
  ORDER BY JobId, FileIndex ASC
 )SQL",
 
-/* 0034_select_recent_version_with_basejob.postgresql */
-R"SQL(SELECT DISTINCT ON (Name,
-                    PathId) JobTDate,
-                   JobId,
-                   FileId,
-                   FileIndex,
-                   PathId,
-                   FileName AS Name,
-                   LStat,
-                   MD5,
-                   DeltaSeq,
-                   Fhinfo,
-                   Fhnode
-FROM
-  (SELECT FileId,
-          JobId,
-          PathId,
-          Name AS FileName,
-          FileIndex,
-          LStat,
-          MD5,
-          DeltaSeq,
-          Fhinfo,
-          Fhnode
-   FROM File
-   WHERE JobId IN (%s)
-     UNION ALL
-     SELECT File.FileId,
-            File.JobId,
-            PathId,
-            File.Name AS FileName,
-            File.FileIndex,
-            LStat,
-            MD5,
-            DeltaSeq,
-            Fhinfo,
-            Fhnode
-     FROM BaseFiles
-     JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
-JOIN Job USING (JobId)
-ORDER BY Name,
-         PathId,
-         JobTDate DESC
-)SQL",
-
-/* 0035_select_recent_version_with_basejob_and_delta.postgresql */
-R"SQL(SELECT DISTINCT ON (Name,
-                    PathId,
-                    DeltaSeq) JobTDate,
-                   JobId,
-                   FileId,
-                   FileIndex,
-                   PathId,
-                   Filename AS Name,
-                   LStat,
-                   MD5,
-                   DeltaSeq,
-                   Fhinfo,
-                   Fhnode
-FROM
-  (SELECT FileId,
-          JobId,
-          PathId,
-          Name AS FileName,
-          FileIndex,
-          LStat,
-          MD5,
-          DeltaSeq,
-          Fhinfo,
-          Fhnode
-   FROM File
-   WHERE JobId IN (%s)
-     UNION ALL
-     SELECT File.FileId,
-            File.JobId,
-            PathId,
-            File.Name AS FileName,
-            File.FileIndex,
-            LStat,
-            MD5,
-            DeltaSeq,
-            Fhinfo,
-            Fhnode
-     FROM BaseFiles
-     JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
-JOIN Job USING (JobId)
-ORDER BY Name,
-         PathId,
-         DeltaSeq,
-         JobTDate DESC
-)SQL",
-
-/* 0036_select_recent_version.postgresql */
+/* 0034_select_recent_version_from_jobids */
 R"SQL(SELECT DISTINCT ON (File.Name,
-                    PathId) JobTDate,
-                   JobId,
-                   FileId,
-                   FileIndex,
-                   PathId,
-                   File.Name,
-                   LStat,
-                   MD5,
-                   Fhinfo,
-                   Fhnode
+                    File.PathId) Job.JobTDate,
+                                   File.JobId,
+                                   File.FileId,
+                                   File.FileIndex,
+                                   File.PathId,
+                                   File.Name,
+                                   File.LStat,
+                                   File.MD5,
+                                   File.DeltaSeq,
+                                   File.Fhinfo,
+                                   File.Fhnode
 FROM File
 JOIN Job USING (JobId)
-WHERE JobId IN (%s)
+WHERE File.JobId IN (%s)
 ORDER BY File.Name,
-         PathId,
-         JobTDate DESC
+         File.PathId,
+         Job.JobTDate DESC
+)SQL",
+
+/* 0035_select_recent_version_from_jobids_and_delta */
+R"SQL(SELECT DISTINCT ON (File.Name,
+                    File.PathId,
+                    File.DeltaSeq) Job.JobTDate,
+                                      File.JobId,
+                                      File.FileId,
+                                      File.FileIndex,
+                                      File.PathId,
+                                      File.Name,
+                                      File.LStat,
+                                      File.MD5,
+                                      File.DeltaSeq,
+                                      File.Fhinfo,
+                                      File.Fhnode
+FROM File
+JOIN Job USING (JobId)
+WHERE File.JobId IN (%s)
+ORDER BY File.Name,
+         File.PathId,
+         File.DeltaSeq,
+         Job.JobTDate DESC
 )SQL",
 
 /* 0037_create_temp_accurate_jobids */
@@ -522,27 +442,6 @@ WHERE ClientId = %s
 ORDER BY Job.JobId DESC,
          Job.JobTDate DESC
 LIMIT 1
-)SQL",
-
-/* 0038_create_temp_basefile */
-R"SQL(CREATE TEMPORARY TABLE basefile%)SQL" PRIu64 R"SQL( ( Path TEXT, Name TEXT)
-)SQL",
-
-/* 0039_create_temp_new_basefile */
-R"SQL(CREATE
-TEMPORARY TABLE new_basefile%)SQL" PRId64 R"SQL( AS
-SELECT Path.Path AS Path,
-       Temp.Name AS Name,
-       Temp.FileIndex AS FileIndex,
-       Temp.JobId AS JobId,
-       Temp.LStat AS LStat,
-       Temp.FileId AS FileId,
-       Temp.MD5 AS MD5,
-       Temp.Fhinfo AS Fhinfo,
-       Temp.Fhnode AS Fhnode
-FROM (%s) AS Temp
-JOIN Path ON (Path.PathId = Temp.PathId)
-WHERE Temp.FileIndex > 0
 )SQL",
 
 /* 0040_uap_upgrade_copies_oldest_job */
@@ -584,7 +483,7 @@ ORDER BY StartTime DESC
 LIMIT 20
 )SQL",
 
-/* 0042_uar_create_temp.postgresql */
+/* 0042_uar_create_temp */
 R"SQL(CREATE TEMPORARY TABLE
        temp (
           JobId INTEGER NOT NULL, JobTDate BIGINT, ClientId INTEGER, Level CHAR, JobFiles INTEGER, JobBytes BIGINT, StartTime
@@ -592,34 +491,34 @@ R"SQL(CREATE TEMPORARY TABLE
        )
 )SQL",
 
-/* 0043_uar_create_temp1.postgresql */
+/* 0043_uar_create_temp1 */
 R"SQL(CREATE TEMPORARY TABLE temp1 ( JobId INTEGER NOT NULL, JobTDate BIGINT)
 )SQL",
 
-/* 0044_uar_jobid_fileindex_from_dir.postgresql */
-R"SQL(SELECT Job.JobId,
-       File.FileIndex
-FROM Job,
-     File,
-     Path,
-     Client
+/* 0044_uar_jobid_fileindex_from_dir */
+R"SQL(SELECT DISTINCT ON (File.Name) Job.JobId,
+                                  File.FileIndex
+FROM Job
+JOIN File ON Job.JobId = File.JobId
+JOIN Path ON Path.PathId = File.PathId
+JOIN Client ON Job.ClientId = Client.ClientId
 WHERE Job.JobId IN (%s)
-  AND Job.JobId=File.JobId
-  AND Path.Path='%s'
-  AND Client.Name='%s'
-  AND Job.ClientId=Client.ClientId
-  AND Path.PathId=File.Pathid
+  AND Path.Path = '%s'
+  AND Client.Name = '%s'
+ORDER BY File.Name,
+         Job.StartTime DESC,
+         Job.JobId DESC
 )SQL",
 
 /* 0045_sql_media_order_most_recently_written */
 R"SQL(ORDER BY LastWritten IS NULL,LastWritten DESC,MediaId
 )SQL",
 
-/* 0046_sql_get_max_connections.postgresql */
+/* 0046_sql_get_max_connections */
 R"SQL(SHOW max_connections
 )SQL",
 
-/* 0047_bvfs_select.postgresql */
+/* 0047_bvfs_select */
 R"SQL(CREATE TABLE %s AS
   (SELECT JobId,
           FileIndex,
@@ -636,7 +535,7 @@ R"SQL(CREATE TABLE %s AS
    WHERE FileIndex > 0)
 )SQL",
 
-/* 0048_bvfs_list_files.postgresql */
+/* 0048_bvfs_list_files */
 R"SQL(SELECT TYPE,
        PathId,
        Name,
@@ -644,61 +543,37 @@ R"SQL(SELECT TYPE,
        LStat,
        FileId
 FROM (
-   SELECT DISTINCT ON (Name) 'F' AS TYPE,
-                       PathId,
-                       FileName AS Name,
-                       JobId,
-                       LStat,
-                       FileId,
-                       FileIndex
-   FROM (
-      SELECT FileId,
-             JobId,
-             PathId,
-             Name AS FileName,
-             FileIndex,
-             LStat,
-             MD5
-      FROM File
-      WHERE JobId IN (%s)
-        AND PathId = %s
-        UNION ALL
-        SELECT File.FileId,
-               File.JobId,
-               PathId,
-               File.Name AS FileName,
-               File.FileIndex,
-               LStat,
-               MD5
-        FROM BaseFiles
-        JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s)
-        AND File.PathId = %s
-   ) AS T
+   SELECT DISTINCT ON (File.Name) 'F' AS TYPE,
+                                  File.PathId,
+                                  File.Name,
+                                  File.JobId,
+                                  File.LStat,
+                                  File.FileId,
+                                  File.FileIndex
+   FROM File
    JOIN Job USING (JobId)
    WHERE
-      FileName != ''
+      File.JobId IN (%s)
+      AND File.PathId = %s
+      AND File.Name != ''
       %s
-   ORDER BY FileName,
-            StartTime DESC
+   ORDER BY File.Name,
+            Job.StartTime DESC
 ) AS A
 WHERE A.FileIndex > 0
 LIMIT %)SQL" PRId64 R"SQL(
 OFFSET %)SQL" PRId64 R"SQL(
 )SQL",
 
-/* 0049_batch_lock_path_query.postgresql */
+/* 0049_batch_lock_path_query */
 R"SQL(BEGIN; LOCK TABLE Path IN SHARE ROW EXCLUSIVE MODE
-)SQL",
-
-/* 0050_batch_lock_filename_query.postgresql */
-R"SQL(BEGIN; LOCK TABLE Filename IN SHARE ROW EXCLUSIVE MODE
 )SQL",
 
 /* 0051_batch_unlock_tables_query */
 R"SQL(COMMIT
 )SQL",
 
-/* 0052_batch_fill_path_query.postgresql */
+/* 0052_batch_fill_path_query */
 R"SQL(INSERT INTO Path (Path)
 SELECT a.Path
   FROM (
@@ -712,26 +587,12 @@ SELECT a.Path
        )
 )SQL",
 
-/* 0053_batch_fill_filename_query.postgresql */
-R"SQL(INSERT INTO Filename (Name)
-SELECT a.Name
-  FROM (
-      SELECT DISTINCT Name
-        FROM batch
-       ) as a
- WHERE NOT EXISTS (
-      SELECT Name
-        FROM Filename
-       WHERE Name = a.Name
-       )
-)SQL",
-
-/* 0054_match_query.postgresql */
+/* 0054_match_query */
 R"SQL( AND Path2.Path ~ '%s'
 )SQL",
 
-/* 0055_match_query2.postgresql */
-R"SQL( AND Filename.Name ~ '%s'
+/* 0055_match_query2 */
+R"SQL( AND File.Name LIKE '%s' ESCAPE '\'
 )SQL",
 
 /* 0056_insert_counter_values */
@@ -751,7 +612,7 @@ R"SQL(UPDATE Counters
  WHERE Counter  = '%s'
 )SQL",
 
-/* 0059_get_quota_jobbytes.postgresql */
+/* 0059_get_quota_jobbytes */
 R"SQL(SELECT SUM(JobBytes)
   FROM Job
  WHERE ClientId  =  %s
@@ -759,7 +620,7 @@ R"SQL(SELECT SUM(JobBytes)
    AND SchedTime >  TIMESTAMP '%s'
 )SQL",
 
-/* 0060_get_quota_jobbytes_nofailed.postgresql */
+/* 0060_get_quota_jobbytes_nofailed */
 R"SQL(SELECT SUM(JobBytes)
   FROM Job
  WHERE ClientId  =  %s
@@ -886,8 +747,9 @@ WHERE  Path != ''
   AND  Path NOT LIKE '%%/'
 )SQL",
 
-/* 0074_bvfs_ls_special_dirs_3.postgresql */
-R"SQL(SELECT DISTINCT ON (PathId) 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId
+/* 0074_bvfs_ls_special_dirs_3 */
+R"SQL((
+SELECT DISTINCT ON (SpecialDir.PathId) 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId
 FROM (
     SELECT %s AS PathId, '.' AS Path
     UNION
@@ -903,9 +765,11 @@ LEFT JOIN (
     ORDER BY PathId ASC, JobId DESC
 ) AS DirAttribute
 ON (SpecialDir.PathId = DirAttribute.PathId)
+ORDER BY SpecialDir.PathId ASC, JobId DESC
+)
 )SQL",
 
-/* 0075_bvfs_ls_sub_dirs_5.postgresql */
+/* 0075_bvfs_ls_sub_dirs_5 */
 R"SQL((
 SELECT DISTINCT ON (Path) 'D', PathId, Path, JobId, LStat, FileId
 FROM (
@@ -1007,7 +871,7 @@ FROM      Media
 LEFT JOIN Storage USING(StorageId)
 )SQL",
 
-/* 0078_bvfs_lock_pathhierarchy_0.postgresql */
+/* 0078_bvfs_lock_pathhierarchy_0 */
 R"SQL(BEGIN; LOCK TABLE PathHierarchy IN SHARE ROW EXCLUSIVE MODE
 )SQL",
 

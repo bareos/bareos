@@ -1,2 +1,0 @@
-CREATE TEMPORARY TABLE
-       DelCandidates ( JobId INTEGER NOT NULL, PurgedFiles SMALLINT, FileSetId INTEGER, JobFiles INTEGER, JobStatus char(1))

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -86,7 +86,6 @@ class BareosAccurateFilelist {
   virtual bool EndLoad() = 0;
   virtual accurate_payload* lookup_payload(char* fname) = 0;
   virtual bool UpdatePayload(char* fname, accurate_payload* payload) = 0;
-  virtual bool SendBaseFileList() = 0;
   virtual bool SendDeletedList() = 0;
   void MarkFileAsSeen(accurate_payload* payload)
   {
@@ -153,7 +152,6 @@ class BareosAccurateFilelistHtable : public BareosAccurateFilelist {
   bool EndLoad() override;
   accurate_payload* lookup_payload(char* fname) override;
   bool UpdatePayload(char* fname, accurate_payload* payload) override;
-  bool SendBaseFileList() override;
   bool SendDeletedList() override;
 };
 
@@ -195,7 +193,6 @@ class BareosAccurateFilelistLmdb : public BareosAccurateFilelist {
   bool EndLoad() override;
   accurate_payload* lookup_payload(char* fname) override;
   bool UpdatePayload(char* fname, accurate_payload* payload) override;
-  bool SendBaseFileList() override;
   bool SendDeletedList() override;
 };
 #endif /* HAVE_LMDB */

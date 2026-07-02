@@ -1,14 +1,13 @@
-# Query to get all files in a directory -- no recursing
-SELECT Job.JobId,
-       File.FileIndex
-FROM Job,
-     File,
-     Path,
-     Client
+# Query to get the latest version of each file in a directory -- no recursing.
+SELECT DISTINCT ON (File.Name) Job.JobId,
+                                  File.FileIndex
+FROM Job
+JOIN File ON Job.JobId = File.JobId
+JOIN Path ON Path.PathId = File.PathId
+JOIN Client ON Job.ClientId = Client.ClientId
 WHERE Job.JobId IN (%s)
-  AND Job.JobId=File.JobId
-  AND Path.Path='%s'
-  AND Client.Name='%s'
-  AND Job.ClientId=Client.ClientId
-  AND Path.PathId=File.Pathid
-GROUP BY File.FileIndex
+  AND Path.Path = '%s'
+  AND Client.Name = '%s'
+ORDER BY File.Name,
+         Job.StartTime DESC,
+         Job.JobId DESC
