@@ -747,26 +747,12 @@ bool PluginPostBackupFile(JobControlRecord* jcr,
   auto* plugin = jcr->plugin_ctx->plugin;
   const char* plugin_name = sp->cmd ? sp->cmd : ff_pkt->plugin;
   const auto plugin_label = PluginCommandName(plugin_name);
-  // st_size < 1 covers both "zero" (0) and "unknown" (-1) as set by plugins
-  // like bpipe-fd that cannot know the size before streaming.
-  Jmsg(jcr, M_WARNING, 0,
-       "TEMP bpipe debug: pre-check plugin=%s ff_type=%d ff_mode=%#o "
-       "ff_isreg=%d ff_size=%" PRId64 " sp_type=%d sp_mode=%#o sp_size=%" PRId64
-       " read_before=%" PRIu64 " read_after=%" PRIu64 "\n",
-       plugin_label.c_str(), ff_pkt->type, (unsigned int)ff_pkt->statp.st_mode,
-       S_ISREG(ff_pkt->statp.st_mode), (int64_t)ff_pkt->statp.st_size,
-       sp->type, (unsigned int)sp->statp.st_mode, (int64_t)sp->statp.st_size,
-       read_bytes_before, jcr->ReadBytes);
+  // Treat st_size as signed for this check. Some Windows toolchains expose an
+  // unsigned st_size type, where plugin "unknown size" values represented as
+  // -1 would otherwise compare as a huge positive number.
+  const auto initial_size = static_cast<int64_t>(ff_pkt->statp.st_size);
   const bool initial_unknown_size
-      = S_ISREG(ff_pkt->statp.st_mode) && ff_pkt->statp.st_size < 1;
-
-  Jmsg(jcr, M_WARNING, 0,
-       "TEMP bpipe debug: PluginPostBackupFile plugin=%s initial_size=%" PRId64
-       " final_size=%" PRId64 " read_before=%" PRIu64
-       " read_after=%" PRIu64 " unknown=%d\n",
-       plugin_label.c_str(), (int64_t)ff_pkt->statp.st_size,
-       (int64_t)sp->statp.st_size, read_bytes_before, jcr->ReadBytes,
-       initial_unknown_size);
+      = S_ISREG(ff_pkt->statp.st_mode) && initial_size < 1;
 
   if (HasPostBackupFileCallback(plugin)) {
     bRC rc = PlugFunc(plugin)->postBackupFile(jcr->plugin_ctx, sp);
@@ -777,15 +763,9 @@ bool PluginPostBackupFile(JobControlRecord* jcr,
   }
 
   ff_pkt->statp = sp->statp;
+  const auto final_size = static_cast<int64_t>(sp->statp.st_size);
 
-  Jmsg(jcr, M_WARNING, 0,
-       "TEMP bpipe debug: PluginPostBackupFile after copy plugin=%s final_size=%"
-       PRId64 " read_delta=%" PRIu64 "\n",
-       plugin_label.c_str(), (int64_t)sp->statp.st_size,
-       jcr->ReadBytes - read_bytes_before);
-
-  if (initial_unknown_size && sp->statp.st_size < 1
-      && jcr->ReadBytes > read_bytes_before) {
+  if (initial_unknown_size && final_size < 1 && jcr->ReadBytes > read_bytes_before) {
     RecordPluginPostWriteWarning(jcr, plugin_label.c_str());
   }
 
@@ -2173,10 +2153,6 @@ static int MyPluginBclose(BareosFilePacket* bfd)
 
   PlugFunc(plugin)->pluginIO(jcr->plugin_ctx, &io);
   bfd->BErrNo = io.io_errno;
-  Jmsg(jcr, M_WARNING, 0,
-       "TEMP bpipe debug: plugin_bclose io status=%d errno=%d win32=%d "
-       "do_io_in_core=%d\n",
-       io.status, io.io_errno, io.win32, bfd->do_io_in_core);
 
   if (io.win32) {
     errno = b_errno_win32;
