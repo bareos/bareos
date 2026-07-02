@@ -26,3 +26,17 @@ def load_bareos_plugin(plugindef):
     print(bareosfd)
     bareosfd.DebugMessage(100, "Kuckuck")
     bareosfd.JobMessage(100, "Kuckuck")
+
+    accurate_options = bareosfd.GetValue(bareosfd.bVarAccurateOptions)
+    assert isinstance(accurate_options, frozenset)
+    assert accurate_options == frozenset(
+        {
+            bareosfd.bAccurateOptionMtime,
+            bareosfd.bAccurateOptionCtime,
+            bareosfd.bAccurateOptionSize,
+        }
+    )
+    assert (
+        bareosfd.bAccurateOption[b"bAccurateOptionMtime"]
+        == bareosfd.bAccurateOptionMtime
+    )

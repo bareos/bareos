@@ -165,6 +165,10 @@ struct Accurate {
   using type = int;
   constexpr static auto value = filedaemon::bVarAccurate;
 };
+struct AccurateOptions {
+  using type = uint64_t;
+  constexpr static auto value = filedaemon::bVarAccurateOptions;
+};
 struct FileSeen {
   using type = bool;
   constexpr static auto value = filedaemon::bVarFileSeen;

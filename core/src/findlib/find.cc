@@ -185,8 +185,9 @@ int FindFiles(JobControlRecord* jcr,
 
       // Here, we reset some values between two different Include{}
       strcpy(ff->VerifyOpts, "V");
-      strcpy(ff->AccurateOpts, "Cmcs");  /* mtime+ctime+size by default */
-      strcpy(ff->BaseJobOpts, "Jspug5"); /* size+perm+user+group+chk  */
+      ff->accurate_opts = accurate_mtime | accurate_ctime | accurate_size;
+      ff->base_job_opts = accurate_size | accurate_permissions | accurate_uid
+                          | accurate_gid | accurate_md5;
       ff->plugin = NULL;
       ff->opt_plugin = false;
 
@@ -209,14 +210,14 @@ int FindFiles(JobControlRecord* jcr,
         }
         bstrncat(ff->VerifyOpts, fo->VerifyOpts,
                  sizeof(ff->VerifyOpts)); /* TODO: Concat or replace? */
-        if (fo->AccurateOpts[0]) {
-          bstrncpy(ff->AccurateOpts, fo->AccurateOpts,
-                   sizeof(ff->AccurateOpts));
+        if (fo->accurate_opts) {
+          ff->accurate_opts = fo->accurate_opts & ~accurate_options_set;
         }
       }
 
       Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%s>\n",
-            ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts,
+            ff->VerifyOpts, accurate_opts_as_str(ff->accurate_opts).c_str(),
+            accurate_opts_as_str(ff->base_job_opts).c_str(),
             fopts_as_str(ff->flags).c_str());
 
       foreach_dlist (node, &incexe->name_list) {
@@ -591,4 +592,82 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   incexe->current_opts = fo;
   incexe->opts_list.prepend(fo);
   ff->fileset->state = state_options;
+}
+
+uint64_t AccurateOptionsToBitmask(char accurate_opt)
+{
+  uint64_t mask = 0;
+  switch (accurate_opt) {
+    case 'i':
+      mask |= accurate_inode;
+      break;
+    case 'p':
+      mask |= accurate_permissions;
+      break;
+    case 'n':
+      mask |= accurate_nlink;
+      break;
+    case 'u':
+      mask |= accurate_uid;
+      break;
+    case 'g':
+      mask |= accurate_gid;
+      break;
+    case 's':
+      mask |= accurate_size;
+      break;
+    case 'a':
+      mask |= accurate_atime;
+      break;
+    case 'm':
+      mask |= accurate_mtime;
+      break;
+    case 'c':
+      mask |= accurate_ctime;
+      break;
+    case 'd':
+      mask |= accurate_size_decrease;
+      break;
+    case 'A':
+      mask |= accurate_always;
+      break;
+    case '5':
+      mask |= accurate_md5;
+      break;
+    case '1':
+      mask |= accurate_sha1;
+      break;
+    case 'C':
+    case 'J':
+    case ':':
+      break;
+    default:
+      Dmsg1(debuglevel,
+            "fd-plugin: ignoring unknown accurate option character '%c'\n",
+            accurate_opt);
+      break;
+  }
+  return mask;
+}
+
+std::string accurate_opts_as_str(std::uint64_t accurate_opts)
+{
+  std::string result;
+  result.reserve(20);
+
+  if ((accurate_opts & accurate_inode)) { result.push_back('i'); }
+  if ((accurate_opts & accurate_permissions)) { result.push_back('p'); }
+  if ((accurate_opts & accurate_nlink)) { result.push_back('n'); }
+  if ((accurate_opts & accurate_uid)) { result.push_back('u'); }
+  if ((accurate_opts & accurate_gid)) { result.push_back('g'); }
+  if ((accurate_opts & accurate_size)) { result.push_back('s'); }
+  if ((accurate_opts & accurate_atime)) { result.push_back('a'); }
+  if ((accurate_opts & accurate_mtime)) { result.push_back('m'); }
+  if ((accurate_opts & accurate_ctime)) { result.push_back('c'); }
+  if ((accurate_opts & accurate_size_decrease)) { result.push_back('d'); }
+  if ((accurate_opts & accurate_always)) { result.push_back('A'); }
+  if ((accurate_opts & accurate_md5)) { result.push_back('5'); }
+  if ((accurate_opts & accurate_sha1)) { result.push_back('1'); }
+
+  return result;
 }
