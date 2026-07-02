@@ -1,0 +1,13 @@
+status subscriptions client=source-client
+Automatically selected Catalog: MyCatalog
+Using Catalog "MyCatalog"
+
+Detailed backup unit report for client 'source-client':
++---------+------------------+---------+------------------+-----------------+----------------------+
+| fileset | plugin           | size_gb | size_source     | effective_ratio | space_saving_percent |
++---------+------------------+---------+------------------+-----------------+----------------------+
+| legacy  | none (file data) |    1.00 | legacy_fallback |            1.00 |                 0.00 |
+| report  | none (file data) |    1.00 | reported        |            1.00 |                 0.00 |
+| virtual | none (file data) |    1.00 | computed_virtual |            1.00 |                 0.00 |
++---------+------------------+---------+------------------+-----------------+----------------------+
+All plugin jobs and the first non-plugin job are counted.

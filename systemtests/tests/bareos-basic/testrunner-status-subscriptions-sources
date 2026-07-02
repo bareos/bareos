@@ -1,0 +1,105 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+#
+# Test the output of the status subscription command for all size sources.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+JobName=bconsole-status-subscriptions-sources
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+rm -f "$tmp"/status-subscriptions-sources*.txt "$tmp"/status-subscriptions-sources*.json
+
+cat <<END_OF_DATA >"$tmp/bconcmds-setup"
+@$out ${NULL_DEV}
+use
+sqlquery sharedsession
+DELETE FROM Job WHERE JobId >= 10000;
+DELETE FROM Client WHERE ClientId >= 10000;
+DELETE FROM Fileset WHERE FileSetId >= 10000;
+INSERT INTO Client (ClientId, Name, UName) VALUES
+(10000, 'source-client', 'synthetic test client');
+INSERT INTO Fileset (FileSetId, Fileset, FileSetText, Md5, CreateTime) VALUES
+(10000, 'legacy',  E'{\n{\nFile = "/legacy"\n}\n}', 'x', now()),
+(10001, 'report',  E'{\n{\nFile = "/report"\n}\n}', 'x', now()),
+(10002, 'virtual', E'{\n{\nFile = "/virtual"\n}\n}', 'x', now());
+INSERT INTO Job
+  (JobId, Job, Name, Type, Level, ClientId, JobStatus, JobBytes, ReadBytes, FilesetId)
+VALUES
+(10000, 'legacy-job',  'legacy',  'B', 'F', 10000, 'T', 10^9, 10^9, 10000),
+(10001, 'report-job',  'report',  'B', 'F', 10000, 'T', 10^9, 10^9, 10001),
+(10002, 'virtual-job', 'virtual', 'B', 'F', 10000, 'T', 10^9, 10^9, 10002);
+UPDATE Job
+   SET PrimaryDataBytes = 10^9,
+       PrimaryDataSource = 'reported'
+ WHERE JobId = 10001;
+UPDATE Job
+   SET PrimaryDataBytes = 10^9,
+       PrimaryDataSource = 'computed_virtual'
+ WHERE JobId = 10002;
+END_OF_DATA
+run_bconsole "$tmp/bconcmds-setup"
+
+cat <<END_OF_DATA >"$tmp/bconcmds-text"
+@$out $tmp/status-subscriptions-sources-client-detail.txt
+status subscriptions client=source-client
+END_OF_DATA
+run_bconsole "$tmp/bconcmds-text"
+
+cat <<END_OF_DATA >"$tmp/bconcmds-json"
+.api 2
+@$out $tmp/status-subscriptions-sources-client-detail.json
+status subscriptions client=source-client
+END_OF_DATA
+run_bconsole "$tmp/bconcmds-json"
+
+cat <<END_OF_DATA >"$tmp/bconcmds-cleanup"
+@$out ${NULL_DEV}
+use
+sqlquery sharedsession
+DELETE FROM Job WHERE JobId >= 10000;
+DELETE FROM Client WHERE ClientId >= 10000;
+DELETE FROM Fileset WHERE FileSetId >= 10000;
+END_OF_DATA
+run_bconsole "$tmp/bconcmds-cleanup"
+
+sed -i.bak -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" "$tmp"/status-subscriptions-sources*.txt
+sed -i.bak -e '/^@/d' -e '/"os":/d' -e '/"version":/d' -e '/"binary-info":/d' -e '/"report-time":/d' -e '/"checksum":/d' "$tmp"/status-subscriptions-sources*.json
+
+for f in expected/status-subscriptions-sources*.txt expected/status-subscriptions-sources*.json; do
+  f="$(basename "$f")"
+  if ! diff --ignore-all-space --unified "expected/$f" "$tmp/$f"; then
+    echo "Output $f does not match expectation!" >&2
+    estat=1
+  fi
+done
+
+end_test
