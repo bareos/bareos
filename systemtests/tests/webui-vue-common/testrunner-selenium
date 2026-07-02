@@ -29,7 +29,7 @@ export TestName
 . ./environment
 . "${BAREOS_SCRIPTS_DIR}/functions"
 
-selenium_log="${tmp}/webui-vue-selenium.out"
+selenium_log="${tmp}/webui-selenium.out"
 
 start_test
 
@@ -39,7 +39,7 @@ if ! BAREOS_WEBUI_BASE_URL="${BAREOS_WEBUI_BASE_URL}" \
   BAREOS_WEBUI_CHROMEDRIVER_PATH="${BAREOS_WEBUI_CHROMEDRIVER_PATH}" \
   BAREOS_WEBUI_CHROME_HEADLESS="yes" \
   "${PYTHON_EXECUTABLE}" \
-  "${CMAKE_SOURCE_DIR}/webui-vue/tests/selenium/webui-vue-selenium-test.py" \
+  "${CMAKE_SOURCE_DIR}/webui-vue/tests/selenium/webui-selenium-test.py" \
   -v \
   >"${selenium_log}" 2>&1; then
   set_error "$(cat "${selenium_log}")"

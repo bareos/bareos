@@ -41,7 +41,7 @@ check_php_is_running
 
 # run tests
 
-if ! ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/webui/tests/selenium/webui-selenium-test.py -v "SeleniumTest.test_@BAREOS_WEBUI_TESTNAME@" >>"${runner_tmp}/selenium.out" 2>&1; then
+if ! ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/webui/tests/selenium/webui-php-selenium-test.py -v "SeleniumTest.test_@BAREOS_WEBUI_TESTNAME@" >>"${runner_tmp}/selenium.out" 2>&1; then
   set_error "$(cat "${runner_tmp}/selenium.out")"
 fi
 
