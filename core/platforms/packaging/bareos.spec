@@ -588,7 +588,7 @@ This package contains the common files for the python storage plugins.
 %endif
 
 %if 0%{?webui}
-%package webui
+%package webui-php
 Summary:       Bareos Web User Interface
 Group:         Productivity/Archiving/Backup
 
@@ -640,16 +640,10 @@ Conflicts: mod_php_any
 %define www_daemon_group www
 %endif
 
-%package webui-php
-Summary:       Bareos Web User Interface
-Group:         Productivity/Archiving/Backup
-Requires:      %{name}-common = %{version}
-Requires:      php-cli
-
 %description webui-php
 %{dscr}
 
-This package contains the webui (Bareos Web User Interface).
+This package contains the PHP-based Bareos Web User Interface.
 
 %package webui
 Summary:       Bareos Web User Interface (Vue)
@@ -1023,7 +1017,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_docdir}/%{name}/README.bareos
 
 %if 0%{?webui}
-%files webui
+%files webui-php
 %defattr(-,root,root,-)
 %doc webui/README.md webui/copyright
 %doc webui/doc/README-TRANSLATION.md
@@ -1927,8 +1921,8 @@ exit 0
 
 %if 0%{?webui}
 
-%pre webui
-%logging_start webui pre
+%pre webui-php
+%logging_start webui-php pre
 if [ $1 -gt 1 ]; then
   # upgrade
   %if_package_version_lt %{name}-webui 25.0.0
@@ -1939,8 +1933,8 @@ fi
 %logging_end
 exit 0
 
-%post webui
-%logging_start webui post
+%post webui-php
+%logging_start webui-php post
 %if 0%{?suse_version}
 a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
@@ -1949,8 +1943,8 @@ a2enmod fcgid &> /dev/null || true
 %endif
 %logging_end
 
-%post webui-vue
-%logging_start webui-vue post
+%post webui
+%logging_start webui post
 %if 0%{?suse_version}
 a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
@@ -1959,8 +1953,8 @@ apachectl graceful &> /dev/null || true
 %endif
 %logging_end
 
-%posttrans webui
-%logging_start webui posttrans
+%posttrans webui-php
+%logging_start webui-php posttrans
 # update from bareos < 25
 %posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-admin.conf"
 %posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-readonly.conf"
