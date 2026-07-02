@@ -55,6 +55,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <unordered_set>
 #include <vector>
 #include <string>
 
@@ -66,9 +67,30 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
                                 const std::string& jobids);
 
 namespace {
+struct VirtualFileKey {
+  dev_t dev;
+  ino_t ino;
+
+  bool operator==(const VirtualFileKey& other) const
+  {
+    return dev == other.dev && ino == other.ino;
+  }
+};
+
+struct VirtualFileKeyHash {
+  size_t operator()(const VirtualFileKey& key) const noexcept
+  {
+    auto hash = std::hash<dev_t>{}(key.dev);
+    hash ^= std::hash<ino_t>{}(key.ino) + 0x9e3779b9 + (hash << 6)
+            + (hash >> 2);
+    return hash;
+  }
+};
+
 struct VirtualBootstrapContext {
   RestoreContext restore;
   uint64_t primary_data_bytes = 0;
+  std::unordered_set<VirtualFileKey, VirtualFileKeyHash> counted_payload_files;
 };
 
 static bool IsPayloadBearingVirtualFile(const struct stat& statp)
@@ -587,13 +609,17 @@ static int InsertBootstrapHandler(void* ctx, int, char** row)
     struct stat statp{};
     int32_t link_fi = 0;
     DecodeStat(row[4], &statp, sizeof(statp), &link_fi);
-    // Hardlink aliases have link_fi != 0 and share payload with their owner.
-    // Count only owner entries to avoid double-accounting primary data.
-    if (link_fi == 0 && IsPayloadBearingVirtualFile(statp) && statp.st_size > 0) {
-      auto size = static_cast<uint64_t>(statp.st_size);
-      auto remaining
-          = std::numeric_limits<uint64_t>::max() - vctx->primary_data_bytes;
-      vctx->primary_data_bytes += std::min(size, remaining);
+    (void)link_fi;
+    if (IsPayloadBearingVirtualFile(statp) && statp.st_size > 0) {
+      // Count each payload-bearing inode once; the query can return a hardlink
+      // alias as the selected row, so link_fi alone is not enough here.
+      VirtualFileKey key{statp.st_dev, statp.st_ino};
+      if (vctx->counted_payload_files.insert(key).second) {
+        auto size = static_cast<uint64_t>(statp.st_size);
+        auto remaining
+            = std::numeric_limits<uint64_t>::max() - vctx->primary_data_bytes;
+        vctx->primary_data_bytes += std::min(size, remaining);
+      }
     }
   }
 

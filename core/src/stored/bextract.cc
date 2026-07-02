@@ -94,7 +94,7 @@ static char* wbuf;            /* write buffer address */
 static uint32_t wsize;        /* write size */
 static uint64_t fileAddr = 0; /* file write address */
 
-/* Phase 8: Track metadata state per (session, file index). */
+// Track metadata state per (session, file index).
 struct MetadataStateKey {
   uint32_t vol_session_time;
   uint32_t vol_session_id;
@@ -109,13 +109,15 @@ struct MetadataStateKey {
 };
 
 struct MetadataStateKeyHash {
+  // A small odd multiplier keeps the three 32-bit fields well mixed in the
+  // unordered_map hash without packing them into a single integer.
+  static constexpr size_t kHashCombineMultiplier = 1315423911u;
+
   size_t operator()(const MetadataStateKey& key) const
   {
     size_t h = std::hash<uint32_t>{}(key.vol_session_time);
-    h ^= std::hash<uint32_t>{}(key.vol_session_id) + 0x9e3779b9 + (h << 6)
-         + (h >> 2);
-    h ^= std::hash<uint32_t>{}(key.file_index) + 0x9e3779b9 + (h << 6)
-         + (h >> 2);
+    h = h * kHashCombineMultiplier ^ std::hash<uint32_t>{}(key.vol_session_id);
+    h = h * kHashCombineMultiplier ^ std::hash<uint32_t>{}(key.file_index);
     return h;
   }
 };
@@ -637,7 +639,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_FILE_DATA:
     case STREAM_SPARSE_DATA:
     case STREAM_WIN32_DATA:
-      /* Phase 8: Skip data if we haven't seen initial metadata for this file */
+      // Skip data until we have seen initial metadata for this file.
       if (!hasInitialMetadata[MetadataKey(rec)]) {
         sawDataBeforeInitialMetadata[MetadataKey(rec)] = true;
         break;

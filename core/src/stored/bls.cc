@@ -84,7 +84,7 @@ static Attributes* attr;
 static FindFilesPacket* ff;
 static BootStrapRecord* bsr = nullptr;
 
-/* Phase 8: Track metadata state per (session, file index). */
+// Track metadata state per (session, file index).
 static std::unordered_map<uint64_t, bool> hasInitialMetadata;
 
 static uint64_t MetadataKey(const DeviceRecord* record)
