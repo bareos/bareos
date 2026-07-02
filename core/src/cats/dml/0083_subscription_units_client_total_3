@@ -13,12 +13,13 @@ SELECT
   size_gb::NUMERIC(20,2),
   size_source,
   CASE
-    WHEN primary_bytes > 0 THEN stored_bytes::NUMERIC / primary_bytes::NUMERIC
+    WHEN primary_bytes > 0
+      THEN (stored_bytes::NUMERIC / primary_bytes::NUMERIC)::NUMERIC(20,2)
     ELSE NULL
   END AS effective_ratio,
   CASE
     WHEN primary_bytes > 0
-      THEN 100.0 * (1.0 - (stored_bytes::NUMERIC / primary_bytes::NUMERIC))
+      THEN (100.0 * (1.0 - (stored_bytes::NUMERIC / primary_bytes::NUMERIC)))::NUMERIC(20,2)
     ELSE NULL
   END AS space_saving_percent
 FROM (
