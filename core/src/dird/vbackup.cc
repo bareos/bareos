@@ -587,7 +587,9 @@ static int InsertBootstrapHandler(void* ctx, int, char** row)
     struct stat statp{};
     int32_t link_fi = 0;
     DecodeStat(row[4], &statp, sizeof(statp), &link_fi);
-    if (IsPayloadBearingVirtualFile(statp) && statp.st_size > 0) {
+    // Hardlink aliases have link_fi != 0 and share payload with their owner.
+    // Count only owner entries to avoid double-accounting primary data.
+    if (link_fi == 0 && IsPayloadBearingVirtualFile(statp) && statp.st_size > 0) {
       auto size = static_cast<uint64_t>(statp.st_size);
       auto remaining
           = std::numeric_limits<uint64_t>::max() - vctx->primary_data_bytes;
