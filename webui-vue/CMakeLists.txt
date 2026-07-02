@@ -28,8 +28,8 @@ else()
 endif()
 
 configure_file(
-  install/apache/bareos-webui-vue.conf.in
-  ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui-vue.conf @ONLY
+  install/apache/bareos-webui.conf.in
+  ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui.conf @ONLY
 )
 
 configure_file(
@@ -145,7 +145,7 @@ endif()
 install(CODE "${WEBUI_VUE_INSTALL_CODE}" COMPONENT webui-vue)
 
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui-vue.conf
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui.conf
   DESTINATION ${HTTPD_CONF}/
   COMPONENT webui-vue
 )

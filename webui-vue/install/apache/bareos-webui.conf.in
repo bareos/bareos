@@ -2,10 +2,10 @@
 # Bareos WebUI Vue - Apache configuration file
 #
 
-Alias /bareos-webui-vue @WEBUI_VUE_DIR@
+Alias /bareos-webui @WEBUI_VUE_DIR@
 
 # Vite builds asset URLs relative to /, so map /assets/ and /favicon.ico
-# directly to the /bareos-webui-vue/ sub-path where they actually live.
+# directly to the /bareos-webui/ sub-path where they actually live.
 AliasMatch "^/assets/(.*)" "@WEBUI_VUE_DIR@/assets/$1"
 AliasMatch "^/favicon\.ico$" "@WEBUI_VUE_DIR@/favicon.ico"
 
@@ -30,7 +30,7 @@ AliasMatch "^/favicon\.ico$" "@WEBUI_VUE_DIR@/favicon.ico"
     # SPA routing: redirect all non-file requests to index.html
     <IfModule mod_rewrite.c>
         RewriteEngine on
-        RewriteBase /bareos-webui-vue
+        RewriteBase /bareos-webui
         RewriteCond %{REQUEST_FILENAME} !-f
         RewriteCond %{REQUEST_FILENAME} !-d
         RewriteRule ^ index.html [L]
@@ -40,12 +40,12 @@ AliasMatch "^/favicon\.ico$" "@WEBUI_VUE_DIR@/favicon.ico"
 # Proxy WebSocket connections to bareos-webui-proxy
 <IfModule mod_proxy.c>
     <IfModule mod_proxy_wstunnel.c>
-        ProxyPass /bareos-webui-vue/ws ws://localhost:9104/ws
-        ProxyPassReverse /bareos-webui-vue/ws ws://localhost:9104/ws
+        ProxyPass /bareos-webui/ws ws://localhost:9104/ws
+        ProxyPassReverse /bareos-webui/ws ws://localhost:9104/ws
     </IfModule>
     <IfModule mod_proxy_http.c>
-        ProxyPass /bareos-webui-vue/api/ http://localhost:9104/api/
-        ProxyPassReverse /bareos-webui-vue/api/ http://localhost:9104/api/
+        ProxyPass /bareos-webui/api/ http://localhost:9104/api/
+        ProxyPassReverse /bareos-webui/api/ http://localhost:9104/api/
     </IfModule>
 </IfModule>
 
