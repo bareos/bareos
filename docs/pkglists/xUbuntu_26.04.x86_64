@@ -1,4 +1,5 @@
 all/bareos-webui
+all/bareos-webui-vue
 all/python3-bareos
 amd64/bareos
 amd64/bareos-barri-cli
