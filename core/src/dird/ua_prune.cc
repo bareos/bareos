@@ -42,8 +42,13 @@
 #include "dird/next_vol.h"
 
 #include <algorithm>
+#include <cctype>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace directordaemon {
+
+static constexpr char kPoolPruneReasonCode[] = "volume_retention_expired";
 
 /* Forward referenced functions */
 static bool PruneDirectory(UaContext* ua, ClientResource* client);
@@ -88,6 +93,234 @@ int FileDeleteHandler(void* ctx, int, char** row)
   if (jobs_todelete->size() >= MAX_DEL_LIST_LEN) { return 1; }
   jobs_todelete->push_back(static_cast<JobId_t>(str_to_int64(row[0])));
   return 0;
+}
+
+static bool GetPruneCandidatesForVolume(UaContext* ua,
+                                        MediaDbRecord* mr,
+                                        std::vector<JobId_t>& prune_list)
+{
+  PoolMem query(PM_MESSAGE);
+  utime_t now;
+  char ed1[50], ed2[50];
+
+  if (mr->Enabled == VOL_ARCHIVED) {
+    return true; /* cannot prune Archived volumes */
+  }
+
+  utime_t VolRetention = mr->VolRetention;
+  now = (utime_t)time(NULL);
+  ua->db->FillQuery<BareosDb::SQL_QUERY::sel_JobMedia>(
+      query, edit_int64(mr->MediaId, ed1), edit_int64(now - VolRetention, ed2));
+
+  Dmsg3(250, "Now=%d VolRetention=%d now-VolRetention=%s\n", (int)now,
+        (int)VolRetention, ed2);
+  Dmsg1(050, "Query=%s\n", query.c_str());
+
+  if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
+                        static_cast<void*>(&prune_list))) {
+    if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
+    Dmsg0(050, "Adding eligible jobs for pruning failed\n");
+    return false;
+  }
+
+  // in case job was the result of a copy or migration, delete the related
+  // migration or copy job
+  if (prune_list.size() > 0) {
+    BStringList copy_migrate_jobs_list;
+    for (auto jobid : prune_list) { copy_migrate_jobs_list << jobid; }
+    Mmsg(query,
+         "SELECT JobId from Job "
+         "WHERE type in ('%c','%c') AND priorjobid in (%s)",
+         JT_COPY, JT_MIGRATE, copy_migrate_jobs_list.Join(',').c_str());
+
+    if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
+                          static_cast<void*>(&prune_list))) {
+      if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
+      Dmsg0(050,
+            "Adding migration and copy child jobs eligible for pruning "
+            "failed\n");
+      return false;
+    }
+  }
+
+  ExcludeRunningJobsFromList(prune_list);
+  return true;
+}
+
+PoolPruneSummary SummarizePoolPruneJobs(
+    const std::unordered_map<JobId_t, uint64_t>& prunable_jobs,
+    uint32_t prunable_volumes)
+{
+  PoolPruneSummary summary;
+  summary.prunable_volumes = prunable_volumes;
+  summary.prunable_jobs = prunable_jobs.size();
+
+  for (const auto& [jobid, bytes] : prunable_jobs) {
+    static_cast<void>(jobid);
+    summary.prunable_bytes += bytes;
+  }
+
+  return summary;
+}
+
+PoolPruneReport BuildPoolPruneReport(
+    const std::vector<PoolPruneVolumeDetail>& volumes,
+    const std::vector<PoolPruneJobDetail>& jobs)
+{
+  PoolPruneReport report;
+  report.reason = volumes.empty() ? "" : kPoolPruneReasonCode;
+  report.volumes = volumes;
+  report.jobs = jobs;
+
+  std::sort(
+      report.volumes.begin(), report.volumes.end(),
+      [](const PoolPruneVolumeDetail& lhs, const PoolPruneVolumeDetail& rhs) {
+        if (lhs.last_written != rhs.last_written) {
+          if (lhs.last_written.empty()) { return false; }
+          if (rhs.last_written.empty()) { return true; }
+          return lhs.last_written < rhs.last_written;
+        }
+        return lhs.volume_name < rhs.volume_name;
+      });
+
+  std::unordered_map<JobId_t, uint64_t> bytes_by_job;
+  for (const auto& job : jobs) { bytes_by_job[job.jobid] = job.bytes; }
+
+  report.summary = SummarizePoolPruneJobs(
+      bytes_by_job, static_cast<uint32_t>(volumes.size()));
+
+  std::unordered_map<std::string, uint32_t> status_counts;
+  std::vector<std::string> ordered_statuses;
+  for (const auto& volume : volumes) {
+    if (status_counts.emplace(volume.volume_status, 0).second) {
+      ordered_statuses.push_back(volume.volume_status);
+    }
+    ++status_counts[volume.volume_status];
+  }
+
+  for (const auto& status : ordered_statuses) {
+    report.status_breakdown.push_back({status, status_counts[status]});
+  }
+
+  return report;
+}
+
+bool GetPoolPruneReport(UaContext* ua,
+                        PoolDbRecord* pool,
+                        PoolPruneReport* report)
+{
+  if (!report) { return false; }
+
+  *report = {};
+
+  char ed1[50];
+  PoolMem query(PM_MESSAGE);
+  dbid_list volume_ids;
+  Mmsg(query, "SELECT MediaId FROM Media WHERE PoolId=%s ORDER BY MediaId",
+       edit_int64(pool->PoolId, ed1));
+  if (!ua->db->GetQueryDbids(ua->jcr, query, volume_ids)) { return false; }
+
+  std::unordered_set<JobId_t> unique_job_ids;
+  std::vector<PoolPruneVolumeDetail> volume_details;
+
+  for (int i = 0; i < volume_ids.num_ids; ++i) {
+    MediaDbRecord mr;
+    mr.MediaId = volume_ids.DBId[i];
+    if (!ua->db->GetMediaRecord(ua->jcr, &mr)) { return false; }
+
+    if (mr.Enabled == VOL_ARCHIVED) { continue; }
+    if (!bstrcmp(mr.VolStatus, "Full") && !bstrcmp(mr.VolStatus, "Used")) {
+      continue;
+    }
+
+    std::vector<JobId_t> volume_jobs;
+    if (!GetPruneCandidatesForVolume(ua, &mr, volume_jobs)) { return false; }
+    if (volume_jobs.empty()) { continue; }
+
+    std::sort(volume_jobs.begin(), volume_jobs.end());
+    volume_jobs.erase(std::unique(volume_jobs.begin(), volume_jobs.end()),
+                      volume_jobs.end());
+
+    PoolPruneVolumeDetail detail;
+    detail.volume_name = mr.VolumeName;
+    detail.volume_status = mr.VolStatus;
+    detail.last_written = mr.cLastWritten;
+    detail.reason = kPoolPruneReasonCode;
+    detail.job_ids = volume_jobs;
+    detail.prunable_jobs = volume_jobs.size();
+    volume_details.push_back(std::move(detail));
+
+    unique_job_ids.insert(volume_jobs.begin(), volume_jobs.end());
+  }
+
+  std::vector<PoolPruneJobDetail> job_details;
+  std::unordered_map<JobId_t, PoolPruneJobDetail> jobs_by_id;
+  if (!unique_job_ids.empty()) {
+    BStringList job_list;
+    for (const auto jobid : unique_job_ids) { job_list << jobid; }
+
+    Mmsg(query,
+         "SELECT JobId, Name, JobBytes, StartTime FROM Job WHERE JobId IN (%s) "
+         "ORDER BY JobId",
+         job_list.Join(',').c_str());
+
+    struct JobDetailsHandlerContext {
+      std::unordered_map<JobId_t, PoolPruneJobDetail>* jobs_by_id;
+    } ctx{&jobs_by_id};
+
+    auto handler = [](void* c, int, char** row) {
+      auto* handler_ctx = static_cast<JobDetailsHandlerContext*>(c);
+      if (row[0]) {
+        PoolPruneJobDetail detail;
+        detail.jobid = str_to_int64(row[0]);
+        detail.name = row[1] ? row[1] : "";
+        detail.bytes = row[2] ? str_to_uint64(row[2]) : 0;
+        detail.start_time = row[3] ? row[3] : "";
+        (*handler_ctx->jobs_by_id)[detail.jobid] = std::move(detail);
+      }
+      return 0;
+    };
+
+    if (!ua->db->SqlQuery(query.c_str(), handler, &ctx)) {
+      if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
+      return false;
+    }
+  }
+
+  for (auto& volume : volume_details) {
+    for (const auto jobid : volume.job_ids) {
+      if (const auto it = jobs_by_id.find(jobid); it != jobs_by_id.end()) {
+        volume.prunable_bytes += it->second.bytes;
+      }
+    }
+  }
+
+  job_details.reserve(jobs_by_id.size());
+  for (const auto& [jobid, detail] : jobs_by_id) {
+    static_cast<void>(jobid);
+    job_details.push_back(detail);
+  }
+
+  std::sort(job_details.begin(), job_details.end(),
+            [](const PoolPruneJobDetail& lhs, const PoolPruneJobDetail& rhs) {
+              return lhs.jobid < rhs.jobid;
+            });
+
+  *report = BuildPoolPruneReport(volume_details, job_details);
+  return true;
+}
+
+bool GetPoolPruneSummary(UaContext* ua,
+                         PoolDbRecord* pool,
+                         PoolPruneSummary* summary)
+{
+  if (!summary) { return false; }
+
+  PoolPruneReport report;
+  if (!GetPoolPruneReport(ua, pool, &report)) { return false; }
+
+  *summary = report.summary;
+  return true;
 }
 
 static bool PruneAllVolumes(UaContext* ua,
@@ -225,10 +458,173 @@ bool PruneCmd(UaContext* ua, const char*)
         }
         return PruneAllVolumes(ua, pool, pr, mr);
       } else {
+        std::vector<std::string> selected_volumes;
+        std::unordered_set<std::string> seen_volumes;
+        for (int i = 1; i < ua->argc; ++i) {
+          if (!ua->argv[i]) { continue; }
+          if (!Bstrcasecmp(ua->argk[i], NT_("volume"))) { continue; }
+
+          std::string volume_name = ua->argv[i];
+          if (seen_volumes.insert(volume_name).second) {
+            selected_volumes.push_back(std::move(volume_name));
+          }
+        }
+
+        if ((FindArgWithValue(ua, NT_("pool")) >= 0)
+            || ua->AclHasRestrictions(Pool_ACL)) {
+          pool = get_pool_resource(ua);
+          if (!pool) { return false; }
+        } else {
+          pool = nullptr;
+        }
+
         if (ua->AclHasRestrictions(Client_ACL)) {
           ua->ErrorMsg(permission_denied_message, "client");
           return false;
         }
+
+        if (selected_volumes.empty() && pool) {
+          PoolDbRecord pool_record;
+          bstrncpy(pool_record.Name, pool->resource_name_,
+                   sizeof(pool_record.Name));
+          if (!ua->db->GetPoolRecord(ua->jcr, &pool_record)) {
+            ua->ErrorMsg(T_("Pool %s doesn't exist.\n"), pool->resource_name_);
+            return false;
+          }
+
+          PoolPruneReport report;
+          if (!GetPoolPruneReport(ua, &pool_record, &report)) {
+            ua->ErrorMsg(T_("Failed to compute prune details for pool %s.\n"),
+                         pool_record.Name);
+            return false;
+          }
+
+          if (report.volumes.empty()) {
+            ua->SendMsg(T_("No prunable volumes found in Pool \"%s\".\n"),
+                        pool_record.Name);
+            return true;
+          }
+
+          char jobs[edit::min_buffer_size];
+          char bytes[edit::min_buffer_size];
+          ua->SendMsg(
+              T_("Prunable volumes in Pool \"%s\" (oldest data first):\n"),
+              pool_record.Name);
+          for (size_t i = 0; i < report.volumes.size(); ++i) {
+            const auto& volume = report.volumes[i];
+            ua->SendMsg("  %zu: %s | lastwritten=%s | jobs=%s | bytes=%s\n",
+                        i + 1, volume.volume_name.c_str(),
+                        volume.last_written.c_str(),
+                        edit_uint64_with_commas(volume.prunable_jobs, jobs),
+                        edit_uint64_with_suffix(volume.prunable_bytes, bytes));
+          }
+
+          if (!GetCmd(ua,
+                      T_("Enter volume numbers or names separated by commas "
+                         "(or \"all\"): "))) {
+            return false;
+          }
+
+          auto trim = [](std::string value) {
+            auto is_space = [](unsigned char c) { return std::isspace(c); };
+            value.erase(value.begin(),
+                        std::find_if_not(value.begin(), value.end(), is_space));
+            value.erase(
+                std::find_if_not(value.rbegin(), value.rend(), is_space).base(),
+                value.end());
+            return value;
+          };
+
+          std::string selection = trim(ua->cmd);
+          if (selection.empty()) {
+            ua->ErrorMsg(T_("No volumes selected.\n"));
+            return false;
+          }
+
+          if (Bstrcasecmp(selection.c_str(), "all")) {
+            for (const auto& volume : report.volumes) {
+              selected_volumes.push_back(volume.volume_name);
+            }
+          } else {
+            size_t start = 0;
+            while (start <= selection.size()) {
+              const auto end = selection.find(',', start);
+              auto token = trim(selection.substr(start, end - start));
+              if (!token.empty()) {
+                if (Is_a_number(token.c_str())) {
+                  const auto selection_index = str_to_int64(token.c_str());
+                  if (selection_index < 1
+                      || selection_index
+                             > static_cast<int64_t>(report.volumes.size())) {
+                    ua->ErrorMsg(T_("Invalid prune selection \"%s\".\n"),
+                                 token.c_str());
+                    return false;
+                  }
+                  token = report.volumes[selection_index - 1].volume_name;
+                }
+
+                if (!seen_volumes.insert(token).second) {
+                  start = (end == std::string::npos) ? selection.size() + 1
+                                                     : end + 1;
+                  continue;
+                }
+
+                const auto match = std::find_if(
+                    report.volumes.begin(), report.volumes.end(),
+                    [&token](const PoolPruneVolumeDetail& volume) {
+                      return volume.volume_name == token;
+                    });
+                if (match == report.volumes.end()) {
+                  ua->ErrorMsg(
+                      T_("Volume \"%s\" is not currently prunable in Pool "
+                         "\"%s\".\n"),
+                      token.c_str(), pool_record.Name);
+                  return false;
+                }
+                selected_volumes.push_back(std::move(token));
+              }
+
+              if (end == std::string::npos) { break; }
+              start = end + 1;
+            }
+          }
+        }
+
+        if (!selected_volumes.empty()) {
+          bool result = true;
+          for (const auto& volume_name : selected_volumes) {
+            if (!SelectMediaDbrByName(ua, &mr, volume_name.c_str())) {
+              return false;
+            }
+            if (!SelectPoolForMediaDbr(ua, &pr, &mr)) { return false; }
+
+            if (pool && strcmp(pool->resource_name_, pr.Name)) {
+              ua->ErrorMsg(T_("Volume \"%s\" is not in Pool \"%s\".\n"),
+                           mr.VolumeName, pool->resource_name_);
+              result = false;
+              continue;
+            }
+
+            if (mr.Enabled == VOL_ARCHIVED) {
+              ua->ErrorMsg(
+                  T_("Cannot prune Volume \"%s\" because it is archived.\n"),
+                  mr.VolumeName);
+              result = false;
+              continue;
+            }
+
+            std::string msg("Volume");
+            msg.append(" (" + volume_name + ")");
+            if (!ConfirmRetention(ua, &mr.VolRetention, msg.c_str())) {
+              result = false;
+              continue;
+            }
+
+            result &= PruneVolume(ua, &mr);
+          }
+          return result;
+        }
+
         if (!SelectMediaDbr(ua, &mr)) { return false; }
         if (!SelectPoolForMediaDbr(ua, &pr, &mr)) { return false; }
 
@@ -837,54 +1233,11 @@ int GetPruneListForVolume(UaContext* ua,
                           MediaDbRecord* mr,
                           std::vector<JobId_t>& prune_list)
 {
-  PoolMem query(PM_MESSAGE);
-  utime_t now;
-  char ed1[50], ed2[50];
+  if (!GetPruneCandidatesForVolume(ua, mr, prune_list)) { return 0; }
 
-  if (mr->Enabled == VOL_ARCHIVED) {
-    return 0; /* cannot prune Archived volumes */
-  }
-
-  // Now add to the  list of JobIds for Jobs written to this Volume
-  utime_t VolRetention = mr->VolRetention;
-  now = (utime_t)time(NULL);
-  ua->db->FillQuery<BareosDb::SQL_QUERY::sel_JobMedia>(
-      query, edit_int64(mr->MediaId, ed1), edit_int64(now - VolRetention, ed2));
-
-  Dmsg3(250, "Now=%d VolRetention=%d now-VolRetention=%s\n", (int)now,
-        (int)VolRetention, ed2);
-  Dmsg1(050, "Query=%s\n", query.c_str());
-
-
-  if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
-                        static_cast<void*>(&prune_list))) {
-    if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
-    Dmsg0(050, "Adding eligible jobs for pruning failed\n");
-    return 0;
-  }
-
-  // in case job was the result of a copy or migration, delete the related
-  // migration or copy job
-  if (prune_list.size() > 0) {
-    BStringList copy_migrate_jobs_list;
-    for (auto jobid : prune_list) { copy_migrate_jobs_list << jobid; }
-    Mmsg(query,
-         "SELECT JobId from Job "
-         "WHERE type in ('%c','%c') AND priorjobid in (%s)",
-         JT_COPY, JT_MIGRATE, copy_migrate_jobs_list.Join(',').c_str());
-
-    if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
-                          static_cast<void*>(&prune_list))) {
-      if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
-      Dmsg0(050,
-            "Adding migration and copy child jobs eligible for pruning "
-            "failed\n");
-      return 0;
-    }
-  }
-
-  int NumJobsToBePruned = ExcludeRunningJobsFromList(prune_list);
+  int NumJobsToBePruned = prune_list.size();
   if (NumJobsToBePruned > 0) {
+    utime_t VolRetention = mr->VolRetention;
     ua->SendMsg(T_("Volume \"%s\" has Volume Retention of %" PRId64
                    " sec. and has %d jobs that will be pruned\n"),
                 mr->VolumeName, VolRetention, NumJobsToBePruned);

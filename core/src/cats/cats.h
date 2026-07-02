@@ -42,6 +42,7 @@
 #include "lib/crypto.h"
 #include "lib/base64.h"
 #include "lib/source_location.h"
+#include "lib/util.h"
 
 #include <bitset>
 #include <string>
@@ -808,7 +809,8 @@ class BareosDb : public BareosDbQueryEnum {
                       bool last,
                       bool count,
                       OutputFormatter* sendit,
-                      e_list_type type);
+                      e_list_type type,
+                      bool descending = false);
   void ListJobTotals(JobControlRecord* jcr,
                      JobDbRecord* jr,
                      OutputFormatter* sendit);
@@ -894,8 +896,6 @@ class BareosDb : public BareosDbQueryEnum {
   {
     return queries[static_cast<int>(query)];
   }
-
-  static constexpr void printf_check(const char*, ...) PRINTF_LIKE(1, 2) {}
 
   template <SQL_QUERY query, typename... Args>
   void FillQuery(POOLMEM*& storage, Args&&... args)

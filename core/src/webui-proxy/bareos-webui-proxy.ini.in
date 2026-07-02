@@ -1,0 +1,24 @@
+# bareos-webui-proxy configuration
+#
+# [listen] configures where the proxy accepts WebSocket connections.
+# Every other section defines one selectable Bareos Director target.
+# The section name is shown in the WebUI and is used as the real
+# director name by default. Set director_name only when the real
+# Bareos Director name differs from the section name.
+# Director address defaults to localhost and port defaults to 9101.
+[listen]
+address = localhost
+port = 9104
+# Session idle timeout in minutes (default: 30)
+# session_idle_timeout_minutes = 30
+# Session absolute lifetime in hours (default: 8)
+# session_absolute_lifetime_hours = 8
+
+[bareos-dir]
+address = localhost
+tls_psk_disable = no
+
+#[site-b]
+#address = dr.example.com
+#director_name = bareos-dir
+#tls_psk_disable = no

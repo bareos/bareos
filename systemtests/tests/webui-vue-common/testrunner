@@ -1,0 +1,56 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+. ./environment
+. "${BAREOS_SCRIPTS_DIR}/functions"
+
+proxy_log="${tmp}/webui-vue-proxy.out"
+playwright_log="${tmp}/webui-vue-playwright.out"
+
+start_test
+
+pushd "${CMAKE_SOURCE_DIR}/webui-vue" >/dev/null
+if ! PLAYWRIGHT_BASE_URL="${BAREOS_WEBUI_BASE_URL}" \
+  PLAYWRIGHT_ARTIFACTS_DIR="${tmp}/playwright-artifacts" \
+  BAREOS_WEBUI_USERNAME="${BAREOS_WEBUI_USERNAME}" \
+  BAREOS_WEBUI_PASSWORD="${BAREOS_WEBUI_PASSWORD}" \
+  GOOGLE_CHROME_EXECUTABLE="${GOOGLE_CHROME_EXECUTABLE}" \
+  "${WEBUI_VUE_PLAYWRIGHT_EXECUTABLE}" test --reporter=line \
+  >"${playwright_log}" 2>&1; then
+  set_error "$(cat "${playwright_log}")"
+fi
+popd >/dev/null
+
+if [[ -n "${BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT}" ]]; then
+  if ! grep -F "director transport: ${BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT}" \
+    "${proxy_log}" >/dev/null; then
+    set_error "webui-vue proxy did not use expected director transport ${BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT}:\n$(cat "${proxy_log}")"
+  fi
+fi
+
+end_test
