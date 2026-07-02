@@ -36,7 +36,7 @@ aarch64/bareos-tools
 aarch64/bareos-traymonitor
 aarch64/bareos-webui
 aarch64/bareos-webui-proxy
-aarch64/bareos-webui-vue
+aarch64/bareos-webui-php
 debug/aarch64/bareos-barri-cli-debuginfo
 debug/aarch64/bareos-bconsole-debuginfo
 debug/aarch64/bareos-common-debuginfo
