@@ -381,7 +381,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
            * files on the same filesystem. The BXATTR_FLAG_SAVE_NATIVE flags
            * gets sets again when we change from one filesystem to another. */
           xattr_data->flags &= ~BXATTR_FLAG_SAVE_NATIVE;
-          retval = BxattrExitCode::kWarning;
+          retval = BxattrExitCode::kInfo;
           warn_if_disabling_xattr(jcr, xattr_data->last_fname);
           goto bail_out;
         default:
@@ -716,7 +716,7 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
            * BXATTR_FLAG_RESTORE_NATIVE flags gets sets again when we
            * change from one filesystem to another. */
           xattr_data->flags &= ~BXATTR_FLAG_SAVE_NATIVE;
-          retval = BxattrExitCode::kWarning;
+          retval = BxattrExitCode::kInfo;
           warn_if_disabling_xattrs(jcr, xattr_data->last_fname);
           goto bail_out;
         default:
