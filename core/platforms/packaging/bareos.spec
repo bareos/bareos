@@ -1032,6 +1032,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 
 %files webui-vue
 %defattr(-,root,root,-)
+%doc webui-vue/tests/selenium
 %{_datadir}/%{name}-webui-vue/
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
 
