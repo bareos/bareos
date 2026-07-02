@@ -10,7 +10,7 @@ FileSet {
     # the post-write size warning path in the file daemon.
     Plugin = "bpipe"
              ":file=/bpipe-warning-test"
-             ":reader=/bin/echo this is test data for post-write warning"
-             ":writer=/bin/cat"
+             ":reader=bash ./warningreader"
+             ":writer=bash ./warningwriter"
   }
 }

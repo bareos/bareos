@@ -10,7 +10,7 @@ FileSet {
     # warning, because warning conditions require bytes actually written.
     Plugin = "bpipe"
              ":file=/bpipe-no-warning-empty-test"
-             ":reader=/bin/true"
-             ":writer=/bin/cat"
+             ":reader=bash ./emptyreader"
+             ":writer=bash ./warningwriter"
   }
 }
