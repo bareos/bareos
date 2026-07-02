@@ -589,8 +589,8 @@ static int InsertBootstrapHandler(void* ctx, int, char** row)
     DecodeStat(row[4], &statp, sizeof(statp), &link_fi);
     if (IsPayloadBearingVirtualFile(statp) && statp.st_size > 0) {
       auto size = static_cast<uint64_t>(statp.st_size);
-      auto remaining = std::numeric_limits<uint64_t>::max()
-                       - vctx->primary_data_bytes;
+      auto remaining
+          = std::numeric_limits<uint64_t>::max() - vctx->primary_data_bytes;
       vctx->primary_data_bytes += std::min(size, remaining);
     }
   }
@@ -632,8 +632,7 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
   FreeUaContext(ua);
   vctx.restore.bsr.reset(nullptr);
 
-  auto max_primary
-      = static_cast<uint64_t>(std::numeric_limits<int64_t>::max());
+  auto max_primary = static_cast<uint64_t>(std::numeric_limits<int64_t>::max());
   jcr.dir_impl->jr.PrimaryDataBytes
       = static_cast<int64_t>(std::min(vctx.primary_data_bytes, max_primary));
   bstrncpy(jcr.dir_impl->jr.PrimaryDataSource, "computed_virtual",

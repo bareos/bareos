@@ -205,8 +205,8 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
       edit_uint64(jr->JobBytes, ed1), edit_uint64(jr->ReadBytes, ed4),
       primary_data_bytes_sql, primary_source_sql, jr->JobFiles, jr->JobErrors,
       jr->VolSessionId, jr->VolSessionTime, jr->PoolId, jr->FileSetId,
-      edit_uint64(JobTDate, ed2), rdt, PriorJobId, jr->HasBase,
-      jr->PurgedFiles, edit_int64(jr->JobId, ed3));
+      edit_uint64(JobTDate, ed2), rdt, PriorJobId, jr->HasBase, jr->PurgedFiles,
+      edit_int64(jr->JobId, ed3));
 
   return UpdateDb(jcr, cmd) > 0;
 }

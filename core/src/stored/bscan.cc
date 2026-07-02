@@ -790,7 +790,8 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
       }
 
       if (has_initial_metadata) {
-        Pmsg1(000, T_("Info: Late metadata for FileIndex %d\n"), rec->FileIndex);
+        Pmsg1(000, T_("Info: Late metadata for FileIndex %d\n"),
+              rec->FileIndex);
       } else {
         hasInitialMetadata[key] = true;
       }

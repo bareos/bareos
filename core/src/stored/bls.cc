@@ -424,7 +424,8 @@ static bool RecordCb(DeviceControlRecord*, DeviceRecord* t_rec)
       auto key = MetadataKey(t_rec);
       bool is_late_metadata = hasInitialMetadata[key];
       if (is_late_metadata) {
-        Pmsg1(000, T_("Info: Late metadata for FileIndex %d\n"), t_rec->FileIndex);
+        Pmsg1(000, T_("Info: Late metadata for FileIndex %d\n"),
+              t_rec->FileIndex);
       } else {
         hasInitialMetadata[key] = true;
       }

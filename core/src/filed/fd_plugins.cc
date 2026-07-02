@@ -245,16 +245,14 @@ static bool HasPostBackupFileCallback(Plugin* plugin)
   if (!funcs) { return false; }
 
   return funcs->size >= offsetof(PluginFunctions, postBackupFile)
-         + sizeof(funcs->postBackupFile)
+                            + sizeof(funcs->postBackupFile)
          && funcs->postBackupFile != nullptr;
 }
 
 static void RecordPluginPostWriteWarning(JobControlRecord* jcr,
                                          const char* plugin_name)
 {
-  if (!jcr || !jcr->fd_impl || !plugin_name || *plugin_name == '\0') {
-    return;
-  }
+  if (!jcr || !jcr->fd_impl || !plugin_name || *plugin_name == '\0') { return; }
 
   jcr->fd_impl->plugin_postwrite_warnings[plugin_name]++;
 }
@@ -263,7 +261,8 @@ void EmitPluginPostWriteWarnings(JobControlRecord* jcr)
 {
   if (!jcr || !jcr->fd_impl) { return; }
 
-  for (const auto& [plugin_name, count] : jcr->fd_impl->plugin_postwrite_warnings) {
+  for (const auto& [plugin_name, count] :
+       jcr->fd_impl->plugin_postwrite_warnings) {
     if (count == 0) { continue; }
 
     Jmsg(jcr, M_WARNING, 0,
@@ -765,7 +764,8 @@ bool PluginPostBackupFile(JobControlRecord* jcr,
   ff_pkt->statp = sp->statp;
   const auto final_size = static_cast<int64_t>(sp->statp.st_size);
 
-  if (initial_unknown_size && final_size < 1 && jcr->ReadBytes > read_bytes_before) {
+  if (initial_unknown_size && final_size < 1
+      && jcr->ReadBytes > read_bytes_before) {
     RecordPluginPostWriteWarning(jcr, plugin_label.c_str());
   }
 

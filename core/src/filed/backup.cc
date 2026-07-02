@@ -836,9 +836,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     sd->signal(BNET_EOD); /* end of hardlink record */
   }
 
-  if (plugin_started) {
-    PluginPostBackupFile(jcr, ff_pkt, read_bytes_before);
-  }
+  if (plugin_started) { PluginPostBackupFile(jcr, ff_pkt, read_bytes_before); }
 
 good_rtn:
   rtnstat = jcr->IsJobCanceled() ? 0 : 1; /* good return if not canceled */
