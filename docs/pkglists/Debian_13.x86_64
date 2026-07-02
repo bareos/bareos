@@ -1,5 +1,5 @@
 all/bareos-webui
-all/bareos-webui-vue
+all/bareos-webui-php
 all/python3-bareos
 amd64/bareos
 amd64/bareos-barri-cli
