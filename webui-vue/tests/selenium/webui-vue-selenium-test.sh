@@ -80,7 +80,7 @@ export BAREOS_WEBUI_LOG_PATH="$(dirname "$0")/.."
 cd "$(dirname "$0")/.."
 
 DISPLAY=:99 VM_IP="${VM_IP}" DIST="${DIST}" \
-  python3 "$(dirname "$0")/webui-vue-selenium-test.py" -v \
-  >"${BAREOS_WEBUI_LOG_PATH}/webui-vue-selenium-test.log" 2>&1
+  python3 "$(dirname "$0")/webui-selenium-test.py" -v \
+  >"${BAREOS_WEBUI_LOG_PATH}/webui-selenium-test.log" 2>&1
 
-cat "${BAREOS_WEBUI_LOG_PATH}/webui-vue-selenium-test.log"
+cat "${BAREOS_WEBUI_LOG_PATH}/webui-selenium-test.log"
