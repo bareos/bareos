@@ -246,9 +246,9 @@ class JobControlRecord {
   PathList* path_list{};      /**< Directory list (used by findlib) */
   bool is_passive_client_connection_probing{}; /**< Set if director probes a passive client connection */
 
-  bool pre_scripts_ran{false};
-  bool post_vss_scripts_ran{false};
-  bool post_scripts_ran{false};
+  std::atomic_flag pre_scripts_ran{};
+  std::atomic_flag post_vss_scripts_ran{};
+  std::atomic_flag post_scripts_ran{};
 
   union {
     DirectorJcrImpl* dir_impl;
