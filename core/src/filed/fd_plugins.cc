@@ -745,12 +745,20 @@ bool PluginPostBackupFile(JobControlRecord* jcr,
   if (!jcr || !ff_pkt || !sp || !jcr->plugin_ctx) { return true; }
 
   auto* plugin = jcr->plugin_ctx->plugin;
-  // st_size < 1 covers both "zero" (0) and "unknown" (-1) as set by plugins
-  // like bpipe-fd that cannot know the size before streaming.
-  const bool initial_unknown_size
-      = S_ISREG(ff_pkt->statp.st_mode) && ff_pkt->statp.st_size < 1;
   const char* plugin_name = sp->cmd ? sp->cmd : ff_pkt->plugin;
   const auto plugin_label = PluginCommandName(plugin_name);
+  // st_size < 1 covers both "zero" (0) and "unknown" (-1) as set by plugins
+  // like bpipe-fd that cannot know the size before streaming.
+  Jmsg(jcr, M_WARNING, 0,
+       "TEMP bpipe debug: pre-check plugin=%s ff_type=%d ff_mode=%#o "
+       "ff_isreg=%d ff_size=%" PRId64 " sp_type=%d sp_mode=%#o sp_size=%" PRId64
+       " read_before=%" PRIu64 " read_after=%" PRIu64 "\n",
+       plugin_label.c_str(), ff_pkt->type, (unsigned int)ff_pkt->statp.st_mode,
+       S_ISREG(ff_pkt->statp.st_mode), (int64_t)ff_pkt->statp.st_size,
+       sp->type, (unsigned int)sp->statp.st_mode, (int64_t)sp->statp.st_size,
+       read_bytes_before, jcr->ReadBytes);
+  const bool initial_unknown_size
+      = S_ISREG(ff_pkt->statp.st_mode) && ff_pkt->statp.st_size < 1;
 
   Jmsg(jcr, M_WARNING, 0,
        "TEMP bpipe debug: PluginPostBackupFile plugin=%s initial_size=%" PRId64
