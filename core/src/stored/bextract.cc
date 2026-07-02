@@ -95,13 +95,41 @@ static uint32_t wsize;        /* write size */
 static uint64_t fileAddr = 0; /* file write address */
 
 /* Phase 8: Track metadata state per (session, file index). */
-static std::unordered_map<uint64_t, bool> hasInitialMetadata;
-static std::unordered_map<uint64_t, bool> sawDataBeforeInitialMetadata;
+struct MetadataStateKey {
+  uint32_t vol_session_time;
+  uint32_t vol_session_id;
+  uint32_t file_index;
 
-static uint64_t MetadataKey(const DeviceRecord* rec)
+  bool operator==(const MetadataStateKey& other) const
+  {
+    return vol_session_time == other.vol_session_time
+           && vol_session_id == other.vol_session_id
+           && file_index == other.file_index;
+  }
+};
+
+struct MetadataStateKeyHash {
+  size_t operator()(const MetadataStateKey& key) const
+  {
+    size_t h = std::hash<uint32_t>{}(key.vol_session_time);
+    h ^= std::hash<uint32_t>{}(key.vol_session_id) + 0x9e3779b9 + (h << 6)
+         + (h >> 2);
+    h ^= std::hash<uint32_t>{}(key.file_index) + 0x9e3779b9 + (h << 6)
+         + (h >> 2);
+    return h;
+  }
+};
+
+static std::unordered_map<MetadataStateKey, bool, MetadataStateKeyHash>
+    hasInitialMetadata;
+static std::unordered_map<MetadataStateKey, bool, MetadataStateKeyHash>
+    sawDataBeforeInitialMetadata;
+
+static MetadataStateKey MetadataKey(const DeviceRecord* rec)
 {
-  return (static_cast<uint64_t>(rec->VolSessionId) << 32)
-         | static_cast<uint32_t>(rec->FileIndex);
+  return MetadataStateKey{static_cast<uint32_t>(rec->VolSessionTime),
+                          static_cast<uint32_t>(rec->VolSessionId),
+                          static_cast<uint32_t>(rec->FileIndex)};
 }
 
 
