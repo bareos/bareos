@@ -101,8 +101,8 @@ configure_file(
 
 set(WEBUI_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui)
 configure_file(
-  install/apache/bareos-webui.conf.in
-  ${CMAKE_CURRENT_SOURCE_DIR}/install/apache/bareos-webui.conf @ONLY
+  install/apache/bareos-webui-php.conf.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/install/apache/bareos-webui-php.conf @ONLY
 )
 set(WEBUI_TESTS_DIR ${WEBUI_DIR}/tests/regress)
 if(PHP)
@@ -138,7 +138,7 @@ if(NOT client-only)
   install(FILES install/bareos/bareos-dir.d/profile/webui-limited.conf.example
           DESTINATION ${configtemplatedir}/bareos-dir.d/profile/
   )
-  install(FILES install/apache/bareos-webui.conf DESTINATION ${HTTPD_CONF}/)
+  install(FILES install/apache/bareos-webui-php.conf DESTINATION ${HTTPD_CONF}/)
 
   install(FILES install/directors.ini DESTINATION ${webuiconfdir})
   install(FILES install/configuration.ini DESTINATION ${webuiconfdir})

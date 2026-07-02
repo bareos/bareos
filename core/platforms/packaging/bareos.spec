@@ -1028,12 +1028,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{configtemplatedir}/bareos-dir.d/profile/webui-limited.conf.example
 %config(noreplace) /etc/bareos-webui/directors.ini
 %config(noreplace) /etc/bareos-webui/configuration.ini
-%config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
+%config(noreplace) %{_apache_conf_dir}/bareos-webui-php.conf
 
 %files webui-vue
 %defattr(-,root,root,-)
 %{_datadir}/%{name}-webui-vue/
-%config(noreplace) %{_apache_conf_dir}/bareos-webui-vue.conf
+%config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
 
 %files webui-proxy
 %defattr(-,root,root,-)
