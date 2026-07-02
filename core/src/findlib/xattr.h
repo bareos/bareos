@@ -118,4 +118,6 @@ BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
                                  uint32_t content_length);
 
 
+bool HandleXattrExitCode(JobControlRecord* jcr, BxattrExitCode retval);
+
 #endif  // BAREOS_FINDLIB_XATTR_H_

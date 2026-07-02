@@ -63,6 +63,7 @@
 #include "lib/bsock.h"
 #include "include/jcr.h"
 #include "lib/serial.h"
+#include "filed/filed_jcr_impl.h"
 
 [[maybe_unused]] static void warn_if_disabling_xattrs(JobControlRecord* jcr,
                                                       const char* file)
@@ -2822,3 +2823,25 @@ bail_out:
   return retval;
 }
 #endif
+
+bool HandleXattrExitCode(JobControlRecord* jcr, BxattrExitCode retval)
+{
+  switch (retval) {
+    case BxattrExitCode::kErrorFatal:
+      return false;
+    case BxattrExitCode::kWarning:
+      Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
+      break;
+    case BxattrExitCode::kError:
+      Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
+      jcr->fd_impl->xattr_data->nr_errors++;
+      break;
+    case BxattrExitCode::kInfo:
+      Jmsg(jcr, M_INFO, 0, "%s", jcr->errmsg);
+      [[fallthrough]];
+    case BxattrExitCode::kSuccess:
+      break;
+  }
+
+  return true;
+}
