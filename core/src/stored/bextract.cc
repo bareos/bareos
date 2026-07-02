@@ -58,6 +58,7 @@
 #include "include/jcr.h"
 #include "lib/compression.h"
 #include "lib/serial.h"
+#include "stored/metadata_state.h"
 #include <unordered_map>
 
 namespace storagedaemon {
@@ -94,45 +95,10 @@ static char* wbuf;            /* write buffer address */
 static uint32_t wsize;        /* write size */
 static uint64_t fileAddr = 0; /* file write address */
 
-// Track metadata state per (session, file index).
-struct MetadataStateKey {
-  uint32_t vol_session_time;
-  uint32_t vol_session_id;
-  uint32_t file_index;
-
-  bool operator==(const MetadataStateKey& other) const
-  {
-    return vol_session_time == other.vol_session_time
-           && vol_session_id == other.vol_session_id
-           && file_index == other.file_index;
-  }
-};
-
-struct MetadataStateKeyHash {
-  // A small odd multiplier keeps the three 32-bit fields well mixed in the
-  // unordered_map hash without packing them into a single integer.
-  static constexpr size_t kHashCombineMultiplier = 1315423911u;
-
-  size_t operator()(const MetadataStateKey& key) const
-  {
-    size_t h = std::hash<uint32_t>{}(key.vol_session_time);
-    h = h * kHashCombineMultiplier ^ std::hash<uint32_t>{}(key.vol_session_id);
-    h = h * kHashCombineMultiplier ^ std::hash<uint32_t>{}(key.file_index);
-    return h;
-  }
-};
-
 static std::unordered_map<MetadataStateKey, bool, MetadataStateKeyHash>
     hasInitialMetadata;
 static std::unordered_map<MetadataStateKey, bool, MetadataStateKeyHash>
     sawDataBeforeInitialMetadata;
-
-static MetadataStateKey MetadataKey(const DeviceRecord* rec)
-{
-  return MetadataStateKey{static_cast<uint32_t>(rec->VolSessionTime),
-                          static_cast<uint32_t>(rec->VolSessionId),
-                          static_cast<uint32_t>(rec->FileIndex)};
-}
 
 
 int main(int argc, char* argv[])

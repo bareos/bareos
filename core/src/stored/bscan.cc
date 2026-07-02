@@ -56,6 +56,7 @@
 #include "lib/util.h"
 #include "lib/version.h"
 #include "lib/compression.h"
+#include "stored/metadata_state.h"
 #include <unordered_map>
 
 /* Dummy functions */
@@ -132,44 +133,10 @@ static int num_media = 0;
 static int num_files = 0;
 static int num_restoreobjects = 0;
 
-// Track metadata state per (session, file index).
-struct MetadataStateKey {
-  uint32_t vol_session_time;
-  uint32_t vol_session_id;
-  uint32_t file_index;
-
-  bool operator==(const MetadataStateKey& other) const
-  {
-    return vol_session_time == other.vol_session_time
-           && vol_session_id == other.vol_session_id
-           && file_index == other.file_index;
-  }
-};
-
-struct MetadataStateKeyHash {
-  // Keep the three fields well mixed without packing them into one integer.
-  static constexpr size_t kHashCombineMultiplier = 1315423911u;
-
-  size_t operator()(const MetadataStateKey& key) const
-  {
-    size_t h = std::hash<uint32_t>{}(key.vol_session_time);
-    h = h * kHashCombineMultiplier ^ std::hash<uint32_t>{}(key.vol_session_id);
-    h = h * kHashCombineMultiplier ^ std::hash<uint32_t>{}(key.file_index);
-    return h;
-  }
-};
-
 static std::unordered_map<MetadataStateKey, bool, MetadataStateKeyHash>
     hasInitialMetadata;
 static std::unordered_map<MetadataStateKey, bool, MetadataStateKeyHash>
     sawDataBeforeInitialMetadata;
-
-static MetadataStateKey MetadataKey(const DeviceRecord* rec)
-{
-  return MetadataStateKey{static_cast<uint32_t>(rec->VolSessionTime),
-                          static_cast<uint32_t>(rec->VolSessionId),
-                          static_cast<uint32_t>(rec->FileIndex)};
-}
 
 int main(int argc, char* argv[])
 {
