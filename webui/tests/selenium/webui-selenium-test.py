@@ -143,7 +143,7 @@ class SeleniumTest(unittest.TestCase):
     resolution_x = 1920
     resolution_y = 1080
     chromedriverpath = None
-    base_url = "http://127.0.0.1/bareos-webui"
+    base_url = "http://127.0.0.1/bareos-webui-php"
     username = "admin"
     password = "admin"
     profile = "admin"
