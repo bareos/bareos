@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Improve database encoding error handling [PR #2699]
+
 ## [25.0.4] - 2026-07-02
 
 ### Fixed
@@ -2304,6 +2307,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2692]: https://github.com/bareos/bareos/pull/2692
 [PR #2693]: https://github.com/bareos/bareos/pull/2693
 [PR #2697]: https://github.com/bareos/bareos/pull/2697
+[PR #2699]: https://github.com/bareos/bareos/pull/2699
 [PR #2707]: https://github.com/bareos/bareos/pull/2707
 [PR #2710]: https://github.com/bareos/bareos/pull/2710
 [PR #2713]: https://github.com/bareos/bareos/pull/2713
