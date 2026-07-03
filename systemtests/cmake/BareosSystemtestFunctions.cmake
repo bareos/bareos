@@ -189,7 +189,7 @@ macro(find_systemtests_binary_paths SYSTEMTESTS_BINARIES)
     set(FD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
     set(SD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
     set(DIR_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
-    set(WEBUI_PUBLIC_DIR_TO_TEST /usr/share/bareos-webui/public)
+    set(WEBUI_PUBLIC_DIR_TO_TEST /usr/share/bareos-webui-php/public)
 
   else() # run systemtests on source and compiled files
 

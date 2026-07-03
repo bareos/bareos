@@ -3,4 +3,4 @@
 /etc/apache2/conf-available/bareos-webui-php.conf
 /etc/bareos-webui/directors.ini
 /etc/bareos-webui/configuration.ini
-/usr/share/bareos-webui
+/usr/share/bareos-webui-php

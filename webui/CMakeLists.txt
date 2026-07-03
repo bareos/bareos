@@ -99,7 +99,7 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/module/Application/view/layout/login.phtml @ONLY
 )
 
-set(WEBUI_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui)
+set(WEBUI_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui-php)
 configure_file(
   install/apache/bareos-webui-php.conf.in
   ${CMAKE_CURRENT_SOURCE_DIR}/install/apache/bareos-webui-php.conf @ONLY
@@ -126,10 +126,10 @@ endif()
 
 if(NOT client-only)
   install(FILES version.php init_autoloader.php
-          DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui
+          DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui-php
   )
   install(DIRECTORY tests config module public vendor
-          DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui
+          DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui-php
   )
 
   install(FILES install/bareos/bareos-dir.d/console/admin.conf.example
