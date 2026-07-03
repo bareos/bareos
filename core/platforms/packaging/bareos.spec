@@ -1065,7 +1065,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %doc webui/README.md webui/copyright
 %doc webui/doc/README-TRANSLATION.md
 %doc webui/tests/selenium
-%{_datadir}/%{name}-webui/
+%{_datadir}/%{name}-webui-php/
 %dir /etc/bareos-webui
 %{configtemplatedir}/bareos-dir.d/console/admin.conf.example
 %{configtemplatedir}/bareos-dir.d/profile/webui-limited.conf.example
@@ -1076,7 +1076,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files webui
 %defattr(-,root,root,-)
 %doc webui-vue/tests/selenium
-%{_datadir}/%{name}-webui-vue/
+%{_datadir}/%{name}-webui/
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
 
 %files webui-proxy
