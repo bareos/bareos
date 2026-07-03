@@ -641,14 +641,17 @@ class BareosCore : public bc::Core::Service {
     if (!bareos_var) {
       return grpc::Status(
           grpc::StatusCode::INVALID_ARGUMENT,
-          fmt::format(FMT_STRING("unknown string variable {}"), int(var)));
+          fmt::format(FMT_STRING("unknown string variable '{}' ({})"),
+                      BareosStringVariable_Name(var), int(var)));
     }
 
     if (!SetBareosValue(core, *bareos_var,
                         const_cast<char*>(request->value().c_str()))) {
       return grpc::Status(
           grpc::StatusCode::INVALID_ARGUMENT,
-          fmt::format(FMT_STRING("set not supported for {}"), int(var)));
+          fmt::format(
+              FMT_STRING("set not supported for '{}' (bareos: {}, grpc: {})"),
+              BareosStringVariable_Name(var), int(*bareos_var), int(var)));
     }
 
     return grpc::Status::OK;
@@ -665,7 +668,8 @@ class BareosCore : public bc::Core::Service {
     if (!bareos_var) {
       return grpc::Status(
           grpc::StatusCode::INVALID_ARGUMENT,
-          fmt::format(FMT_STRING("unknown string variable {}"), int(var)));
+          fmt::format(FMT_STRING("unknown string variable '{}' ({})"),
+                      BareosStringVariable_Name(var), int(var)));
     }
 
     const char* str = nullptr;
@@ -673,7 +677,9 @@ class BareosCore : public bc::Core::Service {
     if (!GetBareosValue(core, *bareos_var, &str)) {
       return grpc::Status(
           grpc::StatusCode::INVALID_ARGUMENT,
-          fmt::format(FMT_STRING("get not supported for {}"), int(var)));
+          fmt::format(
+              FMT_STRING("get not supported for '{}' (bareos: {}, grpc: {})"),
+              BareosStringVariable_Name(var), int(*bareos_var), int(var)));
     }
 
     if (str == nullptr) {
@@ -697,14 +703,17 @@ class BareosCore : public bc::Core::Service {
     if (!bareos_var) {
       return grpc::Status(
           grpc::StatusCode::INVALID_ARGUMENT,
-          fmt::format(FMT_STRING("unknown string variable {}"), int(var)));
+          fmt::format(FMT_STRING("unknown int variable '{}' ({})"),
+                      BareosIntVariable_Name(var), int(var)));
     }
 
     int val = request->value();
     if (!SetBareosValue(core, *bareos_var, &val)) {
       return grpc::Status(
           grpc::StatusCode::INVALID_ARGUMENT,
-          fmt::format(FMT_STRING("set not supported for {}"), int(var)));
+          fmt::format(
+              FMT_STRING("set not supported for '{}' (bareos: {}, grpc: {})"),
+              BareosIntVariable_Name(var), int(*bareos_var), int(var)));
     }
 
     return grpc::Status::OK;
@@ -721,7 +730,8 @@ class BareosCore : public bc::Core::Service {
     if (!bareos_var) {
       return grpc::Status(
           grpc::StatusCode::INVALID_ARGUMENT,
-          fmt::format(FMT_STRING("unknown string variable {}"), int(var)));
+          fmt::format(FMT_STRING("unknown int variable '{}' ({})"),
+                      BareosIntVariable_Name(var), int(var)));
     }
 
     int value{0};
@@ -731,13 +741,20 @@ class BareosCore : public bc::Core::Service {
         if (!GetBareosValue(core, *bareos_var, &v64)) {
           return grpc::Status(
               grpc::StatusCode::INVALID_ARGUMENT,
-              fmt::format(FMT_STRING("get not supported for {}"), int(var)));
+              fmt::format(
+                  FMT_STRING(
+                      "get not supported for '{}' (bareos: {}, grpc: {})"),
+                  BareosIntVariable_Name(var), int(*bareos_var),
+                  int(*bareos_var), int(var)));
         }
 
         if (v64 > std::numeric_limits<decltype(value)>::max()) {
           return grpc::Status(
               grpc::StatusCode::INTERNAL,
-              fmt::format(FMT_STRING("Value for {} is too big"), int(var)));
+              fmt::format(
+                  FMT_STRING(
+                      "Value for '{}' (bareos: {}, grpc: {}}} is too big"),
+                  BareosIntVariable_Name(var), int(*bareos_var), int(var)));
         }
 
         value = static_cast<int>(v64);
@@ -747,7 +764,10 @@ class BareosCore : public bc::Core::Service {
         if (!GetBareosValue(core, *bareos_var, &value)) {
           return grpc::Status(
               grpc::StatusCode::INVALID_ARGUMENT,
-              fmt::format(FMT_STRING("get not supported for {}"), int(var)));
+              fmt::format(
+                  FMT_STRING(
+                      "get not supported for '{}' (bareos: {}, grpc: {})"),
+                  BareosIntVariable_Name(var), int(*bareos_var), int(var)));
         }
       } break;
     }
@@ -768,14 +788,17 @@ class BareosCore : public bc::Core::Service {
     if (!bareos_var) {
       return grpc::Status(
           grpc::StatusCode::INVALID_ARGUMENT,
-          fmt::format(FMT_STRING("unknown string variable {}"), int(var)));
+          fmt::format(FMT_STRING("unknown flag variable '{}' ({})"),
+                      BareosFlagVariable_Name(var), int(var)));
     }
 
     bool val = request->value();
     if (!SetBareosValue(core, *bareos_var, &val)) {
       return grpc::Status(
           grpc::StatusCode::INVALID_ARGUMENT,
-          fmt::format(FMT_STRING("set not supported for {}"), int(var)));
+          fmt::format(
+              FMT_STRING("set not supported for '{}' (bareos: {}, grpc: {})"),
+              BareosFlagVariable_Name(var), int(*bareos_var), int(var)));
     }
 
     return grpc::Status::OK;
@@ -792,7 +815,8 @@ class BareosCore : public bc::Core::Service {
     if (!bareos_var) {
       return grpc::Status(
           grpc::StatusCode::INVALID_ARGUMENT,
-          fmt::format(FMT_STRING("unknown string variable {}"), int(var)));
+          fmt::format(FMT_STRING("unknown flag variable '{}' ({})"),
+                      BareosFlagVariable_Name(var), int(var)));
     }
 
     bool value{false};
@@ -800,7 +824,9 @@ class BareosCore : public bc::Core::Service {
     if (!GetBareosValue(core, *bareos_var, &value)) {
       return grpc::Status(
           grpc::StatusCode::INVALID_ARGUMENT,
-          fmt::format(FMT_STRING("get not supported for {}"), int(var)));
+          fmt::format(
+              FMT_STRING("get not supported for '{}' (bareos: {}, grpc: {})"),
+              BareosFlagVariable_Name(var), int(*bareos_var), int(var)));
     }
 
     response->set_value(value);
