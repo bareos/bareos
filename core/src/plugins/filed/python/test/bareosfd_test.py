@@ -97,13 +97,19 @@ class TestBareosFd(unittest.TestCase):
         # )
 
     def test_StatPacket(self):
-        timestamp = time.time()
+        timestamp_before = time.time()
         test_StatPacket = bareosfd.StatPacket()
+        timestamp_after = time.time()
 
-        # check that the initialization of timestamps from current time stamp works
-        self.assertAlmostEqual(test_StatPacket.st_atime, timestamp, delta=1.1)
-        self.assertAlmostEqual(test_StatPacket.st_mtime, timestamp, delta=1.1)
-        self.assertAlmostEqual(test_StatPacket.st_ctime, timestamp, delta=1.1)
+        # check that initialization uses a current timestamp while tolerating
+        # scheduler jitter and coarse timer granularity on CI machines.
+        for ts_value in (
+            test_StatPacket.st_atime,
+            test_StatPacket.st_mtime,
+            test_StatPacket.st_ctime,
+        ):
+            self.assertGreaterEqual(ts_value, timestamp_before - 1.0)
+            self.assertLessEqual(ts_value, timestamp_after + 1.0)
 
         # set fixed values for comparison
         test_StatPacket.st_atime = 999

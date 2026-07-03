@@ -216,9 +216,6 @@ int main()
   } else {
     printf("load_bareos_plugin() not found in module");
   }
-  Py_DECREF(pDict);
-  Py_DECREF(pFunc);
-
   Py_DECREF(pModule);
   Py_Finalize();
   return 0;
