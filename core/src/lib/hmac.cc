@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU Lesser General
@@ -34,11 +34,11 @@
 #define PAD_LEN 64 /* PAD length */
 #define SIG_LEN 16 /* MD5 digest length */
 
-void hmac_md5(uint8_t* text, /* pointer to data stream */
-              int text_len,  /* length of data stream */
-              uint8_t* key,  /* pointer to authentication key */
-              int key_len,   /* length of authentication key */
-              uint8_t* hmac) /* returned hmac-md5 */
+void hmac_md5(const uint8_t* text, /* pointer to data stream */
+              int text_len,        /* length of data stream */
+              const uint8_t* key,  /* pointer to authentication key */
+              int key_len,         /* length of authentication key */
+              uint8_t* hmac)       /* returned hmac-md5 */
 {
   MD5_CTX md5c;
   uint8_t k_ipad[PAD_LEN]; /* inner padding - key XORd with ipad */
