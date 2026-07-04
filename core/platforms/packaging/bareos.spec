@@ -2011,6 +2011,7 @@ a2enmod fcgid &> /dev/null || true
 %if 0%{?suse_version}
 a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
+a2enmod proxy_http &> /dev/null || true
 a2enmod proxy_wstunnel &> /dev/null || true
 apachectl graceful &> /dev/null || true
 %endif
