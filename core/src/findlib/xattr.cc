@@ -324,7 +324,7 @@ BxattrExitCode SerializeAndSendXattrStream(JobControlRecord* jcr,
 // This is a supported OS, See what kind of interface we should use.
 #  if defined(HAVE_AIX_OS)
 
-#    if (!defined(HAVE_AIX_EA)
+#    if !defined(HAVE_AIX_EA)
 #      error "Missing full support for the Extended Attributes (EA) functions."
 #    endif
 
