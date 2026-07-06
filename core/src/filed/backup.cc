@@ -88,6 +88,10 @@ const bool have_xattr = false;
     (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
 #endif
 
+#ifndef MAX_INTERRUPTS_PER_READ
+#  define MAX_INTERRUPTS_PER_READ 5
+#endif
+
 /* Forward referenced functions */
 
 static int send_data(JobControlRecord* jcr,
@@ -101,6 +105,22 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 #if defined(WIN32_VSS)
 static void CloseVssBackupSession(JobControlRecord* jcr);
 #endif
+
+static ssize_t bread_ignoring_interrupts(BareosFilePacket* bfd,
+                                         void* buf,
+                                         size_t count)
+{
+  ssize_t read_bytes = -1;
+  for (std::size_t i = 0; i <= MAX_INTERRUPTS_PER_READ; ++i) {
+    errno = 0;
+    read_bytes = bread(bfd, buf, count);
+
+    if (read_bytes >= 0) { break; }
+    if (errno != EINTR) { break; }
+  }
+
+  return read_bytes;
+}
 
 /**
  * Find all the requested files and send them
@@ -1034,9 +1054,23 @@ static inline bool SendPlainDataSerially(b_ctx& bctx)
   BareosSocket* sd = bctx.jcr->store_bsock;
 
   // Read the file data
-  while ((sd->message_length
-          = (uint32_t)bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize))
-         > 0) {
+  for (;;) {
+    auto read_bytes
+        = bread_ignoring_interrupts(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize);
+    sd->message_length = read_bytes;
+    if (read_bytes < 0) {
+      /* the api contract is the following:
+       * return value = true => no error during sending
+       *              = false => error during sending
+       * sd->message_length < 0 => error during reading
+       *                    >= 0 => no error during reading
+       * This means that we want to return _true_ for a read error
+       * as otherwise it would imply that the connection got dropped.
+       */
+      break;
+    } else if (read_bytes == 0) {
+      break;
+    }
     if (!SendDataToSd(&bctx)) { goto bail_out; }
   }
   retval = true;
@@ -1323,7 +1357,8 @@ static inline bool SendPlainData(b_ctx& bctx)
     data_message msg(max_buf_size);
     for (bool skip_block = true; skip_block;) {
       skip_block = false;
-      ssize_t read_bytes = bread(&bfd, msg.data_ptr(), msg.data_size());
+      ssize_t read_bytes
+          = bread_ignoring_interrupts(&bfd, msg.data_ptr(), msg.data_size());
       // update offset _before_ sending the header
       offset = bfd.offset;
 

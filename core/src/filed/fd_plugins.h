@@ -240,6 +240,7 @@ typedef enum
   bVarCheckChanges = 20,
   bVarUsedConfig = 21,
   bVarPluginPath = 22,
+  bVarAccurateOptions = 23,
 } bVariable;
 
 // Events that are passed to plugin

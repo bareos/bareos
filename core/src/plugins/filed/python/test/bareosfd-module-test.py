@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -26,3 +26,17 @@ def load_bareos_plugin(plugindef):
     print(bareosfd)
     bareosfd.DebugMessage(100, "Kuckuck")
     bareosfd.JobMessage(100, "Kuckuck")
+
+    accurate_options = bareosfd.GetValue(bareosfd.bVarAccurateOptions)
+    assert isinstance(accurate_options, frozenset)
+    assert accurate_options == frozenset(
+        {
+            bareosfd.bAccurateOptionMtime,
+            bareosfd.bAccurateOptionCtime,
+            bareosfd.bAccurateOptionSize,
+        }
+    )
+    assert (
+        bareosfd.bAccurateOption[b"bAccurateOptionMtime"]
+        == bareosfd.bAccurateOptionMtime
+    )

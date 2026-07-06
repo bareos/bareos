@@ -131,19 +131,19 @@ struct findFOPTS {
   int StripPath{};          /**< Strip path count */
   struct s_sz_matching* size_match{}; /**< Perform size matching ? */
   b_fileset_shadow_type shadow_type{
-      check_shadow_none};        /**< Perform fileset shadowing check ? */
-  char VerifyOpts[MAX_OPTS]{};   /**< Verify options */
-  char AccurateOpts[MAX_OPTS]{}; /**< Accurate mode options */
-  char* plugin{};                /**< Plugin that handle this section */
-  alist<regex_t*> regex;         /**< Regex string(s) */
-  alist<regex_t*> regexdir;      /**< Regex string(s) for directories */
-  alist<regex_t*> regexfile;     /**< Regex string(s) for files */
-  alist<const char*> wild;       /**< Wild card strings */
-  alist<const char*> wilddir;    /**< Wild card strings for directories */
-  alist<const char*> wildfile;   /**< Wild card strings for files */
-  alist<const char*> wildbase;   /**< Wild card strings for basenames */
-  alist<const char*> fstype;     /**< File system type limitation */
-  alist<const char*> Drivetype;  /**< Drive type limitation */
+      check_shadow_none};       /**< Perform fileset shadowing check ? */
+  char VerifyOpts[MAX_OPTS]{};  /**< Verify options */
+  uint64_t accurate_opts{};     /**< Accurate mode options */
+  char* plugin{};               /**< Plugin that handle this section */
+  alist<regex_t*> regex;        /**< Regex string(s) */
+  alist<regex_t*> regexdir;     /**< Regex string(s) for directories */
+  alist<regex_t*> regexfile;    /**< Regex string(s) for files */
+  alist<const char*> wild;      /**< Wild card strings */
+  alist<const char*> wilddir;   /**< Wild card strings for directories */
+  alist<const char*> wildfile;  /**< Wild card strings for files */
+  alist<const char*> wildbase;  /**< Wild card strings for basenames */
+  alist<const char*> fstype;    /**< File system type limitation */
+  alist<const char*> Drivetype; /**< Drive type limitation */
 };
 
 // This is either an include item or an exclude item
@@ -169,6 +169,35 @@ struct HfsPlusInfo {
   char fndrinfo[32]{};     /**< Finder Info */
   off_t rsrclength{0};     /**< Size of resource fork */
 };
+
+/* Accurate comparison option bit values returned by bVarAccurateOptions. */
+typedef enum
+    : std::uint64_t
+{
+  accurate_inode = 1 << 0,
+  accurate_permissions = 1 << 1,
+  accurate_nlink = 1 << 2,
+  accurate_uid = 1 << 3,
+  accurate_gid = 1 << 4,
+  accurate_size = 1 << 5,
+  accurate_atime = 1 << 6,
+  accurate_mtime = 1 << 7,
+  accurate_ctime = 1 << 8,
+  accurate_size_decrease = 1 << 9,
+  accurate_always = 1 << 10,
+  accurate_md5 = 1 << 11,
+  accurate_sha1 = 1 << 12,
+} accurate_check;
+
+
+// This flag is not an accurate option in and of itself, but instead
+// used to signal that the `accurate_option` was set at all, so testing
+// for 0 tells you to use the default values instead
+static constexpr std::uint64_t accurate_options_were_initialized = 1ULL << 63;
+
+uint64_t AccurateOptionsToBitmask(char accurate_opt);
+std::string accurate_opts_as_str(std::uint64_t);
+
 
 /**
  * Definition of the FindFiles packet passed as the
@@ -205,8 +234,8 @@ struct FindFilesPacket {
   bool incremental{false};        /**< Incremental save */
   bool no_read{false};            /**< Do not read this file when using Plugin */
   char VerifyOpts[MAX_OPTS]{};
-  char AccurateOpts[MAX_OPTS]{};
-  char BaseJobOpts[MAX_OPTS]{};
+  uint64_t accurate_opts{};
+  uint64_t base_job_opts{};
   struct s_included_file* included_files_list{nullptr};
   struct s_excluded_file* excluded_files_list{nullptr};
   struct s_excluded_file* excluded_paths_list{nullptr};

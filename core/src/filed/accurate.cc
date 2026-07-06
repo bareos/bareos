@@ -149,11 +149,11 @@ bool AccurateFinish(JobControlRecord* jcr)
  */
 bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
-  char* opts;
+  uint64_t accurate_opts{};
   char* fname;
   int32_t LinkFIc;
   struct stat statc;
-  bool status = false;
+  bool file_changed = false;
   accurate_payload* payload;
 
   ff_pkt->delta_seq = 0;
@@ -174,7 +174,7 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   if (!AccurateLookup(jcr, fname, &payload)) {
     Dmsg1(debuglevel, "accurate %s (not found)\n", fname);
-    status = true;
+    file_changed = true;
     UnstripPath(ff_pkt);
     goto bail_out;
   }
@@ -192,126 +192,112 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
              &LinkFIc); /** decode catalog stat */
 
   if (!jcr->rerunning && (jcr->getJobLevel() == L_FULL)) {
-    opts = ff_pkt->BaseJobOpts;
+    accurate_opts = ff_pkt->base_job_opts;
   } else {
-    opts = ff_pkt->AccurateOpts;
+    accurate_opts = ff_pkt->accurate_opts;
   }
 
-  // Loop over options supplied by user and verify the fields he requests.
-  for (char* p = opts; !status && *p; p++) {
-    char ed1[30], ed2[30];
-    switch (*p) {
-      case 'i': /** Compare INODE numbers */
-        if (statc.st_ino != ff_pkt->statp.st_ino) {
-          Dmsg3(debuglevel - 1, "%s      st_ino   differ. Cat: %s File: %s\n",
-                fname, edit_uint64((uint64_t)statc.st_ino, ed1),
-                edit_uint64((uint64_t)ff_pkt->statp.st_ino, ed2));
-          status = true;
-        }
-        break;
-      case 'p': /** Permissions bits */
-        /* TODO: If something change only in perm, user, group
-         * Backup only the attribute stream */
-        if (statc.st_mode != ff_pkt->statp.st_mode) {
-          Dmsg3(debuglevel - 1,
-                "%s     st_mode  differ. Cat: %04o File: %04o\n", fname,
-                (uint32_t)(statc.st_mode & ~S_IFMT),
-                (uint32_t)(ff_pkt->statp.st_mode & ~S_IFMT));
-          status = true;
-        }
-        break;
-      case 'n': /** Number of links */
-        if (statc.st_nlink != ff_pkt->statp.st_nlink) {
-          Dmsg3(debuglevel - 1,
-                "%s      st_nlink differ. Cat: %" PRIu32 " File: %" PRIu32 "\n",
-                fname, (uint32_t)statc.st_nlink,
-                (uint32_t)ff_pkt->statp.st_nlink);
-          status = true;
-        }
-        break;
-      case 'u': /** User id */
-        if (statc.st_uid != ff_pkt->statp.st_uid) {
-          Dmsg3(debuglevel - 1, "%s      st_uid   differ. Cat: %u File: %u\n",
-                fname, (uint32_t)statc.st_uid, (uint32_t)ff_pkt->statp.st_uid);
-          status = true;
-        }
-        break;
-      case 'g': /** Group id */
-        if (statc.st_gid != ff_pkt->statp.st_gid) {
-          Dmsg3(debuglevel - 1, "%s      st_gid   differ. Cat: %u File: %u\n",
-                fname, (uint32_t)statc.st_gid, (uint32_t)ff_pkt->statp.st_gid);
-          status = true;
-        }
-        break;
-      case 's': /** Size */
-        if (statc.st_size != ff_pkt->statp.st_size) {
-          Dmsg3(debuglevel - 1, "%s      st_size  differ. Cat: %s File: %s\n",
-                fname, edit_uint64((uint64_t)statc.st_size, ed1),
-                edit_uint64((uint64_t)ff_pkt->statp.st_size, ed2));
-          status = true;
-        }
-        break;
-      case 'a': /** Access time */
-        if (statc.st_atime != ff_pkt->statp.st_atime) {
-          Dmsg1(debuglevel - 1, "%s      st_atime differs\n", fname);
-          status = true;
-        }
-        break;
-      case 'm': /** Modification time */
-        if (statc.st_mtime != ff_pkt->statp.st_mtime) {
-          Dmsg1(debuglevel - 1, "%s      st_mtime differs\n", fname);
-          status = true;
-        }
-        break;
-      case 'c': /** Change time */
-        if (statc.st_ctime != ff_pkt->statp.st_ctime) {
-          Dmsg1(debuglevel - 1, "%s      st_ctime differs\n", fname);
-          status = true;
-        }
-        break;
-      case 'd': /** File size decrease */
-        if (statc.st_size > ff_pkt->statp.st_size) {
-          Dmsg3(debuglevel - 1, "%s      st_size  decrease. Cat: %s File: %s\n",
-                fname, edit_uint64((uint64_t)statc.st_size, ed1),
-                edit_uint64((uint64_t)ff_pkt->statp.st_size, ed2));
-          status = true;
-        }
-        break;
-      case 'A': /** Always backup a file */
-        status = true;
-        break;
-      case '5': /** Compare MD5 */
-      case '1': /** Compare SHA1 */
-        if (!status && ff_pkt->type != FT_LNKSAVED
-            && (S_ISREG(ff_pkt->statp.st_mode)
-                && (BitIsSet(FO_MD5, ff_pkt->flags)
-                    || BitIsSet(FO_SHA1, ff_pkt->flags)
-                    || BitIsSet(FO_SHA256, ff_pkt->flags)
-                    || BitIsSet(FO_SHA512, ff_pkt->flags)
-                    || BitIsSet(FO_XXH128, ff_pkt->flags)))) {
-          if (!*payload->chksum && !jcr->rerunning) {
-            Jmsg(jcr, M_WARNING, 0, T_("Cannot verify checksum for %s\n"),
-                 ff_pkt->fname);
-            status = true;
-          } else {
-            status = !CalculateAndCompareFileChksum(jcr, ff_pkt, fname,
-                                                    payload->chksum);
-          }
-        }
-        break;
-      case ':':
-      case 'J':
-      case 'C':
-        break;
-      default:
-        break;
+  char ed1[30], ed2[30];
+  if (!file_changed && (accurate_opts & accurate_inode)) {
+    if (statc.st_ino != ff_pkt->statp.st_ino) {
+      Dmsg3(debuglevel - 1, "%s      st_ino   differ. Cat: %s File: %s\n",
+            fname, edit_uint64((uint64_t)statc.st_ino, ed1),
+            edit_uint64((uint64_t)ff_pkt->statp.st_ino, ed2));
+      file_changed = true;
+    }
+  }
+  if (!file_changed && (accurate_opts & accurate_permissions)) {
+    /* TODO: If something change only in perm, user, group
+     * Backup only the attribute stream */
+    if (statc.st_mode != ff_pkt->statp.st_mode) {
+      Dmsg3(debuglevel - 1, "%s     st_mode  differ. Cat: %04o File: %04o\n",
+            fname, (uint32_t)(statc.st_mode & ~S_IFMT),
+            (uint32_t)(ff_pkt->statp.st_mode & ~S_IFMT));
+      file_changed = true;
+    }
+  }
+  if (!file_changed && (accurate_opts & accurate_nlink)) {
+    if (statc.st_nlink != ff_pkt->statp.st_nlink) {
+      Dmsg3(debuglevel - 1,
+            "%s      st_nlink differ. Cat: %" PRIu32 " File: %" PRIu32 "\n",
+            fname, (uint32_t)statc.st_nlink, (uint32_t)ff_pkt->statp.st_nlink);
+      file_changed = true;
+    }
+  }
+  if (!file_changed && (accurate_opts & accurate_uid)) {
+    if (statc.st_uid != ff_pkt->statp.st_uid) {
+      Dmsg3(debuglevel - 1, "%s      st_uid   differ. Cat: %u File: %u\n",
+            fname, (uint32_t)statc.st_uid, (uint32_t)ff_pkt->statp.st_uid);
+      file_changed = true;
+    }
+  }
+  if (!file_changed && (accurate_opts & accurate_gid)) {
+    if (statc.st_gid != ff_pkt->statp.st_gid) {
+      Dmsg3(debuglevel - 1, "%s      st_gid   differ. Cat: %u File: %u\n",
+            fname, (uint32_t)statc.st_gid, (uint32_t)ff_pkt->statp.st_gid);
+      file_changed = true;
+    }
+  }
+  if (!file_changed && (accurate_opts & accurate_size)) {
+    if (statc.st_size != ff_pkt->statp.st_size) {
+      Dmsg3(debuglevel - 1, "%s      st_size  differ. Cat: %s File: %s\n",
+            fname, edit_uint64((uint64_t)statc.st_size, ed1),
+            edit_uint64((uint64_t)ff_pkt->statp.st_size, ed2));
+      file_changed = true;
+    }
+  }
+  if (!file_changed && (accurate_opts & accurate_atime)) {
+    if (statc.st_atime != ff_pkt->statp.st_atime) {
+      Dmsg1(debuglevel - 1, "%s      st_atime differs\n", fname);
+      file_changed = true;
+    }
+  }
+  if (!file_changed && (accurate_opts & accurate_mtime)) {
+    if (statc.st_mtime != ff_pkt->statp.st_mtime) {
+      Dmsg1(debuglevel - 1, "%s      st_mtime differs\n", fname);
+      file_changed = true;
+    }
+  }
+  if (!file_changed && (accurate_opts & accurate_ctime)) {
+    if (statc.st_ctime != ff_pkt->statp.st_ctime) {
+      Dmsg1(debuglevel - 1, "%s      st_ctime differs\n", fname);
+      file_changed = true;
+    }
+  }
+  if (!file_changed && (accurate_opts & accurate_size_decrease)) {
+    if (statc.st_size > ff_pkt->statp.st_size) {
+      Dmsg3(debuglevel - 1, "%s      st_size  decrease. Cat: %s File: %s\n",
+            fname, edit_uint64((uint64_t)statc.st_size, ed1),
+            edit_uint64((uint64_t)ff_pkt->statp.st_size, ed2));
+      file_changed = true;
+    }
+  }
+  if (!file_changed && (accurate_opts & accurate_always)) {
+    file_changed = true;
+  }
+  if (!file_changed && (accurate_opts & (accurate_md5 | accurate_sha1))) {
+    if (!file_changed && ff_pkt->type != FT_LNKSAVED
+        && (S_ISREG(ff_pkt->statp.st_mode)
+            && (BitIsSet(FO_MD5, ff_pkt->flags)
+                || BitIsSet(FO_SHA1, ff_pkt->flags)
+                || BitIsSet(FO_SHA256, ff_pkt->flags)
+                || BitIsSet(FO_SHA512, ff_pkt->flags)
+                || BitIsSet(FO_XXH128, ff_pkt->flags)))) {
+      if (!*payload->chksum && !jcr->rerunning) {
+        Jmsg(jcr, M_WARNING, 0, T_("Cannot verify checksum for %s\n"),
+             ff_pkt->fname);
+        file_changed = true;
+      } else {
+        file_changed = !CalculateAndCompareFileChksum(jcr, ff_pkt, fname,
+                                                      payload->chksum);
+      }
     }
   }
 
   /* In Incr/Diff accurate mode, we mark all files as seen
    * When in Full+Base mode, we mark only if the file match exactly */
   if (jcr->getJobLevel() == L_FULL) {
-    if (!status) {
+    if (!file_changed) {
       // Compute space saved with basefile.
       jcr->fd_impl->base_size += ff_pkt->statp.st_size;
       jcr->fd_impl->file_list->MarkFileAsSeen(payload);
@@ -321,7 +307,7 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   }
 
 bail_out:
-  return status;
+  return file_changed;
 }
 
 bool AccurateCmd(JobControlRecord* jcr)

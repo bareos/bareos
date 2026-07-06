@@ -2310,6 +2310,12 @@ static bRC bareosGetValue(PluginContext* ctx, bVariable var, void* value)
         Dmsg1(debuglevel, "fd-plugin: return bVarPrefixLinks=%d\n",
               (int)jcr->prefix_links);
         break;
+      case bVarAccurateOptions:
+        if (!jcr->fd_impl || !jcr->fd_impl->ff) { return bRC_Error; }
+        *static_cast<uint64_t*>(value) = jcr->fd_impl->ff->accurate_opts;
+        Dmsg1(debuglevel, "fd-plugin: return bVarAccurateOptions=%" PRIu64 "\n",
+              *static_cast<uint64_t*>(value));
+        break;
       default:
         break;
     }

@@ -140,6 +140,18 @@ by simply doing a **dir()** call on that module.
    'bVarPrevJobName', 'bVarRegexWhere', 'bVarSinceTime', 'bVarType',
    'bVarVersion', 'bVarVssClient', 'bVarWhere', 'bVarWorkingDir', 'bVariable']
 
+Accurate option constants and ``GetValue(bVarAccurateOptions)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``bareosfd`` module exports accurate option constants in two places:
+
+* as flat module constants, e.g. ``bareosfd.bAccurateOptionMtime``
+* as dictionary entries in ``bareosfd.bAccurateOption``
+
+``GetValue(bVarAccurateOptions)`` returns a ``frozenset`` of these constants
+for the currently active effective Fileset ``Accurate=...`` options.
+If no value is available in the current runtime context, ``None`` is returned.
+
 
 
 Direct I/O option in Python plugin API

@@ -708,6 +708,11 @@ bRC Wrapper_getBareosValue(PluginContext*, bVariable var, void* value)
       if (!res) { return bRC_Error; }
       *(int*)value = *res;
     } break;
+    case bVarAccurateOptions: {
+      auto res = Bareos_GetInt(bc::BV_AccurateOptions);
+      if (!res) { return bRC_Error; }
+      *(uint64_t*)value = static_cast<uint64_t>(*res);
+    } break;
     case bVarPrefixLinks: {
       auto res = Bareos_GetInt(bc::BV_PrefixLinks);
       if (!res) { return bRC_Error; }
@@ -799,6 +804,11 @@ bRC Wrapper_setBareosValue(PluginContext*, bVariable var, const void* value)
     } break;
     case bVarAccurate: {
       auto res = Bareos_SetInt(bc::BV_Accurate, *(int*)value);
+      if (!res) { return bRC_Error; }
+    } break;
+    case bVarAccurateOptions: {
+      auto res = Bareos_SetInt(bc::BV_AccurateOptions,
+                               static_cast<int>(*(uint64_t*)value));
       if (!res) { return bRC_Error; }
     } break;
     case bVarPrefixLinks: {
