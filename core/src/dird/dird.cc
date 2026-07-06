@@ -174,9 +174,11 @@ int main(int argc, char* argv[])
   [[maybe_unused]] CLI::Option* foreground_option
       = dir_app.add_flag("-f,--foreground", foreground, "Run in foreground.");
 
+#ifndef HAVE_WIN32
   std::string user;
   std::string group;
   AddUserAndGroupOptions(dir_app, user, group);
+#endif
 
   dir_app.add_flag("-m,--print-kaboom", prt_kaboom,
                    "Print kaboom output (for debugging).");
