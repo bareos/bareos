@@ -102,9 +102,11 @@ int main(int argc, char* argv[])
   [[maybe_unused]] CLI::Option* foreground_option = fd_app.add_flag(
       "-f,--foreground", foreground, "Run in foreground (for debugging).");
 
+#ifndef HAVE_WIN32
   std::string user;
   std::string group;
   AddUserAndGroupOptions(fd_app, user, group);
+#endif
 
   bool keep_readall_caps = false;
   fd_app.add_flag("-k,--keep-readall", keep_readall_caps,
@@ -147,9 +149,11 @@ int main(int argc, char* argv[])
 
   ParseBareosApp(fd_app, argc, argv);
 
+#if !defined(HAVE_WIN32)
   if (user.empty() && keep_readall_caps) {
     Emsg0(M_ERROR_TERM, 0, T_("-k option has no meaning without -u option.\n"));
   }
+#endif
 
   int pidfile_fd = -1;
 #if !defined(HAVE_WIN32)
