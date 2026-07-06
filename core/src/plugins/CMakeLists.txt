@@ -46,14 +46,6 @@ endif()
 
 set(pymod3_include_dirs ${Python3_INCLUDE_DIRS} ${pymod_include_dirs})
 
-if(HAVE_PYTHON)
-  add_library(python-common python/common.cc)
-  target_link_libraries(python-common PUBLIC Python3::Python Bareos::Lib)
-  target_include_directories(
-    python-common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/python
-  )
-endif()
-
 if(NOT client-only)
   add_subdirectory(dird)
   add_subdirectory(stored)
