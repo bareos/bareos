@@ -733,7 +733,6 @@ message("   Build tray-monitor:           ${traymonitor} ")
 message("   webui:                        ${ENABLE_WEBUI} ")
 message("   client-only:                  ${build_client_only} ")
 message("   Plugin support:               ${have_plugins} ")
-message("   AFS support:                  ${have_afs} ")
 message("   ACL support:                  ${HAVE_ACL} ${ACL_LIBRARIES}")
 message("   XATTR support:                ${have_xattr} ")
 message(
