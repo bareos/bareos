@@ -68,13 +68,6 @@
 // Defines if your system have the ACL_TYPE_NFS4 acl type
 #cmakedefine HAVE_ACL_TYPE_NFS4 @HAVE_ACL_TYPE_NFS4@
 
-// Define to 1 if your system has AFS support
-#cmakedefine HAVE_AFS @HAVE_AFS@
-
-// Andrew FileSystem ACL support
-// FIXME: this is used, but never configured
-#cmakedefine HAVE_AFS_ACL @HAVE_AFS_ACL@
-
 // Define to 1 if you are running AIX
 #cmakedefine HAVE_AIX_OS @HAVE_AIX_OS@
 
