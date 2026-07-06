@@ -79,7 +79,6 @@ if(NOT MSVC)
 
   # Linux
   check_function_exists(getmntent HAVE_GETMNTENT)
-  check_function_exists(prctl HAVE_PRCTL)
 
   # Missing on older Linux
   check_function_exists(lchmod HAVE_LCHMOD)

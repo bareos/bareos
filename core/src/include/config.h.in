@@ -164,9 +164,6 @@
 // Define to 1 if you have the `posix_fadvise' function
 #cmakedefine HAVE_POSIX_FADVISE @HAVE_POSIX_FADVISE@
 
-// Define to 1 if you have the `prctl' function
-#cmakedefine HAVE_PRCTL @HAVE_PRCTL@
-
 // Define to 1 if python support should be enabled
 #cmakedefine HAVE_PYTHON @HAVE_PYTHON@
 

@@ -26,14 +26,9 @@
 #include "include/bareos.h"
 #include "lib/berrno.h"
 
-#undef ENABLE_KEEP_READALL_CAPS_SUPPORT
-#if defined(ENABLE_CAPABILITY) && __has_include(<sys/prctl.h>) \
-    && __has_include(<sys/capability.h>) && defined(HAVE_PRCTL)
+#if defined(ENABLE_CAPABILITY)
 #  include <sys/prctl.h>
 #  include <sys/capability.h>
-#  if defined(PR_SET_KEEPCAPS)
-#    define ENABLE_KEEP_READALL_CAPS_SUPPORT
-#  endif
 #endif
 
 #ifdef HAVE_AIX_OS
@@ -104,7 +99,7 @@ void drop(char* uname, char* gname, bool keep_readall_caps)
     }
   }
   if (keep_readall_caps) {
-#ifdef ENABLE_KEEP_READALL_CAPS_SUPPORT
+#if defined(ENABLE_CAPABILITY)
     cap_t caps;
 
     if (prctl(PR_SET_KEEPCAPS, 1)) {
