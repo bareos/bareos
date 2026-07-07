@@ -107,6 +107,11 @@ bareos_known_compiler_flags(
 )
 bareos_known_compiler_flags(
   ID GNU
+  SINCE 13.1.0
+  FLAGS -fcanon-prefix-map
+)
+bareos_known_compiler_flags(
+  ID GNU
   UNSUPPORTED
   FLAGS -Wdeprecated-non-prototype -Wnon-literal-null-conversion
         -Wc99-designator

@@ -17,6 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+include(BareosCompilerFlags)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 
@@ -34,4 +35,5 @@ if(C_SUPPORTS_ffile_prefix_map AND CXX_SUPPORTS_ffile_prefix_map)
       "${CMAKE_CXX_FLAGS} -ffile-prefix-map=${BAREOS_PREFIX_MAP}"
   )
   set(CCACHE_MAY_HASHDIR ON)
+  bareos_add_compile_flags(-fcanon-prefix-map)
 endif()
