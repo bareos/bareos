@@ -27,7 +27,7 @@
 #include <string>
 
 /*
- * This test validates the GetResourceName() utility function that safely
+ * This test validates the GetSafeResourceName() utility function that safely
  * extracts resource names with defensive null checks.
  *
  * The function prevents crashes from null resource_name_ pointers
@@ -43,102 +43,102 @@ struct MockResource {
 };
 
 // Test with null resource pointer
-TEST(GetResourceName, NullResourcePointerReturnsDefault)
+TEST(GetSafeResourceName, NullResourcePointerReturnsDefault)
 {
   MockResource* resource = nullptr;
-  std::string result = GetResourceName(resource);
+  std::string result = GetSafeResourceName(resource);
 
   EXPECT_EQ(result, "**None**");
 }
 
 // Test with null resource pointer and custom fallback
-TEST(GetResourceName, NullResourcePointerReturnsCustomFallback)
+TEST(GetSafeResourceName, NullResourcePointerReturnsCustomFallback)
 {
   MockResource* resource = nullptr;
-  std::string result = GetResourceName(resource, "**Unknown**");
+  std::string result = GetSafeResourceName(resource, "**Unknown**");
 
   EXPECT_EQ(result, "**Unknown**");
 }
 
 // Test with null resource_name_ pointer
-TEST(GetResourceName, NullResourceNameReturnsDefault)
+TEST(GetSafeResourceName, NullResourceNameReturnsDefault)
 {
   MockResource resource;
   resource.resource_name_ = nullptr;
 
-  std::string result = GetResourceName(&resource);
+  std::string result = GetSafeResourceName(&resource);
 
   EXPECT_EQ(result, "**None**");
 }
 
 // Test with valid resource_name_
-TEST(GetResourceName, ValidResourceNameReturnsValue)
+TEST(GetSafeResourceName, ValidResourceNameReturnsValue)
 {
   MockResource resource;
   resource.resource_name_ = const_cast<char*>("test_client");
 
-  std::string result = GetResourceName(&resource);
+  std::string result = GetSafeResourceName(&resource);
 
   EXPECT_EQ(result, "test_client");
 }
 
 // Test with valid resource_name_ and custom fallback (fallback unused)
-TEST(GetResourceName, ValidResourceNameIgnoresCustomFallback)
+TEST(GetSafeResourceName, ValidResourceNameIgnoresCustomFallback)
 {
   MockResource resource;
   resource.resource_name_ = const_cast<char*>("my_resource");
 
-  std::string result = GetResourceName(&resource, "**Unknown**");
+  std::string result = GetSafeResourceName(&resource, "**Unknown**");
 
   EXPECT_EQ(result, "my_resource");
 }
 
 // Test with different fallback values
-TEST(GetResourceName, DifferentFallbackValues)
+TEST(GetSafeResourceName, DifferentFallbackValues)
 {
   MockResource resource;
   resource.resource_name_ = nullptr;
 
-  EXPECT_EQ(GetResourceName(&resource, "**None**"), "**None**");
-  EXPECT_EQ(GetResourceName(&resource, "**Unknown**"), "**Unknown**");
-  EXPECT_EQ(GetResourceName(&resource, ""), "");
-  EXPECT_EQ(GetResourceName(&resource, "default"), "default");
+  EXPECT_EQ(GetSafeResourceName(&resource, "**None**"), "**None**");
+  EXPECT_EQ(GetSafeResourceName(&resource, "**Unknown**"), "**Unknown**");
+  EXPECT_EQ(GetSafeResourceName(&resource, ""), "");
+  EXPECT_EQ(GetSafeResourceName(&resource, "default"), "default");
 }
 
 // Test case matching StartStorageDaemonJob scenario: job resource
-TEST(GetResourceName, JobResourceScenario)
+TEST(GetSafeResourceName, JobResourceScenario)
 {
   MockResource job;
   job.resource_name_ = const_cast<char*>("backup_job");
 
-  std::string job_name = GetResourceName(&job, "**Unknown**");
+  std::string job_name = GetSafeResourceName(&job, "**Unknown**");
 
   EXPECT_EQ(job_name, "backup_job");
 }
 
 // Test case matching StartStorageDaemonJob scenario: client without name
-TEST(GetResourceName, ClientResourceWithoutNameScenario)
+TEST(GetSafeResourceName, ClientResourceWithoutNameScenario)
 {
   MockResource client;
   client.resource_name_ = nullptr;
 
-  std::string client_name = GetResourceName(&client, "**None**");
+  std::string client_name = GetSafeResourceName(&client, "**None**");
 
   EXPECT_EQ(client_name, "**None**");
 }
 
 // Test case matching StartStorageDaemonJob scenario: missing fileset
-TEST(GetResourceName, MissingFilesetResourceScenario)
+TEST(GetSafeResourceName, MissingFilesetResourceScenario)
 {
   MockResource* fileset = nullptr;
 
-  std::string fileset_name = GetResourceName(fileset, "**None**");
+  std::string fileset_name = GetSafeResourceName(fileset, "**None**");
 
   EXPECT_EQ(fileset_name, "**None**");
 }
 
 // Comprehensive scenario: multiple resources with mixed states
-TEST(GetResourceName, MultipleResourcesWithMixedStates)
+TEST(GetSafeResourceName, MultipleResourcesWithMixedStates)
 {
   MockResource job;
   job.resource_name_ = const_cast<char*>("test_job");
@@ -149,30 +149,30 @@ TEST(GetResourceName, MultipleResourcesWithMixedStates)
   MockResource* fileset = nullptr;
 
   // Verify all three are handled correctly
-  EXPECT_EQ(GetResourceName(&job, "**Unknown**"), "test_job");
-  EXPECT_EQ(GetResourceName(&client, "**None**"), "**None**");
-  EXPECT_EQ(GetResourceName(fileset, "**None**"), "**None**");
+  EXPECT_EQ(GetSafeResourceName(&job, "**Unknown**"), "test_job");
+  EXPECT_EQ(GetSafeResourceName(&client, "**None**"), "**None**");
+  EXPECT_EQ(GetSafeResourceName(fileset, "**None**"), "**None**");
 }
 
 // Test that the function works with const pointers
-TEST(GetResourceName, ConstResourcePointer)
+TEST(GetSafeResourceName, ConstResourcePointer)
 {
   MockResource resource;
   resource.resource_name_ = const_cast<char*>("const_test");
 
   const MockResource* const_resource = &resource;
-  std::string result = GetResourceName(const_resource);
+  std::string result = GetSafeResourceName(const_resource);
 
   EXPECT_EQ(result, "const_test");
 }
 
 // Test edge case: empty string as resource_name_
-TEST(GetResourceName, EmptyStringResourceName)
+TEST(GetSafeResourceName, EmptyStringResourceName)
 {
   MockResource resource;
   resource.resource_name_ = const_cast<char*>("");
 
-  std::string result = GetResourceName(&resource);
+  std::string result = GetSafeResourceName(&resource);
 
   // Empty string is still valid (not null)
   EXPECT_EQ(result, "");

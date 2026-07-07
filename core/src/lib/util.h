@@ -283,8 +283,8 @@ inline std::string vstdprintf(const char* fmt, va_list args)
  * @return std::string containing either resource_name_ or fallback_value
  */
 template <typename ResourceType>
-inline std::string GetResourceName(ResourceType* resource,
-                                   const char* fallback_value = "**None**")
+inline std::string GetSafeResourceName(ResourceType* resource,
+                                       const char* fallback_value = "**None**")
 {
   if (resource && resource->resource_name_) {
     return std::string(resource->resource_name_);
