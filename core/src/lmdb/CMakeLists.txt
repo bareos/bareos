@@ -25,9 +25,9 @@ if(HAVE_FREEBSD_OS)
 endif()
 
 add_library(bareoslmdb SHARED mdb.c midl.c)
-bareos_disable_warnings(TARGET bareoslmdb WARNINGS -Wunused-parameter -Wimplicit-fallthrough -Wstringop-overflow -Wshadow C_ONLY)
+bareos_disable_warnings(TARGETS bareoslmdb WARNINGS -Wunused-parameter -Wimplicit-fallthrough -Wstringop-overflow -Wshadow C_ONLY)
 if(HAVE_WIN32)
-  bareos_disable_warnings(TARGET bareoslmdb WARNINGS -Wreturn-local-addr C_ONLY)
+  bareos_disable_warnings(TARGETS bareoslmdb WARNINGS -Wreturn-local-addr C_ONLY)
   set_source_files_properties(
     mdb.c
     PROPERTIES COMPILE_OPTIONS
