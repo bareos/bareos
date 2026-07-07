@@ -323,11 +323,6 @@ BxattrExitCode SerializeAndSendXattrStream(JobControlRecord* jcr,
 }
 // This is a supported OS, See what kind of interface we should use.
 #  if defined(HAVE_AIX_OS)
-
-#    if !defined(HAVE_AIX_EA)
-#      error "Missing full support for the Extended Attributes (EA) functions."
-#    endif
-
 #    include <sys/ea.h>
 
 // Define the supported XATTR streams for this OS
@@ -613,12 +608,6 @@ static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
     = aix_parse_xattr_streams;
 
 #  elif defined(HAVE_DARWIN_OS) || defined(HAVE_LINUX_OS)
-
-#    if (defined(HAVE_DARWIN_OS) && !defined(HAVE_DARWIN_XATTR)) \
-        || (defined(HAVE_LINUX_OS) && !defined(HAVE_LINUX_XATTR))
-#      error "Missing full support for the XATTR functions."
-#    endif
-
 #    include <sys/xattr.h>
 
 // Define the supported XATTR streams for this OS
@@ -948,11 +937,6 @@ static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
     = generic_parse_xattr_streams;
 
 #  elif defined(HAVE_FREEBSD_OS)
-
-#    if !defined(HAVE_FREEBSD_EXTATTR)
-#      error "Missing full support for the extattr functions."
-#    endif
-
 #    include <sys/extattr.h>
 
 #    if __has_include(<libutil.h>)
