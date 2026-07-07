@@ -76,7 +76,8 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   bs->SetEnableKtls(me->enable_ktls);
 
-  if (!TryTlsHandshakeAsAServer(bs, config)) {
+  UsePasswordsFromConfig tls_secret_provider{config};
+  if (!TryTlsHandshakeAsAServer(bs, config, &tls_secret_provider)) {
     bs->signal(BNET_TERMINATE);
     bs->close();
     delete bs;

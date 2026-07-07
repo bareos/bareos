@@ -65,7 +65,8 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   bs->SetEnableKtls(me->enable_ktls);
 
-  if (!TryTlsHandshakeAsAServer(bs, config)) {
+  UseConfigAndJcrs data{config};
+  if (!TryTlsHandshakeAsAServer(bs, config, &data)) {
     bs->signal(BNET_TERMINATE);
     bs->close();
     delete bs;

@@ -28,7 +28,10 @@
  * This file handles external connections made to the storage daemon.
  */
 
+#include <ranges>
 #include "include/bareos.h"
+#include "include/jcr.h"
+#include "lib/ascii_control_characters.h"
 #include "stored/autochanger.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
@@ -62,6 +65,7 @@ static pthread_t tcp_server_tid;
  *  - Otherwise it was a connection from the DIR, call
  * handle_director_connection()
  */
+
 void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 {
   BareosSocket* bs = (BareosSocket*)arg;
@@ -70,7 +74,8 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   bs->SetEnableKtls(me->enable_ktls);
 
-  if (!TryTlsHandshakeAsAServer(bs, config)) {
+  UseConfigAndJcrs data{config};
+  if (!TryTlsHandshakeAsAServer(bs, config, &data)) {
     bs->signal(BNET_TERMINATE);
     bs->close();
     delete bs;

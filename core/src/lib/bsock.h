@@ -54,6 +54,7 @@
 #include <functional>
 #include <cassert>
 #include <atomic>
+#include <span>
 
 struct btimer_t; /* forward reference */
 class BareosSocket;
@@ -206,14 +207,16 @@ class BareosSocket {
                                         const char* identity,
                                         const char* password,
                                         bool initiated_by_remote);
-  bool ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser* config);
+  bool ParameterizeAndInitTlsConnectionAsAServer(TlsResource* tls_resource,
+                                                 TlsSecretProvider* data);
   bool DoTlsHandshake(TlsPolicy remote_tls_policy,
                       TlsResource* tls_resource,
                       bool initiated_by_remote,
                       const char* identity,
                       const char* password,
                       JobControlRecord* jcr);
-  bool DoTlsHandshakeAsAServer(ConfigurationParser* config,
+  bool DoTlsHandshakeAsAServer(TlsSecretProvider* data,
+                               TlsResource* tls_resource,
                                JobControlRecord* jcr = nullptr);
   bool SetLocking();   /* in bsock.c */
   void ClearLocking(); /* in bsock.c */
