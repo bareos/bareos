@@ -87,7 +87,7 @@ endfunction()
 # This functions disables compiler warnings on targets, if they're supported.
 function(bareos_disable_warnings)
   set(options C_ONLY CXX_ONLY ADD_FOR_LTO)
-  set(oneValueArgs TARGET)
+  set(oneValueArgs "")
   set(multiValueArgs TARGETS WARNINGS)
   cmake_parse_arguments(
     ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
@@ -97,15 +97,6 @@ function(bareos_disable_warnings)
       FATAL_ERROR
         "Unparsed arguments to bareos_disable_warnings(): ${ARG_UNPARSED_ARGUMENTS}"
     )
-  endif()
-  if(ARG_TARGET AND ARG_TARGETS)
-    message(
-      FATAL_ERROR
-        "Don't mix TARGET and TARGETS. Just add '${ARG_TARGET}' to TARGETS"
-    )
-  endif()
-  if(ARG_TARGET)
-    set(ARG_TARGETS ${ARG_TARGET})
   endif()
   foreach(target ${ARG_TARGETS})
     if(NOT TARGET ${target})

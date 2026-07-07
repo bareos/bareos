@@ -184,7 +184,7 @@ endforeach()
 add_library(bareosndmp SHARED ${LIBBAREOSNDMP_SRCS} ${RPC_GEN_FILES})
 include(BareosCompilerFlags)
 bareos_disable_warnings(
-  TARGET
+  TARGETS
   bareosndmp
   WARNINGS
   -Wenum-conversion
