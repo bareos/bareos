@@ -305,28 +305,14 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
   }
 
   // Now send JobId and permissions, and get back the authorization key.
-  std::string job_name;
-  if (jcr->dir_impl->res.job && jcr->dir_impl->res.job->resource_name_) {
-    job_name = jcr->dir_impl->res.job->resource_name_;
-  } else {
-    job_name = "**Unknown**";
-  }
+  std::string job_name = GetResourceName(jcr->dir_impl->res.job, "**Unknown**");
   BashSpaces(job_name);
 
-  std::string client_name{};
-  if (jcr->dir_impl->res.client && jcr->dir_impl->res.client->resource_name_) {
-    client_name = jcr->dir_impl->res.client->resource_name_;
-  } else {
-    client_name = "**None**";
-  }
+  std::string client_name
+      = GetResourceName(jcr->dir_impl->res.client, "**None**");
   BashSpaces(client_name);
-  std::string fileset_name{};
-  if (jcr->dir_impl->res.fileset
-      && jcr->dir_impl->res.fileset->resource_name_) {
-    fileset_name = jcr->dir_impl->res.fileset->resource_name_;
-  } else {
-    fileset_name = "**None**";
-  }
+  std::string fileset_name
+      = GetResourceName(jcr->dir_impl->res.fileset, "**None**");
   BashSpaces(fileset_name);
 
   std::string backup_format{};

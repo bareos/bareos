@@ -442,7 +442,7 @@ bareos_add_test(
 bareos_add_test(test_bsnprintf LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 bareos_add_test(
-  msgchan_null_resource_name_test LINK_LIBRARIES Bareos::Lib GTest::gtest_main
+  get_resource_name_test LINK_LIBRARIES Bareos::Lib GTest::gtest_main
 )
 
 add_executable(test_bpipe_prog)

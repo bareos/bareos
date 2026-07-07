@@ -270,4 +270,26 @@ inline std::string vstdprintf(const char* fmt, va_list args)
   return s;
 }
 
+/*
+ * Extract resource name from a resource pointer, with defensive null checks.
+ * Returns the resource_name_ if both the resource and resource_name_ are valid,
+ * otherwise returns the fallback_value.
+ *
+ * This function prevents nullptr dereferences when resource_name_ may be null
+ * (e.g., during multi-threaded resource deallocation).
+ *
+ * @param resource Resource pointer (may be nullptr)
+ * @param fallback_value String to return if resource or resource_name_ is null
+ * @return std::string containing either resource_name_ or fallback_value
+ */
+template <typename ResourceType>
+inline std::string GetResourceName(ResourceType* resource,
+                                   const char* fallback_value = "**None**")
+{
+  if (resource && resource->resource_name_) {
+    return std::string(resource->resource_name_);
+  }
+  return fallback_value;
+}
+
 #endif  // BAREOS_LIB_UTIL_H_
