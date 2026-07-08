@@ -305,35 +305,39 @@ endif()
 # generic function to probe for a python module for the given python version (2
 # or 3)
 function(check_pymodule_available python_version module)
-  if(NOT python_version)
-    message(FATAL_ERROR "python_version ist not set")
-  endif()
-  if(${python_version} EQUAL 3)
-    set(python_exe ${Python3_EXECUTABLE})
-  else()
-    message(FATAL_ERROR "unsupported python_version ${python_version}")
-  endif()
-  # message(STATUS "running  ${python_exe} -c import ${module}")
-  execute_process(
-    COMMAND "${python_exe}" "-c" "import ${module}"
-    RESULT_VARIABLE ${module}_status
-    ERROR_QUIET
-  )
   string(TOUPPER ${module} module_uppercase)
-  if(${module}_status EQUAL 0)
-    set("PYMODULE_${python_version}_${module_uppercase}_FOUND"
-        TRUE
-        PARENT_SCOPE
+  if(NOT DEFINED "PYMODULE_${python_version}_${module_uppercase}_FOUND")
+    if(NOT python_version)
+      message(FATAL_ERROR "python_version ist not set")
+    endif()
+    if(${python_version} EQUAL 3)
+      set(python_exe ${Python3_EXECUTABLE})
+    else()
+      message(FATAL_ERROR "unsupported python_version ${python_version}")
+    endif()
+    # message(STATUS "running  ${python_exe} -c import ${module}")
+    execute_process(
+      COMMAND "${python_exe}" "-c" "import ${module}"
+      RESULT_VARIABLE ${module}_status
+      ERROR_QUIET
     )
-    message(STATUS "python module pyversion ${python_version} ${module} found")
-  else()
-    set("PYMODULE_${python_version}_${module_uppercase}_FOUND"
-        FALSE
-        PARENT_SCOPE
-    )
-    message(
-      STATUS "python module pyversion ${python_version} ${module} NOT found"
-    )
+    if(${module}_status EQUAL 0)
+      set("PYMODULE_${python_version}_${module_uppercase}_FOUND"
+          TRUE
+          CACHE BOOL ""
+      )
+      message(
+        STATUS "python module pyversion ${python_version} ${module} found"
+      )
+    else()
+      set("PYMODULE_${python_version}_${module_uppercase}_FOUND"
+          FALSE
+          CACHE BOOL ""
+      )
+      message(
+        STATUS "python module pyversion ${python_version} ${module} NOT found"
+      )
+    endif()
   endif()
 endfunction()
 
@@ -344,16 +348,26 @@ macro(check_for_pamtest)
   find_program(PAMTESTER pamtester)
 
   set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
-  if(PAM_FOUND)
-    execute_process(
-      COMMAND
-        "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
-      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/"
-      RESULT_VARIABLE PAM_EXEC_AVAILABLE_RC
-    )
-  endif()
-  if(PAM_EXEC_AVAILABLE_RC EQUAL "0")
-    set(PAM_EXEC_AVAILABLE TRUE)
+  if(NOT DEFINED PAM_EXEC_AVAILABLE)
+    if(PAM_FOUND)
+      execute_process(
+        COMMAND
+          "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/"
+        RESULT_VARIABLE PAM_EXEC_AVAILABLE_RC
+      )
+    endif()
+    if(PAM_EXEC_AVAILABLE_RC EQUAL "0")
+      set(PAM_EXEC_AVAILABLE
+          TRUE
+          CACHE BOOL "pam_exec is available"
+      )
+    else()
+      set(PAM_EXEC_AVAILABLE
+          FALSE
+          CACHE BOOL "pam_exec is available"
+      )
+    endif()
   endif()
   message("   PAM_FOUND:                " ${PAM_FOUND})
   message("   PAM_WRAPPER_LIBRARIES:    " ${PAM_WRAPPER_LIBRARIES})
