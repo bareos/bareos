@@ -48,6 +48,8 @@ inline constexpr const char hello_client_with_version[]
 
 inline constexpr const char hello_client[] = "Hello Client %127s calling";
 
+inline constexpr const char hello_console[] = "Hello %127s calling";
+
 /* Global variables */
 static ThreadList thread_list;
 static std::atomic<bool> server_running;
@@ -107,16 +109,48 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   Dmsg1(110, "Conn: %s", bs->msg);
 
-  // See if this is a File daemon connection. If so call FD handler.
   if ((bsscanf(bs->msg, hello_client_with_version, name, &fd_protocol_version)
        == 2)
       || (bsscanf(bs->msg, hello_client, name) == 1)) {
     Dmsg1(110, "Got a FD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+
+    if (auto error
+        = tls_secret_provider.is_resource_name_different_from_tls_name(R_CLIENT,
+                                                                       name)) {
+      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
+            error->c_str());
+      Bmicrosleep(5, 0); /* make user wait 5 seconds */
+      bs->signal(BNET_TERMINATE);
+      bs->close();
+      delete bs;
+      return NULL;
+    }
+
     return HandleFiledConnection(*client_connections.get(), bs, name,
                                  fd_protocol_version);
+  } else if (bsscanf(bs->msg, hello_console, name) == 1) {
+    if (auto error
+        = tls_secret_provider.is_resource_name_different_from_tls_name(
+            R_CONSOLE, name)) {
+      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
+            error->c_str());
+      Bmicrosleep(5, 0); /* make user wait 5 seconds */
+      bs->signal(BNET_TERMINATE);
+      bs->close();
+      delete bs;
+      return NULL;
+    }
+    return HandleUserAgentClientRequest(bs);
   }
-  return HandleUserAgentClientRequest(bs);
+
+  Emsg1(M_ERROR, 0, T_("Connection request from %s failed (unknown type).\n"),
+        bs->who());
+  Bmicrosleep(5, 0); /* make user wait 5 seconds */
+  bs->signal(BNET_TERMINATE);
+  bs->close();
+  delete bs;
+  return nullptr;
 }
 
 static void* UserAgentShutdownCallback(void* bsock)
