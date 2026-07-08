@@ -141,6 +141,25 @@ Use the Vue WebUI preview when:
 For now, the recommended approach is to keep both interfaces available and let
 users compare them against their operational needs.
 
+Providing feedback
+------------------
+
+Because the Vue WebUI is a technical preview under active development, user
+feedback is especially valuable at this stage.
+
+Please open an issue on `GitHub Issues <https://github.com/bareos/bareos/issues/>`_
+for any of the following:
+
+* **Misbehaviour** — anything that does not work as expected or produces
+  errors
+* **Missing functionality** — features present in the classic PHP WebUI that
+  are absent or incomplete in the Vue WebUI
+* **New feature requests** — ideas for functionality you would like to see
+  in the new WebUI that go beyond what the classic WebUI offers
+
+When reporting, please include the Bareos version, browser, and a short
+description of the steps to reproduce the issue.
+
 Further information
 -------------------
 
