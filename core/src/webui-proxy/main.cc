@@ -39,6 +39,7 @@ int main(int argc, char* argv[])
   CLI::App app{"Bareos Director WebSocket Proxy"};
   std::string config_file = WEBUI_PROXY_DEFAULT_CONFIG_PATH;
   CLI::Option* config_option = nullptr;
+  CLI::Option* log_level_option = nullptr;
   std::string log_file;
   ProxyLogLevel log_level = ProxyLogLevel::Info;
 
@@ -46,17 +47,18 @@ int main(int argc, char* argv[])
                       ->capture_default_str()
                       ->check(CLI::ExistingFile);
   app.add_option("--log-file", log_file, "Append proxy logs to this file");
-  app.add_option("--log-level", log_level,
-                 "Minimum proxy log level: debug, info, warn, error")
-      ->transform(CLI::CheckedTransformer(
-          std::map<std::string, ProxyLogLevel>{
-              {"debug", ProxyLogLevel::Debug},
-              {"info", ProxyLogLevel::Info},
-              {"warn", ProxyLogLevel::Warn},
-              {"warning", ProxyLogLevel::Warn},
-              {"error", ProxyLogLevel::Error},
-          },
-          CLI::ignore_case));
+  log_level_option
+      = app.add_option("--log-level", log_level,
+                       "Minimum proxy log level: debug, info, warn, error")
+            ->transform(CLI::CheckedTransformer(
+                std::map<std::string, ProxyLogLevel>{
+                    {"debug", ProxyLogLevel::Debug},
+                    {"info", ProxyLogLevel::Info},
+                    {"warn", ProxyLogLevel::Warn},
+                    {"warning", ProxyLogLevel::Warn},
+                    {"error", ProxyLogLevel::Error},
+                },
+                CLI::ignore_case));
 
   CLI11_PARSE(app, argc, argv);
 
@@ -85,6 +87,12 @@ int main(int argc, char* argv[])
                      "proxy config file '%s' not found; using built-in "
                      "defaults",
                      config_file.c_str());
+    }
+
+    // Apply log_level from config file unless overridden on the CLI
+    if (log_level_option->count() == 0) {
+      logger_cfg.min_level = cfg.log_level;
+      ConfigureProxyLogger(logger_cfg);
     }
 
     // Apply session timeout configuration

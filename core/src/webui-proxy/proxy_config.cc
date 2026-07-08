@@ -20,6 +20,7 @@
  */
 #include "proxy_config.h"
 
+#include "proxy_log.h"
 #include "lib/bsys.h"
 
 #include <algorithm>
@@ -143,6 +144,12 @@ void ApplyProxySetting(ProxyConfig& cfg,
     cfg.session_absolute_lifetime_hours = ParseInteger(value, key, line_number);
   } else if (key == "max_unauthenticated_connections") {
     cfg.max_unauthenticated_connections = ParseInteger(value, key, line_number);
+  } else if (key == "log_level") {
+    if (!ParseProxyLogLevel(value, cfg.log_level)) {
+      throw ProxyConfigParseError("line " + std::to_string(line_number)
+                                  + ": invalid log_level value '" + value
+                                  + "' (expected: debug, info, warn, error)");
+    }
   } else {
     throw ProxyConfigUnknownKeyError(
         FormatUnknownKeyError("listen", key, line_number));

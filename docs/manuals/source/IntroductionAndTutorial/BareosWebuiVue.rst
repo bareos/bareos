@@ -149,6 +149,10 @@ allows switching between them or viewing data from all Directors at once.
    * - ``port``
      - ``9104``
      - Port the proxy listens on.
+   * - ``log_level``
+     - ``info``
+     - Minimum log level: ``debug``, ``info``, ``warn``, ``error``.
+       The ``--log-level`` CLI flag takes precedence if specified.
    * - ``session_idle_timeout_minutes``
      - ``30``
      - Minutes of inactivity before a session is invalidated.

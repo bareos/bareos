@@ -21,6 +21,8 @@
 #ifndef BAREOS_WEBUI_PROXY_PROXY_CONFIG_H_
 #define BAREOS_WEBUI_PROXY_PROXY_CONFIG_H_
 
+#include "proxy_log.h"
+
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -103,6 +105,8 @@ struct ProxyConfig {
   int session_absolute_lifetime_hours{8};
   // Maximum number of concurrent unauthenticated connections (default 100)
   int max_unauthenticated_connections{100};
+  // Minimum log level (default Info); overridden by --log-level CLI flag
+  ProxyLogLevel log_level{ProxyLogLevel::Info};
   // Keys are client-visible selectors; target.name is the Bareos director name.
   std::map<std::string, DirectorTargetConfig> configured_directors;
 };

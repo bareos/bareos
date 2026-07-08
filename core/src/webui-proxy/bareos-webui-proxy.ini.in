@@ -9,6 +9,7 @@
 [listen]
 # address = localhost
 # port = 9104
+# log_level = info
 # session_idle_timeout_minutes = 30
 # session_absolute_lifetime_hours = 8
 # max_unauthenticated_connections = 100
