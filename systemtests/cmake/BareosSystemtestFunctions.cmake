@@ -41,9 +41,6 @@ macro(create_systemtests_directory)
   )
   configurefilestosystemtest("systemtests" "scripts" "diff.pl.in" @ONLY "")
   configurefilestosystemtest(
-    "systemtests" "scripts" "generate_minio_certs.sh.in" @ONLY ""
-  )
-  configurefilestosystemtest(
     "systemtests" "scripts" "create_autochanger_configs.sh.in" @ONLY ""
   )
   configurefilestosystemtest(
