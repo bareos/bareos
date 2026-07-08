@@ -556,7 +556,7 @@ JobControlRecord* get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime)
  * Returns: jcr on success
  *          nullptr on failure
  */
-JobControlRecord* get_jcr_by_partial_name(char* Job)
+JobControlRecord* get_jcr_by_partial_name(char const* Job)
 {
   JobControlRecord* jcr;
   int len;
@@ -583,7 +583,7 @@ JobControlRecord* get_jcr_by_partial_name(char* Job)
  * Returns: jcr on success
  *          nullptr on failure
  */
-JobControlRecord* get_jcr_by_full_name(char* Job)
+JobControlRecord* get_jcr_by_full_name(char const* Job)
 {
   JobControlRecord* jcr;
 
