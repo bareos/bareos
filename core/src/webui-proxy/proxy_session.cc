@@ -991,7 +991,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
       if (command.empty()) { continue; }
 
-      PROXY_LOG_INFO(peer, "command [id=%.*s]: %s",
+      PROXY_LOG_DEBUG(peer, "command [id=%.*s]: %s",
                      static_cast<int>(req_id.value_or("").size()),
                      req_id.value_or("").data(), command.c_str());
 
