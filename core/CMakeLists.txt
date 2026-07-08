@@ -517,10 +517,12 @@ option(ENABLE_CAPABILITY "Enable keep readall capability in filedaemon"
        "${HAVE_SYS_CAPABILITY_H}"
 )
 
-try_compile(
-  HAVE_IS_TRIVIALLY_COPYABLE ${CMAKE_BINARY_DIR}/compile_tests
-  ${PROJECT_SOURCE_DIR}/src/compile_tests/trivially_copyable.cc
-)
+if(NOT DEFINED HAVE_IS_TRIVIALLY_COPYABLE)
+  try_compile(
+    HAVE_IS_TRIVIALLY_COPYABLE ${CMAKE_BINARY_DIR}/compile_tests
+    ${PROJECT_SOURCE_DIR}/src/compile_tests/trivially_copyable.cc
+  )
+endif()
 
 option(BUILD_BENCHMARKS "Build benchmark binaries" OFF)
 mark_as_advanced(BUILD_BENCHMARKS)

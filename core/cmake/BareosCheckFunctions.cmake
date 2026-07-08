@@ -18,11 +18,13 @@
 #   02110-1301, USA.
 
 if(NOT MSVC)
-  try_compile(
-    HAVE_CORE_SYSTEM_INTERFACES ${CMAKE_BINARY_DIR}/compile_tests
-    ${PROJECT_SOURCE_DIR}/src/compile_tests/core_system_interfaces.c
-    OUTPUT_VARIABLE build_output
-  )
+  if(NOT DEFINED HAVE_CORE_SYSTEM_INTERFACES)
+    try_compile(
+      HAVE_CORE_SYSTEM_INTERFACES ${CMAKE_BINARY_DIR}/compile_tests
+      ${PROJECT_SOURCE_DIR}/src/compile_tests/core_system_interfaces.c
+      OUTPUT_VARIABLE build_output
+    )
+  endif()
   if(HAVE_CORE_SYSTEM_INTERFACES)
     set(HAVE_GETPAGESIZE 1)
     set(HAVE_POLL 1)
@@ -40,35 +42,43 @@ if(NOT MSVC)
 
   # FreeBSD extended attributes
   if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
-    try_compile(
-      HAVE_FREEBSD_EXTATTR ${CMAKE_BINARY_DIR}/compile_tests
-      ${PROJECT_SOURCE_DIR}/src/compile_tests/freebsd_extattr.c
-    )
+    if(NOT DEFINED HAVE_FREEBSD_EXTATTR)
+      try_compile(
+        HAVE_FREEBSD_EXTATTR ${CMAKE_BINARY_DIR}/compile_tests
+        ${PROJECT_SOURCE_DIR}/src/compile_tests/freebsd_extattr.c
+      )
+    endif()
   endif()
 
   # AIX extended attributes
   if(CMAKE_SYSTEM_NAME MATCHES "AIX")
     message(WARNING "AIX compile test for EA is untested.")
-    try_compile(
-      HAVE_AIX_EA ${CMAKE_BINARY_DIR}/compile_tests
-      ${PROJECT_SOURCE_DIR}/src/compile_tests/aix_ea.c
-    )
+    if(NOT DEFINED HAVE_AIX_EA)
+      try_compile(
+        HAVE_AIX_EA ${CMAKE_BINARY_DIR}/compile_tests
+        ${PROJECT_SOURCE_DIR}/src/compile_tests/aix_ea.c
+      )
+    endif()
   endif()
 
   # Linux extended attributes
   if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-    try_compile(
-      HAVE_LINUX_XATTR ${CMAKE_BINARY_DIR}/compile_tests
-      ${PROJECT_SOURCE_DIR}/src/compile_tests/linux_xattr.c
-    )
+    if(NOT DEFINED HAVE_LINUX_XATTR)
+      try_compile(
+        HAVE_LINUX_XATTR ${CMAKE_BINARY_DIR}/compile_tests
+        ${PROJECT_SOURCE_DIR}/src/compile_tests/linux_xattr.c
+      )
+    endif()
   endif()
 
   # MacOS extended attributes
   if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    try_compile(
-      HAVE_DARWIN_XATTR ${CMAKE_BINARY_DIR}/compile_tests
-      ${PROJECT_SOURCE_DIR}/src/compile_tests/darwin_xattr.c
-    )
+    if(NOT DEFINED HAVE_DARWIN_XATTR)
+      try_compile(
+        HAVE_DARWIN_XATTR ${CMAKE_BINARY_DIR}/compile_tests
+        ${PROJECT_SOURCE_DIR}/src/compile_tests/darwin_xattr.c
+      )
+    endif()
   endif()
 
   include(CheckFunctionExists)
