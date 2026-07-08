@@ -326,7 +326,7 @@ const {
   isCommonScope,
   scopeLabel,
   syncSelectedDirectors,
-} = useDirectorScope({ t })
+} = useDirectorScope({ t, syncEmptySelection: 'all' })
 const headerScopeLabel = computed(() => (
   isCommonScope.value
     ? `${activeDirectors.value.length} ${t('directors')}`
