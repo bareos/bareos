@@ -588,7 +588,7 @@ This package contains the common files for the python storage plugins.
 %endif
 
 %if 0%{?webui}
-%package webui-php
+%package webui
 Summary:       Bareos Web User Interface
 Group:         Productivity/Archiving/Backup
 
@@ -640,18 +640,18 @@ Conflicts: mod_php_any
 %define www_daemon_group www
 %endif
 
-%description webui-php
+%description webui
 %{dscr}
 
 This package contains the PHP-based Bareos Web User Interface.
 
-%package webui
+%package webui-new
 Summary:       Bareos Web User Interface (Vue)
 Group:         Productivity/Archiving/Backup
 Requires:      %{name}-webui-proxy = %{version}
 Requires:      httpd
 
-%description webui
+%description webui-new
 %{dscr}
 
 This package contains the Vue-based Bareos Web User Interface.
@@ -1017,24 +1017,24 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_docdir}/%{name}/README.bareos
 
 %if 0%{?webui}
-%files webui-php
+%files webui
 %defattr(-,root,root,-)
 %doc webui/README.md webui/copyright
 %doc webui/doc/README-TRANSLATION.md
 %doc webui/tests/selenium
-%{_datadir}/%{name}-webui-php/
+%{_datadir}/%{name}-webui/
 %dir /etc/bareos-webui
 %{configtemplatedir}/bareos-dir.d/console/admin.conf.example
 %{configtemplatedir}/bareos-dir.d/profile/webui-limited.conf.example
 %config(noreplace) /etc/bareos-webui/directors.ini
 %config(noreplace) /etc/bareos-webui/configuration.ini
-%config(noreplace) %{_apache_conf_dir}/bareos-webui-php.conf
+%config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
 
-%files webui
+%files webui-new
 %defattr(-,root,root,-)
 %doc webui-vue/tests/selenium
-%{_datadir}/%{name}-webui/
-%config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
+%{_datadir}/%{name}-webui-new/
+%config(noreplace) %{_apache_conf_dir}/bareos-webui-new.conf
 
 %files webui-proxy
 %defattr(-,root,root,-)

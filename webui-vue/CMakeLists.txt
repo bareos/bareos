@@ -9,7 +9,7 @@
 
 cmake_minimum_required(VERSION 3.17)
 
-set(WEBUI_VUE_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui)
+set(WEBUI_VUE_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui-new)
 
 # Detect Apache configuration directory
 if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
@@ -28,8 +28,8 @@ else()
 endif()
 
 configure_file(
-  install/apache/bareos-webui.conf.in
-  ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui.conf @ONLY
+  install/apache/bareos-webui-new.conf.in
+  ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui-new.conf @ONLY
 )
 
 configure_file(
@@ -145,7 +145,7 @@ endif()
 install(CODE "${WEBUI_VUE_INSTALL_CODE}" COMPONENT webui-vue)
 
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui.conf
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui-new.conf
   DESTINATION ${HTTPD_CONF}/
   COMPONENT webui-vue
 )
