@@ -197,7 +197,6 @@ set(CMAKE_CTEST_COMMAND ctest -V)
 include(CTest)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(HAVE_DARWIN_OS 1)
   if(DEFINED ENV{HOMEBREW_PREFIX})
     set(HOMEBREW_PREFIX "$ENV{HOMEBREW_PREFIX}")
   else()
@@ -219,12 +218,7 @@ endif()
 
 include(BareosFindPrograms)
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  set(HAVE_LINUX_OS 1)
-endif()
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-  set(HAVE_SUN_OS 1)
   link_libraries(nsl socket curses sec)
 
   if(${CMAKE_C_COMPILER_ID} MATCHES SunPro)
@@ -240,7 +234,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-  set(HAVE_FREEBSD_OS 1)
   include_directories(SYSTEM /usr/local/include)
   link_directories(/usr/local/lib)
   link_libraries(intl)
@@ -259,7 +252,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
-  set(HAVE_AIX_OS 1)
   set(lmdb OFF)
   link_libraries(intl)
 endif()
@@ -271,11 +263,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   if(MSVC)
     link_libraries(Intl::Intl)
-  endif()
-
-  set(HAVE_WIN32 1)
-
-  if(MSVC)
     set(PostgreSQL_INCLUDE_DIR "")
     set(PostgreSQL_TYPE_INCLUDE_DIR "")
   endif()

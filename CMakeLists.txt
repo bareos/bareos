@@ -52,6 +52,8 @@ if(CPM_ONLY)
   return()
 endif()
 
+include(BareosOSInfo)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT Embedded)
   string(REPLACE "Program Files (x86)" "Program Files" CMAKE_INSTALL_PREFIX
