@@ -21,8 +21,13 @@
 
 #include "dird/reload.h"
 
+#include "dird/job.h"
+#include "dird/ua.h"
+
 #include <cassert>
 #include <atomic>
+#include <vector>
+#include <unordered_set>
 
 namespace directordaemon {
 
@@ -219,6 +224,96 @@ bool DoReloadConfig()
     backup_container->SetNext(my_config->GetResourcesContainer());
 
     Dmsg0(10, "Director's configuration file reread successfully.\n");
+
+    // Validate queued jobs: cancel those that reference resources which
+    // no longer exist in the newly loaded configuration. This prevents
+    // dereferencing freed resource_name_ pointers after the old
+    // configuration container is released.
+    {
+      // Collect candidates while holding the job queue mutex
+      std::vector<JobControlRecord*> to_cancel;
+      std::unordered_set<JobControlRecord*> seen;
+
+      lock_mutex(job_queue.mutex);
+
+      // Helper lambda to inspect a job and add to list if invalid
+      auto inspect_jcr = [&](JobControlRecord* jcr) {
+        if (!jcr || seen.find(jcr) != seen.end()) { return; }
+        seen.insert(jcr);
+
+        bool invalid = false;
+
+        // Job resource
+        if (!jcr->dir_impl->res.job || !jcr->dir_impl->res.job->resource_name_
+            || my_config->GetResWithName(R_JOB,
+                                         jcr->dir_impl->res.job->resource_name_,
+                                         /*lock=*/false)
+                   == nullptr) {
+          invalid = true;
+        }
+        // Client resource
+        if (!invalid) {
+          if (!jcr->dir_impl->res.client
+              || !jcr->dir_impl->res.client->resource_name_
+              || my_config->GetResWithName(R_CLIENT,
+                                           jcr->dir_impl->res.client->resource_name_,
+                                           /*lock=*/false)
+                     == nullptr) {
+            invalid = true;
+          }
+        }
+        // Fileset resource (optional)
+        if (!invalid && jcr->dir_impl->res.fileset) {
+          if (!jcr->dir_impl->res.fileset->resource_name_
+              || my_config->GetResWithName(R_FILESET,
+                                           jcr->dir_impl->res.fileset->resource_name_,
+                                           /*lock=*/false)
+                     == nullptr) {
+            invalid = true;
+          }
+        }
+
+        if (invalid) { to_cancel.push_back(jcr); }
+      };
+
+      // Inspect waiting jobs
+      if (job_queue.waiting_jobs) {
+        jobq_item_t* item = (jobq_item_t*)job_queue.waiting_jobs->first();
+        for (; item; item = (jobq_item_t*)job_queue.waiting_jobs->next(item)) {
+          inspect_jcr(item->jcr);
+        }
+      }
+
+      // Inspect ready jobs
+      if (job_queue.ready_jobs) {
+        jobq_item_t* item = (jobq_item_t*)job_queue.ready_jobs->first();
+        for (; item; item = (jobq_item_t*)job_queue.ready_jobs->next(item)) {
+          inspect_jcr(item->jcr);
+        }
+      }
+
+      // Inspect running jobs
+      if (job_queue.running_jobs) {
+        jobq_item_t* item = (jobq_item_t*)job_queue.running_jobs->first();
+        for (; item; item = (jobq_item_t*)job_queue.running_jobs->next(item)) {
+          inspect_jcr(item->jcr);
+        }
+      }
+
+      unlock_mutex(job_queue.mutex);
+
+      // Cancel invalid jobs outside of queue mutex
+      for (JobControlRecord* jcr : to_cancel) {
+        Dmsg2(200, "Cancelling job %s (id=%" PRIu32 ") due to missing "
+              "configuration resource.\n",
+              jcr->Job, jcr->JobId);
+        UaContext* ua = new_ua_context(jcr);
+        ua->jcr = jcr;
+        CancelJob(ua, jcr);
+        FreeUaContext(ua);
+      }
+    }
+
   } else {  // parse config failed
     Jmsg(nullptr, M_ERROR, 0, T_("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
