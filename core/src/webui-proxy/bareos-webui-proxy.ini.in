@@ -16,9 +16,9 @@ port = 9104
 
 [bareos-dir]
 address = localhost
-tls_psk_disable = no
+# tls_psk_disable = no
 
 #[site-b]
 #address = dr.example.com
 #director_name = bareos-dir
-#tls_psk_disable = no
+# tls_psk_disable = no
