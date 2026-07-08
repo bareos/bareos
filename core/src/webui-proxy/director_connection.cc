@@ -484,9 +484,26 @@ void DirectorConnection::ConnectTlsPsk(const DirectorConfig& cfg)
 void DirectorConnection::Disconnect()
 {
   if (fd_ >= 0 || ssl_ || ssl_ctx_) {
-    // Best-effort: send quit command.
+    // Best-effort: send quit and wait for the director to acknowledge it with
+    // BNET_TERMINATE before closing the socket.  Without this drain the
+    // director is still mid-write when the socket disappears and logs a
+    // spurious "broken pipe" error.
     try {
-      if (fd_ >= 0) { SendFrame("quit\n"); }
+      if (fd_ >= 0) {
+        SendFrame("quit\n");
+        // Drain frames for up to 1 s so the director can finish its current
+        // write and send its BNET_TERMINATE goodbye frame.
+        constexpr int kQuitDrainTimeoutMs = 1000;
+        constexpr int kPollSliceMs = 50;
+        int waited_ms = 0;
+        while (waited_ms < kQuitDrainTimeoutMs
+               && HasPendingInput(kPollSliceMs)) {
+          int32_t signal = 0;
+          RecvFrame(&signal);
+          if (signal == BNET_TERMINATE) { break; }
+          waited_ms += kPollSliceMs;
+        }
+      }
     } catch (...) {
     }
     if (ssl_) {
