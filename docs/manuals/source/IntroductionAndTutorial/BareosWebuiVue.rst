@@ -93,6 +93,95 @@ To use it successfully, ensure that:
   Apache
 * suitable Bareos Director console credentials exist
 
+Configuring multiple directors
+------------------------------
+
+By default, :command:`bareos-webui-proxy` connects to a single local Director.
+To make multiple Directors selectable in the WebUI, copy the shipped config
+template into place and add one section per Director:
+
+.. code-block:: shell-session
+
+   cp /usr/lib/bareos/defaultconfigs/bareos-webui-proxy.ini \
+      /etc/bareos-webui-proxy/bareos-webui-proxy.ini
+
+Then edit :file:`/etc/bareos-webui-proxy/bareos-webui-proxy.ini`:
+
+.. code-block:: ini
+
+   [listen]
+   address = localhost
+   port = 9104
+
+   [bareos-dir]
+   address = localhost
+
+   [site-b]
+   address = dr.example.com
+   director_name = bareos-dir
+
+Each section name (e.g. ``bareos-dir``, ``site-b``) is shown as a selectable
+Director in the WebUI login and scope menu.
+Set ``director_name`` only when the real Bareos Director name differs from the
+section name — this is the name the Director announces in its greeting banner.
+
+After changing the config, restart the proxy:
+
+.. code-block:: shell-session
+
+   systemctl restart bareos-webui-proxy
+
+Once logged in to multiple Directors, the scope menu at the top of the page
+allows switching between them or viewing data from all Directors at once.
+
+**``[listen]`` section options**
+
+.. list-table::
+   :widths: 35 15 50
+   :header-rows: 1
+
+   * - Option
+     - Default
+     - Description
+   * - ``address``
+     - ``localhost``
+     - Address the proxy binds to.
+   * - ``port``
+     - ``9104``
+     - Port the proxy listens on.
+   * - ``session_idle_timeout_minutes``
+     - ``30``
+     - Minutes of inactivity before a session is invalidated.
+   * - ``session_absolute_lifetime_hours``
+     - ``8``
+     - Maximum session lifetime in hours regardless of activity.
+   * - ``max_unauthenticated_connections``
+     - ``100``
+     - Maximum concurrent connections that have not yet completed login.
+
+**``[<director>]`` section options**
+
+.. list-table::
+   :widths: 35 15 50
+   :header-rows: 1
+
+   * - Option
+     - Default
+     - Description
+   * - ``address``
+     - ``localhost``
+     - Hostname or IP address of the Bareos Director.
+   * - ``port``
+     - ``9101``
+     - Port the Bareos Director listens on.
+   * - ``director_name``
+     - *(section name)*
+     - Real Director name as announced in the greeting banner.
+       Set this when the section name differs from the Director name.
+   * - ``tls_psk_disable``
+     - ``no``
+     - Set to ``yes`` to disable TLS-PSK for this Director connection.
+
 What is already available
 -------------------------
 
