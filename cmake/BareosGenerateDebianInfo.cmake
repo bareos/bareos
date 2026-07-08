@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -91,9 +91,9 @@ else()
   endif()
 
   if(NOT client-only)
-    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui-php")
-    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui-proxy")
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui")
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui-proxy")
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui-new")
   endif()
 
   if(NOT client-only AND VIXDISKLIB_FOUND)

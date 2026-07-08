@@ -1,7 +1,11 @@
 Package: bareos-webui
 Architecture: all
 Depends: apache2 | httpd,
-   bareos-webui-proxy,
+   php-fpm (>= 7.0),
+   php-date <bookworm> <bullseye> <noble> <jammy>,
+   php-intl,
+   php-json,
+   php-curl,
    ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - Vue webui
- This package contains the Vue-based Bareos WebUI.
+Description: Backup Archiving Recovery Open Sourced - PHP webui
+ This package contains the Bareos WebUI.
