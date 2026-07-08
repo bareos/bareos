@@ -28,6 +28,7 @@
 #include "dird/job.h"
 #include "dird/jcr_util.h"
 #include "dird/jobq.h"
+#include "testing_dir_common.h"
 
 using namespace directordaemon;
 
@@ -46,8 +47,9 @@ class ReloadCancelJobsTest : public ::testing::Test {
 TEST_F(ReloadCancelJobsTest, CancelsJobsReferencingRemovedResources)
 {
   // Initialize configuration from test fixtures
-  std::string path_to_config_file
-      = std::string("configs/bareos-configparser-tests");
+  std::string path_to_config_file = std::string(
+      "configs/bareos-configparser-tests/"
+      "bareos-dir-CFG_TYPE_ALIST_STR.conf");
   ConfigurationParser* dir_conf
       = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_NE(nullptr, dir_conf);
@@ -62,12 +64,13 @@ TEST_F(ReloadCancelJobsTest, CancelsJobsReferencingRemovedResources)
   ASSERT_NE(nullptr, job) << "Test config must contain job1";
 
   // Initialize job server (job queue)
-  InitJobServer(1);
+  InitJobServer(0);
 
   // Create a JCR referencing the job resource and enqueue it
   JobControlRecord* jcr = NewDirectorJcr(DirdFreeJcr);
   ASSERT_NE(nullptr, jcr);
   SetJcrDefaults(jcr, job);
+  jcr->setJobStatus(JS_WaitJobRes);
 
   int status = JobqAdd(&job_queue, jcr);
   ASSERT_EQ(status, 0);

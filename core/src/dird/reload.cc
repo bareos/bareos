@@ -23,6 +23,8 @@
 
 #include "dird/job.h"
 #include "dird/ua.h"
+#include "dird/jobq.h"
+#include "dird/director_jcr_impl.h"
 
 #include <cassert>
 #include <atomic>
@@ -30,6 +32,9 @@
 #include <unordered_set>
 
 namespace directordaemon {
+
+// job_queue is defined in dird/job.cc
+extern jobq_t job_queue;
 
 /**
  * Make a quick check to see that we have all the
@@ -199,31 +204,25 @@ void CancelInvalidQueuedJobs()
     bool invalid = false;
 
     // Job resource
-    if (!jcr->dir_impl->res.job || !jcr->dir_impl->res.job->resource_name_
-        || my_config->GetResWithName(R_JOB,
-                                     jcr->dir_impl->res.job->resource_name_,
-                                     /*lock=*/false)
+    if (!jcr->job_name
+        || my_config->GetResWithName(R_JOB, jcr->job_name, /*lock=*/false)
                == nullptr) {
       invalid = true;
     }
     // Client resource
     if (!invalid) {
-      if (!jcr->dir_impl->res.client
-          || !jcr->dir_impl->res.client->resource_name_
-          || my_config->GetResWithName(
-                 R_CLIENT, jcr->dir_impl->res.client->resource_name_,
-                 /*lock=*/false)
+      if (!jcr->client_name
+          || my_config->GetResWithName(R_CLIENT, jcr->client_name,
+                                       /*lock=*/false)
                  == nullptr) {
         invalid = true;
       }
     }
     // Fileset resource (optional)
-    if (!invalid && jcr->dir_impl->res.fileset) {
-      if (!jcr->dir_impl->res.fileset->resource_name_
-          || my_config->GetResWithName(
-                 R_FILESET, jcr->dir_impl->res.fileset->resource_name_,
-                 /*lock=*/false)
-                 == nullptr) {
+    if (!invalid && jcr->fileset_name) {
+      if (my_config->GetResWithName(R_FILESET, jcr->fileset_name,
+                                    /*lock=*/false)
+          == nullptr) {
         invalid = true;
       }
     }

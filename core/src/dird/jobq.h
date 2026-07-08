@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -70,6 +70,7 @@ extern int JobqInit(jobq_t* wq,
 extern int JobqDestroy(jobq_t* wq);
 extern int JobqAdd(jobq_t* wq, JobControlRecord* jcr);
 extern int JobqRemove(jobq_t* wq, JobControlRecord* jcr);
+extern jobq_t job_queue;
 
 bool IncReadStore(JobControlRecord* jcr);
 void DecReadStore(JobControlRecord* jcr);

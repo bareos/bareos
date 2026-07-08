@@ -711,7 +711,11 @@ bool CancelJob(UaContext* ua, JobControlRecord* jcr)
       break;
   }
 
-  RunScripts(jcr, jcr->dir_impl->res.job->RunScripts, "AfterJob");
+  JobResource* job = nullptr;
+  if (jcr->job_name && my_config) {
+    job = (JobResource*)my_config->GetResWithName(R_JOB, jcr->job_name, false);
+  }
+  if (job) { RunScripts(jcr, job->RunScripts, "AfterJob"); }
 
   return true;
 }
@@ -1666,6 +1670,10 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
   jcr->dir_impl->res.job = job;
   jcr->dir_impl->res.rjs = job->rjs;
   jcr->dir_impl->max_concurrent_jobs = job->MaxConcurrentJobs;
+  if (job->resource_name_) {
+    if (!jcr->job_name) { jcr->job_name = GetPoolMemory(PM_NAME); }
+    PmStrcpy(jcr->job_name, job->resource_name_);
+  }
   jcr->setJobType(job->JobType);
   jcr->setJobProtocol(job->Protocol);
   jcr->setJobStatus(JS_Created);
@@ -1737,6 +1745,10 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
   }
 
   jcr->dir_impl->res.fileset = job->fileset;
+  if (job->fileset && job->fileset->resource_name_) {
+    if (!jcr->fileset_name) { jcr->fileset_name = GetPoolMemory(PM_NAME); }
+    PmStrcpy(jcr->fileset_name, job->fileset->resource_name_);
+  }
   jcr->accurate = job->accurate;
   jcr->dir_impl->res.messages = job->messages;
   jcr->dir_impl->spool_data = job->spool_data;

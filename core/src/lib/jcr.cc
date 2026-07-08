@@ -283,6 +283,16 @@ static void FreeCommonJcr(JobControlRecord* jcr)
     jcr->client_name = nullptr;
   }
 
+  if (jcr->job_name) {
+    FreePoolMemory(jcr->job_name);
+    jcr->job_name = nullptr;
+  }
+
+  if (jcr->fileset_name) {
+    FreePoolMemory(jcr->fileset_name);
+    jcr->fileset_name = nullptr;
+  }
+
   if (jcr->attr) {
     FreePoolMemory(jcr->attr);
     jcr->attr = nullptr;
