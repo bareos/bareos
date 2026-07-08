@@ -97,26 +97,30 @@ BareosResource* ConfigurationParser::GetResWithName(int rcode,
                                                     const char* name,
                                                     bool lock) const
 {
-  BareosResource* res;
   int rindex = rcode;
+
+  auto find_res = [&]() -> BareosResource* {
+    auto& containers = config_resources_container_->configuration_resources_;
+    if (rindex < 0 || static_cast<std::size_t>(rindex) >= containers.size()) {
+      return nullptr;
+    }
+
+    auto* res = containers[rindex];
+
+    while (res) {
+      if (bstrcmp(res->resource_name_, name)) { break; }
+      res = res->next_;
+    }
+
+    return res;
+  };
 
   if (lock) {
     ResLocker _{this};
-
-    res = config_resources_container_->configuration_resources_[rindex];
-    while (res) {
-      if (bstrcmp(res->resource_name_, name)) { break; }
-      res = res->next_;
-    }
+    return find_res();
   } else {
-    res = config_resources_container_->configuration_resources_[rindex];
-    while (res) {
-      if (bstrcmp(res->resource_name_, name)) { break; }
-      res = res->next_;
-    }
+    return find_res();
   }
-
-  return res;
 }
 
 /*
