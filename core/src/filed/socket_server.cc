@@ -28,6 +28,7 @@
  * This file handles external connections made to the File daemon.
  */
 
+#include "filed/filed_conf.h"
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
@@ -65,8 +66,8 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   bs->SetEnableKtls(me->enable_ktls);
 
-  UseConfigAndJcrs data{config};
-  if (!TryTlsHandshakeAsAServer(bs, config, &data)) {
+  UseConfigAndJcrs tls_secret_provider{config};
+  if (!TryTlsHandshakeAsAServer(bs, config, &tls_secret_provider)) {
     bs->signal(BNET_TERMINATE);
     bs->close();
     delete bs;
@@ -86,22 +87,52 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   // See if its a director making a connection.
   char tbuf[100];
-  if (bstrncmp(bs->msg, "Hello Director", 14)) {
+  char name[128];
+
+  if (bsscanf(bs->msg, "Hello Director %127s calling", name) == 1) {
     Dmsg1(110, "Got a DIR connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+
+    if (std::optional error
+        = tls_secret_provider.is_resource_name_different_from_tls_name(
+            R_DIRECTOR, name)) {
+      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
+            error->c_str());
+      Bmicrosleep(5, 0); /* make user wait 5 seconds */
+      bs->signal(BNET_TERMINATE);
+      bs->close();
+      delete bs;
+      return NULL;
+    }
+
     return handle_director_connection(bs);
   }
 
   // See if its a storage daemon making a connection.
-  if (bstrncmp(bs->msg, "Hello Storage", 13)) {
+  if (bsscanf(bs->msg, "Hello Storage calling Start Job %127s", name) == 1) {
     Dmsg1(110, "Got a SD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+
+    if (std::optional error = tls_secret_provider.check_job_name(name)) {
+      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
+            error->c_str());
+      Bmicrosleep(5, 0); /* make user wait 5 seconds */
+      bs->signal(BNET_TERMINATE);
+      bs->close();
+      delete bs;
+      return NULL;
+    }
+
     return handle_stored_connection(bs);
   }
 
   Emsg2(M_ERROR, 0, T_("Invalid connection from %s. Len=%d\n"), bs->who(),
         bs->message_length);
 
+  Bmicrosleep(5, 0); /* make user wait 5 seconds */
+  bs->signal(BNET_TERMINATE);
+  bs->close();
+  delete bs;
   return nullptr;
 }
 
