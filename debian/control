@@ -36,7 +36,6 @@ Build-Depends: acl-dev,
  libfmt-dev (>= 6.3.1) <bookworm> <bullseye> <noble> <jammy>,
  libmsgsl-dev (>= 4.0.0) <bookworm> <noble> <jammy>,
  libutfcpp-dev (>= 2.3.4) <bookworm> <bullseye> <noble> <jammy>,
- libprotobuf-dev,
  libpq-dev,
  libjansson-dev,
  libjson-c-dev,
@@ -49,10 +48,7 @@ Build-Depends: acl-dev,
  po-debconf (>= 0.8.2),
  python3-dev,
  zlib1g-dev,
- systemd,
- libprotobuf-dev,
- libgrpc++-dev,
- protobuf-compiler-grpc
+ systemd
 Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools, libqt4-dev
 Standards-Version: 3.9.6
 Vcs-Git: git://github.com/bareos/bareos.git -b master
