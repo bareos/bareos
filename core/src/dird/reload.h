@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,6 +40,12 @@ namespace directordaemon {
 bool CheckResources();
 bool InitializeSqlPooling(void);
 bool DoReloadConfig();
+
+// Validate queued jobs and cancel those referencing resources that no
+// longer exist in the current configuration. This provides a targeted
+// cleanup after config reload so queued jobs don't dereference freed
+// resource pointers.
+void CancelInvalidQueuedJobs();
 
 } /* namespace directordaemon */
 

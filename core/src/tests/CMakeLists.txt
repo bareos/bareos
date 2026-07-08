@@ -445,6 +445,12 @@ bareos_add_test(
   get_resource_name_test LINK_LIBRARIES Bareos::Lib GTest::gtest_main
 )
 
+bareos_add_test(
+  reload_cancel_jobs_test
+  LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib testing_common
+                 GTest::gtest_main
+)
+
 add_executable(test_bpipe_prog)
 target_sources(test_bpipe_prog PRIVATE test_bpipe_prog.cc)
 bareos_add_test(test_bpipe LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
