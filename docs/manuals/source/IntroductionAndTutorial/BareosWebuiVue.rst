@@ -33,7 +33,7 @@ The two interfaces are designed to exist in parallel.
 In a typical Apache deployment they use separate URLs:
 
 * classic WebUI: :file:`/bareos-webui`
-* Vue WebUI preview: :file:`/bareos-webui-vue`
+* Vue WebUI preview: :file:`/bareos-webui-new`
 
 The Vue WebUI uses the same Bareos Director console concepts as the classic
 WebUI, so user access still depends on properly configured
@@ -44,9 +44,9 @@ Architecture overview
 
 The Vue WebUI consists of:
 
-* the static SPA bundle installed below :file:`/usr/share/bareos-webui-vue`
+* the static SPA bundle installed below :file:`/usr/share/bareos-webui-new`
 * an Apache configuration that exposes the bundle below
-  :file:`/bareos-webui-vue`
+  :file:`/bareos-webui-new`
 * the :command:`bareos-webui-proxy` service, which accepts both HTTP session
   requests and WebSocket connections and forwards them to the Bareos Director
 
@@ -70,7 +70,7 @@ Installation and access
 The exact package layout depends on the target platform.
 Where packaging support is available, the Vue WebUI is installed separately
 from the classic PHP WebUI and keeps its own Apache configuration file
-:file:`bareos-webui-vue.conf`.
+:file:`bareos-webui-new.conf`.
 
 For source builds, the installable bundle is generated with:
 
@@ -82,12 +82,12 @@ After installation, open the preview at:
 
 .. code-block:: text
 
-   http://HOSTNAME/bareos-webui-vue
+   http://HOSTNAME/bareos-webui-new
 
 To use it successfully, ensure that:
 
 * the Vue WebUI bundle is installed
-* the Apache configuration for :file:`/bareos-webui-vue` is enabled
+* the Apache configuration for :file:`/bareos-webui-new` is enabled
 * :command:`bareos-webui-proxy` is installed and running
 * the HTTP and WebSocket proxy targets on port **9104** are reachable from
   Apache

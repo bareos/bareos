@@ -50,10 +50,10 @@ The build logic is implemented in:
 
 The installed Apache configuration is generated from:
 
-* :file:`webui-vue/install/apache/bareos-webui-vue.conf.in`
+* :file:`webui-vue/install/apache/bareos-webui-new.conf.in`
 
-The SPA is installed below :file:`${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui-vue`
-and exposed by Apache below :file:`/bareos-webui-vue`.
+The SPA is installed below :file:`${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui-new`
+and exposed by Apache below :file:`/bareos-webui-new`.
 
 Runtime architecture
 --------------------
@@ -65,7 +65,7 @@ and WebSocket-based director communication.
 
 The default Apache configuration:
 
-* serves the SPA from :file:`/bareos-webui-vue`
+* serves the SPA from :file:`/bareos-webui-new`
 * rewrites SPA routes back to :file:`index.html`
 * proxies :file:`/ws` to :command:`bareos-webui-proxy` on port **9104**
 * proxies :file:`/api/` to :command:`bareos-webui-proxy` on port **9104**
