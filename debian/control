@@ -461,7 +461,7 @@ Description: Backup Archiving Recovery Open Sourced - storage daemon Python plug
  This package provides common files for Python storagedaemon plugins.
 
 
-Package: bareos-webui-php
+Package: bareos-webui
 Architecture: all
 Depends: apache2 | httpd,
    php-fpm (>= 7.0),

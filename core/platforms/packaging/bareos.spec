@@ -1984,8 +1984,8 @@ exit 0
 
 %if 0%{?webui}
 
-%pre webui-php
-%logging_start webui-php pre
+%pre webui
+%logging_start webui pre
 if [ $1 -gt 1 ]; then
   # upgrade
   %if_package_version_lt %{name}-webui 25.0.0
@@ -1996,8 +1996,8 @@ fi
 %logging_end
 exit 0
 
-%post webui-php
-%logging_start webui-php post
+%post webui
+%logging_start webui post
 %if 0%{?suse_version}
 a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
@@ -2006,8 +2006,8 @@ a2enmod fcgid &> /dev/null || true
 %endif
 %logging_end
 
-%post webui
-%logging_start webui post
+%post webui-new
+%logging_start webui-new post
 %if 0%{?suse_version}
 a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
@@ -2017,8 +2017,8 @@ apachectl graceful &> /dev/null || true
 %endif
 %logging_end
 
-%posttrans webui-php
-%logging_start webui-php posttrans
+%posttrans webui
+%logging_start webui posttrans
 # update from bareos < 25
 %posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-admin.conf"
 %posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-readonly.conf"

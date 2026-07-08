@@ -13,7 +13,7 @@ This test checks the Bareos WebUI by using seleniums webdriver.
 To run the test you must set certain environment variables:
 
  * `BAREOS_WEBUI_BROWSER`: The test takes either 'firefox' or 'chrome'
- * `BAREOS_WEBUI_BASE_URL`: The base url of the bareos-webui, default: `http://127.0.0.1/bareos-webui-php/`.
+ * `BAREOS_WEBUI_BASE_URL`: The base url of the bareos-webui, default: `http://127.0.0.1/bareos-webui/`.
  * `BAREOS_WEBUI_USERNAME`: Login user name, default: `admin`
  * `BAREOS_WEBUI_PASSWORD`: Login password, default: `secret`
  * `BAREOS_WEBUI_PROFILE`: if set to "readonly", only actions that are available in readonly modus are used.
@@ -32,7 +32,7 @@ To run the test you must set certain environment variables:
 ## Running the test
 
 ```
-export BAREOS_WEBUI_BASE_URL=http://127.0.0.1/bareos-webui-php/
+export BAREOS_WEBUI_BASE_URL=http://127.0.0.1/bareos-webui/
 export BAREOS_WEBUI_BROWSER=chrome
 export BAREOS_WEBUI_CHROME_HEADLESS=no
 export BAREOS_WEBUI_CHROMEDRIVER_PATH=/usr/bin/chromedriver
