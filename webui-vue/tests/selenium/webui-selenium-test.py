@@ -159,7 +159,11 @@ class SeleniumVueTest(unittest.TestCase):
         self.assertTrue(
             any(
                 kw in error_text
-                for kw in ("authentication failed", "connection error", "could not log in")
+                for kw in (
+                    "authentication failed",
+                    "connection error",
+                    "could not log in",
+                )
             ),
             f"Unexpected error text: {error_text!r}",
         )

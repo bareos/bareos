@@ -22,8 +22,8 @@ set -e
 set -o pipefail
 set -u
 
-if [ "${TESTTYPE:-}" = "bareos-client-only" ] || \
-   [ "${TESTTYPE:-}" = "bareos-universal-client" ]; then
+if [ "${TESTTYPE:-}" = "bareos-client-only" ] \
+  || [ "${TESTTYPE:-}" = "bareos-universal-client" ]; then
   echo "SKIPPED (client-only does not contain webui)"
   return 0
 fi
