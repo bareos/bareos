@@ -53,7 +53,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # as such we set these right at the start
 include(BareosCompilerFlags)
 if(MSVC)
-  set(BAREOS_WARNING_FLAGS
+  add_compile_options(
       /W4 # enable all reasonable warnings, but disable the following
       /wd4273 # inconsistent dll linkage
       /wd4127 # conditional expression is constant
@@ -63,9 +63,6 @@ if(MSVC)
       /wd4389 # sign mismatch
       /D_CRT_SECURE_NO_DEPRECATE # deprecation warning for stdlib functions
   )
-  list(JOIN BAREOS_WARNING_FLAGS " " BAREOS_WARNING_FLAGS_STRING)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
 else()
   bareos_add_compile_flags(-Werror -Wall -Wextra -Wshadow -Wformat -Wformat-type-confusion)
   bareos_add_compile_flags(-Wsuggest-override -Wno-invalid-offsetof CXX_ONLY)
@@ -82,25 +79,15 @@ endif()
 option(ENABLE_SANITIZERS "Build with ASan/LSan/UBSan enabled" OFF)
 if(ENABLE_SANITIZERS)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
-    )
-    set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
-    )
-
+    add_compile_options(-fsanitize=undefined -fsanitize=address -fno-sanitize-recover)
+    add_link_options(-fsanitize=undefined -fsanitize=address -fno-sanitize-recover)
     add_compile_definitions(BAREOS_UB_SANITIZER=1 BAREOS_ADDRESS_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
-    )
-    set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
-    )
+    add_compile_options(-fsanitize=undefined -fsanitize=address -fno-sanitize-recover)
+    add_link_options(-fsanitize=undefined -fsanitize=address -fno-sanitize-recover)
     add_compile_definitions(BAREOS_UB_SANITIZER=1 BAREOS_ADDRESS_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
+    add_compile_options(/fsanitize=address)
     add_compile_definitions(BAREOS_ADDRESS_SANITIZER=1)
   else()
     message(
@@ -113,25 +100,15 @@ endif()
 option(ENABLE_THREAD_SANITIZERS "Build with TSan enabled" OFF)
 if(ENABLE_THREAD_SANITIZERS)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fsanitize=thread -fno-sanitize-recover"
-    )
-    set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} -fsanitize=thread -fno-sanitize-recover"
-    )
-
+    add_compile_options(-fsanitize=thread -fno-sanitize-recover)
+    add_link_options(-fsanitize=thread -fno-sanitize-recover)
     add_compile_definitions(BAREOS_THREAD_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fsanitize=thread -fno-sanitize-recover"
-    )
-    set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} -fsanitize=thread -fno-sanitize-recover"
-    )
+    add_compile_options(-fsanitize=thread -fno-sanitize-recover)
+    add_link_options(-fsanitize=thread -fno-sanitize-recover)
     add_compile_definitions(BAREOS_THREAD_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=thread")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=thread")
+    add_compile_options(/fsanitize=thread>)
     add_compile_definitions(BAREOS_THREAD_SANITIZER=1)
   else()
     message(
@@ -153,8 +130,7 @@ option(ENABLE_STATIC_RUNTIME_LIBS "Link C and C++ runtime libraries statically"
 )
 if(ENABLE_STATIC_RUNTIME_LIBS)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
+    add_link_options(-static-libgcc -static-libstdc++)
   else()
     message(
       FATAL_ERROR
@@ -228,12 +204,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   if(${CMAKE_C_COMPILER_ID} MATCHES SunPro)
     include_directories(/usr/local/include)
     link_directories(/usr/local/lib)
-
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
-  endif()
-
-  if(${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
+    add_compile_options(-m64)
   endif()
 endif()
 
@@ -297,7 +268,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       -DWINVER=${WINDOWS_VERSION}
     )
     # add parallel builds (-MP)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MP")
+    add_compile_options(-MP)
     # export all symbols of dlls trick in cmake
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
   endif()

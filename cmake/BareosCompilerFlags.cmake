@@ -50,38 +50,24 @@ function(bareos_add_compile_flags)
     if(ARG_C_ONLY)
       bareos_check_compiler_flags("-${plain_flag}" C_ONLY)
       if(C_SUPPORTS_${plain_flag_sym})
-        list(APPEND c_flags "${flag}")
+        add_compile_options("$<$<COMPILE_LANGUAGE:C>:${flag}>")
       endif()
     elseif(ARG_CXX_ONLY)
       bareos_check_compiler_flags("-${plain_flag}" CXX_ONLY)
       if(CXX_SUPPORTS_${plain_flag_sym})
-        list(APPEND cxx_flags "${flag}")
+        add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:${flag}>")
       endif()
     else()
       bareos_check_compiler_flags("-${plain_flag}")
-      if(C_SUPPORTS_${plain_flag_sym})
-        list(APPEND c_flags "${flag}")
-      endif()
-      if(CXX_SUPPORTS_${plain_flag_sym})
-        list(APPEND cxx_flags "${flag}")
+      if(C_SUPPORTS_${plain_flag_sym} AND CXX_SUPPORTS_${plain_flag_sym})
+        add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:${flag}>")
+      elseif(C_SUPPORTS_${plain_flag_sym})
+        add_compile_options("$<$<COMPILE_LANGUAGE:C>:${flag}>")
+      elseif(CXX_SUPPORTS_${plain_flag_sym})
+        add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:${flag}>")
       endif()
     endif()
-
   endforeach()
-  # TODO(arogge): this should probably not mutate CMAKE_*_FLAGS
-  #               using add_compile_options() + generator expressions
-  #               is probably still a lot better than this
-  list(JOIN cxx_flags " " cxx_flags_str)
-  set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} ${cxx_flags_str}"
-      PARENT_SCOPE
-  )
-  list(JOIN c_flags " " c_flags_str)
-  set(CMAKE_C_FLAGS
-      "${CMAKE_C_FLAGS} ${c_flags_str}"
-      PARENT_SCOPE
-  )
-
 endfunction()
 
 # This functions disables compiler warnings on targets, if they're supported.
