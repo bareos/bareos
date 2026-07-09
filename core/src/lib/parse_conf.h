@@ -242,7 +242,6 @@ class ConfigurationParser {
                       const ResourceTable* resources,
                       const char* config_default_filename,
                       const char* config_include_dir,
-                      void (*ParseConfigBeforeCb)(ConfigurationParser&),
                       void (*ParseConfigReadyCb)(ConfigurationParser&),
                       SaveResourceCb_t SaveResourceCb,
                       DumpResourceCb_t DumpResourceCb,
@@ -348,7 +347,6 @@ class ConfigurationParser {
   std::string config_include_naming_format_; /* Format string for file paths of
                                                 resources */
   std::string used_config_path_;             /* Config file that is used. */
-  ParseConfigBeforeCb_t ParseConfigBeforeCb_{nullptr};
   ParseConfigReadyCb_t ParseConfigReadyCb_{nullptr};
   bool parser_first_run_{true};
   BStringList warnings_;

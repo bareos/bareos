@@ -357,9 +357,6 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
   return (error == 0);
 }
 
-///***REMOVE***
-static void ConfigBeforeCallback(ConfigurationParser&) {}
-
 static void ConfigReadyCallback(ConfigurationParser&) {}
 
 ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
@@ -367,8 +364,7 @@ ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, nullptr, exit_code, R_NUM,
       resource_definitions, default_config_filename.c_str(), "tray-monitor.d",
-      ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
-      FreeResource);
+      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_MONITOR; }
   return config;
 }

@@ -93,7 +93,6 @@ ConfigurationParser::ConfigurationParser(
     const ResourceTable* resource_definitions,
     const char* config_default_filename,
     const char* config_include_dir,
-    void (*ParseConfigBeforeCb)(ConfigurationParser&),
     void (*ParseConfigReadyCb)(ConfigurationParser&),
     SaveResourceCb_t SaveResourceCb,
     DumpResourceCb_t DumpResourceCb,
@@ -112,7 +111,6 @@ ConfigurationParser::ConfigurationParser(
   config_default_filename_
       = config_default_filename == nullptr ? "" : config_default_filename;
   config_include_dir_ = config_include_dir == nullptr ? "" : config_include_dir;
-  ParseConfigBeforeCb_ = ParseConfigBeforeCb;
   ParseConfigReadyCb_ = ParseConfigReadyCb;
   ASSERT(SaveResourceCb);
   ASSERT(DumpResourceCb);
@@ -173,8 +171,6 @@ bool ConfigurationParser::ParseConfig()
 {
   int errstat;
   PoolMem config_path;
-
-  if (ParseConfigBeforeCb_) ParseConfigBeforeCb_(*this);
 
   if (parser_first_run_ && (errstat = RwlInit(&res_lock_)) != 0) {
     BErrNo be;

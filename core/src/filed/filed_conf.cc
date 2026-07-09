@@ -230,9 +230,6 @@ static void ParseConfigCb(lexer* lc,
   }
 }
 
-///***REMOVE***
-static void ConfigBeforeCallback(ConfigurationParser&) {}
-
 static void ConfigReadyCallback(ConfigurationParser&) {}
 
 ConfigurationParser* InitFdConfig(const char* t_configfile, int exit_code)
@@ -240,8 +237,7 @@ ConfigurationParser* InitFdConfig(const char* t_configfile, int exit_code)
   ConfigurationParser* config = new ConfigurationParser(
       t_configfile, InitResourceCb, ParseConfigCb, nullptr, exit_code, R_NUM,
       resources, default_config_filename.c_str(), "bareos-fd.d",
-      ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
-      FreeResource);
+      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_CLIENT; }
   return config;
 }

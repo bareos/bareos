@@ -243,17 +243,14 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
   return (error == 0);
 }
 
-//***REMOVE***
-static void ConfigBeforeCallback(ConfigurationParser&) {}
-
 static void ConfigReadyCallback(ConfigurationParser&) {}
 
 ConfigurationParser* InitConsConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, nullptr, exit_code, R_NUM, resources,
-      default_config_filename.c_str(), "bconsole.d", ConfigBeforeCallback,
-      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
+      default_config_filename.c_str(), "bconsole.d", ConfigReadyCallback,
+      SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_CONSOLE; }
   return config;
 }
