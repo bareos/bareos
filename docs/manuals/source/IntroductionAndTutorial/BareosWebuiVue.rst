@@ -67,16 +67,9 @@ When ``--config`` is used explicitly, the given file must exist.
 Installation and access
 -----------------------
 
-The exact package layout depends on the target platform.
-Where packaging support is available, the Vue WebUI is installed separately
-from the classic PHP WebUI and keeps its own Apache configuration file
+The Vue WebUI is installed separately from the classic PHP WebUI via the
+:file:`bareos-webui-vue` package and keeps its own Apache configuration file
 :file:`bareos-webui-vue.conf`.
-
-For source builds, the installable bundle is generated with:
-
-.. code-block:: shell-session
-
-   cmake --build <builddir> --target bareos-webui-vue-build
 
 After installation, open the preview at:
 
