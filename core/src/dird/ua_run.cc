@@ -1234,7 +1234,6 @@ static bool DisplayJobParameters(UaContext* ua,
   char ec1[30];
   JobResource* job = rc.job;
   char dt[MAX_TIME_LENGTH];
-  const char* verify_list = rc.verify_list;
 
   Dmsg1(800, "JobType=%c\n", jcr->getJobType());
   switch (jcr->getJobType()) {
@@ -1442,8 +1441,6 @@ static bool DisplayJobParameters(UaContext* ua,
         } else {
           Name = "";
         }
-        if (!verify_list) { verify_list = job->WriteVerifyList; }
-        if (!verify_list) { verify_list = ""; }
         if (ua->api) {
           ua->signal(BNET_RUN_CMD);
           ua->SendMsg(
@@ -1456,7 +1453,6 @@ static bool DisplayJobParameters(UaContext* ua,
               "Pool:        %s (From %s)\n"
               "Storage:     %s (From %s)\n"
               "Verify Job:  %s\n"
-              "Verify List: %s\n"
               "When:        %s\n"
               "Priority:    %d\n",
               job->resource_name_, JobLevelToString(jcr->getJobLevel()),
@@ -1465,7 +1461,7 @@ static bool DisplayJobParameters(UaContext* ua,
               NPRT(jcr->dir_impl->res.pool->resource_name_),
               jcr->dir_impl->res.pool_source,
               jcr->dir_impl->res.read_storage->resource_name_,
-              jcr->dir_impl->res.rstore_source, Name, verify_list,
+              jcr->dir_impl->res.rstore_source, Name,
               bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
         } else {
           ua->SendMsg(T_("Run Verify Job\n"
@@ -1476,7 +1472,6 @@ static bool DisplayJobParameters(UaContext* ua,
                          "Pool:        %s (From %s)\n"
                          "Storage:     %s (From %s)\n"
                          "Verify Job:  %s\n"
-                         "Verify List: %s\n"
                          "When:        %s\n"
                          "Priority:    %d\n"),
                       job->resource_name_, JobLevelToString(jcr->getJobLevel()),
@@ -1485,7 +1480,7 @@ static bool DisplayJobParameters(UaContext* ua,
                       NPRT(jcr->dir_impl->res.pool->resource_name_),
                       jcr->dir_impl->res.pool_source,
                       jcr->dir_impl->res.read_storage->resource_name_,
-                      jcr->dir_impl->res.rstore_source, Name, verify_list,
+                      jcr->dir_impl->res.rstore_source, Name,
                       bstrutime(dt, sizeof(dt), jcr->sched_time),
                       jcr->JobPriority);
         }
@@ -1772,19 +1767,18 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
          "catalog",       /* 17 - override catalog */
          "since",         /* 18 - since */
          "cloned",        /* 19 - cloned */
-         "verifylist",    /* 20 - verify output list */
-         "migrationjob",  /* 21 - migration job name */
-         "pool",          /* 22 */
-         "nextpool",      /* 23 */
-         "backupclient",  /* 24 */
-         "restoreclient", /* 25 */
-         "pluginoptions", /* 26 */
-         "spooldata",     /* 27 */
-         "comment",       /* 28 */
-         "ignoreduplicatecheck", /* 29 */
-         "accurate",             /* 30 */
-         "backupformat",         /* 31 */
-         "consolidatejob",       /* 32 - parent consolidate job */
+         "migrationjob",  /* 20 - migration job name */
+         "pool",          /* 21 */
+         "nextpool",      /* 22 */
+         "backupclient",  /* 23 */
+         "restoreclient", /* 24 */
+         "pluginoptions", /* 25 */
+         "spooldata",     /* 26 */
+         "comment",       /* 27 */
+         "ignoreduplicatecheck", /* 28 */
+         "accurate",             /* 29 */
+         "backupformat",         /* 30 */
+         "consolidatejob",       /* 31 - parent consolidate job */
          NULL};
 
 #define YES_POS 14
@@ -1970,11 +1964,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             rc.cloned = true;
             kw_ok = true;
             break;
-          case 20: /* write verify list output */
-            rc.verify_list = ua->argv[i];
-            kw_ok = true;
-            break;
-          case 21: /* Migration Job */
+          case 20: /* Migration Job */
             if (rc.previous_job_name) {
               ua->SendMsg(T_("Migration Job specified twice.\n"));
               return false;
@@ -1982,7 +1972,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             rc.previous_job_name = ua->argv[i];
             kw_ok = true;
             break;
-          case 22: /* pool */
+          case 21: /* pool */
             if (rc.pool_name) {
               ua->SendMsg(T_("Pool specified twice.\n"));
               return false;
@@ -1990,7 +1980,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             rc.pool_name = ua->argv[i];
             kw_ok = true;
             break;
-          case 23: /* nextpool */
+          case 22: /* nextpool */
             if (rc.next_pool_name) {
               ua->SendMsg(T_("NextPool specified twice.\n"));
               return false;
@@ -1998,7 +1988,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             rc.next_pool_name = ua->argv[i];
             kw_ok = true;
             break;
-          case 24: /* backupclient */
+          case 23: /* backupclient */
             if (rc.client_name) {
               ua->SendMsg(T_("Client specified twice.\n"));
               return 0;
@@ -2006,7 +1996,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             rc.client_name = ua->argv[i];
             kw_ok = true;
             break;
-          case 25: /* restoreclient */
+          case 24: /* restoreclient */
             if (rc.restore_client_name && !rc.mod) {
               ua->SendMsg(T_("Restore Client specified twice.\n"));
               return false;
@@ -2014,7 +2004,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             rc.restore_client_name = ua->argv[i];
             kw_ok = true;
             break;
-          case 26: /* pluginoptions */
+          case 25: /* pluginoptions */
             if (rc.plugin_options) {
               ua->SendMsg(T_("Plugin Options specified twice.\n"));
               return false;
@@ -2027,7 +2017,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             }
             kw_ok = true;
             break;
-          case 27: /* spooldata */
+          case 26: /* spooldata */
             if (rc.spool_data_set) {
               ua->SendMsg(T_("Spool flag specified twice.\n"));
               return false;
@@ -2048,11 +2038,11 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               } break;
             }
             break;
-          case 28: /* comment */
+          case 27: /* comment */
             rc.comment = ua->argv[i];
             kw_ok = true;
             break;
-          case 29: /* ignoreduplicatecheck */
+          case 28: /* ignoreduplicatecheck */
             if (rc.ignoreduplicatecheck_set) {
               ua->SendMsg(T_("IgnoreDuplicateCheck flag specified twice.\n"));
               return false;
@@ -2073,7 +2063,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               } break;
             }
             break;
-          case 30: /* accurate */
+          case 29: /* accurate */
             if (rc.accurate_set) {
               ua->SendMsg(T_("Accurate flag specified twice.\n"));
               return false;
@@ -2094,7 +2084,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               } break;
             }
             break;
-          case 31: /* backupformat */
+          case 30: /* backupformat */
             if (rc.backup_format && !rc.mod) {
               ua->SendMsg(T_("Backup Format specified twice.\n"));
               return false;
@@ -2102,7 +2092,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             rc.backup_format = ua->argv[i];
             kw_ok = true;
             break;
-          case 32: /* consolidatejob */
+          case 31: /* consolidatejob */
             if (consolidate_job_name) {
               ua->SendMsg(T_("Consolidate Job specified twice.\n"));
               return false;

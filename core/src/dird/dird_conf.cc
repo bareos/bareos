@@ -310,7 +310,6 @@ const ResourceItem job_items[] = {
   { "AddSuffix", CFG_TYPE_STR, ITEM(res_job, add_suffix), {}},
   { "Bootstrap", CFG_TYPE_DIR, ITEM(res_job, RestoreBootstrap), {}},
   { "WriteBootstrap", CFG_TYPE_DIR_OR_CMD, ITEM(res_job, WriteBootstrap), {}},
-  { "WriteVerifyList", CFG_TYPE_DIR, ITEM(res_job, WriteVerifyList), { config::DeprecatedSince{25, 1, 0} }},
   { "Replace", CFG_TYPE_REPLACE, ITEM(res_job, replace), {config::DefaultValue{"Always"}}},
   { "MaximumBandwidth", CFG_TYPE_SPEED, ITEM(res_job, max_bandwidth), {}},
   { "MaxRunSchedTime", CFG_TYPE_TIME, ITEM(res_job, MaxRunSchedTime), {}},
@@ -3903,7 +3902,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->add_suffix) { free(p->add_suffix); }
       if (p->RestoreBootstrap) { free(p->RestoreBootstrap); }
       if (p->WriteBootstrap) { free(p->WriteBootstrap); }
-      if (p->WriteVerifyList) { free(p->WriteVerifyList); }
       if (p->selection_pattern) { free(p->selection_pattern); }
       if (p->run_cmds) { delete p->run_cmds; }
       if (p->storage) { delete p->storage; }
