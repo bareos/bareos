@@ -32,6 +32,7 @@
 #include "cats/cats.h"
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/next_vol.h"
 #include "dird/sd_cmds.h"
@@ -526,6 +527,12 @@ static void UpdateVolEncrypt(UaContext* ua, MediaDbRecord* mr)
            "Re-keying an encrypted volume is not supported as it would\n"
            "make existing encrypted data unreadable.\n"),
         mr->VolumeName);
+    return;
+  }
+
+  if (!me->keyencrkey.value && FindArg(ua, NT_("force")) <= 0) {
+    ua->ErrorMsg(T_("Cannot encrypt volume: no Key Encryption Key (KEK) "
+                    "configured in the Director.\n"));
     return;
   }
 

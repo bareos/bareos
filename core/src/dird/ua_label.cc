@@ -485,6 +485,19 @@ static int do_label(UaContext* ua, const char*, bool relabel)
     label_encrypt = true;
   }
 
+  // Look for the force keyword (must be zapped before get_storage_resource)
+  bool label_force = false;
+  if ((i = FindArg(ua, NT_("force"))) > 0) {
+    *ua->argk[i] = 0; /* zap force keyword */
+    label_force = true;
+  }
+
+  if (label_encrypt && !me->keyencrkey.value && !label_force) {
+    ua->ErrorMsg(T_("Cannot encrypt volume: no Key Encryption Key (KEK) "
+                    "configured in the Director.\n"));
+    return 1;
+  }
+
   store.store = get_storage_resource(ua, true, label_barcodes);
   if (!store.store) { return 1; }
 
