@@ -38,6 +38,7 @@
 #include "dird/storage.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
+#include "dird/ua_label.h"
 #include "dird/ua_select.h"
 #include "lib/bool_string.h"
 #include "lib/edit.h"
@@ -506,6 +507,44 @@ static void UpdateVolenabled(UaContext* ua, char* val, MediaDbRecord* mr)
   }
 }
 
+/**
+ * Add a hardware encryption key to a previously unencrypted volume.
+ *
+ * A new random key is generated (and optionally wrapped with the director's
+ * KeyEncryptionKey) and stored in the catalog. The key takes effect the next
+ * time the volume is mounted in a drive that has DriveCryptoEnabled = yes and
+ * the scsicrypto storage plugin loaded.
+ *
+ * Re-keying an already-encrypted volume is rejected to prevent making existing
+ * encrypted data unreadable.
+ */
+static void UpdateVolEncrypt(UaContext* ua, MediaDbRecord* mr)
+{
+  if (mr->EncrKey[0] != '\0') {
+    ua->ErrorMsg(
+        T_("Volume \"%s\" already has an encryption key set.\n"
+           "Re-keying an encrypted volume is not supported as it would\n"
+           "make existing encrypted data unreadable.\n"),
+        mr->VolumeName);
+    return;
+  }
+
+  if (!GenerateNewEncryptionKey(ua, mr)) { return; }
+
+  if (DbLocker _{ua->db}; !ua->db->UpdateMediaEncryptionKey(ua->jcr, mr)) {
+    ua->ErrorMsg(T_("Error setting encryption key on Volume \"%s\": ERR=%s\n"),
+                 mr->VolumeName, ua->db->strerror());
+    return;
+  }
+
+  ua->InfoMsg(
+      T_("Encryption key set for Volume \"%s\".\n"
+         "The key takes effect the next time the volume is mounted.\n"
+         "Ensure DriveCryptoEnabled = yes on the storage device and\n"
+         "that the scsicrypto storage plugin is loaded.\n"),
+      mr->VolumeName);
+}
+
 static void UpdateVolActiononpurge(UaContext* ua, char* val, MediaDbRecord* mr)
 {
   PoolMem ret;
@@ -559,6 +598,16 @@ static bool UpdateVolume(UaContext* ua)
                       NULL};
 
 #define AllFromPool 11 /* keep this updated with above */
+
+  /* Handle bare-flag keywords that take no value */
+  {
+    MediaDbRecord mr;
+    if (FindArg(ua, NT_("encrypt")) > 0) {
+      if (!SelectMediaDbr(ua, &mr)) { return false; }
+      UpdateVolEncrypt(ua, &mr);
+      done = true;
+    }
+  }
 
   for (i = 0; kw[i]; i++) {
     int j;
@@ -657,12 +706,13 @@ static bool UpdateVolume(UaContext* ua)
     AddPrompt(ua, T_("RecyclePool"));                /* 15 */
     AddPrompt(ua, T_("Action On Purge"));            /* 16 */
     AddPrompt(ua, T_("Storage"));                    /* 17 */
-    AddPrompt(ua, T_("Done"));                       /* 18 */
+    AddPrompt(ua, T_("Encrypt Volume"));             /* 18 */
+    AddPrompt(ua, T_("Done"));                       /* 19 */
     i = DoPrompt(ua, "", T_("Select parameter to modify"), NULL, 0);
 
     /* For All Volumes, All Volumes from Pool, and Done, we don't need
      * a Volume record */
-    if (i != 12 && i != 13 && i != 18) {
+    if (i != 12 && i != 13 && i != 19) {
       if (!SelectMediaDbr(ua, &mr)) { /* Get Volume record */
         return false;
       }
@@ -851,6 +901,10 @@ static bool UpdateVolume(UaContext* ua)
         UpdateVolStorage(ua, sr.Name, &mr);
         ua->InfoMsg(T_("New Storage is: %s\n"), sr.Name);
         return true;
+
+      case 18: /* Encrypt Volume */
+        UpdateVolEncrypt(ua, &mr);
+        break;
 
       default: /* Done or error */
         ua->InfoMsg(T_("Selection terminated.\n"));

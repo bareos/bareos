@@ -201,7 +201,7 @@ static inline bool native_send_label_request(UaContext* ua,
  * the old key somewhere save so you can use bscrypto to
  * convert them for the new wrap key.
  */
-static bool GenerateNewEncryptionKey(UaContext* ua, MediaDbRecord* mr)
+bool GenerateNewEncryptionKey(UaContext* ua, MediaDbRecord* mr)
 {
   int length;
   char* passphrase;

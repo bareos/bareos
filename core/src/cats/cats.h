@@ -937,6 +937,7 @@ class BareosDb : public BareosDbQueryEnum {
   bool UpdatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr);
   bool UpdateStorageRecord(JobControlRecord* jcr, StorageDbRecord* sr);
   bool UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr);
+  bool UpdateMediaEncryptionKey(JobControlRecord* jcr, MediaDbRecord* mr);
   bool UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr);
   bool UpdateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr);
   bool UpdateQuotaGracetime(JobControlRecord* jcr, JobDbRecord* jr);

@@ -368,6 +368,34 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
 }
 
 /**
+ * Update only the EncryptionKey field for a Media record.
+ *
+ * Used by "update volume encrypt" to set a new hardware encryption key
+ * on a previously unencrypted volume without relabeling it.
+ * The generic UpdateMediaRecord() intentionally does not touch EncryptionKey
+ * to avoid accidental clobbering from stale MediaDbRecord instances.
+ *
+ * Returns: false on failure
+ *          true on success
+ */
+bool BareosDb::UpdateMediaEncryptionKey(JobControlRecord* jcr,
+                                        MediaDbRecord* mr)
+{
+  char ed1[50];
+  char esc_key[MAX_ESCAPE_NAME_LENGTH];
+
+  DbLocker _{this};
+  EscapeString(jcr, esc_key, mr->EncrKey, strlen(mr->EncrKey));
+  Mmsg(cmd,
+       "UPDATE Media SET EncryptionKey='%s' WHERE MediaId=%s",
+       esc_key, edit_int64(mr->MediaId, ed1));
+
+  Dmsg1(400, "%s\n", cmd);
+
+  return UpdateDb(jcr, cmd) > 0;
+}
+
+/**
  * Update the Media Record Default values from Pool
  *
  * Returns: false on failure

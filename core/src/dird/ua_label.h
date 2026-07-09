@@ -25,6 +25,7 @@
 namespace directordaemon {
 
 bool IsVolumeNameLegal(UaContext* ua, const char* name);
+bool GenerateNewEncryptionKey(UaContext* ua, MediaDbRecord* mr);
 bool SendLabelRequest(UaContext* ua,
                       StorageResource* store,
                       MediaDbRecord* mr,
