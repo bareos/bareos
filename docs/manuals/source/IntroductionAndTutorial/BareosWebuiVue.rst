@@ -134,7 +134,8 @@ After changing the config, restart the proxy:
 Once logged in to multiple Directors, the scope menu at the top of the page
 allows switching between them or viewing data from all Directors at once.
 
-**``[listen]`` section options**
+``[listen]`` section options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. list-table::
    :widths: 35 15 50
@@ -163,7 +164,8 @@ allows switching between them or viewing data from all Directors at once.
      - ``100``
      - Maximum concurrent connections that have not yet completed login.
 
-**``[<director>]`` section options**
+``[<director>]`` section options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. list-table::
    :widths: 35 15 50
