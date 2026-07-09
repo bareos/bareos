@@ -64,7 +64,8 @@ if(MSVC)
       /D_CRT_SECURE_NO_DEPRECATE # deprecation warning for stdlib functions
   )
 else()
-  bareos_add_compile_flags(-Werror -Wall -Wextra -Wshadow -Wformat -Wformat-type-confusion)
+  set(CMAKE_COMPILE_WARNING_AS_ERROR ON) # sadly we cannot switch this on for MSVC yet
+  bareos_add_compile_flags(-Wall -Wextra -Wshadow -Wformat -Wformat-type-confusion)
   bareos_add_compile_flags(-Wsuggest-override -Wno-invalid-offsetof CXX_ONLY)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     # we want to allow non-literal (but constant) strings Wformat-security
