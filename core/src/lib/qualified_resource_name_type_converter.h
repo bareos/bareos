@@ -1,7 +1,7 @@
 /**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,5 +46,83 @@ class QualifiedResourceNameTypeConverter {
   const std::map<int, std::string> type_name_relation_map_;
   const std::map<std::string, int> name_type_relation_map_;
 };
+
+// this is a list of _all_ resources, for _all_ daemons
+
+namespace global_resource {
+
+enum class Type
+{
+  Unknown,
+  Autochanger,
+  Catalog,
+  Client,
+  Console,
+  ConsoleFont,
+  Counter,
+  Device,
+  Director,
+  Fileset,
+  Job,
+  JobDefs,
+  Messages,
+  Monitor,
+  Ndmp,
+  Pool,
+  Profile,
+  Schedule,
+  Storage,
+  User,
+};
+
+struct TypeName {
+  Type type;
+  std::string_view name;
+};
+
+static constexpr TypeName type_names[] = {
+    {Type::Autochanger, "R_AUTOCHANGER"},
+    {Type::Catalog, "R_CATALOG"},
+    {Type::Client, "R_CLIENT"},
+    {Type::ConsoleFont, "R_CONSOLE_FONT"},
+    {Type::Console, "R_CONSOLE"},
+    {Type::Counter, "R_COUNTER"},
+    {Type::Device, "R_DEVICE"},
+    {Type::Director, "R_DIRECTOR"},
+    {Type::Fileset, "R_FILESET"},
+    {Type::JobDefs, "R_JOBDEFS"},
+    {Type::Job, "R_JOB"},
+    {Type::Messages, "R_MSGS"},
+    {Type::Monitor, "R_MONITOR"},
+    {Type::Ndmp, "R_NDMP"},
+    {Type::Pool, "R_POOL"},
+    {Type::Profile, "R_PROFILE"},
+    {Type::Schedule, "R_SCHEDULE"},
+    {Type::Storage, "R_STORAGE"},
+    {Type::User, "R_USER"},
+};
+
+static constexpr std::string_view GetNameFromType(Type type)
+{
+  if (auto iter = std::ranges::find_if(
+          type_names, [type](auto& item) { return item.type == type; });
+      iter != std::end(type_names)) {
+    return iter->name;
+  }
+  return "";
+}
+
+static constexpr Type GetTypeFromName(std::string_view name)
+{
+  if (auto iter = std::ranges::find_if(
+          type_names, [name](auto& item) { return item.name == name; });
+      iter != std::end(type_names)) {
+    return iter->type;
+  }
+  return Type::Unknown;
+}
+
+
+};  // namespace global_resource
 
 #endif  // BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_

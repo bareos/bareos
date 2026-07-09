@@ -28,6 +28,7 @@
 #include "include/bc_types.h"
 #include "lib/bstringlist.h"
 #include "lib/parse_conf_callbacks.h"
+#include "lib/qualified_resource_name_type_converter.h"
 #include "lib/s_password.h"
 #include "lib/tls_conf.h"
 #include "lib/keyword_table_s.h"
@@ -68,7 +69,8 @@ struct ResourceTable {
   const char* name;          /* Resource name */
   const char* groupname;     /* Resource name in plural form */
   const ResourceItem* items; /* List of resource keywords */
-  uint32_t rcode;            /* Code if needed */
+  uint32_t rcode;            /* local resource code if needed; these need to be from 0 .. R_NUM; otherwise things break */
+  global_resource::Type global_rcode; /* global resource code; used for qualified resource names */
   uint32_t size;             /* Size of resource */
 
   std::function<void()> ResourceSpecificInitializer; /* this allocates memory */

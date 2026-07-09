@@ -141,13 +141,13 @@ static const ResourceItem dir_items[] = {
 #include "lib/messages_resource_items.h"
 
 static ResourceTable resources[] = {
-  {"Director", "Directors", dir_items, R_DIRECTOR, sizeof(DirectorResource),
+  {"Director", "Directors", dir_items, R_DIRECTOR, global_resource::Type::Director, sizeof(DirectorResource),
       []() { res_dir = new  DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir)},
-  {"Client", "Clients", cli_items, R_CLIENT, sizeof(ClientResource),
+  {"Client", "Clients", cli_items, R_CLIENT, global_resource::Type::Client, sizeof(ClientResource),
       []() { res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client), { { "FileDaemon", "FileDaemons" } }},
-  {"Messages", "Messages", msgs_items, R_MSGS, sizeof(MessagesResource),
+  {"Messages", "Messages", msgs_items, R_MSGS, global_resource::Type::Messages, sizeof(MessagesResource),
       []() { res_msgs = new MessagesResource(); }, reinterpret_cast<BareosResource**>(&res_msgs)},
-  {nullptr, nullptr, nullptr, 0, 0, nullptr, nullptr}
+  {}
 };
 
 /* clang-format on */
