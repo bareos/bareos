@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -245,7 +245,6 @@ class RunContext {
   char* when = nullptr;
   char* where = nullptr;
   const char* replace = nullptr;
-  const char* verify_list = nullptr;
   JobResource* job = nullptr;
   JobResource* verify_job = nullptr;
   JobResource* previous_job = nullptr;

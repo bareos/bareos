@@ -793,13 +793,6 @@
           "code": 0,
           "equals": true
         },
-        "WriteVerifyList": {
-          "datatype": "DIRECTORY",
-          "code": 0,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-25.1.0"
-        },
         "Replace": {
           "datatype": "REPLACE_OPTION",
           "code": 0,
@@ -1280,13 +1273,6 @@
           "datatype": "DIRECTORY_OR_COMMAND",
           "code": 0,
           "equals": true
-        },
-        "WriteVerifyList": {
-          "datatype": "DIRECTORY",
-          "code": 0,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-25.1.0"
         },
         "Replace": {
           "datatype": "REPLACE_OPTION",

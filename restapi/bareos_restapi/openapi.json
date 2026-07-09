@@ -4110,11 +4110,6 @@
             "title": "Writebootstrap",
             "type": "string",
             "format": "path"
-          },
-          "writeverifylist": {
-            "title": "Writeverifylist",
-            "type": "string",
-            "format": "path"
           }
         }
       },
@@ -4573,11 +4568,6 @@
           },
           "writebootstrap": {
             "title": "Writebootstrap",
-            "type": "string",
-            "format": "path"
-          },
-          "writeverifylist": {
-            "title": "Writeverifylist",
             "type": "string",
             "format": "path"
           }

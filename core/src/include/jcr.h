@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -263,8 +263,8 @@ BAREOS_IMPORT void register_jcr(JobControlRecord* jcr);
 BAREOS_IMPORT JobControlRecord* get_jcr_by_id(uint32_t JobId);
 BAREOS_IMPORT JobControlRecord* get_jcr_by_session(uint32_t SessionId,
                                                    uint32_t SessionTime);
-BAREOS_IMPORT JobControlRecord* get_jcr_by_partial_name(char* Job);
-BAREOS_IMPORT JobControlRecord* get_jcr_by_full_name(char* Job);
+BAREOS_IMPORT JobControlRecord* get_jcr_by_partial_name(char const* Job);
+BAREOS_IMPORT JobControlRecord* get_jcr_by_full_name(char const* Job);
 BAREOS_IMPORT const char* JcrGetAuthenticateKey(const char* unified_job_name);
 TlsPolicy JcrGetTlsPolicy(const char* unified_job_name);
 BAREOS_IMPORT std::size_t NumJobsRun();

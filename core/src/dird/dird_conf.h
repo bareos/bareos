@@ -388,7 +388,6 @@ class JobResource : public BareosResource {
   char* backup_format = nullptr; /**< Format of backup to use for protocols supporting multiple backup formats */
   char* RestoreBootstrap = nullptr; /**< Bootstrap file */
   char* WriteBootstrap = nullptr;   /**< Where to write bootstrap Job updates */
-  char* WriteVerifyList = nullptr;  /**< List of changed files */
   utime_t MaxRunTime = {0};         /**< Max run time in seconds */
   utime_t MaxWaitTime = {0};        /**< Max blocking time in seconds */
   utime_t FullMaxRunTime = {0};     /**< Max Full job run time */
