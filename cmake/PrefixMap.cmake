@@ -30,10 +30,7 @@ check_cxx_compiler_flag(
   -ffile-prefix-map=${BAREOS_PREFIX_MAP} CXX_SUPPORTS_ffile_prefix_map
 )
 if(C_SUPPORTS_ffile_prefix_map AND CXX_SUPPORTS_ffile_prefix_map)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffile-prefix-map=${BAREOS_PREFIX_MAP}")
-  set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -ffile-prefix-map=${BAREOS_PREFIX_MAP}"
-  )
-  set(CCACHE_MAY_HASHDIR ON)
+  add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:-ffile-prefix-map=${BAREOS_PREFIX_MAP}>")
   bareos_add_compile_flags(-fcanon-prefix-map)
+  set(CCACHE_MAY_HASHDIR ON)
 endif()
