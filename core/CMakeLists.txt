@@ -67,13 +67,17 @@ if(MSVC)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
 else()
-  bareos_add_compile_flags(-Werror -Wall -Wextra -Wshadow)
+  bareos_add_compile_flags(-Werror -Wall -Wextra -Wshadow -Wformat -Wformat-type-confusion)
   bareos_add_compile_flags(-Wsuggest-override -Wno-invalid-offsetof CXX_ONLY)
-  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-    bareos_add_compile_flags(-Wformat -Wformat-security)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # we want to allow non-literal (but constant) strings Wformat-security
+    # always generates warnings when non-literals are used even if they are
+    # known at compile time.
+    bareos_add_compile_flags(-Wno-format-security)
+  else()
+    bareos_add_compile_flags(-Wformat-security)
   endif()
 endif()
-
 
 option(ENABLE_SANITIZERS "Build with ASan/LSan/UBSan enabled" OFF)
 if(ENABLE_SANITIZERS)
