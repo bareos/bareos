@@ -149,9 +149,11 @@ int main(int argc, char* argv[])
 
   ParseBareosApp(fd_app, argc, argv);
 
+#if !defined(HAVE_WIN32)
   if (user.empty() && keep_readall_caps) {
     Emsg0(M_ERROR_TERM, 0, T_("-k option has no meaning without -u option.\n"));
   }
+#endif
 
   int pidfile_fd = -1;
 #if !defined(HAVE_WIN32)
