@@ -22,31 +22,10 @@
 #ifndef BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_
 #define BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_
 
-#include <map>
-#include "include/bareos.h"
 #include "lib/ascii_control_characters.h"
-
-class QualifiedResourceNameTypeConverter {
- public:
-  QualifiedResourceNameTypeConverter(const std::map<int, std::string>& map);
-  bool ResourceToString(const std::string& name_of_resource,
-                        const int& r_type,
-                        std::string& str_out) const;
-  bool ResourceToString(const std::string& name_of_resource,
-                        const int& r_type,
-                        const std::string separator,
-                        std::string& str_out) const;
-  bool StringToResource(std::string& name_of_resource,
-                        int& r_type,
-                        const std::string& in) const;
-
-  std::string ResourceTypeToString(const int& type) const;
-  int StringToResourceType(const std::string&) const;
-
- private:
-  const std::map<int, std::string> type_name_relation_map_;
-  const std::map<std::string, int> name_type_relation_map_;
-};
+#include <string_view>
+#include <algorithm>
+#include <string>
 
 // this is a list of _all_ resources, for _all_ daemons
 

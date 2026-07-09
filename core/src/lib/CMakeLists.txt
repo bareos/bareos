@@ -131,7 +131,6 @@ target_sources(
           parse_conf_init_resource.cc
           parse_conf_state_machine.cc
           res.cc
-          qualified_resource_name_type_converter.cc
 )
 
 # this is done to ensure every other object can be cached
