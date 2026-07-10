@@ -18,8 +18,6 @@
         <a href="https://github.com/sponsors/bareos"><img src="https://img.shields.io/badge/Sponsor-Donate%20Now-1a1a1a?labelColor=1a1a1a&color=gray&logo=github&logoColor=white" alt="Sponsor Bareos"></a>
     </div>
 
-</div>
-
 <br>
 
 
