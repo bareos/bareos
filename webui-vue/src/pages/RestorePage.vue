@@ -1251,7 +1251,7 @@ async function doRestore() {
   try {
     await ensureSelectedSourceDirector()
     // Step 1: build restore list in BVFS
-    await director.call(buildRestoreBvfsRestoreCommand({
+    await director.rawCall(buildRestoreBvfsRestoreCommand({
       jobids: jids,
       fileids,
       dirids,
@@ -1282,7 +1282,7 @@ async function doRestore() {
 
     // Step 3: clean up BVFS restore path
     try {
-      await director.call(`.bvfs_cleanup path=${quoteDirectorString(bvfsPath)}`)
+      await director.rawCall(`.bvfs_cleanup path=${quoteDirectorString(bvfsPath)}`)
     } catch (_) {
       // Cleanup should not block the queued restore from being shown.
     }
