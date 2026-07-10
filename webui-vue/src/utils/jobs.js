@@ -284,6 +284,37 @@ export function paginateJobs(jobs, pagination) {
   return jobs.slice(offset, offset + rowsPerPage)
 }
 
+export function mergeJobMediaByVolume(jobmediaRows) {
+  if (!Array.isArray(jobmediaRows)) {
+    return []
+  }
+
+  const groupedByVolume = new Map()
+
+  for (const row of jobmediaRows) {
+    const volumeName = typeof row?.volumename === 'string'
+      ? row.volumename.trim()
+      : ''
+    if (!volumeName) {
+      continue
+    }
+
+    const existing = groupedByVolume.get(volumeName)
+    if (existing) {
+      existing.segments += 1
+      continue
+    }
+
+    groupedByVolume.set(volumeName, {
+      ...row,
+      volumename: volumeName,
+      segments: 1,
+    })
+  }
+
+  return [...groupedByVolume.values()]
+}
+
 export function buildCancelJobCommand(jobId) {
   return `cancel jobid=${jobId} yes`
 }

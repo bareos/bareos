@@ -80,8 +80,7 @@
                 :columns="volumeCols"
                 row-key="volumename"
                 dense flat
-                hide-bottom
-                :pagination="{ rowsPerPage: 0 }"
+                v-model:pagination="volumesPagination"
                 :no-data-label="t('No volumes recorded.')"
               >
                 <template #body-cell-volumename="props">
@@ -99,22 +98,6 @@
                       }"
                     />
                   </q-td>
-                </template>
-                <template #header-cell-firstindex="props">
-                  <q-th :props="props">
-                    {{ props.col.label }}
-                    <q-icon name="help_outline" size="xs" class="q-ml-xs text-grey-5">
-                      <q-tooltip>{{ t('Catalog index of the first file written to this volume for this job. Used internally by Bareos to locate and restore files.') }}</q-tooltip>
-                    </q-icon>
-                  </q-th>
-                </template>
-                <template #header-cell-lastindex="props">
-                  <q-th :props="props">
-                    {{ props.col.label }}
-                    <q-icon name="help_outline" size="xs" class="q-ml-xs text-grey-5">
-                      <q-tooltip>{{ t('Catalog index of the last file written to this volume for this job. The range first–last covers all files stored on this volume for this job.') }}</q-tooltip>
-                    </q-icon>
-                  </q-th>
                 </template>
               </q-table>
             </q-card-section>
@@ -162,6 +145,7 @@ import {
   overlayRuntimeStatuses,
 } from '../composables/useDirectorFetch.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -181,6 +165,7 @@ import {
   resolveJobDetailsRestoreOrigin,
   resolveJobDetailsVolumeOrigin,
   resolveJobsListQuery,
+  mergeJobMediaByVolume,
 } from '../utils/jobs.js'
 import { resolveJobTypeCode } from '../utils/jobTypes.js'
 import { buildVolumeDetailsQuery } from '../utils/volumes.js'
@@ -296,6 +281,11 @@ const volumeDetailsByName = ref({})
 const error         = ref(null)
 const rerunLoading  = ref(false)
 const cancelLoading = ref(false)
+const volumesPagination = usePersistedTablePagination('job-details.volumes', {
+  rowsPerPage: 15,
+  sortBy: 'volumename',
+  descending: false,
+})
 
 // Scroll the log panel to the bottom whenever new log content arrives.
 watch(logLines, () => {
@@ -360,10 +350,8 @@ async function loadJob() {
   }
 
   if (mediaRes.status === 'fulfilled') {
-    const mediaRows = mediaRes.value?.jobmedia ?? []
-    const volumeNames = [...new Set(
-      mediaRows.map(row => row.volumename).filter(Boolean)
-    )]
+    const mediaRows = mergeJobMediaByVolume(mediaRes.value?.jobmedia)
+    const volumeNames = mediaRows.map(row => row.volumename)
     const volumeResults = await Promise.allSettled(
       volumeNames.map(name => director.call(`llist volume=${quoteDirectorString(name)}`))
     )
@@ -411,12 +399,8 @@ const volumeCols = computed(() => [
   { name: 'volumename', label: 'Volume',
     field: 'volumename', align: 'left', sortable: true,
     headerClasses: 'text-weight-bold' },
-  { name: 'firstindex', label: 'First File Index',
-    field: 'firstindex', align: 'right', sortable: true,
-    headerTitle: 'Catalog index of the first file written to this volume for this job' },
-  { name: 'lastindex',  label: 'Last File Index',
-    field: 'lastindex',  align: 'right', sortable: true,
-    headerTitle: 'Catalog index of the last file written to this volume for this job' },
+  { name: 'segments', label: 'Segments',
+    field: 'segments', align: 'right', sortable: true },
 ].map((col) => ({
   ...col,
   label: t(col.label),
