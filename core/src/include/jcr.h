@@ -246,6 +246,14 @@ class JobControlRecord {
   PathList* path_list{};      /**< Directory list (used by findlib) */
   bool is_passive_client_connection_probing{}; /**< Set if director probes a passive client connection */
 
+  /* These flags store whether a particular set of runscripts already ran
+   * This is necessary to make sure that each configured runscript only runs
+   * once in this job.
+   * As `cancel` can cause runscripts to run, these need to be thread safe. */
+  std::atomic_flag pre_scripts_ran{};
+  std::atomic_flag post_vss_scripts_ran{};
+  std::atomic_flag post_scripts_ran{};
+
   union {
     DirectorJcrImpl* dir_impl;
     StoredJcrImpl* sd_impl;

@@ -112,10 +112,22 @@ int RunScripts(JobControlRecord* jcr,
 
   if (strstr(label, NT_("Before"))) {
     when = SCRIPT_Before;
+    if (jcr->pre_scripts_ran.test_and_set()) {
+      Dmsg0(50, "not executing pre scripts twice.\n");
+      return 0;
+    }
   } else if (bstrcmp(label, NT_("ClientAfterVSS"))) {
     when = SCRIPT_AfterVSS;
+    if (jcr->post_vss_scripts_ran.test_and_set()) {
+      Dmsg0(50, "not executing post vss scripts twice.\n");
+      return 0;
+    }
   } else {
     when = SCRIPT_After;
+    if (jcr->post_scripts_ran.test_and_set()) {
+      Dmsg0(50, "not executing post scripts twice.\n");
+      return 0;
+    }
   }
 
   if (!runscripts) {

@@ -506,21 +506,7 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
         ff_pkt);
   }
 
-  switch (retval) {
-    case BxattrExitCode::kErrorFatal:
-      return false;
-    case BxattrExitCode::kWarning:
-      Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
-      break;
-    case BxattrExitCode::kError:
-      Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
-      jcr->fd_impl->xattr_data->nr_errors++;
-      break;
-    case BxattrExitCode::kSuccess:
-      break;
-  }
-
-  return true;
+  return HandleXattrExitCode(jcr, retval);
 }
 
 /**

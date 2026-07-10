@@ -35,6 +35,10 @@ struct AclData;
 struct XattrData;
 class RunScript;
 
+#ifdef HAVE_WIN32
+class VSSClient;
+#endif
+
 namespace filedaemon {
 class BareosAccurateFilelist;
 class DirectorResource;
