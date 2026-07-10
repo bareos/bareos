@@ -343,6 +343,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        "MaxVolJobs=%u,MaxVolFiles=%u,Enabled=%d,LocationId=%s,"
        "ScratchPoolId=%s,RecyclePoolId=%s,RecycleCount=%u,Recycle=%d,"
        "ActionOnPurge=%u,"
+       "EncryptionKey='%s',"
        "MinBlocksize=%u,MaxBlocksize=%u "
        "WHERE VolumeName='%s'",
        mr->VolJobs, mr->VolFiles, mr->VolBlocks, edit_uint64(mr->VolBytes, ed1),
@@ -355,7 +356,8 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        mr->Enabled, edit_uint64(mr->LocationId, ed9),
        edit_uint64(mr->ScratchPoolId, ed10),
        edit_uint64(mr->RecyclePoolId, ed11), mr->RecycleCount, mr->Recycle,
-       mr->ActionOnPurge, mr->MinBlocksize, mr->MaxBlocksize, esc_medianame);
+       mr->ActionOnPurge, mr->EncrKey, mr->MinBlocksize, mr->MaxBlocksize,
+       esc_medianame);
 
   Dmsg1(400, "%s\n", cmd);
 
