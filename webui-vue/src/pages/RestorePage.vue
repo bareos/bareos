@@ -490,6 +490,7 @@ import { formatBytes } from '../mock/index.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import {
   buildRestoreBackupOption,
+  buildRestoreBvfsRestoreCommand,
   buildRestoreBvfsJobidsCommand,
   canNavigateRestoreBrowser,
   buildRestoreSourceQuery,
@@ -1250,9 +1251,12 @@ async function doRestore() {
   try {
     await ensureSelectedSourceDirector()
     // Step 1: build restore list in BVFS
-    await director.call(
-      `.bvfs_restore jobid=${jids} fileid=${fileids} dirid=${dirids} path=${quoteDirectorString(bvfsPath)}`
-    )
+    await director.call(buildRestoreBvfsRestoreCommand({
+      jobids: jids,
+      fileids,
+      dirids,
+      path: quoteDirectorString(bvfsPath),
+    }))
 
     // Step 2: run restore job
     const src = form.value.client

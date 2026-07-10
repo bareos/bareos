@@ -21,6 +21,7 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  buildRestoreBvfsRestoreCommand,
   buildRestoreBvfsJobidsCommand,
   buildRestoreBackupOption,
   buildRestorePluginFilesetDetails,
@@ -266,6 +267,22 @@ describe('restore browser placeholder', () => {
       mergeJobs: false,
       mergeFilesets: true,
     })).toBe('')
+  })
+
+  it('builds BVFS restore command without empty file or dir ids', () => {
+    expect(buildRestoreBvfsRestoreCommand({
+      jobids: '1,14,17',
+      fileids: '2587444',
+      dirids: '',
+      path: '"b2000298"',
+    })).toBe('.bvfs_restore jobid=1,14,17 fileid=2587444 path="b2000298"')
+
+    expect(buildRestoreBvfsRestoreCommand({
+      jobids: '1,14,17',
+      fileids: '',
+      dirids: '42',
+      path: '"b2000298"',
+    })).toBe('.bvfs_restore jobid=1,14,17 dirid=42 path="b2000298"')
   })
 
   it('clears restore source query fields when no source is selected', () => {
