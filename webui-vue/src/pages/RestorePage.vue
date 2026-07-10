@@ -1270,7 +1270,7 @@ async function doRestore() {
       ` replace=${quoteDirectorString(form.value.replace)}` +
       (pluginOptions ? ` pluginoptions=${quoteDirectorString(pluginOptions)}` : '') +
       ` yes`
-    const result = await director.call(cmd)
+    const result = await director.rawCall(cmd)
 
     const jobid = extractQueuedJobId(result)
 
