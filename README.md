@@ -1,10 +1,6 @@
-<div align="left" style="display: flex; flex-direction: column; align-items: center;">
-    <!-- Image on top -->
-    <a href="https://www.bareos.com" style="flex-shrink: 0;">
-        <img src="bareos-github-banner.png" width="80%">
-    </a>
-  <!-- Supported Systems row below -->
-    <div style="margin-top: 20px;">
+# <img src="bareos-github-banner.png" alt="Bareos" width="100%" height="100%" />
+
+   <div style="margin-top: 20px;">
        <a href="https://download.bareos.com"> <img src="https://img.shields.io/badge/Linux-0078D6?logo=linux&logoColor=white" alt="Linux"></a>
 <a href="https://download.bareos.com"><img src="https://img.shields.io/badge/Debian-0078D6?logo=debian&logoColor=white" alt="Debian"></a>
 <a href="https://download.bareos.com"><img src="https://img.shields.io/badge/Fedora-0078D6?logo=fedora&logoColor=white" alt="Fedora"></a>
@@ -22,29 +18,37 @@
         <a href="https://github.com/sponsors/bareos"><img src="https://img.shields.io/badge/Sponsor-Donate%20Now-1a1a1a?labelColor=1a1a1a&color=gray&logo=github&logoColor=white" alt="Sponsor Bareos"></a>
     </div>
 
-</div>
-
 <br>
 
-[**Bareos**](https://www.bareos.com) is a reliable, cross-network open-source backup solution for data protection, archiving, and recovery. It supports Linux, Windows, FreeBSD, macOS, and other well-established operating systems. Bareos offers scalable, enterprise-grade features for businesses of all sizes, ensuring secure and efficient data management.
+
+[Bareos](https://www.bareos.com) is backup and recovery open-source software for mixed IT environments.
+
+Bareos helps organizations back up, restore and manage data across networks, operating systems, storage targets and workloads. It is licensed under AGPLv3 and follows a true open-source approach without open-core restrictions.
+
+Bareos supports Linux, Windows, FreeBSD, macOS and other well-established operating systems.
 
 ---
 
 ### Key Features
 
-- **True Open Source**: Licensed under AGPLv3 with no open-core or restrictions.
-- **Cross-Platform**: Supports Linux, Windows, FreeBSD, macOS, and more.
-- **Scalable Architecture**: Designed for many clients and storage targets across networks.
-- **Multiple Backends**: Supports disk, tape, dedupable and cloud/object storage to store backups.
-- **Plugins for Modern Workloads**: Built-in and optional plugins for databases, virtualization, Linux and Windows bare-metal recovery and more.
-- **Virtualization Backups**: Support for hypervisors such as VMware vSphere, Proxmox, Hyper-V (depending on version/subscription).
-- **NDMP SAN Backups**: High-speed SAN backups using NDMP with DAR/DDAR support.
-- **Incremental and Full Backups**: Supports full, incremental, differential, always incremental and virtual full workflows (as configured).
-- **Encryption**: Secure backups with built-in encryption.
-- **Automation-Friendly**: Scriptable via CLI and integrates well into automation pipelines.
-- GUI based administration via Bareos WebUI
-- CLI based administration via bconsole
-- **Role-Based ACL**: Secure access control with role-based permissions.
+- **Open and transparent**: Licensed under AGPLv3, with no open-core restrictions.
+- **Cross-platform**: Supports Linux, Windows, FreeBSD, macOS and other operating systems.
+- **Scalable architecture**: Designed for many clients, storage daemons and backup targets across networks.
+- **Flexible storage targets**: Store backups on disk, tape and S3-compatible object storage.
+- **Deduplication-friendly storage**: Stores backups in a format optimized for deduplicating storage systems such as ZFS, VDO or btrfs.
+- **Storage planning**: `bdedupestimate` helps estimate deduplication potential before changing the backup setup.
+- **Always Incremental backups**: Supports an Always Incremental backup scheme for file-based backups.
+- **Controlled restore**: Uses a catalog and WebUI to help teams find, select and restore the right data.
+- **Access control**: Role-based ACL support for commands and objects.
+- **Encryption**: Supports encrypted communication and backup encryption.
+- **Automation-friendly**: Scriptable administration through `bconsole` and command-line tools.
+- **Web-based administration**: Bareos WebUI provides a graphical interface for administration and restore tasks.
+- **Extensible plugins**: Plugins allow Bareos to support virtual environments, databases and specialized workloads.
+- **Virtualization support**: Plugins are available for workloads such as VMware vSphere, Hyper-V and Proxmox.
+- **Bare-metal recovery**: Supports Linux bare-metal recovery with Relax-and-Recover and Windows disaster recovery with `Barri`.
+- **NDMP SAN backups**: Supports SAN backups using NDMP with DAR/DDAR.
+- **Tape support**: Supports tape, tape libraries and WORM tape media for long-term retention workflows.
+- **Just-In-Time Device Reservation**: Improves storage device usage in environments with shared devices, tape libraries, autochangers or parallel backup jobs.
 
 ---
 
@@ -77,46 +81,62 @@
 [![Facebook](https://img.shields.io/badge/Facebook-Follow%20Us-1877F2?logo=facebook&logoColor=white)](https://www.facebook.com/bareosbackup/)
 
 
+### Commercial Services
+
+Bareos offers commercial services for organizations using Bareos in production environments.
+
+- Subscription repositories
+- Professional support
+- Consulting
+- Training
+- Sponsored development
+
+[Learn more about Bareos services](https://www.bareos.com/services/)
+
+---
 ## Join the Bareos Team
 
 Are you a developer passionate about open-source technology? We’re always open to collaborating with skilled professionals, whether freelance or employed, ideally based in Germany or the EU. Reach out to us at jobs@bareos.com or join the discussion on our [GitHub Discussions page](https://github.com/bareos/bareos/discussions).
 
----
 
-## Videos
+### Videos
 
-<p>
-  <a href="https://www.youtube.com/playlist?list=PLo4hatlfsTzQkRYkzHmdhyoPx1Q9PXBEL">
-    Watch Bareos videos on YouTube
-  </a>
-</p>
+[Watch Bareos videos on YouTube](https://www.youtube.com/playlist?list=PLo4hatlfsTzQkRYkzHmdhyoPx1Q9PXBEL)
 
 <a href="https://youtu.be/vl9VSF8C0fg">
   <img src="https://img.youtube.com/vi/vl9VSF8C0fg/0.jpg" width="300" alt="Hyper-V Backups with Bareos 25">
 </a>
 
 <a href="https://youtu.be/gLajfP_kF1k">
-  <img src="https://img.youtube.com/vi/gLajfP_kF1k/0.jpg" width="300" alt="Bareos 25 Proxmox Plugin – Video Overview">
-</a>
-<a href="https://youtu.be/f-2dlqfLFRc?si=HComHfXTtb22bmtV">
-    <img src="https://img.youtube.com/vi/f-2dlqfLFRc/0.jpg" width="300">
+  <img src="https://img.youtube.com/vi/gLajfP_kF1k/0.jpg" width="300" alt="Bareos 25 Proxmox Plugin Video Overview">
 </a>
 
+<a href="https://youtu.be/f-2dlqfLFRc">
+  <img src="https://img.youtube.com/vi/f-2dlqfLFRc/0.jpg" width="300" alt="Bareos video">
+</a>
 
 ---
+### What's New
+
+Bareos 25 adds new plugins and platform improvements, including extended hypervisor support, Windows disaster recovery workflows, cloud object backup support and improved automation.
+
+Recent additions include:
+
+- Hyper-V Plugin for Microsoft Hyper-V backups
+- Proxmox Plugin for Proxmox VE guests
+- Bareos Recovery Imager for Windows disaster recovery workflows
+- Libcloud Plugin for S3-compatible object backup
+- Qumulo Plugin for Qumulo cluster backups
+- PCRE2 support for faster regular expression handling on Windows
+- Automatic configuration of disk autochangers
+
+For details, see the official release notes:
+
+[View Bareos Release Notes](https://docs.bareos.org/master/Appendix/ReleaseNotes.html)
 
 
-## What's New
+### Latest Release Information
 
-Bareos 25 brings new plugins and platform improvements - from extended hypervisor support to Windows bare-metal recovery and improved automation.
+For current release information, new features and maintenance updates, please see the official release notes:
 
-### Bareos 25 Plugins and Features
-- **Hyper-V Plugin**: Adds native support for Microsoft Hyper-V. The plugin can back up and restore virtual machines and uses Resilient Change Tracking (RCT) for very fast incremental backups. Full and incremental backups are supported, and restore recreates the VM and its disks in Hyper-V.
-- **Proxmox Plugin**: Agentless backups for Proxmox Virtual Environment guests. After installing the Bareos File Daemon with the plugin on one cluster node, Bareos can back up both virtual machines and container guests. The plugin currently supports full backups. Restore can recreate a guest on the cluster or restore into a local `.vma` dump file for import via the Proxmox GUI.
-- **Barri Plugin (Windows Disaster Recovery)**: The new Bareos Recovery Imager (Barri) plugin provides a toolset for creating and restoring Windows disaster recovery images. It can generate a full recovery image of a running Windows system without downtime, via the File Daemon plugin or `barri-cli.exe`. Recovery can be done through a Linux live environment, via Linux/Windows CLI tools, or inside a Windows PE environment when drivers are required. Supports connected and fully offline workflows.
-- **Libcloud Plugin**: Re-adds support for backing up cloud objects stored via the S3 protocol through the Apache Libcloud plugin. The plugin can recurse nested buckets and back up objects. Updated for current Python versions and uses the standard `threading` module. Restores write objects to a local filesystem (not directly back to S3).
-- **Qumulo Plugin (Third-party, by Yuzuy)**: Integrates Qumulo clusters with the Bareos File Daemon. Supports full and incremental backups, snapshot-based backups, ACL handling, exclusions, fast scan for changed data (avoids expensive tree walks), and virtual full backups.
-- **New Regular Expression Library**: Switches from the legacy regex library to the faster PCRE2 engine on Windows. Depending on the pattern and complexity, expected speedup is between 2× and 20×.
-- **Automatic Configuration of Disk Autochanger**: For disk devices configured with `Count > 1`, Bareos now creates required virtual devices automatically and groups them into an autochanger, avoiding manual setup. The remaining manual step is setting an appropriate `Maximum Concurrent Jobs` value in the Director.
-
-<a href="https://docs.bareos.org/master/Appendix/ReleaseNotes.html" target="_blank" rel="noopener noreferrer">See Release Notes & Changelog</a>
+[View Bareos Release Notes](https://docs.bareos.org/master/Appendix/ReleaseNotes.html)
