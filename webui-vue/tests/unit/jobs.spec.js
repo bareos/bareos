@@ -51,6 +51,7 @@ import {
   normaliseJobTypeFilter,
   normaliseJobTypeFilters,
   paginateJobs,
+  mergeJobMediaByVolume,
   resolveJobDetailsClientOrigin,
   resolveJobDetailsQuery,
   resolveJobDetailsDashboardOrigin,
@@ -156,6 +157,19 @@ describe('jobs filter helpers', () => {
       { id: 1 },
     ])
     expect(paginateJobs(jobs, { page: 1, rowsPerPage: 0 })).toEqual(jobs)
+  })
+
+  it('merges job media rows by volume and counts segments', () => {
+    expect(mergeJobMediaByVolume([
+      { volumename: 'Vol-001', firstindex: 0, lastindex: 0 },
+      { volumename: ' Vol-001 ', firstindex: 1, lastindex: 5 },
+      { volumename: 'Vol-002', firstindex: 10, lastindex: 20 },
+      { volumename: '', firstindex: 2, lastindex: 3 },
+      { firstindex: 4, lastindex: 4 },
+    ])).toEqual([
+      { volumename: 'Vol-001', firstindex: 0, lastindex: 0, segments: 2 },
+      { volumename: 'Vol-002', firstindex: 10, lastindex: 20, segments: 1 },
+    ])
   })
 
   it('normalizes and encodes multi-status filters', () => {
