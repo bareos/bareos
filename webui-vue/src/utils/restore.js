@@ -186,6 +186,27 @@ export function buildRestoreBvfsJobidsCommand(jobid, {
   return `.bvfs_get_jobids jobid=${jobid}${mergeFilesets ? ' all' : ''}`
 }
 
+export function buildRestoreBvfsRestoreCommand({
+  jobids,
+  fileids = '',
+  dirids = '',
+  path,
+}) {
+  const parts = [`.bvfs_restore jobid=${jobids}`]
+
+  if (fileids) {
+    parts.push(`fileid=${fileids}`)
+  }
+
+  if (dirids) {
+    parts.push(`dirid=${dirids}`)
+  }
+
+  parts.push(`path=${path}`)
+
+  return parts.join(' ')
+}
+
 export function buildRestoreBackupOption(
   backup,
   {
