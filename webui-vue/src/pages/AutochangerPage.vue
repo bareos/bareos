@@ -1096,20 +1096,20 @@ async function doUpdateSlots() {
   if (shouldReloadAutochangerAfterCommand(result?.status)) {
     await loadSlots()
   }
+}
 
-  function defaultDriveNumber() {
-    return driveOptions.value[0]?.value ?? 0
-  }
+function defaultDriveNumber() {
+  return driveOptions.value[0]?.value ?? 0
+}
 
-  function openLabelDialog() {
-    labelForm.value = {
-      pool: poolNames.value[0] ?? '',
-      drive: defaultDriveNumber(),
-      slots: '',
-      encrypted: false,
-    }
-    labelDialog.value = true
+function openLabelDialog() {
+  labelForm.value = {
+    pool: poolNames.value[0] ?? '',
+    drive: defaultDriveNumber(),
+    slots: '',
+    encrypted: false,
   }
+  labelDialog.value = true
 }
 
 async function doImportAll() {
