@@ -167,8 +167,8 @@ describe('jobs filter helpers', () => {
       { volumename: '', firstindex: 2, lastindex: 3 },
       { firstindex: 4, lastindex: 4 },
     ])).toEqual([
-      { volumename: 'Vol-001', firstindex: 0, lastindex: 0, segments: 2 },
-      { volumename: 'Vol-002', firstindex: 10, lastindex: 20, segments: 1 },
+      { volumename: 'Vol-001', segments: 2 },
+      { volumename: 'Vol-002', segments: 1 },
     ])
   })
 
