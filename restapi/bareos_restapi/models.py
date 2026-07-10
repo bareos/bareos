@@ -424,7 +424,6 @@ class jobControl(BaseModel):
         title="Set since time for differential / incremental jobs. Bareos universal timespec",
     )
     verifyjob: Optional[str] = Field(None)
-    verifylist: Optional[str] = Field(None)
     migrationjob: Optional[str] = Field(None)
 
 

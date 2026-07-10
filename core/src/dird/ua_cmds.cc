@@ -440,7 +440,6 @@ static struct ua_cmdstruct commands[] = {
          "backupclient=<client-name> backupformat=<format> "
          "nextpool=<pool-name> "
          "since=<universal-time-specification> verifyjob=<job-name> "
-         "verifylist=<verify-list> "
          "migrationjob=<complete_name> [ yes ]"),
      false, true},
     {NT_("status"), StatusCmd, T_("Report status"),

@@ -3757,10 +3757,6 @@
           "verifyjob": {
             "title": "Verifyjob",
             "type": "string"
-          },
-          "verifylist": {
-            "title": "Verifylist",
-            "type": "string"
           }
         }
       },
