@@ -305,8 +305,14 @@ export function mergeJobMediaByVolume(jobmediaRows) {
       continue
     }
 
+    const {
+      firstindex: _firstindex,
+      lastindex: _lastindex,
+      ...rowWithoutIndexes
+    } = row ?? {}
+
     groupedByVolume.set(volumeName, {
-      ...row,
+      ...rowWithoutIndexes,
       volumename: volumeName,
       segments: 1,
     })
