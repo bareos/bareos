@@ -359,6 +359,47 @@
           </template>
         </q-banner>
 
+        <q-card
+          v-if="commandLogVisible"
+          flat
+          bordered
+          class="bareos-panel q-mt-md"
+        >
+          <q-card-section class="row items-center q-pb-sm">
+            <div class="col">
+              <div class="text-subtitle1">{{ commandLogTitle || t('Command output') }}</div>
+              <div class="text-caption text-grey-7 command-log-command">{{ commandLogCommand }}</div>
+              <div v-if="commandStatusSummary" class="text-caption text-grey-7 q-mt-xs">
+                {{ commandStatusSummary }}
+              </div>
+            </div>
+            <q-badge
+              v-if="commandRunning"
+              :color="commandStatusColor"
+              class="q-mr-sm"
+            >
+              <q-spinner size="14px" class="q-mr-xs" />
+              {{ commandStatusLabel }}
+            </q-badge>
+            <q-badge v-else :color="commandStatusColor" class="q-mr-sm">{{ commandStatusLabel }}</q-badge>
+            <q-btn
+              flat
+              round
+              dense
+              icon="delete_sweep"
+              :disable="commandRunning"
+              :title="t('Clear')"
+              @click="clearCommandLog"
+            />
+          </q-card-section>
+          <q-separator />
+          <q-card-section class="q-pa-none">
+            <q-scroll-area ref="commandLogScroll" style="height:220px">
+              <pre class="command-log-text">{{ commandLogText }}</pre>
+            </q-scroll-area>
+          </q-card-section>
+        </q-card>
+
       </q-card-section>
     </q-card>
   </q-page>
@@ -476,7 +517,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
@@ -1228,12 +1269,158 @@ function clearSelection() {
 // ── Restore execution ──────────────────────────────────────────────────────────
 const loadingRestore = ref(false)
 const restoreResult  = ref(null)
+const commandRunning = ref(false)
+const commandLogVisible = ref(false)
+const commandLogTitle = ref('')
+const commandLogCommand = ref('')
+const commandLogText = ref('')
+const commandStatus = ref('idle')
+const commandStatusPrompt = ref('')
+const commandStatusMessage = ref('')
+const commandLogScroll = ref(null)
 
 const canRestore = computed(() =>
   !!form.value.jobid &&
   !!form.value.restorejob &&
   (selectedFiles.value.size > 0 || selectedDirs.value.size > 0)
 )
+
+const commandStatusColor = computed(() => {
+  switch (commandStatus.value) {
+    case 'starting':
+      return 'info'
+    case 'running':
+      return 'primary'
+    case 'waiting_for_input':
+      return 'warning'
+    case 'failed':
+      return 'negative'
+    case 'completed':
+      return 'positive'
+    default:
+      return 'grey-6'
+  }
+})
+
+const commandStatusLabel = computed(() => {
+  switch (commandStatus.value) {
+    case 'starting':
+      return t('Starting...')
+    case 'running':
+      return t('Running')
+    case 'waiting_for_input':
+      return t('Waiting for input')
+    case 'failed':
+      return t('Failed')
+    case 'completed':
+      return t('Completed')
+    default:
+      return t('Idle')
+  }
+})
+
+const commandStatusSummary = computed(() => {
+  if (commandStatusMessage.value) {
+    return commandStatusMessage.value
+  }
+
+  if (commandStatus.value === 'waiting_for_input') {
+    if (commandStatusPrompt.value === 'select') {
+      return t('The director is waiting for a numeric selection.')
+    }
+
+    if (commandStatusPrompt.value === 'sub') {
+      return t('The director is waiting for additional input.')
+    }
+
+    return t('The director returned a non-final prompt.')
+  }
+
+  if (commandStatus.value === 'completed') {
+    return t('The command finished and returned to the main prompt.')
+  }
+
+  return ''
+})
+
+async function scrollCommandLogToBottom() {
+  await nextTick()
+  commandLogScroll.value?.setScrollPosition('vertical', Number.MAX_SAFE_INTEGER, 0)
+}
+
+function clearCommandLog() {
+  commandLogVisible.value = false
+  commandLogTitle.value = ''
+  commandLogCommand.value = ''
+  commandLogText.value = ''
+  commandStatus.value = 'idle'
+  commandStatusPrompt.value = ''
+  commandStatusMessage.value = ''
+}
+
+async function runRestoreCommand(title, cmd) {
+  if (commandRunning.value) {
+    throw new Error(t('Another command is still running.'))
+  }
+
+  commandLogVisible.value = true
+  commandLogTitle.value = title
+  commandLogCommand.value = cmd
+  commandLogText.value += `${commandLogText.value ? '\n' : ''}$ ${cmd}\n\n`
+  commandStatus.value = 'starting'
+  commandStatusPrompt.value = ''
+  commandStatusMessage.value = ''
+  commandRunning.value = true
+  await scrollCommandLogToBottom()
+
+  let finalState = {
+    status: 'starting',
+    prompt: '',
+    message: '',
+  }
+
+  const applyCommandState = (nextState) => {
+    finalState = {
+      ...finalState,
+      ...nextState,
+      status: nextState?.status || finalState.status,
+    }
+
+    commandStatus.value = finalState.status
+    commandStatusPrompt.value = finalState.prompt ?? ''
+    commandStatusMessage.value = finalState.message ?? ''
+  }
+
+  try {
+    return await director.rawCall(cmd, {
+      onChunk: (chunk) => {
+        if (!chunk) {
+          return
+        }
+        commandLogText.value += chunk
+        void scrollCommandLogToBottom()
+      },
+      onStateChange: applyCommandState,
+    })
+  } catch (e) {
+    commandLogText.value += `\nError: ${e.message}\n`
+    applyCommandState({
+      status: 'failed',
+      message: e.message,
+    })
+    void scrollCommandLogToBottom()
+    throw e
+  } finally {
+    commandRunning.value = false
+
+    if (finalState.status === 'starting' || finalState.status === 'running') {
+      applyCommandState({
+        status: 'completed',
+        prompt: 'main',
+      })
+    }
+  }
+}
 
 async function doRestore() {
   if (!canRestore.value) return
@@ -1251,7 +1438,7 @@ async function doRestore() {
   try {
     await ensureSelectedSourceDirector()
     // Step 1: build restore list in BVFS
-    await director.rawCall(buildRestoreBvfsRestoreCommand({
+    await runRestoreCommand(t('Prepare restore list'), buildRestoreBvfsRestoreCommand({
       jobids: jids,
       fileids,
       dirids,
@@ -1270,7 +1457,7 @@ async function doRestore() {
       ` replace=${quoteDirectorString(form.value.replace)}` +
       (pluginOptions ? ` pluginoptions=${quoteDirectorString(pluginOptions)}` : '') +
       ` yes`
-    const result = await director.rawCall(cmd)
+    const result = await runRestoreCommand(t('Queue restore job'), cmd)
 
     const jobid = extractQueuedJobId(result)
 
@@ -1282,7 +1469,10 @@ async function doRestore() {
 
     // Step 3: clean up BVFS restore path
     try {
-      await director.rawCall(`.bvfs_cleanup path=${quoteDirectorString(bvfsPath)}`)
+      await runRestoreCommand(
+        t('Cleanup restore list'),
+        `.bvfs_cleanup path=${quoteDirectorString(bvfsPath)}`
+      )
     } catch (_) {
       // Cleanup should not block the queued restore from being shown.
     }
@@ -1653,6 +1843,17 @@ watch(() => [route.query.client, route.query.director, route.query.jobid, route.
 
 .restore-backup-option .column {
   min-width: 0;
+}
+
+.command-log-command,
+.command-log-text {
+  font-family: monospace;
+}
+
+.command-log-text {
+  margin: 0;
+  padding: 16px;
+  white-space: pre-wrap;
 }
 
 @media (max-width: 599px) {
