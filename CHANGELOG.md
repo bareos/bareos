@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Improve database encoding error handling [PR #2699]
+- core: ensure runscripts are only executed once [PR #2723]
 
 ## [25.0.4] - 2026-07-02
 
@@ -2311,4 +2312,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2707]: https://github.com/bareos/bareos/pull/2707
 [PR #2710]: https://github.com/bareos/bareos/pull/2710
 [PR #2713]: https://github.com/bareos/bareos/pull/2713
+[PR #2723]: https://github.com/bareos/bareos/pull/2723
 [unreleased]: https://github.com/bareos/bareos/tree/master

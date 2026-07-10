@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -245,6 +245,14 @@ class JobControlRecord {
   int64_t max_bandwidth{};  /**< Bandwidth limit for this Job */
   PathList* path_list{};      /**< Directory list (used by findlib) */
   bool is_passive_client_connection_probing{}; /**< Set if director probes a passive client connection */
+
+  /* These flags store whether a particular set of runscripts already ran
+   * This is necessary to make sure that each configured runscript only runs
+   * once in this job.
+   * As `cancel` can cause runscripts to run, these need to be thread safe. */
+  std::atomic_flag pre_scripts_ran{};
+  std::atomic_flag post_vss_scripts_ran{};
+  std::atomic_flag post_scripts_ran{};
 
   union {
     DirectorJcrImpl* dir_impl;

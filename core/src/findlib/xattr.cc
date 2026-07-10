@@ -63,6 +63,7 @@
 #include "lib/bsock.h"
 #include "include/jcr.h"
 #include "lib/serial.h"
+#include "filed/filed_jcr_impl.h"
 
 [[maybe_unused]] static void warn_if_disabling_xattrs(JobControlRecord* jcr,
                                                       const char* file)
@@ -379,7 +380,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
            * files on the same filesystem. The BXATTR_FLAG_SAVE_NATIVE flags
            * gets sets again when we change from one filesystem to another. */
           xattr_data->flags &= ~BXATTR_FLAG_SAVE_NATIVE;
-          retval = BxattrExitCode::kWarning;
+          retval = BxattrExitCode::kInfo;
           warn_if_disabling_xattr(jcr, xattr_data->last_fname);
           goto bail_out;
         default:
@@ -714,7 +715,7 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
            * BXATTR_FLAG_RESTORE_NATIVE flags gets sets again when we
            * change from one filesystem to another. */
           xattr_data->flags &= ~BXATTR_FLAG_SAVE_NATIVE;
-          retval = BxattrExitCode::kWarning;
+          retval = BxattrExitCode::kInfo;
           warn_if_disabling_xattrs(jcr, xattr_data->last_fname);
           goto bail_out;
         default:
@@ -1058,18 +1059,30 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
             retval = BxattrExitCode::kSuccess;
             goto bail_out;
 #    if defined(EOPNOTSUPP)
-          case EOPNOTSUPP:
-#    endif
-          case EPERM:
+          case EOPNOTSUPP: {
             if (attrnamespace == EXTATTR_NAMESPACE_SYSTEM) { continue; }
-            // FALLTHROUGH
-          default:
+
+            retval = BxattrExitCode::kInfo;
+            Mmsg2(jcr->errmsg,
+                  T_("extended attributes are not supported on file \"%s\"\n"),
+                  xattr_data->last_fname);
+            Dmsg2(100, "extended attributes are not supported on file \"%s\"\n",
+                  xattr_data->last_fname);
+            goto bail_out;
+          } break;
+#    endif
+          case EPERM: {
+            if (attrnamespace == EXTATTR_NAMESPACE_SYSTEM) { continue; }
+          }
+            [[fallthrough]];
+          default: {
             Mmsg2(jcr->errmsg,
                   T_("extattr_list_link error on file \"%s\": ERR=%s\n"),
                   xattr_data->last_fname, be.bstrerror());
             Dmsg2(100, "extattr_list_link error file=%s ERR=%s\n",
                   xattr_data->last_fname, be.bstrerror());
             goto bail_out;
+          }
         }
         break;
       }
@@ -2808,3 +2821,25 @@ bail_out:
   return retval;
 }
 #endif
+
+bool HandleXattrExitCode(JobControlRecord* jcr, BxattrExitCode retval)
+{
+  switch (retval) {
+    case BxattrExitCode::kErrorFatal:
+      return false;
+    case BxattrExitCode::kWarning:
+      Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
+      break;
+    case BxattrExitCode::kError:
+      Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
+      jcr->fd_impl->xattr_data->nr_errors++;
+      break;
+    case BxattrExitCode::kInfo:
+      Jmsg(jcr, M_INFO, 0, "%s", jcr->errmsg);
+      [[fallthrough]];
+    case BxattrExitCode::kSuccess:
+      break;
+  }
+
+  return true;
+}
