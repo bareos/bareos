@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
+import { useSettingsStore } from '../stores/settings.js'
 import { buildStoragesTabQuery } from '../utils/storagesRoute.js'
 
 const routes = [
@@ -59,7 +60,6 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
-  const { useSettingsStore } = await import('../stores/settings.js')
   const settings = useSettingsStore()
   await auth.restoreSession(false, settings.directorName)
   if (to.meta.requiresAuth && !auth.isLoggedIn) {
