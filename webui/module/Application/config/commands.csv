@@ -32,7 +32,7 @@ reload,--,optional,--,--,--,--,--,--,--,--,--,--
 rerun,--,optional,--,--,--,optional,--,--,--,--,--,--
 resolve,--,optional,--,--,--,--,--,--,--,--,--,--
 run,--,optional,--,--,--,optional,--,--,--,--,--,--
-status,optional,optional,--,optional,--,--,--,--,--,optional,optional,--
+status,optional,optional,--,optional,--,optional,--,--,--,optional,optional,--
 setbandwidth,--,optional,--,--,--,--,--,--,--,--,--,--
 setdebug,--,optional,--,--,--,--,--,--,--,--,--,--
 setip,--,optional,--,--,--,--,--,--,--,--,--,--

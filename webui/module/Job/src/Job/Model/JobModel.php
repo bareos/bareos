@@ -209,6 +209,38 @@ class JobModel
     }
 
     /**
+     * Live status for a currently-running job. Calls the director's
+     * `status jobid=N` aggregator under api=json and returns the
+     * nested job_status subtree (dir + fd + sd views combined), or
+     * an empty array if the director did not return a result.
+     *
+     * Requires a bareos-dir that implements the JSON status feature
+     * (bareos/bareos#2325). Callers should tolerate:
+     *   - {"error": "job_not_found"}             (job already finished)
+     *   - fd/sd with {"error": "..._too_old"}    (backward-compat gating)
+     *   - fd/sd with {"error": "reply_too_large"} (defensive cap)
+     *
+     * @param $bsock
+     * @param $id
+     *
+     * @return array
+     */
+    public function getLiveJobStatus(&$bsock = null, $id = null)
+    {
+        if (isset($bsock, $id)) {
+            $cmd = 'status jobid=' . (int)$id;
+            $result = $bsock->send_command($cmd, 2);
+            $decoded = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
+            if (empty($decoded['result']['job_status'])) {
+                return array();
+            }
+            return $decoded['result']['job_status'];
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
+
+    /**
      * Get Job Log
      *
      * @param $bsock

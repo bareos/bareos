@@ -59,6 +59,7 @@ static char hello[] = "Hello Director %s calling\n";
 
 // Response from Storage daemon
 static char OKhello[] = "3000 OK Hello\n";
+static char OKnewHello[] = "3000 OK Hello %d\n";
 static char FDOKhello[] = "2000 OK Hello\n";
 static char FDOKnewHello[] = "2000 OK Hello %d\n";
 
@@ -109,7 +110,9 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd,
   }
 
   Dmsg1(110, "<stored: %s", sd->msg);
-  if (!bstrncmp(sd->msg, OKhello, sizeof(OKhello))) {
+  jcr->dir_impl->SDVersion = 0;
+  if (!bstrncmp(sd->msg, OKhello, sizeof(OKhello))
+      && sscanf(sd->msg, OKnewHello, &jcr->dir_impl->SDVersion) != 1) {
     Dmsg0(debuglevel, T_("Storage daemon rejected Hello command\n"));
     Jmsg2(jcr, M_FATAL, 0,
           T_("Storage daemon at \"%s:%d\" rejected Hello command\n"),

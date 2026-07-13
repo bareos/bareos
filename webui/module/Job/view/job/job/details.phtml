@@ -40,6 +40,53 @@ $this->headTitle($title);
 
 <?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
 
+<!-- Live progress (hidden unless the job is currently running) -->
+<div class="row" id="live-progress-row" style="display: none;">
+   <div class="col-md-12">
+      <div class="panel panel-primary">
+         <div class="panel-heading">
+            <h3 class="panel-title">
+               <span class="glyphicon glyphicon-refresh" style="animation: spin 1.6s linear infinite;"></span>
+               <?php echo $this->translate("Live progress"); ?>
+               <span id="live-progress-status" class="badge" style="margin-left: 8px;"></span>
+            </h3>
+         </div>
+         <div class="panel-body">
+            <div class="row">
+               <div class="col-md-6">
+                  <dl class="dl-horizontal">
+                     <dt><?php echo $this->translate("Client bytes"); ?></dt>
+                     <dd id="lp-fd-bytes">&mdash;</dd>
+                     <dt><?php echo $this->translate("Client files"); ?></dt>
+                     <dd id="lp-fd-files">&mdash;</dd>
+                     <dt><?php echo $this->translate("Files examined"); ?></dt>
+                     <dd id="lp-fd-examined">&mdash;</dd>
+                     <dt><?php echo $this->translate("Processing file"); ?></dt>
+                     <dd id="lp-fd-processing" style="word-break: break-all;">&mdash;</dd>
+                  </dl>
+               </div>
+               <div class="col-md-6">
+                  <dl class="dl-horizontal">
+                     <dt><?php echo $this->translate("Storage bytes"); ?></dt>
+                     <dd id="lp-sd-bytes">&mdash;</dd>
+                     <dt><?php echo $this->translate("Average rate"); ?></dt>
+                     <dd id="lp-sd-avgrate">&mdash;</dd>
+                     <dt><?php echo $this->translate("Current rate"); ?></dt>
+                     <dd id="lp-sd-lastrate">&mdash;</dd>
+                     <dt><?php echo $this->translate("Volume"); ?></dt>
+                     <dd id="lp-sd-volume">&mdash;</dd>
+                     <dt><?php echo $this->translate("Device"); ?></dt>
+                     <dd id="lp-sd-device" style="word-break: break-all;">&mdash;</dd>
+                  </dl>
+               </div>
+            </div>
+            <div id="live-progress-warning" class="alert alert-warning" style="display: none;"></div>
+         </div>
+      </div>
+   </div>
+</div>
+<style>@keyframes spin { from{transform:rotate(0);} to{transform:rotate(360deg);} }</style>
+
 <!-- Job -->
 <div class="row">
 
@@ -302,6 +349,108 @@ $this->headTitle($title);
       });
    }
 
+   // Live progress panel: polls /api/jobstatus/<id> every 5s while the
+   // job is running, hides the panel (and stops polling) once the job
+   // is no longer in the director's live JCR list. Fail-soft: if the
+   // director or either daemon returns a structured error (too-old,
+   // oversize reply, parse failure) the panel stays visible with a
+   // warning banner but continues polling -- the error may be transient.
+   var liveProgressTimer = null;
+   var liveProgressJobid = <?php echo (int)$this->jobid; ?>;
+
+   function fmtBytes(n) {
+      if (n === null || n === undefined) return '\u2014';
+      var u = ['B','KB','MB','GB','TB','PB'];
+      var i = 0; n = Number(n);
+      while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+      return n.toFixed(i === 0 ? 0 : 2) + ' ' + u[i];
+   }
+
+   function fmtRate(bps) {
+      if (!bps) return '\u2014';
+      return fmtBytes(bps) + '/s';
+   }
+
+   function renderLiveProgress(data) {
+      // The endpoint returns the job_status object directly (Laminas
+      // JsonModel serializes $this->result, which is the inner subtree).
+      var warn = $('#live-progress-warning');
+      if (!data || !data.jobid) { return false; }
+      var js = data;
+
+      if (js.error === 'job_not_found') {
+         // Job is no longer running. Hide panel and stop polling.
+         $('#live-progress-row').hide();
+         return false;
+      }
+
+      var fdData = (js.fd && js.fd.data) ? js.fd.data : null;
+      var sdData = (js.sd && js.sd.data) ? js.sd.data : null;
+      var fdErr = (js.fd && js.fd.error) ? js.fd.error : null;
+      var sdErr = (js.sd && js.sd.error) ? js.sd.error : null;
+
+      $('#live-progress-row').show();
+      if (js.dir && js.dir.status) {
+         $('#live-progress-status').text(js.dir.status);
+      }
+
+      var fdJob = (fdData && fdData.running_jobs)
+         ? fdData.running_jobs.find(function(j) { return j.jobid === liveProgressJobid; })
+         : null;
+      if (fdJob) {
+         $('#lp-fd-bytes').text(fmtBytes(fdJob.bytes));
+         $('#lp-fd-files').text((fdJob.files || 0).toLocaleString());
+         $('#lp-fd-examined').text((fdJob.files_examined || 0).toLocaleString());
+         $('#lp-fd-processing').text(fdJob.processing_file || '\u2014');
+      }
+
+      var sdJob = (sdData && sdData.running_jobs)
+         ? sdData.running_jobs.find(function(j) { return j.jobid === liveProgressJobid; })
+         : null;
+      if (sdJob) {
+         $('#lp-sd-bytes').text(fmtBytes(sdJob.bytes));
+         $('#lp-sd-avgrate').text(fmtRate(sdJob.avg_bytes_per_sec));
+         $('#lp-sd-lastrate').text(fmtRate(sdJob.last_bytes_per_sec));
+         if (sdJob.writing) {
+            $('#lp-sd-volume').text(sdJob.writing.volume || '\u2014');
+            $('#lp-sd-device').text(sdJob.writing.device || '\u2014');
+         }
+      }
+
+      var warnings = [];
+      if (fdErr) { warnings.push('<?php echo $this->translate("File Daemon JSON status unavailable"); ?>: ' + fdErr); }
+      if (sdErr) { warnings.push('<?php echo $this->translate("Storage Daemon JSON status unavailable"); ?>: ' + sdErr); }
+      if (warnings.length) {
+         warn.html(warnings.join('<br>')).show();
+      } else {
+         warn.hide();
+      }
+
+      return true;
+   }
+
+   function pollLiveProgress() {
+      $.ajax({
+         url: '<?php echo $this->url('api/jobstatus', array('id' => $this->jobid)); ?>',
+         method: 'GET',
+         dataType: 'json',
+         timeout: 10000
+      }).done(function(data) {
+         var stillRunning = renderLiveProgress(data);
+         if (!stillRunning) {
+            clearInterval(liveProgressTimer);
+            liveProgressTimer = null;
+         }
+      }).fail(function() {
+         // Transient -- leave panel in its current state, keep polling.
+      });
+   }
+
+   function attachLiveProgress() {
+      pollLiveProgress();
+      liveProgressTimer = setInterval(pollLiveProgress, 5000);
+   }
+
    $(document).ready(function() {
 
       setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
@@ -310,6 +459,7 @@ $this->headTitle($title);
       attachJobDetailsTable();
       attachJobLogTable();
       attachJobMediaTable();
+      attachLiveProgress();
 
    });
 
