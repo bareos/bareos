@@ -939,7 +939,8 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
     }
 
     mr->PoolId = pr.PoolId;
-    ua->db->ListMediaRecords(ua->jcr, mr, NULL, false, ua->send, HORZ_LIST);
+    ua->db->ListMediaRecords(ua->jcr, mr, NULL, false, ua->send.get(),
+                             HORZ_LIST);
 
     ua->SendMsg(
         T_("Enter the volume name or MediaId of the volume prefixed with an "
@@ -1023,7 +1024,7 @@ PoolResource* get_pool_resource(UaContext* ua)
 int SelectJobDbr(UaContext* ua, JobDbRecord* jr)
 {
   ua->db->ListJobRecords(ua->jcr, jr, "", NULL, {}, {}, {}, nullptr, nullptr, 0,
-                         0, 0, ua->send, HORZ_LIST);
+                         0, 0, ua->send.get(), HORZ_LIST);
   if (!GetPint(ua, T_("Enter the JobId to select: "))) { return 0; }
 
   jr->JobId = ua->int64_val;
@@ -1090,35 +1091,26 @@ int GetJobDbr(UaContext* ua, JobDbRecord* jr)
 }
 
 // Implement unique set of prompts
-void StartPrompt(UaContext* ua, const char* msg)
-{
-  if (ua->max_prompts == 0) {
-    ua->max_prompts = 10;
-    ua->prompt = (char**)malloc(sizeof(char*) * ua->max_prompts);
-  }
-  ua->num_prompts = 1;
-  ua->prompt[0] = strdup(msg);
-}
+void StartPrompt(UaContext* ua, const char* msg) { ua->prompt_header = msg; }
 
 // Add to prompts -- keeping them unique
 void AddPrompt(UaContext* ua, const char* prompt)
 {
-  if (ua->num_prompts == ua->max_prompts) {
-    ua->max_prompts *= 2;
-    ua->prompt = (char**)realloc(ua->prompt, sizeof(char*) * ua->max_prompts);
+  std::string_view as_view{prompt};
+  for (auto& existing : ua->prompts) {
+    if (existing == as_view) { return; }
   }
 
-  for (int i = 1; i < ua->num_prompts; i++) {
-    if (bstrcmp(ua->prompt[i], prompt)) { return; }
-  }
-
-  ua->prompt[ua->num_prompts++] = strdup(prompt);
+  ua->prompts.emplace_back(as_view);
 }
 
 void AddPrompt(UaContext* ua, std::string&& prompt)
 {
-  std::string p{prompt};
-  AddPrompt(ua, p.c_str());
+  for (auto& existing : ua->prompts) {
+    if (existing == prompt) { return; }
+  }
+
+  ua->prompts.emplace_back(std::move(prompt));
 }
 
 /**
@@ -1131,11 +1123,12 @@ std::string FormatPrompts(const UaContext* ua,
 {
   int max_prompt_length = 1;
 
-  const int max_prompt_index_length = std::to_string(ua->num_prompts).length();
+  const int max_prompt_index_length
+      = std::to_string(ua->prompts.size()).length();
 
-  for (int i = 1; i < ua->num_prompts; i++) {
-    if (static_cast<int>(strlen(ua->prompt[i])) > max_prompt_length) {
-      max_prompt_length = static_cast<int>(strlen(ua->prompt[i]));
+  for (auto& prompt : ua->prompts) {
+    if (static_cast<int>(prompt.size()) > max_prompt_length) {
+      max_prompt_length = static_cast<int>(prompt.size());
     }
   }
 
@@ -1155,20 +1148,20 @@ std::string FormatPrompts(const UaContext* ua,
       = std::max(1, window_width / (max_formatted_prompt_length - 1));
 
   const int number_output_lines
-      = (ua->num_prompts + prompts_perline - 1) / prompts_perline;
+      = (ua->prompts.size() + prompts_perline - 1) / prompts_perline;
 
   std::vector<char> formatted_prompt(max_formatted_prompt_length);
   std::vector<std::vector<char>> formatted_prompts_container;
 
   std::string output{};
 
-  if (ua->num_prompts > min_lines_threshold
+  if (ua->prompts.size() > static_cast<size_t>(min_lines_threshold)
       && window_width > max_formatted_prompt_length * 2) {
-    for (int i = 1; i < ua->num_prompts; i++) {
+    for (size_t i = 0; i < ua->prompts.size(); i++) {
       {
         snprintf(formatted_prompt.data(), max_formatted_prompt_length,
-                 "%*d: %-*s ", max_prompt_index_length, i, max_prompt_length,
-                 ua->prompt[i]);
+                 "%*zu: %-*s ", max_prompt_index_length, i + 1,
+                 max_prompt_length, ua->prompts[i].c_str());
       }
 
       formatted_prompts_container.push_back(formatted_prompt);
@@ -1185,10 +1178,11 @@ std::string FormatPrompts(const UaContext* ua,
       output.append("\n");
     }
   } else {
-    for (int i = 1; i < ua->num_prompts; i++) {
+    for (size_t i = 0; i < ua->prompts.size(); i++) {
       {
         snprintf(formatted_prompt.data(), max_formatted_prompt_length,
-                 "%*d: %s\n", max_prompt_index_length, i, ua->prompt[i]);
+                 "%*zu: %s\n", max_prompt_index_length, i + 1,
+                 ua->prompts[i].c_str());
         output.append(formatted_prompt.data());
       }
     }
@@ -1219,12 +1213,12 @@ int DoPrompt(UaContext* ua,
   int min_lines_threshold = 20;
 
   if (prompt) { *prompt = 0; }
-  if (ua->num_prompts == 2) {
+  if (ua->prompts.size() == 1) {
     item = 1;
-    if (prompt) { bstrncpy(prompt, ua->prompt[1], max_prompt); }
+    if (prompt) { bstrncpy(prompt, ua->prompts[0].c_str(), max_prompt); }
     if (!ua->api && !ua->runscript) {
       ua->SendMsg(T_("Automatically selected %s: %s\n"), automsg,
-                  ua->prompt[1]);
+                  ua->prompts[0].c_str());
     }
     goto done;
   }
@@ -1232,7 +1226,7 @@ int DoPrompt(UaContext* ua,
   // If running non-interactive, bail out
   if (ua->batch) {
     // First print the choices he wanted to make
-    ua->SendMsg("%s", ua->prompt[0]);
+    ua->SendMsg("%s", ua->prompt_header.c_str());
     ua->SendMsg("%s",
                 FormatPrompts(ua, window_width, min_lines_threshold).c_str());
 
@@ -1246,12 +1240,11 @@ int DoPrompt(UaContext* ua,
 
   if (ua->api) { user->signal(BNET_START_SELECT); }
 
-  ua->SendMsg("%s", ua->prompt[0]);
-
+  ua->SendMsg("%s", ua->prompt_header.c_str());
 
   if (ua->api) {
-    for (int i = 1; i < ua->num_prompts; i++) {
-      ua->SendMsg("%s", ua->prompt[i]);
+    for (auto& candidate : ua->prompts) {
+      ua->SendMsg("%s", candidate.c_str());
     }
   } else {
     ua->SendMsg("%s",
@@ -1263,18 +1256,18 @@ int DoPrompt(UaContext* ua,
 
   while (1) {
     // First item is the prompt string, not the items
-    if (ua->num_prompts == 1) {
+    if (ua->prompts.empty()) {
       ua->ErrorMsg(T_("Selection list for \"%s\" is empty!\n"), automsg);
       item = -1; /* list is empty ! */
       break;
     }
-    if (ua->num_prompts == 2) {
+    if (ua->prompts.size() == 1) {
       item = 1;
-      ua->SendMsg(T_("Automatically selected: %s\n"), ua->prompt[1]);
-      if (prompt) { bstrncpy(prompt, ua->prompt[1], max_prompt); }
+      ua->SendMsg(T_("Automatically selected: %s\n"), ua->prompts[0].c_str());
+      if (prompt) { bstrncpy(prompt, ua->prompts[0].c_str(), max_prompt); }
       break;
     } else {
-      Mmsg(pmsg, "%s (1-%d): ", msg, ua->num_prompts - 1);
+      Mmsg(pmsg, "%s (1-%zu): ", msg, ua->prompts.size());
     }
 
     // Either a . or an @ will get you out of the loop
@@ -1286,18 +1279,17 @@ int DoPrompt(UaContext* ua,
       break;
     }
     item = ua->pint32_val;
-    if (item < 1 || item >= ua->num_prompts) {
-      ua->WarningMsg(T_("Please enter a number between 1 and %d\n"),
-                     ua->num_prompts - 1);
+    if (item < 1 || static_cast<size_t>(item) > ua->prompts.size()) {
+      ua->WarningMsg(T_("Please enter a number between 1 and %zu\n"),
+                     ua->prompts.size());
       continue;
     }
-    if (prompt) { bstrncpy(prompt, ua->prompt[item], max_prompt); }
+    if (prompt) { bstrncpy(prompt, ua->prompts[item - 1].c_str(), max_prompt); }
     break;
   }
 
 done:
-  for (int i = 0; i < ua->num_prompts; i++) { free(ua->prompt[i]); }
-  ua->num_prompts = 0;
+  ua->prompts.clear();
 
   return (item > 0) ? (item - 1) : item;
 }

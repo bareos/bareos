@@ -759,10 +759,10 @@ static void JobMonitorWatchdog(watchdog_t* self)
     if (cancel) {
       Dmsg3(800, "Cancelling JobControlRecord %p jobid %" PRIu32 " (%s)\n", jcr,
             jcr->JobId, jcr->Job);
-      UaContext* ua = new_ua_context(jcr);
+      UaContext* ua = new UaContext(jcr);
       ua->jcr = control_jcr;
       CancelJob(ua, jcr);
-      FreeUaContext(ua);
+      delete ua;
       Dmsg2(800, "Have cancelled JobControlRecord %p Job=%" PRIu32 "\n", jcr,
             jcr->JobId);
     }
@@ -1001,14 +1001,14 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
 
       if (cancel_dup || job->CancelRunningDuplicates) {
         // Zap the duplicated job djcr
-        UaContext* ua = new_ua_context(jcr);
+        UaContext* ua = new UaContext(jcr);
         Jmsg(jcr, M_INFO, 0, T_("Cancelling duplicate JobId=%" PRIu32 ".\n"),
              djcr->JobId);
         CancelJob(ua, djcr);
         Bmicrosleep(0, 500000);
         djcr->setJobStatusWithPriorityCheck(JS_Canceled);
         CancelJob(ua, djcr);
-        FreeUaContext(ua);
+        delete ua;
         Dmsg2(800, "Cancel dup %p JobId=%" PRIu32 "\n", djcr, djcr->JobId);
       } else {
         // Zap current job
@@ -1790,7 +1790,7 @@ void CreateClones(JobControlRecord* jcr)
     JobResource* job = jcr->dir_impl->res.job;
     POOLMEM* cmd = GetPoolMemory(PM_FNAME);
 
-    UaContext* ua = new_ua_context(jcr);
+    UaContext* ua = new UaContext(jcr);
     ua->batch = true;
     for (auto* runcmd : job->run_cmds) {
       cmd = edit_job_codes(jcr, cmd, runcmd, "", job_code_callback_director);
@@ -1806,7 +1806,7 @@ void CreateClones(JobControlRecord* jcr)
         Jmsg(jcr, M_INFO, 0, T_("Clone JobId %" PRIu32 " started.\n"), jobid);
       }
     }
-    FreeUaContext(ua);
+    delete ua;
     FreePoolMemory(cmd);
   }
 }
@@ -1826,7 +1826,7 @@ int CreateRestoreBootstrapFile(JobControlRecord* jcr, const JobDbRecord& job)
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
   rx.JobIds = (char*)"";
   rx.bsr->JobId = job.JobId;
-  ua = new_ua_context(jcr);
+  ua = new UaContext(jcr);
   if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
     files = -1;
     goto bail_out;
@@ -1837,13 +1837,13 @@ int CreateRestoreBootstrapFile(JobControlRecord* jcr, const JobDbRecord& job)
     files = 0;
     goto bail_out;
   }
-  FreeUaContext(ua);
+  delete ua;
   rx.bsr.reset(nullptr);
   jcr->dir_impl->needs_sd = true;
   return jcr->dir_impl->ExpectedFiles;
 
 bail_out:
-  FreeUaContext(ua);
+  delete ua;
   rx.bsr.reset(nullptr);
   return files;
 }
@@ -1854,14 +1854,14 @@ bool RunConsoleCommand(JobControlRecord*, const char* cmd)
   UaContext* ua;
   bool ok;
   JobControlRecord* ljcr = new_control_jcr("-RunScript-", JT_CONSOLE);
-  ua = new_ua_context(ljcr);
+  ua = new UaContext(ljcr);
   /* run from runscript and check if commands are authorized */
   ua->runscript = true;
   Mmsg(ua->cmd, "%s", cmd);
   Dmsg1(100, "Console command: %s\n", ua->cmd);
   ParseUaArgs(ua);
   ok = Do_a_command(ua);
-  FreeUaContext(ua);
+  delete ua;
   FreeJcr(ljcr);
   return ok;
 }

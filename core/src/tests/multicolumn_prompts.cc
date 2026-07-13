@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,9 +33,9 @@ using namespace directordaemon;
 
 class PromptsFormatting : public ::testing::Test {
  protected:
-  void SetUp() override { ua = new_ua_context(&jcr); }
+  void SetUp() override { ua = new UaContext(&jcr); }
 
-  void TearDown() override { FreeUaContext(ua); }
+  void TearDown() override { delete ua; }
 
   void PopulateUaWithPrompts(UaContext* t_ua, const char** list)
   {

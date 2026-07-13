@@ -65,7 +65,7 @@ static inline void StartNewConsolidationJob(const JobResource* consolidate_job,
   UaContext* ua;
   PoolMem cmd(PM_MESSAGE);
 
-  ua = new_ua_context(jcr);
+  ua = new UaContext(jcr);
   ua->batch = true;
   Mmsg(ua->cmd,
        "run job=\"%s\" jobid=%s level=VirtualFull priority=%d accurate=%s "
@@ -86,7 +86,7 @@ static inline void StartNewConsolidationJob(const JobResource* consolidate_job,
          jcr->get_OperationName(), jobid);
   }
 
-  FreeUaContext(ua);
+  delete ua;
 }
 
 static bool ConsolidateJobs(JobControlRecord* jcr)

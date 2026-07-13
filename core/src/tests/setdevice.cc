@@ -70,11 +70,9 @@ TEST(setdevice, scan_command_line)
   std::unique_ptr<JobControlRecord, decltype(&Test_FreeJcr)> jcr(
       NewDirectorJcr(my_config->GetCurrentConfiguration()), &Test_FreeJcr);
 
-  std::unique_ptr<UaContext, decltype(&FreeUaContext)> ua(
-      new_ua_context(jcr.get()), &FreeUaContext);
+  auto ua = std::make_unique<UaContext>(jcr.get());
 
-  delete ua->send;
-  ua->send = new OutputFormatter(sprintit, ua.get(), nullptr, ua.get());
+  ua->send.reset(new OutputFormatter(sprintit, ua.get(), nullptr, ua.get()));
 
   std::string command_line{
       "setdevice storage=File device=Any "

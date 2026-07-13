@@ -3662,7 +3662,7 @@ static void DumpResource(int type,
   OutputFormatter* output_formatter = nullptr;
   std::unique_ptr<OutputFormatter> output_formatter_local;
   if (ua) {
-    output_formatter = ua->send;
+    output_formatter = ua->send.get();
   } else {
     output_formatter_local
         = std::make_unique<OutputFormatter>(sendit, nullptr, nullptr, nullptr);

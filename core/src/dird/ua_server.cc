@@ -88,7 +88,7 @@ void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
 
   JobControlRecord* jcr = new_control_jcr("-Console-", JT_CONSOLE);
 
-  UaContext* ua = new_ua_context(jcr);
+  UaContext* ua = new UaContext(jcr);
   ua->UA_sock = user_agent_socket;
   SetJcrInThreadSpecificData(nullptr);
 
@@ -136,7 +136,7 @@ void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
   } /* while (!ua->quit) */
 
   CloseDb(ua);
-  FreeUaContext(ua);
+  delete ua;
   FreeJcr(jcr);
   delete user_agent_socket;
 

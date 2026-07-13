@@ -337,7 +337,6 @@ static void DisplayVolInfo(UaContext* ua, RestoreContext& rx, JobId_t JobId)
 
 void DisplayBsrInfo(UaContext* ua, RestoreContext& rx)
 {
-  int i;
   const char* p;
   JobId_t JobId;
 
@@ -361,18 +360,16 @@ void DisplayBsrInfo(UaContext* ua, RestoreContext& rx)
     }
   }
 
-  for (i = 0; i < ua->num_prompts; i++) {
-    ua->SendMsg("   %s\n", ua->prompt[i]);
-    free(ua->prompt[i]);
-  }
+  ua->SendMsg("   %s\n", ua->prompt_header.c_str());
+  for (auto& prompt : ua->prompts) { ua->SendMsg("   %s\n", prompt.c_str()); }
 
-  if (ua->num_prompts == 0) {
+  if (ua->prompts.size() == 0) {
     ua->SendMsg(T_("No Volumes found to restore.\n"));
   } else {
     ua->SendMsg(T_("\nVolumes marked with \"*\" are online.\n"));
   }
 
-  ua->num_prompts = 0;
+  ua->prompts.clear();
   ua->SendMsg("\n");
 
   return;
@@ -609,7 +606,7 @@ bool OpenBootstrapFile(JobControlRecord* jcr, bootstrap_info& info)
     return false;
   }
 
-  ua = new_ua_context(jcr);
+  ua = new UaContext(jcr);
   ua->cmd = CheckPoolMemorySize(ua->cmd, UA_CMD_SIZE + 1);
   while (!fgets(ua->cmd, UA_CMD_SIZE, bs)) {
     ParseUaArgs(ua);
@@ -728,6 +725,6 @@ bool SendBootstrapFile(JobControlRecord* jcr,
 void CloseBootstrapFile(bootstrap_info& info)
 {
   if (info.bs) { fclose(info.bs); }
-  if (info.ua) { FreeUaContext(info.ua); }
+  if (info.ua) { delete info.ua; }
 }
 } /* namespace directordaemon */

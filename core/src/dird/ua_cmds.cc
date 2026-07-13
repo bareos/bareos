@@ -2105,8 +2105,8 @@ static bool TruncateCmd(UaContext* ua, const char*)
   }
 
   /* execute query and display result */
-  ua->db->ListSqlQuery(ua->jcr, tmp.c_str(), ua->send, HORZ_LIST, "volumes",
-                       true);
+  ua->db->ListSqlQuery(ua->jcr, tmp.c_str(), ua->send.get(), HORZ_LIST,
+                       "volumes", true);
 
   /* execute query to get media ids.
    * Second execution is only required,

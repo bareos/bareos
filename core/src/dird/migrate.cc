@@ -330,7 +330,7 @@ static inline void StartNewMigrationJob(JobControlRecord* jcr)
   UaContext* ua;
   PoolMem cmd(PM_MESSAGE);
 
-  ua = new_ua_context(jcr);
+  ua = new UaContext(jcr);
   ua->batch = true;
   Mmsg(ua->cmd, "run job=\"%s\" jobid=%s ignoreduplicatecheck=yes",
        jcr->dir_impl->res.job->resource_name_,
@@ -365,7 +365,7 @@ static inline void StartNewMigrationJob(JobControlRecord* jcr)
          jcr->get_OperationName(), jobid);
   }
 
-  FreeUaContext(ua);
+  delete ua;
 }
 
 /**
@@ -1743,7 +1743,7 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
               break;
           }
 
-          ua = new_ua_context(jcr);
+          ua = new UaContext(jcr);
           if (jcr->dir_impl->res.job->PurgeMigrateJob) {
             // Purge old Job record
             PurgeJobsFromCatalog(ua, old_jobid);
@@ -1752,7 +1752,7 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
             PurgeFilesFromJobs(ua, old_jobid);
           }
 
-          FreeUaContext(ua);
+          delete ua;
           break;
         case JT_COPY:
           /* If we terminated a Copy Job successfully we should:

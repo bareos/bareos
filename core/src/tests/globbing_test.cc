@@ -98,12 +98,12 @@ class Globbing : public testing::Test {
     tree.root = new_tree(1);
     tree.node = tree.root;
     me = new DirectorResource;
-    ua = new_ua_context(&jcr);
+    ua = new UaContext(&jcr);
   }
 
   void TearDown() override
   {
-    FreeUaContext(ua);
+    delete ua;
     FreeTree(tree.root);
     delete me;
   }

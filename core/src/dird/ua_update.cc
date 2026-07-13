@@ -982,7 +982,7 @@ static bool UpdatePool(UaContext* ua)
   }
   ua->db->FillQuery<BareosDb::SQL_QUERY::list_pool>(query,
                                                     edit_int64(pr.PoolId, ed1));
-  ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
+  ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST, true);
   ua->InfoMsg(T_("Pool DB record updated from resource.\n"));
 
   return true;

@@ -53,7 +53,7 @@ void DoAutoprune(JobControlRecord* jcr)
     return;
   }
 
-  ua = new_ua_context(jcr);
+  ua = new UaContext(jcr);
   job = jcr->dir_impl->res.job;
   client = jcr->dir_impl->res.client;
   pool = jcr->dir_impl->res.pool;
@@ -70,8 +70,7 @@ void DoAutoprune(JobControlRecord* jcr)
     pruned = true;
   }
   if (pruned) { Jmsg(jcr, M_INFO, 0, T_("End auto prune.\n\n")); }
-  FreeUaContext(ua);
-  return;
+  delete ua;
 }
 
 /**
@@ -99,7 +98,7 @@ void PruneVolumes(JobControlRecord* jcr,
     return;
   }
 
-  ua = new_ua_context(jcr);
+  ua = new UaContext(jcr);
   DbLocker _{jcr->db};
 
   edit_int64(mr->PoolId, ed1);
@@ -216,7 +215,7 @@ void PruneVolumes(JobControlRecord* jcr,
 
 bail_out:
   Dmsg0(100, "Leave prune volumes\n");
-  FreeUaContext(ua);
+  delete ua;
   return;
 }
 } /* namespace directordaemon */

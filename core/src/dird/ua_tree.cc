@@ -128,7 +128,7 @@ bool UserSelectFilesFromTree(TreeContext* tree)
   bool status;
 
   // Get a new context so we don't destroy restore command args
-  ua = new_ua_context(tree->ua->jcr);
+  ua = new UaContext(tree->ua->jcr);
   ua->UA_sock = tree->ua->UA_sock; /* patch in UA socket */
   ua->api = tree->ua->api;         /* keep API flag too */
   user = ua->UA_sock;
@@ -200,7 +200,7 @@ bool UserSelectFilesFromTree(TreeContext* tree)
   ua->UA_sock = NULL; /* don't release restore socket */
   status = !ua->quit;
   ua->quit = false;
-  FreeUaContext(ua); /* get rid of temp UA context */
+  delete ua; /* get rid of temp UA context */
 
   return status;
 }

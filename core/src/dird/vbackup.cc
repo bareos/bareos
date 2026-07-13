@@ -393,13 +393,13 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   if (jcr->dir_impl->res.job->AlwaysIncremental
       && jcr->dir_impl->res.job->AlwaysIncrementalJobRetention) {
     UaContext* ua;
-    ua = new_ua_context(jcr);
+    ua = new UaContext(jcr);
     PurgeJobsFromCatalog(ua, jobids.c_str());
     Jmsg(
         jcr, M_INFO, 0,
         T_("purged JobIds %s as they were consolidated into Job %" PRIu32 "\n"),
         jobids.c_str(), jcr->JobId);
-    FreeUaContext(ua);
+    delete ua;
   }
   return true;
 }
@@ -578,12 +578,12 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
     return false;
   }
 
-  UaContext* ua = new_ua_context(&jcr);
+  UaContext* ua = new UaContext(&jcr);
   AddVolumeInformationToBsr(ua, rx.bsr.get());
   jcr.dir_impl->ExpectedFiles = WriteBsrFile(ua, rx);
   Dmsg1(10, "Found %" PRIu32 " files to consolidate.\n",
         jcr.dir_impl->ExpectedFiles);
-  FreeUaContext(ua);
+  delete ua;
   rx.bsr.reset(nullptr);
   return jcr.dir_impl->ExpectedFiles != 0;
 }
