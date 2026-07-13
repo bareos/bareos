@@ -324,7 +324,7 @@
             :disable="!canRestore"
             :loading="loadingRestore"
             data-testid="restore-submit"
-            @click="doRestore"
+            @click="openRestoreConfirmDialog"
           />
           <q-btn flat :label="t('Reset')" @click="resetAll" />
           <q-space />
@@ -403,6 +403,45 @@
       </q-card-section>
     </q-card>
   </q-page>
+
+  <q-dialog
+    v-model="confirmRestoreDialog"
+    :persistent="confirmRestoreSubmitting || loadingRestore"
+  >
+    <q-card style="min-width: min(720px, 95vw);">
+      <q-card-section class="row items-center">
+        <div class="text-h6">{{ t('Confirm restore job submit') }}</div>
+      </q-card-section>
+      <q-card-section class="q-pt-none">
+        <div class="q-mb-sm">
+          {{ t('A restore job with the parameters given below will be scheduled.') }}
+        </div>
+        <q-markup-table dense flat bordered>
+          <tbody>
+            <tr v-for="row in restoreConfirmSummaryRows" :key="row.label">
+              <td class="text-weight-medium" style="width: 45%;">{{ row.label }}</td>
+              <td>{{ row.value }}</td>
+            </tr>
+          </tbody>
+        </q-markup-table>
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn
+          flat
+          :label="t('Cancel')"
+          :disable="confirmRestoreSubmitting || loadingRestore"
+          @click="confirmRestoreDialog = false"
+        />
+        <q-btn
+          color="primary"
+          :label="t('OK')"
+          :loading="confirmRestoreSubmitting || loadingRestore"
+          :disable="!canRestore || confirmRestoreSubmitting || loadingRestore"
+          @click="confirmRestoreAndRun"
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 
   <!-- File Versions Dialog -->
   <q-dialog
@@ -1269,6 +1308,8 @@ function clearSelection() {
 // ── Restore execution ──────────────────────────────────────────────────────────
 const loadingRestore = ref(false)
 const restoreResult  = ref(null)
+const confirmRestoreDialog = ref(false)
+const confirmRestoreSubmitting = ref(false)
 const commandRunning = ref(false)
 const commandLogVisible = ref(false)
 const commandLogTitle = ref('')
@@ -1284,6 +1325,63 @@ const canRestore = computed(() =>
   !!form.value.restorejob &&
   (selectedFiles.value.size > 0 || selectedDirs.value.size > 0)
 )
+
+const restoreSelectedFilesCount = computed(() => selectedFiles.value.size)
+const restoreSelectedDirectoriesCount = computed(() => selectedDirs.value.size)
+const restoreVersionOverridesCount = computed(() => (
+  [...selectedFiles.value.keys()].reduce((count, fileId) => {
+    const override = fileVersionOverrides.value.get(fileId)
+    return override != null && override !== fileId ? count + 1 : count
+  }, 0)
+))
+const restoreEffectiveClient = computed(() => (
+  form.value.restoreclient || form.value.client || '—'
+))
+const restorePluginOptionsSummary = computed(() => {
+  const pluginOptions = form.value.pluginoptions?.trim() ?? ''
+  return pluginOptions || '—'
+})
+const restoreConfirmSummaryRows = computed(() => {
+  const rows = [
+    { label: t('Client'), value: form.value.client || '—' },
+    { label: t('Restore to client'), value: restoreEffectiveClient.value },
+    { label: t('Replace files on client'), value: form.value.replace || '—' },
+    { label: t('Restore location on client'), value: form.value.where || '—' },
+    { label: t('Plugin Options'), value: restorePluginOptionsSummary.value },
+    { label: t('Directories selected'), value: String(restoreSelectedDirectoriesCount.value) },
+    { label: t('Files selected'), value: String(restoreSelectedFilesCount.value) },
+  ]
+
+  if (restoreVersionOverridesCount.value > 0) {
+    rows.push({
+      label: t('Files with version overrides'),
+      value: String(restoreVersionOverridesCount.value),
+    })
+  }
+
+  return rows
+})
+
+function openRestoreConfirmDialog() {
+  if (!canRestore.value || confirmRestoreSubmitting.value || loadingRestore.value) {
+    return
+  }
+  confirmRestoreDialog.value = true
+}
+
+async function confirmRestoreAndRun() {
+  if (!canRestore.value || confirmRestoreSubmitting.value || loadingRestore.value) {
+    return
+  }
+
+  confirmRestoreSubmitting.value = true
+  confirmRestoreDialog.value = false
+  try {
+    await doRestore()
+  } finally {
+    confirmRestoreSubmitting.value = false
+  }
+}
 
 const commandStatusColor = computed(() => {
   switch (commandStatus.value) {
