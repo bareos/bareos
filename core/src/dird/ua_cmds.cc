@@ -997,15 +997,13 @@ static bool SetipCmd(UaContext* ua, const char*)
   ClientResource* client;
   char buf[1024];
 
-  if ((!ua->user_acl) || (!ua->user_acl->corresponding_resource)) {
+  if ((!ua->user_acl) || (ua->user_acl->name.empty())) {
     ua->ErrorMsg(T_("No corresponding client found.\n"));
     return false;
   }
-  client = ua->GetClientResWithName(
-      ua->user_acl->corresponding_resource->resource_name_);
+  client = ua->GetClientResWithName(ua->user_acl->name.c_str());
   if (!client) {
-    ua->ErrorMsg(T_("Client \"%s\" not found.\n"),
-                 ua->user_acl->corresponding_resource->resource_name_);
+    ua->ErrorMsg(T_("Client \"%s\" not found.\n"), ua->user_acl->name.c_str());
     return false;
   }
 
@@ -2780,8 +2778,7 @@ static bool wait_cmd(UaContext* ua, const char*)
 static bool WhoAmICmd(UaContext* ua, const char*)
 {
   std::string message;
-  message = ua->user_acl ? ua->user_acl->corresponding_resource->resource_name_
-                         : "root";
+  message = ua->user_acl ? ua->user_acl->name.c_str() : "root";
   ua->send->ObjectKeyValue("whoami", message.c_str(), "%s\n");
   return true;
 }

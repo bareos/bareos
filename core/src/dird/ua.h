@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "lib/bsock.h"
+#include "dird/dird_conf.h"
 
 class JobControlRecord;
 class BareosDb;
@@ -41,18 +42,40 @@ struct tree_node;
 
 namespace directordaemon {
 
-class CatalogResource;
-class ConsoleResource;
-class PoolResource;
-class StorageResource;
-class ClientResource;
-class JobResource;
-class FilesetResource;
-class ScheduleResource;
-struct RestoreBootstrapRecord;
 struct ua_cmdstruct;
-class UnifiedStorageResource;
-struct AclConfig;
+struct RestoreBootstrapRecord;
+
+struct UserAcl {
+  std::string name{};
+
+  std::vector<std::string> acl_lists[Num_ACL];
+
+  template <typename Resource,
+            AclConfig Resource::* Accessor = &Resource::user_acl>
+  static std::unique_ptr<UserAcl> from_config(Resource* res)
+  {
+    auto result = std::make_unique<UserAcl>(res->resource_name_);
+
+    AclConfig* cfg = &(res->*Accessor);
+    // a valid resource must _always_ have this set
+    // otherwise they would become "root" when used!
+    ASSERT(cfg);
+
+    for (int acl = 0; acl < Num_ACL; ++acl) {
+      auto& list = result->acl_lists[acl];
+
+      // acl of a resource have higher priority than acls from a profile
+
+      for (auto* entry : cfg->ACL_lists[acl]) { list.push_back(entry); }
+
+      for (auto* profile : cfg->profiles) {
+        for (auto* entry : profile->ACL_lists[acl]) { list.push_back(entry); }
+      }
+    }
+
+    return result;
+  }
+};
 
 class UaContext {
  public:
@@ -74,7 +97,8 @@ class UaContext {
   BareosDb* private_db{
       nullptr}; /**< Private database connection only used by this ua */
   CatalogResource* catalog{nullptr};
-  AclConfig* user_acl{nullptr};       /**< acl from console or user resource */
+  std::unique_ptr<UserAcl> user_acl{
+      nullptr};                       /**< acl from console or user resource */
   POOLMEM* cmd;                       /**< Return command/name buffer */
   POOLMEM* args;                      /**< Command line arguments */
   std::string errmsg{};               /**< Store error message */

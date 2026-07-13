@@ -166,7 +166,6 @@ class ProfileResource : public BareosResource {
 };
 
 struct AclConfig {
-  BareosResource* corresponding_resource = nullptr;
   alist<const char*>* ACL_lists[Num_ACL] = {0}; /**< Pointers to ACLs */
   alist<ProfileResource*>* profiles
       = nullptr; /**< Pointers to profile resources */

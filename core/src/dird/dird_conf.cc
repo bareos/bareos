@@ -2174,7 +2174,6 @@ static bool UpdateResourcePointer(int type, const ResourceItem* items)
         p->tls_cert_.allowed_certificate_common_names_
             = std::move(res_con->tls_cert_.allowed_certificate_common_names_);
         p->user_acl.profiles = res_con->user_acl.profiles;
-        p->user_acl.corresponding_resource = p;
       }
       break;
     }
@@ -2187,7 +2186,6 @@ static bool UpdateResourcePointer(int type, const ResourceItem* items)
         return false;
       } else {
         p->user_acl.profiles = res_user->user_acl.profiles;
-        p->user_acl.corresponding_resource = p;
       }
       break;
     }
@@ -3788,7 +3786,6 @@ static void FreeResource(BareosResource* res, int type)
       for (int i = 0; i < Num_ACL; i++) {
         if (p->user_acl.ACL_lists[i]) {
           delete p->user_acl.ACL_lists[i];
-          p->user_acl.corresponding_resource = nullptr;
           p->user_acl.ACL_lists[i] = NULL;
         }
       }
@@ -3802,7 +3799,6 @@ static void FreeResource(BareosResource* res, int type)
       for (int i = 0; i < Num_ACL; i++) {
         if (p->user_acl.ACL_lists[i]) {
           delete p->user_acl.ACL_lists[i];
-          p->user_acl.corresponding_resource = nullptr;
           p->user_acl.ACL_lists[i] = NULL;
         }
       }

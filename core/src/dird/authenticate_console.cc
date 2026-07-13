@@ -102,7 +102,7 @@ void ConsoleAuthenticator::DoNamedAuthentication()
       NULL, my_config, console_name_.c_str(),
       optional_console_resource_->password_, optional_console_resource_);
   if (auth_success_) {
-    ua_->user_acl = &optional_console_resource_->user_acl;
+    ua_->user_acl = UserAcl::from_config(optional_console_resource_);
   } else {
     ua_->user_acl = nullptr;
     Dmsg1(200, "Could not authenticate console %s\n", console_name_.c_str());
@@ -222,7 +222,7 @@ bool ConsoleAuthenticatorFrom_18_2::SendInfoMessage()
   message += "You are ";
   if (ua_->user_acl) {
     message += "logged in as: ";
-    message += ua_->user_acl->corresponding_resource->resource_name_;
+    message += ua_->user_acl->name;
   } else {
     message += "connected using the default console";
   }
@@ -336,7 +336,7 @@ OptionResult ConsoleAuthenticatorFrom_18_2::AuthenticatePamUser()
         ua_->user_acl = nullptr;
         auth_success_ = false;
       } else {
-        ua_->user_acl = &user->user_acl;
+        ua_->user_acl = UserAcl::from_config(user);
         auth_success_ = true;
       }
     }
