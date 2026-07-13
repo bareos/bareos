@@ -52,7 +52,7 @@ class ScheduleResource;
 struct RestoreBootstrapRecord;
 struct ua_cmdstruct;
 class UnifiedStorageResource;
-struct UserAcl;
+struct AclConfig;
 
 class UaContext {
  public:
@@ -74,7 +74,7 @@ class UaContext {
   BareosDb* private_db{
       nullptr}; /**< Private database connection only used by this ua */
   CatalogResource* catalog{nullptr};
-  UserAcl* user_acl{nullptr};         /**< acl from console or user resource */
+  AclConfig* user_acl{nullptr};       /**< acl from console or user resource */
   POOLMEM* cmd;                       /**< Return command/name buffer */
   POOLMEM* args;                      /**< Command line arguments */
   std::string errmsg{};               /**< Store error message */
