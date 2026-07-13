@@ -39,6 +39,8 @@ Changes in the director
 '''''''''''''''''''''''
 
 The director has been extended with additional code for handling hardware data encryption. The extra keyword **encrypt** on the label of a volume will force the director to generate a new semi-random passphrase for the volume, which will be stored in the database as part of the media information.
+You can use :bcommand:`update volume=<volume-name> encrypt=<yes/no/rotate>` to
+add, remove or rotate the encryption key for an existing volume.
 
 A passphrase is always stored in the database base64-encoded. When a so called **Key Encryption Key** is set in the config of the director, the passphrase is first wrapped using RFC3394 key wrapping and then base64-encoded. By using key wrapping, the keys in the database are safe against people sniffing the info, as the data is still encrypted using the Key Encryption Key (which in essence is just an extra passphrase of the same length as the volume passphrases used).
 
