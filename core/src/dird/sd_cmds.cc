@@ -30,6 +30,13 @@
  */
 
 #include "include/bareos.h"
+
+#if HAVE_JANSSON
+#  include <jansson.h>
+#  include <set>
+#  include <string>
+#endif
+
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/authenticate.h"
@@ -689,6 +696,63 @@ bail_out:
   FreeUaContext(ua);
 }
 
+#if HAVE_JANSSON
+/* An SD serves multiple Storage definitions over the same daemon. The
+ * text-mode status path restricts output to devices belonging to the
+ * queried Storage resource (by passing `devicenames=X,Y`); the SD's JSON
+ * emitter currently dumps everything. Until the protocol grows a filter
+ * arg, prune the parsed reply here so `status storage=X api=json` can't
+ * leak device or volume state from unrelated Storage resources that
+ * happen to share an SD. */
+static void FilterSdJsonToStorage(json_t* root, StorageResource* store)
+{
+  if (!root || !store) { return; }
+  json_t* data = json_object_get(root, "data");
+  if (!data) { return; }
+
+  std::set<std::string> allowed_devices;
+  for (auto& device : store->devices) { allowed_devices.insert(device.name); }
+
+  /* `devices` array: each item has a "name" (the DeviceResource name).
+   * Drop items not in the allowed set. */
+  json_t* devices = json_object_get(data, "devices");
+  if (devices && json_is_array(devices)) {
+    for (size_t i = json_array_size(devices); i > 0; --i) {
+      json_t* item = json_array_get(devices, i - 1);
+      json_t* name = item ? json_object_get(item, "name") : nullptr;
+      if (!name || !json_is_string(name)
+          || allowed_devices.find(json_string_value(name))
+                 == allowed_devices.end()) {
+        json_array_remove(devices, i - 1);
+      }
+    }
+  }
+
+  /* `used_volumes` items have a "device" field that is the device's
+   * print-name (not resource name). Match by substring against each
+   * allowed device name; imperfect but conservative (drops volumes
+   * belonging to clearly-unrelated devices). */
+  json_t* volumes = json_object_get(data, "used_volumes");
+  if (volumes && json_is_array(volumes)) {
+    for (size_t i = json_array_size(volumes); i > 0; --i) {
+      json_t* item = json_array_get(volumes, i - 1);
+      json_t* dev = item ? json_object_get(item, "device") : nullptr;
+      bool keep = false;
+      if (dev && json_is_string(dev)) {
+        std::string s(json_string_value(dev));
+        for (auto& allowed : allowed_devices) {
+          if (s.find(allowed) != std::string::npos) {
+            keep = true;
+            break;
+          }
+        }
+      }
+      if (!keep) { json_array_remove(volumes, i - 1); }
+    }
+  }
+}
+#endif  // HAVE_JANSSON
+
 void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
 {
   UnifiedStorageResource lstore;
@@ -716,6 +780,65 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   }
 
   Dmsg0(20, T_("Connected to storage daemon\n"));
+
+#if HAVE_JANSSON
+  if (ua->api == API_MODE_JSON) {
+    BareosSocket* sd = ua->jcr->store_bsock;
+
+    if (ua->jcr->dir_impl->SDVersion < SD_VERSION_1) {
+      ua->send->ObjectStart("storage_status");
+      ua->send->ObjectKeyValue("error", "storage_daemon_too_old", 0);
+      ua->send->ObjectKeyValue("storage", store->resource_name_, 0);
+      ua->send->ObjectKeyValue(
+          "message",
+          "Storage Daemon does not support JSON status output (requires "
+          "SD protocol version 1 or newer).",
+          0);
+      ua->send->ObjectEnd("storage_status");
+    } else {
+      /* Cap on JSON payload from SD. See matching rationale in fd_cmds.cc. */
+      constexpr int64_t kMaxStorageStatusJsonBytes = 16 * 1024 * 1024;
+      sd->fsend(dotstatuscmd, "json");
+
+      PoolMem buf(PM_MESSAGE);
+      int64_t total = 0;
+      bool overflow = false;
+      while (sd->recv() >= 0) {
+        if (overflow) { continue; }
+        if (total + sd->message_length + 1 > kMaxStorageStatusJsonBytes) {
+          overflow = true;
+          continue;
+        }
+        buf.check_size(total + sd->message_length + 1);
+        memcpy(buf.c_str() + total, sd->msg, sd->message_length);
+        total += sd->message_length;
+        buf.c_str()[total] = '\0';
+      }
+
+      ua->send->ObjectStart("storage_status");
+      ua->send->ObjectKeyValue("storage", store->resource_name_, 0);
+      if (overflow) {
+        ua->send->ObjectKeyValue("error", "reply_too_large", 0);
+        ua->send->ObjectKeyValue(
+            "message", "Storage Daemon JSON status exceeded 16 MB cap", 0);
+      } else {
+        json_error_t jerr;
+        json_t* parsed = json_loads(buf.c_str(), 0, &jerr);
+        if (parsed) {
+          FilterSdJsonToStorage(parsed, store);
+          ua->send->JsonKeyValueAddJson("data", parsed);
+        } else {
+          ua->send->ObjectKeyValue("error", "parse_failed", 0);
+          ua->send->ObjectKeyValue("message", jerr.text, 0);
+        }
+      }
+      ua->send->ObjectEnd("storage_status");
+    }
+
+    TerminateAndCloseJcrStoreSocket(ua->jcr);
+    return;
+  }
+#endif  // HAVE_JANSSON
 
   if (cmd) {
     ua->jcr->store_bsock->fsend(dotstatuscmd, cmd);

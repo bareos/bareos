@@ -52,8 +52,15 @@ const int debuglevel = 50;
  *  52 13Jul13 - Added plugin options
  *  53 02Apr15 - Added setdebug timestamp
  *  54 29Oct15 - Added getSecureEraseCmd
+ *  55          - Added JSON output for .status command
  */
+#if HAVE_JANSSON
+inline constexpr const char OK_hello[] = "2000 OK Hello 55\n";
+#else
+/* Without jansson the .status json handler is absent -- don't advertise
+ * the capability or the director would send a command we cannot answer. */
 inline constexpr const char OK_hello[] = "2000 OK Hello 54\n";
+#endif
 
 inline constexpr const char Dir_sorry[] = "2999 Authentication failed.\n";
 
