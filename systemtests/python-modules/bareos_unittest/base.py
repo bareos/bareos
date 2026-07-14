@@ -2,7 +2,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -93,9 +93,9 @@ class Base(unittest.TestCase):
             else:
                 tls = False
         if tls:
-            return "admin-tls"
+            return "admin tls"
         else:
-            return "admin-notls"
+            return "admin notls"
 
     def get_operator_password(self, username=None):
         return bareos.bsock.Password("secret")
