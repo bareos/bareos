@@ -69,9 +69,7 @@ bool ShouldSuppressRawConsoleChunk(std::string_view command,
 std::string FilterRawConsoleChunk(std::string_view command,
                                   std::string_view chunk);
 
-/**
- * Normalize console text so it can be safely embedded in JSON responses.
- */
+// Normalize console text so it can be safely embedded in JSON responses.
 std::string NormalizeJsonText(std::string_view text);
 
 #endif  // BAREOS_WEBUI_PROXY_PROXY_SESSION_H_

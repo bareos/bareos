@@ -724,11 +724,10 @@ else()
 endif()
 
 #
-# webui-vue selenium tests
-# Uses the same webui-vue-common setup (Node serves the dist),
-# but runs the Python/Selenium test instead of Playwright.
-# Requires Selenium + chromedriver (already needed for PHP webui
-# tests), Node for serving the frontend, and a dist or Vite.
+# webui-vue selenium tests Uses the same webui-vue-common setup (Node serves the
+# dist), but runs the Python/Selenium test instead of Playwright. Requires
+# Selenium + chromedriver (already needed for PHP webui tests), Node for serving
+# the frontend, and a dist or Vite.
 #
 
 set(WEBUI_VUE_SELENIUM_TEST_NAME admin-selenium-smoke)
@@ -741,10 +740,7 @@ if(NODE
    AND (WEBUI_VUE_TEST_DIST OR WEBUI_VUE_VITE)
 )
   set(ENABLE_WEBUI_VUE_SELENIUM_TEST TRUE)
-  message(
-    STATUS
-      "OK: all requirements for webui-vue selenium tests were met."
-  )
+  message(STATUS "OK: all requirements for webui-vue selenium tests were met.")
 else()
   set(ENABLE_WEBUI_VUE_SELENIUM_TEST FALSE)
   message(
@@ -754,13 +750,12 @@ else()
 endif()
 
 if(NOT ENABLE_WEBUI_VUE_SELENIUM_TEST)
-  add_test(
-    NAME ${WEBUI_VUE_TEST_PREFIX}${WEBUI_VUE_SELENIUM_TEST_NAME}
-    COMMAND false
+  add_test(NAME ${WEBUI_VUE_TEST_PREFIX}${WEBUI_VUE_SELENIUM_TEST_NAME}
+           COMMAND false
   )
   set_tests_properties(
-    ${WEBUI_VUE_TEST_PREFIX}${WEBUI_VUE_SELENIUM_TEST_NAME}
-    PROPERTIES DISABLED true
+    ${WEBUI_VUE_TEST_PREFIX}${WEBUI_VUE_SELENIUM_TEST_NAME} PROPERTIES DISABLED
+                                                                       true
   )
   message(
     STATUS
@@ -774,24 +769,18 @@ else()
   set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK 0)
   set(BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR 0)
 
-  message(
-    STATUS
-      "Configuring test: ${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
-  )
+  message(STATUS "Configuring test: ${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}")
 
   prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
   configurefilestosystemtest(
     "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
   )
-  configurefilestosystemtest(
-    "systemtests" "tests/${TEST_NAME}" "*" @ONLY ""
-  )
+  configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
   configurefilestosystemtest(
     "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-vue-common"
   )
   configure_file(
-    "environment.in" "tests/${TEST_NAME}/environment" @ONLY
-    NEWLINE_STYLE UNIX
+    "environment.in" "tests/${TEST_NAME}/environment" @ONLY NEWLINE_STYLE UNIX
   )
   configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
   configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
@@ -802,8 +791,7 @@ else()
   )
   set_tests_properties(
     "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
-    PROPERTIES FIXTURES_SETUP
-               "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
+    PROPERTIES FIXTURES_SETUP "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
                TIMEOUT 240 COST 2.0
   )
   add_systemtest(
@@ -816,7 +804,10 @@ else()
                "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
                FIXTURES_SETUP
                "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
-               TIMEOUT 120 COST 1.0
+               TIMEOUT
+               120
+               COST
+               1.0
   )
   add_systemtest(
     "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
@@ -824,9 +815,13 @@ else()
   )
   set_tests_properties(
     "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
-    PROPERTIES FIXTURES_REQUIRED
-               "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture;${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
-               TIMEOUT 240 COST 2.0
+    PROPERTIES
+      FIXTURES_REQUIRED
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture;${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
+      TIMEOUT
+      240
+      COST
+      2.0
   )
   add_systemtest(
     "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:cleanup"
@@ -834,8 +829,7 @@ else()
   )
   set_tests_properties(
     "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:cleanup"
-    PROPERTIES FIXTURES_CLEANUP
-               "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
+    PROPERTIES FIXTURES_CLEANUP "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
                TIMEOUT 60 COST 1.0
   )
 
