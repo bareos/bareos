@@ -43,7 +43,10 @@ function(bareos_add_compile_flags)
   foreach(flag IN LISTS ARG_UNPARSED_ARGUMENTS)
     string(REGEX REPLACE "^-" "" tmp1 ${flag})
 
-    # strip prefixes from warning flags
+    # Strip prefixes from warning flags.
+    # When we want to add -Wno-xyz or -Wno-error=xyz, we check if -Wxyz
+    # is supported instead of checking for -Wno-xyz or -Wno-error=xyz to
+    # avoid duplicated checks
     string(REGEX REPLACE "^W(no-)?(error=)?" "W" plain_flag ${tmp1})
     string(REGEX REPLACE "[-=]" "_" plain_flag_sym ${plain_flag})
 
