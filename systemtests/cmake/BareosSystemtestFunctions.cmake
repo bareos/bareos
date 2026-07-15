@@ -523,7 +523,7 @@ macro(prepare_testdir_for_daemon_run)
   if(${dbHostLength} GREATER 90)
     # unix domain sockets (used by e.g. mariadb, mysql and psql) cannot be
     # longer than 107 chars. If too long, the socket is created under /tmp
-    message(INFO
+    message(NOTICE
             "'${dbHost}' is too long.  Creating '/tmp/${TEST_NAME}' instead."
     )
     set(dbHost /tmp/${TEST_NAME})
