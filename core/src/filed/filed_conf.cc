@@ -230,15 +230,8 @@ static void ParseConfigCb(lexer* lc,
   }
 }
 
-static void ConfigBeforeCallback(ConfigurationParser& t_config)
-{
-  std::map<int, std::string> map{{R_DIRECTOR, "R_DIRECTOR"},
-                                 {R_CLIENT, "R_CLIENT"},
-                                 {R_STORAGE, "R_STORAGE"},
-                                 {R_MSGS, "R_MSGS"},
-                                 {R_JOB, "R_JOB"}};
-  t_config.InitializeQualifiedResourceNameTypeConverter(map);
-}
+///***REMOVE***
+static void ConfigBeforeCallback(ConfigurationParser&) {}
 
 static void ConfigReadyCallback(ConfigurationParser&) {}
 

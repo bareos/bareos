@@ -3536,19 +3536,8 @@ static void ResetAllClientConnectionHandshakeModes(
     p = t_config.GetNextRes(R_CLIENT, p);
   };
 }
-
-static void ConfigBeforeCallback(ConfigurationParser& t_config)
-{
-  std::map<int, std::string> map{
-      {R_DIRECTOR, "R_DIRECTOR"}, {R_CLIENT, "R_CLIENT"},
-      {R_JOBDEFS, "R_JOBDEFS"},   {R_JOB, "R_JOB"},
-      {R_STORAGE, "R_STORAGE"},   {R_CATALOG, "R_CATALOG"},
-      {R_SCHEDULE, "R_SCHEDULE"}, {R_FILESET, "R_FILESET"},
-      {R_POOL, "R_POOL"},         {R_MSGS, "R_MSGS"},
-      {R_COUNTER, "R_COUNTER"},   {R_PROFILE, "R_PROFILE"},
-      {R_CONSOLE, "R_CONSOLE"},   {R_USER, "R_USER"}};
-  t_config.InitializeQualifiedResourceNameTypeConverter(map);
-}
+//***REMOVE***
+static void ConfigBeforeCallback(ConfigurationParser&) {}
 
 static void ConfigReadyCallback(ConfigurationParser& t_config)
 {

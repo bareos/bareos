@@ -24,6 +24,7 @@
 
 #include <map>
 #include "include/bareos.h"
+#include "lib/ascii_control_characters.h"
 
 class QualifiedResourceNameTypeConverter {
  public:
@@ -120,6 +121,41 @@ static constexpr Type GetTypeFromName(std::string_view name)
     return iter->type;
   }
   return Type::Unknown;
+}
+
+static inline std::string QualifiedName(Type type, std::string_view name)
+{
+  auto type_name = GetNameFromType(type);
+  if (type_name.empty()) { return {}; }
+
+  std::string result;
+  result.reserve(type_name.size() + name.size() + 1);
+  result.insert(result.end(), type_name.begin(), type_name.end());
+
+  result += AsciiControlCharacters::RecordSeparator();
+
+  result.insert(result.end(), name.begin(), name.end());
+
+  return result;
+}
+
+static constexpr std::pair<Type, std::string_view> ParseQualifiedName(
+    std::string_view qualified_name)
+{
+  auto pos = qualified_name.find(AsciiControlCharacters::RecordSeparator());
+  if (pos == qualified_name.npos) { return {}; }
+
+  auto type_name = qualified_name.substr(0, pos);
+
+  auto type = GetTypeFromName(type_name);
+
+  auto end
+      = qualified_name.find(AsciiControlCharacters::RecordSeparator(), pos + 1);
+  if (end == qualified_name.npos) { end = qualified_name.size(); }
+
+  auto resource_name = qualified_name.substr(pos + 1, end - pos - 1);
+
+  return {type, resource_name};
 }
 
 

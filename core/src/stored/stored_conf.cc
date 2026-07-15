@@ -514,19 +514,8 @@ static void MultiplyConfiguredDevices(ConfigurationParser& config)
   }
 }
 
-static void ConfigBeforeCallback(ConfigurationParser& config)
-{
-  std::map<int, std::string> map{
-      {R_DIRECTOR, "R_DIRECTOR"},
-      {R_JOB, "R_JOB"}, /* needed for client name conversion */
-      {R_NDMP, "R_NDMP"},
-      {R_STORAGE, "R_STORAGE"},
-      {R_MSGS, "R_MSGS"},
-      {R_DEVICE, "R_DEVICE"},
-      {R_AUTOCHANGER, "R_AUTOCHANGER"},
-      {R_CLIENT, "R_CLIENT"}}; /* needed for network dump */
-  config.InitializeQualifiedResourceNameTypeConverter(map);
-}
+// ***REMOVE***
+static void ConfigBeforeCallback(ConfigurationParser&) {}
 
 static void GuessMissingDeviceTypes(ConfigurationParser& config)
 {

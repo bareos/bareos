@@ -256,8 +256,7 @@ ConfigParserStateMachine::ParserInitResource(int token)
     ASSERT(currently_parsed_resource_.allocated_resource_);
 
     currently_parsed_resource_.allocated_resource_->rcode_str_
-        = my_config_.GetQualifiedResourceNameTypeConverter()
-              ->ResourceTypeToString(resource_table->rcode);
+        = global_resource::GetNameFromType(resource_table->global_rcode);
 
     state = ParseState::kResource;
 

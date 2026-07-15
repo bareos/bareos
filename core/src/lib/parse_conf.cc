@@ -127,24 +127,15 @@ ConfigurationParser::ConfigurationParser(
       = std::make_shared<ConfigResourcesContainer>(this);
 }
 
-void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(
-    const std::map<int, std::string>& map)
-{
-  qualified_resource_name_type_converter_.reset(
-      new QualifiedResourceNameTypeConverter(map));
-}
-
 std::string ConfigurationParser::CreateOwnQualifiedNameForNetworkDump() const
 {
-  std::string qualified_name;
+  if (!own_resource_) { return {}; }
 
-  if (own_resource_ && qualified_resource_name_type_converter_) {
-    if (qualified_resource_name_type_converter_->ResourceToString(
-            own_resource_->resource_name_, own_resource_->rcode_,
-            "::", qualified_name)) {
-      return qualified_name;
-    }
-  }
+  std::string qualified_name;
+  qualified_name += global_resource::GetNameFromType(
+      GlobalTypeFromLocalType(own_resource_->rcode_));
+  qualified_name += "::";
+  qualified_name += own_resource_->resource_name_;
   return qualified_name;
 }
 void ConfigurationParser::ParseConfigOrExit()
@@ -737,4 +728,29 @@ bool ConfigurationParser::HasWarnings() const { return !warnings_.empty(); }
 const BStringList& ConfigurationParser::GetWarnings() const
 {
   return warnings_;
+}
+
+global_resource::Type ConfigurationParser::GlobalTypeFromLocalType(
+    uint32_t rcode) const
+{
+  for (int i = 0; resource_definitions_[i].name; i++) {
+    if (resource_definitions_[i].rcode == rcode) {
+      return resource_definitions_[i].global_rcode;
+    }
+  }
+
+  ASSERT(!"Local type not handled");
+  return global_resource::Type::Unknown;
+}
+
+int ConfigurationParser::LocalTypeFromGlobalType(
+    global_resource::Type type) const
+{
+  for (int i = 0; resource_definitions_[i].name; i++) {
+    if (resource_definitions_[i].global_rcode == type) {
+      return resource_definitions_[i].rcode;
+    }
+  }
+
+  return -1;
 }

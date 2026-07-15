@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -88,12 +88,8 @@ static AuthenticationResult AuthenticateWithDirector(JobControlRecord* jcr,
   BareosSocket* dir = jcr->dir_bsock;
   MonitorResource* monitor = MonitorItemThread::instance()->getMonitor();
   if (dir_res->IsTlsConfigured()) {
-    std::string qualified_resource_name;
-    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            monitor->resource_name_, R_CONSOLE, qualified_resource_name)) {
-      return AuthenticationResult::kQualifiedResourceNameFailed;
-    }
-
+    std::string qualified_resource_name = global_resource::QualifiedName(
+        global_resource::Type::Console, monitor->resource_name_);
     if (!dir->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, dir_res, false,
                              qualified_resource_name.c_str(),
                              monitor->password.value, jcr)) {
@@ -127,11 +123,8 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
   BareosSocket* sd = jcr->store_bsock;
   MonitorResource* monitor = MonitorItemThread::instance()->getMonitor();
   if (store->IsTlsConfigured()) {
-    std::string qualified_resource_name;
-    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            monitor->resource_name_, R_DIRECTOR, qualified_resource_name)) {
-      return AuthenticationResult::kQualifiedResourceNameFailed;
-    }
+    std::string qualified_resource_name = global_resource::QualifiedName(
+        global_resource::Type::Director, monitor->resource_name_);
 
     if (!sd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, store, false,
                             qualified_resource_name.c_str(),
@@ -203,11 +196,8 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
   BareosSocket* fd = jcr->file_bsock;
   MonitorResource* monitor = MonitorItemThread::instance()->getMonitor();
   if (client->IsTlsConfigured()) {
-    std::string qualified_resource_name;
-    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            monitor->resource_name_, R_DIRECTOR, qualified_resource_name)) {
-      return AuthenticationResult::kQualifiedResourceNameFailed;
-    }
+    std::string qualified_resource_name = global_resource::QualifiedName(
+        global_resource::Type::Director, monitor->resource_name_);
 
     if (!fd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, client, false,
                             qualified_resource_name.c_str(),

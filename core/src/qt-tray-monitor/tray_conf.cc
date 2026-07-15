@@ -357,14 +357,8 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
   return (error == 0);
 }
 
-static void ConfigBeforeCallback(ConfigurationParser& config)
-{
-  std::map<int, std::string> map{
-      {R_MONITOR, "R_MONITOR"}, {R_DIRECTOR, "R_DIRECTOR"},
-      {R_CLIENT, "R_CLIENT"},   {R_STORAGE, "R_STORAGE"},
-      {R_CONSOLE, "R_CONSOLE"}, {R_CONSOLE_FONT, "R_CONSOLE_FONT"}};
-  config.InitializeQualifiedResourceNameTypeConverter(map);
-}
+///***REMOVE***
+static void ConfigBeforeCallback(ConfigurationParser&) {}
 
 static void ConfigReadyCallback(ConfigurationParser&) {}
 

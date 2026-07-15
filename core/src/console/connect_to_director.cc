@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -62,9 +62,9 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
   }
 
   if (local_tls_resource->IsTlsConfigured()) {
-    std::string qualified_resource_name;
-    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            name, my_config->r_own_, qualified_resource_name)) {
+    std::string qualified_resource_name = global_resource::QualifiedName(
+        my_config->GlobalTypeFromLocalType(my_config->r_own_), name);
+    if (qualified_resource_name.empty()) {
       delete UA_sock;
       UA_sock = nullptr;
       jcr.dir_bsock = nullptr;

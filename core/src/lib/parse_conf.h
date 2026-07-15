@@ -69,9 +69,11 @@ struct ResourceTable {
   const char* name;          /* Resource name */
   const char* groupname;     /* Resource name in plural form */
   const ResourceItem* items; /* List of resource keywords */
-  uint32_t rcode;            /* local resource code if needed; these need to be from 0 .. R_NUM; otherwise things break */
-  global_resource::Type global_rcode; /* global resource code; used for qualified resource names */
-  uint32_t size;             /* Size of resource */
+  uint32_t rcode; /* local resource code if needed; these need to be from 0 ..
+                     R_NUM; otherwise things break */
+  global_resource::Type global_rcode; /* global resource code; used for
+                                         qualified resource names */
+  uint32_t size;                      /* Size of resource */
 
   std::function<void()> ResourceSpecificInitializer; /* this allocates memory */
   BareosResource** allocated_resource_;
@@ -281,6 +283,10 @@ class ConfigurationParser {
   int GetResourceItemIndex(const ResourceItem* res_table, const char* item);
   const ResourceItem* GetResourceItem(const ResourceItem* res_table,
                                       const char* item);
+  global_resource::Type GlobalTypeFromLocalType(uint32_t rcode) const;
+  int LocalTypeFromGlobalType(global_resource::Type type) const;
+
+
   bool GetPathOfResource(PoolMem& path,
                          const char* component,
                          const char* resourcetype,
@@ -306,13 +312,6 @@ class ConfigurationParser {
                      const ResourceItem* item,
                      int index,
                      int pass);
-  void InitializeQualifiedResourceNameTypeConverter(
-      const std::map<int, std::string>&);
-  QualifiedResourceNameTypeConverter* GetQualifiedResourceNameTypeConverter()
-      const
-  {
-    return qualified_resource_name_type_converter_.get();
-  }
   static bool GetTlsPskByFullyQualifiedResourceName(
       ConfigurationParser* config,
       const char* fully_qualified_name,
@@ -349,8 +348,6 @@ class ConfigurationParser {
   std::string config_include_naming_format_; /* Format string for file paths of
                                                 resources */
   std::string used_config_path_;             /* Config file that is used. */
-  std::unique_ptr<QualifiedResourceNameTypeConverter>
-      qualified_resource_name_type_converter_;
   ParseConfigBeforeCb_t ParseConfigBeforeCb_{nullptr};
   ParseConfigReadyCb_t ParseConfigReadyCb_{nullptr};
   bool parser_first_run_{true};

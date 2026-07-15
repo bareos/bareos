@@ -128,9 +128,10 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
   }
 
   if (store->IsTlsConfigured()) {
-    std::string qualified_resource_name;
-    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            me->resource_name_, my_config->r_own_, qualified_resource_name)) {
+    std::string qualified_resource_name = global_resource::QualifiedName(
+        my_config->GlobalTypeFromLocalType(my_config->r_own_),
+        me->resource_name_);
+    if (qualified_resource_name.empty()) {
       Dmsg0(100,
             "Could not generate qualified resource name for a storage "
             "resource\n");

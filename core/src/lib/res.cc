@@ -163,33 +163,22 @@ const char* ConfigurationParser::ResGroupToStr(int rcode) const
 
 bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(
     ConfigurationParser* config,
-    const char* fq_name_in,
+    const char* qualified_name,
     std::string& psk)
 {
-  char* fq_name_buffer = strdup(fq_name_in);
-  UnbashSpaces(fq_name_buffer);
-  std::string fq_name(fq_name_buffer);
-  free(fq_name_buffer);
+  auto [type, name] = global_resource::ParseQualifiedName(qualified_name);
 
-  QualifiedResourceNameTypeConverter* c
-      = config->GetQualifiedResourceNameTypeConverter();
-  if (!c) { return false; }
-
-  int r_type;
-  std::string name; /* either unique job name or client name */
-
-  bool ok = c->StringToResource(name, r_type, fq_name_in);
-  if (!ok) { return false; }
-
-  if (fq_name.find("R_JOB") != std::string::npos) {
-    const char* psk_cstr = JcrGetAuthenticateKey(name.c_str());
+  if (type == global_resource::Type::Job) {
+    const char* psk_cstr = JcrGetAuthenticateKey(std::string{name}.c_str());
     if (psk_cstr) {
       psk = psk_cstr;
       return true;
     }
   } else {
+    auto r_type = config->LocalTypeFromGlobalType(type);
+    if (r_type < 0) { return false; }
     TlsResource* tls = dynamic_cast<TlsResource*>(
-        config->GetResWithName(r_type, name.c_str()));
+        config->GetResWithName(r_type, std::string{name}.c_str()));
     if (tls) {
       psk = tls->password_.value;
       return true;
