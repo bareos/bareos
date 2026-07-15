@@ -45,21 +45,39 @@ struct UsePasswordsFromConfig : TlsSecretProvider {
     auto [type, name] = global_resource::ParseQualifiedName(identity);
     auto r_type = parser->LocalTypeFromGlobalType(type);
 
-    if (r_type < 0) { return 0; }
+    if (r_type < 0) {
+      Dmsg1(100, "Could not parse resource type from %.*s.\n",
+            (int)identity.size(), identity.data());
+      return 0;
+    }
 
     auto* res = parser->GetResWithName(r_type, std::string{name}.c_str());
+    if (!res) {
+      auto type_name = global_resource::GetNameFromType(type);
+      Dmsg1(100, "Could not find resource %.*s of type %.*s (%d).\n",
+            (int)name.size(), name.data(), (int)type_name.size(),
+            type_name.data(), r_type);
+      return 0;
+    }
     TlsResource* tls = dynamic_cast<TlsResource*>(res);
-    if (tls) {
-      auto pw_len = strlen(tls->password_.value);
-      if (pw_len >= output.size()) { return 0; }
-      memcpy(output.data(), tls->password_.value, pw_len);
-      output[pw_len] = 0;
-      chosen_resource = res;
-      return pw_len;
-    } else {
+    if (!tls) {
       Dmsg1(100, "Could not get tls resource for %d.\n", r_type);
       return 0;
     }
+
+    auto pw_len = strlen(tls->password_.value);
+    if (pw_len >= output.size()) {
+      Dmsg1(100, "Secret key for resource %s is too long: %zu vs max %zu\n",
+            res->resource_name_, pw_len, output.size());
+      return 0;
+    }
+
+    Dmsg1(200, "Using resource %s secret for the tls connection\n",
+          res->resource_name_);
+    memcpy(output.data(), tls->password_.value, pw_len);
+    output[pw_len] = 0;
+    chosen_resource = res;
+    return pw_len;
   }
 
   std::optional<std::string> is_resource_name_different_from_tls_name(
@@ -115,13 +133,25 @@ struct UseConfigAndJcrs : UsePasswordsFromConfig {
     auto [type, name] = global_resource::ParseQualifiedName(identity);
 
     if (type == global_resource::Type::Job) {
+      Dmsg1(200, "Searching for job %.*s to create a tls connection\n",
+            (int)name.size(), name.data());
       auto* jcr = get_jcr_by_full_name(name);
-      if (!jcr) { return 0; }
+      if (!jcr) {
+        Dmsg1(100,
+              "Login attempt via job %.*s, but no such job is known to me\n",
+              (int)name.size(), name.data());
+        return 0;
+      }
       found_jcr = jcr;
 
       auto key_length = strlen(jcr->sd_auth_key);
-      if (key_length >= psk_buffer.size()) { return 0; }
+      if (key_length >= psk_buffer.size()) {
+        Dmsg1(100, "Secret key for job %s is too long: %zu vs max %zu\n",
+              jcr->Job, key_length, psk_buffer.size());
+        return 0;
+      }
 
+      Dmsg1(200, "Using job %s secret for the tls connection\n", jcr->Job);
       memcpy(psk_buffer.data(), jcr->sd_auth_key, key_length);
       psk_buffer[key_length] = 0;
       return key_length;
