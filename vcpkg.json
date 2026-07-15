@@ -22,7 +22,6 @@
         "png"
       ]
     },
-    "qtsvg",
     "libpq",
     "readline",
     "gtest",

@@ -31,7 +31,7 @@ set(CMAKE_AUTORCC ON)
 if(HAVE_WIN32)
   find_package(
     Qt6 QUIET
-    COMPONENTS Core Widgets Svg
+    COMPONENTS Core Widgets
     REQUIRED
   )
 else()
