@@ -679,15 +679,14 @@ bRC endBackupFile(PluginContext* ctx)
 
 bRC startRestoreFile(PluginContext* ctx, const char* file_name)
 {
-  (void)ctx;
-  (void)file_name;
-  return bRC_Error;
+  DebugLog(ctx, 500, "starting to restore '{}'", file_name);
+  return bRC_OK;
 }
 
 bRC endRestoreFile(PluginContext* ctx)
 {
-  (void)ctx;
-  return bRC_Error;
+  DebugLog(ctx, 500, "finished restoring file");
+  return bRC_OK;
 }
 
 bRC pluginIO_Dump(PluginContext* ctx, filedaemon::io_pkt* pkt)
