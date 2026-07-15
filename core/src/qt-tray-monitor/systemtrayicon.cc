@@ -269,6 +269,29 @@ bool RotateIcon(QList<QIcon>& list,
   return true;
 }
 
+bool LoadAnimationFromSpriteSheet(QList<QIcon>& icons,
+                                  const char* spritePath,
+                                  int frameCount,
+                                  int frameWidth,
+                                  int frameHeight)
+{
+  QPixmap sheet{spritePath};
+  if (sheet.isNull() || frameCount <= 0 || frameWidth <= 0 || frameHeight <= 0
+      || sheet.height() < frameHeight
+      || sheet.width() < frameCount * frameWidth) {
+    return false;
+  }
+
+  for (int frame = 0; frame < frameCount; ++frame) {
+    QPixmap pixmapFrame = sheet.copy(frame * frameWidth, 0, frameWidth,
+                                     frameHeight);
+    if (pixmapFrame.isNull()) { return false; }
+    icons << QIcon(pixmapFrame);
+  }
+
+  return true;
+}
+
 QPixmap LoadSvg(const char* path, int width, int height)
 {
   QPixmap px{width, height};
@@ -281,32 +304,41 @@ QPixmap LoadSvg(const char* path, int width, int height)
 SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
     : QSystemTrayIcon(mainWindow), timer(std::make_unique<QTimer>(this))
 {
-  constexpr int IconWidth = 128;
-  constexpr int IconHeight = 128;
+  bool loaded_sprite = LoadAnimationFromSpriteSheet(
+      animationIcons, kRes_RunningSpriteSheet, kRes_RunningFrameCount,
+      kRes_RunningFrameWidth, kRes_RunningFrameHeight);
+  Q_ASSERT(loaded_sprite || !animationIcons.size());
 
-  auto logo = LoadSvg(kRes_LogoIcon, IconWidth, IconHeight);
-  Q_ASSERT_X(!logo.isNull(), "Tray Logo", kRes_LogoIcon);
+  if (loaded_sprite && !animationIcons.isEmpty()) {
+    normalIcon = animationIcons[0];
+  } else {
+    constexpr int IconWidth = 128;
+    constexpr int IconHeight = 128;
 
-  auto bg = LoadSvg(kRes_LogoBGIcon, IconWidth, IconHeight);
-  Q_ASSERT_X(!bg.isNull(), "Tray Logo Background", kRes_LogoBGIcon);
+    auto logo = LoadSvg(kRes_LogoIcon, IconWidth, IconHeight);
+    Q_ASSERT_X(!logo.isNull(), "Tray Logo", kRes_LogoIcon);
 
-  QPixmap defaultIcon(IconWidth, IconHeight);
-  bool default_icon_ok = RenderIcon(defaultIcon, logo, bg, IdlePalette.color);
-  Q_ASSERT(default_icon_ok);
+    auto bg = LoadSvg(kRes_LogoBGIcon, IconWidth, IconHeight);
+    Q_ASSERT_X(!bg.isNull(), "Tray Logo Background", kRes_LogoBGIcon);
 
-  QPixmap runningIcon(IconWidth, IconHeight);
-  bool running_icon_ok
-      = RenderIcon(runningIcon, logo, bg, RunningPalette.color);
-  Q_ASSERT(running_icon_ok);
+    QPixmap defaultIcon(IconWidth, IconHeight);
+    bool default_icon_ok
+        = RenderIcon(defaultIcon, logo, bg, IdlePalette.color);
+    Q_ASSERT(default_icon_ok);
 
-  QList<QIcon> runningAnimation;
-  bool running_animation_ok = RotateIcon(runningAnimation, runningIcon,
-                                         kAnimationFrameCount, RunningPalette);
-  Q_ASSERT(running_animation_ok);
+    QPixmap runningIcon(IconWidth, IconHeight);
+    bool running_icon_ok
+        = RenderIcon(runningIcon, logo, bg, RunningPalette.color);
+    Q_ASSERT(running_icon_ok);
 
-  normalIcon = std::move(defaultIcon);
+    bool running_animation_ok = RotateIcon(animationIcons, runningIcon,
+                                           kAnimationFrameCount,
+                                           RunningPalette);
+    Q_ASSERT(running_animation_ok);
+    normalIcon = std::move(defaultIcon);
+  }
+
   errorIcon = QIcon(kRes_ErrorIcon);
-  animationIcons = std::move(runningAnimation);
 
   // this object name is used for auto-connection to the MainWindow
   setObjectName("SystemTrayIcon");

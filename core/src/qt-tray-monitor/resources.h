@@ -25,6 +25,11 @@
 constexpr inline const char* kRes_LogoIcon = ":/images/bareos-logo.svg";
 constexpr inline const char* kRes_LogoBGIcon
     = ":/images/bareos-logo-background.svg";
+constexpr inline const char* kRes_RunningSpriteSheet
+    = ":/images/tray-running-sprite.png";
+constexpr inline int kRes_RunningFrameCount = 12;
+constexpr inline int kRes_RunningFrameWidth = 128;
+constexpr inline int kRes_RunningFrameHeight = 128;
 constexpr inline const char* kRes_ErrorIcon = ":/images/warning.png";
 constexpr inline const char* kRes_FailureIcon = ":/images/failure.png";
 
