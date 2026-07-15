@@ -94,7 +94,7 @@ void ConfigurationParser::b_UnlockRes(const char* file, int line) const
 
 // Return resource of type rcode that matches name
 BareosResource* ConfigurationParser::GetResWithName(int rcode,
-                                                    const char* name,
+                                                    std::string_view name,
                                                     bool lock) const
 {
   int rindex = rcode;
@@ -108,7 +108,7 @@ BareosResource* ConfigurationParser::GetResWithName(int rcode,
     auto* res = containers[rindex];
 
     while (res) {
-      if (bstrcmp(res->resource_name_, name)) { break; }
+      if (name == res->resource_name_) { break; }
       res = res->next_;
     }
 
@@ -121,6 +121,15 @@ BareosResource* ConfigurationParser::GetResWithName(int rcode,
   } else {
     return find_res();
   }
+}
+
+BareosResource* ConfigurationParser::GetResWithName(int rcode,
+                                                    const char* name,
+                                                    bool lock) const
+{
+  if (!name) { return nullptr; }
+
+  return GetResWithName(rcode, std::string_view{name}, lock);
 }
 
 /*

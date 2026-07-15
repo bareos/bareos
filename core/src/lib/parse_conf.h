@@ -302,6 +302,9 @@ class ConfigurationParser {
   BareosResource* GetResWithName(int rcode,
                                  const char* name,
                                  bool lock = true) const;
+  BareosResource* GetResWithName(int rcode,
+                                 std::string_view name,
+                                 bool lock = true) const;
   void b_LockRes(const char* file, int line) const;
   void b_UnlockRes(const char* file, int line) const;
   const char* ResToStr(int rcode) const;

@@ -51,7 +51,7 @@ struct UsePasswordsFromConfig : TlsSecretProvider {
       return 0;
     }
 
-    auto* res = parser->GetResWithName(r_type, std::string{name}.c_str());
+    auto* res = parser->GetResWithName(r_type, name);
     if (!res) {
       auto type_name = global_resource::GetNameFromType(type);
       Dmsg1(100, "Could not find resource %.*s of type %.*s (%d).\n",
