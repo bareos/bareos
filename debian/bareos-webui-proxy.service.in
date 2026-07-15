@@ -1,0 +1,24 @@
+#
+# Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+[Unit]
+Description=Bareos WebUI WebSocket Proxy
+Documentation=man:bareos-webui-proxy(8)
+Requires=network.target
+After=network-online.target
+# Limit the number of restart per day
+StartLimitIntervalSec=1d
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=@dir_user@
+Group=@dir_group@
+# Uses built-in defaults when no config file is present.
+ExecStart=@sbindir@/bareos-webui-proxy
+# Restart on failure, wait 30 seconds
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -20,6 +20,10 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(bareos SHARED)
 add_library(Bareos::Lib ALIAS bareos)
+target_include_directories(
+  bareos PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+                $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
+)
 target_sources(
   bareos
   PRIVATE address_conf.cc

@@ -1,0 +1,90 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+ */
+
+const DIRECTOR_SINGLETON_TABS = new Set(['catalog', 'subscription'])
+
+function normalizeDirectorValues(values) {
+  return [...new Set(
+    values
+      .map(value => String(value ?? '').trim())
+      .filter(Boolean)
+  )]
+}
+
+export function isDirectorSingletonTab(tab) {
+  return DIRECTOR_SINGLETON_TABS.has(tab)
+}
+
+export function buildDirectorOptions({
+  availableDirectors = [],
+  selectedDirectors = [],
+  currentDirector = '',
+  fallbackDirector = '',
+} = {}) {
+  const configuredDirectors = normalizeDirectorValues(availableDirectors)
+
+  if (configuredDirectors.length > 0) {
+    const effectiveDirectors = configuredDirectors.length === 1
+      ? configuredDirectors
+      : normalizeDirectorValues([
+          ...configuredDirectors,
+          currentDirector,
+          fallbackDirector,
+          ...selectedDirectors,
+        ])
+
+    return effectiveDirectors.map(value => ({ label: value, value }))
+  }
+
+  return normalizeDirectorValues([
+    currentDirector,
+    fallbackDirector,
+    ...selectedDirectors,
+  ]).map(value => ({ label: value, value }))
+}
+
+export function resolveDirectorTargetQuery(query) {
+  if (typeof query?.directorTarget === 'string' && query.directorTarget) {
+    return query.directorTarget
+  }
+
+  return ''
+}
+
+export function buildDirectorPageQuery(query, {
+  tab,
+  targetDirector,
+} = {}) {
+  const nextQuery = { ...query }
+
+  delete nextQuery.tab
+  delete nextQuery.directorTarget
+
+  if (tab && tab !== 'status') {
+    nextQuery.tab = tab
+  }
+
+  if (isDirectorSingletonTab(tab) && targetDirector) {
+    nextQuery.directorTarget = targetDirector
+  }
+
+  return nextQuery
+}

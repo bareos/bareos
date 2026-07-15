@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -44,6 +44,16 @@ if(NOT client-only)
   add_subdirectory(dird)
 endif()
 
+add_subdirectory(plugins)
+if(${traymonitor})
+  add_subdirectory(qt-tray-monitor)
+endif()
+if(NOT HAVE_WIN32
+   AND NOT HAVE_DARWIN_OS
+   AND NOT client-only
+)
+  add_subdirectory(webui-proxy)
+endif()
 if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   message(
     STATUS "Skipping unit tests as testing on installed files is requested"
@@ -60,8 +70,4 @@ endif()
 
 if(ENABLE_BCONSOLE)
   add_subdirectory(console)
-endif()
-add_subdirectory(plugins)
-if(${traymonitor})
-  add_subdirectory(qt-tray-monitor)
 endif()

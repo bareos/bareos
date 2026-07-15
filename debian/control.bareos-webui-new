@@ -1,0 +1,7 @@
+Package: bareos-webui-new
+Architecture: all
+Depends: apache2 | httpd,
+   bareos-webui-proxy,
+   ${misc:Depends}
+Description: Backup Archiving Recovery Open Sourced - Vue webui
+ This package contains the Vue-based Bareos WebUI.

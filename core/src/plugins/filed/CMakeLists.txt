@@ -41,7 +41,7 @@ endif()
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-if(ENABLE_PYTHON)
+if(HAVE_PYTHON)
   add_subdirectory(python)
 endif()
 

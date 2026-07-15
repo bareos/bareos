@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,8 +28,10 @@
 #  include "include/bareos.h"
 #endif
 
+#include "webui-proxy/director_connection.h"
 #include "lib/bsock.h"
 #include "lib/bsock_tcp.h"
+#include "lib/base64.h"
 #include "lib/cram_md5.h"
 #include "tests/bareos_test_sockets.h"
 
@@ -40,6 +42,7 @@
 #include <map>
 #include <memory>
 #include <signal.h>
+#include <string_view>
 
 static bool InitSignalHandler()
 {
@@ -68,13 +71,29 @@ static std::map<CramMd5Handshake::HandshakeResult, std::string>
 
 /********************** Tests *****************************/
 
-static std::string CreateQualifiedResourceName(const char* r_type_str,
-                                               const char* name)
+static std::string CreateQualifiedResourceName(std::string_view r_type_str,
+                                               std::string_view name)
 {
   return std::string(r_type_str) + static_cast<char>(0x1e) + std::string(name);
 }
 
+static std::string ExtractChallenge(std::string_view message)
+{
+  const auto prefix_end = message.find('<');
+  const auto suffix = message.find(" ssl=");
+
+  EXPECT_NE(prefix_end, std::string_view::npos);
+  EXPECT_NE(suffix, std::string_view::npos);
+
+  return std::string(message.substr(prefix_end, suffix - prefix_end));
+}
+
 static constexpr bool InitiatedByRemote = true;
+
+TEST(cram_md5, derives_cram_md5_key_from_plaintext_password)
+{
+  EXPECT_EQ(MakeCramMd5Key("secret"), "5ebe2294ecd0e0f08eab7690d2a6ee69");
+}
 
 class CramSockets {
  public:
@@ -183,4 +202,58 @@ TEST(cram_md5, different_stored_qualified_name)
   EXPECT_EQ(cs.server_cram.result, CramMd5Handshake::HandshakeResult::SUCCESS)
       << "  CramMd5Handshake::HandshakeResult::"
       << cram_result_to_string.at(cs.server_cram.result) << std::endl;
+}
+
+TEST(cram_md5, accepts_compatible_challenge_without_qualified_name)
+{
+  auto sockets = create_connected_server_and_client_bareos_socket();
+  sockets->server->InitBnetDump(
+      CreateQualifiedResourceName("R_DIRECTOR", "srv"));
+
+  CramMd5Handshake server_cram(
+      sockets->server.get(), "Secret-Password", TlsPolicy::kBnetTlsNone,
+      CreateQualifiedResourceName("R_DIRECTOR", "srv"));
+
+  auto server_future = std::async(
+      std::launch::async, &CramMd5Handshake::DoHandshake, &server_cram, false);
+
+  const std::string challenge
+      = "auth cram-md5c <1234567890.1715520000@client> ssl=0\n";
+  ASSERT_TRUE(
+      static_cast<BareosSocket*>(sockets->client.get())
+          ->send(challenge.c_str(), static_cast<uint32_t>(challenge.size())));
+
+  ASSERT_GT(sockets->client->recv(), 0);
+
+  uint8_t hmac[20];
+  hmac_md5((uint8_t*)"<1234567890.1715520000@client>",
+           strlen("<1234567890.1715520000@client>"),
+           (uint8_t*)"Secret-Password", strlen("Secret-Password"), hmac);
+
+  char expected[50]{};
+  BinToBase64(expected, sizeof(expected), (char*)hmac, 16, true);
+  EXPECT_STREQ(sockets->client->msg, expected);
+
+  const std::string auth_ok = "1000 OK auth\n";
+  ASSERT_TRUE(
+      static_cast<BareosSocket*>(sockets->client.get())
+          ->send(auth_ok.c_str(), static_cast<uint32_t>(auth_ok.size())));
+
+  ASSERT_GT(sockets->client->recv(), 0);
+  const std::string server_challenge = ExtractChallenge(sockets->client->msg);
+
+  hmac_md5((uint8_t*)server_challenge.c_str(), strlen(server_challenge.c_str()),
+           (uint8_t*)"Secret-Password", strlen("Secret-Password"), hmac);
+  BinToBase64(expected, sizeof(expected), (char*)hmac, 16, true);
+
+  ASSERT_TRUE(static_cast<BareosSocket*>(sockets->client.get())
+                  ->send(expected, static_cast<uint32_t>(strlen(expected))));
+  ASSERT_GT(sockets->client->recv(), 0);
+  EXPECT_STREQ(sockets->client->msg, "1000 OK auth\n");
+
+  EXPECT_TRUE(server_future.get());
+  EXPECT_EQ(server_cram.result, CramMd5Handshake::HandshakeResult::SUCCESS);
+
+  sockets->client->close();
+  sockets->server->close();
 }

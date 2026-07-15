@@ -40,10 +40,14 @@
 #include "dird/next_vol.h"
 #include "dird/ua_db.h"
 #include "dird/ua_output.h"
+#include "dird/ua_prune.h"
 #include "dird/ua_select.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "dird/jcr_util.h"
+
+#include <array>
+#include <string>
 
 namespace directordaemon {
 
@@ -64,6 +68,217 @@ static bool ParseListBackupsCmd(UaContext* ua,
 // Some defaults.
 const int kDefaultLogLines = 5;
 const int kDefaultNumberOfDays = 50;
+
+struct PoolListRow {
+  std::array<std::string, 19> fields;
+};
+
+static bool QueryPoolListRows(UaContext* ua,
+                              PoolDbRecord* pool,
+                              std::vector<PoolListRow>* rows)
+{
+  char escaped_pool_name[MAX_ESCAPE_NAME_LENGTH];
+  PoolMem query(PM_MESSAGE);
+  PoolMem select(PM_MESSAGE);
+
+  ua->db->EscapeString(ua->jcr, escaped_pool_name, pool->Name,
+                       strlen(pool->Name));
+  Mmsg(select,
+       "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,"
+       "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,"
+       "MaxVolBytes,AutoPrune,Recycle,PoolType,LabelFormat,Enabled,"
+       "ScratchPoolId,RecyclePoolId,LabelType ");
+  if (pool->Name[0] != 0) {
+    query.bsprintf("%s FROM Pool WHERE Name='%s'", select.c_str(),
+                   escaped_pool_name);
+  } else if (pool->PoolId > 0) {
+    query.bsprintf("%s FROM Pool WHERE poolid=%" PRIdbid, select.c_str(),
+                   pool->PoolId);
+  } else {
+    query.bsprintf("%s FROM Pool ORDER BY PoolId", select.c_str());
+  }
+
+  struct PoolListHandlerContext {
+    OutputFormatter* send;
+    bool filters_enabled;
+    std::vector<PoolListRow>* rows;
+  } ctx{ua->send, ua->send->HasFilters(), rows};
+
+  auto handler = [](void* c, int, char** row) {
+    auto* handler_ctx = static_cast<PoolListHandlerContext*>(c);
+    if (handler_ctx->filters_enabled && !handler_ctx->send->FilterData(row)) {
+      return 0;
+    }
+
+    PoolListRow entry;
+    for (int i = 0; i < static_cast<int>(entry.fields.size()); ++i) {
+      entry.fields[i] = row[i] ? row[i] : "";
+    }
+    handler_ctx->rows->push_back(std::move(entry));
+    return 0;
+  };
+
+  return ua->db->SqlQuery(query.c_str(), handler, &ctx);
+}
+
+static void EmitPoolFields(UaContext* ua,
+                           const PoolListRow& row,
+                           const PoolPruneSummary& prune_summary)
+{
+  const auto prunable_volumes = std::to_string(prune_summary.prunable_volumes);
+  const auto prunable_jobs = std::to_string(prune_summary.prunable_jobs);
+  const auto prunable_bytes = std::to_string(prune_summary.prunable_bytes);
+  const auto emit_field = [&ua](const char* key, const char* value) {
+    ua->send->ObjectKeyValue(key, "%s: ", value, "%s\n");
+  };
+
+  emit_field("poolid", row.fields[0].c_str());
+  emit_field("name", row.fields[1].c_str());
+  emit_field("numvols", row.fields[2].c_str());
+  emit_field("maxvols", row.fields[3].c_str());
+  emit_field("useonce", row.fields[4].c_str());
+  emit_field("usecatalog", row.fields[5].c_str());
+  emit_field("acceptanyvolume", row.fields[6].c_str());
+  emit_field("volretention", row.fields[7].c_str());
+  emit_field("voluseduration", row.fields[8].c_str());
+  emit_field("maxvoljobs", row.fields[9].c_str());
+  emit_field("maxvolbytes", row.fields[10].c_str());
+  emit_field("autoprune", row.fields[11].c_str());
+  emit_field("recycle", row.fields[12].c_str());
+  emit_field("pooltype", row.fields[13].c_str());
+  emit_field("labelformat", row.fields[14].c_str());
+  emit_field("enabled", row.fields[15].c_str());
+  emit_field("scratchpoolid", row.fields[16].c_str());
+  emit_field("recyclepoolid", row.fields[17].c_str());
+  emit_field("labeltype", row.fields[18].c_str());
+  emit_field("prunablevolumes", prunable_volumes.c_str());
+  emit_field("prunablejobs", prunable_jobs.c_str());
+  emit_field("prunablebytes", prunable_bytes.c_str());
+}
+
+static void EmitPoolRecord(UaContext* ua,
+                           const PoolListRow& row,
+                           const PoolPruneSummary& prune_summary)
+{
+  ua->send->ObjectStart();
+  EmitPoolFields(ua, row, prune_summary);
+  ua->send->ObjectEnd();
+}
+
+static void EmitPoolPruneReportJson(UaContext* ua,
+                                    const PoolPruneReport& report)
+{
+  ua->send->ObjectKeyValue("reason", report.reason.c_str(), "%s\n");
+
+  ua->send->ArrayStart("status_breakdown");
+  for (const auto& status : report.status_breakdown) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("status", status.status.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("volumes", static_cast<uint64_t>(status.volumes));
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("status_breakdown");
+
+  ua->send->ArrayStart("volumes");
+  for (const auto& volume : report.volumes) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("name", volume.volume_name.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("status", volume.volume_status.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("lastwritten", volume.last_written.c_str(),
+                             "%s\n");
+    ua->send->ObjectKeyValue("reason", volume.reason.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("prunablejobs",
+                             static_cast<uint64_t>(volume.prunable_jobs));
+    ua->send->ObjectKeyValue("prunablebytes",
+                             static_cast<uint64_t>(volume.prunable_bytes));
+    ua->send->ArrayStart("jobids");
+    for (const auto jobid : volume.job_ids) {
+      ua->send->ArrayItem(static_cast<uint64_t>(jobid));
+    }
+    ua->send->ArrayEnd("jobids");
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("volumes");
+
+  ua->send->ArrayStart("jobs");
+  for (const auto& job : report.jobs) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("jobid", static_cast<uint64_t>(job.jobid));
+    ua->send->ObjectKeyValue("name", job.name.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("bytes", static_cast<uint64_t>(job.bytes));
+    ua->send->ObjectKeyValue("starttime", job.start_time.c_str(), "%s\n");
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("jobs");
+}
+
+static void EmitPoolPruneReportText(UaContext* ua,
+                                    const PoolPruneReport& report)
+{
+  auto format_count = [](uint64_t value, char* buffer) {
+    return edit_uint64_with_commas(value, buffer);
+  };
+  auto format_bytes = [](uint64_t value, char* buffer) {
+    return edit_uint64_with_suffix(value, buffer);
+  };
+  char prunable_volumes[edit::min_buffer_size];
+  char prunable_jobs[edit::min_buffer_size];
+  char prunable_bytes[edit::min_buffer_size];
+
+  ua->send->Decoration(T_("\nPrune details:\n"));
+  ua->send->Decoration(T_("  Reason: %s\n"), report.reason.c_str());
+  ua->send->Decoration(
+      T_("  Prunable volumes: %s\n"),
+      format_count(report.summary.prunable_volumes, prunable_volumes));
+  ua->send->Decoration(
+      T_("  Prunable jobs: %s\n"),
+      format_count(report.summary.prunable_jobs, prunable_jobs));
+  ua->send->Decoration(
+      T_("  Prunable bytes: %s\n"),
+      format_bytes(report.summary.prunable_bytes, prunable_bytes));
+
+  ua->send->Decoration(T_("  Affected statuses:\n"));
+  if (report.status_breakdown.empty()) {
+    ua->send->Decoration(T_("    none\n"));
+  } else {
+    for (const auto& status : report.status_breakdown) {
+      char status_volumes[edit::min_buffer_size];
+      ua->send->Decoration("    - %s (%s)\n", status.status.c_str(),
+                           format_count(status.volumes, status_volumes));
+    }
+  }
+
+  ua->send->Decoration(T_("  Prunable volumes:\n"));
+  if (report.volumes.empty()) {
+    ua->send->Decoration(T_("    none\n"));
+  } else {
+    for (const auto& volume : report.volumes) {
+      char volume_jobs[edit::min_buffer_size];
+      char volume_bytes[edit::min_buffer_size];
+      ua->send->Decoration(
+          "    - %s | status=%s | lastwritten=%s | jobs=%s | "
+          "bytes=%s\n",
+          volume.volume_name.c_str(), volume.volume_status.c_str(),
+          volume.last_written.c_str(),
+          format_count(volume.prunable_jobs, volume_jobs),
+          format_bytes(volume.prunable_bytes, volume_bytes));
+    }
+  }
+
+  ua->send->Decoration(T_("  Prunable jobs:\n"));
+  if (report.jobs.empty()) {
+    ua->send->Decoration(T_("    none\n"));
+  } else {
+    for (const auto& job : report.jobs) {
+      char jobid[edit::min_buffer_size];
+      char bytes[edit::min_buffer_size];
+      ua->send->Decoration("    - %s | %s | %s | %s\n",
+                           format_count(job.jobid, jobid), job.name.c_str(),
+                           job.start_time.c_str(),
+                           format_bytes(job.bytes, bytes));
+    }
+  }
+}
 
 // Turn auto display of console messages on/off
 bool AutodisplayCmd(UaContext* ua, const char*)
@@ -720,10 +935,13 @@ static bool ListJobs(UaContext* ua,
   std::string query_range;
   SetQueryRange(query_range, ua, &jr);
 
+  const bool descending = FindArg(ua, NT_("reverse")) >= 0;
+
   ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
                          optionslist.jobstatuslist, optionslist.joblevel_list,
                          optionslist.jobtypes, volumename, poolname, schedtime,
-                         optionslist.last, optionslist.count, ua->send, llist);
+                         optionslist.last, optionslist.count, ua->send, llist,
+                         descending);
 
   return true;
 }
@@ -892,7 +1110,76 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     SetAclFilter(ua, 1, Pool_ACL); /* PoolName */
     if (optionslist.current) { SetResFilter(ua, 1, R_POOL); }
 
+    if (llist == VERT_LIST) {
+      std::vector<PoolListRow> rows;
+      if (!QueryPoolListRows(ua, &pr, &rows)) { return true; }
+
+      ua->send->ArrayStart("pools");
+      for (const auto& row : rows) {
+        PoolDbRecord pool_record;
+        pool_record.PoolId = str_to_int64(row.fields[0].c_str());
+        bstrncpy(pool_record.Name, row.fields[1].c_str(),
+                 sizeof(pool_record.Name));
+
+        PoolPruneSummary prune_summary;
+        if (!GetPoolPruneSummary(ua, &pool_record, &prune_summary)) {
+          ua->ErrorMsg(T_("Failed to compute prune summary for pool %s.\n"),
+                       row.fields[1].c_str());
+          ua->send->ArrayEnd("pools");
+          return false;
+        }
+
+        EmitPoolRecord(ua, row, prune_summary);
+      }
+      ua->send->ArrayEnd("pools");
+      return true;
+    }
+
+    if (llist == HORZ_LIST && ua->api == API_MODE_JSON && pr.Name[0] != 0) {
+      std::vector<PoolListRow> rows;
+      if (!QueryPoolListRows(ua, &pr, &rows)) { return true; }
+
+      ua->send->ArrayStart("pools");
+      for (const auto& row : rows) {
+        PoolDbRecord pool_record;
+        pool_record.PoolId = str_to_int64(row.fields[0].c_str());
+        bstrncpy(pool_record.Name, row.fields[1].c_str(),
+                 sizeof(pool_record.Name));
+
+        PoolPruneReport report;
+        if (!GetPoolPruneReport(ua, &pool_record, &report)) {
+          ua->ErrorMsg(T_("Failed to compute prune details for pool %s.\n"),
+                       row.fields[1].c_str());
+          ua->send->ArrayEnd("pools");
+          return false;
+        }
+
+        ua->send->ObjectStart();
+        EmitPoolFields(ua, row, report.summary);
+        EmitPoolPruneReportJson(ua, report);
+        ua->send->ObjectEnd();
+      }
+      ua->send->ArrayEnd("pools");
+      return true;
+    }
+
     ua->db->ListPoolRecords(ua->jcr, &pr, ua->send, llist);
+
+    if (llist == HORZ_LIST && pr.Name[0] != 0) {
+      PoolDbRecord pool_record;
+      bstrncpy(pool_record.Name, pr.Name, sizeof(pool_record.Name));
+      if (ua->db->GetPoolRecord(ua->jcr, &pool_record)) {
+        PoolPruneReport report;
+        if (!GetPoolPruneReport(ua, &pool_record, &report)) {
+          ua->ErrorMsg(T_("Failed to compute prune details for pool %s.\n"),
+                       pool_record.Name);
+          return false;
+        }
+
+        EmitPoolPruneReportText(ua, report);
+      }
+    }
+
     return true;
   }
 
