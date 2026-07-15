@@ -74,8 +74,8 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   bs->SetEnableKtls(me->enable_ktls);
 
-  UseConfigAndJcrs data{config};
-  if (!TryTlsHandshakeAsAServer(bs, config, &data)) {
+  UseConfigAndJcrs tls_secret_provider{config};
+  if (!TryTlsHandshakeAsAServer(bs, config, &tls_secret_provider)) {
     bs->signal(BNET_TERMINATE);
     bs->close();
     delete bs;
@@ -87,6 +87,7 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
     bs->signal(BNET_TERMINATE);
     bs->close();
+    delete bs;
     return NULL;
   }
 
@@ -98,29 +99,69 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
     bs->signal(BNET_TERMINATE);
     bs->close();
+    delete bs;
     return NULL;
   }
 
   Dmsg1(110, "Conn: %s", bs->msg);
 
-  // See if this is a File daemon connection. If so call FD handler.
   if (bsscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
     Dmsg1(110, "Got a FD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-    return HandleFiledConnection(bs, name);
-  }
 
-  // See if this is a Storage daemon connection. If so call SD handler.
-  if (bsscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
+    if (std::optional error = tls_secret_provider.check_job_name(name)) {
+      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
+            error->c_str());
+      Bmicrosleep(5, 0); /* make user wait 5 seconds */
+      bs->signal(BNET_TERMINATE);
+      bs->close();
+      delete bs;
+      return NULL;
+    }
+
+    return HandleFiledConnection(bs, name);
+  } else if (bsscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
     Dmsg1(110, "Got a SD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+
+    if (std::optional error = tls_secret_provider.check_job_name(name)) {
+      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
+            error->c_str());
+      Bmicrosleep(5, 0); /* make user wait 5 seconds */
+      bs->signal(BNET_TERMINATE);
+      bs->close();
+      delete bs;
+      return NULL;
+    }
+
     return handle_stored_connection(bs, name);
+  } else if (bsscanf(bs->msg, "Hello Director %127s calling", name) == 1) {
+    Dmsg1(110, "Got a DIR connection at %s\n",
+          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+
+    if (std::optional error
+        = tls_secret_provider.is_resource_name_different_from_tls_name(
+            R_DIRECTOR, name)) {
+      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
+            error->c_str());
+      Bmicrosleep(5, 0); /* make user wait 5 seconds */
+      bs->signal(BNET_TERMINATE);
+      bs->close();
+      delete bs;
+      return NULL;
+    }
+
+    return HandleDirectorConnection(bs);
+  } else {
+    Dmsg1(60, "Bad hello message: %s\n", bs->msg);
+    Emsg1(M_ERROR, 0, T_("Connection request from %s refused (bad hello).\n"),
+          bs->who());
+    Bmicrosleep(5, 0); /* make user wait 5 seconds */
+    bs->signal(BNET_TERMINATE);
+    bs->close();
+    delete bs;
+    return NULL;
   }
-
-  Dmsg1(110, "Got a DIR connection at %s\n",
-        bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-
-  return HandleDirectorConnection(bs);
 }
 
 static void* UserAgentShutdownCallback(void* bsock)
