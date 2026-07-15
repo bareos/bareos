@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2015-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -42,15 +42,19 @@ class ProtocolMessages:
     def get_version(self):
         return self.protocolversion
 
-    def hello(self, name, type=ConnectionType.DIRECTOR):
+    def hello(self, bashed_name, type=ConnectionType.DIRECTOR):
+
+        assert " " not in bashed_name, "Names need to be bashed!"
+
         if type == ConnectionType.FILEDAEMON:
-            return bytearray("Hello Director %s calling\n" % (name), "utf-8")
+            return bytearray("Hello Director %s calling\n" % (bashed_name), "utf-8")
         else:
             if self.protocolversion < ProtocolVersions.bareos_18_2:
-                return bytearray("Hello %s calling\n" % (name), "utf-8")
+                return bytearray("Hello %s calling\n" % (bashed_name), "utf-8")
             else:
                 return bytearray(
-                    "Hello %s calling version %s\n" % (name, __version__), "utf-8"
+                    "Hello %s calling version %s\n" % (bashed_name, __version__),
+                    "utf-8",
                 )
 
     # @staticmethod
