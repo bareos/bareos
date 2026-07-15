@@ -44,7 +44,7 @@ export BAREOS_WEBUI_PROFILE=admin
 export BAREOS_WEBUI_RESTOREFILE=/etc/passwd
 export BAREOS_WEBUI_USERNAME=readonly
 
-python webui-selenium-test.py -v
+python webui-php-selenium-test.py -v
 ```
 
 After setting the environment variables you can run the test. Use `-v`option of our test to show the progress and results of each test.
@@ -52,10 +52,10 @@ After setting the environment variables you can run the test. Use `-v`option of 
 A single test can be performed by:
 
 ```
-python webui-selenium-test.py -v SeleniumTest.test_run_default_job
+python webui-php-selenium-test.py -v SeleniumTest.test_run_default_job
 ```
 
 
 ## Debugging
 
-After the test fails you will see an exception that was thrown. If this does not help you, take a look inside the generated log file, located in the same path as your `webui-selenium-test.py` file.
+After the test fails you will see an exception that was thrown. If this does not help you, take a look inside the generated log file, located in the same path as your `webui-php-selenium-test.py` file.

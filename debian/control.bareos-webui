@@ -7,5 +7,5 @@ Depends: apache2 | httpd,
    php-json,
    php-curl,
    ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - webui
+Description: Backup Archiving Recovery Open Sourced - PHP webui
  This package contains the Bareos WebUI.

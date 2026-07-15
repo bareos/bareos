@@ -170,6 +170,7 @@ set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
     bareos-fd
     bareos-test-fd
     bareos-sd
+    bareos-webui-proxy
     bcopy
     btape
     bextract
@@ -369,6 +370,52 @@ set(READONLY_WEBUI_SELENIUM_TESTNAMES
 
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
+find_program(NODE node)
+set(WEBUI_VUE_MINIMUM_NODE_MAJOR 20)
+set(WEBUI_VUE_NODE_VERSION_OK FALSE)
+set(NODE_VERSION "")
+if(NODE)
+  execute_process(
+    COMMAND "${NODE}" --version
+    OUTPUT_VARIABLE NODE_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
+  )
+  if("${NODE_VERSION}" MATCHES "^v([0-9]+)\\.")
+    set(NODE_VERSION_MAJOR "${CMAKE_MATCH_1}")
+    if(NODE_VERSION_MAJOR GREATER_EQUAL WEBUI_VUE_MINIMUM_NODE_MAJOR)
+      set(WEBUI_VUE_NODE_VERSION_OK TRUE)
+    endif()
+  endif()
+endif()
+set(WEBUI_VUE_TEST_DIST "")
+set(WEBUI_VUE_PREFER_PREBUILT_DIST FALSE)
+if(EXISTS "${PROJECT_BINARY_DIR}/webui-vue/dist/index.html")
+  set(WEBUI_VUE_TEST_DIST "${PROJECT_BINARY_DIR}/webui-vue/dist")
+elseif(EXISTS "${CMAKE_SOURCE_DIR}/webui-vue/dist/index.html"
+       AND NOT EXISTS "${CMAKE_SOURCE_DIR}/.git"
+)
+  set(WEBUI_VUE_TEST_DIST "${CMAKE_SOURCE_DIR}/webui-vue/dist")
+  set(WEBUI_VUE_PREFER_PREBUILT_DIST TRUE)
+endif()
+find_program(
+  GOOGLE_CHROME NAMES google-chrome google-chrome-stable chromium
+                      chromium-browser chrome
+)
+# The lookup cache must be cleared before re-searching because these executables
+# can be provided by the build tree or the system PATH.
+unset(WEBUI_VUE_PLAYWRIGHT CACHE)
+find_program(
+  WEBUI_VUE_PLAYWRIGHT
+  NAMES playwright playwright.cmd
+  HINTS "${CMAKE_SOURCE_DIR}/webui-vue/node_modules/.bin"
+)
+# Same cache-clearing pattern as above for the Vite executable.
+unset(WEBUI_VUE_VITE CACHE)
+find_program(
+  WEBUI_VUE_VITE
+  NAMES vite vite.cmd
+  HINTS "${CMAKE_SOURCE_DIR}/webui-vue/node_modules/.bin"
+)
 check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 # FALSE
 
@@ -376,6 +423,13 @@ message("   PHP:                       " ${PHP})
 message("   PYTHON_EXECUTABLE:         " ${PYTHON_EXECUTABLE})
 message("   PYMODULE_3_SELENIUM_FOUND: " ${PYMODULE_3_SELENIUM_FOUND})
 message("   CHROMEDRIVER:              " ${CHROMEDRIVER})
+message("   NODE:                      " ${NODE})
+message("   NODE_VERSION:              " ${NODE_VERSION})
+message("   GOOGLE_CHROME:             " ${GOOGLE_CHROME})
+message("   WEBUI_VUE_PLAYWRIGHT:      " ${WEBUI_VUE_PLAYWRIGHT})
+message("   WEBUI_VUE_VITE:            " ${WEBUI_VUE_VITE})
+message("   WEBUI_VUE_TEST_DIST:       " ${WEBUI_VUE_TEST_DIST})
+message("   WEBUI_VUE_USE_DIST_FIRST:  " ${WEBUI_VUE_PREFER_PREBUILT_DIST})
 
 if(PHP
    AND PYTHON_EXECUTABLE
@@ -410,12 +464,14 @@ else()
   macro(register_webui_profile_test profile testnames_var timeout)
     set(TEST_NAME "${profile}")
     set(BAREOS_WEBUI_PROFILE "${profile}")
+    set(BAREOS_WEBUI_USERNAME "${profile}")
+    set(BAREOS_WEBUI_PASSWORD "${profile}")
+    set(BAREOS_WEBUI_TESTNAME "")
 
     message(STATUS "✓ ${WEBUI_TEST_PREFIX}${TEST_NAME} (baseport=${BASEPORT})")
 
     prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
     prepare_testdir_for_daemon_run()
-
     set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui)
     file(MAKE_DIRECTORY ${WEBUICONFDIR})
     configure_file(
@@ -491,12 +547,301 @@ else()
 
   # unset variables, so that they are not set in other environments.
   set(BAREOS_WEBUI_PROFILE "")
+  set(BAREOS_WEBUI_USERNAME "")
+  set(BAREOS_WEBUI_PASSWORD "")
+  set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT "")
   set(BAREOS_WEBUI_TESTNAME "")
   set(BAREOS_WEBUI_TESTS "")
 endif()
 
 #
 # webui: end
+#
+
+set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS
+    admin-smoke readonly-smoke testuser-smoke testuser-tls-psk-smoke
+    admin-smoke-multi-director
+)
+
+if(NODE
+   AND WEBUI_VUE_NODE_VERSION_OK
+   AND GOOGLE_CHROME
+   AND WEBUI_VUE_PLAYWRIGHT
+   AND (WEBUI_VUE_TEST_DIST OR WEBUI_VUE_VITE)
+)
+  set(ENABLE_WEBUI_VUE_PLAYWRIGHT_TEST TRUE)
+  message(STATUS "OK: all requirements for webui-vue browser tests were met.")
+else()
+  set(ENABLE_WEBUI_VUE_PLAYWRIGHT_TEST FALSE)
+  message(
+    STATUS
+      "NOT OK: disabling webui-vue browser tests as not all requirements were found."
+  )
+  if(NOT NODE)
+    message(
+      STATUS
+        "Install Node >= ${WEBUI_VUE_MINIMUM_NODE_MAJOR} before configuring webui-vue browser tests."
+    )
+  elseif(NOT WEBUI_VUE_NODE_VERSION_OK)
+    message(
+      STATUS
+        "webui-vue browser tests require Node >= ${WEBUI_VUE_MINIMUM_NODE_MAJOR}, but found ${NODE_VERSION}."
+    )
+  elseif(NOT WEBUI_VUE_PLAYWRIGHT)
+    message(
+      STATUS
+        "Install webui-vue Playwright before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
+    )
+  elseif(NOT WEBUI_VUE_TEST_DIST AND NOT WEBUI_VUE_VITE)
+    message(
+      STATUS
+        "Provide a prebuilt webui-vue dist/ or install Vite before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
+    )
+  endif()
+endif()
+
+set(WEBUI_VUE_TEST_PREFIX "webui-vue:")
+if(NOT ENABLE_WEBUI_VUE_PLAYWRIGHT_TEST)
+  foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS})
+    add_test(NAME ${WEBUI_VUE_TEST_PREFIX}${TEST_NAME_DISABLED} COMMAND false)
+    set_tests_properties(
+      ${WEBUI_VUE_TEST_PREFIX}${TEST_NAME_DISABLED} PROPERTIES DISABLED true
+    )
+    message(
+      STATUS "Disabled test: ${WEBUI_VUE_TEST_PREFIX}${TEST_NAME_DISABLED}"
+    )
+  endforeach()
+else()
+  foreach(TEST_NAME ${AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS})
+    message(STATUS "Configuring test: ${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}")
+
+    prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
+    set(BAREOS_WEBUI_PROFILE admin)
+    set(BAREOS_WEBUI_TESTNAME smoke)
+    set(BAREOS_WEBUI_USERNAME admin)
+    set(BAREOS_WEBUI_PASSWORD admin)
+    set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT TLS-PSK)
+    set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK 0)
+    set(BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR 0)
+
+    if(TEST_NAME STREQUAL "testuser-smoke")
+      set(BAREOS_WEBUI_PROFILE testuser)
+      set(BAREOS_WEBUI_USERNAME testuser)
+      set(BAREOS_WEBUI_PASSWORD testuser)
+      set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT cleartext)
+      set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK 1)
+    elseif(TEST_NAME STREQUAL "readonly-smoke")
+      set(BAREOS_WEBUI_PROFILE readonly)
+      set(BAREOS_WEBUI_USERNAME readonly)
+      set(BAREOS_WEBUI_PASSWORD readonly)
+      set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT TLS-PSK)
+    elseif(TEST_NAME STREQUAL "testuser-tls-psk-smoke")
+      set(BAREOS_WEBUI_PROFILE testuser)
+      set(BAREOS_WEBUI_USERNAME testuser)
+      set(BAREOS_WEBUI_PASSWORD testuser)
+      set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT TLS-PSK)
+    elseif(TEST_NAME STREQUAL "admin-smoke-multi-director")
+      set(BAREOS_WEBUI_PROFILE admin)
+      set(BAREOS_WEBUI_USERNAME admin)
+      set(BAREOS_WEBUI_PASSWORD admin)
+      set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT TLS-PSK)
+      set(BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR 1)
+    endif()
+
+    configurefilestosystemtest(
+      "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
+    )
+    configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
+    configurefilestosystemtest(
+      "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-vue-common"
+    )
+
+    configure_file(
+      "environment.in" "tests/${TEST_NAME}/environment" @ONLY
+      NEWLINE_STYLE UNIX
+    )
+
+    configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
+    configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
+
+    add_systemtest(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
+      ${tests_dir}/${TEST_NAME}/test-setup
+    )
+    set_tests_properties(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
+      PROPERTIES FIXTURES_SETUP "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
+                 TIMEOUT 240 COST 2.0
+    )
+    add_systemtest(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
+      ${tests_dir}/${TEST_NAME}/testrunner-create-backup
+    )
+    set_tests_properties(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
+      PROPERTIES FIXTURES_REQUIRED
+                 "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
+                 FIXTURES_SETUP
+                 "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
+                 TIMEOUT
+                 120
+                 COST
+                 1.0
+    )
+    add_systemtest(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
+      ${tests_dir}/${TEST_NAME}/testrunner
+    )
+    set_tests_properties(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
+      PROPERTIES
+        FIXTURES_REQUIRED
+        "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture;${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
+        TIMEOUT
+        240
+        COST
+        2.0
+    )
+    add_systemtest(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:cleanup"
+      ${tests_dir}/${TEST_NAME}/test-cleanup
+    )
+    set_tests_properties(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:cleanup"
+      PROPERTIES FIXTURES_CLEANUP
+                 "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture" TIMEOUT 60 COST
+                 1.0
+    )
+    math(EXPR BASEPORT "${BASEPORT} + 10")
+  endforeach()
+  set(BAREOS_WEBUI_PROFILE "")
+  set(BAREOS_WEBUI_USERNAME "")
+  set(BAREOS_WEBUI_PASSWORD "")
+  set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT "")
+  set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK "")
+  set(BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR "")
+  set(BAREOS_WEBUI_TESTNAME "")
+endif()
+
+#
+# webui-vue selenium tests Uses the same webui-vue-common setup (Node serves the
+# dist), but runs the Python/Selenium test instead of Playwright. Requires
+# Selenium + chromedriver (already needed for PHP webui tests), Node for serving
+# the frontend, and a dist or Vite.
+#
+
+set(WEBUI_VUE_SELENIUM_TEST_NAME admin-selenium-smoke)
+
+if(NODE
+   AND WEBUI_VUE_NODE_VERSION_OK
+   AND GOOGLE_CHROME
+   AND CHROMEDRIVER
+   AND PYMODULE_3_SELENIUM_FOUND
+   AND (WEBUI_VUE_TEST_DIST OR WEBUI_VUE_VITE)
+)
+  set(ENABLE_WEBUI_VUE_SELENIUM_TEST TRUE)
+  message(STATUS "OK: all requirements for webui-vue selenium tests were met.")
+else()
+  set(ENABLE_WEBUI_VUE_SELENIUM_TEST FALSE)
+  message(
+    STATUS
+      "NOT OK: disabling webui-vue selenium tests as requirements are missing."
+  )
+endif()
+
+if(NOT ENABLE_WEBUI_VUE_SELENIUM_TEST)
+  add_test(NAME ${WEBUI_VUE_TEST_PREFIX}${WEBUI_VUE_SELENIUM_TEST_NAME}
+           COMMAND false
+  )
+  set_tests_properties(
+    ${WEBUI_VUE_TEST_PREFIX}${WEBUI_VUE_SELENIUM_TEST_NAME} PROPERTIES DISABLED
+                                                                       true
+  )
+  message(
+    STATUS
+      "Disabled test: ${WEBUI_VUE_TEST_PREFIX}${WEBUI_VUE_SELENIUM_TEST_NAME}"
+  )
+else()
+  set(TEST_NAME ${WEBUI_VUE_SELENIUM_TEST_NAME})
+  set(BAREOS_WEBUI_PROFILE admin)
+  set(BAREOS_WEBUI_USERNAME admin)
+  set(BAREOS_WEBUI_PASSWORD admin)
+  set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK 0)
+  set(BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR 0)
+
+  message(STATUS "Configuring test: ${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}")
+
+  prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
+  configurefilestosystemtest(
+    "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
+  )
+  configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
+  configurefilestosystemtest(
+    "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-vue-common"
+  )
+  configure_file(
+    "environment.in" "tests/${TEST_NAME}/environment" @ONLY NEWLINE_STYLE UNIX
+  )
+  configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
+  configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
+
+  add_systemtest(
+    "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
+    ${tests_dir}/${TEST_NAME}/test-setup
+  )
+  set_tests_properties(
+    "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
+    PROPERTIES FIXTURES_SETUP "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
+               TIMEOUT 240 COST 2.0
+  )
+  add_systemtest(
+    "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
+    ${tests_dir}/${TEST_NAME}/testrunner-create-backup
+  )
+  set_tests_properties(
+    "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
+    PROPERTIES FIXTURES_REQUIRED
+               "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
+               FIXTURES_SETUP
+               "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
+               TIMEOUT
+               120
+               COST
+               1.0
+  )
+  add_systemtest(
+    "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
+    ${tests_dir}/${TEST_NAME}/testrunner-selenium
+  )
+  set_tests_properties(
+    "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
+    PROPERTIES
+      FIXTURES_REQUIRED
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture;${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
+      TIMEOUT
+      240
+      COST
+      2.0
+  )
+  add_systemtest(
+    "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:cleanup"
+    ${tests_dir}/${TEST_NAME}/test-cleanup
+  )
+  set_tests_properties(
+    "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:cleanup"
+    PROPERTIES FIXTURES_CLEANUP "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
+               TIMEOUT 60 COST 1.0
+  )
+
+  set(BAREOS_WEBUI_PROFILE "")
+  set(BAREOS_WEBUI_USERNAME "")
+  set(BAREOS_WEBUI_PASSWORD "")
+  set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK "")
+  set(BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR "")
+endif()
+
+#
+# webui-vue selenium: end
 #
 
 add_subdirectory(tests)

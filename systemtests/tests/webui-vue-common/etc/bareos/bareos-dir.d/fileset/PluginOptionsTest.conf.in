@@ -1,0 +1,14 @@
+FileSet {
+  Name = "PluginOptionsTest"
+  Description = "Smoke-test fileset backed by the bpipe plugin"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "bpipe"
+             ":file=/plugin-options-demo.txt"
+             ":reader=bash @current_test_directory@/readprogram"
+             ":writer=bash @current_test_directory@/writeprogram"
+  }
+}

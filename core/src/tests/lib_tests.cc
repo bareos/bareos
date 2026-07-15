@@ -1,7 +1,7 @@
 /**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +32,18 @@
 #include "lib/bstringlist.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/util.h"
+
+namespace {
+constexpr bool PrintfCheckAcceptsValidFormats()
+{
+  printf_check("%s", "test");
+  printf_check("%s %d", "test", 42);
+  printf_check("%p", static_cast<void*>(nullptr));
+  return true;
+}
+
+static_assert(PrintfCheckAcceptsValidFormats());
+}  // namespace
 
 TEST(BStringList, ConstructorsTest)
 {
@@ -254,6 +266,11 @@ TEST(Util, version_number_major_minor)
   BareosVersionToMajorMinor v(version);
   EXPECT_EQ(v.major, 18);
   EXPECT_EQ(v.minor, 2);
+}
+
+TEST(Util, printf_check_accepts_valid_formats)
+{
+  EXPECT_TRUE(PrintfCheckAcceptsValidFormats());
 }
 
 #include "filed/evaluate_job_command.h"

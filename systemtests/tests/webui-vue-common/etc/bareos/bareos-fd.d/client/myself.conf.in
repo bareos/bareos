@@ -1,0 +1,10 @@
+Client {
+  Name = @basename@-fd
+
+  Plugin Directory = "@FD_PLUGINS_DIR_TO_TEST@"
+  Plugin Names = "bpipe"
+
+  Working Directory =  "@working_dir@"
+  Port = @fd_port@
+
+}

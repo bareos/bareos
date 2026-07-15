@@ -1,0 +1,590 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
+#include "director_connection.h"
+#include "bareos_base64.h"
+#include "lib/cram_md5.h"
+#include "lib/ascii_control_characters.h"
+#include "lib/bnet_protocol_signals.h"
+#include "proxy_log.h"
+#include "lib/version.h"
+
+#include <algorithm>
+#include <array>
+#include <cassert>
+#include <cerrno>
+#include <cstring>
+#include <ctime>
+#include <stdexcept>
+#include <string>
+
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <poll.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
+#include <openssl/rand.h>
+#include <openssl/ssl.h>
+
+std::string GetTlsPskIdentityForDirector(const std::string& console_name)
+{
+  std::string identity = "R_CONSOLE";
+  identity.reserve(identity.size() + 1 + console_name.size());
+  identity.push_back(AsciiControlCharacters::RecordSeparator());
+  identity.append(console_name);
+  return identity;
+}
+
+namespace {
+
+constexpr size_t kHmacMd5DigestBytes = 16;
+
+/**
+ * Compute HMAC-MD5(key, data) and return the 16-byte raw digest.
+ * The key is the MD5 hex string of the plaintext password.
+ */
+std::array<uint8_t, 16> HmacMd5(const std::string& key, const std::string& data)
+{
+  std::array<uint8_t, 16> result{};
+  unsigned int len = 16;
+
+  HMAC(EVP_md5(), key.data(), static_cast<int>(key.size()),
+       reinterpret_cast<const uint8_t*>(data.data()), data.size(),
+       result.data(), &len);
+  return result;
+}
+
+std::string GetOpenSslError()
+{
+  std::string error;
+  while (unsigned long code = ERR_get_error()) {
+    char buffer[256] = {};
+    ERR_error_string_n(code, buffer, sizeof(buffer));
+    if (!error.empty()) { error += ": "; }
+    error += buffer;
+  }
+  return error.empty() ? "unknown OpenSSL error" : error;
+}
+
+int GetDirectorConnectionSslCtxExDataIndex()
+{
+  static const int index
+      = SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+  return index;
+}
+
+}  // namespace
+
+unsigned int TlsPskClientCallback(SSL* ssl,
+                                  const char* /*hint*/,
+                                  char* identity,
+                                  unsigned int max_identity_len,
+                                  unsigned char* psk,
+                                  unsigned int max_psk_len)
+{
+  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
+  if (!ssl_ctx) { return 0; }
+
+  auto* connection = static_cast<DirectorConnection*>(
+      SSL_CTX_get_ex_data(ssl_ctx, GetDirectorConnectionSslCtxExDataIndex()));
+  if (!connection) { return 0; }
+
+  const std::string& tls_psk_identity = connection->tls_psk_identity_;
+  const std::string& tls_psk_secret = connection->tls_psk_secret_;
+
+  if (tls_psk_identity.empty() || tls_psk_secret.empty()) { return 0; }
+  if (tls_psk_identity.size() + 1 > max_identity_len
+      || tls_psk_secret.size() > max_psk_len) {
+    return 0;
+  }
+
+  std::memcpy(identity, tls_psk_identity.c_str(), tls_psk_identity.size() + 1);
+  std::memcpy(psk, tls_psk_secret.data(), tls_psk_secret.size());
+  return static_cast<unsigned int>(tls_psk_secret.size());
+}
+
+// ---------------------------------------------------------------------------
+// Frame I/O
+// ---------------------------------------------------------------------------
+
+void DirectorConnection::WriteAll(const void* buf, size_t len)
+{
+  assert(fd_ >= 0);
+  const auto* p = static_cast<const uint8_t*>(buf);
+  while (len > 0) {
+    int n = 0;
+    if (ssl_) {
+      n = SSL_write(ssl_, p, static_cast<int>(len));
+      if (n <= 0) {
+        int ssl_error = SSL_get_error(ssl_, n);
+        if (ssl_error == SSL_ERROR_WANT_READ
+            || ssl_error == SSL_ERROR_WANT_WRITE) {
+          continue;
+        }
+        throw std::runtime_error("Director: TLS write failed: "
+                                 + GetOpenSslError());
+      }
+    } else {
+      n = static_cast<int>(::send(fd_, p, len, MSG_NOSIGNAL));
+      if (n < 0 && errno == EINTR) { continue; }
+      if (n < 0) {
+        const int send_errno = errno;
+        throw std::runtime_error("Director: send failed: errno="
+                                 + std::to_string(send_errno) + " ("
+                                 + std::strerror(send_errno) + ")");
+      }
+      if (n == 0) {
+        throw std::runtime_error("Director: send failed: connection closed");
+      }
+    }
+    p += n;
+    len -= static_cast<size_t>(n);
+  }
+}
+
+void DirectorConnection::ReadAll(void* buf, size_t len)
+{
+  assert(fd_ >= 0);
+  auto* p = static_cast<uint8_t*>(buf);
+  while (len > 0) {
+    int n = 0;
+    if (ssl_) {
+      n = SSL_read(ssl_, p, static_cast<int>(len));
+      if (n <= 0) {
+        int ssl_error = SSL_get_error(ssl_, n);
+        if (ssl_error == SSL_ERROR_WANT_READ
+            || ssl_error == SSL_ERROR_WANT_WRITE) {
+          continue;
+        }
+        throw std::runtime_error("Director: TLS read failed: "
+                                 + GetOpenSslError());
+      }
+    } else {
+      n = static_cast<int>(::recv(fd_, p, len, MSG_WAITALL));
+      if (n < 0 && errno == EINTR) { continue; }
+      if (n < 0) {
+        const int recv_errno = errno;
+        throw std::runtime_error("Director: recv failed: errno="
+                                 + std::to_string(recv_errno) + " ("
+                                 + std::strerror(recv_errno) + ")");
+      }
+      if (n == 0) {
+        throw std::runtime_error("Director: connection closed by peer");
+      }
+    }
+    p += n;
+    len -= static_cast<size_t>(n);
+  }
+}
+
+void DirectorConnection::SendFrame(const std::string& data)
+{
+  assert(fd_ >= 0);
+  int32_t hdr = htonl(static_cast<int32_t>(data.size()));
+  WriteAll(&hdr, 4);
+  if (!data.empty()) { WriteAll(data.data(), data.size()); }
+}
+
+bool DirectorConnection::HasPendingInput(int timeout_ms) const
+{
+  if (ssl_ && SSL_pending(ssl_) > 0) { return true; }
+  assert(fd_ >= 0);
+
+  struct pollfd pfd{fd_, POLLIN, 0};
+  int rc = poll(&pfd, 1, timeout_ms);
+  return rc > 0 && (pfd.revents & POLLIN);
+}
+
+void DirectorConnection::DrainPendingInput()
+{
+  while (HasPendingInput()) {
+    int32_t signal = 0;
+    std::string frame = RecvFrame(&signal);
+    if (signal == BNET_TERMINATE) {
+      throw std::runtime_error("Director: received BNET_TERMINATE signal");
+    }
+    if (!frame.empty()) {
+      // Discard queued JSON/text frames that belong to a previous command.
+      continue;
+    }
+  }
+}
+
+std::string DirectorConnection::RecvFrame(int32_t* signal)
+{
+  assert(fd_ >= 0);
+  int32_t hdr_net;
+  ReadAll(&hdr_net, 4);
+  int32_t len = ntohl(hdr_net);
+
+  if (len <= 0) {
+    if (signal) { *signal = len; }
+    return {};  // signal frame (BNET_EOD, BNET_TERMINATE, etc.) — no payload
+  }
+
+  if (signal) { *signal = 0; }
+
+  std::string msg(static_cast<size_t>(len), '\0');
+  ReadAll(msg.data(), static_cast<size_t>(len));
+  return msg;
+}
+
+std::string DirectorConnection::RecvResponse()
+{
+  assert(fd_ >= 0);
+  std::string result;
+  while (true) {
+    int32_t signal = 0;
+    std::string chunk = RecvFrame(&signal);
+
+    if (signal == BNET_EOD || signal == BNET_EOD_POLL
+        || signal == BNET_STATUS) {
+      break;  // end of response
+    }
+    if (signal == BNET_TERMINATE) {
+      throw std::runtime_error("Director: received BNET_TERMINATE signal");
+    }
+    if (signal < 0) {
+      continue;  // other signals (BNET_CMD_BEGIN, BNET_CMD_OK, …) — skip
+    }
+    if (chunk.empty()) {
+      continue;  // keep-alive — skip
+    }
+    result += chunk;
+  }
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Authentication
+// ---------------------------------------------------------------------------
+
+void DirectorConnection::Authenticate(const DirectorConfig& cfg)
+{
+  assert(fd_ >= 0);
+  // The CRAM-MD5 key is MD5(plaintext_password) as a hex string.
+  const std::string key = MakeCramMd5Key(cfg.password);
+
+  // Step 1: send Hello with version so the director uses the >= 18.2 protocol.
+  const std::string hello = "Hello " + cfg.username + " calling version "
+                            + kBareosVersionStrings.Full + "\n";
+  SendFrame(hello);
+
+  // Step 2: receive director's challenge
+  int32_t challenge_signal = 0;
+  std::string challenge_msg = RecvFrame(&challenge_signal);
+  if (challenge_msg.empty()) {
+    throw std::runtime_error(
+        "Director: no challenge received after Hello "
+        "(got signal frame "
+        + std::to_string(challenge_signal) + ")");
+  }
+  // Challenge format: "auth cram-md5 <token> ssl=<n>\n"
+  char token_buf[512] = {};
+  [[maybe_unused]] int ssl_val = 0;
+  if (bsscanf(challenge_msg.c_str(), "auth cram-md5 %511s ssl=%d", token_buf,
+              &ssl_val)
+      < 1) {
+    throw std::runtime_error("Director: unexpected response to Hello: "
+                             + challenge_msg);
+  }
+  std::string director_challenge(token_buf);
+
+  // Step 3: compute and send our CRAM-MD5 response (no trailing newline)
+  auto hmac = HmacMd5(key, director_challenge);
+  assert(hmac.size() == kHmacMd5DigestBytes);
+  std::string response = BareosBase64Encode(hmac.data(), hmac.size());
+  SendFrame(response);
+
+  // Step 4: receive director's "1000 OK auth\n"
+  std::string auth_result = RecvFrame();
+  if (auth_result.find("1000 OK auth") == std::string::npos) {
+    throw std::runtime_error("Director: authentication failed: " + auth_result);
+  }
+
+  // Step 5: send our own challenge to verify the director
+  uint32_t rand_val = 0;
+  if (RAND_bytes(reinterpret_cast<unsigned char*>(&rand_val), sizeof(rand_val))
+      != 1) {
+    throw std::runtime_error("Director: failed to create CRAM-MD5 challenge: "
+                             + GetOpenSslError());
+  }
+  uint32_t ts = static_cast<uint32_t>(std::time(nullptr));
+  std::string our_challenge = "<" + std::to_string(rand_val) + "."
+                              + std::to_string(ts) + "@" + cfg.username + ">";
+  std::string our_challenge_msg
+      = "auth cram-md5c " + our_challenge + " ssl=0\n";
+  SendFrame(our_challenge_msg);
+
+  // Step 6: receive director's CRAM-MD5 response to our challenge.
+  // The director includes a null terminator in the frame length, so strip it.
+  std::string dir_response = RecvFrame();
+  while (!dir_response.empty()
+         && (dir_response.back() == '\n' || dir_response.back() == '\0')) {
+    dir_response.pop_back();
+  }
+
+  // Step 7: verify director response against the Bareos-compatible variant.
+  auto expected_hmac = HmacMd5(key, our_challenge);
+  assert(expected_hmac.size() == kHmacMd5DigestBytes);
+  std::string expected
+      = BareosBase64Encode(expected_hmac.data(), expected_hmac.size());
+
+  if (dir_response == expected) {
+    SendFrame("1000 OK auth\n");
+  } else {
+    SendFrame("1999 Authorization failed.\n");
+    throw std::runtime_error(
+        "Director: failed to verify director identity (wrong CRAM-MD5 "
+        "response)");
+  }
+
+  // Step 8: receive welcome (>= 18.2: "1000\x1eOK: <name> Version: ...").
+  // The director also sends a second info frame (1002\x1e...) that we discard.
+  std::string welcome = RecvFrame();
+  if (welcome.find("1000") == std::string::npos) {
+    throw std::runtime_error("Director: unexpected welcome: " + welcome);
+  }
+  std::string info = RecvFrame();
+  if (info.find("1002") == std::string::npos) {
+    throw std::runtime_error("Director: unexpected info message: " + info);
+  }
+
+  // Step 9: activate JSON API if requested.
+  // Use the normal Call() path here so we consume both the data response and
+  // the terminating prompt. Otherwise the last .api response can remain queued
+  // and shift every subsequent dashboard command by one response.
+  if (cfg.json_mode) { Call(".api json"); }
+}
+
+// ---------------------------------------------------------------------------
+// Public interface
+// ---------------------------------------------------------------------------
+
+DirectorConnection DirectorConnection::Connect(const DirectorConfig& cfg)
+{
+  DirectorConnection connection;
+  connection.json_mode_ = cfg.json_mode;
+  connection.tls_psk_active_ = false;
+  connection.tls_psk_identity_ = GetTlsPskIdentityForDirector(cfg.username);
+  connection.tls_psk_secret_ = MakeCramMd5Key(cfg.password);
+  const bool use_tls_psk = !cfg.tls_psk_disable;
+
+  try {
+    connection.ConnectTcp(cfg);
+    if (use_tls_psk) { connection.ConnectTlsPsk(cfg); }
+    connection.Authenticate(cfg);
+  } catch (...) {
+    connection.Disconnect();
+    throw;
+  }
+
+  return connection;
+}
+
+void DirectorConnection::ConnectTcp(const DirectorConfig& cfg)
+{
+  struct addrinfo hints{};
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  struct addrinfo* res = nullptr;
+  const std::string port_str = std::to_string(cfg.port);
+  int rc = getaddrinfo(cfg.host.c_str(), port_str.c_str(), &hints, &res);
+  if (rc != 0) {
+    throw std::runtime_error(std::string("Director: getaddrinfo: ")
+                             + gai_strerror(rc));
+  }
+
+  for (auto* ai = res; ai != nullptr; ai = ai->ai_next) {
+    fd_ = ::socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+    if (fd_ < 0) { continue; }
+    if (::connect(fd_, ai->ai_addr, ai->ai_addrlen) == 0) { break; }
+    PROXY_LOG_DEBUG("", "Director: connect to %s:%d failed: %s",
+                    cfg.host.c_str(), cfg.port, std::strerror(errno));
+    ::close(fd_);
+    fd_ = -1;
+  }
+  freeaddrinfo(res);
+
+  if (fd_ < 0) {
+    throw std::runtime_error("Director: could not connect to " + cfg.host + ":"
+                             + std::to_string(cfg.port));
+  }
+}
+
+void DirectorConnection::ConnectTlsPsk(const DirectorConfig& cfg)
+{
+  assert(fd_ >= 0);
+  ssl_ctx_ = SSL_CTX_new(TLS_client_method());
+  if (!ssl_ctx_) {
+    throw std::runtime_error("Director: could not create TLS-PSK context: "
+                             + GetOpenSslError());
+  }
+
+  if (SSL_CTX_set_cipher_list(ssl_ctx_, "PSK") != 1) {
+    throw std::runtime_error("Director: could not set TLS-PSK cipher list: "
+                             + GetOpenSslError());
+  }
+  if (SSL_CTX_set_min_proto_version(ssl_ctx_, TLS1_2_VERSION) != 1) {
+    throw std::runtime_error("Director: could not set minimum TLS version: "
+                             + GetOpenSslError());
+  }
+
+  SSL_CTX_set_ex_data(ssl_ctx_, GetDirectorConnectionSslCtxExDataIndex(), this);
+  SSL_CTX_set_psk_client_callback(ssl_ctx_, TlsPskClientCallback);
+
+  ssl_ = SSL_new(ssl_ctx_);
+  if (!ssl_) {
+    throw std::runtime_error("Director: could not create TLS-PSK session: "
+                             + GetOpenSslError());
+  }
+  if (SSL_set_fd(ssl_, fd_) != 1) {
+    throw std::runtime_error("Director: could not bind TLS-PSK session: "
+                             + GetOpenSslError());
+  }
+  if (SSL_set_tlsext_host_name(ssl_, cfg.host.c_str()) != 1) {
+    throw std::runtime_error("Director: could not set TLS-PSK server name: "
+                             + GetOpenSslError());
+  }
+  while (true) {
+    int rc = SSL_connect(ssl_);
+    if (rc == 1) { break; }
+    int ssl_error = SSL_get_error(ssl_, rc);
+    if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
+      continue;
+    }
+    throw std::runtime_error("Director: TLS-PSK handshake failed: "
+                             + GetOpenSslError());
+  }
+  tls_psk_active_ = true;
+}
+
+void DirectorConnection::Disconnect()
+{
+  if (fd_ >= 0 || ssl_ || ssl_ctx_) {
+    // Best-effort: send quit and wait for the director to acknowledge it with
+    // BNET_TERMINATE before closing the socket.  Without this drain the
+    // director is still mid-write when the socket disappears and logs a
+    // spurious "broken pipe" error.
+    try {
+      if (fd_ >= 0) {
+        SendFrame("quit\n");
+        // Drain frames for up to 1 s so the director can finish its current
+        // write and send its BNET_TERMINATE goodbye frame.
+        constexpr int kQuitDrainTimeoutMs = 1000;
+        constexpr int kPollSliceMs = 50;
+        int waited_ms = 0;
+        while (waited_ms < kQuitDrainTimeoutMs
+               && HasPendingInput(kPollSliceMs)) {
+          int32_t signal = 0;
+          RecvFrame(&signal);
+          if (signal == BNET_TERMINATE) { break; }
+          waited_ms += kPollSliceMs;
+        }
+      }
+    } catch (...) {
+    }
+    if (ssl_) {
+      SSL_shutdown(ssl_);
+      SSL_free(ssl_);
+      ssl_ = nullptr;
+    }
+    if (ssl_ctx_) {
+      SSL_CTX_free(ssl_ctx_);
+      ssl_ctx_ = nullptr;
+    }
+    if (fd_ >= 0) {
+      ::close(fd_);
+      fd_ = -1;
+    }
+  }
+  tls_psk_active_ = false;
+  json_mode_ = true;
+  tls_psk_identity_.clear();
+  tls_psk_secret_.clear();
+}
+
+DirectorPrompt DirectorConnection::CallStreamed(
+    const std::string& command,
+    const std::function<void(std::string_view)>& on_data)
+{
+  assert(fd_ >= 0);
+  if (json_mode_) { DrainPendingInput(); }
+  SendFrame(command + "\n");
+  // Unified receive strategy for both JSON and raw (text) mode:
+  //
+  // Skip all *leading* signals before any data arrives.  This handles:
+  //   - Stale BNET_MAIN_PROMPT left by JSON mode's RecvDataFrame() after auth
+  //   - BNET_CMD_BEGIN / BNET_CMD_OK preamble signals in JSON mode
+  //   - BNET_MSGS_PENDING before the response in text mode
+  //
+  // Once data starts arriving, accumulate all consecutive data frames and
+  // stop as soon as any signal is received.  This handles:
+  //   JSON mode: data chunk(s) terminated by BNET_MAIN_PROMPT (no BNET_EOD)
+  //   Text mode: data terminated by BNET_EOD or BNET_MAIN_PROMPT
+  //   Interactive: menu text terminated by BNET_SELECT_INPUT / BNET_SUB_PROMPT
+  //
+  // Large responses (> ~1 MB) arrive as multiple consecutive data frames with
+  // no signals between them; the loop accumulates them all correctly.
+  bool received_data = false;
+  while (true) {
+    int32_t signal = 0;
+    std::string chunk = RecvFrame(&signal);
+
+    if (signal < 0) {
+      if (signal == BNET_TERMINATE) {
+        throw std::runtime_error("Director: received BNET_TERMINATE signal");
+      }
+      if (signal == BNET_MAIN_PROMPT) { return DirectorPrompt::Main; }
+      if (signal == BNET_SUB_PROMPT) { return DirectorPrompt::Sub; }
+      if (signal == BNET_SELECT_INPUT) { return DirectorPrompt::Select; }
+      if (signal == BNET_START_RTREE || signal == BNET_END_RTREE) { continue; }
+      if (signal == BNET_EOD || signal == BNET_EOD_POLL
+          || signal == BNET_STATUS) {
+        // Some interactive raw-mode commands emit an EOD separator before the
+        // follow-up prompt text ("cwd is: /\n$ "). Wait briefly so that prompt
+        // transition data stays attached to the command that triggered it.
+        if (HasPendingInput(50)) { continue; }
+        if (received_data) { return DirectorPrompt::Other; }
+      } else if (received_data) {
+        return DirectorPrompt::Other;
+      }
+      continue;  // leading signal before data → skip
+    }
+    if (chunk.empty()) { continue; }  // keep-alive
+
+    received_data = true;
+    if (on_data) { on_data(chunk); }
+  }
+}
+
+CallResult DirectorConnection::Call(const std::string& command)
+{
+  CallResult result;
+  result.prompt = CallStreamed(command, [&](std::string_view chunk) {
+    result.text.append(chunk.data(), chunk.size());
+  });
+  return result;
+}

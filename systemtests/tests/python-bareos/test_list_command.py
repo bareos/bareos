@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -402,6 +402,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             "mediatype",
             "lastwritten",
             "storage",
+            "hasencryptionkey",
         ]
         resultkeys = list(result["volumes"]["full"][0].keys())
 
@@ -538,13 +539,20 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             "recyclepoolid",
             "labeltype",
         ]
+        optional_long_list_pool_keys = {
+            "prunablevolumes",
+            "prunablejobs",
+            "prunablebytes",
+        }
         resultkeys = list(result["pools"][0].keys())
-
-        resultkeys.sort()
-        expected_long_list_pool_keys.sort()
         self.assertEqual(
-            resultkeys,
-            expected_long_list_pool_keys,
+            set(resultkeys) - optional_long_list_pool_keys,
+            set(expected_long_list_pool_keys),
+        )
+        self.assertTrue(
+            set(resultkeys).issubset(
+                set(expected_long_list_pool_keys) | optional_long_list_pool_keys
+            ),
         )
 
         # check expected behavior when asking for specific volume by name

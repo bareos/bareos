@@ -23,10 +23,12 @@
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/schedule/WeeklyCycle.conf
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/storage/File.conf
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/storage/File.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-webui-proxy.ini
 @dir(bareos,wheel,2750) %%ETCDIR%%/bareos-dir-export/client/
 lib/bareos/scripts/delete_catalog_backup
 lib/bareos/scripts/make_catalog_backup
 sbin/bareos-dir
+sbin/bareos-webui-proxy
 share/man/man8/bareos-dir.8.gz
 share/man/man8/bareos.8.gz
 etc/rc.d/bareos-dir

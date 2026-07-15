@@ -80,6 +80,8 @@ void SortCaseInsensitive(std::vector<std::string>& v);
 std::string getenv_std_string(std::string env_var);
 void StringToLowerCase(std::string& s);
 void StringToLowerCase(std::string& out, const std::string& in);
+constexpr void printf_check(const char*, ...) PRINTF_LIKE(1, 2);
+constexpr void printf_check(const char*, ...) {}
 bool pm_append(void* pm_string, const char* fmt, ...) PRINTF_LIKE(2, 3);
 std::vector<std::string> split_string(const std::string& str, char delim);
 

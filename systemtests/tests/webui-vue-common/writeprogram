@@ -1,0 +1,3 @@
+#!/bin/bash
+
+cat >"$BareosWhere/plugin-options-demo.txt"

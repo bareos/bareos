@@ -643,7 +643,28 @@ Conflicts: mod_php_any
 %description webui
 %{dscr}
 
-This package contains the webui (Bareos Web User Interface).
+This package contains the PHP-based Bareos Web User Interface.
+
+%package webui-new
+Summary:       Bareos Web User Interface (Vue)
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-webui-proxy = %{version}
+Requires:      httpd
+
+%description webui-new
+%{dscr}
+
+This package contains the Vue-based Bareos Web User Interface.
+
+%package webui-proxy
+Summary:       Bareos Web User Interface WebSocket proxy
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common = %{version}
+
+%description webui-proxy
+%{dscr}
+
+This package contains the Bareos WebUI WebSocket proxy.
 %endif
 
 %if 0%{?contrib}
@@ -976,6 +997,7 @@ install -d -m 755 %{buildroot}%{_unitdir}
 install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-dir.service %{buildroot}%{_unitdir}
 install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-fd.service %{buildroot}%{_unitdir}
 install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-sd.service %{buildroot}%{_unitdir}
+install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-webui-proxy.service %{buildroot}%{_unitdir}
 %if 0%{?suse_version}
 ln -sf service %{buildroot}%{_sbindir}/rcbareos-dir
 ln -sf service %{buildroot}%{_sbindir}/rcbareos-fd
@@ -1007,6 +1029,18 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %config(noreplace) /etc/bareos-webui/directors.ini
 %config(noreplace) /etc/bareos-webui/configuration.ini
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
+
+%files webui-new
+%defattr(-,root,root,-)
+%doc webui-vue/tests/selenium
+%{_datadir}/%{name}-webui-new/
+%config(noreplace) %{_apache_conf_dir}/bareos-webui-new.conf
+
+%files webui-proxy
+%defattr(-,root,root,-)
+%{_sbindir}/bareos-webui-proxy
+%{configtemplatedir}/bareos-webui-proxy.ini
+%{_unitdir}/bareos-webui-proxy.service
 %endif
 
 %files client
@@ -1906,6 +1940,17 @@ a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
 a2enmod proxy_fcgi &> /dev/null || true
 a2enmod fcgid &> /dev/null || true
+%endif
+%logging_end
+
+%post webui-new
+%logging_start webui-new post
+%if 0%{?suse_version}
+a2enmod rewrite &> /dev/null || true
+a2enmod proxy &> /dev/null || true
+a2enmod proxy_http &> /dev/null || true
+a2enmod proxy_wstunnel &> /dev/null || true
+apachectl graceful &> /dev/null || true
 %endif
 %logging_end
 

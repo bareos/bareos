@@ -10,6 +10,19 @@ Bareos Webui
 
 Since :sinceVersion:`15.2.0: bareos-webui` |webui| is part of the Bareos project and available for a number of platforms.
 
+Bareos currently provides two WebUI variants:
+
+* the classic PHP-based |webui| documented on this page
+* the new Vue-based WebUI documented in :ref:`section-webui-vue`
+
+.. note::
+
+   The Vue-based WebUI is currently a technical preview.
+   For now, both WebUI variants exist in parallel.
+   The classic PHP WebUI remains the primary documented and supported WebUI,
+   while the Vue WebUI is documented separately so users can evaluate it
+   without treating it as a full replacement yet.
+
 .. image:: /include/images/bareos-webui-jobs.*
    :width: 80.0%
 
@@ -1003,6 +1016,42 @@ Restore location on client
 Plugin options
 
    Provide a plugin options string here if required. The field is only shown if a fileset using a plugin is detected.
+
+   When a plugin based backup is selected, the restore dialog in the Vue based
+   |webui| shows additional context to help building the restore plugin options
+   string:
+
+   - detected plugin name(s)
+   - the fileset name(s)
+   - option keys seen in the backup plugin definition
+   - the raw backup plugin definition
+   - a best-effort table of known plugin options for detected plugins
+
+   The dialog also provides a button **Show all known plugin hints** that opens
+   a catalog of all plugin hints currently built into the Vue based |webui|.
+
+   These hints are static frontend guidance derived from the Bareos manuals,
+   shipped plugin example configurations and plugin README files. They are not a
+   generic backend provided schema, therefore the shown classification of
+   options as *Required*, *Optional* or *Known key* is only a best-effort aid.
+   The final authoritative source remains the corresponding plugin
+   documentation.
+
+   At the moment the Vue based |webui| includes static hint data for these
+   plugins:
+
+   - VMware
+   - PostgreSQL
+   - Proxmox
+   - Apache Libcloud
+   - LDAP
+   - MariaDB mariabackup
+   - Percona XtraBackup
+   - bpipe
+   - grpc bridge plugin
+   - python-fd wrapper
+   - contrib bareos_mysql_dump
+   - contrib bareos_tasks plugins for PostgreSQL, MySQL, MariaDB and Oracle
 
 
 Restore multiple files
