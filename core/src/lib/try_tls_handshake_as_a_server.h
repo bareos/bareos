@@ -115,8 +115,7 @@ struct UseConfigAndJcrs : UsePasswordsFromConfig {
     auto [type, name] = global_resource::ParseQualifiedName(identity);
 
     if (type == global_resource::Type::Job) {
-      std::string cpy{name};
-      auto* jcr = get_jcr_by_full_name(cpy.c_str());
+      auto* jcr = get_jcr_by_full_name(name);
       if (!jcr) { return 0; }
       found_jcr = jcr;
 
