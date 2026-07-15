@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - build: remove windows warnings [PR #2698]
 - spec: use gcc-15 for rhel builds [PR #2705]
 - python api: Expose accurate options as typed plugin constants [PR #2702]
+- introduce new webui [PR #2711]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2328,5 +2329,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2702]: https://github.com/bareos/bareos/pull/2702
 [PR #2705]: https://github.com/bareos/bareos/pull/2705
 [PR #2706]: https://github.com/bareos/bareos/pull/2706
+[PR #2711]: https://github.com/bareos/bareos/pull/2711
 [PR #2712]: https://github.com/bareos/bareos/pull/2712
 [unreleased]: https://github.com/bareos/bareos/tree/master
