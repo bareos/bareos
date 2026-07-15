@@ -4,7 +4,5 @@
         <file>images/warning.png</file>
         <file>images/tray-error.png</file>
         <file>images/tray-running-sprite.png</file>
-        <file>images/bareos-logo.svg</file>
-        <file>images/bareos-logo-background.svg</file>
     </qresource>
 </RCC>
