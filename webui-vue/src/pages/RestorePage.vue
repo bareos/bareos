@@ -1159,11 +1159,32 @@ async function initBrowser() {
 async function fetchDir(pathId) {
   await ensureSelectedSourceDirector()
   const jids = mergedJobids.value
-  const pathArg = pathId != null ? `pathid=${pathId}` : `path=${quoteDirectorString('/')}`
-  const [dr, fr] = await Promise.all([
+  const pathArg = pathId != null ? `pathid=${pathId}` : 'path='
+  const [drPrimary, frPrimary] = await Promise.all([
     director.call(`.bvfs_lsdirs jobid=${jids} ${pathArg} limit=2000`).catch(() => null),
     director.call(`.bvfs_lsfiles jobid=${jids} ${pathArg} limit=2000`).catch(() => null),
   ])
+
+  let dr = drPrimary
+  let fr = frPrimary
+
+  const rootDirsEmpty = pathId == null && (!Array.isArray(dr?.directories) || dr.directories.length === 0)
+  const rootFilesEmpty = pathId == null && (!Array.isArray(fr?.files) || fr.files.length === 0)
+
+  if (rootDirsEmpty && rootFilesEmpty) {
+    const [drFallback, frFallback] = await Promise.all([
+      director.call(`.bvfs_lsdirs jobid=${jids} path=@ limit=2000`).catch(() => null),
+      director.call(`.bvfs_lsfiles jobid=${jids} path=@ limit=2000`).catch(() => null),
+    ])
+
+    if (rootDirsEmpty && Array.isArray(drFallback?.directories) && drFallback.directories.length > 0) {
+      dr = drFallback
+    }
+    if (rootFilesEmpty && Array.isArray(frFallback?.files) && frFallback.files.length > 0) {
+      fr = frFallback
+    }
+  }
+
   const dirs  = (dr?.directories ?? [])
     .filter(d => d.name && d.name !== '.' && d.name !== '..' && d.name !== './' && d.name !== '../')
     .map(d => ({
