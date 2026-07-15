@@ -79,16 +79,31 @@ const PluginInformation my_info = {
     .plugin_version = "26.0.0",
     .plugin_description
     = "This plugin allows you to backup your windows system for disaster "
-      "recovery.",
-    .plugin_usage = PLUGIN_NAME
-    R"(:save-unreferenced-disks=<yes|no>:save-unreferenced-partitions=<yes|no>:save-unreferenced-extents=<yes|no>:ignore-disks=<disks to ignore>
+      "recovery & restore it later.",
+    .plugin_usage
+    = "\non backup:\n---\n" PLUGIN_NAME
+      R"(:save-unreferenced-disks=<yes|no>:save-unreferenced-partitions=<yes|no>:save-unreferenced-extents=<yes|no>:ignore-disks=<disks to ignore>
 
   save-unreferenced-disks=<yes|no>: try to save disks that contain no snapshotted data, default=yes
   save-unreferenced-partitions=<yes|no>: try to save partitions that contain no snapshotted data, default=yes
   save-unreferenced-extents=<yes|no>: try to save even unsnapshotted parts of partitions, default=yes
-  disks to ignore: a comma-separated list of disk ids (i.e. '1,2,5') of disks
-                   to not backup
-)"};
+  disks to ignore: a comma-separated list of disk ids (i.e. '1,2,5') of disks to not backup
+
+on restore:
+---
+)" PLUGIN_NAME
+      R"(:<target>,
+  where <target> is one of the following:
+    files=file1,file2,file3 - restore the disks to the chosen files
+    directory=dir           - restore the disks into the directory
+    copy=path               - copy the barri image to the following path
+
+  The copy option allows you to restore the image via the barri cli tool instead
+  of this filedaemon plugin.
+)"
+
+
+};
 
 std::string_view trim_left(std::string_view input)
 {
