@@ -1,0 +1,74 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+#
+# restore command accepts when= and forwards it to run command
+#
+
+#CTEST requires=create-backup
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+#shellcheck source=functions
+. functions
+
+RestoreDirectory="${runner_tmp}/restore-when"
+
+start_test
+
+if [[ -d "$RestoreDirectory" ]]; then
+  rm -r "$RestoreDirectory"
+fi
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${runner_tmp}/jobs.out
+list jobs
+@$out ${runner_tmp}/restore-when.out
+restore client=bareos-fd fileset=SelfTest where="$RestoreDirectory" \
+  when="2001-01-01 00:00:00" jobid=1 all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_preconditions
+
+expect_grep "Job queued." \
+  "${runner_tmp}/restore-when.out" \
+  "The restore job was not queued with when option."
+expect_not_grep "Invalid time specification in when" \
+  "${runner_tmp}/restore-when.out" \
+  "Restore with when option was rejected."
+
+end_test

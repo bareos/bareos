@@ -598,6 +598,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
                       "replace",       /* 24 */
                       "pluginoptions", /* 25 */
                       "archive",       /* 26 */
+                      "when",          /* 27 */
                       NULL};
 
   rx->JobIds[0] = 0;
