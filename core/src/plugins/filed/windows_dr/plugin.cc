@@ -19,7 +19,9 @@
    02110-1301, USA.
 */
 
+#include <variant>
 #include "include/job_types.h"
+#include "lib/util.h"
 #if !defined(PLUGIN_NAME)
 #  error PLUGIN_NAME not set
 #endif
@@ -32,6 +34,7 @@
 #include "parser.h"
 #include "dump.h"
 #include "plugin.h"
+#include "restore.h"
 #include "lib/bool_string.h"
 #include <comdef.h>
 #include <time.h>
@@ -40,6 +43,8 @@
 
 #include <charconv>
 #include <memory>
+
+#include <tl/expected.hpp>
 
 #if defined(MSVC_JOINED_THE_MODERN_WORLD)
 #  define warn_msg(ctx, fmt, ...) \
@@ -95,9 +100,10 @@ on restore:
 )" PLUGIN_NAME
       R"(:<target>,
   where <target> is one of the following:
-    files=file1,file2,file3 - restore the disks to the chosen files
-    directory=dir           - restore the disks into the directory
-    copy=path               - copy the barri image to the following path
+    disks=file1,file2,file3 - restore the disks to the chosen disks
+    vhdx-directory=dir      - restore the disks as vhdx files into the directory
+    raw-directory=dir       - restore the disks as raw files into the directory
+    copy=<yes|no>           - if yes, then the data gets restored as simple files
 
   The copy option allows you to restore the image via the barri cli tool instead
   of this filedaemon plugin.
@@ -153,6 +159,7 @@ std::string_view next_part(std::string_view& input, char sep)
 
 std::size_t next_option(std::string_view& to_parse,
                         std::span<const std::string_view> keywords,
+                        std::string_view* keyword,
                         std::string_view* value)
 {
   // we dont want to change to_parse, if we cannot find a keyword
@@ -166,12 +173,12 @@ std::size_t next_option(std::string_view& to_parse,
 
   auto key = trim_right(next_part(input, '='));
 
-
   debug_msg(300, " => key = {}, value = {}", key, input);
   *value = trim(input);
 
   for (size_t i = 0; i < keywords.size(); ++i) {
     if (key == keywords[i]) {
+      *keyword = key;
       debug_msg(300, " => keyword #{}", i);
       // if we found a keyword, then we update to_parse
       to_parse = working_copy;
@@ -205,6 +212,8 @@ std::optional<std::string> insert_numbers(std::vector<std::size_t>& nums,
 
     if (conversion_result.ec != std::errc{}) {
       switch (conversion_result.ec) {
+        default:
+          [[fallthrough]];
         case std::errc::invalid_argument: {
           return libbareos::format("could not parse {} as a number", found);
         } break;
@@ -249,7 +258,10 @@ constexpr std::size_t index_of(std::span<const std::string_view> keywords,
 }
 
 struct context {
-  virtual bool parse(PluginContext* ctx, const char* text) = 0;
+  virtual bool parse(PluginContext* ctx,
+                     const char* text,
+                     std::string_view overrides)
+      = 0;
   virtual bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt) = 0;
   virtual ~context() = default;
 };
@@ -261,6 +273,8 @@ struct plugin_ctx {
 
   CoUninitializer unititializer{};
   std::unique_ptr<context> context;
+
+  std::string option_overrides;
 };
 
 plugin_ctx* get_private_context(PluginContext* ctx)
@@ -273,28 +287,38 @@ void set_private_context(PluginContext* ctx, plugin_ctx* priv_ctx)
   ctx->plugin_private_context = priv_ctx;
 }
 
-namespace backup {
+enum class file : std::size_t
+{
+  Dump,
+  Log,
+  Count,
+};
+
+using copy_location = std::string;
+using drive_list = std::vector<std::string>;
+
+using barri::restore::raw_directory;
+using barri::restore::vhdx_directory;
+
 struct plugin_arguments {
+  using Error = tl::unexpected<std::string>;
+
   static std::optional<plugin_arguments> parse(PluginContext* ctx,
                                                std::string_view str)
   {
-    static constexpr std::string_view save_unreferenced_disks
-        = "save-unreferenced-disks";
-    static constexpr std::string_view save_unreferenced_partitions
-        = "save-unreferenced-partitions";
-    static constexpr std::string_view save_unreferenced_extents
-        = "save-unreferenced-extents";
-    static constexpr std::string_view ignore_disks = "ignore-disks";
-    static constexpr std::string_view keywords[] = {
-        save_unreferenced_disks,
-        save_unreferenced_partitions,
-        save_unreferenced_extents,
-        ignore_disks,
-    };
+    static constexpr std::string_view keywords[]
+        = {"disks",
+           "vhdx-directory",
+           "raw-directory",
+           "copy",
+           "save-unreferenced-disks",
+           "save-unreferenced-partitions",
+           "save-unreferenced-extents",
+           "ignore-disks"};
 
     auto name = next_part(str, ':');
 
-    debug_msg(300, "got name = '{}'", name);
+    debug_msg(ctx, 300, "got name = '{}'", name);
 
     if (name != PLUGIN_NAME) {
       err_msg(ctx, "bad plugin options received, expected '{}', got '{}'",
@@ -308,9 +332,51 @@ struct plugin_arguments {
 
       if (str.size() == 0) { break; }
 
+      // we always choose the last option set, i.e. if
+      //  drives=a,b,c dump=k drives=l,m,n
+      // is given, we treat it the same as drives=l,m,n
+      // This allows the user to overwrite the options via FdPluginOptions
+
       std::string_view value = {};
-      switch (next_option(str, keywords, &value)) {
-        case index_of(keywords, save_unreferenced_disks): {
+      std::string_view key = {};
+      switch (next_option(str, keywords, &key, &value)) {
+        case index_of(keywords, "disks"): {
+          debug_msg(ctx, 300, "parsing disks value '{}'", value);
+
+          auto paths = split_string_view(value, ',');
+
+          // checking of whether the paths are valid are done later
+          auto& list = args.target.emplace<drive_list>();
+          list.insert(list.end(), paths.begin(), paths.end());
+        } break;
+
+        case index_of(keywords, "copy"): {
+          debug_msg(ctx, 300, "parsing copy value '{}'", value);
+          switch (parse_user_bool(value)) {
+            case parse_bool_result::True: {
+              args.dump_to_disk = true;
+            } break;
+            case parse_bool_result::False: {
+              args.dump_to_disk = false;
+            } break;
+            case parse_bool_result::Error: {
+              fatal_msg(ctx, "unexpected value {} for {}", value, key);
+              return std::nullopt;
+            } break;
+          }
+        } break;
+
+        case index_of(keywords, "vhdx-directory"): {
+          // checking of whether the path is valid is done later
+          args.target.emplace<vhdx_directory>(FromUtf8(value));
+        } break;
+
+        case index_of(keywords, "raw-directory"): {
+          // checking of whether the path is valid is done later
+          args.target.emplace<raw_directory>(FromUtf8(value));
+        } break;
+
+        case index_of(keywords, "save-unreferenced-disks"): {
           switch (parse_user_bool(value)) {
             case parse_bool_result::True: {
               args.save_unknown_disks = true;
@@ -319,14 +385,13 @@ struct plugin_arguments {
               args.save_unknown_disks = false;
             } break;
             case parse_bool_result::Error: {
-              fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                        save_unreferenced_disks);
+              fatal_msg(ctx, "unexpected value {} for {}", value, key);
               return std::nullopt;
             } break;
           }
         } break;
 
-        case index_of(keywords, save_unreferenced_partitions): {
+        case index_of(keywords, "save-unreferenced-partitions"): {
           switch (parse_user_bool(value)) {
             case parse_bool_result::True: {
               args.save_unknown_partitions = true;
@@ -335,14 +400,13 @@ struct plugin_arguments {
               args.save_unknown_partitions = false;
             } break;
             case parse_bool_result::Error: {
-              fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                        save_unreferenced_partitions);
+              fatal_msg(ctx, "unexpected value {} for {}", value, key);
               return std::nullopt;
             } break;
           }
         } break;
 
-        case index_of(keywords, save_unreferenced_extents): {
+        case index_of(keywords, "save-unreferenced-extents"): {
           switch (parse_user_bool(value)) {
             case parse_bool_result::True: {
               args.save_unknown_extents = true;
@@ -351,25 +415,24 @@ struct plugin_arguments {
               args.save_unknown_extents = false;
             } break;
             case parse_bool_result::Error: {
-              fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                        save_unreferenced_extents);
+              fatal_msg(ctx, "unexpected value {} for {}", value, key);
               return std::nullopt;
             } break;
           }
         } break;
 
-        case index_of(keywords, ignore_disks): {
+        case index_of(keywords, "ignore-disks"): {
           if (value.empty()) {
-            fatal_msg(ctx, "unexpected empty value for {} option",
-                      ignore_disks);
+            fatal_msg(ctx, "unexpected empty value for {}", key);
             return std::nullopt;
           }
           if (auto error = insert_numbers(args.ignored_disks, value)) {
             fatal_msg(ctx, "could not parse {} as a list of ints ({}): {}",
-                      value, ignore_disks, error.value());
+                      value, key, error.value());
             return std::nullopt;
           }
         } break;
+
         default: {
           fatal_msg(ctx, "could not parse plugin options string '{}'", str);
 
@@ -392,7 +455,12 @@ struct plugin_arguments {
     }
   }
 
- private:
+  // restore options
+  bool dump_to_disk{true};
+  std::variant<std::monostate, drive_list, raw_directory, vhdx_directory>
+      target;
+
+  // backup options
   std::vector<size_t> ignored_disks;
   bool save_unknown_disks{true};
   bool save_unknown_partitions{true};
@@ -446,6 +514,8 @@ struct plugin_logger : public GenericLogger {
 
   std::span<const char> log() const { return messages; }
 
+  PluginContext* context() { return ctx; }
+
  private:
   void print_progress(Clock::time_point current_ts, std::size_t current_offset)
   {
@@ -486,6 +556,7 @@ struct plugin_logger : public GenericLogger {
   std::vector<char> messages;
 };
 
+namespace backup {
 struct session_ctx {
   plugin_logger logger;
   std::unique_ptr<dump_context,
@@ -501,13 +572,6 @@ struct session_ctx {
     args.apply_dump_context_settings(dctx.get());
     dumper.reset(dumper_setup(&logger, dump_context_create_plan(dctx.get())));
   }
-};
-
-enum class file : std::size_t
-{
-  Dump,
-  Log,
-  Count,
 };
 
 struct context : ::context {
@@ -539,9 +603,17 @@ struct context : ::context {
   }
 
 
-  bool parse(PluginContext* ctx, const char* text) override
+  bool parse(PluginContext* ctx,
+             const char* text,
+             std::string_view overrides) override
   {
-    std::optional parsed = plugin_arguments::parse(ctx, text);
+    std::string computed_value{text};
+    if (!overrides.empty()) {
+      computed_value += ":";
+      computed_value += overrides;
+    }
+
+    std::optional parsed = plugin_arguments::parse(ctx, computed_value);
     if (!parsed) { return false; }
 
     args = std::move(*parsed);
@@ -698,32 +770,227 @@ bRC context::pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
 };  // namespace backup
 
 namespace restore {
+struct session {
+  plugin_logger logger;
+
+  restartable_parser* parser{};
+  std::unique_ptr<GenericHandler> handler{};
+
+  session(PluginContext* ctx) : logger{ctx} {}
+
+  template <typename T>
+    requires std::same_as<T, vhdx_directory> || std::same_as<T, raw_directory>
+             || std::same_as<T, disk_ids>
+  bool begin(T dir)
+  {
+    try {
+      handler = GetHandler(&logger, std::move(dir));
+      if (!handler) { return false; }
+      parser = parse_begin(handler.get(), &logger);
+      if (!parser) { return false; }
+    } catch (const std::exception& ex) {
+      err_msg(logger.context(), "Exception occured during creation: {}",
+              ex.what());
+      return false;
+    }
+    return true;
+  }
+
+  ssize_t write(std::span<const char> data)
+  {
+    try {
+      parse_data(parser, data);
+      return data.size();
+    } catch (const std::exception& ex) {
+      err_msg(logger.context(), "Exception occured during write: {}",
+              ex.what());
+      return -1;
+    }
+  }
+
+  ~session()
+  {
+    if (parser) { parse_end(parser); }
+  }
+};
+
 struct context : ::context {
   virtual ~context() = default;
 
   static std::unique_ptr<context> make(PluginContext*)
   {
-    (void)ctx;
-    return nullptr;
+    auto rctx = std::make_unique<context>();
+
+    return rctx;
   }
 
+  bool parse(PluginContext* ctx,
+             const char* text,
+             std::string_view overrides) override
+  {
+    std::string computed_value{text};
+    if (!overrides.empty()) {
+      computed_value += ":";
+      computed_value += overrides;
+    }
 
-  bool parse(PluginContext* ctx, const char* text) override
+    std::optional opt = plugin_arguments::parse(ctx, computed_value);
+    if (!opt) { return false; }
+    args = std::move(*opt);
+    return true;
+  }
+
+  bRC start_file(PluginContext* ctx, const char* name)
   {
     (void)ctx;
-    (void)text;
-    return false;
+    (void)name;
+    return bRC_OK;
   }
 
-  bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt) override;
-};
+  bRC end_current_file(PluginContext* ctx)
+  {
+    (void)ctx;
+    current_file_type.reset();
+    return bRC_OK;
+  }
 
-bRC context::pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
-{
-  (void)ctx;
-  (void)pkt;
-  return bRC_Error;
-}
+  bRC pluginIO_Session(drive_list& list,
+                       PluginContext* ctx,
+                       filedaemon::io_pkt* pkt)
+  {
+    switch (pkt->func) {
+      case filedaemon::IO_OPEN: {
+        if (current_session) {
+          err_msg(ctx, "context can only be created once");
+          pkt->status = -1;
+          return bRC_Error;
+        }
+
+        try {
+          current_session.emplace(ctx);
+          pkt->status = 0;
+          return bRC_OK;
+        } catch (const std::exception& ex) {
+          err_msg(ctx, "could not start: {}", ex.what());
+          pkt->status = -1;
+          return bRC_Error;
+        } catch (...) {
+          err_msg(ctx, "could not start: unknown error occurred");
+          pkt->status = -1;
+          return bRC_Error;
+        }
+      } break;
+      case filedaemon::IO_WRITE: {
+        if (pkt->count < 0) {
+          err_msg(ctx, "its impossible to write {} bytes...", pkt->count);
+          pkt->status = -1;
+          return bRC_Error;
+        }
+        if (!current_session) {
+          err_msg(ctx, "its impossible to write with no session", pkt->count);
+          pkt->status = -1;
+          return bRC_Error;
+        }
+
+        pkt->status = current_session->write(
+            std::span{pkt->buf, static_cast<std::size_t>(pkt->count)});
+        return bRC_OK;
+      } break;
+      case filedaemon::IO_CLOSE: {
+        if (!current_session) {
+          err_msg(ctx, "context can only be closed, if its open");
+          pkt->status = -1;
+          return bRC_Error;
+        }
+        current_session.reset();
+        pkt->status = 0;
+        return bRC_OK;
+      } break;
+    }
+
+    fatal_msg(ctx, "unhandled code path: {}", pkt->func);
+    return bRC_Error;
+  }
+
+  std::optional<session> current_session;
+
+  bRC pluginIO_Dump(PluginContext* ctx, filedaemon::io_pkt* pkt)
+  {
+    switch (pkt->func) {
+      case filedaemon::IO_OPEN: {
+        auto hndl = CreateFileA(pkt->fname, GENERIC_WRITE, 0, NULL,
+                                CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+        if (hndl == INVALID_HANDLE_VALUE) {
+          warn_msg(ctx, "Could not open file {} for writing", pkt->fname);
+          pkt->status = -1;
+          return bRC_Error;
+        } else {
+          pkt->hndl = hndl;
+          pkt->status = IoStatus::do_io_in_core;
+
+          return bRC_OK;
+        }
+      } break;
+      case filedaemon::IO_CLOSE: {
+        if (CloseHandle(pkt->hndl) == 0) { return bRC_Error; }
+        return bRC_OK;
+      } break;
+      default: {
+        fatal_msg(ctx,
+                  "Internal error occured: received unexpected instruction: {}",
+                  pkt->func);
+        return bRC_Error;
+      } break;
+    }
+  }
+
+  bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt) override
+  {
+    if (args.dump_to_disk) { return pluginIO_Dump(ctx, pkt); }
+
+
+    if (auto* list = std::get_if<drive_list>(&args.target)) {
+      return pluginIO_Session(*list, ctx, pkt);
+    }
+
+    fatal_msg(ctx, "Cannot do IO as it was not set up yet!");
+    return bRC_Error;
+  }
+
+  bRC create_file(PluginContext* ctx, filedaemon::restore_pkt* pkt)
+  {
+    if (args.dump_to_disk) {
+      // TODO: we should delete @BARRI/ from the pkt->ofname
+      // and restore to there
+
+      pkt->create_status = CF_CORE;
+      return bRC_OK;
+    }
+
+
+    if (auto* list = std::get_if<drive_list>(&args.target)) {
+      auto fname = std::string_view{pkt->original_file_name};
+      if (fname.ends_with(log_ending)) {
+        pkt->create_status = CF_SKIP;
+        return bRC_Skip;
+      } else if (fname.ends_with(dump_ending)) {
+        // we do not actually create files here, so we just ignore this
+        return bRC_OK;
+      }
+
+      fatal_msg(ctx, "Cannot restore {} of unknown type!", fname);
+      return bRC_Error;
+    }
+
+    fatal_msg(ctx, "Cannot create {} as it was not set up yet!",
+              pkt->original_file_name);
+    return bRC_Error;
+  }
+
+  std::optional<file> current_file_type{};
+  plugin_arguments args;
+};
 };  // namespace restore
 
 backup::context* get_backup_context(PluginContext* ctx)
@@ -752,7 +1019,6 @@ bRC newPlugin(PluginContext* ctx)
   }
 
   set_private_context(ctx, new plugin_ctx);
-  RegisterBareosEvent(ctx, filedaemon::bEventPluginCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventNewPluginOptions);
   RegisterBareosEvent(ctx, filedaemon::bEventPluginCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventJobStart);
@@ -786,66 +1052,77 @@ bRC setPluginValue(PluginContext*, filedaemon::pVariable, void*)
 bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
 {
   auto* pctx = get_private_context(ctx);
-  if (!pctx->context) {
-    std::optional job_type = bVar::Get<bVar::Type>(ctx);
+  switch (event->eventType) {
+    case filedaemon::bEventNewPluginOptions: {
+      std::string_view s{static_cast<const char*>(data)};
 
-    if (!job_type) {
-      DebugLog(ctx, 300, "could not query job type!");
-      return bRC_Error;
-    }
-
-    if (*job_type == JT_RESTORE) {
-      // if its set to restore, then we are definitely a restore job
-
-      auto rctx = restore::context::make(ctx);
-      if (!rctx) {
-        fatal_msg(ctx, "Could not start a restore job");
+      if (!s.starts_with("barri:")) {
+        err_msg(
+            ctx,
+            "Could not parse plugin options: they do not start with barri:!");
         return bRC_Error;
       }
 
-      pctx->context = std::move(rctx);
-    } else {
-      // we take a guess and say this is a backup job (as we only support
-      // these two options!)
+      s.remove_prefix(sizeof("barri:") - 1);
 
-      auto bctx = backup::context::make(ctx);
+      if (pctx->option_overrides.empty()) {
+        pctx->option_overrides = std::string{s};
+      }
+    } break;
+    case filedaemon::bEventPluginCommand: {
+      if (!pctx->context) {
+        debug_msg(ctx, 300, "setting up a backup context");
+        auto bctx = backup::context::make(ctx);
+        if (!bctx) {
+          fatal_msg(ctx, "Could not setup the backup context");
+          return bRC_Error;
+        }
+
+        pctx->context = std::move(bctx);
+      }
+
+      auto* bctx = get_backup_context(ctx);
+
       if (!bctx) {
-        fatal_msg(ctx, "Could not start a backup job");
+        // this can happen if we somehow setup a restore context before
+        fatal_msg(ctx, "instructed to execute a backup command during restore");
         return bRC_Error;
       }
 
-      pctx->context = std::move(bctx);
-    }
-  }
-
-
-  if (auto* bctx = get_backup_context(ctx)) {
-    switch (event->eventType) {
-      case filedaemon::bEventNewPluginOptions:
-        [[fallthrough]];
-      case filedaemon::bEventPluginCommand: {
-        if (!bctx->parse(ctx, static_cast<const char*>(data))) {
-          DebugLog(ctx, 300, "plugin option string could not be parsed");
+      if (!bctx->parse(ctx, static_cast<const char*>(data),
+                       pctx->option_overrides)) {
+        debug_msg(ctx, 300, "plugin option string could not be parsed");
+        return bRC_Error;
+      }
+      return bRC_OK;
+    } break;
+    case filedaemon::bEventRestoreCommand: {
+      if (!pctx->context) {
+        debug_msg(ctx, 300, "setting up a restore context");
+        auto rctx = restore::context::make(ctx);
+        if (!rctx) {
+          fatal_msg(ctx, "could not setup the restore context");
           return bRC_Error;
         }
-        return bRC_OK;
-      } break;
-    }
-  } else if (auto* rctx = get_restore_context(ctx)) {
-    switch (event->eventType) {
-      case filedaemon::bEventNewPluginOptions:
-        [[fallthrough]];
-      case filedaemon::bEventRestoreCommand: {
-        if (!rctx->parse(ctx, static_cast<const char*>(data))) {
-          DebugLog(ctx, 300, "plugin option string could not be parsed");
-          return bRC_Error;
-        }
-        return bRC_OK;
-      } break;
-    }
-  } else {
-    fatal_msg(ctx, "Context was not setup properly");
-    return bRC_Error;
+
+        pctx->context = std::move(rctx);
+      }
+
+      auto* rctx = get_restore_context(ctx);
+
+      if (!rctx) {
+        // this can happen if we somehow setup a backup context before
+        fatal_msg(ctx, "instructed to execute a restore command during backup");
+        return bRC_Error;
+      }
+
+      if (!rctx->parse(ctx, static_cast<const char*>(data),
+                       pctx->option_overrides)) {
+        debug_msg(ctx, 300, "plugin option string could not be parsed");
+        return bRC_Error;
+      }
+      return bRC_OK;
+    } break;
   }
 
   warn_msg(ctx, "Unknown event {} passed", (int)event->eventType);
@@ -888,7 +1165,7 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
     }
   }
 
-  if (bctx->current_file == backup::file::Dump) {
+  if (bctx->current_file == file::Dump) {
     // setting this does not do anything yet.  Maybe it will in the future
     sp->portable = true;  // we do not create windows backup data streams
 
@@ -901,7 +1178,7 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
     sp->statp.st_size = -1;
     sp->statp.st_blksize = 4096;
     sp->statp.st_blocks = 1;
-  } else if (bctx->current_file == backup::file::Log) {
+  } else if (bctx->current_file == file::Log) {
     if (!bctx->current_session) {
       fatal_msg(ctx, "cannot backup log of a session that does not exist");
       return bRC_Error;
@@ -935,9 +1212,9 @@ bRC endBackupFile(PluginContext* ctx)
     return bRC_Error;
   }
 
-  bctx->current_file = static_cast<backup::file>(
-      static_cast<std::size_t>(bctx->current_file) + 1);
-  if (bctx->current_file != backup::file::Count) { return bRC_More; }
+  bctx->current_file
+      = static_cast<file>(static_cast<std::size_t>(bctx->current_file) + 1);
+  if (bctx->current_file != file::Count) { return bRC_More; }
   return bRC_OK;
 }
 
@@ -953,7 +1230,7 @@ bRC startRestoreFile(PluginContext* ctx, const char* file_name)
     return bRC_Error;
   }
 
-  return bRC_OK;
+  return rctx->start_file(ctx, file_name);
 }
 
 bRC endRestoreFile(PluginContext* ctx)
@@ -967,7 +1244,8 @@ bRC endRestoreFile(PluginContext* ctx)
   }
 
   DebugLog(ctx, 500, "finished restoring file");
-  return bRC_OK;
+
+  return rctx->end_current_file(ctx);
 }
 
 bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
@@ -985,16 +1263,22 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
 
 bRC createFile(PluginContext* ctx, filedaemon::restore_pkt* pkt)
 {
-  (void)ctx;
-  (void)pkt;
-  return bRC_Error;
+  if (auto* rctx = get_restore_context(ctx)) {
+    return rctx->create_file(ctx, pkt);
+  } else {
+    fatal_msg(ctx, "{} can only be called during restore", __PRETTY_FUNCTION__);
+    return bRC_Error;
+  }
 }
 
 bRC setFileAttributes(PluginContext* ctx, filedaemon::restore_pkt* pkt)
 {
-  (void)ctx;
-  (void)pkt;
-  return bRC_Error;
+  if (auto* rctx = get_restore_context(ctx)) {
+    return rctx->create_file(ctx, pkt);
+  } else {
+    fatal_msg(ctx, "{} can only be called during restore", __PRETTY_FUNCTION__);
+    return bRC_Error;
+  }
 }
 
 bRC checkFile(PluginContext* ctx, char* file_name)
