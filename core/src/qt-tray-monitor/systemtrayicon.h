@@ -50,7 +50,7 @@ class SystemTrayIcon : public QSystemTrayIcon {
   Q_DISABLE_COPY(SystemTrayIcon);
 
   IconType currentIcon{IconType::Normal};
-  size_t animationFrameIdx{0};
+  int animationFrameIdx{0};
   bool animationRequested{false};
   QIcon normalIcon;
   QIcon errorIcon;

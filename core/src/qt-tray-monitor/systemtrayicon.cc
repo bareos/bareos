@@ -22,6 +22,7 @@
 #include "systemtrayicon.h"
 #include "resources.h"
 #include "traymenu.h"
+#include <QDebug>
 #include <QMainWindow>
 #include <QPixmap>
 #include <QTimer>
@@ -60,11 +61,18 @@ SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
   bool loaded_sprite = LoadAnimationFromSpriteSheet(
       animationIcons, kRes_RunningSpriteSheet, kRes_RunningFrameCount,
       kRes_RunningFrameWidth, kRes_RunningFrameHeight);
+
   Q_ASSERT_X(loaded_sprite && !animationIcons.isEmpty(), "Tray animation",
              kRes_RunningSpriteSheet);
-  normalIcon = animationIcons.isEmpty() ? QIcon() : animationIcons[0];
-
   errorIcon = QIcon(kRes_ErrorIcon);
+
+  if (loaded_sprite && !animationIcons.isEmpty()) {
+    normalIcon = animationIcons[0];
+  } else {
+    qCritical("Failed to load tray sprite sheet: %s",
+              kRes_RunningSpriteSheet);
+    normalIcon = errorIcon;
+  }
 
   // this object name is used for auto-connection to the MainWindow
   setObjectName("SystemTrayIcon");
@@ -99,7 +107,8 @@ void SystemTrayIcon::setIconInternal()
     return;
   }
 
-  animationFrameIdx = (animationFrameIdx + 1) % animationIcons.size();
+  const int frame_count = static_cast<int>(animationIcons.size());
+  animationFrameIdx = (animationFrameIdx + 1) % frame_count;
   if (!animationRequested && animationFrameIdx == 0) { timer->stop(); }
   updateIcon();
 }
