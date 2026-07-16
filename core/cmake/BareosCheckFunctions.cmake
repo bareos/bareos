@@ -17,23 +17,23 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-if(NOT MSVC)
-  if(NOT DEFINED HAVE_CORE_SYSTEM_INTERFACES)
+# do a conditional try-compile
+function(bareos_compile_test result_var source_file)
+  if(NOT DEFINED ${result_var})
     try_compile(
-      HAVE_CORE_SYSTEM_INTERFACES ${CMAKE_BINARY_DIR}/compile_tests
-      ${PROJECT_SOURCE_DIR}/src/compile_tests/core_system_interfaces.c
-      OUTPUT_VARIABLE build_output
+      ${result_var} ${CMAKE_BINARY_DIR}/compile_tests
+      ${PROJECT_SOURCE_DIR}/src/compile_tests/${source_file}
     )
   endif()
+endfunction()
+
+if(NOT MSVC)
+  bareos_compile_test(HAVE_CORE_SYSTEM_INTERFACES core_system_interfaces.c)
   if(HAVE_CORE_SYSTEM_INTERFACES)
     set(HAVE_GETPAGESIZE 1)
     set(HAVE_POLL 1)
     set(HAVE_READDIR_R 1)
   else()
-    message(
-      SEND_ERROR
-        "core/src/compile_tests/core_system_interfaces.c failed to build: ${build_output}"
-    )
     message(
       FATAL_ERROR
         "Your system does not provide all required system interfaces. Cannot continue."
@@ -42,43 +42,23 @@ if(NOT MSVC)
 
   # FreeBSD extended attributes
   if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
-    if(NOT DEFINED HAVE_FREEBSD_EXTATTR)
-      try_compile(
-        HAVE_FREEBSD_EXTATTR ${CMAKE_BINARY_DIR}/compile_tests
-        ${PROJECT_SOURCE_DIR}/src/compile_tests/freebsd_extattr.c
-      )
-    endif()
+    bareos_compile_test(HAVE_FREEBSD_EXTATTR freebsd_extattr.c)
   endif()
 
   # AIX extended attributes
   if(CMAKE_SYSTEM_NAME MATCHES "AIX")
     message(WARNING "AIX compile test for EA is untested.")
-    if(NOT DEFINED HAVE_AIX_EA)
-      try_compile(
-        HAVE_AIX_EA ${CMAKE_BINARY_DIR}/compile_tests
-        ${PROJECT_SOURCE_DIR}/src/compile_tests/aix_ea.c
-      )
-    endif()
+    bareos_compile_test(HAVE_AIX_EA aix_ea.c)
   endif()
 
   # Linux extended attributes
   if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-    if(NOT DEFINED HAVE_LINUX_XATTR)
-      try_compile(
-        HAVE_LINUX_XATTR ${CMAKE_BINARY_DIR}/compile_tests
-        ${PROJECT_SOURCE_DIR}/src/compile_tests/linux_xattr.c
-      )
-    endif()
+    bareos_compile_test(HAVE_LINUX_XATTR linux_xattr.c)
   endif()
 
   # MacOS extended attributes
   if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    if(NOT DEFINED HAVE_DARWIN_XATTR)
-      try_compile(
-        HAVE_DARWIN_XATTR ${CMAKE_BINARY_DIR}/compile_tests
-        ${PROJECT_SOURCE_DIR}/src/compile_tests/darwin_xattr.c
-      )
-    endif()
+    bareos_compile_test(HAVE_DARWIN_XATTR darwin_xattr.c)
   endif()
 
   include(CheckFunctionExists)
