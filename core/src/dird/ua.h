@@ -205,6 +205,7 @@ struct RestoreContext {
   char* comment = nullptr;
   char* where = nullptr;
   char* RegexWhere = nullptr;
+  char* when = nullptr;
   char* replace = nullptr;
   char* plugin_options = nullptr;
   std::unique_ptr<RestoreBootstrapRecord> bsr;

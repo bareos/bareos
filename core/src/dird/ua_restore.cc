@@ -135,6 +135,9 @@ bool RestoreCmd(UaContext* ua, const char*)
   i = FindArgWithValue(ua, "replace");
   if (i >= 0) { rx.replace = ua->argv[i]; }
 
+  i = FindArgWithValue(ua, "when");
+  if (i >= 0) { rx.when = ua->argv[i]; }
+
   i = FindArgWithValue(ua, "pluginoptions");
   if (i >= 0) { rx.plugin_options = ua->argv[i]; }
 
@@ -322,6 +325,11 @@ bool RestoreCmd(UaContext* ua, const char*)
 
   if (rx.comment) {
     Mmsg(buf, " comment=\"%s\"", rx.comment);
+    PmStrcat(ua->cmd, buf);
+  }
+
+  if (rx.when) {
+    Mmsg(buf, " when=\"%s\"", rx.when);
     PmStrcat(ua->cmd, buf);
   }
 

@@ -405,6 +405,7 @@ static struct ua_cmdstruct commands[] = {
          "restorejob=<job-name> comment=<text> jobid=<jobid> "
          "fileset=<fileset-name> "
          "replace=<always|never|ifolder|ifnewer> "
+         "when=<universal-time-specification> "
          "pluginoptions=<plugin-options-string> "
          "regexwhere=<regex> fileregex=<regex> "
          "restoreclient=<client-name> backupformat=<format> "
