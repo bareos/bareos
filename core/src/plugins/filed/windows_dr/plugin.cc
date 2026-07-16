@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 
+#include "include/job_types.h"
 #if !defined(PLUGIN_NAME)
 #  error PLUGIN_NAME not set
 #endif
@@ -244,6 +245,32 @@ constexpr std::size_t index_of(std::span<const std::string_view> keywords,
   throw std::logic_error{"no such keyword"};
 }
 
+struct context {
+  virtual bool parse(PluginContext* ctx, const char* text) = 0;
+  virtual bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt) = 0;
+  virtual ~context() = default;
+};
+
+struct plugin_ctx {
+  struct CoUninitializer {
+    ~CoUninitializer() { CoUninitialize(); }
+  };
+
+  CoUninitializer unititializer{};
+  std::unique_ptr<context> context;
+};
+
+plugin_ctx* get_private_context(PluginContext* ctx)
+{
+  return reinterpret_cast<plugin_ctx*>(ctx->plugin_private_context);
+}
+
+void set_private_context(PluginContext* ctx, plugin_ctx* priv_ctx)
+{
+  ctx->plugin_private_context = priv_ctx;
+}
+
+namespace backup {
 struct plugin_arguments {
   static std::optional<plugin_arguments> parse(PluginContext* ctx,
                                                std::string_view str)
@@ -469,8 +496,53 @@ struct session_ctx {
   }
 };
 
-struct plugin_ctx {
-  void set_plugin_args(plugin_arguments args_) { args = args_; }
+enum class file : std::size_t
+{
+  Dump,
+  Log,
+  Count,
+};
+
+struct context : ::context {
+  virtual ~context() = default;
+
+  file current_file = file::Dump;
+
+  static std::unique_ptr<context> make(PluginContext* ctx)
+  {
+    std::optional client_name = bVar::Get<bVar::Client>(ctx);
+    if (!client_name) {
+      fatal_msg(ctx, "could not retrieve client name from the bareos api!");
+      return nullptr;
+    }
+
+    auto now = time(NULL);
+
+    auto bctx = std::make_unique<context>();
+
+    std::string_view hostname{client_name.value()};
+    bctx->dump_file_name
+        = libbareos::format("@BARRI/{}{}", hostname, dump_ending);
+    bctx->log_file_name
+        = libbareos::format("@BARRI/{}{}", hostname, log_ending);
+
+    bctx->timestamp = now;
+
+    return bctx;
+  }
+
+
+  bool parse(PluginContext* ctx, const char* text) override
+  {
+    std::optional parsed = plugin_arguments::parse(ctx, text);
+    if (!parsed) { return false; }
+
+    args = std::move(*parsed);
+    return true;
+  }
+
+  std::optional<session_ctx> current_session;
+  plugin_arguments args;
 
   void begin_session(PluginContext* ctx) { current_session.emplace(ctx, args); }
 
@@ -482,38 +554,186 @@ struct plugin_ctx {
 
   bool has_session() const { return current_session.has_value(); }
 
-  std::optional<session_ctx> current_session;
-
-  struct CoUninitializer {
-    ~CoUninitializer() { CoUninitialize(); }
-  };
-
-  CoUninitializer unititializer{};
-  plugin_arguments args{};
-
-  enum class file : std::size_t
-  {
-    Dump,
-    Log,
-    Count,
-  };
-  file current_file = file::Dump;
-
   std::string dump_file_name;
   std::string log_file_name;
   time_t timestamp;
   std::size_t log_bytes_sent = 0;
+
+  bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt) override;
 };
 
-plugin_ctx* get_private_context(PluginContext* ctx)
+bRC pluginIO_Dump(context* bctx, PluginContext* ctx, filedaemon::io_pkt* pkt)
 {
-  return reinterpret_cast<plugin_ctx*>(ctx->plugin_private_context);
+  switch (pkt->func) {
+    case filedaemon::IO_OPEN: {
+      if (bctx->has_session()) {
+        err_msg(ctx, "context can only be created once");
+        pkt->status = -1;
+        return bRC_Error;
+      }
+      try {
+        bctx->begin_session(ctx);
+        pkt->status = 0;
+        return bRC_OK;
+      } catch (const std::exception& ex) {
+        err_msg(ctx, "could not start: {}", ex.what());
+        pkt->status = -1;
+        return bRC_Error;
+      } catch (...) {
+        err_msg(ctx, "could not start: unknown error occurred");
+        pkt->status = -1;
+        return bRC_Error;
+      }
+    } break;
+    case filedaemon::IO_READ: {
+      if (pkt->count < 0) {
+        err_msg(ctx, "its impossible to read {} bytes...", pkt->count);
+        pkt->status = -1;
+        return bRC_Error;
+      }
+      pkt->status = bctx->session_read(
+          std::span{pkt->buf, static_cast<std::size_t>(pkt->count)});
+      return bRC_OK;
+    } break;
+    case filedaemon::IO_CLOSE: {
+      if (!bctx->has_session()) {
+        err_msg(ctx, "context can only be closed, if its open");
+        pkt->status = -1;
+        return bRC_Error;
+      }
+      pkt->status = 0;
+      return bRC_OK;
+    } break;
+  }
+
+  fatal_msg(ctx, "unhandled code path: {}", pkt->func);
+  return bRC_Error;
 }
 
-void set_private_context(PluginContext* ctx, plugin_ctx* priv_ctx)
+bRC pluginIO_Log(context* bctx, PluginContext* ctx, filedaemon::io_pkt* pkt)
 {
-  ctx->plugin_private_context = priv_ctx;
+  switch (pkt->func) {
+    case filedaemon::IO_OPEN: {
+      if (!bctx->has_session()) {
+        err_msg(ctx, "cannot open log: no session open");
+        pkt->status = -1;
+        return bRC_Error;
+      }
+      return bRC_OK;
+    } break;
+    case filedaemon::IO_READ: {
+      if (pkt->count < 0) {
+        err_msg(ctx, "it is impossible to read {} bytes...", pkt->count);
+        pkt->status = -1;
+        return bRC_Error;
+      }
+
+      auto log = bctx->current_session->logger.log();
+
+      std::size_t& log_bytes_sent = bctx->log_bytes_sent;
+      auto bytes_to_read = std::min(log.size() - log_bytes_sent,
+                                    static_cast<std::size_t>(pkt->count));
+
+      memcpy(pkt->buf, log.data() + log_bytes_sent, bytes_to_read);
+      pkt->status = bytes_to_read;
+      log_bytes_sent += bytes_to_read;
+      return bRC_OK;
+    } break;
+    case filedaemon::IO_CLOSE: {
+      pkt->status = 0;
+      return bRC_OK;
+    } break;
+  }
+  fatal_msg(ctx, "unhandled code path: {}", pkt->func);
+  return bRC_Error;
 }
+
+bRC context::pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
+{
+  auto handler = [&] {
+    switch (current_file) {
+      case file::Dump: {
+        return &pluginIO_Dump;
+      } break;
+      case file::Log: {
+        return &pluginIO_Log;
+      } break;
+      default: {
+        return static_cast<decltype(&pluginIO_Dump)>(nullptr);
+      } break;
+    }
+  }();
+
+  if (!handler) {
+    fatal_msg(ctx, "could not find handler for file {}",
+              static_cast<std::size_t>(current_file));
+    return bRC_Error;
+  }
+
+
+  switch (pkt->func) {
+    case filedaemon::IO_OPEN:
+      [[fallthrough]];
+    case filedaemon::IO_READ:
+      [[fallthrough]];
+    case filedaemon::IO_CLOSE: {
+      return handler(this, ctx, pkt);
+    } break;
+
+    case filedaemon::IO_WRITE: {
+      err_msg(ctx, "restores are not supported during a backup");
+      pkt->status = -1;
+      return bRC_Error;
+    } break;
+  }
+  return bRC_Error;
+}
+};  // namespace backup
+
+namespace restore {
+struct context : ::context {
+  virtual ~context() = default;
+
+  static std::unique_ptr<context> make(PluginContext*)
+  {
+    (void)ctx;
+    return nullptr;
+  }
+
+
+  bool parse(PluginContext* ctx, const char* text) override
+  {
+    (void)ctx;
+    (void)text;
+    return false;
+  }
+
+  bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt) override;
+};
+
+bRC context::pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
+{
+  (void)ctx;
+  (void)pkt;
+  return bRC_Error;
+}
+};  // namespace restore
+
+backup::context* get_backup_context(PluginContext* ctx)
+{
+  auto* pctx = get_private_context(ctx);
+
+  return dynamic_cast<backup::context*>(pctx->context.get());
+}
+
+restore::context* get_restore_context(PluginContext* ctx)
+{
+  auto* pctx = get_private_context(ctx);
+  (void)pctx;
+
+  return dynamic_cast<restore::context*>(pctx->context.get());
+}
+
 
 bRC newPlugin(PluginContext* ctx)
 {
@@ -533,23 +753,6 @@ bRC newPlugin(PluginContext* ctx)
   RegisterBareosEvent(ctx, filedaemon::bEventEstimateCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventBackupCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventRestoreObject);
-
-  std::optional client_name = bVar::Get<bVar::Client>(ctx);
-  if (!client_name) {
-    fatal_msg(ctx, "could not retrieve client name from the bareos api!");
-    return bRC_Error;
-  }
-
-  auto now = time(NULL);
-
-  auto pctx = get_private_context(ctx);
-
-  std::string_view hostname{client_name.value()};
-  pctx->dump_file_name
-      = libbareos::format("@BARRI/{}{}", hostname, dump_ending);
-  pctx->log_file_name = libbareos::format("@BARRI/{}{}", hostname, log_ending);
-
-  pctx->timestamp = now;
 
   return bRC_OK;
 }
@@ -576,44 +779,80 @@ bRC setPluginValue(PluginContext*, filedaemon::pVariable, void*)
 bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
 {
   auto* pctx = get_private_context(ctx);
-  switch (event->eventType) {
-    case filedaemon::bEventPluginCommand: {
-      std::optional arguments
-          = plugin_arguments::parse(ctx, static_cast<const char*>(data));
+  if (!pctx->context) {
+    std::optional job_type = bVar::Get<bVar::Type>(ctx);
 
-      if (!arguments) {
-        DebugLog(ctx, 300, "plugin option string could not be parsed");
-        return bRC_Error;
-      }
-      pctx->set_plugin_args(std::move(arguments.value()));
-      return bRC_OK;
-    } break;
+    if (!job_type) {
+      DebugLog(ctx, 300, "could not query job type!");
+      return bRC_Error;
+    }
 
-    case filedaemon::bEventNewPluginOptions:
-      [[fallthrough]];
-    case filedaemon::bEventBackupCommand:
-      [[fallthrough]];
-    case filedaemon::bEventEstimateCommand:
-      [[fallthrough]];
-    case filedaemon::bEventRestoreCommand: {
-      std::optional arguments
-          = plugin_arguments::parse(ctx, static_cast<const char*>(data));
+    if (*job_type == JT_RESTORE) {
+      // if its set to restore, then we are definitely a restore job
 
-      if (!arguments) {
-        DebugLog(ctx, 300, "plugin option string could not be parsed");
+      auto rctx = restore::context::make(ctx);
+      if (!rctx) {
+        fatal_msg(ctx, "Could not start a restore job");
         return bRC_Error;
       }
 
-      pctx->set_plugin_args(std::move(arguments.value()));
-      return bRC_OK;
-    } break;
+      pctx->context = std::move(rctx);
+    } else {
+      // we take a guess and say this is a backup job (as we only support
+      // these two options!)
+
+      auto bctx = backup::context::make(ctx);
+      if (!bctx) {
+        fatal_msg(ctx, "Could not start a backup job");
+        return bRC_Error;
+      }
+
+      pctx->context = std::move(bctx);
+    }
   }
-  return bRC_Error;
+
+
+  if (auto* bctx = get_backup_context(ctx)) {
+    switch (event->eventType) {
+      case filedaemon::bEventNewPluginOptions:
+        [[fallthrough]];
+      case filedaemon::bEventPluginCommand: {
+        if (!bctx->parse(ctx, static_cast<const char*>(data))) {
+          DebugLog(ctx, 300, "plugin option string could not be parsed");
+          return bRC_Error;
+        }
+        return bRC_OK;
+      } break;
+    }
+  } else if (auto* rctx = get_restore_context(ctx)) {
+    switch (event->eventType) {
+      case filedaemon::bEventNewPluginOptions:
+        [[fallthrough]];
+      case filedaemon::bEventRestoreCommand: {
+        if (!rctx->parse(ctx, static_cast<const char*>(data))) {
+          DebugLog(ctx, 300, "plugin option string could not be parsed");
+          return bRC_Error;
+        }
+        return bRC_OK;
+      } break;
+    }
+  } else {
+    fatal_msg(ctx, "Context was not setup properly");
+    return bRC_Error;
+  }
+
+  warn_msg(ctx, "Unknown event {} passed", (int)event->eventType);
+  return bRC_OK;
 }
 
 bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
 {
-  auto* pctx = get_private_context(ctx);
+  auto* bctx = get_backup_context(ctx);
+
+  if (!bctx) {
+    fatal_msg(ctx, "Backup Context was not set before {}", __PRETTY_FUNCTION__);
+    return bRC_Error;
+  }
 
   // first we check if this is a full backup.  If not, we reject the backup
   {
@@ -642,34 +881,34 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
     }
   }
 
-  if (pctx->current_file == plugin_ctx::file::Dump) {
+  if (bctx->current_file == backup::file::Dump) {
     // setting this does not do anything yet.  Maybe it will in the future
     sp->portable = true;  // we do not create windows backup data streams
 
-    sp->fname = const_cast<char*>(pctx->dump_file_name.c_str());
+    sp->fname = const_cast<char*>(bctx->dump_file_name.c_str());
     sp->type = FT_REG;
     sp->statp.st_mode = 0700 | S_IFREG;
-    sp->statp.st_ctime = pctx->timestamp;
-    sp->statp.st_mtime = pctx->timestamp;
-    sp->statp.st_atime = pctx->timestamp;
+    sp->statp.st_ctime = bctx->timestamp;
+    sp->statp.st_mtime = bctx->timestamp;
+    sp->statp.st_atime = bctx->timestamp;
     sp->statp.st_size = -1;
     sp->statp.st_blksize = 4096;
     sp->statp.st_blocks = 1;
-  } else if (pctx->current_file == plugin_ctx::file::Log) {
-    if (!pctx->current_session) {
+  } else if (bctx->current_file == backup::file::Log) {
+    if (!bctx->current_session) {
       fatal_msg(ctx, "cannot backup log of a session that does not exist");
       return bRC_Error;
     }
 
     sp->portable = true;  // we do not create windows backup data streams
 
-    sp->fname = const_cast<char*>(pctx->log_file_name.c_str());
+    sp->fname = const_cast<char*>(bctx->log_file_name.c_str());
     sp->type = FT_REG;
     sp->statp.st_mode = 0700 | S_IFREG;
-    sp->statp.st_ctime = pctx->timestamp;
-    sp->statp.st_mtime = pctx->timestamp;
-    sp->statp.st_atime = pctx->timestamp;
-    sp->statp.st_size = pctx->current_session->logger.log().size();
+    sp->statp.st_ctime = bctx->timestamp;
+    sp->statp.st_mtime = bctx->timestamp;
+    sp->statp.st_atime = bctx->timestamp;
+    sp->statp.st_size = bctx->current_session->logger.log().size();
     sp->statp.st_blksize = 4096;
     sp->statp.st_blocks = (sp->statp.st_size + 4095) / 4096;
   } else {
@@ -682,152 +921,59 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
 
 bRC endBackupFile(PluginContext* ctx)
 {
-  auto* pctx = get_private_context(ctx);
-  pctx->current_file = static_cast<plugin_ctx::file>(
-      static_cast<std::size_t>(pctx->current_file) + 1);
-  if (pctx->current_file != plugin_ctx::file::Count) { return bRC_More; }
+  auto* bctx = get_backup_context(ctx);
+
+  if (!bctx) {
+    fatal_msg(ctx, "Backup Context was not set before {}", __PRETTY_FUNCTION__);
+    return bRC_Error;
+  }
+
+  bctx->current_file = static_cast<backup::file>(
+      static_cast<std::size_t>(bctx->current_file) + 1);
+  if (bctx->current_file != backup::file::Count) { return bRC_More; }
   return bRC_OK;
 }
 
 bRC startRestoreFile(PluginContext* ctx, const char* file_name)
 {
   DebugLog(ctx, 500, "starting to restore '{}'", file_name);
+
+  auto* rctx = get_restore_context(ctx);
+
+  if (!rctx) {
+    fatal_msg(ctx, "Restore Context was not set before {}",
+              __PRETTY_FUNCTION__);
+    return bRC_Error;
+  }
+
   return bRC_OK;
 }
 
 bRC endRestoreFile(PluginContext* ctx)
 {
+  auto* rctx = get_restore_context(ctx);
+
+  if (!rctx) {
+    fatal_msg(ctx, "Restore Context was not set before {}",
+              __PRETTY_FUNCTION__);
+    return bRC_Error;
+  }
+
   DebugLog(ctx, 500, "finished restoring file");
   return bRC_OK;
 }
 
-bRC pluginIO_Dump(PluginContext* ctx, filedaemon::io_pkt* pkt)
-{
-  auto* pctx = get_private_context(ctx);
-  switch (pkt->func) {
-    case filedaemon::IO_OPEN: {
-      if (pctx->has_session()) {
-        err_msg(ctx, "context can only be created once");
-        pkt->status = -1;
-        return bRC_Error;
-      }
-      try {
-        pctx->begin_session(ctx);
-        pkt->status = 0;
-        return bRC_OK;
-      } catch (const std::exception& ex) {
-        err_msg(ctx, "could not start: {}", ex.what());
-        pkt->status = -1;
-        return bRC_Error;
-      } catch (...) {
-        err_msg(ctx, "could not start: unknown error occurred");
-        pkt->status = -1;
-        return bRC_Error;
-      }
-    } break;
-    case filedaemon::IO_READ: {
-      if (pkt->count < 0) {
-        err_msg(ctx, "its impossible to read {} bytes...", pkt->count);
-        pkt->status = -1;
-        return bRC_Error;
-      }
-      pkt->status = pctx->session_read(
-          std::span{pkt->buf, static_cast<std::size_t>(pkt->count)});
-      return bRC_OK;
-    } break;
-    case filedaemon::IO_CLOSE: {
-      if (!pctx->has_session()) {
-        err_msg(ctx, "context can only be closed, if its open");
-        pkt->status = -1;
-        return bRC_Error;
-      }
-      pkt->status = 0;
-      return bRC_OK;
-    } break;
-  }
-
-  fatal_msg(ctx, "unhandled code path: {}", pkt->func);
-  return bRC_Error;
-}
-
-bRC pluginIO_Log(PluginContext* ctx, filedaemon::io_pkt* pkt)
-{
-  auto* pctx = get_private_context(ctx);
-  switch (pkt->func) {
-    case filedaemon::IO_OPEN: {
-      if (!pctx->has_session()) {
-        err_msg(ctx, "cannot open log: no session open");
-        pkt->status = -1;
-        return bRC_Error;
-      }
-      return bRC_OK;
-    } break;
-    case filedaemon::IO_READ: {
-      if (pkt->count < 0) {
-        err_msg(ctx, "it is impossible to read {} bytes...", pkt->count);
-        pkt->status = -1;
-        return bRC_Error;
-      }
-
-      auto log = pctx->current_session->logger.log();
-
-      std::size_t& log_bytes_sent = pctx->log_bytes_sent;
-      auto bytes_to_read = std::min(log.size() - log_bytes_sent,
-                                    static_cast<std::size_t>(pkt->count));
-
-      memcpy(pkt->buf, log.data() + log_bytes_sent, bytes_to_read);
-      pkt->status = bytes_to_read;
-      log_bytes_sent += bytes_to_read;
-      return bRC_OK;
-    } break;
-    case filedaemon::IO_CLOSE: {
-      pkt->status = 0;
-      return bRC_OK;
-    } break;
-  }
-  fatal_msg(ctx, "unhandled code path: {}", pkt->func);
-  return bRC_Error;
-}
-
 bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
 {
-  auto* pctx = get_private_context(ctx);
-
-  auto handler = [&] {
-    switch (pctx->current_file) {
-      case plugin_ctx::file::Dump: {
-        return &pluginIO_Dump;
-      } break;
-      case plugin_ctx::file::Log: {
-        return &pluginIO_Log;
-      } break;
-    }
-    return static_cast<decltype(&pluginIO_Dump)>(nullptr);
-  }();
-
-  if (!handler) {
-    fatal_msg(ctx, "could not find handler for file {}",
-              static_cast<std::size_t>(pctx->current_file));
+  if (auto* bctx = get_backup_context(ctx)) {
+    return bctx->pluginIO(ctx, pkt);
+  } else if (auto* rctx = get_restore_context(ctx)) {
+    return rctx->pluginIO(ctx, pkt);
+  } else {
+    fatal_msg(ctx, "context is not setup properly, but {} is called",
+              __PRETTY_FUNCTION__);
     return bRC_Error;
   }
-
-
-  switch (pkt->func) {
-    case filedaemon::IO_OPEN:
-      [[fallthrough]];
-    case filedaemon::IO_READ:
-      [[fallthrough]];
-    case filedaemon::IO_CLOSE: {
-      return handler(ctx, pkt);
-    } break;
-
-    case filedaemon::IO_WRITE: {
-      err_msg(ctx, "restores are not supported on the windows plugin");
-      pkt->status = -1;
-      return bRC_Error;
-    } break;
-  }
-  return bRC_Error;
 }
 
 bRC createFile(PluginContext* ctx, filedaemon::restore_pkt* pkt)
