@@ -654,6 +654,7 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
 
     if (ending_start == path.npos) {
       fatal_msg(ctx, "cannot restore '{}': unknown file ending", path);
+      return bRC_Error;
     }
 
     auto ending = path.substr(ending_start);
