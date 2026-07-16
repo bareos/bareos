@@ -44,6 +44,14 @@ RestoreDirectory="${runner_tmp}/restore-when"
 
 start_test
 
+if on_freebsd_host; then
+  when="$(date -r $(($(date +"%s") + 300)) "+%F %H:%M:%S")"
+  when_status="$(date -r $(($(date +"%s") + 300)) "+%d-%b-%y %H:%M")"
+else
+  when="$(date "+%F %H:%M:%S" --date="5 minutes")"
+  when_status="$(date "+%d-%b-%y %H:%M" --date="5 minutes")"
+fi
+
 if [[ -d "$RestoreDirectory" ]]; then
   rm -r "$RestoreDirectory"
 fi
@@ -53,8 +61,9 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 list jobs
 @$out ${runner_tmp}/restore-when.out
 restore client=bareos-fd fileset=SelfTest where="$RestoreDirectory" \
-  when="2001-01-01 00:00:00" jobid=1 all done yes
-wait
+  when="${when}" jobid=1 all done yes
+@$out ${runner_tmp}/status.out
+status dir
 messages
 quit
 END_OF_DATA
@@ -67,8 +76,11 @@ check_preconditions
 expect_grep "Job queued." \
   "${runner_tmp}/restore-when.out" \
   "The restore job was not queued with when option."
-expect_not_grep "Invalid time specification in when" \
-  "${runner_tmp}/restore-when.out" \
-  "Restore with when option was rejected."
+expect_grep "waiting [0-9][0-9]* seconds for scheduled start time." \
+  "${runner_tmp}/status.out" \
+  "The restore job did not report a scheduled wait time."
+expect_grep "is waiting for its start time at ${when_status}" \
+  "${runner_tmp}/status.out" \
+  "Restore job was not scheduled for the requested future time."
 
 end_test
