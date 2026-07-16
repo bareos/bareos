@@ -1301,6 +1301,7 @@ restore
 
       restore storage=<storage-name> client=<backup-client-name>
         where=<path> pool=<pool-name> fileset=<fileset-name>
+        when=<universal-time-specification>
         restoreclient=<restore-client-name>
         restorejob=<job-name>
         select current all done
