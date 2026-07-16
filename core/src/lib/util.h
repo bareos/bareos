@@ -234,6 +234,24 @@ static_assert(split_first("abc", ',') == std::nullopt);
 static_assert(split_first("abc", 'b')->first == "a");
 static_assert(split_first("abcbd", 'b')->second == "cbd");
 
+inline std::vector<std::string_view> split_string_view(std::string_view input,
+                                                       char c)
+{
+  std::vector<std::string_view> result;
+  auto current = input;
+  for (;;) {
+    std::optional split = split_first(current, c);
+    if (!split) {
+      result.push_back(current);
+      break;
+    }
+    result.push_back(split->first);
+    current = split->second;
+  }
+
+  return result;
+}
+
 
 inline std::string vstdprintf(const char* fmt, va_list args)
 {
