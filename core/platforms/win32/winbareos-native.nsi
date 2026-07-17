@@ -1869,8 +1869,11 @@ Function GeneratePassword
   ClearErrors
   FileOpen $R1 "$PLUGINSDIR\pw.txt" r
   IfErrors GeneratePasswordReadFailed
+  ClearErrors
   FileRead $R1 $R0
   ${StrTrimNewLines} $R0 $R0
+  IfErrors GeneratePasswordReadFailed
+  StrCmp $R0 "" GeneratePasswordReadFailed
   FileClose $R1
   Push $R0
   Return
