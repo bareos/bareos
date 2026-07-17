@@ -621,6 +621,7 @@ Section -SetPasswords
   SetShellVarContext all
 
   # TODO: replace by ConfigureConfiguration ?
+  Call GenerateMissingPasswords
 
   FileOpen $R1 $PLUGINSDIR\postgres.sed w
   FileWrite $R1 "s#@DB_USER@#$DbUser#g$\r$\n"
@@ -1853,9 +1854,10 @@ Function GeneratePassword
 
   ${If} $R0 != "0"
     DetailPrint "openssl rand output for $R3: $R2"
-    MessageBox MB_OK|MB_ICONSTOP \
-      "Failed to generate installer passwords.$\r$\n\
-       Please install Microsoft Visual C++ Redistributable and restart the installer."
+    IfSilent +1 0
+      MessageBox MB_OK|MB_ICONSTOP \
+        "Failed to generate installer passwords.$\r$\n\
+         Please install Microsoft Visual C++ Redistributable and restart the installer."
     FileOpen $R1 $TEMP\abortreason.txt w
     FileWrite $R1 "password generation failed for $R3 (openssl exit code: $R0)"
     FileClose $R1
@@ -1871,9 +1873,10 @@ Function GeneratePassword
   Return
 
 GeneratePasswordReadFailed:
-    MessageBox MB_OK|MB_ICONSTOP \
-      "Failed to read generated password for $R3.$\r$\n\
-       The installer will exit now."
+    IfSilent +1 0
+      MessageBox MB_OK|MB_ICONSTOP \
+        "Failed to read generated password for $R3.$\r$\n\
+         The installer will exit now."
     FileOpen $R1 $TEMP\abortreason.txt w
     FileWrite $R1 "password generation output missing for $R3"
     FileClose $R1
