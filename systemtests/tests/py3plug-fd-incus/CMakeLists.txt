@@ -63,10 +63,10 @@ if(INCUS)
   )
 
   # incus only allows alphanumeric characters + hyphens in names but only a max
-  # of 63 characters; we leave 8 chars to the tests so we can only create a name
-  # of length 55
+  # of 63 characters; we leave 13 chars to the tests so we can only create a
+  # name of length 50
 
-  set(MAX_LENGTH 55)
+  set(MAX_LENGTH 50)
 
   if(DEFINED CIUID)
     string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_VM_NAME
@@ -86,7 +86,7 @@ if(INCUS)
 
       math(EXPR MAX_SUB_LEN "${MAX_LENGTH} - 3") # VM-
       string(SUBSTRING "${CIUID}" 0 MAX_SUB_LEN USED_CIUID)
-      string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_VM_NAME "VM-${CIUID}")
+      string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_VM_NAME "VM-${USED_CIUID}")
     endif()
 
     if(CT_LENGTH GREATER MAX_LENGTH)
@@ -96,7 +96,7 @@ if(INCUS)
 
       math(EXPR MAX_SUB_LEN "${MAX_LENGTH} - 3") # CT-
       string(SUBSTRING "${CIUID}" 0 MAX_SUB_LEN USED_CIUID)
-      string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_VM_NAME "CT-${CIUID}")
+      string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_CT_NAME "CT-${USED_CIUID}")
     endif()
 
   else()
