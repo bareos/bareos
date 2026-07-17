@@ -215,8 +215,7 @@ class ConfigurationParser {
   int32_t r_own_{0};                      /* own resource type */
   BareosResource* own_resource_{nullptr}; /* Pointer to own resource */
   const ResourceTable* resource_definitions_{
-      0}; /* Pointer to table of permitted resources */
-  std::shared_ptr<LoadedConfiguration> loaded_configuration;
+      0};                      /* Pointer to table of permitted resources */
   mutable brwlock_t res_lock_; /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_{nullptr};
@@ -333,6 +332,8 @@ class ConfigurationParser {
     STORE_SIZE,
     STORE_SPEED
   };
+
+  std::shared_ptr<LoadedConfiguration> loaded_configuration;
 
   std::string config_default_filename_; /* default config filename, that is
                                            used, if no filename is given */

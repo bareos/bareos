@@ -201,7 +201,7 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
   date_time_next_hour.PrintDebugMessage(local_debuglevel);
 
   JobResource* job = nullptr;
-  auto used_conf = my_config->loaded_configuration;
+  auto used_conf = my_config->GetCurrentConfiguration();
 
   foreach_res (job, R_JOB) {
     if (!IsAutomaticSchedulerJob(job)) { continue; }

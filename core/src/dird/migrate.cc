@@ -995,7 +995,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
   JobControlRecord* mig_jcr = NULL; /* newly migrated job */
 
   ApplyPoolOverrides(jcr);
-  auto used_config = my_config->loaded_configuration;
+  auto used_config = my_config->GetCurrentConfiguration();
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 

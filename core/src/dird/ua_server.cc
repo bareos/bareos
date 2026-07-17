@@ -59,7 +59,7 @@ JobControlRecord* new_control_jcr(const char* base_name, int job_type)
   if (job_type == JT_SYSTEM) {
     jcr = NewDirectorJcr({});
   } else {
-    auto conf = my_config->loaded_configuration;
+    auto conf = my_config->GetCurrentConfiguration();
     jcr = NewDirectorJcr(conf);
 
     /* The job and defaults are not really used, but we set them up to ensure
