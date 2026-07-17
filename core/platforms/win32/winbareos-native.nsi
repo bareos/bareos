@@ -1864,6 +1864,9 @@ Function GeneratePassword
     Abort
   ${EndIf}
 
+  IfFileExists "$PLUGINSDIR\pw.txt" +2 0
+    Goto GeneratePasswordReadFailed
+  ClearErrors
   FileOpen $R1 "$PLUGINSDIR\pw.txt" r
   IfErrors GeneratePasswordReadFailed
   FileRead $R1 $R0
@@ -1873,12 +1876,13 @@ Function GeneratePassword
   Return
 
 GeneratePasswordReadFailed:
+    DetailPrint "Cannot read generated password file: $PLUGINSDIR\pw.txt"
     IfSilent +1 0
       MessageBox MB_OK|MB_ICONSTOP \
         "Failed to read generated password for $R3.$\r$\n\
          The installer will exit now."
     FileOpen $R1 $TEMP\abortreason.txt w
-    FileWrite $R1 "password generation output missing for $R3"
+    FileWrite $R1 "password generation output missing for $R3 in $PLUGINSDIR\pw.txt"
     FileClose $R1
     Abort
 FunctionEnd
