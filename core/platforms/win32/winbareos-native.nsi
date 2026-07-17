@@ -544,7 +544,7 @@ Function VCRedist.IsInstalled
     Pop $R2
     Goto +3
   StrCpy $R0 "error"
-  StrCpy $R2 "openssl.exe missing in \$PLUGINSDIR"
+  StrCpy $R2 "openssl.exe missing in $PLUGINSDIR"
 
   DetailPrint "VC++ runtime probe exit code: $R0"
   ${If} $R0 == "0"
@@ -597,9 +597,6 @@ Section -CheckVCRedist
     FileOpen $R1 $TEMP\abortreason.txt w
     FileWrite $R1 "VC++ prerequisite check failed in silent mode"
     FileClose $R1
-    MessageBox MB_OK|MB_ICONSTOP \
-      "Bareos requires Microsoft Visual C++ Redistributable to be installed.$\r$\n\
-       The installer will exit now."
     Abort
   ${EndIf}
   CheckVCRedistEnd:
@@ -1511,6 +1508,20 @@ Function .onInit
   File "C:\vcpkg_installed\x64-windows\tools\openssl\openssl.exe"
   File "${CMAKE_BINARY_DIR}\bin\libcrypto-3-x64.dll"
   File "${CMAKE_BINARY_DIR}\bin\libssl-3-x64.dll"
+  IfFileExists "$PLUGINSDIR\openssl.exe" 0 missingRuntimeProbeBinaries
+  IfFileExists "$PLUGINSDIR\libcrypto-3-x64.dll" 0 missingRuntimeProbeBinaries
+  IfFileExists "$PLUGINSDIR\libssl-3-x64.dll" 0 missingRuntimeProbeBinaries
+  Goto runtimeProbeBinariesReady
+missingRuntimeProbeBinaries:
+  DetailPrint "Installer is missing VC++ probe binaries in $PLUGINSDIR"
+  IfSilent +1 0
+    MessageBox MB_OK|MB_ICONSTOP \
+      "Installer is missing runtime probe files and cannot continue."
+  FileOpen $R1 $TEMP\abortreason.txt w
+  FileWrite $R1 "missing VC++ probe binaries in $PLUGINSDIR"
+  FileClose $R1
+  Abort
+runtimeProbeBinariesReady:
 
   #
   # UPGRADE: if already installed allow to uninstall installed version
@@ -1531,9 +1542,10 @@ Function .onInit
   Pop $R1
   StrCmp $R1 "yes" vcRuntimeReadyForUpgrade
     DetailPrint "VC++ prerequisite check failed before upgrade uninstall."
-    MessageBox MB_OK|MB_ICONSTOP \
-      "Bareos requires Microsoft Visual C++ Redistributable to be installed before upgrade can continue.$\r$\n\
-       Please install it and restart the installer."
+    IfSilent +1 0
+      MessageBox MB_OK|MB_ICONSTOP \
+        "Bareos requires Microsoft Visual C++ Redistributable to be installed before upgrade can continue.$\r$\n\
+         Please install it and restart the installer."
     FileOpen $R1 $TEMP\abortreason.txt w
     FileWrite $R1 "VC++ prerequisite check failed before upgrade uninstall"
     FileClose $R1
