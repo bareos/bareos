@@ -110,6 +110,7 @@ bool RestoreCmd(UaContext* ua, const char*)
   char* escaped_bsr_name = NULL;
   char* escaped_where_name = NULL;
   char *strip_prefix, *add_prefix, *add_suffix, *regexp;
+  bool run_ok = false;
   strip_prefix = add_prefix = add_suffix = regexp = NULL;
 
   rx.path = GetPoolMemory(PM_FNAME);
@@ -350,9 +351,9 @@ bool RestoreCmd(UaContext* ua, const char*)
   rx.JobIds = NULL;
 
   ParseUaArgs(ua);
-  RunCmd(ua, ua->cmd);
+  run_ok = RunCmd(ua, ua->cmd);
   free_rx(&rx);
-  return true;
+  return run_ok;
 
 bail_out:
   if (escaped_bsr_name != NULL) { free(escaped_bsr_name); }
