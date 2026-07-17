@@ -478,6 +478,9 @@ class ConfigResourcesContainer {
   {
     next_ = std::move(next);
   }
+
+  BareosResource* GetNextRes(int rcode, BareosResource* res) const;
+  BareosResource* GetResWithName(int rcode, const char* name) const;
 };
 
 

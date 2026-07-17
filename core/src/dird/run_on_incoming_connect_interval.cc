@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,7 @@
    02110-1301, USA.
 */
 
+#include "dird/dird_globals.h"
 #include "include/bareos.h"
 #include "cats/cats.h"
 #include "dird/dird_conf.h"
@@ -40,6 +41,7 @@ RunOnIncomingConnectInterval::RunOnIncomingConnectInterval(
     std::string client_name)
     : client_name_(std::move(client_name))
     , scheduler_(Scheduler::GetMainScheduler())
+    , used_config_{my_config->GetResourcesContainer()}
 {
   // initialize database by job settings
 }
@@ -48,14 +50,17 @@ RunOnIncomingConnectInterval::RunOnIncomingConnectInterval(
     std::string client_name,
     Scheduler& scheduler,
     BareosDb* db)
-    : client_name_(std::move(client_name)), scheduler_(scheduler), db_(db)
+    : client_name_(std::move(client_name))
+    , scheduler_(scheduler)
+    , db_(db)
+    , used_config_{my_config->GetCurrentConfiguration()}
 {
   // constructor used for tests to inject mocked scheduler and database
 }
 
 time_t RunOnIncomingConnectInterval::FindLastJobStart(JobResource* job)
 {
-  JobControlRecord* jcr = NewDirectorJcr(DirdFreeJcr);
+  JobControlRecord* jcr = NewDirectorJcr(DirdFreeJcr, used_config_);
   SetJcrDefaults(jcr, job);
   auto db = db_ != nullptr ? db_ : GetDatabaseConnection(jcr);
   if (db == nullptr) {
@@ -125,7 +130,7 @@ void RunOnIncomingConnectInterval::RunJobIfIntervalExceeded(
 void RunOnIncomingConnectInterval::Run()
 {
   std::vector<JobResource*> job_resources
-      = GetAllJobResourcesByClientName(client_name_);
+      = GetAllJobResourcesByClientName(used_config_.get(), client_name_);
 
   if (job_resources.empty()) { return; }
 
