@@ -97,29 +97,11 @@ BareosResource* ConfigurationParser::GetResWithName(int rcode,
                                                     std::string_view name,
                                                     bool lock) const
 {
-  int rindex = rcode;
-
-  auto find_res = [&]() -> BareosResource* {
-    auto& containers = config_resources_container_->configuration_resources_;
-    if (rindex < 0 || static_cast<std::size_t>(rindex) >= containers.size()) {
-      return nullptr;
-    }
-
-    auto* res = containers[rindex];
-
-    while (res) {
-      if (name == res->resource_name_) { break; }
-      res = res->next_;
-    }
-
-    return res;
-  };
-
   if (lock) {
     ResLocker _{this};
-    return find_res();
+    return config_resources_container_->GetResWithName(rcode, name);
   } else {
-    return find_res();
+    return config_resources_container_->GetResWithName(rcode, name);
   }
 }
 
@@ -140,16 +122,7 @@ BareosResource* ConfigurationParser::GetResWithName(int rcode,
 BareosResource* ConfigurationParser::GetNextRes(int rcode,
                                                 BareosResource* res) const
 {
-  BareosResource* nres;
-  int rindex = rcode;
-
-  if (res == NULL) {
-    nres = config_resources_container_->configuration_resources_[rindex];
-  } else {
-    nres = res->next_;
-  }
-
-  return nres;
+  return config_resources_container_->GetNextRes(rcode, res);
 }
 
 const char* ConfigurationParser::ResToStr(int rcode) const
@@ -2328,4 +2301,46 @@ const char* DatatypeToDescription(int type)
   }
 
   return NULL;
+}
+
+
+// Return resource of type rcode that matches name
+BareosResource* ConfigResourcesContainer::GetResWithName(int rcode,
+                                                         std::string_view name) const
+{
+  int rindex = rcode;
+
+  auto& containers = configuration_resources_;
+  if (rindex < 0 || static_cast<std::size_t>(rindex) >= containers.size()) {
+    return nullptr;
+  }
+
+  auto* res = containers[rindex];
+
+  while (res) {
+    if (res->resource_name_ == name) { break; }
+    res = res->next_;
+  }
+
+  return res;
+}
+
+/*
+ * Return next resource of type rcode. On first
+ * call second arg (res) is NULL, on subsequent
+ * calls, it is called with previous value.
+ */
+BareosResource* ConfigResourcesContainer::GetNextRes(int rcode,
+                                                     BareosResource* res) const
+{
+  BareosResource* nres;
+  int rindex = rcode;
+
+  if (res == NULL) {
+    nres = configuration_resources_[rindex];
+  } else {
+    nres = res->next_;
+  }
+
+  return nres;
 }

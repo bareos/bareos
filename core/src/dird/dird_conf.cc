@@ -3990,13 +3990,15 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
   return true;
 }
 
-std::vector<JobResource*> GetAllJobResourcesByClientName(std::string name)
+std::vector<JobResource*> GetAllJobResourcesByClientName(
+    ConfigResourcesContainer* container,
+    std::string_view name)
 {
   std::vector<JobResource*> all_matching_jobs;
   JobResource* job{nullptr};
 
   do {
-    job = static_cast<JobResource*>(my_config->GetNextRes(R_JOB, job));
+    job = static_cast<JobResource*>(container->GetNextRes(R_JOB, job));
     if (job && job->client) {
       if (job->client->resource_name_ == name) {
         all_matching_jobs.push_back(job);
