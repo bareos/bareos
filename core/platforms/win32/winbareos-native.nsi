@@ -1741,88 +1741,6 @@ AutoSelecPostgresIfAvailableEnd:
 
   SetPluginUnload alwaysoff
 
-  # check if password is set by cmdline. If so, skip creation
-  strcmp $ClientPassword "" genclientpassword skipclientpassword
-  genclientpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $ClientPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipclientpassword:
-
-  strcmp $ClientMonitorPassword "" genclientmonpassword skipclientmonpassword
-  genclientmonpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $ClientMonitorPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipclientmonpassword:
-
-
-  # check if password is set by cmdline. If so, skip creation
-  strcmp $StoragePassword "" genstoragepassword skipstoragepassword
-  genstoragepassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $StoragePassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipstoragepassword:
-
-  strcmp $StorageMonitorPassword "" genstoragemonpassword skipstoragemonpassword
-  genstoragemonpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $StorageMonitorPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipstoragemonpassword:
-
-  strcmp $DirectorPassword "" gendirectorpassword skipdirectorpassword
-  gendirectorpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $DirectorPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipdirectorpassword:
-
-  strcmp $DirectorMonPassword "" gendirectormonpassword skipdirectormonpassword
-  gendirectormonpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $DirectorMonPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipdirectormonpassword:
-
-
 # if the variables are not empty (because of cmdline params),
 # dont set them with our own logic but leave them as they are
   strcmp $ClientName     "" +1 +2
@@ -1888,12 +1806,90 @@ FunctionEnd
 
 
 #
+# password generation helpers
+#
+Function GeneratePassword
+  nsExec::ExecToStack '"$PLUGINSDIR\openssl.exe" rand -base64 -out "$PLUGINSDIR\pw.txt" 33'
+  Pop $R0
+  Pop $R2
+  DetailPrint "openssl rand for $R3 exit code: $R0"
+
+  ${If} $R0 != "0"
+    DetailPrint "openssl rand output for $R3: $R2"
+    MessageBox MB_OK|MB_ICONSTOP \
+      "Failed to generate installer passwords.$\r$\n\
+       Please install Microsoft Visual C++ Redistributable and restart the installer."
+    FileOpen $R1 $TEMP\abortreason.txt w
+    FileWrite $R1 "password generation failed for $R3 (openssl exit code: $R0)"
+    FileClose $R1
+    Abort
+  ${EndIf}
+
+  FileOpen $R1 "$PLUGINSDIR\pw.txt" r
+  IfErrors GeneratePasswordReadFailed
+  FileRead $R1 $R0
+  ${StrTrimNewLines} $R0 $R0
+  FileClose $R1
+  Push $R0
+  Return
+
+GeneratePasswordReadFailed:
+    MessageBox MB_OK|MB_ICONSTOP \
+      "Failed to read generated password for $R3.$\r$\n\
+       The installer will exit now."
+    FileOpen $R1 $TEMP\abortreason.txt w
+    FileWrite $R1 "password generation output missing for $R3"
+    FileClose $R1
+    Abort
+FunctionEnd
+
+Function GenerateMissingPasswords
+  strcmp $ClientPassword "" 0 skipClientPasswordGeneration
+    StrCpy $R3 "ClientPassword"
+    Call GeneratePassword
+    Pop $ClientPassword
+skipClientPasswordGeneration:
+
+  strcmp $ClientMonitorPassword "" 0 skipClientMonitorPasswordGeneration
+    StrCpy $R3 "ClientMonitorPassword"
+    Call GeneratePassword
+    Pop $ClientMonitorPassword
+skipClientMonitorPasswordGeneration:
+
+  strcmp $StoragePassword "" 0 skipStoragePasswordGeneration
+    StrCpy $R3 "StoragePassword"
+    Call GeneratePassword
+    Pop $StoragePassword
+skipStoragePasswordGeneration:
+
+  strcmp $StorageMonitorPassword "" 0 skipStorageMonitorPasswordGeneration
+    StrCpy $R3 "StorageMonitorPassword"
+    Call GeneratePassword
+    Pop $StorageMonitorPassword
+skipStorageMonitorPasswordGeneration:
+
+  strcmp $DirectorPassword "" 0 skipDirectorPasswordGeneration
+    StrCpy $R3 "DirectorPassword"
+    Call GeneratePassword
+    Pop $DirectorPassword
+skipDirectorPasswordGeneration:
+
+  strcmp $DirectorMonPassword "" 0 skipDirectorMonPasswordGeneration
+    StrCpy $R3 "DirectorMonPassword"
+    Call GeneratePassword
+    Pop $DirectorMonPassword
+skipDirectorMonPasswordGeneration:
+FunctionEnd
+
+#
 # Client Configuration Dialog
 #
 Function getClientParameters
   push $R0
   # skip if we are upgrading
   strcmp $Upgrading "yes" skip
+
+  Call GenerateMissingPasswords
 
   # prefill the dialog fields with our passwords and other
   # information
