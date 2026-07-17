@@ -128,7 +128,7 @@ ConfigurationParser::ConfigurationParser(
   // config resources container needs to access our members, so this
   // needs to always happen after we initialised everything else
   config_resources_container_
-      = std::make_shared<ConfigResourcesContainer>(this);
+      = std::make_shared<ConfigResourcesContainer>(FreeResourceCb_, r_num_);
 }
 
 void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(
@@ -512,7 +512,7 @@ ConfigurationParser::BackupResourcesContainer()
 {
   auto backup_table = config_resources_container_;
   config_resources_container_
-      = std::make_shared<ConfigResourcesContainer>(this);
+      = std::make_shared<ConfigResourcesContainer>(FreeResourceCb_, r_num_);
   return backup_table;
 }
 
