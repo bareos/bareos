@@ -19,16 +19,12 @@
    02110-1301, USA.
 */
 
-#include "dird/dird_globals.h"
-#include "dird/director_jcr_impl.h"
-#include "lib/parse_bsr.h"
-#include "lib/parse_conf.h"
-
+#include "dird/jcr_util.h"
+#include "dird/job.h"
 
 namespace directordaemon {
 
 JobControlRecord* NewDirectorJcr(
-    JCR_free_HANDLER* DirdFreeJcr,
     std::shared_ptr<ConfigResourcesContainer> config)
 {
   JobControlRecord* jcr = new_jcr(DirdFreeJcr);

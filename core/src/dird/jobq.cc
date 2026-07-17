@@ -637,8 +637,7 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
       jcr->setJobStatusWithPriorityCheck(JS_WaitStartTime);
 
       // we reuse the pointers of jcr, so we need to save its config
-      njcr = NewDirectorJcr(DirdFreeJcr,
-                            jcr->dir_impl->job_config_resources_container_);
+      njcr = NewDirectorJcr(jcr->dir_impl->job_config_resources_container_);
       SetJcrDefaults(njcr, jcr->dir_impl->res.job);
       njcr->dir_impl->reschedule_count = jcr->dir_impl->reschedule_count;
       njcr->sched_time = jcr->sched_time;

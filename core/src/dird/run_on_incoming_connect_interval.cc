@@ -60,7 +60,7 @@ RunOnIncomingConnectInterval::RunOnIncomingConnectInterval(
 
 time_t RunOnIncomingConnectInterval::FindLastJobStart(JobResource* job)
 {
-  JobControlRecord* jcr = NewDirectorJcr(DirdFreeJcr, used_config_);
+  JobControlRecord* jcr = NewDirectorJcr(used_config_);
   SetJcrDefaults(jcr, job);
   auto db = db_ != nullptr ? db_ : GetDatabaseConnection(jcr);
   if (db == nullptr) {

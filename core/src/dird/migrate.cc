@@ -1113,7 +1113,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
     }
 
     // Create a migration jcr
-    mig_jcr = NewDirectorJcr(DirdFreeJcr, used_config);
+    mig_jcr = NewDirectorJcr(used_config);
     jcr->dir_impl->mig_jcr = mig_jcr;
     mig_jcr->dir_impl->previous_jr = prev_jr;
 
