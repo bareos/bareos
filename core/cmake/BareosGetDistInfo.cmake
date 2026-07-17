@@ -49,16 +49,11 @@ else() # NOT Windows
 endif()
 set(BAREOS_PLATFORM ${PLATFORM})
 
-# cmake_host_system_information() was added in 3.22
-if(CMAKE_VERSION VERSION_GREATER 3.22)
-  if(NOT DEFINED DIST_VERSION_ID)
-    cmake_host_system_information(
-      RESULT DIST_VERSION_ID QUERY DISTRIB_VERSION_ID
-    )
-    set(DIST_VERSION_ID
-        "${DIST_VERSION_ID}"
-        CACHE INTERNAL "DISTRIB_VERSION_ID from cmake host system"
-    )
-    mark_as_advanced(DIST_VERSION_ID)
-  endif()
+if(NOT DEFINED DIST_VERSION_ID)
+  cmake_host_system_information(RESULT DIST_VERSION_ID QUERY DISTRIB_VERSION_ID)
+  set(DIST_VERSION_ID
+      "${DIST_VERSION_ID}"
+      CACHE INTERNAL "DISTRIB_VERSION_ID from cmake host system"
+  )
+  mark_as_advanced(DIST_VERSION_ID)
 endif()

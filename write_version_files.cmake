@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-cmake_minimum_required(VERSION 3.17...3.31)
+cmake_minimum_required(VERSION 3.22...3.31)
 
 set(CMAKE_MODULE_PATH
     "${CMAKE_CURRENT_LIST_DIR}/cmake" "${CMAKE_CURRENT_LIST_DIR}/core/cmake"
