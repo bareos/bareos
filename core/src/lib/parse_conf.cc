@@ -530,7 +530,12 @@ ConfigurationParser::BackupCurrentConfiguration()
 std::shared_ptr<LoadedConfiguration>
 ConfigurationParser::GetCurrentConfiguration()
 {
-  return loaded_configuration;
+  std::shared_ptr<LoadedConfiguration> ptr;
+  {
+    ResLocker _{this};
+    ptr = loaded_configuration;
+  }
+  return ptr;
 }
 
 

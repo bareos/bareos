@@ -394,11 +394,11 @@ static void ShowDisabledSchedules(UaContext* ua)
 // Enter with Resources locked
 static void ShowAll(UaContext* ua, bool hide_sensitive_data, bool verbose)
 {
+  auto conf = my_config->GetCurrentConfiguration();
   for (int j = 0; j <= my_config->r_num_ - 1; j++) {
-    if (my_config->loaded_configuration->configuration_resources_[j]) {
-      my_config->DumpResourceCb_(
-          j, my_config->loaded_configuration->configuration_resources_[j],
-          bsendmsg, ua, hide_sensitive_data, verbose);
+    if (conf->configuration_resources_[j]) {
+      my_config->DumpResourceCb_(j, conf->configuration_resources_[j], bsendmsg,
+                                 ua, hide_sensitive_data, verbose);
     }
   }
 }
@@ -474,10 +474,11 @@ bool show_cmd(UaContext* ua, const char*)
     if (!ua->argv[i]) { /* was a name given? */
       // No name, dump all resources of specified type
       recurse = 1;
+      auto conf = my_config->GetCurrentConfiguration();
       for (const auto& command : show_cmd_available_resources) {
         if (bstrncasecmp(res_name, command.first, len)) {
           type = command.second;
-          res = my_config->loaded_configuration->configuration_resources_[type];
+          res = conf->configuration_resources_[type];
           break;
         }
       }

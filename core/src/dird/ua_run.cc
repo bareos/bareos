@@ -376,7 +376,7 @@ int DoRunCmd(UaContext* ua, const char*)
   bool valid_response;
   bool do_pool_overrides = true;
 
-  auto used_config = my_config->loaded_configuration;
+  auto used_config = my_config->GetCurrentConfiguration();
 
   if (!OpenClientDb(ua)) { return 0; }
 

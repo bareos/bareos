@@ -90,7 +90,7 @@ static bool find(std::vector<JobResource*> jobs, std::string jobname)
 TEST_F(RunOnIncomingConnectIntervalTest, find_all_jobs_for_client)
 {
   std::vector<JobResource*> jobs{GetAllJobResourcesByClientName(
-      my_config->loaded_configuration.get(), "bareos-fd")};
+      my_config->GetCurrentConfiguration().get(), "bareos-fd")};
 
   EXPECT_EQ(jobs.size(), 4);
 
@@ -104,7 +104,7 @@ TEST_F(RunOnIncomingConnectIntervalTest,
        find_all_connect_interval_jobs_for_client)
 {
   std::vector<JobResource*> jobs{GetAllJobResourcesByClientName(
-      my_config->loaded_configuration.get(), "bareos-fd")};
+      my_config->GetCurrentConfiguration().get(), "bareos-fd")};
 
   auto end = std::remove_if(jobs.begin(), jobs.end(), [](JobResource* job) {
     return job->RunOnIncomingConnectInterval == 0;
