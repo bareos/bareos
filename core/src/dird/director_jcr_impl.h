@@ -104,7 +104,7 @@ struct Resources {
 };
 
 struct DirectorJcrImpl {
-  DirectorJcrImpl( std::shared_ptr<LoadedConfiguration> config) : used_config_for_job(config) {
+  DirectorJcrImpl( std::shared_ptr<LoadedConfiguration> config) : used_config_for_job(std::move(config)) {
     RestoreJobId = 0; MigrateJobId = 0; VerifyJobId = 0;
   }
   std::shared_ptr<LoadedConfiguration> used_config_for_job;
