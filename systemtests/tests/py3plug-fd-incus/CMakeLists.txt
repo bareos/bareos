@@ -85,7 +85,7 @@ if(INCUS)
       )
 
       math(EXPR MAX_SUB_LEN "${MAX_LENGTH} - 3") # VM-
-      string(SUBSTRING "${CIUID}" 0 MAX_SUB_LEN USED_CIUID)
+      string(SUBSTRING "${CIUID}" 0 ${MAX_SUB_LEN} USED_CIUID)
       string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_VM_NAME "VM-${USED_CIUID}")
     endif()
 
@@ -95,7 +95,7 @@ if(INCUS)
       )
 
       math(EXPR MAX_SUB_LEN "${MAX_LENGTH} - 3") # CT-
-      string(SUBSTRING "${CIUID}" 0 MAX_SUB_LEN USED_CIUID)
+      string(SUBSTRING "${CIUID}" 0 ${MAX_SUB_LEN} USED_CIUID)
       string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_CT_NAME "CT-${USED_CIUID}")
     endif()
 
