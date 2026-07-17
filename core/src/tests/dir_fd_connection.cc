@@ -36,7 +36,7 @@ TEST(DirectorToClientConnection, DoesNotConnectWhenDisabled)
 
 
   JobControlRecord* jcr = directordaemon::NewDirectorJcr(
-      directordaemon::DirdFreeJcr, director_config->GetResourcesContainer());
+      director_config->GetResourcesContainer());
 
   jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
       directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
@@ -55,7 +55,7 @@ TEST(DirectorToClientConnection, DoesNotDowngradeToClearTextWhenTlsRequired)
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   InitMsg(nullptr, nullptr);
   JobControlRecord* jcr = directordaemon::NewDirectorJcr(
-      directordaemon::DirdFreeJcr, director_config->GetResourcesContainer());
+      director_config->GetResourcesContainer());
 
   jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
       directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
@@ -78,7 +78,7 @@ TEST(DirectorToClientConnection, DowngradesToClearTextWhenTlsNotRequired)
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   InitMsg(nullptr, nullptr);
   JobControlRecord* jcr = directordaemon::NewDirectorJcr(
-      directordaemon::DirdFreeJcr, director_config->GetResourcesContainer());
+      director_config->GetResourcesContainer());
 
   jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
       directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,

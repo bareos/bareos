@@ -37,13 +37,13 @@ TEST(Pruning, ExcludeRunningJobsFromList)
   if (!director_config) { return; }
 
   JobControlRecord* jcr1 = directordaemon::NewDirectorJcr(
-      directordaemon::DirdFreeJcr, director_config->GetResourcesContainer());
+      director_config->GetResourcesContainer());
   jcr1->JobId = 1;
   JobControlRecord* jcr2 = directordaemon::NewDirectorJcr(
-      directordaemon::DirdFreeJcr, director_config->GetResourcesContainer());
+      director_config->GetResourcesContainer());
   jcr2->JobId = 2;
   JobControlRecord* jcr3 = directordaemon::NewDirectorJcr(
-      directordaemon::DirdFreeJcr, director_config->GetResourcesContainer());
+      director_config->GetResourcesContainer());
   jcr3->JobId = 3;
 
   std::vector<JobId_t> pruninglist{0, 0, 1, 2, 3, 4, 5};
@@ -63,7 +63,7 @@ TEST(Pruning, TransformJobidsTobedeleted)
   if (!director_config) { return; }
 
   JobControlRecord* jcr1 = directordaemon::NewDirectorJcr(
-      directordaemon::DirdFreeJcr, director_config->GetResourcesContainer());
+      director_config->GetResourcesContainer());
   jcr1->JobId = 1;
 
   directordaemon::UaContext* ua = directordaemon::new_ua_context(jcr1);

@@ -1524,7 +1524,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
     if ((job = select_job_resource(ua)) == NULL) { return false; }
   }
 
-  jcr = NewDirectorJcr(DirdFreeJcr, used_config);
+  jcr = NewDirectorJcr(used_config);
   time_t now = time(NULL);
   bool found = false;
   if (job->schedule) {

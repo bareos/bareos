@@ -30,9 +30,8 @@
 
 namespace directordaemon {
 
-JobControlRecord* NewDirectorJcr(JCR_free_HANDLER* DirdFreeJcr,
-                                 std::shared_ptr<ConfigResourcesContainer>
-                                 = my_config->GetResourcesContainer());
+JobControlRecord* NewDirectorJcr(
+    std::shared_ptr<ConfigResourcesContainer> conf);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_JCR_UTIL_H_

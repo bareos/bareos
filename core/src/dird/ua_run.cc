@@ -384,7 +384,7 @@ int DoRunCmd(UaContext* ua, const char*)
 
   /* Create JobControlRecord to run job.  NOTE!!! after this point, FreeJcr()
    * before returning. */
-  auto* jcr = NewDirectorJcr(DirdFreeJcr, used_config);
+  auto* jcr = NewDirectorJcr(used_config);
   SetJcrDefaults(jcr, rc.job);
   jcr->dir_impl->unlink_bsr
       = ua->jcr->dir_impl->unlink_bsr; /* copy unlink flag from caller */
