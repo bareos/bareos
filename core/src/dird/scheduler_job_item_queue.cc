@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,7 @@
 
 #include "include/bareos.h"
 #include "dird/dird_conf.h"
+#include "lib/parse_conf.h"
 #include "scheduler_job_item_queue.h"
 
 #include <iostream>
@@ -81,11 +82,14 @@ SchedulerJobItem SchedulerJobItemQueue::TopItem() const
   return job_item_with_highest_priority;
 }
 
-void SchedulerJobItemQueue::EmplaceItem(JobResource* job,
-                                        RunResource* run,
-                                        time_t runtime,
-                                        JobTrigger job_trigger)
+void SchedulerJobItemQueue::EmplaceItem(
+    std::shared_ptr<ConfigResourcesContainer> conf,
+    JobResource* job,
+    RunResource* run,
+    time_t runtime,
+    JobTrigger job_trigger)
 {
+  if (!conf) { throw std::invalid_argument("Invalid Argument: conf is NULL"); }
   if (job == nullptr) {
     throw std::invalid_argument("Invalid Argument: JobResource is undefined");
   }
@@ -97,7 +101,8 @@ void SchedulerJobItemQueue::EmplaceItem(JobResource* job,
                      : default_priority;
 
   std::lock_guard<std::mutex> lg(impl_->mutex);
-  impl_->priority_queue.emplace(job, run, runtime, priority, job_trigger);
+  impl_->priority_queue.emplace(std::move(conf), job, run, runtime, priority,
+                                job_trigger);
 }
 
 bool SchedulerJobItemQueue::Empty() const

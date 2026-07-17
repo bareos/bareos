@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,7 @@
 #define BAREOS_DIRD_SCHEDULER_PRIVATE_H_
 
 #include "dird/scheduler_job_item_queue.h"
+#include "lib/parse_conf.h"
 
 #include <atomic>
 #include <functional>
@@ -46,7 +47,10 @@ class SchedulerPrivate {
 
   void WaitForJobsToRun();
   void FillSchedulerJobQueueOrSleep();
-  void AddJobWithNoRunResourceToQueue(JobResource* job, JobTrigger job_trigger);
+  void AddJobWithNoRunResourceToQueue(
+      std::shared_ptr<ConfigResourcesContainer> config,
+      JobResource* job,
+      JobTrigger job_trigger);
 
   std::unique_ptr<SchedulerTimeAdapter> time_adapter;
   SchedulerJobItemQueue prioritised_job_item_queue;
@@ -60,7 +64,8 @@ class SchedulerPrivate {
   std::function<void(JobControlRecord*)> ExecuteJobCallback_;
   JobControlRecord* TryCreateJobControlRecord(const SchedulerJobItem& next_job);
   void AddJobsForThisAndNextHourToQueue();
-  void AddJobToQueue(JobResource* job,
+  void AddJobToQueue(std::shared_ptr<ConfigResourcesContainer> config,
+                     JobResource* job,
                      RunResource* run,
                      time_t now,
                      time_t runtime,
