@@ -1513,6 +1513,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
   JobResource* job{nullptr};
   JobControlRecord* jcr;
   UnifiedStorageResource store;
+  auto used_config = my_config->GetResourcesContainer();
   if (const char* job_name = GetArgValue(ua, "job")) {
     job = ua->GetJobResWithName(job_name);
     if (!job) {
@@ -1523,7 +1524,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
     if ((job = select_job_resource(ua)) == NULL) { return false; }
   }
 
-  jcr = NewDirectorJcr(DirdFreeJcr);
+  jcr = NewDirectorJcr(DirdFreeJcr, used_config);
   time_t now = time(NULL);
   bool found = false;
   if (job->schedule) {
