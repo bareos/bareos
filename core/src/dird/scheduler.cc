@@ -56,8 +56,7 @@ Scheduler& Scheduler::GetMainScheduler() noexcept
   return scheduler;
 }
 
-Scheduler::Scheduler() noexcept
-    : impl_(std::make_unique<SchedulerPrivate>()) {};
+Scheduler::Scheduler() noexcept : impl_(std::make_unique<SchedulerPrivate>()) {}
 
 Scheduler::Scheduler(std::unique_ptr<SchedulerTimeAdapter> time_adapter,
                      std::function<void(JobControlRecord*)> ExecuteJob) noexcept
