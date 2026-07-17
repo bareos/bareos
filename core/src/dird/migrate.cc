@@ -1000,6 +1000,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
   JobControlRecord* mig_jcr = NULL; /* newly migrated job */
 
   ApplyPoolOverrides(jcr);
+  auto used_config = my_config->config_resources_container_;
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
@@ -1119,7 +1120,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
     }
 
     // Create a migration jcr
-    mig_jcr = NewDirectorJcr(DirdFreeJcr);
+    mig_jcr = NewDirectorJcr(DirdFreeJcr, used_config);
     jcr->dir_impl->mig_jcr = mig_jcr;
     mig_jcr->dir_impl->previous_jr = prev_jr;
 
