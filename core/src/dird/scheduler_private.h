@@ -48,7 +48,7 @@ class SchedulerPrivate {
   void WaitForJobsToRun();
   void FillSchedulerJobQueueOrSleep();
   void AddJobWithNoRunResourceToQueue(
-      std::shared_ptr<ConfigResourcesContainer> config,
+      std::shared_ptr<LoadedConfiguration> config,
       JobResource* job,
       JobTrigger job_trigger);
 
@@ -64,7 +64,7 @@ class SchedulerPrivate {
   std::function<void(JobControlRecord*)> ExecuteJobCallback_;
   JobControlRecord* TryCreateJobControlRecord(const SchedulerJobItem& next_job);
   void AddJobsForThisAndNextHourToQueue();
-  void AddJobToQueue(std::shared_ptr<ConfigResourcesContainer> config,
+  void AddJobToQueue(std::shared_ptr<LoadedConfiguration> config,
                      JobResource* job,
                      RunResource* run,
                      time_t now,

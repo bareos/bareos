@@ -24,8 +24,7 @@
 
 namespace directordaemon {
 
-JobControlRecord* NewDirectorJcr(
-    std::shared_ptr<ConfigResourcesContainer> config)
+JobControlRecord* NewDirectorJcr(std::shared_ptr<LoadedConfiguration> config)
 {
   JobControlRecord* jcr = new_jcr(DirdFreeJcr);
   if (config) {

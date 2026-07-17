@@ -60,7 +60,7 @@ class RunOnIncomingConnectInterval {
   std::string client_name_;
   Scheduler& scheduler_;
   BareosDb* db_{nullptr};
-  std::shared_ptr<ConfigResourcesContainer> used_config_;
+  std::shared_ptr<LoadedConfiguration> used_config_;
 };
 
 }  // namespace directordaemon

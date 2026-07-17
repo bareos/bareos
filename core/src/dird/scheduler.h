@@ -49,7 +49,7 @@ class Scheduler {
   void Terminate();
   void ClearQueue();
   void AddJobWithNoRunResourceToQueue(
-      std::shared_ptr<ConfigResourcesContainer> config,
+      std::shared_ptr<LoadedConfiguration> config,
       JobResource* job,
       JobTrigger job_trigger);
   static Scheduler& GetMainScheduler() noexcept;

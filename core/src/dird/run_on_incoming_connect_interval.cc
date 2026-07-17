@@ -41,7 +41,7 @@ RunOnIncomingConnectInterval::RunOnIncomingConnectInterval(
     std::string client_name)
     : client_name_(std::move(client_name))
     , scheduler_(Scheduler::GetMainScheduler())
-    , used_config_{my_config->GetResourcesContainer()}
+    , used_config_{my_config->GetCurrentConfiguration()}
 {
   // initialize database by job settings
 }

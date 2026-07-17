@@ -70,7 +70,7 @@ Scheduler::Scheduler(std::unique_ptr<SchedulerTimeAdapter> time_adapter,
 Scheduler::~Scheduler() = default;
 
 void Scheduler::AddJobWithNoRunResourceToQueue(
-    std::shared_ptr<ConfigResourcesContainer> config,
+    std::shared_ptr<LoadedConfiguration> config,
     JobResource* job,
     JobTrigger job_trigger)
 {

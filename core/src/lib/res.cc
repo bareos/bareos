@@ -98,9 +98,9 @@ BareosResource* ConfigurationParser::GetResWithName(int rcode,
 {
   if (lock) {
     ResLocker _{this};
-    return config_resources_container_->GetResWithName(rcode, name);
+    return loaded_configuration->GetResWithName(rcode, name);
   } else {
-    return config_resources_container_->GetResWithName(rcode, name);
+    return loaded_configuration->GetResWithName(rcode, name);
   }
 }
 
@@ -112,7 +112,7 @@ BareosResource* ConfigurationParser::GetResWithName(int rcode,
 BareosResource* ConfigurationParser::GetNextRes(int rcode,
                                                 BareosResource* res) const
 {
-  return config_resources_container_->GetNextRes(rcode, res);
+  return loaded_configuration->GetNextRes(rcode, res);
 }
 
 const char* ConfigurationParser::ResToStr(int rcode) const
@@ -2283,8 +2283,8 @@ const char* DatatypeToDescription(int type)
 
 
 // Return resource of type rcode that matches name
-BareosResource* ConfigResourcesContainer::GetResWithName(int rcode,
-                                                         const char* name) const
+BareosResource* LoadedConfiguration::GetResWithName(int rcode,
+                                                    const char* name) const
 {
   int rindex = rcode;
 
@@ -2308,8 +2308,8 @@ BareosResource* ConfigResourcesContainer::GetResWithName(int rcode,
  * call second arg (res) is NULL, on subsequent
  * calls, it is called with previous value.
  */
-BareosResource* ConfigResourcesContainer::GetNextRes(int rcode,
-                                                     BareosResource* res) const
+BareosResource* LoadedConfiguration::GetNextRes(int rcode,
+                                                BareosResource* res) const
 {
   BareosResource* nres;
   int rindex = rcode;

@@ -83,7 +83,7 @@ SchedulerJobItem SchedulerJobItemQueue::TopItem() const
 }
 
 void SchedulerJobItemQueue::EmplaceItem(
-    std::shared_ptr<ConfigResourcesContainer> conf,
+    std::shared_ptr<LoadedConfiguration> conf,
     JobResource* job,
     RunResource* run,
     time_t runtime,

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,7 @@
 #include <map>
 #include "include/bareos.h"
 #include <string>
+#include "lib/parse_conf.h"
 
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
@@ -93,7 +94,7 @@ class TlsOpenSslPrivate {
   std::string ciphersuites_;
   bool verify_peer_{};
   bool enable_ktls_{false};
-  std::shared_ptr<ConfigResourcesContainer>
+  std::shared_ptr<LoadedConfiguration>
       config_table_{};  // config table being used
 };
 

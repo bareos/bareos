@@ -326,8 +326,8 @@ TEST_F(SchedulerTest, add_job_with_no_run_resource_to_queue)
       my_config->GetResWithName(R_JOB, "backup-bareos-fd"))};
   ASSERT_TRUE(job) << "Job Resource \"backup-bareos-fd\" not found";
 
-  scheduler->AddJobWithNoRunResourceToQueue(my_config->GetResourcesContainer(),
-                                            job, JobTrigger::kUndefined);
+  scheduler->AddJobWithNoRunResourceToQueue(
+      my_config->GetCurrentConfiguration(), job, JobTrigger::kUndefined);
 
   scheduler_thread.join();
   ASSERT_EQ(counter_of_number_of_jobs_run, 1);
