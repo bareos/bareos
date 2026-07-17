@@ -1323,6 +1323,8 @@ restore
 
    For more details, see the :ref:`Restore chapter <RestoreChapter>`.
 
+.. _bcommandrun:
+
 run
    :index:`\ <single: Console; Command; run>`
    This command allows you to schedule jobs to be run immediately.

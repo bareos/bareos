@@ -551,7 +551,7 @@ The full list of possible command line arguments are:
 
 -  when=YYYY-MM-DD HH:MM:SS – schedule the restore job for the given
    start time. This uses the same time format and validation as the
-   :ref:`run command <bcommandRun>`.
+   :ref:`run command <bcommandrun>`.
 
 -  yes – automatically run the restore without prompting for modifications
    (most useful in batch scripts).
