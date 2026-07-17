@@ -131,7 +131,7 @@ option(ENABLE_STATIC_RUNTIME_LIBS "Link C and C++ runtime libraries statically"
 )
 if(ENABLE_STATIC_RUNTIME_LIBS)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_link_options(-static-libgcc -static-libstdc++)
+    add_link_options(-static-libgcc $<$<LINK_LANGUAGE:CXX>:-static-libstdc++>)
   else()
     message(
       FATAL_ERROR
