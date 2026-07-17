@@ -35,7 +35,7 @@ struct UsePasswordsFromConfig : TlsSecretProvider {
   {
     // keep a shared_ptr to the current config, so a reload won't
     // free the memory we're going to use in the private context
-    config_table_ = parser->GetResourcesContainer();
+    config = parser->GetCurrentConfiguration();
   }
 
 
@@ -116,7 +116,7 @@ struct UsePasswordsFromConfig : TlsSecretProvider {
  protected:
   ConfigurationParser* parser;
   BareosResource* chosen_resource{nullptr};
-  std::shared_ptr<ConfigResourcesContainer> config_table_;
+  std::shared_ptr<LoadedConfiguration> config;
 };
 
 // look not only in the config for passwords, but also

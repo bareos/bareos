@@ -83,7 +83,7 @@ void CatalogTest::SetUp()
 
   // connect to database
   {
-    jcr = directordaemon::NewDirectorJcr(my_config->GetResourcesContainer());
+    jcr = directordaemon::NewDirectorJcr(my_config->GetCurrentConfiguration());
     jcr->dir_impl->res.catalog
         = (directordaemon::CatalogResource*)my_config->GetResWithName(
             directordaemon::R_CATALOG, catalog_backend_name.c_str());

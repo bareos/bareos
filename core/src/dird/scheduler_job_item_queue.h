@@ -38,13 +38,13 @@ struct SchedulerJobItemQueuePrivate;
 
 struct SchedulerJobItem {
   SchedulerJobItem() = default;
-  SchedulerJobItem(std::shared_ptr<ConfigResourcesContainer> config,
+  SchedulerJobItem(std::shared_ptr<LoadedConfiguration> config_to_use,
                    JobResource* job_in,
                    RunResource* run_in,
                    time_t runtime_in,
                    int priority_in,
                    JobTrigger job_kickoff_in) noexcept
-      : container{std::move(config)}
+      : config{std::move(config_to_use)}
       , job(job_in)
       , run(run_in)
       , runtime(runtime_in)
@@ -60,7 +60,7 @@ struct SchedulerJobItem {
            && run == rhs.run;
   }
 
-  std::shared_ptr<ConfigResourcesContainer> container{};
+  std::shared_ptr<LoadedConfiguration> config{};
   JobResource* job{nullptr};
   RunResource* run{nullptr};
   time_t runtime{0};
@@ -76,7 +76,7 @@ class SchedulerJobItemQueue {
 
   SchedulerJobItem TopItem() const;
   SchedulerJobItem TakeOutTopItem();
-  void EmplaceItem(std::shared_ptr<ConfigResourcesContainer> conf,
+  void EmplaceItem(std::shared_ptr<LoadedConfiguration> conf,
                    JobResource* job,
                    RunResource* run,
                    time_t runtime,

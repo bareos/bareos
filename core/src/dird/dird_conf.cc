@@ -3991,7 +3991,7 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
 }
 
 std::vector<JobResource*> GetAllJobResourcesByClientName(
-    ConfigResourcesContainer* container,
+    LoadedConfiguration* container,
     std::string_view name)
 {
   std::vector<JobResource*> all_matching_jobs;

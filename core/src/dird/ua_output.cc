@@ -395,10 +395,9 @@ static void ShowDisabledSchedules(UaContext* ua)
 static void ShowAll(UaContext* ua, bool hide_sensitive_data, bool verbose)
 {
   for (int j = 0; j <= my_config->r_num_ - 1; j++) {
-    if (my_config->config_resources_container_->configuration_resources_[j]) {
+    if (my_config->loaded_configuration->configuration_resources_[j]) {
       my_config->DumpResourceCb_(
-          j,
-          my_config->config_resources_container_->configuration_resources_[j],
+          j, my_config->loaded_configuration->configuration_resources_[j],
           bsendmsg, ua, hide_sensitive_data, verbose);
     }
   }
@@ -478,8 +477,7 @@ bool show_cmd(UaContext* ua, const char*)
       for (const auto& command : show_cmd_available_resources) {
         if (bstrncasecmp(res_name, command.first, len)) {
           type = command.second;
-          res = my_config->config_resources_container_
-                    ->configuration_resources_[type];
+          res = my_config->loaded_configuration->configuration_resources_[type];
           break;
         }
       }
@@ -1513,7 +1511,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
   JobResource* job{nullptr};
   JobControlRecord* jcr;
   UnifiedStorageResource store;
-  auto used_config = my_config->GetResourcesContainer();
+  auto used_config = my_config->GetCurrentConfiguration();
   if (const char* job_name = GetArgValue(ua, "job")) {
     job = ua->GetJobResWithName(job_name);
     if (!job) {

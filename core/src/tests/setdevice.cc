@@ -68,7 +68,7 @@ TEST(setdevice, scan_command_line)
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
 
   std::unique_ptr<JobControlRecord, decltype(&Test_FreeJcr)> jcr(
-      NewDirectorJcr(my_config->GetResourcesContainer()), &Test_FreeJcr);
+      NewDirectorJcr(my_config->GetCurrentConfiguration()), &Test_FreeJcr);
 
   std::unique_ptr<UaContext, decltype(&FreeUaContext)> ua(
       new_ua_context(jcr.get()), &FreeUaContext);

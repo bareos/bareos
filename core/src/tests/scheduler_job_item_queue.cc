@@ -44,7 +44,7 @@ TEST(scheduler_job_item_queue, job_item)
   SchedulerJobItem item;
   EXPECT_FALSE(item.is_valid);
 
-  auto conf = std::make_shared<ConfigResourcesContainer>();
+  auto conf = std::make_shared<LoadedConfiguration>();
   JobResource job;
   RunResource run;
 
@@ -55,7 +55,7 @@ TEST(scheduler_job_item_queue, job_item)
 
 TEST(scheduler_job_item_queue, compare_job_items)
 {
-  auto conf = std::make_shared<ConfigResourcesContainer>();
+  auto conf = std::make_shared<LoadedConfiguration>();
   JobResource job[2];
   RunResource run[2];
 
@@ -73,7 +73,7 @@ TEST(scheduler_job_item_queue, priority_and_time)
 {
   time_t now = time(nullptr);
 
-  auto unused = std::make_shared<ConfigResourcesContainer>();
+  auto unused = std::make_shared<LoadedConfiguration>();
   std::vector<JobResource> job_resources(4);
   std::vector<RunResource> run_resources(job_resources.size());
 
@@ -119,7 +119,7 @@ TEST(scheduler_job_item_queue, priority_and_time)
 
 TEST(scheduler_job_item_queue, job_resource_undefined)
 {
-  auto unused = std::make_shared<ConfigResourcesContainer>();
+  auto unused = std::make_shared<LoadedConfiguration>();
   bool failed{false};
   RunResource run;
   try {
@@ -134,7 +134,7 @@ TEST(scheduler_job_item_queue, job_resource_undefined)
 
 TEST(scheduler_job_item_queue, runtime_undefined)
 {
-  auto unused = std::make_shared<ConfigResourcesContainer>();
+  auto unused = std::make_shared<LoadedConfiguration>();
   bool failed{false};
   JobResource job;
   RunResource run;

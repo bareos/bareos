@@ -648,7 +648,7 @@ const char* GetUsageStringForConsoleConfigureCommand();
 void DestroyConfigureUsageString();
 bool PopulateDefs();
 std::vector<JobResource*> GetAllJobResourcesByClientName(
-    ConfigResourcesContainer* container,
+    LoadedConfiguration* container,
     std::string_view name);
 
 } /* namespace directordaemon */

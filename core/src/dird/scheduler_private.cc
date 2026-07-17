@@ -127,7 +127,7 @@ static void SetJcrFromRunResource(JobControlRecord* jcr, RunResource* run)
 JobControlRecord* SchedulerPrivate::TryCreateJobControlRecord(
     const SchedulerJobItem& next_job)
 {
-  JobControlRecord* jcr = NewDirectorJcr(next_job.container);
+  JobControlRecord* jcr = NewDirectorJcr(next_job.config);
   SetJcrDefaults(jcr, next_job.job);
   if (next_job.run != nullptr) {
     next_job.run->scheduled_last = time_adapter->time_source_->SystemTime();
@@ -201,7 +201,7 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
   date_time_next_hour.PrintDebugMessage(local_debuglevel);
 
   JobResource* job = nullptr;
-  auto used_conf = my_config->config_resources_container_;
+  auto used_conf = my_config->loaded_configuration;
 
   foreach_res (job, R_JOB) {
     if (!IsAutomaticSchedulerJob(job)) { continue; }
@@ -236,7 +236,7 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 }
 
 void SchedulerPrivate::AddJobToQueue(
-    std::shared_ptr<ConfigResourcesContainer> config,
+    std::shared_ptr<LoadedConfiguration> config,
     JobResource* job,
     RunResource* run,
     time_t now,
@@ -265,7 +265,7 @@ void SchedulerPrivate::AddJobToQueue(
 }
 
 void SchedulerPrivate::AddJobWithNoRunResourceToQueue(
-    std::shared_ptr<ConfigResourcesContainer> config,
+    std::shared_ptr<LoadedConfiguration> config,
     JobResource* job,
     JobTrigger job_trigger)
 {
