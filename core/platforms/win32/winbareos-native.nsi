@@ -593,6 +593,10 @@ Section -CheckVCRedist
   Call VCRedist.IsInstalled
   Pop $R1
   ${If} $R1 == "no"
+    DetailPrint "VC++ prerequisite check failed in silent mode."
+    FileOpen $R1 $TEMP\abortreason.txt w
+    FileWrite $R1 "VC++ prerequisite check failed in silent mode"
+    FileClose $R1
     MessageBox MB_OK|MB_ICONSTOP \
       "Bareos requires Microsoft Visual C++ Redistributable to be installed.$\r$\n\
        The installer will exit now."
@@ -1500,6 +1504,14 @@ Function .onInit
 
   !insertmacro getPostgresVars
 
+  # extract runtime probe tools early, as we may need to validate
+  # prerequisites before running upgrade uninstall actions
+  InitPluginsDir
+  SetOutPath $PLUGINSDIR
+  File "C:\vcpkg_installed\x64-windows\tools\openssl\openssl.exe"
+  File "${CMAKE_BINARY_DIR}\bin\libcrypto-3-x64.dll"
+  File "${CMAKE_BINARY_DIR}\bin\libssl-3-x64.dll"
+
   #
   # UPGRADE: if already installed allow to uninstall installed version
   # inspired by http://nsis.sourceforge.net/Auto-uninstall_old_before_installing_new
@@ -1514,6 +1526,19 @@ Function .onInit
   # If there is no version installed there is not much to upgrade so jump to done.
   #
   StrCmp $R0 "" done
+
+  Call VCRedist.IsInstalled
+  Pop $R1
+  StrCmp $R1 "yes" vcRuntimeReadyForUpgrade
+    DetailPrint "VC++ prerequisite check failed before upgrade uninstall."
+    MessageBox MB_OK|MB_ICONSTOP \
+      "Bareos requires Microsoft Visual C++ Redistributable to be installed before upgrade can continue.$\r$\n\
+       Please install it and restart the installer."
+    FileOpen $R1 $TEMP\abortreason.txt w
+    FileWrite $R1 "VC++ prerequisite check failed before upgrade uninstall"
+    FileClose $R1
+    Abort
+vcRuntimeReadyForUpgrade:
 
   #LogText "Prior Bareos version installed: $0"
 
