@@ -132,33 +132,49 @@ struct UseConfigAndJcrs : UsePasswordsFromConfig {
   {
     auto [type, name] = global_resource::ParseQualifiedName(identity);
 
-    if (type == global_resource::Type::Job) {
-      Dmsg1(200, "Searching for job %.*s to create a tls connection\n",
-            (int)name.size(), name.data());
-      auto* jcr = get_jcr_by_full_name(name);
-      if (!jcr) {
-        Dmsg1(100,
-              "Login attempt via job %.*s, but no such job is known to me\n",
-              (int)name.size(), name.data());
-        return 0;
-      }
-      found_jcr = jcr;
-
-      auto key_length = strlen(jcr->sd_auth_key);
-      if (key_length >= psk_buffer.size()) {
-        Dmsg1(100, "Secret key for job %s is too long: %zu vs max %zu\n",
-              jcr->Job, key_length, psk_buffer.size());
-        return 0;
-      }
-
-      Dmsg1(200, "Using job %s secret for the tls connection\n", jcr->Job);
-      memcpy(psk_buffer.data(), jcr->sd_auth_key, key_length);
-      psk_buffer[key_length] = 0;
-      return key_length;
-    } else {
+    if (type != global_resource::Type::Job) {
       return UsePasswordsFromConfig::get_shared_secret_for(identity,
                                                            psk_buffer);
     }
+
+    Dmsg1(200, "Searching for job %.*s to create a tls connection\n",
+          (int)name.size(), name.data());
+    auto* jcr = get_jcr_by_full_name(name);
+    if (!jcr) {
+      Dmsg1(100, "Login attempt via job %.*s, but no such job is known to me\n",
+            (int)name.size(), name.data());
+      return 0;
+    }
+    if (!jcr->sd_auth_key) {
+      Dmsg1(100, "Login attempt via job %.*s, but that job has no auth key\n",
+            (int)name.size(), name.data());
+      FreeJcr(jcr);
+      return 0;
+    }
+    if (strcmp(jcr->sd_auth_key, "dummy") == 0) {
+      Dmsg1(100,
+            "Login attempt via job %.*s, but that job has no real auth key\n",
+            (int)name.size(), name.data());
+      FreeJcr(jcr);
+      return 0;
+    }
+
+    auto key_length = strlen(jcr->sd_auth_key);
+    if (key_length >= psk_buffer.size()) {
+      Dmsg1(100, "Secret key for job %s is too long: %zu vs max %zu\n",
+            jcr->Job, key_length, psk_buffer.size());
+      FreeJcr(jcr);
+      return 0;
+    }
+
+    Dmsg1(200, "Using job %s secret for the tls connection\n", jcr->Job);
+    memcpy(psk_buffer.data(), jcr->sd_auth_key, key_length);
+    psk_buffer[key_length] = 0;
+
+    // only set jcr if we actually chose the jcr for a psk
+    found_jcr = jcr;
+
+    return key_length;
   }
 
   std::optional<std::string> check_job_name(std::string_view jobname)
