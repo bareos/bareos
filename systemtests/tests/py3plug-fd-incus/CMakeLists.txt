@@ -62,7 +62,16 @@ if(INCUS)
       CACHE STRING "base container image for the incus test"
   )
 
-  # incus only allows alphanumeric characters + hyphens in names
+  # incus only allows alphanumeric characters + hyphens in names but only a max
+  # of 63 characters; we leave 13 chars to the tests so we can only create a
+  # name of length 50
+
+  # Quote: Incus instance names must be 1 to 63 characters long and contain only
+  # ASCII letters, numbers, and dashes. They must not start with a digit or a
+  # dash, and they cannot end with a dash
+
+  set(MAX_LENGTH 50)
+
   if(DEFINED CIUID)
     string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_VM_NAME
                          "${INCUS_VM_BASE_NAME}-${CIUID}"
@@ -70,6 +79,30 @@ if(INCUS)
     string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_CT_NAME
                          "${INCUS_CT_BASE_NAME}-${CIUID}"
     )
+
+    string(LENGTH "${INCUS_VM_NAME}" VM_LENGTH)
+    string(LENGTH "${INCUS_CT_NAME}" CT_LENGTH)
+
+    if(VM_LENGTH GREATER MAX_LENGTH)
+      message(
+        "incus: Generated vm name ${INCUS_VM_NAME} is too long.  Generating fallback name"
+      )
+
+      math(EXPR MAX_SUB_LEN "${MAX_LENGTH} - 3") # VM-
+      string(SUBSTRING "${CIUID}" 0 ${MAX_SUB_LEN} USED_CIUID)
+      string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_VM_NAME "VM-${USED_CIUID}")
+    endif()
+
+    if(CT_LENGTH GREATER MAX_LENGTH)
+      message(
+        "incus: Generated ct name ${INCUS_CT_NAME} is too long.  Generating fallback name"
+      )
+
+      math(EXPR MAX_SUB_LEN "${MAX_LENGTH} - 3") # CT-
+      string(SUBSTRING "${CIUID}" 0 ${MAX_SUB_LEN} USED_CIUID)
+      string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_CT_NAME "CT-${USED_CIUID}")
+    endif()
+
   else()
     string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_VM_NAME
                          "${INCUS_VM_BASE_NAME}"
@@ -78,6 +111,11 @@ if(INCUS)
                          "${INCUS_CT_BASE_NAME}"
     )
   endif()
+
+  # remove trailing `-` this can happen if e.g. the string is too long and got
+  # cutoff at a bad place
+  string(REGEX REPLACE "-+$" "" INCUS_VM_NAME "${INCUS_VM_NAME}")
+  string(REGEX REPLACE "-+$" "" INCUS_CT_NAME "${INCUS_CT_NAME}")
 
   message("incus: using ${INCUS_VM_NAME} / ${INCUS_CT_NAME}")
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} NO_GRPC)
