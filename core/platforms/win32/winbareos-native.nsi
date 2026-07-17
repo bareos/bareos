@@ -474,8 +474,9 @@ InstType "Full - All Daemons, Director with PostgreSQL Catalog Database (needs l
 InstType "Minimal - FileDaemon + Plugins, no Traymonitor"
 
 Function VCRedist.CustomPage
-  ReadRegDword $R1 HKLM "${VCREDIST_REGPATH}" "Installed"
-  ${If} $R1 == ""
+  Call VCRedist.IsInstalled
+  Pop $R1
+  ${If} $R1 == "no"
     ;Disable Next Button
     GetDlgItem $0 $HWNDPARENT 1
     EnableWindow $0 0
@@ -519,12 +520,41 @@ Function VCRedist.CustomPage
 FunctionEnd
 
 Function VCRedist.RecheckTimer
-  ReadRegDword $R1 HKLM "${VCREDIST_REGPATH}" "Installed"
-  ${If} $R1 != ""
+  Call VCRedist.IsInstalled
+  Pop $R1
+  ${If} $R1 == "yes"
     ${NSD_KillTimer} VCRedist.RecheckTimer
     GetDlgItem $0 $HWNDPARENT 1
     EnableWindow $0 1
   ${EndIf}
+FunctionEnd
+
+Function VCRedist.IsInstalled
+  StrCpy $R1 "no"
+
+  ReadRegDword $R0 HKLM "${VCREDIST_REGPATH}" "Installed"
+  ${If} $R0 == ""
+    DetailPrint "VC++ redist registry marker missing at ${VCREDIST_REGPATH}"
+    Goto VCRedistCheckDone
+  ${EndIf}
+
+  IfFileExists "$PLUGINSDIR\openssl.exe" 0 +4
+    nsExec::ExecToStack '"$PLUGINSDIR\openssl.exe" version'
+    Pop $R0
+    Pop $R2
+    Goto +3
+  StrCpy $R0 "error"
+  StrCpy $R2 "openssl.exe missing in \$PLUGINSDIR"
+
+  DetailPrint "VC++ runtime probe exit code: $R0"
+  ${If} $R0 == "0"
+    StrCpy $R1 "yes"
+  ${Else}
+    DetailPrint "VC++ runtime probe output: $R2"
+  ${EndIf}
+
+VCRedistCheckDone:
+  Push $R1
 FunctionEnd
 
 Function VCRedist.OpenLink
@@ -560,8 +590,9 @@ FunctionEnd
 Section -CheckVCRedist
   # non-silent install is handled on a custom page
   IfSilent 0 CheckVCRedistEnd
-  ReadRegDword $R1 HKLM "${VCREDIST_REGPATH}" "Installed"
-  ${If} $R1 == ""
+  Call VCRedist.IsInstalled
+  Pop $R1
+  ${If} $R1 == "no"
     MessageBox MB_OK|MB_ICONSTOP \
       "Bareos requires Microsoft Visual C++ Redistributable to be installed.$\r$\n\
        The installer will exit now."
