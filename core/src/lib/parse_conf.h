@@ -456,6 +456,8 @@ class ConfigResourcesContainer {
 
  public:
   std::vector<BareosResource*> configuration_resources_ = {};
+
+  ConfigResourcesContainer() = default;
   ConfigResourcesContainer(ConfigurationParser* config)
       : free_res{config->FreeResourceCb_}
       , configuration_resources_(config->r_num_)

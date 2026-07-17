@@ -123,7 +123,8 @@ void RunOnIncomingConnectInterval::RunJobIfIntervalExceeded(
 
   if (!job_ran_before || interval_time_exceeded) {
     Dmsg1(800, "Add job %s to scheduler queue.\n", job->resource_name_);
-    scheduler_.AddJobWithNoRunResourceToQueue(job, JobTrigger::kClient);
+    scheduler_.AddJobWithNoRunResourceToQueue(used_config_, job,
+                                              JobTrigger::kClient);
   }
 }
 

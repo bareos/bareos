@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,6 +24,7 @@
 
 #include "include/bareos.h"
 #include "dird/job_trigger.h"
+#include "lib/parse_conf.h"
 
 #include <memory>
 #include <queue>
@@ -36,20 +37,15 @@ class JobResource;
 struct SchedulerJobItemQueuePrivate;
 
 struct SchedulerJobItem {
-  ~SchedulerJobItem() = default;
-
   SchedulerJobItem() = default;
-  SchedulerJobItem(const SchedulerJobItem& other) = default;
-  SchedulerJobItem(SchedulerJobItem&& other) = default;
-  SchedulerJobItem& operator=(const SchedulerJobItem& other) = default;
-  SchedulerJobItem& operator=(SchedulerJobItem&& other) = default;
-
-  SchedulerJobItem(JobResource* job_in,
+  SchedulerJobItem(std::shared_ptr<ConfigResourcesContainer> config,
+                   JobResource* job_in,
                    RunResource* run_in,
                    time_t runtime_in,
                    int priority_in,
                    JobTrigger job_kickoff_in) noexcept
-      : job(job_in)
+      : container{std::move(config)}
+      , job(job_in)
       , run(run_in)
       , runtime(runtime_in)
       , priority(priority_in)
@@ -64,8 +60,7 @@ struct SchedulerJobItem {
            && run == rhs.run;
   }
 
-  bool operator!=(const SchedulerJobItem& rhs) const { return !(*this == rhs); }
-
+  std::shared_ptr<ConfigResourcesContainer> container{};
   JobResource* job{nullptr};
   RunResource* run{nullptr};
   time_t runtime{0};
@@ -81,7 +76,8 @@ class SchedulerJobItemQueue {
 
   SchedulerJobItem TopItem() const;
   SchedulerJobItem TakeOutTopItem();
-  void EmplaceItem(JobResource* job,
+  void EmplaceItem(std::shared_ptr<ConfigResourcesContainer> conf,
+                   JobResource* job,
                    RunResource* run,
                    time_t runtime,
                    JobTrigger job_trigger);
