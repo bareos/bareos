@@ -28,11 +28,7 @@
 #ifndef BAREOS_LIB_BREG_H_
 #define BAREOS_LIB_BREG_H_
 
-#if __has_include(<regex.h>)
-#  include <regex.h>
-#else
-#  include "lib/bregex.h"
-#endif
+#include "lib/bregex.h"
 
 /* Usage:
  *

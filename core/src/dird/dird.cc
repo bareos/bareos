@@ -54,11 +54,7 @@
 
 #include "dird/reload.h"
 
-#if __has_include(<regex.h>)
-#  include <regex.h>
-#else
-#  include "lib/bregex.h"
-#endif
+#include "lib/bregex.h"
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
 #ifndef HAVE_READDIR_R
