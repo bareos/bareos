@@ -52,7 +52,7 @@ struct SchedulerJobItem {
       , job_trigger(job_kickoff_in)
   {
     is_valid = job && runtime;
-  };
+  }
 
   bool operator==(const SchedulerJobItem& rhs) const
   {
