@@ -62,7 +62,12 @@ if(INCUS)
       CACHE STRING "base container image for the incus test"
   )
 
-  # incus only allows alphanumeric characters + hyphens in names
+  # incus only allows alphanumeric characters + hyphens in names but only a max
+  # of 63 characters; we leave 8 chars to the tests so we can only create a name
+  # of length 55
+
+  set(MAX_LENGTH 55)
+
   if(DEFINED CIUID)
     string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_VM_NAME
                          "${INCUS_VM_BASE_NAME}-${CIUID}"
@@ -70,6 +75,30 @@ if(INCUS)
     string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_CT_NAME
                          "${INCUS_CT_BASE_NAME}-${CIUID}"
     )
+
+    string(LENGTH "${INCUS_VM_NAME}" VM_LENGTH)
+    string(LENGTH "${INCUS_CT_NAME}" CT_LENGTH)
+
+    if(VM_LENGTH GREATER MAX_LENGTH)
+      message(
+        "incus: Generated vm name ${INCUS_VM_NAME} is too long.  Generating fallback name"
+      )
+
+      math(EXPR MAX_SUB_LEN "${MAX_LENGTH} - 3") # VM-
+      string(SUBSTRING "${CIUID}" 0 MAX_SUB_LEN USED_CIUID)
+      string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_VM_NAME "VM-${CIUID}")
+    endif()
+
+    if(CT_LENGTH GREATER MAX_LENGTH)
+      message(
+        "incus: Generated ct name ${INCUS_CT_NAME} is too long.  Generating fallback name"
+      )
+
+      math(EXPR MAX_SUB_LEN "${MAX_LENGTH} - 3") # CT-
+      string(SUBSTRING "${CIUID}" 0 MAX_SUB_LEN USED_CIUID)
+      string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_VM_NAME "CT-${CIUID}")
+    endif()
+
   else()
     string(REGEX REPLACE "[^A-Za-z0-9]" "-" INCUS_VM_NAME
                          "${INCUS_VM_BASE_NAME}"
