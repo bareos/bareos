@@ -20,7 +20,6 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(BareosConfigureFile)
 include(BareosWindowsResource)
-include(CheckIncludeFiles)
 
 option(FD_CLIENT_SLEEP_INHIBITION
        "Enable FD sleep inhibition during backup/restore jobs"
@@ -43,11 +42,6 @@ if(FD_CLIENT_SLEEP_INHIBITION AND HAVE_LINUX_OS)
         "Set -DFD_CLIENT_SLEEP_INHIBITION=OFF to disable manually."
     )
   endif()
-  set(_previous_required_includes "${CMAKE_REQUIRED_INCLUDES}")
-  set(CMAKE_REQUIRED_INCLUDES ${SYSTEMD_INCLUDE_DIRS})
-  check_include_files("systemd/sd-bus.h" HAVE_SYSTEMD_SD_BUS_H)
-  set(CMAKE_REQUIRED_INCLUDES "${_previous_required_includes}")
-  unset(_previous_required_includes)
   if(NOT HAVE_SYSTEMD_SD_BUS_H)
     message(
       FATAL_ERROR
