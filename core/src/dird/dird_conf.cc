@@ -4045,12 +4045,14 @@ std::vector<JobResource*> GetAllJobResourcesByClientName(
     LoadedConfiguration* container,
     std::string_view name)
 {
+  if (!container) { return {}; }
+
   std::vector<JobResource*> all_matching_jobs;
   JobResource* job{nullptr};
 
   do {
     job = static_cast<JobResource*>(container->GetNextRes(R_JOB, job));
-    if (job && job->client) {
+    if (job && job->client && job->client->resource_name_) {
       if (job->client->resource_name_ == name) {
         all_matching_jobs.push_back(job);
       }
