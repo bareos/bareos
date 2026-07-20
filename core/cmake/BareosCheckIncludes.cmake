@@ -76,6 +76,14 @@ if(NOT MSVC)
   check_include_files(dev/scsipi/scsipi_all.h HAVE_DEV_SCSIPI_SCSIPI_ALL_H)
 
   check_include_files(scsi/uscsi_all.h HAVE_USCSI_ALL_H)
+
+  if(HAVE_SYSTEMD AND HAVE_LINUX_OS)
+    set(_previous_required_includes "${CMAKE_REQUIRED_INCLUDES}")
+    set(CMAKE_REQUIRED_INCLUDES ${SYSTEMD_INCLUDE_DIRS})
+    check_include_files("systemd/sd-bus.h" HAVE_SYSTEMD_SD_BUS_H)
+    set(CMAKE_REQUIRED_INCLUDES "${_previous_required_includes}")
+    unset(_previous_required_includes)
+  endif()
 else()
   # we provide tho following headers
   set(HAVE_SYS_MTIO_H 1)
