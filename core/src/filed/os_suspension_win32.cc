@@ -36,8 +36,10 @@ void ActivateWindowsSleepPrevention(SleepPrevention& sleep_prevention)
 
 void DeactivateWindowsSleepPrevention(SleepPrevention& sleep_prevention)
 {
-  AllowOsSuspensions();
-  sleep_prevention.windows_active = false;
+  if (sleep_prevention.windows_active) {
+    AllowOsSuspensions();
+    sleep_prevention.windows_active = false;
+  }
 }
 
 }  // namespace filedaemon
