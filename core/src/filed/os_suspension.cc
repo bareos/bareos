@@ -26,6 +26,9 @@ namespace filedaemon {
 void ActivateSleepPrevention(JobControlRecord* jcr,
                              SleepPrevention& sleep_prevention)
 {
+  (void)jcr;
+  (void)sleep_prevention;
+
 #if defined(FILED_CLIENT_SLEEP_INHIBITION)
 #  if defined(HAVE_WIN32)
   ActivateWindowsSleepPrevention(sleep_prevention);
@@ -36,14 +39,13 @@ void ActivateSleepPrevention(JobControlRecord* jcr,
 #  if defined(HAVE_DARWIN_OS)
   ActivateDarwinSleepPrevention(jcr, sleep_prevention);
 #  endif
-#else
-  (void)jcr;
-  (void)sleep_prevention;
 #endif
 }
 
 void DeactivateSleepPrevention(SleepPrevention& sleep_prevention)
 {
+  (void)sleep_prevention;
+
 #if defined(FILED_CLIENT_SLEEP_INHIBITION)
 #  if defined(HAVE_WIN32)
   DeactivateWindowsSleepPrevention(sleep_prevention);
@@ -54,8 +56,6 @@ void DeactivateSleepPrevention(SleepPrevention& sleep_prevention)
 #  if defined(HAVE_DARWIN_OS)
   DeactivateDarwinSleepPrevention(sleep_prevention);
 #  endif
-#else
-  (void)sleep_prevention;
 #endif
 }
 
