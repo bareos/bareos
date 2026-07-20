@@ -73,11 +73,10 @@ void ActivateLinuxSleepPrevention(JobControlRecord* jcr,
     return;
   }
 
-  status = sd_bus_call_method(bus, "org.freedesktop.login1",
-                              "/org/freedesktop/login1",
-                              "org.freedesktop.login1.Manager", "Inhibit",
-                              &error, &reply, "ssss", "sleep", "bareos-fd",
-                              "Backup or restore running", "block");
+  status = sd_bus_call_method(
+      bus, "org.freedesktop.login1", "/org/freedesktop/login1",
+      "org.freedesktop.login1.Manager", "Inhibit", &error, &reply, "ssss",
+      "sleep", "bareos-fd", "Backup or restore running", "block");
   if (status < 0) {
     if (error.message != nullptr) {
       warn_and_return(error.message);
