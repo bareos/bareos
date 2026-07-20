@@ -84,7 +84,7 @@ target_link_libraries(
 )
 if(FD_CLIENT_SLEEP_INHIBITION)
   target_compile_definitions(fd_objects_common
-                             PRIVATE HAVE_FD_CLIENT_SLEEP_INHIBITION=1
+                             PRIVATE FILED_CLIENT_SLEEP_INHIBITION=1
   )
 endif()
 if(HAVE_SYSTEMD AND FD_CLIENT_SLEEP_INHIBITION)

@@ -63,13 +63,13 @@
 #  include "vss.h"
 #endif
 
-#if defined(HAVE_FD_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
+#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
     && defined(HAVE_SYSTEMD)
 #  include <fcntl.h>
 #  include <systemd/sd-bus.h>
 #  include <unistd.h>
 #endif
-#if defined(HAVE_FD_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
+#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
 #  include <CoreFoundation/CoreFoundation.h>
 #  include <IOKit/pwr_mgt/IOPMLib.h>
 #endif
@@ -144,7 +144,7 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
                                           char* key,
                                           TlsPolicy policy);
 
-#if defined(HAVE_FD_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
+#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
     && defined(HAVE_SYSTEMD)
 static void WarnLinuxSleepInhibitFailure(JobControlRecord* jcr,
                                          bool& warning_logged,
@@ -228,7 +228,7 @@ static void DeactivateLinuxSleepInhibition(int& inhibitor_fd)
 }
 #endif
 
-#if defined(HAVE_FD_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
+#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
 static void WarnDarwinSleepInhibitFailure(JobControlRecord* jcr,
                                           bool& warning_logged,
                                           IOReturn status)
@@ -498,15 +498,15 @@ static s_fd_dir_cmds* SelectCommandByName(const char* name)
 
 void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 {
-#if defined(HAVE_FD_CLIENT_SLEEP_INHIBITION) && defined(HAVE_WIN32)
+#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_WIN32)
   bool sleep_prevention_active = false;
 #endif
-#if defined(HAVE_FD_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
+#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
     && defined(HAVE_SYSTEMD)
   int linux_sleep_inhibitor_fd = -1;
   bool linux_sleep_inhibit_warning_logged = false;
 #endif
-#if defined(HAVE_FD_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
+#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
   IOPMAssertionID darwin_sleep_assertion_id = kIOPMNullAssertionID;
   bool darwin_sleep_inhibit_warning_logged = false;
 #endif
@@ -542,20 +542,20 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
       [[maybe_unused]] const bool is_backup_or_restore_command
           = (to_execute->func == BackupCmd || to_execute->func == RestoreCmd);
 
-#if defined(HAVE_FD_CLIENT_SLEEP_INHIBITION) && defined(HAVE_WIN32)
+#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_WIN32)
       if (!sleep_prevention_active && is_backup_or_restore_command) {
         PreventOsSuspensions();
         sleep_prevention_active = true;
       }
 #endif
-#if defined(HAVE_FD_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
+#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
     && defined(HAVE_SYSTEMD)
       if (is_backup_or_restore_command) {
         ActivateLinuxSleepInhibition(jcr, linux_sleep_inhibitor_fd,
                                      linux_sleep_inhibit_warning_logged);
       }
 #endif
-#if defined(HAVE_FD_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
+#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
       if (is_backup_or_restore_command) {
         ActivateDarwinSleepInhibition(jcr, darwin_sleep_assertion_id,
                                       darwin_sleep_inhibit_warning_logged);
@@ -609,14 +609,14 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
   FreeJcr(jcr); /* destroy JobControlRecord record */
   Dmsg0(100, "Done with FreeJcr\n");
 
-#if defined(HAVE_FD_CLIENT_SLEEP_INHIBITION) && defined(HAVE_WIN32)
+#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_WIN32)
   AllowOsSuspensions();
 #endif
-#if defined(HAVE_FD_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
+#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
     && defined(HAVE_SYSTEMD)
   DeactivateLinuxSleepInhibition(linux_sleep_inhibitor_fd);
 #endif
-#if defined(HAVE_FD_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
+#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
   DeactivateDarwinSleepInhibition(darwin_sleep_assertion_id);
 #endif
 
