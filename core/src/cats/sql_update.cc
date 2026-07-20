@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -344,6 +344,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        "MaxVolJobs=%d,MaxVolFiles=%d,Enabled=%d,LocationId=%s,"
        "ScratchPoolId=%s,RecyclePoolId=%s,RecycleCount=%d,Recycle=%d,"
        "ActionOnPurge=%d,"
+       "EncryptionKey='%s',"
        "MinBlocksize=%u,MaxBlocksize=%u "
        "WHERE VolumeName='%s'",
        mr->VolJobs, mr->VolFiles, mr->VolBlocks, edit_uint64(mr->VolBytes, ed1),
@@ -356,7 +357,8 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        mr->Enabled, edit_uint64(mr->LocationId, ed9),
        edit_uint64(mr->ScratchPoolId, ed10),
        edit_uint64(mr->RecyclePoolId, ed11), mr->RecycleCount, mr->Recycle,
-       mr->ActionOnPurge, mr->MinBlocksize, mr->MaxBlocksize, esc_medianame);
+       mr->ActionOnPurge, mr->EncrKey, mr->MinBlocksize, mr->MaxBlocksize,
+       esc_medianame);
 
   Dmsg1(400, "%s\n", cmd);
 

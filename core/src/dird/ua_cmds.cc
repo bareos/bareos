@@ -502,7 +502,7 @@ static struct ua_cmdstruct commands[] = {
      T_("Update volume, pool, slots, job or statistics"),
      NT_("[volume=<volume-name> "
          "[volstatus=<status>] [volretention=<time-def>] "
-         "actiononpurge=<action>] "
+         "[actiononpurge=<action>] [encrypt=<yes/no/rotate>] "
          "[pool=<pool-name>] [recycle=<yes/no>] [slot=<number>] "
          "[inchanger=<yes/no>]] "
          "| [pool=<pool-name> "
