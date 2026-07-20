@@ -22,8 +22,7 @@ include(BareosConfigureFile)
 include(BareosWindowsResource)
 
 option(FD_CLIENT_SLEEP_INHIBITION
-       "Enable FD sleep inhibition during backup/restore jobs"
-       ON
+       "Enable FD sleep inhibition during backup/restore jobs" ON
 )
 
 if(HAVE_WIN32)
@@ -82,7 +81,10 @@ target_sources(
 if(FD_CLIENT_SLEEP_INHIBITION AND HAVE_WIN32)
   target_sources(fd_objects_common PRIVATE os_suspension_win32.cc)
 endif()
-if(FD_CLIENT_SLEEP_INHIBITION AND HAVE_LINUX_OS AND HAVE_SYSTEMD)
+if(FD_CLIENT_SLEEP_INHIBITION
+   AND HAVE_LINUX_OS
+   AND HAVE_SYSTEMD
+)
   target_sources(fd_objects_common PRIVATE os_suspension_linux.cc)
 endif()
 if(FD_CLIENT_SLEEP_INHIBITION AND HAVE_DARWIN_OS)
@@ -94,12 +96,12 @@ target_link_libraries(
                             ZLIB::ZLIB
 )
 if(FD_CLIENT_SLEEP_INHIBITION)
-  target_compile_definitions(fd_objects_common
-                             PRIVATE FILED_CLIENT_SLEEP_INHIBITION=1
+  target_compile_definitions(
+    fd_objects_common PRIVATE FILED_CLIENT_SLEEP_INHIBITION=1
   )
   if(HAVE_SYSTEMD)
-    target_include_directories(fd_objects_common
-                               PRIVATE ${SYSTEMD_INCLUDE_DIRS}
+    target_include_directories(
+      fd_objects_common PRIVATE ${SYSTEMD_INCLUDE_DIRS}
     )
     target_compile_options(fd_objects_common PRIVATE ${SYSTEMD_CFLAGS_OTHER})
     if(SYSTEMD_LIBRARIES)

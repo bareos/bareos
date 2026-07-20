@@ -29,7 +29,7 @@ assert_fd_not_listening()
   local port
   port="${BAREOS_FD_PORT}"
 
-  if "${PYTHON_EXECUTABLE}" - "${port}" <<'PY'
+  if "${PYTHON_EXECUTABLE}" - "${port}" <<'PY'; then
 import socket
 import sys
 
@@ -50,7 +50,6 @@ for host, family in targets:
 
 sys.exit(0)
 PY
-  then
     return 0
   fi
 
