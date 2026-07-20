@@ -1968,7 +1968,12 @@ update
          All Volumes from Pool
          All Volumes from all Pools
 
+   You can add, remove or rotate a volume encryption key using :bcommand:`update
+   volume=<volume-name> encrypt=<yes/no/rotate>` for :ref:`scsicrypto-sd`.
 
+   .. warning::
+      As a new encryption key will only be loaded on volume mount, make sure you
+      re-mount any currently mounted volume when changing the encryption key!
 
    For slots :bcommand:`update slots`, Bareos will obtain a list of slots and their barcodes from
    the Storage daemon, and for each barcode found, it will automatically update the slot in the
@@ -2002,7 +2007,7 @@ update
               [recycle=<yes/no>] [slot=<number>] [inchanger=<yes/no>] |
               pool=<pool-name> [maxvolbytes=<size>] [maxvolfiles=<nb>]
               [maxvoljobs=<nb>][enabled=<yes/no>] [recyclepool=<pool-name>]
-              [actiononpurge=<action>] |
+              [actiononpurge=<action>] [encrypt=<yes/no/rotate>] |
               slots [storage=<storage-name>] [scan] |
               jobid=<jobid> [jobname=<name>] [starttime=<time-def>]
               [client=<client-name>] [filesetid=<fileset-id>]

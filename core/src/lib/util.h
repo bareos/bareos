@@ -272,4 +272,45 @@ inline std::string vstdprintf(const char* fmt, va_list args)
   return s;
 }
 
+// compile-time strings
+template <std::size_t N> struct fixed_string {
+  char value[N];
+
+  constexpr fixed_string(const char (&str)[N]) { std::copy_n(str, N, value); }
+
+  constexpr std::string_view view() const
+  {
+    return {value, N - 1};  // ohne Nullterminator
+  }
+};
+
+template <std::size_t N> fixed_string(const char (&)[N]) -> fixed_string<N>;
+
+// basic constexpr version of tolower(char c)
+inline constexpr char ascii_tolower(char c)
+{
+  return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c;
+}
+
+// compile-time string that compares case-insensitively
+template <fixed_string S> struct ci_string {
+  static constexpr std::string_view value = S.view();
+
+  constexpr bool operator==(std::string_view rhs) const
+  {
+    if (value.size() != rhs.size()) return false;
+
+    for (std::size_t i = 0; i < value.size(); ++i) {
+      if (ascii_tolower(value[i]) != ascii_tolower(rhs[i])) return false;
+    }
+
+    return true;
+  }
+
+  friend constexpr bool operator==(std::string_view lhs, ci_string rhs)
+  {
+    return rhs == lhs;
+  }
+};
+
 #endif  // BAREOS_LIB_UTIL_H_

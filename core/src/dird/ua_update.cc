@@ -42,6 +42,7 @@
 #include "lib/bool_string.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+#include "volume_key.h"
 
 namespace directordaemon {
 
@@ -331,6 +332,81 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
   }
 }
 
+static void ReplaceVolEncryptionKey(UaContext* ua, MediaDbRecord* mr)
+{
+  if (!GenerateNewEncryptionKey(ua, mr)) { return; }
+  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+    ua->ErrorMsg(T_("Error updating media record: ERR=%s"), ua->db->strerror());
+  } else {
+    ua->InfoMsg("Generated new encryption key for volume '%s' in catalog.\n",
+                mr->VolumeName);
+  }
+}
+
+static void RemoveVolEncryptionKey(UaContext* ua, MediaDbRecord* mr)
+{
+  memset(mr->EncrKey, 0, sizeof(mr->EncrKey));
+  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+    ua->ErrorMsg(T_("Error updating media record: ERR=%s"), ua->db->strerror());
+  } else {
+    ua->InfoMsg("Removed encryption key for volume '%s' from catalog.\n",
+                mr->VolumeName);
+  }
+}
+
+static void UpdateVolEncryption(UaContext* ua,
+                                std::string_view val,
+                                MediaDbRecord* mr)
+{
+  const bool key_present = strnlen(mr->EncrKey, 1);
+  const bool vol_is_purged = bstrcmp(mr->VolStatus, NT_("Purged"));
+
+  switch (parse_user_bool(val)) {
+    case parse_bool_result::True:
+      if (key_present) {
+        ua->WarningMsg("Encryption key for volume '%s' already configured.\n",
+                       mr->VolumeName);
+      } else {
+        ReplaceVolEncryptionKey(ua, mr);
+      }
+      break;
+    case parse_bool_result::False:
+      if (!key_present) {
+        ua->WarningMsg("No encryption key for volume '%s' configured.\n",
+                       mr->VolumeName);
+      } else if (!vol_is_purged) {
+        ua->ErrorMsg(
+            "Removing encryption key from volume '%s' requires "
+            "volstatus=Purged\n",
+            mr->VolumeName);
+      } else {
+        ua->WarningMsg(
+            "If the volume is currently mounted, remount before use!\n");
+        RemoveVolEncryptionKey(ua, mr);
+      }
+      break;
+    case parse_bool_result::Error:
+      if (val == ci_string<"rotate">{}) {
+        if (!key_present) {
+          ua->WarningMsg("No encryption key for volume '%s' configured.\n",
+                         mr->VolumeName);
+        } else if (!vol_is_purged) {
+          ua->ErrorMsg(
+              "Rotating encryption key for volume '%s' requires "
+              "volstatus=Purged\n",
+              mr->VolumeName);
+        } else {
+          ua->WarningMsg(
+              "If the volume is currently mounted, remount before use!\n");
+          ReplaceVolEncryptionKey(ua, mr);
+        }
+      } else {
+        ua->ErrorMsg(T_("Valid values for Encrypt are yes/no/rotate\n"));
+      }
+  }
+}
+
+
 // Modify the Pool in which this Volume is located
 void UpdateVolPool(UaContext* ua,
                    char* val,
@@ -556,6 +632,7 @@ static bool UpdateVolume(UaContext* ua)
                       NT_("RecyclePool"),   /* 13 */
                       NT_("ActionOnPurge"), /* 14 */
                       NT_("Storage"),       /* 15 */
+                      NT_("Encrypt"),       /* 16 */
                       NULL};
 
 #define AllFromPool 11 /* keep this updated with above */
@@ -621,6 +698,9 @@ static bool UpdateVolume(UaContext* ua)
           break;
         case 15:
           UpdateVolStorage(ua, ua->argv[j], &mr);
+          break;
+        case 16:
+          UpdateVolEncryption(ua, ua->argv[j], &mr);
           break;
       }
       done = true;
