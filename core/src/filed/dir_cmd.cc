@@ -37,6 +37,7 @@
 #include "filed/heartbeat.h"
 #include "filed/fileset.h"
 #include "filed/filed_jcr_impl.h"
+#include "filed/os_suspension.h"
 #include "filed/socket_server.h"
 #include "filed/restore.h"
 #include "filed/verify.h"
@@ -61,17 +62,6 @@
 #if defined(WIN32_VSS)
 #  include "findlib/win32.h"
 #  include "vss.h"
-#endif
-
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
-    && defined(HAVE_SYSTEMD)
-#  include <fcntl.h>
-#  include <systemd/sd-bus.h>
-#  include <unistd.h>
-#endif
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
-#  include <CoreFoundation/CoreFoundation.h>
-#  include <IOKit/pwr_mgt/IOPMLib.h>
 #endif
 
 #include <atomic>
@@ -143,185 +133,6 @@ static bool OpenSdReadSession(JobControlRecord* jcr);
 static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
                                           char* key,
                                           TlsPolicy policy);
-
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
-    && defined(HAVE_SYSTEMD)
-static void WarnLinuxSleepInhibitFailure(JobControlRecord* jcr,
-                                         bool& warning_logged,
-                                         const char* reason)
-{
-  if (warning_logged) { return; }
-
-  Qmsg(jcr, M_INFO, 0,
-       T_("Failed to inhibit system sleep on Linux: %s. "
-          "Continuing without sleep inhibition.\n"),
-       reason);
-  warning_logged = true;
-}
-
-static bool ActivateLinuxSleepInhibition(JobControlRecord* jcr,
-                                         int& inhibitor_fd,
-                                         bool& warning_logged)
-{
-  if (inhibitor_fd >= 0) { return true; }
-
-  sd_bus* bus = nullptr;
-  sd_bus_message* reply = nullptr;
-  sd_bus_error error = SD_BUS_ERROR_NULL;
-
-  auto cleanup = [&]() {
-    sd_bus_error_free(&error);
-    sd_bus_message_unref(reply);
-    sd_bus_unref(bus);
-  };
-
-  auto warn_and_fail = [&](const char* reason) {
-    WarnLinuxSleepInhibitFailure(jcr, warning_logged, reason);
-    cleanup();
-    return false;
-  };
-
-  int status = sd_bus_open_system(&bus);
-  if (status < 0) {
-    BErrNo be;
-    return warn_and_fail(be.bstrerror(-status));
-  }
-
-  status = sd_bus_call_method(bus, "org.freedesktop.login1",
-                              "/org/freedesktop/login1",
-                              "org.freedesktop.login1.Manager", "Inhibit",
-                              &error, &reply, "ssss", "sleep", "bareos-fd",
-                              "Backup or restore running", "block");
-  if (status < 0) {
-    if (error.message != nullptr) {
-      return warn_and_fail(error.message);
-    } else {
-      BErrNo be;
-      return warn_and_fail(be.bstrerror(-status));
-    }
-  }
-
-  int fd = -1;
-  status = sd_bus_message_read(reply, "h", &fd);
-  if (status < 0 || fd < 0) {
-    BErrNo be;
-    return warn_and_fail(be.bstrerror((status < 0) ? -status : EINVAL));
-  }
-
-  int dupfd = fcntl(fd, F_DUPFD_CLOEXEC, 3);
-  if (dupfd < 0) {
-    BErrNo be;
-    return warn_and_fail(be.bstrerror());
-  }
-
-  inhibitor_fd = dupfd;
-  cleanup();
-  return true;
-}
-
-static void DeactivateLinuxSleepInhibition(int& inhibitor_fd)
-{
-  if (inhibitor_fd >= 0) {
-    close(inhibitor_fd);
-    inhibitor_fd = -1;
-  }
-}
-#endif
-
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
-static void WarnDarwinSleepInhibitFailure(JobControlRecord* jcr,
-                                          bool& warning_logged,
-                                          IOReturn status)
-{
-  if (warning_logged) { return; }
-
-  Qmsg(jcr, M_INFO, 0,
-       T_("Failed to inhibit system sleep on macOS (IOKit status %d). "
-          "Continuing without sleep inhibition.\n"),
-       status);
-  warning_logged = true;
-}
-
-static bool ActivateDarwinSleepInhibition(JobControlRecord* jcr,
-                                          IOPMAssertionID& assertion_id,
-                                          bool& warning_logged)
-{
-  if (assertion_id != kIOPMNullAssertionID) { return true; }
-
-  IOReturn status = IOPMAssertionCreateWithName(
-      kIOPMAssertionTypePreventSystemSleep, kIOPMAssertionLevelOn,
-      CFSTR("Bareos backup or restore running"), &assertion_id);
-  if (status != kIOReturnSuccess) {
-    assertion_id = kIOPMNullAssertionID;
-    WarnDarwinSleepInhibitFailure(jcr, warning_logged, status);
-    return false;
-  }
-
-  return true;
-}
-
-static void DeactivateDarwinSleepInhibition(IOPMAssertionID& assertion_id)
-{
-  if (assertion_id != kIOPMNullAssertionID) {
-    IOPMAssertionRelease(assertion_id);
-    assertion_id = kIOPMNullAssertionID;
-  }
-}
-#endif
-
-#if defined(FILED_CLIENT_SLEEP_INHIBITION)
-struct SleepPrevention {
-#  if defined(HAVE_WIN32)
-  bool windows_active = false;
-#  endif
-#  if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
-  int linux_inhibitor_fd = -1;
-  bool linux_warning_logged = false;
-#  endif
-#  if defined(HAVE_DARWIN_OS)
-  IOPMAssertionID darwin_assertion_id = kIOPMNullAssertionID;
-  bool darwin_warning_logged = false;
-#  endif
-};
-
-static void ActivateSleepPrevention(JobControlRecord* jcr,
-                                    SleepPrevention& sleep_prevention)
-{
-#  if defined(HAVE_WIN32)
-  if (!sleep_prevention.windows_active) {
-    PreventOsSuspensions();
-    sleep_prevention.windows_active = true;
-  }
-#  endif
-#  if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
-  ActivateLinuxSleepInhibition(jcr, sleep_prevention.linux_inhibitor_fd,
-                               sleep_prevention.linux_warning_logged);
-#  endif
-#  if defined(HAVE_DARWIN_OS)
-  ActivateDarwinSleepInhibition(jcr, sleep_prevention.darwin_assertion_id,
-                                sleep_prevention.darwin_warning_logged);
-#  endif
-}
-
-static void DeactivateSleepPrevention(SleepPrevention& sleep_prevention)
-{
-#  if defined(HAVE_WIN32)
-  AllowOsSuspensions();
-#  endif
-#  if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
-  DeactivateLinuxSleepInhibition(sleep_prevention.linux_inhibitor_fd);
-#  endif
-#  if defined(HAVE_DARWIN_OS)
-  DeactivateDarwinSleepInhibition(sleep_prevention.darwin_assertion_id);
-#  endif
-}
-#else
-struct SleepPrevention {};
-
-static void ActivateSleepPrevention(JobControlRecord*, SleepPrevention&) {}
-
-static void DeactivateSleepPrevention(SleepPrevention&) {}
-#endif
 
 /* Exported functions */
 

@@ -65,6 +65,7 @@ target_sources(
           verify.cc
           accurate_htable.cc
           dir_cmd.cc
+          os_suspension.cc
           filed_globals.cc
           heartbeat.cc
           socket_server.cc
@@ -77,6 +78,16 @@ target_sources(
           status.cc
           filed_utils.cc
 )
+
+if(FD_CLIENT_SLEEP_INHIBITION AND HAVE_WIN32)
+  target_sources(fd_objects_common PRIVATE os_suspension_win32.cc)
+endif()
+if(FD_CLIENT_SLEEP_INHIBITION AND HAVE_LINUX_OS AND HAVE_SYSTEMD)
+  target_sources(fd_objects_common PRIVATE os_suspension_linux.cc)
+endif()
+if(FD_CLIENT_SLEEP_INHIBITION AND HAVE_DARWIN_OS)
+  target_sources(fd_objects_common PRIVATE os_suspension_darwin.cc)
+endif()
 
 target_link_libraries(
   fd_objects_common PRIVATE Bareos::Lib Bareos::Findlib Bareos::Fastlz
