@@ -74,9 +74,9 @@ static void CloseTerminationPipe()
 #endif
 }
 
+#if !defined(HAVE_WIN32)
 static bool SetupTerminationPipe()
 {
-#if !defined(HAVE_WIN32)
   if (pipe(termination_pipe_fds) != 0) {
     BErrNo be;
     Emsg1(M_WARNING, 0,
@@ -97,24 +97,18 @@ static bool SetupTerminationPipe()
   }
 
   return true;
-#else
-  return false;
-#endif
 }
 
 static void NotifyTerminationViaPipe(int sig)
 {
-#if !defined(HAVE_WIN32)
   termination_signal = sig;
   if (termination_pipe_fds[1] >= 0) {
     const unsigned char signal_byte = 1;
     [[maybe_unused]] auto ignored
         = write(termination_pipe_fds[1], &signal_byte, sizeof(signal_byte));
   }
-#else
-  (void)sig;
-#endif
 }
+#endif
 
 static bool IsClientInitiatedOnlyModeConfigured()
 {
