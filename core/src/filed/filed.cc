@@ -27,6 +27,7 @@
  */
 
 #if !defined(HAVE_MSVC)
+#  include <fcntl.h>
 #  include <unistd.h>
 #endif
 #include "include/bareos.h"
@@ -46,11 +47,74 @@
 #include "lib/util.h"
 #include "lib/address_conf.h"
 #include "lib/alist.h"
+#include "lib/berrno.h"
 
 using namespace filedaemon;
 
 /* Imported Functions */
 extern void* handle_connection_request(void* dir_sock);
+
+static bool use_signal_pipe_termination = false;
+#if !defined(HAVE_WIN32)
+static int termination_pipe_fds[2] = {-1, -1};
+static volatile sig_atomic_t termination_signal = 0;
+#endif
+
+static void CloseTerminationPipe()
+{
+#if !defined(HAVE_WIN32)
+  if (termination_pipe_fds[0] >= 0) {
+    close(termination_pipe_fds[0]);
+    termination_pipe_fds[0] = -1;
+  }
+  if (termination_pipe_fds[1] >= 0) {
+    close(termination_pipe_fds[1]);
+    termination_pipe_fds[1] = -1;
+  }
+#endif
+}
+
+static bool SetupTerminationPipe()
+{
+#if !defined(HAVE_WIN32)
+  if (pipe(termination_pipe_fds) != 0) {
+    BErrNo be;
+    Emsg1(M_WARNING, 0,
+          T_("Failed to create termination notification pipe: %s\n"),
+          be.bstrerror());
+    return false;
+  }
+
+  int flags = fcntl(termination_pipe_fds[1], F_GETFL);
+  if (flags < 0
+      || fcntl(termination_pipe_fds[1], F_SETFL, flags | O_NONBLOCK) != 0) {
+    BErrNo be;
+    Emsg1(M_WARNING, 0,
+          T_("Failed to configure termination notification pipe: %s\n"),
+          be.bstrerror());
+    CloseTerminationPipe();
+    return false;
+  }
+
+  return true;
+#else
+  return false;
+#endif
+}
+
+static void NotifyTerminationViaPipe(int sig)
+{
+#if !defined(HAVE_WIN32)
+  termination_signal = sig;
+  if (termination_pipe_fds[1] >= 0) {
+    const unsigned char signal_byte = 1;
+    [[maybe_unused]] auto ignored
+        = write(termination_pipe_fds[1], &signal_byte, sizeof(signal_byte));
+  }
+#else
+  (void)sig;
+#endif
+}
 
 static bool IsClientInitiatedOnlyModeConfigured()
 {
@@ -74,7 +138,15 @@ static void WaitUntilTerminated()
   // Without a listening socket server we still need to keep the daemon process
   // alive until the process receives a termination signal.
 #if !defined(HAVE_WIN32)
-  for (;;) { pause(); }
+  if (use_signal_pipe_termination && termination_pipe_fds[0] >= 0) {
+    unsigned char signal_byte;
+    while (read(termination_pipe_fds[0], &signal_byte, sizeof(signal_byte))
+           < 0) {
+      if (errno != EINTR) { break; }
+    }
+  } else {
+    for (;;) { pause(); }
+  }
 #else
   for (;;) { Bmicrosleep(30, 0); }
 #endif
@@ -198,8 +270,6 @@ int main(int argc, char* argv[])
              "but program was not started with required root privileges.\n"));
   }
 
-  if (!no_signals) { InitSignals(TerminateFiled); }
-
   if (export_config_schema) {
     PoolMem buffer;
 
@@ -231,6 +301,21 @@ int main(int argc, char* argv[])
     for (auto& warning : my_config->GetWarnings()) {
       fprintf(stderr, " * %s\n", warning.c_str());
     }
+  }
+
+  const bool client_initiated_only_mode = IsClientInitiatedOnlyModeConfigured();
+
+  if (!no_signals) {
+#if !defined(HAVE_WIN32)
+    if (client_initiated_only_mode && SetupTerminationPipe()) {
+      InitSignals(NotifyTerminationViaPipe);
+      use_signal_pipe_termination = true;
+    } else {
+      InitSignals(TerminateFiled);
+    }
+#else
+    InitSignals(TerminateFiled);
+#endif
   }
 
   if (!foreground && !test_config) {
@@ -267,10 +352,17 @@ int main(int argc, char* argv[])
   StartConnectToDirectorThreads();
 
   // Start socket server only when inbound director connections are enabled.
-  if (IsClientInitiatedOnlyModeConfigured()) {
+  if (client_initiated_only_mode) {
     Pmsg0(000, T_("Client-initiated-only mode detected; "
                   "skipping socket listener startup.\n"));
     WaitUntilTerminated();
+    if (use_signal_pipe_termination) {
+#if !defined(HAVE_WIN32)
+      TerminateFiled(termination_signal ? termination_signal : BEXIT_SUCCESS);
+#else
+      TerminateFiled(BEXIT_SUCCESS);
+#endif
+    }
   } else {
     StartSocketServer(me->FDaddrs);
   }
@@ -302,6 +394,7 @@ void TerminateFiled(int sig)
     WriteStateFile(me->working_directory, "bareos-fd",
                    GetFirstPortHostOrder(me->FDaddrs));
   }
+  CloseTerminationPipe();
   DeletePidFile(pidfile_path);
 
   if (g_filed_configfile != nullptr) { free(g_filed_configfile); }
