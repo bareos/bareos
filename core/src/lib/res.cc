@@ -2308,14 +2308,12 @@ const char* DatatypeToDescription(int type)
 BareosResource* LoadedConfiguration::GetResWithName(int rcode,
                                                     std::string_view name) const
 {
-  int rindex = rcode;
-
   auto& containers = configuration_resources_;
-  if (rindex < 0 || static_cast<std::size_t>(rindex) >= containers.size()) {
+  if (rcode < 0 || static_cast<std::size_t>(rcode) >= containers.size()) {
     return nullptr;
   }
 
-  auto* res = containers[rindex];
+  auto* res = containers[rcode];
 
   while (res) {
     if (res->resource_name_ == name) { break; }
@@ -2333,14 +2331,12 @@ BareosResource* LoadedConfiguration::GetResWithName(int rcode,
 BareosResource* LoadedConfiguration::GetNextRes(int rcode,
                                                 BareosResource* res) const
 {
-  BareosResource* nres;
-  int rindex = rcode;
+  if (res) { return res->next_; }
 
-  if (res == NULL) {
-    nres = configuration_resources_[rindex];
-  } else {
-    nres = res->next_;
+  auto& containers = configuration_resources_;
+  if (rcode < 0 || static_cast<std::size_t>(rcode) >= containers.size()) {
+    return nullptr;
   }
 
-  return nres;
+  return containers[rcode];
 }
