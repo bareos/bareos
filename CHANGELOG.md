@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add simple dependency generator for systemtest testrunners [PR #2484]
 - Add compiler checking for our printf-style queries [PR #2630]
 - Add Incus FD plugin [PR #2510]
+- add `update volume encrypt` command [PR #2724]
 
 ### Changed
 - dirconfig: add subscription setting with comment [PR #2468]
@@ -2337,4 +2338,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2712]: https://github.com/bareos/bareos/pull/2712
 [PR #2719]: https://github.com/bareos/bareos/pull/2719
 [PR #2720]: https://github.com/bareos/bareos/pull/2720
+[PR #2724]: https://github.com/bareos/bareos/pull/2724
 [unreleased]: https://github.com/bareos/bareos/tree/master
