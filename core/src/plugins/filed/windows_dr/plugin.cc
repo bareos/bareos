@@ -34,6 +34,7 @@
 #include "parser.h"
 #include "dump.h"
 #include "plugin.h"
+#include "restore.h"
 #include "lib/bool_string.h"
 #include <comdef.h>
 #include <time.h>
@@ -455,8 +456,6 @@ struct plugin_arguments {
   bool save_unknown_extents{false};
 };
 
-
-namespace backup {
 struct plugin_logger : public GenericLogger {
   using Clock = std::chrono::steady_clock;
 
@@ -544,6 +543,7 @@ struct plugin_logger : public GenericLogger {
   std::vector<char> messages;
 };
 
+namespace backup {
 struct session_ctx {
   plugin_logger logger;
   std::unique_ptr<dump_context,
@@ -757,6 +757,33 @@ bRC context::pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
 };  // namespace backup
 
 namespace restore {
+struct session {
+  plugin_logger logger;
+
+  restartable_parser* parser{};
+  std::unique_ptr<GenericHandler> handler{};
+
+  session(PluginContext* ctx) : logger{ctx} {}
+
+  template <typename T>
+    requires std::same_as<T, vhdx_directory> || std::same_as<T, raw_directory>
+             || std::same_as<T, disk_ids>
+  bool begin(T dir)
+  {
+    handler = GetHandler(&logger, std::move(dir));
+    if (!handler) { return false; }
+    parser = parse_begin(handler.get(), &logger);
+    if (!parser) { return false; }
+    return true;
+  }
+
+  size_t write() {}
+
+  bool end() {}
+
+  ~session() {}
+};
+
 struct context : ::context {
   virtual ~context() = default;
 
@@ -801,9 +828,56 @@ struct context : ::context {
                        PluginContext* ctx,
                        filedaemon::io_pkt* pkt)
   {
-    (void)list;
-    (void)ctx;
-    (void)pkt;
+    switch (pkt->func) {
+      case filedaemon::IO_OPEN: {
+        if (current_session) {
+          err_msg(ctx, "context can only be created once");
+          pkt->status = -1;
+          return bRC_Error;
+        }
+        try {
+          current_session = parse_begin(handler.get(), &logger);
+          pkt->status = 0;
+          return bRC_OK;
+        } catch (const std::exception& ex) {
+          err_msg(ctx, "could not start: {}", ex.what());
+          pkt->status = -1;
+          return bRC_Error;
+        } catch (...) {
+          err_msg(ctx, "could not start: unknown error occurred");
+          pkt->status = -1;
+          return bRC_Error;
+        }
+      } break;
+      case filedaemon::IO_WRITE: {
+        if (pkt->count < 0) {
+          err_msg(ctx, "its impossible to write {} bytes...", pkt->count);
+          pkt->status = -1;
+          return bRC_Error;
+        }
+        if (!current_session) {
+          err_msg(ctx, "its impossible to write with no session", pkt->count);
+          pkt->status = -1;
+          return bRC_Error;
+        }
+        parse_data(current_session,
+                   std::span{pkt->buf, static_cast<std::size_t>(pkt->count)});
+        pkt->status = pkt->count;
+        return bRC_OK;
+      } break;
+      case filedaemon::IO_CLOSE: {
+        if (!current_session) {
+          err_msg(ctx, "context can only be closed, if its open");
+          pkt->status = -1;
+          return bRC_Error;
+        }
+        parse_end(current_session);
+        pkt->status = 0;
+        return bRC_OK;
+      } break;
+    }
+
+    fatal_msg(ctx, "unhandled code path: {}", pkt->func);
     return bRC_Error;
   }
 
