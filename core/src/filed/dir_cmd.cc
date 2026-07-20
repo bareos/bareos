@@ -269,6 +269,60 @@ static void DeactivateDarwinSleepInhibition(IOPMAssertionID& assertion_id)
 }
 #endif
 
+#if defined(FILED_CLIENT_SLEEP_INHIBITION)
+struct SleepPrevention {
+#  if defined(HAVE_WIN32)
+  bool windows_active = false;
+#  endif
+#  if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
+  int linux_inhibitor_fd = -1;
+  bool linux_warning_logged = false;
+#  endif
+#  if defined(HAVE_DARWIN_OS)
+  IOPMAssertionID darwin_assertion_id = kIOPMNullAssertionID;
+  bool darwin_warning_logged = false;
+#  endif
+};
+
+static void ActivateSleepPrevention(JobControlRecord* jcr,
+                                    SleepPrevention& sleep_prevention)
+{
+#  if defined(HAVE_WIN32)
+  if (!sleep_prevention.windows_active) {
+    PreventOsSuspensions();
+    sleep_prevention.windows_active = true;
+  }
+#  endif
+#  if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
+  ActivateLinuxSleepInhibition(jcr, sleep_prevention.linux_inhibitor_fd,
+                               sleep_prevention.linux_warning_logged);
+#  endif
+#  if defined(HAVE_DARWIN_OS)
+  ActivateDarwinSleepInhibition(jcr, sleep_prevention.darwin_assertion_id,
+                                sleep_prevention.darwin_warning_logged);
+#  endif
+}
+
+static void DeactivateSleepPrevention(SleepPrevention& sleep_prevention)
+{
+#  if defined(HAVE_WIN32)
+  AllowOsSuspensions();
+#  endif
+#  if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
+  DeactivateLinuxSleepInhibition(sleep_prevention.linux_inhibitor_fd);
+#  endif
+#  if defined(HAVE_DARWIN_OS)
+  DeactivateDarwinSleepInhibition(sleep_prevention.darwin_assertion_id);
+#  endif
+}
+#else
+struct SleepPrevention {};
+
+static void ActivateSleepPrevention(JobControlRecord*, SleepPrevention&) {}
+
+static void DeactivateSleepPrevention(SleepPrevention&) {}
+#endif
+
 /* Exported functions */
 
 struct s_fd_dir_cmds {
@@ -498,18 +552,7 @@ static s_fd_dir_cmds* SelectCommandByName(const char* name)
 
 void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 {
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_WIN32)
-  bool sleep_prevention_active = false;
-#endif
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
-    && defined(HAVE_SYSTEMD)
-  int linux_sleep_inhibitor_fd = -1;
-  bool linux_sleep_inhibit_warning_logged = false;
-#endif
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
-  IOPMAssertionID darwin_sleep_assertion_id = kIOPMNullAssertionID;
-  bool darwin_sleep_inhibit_warning_logged = false;
-#endif
+  SleepPrevention sleep_prevention;
 
   // only do the cleanup if dir is not authenticated
   if (jcr->authenticated) {
@@ -539,28 +582,12 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
       }
 
       Dmsg1(100, "Executing %s command.\n", to_execute->cmd);
-      [[maybe_unused]] const bool is_backup_or_restore_command
+      const bool is_backup_or_restore_command
           = (to_execute->func == BackupCmd || to_execute->func == RestoreCmd);
 
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_WIN32)
-      if (!sleep_prevention_active && is_backup_or_restore_command) {
-        PreventOsSuspensions();
-        sleep_prevention_active = true;
-      }
-#endif
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
-    && defined(HAVE_SYSTEMD)
       if (is_backup_or_restore_command) {
-        ActivateLinuxSleepInhibition(jcr, linux_sleep_inhibitor_fd,
-                                     linux_sleep_inhibit_warning_logged);
+        ActivateSleepPrevention(jcr, sleep_prevention);
       }
-#endif
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
-      if (is_backup_or_restore_command) {
-        ActivateDarwinSleepInhibition(jcr, darwin_sleep_assertion_id,
-                                      darwin_sleep_inhibit_warning_logged);
-      }
-#endif
 
       if (!to_execute->func(jcr)) { /* do command */
         Dmsg1(100, "Quit command loop. Canceled=%d\n", jcr->IsJobCanceled());
@@ -609,16 +636,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
   FreeJcr(jcr); /* destroy JobControlRecord record */
   Dmsg0(100, "Done with FreeJcr\n");
 
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_WIN32)
-  AllowOsSuspensions();
-#endif
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
-    && defined(HAVE_SYSTEMD)
-  DeactivateLinuxSleepInhibition(linux_sleep_inhibitor_fd);
-#endif
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
-  DeactivateDarwinSleepInhibition(darwin_sleep_assertion_id);
-#endif
+  DeactivateSleepPrevention(sleep_prevention);
 
   return nullptr;
 }
