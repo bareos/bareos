@@ -47,26 +47,10 @@
 #include "lib/address_conf.h"
 #include "lib/alist.h"
 
-#include <condition_variable>
-#include <mutex>
-
 using namespace filedaemon;
 
 /* Imported Functions */
 extern void* handle_connection_request(void* dir_sock);
-
-static std::mutex termination_mutex;
-static std::condition_variable termination_cv;
-static bool termination_requested = false;
-
-static void NotifyTerminationRequested()
-{
-  {
-    std::lock_guard<std::mutex> lock(termination_mutex);
-    termination_requested = true;
-  }
-  termination_cv.notify_all();
-}
 
 static bool IsClientInitiatedOnlyModeConfigured()
 {
@@ -88,9 +72,12 @@ static bool IsClientInitiatedOnlyModeConfigured()
 static void WaitUntilTerminated()
 {
   // Without a listening socket server we still need to keep the daemon process
-  // alive until normal daemon termination is requested.
-  std::unique_lock<std::mutex> lock(termination_mutex);
-  termination_cv.wait(lock, []() { return termination_requested; });
+  // alive until the process receives a termination signal.
+#if !defined(HAVE_WIN32)
+  for (;;) { pause(); }
+#else
+  for (;;) { Bmicrosleep(30, 0); }
+#endif
 }
 
 
@@ -296,8 +283,6 @@ namespace filedaemon {
 
 void TerminateFiled(int sig)
 {
-  NotifyTerminationRequested();
-
   static bool already_here = false;
 
   if (already_here) {
