@@ -103,7 +103,7 @@ on restore:
     disks=file1,file2,file3 - restore the disks to the chosen disks
     vhdx-directory=dir      - restore the disks as vhdx files into the directory
     raw-directory=dir       - restore the disks as raw files into the directory
-    copy=path               - copy the barri image to the following path
+    copy=<yes|no>           - if yes, then the data gets restored as simple files
 
   The copy option allows you to restore the image via the barri cli tool instead
   of this filedaemon plugin.
@@ -297,6 +297,9 @@ enum class file : std::size_t
 using copy_location = std::string;
 using drive_list = std::vector<std::string>;
 
+using barri::restore::raw_directory;
+using barri::restore::vhdx_directory;
+
 struct plugin_arguments {
   using Error = tl::unexpected<std::string>;
 
@@ -338,7 +341,7 @@ struct plugin_arguments {
       std::string_view key = {};
       switch (next_option(str, keywords, &key, &value)) {
         case index_of(keywords, "disks"): {
-          debug_msg(ctx, 300, "parsing drives value '{}'", value);
+          debug_msg(ctx, 300, "parsing disks value '{}'", value);
 
           auto paths = split_string_view(value, ',');
 
@@ -348,15 +351,29 @@ struct plugin_arguments {
         } break;
 
         case index_of(keywords, "copy"): {
-          debug_msg(ctx, 300, "parsing dump value '{}'", value);
-
-          args.target.emplace<copy_location>(value);
+          debug_msg(ctx, 300, "parsing copy value '{}'", value);
+          switch (parse_user_bool(value)) {
+            case parse_bool_result::True: {
+              args.dump_to_disk = true;
+            } break;
+            case parse_bool_result::False: {
+              args.dump_to_disk = false;
+            } break;
+            case parse_bool_result::Error: {
+              fatal_msg(ctx, "unexpected value {} for {}", value, key);
+              return std::nullopt;
+            } break;
+          }
         } break;
 
         case index_of(keywords, "vhdx-directory"): {
+          // checking of whether the path is valid is done later
+          args.target.emplace<vhdx_directory>(FromUtf8(value));
         } break;
 
         case index_of(keywords, "raw-directory"): {
+          // checking of whether the path is valid is done later
+          args.target.emplace<raw_directory>(FromUtf8(value));
         } break;
 
         case index_of(keywords, "save-unreferenced-disks"): {
@@ -439,7 +456,9 @@ struct plugin_arguments {
   }
 
   // restore options
-  std::variant<std::monostate, copy_location, drive_list> target;
+  bool dump_to_disk{true};
+  std::variant<std::monostate, drive_list, raw_directory, vhdx_directory>
+      target;
 
   // backup options
   std::vector<size_t> ignored_disks;
@@ -494,6 +513,8 @@ struct plugin_logger : public GenericLogger {
   plugin_logger(PluginContext* ctx_) : GenericLogger{true}, ctx{ctx_} {}
 
   std::span<const char> log() const { return messages; }
+
+  PluginContext* context() { return ctx; }
 
  private:
   void print_progress(Clock::time_point current_ts, std::size_t current_offset)
@@ -762,18 +783,35 @@ struct session {
              || std::same_as<T, disk_ids>
   bool begin(T dir)
   {
-    handler = GetHandler(&logger, std::move(dir));
-    if (!handler) { return false; }
-    parser = parse_begin(handler.get(), &logger);
-    if (!parser) { return false; }
+    try {
+      handler = GetHandler(&logger, std::move(dir));
+      if (!handler) { return false; }
+      parser = parse_begin(handler.get(), &logger);
+      if (!parser) { return false; }
+    } catch (const std::exception& ex) {
+      err_msg(logger.context(), "Exception occured during creation: {}",
+              ex.what());
+      return false;
+    }
     return true;
   }
 
-  size_t write() {}
+  ssize_t write(std::span<const char> data)
+  {
+    try {
+      parse_data(parser, data);
+      return data.size();
+    } catch (const std::exception& ex) {
+      err_msg(logger.context(), "Exception occured during write: {}",
+              ex.what());
+      return -1;
+    }
+  }
 
-  bool end() {}
-
-  ~session() {}
+  ~session()
+  {
+    if (parser) { parse_end(parser); }
+  }
 };
 
 struct context : ::context {
@@ -827,8 +865,9 @@ struct context : ::context {
           pkt->status = -1;
           return bRC_Error;
         }
+
         try {
-          current_session = parse_begin(handler.get(), &logger);
+          current_session.emplace(ctx);
           pkt->status = 0;
           return bRC_OK;
         } catch (const std::exception& ex) {
@@ -852,9 +891,9 @@ struct context : ::context {
           pkt->status = -1;
           return bRC_Error;
         }
-        parse_data(current_session,
-                   std::span{pkt->buf, static_cast<std::size_t>(pkt->count)});
-        pkt->status = pkt->count;
+
+        pkt->status = current_session->write(
+            std::span{pkt->buf, static_cast<std::size_t>(pkt->count)});
         return bRC_OK;
       } break;
       case filedaemon::IO_CLOSE: {
@@ -863,7 +902,7 @@ struct context : ::context {
           pkt->status = -1;
           return bRC_Error;
         }
-        parse_end(current_session);
+        current_session.reset();
         pkt->status = 0;
         return bRC_OK;
       } break;
@@ -873,9 +912,9 @@ struct context : ::context {
     return bRC_Error;
   }
 
-  bRC pluginIO_Dump(copy_location& loc,
-                    PluginContext* ctx,
-                    filedaemon::io_pkt* pkt)
+  std::optional<session> current_session;
+
+  bRC pluginIO_Dump(PluginContext* ctx, filedaemon::io_pkt* pkt)
   {
     switch (pkt->func) {
       case filedaemon::IO_OPEN: {
@@ -907,12 +946,11 @@ struct context : ::context {
 
   bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt) override
   {
+    if (args.dump_to_disk) { return pluginIO_Dump(ctx, pkt); }
+
+
     if (auto* list = std::get_if<drive_list>(&args.target)) {
       return pluginIO_Session(*list, ctx, pkt);
-    }
-
-    if (auto* loc = std::get_if<copy_location>(&args.target)) {
-      return pluginIO_Dump(*loc, ctx, pkt);
     }
 
     fatal_msg(ctx, "Cannot do IO as it was not set up yet!");
@@ -921,6 +959,15 @@ struct context : ::context {
 
   bRC create_file(PluginContext* ctx, filedaemon::restore_pkt* pkt)
   {
+    if (args.dump_to_disk) {
+      // TODO: we should delete @BARRI/ from the pkt->ofname
+      // and restore to there
+
+      pkt->create_status = CF_CORE;
+      return bRC_OK;
+    }
+
+
     if (auto* list = std::get_if<drive_list>(&args.target)) {
       auto fname = std::string_view{pkt->original_file_name};
       if (fname.ends_with(log_ending)) {
@@ -933,14 +980,6 @@ struct context : ::context {
 
       fatal_msg(ctx, "Cannot restore {} of unknown type!", fname);
       return bRC_Error;
-    }
-
-    if (auto* loc = std::get_if<copy_location>(&args.target)) {
-      // TODO: we should delete @BARRI/ from the pkt->ofname
-      // and restore to there
-
-      pkt->create_status = CF_CORE;
-      return bRC_OK;
     }
 
     fatal_msg(ctx, "Cannot create {} as it was not set up yet!",
