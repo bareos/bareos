@@ -901,7 +901,7 @@ boffset_t blseek(BareosFilePacket* bfd, boffset_t offset, int whence)
   LONG offset_high = (LONG)(offset >> 32);
   DWORD dwResult;
 
-  if (bfd->cmd_plugin && plugin_blseek) {
+  if (bfd->cmd_plugin && plugin_blseek && !bfd->do_io_in_core) {
     return plugin_blseek(bfd, offset, whence);
   }
 
@@ -1144,9 +1144,10 @@ ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count)
 
 ssize_t bwrite(BareosFilePacket* bfd, void* buf, size_t count)
 {
-  if (bfd->cmd_plugin && plugin_bwrite)
+  if (bfd->cmd_plugin && plugin_bwrite && !bfd->do_io_in_core) {
     // plugin does read/write
-    if (!bfd->do_io_in_core) { return plugin_bwrite(bfd, buf, count); }
+    return plugin_bwrite(bfd, buf, count);
+  }
 
   const char* ptr = static_cast<const char*>(buf);
 
@@ -1177,7 +1178,7 @@ boffset_t blseek(BareosFilePacket* bfd, boffset_t offset, int whence)
 {
   boffset_t pos;
 
-  if (bfd->cmd_plugin && plugin_bwrite) {
+  if (bfd->cmd_plugin && plugin_blseek && !bfd->do_io_in_core) {
     return plugin_blseek(bfd, offset, whence);
   }
   pos = (boffset_t)lseek(bfd->filedes, offset, whence);
