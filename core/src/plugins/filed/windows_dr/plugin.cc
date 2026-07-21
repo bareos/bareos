@@ -110,6 +110,10 @@ on restore:
 
   The copy option allows you to restore the image via the barri cli tool instead
   of this filedaemon plugin.
+
+  Keep in mind, that you specify full paths with a drive letter, say X:,
+  by using /X/ at the start of the path.  I.e. C:\my\path, becomes
+  /C/my/path.
 )"};
 
 std::string_view trim_left(std::string_view input)
@@ -295,10 +299,12 @@ enum class file : std::size_t
 };
 
 using copy_location = std::string;
-using drive_list = std::vector<std::string>;
 
+using barri::restore::disk_ids;
 using barri::restore::raw_directory;
 using barri::restore::vhdx_directory;
+
+using restore_target = std::variant<disk_ids, raw_directory, vhdx_directory>;
 
 struct plugin_arguments {
   using Error = tl::unexpected<std::string>;
@@ -348,12 +354,85 @@ struct plugin_arguments {
         case index_of(keywords, "disks"): {
           debug_msg(ctx, 300, "parsing disks value '{}'", value);
 
-          auto paths = split_string_view(value, ',');
+          auto ids = split_string_view(value, ',');
 
           // checking of whether the paths are valid are done later
-          auto& list = args.target.emplace<drive_list>();
-          list.insert(list.end(), paths.begin(), paths.end());
+          disk_ids list;
+          list.reserve(ids.size());
+
+          for (auto& id_str : ids) {
+            std::size_t id{};
+            auto result = std::from_chars(id_str.data(),
+                                          id_str.data() + id_str.size(), id);
+
+            if (result.ec != std::errc{}) {
+              err_msg(ctx, "bad disk id '{}': {}", id_str,
+                      std::make_error_code(result.ec).message());
+              return {};
+            }
+
+            if (result.ptr != id_str.data() + id_str.size()) {
+              err_msg(ctx, "bad disk id '{}': junk at end", id_str);
+              return {};
+            }
+
+            list.push_back(id);
+          }
+
+          args.dump_to_disk = false;
+          args.target = std::move(list);
         } break;
+
+        case index_of(keywords, "vhdx-directory"): {
+          // checking of whether the path is valid is done later
+          if (value.empty()) {
+            err_msg(ctx, "vhdx-directory cannot be empty");
+            return std::nullopt;
+          }
+
+          if (value.size() >= 3 && IsPathSeparator(value[0])
+              && IsPathSeparator(value[2])) {
+            auto drive_letter = value[1];
+            std::string path;
+            path += drive_letter;
+            path += ":\\";
+            path += value.substr(3);
+
+            debug_msg(ctx, 300, "Using vhdx dir {}", path);
+            args.target = std::move(vhdx_directory{FromUtf8(path)});
+          } else {
+            debug_msg(ctx, 300, "Using vhdx dir {}", value);
+            args.target = std::move(vhdx_directory{FromUtf8(value)});
+          }
+
+          args.dump_to_disk = false;
+        } break;
+
+        case index_of(keywords, "raw-directory"): {
+          // checking of whether the path is valid is done later
+          if (value.empty()) {
+            err_msg(ctx, "raw-directory cannot be empty");
+            return std::nullopt;
+          }
+
+          if (value.size() >= 3 && IsPathSeparator(value[0])
+              && IsPathSeparator(value[2])) {
+            auto drive_letter = value[1];
+            std::string path;
+            path += drive_letter;
+            path += ":\\";
+            path += value.substr(3);
+
+            debug_msg(ctx, 300, "Using raw dir {}", path);
+            args.target = std::move(raw_directory{FromUtf8(path)});
+          } else {
+            debug_msg(ctx, 300, "Using raw dir {}", value);
+            args.target = std::move(raw_directory{FromUtf8(value)});
+          }
+
+          args.dump_to_disk = false;
+        } break;
+
 
         case index_of(keywords, "copy"): {
           debug_msg(ctx, 300, "parsing copy value '{}'", value);
@@ -369,16 +448,6 @@ struct plugin_arguments {
               return std::nullopt;
             } break;
           }
-        } break;
-
-        case index_of(keywords, "vhdx-directory"): {
-          // checking of whether the path is valid is done later
-          args.target.emplace<vhdx_directory>(FromUtf8(value));
-        } break;
-
-        case index_of(keywords, "raw-directory"): {
-          // checking of whether the path is valid is done later
-          args.target.emplace<raw_directory>(FromUtf8(value));
         } break;
 
         case index_of(keywords, "unknown disks"):
@@ -465,8 +534,7 @@ struct plugin_arguments {
 
   // restore options
   bool dump_to_disk{true};
-  std::variant<std::monostate, drive_list, raw_directory, vhdx_directory>
-      target;
+  std::optional<restore_target> target;
 
   // backup options
   std::vector<size_t> ignored_disks;
@@ -789,10 +857,10 @@ struct session {
   template <typename T>
     requires std::same_as<T, vhdx_directory> || std::same_as<T, raw_directory>
              || std::same_as<T, disk_ids>
-  bool begin(T dir)
+  bool begin(T arg)
   {
     try {
-      handler = GetHandler(&logger, std::move(dir));
+      handler = barri::restore::GetHandler(&logger, std::move(arg));
       if (!handler) { return false; }
       parser = parse_begin(handler.get(), &logger);
       if (!parser) { return false; }
@@ -862,10 +930,13 @@ struct context : ::context {
     return bRC_OK;
   }
 
-  bRC pluginIO_Session(drive_list& list,
-                       PluginContext* ctx,
+  bRC pluginIO_Session(PluginContext* ctx,
+                       restore_target& target,
                        filedaemon::io_pkt* pkt)
   {
+    // this function should only b
+    if (!args.target.has_value()) { return bRC_Error; }
+
     switch (pkt->func) {
       case filedaemon::IO_OPEN: {
         if (current_session) {
@@ -876,6 +947,16 @@ struct context : ::context {
 
         try {
           current_session.emplace(ctx);
+
+          auto start_ok = std::visit(
+              [&](auto& val) { return current_session->begin(val); }, target);
+
+          if (!start_ok) {
+            err_msg(ctx, "could not begin session");
+            pkt->status = -1;
+            return bRC_Error;
+          }
+
           pkt->status = 0;
           return bRC_OK;
         } catch (const std::exception& ex) {
@@ -902,6 +983,7 @@ struct context : ::context {
 
         pkt->status = current_session->write(
             std::span{pkt->buf, static_cast<std::size_t>(pkt->count)});
+        if (pkt->status < 0) { return bRC_Error; }
         return bRC_OK;
       } break;
       case filedaemon::IO_CLOSE: {
@@ -956,13 +1038,12 @@ struct context : ::context {
   {
     if (args.dump_to_disk) { return pluginIO_Dump(ctx, pkt); }
 
-
-    if (auto* list = std::get_if<drive_list>(&args.target)) {
-      return pluginIO_Session(*list, ctx, pkt);
+    if (!args.target.has_value()) {
+      fatal_msg(ctx, "Cannot do IO as it was not set up yet!");
+      return bRC_Error;
     }
 
-    fatal_msg(ctx, "Cannot do IO as it was not set up yet!");
-    return bRC_Error;
+    return pluginIO_Session(ctx, *args.target, pkt);
   }
 
   bRC create_file(PluginContext* ctx, filedaemon::restore_pkt* pkt)
@@ -971,27 +1052,34 @@ struct context : ::context {
       // TODO: we should delete @BARRI/ from the pkt->ofname
       // and restore to there
 
+      debug_msg(ctx, 300, "duming {} to disk at {}", pkt->original_file_name,
+                pkt->ofname);
+
       pkt->create_status = CF_CORE;
       return bRC_OK;
     }
 
-
-    if (auto* list = std::get_if<drive_list>(&args.target)) {
-      auto fname = std::string_view{pkt->original_file_name};
-      if (fname.ends_with(log_ending)) {
-        pkt->create_status = CF_SKIP;
-        return bRC_Skip;
-      } else if (fname.ends_with(dump_ending)) {
-        // we do not actually create files here, so we just ignore this
-        return bRC_OK;
-      }
-
-      fatal_msg(ctx, "Cannot restore {} of unknown type!", fname);
+    if (!args.target.has_value()) {
+      fatal_msg(ctx, "Cannot create {} as context was not set up yet!",
+                pkt->original_file_name);
       return bRC_Error;
     }
 
-    fatal_msg(ctx, "Cannot create {} as it was not set up yet!",
-              pkt->original_file_name);
+    auto fname = std::string_view{pkt->original_file_name};
+    if (fname.ends_with(log_ending)) {
+      debug_msg(ctx, 300, "skipping {}", pkt->original_file_name, pkt->ofname);
+      pkt->create_status = CF_SKIP;
+      return bRC_OK;
+    } else if (fname.ends_with(dump_ending)) {
+      // we do not actually create files here, so we just ignore this
+
+      debug_msg(ctx, 300, "extracting {}", pkt->original_file_name,
+                pkt->ofname);
+      pkt->create_status = CF_EXTRACT;
+      return bRC_OK;
+    }
+
+    fatal_msg(ctx, "Cannot restore {} of unknown type!", fname);
     return bRC_Error;
   }
 
@@ -1060,6 +1148,9 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
 {
   auto* pctx = get_private_context(ctx);
   switch (event->eventType) {
+    case filedaemon::bEventJobStart: {
+      return bRC_OK;
+    }
     case filedaemon::bEventNewPluginOptions: {
       std::string_view s{static_cast<const char*>(data)};
 
@@ -1074,7 +1165,15 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
 
       if (pctx->option_overrides.empty()) {
         pctx->option_overrides = std::string{s};
+        debug_msg(ctx, 300, "Setting option_overrides to {}",
+                  pctx->option_overrides);
+      } else {
+        debug_msg(ctx, 300,
+                  "Keeping option_overrides at {}, not changing to {}",
+                  pctx->option_overrides, s);
       }
+
+      return bRC_OK;
     } break;
     case filedaemon::bEventPluginCommand: {
       if (!pctx->context) {
@@ -1250,7 +1349,7 @@ bRC endRestoreFile(PluginContext* ctx)
     return bRC_Error;
   }
 
-  DebugLog(ctx, 500, "finished restoring file");
+  debug_msg(ctx, 500, "finished restoring file");
 
   return rctx->end_current_file(ctx);
 }
@@ -1278,10 +1377,11 @@ bRC createFile(PluginContext* ctx, filedaemon::restore_pkt* pkt)
   }
 }
 
-bRC setFileAttributes(PluginContext* ctx, filedaemon::restore_pkt* pkt)
+bRC setFileAttributes(PluginContext* ctx, filedaemon::restore_pkt*)
 {
   if (auto* rctx = get_restore_context(ctx)) {
-    return rctx->create_file(ctx, pkt);
+    debug_msg(ctx, 300, "ignoring set_file_attributes");
+    return bRC_OK;
   } else {
     fatal_msg(ctx, "{} can only be called during restore", __PRETTY_FUNCTION__);
     return bRC_Error;
