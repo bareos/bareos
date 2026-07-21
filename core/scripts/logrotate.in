@@ -8,6 +8,7 @@
 #
 @logdir@/bareos*.log {
     monthly
+    maxsize 100k
     rotate 6
     notifempty
     missingok
