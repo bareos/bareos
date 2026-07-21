@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,7 @@
 #include "lib/bsock_tcp.h"
 #include "lib/configured_tls_policy_getter.h"
 #include "lib/parse_conf.h"
+#include "lib/qualified_resource_name_type_converter.h"
 
 enum class ConnectionHandshakeMode
 {
@@ -83,17 +84,25 @@ static ConnectionHandshakeMode GetHandshakeMode(
   } /* if (cleartext_hello) */
 }
 
-bool TryTlsHandshakeAsAServer(BareosSocket* bs, ConfigurationParser* config)
+bool TryTlsHandshakeAsAServer(BareosSocket* bs,
+                              ConfigurationParser* config,
+                              TlsSecretProvider* data)
 {
   ASSERT(config);
   ConnectionHandshakeMode mode = GetHandshakeMode(bs, *config);
 
   bool success = false;
-
   switch (mode) {
-    case ConnectionHandshakeMode::PerformTlsHandshake:
-      if (bs->DoTlsHandshakeAsAServer(config)) { success = true; }
-      break;
+    case ConnectionHandshakeMode::PerformTlsHandshake: {
+      TlsResource* tls_resource = dynamic_cast<TlsResource*>(
+          config->GetNextRes(config->r_own_, nullptr));
+      if (!tls_resource) {
+        Dmsg1(100, "Could not get tls resource for %d.\n", config->r_own_);
+        return false;
+      }
+
+      if (bs->DoTlsHandshakeAsAServer(data, tls_resource)) { success = true; }
+    } break;
     case ConnectionHandshakeMode::PerformCleartextHandshake:
       /* do tls handshake later */
       success = true;

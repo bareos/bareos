@@ -33,10 +33,17 @@
 #include "lib/crypto.h"
 
 #include <memory>
+#include <span>
 
 class BareosSocket;
 class JobControlRecord;
 class PskCredentials;
+
+struct TlsSecretProvider {
+  virtual unsigned int get_shared_secret_for(std::string_view idenity,
+                                             std::span<unsigned char> secret)
+      = 0;
+};
 
 class Tls {
  public:
@@ -53,7 +60,7 @@ class Tls {
   static std::unique_ptr<Tls> CreateNewTlsContext(Tls::ImplementationType type);
 
   virtual void SetTlsPskClientContext(const PskCredentials& credentials) = 0;
-  virtual void SetTlsPskServerContext(ConfigurationParser* config) = 0;
+  virtual void SetTlsPskServerContext(TlsSecretProvider* config) = 0;
 
   virtual bool TlsPostconnectVerifyHost(JobControlRecord* jcr, const char* host)
       = 0;

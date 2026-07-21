@@ -71,6 +71,17 @@ if not getattr(ssl, "HAS_PSK", False):
             )
 
 
+def bash(name):
+    if name is None:
+        return None
+    if isinstance(name, str):
+        return name.replace(" ", "\x01")
+    if isinstance(name, bytes):
+        return name.replace(b" ", b"\x01")
+
+    raise TypeError("name has to be None/str/bytes")
+
+
 class LowLevel(object):
     """
     Low Level socket methods to communicate with a Bareos Daemon.
@@ -361,9 +372,12 @@ class LowLevel(object):
         Raises:
            bareos.exceptions.AuthenticationError: if authentication fails.
         """
-        bashed_name = self.protocol_messages.hello(self.name, type=self.connection_type)
+
+        bashed_name = bash(self.name)
+
+        hello_msg = self.protocol_messages.hello(bashed_name, type=self.connection_type)
         # send the bash to the director
-        self.send(bashed_name)
+        self.send(hello_msg)
 
         try:
             (ssl, result_compatible, result) = self._cram_md5_respond(
@@ -377,7 +391,7 @@ class LowLevel(object):
         if not result:
             raise bareos.exceptions.AuthenticationError("failed (in response)")
         if not self._cram_md5_challenge(
-            clientname=self.name,
+            clientname=bashed_name,
             password=self.password.md5(),
             tls_local_need=0,
             compatible=True,

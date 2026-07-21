@@ -141,13 +141,13 @@ static const ResourceItem dir_items[] = {
 #include "lib/messages_resource_items.h"
 
 static ResourceTable resources[] = {
-  {"Director", "Directors", dir_items, R_DIRECTOR, sizeof(DirectorResource),
+  {"Director", "Directors", dir_items, R_DIRECTOR, global_resource::Type::Director, sizeof(DirectorResource),
       []() { res_dir = new  DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir)},
-  {"Client", "Clients", cli_items, R_CLIENT, sizeof(ClientResource),
+  {"Client", "Clients", cli_items, R_CLIENT, global_resource::Type::Client, sizeof(ClientResource),
       []() { res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client), { { "FileDaemon", "FileDaemons" } }},
-  {"Messages", "Messages", msgs_items, R_MSGS, sizeof(MessagesResource),
+  {"Messages", "Messages", msgs_items, R_MSGS, global_resource::Type::Messages, sizeof(MessagesResource),
       []() { res_msgs = new MessagesResource(); }, reinterpret_cast<BareosResource**>(&res_msgs)},
-  {nullptr, nullptr, nullptr, 0, 0, nullptr, nullptr}
+  {}
 };
 
 /* clang-format on */
@@ -230,16 +230,6 @@ static void ParseConfigCb(lexer* lc,
   }
 }
 
-static void ConfigBeforeCallback(ConfigurationParser& t_config)
-{
-  std::map<int, std::string> map{{R_DIRECTOR, "R_DIRECTOR"},
-                                 {R_CLIENT, "R_CLIENT"},
-                                 {R_STORAGE, "R_STORAGE"},
-                                 {R_MSGS, "R_MSGS"},
-                                 {R_JOB, "R_JOB"}};
-  t_config.InitializeQualifiedResourceNameTypeConverter(map);
-}
-
 static void ConfigReadyCallback(ConfigurationParser&) {}
 
 ConfigurationParser* InitFdConfig(const char* t_configfile, int exit_code)
@@ -247,8 +237,7 @@ ConfigurationParser* InitFdConfig(const char* t_configfile, int exit_code)
   ConfigurationParser* config = new ConfigurationParser(
       t_configfile, InitResourceCb, ParseConfigCb, nullptr, exit_code, R_NUM,
       resources, default_config_filename.c_str(), "bareos-fd.d",
-      ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
-      FreeResource);
+      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_CLIENT; }
   return config;
 }

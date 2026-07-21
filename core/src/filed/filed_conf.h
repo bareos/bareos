@@ -49,12 +49,6 @@ enum
   R_CLIENT,
   R_MSGS,
   R_NUM, /* number of entries */
-
-
-  // these two do not really exist in the configuration
-  // they exist for other purposes
-  R_STORAGE,
-  R_JOB,
 };
 
 /* Definition of the contents of each Resource */

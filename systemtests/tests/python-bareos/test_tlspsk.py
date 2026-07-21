@@ -2,7 +2,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -104,7 +104,7 @@ class PythonBareosTlsPskTest(bareos_unittest.Base):
 
         logger = logging.getLogger()
 
-        username = u"admin-tls"
+        username = self.get_operator_username(tls=True)
         password = self.get_operator_password(username)
 
         director = bareos.bsock.DirectorConsole(
@@ -133,7 +133,7 @@ class PythonBareosTlsPskTest(bareos_unittest.Base):
 
         logger = logging.getLogger()
 
-        username = u"admin-tls"
+        username = self.get_operator_username(tls=True)
         password = self.get_operator_password(username)
 
         with self.assertRaises(bareos.exceptions.AuthenticationError):

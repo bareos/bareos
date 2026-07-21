@@ -556,7 +556,7 @@ JobControlRecord* get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime)
  * Returns: jcr on success
  *          nullptr on failure
  */
-JobControlRecord* get_jcr_by_partial_name(char const* Job)
+JobControlRecord* get_jcr_by_partial_name(const char* Job)
 {
   JobControlRecord* jcr;
   int len;
@@ -583,14 +583,12 @@ JobControlRecord* get_jcr_by_partial_name(char const* Job)
  * Returns: jcr on success
  *          nullptr on failure
  */
-JobControlRecord* get_jcr_by_full_name(char const* Job)
+JobControlRecord* get_jcr_by_full_name(std::string_view job)
 {
   JobControlRecord* jcr;
 
-  if (!Job) { return nullptr; }
-
   foreach_jcr (jcr) {
-    if (bstrcmp(jcr->Job, Job)) {
+    if (job == jcr->Job) {
       jcr->IncUseCount();
       Dmsg3(debuglevel, "Inc get_jcr jid=%" PRIu32 " UseCount=%d Job=%s\n",
             jcr->JobId, jcr->UseCount(), jcr->Job);
@@ -600,6 +598,13 @@ JobControlRecord* get_jcr_by_full_name(char const* Job)
   endeach_jcr(jcr);
 
   return jcr;
+}
+
+JobControlRecord* get_jcr_by_full_name(char const* Job)
+{
+  if (!Job) { return nullptr; }
+
+  return get_jcr_by_full_name(std::string_view{Job});
 }
 
 const char* JcrGetAuthenticateKey(const char* unified_job_name)

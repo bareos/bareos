@@ -698,7 +698,7 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
     } break;
 
     case filedaemon::IO_READ: {
-      err_msg(ctx, "backups are not supported on windows");
+      err_msg(ctx, "backups are only supported on windows");
       pkt->status = -1;
       return bRC_Error;
     } break;

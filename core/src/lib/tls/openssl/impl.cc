@@ -79,7 +79,7 @@ class TlsOpenSsl : public Tls {
                       int port,
                       const char* who) const override;
   void SetTlsPskClientContext(const PskCredentials& credentials) override;
-  void SetTlsPskServerContext(ConfigurationParser* config) override;
+  void SetTlsPskServerContext(TlsSecretProvider* data) override;
 
   void Setca_certfile_(const std::string& ca_certfile) override;
   void SetCaCertdir(const std::string& ca_certdir) override;
@@ -136,8 +136,6 @@ class TlsOpenSsl : public Tls {
   std::string ciphersuites_;
   bool verify_peer_{};
   bool enable_ktls_{false};
-  std::shared_ptr<ConfigResourcesContainer>
-      config_table_{};  // config table being used
 
   std::optional<PskCredentials> credentials_;
 };
@@ -323,7 +321,7 @@ int tls_pem_callback_dispatch(char* buf, int size, int, void* userdata)
 
 enum class CtxDataIndex : int
 {
-  Config = 0,
+  SecretProvider = 0,
   Cred = 1,
 };
 
@@ -349,16 +347,18 @@ const PskCredentials& SSL_CTX_getcred(const SSL_CTX* ctx)
   return *creds;
 }
 
-void SSL_CTX_setconfig(SSL_CTX* ctx, ConfigurationParser* parser)
+void SSL_CTX_set_secretprovider(SSL_CTX* ctx, TlsSecretProvider* parser)
 {
-  SSL_CTX_set_ex_data(ctx, static_cast<int>(CtxDataIndex::Config), parser);
+  SSL_CTX_set_ex_data(ctx, static_cast<int>(CtxDataIndex::SecretProvider),
+                      parser);
 }
 
-ConfigurationParser* SSL_CTX_getconfig(SSL_CTX* ctx)
+TlsSecretProvider* SSL_CTX_get_secretprovider(SSL_CTX* ctx)
 {
-  void* ptr = SSL_CTX_get_ex_data(ctx, static_cast<int>(CtxDataIndex::Config));
-  auto* config = static_cast<ConfigurationParser*>(ptr);
-  return config;
+  void* ptr = SSL_CTX_get_ex_data(
+      ctx, static_cast<int>(CtxDataIndex::SecretProvider));
+  auto* provider = static_cast<TlsSecretProvider*>(ptr);
+  return provider;
 }
 
 unsigned int psk_server_cb(SSL* ssl,
@@ -380,23 +380,17 @@ unsigned int psk_server_cb(SSL* ssl,
 
   std::string configured_psk;
 
-  auto* config = SSL_CTX_getconfig(openssl_ctx);
+  auto* data = SSL_CTX_get_secretprovider(openssl_ctx);
 
-  if (!config) {
-    Dmsg0(100, "Config not set: kConfigurationParserPtr\n");
+  if (!data) {
+    Dmsg0(100, "secret provider not set!\n");
     return result;
   }
 
-  if (!config->GetTlsPskByFullyQualifiedResourceName(config, identity,
-                                                     configured_psk)) {
-    Dmsg0(100, "Error, TLS-PSK credentials not found.\n");
-  } else {
-    int psklen = Bsnprintf((char*)psk_output, max_psk_len, "%s",
-                           configured_psk.c_str());
-    result = (psklen < 0) ? 0 : psklen;
-    Dmsg1(100, "psk_server_cb. result: %u.\n", result);
-  }
-  return result;
+  auto psklen = data->get_shared_secret_for(
+      identity, std::span<unsigned char>(psk_output, max_psk_len));
+
+  return psklen;
 }
 
 unsigned int psk_client_cb(SSL* ssl,
@@ -771,22 +765,20 @@ void TlsOpenSsl::SetTlsPskClientContext(const PskCredentials& credentials)
   SSL_CTX_set_psk_client_callback(openssl_ctx_, psk_client_cb);
 }
 
-void TlsOpenSsl::SetTlsPskServerContext(ConfigurationParser* config)
+void TlsOpenSsl::SetTlsPskServerContext(TlsSecretProvider* data)
 {
   if (!openssl_ctx_) {
     Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no SSL_CTX)\n");
     return;
   }
 
-  if (!config) {
-    Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no config)\n");
+  if (!data) {
+    Dmsg0(50,
+          "Could not prepare TLS_PSK SERVER callback (no secret provider)\n");
     return;
   }
 
-  // keep a shared_ptr to the current config, so a reload won't
-  // free the memory we're going to use in the private context
-  config_table_ = config->GetResourcesContainer();
-  SSL_CTX_setconfig(openssl_ctx_, config);
+  SSL_CTX_set_secretprovider(openssl_ctx_, data);
 
   SSL_CTX_set_psk_server_callback(openssl_ctx_, psk_server_cb);
 }

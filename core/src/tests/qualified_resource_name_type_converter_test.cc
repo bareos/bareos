@@ -1,7 +1,7 @@
 /**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,67 +30,41 @@
 #include "lib/qualified_resource_name_type_converter.h"
 #undef private
 
-static constexpr char record_separator_ = 0x1e;
-
-enum
-{
-  kOne = 1,
-  kTwo = 2,
-  kThree = 3,
-  kNotInsertedIntoMap = 4
-};
-
-static const std::map<int, std::string> create_test_map()
-{
-  const std::map<int, std::string> map{
-      {kOne, "kOne"}, {kTwo, "kTwo"}, {kThree, "kThree"}};
-  return map;
-}
-
 TEST(QualifiedResourceNameTypeConverter, StringToType)
 {
-  bool ok;
-  int r_type;
-  std::string name;
-  std::string result_str;
-
-  QualifiedResourceNameTypeConverter c(create_test_map());
-
-  EXPECT_EQ(c.StringToResourceType("kOne"), kOne);
-  EXPECT_EQ(c.StringToResourceType("kTwo"), kTwo);
-  EXPECT_EQ(c.StringToResourceType("kThree"), kThree);
-  EXPECT_EQ(c.StringToResourceType("kNotInsertedIntoMap"), -1);
-
-  std::string tmp;
-  tmp = std::string("kOne") + record_separator_ + std::string("Developer");
-  ok = c.StringToResource(name, r_type, tmp);
-  EXPECT_EQ(ok, true);
-
-  /* try invalid string */
-  ok = c.StringToResource(name, r_type, "foobar");
-  EXPECT_EQ(ok, false);
+  using namespace global_resource;
+  for (auto [type, name] : type_names) {
+    EXPECT_EQ(GetNameFromType(type), name);
+  }
 }
 
 TEST(QualifiedResourceNameTypeConverter, TypeToString)
 {
-  bool ok;
-  std::string name;
-  std::string result_str;
+  using namespace global_resource;
+  for (auto [type, name] : type_names) {
+    EXPECT_EQ(GetTypeFromName(name), type);
+  }
+}
 
-  QualifiedResourceNameTypeConverter c(create_test_map());
+TEST(QualifiedResourceNameTypeConverter, QualifiedNameWorks)
+{
+  using namespace global_resource;
+  for (auto [type, _] : type_names) {
+    // QualifiedName returns an empty string on error
+    EXPECT_NE(QualifiedName(type, ""), std::string{});
+  }
+}
 
-  EXPECT_STREQ(c.ResourceTypeToString(kOne).c_str(), "kOne");
-  EXPECT_STREQ(c.ResourceTypeToString(kTwo).c_str(), "kTwo");
-  EXPECT_STREQ(c.ResourceTypeToString(kThree).c_str(), "kThree");
-  EXPECT_STREQ(c.ResourceTypeToString(kNotInsertedIntoMap).c_str(), "");
+TEST(QualifiedResourceNameTypeConverter, QualifiedNameRoundtrip)
+{
+  std::string_view resource_name = "abcd";
+  using namespace global_resource;
+  for (auto [type, _] : type_names) {
+    auto qualified_name = QualifiedName(type, resource_name);
+    ASSERT_NE(qualified_name, std::string{});
 
-  ok = c.ResourceToString("ResourceName", kTwo, result_str);
-  EXPECT_EQ(ok, true);
-  std::string test1
-      = std::string("kTwo") + record_separator_ + std::string("ResourceName");
-  EXPECT_STREQ(result_str.c_str(), test1.c_str());
-
-  /* try invalid resource type */
-  ok = c.ResourceToString("ResourceName", kNotInsertedIntoMap, result_str);
-  EXPECT_EQ(ok, false);
+    auto [parsed_type, parsed_name] = ParseQualifiedName(qualified_name);
+    EXPECT_EQ(parsed_type, type);
+    EXPECT_EQ(parsed_name, resource_name);
+  }
 }

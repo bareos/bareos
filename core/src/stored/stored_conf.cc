@@ -223,19 +223,20 @@ static const ResourceItem autochanger_items[] = {
 };
 
 static ResourceTable resources[] = {
-  {"Director", "Directors", dir_items, R_DIRECTOR, sizeof(DirectorResource),
+  {"Director", "Directors", dir_items, R_DIRECTOR, global_resource::Type::Director,
+   sizeof(DirectorResource),
       []() { res_dir = new DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir)},
-  {"Ndmp", "Ndmp", ndmp_items, R_NDMP, sizeof(NdmpResource),
+  {"Ndmp", "Ndmp", ndmp_items, R_NDMP, global_resource::Type::Ndmp, sizeof(NdmpResource),
       []() { res_ndmp = new NdmpResource(); }, reinterpret_cast<BareosResource**>(&res_ndmp)},
-  {"Storage", "Storages", store_items, R_STORAGE, sizeof(StorageResource),
+  {"Storage", "Storages", store_items, R_STORAGE, global_resource::Type::Storage, sizeof(StorageResource),
       []() { res_store = new StorageResource(); }, reinterpret_cast<BareosResource**>(&res_store)},
-  {"Device", "Devices", dev_items, R_DEVICE, sizeof(DeviceResource),
+  {"Device", "Devices", dev_items, R_DEVICE, global_resource::Type::Device, sizeof(DeviceResource),
       []() { res_dev = new DeviceResource(); }, reinterpret_cast<BareosResource**>(&res_dev)},
-  {"Messages", "Messages", msgs_items, R_MSGS, sizeof(MessagesResource),
+  {"Messages", "Messages", msgs_items, R_MSGS, global_resource::Type::Messages, sizeof(MessagesResource),
       []() { res_msgs = new MessagesResource(); }, reinterpret_cast<BareosResource**>(&res_msgs)},
-  {"Autochanger", "Autochangers", autochanger_items, R_AUTOCHANGER, sizeof(AutochangerResource),
+  {"Autochanger", "Autochangers", autochanger_items, R_AUTOCHANGER, global_resource::Type::Autochanger, sizeof(AutochangerResource),
       []() { res_changer = new AutochangerResource(); }, reinterpret_cast<BareosResource**>(&res_changer)},
-  {nullptr, nullptr, nullptr, 0, 0, nullptr, nullptr}};
+  {}};
 
 /* clang-format on */
 
@@ -513,20 +514,6 @@ static void MultiplyConfiguredDevices(ConfigurationParser& config)
   }
 }
 
-static void ConfigBeforeCallback(ConfigurationParser& config)
-{
-  std::map<int, std::string> map{
-      {R_DIRECTOR, "R_DIRECTOR"},
-      {R_JOB, "R_JOB"}, /* needed for client name conversion */
-      {R_NDMP, "R_NDMP"},
-      {R_STORAGE, "R_STORAGE"},
-      {R_MSGS, "R_MSGS"},
-      {R_DEVICE, "R_DEVICE"},
-      {R_AUTOCHANGER, "R_AUTOCHANGER"},
-      {R_CLIENT, "R_CLIENT"}}; /* needed for network dump */
-  config.InitializeQualifiedResourceNameTypeConverter(map);
-}
-
 static void GuessMissingDeviceTypes(ConfigurationParser& config)
 {
   BareosResource* p = nullptr;
@@ -609,8 +596,7 @@ ConfigurationParser* InitSdConfig(const char* t_configfile, int exit_code)
   ConfigurationParser* config = new ConfigurationParser(
       t_configfile, InitResourceCb, ParseConfigCb, nullptr, exit_code, R_NUM,
       resources, default_config_filename.c_str(), "bareos-sd.d",
-      ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
-      FreeResource);
+      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_STORAGE; }
   return config;
 }

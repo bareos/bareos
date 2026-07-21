@@ -1661,14 +1661,11 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   storage_daemon_socket->SetEnableKtls(me->enable_ktls);
 
   if (tls_policy == TlsPolicy::kBnetTlsAuto) {
-    std::string qualified_resource_name;
-    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            JobName, R_JOB, qualified_resource_name)) {
-      connect_state(ReplicateCmdState::kError);
-      return false;
-    } else if (!storage_daemon_socket->DoTlsHandshake(
-                   TlsPolicy::kBnetTlsAuto, me, false,
-                   qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
+    std::string qualified_resource_name
+        = global_resource::QualifiedName(global_resource::Type::Job, JobName);
+    if (!storage_daemon_socket->DoTlsHandshake(
+            TlsPolicy::kBnetTlsAuto, me, false, qualified_resource_name.c_str(),
+            jcr->sd_auth_key, jcr)) {
       Dmsg0(110, "TLS direct handshake failed\n");
       connect_state(ReplicateCmdState::kError);
       return false;
@@ -1756,11 +1753,8 @@ static bool PassiveCmd(JobControlRecord* jcr)
   fd->SetEnableKtls(me->enable_ktls);
 
   if (tls_policy == TlsPolicy::kBnetTlsAuto) {
-    std::string qualified_resource_name;
-    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            jcr->Job, R_JOB, qualified_resource_name)) {
-      goto bail_out;
-    }
+    std::string qualified_resource_name
+        = global_resource::QualifiedName(global_resource::Type::Job, jcr->Job);
 
     if (!fd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, me, false,
                             qualified_resource_name.c_str(), jcr->sd_auth_key,

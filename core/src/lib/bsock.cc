@@ -469,17 +469,13 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
   return auth_success;
 }
 
-bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser* config,
+bool BareosSocket::DoTlsHandshakeAsAServer(TlsSecretProvider* data,
+                                           TlsResource* tls_resource,
                                            JobControlRecord* jcr)
 {
-  TlsResource* tls_resource
-      = dynamic_cast<TlsResource*>(config->GetNextRes(config->r_own_, nullptr));
-  if (!tls_resource) {
-    Dmsg1(100, "Could not get tls resource for %d.\n", config->r_own_);
+  if (!ParameterizeAndInitTlsConnectionAsAServer(tls_resource, data)) {
     return false;
   }
-
-  if (!ParameterizeAndInitTlsConnectionAsAServer(config)) { return false; }
 
   if (!DoTlsHandshakeWithClient(&tls_resource->tls_cert_, jcr)) {
     return false;
@@ -511,8 +507,14 @@ void BareosSocket::ParameterizeTlsCert(Tls* conn_init,
 }
 
 bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(
-    ConfigurationParser* config)
+    TlsResource* tls_resource,
+    TlsSecretProvider* data)
 {
+  if (!tls_resource) {
+    Dmsg1(100, "No tls resource was provided.\n");
+    return false;
+  }
+
   tls_conn_init = Tls::CreateNewTlsContext(Tls::ImplementationType::kOpenSsl);
   if (!tls_conn_init) {
     Qmsg0(BareosSocket::jcr(), M_FATAL, 0,
@@ -522,18 +524,11 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(
 
   tls_conn_init->SetTcpFileDescriptor(fd_);
 
-  TlsResource* tls_resource
-      = dynamic_cast<TlsResource*>(config->GetNextRes(config->r_own_, nullptr));
-  if (!tls_resource) {
-    Dmsg1(100, "Could not get tls resource for %d.\n", config->r_own_);
-    return false;
-  }
-
   tls_conn_init->SetProtocol(tls_resource->protocol_);
 
   ParameterizeTlsCert(tls_conn_init.get(), tls_resource);
 
-  tls_conn_init->SetTlsPskServerContext(config);
+  tls_conn_init->SetTlsPskServerContext(data);
   tls_conn_init->SetEnableKtls(enable_ktls_);
 
   if (!tls_conn_init->init()) {

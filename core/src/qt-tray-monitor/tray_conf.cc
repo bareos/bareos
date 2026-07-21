@@ -165,17 +165,17 @@ static const ResourceItem con_font_items[] = {
  *  name items rcode configuration_resources
  */
 static ResourceTable resource_definitions[] = {
-  {"Monitor", "Monitors", mon_items, R_MONITOR, sizeof(MonitorResource),
+  {"Monitor", "Monitors", mon_items, R_MONITOR, global_resource::Type::Monitor, sizeof(MonitorResource),
       []() { res_monitor = new MonitorResource(); }, reinterpret_cast<BareosResource**>(&res_monitor)},
-  {"Director", "Directors", dir_items, R_DIRECTOR, sizeof(DirectorResource),
+  {"Director", "Directors", dir_items, R_DIRECTOR, global_resource::Type::Director, sizeof(DirectorResource),
       []() { res_dir = new DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir)},
-  {"Client", "Clients", client_items, R_CLIENT, sizeof(ClientResource),
+  {"Client", "Clients", client_items, R_CLIENT, global_resource::Type::Client, sizeof(ClientResource),
       []() { res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client)},
-  {"Storage", "Storages", store_items, R_STORAGE, sizeof(StorageResource),
+  {"Storage", "Storages", store_items, R_STORAGE, global_resource::Type::Storage, sizeof(StorageResource),
       []() { res_store = new StorageResource(); }, reinterpret_cast<BareosResource**>(&res_store)},
-  {"ConsoleFont", "ConsoleFonts", con_font_items, R_CONSOLE_FONT, sizeof(ConsoleFontResource),
+  {"ConsoleFont", "ConsoleFonts", con_font_items, R_CONSOLE_FONT, global_resource::Type::ConsoleFont, sizeof(ConsoleFontResource),
       []() { res_font = new ConsoleFontResource(); }, reinterpret_cast<BareosResource**>(&res_font)},
-  {nullptr, nullptr, nullptr, 0, 0, nullptr, nullptr}
+  {}
 };
 
 /* clang-format on */
@@ -357,15 +357,6 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
   return (error == 0);
 }
 
-static void ConfigBeforeCallback(ConfigurationParser& config)
-{
-  std::map<int, std::string> map{
-      {R_MONITOR, "R_MONITOR"}, {R_DIRECTOR, "R_DIRECTOR"},
-      {R_CLIENT, "R_CLIENT"},   {R_STORAGE, "R_STORAGE"},
-      {R_CONSOLE, "R_CONSOLE"}, {R_CONSOLE_FONT, "R_CONSOLE_FONT"}};
-  config.InitializeQualifiedResourceNameTypeConverter(map);
-}
-
 static void ConfigReadyCallback(ConfigurationParser&) {}
 
 ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
@@ -373,8 +364,7 @@ ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, nullptr, exit_code, R_NUM,
       resource_definitions, default_config_filename.c_str(), "tray-monitor.d",
-      ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
-      FreeResource);
+      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_MONITOR; }
   return config;
 }

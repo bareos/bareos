@@ -1338,7 +1338,7 @@ run
          comment=<text> spooldata=<yes|no> priority=<number>
          jobid=<jobid> catalog=<catalog> migrationjob=<job-name> backupclient=<client-name>
          backupformat=<format> nextpool=<pool-name> since=<universal-time-specification>
-         verifyjob=<job-name> verifylist=<verify-list> migrationjob=<complete_name>
+         verifyjob=<job-name>
          yes
 
    Any information that is needed but not specified will be listed for selection, and before

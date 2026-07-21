@@ -10,6 +10,6 @@ Director {
 }
 
 Console {
-  Name = admin-tls
+  Name = "admin tls"
   Password = secret
 }

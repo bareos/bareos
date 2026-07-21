@@ -444,34 +444,34 @@ static const ResourceItem counter_items[] = {
  * name handler value code flags default_value
  */
 static ResourceTable dird_resource_tables[] = {
-  { "Director", "Directors", dir_items, R_DIRECTOR, sizeof(DirectorResource),
+  { "Director", "Directors", dir_items, R_DIRECTOR, global_resource::Type::Director, sizeof(DirectorResource),
       [] (){ res_dir = new DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir) },
-  { "Client", "Clients", client_items, R_CLIENT, sizeof(ClientResource),
+  { "Client", "Clients", client_items, R_CLIENT, global_resource::Type::Client, sizeof(ClientResource),
       [] (){ res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client)  },
-  { "JobDefs", "JobDefs", job_items, R_JOBDEFS, sizeof(JobResource),
+  { "JobDefs", "JobDefs", job_items, R_JOBDEFS, global_resource::Type::JobDefs, sizeof(JobResource),
       [] (){ res_job = new JobResource(); }, reinterpret_cast<BareosResource**>(&res_job) },
-  { "Job", "Jobs", job_items, R_JOB, sizeof(JobResource),
+  { "Job", "Jobs", job_items, R_JOB, global_resource::Type::Job, sizeof(JobResource),
       [] (){ res_job = new JobResource(); }, reinterpret_cast<BareosResource**>(&res_job) },
-  { "Storage", "Storages", store_items, R_STORAGE, sizeof(StorageResource),
+  { "Storage", "Storages", store_items, R_STORAGE, global_resource::Type::Storage, sizeof(StorageResource),
       [] (){ res_store = new StorageResource(); }, reinterpret_cast<BareosResource**>(&res_store) },
-  { "Catalog", "Catalogs", cat_items, R_CATALOG, sizeof(CatalogResource),
+  { "Catalog", "Catalogs", cat_items, R_CATALOG, global_resource::Type::Catalog, sizeof(CatalogResource),
       [] (){ res_cat = new CatalogResource(); }, reinterpret_cast<BareosResource**>(&res_cat) },
-  { "Schedule", "Schedules", sch_items, R_SCHEDULE, sizeof(ScheduleResource),
+  { "Schedule", "Schedules", sch_items, R_SCHEDULE, global_resource::Type::Schedule, sizeof(ScheduleResource),
       [] (){ res_sch = new ScheduleResource(); }, reinterpret_cast<BareosResource**>(&res_sch) },
-  { "FileSet", "FileSets", fs_items, R_FILESET, sizeof(FilesetResource),
+  { "FileSet", "FileSets", fs_items, R_FILESET, global_resource::Type::Fileset, sizeof(FilesetResource),
       [] (){ res_fs = new FilesetResource(); }, reinterpret_cast<BareosResource**>(&res_fs) },
-  { "Pool", "Pools", pool_items, R_POOL, sizeof(PoolResource),
+  { "Pool", "Pools", pool_items, R_POOL, global_resource::Type::Pool, sizeof(PoolResource),
       [] (){ res_pool = new PoolResource(); }, reinterpret_cast<BareosResource**>(&res_pool) },
-  { "Messages", "Messages", msgs_items, R_MSGS, sizeof(MessagesResource),
+  { "Messages", "Messages", msgs_items, R_MSGS, global_resource::Type::Messages, sizeof(MessagesResource),
       [] (){ res_msgs = new MessagesResource(); }, reinterpret_cast<BareosResource**>(&res_msgs) },
-  { "Counter", "Counters", counter_items, R_COUNTER, sizeof(CounterResource),
+  { "Counter", "Counters", counter_items, R_COUNTER, global_resource::Type::Counter, sizeof(CounterResource),
     [] (){ res_counter = new CounterResource(); }, reinterpret_cast<BareosResource**>(&res_counter),
     {}, true },
-  { "Profile", "Profiles", profile_items, R_PROFILE, sizeof(ProfileResource),
+  { "Profile", "Profiles", profile_items, R_PROFILE, global_resource::Type::Profile, sizeof(ProfileResource),
       [] (){ res_profile = new ProfileResource(); }, reinterpret_cast<BareosResource**>(&res_profile) },
-  { "Console", "Consoles", con_items, R_CONSOLE, sizeof(ConsoleResource),
+  { "Console", "Consoles", con_items, R_CONSOLE, global_resource::Type::Console, sizeof(ConsoleResource),
       [] (){ res_con = new ConsoleResource(); }, reinterpret_cast<BareosResource**>(&res_con) },
-  { "User", "Users", user_items, R_USER, sizeof(UserResource),
+  { "User", "Users", user_items, R_USER, global_resource::Type::User, sizeof(UserResource),
       [] (){ res_user = new UserResource(); }, reinterpret_cast<BareosResource**>(&res_user) },
   { }
 };
@@ -3537,19 +3537,6 @@ static void ResetAllClientConnectionHandshakeModes(
   };
 }
 
-static void ConfigBeforeCallback(ConfigurationParser& t_config)
-{
-  std::map<int, std::string> map{
-      {R_DIRECTOR, "R_DIRECTOR"}, {R_CLIENT, "R_CLIENT"},
-      {R_JOBDEFS, "R_JOBDEFS"},   {R_JOB, "R_JOB"},
-      {R_STORAGE, "R_STORAGE"},   {R_CATALOG, "R_CATALOG"},
-      {R_SCHEDULE, "R_SCHEDULE"}, {R_FILESET, "R_FILESET"},
-      {R_POOL, "R_POOL"},         {R_MSGS, "R_MSGS"},
-      {R_COUNTER, "R_COUNTER"},   {R_PROFILE, "R_PROFILE"},
-      {R_CONSOLE, "R_CONSOLE"},   {R_USER, "R_USER"}};
-  t_config.InitializeQualifiedResourceNameTypeConverter(map);
-}
-
 static void ConfigReadyCallback(ConfigurationParser& t_config)
 {
   CreateAndAddUserAgentConsoleResource(t_config);
@@ -3654,8 +3641,8 @@ ConfigurationParser* InitDirConfig(const char* t_configfile, int exit_code)
   ConfigurationParser* config = new ConfigurationParser(
       t_configfile, InitResourceCb, ParseConfigCb, PrintConfigCb, exit_code,
       R_NUM, dird_resource_tables, default_config_filename.c_str(),
-      "bareos-dir.d", ConfigBeforeCallback, ConfigReadyCallback, SaveResource,
-      DumpResource, FreeResource);
+      "bareos-dir.d", ConfigReadyCallback, SaveResource, DumpResource,
+      FreeResource);
   if (config) { config->r_own_ = R_DIRECTOR; }
   return config;
 }

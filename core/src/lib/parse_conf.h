@@ -28,6 +28,7 @@
 #include "include/bc_types.h"
 #include "lib/bstringlist.h"
 #include "lib/parse_conf_callbacks.h"
+#include "lib/qualified_resource_name_type_converter.h"
 #include "lib/s_password.h"
 #include "lib/tls_conf.h"
 #include "lib/keyword_table_s.h"
@@ -68,8 +69,11 @@ struct ResourceTable {
   const char* name;          /* Resource name */
   const char* groupname;     /* Resource name in plural form */
   const ResourceItem* items; /* List of resource keywords */
-  uint32_t rcode;            /* Code if needed */
-  uint32_t size;             /* Size of resource */
+  uint32_t rcode; /* local resource code if needed; these need to be from 0 ..
+                     R_NUM; otherwise things break */
+  global_resource::Type global_rcode; /* global resource code; used for
+                                         qualified resource names */
+  uint32_t size;                      /* Size of resource */
 
   std::function<void()> ResourceSpecificInitializer; /* this allocates memory */
   BareosResource** allocated_resource_;
@@ -238,7 +242,6 @@ class ConfigurationParser {
                       const ResourceTable* resources,
                       const char* config_default_filename,
                       const char* config_include_dir,
-                      void (*ParseConfigBeforeCb)(ConfigurationParser&),
                       void (*ParseConfigReadyCb)(ConfigurationParser&),
                       SaveResourceCb_t SaveResourceCb,
                       DumpResourceCb_t DumpResourceCb,
@@ -279,6 +282,10 @@ class ConfigurationParser {
   int GetResourceItemIndex(const ResourceItem* res_table, const char* item);
   const ResourceItem* GetResourceItem(const ResourceItem* res_table,
                                       const char* item);
+  global_resource::Type GlobalTypeFromLocalType(uint32_t rcode) const;
+  int LocalTypeFromGlobalType(global_resource::Type type) const;
+
+
   bool GetPathOfResource(PoolMem& path,
                          const char* component,
                          const char* resourcetype,
@@ -295,6 +302,9 @@ class ConfigurationParser {
   BareosResource* GetResWithName(int rcode,
                                  const char* name,
                                  bool lock = true) const;
+  BareosResource* GetResWithName(int rcode,
+                                 std::string_view name,
+                                 bool lock = true) const;
   void b_LockRes(const char* file, int line) const;
   void b_UnlockRes(const char* file, int line) const;
   const char* ResToStr(int rcode) const;
@@ -304,13 +314,6 @@ class ConfigurationParser {
                      const ResourceItem* item,
                      int index,
                      int pass);
-  void InitializeQualifiedResourceNameTypeConverter(
-      const std::map<int, std::string>&);
-  QualifiedResourceNameTypeConverter* GetQualifiedResourceNameTypeConverter()
-      const
-  {
-    return qualified_resource_name_type_converter_.get();
-  }
   static bool GetTlsPskByFullyQualifiedResourceName(
       ConfigurationParser* config,
       const char* fully_qualified_name,
@@ -347,9 +350,6 @@ class ConfigurationParser {
   std::string config_include_naming_format_; /* Format string for file paths of
                                                 resources */
   std::string used_config_path_;             /* Config file that is used. */
-  std::unique_ptr<QualifiedResourceNameTypeConverter>
-      qualified_resource_name_type_converter_;
-  ParseConfigBeforeCb_t ParseConfigBeforeCb_{nullptr};
   ParseConfigReadyCb_t ParseConfigReadyCb_{nullptr};
   bool parser_first_run_{true};
   BStringList warnings_;

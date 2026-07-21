@@ -49,6 +49,7 @@
 #include "lib/jcr.h"
 
 #include <atomic>
+#include <string_view>
 
 struct job_callback_item;
 class BareosDb;
@@ -273,6 +274,7 @@ BAREOS_IMPORT JobControlRecord* get_jcr_by_session(uint32_t SessionId,
                                                    uint32_t SessionTime);
 BAREOS_IMPORT JobControlRecord* get_jcr_by_partial_name(char const* Job);
 BAREOS_IMPORT JobControlRecord* get_jcr_by_full_name(char const* Job);
+BAREOS_IMPORT JobControlRecord* get_jcr_by_full_name(std::string_view job_name);
 BAREOS_IMPORT const char* JcrGetAuthenticateKey(const char* unified_job_name);
 TlsPolicy JcrGetTlsPolicy(const char* unified_job_name);
 BAREOS_IMPORT std::size_t NumJobsRun();

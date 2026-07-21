@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -90,9 +90,11 @@ TlsPolicy ConfiguredTlsPolicyGetterPrivate::GetTlsPolicyForResourceCodeAndName(
     const std::string& r_code_str,
     const std::string& name) const
 {
-  int r_code = my_config_.qualified_resource_name_type_converter_
-                   ->StringToResourceType(r_code_str);
+  auto type = global_resource::GetTypeFromName(r_code_str);
+  auto r_code = my_config_.LocalTypeFromGlobalType(type);
+
   if (r_code < 0) { return TlsPolicy::kBnetTlsUnknown; }
+
 
   TlsResource* foreign_tls_resource = dynamic_cast<TlsResource*>(
       my_config_.GetResWithName(r_code, name.c_str()));
