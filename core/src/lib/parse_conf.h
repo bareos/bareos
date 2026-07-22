@@ -47,7 +47,7 @@
 struct ResourceItem;
 class ConfigParserStateMachine;
 class ConfigurationParser;
-class ConfigResourcesContainer;
+class LoadedConfiguration;
 /* For storing name_addr items in res_items table */
 
 /* using offsetof on non-standard-layout types is conditionally supported. As
@@ -224,8 +224,7 @@ class ConfigurationParser {
   int32_t r_own_{0};                      /* own resource type */
   BareosResource* own_resource_{nullptr}; /* Pointer to own resource */
   const ResourceTable* resource_definitions_{
-      0}; /* Pointer to table of permitted resources */
-  std::shared_ptr<ConfigResourcesContainer> config_resources_container_;
+      0};                      /* Pointer to table of permitted resources */
   mutable brwlock_t res_lock_; /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_{nullptr};
@@ -259,9 +258,9 @@ class ConfigurationParser {
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
 
-  std::shared_ptr<ConfigResourcesContainer> GetResourcesContainer();
-  std::shared_ptr<ConfigResourcesContainer> BackupResourcesContainer();
-  void RestoreResourcesContainer(std::shared_ptr<ConfigResourcesContainer>&&);
+  std::shared_ptr<LoadedConfiguration> GetCurrentConfiguration();
+  std::shared_ptr<LoadedConfiguration> BackupCurrentConfiguration();
+  void RestoreConfiguration(std::shared_ptr<LoadedConfiguration>&&);
 
   void InitResource(int rcode,
                     const ResourceItem items[],
@@ -339,6 +338,8 @@ class ConfigurationParser {
     STORE_SIZE,
     STORE_SPEED
   };
+
+  std::shared_ptr<LoadedConfiguration> loaded_configuration;
 
   std::string config_default_filename_; /* default config filename, that is
                                            used, if no filename is given */
@@ -441,8 +442,7 @@ class ConfigurationParser {
   void SetResourceDefaultsParserPass2(const ResourceItem* item);
 };
 
-
-class ConfigResourcesContainer {
+class LoadedConfiguration {
  private:
   std::chrono::time_point<std::chrono::system_clock> timestamp_{};
   /* `next_` points to the immediate successor of this configuration.  This
@@ -451,22 +451,24 @@ class ConfigResourcesContainer {
    * saving it as well), then the daemon will not crash because of use
    * after free, as the newer configurations are now also kept alive
    * implicitly as well. */
-  std::shared_ptr<ConfigResourcesContainer> next_ = nullptr;
+  std::shared_ptr<LoadedConfiguration> next_ = nullptr;
   FreeResourceCb_t free_res = nullptr;
 
  public:
   std::vector<BareosResource*> configuration_resources_ = {};
-  ConfigResourcesContainer(ConfigurationParser* config)
-      : free_res{config->FreeResourceCb_}
-      , configuration_resources_(config->r_num_)
+
+  LoadedConfiguration() = default;
+  LoadedConfiguration(FreeResourceCb_t resource_freer,
+                      std::size_t resource_type_count)
+      : free_res{resource_freer}, configuration_resources_(resource_type_count)
   {
-    Dmsg1(10, "ConfigResourcesContainer: new configuration_resources_ %p\n",
+    Dmsg1(10, "LoadedConfiguration: new configuration_resources_ %p\n",
           configuration_resources_.data());
   }
 
-  ~ConfigResourcesContainer()
+  ~LoadedConfiguration()
   {
-    Dmsg1(10, "ConfigResourcesContainer freeing %p %s\n",
+    Dmsg1(10, "LoadedConfiguration: freeing %p %s\n",
           configuration_resources_.data(), TPAsString(timestamp_).c_str());
 
     for (size_t i = 0; i < configuration_resources_.size(); ++i) {
@@ -477,12 +479,14 @@ class ConfigResourcesContainer {
   void SetTimestampToNow() { timestamp_ = std::chrono::system_clock::now(); }
   std::string TimeStampAsString() { return TPAsString(timestamp_); }
 
-  void SetNext(std::shared_ptr<ConfigResourcesContainer> next)
+  void SetNext(std::shared_ptr<LoadedConfiguration> next)
   {
     next_ = std::move(next);
   }
-};
 
+  BareosResource* GetNextRes(int rcode, BareosResource* res) const;
+  BareosResource* GetResWithName(int rcode, std::string_view name) const;
+};
 
 bool PrintMessage(void* sock, const char* fmt, ...) PRINTF_LIKE(2, 3);
 bool IsTlsConfigured(TlsResource* tls_resource);
@@ -499,12 +503,12 @@ const char* DatatypeToDescription(int type);
  * the pointer passed into and also get a reference to the configuration that
  * we then keep for the lifetime of the loop.
  */
-inline std::shared_ptr<ConfigResourcesContainer> _init_foreach_res_(
+inline std::shared_ptr<LoadedConfiguration> _init_foreach_res_(
     ConfigurationParser* config,
     void* var)
 {
   memset(var, 0, sizeof(void*));
-  return config->GetResourcesContainer();
+  return config->GetCurrentConfiguration();
 }
 
 // Loop through each resource of type, returning in var

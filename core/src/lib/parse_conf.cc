@@ -119,10 +119,10 @@ ConfigurationParser::ConfigurationParser(
   DumpResourceCb_ = DumpResourceCb;
   FreeResourceCb_ = FreeResourceCb;
 
-  // config resources container needs to access our members, so this
+  // LoadedConfiguration needs to access our members, so this
   // needs to always happen after we initialised everything else
-  config_resources_container_
-      = std::make_shared<ConfigResourcesContainer>(this);
+  loaded_configuration
+      = std::make_shared<LoadedConfiguration>(FreeResourceCb_, r_num_);
 }
 
 std::string ConfigurationParser::CreateOwnQualifiedNameForNetworkDump() const
@@ -189,7 +189,7 @@ bool ConfigurationParser::ParseConfig()
                                  &ConfigurationParser_PrintWarning);
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
 
-  config_resources_container_->SetTimestampToNow();
+  loaded_configuration->SetTimestampToNow();
 
   return success;
 }
@@ -265,15 +265,14 @@ bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
     return false;
   }
 
-  if (!config_resources_container_->configuration_resources_[rindex]) {
-    config_resources_container_->configuration_resources_[rindex]
-        = new_resource;
+  if (!loaded_configuration->configuration_resources_[rindex]) {
+    loaded_configuration->configuration_resources_[rindex] = new_resource;
     Dmsg3(900, "Inserting first %s res: %s index=%d\n", ResToStr(rcode),
           new_resource->resource_name_, rindex);
   } else {  // append
     BareosResource* last = nullptr;
     BareosResource* current
-        = config_resources_container_->configuration_resources_[rindex];
+        = loaded_configuration->configuration_resources_[rindex];
     do {
       if (bstrcmp(current->resource_name_, new_resource->resource_name_)) {
         Emsg2(M_ERROR, 0,
@@ -512,26 +511,31 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
   return found;
 }
 
-void ConfigurationParser::RestoreResourcesContainer(
-    std::shared_ptr<ConfigResourcesContainer>&& backup_table)
+void ConfigurationParser::RestoreConfiguration(
+    std::shared_ptr<LoadedConfiguration>&& backup_table)
 {
-  std::swap(config_resources_container_, backup_table);
+  std::swap(loaded_configuration, backup_table);
   backup_table.reset();
 }
 
-std::shared_ptr<ConfigResourcesContainer>
-ConfigurationParser::BackupResourcesContainer()
+std::shared_ptr<LoadedConfiguration>
+ConfigurationParser::BackupCurrentConfiguration()
 {
-  auto backup_table = config_resources_container_;
-  config_resources_container_
-      = std::make_shared<ConfigResourcesContainer>(this);
+  auto backup_table = loaded_configuration;
+  loaded_configuration
+      = std::make_shared<LoadedConfiguration>(FreeResourceCb_, r_num_);
   return backup_table;
 }
 
-std::shared_ptr<ConfigResourcesContainer>
-ConfigurationParser::GetResourcesContainer()
+std::shared_ptr<LoadedConfiguration>
+ConfigurationParser::GetCurrentConfiguration()
 {
-  return config_resources_container_;
+  std::shared_ptr<LoadedConfiguration> ptr;
+  {
+    ResLocker _{this};
+    ptr = loaded_configuration;
+  }
+  return ptr;
 }
 
 
@@ -549,15 +553,14 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
    */
   last = nullptr;
   for (BareosResource* res
-       = config_resources_container_->configuration_resources_[rindex];
+       = loaded_configuration->configuration_resources_[rindex];
        res; res = res->next_) {
     if (bstrcmp(res->resource_name_, name)) {
       if (!last) {
         Dmsg2(900,
               T_("removing resource %s, name=%s (first resource in list)\n"),
               ResToStr(rcode), name);
-        config_resources_container_->configuration_resources_[rindex]
-            = res->next_;
+        loaded_configuration->configuration_resources_[rindex] = res->next_;
       } else {
         Dmsg2(900, T_("removing resource %s, name=%s\n"), ResToStr(rcode),
               name);
@@ -610,9 +613,8 @@ void ConfigurationParser::DumpResources(sender* sendit,
                                         bool hide_sensitive_data)
 {
   for (int i = 0; i <= r_num_ - 1; i++) {
-    if (config_resources_container_->configuration_resources_[i]) {
-      DumpResourceCb_(i,
-                      config_resources_container_->configuration_resources_[i],
+    if (loaded_configuration->configuration_resources_[i]) {
+      DumpResourceCb_(i, loaded_configuration->configuration_resources_[i],
                       sendit, sock, hide_sensitive_data, false);
     }
   }

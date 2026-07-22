@@ -35,7 +35,7 @@
 
 typedef struct s_tree_root TREE_ROOT;
 
-class ConfigResourcesContainer;
+class LoadedConfiguration;
 
 namespace directordaemon {
 class JobResource;
@@ -104,10 +104,10 @@ struct Resources {
 };
 
 struct DirectorJcrImpl {
-  DirectorJcrImpl( std::shared_ptr<ConfigResourcesContainer> configuration_resources_container) : job_config_resources_container_(configuration_resources_container) {
+  DirectorJcrImpl(std::shared_ptr<LoadedConfiguration> config) : used_config_for_job(std::move(config)) {
     RestoreJobId = 0; MigrateJobId = 0; VerifyJobId = 0;
   }
-  std::shared_ptr<ConfigResourcesContainer> job_config_resources_container_;
+  std::shared_ptr<LoadedConfiguration> used_config_for_job;
   pthread_t SD_msg_chan{};        /**< Message channel thread id */
   bool SD_msg_chan_started{};     /**< Message channel thread started */
   std::condition_variable term_wait{}; /**< Wait for job termination */

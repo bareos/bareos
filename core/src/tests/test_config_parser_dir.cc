@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -118,20 +118,20 @@ TEST_F(ConfigParser_Dir, bareos_configparser_tests)
   my_config->DumpResources(PrintMessage, NULL);
 
   {
-    auto backup = my_config->BackupResourcesContainer();
+    auto backup = my_config->BackupCurrentConfiguration();
     my_config->ParseConfig();
 
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
     my_config->own_resource_ = me;
     ASSERT_NE(nullptr, me);
-    my_config->RestoreResourcesContainer(std::move(backup));
+    my_config->RestoreConfiguration(std::move(backup));
     ASSERT_NE(nullptr, me);
   }
-  // If a config already exists, BackupResourcesContainer() needs to be called
+  // If a config already exists, BackupCurrentConfiguration() needs to be called
   // before ParseConfig(), otherwise memory of the existing config is not freed
   // completely
   {
-    auto backup = my_config->BackupResourcesContainer();
+    auto backup = my_config->BackupCurrentConfiguration();
     my_config->ParseConfig();
 
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
@@ -154,14 +154,14 @@ TEST_F(ConfigParser_Dir, foreach_res_and_reload)
   my_config->ParseConfig();
 
   [[maybe_unused]] auto do_reload = [](bool keep_config) {
-    auto backup = my_config->BackupResourcesContainer();
+    auto backup = my_config->BackupCurrentConfiguration();
     my_config->ParseConfig();
 
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
     my_config->own_resource_ = me;
     ASSERT_NE(nullptr, me);
     if (!keep_config) {
-      my_config->RestoreResourcesContainer(std::move(backup));
+      my_config->RestoreConfiguration(std::move(backup));
       ASSERT_NE(nullptr, me);
     }
   };
@@ -174,7 +174,6 @@ TEST_F(ConfigParser_Dir, foreach_res_and_reload)
     std::unique_lock lk(cv_m);
     BareosResource* client;
     client = (BareosResource*)0xfefe;
-    // auto handle = my_config->GetResourcesContainer();
     foreach_res (client, R_CLIENT) {
       cv.wait(lk);
       printf("%p %s\n", client->resource_name_, client->resource_name_);

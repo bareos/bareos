@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -83,7 +83,7 @@ void CatalogTest::SetUp()
 
   // connect to database
   {
-    jcr = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
+    jcr = directordaemon::NewDirectorJcr(my_config->GetCurrentConfiguration());
     jcr->dir_impl->res.catalog
         = (directordaemon::CatalogResource*)my_config->GetResWithName(
             directordaemon::R_CATALOG, catalog_backend_name.c_str());

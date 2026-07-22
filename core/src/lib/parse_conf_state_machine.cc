@@ -151,7 +151,7 @@ ConfigParserStateMachine::ScanResource(int token)
           if (my_config_.store_res_) {
             my_config_.store_res_(lexical_parser_, item, resource_item_index,
                                   parser_pass_number_,
-                                  my_config_.config_resources_container_
+                                  my_config_.GetCurrentConfiguration()
                                       ->configuration_resources_.data());
           }
         }
@@ -298,11 +298,10 @@ bool ConfigParserStateMachine::InitParserPass()
 void ConfigParserStateMachine::DumpResourcesAfterSecondPass()
 {
   if (debug_level >= 900 && parser_pass_number_ == 2) {
+    auto conf = my_config_.GetCurrentConfiguration();
     for (int i = 0; i <= my_config_.r_num_ - 1; i++) {
-      my_config_.DumpResourceCb_(
-          i,
-          my_config_.config_resources_container_->configuration_resources_[i],
-          PrintMessage, nullptr, false, false);
+      my_config_.DumpResourceCb_(i, conf->configuration_resources_[i],
+                                 PrintMessage, nullptr, false, false);
     }
   }
 }

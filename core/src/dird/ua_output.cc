@@ -394,12 +394,11 @@ static void ShowDisabledSchedules(UaContext* ua)
 // Enter with Resources locked
 static void ShowAll(UaContext* ua, bool hide_sensitive_data, bool verbose)
 {
+  auto conf = my_config->GetCurrentConfiguration();
   for (int j = 0; j <= my_config->r_num_ - 1; j++) {
-    if (my_config->config_resources_container_->configuration_resources_[j]) {
-      my_config->DumpResourceCb_(
-          j,
-          my_config->config_resources_container_->configuration_resources_[j],
-          bsendmsg, ua, hide_sensitive_data, verbose);
+    if (conf->configuration_resources_[j]) {
+      my_config->DumpResourceCb_(j, conf->configuration_resources_[j], bsendmsg,
+                                 ua, hide_sensitive_data, verbose);
     }
   }
 }
@@ -475,11 +474,11 @@ bool show_cmd(UaContext* ua, const char*)
     if (!ua->argv[i]) { /* was a name given? */
       // No name, dump all resources of specified type
       recurse = 1;
+      auto conf = my_config->GetCurrentConfiguration();
       for (const auto& command : show_cmd_available_resources) {
         if (bstrncasecmp(res_name, command.first, len)) {
           type = command.second;
-          res = my_config->config_resources_container_
-                    ->configuration_resources_[type];
+          res = conf->configuration_resources_[type];
           break;
         }
       }
@@ -1513,6 +1512,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
   JobResource* job{nullptr};
   JobControlRecord* jcr;
   UnifiedStorageResource store;
+  auto used_config = my_config->GetCurrentConfiguration();
   if (const char* job_name = GetArgValue(ua, "job")) {
     job = ua->GetJobResWithName(job_name);
     if (!job) {
@@ -1523,7 +1523,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
     if ((job = select_job_resource(ua)) == NULL) { return false; }
   }
 
-  jcr = NewDirectorJcr(DirdFreeJcr);
+  jcr = NewDirectorJcr(used_config);
   time_t now = time(NULL);
   bool found = false;
   if (job->schedule) {

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 
+#include "lib/parse_conf.h"
 #if defined(HAVE_MINGW)
 #  include "include/bareos.h"
 #  include "gtest/gtest.h"
@@ -43,23 +44,25 @@ TEST(scheduler_job_item_queue, job_item)
   SchedulerJobItem item;
   EXPECT_FALSE(item.is_valid);
 
+  auto conf = std::make_shared<LoadedConfiguration>();
   JobResource job;
   RunResource run;
 
-  SchedulerJobItem item_unitialised(&job, &run, time(nullptr), 0,
+  SchedulerJobItem item_unitialised(conf, &job, &run, time(nullptr), 0,
                                     JobTrigger::kUndefined);
   EXPECT_TRUE(item_unitialised.is_valid);
 }
 
 TEST(scheduler_job_item_queue, compare_job_items)
 {
+  auto conf = std::make_shared<LoadedConfiguration>();
   JobResource job[2];
   RunResource run[2];
 
-  SchedulerJobItem item1(&job[0], &run[0], time(nullptr), 10,
+  SchedulerJobItem item1(conf, &job[0], &run[0], time(nullptr), 10,
                          JobTrigger::kUndefined);
   SchedulerJobItem item2 = item1;
-  SchedulerJobItem item3(&job[1], &run[1], time(nullptr) + 3600, 11,
+  SchedulerJobItem item3(conf, &job[1], &run[1], time(nullptr) + 3600, 11,
                          JobTrigger::kUndefined);
 
   EXPECT_EQ(item1, item2);
@@ -70,6 +73,7 @@ TEST(scheduler_job_item_queue, priority_and_time)
 {
   time_t now = time(nullptr);
 
+  auto unused = std::make_shared<LoadedConfiguration>();
   std::vector<JobResource> job_resources(4);
   std::vector<RunResource> run_resources(job_resources.size());
 
@@ -79,23 +83,27 @@ TEST(scheduler_job_item_queue, priority_and_time)
   time_t runtime = now;
   run_resources[0].Priority = 10;
   job_resources[0].selection_type = 1;  // runs first (see above)
-  scheduler_job_item_queue.EmplaceItem(&job_resources[0], &run_resources[0],
-                                       runtime, JobTrigger::kUndefined);
+  scheduler_job_item_queue.EmplaceItem(unused, &job_resources[0],
+                                       &run_resources[0], runtime,
+                                       JobTrigger::kUndefined);
   runtime = now + 1;
   run_resources[1].Priority = 10;
   job_resources[1].selection_type = 3;
-  scheduler_job_item_queue.EmplaceItem(&job_resources[1], &run_resources[1],
-                                       runtime, JobTrigger::kUndefined);
+  scheduler_job_item_queue.EmplaceItem(unused, &job_resources[1],
+                                       &run_resources[1], runtime,
+                                       JobTrigger::kUndefined);
   runtime = now + 1;
   run_resources[2].Priority = 11;
   job_resources[2].selection_type = 4;  // runs last
-  scheduler_job_item_queue.EmplaceItem(&job_resources[2], &run_resources[2],
-                                       runtime, JobTrigger::kUndefined);
+  scheduler_job_item_queue.EmplaceItem(unused, &job_resources[2],
+                                       &run_resources[2], runtime,
+                                       JobTrigger::kUndefined);
   runtime = now + 1;
   run_resources[3].Priority = 9;
   job_resources[3].selection_type = 2;
-  scheduler_job_item_queue.EmplaceItem(&job_resources[3], &run_resources[3],
-                                       runtime, JobTrigger::kUndefined);
+  scheduler_job_item_queue.EmplaceItem(unused, &job_resources[3],
+                                       &run_resources[3], runtime,
+                                       JobTrigger::kUndefined);
 
   int item_position = 1;
   while (!scheduler_job_item_queue.Empty()) {
@@ -111,10 +119,11 @@ TEST(scheduler_job_item_queue, priority_and_time)
 
 TEST(scheduler_job_item_queue, job_resource_undefined)
 {
+  auto unused = std::make_shared<LoadedConfiguration>();
   bool failed{false};
   RunResource run;
   try {
-    scheduler_job_item_queue.EmplaceItem(nullptr, &run, 123,
+    scheduler_job_item_queue.EmplaceItem(unused, nullptr, &run, 123,
                                          JobTrigger::kUndefined);
   } catch (const std::invalid_argument& e) {
     EXPECT_STREQ(e.what(), "Invalid Argument: JobResource is undefined");
@@ -125,11 +134,13 @@ TEST(scheduler_job_item_queue, job_resource_undefined)
 
 TEST(scheduler_job_item_queue, runtime_undefined)
 {
+  auto unused = std::make_shared<LoadedConfiguration>();
   bool failed{false};
   JobResource job;
   RunResource run;
   try {
-    scheduler_job_item_queue.EmplaceItem(&job, &run, 0, JobTrigger::kUndefined);
+    scheduler_job_item_queue.EmplaceItem(unused, &job, &run, 0,
+                                         JobTrigger::kUndefined);
   } catch (const std::invalid_argument& e) {
     EXPECT_STREQ(e.what(), "Invalid Argument: runtime is invalid");
     failed = true;

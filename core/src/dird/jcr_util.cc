@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,22 +19,21 @@
    02110-1301, USA.
 */
 
-#include "dird/dird_globals.h"
-#include "dird/director_jcr_impl.h"
-#include "lib/parse_bsr.h"
-#include "lib/parse_conf.h"
-
+#include "dird/jcr_util.h"
+#include "dird/job.h"
 
 namespace directordaemon {
 
-JobControlRecord* NewDirectorJcr(JCR_free_HANDLER* DirdFreeJcr)
+JobControlRecord* NewDirectorJcr(std::shared_ptr<LoadedConfiguration> config)
 {
   JobControlRecord* jcr = new_jcr(DirdFreeJcr);
-  jcr->dir_impl = new DirectorJcrImpl(my_config->config_resources_container_);
+  if (config) {
+    Dmsg1(10, "NewDirectorJcr: configuration_resources_ is at %p %s\n",
+          config->configuration_resources_.data(),
+          config->TimeStampAsString().c_str());
+  }
+  jcr->dir_impl = new DirectorJcrImpl(std::move(config));
   register_jcr(jcr);
-  Dmsg1(10, "NewDirectorJcr: configuration_resources_ is at %p %s\n",
-        my_config->config_resources_container_->configuration_resources_.data(),
-        my_config->config_resources_container_->TimeStampAsString().c_str());
   return jcr;
 }
 
