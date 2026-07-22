@@ -1052,8 +1052,7 @@ struct context : ::context {
       // TODO: we should delete @BARRI/ from the pkt->ofname
       // and restore to there
 
-      debug_msg(ctx, 300, "duming {} to disk at {}", pkt->original_file_name,
-                pkt->ofname);
+      debug_msg(ctx, 300, "duming {} to disk", pkt->ofname);
 
       pkt->create_status = CF_CORE;
       return bRC_OK;
@@ -1061,20 +1060,19 @@ struct context : ::context {
 
     if (!args.target.has_value()) {
       fatal_msg(ctx, "Cannot create {} as context was not set up yet!",
-                pkt->original_file_name);
+                pkt->ofname);
       return bRC_Error;
     }
 
-    auto fname = std::string_view{pkt->original_file_name};
+    auto fname = std::string_view{pkt->ofname};
     if (fname.ends_with(log_ending)) {
-      debug_msg(ctx, 300, "skipping {}", pkt->original_file_name, pkt->ofname);
+      debug_msg(ctx, 300, "skipping {}", pkt->ofname);
       pkt->create_status = CF_SKIP;
       return bRC_OK;
     } else if (fname.ends_with(dump_ending)) {
       // we do not actually create files here, so we just ignore this
 
-      debug_msg(ctx, 300, "extracting {}", pkt->original_file_name,
-                pkt->ofname);
+      debug_msg(ctx, 300, "extracting {}", pkt->ofname);
       pkt->create_status = CF_EXTRACT;
       return bRC_OK;
     }
