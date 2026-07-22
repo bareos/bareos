@@ -78,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - contrib: media_vault use scriptdir [PR #2689]
 - Improve database encoding error handling [PR #2696]
 - core: ensure runscripts are only executed once [PR #2661]
+- core: fix sometimes not preserving used resource pointers [PR #2725]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2341,4 +2342,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2720]: https://github.com/bareos/bareos/pull/2720
 [PR #2721]: https://github.com/bareos/bareos/pull/2721
 [PR #2724]: https://github.com/bareos/bareos/pull/2724
+[PR #2725]: https://github.com/bareos/bareos/pull/2725
 [unreleased]: https://github.com/bareos/bareos/tree/master
