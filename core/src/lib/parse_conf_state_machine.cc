@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -151,7 +151,7 @@ ConfigParserStateMachine::ScanResource(int token)
           if (my_config_.store_res_) {
             my_config_.store_res_(lexical_parser_, item, resource_item_index,
                                   parser_pass_number_,
-                                  my_config_.config_resources_container_
+                                  my_config_.GetCurrentConfiguration()
                                       ->configuration_resources_.data());
           }
         }
@@ -293,11 +293,10 @@ bool ConfigParserStateMachine::InitParserPass()
 void ConfigParserStateMachine::DumpResourcesAfterSecondPass()
 {
   if (debug_level >= 900 && parser_pass_number_ == 2) {
+    auto conf = my_config_.GetCurrentConfiguration();
     for (int i = 0; i <= my_config_.r_num_ - 1; i++) {
-      my_config_.DumpResourceCb_(
-          i,
-          my_config_.config_resources_container_->configuration_resources_[i],
-          PrintMessage, nullptr, false, false);
+      my_config_.DumpResourceCb_(i, conf->configuration_resources_[i],
+                                 PrintMessage, nullptr, false, false);
     }
   }
 }

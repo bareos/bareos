@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,8 +35,8 @@ TEST(DirectorToClientConnection, DoesNotConnectWhenDisabled)
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
 
 
-  JobControlRecord* jcr
-      = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
+  JobControlRecord* jcr = directordaemon::NewDirectorJcr(
+      director_config->GetCurrentConfiguration());
 
   jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
       directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
@@ -54,8 +54,8 @@ TEST(DirectorToClientConnection, DoesNotDowngradeToClearTextWhenTlsRequired)
 
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   InitMsg(nullptr, nullptr);
-  JobControlRecord* jcr
-      = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
+  JobControlRecord* jcr = directordaemon::NewDirectorJcr(
+      director_config->GetCurrentConfiguration());
 
   jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
       directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
@@ -77,8 +77,8 @@ TEST(DirectorToClientConnection, DowngradesToClearTextWhenTlsNotRequired)
 
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   InitMsg(nullptr, nullptr);
-  JobControlRecord* jcr
-      = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
+  JobControlRecord* jcr = directordaemon::NewDirectorJcr(
+      director_config->GetCurrentConfiguration());
 
   jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
       directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,

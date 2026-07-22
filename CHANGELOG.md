@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Improve database encoding error handling [PR #2699]
 - core: ensure runscripts are only executed once [PR #2723]
+- core: fix sometimes not preserving used resource pointers [PR #2728]
 
 ### Added
 - add `update volume encrypt` command [PR #2727]
@@ -2321,4 +2322,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2716]: https://github.com/bareos/bareos/pull/2716
 [PR #2723]: https://github.com/bareos/bareos/pull/2723
 [PR #2727]: https://github.com/bareos/bareos/pull/2727
+[PR #2728]: https://github.com/bareos/bareos/pull/2728
 [unreleased]: https://github.com/bareos/bareos/tree/master

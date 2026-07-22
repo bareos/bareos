@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,18 +54,19 @@ namespace directordaemon {
 JobControlRecord* new_control_jcr(const char* base_name, int job_type)
 {
   JobControlRecord* jcr;
-  jcr = NewDirectorJcr(DirdFreeJcr);
 
   // exclude JT_SYSTEM job from shared config counting
   if (job_type == JT_SYSTEM) {
-    jcr->dir_impl->job_config_resources_container_ = nullptr;
-  }
+    jcr = NewDirectorJcr({});
+  } else {
+    auto conf = my_config->GetCurrentConfiguration();
+    jcr = NewDirectorJcr(conf);
 
-  /* The job and defaults are not really used, but we set them up to ensure that
-   * everything is correctly initialized. */
-  {
-    ResLocker _{my_config};
-    jcr->dir_impl->res.job = (JobResource*)my_config->GetNextRes(R_JOB, NULL);
+    /* The job and defaults are not really used, but we set them up to ensure
+     * that everything is correctly initialized. */
+    jcr->dir_impl->res.job
+        = dynamic_cast<JobResource*>(conf->GetNextRes(R_JOB, NULL));
+    ASSERT(jcr->dir_impl->res.job);
     SetJcrDefaults(jcr, jcr->dir_impl->res.job);
   }
 

@@ -96,26 +96,12 @@ BareosResource* ConfigurationParser::GetResWithName(int rcode,
                                                     const char* name,
                                                     bool lock) const
 {
-  BareosResource* res;
-  int rindex = rcode;
-
   if (lock) {
     ResLocker _{this};
-
-    res = config_resources_container_->configuration_resources_[rindex];
-    while (res) {
-      if (bstrcmp(res->resource_name_, name)) { break; }
-      res = res->next_;
-    }
+    return loaded_configuration->GetResWithName(rcode, name);
   } else {
-    res = config_resources_container_->configuration_resources_[rindex];
-    while (res) {
-      if (bstrcmp(res->resource_name_, name)) { break; }
-      res = res->next_;
-    }
+    return loaded_configuration->GetResWithName(rcode, name);
   }
-
-  return res;
 }
 
 /*
@@ -126,16 +112,7 @@ BareosResource* ConfigurationParser::GetResWithName(int rcode,
 BareosResource* ConfigurationParser::GetNextRes(int rcode,
                                                 BareosResource* res) const
 {
-  BareosResource* nres;
-  int rindex = rcode;
-
-  if (res == NULL) {
-    nres = config_resources_container_->configuration_resources_[rindex];
-  } else {
-    nres = res->next_;
-  }
-
-  return nres;
+  return loaded_configuration->GetNextRes(rcode, res);
 }
 
 const char* ConfigurationParser::ResToStr(int rcode) const
@@ -2302,4 +2279,42 @@ const char* DatatypeToDescription(int type)
   }
 
   return NULL;
+}
+
+
+// Return resource of type rcode that matches name
+BareosResource* LoadedConfiguration::GetResWithName(int rcode,
+                                                    const char* name) const
+{
+  auto& containers = configuration_resources_;
+  if (rcode < 0 || static_cast<std::size_t>(rcode) >= containers.size()) {
+    return nullptr;
+  }
+
+  auto* res = containers[rcode];
+
+  while (res) {
+    if (bstrcmp(res->resource_name_, name)) { break; }
+    res = res->next_;
+  }
+
+  return res;
+}
+
+/*
+ * Return next resource of type rcode. On first
+ * call second arg (res) is NULL, on subsequent
+ * calls, it is called with previous value.
+ */
+BareosResource* LoadedConfiguration::GetNextRes(int rcode,
+                                                BareosResource* res) const
+{
+  if (res) { return res->next_; }
+
+  auto& containers = configuration_resources_;
+  if (rcode < 0 || static_cast<std::size_t>(rcode) >= containers.size()) {
+    return nullptr;
+  }
+
+  return containers[rcode];
 }

@@ -24,6 +24,7 @@
  * @file
  * BAREOS Director -- Run Command
  */
+#include "dird/dird_globals.h"
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/director_jcr_impl.h"
@@ -369,11 +370,12 @@ bool reRunCmd(UaContext* ua, const char*)
  */
 int DoRunCmd(UaContext* ua, const char*)
 {
-  JobControlRecord* jcr = NULL;
   RunContext rc;
   int status, length;
   bool valid_response;
   bool do_pool_overrides = true;
+
+  auto used_config = my_config->GetCurrentConfiguration();
 
   if (!OpenClientDb(ua)) { return 0; }
 
@@ -381,13 +383,11 @@ int DoRunCmd(UaContext* ua, const char*)
 
   /* Create JobControlRecord to run job.  NOTE!!! after this point, FreeJcr()
    * before returning. */
-  if (!jcr) {
-    jcr = NewDirectorJcr(DirdFreeJcr);
-    SetJcrDefaults(jcr, rc.job);
-    jcr->dir_impl->unlink_bsr
-        = ua->jcr->dir_impl->unlink_bsr; /* copy unlink flag from caller */
-    ua->jcr->dir_impl->unlink_bsr = false;
-  }
+  auto* jcr = NewDirectorJcr(used_config);
+  SetJcrDefaults(jcr, rc.job);
+  jcr->dir_impl->unlink_bsr
+      = ua->jcr->dir_impl->unlink_bsr; /* copy unlink flag from caller */
+  ua->jcr->dir_impl->unlink_bsr = false;
 
   // Transfer JobIds to new restore Job
   if (ua->jcr->JobIds) {

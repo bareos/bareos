@@ -36,6 +36,7 @@
 #include "dird/date_time_mask.h"
 #include "lib/alist.h"
 #include "lib/messages_resource.h"
+#include "lib/parse_conf.h"
 #include "lib/resource_item.h"
 #include "lib/tls_conf.h"
 
@@ -679,7 +680,9 @@ std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
 const char* GetUsageStringForConsoleConfigureCommand();
 void DestroyConfigureUsageString();
 bool PopulateDefs();
-std::vector<JobResource*> GetAllJobResourcesByClientName(std::string name);
+std::vector<JobResource*> GetAllJobResourcesByClientName(
+    LoadedConfiguration* container,
+    std::string_view name);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_DIRD_CONF_H_
