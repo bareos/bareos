@@ -40,6 +40,7 @@ extern "C" {
 
 #define NDMNMB_FLAG_NO_FREE 1
 #define NDMNMB_FLAG_NO_SEND 2
+#define NDMNMB_FLAG_NO_REPLY_EXPECTED 4
 
 /*
  * Most replies are regular in that 'error' is the

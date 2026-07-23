@@ -376,6 +376,7 @@ extern char* ndmconn_get_err_msg(struct ndmconn* conn);
     NDMOS_MACRO_ZEROFILL(xa);                              \
     xa->request.protocol_version = VERS;                   \
     xa->request.header.message = (ndmp0_message)MT_##TYPE; \
+    xa->request.flags |= NDMNMB_FLAG_NO_REPLY_EXPECTED;    \
     {
 #ifndef NDMOS_OPTION_NO_NDMP4
 #define NDMC_WITH_POST(TYPE, VERS)                         \
@@ -386,6 +387,7 @@ extern char* ndmconn_get_err_msg(struct ndmconn* conn);
     NDMOS_MACRO_ZEROFILL(xa);                              \
     xa->request.protocol_version = VERS;                   \
     xa->request.header.message = (ndmp0_message)MT_##TYPE; \
+    xa->request.flags |= NDMNMB_FLAG_NO_REPLY_EXPECTED;    \
     {
 #endif /* !NDMOS_OPTION_NO_NDMP4 */
 
