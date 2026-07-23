@@ -37,6 +37,7 @@
 #include "filed/heartbeat.h"
 #include "filed/fileset.h"
 #include "filed/filed_jcr_impl.h"
+#include "filed/os_suspension.h"
 #include "filed/socket_server.h"
 #include "filed/restore.h"
 #include "filed/verify.h"
@@ -362,6 +363,8 @@ static s_fd_dir_cmds* SelectCommandByName(const char* name)
 
 void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 {
+  SleepPrevention sleep_prevention;
+
   // only do the cleanup if dir is not authenticated
   if (jcr->authenticated) {
     /**********FIXME******* add command handler error code */
@@ -390,6 +393,12 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
       }
 
       Dmsg1(100, "Executing %s command.\n", to_execute->cmd);
+      const bool is_backup_or_restore_command
+          = (to_execute->func == BackupCmd || to_execute->func == RestoreCmd);
+
+      if (is_backup_or_restore_command) {
+        ActivateSleepPrevention(jcr, sleep_prevention);
+      }
 
       if (!to_execute->func(jcr)) { /* do command */
         Dmsg1(100, "Quit command loop. Canceled=%d\n", jcr->IsJobCanceled());
@@ -438,9 +447,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
   FreeJcr(jcr); /* destroy JobControlRecord record */
   Dmsg0(100, "Done with FreeJcr\n");
 
-#ifdef HAVE_WIN32
-  AllowOsSuspensions();
-#endif
+  DeactivateSleepPrevention(sleep_prevention);
 
   return nullptr;
 }
@@ -486,10 +493,6 @@ static bool StartProcessDirectorCommands(JobControlRecord* jcr)
 void* handle_director_connection(BareosSocket* dir)
 {
   JobControlRecord* jcr;
-
-#ifdef HAVE_WIN32
-  PreventOsSuspensions();
-#endif
 
   if (AreMaxConcurrentJobsExceeded()) {
     Emsg0(M_ERROR, 0,

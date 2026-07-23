@@ -21,12 +21,34 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 include(BareosConfigureFile)
 include(BareosWindowsResource)
 
+option(FD_CLIENT_SLEEP_INHIBITION
+       "Enable FD sleep inhibition during backup/restore jobs" ON
+)
+
 if(HAVE_WIN32)
   include_directories(
     ${PROJECT_SOURCE_DIR}/src/win32/generic
     ${PROJECT_SOURCE_DIR}/src/win32/filed
     ${PROJECT_SOURCE_DIR}/src/win32/vss/include
   )
+endif()
+
+if(FD_CLIENT_SLEEP_INHIBITION AND HAVE_LINUX_OS)
+  if(NOT HAVE_SYSTEMD)
+    message(
+      FATAL_ERROR
+        "FD_CLIENT_SLEEP_INHIBITION requires systemd support on Linux. "
+        "Set -DFD_CLIENT_SLEEP_INHIBITION=OFF to disable manually."
+    )
+  endif()
+  if(NOT HAVE_SYSTEMD_SD_BUS_H)
+    message(
+      FATAL_ERROR
+        "FD_CLIENT_SLEEP_INHIBITION requires <systemd/sd-bus.h> on Linux. "
+        "Install systemd development headers or set "
+        "-DFD_CLIENT_SLEEP_INHIBITION=OFF to disable manually."
+    )
+  endif()
 endif()
 
 add_library(fd_objects_common OBJECT)
@@ -42,6 +64,7 @@ target_sources(
           verify.cc
           accurate_htable.cc
           dir_cmd.cc
+          os_suspension.cc
           filed_globals.cc
           heartbeat.cc
           socket_server.cc
@@ -55,10 +78,43 @@ target_sources(
           filed_utils.cc
 )
 
+if(FD_CLIENT_SLEEP_INHIBITION AND HAVE_WIN32)
+  target_sources(fd_objects_common PRIVATE os_suspension_win32.cc)
+endif()
+if(FD_CLIENT_SLEEP_INHIBITION
+   AND HAVE_LINUX_OS
+   AND HAVE_SYSTEMD
+)
+  target_sources(fd_objects_common PRIVATE os_suspension_linux.cc)
+endif()
+if(FD_CLIENT_SLEEP_INHIBITION AND HAVE_DARWIN_OS)
+  target_sources(fd_objects_common PRIVATE os_suspension_darwin.cc)
+endif()
+
 target_link_libraries(
   fd_objects_common PRIVATE Bareos::Lib Bareos::Findlib Bareos::Fastlz
                             ZLIB::ZLIB
 )
+if(FD_CLIENT_SLEEP_INHIBITION)
+  target_compile_definitions(
+    fd_objects_common PRIVATE FILED_CLIENT_SLEEP_INHIBITION=1
+  )
+  if(HAVE_SYSTEMD)
+    target_include_directories(
+      fd_objects_common PRIVATE ${SYSTEMD_INCLUDE_DIRS}
+    )
+    target_compile_options(fd_objects_common PRIVATE ${SYSTEMD_CFLAGS_OTHER})
+    if(SYSTEMD_LIBRARIES)
+      target_link_libraries(fd_objects_common PRIVATE ${SYSTEMD_LIBRARIES})
+    else()
+      target_link_libraries(fd_objects_common PRIVATE systemd)
+    endif()
+  endif()
+
+  if(HAVE_DARWIN_OS)
+    target_link_libraries(fd_objects_common PRIVATE "-framework IOKit")
+  endif()
+endif()
 if(HAVE_LMDB)
   target_link_libraries(fd_objects_common PRIVATE bareoslmdb)
 endif()
