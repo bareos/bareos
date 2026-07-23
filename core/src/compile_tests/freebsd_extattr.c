@@ -19,14 +19,27 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_BREGEX_H_
-#define BAREOS_LIB_BREGEX_H_
+#include <sys/types.h>
+#include <sys/extattr.h>
+#include <libutil.h>
 
-#if __has_include(<regex.h>)
-#  include <regex.h>
-#elif __has_include(<pcre2posix.h>)
-#  include <pcre2posix.h>
-#else
-#  error "no suitable regex engine found."
-#endif
-#endif  // BAREOS_LIB_BREGEX_H_
+void* ptr;
+void* ptr2;
+void* ptr3;
+void* ptr4;
+
+int main(int argc, char** argv)
+{
+  (void)argc;
+  (void)argv;
+
+  // FreeBSD extended attribute functions
+  extattr_get_file(ptr, 0, ptr2, ptr3, 0);
+  extattr_get_link(ptr, 0, ptr2, ptr3, 0);
+  extattr_set_file(ptr, 0, ptr2, ptr3, 0);
+  extattr_set_link(ptr, 0, ptr2, ptr3, 0);
+  extattr_list_file(ptr, 0, ptr2, 0);
+  extattr_list_link(ptr, 0, ptr2, 0);
+  extattr_namespace_to_string(0, ptr);
+  extattr_string_to_namespace(ptr, ptr);
+}

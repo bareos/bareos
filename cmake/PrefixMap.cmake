@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,34 +17,22 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+include(BareosCompilerFlags)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 
 set(BAREOS_PREFIX_MAP "${CMAKE_SOURCE_DIR}=/usr/src/bareos")
 
 check_c_compiler_flag(
-  -fdebug-prefix-map=${BAREOS_PREFIX_MAP} c_compiler_debug_prefix_map
+  -ffile-prefix-map=${BAREOS_PREFIX_MAP} C_SUPPORTS_ffile_prefix_map
 )
 check_cxx_compiler_flag(
-  -fdebug-prefix-map=${BAREOS_PREFIX_MAP} cxx_compiler_debug_prefix_map
+  -ffile-prefix-map=${BAREOS_PREFIX_MAP} CXX_SUPPORTS_ffile_prefix_map
 )
-if(c_compiler_debug_prefix_map AND cxx_compiler_debug_prefix_map)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdebug-prefix-map=${BAREOS_PREFIX_MAP}")
-  set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -fdebug-prefix-map=${BAREOS_PREFIX_MAP}"
+if(C_SUPPORTS_ffile_prefix_map AND CXX_SUPPORTS_ffile_prefix_map)
+  add_compile_options(
+    "$<$<COMPILE_LANGUAGE:C,CXX>:-ffile-prefix-map=${BAREOS_PREFIX_MAP}>"
   )
+  bareos_add_compile_flags(-fcanon-prefix-map)
   set(CCACHE_MAY_HASHDIR ON)
-endif()
-
-check_c_compiler_flag(
-  -fmacro-prefix-map=${BAREOS_PREFIX_MAP} c_compiler_macro_prefix_map
-)
-check_cxx_compiler_flag(
-  -fmacro-prefix-map=${BAREOS_PREFIX_MAP} cxx_compiler_macro_prefix_map
-)
-if(c_compiler_macro_prefix_map AND cxx_compiler_macro_prefix_map)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fmacro-prefix-map=${BAREOS_PREFIX_MAP}")
-  set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -fmacro-prefix-map=${BAREOS_PREFIX_MAP}"
-  )
 endif()

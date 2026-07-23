@@ -48,11 +48,13 @@
 #include "lib/util.h"
 #include "lib/watchdog.h"
 #include "lib/cli.h"
+#if !defined(HAVE_WIN32)
+#  include "lib/priv.h"
+#endif
 
 #include "dird/reload.h"
 
 #include "lib/bregex.h"
-
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
 #ifndef HAVE_READDIR_R
@@ -168,9 +170,11 @@ int main(int argc, char* argv[])
   [[maybe_unused]] CLI::Option* foreground_option
       = dir_app.add_flag("-f,--foreground", foreground, "Run in foreground.");
 
+#ifndef HAVE_WIN32
   std::string user;
   std::string group;
   AddUserAndGroupOptions(dir_app, user, group);
+#endif
 
   dir_app.add_flag("-m,--print-kaboom", prt_kaboom,
                    "Print kaboom output (for debugging).");
@@ -232,7 +236,7 @@ int main(int argc, char* argv[])
   if (!test_config && !foreground && !pidfile_path.empty()) {
     pidfile_fd = CreatePidFile("bareos-dir", pidfile_path.c_str());
   }
-#endif
+
   // See if we want to drop privs.
   char* uid = nullptr;
   if (!user.empty()) { uid = user.data(); }
@@ -247,6 +251,7 @@ int main(int argc, char* argv[])
           T_("The commandline options indicate to run as specified user/group, "
              "but program was not started with required root privileges.\n"));
   }
+#endif
 
   my_config = InitDirConfig(configfile, M_CONFIG_ERROR);
   if (export_config_schema) {

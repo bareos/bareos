@@ -19,8 +19,6 @@
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-include(BareosOSInfo)
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(DISABLED_TESTS
       system:always-incremental-consolidate:02-empty-incrementals
@@ -211,10 +209,6 @@ file(STRINGS ${CMAKE_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING
 string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_STRING})
 message(STATUS "db version from cats.h is ${BDB_VERSION}")
 
-cmake_print_variables(DEFAULT_DB_TYPE)
-
-# set(TAPEDRIVE "TAPEDRIVE")
-
 set(archivedir "${PROJECT_BINARY_DIR}/archivedir")
 
 set(bin ${PROJECT_BINARY_DIR}/bin)
@@ -272,21 +266,6 @@ if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   set(TEST_INFO_TEXT "running system tests on installed files")
 else()
   set(TEST_INFO_TEXT "running system tests on the sourcetree")
-endif()
-
-if(MINIO)
-  execute_process(
-    COMMAND "${CMAKE_BINARY_DIR}/systemtests/scripts/generate_minio_certs.sh"
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/systemtests/tls/minio/"
-    RESULT_VARIABLE RESULT_GENERATE_MINIO_CERTS
-    OUTPUT_QUIET ERROR_QUIET
-  )
-  if(NOT "${RESULT_GENERATE_MINIO_CERTS}" STREQUAL "0")
-    message(
-      FATAL_ERROR
-        "Creation of certificates failed: ${RESULT_GENERATE_MINIO_CERTS} ${CMAKE_BINARY_DIR}"
-    )
-  endif()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")

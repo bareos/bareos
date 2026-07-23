@@ -41,8 +41,6 @@
  *   - Solaris (POSIX and NFSv4/ZFS acls)
  *   - Tru64
  *
- * Next to OS specific acls we support AFS acls using the pioctl interface.
- *
  * We handle two different types of ACLs: access and default ACLS.
  * On most systems that support default ACLs they only apply to directories.
  *
@@ -69,7 +67,7 @@
 #include "lib/bsock.h"
 #include "find.h"
 
-#if !defined(HAVE_ACL) && !defined(HAVE_AFS_ACL)
+#if !defined(HAVE_ACL)
 /**
  * Entry points when compiled without support for ACLs or on an unsupported
  * platform.
@@ -521,7 +519,7 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
 
 #      include <sys/types.h>
 
-#      ifdef HAVE_SYS_ACL_H
+#      if __has_include(<sys/acl.h>)
 #        include <sys/acl.h>
 #      else
 #        error "configure failed to detect availability of sys/acl.h"
@@ -1223,7 +1221,7 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
 #      endif
 
 #    elif defined(HAVE_SUN_OS)
-#      ifdef HAVE_SYS_ACL_H
+#      if __has_include(<sys/acl.h>)
 #        include <sys/acl.h>
 #      else
 #        error "configure failed to detect availability of sys/acl.h"
@@ -1627,83 +1625,6 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
 #    endif /* HAVE_SUN_OS */
 #  endif   /* HAVE_ACL */
 
-#  if defined(HAVE_AFS_ACL)
-
-#    if defined(HAVE_AFS_AFSINT_H) && defined(HAVE_AFS_VENUS_H)
-#      include <afs/afsint.h>
-#      include <afs/venus.h>
-#    else
-#      error \
-          "configure failed to detect availability of afs/afsint.h and/or afs/venus.h"
-#    endif
-
-/**
- * External references to functions in the libsys library function not in
- * current include files.
- */
-extern "C" {
-long pioctl(char* pathp, long opcode, struct ViceIoctl* blobp, int follow);
-}
-
-static bacl_exit_code afs_build_acl_streams(JobControlRecord* jcr,
-                                            AclBuildData* acl_data,
-                                            FindFilesPacket* ff_pkt)
-{
-  int error;
-  struct ViceIoctl vip;
-  char acl_text[BUFSIZ];
-
-  /* AFS ACLs can only be set on a directory, so no need to try to
-   * request them for anything other then that. */
-  if (ff_pkt->type != FT_DIREND) { return bacl_exit_ok; }
-
-  vip.in = NULL;
-  vip.in_size = 0;
-  vip.out = acl_text;
-  vip.out_size = sizeof(acl_text);
-  memset((caddr_t)acl_text, 0, sizeof(acl_text));
-
-  if ((error = pioctl(acl_data->last_fname, VIOCGETAL, &vip, 0)) < 0) {
-    BErrNo be;
-
-    Mmsg2(jcr->errmsg, T_("pioctl VIOCGETAL error on file \"%s\": ERR=%s\n"),
-          acl_data->last_fname, be.bstrerror());
-    Dmsg2(100, "pioctl VIOCGETAL error file=%s ERR=%s\n", acl_data->last_fname,
-          be.bstrerror());
-    return bacl_exit_error;
-  }
-  acl_data->content_length = PmStrcpy(acl_data->content, acl_text);
-  return SendAclStream(jcr, acl_data, STREAM_ACL_AFS_TEXT);
-}
-
-static bacl_exit_code afs_parse_acl_stream(JobControlRecord* jcr,
-                                           AclData* acl_data,
-                                           int stream,
-                                           char* content,
-                                           uint32_t content_length)
-{
-  int error;
-  struct ViceIoctl vip;
-
-  vip.in = content;
-  vip.in_size = content_length;
-  vip.out = NULL;
-  vip.out_size = 0;
-
-  if ((error = pioctl(acl_data->last_fname, VIOCSETAL, &vip, 0)) < 0) {
-    BErrNo be;
-
-    Mmsg2(jcr->errmsg, T_("pioctl VIOCSETAL error on file \"%s\": ERR=%s\n"),
-          acl_data->last_fname, be.bstrerror());
-    Dmsg2(100, "pioctl VIOCSETAL error file=%s ERR=%s\n", acl_data->last_fname,
-          be.bstrerror());
-
-    return bacl_exit_error;
-  }
-  return bacl_exit_ok;
-}
-#  endif /* HAVE_AFS_ACL */
-
 // Entry points when compiled with support for ACLs on a supported platform.
 
 // Read and send an ACL for the last encountered file.
@@ -1719,30 +1640,12 @@ bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
     acl_data->flags = {};
     acl_data->first_dev = false;
 
-#  if defined(HAVE_AFS_ACL)
-    /* AFS is a non OS specific filesystem so see if this path is on an AFS
-     * filesystem Set the SaveAfs flag if it is. If not set the
-     * SaveNative flag. */
-    if (FstypeEquals(acl_data->last_fname, "afs")) {
-      acl_data->flags.SaveAfs = true;
-    } else {
-      acl_data->flags.SaveNative = true;
-    }
-#  else
     acl_data->flags.SaveNative = true;
-#  endif
 
     // Save that we started scanning a new filesystem.
     acl_data->current_dev = ff_pkt->statp.st_dev;
   }
 
-#  if defined(HAVE_AFS_ACL)
-  /* See if the SaveAfs flag is set which lets us know if we should
-   * save AFS ACLs. */
-  if (acl_data->flags.SaveAfs) {
-    return afs_build_acl_streams(jcr, acl_data, ff_pkt);
-  }
-#  endif
 #  if defined(HAVE_ACL)
   /* See if the SaveNative flag is set which lets us know if we
    * should save native ACLs. */
@@ -1795,37 +1698,13 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
   if (acl_data->first_dev || acl_data->current_dev != st.st_dev) {
     acl_data->flags = {};
     acl_data->first_dev = false;
-
-#  if defined(HAVE_AFS_ACL)
-    /* AFS is a non OS specific filesystem so see if this path is on an AFS
-     * filesystem Set the RestoreAfs flag if it is. If not set the
-     * RestoreNative flag. */
-    if (FstypeEquals(acl_data->last_fname, "afs")) {
-      acl_data->flags.RestoreAfs = true;
-    } else {
-      acl_data->flags.RestoreNative = true;
-    }
-#  else
     acl_data->flags.RestoreNative = true;
-#  endif
 
     // Save that we started restoring to a new filesystem.
     acl_data->current_dev = st.st_dev;
   }
 
   switch (stream) {
-#  if defined(HAVE_AFS_ACL)
-    case STREAM_ACL_AFS_TEXT:
-      if (acl_data->flags.RestoreAfs) {
-        return afs_parse_acl_stream(jcr, acl_data, stream, content,
-                                    content_length);
-      } else {
-        /* Increment error count but don't log an error again for the same
-         * filesystem. */
-        acl_data->u.parse->nr_errors++;
-        return bacl_exit_ok;
-      }
-#  endif
 #  if defined(HAVE_ACL)
     case STREAM_UNIX_ACCESS_ACL:
     case STREAM_UNIX_DEFAULT_ACL:

@@ -20,6 +20,7 @@
 # check if variables are set via cmdline else set them to default values
 
 include(GNUInstallDirs)
+include(CMakeDependentOption)
 
 # configure variables
 #
@@ -397,7 +398,9 @@ option(lmdb "Enable LMDP" ON)
 mark_as_advanced(lmdb)
 option(xattr "Enable extended file attributes (xattr) support" ON)
 mark_as_advanced(xattr)
-option(scsi-crypto "Enable scsi-crypto" ON)
+cmake_dependent_option(
+  scsi-crypto "Enable scsi-crypto" ON "NOT HAVE_WIN32;NOT HAVE_DARWIN_OS" OFF
+)
 option(ndmp "Enable NDMP support" ON)
 option(build_ndmjob "Building ndmpjob" OFF)
 mark_as_advanced(build_ndmjob)
@@ -407,21 +410,8 @@ option(traymonitor "Build bareos-traymonitor" OFF)
 option(client-only "Build only the client components" OFF)
 if(client-only)
   set(build_client_only ON)
-  set(postgresql OFF)
 else()
   set(build_client_only OFF)
-  set(postgresql ON)
-endif()
-
-if(NOT postgresql)
-  set(PostgreSQL_INCLUDE_DIR "")
-endif()
-
-if(NOT client-only)
-  if(${postgresql})
-    set(HAVE_POSTGRESQL 1)
-    set(DEFAULT_DB_TYPE postgresql)
-  endif()
 endif()
 
 option(systemd "Enable systemd support" OFF)
@@ -490,7 +480,6 @@ set(HAVE_SHA2 1)
 set(_LARGEFILE_SOURCE 1)
 set(_LARGE_FILES 1)
 set(_FILE_OFFSET_BITS 64)
-set(HAVE_COMPRESS_BOUND 1)
 
 set(PACKAGE_NAME "\"${CMAKE_PROJECT_NAME}\"")
 set(PACKAGE_STRING "\"${CMAKE_PROJECT_NAME} ${BAREOS_NUMERIC_VERSION}\"")

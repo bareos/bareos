@@ -51,46 +51,55 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # setting Wall last basically makes it impossible to turn off certain things as
 # often the last option wins, so Wall turns on everything you tried to turn off,
 # as such we set these right at the start
+include(BareosCompilerFlags)
 if(MSVC)
-  set(BAREOS_WARNING_FLAGS
-      /W4 # enable all reasonable warnings, but disable the following
-      /wd4273 # inconsistent dll linkage
-      /wd4127 # conditional expression is constant
-      /wd4244 # conversion warning
-      /wd4245 # conversion warning
-      /wd4267 # conversion warning
-      /wd4389 # sign mismatch
-      /D_CRT_SECURE_NO_DEPRECATE # deprecation warning for stdlib functions
+  add_compile_options(
+    /W4 # enable all reasonable warnings, but disable the following
+    /wd4273 # inconsistent dll linkage
+    /wd4127 # conditional expression is constant
+    /wd4244 # conversion warning
+    /wd4245 # conversion warning
+    /wd4267 # conversion warning
+    /wd4389 # sign mismatch
+    /D_CRT_SECURE_NO_DEPRECATE # deprecation warning for stdlib functions
   )
 else()
-  set(BAREOS_WARNING_FLAGS -Werror -Wall -Wextra -Wshadow)
+  set(CMAKE_COMPILE_WARNING_AS_ERROR ON) # sadly we cannot switch this on for
+                                         # MSVC yet
+  bareos_add_compile_flags(
+    -Wall -Wextra -Wshadow -Wformat -Wformat-type-confusion
+  )
+  bareos_add_compile_flags(-Wsuggest-override -Wno-invalid-offsetof CXX_ONLY)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # we want to allow non-literal (but constant) strings Wformat-security
+    # always generates warnings when non-literals are used even if they are
+    # known at compile time.
+    bareos_add_compile_flags(-Wno-format-security)
+  else()
+    bareos_add_compile_flags(-Wformat-security)
+  endif()
 endif()
-list(JOIN BAREOS_WARNING_FLAGS " " BAREOS_WARNING_FLAGS_STRING)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
 
 option(ENABLE_SANITIZERS "Build with ASan/LSan/UBSan enabled" OFF)
 if(ENABLE_SANITIZERS)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
+    add_compile_options(
+      -fsanitize=undefined -fsanitize=address -fno-sanitize-recover
     )
-    set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
+    add_link_options(
+      -fsanitize=undefined -fsanitize=address -fno-sanitize-recover
     )
-
     add_compile_definitions(BAREOS_UB_SANITIZER=1 BAREOS_ADDRESS_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
+    add_compile_options(
+      -fsanitize=undefined -fsanitize=address -fno-sanitize-recover
     )
-    set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
+    add_link_options(
+      -fsanitize=undefined -fsanitize=address -fno-sanitize-recover
     )
     add_compile_definitions(BAREOS_UB_SANITIZER=1 BAREOS_ADDRESS_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
+    add_compile_options(/fsanitize=address)
     add_compile_definitions(BAREOS_ADDRESS_SANITIZER=1)
   else()
     message(
@@ -103,25 +112,15 @@ endif()
 option(ENABLE_THREAD_SANITIZERS "Build with TSan enabled" OFF)
 if(ENABLE_THREAD_SANITIZERS)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fsanitize=thread -fno-sanitize-recover"
-    )
-    set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} -fsanitize=thread -fno-sanitize-recover"
-    )
-
+    add_compile_options(-fsanitize=thread -fno-sanitize-recover)
+    add_link_options(-fsanitize=thread -fno-sanitize-recover)
     add_compile_definitions(BAREOS_THREAD_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fsanitize=thread -fno-sanitize-recover"
-    )
-    set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} -fsanitize=thread -fno-sanitize-recover"
-    )
+    add_compile_options(-fsanitize=thread -fno-sanitize-recover)
+    add_link_options(-fsanitize=thread -fno-sanitize-recover)
     add_compile_definitions(BAREOS_THREAD_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=thread")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=thread")
+    add_compile_options(/fsanitize=thread>)
     add_compile_definitions(BAREOS_THREAD_SANITIZER=1)
   else()
     message(
@@ -143,8 +142,7 @@ option(ENABLE_STATIC_RUNTIME_LIBS "Link C and C++ runtime libraries statically"
 )
 if(ENABLE_STATIC_RUNTIME_LIBS)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
+    add_link_options(-static-libgcc $<$<LINK_LANGUAGE:CXX>:-static-libstdc++>)
   else()
     message(
       FATAL_ERROR
@@ -160,63 +158,6 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18.0)
     add_link_options("-Wl,--as-needed")
   endif()
 endif()
-
-include(CheckCCompilerFlag)
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-Wsuggest-override compiler_will_suggest_override)
-
-if(${compiler_will_suggest_override})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsuggest-override")
-endif()
-
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    # we want to allow non-literal (but constant) strings Wformat-security
-    # always generates warnings when non-literals are used even if they are
-    # known at compile time ... Wformat-type-confusion is not turned on by
-    # Wformat so we add it
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -Wformat -Wno-format-security -Wformat-type-confusion"
-    )
-  else()
-    check_cxx_compiler_flag(-Wformat compiler_format_security)
-    if(${compiler_format_security})
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat")
-    endif()
-
-    check_cxx_compiler_flag(
-      -Wformat-signedness compiler_format_signedness_security
-    )
-    if(${compiler_format_signedness_security})
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat-signedness")
-    endif()
-
-    # make format-security issues a compiler-error
-    check_cxx_compiler_flag(
-      -Werror=format-security compiler_error_format_security
-    )
-    if(${compiler_error_format_security})
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=format-security")
-    endif()
-  endif()
-endif()
-
-check_cxx_compiler_flag(-Winvalid-offsetof compiler_has_invalid_offsetof)
-if(compiler_has_invalid_offsetof)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-offsetof")
-endif()
-
-# warn on sign-conversion include(CheckCCompilerFlag)
-# CHECK_C_COMPILER_FLAG(-Wsign-conversion c_compiler_will_warn_sign_conversion)
-#
-# if (${c_compiler_will_warn_sign_conversion}) set (CMAKE_C_FLAGS
-# "${CMAKE_C_FLAGS} -Wsign-conversion") endif()
-#
-# CHECK_CXX_COMPILER_FLAG(-Wsign-conversion
-# cxx_compiler_will_warn_sign_conversion)
-#
-# if (${cxx_compiler_will_warn_sign_conversion}) set (CMAKE_CXX_FLAGS
-# "${CMAKE_CXX_FLAGS} -Wsign-conversion") endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   include_directories(/usr/include)
@@ -248,7 +189,6 @@ set(CMAKE_CTEST_COMMAND ctest -V)
 include(CTest)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(HAVE_DARWIN_OS 1)
   if(DEFINED ENV{HOMEBREW_PREFIX})
     set(HOMEBREW_PREFIX "$ENV{HOMEBREW_PREFIX}")
   else()
@@ -270,34 +210,20 @@ endif()
 
 include(BareosFindPrograms)
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  set(HAVE_LINUX_OS 1)
-endif()
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-  set(HAVE_SUN_OS 1)
   link_libraries(nsl socket curses sec)
 
   if(${CMAKE_C_COMPILER_ID} MATCHES SunPro)
     include_directories(/usr/local/include)
     link_directories(/usr/local/lib)
-
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
-  endif()
-
-  if(${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
+    add_compile_options(-m64)
   endif()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-  set(HAVE_FREEBSD_OS 1)
   include_directories(SYSTEM /usr/local/include)
   link_directories(/usr/local/lib)
   link_libraries(intl)
-  check_cxx_compiler_flag(
-    -Wunused-but-set-variable compiler_will_warn_of_unused_but_set_variable
-  )
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -313,7 +239,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
-  set(HAVE_AIX_OS 1)
   set(lmdb OFF)
   link_libraries(intl)
 endif()
@@ -325,11 +250,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   if(MSVC)
     link_libraries(Intl::Intl)
-  endif()
-
-  set(HAVE_WIN32 1)
-
-  if(MSVC)
     set(PostgreSQL_INCLUDE_DIR "")
     set(PostgreSQL_TYPE_INCLUDE_DIR "")
   endif()
@@ -360,7 +280,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       -DWINVER=${WINDOWS_VERSION}
     )
     # add parallel builds (-MP)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MP")
+    add_compile_options(-MP)
     # export all symbols of dlls trick in cmake
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
   endif()
@@ -415,8 +335,6 @@ set(CMAKE_REQUIRED_DEFINITIONS "-D_FILE_OFFSET_BITS=64")
 include(BareosCheckIncludes)
 
 include(BareosCheckFunctions)
-
-include(BareosCheckSymbols)
 
 include(BareosDetermineHaveLowLevelScsiInterface)
 
@@ -570,13 +488,15 @@ if("${PAM_FOUND}")
 endif()
 
 option(ENABLE_CAPABILITY "Enable keep readall capability in filedaemon"
-       "${HAVE_CAPABILITY_H}"
+       "${HAVE_SYS_CAPABILITY_H}"
 )
 
-try_compile(
-  HAVE_IS_TRIVIALLY_COPYABLE ${CMAKE_BINARY_DIR}/compile_tests
-  ${PROJECT_SOURCE_DIR}/src/compile_tests/trivially_copyable.cc
-)
+if(NOT DEFINED HAVE_IS_TRIVIALLY_COPYABLE)
+  try_compile(
+    HAVE_IS_TRIVIALLY_COPYABLE ${CMAKE_BINARY_DIR}/compile_tests
+    ${PROJECT_SOURCE_DIR}/src/compile_tests/trivially_copyable.cc
+  )
+endif()
 
 option(BUILD_BENCHMARKS "Build benchmark binaries" OFF)
 mark_as_advanced(BUILD_BENCHMARKS)
@@ -600,7 +520,11 @@ if(${acl})
   endif()
 endif()
 
-if("${HAVE_SYS_XATTR_H}" OR "${HAVE_SYS_EXTATTR_H}")
+if(HAVE_LINUX_XATTR
+   OR HAVE_DARWIN_XATTR
+   OR HAVE_FREEBSD_EXTATTR
+   OR HAVE_AIX_EA
+)
   set(HAVE_XATTR 1)
   set(have_xattr YES)
 endif()
@@ -785,7 +709,6 @@ message("   Build tray-monitor:           ${traymonitor} ")
 message("   webui:                        ${ENABLE_WEBUI} ")
 message("   client-only:                  ${build_client_only} ")
 message("   Plugin support:               ${have_plugins} ")
-message("   AFS support:                  ${have_afs} ")
 message("   ACL support:                  ${HAVE_ACL} ${ACL_LIBRARIES}")
 message("   XATTR support:                ${have_xattr} ")
 message(

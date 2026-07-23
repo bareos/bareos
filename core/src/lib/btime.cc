@@ -44,26 +44,16 @@
 #include "lib/btime.h"
 #include <math.h>
 
-#if defined(HAVE_LOCALTIME_R)
-void Blocaltime(const time_t* time, struct tm* tm)
-{
-  (void)localtime_r(time, tm);
-}
-#elif defined(HAVE_MSVC)
+#if defined(HAVE_MSVC)
 void Blocaltime(const time_t* timep, struct tm* tm)
 {
   auto error = localtime_s(tm, timep);
   if (error) { errno = error; }
 }
 #else
-void Blocaltime(const time_t* timep, struct tm* tm)
+void Blocaltime(const time_t* time, struct tm* tm)
 {
-  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
-  lock_mutex(mutex);
-  struct tm* ltm = localtime(timep);
-  if (ltm) { memcpy(tm, ltm, sizeof(struct tm)); }
-  unlock_mutex(mutex);
+  (void)localtime_r(time, tm);
 }
 #endif /* HAVE_MSVC */
 

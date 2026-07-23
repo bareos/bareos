@@ -48,18 +48,15 @@
 extern "C" {
 #  include <sys/utime.h>
 }
-#elif !defined(HAVE_UTIMES) && !defined(HAVE_LUTIMES)
+#elif defined(HAVE_WIN32)
 #  include <utime.h>
-#else
 #endif
 
 
 #define MODE_RALL (S_IRUSR | S_IRGRP | S_IROTH)
 
 #include "lib/fnmatch.h"
-
 #include "lib/bregex.h"
-
 #ifdef USE_READDIR_R
 #  ifndef HAVE_READDIR_R
 int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);

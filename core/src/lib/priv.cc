@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,21 +22,13 @@
 
 #include <pwd.h>
 #include <grp.h>
-#if !defined(HAVE_MSVC)
-#  include <unistd.h>
-#endif
+#include <unistd.h>
 #include "include/bareos.h"
 #include "lib/berrno.h"
 
-#undef ENABLE_KEEP_READALL_CAPS_SUPPORT
-#if defined(ENABLE_CAPABILITY) && defined(HAVE_SYS_PRCTL_H)  \
-    && defined(HAVE_SYS_CAPABILITY_H) && defined(HAVE_PRCTL) \
-    && defined(HAVE_SETREUID)
+#if defined(ENABLE_CAPABILITY)
 #  include <sys/prctl.h>
 #  include <sys/capability.h>
-#  if defined(PR_SET_KEEPCAPS)
-#    define ENABLE_KEEP_READALL_CAPS_SUPPORT
-#  endif
 #endif
 
 #ifdef HAVE_AIX_OS
@@ -49,7 +41,6 @@ extern "C" int initgroups(const char*, int);
  * Lower privileges by switching to new UID and GID if non-NULL.
  * If requested, keep readall capabilities after switch.
  */
-#if defined(HAVE_PWD_H) && defined(HAVE_GRP_H)
 void drop(char* uname, char* gname, bool keep_readall_caps)
 {
   struct passwd* passw = NULL;
@@ -108,7 +99,7 @@ void drop(char* uname, char* gname, bool keep_readall_caps)
     }
   }
   if (keep_readall_caps) {
-#  ifdef ENABLE_KEEP_READALL_CAPS_SUPPORT
+#if defined(ENABLE_CAPABILITY)
     cap_t caps;
 
     if (prctl(PR_SET_KEEPCAPS, 1)) {
@@ -130,17 +121,14 @@ void drop(char* uname, char* gname, bool keep_readall_caps)
             be.bstrerror());
     }
     cap_free(caps);
-#  else
+#else
     Emsg0(M_ERROR_TERM, 0,
           T_("Keep readall caps not implemented this OS or missing "
              "libraries.\n"));
-#  endif
+#endif
   } else if (setuid(uid)) {
     BErrNo be;
     Emsg1(M_ERROR_TERM, 0, T_("Could not set specified userid: %s\n"),
           username);
   }
 }
-#else
-void drop(char*, char*, bool) {}
-#endif

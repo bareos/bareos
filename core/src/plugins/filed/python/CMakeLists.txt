@@ -17,7 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-include(BareosDisableWarnings)
+include(BareosCompilerFlags)
 include(BareosConfigureFile)
 include(BareosPlugins)
 
@@ -91,7 +91,7 @@ if(HAVE_PYTHON)
     )
   endif()
   bareos_disable_warnings(
-    TARGET bareosfd-python3-module WARNINGS -Wc99-designator
+    TARGETS bareosfd-python3-module WARNINGS -Wc99-designator
   )
   target_link_libraries(
     bareosfd-python3-module Bareos::Lib ${Python3_LIBRARIES}

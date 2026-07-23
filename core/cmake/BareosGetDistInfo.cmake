@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -28,12 +28,18 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(Host ${CMAKE_SYSTEM})
   set(Distribution ${PLATFORM})
 else() # NOT Windows
-  execute_process(
-    COMMAND ${CMAKE_CURRENT_LIST_DIR}/distname.sh
-    OUTPUT_VARIABLE DISTINFOTXT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  set(DISTINFO ${DISTINFOTXT})
+  if(NOT DEFINED DISTINFO)
+    execute_process(
+      COMMAND ${CMAKE_CURRENT_LIST_DIR}/distname.sh
+      OUTPUT_VARIABLE DISTINFOTXT
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    set(DISTINFO
+        ${DISTINFOTXT}
+        CACHE INTERNAL "Distribution info from distname.sh"
+    )
+    mark_as_advanced(DISTINFO)
+  endif()
   list(LENGTH DISTINFO DISTINFO_LENGTH)
   list(GET DISTINFO 0 PLATFORM)
   list(GET DISTINFO 1 DISTVER)
@@ -43,7 +49,11 @@ else() # NOT Windows
 endif()
 set(BAREOS_PLATFORM ${PLATFORM})
 
-# cmake_host_system_information() was added in 3.22
-if(CMAKE_VERSION VERSION_GREATER 3.22)
+if(NOT DEFINED DIST_VERSION_ID)
   cmake_host_system_information(RESULT DIST_VERSION_ID QUERY DISTRIB_VERSION_ID)
+  set(DIST_VERSION_ID
+      "${DIST_VERSION_ID}"
+      CACHE INTERNAL "DISTRIB_VERSION_ID from cmake host system"
+  )
+  mark_as_advanced(DIST_VERSION_ID)
 endif()

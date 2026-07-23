@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,20 +18,16 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNDMOS_OPTION_NO_TEST_AGENTS")
-# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}
-# -DNDMOS_CONST_NDMJOBLIB_REVISION=\\\"${BAREOS_FULL_VERSION}\\\"")
-set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -DNDMOS_CONST_VENDOR_NAME=\\\"Bareos\\ GmbH\\ \\&\\ Co.KG\\\""
+add_compile_definitions(
+  "NDMOS_OPTION_NO_TEST_AGENTS"
+  "NDMOS_CONST_VENDOR_NAME=\"Bareos GmbH & Co.KG\""
+  "NDMOS_CONST_PRODUCT_NAME=\"Bareos\""
 )
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNDMOS_CONST_PRODUCT_NAME=\\\"Bareos\\\"")
-# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}
-# -DNDMOS_CONST_PRODUCT_REVISION=\\\"${BAREOS_FULL_VERSION}\\\"")
 
-if(${HAVE_LINUX_OS})
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_LINUX_OS")
-elseif(${HAVE_SUN_OS})
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_SUN_OS")
+if(HAVE_LINUX_OS)
+  add_compile_definitions(HAVE_LINUX_OS)
+elseif(HAVE_SUN_OS)
+  add_compile_definitions(HAVE_SUN_OS)
 endif()
 
 set(RPC_GEN_FILES
@@ -182,9 +178,9 @@ foreach(NDMP_VERSION 0 2 3 4 9)
 endforeach()
 
 add_library(bareosndmp SHARED ${LIBBAREOSNDMP_SRCS} ${RPC_GEN_FILES})
-include(BareosDisableWarnings)
+include(BareosCompilerFlags)
 bareos_disable_warnings(
-  TARGET
+  TARGETS
   bareosndmp
   WARNINGS
   -Wenum-conversion

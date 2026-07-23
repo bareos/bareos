@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,9 @@
 #  include <unistd.h>
 #endif
 #include "include/bareos.h"
+#if !defined(HAVE_WIN32)
+#  include "lib/priv.h"
+#endif
 #include "include/exit_codes.h"
 #include "filed/dir_cmd.h"
 #include "filed/filed.h"
@@ -99,9 +102,11 @@ int main(int argc, char* argv[])
   [[maybe_unused]] CLI::Option* foreground_option = fd_app.add_flag(
       "-f,--foreground", foreground, "Run in foreground (for debugging).");
 
+#ifndef HAVE_WIN32
   std::string user;
   std::string group;
   AddUserAndGroupOptions(fd_app, user, group);
+#endif
 
   bool keep_readall_caps = false;
   fd_app.add_flag("-k,--keep-readall", keep_readall_caps,
@@ -144,16 +149,17 @@ int main(int argc, char* argv[])
 
   ParseBareosApp(fd_app, argc, argv);
 
+#if !defined(HAVE_WIN32)
   if (user.empty() && keep_readall_caps) {
     Emsg0(M_ERROR_TERM, 0, T_("-k option has no meaning without -u option.\n"));
   }
+#endif
 
   int pidfile_fd = -1;
 #if !defined(HAVE_WIN32)
   if (!foreground && !test_config && !pidfile_path.empty()) {
     pidfile_fd = CreatePidFile("bareos-fd", pidfile_path.c_str());
   }
-#endif
 
   // See if we want to drop privs.
   char* uid = nullptr;
@@ -169,6 +175,7 @@ int main(int argc, char* argv[])
           T_("The commandline options indicate to run as specified user/group, "
              "but program was not started with required root privileges.\n"));
   }
+#endif
 
   if (!no_signals) { InitSignals(TerminateFiled); }
 

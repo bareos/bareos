@@ -78,7 +78,6 @@ target_sources(
           path_list.cc
           plugins.cc
           bpoll.cc
-          priv.cc
           recent_job_results_list.cc
           rblist.cc
           runscript.cc
@@ -115,9 +114,9 @@ if(HAVE_WIN32)
   find_package(pcre2 CONFIG REQUIRED)
   target_link_libraries(bareos PUBLIC PCRE2::POSIX)
 else()
-  target_sources(bareos PRIVATE bpipe_unix.cc)
-  target_sources(bareos PRIVATE scsi_tapealert.cc)
-  target_sources(bareos PRIVATE osinfo_unix.cc)
+  target_sources(
+    bareos PRIVATE bpipe_unix.cc scsi_tapealert.cc osinfo_unix.cc priv.cc
+  )
 endif()
 
 target_sources(
@@ -165,7 +164,7 @@ if(XXHASH_ENABLE_DISPATCH)
   )
 endif()
 
-if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"
+if(ENABLE_SANITIZERS
    AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
    AND CMAKE_CXX_COMPILER_VERSION MATCHES "^1[234]"
 )

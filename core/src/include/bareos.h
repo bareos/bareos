@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -82,10 +82,10 @@
 #define _POSIX_PTHREAD_SEMANTICS 1
 
 /* System includes */
-#if defined(HAVE_UMEM_H)
+#if __has_include(<umem.h>)
 #  include <umem.h>
 #endif
-#if defined(HAVE_ALLOCA_H)
+#if __has_include(<alloca.h>)
 #  include <alloca.h>
 #endif
 #if defined(HAVE_MSVC)

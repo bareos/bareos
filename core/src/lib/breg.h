@@ -28,7 +28,7 @@
 #ifndef BAREOS_LIB_BREG_H_
 #define BAREOS_LIB_BREG_H_
 
-#include "bregex.h"
+#include "lib/bregex.h"
 
 /* Usage:
  *

@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,7 +33,7 @@
 #include "include/bc_types.h"
 #include "lib/mem_pool.h"
 
-#ifdef HAVE_SYS_ACL_H
+#if __has_include(<sys/acl.h>)
 #  include <sys/acl.h>
 /**
  * This value is used as ostype when we encounter an invalid acl type.

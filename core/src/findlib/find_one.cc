@@ -202,7 +202,7 @@ static bool VolumeHasAttrlist(const char*) { return false; }
 #endif
 
 // check for BSD nodump flag
-#if defined(HAVE_CHFLAGS) && defined(UF_NODUMP)
+#if defined(HAVE_CHFLAGS) && !defined(__stub_chflags) && defined(UF_NODUMP)
 static inline bool no_dump(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
   if (BitIsSet(FO_HONOR_NODUMP, ff_pkt->flags)
@@ -367,7 +367,7 @@ static inline bool HaveIgnoredir(FindFilesPacket* ff_pkt)
 // Restore file times.
 static inline void RestoreFileTimes(FindFilesPacket* ff_pkt, char* fname)
 {
-#if defined(HAVE_LUTIMES)
+#if !defined(HAVE_WIN32)
   struct timeval restore_times[2];
 
   restore_times[0].tv_sec = ff_pkt->statp.st_atime;
@@ -376,15 +376,6 @@ static inline void RestoreFileTimes(FindFilesPacket* ff_pkt, char* fname)
   restore_times[1].tv_usec = 0;
 
   lutimes(fname, restore_times);
-#elif defined(HAVE_UTIMES)
-  struct timeval restore_times[2];
-
-  restore_times[0].tv_sec = ff_pkt->statp.st_atime;
-  restore_times[0].tv_usec = 0;
-  restore_times[1].tv_sec = ff_pkt->statp.st_mtime;
-  restore_times[1].tv_usec = 0;
-
-  utimes(fname, restore_times);
 #else
   struct utimbuf restore_times;
 

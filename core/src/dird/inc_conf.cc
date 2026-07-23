@@ -36,7 +36,6 @@
 #include "include/compiler_macro.h"
 
 #include "lib/bregex.h"
-
 #include "findlib/find.h"
 
 #include "inc_conf.h"
