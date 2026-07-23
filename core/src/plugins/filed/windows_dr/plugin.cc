@@ -1005,6 +1005,7 @@ struct context : ::context {
 
         if (hndl == INVALID_HANDLE_VALUE) {
           warn_msg(ctx, "Could not open file {} for writing", pkt->fname);
+          pkt->status = -1;
           return bRC_Error;
         } else {
           pkt->hndl = hndl;
