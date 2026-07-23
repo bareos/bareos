@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - python api: Expose accurate options as typed plugin constants [PR #2702]
 - introduce new webui [PR #2711]
 - core: make sure to cross check tls-psk with claimed identity in auth [PR #2721]
+- speedup cmake checks [PR #2379]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2229,6 +2230,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2372]: https://github.com/bareos/bareos/pull/2372
 [PR #2373]: https://github.com/bareos/bareos/pull/2373
 [PR #2376]: https://github.com/bareos/bareos/pull/2376
+[PR #2379]: https://github.com/bareos/bareos/pull/2379
 [PR #2381]: https://github.com/bareos/bareos/pull/2381
 [PR #2385]: https://github.com/bareos/bareos/pull/2385
 [PR #2386]: https://github.com/bareos/bareos/pull/2386
