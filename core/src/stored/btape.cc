@@ -614,6 +614,9 @@ static void weofcmd()
   if (!g_dev->weof(num)) {
     Pmsg1(0, T_("Bad status from weof. ERR=%s\n"), g_dev->bstrerror());
     return;
+  } else if (!g_dev->d_flush(g_dcr)) {
+    Pmsg1(0, T_("Bad status from flush. ERR=%s\n"), g_dev->bstrerror());
+    return;
   } else {
     if (num == 1) {
       Pmsg1(0, T_("Wrote 1 EOF to %s\n"), g_dev->print_name());
@@ -1533,7 +1536,7 @@ try_again:
   /* Start with sleep_time 0 then increment by 30 seconds if we get
    * a failure. */
   Bmicrosleep(sleep_time, 0);
-  if (!g_dev->rewind(g_dcr) || !g_dev->weof(1)) {
+  if (!g_dev->rewind(g_dcr) || !g_dev->weof(1) || !g_dev->d_flush(g_dcr)) {
     Pmsg1(0, T_("Bad status from rewind. ERR=%s\n"), g_dev->bstrerror());
     g_dev->clrerror(-1);
     Pmsg0(-1, T_("\nThe test failed, probably because you need to put\n"
@@ -1545,7 +1548,7 @@ try_again:
     Pmsg1(0, T_("Rewound %s\n"), g_dev->print_name());
   }
 
-  if (!g_dev->weof(1)) {
+  if (!g_dev->weof(1) || !g_dev->d_flush(g_dcr)) {
     Pmsg1(0, T_("Bad status from weof. ERR=%s\n"), g_dev->bstrerror());
     goto bail_out;
   } else {
