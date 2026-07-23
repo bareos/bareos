@@ -19,13 +19,8 @@
    02110-1301, USA.
 */
 
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "include/bareos.h"
 
 #include "ndmlib.h"
 
@@ -67,6 +62,7 @@ TEST(ndmp_xmt, ndmc_with_no_reply_sets_request_flag)
   struct ndmconn* conn = &conn_storage;
 
   NDMC_WITH_NO_REPLY(ndmp9_connect_close, NDMP9VER)
+  EXPECT_NE(request, nullptr);
   EXPECT_EQ(xa->request.header.message, MT_ndmp9_connect_close);
   NDMC_ENDWITH
 
