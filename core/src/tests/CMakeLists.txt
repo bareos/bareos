@@ -278,7 +278,7 @@ if(NOT client-only)
   bareos_add_test(
     ndmp_address_translate_test
     ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
-    LINK_LIBRARIES ${LINK_LIBRARIES}
+    LINK_LIBRARIES ${LINK_LIBRARIES} bareosndmp
   )
 
   bareos_add_test(pruning LINK_LIBRARIES testing_common GTest::gtest_main)

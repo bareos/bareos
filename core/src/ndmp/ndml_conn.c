@@ -153,7 +153,8 @@ int ndmconn_connect_host_port(struct ndmconn* conn,
                               int port,
                               unsigned want_protocol_version)
 {
-  struct sockaddr_in sin;
+  struct sockaddr_storage ss;
+  socklen_t ss_len;
   char* err = "???";
 
   if (conn->chan.fd >= 0) {
@@ -161,21 +162,29 @@ int ndmconn_connect_host_port(struct ndmconn* conn,
     return ndmconn_set_err_msg(conn, err);
   }
 
-  if (ndmhost_lookup(hostname, &sin) != 0) {
+  if (ndmhost_lookup(hostname, &ss) != 0) {
     err = "bad-host-name";
     return ndmconn_set_err_msg(conn, err);
   }
 
   if (port == 0) port = NDMPPORT;
 
-  sin.sin_port = htons(port);
+  if (ndm_sockaddr_set_port(&ss, port) != 0) {
+    err = "bad-host-name";
+    return ndmconn_set_err_msg(conn, err);
+  }
 
-  return ndmconn_connect_sockaddr_in(conn, &sin, want_protocol_version);
+  ss_len = ss.ss_family == AF_INET6 ? sizeof(struct sockaddr_in6)
+                                    : sizeof(struct sockaddr_in);
+
+  return ndmconn_connect_sockaddr(conn, (struct sockaddr*)&ss, ss_len,
+                                  want_protocol_version);
 }
 
-int ndmconn_connect_sockaddr_in(struct ndmconn* conn,
-                                struct sockaddr_in* sin,
-                                unsigned want_protocol_version)
+int ndmconn_connect_sockaddr(struct ndmconn* conn,
+                             struct sockaddr* sa,
+                             socklen_t sa_len,
+                             unsigned want_protocol_version)
 {
   int fd = -1;
   int rc;
@@ -187,7 +196,7 @@ int ndmconn_connect_sockaddr_in(struct ndmconn* conn,
     return ndmconn_set_err_msg(conn, err);
   }
 
-  fd = socket(AF_INET, SOCK_STREAM, 0);
+  fd = socket(sa->sa_family, SOCK_STREAM, 0);
   if (fd < 0) {
     err = NDMOS_API_MALLOC(1024);
     if (err) snprintf(err, 1023, "open a socket failed: %s", strerror(errno));
@@ -195,7 +204,7 @@ int ndmconn_connect_sockaddr_in(struct ndmconn* conn,
   }
 
   /* reserved port? */
-  if (connect(fd, (struct sockaddr*)sin, sizeof *sin) < 0) {
+  if (connect(fd, sa, sa_len) < 0) {
     err = NDMOS_API_MALLOC(1024);
     if (err) snprintf(err, 1023, "connect failed: %s", strerror(errno));
     goto error_out;
@@ -602,6 +611,142 @@ int ndmconn_auth_md5(struct ndmconn* conn, char* id, char* pw)
   return 0;
 }
 
+#ifndef NDMOS_OPTION_NO_NDMP4
+static bool ndmconn_find_extension_version(
+    const ndmp4_config_get_ext_list_reply* reply,
+    uint16_t class_id,
+    uint16_t version)
+{
+  if (reply->error != NDMP4_NO_ERR) { return false; }
+
+  for (u_int i = 0; i < reply->class_list.class_list_len; ++i) {
+    const ndmp4_class_list* class_list = &reply->class_list.class_list_val[i];
+    if (class_list->class_id != class_id) { continue; }
+
+    for (u_int j = 0; j < class_list->class_version.class_version_len; ++j) {
+      if (class_list->class_version.class_version_val[j] == version) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+#endif
+
+static int ndmconn_negotiate_v4_extensions(struct ndmconn* conn,
+                                           bool want_ipv6,
+                                           bool want_cab)
+{
+#ifndef NDMOS_OPTION_NO_NDMP4
+  int rc;
+  bool have_ipv6_extension = false;
+  bool have_cab_extension = false;
+  uint16_t extension_versions[2];
+  ndmp4_class_list extensions[2];
+  unsigned num_extensions = 0;
+
+  conn->ipv6_extensions_available = 0;
+  conn->ipv6_extensions_enabled = 0;
+  conn->ipv6_extension_version = 0;
+  conn->cab_extensions_available = 0;
+  conn->cab_extensions_enabled = 0;
+  conn->cab_extension_version = 0;
+
+  if (conn->conn_type != NDMCONN_TYPE_REMOTE) { return 0; }
+
+  if (conn->protocol_version != NDMP4VER) {
+    if (want_cab) {
+      ndmconn_set_err_msg(conn, "cab-requires-ndmp4");
+      return -1;
+    }
+    return 0;
+  }
+
+  NDMC_WITH_VOID_REQUEST(ndmp4_config_get_ext_list, NDMP4VER)
+  rc = NDMC_CALL(conn);
+  if (rc != NDMCONN_CALL_STATUS_OK) {
+    NDMC_FREE_REPLY();
+    ndmconn_set_err_msg(conn, want_cab ? "cab-ext-list-query-failed"
+                                       : "ipv6-ext-list-query-failed");
+    return -1;
+  }
+
+  have_ipv6_extension = ndmconn_find_extension_version(
+      reply, NDMP4_EXT_CLASS_IPV6, NDMP4_EXT_VERSION_IPV6);
+  have_cab_extension = ndmconn_find_extension_version(
+      reply, NDMP4_EXT_CLASS_CAB, NDMP4_EXT_VERSION_CAB);
+  NDMC_FREE_REPLY();
+  NDMC_ENDWITH
+
+  if (want_cab && !have_cab_extension) {
+    ndmconn_set_err_msg(conn, "cab-extension-unavailable");
+    return -1;
+  }
+
+  conn->ipv6_extensions_available = have_ipv6_extension;
+  conn->ipv6_extension_version
+      = have_ipv6_extension ? NDMP4_EXT_VERSION_IPV6 : 0;
+  conn->cab_extensions_available = have_cab_extension;
+  conn->cab_extension_version = have_cab_extension ? NDMP4_EXT_VERSION_CAB : 0;
+
+  if (want_ipv6 && have_ipv6_extension) {
+    extension_versions[num_extensions] = NDMP4_EXT_VERSION_IPV6;
+    NDMOS_MACRO_ZEROFILL(&extensions[num_extensions]);
+    extensions[num_extensions].class_id = NDMP4_EXT_CLASS_IPV6;
+    extensions[num_extensions].class_version.class_version_len = 1;
+    extensions[num_extensions].class_version.class_version_val
+        = &extension_versions[num_extensions];
+    ++num_extensions;
+  }
+
+  if (want_cab) {
+    extension_versions[num_extensions] = NDMP4_EXT_VERSION_CAB;
+    NDMOS_MACRO_ZEROFILL(&extensions[num_extensions]);
+    extensions[num_extensions].class_id = NDMP4_EXT_CLASS_CAB;
+    extensions[num_extensions].class_version.class_version_len = 1;
+    extensions[num_extensions].class_version.class_version_val
+        = &extension_versions[num_extensions];
+    ++num_extensions;
+  }
+
+  if (num_extensions == 0) { return 0; }
+
+  NDMC_WITH(ndmp4_config_set_ext_list, NDMP4VER)
+  request->error = NDMP4_NO_ERR;
+  request->ndmp4_accepted_ext.ndmp4_accepted_ext_len = num_extensions;
+  request->ndmp4_accepted_ext.ndmp4_accepted_ext_val = extensions;
+  rc = NDMC_CALL(conn);
+  if (rc != NDMCONN_CALL_STATUS_OK) {
+    ndmconn_set_err_msg(conn, want_cab ? "cab-ext-list-enable-failed"
+                                       : "ipv6-ext-list-enable-failed");
+    return -1;
+  }
+  NDMC_ENDWITH
+
+  conn->ipv6_extensions_enabled = want_ipv6 && have_ipv6_extension;
+  conn->cab_extensions_enabled = want_cab;
+
+  return 0;
+#else
+  if (want_cab) {
+    ndmconn_set_err_msg(conn, "cab-requires-ndmp4");
+    return -1;
+  }
+  return 0;
+#endif
+}
+
+int ndmconn_negotiate_ipv6_extensions(struct ndmconn* conn)
+{
+  return ndmconn_negotiate_v4_extensions(conn, true, false);
+}
+
+int ndmconn_negotiate_cab_extensions(struct ndmconn* conn)
+{
+  return ndmconn_negotiate_v4_extensions(conn, true, true);
+}
+
 
 /*
  * CALL (REQUEST/REPLY), SEND, and RECEIVE
@@ -724,6 +869,7 @@ int ndmconn_xdr_nmb(struct ndmconn* conn,
                     enum xdr_op x_op)
 {
   xdrproc_t xdr_body = 0;
+  uint32_t cab_prepare_length = 1;
 
   assert(conn->conn_type == NDMCONN_TYPE_REMOTE);
 
@@ -753,6 +899,13 @@ int ndmconn_xdr_nmb(struct ndmconn* conn,
       return ndmconn_set_err_msg(conn, "EOF");
     } else {
       return ndmconn_set_err_msg(conn, "xdr-hdr");
+    }
+  }
+
+  if (nmb->header.message == NDMP4_CAB_DATA_CONN_PREPARE) {
+    if (!xdr_u_int(&conn->xdrs, &cab_prepare_length)) {
+      ndmconn_abort(conn);
+      return ndmconn_set_err_msg(conn, "xdr-cab-hdr");
     }
   }
 

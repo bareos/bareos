@@ -43,6 +43,17 @@ extern "C" {
 
 extern int ndmp_4to9_error(ndmp4_error* error4, ndmp9_error* error9);
 extern int ndmp_9to4_error(ndmp9_error* error9, ndmp4_error* error4);
+extern int ndmp_4to9_addr(ndmp4_addr* addr4, ndmp9_addr* addr9);
+extern int ndmp_9to4_addr(ndmp9_addr* addr9, ndmp4_addr* addr4);
+extern int ndmp_4to9_pval_vec_dup(ndmp4_pval* pval4,
+                                  ndmp9_pval** pval9_p,
+                                  unsigned n_pval);
+extern int ndmp_9to4_pval_vec_dup(ndmp9_pval* pval9,
+                                  ndmp4_pval** pval4_p,
+                                  unsigned n_pval);
+extern int ndmp_4to9_pval_vec_free(ndmp9_pval* pval9, unsigned n_pval);
+extern int ndmp_9to4_pval_vec_free(ndmp4_pval* pval4, unsigned n_pval);
+extern int ndmp_9to4_addr_free(ndmp4_addr* addr4);
 
 extern struct reqrep_xlate ndmp4_reqrep_xlate_table[];
 

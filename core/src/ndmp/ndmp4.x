@@ -328,7 +328,8 @@ enum ndmp4_addr_type
         NDMP4_ADDR_LOCAL=0,
         NDMP4_ADDR_TCP=1,
         NDMP4_ADDR_RESERVED=2,
-        NDMP4_ADDR_IPC=3
+        NDMP4_ADDR_IPC=3,
+        NDMP4_ADDR_TCP_IPV6=0x20510004
 };
 
 struct ndmp4_config_get_connection_type_reply
@@ -667,6 +668,18 @@ struct ndmp4_tcp_addr
         ndmp4_pval      addr_env<>;
 };
 
+struct ndmp4_ipv6_addr
+{
+        opaque          ipv6_addr[16];
+};
+
+struct ndmp4_tcp_ipv6_addr
+{
+        ndmp4_ipv6_addr ipv6_addr;
+        uint16_t        port;
+        ndmp4_pval      addr_env<>;
+};
+
 struct ndmp4_ipc_addr
 {
         opaque          comm_data<>;
@@ -680,6 +693,8 @@ union ndmp4_addr switch (ndmp4_addr_type addr_type)
                 ndmp4_tcp_addr  tcp_addr<>;
         case NDMP4_ADDR_IPC:
                 ndmp4_ipc_addr  ipc_addr;
+        case NDMP4_ADDR_TCP_IPV6:
+                ndmp4_tcp_ipv6_addr tcp_ipv6_addr<>;
 };
 
 /* unsupported bitmask bits */

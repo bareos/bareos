@@ -226,6 +226,7 @@ static const ResourceItem client_items[] = {
   { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_client, ndmp_loglevel), {config::DefaultValue{"4"}}},
   { "NdmpBlockSize", CFG_TYPE_SIZE32, ITEM(res_client, ndmp_blocksize), {config::DefaultValue{"64512"}}},
   { "NdmpUseLmdb", CFG_TYPE_BOOL, ITEM(res_client, ndmp_use_lmdb), {config::DefaultValue{"true"}}},
+  { "NdmpCab", CFG_TYPE_BOOL, ITEM(res_client, ndmp_cab), {config::DefaultValue{"false"}}},
    TLS_COMMON_CONFIG(res_client),
    TLS_CERT_CONFIG(res_client),
   {}

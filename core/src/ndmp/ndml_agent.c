@@ -59,6 +59,25 @@
 #define INADDR_NONE ((in_addr_t)-1)
 #endif
 
+static void ndm_sockaddr_init(struct sockaddr_storage* ss, int family)
+{
+  NDMOS_MACRO_ZEROFILL(ss);
+
+  if (family == AF_INET) {
+    struct sockaddr_in* sin = (struct sockaddr_in*)ss;
+#ifdef NDMOS_OPTION_HAVE_SIN_LEN
+    sin->sin_len = sizeof(*sin);
+#endif
+    sin->sin_family = AF_INET;
+  } else if (family == AF_INET6) {
+    struct sockaddr_in6* sin6 = (struct sockaddr_in6*)ss;
+#ifdef NDMOS_OPTION_HAVE_SIN_LEN
+    sin6->sin6_len = sizeof(*sin6);
+#endif
+    sin6->sin6_family = AF_INET6;
+  }
+}
+
 int ndmagent_from_str(struct ndmagent* agent, char* str)
 {
   int have_vers = 0;
@@ -183,16 +202,13 @@ error_out:
 
 
 #ifdef NDMOS_OPTION_USE_GETHOSTBYNAME
-int ndmhost_lookup(char* hostname, struct sockaddr_in* sin)
+int ndmhost_lookup(char* hostname, struct sockaddr_storage* ss)
 {
   struct hostent* he;
   in_addr_t addr;
+  struct sockaddr_in* sin = (struct sockaddr_in*)ss;
 
-  NDMOS_MACRO_ZEROFILL(sin);
-#ifdef NDMOS_OPTION_HAVE_SIN_LEN
-  sin->sin_len = sizeof *sin;
-#endif
-  sin->sin_family = AF_INET;
+  ndm_sockaddr_init(ss, AF_INET);
 
   addr = inet_addr(hostname);
   if (addr != INADDR_NONE) {
@@ -208,48 +224,136 @@ int ndmhost_lookup(char* hostname, struct sockaddr_in* sin)
 #endif
 
 #ifdef NDMOS_OPTION_USE_GETADDRINFO
-int ndmhost_lookup(char* hostname, struct sockaddr_in* sin)
+int ndmhost_lookup(char* hostname, struct sockaddr_storage* ss)
 {
   int res;
   struct addrinfo hints;
   struct addrinfo* ai;
-  in_addr_t addr;
 
-  NDMOS_MACRO_ZEROFILL(sin);
-#ifdef NDMOS_OPTION_HAVE_SIN_LEN
-  sin->sin_len = sizeof *sin;
-#endif
-  sin->sin_family = AF_INET;
-
-  addr = inet_addr(hostname);
-  if (addr != INADDR_NONE) {
-    bcopy(&addr, &sin->sin_addr, 4);
-  } else {
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = 0;
-
-    res = getaddrinfo(hostname, NULL, &hints, &ai);
-    if (res != 0) { return 1; }
-
-    bcopy(&(((struct sockaddr_in*)ai->ai_addr)->sin_addr), &sin->sin_addr, 4);
-    freeaddrinfo(ai);
+  ndm_sockaddr_init(ss, AF_INET);
+  if (inet_pton(AF_INET, hostname,
+                &((struct sockaddr_in*)ss)->sin_addr) == 1) {
+    return 0;
   }
+
+  ndm_sockaddr_init(ss, AF_INET6);
+  if (inet_pton(AF_INET6, hostname,
+                &((struct sockaddr_in6*)ss)->sin6_addr) == 1) {
+    return 0;
+  }
+
+  memset(&hints, 0, sizeof(struct addrinfo));
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_protocol = IPPROTO_TCP;
+  hints.ai_flags = 0;
+
+  res = getaddrinfo(hostname, NULL, &hints, &ai);
+  if (res != 0) { return 1; }
+
+  if (ai->ai_addrlen > sizeof(*ss)) {
+    freeaddrinfo(ai);
+    return 1;
+  }
+
+  memcpy(ss, ai->ai_addr, ai->ai_addrlen);
+  freeaddrinfo(ai);
 
   return 0;
 }
 #endif
 
-int ndmagent_to_sockaddr_in(struct ndmagent* agent, struct sockaddr_in* sin)
+int ndm_sockaddr_set_port(struct sockaddr_storage* ss, int port)
+{
+  switch (ss->ss_family) {
+    case AF_INET:
+      ((struct sockaddr_in*)ss)->sin_port = htons(port);
+      return 0;
+
+    case AF_INET6:
+      ((struct sockaddr_in6*)ss)->sin6_port = htons(port);
+      return 0;
+
+    default:
+      return -1;
+  }
+}
+
+int ndm_sockaddr_to_ndmp9_addr(struct sockaddr* sa, ndmp9_addr* addr)
+{
+  NDMOS_MACRO_ZEROFILL(addr);
+
+  switch (sa->sa_family) {
+    case AF_INET: {
+      struct sockaddr_in* sin = (struct sockaddr_in*)sa;
+
+      addr->addr_type = NDMP9_ADDR_TCP;
+      addr->ndmp9_addr_u.tcp_addr.ip_addr = ntohl(sin->sin_addr.s_addr);
+      addr->ndmp9_addr_u.tcp_addr.port = ntohs(sin->sin_port);
+      return 0;
+    }
+
+    case AF_INET6: {
+      struct sockaddr_in6* sin6 = (struct sockaddr_in6*)sa;
+
+      addr->addr_type = NDMP9_ADDR_TCP_IPV6;
+      memcpy(addr->ndmp9_addr_u.tcp_ipv6_addr.ipv6_addr, &sin6->sin6_addr,
+             sizeof(addr->ndmp9_addr_u.tcp_ipv6_addr.ipv6_addr));
+      addr->ndmp9_addr_u.tcp_ipv6_addr.port = ntohs(sin6->sin6_port);
+      return 0;
+    }
+
+    default:
+      addr->addr_type = -1;
+      return -1;
+  }
+}
+
+int ndmp9_addr_to_sockaddr(const ndmp9_addr* addr,
+                           struct sockaddr_storage* ss,
+                           socklen_t* len)
+{
+  NDMOS_MACRO_ZEROFILL(ss);
+
+  switch (addr->addr_type) {
+    case NDMP9_ADDR_TCP: {
+      struct sockaddr_in* sin = (struct sockaddr_in*)ss;
+
+#ifdef NDMOS_OPTION_HAVE_SIN_LEN
+      sin->sin_len = sizeof(*sin);
+#endif
+      sin->sin_family = AF_INET;
+      sin->sin_addr.s_addr = htonl(addr->ndmp9_addr_u.tcp_addr.ip_addr);
+      sin->sin_port = htons(addr->ndmp9_addr_u.tcp_addr.port);
+      *len = sizeof(*sin);
+      return 0;
+    }
+
+    case NDMP9_ADDR_TCP_IPV6: {
+      struct sockaddr_in6* sin6 = (struct sockaddr_in6*)ss;
+
+#ifdef NDMOS_OPTION_HAVE_SIN_LEN
+      sin6->sin6_len = sizeof(*sin6);
+#endif
+      sin6->sin6_family = AF_INET6;
+      memcpy(&sin6->sin6_addr, addr->ndmp9_addr_u.tcp_ipv6_addr.ipv6_addr,
+             sizeof(addr->ndmp9_addr_u.tcp_ipv6_addr.ipv6_addr));
+      sin6->sin6_port = htons(addr->ndmp9_addr_u.tcp_ipv6_addr.port);
+      *len = sizeof(*sin6);
+      return 0;
+    }
+
+    default:
+      return -1;
+  }
+}
+
+int ndmagent_to_sockaddr(struct ndmagent* agent, struct sockaddr_storage* ss)
 {
   int rc;
 
-  rc = ndmhost_lookup(agent->host, sin); /* inits sin */
+  rc = ndmhost_lookup(agent->host, ss); /* inits ss */
   if (rc) return rc;
 
-  sin->sin_port = htons(agent->port);
-
-  return 0;
+  return ndm_sockaddr_set_port(ss, agent->port);
 }
