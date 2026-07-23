@@ -474,8 +474,9 @@ InstType "Full - All Daemons, Director with PostgreSQL Catalog Database (needs l
 InstType "Minimal - FileDaemon + Plugins, no Traymonitor"
 
 Function VCRedist.CustomPage
-  ReadRegDword $R1 HKLM "${VCREDIST_REGPATH}" "Installed"
-  ${If} $R1 == ""
+  Call VCRedist.IsInstalled
+  Pop $R1
+  ${If} $R1 == "no"
     ;Disable Next Button
     GetDlgItem $0 $HWNDPARENT 1
     EnableWindow $0 0
@@ -519,12 +520,41 @@ Function VCRedist.CustomPage
 FunctionEnd
 
 Function VCRedist.RecheckTimer
-  ReadRegDword $R1 HKLM "${VCREDIST_REGPATH}" "Installed"
-  ${If} $R1 != ""
+  Call VCRedist.IsInstalled
+  Pop $R1
+  ${If} $R1 == "yes"
     ${NSD_KillTimer} VCRedist.RecheckTimer
     GetDlgItem $0 $HWNDPARENT 1
     EnableWindow $0 1
   ${EndIf}
+FunctionEnd
+
+Function VCRedist.IsInstalled
+  StrCpy $R1 "no"
+
+  ReadRegDword $R0 HKLM "${VCREDIST_REGPATH}" "Installed"
+  ${If} $R0 == ""
+    DetailPrint "VC++ redist registry marker missing at ${VCREDIST_REGPATH}"
+    Goto VCRedistCheckDone
+  ${EndIf}
+
+  IfFileExists "$PLUGINSDIR\openssl.exe" 0 +4
+    nsExec::ExecToStack '"$PLUGINSDIR\openssl.exe" version'
+    Pop $R0
+    Pop $R2
+    Goto +3
+  StrCpy $R0 "error"
+  StrCpy $R2 "openssl.exe missing in $PLUGINSDIR"
+
+  DetailPrint "VC++ runtime probe exit code: $R0"
+  ${If} $R0 == "0"
+    StrCpy $R1 "yes"
+  ${Else}
+    DetailPrint "VC++ runtime probe output: $R2"
+  ${EndIf}
+
+VCRedistCheckDone:
+  Push $R1
 FunctionEnd
 
 Function VCRedist.OpenLink
@@ -560,11 +590,13 @@ FunctionEnd
 Section -CheckVCRedist
   # non-silent install is handled on a custom page
   IfSilent 0 CheckVCRedistEnd
-  ReadRegDword $R1 HKLM "${VCREDIST_REGPATH}" "Installed"
-  ${If} $R1 == ""
-    MessageBox MB_OK|MB_ICONSTOP \
-      "Bareos requires Microsoft Visual C++ Redistributable to be installed.$\r$\n\
-       The installer will exit now."
+  Call VCRedist.IsInstalled
+  Pop $R1
+  ${If} $R1 == "no"
+    DetailPrint "VC++ prerequisite check failed in silent mode."
+    FileOpen $R1 $TEMP\abortreason.txt w
+    FileWrite $R1 "VC++ prerequisite check failed in silent mode"
+    FileClose $R1
     Abort
   ${EndIf}
   CheckVCRedistEnd:
@@ -589,6 +621,7 @@ Section -SetPasswords
   SetShellVarContext all
 
   # TODO: replace by ConfigureConfiguration ?
+  Call GenerateMissingPasswords
 
   FileOpen $R1 $PLUGINSDIR\postgres.sed w
   FileWrite $R1 "s#@DB_USER@#$DbUser#g$\r$\n"
@@ -1469,6 +1502,28 @@ Function .onInit
 
   !insertmacro getPostgresVars
 
+  # extract runtime probe tools early, as we may need to validate
+  # prerequisites before running upgrade uninstall actions
+  InitPluginsDir
+  SetOutPath $PLUGINSDIR
+  File "C:\vcpkg_installed\x64-windows\tools\openssl\openssl.exe"
+  File "${CMAKE_BINARY_DIR}\bin\libcrypto-3-x64.dll"
+  File "${CMAKE_BINARY_DIR}\bin\libssl-3-x64.dll"
+  IfFileExists "$PLUGINSDIR\openssl.exe" 0 missingRuntimeProbeBinaries
+  IfFileExists "$PLUGINSDIR\libcrypto-3-x64.dll" 0 missingRuntimeProbeBinaries
+  IfFileExists "$PLUGINSDIR\libssl-3-x64.dll" 0 missingRuntimeProbeBinaries
+  Goto runtimeProbeBinariesReady
+missingRuntimeProbeBinaries:
+  DetailPrint "Installer is missing VC++ probe binaries in $PLUGINSDIR"
+  IfSilent +1 0
+    MessageBox MB_OK|MB_ICONSTOP \
+      "Installer is missing runtime probe files and cannot continue."
+  FileOpen $R1 $TEMP\abortreason.txt w
+  FileWrite $R1 "missing VC++ probe binaries in $PLUGINSDIR"
+  FileClose $R1
+  Abort
+runtimeProbeBinariesReady:
+
   #
   # UPGRADE: if already installed allow to uninstall installed version
   # inspired by http://nsis.sourceforge.net/Auto-uninstall_old_before_installing_new
@@ -1483,6 +1538,20 @@ Function .onInit
   # If there is no version installed there is not much to upgrade so jump to done.
   #
   StrCmp $R0 "" done
+
+  Call VCRedist.IsInstalled
+  Pop $R1
+  StrCmp $R1 "yes" vcRuntimeReadyForUpgrade
+    DetailPrint "VC++ prerequisite check failed before upgrade uninstall."
+    IfSilent +1 0
+      MessageBox MB_OK|MB_ICONSTOP \
+        "Bareos requires Microsoft Visual C++ Redistributable to be installed before upgrade can continue.$\r$\n\
+         Please install it and restart the installer."
+    FileOpen $R1 $TEMP\abortreason.txt w
+    FileWrite $R1 "VC++ prerequisite check failed before upgrade uninstall"
+    FileClose $R1
+    Abort
+vcRuntimeReadyForUpgrade:
 
   #LogText "Prior Bareos version installed: $0"
 
@@ -1710,88 +1779,6 @@ AutoSelecPostgresIfAvailableEnd:
 
   SetPluginUnload alwaysoff
 
-  # check if password is set by cmdline. If so, skip creation
-  strcmp $ClientPassword "" genclientpassword skipclientpassword
-  genclientpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $ClientPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipclientpassword:
-
-  strcmp $ClientMonitorPassword "" genclientmonpassword skipclientmonpassword
-  genclientmonpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $ClientMonitorPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipclientmonpassword:
-
-
-  # check if password is set by cmdline. If so, skip creation
-  strcmp $StoragePassword "" genstoragepassword skipstoragepassword
-  genstoragepassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $StoragePassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipstoragepassword:
-
-  strcmp $StorageMonitorPassword "" genstoragemonpassword skipstoragemonpassword
-  genstoragemonpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $StorageMonitorPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipstoragemonpassword:
-
-  strcmp $DirectorPassword "" gendirectorpassword skipdirectorpassword
-  gendirectorpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $DirectorPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipdirectorpassword:
-
-  strcmp $DirectorMonPassword "" gendirectormonpassword skipdirectormonpassword
-  gendirectormonpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $DirectorMonPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipdirectormonpassword:
-
-
 # if the variables are not empty (because of cmdline params),
 # dont set them with our own logic but leave them as they are
   strcmp $ClientName     "" +1 +2
@@ -1857,12 +1844,99 @@ FunctionEnd
 
 
 #
+# password generation helpers
+#
+Function GeneratePassword
+  nsExec::ExecToStack '"$PLUGINSDIR\openssl.exe" rand -base64 -out "$PLUGINSDIR\pw.txt" 33'
+  Pop $R0
+  Pop $R2
+  DetailPrint "openssl rand for $R3 exit code: $R0"
+
+  ${If} $R0 != "0"
+    DetailPrint "openssl rand output for $R3: $R2"
+    IfSilent +1 0
+      MessageBox MB_OK|MB_ICONSTOP \
+        "Failed to generate installer passwords.$\r$\n\
+         Please install Microsoft Visual C++ Redistributable and restart the installer."
+    FileOpen $R1 $TEMP\abortreason.txt w
+    FileWrite $R1 "password generation failed for $R3 (openssl exit code: $R0)"
+    FileClose $R1
+    Abort
+  ${EndIf}
+
+  IfFileExists "$PLUGINSDIR\pw.txt" +2 0
+    Goto GeneratePasswordReadFailed
+  ClearErrors
+  FileOpen $R1 "$PLUGINSDIR\pw.txt" r
+  IfErrors GeneratePasswordReadFailed
+  ClearErrors
+  FileRead $R1 $R0
+  ${StrTrimNewLines} $R0 $R0
+  IfErrors GeneratePasswordReadFailed
+  StrCmp $R0 "" GeneratePasswordReadFailed
+  FileClose $R1
+  Push $R0
+  Return
+
+GeneratePasswordReadFailed:
+    DetailPrint "Cannot read generated password file: $PLUGINSDIR\pw.txt"
+    IfSilent +1 0
+      MessageBox MB_OK|MB_ICONSTOP \
+        "Failed to read generated password for $R3.$\r$\n\
+         The installer will exit now."
+    FileOpen $R1 $TEMP\abortreason.txt w
+    FileWrite $R1 "password generation output missing for $R3 in $PLUGINSDIR\pw.txt"
+    FileClose $R1
+    Abort
+FunctionEnd
+
+Function GenerateMissingPasswords
+  strcmp $ClientPassword "" 0 skipClientPasswordGeneration
+    StrCpy $R3 "ClientPassword"
+    Call GeneratePassword
+    Pop $ClientPassword
+skipClientPasswordGeneration:
+
+  strcmp $ClientMonitorPassword "" 0 skipClientMonitorPasswordGeneration
+    StrCpy $R3 "ClientMonitorPassword"
+    Call GeneratePassword
+    Pop $ClientMonitorPassword
+skipClientMonitorPasswordGeneration:
+
+  strcmp $StoragePassword "" 0 skipStoragePasswordGeneration
+    StrCpy $R3 "StoragePassword"
+    Call GeneratePassword
+    Pop $StoragePassword
+skipStoragePasswordGeneration:
+
+  strcmp $StorageMonitorPassword "" 0 skipStorageMonitorPasswordGeneration
+    StrCpy $R3 "StorageMonitorPassword"
+    Call GeneratePassword
+    Pop $StorageMonitorPassword
+skipStorageMonitorPasswordGeneration:
+
+  strcmp $DirectorPassword "" 0 skipDirectorPasswordGeneration
+    StrCpy $R3 "DirectorPassword"
+    Call GeneratePassword
+    Pop $DirectorPassword
+skipDirectorPasswordGeneration:
+
+  strcmp $DirectorMonPassword "" 0 skipDirectorMonPasswordGeneration
+    StrCpy $R3 "DirectorMonPassword"
+    Call GeneratePassword
+    Pop $DirectorMonPassword
+skipDirectorMonPasswordGeneration:
+FunctionEnd
+
+#
 # Client Configuration Dialog
 #
 Function getClientParameters
   push $R0
   # skip if we are upgrading
   strcmp $Upgrading "yes" skip
+
+  Call GenerateMissingPasswords
 
   # prefill the dialog fields with our passwords and other
   # information
