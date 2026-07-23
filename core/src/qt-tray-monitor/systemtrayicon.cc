@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,54 +20,130 @@
 */
 
 #include "systemtrayicon.h"
+#include "resources.h"
 #include "traymenu.h"
-#include <QObject>
-#include <QMainWindow>
-#include <QTimer>
 #include <QDebug>
+#include <QMainWindow>
+#include <QPixmap>
+#include <QTimer>
+
+namespace {
+const int kAnimationIntervalMs = 120;
+
+bool LoadAnimationFromSpriteSheet(QList<QIcon>& icons,
+                                  const char* spritePath,
+                                  int frameCount,
+                                  int frameWidth,
+                                  int frameHeight)
+{
+  QPixmap sheet{spritePath};
+  if (sheet.isNull() || frameCount <= 0 || frameWidth <= 0 || frameHeight <= 0
+      || sheet.height() < frameHeight
+      || sheet.width() < frameCount * frameWidth) {
+    return false;
+  }
+
+  for (int frame = 0; frame < frameCount; ++frame) {
+    QPixmap pixmapFrame = sheet.copy(frame * frameWidth, 0, frameWidth,
+                                     frameHeight);
+    if (pixmapFrame.isNull()) { return false; }
+    icons << QIcon(pixmapFrame);
+  }
+
+  return true;
+}
+
+}  // namespace
 
 SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
-    : QSystemTrayIcon(mainWindow), iconIdx(0), timer(new QTimer(this))
+    : QSystemTrayIcon(mainWindow), timer(std::make_unique<QTimer>(this))
 {
+  bool loaded_sprite = LoadAnimationFromSpriteSheet(
+      animationIcons, kRes_RunningSpriteSheet, kRes_RunningFrameCount,
+      kRes_RunningFrameWidth, kRes_RunningFrameHeight);
+
+  Q_ASSERT_X(loaded_sprite && !animationIcons.isEmpty(), "Tray animation",
+             kRes_RunningSpriteSheet);
+  errorIcon = QIcon(kRes_ErrorIcon);
+
+  if (loaded_sprite && !animationIcons.isEmpty()) {
+    normalIcon = animationIcons[0];
+  } else {
+    qCritical("Failed to load tray sprite sheet: %s",
+              kRes_RunningSpriteSheet);
+    normalIcon = errorIcon;
+  }
+
   // this object name is used for auto-connection to the MainWindow
   setObjectName("SystemTrayIcon");
 
   TrayMenu* menu = new TrayMenu(mainWindow);
   setContextMenu(menu);
-
-  icons << ":/images/bareos_1.png"
-        << ":/images/bareos_2.png"
-        << ":/images/W.png";
-  setIcon(QIcon(icons[iconIdx]));
+  updateIcon();
   setToolTip("Bareos Tray Monitor");
 
-  timer->setInterval(700);
-  connect(timer, SIGNAL(timeout()), this, SLOT(setIconInternal()));
+  timer->setInterval(kAnimationIntervalMs);
+  connect(timer.get(), SIGNAL(timeout()), this, SLOT(setIconInternal()));
 }
 
-SystemTrayIcon::~SystemTrayIcon() { timer->stop(); }
-
-void SystemTrayIcon::setNewIcon(int icon)
+void SystemTrayIcon::setNewIcon(IconType type)
 {
-  iconIdx = icon;
-  setIcon(QIcon(icons[icon]));
+  currentIcon = type;
+  if (currentIcon == IconType::Error) {
+    timer->stop();
+    animationFrameIdx = 0;
+  } else if (animationRequested && !timer->isActive()) {
+    animationFrameIdx = 0;
+    timer->start();
+  }
+
+  updateIcon();
 }
 
 void SystemTrayIcon::setIconInternal()
 {
-  setIcon(QIcon(icons[iconIdx++]));
-  iconIdx %= 2;  // 0 if 1 / 1 if 0
+  if (currentIcon == IconType::Error || animationIcons.isEmpty()
+      || !timer->isActive()) {
+    return;
+  }
+
+  const int frame_count = static_cast<int>(animationIcons.size());
+  animationFrameIdx = (animationFrameIdx + 1) % frame_count;
+  if (!animationRequested && animationFrameIdx == 0) { timer->stop(); }
+  updateIcon();
 }
 
 void SystemTrayIcon::animateIcon(bool on)
 {
-  if (on) {
-    if (!timer->isActive()) { timer->start(); }
-  } else {  // off
-    if (timer->isActive()) { timer->stop(); }
-    if (iconIdx != 2) {  // blink if there's no error
-      iconIdx = 0;
-      setIconInternal();
+  if (animationRequested == on) {
+    if (!animationRequested && !timer->isActive()) { updateIcon(); }
+    return;
+  }
+
+  animationRequested = on;
+  if (animationRequested && currentIcon != IconType::Error) {
+    if (!timer->isActive()) {
+      animationFrameIdx = 0;
+      timer->start();
     }
+  } else {
+    if (!timer->isActive() || currentIcon == IconType::Error
+        || animationFrameIdx == 0) {
+      timer->stop();
+      animationFrameIdx = 0;
+    }
+  }
+
+  updateIcon();
+}
+
+void SystemTrayIcon::updateIcon()
+{
+  if (currentIcon == IconType::Error) {
+    setIcon(errorIcon);
+  } else if (timer->isActive() && !animationIcons.isEmpty()) {
+    setIcon(animationIcons[animationFrameIdx]);
+  } else {
+    setIcon(normalIcon);
   }
 }

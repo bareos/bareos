@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -45,13 +45,7 @@ else()
   if(Qt5Widgets_FOUND)
     message(STATUS "Found QT5Widgets")
   else()
-    message(STATUS "QT5Widgets NOT found, checking for Qt4 ...")
-    find_package(Qt4)
-    if(NOT Qt4_FOUND)
-      message(
-        FATAL_ERROR "None of Qt6, Qt5 or Qt4 found, cannot build tray-monitor."
-      )
-    endif()
+    message(FATAL_ERROR "None of Qt6 or Qt5 found, cannot build tray-monitor.")
   endif()
 endif()
 
@@ -83,17 +77,7 @@ endif()
 
 target_link_libraries(bareos-tray-monitor PRIVATE Bareos::Lib CLI11::CLI11)
 
-if(TARGET Qt4::QtGui)
-  target_link_libraries(bareos-tray-monitor PRIVATE Qt4::QtGui)
-endif()
-
-if(TARGET Qt5::Widgets)
-  target_link_libraries(bareos-tray-monitor PRIVATE Qt5::Widgets)
-endif()
-
-if(TARGET Qt6::Widgets)
-  target_link_libraries(bareos-tray-monitor PRIVATE Qt6::Widgets)
-endif()
+target_link_libraries(bareos-tray-monitor PRIVATE Qt::Core Qt::Widgets)
 
 bareos_configure_file(FILES bareos-tray-monitor.desktop.in)
 

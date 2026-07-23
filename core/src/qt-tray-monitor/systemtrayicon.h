@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,31 +22,46 @@
 #ifndef BAREOS_QT_TRAY_MONITOR_SYSTEMTRAYICON_H_
 #define BAREOS_QT_TRAY_MONITOR_SYSTEMTRAYICON_H_
 
+#include <QColor>
+#include <QIcon>
+#include <QList>
+#include <QPixmap>
+
+#include <QTimer>
 #include <QSystemTrayIcon>
 
 class QMainWindow;
-class QTimer;
+
+enum class IconType
+{
+  Normal,
+  Error,
+};
 
 class SystemTrayIcon : public QSystemTrayIcon {
   Q_OBJECT
 
  public:
   SystemTrayIcon(QMainWindow* mainWindow);
-  virtual ~SystemTrayIcon();
 
   void animateIcon(bool on);
 
  private:
   Q_DISABLE_COPY(SystemTrayIcon);
-  SystemTrayIcon();
-  QStringList icons;
 
-  int iconIdx;
-  QTimer* timer;
+  IconType currentIcon{IconType::Normal};
+  int animationFrameIdx{0};
+  bool animationRequested{false};
+  QIcon normalIcon;
+  QIcon errorIcon;
+  QList<QIcon> animationIcons;
+  std::unique_ptr<QTimer> timer;
+
+  void updateIcon();
 
  protected:
  public slots:
-  void setNewIcon(int icon);
+  void setNewIcon(IconType type);
   void setIconInternal();
 };
 
