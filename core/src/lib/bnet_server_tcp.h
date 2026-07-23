@@ -25,6 +25,8 @@
 #include <functional>
 #include <vector>
 
+#include "include/bareos.h"
+
 constexpr int kListenBacklog = 50;
 
 class ConfigurationParser;
@@ -77,6 +79,7 @@ void BnetThreadServerTcp(
     std::function<void*(ConfigurationParser* config, void* bsock)>
         HandleConnectionRequest,
     ConfigurationParser* config,
+    utime_t heartbeat_interval,
     std::atomic<BnetServerState>* const server_state = nullptr,
     std::function<void*(void* bsock)> UserAgentShutdownCallback = nullptr,
     std::function<void()> CustomCallback = nullptr);

@@ -91,6 +91,7 @@ target_sources(
           status_packet.cc
           thread_list.cc
           thread_specific_data.cc
+          tcp_keepalive.cc
           tls.cc
           tls_conf.cc
           tls/openssl/impl.cc

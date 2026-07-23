@@ -175,7 +175,8 @@ extern "C" void* connect_with_bound_thread(void* arg)
   if (bound_sockets.size()) {
     server_running = true;
     BnetThreadServerTcp(std::move(bound_sockets), thread_list,
-                        HandleConnectionRequest, my_config, &server_state,
+                        HandleConnectionRequest, my_config,
+                        me->heartbeat_interval, &server_state,
                         UserAgentShutdownCallback, CleanupConnectionPool);
 
   } else {
