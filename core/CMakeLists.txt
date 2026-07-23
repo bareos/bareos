@@ -54,18 +54,21 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 include(BareosCompilerFlags)
 if(MSVC)
   add_compile_options(
-      /W4 # enable all reasonable warnings, but disable the following
-      /wd4273 # inconsistent dll linkage
-      /wd4127 # conditional expression is constant
-      /wd4244 # conversion warning
-      /wd4245 # conversion warning
-      /wd4267 # conversion warning
-      /wd4389 # sign mismatch
-      /D_CRT_SECURE_NO_DEPRECATE # deprecation warning for stdlib functions
+    /W4 # enable all reasonable warnings, but disable the following
+    /wd4273 # inconsistent dll linkage
+    /wd4127 # conditional expression is constant
+    /wd4244 # conversion warning
+    /wd4245 # conversion warning
+    /wd4267 # conversion warning
+    /wd4389 # sign mismatch
+    /D_CRT_SECURE_NO_DEPRECATE # deprecation warning for stdlib functions
   )
 else()
-  set(CMAKE_COMPILE_WARNING_AS_ERROR ON) # sadly we cannot switch this on for MSVC yet
-  bareos_add_compile_flags(-Wall -Wextra -Wshadow -Wformat -Wformat-type-confusion)
+  set(CMAKE_COMPILE_WARNING_AS_ERROR ON) # sadly we cannot switch this on for
+                                         # MSVC yet
+  bareos_add_compile_flags(
+    -Wall -Wextra -Wshadow -Wformat -Wformat-type-confusion
+  )
   bareos_add_compile_flags(-Wsuggest-override -Wno-invalid-offsetof CXX_ONLY)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     # we want to allow non-literal (but constant) strings Wformat-security
@@ -80,12 +83,20 @@ endif()
 option(ENABLE_SANITIZERS "Build with ASan/LSan/UBSan enabled" OFF)
 if(ENABLE_SANITIZERS)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_compile_options(-fsanitize=undefined -fsanitize=address -fno-sanitize-recover)
-    add_link_options(-fsanitize=undefined -fsanitize=address -fno-sanitize-recover)
+    add_compile_options(
+      -fsanitize=undefined -fsanitize=address -fno-sanitize-recover
+    )
+    add_link_options(
+      -fsanitize=undefined -fsanitize=address -fno-sanitize-recover
+    )
     add_compile_definitions(BAREOS_UB_SANITIZER=1 BAREOS_ADDRESS_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    add_compile_options(-fsanitize=undefined -fsanitize=address -fno-sanitize-recover)
-    add_link_options(-fsanitize=undefined -fsanitize=address -fno-sanitize-recover)
+    add_compile_options(
+      -fsanitize=undefined -fsanitize=address -fno-sanitize-recover
+    )
+    add_link_options(
+      -fsanitize=undefined -fsanitize=address -fno-sanitize-recover
+    )
     add_compile_definitions(BAREOS_UB_SANITIZER=1 BAREOS_ADDRESS_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options(/fsanitize=address)

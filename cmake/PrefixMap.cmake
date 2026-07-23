@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -30,7 +30,9 @@ check_cxx_compiler_flag(
   -ffile-prefix-map=${BAREOS_PREFIX_MAP} CXX_SUPPORTS_ffile_prefix_map
 )
 if(C_SUPPORTS_ffile_prefix_map AND CXX_SUPPORTS_ffile_prefix_map)
-  add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:-ffile-prefix-map=${BAREOS_PREFIX_MAP}>")
+  add_compile_options(
+    "$<$<COMPILE_LANGUAGE:C,CXX>:-ffile-prefix-map=${BAREOS_PREFIX_MAP}>"
+  )
   bareos_add_compile_flags(-fcanon-prefix-map)
   set(CCACHE_MAY_HASHDIR ON)
 endif()
