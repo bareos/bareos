@@ -4,7 +4,7 @@ Positionals:
     bareos-archive-device-name  
         Specify the input device name (either as name of a Bareos Storage 
         Daemon Device resource or identical to the Archive Device in a Bareos 
-        Storage Daemon Device resource). 
+        Storage Daemon Device resource, or a local file volume path). 
 
     target-directory  
         Specify directory where to store files. 

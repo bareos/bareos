@@ -235,18 +235,30 @@ int main(int argc, char* argv[])
       .add_option("device_name", device_name,
                   "Specify the input device name (either as name of a Bareos "
                   "Storage Daemon Device resource or identical to the Archive "
-                  "Device in a Bareos Storage Daemon Device resource).")
+                  "Device in a Bareos Storage Daemon Device resource, or a "
+                  "local file volume path).")
       ->type_name(" ");
 
   ParseBareosApp(bscan_app, argc, argv);
 
-  my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
-  ParseSdConfig(configfile, M_CONFIG_ERROR);
-
   if (device_name.empty()) {
+    LoadSdConfigIfAvailable(configfile);
     printf(T_("Missing input device. %sNothing done.\n"),
            AvailableDevicesListing().c_str());
     return BEXIT_CLI_PARSING_ERROR;
+  }
+
+  const bool config_explicit = configfile != nullptr;
+  const bool use_sd_config
+      = config_explicit || !IsLocalFilesystemVolumePath(device_name.c_str());
+
+  my_config = nullptr;
+  if (use_sd_config) {
+    my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+    ParseSdConfig(configfile, M_CONFIG_ERROR);
+  } else if (!DirectorName.empty()) {
+    Emsg0(M_ERROR_TERM, 0,
+          T_("--director requires a Storage Daemon configuration.\n"));
   }
 
   DirectorResource* director = nullptr;
@@ -262,15 +274,31 @@ int main(int argc, char* argv[])
     }
   }
 
-  LoadSdPlugins(me->plugin_directory, me->plugin_names);
+  if (my_config) {
+    LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
-  ReadCryptoCache(me->working_directory, "bareos-sd",
-                  GetFirstPortHostOrder(me->SDaddrs));
+    ReadCryptoCache(me->working_directory, "bareos-sd",
+                    GetFirstPortHostOrder(me->SDaddrs));
+  }
 
   /* Check if -w option given, otherwise use resource for working directory
    */
   if (!work_dir.empty()) {
     working_directory = work_dir.c_str();
+  } else if (!my_config) {
+#if defined(HAVE_WIN32)
+    static char temp_directory[MAX_PATH];
+    auto temp_directory_length
+        = GetTempPathA(sizeof(temp_directory), temp_directory);
+    if (temp_directory_length > 0
+        && temp_directory_length < sizeof(temp_directory)) {
+      working_directory = temp_directory;
+    } else {
+      working_directory = "C:\\Windows\\Temp";
+    }
+#else
+    working_directory = "/tmp";
+#endif
   } else if (!me->working_directory) {
     Emsg1(M_ERROR_TERM, 0,
           T_("No Working Directory defined in %s. Cannot continue.\n"),
