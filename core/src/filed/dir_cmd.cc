@@ -421,7 +421,8 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 
     GeneratePluginEvent(jcr, bEventJobEnd);
 
-    DequeueMessages(jcr); /* send any queued messages */
+    EmitPluginPostWriteWarnings(jcr); /* flush before messages are sent */
+    DequeueMessages(jcr);             /* send any queued messages */
 
     // Inform Director that we are done
     dir->signal(BNET_TERMINATE);

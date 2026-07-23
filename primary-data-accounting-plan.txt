@@ -1,0 +1,65 @@
+Primary data accounting correction plan
+======================================
+
+1. Schema + model (additive, compatible)
+- Add Job.PrimaryDataBytes (nullable BIGINT, raw bytes).
+- Add Job.PrimaryDataSource.
+- Wire through JobDbRecord, catalog read/write SQL, and migrations.
+- Add full DB upgrade scripts for supported catalog backends and bump catalog
+  schema/version identifiers accordingly.
+- Ensure update paths for existing databases run cleanly end-to-end (no manual
+  fixes), including upgrade from previous released schema versions.
+
+2. Non-virtual jobs
+- Persist primary bytes from trusted FD-reported values.
+- Mark source reported.
+- Keep DB values nullable for legacy; no forced guessed writes.
+
+3. Plugin post-write updates (capability-based)
+- Add optional plugin post-write callback using save_pkt.
+- Negotiate support FD<->DIR; remain backward-compatible.
+- Post-write value is authoritative.
+- Log-only warning (aggregated once per plugin/job) for regular plugin files:
+  started size 0 + bytes written + no update.
+- Update all supported plugins that currently start with size 0 to emit final
+  size updates.
+
+4. Virtual jobs (compute once, cheap path)
+- During virtual creation, decode selected final LStat once and sum primary
+  bytes.
+- Include regular + raw/fifo/special entries with real payload; exclude
+  metadata-only/deleted.
+- Persist to Job.PrimaryDataBytes with source computed_virtual.
+- Log: "Virtual job will contain <files> files with <primary_bytes> bytes
+  primary data."
+
+5. status subscriptions updates
+- Source priority: PrimaryDataBytes first, else GREATEST(ReadBytes, JobBytes).
+- Add per-row source labels in both text and JSON:
+  reported, computed_virtual, legacy_fallback.
+- Keep text/JSON in sync.
+
+6. Effective storage/compression factor
+- Report for virtual jobs and subscriptions:
+  ratio = stored / primary
+  saving% = 100 * (1 - stored/primary)
+- 2 decimal places, zero-safe.
+
+7. Tests and fixtures
+- Update status subscriptions tests and expected text/json fixtures.
+- Add coverage for virtual primary computation and source labels.
+- Add a deterministic virtual-job accounting test that verifies the exact
+  expected primary-byte total (not just non-zero or source label presence).
+- Add plugin migration tests and warning trigger checks.
+- Add stream-order tests for metadata packets written after payload.
+- Add explicit catalog-upgrade validation for existing databases:
+  - apply update scripts on pre-upgrade schemas,
+  - verify schema version bump is correct,
+  - verify director startup/operation after upgrade.
+
+8. Low-level tooling compatibility for late metadata
+- Audit and adapt low-level readers/parsers (including bscan/bls/bextract paths)
+  to handle metadata-after-data ordering.
+- Ensure deterministic catalog updates for late metadata
+  (last authoritative update wins).
+- Preserve compatibility with traditional ordering.

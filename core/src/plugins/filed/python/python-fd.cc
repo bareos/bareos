@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -957,7 +957,8 @@ PluginFunctions pluginFuncs
        freePlugin, /* free plugin instance */
        getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
        endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
-       setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
+       setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr,
+       nullptr}; /* postBackupFile */
 
 }  // namespace
 

@@ -153,9 +153,12 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
   char dt[MAX_TIME_LENGTH];
   char rdt[MAX_TIME_LENGTH];
   time_t ttime;
-  char ed1[30], ed2[30], ed3[50], ed4[50];
+  char ed1[30], ed2[30], ed3[50], ed4[50], ed5[50];
   btime_t JobTDate;
   char PriorJobId[50];
+  char esc_primary_source[MAX_ESCAPE_NAME_LENGTH];
+  char primary_source_sql[MAX_ESCAPE_NAME_LENGTH + 3];
+  char primary_data_bytes_sql[50];
 
   if (jr->PriorJobId) {
     bstrncpy(PriorJobId, edit_int64(jr->PriorJobId, ed1), sizeof(PriorJobId));
@@ -174,18 +177,36 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
 
   DbLocker _{this};
 
+  if (jr->PrimaryDataBytes >= 0) {
+    bstrncpy(primary_data_bytes_sql, edit_int64(jr->PrimaryDataBytes, ed5),
+             sizeof(primary_data_bytes_sql));
+  } else {
+    bstrncpy(primary_data_bytes_sql, "NULL", sizeof(primary_data_bytes_sql));
+  }
+
+  if (jr->PrimaryDataSource[0] != '\0') {
+    EscapeString(jcr, esc_primary_source, jr->PrimaryDataSource,
+                 strlen(jr->PrimaryDataSource));
+    Bsnprintf(primary_source_sql, sizeof(primary_source_sql), "'%s'",
+              esc_primary_source);
+  } else {
+    bstrncpy(primary_source_sql, "NULL", sizeof(primary_source_sql));
+  }
+
   Mmsg(
       cmd,
       "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
-      "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,"
+      "ClientId=%u,JobBytes=%s,ReadBytes=%s,PrimaryDataBytes=%s,"
+      "PrimaryDataSource=%s,JobFiles=%u,JobErrors=%u,"
       "VolSessionId=%u,"
       "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
       "RealEndTime='%s',PriorJobId=%s,HasBase=%d,PurgedFiles=%d WHERE JobId=%s",
       (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,
       edit_uint64(jr->JobBytes, ed1), edit_uint64(jr->ReadBytes, ed4),
-      jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
-      jr->PoolId, jr->FileSetId, edit_uint64(JobTDate, ed2), rdt, PriorJobId,
-      jr->HasBase, jr->PurgedFiles, edit_int64(jr->JobId, ed3));
+      primary_data_bytes_sql, primary_source_sql, jr->JobFiles, jr->JobErrors,
+      jr->VolSessionId, jr->VolSessionTime, jr->PoolId, jr->FileSetId,
+      edit_uint64(JobTDate, ed2), rdt, PriorJobId, jr->HasBase, jr->PurgedFiles,
+      edit_int64(jr->JobId, ed3));
 
   return UpdateDb(jcr, cmd) > 0;
 }

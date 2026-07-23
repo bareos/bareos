@@ -248,7 +248,8 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
          "SELECT VolSessionId,VolSessionTime,"
          "PoolId,StartTime,EndTime,JobFiles,JobBytes,JobTDate,Job,JobStatus,"
          "Type,Level,ClientId,Name,PriorJobId,RealEndTime,JobId,FileSetId,"
-         "SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles "
+         "SchedTime,RealEndTime,ReadBytes,PrimaryDataBytes,PrimaryDataSource,"
+         "HasBase,PurgedFiles "
          "FROM Job WHERE Job='%s'",
          esc);
   } else {
@@ -256,7 +257,8 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
          "SELECT VolSessionId,VolSessionTime,"
          "PoolId,StartTime,EndTime,JobFiles,JobBytes,JobTDate,Job,JobStatus,"
          "Type,Level,ClientId,Name,PriorJobId,RealEndTime,JobId,FileSetId,"
-         "SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles "
+         "SchedTime,RealEndTime,ReadBytes,PrimaryDataBytes,PrimaryDataSource,"
+         "HasBase,PurgedFiles "
          "FROM Job WHERE JobId=%s",
          edit_int64(jr->JobId, ed1));
   }
@@ -299,12 +301,15 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   bstrncpy(jr->cRealEndTime, (row[19] != NULL) ? row[19] : "",
            sizeof(jr->cRealEndTime));
   jr->ReadBytes = str_to_int64(row[20]);
+  jr->PrimaryDataBytes = (row[21] != NULL) ? str_to_int64(row[21]) : -1;
+  bstrncpy(jr->PrimaryDataSource, (row[22] != NULL) ? row[22] : "",
+           sizeof(jr->PrimaryDataSource));
   jr->StartTime = StrToUtime(jr->cStartTime);
   jr->SchedTime = StrToUtime(jr->cSchedTime);
   jr->EndTime = StrToUtime(jr->cEndTime);
   jr->RealEndTime = StrToUtime(jr->cRealEndTime);
-  jr->HasBase = str_to_int64(row[21]);
-  jr->PurgedFiles = str_to_int64(row[22]);
+  jr->HasBase = str_to_int64(row[23]);
+  jr->PurgedFiles = str_to_int64(row[24]);
 
   SqlFreeResult();
 

@@ -29,6 +29,8 @@
 #include "lib/thread_pool.h"
 
 #include <atomic>
+#include <string>
+#include <unordered_map>
 
 struct FindFilesPacket;
 struct AclData;
@@ -89,6 +91,7 @@ struct FiledJcrImpl {
   filedaemon::BareosAccurateFilelist* file_list{}; /**< Previous file list (accurate mode) */
   uint64_t base_size{};           /**< Compute space saved with base job */
   filedaemon::save_pkt* plugin_sp{}; /**< Plugin save packet */
+  std::unordered_map<std::string, uint32_t> plugin_postwrite_warnings{};
 #ifdef HAVE_WIN32
   VSSClient* pVSSClient{};        /**< VSS Client Instance */
 #endif

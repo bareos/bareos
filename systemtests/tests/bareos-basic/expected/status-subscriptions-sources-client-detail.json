@@ -1,0 +1,33 @@
+status subscriptions client=source-client
+{
+  "jsonrpc": "2.0",
+  "id": null,
+  "result": {
+    "unit-detail": [
+      {
+        "fileset": "legacy",
+        "plugin": "none (file data)",
+        "size_gb": "1.00",
+        "size_source": "legacy_fallback",
+        "effective_ratio": "1.00",
+        "space_saving_percent": "0.00"
+      },
+      {
+        "fileset": "report",
+        "plugin": "none (file data)",
+        "size_gb": "1.00",
+        "size_source": "reported",
+        "effective_ratio": "1.00",
+        "space_saving_percent": "0.00"
+      },
+      {
+        "fileset": "virtual",
+        "plugin": "none (file data)",
+        "size_gb": "1.00",
+        "size_source": "computed_virtual",
+        "effective_ratio": "1.00",
+        "space_saving_percent": "0.00"
+      }
+    ]
+  }
+}

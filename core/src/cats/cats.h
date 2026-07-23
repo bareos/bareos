@@ -125,6 +125,8 @@ struct JobDbRecord {
   uint32_t JobMissingFiles = 0;
   uint64_t JobBytes = 0;
   uint64_t ReadBytes = 0;
+  int64_t PrimaryDataBytes = -1; /**< <0 means NULL in catalog */
+  char PrimaryDataSource[32]{0};
   uint64_t JobSumTotalBytes = 0; /**< All jobs but this one */
   int PurgedFiles = 0;
   int HasBase = 0;
@@ -472,7 +474,7 @@ class pathid_cache;
 #define QUERY_HTABLE_PAGES 128
 
 // Current database version number schema = 2000 + 10 * Major + Minor
-#define BDB_VERSION 2250
+#define BDB_VERSION 2260
 
 typedef char** SQL_ROW;
 
