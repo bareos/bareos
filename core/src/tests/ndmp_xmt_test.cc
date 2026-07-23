@@ -27,34 +27,50 @@
 #  include "include/bareos.h"
 #endif
 
-#include "ndmprotocol.h"
+#include "ndmlib.h"
 
-// Verify that CONNECT_CLOSE across all protocol versions has
-// xdr_reply == NULL in the XMT table. This ensures ndmconn_call()
-// treats CONNECT_CLOSE as a send-only message (no reply expected),
-// avoiding the spurious "ERR=EOF" and "ERR=exchange-failed" errors
-// that occurred during normal connection teardown.
-TEST(ndmp_xmt, connect_close_has_no_reply)
+// Verify that CONNECT_CLOSE across all protocol versions has a reply
+// serializer entry. No-reply caller behavior is now explicit via
+// NDMNMB_FLAG_NO_REPLY_EXPECTED (set by NDMC_WITH_NO_REPLY), not by
+// null xdr_reply pointers.
+TEST(ndmp_xmt, connect_close_has_void_reply)
 {
   // NDMP0
   auto* ent = ndmp_xmt_lookup(0, NDMP0_CONNECT_CLOSE);
   ASSERT_NE(ent, nullptr);
-  EXPECT_EQ(ent->xdr_reply, nullptr);
+  EXPECT_NE(ent->xdr_reply, nullptr);
 
   // NDMP2
   ent = ndmp_xmt_lookup(NDMP2VER, NDMP2_CONNECT_CLOSE);
   ASSERT_NE(ent, nullptr);
-  EXPECT_EQ(ent->xdr_reply, nullptr);
+  EXPECT_NE(ent->xdr_reply, nullptr);
 
   // NDMP3
   ent = ndmp_xmt_lookup(NDMP3VER, NDMP3_CONNECT_CLOSE);
   ASSERT_NE(ent, nullptr);
-  EXPECT_EQ(ent->xdr_reply, nullptr);
+  EXPECT_NE(ent->xdr_reply, nullptr);
 
   // NDMP4
   ent = ndmp_xmt_lookup(NDMP4VER, NDMP4_CONNECT_CLOSE);
   ASSERT_NE(ent, nullptr);
+  EXPECT_NE(ent->xdr_reply, nullptr);
+
+  // Notify messages are still send-only (no reply serializer).
+  ent = ndmp_xmt_lookup(0, NDMP0_NOTIFY_CONNECTED);
+  ASSERT_NE(ent, nullptr);
   EXPECT_EQ(ent->xdr_reply, nullptr);
+}
+
+TEST(ndmp_xmt, ndmc_with_no_reply_sets_request_flag)
+{
+  struct ndmconn conn_storage = {};
+  struct ndmconn* conn = &conn_storage;
+
+  NDMC_WITH_NO_REPLY(ndmp9_connect_close, NDMP9VER)
+  EXPECT_EQ(xa->request.header.message, MT_ndmp9_connect_close);
+  NDMC_ENDWITH
+
+  EXPECT_NE(conn->call_xa_buf.request.flags & NDMNMB_FLAG_NO_REPLY_EXPECTED, 0);
 }
 
 // Sanity check: TAPE_OPEN should still have a reply XDR (it's a normal

@@ -633,9 +633,13 @@ int ndmconn_call(struct ndmconn* conn, struct ndmp_xa_buf* xa)
 
   xa->request.header.message_type = NDMP0_MESSAGE_REQUEST;
 
-  if (!xmte->xdr_reply) {
-    /* no reply expected, just a send (eg NOTIFY) */
+  if (xa->request.flags & NDMNMB_FLAG_NO_REPLY_EXPECTED) {
+    /* no reply expected, just a send (eg NOTIFY/CONNECT_CLOSE) */
     return ndmconn_send_nmb(conn, &xa->request);
+  }
+  if (!xmte->xdr_reply) {
+    ndmconn_set_err_msg(conn, "reply-xdr-missing");
+    return NDMCONN_CALL_STATUS_BOTCH;
   }
 
   rc = ndmconn_exchange_nmb(conn, &xa->request, &xa->reply);
@@ -760,11 +764,7 @@ int ndmconn_xdr_nmb(struct ndmconn* conn,
     xdr_body = ndmnmb_find_xdrproc(nmb);
 
     if (nmb->header.error == NDMP0_NO_ERR && !xdr_body) {
-      /* No body handler registered for this message (e.g. CONNECT_CLOSE
-       * has xdr_reply == 0 after the server may still send a reply).
-       * Skip the body and return success; xdrrec_skiprecord in the next
-       * call will flush any remaining bytes. */
-      return 0;
+      return ndmconn_set_err_msg(conn, "unknown-body");
     }
   }
   if (nmb->header.error == NDMP0_NO_ERR) {
