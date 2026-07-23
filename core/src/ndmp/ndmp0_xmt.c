@@ -40,7 +40,7 @@
 
 
 #define xdr_ndmp0_connect_close_request xdr_void
-#define xdr_ndmp0_connect_close_reply 0
+#define xdr_ndmp0_connect_close_reply xdr_void
 
 #define xdr_ndmp0_notify_connected_reply 0
 
