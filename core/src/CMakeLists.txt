@@ -28,11 +28,11 @@ endif()
 add_subdirectory(lib)
 add_subdirectory(findlib)
 add_subdirectory(fastlz)
+add_subdirectory(tools)
 
 add_subdirectory(filed)
 
 if(NOT client-only)
-  add_subdirectory(tools)
   add_subdirectory(cats)
   if(NOT HAVE_WIN32 AND ndmp)
     add_subdirectory(ndmp)

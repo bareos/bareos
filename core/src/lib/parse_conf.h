@@ -256,6 +256,7 @@ class ConfigurationParser {
                        lexer::error_handler* scan_error = nullptr,
                        lexer::warning_handler* scan_warning = nullptr);
   const std::string& get_base_config_path() const { return used_config_path_; }
+  const std::string& get_config_directory() const { return config_dir_; }
   void FreeResources();
 
   std::shared_ptr<LoadedConfiguration> GetCurrentConfiguration();

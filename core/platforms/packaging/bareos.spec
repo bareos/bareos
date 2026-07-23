@@ -1089,6 +1089,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_sbindir}/rcbareos-dir
 %endif
 %{configtemplatedir}/bareos-dir.d/catalog/MyCatalog.conf
+%{_sbindir}/bclient-enrolld
+%{_sbindir}/bclient-activate
 %{configtemplatedir}/bareos-dir.d/client/bareos-fd.conf
 %{configtemplatedir}/bareos-dir.d/console/bareos-mon.conf
 %{configtemplatedir}/bareos-dir.d/director/bareos-dir.conf
@@ -1212,6 +1214,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_sbindir}/rcbareos-fd
 %endif
 %{_sbindir}/bareos-fd
+%{_sbindir}/bclient-enroll
 %{plugin_dir}/bpipe-fd.so
 %{_mandir}/man8/bareos-fd.8.gz
 %{_unitdir}/bareos-fd.service
