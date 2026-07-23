@@ -465,6 +465,11 @@ if(NOT MSVC)
     LINK_LIBRARIES Bareos::Lib Bareos::Findlib GTest::gtest_main
   )
 endif()
+if(HAVE_LINUX_OS)
+  bareos_add_test(
+    test_fstype LINK_LIBRARIES Bareos::Findlib Bareos::Lib GTest::gtest_main
+  )
+endif()
 bareos_add_test(test_is_name_valid LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 bareos_add_test(test_poolmem LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
