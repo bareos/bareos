@@ -177,6 +177,7 @@ class BucketExplorer(ProcessBase):
         obj_count = 0
         task_count = 0
         start_time = time.time()
+        iteration_start_time = time.time()
         for obj in object_iterator:
             if obj_count == 0:
                 iteration_start_time = time.time()
