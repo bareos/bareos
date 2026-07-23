@@ -46,6 +46,7 @@ cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore-file.out
 restore jobid=10 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump file="${NDMP_TEST_PATH}/incremental" yes
 wait
+message
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
