@@ -256,9 +256,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         write_started = False
 
         try:
-            for line in self.log_pipe.readlines(
-                init_timeout=10000, read_timeout=30000
-            ):
+            for line in self.log_pipe.readlines(init_timeout=10000, read_timeout=30000):
                 bareosfd.JobMessage(bareosfd.M_INFO, line)
                 if line.startswith("INFO: Starting Backup of VM"):
                     # """INFO: Starting Backup of VM 999010 (qemu)"""
