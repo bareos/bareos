@@ -256,9 +256,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         write_started = False
 
         try:
-            for line in self.log_pipe.readlines(
-                init_timeout=10000, read_timeout=300000
-            ):
+            for line in self.log_pipe.readlines(init_timeout=10000, read_timeout=30000):
                 bareosfd.JobMessage(bareosfd.M_INFO, line)
                 if line.startswith("INFO: Starting Backup of VM"):
                     # """INFO: Starting Backup of VM 999010 (qemu)"""
@@ -286,6 +284,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     # """INFO: sending archive to stdout"
                     write_started = True
                     bareosfd.DebugMessage(100, "start marker found\n")
+                    break
         except TimeoutError as e:
             bareosfd.JobMessage(bareosfd.M_FATAL, f"vzdump log output stalled: {e}\n")
             return bareosfd.bRC_Error
@@ -391,6 +390,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             # other levels already caught at job start
             assert False
 
+        self._despool_log(init_timeout=0)
         return bareosfd.bRC_OK
 
     def plugin_io_close(self, iop):
