@@ -479,12 +479,32 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         )
         return False
 
-    def _wait_for_io_process(self, timeout=10):
+    def _wait_for_io_process(self, wait_interval=10):
         bareosfd.JobMessage(bareosfd.M_INFO, "waiting for command to finish\n")
+        wait_count = 0
         while self.io_process.returncode is None:
             self._despool_log()
             try:
-                self.io_process.wait(timeout=timeout)
+                wait_count += 1
+                self.io_process.wait(timeout=wait_interval)
             except subprocess.TimeoutExpired:
-                pass
+                if 3 < wait_count <= 6:
+                    bareosfd.JobMessage(
+                        bareosfd.M_WARNING,
+                        f"command did not exit within {wait_count * wait_interval}s, terminating\n",
+                    )
+                    self.io_process.terminate()
+                elif 6 < wait_count <= 7:
+                    bareosfd.JobMessage(
+                        bareosfd.M_WARNING,
+                        f"command did not exit within {wait_count * wait_interval}s, killing\n",
+                    )
+                    self.io_process.kill()
+                elif 7 < wait_count:
+                    bareosfd.JobMessage(
+                        bareosfd.M_WARNING,
+                        "giving up as command did not exit after kill signal.\n",
+                    )
+                    break
+
         return self._check_io_process()
