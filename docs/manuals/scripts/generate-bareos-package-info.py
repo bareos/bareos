@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -353,7 +353,7 @@ if __name__ == "__main__":
             json_data = json.load(json_file)
             data.add_release(release, json_data)
 
-    # print data.data
+    # print(data.data)
 
     basename = "bareos-packages"
     dest = args.out + "/" + basename
@@ -378,7 +378,9 @@ if __name__ == "__main__":
         args.latex,
     )
     create_file(filenametemplate.format("debian"), data, "Debian.*", args.latex)
-    create_file(filenametemplate.format("ubuntu"), data, "xUbuntu.*", args.latex)
+    create_file(
+        filenametemplate.format("ubuntu"), data, "xUbuntu.*|Ubuntu.*", args.latex
+    )
     create_file(
         filenametemplate.format("univention"), data, "Univention_4.*", args.latex
     )
