@@ -5,17 +5,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- introduce new webui as a technology preview [PR #2716]
+- add `update volume encrypt` command [PR #2727]
+
 ### Fixed
 - Improve database encoding error handling [PR #2699]
 - core: ensure runscripts are only executed once [PR #2723]
 - core: fix sometimes not preserving used resource pointers [PR #2728]
 - Fix proxmox plugin stalling virtual machines [PR #2734]
-
-### Added
-- add `update volume encrypt` command [PR #2727]
-
-### Changed
-- introduce new webui [PR #2716]
 - Don't break the build when npm audit fails [PR #2741]
 
 ## [25.0.4] - 2026-07-02
