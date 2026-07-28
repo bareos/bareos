@@ -81,22 +81,33 @@ async function openNav(page, testId, urlPattern) {
   await page.waitForURL(urlPattern)
 }
 
-async function selectFirstQOption(page, testId, { optionTimeoutMs = 5000 } = {}) {
+async function selectFirstQOption(
+  page,
+  testId,
+  {
+    optionTimeoutMs = 5000,
+    selected,
+  } = {}
+) {
   const field = page.locator(`[data-testid="${testId}"]`)
     .locator('xpath=ancestor::*[contains(@class,"q-field")]')
     .first()
+  const combobox = field.getByRole('combobox')
   await expect(field).toBeVisible({ timeout: 20000 })
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await field.click({ force: true })
-    await page.keyboard.press('ArrowDown')
-    const option = page.locator(
-      '.q-menu:visible [role="option"], .q-menu:visible .q-item, .q-menu:visible .q-virtual-scroll__content .q-item, .q-popup-proxy:visible .q-item'
-    ).first()
-
     try {
+      await combobox.click()
+      const listboxId = await combobox.getAttribute('aria-controls')
+      if (!listboxId) {
+        throw new Error(`Could not find the option list for ${testId}`)
+      }
+      const option = page.locator(`[id="${listboxId}"]`).getByRole('option').first()
       await expect(option).toBeVisible({ timeout: optionTimeoutMs })
       await option.click()
+      if (selected) {
+        await selected()
+      }
       return
     } catch {
       await page.keyboard.press('Escape')
@@ -227,7 +238,9 @@ test('loads the restore workflow selections', async ({ page }) => {
   await openNav(page, 'nav-restore', /#\/restore/)
 
   await waitForQSelectReady(page, 'restore-source-client')
-  await selectFirstQOption(page, 'restore-source-client')
+  await selectFirstQOption(page, 'restore-source-client', {
+    selected: () => waitForQSelectReady(page, 'restore-backup-job'),
+  })
   await expect(page.locator('[data-testid="restore-backup-job"]')).toBeVisible()
   await waitForQSelectReady(page, 'restore-backup-job')
   await selectFirstQOption(page, 'restore-backup-job', { optionTimeoutMs: 8000 })
