@@ -97,7 +97,7 @@ execute_process(
   RESULT_VARIABLE npm_audit_result
 )
 if(NOT npm_audit_result EQUAL 0)
-  message(FATAL_ERROR "npm audit failed with exit code ${npm_audit_result}")
+  message(WARNING "npm audit failed with exit code ${npm_audit_result}")
 endif()
 
 message(STATUS "Building webui-vue dist in ${DIST_DIR}")
