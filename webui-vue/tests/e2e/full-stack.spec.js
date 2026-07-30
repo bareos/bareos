@@ -54,11 +54,25 @@ async function login(
     shouldSucceed = true,
   } = {}
 ) {
+  const loginForm = page.locator('[data-testid="login-form"]')
   const loginError = page.locator('[data-testid="login-error"]')
 
   for (let attempt = 1; attempt <= LOGIN_ATTEMPTS; attempt += 1) {
     await page.goto('/')
-    await expect(page.locator('[data-testid="login-form"]')).toBeVisible()
+    await page.waitForFunction(() => (
+      window.location.hash === '#/dashboard'
+      || document.querySelector('[data-testid="login-form"]')
+    ), { timeout: LOGIN_RESULT_TIMEOUT_MS })
+
+    if (page.url().endsWith('/#/dashboard')) {
+      if (!shouldSucceed) {
+        throw new Error('Invalid credentials unexpectedly restored a session')
+      }
+      await expectConnected(page)
+      return
+    }
+
+    await expect(loginForm).toBeVisible()
     await page.getByLabel('Username').fill(loginUsername)
     await page.getByLabel('Password').fill(loginPassword)
     await page.getByRole('button', { name: 'Login' }).click()
@@ -93,6 +107,26 @@ async function login(
 async function openNav(page, testId, urlPattern) {
   await page.locator(`[data-testid="${testId}"]`).click()
   await page.waitForURL(urlPattern)
+}
+
+async function openConsole(page) {
+  const consoleOutput = page.locator('[data-testid="console-output"]')
+  await page.goto('/#/console-popup')
+  await expect(consoleOutput).toBeVisible()
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      await expect(consoleOutput).toContainText('Connected to bareos-dir', {
+        timeout: 5000,
+      })
+      return consoleOutput
+    } catch {
+      await page.getByTitle('Reconnect').click()
+    }
+  }
+
+  await expect(consoleOutput).toContainText('Connected to bareos-dir')
+  return consoleOutput
 }
 
 async function selectFirstQOption(
@@ -196,9 +230,7 @@ test('shows all configured directors in multi-director login mode', async ({
 test('reconnects the console session on demand', async ({ page }) => {
   await login(page)
 
-  await page.goto('/#/console-popup')
-  const consoleOutput = page.locator('[data-testid="console-output"]')
-  await expect(consoleOutput).toContainText('Connected to bareos-dir')
+  const consoleOutput = await openConsole(page)
 
   await page.getByTitle('Reconnect').click()
   await expect(consoleOutput).toContainText('Console disconnected.')
@@ -208,9 +240,7 @@ test('reconnects the console session on demand', async ({ page }) => {
 test('reconnects the console after typing exit', async ({ page }) => {
   await login(page)
 
-  await page.goto('/#/console-popup')
-  const consoleOutput = page.locator('[data-testid="console-output"]')
-  await expect(consoleOutput).toContainText('Connected to bareos-dir')
+  const consoleOutput = await openConsole(page)
 
   await consoleOutput.click()
   await page.keyboard.type('exit')
@@ -346,9 +376,7 @@ test('keeps the console session when navigating away and back', async ({
 }) => {
   await login(page)
 
-  await page.goto('/#/console-popup')
-  const consoleOutput = page.locator('[data-testid="console-output"]')
-  await expect(consoleOutput).toContainText('Connected to bareos-dir')
+  const consoleOutput = await openConsole(page)
 
   await page.getByText('status director', { exact: true }).click()
   await expect(consoleOutput).toContainText('Terminated Jobs:')
@@ -374,12 +402,7 @@ test('opens the console and runs a raw command through the proxied director conn
 }) => {
   await login(page)
 
-  await page.goto('/#/console-popup')
-  await expect(page.locator('[data-testid="console-output"]')).toContainText(
-    'Connected to bareos-dir'
-  )
+  const consoleOutput = await openConsole(page)
   await page.getByText('status director', { exact: true }).click()
-  await expect(page.locator('[data-testid="console-output"]')).toContainText(
-    'Terminated Jobs:'
-  )
+  await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
