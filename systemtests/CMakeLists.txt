@@ -691,6 +691,15 @@ else()
                  "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture" TIMEOUT 60 COST
                  1.0
     )
+    # Each profile starts a Director, proxy, frontend, and Chromium instance.
+    # Keep the complete profile lifecycle exclusive on shared CI workers.
+    set_tests_properties(
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
+      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:cleanup"
+      PROPERTIES RESOURCE_LOCK webui_vue_playwright_resource
+    )
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endforeach()
   set(BAREOS_WEBUI_PROFILE "")

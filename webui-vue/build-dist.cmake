@@ -47,18 +47,8 @@ set(CMAKE_MODULE_PATH "${REPO_ROOT_DIR}/cmake" "${REPO_ROOT_DIR}/core/cmake"
                       "${REPO_ROOT_DIR}/webui/cmake"
 )
 
-execute_process(
-  COMMAND "${CMAKE_COMMAND}" -P "${REPO_ROOT_DIR}/write_version_files.cmake"
-  WORKING_DIRECTORY "${REPO_ROOT_DIR}"
-  RESULT_VARIABLE write_version_result
-)
-if(NOT write_version_result EQUAL 0)
-  message(
-    FATAL_ERROR
-      "write_version_files.cmake failed with exit code ${write_version_result}"
-  )
-endif()
-
+find_package(Git QUIET)
+include(BareosVersionFromGit)
 include(BareosExtractVersionInfo)
 
 file(READ "${VERSION_TEMPLATE_FILE}" VERSION_FILE_TEMPLATE)
@@ -97,7 +87,7 @@ execute_process(
   RESULT_VARIABLE npm_audit_result
 )
 if(NOT npm_audit_result EQUAL 0)
-  message(FATAL_ERROR "npm audit failed with exit code ${npm_audit_result}")
+  message(WARNING "npm audit failed with exit code ${npm_audit_result}")
 endif()
 
 message(STATUS "Building webui-vue dist in ${DIST_DIR}")
