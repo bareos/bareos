@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - introduce new webui [PR #2716]
+- Don't break the build when npm audit fails [PR #2741]
 
 ## [25.0.4] - 2026-07-02
 
@@ -2325,4 +2326,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2727]: https://github.com/bareos/bareos/pull/2727
 [PR #2728]: https://github.com/bareos/bareos/pull/2728
 [PR #2734]: https://github.com/bareos/bareos/pull/2734
+[PR #2741]: https://github.com/bareos/bareos/pull/2741
 [unreleased]: https://github.com/bareos/bareos/tree/master
