@@ -29,6 +29,7 @@ use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Laminas\Json\Json;
 use Job\Form\JobForm;
+use Job\Form\CancelJobForm;
 use Job\Form\RunJobForm;
 use Job\Model\Job;
 use Exception;
@@ -249,9 +250,25 @@ class JobController extends AbstractActionController
             );
         }
 
-        $result = null;
-
         $jobid = (int) $this->params()->fromRoute('id', 0);
+        $form = new CancelJobForm();
+
+        if (!$this->getRequest()->isPost()) {
+            return new ViewModel(array(
+                'cancelForm' => $form,
+                'jobid' => $jobid,
+            ));
+        }
+
+        $form->setData($this->getRequest()->getPost());
+        if (!$form->isValid()) {
+            return new ViewModel(array(
+                'cancelForm' => $form,
+                'jobid' => $jobid,
+            ));
+        }
+
+        $result = null;
 
         try {
             $this->bsock = $this->getServiceLocator()->get('director');

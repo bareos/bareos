@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,35 +23,33 @@
  *
  */
 
-$title = 'Job Cancel';
-$this->headTitle($title);
+namespace Job\Form;
 
-?>
+use Laminas\Form\Form;
 
-<?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
+class CancelJobForm extends Form
+{
+    public function __construct()
+    {
+        parent::__construct('canceljob');
 
-<?php if (isset($this->cancelForm)) : ?>
+        $this->setAttribute('method', 'post');
 
-<p><?php echo sprintf($this->translate('Cancel job %d?'), $this->jobid); ?></p>
+        $this->add(array(
+            'name' => 'csrf',
+            'type' => 'Laminas\Form\Element\Csrf',
+            'options' => array(
+                'csrf_options' => array('timeout' => 3600),
+            ),
+        ));
 
-<?php
-$form = $this->cancelForm;
-$form->prepare();
-echo $this->form()->openTag($form);
-echo $this->formHidden($form->get('csrf'));
-echo $this->formElementErrors($form->get('csrf'));
-echo $this->formSubmit($form->get('submit'));
-echo $this->form()->closeTag();
-?>
-
-<?php else : ?>
-
-<pre>
-<code>
-<?php echo $this->bconsoleOutput; ?>
-</code>
-</pre>
-
-<?php endif; ?>
-
-<?php endif; ?>
+        $this->add(array(
+            'name' => 'submit',
+            'type' => 'submit',
+            'attributes' => array(
+                'class' => 'btn btn-danger',
+                'value' => _('Cancel Job'),
+            ),
+        ));
+    }
+}
