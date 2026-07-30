@@ -29,6 +29,8 @@ const expectedDirectorTransport
 const isReadonlyProfile = profile === 'readonly'
 const isMultiDirectorProfile
   = process.env.BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR === '1'
+const LOGIN_ATTEMPTS = 3
+const LOGIN_RESULT_TIMEOUT_MS = 10_000
 
 async function expectConnected(page) {
   await expect(page.locator('[data-testid="director-status-label"]')).toContainText(
@@ -54,26 +56,38 @@ async function login(
 ) {
   const loginError = page.locator('[data-testid="login-error"]')
 
-  await page.goto('/')
-  await expect(page.locator('[data-testid="login-form"]')).toBeVisible()
-  await page.getByLabel('Username').fill(loginUsername)
-  await page.getByLabel('Password').fill(loginPassword)
-  await page.getByRole('button', { name: 'Login' }).click()
+  for (let attempt = 1; attempt <= LOGIN_ATTEMPTS; attempt += 1) {
+    await page.goto('/')
+    await expect(page.locator('[data-testid="login-form"]')).toBeVisible()
+    await page.getByLabel('Username').fill(loginUsername)
+    await page.getByLabel('Password').fill(loginPassword)
+    await page.getByRole('button', { name: 'Login' }).click()
 
-  if (!shouldSucceed) {
-    await expect(page.locator('[data-testid="login-error"]')).toBeVisible()
-    await expect(page).toHaveURL(/#\/login$/)
-    return
+    await page.waitForFunction(() => (
+      window.location.hash === '#/dashboard'
+      || document.querySelector('[data-testid="login-error"]')?.textContent?.trim()
+    ), { timeout: LOGIN_RESULT_TIMEOUT_MS })
+
+    if (!shouldSucceed) {
+      await expect(loginError).toBeVisible()
+      await expect(page).toHaveURL(/#\/login$/)
+      return
+    }
+
+    if (page.url().endsWith('/#/dashboard')) {
+      await expectConnected(page)
+      return
+    }
+
+    const message = (await loginError.textContent())?.trim() || 'Unknown error'
+    const transientConnectionError
+      = /connection error|websocket connection failed|could not connect to director/i.test(message)
+    if (!transientConnectionError || attempt === LOGIN_ATTEMPTS) {
+      throw new Error(`Login failed: ${message}`)
+    }
+
+    await page.waitForTimeout(1_000)
   }
-
-  await Promise.race([
-    page.waitForURL(/#\/dashboard$/),
-    loginError.waitFor({ state: 'visible' }).then(async () => {
-      const message = (await loginError.textContent())?.trim()
-      throw new Error(`Login failed: ${message || 'Unknown error'}`)
-    }),
-  ])
-  await expectConnected(page)
 }
 
 async function openNav(page, testId, urlPattern) {
