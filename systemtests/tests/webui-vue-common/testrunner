@@ -30,6 +30,7 @@ export TestName
 . "${BAREOS_SCRIPTS_DIR}/functions"
 
 proxy_log="${tmp}/webui-vue-proxy.out"
+frontend_log="${tmp}/webui-vue-frontend.out"
 playwright_log="${tmp}/webui-vue-playwright.out"
 
 start_test
@@ -42,7 +43,13 @@ if ! PLAYWRIGHT_BASE_URL="${BAREOS_WEBUI_BASE_URL}" \
   GOOGLE_CHROME_EXECUTABLE="${GOOGLE_CHROME_EXECUTABLE}" \
   "${WEBUI_VUE_PLAYWRIGHT_EXECUTABLE}" test --reporter=line \
   >"${playwright_log}" 2>&1; then
-  set_error "$(cat "${playwright_log}")"
+  set_error "$(cat "${playwright_log}")
+
+=== webui-vue proxy log ===
+$(cat "${proxy_log}")
+
+=== webui-vue frontend log ===
+$(cat "${frontend_log}")"
 fi
 popd >/dev/null
 
