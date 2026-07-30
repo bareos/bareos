@@ -167,12 +167,12 @@ class AuthController extends AbstractActionController
             $session->offsetSet('commands', $aclcheck);
         }
 
-        if ($this->params()->fromQuery('req')) {
-            $redirect = $this->params()->fromQuery('req');
+        $redirect = $this->params()->fromQuery('req');
+        if ($this->isLocalRedirect($redirect)) {
             $request = $this->getRequest();
             $request->setUri($redirect);
             if ($routeToBeMatched = $this->getServiceLocator()->get('Router')->match($request)) {
-                return $this->redirect()->toUrl($this->params()->fromQuery('req'));
+                return $this->redirect()->toUrl($redirect);
             }
         }
 
@@ -241,6 +241,15 @@ class AuthController extends AbstractActionController
         ) as $key) {
             $session->offsetUnset($key);
         }
+    }
+
+    private function isLocalRedirect($redirect)
+    {
+        return is_string($redirect)
+            && substr($redirect, 0, 1) === '/'
+            && substr($redirect, 0, 2) !== '//'
+            && strpos($redirect, '\\') === false
+            && !preg_match('/%(2f|5c)/i', $redirect);
     }
 
     /**
