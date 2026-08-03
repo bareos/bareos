@@ -343,6 +343,8 @@ linkcheck_ignore = [
     "http://127.0.0.1:8000/docs",
     "http://127.0.0.1:8000/redoc",
     r"https://github\.com/bareos/bareos/pull/\d+",
+    r"https://download.bareos.com/bareos/release/\d+/\w+/add_bareos_repositories.sh",  # login protected
+    r"https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/\d+/html/security_hardening/switching-rhel-to-fips-mode",  # bot crawl protected
     "https://www.sphinx-doc.org/en/1.7/intro.html#",
     "https://www.snia.org/ndmp",  # cloudflare protected
     "https://www.dell.com/support.*",  # client protected
