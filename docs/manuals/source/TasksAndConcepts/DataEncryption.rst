@@ -7,19 +7,31 @@ Data Encryption
    single: Data Encryption
    single: Encryption; Data
 
-Bareos permits file data encryption and signing within the File Daemon (or Client) prior to sending data to the Storage Daemon. Upon restoration, file signatures are validated and any mismatches are reported. At no time does the Director or the Storage Daemon have access to unencrypted file contents.
+Bareos permits file data encryption and signing within the File Daemon (or Client) prior to sending
+data to the Storage Daemon. Upon restoration, file signatures are validated and any mismatches are
+reported. At no time does the Director or the Storage Daemon have access to unencrypted file contents.
 
 It is very important to specify what this implementation does NOT do:
 
--  The implementation does not encrypt file metadata such as file path names, permissions, ownership and extended attributes. However, Mac OS X resource forks are encrypted.
+-  The implementation does not encrypt file metadata such as file path names, permissions,
+   ownership and extended attributes. However, Mac OS X resource forks are encrypted.
 
-Encryption and signing are implemented using RSA private keys coupled with self-signed x509 public certificates. This is also sometimes known as PKI or Public Key Infrastructure.
+Encryption and signing are implemented using RSA private keys coupled with self-signed x509 public
+certificates. This is also sometimes known as PKI or Public Key Infrastructure.
 
-Each File Daemon should be given its own unique private/public key pair. In addition to this key pair, any number of "Master Keys" may be specified – these are key pairs that may be used to decrypt any backups should the File Daemon key be lost. Only the Master Key’s public certificate should be made available to the File Daemon. Under no circumstances should the Master Private Key be shared or stored on the Client machine.
+Each File Daemon should be given its own unique private/public key pair. In addition to this key
+pair, any number of "Master Keys" may be specified – these are key pairs that may be used to
+decrypt any backups should the File Daemon key be lost. Only the Master Key’s public certificate
+should be made available to the File Daemon. Under no circumstances should the Master Private Key
+be shared or stored on the Client machine.
 
-The Master Keys should be backed up to a secure location, such as a CD placed in a in a fire-proof safe or bank safety deposit box. The Master Keys should never be kept on the same machine as the Storage Daemon or Director if you are worried about an unauthorized party compromising either machine and accessing your encrypted backups.
+The Master Keys should be backed up to a secure location, such as a CD placed in a in a fire-proof
+safe or bank safety deposit box. The Master Keys should never be kept on the same machine as the
+Storage Daemon or Director if you are worried about an unauthorized party compromising either
+machine and accessing your encrypted backups.
 
-While less critical than the Master Keys, File Daemon Keys are also a prime candidate for off-site backups; burn the key pair to a CD and send the CD home with the owner of the machine.
+While less critical than the Master Keys, File Daemon Keys are also a prime candidate for off-site
+backups; burn the key pair to a CD and send the CD home with the owner of the machine.
 
 
 
@@ -36,14 +48,27 @@ The basic algorithm used for each backup session (Job) is:
 
 #. The FD uses that session key to perform symmetric encryption on the data.
 
+.. warning::
+
+   PKI Encryption disables Parallel Send code path, as such the configuration option
+   :config:option:`fd/client/MaximumWorkersPerJob` will not be used.
+   With PKI enabled, the FD has to handle compression, digests, transport encryption,
+   data encryption, and sending all in a single thread per job.
+
+
 Encryption Technical Details
 ----------------------------
 
-:index:`\ <single: Encryption; Technical Details>`
+.. index::
+   single: Encryption; Technical Details
 
-The implementation uses 128bit AES-CBC, with RSA encrypted symmetric session keys. The RSA key is user supplied. If you are running OpenSSL >= 0.9.8, the signed file hash uses SHA-256, otherwise SHA-1 is used.
+The implementation uses 128bit AES-CBC, with RSA encrypted symmetric session keys. The RSA key is
+user supplied. If you are running OpenSSL >= 0.9.8, the signed file hash uses SHA-256, otherwise
+SHA-1 is used.
 
-End-user configuration settings for the algorithms are not currently exposed, only the algorithms listed above are used. However, the data written to Volume supports arbitrary symmetric, asymmetric, and digest algorithms for future extensibility, and the back-end implementation currently supports:
+End-user configuration settings for the algorithms are not currently exposed, only the algorithms
+listed above are used. However, the data written to Volume supports arbitrary symmetric, asymmetric,
+and digest algorithms for future extensibility, and the back-end implementation currently supports:
 
 ::
 
@@ -60,12 +85,18 @@ End-user configuration settings for the algorithms are not currently exposed, on
        - SHA256
        - SHA512
 
-The various algorithms are exposed via an entirely reusable, OpenSSL-agnostic API (ie, it is possible to drop in a new encryption backend). The Volume format is DER-encoded ASN.1, modeled after the Cryptographic Message Syntax from RFC 3852. Unfortunately, using CMS directly was not possible, as at the time of coding a free software streaming DER decoder/encoder was not available.
+The various algorithms are exposed via an entirely reusable, OpenSSL-agnostic API (ie, it is
+possible to drop in a new encryption backend). The Volume format is DER-encoded ASN.1, modeled
+after the Cryptographic Message Syntax from RFC 3852.
+Unfortunately, using CMS directly was not possible, as at the time of coding a free software
+streaming DER decoder/encoder was not available.
+
 
 Generating Private/Public Encryption Keys
 -----------------------------------------
 
-:index:`\ <single: Encryption; Generating Private/Public Encryption Keypairs>`\
+.. index::
+   single: Encryption; Generating Private/Public Encryption Keypairs
 
 Generate a Master public/private key-pair with:
 
@@ -90,15 +121,24 @@ Generate the File Daemon public/private key-pairs for each FD with:
 
 
 
-Please note the extensions given to these key-files. For example, a .pem file can contain all the following: private keys (RSA and DSA), public keys (RSA and DSA) and (x509) certificates. It is the default format for OpenSSL. It stores data Base64 encoded DER format, surrounded by ASCII headers, so is suitable for text mode transfers between systems. A .pem file may contain any number of keys either public or private. We use it in cases where there is both, a public and a private key.
+Please note the extensions given to these key-files. For example, a .pem file can contain all the
+following: private keys (RSA and DSA), public keys (RSA and DSA) and (x509) certificates. It is the
+default format for OpenSSL. It stores data Base64 encoded DER format, surrounded by ASCII headers,
+so is suitable for text mode transfers between systems.
+A .pem file may contain any number of keys either public or private.
+We use it in cases where there is both, a public and a private key.
 
-Above we have used the .pub.key extension to refer to X509 certificate encoding that contains only a single public key.
+Above we have used the .pub.key extension to refer to X509 certificate encoding that contains only
+a single public key.
 
 Example Data Encryption Configurations (bareos-fd.conf)
 -------------------------------------------------------
 
-:index:`\ <single: Example; Data Encryption Configuration File>`\
+.. index::
+   single: Example; Data Encryption Configuration File
 
+
+a sample configuration:
 
 
    .. literalinclude:: /include/config/FdClientPki.conf
@@ -109,9 +149,12 @@ Example Data Encryption Configurations (bareos-fd.conf)
 Decrypting with a Master Key
 ----------------------------
 
-:index:`\ <single: Decrypting with a Master Key>`\  :index:`\ <single: Encryption; Decrypting with a Master Key>`\
+.. index::
+   single: Decrypting with a Master Key
+   single: Encryption; Decrypting with a Master Key
 
-It is preferable to retain a secure, non-encrypted copy of the client’s own encryption keypair. However, should you lose the client’s keypair, recovery with the master keypair is possible.
+It is preferable to retain a secure, non-encrypted copy of the client’s own encryption keypair.
+However, should you lose the client’s keypair, recovery with the master keypair is possible.
 
 You must:
 
