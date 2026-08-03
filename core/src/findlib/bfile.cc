@@ -738,12 +738,34 @@ static inline int BcloseEncrypted(BareosFilePacket* bfd)
 }
 
 /**
+ * Changes to file handles do not get propagated to directory entries.
+ * This means that e.g. the windows explorer and other tools that only look
+ * at directory entries for file meta data, will show outdated data for
+ * files that get restored by bareos.  Essentially the restored files size will
+ * say 0 until bareos is done with that file, and then its complete size.
+ *
+ * This function is a workaround for this issue.  (Re-)opening and closing the
+ * handle, should force windows to update the directory entry.
+ * This can take some time so this should _not_ be done on every write.
+ *
+ * See: https://devblogs.microsoft.com/oldnewthing/20111226-00/?p=8813
+ */
+static inline void UpdateFileDirectoryEntry(HANDLE hFile)
+{
+  HANDLE h = ReOpenFile(
+      hFile, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0);
+  if (h != INVALID_HANDLE_VALUE) { CloseHandle(h); }
+}
+
+
+/**
  * Returns  0 on success
  *         -1 on error
  */
 static inline int BcloseNonencrypted(BareosFilePacket* bfd)
 {
   int status = 0;
+  DWORD bytes_changed = 0;
 
   if (bfd->mode == BF_CLOSED) {
     Dmsg0(50, "=== BFD already closed.\n");
@@ -765,7 +787,7 @@ static inline int BcloseNonencrypted(BareosFilePacket* bfd)
     if (bfd->lplugin_private_context
         && !p_BackupRead(bfd->fh, buf,                     /* buffer */
                          (DWORD)0,                         /* bytes to read */
-                         &bfd->rw_bytes,                   /* bytes read */
+                         &bytes_changed,                   /* bytes read */
                          1,                                /* Abort */
                          1,                                /* ProcessSecurity */
                          &bfd->lplugin_private_context)) { /* Read context */
@@ -777,7 +799,7 @@ static inline int BcloseNonencrypted(BareosFilePacket* bfd)
     if (bfd->lplugin_private_context
         && !p_BackupWrite(bfd->fh, buf,   /* buffer */
                           (DWORD)0,       /* bytes to read */
-                          &bfd->rw_bytes, /* bytes written */
+                          &bytes_changed, /* bytes written */
                           1,              /* Abort */
                           1,              /* ProcessSecurity */
                           &bfd->lplugin_private_context)) { /* Write context */
@@ -799,6 +821,7 @@ all_done:
   bfd->lplugin_private_context = NULL;
   bfd->cmd_plugin = false;
   bfd->do_io_in_core = false;
+  bfd->rw_bytes = 0;
 
   return status;
 }
@@ -822,7 +845,7 @@ int bclose(BareosFilePacket* bfd)
  */
 ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count)
 {
-  bfd->rw_bytes = 0;
+  DWORD bytes_read = 0;
 
   if (bfd->cmd_plugin && plugin_bread) {
     // invalid filehandle -> plugin does read
@@ -833,8 +856,7 @@ ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count)
     Dmsg1(400, "bread handled in core via bfd->fh=%p\n", bfd->fh);
   }
   if (bfd->use_backup_api) {
-    if (!p_BackupRead(bfd->fh, (BYTE*)buf, count, &bfd->rw_bytes,
-                      0,                                /* no Abort */
+    if (!p_BackupRead(bfd->fh, (BYTE*)buf, count, &bytes_read, 0, /* no Abort */
                       1,                                /* Process Security */
                       &bfd->lplugin_private_context)) { /* Context */
       bfd->lerror = GetLastError();
@@ -843,7 +865,7 @@ ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count)
       return -1;
     }
   } else {
-    if (!ReadFile(bfd->fh, buf, count, &bfd->rw_bytes, NULL)) {
+    if (!ReadFile(bfd->fh, buf, count, &bytes_read, NULL)) {
       bfd->lerror = GetLastError();
       bfd->BErrNo = b_errno_win32;
       errno = b_errno_win32;
@@ -851,12 +873,14 @@ ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count)
     }
   }
 
-  return (ssize_t)bfd->rw_bytes;
+  bfd->rw_bytes += bytes_read;
+
+  return (ssize_t)bytes_read;
 }
 
 ssize_t bwrite(BareosFilePacket* bfd, void* buf, size_t count)
 {
-  bfd->rw_bytes = 0;
+  DWORD bytes_written = 0;
 
   if (bfd->cmd_plugin && plugin_bwrite) {
     // invalid filehandle -> plugin does read
@@ -868,7 +892,7 @@ ssize_t bwrite(BareosFilePacket* bfd, void* buf, size_t count)
 
 
   if (bfd->use_backup_api) {
-    if (!p_BackupWrite(bfd->fh, (BYTE*)buf, count, &bfd->rw_bytes,
+    if (!p_BackupWrite(bfd->fh, (BYTE*)buf, count, &bytes_written,
                        0,                                /* No abort */
                        1,                                /* Process Security */
                        &bfd->lplugin_private_context)) { /* Context */
@@ -878,7 +902,7 @@ ssize_t bwrite(BareosFilePacket* bfd, void* buf, size_t count)
       return -1;
     }
   } else {
-    if (!WriteFile(bfd->fh, buf, count, &bfd->rw_bytes, NULL)) {
+    if (!WriteFile(bfd->fh, buf, count, &bytes_written, NULL)) {
       bfd->lerror = GetLastError();
       bfd->BErrNo = b_errno_win32;
       errno = b_errno_win32;
@@ -886,7 +910,16 @@ ssize_t bwrite(BareosFilePacket* bfd, void* buf, size_t count)
     }
   }
 
-  return (ssize_t)bfd->rw_bytes;
+  // update the directory entry every 128MB
+  constexpr std::size_t threshold_in_bytes = 128 << 20;
+  auto last_chunk = bfd->rw_bytes / threshold_in_bytes;
+  auto current_chunk = (bfd->rw_bytes + bytes_written) / threshold_in_bytes;
+
+  if (last_chunk != current_chunk) { UpdateFileDirectoryEntry(bfd->fh); }
+
+  bfd->rw_bytes += bytes_written;
+
+  return (ssize_t)bytes_written;
 }
 
 bool IsBopen(BareosFilePacket* bfd) { return bfd->mode != BF_CLOSED; }
