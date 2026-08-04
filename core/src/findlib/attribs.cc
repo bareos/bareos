@@ -333,7 +333,7 @@ bool SetAttributes(JobControlRecord* jcr,
    * but its actually doing something different than you expect.
    *
    * Normally attr->statp.st_size is signed, so to check for "unset" sizes
-   * (which are mostly set to 0 or -1), you can just check st_size > 0.
+   * (which are mostly set to 0 or -1), you can just check st_size <= 0.
    * And this is the way this code checked it for ages, until someone
    * (which is sadly me) decided to test sparse files + io in core on windows.
    * Conclusion: The stat field on windows is unsigned, so st_size{-1} > 0
@@ -355,8 +355,7 @@ bool SetAttributes(JobControlRecord* jcr,
   old_mask = umask(0);
   if (has_set_size(attr->statp) && attr->type == FT_REG) {
     if (IsBopen(ofd)) {
-      boffset_t fsize;
-      fsize = blseek(ofd, 0, SEEK_END);
+      boffset_t fsize = blseek(ofd, 0, SEEK_END);
 
       if (fsize > 0 && fsize != (boffset_t)attr->statp.st_size) {
         Jmsg3(jcr, M_ERROR, 0,
