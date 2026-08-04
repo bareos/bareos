@@ -61,4 +61,8 @@ expect_grep "Backup Error." \
   "${runner_tmp}/incr.out" \
   "backup should have failed but did not"
 
+expect_grep "Accurate not allowed with usesuffix" \
+  "${runner_tmp}/incr.out" \
+  "expected error message about Accurate job not found"
+
 end_test
