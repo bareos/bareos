@@ -20,8 +20,8 @@
  */
 
 export function getAppBasePath() {
-  const path = window.location.pathname || '/'
-  return path.endsWith('/') ? path : path + '/'
+  const base = import.meta.env.BASE_URL || '/'
+  return base.endsWith('/') ? base : base + '/'
 }
 
 export function defaultDirectorWsUrl() {
