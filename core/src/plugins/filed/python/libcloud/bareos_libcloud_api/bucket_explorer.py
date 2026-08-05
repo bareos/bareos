@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright (C) 2020-2025 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -177,6 +177,7 @@ class BucketExplorer(ProcessBase):
         obj_count = 0
         task_count = 0
         start_time = time.time()
+        iteration_start_time = time.time()
         for obj in object_iterator:
             if obj_count == 0:
                 iteration_start_time = time.time()
