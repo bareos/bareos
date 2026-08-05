@@ -117,8 +117,17 @@ class TestBareosFd(unittest.TestCase):
             test_StatPacket.st_mtime,
             test_StatPacket.st_ctime,
         ):
-            self.assertGreaterEqual(ts_value, timestamp_before - 1.0)
-            self.assertLessEqual(ts_value, timestamp_after + 1.0)
+            # ptyhon time.time() uses CLOCK_REALTIME, while our code
+            # uses time(NULL).  These can differ by a few milliseconds,
+            # which can cause large differences between of rounding.
+            # E.g. we can have
+            #   timestamp_before = 1785830999.000088, and
+            #   ts_value = 1785830998
+            # Which are further apart than 1 second, even time(NULL) probably
+            # just lagged by ~90us behind CLOCK_REALTIME.
+
+            self.assertGreaterEqual(ts_value, timestamp_before - 2.0)
+            self.assertLessEqual(ts_value, timestamp_after + 2.0)
 
         # set fixed values for comparison
         test_StatPacket.st_atime = 999

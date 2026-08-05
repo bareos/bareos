@@ -83,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: ensure runscripts are only executed once [PR #2661]
 - core: fix sometimes not preserving used resource pointers [PR #2725]
 - Fix proxmox plugin stalling virtual machines [PR #2733]
+- logrotate: add minsize 100k [PR #2731]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2348,6 +2349,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2721]: https://github.com/bareos/bareos/pull/2721
 [PR #2724]: https://github.com/bareos/bareos/pull/2724
 [PR #2725]: https://github.com/bareos/bareos/pull/2725
+[PR #2731]: https://github.com/bareos/bareos/pull/2731
 [PR #2733]: https://github.com/bareos/bareos/pull/2733
 [PR #2736]: https://github.com/bareos/bareos/pull/2736
 [PR #2737]: https://github.com/bareos/bareos/pull/2737
