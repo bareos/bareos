@@ -40,6 +40,9 @@
 #include "lib/tls_psk_credentials.h"
 
 #include <algorithm>
+
+static constexpr int debuglevel = 50;
+
 namespace {
 void ParameterizeTlsCert(Tls* tls, TlsConfigCert& tls_cert)
 {
@@ -118,9 +121,54 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnection(JobControlRecord* jcr,
   return result;
 }
 
-}  // namespace
+bool DoTlsHandshakeWithClient(JobControlRecord* jcr,
+                              BareosSocket* socket,
+                              std::shared_ptr<Tls> tls,
+                              TlsConfigCert* local_tls_cert)
+{
+  std::vector<std::string> verify_list;
 
-static constexpr int debuglevel = 50;
+  if (local_tls_cert->verify_peer_) {
+    verify_list = local_tls_cert->allowed_certificate_common_names_;
+  }
+  if (BnetTlsServer(socket, std::move(tls), verify_list)) { return true; }
+  if (jcr && jcr->JobId != 0) {
+    Jmsg(jcr, M_FATAL, 0, T_("TLS negotiation failed.\n"));
+  }
+  Dmsg0(debuglevel, "TLS negotiation failed.\n");
+  return false;
+}
+
+bool DoTlsHandshakeWithServer(JobControlRecord* jcr,
+                              BareosSocket* socket,
+                              std::shared_ptr<Tls> tls,
+                              TlsConfigCert* local_tls_cert)
+{
+  if (BnetTlsClient(socket, std::move(tls), local_tls_cert->verify_peer_,
+                    local_tls_cert->allowed_certificate_common_names_)) {
+    return true;
+  }
+
+  int message_type = 0;
+  std::string message;
+
+  if (jcr && jcr->is_passive_client_connection_probing) {
+    /* connection try */
+    message_type = M_INFO;
+    message = T_("TLS negotiation failed (while probing client protocol)");
+  } else {
+    message_type = M_FATAL;
+    message = T_("TLS negotiation failed");
+  }
+
+  if (jcr && jcr->JobId != 0) {
+    Jmsg(jcr, message_type, 0, "%s\n", message.c_str());
+  }
+  Dmsg0(debuglevel, "%s\n", message.c_str());
+
+  return false;
+}
+}  // namespace
 
 BareosSocket::BareosSocket()
     /* public */
@@ -554,7 +602,7 @@ bool BareosSocket::DoTlsHandshakeAsAServer(TlsSecretProvider* data,
   auto tls = ParameterizeAndInitTlsConnectionAsAServer(jcr, tls_resource, data);
   if (!tls) { return false; }
 
-  if (!DoTlsHandshakeWithClient(jcr, tls, &tls_resource->tls_cert_)) {
+  if (!DoTlsHandshakeWithClient(jcr, this, tls, &tls_resource->tls_cert_)) {
     return false;
   }
 
@@ -587,12 +635,12 @@ bool BareosSocket::DoTlsHandshake(TlsPolicy remote_tls_policy,
     if (!tls) { return false; }
 
     if (initiated_by_remote) {
-      if (!DoTlsHandshakeWithClient(jcr, std::move(tls),
+      if (!DoTlsHandshakeWithClient(jcr, this, std::move(tls),
                                     &tls_resource->tls_cert_)) {
         return false;
       }
     } else {
-      if (!DoTlsHandshakeWithServer(jcr, std::move(tls),
+      if (!DoTlsHandshakeWithServer(jcr, this, std::move(tls),
                                     &tls_resource->tls_cert_)) {
         return false;
       }
@@ -611,52 +659,6 @@ bool BareosSocket::DoTlsHandshake(TlsPolicy remote_tls_policy,
     }
   }
   return true;
-}
-
-bool BareosSocket::DoTlsHandshakeWithClient(JobControlRecord* jcr,
-                                            std::shared_ptr<Tls> tls,
-                                            TlsConfigCert* local_tls_cert)
-{
-  std::vector<std::string> verify_list;
-
-  if (local_tls_cert->verify_peer_) {
-    verify_list = local_tls_cert->allowed_certificate_common_names_;
-  }
-  if (BnetTlsServer(this, std::move(tls), verify_list)) { return true; }
-  if (jcr && jcr->JobId != 0) {
-    Jmsg(jcr, M_FATAL, 0, T_("TLS negotiation failed.\n"));
-  }
-  Dmsg0(debuglevel, "TLS negotiation failed.\n");
-  return false;
-}
-
-bool BareosSocket::DoTlsHandshakeWithServer(JobControlRecord* jcr,
-                                            std::shared_ptr<Tls> tls,
-                                            TlsConfigCert* local_tls_cert)
-{
-  if (BnetTlsClient(this, std::move(tls), local_tls_cert->verify_peer_,
-                    local_tls_cert->allowed_certificate_common_names_)) {
-    return true;
-  }
-
-  int message_type = 0;
-  std::string message;
-
-  if (jcr && jcr->is_passive_client_connection_probing) {
-    /* connection try */
-    message_type = M_INFO;
-    message = T_("TLS negotiation failed (while probing client protocol)");
-  } else {
-    message_type = M_FATAL;
-    message = T_("TLS negotiation failed");
-  }
-
-  if (jcr && jcr->JobId != 0) {
-    Jmsg(jcr, message_type, 0, "%s\n", message.c_str());
-  }
-  Dmsg0(debuglevel, "%s\n", message.c_str());
-
-  return false;
 }
 
 bool BareosSocket::AuthenticateOutboundConnection(

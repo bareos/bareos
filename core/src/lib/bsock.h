@@ -139,12 +139,6 @@ class BareosSocket {
                           s_password& password,
                           TlsResource* tls_resource,
                           bool initiated_by_remote);
-  bool DoTlsHandshakeWithClient(JobControlRecord* jcr,
-                                std::shared_ptr<Tls> tls,
-                                TlsConfigCert* local_tls_cert);
-  bool DoTlsHandshakeWithServer(JobControlRecord* jcr,
-                                std::shared_ptr<Tls> tls,
-                                TlsConfigCert* local_tls_cert);
   void SetBnetDump(std::unique_ptr<BnetDump>&& bnet_dump)
   {
     // do not set twice
