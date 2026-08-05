@@ -84,6 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: fix sometimes not preserving used resource pointers [PR #2725]
 - Fix proxmox plugin stalling virtual machines [PR #2733]
 - logrotate: add minsize 100k [PR #2731]
+- libcloud plugin: fix error when backing up an empty bucket [PR #2717]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2344,6 +2345,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2706]: https://github.com/bareos/bareos/pull/2706
 [PR #2711]: https://github.com/bareos/bareos/pull/2711
 [PR #2712]: https://github.com/bareos/bareos/pull/2712
+[PR #2717]: https://github.com/bareos/bareos/pull/2717
 [PR #2719]: https://github.com/bareos/bareos/pull/2719
 [PR #2720]: https://github.com/bareos/bareos/pull/2720
 [PR #2721]: https://github.com/bareos/bareos/pull/2721
