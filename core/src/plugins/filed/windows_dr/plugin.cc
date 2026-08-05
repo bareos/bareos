@@ -926,9 +926,6 @@ struct context : ::context {
                        restore_target& target,
                        filedaemon::io_pkt* pkt)
   {
-    // this function should only b
-    if (!args.target.has_value()) { return bRC_Error; }
-
     switch (pkt->func) {
       case filedaemon::IO_OPEN: {
         if (current_session) {
