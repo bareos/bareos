@@ -1975,7 +1975,7 @@ update
    .. warning::
       - As a new encryption key will only be loaded on volume mount, make sure you
         re-mount any currently mounted volume when changing the encryption key!
-      - Removing or rotating a key need purging the volume first.
+      - Removing or rotating a key requires the volume to be purged.
 
 
    For slots :bcommand:`update slots`, Bareos will obtain a list of slots and their barcodes from

@@ -50,10 +50,9 @@ The basic algorithm used for each backup session (Job) is:
 
 .. warning::
 
-   PKI Encryption disables Parallel Send code path, as such the configuration option
-   :config:option:`fd/client/MaximumWorkersPerJob` will not be used.
-   With PKI enabled, the FD has to handle compression, digests, transport encryption,
-   data encryption, and sending all in a single thread per job.
+   PKI Encryption disables Parallel Send code path, as such whatever the configuration option
+   :config:option:`fd/client/MaximumWorkersPerJob` is set, the FD has to handle compression, digests,
+   transport encryption, data encryption, and data sending all in a single thread per job.
 
 
 Encryption Technical Details
