@@ -11,6 +11,10 @@ Alias /favicon.ico @WEBUI_VUE_DIR@/favicon.ico
     Require all granted
 </Directory>
 
+<Location /bareos-webui-new>
+  ErrorDocument 404 /bareos-webui-new/404.html
+</Location>
+
 # Proxy WebSocket connections to bareos-webui-proxy
 ProxyPass /bareos-webui-new/ws ws://localhost:9104/ws
 ProxyPassReverse /bareos-webui-new/ws ws://localhost:9104/ws
