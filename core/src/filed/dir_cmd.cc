@@ -57,6 +57,7 @@
 #include "lib/util.h"
 #include "filed/backup.h"
 #include "lib/compression.h"
+#include "filed/accurate.h"
 
 #if defined(WIN32_VSS)
 #  include "findlib/win32.h"
@@ -434,6 +435,10 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 
   // Clean up fileset
   CleanupFileset(jcr);
+
+  // make sure that accurate is cleaned up!
+  // this may not properly happen if e.g. the backup command fails
+  AccurateFree(jcr);
 
   FreeJcr(jcr); /* destroy JobControlRecord record */
   Dmsg0(100, "Done with FreeJcr\n");
