@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - speedup cmake checks [PR #2379]
 - devtools: pip-tools: update dependencies [PR #2736]
 - Don't break the build when npm audit fails [PR #2737]
+- Matrix: rename xUbuntu to Ubuntu [PR #2735]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2353,6 +2354,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2725]: https://github.com/bareos/bareos/pull/2725
 [PR #2731]: https://github.com/bareos/bareos/pull/2731
 [PR #2733]: https://github.com/bareos/bareos/pull/2733
+[PR #2735]: https://github.com/bareos/bareos/pull/2735
 [PR #2736]: https://github.com/bareos/bareos/pull/2736
 [PR #2737]: https://github.com/bareos/bareos/pull/2737
 [unreleased]: https://github.com/bareos/bareos/tree/master
