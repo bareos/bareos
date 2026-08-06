@@ -3913,7 +3913,7 @@ static void FreeResource(BareosResource* res, int type)
       printf(T_("Unknown resource type %d in FreeResource.\n"), type);
       break;
   }
-  if (next_resource) { my_config->FreeResourceCb_(next_resource, type); }
+  if (next_resource) { FreeResource(next_resource, type); }
 }
 
 /**
