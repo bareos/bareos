@@ -49,7 +49,7 @@ class TlsResource {
 
   bool IsTlsConfigured() const;
   TlsPolicy GetPolicy() const;
-  int SelectTlsPolicy(TlsPolicy remote_policy) const;
+  TlsPolicy SelectTlsPolicy(TlsPolicy remote_policy) const;
 };
 
 #endif  // BAREOS_LIB_TLS_CONF_H_

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,20 +31,20 @@ TlsPolicy TlsResource::GetPolicy() const
   return TlsPolicy::kBnetTlsRequired;
 }
 
-int TlsResource::SelectTlsPolicy(TlsPolicy remote_policy) const
+TlsPolicy TlsResource::SelectTlsPolicy(TlsPolicy remote_policy) const
 {
   if (remote_policy == TlsPolicy::kBnetTlsAuto) {
     return TlsPolicy::kBnetTlsAuto;
   }
   TlsPolicy local_policy = GetPolicy();
 
-  if ((remote_policy == 0 && local_policy == 0)
-      || (remote_policy == 0 && local_policy == 1)
-      || (remote_policy == 1 && local_policy == 0)) {
+  if ((remote_policy == kBnetTlsNone && local_policy == kBnetTlsNone)
+      || (remote_policy == kBnetTlsNone && local_policy == kBnetTlsEnabled)
+      || (remote_policy == kBnetTlsEnabled && local_policy == kBnetTlsNone)) {
     return TlsPolicy::kBnetTlsNone;
   }
-  if ((remote_policy == 0 && local_policy == 2)
-      || (remote_policy == 2 && local_policy == 0)) {
+  if ((remote_policy == kBnetTlsNone && local_policy == kBnetTlsRequired)
+      || (remote_policy == kBnetTlsRequired && local_policy == kBnetTlsNone)) {
     return TlsPolicy::kBnetTlsDeny;
   }
   return TlsPolicy::kBnetTlsEnabled;
