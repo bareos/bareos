@@ -84,7 +84,7 @@ class BareosSocket {
   int sleep_time_after_authentication_error;
   bool enable_ktls_{false};
 
-  unsigned remote_version{}; /* version hex of remote version; only for inbound;
+  uint32_t remote_version{}; /* version hex of remote version; only for inbound;
                                 0 if unknown */
 
   struct sockaddr_storage client_addr; /* Client's IP address */
@@ -92,7 +92,6 @@ class BareosSocket {
   void SetTlsEstablished() { tls_established_ = true; }
   bool TlsEstablished() const { return tls_established_; }
   std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
-  BareosVersionNumber connected_daemon_version_;
 
  protected:
   JobControlRecord* jcr_; /* JobControlRecord or NULL for error msgs */
@@ -203,10 +202,7 @@ class BareosSocket {
   void ClearLocking(); /* in bsock.c */
   void SetSourceAddress(dlist<IPADDR>* src_addr_list);
   void ControlBwlimit(int bytes); /* in bsock.c */
-  bool EvaluateCleartextBareosHello(bool& cleartext,
-                                    std::string& client_name_out,
-                                    std::string& r_code_str_out,
-                                    BareosVersionNumber& version_out) const;
+  bool peek(char* buffer, size_t count) const;
   std::string GetCipherMessageString() const;
   bool ReceiveAndEvaluateResponseMessage(uint32_t& id_out,
                                          BStringList& args_out);
@@ -290,5 +286,24 @@ enum
   BNET_HARDEOF = -2,
   BNET_ERROR = -3
 };
+
+struct ClientHelloParser {
+  virtual TlsResource* parse(std::string_view hello) = 0;
+  virtual ~ClientHelloParser() = default;
+};
+
+enum class TlsHandshake
+{
+  Disabled,  // no tls during authentication (may be enabled after the
+             // connection)
+  Enabled,   // use tls for the connection
+  AuthOnly,  // setup the tls connection, then tear it down immediately
+};
+
+bool BareosAccept(BareosSocket* socket,
+                  const std::string& qualified_name,
+                  const TlsResource* initial_tls,
+                  TlsSecretProvider* provider,
+                  ClientHelloParser* hello_parser);
 
 #endif  // BAREOS_LIB_BSOCK_H_
