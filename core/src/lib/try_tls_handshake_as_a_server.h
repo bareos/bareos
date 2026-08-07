@@ -31,11 +31,10 @@
 #include "lib/util.h"
 
 struct UsePasswordsFromConfig : TlsSecretProvider {
-  UsePasswordsFromConfig(ConfigurationParser* p) : parser{p}
+  UsePasswordsFromConfig(std::shared_ptr<LoadedConfiguration> conf,
+                         const ResourceTable* tbl)
+      : config{std::move(conf)}, definitions{tbl}
   {
-    // keep a shared_ptr to the current config, so a reload won't
-    // free the memory we're going to use in the private context
-    config = parser->GetCurrentConfiguration();
   }
 
 
@@ -43,7 +42,7 @@ struct UsePasswordsFromConfig : TlsSecretProvider {
                                      std::span<unsigned char> output) override
   {
     auto [type, name] = global_resource::ParseQualifiedName(identity);
-    auto r_type = parser->LocalTypeFromGlobalType(type);
+    auto r_type = LocalTypeFromGlobalType(definitions, type);
 
     if (r_type < 0) {
       Dmsg1(100, "Could not parse resource type from %.*s.\n",
@@ -51,7 +50,7 @@ struct UsePasswordsFromConfig : TlsSecretProvider {
       return 0;
     }
 
-    auto* res = parser->GetResWithName(r_type, name);
+    auto* res = config->GetResWithName(r_type, name);
     if (!res) {
       auto type_name = global_resource::GetNameFromType(type);
       Dmsg1(100, "Could not find resource %.*s of type %.*s (%d).\n",
@@ -94,9 +93,9 @@ struct UsePasswordsFromConfig : TlsSecretProvider {
         || unbashed_name != chosen_resource->resource_name_) {
       std::stringstream msg;
 
-      msg << "tried authenticating as '" << parser->ResToStr(resource_type)
+      msg << "tried authenticating as '" << str_for_local_type(resource_type)
           << "::" << unbashed_name << "' but used psk for '"
-          << parser->ResToStr(chosen_resource->rcode_)
+          << str_for_local_type(chosen_resource->rcode_)
           << "::" << chosen_resource->resource_name_ << "'";
 
       return std::optional{msg.str()};
@@ -113,16 +112,29 @@ struct UsePasswordsFromConfig : TlsSecretProvider {
     return chosen_resource;
   }
 
+  std::string_view str_for_local_type(uint32_t local_type)
+  {
+    auto global = GlobalTypeFromLocalType(definitions, local_type);
+    auto name = global_resource::GetNameFromType(global);
+    if (name.empty()) { return "***UNKNOWN***"; }
+
+    return name;
+  }
+
  protected:
-  ConfigurationParser* parser;
   BareosResource* chosen_resource{nullptr};
   std::shared_ptr<LoadedConfiguration> config;
+  const ResourceTable* definitions{nullptr};
 };
 
 // look not only in the config for passwords, but also
 // allow tls via secrets set in the jcrs (sd_auth_key)
 struct UseConfigAndJcrs : UsePasswordsFromConfig {
-  UseConfigAndJcrs(ConfigurationParser* p) : UsePasswordsFromConfig{p} {}
+  UseConfigAndJcrs(std::shared_ptr<LoadedConfiguration> conf,
+                   const ResourceTable* tbl)
+      : UsePasswordsFromConfig{conf, tbl}
+  {
+  }
 
   JobControlRecord* found_jcr{nullptr};
 
@@ -183,7 +195,7 @@ struct UseConfigAndJcrs : UsePasswordsFromConfig {
       std::stringstream msg;
 
       msg << "tried authenticating as job " << jobname << " but used psk for '"
-          << parser->ResToStr(res->rcode_) << "::" << res->resource_name_
+          << str_for_local_type(res->rcode_) << "::" << res->resource_name_
           << "'";
 
       return std::optional{msg.str()};
@@ -211,7 +223,7 @@ struct UseConfigAndJcrs : UsePasswordsFromConfig {
       std::stringstream msg;
 
       msg << "tried authenticating as resource "
-          << parser->ResToStr(resource_type) << "::" << name
+          << str_for_local_type(resource_type) << "::" << name
           << " but used psk for job " << found_jcr->Job;
 
       return std::optional{msg.str()};
@@ -234,9 +246,5 @@ struct UseConfigAndJcrs : UsePasswordsFromConfig {
     if (found_jcr) { FreeJcr(found_jcr); }
   }
 };
-
-bool TryTlsHandshakeAsAServer(BareosSocket* bsock,
-                              ConfigurationParser* parser,
-                              TlsSecretProvider* data);
 
 #endif  // BAREOS_LIB_TRY_TLS_HANDSHAKE_AS_A_SERVER_H_
