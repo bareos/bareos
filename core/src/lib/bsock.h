@@ -133,12 +133,6 @@ class BareosSocket {
       = 0;
 
  private:
-  bool TwoWayAuthenticate(JobControlRecord* jcr,
-                          const std::string own_qualified_name,
-                          const char* identity,
-                          s_password& password,
-                          TlsResource* tls_resource,
-                          bool initiated_by_remote);
   void SetBnetDump(std::unique_ptr<BnetDump>&& bnet_dump)
   {
     // do not set twice

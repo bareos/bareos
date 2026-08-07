@@ -168,6 +168,101 @@ bool DoTlsHandshakeWithServer(JobControlRecord* jcr,
 
   return false;
 }
+
+bool TwoWayAuthenticate(JobControlRecord* jcr,
+                        BareosSocket* socket,
+                        const std::string own_qualified_name,
+                        const char* identity,
+                        s_password& password,
+                        TlsResource* tls_resource,
+                        bool initiated_by_remote)
+{
+  bool auth_success = false;
+
+  if (jcr && jcr->IsJobCanceled()) {
+    const char* err_msg
+        = T_("TwoWayAuthenticate failed, because job was canceled.");
+    Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
+    Dmsg0(debuglevel, "%s\n", err_msg);
+  } else if (password.encoding != p_encoding_md5) {
+    const char* err_msg = T_(
+        "Password encoding is not MD5. You are probably restoring a NDMP "
+        "Backup "
+        "with a restore job not configured for NDMP protocol.");
+    Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
+    Dmsg0(debuglevel, "%s\n", err_msg);
+  } else {
+    TlsPolicy local_tls_policy = tls_resource->GetPolicy();
+    CramMd5Handshake cram_md5_handshake(socket, password.value,
+                                        local_tls_policy, own_qualified_name);
+
+    btimer_t* tid = StartBsockTimer(socket, AUTH_TIMEOUT);
+
+    if (socket->ConnectionReceivedTerminateSignal()) {
+      if (tid) { StopBsockTimer(tid); }
+      const char* err_msg = T_(
+          "TwoWayAuthenticate failed, because connection was reset by "
+          "destination peer.");
+      Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
+      Dmsg0(debuglevel, "%s\n", err_msg);
+      if (jcr) { jcr->authenticated = false; }
+      return false;
+    }
+
+    auth_success = cram_md5_handshake.DoHandshake(initiated_by_remote);
+
+    if (!auth_success) {
+      char ipaddr_str[MAXHOSTNAMELEN]{};
+      SockaddrToAscii(&socket->client_addr, ipaddr_str, sizeof(ipaddr_str));
+
+      switch (cram_md5_handshake.result) {
+        case CramMd5Handshake::HandshakeResult::REPLAY_ATTACK: {
+          const char* fmt
+              = "Warning! Attack detected: "
+                "I will not answer to my own challenge. "
+                "Please check integrity of the host at IP address: %s\n";
+          Jmsg(jcr, M_FATAL, 0, fmt, ipaddr_str);
+          Dmsg1(debuglevel, fmt, ipaddr_str);
+          break;
+        }
+        case CramMd5Handshake::HandshakeResult::NETWORK_ERROR:
+          Jmsg(jcr, M_FATAL, 0, T_("Network error during CRAM MD5 with %s\n"),
+               ipaddr_str);
+          break;
+        case CramMd5Handshake::HandshakeResult::WRONG_HASH:
+          Jmsg(jcr, M_FATAL, 0, T_("Authorization key rejected by %s.\n"),
+               ipaddr_str);
+          break;
+        case CramMd5Handshake::HandshakeResult::FORMAT_MISMATCH:
+          Jmsg(jcr, M_FATAL, 0,
+               T_("Wrong format of the CRAM challenge with %s.\n"), ipaddr_str);
+        default:
+          break;
+      }
+      socket->fsend(T_("1999 Authorization failed.\n"));
+      Bmicrosleep(socket->sleep_time_after_authentication_error, 0);
+    } else if (jcr && jcr->IsJobCanceled()) {
+      const char* err_msg
+          = T_("TwoWayAuthenticate failed, because job was canceled.");
+      Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
+      Dmsg0(debuglevel, "%s\n", err_msg);
+      auth_success = false;
+    } else if (!socket->DoTlsHandshake(cram_md5_handshake.RemoteTlsPolicy(),
+                                       tls_resource, initiated_by_remote,
+                                       identity, password.value, jcr)) {
+      const char* err_msg = T_("Tls handshake failed.");
+      Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
+      Dmsg0(debuglevel, "%s\n", err_msg);
+      auth_success = false;
+    }
+    if (tid) { StopBsockTimer(tid); }
+  }
+
+  if (jcr) { jcr->authenticated = auth_success; }
+
+  return auth_success;
+}
+
 }  // namespace
 
 BareosSocket::BareosSocket()
@@ -503,98 +598,6 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(
  * - First prove our identity to the Remote and then make him prove his
  * identity.
  */
-bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
-                                      const std::string own_qualified_name,
-                                      const char* identity,
-                                      s_password& password,
-                                      TlsResource* tls_resource,
-                                      bool initiated_by_remote)
-{
-  bool auth_success = false;
-
-  if (jcr && jcr->IsJobCanceled()) {
-    const char* err_msg
-        = T_("TwoWayAuthenticate failed, because job was canceled.");
-    Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
-    Dmsg0(debuglevel, "%s\n", err_msg);
-  } else if (password.encoding != p_encoding_md5) {
-    const char* err_msg = T_(
-        "Password encoding is not MD5. You are probably restoring a NDMP "
-        "Backup "
-        "with a restore job not configured for NDMP protocol.");
-    Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
-    Dmsg0(debuglevel, "%s\n", err_msg);
-  } else {
-    TlsPolicy local_tls_policy = tls_resource->GetPolicy();
-    CramMd5Handshake cram_md5_handshake(this, password.value, local_tls_policy,
-                                        own_qualified_name);
-
-    btimer_t* tid = StartBsockTimer(this, AUTH_TIMEOUT);
-
-    if (ConnectionReceivedTerminateSignal()) {
-      if (tid) { StopBsockTimer(tid); }
-      const char* err_msg = T_(
-          "TwoWayAuthenticate failed, because connection was reset by "
-          "destination peer.");
-      Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
-      Dmsg0(debuglevel, "%s\n", err_msg);
-      return false;
-    }
-
-    auth_success = cram_md5_handshake.DoHandshake(initiated_by_remote);
-
-    if (!auth_success) {
-      char ipaddr_str[MAXHOSTNAMELEN]{};
-      SockaddrToAscii(&client_addr, ipaddr_str, sizeof(ipaddr_str));
-
-      switch (cram_md5_handshake.result) {
-        case CramMd5Handshake::HandshakeResult::REPLAY_ATTACK: {
-          const char* fmt
-              = "Warning! Attack detected: "
-                "I will not answer to my own challenge. "
-                "Please check integrity of the host at IP address: %s\n";
-          Jmsg(jcr, M_FATAL, 0, fmt, ipaddr_str);
-          Dmsg1(debuglevel, fmt, ipaddr_str);
-          break;
-        }
-        case CramMd5Handshake::HandshakeResult::NETWORK_ERROR:
-          Jmsg(jcr, M_FATAL, 0, T_("Network error during CRAM MD5 with %s\n"),
-               ipaddr_str);
-          break;
-        case CramMd5Handshake::HandshakeResult::WRONG_HASH:
-          Jmsg(jcr, M_FATAL, 0, T_("Authorization key rejected by %s.\n"),
-               ipaddr_str);
-          break;
-        case CramMd5Handshake::HandshakeResult::FORMAT_MISMATCH:
-          Jmsg(jcr, M_FATAL, 0,
-               T_("Wrong format of the CRAM challenge with %s.\n"), ipaddr_str);
-        default:
-          break;
-      }
-      fsend(T_("1999 Authorization failed.\n"));
-      Bmicrosleep(sleep_time_after_authentication_error, 0);
-    } else if (jcr && jcr->IsJobCanceled()) {
-      const char* err_msg
-          = T_("TwoWayAuthenticate failed, because job was canceled.");
-      Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
-      Dmsg0(debuglevel, "%s\n", err_msg);
-      auth_success = false;
-    } else if (!DoTlsHandshake(cram_md5_handshake.RemoteTlsPolicy(),
-                               tls_resource, initiated_by_remote, identity,
-                               password.value, jcr)) {
-      const char* err_msg = T_("Tls handshake failed.");
-      Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
-      Dmsg0(debuglevel, "%s\n", err_msg);
-      auth_success = false;
-    }
-    if (tid) { StopBsockTimer(tid); }
-  }
-
-  if (jcr) { jcr->authenticated = auth_success; }
-
-  return auth_success;
-}
-
 bool BareosSocket::DoTlsHandshakeAsAServer(TlsSecretProvider* data,
                                            TlsResource* tls_resource,
                                            JobControlRecord* jcr)
@@ -668,7 +671,7 @@ bool BareosSocket::AuthenticateOutboundConnection(
     s_password& password,
     TlsResource* tls_resource)
 {
-  return TwoWayAuthenticate(jcr, own_qualified_name, identity, password,
+  return TwoWayAuthenticate(jcr, this, own_qualified_name, identity, password,
                             tls_resource, false);
 }
 
@@ -686,8 +689,8 @@ bool BareosSocket::AuthenticateInboundConnection(JobControlRecord* jcr,
         = my_config->CreateOwnQualifiedNameForNetworkDump();
   }
 
-  return TwoWayAuthenticate(jcr, own_qualified_name_for_network_dump, identity,
-                            password, tls_resource, true);
+  return TwoWayAuthenticate(jcr, this, own_qualified_name_for_network_dump,
+                            identity, password, tls_resource, true);
 }
 
 bool BareosSocket::EvaluateCleartextBareosHello(
