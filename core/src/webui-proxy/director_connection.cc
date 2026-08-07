@@ -25,6 +25,7 @@
 #include "lib/bnet_protocol_signals.h"
 #include "proxy_log.h"
 #include "lib/version.h"
+#include "lib/scan.h"
 
 #include <algorithm>
 #include <array>

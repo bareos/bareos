@@ -45,7 +45,6 @@
 #include "lib/output_formatter.h"
 #include "tray_conf.h"
 
-#include "lib/parse_conf.h"
 #include "lib/resource_item.h"
 #include "lib/tls_resource_items.h"
 #include "lib/output_formatter.h"

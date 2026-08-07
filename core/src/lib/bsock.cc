@@ -37,6 +37,7 @@
 #include "lib/bstringlist.h"
 #include "lib/parse_conf.h"
 #include "lib/version.h"
+#include "lib/tls_psk_credentials.h"
 
 #include <algorithm>
 

@@ -42,6 +42,7 @@
 #include "lib/bstringlist.h"
 #include "lib/ascii_control_characters.h"
 #include "include/jcr.h"
+#include "lib/tls_psk_credentials.h"
 
 #include "lib/parse_conf.h"
 
