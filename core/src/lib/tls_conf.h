@@ -52,4 +52,16 @@ class TlsResource {
   TlsPolicy SelectTlsPolicy(TlsPolicy remote_policy) const;
 };
 
+enum class TlsStatus
+{
+  Error,
+  Disabled,
+  Enabled,
+};
+
+// Given two parties (left, right) with their respective TlsPolicys,
+// this checks whether both parties will use or not use tls, or if no
+// common setting exists
+TlsStatus select_tls_status(TlsPolicy left, TlsPolicy right);
+
 #endif  // BAREOS_LIB_TLS_CONF_H_
