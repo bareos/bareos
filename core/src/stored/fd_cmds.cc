@@ -102,53 +102,17 @@ inline constexpr const char Job_end[]
  * After receiving a connection (in dircmd.c) if it is
  * from the File daemon, this routine is called.
  */
-void* HandleFiledConnection(BareosSocket* fd, char* job_name)
+void* HandleFiledConnection(BareosSocket* fd, JobControlRecord* jcr)
 {
-  JobControlRecord* jcr;
-
-  /* With the following Bmicrosleep on, running the
-   * SD under the debugger fails. */
-  // Bmicrosleep(0, 50000);             /* wait 50 millisecs */
-  if (!(jcr = get_jcr_by_full_name(job_name))) {
-    Jmsg1(NULL, M_FATAL, 0, T_("FD connect failed: Job name not found: %s\n"),
-          job_name);
-    Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
-    fd->close();
-    return NULL;
-  }
-
-  Dmsg1(50, "Found Job %s\n", job_name);
-
-  if (jcr->authenticated) {
-    Jmsg2(jcr, M_FATAL, 0,
-          T_("Hey!!!! JobId %u Job %s already authenticated.\n"),
-          (uint32_t)jcr->JobId, jcr->Job);
-    Dmsg2(50, "Hey!!!! JobId %u Job %s already authenticated.\n",
-          (uint32_t)jcr->JobId, jcr->Job);
-    fd->close();
-    FreeJcr(jcr);
-    return NULL;
-  }
-
   jcr->file_bsock = fd;
   jcr->file_bsock->SetJcr(jcr);
 
-  // Authenticate the File daemon
-  if (!AuthenticateFiledaemon(jcr)) {
-    Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
-    Jmsg(jcr, M_FATAL, 0, T_("Unable to authenticate File daemon\n"));
-    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-  } else {
-    utime_t now;
+  *jcr->sd_impl->client_available.lock() = true;
+  Dmsg2(50, "OK Authentication jid=%" PRIu32 " Job %s\n", jcr->JobId, jcr->Job);
 
-    *jcr->sd_impl->client_available.lock() = true;
-    Dmsg2(50, "OK Authentication jid=%" PRIu32 " Job %s\n", jcr->JobId,
-          jcr->Job);
-
-    // Update the initial Job Statistics.
-    now = (utime_t)time(NULL);
-    UpdateJobStatistics(jcr, now);
-  }
+  // Update the initial Job Statistics.
+  auto now = static_cast<utime_t>(time(NULL));
+  UpdateJobStatistics(jcr, now);
 
   jcr->sd_impl->job_start_wait.notify_one(); /* wake waiting job */
   FreeJcr(jcr);

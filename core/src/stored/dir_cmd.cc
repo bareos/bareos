@@ -241,7 +241,7 @@ static inline bool AreMaxConcurrentJobsExceeded()
  *  - We execute the command
  *  - We continue or exit depending on the return status
  */
-void* HandleDirectorConnection(BareosSocket* dir)
+void* HandleDirectorConnection(BareosSocket* dir, DirectorResource* res)
 {
   JobControlRecord* jcr;
   int i, errstat;
@@ -261,6 +261,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
   NewPlugins(jcr);      /* instantiate plugins */
   jcr->dir_bsock = dir; /* save Director bsock */
   jcr->dir_bsock->SetJcr(jcr);
+  jcr->sd_impl->director = res;
 
   // Initialize End Job condition variable
   errstat = pthread_cond_init(&jcr->sd_impl->job_end_wait, NULL);
@@ -274,12 +275,6 @@ void* HandleDirectorConnection(BareosSocket* dir)
   Dmsg0(1000, "stored in start_job\n");
 
   SetJcrInThreadSpecificData(jcr);
-
-  // Authenticate the Director
-  if (!AuthenticateDirector(jcr)) {
-    Jmsg(jcr, M_FATAL, 0, T_("Unable to authenticate Director\n"));
-    goto bail_out;
-  }
 
   Dmsg0(90, "Message channel init completed.\n");
 
