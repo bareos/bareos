@@ -195,9 +195,6 @@ class BareosSocket {
                       const char* identity,
                       const char* password,
                       JobControlRecord* jcr);
-  bool DoTlsHandshakeAsAServer(TlsSecretProvider* data,
-                               TlsResource* tls_resource,
-                               JobControlRecord* jcr = nullptr);
   bool SetLocking();   /* in bsock.c */
   void ClearLocking(); /* in bsock.c */
   void SetSourceAddress(dlist<IPADDR>* src_addr_list);
