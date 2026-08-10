@@ -613,24 +613,6 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(
  * - First prove our identity to the Remote and then make him prove his
  * identity.
  */
-bool BareosSocket::DoTlsHandshakeAsAServer(TlsSecretProvider* data,
-                                           TlsResource* tls_resource,
-                                           JobControlRecord* jcr)
-{
-  auto tls = ParameterizeAndInitTlsConnectionAsAServer(jcr, tls_resource, data);
-  if (!tls) { return false; }
-
-  if (!DoTlsHandshakeWithClient(jcr, this, tls, &tls_resource->tls_cert_)) {
-    return false;
-  }
-
-  if (tls_resource->authenticate_) {   /* tls authentication only? */
-    CloseTlsConnectionAndFreeMemory(); /* yes, shutdown tls */
-  }
-
-  return true;
-}
-
 bool BareosSocket::DoTlsHandshake(TlsPolicy remote_tls_policy,
                                   TlsResource* tls_resource,
                                   bool initiated_by_remote,

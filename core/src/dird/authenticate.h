@@ -41,7 +41,6 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd,
                                    JobControlRecord* jcr,
                                    StorageResource* store);
 bool AuthenticateWithFileDaemon(JobControlRecord* jcr);
-bool AuthenticateFileDaemon(BareosSocket* fd, char* client_name);
 
 struct DirectorAuth : ::ClientHelloParser {
   DirectorAuth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)}
