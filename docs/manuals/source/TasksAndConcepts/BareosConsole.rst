@@ -1973,8 +1973,10 @@ update
    volume=<volume-name> encrypt=<yes/no/rotate>` for :ref:`scsicrypto-sd`.
 
    .. warning::
-      As a new encryption key will only be loaded on volume mount, make sure you
-      re-mount any currently mounted volume when changing the encryption key!
+      - As a new encryption key will only be loaded on volume mount, make sure you
+        re-mount any currently mounted volume when changing the encryption key!
+      - Removing or rotating a key requires the volume to be purged.
+
 
    For slots :bcommand:`update slots`, Bareos will obtain a list of slots and their barcodes from
    the Storage daemon, and for each barcode found, it will automatically update the slot in the

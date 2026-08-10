@@ -245,7 +245,7 @@ There are different types of Bareos binaries:
 .. note::
 
    Interested in the subscription repositories? Start with a Bareos Evaluation Subscription at
-   https://bareos.com/try.
+   https://www.bareos.com/try/ .
 
 2. Bareos Community binaries on https://download.bareos.org/:
 
@@ -310,7 +310,7 @@ For a simple comparison of the two editions, please see the following table:
 +-------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Issue tracker           | `GitHub Issues <https://github.com/bareos/bareos/issues/>`_                                                                                                   |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
-| New features            | `Co-Funding         <https://www.bareos.com/funded-development>`_            | `Join in <https://www.bareos.com/community/join-in/>`_                         |
+| New features            | `Co-Funding <https://www.bareos.com/services/#development-hint>`_            | `Join in <https://www.bareos.com/community/join-in/>`_                         |
 +-------------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
 
 This binary release policy is in place since Bareos >= 22.

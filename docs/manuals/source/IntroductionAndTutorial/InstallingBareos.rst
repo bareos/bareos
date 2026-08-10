@@ -48,7 +48,7 @@ There are different types of Bareos repositories:
 .. note::
 
    Interested in the subscription repositories? Start with a Bareos Evaluation Subscription at
-   https://bareos.com/try.
+   https://www.bareos.com/try/ .
 
 2. Bareos Community repositories on https://download.bareos.org/ with
 
