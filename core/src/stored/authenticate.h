@@ -2,7 +2,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,6 +22,11 @@
 #ifndef BAREOS_STORED_AUTHENTICATE_H_
 #define BAREOS_STORED_AUTHENTICATE_H_
 
+#include "lib/bsock.h"
+#include "include/jcr.h"
+#include "lib/parse_conf.h"
+#include "stored/stored_conf.h"
+
 namespace storagedaemon {
 
 bool AuthenticateDirector(JobControlRecord* jcr);
@@ -29,6 +34,56 @@ bool AuthenticateStoragedaemon(JobControlRecord* jcr);
 bool AuthenticateWithStoragedaemon(JobControlRecord* jcr);
 bool AuthenticateFiledaemon(JobControlRecord* jcr);
 bool AuthenticateWithFiledaemon(JobControlRecord* jcr);
+
+struct Auth : ::ClientHelloParser {
+  Auth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)} {}
+
+  TlsResource* parse(std::string_view hello) override;
+
+  enum class inbound_type
+  {
+    Unknown,
+    Client,
+    Director,
+    Storage,
+  };
+
+  struct director_data {
+    DirectorResource* res{};
+  };
+
+  struct client_data {
+    JobControlRecord* jcr{};
+    TlsResource client{};
+
+    ~client_data()
+    {
+      if (jcr) { FreeJcr(jcr); }
+    }
+  };
+
+  struct storage_data {
+    JobControlRecord* jcr{};
+    TlsResource storage{};
+
+    ~storage_data()
+    {
+      if (jcr) { FreeJcr(jcr); }
+    }
+  };
+
+  inbound_type GetType() const { return type; }
+
+  std::optional<director_data> director;
+  std::optional<client_data> client;
+  std::optional<storage_data> storage;
+
+ private:
+  std::shared_ptr<LoadedConfiguration> p;
+  inbound_type type{inbound_type::Unknown};
+  uint32_t remote_version{0};
+};
+
 
 } /* namespace storagedaemon */
 
