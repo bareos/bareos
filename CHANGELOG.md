@@ -104,6 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: fix sphinx-linkcheck warnings in our docs [PR #2706]
 - docs: promote eval subscription in release docs [PR #2712]
 - docs: update readme file and image [PR #2719]
+- docs: update volume add warning about delete rotate key [PR #2738]
 
 ## [25.0.0] - 2025-12-01
 
@@ -2357,4 +2358,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2735]: https://github.com/bareos/bareos/pull/2735
 [PR #2736]: https://github.com/bareos/bareos/pull/2736
 [PR #2737]: https://github.com/bareos/bareos/pull/2737
+[PR #2738]: https://github.com/bareos/bareos/pull/2738
 [unreleased]: https://github.com/bareos/bareos/tree/master
