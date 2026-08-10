@@ -66,8 +66,6 @@ static char OKhello[] = "3000 OK Hello\n";
 static char FDOKhello[] = "2000 OK Hello\n";
 static char FDOKnewHello[] = "2000 OK Hello %d\n";
 
-static char dir_not_authorized_message[] = "1999 You are not authorized.\n";
-
 bool AuthenticateWithStorageDaemon(BareosSocket* sd,
                                    JobControlRecord* jcr,
                                    StorageResource* store)
@@ -206,34 +204,6 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
          fd->port());
     return false;
   }
-
-  return true;
-}
-
-bool AuthenticateFileDaemon(BareosSocket* fd, char* client_name)
-{
-  ClientResource* client;
-  bool auth_success = false;
-
-  UnbashSpaces(client_name);
-  client = (ClientResource*)my_config->GetResWithName(R_CLIENT, client_name);
-  if (client) {
-    if (IsConnectFromClientAllowed(client)) {
-      auth_success = fd->AuthenticateInboundConnection(
-          NULL, my_config, client_name, client->password_, client);
-    }
-  }
-
-  // Authorization Completed
-  if (!auth_success) {
-    fd->fsend("%s", T_(dir_not_authorized_message));
-    Emsg4(M_ERROR, 0, T_("Unable to authenticate client \"%s\" at %s:%s:%d.\n"),
-          client_name, fd->who(), fd->host(), fd->port());
-    sleep(5);
-    return false;
-  }
-  fd->fsend("1000 OK: %s Version: %s (%s)\n", my_name,
-            kBareosVersionStrings.Full, kBareosVersionStrings.Date);
 
   return true;
 }
