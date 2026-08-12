@@ -39,63 +39,6 @@
 
 namespace storagedaemon {
 
-const int debuglevel = 50;
-
-constexpr const char Dir_sorry[] = "3999 No go\n";
-constexpr const char OK_hello[] = "3000 OK Hello\n";
-
-/**
- * Authenticate with a remote storage daemon.
- *
- * This is used for SD-SD replication of data.
- */
-bool AuthenticateWithStoragedaemon(JobControlRecord* jcr)
-{
-  BareosSocket* sd = jcr->store_bsock;
-  s_password password;
-
-  const char* identity = "* replicate *";
-  password.encoding = p_encoding_md5;
-  password.value = jcr->sd_auth_key;
-
-  if (!sd->AuthenticateOutboundConnection(
-          jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), identity,
-          password, me)) {
-    Jmsg1(jcr, M_FATAL, 0,
-          T_("Authorization problem: Two way security handshake failed with "
-             "Storage daemon at %s\n"),
-          sd->who());
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * Authenticate with a remote file daemon.
- *
- * This is used for passive FD backups or restores.
- */
-bool AuthenticateWithFiledaemon(JobControlRecord* jcr)
-{
-  BareosSocket* fd = jcr->file_bsock;
-  s_password password;
-
-  password.encoding = p_encoding_md5;
-  password.value = jcr->sd_auth_key;
-
-  if (!fd->AuthenticateOutboundConnection(jcr, "File daemon", jcr->client_name,
-                                          password, me)) {
-    Jmsg1(jcr, M_FATAL, 0,
-          T_("Authorization problem: Two way security handshake failed with "
-             "File daemon at %s\n"),
-          fd->who());
-    return false;
-  }
-
-  return true;
-}
-
 TlsResource* Auth::parse(std::string_view hello)
 {
   char name[MAX_NAME_LENGTH];
