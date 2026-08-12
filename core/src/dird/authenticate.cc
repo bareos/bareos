@@ -62,122 +62,53 @@ static const int debuglevel = 50;
 static char hello[] = "Hello Director %s calling Version=\"%u.%u.%u\"\n";
 
 // Response from Storage daemon
-static char OKhello[] = "3000 OK Hello\n";
 static char FDOKhello[] = "2000 OK Hello\n";
 static char FDOKnewHello[] = "2000 OK Hello %d\n";
-
-bool AuthenticateWithStorageDaemon(BareosSocket* sd,
-                                   JobControlRecord* jcr,
-                                   StorageResource* store)
-{
-  char dirname[MAX_NAME_LENGTH];
-  bstrncpy(dirname, me->resource_name_, sizeof(dirname));
-  BashSpaces(dirname);
-
-  sd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
-  if (!sd->fsend(hello, dirname, kBareosVersion.Major, kBareosVersion.Minor,
-                 kBareosVersion.Patch)) {
-    Dmsg1(debuglevel, T_("Error sending Hello to Storage daemon. ERR=%s\n"),
-          BnetStrerror(sd));
-    Jmsg(jcr, M_FATAL, 0, T_("Error sending Hello to Storage daemon. ERR=%s\n"),
-         BnetStrerror(sd));
-    return false;
-  }
-
-  bool auth_success = false;
-  auth_success = sd->AuthenticateOutboundConnection(
-      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), dirname,
-      store->password_, store);
-  if (!auth_success) {
-    Dmsg2(debuglevel,
-          "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
-          sd->host(), sd->port());
-    Jmsg(jcr, M_FATAL, 0,
-         T_("Director unable to authenticate with Storage daemon at \"%s:%d\". "
-            "Possible causes:\n"
-            "Passwords or names not the same or\n"
-            "TLS negotiation problem or\n"
-            "Maximum Concurrent Jobs exceeded on the SD or\n"
-            "SD networking messed up (restart daemon).\n"),
-         sd->host(), sd->port());
-    return false;
-  }
-
-  Dmsg1(116, ">stored: %s", sd->msg);
-  if (sd->recv() <= 0) {
-    Jmsg3(jcr, M_FATAL, 0,
-          T_("dir<stored: \"%s:%s\" bad response to Hello command: ERR=%s\n"),
-          sd->who(), sd->host(), sd->bstrerror());
-    return false;
-  }
-
-  Dmsg1(110, "<stored: %s", sd->msg);
-  if (!bstrncmp(sd->msg, OKhello, sizeof(OKhello))) {
-    Dmsg0(debuglevel, T_("Storage daemon rejected Hello command\n"));
-    Jmsg2(jcr, M_FATAL, 0,
-          T_("Storage daemon at \"%s:%d\" rejected Hello command\n"),
-          sd->host(), sd->port());
-    return false;
-  }
-
-  return true;
-}
 
 bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
 {
   if (jcr->authenticated) { return true; }
 
-  BareosSocket* fd = jcr->file_bsock;
-  ClientResource* client = jcr->dir_impl->res.client;
+  auto config = jcr->dir_impl->used_config_for_job;
+  if (!config) { config = my_config->GetCurrentConfiguration(); }
 
-  if (jcr->dir_impl->connection_handshake_try_
-      == ClientConnectionHandshakeMode::kTlsFirst) {
-    std::string qualified_resource_name = global_resource::QualifiedName(
-        my_config->GlobalTypeFromLocalType(my_config->r_own_),
-        me->resource_name_);
-    if (qualified_resource_name.empty()) {
-      Dmsg0(
-          100,
-          "Could not generate qualified resource name for a client resource\n");
+  auto myself = dynamic_cast<DirectorResource*>(
+      config->GetNextRes(R_DIRECTOR, nullptr));
+  if (!myself) { return false; }
+
+  auto* fd = jcr->file_bsock;
+  auto* client = jcr->dir_impl->res.client;
+  fd->SetEnableKtls(myself->enable_ktls);
+
+  std::string qualified_resource_name = global_resource::QualifiedName(
+      global_resource::Type::Director, myself->resource_name_);
+
+  bool old_style_tls{false};
+
+  switch (jcr->dir_impl->connection_handshake_try_) {
+    case ClientConnectionHandshakeMode::kTlsFirst: {
+      old_style_tls = false;
+    } break;
+    case ClientConnectionHandshakeMode::kCleartextFirst: {
+      old_style_tls = true;
+    } break;
+    case ClientConnectionHandshakeMode::kUndefined:
+    case ClientConnectionHandshakeMode::kFailed: {
       return false;
-    }
-
-    fd->SetEnableKtls(me->enable_ktls);
-
-    if (!fd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, client, false,
-                            qualified_resource_name.c_str(),
-                            client->password_.value, jcr)) {
-      Dmsg0(100, "Could not DoTlsHandshake() with a file daemon\n");
-      return false;
-    }
+    } break;
   }
 
-  char dirname[MAX_NAME_LENGTH];
-  bstrncpy(dirname, me->resource_name_, sizeof(dirname));
-  BashSpaces(dirname);
+  std::string cpy{myself->resource_name_};
+  BashSpaces(cpy.data());
+  PoolMem hello_msg;
+  hello_msg.bsprintf(hello, cpy.c_str(), kBareosVersion.Major,
+                     kBareosVersion.Minor, kBareosVersion.Patch);
 
-  fd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
-  if (!fd->fsend(hello, dirname, kBareosVersion.Major, kBareosVersion.Minor,
-                 kBareosVersion.Patch)) {
+  if (!BareosConnect(jcr, fd, qualified_resource_name, client,
+                     hello_msg.c_str(), old_style_tls)) {
     Jmsg(jcr, M_FATAL, 0,
-         T_("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
+         T_("Error connecting to File daemon at \"%s:%d\". ERR=%s\n"),
          fd->host(), fd->port(), fd->bstrerror());
-    return false;
-  }
-  Dmsg1(debuglevel, "Sent: %s", fd->msg);
-
-  bool auth_success;
-  auth_success = fd->AuthenticateOutboundConnection(
-      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), dirname,
-      client->password_, client);
-
-  if (!auth_success) {
-    std::array<char, 1024> msg;
-    const char* fmt
-        = T_("Unable to authenticate with File daemon at \"%s:%d\"\n");
-    snprintf(msg.data(), msg.size(), fmt, fd->host(), fd->port());
-    Dmsg0(debuglevel, "%s", msg.data());
-    Jmsg(jcr, M_FATAL, 0, "%s", msg.data());
     return false;
   }
 
