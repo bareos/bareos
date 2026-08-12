@@ -29,9 +29,6 @@
 
 namespace storagedaemon {
 
-bool AuthenticateWithStoragedaemon(JobControlRecord* jcr);
-bool AuthenticateWithFiledaemon(JobControlRecord* jcr);
-
 struct Auth : ::ClientHelloParser {
   Auth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)} {}
 
