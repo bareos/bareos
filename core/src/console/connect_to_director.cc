@@ -28,6 +28,7 @@
 #include "lib/global_resource.h"
 #include "lib/bstringlist.h"
 #include "lib/bsock_tcp.h"
+#include "lib/version.h"
 
 namespace console {
 BareosSocket* ConnectToDirector(JobControlRecord& jcr,
@@ -61,37 +62,51 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
     local_tls_resource = director_resource;
   }
 
-  if (local_tls_resource->IsTlsConfigured()) {
-    std::string qualified_resource_name = global_resource::QualifiedName(
-        my_config->GlobalTypeFromLocalType(my_config->r_own_), name);
-    if (qualified_resource_name.empty()) {
-      delete UA_sock;
-      UA_sock = nullptr;
-      jcr.dir_bsock = nullptr;
-      return nullptr;
+  std::string qualified_resource_name
+      = global_resource::QualifiedName(global_resource::Type::Console, name);
+
+  ClientAuthenticator auth;
+  auth.password = password->value;
+  auth.qualified_name = qualified_resource_name;
+  auth.tls_policy = local_tls_resource->GetPolicy();
+
+  auto tls_handshake = [&] {
+    if (local_tls_resource->GetPolicy() == kBnetTlsNone) {
+      return TlsHandshake::Disabled;
+    } else if (local_tls_resource->authenticate_) {
+      return TlsHandshake::AuthOnly;
+    } else {
+      return TlsHandshake::Enabled;
     }
+  }();
 
-    if (!UA_sock->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, local_tls_resource,
-                                 false, qualified_resource_name.c_str(),
-                                 password->value, &jcr)) {
-      delete UA_sock;
-      UA_sock = nullptr;
-      jcr.dir_bsock = nullptr;
-      return nullptr;
-    }
-  } /* IsTlsConfigured */
+  std::shared_ptr<Tls> tls_config = ParameterizeAndInitTlsConnectionAsAClient(
+      &jcr, local_tls_resource, qualified_resource_name.c_str(),
+      auth.password.c_str());
 
-  std::string own_qualified_name = "R_CONSOLE::";
-  own_qualified_name += name;
+  std::string cpy{name};
+  BashSpaces(cpy.data());
+  PoolMem hello_msg;
+  hello_msg.bsprintf("Hello %s calling version %s Version=\"%u.%u.%u\"\n",
+                     cpy.c_str(), kBareosVersionStrings.Full,
+                     kBareosVersion.Major, kBareosVersion.Minor,
+                     kBareosVersion.Patch);
 
-  if (!UA_sock->ConsoleAuthenticateWithDirector(
-          &jcr, name, *password, director_resource, own_qualified_name,
-          response_args, response_id)) {
+  if (!BareosConnect(&jcr, UA_sock, tls_config, &local_tls_resource->tls_cert_,
+                     tls_handshake, hello_msg.c_str(), &auth)) {
     delete UA_sock;
     UA_sock = nullptr;
     jcr.dir_bsock = nullptr;
     return nullptr;
   }
+
+  if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id, response_args)) {
+    delete UA_sock;
+    UA_sock = nullptr;
+    jcr.dir_bsock = nullptr;
+    return nullptr;
+  }
+
   return UA_sock;
 }
 
