@@ -46,11 +46,15 @@ const int debuglevel = 50;
  *  from the User Agent */
 inline constexpr const char SDFDhello[]
     = "Hello Director %s calling Version=\"%u.%u.%u\"\n";
+inline constexpr const char Dirhello[]
+    = "Hello %s calling Version=\"%u.%u.%u\"\n";
 
 /* Response from SD */
-inline constexpr const char SDOKhello[] = "3000 OK Hello\n";
+inline constexpr const char SDOKhello[] = "3000 OK Hello";
 /* Response from FD */
 inline constexpr const char FDOKhello[] = "2000 OK Hello";
+/* Response from DIR */
+inline constexpr const char DIROKhello[] = "1000 OK Hello";
 
 static std::map<AuthenticationResult, std::string>
     authentication_error_to_string_map{
@@ -80,203 +84,125 @@ bool GetAuthenticationResultString(AuthenticationResult err,
   return false;
 }
 
-static AuthenticationResult AuthenticateWithDirector(JobControlRecord* jcr,
-                                                     DirectorResource* dir_res)
-{
-  if (jcr->authenticated) {
-    return AuthenticationResult::kAlreadyAuthenticated;
-  }
-
-  BareosSocket* dir = jcr->dir_bsock;
-  MonitorResource* monitor = MonitorItemThread::instance()->getMonitor();
-  if (dir_res->IsTlsConfigured()) {
-    std::string qualified_resource_name = global_resource::QualifiedName(
-        global_resource::Type::Console, monitor->resource_name_);
-    if (!dir->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, dir_res, false,
-                             qualified_resource_name.c_str(),
-                             monitor->password.value, jcr)) {
-      return AuthenticationResult::kTlsHandshakeFailed;
-    }
-  }
-
-  uint32_t response_id;
-  BStringList response_args;
-  if (!dir->ConsoleAuthenticateWithDirector(
-          jcr, monitor->resource_name_, monitor->password, dir_res,
-          my_config->CreateOwnQualifiedNameForNetworkDump(), response_args,
-          response_id)) {
-    Jmsg(jcr, M_FATAL, 0,
-         T_("Director authorization problem.\n"
-            "Most likely the passwords do not agree.\n"));
-    return AuthenticationResult::kCramMd5HandshakeFailed;
-  }
-
-  return AuthenticationResult::kNoError;
-}
-
-static AuthenticationResult AuthenticateWithStorageDaemon(
-    JobControlRecord* jcr,
-    StorageResource* store)
-{
-  if (jcr->authenticated) {
-    return AuthenticationResult::kAlreadyAuthenticated;
-  }
-
-  BareosSocket* sd = jcr->store_bsock;
-  MonitorResource* monitor = MonitorItemThread::instance()->getMonitor();
-  if (store->IsTlsConfigured()) {
-    std::string qualified_resource_name = global_resource::QualifiedName(
-        global_resource::Type::Director, monitor->resource_name_);
-
-    if (!sd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, store, false,
-                            qualified_resource_name.c_str(),
-                            store->password.value, jcr)) {
-      return AuthenticationResult::kTlsHandshakeFailed;
-    }
-  }
-
-  // Send my name to the Storage daemon then do authentication
-  char dirname[MAX_NAME_LENGTH];
-  bstrncpy(dirname, monitor->resource_name_, sizeof(dirname));
-  BashSpaces(dirname);
-
-  sd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
-
-  if (!sd->fsend(SDFDhello, dirname, kBareosVersion.Major, kBareosVersion.Minor,
-                 kBareosVersion.Patch)) {
-    Dmsg1(debuglevel, T_("Error sending Hello to Storage daemon. ERR=%s\n"),
-          BnetStrerror(sd));
-    Jmsg(jcr, M_FATAL, 0, T_("Error sending Hello to Storage daemon. ERR=%s\n"),
-         BnetStrerror(sd));
-    return AuthenticationResult::kSendHelloMessageFailed;
-  }
-
-  bool auth_success = sd->AuthenticateOutboundConnection(
-      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), dirname,
-      store->password, store);
-  if (!auth_success) {
-    Dmsg2(debuglevel,
-          "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
-          sd->host(), sd->port());
-    Jmsg(jcr, M_FATAL, 0,
-         T_("Director unable to authenticate with Storage daemon at \"%s:%d\". "
-            "Possible causes:\n"
-            "Passwords or names not the same or\n"
-            "TLS negotiation problem or\n"
-            "Maximum Concurrent Jobs exceeded on the SD or\n"
-            "SD networking messed up (restart daemon).\n"),
-         sd->host(), sd->port());
-    return AuthenticationResult::kCramMd5HandshakeFailed;
-  }
-
-  Dmsg1(116, ">stored: %s", sd->msg);
-  if (sd->recv() <= 0) {
-    Jmsg3(jcr, M_FATAL, 0,
-          T_("dir<stored: \"%s:%s\" bad response to Hello command: ERR=%s\n"),
-          sd->who(), sd->host(), sd->bstrerror());
-    return AuthenticationResult::kDaemonResponseFailed;
-  }
-
-  Dmsg1(110, "<stored: %s", sd->msg);
-  if (!bstrncmp(sd->msg, SDOKhello, sizeof(SDOKhello))) {
-    Dmsg0(debuglevel, T_("Storage daemon rejected Hello command\n"));
-    Jmsg2(jcr, M_FATAL, 0,
-          T_("Storage daemon at \"%s:%d\" rejected Hello command\n"),
-          sd->host(), sd->port());
-    return AuthenticationResult::kRejectedByDaemon;
-  }
-
-  return AuthenticationResult::kNoError;
-}
-
-static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
-                                                       ClientResource* client)
-{
-  if (jcr->authenticated) {
-    return AuthenticationResult::kAlreadyAuthenticated;
-  }
-
-  BareosSocket* fd = jcr->file_bsock;
-  MonitorResource* monitor = MonitorItemThread::instance()->getMonitor();
-  if (client->IsTlsConfigured()) {
-    std::string qualified_resource_name = global_resource::QualifiedName(
-        global_resource::Type::Director, monitor->resource_name_);
-
-    if (!fd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, client, false,
-                            qualified_resource_name.c_str(),
-                            client->password.value, jcr)) {
-      return AuthenticationResult::kTlsHandshakeFailed;
-    }
-  }
-
-  // Send my name to the File daemon then do authentication
-  char dirname[MAX_NAME_LENGTH];
-  bstrncpy(dirname, monitor->resource_name_, sizeof(dirname));
-  BashSpaces(dirname);
-
-  fd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
-
-  if (!fd->fsend(SDFDhello, dirname, kBareosVersion.Major, kBareosVersion.Minor,
-                 kBareosVersion.Patch)) {
-    Jmsg(jcr, M_FATAL, 0,
-         T_("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
-         fd->host(), fd->port(), fd->bstrerror());
-    return AuthenticationResult::kSendHelloMessageFailed;
-  }
-  Dmsg1(debuglevel, "Sent: %s", fd->msg);
-
-  bool auth_success = fd->AuthenticateOutboundConnection(
-      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), dirname,
-      client->password, client);
-
-  if (!auth_success) {
-    Dmsg2(debuglevel, "Unable to authenticate with File daemon at \"%s:%d\"\n",
-          fd->host(), fd->port());
-    Jmsg(jcr, M_FATAL, 0,
-         T_("Unable to authenticate with File daemon at \"%s:%d\". Possible "
-            "causes:\n"
-            "Passwords or names not the same or\n"
-            "TLS negotiation failed or\n"
-            "Maximum Concurrent Jobs exceeded on the FD or\n"
-            "FD networking messed up (restart daemon).\n"),
-         fd->host(), fd->port());
-    return AuthenticationResult::kCramMd5HandshakeFailed;
-  }
-
-  Dmsg1(116, ">filed: %s", fd->msg);
-  if (fd->recv() <= 0) {
-    Dmsg1(debuglevel,
-          T_("Bad response from File daemon to Hello command: ERR=%s\n"),
-          BnetStrerror(fd));
-    Jmsg(jcr, M_FATAL, 0,
-         T_("Bad response from File daemon at \"%s:%d\" to Hello command: "
-            "ERR=%s\n"),
-         fd->host(), fd->port(), fd->bstrerror());
-    return AuthenticationResult::kDaemonResponseFailed;
-  }
-
-  Dmsg1(110, "<filed: %s", fd->msg);
-  if (strncmp(fd->msg, FDOKhello, sizeof(FDOKhello) - 1) != 0) {
-    Jmsg(jcr, M_FATAL, 0, T_("File daemon rejected Hello command\n"));
-    return AuthenticationResult::kRejectedByDaemon;
-  }
-
-  return AuthenticationResult::kNoError;
-}
-
 AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
                                             JobControlRecord* jcr)
 {
+  if (jcr->authenticated) {
+    return AuthenticationResult::kAlreadyAuthenticated;
+  }
+
+  MonitorResource* monitor = MonitorItemThread::instance()->getMonitor();
+
+  PoolMem hello;
+
   switch (item->type()) {
-    case R_DIRECTOR:
-      return AuthenticateWithDirector(jcr, (DirectorResource*)item->resource());
-    case R_CLIENT:
-      return AuthenticateWithFileDaemon(jcr, (ClientResource*)item->resource());
-    case R_STORAGE:
-      return AuthenticateWithStorageDaemon(jcr,
-                                           (StorageResource*)item->resource());
+    case R_DIRECTOR: {
+      auto* sock = jcr->dir_bsock;
+      auto* dir = static_cast<DirectorResource*>(item->resource());
+      hello.bsprintf(Dirhello, monitor->resource_name_, kBareosVersion.Major,
+                     kBareosVersion.Minor, kBareosVersion.Patch);
+
+      TlsResource custom = *dir;
+      // bareos is consistently inconsistent, so we obviously use the
+      // monitor password here, not the director one ...
+      custom.password_.value = monitor->password.value;
+
+      if (!BareosConnect(
+              jcr, sock,
+              global_resource::QualifiedName(global_resource::Type::Console,
+                                             monitor->resource_name_),
+              &custom, hello.c_str())) {
+        Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate with %s\n"),
+             dir->resource_name_);
+        return AuthenticationResult::kCramMd5HandshakeFailed;
+      }
+
+      if (sock->recv() <= 0) {
+        Jmsg3(jcr, M_FATAL, 0,
+              T_("console<dir: \"%s:%s\" bad response to Hello command: "
+                 "ERR=%s\n"),
+              sock->who(), sock->host(), sock->bstrerror());
+        return AuthenticationResult::kDaemonResponseFailed;
+      }
+
+      if (!bstrncmp(sock->msg, DIROKhello, sizeof(DIROKhello) - 1)) {
+        Dmsg0(debuglevel, T_("Director daemon rejected Hello command\n"));
+        Jmsg2(jcr, M_FATAL, 0,
+              T_("Director daemon at \"%s:%d\" rejected Hello command\n"),
+              sock->host(), sock->port());
+        return AuthenticationResult::kRejectedByDaemon;
+      }
+    } break;
+    case R_CLIENT: {
+      auto* fd = jcr->file_bsock;
+      auto* client = static_cast<ClientResource*>(item->resource());
+      hello.bsprintf(SDFDhello, monitor->resource_name_, kBareosVersion.Major,
+                     kBareosVersion.Minor, kBareosVersion.Patch);
+
+      if (!BareosConnect(
+              jcr, fd,
+              global_resource::QualifiedName(global_resource::Type::Director,
+                                             monitor->resource_name_),
+              client, hello.c_str())) {
+        Jmsg(jcr, M_FATAL, 0, "Failed to authenticate with %s\n",
+             client->resource_name_);
+        return AuthenticationResult::kCramMd5HandshakeFailed;
+      }
+
+      if (fd->recv() <= 0) {
+        Dmsg1(debuglevel,
+              T_("Bad response from File daemon to Hello command: ERR=%s\n"),
+              BnetStrerror(fd));
+        Jmsg(jcr, M_FATAL, 0,
+             T_("Bad response from File daemon at \"%s:%d\" to Hello command: "
+                "ERR=%s\n"),
+             fd->host(), fd->port(), fd->bstrerror());
+        return AuthenticationResult::kDaemonResponseFailed;
+      }
+
+      Dmsg1(110, "<filed: %s", fd->msg);
+      if (strncmp(fd->msg, FDOKhello, sizeof(FDOKhello) - 1) != 0) {
+        Jmsg(jcr, M_FATAL, 0, T_("File daemon rejected Hello command\n"));
+        return AuthenticationResult::kRejectedByDaemon;
+      }
+    } break;
+    case R_STORAGE: {
+      auto* sd = jcr->store_bsock;
+      auto* storage = static_cast<StorageResource*>(item->resource());
+      hello.bsprintf(SDFDhello, monitor->resource_name_, kBareosVersion.Major,
+                     kBareosVersion.Minor, kBareosVersion.Patch);
+      if (!BareosConnect(
+              jcr, sd,
+              global_resource::QualifiedName(global_resource::Type::Director,
+                                             monitor->resource_name_),
+              storage, hello.c_str())) {
+        Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate with %s\n"),
+             storage->resource_name_);
+        return AuthenticationResult::kCramMd5HandshakeFailed;
+      }
+
+      if (sd->recv() <= 0) {
+        Jmsg3(
+            jcr, M_FATAL, 0,
+            T_("dir<stored: \"%s:%s\" bad response to Hello command: ERR=%s\n"),
+            sd->who(), sd->host(), sd->bstrerror());
+        return AuthenticationResult::kDaemonResponseFailed;
+      }
+
+      if (!bstrncmp(sd->msg, SDOKhello, sizeof(SDOKhello) - 1)) {
+        Dmsg0(debuglevel, T_("Storage daemon rejected Hello command\n"));
+        Jmsg2(jcr, M_FATAL, 0,
+              T_("Storage daemon at \"%s:%d\" rejected Hello command\n"),
+              sd->host(), sd->port());
+        return AuthenticationResult::kRejectedByDaemon;
+      }
+    } break;
     default:
-      printf(T_("Error, currentitem is not a Client or a Storage..\n"));
+      printf(
+          T_("Error, currentitem is neither a Client, a Storage nor a "
+             "Director.\n"));
       return AuthenticationResult::kUnknownDaemon;
   }
+
+  return AuthenticationResult::kNoError;
 }
