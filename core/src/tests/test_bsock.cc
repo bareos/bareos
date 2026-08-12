@@ -570,15 +570,8 @@ static bool connect_to_server(std::string console_name,
 
   JobControlRecord jcr;
 
-  char* name = (char*)console_name.c_str();
-
-  s_password password;
-  password.encoding = p_encoding_md5;
-  password.value = (char*)console_password.c_str();
-
   std::shared_ptr<BareosSocketTCP> UA_sock(new BareosSocketTCP);
   UA_sock->sleep_time_after_authentication_error = 0;
-  jcr.dir_bsock = UA_sock.get();
 
   bool success = false;
 
@@ -590,37 +583,58 @@ static bool connect_to_server(std::string console_name,
     Dmsg0(10, "socket connect OK\n");
     uint32_t response_id = kMessageIdUnknown;
     BStringList response_args;
-    if (!UA_sock->ConsoleAuthenticateWithDirector(
-            &jcr, name, password, cons_dir_config.get(), console_name,
-            response_args, response_id)) {
+
+    std::string qualified_resource_name = global_resource::QualifiedName(
+        global_resource::Type::Console, console_name);
+
+    std::string cpy{console_name};
+    BashSpaces(cpy.data());
+    PoolMem hello_msg;
+    hello_msg.bsprintf("Hello %s calling version %s Version=\"%u.%u.%u\"\n",
+                       cpy.c_str(), kBareosVersionStrings.Full,
+                       kBareosVersion.Major, kBareosVersion.Minor,
+                       kBareosVersion.Patch);
+
+    TlsResource custom = *cons_dir_config;
+    custom.password_.value = console_password.data();
+
+    // yes, you read this right
+    // all these tests use the auth path that is never taken by bareos anymore
+    // this is the pre 18.2 path ...
+    if (!BareosConnect(&jcr, UA_sock.get(), std::move(qualified_resource_name),
+                       &custom, hello_msg.c_str(), true)) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
+      return false;
+    }
+
+    if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id,
+                                                    response_args)) {
+      Emsg0(M_ERROR, 0, "Did not receive correct response\n");
+      return false;
+    }
+
+    EXPECT_EQ(response_id, kMessageIdOk) << "Received the wrong message id.";
+    Dmsg0(10, "Authenticate Connect to Server successful!\n");
+    std::string cipher;
+    if (UA_sock->tls_conn) {
+      cipher = UA_sock->tls_conn->TlsCipherGetName();
+      Dmsg1(10, "Client used cipher: <%s>\n", cipher.c_str());
+      cipher_client = cipher;
+    }
+    if (cons_dir_config->IsTlsConfigured()) {
+      Dmsg0(10, UA_sock->TlsEstablished() ? "Tls enable\n"
+                                          : "Tls failed to establish\n");
+      success = UA_sock->TlsEstablished();
     } else {
-      EXPECT_EQ(response_id, kMessageIdOk) << "Received the wrong message id.";
-      Dmsg0(10, "Authenticate Connect to Server successful!\n");
-      std::string cipher;
-      if (UA_sock->tls_conn) {
-        cipher = UA_sock->tls_conn->TlsCipherGetName();
-        Dmsg1(10, "Client used cipher: <%s>\n", cipher.c_str());
-        cipher_client = cipher;
+      Dmsg0(10, "Tls disabled by command\n");
+      if (UA_sock->TlsEstablished()) {
+        Dmsg0(10, "UA_sock->tls_established_ should be false but is true\n");
       }
-      if (cons_dir_config->IsTlsConfigured()) {
-        Dmsg0(10, UA_sock->TlsEstablished() ? "Tls enable\n"
-                                            : "Tls failed to establish\n");
-        success = UA_sock->TlsEstablished();
-      } else {
-        Dmsg0(10, "Tls disabled by command\n");
-        if (UA_sock->TlsEstablished()) {
-          Dmsg0(10, "UA_sock->tls_established_ should be false but is true\n");
-        }
-        success = !UA_sock->TlsEstablished();
-      }
+      success = !UA_sock->TlsEstablished();
     }
   }
   if (success) { clone_a_client_socket(UA_sock); }
-  if (UA_sock) {
-    UA_sock->close();
-    jcr.dir_bsock = nullptr;
-  }
+  if (UA_sock) { UA_sock->close(); }
   return success;
 }
 
