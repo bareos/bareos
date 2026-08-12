@@ -933,6 +933,43 @@ bool NdmpSendLabelRequest(UaContext* ua,
     return retval;
   }
 
+  /* Make sure the mapping from logical to physical storage addresses is
+   * up to date before resolving the drive and slot below. E.g. when
+   * labeling a single Volume (not via "label barcodes") the mapping may
+   * not have been populated yet by an earlier status/slot query. */
+  if (!NdmpUpdateStorageMappings(ua, store)) {
+    ua->ErrorMsg("Could not update NDMP storage mappings\n");
+    return retval;
+  }
+
+  /* Map the configured drive to its physical element address, so the robot
+   * loads the volume into the same drive that the NDMP tape agent will
+   * open by name. Without this, the underlying ndmjob library defaults to
+   * the first drive reported by the robot, which is not necessarily the
+   * drive associated with tape_device, e.g. when multiple autochangers
+   * are attached to the same NDMP host.
+   *
+   * Resolve the drive and slot mappings before allocating any of the
+   * ndmp_job members below, so a mapping failure does not leak them. */
+  slot_number_t drive_mapping = GetElementAddressByBareosSlotNumber(
+      &store->runtime_storage_status->storage_mapping,
+      slot_type_t::kSlotTypeDrive, drive);
+  if (drive_mapping == kInvalidSlotNumber) {
+    ua->ErrorMsg("No slot mapping for drive %hd\n", drive);
+    return retval;
+  }
+
+  slot_number_t slot_mapping = kInvalidSlotNumber;
+  if (IsSlotNumberValid(slot)) {
+    slot_mapping = GetElementAddressByBareosSlotNumber(
+        &store->runtime_storage_status->storage_mapping,
+        slot_type_t::kSlotTypeStorage, slot);
+    if (slot_mapping == kInvalidSlotNumber) {
+      ua->ErrorMsg("No slot mapping for slot %hd\n", slot);
+      return retval;
+    }
+  }
+
   /* Set the remote robotics name to use.
    * We use the ndmscsi_target_from_str() function which parses the NDMJOB
    * format of a device in the form NAME[,[CNUM,]SID[,LUN] */
@@ -949,19 +986,16 @@ bool NdmpSendLabelRequest(UaContext* ua,
 
   // Set the remote tape drive to use.
   ndmp_job.tape_device = strdup(store->dev_name());
-  if (!ndmp_job.tape_device) { free(ndmp_job.robot_target); }
+  if (!ndmp_job.tape_device) {
+    free(ndmp_job.robot_target);
+    return retval;
+  }
+
+  ndmp_job.drive_addr = drive_mapping;
+  ndmp_job.drive_addr_given = 1;
 
   // Insert a media entry of the slot to label.
   if (IsSlotNumberValid(slot)) {
-    slot_number_t slot_mapping;
-
-    slot_mapping = GetElementAddressByBareosSlotNumber(
-        &store->runtime_storage_status->storage_mapping,
-        slot_type_t::kSlotTypeStorage, slot);
-    if (slot_mapping == kInvalidSlotNumber) {
-      ua->ErrorMsg("No slot mapping for slot %hd\n", slot);
-      return retval;
-    }
     media = ndma_store_media(&ndmp_job.media_tab, slot_mapping);
   } else {
     media = ndma_store_media(&ndmp_job.media_tab, 0);
