@@ -673,6 +673,8 @@ static bool SelectDirector(const char* director,
                            DirectorResource** ret_dir,
                            ConsoleResource** ret_cons)
 {
+  ResLocker _{my_config};
+
   int numcon = 0, numdir = 0;
   int i = 0, item = 0;
   BareosSocket* UA_sock;
@@ -739,41 +741,45 @@ static bool SelectDirector(const char* director,
     }
     delete UA_sock;
     {
-      ResLocker _{my_config};
       for (i = 0; i < item; i++) {
         director_resource_tmp = (DirectorResource*)my_config->GetNextRes(
-            R_DIRECTOR, (BareosResource*)director_resource_tmp);
+            R_DIRECTOR, director_resource_tmp);
       }
     }
   }
 
   // Look for a console linked to this director
-  ResLocker _{my_config};
+  bool console_found = false;
   for (i = 0; i < numcon; i++) {
-    console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
-        R_CONSOLE, (BareosResource*)console_resource_tmp);
+    console_resource_tmp = dynamic_cast<ConsoleResource*>(
+        my_config->GetNextRes(R_CONSOLE, console_resource_tmp));
+    ASSERT(console_resource_tmp);
     if (console_resource_tmp->director
         && bstrcmp(console_resource_tmp->director,
                    director_resource_tmp->resource_name_)) {
+      console_found = true;
       break;
     }
-    console_resource_tmp = NULL;
   }
 
-  // Look for the first non-linked console
-  if (console_resource_tmp == NULL) {
+  if (!console_found) {
+    // Look for the first non-linked console
+    console_resource_tmp = nullptr;
     for (i = 0; i < numcon; i++) {
-      console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
-          R_CONSOLE, (BareosResource*)console_resource_tmp);
-      if (console_resource_tmp->director == NULL) break;
-      console_resource_tmp = NULL;
+      console_resource_tmp = dynamic_cast<ConsoleResource*>(
+          my_config->GetNextRes(R_CONSOLE, console_resource_tmp));
+      ASSERT(console_resource_tmp);
+      if (console_resource_tmp->director == NULL) {
+        console_found = true;
+        break;
+      }
     }
   }
 
   // If no console, take first one
-  if (!console_resource_tmp) {
-    console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
-        R_CONSOLE, (BareosResource*)NULL);
+  if (!console_found) {
+    console_resource_tmp = dynamic_cast<ConsoleResource*>(
+        my_config->GetNextRes(R_CONSOLE, nullptr));
   }
 
   *ret_dir = director_resource_tmp;
