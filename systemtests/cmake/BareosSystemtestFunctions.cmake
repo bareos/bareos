@@ -992,7 +992,11 @@ function(add_alphabetic_requirements prefix test_subdir)
     CONFIGURE_DEPENDS "${test_dir}/testrunner-*"
   )
 
-  list(SORT "${all_test_files}")
+  # Use natural sort, so e.g. testrunner-9-... sorts before testrunner-10-...,
+  # not just testrunner-01-.../testrunner-02-... Pass the variable name (not its
+  # dereferenced value), otherwise list(SORT) silently does nothing and
+  # all_test_files keeps whatever order file(GLOB ...) happened to return it in.
+  list(SORT all_test_files COMPARE NATURAL)
 
   set(all_tests "")
   foreach(file ${all_test_files})
