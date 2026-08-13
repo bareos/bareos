@@ -67,7 +67,7 @@ fi
 
 # we deterministically use one jobid and look that we found the corresponding incremental
 # here the restore should be the first incremental
-if ! ${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | xargs | grep -F -- \"${NDMP_HOST_ADDRESS}-1\""; then
+if ! ndmp_ssh "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | xargs | grep -F -- \"${NDMP_HOST_ADDRESS}-1\""; then
   echo "Restored file ${NDMP_TEST_PATH}/incremental is not the expected first Incremental"
   rstat=1
 fi

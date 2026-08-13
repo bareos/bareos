@@ -53,7 +53,7 @@ run_bconsole "${tmp}/bconcmds"
 
 check_log "${log_home}/restore-mark.out"
 
-${SSH} "cat \"${NDMP_TEST_PATH}/testfile\"" | diff - sbin/bareos_dir-ndmp-bareos
+ndmp_ssh "cat \"${NDMP_TEST_PATH}/testfile\"" | diff - sbin/bareos_dir-ndmp-bareos
 
 #uncomment when ok
 #check_for_zombie_jobs storage=ndmpfile client=ndmp-fd

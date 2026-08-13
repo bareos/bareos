@@ -21,30 +21,32 @@
 # Common functions for NDMP Testing
 # TestName needs to be defined including in test-setup
 
-# Avoid unbound variable in other tests
-NDMP_HOST_ADDRESS=${NDMP_HOST_ADDRESS:-localhost}
-# StrictHostKeyChecking disabled for automated testing - not for production use
-SSH="ssh root@${NDMP_HOST_ADDRESS} -o StrictHostKeyChecking=no"
-export SSH
+ndmp_ssh()
+{
+  if [ -z "${NDMP_HOST_ADDRESS:-}" ]; then
+    return 1
+  fi
+  ssh -o StrictHostKeyChecking=no "root@${NDMP_HOST_ADDRESS}" "$@"
+}
 
 cleanup_remote()
 {
-  ${SSH} rm -Rf "${NDMP_TEST_PATH}"
-  ${SSH} rm -Rf "${NDMP_MOUNTPOINT}/data/${NDMP_TEST_PATH}"
+  ndmp_ssh rm -Rf "${NDMP_TEST_PATH}"
+  ndmp_ssh rm -Rf "${NDMP_MOUNTPOINT}/data/${NDMP_TEST_PATH}"
 }
 
 make_remote_data_full()
 {
-  ${SSH} mkdir -p "${NDMP_TEST_PATH}"
-  ${SSH} dd if=/dev/zero of="${NDMP_TEST_PATH}/full" bs=1M count=20
-  ${SSH} "echo \"${NDMP_HOST_ADDRESS}\" >> \"${NDMP_TEST_PATH}/full\""
+  ndmp_ssh mkdir -p "${NDMP_TEST_PATH}"
+  ndmp_ssh dd if=/dev/zero of="${NDMP_TEST_PATH}/full" bs=1M count=20
+  ndmp_ssh "echo \"${NDMP_HOST_ADDRESS}\" >> \"${NDMP_TEST_PATH}/full\""
   local dir_file
   dir_file="$(readlink sbin/bareos_dir-* 2>/dev/null | head -1)"
   if [ -z "$dir_file" ] || [ ! -f "$dir_file" ]; then
     echo "ERROR: Could not resolve bareos_dir-* symlink" >&2
     return 1
   fi
-  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile\"" <"$dir_file"
+  ndmp_ssh "cat - > \"${NDMP_TEST_PATH}/testfile\"" <"$dir_file"
   # we need an additional file, so the restore doesn't pick the last file of the volume and data stream
   local sd_file
   sd_file="$(readlink sbin/bareos_sd-* 2>/dev/null | head -1)"
@@ -52,17 +54,19 @@ make_remote_data_full()
     echo "ERROR: Could not resolve bareos_sd-* symlink" >&2
     return 1
   fi
-  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile2\"" <"$sd_file"
+  ndmp_ssh "cat - > \"${NDMP_TEST_PATH}/testfile2\"" <"$sd_file"
+  echo " ndmp_ssh \"ls -lRh \"${NDMP_TEST_PATH}\"\""
+  ndmp_ssh "ls -lRh \"${NDMP_TEST_PATH}\""
 }
 
 make_remote_data_incremental()
 {
-  ${SSH} dd if=/dev/zero of="${NDMP_TEST_PATH}/incremental" bs=1M count=2
+  ndmp_ssh dd if=/dev/zero of="${NDMP_TEST_PATH}/incremental" bs=1M count=2
 }
 
 make_remote_subdata_incremental()
 {
-  ${SSH} mkdir -p "${NDMP_TEST_PATH}/subdir"
-  ${SSH} cp -a "${NDMP_TEST_PATH}/testfile" "${NDMP_TEST_PATH}/subdir/subtestfile1"
-  ${SSH} cp -a "${NDMP_TEST_PATH}/testfile2" "${NDMP_TEST_PATH}/subdir/subtestfile2"
+  ndmp_ssh mkdir -p "${NDMP_TEST_PATH}/subdir"
+  ndmp_ssh cp -a "${NDMP_TEST_PATH}/testfile" "${NDMP_TEST_PATH}/subdir/subtestfile1"
+  ndmp_ssh cp -a "${NDMP_TEST_PATH}/testfile2" "${NDMP_TEST_PATH}/subdir/subtestfile2"
 }

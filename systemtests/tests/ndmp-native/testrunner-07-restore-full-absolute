@@ -65,9 +65,9 @@ fi
 
 # printf is used to suppress error return due to null byte
 # bash: line 1: warning: command substitution: ignored null byte in input
-${SSH} "tail -c 200 \"${restore_path}/full\" | xargs | grep -F -- \"${NDMP_HOST_ADDRESS}\""
-${SSH} "cat \"${restore_path}/testfile\"" | diff - sbin/bareos_dir-ndmp-native
-${SSH} "cat \"${restore_path}/testfile2\"" | diff - sbin/bareos_sd-ndmp-native
+ndmp_ssh "tail -c 200 \"${restore_path}/full\" | xargs | grep -F -- \"${NDMP_HOST_ADDRESS}\""
+ndmp_ssh "cat \"${restore_path}/testfile\"" | diff - sbin/bareos_dir-ndmp-native
+ndmp_ssh "cat \"${restore_path}/testfile2\"" | diff - sbin/bareos_sd-ndmp-native
 
 #check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 

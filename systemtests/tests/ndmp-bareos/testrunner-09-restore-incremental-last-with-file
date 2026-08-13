@@ -53,7 +53,7 @@ run_bconsole "${tmp}/bconcmds"
 
 check_log "${log_home}/restore-file.out"
 # check which incremental has been restored, here we expected to have the last increment job done.
-if ! ${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | xargs | grep -F -- \"${NDMP_HOST_ADDRESS}-9\""; then
+if ! ndmp_ssh "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | xargs | grep -F -- \"${NDMP_HOST_ADDRESS}-9\""; then
   echo "Restored file is not the expected last Incremental"
   estat=1
 fi

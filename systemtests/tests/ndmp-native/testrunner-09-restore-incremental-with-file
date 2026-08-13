@@ -64,8 +64,8 @@ if ! check_log "${log_home}/restore-file.out"; then
   fi
 fi
 
-${SSH} "cat \"${NDMP_TEST_PATH}/subdir/subtestfile1\"" | diff - sbin/bareos_dir-ndmp-native
-${SSH} "cat \"${NDMP_TEST_PATH}/subdir/subtestfile2\"" | diff - sbin/bareos_sd-ndmp-native
+ndmp_ssh "cat \"${NDMP_TEST_PATH}/subdir/subtestfile1\"" | diff - sbin/bareos_dir-ndmp-native
+ndmp_ssh "cat \"${NDMP_TEST_PATH}/subdir/subtestfile2\"" | diff - sbin/bareos_sd-ndmp-native
 
 #check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 

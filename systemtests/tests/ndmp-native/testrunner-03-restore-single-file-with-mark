@@ -54,7 +54,7 @@ run_bconsole "${tmp}/bconcmds"
 
 check_log "${log_home}/restore-single-mark.out"
 
-${SSH} "cat \"${NDMP_TEST_PATH}/testfile\"" | diff - sbin/bareos_dir-ndmp-native
+ndmp_ssh "cat \"${NDMP_TEST_PATH}/testfile\"" | diff - sbin/bareos_dir-ndmp-native
 
 #check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 
