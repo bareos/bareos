@@ -182,19 +182,6 @@ class BareosSocket {
   bool signal(int signal);
   const char* bstrerror(); /* last error on socket */
   bool despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize);
-  bool ConsoleAuthenticateWithDirector(JobControlRecord* jcr,
-                                       const char* name,
-                                       s_password& password,
-                                       TlsResource* tls_resource,
-                                       const std::string& own_qualified_name,
-                                       BStringList& response_args,
-                                       uint32_t& response_id);
-  bool DoTlsHandshake(TlsPolicy remote_tls_policy,
-                      TlsResource* tls_resource,
-                      bool initiated_by_remote,
-                      const char* identity,
-                      const char* password,
-                      JobControlRecord* jcr);
   bool SetLocking();   /* in bsock.c */
   void ClearLocking(); /* in bsock.c */
   void SetSourceAddress(dlist<IPADDR>* src_addr_list);
@@ -205,18 +192,6 @@ class BareosSocket {
                                          BStringList& args_out);
   bool FormatAndSendResponseMessage(uint32_t id,
                                     const BStringList& list_of_agruments);
-
-  bool AuthenticateOutboundConnection(JobControlRecord* jcr,
-                                      const std::string own_qualified_name,
-                                      const char* identity,
-                                      s_password& password,
-                                      TlsResource* tls_resource);
-
-  bool AuthenticateInboundConnection(JobControlRecord* jcr,
-                                     ConfigurationParser* my_config,
-                                     const char* name,
-                                     s_password& password,
-                                     TlsResource* tls_resource);
 
   void SetJcr(JobControlRecord* jcr) { jcr_ = jcr; }
   void SetWho(char* who) { who_ = who; }
