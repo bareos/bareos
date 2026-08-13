@@ -30,7 +30,8 @@ export TestName
 
 echo "=== ${TestName} Running ==="
 
-invalidate_slots_on_autochanger() {
+invalidate_slots_on_autochanger()
+{
   changer_device=$1
   tape_device=$2
 
