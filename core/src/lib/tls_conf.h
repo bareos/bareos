@@ -32,7 +32,6 @@ enum TlsPolicy : uint32_t
   kBnetTlsEnabled = 1, /*!< TLS with certificates is allowed but not required */
   kBnetTlsRequired = 2,  /*!< TLS with certificates is required */
   kBnetTlsAuto = 4,      /*!< TLS mode will be negotiated by ssl handshake */
-  kBnetTlsDeny = 0xFF,   /*!< TLS connection not allowed */
   kBnetTlsUnknown = 0xFE /*!< initializer constant */
 };
 
@@ -49,7 +48,6 @@ class TlsResource {
 
   bool IsTlsConfigured() const;
   TlsPolicy GetPolicy() const;
-  TlsPolicy SelectTlsPolicy(TlsPolicy remote_policy) const;
 };
 
 enum class TlsStatus

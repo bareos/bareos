@@ -35,8 +35,6 @@ bool bad_policy(TlsPolicy pol)
     case kBnetTlsAuto: {
       return false;
     } break;
-    case kBnetTlsDeny:
-      [[fallthrough]];
     case kBnetTlsUnknown:
       [[fallthrough]];
     default: {
@@ -117,23 +115,4 @@ TlsStatus select_tls_status(TlsPolicy left, TlsPolicy right)
   // - both sides allow tls
   // as such both Enabled/Disabled is ok.  By default we choose to use tls
   return TlsStatus::Enabled;
-}
-
-TlsPolicy TlsResource::SelectTlsPolicy(TlsPolicy remote_policy) const
-{
-  if (remote_policy == TlsPolicy::kBnetTlsAuto) {
-    return TlsPolicy::kBnetTlsAuto;
-  }
-  TlsPolicy local_policy = GetPolicy();
-
-  switch (select_tls_status(local_policy, remote_policy)) {
-    case TlsStatus::Disabled:
-      return TlsPolicy::kBnetTlsNone;
-    case TlsStatus::Enabled:
-      return TlsPolicy::kBnetTlsEnabled;
-    case TlsStatus::Error:
-      return TlsPolicy::kBnetTlsDeny;
-    default:
-      return TlsPolicy::kBnetTlsDeny;
-  }
 }
