@@ -47,42 +47,20 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
   jcr.dir_bsock = UA_sock;
 
   const char* name;
-  s_password* password = NULL;
 
   TlsResource* local_tls_resource;
   if (console_resource) {
     name = console_resource->resource_name_;
     ASSERT(console_resource->password_.encoding == p_encoding_md5);
-    password = &console_resource->password_;
     local_tls_resource = console_resource;
   } else { /* default console */
     name = "*UserAgent*";
     ASSERT(director_resource->password_.encoding == p_encoding_md5);
-    password = &director_resource->password_;
     local_tls_resource = director_resource;
   }
 
   std::string qualified_resource_name
       = global_resource::QualifiedName(global_resource::Type::Console, name);
-
-  ClientAuthenticator auth;
-  auth.password = password->value;
-  auth.qualified_name = qualified_resource_name;
-  auth.tls_policy = local_tls_resource->GetPolicy();
-
-  auto tls_handshake = [&] {
-    if (local_tls_resource->GetPolicy() == kBnetTlsNone) {
-      return TlsHandshake::Disabled;
-    } else if (local_tls_resource->authenticate_) {
-      return TlsHandshake::AuthOnly;
-    } else {
-      return TlsHandshake::Enabled;
-    }
-  }();
-
-  std::shared_ptr<Tls> tls_config = ParameterizeAndInitTlsConnectionAsAClient(
-      &jcr, local_tls_resource, qualified_resource_name.c_str(),
-      auth.password.c_str());
 
   std::string cpy{name};
   BashSpaces(cpy.data());
@@ -92,8 +70,8 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
                      kBareosVersion.Major, kBareosVersion.Minor,
                      kBareosVersion.Patch);
 
-  if (!BareosConnect(&jcr, UA_sock, tls_config, &local_tls_resource->tls_cert_,
-                     tls_handshake, hello_msg.c_str(), &auth)) {
+  if (!BareosConnect(&jcr, UA_sock, qualified_resource_name, local_tls_resource,
+                     hello_msg.c_str())) {
     delete UA_sock;
     UA_sock = nullptr;
     jcr.dir_bsock = nullptr;
