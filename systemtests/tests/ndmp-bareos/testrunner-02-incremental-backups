@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -42,7 +42,7 @@ start_test
 # So we limit to 9 on omnios
 # https://docs.bareos.org/BareosMainReference/TasksAndConcepts/NdmpBackupsWithBareos.html#ndmp-backup-level
 limit=10
-if [ "${NDMP_TEST}" = "omnios" ];then
+if [ "${NDMP_TEST}" = "omnios" ]; then
   limit=9
 fi
 echo "############# running NDMP ${NDMP_TEST} backup incrementals limit set to ${limit} ##################"
@@ -50,7 +50,7 @@ echo "############# running NDMP ${NDMP_TEST} backup incrementals limit set to $
 make_remote_data_incremental
 
 for ID in $(seq 1 ${limit}); do
-  ${SSH} "echo \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-${ID}\" >> \"${NDMP_TEST_PATH}/incremental\""
+  ${SSH} "echo \"${NDMP_HOST_ADDRESS}-${ID}\" >> \"${NDMP_TEST_PATH}/incremental\""
 
   cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/incr-${ID}.out
