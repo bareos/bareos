@@ -770,14 +770,6 @@ std::string BareosSocket::GetCipherMessageString() const
   return cipher_string;
 }
 
-void BareosSocket::OutputCipherMessageString(
-    std::function<void(const char*)> output_cb)
-{
-  std::string str = GetCipherMessageString();
-  str += '\n';
-  output_cb(str.c_str());
-}
-
 // Try to limit the bandwidth of a network connection
 void BareosSocket::ControlBwlimit(int bytes)
 {
