@@ -1022,7 +1022,9 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  g_UA_sock->OutputCipherMessageString(ConsoleOutput);
+  auto cipher_str = g_UA_sock->GetCipherMessageString();
+  cipher_str += "\n";
+  ConsoleOutput(cipher_str.c_str());
 
   if (response_id == kMessageIdPamRequired) {
 #if defined(HAVE_PAM)
