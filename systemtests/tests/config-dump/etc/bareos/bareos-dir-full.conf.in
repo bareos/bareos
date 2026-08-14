@@ -30,7 +30,6 @@ Director {
   # SecureEraseCommand =
   # LogTimestampFormat = "%d-%b %H:%M"
   # EnableKtls = No
-  # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
   # TlsCipherList = ""
@@ -72,7 +71,6 @@ Client {
   # NdmpLogLevel = 4
   # NdmpBlockSize = 63 k
   # NdmpUseLmdb = Yes
-  # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
   # TlsCipherList = ""
@@ -114,7 +112,6 @@ Client {
   # NdmpLogLevel = 4
   # NdmpBlockSize = 63 k
   # NdmpUseLmdb = Yes
-  # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
   # TlsCipherList = ""
@@ -156,7 +153,6 @@ Client {
   NdmpLogLevel = 40
   NdmpBlockSize = 163 k
   NdmpUseLmdb = No
-  # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
   # TlsCipherList = ""
@@ -1247,7 +1243,6 @@ Storage {
   # PairedStorage = ""
   # MaximumBandwidthPerJob = 0
   # NdmpChangerDevice =
-  # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
   # TlsCipherList = ""
@@ -1716,7 +1711,6 @@ Console {
   # PluginOptionsAcl =
   # Profile =
   # UsePamAuthentication = No
-  # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
   # TlsCipherList = ""
@@ -1748,7 +1742,6 @@ Console {
   # PluginOptionsAcl =
   Profile = "webui-admin"
   # UsePamAuthentication = No
-  # TlsAuthenticate = No
   TlsEnable = No
   # TlsRequire = Yes
   # TlsCipherList = ""
@@ -1780,7 +1773,6 @@ Console {
   # PluginOptionsAcl =
   # Profile =
   # UsePamAuthentication = No
-  # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = No
   # TlsCipherList = ""
