@@ -47,7 +47,7 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/path_list.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/thread_specific_data.h"
 #include "lib/tls_conf.h"
 #include "lib/parse_conf.h"

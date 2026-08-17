@@ -37,7 +37,6 @@
 
 class BareosSocket;
 class ConfigurationParser;
-class QualifiedResourceNameTypeConverter;
 enum class BareosVersionNumber : uint32_t;
 
 void EscapeString(PoolMem& snew, const char* old, int len);

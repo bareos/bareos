@@ -30,7 +30,7 @@
 #include "dird/dird_globals.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/bstringlist.h"
 #include "lib/jcr.h"
 #include "lib/parse_conf.h"

@@ -27,10 +27,10 @@
 #endif
 
 #define private public
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #undef private
 
-TEST(QualifiedResourceNameTypeConverter, StringToType)
+TEST(GlobalResource, GetNameFromType)
 {
   using namespace global_resource;
   for (auto [type, name] : type_names) {
@@ -38,7 +38,7 @@ TEST(QualifiedResourceNameTypeConverter, StringToType)
   }
 }
 
-TEST(QualifiedResourceNameTypeConverter, TypeToString)
+TEST(GlobalResource, GetTypeFromName)
 {
   using namespace global_resource;
   for (auto [type, name] : type_names) {
@@ -46,7 +46,7 @@ TEST(QualifiedResourceNameTypeConverter, TypeToString)
   }
 }
 
-TEST(QualifiedResourceNameTypeConverter, QualifiedNameWorks)
+TEST(GlobalResource, QualifiedNameWorks)
 {
   using namespace global_resource;
   for (auto [type, _] : type_names) {
@@ -55,7 +55,7 @@ TEST(QualifiedResourceNameTypeConverter, QualifiedNameWorks)
   }
 }
 
-TEST(QualifiedResourceNameTypeConverter, QualifiedNameRoundtrip)
+TEST(GlobalResource, QualifiedNameRoundtrip)
 {
   std::string_view resource_name = "abcd";
   using namespace global_resource;

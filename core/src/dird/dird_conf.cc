@@ -60,7 +60,7 @@
 #include "lib/berrno.h"
 #include "lib/breg.h"
 #include "lib/tls_conf.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/parse_conf.h"
 #include "lib/keyword_table_s.h"
 #include "lib/util.h"

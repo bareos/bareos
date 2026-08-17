@@ -201,8 +201,6 @@ enum
   R_CONSOLE
 };
 
-#include "lib/qualified_resource_name_type_converter.h"
-
 static void do_get_name_from_hello_test(const char* client_string_fmt,
                                         const char* client_name,
                                         const std::string& r_type_test,

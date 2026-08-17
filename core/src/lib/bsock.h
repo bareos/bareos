@@ -59,7 +59,6 @@
 struct btimer_t; /* forward reference */
 class BareosSocket;
 class BStringList;
-class QualifiedResourceNameTypeConverter;
 template <typename T> class dlist;
 btimer_t* StartBsockTimer(BareosSocket* bs, uint32_t wait);
 void StopBsockTimer(btimer_t* wid);

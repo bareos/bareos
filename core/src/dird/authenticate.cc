@@ -39,7 +39,7 @@
 #include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
 #include "lib/bnet.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/bstringlist.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
