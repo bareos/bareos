@@ -98,7 +98,6 @@ if(ndmp_tape_and_robot_agent_address)
           string(APPEND ndmp_tapes_devices "Device = \"${device}\"\n")
         endforeach(device)
         create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-        # add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME}) Testing
         # needs exclusive access to an autochanger from the ndmp host by iscsi
         set_tests_properties(
           # This feature needs to be implemented before enabling the test
@@ -110,6 +109,7 @@ if(ndmp_tape_and_robot_agent_address)
           system:ndmp-native:09-restore-incremental-with-file
           PROPERTIES DISABLED TRUE
         )
+        add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME})
       else()
         create_systemtest(
           ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT

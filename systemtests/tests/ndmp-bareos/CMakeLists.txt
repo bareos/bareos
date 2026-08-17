@@ -77,7 +77,6 @@ if(ndmp_data_agent_address)
       endif()
 
       create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-      add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME})
       set_tests_properties(
         # This temporary test will be removed at the end of the sprint
         system:ndmp-bareos:00-full-fail-rerun PROPERTIES DISABLED TRUE
@@ -95,6 +94,7 @@ if(ndmp_data_agent_address)
         # Disabled until a reliable compare method is found
         system:ndmp-bareos:11-compare-with-copy PROPERTIES DISABLED TRUE
       )
+      add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME})
     else()
       create_systemtest(
         ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
