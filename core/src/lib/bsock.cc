@@ -236,6 +236,7 @@ bool TwoWayAuthenticate(JobControlRecord* jcr,
         case CramMd5Handshake::HandshakeResult::FORMAT_MISMATCH:
           Jmsg(jcr, M_FATAL, 0,
                T_("Wrong format of the CRAM challenge with %s.\n"), ipaddr_str);
+          break;
         default:
           break;
       }
