@@ -25,6 +25,10 @@
 #include "lib/address_conf.h"
 #include "include/compiler_macro.h"
 
+#include <memory>
+#include <vector>
+#include <string>
+
 template <typename T> class dlist;
 
 int32_t BnetRecv(BareosSocket* bsock);
