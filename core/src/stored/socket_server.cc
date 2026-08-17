@@ -181,11 +181,6 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
     delete bs;
     return NULL;
   }
-  Dmsg1(110, "Got a DIR connection at %s\n",
-        bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-
-  bs->remote_version = VERSION_HEX(major, minor, patch);
-  return HandleDirectorConnection(bs);
 }
 
 static void* UserAgentShutdownCallback(void* bsock)
