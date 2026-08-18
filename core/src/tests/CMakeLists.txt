@@ -466,11 +466,13 @@ bareos_add_test(test_is_name_valid LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 bareos_add_test(test_poolmem LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
-bareos_add_test(
-  test_ua_audit
-  LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib Bareos::SQL
-                 GTest::gtest_main
-)
+if(NOT client-only)
+  bareos_add_test(
+    test_ua_audit
+    LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib Bareos::SQL
+                   GTest::gtest_main
+  )
+endif()
 
 bareos_add_test(
   test_output_formatter LINK_LIBRARIES GTest::gtest_main Bareos::Lib
