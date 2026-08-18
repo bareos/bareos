@@ -50,7 +50,7 @@ usesuffix
    Optional boolean argument that enables the automatic creation of a unique pseudo filename.
    If **usesuffix** is :code:`true`, a unique suffix is appended to **filepath**, containing the job name, the backup level and the job id. This makes incremental backups with the bpipe plugin possible. Otherwise, on a restore the plugin would just be called once with the data from the latest job, and earlier incremental and full backup jobs would be ignored.
    The full filename will have the following form: :code:`<filepath>.<job_name>.<level_letter>.<job_id>`
-
+   **usesuffix** cannot be used in a job that has **Accurate** enabled.
 readprogram
    for the bpipe plugin specifies the "reader" program that is called by the plugin during backup to read the data. bpipe will call this program by doing a popen on it.
 
