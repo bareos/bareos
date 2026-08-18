@@ -35,7 +35,9 @@ PoolMem NormalizeAuditMessageText(const char* text)
 {
   PoolMem normalized(PM_MESSAGE);
   normalized.strcpy(text ? text : "");
-  StripTrailingNewline(normalized.c_str());
+  if (normalized.c_str()[0] != '\0') {
+    StripTrailingNewline(normalized.c_str());
+  }
   return normalized;
 }
 

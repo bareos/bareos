@@ -58,4 +58,10 @@ TEST(ua_audit, normalize_message_text_handles_null_input)
   ASSERT_STREQ(normalized.c_str(), "");
 }
 
+TEST(ua_audit, normalize_message_text_handles_empty_input)
+{
+  const PoolMem normalized = NormalizeAuditMessageText("");
+  ASSERT_STREQ(normalized.c_str(), "");
+}
+
 }  // namespace directordaemon
