@@ -158,8 +158,9 @@ void UaContext::LogAuditEventInfoMsg(const char* fmt, ...)
   user_name = user_acl ? user_acl->name.c_str() : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
+  const PoolMem normalized_message = NormalizeAuditText(message.c_str());
   Emsg3(M_AUDIT, 0, T_("Console [%s] from [%s] info message %s\n"), user_name,
-        host, message.c_str());
+        host, normalized_message.c_str());
 }
 
 } /* namespace directordaemon */
