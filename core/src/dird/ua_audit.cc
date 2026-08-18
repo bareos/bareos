@@ -27,8 +27,17 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
+#include "lib/scan.h"
 
 namespace directordaemon {
+
+static PoolMem NormalizeAuditText(const char* text)
+{
+  PoolMem normalized(PM_MESSAGE);
+  normalized.strcpy(text ? text : "");
+  StripTrailingNewline(normalized.c_str());
+  return normalized;
+}
 
 /* Forward referenced functions */
 
@@ -128,8 +137,9 @@ void UaContext::LogAuditEventCmdline()
   user_name = user_acl ? user_acl->name.c_str() : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
+  const PoolMem normalized_cmdline = NormalizeAuditText(cmd);
   Emsg3(M_AUDIT, 0, T_("Console [%s] from [%s] cmdline %s\n"), user_name, host,
-        cmd);
+        normalized_cmdline.c_str());
 }
 
 void UaContext::LogAuditEventInfoMsg(const char* fmt, ...)

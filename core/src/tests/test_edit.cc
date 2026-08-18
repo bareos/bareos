@@ -22,6 +22,7 @@
 #include "include/bareos.h"
 
 #include "lib/edit.h"
+#include "lib/scan.h"
 
 constexpr std::uint64_t kibi = 1024;
 constexpr std::uint64_t mebi = 1024 * kibi;
@@ -200,5 +201,20 @@ TEST(edit, check_bad_parse)
     const char* str = "M";
     uint64_t retvalue = 0;
     ASSERT_FALSE(size_to_uint64(str, &retvalue));
+  }
+}
+
+TEST(edit, strip_trailing_newline)
+{
+  {
+    char value[] = "llist jobs days=1\n";
+    StripTrailingNewline(value);
+    ASSERT_STREQ(value, "llist jobs days=1");
+  }
+
+  {
+    char value[] = "llist jobs days=1\r\n";
+    StripTrailingNewline(value);
+    ASSERT_STREQ(value, "llist jobs days=1");
   }
 }
