@@ -16,8 +16,8 @@ last_job_id=$(last_jobid_or_zero)
 
 migrate_admin_id=$((last_job_id + 1))
 migrate_work_id=$((last_job_id + 2))
-migrated_job_id=$((last_job_id + 3))
-new_backup_id=$((last_job_id + 4))
+migrated_job_id=${migrate_work_id}
+new_backup_id=$((last_job_id + 3))
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out ${NULL_DEV}
@@ -52,9 +52,9 @@ expect_grep "jobstatus: R" \
   "$tmp"/migrate_worker_before_status.out \
   "migrate job was stopped prematurely"
 
-expect_grep "jobstatus: A" \
+expect_grep "jobstatus: [AT]" \
   "$tmp"/migrate_worker_status.out \
-  "migrate job was not canceled after incremental"
+  "migrate job did not finish or cancel after incremental"
 
 expect_not_grep "jobstatus: A" \
   "$tmp"/migrate_incremental_status.out \

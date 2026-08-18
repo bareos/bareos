@@ -926,7 +926,8 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
 {
    char sdt[50], edt[50], schedt[50], gdt[50];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], compress[50];
-   char ec6[30], ec7[30], ec8[30], elapsed[50];
+   char ec6[30], ec7[30], ec8[30], ec9[30], ec10[30], elapsed[50];
+   char effective_ratio[50], space_saving_percent[50];
    double kbps;
    utime_t RunTime;
    MediaDbRecord mr;
@@ -993,6 +994,21 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
      Bsnprintf(compress, sizeof(compress), "%.1f %%", compression);
    }
 
+   const int64_t primary_data_bytes = jcr->dir_impl->jr.PrimaryDataBytes;
+   const uint64_t stored_data_bytes = jcr->dir_impl->jr.JobBytes;
+   const bool have_primary_data = primary_data_bytes > 0;
+   if (have_primary_data) {
+      const double ratio = static_cast<double>(stored_data_bytes)
+                           / static_cast<double>(primary_data_bytes);
+      const double saving = 100.0 * (1.0 - ratio);
+      Bsnprintf(effective_ratio, sizeof(effective_ratio), "%.2f", ratio);
+      Bsnprintf(space_saving_percent, sizeof(space_saving_percent), "%.2f%%",
+                saving);
+   } else {
+      bstrncpy(effective_ratio, "n/a", sizeof(effective_ratio));
+      bstrncpy(space_saving_percent, "n/a", sizeof(space_saving_percent));
+   }
+
    std::string fd_term_msg = JobstatusToAscii(jcr->dir_impl->FDJobStatus);
    std::string sd_term_msg = JobstatusToAscii(jcr->dir_impl->SDJobStatus);
 
@@ -1030,10 +1046,23 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
               "  Backup Level:           Virtual Full\n"));
          Mmsg(statistics, T_(
               "  SD Files Written:       %s\n"
-              "  SD Bytes Written:       %s (%sB)\n"),
+              "  SD Bytes Written:       %s (%sB)\n"
+              "  Primary Data Bytes:     %s (%sB)\n"
+              "  Effective Ratio:        %s\n"
+              "  Space Saving:           %s\n"),
               edit_uint64_with_commas(jcr->dir_impl->SDJobFiles, ec2),
               edit_uint64_with_commas(jcr->dir_impl->SDJobBytes, ec5),
-              edit_uint64_with_suffix(jcr->dir_impl->SDJobBytes, ec6));
+              edit_uint64_with_suffix(jcr->dir_impl->SDJobBytes, ec6),
+              have_primary_data ? edit_uint64_with_commas(
+                                      static_cast<uint64_t>(primary_data_bytes),
+                                      ec9)
+                                : "n/a",
+              have_primary_data ? edit_uint64_with_suffix(
+                                      static_cast<uint64_t>(primary_data_bytes),
+                                      ec10)
+                                : "n/a",
+              effective_ratio,
+              space_saving_percent);
       } else {
          Mmsg(level_info, T_(
               "  Backup Level:           %s%s\n"),
@@ -1043,7 +1072,10 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
               "  SD Files Written:       %s\n"
               "  FD Bytes Read:          %s (%sB)\n"
               "  FD Bytes Written:       %s (%sB)\n"
-              "  SD Bytes Written:       %s (%sB)\n"),
+              "  SD Bytes Written:       %s (%sB)\n"
+              "  Primary Data Bytes:     %s (%sB)\n"
+              "  Effective Ratio:        %s\n"
+              "  Space Saving:           %s\n"),
               edit_uint64_with_commas(jcr->dir_impl->jr.JobFiles, ec1),
               edit_uint64_with_commas(jcr->dir_impl->SDJobFiles, ec2),
               edit_uint64_with_commas(jcr->dir_impl->jr.ReadBytes, ec3),
@@ -1051,7 +1083,17 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
               edit_uint64_with_commas(jcr->dir_impl->jr.JobBytes, ec5),
               edit_uint64_with_suffix(jcr->dir_impl->jr.JobBytes, ec6),
               edit_uint64_with_commas(jcr->dir_impl->SDJobBytes, ec7),
-              edit_uint64_with_suffix(jcr->dir_impl->SDJobBytes, ec8));
+              edit_uint64_with_suffix(jcr->dir_impl->SDJobBytes, ec8),
+              have_primary_data ? edit_uint64_with_commas(
+                                      static_cast<uint64_t>(primary_data_bytes),
+                                      ec9)
+                                : "n/a",
+              have_primary_data ? edit_uint64_with_suffix(
+                                      static_cast<uint64_t>(primary_data_bytes),
+                                      ec10)
+                                : "n/a",
+              effective_ratio,
+              space_saving_percent);
       }
       break;
    }

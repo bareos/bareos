@@ -24,3 +24,21 @@ export SQL_DDL_DIR="${current_test_directory}/bareos_15_db_2004_ddl"
 unset SQL_DDL_DIR
 
 "${BAREOS_SCRIPTS_DIR}/update_bareos_tables" -f
+
+schema_check_log="${tmp}/schema-check.out"
+version_check_log="${tmp}/version-check.out"
+
+run_query "SELECT column_name
+FROM information_schema.columns
+WHERE table_name = 'job'
+  AND column_name IN ('primarydatabytes', 'primarydatasource')
+ORDER BY column_name;" >"${schema_check_log}"
+
+expect_grep "primarydatabytes" "${schema_check_log}" \
+  "Upgraded catalog is missing Job.PrimaryDataBytes column."
+expect_grep "primarydatasource" "${schema_check_log}" \
+  "Upgraded catalog is missing Job.PrimaryDataSource column."
+
+run_query "SELECT VersionId FROM Version;" >"${version_check_log}"
+expect_grep "2260" "${version_check_log}" \
+  "Catalog schema version after upgrade is not 2260."

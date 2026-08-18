@@ -7,13 +7,34 @@
 # - client sorting column
 #   set client_name for clear client names or client_id for anonymized client names
 %s
-SELECT %s as client, count, size_gb::NUMERIC(20,2) FROM (
+SELECT
+  %s as client,
+  count,
+  size_gb::NUMERIC(20,2),
+  size_source,
+  CASE
+    WHEN primary_bytes > 0
+      THEN (stored_bytes::NUMERIC / primary_bytes::NUMERIC)::NUMERIC(20,2)
+    ELSE NULL
+  END AS effective_ratio,
+  CASE
+    WHEN primary_bytes > 0
+      THEN (100.0 * (1.0 - (stored_bytes::NUMERIC / primary_bytes::NUMERIC)))::NUMERIC(20,2)
+    ELSE NULL
+  END AS space_saving_percent
+FROM (
   SELECT
     client_name,
     client_anon,
     client_id,
     SUM(count) AS count,
+    SUM(primary_bytes) AS primary_bytes,
+    SUM(stored_bytes) AS stored_bytes,
     SUM(size_gb) AS size_gb,
+    CASE
+      WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
+      ELSE 'mixed'
+    END AS size_source,
     1 AS order
   FROM client_aggregated
   GROUP BY client_name, client_anon, client_id
@@ -23,7 +44,13 @@ SELECT %s as client, count, size_gb::NUMERIC(20,2) FROM (
     'TOTAL' AS client_anon,
     0 as client_id,
     SUM(count) AS count,
+    SUM(primary_bytes) AS primary_bytes,
+    SUM(stored_bytes) AS stored_bytes,
     SUM(size_gb) AS size_gb,
+    CASE
+      WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
+      ELSE 'mixed'
+    END AS size_source,
     2 AS order
   FROM client_aggregated
 ) t

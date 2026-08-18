@@ -41,10 +41,12 @@
 
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
+#include "filed/filed_jcr_impl.h"
 #include "filed/accurate.h"
 #include "filed/heartbeat.h"
 #include "filed/fileset.h"
 #include "filed/heartbeat.h"
+#include "filed/fd_plugins.h"
 #include "findlib/attribs.h"
 #include "findlib/find.h"
 #include "findlib/find_one.h"
@@ -116,4 +118,154 @@ TEST(fd, fd_plugins)
 
   UnloadFdPlugins();
 }
+
+// Callback used in postBackupFile unit tests: sets file size to 100.
+static bRC TestPostBackupFileSetSize(PluginContext*, save_pkt* sp)
+{
+  sp->statp.st_size = 100;
+  return bRC_OK;
+}
+
+// Build a minimal Plugin with PluginFunctions of a given declared size.
+// funcs_size controls what the plugin reports as its struct size, letting
+// tests simulate an old plugin that doesn't know about postBackupFile.
+struct PluginTestHarness {
+  PluginFunctions funcs{};
+  Plugin plugin{};
+  PluginContext ctx{};
+  FiledJcrImpl fd_impl{};
+  save_pkt sp{};
+  FindFilesPacket ff{};
+  JobControlRecord jcr{};
+
+  explicit PluginTestHarness(uint32_t funcs_size = sizeof(PluginFunctions))
+  {
+    funcs.size = funcs_size;
+    funcs.version = FD_PLUGIN_INTERFACE_VERSION;
+    plugin.plugin_functions = &funcs;
+    ctx.plugin = &plugin;
+    sp.statp.st_mode = S_IFREG | 0644;
+    ff.statp.st_mode = S_IFREG | 0644;
+    fd_impl.plugin_sp = &sp;
+    jcr.fd_impl = &fd_impl;
+    jcr.plugin_ctx = &ctx;
+  }
+};
+
+// A warning must be recorded when:
+//   - the plugin has no postBackupFile callback (old ABI, struct too small)
+//   - the file started at st_size == 0 (regular file, explicitly zero)
+//   - bytes were actually read/written (ReadBytes grew)
+TEST(fd, postbackupfile_warning_when_no_callback_and_bytes_written)
+{
+  static char bpipe_cmd[] = "bpipe:file=/test:reader=echo hi:writer=/bin/cat";
+
+  // Struct size stops before postBackupFile — simulates a pre-Phase-3 plugin.
+  PluginTestHarness h{(uint32_t)offsetof(PluginFunctions, postBackupFile)};
+  h.sp.cmd = bpipe_cmd;
+  h.sp.statp.st_size = 0;
+  h.ff.statp.st_size = 0;
+  h.jcr.ReadBytes = 1024;
+
+  PluginPostBackupFile(&h.jcr, &h.ff, /*read_bytes_before=*/0);
+
+  ASSERT_EQ(h.fd_impl.plugin_postwrite_warnings.count("bpipe"), 1u);
+  EXPECT_EQ(h.fd_impl.plugin_postwrite_warnings.at("bpipe"), 1u);
+}
+
+// A warning must also be recorded when st_size == -1 (unknown, as set by
+// bpipe-fd) and bytes were written — the plugin couldn't know the size ahead
+// of streaming and never provided a post-write update.
+TEST(fd, postbackupfile_warning_when_no_callback_and_size_negative_one)
+{
+  static char bpipe_cmd[] = "bpipe:file=/test:reader=echo hi:writer=/bin/cat";
+
+  PluginTestHarness h{(uint32_t)offsetof(PluginFunctions, postBackupFile)};
+  h.sp.cmd = bpipe_cmd;
+  h.sp.statp.st_size = -1;  // bpipe-fd uses -1 for "unknown size"
+  h.ff.statp.st_size = -1;
+  h.jcr.ReadBytes = 41;
+
+  PluginPostBackupFile(&h.jcr, &h.ff, /*read_bytes_before=*/0);
+
+  ASSERT_EQ(h.fd_impl.plugin_postwrite_warnings.count("bpipe"), 1u);
+  EXPECT_EQ(h.fd_impl.plugin_postwrite_warnings.at("bpipe"), 1u);
+}
+
+// No warning when the file already had a non-zero size before the backup —
+// only genuinely zero-reported files should be flagged.
+TEST(fd, postbackupfile_no_warning_for_nonzero_initial_size)
+{
+  static char bpipe_cmd[] = "bpipe:file=/test:reader=echo hi:writer=/bin/cat";
+
+  PluginTestHarness h{(uint32_t)offsetof(PluginFunctions, postBackupFile)};
+  h.sp.cmd = bpipe_cmd;
+  h.sp.statp.st_size = 1024;
+  h.ff.statp.st_size = 1024;
+  h.jcr.ReadBytes = 2048;
+
+  PluginPostBackupFile(&h.jcr, &h.ff, /*read_bytes_before=*/0);
+
+  EXPECT_TRUE(h.fd_impl.plugin_postwrite_warnings.empty());
+}
+
+// No warning when no bytes were transferred, even for a zero-size entry —
+// an empty bpipe source is legitimate and must not be flagged.
+TEST(fd, postbackupfile_no_warning_when_no_bytes_written)
+{
+  static char bpipe_cmd[] = "bpipe:file=/test:reader=echo hi:writer=/bin/cat";
+
+  PluginTestHarness h{(uint32_t)offsetof(PluginFunctions, postBackupFile)};
+  h.sp.cmd = bpipe_cmd;
+  h.sp.statp.st_size = 0;
+  h.ff.statp.st_size = 0;
+  h.jcr.ReadBytes = 100;
+
+  // read_bytes_before == ReadBytes => no new bytes
+  PluginPostBackupFile(&h.jcr, &h.ff, /*read_bytes_before=*/100);
+
+  EXPECT_TRUE(h.fd_impl.plugin_postwrite_warnings.empty());
+}
+
+// No warning when the plugin implements postBackupFile and updates st_size —
+// the callback is the correct opt-in path.
+TEST(fd, postbackupfile_no_warning_when_callback_updates_size)
+{
+  static char plugin_cmd[] = "myplugin:some:args";
+
+  // Full-size struct so postBackupFile is within range.
+  PluginTestHarness h{(uint32_t)sizeof(PluginFunctions)};
+  h.funcs.postBackupFile = TestPostBackupFileSetSize;
+  h.sp.cmd = plugin_cmd;
+  h.sp.statp.st_size = 0;
+  h.ff.statp.st_size = 0;
+  h.jcr.ReadBytes = 500;
+
+  PluginPostBackupFile(&h.jcr, &h.ff, /*read_bytes_before=*/0);
+
+  EXPECT_TRUE(h.fd_impl.plugin_postwrite_warnings.empty());
+  // ff_pkt->statp must reflect the size set by the callback (100).
+  EXPECT_EQ(h.ff.statp.st_size, (off_t)100);
+}
+
+// ff_pkt->statp must always be overwritten with sp->statp after the call,
+// regardless of whether the plugin has a callback.
+TEST(fd, postbackupfile_always_updates_ffpkt_stat)
+{
+  static char bpipe_cmd[] = "bpipe:file=/test:reader=echo hi:writer=/bin/cat";
+
+  PluginTestHarness h{(uint32_t)offsetof(PluginFunctions, postBackupFile)};
+  h.sp.cmd = bpipe_cmd;
+  h.sp.statp.st_size = 42;
+  h.sp.statp.st_mode = S_IFREG | 0600;
+  h.ff.statp.st_size = 0;
+  h.ff.statp.st_mode = S_IFREG | 0644;
+  h.jcr.ReadBytes = 42;
+
+  PluginPostBackupFile(&h.jcr, &h.ff, /*read_bytes_before=*/0);
+
+  EXPECT_EQ(h.ff.statp.st_size, (off_t)42);
+  EXPECT_EQ(h.ff.statp.st_mode, h.sp.statp.st_mode);
+}
+
 } /* namespace filedaemon */

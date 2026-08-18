@@ -45,7 +45,67 @@ client_detail AS (
     'Client ' || c.clientid AS client_anon,
     c.clientid AS client_id,
     f.fileset AS fileset,
-    GREATEST(j.readbytes::bigint, j.jobbytes::bigint) / 10^9 AS size_gb,
+    CASE
+      WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+        THEN j.primarydatabytes::bigint
+      ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+    END AS primary_bytes,
+    GREATEST(j.jobbytes::bigint, 0) AS stored_bytes,
+    (
+      CASE
+        WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+          THEN j.primarydatabytes::bigint
+        ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+      END
+    ) / 10^9 AS size_gb,
+    CASE
+      WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+        THEN COALESCE(NULLIF(j.primarydatasource, ''), 'reported')
+      ELSE 'legacy_fallback'
+    END AS size_source,
+    CASE
+      WHEN (
+        CASE
+          WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+            THEN j.primarydatabytes::bigint
+          ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+        END
+      ) > 0
+        THEN GREATEST(j.jobbytes::bigint, 0)::NUMERIC
+             / (
+               CASE
+                 WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+                   THEN j.primarydatabytes::bigint
+                 ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+               END
+             )::NUMERIC
+      ELSE NULL
+    END AS effective_ratio,
+    CASE
+      WHEN (
+        CASE
+          WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+            THEN j.primarydatabytes::bigint
+          ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+        END
+      ) > 0
+        THEN 100.0
+             * (
+               1.0
+               - (
+                 GREATEST(j.jobbytes::bigint, 0)::NUMERIC
+                 / (
+                   CASE
+                     WHEN j.primarydatabytes IS NOT NULL
+                          AND j.primarydatabytes >= 0
+                       THEN j.primarydatabytes::bigint
+                     ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+                   END
+                 )::NUMERIC
+               )
+             )
+      ELSE NULL
+    END AS space_saving_percent,
     f.plugin AS plugin
   FROM job j
   INNER JOIN client c
@@ -61,7 +121,13 @@ client_detail AS (
     WHERE level = 'F'
       AND j.jobstatus IN ('T','W')
       AND j.type = 'B'
-      AND j.jobbytes > 0
+      AND (
+        CASE
+          WHEN j.primarydatabytes IS NOT NULL AND j.primarydatabytes >= 0
+            THEN j.primarydatabytes::bigint
+          ELSE GREATEST(j.readbytes::bigint, j.jobbytes::bigint)
+        END
+      ) > 0
     GROUP BY j.clientid, f.fileset
   )
 ),
@@ -74,7 +140,13 @@ client_aggregated AS (
       WHEN plugin IS NULL THEN 1
       ELSE COUNT(fileset)
     END as count,
+    SUM(primary_bytes) as primary_bytes,
+    SUM(stored_bytes) as stored_bytes,
     SUM(size_gb) as size_gb,
+    CASE
+      WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
+      ELSE 'mixed'
+    END as size_source,
     COALESCE(plugin, 'none (file data)') as plugin
   FROM client_detail
   GROUP BY client_name, client_anon, client_id, plugin
@@ -83,7 +155,13 @@ plugin_aggregated AS (
   SELECT
     COALESCE(plugin, 'none (file data)') as plugin,
     SUM(count) as count,
-    SUM(size_gb) as size_gb
+    SUM(primary_bytes) as primary_bytes,
+    SUM(stored_bytes) as stored_bytes,
+    SUM(size_gb) as size_gb,
+    CASE
+      WHEN COUNT(DISTINCT size_source) = 1 THEN MIN(size_source)
+      ELSE 'mixed'
+    END as size_source
   FROM client_aggregated
   GROUP BY plugin
   ORDER BY plugin

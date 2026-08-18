@@ -785,6 +785,7 @@ const filedaemon::PluginFunctions my_functions = {
     .setAcl = &setAcl,
     .getXattr = &getXattr,
     .setXattr = &setXattr,
+    .postBackupFile = nullptr,
 };
 
 extern "C" int loadPlugin(filedaemon::PluginApiDefinition* core_info,

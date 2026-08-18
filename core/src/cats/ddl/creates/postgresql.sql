@@ -92,6 +92,8 @@ CREATE TABLE Job
     JobFiles          INTEGER     DEFAULT 0,
     JobBytes          BIGINT      DEFAULT 0,
     ReadBytes         BIGINT      DEFAULT 0,
+    PrimaryDataBytes  BIGINT,
+    PrimaryDataSource TEXT,
     JobErrors         INTEGER     DEFAULT 0,
     JobMissingFiles   INTEGER     DEFAULT 0,
     PoolId            INTEGER     DEFAULT 0,
@@ -635,7 +637,7 @@ commit;
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2250;
-INSERT INTO Version (VersionId) VALUES (2250);
+DELETE FROM Version WHERE VersionId<=2260;
+INSERT INTO Version (VersionId) VALUES (2260);
 
 -- Make sure we have appropriate permissions

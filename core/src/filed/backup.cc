@@ -530,6 +530,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   bool has_file_data = false;
   save_pkt sp; /* use by option plugin */
   BareosSocket* sd = jcr->store_bsock;
+  const uint64_t read_bytes_before = jcr->ReadBytes;
 
   if (jcr->IsJobCanceled() || jcr->IsIncomplete()) { return 0; }
 
@@ -840,6 +841,8 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
     sd->signal(BNET_EOD); /* end of hardlink record */
   }
+
+  if (plugin_started) { PluginPostBackupFile(jcr, ff_pkt, read_bytes_before); }
 
 good_rtn:
   rtnstat = jcr->IsJobCanceled() ? 0 : 1; /* good return if not canceled */

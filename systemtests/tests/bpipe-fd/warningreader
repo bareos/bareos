@@ -1,0 +1,3 @@
+#!/bin/bash
+
+printf '%s\n' 'this is test data for post-write warning'

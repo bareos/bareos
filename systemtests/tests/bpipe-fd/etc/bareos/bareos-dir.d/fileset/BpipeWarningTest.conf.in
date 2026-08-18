@@ -1,0 +1,16 @@
+FileSet {
+  Name = "bpipe-warning-test"
+  Enable VSS = No
+
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    # reader writes actual bytes so bpipe's zero initial st_size triggers
+    # the post-write size warning path in the file daemon.
+    Plugin = "bpipe"
+             ":file=/bpipe-warning-test"
+             ":reader=bash ./warningreader"
+             ":writer=bash ./warningwriter"
+  }
+}

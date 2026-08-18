@@ -1,0 +1,109 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+#
+# Verify bpipe post-write warning trigger conditions:
+# - warning is emitted when bytes are written without post-write size update
+# - warning is not emitted when no bytes are written
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+warning_log="${runner_tmp}/warning-job.out"
+no_warning_log="${runner_tmp}/no-warning-job.out"
+
+run_bconsole - <<END_OF_DATA
+@$out ${NULL_DEV}
+messages
+
+@$out ${warning_log}
+run job=backup-bareos-fd fileset=bpipe-warning-test level=Full yes
+wait
+messages
+END_OF_DATA
+
+check_log "${warning_log}"
+
+expect_grep 'Plugin "bpipe" backed up' \
+  "${warning_log}" \
+  "Expected post-write size warning from bpipe plugin was not found in job messages"
+
+warning_jobid=$(grep -oE 'JobId=[0-9]+' "${warning_log}" | tail -n 1 | cut -d= -f2)
+if [ -z "${warning_jobid}" ]; then
+  set_error "Could not determine warning job id from ${warning_log}"
+fi
+
+run_bconsole - <<END_OF_DATA
+@$out ${runner_tmp}/warning-volume.out
+.sql query="SELECT m.VolumeName FROM Media m JOIN JobMedia jm ON jm.MediaId=m.MediaId WHERE jm.JobId=${warning_jobid} ORDER BY jm.JobMediaId LIMIT 1"
+END_OF_DATA
+
+warning_volume=$(grep -oE 'Full-[^[:space:]|]+' "${runner_tmp}/warning-volume.out" | head -n 1)
+if [ -z "${warning_volume}" ]; then
+  set_error "Could not determine volume for warning job ${warning_jobid}"
+fi
+
+run_bls -vv -V "${warning_volume}" FileStorage
+expect_grep "bpipe-warning-test" \
+  "${tmp}/bls.out" \
+  "bls did not list the bpipe warning test entry."
+
+rm -rf "${runner_tmp}/bextract-warning"
+mkdir -p "${runner_tmp}/bextract-warning"
+run_bextract -vv -V "${warning_volume}" FileStorage "${runner_tmp}/bextract-warning"
+
+run_bscan_db -vv -s -V "${warning_volume}" FileStorage
+expect_grep '^Begin Job Session Record:' \
+  "${tmp}/bscan.out" \
+  "bscan did not find a start-of-session record for the bpipe warning volume."
+expect_grep '^End Job Session Record:' \
+  "${tmp}/bscan.out" \
+  "bscan did not find an end-of-session record for the bpipe warning volume."
+
+run_bconsole - <<END_OF_DATA
+@$out ${NULL_DEV}
+messages
+
+@$out ${no_warning_log}
+run job=backup-bareos-fd fileset=bpipe-no-warning-empty-test level=Full yes
+wait
+messages
+END_OF_DATA
+
+check_log "${no_warning_log}"
+
+expect_not_grep 'Plugin "bpipe" backed up' \
+  "${no_warning_log}" \
+  "Unexpected post-write size warning was emitted for bpipe job without payload bytes"
+
+end_test

@@ -7,41 +7,65 @@ status subscriptions clients
       {
         "client": "file-and-plugins",
         "count": "3",
-        "size_gb": "4.00"
+        "size_gb": "4.00",
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001000000000000000000",
+        "space_saving_percent": "99.9999000000000000000000000"
       },
       {
         "client": "file-only",
         "count": "1",
-        "size_gb": "3.00"
+        "size_gb": "3.00",
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.33333400000000000000",
+        "space_saving_percent": "66.666600000000000000000"
       },
       {
         "client": "native-plugins",
         "count": "10",
-        "size_gb": "1234.00"
+        "size_gb": "1234.00",
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.0000000081037277147487844408",
+        "space_saving_percent": "99.99999918962722852512155592000"
       },
       {
         "client": "python-plugins",
         "count": "9",
-        "size_gb": "1234567.89"
+        "size_gb": "1234567.89",
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.0000000000072900000663390006",
+        "space_saving_percent": "99.99999999927099999336609994000"
       },
       {
         "client": "special-syntax",
         "count": "5",
-        "size_gb": "5.00"
+        "size_gb": "5.00",
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001000000000000000000",
+        "space_saving_percent": "99.9999000000000000000000000"
       },
       {
         "client": "two-barri-jobs",
         "count": "2",
-        "size_gb": "2.00"
+        "size_gb": "2.00",
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000001000000000000000000",
+        "space_saving_percent": "99.9999000000000000000000000"
       },
       {
         "client": "TOTAL",
         "count": "30",
-        "size_gb": "1235815.89"
+        "size_gb": "1235815.89",
+        "size_source": "legacy_fallback",
+        "effective_ratio": "0.000000809207915266407523",
+        "space_saving_percent": "99.9999190792084733592477000"
       }
     ],
     "unit-summary": {
       "accounting_mode": "volume-based (1236 volume-based units >= 30 count-based units)",
+      "size_source": "legacy_fallback",
+      "effective_ratio": "0.000000809207915266407523",
+      "space_saving_percent": "99.9999190792084733592477000",
       "used": "1236",
       "configured": "1240",
       "remaining": "4"
