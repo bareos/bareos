@@ -44,7 +44,7 @@
 static constexpr int debuglevel = 50;
 
 namespace {
-void ParameterizeTlsCert(Tls* tls, TlsConfigCert& tls_cert)
+void ParameterizeTlsCert(Tls* tls, const TlsConfigCert& tls_cert)
 {
   tls->Setca_certfile_(tls_cert.ca_certfile_);
   tls->SetCaCertdir(tls_cert.ca_certdir_);
@@ -159,7 +159,7 @@ bool DoTlsHandshakeWithClient(JobControlRecord* jcr,
 bool DoTlsHandshakeWithServer(JobControlRecord* jcr,
                               BareosSocket* socket,
                               std::shared_ptr<Tls> tls,
-                              TlsConfigCert* local_tls_cert)
+                              const TlsConfigCert* local_tls_cert)
 {
   if (BnetTlsClient(socket, std::move(tls), local_tls_cert->verify_peer_,
                     local_tls_cert->allowed_certificate_common_names_)) {
