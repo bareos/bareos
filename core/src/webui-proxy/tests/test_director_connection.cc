@@ -41,6 +41,47 @@
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 
+TEST(DirectorConnection, BashesSpacesInUsernameInHelloMessage)
+{
+  // Usernames containing spaces must have spaces encoded as \x01 so the
+  // director's space-splitting Hello parser reconstructs the full name.
+  int sockets[2] = {-1, -1};
+  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+  DirectorConnection connection;
+  connection.fd_ = sockets[0];
+
+  DirectorConfig cfg;
+  cfg.username = "my console";  // space in name
+  cfg.password = "secret";
+  cfg.json_mode = false;
+
+  std::thread director([peer = sockets[1]]() {
+    int32_t header = 0;
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+    const auto hello_size = static_cast<size_t>(ntohl(header));
+    std::string hello(hello_size, '\0');
+    ASSERT_EQ(read(peer, hello.data(), hello.size()),
+              static_cast<ssize_t>(hello.size()));
+
+    // Space in username must be encoded as \x01, not a literal space.
+    const std::string bashed = "my\x01" "console";
+    EXPECT_NE(hello.find("Hello " + bashed + " calling version "),
+              std::string::npos)
+        << "Hello message was: " << hello;
+
+    // Close without completing auth — we only care about the Hello content.
+    close(peer);
+  });
+
+  // Authenticate will throw because we closed the socket early; that's fine.
+  EXPECT_THROW(connection.Authenticate(cfg), std::runtime_error);
+
+  director.join();
+  close(connection.fd_);
+  connection.fd_ = -1;
+}
+
 TEST(DirectorConnection, FormatsTlsPskIdentityAsQualifiedConsoleName)
 {
   // The proxy prepends the console resource name and the separator byte.
