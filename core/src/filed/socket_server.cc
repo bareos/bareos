@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "filed/filed_conf.h"
+#include "filed/authenticate.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "filed/dir_cmd.h"
@@ -61,93 +62,85 @@ static std::atomic<bool> server_running = false;
  *  - Otherwise it was a connection from the DIR, call
  * handle_director_connection()
  */
-static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
+static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 {
   BareosSocket* bs = (BareosSocket*)arg;
 
   bs->SetEnableKtls(me->enable_ktls);
 
-  UseConfigAndJcrs tls_secret_provider{config};
-  if (!TryTlsHandshakeAsAServer(bs, config, &tls_secret_provider)) {
-    bs->signal(BNET_TERMINATE);
-    bs->close();
-    delete bs;
+  auto config = parser->GetCurrentConfiguration();
+
+  UseConfigAndJcrs tls_secret_provider{config, parser->resource_definitions_};
+
+  auto* myself
+      = dynamic_cast<ClientResource*>(config->GetNextRes(R_CLIENT, nullptr));
+
+  auto error_and_close = [](BareosSocket* socket) {
+    Bmicrosleep(socket->sleep_time_after_authentication_error, 0);
+    socket->signal(BNET_TERMINATE);
+    socket->close();
+    delete socket;
     return nullptr;
+  };
+
+  if (!myself) {
+    Emsg1(M_ERROR, 0, "Could not find myself during connection attempt.\n");
+    return error_and_close(bs);
   }
 
-  if (bs->recv() <= 0) {
-    Emsg1(M_ERROR, 0, T_("Connection request from %s failed.\n"), bs->who());
-    Bmicrosleep(5, 0); /* make user wait 5 seconds */
-    bs->signal(BNET_TERMINATE);
-    bs->close();
-    delete bs;
-    return nullptr;
+  Auth auth{config};
+
+  if (!BareosAccept(bs,
+                    global_resource::QualifiedName(
+                        global_resource::Type::Client, myself->resource_name_),
+                    myself, &tls_secret_provider, &auth)) {
+    return error_and_close(bs);
   }
 
-  Dmsg1(110, "Conn: %s\n", bs->msg);
+  switch (auth.GetType()) {
+    case Auth::inbound_type::Director: {
+      if (std::optional error
+          = tls_secret_provider.is_resource_name_different_from_tls_name(
+              R_DIRECTOR, auth.director->res->resource_name_)) {
+        Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
+              error->c_str());
+        return error_and_close(bs);
+      }
 
-  // See if its a director making a connection.
-  char tbuf[100];
-  char name[128];
+      bs->sleep_time_after_authentication_error = 0;
 
-  unsigned major{}, minor{}, patch{};
+      if (!auth.director->res->conn_from_dir_to_fd) {
+        Emsg2(M_ERROR, 0,
+              "Connection from director %s (as %s) is not allowed\n", bs->who(),
+              auth.director->res->resource_name_);
+        return error_and_close(bs);
+      }
 
-  if (bsscanf(bs->msg, "Hello Director %127s calling Version=\"%u.%u.%u\"",
-              name, &major, &minor, &patch)
-          == 4
-      || bsscanf(bs->msg, "Hello Director %127s calling", name) == 1) {
-    Dmsg1(110, "Got a DIR connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+      if (!bs->fsend("2000 OK Hello %d\n", FD_PROTOCOL_VERSION)) {
+        Emsg2(M_ERROR, 0, "Could not send OK Hello to %s: ERR=%s\n", bs->who(),
+              bs->bstrerror());
+        return error_and_close(bs);
+      }
 
-    if (std::optional error
-        = tls_secret_provider.is_resource_name_different_from_tls_name(
-            R_DIRECTOR, name)) {
-      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-            error->c_str());
-      Bmicrosleep(5, 0); /* make user wait 5 seconds */
-      bs->signal(BNET_TERMINATE);
-      bs->close();
-      delete bs;
-      return NULL;
+      return handle_director_connection(bs, auth.director->res);
+    } break;
+    case Auth::inbound_type::Storage: {
+      if (std::optional error
+          = tls_secret_provider.check_job_name(auth.storage->jcr->Job)) {
+        Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
+              error->c_str());
+        return error_and_close(bs);
+      }
+      auto* jcr = auth.storage->jcr;
+      auth.storage->jcr = nullptr;
+      jcr->authenticated = true;
+      return handle_stored_connection(bs, jcr);
+    } break;
+
+    default: {
+      return error_and_close(bs);
     }
-
-    bs->remote_version = VERSION_HEX(major, minor, patch);
-
-    return handle_director_connection(bs);
   }
-
-  // See if its a storage daemon making a connection.
-  if (bsscanf(bs->msg,
-              "Hello Storage calling Start Job %127s Version=\"%u.%u.%u\"",
-              name, &major, &minor, &patch)
-          == 4
-      || bsscanf(bs->msg, "Hello Storage calling Start Job %127s", name) == 1) {
-    Dmsg1(110, "Got a SD connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-
-    if (std::optional error = tls_secret_provider.check_job_name(name)) {
-      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-            error->c_str());
-      Bmicrosleep(5, 0); /* make user wait 5 seconds */
-      bs->signal(BNET_TERMINATE);
-      bs->close();
-      delete bs;
-      return NULL;
-    }
-
-    bs->remote_version = VERSION_HEX(major, minor, patch);
-
-    return handle_stored_connection(bs);
-  }
-
-  Emsg2(M_ERROR, 0, T_("Invalid connection from %s. Len=%d\n"), bs->who(),
-        bs->message_length);
-
-  Bmicrosleep(5, 0); /* make user wait 5 seconds */
-  bs->signal(BNET_TERMINATE);
-  bs->close();
-  delete bs;
-  return nullptr;
 }
 
 static void* UserAgentShutdownCallback(void* bsock)
