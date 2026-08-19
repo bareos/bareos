@@ -24,6 +24,7 @@
 #include "lib/ascii_control_characters.h"
 #include "lib/bnet_protocol_signals.h"
 #include "proxy_log.h"
+#include "lib/util.h"
 #include "lib/version.h"
 #include "lib/scan.h"
 
@@ -288,7 +289,9 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   const std::string key = MakeCramMd5Key(cfg.password);
 
   // Step 1: send Hello with version so the director uses the >= 18.2 protocol.
-  const std::string hello = "Hello " + cfg.username + " calling version "
+  std::string bashed_username = cfg.username;
+  BashSpaces(bashed_username);
+  const std::string hello = "Hello " + bashed_username + " calling version "
                             + kBareosVersionStrings.Full + "\n";
   SendFrame(hello);
 
