@@ -40,8 +40,6 @@
 
 namespace filedaemon {
 
-const int debuglevel = 50;
-
 /* Version at end of Hello
  *   prior to 10Mar08 no version
  *   1 10Mar08
@@ -55,33 +53,6 @@ const int debuglevel = 50;
  *  53 02Apr15 - Added setdebug timestamp
  *  54 29Oct15 - Added getSecureEraseCmd
  */
-
-// Authenticate with a remote director.
-bool AuthenticateWithDirector(JobControlRecord* jcr, DirectorResource* director)
-{
-  return jcr->dir_bsock->AuthenticateOutboundConnection(
-      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(),
-      me->resource_name_, director->password_, director);
-}
-
-// Authenticate with a remote storage daemon.
-bool AuthenticateWithStoragedaemon(JobControlRecord* jcr)
-{
-  bool result = false;
-  BareosSocket* sd = jcr->store_bsock;
-  s_password password;
-
-  password.encoding = p_encoding_md5;
-  password.value = jcr->sd_auth_key;
-  result = sd->AuthenticateOutboundConnection(
-      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(),
-      (char*)jcr->client_name, password, me);
-
-  // Destroy session key
-  memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
-
-  return result;
-}
 
 TlsResource* Auth::parse(std::string_view hello)
 {
