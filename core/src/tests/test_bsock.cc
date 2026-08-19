@@ -47,6 +47,8 @@
 #include "lib/bnet.h"
 #include "lib/bstringlist.h"
 #include "lib/version.h"
+#include "lib/bsock.h"
+#include "lib/tls_conf.h"
 
 #include "include/jcr.h"
 
@@ -467,6 +469,29 @@ static void clone_a_server_socket(BareosSocket* bs)
   bs->fsend("bareos-socket-1234567890");
 }
 
+struct dummy_auth : ::ClientHelloParser {
+  dummy_auth(std::string console_name, std::string console_password)
+      : name{std::move(console_name)}, password{std::move(console_password)}
+  {
+  }
+
+  TlsResource* parse(std::string_view hello) override
+  {
+    Dmsg1(10, "Cons->Dir: %s", std::string{hello}.c_str());
+
+    res = *dir_cons_config;
+    res.password_.value = password.data();
+    // res.tls_enable_ = true;
+
+    return &res;
+  }
+
+  std::string name;
+  std::string password;
+
+  TlsResource res{};
+};
+
 static void start_bareos_server(std::promise<bool>* promise,
                                 std::string console_name,
                                 std::string console_password,
@@ -480,44 +505,32 @@ static void start_bareos_server(std::promise<bool>* promise,
 
   std::unique_ptr<BareosSocket> bs(create_new_bareos_socket(newsockfd));
 
-  char* name = (char*)console_name.c_str();
-  s_password password;
-  password.encoding = p_encoding_md5;
-  password.value = (char*)console_password.c_str();
-
   bool success = false;
-  if (bs->recv() <= 0) {
-    Dmsg1(10, T_("Connection request from %s failed.\n"), bs->who());
-  } else if (bs->message_length < MIN_MSG_LEN
-             || bs->message_length > MAX_MSG_LEN) {
-    Dmsg2(10, T_("Invalid connection from %s. Len=%d\n"), bs->who(),
-          bs->message_length);
+
+  dummy_auth auth{console_name, console_password};
+
+  if (!BareosAccept(bs.get(), "myname", nullptr, nullptr, &auth)) {
+    Dmsg0(10, "Server: inbound auth failed\n");
   } else {
-    Dmsg1(10, "Cons->Dir: %s", bs->msg);
-    if (!bs->AuthenticateInboundConnection(NULL, nullptr, name, password,
-                                           dir_cons_config.get())) {
-      Dmsg0(10, "Server: inbound auth failed\n");
+    bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,
+              kBareosVersionStrings.Full, kBareosVersionStrings.Date);
+    Dmsg0(10, "Server: inbound auth successful\n");
+    std::string cipher;
+    if (bs->tls_conn) {
+      cipher = bs->tls_conn->TlsCipherGetName();
+      Dmsg1(10, "Server used cipher: <%s>\n", cipher.c_str());
+      cipher_server = cipher;
+    }
+    if (dir_cons_config->IsTlsConfigured()) {
+      Dmsg0(10, bs->TlsEstablished() ? "Tls enable\n"
+                                     : "Tls failed to establish\n");
+      success = bs->TlsEstablished();
     } else {
-      bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,
-                kBareosVersionStrings.Full, kBareosVersionStrings.Date);
-      Dmsg0(10, "Server: inbound auth successful\n");
-      std::string cipher;
-      if (bs->tls_conn) {
-        cipher = bs->tls_conn->TlsCipherGetName();
-        Dmsg1(10, "Server used cipher: <%s>\n", cipher.c_str());
-        cipher_server = cipher;
+      Dmsg0(10, "Tls disabled by command\n");
+      if (bs->TlsEstablished()) {
+        Dmsg0(10, "bs->tls_established_ should be false but is true\n");
       }
-      if (dir_cons_config->IsTlsConfigured()) {
-        Dmsg0(10, bs->TlsEstablished() ? "Tls enable\n"
-                                       : "Tls failed to establish\n");
-        success = bs->TlsEstablished();
-      } else {
-        Dmsg0(10, "Tls disabled by command\n");
-        if (bs->TlsEstablished()) {
-          Dmsg0(10, "bs->tls_established_ should be false but is true\n");
-        }
-        success = !bs->TlsEstablished();
-      }
+      success = !bs->TlsEstablished();
     }
   }
   if (success) { clone_a_server_socket(bs.get()); }
