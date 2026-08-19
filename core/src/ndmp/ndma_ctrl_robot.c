@@ -84,6 +84,8 @@ int ndmca_robot_prep_target(struct ndm_session* sess)
   rc = ndmscsi_use(sess->plumb.robot, sess->control_acb->job.robot_target);
   if (rc) return rc;
 
+  sess->control_acb->robot_is_open = 1;
+
   return 0;
 }
 
