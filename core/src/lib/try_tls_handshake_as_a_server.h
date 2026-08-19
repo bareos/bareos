@@ -27,7 +27,7 @@
 #include "include/jcr.h"
 #include "lib/bsock.h"
 #include "lib/parse_conf.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/util.h"
 
 struct UsePasswordsFromConfig : TlsSecretProvider {

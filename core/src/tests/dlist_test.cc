@@ -27,13 +27,8 @@
  * Philipp Storz, November 2017
  */
 
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "lib/dlist.h"
 

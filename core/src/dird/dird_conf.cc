@@ -60,7 +60,7 @@
 #include "lib/berrno.h"
 #include "lib/breg.h"
 #include "lib/tls_conf.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/parse_conf.h"
 #include "lib/keyword_table_s.h"
 #include "lib/util.h"
@@ -2174,7 +2174,6 @@ static bool UpdateResourcePointer(int type, const ResourceItem* items)
         p->tls_cert_.allowed_certificate_common_names_
             = std::move(res_con->tls_cert_.allowed_certificate_common_names_);
         p->user_acl.profiles = res_con->user_acl.profiles;
-        p->user_acl.corresponding_resource = p;
       }
       break;
     }
@@ -2187,7 +2186,6 @@ static bool UpdateResourcePointer(int type, const ResourceItem* items)
         return false;
       } else {
         p->user_acl.profiles = res_user->user_acl.profiles;
-        p->user_acl.corresponding_resource = p;
       }
       break;
     }
@@ -3662,7 +3660,7 @@ static void DumpResource(int type,
   OutputFormatter* output_formatter = nullptr;
   std::unique_ptr<OutputFormatter> output_formatter_local;
   if (ua) {
-    output_formatter = ua->send;
+    output_formatter = ua->send.get();
   } else {
     output_formatter_local
         = std::make_unique<OutputFormatter>(sendit, nullptr, nullptr, nullptr);
@@ -3788,7 +3786,6 @@ static void FreeResource(BareosResource* res, int type)
       for (int i = 0; i < Num_ACL; i++) {
         if (p->user_acl.ACL_lists[i]) {
           delete p->user_acl.ACL_lists[i];
-          p->user_acl.corresponding_resource = nullptr;
           p->user_acl.ACL_lists[i] = NULL;
         }
       }
@@ -3802,7 +3799,6 @@ static void FreeResource(BareosResource* res, int type)
       for (int i = 0; i < Num_ACL; i++) {
         if (p->user_acl.ACL_lists[i]) {
           delete p->user_acl.ACL_lists[i];
-          p->user_acl.corresponding_resource = nullptr;
           p->user_acl.ACL_lists[i] = NULL;
         }
       }
@@ -3913,7 +3909,7 @@ static void FreeResource(BareosResource* res, int type)
       printf(T_("Unknown resource type %d in FreeResource.\n"), type);
       break;
   }
-  if (next_resource) { my_config->FreeResourceCb_(next_resource, type); }
+  if (next_resource) { FreeResource(next_resource, type); }
 }
 
 /**

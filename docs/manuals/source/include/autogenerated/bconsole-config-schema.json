@@ -53,7 +53,9 @@
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "false",
+          "deprecated": true,
           "equals": true,
+          "versions": "-26.0.0",
           "description": "Use TLS only to authenticate, not for encryption."
         },
         "TlsEnable": {
@@ -197,7 +199,9 @@
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "false",
+          "deprecated": true,
           "equals": true,
+          "versions": "-26.0.0",
           "description": "Use TLS only to authenticate, not for encryption."
         },
         "TlsEnable": {

@@ -47,7 +47,7 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/path_list.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/thread_specific_data.h"
 #include "lib/tls_conf.h"
 #include "lib/parse_conf.h"
@@ -57,6 +57,7 @@
 #include "lib/util.h"
 #include "filed/backup.h"
 #include "lib/compression.h"
+#include "filed/accurate.h"
 
 #if defined(WIN32_VSS)
 #  include "findlib/win32.h"
@@ -177,7 +178,7 @@ static struct s_fd_dir_cmds cmds[] = {
 
 // Commands send to director
 inline constexpr const char hello_client[]
-    = "Hello Client %s FdProtocolVersion=%d calling\n";
+    = "Hello Client %s FdProtocolVersion=%d calling Version=\"%u.%u.%u\"\n";
 
 // Responses received from the director
 inline constexpr const char OKversion[] = "1000 OK: %s Version: %s (%u %s %u)";
@@ -434,6 +435,10 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 
   // Clean up fileset
   CleanupFileset(jcr);
+
+  // make sure that accurate is cleaned up!
+  // this may not properly happen if e.g. the backup command fails
+  AccurateFree(jcr);
 
   FreeJcr(jcr); /* destroy JobControlRecord record */
   Dmsg0(100, "Done with FreeJcr\n");
@@ -1456,7 +1461,9 @@ static bool StorageCmd(JobControlRecord* jcr)
 
   storage_daemon_socket->InitBnetDump(
       my_config->CreateOwnQualifiedNameForNetworkDump());
-  storage_daemon_socket->fsend("Hello Start Job %s\n", jcr->Job);
+  storage_daemon_socket->fsend("Hello Start Job %s Version=\"%u.%u.%u\"\n",
+                               jcr->Job, kBareosVersion.Major,
+                               kBareosVersion.Minor, kBareosVersion.Patch);
   if (!AuthenticateWithStoragedaemon(jcr)) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate Storage daemon.\n"));
     goto bail_out;
@@ -2038,7 +2045,9 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
 
   director_socket->InitBnetDump(
       my_config->CreateOwnQualifiedNameForNetworkDump());
-  director_socket->fsend(hello_client, my_name, FD_PROTOCOL_VERSION);
+  director_socket->fsend(hello_client, my_name, FD_PROTOCOL_VERSION,
+                         kBareosVersion.Major, kBareosVersion.Minor,
+                         kBareosVersion.Patch);
   if (!AuthenticateWithDirector(jcr, dir_res)) {
     jcr->dir_bsock = nullptr;
     return nullptr;

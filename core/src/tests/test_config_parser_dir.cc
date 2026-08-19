@@ -21,15 +21,9 @@
 #include <algorithm>
 #include "dird/reload.h"
 #include "lib/runscript.h"
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#  include "gmock/gmock.h"
-#else
-#  include "gtest/gtest.h"
-#  include "gmock/gmock.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "include/bareos.h"
 
 #include "lib/parse_conf.h"
 #include "dird/dird_globals.h"

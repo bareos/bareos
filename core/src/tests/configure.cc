@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,7 +34,7 @@ TEST(ConfigureExport, ReturnsQuotedNameAndPassword)
 
 
   JobControlRecord jcr{};
-  directordaemon::UaContext* ua = directordaemon::new_ua_context(&jcr);
+  directordaemon::UaContext* ua = new directordaemon::UaContext(&jcr);
   PoolMem resource(PM_MESSAGE);
   ConfigureCreateFdResourceString(ua, resource, "bareos-fd");
   std::string expected_output{
@@ -45,5 +45,5 @@ TEST(ConfigureExport, ReturnsQuotedNameAndPassword)
 
   EXPECT_EQ(resource.c_str(), expected_output);
 
-  FreeUaContext(ua);
+  delete ua;
 }

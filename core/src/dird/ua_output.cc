@@ -102,7 +102,7 @@ static bool QueryPoolListRows(UaContext* ua,
     OutputFormatter* send;
     bool filters_enabled;
     std::vector<PoolListRow>* rows;
-  } ctx{ua->send, ua->send->HasFilters(), rows};
+  } ctx{ua->send.get(), ua->send->HasFilters(), rows};
 
   auto handler = [](void* c, int, char** row) {
     auto* handler_ctx = static_cast<PoolListHandlerContext*>(c);
@@ -730,7 +730,7 @@ static bool ListMedia(UaContext* ua,
   // List MEDIA or VOLUMES
   int jobid = GetJobidFromCmdline(ua);
   if (jobid > 0) {
-    ua->db->ListVolumesOfJobid(ua->jcr, jobid, ua->send, llist);
+    ua->db->ListVolumesOfJobid(ua->jcr, jobid, ua->send.get(), llist);
   } else if (jobid == 0) {
     MediaDbRecord mr;
     // List a specific volume?
@@ -738,7 +738,7 @@ static bool ListMedia(UaContext* ua,
       bstrncpy(mr.VolumeName, ua->argv[1], sizeof(mr.VolumeName));
       ua->send->ObjectStart("volume");
       ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(),
-                               optionslist.count, ua->send, llist);
+                               optionslist.count, ua->send.get(), llist);
       ua->send->ObjectEnd("volume");
     } else {
       /* If no job or jobid keyword found, then we list all media
@@ -758,7 +758,7 @@ static bool ListMedia(UaContext* ua,
         mr.PoolId = pr.PoolId;
         ua->send->ArrayStart("volumes");
         ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(),
-                                 optionslist.count, ua->send, llist);
+                                 optionslist.count, ua->send.get(), llist);
         ua->send->ArrayEnd("volumes");
         return true;
       } else {
@@ -783,7 +783,7 @@ static bool ListMedia(UaContext* ua,
             SetResFilter(ua, 4, R_POOL); /* PoolName */
           }
           ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(),
-                                   optionslist.count, ua->send, llist);
+                                   optionslist.count, ua->send.get(), llist);
           ua->send->ArrayEnd("volumes");
         } else {
           // List Volumes in all pools
@@ -807,7 +807,8 @@ static bool ListMedia(UaContext* ua,
                 ua->send->ArrayStart(pr.Name);
                 mr.PoolId = ids[i];
                 ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(),
-                                         optionslist.count, ua->send, llist);
+                                         optionslist.count, ua->send.get(),
+                                         llist);
                 ua->send->ArrayEnd(pr.Name);
               }
             }
@@ -931,8 +932,8 @@ static bool ListJobs(UaContext* ua,
   ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
                          optionslist.jobstatuslist, optionslist.joblevel_list,
                          optionslist.jobtypes, volumename, poolname, schedtime,
-                         optionslist.last, optionslist.count, ua->send, llist,
-                         descending);
+                         optionslist.last, optionslist.count, ua->send.get(),
+                         llist, descending);
 
   return true;
 }
@@ -966,14 +967,14 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
   if (Bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
     // List JOBTOTALS
-    ua->db->ListJobTotals(ua->jcr, &jr, ua->send);
+    ua->db->ListJobTotals(ua->jcr, &jr, ua->send.get());
     return true;
   }
 
   if (Bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
     // List BASEFILES
     if (int jobid = GetJobidFromCmdline(ua); jobid > 0) {
-      ua->db->ListBaseFilesForJob(ua->jcr, jobid, ua->send);
+      ua->db->ListBaseFilesForJob(ua->jcr, jobid, ua->send.get());
       return true;
     } else {
       ua->ErrorMsg(
@@ -986,7 +987,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   if (Bstrcasecmp(ua->argk[1], NT_("files"))) {
     // List FILES
     if (int jobid = GetJobidFromCmdline(ua); jobid > 0) {
-      ua->db->ListFilesForJob(ua->jcr, jobid, ua->send);
+      ua->db->ListFilesForJob(ua->jcr, jobid, ua->send.get());
       return true;
     } else {
       ua->ErrorMsg(
@@ -1012,7 +1013,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       SetAclFilter(ua, 1, FileSet_ACL);
       if (optionslist.current) { SetResFilter(ua, 1, R_FILESET); }
 
-      ua->db->ListFilesets(ua->jcr, &jr, query_range.c_str(), ua->send, llist);
+      ua->db->ListFilesets(ua->jcr, &jr, query_range.c_str(), ua->send.get(),
+                           llist);
       return true;
     } else {
       ua->ErrorMsg(
@@ -1027,14 +1029,15 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     SetAclFilter(ua, 1, FileSet_ACL);
     if (optionslist.current) { SetResFilter(ua, 1, R_FILESET); }
 
-    ua->db->ListFilesets(ua->jcr, &jr, query_range.c_str(), ua->send, llist);
+    ua->db->ListFilesets(ua->jcr, &jr, query_range.c_str(), ua->send.get(),
+                         llist);
     return true;
   }
 
   if (Bstrcasecmp(ua->argk[1], NT_("jobmedia"))) {
     // List JOBMEDIA
     if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
-      ua->db->ListJobmediaRecords(ua->jcr, jobid, ua->send, llist);
+      ua->db->ListJobmediaRecords(ua->jcr, jobid, ua->send.get(), llist);
       return true;
     } else {
       ua->ErrorMsg(
@@ -1048,7 +1051,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     // List JOBLOG
     if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
       ua->db->ListJoblogRecords(ua->jcr, jobid, query_range.c_str(),
-                                optionslist.count, ua->send, llist);
+                                optionslist.count, ua->send.get(), llist);
       return true;
     } else {
       ua->ErrorMsg(
@@ -1087,7 +1090,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     }
 
     ua->db->ListLogRecords(ua->jcr, clientname, query_range.c_str(), reverse,
-                           ua->send, llist);
+                           ua->send.get(), llist);
     return true;
   }
 
@@ -1154,7 +1157,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       return true;
     }
 
-    ua->db->ListPoolRecords(ua->jcr, &pr, ua->send, llist);
+    ua->db->ListPoolRecords(ua->jcr, &pr, ua->send.get(), llist);
 
     if (llist == HORZ_LIST && pr.Name[0] != 0) {
       PoolDbRecord pool_record;
@@ -1183,7 +1186,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     SetAclFilter(ua, 1, Pool_ACL);
     if (optionslist.current) { SetResFilter(ua, 1, R_POOL); }
 
-    ua->db->ListPoolRecords(ua->jcr, &pr, ua->send, llist);
+    ua->db->ListPoolRecords(ua->jcr, &pr, ua->send.get(), llist);
     return true;
   }
 
@@ -1194,7 +1197,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_CLIENT); }
     if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_CLIENT); }
 
-    ua->db->ListClientRecords(ua->jcr, NULL, ua->send, llist);
+    ua->db->ListClientRecords(ua->jcr, NULL, ua->send.get(), llist);
     return true;
   }
 
@@ -1205,7 +1208,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_CLIENT); }
     if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_CLIENT); }
 
-    ua->db->ListClientRecords(ua->jcr, ua->argv[1], ua->send, llist);
+    ua->db->ListClientRecords(ua->jcr, ua->argv[1], ua->send.get(), llist);
     return true;
   }
 
@@ -1216,8 +1219,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_STORAGE); }
     if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_STORAGE); }
 
-    ua->db->ListSqlQuery(ua->jcr, "SELECT * FROM Storage", ua->send, llist,
-                         "storages");
+    ua->db->ListSqlQuery(ua->jcr, "SELECT * FROM Storage", ua->send.get(),
+                         llist, "storages");
     return true;
   }
 
@@ -1234,7 +1237,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     mr.MediaId = str_to_int64(ua->argv[1]);
     ua->send->ObjectStart("volume");
     ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(),
-                             optionslist.count, ua->send, llist);
+                             optionslist.count, ua->send.get(), llist);
     ua->send->ObjectEnd("volume");
     return true;
   }
@@ -1258,13 +1261,13 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     // List copies
     if (const char* value = GetArgValue(ua, NT_("jobid"))) {
       if (Is_a_number_list(value)) {
-        ua->db->ListCopiesRecords(ua->jcr, query_range.c_str(), value, ua->send,
-                                  llist);
+        ua->db->ListCopiesRecords(ua->jcr, query_range.c_str(), value,
+                                  ua->send.get(), llist);
         return true;
       }
     } else {
-      ua->db->ListCopiesRecords(ua->jcr, query_range.c_str(), NULL, ua->send,
-                                llist);
+      ua->db->ListCopiesRecords(ua->jcr, query_range.c_str(), NULL,
+                                ua->send.get(), llist);
       return true;
     }
   }
@@ -1290,14 +1293,15 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
           break;
       }
 
-      return ua->db->ListSqlQuery(ua->jcr, ua->cmd, ua->send, llist, "backups");
+      return ua->db->ListSqlQuery(ua->jcr, ua->cmd, ua->send.get(), llist,
+                                  "backups");
     }
   }
 
   if (Bstrcasecmp(ua->argk[1], NT_("jobstatistics"))
       || Bstrcasecmp(ua->argk[1], NT_("jobstats"))) {
     if (int jobid = GetJobidFromCmdline(ua); jobid > 0) {
-      ua->db->ListJobstatisticsRecords(ua->jcr, jobid, ua->send, llist);
+      ua->db->ListJobstatisticsRecords(ua->jcr, jobid, ua->send.get(), llist);
       return true;
     } else {
       ua->ErrorMsg(T_("no jobid given\n"));

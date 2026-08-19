@@ -58,9 +58,7 @@
 
 struct btimer_t; /* forward reference */
 class BareosSocket;
-class Tls;
 class BStringList;
-class QualifiedResourceNameTypeConverter;
 template <typename T> class dlist;
 btimer_t* StartBsockTimer(BareosSocket* bs, uint32_t wait);
 void StopBsockTimer(btimer_t* wid);
@@ -86,12 +84,14 @@ class BareosSocket {
   int sleep_time_after_authentication_error;
   bool enable_ktls_{false};
 
+  unsigned remote_version{}; /* version hex of remote version; only for inbound;
+                                0 if unknown */
+
   struct sockaddr_storage client_addr; /* Client's IP address */
   struct sockaddr_storage peer_addr;   /* Peer's IP address */
   void SetTlsEstablished() { tls_established_ = true; }
   bool TlsEstablished() const { return tls_established_; }
-  std::shared_ptr<Tls> tls_conn;      /* Associated tls connection */
-  std::unique_ptr<Tls> tls_conn_init; /* during initialization */
+  std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
   BareosVersionNumber connected_daemon_version_;
 
  protected:
@@ -132,19 +132,6 @@ class BareosSocket {
       = 0;
 
  private:
-  bool TwoWayAuthenticate(JobControlRecord* jcr,
-                          const std::string own_qualified_name,
-                          const char* identity,
-                          s_password& password,
-                          TlsResource* tls_resource,
-                          bool initiated_by_remote);
-  bool DoTlsHandshakeWithClient(TlsConfigCert* local_tls_cert,
-                                JobControlRecord* jcr);
-  bool DoTlsHandshakeWithServer(TlsConfigCert* local_tls_cert,
-                                const char* identity,
-                                const char* password,
-                                JobControlRecord* jcr);
-  void ParameterizeTlsCert(Tls* tls_conn, TlsResource* tls_resource);
   void SetBnetDump(std::unique_ptr<BnetDump>&& bnet_dump)
   {
     // do not set twice
@@ -203,12 +190,6 @@ class BareosSocket {
                                        const std::string& own_qualified_name,
                                        BStringList& response_args,
                                        uint32_t& response_id);
-  bool ParameterizeAndInitTlsConnection(TlsResource* tls_resource,
-                                        const char* identity,
-                                        const char* password,
-                                        bool initiated_by_remote);
-  bool ParameterizeAndInitTlsConnectionAsAServer(TlsResource* tls_resource,
-                                                 TlsSecretProvider* data);
   bool DoTlsHandshake(TlsPolicy remote_tls_policy,
                       TlsResource* tls_resource,
                       bool initiated_by_remote,

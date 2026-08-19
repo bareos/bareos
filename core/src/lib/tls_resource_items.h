@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,7 +28,7 @@
 
 // Common TLS-Settings for both (Certificate and PSK).
 #define TLS_COMMON_CONFIG(res) \
-  { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res, authenticate_), {config::DefaultValue{"false"}, config::Description{"Use TLS only to authenticate, not for encryption."}}}, \
+  { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res, authenticate_), {config::DefaultValue{"false"}, config::Description{"Use TLS only to authenticate, not for encryption."}, config::DeprecatedSince{26, 0, 0}}}, \
   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res, tls_enable_), {config::DefaultValue{"true"}, config::Description{"Enable TLS support."}}}, \
   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res, tls_require_), {config::DefaultValue{"true"}, config::Description{"If set to \"no\", Bareos can fall back to use unencrypted connections. "}}}, \
   { "TlsCipherList", CFG_TYPE_STDSTR, ITEM(res, cipherlist_), {config::Description{"Colon separated list of valid TLSv1.2 and lower Ciphers; see \"openssl ciphers\" command. Leftmost element has the highest priority."}, config::PlatformSpecific{}}}, \

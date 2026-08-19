@@ -35,6 +35,7 @@
 #include "lib/bsock.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "include/version_hex.h"
 
 namespace filedaemon {
 
@@ -103,9 +104,16 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
-  if (bsscanf(dir->msg, "Hello Director %s calling",
-              dirname.check_size(dir->message_length))
-      != 1) {
+
+  unsigned major = 0;
+  unsigned minor = 0;
+  unsigned patch = 0;
+  dirname.check_size(dir->message_length);
+
+  if (bsscanf(dir->msg, "Hello Director %s calling Version=\"%u.%u.%u\"",
+              dirname.c_str(), &major, &minor, &patch)
+          != 4
+      && bsscanf(dir->msg, "Hello Director %s calling", dirname.c_str()) != 1) {
     char addr[64];
     char* who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
     dir->msg[100] = 0;
@@ -114,6 +122,8 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
+
+  dir->remote_version = VERSION_HEX(major, minor, patch);
 
   UnbashSpaces(dirname.c_str());
   director = (DirectorResource*)my_config->GetResWithName(R_DIRECTOR,

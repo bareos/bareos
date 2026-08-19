@@ -31,6 +31,7 @@
 #include "filed/authenticate.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
+#include "include/version_hex.h"
 
 namespace filedaemon {
 
@@ -52,8 +53,14 @@ void* handle_stored_connection(BareosSocket* sd)
     return NULL;
   }
 
-  if (bsscanf(sd->msg, "Hello Storage calling Start Job %127s", job_name)
-      != 1) {
+  unsigned major{}, minor{}, patch{};
+
+  if (bsscanf(sd->msg,
+              "Hello Storage calling Start Job %127s Version=\"%u.%u.%u\"",
+              job_name, &major, &minor, &patch)
+          != 4
+      && bsscanf(sd->msg, "Hello Storage calling Start Job %127s", job_name)
+             != 1) {
     char addr[64];
     char* who = BnetGetPeer(sd, addr, sizeof(addr)) ? sd->who() : addr;
 
@@ -66,6 +73,8 @@ void* handle_stored_connection(BareosSocket* sd)
     delete sd;
     return NULL;
   }
+
+  sd->remote_version = VERSION_HEX(major, minor, patch);
 
   if (!(jcr = get_jcr_by_full_name(job_name))) {
     Jmsg1(NULL, M_FATAL, 0, T_("SD connect failed: Job name not found: %s\n"),

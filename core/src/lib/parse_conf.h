@@ -27,8 +27,9 @@
 #include "include/bareos.h"
 #include "include/bc_types.h"
 #include "lib/bstringlist.h"
+#include "lib/output_formatter_resource.h"
 #include "lib/parse_conf_callbacks.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/s_password.h"
 #include "lib/tls_conf.h"
 #include "lib/keyword_table_s.h"
@@ -36,6 +37,7 @@
 #include "lib/util.h"
 #include "lib/lex.h"
 #include "lib/bpipe.h"
+#include "lib/bareos_resource.h"
 #include "include/compiler_macro.h"
 
 #include <functional>
@@ -187,8 +189,6 @@ struct DatatypeName {
   const char* name;
   const char* description;
 };
-
-class QualifiedResourceNameTypeConverter;
 
 class ConfigurationParser {
   friend class ConfiguredTlsPolicyGetterPrivate;

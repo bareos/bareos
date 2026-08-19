@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "lib/bsock.h"
+#include "dird/dird_conf.h"
 
 class JobControlRecord;
 class BareosDb;
@@ -41,57 +42,92 @@ struct tree_node;
 
 namespace directordaemon {
 
-class CatalogResource;
-class ConsoleResource;
-class PoolResource;
-class StorageResource;
-class ClientResource;
-class JobResource;
-class FilesetResource;
-class ScheduleResource;
-struct RestoreBootstrapRecord;
 struct ua_cmdstruct;
-class UnifiedStorageResource;
-struct UserAcl;
+struct RestoreBootstrapRecord;
+
+struct UserAcl {
+  std::string name{};
+
+  std::vector<std::string> acl_lists[Num_ACL];
+
+  template <typename Resource,
+            AclConfig Resource::* Accessor = &Resource::user_acl>
+  static std::unique_ptr<UserAcl> from_config(Resource* res)
+  {
+    auto result = std::make_unique<UserAcl>(res->resource_name_);
+
+    AclConfig* cfg = &(res->*Accessor);
+    // a valid resource must _always_ have this set
+    // otherwise they would become "root" when used!
+    ASSERT(cfg);
+
+    for (int acl = 0; acl < Num_ACL; ++acl) {
+      auto& list = result->acl_lists[acl];
+
+      // acl of a resource have higher priority than acls from a profile
+
+      for (auto* entry : cfg->ACL_lists[acl]) { list.push_back(entry); }
+
+      for (auto* profile : cfg->profiles) {
+        for (auto* entry : profile->ACL_lists[acl]) { list.push_back(entry); }
+      }
+    }
+
+    return result;
+  }
+};
 
 class UaContext {
  public:
-  BareosSocket* UA_sock;
-  BareosSocket* sd;
-  JobControlRecord* jcr;
-  BareosDb* db;
-  BareosDb* shared_db;  /**< Shared database connection used by multiple ua's */
-  BareosDb* private_db; /**< Private database connection only used by this ua */
-  CatalogResource* catalog;
-  UserAcl* user_acl;              /**< acl from console or user resource */
-  POOLMEM* cmd;                   /**< Return command/name buffer */
-  POOLMEM* args;                  /**< Command line arguments */
-  std::string errmsg{};           /**< Store error message */
-  guid_list* guid;                /**< User and Group Name mapping cache */
-  char* argk[MAX_CMD_ARGS];       /**< Argument keywords */
-  char* argv[MAX_CMD_ARGS];       /**< Argument values */
-  int argc;                       /**< Number of arguments */
-  char** prompt;                  /**< List of prompts */
-  int max_prompts;                /**< Max size of list */
-  int num_prompts;                /**< Current number in list */
-  int api;                        /**< For programs want an API */
-  bool auto_display_messages;     /**< If set, display messages */
-  bool user_notified_msg_pending; /**< Set when user notified */
-  bool automount;                 /**< If set, mount after label */
-  bool quit;                      /**< If set, quit */
-  bool verbose;                   /**< Set for normal UA verbosity */
-  bool batch;                     /**< Set for non-interactive mode */
-  bool gui;                       /**< Set if talking to GUI program */
-  bool runscript;                 /**< Set if we are in runscript */
-  uint32_t pint32_val;            /**< Positive integer */
-  int32_t int32_val;              /**< Positive/negative */
-  int64_t int64_val;              /**< Big int */
-  OutputFormatter* send;          /**< object instance to handle output */
+  UaContext(JobControlRecord* jcr);
+  ~UaContext();
+  UaContext(const UaContext&) = delete;
+  UaContext& operator=(const UaContext&) = delete;
+  UaContext(UaContext&&) = delete;
+  UaContext& operator=(UaContext&&) = delete;
+
+
+ public:
+  BareosSocket* UA_sock{nullptr};
+  BareosSocket* sd{nullptr};
+  JobControlRecord* jcr{nullptr};
+  BareosDb* db{nullptr};
+  BareosDb* shared_db{
+      nullptr}; /**< Shared database connection used by multiple ua's */
+  BareosDb* private_db{
+      nullptr}; /**< Private database connection only used by this ua */
+  CatalogResource* catalog{nullptr};
+  std::unique_ptr<UserAcl> user_acl{
+      nullptr};                       /**< acl from console or user resource */
+  POOLMEM* cmd;                       /**< Return command/name buffer */
+  POOLMEM* args;                      /**< Command line arguments */
+  std::string errmsg{};               /**< Store error message */
+  guid_list* guid{nullptr};           /**< User and Group Name mapping cache */
+  char* argk[MAX_CMD_ARGS] = {};      /**< Argument keywords */
+  char* argv[MAX_CMD_ARGS] = {};      /**< Argument values */
+  int argc{0};                        /**< Number of arguments */
+  std::string prompt_header{};        /**< Name of current prompt */
+  std::vector<std::string> prompts{}; /**< List of prompts */
+  int api{0};                         /**< For programs want an API */
+  bool auto_display_messages{false};  /**< If set, display messages */
+  bool user_notified_msg_pending{false}; /**< Set when user notified */
+  bool automount{true};                  /**< If set, mount after label */
+  bool quit{false};                      /**< If set, quit */
+  bool verbose{true};                    /**< Set for normal UA verbosity */
+  bool batch{false};                     /**< Set for non-interactive mode */
+  bool gui{false};                       /**< Set if talking to GUI program */
+  bool runscript{false};                 /**< Set if we are in runscript */
+  uint32_t pint32_val{};                 /**< Positive integer */
+  int32_t int32_val{};                   /**< Positive/negative */
+  int64_t int64_val{};                   /**< Big int */
+  std::unique_ptr<OutputFormatter>
+      send; /**< object instance to handle output */
 
  private:
-  ua_cmdstruct* cmddef; /**< Definition of the currently executed command */
-  bool console_is_connected;  // is this ua connected to a console (and not
-                              // a fake for a running job)
+  ua_cmdstruct* cmddef{
+      nullptr}; /**< Definition of the currently executed command */
+  bool console_is_connected{true};  // is this ua connected to a console (and
+                                    // not a fake for a running job)
 
   bool AclAccessOk(int acl,
                    const char* item,
@@ -103,7 +139,6 @@ class UaContext {
   void SetCommandDefinition(ua_cmdstruct* cmdstruct) { cmddef = cmdstruct; }
 
  public:
-  UaContext(bool console_connected = true);
   void signal(int sig) { UA_sock->signal(sig); }
   bool execute(ua_cmdstruct* cmd);
 
@@ -272,9 +307,5 @@ class RunContext {
   RunContext();
   ~RunContext();
 };
-
-void FreeUaContext(UaContext* ua);
-UaContext* new_ua_context(JobControlRecord* jcr);
-
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_H_

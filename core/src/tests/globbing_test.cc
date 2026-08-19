@@ -18,13 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "include/bareos.h"
 
 #include "dird/ua_tree.cc"
 #include "dird/ua_output.h"
@@ -98,12 +93,12 @@ class Globbing : public testing::Test {
     tree.root = new_tree(1);
     tree.node = tree.root;
     me = new DirectorResource;
-    ua = new_ua_context(&jcr);
+    ua = new UaContext(&jcr);
   }
 
   void TearDown() override
   {
-    FreeUaContext(ua);
+    delete ua;
     FreeTree(tree.root);
     delete me;
   }

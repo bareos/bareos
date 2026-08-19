@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,13 +26,8 @@
  *
  * Philipp Storz, November 2017
  */
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "include/bareos.h"
 
 #include "lib/htable.h"
 
@@ -82,9 +77,7 @@ TEST(htable, htable)
     if (i == 10) { save_jcr = jcr; }
   }
   EXPECT_TRUE(item = (HTABLEJCR*)jcrtbl->lookup(save_jcr->key));
-  foreach_htable (jcr, jcrtbl) {
-    count++;
-  }
+  foreach_htable (jcr, jcrtbl) { count++; }
 
   delete jcrtbl;
   EXPECT_EQ(count, NITEMS);

@@ -43,7 +43,6 @@ namespace directordaemon {
  */
 void DoAutoprune(JobControlRecord* jcr)
 {
-  UaContext* ua;
   JobResource* job;
   ClientResource* client;
   PoolResource* pool;
@@ -53,25 +52,23 @@ void DoAutoprune(JobControlRecord* jcr)
     return;
   }
 
-  ua = new_ua_context(jcr);
+  UaContext ua{jcr};
   job = jcr->dir_impl->res.job;
   client = jcr->dir_impl->res.client;
   pool = jcr->dir_impl->res.pool;
 
   if (job->PruneJobs || client->AutoPrune) {
-    PruneJobs(ua, client, pool);
+    PruneJobs(&ua, client, pool);
     pruned = true;
   } else {
     pruned = false;
   }
 
   if (job->PruneFiles || client->AutoPrune) {
-    PruneFiles(ua, client, pool);
+    PruneFiles(&ua, client, pool);
     pruned = true;
   }
   if (pruned) { Jmsg(jcr, M_INFO, 0, T_("End auto prune.\n\n")); }
-  FreeUaContext(ua);
-  return;
 }
 
 /**
@@ -86,7 +83,6 @@ void PruneVolumes(JobControlRecord* jcr,
 {
   int i;
   int count;
-  UaContext* ua;
   dbid_list ids;
   std::vector<JobId_t> prune_list;
   PoolMem query(PM_MESSAGE);
@@ -99,7 +95,7 @@ void PruneVolumes(JobControlRecord* jcr,
     return;
   }
 
-  ua = new_ua_context(jcr);
+  UaContext ua{jcr};
   DbLocker _{jcr->db};
 
   edit_int64(mr->PoolId, ed1);
@@ -143,7 +139,7 @@ void PruneVolumes(JobControlRecord* jcr,
   }
 
   Dmsg1(100, "query=%s\n", query.c_str());
-  if (!jcr->db->GetQueryDbids(ua->jcr, query, ids)) {
+  if (!jcr->db->GetQueryDbids(ua.jcr, query, ids)) {
     Jmsg(jcr, M_ERROR, 0, "%s", jcr->db->strerror());
     goto bail_out;
   }
@@ -170,13 +166,13 @@ void PruneVolumes(JobControlRecord* jcr,
     if (bstrcmp(lmr.VolStatus, "Full") || bstrcmp(lmr.VolStatus, "Used")) {
       Dmsg2(100, "Add prune list MediaId=%d Volume %s\n", (int)lmr.MediaId,
             lmr.VolumeName);
-      count = GetPruneListForVolume(ua, &lmr, prune_list);
+      count = GetPruneListForVolume(&ua, &lmr, prune_list);
       Dmsg1(100, "Num pruned = %d\n", count);
       if (count != 0) {
-        PurgeJobListFromCatalog(ua, prune_list);
+        PurgeJobListFromCatalog(&ua, prune_list);
         prune_list.clear(); /* reset count */
       }
-      if (!IsVolumePurged(ua, &lmr)) {
+      if (!IsVolumePurged(&ua, &lmr)) {
         Dmsg1(050, "Vol=%s not pruned\n", lmr.VolumeName);
         continue;
       }
@@ -216,7 +212,5 @@ void PruneVolumes(JobControlRecord* jcr,
 
 bail_out:
   Dmsg0(100, "Leave prune volumes\n");
-  FreeUaContext(ua);
-  return;
 }
 } /* namespace directordaemon */

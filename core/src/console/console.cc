@@ -40,7 +40,7 @@
 #include "lib/bsock_tcp.h"
 #include "lib/bstringlist.h"
 #include "lib/cli.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/version.h"
 #include "lib/watchdog.h"
 #include "lib/bpipe.h"

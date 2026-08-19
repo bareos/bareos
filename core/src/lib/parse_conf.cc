@@ -61,7 +61,7 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/parse_conf_state_machine.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/bstringlist.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/messages_resource.h"

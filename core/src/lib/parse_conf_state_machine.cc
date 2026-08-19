@@ -25,7 +25,7 @@
 #include "lib/parse_conf.h"
 #include "lib/resource_item.h"
 #include "lib/lex.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 
 ConfigParserStateMachine::ConfigParserStateMachine(
     const char* config_file_name,

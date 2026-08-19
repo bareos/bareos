@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,13 +19,8 @@
    02110-1301, USA.
 */
 
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "include/bareos.h"
 
 #include <unordered_map>
 
@@ -59,9 +54,9 @@ std::vector<char> notpermitted_jobtypes{JT_SCAN, JT_JOB_COPY, JT_MIGRATED_JOB,
 
 class JobTypeSelection : public testing::Test {
  protected:
-  void SetUp() override { ua = directordaemon::new_ua_context(&jcr); }
+  void SetUp() override { ua = new directordaemon::UaContext(&jcr); }
 
-  void TearDown() override { FreeUaContext(ua); }
+  void TearDown() override { delete ua; }
   void FakeListCommand(directordaemon::UaContext* t_ua, std::string arguments)
   {
     FakeCmd(t_ua, "list jobs " + arguments);
@@ -195,9 +190,9 @@ TEST_F(JobTypeSelection, NonPermittedJobtypesAreNotParsed)
 
 class JobStatusSelection : public testing::Test {
  protected:
-  void SetUp() override { ua = directordaemon::new_ua_context(&jcr); }
+  void SetUp() override { ua = new directordaemon::UaContext(&jcr); }
 
-  void TearDown() override { FreeUaContext(ua); }
+  void TearDown() override { delete ua; }
   void FakeListCommand(directordaemon::UaContext* t_ua, std::string arguments)
   {
     FakeCmd(t_ua, "list jobs " + arguments);

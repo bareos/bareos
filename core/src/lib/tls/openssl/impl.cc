@@ -42,6 +42,7 @@
 #include "lib/bstringlist.h"
 #include "lib/ascii_control_characters.h"
 #include "include/jcr.h"
+#include "lib/tls_psk_credentials.h"
 
 #include "lib/parse_conf.h"
 
@@ -90,8 +91,6 @@ class TlsOpenSsl : public Tls {
   void SetPemUserdata(void* pem_userdata) override;
   void SetDhFile(const std::string& dhfile_) override;
   void SetVerifyPeer(const bool& verify_peer) override;
-  void SetEnableKtls(bool ktls) override;
-  void SetTcpFileDescriptor(const int& fd) override;
 
   bool KtlsSendStatus() override;
   bool KtlsRecvStatus() override;
@@ -123,7 +122,6 @@ class TlsOpenSsl : public Tls {
   std::string protocol_;
 
   /* cert attributes */
-  int tcp_file_descriptor_{kInvalidFiledescriptor};
   std::string ca_certfile_;
   std::string ca_certdir_;
   std::string crlfile_;
@@ -135,7 +133,6 @@ class TlsOpenSsl : public Tls {
   std::string cipherlist_;
   std::string ciphersuites_;
   bool verify_peer_{};
-  bool enable_ktls_{false};
 
   std::optional<PskCredentials> credentials_;
 };
@@ -251,6 +248,25 @@ cleanup:
 
 bool TlsOpenSsl::OpensslBsockSessionStart(BareosSocket* bsock, bool server)
 {
+  if (bsock->fd_ < 0) {
+    Dmsg0(50, "Cannot start tls session with invalid fd %d (bsock: %p)\n",
+          bsock->fd_, bsock);
+    return false;
+  }
+
+  BIO* bio = BIO_new(BIO_s_socket());
+  if (!bio) {
+    OpensslPostErrors(M_FATAL, T_("Error creating file descriptor-based BIO"));
+    return false;
+  }
+
+  BIO_set_fd(bio, bsock->fd_, BIO_NOCLOSE);
+  SSL_set_bio(openssl_, bio, bio);
+
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  if (bsock->enable_ktls_) { SSL_set_options(openssl_, SSL_OP_ENABLE_KTLS); }
+#endif
+
   bool status = true;
 
   int flags = bsock->SetNonblocking();
@@ -302,7 +318,7 @@ cleanup:
   bsock->timer_start = 0;
   bsock->SetKillable(true);
 
-  if (enable_ktls_) {
+  if (bsock->enable_ktls_) {
     // old openssl versions might return -1 as well; so check for > 0 instead
     bool ktls_send = KtlsSendStatus();
     bool ktls_recv = KtlsRecvStatus();
@@ -484,18 +500,6 @@ void TlsOpenSsl::SetVerifyPeer(const bool& verify_peer)
   verify_peer_ = verify_peer;
 }
 
-void TlsOpenSsl::SetEnableKtls(bool ktls)
-{
-  Dmsg1(100, "Set ktls:\t<%s>\n", ktls ? "true" : "false");
-  enable_ktls_ = ktls;
-}
-
-void TlsOpenSsl::SetTcpFileDescriptor(const int& fd)
-{
-  Dmsg1(100, "Set tcp filedescriptor: <%d>\n", fd);
-  tcp_file_descriptor_ = fd;
-}
-
 void TlsOpenSsl::SetCipherList(const std::string& cipherlist)
 {
   Dmsg1(100, "Set cipherlist:\t<%s>\n", cipherlist.c_str());
@@ -596,10 +600,6 @@ bool TlsOpenSsl::init()
 
   SSL_CTX_set_options(openssl_ctx_, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
   SSL_CTX_set_read_ahead(openssl_ctx_, 1);
-
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-  if (enable_ktls_) { SSL_CTX_set_options(openssl_ctx_, SSL_OP_ENABLE_KTLS); }
-#endif
 
   if (cipherlist_.empty()) { cipherlist_ = tls_default_ciphers_; }
 
@@ -736,17 +736,6 @@ bool TlsOpenSsl::init()
   /* Non-blocking partial writes */
   SSL_set_mode(openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE
                              | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
-
-  BIO* bio = BIO_new(BIO_s_socket());
-  if (!bio) {
-    OpensslPostErrors(M_FATAL, T_("Error creating file descriptor-based BIO"));
-    return false;
-  }
-
-  ASSERT(tcp_file_descriptor_ >= 0);  // 0 is a good (socket-)fd
-  BIO_set_fd(bio, tcp_file_descriptor_, BIO_NOCLOSE);
-
-  SSL_set_bio(openssl_, bio, bio);
 
   return true;
 }

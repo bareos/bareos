@@ -96,7 +96,7 @@
 #endif
 
 #include <sys/socket.h>
-#if defined(HAVE_WIN32) & !defined(HAVE_MINGW)
+#if defined(HAVE_WIN32)
 #  include <winsock2.h>
 #endif
 

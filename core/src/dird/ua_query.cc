@@ -118,9 +118,10 @@ bool QueryCmd(UaContext* ua, const char*)
       query = substitute_prompts(ua, query, prompt, nprompt);
       Dmsg1(100, "Query2=%s\n", query);
       if (query[0] == '!') {
-        ua->db->ListSqlQuery(ua->jcr, query + 1, ua->send, VERT_LIST, false);
-      } else if (!ua->db->ListSqlQuery(ua->jcr, query, ua->send, HORZ_LIST,
-                                       true)) {
+        ua->db->ListSqlQuery(ua->jcr, query + 1, ua->send.get(), VERT_LIST,
+                             false);
+      } else if (!ua->db->ListSqlQuery(ua->jcr, query, ua->send.get(),
+                                       HORZ_LIST, true)) {
         ua->SendMsg("%s\n", query);
       }
       query[0] = 0;
@@ -131,8 +132,9 @@ bool QueryCmd(UaContext* ua, const char*)
     query = substitute_prompts(ua, query, prompt, nprompt);
     Dmsg1(100, "Query2=%s\n", query);
     if (query[0] == '!') {
-      ua->db->ListSqlQuery(ua->jcr, query + 1, ua->send, VERT_LIST, false);
-    } else if (!ua->db->ListSqlQuery(ua->jcr, query, ua->send, HORZ_LIST,
+      ua->db->ListSqlQuery(ua->jcr, query + 1, ua->send.get(), VERT_LIST,
+                           false);
+    } else if (!ua->db->ListSqlQuery(ua->jcr, query, ua->send.get(), HORZ_LIST,
                                      true)) {
       ua->ErrorMsg("%s\n", query);
     }
@@ -249,7 +251,8 @@ bool SqlqueryCmd(UaContext* ua, const char*)
     if (ua->cmd[len - 1] == ';') {
       ua->cmd[len - 1] = 0; /* zap ; */
       // Submit query
-      ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
+      ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
+                           true);
       *query.c_str() = 0; /* start new query */
       msg = T_("Enter SQL query: ");
     } else {
