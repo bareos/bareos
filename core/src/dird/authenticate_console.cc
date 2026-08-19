@@ -198,36 +198,36 @@ class ConsoleAuthenticatorFrom_18_2 : public ConsoleAuthenticator {
   bool SendInfoMessage() override;
 
  private:
-  bool SendResponseMessage(uint32_t response_id, bool send_version_info);
+  bool SendResponseMessage(ResponseId response_id, bool send_version_info);
 };
 
-bool ConsoleAuthenticatorFrom_18_2::SendResponseMessage(uint32_t response_id,
+bool ConsoleAuthenticatorFrom_18_2::SendResponseMessage(ResponseId response_id,
                                                         bool send_version_info)
 {
-  std::string message;
   if (send_version_info) {
-    char version_info[128];
-    ::snprintf(version_info, 100, "OK: %s Version: %s (%s)", my_name,
-               kBareosVersionStrings.Full, kBareosVersionStrings.Date);
-    message = version_info;
+    return FormatAndSendResponseMessage(
+        ua_->UA_sock, response_id, "OK: %s Version: %s (%s)", my_name,
+        kBareosVersionStrings.Full, kBareosVersionStrings.Date);
   }
-  return ua_->UA_sock->FormatAndSendResponseMessage(response_id, message);
+
+  return FormatAndSendResponseMessage(ua_->UA_sock, response_id, "")
 }
 
 bool ConsoleAuthenticatorFrom_18_2::SendInfoMessage()
 {
-  std::string message;
-  message += kBareosVersionStrings.ServicesMessage;
-  message += "\n";
-  message += "You are ";
-  if (ua_->user_acl) {
-    message += "logged in as: ";
-    message += ua_->user_acl->name;
-  } else {
-    message += "connected using the default console";
-  }
-  auth_success_ = ua_->UA_sock->FormatAndSendResponseMessage(
-      kMessageIdInfoMessage, message);
+  auth_success_ = [&] {
+    if (ua_->user_acl) {
+      return FormatAndSendResponseMessage(
+          ua_->UA_sock, kMessageIdInfoMessage, "%s\nYou are logged in as: %s",
+          kBareosVersionStrings.ServicesMessage, ua_->user_acl->name.c_str());
+    } else {
+      return FormatAndSendResponseMessage(
+          ua_->UA_sock, kMessageIdInfoMessage,
+          "%s\nYou are connected using the default console",
+          kBareosVersionStrings.ServicesMessage);
+    }
+  }();
+
   return true;
 }
 
@@ -253,7 +253,7 @@ void ConsoleAuthenticatorFrom_18_2::AuthenticateNamedConsole()
 
   if (!auth_success_) { return; }
 
-  uint32_t response_id = kMessageIdOk;
+  ResponseId response_id = kMessageIdOk;
   bool send_version = true;
 
   if (optional_console_resource_

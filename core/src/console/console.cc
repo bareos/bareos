@@ -817,8 +817,7 @@ static bool ExaminePamAuthentication(
     if (data.empty()) { return false; }
     g_UA_sock->FormatAndSendResponseMessage(kMessageIdPamUserCredentials, data);
   } else {
-    g_UA_sock->FormatAndSendResponseMessage(kMessageIdPamInteractive,
-                                            std::string());
+    SendResponseMessage(g_UA_sock, kMessageIdPamInteractive, "");
     if (!ConsolePamAuthenticate(stdin, g_UA_sock)) {
       TerminateConsole(0);
       return false;

@@ -841,7 +841,7 @@ TEST(BNet, FormatAndSendResponseMessage)
 
   std::string m("Test123");
 
-  test_sockets->client->FormatAndSendResponseMessage(kMessageIdOk, m);
+  SendResponseMessage(test_sockets->client.get(), kMessageIdOk, m.c_str());
 
   uint32_t id = kMessageIdUnknown;
   BStringList args;

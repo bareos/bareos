@@ -208,7 +208,6 @@ class BareosSocket {
                                          BStringList& args_out);
   bool FormatAndSendResponseMessage(uint32_t id,
                                     const BStringList& list_of_agruments);
-  bool FormatAndSendResponseMessage(uint32_t id, const std::string& str);
 
   bool AuthenticateOutboundConnection(JobControlRecord* jcr,
                                       const std::string own_qualified_name,
