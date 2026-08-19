@@ -731,23 +731,32 @@ const BStringList& ConfigurationParser::GetWarnings() const
 global_resource::Type ConfigurationParser::GlobalTypeFromLocalType(
     uint32_t rcode) const
 {
-  for (int i = 0; resource_definitions_[i].name; i++) {
-    if (resource_definitions_[i].rcode == rcode) {
-      return resource_definitions_[i].global_rcode;
-    }
+  return ::GlobalTypeFromLocalType(resource_definitions_, rcode);
+}
+
+int ConfigurationParser::LocalTypeFromGlobalType(
+    global_resource::Type type) const
+{
+  return ::LocalTypeFromGlobalType(resource_definitions_, type);
+}
+
+
+global_resource::Type GlobalTypeFromLocalType(const ResourceTable* table,
+                                              uint32_t type)
+{
+  for (int i = 0; table[i].name; i++) {
+    if (table[i].rcode == type) { return table[i].global_rcode; }
   }
 
   ASSERT(!"Local type not handled");
   return global_resource::Type::Unknown;
 }
 
-int ConfigurationParser::LocalTypeFromGlobalType(
-    global_resource::Type type) const
+int32_t LocalTypeFromGlobalType(const ResourceTable* table,
+                                global_resource::Type type)
 {
-  for (int i = 0; resource_definitions_[i].name; i++) {
-    if (resource_definitions_[i].global_rcode == type) {
-      return resource_definitions_[i].rcode;
-    }
+  for (int i = 0; table[i].name; i++) {
+    if (table[i].global_rcode == type) { return table[i].rcode; }
   }
 
   return -1;

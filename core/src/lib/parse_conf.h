@@ -535,4 +535,9 @@ class ResLocker {
   ResLocker& operator=(ResLocker&&) = delete;
 };
 
+global_resource::Type GlobalTypeFromLocalType(const ResourceTable* table,
+                                              uint32_t type);
+int32_t LocalTypeFromGlobalType(const ResourceTable* table,
+                                global_resource::Type type);
+
 #endif  // BAREOS_LIB_PARSE_CONF_H_
