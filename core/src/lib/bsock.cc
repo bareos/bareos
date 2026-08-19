@@ -33,6 +33,7 @@
 #include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/cram_md5.h"
+#include "lib/s_password.h"
 #include "lib/tls.h"
 #include "lib/tls_conf.h"
 #include "lib/tls_conf_cert.h"
@@ -271,6 +272,38 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAServer(
   result->SetCipherList(tls_resource->cipherlist_);
   result->SetCipherSuites(tls_resource->ciphersuites_);
   result->SetTlsPskServerContext(data);
+
+  if (!result->init()) {
+    result.reset();
+    return nullptr;
+  }
+  return result;
+}
+
+std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAClient(
+    JobControlRecord* jcr,
+    const TlsResource* tls_resource,
+    const char* identity,
+    const char* password)
+{
+  ASSERT(tls_resource);
+  auto result = Tls::CreateNewTlsContext(Tls::ImplementationType::kOpenSsl);
+  if (!result) {
+    Qmsg0(jcr, M_FATAL, 0, T_("TLS connection initialization failed.\n"));
+    return nullptr;
+  }
+
+  result->SetProtocol(tls_resource->protocol_);
+  ParameterizeTlsCert(result.get(), tls_resource->tls_cert_);
+  result->SetCipherList(tls_resource->cipherlist_);
+  result->SetCipherSuites(tls_resource->ciphersuites_);
+
+  if (tls_resource->IsTlsConfigured()) {
+    PskCredentials psk_cred{identity, password};
+    result->SetTlsPskClientContext(psk_cred);
+  } else {
+    Dmsg2(200, "Tls is not configured %s\n", identity);
+  }
 
   if (!result->init()) {
     result.reset();
@@ -1028,5 +1061,100 @@ bool BareosAccept(BareosSocket* socket,
     }
   }
 
+  return true;
+}
+
+bool BareosConnect(JobControlRecord* jcr,
+                   BareosSocket* socket,
+                   std::string qualified_name,
+                   const TlsResource* res,
+                   std::string_view hello_msg,
+                   bool cleartext_authentication)
+{
+  ASSERT(jcr);
+  ASSERT(socket);
+  ASSERT(res);
+
+  std::string bashed = qualified_name;
+  BashSpaces(bashed.data());
+
+  auth_timer timer{socket};
+
+  bool have_tls = false;
+  if (res->IsTlsConfigured() && !cleartext_authentication) {
+    auto tls = ParameterizeAndInitTlsConnectionAsAClient(
+        jcr, res, qualified_name.c_str(), res->password_.value);
+    if (!DoTlsHandshakeWithServer(jcr, socket, tls, &res->tls_cert_)) {
+      Jmsg(jcr, M_FATAL, 0, "Could not complete tls handshake\n");
+      return false;
+    }
+
+    tls->TlsLogConninfo(jcr, socket->host(), socket->port(), socket->who());
+
+    if (res->authenticate_) {
+      // cleanup tls
+      Qmsg(jcr, M_INFO, 0,
+           "Proceeding with UNENCRYPTED authentication with %s as 'Tls "
+           "Authenticate = Yes' was set\n",
+           socket->who());
+      socket->CloseTlsConnectionAndFreeMemory();
+    } else {
+      have_tls = true;
+    }
+  } else {
+    Qmsg(jcr, M_INFO, 0, T_("Connected %s at %s:%d, encryption: None\n"),
+         socket->who(), socket->host(), socket->port());
+  }
+
+  if (!socket->send(hello_msg.data(), hello_msg.size())) {
+    Jmsg(jcr, M_FATAL, 0, "Could not send hello\n");
+    return false;
+  }
+
+  TlsPolicy local_policy = res->GetPolicy();
+  if (!cleartext_authentication) { local_policy = kBnetTlsAuto; }
+  TlsPolicy remote_policy{kBnetTlsUnknown};
+  if (!cram_md5_handshake(jcr, socket, bashed.c_str(), res->password_.value,
+                          local_policy, false, &remote_policy)) {
+    Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());
+    return false;
+  }
+
+  bool connection_tls;
+  switch (select_tls_status(remote_policy, local_policy)) {
+    default:
+      [[fallthrough]];
+    case TlsStatus::Error: {
+      Jmsg1(jcr, M_ERROR, 0,
+            T_("It was not possible to negotiate a shared tls policy with "
+               "%s.\n"),
+            socket->who());
+      return false;
+    } break;
+    case TlsStatus::Disabled: {
+      connection_tls = false;
+    } break;
+    case TlsStatus::Enabled: {
+      connection_tls = true;
+    } break;
+  }
+
+  /* only create the tls connection if it does not already exist
+   *
+   * one might argue that we should drop the tls connection if
+   * the resource we authenticated has tls disabled, or simply drop the
+   * connection, but that is not how it was done. */
+  if (!have_tls && connection_tls) {
+    auto tls = ParameterizeAndInitTlsConnectionAsAClient(
+        jcr, res, qualified_name.c_str(), res->password_.value);
+    if (!DoTlsHandshakeWithServer(jcr, socket, std::move(tls),
+                                  &res->tls_cert_)) {
+      return false;
+    }
+
+    if (res->authenticate_) { socket->CloseTlsConnectionAndFreeMemory(); }
+  }
+
+  jcr->authenticated = true;
   return true;
 }
