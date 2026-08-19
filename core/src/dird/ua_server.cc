@@ -88,55 +88,58 @@ void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
 
   JobControlRecord* jcr = new_control_jcr("-Console-", JT_CONSOLE);
 
-  UaContext* ua = new UaContext(jcr);
-  ua->UA_sock = user_agent_socket;
-  SetJcrInThreadSpecificData(nullptr);
+  {
+    // ua should get deleted before the jcr gets freed, so we
+    // enclose this in an extra scope
+    UaContext ua{jcr};
+    ua.UA_sock = user_agent_socket;
+    SetJcrInThreadSpecificData(nullptr);
 
-  ConsoleConnectionLease lease;  // obtain lease to count connections
-  bool success = AuthenticateConsole(ua);
+    ConsoleConnectionLease lease;  // obtain lease to count connections
+    bool success = AuthenticateConsole(&ua);
 
-  if (!success) { ua->quit = true; }
+    if (!success) { ua.quit = true; }
 
-  while (!ua->quit) {
-    if (ua->api) { user_agent_socket->signal(BNET_MAIN_PROMPT); }
+    while (!ua.quit) {
+      if (ua.api) { user_agent_socket->signal(BNET_MAIN_PROMPT); }
 
-    int status = user_agent_socket->recv();
-    if (status >= 0) {
-      PmStrcpy(ua->cmd, ua->UA_sock->msg);
-      ParseUaArgs(ua);
-      Do_a_command(ua);
+      int status = user_agent_socket->recv();
+      if (status >= 0) {
+        PmStrcpy(ua.cmd, ua.UA_sock->msg);
+        ParseUaArgs(&ua);
+        Do_a_command(&ua);
 
-      DequeueMessages(ua->jcr);
+        DequeueMessages(ua.jcr);
 
-      if (!ua->quit) {
-        if (console_msg_pending && ua->AclAccessOk(Command_ACL, "messages")) {
-          if (ua->auto_display_messages) {
-            PmStrcpy(ua->cmd, "messages");
-            DotMessagesCmd(ua, ua->cmd);
-            ua->user_notified_msg_pending = false;
-          } else if (!ua->gui && !ua->user_notified_msg_pending
-                     && console_msg_pending) {
-            if (ua->api) {
-              user_agent_socket->signal(BNET_MSGS_PENDING);
-            } else {
-              bsendmsg(ua, T_("You have messages.\n"));
+        if (!ua.quit) {
+          if (console_msg_pending && ua.AclAccessOk(Command_ACL, "messages")) {
+            if (ua.auto_display_messages) {
+              PmStrcpy(ua.cmd, "messages");
+              DotMessagesCmd(&ua, ua.cmd);
+              ua.user_notified_msg_pending = false;
+            } else if (!ua.gui && !ua.user_notified_msg_pending
+                       && console_msg_pending) {
+              if (ua.api) {
+                user_agent_socket->signal(BNET_MSGS_PENDING);
+              } else {
+                bsendmsg(&ua, T_("You have messages.\n"));
+              }
+              ua.user_notified_msg_pending = true;
             }
-            ua->user_notified_msg_pending = true;
+          }
+          if (!ua.api) {
+            user_agent_socket->signal(BNET_EOD); /* send end of command */
           }
         }
-        if (!ua->api) {
-          user_agent_socket->signal(BNET_EOD); /* send end of command */
-        }
+      } else if (IsBnetStop(user_agent_socket)) {
+        ua.quit = true;
+      } else { /* signal */
+        user_agent_socket->signal(BNET_POLL);
       }
-    } else if (IsBnetStop(user_agent_socket)) {
-      ua->quit = true;
-    } else { /* signal */
-      user_agent_socket->signal(BNET_POLL);
-    }
-  } /* while (!ua->quit) */
+    } /* while (!ua.quit) */
 
-  CloseDb(ua);
-  delete ua;
+    CloseDb(&ua);
+  }
   FreeJcr(jcr);
   delete user_agent_socket;
 

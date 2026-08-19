@@ -677,17 +677,13 @@ void CancelStorageDaemonJob(JobControlRecord* jcr)
 {
   if (jcr->dir_impl->sd_canceled) { return; /* cancel only once */ }
 
-  UaContext* ua = new UaContext(jcr);
+  if (!jcr->store_bsock) { return; }
   JobControlRecord* control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
-
-  ua->jcr = control_jcr;
-  if (jcr->store_bsock) {
-    if (!CancelStorageDaemonJob(ua, jcr, false)) { goto bail_out; }
+  {
+    UaContext ua{control_jcr};
+    CancelStorageDaemonJob(&ua, jcr, false);
   }
-
-bail_out:
   FreeJcr(control_jcr);
-  delete ua;
 }
 
 void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)

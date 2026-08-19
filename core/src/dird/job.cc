@@ -759,10 +759,8 @@ static void JobMonitorWatchdog(watchdog_t* self)
     if (cancel) {
       Dmsg3(800, "Cancelling JobControlRecord %p jobid %" PRIu32 " (%s)\n", jcr,
             jcr->JobId, jcr->Job);
-      UaContext* ua = new UaContext(jcr);
-      ua->jcr = control_jcr;
-      CancelJob(ua, jcr);
-      delete ua;
+      UaContext ua{control_jcr};
+      CancelJob(&ua, jcr);
       Dmsg2(800, "Have cancelled JobControlRecord %p Job=%" PRIu32 "\n", jcr,
             jcr->JobId);
     }
@@ -1001,14 +999,13 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
 
       if (cancel_dup || job->CancelRunningDuplicates) {
         // Zap the duplicated job djcr
-        UaContext* ua = new UaContext(jcr);
+        UaContext ua{jcr};
         Jmsg(jcr, M_INFO, 0, T_("Cancelling duplicate JobId=%" PRIu32 ".\n"),
              djcr->JobId);
-        CancelJob(ua, djcr);
+        CancelJob(&ua, djcr);
         Bmicrosleep(0, 500000);
         djcr->setJobStatusWithPriorityCheck(JS_Canceled);
-        CancelJob(ua, djcr);
-        delete ua;
+        CancelJob(&ua, djcr);
         Dmsg2(800, "Cancel dup %p JobId=%" PRIu32 "\n", djcr, djcr->JobId);
       } else {
         // Zap current job
@@ -1790,23 +1787,22 @@ void CreateClones(JobControlRecord* jcr)
     JobResource* job = jcr->dir_impl->res.job;
     POOLMEM* cmd = GetPoolMemory(PM_FNAME);
 
-    UaContext* ua = new UaContext(jcr);
-    ua->batch = true;
+    UaContext ua{jcr};
+    ua.batch = true;
     for (auto* runcmd : job->run_cmds) {
       cmd = edit_job_codes(jcr, cmd, runcmd, "", job_code_callback_director);
-      Mmsg(ua->cmd, "run %s cloned=yes", cmd);
-      Dmsg1(900, "=============== Clone cmd=%s\n", ua->cmd);
-      ParseUaArgs(ua); /* parse command */
+      Mmsg(ua.cmd, "run %s cloned=yes", cmd);
+      Dmsg1(900, "=============== Clone cmd=%s\n", ua.cmd);
+      ParseUaArgs(&ua); /* parse command */
 
-      jobid = DoRunCmd(ua, ua->cmd);
+      jobid = DoRunCmd(&ua, ua.cmd);
       if (!jobid) {
         Jmsg(jcr, M_ERROR, 0, T_("Could not start clone job: \"%s\".\n"),
-             ua->cmd);
+             ua.cmd);
       } else {
         Jmsg(jcr, M_INFO, 0, T_("Clone JobId %" PRIu32 " started.\n"), jobid);
       }
     }
-    delete ua;
     FreePoolMemory(cmd);
   }
 }
@@ -1820,30 +1816,29 @@ void CreateClones(JobControlRecord* jcr)
 int CreateRestoreBootstrapFile(JobControlRecord* jcr, const JobDbRecord& job)
 {
   RestoreContext rx;
-  UaContext* ua;
   int files;
 
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
   rx.JobIds = (char*)"";
   rx.bsr->JobId = job.JobId;
-  ua = new UaContext(jcr);
-  if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
-    files = -1;
-    goto bail_out;
+  {
+    UaContext ua{jcr};
+    if (!AddVolumeInformationToBsr(&ua, rx.bsr.get())) {
+      files = -1;
+      goto bail_out;
+    }
+    for (uint32_t fi = 1; fi <= job.JobFiles; fi++) { rx.bsr->fi->Add(fi); }
+    jcr->dir_impl->ExpectedFiles = WriteBsrFile(&ua, rx);
+    if (jcr->dir_impl->ExpectedFiles == 0) {
+      files = 0;
+      goto bail_out;
+    }
+    rx.bsr.reset(nullptr);
+    jcr->dir_impl->needs_sd = true;
+    return jcr->dir_impl->ExpectedFiles;
   }
-  for (uint32_t fi = 1; fi <= job.JobFiles; fi++) { rx.bsr->fi->Add(fi); }
-  jcr->dir_impl->ExpectedFiles = WriteBsrFile(ua, rx);
-  if (jcr->dir_impl->ExpectedFiles == 0) {
-    files = 0;
-    goto bail_out;
-  }
-  delete ua;
-  rx.bsr.reset(nullptr);
-  jcr->dir_impl->needs_sd = true;
-  return jcr->dir_impl->ExpectedFiles;
 
 bail_out:
-  delete ua;
   rx.bsr.reset(nullptr);
   return files;
 }
@@ -1851,17 +1846,17 @@ bail_out:
 /* TODO: redirect command output to job log */
 bool RunConsoleCommand(JobControlRecord*, const char* cmd)
 {
-  UaContext* ua;
   bool ok;
   JobControlRecord* ljcr = new_control_jcr("-RunScript-", JT_CONSOLE);
-  ua = new UaContext(ljcr);
-  /* run from runscript and check if commands are authorized */
-  ua->runscript = true;
-  Mmsg(ua->cmd, "%s", cmd);
-  Dmsg1(100, "Console command: %s\n", ua->cmd);
-  ParseUaArgs(ua);
-  ok = Do_a_command(ua);
-  delete ua;
+  {
+    UaContext ua{ljcr};
+    /* run from runscript and check if commands are authorized */
+    ua.runscript = true;
+    Mmsg(ua.cmd, "%s", cmd);
+    Dmsg1(100, "Console command: %s\n", ua.cmd);
+    ParseUaArgs(&ua);
+    ok = Do_a_command(&ua);
+  }
   FreeJcr(ljcr);
   return ok;
 }

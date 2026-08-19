@@ -62,22 +62,21 @@ static inline void StartNewConsolidationJob(const JobResource* consolidate_job,
                                             char* jobname)
 {
   JobId_t jobid;
-  UaContext* ua;
   PoolMem cmd(PM_MESSAGE);
 
-  ua = new UaContext(jcr);
-  ua->batch = true;
-  Mmsg(ua->cmd,
+  UaContext ua{jcr};
+  ua.batch = true;
+  Mmsg(ua.cmd,
        "run job=\"%s\" jobid=%s level=VirtualFull priority=%d accurate=%s "
        "spooldata=%s ignoreduplicatecheck=yes consolidatejob=%s",
        jobname, jcr->dir_impl->vf_jobids, jcr->JobPriority,
        jcr->accurate ? "yes" : "no", jcr->dir_impl->spool_data ? "yes" : "no",
        consolidate_job->resource_name_);
 
-  Dmsg1(debuglevel, "=============== consolidate cmd=%s\n", ua->cmd);
-  ParseUaArgs(ua); /* parse command */
+  Dmsg1(debuglevel, "=============== consolidate cmd=%s\n", ua.cmd);
+  ParseUaArgs(&ua); /* parse command */
 
-  jobid = DoRunCmd(ua, ua->cmd);
+  jobid = DoRunCmd(&ua, ua.cmd);
   if (jobid == 0) {
     Jmsg(jcr, M_ERROR, 0, T_("Could not start %s job.\n"),
          jcr->get_OperationName());
@@ -85,8 +84,6 @@ static inline void StartNewConsolidationJob(const JobResource* consolidate_job,
     Jmsg(jcr, M_INFO, 0, T_("%s JobId %" PRIu32 " started.\n"),
          jcr->get_OperationName(), jobid);
   }
-
-  delete ua;
 }
 
 static bool ConsolidateJobs(JobControlRecord* jcr)

@@ -167,21 +167,19 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
         SetStorageidInMr(store, mr);
         Dmsg1(debuglevel, "Find oldest=%d Volume\n", ok);
         if (ok && prune) {
-          UaContext* ua;
           Dmsg0(debuglevel, "Try purge Volume.\n");
           // 8.  Try to purging oldest volume only if not UA calling us.
-          ua = new UaContext(jcr);
+          UaContext ua{jcr};
           if (jcr->dir_impl->res.pool->purge_oldest_volume && create) {
             Jmsg(jcr, M_INFO, 0, T_("Purging oldest volume \"%s\"\n"),
                  mr->VolumeName);
-            ok = PurgeJobsFromVolume(ua, mr);
+            ok = PurgeJobsFromVolume(&ua, mr);
           } else if (jcr->dir_impl->res.pool->recycle_oldest_volume) {
             // 9. Try recycling the oldest volume
             Jmsg(jcr, M_INFO, 0, T_("Pruning oldest volume \"%s\"\n"),
                  mr->VolumeName);
-            ok = PruneVolume(ua, mr);
+            ok = PruneVolume(&ua, mr);
           }
-          delete ua;
 
           if (ok) {
             ok = RecycleVolume(jcr, mr);
@@ -339,11 +337,10 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
       && jcr->dir_impl->res.pool->recycle_current_volume
       && (bstrcmp(mr->VolStatus, "Full") || bstrcmp(mr->VolStatus, "Used"))) {
     // Attempt prune of current volume to see if we can recycle it for use.
-    UaContext* ua;
-
-    ua = new UaContext(jcr);
-    ok = PruneVolume(ua, mr);
-    delete ua;
+    {
+      UaContext ua{jcr};
+      ok = PruneVolume(&ua, mr);
+    }
 
     if (ok) {
       // If fully purged, recycle current volume
