@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,6 +22,7 @@
 #ifndef BAREOS_FILED_DIR_CMD_H_
 #define BAREOS_FILED_DIR_CMD_H_
 
+#include "filed/filed_conf.h"
 #include "lib/crypto.h"
 
 class JobControlRecord;
@@ -31,7 +32,7 @@ namespace filedaemon {
 
 JobControlRecord* create_new_director_session(BareosSocket* dir);
 void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir);
-void* handle_director_connection(BareosSocket* dir);
+void* handle_director_connection(BareosSocket* dir, DirectorResource* res);
 bool StartConnectToDirectorThreads();
 bool StopConnectToDirectorThreads(bool wait = false);
 bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher);
