@@ -468,9 +468,8 @@ bareos_add_test(test_poolmem LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 if(NOT client-only)
   bareos_add_test(
-    test_ua_audit
-    LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib Bareos::SQL
-                   GTest::gtest_main
+    test_ua_audit LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib
+                                 Bareos::SQL GTest::gtest_main
   )
 endif()
 

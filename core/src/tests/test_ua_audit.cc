@@ -42,8 +42,7 @@ TEST(ua_audit, normalize_message_text_trims_trailing_crlf)
 
 TEST(ua_audit, normalize_message_text_keeps_interior_newline)
 {
-  const std::string normalized
-      = NormalizeAuditMessageText("line 1\nline 2\n");
+  const std::string normalized = NormalizeAuditMessageText("line 1\nline 2\n");
   ASSERT_EQ(normalized, "line 1\nline 2");
 }
 
