@@ -28,35 +28,35 @@ namespace directordaemon {
 
 TEST(ua_audit, normalize_message_text_trims_trailing_newline)
 {
-  const PoolMem normalized
+  const std::string normalized
       = NormalizeAuditMessageText("llist jobs days=1\n");
-  ASSERT_STREQ(normalized.c_str(), "llist jobs days=1");
+  ASSERT_EQ(normalized, "llist jobs days=1");
 }
 
 TEST(ua_audit, normalize_message_text_trims_trailing_crlf)
 {
-  const PoolMem normalized
+  const std::string normalized
       = NormalizeAuditMessageText("Job queued. JobId=1\r\n");
-  ASSERT_STREQ(normalized.c_str(), "Job queued. JobId=1");
+  ASSERT_EQ(normalized, "Job queued. JobId=1");
 }
 
 TEST(ua_audit, normalize_message_text_keeps_interior_newline)
 {
-  const PoolMem normalized
+  const std::string normalized
       = NormalizeAuditMessageText("line 1\nline 2\n");
-  ASSERT_STREQ(normalized.c_str(), "line 1\nline 2");
+  ASSERT_EQ(normalized, "line 1\nline 2");
 }
 
 TEST(ua_audit, normalize_message_text_handles_null_input)
 {
-  const PoolMem normalized = NormalizeAuditMessageText(nullptr);
-  ASSERT_STREQ(normalized.c_str(), "");
+  const std::string normalized = NormalizeAuditMessageText(nullptr);
+  ASSERT_EQ(normalized, "");
 }
 
 TEST(ua_audit, normalize_message_text_handles_empty_input)
 {
-  const PoolMem normalized = NormalizeAuditMessageText("");
-  ASSERT_STREQ(normalized.c_str(), "");
+  const std::string normalized = NormalizeAuditMessageText("");
+  ASSERT_EQ(normalized, "");
 }
 
 }  // namespace directordaemon

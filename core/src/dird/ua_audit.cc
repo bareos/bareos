@@ -27,16 +27,15 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
-#include "lib/scan.h"
 
 namespace directordaemon {
 
-PoolMem NormalizeAuditMessageText(const char* text)
+std::string NormalizeAuditMessageText(const char* text)
 {
-  PoolMem normalized(PM_MESSAGE);
-  normalized.strcpy(text ? text : "");
-  if (normalized.c_str()[0] != '\0') {
-    StripTrailingNewline(normalized.c_str());
+  std::string normalized{text ? text : ""};
+  while (!normalized.empty()
+         && (normalized.back() == '\n' || normalized.back() == '\r')) {
+    normalized.pop_back();
   }
   return normalized;
 }
@@ -139,7 +138,7 @@ void UaContext::LogAuditEventCmdline()
   user_name = user_acl ? user_acl->name.c_str() : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
-  const PoolMem normalized_cmdline = NormalizeAuditMessageText(cmd);
+  const std::string normalized_cmdline = NormalizeAuditMessageText(cmd);
   Emsg3(M_AUDIT, 0, T_("Console [%s] from [%s] cmdline %s\n"), user_name, host,
         normalized_cmdline.c_str());
 }
@@ -160,7 +159,8 @@ void UaContext::LogAuditEventInfoMsg(const char* fmt, ...)
   user_name = user_acl ? user_acl->name.c_str() : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
-  const PoolMem normalized_message = NormalizeAuditMessageText(message.c_str());
+  const std::string normalized_message
+      = NormalizeAuditMessageText(message.c_str());
   Emsg3(M_AUDIT, 0, T_("Console [%s] from [%s] info message %s\n"), user_name,
         host, normalized_message.c_str());
 }
