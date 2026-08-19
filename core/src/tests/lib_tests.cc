@@ -218,7 +218,20 @@ struct TestUseConfigAndJcrs : UseConfigAndJcrs {
 TEST(TlsPskAuth, JobPskCannotAuthenticateAsDirector)
 {
   ConfigurationParser parser;
-  TestUseConfigAndJcrs provider(&parser);
+
+  ResourceTable table[] = {{"Director",
+                            "Directors",
+                            nullptr,
+                            R_DIRECTOR,
+                            global_resource::Type::Director,
+                            {},
+                            {},
+                            {},
+                            {},
+                            {}},
+                           {}};
+
+  TestUseConfigAndJcrs provider(parser.GetCurrentConfiguration(), table);
   provider.found_jcr
       = storagedaemon::SetupDummyJcr("Test Job", nullptr, nullptr);
 
