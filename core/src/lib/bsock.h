@@ -288,18 +288,17 @@ struct ClientHelloParser {
   virtual ~ClientHelloParser() = default;
 };
 
-enum class TlsHandshake
-{
-  Disabled,  // no tls during authentication (may be enabled after the
-             // connection)
-  Enabled,   // use tls for the connection
-  AuthOnly,  // setup the tls connection, then tear it down immediately
-};
-
 bool BareosAccept(BareosSocket* socket,
                   const std::string& qualified_name,
                   const TlsResource* initial_tls,
                   TlsSecretProvider* provider,
                   ClientHelloParser* hello_parser);
+
+bool BareosConnect(JobControlRecord* jcr,
+                   BareosSocket* socket,
+                   const std::string& qualified_name,
+                   const TlsResource* res,
+                   std::string_view hello_msg,
+                   bool cleartext_authentication = false);
 
 #endif  // BAREOS_LIB_BSOCK_H_
