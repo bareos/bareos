@@ -599,7 +599,7 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   /* If this is a virtual autochanger (i.e. changer_res != NULL) we simply use
    * the device name, assuming it has been appropriately setup by the
    * "autochanger". */
-  if (!device_resource->changer_res
+  if (!device_resource->changer_res || !device_resource->changer_command
       || device_resource->changer_command[0] == 0) {
     if (VolCatInfo.VolCatName[0] == 0) {
       Mmsg(errmsg, T_("Could not open file device %s. No Volume name given.\n"),
