@@ -64,7 +64,7 @@ int NetConnect(int port);
 BareosSocket* BnetBind(int port);
 BareosSocket* BnetAccept(BareosSocket* bsock, char* who);
 
-enum : uint32_t
+enum ResponseId : uint32_t
 {
   kMessageIdUnknown = 0,
   kMessageIdProtokollError = 1,
@@ -89,11 +89,11 @@ bool EvaluateResponseMessageId(const std::string& message,
 bool ReceiveAndEvaluateResponseMessage(BareosSocket* bsock,
                                        uint32_t& id_out,
                                        BStringList& args_out);
-bool FormatAndSendResponseMessage(BareosSocket* bsock,
-                                  uint32_t id,
-                                  const std::string& str);
-bool FormatAndSendResponseMessage(BareosSocket* bsock,
-                                  uint32_t id,
-                                  const BStringList& list_of_agruments);
+
+bool SendResponseMessage(BareosSocket* socket, ResponseId id, const char* msg);
+bool FormatAndSendResponseMessage(BareosSocket* socket,
+                                  ResponseId id,
+                                  const char* fmt,
+                                  ...) PRINTF_LIKE(3, 4);
 
 #endif  // BAREOS_LIB_BNET_H_
