@@ -64,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
 - Disable EL 10 ARM64 and ULC OpenSSL 1.1 builds [PR #2665]
 - dird: remove unused write verify list [PR #2720]
+- core: add machine readable version to client hello; deprecate TlsAuthenticate [PR #2752]
 
 ### Fixed
 - VMware Plugin: Fix NVRAM backup when datacenter is not in root folder [PR #2461]
@@ -2362,5 +2363,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2737]: https://github.com/bareos/bareos/pull/2737
 [PR #2738]: https://github.com/bareos/bareos/pull/2738
 [PR #2745]: https://github.com/bareos/bareos/pull/2745
+[PR #2752]: https://github.com/bareos/bareos/pull/2752
 [PR #2756]: https://github.com/bareos/bareos/pull/2756
 [unreleased]: https://github.com/bareos/bareos/tree/master
