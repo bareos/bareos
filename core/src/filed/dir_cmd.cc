@@ -367,6 +367,10 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
   if (jcr->authenticated) {
     /**********FIXME******* add command handler error code */
 
+    // set authenticated to false, so that storage daemons will be able to
+    // connect
+    jcr->authenticated = false;
+
     for (;;) {
       // Read command
       if (dir->recv() < 0) { break; /* connection terminated */ }
@@ -488,7 +492,7 @@ static bool StartProcessDirectorCommands(JobControlRecord* jcr)
  *  8. SD/FD disconnects while SD despools data and attributes (optional)
  *  9. FD runs ClientRunAfterJob
  */
-void* handle_director_connection(BareosSocket* dir)
+void* handle_director_connection(BareosSocket* dir, DirectorResource* res)
 {
   JobControlRecord* jcr;
 
@@ -505,8 +509,8 @@ void* handle_director_connection(BareosSocket* dir)
 
   jcr = create_new_director_session(dir);
 
-  Dmsg0(120, "Calling Authenticate\n");
-  if (AuthenticateDirector(jcr)) { Dmsg0(120, "OK Authenticate\n"); }
+  jcr->fd_impl->director = res;
+  jcr->authenticated = true;
 
   return process_director_commands(jcr, dir);
 }
