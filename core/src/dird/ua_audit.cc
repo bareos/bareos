@@ -31,7 +31,7 @@
 
 namespace directordaemon {
 
-static PoolMem NormalizeAuditText(const char* text)
+PoolMem NormalizeAuditMessageText(const char* text)
 {
   PoolMem normalized(PM_MESSAGE);
   normalized.strcpy(text ? text : "");
@@ -137,7 +137,7 @@ void UaContext::LogAuditEventCmdline()
   user_name = user_acl ? user_acl->name.c_str() : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
-  const PoolMem normalized_cmdline = NormalizeAuditText(cmd);
+  const PoolMem normalized_cmdline = NormalizeAuditMessageText(cmd);
   Emsg3(M_AUDIT, 0, T_("Console [%s] from [%s] cmdline %s\n"), user_name, host,
         normalized_cmdline.c_str());
 }
@@ -158,7 +158,7 @@ void UaContext::LogAuditEventInfoMsg(const char* fmt, ...)
   user_name = user_acl ? user_acl->name.c_str() : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
-  const PoolMem normalized_message = NormalizeAuditText(message.c_str());
+  const PoolMem normalized_message = NormalizeAuditMessageText(message.c_str());
   Emsg3(M_AUDIT, 0, T_("Console [%s] from [%s] info message %s\n"), user_name,
         host, normalized_message.c_str());
 }
