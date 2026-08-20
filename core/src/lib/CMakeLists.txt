@@ -120,7 +120,7 @@ endif()
 
 target_sources(
   bareos PRIVATE bareos_resource.cc lex.cc parse_bsr.cc res.cc parse_conf.cc
-                 parse_conf_init_resource.cc parse_conf_state_machine.cc res.cc
+                 parse_conf_init_resource.cc parse_conf_state_machine.cc
 )
 
 # this is done to ensure every other object can be cached
