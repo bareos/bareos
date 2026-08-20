@@ -121,6 +121,23 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnection(JobControlRecord* jcr,
   return result;
 }
 
+struct auth_timer {
+  auth_timer(BareosSocket* socket)
+      : timer{StartBsockTimer(socket, AUTH_TIMEOUT)}
+  {
+  }
+
+  auth_timer(auth_timer&) = delete;
+  auth_timer(const auth_timer&) = delete;
+
+  ~auth_timer()
+  {
+    if (timer) { StopBsockTimer(timer); }
+  }
+
+  btimer_t* timer{nullptr};
+};
+
 bool DoTlsHandshakeWithClient(JobControlRecord* jcr,
                               BareosSocket* socket,
                               std::shared_ptr<Tls> tls,
