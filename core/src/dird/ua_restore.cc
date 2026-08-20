@@ -94,7 +94,6 @@ static int RestoreCountHandler(void* ctx, int num_fields, char** row);
 static bool InsertTableIntoFindexList(UaContext* ua,
                                       RestoreContext* rx,
                                       char* table);
-static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx);
 static bool CheckAndSetFileregex(UaContext* ua,
                                  RestoreContext* rx,
                                  const char* regex);
@@ -117,7 +116,6 @@ bool RestoreCmd(UaContext* ua, const char*)
   rx.fname = GetPoolMemory(PM_FNAME);
   rx.JobIds = GetPoolMemory(PM_FNAME);
   rx.JobIds[0] = 0;
-  rx.BaseJobIds = GetPoolMemory(PM_FNAME);
   rx.query = GetPoolMemory(PM_FNAME);
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
 
@@ -217,7 +215,6 @@ bool RestoreCmd(UaContext* ua, const char*)
     case 0: /* error */
       goto bail_out;
     case 1: /* selected by jobid */
-      GetAndDisplayBasejobs(ua, &rx);
       if (!BuildDirectoryTree(ua, &rx)) {
         ua->SendMsg(T_("Restore not done.\n"));
         goto bail_out;
@@ -404,7 +401,6 @@ static void free_rx(RestoreContext* rx)
   }
 
   FreeAndNullPoolMemory(rx->JobIds);
-  FreeAndNullPoolMemory(rx->BaseJobIds);
   FreeAndNullPoolMemory(rx->fname);
   FreeAndNullPoolMemory(rx->path);
   FreeAndNullPoolMemory(rx->query);
@@ -1359,10 +1355,6 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     ua->ErrorMsg("%s", ua->db->strerror());
   }
 
-  if (*rx->BaseJobIds) {
-    PmStrcat(rx->JobIds, ",");
-    PmStrcat(rx->JobIds, rx->BaseJobIds);
-  }
 
   /* Look at the first JobId on the list (presumably the oldest) and
    *  if it is marked purged, don't do the manual selection because
