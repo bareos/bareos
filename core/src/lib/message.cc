@@ -208,39 +208,39 @@ void InitMsg(JobControlRecord* jcr,
              MessagesResource* msg,
              job_code_callback_t job_code_callback)
 {
-  int i;
+  ASSERT(jcr);
+  ASSERT(msg);
+  message_job_code_callback = job_code_callback;
 
-  if (jcr == NULL && msg == NULL) {
+  jcr->jcr_msgs = new MessagesResource;
+  msg->DuplicateResourceTo(*jcr->jcr_msgs);
+  Dmsg2(250, "Copied message resource %p\n", msg);
+}
+
+void InitMsg(MessagesResource* msg)
+{
+  message_job_code_callback = NULL;
+
+  if (!msg) {
     /* Setup a daemon key then set invalid jcr
      * Maybe we should give the daemon a jcr??? */
     SetJcrInThreadSpecificData(nullptr);
-  }
 
-  message_job_code_callback = job_code_callback;
-
-  if (!msg) {
     // initialize default chain for stdout and syslog
     daemon_msgs = new MessagesResource;
-    for (i = 1; i <= M_MAX; i++) {
+    for (int i = 1; i <= M_MAX; i++) {
       daemon_msgs->AddMessageDestination(MessageDestinationCode::kStdout, i,
                                          std::string(), std::string(),
                                          std::string());
     }
     Dmsg1(050, "Create daemon global message resource %p\n", daemon_msgs);
-    return;
-  }
-
-  if (jcr) {
-    jcr->jcr_msgs = new MessagesResource;
-    msg->DuplicateResourceTo(*jcr->jcr_msgs);
   } else {
     // replace the defaults
     if (daemon_msgs) { delete daemon_msgs; }
     daemon_msgs = new MessagesResource;
     msg->DuplicateResourceTo(*daemon_msgs);
+    Dmsg2(250, "Copied message resource %p\n", msg);
   }
-
-  Dmsg2(250, "Copied message resource %p\n", msg);
 }
 
 /*
