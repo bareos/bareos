@@ -364,26 +364,6 @@ bail_out:
   return false;
 }
 
-// Fill the rx->BaseJobIds and display the list
-static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx)
-{
-  db_list_ctx jobids;
-
-  if (!ua->db->GetUsedBaseJobids(ua->jcr, rx->JobIds, &jobids)) {
-    ua->WarningMsg("%s", ua->db->strerror());
-  }
-
-  if (!jobids.empty()) {
-    PoolMem query(PM_MESSAGE);
-
-    ua->SendMsg(T_("The restore will use the following job(s) as Base\n"));
-    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_print_jobs>(
-        query, jobids.GetAsString().c_str());
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
-                         true);
-  }
-  PmStrcpy(rx->BaseJobIds, jobids.GetAsString().c_str());
-}
 
 static void free_rx(RestoreContext* rx)
 {

@@ -286,15 +286,7 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     }
   }
 
-  /* In Incr/Diff accurate mode, we mark all files as seen
-   * When in Full+Base mode, we mark only if the file match exactly */
-  if (jcr->getJobLevel() == L_FULL) {
-    if (!file_changed) {
-      // Compute space saved with basefile.
-      jcr->fd_impl->base_size += ff_pkt->statp.st_size;
-      jcr->fd_impl->file_list->MarkFileAsSeen(payload);
-    }
-  } else {
+  if (!file_changed) {
     jcr->fd_impl->file_list->MarkFileAsSeen(payload);
   }
 

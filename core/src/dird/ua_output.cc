@@ -969,19 +969,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     return true;
   }
 
-  if (Bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
-    // List BASEFILES
-    if (int jobid = GetJobidFromCmdline(ua); jobid > 0) {
-      ua->db->ListBaseFilesForJob(ua->jcr, jobid, ua->send.get());
-      return true;
-    } else {
-      ua->ErrorMsg(
-          T_("jobid not found in db, access to job or client denied by ACL, or "
-             "client not found in db\n"));
-      return false;
-    }
-  }
-
   if (Bstrcasecmp(ua->argk[1], NT_("files"))) {
     // List FILES
     if (int jobid = GetJobidFromCmdline(ua); jobid > 0) {
