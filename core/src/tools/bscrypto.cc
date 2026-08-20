@@ -292,7 +292,7 @@ int main(int argc, char* const* argv)
 
   CLI11_PARSE(bscrypto_app, argc, argv);
 
-  InitMsg(nullptr, nullptr);
+  InitMsg(nullptr);
 
   if (!generate_passphrase && !show_keydata && !dump_cache && !populate_cache
       && !reset_cache && device_name.empty()) {

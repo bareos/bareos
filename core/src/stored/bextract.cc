@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
 
   working_directory = "/tmp";
   MyNameIs(argc, argv, "bextract");
-  InitMsg(nullptr, nullptr); /* setup message handler */
+  InitMsg(nullptr); /* setup message handler */
 
   OSDependentInit();
 
