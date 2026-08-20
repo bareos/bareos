@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -100,6 +100,7 @@ Provides:   %{name}-fd
 Summary:    Common files, required by multiple Bareos packages
 Group:      Productivity/Archiving/Backup
 Provides:   %{name}-libs
+Requires:   coreutils
 Requires:   libstdc++
 Requires:   libgcc
 Requires:   zlib
