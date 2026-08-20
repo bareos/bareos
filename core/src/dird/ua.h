@@ -42,6 +42,17 @@ struct tree_node;
 
 namespace directordaemon {
 
+PoolMem NormalizeAuditMessageText(const char* text);
+
+class CatalogResource;
+class ConsoleResource;
+class PoolResource;
+class StorageResource;
+class ClientResource;
+class JobResource;
+class FilesetResource;
+class ScheduleResource;
+struct RestoreBootstrapRecord;
 struct ua_cmdstruct;
 struct RestoreBootstrapRecord;
 
