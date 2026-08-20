@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -75,7 +75,7 @@ TEST(ConfigParser_SD, CFG_TYPE_STR_VECTOR_OF_DIRS)
   WSA_Init();
 #  endif
 
-  InitMsg(nullptr, nullptr);
+  InitMsg(nullptr);
 
   std::string path_to_config_file
       = std::string("configs/bareos-configparser-tests/bareos-sd-") + test_name
