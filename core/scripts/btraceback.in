@@ -102,5 +102,13 @@ esac
 # Send the stack trace info to someone for analyzing or at least letting someone know we crashed.
 #
 PNAME="${PNAME} on $(hostname)"
+# Environment variable
+${BAREOS_BTRACEBACK_MTA:="@sbindir@/bsmtp"}
+${BAREOS_BTRACEBACK_HOST:="-h @smtp_host@"}
+${BAREOS_BTRACEBACK_FROM:="-f @dump_email@"}
+${BAREOS_BTRACEBACK_RECIPIENT:="@dump_email@"}
+${BAREOS_BTRACEBACK_TIMEOUT:=30}
+
+
 cat ${WD}/bareos.$2.traceback \
-  | @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bareos ${DEBUGGER} traceback of ${PNAME}" @dump_email@
+  | timeout ${BAREOS_BTRACEBACK_TIMEOUT} ${BAREOS_BTRACEBACK_MTA} ${BAREOS_BTRACEBACK_HOST} ${BAREOS_BTRACEBACK_FROM} -s "Bareos ${DEBUGGER} traceback of ${PNAME}" ${BAREOS_BTRACEBACK_RECIPIENT}
