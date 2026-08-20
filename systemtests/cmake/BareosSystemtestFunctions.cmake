@@ -968,12 +968,20 @@ function(systemtest_requires test required_test)
   )
 endfunction()
 
-function(add_requirement test_basename test requirement)
+function(add_requirements test_basename test)
   get_test_property("${test_basename}:${test}" FIXTURES_REQUIRED fixtures)
+  if(NOT fixtures)
+    # if no fixtures are defined yet, get_test_property returns NOTFOUND since
+    # list(APPEND) does not treat that value differently (but if does!) we need
+    # to empty it out, so that we do not add NOTFOUND to the list of fixtures
+    set(fixtures "")
+  endif()
+  foreach(req IN LISTS ARGN)
+    list(APPEND fixtures "${test_basename}/${req}-fixture")
+  endforeach()
+
   set_tests_properties(
-    "${test_basename}:${test}"
-    PROPERTIES FIXTURES_REQUIRED
-               "${fixtures};${test_basename}/${requirement}-fixture"
+    "${test_basename}:${test}" PROPERTIES FIXTURES_REQUIRED "${fixtures}"
   )
 endfunction()
 
@@ -1005,12 +1013,10 @@ function(add_alphabetic_requirements prefix test_subdir)
   endforeach()
 
   set(tests "${all_tests}")
-  set(prevs "${all_tests}")
+  set(prevs "")
 
-  list(POP_BACK prevs)
-  list(POP_FRONT tests)
-
-  foreach(iter IN ZIP_LISTS tests prevs)
-    add_requirement("${test_basename}" "${iter_0}" "${iter_1}")
+  foreach(test IN LISTS tests)
+    add_requirements("${test_basename}" "${test}" "${prevs}")
+    list(APPEND prevs "${test}")
   endforeach()
 endfunction()
