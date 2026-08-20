@@ -119,6 +119,15 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
       // we are authenticated now, so the client does not need to wait anymore
       bs->sleep_time_after_authentication_error = 0;
 
+      if (!IsConnectFromClientAllowed(auth.client->res)) {
+        /* clients ignore our response message anyways, so it does not make
+         * sense to send any message.
+         * There also is not a good response id for this. */
+        Emsg2(M_ERROR, 0, "Client '%s' (as %s) is not allowed to connect!\n",
+              bs->who(), auth.client->res->resource_name_);
+        return error_and_close(bs);
+      }
+
       if (!FormatAndSendResponseMessage(
               bs, kMessageIdOk, "OK: %s Version %s (%s)\n", my_name,
               kBareosVersionStrings.Full, kBareosVersionStrings.Date)) {
