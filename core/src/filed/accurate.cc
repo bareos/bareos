@@ -286,7 +286,14 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     }
   }
 
-  if (!file_changed) {
+  /* In Incr/Diff accurate mode, we mark all files as seen.
+   * In Full accurate mode, we only mark if the file hasn't changed
+   * (unchanged files can be skipped by reusing the previous backup). */
+  if (jcr->getJobLevel() == L_FULL) {
+    if (!file_changed) {
+      jcr->fd_impl->file_list->MarkFileAsSeen(payload);
+    }
+  } else {
     jcr->fd_impl->file_list->MarkFileAsSeen(payload);
   }
 
