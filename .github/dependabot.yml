@@ -1,0 +1,62 @@
+version: 2
+updates:
+  # npm dependencies in webui-vue
+  - package-ecosystem: "npm"
+    directory: "/webui-vue"
+    schedule:
+      interval: "daily"
+      time: "13:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "npm"
+      - "webui"
+    commit-message:
+      prefix: "webui-vue:"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+
+  # Python dependencies in restapi
+  - package-ecosystem: "pip"
+    directory: "/restapi"
+    schedule:
+      interval: "daily"
+      time: "13:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+      - "restapi"
+    commit-message:
+      prefix: "restapi:"
+      include: "scope"
+
+  # Python dependencies in python-bareos module
+  - package-ecosystem: "pip"
+    directory: "/python-bareos"
+    schedule:
+      interval: "daily"
+      time: "13:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+      - "python-module"
+    commit-message:
+      prefix: "python-bareos:"
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "13:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci:"
+      include: "scope"
