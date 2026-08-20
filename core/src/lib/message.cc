@@ -53,6 +53,8 @@
 #include "lib/bpipe.h"
 #include "include/compiler_macro.h"
 
+#include <shared_mutex>
+
 // globals
 inline constexpr const char* JobMessage
     = "Jmsg Job=%s type=%" PRId32 " level=%" PRId64 " %s";
@@ -76,6 +78,7 @@ job_code_callback_t message_job_code_callback = NULL;  // Only used by director
 /* Exclude spaces but require .mail at end */
 #define MAIL_REGEX "^[^ ]+\\.mail$"
 
+std::shared_mutex daemon_msg_mutex;
 static MessagesResource* daemon_msgs; /* Global messages */
 static char* catalog_db = NULL;       /* Database type */
 static const char* log_timestamp_format = "%d-%b %H:%M";
@@ -221,6 +224,8 @@ void InitMsg(MessagesResource* msg)
 {
   message_job_code_callback = NULL;
 
+  std::unique_lock _{daemon_msg_mutex};
+
   if (!msg) {
     /* Setup a daemon key then set invalid jcr
      * Maybe we should give the daemon a jcr??? */
@@ -331,9 +336,12 @@ void CloseMsg(JobControlRecord* jcr)
   POOLMEM *cmd, *line;
   int len, status;
 
+  std::unique_lock lock{daemon_msg_mutex, std::defer_lock};
+
   Dmsg1(580, "Close_msg jcr=%p\n", jcr);
 
   if (jcr == NULL) { /* NULL -> global chain */
+    lock.lock();
     msgs = daemon_msgs;
   } else {
     msgs = jcr->jcr_msgs;
@@ -664,7 +672,12 @@ void DispatchMessage(JobControlRecord* jcr,
     msgs = jcr->jcr_msgs;
   }
 
-  if (msgs == NULL) { msgs = daemon_msgs; }
+  std::shared_lock lock{daemon_msg_mutex, std::defer_lock};
+
+  if (msgs == NULL) {
+    lock.lock();
+    msgs = daemon_msgs;
+  }
 
   if (!msgs) {
     Dmsg1(100, "Could not dispatch message: %s", msg);
@@ -1144,12 +1157,17 @@ void e_msg(const char* file,
   // show error message also as debug message (level 10)
   d_msg(file, line, 10, "%s: %s", typestr.c_str(), more.c_str());
 
-  /* Check if we have a message destination defined.
-   * We always report M_ABORT and M_ERROR_TERM */
-  if (!daemon_msgs
-      || ((type != M_ABORT && type != M_ERROR_TERM && type != M_CONFIG_ERROR)
-          && !BitIsSet(type, daemon_msgs->send_msg_types_))) {
-    return; /* no destination */
+  {
+    /* does this lock make sense ? No!
+     * but this way we at least do not crash */
+    std::shared_lock lock{daemon_msg_mutex};
+    /* Check if we have a message destination defined.
+     * We always report M_ABORT and M_ERROR_TERM */
+    if (!daemon_msgs
+        || ((type != M_ABORT && type != M_ERROR_TERM && type != M_CONFIG_ERROR)
+            && !BitIsSet(type, daemon_msgs->send_msg_types_))) {
+      return; /* no destination */
+    }
   }
 
   PmStrcat(buf, more.c_str());
@@ -1211,14 +1229,25 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
     JobId = jcr->JobId;
   }
 
-  if (!msgs) { msgs = daemon_msgs; /* if no jcr, we use daemon handler */ }
+  {
+    /* This lock does not make the code correct, it only makes sure
+     * that we do not crash.
+     * We should select the correct msgs resource _once_ and then
+     * check it & pass it to dispatch message, but the code is written
+     * in a way where this is not easily possible. */
+    std::shared_lock lock{daemon_msg_mutex, std::defer_lock};
+    if (!msgs) {
+      lock.lock();
+      msgs = daemon_msgs; /* if no jcr, we use daemon handler */
+    }
 
-  /* Check if we have a message destination defined.
-   * We always report M_ABORT, M_ERROR_TERM and M_CONFIG_ERROR*/
-  if (msgs
-      && (type != M_ABORT && type != M_ERROR_TERM && type != M_CONFIG_ERROR)
-      && !BitIsSet(type, msgs->send_msg_types_)) {
-    return; /* no destination */
+    /* Check if we have a message destination defined.
+     * We always report M_ABORT, M_ERROR_TERM and M_CONFIG_ERROR*/
+    if (msgs
+        && (type != M_ABORT && type != M_ERROR_TERM && type != M_CONFIG_ERROR)
+        && !BitIsSet(type, msgs->send_msg_types_)) {
+      return; /* no destination */
+    }
   }
 
   switch (type) {
