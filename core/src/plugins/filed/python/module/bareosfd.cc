@@ -255,7 +255,7 @@ static inline PySavePacket* NativeToPySavePacket(save_pkt* sp)
     pSavePkt->no_read = sp->no_read;
     pSavePkt->portable = sp->portable;
     pSavePkt->accurate_found = sp->accurate_found;
-    pSavePkt->cmd = sp->cmd;
+    pSavePkt->cmd = NULL;
     pSavePkt->save_time = sp->save_time;
     pSavePkt->delta_seq = sp->delta_seq;
     pSavePkt->object_name = NULL;
