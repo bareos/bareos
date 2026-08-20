@@ -524,8 +524,6 @@ bool show_cmd(UaContext* ua, const char*)
  *  list joblog jobid=<nn>
  *  list joblog job=name
  *  list log [ limit=<number> [ offset=<number> ] ]
- *  list basefiles jobid=nnn    - list files saved for job nn
- *  list basefiles ujobid=uname
  *  list files jobid=<nn>       - list files saved for job nn
  *  list files ujobid=name
  *  list pools                  - list pool records

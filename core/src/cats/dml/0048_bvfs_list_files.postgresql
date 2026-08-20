@@ -23,16 +23,6 @@ FROM (
       FROM File
       WHERE JobId IN (%s)
         AND PathId = %s
-        UNION ALL
-        SELECT File.FileId,
-               File.JobId,
-               PathId,
-               File.Name AS FileName,
-               File.FileIndex,
-               LStat,
-               MD5
-        FROM BaseFiles
-        JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s)
         AND File.PathId = %s
    ) AS T
    JOIN Job USING (JobId)

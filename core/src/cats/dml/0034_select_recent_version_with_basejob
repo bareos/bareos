@@ -31,20 +31,10 @@ FROM Job,
       FROM File
       JOIN Job USING (JobId)
       WHERE File.JobId IN (%s)
-        UNION ALL
-        SELECT JobTDate,
-               PathId,
-               File.Name AS FileName
-        FROM BaseFiles
-        JOIN File USING (FileId)
-        JOIN Job ON (BaseJobId = Job.JobId) WHERE BaseFiles.JobId IN (%s) ) AS tmp
+     ) AS tmp
    GROUP BY PathId,
             FileName) AS T1
-WHERE (Job.JobId IN
-         (SELECT DISTINCT BaseJobId
-          FROM BaseFiles
-          WHERE JobId IN (%s))
-       OR Job.JobId IN (%s))
+WHERE (Job.JobId IN (%s))
   AND T1.JobTDate = Job.JobTDate
   AND Job.JobId = File.JobId
   AND T1.PathId = File.PathId
