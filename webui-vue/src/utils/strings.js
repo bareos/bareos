@@ -31,7 +31,8 @@
  * @returns {string}
  */
 export function midEllipsis(str, maxLen) {
-  if (str.length <= maxLen) return str
+  const chars = Array.from(str)
+  if (chars.length <= maxLen) return str
   const half = Math.floor((maxLen - 1) / 2)
-  return str.slice(0, half) + '\u2026' + str.slice(str.length - (maxLen - 1 - half))
+  return chars.slice(0, half).join('') + '\u2026' + chars.slice(chars.length - (maxLen - 1 - half)).join('')
 }
