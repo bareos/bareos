@@ -148,24 +148,46 @@ const snapshots    = ref([])
 const loading      = ref(false)
 const refreshToken = ref(0)
 
+// Pool data changes infrequently — only re-fetch every POOL_REFRESH_EVERY
+// normal refresh cycles (≈ every 10 minutes at the default 60 s interval).
+const POOL_REFRESH_EVERY = 10
+let _refreshCount = 0
+
 const aggregate = computed(() => aggregateDirectorDashboardSnapshots(snapshots.value))
 
-async function fetchData() {
+async function fetchData({ forcePools = false } = {}) {
   const credentials = auth.getCredentials()
   if (!credentials || props.activeDirectors.length === 0) {
     snapshots.value = []
     return
   }
+
+  _refreshCount += 1
+  const includePools = forcePools || _refreshCount % POOL_REFRESH_EVERY === 1
+
   loading.value = true
   try {
     const results = await Promise.allSettled(
       props.activeDirectors.map(d =>
-        fetchDirectorDashboardSnapshot({ ...credentials, director: d })
+        fetchDirectorDashboardSnapshot({ ...credentials, director: d }, { includePools })
       )
     )
-    snapshots.value = results
+    const fresh = results
       .filter(r => r.status === 'fulfilled')
       .map(r => r.value)
+
+    if (includePools) {
+      snapshots.value = fresh
+    } else {
+      // Carry forward pool data from the previous snapshot for each director.
+      const prevPoolsByDir = Object.fromEntries(
+        snapshots.value.map(s => [s.director, s.pools ?? []])
+      )
+      snapshots.value = fresh.map(s => ({
+        ...s,
+        pools: prevPoolsByDir[s.director] ?? [],
+      }))
+    }
   } finally {
     loading.value = false
     refreshToken.value += 1
@@ -174,7 +196,7 @@ async function fetchData() {
 
 function refresh() { fetchData() }
 
-watch(() => props.activeDirectors.join('\0'), () => fetchData(), { immediate: true })
+watch(() => props.activeDirectors.join('\0'), () => fetchData({ forcePools: true }), { immediate: true })
 
 provide(DASHBOARD_CONTEXT_KEY, {
   aggregate,

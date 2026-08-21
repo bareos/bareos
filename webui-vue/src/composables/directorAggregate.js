@@ -196,6 +196,24 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
   const client = await createDirectorCommandClient(credentials, options)
 
   try {
+    const includePools = options.includePools !== false
+
+    const jobCalls = [
+      client.call('llist jobs days=1'),
+      client.call('list jobs jobstatus=R'),
+      client.call('llist jobs last current enabled'),
+      client.call('list jobtotals'),
+      client.call('list clients'),
+      client.call('list storages'),
+      client.call('status director'),
+    ]
+
+    // Pool + volume data is expensive and changes infrequently.
+    // Only fetch when the caller requests it (slow refresh cycle).
+    const poolCalls = includePools
+      ? [client.call('llist pools'), client.call('llist volumes')]
+      : []
+
     const [
       past24hResult,
       runningResult,
@@ -204,19 +222,8 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       clientsResult,
       storagesResult,
       directorStatusResult,
-      poolsResult,
-      volumesResult,
-    ] = await Promise.allSettled([
-      client.call('llist jobs days=1'),
-      client.call('list jobs jobstatus=R'),
-      client.call('llist jobs last current enabled'),
-      client.call('list jobtotals'),
-      client.call('list clients'),
-      client.call('list storages'),
-      client.call('status director'),
-      client.call('llist pools'),
-      client.call('llist volumes'),
-    ])
+      ...poolResults
+    ] = await Promise.allSettled([...jobCalls, ...poolCalls])
 
     const runtimeRunningJobs = directorStatusResult.status === 'fulfilled'
       ? decorateRuntimeJobs(directorStatusResult.value?.running, credentials.director)
@@ -231,7 +238,10 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       ? decorateJobs(past24hResult.value?.jobs, credentials.director)
       : []
 
-    const volumes = volumesResult.status === 'fulfilled'
+    const poolsResult  = includePools ? poolResults[0] : null
+    const volumesResult = includePools ? poolResults[1] : null
+
+    const volumes = volumesResult?.status === 'fulfilled'
       ? (Array.isArray(volumesResult.value?.volumes)
           ? volumesResult.value.volumes
           : Object.values(volumesResult.value?.volumes ?? {}).flat()
@@ -246,7 +256,7 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       volumesByPool[key] = (volumesByPool[key] ?? 0) + 1
     }
 
-    const pools = poolsResult.status === 'fulfilled'
+    const pools = poolsResult?.status === 'fulfilled'
       ? directorCollection(poolsResult.value?.pools).map(entry => {
           const pool = normalisePool(entry)
           return {
