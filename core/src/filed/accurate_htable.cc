@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -127,36 +127,6 @@ accurate_payload* BareosAccurateFilelistHtable::lookup_payload(char* fname)
 
 bool BareosAccurateFilelistHtable::UpdatePayload(char*, accurate_payload*)
 {
-  return true;
-}
-
-bool BareosAccurateFilelistHtable::SendBaseFileList()
-{
-  CurFile* elt;
-  FindFilesPacket* ff_pkt;
-  int32_t LinkFIc;
-  struct stat statp;
-  int stream = STREAM_UNIX_ATTRIBUTES;
-
-  if (!jcr_->accurate || jcr_->getJobLevel() != L_FULL) { return true; }
-
-  if (file_list_ == NULL) { return true; }
-
-  ff_pkt = init_find_files();
-  ff_pkt->type = FT_BASE;
-
-  foreach_htable (elt, file_list_) {
-    if (seen_bitmap_.at(elt->payload.filenr)) {
-      Dmsg1(debuglevel, "base file fname=%s\n", elt->fname);
-      DecodeStat(elt->payload.lstat, &statp, sizeof(statp),
-                 &LinkFIc); /* decode catalog stat */
-      ff_pkt->fname = elt->fname;
-      ff_pkt->statp = statp;
-      EncodeAndSendAttributes(jcr_, ff_pkt, stream);
-    }
-  }
-
-  TermFindFiles(ff_pkt);
   return true;
 }
 
