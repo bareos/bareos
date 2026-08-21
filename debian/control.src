@@ -46,7 +46,8 @@ Build-Depends: acl-dev,
  systemd,
  libprotobuf-dev,
  libgrpc++-dev,
- protobuf-compiler-grpc
+ protobuf-compiler-grpc,
+ libtirpc-dev
 Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools, libqt4-dev
 Standards-Version: 3.9.6
 Vcs-Git: git://github.com/bareos/bareos.git -b master
