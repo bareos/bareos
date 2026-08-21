@@ -596,10 +596,10 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   // Handle opening of File Archive (not a tape)
   PmStrcpy(archive_name, archive_device_string);
 
-  /* If this is a virtual autochanger (i.e. changer_res != NULL) we simply use
-   * the device name, assuming it has been appropriately setup by the
-   * "autochanger". */
-  if (!device_resource->changer_res
+  /* Use the device name only when an autochanger resource and a non-empty
+   * changer command are configured. Otherwise, treat it as a file archive
+   * and append the volume name. */
+  if (!device_resource->changer_res || !device_resource->changer_command
       || device_resource->changer_command[0] == 0) {
     if (VolCatInfo.VolCatName[0] == 0) {
       Mmsg(errmsg, T_("Could not open file device %s. No Volume name given.\n"),
