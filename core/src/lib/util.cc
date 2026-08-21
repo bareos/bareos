@@ -184,93 +184,23 @@ void UnbashSpaces(PoolMem& pm)
   }
 }
 
-struct HelloInformation {
-  std::string hello_string;
-  std::string resource_type_string;
-  uint32_t position_of_name;
-  int32_t position_of_version;
-};
-
-using SizeTypeOfHelloList = std::vector<std::string>::size_type;
-
-static std::list<HelloInformation> hello_list{
-    /* this order is important */
-    {"Hello Storage calling Start Job", "R_JOB", 5, -1},
-    {"Hello Start Storage Job", "R_JOB", 4, -1},
-    {"Hello Start Job", "R_JOB", 3, -1},
-    {"Hello Director", "R_DIRECTOR", 2, -1},
-    {"Hello Storage", "R_STORAGE", 2, -1},
-    {"Hello Client", "R_CLIENT", 2, -1},
-    {"Hello", "R_CONSOLE", 1, 4} /* "Hello %s calling version %s" */
-};
-
-bool GetNameAndResourceTypeAndVersionFromHello(
-    const std::string& input,
-    std::string& name,
-    std::string& r_type_str,
-    BareosVersionNumber& bareos_version)
+BareosVersionNumber parse_version(std::string_view input)
 {
-  std::list<HelloInformation>::const_iterator hello = hello_list.cbegin();
-
-  bool found = false;
-  while (hello != hello_list.cend()) {
-    uint32_t size = hello->hello_string.size();
-    uint32_t input_size = input.size();
-    if (input_size >= size) {
-      if (!input.compare(0, size, hello->hello_string)) {
-        found = true;
-        break;
-      }
-    }
-    hello++;
-  }
-
-  if (!found) {
-    Dmsg1(100, "Client information not found: %s\n", input.c_str());
-    return false;
-  }
-
-  BStringList arguments_of_hello_string(input, ' '); /* split at blanks */
-
-  bool ok = false;
-  if (arguments_of_hello_string.size() > hello->position_of_name) {
-    name = arguments_of_hello_string[hello->position_of_name];
-    std::replace(name.begin(), name.end(), (char)0x1, ' ');
-    r_type_str = hello->resource_type_string;
-    ok = true;
-  } else {
-    Dmsg0(100, "Failed to retrieve the name from hello message\n");
-  }
-
-  if (ok) {
-    bareos_version = BareosVersionNumber::kUndefined;
-    if (hello->position_of_version >= 0) {
-      if (arguments_of_hello_string.size()
-          > static_cast<SizeTypeOfHelloList>(hello->position_of_version)) {
-        std::string version_str
-            = arguments_of_hello_string[hello->position_of_version];
-        if (!version_str.empty()) {
-          ok = false;
-          BStringList splittet_version(version_str, '.');
-          if (splittet_version.size() > 1) {
-            uint32_t v;
-            try {
-              v = std::stoul(splittet_version[0]) * 100;
-              v += std::stoul(splittet_version[1]);
-              bareos_version = static_cast<BareosVersionNumber>(v);
-              ok = true;
-            } catch (const std::exception& e) {
-              Dmsg0(100,
-                    "Could not read out any version from hello message: %s\n",
-                    e.what());
-            }
-          }
-        }
-      }
+  if (input.empty()) { return BareosVersionNumber::kUndefined; }
+  BStringList splittet_version(input, '.');
+  if (splittet_version.size() > 1) {
+    uint32_t v;
+    try {
+      v = std::stoul(splittet_version[0]) * 100;
+      v += std::stoul(splittet_version[1]);
+      return static_cast<BareosVersionNumber>(v);
+    } catch (const std::exception& e) {
+      Dmsg0(100, "Could not read out any version from hello message: %s\n",
+            e.what());
     }
   }
 
-  return ok;
+  return BareosVersionNumber::kUndefined;
 }
 
 /*
