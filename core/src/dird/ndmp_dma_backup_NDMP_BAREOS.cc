@@ -303,6 +303,8 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       // Copy the actual job to perform.
       memcpy(&ndmp_sess.control_acb->job, &ndmp_job,
              sizeof(struct ndm_job_param));
+      ndmp_sess.control_acb->job.use_cab_extensions
+          = jcr->dir_impl->res.client->ndmp_cab;
 
       /* We can use the same private pointer used in the logging with the
        * JobControlRecord in the file index generation. We don't setup a

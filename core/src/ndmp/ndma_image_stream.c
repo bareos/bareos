@@ -431,6 +431,7 @@ ndmp9_error ndmis_audit_ep_listen(struct ndm_session* sess,
       break;
 
     case NDMP9_ADDR_TCP:
+    case NDMP9_ADDR_TCP_IPV6:
       break;
 
     default:
@@ -483,6 +484,7 @@ ndmp9_error ndmis_audit_ep_connect(struct ndm_session* sess,
       break;
 
     case NDMP9_ADDR_TCP:
+    case NDMP9_ADDR_TCP_IPV6:
       if (peer_ep->connect_status != NDMIS_CONN_IDLE) {
         sprintf(reason_end, "LOCAL %s not IDLE", peer_ep->name);
         error = NDMP9_ILLEGAL_STATE_ERR;
@@ -534,12 +536,13 @@ ndmp9_error ndmis_ep_listen(struct ndm_session* sess,
       break;
 
     case NDMP9_ADDR_TCP:
+    case NDMP9_ADDR_TCP_IPV6:
       if (ndmis_tcp_listen(sess, ret_addr) != 0) {
         strcpy(reason_end, "TCP listen() failed");
         error = NDMP9_CONNECT_ERR;
         goto out;
       }
-      mine_ep->addr_type = NDMP9_ADDR_TCP;
+      mine_ep->addr_type = addr_type;
       mine_ep->connect_status = NDMIS_CONN_LISTEN;
       peer_ep->connect_status = NDMIS_CONN_REMOTE;
       break;
@@ -585,12 +588,13 @@ ndmp9_error ndmis_ep_connect(struct ndm_session* sess,
       break;
 
     case NDMP9_ADDR_TCP:
+    case NDMP9_ADDR_TCP_IPV6:
       if (ndmis_tcp_connect(sess, addr) != 0) {
         strcpy(reason_end, "TCP connect() failed");
         error = NDMP9_CONNECT_ERR;
         goto out;
       }
-      mine_ep->addr_type = NDMP9_ADDR_TCP;
+      mine_ep->addr_type = addr_type;
       mine_ep->connect_status = NDMIS_CONN_CONNECTED;
       peer_ep->connect_status = NDMIS_CONN_REMOTE;
       break;
@@ -632,6 +636,7 @@ int ndmis_ep_close(struct ndm_session* sess,
           break;
 
         case NDMP9_ADDR_TCP:
+        case NDMP9_ADDR_TCP_IPV6:
           ndmis_tcp_close(sess);
           if (peer_ep->connect_status != NDMIS_CONN_REMOTE) goto messy;
           peer_ep->connect_status = NDMIS_CONN_IDLE;
@@ -653,6 +658,7 @@ int ndmis_ep_close(struct ndm_session* sess,
           break;
 
         case NDMP9_ADDR_TCP:
+        case NDMP9_ADDR_TCP_IPV6:
           ndmis_tcp_close(sess);
           if (peer_ep->connect_status != NDMIS_CONN_REMOTE) goto messy;
           peer_ep->connect_status = NDMIS_CONN_IDLE;
@@ -674,6 +680,7 @@ int ndmis_ep_close(struct ndm_session* sess,
           break;
 
         case NDMP9_ADDR_TCP:
+        case NDMP9_ADDR_TCP_IPV6:
           ndmis_tcp_close(sess);
           if (peer_ep->connect_status != NDMIS_CONN_REMOTE) goto messy;
           peer_ep->connect_status = NDMIS_CONN_IDLE;
@@ -746,12 +753,11 @@ messy:
 int ndmis_tcp_listen(struct ndm_session* sess, struct ndmp9_addr* listen_addr)
 {
   struct ndm_image_stream* is = sess->plumb.image_stream;
-  ndmp9_tcp_addr* tcp_addr = &listen_addr->ndmp9_addr_u.tcp_addr;
   struct ndmconn* conn;
-  struct sockaddr c_sa;
-  struct sockaddr l_sa;
-  struct sockaddr_in* sin;
+  struct sockaddr_storage c_sa;
+  struct sockaddr_storage l_sa;
   socklen_t len;
+  int family = AF_INET;
   int listen_sock = -1;
   char* what = "???";
 
@@ -796,22 +802,32 @@ int ndmis_tcp_listen(struct ndm_session* sess, struct ndmp9_addr* listen_addr)
      */
     ndmos_sync_config_info(sess);
 
-    sin = (struct sockaddr_in*)&c_sa;
-
     what = "ndmhost_lookup";
-    if (ndmhost_lookup(sess->config_info->hostname, sin) != 0) goto fail;
+    if (ndmhost_lookup(sess->config_info->hostname, &c_sa) != 0) goto fail;
   }
 
-  /* c_sa is a sockaddr_in for the IP address to use */
+  family = ((struct sockaddr*)&c_sa)->sa_family;
 
   what = "socket";
-  listen_sock = socket(AF_INET, SOCK_STREAM, 0);
+  listen_sock = socket(family, SOCK_STREAM, 0);
   if (listen_sock < 0) goto fail;
 
-  /* could bind() to more restrictive addr based on c_sa */
-  NDMOS_MACRO_SET_SOCKADDR(&l_sa, 0, 0);
+  NDMOS_MACRO_ZEROFILL(&l_sa);
+  if (family == AF_INET6) {
+    struct sockaddr_in6* sin6 = (struct sockaddr_in6*)&l_sa;
+#ifdef NDMOS_OPTION_HAVE_SIN_LEN
+    sin6->sin6_len = sizeof(*sin6);
+#endif
+    sin6->sin6_family = AF_INET6;
+    sin6->sin6_addr = in6addr_any;
+    sin6->sin6_port = 0;
+  } else {
+    NDMOS_MACRO_SET_SOCKADDR(&l_sa, 0, 0);
+  }
   what = "bind";
-  if (bind(listen_sock, &l_sa, sizeof l_sa) < 0) goto fail;
+  len = family == AF_INET6 ? sizeof(struct sockaddr_in6)
+                           : sizeof(struct sockaddr_in);
+  if (bind(listen_sock, (struct sockaddr*)&l_sa, len) < 0) goto fail;
 
   what = "listen";
   if (listen(listen_sock, 1) < 0) goto fail;
@@ -825,16 +841,16 @@ int ndmis_tcp_listen(struct ndm_session* sess, struct ndmp9_addr* listen_addr)
 
   // Fill in the return address
 
-  listen_addr->addr_type = NDMP9_ADDR_TCP;
-  tcp_addr = &listen_addr->ndmp9_addr_u.tcp_addr;
-
-  /* IP addr from CONTROL connection, or where ever c_sa came from */
-  sin = (struct sockaddr_in*)&c_sa;
-  tcp_addr->ip_addr = ntohl(sin->sin_addr.s_addr);
-
-  /* port from the bind() and getsockname() above */
-  sin = (struct sockaddr_in*)&l_sa;
-  tcp_addr->port = ntohs(sin->sin_port);
+  if (ndm_sockaddr_to_ndmp9_addr((struct sockaddr*)&c_sa, listen_addr) != 0) {
+    goto fail;
+  }
+  if (family == AF_INET6) {
+    listen_addr->ndmp9_addr_u.tcp_ipv6_addr.port
+        = ntohs(((struct sockaddr_in6*)&l_sa)->sin6_port);
+  } else {
+    listen_addr->ndmp9_addr_u.tcp_addr.port
+        = ntohs(((struct sockaddr_in*)&l_sa)->sin_port);
+  }
 
   // Start the listen channel
 
@@ -856,9 +872,7 @@ int ndmis_tcp_accept(struct ndm_session* sess)
 {
   struct ndm_image_stream* is = sess->plumb.image_stream;
   char* what = "???";
-  ndmp9_tcp_addr* tcp_addr;
-  struct sockaddr sa;
-  struct sockaddr_in* sin = (struct sockaddr_in*)&sa;
+  struct sockaddr_storage sa;
   socklen_t len;
   int accept_sock = -1;
 
@@ -870,7 +884,7 @@ int ndmis_tcp_accept(struct ndm_session* sess)
 
   what = "accept";
   len = sizeof sa;
-  accept_sock = accept(is->remote.listen_chan.fd, &sa, &len);
+  accept_sock = accept(is->remote.listen_chan.fd, (struct sockaddr*)&sa, &len);
 
   ndmchan_cleanup(&is->remote.listen_chan);
 
@@ -880,10 +894,10 @@ int ndmis_tcp_accept(struct ndm_session* sess)
   }
 
   /* write what we know, ndmis...addrs() will update if possible */
-  is->remote.peer_addr.addr_type = NDMP9_ADDR_TCP;
-  tcp_addr = &is->remote.peer_addr.ndmp9_addr_u.tcp_addr;
-  tcp_addr->ip_addr = ntohl(sin->sin_addr.s_addr);
-  tcp_addr->port = ntohs(sin->sin_port);
+  if (ndm_sockaddr_to_ndmp9_addr((struct sockaddr*)&sa, &is->remote.peer_addr)
+      != 0) {
+    goto fail;
+  }
 
   ndmis_tcp_green_light(sess, accept_sock, NDMIS_CONN_ACCEPTED);
 
@@ -898,19 +912,19 @@ fail:
 int ndmis_tcp_connect(struct ndm_session* sess, struct ndmp9_addr* connect_addr)
 {
   struct ndm_image_stream* is = sess->plumb.image_stream;
-  ndmp9_tcp_addr* tcp_addr = &connect_addr->ndmp9_addr_u.tcp_addr;
   char* what = "???";
-  struct sockaddr sa;
-  int connect_sock;
+  struct sockaddr_storage sa;
+  socklen_t sa_len = 0;
+  int connect_sock = -1;
 
-  NDMOS_MACRO_SET_SOCKADDR(&sa, tcp_addr->ip_addr, tcp_addr->port);
+  if (ndmp9_addr_to_sockaddr(connect_addr, &sa, &sa_len) != 0) goto fail;
 
   what = "socket";
-  connect_sock = socket(AF_INET, SOCK_STREAM, 0);
+  connect_sock = socket(((struct sockaddr*)&sa)->sa_family, SOCK_STREAM, 0);
   if (connect_sock < 0) goto fail;
 
   what = "connect";
-  if (connect(connect_sock, &sa, sizeof sa) < 0) goto fail;
+  if (connect(connect_sock, (struct sockaddr*)&sa, sa_len) < 0) goto fail;
 
 
   /* write what we know, ndmis...addrs() will update if possible */
@@ -971,36 +985,34 @@ int ndmis_tcp_get_local_and_peer_addrs(struct ndm_session* sess)
 {
   struct ndm_image_stream* is = sess->plumb.image_stream;
   char* what = "???";
-  struct sockaddr sa;
-  struct sockaddr_in* sin = (struct sockaddr_in*)&sa;
-  ndmp9_tcp_addr* tcp_addr;
+  struct sockaddr_storage sa;
   socklen_t len;
   int rc = 0;
 
   len = sizeof sa;
   what = "getpeername";
-  if (getpeername(is->chan.fd, &sa, &len) < 0) {
+  if (getpeername(is->chan.fd, (struct sockaddr*)&sa, &len) < 0) {
     /* this is best effort */
     ndmalogf(sess, 0, 2, "ndmis_tcp..._addrs(): %s failed", what);
     rc = -1;
   } else {
-    is->remote.peer_addr.addr_type = NDMP9_ADDR_TCP;
-    tcp_addr = &is->remote.peer_addr.ndmp9_addr_u.tcp_addr;
-    tcp_addr->ip_addr = ntohl(sin->sin_addr.s_addr);
-    tcp_addr->port = ntohs(sin->sin_port);
+    if (ndm_sockaddr_to_ndmp9_addr((struct sockaddr*)&sa,
+                                   &is->remote.peer_addr) != 0) {
+      rc = -1;
+    }
   }
 
   len = sizeof sa;
   what = "getsockname";
-  if (getsockname(is->chan.fd, &sa, &len) < 0) {
+  if (getsockname(is->chan.fd, (struct sockaddr*)&sa, &len) < 0) {
     /* this is best effort */
     ndmalogf(sess, 0, 2, "ndmis_tcp..._addrs(): %s failed", what);
     rc = -1;
   } else {
-    is->remote.local_addr.addr_type = NDMP9_ADDR_TCP;
-    tcp_addr = &is->remote.peer_addr.ndmp9_addr_u.tcp_addr;
-    tcp_addr->ip_addr = ntohl(sin->sin_addr.s_addr);
-    tcp_addr->port = ntohs(sin->sin_port);
+    if (ndm_sockaddr_to_ndmp9_addr((struct sockaddr*)&sa,
+                                   &is->remote.local_addr) != 0) {
+      rc = -1;
+    }
   }
 
   return rc;

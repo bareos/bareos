@@ -78,6 +78,16 @@ int ndmca_destroy(struct ndm_session* sess)
     NDMOS_API_FREE(sess->control_acb->smc_cb);
   }
 
+  if (sess->control_acb->data_addr_env) {
+    ndmp_4to9_pval_vec_free(sess->control_acb->data_addr_env,
+                            sess->control_acb->data_addr_env_len);
+  }
+
+  if (sess->control_acb->mover_addr_env) {
+    ndmp_4to9_pval_vec_free(sess->control_acb->mover_addr_env,
+                            sess->control_acb->mover_addr_env_len);
+  }
+
   NDMOS_API_FREE(sess->control_acb);
   sess->control_acb = NULL;
 

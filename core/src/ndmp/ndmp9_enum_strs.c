@@ -125,6 +125,7 @@ int ndmp9_addr_type_from_str(ndmp9_addr_type* valp, char* str)
 struct ndmp_enum_str_table ndmp9_addr_type_table[] = {
         { "NDMP9_ADDR_LOCAL",   NDMP9_ADDR_LOCAL },
         { "NDMP9_ADDR_TCP",     NDMP9_ADDR_TCP },
+        { "NDMP9_ADDR_TCP_IPV6", NDMP9_ADDR_TCP_IPV6 },
         { 0 }
 };
 /* clang-format on */

@@ -537,6 +537,8 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
 
         memcpy(&ndmp_sess.control_acb->job, &ndmp_job,
                sizeof(struct ndm_job_param));
+        ndmp_sess.control_acb->job.use_cab_extensions
+            = jcr->dir_impl->res.client->ndmp_cab;
         if (!fill_restore_environment(jcr, current_fi, current_session,
                                       &ndmp_sess.control_acb->job)) {
           Jmsg(jcr, M_ERROR, 0, T_("ERROR in fill_restore_environment\n"));

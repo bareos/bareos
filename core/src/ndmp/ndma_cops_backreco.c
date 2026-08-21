@@ -592,6 +592,9 @@ int ndmca_backreco_startup(struct ndm_session* sess)
     return rc;
   }
 
+  rc = ndmca_data_conn_prepare(sess);
+  if (rc) { return rc; }
+
   if (ca->job.tape_tcp) { return 0; }
 
   rc = ndmca_connect_tape_agent(sess);

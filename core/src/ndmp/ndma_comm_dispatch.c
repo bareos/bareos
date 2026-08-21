@@ -1711,6 +1711,9 @@ int ndmadr_data_listen(struct ndm_session* sess,
         case NDMP4_ADDR_TCP:
           addr_type = NDMP9_ADDR_TCP;
           break;
+        case NDMP4_ADDR_TCP_IPV6:
+          addr_type = NDMP9_ADDR_TCP_IPV6;
+          break;
       }
 
       rc = data_listen_common34(sess, xa, ref_conn, addr_type);
@@ -1751,6 +1754,7 @@ static int data_listen_common34(struct ndm_session* sess,
       break;
 
     case NDMP9_ADDR_TCP:
+    case NDMP9_ADDR_TCP_IPV6:
       break;
   }
 
@@ -1879,6 +1883,7 @@ static int data_can_connect(struct ndm_session* sess,
       break;
 
     case NDMP9_ADDR_TCP:
+    case NDMP9_ADDR_TCP_IPV6:
       break;
   }
 
@@ -2101,6 +2106,7 @@ int ndmp_sxa_mover_listen(struct ndm_session* sess,
       break;
 
     case NDMP9_ADDR_TCP:
+    case NDMP9_ADDR_TCP_IPV6:
       break;
   }
 
@@ -2312,7 +2318,8 @@ int ndmp_sxa_mover_read(struct ndm_session* sess,
     NDMADR_RAISE_ILLEGAL_STATE("byte_left_to_read");
   }
 
-  if (ms->data_connection_addr.addr_type != NDMP9_ADDR_TCP) {
+  if (ms->data_connection_addr.addr_type != NDMP9_ADDR_TCP
+      && ms->data_connection_addr.addr_type != NDMP9_ADDR_TCP_IPV6) {
     NDMADR_RAISE_ILLEGAL_STATE("mover_addr !TCP");
   }
 
@@ -2417,6 +2424,7 @@ int ndmp_sxa_mover_connect(struct ndm_session* sess,
       break;
 
     case NDMP9_ADDR_TCP:
+    case NDMP9_ADDR_TCP_IPV6:
       break;
   }
 

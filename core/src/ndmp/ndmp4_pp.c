@@ -67,6 +67,7 @@ int ndmp4_pp_addr(char* buf, ndmp4_addr* ma)
 {
   unsigned int i, j;
   ndmp4_tcp_addr* tcp;
+  ndmp4_tcp_ipv6_addr* tcp_ipv6;
   uint32_t ip_in_host_order;
 
   sprintf(buf, "%s", ndmp4_addr_type_to_str(ma->addr_type));
@@ -84,6 +85,23 @@ int ndmp4_pp_addr(char* buf, ndmp4_addr* ma)
         sprintf(NDMOS_API_STREND(buf), ",%s=%s",
                 tcp->addr_env.addr_env_val[j].name,
                 tcp->addr_env.addr_env_val[j].value);
+      }
+      sprintf(NDMOS_API_STREND(buf), ")");
+    }
+  } else if (ma->addr_type == NDMP4_ADDR_TCP_IPV6) {
+    for (i = 0; i < ma->ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_len; i++) {
+      tcp_ipv6 = &ma->ndmp4_addr_u.tcp_ipv6_addr.tcp_ipv6_addr_val[i];
+
+      char ip_addr[INET6_ADDRSTRLEN];
+      sprintf(NDMOS_API_STREND(buf), "%d([%s]:%u", i,
+              inet_ntop(AF_INET6, tcp_ipv6->ipv6_addr.ipv6_addr, ip_addr,
+                        sizeof(ip_addr)),
+              tcp_ipv6->port);
+
+      for (j = 0; j < tcp_ipv6->addr_env.addr_env_len; j++) {
+        sprintf(NDMOS_API_STREND(buf), ",%s=%s",
+                tcp_ipv6->addr_env.addr_env_val[j].name,
+                tcp_ipv6->addr_env.addr_env_val[j].value);
       }
       sprintf(NDMOS_API_STREND(buf), ")");
     }

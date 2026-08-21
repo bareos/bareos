@@ -252,6 +252,7 @@ struct ndm_job_param {
   struct ndm_nlist_table nlist_tab;    /* for RECOVER ops */
   struct ndm_env_table result_env_tab; /* after BACKUP */
   struct ndmlog index_log;             /* to log NDMP_FH_ADD_... */
+  NDM_FLAG_DECL(use_cab_extensions)
 
   struct ndmagent tape_agent;         /* TAPE AGENT host/pw */
   char* tape_device;                  /* eg "/dev/rmt0" */
@@ -310,12 +311,16 @@ struct ndm_control_agent {
   NDM_FLAG_DECL(pending_notify_data_halted)
   ndmp9_notify_data_read_request last_notify_data_read;
   ndmp9_addr data_addr;
+  ndmp9_pval* data_addr_env;
+  unsigned data_addr_env_len;
   int32_t recover_log_file_count;
   int32_t recover_log_file_ok;
   int32_t recover_log_file_error;
 
   /* Image stream */
   ndmp9_addr mover_addr;
+  ndmp9_pval* mover_addr_env;
+  unsigned mover_addr_env_len;
   ndmp9_mover_mode mover_mode;
 
   /* TAPE Agent */
@@ -459,6 +464,7 @@ extern int ndmca_op_unload_tape(struct ndm_session* sess);
 extern int ndmca_connect_close(struct ndm_session* sess);
 extern int ndmca_data_get_state(struct ndm_session* sess);
 extern int ndmca_data_connect(struct ndm_session* sess);
+extern int ndmca_data_conn_prepare(struct ndm_session* sess);
 extern int ndmca_data_listen(struct ndm_session* sess);
 extern int ndmca_data_start_backup(struct ndm_session* sess);
 extern int ndmca_data_start_recover(struct ndm_session* sess);
