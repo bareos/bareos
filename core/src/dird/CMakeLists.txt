@@ -40,7 +40,6 @@ target_sources(
   PRIVATE admin.cc
           archive.cc
           authenticate.cc
-          authenticate_console.cc
           autoprune.cc
           backup.cc
           bsr.cc
