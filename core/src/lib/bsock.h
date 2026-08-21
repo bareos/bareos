@@ -186,7 +186,7 @@ class BareosSocket {
   void ClearLocking(); /* in bsock.c */
   void SetSourceAddress(dlist<IPADDR>* src_addr_list);
   void ControlBwlimit(int bytes); /* in bsock.c */
-  bool peek(char* buffer, size_t count) const;
+  ssize_t peek(char* buffer, size_t count) const;
   std::string GetCipherMessageString() const;
   bool ReceiveAndEvaluateResponseMessage(uint32_t& id_out,
                                          BStringList& args_out);

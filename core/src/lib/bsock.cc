@@ -44,6 +44,7 @@
 #include "lib/tls_psk_credentials.h"
 
 #include <algorithm>
+#include <thread>
 
 static constexpr int debuglevel = 50;
 
@@ -182,6 +183,72 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAClient(
     return nullptr;
   }
   return result;
+}
+
+bool guess_whether_cleartext(BareosSocket* socket, bool* is_cleartext)
+{
+  constexpr std::string_view hello_start = "Hello ";
+  // we check that we are about to receive a bnet message starting
+  // with 'Hello ' as this means that this is actually an unencrypted
+  // client-hello message.
+  char peek_buffer[hello_start.size() + sizeof(uint32_t)];
+
+  for (;;) {
+    auto bytes_received = socket->peek(peek_buffer, sizeof(peek_buffer));
+
+    if (bytes_received <= 0) {
+      // either an error occured (bytes_received < 0)
+      // or the connection was cut (bytes_received == 0)
+      return false;
+    }
+
+    size_t bytes_in_buffer = bytes_received;
+
+    uint32_t msg_size_network;
+    if (bytes_in_buffer > sizeof(msg_size_network)) {
+      memcpy(&msg_size_network, peek_buffer, sizeof(msg_size_network));
+
+      uint32_t msg_size = ntohl(msg_size_network);
+
+      if (msg_size < 10 || msg_size > 1000) {
+        // this is definitely not a cleartext hello
+        Dmsg0(150,
+              "peek starts with bad header (%" PRIu32
+              ") -> not cleartext hello\n",
+              msg_size);
+        *is_cleartext = false;
+        return true;
+      }
+    } else {
+      // give data some more time to arrive
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      continue;
+    }
+
+    size_t message_bytes = bytes_in_buffer - sizeof(msg_size_network);
+
+    ASSERT(message_bytes <= hello_start.size());
+
+    if (memcmp(hello_start.data(), peek_buffer + sizeof(msg_size_network),
+               message_bytes)
+        != 0) {
+      Dmsg0(
+          150,
+          "message contains bad characters at start -> not cleartext hello\n");
+      *is_cleartext = false;
+      return true;
+    }
+
+    if (bytes_in_buffer == sizeof(peek_buffer)) {
+      // we are happy with everything, so this looks like a cleartext hello
+
+      *is_cleartext = true;
+      return true;
+    }
+
+    // give data some more time to arrive
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
 }
 
 }  // namespace
@@ -468,14 +535,9 @@ void BareosSocket::SetKillable(bool killable)
   if (jcr_) { jcr_->SetKillable(killable); }
 }
 
-bool BareosSocket::peek(char* buffer, size_t count) const
+ssize_t BareosSocket::peek(char* buffer, size_t count) const
 {
-  auto amount_bytes = ::recv(fd_, buffer, count, MSG_PEEK);
-  if (amount_bytes < 0 || static_cast<size_t>(amount_bytes) != count) {
-    return false;
-  }
-
-  return true;
+  return ::recv(fd_, buffer, count, MSG_PEEK);
 }
 
 std::string BareosSocket::GetCipherMessageString() const
@@ -685,30 +747,10 @@ bool BareosAccept(BareosSocket* socket,
   bool have_tls = false;
 
   bool received_clear_text_handshake = false;
-
-  constexpr std::string_view hello_start = "Hello ";
-  // we check that we are about to receive a bnet message starting
-  // with 'Hello ' as this means that this is actually an unencrypted
-  // client-hello message.
-  char peek_buffer[hello_start.size() + sizeof(uint32_t)];
-  if (socket->peek(peek_buffer, sizeof(peek_buffer))) {
-    // if we receive a clear text handshake then we skip the tls
-    // (as that would obviously not work), and let the parser parse the hello
-    // we are about to receive.
-    // Once the hello is received, we check if we were "allowed" to
-    // accept a clear text handshake
-
-    uint32_t msg_size_network;
-    memcpy(&msg_size_network, peek_buffer, sizeof(msg_size_network));
-
-    uint32_t msg_size = ntohl(msg_size_network);
-
-    if (msg_size > 10 && msg_size < 1000
-        && memcmp(peek_buffer + sizeof(uint32_t), hello_start.data(),
-                  hello_start.size())
-               == 0) {
-      received_clear_text_handshake = true;
-    }
+  if (!guess_whether_cleartext(socket, &received_clear_text_handshake)) {
+    Emsg1(M_ERROR, 0, "Could check for cleartext handshake with %s\n",
+          socket->who());
+    return false;
   }
 
   if (initial_tls && !received_clear_text_handshake) {
@@ -720,7 +762,8 @@ bool BareosAccept(BareosSocket* socket,
     }
     if (!DoTlsHandshakeWithClient(nullptr, socket, std::move(tls),
                                   &initial_tls->tls_cert_)) {
-      Jmsg(nullptr, M_FATAL, 0, "Could not complete tls handshake\n");
+      Emsg1(M_ERROR, 0, "Could not complete tls handshake with %s\n",
+            socket->who());
       return false;
     }
 
