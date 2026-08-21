@@ -28,6 +28,7 @@
 #include "lib/global_resource.h"
 #include "lib/bstringlist.h"
 #include "lib/bsock_tcp.h"
+#include "lib/version.h"
 
 namespace console {
 BareosSocket* ConnectToDirector(JobControlRecord& jcr,
@@ -46,52 +47,44 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
   jcr.dir_bsock = UA_sock;
 
   const char* name;
-  s_password* password = NULL;
 
   TlsResource* local_tls_resource;
   if (console_resource) {
     name = console_resource->resource_name_;
     ASSERT(console_resource->password_.encoding == p_encoding_md5);
-    password = &console_resource->password_;
     local_tls_resource = console_resource;
   } else { /* default console */
     name = "*UserAgent*";
     ASSERT(director_resource->password_.encoding == p_encoding_md5);
-    password = &director_resource->password_;
     local_tls_resource = director_resource;
   }
 
-  if (local_tls_resource->IsTlsConfigured()) {
-    std::string qualified_resource_name = global_resource::QualifiedName(
-        my_config->GlobalTypeFromLocalType(my_config->r_own_), name);
-    if (qualified_resource_name.empty()) {
-      delete UA_sock;
-      UA_sock = nullptr;
-      jcr.dir_bsock = nullptr;
-      return nullptr;
-    }
+  std::string qualified_resource_name
+      = global_resource::QualifiedName(global_resource::Type::Console, name);
 
-    if (!UA_sock->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, local_tls_resource,
-                                 false, qualified_resource_name.c_str(),
-                                 password->value, &jcr)) {
-      delete UA_sock;
-      UA_sock = nullptr;
-      jcr.dir_bsock = nullptr;
-      return nullptr;
-    }
-  } /* IsTlsConfigured */
+  std::string cpy{name};
+  BashSpaces(cpy.data());
+  PoolMem hello_msg;
+  hello_msg.bsprintf("Hello %s calling version %s Version=\"%u.%u.%u\"\n",
+                     cpy.c_str(), kBareosVersionStrings.Full,
+                     kBareosVersion.Major, kBareosVersion.Minor,
+                     kBareosVersion.Patch);
 
-  std::string own_qualified_name = "R_CONSOLE::";
-  own_qualified_name += name;
-
-  if (!UA_sock->ConsoleAuthenticateWithDirector(
-          &jcr, name, *password, director_resource, own_qualified_name,
-          response_args, response_id)) {
+  if (!BareosConnect(&jcr, UA_sock, qualified_resource_name, local_tls_resource,
+                     hello_msg.c_str())) {
     delete UA_sock;
     UA_sock = nullptr;
     jcr.dir_bsock = nullptr;
     return nullptr;
   }
+
+  if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id, response_args)) {
+    delete UA_sock;
+    UA_sock = nullptr;
+    jcr.dir_bsock = nullptr;
+    return nullptr;
+  }
+
   return UA_sock;
 }
 

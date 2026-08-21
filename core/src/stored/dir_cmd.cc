@@ -241,7 +241,7 @@ static inline bool AreMaxConcurrentJobsExceeded()
  *  - We execute the command
  *  - We continue or exit depending on the return status
  */
-void* HandleDirectorConnection(BareosSocket* dir)
+void* HandleDirectorConnection(BareosSocket* dir, DirectorResource* res)
 {
   JobControlRecord* jcr;
   int i, errstat;
@@ -261,6 +261,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
   NewPlugins(jcr);      /* instantiate plugins */
   jcr->dir_bsock = dir; /* save Director bsock */
   jcr->dir_bsock->SetJcr(jcr);
+  jcr->sd_impl->director = res;
 
   // Initialize End Job condition variable
   errstat = pthread_cond_init(&jcr->sd_impl->job_end_wait, NULL);
@@ -274,12 +275,6 @@ void* HandleDirectorConnection(BareosSocket* dir)
   Dmsg0(1000, "stored in start_job\n");
 
   SetJcrInThreadSpecificData(jcr);
-
-  // Authenticate the Director
-  if (!AuthenticateDirector(jcr)) {
-    Jmsg(jcr, M_FATAL, 0, T_("Unable to authenticate Director\n"));
-    goto bail_out;
-  }
 
   Dmsg0(90, "Message channel init completed.\n");
 
@@ -1661,41 +1656,57 @@ static bool ReplicateCmd(JobControlRecord* jcr)
 
   storage_daemon_socket->SetEnableKtls(me->enable_ktls);
 
-  if (tls_policy == TlsPolicy::kBnetTlsAuto) {
-    std::string qualified_resource_name
-        = global_resource::QualifiedName(global_resource::Type::Job, JobName);
-    if (!storage_daemon_socket->DoTlsHandshake(
-            TlsPolicy::kBnetTlsAuto, me, false, qualified_resource_name.c_str(),
-            jcr->sd_auth_key, jcr)) {
-      Dmsg0(110, "TLS direct handshake failed\n");
+  PoolMem hello;
+  hello.bsprintf("Hello Start Storage Job %s Version=\"%u.%u.%u\"\n", JobName,
+                 kBareosVersion.Major, kBareosVersion.Minor,
+                 kBareosVersion.Patch);
+
+  TlsResource custom = *me;
+  custom.password_.value = jcr->sd_auth_key;
+
+  bool cleartext_auth{false};
+
+  switch (jcr->sd_tls_policy) {
+    case kBnetTlsNone: {
+      custom.tls_enable_ = false;
+    } break;
+    case kBnetTlsAuto: {
+      custom.tls_enable_ = true;
+      custom.tls_require_ = false;
+      cleartext_auth = false;
+    } break;
+    case kBnetTlsEnabled: {
+      custom.tls_enable_ = true;
+      custom.tls_require_ = false;
+      cleartext_auth = true;
+    } break;
+    case kBnetTlsRequired: {
+      custom.tls_enable_ = true;
+      custom.tls_require_ = true;
+      cleartext_auth = true;
+    } break;
+    case kBnetTlsUnknown: {
       connect_state(ReplicateCmdState::kError);
       return false;
-    } else {
-      connect_state(ReplicateCmdState::kTlsEstablished);
-    }
+    } break;
   }
 
-  jcr->store_bsock = storage_daemon_socket.get();
-
-  storage_daemon_socket->InitBnetDump(
-      my_config->CreateOwnQualifiedNameForNetworkDump());
-  storage_daemon_socket->fsend(
-      "Hello Start Storage Job %s Version=\"%u.%u.%u\"\n", JobName,
-      kBareosVersion.Major, kBareosVersion.Minor, kBareosVersion.Patch);
-
-  if (!AuthenticateWithStoragedaemon(jcr)) {
+  if (!BareosConnect(
+          jcr, storage_daemon_socket.get(),
+          global_resource::QualifiedName(global_resource::Type::Job, JobName),
+          &custom, hello.c_str(), cleartext_auth)) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate Storage daemon.\n"));
     connect_state(ReplicateCmdState::kError);
     return false;
-  } else {
-    connect_state(ReplicateCmdState::kAuthenticated);
-    Dmsg0(110, "Authenticated with SD.\n");
-
-    jcr->sd_impl->remote_replicate = true;
-
-    storage_daemon_socket.release(); /* jcr->store_bsock */
-    return dir->fsend(OK_replicate);
   }
+
+  connect_state(ReplicateCmdState::kAuthenticated);
+  Dmsg0(110, "Authenticated with SD.\n");
+
+  jcr->sd_impl->remote_replicate = true;
+
+  jcr->store_bsock = storage_daemon_socket.release();
+  return dir->fsend(OK_replicate);
 }
 
 static bool RunCmd(JobControlRecord* jcr)
@@ -1717,7 +1728,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
   TlsPolicy tls_policy; /* enable ssl to fd */
   char filed_addr[MAX_NAME_LENGTH];
   BareosSocket* dir = jcr->dir_bsock;
-  BareosSocket* fd; /* file daemon bsock */
+  BareosSocket* fd{nullptr}; /* file daemon bsock */
   std::string cpy{dir->msg};
 
   Dmsg1(100, "PassiveClientCmd: %s", cpy.c_str());
@@ -1740,50 +1751,66 @@ static bool PassiveCmd(JobControlRecord* jcr)
   // Open command communications with passive filedaemon
   if (!fd->connect(jcr, 10, (int)me->FDConnectTimeout, me->heartbeat_interval,
                    T_("File Daemon"), filed_addr, NULL, filed_port, 1)) {
-    delete fd;
-    fd = NULL;
-  }
-
-  if (fd == NULL) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to connect to File daemon: %s:%d\n"),
          filed_addr, filed_port);
     Dmsg2(100, "Failed to connect to File daemon: %s:%d\n", filed_addr,
           filed_port);
     goto bail_out;
   }
+
   Dmsg0(110, "Connection OK to FD.\n");
 
   fd->SetEnableKtls(me->enable_ktls);
 
-  if (tls_policy == TlsPolicy::kBnetTlsAuto) {
-    std::string qualified_resource_name
-        = global_resource::QualifiedName(global_resource::Type::Job, jcr->Job);
+  {
+    PoolMem hello;
+    hello.bsprintf("Hello Storage calling Start Job %s Version=\"%u.%u.%u\"\n",
+                   jcr->Job, kBareosVersion.Major, kBareosVersion.Minor,
+                   kBareosVersion.Patch);
 
-    if (!fd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, me, false,
-                            qualified_resource_name.c_str(), jcr->sd_auth_key,
-                            jcr)) {
+    TlsResource custom = *me;
+    custom.password_.value = jcr->sd_auth_key;
+
+    bool cleartext_authentication = false;
+
+    switch (tls_policy) {
+      case kBnetTlsNone: {
+        custom.tls_enable_ = false;
+      } break;
+      case kBnetTlsAuto: {
+        custom.tls_enable_ = true;
+        custom.tls_require_ = false;
+      } break;
+      case kBnetTlsEnabled: {
+        custom.tls_enable_ = true;
+        custom.tls_require_ = false;
+        cleartext_authentication = true;
+      } break;
+      case kBnetTlsRequired: {
+        custom.tls_enable_ = true;
+        custom.tls_require_ = true;
+        cleartext_authentication = true;
+      } break;
+      case kBnetTlsUnknown: {
+        goto bail_out;
+      } break;
+    }
+
+    if (!BareosConnect(jcr, fd,
+                       global_resource::QualifiedName(
+                           global_resource::Type::Job, jcr->Job),
+                       &custom, hello.c_str(), cleartext_authentication)) {
+      Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate File daemon.\n"));
+      jcr->file_bsock = NULL;
       goto bail_out;
     }
-  }
 
-  jcr->file_bsock = fd;
-  fd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
-  fd->fsend("Hello Storage calling Start Job %s Version=\"%u.%u.%u\"\n",
-            jcr->Job, kBareosVersion.Major, kBareosVersion.Minor,
-            kBareosVersion.Patch);
-  if (!AuthenticateWithFiledaemon(jcr)) {
-    Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate File daemon.\n"));
-    delete fd;
-    jcr->file_bsock = NULL;
-    goto bail_out;
-  } else {
-    utime_t now;
-
+    jcr->file_bsock = fd;
     Dmsg0(110, "Authenticated with FD.\n");
     *jcr->sd_impl->client_available.lock() = true;
 
     // Update the initial Job Statistics.
-    now = (utime_t)time(NULL);
+    utime_t now = (utime_t)time(NULL);
     UpdateJobStatistics(jcr, now);
   }
 
@@ -1792,6 +1819,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
 
 bail_out:
   dir->fsend(BADcmd, "passive client", cpy.c_str());
+  if (fd) { delete fd; }
   return false;
 }
 

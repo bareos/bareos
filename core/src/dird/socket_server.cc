@@ -29,32 +29,26 @@
  */
 
 #include "include/bareos.h"
+#include "dird/ua.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/fd_cmds.h"
 #include "dird/ua_server.h"
 #include "lib/berrno.h"
+#include "lib/bnet.h"
 #include "lib/bnet_server_tcp.h"
+#include "lib/bsock.h"
+#include "lib/bsys.h"
+#include "lib/global_resource.h"
 #include "lib/thread_list.h"
 #include "lib/thread_specific_data.h"
 #include "lib/try_tls_handshake_as_a_server.h"
-#include "include/version_hex.h"
+#include "dird/authenticate.h"
+#include "lib/version.h"
 
 #include <atomic>
 
 namespace directordaemon {
-
-inline constexpr const char hello_client_with_version_v2[]
-    = "Hello Client %127s FdProtocolVersion=%d calling Version=\"%u.%u.%u\"";
-
-inline constexpr const char hello_client_with_version[]
-    = "Hello Client %127s FdProtocolVersion=%d calling";
-
-inline constexpr const char hello_client[] = "Hello Client %127s calling";
-
-inline constexpr const char hello_console[] = "Hello %127s calling";
-inline constexpr const char hello_console_with_version[]
-    = "Hello %127s calling version %127s Version=\"%u.%u.%u\"";
 
 /* Global variables */
 static ThreadList thread_list;
@@ -75,133 +69,171 @@ struct s_addr_port {
 
 connection_pool& get_client_connections() { return *client_connections.get(); }
 
-static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
+static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 {
   BareosSocket* bs = (BareosSocket*)arg;
-  char name[MAX_NAME_LENGTH];
-  char version[MAX_NAME_LENGTH];
-  char tbuf[MAX_TIME_LENGTH];
-  int fd_protocol_version = 0;
+  auto config = parser->GetCurrentConfiguration();
 
-  bs->SetEnableKtls(me->enable_ktls);
+  auto* myself = dynamic_cast<DirectorResource*>(
+      config->GetNextRes(R_DIRECTOR, nullptr));
 
-  UsePasswordsFromConfig tls_secret_provider{config};
-  if (!TryTlsHandshakeAsAServer(bs, config, &tls_secret_provider)) {
-    bs->signal(BNET_TERMINATE);
-    bs->close();
-    delete bs;
+  auto error_and_close = [](BareosSocket* socket) {
+    Bmicrosleep(socket->sleep_time_after_authentication_error, 0);
+    socket->signal(BNET_TERMINATE);
+    socket->close();
+    delete socket;
     return nullptr;
+  };
+  if (!myself) {
+    Emsg2(M_ERROR, 0,
+          "Could not find myself during connection attempt from %s\n",
+          bs->who());
+    return error_and_close(bs);
   }
 
-  if (bs->recv() <= 0) {
-    Emsg1(M_ERROR, 0, T_("Connection request from %s failed.\n"), bs->who());
-    Bmicrosleep(5, 0); /* make user wait 5 seconds */
-    bs->signal(BNET_TERMINATE);
-    bs->close();
-    delete bs;
-    return nullptr;
+  UsePasswordsFromConfig tls_secret_provider{config,
+                                             parser->resource_definitions_};
+
+  bs->SetEnableKtls(myself->enable_ktls);
+
+  DirectorAuth auth{config};
+
+  if (!BareosAccept(
+          bs,
+          global_resource::QualifiedName(global_resource::Type::Director,
+                                         myself->resource_name_),
+          myself, &tls_secret_provider, &auth)) {
+    return error_and_close(bs);
   }
 
-  // Do a sanity check on the message received
-  if (bs->message_length < MIN_MSG_LEN || bs->message_length > MAX_MSG_LEN) {
-    Dmsg1(000, "<filed: %s", bs->msg);
-    Emsg2(M_ERROR, 0, T_("Invalid connection from %s. Len=%d\n"), bs->who(),
-          bs->message_length);
-    Bmicrosleep(5, 0); /* make user wait 5 seconds */
-    bs->signal(BNET_TERMINATE);
-    bs->close();
-    delete bs;
-    return nullptr;
-  }
+  switch (auth.GetType()) {
+    case DirectorAuth::inbound_type::Client: {
+      if (auto error
+          = tls_secret_provider.is_resource_name_different_from_tls_name(
+              R_CLIENT, auth.client->res->resource_name_)) {
+        Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
+              error->c_str());
+        return error_and_close(bs);
+      }
 
-  Dmsg1(110, "Conn: %s", bs->msg);
+      // we are authenticated now, so the client does not need to wait anymore
+      bs->sleep_time_after_authentication_error = 0;
 
-  unsigned major = 0;
-  unsigned minor = 0;
-  unsigned patch = 0;
+      if (!IsConnectFromClientAllowed(auth.client->res)) {
+        /* clients ignore our response message anyways, so it does not make
+         * sense to send any message.
+         * There also is not a good response id for this. */
+        Emsg2(M_ERROR, 0, "Client '%s' (as %s) is not allowed to connect!\n",
+              bs->who(), auth.client->res->resource_name_);
+        return error_and_close(bs);
+      }
 
-  if (bsscanf(bs->msg, hello_client_with_version_v2, name, &fd_protocol_version,
-              &major, &minor, &patch)
-      == 5) {
-    bs->remote_version = VERSION_HEX(major, minor, patch);
-    Dmsg1(110, "Got a FD connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+      if (!FormatAndSendResponseMessage(
+              bs, kMessageIdOk, "OK: %s Version %s (%s)\n", my_name,
+              kBareosVersionStrings.Full, kBareosVersionStrings.Date)) {
+        return error_and_close(bs);
+      }
 
-    if (auto error
-        = tls_secret_provider.is_resource_name_different_from_tls_name(R_CLIENT,
-                                                                       name)) {
-      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-            error->c_str());
-      Bmicrosleep(5, 0); /* make user wait 5 seconds */
-      bs->signal(BNET_TERMINATE);
-      bs->close();
-      delete bs;
-      return NULL;
-    }
+      return HandleFiledConnection(*client_connections.get(), bs,
+                                   auth.client->res,
+                                   auth.client->protocol_version);
+    } break;
+    case DirectorAuth::inbound_type::Console: {
+      if (auto error
+          = tls_secret_provider.is_resource_name_different_from_tls_name(
+              R_CONSOLE, auth.console->res->resource_name_)) {
+        Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
+              error->c_str());
+        return error_and_close(bs);
+      }
 
-    return HandleFiledConnection(*client_connections.get(), bs, name,
-                                 fd_protocol_version);
-  } else if (bsscanf(bs->msg, hello_client_with_version, name,
-                     &fd_protocol_version)
-             == 2) {
-    Dmsg1(110, "Got a FD connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-    if (auto error
-        = tls_secret_provider.is_resource_name_different_from_tls_name(R_CLIENT,
-                                                                       name)) {
-      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-            error->c_str());
-      Bmicrosleep(5, 0); /* make user wait 5 seconds */
-      bs->signal(BNET_TERMINATE);
-      bs->close();
-      delete bs;
-      return NULL;
-    }
-    return HandleFiledConnection(*client_connections.get(), bs, name,
-                                 fd_protocol_version);
-  } else if (bsscanf(bs->msg, hello_client, name) == 1) {
-    Dmsg1(110, "Got a FD connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-    if (auto error
-        = tls_secret_provider.is_resource_name_different_from_tls_name(R_CLIENT,
-                                                                       name)) {
-      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-            error->c_str());
-      Bmicrosleep(5, 0); /* make user wait 5 seconds */
-      bs->signal(BNET_TERMINATE);
-      bs->close();
-      delete bs;
-      return NULL;
-    }
-    return HandleFiledConnection(*client_connections.get(), bs, name,
-                                 fd_protocol_version);
-  } else if (bsscanf(bs->msg, hello_console_with_version, name, version, &major,
-                     &minor, &patch)
-                 == 5
-             || bsscanf(bs->msg, hello_console, name) == 1) {
-    if (auto error
-        = tls_secret_provider.is_resource_name_different_from_tls_name(
-            R_CONSOLE, name)) {
-      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-            error->c_str());
-      Bmicrosleep(5, 0); /* make user wait 5 seconds */
-      bs->signal(BNET_TERMINATE);
-      bs->close();
-      delete bs;
-      return NULL;
-    }
+      // Now that the _console_ connection is authenticated, we still
+      // need to do the authorization part
 
-    bs->remote_version = VERSION_HEX(major, minor, patch);
-    return HandleUserAgentClientRequest(bs);
+      std::unique_ptr<UserAcl> user_acl{};
+      if (!bstrcmp(auth.console->res->resource_name_, "*UserAgent*")) {
+        user_acl = UserAcl::from_config(auth.console->res);
+      }
+
+      if (auth.console->res->use_pam_authentication_) {
+        // if pam authentication is used, then the client is additionally
+        // authenticated as a user, and we use that users acls.
+
+        if (auth.console->is_old) {
+          // old consoles do not support pam
+          Emsg4(M_ERROR, 0,
+                T_("Unable to pam authenticate old console \"%s\" at "
+                   "%s:%s:%d.\n"),
+                auth.console->res->resource_name_, bs->who(), bs->host(),
+                bs->port());
+          return error_and_close(bs);
+        }
+
+        if (!SendResponseMessage(bs, kMessageIdPamRequired, "")) {
+          Emsg4(M_ERROR, 0,
+                T_("Unable to pam authenticate console \"%s\" at %s:%s:%d.\n"),
+                auth.console->res->resource_name_, bs->who(), bs->host(),
+                bs->port());
+          return error_and_close(bs);
+        }
+
+        user_acl = AuthenticatePamUser(bs, config.get());
+
+        if (!user_acl) {
+          Emsg4(M_ERROR, 0,
+                T_("Unable to pam authenticate console \"%s\" at %s:%s:%d.\n"),
+                auth.console->res->resource_name_, bs->who(), bs->host(),
+                bs->port());
+          return error_and_close(bs);
+        }
+      }
+
+      // we are authenticated now, so the client does not need to wait anymore
+      bs->sleep_time_after_authentication_error = 0;
+
+      if (!FormatAndSendResponseMessage(
+              bs, kMessageIdOk, "OK: %s Version %s (%s)\n", my_name,
+              kBareosVersionStrings.Full, kBareosVersionStrings.Date)) {
+        Emsg4(M_ERROR, 0,
+              T_("Unable to authenticate console \"%s\" at %s:%s:%d.\n"),
+              auth.console->res->resource_name_, bs->who(), bs->host(),
+              bs->port());
+        return error_and_close(bs);
+      }
+
+      std::string message;
+      message += kBareosVersionStrings.ServicesMessage;
+      message += "\n";
+      message += "You are ";
+      if (user_acl) {
+        message += "logged in as: ";
+        message += user_acl->name;
+      } else {
+        message += "connected using the default console";
+      }
+      if (!SendResponseMessage(bs, kMessageIdInfoMessage, message.c_str())) {
+        Emsg4(M_ERROR, 0,
+              T_("Unable to authenticate console \"%s\" at %s:%s:%d.\n"),
+              auth.console->res->resource_name_, bs->who(), bs->host(),
+              bs->port());
+        return error_and_close(bs);
+      }
+
+      JobControlRecord* console_jcr = new_control_jcr("-Console-", JT_CONSOLE);
+      auto* ctx = new UaContext(console_jcr);
+      ctx->UA_sock = bs;
+      ctx->user_acl = std::move(user_acl);
+
+      return HandleUserAgentClientRequest(ctx);
+    } break;
+    case DirectorAuth::inbound_type::Unknown: {
+      // intentionally left empty
+    } break;
   }
 
   Emsg1(M_ERROR, 0, T_("Connection request from %s failed (unknown type).\n"),
         bs->who());
-  Bmicrosleep(5, 0); /* make user wait 5 seconds */
-  bs->signal(BNET_TERMINATE);
-  bs->close();
-  delete bs;
-  return nullptr;
+  return error_and_close(bs);
 }
 
 static void* UserAgentShutdownCallback(void* bsock)

@@ -47,6 +47,8 @@
 #include "lib/bnet.h"
 #include "lib/bstringlist.h"
 #include "lib/version.h"
+#include "lib/bsock.h"
+#include "lib/tls_conf.h"
 
 #include "include/jcr.h"
 
@@ -467,6 +469,29 @@ static void clone_a_server_socket(BareosSocket* bs)
   bs->fsend("bareos-socket-1234567890");
 }
 
+struct dummy_auth : ::ClientHelloParser {
+  dummy_auth(std::string console_name, std::string console_password)
+      : name{std::move(console_name)}, password{std::move(console_password)}
+  {
+  }
+
+  TlsResource* parse(std::string_view hello) override
+  {
+    Dmsg1(10, "Cons->Dir: %s", std::string{hello}.c_str());
+
+    res = *dir_cons_config;
+    res.password_.value = password.data();
+    // res.tls_enable_ = true;
+
+    return &res;
+  }
+
+  std::string name;
+  std::string password;
+
+  TlsResource res{};
+};
+
 static void start_bareos_server(std::promise<bool>* promise,
                                 std::string console_name,
                                 std::string console_password,
@@ -480,44 +505,32 @@ static void start_bareos_server(std::promise<bool>* promise,
 
   std::unique_ptr<BareosSocket> bs(create_new_bareos_socket(newsockfd));
 
-  char* name = (char*)console_name.c_str();
-  s_password password;
-  password.encoding = p_encoding_md5;
-  password.value = (char*)console_password.c_str();
-
   bool success = false;
-  if (bs->recv() <= 0) {
-    Dmsg1(10, T_("Connection request from %s failed.\n"), bs->who());
-  } else if (bs->message_length < MIN_MSG_LEN
-             || bs->message_length > MAX_MSG_LEN) {
-    Dmsg2(10, T_("Invalid connection from %s. Len=%d\n"), bs->who(),
-          bs->message_length);
+
+  dummy_auth auth{console_name, console_password};
+
+  if (!BareosAccept(bs.get(), "myname", nullptr, nullptr, &auth)) {
+    Dmsg0(10, "Server: inbound auth failed\n");
   } else {
-    Dmsg1(10, "Cons->Dir: %s", bs->msg);
-    if (!bs->AuthenticateInboundConnection(NULL, nullptr, name, password,
-                                           dir_cons_config.get())) {
-      Dmsg0(10, "Server: inbound auth failed\n");
+    bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,
+              kBareosVersionStrings.Full, kBareosVersionStrings.Date);
+    Dmsg0(10, "Server: inbound auth successful\n");
+    std::string cipher;
+    if (bs->tls_conn) {
+      cipher = bs->tls_conn->TlsCipherGetName();
+      Dmsg1(10, "Server used cipher: <%s>\n", cipher.c_str());
+      cipher_server = cipher;
+    }
+    if (dir_cons_config->IsTlsConfigured()) {
+      Dmsg0(10, bs->TlsEstablished() ? "Tls enable\n"
+                                     : "Tls failed to establish\n");
+      success = bs->TlsEstablished();
     } else {
-      bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,
-                kBareosVersionStrings.Full, kBareosVersionStrings.Date);
-      Dmsg0(10, "Server: inbound auth successful\n");
-      std::string cipher;
-      if (bs->tls_conn) {
-        cipher = bs->tls_conn->TlsCipherGetName();
-        Dmsg1(10, "Server used cipher: <%s>\n", cipher.c_str());
-        cipher_server = cipher;
+      Dmsg0(10, "Tls disabled by command\n");
+      if (bs->TlsEstablished()) {
+        Dmsg0(10, "bs->tls_established_ should be false but is true\n");
       }
-      if (dir_cons_config->IsTlsConfigured()) {
-        Dmsg0(10, bs->TlsEstablished() ? "Tls enable\n"
-                                       : "Tls failed to establish\n");
-        success = bs->TlsEstablished();
-      } else {
-        Dmsg0(10, "Tls disabled by command\n");
-        if (bs->TlsEstablished()) {
-          Dmsg0(10, "bs->tls_established_ should be false but is true\n");
-        }
-        success = !bs->TlsEstablished();
-      }
+      success = !bs->TlsEstablished();
     }
   }
   if (success) { clone_a_server_socket(bs.get()); }
@@ -557,15 +570,8 @@ static bool connect_to_server(std::string console_name,
 
   JobControlRecord jcr;
 
-  char* name = (char*)console_name.c_str();
-
-  s_password password;
-  password.encoding = p_encoding_md5;
-  password.value = (char*)console_password.c_str();
-
   std::shared_ptr<BareosSocketTCP> UA_sock(new BareosSocketTCP);
   UA_sock->sleep_time_after_authentication_error = 0;
-  jcr.dir_bsock = UA_sock.get();
 
   bool success = false;
 
@@ -577,37 +583,58 @@ static bool connect_to_server(std::string console_name,
     Dmsg0(10, "socket connect OK\n");
     uint32_t response_id = kMessageIdUnknown;
     BStringList response_args;
-    if (!UA_sock->ConsoleAuthenticateWithDirector(
-            &jcr, name, password, cons_dir_config.get(), console_name,
-            response_args, response_id)) {
+
+    std::string qualified_resource_name = global_resource::QualifiedName(
+        global_resource::Type::Console, console_name);
+
+    std::string cpy{console_name};
+    BashSpaces(cpy.data());
+    PoolMem hello_msg;
+    hello_msg.bsprintf("Hello %s calling version %s Version=\"%u.%u.%u\"\n",
+                       cpy.c_str(), kBareosVersionStrings.Full,
+                       kBareosVersion.Major, kBareosVersion.Minor,
+                       kBareosVersion.Patch);
+
+    TlsResource custom = *cons_dir_config;
+    custom.password_.value = console_password.data();
+
+    // yes, you read this right
+    // all these tests use the auth path that is never taken by bareos anymore
+    // this is the pre 18.2 path ...
+    if (!BareosConnect(&jcr, UA_sock.get(), std::move(qualified_resource_name),
+                       &custom, hello_msg.c_str(), true)) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
+      return false;
+    }
+
+    if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id,
+                                                    response_args)) {
+      Emsg0(M_ERROR, 0, "Did not receive correct response\n");
+      return false;
+    }
+
+    EXPECT_EQ(response_id, kMessageIdOk) << "Received the wrong message id.";
+    Dmsg0(10, "Authenticate Connect to Server successful!\n");
+    std::string cipher;
+    if (UA_sock->tls_conn) {
+      cipher = UA_sock->tls_conn->TlsCipherGetName();
+      Dmsg1(10, "Client used cipher: <%s>\n", cipher.c_str());
+      cipher_client = cipher;
+    }
+    if (cons_dir_config->IsTlsConfigured()) {
+      Dmsg0(10, UA_sock->TlsEstablished() ? "Tls enable\n"
+                                          : "Tls failed to establish\n");
+      success = UA_sock->TlsEstablished();
     } else {
-      EXPECT_EQ(response_id, kMessageIdOk) << "Received the wrong message id.";
-      Dmsg0(10, "Authenticate Connect to Server successful!\n");
-      std::string cipher;
-      if (UA_sock->tls_conn) {
-        cipher = UA_sock->tls_conn->TlsCipherGetName();
-        Dmsg1(10, "Client used cipher: <%s>\n", cipher.c_str());
-        cipher_client = cipher;
+      Dmsg0(10, "Tls disabled by command\n");
+      if (UA_sock->TlsEstablished()) {
+        Dmsg0(10, "UA_sock->tls_established_ should be false but is true\n");
       }
-      if (cons_dir_config->IsTlsConfigured()) {
-        Dmsg0(10, UA_sock->TlsEstablished() ? "Tls enable\n"
-                                            : "Tls failed to establish\n");
-        success = UA_sock->TlsEstablished();
-      } else {
-        Dmsg0(10, "Tls disabled by command\n");
-        if (UA_sock->TlsEstablished()) {
-          Dmsg0(10, "UA_sock->tls_established_ should be false but is true\n");
-        }
-        success = !UA_sock->TlsEstablished();
-      }
+      success = !UA_sock->TlsEstablished();
     }
   }
   if (success) { clone_a_client_socket(UA_sock); }
-  if (UA_sock) {
-    UA_sock->close();
-    jcr.dir_bsock = nullptr;
-  }
+  if (UA_sock) { UA_sock->close(); }
   return success;
 }
 
@@ -841,7 +868,7 @@ TEST(BNet, FormatAndSendResponseMessage)
 
   std::string m("Test123");
 
-  test_sockets->client->FormatAndSendResponseMessage(kMessageIdOk, m);
+  SendResponseMessage(test_sockets->client.get(), kMessageIdOk, m.c_str());
 
   uint32_t id = kMessageIdUnknown;
   BStringList args;

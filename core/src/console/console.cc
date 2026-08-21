@@ -673,6 +673,8 @@ static bool SelectDirector(const char* director,
                            DirectorResource** ret_dir,
                            ConsoleResource** ret_cons)
 {
+  ResLocker _{my_config};
+
   int numcon = 0, numdir = 0;
   int i = 0, item = 0;
   BareosSocket* UA_sock;
@@ -739,41 +741,39 @@ static bool SelectDirector(const char* director,
     }
     delete UA_sock;
     {
-      ResLocker _{my_config};
       for (i = 0; i < item; i++) {
         director_resource_tmp = (DirectorResource*)my_config->GetNextRes(
-            R_DIRECTOR, (BareosResource*)director_resource_tmp);
+            R_DIRECTOR, director_resource_tmp);
       }
     }
   }
 
   // Look for a console linked to this director
-  ResLocker _{my_config};
   for (i = 0; i < numcon; i++) {
-    console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
-        R_CONSOLE, (BareosResource*)console_resource_tmp);
+    console_resource_tmp = dynamic_cast<ConsoleResource*>(
+        my_config->GetNextRes(R_CONSOLE, console_resource_tmp));
+    ASSERT(console_resource_tmp);
     if (console_resource_tmp->director
         && bstrcmp(console_resource_tmp->director,
                    director_resource_tmp->resource_name_)) {
       break;
     }
-    console_resource_tmp = NULL;
   }
 
   // Look for the first non-linked console
   if (console_resource_tmp == NULL) {
     for (i = 0; i < numcon; i++) {
-      console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
-          R_CONSOLE, (BareosResource*)console_resource_tmp);
+      console_resource_tmp = dynamic_cast<ConsoleResource*>(
+          my_config->GetNextRes(R_CONSOLE, console_resource_tmp));
+      ASSERT(console_resource_tmp);
       if (console_resource_tmp->director == NULL) break;
-      console_resource_tmp = NULL;
     }
   }
 
   // If no console, take first one
   if (!console_resource_tmp) {
-    console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
-        R_CONSOLE, (BareosResource*)NULL);
+    console_resource_tmp = dynamic_cast<ConsoleResource*>(
+        my_config->GetNextRes(R_CONSOLE, nullptr));
   }
 
   *ret_dir = director_resource_tmp;
@@ -817,8 +817,7 @@ static bool ExaminePamAuthentication(
     if (data.empty()) { return false; }
     g_UA_sock->FormatAndSendResponseMessage(kMessageIdPamUserCredentials, data);
   } else {
-    g_UA_sock->FormatAndSendResponseMessage(kMessageIdPamInteractive,
-                                            std::string());
+    SendResponseMessage(g_UA_sock, kMessageIdPamInteractive, "");
     if (!ConsolePamAuthenticate(stdin, g_UA_sock)) {
       TerminateConsole(0);
       return false;
@@ -1022,7 +1021,9 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  g_UA_sock->OutputCipherMessageString(ConsoleOutput);
+  auto cipher_str = g_UA_sock->GetCipherMessageString();
+  cipher_str += "\n";
+  ConsoleOutput(cipher_str.c_str());
 
   if (response_id == kMessageIdPamRequired) {
 #if defined(HAVE_PAM)

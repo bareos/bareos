@@ -367,6 +367,10 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
   if (jcr->authenticated) {
     /**********FIXME******* add command handler error code */
 
+    // set authenticated to false, so that storage daemons will be able to
+    // connect
+    jcr->authenticated = false;
+
     for (;;) {
       // Read command
       if (dir->recv() < 0) { break; /* connection terminated */ }
@@ -488,7 +492,7 @@ static bool StartProcessDirectorCommands(JobControlRecord* jcr)
  *  8. SD/FD disconnects while SD despools data and attributes (optional)
  *  9. FD runs ClientRunAfterJob
  */
-void* handle_director_connection(BareosSocket* dir)
+void* handle_director_connection(BareosSocket* dir, DirectorResource* res)
 {
   JobControlRecord* jcr;
 
@@ -505,8 +509,8 @@ void* handle_director_connection(BareosSocket* dir)
 
   jcr = create_new_director_session(dir);
 
-  Dmsg0(120, "Calling Authenticate\n");
-  if (AuthenticateDirector(jcr)) { Dmsg0(120, "OK Authenticate\n"); }
+  jcr->fd_impl->director = res;
+  jcr->authenticated = true;
 
   return process_director_commands(jcr, dir);
 }
@@ -1440,35 +1444,55 @@ static bool StorageCmd(JobControlRecord* jcr)
 
   jcr->store_bsock = storage_daemon_socket;
 
-  if (tls_policy == TlsPolicy::kBnetTlsAuto) {
+  {
     std::string qualified_resource_name
         = global_resource::QualifiedName(global_resource::Type::Job, jcr->Job);
 
-    storage_daemon_socket->SetEnableKtls(me->enable_ktls);
+    TlsResource custom = *me;
+    custom.password_.value = jcr->sd_auth_key;
+    bool cleartext_auth = false;
+    switch (jcr->sd_tls_policy) {
+      case kBnetTlsNone: {
+        custom.tls_enable_ = false;
+      } break;
+      case kBnetTlsAuto: {
+        custom.tls_enable_ = true;
+        custom.tls_require_ = false;
+      } break;
+      case kBnetTlsEnabled: {
+        custom.tls_enable_ = true;
+        custom.tls_require_ = false;
+        cleartext_auth = true;
+      } break;
+      case kBnetTlsRequired: {
+        custom.tls_enable_ = true;
+        custom.tls_require_ = true;
+        cleartext_auth = true;
+      } break;
+      case kBnetTlsUnknown: {
+        goto bail_out;
+      } break;
+    }
 
-    if (!storage_daemon_socket->DoTlsHandshake(
-            TlsPolicy::kBnetTlsAuto, me, false, qualified_resource_name.c_str(),
-            jcr->sd_auth_key, jcr)) {
-      jcr->store_bsock = nullptr;
+    PoolMem hello;
+    hello.bsprintf("Hello Start Job %s Version=\"%u.%u.%u\"\n", jcr->Job,
+                   kBareosVersion.Major, kBareosVersion.Minor,
+                   kBareosVersion.Patch);
+
+    if (!BareosConnect(jcr, storage_daemon_socket, qualified_resource_name,
+                       &custom, hello.c_str(), cleartext_auth)) {
+      Jmsg(jcr, M_FATAL, 0,
+           T_("Failed to authenticate with Storage daemon.\n"));
       goto bail_out;
     }
   }
+  Dmsg0(110, "Authenticated with SD.\n");
 
   if (jcr->JobId != 0) {
     Jmsg(jcr, M_INFO, 0, "%s\n",
          storage_daemon_socket->GetCipherMessageString().c_str());
   }
 
-  storage_daemon_socket->InitBnetDump(
-      my_config->CreateOwnQualifiedNameForNetworkDump());
-  storage_daemon_socket->fsend("Hello Start Job %s Version=\"%u.%u.%u\"\n",
-                               jcr->Job, kBareosVersion.Major,
-                               kBareosVersion.Minor, kBareosVersion.Patch);
-  if (!AuthenticateWithStoragedaemon(jcr)) {
-    Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate Storage daemon.\n"));
-    goto bail_out;
-  }
-  Dmsg0(110, "Authenticated with SD.\n");
 
   // Send OK to Director
   return dir->fsend(OKstore);
@@ -2019,40 +2043,24 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
     return nullptr;
   }
 
-  if (dir_res->IsTlsConfigured()) {
-    std::string qualified_resource_name = global_resource::QualifiedName(
-        my_config->GlobalTypeFromLocalType(my_config->r_own_),
-        me->resource_name_);
-    if (qualified_resource_name.empty()) {
-      Dmsg0(100,
-            "Could not generate qualified resource name for a storage "
-            "resource\n");
-      return nullptr;
-    }
+  director_socket->SetEnableKtls(me->enable_ktls);
 
-    director_socket->SetEnableKtls(me->enable_ktls);
+  std::string qualified_resource_name = global_resource::QualifiedName(
+      global_resource::Type::Client, me->resource_name_);
 
-    if (!director_socket->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, dir_res,
-                                         false, qualified_resource_name.c_str(),
-                                         dir_res->password_.value, jcr)) {
-      Dmsg0(100, "Could not DoTlsHandshake() with director\n");
-      return nullptr;
-    }
-  }
+  PoolMem hello;
+  hello.bsprintf(hello_client, me->resource_name_, FD_PROTOCOL_VERSION,
+                 kBareosVersion.Major, kBareosVersion.Minor,
+                 kBareosVersion.Patch);
 
-  Dmsg1(10, "Opened connection with Director %s\n", dir_res->resource_name_);
-  jcr->dir_bsock = director_socket.get();
-
-  director_socket->InitBnetDump(
-      my_config->CreateOwnQualifiedNameForNetworkDump());
-  director_socket->fsend(hello_client, my_name, FD_PROTOCOL_VERSION,
-                         kBareosVersion.Major, kBareosVersion.Minor,
-                         kBareosVersion.Patch);
-  if (!AuthenticateWithDirector(jcr, dir_res)) {
-    jcr->dir_bsock = nullptr;
+  if (!BareosConnect(jcr, director_socket.get(),
+                     std::move(qualified_resource_name), dir_res,
+                     hello.c_str())) {
+    Dmsg0(100, "Could not connect to director\n");
     return nullptr;
   }
 
+  jcr->dir_bsock = director_socket.get();
   director_socket->recv();
   ParseOkVersion(director_socket->msg);
 

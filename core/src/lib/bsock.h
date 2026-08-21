@@ -84,7 +84,7 @@ class BareosSocket {
   int sleep_time_after_authentication_error;
   bool enable_ktls_{false};
 
-  unsigned remote_version{}; /* version hex of remote version; only for inbound;
+  uint32_t remote_version{}; /* version hex of remote version; only for inbound;
                                 0 if unknown */
 
   struct sockaddr_storage client_addr; /* Client's IP address */
@@ -92,7 +92,6 @@ class BareosSocket {
   void SetTlsEstablished() { tls_established_ = true; }
   bool TlsEstablished() const { return tls_established_; }
   std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
-  BareosVersionNumber connected_daemon_version_;
 
  protected:
   JobControlRecord* jcr_; /* JobControlRecord or NULL for error msgs */
@@ -183,49 +182,16 @@ class BareosSocket {
   bool signal(int signal);
   const char* bstrerror(); /* last error on socket */
   bool despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize);
-  bool ConsoleAuthenticateWithDirector(JobControlRecord* jcr,
-                                       const char* name,
-                                       s_password& password,
-                                       TlsResource* tls_resource,
-                                       const std::string& own_qualified_name,
-                                       BStringList& response_args,
-                                       uint32_t& response_id);
-  bool DoTlsHandshake(TlsPolicy remote_tls_policy,
-                      TlsResource* tls_resource,
-                      bool initiated_by_remote,
-                      const char* identity,
-                      const char* password,
-                      JobControlRecord* jcr);
-  bool DoTlsHandshakeAsAServer(TlsSecretProvider* data,
-                               TlsResource* tls_resource,
-                               JobControlRecord* jcr = nullptr);
   bool SetLocking();   /* in bsock.c */
   void ClearLocking(); /* in bsock.c */
   void SetSourceAddress(dlist<IPADDR>* src_addr_list);
   void ControlBwlimit(int bytes); /* in bsock.c */
-  bool EvaluateCleartextBareosHello(bool& cleartext,
-                                    std::string& client_name_out,
-                                    std::string& r_code_str_out,
-                                    BareosVersionNumber& version_out) const;
-  void OutputCipherMessageString(std::function<void(const char*)>);
+  ssize_t peek(char* buffer, size_t count) const;
   std::string GetCipherMessageString() const;
   bool ReceiveAndEvaluateResponseMessage(uint32_t& id_out,
                                          BStringList& args_out);
   bool FormatAndSendResponseMessage(uint32_t id,
                                     const BStringList& list_of_agruments);
-  bool FormatAndSendResponseMessage(uint32_t id, const std::string& str);
-
-  bool AuthenticateOutboundConnection(JobControlRecord* jcr,
-                                      const std::string own_qualified_name,
-                                      const char* identity,
-                                      s_password& password,
-                                      TlsResource* tls_resource);
-
-  bool AuthenticateInboundConnection(JobControlRecord* jcr,
-                                     ConfigurationParser* my_config,
-                                     const char* name,
-                                     s_password& password,
-                                     TlsResource* tls_resource);
 
   void SetJcr(JobControlRecord* jcr) { jcr_ = jcr; }
   void SetWho(char* who) { who_ = who; }
@@ -291,5 +257,23 @@ enum
   BNET_HARDEOF = -2,
   BNET_ERROR = -3
 };
+
+struct ClientHelloParser {
+  virtual TlsResource* parse(std::string_view hello) = 0;
+  virtual ~ClientHelloParser() = default;
+};
+
+bool BareosAccept(BareosSocket* socket,
+                  const std::string& qualified_name,
+                  const TlsResource* initial_tls,
+                  TlsSecretProvider* provider,
+                  ClientHelloParser* hello_parser);
+
+bool BareosConnect(JobControlRecord* jcr,
+                   BareosSocket* socket,
+                   std::string qualified_name,
+                   const TlsResource* res,
+                   std::string_view hello_msg,
+                   bool cleartext_authentication = false);
 
 #endif  // BAREOS_LIB_BSOCK_H_
