@@ -103,12 +103,11 @@ esac
 #
 PNAME="${PNAME} on $(hostname)"
 # Environment variable
-${BAREOS_BTRACEBACK_MTA:="@sbindir@/bsmtp"}
-${BAREOS_BTRACEBACK_HOST:="-h @smtp_host@"}
-${BAREOS_BTRACEBACK_FROM:="-f @dump_email@"}
-${BAREOS_BTRACEBACK_RECIPIENT:="@dump_email@"}
-${BAREOS_BTRACEBACK_TIMEOUT:=30}
+: ${BAREOS_BTRACEBACK_MTA:="@sbindir@/bsmtp"}
+: ${BAREOS_BTRACEBACK_HOST:="-h @smtp_host@"}
+: ${BAREOS_BTRACEBACK_FROM:="-f @dump_email@"}
+: ${BAREOS_BTRACEBACK_RECIPIENT:="@dump_email@"}
+: ${BAREOS_BTRACEBACK_TIMEOUT:=30}
 
-
-cat ${WD}/bareos.$2.traceback \
-  | timeout ${BAREOS_BTRACEBACK_TIMEOUT} ${BAREOS_BTRACEBACK_MTA} ${BAREOS_BTRACEBACK_HOST} ${BAREOS_BTRACEBACK_FROM} -s "Bareos ${DEBUGGER} traceback of ${PNAME}" ${BAREOS_BTRACEBACK_RECIPIENT}
+cat "${WD}/bareos.$2.traceback" \
+  | timeout ${BAREOS_BTRACEBACK_TIMEOUT} -k 5s ${BAREOS_BTRACEBACK_MTA} ${BAREOS_BTRACEBACK_HOST} ${BAREOS_BTRACEBACK_FROM} -s "Bareos ${DEBUGGER} traceback of ${PNAME}" ${BAREOS_BTRACEBACK_RECIPIENT}
