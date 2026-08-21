@@ -133,6 +133,17 @@ if(NPM_EXECUTABLE)
 
   add_custom_target(bareos-webui-vue-audit DEPENDS "${WEBUI_VUE_AUDIT_STAMP}")
   add_custom_target(bareos-webui-vue-build DEPENDS "${WEBUI_VUE_BUILD_STAMP}")
+
+  add_test(
+    NAME webui-vue:unit-tests
+    COMMAND "${NPM_EXECUTABLE}" run test:unit -- --run
+    WORKING_DIRECTORY "${WEBUI_VUE_SRC}"
+  )
+  set_tests_properties(
+    webui-vue:unit-tests PROPERTIES
+    LABELS "webui-vue"
+    TIMEOUT 120
+  )
 else()
   add_custom_target(
     bareos-webui-vue-audit
