@@ -545,6 +545,7 @@ SectionIn 1 2 3
   SetOutPath "$INSTDIR"
   File bareos-config-deploy.bat
   File bareos-fd.exe
+  File bclient-enroll.exe
   File libbareos.dll
   File libbareosfastlz.dll
   File libbareosfind.dll
@@ -1974,6 +1975,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\uninst.exe"
   Delete "$INSTDIR\bareos-tray-monitor.exe"
   Delete "$INSTDIR\bareos-fd.exe"
+  Delete "$INSTDIR\bclient-enroll.exe"
   Delete "$INSTDIR\bareos-sd.exe"
   Delete "$INSTDIR\bareos-dir.exe"
   Delete "$INSTDIR\bareos-dbcheck.exe"

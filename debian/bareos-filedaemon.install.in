@@ -4,5 +4,6 @@
 @configtemplatedir@/bareos-fd.d/messages/Standard.conf
 @configtemplatedir@/tray-monitor.d/client/FileDaemon-local*.conf
 /usr/sbin/bareos-fd
+/usr/sbin/bclient-enroll
 @plugindir@/bpipe-fd.so
 /usr/share/man/man8/bareos-fd.8*

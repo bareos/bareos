@@ -7,6 +7,7 @@
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-fd.d/director/bareos-mon.conf
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-fd.d/messages/Standard.conf
 sbin/bareos-fd
+sbin/bclient-enroll
 lib/bareos/plugins/bpipe-fd.so
 share/man/man8/bareos-fd.8.gz
 etc/rc.d/bareos-fd
