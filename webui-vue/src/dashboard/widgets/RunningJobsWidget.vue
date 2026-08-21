@@ -19,7 +19,7 @@
   02110-1301, USA.
 -->
 <template>
-  <div style="height:100%; overflow-y:auto">
+  <div style="height:100%; overflow:auto">
     <q-list separator>
       <q-item v-for="job in runningJobs" :key="job.scopeKey" class="q-py-sm">
         <q-item-section>
@@ -75,7 +75,7 @@
 </template>
 
 <script setup>
-import { inject, computed, ref } from 'vue'
+import { inject, computed, ref, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
@@ -100,7 +100,8 @@ const directorOptions = computed(() => ctx.directorOptions.value)
 const showDirectorColumn = computed(() => directorOptions.value.length > 1)
 
 const now = ref(Date.now())
-setInterval(() => { now.value = Date.now() }, 1000)
+const _clockTimer = setInterval(() => { now.value = Date.now() }, 1000)
+onUnmounted(() => clearInterval(_clockTimer))
 
 function elapsedSecs(job) {
   if (!job.starttime) return 0

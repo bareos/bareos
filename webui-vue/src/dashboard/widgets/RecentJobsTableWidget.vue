@@ -19,13 +19,14 @@
   02110-1301, USA.
 -->
 <template>
-  <div style="height:100%; overflow-y:auto">
+  <div class="recent-jobs-widget" style="height:100%; width:100%">
     <q-table
       :rows="recentJobs"
       :columns="recentCols"
       row-key="scopeKey"
       dense flat
       :loading="loading"
+      style="height:100%; width:100%"
       v-model:pagination="pagination"
     >
       <template #body-cell-id="props">
@@ -272,5 +273,20 @@ async function openClientDetails(row) {
   45%  { transform: rotate(0deg); }
   55%  { transform: rotate(180deg); }
   100% { transform: rotate(180deg); }
+}
+</style>
+
+<style>
+.recent-jobs-widget .q-table__middle {
+  overflow-x: auto !important;
+}
+.recent-jobs-widget table {
+  table-layout: auto !important;
+  width: max-content !important;
+  min-width: 100%;
+}
+.recent-jobs-widget th,
+.recent-jobs-widget td {
+  white-space: nowrap !important;
 }
 </style>
