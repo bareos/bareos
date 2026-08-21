@@ -79,7 +79,8 @@
                     :fill="$q.dark.isActive ? '#90caf9' : '#1565c0'"
                     style="font-family:sans-serif; user-select:none; cursor:pointer"
                     @click="router.push(clientDetailsRoute(span))">
-                {{ span.label.length > 14 ? span.label.slice(0, 13) + '\u2026' : span.label }}
+                <title>{{ span.label }}</title>
+                {{ midEllipsis(span.label, 14) }}
               </text>
             </g>
 
@@ -99,7 +100,8 @@
                   font-size="11" text-anchor="end"
                   :fill="$q.dark.isActive ? '#ccc' : '#555'"
                   style="font-family:sans-serif; user-select:none">
-              {{ row.name.length > 18 ? row.name.slice(0, 17) + '\u2026' : row.name }}
+              <title>{{ row.name }}</title>
+              {{ midEllipsis(row.name, 18) }}
             </text>
 
             <!-- Job bars — all runs for each job name in the same row -->
@@ -154,6 +156,7 @@ import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildTimelineGroups } from '../utils/jobTimeline.js'
 import { formatNumber } from '../utils/locales.js'
+import { midEllipsis } from '../utils/strings.js'
 
 const {
   clientDetailsQuery = null,
