@@ -22,6 +22,8 @@
 import {
   directorCollection,
   normaliseJob,
+  normalisePool,
+  normaliseVolume,
 } from './useDirectorFetch.js'
 import {
   createDirectorCommandSession,
@@ -202,6 +204,8 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       clientsResult,
       storagesResult,
       directorStatusResult,
+      poolsResult,
+      volumesResult,
     ] = await Promise.allSettled([
       client.call('llist jobs days=1'),
       client.call('list jobs jobstatus=R'),
@@ -210,6 +214,8 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       client.call('list clients'),
       client.call('list storages'),
       client.call('status director'),
+      client.call('llist pools'),
+      client.call('llist volumes'),
     ])
 
     const runtimeRunningJobs = directorStatusResult.status === 'fulfilled'
@@ -225,12 +231,40 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       ? decorateJobs(past24hResult.value?.jobs, credentials.director)
       : []
 
+    const volumes = volumesResult.status === 'fulfilled'
+      ? (Array.isArray(volumesResult.value?.volumes)
+          ? volumesResult.value.volumes
+          : Object.values(volumesResult.value?.volumes ?? {}).flat()
+        ).map(v => normaliseVolume(v))
+      : []
+
+    const bytesByPool = {}
+    const volumesByPool = {}
+    for (const v of volumes) {
+      const key = v.pool ?? ''
+      bytesByPool[key] = (bytesByPool[key] ?? 0) + (Number(v.volbytes) || 0)
+      volumesByPool[key] = (volumesByPool[key] ?? 0) + 1
+    }
+
+    const pools = poolsResult.status === 'fulfilled'
+      ? directorCollection(poolsResult.value?.pools).map(entry => {
+          const pool = normalisePool(entry)
+          return {
+            ...pool,
+            director: credentials.director,
+            totalbytes: bytesByPool[pool.name ?? ''] ?? 0,
+            totalvolumes: volumesByPool[pool.name ?? ''] ?? 0,
+          }
+        })
+      : []
+
     return {
       director: credentials.director,
       transport: client.transport,
       jobsPast24h,
       runningJobs: mergeRunningJobs(runningJobs, runtimeRunningJobs),
       recentJobs: overlayRuntimeStatus(recentJobs, runtimeRunningJobs),
+      pools,
       jobTotals: totalsResult.status === 'fulfilled'
         ? {
           jobs: numberValue(totalsResult.value?.jobtotals?.jobs),
@@ -268,6 +302,10 @@ export function aggregateDirectorDashboardSnapshots(snapshots) {
       ...aggregate.recentJobs,
       ...(snapshot.recentJobs ?? []),
     ]),
+    pools: [
+      ...aggregate.pools,
+      ...(snapshot.pools ?? []),
+    ].sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? ''))),
     clientCount: aggregate.clientCount + numberValue(snapshot.clientCount),
     storageCount: aggregate.storageCount + numberValue(snapshot.storageCount),
     jobTotals: {
@@ -279,6 +317,7 @@ export function aggregateDirectorDashboardSnapshots(snapshots) {
     jobsPast24h: [],
     runningJobs: [],
     recentJobs: [],
+    pools: [],
     clientCount: 0,
     storageCount: 0,
     jobTotals: {
