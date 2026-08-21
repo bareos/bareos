@@ -796,6 +796,29 @@ bool DeviceControlRecord::Can_i_write_volume()
   return Can_i_use_volume();
 }
 
+bool DeviceControlRecord::IsAppendVolumeBusyOnAnotherDevice()
+{
+  VolumeReservationItem* vol = nullptr;
+  bool busy = false;
+
+  if (find_read_volume(VolumeName)) { return false; }
+
+  with_volume_lock([&] {
+    vol = find_volume(VolumeName);
+    if (!vol || !vol->dev || dev == vol->dev) { return; }
+
+    const bool volume_mounted_elsewhere
+        = bstrcmp(vol->dev->VolHdr.VolumeName, VolumeName)
+          || (vol->dev->vol && bstrcmp(vol->dev->vol->vol_name, VolumeName));
+    if (!volume_mounted_elsewhere) { return; }
+
+    busy = vol->dev->CanAppend() || vol->dev->num_writers > 0
+           || vol->dev->NumReserved() > 0;
+  });
+
+  return busy;
+}
+
 // Determine if caller can read or write volume
 bool DeviceControlRecord::Can_i_use_volume()
 {

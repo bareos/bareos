@@ -52,6 +52,8 @@ namespace storagedaemon {
 
 static const int debuglevel = 50;
 static pthread_mutex_t vol_info_mutex = PTHREAD_MUTEX_INITIALIZER;
+static constexpr std::size_t kMaxAppendVolumeLookups = 200;
+static constexpr std::size_t kMaxUnwantedVolumesLength = 32 * 1024;
 
 /* Requests sent to the Director */
 inline constexpr const char Find_media[]
@@ -201,8 +203,8 @@ bool StorageDaemonDeviceControlRecord::DirGetVolumeInfo(
  * Returns: true  on success dcr->VolumeName is volume
  *                reserve_volume() called on Volume name
  *          false on failure dcr->VolumeName[0] == 0
- *                also sets dcr->FoundInUse if at least one
- *                in use volume was found.
+ *                also sets dcr->AppendVolumeBusy if at least one
+ *                appendable volume was found busy on another device.
  *
  * Volume information returned in dcr
  */
@@ -221,39 +223,20 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
   with_volume_lock([&] {
     lock_mutex(vol_info_mutex);
     ClearFoundInUse();
+    ClearAppendVolumeBusy();
 
     PmStrcpy(unwanted_volumes, "");
 
-    std::size_t device_count = 0;
+    for (std::size_t vol_index = 1; vol_index <= kMaxAppendVolumeLookups;
+         vol_index++) {
+      if (strlen(unwanted_volumes.c_str()) >= kMaxUnwantedVolumesLength) {
+        Dmsg1(debuglevel,
+              "Stopping append volume lookup after unwanted list reached %zu "
+              "bytes.\n",
+              strlen(unwanted_volumes.c_str()));
+        break;
+      }
 
-    {
-      ResLocker _{my_config};
-
-      BareosResource* found_dev = nullptr;
-      foreach_res (found_dev, R_DEVICE) { device_count += 1; }
-    }
-
-    if (device_count == 0) {
-      Emsg0(M_ERROR, 0,
-            "Trying to find a volume, but there are apparently no devices.");
-      // not sure what happened here, but this should hopefully be enough
-      device_count = 100;
-    }
-
-    // x >> 3 == x / 8 ~ 10% * x
-    // there should never be a need to ask for more volumes than there are
-    // devices because each device should only be allowed to reserve one volume,
-    // but we add some headroom here in case some recommended volume is broken
-    // or in case some devices are currently reserving multiple volumes (maybe
-    // they are currently switching volumes)
-    std::size_t ask_limit = device_count + (device_count >> 3);
-
-    Dmsg0(400, "device count = %llu => ask limit = %llu\n",
-          static_cast<long long unsigned>(device_count),
-          static_cast<long long unsigned>(ask_limit));
-
-    // use <= because we start counting at 1
-    for (std::size_t vol_index = 1; vol_index <= ask_limit; vol_index++) {
       BashSpaces(media_type);
       BashSpaces(pool_name);
       BashSpaces(unwanted_volumes.c_str());
@@ -286,9 +269,7 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
           goto get_out;
         } else {
           Dmsg1(debuglevel, "Volume %s is in use.\n", VolumeName);
-
-          // If volume is not usable, it is in use by someone else
-          SetFoundInUse();
+          if (IsAppendVolumeBusyOnAnotherDevice()) { SetAppendVolumeBusy(); }
           continue;
         }
       }
