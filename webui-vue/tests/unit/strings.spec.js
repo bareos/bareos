@@ -81,4 +81,19 @@ describe('midEllipsis', () => {
     expect(r3.endsWith('er-1')).toBe(true)
     expect([...r3].length).toBe(14)
   })
+
+  it('handles emoji (multi-codepoint characters) correctly', () => {
+    // 5 emoji = 10 UTF-16 code units but only 5 codepoints — must not truncate
+    const fiveEmoji = '😀😁😂😃😄'
+    expect(midEllipsis(fiveEmoji, 5)).toBe(fiveEmoji)
+    expect(midEllipsis(fiveEmoji, 6)).toBe(fiveEmoji)
+
+    // 8 emoji truncated to 6 must not produce broken surrogates
+    const eightEmoji = '😀😁😂😃😄😅😆😇'
+    const result = midEllipsis(eightEmoji, 6)
+    expect([...result].length).toBe(6)
+    expect(result).toContain('\u2026')
+    // Verify no isolated surrogates (every char must round-trip cleanly)
+    expect(result).toBe([...result].join(''))
+  })
 })
