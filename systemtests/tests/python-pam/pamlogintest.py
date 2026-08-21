@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -108,7 +108,7 @@ class PamLoginTest(bareos_unittest.Base):
                 **self.director_extra_options
             )
 
-    def test_login_with_not_wrong_password(self):
+    def test_login_with_wrong_password(self):
         """
         Verify bareos.bsock.DirectorConsole raises an AuthenticationError exception.
         """
