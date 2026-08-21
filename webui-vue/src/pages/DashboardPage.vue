@@ -20,631 +20,309 @@
 -->
 <template>
   <q-page class="q-pa-md">
-    <DirectorErrorsBanner :errors="directorErrors" />
 
-    <div class="row q-col-gutter-md">
-      <!-- Left column: 8/12 -->
-      <div class="col-12 col-md-8">
-        <!-- Jobs Past 24h stat row -->
-        <q-card flat bordered class="q-mb-md bareos-panel">
-          <q-card-section class="panel-header row items-center">
-            <span>{{ t('Jobs started during the past 24 hours') }}</span>
-            <q-space />
-            <span class="text-white text-caption q-mr-sm panel-refresh-countdown">
-              <span aria-hidden="true">↻</span>
-              <span class="panel-refresh-countdown__value">{{ countdown }}s</span>
-            </span>
-            <q-btn
-              flat
-              round
-              dense
-              icon="refresh"
-              color="white"
-              size="sm"
-              :loading="loadingJobs"
-              @click="manualRefresh"
-            />
-          </q-card-section>
-          <q-card-section>
-            <div class="row q-col-gutter-md text-center">
-              <div class="col" v-for="s in summaryStats" :key="s.label">
-                <router-link
-                  :to="{ name: 'jobs', query: withJobsStatusFilterQuery({}, s.status) }"
-                  class="text-decoration-none"
-                >
-                  <StatNumber :value="s.count" :label="s.label" :color="s.color" />
-                </router-link>
-              </div>
-            </div>
-          </q-card-section>
-        </q-card>
+    <!-- ── Top toolbar ───────────────────────────────────────────────────── -->
+    <div class="row items-center q-mb-sm q-gutter-sm no-wrap">
 
-        <!-- Jobs Last Status table -->
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header row items-center">
-            <span>{{ t('Most recent job status per job name') }}</span>
-            <q-space />
-            <q-btn
-              flat
-              round
-              dense
-              icon="refresh"
-              color="white"
-              size="sm"
-              :loading="loadingJobs"
-              @click="manualRefresh"
-            />
-          </q-card-section>
-          <q-card-section class="q-pa-none">
-            <q-table
-              :rows="recentJobs"
-              :columns="recentCols"
-              row-key="scopeKey"
-              dense flat
-              :loading="loadingJobs"
-              v-model:pagination="recentJobsPagination"
-            >
-              <template #body-cell-id="props">
-                <q-td :props="props" class="text-right">
-                  <a href="#" class="text-primary" @click.prevent="openJobDetails(props.row)">
-                    {{ props.value }}
-                  </a>
-                </q-td>
-              </template>
-              <template #body-cell-director="props">
-                <q-td :props="props">
-                  <div class="row items-center q-gutter-sm no-wrap">
-                    <span :style="directorSwatchStyle(props.row.director || props.value || '')" />
-                    <span>{{ props.row.director || props.value || '—' }}</span>
-                  </div>
-                </q-td>
-              </template>
-              <template #body-cell-status="props">
-                <q-td :props="props">
-                  <span
-                    v-if="isWaitingStatus(jobStatus(props.row))"
-                    class="row items-center no-wrap q-gutter-x-xs"
-                  >
-                    <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
-                    <span class="text-orange-7 text-caption">{{ jobStatus(props.row) }}</span>
-                  </span>
-                  <JobStatusBadge v-else :status="jobStatus(props.row)" />
-                </q-td>
-              </template>
-              <template #body-cell-client="props">
-                <q-td :props="props">
-                  <a href="#" class="text-primary" @click.prevent="openClientDetails(props.row)">
-                    {{ props.value }}
-                  </a>
-                </q-td>
-              </template>
-              <template #body-cell-starttime="props">
-                <q-td :props="props">
-                  <span :title="settings.relativeTime ? props.value : timeAgo(props.value, settings.locale)">
-                    {{ settings.relativeTime ? timeAgo(props.value, settings.locale) : props.value }}
-                  </span>
-                </q-td>
-              </template>
-              <template #body-cell-name="props">
-                <q-td :props="props">
-                  <a href="#" class="text-primary" @click.prevent="openJobDetails(props.row)">
-                    {{ props.value }}
-                  </a>
-                </q-td>
-              </template>
-              <template #body-cell-level="props">
-                <q-td :props="props" class="text-center">
-                  <JobLevelBadge v-if="props.value" :level="props.value" />
-                  <span v-else>—</span>
-                </q-td>
-              </template>
-              <template #body-cell-bytes="props">
-                <q-td :props="props" class="text-right" style="min-width:90px">
-                  <div>{{ jobBytes(props.row) }}</div>
-                  <q-linear-progress
-                    v-if="isRunningJob(props.row)"
-                    indeterminate color="primary" track-color="grey-3"
-                    size="4px" class="q-mt-xs" rounded
-                  />
-                  <q-linear-progress
-                    v-else
-                    :value="bytesGauge(props.row.bytes)"
-                    color="primary" track-color="grey-3"
-                    size="4px" class="q-mt-xs" rounded
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-duration="props">
-                <q-td :props="props" class="text-right" style="min-width:80px">
-                  <div>{{ props.value || '—' }}</div>
-                  <q-linear-progress
-                    :value="durationGauge(props.value)"
-                    color="orange" track-color="grey-3"
-                    size="4px" class="q-mt-xs" rounded
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-speed="props">
-                <q-td :props="props" class="text-right" style="min-width:80px">
-                  <span v-if="isRunningJob(props.row)" class="text-grey-5">—</span>
-                  <template v-else>
-                    <div>{{ fmtSpeed(props.row.bytes, props.row.duration) }}</div>
-                    <q-linear-progress
-                      :value="speedGauge(props.row)"
-                      color="cyan-7" track-color="grey-3"
-                      size="4px" class="q-mt-xs" rounded
-                    />
-                  </template>
-                </q-td>
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
-      </div>
+      <!-- Dashboard tabs -->
+      <q-tabs
+        v-model="activeDashboardId"
+        dense no-caps
+        class="col"
+        style="min-width:0"
+        @update:model-value="dashStore.setActiveDashboard($event)"
+      >
+        <q-tab
+          v-for="db in dashStore.dashboards"
+          :key="db.id"
+          :name="db.id"
+          :label="db.name"
+        >
+          <!-- Rename button shown in edit mode -->
+          <q-btn
+            v-if="editMode && dashStore.dashboards.length > 1"
+            flat round dense
+            icon="edit"
+            size="xs"
+            class="q-ml-xs"
+            @click.stop="startRename(db)"
+          />
+        </q-tab>
 
-      <!-- Right column: 4/12 -->
-      <div class="col-12 col-md-4">
-        <!-- Job Totals -->
-        <q-card flat bordered class="q-mb-md bareos-panel">
-          <q-card-section class="panel-header">{{ t('Job Totals') }}</q-card-section>
-          <q-card-section class="q-pa-sm">
-            <div class="row q-gutter-sm">
-              <div v-for="stat in totalStats" :key="stat.label" class="col-auto">
-                <div class="text-caption text-grey-6" style="white-space:nowrap">{{ stat.label }}</div>
-                <div class="text-weight-bold" style="font-size:1rem; line-height:1.2">{{ stat.value }}</div>
-              </div>
-            </div>
-          </q-card-section>
-        </q-card>
+        <!-- Add dashboard tab -->
+        <q-btn
+          flat dense
+          icon="add"
+          size="sm"
+          :title="t('Add dashboard')"
+          @click="addDashboard"
+        />
+      </q-tabs>
 
-        <!-- Running Jobs -->
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header row items-center">
-            <span>{{ t('Running') }} {{ t('Jobs') }}</span>
-            <q-space />
-            <q-btn
-              flat
-              round
-              dense
-              icon="refresh"
-              color="white"
-              size="sm"
-              :loading="loadingJobs"
-              @click="manualRefresh"
-            />
-          </q-card-section>
-          <q-card-section style="max-height:320px; overflow-y:auto; padding:0">
-            <q-list separator>
-              <q-item v-for="job in runningJobs" :key="job.scopeKey" class="q-py-sm">
-                <q-item-section>
-                  <q-item-label>
-                    <a href="#" class="text-primary text-weight-medium" @click.prevent="openJobDetails(job)">
-                      {{ job.name }}
-                    </a>
-                    <DirectorBadge
-                      v-if="showDirectorColumn"
-                      :director="job.director"
-                      size="sm"
-                      class="q-ml-xs"
-                    />
-                    <span class="text-grey-6 text-caption q-ml-xs">({{ job.client }})</span>
-                  </q-item-label>
-                  <q-item-label caption>
-                      {{ formatNumber(job.files ?? 0, settings.locale) }} {{ t('Files') }} &middot; {{ jobBytes(job) }} &middot; {{ formatDuration(elapsedSecs(job)) }}
-                  </q-item-label>
-                  <q-item-label
-                    v-if="jobStatus(job)"
-                    caption
-                    :class="isWaitingStatus(jobStatus(job)) ? 'text-orange-7' : 'text-grey-6'"
-                  >
-                    <q-icon
-                      v-if="isWaitingStatus(jobStatus(job))"
-                      name="hourglass_empty"
-                      size="14px"
-                      class="q-mr-xs"
-                    />
-                    {{ jobStatus(job) }}
-                  </q-item-label>
-                  <q-linear-progress indeterminate color="positive" class="q-mt-xs" style="height:6px; border-radius:3px" />
-                </q-item-section>
-                <q-item-section side>
-                  <q-btn
-                    flat
-                    round
-                    dense
-                    icon="cancel"
-                    color="negative"
-                    size="sm"
-                    :title="t('Cancel Job')"
-                    @click="confirmCancel(job)"
-                  />
-                </q-item-section>
-              </q-item>
-              <q-item v-if="!runningJobs.length">
-                <q-item-section class="text-grey text-caption text-center q-py-md">{{ t('No running jobs') }}</q-item-section>
-              </q-item>
-            </q-list>
-          </q-card-section>
-        </q-card>
+      <!-- Right side controls -->
+      <div class="row items-center q-gutter-xs no-wrap" style="flex-shrink:0">
+        <!-- refresh countdown -->
+        <span class="text-caption text-grey-6 panel-refresh-countdown">
+          <span aria-hidden="true">↻</span>
+          <span class="panel-refresh-countdown__value">{{ countdown }}s</span>
+        </span>
+        <q-btn flat round dense icon="refresh" size="sm" :loading="gridRef?.loading"
+               :title="t('Refresh')" @click="manualRefresh" />
+
+        <template v-if="editMode">
+          <q-btn flat round dense icon="add_circle_outline" color="primary" size="sm"
+                 :title="t('Add widget')" @click="showPicker = true" />
+          <q-btn
+            v-if="dashStore.dashboards.length > 1"
+            flat round dense icon="delete_outline" color="negative" size="sm"
+            :title="t('Delete dashboard')"
+            @click="deleteDashboard"
+          />
+          <q-btn color="primary" dense no-caps size="sm" :label="t('Done')"
+                 @click="editMode = false" />
+        </template>
+        <q-btn v-else flat round dense icon="edit" size="sm"
+               :title="t('Edit layout')" @click="editMode = true" />
       </div>
     </div>
+
+    <!-- Edit mode banner -->
+    <q-banner v-if="editMode" class="bg-blue-1 text-blue-9 q-mb-sm" rounded dense>
+      <template #avatar><q-icon name="info" color="blue-9" /></template>
+      {{ t('Drag widgets to reposition. Resize from the bottom-right corner. Click the gear icon to configure a widget.') }}
+    </q-banner>
+
+    <!-- ── Dashboard grid ─────────────────────────────────────────────────── -->
+    <DashboardGrid
+      v-if="currentDashboard"
+      ref="gridRef"
+      :dashboard="currentDashboard"
+      :edit-mode="editMode"
+      :active-directors="activeDirectors"
+      :director-options="directorOptions"
+    />
+
+    <!-- ── Widget picker ──────────────────────────────────────────────────── -->
+    <WidgetPickerDialog
+      v-model="showPicker"
+      @pick="onWidgetPicked"
+    />
+
+    <!-- ── Widget initial config (required props) ─────────────────────────── -->
+    <WidgetConfigDialog
+      v-if="pendingWidget"
+      v-model="showInitialConfig"
+      :widget="pendingWidget"
+      :required-only="true"
+      :active-directors="activeDirectors"
+      @save="onInitialConfigSave"
+      @update:model-value="onInitialConfigClose"
+    />
+
+    <!-- ── Rename dashboard dialog ────────────────────────────────────────── -->
+    <q-dialog v-model="showRenameDialog">
+      <q-card style="min-width:320px">
+        <q-card-section class="panel-header row items-center">
+          <span>{{ t('Rename Dashboard') }}</span>
+          <q-space />
+          <q-btn flat round dense icon="close" color="white" @click="showRenameDialog = false" />
+        </q-card-section>
+        <q-card-section>
+          <q-input
+            v-model="renameValue"
+            dense outlined autofocus
+            :label="t('Dashboard name')"
+            @keyup.enter="confirmRename"
+          />
+        </q-card-section>
+        <q-card-actions align="right" class="q-pb-md q-pr-md">
+          <q-btn flat :label="t('Cancel')" @click="showRenameDialog = false" />
+          <q-btn color="primary" :label="t('Rename')" :disable="!renameValue.trim()" @click="confirmRename" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
   </q-page>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useQuasar } from 'quasar'
-import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { formatBytes, formatSpeed, parseDurationSecs, timeAgo, formatDuration } from '../mock/index.js'
-import {
-  aggregateDirectorDashboardSnapshots,
-  fetchDirectorDashboardSnapshot,
-} from '../composables/directorAggregate.js'
+import { useQuasar } from 'quasar'
+import { useDashboardStore } from '../stores/dashboards.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
-import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useDirectorStore } from '../stores/director.js'
-import { useAuthStore } from '../stores/auth.js'
+import { getWidgetDefinition } from '../dashboard/widgetRegistry.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { buildClientDetailsQuery } from '../utils/clients.js'
-import { resolveDirectorColors } from '../utils/directorColors.js'
-import {
-  buildCancelJobCommand,
-  buildJobDetailsQuery,
-  withJobsStatusFilterQuery,
-} from '../utils/jobs.js'
-import { formatNumber } from '../utils/locales.js'
-import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
-import DirectorBadge from '../components/DirectorBadge.vue'
-import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
-import JobStatusBadge from '../components/JobStatusBadge.vue'
-import JobLevelBadge from '../components/JobLevelBadge.vue'
-import StatNumber from '../components/StatNumber.vue'
+import DashboardGrid from '../dashboard/DashboardGrid.vue'
+import WidgetPickerDialog from '../dashboard/WidgetPickerDialog.vue'
+import WidgetConfigDialog from '../dashboard/WidgetConfigDialog.vue'
 
-const auth = useAuthStore()
+const { t } = useI18n()
+const $q = useQuasar()
+const dashStore = useDashboardStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
-const $q = useQuasar()
-const router = useRouter()
-const { t } = useI18n()
-const recentJobsPagination = usePersistedTablePagination('dashboard.recentJobs', {
-  rowsPerPage: 10,
-  sortBy: 'id',
-  descending: true,
-})
-const fmtBytes = formatBytes
-const fmtSpeed = formatSpeed
 
-// ── data ─────────────────────────────────────────────────────────────────────
-const dashboardSnapshots = ref([])
-const directorErrors = ref([])
-const loadingJobs = ref(false)
-
+// ── director scope ─────────────────────────────────────────────────────────
 const {
   directorOptions,
-  selectedDirectorsModel,
   activeDirectors,
-  isCommonScope: isCommonDashboard,
-  scopeLabel: dashboardScopeLabel,
   syncSelectedDirectors,
-} = useDirectorScope({
-  t,
-  syncEmptySelection: 'all',
-})
-
-const showDirectorColumn = computed(() => directorOptions.value.length > 1)
-
-async function fetchDashboard() {
-  const credentials = auth.getCredentials()
-  if (!credentials || activeDirectors.value.length === 0) {
-    dashboardSnapshots.value = []
-    directorErrors.value = []
-    return
-  }
-
-  loadingJobs.value = true
-  try {
-    const results = await Promise.allSettled(activeDirectors.value.map(currentDirector => (
-      fetchDirectorDashboardSnapshot({
-        ...credentials,
-        director: currentDirector,
-      })
-    )))
-
-    dashboardSnapshots.value = results
-      .filter(result => result.status === 'fulfilled')
-      .map(result => result.value)
-    directorErrors.value = results.flatMap((result, index) => (
-      result.status === 'rejected'
-        ? [{
-          director: activeDirectors.value[index],
-          message: result.reason?.message ?? t('Failed to load dashboard data.'),
-        }]
-        : []
-    ))
-  } finally {
-    loadingJobs.value = false
-  }
-}
+} = useDirectorScope({ t, syncEmptySelection: 'all' })
 
 async function loadAvailableDirectors() {
   try {
     await director.fetchAvailableDirectors()
-  } catch {
-    // Keep the selector usable with the active director when the proxy list is
-    // unavailable.
-  }
+  } catch { /* keep going */ }
 }
 
-let refreshPromise = null
-let refreshQueued = false
-
-async function runRefreshBatch() {
-  await fetchDashboard()
-}
-
-function refresh() {
-  if (refreshPromise) {
-    refreshQueued = true
-    return refreshPromise
-  }
-
-  refreshPromise = (async () => {
-    do {
-      refreshQueued = false
-      await runRefreshBatch()
-    } while (refreshQueued)
-  })().finally(() => {
-    refreshPromise = null
-  })
-
-  return refreshPromise
-}
-
-function confirmCancel(job) {
-  $q.dialog({
-    title: 'Cancel Job',
-    message: t('Cancel job {name} (ID {id})?', { name: job.name, id: jobId(job) }),
-    ok: { label: t('Cancel Job'), color: 'negative', flat: true },
-    cancel: { label: t('Keep Running'), flat: true },
-  }).onOk(() => doCancel(job))
-}
-
-async function openJobDetails(row) {
-  try {
-    await switchActiveDirector(row.director)
-    await router.push({
-      name: 'job-details',
-      params: { id: jobId(row) },
-      query: buildJobDetailsQuery({
-        director: row.director,
-        dashboardOrigin: true,
-      }),
-    })
-  } catch (error) {
-    $q.notify({
-      type: 'negative',
-      message: t('Could not switch to director {director}: {message}', {
-        director: row.director ?? t('unknown'),
-        message: error.message,
-      }),
-    })
-  }
-}
-
-async function openClientDetails(row) {
-  try {
-    await switchActiveDirector(row.director)
-    await router.push({
-      name: 'client-details',
-      params: { name: row.client },
-      query: buildClientDetailsQuery({
-        director: row.director,
-        dashboardOrigin: true,
-      }),
-    })
-  } catch (error) {
-    $q.notify({
-      type: 'negative',
-      message: t('Could not switch to director {director}: {message}', {
-        director: row.director ?? t('unknown'),
-        message: error.message,
-      }),
-    })
-  }
-}
-
-async function doCancel(job) {
-  try {
-    await switchActiveDirector(job.director)
-    await director.call(buildCancelJobCommand(jobId(job)))
-    $q.notify({ type: 'positive', message: t('Job {id} cancelled.', { id: jobId(job) }) })
-    refresh()
-  } catch (e) {
-    $q.notify({ type: 'negative', message: t('Cancel failed: {message}', { message: e.message }) })
-  }
-}
-
-const now = ref(Date.now())
-
-onMounted(async () => {
-  await loadAvailableDirectors()
-  syncSelectedDirectors()
-  refresh()
+// ── active dashboard ───────────────────────────────────────────────────────
+const activeDashboardId = computed({
+  get: () => dashStore.activeDashboardId ?? dashStore.dashboards[0]?.id,
+  set: (id) => dashStore.setActiveDashboard(id),
 })
+const currentDashboard = computed(() => dashStore.activeDashboard())
 
-// ── auto-refresh ──────────────────────────────────────────────────────────────
+// ── edit mode ──────────────────────────────────────────────────────────────
+const editMode = ref(false)
+
+// ── grid ref (for refresh) ─────────────────────────────────────────────────
+const gridRef = ref(null)
+
+function manualRefresh() {
+  gridRef.value?.refresh()
+  countdown.value = settings.refreshInterval
+}
+
+// ── auto-refresh ───────────────────────────────────────────────────────────
 const countdown = ref(settings.refreshInterval)
-let _countdownTimer = null
-let _refreshTimer = null
+let _timer = null
 
 function startAutoRefresh() {
   stopAutoRefresh()
   countdown.value = settings.refreshInterval
-  _countdownTimer = setInterval(() => {
-    now.value = Date.now()
+  _timer = setInterval(() => {
     countdown.value -= 1
     if (countdown.value <= 0) {
-      refresh()
+      gridRef.value?.refresh()
       countdown.value = settings.refreshInterval
     }
   }, 1000)
 }
 
 function stopAutoRefresh() {
-  clearInterval(_countdownTimer)
-  clearInterval(_refreshTimer)
-  _countdownTimer = null
-  _refreshTimer = null
+  clearInterval(_timer)
+  _timer = null
 }
 
-function manualRefresh() {
-  refresh()
-  countdown.value = settings.refreshInterval
-}
-
-onMounted(startAutoRefresh)
-onUnmounted(stopAutoRefresh)
-watch(() => directorOptions.value, () => {
+onMounted(async () => {
+  await loadAvailableDirectors()
   syncSelectedDirectors()
-}, { deep: true })
-watch(() => activeDirectors.value.join('\u0000'), () => {
-  countdown.value = settings.refreshInterval
-  refresh()
+  startAutoRefresh()
 })
+onUnmounted(stopAutoRefresh)
 
-// ── computed views ────────────────────────────────────────────────────────────
-const aggregate = computed(() => (
-  aggregateDirectorDashboardSnapshots(dashboardSnapshots.value)
-))
-const past24hJobs = computed(() => aggregate.value.jobsPast24h)
-const lastJobs = computed(() => aggregate.value.recentJobs)
+watch(() => directorOptions.value, () => { syncSelectedDirectors() }, { deep: true })
 
-const recentCols = computed(() => {
-  const columns = [
-    { name: 'id', label: 'ID', field: 'id', align: 'right', sortable: true },
-    { name: 'name', label: t('Job Name'), field: 'name', align: 'left', sortable: true },
-    { name: 'client', label: t('Client'), field: 'client', align: 'left', sortable: true },
-    { name: 'level', label: t('Level'), field: 'level', align: 'center', sortable: true },
-    { name: 'status', label: t('Status'), field: 'status', align: 'center', sortable: true },
-    { name: 'starttime', label: t('Start'), field: 'starttime', align: 'left', sortable: true },
-    {
-      name: 'duration',
-      label: t('Duration'),
-      field: 'duration',
-      align: 'right',
-      sortable: true,
-      sort: (a, b) => parseDurationSecs(a) - parseDurationSecs(b),
+// ── add widget flow ────────────────────────────────────────────────────────
+const showPicker = ref(false)
+
+// Pending widget: a partially built widget instance awaiting initial config.
+const pendingWidget = ref(null)
+const showInitialConfig = ref(false)
+
+function onWidgetPicked(def) {
+  const hasRequired = def.requiredProps?.length > 0
+  const newWidget = {
+    id: `tmp-${Date.now()}`,
+    type: def.type,
+    title: def.defaultTitle,
+    props: {},
+    layout: { ...def.defaultLayout, x: 0, y: Infinity },
+  }
+
+  if (hasRequired) {
+    // Show the initial config dialog before placing the widget.
+    pendingWidget.value = newWidget
+    showInitialConfig.value = true
+  } else {
+    placeWidget(newWidget)
+  }
+}
+
+function onInitialConfigSave({ title, props }) {
+  if (!pendingWidget.value) return
+  placeWidget({
+    ...pendingWidget.value,
+    title,
+    props,
+  })
+  pendingWidget.value = null
+}
+
+function onInitialConfigClose(open) {
+  if (!open) {
+    // User cancelled — discard pending widget.
+    pendingWidget.value = null
+  }
+}
+
+function placeWidget(widget) {
+  const def = getWidgetDefinition(widget.type)
+  dashStore.addWidget(activeDashboardId.value, {
+    type:   widget.type,
+    title:  widget.title,
+    props:  widget.props,
+    layout: { ...(def?.defaultLayout ?? { w: 4, h: 6 }), x: 0, y: Infinity },
+  })
+}
+
+// ── dashboard management ───────────────────────────────────────────────────
+
+function addDashboard() {
+  $q.dialog({
+    title: t('New Dashboard'),
+    prompt: {
+      model: t('My Dashboard'),
+      label: t('Dashboard name'),
+      type: 'text',
     },
-    { name: 'bytes', label: t('Bytes'), field: 'bytes', align: 'right', sortable: true },
-    { name: 'speed', label: t('Speed'), field: 'speed', align: 'right', sortable: true,
-      sort: (_a, _b, rowA, rowB) => jobSpeedBps(rowA) - jobSpeedBps(rowB) },
-  ]
-
-  if (showDirectorColumn.value) {
-    columns.splice(1, 0, {
-      name: 'director',
-      label: t('Director'),
-      field: 'director',
-      align: 'left',
-      sortable: true,
-    })
-  }
-
-  return columns
-})
-
-const recentJobs = computed(() => lastJobs.value)
-const runningJobs = computed(() => aggregate.value.runningJobs)
-
-function directorSwatchStyle(name) {
-  const colors = resolveDirectorColors(
-    name,
-    directorOptions.value.map(option => option.value)
-  )
-  return {
-    display: 'inline-block',
-    width: '10px',
-    height: '10px',
-    borderRadius: '999px',
-    backgroundColor: colors.background,
-    border: `1px solid ${colors.border}`,
-    flexShrink: 0,
-  }
+    ok:     { label: t('Create'), color: 'primary' },
+    cancel: true,
+  }).onOk(name => {
+    if (name?.trim()) dashStore.addDashboard(name.trim())
+  })
 }
 
-function elapsedSecs(job) {
-  if (!job.starttime) return 0
-  const start = new Date(job.starttime.replace(' ', 'T')).getTime()
-  if (isNaN(start)) return 0
-  return Math.max(0, Math.floor((now.value - start) / 1000))
+function deleteDashboard() {
+  $q.dialog({
+    title:   t('Delete Dashboard'),
+    message: t('Delete dashboard "{name}"? This cannot be undone.', {
+      name: currentDashboard.value?.name,
+    }),
+    ok:     { label: t('Delete'), color: 'negative', flat: true },
+    cancel: { label: t('Cancel'), flat: true },
+  }).onOk(() => {
+    dashStore.removeDashboard(activeDashboardId.value)
+    editMode.value = false
+  })
 }
 
-const maxBytes = computed(() => Math.max(1, ...recentJobs.value.map(j => j.bytes)))
-const maxDurationSecs = computed(() => Math.max(1, ...recentJobs.value.map(j => parseDurationSecs(j.duration))))
-function jobSpeedBps(row) {
-  const secs = parseDurationSecs(row.duration)
-  if (!secs) return 0
-  const bytes = typeof row.bytes === 'string' ? parseFloat(row.bytes) : (row.bytes || 0)
-  return bytes / secs
+// ── rename dashboard ───────────────────────────────────────────────────────
+const showRenameDialog = ref(false)
+const renameValue      = ref('')
+const renamingId       = ref(null)
+
+function startRename(db) {
+  renamingId.value    = db.id
+  renameValue.value   = db.name
+  showRenameDialog.value = true
 }
-const maxSpeedBps = computed(() => Math.max(1, ...recentJobs.value
-  .filter(j => !isRunningJob(j))
-  .map(j => jobSpeedBps(j))))
-function bytesGauge(val) { return val / maxBytes.value }
-function durationGauge(str) { return parseDurationSecs(str) / maxDurationSecs.value }
-function speedGauge(row) { return jobSpeedBps(row) / maxSpeedBps.value }
 
-const summaryStats = computed(() => {
-  const countByStatus = (code) => past24hJobs.value.filter(j => j.status === code).length
-  return [
-    { label: t('Running'), status: 'R', color: 'info', count: countByStatus('R') },
-    { label: t('Waiting'), status: 'C', color: 'grey', count: countByStatus('C') },
-    { label: t('Successful'), status: 'T', color: 'positive', count: countByStatus('T') },
-    { label: t('Warning'), status: 'W', color: 'warning', count: countByStatus('W') },
-    { label: t('Failed'), status: 'f', color: 'negative', count: countByStatus('f') },
-  ]
-})
-
-const totals = computed(() => ({
-  jobs: aggregate.value.jobTotals.jobs,
-  files: aggregate.value.jobTotals.files,
-  bytes: aggregate.value.jobTotals.bytes,
-  clients: aggregate.value.clientCount,
-  storages: aggregate.value.storageCount,
-}))
-
-const totalStats = computed(() => [
-  { label: t('Total Jobs'), value: totals.value.jobs },
-  { label: t('Total Files'), value: formatNumber(totals.value.files ?? 0, settings.locale) },
-  { label: t('Total Bytes'), value: fmtBytes(totals.value.bytes ?? 0) },
-  { label: t('Clients'), value: totals.value.clients },
-  { label: t('Storages'), value: totals.value.storages },
-])
-
-// helper: keep status/bytes getters for template compatibility
-function jobStatus(row) { return row.runtimeStatus ?? row.status ?? '?' }
-function isWaitingStatus(status) {
-  return typeof status === 'string' && status.toLowerCase().includes('is waiting')
-}
-function isRunningJob(row) {
-  return row?.status === 'R' || row?.runtimeStatus != null
-}
-function jobBytes(row) { return fmtBytes(row.bytes ?? 0) }
-function jobId(row) {
-  return row.id ?? row.jobid
+function confirmRename() {
+  if (!renameValue.value.trim()) return
+  dashStore.renameDashboard(renamingId.value, renameValue.value.trim())
+  showRenameDialog.value = false
 }
 </script>
-
-<style scoped>
-.animated-spin {
-  animation: hourglass-spin 1.4s ease-in-out infinite;
-}
-
-@keyframes hourglass-spin {
-  0%   { transform: rotate(0deg); }
-  45%  { transform: rotate(0deg); }
-  55%  { transform: rotate(180deg); }
-  100% { transform: rotate(180deg); }
-}
-</style>
