@@ -30,6 +30,16 @@
 
 namespace directordaemon {
 
+std::string NormalizeAuditMessageText(const char* text)
+{
+  std::string normalized{text ? text : ""};
+  while (!normalized.empty()
+         && (normalized.back() == '\n' || normalized.back() == '\r')) {
+    normalized.pop_back();
+  }
+  return normalized;
+}
+
 /* Forward referenced functions */
 
 // See if we need to audit this event.
@@ -128,8 +138,9 @@ void UaContext::LogAuditEventCmdline()
   user_name = user_acl ? user_acl->name.c_str() : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
+  const std::string normalized_cmdline = NormalizeAuditMessageText(cmd);
   Emsg3(M_AUDIT, 0, T_("Console [%s] from [%s] cmdline %s\n"), user_name, host,
-        cmd);
+        normalized_cmdline.c_str());
 }
 
 void UaContext::LogAuditEventInfoMsg(const char* fmt, ...)
@@ -148,8 +159,10 @@ void UaContext::LogAuditEventInfoMsg(const char* fmt, ...)
   user_name = user_acl ? user_acl->name.c_str() : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
+  const std::string normalized_message
+      = NormalizeAuditMessageText(message.c_str());
   Emsg3(M_AUDIT, 0, T_("Console [%s] from [%s] info message %s\n"), user_name,
-        host, message.c_str());
+        host, normalized_message.c_str());
 }
 
 } /* namespace directordaemon */
