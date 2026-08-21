@@ -19,7 +19,7 @@
   02110-1301, USA.
 -->
 <template>
-  <div class="column items-center justify-center" style="height:100%; padding:8px">
+  <div class="column items-center justify-center" style="height:100%; overflow:hidden; padding:8px; box-sizing:border-box">
     <q-spinner v-if="loading" size="40px" />
     <div v-else-if="error" class="text-negative text-caption text-center">{{ error }}</div>
     <div v-else-if="!chartData.labels.length" class="text-grey text-caption text-center">
@@ -37,7 +37,7 @@
 </template>
 
 <script setup>
-import { inject, computed, ref, onMounted, watch } from 'vue'
+import { inject, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Pie } from 'vue-chartjs'
 import {
@@ -46,9 +46,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
-import { useAuthStore } from '../../stores/auth.js'
 import { useSettingsStore } from '../../stores/settings.js'
-import { fetchAggregatedPools } from '../../composables/poolsAggregate.js'
 import { formatBytes } from '../../mock/index.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
 import { PIE_PALETTE } from '../piePalette.js'
@@ -56,34 +54,11 @@ import { PIE_PALETTE } from '../piePalette.js'
 ChartJS.register(ArcElement, Tooltip, Legend)
 
 const { t } = useI18n()
-const auth = useAuthStore()
 const settings = useSettingsStore()
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
 
-const pools = ref([])
-const loading = ref(false)
-const error = ref(null)
-
-async function loadPools() {
-  const credentials = auth.getCredentials()
-  if (!credentials) return
-  loading.value = true
-  error.value = null
-  try {
-    const result = await fetchAggregatedPools(credentials, ctx.activeDirectors.value)
-    pools.value = result.pools
-  } catch (e) {
-    error.value = e.message
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(loadPools)
-watch(() => ctx.activeDirectors.value.join('\0'), loadPools)
-
-// Re-load whenever the parent triggers a dashboard refresh.
-watch(() => ctx.refreshToken?.value, () => { loadPools() })
+const pools = computed(() => ctx.aggregate.value.pools ?? [])
+const loading = computed(() => ctx.loading.value)
 
 const totalBytes = computed(() => pools.value.reduce((s, p) => s + (p.totalbytes ?? 0), 0))
 

@@ -26,7 +26,7 @@
   • A drag handle covering the whole header when in edit mode
 -->
 <template>
-  <q-card flat bordered class="bareos-panel column" style="height:100%">
+  <q-card flat bordered class="bareos-panel column" style="height:100%; overflow:hidden">
     <!-- Header -->
     <q-card-section
       class="panel-header row items-center no-wrap"
@@ -58,10 +58,13 @@
       </template>
     </q-card-section>
 
-    <!-- Content -->
-    <q-card-section class="q-pa-none col" style="overflow:hidden; position:relative">
-      <slot />
-    </q-card-section>
+    <!-- Content: bounded container, vertical scroll only.
+         Horizontal scroll is handled by q-table__middle internally. -->
+    <div style="position:relative; flex:1; min-height:0; min-width:0; overflow:hidden">
+      <div style="position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; padding:4px">
+        <slot />
+      </div>
+    </div>
   </q-card>
 </template>
 

@@ -21,9 +21,8 @@
 
 <!--
   DashboardGrid
-  Renders the vue-grid-layout for one dashboard, provides the dashboard
-  data context via Vue provide/inject to all child widgets, and handles
-  widget configuration and removal.
+  Renders a grid-layout-plus drag/resize grid for one dashboard.
+  Provides the dashboard data context via Vue provide/inject to all child widgets.
 -->
 <template>
   <div>
@@ -40,39 +39,61 @@
       </div>
     </div>
 
+    <!-- Mobile: simple vertical stack (no drag/resize) -->
+    <div
+      v-if="dashboard.widgets.length && isMobile"
+      class="column q-gutter-sm q-px-sm"
+    >
+      <WidgetShell
+        v-for="widget in dashboard.widgets"
+        :key="widget.id"
+        :title="widget.title || defaultTitle(widget.type)"
+        :edit-mode="editMode"
+        style="min-height:200px"
+        @configure="openConfig(widget)"
+        @remove="removeWidget(widget)"
+      >
+        <component
+          :is="resolveWidgetComponent(widget.type)"
+          :widget-props="widget.props"
+        />
+      </WidgetShell>
+    </div>
+
+    <!-- Desktop: full drag/resize grid -->
     <GridLayout
-      v-else
-      :layout="gridLayout"
+      v-else-if="dashboard.widgets.length"
+      v-model:layout="layout"
       :col-num="12"
       :row-height="30"
+      :margin="[8, 8]"
       :is-draggable="editMode"
       :is-resizable="editMode"
-      :margin="[8, 8]"
       :use-css-transforms="true"
+      :vertical-compact="true"
+      drag-allow-from=".widget-drag-handle"
       @layout-updated="onLayoutUpdated"
     >
       <GridItem
         v-for="widget in dashboard.widgets"
         :key="widget.id"
         :i="widget.id"
-        :x="widget.layout.x"
-        :y="widget.layout.y"
-        :w="widget.layout.w"
-        :h="widget.layout.h"
+        :x="layoutMap[widget.id]?.x ?? widget.layout.x"
+        :y="layoutMap[widget.id]?.y ?? widget.layout.y"
+        :w="layoutMap[widget.id]?.w ?? widget.layout.w"
+        :h="layoutMap[widget.id]?.h ?? widget.layout.h"
         :min-w="widget.layout.minW ?? 2"
         :min-h="widget.layout.minH ?? 3"
-        drag-allow-from=".widget-drag-handle"
-        drag-ignore-from="a, button, input, select, .no-drag"
       >
         <WidgetShell
           :title="widget.title || defaultTitle(widget.type)"
           :edit-mode="editMode"
+          style="height:100%"
           @configure="openConfig(widget)"
           @remove="removeWidget(widget)"
-          style="height:100%"
         >
           <component
-            :is="resolveComponent(widget.type)"
+            :is="resolveWidgetComponent(widget.type)"
             :widget-props="widget.props"
           />
         </WidgetShell>
@@ -92,10 +113,10 @@
 </template>
 
 <script setup>
-import { ref, computed, provide, watch } from 'vue'
+import { ref, computed, provide, watch, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
-import { GridLayout, GridItem } from 'vue-grid-layout'
+import { GridLayout, GridItem } from 'grid-layout-plus'
 import { useDashboardStore } from '../stores/dashboards.js'
 import { useAuthStore } from '../stores/auth.js'
 import { getWidgetDefinition } from './widgetRegistry.js'
@@ -119,10 +140,13 @@ const $q = useQuasar()
 const dashboardStore = useDashboardStore()
 const auth = useAuthStore()
 
-// ── snapshot data ─────────────────────────────────────────────────────────────
-const snapshots = ref([])
-const loading   = ref(false)
-const refreshToken = ref(0)   // incremented to signal widgets to re-fetch
+// Switch to simple vertical stack below Quasar's 'sm' breakpoint (600 px).
+const isMobile = computed(() => $q.screen.lt.sm)
+
+// ── snapshot data ──────────────────────────────────────────────────────────
+const snapshots    = ref([])
+const loading      = ref(false)
+const refreshToken = ref(0)
 
 const aggregate = computed(() => aggregateDirectorDashboardSnapshots(snapshots.value))
 
@@ -132,11 +156,12 @@ async function fetchData() {
     snapshots.value = []
     return
   }
-
   loading.value = true
   try {
     const results = await Promise.allSettled(
-      props.activeDirectors.map(d => fetchDirectorDashboardSnapshot({ ...credentials, director: d }))
+      props.activeDirectors.map(d =>
+        fetchDirectorDashboardSnapshot({ ...credentials, director: d })
+      )
     )
     snapshots.value = results
       .filter(r => r.status === 'fulfilled')
@@ -147,12 +172,10 @@ async function fetchData() {
   }
 }
 
-// Expose as a callable refresh so RunningJobsWidget can trigger it.
 function refresh() { fetchData() }
 
-watch(() => props.activeDirectors.join('\0'), () => { fetchData() }, { immediate: true })
+watch(() => props.activeDirectors.join('\0'), () => fetchData(), { immediate: true })
 
-// Provide context to all child widgets.
 provide(DASHBOARD_CONTEXT_KEY, {
   aggregate,
   loading,
@@ -162,38 +185,64 @@ provide(DASHBOARD_CONTEXT_KEY, {
   directorOptions: computed(() => props.directorOptions),
 })
 
-// ── grid layout ───────────────────────────────────────────────────────────────
+// ── layout ─────────────────────────────────────────────────────────────────
+// grid-layout-plus needs a flat array of { i, x, y, w, h } objects.
+const layout = computed({
+  get() {
+    return props.dashboard.widgets.map(w => ({
+      i: w.id,
+      x: w.layout.x,
+      y: w.layout.y,
+      w: w.layout.w,
+      h: w.layout.h,
+    }))
+  },
+  set() {
+    // mutations handled by onLayoutUpdated
+  },
+})
 
-/** vue-grid-layout needs a flat layout array. */
-const gridLayout = computed(() =>
-  props.dashboard.widgets.map(w => ({
-    i: w.id,
-    x: w.layout.x,
-    y: w.layout.y,
-    w: w.layout.w,
-    h: w.layout.h,
-    minW: w.layout.minW ?? 2,
-    minH: w.layout.minH ?? 3,
-  }))
+// Keep a reactive map so GridItem props stay in sync with drag/resize
+const layoutMap = reactive({})
+watch(
+  () => props.dashboard.widgets,
+  (widgets) => {
+    widgets.forEach(w => {
+      if (!layoutMap[w.id]) {
+        layoutMap[w.id] = { x: w.layout.x, y: w.layout.y, w: w.layout.w, h: w.layout.h }
+      }
+    })
+    // Remove stale entries
+    const ids = new Set(widgets.map(w => w.id))
+    for (const id of Object.keys(layoutMap)) {
+      if (!ids.has(id)) delete layoutMap[id]
+    }
+  },
+  { immediate: true, deep: true }
 )
 
 function onLayoutUpdated(newLayout) {
   if (!props.editMode) return
-  dashboardStore.updateWidgetLayouts(props.dashboard.id, newLayout)
+  newLayout.forEach(item => {
+    layoutMap[item.i] = { x: item.x, y: item.y, w: item.w, h: item.h }
+  })
+  dashboardStore.updateWidgetLayouts(
+    props.dashboard.id,
+    newLayout.map(item => ({ i: item.i, x: item.x, y: item.y, w: item.w, h: item.h }))
+  )
 }
 
-// ── widget actions ─────────────────────────────────────────────────────────────
-
+// ── widget helpers ─────────────────────────────────────────────────────────
 function defaultTitle(type) {
   return getWidgetDefinition(type)?.defaultTitle ?? type
 }
 
-function resolveComponent(type) {
+function resolveWidgetComponent(type) {
   return getWidgetDefinition(type)?.component ?? null
 }
 
 const configuringWidget = ref(null)
-const showConfigDialog   = ref(false)
+const showConfigDialog  = ref(false)
 
 function openConfig(widget) {
   configuringWidget.value = widget
@@ -214,11 +263,8 @@ function removeWidget(widget) {
     }),
     ok:     { label: t('Remove'), color: 'negative', flat: true },
     cancel: { label: t('Cancel'), flat: true },
-  }).onOk(() => {
-    dashboardStore.removeWidget(props.dashboard.id, widget.id)
-  })
+  }).onOk(() => dashboardStore.removeWidget(props.dashboard.id, widget.id))
 }
 
-// Expose refresh so the parent page can call it from the toolbar.
 defineExpose({ refresh, fetchData })
 </script>

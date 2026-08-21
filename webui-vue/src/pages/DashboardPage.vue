@@ -269,12 +269,11 @@ function onInitialConfigClose(open) {
 }
 
 function placeWidget(widget) {
-  const def = getWidgetDefinition(widget.type)
   dashStore.addWidget(activeDashboardId.value, {
     type:   widget.type,
     title:  widget.title,
     props:  widget.props,
-    layout: { ...(def?.defaultLayout ?? { w: 4, h: 6 }), x: 0, y: Infinity },
+    layout: widget.layout,
   })
 }
 
