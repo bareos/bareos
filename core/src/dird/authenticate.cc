@@ -29,7 +29,11 @@
  */
 
 #include "include/bareos.h"
+#include "dird/ua_server.h"
 #include "dird.h"
+#include "include/version_hex.h"
+#include "include/version_numbers.h"
+#include "lib/s_password.h"
 #include "dird/authenticate.h"
 #if defined(HAVE_PAM)
 #  include "dird/auth_pam.h"
@@ -232,5 +236,190 @@ bool AuthenticateFileDaemon(BareosSocket* fd, char* client_name)
             kBareosVersionStrings.Full, kBareosVersionStrings.Date);
 
   return true;
+}
+
+inline constexpr const char hello_client_with_version_v2[]
+    = "Hello Client %127s FdProtocolVersion=%d calling Version=\"%u.%u.%u\"";
+
+inline constexpr const char hello_client_with_version[]
+    = "Hello Client %127s FdProtocolVersion=%d calling";
+
+inline constexpr const char hello_client[] = "Hello Client %127s calling";
+
+inline constexpr const char hello_console[] = "Hello %127s calling";
+inline constexpr const char hello_console_with_version[]
+    = "Hello %127s calling version %127s Version=\"%u.%u.%u\"";
+
+TlsResource* DirectorAuth::parse(std::string_view msg)
+{
+  char version[MAX_NAME_LENGTH]{};
+  char tbuf[MAX_TIME_LENGTH];
+  char name[MAX_NAME_LENGTH]{};
+  int fd_protocol_version{0};
+
+  unsigned major{}, minor{}, patch{};
+  std::string cpy{msg};
+  if ((bsscanf(cpy.c_str(), hello_client_with_version_v2, name,
+               &fd_protocol_version, &major, &minor, &patch)
+       == 5)
+      || (bsscanf(cpy.c_str(), hello_client_with_version, name,
+                  &fd_protocol_version)
+          == 2)
+      || (bsscanf(cpy.c_str(), hello_client, name) == 1)) {
+    type = inbound_type::Client;
+  } else if (bsscanf(cpy.c_str(), hello_console_with_version, name, version,
+                     &major, &minor, &patch)
+                 == 5
+             || bsscanf(cpy.c_str(), hello_console, name) == 1) {
+    type = inbound_type::Console;
+  }
+
+  remote_version = VERSION_HEX(major, minor, patch);
+  UnbashSpaces(name);
+
+  bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL));
+
+  auto* myself
+      = dynamic_cast<DirectorResource*>(p->GetNextRes(R_DIRECTOR, nullptr));
+
+  if (!myself) { return nullptr; }
+
+  switch (type) {
+    case inbound_type::Client: {
+      Dmsg1(110, "Got a FD connection from %s at %s\n", name, tbuf);
+      auto* res
+          = dynamic_cast<ClientResource*>(p->GetResWithName(R_CLIENT, name));
+
+      if (!res) {
+        Dmsg1(50, "Unknown FD %s for new connection\n", name);
+        return nullptr;
+      }
+
+      if (res->password_.encoding != p_encoding_md5) {
+        Dmsg1(50, "Bad password for FD %s: md5 is required\n", name);
+        return nullptr;
+      }
+
+      auto& data = client.emplace();
+      data.res = res;
+      data.protocol_version = fd_protocol_version;
+
+      return res;
+    } break;
+    case inbound_type::Console: {
+      Dmsg1(110, "Got a Console connection from %s at %s\n", name, tbuf);
+      auto* res
+          = dynamic_cast<ConsoleResource*>(p->GetResWithName(R_CONSOLE, name));
+      if (!res) {
+        Dmsg1(50, "Unknown Console %s for new connection\n", name);
+        return nullptr;
+      }
+
+      if (res->password_.encoding != p_encoding_md5) {
+        Dmsg1(50, "Bad password for Console %s: md5 is required\n", name);
+        return nullptr;
+      }
+
+      auto& data = console.emplace();
+      auto num_leases = ConsoleConnectionLease::get_num_leases();
+
+      if (num_leases > myself->MaxConsoleConnections) {
+        if (bstrcmp(name, "*UserAgent*")) {
+          Emsg0(M_INFO, 0,
+                T_("Number of console connections exceeded "
+                   "Maximum :%u, Current: %" PRIuz "\n"),
+                myself->MaxConsoleConnections, num_leases);
+        } else {
+          Emsg0(M_ERROR, 0,
+                T_("Number of console connections exceeded "
+                   "Maximum :%u, Current: %" PRIuz "\n"),
+                myself->MaxConsoleConnections, num_leases);
+          return nullptr;
+        }
+      }
+
+      data.res = res;
+
+      if (std::string_view{data.res->resource_name_} == "*UserAgent*") {
+        data.tls = *myself;
+      } else {
+        data.tls = *res;
+      }
+
+      auto parsed_version = parse_version(version);
+      if (parsed_version >= BareosVersionNumber::kRelease_18_2) {
+        data.is_old = false;
+        if (data.tls.tls_enable_) { data.tls.tls_require_ = true; }
+      } else {
+        data.is_old = true;
+      }
+
+      return &data.tls;
+    } break;
+    default:
+      [[fallthrough]];
+    case inbound_type::Unknown: {
+      Dmsg1(110, "received bad hello at %s\n", tbuf);
+      return nullptr;
+    } break;
+  }
+}
+
+std::unique_ptr<UserAcl> AuthenticatePamUser(BareosSocket* socket,
+                                             LoadedConfiguration* conf)
+{
+#if !defined(HAVE_PAM)
+  (void)socket;
+  (void)conf;
+  Emsg0(M_ERROR, 0, T_("PAM is not available on this director\n"));
+  return nullptr;
+#else  /* HAVE_PAM */
+  uint32_t response_id;
+  BStringList message_arguments;
+
+  if (!socket->ReceiveAndEvaluateResponseMessage(response_id,
+                                                 message_arguments)) {
+    Dmsg2(100, "Could not evaluate response_id: %" PRIu32 " - %s\n",
+          response_id, message_arguments.JoinReadable().c_str());
+    return nullptr;
+  }
+
+  std::string pam_username;
+  std::string pam_password;
+
+  if (response_id == kMessageIdPamUserCredentials) {
+    Dmsg0(200, "Console chooses PAM direct credentials\n");
+    if (message_arguments.size() < 3) {
+      Dmsg0(200, "Console sent wrong number of credentials\n");
+      return nullptr;
+    } else {
+      pam_username = message_arguments.at(1);
+      pam_password = message_arguments.at(2);
+    }
+  } else if (response_id == kMessageIdPamInteractive) {
+    Dmsg0(200, "Console chooses PAM interactive\n");
+  } else {
+    Dmsg0(200, "Console did not answer correctly: response_id=%" PRIu32 "\n",
+          response_id);
+    return nullptr;
+  }
+
+  Dmsg1(200, "Try to authenticate user using PAM:%s\n", pam_username.c_str());
+
+  std::string authenticated_username;
+  if (!PamAuthenticateUser(socket, pam_username, pam_password,
+                           authenticated_username)) {
+    return nullptr;
+  }
+  auto* user = dynamic_cast<UserResource*>(
+      conf->GetResWithName(R_USER, authenticated_username.c_str()));
+  if (!user) {
+    Dmsg1(200, "No user config found for user %s\n",
+          authenticated_username.c_str());
+    return nullptr;
+  }
+  auto acls = UserAcl::from_config(user);
+  return acls;
+#endif /* !HAVE_PAM */
 }
 } /* namespace directordaemon */
