@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,6 +58,7 @@ class generic_tape_device : public Device {
   virtual void SetOsDeviceParameters(DeviceControlRecord* dcr) override;
   virtual int32_t GetOsTapeFile() override;
   virtual bool rewind(DeviceControlRecord* dcr) override;
+  virtual bool d_flush(DeviceControlRecord* dcr) override;
   virtual bool UpdatePos(DeviceControlRecord* dcr) override;
   virtual bool Reposition(DeviceControlRecord* dcr,
                           uint32_t rfile,
