@@ -53,26 +53,30 @@ describe('dashboards store', () => {
     await nextTick()
 
     const raw = JSON.parse(localStorage.getItem('bareos_dashboards'))
-    expect(Array.isArray(raw)).toBe(true)
-    expect(raw.some(d => d.name === 'My Board')).toBe(true)
+    expect(Array.isArray(raw.dashboards)).toBe(true)
+    expect(raw.dashboards.some(d => d.name === 'My Board')).toBe(true)
+    expect(typeof raw.activeDashboardId).toBe('string')
   })
 
   it('restores dashboards from localStorage on mount', () => {
-    localStorage.setItem('bareos_dashboards', JSON.stringify([
-      {
-        id: 'saved-1',
-        name: 'Restored Board',
-        widgets: [
-          {
-            id: 'w1',
-            type: 'job-totals',
-            title: 'Totals',
-            props: {},
-            layout: { x: 0, y: 0, w: 4, h: 5, i: 'w1', minW: 2, minH: 3 },
-          },
-        ],
-      },
-    ]))
+    localStorage.setItem('bareos_dashboards', JSON.stringify({
+      activeDashboardId: 'saved-1',
+      dashboards: [
+        {
+          id: 'saved-1',
+          name: 'Restored Board',
+          widgets: [
+            {
+              id: 'w1',
+              type: 'job-totals',
+              title: 'Totals',
+              props: {},
+              layout: { x: 0, y: 0, w: 4, h: 5, i: 'w1', minW: 2, minH: 3 },
+            },
+          ],
+        },
+      ],
+    }))
 
     setActivePinia(createPinia())
     const store = useDashboardStore()
@@ -92,24 +96,27 @@ describe('dashboards store', () => {
   })
 
   it('falls back to default when localStorage contains an empty array', () => {
-    localStorage.setItem('bareos_dashboards', JSON.stringify([]))
+    localStorage.setItem('bareos_dashboards', JSON.stringify({ dashboards: [], activeDashboardId: null }))
     setActivePinia(createPinia())
     const store = useDashboardStore()
     expect(store.dashboards[0].name).toBe('Overview')
   })
 
   it('discards widgets with missing id or type when restoring', () => {
-    localStorage.setItem('bareos_dashboards', JSON.stringify([
-      {
-        id: 'db1',
-        name: 'Board',
-        widgets: [
-          { id: '', type: 'job-totals', title: '', props: {}, layout: {} },
-          { id: 'w1', type: '', title: '', props: {}, layout: {} },
-          { id: 'w2', type: 'job-totals', title: 'OK', props: {}, layout: { x: 0, y: 0, w: 4, h: 5 } },
-        ],
-      },
-    ]))
+    localStorage.setItem('bareos_dashboards', JSON.stringify({
+      activeDashboardId: 'db1',
+      dashboards: [
+        {
+          id: 'db1',
+          name: 'Board',
+          widgets: [
+            { id: '', type: 'job-totals', title: '', props: {}, layout: {} },
+            { id: 'w1', type: '', title: '', props: {}, layout: {} },
+            { id: 'w2', type: 'job-totals', title: 'OK', props: {}, layout: { x: 0, y: 0, w: 4, h: 5 } },
+          ],
+        },
+      ],
+    }))
     setActivePinia(createPinia())
     const store = useDashboardStore()
     expect(store.dashboards[0].widgets).toHaveLength(1)

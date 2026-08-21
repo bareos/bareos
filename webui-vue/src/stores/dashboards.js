@@ -54,7 +54,7 @@ function normaliseDashboard(raw) {
   if (!id || !name) return null
 
   const widgets = Array.isArray(raw.widgets)
-    ? raw.widgets.flatMap(w => normaliseWidget(w) ? [normaliseWidget(w)] : [])
+    ? raw.widgets.flatMap(w => { const n = normaliseWidget(w); return n ? [n] : [] })
     : []
 
   return { id, name, widgets }
@@ -92,13 +92,16 @@ function loadFromStorage() {
     const raw = localStorage.getItem(LS_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const dashboards = parsed.flatMap(d => {
+      const stored = Array.isArray(parsed) ? parsed : parsed?.dashboards
+      if (Array.isArray(stored) && stored.length > 0) {
+        const dashboards = stored.flatMap(d => {
           const nd = normaliseDashboard(d)
           return nd ? [nd] : []
         })
         if (dashboards.length > 0) {
-          return { dashboards, activeDashboardId: dashboards[0].id }
+          const savedActiveId = parsed?.activeDashboardId
+          const validActiveId = dashboards.find(d => d.id === savedActiveId)?.id
+          return { dashboards, activeDashboardId: validActiveId ?? dashboards[0].id }
         }
       }
     }
@@ -119,10 +122,14 @@ export const useDashboardStore = defineStore('dashboards', () => {
   )
 
   function save() {
-    localStorage.setItem(LS_KEY, JSON.stringify(dashboards.value))
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      dashboards: dashboards.value,
+      activeDashboardId: activeDashboardId.value,
+    }))
   }
 
   watch(dashboards, save, { deep: true })
+  watch(activeDashboardId, save)
 
   // ── active dashboard ─────────────────────────────────────────────────────
 

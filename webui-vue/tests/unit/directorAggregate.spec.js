@@ -93,7 +93,7 @@ describe('director aggregate dashboard helpers', () => {
       }),
     })
     await vi.waitFor(() => {
-      expect(socket.sent).toHaveLength(8)
+      expect(socket.sent).toHaveLength(10)
     })
 
     const commandIds = new Map(
@@ -201,6 +201,24 @@ describe('director aggregate dashboard helpers', () => {
             status: 'Is waiting for a mount request',
           }],
         },
+      }),
+    })
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get('llist pools'),
+        data: { pools: [{ name: 'Default', poolid: '1', numvols: '2' }] },
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get('llist volumes'),
+        data: { volumes: [
+          { volumename: 'Vol-0001', pool: 'Default', volbytes: '1024' },
+          { volumename: 'Vol-0002', pool: 'Default', volbytes: '2048' },
+        ]},
       }),
     })
 
