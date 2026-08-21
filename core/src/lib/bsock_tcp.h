@@ -53,11 +53,6 @@ class BareosSocketTCP : public BareosSocket {
             int port,
             utime_t heart_beat,
             int* fatal) override;
-  bool SetKeepalive(JobControlRecord* jcr,
-                    int sockfd,
-                    bool enable,
-                    int keepalive_start,
-                    int keepalive_interval);
   bool SendPacket(int32_t* hdr, int32_t pktsiz);
   void DumpNetworkMessageToFile(const char* ptr, int nbytes);
 

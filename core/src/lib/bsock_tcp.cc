@@ -35,6 +35,7 @@
 #include "lib/bnet.h"
 #include "lib/bpoll.h"
 #include "lib/btimers.h"
+#include "lib/tcp_keepalive.h"
 #include "lib/tls/openssl.h"
 #include "lib/bsock_tcp.h"
 #include "lib/berrno.h"
@@ -226,9 +227,10 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
   dlist<IPADDR>* addr_list;
   IPADDR *ipaddr, *next, *to_free;
   bool connected = false;
-  int value;
   const char* errstr;
   int save_errno = 0;
+  auto keepalive_settings = ResolveTcpKeepaliveSettings(heart_beat);
+  keepalive_settings.enabled = use_keepalive_;
 
   /* Fill in the structure serv_addr with the address of
    * the server that we want to connect with. */
@@ -256,12 +258,6 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
         next = (IPADDR*)addr_list->next(next);
       }
     }
-  }
-
-  if (use_keepalive_) {
-    value = 1;
-  } else {
-    value = 0;
   }
 
   foreach_dlist (ipaddr, addr_list) {
@@ -316,9 +312,6 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
       }
     }
 
-    // Keep socket from timing out from inactivity
-    SetKeepalive(jcr, sockfd, use_keepalive_, heart_beat, heart_beat);
-
     // Connect to server
     if (::connect(sockfd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen())
         < 0) {
@@ -357,84 +350,11 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
 #  endif
 #endif
 
-  /* Keep socket from timing out from inactivity
-   * Do this a second time out of paranoia */
-  if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value,
-                 sizeof(value))
-      < 0) {
-    BErrNo be;
-    Qmsg1(jcr, M_WARNING, 0, T_("Cannot set SO_KEEPALIVE on socket: %s\n"),
-          be.bstrerror());
-  }
+  ApplyTcpKeepaliveSettings(jcr, sockfd, keepalive_settings);
 
   FinInit(jcr, sockfd, name, host, port, ipaddr->get_sockaddr());
   FreeAddresses(addr_list);
   fd_ = sockfd;
-  return true;
-}
-
-
-bool BareosSocketTCP::SetKeepalive(JobControlRecord* jcr,
-                                   int sockfd,
-                                   bool enable,
-                                   [[maybe_unused]] int keepalive_start,
-                                   int keepalive_interval)
-{
-  int value = int(enable);
-
-  // Keep socket from timing out from inactivity
-  if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value,
-                 sizeof(value))
-      < 0) {
-    BErrNo be;
-    Qmsg1(jcr, M_WARNING, 0, T_("Failed to set SO_KEEPALIVE on socket: %s\n"),
-          be.bstrerror());
-    return false;
-  }
-
-  if (enable && keepalive_interval) {
-#ifdef HAVE_WIN32
-    struct s_tcp_keepalive {
-      u_long onoff;
-      u_long keepalivetime;
-      u_long keepaliveinterval;
-    } val;
-    val.onoff = enable;
-    val.keepalivetime = keepalive_start * 1000L;
-    val.keepaliveinterval = keepalive_interval * 1000L;
-    DWORD got = 0;
-    if (WSAIoctl(sockfd, SIO_KEEPALIVE_VALS, &val, sizeof(val), NULL, 0, &got,
-                 NULL, NULL)
-        != 0) {
-      Qmsg1(jcr, M_WARNING, 0,
-            "Failed to set SIO_KEEPALIVE_VALS on socket: %d\n",
-            WSAGetLastError());
-      return false;
-    }
-#else
-#  if defined(TCP_KEEPIDLE)
-    if (setsockopt(sockfd, SOL_TCP, TCP_KEEPIDLE,
-                   (sockopt_val_t)&keepalive_start, sizeof(keepalive_start))
-        < 0) {
-      BErrNo be;
-      Qmsg2(jcr, M_WARNING, 0,
-            T_("Failed to set TCP_KEEPIDLE = %d on socket: %s\n"),
-            keepalive_start, be.bstrerror());
-      return false;
-    }
-    if (setsockopt(sockfd, SOL_TCP, TCP_KEEPINTVL,
-                   (sockopt_val_t)&keepalive_interval,
-                   sizeof(keepalive_interval))
-        < 0) {
-      BErrNo be;
-      Qmsg2(jcr, M_WARNING, 0,
-            T_("Failed to set TCP_KEEPINTVL = %d on socket: %s\n"),
-            keepalive_interval, be.bstrerror());
-      return false;
-    }
-#  endif
-#endif
-  }
   return true;
 }
 

@@ -37,6 +37,11 @@ This usually results in a *broken pipe* error message.
 
    Consult `TLDP howto TCP-Keepalive <https://tldp.org/HOWTO/TCP-Keepalive-HOWTO/overview.html>`_
    to learn how to setup tcp keepalive in you Linux.
+   Bareos also enables TCP keepalive on bnet sockets. If
+   :config:option:`dir/director/HeartbeatInterval`\ or a more specific
+   heartbeat setting is configured, Bareos uses that value as the TCP keepalive
+   idle time and probe interval. Otherwise Bareos uses a 60 second idle time,
+   a 60 second probe interval and 3 probes.
 
 .. _section-PassiveClient:
 
