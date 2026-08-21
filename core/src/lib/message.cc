@@ -426,7 +426,7 @@ void CloseMsg(JobControlRecord* jcr)
           /* Since we are closing all messages, before "recursing"
            * make sure we are not closing the daemon messages, otherwise
            * kaboom. */
-          if (msgs != daemon_msgs) {
+          if (jcr) {
             // Read what mail prog returned -- should be nothing
             while (fgets(line, len, bpipe->rfd)) {
               DeliveryError(T_("Mail prog: %s"), line);
@@ -434,7 +434,7 @@ void CloseMsg(JobControlRecord* jcr)
           }
 
           status = CloseBpipe(bpipe);
-          if (status != 0 && msgs != daemon_msgs) {
+          if (status != 0 && jcr) {
             BErrNo be;
             be.SetErrno(status);
             Dmsg1(850, "Calling emsg. CMD=%s\n", cmd);
