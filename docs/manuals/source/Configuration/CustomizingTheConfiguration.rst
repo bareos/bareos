@@ -837,12 +837,26 @@ When parsing the resource directives, Bareos classifies the data according to th
 
    Don’t use quotes around the number, see :ref:`section-Quotes`.
 
-
-
 .. config:datatype:: PLUGIN_NAMES
 
-   List of plugins, that should get loaded from `Plugin Directory`
+   List of space-separated plugin names, that should get loaded from `Plugin Directory`
+   If a plugin name contains spaces itself, then you need to enclose it in quotes.
 
+   .. code-block:: bareosconfig
+
+      Plugin Names =  plugin1 "plugin2" "plugin with spaces"
+
+   Specifying the same option multiple times will cause the lists to be concatenated, so the following is equivalent to the above
+
+   .. code-block:: bareosconfig
+
+      Plugin Names = plugin1
+      Plugin Names = "plugin2"
+      Plugin Names = "plugin with spaces"
+
+   .. note::
+
+      For legacy reasons, we also accept comma-separated and colon-separated lists.
 
 .. config:datatype:: POOLTYPE
 
