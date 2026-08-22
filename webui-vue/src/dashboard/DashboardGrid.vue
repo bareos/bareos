@@ -41,7 +41,7 @@
 
     <!-- Mobile: simple vertical stack (no drag/resize) -->
     <div
-      v-if="dashboard.widgets.length && isMobile"
+      v-if="dashboard.widgets.length && isMobile && !editMode"
       class="column q-gutter-sm q-px-sm"
     >
       <WidgetShell
@@ -60,14 +60,14 @@
       </WidgetShell>
     </div>
 
-    <!-- Desktop: full drag/resize grid -->
+    <!-- Full drag/resize grid (desktop + mobile edit mode) -->
     <GridLayout
       v-else-if="dashboard.widgets.length"
       v-model:layout="layout"
       :col-num="12"
       :row-height="30"
       :margin="[8, 8]"
-      :is-draggable="editMode"
+      :is-draggable="editMode && !isMobile"
       :is-resizable="editMode"
       :use-css-transforms="true"
       :vertical-compact="true"
@@ -113,7 +113,7 @@
 </template>
 
 <script setup>
-import { ref, computed, provide, watch, reactive } from 'vue'
+import { ref, computed, provide, watch, reactive, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import { GridLayout, GridItem } from 'grid-layout-plus'
@@ -226,6 +226,7 @@ const layout = computed({
 
 // Keep a reactive map so GridItem props stay in sync with drag/resize
 const layoutMap = reactive({})
+let _persistLayoutTimer = null
 watch(
   () => props.dashboard.widgets,
   (widgets) => {
@@ -248,11 +249,22 @@ function onLayoutUpdated(newLayout) {
   newLayout.forEach(item => {
     layoutMap[item.i] = { x: item.x, y: item.y, w: item.w, h: item.h }
   })
-  dashboardStore.updateWidgetLayouts(
-    props.dashboard.id,
-    newLayout.map(item => ({ i: item.i, x: item.x, y: item.y, w: item.w, h: item.h }))
-  )
+  if (_persistLayoutTimer) clearTimeout(_persistLayoutTimer)
+  _persistLayoutTimer = setTimeout(() => {
+    dashboardStore.updateWidgetLayouts(
+      props.dashboard.id,
+      newLayout.map(item => ({ i: item.i, x: item.x, y: item.y, w: item.w, h: item.h }))
+    )
+    _persistLayoutTimer = null
+  }, 120)
 }
+
+onUnmounted(() => {
+  if (_persistLayoutTimer) {
+    clearTimeout(_persistLayoutTimer)
+    _persistLayoutTimer = null
+  }
+})
 
 // ── widget helpers ─────────────────────────────────────────────────────────
 function defaultTitle(type) {
@@ -290,3 +302,17 @@ function removeWidget(widget) {
 
 defineExpose({ refresh, fetchData })
 </script>
+
+<style scoped>
+@media (max-width: 599px) {
+  :deep(.vgl-layout) {
+    --vgl-resizer-size: 18px;
+    --vgl-resizer-border-width: 3px;
+  }
+
+  /* Keep page scrolling usable in mobile edit mode. */
+  :deep(.vgl-item--no-touch) {
+    touch-action: pan-y !important;
+  }
+}
+</style>
