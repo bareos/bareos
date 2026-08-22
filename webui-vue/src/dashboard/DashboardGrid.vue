@@ -261,6 +261,19 @@ function toLayoutItems(widgets) {
   }))
 }
 
+function isSameLayout(a, b) {
+  if (a.length !== b.length) return false
+  return a.every((item, idx) => {
+    const other = b[idx]
+    return other
+      && String(item.i) === String(other.i)
+      && item.x === other.x
+      && item.y === other.y
+      && item.w === other.w
+      && item.h === other.h
+  })
+}
+
 const layout = computed(() => layoutModel.value)
 
 // Keep a reactive map so GridItem props stay in sync with drag/resize
@@ -291,6 +304,7 @@ function onLayoutUpdated(newLayout) {
     w: item.w,
     h: item.h,
   }))
+  if (isSameLayout(layoutModel.value, normalized)) return
   layoutModel.value = normalized
   normalized.forEach(item => {
     layoutMap[item.i] = { x: item.x, y: item.y, w: item.w, h: item.h }
