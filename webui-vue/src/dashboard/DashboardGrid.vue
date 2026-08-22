@@ -147,6 +147,12 @@ const isMobile = computed(() => $q.screen.lt.sm)
 const snapshots    = ref([])
 const loading      = ref(false)
 const refreshToken = ref(0)
+const pools        = ref([])
+const poolLoading  = ref(false)
+const poolRefreshToken = ref(0)
+let _latestFetchRequestId = 0
+let _dataRequestsInFlight = 0
+let _poolRequestsInFlight = 0
 
 // Pool data changes infrequently — only re-fetch every POOL_REFRESH_EVERY
 // normal refresh cycles (≈ every 10 minutes at the default 60 s interval).
@@ -156,16 +162,25 @@ let _refreshCount = 0
 const aggregate = computed(() => aggregateDirectorDashboardSnapshots(snapshots.value))
 
 async function fetchData({ forcePools = false } = {}) {
+  const requestId = ++_latestFetchRequestId
   const credentials = auth.getCredentials()
   if (!credentials || props.activeDirectors.length === 0) {
-    snapshots.value = []
+    if (requestId === _latestFetchRequestId) {
+      snapshots.value = []
+      pools.value = []
+    }
     return
   }
 
   _refreshCount += 1
   const includePools = forcePools || _refreshCount % POOL_REFRESH_EVERY === 1
 
+  _dataRequestsInFlight += 1
   loading.value = true
+  if (includePools) {
+    _poolRequestsInFlight += 1
+    poolLoading.value = true
+  }
   try {
     const results = await Promise.allSettled(
       props.activeDirectors.map(d =>
@@ -176,8 +191,13 @@ async function fetchData({ forcePools = false } = {}) {
       .filter(r => r.status === 'fulfilled')
       .map(r => r.value)
 
+    // Ignore stale completions from older requests.
+    if (requestId !== _latestFetchRequestId) return
+
     if (includePools) {
       snapshots.value = fresh
+      pools.value = aggregateDirectorDashboardSnapshots(fresh).pools
+      poolRefreshToken.value += 1
     } else {
       // Carry forward pool data from the previous snapshot for each director.
       const prevPoolsByDir = Object.fromEntries(
@@ -188,9 +208,14 @@ async function fetchData({ forcePools = false } = {}) {
         pools: prevPoolsByDir[s.director] ?? [],
       }))
     }
-  } finally {
-    loading.value = false
     refreshToken.value += 1
+  } finally {
+    _dataRequestsInFlight = Math.max(0, _dataRequestsInFlight - 1)
+    loading.value = _dataRequestsInFlight > 0
+    if (includePools) {
+      _poolRequestsInFlight = Math.max(0, _poolRequestsInFlight - 1)
+      poolLoading.value = _poolRequestsInFlight > 0
+    }
   }
 }
 
@@ -200,9 +225,12 @@ watch(() => props.activeDirectors.join('\0'), () => fetchData({ forcePools: true
 
 provide(DASHBOARD_CONTEXT_KEY, {
   aggregate,
+  pools,
   loading,
+  poolLoading,
   refresh,
   refreshToken,
+  poolRefreshToken,
   activeDirectors: computed(() => props.activeDirectors),
   directorOptions: computed(() => props.directorOptions),
 })
@@ -300,7 +328,7 @@ function removeWidget(widget) {
   }).onOk(() => dashboardStore.removeWidget(props.dashboard.id, widget.id))
 }
 
-defineExpose({ refresh, fetchData })
+defineExpose({ refresh, fetchData, loading })
 </script>
 
 <style scoped>
