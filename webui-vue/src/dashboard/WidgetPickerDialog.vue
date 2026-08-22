@@ -25,8 +25,12 @@
   Emits 'pick' with the chosen widget definition.
 -->
 <template>
-  <q-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)">
-    <q-card style="min-width:520px; max-width:720px; width:100%">
+  <q-dialog
+    :model-value="modelValue"
+    :maximized="isMobile"
+    @update:model-value="$emit('update:modelValue', $event)"
+  >
+    <q-card :style="dialogCardStyle">
       <q-card-section class="panel-header row items-center">
         <span>{{ t('Add Widget') }}</span>
         <q-space />
@@ -80,16 +84,22 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { getAllWidgetDefinitions } from './widgetRegistry.js'
 
 const { t } = useI18n()
+const $q = useQuasar()
 
 defineProps({ modelValue: { type: Boolean, default: false } })
 const emit = defineEmits(['update:modelValue', 'pick'])
 
 const search = ref('')
 const allDefs = getAllWidgetDefinitions()
+const isMobile = computed(() => $q.screen.lt.sm)
+const dialogCardStyle = computed(() => (isMobile.value
+  ? 'width:100%; max-width:100vw; min-width:0; max-height:100vh'
+  : 'min-width:520px; max-width:720px; width:100%'))
 
 const filtered = computed(() => {
   const q = search.value.toLowerCase().trim()
