@@ -105,6 +105,17 @@ const WIDGETS = [
     requiredProps: [],
     optionalProps: [],
   },
+  {
+    type: 'database-status',
+    label: 'Database Status',
+    description: 'Database status summary and per-director catalog size.',
+    icon: 'mdi-database',
+    component: defineAsyncComponent(() => import('./widgets/DatabaseStatusWidget.vue')),
+    defaultTitle: 'Database Status',
+    defaultLayout: { w: 6, h: 8 },
+    requiredProps: [],
+    optionalProps: [],
+  },
 ]
 
 /** Map from type key → definition (for O(1) lookup). */

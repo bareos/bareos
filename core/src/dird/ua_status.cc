@@ -733,7 +733,6 @@ static bool QueryDatabaseTotalSize(UaContext* ua,
 }
 
 static bool QueryLargestTables(UaContext* ua,
-                               int top,
                                std::vector<DatabaseTableSize>& tables,
                                std::vector<std::string>& errors)
 {
@@ -742,9 +741,7 @@ static bool QueryLargestTables(UaContext* ua,
       "SELECT schemaname || '.' || relname AS name,"
       " pg_total_relation_size(relid)::bigint AS bytes "
       "FROM pg_catalog.pg_statio_user_tables "
-      "ORDER BY pg_total_relation_size(relid) DESC "
-      "LIMIT %d",
-      top);
+      "ORDER BY pg_total_relation_size(relid) DESC");
 
   auto handler = [](void* data, int, char** row) {
     auto* table_rows = static_cast<std::vector<DatabaseTableSize>*>(data);
@@ -900,7 +897,7 @@ static void DoDatabaseStatus(UaContext* ua)
   }
 
   total_available = QueryDatabaseTotalSize(ua, total_bytes, errors);
-  tables_available = QueryLargestTables(ua, top, tables, errors);
+  tables_available = QueryLargestTables(ua, tables, errors);
 
   const char* status = "ok";
   if (!total_available && !tables_available) {
