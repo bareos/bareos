@@ -93,7 +93,7 @@ describe('director aggregate dashboard helpers', () => {
       }),
     })
     await vi.waitFor(() => {
-      expect(socket.sent).toHaveLength(8)
+      expect(socket.sent).toHaveLength(11)
     })
 
     const commandIds = new Map(
@@ -203,6 +203,48 @@ describe('director aggregate dashboard helpers', () => {
         },
       }),
     })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get('status database'),
+        data: {
+          database_status: {
+            status: 'ok',
+            checked_at: '2026-03-23 09:30:00',
+            top: 10,
+            database: {
+              engine: 'postgresql',
+              name: 'bareos',
+              total_bytes_available: true,
+              total_bytes: 4096,
+            },
+            tables_available: true,
+            tables: [
+              { name: 'public.job', bytes: 2048 },
+              { name: 'public.file', bytes: 1024 },
+            ],
+          },
+        },
+      }),
+    })
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get('llist pools'),
+        data: { pools: [{ name: 'Default', poolid: '1', numvols: '2' }] },
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get('llist volumes'),
+        data: { volumes: [
+          { volumename: 'Vol-0001', pool: 'Default', volbytes: '1024' },
+          { volumename: 'Vol-0002', pool: 'Default', volbytes: '2048' },
+        ]},
+      }),
+    })
 
     await expect(snapshotPromise).resolves.toMatchObject({
       director: 'prod-dir',
@@ -236,6 +278,17 @@ describe('director aggregate dashboard helpers', () => {
         files: 1200,
         bytes: 40960,
       },
+      databaseStatus: {
+        status: 'ok',
+        checkedAt: '2026-03-23 09:30:00',
+        database: {
+          engine: 'postgresql',
+          name: 'bareos',
+          totalBytesAvailable: true,
+          totalBytes: 4096,
+        },
+        tablesAvailable: true,
+      },
     })
   })
 
@@ -246,6 +299,12 @@ describe('director aggregate dashboard helpers', () => {
         jobsPast24h: [{ scopeKey: 'prod-a:1', director: 'prod-a', id: 1, status: 'T', starttime: '2026-03-23 08:00:00' }],
         runningJobs: [{ scopeKey: 'prod-a:2', director: 'prod-a', id: 2, status: 'R', starttime: '2026-03-23 09:00:00' }],
         recentJobs: [{ scopeKey: 'prod-a:3', director: 'prod-a', id: 3, status: 'W', starttime: '2026-03-23 10:00:00' }],
+        databaseStatus: {
+          director: 'prod-a',
+          status: 'warning',
+          checkedAt: '2026-03-23 10:00:00',
+          database: { totalBytesAvailable: true, totalBytes: 1000 },
+        },
         clientCount: 2,
         storageCount: 1,
         jobTotals: { jobs: 10, files: 100, bytes: 1000 },
@@ -255,6 +314,12 @@ describe('director aggregate dashboard helpers', () => {
         jobsPast24h: [{ scopeKey: 'prod-b:4', director: 'prod-b', id: 4, status: 'f', starttime: '2026-03-23 11:00:00' }],
         runningJobs: [],
         recentJobs: [{ scopeKey: 'prod-b:5', director: 'prod-b', id: 5, status: 'T', starttime: '2026-03-23 12:00:00' }],
+        databaseStatus: {
+          director: 'prod-b',
+          status: 'ok',
+          checkedAt: '2026-03-23 12:00:00',
+          database: { totalBytesAvailable: true, totalBytes: 2000 },
+        },
         clientCount: 3,
         storageCount: 2,
         jobTotals: { jobs: 20, files: 200, bytes: 2000 },
@@ -275,6 +340,17 @@ describe('director aggregate dashboard helpers', () => {
       jobs: 30,
       files: 300,
       bytes: 3000,
+    })
+    expect(aggregate.databaseStatuses.map(s => s.director)).toEqual(['prod-a', 'prod-b'])
+    expect(aggregate.databaseStatusSummary).toEqual({
+      status: 'warning',
+      checkedAt: '2026-03-23 12:00:00',
+      totalBytes: 3000,
+      directors: 2,
+      availableDirectors: 2,
+      unavailableDirectors: 0,
+      warningDirectors: 1,
+      errorDirectors: 0,
     })
   })
 })

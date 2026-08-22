@@ -22,6 +22,8 @@
 import {
   directorCollection,
   normaliseJob,
+  normalisePool,
+  normaliseVolume,
 } from './useDirectorFetch.js'
 import {
   createDirectorCommandSession,
@@ -70,6 +72,17 @@ function decorateJobs(entries, director) {
 function numberValue(value) {
   const number = Number(value ?? 0)
   return Number.isFinite(number) ? number : 0
+}
+
+function booleanValue(value, fallback = false) {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'number') return value !== 0
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (['1', 'true', 'yes', 'on'].includes(normalized)) return true
+    if (['0', 'false', 'no', 'off'].includes(normalized)) return false
+  }
+  return fallback
 }
 
 function optionalNumberValue(value) {
@@ -190,10 +203,118 @@ function overlayRuntimeStatus(jobs, runtimeJobs) {
   )
 }
 
+function normalizeDatabaseStatus(statusResult, director) {
+  const payload = statusResult?.database_status ?? statusResult ?? {}
+  const database = payload.database ?? {}
+  const tableEntries = Array.isArray(payload.tables) ? payload.tables : []
+  const errors = Array.isArray(payload.errors)
+    ? payload.errors
+      .map(error => (typeof error?.message === 'string' ? error.message : String(error ?? '')))
+      .filter(Boolean)
+    : []
+
+  return {
+    director,
+    status: payload.status ?? 'unavailable',
+    checkedAt: payload.checked_at ?? '',
+    top: Math.max(0, numberValue(payload.top)),
+    database: {
+      engine: database.engine ?? '',
+      name: database.name ?? '',
+      totalBytes: numberValue(database.total_bytes),
+      totalBytesAvailable: booleanValue(database.total_bytes_available),
+    },
+    tablesAvailable: booleanValue(payload.tables_available, tableEntries.length > 0),
+    tables: tableEntries.map((entry, index) => ({
+      name: entry?.name ?? '',
+      bytes: numberValue(entry?.bytes),
+      scopeKey: `${director}:table:${entry?.name ?? index}`,
+    })),
+    message: payload.message ?? '',
+    errors,
+  }
+}
+
+function severityRank(status) {
+  switch (String(status ?? '').toLowerCase()) {
+    case 'ok': return 1
+    case 'warning': return 2
+    case 'error': return 3
+    case 'unavailable':
+    default:
+      return 0
+  }
+}
+
+function severityFromRank(rank) {
+  switch (rank) {
+    case 3: return 'error'
+    case 2: return 'warning'
+    case 1: return 'ok'
+    default: return 'unavailable'
+  }
+}
+
+function aggregateDatabaseStatusSummary(databaseStatuses) {
+  const statuses = Array.isArray(databaseStatuses) ? databaseStatuses : []
+  if (!statuses.length) {
+    return {
+      status: 'unavailable',
+      checkedAt: '',
+      totalBytes: 0,
+      directors: 0,
+      availableDirectors: 0,
+      unavailableDirectors: 0,
+      warningDirectors: 0,
+      errorDirectors: 0,
+    }
+  }
+
+  const highestSeverity = statuses.reduce(
+    (highest, entry) => Math.max(highest, severityRank(entry.status)),
+    0
+  )
+
+  return {
+    status: severityFromRank(highestSeverity),
+    checkedAt: statuses
+      .map(entry => entry.checkedAt ?? '')
+      .sort((a, b) => String(b).localeCompare(String(a)))[0] ?? '',
+    totalBytes: statuses.reduce(
+      (sum, entry) => sum + (entry.database?.totalBytesAvailable ? numberValue(entry.database.totalBytes) : 0),
+      0
+    ),
+    directors: statuses.length,
+    availableDirectors: statuses.filter(entry => entry.status !== 'unavailable').length,
+    unavailableDirectors: statuses.filter(entry => entry.status === 'unavailable').length,
+    warningDirectors: statuses.filter(entry => entry.status === 'warning').length,
+    errorDirectors: statuses.filter(entry => entry.status === 'error').length,
+  }
+}
+
 export async function fetchDirectorDashboardSnapshot(credentials, options = {}) {
   const client = await createDirectorCommandClient(credentials, options)
 
   try {
+    const includePools = options.includePools !== false
+
+    const jobCalls = [
+      client.call('llist jobs days=1'),
+      client.call('list jobs jobstatus=R'),
+      client.call('llist jobs last current enabled'),
+      client.call('list jobtotals'),
+      client.call('list clients'),
+      client.call('list storages'),
+      client.call('status director'),
+      client.call('status database'),
+    ]
+
+    // Pool + volume data is expensive and changes infrequently.
+    // Only fetch when the caller requests it (slow refresh cycle).
+    const poolCalls = includePools
+      ? [client.call('llist pools'), client.call('llist volumes')]
+      : []
+
     const [
       past24hResult,
       runningResult,
@@ -202,15 +323,9 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       clientsResult,
       storagesResult,
       directorStatusResult,
-    ] = await Promise.allSettled([
-      client.call('llist jobs days=1'),
-      client.call('list jobs jobstatus=R'),
-      client.call('llist jobs last current enabled'),
-      client.call('list jobtotals'),
-      client.call('list clients'),
-      client.call('list storages'),
-      client.call('status director'),
-    ])
+      databaseStatusResult,
+      ...poolResults
+    ] = await Promise.allSettled([...jobCalls, ...poolCalls])
 
     const runtimeRunningJobs = directorStatusResult.status === 'fulfilled'
       ? decorateRuntimeJobs(directorStatusResult.value?.running, credentials.director)
@@ -225,12 +340,50 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       ? decorateJobs(past24hResult.value?.jobs, credentials.director)
       : []
 
+    const poolsResult  = includePools ? poolResults[0] : null
+    const volumesResult = includePools ? poolResults[1] : null
+
+    const volumes = volumesResult?.status === 'fulfilled'
+      ? (Array.isArray(volumesResult.value?.volumes)
+          ? volumesResult.value.volumes
+          : Object.values(volumesResult.value?.volumes ?? {}).flat()
+        ).map(v => normaliseVolume(v))
+      : []
+
+    const bytesByPool = {}
+    const volumesByPool = {}
+    for (const v of volumes) {
+      const key = v.pool ?? ''
+      bytesByPool[key] = (bytesByPool[key] ?? 0) + (Number(v.volbytes) || 0)
+      volumesByPool[key] = (volumesByPool[key] ?? 0) + 1
+    }
+
+    const pools = poolsResult?.status === 'fulfilled'
+      ? directorCollection(poolsResult.value?.pools).map(entry => {
+          const pool = normalisePool(entry)
+          return {
+            ...pool,
+            director: credentials.director,
+            totalbytes: bytesByPool[pool.name ?? ''] ?? 0,
+            totalvolumes: volumesByPool[pool.name ?? ''] ?? 0,
+          }
+        })
+      : []
+
     return {
       director: credentials.director,
       transport: client.transport,
       jobsPast24h,
       runningJobs: mergeRunningJobs(runningJobs, runtimeRunningJobs),
       recentJobs: overlayRuntimeStatus(recentJobs, runtimeRunningJobs),
+      pools,
+      databaseStatus: databaseStatusResult.status === 'fulfilled'
+        ? normalizeDatabaseStatus(databaseStatusResult.value, credentials.director)
+        : normalizeDatabaseStatus({
+          status: 'unavailable',
+          message: 'Database status unavailable.',
+          errors: [databaseStatusResult.reason?.message ?? 'Database status unavailable.'],
+        }, credentials.director),
       jobTotals: totalsResult.status === 'fulfilled'
         ? {
           jobs: numberValue(totalsResult.value?.jobtotals?.jobs),
@@ -255,30 +408,42 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
 }
 
 export function aggregateDirectorDashboardSnapshots(snapshots) {
-  return snapshots.reduce((aggregate, snapshot) => ({
+  const aggregate = snapshots.reduce((combined, snapshot) => ({
     jobsPast24h: sortJobsByStartTime([
-      ...aggregate.jobsPast24h,
+      ...combined.jobsPast24h,
       ...(snapshot.jobsPast24h ?? []),
     ]),
     runningJobs: sortJobsByStartTime([
-      ...aggregate.runningJobs,
+      ...combined.runningJobs,
       ...(snapshot.runningJobs ?? []),
     ]),
     recentJobs: sortJobsById([
-      ...aggregate.recentJobs,
+      ...combined.recentJobs,
       ...(snapshot.recentJobs ?? []),
     ]),
-    clientCount: aggregate.clientCount + numberValue(snapshot.clientCount),
-    storageCount: aggregate.storageCount + numberValue(snapshot.storageCount),
+    pools: [
+      ...combined.pools,
+      ...(snapshot.pools ?? []),
+    ].sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? ''))),
+    databaseStatuses: [
+      ...combined.databaseStatuses,
+      ...(Array.isArray(snapshot.databaseStatuses)
+        ? snapshot.databaseStatuses
+        : (snapshot.databaseStatus ? [snapshot.databaseStatus] : [])),
+    ],
+    clientCount: combined.clientCount + numberValue(snapshot.clientCount),
+    storageCount: combined.storageCount + numberValue(snapshot.storageCount),
     jobTotals: {
-      jobs: aggregate.jobTotals.jobs + numberValue(snapshot.jobTotals?.jobs),
-      files: aggregate.jobTotals.files + numberValue(snapshot.jobTotals?.files),
-      bytes: aggregate.jobTotals.bytes + numberValue(snapshot.jobTotals?.bytes),
+      jobs: combined.jobTotals.jobs + numberValue(snapshot.jobTotals?.jobs),
+      files: combined.jobTotals.files + numberValue(snapshot.jobTotals?.files),
+      bytes: combined.jobTotals.bytes + numberValue(snapshot.jobTotals?.bytes),
     },
   }), {
     jobsPast24h: [],
     runningJobs: [],
     recentJobs: [],
+    pools: [],
+    databaseStatuses: [],
     clientCount: 0,
     storageCount: 0,
     jobTotals: {
@@ -287,4 +452,12 @@ export function aggregateDirectorDashboardSnapshots(snapshots) {
       bytes: 0,
     },
   })
+
+  const databaseStatuses = [...aggregate.databaseStatuses]
+    .sort((left, right) => String(left.director ?? '').localeCompare(String(right.director ?? '')))
+  return {
+    ...aggregate,
+    databaseStatuses,
+    databaseStatusSummary: aggregateDatabaseStatusSummary(databaseStatuses),
+  }
 }
