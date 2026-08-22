@@ -334,6 +334,7 @@ struct ndm_control_agent {
 
   /* ROBOT Agent */
   struct smc_ctrl_block* smc_cb;
+  NDM_FLAG_DECL(robot_is_open)
   unsigned drive_addr;
 
 #ifndef NDMOS_OPTION_NO_TEST_AGENTS

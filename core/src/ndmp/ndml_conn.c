@@ -633,9 +633,13 @@ int ndmconn_call(struct ndmconn* conn, struct ndmp_xa_buf* xa)
 
   xa->request.header.message_type = NDMP0_MESSAGE_REQUEST;
 
-  if (!xmte->xdr_reply) {
-    /* no reply expected, just a send (eg NOTIFY) */
+  if (xa->request.flags & NDMNMB_FLAG_NO_REPLY_EXPECTED) {
+    /* no reply expected, just a send (eg NOTIFY/CONNECT_CLOSE) */
     return ndmconn_send_nmb(conn, &xa->request);
+  }
+  if (!xmte->xdr_reply) {
+    ndmconn_set_err_msg(conn, "reply-xdr-missing");
+    return NDMCONN_CALL_STATUS_BOTCH;
   }
 
   rc = ndmconn_exchange_nmb(conn, &xa->request, &xa->reply);
@@ -819,10 +823,10 @@ int ndmconn_readit(void* a_conn, char* buf, int len)
       if (rc <= 0) { return rc; }
       i += rc;
     }
-    conn->frag_resid = conn->frag_hdr_buf[0] << 24;
-    conn->frag_resid |= conn->frag_hdr_buf[1] << 16;
-    conn->frag_resid |= conn->frag_hdr_buf[2] << 8;
-    conn->frag_resid |= conn->frag_hdr_buf[3];
+    conn->frag_resid = (uint32_t)conn->frag_hdr_buf[0] << 24;
+    conn->frag_resid |= (uint32_t)conn->frag_hdr_buf[1] << 16;
+    conn->frag_resid |= (uint32_t)conn->frag_hdr_buf[2] << 8;
+    conn->frag_resid |= (uint32_t)conn->frag_hdr_buf[3];
     conn->frag_resid &= 0xFFFFFF;
     conn->fhb_off = 0;
   }

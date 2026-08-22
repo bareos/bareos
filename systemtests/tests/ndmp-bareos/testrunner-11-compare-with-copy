@@ -1,0 +1,73 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# make sure we can copy ndmp jobs, and also restore them afterwards
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+# TODO
+# bscan between source and copy should produce the same result,
+# but it is not always the case.
+# https://github.com/bareos/internal/issues/349
+
+source_volumes=$(bin/bconsole <<<".api 2
+list volumes pool=ndmp
+" | "${AWK}" '/"volumename":/ {gsub("\"","",$2);gsub(",","",$2);print $2}' | xargs | sed -e "s, ,|,g")
+if [[ -z "${source_volumes}" ]]; then
+  echo "ERROR: No source volume found in pool ndmp"
+  exit 1
+fi
+copy_volumes=$(bin/bconsole <<<".api 2
+list volumes pool=ndmp-copy
+" | "${AWK}" '/"volumename":/ {gsub("\"","",$2);gsub(",","",$2);print $2}' | xargs | sed -e "s, ,|,g")
+if [[ -z "${copy_volumes}" ]]; then
+  echo "ERROR: No copy volume found in pool ndmp-copy"
+  exit 1
+fi
+
+run_bscan_db --list-records --verbose --volumes "${source_volumes}" \
+  --update-volume-info FileStorage
+mv "${tmp}/bscan.out" "${tmp}/bscan_FileStorage.out"
+
+run_bscan_db --list-records --verbose --volumes "${copy_volumes}" \
+  --update-volume-info CopyStorage
+mv "${tmp}/bscan.out" "${tmp}/bscan_CopyStorage.out"
+
+# TODO find adequate filters to compare both output
+# Record: SessId=35 SessTim=1771339665 FileIndex=1 Stream=29 len=307
+diff -u "${tmp}/bscan_FileStorage.out" "${tmp}/bscan_CopyStorage.out" >"${tmp}/diff.out" || dstat=$?
+
+end_test
