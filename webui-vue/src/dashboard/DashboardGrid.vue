@@ -25,7 +25,11 @@
   Provides the dashboard data context via Vue provide/inject to all child widgets.
 -->
 <template>
-  <div>
+  <div
+    ref="gridRoot"
+    class="dashboard-grid-root"
+    :class="{ 'grid-interacting': interactionActive }"
+  >
     <!-- Empty state -->
     <div
       v-if="!dashboard.widgets.length"
@@ -63,7 +67,7 @@
     <!-- Full drag/resize grid (desktop + mobile edit mode) -->
     <GridLayout
       v-else-if="dashboard.widgets.length"
-      v-model:layout="layout"
+      :layout="layout"
       :col-num="12"
       :row-height="30"
       :margin="[8, 8]"
@@ -84,6 +88,10 @@
         :h="layoutMap[widget.id]?.h ?? widget.layout.h"
         :min-w="widget.layout.minW ?? 2"
         :min-h="widget.layout.minH ?? 3"
+        @resize="onItemResize"
+        @resized="onItemResized"
+        @move="onItemMove"
+        @moved="onItemMoved"
       >
         <WidgetShell
           :title="widget.title || defaultTitle(widget.type)"
@@ -113,7 +121,9 @@
 </template>
 
 <script setup>
-import { ref, computed, provide, watch, reactive, onUnmounted } from 'vue'
+import {
+  ref, computed, provide, watch, reactive, nextTick, onMounted, onUnmounted,
+} from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import { GridLayout, GridItem } from 'grid-layout-plus'
@@ -139,6 +149,8 @@ const { t } = useI18n()
 const $q = useQuasar()
 const dashboardStore = useDashboardStore()
 const auth = useAuthStore()
+const gridRoot = ref(null)
+const interactionActive = ref(false)
 
 // Switch to simple vertical stack below Quasar's 'sm' breakpoint (600 px).
 const isMobile = computed(() => $q.screen.lt.sm)
@@ -237,31 +249,29 @@ provide(DASHBOARD_CONTEXT_KEY, {
 
 // ── layout ─────────────────────────────────────────────────────────────────
 // grid-layout-plus needs a flat array of { i, x, y, w, h } objects.
-const layout = computed({
-  get() {
-    return props.dashboard.widgets.map(w => ({
-      i: w.id,
-      x: w.layout.x,
-      y: w.layout.y,
-      w: w.layout.w,
-      h: w.layout.h,
-    }))
-  },
-  set() {
-    // mutations handled by onLayoutUpdated
-  },
-})
+const layoutModel = ref([])
+
+function toLayoutItems(widgets) {
+  return widgets.map(w => ({
+    i: String(w.id),
+    x: w.layout.x,
+    y: w.layout.y,
+    w: w.layout.w,
+    h: w.layout.h,
+  }))
+}
+
+const layout = computed(() => layoutModel.value)
 
 // Keep a reactive map so GridItem props stay in sync with drag/resize
 const layoutMap = reactive({})
-let _persistLayoutTimer = null
+
 watch(
   () => props.dashboard.widgets,
   (widgets) => {
+    layoutModel.value = toLayoutItems(widgets)
     widgets.forEach(w => {
-      if (!layoutMap[w.id]) {
-        layoutMap[w.id] = { x: w.layout.x, y: w.layout.y, w: w.layout.w, h: w.layout.h }
-      }
+      layoutMap[w.id] = { x: w.layout.x, y: w.layout.y, w: w.layout.w, h: w.layout.h }
     })
     // Remove stale entries
     const ids = new Set(widgets.map(w => w.id))
@@ -274,24 +284,123 @@ watch(
 
 function onLayoutUpdated(newLayout) {
   if (!props.editMode) return
-  newLayout.forEach(item => {
+  const normalized = newLayout.map(item => ({
+    i: String(item.i),
+    x: item.x,
+    y: item.y,
+    w: item.w,
+    h: item.h,
+  }))
+  layoutModel.value = normalized
+  normalized.forEach(item => {
     layoutMap[item.i] = { x: item.x, y: item.y, w: item.w, h: item.h }
   })
-  if (_persistLayoutTimer) clearTimeout(_persistLayoutTimer)
-  _persistLayoutTimer = setTimeout(() => {
-    dashboardStore.updateWidgetLayouts(
-      props.dashboard.id,
-      newLayout.map(item => ({ i: item.i, x: item.x, y: item.y, w: item.w, h: item.h }))
-    )
-    _persistLayoutTimer = null
-  }, 120)
 }
 
-onUnmounted(() => {
-  if (_persistLayoutTimer) {
-    clearTimeout(_persistLayoutTimer)
-    _persistLayoutTimer = null
+function updateDraftLayoutItem(id, patch) {
+  if (!props.editMode) return
+  const key = String(id)
+  const current = layoutMap[key]
+  if (!current) return
+  layoutMap[key] = { ...current, ...patch }
+  layoutModel.value = layoutModel.value.map(item =>
+    String(item.i) === key ? { ...item, ...patch } : item
+  )
+}
+
+function onItemResize(id, h, w) {
+  interactionActive.value = true
+  updateDraftLayoutItem(id, { h, w })
+}
+
+function onItemMove(id, x, y) {
+  interactionActive.value = true
+  updateDraftLayoutItem(id, { x, y })
+}
+
+function commitDraftLayout() {
+  if (!props.editMode) return
+  const normalized = layoutModel.value.map(item => ({
+    i: String(item.i),
+    x: item.x,
+    y: item.y,
+    w: item.w,
+    h: item.h,
+  }))
+  const current = new Map(
+    props.dashboard.widgets.map(w => [
+      String(w.id),
+      { x: w.layout.x, y: w.layout.y, w: w.layout.w, h: w.layout.h },
+    ])
+  )
+  const unchanged =
+    normalized.length === current.size
+    && normalized.every(item => {
+      const c = current.get(item.i)
+      return c
+        && c.x === item.x
+        && c.y === item.y
+        && c.w === item.w
+        && c.h === item.h
+    })
+  if (unchanged) return
+  dashboardStore.updateWidgetLayouts(props.dashboard.id, normalized)
+}
+
+function onItemResized(id, h, w) {
+  updateDraftLayoutItem(id, { h, w })
+  commitDraftLayout()
+  interactionActive.value = false
+  scheduleInteractionClassReset()
+}
+
+function onItemMoved(id, x, y) {
+  updateDraftLayoutItem(id, { x, y })
+  commitDraftLayout()
+  interactionActive.value = false
+  scheduleInteractionClassReset()
+}
+
+function resetInteractionClasses() {
+  const root = gridRoot.value
+  if (!root) return
+  root.querySelectorAll('.vgl-item--resizing, .vgl-item--dragging').forEach(el => {
+    el.classList.remove('vgl-item--resizing', 'vgl-item--dragging')
+  })
+}
+
+function scheduleInteractionClassReset() {
+  nextTick(() => {
+    resetInteractionClasses()
+  })
+}
+
+watch(
+  () => props.editMode,
+  (isEditMode) => {
+    if (isEditMode) return
+    interactionActive.value = false
+    commitDraftLayout()
+    scheduleInteractionClassReset()
   }
+)
+
+function onPointerRelease() {
+  if (!props.editMode) return
+  interactionActive.value = false
+  scheduleInteractionClassReset()
+}
+
+onMounted(() => {
+  window.addEventListener('mouseup', onPointerRelease, true)
+  window.addEventListener('pointerup', onPointerRelease, true)
+  window.addEventListener('touchend', onPointerRelease, true)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('mouseup', onPointerRelease, true)
+  window.removeEventListener('pointerup', onPointerRelease, true)
+  window.removeEventListener('touchend', onPointerRelease, true)
 })
 
 // ── widget helpers ─────────────────────────────────────────────────────────
@@ -332,6 +441,14 @@ defineExpose({ refresh, fetchData, loading })
 </script>
 
 <style scoped>
+.dashboard-grid-root :deep(.vgl-item--placeholder) {
+  display: none !important;
+}
+
+.dashboard-grid-root.grid-interacting :deep(.vgl-item--placeholder) {
+  display: block !important;
+}
+
 @media (max-width: 599px) {
   :deep(.vgl-layout) {
     --vgl-resizer-size: 18px;
