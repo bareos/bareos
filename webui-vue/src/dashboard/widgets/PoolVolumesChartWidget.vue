@@ -19,9 +19,11 @@
   02110-1301, USA.
 -->
 <template>
-  <div class="column items-center justify-center" style="height:100%; overflow:hidden; padding:8px; box-sizing:border-box">
-    <q-spinner v-if="loading" size="40px" />
-    <div v-else-if="error" class="text-negative text-caption text-center">{{ error }}</div>
+  <div class="column items-center justify-center pool-chart-root" style="height:100%; overflow:hidden; padding:8px; box-sizing:border-box">
+    <div v-if="loading && chartData.labels.length" class="pool-refresh-indicator">
+      <q-spinner size="14px" color="primary" />
+    </div>
+    <q-spinner v-if="loading && !chartData.labels.length" size="40px" />
     <div v-else-if="!chartData.labels.length" class="text-grey text-caption text-center">
       {{ t('No pool data available') }}
     </div>
@@ -54,8 +56,8 @@ ChartJS.register(ArcElement, Tooltip, Legend)
 const { t } = useI18n()
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
 
-const pools = computed(() => ctx.aggregate.value.pools ?? [])
-const loading = computed(() => ctx.loading.value)
+const pools = computed(() => ctx.pools?.value ?? ctx.aggregate.value.pools ?? [])
+const loading = computed(() => ctx.poolLoading?.value ?? ctx.loading.value)
 
 const totalVolumes = computed(() => pools.value.reduce((s, p) => s + (p.totalvolumes ?? 0), 0))
 
@@ -92,3 +94,20 @@ const chartOptions = computed(() => ({
   },
 }))
 </script>
+
+<style scoped>
+.pool-chart-root {
+  position: relative;
+}
+
+.pool-refresh-indicator {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 3px;
+  line-height: 0;
+}
+</style>

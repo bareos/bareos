@@ -89,7 +89,12 @@
     <!-- Edit mode banner -->
     <q-banner v-if="editMode" class="bg-blue-1 text-blue-9 q-mb-sm" rounded dense>
       <template #avatar><q-icon name="info" color="blue-9" /></template>
-      {{ t('Drag widgets to reposition. Resize from the bottom-right corner. Click the gear icon to configure a widget.') }}
+      <span v-if="!isMobile">
+        {{ t('Drag widgets to reposition. Resize from the bottom-right corner. Click the gear icon to configure a widget.') }}
+      </span>
+      <span v-else>
+        Resize from the bottom-right corner. Tap the gear icon to configure a widget.
+      </span>
     </q-banner>
 
     <!-- ── Dashboard grid ─────────────────────────────────────────────────── -->
@@ -183,6 +188,7 @@ const activeDashboardId = computed({
   set: (id) => dashStore.setActiveDashboard(id),
 })
 const currentDashboard = computed(() => dashStore.activeDashboard())
+const isMobile = computed(() => $q.screen.lt.sm)
 
 // ── edit mode ──────────────────────────────────────────────────────────────
 const editMode = ref(false)
