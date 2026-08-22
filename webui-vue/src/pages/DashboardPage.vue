@@ -240,12 +240,16 @@ const showInitialConfig = ref(false)
 
 function onWidgetPicked(def) {
   const hasRequired = def.requiredProps?.length > 0
+  const nextY = currentDashboard.value?.widgets?.reduce(
+    (maxY, w) => Math.max(maxY, Number(w.layout?.y ?? 0) + Number(w.layout?.h ?? 0)),
+    0
+  ) ?? 0
   const newWidget = {
     id: `tmp-${Date.now()}`,
     type: def.type,
     title: def.defaultTitle,
     props: {},
-    layout: { ...def.defaultLayout, x: 0, y: Infinity },
+    layout: { ...def.defaultLayout, x: 0, y: nextY },
   }
 
   if (hasRequired) {
