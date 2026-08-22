@@ -79,6 +79,7 @@ describe('widgetRegistry', () => {
     expect(types.has('job-totals')).toBe(true)
     expect(types.has('pool-bytes-chart')).toBe(true)
     expect(types.has('pool-volumes-chart')).toBe(true)
+    expect(types.has('database-status')).toBe(true)
   })
 
   it('pool chart widgets have appropriate default layout dimensions', () => {
