@@ -261,11 +261,42 @@ struct ClientHelloParser {
   virtual ~ClientHelloParser() = default;
 };
 
-bool BareosAccept(BareosSocket* socket,
-                  const std::string& qualified_name,
-                  const TlsResource* initial_tls,
-                  TlsSecretProvider* provider,
-                  ClientHelloParser* hello_parser);
+struct Authenticator {
+  struct OutboundArgs {
+    JobControlRecord* jcr;
+    BareosSocket* socket;
+    bool cleartext;
+  };
+
+  struct InboundArgs {
+    BareosSocket* socket;
+    bool cleartext;
+    const TlsResource* target;
+  };
+
+  virtual bool authenticate_outbound(OutboundArgs args) = 0;
+  virtual bool authenticate_inbound(InboundArgs args) = 0;
+  virtual ~Authenticator() = default;
+
+  TlsPolicy remote_policy{kBnetTlsUnknown};
+};
+
+struct Md5Authenticator : Authenticator {
+  Md5Authenticator(std::string name, const TlsResource* target);
+  bool authenticate_outbound(OutboundArgs args) override;
+  bool authenticate_inbound(InboundArgs args) override;
+
+  std::string my_name;
+  const TlsResource* target;
+};
+
+bool BareosConnect(JobControlRecord* jcr,
+                   BareosSocket* socket,
+                   const std::string& qualified_name,
+                   const TlsResource* res,
+                   std::string_view hello_msg,
+                   Authenticator* auth,
+                   bool cleartext_authentication = false);
 
 bool BareosConnect(JobControlRecord* jcr,
                    BareosSocket* socket,
@@ -273,5 +304,18 @@ bool BareosConnect(JobControlRecord* jcr,
                    const TlsResource* res,
                    std::string_view hello_msg,
                    bool cleartext_authentication = false);
+
+bool BareosAccept(BareosSocket* socket,
+                  const std::string& qualified_name,
+                  const TlsResource* initial_tls,
+                  TlsSecretProvider* provider,
+                  ClientHelloParser* hello_parser);
+
+bool BareosAccept(BareosSocket* socket,
+                  const TlsResource* initial_tls,
+                  TlsSecretProvider* provider,
+                  ClientHelloParser* hello_parser,
+                  Authenticator* auth);
+
 
 #endif  // BAREOS_LIB_BSOCK_H_

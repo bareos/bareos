@@ -376,6 +376,60 @@ TlsSecretProvider* SSL_CTX_get_secretprovider(SSL_CTX* ctx)
   return provider;
 }
 
+[[maybe_unused]] unsigned int psk_server_cb2(SSL* ssl,
+                                             const char* identity,
+                                             unsigned char* psk_output,
+                                             unsigned int max_psk_len)
+{
+  SSL_CTX* openssl_ctx = SSL_get_SSL_CTX(ssl);
+
+  if (!openssl_ctx) {
+    Dmsg0(100, "Psk Server Callback: No SSL_CTX\n");
+    return 0;
+  }
+
+  LoadedConfiguration* config = nullptr;
+  bool allow_jobs = false;
+
+  auto [type, name] = global_resource::ParseQualifiedName(identity);
+
+  switch (type) {
+    case global_resource::Type::Unknown: {
+      return 0;
+    } break;
+    case global_resource::Type::Job: {
+      if (!allow_jobs) { return 0; }
+      auto* jcr = get_jcr_by_full_name(name);
+      if (!jcr->sd_auth_key || !bstrcmp(jcr->sd_auth_key, "dummy")) {
+        FreeJcr(jcr);
+        return 0;
+      }
+
+      auto pwlen = strlen(jcr->sd_auth_key);
+
+      if (pwlen > max_psk_len) { return 0; }
+
+      memcpy(psk_output, jcr->sd_auth_key, pwlen);
+      return pwlen;
+    } break;
+    default: {
+      // TODO: make this work
+      auto* res = config->GetResWithName((int)type, name);
+      // TODO: check if type is ok
+      auto* as_tls = dynamic_cast<TlsResource*>(res);
+
+      if (!as_tls || !as_tls->password_.value) { return 0; }
+
+      auto pwlen = strlen(as_tls->password_.value);
+
+      if (pwlen > max_psk_len) { return 0; }
+
+      memcpy(psk_output, as_tls->password_.value, pwlen);
+      return pwlen;
+    } break;
+  }
+}
+
 unsigned int psk_server_cb(SSL* ssl,
                            const char* identity,
                            unsigned char* psk_output,

@@ -99,6 +99,7 @@ target_sources(
           var.cc
           watchdog.cc
           xxhash.cc
+          hello_parser.cc
 )
 
 if(HAVE_WIN32)
