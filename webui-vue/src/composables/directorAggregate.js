@@ -203,6 +203,11 @@ function overlayRuntimeStatus(jobs, runtimeJobs) {
   )
 }
 
+function stripDefaultSchemaPrefix(name) {
+  const value = String(name ?? '')
+  return value.startsWith('public.') ? value.slice('public.'.length) : value
+}
+
 function normalizeDatabaseStatus(statusResult, director) {
   const payload = statusResult?.database_status ?? statusResult ?? {}
   const database = payload.database ?? {}
@@ -226,7 +231,7 @@ function normalizeDatabaseStatus(statusResult, director) {
     },
     tablesAvailable: booleanValue(payload.tables_available, tableEntries.length > 0),
     tables: tableEntries.map((entry, index) => ({
-      name: entry?.name ?? '',
+      name: stripDefaultSchemaPrefix(entry?.name),
       bytes: numberValue(entry?.bytes),
       scopeKey: `${director}:table:${entry?.name ?? index}`,
     })),
