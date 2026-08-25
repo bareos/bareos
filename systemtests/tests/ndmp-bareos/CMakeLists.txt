@@ -77,6 +77,14 @@ if(ndmp_data_agent_address)
       endif()
 
       create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+      get_property(ndmp_bareos_tests DIRECTORY PROPERTY TESTS)
+      set_tests_properties(
+        ${ndmp_bareos_tests} PROPERTIES RESOURCE_LOCK ndmp_systemtest
+      )
+      set(NDMP_BAREOS_ENABLED
+          ON
+          PARENT_SCOPE
+      )
       set_tests_properties(
         # This temporary test will be removed at the end of the sprint
         system:ndmp-bareos:00-full-fail-rerun PROPERTIES DISABLED TRUE

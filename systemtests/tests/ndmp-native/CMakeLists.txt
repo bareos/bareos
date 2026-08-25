@@ -98,6 +98,16 @@ if(ndmp_tape_and_robot_agent_address)
           string(APPEND ndmp_tapes_devices "Device = \"${device}\"\n")
         endforeach(device)
         create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+        get_property(ndmp_native_tests DIRECTORY PROPERTY TESTS)
+        set_tests_properties(
+          ${ndmp_native_tests} PROPERTIES RESOURCE_LOCK ndmp_systemtest
+        )
+        if(NDMP_BAREOS_ENABLED)
+          set_tests_properties(
+            system:ndmp-native:setup
+            PROPERTIES DEPENDS system:ndmp-bareos:cleanup
+          )
+        endif()
         # needs exclusive access to an autochanger from the ndmp host by iscsi
         set_tests_properties(
           # This feature needs to be implemented before enabling the test
