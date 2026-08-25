@@ -19,69 +19,35 @@
   02110-1301, USA.
 -->
 <template>
-  <div class="column full-height">
-    <div class="row items-center q-gutter-sm q-px-sm q-pt-sm q-pb-xs">
-      <q-badge
-        rounded
-        :color="statusColor(summary.status)"
-        :label="summary.status || 'unavailable'"
-        class="text-uppercase"
-      />
-      <span class="text-caption text-grey-6">
-        {{ t('Directors') }}: {{ summary.directors }}
-      </span>
-      <span class="text-caption text-grey-6">
-        {{ t('Total Size') }}: {{ formatBytes(summary.totalBytes ?? 0) }}
-      </span>
+  <div class="column items-center justify-center db-chart-root" style="height:100%; overflow:hidden; padding:8px; box-sizing:border-box">
+    <div v-if="loading && chartData.labels.length" class="db-refresh-indicator">
+      <q-spinner size="14px" color="primary" />
     </div>
-
-    <div v-if="!rows.length" class="col column items-center justify-center text-grey text-caption q-pa-md">
-      {{ t('Database status unavailable') }}
+    <q-badge
+      v-if="summary.status === 'warning' || summary.status === 'error'"
+      rounded
+      :color="summary.status === 'error' ? 'negative' : 'warning'"
+      :label="summary.status"
+      class="text-uppercase db-status-indicator"
+    >
+      <q-tooltip v-if="errorMessages.length">
+        <div v-for="(msg, i) in errorMessages" :key="i">{{ msg }}</div>
+      </q-tooltip>
+    </q-badge>
+    <q-spinner v-if="loading && !chartData.labels.length" size="40px" />
+    <div v-else-if="!chartData.labels.length" class="text-grey text-caption text-center">
+      {{ summary.status === 'error' || summary.status === 'unavailable'
+        ? t('Database status unavailable')
+        : t('No table size data available') }}
     </div>
-
-    <div v-else class="col column q-px-sm q-pb-sm" style="min-height:0; overflow:auto">
-      <table class="db-status-table">
-        <thead>
-          <tr>
-            <th>{{ t('Director') }}</th>
-            <th>{{ t('Status') }}</th>
-            <th>{{ t('Total Size') }}</th>
-            <th>{{ t('Last Check') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in rows" :key="row.director">
-            <td>{{ row.director }}</td>
-            <td>
-              <q-badge
-                rounded
-                :color="statusColor(row.status)"
-                :label="row.status || 'unavailable'"
-                class="text-uppercase"
-              />
-            </td>
-            <td>
-              <span v-if="row.database?.totalBytesAvailable">
-                {{ formatBytes(row.database.totalBytes ?? 0) }}
-              </span>
-              <span v-else class="text-grey-6">—</span>
-            </td>
-            <td>
-              <span :title="row.checkedAt || ''">
-                {{ settings.relativeTime ? timeAgo(row.checkedAt, settings.locale) : (row.checkedAt || '—') }}
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-if="tableChartData.labels.length" class="db-chart-wrap">
-        <Pie :data="tableChartData" :options="tableChartOptions" />
+    <template v-else>
+      <div style="position:relative; width:100%; flex:1; min-height:0">
+        <Pie :data="chartData" :options="chartOptions" />
       </div>
-      <div v-else class="text-grey text-caption q-pb-sm q-pt-sm">
-        {{ t('No table size data available') }}
+      <div class="q-mt-xs" style="font-size:0.72rem; color:#888; text-align:center">
+        {{ t('Total') }}: {{ formatBytes(summary.totalBytes ?? 0) }}
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
@@ -95,25 +61,27 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
-import { useSettingsStore } from '../../stores/settings.js'
-import { formatBytes, timeAgo } from '../../mock/index.js'
+import { formatBytes } from '../../mock/index.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
 import { PIE_PALETTE } from '../piePalette.js'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
 const { t } = useI18n()
-const settings = useSettingsStore()
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
 
 const rows = computed(() => ctx.aggregate.value.databaseStatuses ?? [])
 const summary = computed(() => ctx.aggregate.value.databaseStatusSummary ?? {
   status: 'unavailable',
-  directors: 0,
   totalBytes: 0,
 })
+const loading = computed(() => ctx.loading.value)
 
-const tableChartRows = computed(() => {
+const errorMessages = computed(() => rows.value
+  .flatMap(row => row.errors ?? [])
+  .filter(Boolean))
+
+const tableRows = computed(() => {
   const merged = new Map()
 
   for (const row of rows.value) {
@@ -132,21 +100,21 @@ const tableChartRows = computed(() => {
     .sort((a, b) => b.bytes - a.bytes)
 })
 
-const tableChartTotalBytes = computed(
-  () => tableChartRows.value.reduce((sum, row) => sum + row.bytes, 0)
+const tableBytesTotal = computed(
+  () => tableRows.value.reduce((sum, row) => sum + row.bytes, 0)
 )
 
-const reducedTableChartRows = computed(() => {
-  const totalBytes = tableChartTotalBytes.value
-  if (totalBytes <= 0) {
+const reducedTableRows = computed(() => {
+  const total = tableBytesTotal.value
+  if (total <= 0) {
     return []
   }
 
-  const minBytes = Math.max(10 * 1024 * 1024, totalBytes * 0.01)
-  const kept = tableChartRows.value.filter(row => row.bytes >= minBytes)
+  const minBytes = Math.max(10 * 1024 * 1024, total * 0.01)
+  const kept = tableRows.value.filter(row => row.bytes >= minBytes)
   const visible = kept.length >= 3
     ? kept
-    : tableChartRows.value
+    : tableRows.value
 
   const limited = visible.slice(0, 15).map(row => ({ ...row }))
   const hiddenBytes = visible
@@ -158,16 +126,16 @@ const reducedTableChartRows = computed(() => {
     : limited
 })
 
-const tableChartData = computed(() => ({
-  labels: reducedTableChartRows.value.map(row => row.name),
+const chartData = computed(() => ({
+  labels: reducedTableRows.value.map(row => row.name),
   datasets: [{
-    data: reducedTableChartRows.value.map(row => row.bytes),
-    backgroundColor: reducedTableChartRows.value.map((_, i) => PIE_PALETTE[i % PIE_PALETTE.length]),
+    data: reducedTableRows.value.map(row => row.bytes),
+    backgroundColor: reducedTableRows.value.map((_, i) => PIE_PALETTE[i % PIE_PALETTE.length]),
     borderWidth: 1,
   }],
 }))
 
-const tableChartOptions = computed(() => ({
+const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -179,7 +147,7 @@ const tableChartOptions = computed(() => ({
       callbacks: {
         label(context) {
           const bytes = Number(context.raw ?? 0)
-          const total = tableChartTotalBytes.value
+          const total = tableBytesTotal.value
           const percent = total > 0 ? (bytes / total) * 100 : 0
           return ` ${context.label}: ${formatBytes(bytes)} (${percent.toFixed(1)}%)`
         },
@@ -187,45 +155,28 @@ const tableChartOptions = computed(() => ({
     },
   },
 }))
-
-function statusColor(status) {
-  switch (String(status ?? '').toLowerCase()) {
-    case 'ok': return 'positive'
-    case 'warning': return 'warning'
-    case 'error': return 'negative'
-    default: return 'grey'
-  }
-}
 </script>
 
 <style scoped>
-.db-status-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.82rem;
-}
-
-.db-chart-wrap {
+.db-chart-root {
   position: relative;
-  width: 100%;
-  min-height: 210px;
-  height: 210px;
-  margin-top: 0.5rem;
 }
 
-.db-status-table th,
-.db-status-table td {
-  padding: 0.35rem 0.45rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  text-align: left;
-  white-space: nowrap;
+.db-refresh-indicator {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 3px;
+  line-height: 0;
 }
 
-.db-status-table th {
-  color: #666;
-  font-weight: 600;
-  position: sticky;
-  top: 0;
-  background: var(--q-color-grey-1, #fafafa);
+.db-status-indicator {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
 }
 </style>
