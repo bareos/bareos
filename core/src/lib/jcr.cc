@@ -662,29 +662,6 @@ const char* JcrGetAuthenticateKey(const char* unified_job_name)
   return auth_key;
 }
 
-TlsPolicy JcrGetTlsPolicy(const char* unified_job_name)
-{
-  if (!unified_job_name) { return kBnetTlsUnknown; }
-
-  TlsPolicy policy = kBnetTlsUnknown;
-  JobControlRecord* jcr;
-
-  foreach_jcr (jcr) {
-    if (bstrcmp(jcr->Job, unified_job_name)) {
-      policy = jcr->sd_tls_policy;
-      Dmsg4(debuglevel,
-            "Inc get_jcr jid=%" PRIu32 " UseCount=%d Job=%s TlsPolicy=%" PRIu32
-            "\n",
-            jcr->JobId, jcr->UseCount(), jcr->Job,
-            static_cast<uint32_t>(policy));
-      break;
-    }
-  }
-  endeach_jcr(jcr);
-
-  return policy;
-}
-
 static void UpdateWaitTime(JobControlRecord* jcr, int newJobStatus)
 {
   bool enter_in_waittime;

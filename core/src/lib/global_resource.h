@@ -26,12 +26,13 @@
 #include <string_view>
 #include <algorithm>
 #include <string>
+#include <cstdint>
 
 // this is a list of _all_ resources, for _all_ daemons
 
 namespace global_resource {
 
-enum class Type
+enum class Type : std::uint64_t
 {
   Unknown,
   Autochanger,

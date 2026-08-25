@@ -48,6 +48,7 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "lib/version.h"
+#include "lib/hello.h"
 
 namespace directordaemon {
 
@@ -146,18 +147,9 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
 
   sd->SetEnableKtls(myself->enable_ktls);
 
-  std::string bashed = myself->resource_name_;
-  BashSpaces(bashed.data());
-
-  PoolMem hello;
-  hello.bsprintf("Hello Director %s calling Version=\"%u.%u.%u\"\n",
-                 bashed.data(), kBareosVersion.Major, kBareosVersion.Minor,
-                 kBareosVersion.Patch);
-  auto qualified_name = global_resource::QualifiedName(
-      global_resource::Type::Director, myself->resource_name_);
-
-  if (!BareosConnect(jcr, sd.get(), std::move(qualified_name), store,
-                     hello.c_str())) {
+  if (!BareosConnect<global_resource::Type::Director,
+                     global_resource::Type::Storage>(
+          jcr, sd.get(), myself->resource_name_, store)) {
     sd->close();
     return false;
   }

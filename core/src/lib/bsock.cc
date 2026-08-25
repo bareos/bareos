@@ -33,6 +33,7 @@
 #include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/cram_md5.h"
+#include "lib/global_resource.h"
 #include "lib/s_password.h"
 #include "lib/tls.h"
 #include "lib/tls_conf.h"
@@ -42,6 +43,7 @@
 #include "lib/parse_conf.h"
 #include "lib/version.h"
 #include "lib/tls_psk_credentials.h"
+#include "lib/hello.h"
 
 #include <algorithm>
 #include <thread>
@@ -131,7 +133,7 @@ bool DoTlsHandshakeWithServer(JobControlRecord* jcr,
 
 std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAServer(
     const TlsResource* tls_resource,
-    TlsSecretProvider* data)
+    TlsConfigProvider* data)
 {
   ASSERT(tls_resource);
   auto result = Tls::CreateNewTlsContext(Tls::ImplementationType::kOpenSsl);
@@ -160,6 +162,8 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAClient(
     const char* password)
 {
   ASSERT(tls_resource);
+  ASSERT(tls_resource->IsTlsConfigured());
+
   auto result = Tls::CreateNewTlsContext(Tls::ImplementationType::kOpenSsl);
   if (!result) {
     Qmsg0(jcr, M_FATAL, 0, T_("TLS connection initialization failed.\n"));
@@ -171,11 +175,11 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAClient(
   result->SetCipherList(tls_resource->cipherlist_);
   result->SetCipherSuites(tls_resource->ciphersuites_);
 
-  if (tls_resource->IsTlsConfigured()) {
+  if (identity) {
     PskCredentials psk_cred{identity, password};
     result->SetTlsPskClientContext(psk_cred);
   } else {
-    Dmsg2(200, "Tls is not configured %s\n", identity);
+    Dmsg2(200, "Psk is not setup, as not identity was provided\n");
   }
 
   if (!result->init()) {
@@ -263,6 +267,30 @@ bool guess_whether_cleartext(BareosSocket* socket, bool* is_cleartext)
   return false;
 }
 
+struct CramIdentity {
+  CramIdentity()
+  {
+    identity.resize(120);
+
+    if (!MakeSessionKey(identity.data())) {
+      Emsg1(M_ERROR_TERM, 0, "Could not generate default CRAM identity: %s\n",
+            identity.c_str());
+    }
+
+    identity.resize(strlen(identity.c_str()));
+  }
+
+  const std::string& as_str() const { return identity; }
+
+  std::string identity;
+};
+
+static const std::string& get_default_cram_identity()
+{
+  static CramIdentity identity;
+
+  return identity.as_str();
+}
 }  // namespace
 
 
@@ -736,137 +764,107 @@ bool cram_md5_handshake(JobControlRecord* jcr,
   return auth_success;
 }
 
-bool BareosAccept(BareosSocket* socket,
-                  const std::string& qualified_name,
-                  const TlsResource* initial_tls,
-                  TlsSecretProvider* provider,
-                  ClientHelloParser* hello_parser)
+bool Md5Authenticator::authenticate_outbound(OutboundArgs args)
 {
-  // provider is allowed to be NULL in case no tls-psk is wanted
-  if (!socket) {
-    Emsg1(M_ERROR, 0, "socket is NULL in BareosAccept.\n");
-    return false;
-  }
-
-  if (!hello_parser) {
-    Emsg1(M_ERROR, 0, "auth is NULL in BareosAccept.\n");
-    return false;
-  }
-
-  if (!initial_tls) {
-    Emsg1(M_ERROR, 0, "initial_tls is NULL in BareosAccept.\n");
-    return false;
-  }
-
-  auth_timer timer{socket};
-
-  bool have_tls = false;
-
-  bool received_clear_text_handshake = false;
-  if (!guess_whether_cleartext(socket, &received_clear_text_handshake)) {
-    Emsg1(M_ERROR, 0, "Could not check for cleartext handshake with %s\n",
-          socket->who());
-    return false;
-  }
-
-  if (!received_clear_text_handshake) {
-    auto tls = ParameterizeAndInitTlsConnectionAsAServer(initial_tls, provider);
-    if (!tls) {
-      Emsg1(M_ERROR, 0, "Could not initialize initial tls context for %s\n",
-            socket->who());
-      return false;
-    }
-    if (!DoTlsHandshakeWithClient(nullptr, socket, std::move(tls),
-                                  &initial_tls->tls_cert_)) {
-      Emsg1(M_ERROR, 0, "Could not complete tls handshake with %s\n",
-            socket->who());
-      return false;
-    }
-
-    if (initial_tls->authenticate_) {
-      // cleanup tls
-      socket->CloseTlsConnectionAndFreeMemory();
-    } else {
-      have_tls = true;
-    }
-  }
-
-  TlsResource* tls_resource{nullptr};
   TlsPolicy remote_policy{kBnetTlsUnknown};
-  {
-    if (!socket->recv() || socket->message_length < 0) {
-      Emsg1(M_ERROR, 0, T_("Connection request from %s failed.\n"),
-            socket->who());
-      return false;
-    }
-
-    std::string_view hello{socket->msg,
-                           static_cast<size_t>(socket->message_length)};
-
-    tls_resource = hello_parser->parse(hello);
-    if (!tls_resource) {
-      Emsg1(M_ERROR, 0, T_("Received bad hello message from %s.\n"),
-            socket->who());
-      return false;
-    }
-
-    if (received_clear_text_handshake && tls_resource->tls_require_
-        && tls_resource->tls_enable_) {
-      // checking for only tls_require is not enough:
-      // Nobody sets tls_require to false, when tls_enable is false
-
-      Emsg1(M_ERROR, 0, T_("Received a cleartext hello from %s.\n"),
-            socket->who());
-      return false;
-    }
-
-    if (!cram_md5_handshake(nullptr, socket, qualified_name.c_str(),
-                            tls_resource->password_.value,
-                            tls_resource->GetPolicy(), true, &remote_policy)) {
-      Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());
-      return false;
-    }
+  TlsPolicy local_policy = args.target->GetPolicy();
+  if (args.socket->tls_conn) { local_policy = kBnetTlsAuto; }
+  if (!cram_md5_handshake(args.jcr, args.socket, cram_identity.c_str(),
+                          args.target->password_.value, local_policy, false,
+                          &remote_policy)) {
+    return false;
   }
 
-  /* only create the tls connection if it does not already exist
-   *
-   * one might argue that we should drop the tls connection if
-   * the resource we authenticated has tls disabled, or simply drop the
-   * connection, but that is not how it was done. */
-  if (!have_tls) {
-    switch (select_tls_status(remote_policy, tls_resource->GetPolicy())) {
-      case TlsStatus::Error: {
-        Emsg1(M_ERROR, 0,
-              T_("It was not possible to negotiate a shared tls policy with "
-                 "%s.\n"),
-              socket->who());
+  if (args.socket->tls_conn) {
+    // if we already established tls, then there is nothing left to do
+    return true;
+  }
+
+  switch (select_tls_status(remote_policy, local_policy)) {
+    default:
+      [[fallthrough]];
+    case TlsStatus::Error: {
+      Jmsg1(args.jcr, M_ERROR, 0,
+            T_("It was not possible to negotiate a shared tls policy with "
+               "%s.\n"),
+            args.socket->who());
+      return false;
+    } break;
+    case TlsStatus::Disabled: {
+      // nothing to do
+    } break;
+    case TlsStatus::Enabled: {
+      // this tls connection does _not_ support tls-psk!
+      auto tls = ParameterizeAndInitTlsConnectionAsAClient(
+          args.jcr, args.target, nullptr, nullptr);
+
+      if (!tls) {
+        Jmsg(args.jcr, M_FATAL, 0,
+             "Could initialize secondary tls context for %s\n",
+             args.socket->who());
         return false;
-      } break;
-      case TlsStatus::Disabled: {
-        // nothing to do here
-      } break;
-      case TlsStatus::Enabled: {
-        // we do _not_ want tls-psk here, as this path is only used by
-        // old clients that do not support tls-psk anyways
-        auto tls2
-            = ParameterizeAndInitTlsConnectionAsAServer(tls_resource, nullptr);
+      }
 
-        if (!tls2) {
-          Emsg1(M_ERROR, 0, "Could initialize secondary tls context for %s\n",
-                socket->who());
-          return false;
-        }
+      if (!DoTlsHandshakeWithServer(args.jcr, args.socket, std::move(tls),
+                                    &args.target->tls_cert_)) {
+        return false;
+      }
 
-        if (!DoTlsHandshakeWithClient(nullptr, socket, std::move(tls2),
-                                      &tls_resource->tls_cert_)) {
-          return false;
-        }
+      if (args.target->authenticate_) {
+        args.socket->CloseTlsConnectionAndFreeMemory();
+      }
+    } break;
+  }
 
-        if (tls_resource->authenticate_) {
-          socket->CloseTlsConnectionAndFreeMemory();
-        }
-      } break;
-    }
+  return true;
+}
+
+bool Md5Authenticator::authenticate_inbound(InboundArgs args)
+{
+  TlsPolicy remote_policy{kBnetTlsUnknown};
+  if (!cram_md5_handshake(nullptr, args.socket, cram_identity.c_str(),
+                          args.target->password_.value,
+                          args.target->GetPolicy(), true, &remote_policy)) {
+    return false;
+  }
+
+  if (args.socket->tls_conn) {
+    // if we already established tls, then there is nothing left to do
+    return true;
+  }
+
+  switch (select_tls_status(remote_policy, args.target->GetPolicy())) {
+    case TlsStatus::Error: {
+      Emsg1(M_ERROR, 0,
+            T_("It was not possible to negotiate a shared tls policy with "
+               "%s.\n"),
+            args.socket->who());
+      return false;
+    } break;
+    case TlsStatus::Disabled: {
+      // nothing to do here
+    } break;
+    case TlsStatus::Enabled: {
+      // we do _not_ want tls-psk here, as this path is only used by
+      // old clients that do not support tls-psk anyways
+      auto tls
+          = ParameterizeAndInitTlsConnectionAsAServer(args.target, nullptr);
+
+      if (!tls) {
+        Emsg1(M_ERROR, 0, "Could initialize secondary tls context for %s\n",
+              args.socket->who());
+        return false;
+      }
+
+      if (!DoTlsHandshakeWithClient(nullptr, args.socket, std::move(tls),
+                                    &args.target->tls_cert_)) {
+        return false;
+      }
+
+      if (args.target->authenticate_) {
+        args.socket->CloseTlsConnectionAndFreeMemory();
+      }
+    } break;
   }
 
   return true;
@@ -877,18 +875,15 @@ bool BareosConnect(JobControlRecord* jcr,
                    const std::string& qualified_name,
                    const TlsResource* res,
                    std::string_view hello_msg,
+                   Authenticator* auth,
                    bool cleartext_authentication)
 {
   ASSERT(jcr);
   ASSERT(socket);
   ASSERT(res);
 
-  std::string bashed = qualified_name;
-  BashSpaces(bashed.data());
-
   auth_timer timer{socket};
 
-  bool have_tls = false;
   if (res->IsTlsConfigured() && !cleartext_authentication) {
     auto tls = ParameterizeAndInitTlsConnectionAsAClient(
         jcr, res, qualified_name.c_str(), res->password_.value);
@@ -913,8 +908,6 @@ bool BareosConnect(JobControlRecord* jcr,
            "Authenticate = Yes' was set\n",
            socket->who());
       socket->CloseTlsConnectionAndFreeMemory();
-    } else {
-      have_tls = true;
     }
   } else {
     Qmsg(jcr, M_INFO, 0, T_("Connected %s at %s:%d, encryption: None\n"),
@@ -926,55 +919,163 @@ bool BareosConnect(JobControlRecord* jcr,
     return false;
   }
 
-  TlsPolicy local_policy = res->GetPolicy();
-  if (!cleartext_authentication) { local_policy = kBnetTlsAuto; }
-  TlsPolicy remote_policy{kBnetTlsUnknown};
-  if (!cram_md5_handshake(jcr, socket, bashed.c_str(), res->password_.value,
-                          local_policy, false, &remote_policy)) {
+  if (!auth->authenticate_outbound({
+          .jcr = jcr,
+          .socket = socket,
+          .target = res,
+      })) {
     Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());
     return false;
   }
 
-  /* only create the tls connection if it does not already exist */
-  if (!have_tls) {
-    bool connection_tls = true;
-    switch (select_tls_status(remote_policy, local_policy)) {
-      default:
-        [[fallthrough]];
-      case TlsStatus::Error: {
-        Jmsg1(jcr, M_ERROR, 0,
-              T_("It was not possible to negotiate a shared tls policy with "
-                 "%s.\n"),
-              socket->who());
-        return false;
-      } break;
-      case TlsStatus::Disabled: {
-        connection_tls = false;
-      } break;
-      case TlsStatus::Enabled: {
-        connection_tls = true;
-      } break;
+  jcr->authenticated = true;
+  return true;
+}
+
+struct TlsWrapper : public TlsConfigProvider {
+  TlsWrapper(TlsConfigProvider* provider) : wrapped{provider} {}
+
+  const TlsResource* get(global_resource::Type type,
+                         std::string_view name) override
+  {
+    psk_res = wrapped->get(type, name);
+    if (psk_res) {
+      psk_type = type;
+      psk_name.assign(name);
+    }
+    return psk_res;
+  }
+
+  TlsConfigProvider* wrapped;
+
+  bool is_set() const { return psk_res; }
+
+  global_resource::Type psk_type{};
+  std::string psk_name{};
+  const TlsResource* psk_res{};
+};
+
+std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
+                                        global_resource::Type my_type,
+                                        const TlsResource* initial_tls,
+                                        TlsConfigProvider* provider,
+                                        Authenticator* auth)
+{
+  if (!socket) {
+    Emsg1(M_ERROR, 0, "socket is NULL in BareosAccept.\n");
+    return std::nullopt;
+  }
+
+  if (!initial_tls) {
+    Emsg1(M_ERROR, 0, "initial_tls is NULL in BareosAccept.\n");
+    return std::nullopt;
+  }
+
+  if (!provider) {
+    Emsg1(M_ERROR, 0, "provider is NULL in BareosAccept.\n");
+    return std::nullopt;
+  }
+
+  if (!auth) {
+    Emsg1(M_ERROR, 0, "auth is NULL in BareosAccept.\n");
+    return std::nullopt;
+  }
+
+  TlsWrapper wrapper{provider};
+
+  auth_timer timer{socket};
+
+  bool received_clear_text_handshake = false;
+  if (!guess_whether_cleartext(socket, &received_clear_text_handshake)) {
+    Emsg1(M_ERROR, 0, "Could not check for cleartext handshake with %s\n",
+          socket->who());
+    return std::nullopt;
+  }
+
+  if (!received_clear_text_handshake) {
+    auto tls = ParameterizeAndInitTlsConnectionAsAServer(initial_tls, &wrapper);
+    if (!tls) {
+      Emsg1(M_ERROR, 0, "Could not initialize initial tls context for %s\n",
+            socket->who());
+      return std::nullopt;
+    }
+    if (!DoTlsHandshakeWithClient(nullptr, socket, std::move(tls),
+                                  &initial_tls->tls_cert_)) {
+      Emsg1(M_ERROR, 0, "Could not complete tls handshake with %s\n",
+            socket->who());
+      return std::nullopt;
     }
 
-    if (connection_tls) {
-      auto tls = ParameterizeAndInitTlsConnectionAsAClient(
-          jcr, res, qualified_name.c_str(), res->password_.value);
-
-      if (!tls) {
-        Jmsg(jcr, M_FATAL, 0, "Could initialize secondary tls context for %s\n",
-             socket->who());
-        return false;
-      }
-
-      if (!DoTlsHandshakeWithServer(jcr, socket, std::move(tls),
-                                    &res->tls_cert_)) {
-        return false;
-      }
-
-      if (res->authenticate_) { socket->CloseTlsConnectionAndFreeMemory(); }
+    if (initial_tls->authenticate_) {
+      // cleanup tls
+      socket->CloseTlsConnectionAndFreeMemory();
     }
   }
 
-  jcr->authenticated = true;
-  return true;
+  const TlsResource* tls_resource{nullptr};
+  if (!socket->recv() || socket->message_length < 0) {
+    Emsg1(M_ERROR, 0, T_("Connection request from %s failed.\n"),
+          socket->who());
+    return std::nullopt;
+  }
+
+  std::string_view hello{socket->msg,
+                         static_cast<size_t>(socket->message_length)};
+
+  auto parsed_hello = parse_hello(my_type, hello);
+  if (!parsed_hello) {
+    Emsg1(M_ERROR, 0,
+          T_("Connection request from %s failed: could not parse the hello\n"),
+          socket->who());
+    return std::nullopt;
+  }
+
+  if (wrapper.is_set()) {
+    if (wrapper.psk_name != parsed_hello->name
+        || wrapper.psk_type != parsed_hello->type) {
+      Emsg1(M_ERROR, 0, T_("tls/cram mismatch detected for %s!\n"),
+            socket->who());
+      return std::nullopt;
+    }
+  }
+
+  tls_resource = wrapper.is_set()
+                     ? wrapper.psk_res
+                     : provider->get(parsed_hello->type, parsed_hello->name);
+  if (!tls_resource) {
+    Emsg1(M_ERROR, 0, T_("Could not map identity to tls resource for %s.\n"),
+          socket->who());
+    return std::nullopt;
+  }
+
+  if (received_clear_text_handshake) {
+    if (parsed_hello->type == global_resource::Type::Client
+        && !tls_resource->tls_require_) {
+      Dmsg0(200, "Accepting cleartext handshake for client\n");
+    } else if (tls_resource->tls_enable_) {
+      Emsg1(M_ERROR, 0, T_("Received a cleartext hello from %s.\n"),
+            socket->who());
+      return std::nullopt;
+    }
+  }
+
+  if (!auth->authenticate_inbound({
+          .socket = socket,
+          .target = tls_resource,
+      })) {
+    Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());
+    return std::nullopt;
+  }
+
+  return parsed_hello;
+}
+
+Md5Authenticator::Md5Authenticator()
+    : Md5Authenticator(get_default_cram_identity())
+{
+}
+Md5Authenticator::Md5Authenticator(std::string identity)
+    : cram_identity(std::move(identity))
+{
+  BashSpaces(cram_identity.data());
 }

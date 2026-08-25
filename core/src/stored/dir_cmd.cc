@@ -40,6 +40,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/hello.h"
 #include "stored/append.h"
 #include "stored/stored.h"
 #include "stored/acquire.h"
@@ -1656,11 +1657,6 @@ static bool ReplicateCmd(JobControlRecord* jcr)
 
   storage_daemon_socket->SetEnableKtls(me->enable_ktls);
 
-  PoolMem hello;
-  hello.bsprintf("Hello Start Storage Job %s Version=\"%u.%u.%u\"\n", JobName,
-                 kBareosVersion.Major, kBareosVersion.Minor,
-                 kBareosVersion.Patch);
-
   TlsResource custom = *me;
   custom.password_.value = jcr->sd_auth_key;
 
@@ -1691,10 +1687,9 @@ static bool ReplicateCmd(JobControlRecord* jcr)
     } break;
   }
 
-  if (!BareosConnect(
-          jcr, storage_daemon_socket.get(),
-          global_resource::QualifiedName(global_resource::Type::Job, JobName),
-          &custom, hello.c_str(), cleartext_auth)) {
+  if (!BareosConnect<global_resource::Type::Storage,
+                     global_resource::Type::Storage>(
+          jcr, storage_daemon_socket.get(), JobName, &custom, cleartext_auth)) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate Storage daemon.\n"));
     connect_state(ReplicateCmdState::kError);
     return false;
@@ -1763,11 +1758,6 @@ static bool PassiveCmd(JobControlRecord* jcr)
   fd->SetEnableKtls(me->enable_ktls);
 
   {
-    PoolMem hello;
-    hello.bsprintf("Hello Storage calling Start Job %s Version=\"%u.%u.%u\"\n",
-                   jcr->Job, kBareosVersion.Major, kBareosVersion.Minor,
-                   kBareosVersion.Patch);
-
     TlsResource custom = *me;
     custom.password_.value = jcr->sd_auth_key;
 
@@ -1796,10 +1786,9 @@ static bool PassiveCmd(JobControlRecord* jcr)
       } break;
     }
 
-    if (!BareosConnect(jcr, fd,
-                       global_resource::QualifiedName(
-                           global_resource::Type::Job, jcr->Job),
-                       &custom, hello.c_str(), cleartext_authentication)) {
+    if (!BareosConnect<global_resource::Type::Storage,
+                       global_resource::Type::Client>(
+            jcr, fd, jcr->Job, &custom, cleartext_authentication)) {
       Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate File daemon.\n"));
       jcr->file_bsock = NULL;
       goto bail_out;

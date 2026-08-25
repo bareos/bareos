@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "lib/crypto.h"
+#include "lib/global_resource.h"
 
 #include <memory>
 #include <span>
@@ -37,10 +38,11 @@
 class BareosSocket;
 class JobControlRecord;
 class PskCredentials;
+class TlsResource;
 
-struct TlsSecretProvider {
-  virtual unsigned int get_shared_secret_for(std::string_view idenity,
-                                             std::span<unsigned char> secret)
+struct TlsConfigProvider {
+  virtual const TlsResource* get(global_resource::Type type,
+                                 std::string_view idenity)
       = 0;
 };
 
@@ -59,7 +61,7 @@ class Tls {
   static std::unique_ptr<Tls> CreateNewTlsContext(Tls::ImplementationType type);
 
   virtual void SetTlsPskClientContext(const PskCredentials& credentials) = 0;
-  virtual void SetTlsPskServerContext(TlsSecretProvider* config) = 0;
+  virtual void SetTlsPskServerContext(TlsConfigProvider* config) = 0;
 
   virtual bool TlsPostconnectVerifyHost(JobControlRecord* jcr, const char* host)
       = 0;

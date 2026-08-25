@@ -29,38 +29,28 @@
 
 namespace storagedaemon {
 
-struct Auth : ::ClientHelloParser {
+struct Auth : ::TlsConfigProvider {
   Auth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)} {}
 
-  TlsResource* parse(std::string_view hello) override;
+  const TlsResource* get(global_resource::Type type,
+                         std::string_view name) override;
 
   enum class inbound_type
   {
     Unknown,
-    Client,
     Director,
-    Storage,
+    Job,
   };
 
   struct director_data {
     DirectorResource* res{};
   };
 
-  struct client_data {
+  struct job_data {
     JobControlRecord* jcr{};
-    TlsResource client{};
+    TlsResource job{};
 
-    ~client_data()
-    {
-      if (jcr) { FreeJcr(jcr); }
-    }
-  };
-
-  struct storage_data {
-    JobControlRecord* jcr{};
-    TlsResource storage{};
-
-    ~storage_data()
+    ~job_data()
     {
       if (jcr) { FreeJcr(jcr); }
     }
@@ -69,13 +59,11 @@ struct Auth : ::ClientHelloParser {
   inbound_type GetType() const { return type; }
 
   std::optional<director_data> director;
-  std::optional<client_data> client;
-  std::optional<storage_data> storage;
+  std::optional<job_data> job;
 
  private:
   std::shared_ptr<LoadedConfiguration> p;
   inbound_type type{inbound_type::Unknown};
-  uint32_t remote_version{0};
 };
 
 

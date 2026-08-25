@@ -49,6 +49,8 @@
 #include "lib/s_password.h"
 #include "lib/tls_conf.h"
 #include "include/version_numbers.h"
+#include "lib/global_resource.h"
+#include "lib/hello.h"
 
 #include <mutex>
 #include <functional>
@@ -256,22 +258,79 @@ enum
   BNET_ERROR = -3
 };
 
-struct ClientHelloParser {
-  virtual TlsResource* parse(std::string_view hello) = 0;
-  virtual ~ClientHelloParser() = default;
+struct Authenticator {
+  struct OutboundArgs {
+    JobControlRecord* jcr;
+    BareosSocket* socket;
+    const TlsResource* target;
+  };
+
+  struct InboundArgs {
+    BareosSocket* socket;
+    const TlsResource* target;
+  };
+
+  virtual bool authenticate_outbound(OutboundArgs args) = 0;
+  virtual bool authenticate_inbound(InboundArgs args) = 0;
+  virtual ~Authenticator() = default;
 };
 
-bool BareosAccept(BareosSocket* socket,
-                  const std::string& qualified_name,
-                  const TlsResource* initial_tls,
-                  TlsSecretProvider* provider,
-                  ClientHelloParser* hello_parser);
+struct Md5Authenticator : Authenticator {
+  bool authenticate_outbound(OutboundArgs args) override;
+  bool authenticate_inbound(InboundArgs args) override;
+
+  Md5Authenticator();
+  Md5Authenticator(std::string identity);
+
+  /* a cram-md5 challenge consists of three parts:
+   *  - a current timestamp,
+   *  - a random value, and
+   *  - some way to identify our own challenges
+   * cram_identity is used for the third part.  It makes sure
+   * that you cannot use us, to solve our own challenge.
+   * This value can be anything, but it should always be the same for the
+   * livetime of the program, otherwise it will not do its job!
+   * This string shall _NOT_ contain whitespace! */
+  std::string cram_identity;
+};
 
 bool BareosConnect(JobControlRecord* jcr,
                    BareosSocket* socket,
                    const std::string& qualified_name,
                    const TlsResource* res,
                    std::string_view hello_msg,
+                   Authenticator* auth,
                    bool cleartext_authentication = false);
+
+template <global_resource::Type type, global_resource::Type target_type>
+bool BareosConnect(JobControlRecord* jcr,
+                   BareosSocket* socket,
+                   std::string_view name,
+                   const TlsResource* res,
+                   bool cleartext_authentication = false)
+{
+  using formatter = hello_formatter<type, target_type>;
+  auto qualified_name
+      = global_resource::QualifiedName(formatter::auth_type, name);
+  auto hello = formatter::format(name);
+  Md5Authenticator auth{qualified_name};
+  return BareosConnect(jcr, socket, qualified_name, res, hello, &auth,
+                       cleartext_authentication);
+}
+
+std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
+                                        global_resource::Type type,
+                                        const TlsResource* initial_tls,
+                                        TlsConfigProvider* provider,
+                                        Authenticator* auth);
+
+static inline auto BareosAccept(BareosSocket* socket,
+                                global_resource::Type type,
+                                const TlsResource* initial_tls,
+                                TlsConfigProvider* provider)
+{
+  Md5Authenticator auth{};
+  return BareosAccept(socket, type, initial_tls, provider, &auth);
+}
 
 #endif  // BAREOS_LIB_BSOCK_H_

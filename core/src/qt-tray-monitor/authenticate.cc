@@ -26,6 +26,7 @@
  * Nicolas Boichat, August MMIV
  */
 
+#include "lib/hello.h"
 #include "monitoritem.h"
 #include "authenticate.h"
 #include "include/jcr.h"
@@ -41,13 +42,6 @@
 #include "lib/version.h"
 
 const int debuglevel = 50;
-
-/* Commands sent to Storage daemon and File daemon and received
- *  from the User Agent */
-inline constexpr const char SDFDhello[]
-    = "Hello Director %s calling Version=\"%u.%u.%u\"\n";
-inline constexpr const char Dirhello[]
-    = "Hello %s calling Version=\"%u.%u.%u\"\n";
 
 /* Response from SD */
 inline constexpr const char SDOKhello[] = "3000 OK Hello";
@@ -91,27 +85,19 @@ AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
 
   MonitorResource* monitor = MonitorItemThread::instance()->getMonitor();
 
-  PoolMem hello;
-
   switch (item->type()) {
     case R_DIRECTOR: {
       auto* sock = jcr->dir_bsock;
       auto* dir = static_cast<DirectorResource*>(item->resource());
-      std::string bashed{monitor->resource_name_};
-      BashSpaces(bashed.data());
-      hello.bsprintf(Dirhello, bashed.c_str(), kBareosVersion.Major,
-                     kBareosVersion.Minor, kBareosVersion.Patch);
 
       TlsResource custom = *dir;
       // bareos is consistently inconsistent, so we obviously use the
       // monitor password here, not the director one ...
       custom.password_.value = monitor->password.value;
 
-      if (!BareosConnect(
-              jcr, sock,
-              global_resource::QualifiedName(global_resource::Type::Console,
-                                             monitor->resource_name_),
-              &custom, hello.c_str())) {
+      if (!BareosConnect<global_resource::Type::Console,
+                         global_resource::Type::Director>(
+              jcr, sock, monitor->resource_name_, &custom)) {
         Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate with %s\n"),
              dir->resource_name_);
         return AuthenticationResult::kCramMd5HandshakeFailed;
@@ -139,16 +125,10 @@ AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
     case R_CLIENT: {
       auto* fd = jcr->file_bsock;
       auto* client = static_cast<ClientResource*>(item->resource());
-      std::string bashed{monitor->resource_name_};
-      BashSpaces(bashed.data());
-      hello.bsprintf(SDFDhello, bashed.data(), kBareosVersion.Major,
-                     kBareosVersion.Minor, kBareosVersion.Patch);
 
-      if (!BareosConnect(
-              jcr, fd,
-              global_resource::QualifiedName(global_resource::Type::Director,
-                                             monitor->resource_name_),
-              client, hello.c_str())) {
+      if (!BareosConnect<global_resource::Type::Director,
+                         global_resource::Type::Client>(
+              jcr, fd, monitor->resource_name_, client)) {
         Jmsg(jcr, M_FATAL, 0, "Failed to authenticate with %s\n",
              client->resource_name_);
         return AuthenticationResult::kCramMd5HandshakeFailed;
@@ -174,15 +154,9 @@ AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
     case R_STORAGE: {
       auto* sd = jcr->store_bsock;
       auto* storage = static_cast<StorageResource*>(item->resource());
-      std::string bashed{monitor->resource_name_};
-      BashSpaces(bashed.data());
-      hello.bsprintf(SDFDhello, bashed.data(), kBareosVersion.Major,
-                     kBareosVersion.Minor, kBareosVersion.Patch);
-      if (!BareosConnect(
-              jcr, sd,
-              global_resource::QualifiedName(global_resource::Type::Director,
-                                             monitor->resource_name_),
-              storage, hello.c_str())) {
+      if (!BareosConnect<global_resource::Type::Director,
+                         global_resource::Type::Storage>(
+              jcr, sd, monitor->resource_name_, storage)) {
         Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate with %s\n"),
              storage->resource_name_);
         return AuthenticationResult::kCramMd5HandshakeFailed;

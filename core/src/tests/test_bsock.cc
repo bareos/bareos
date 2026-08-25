@@ -24,6 +24,7 @@
 #include "bsock_test.h"
 #include "create_resource.h"
 #include "lib/s_password.h"
+#include "lib/global_resource.h"
 #include "tests/bareos_test_sockets.h"
 #include "tests/init_openssl.h"
 #include <filesystem>
@@ -470,15 +471,26 @@ static void clone_a_server_socket(BareosSocket* bs)
   bs->fsend("bareos-socket-1234567890");
 }
 
-struct dummy_auth : ::ClientHelloParser {
+struct dummy_auth : ::TlsConfigProvider {
   dummy_auth(std::string console_name, std::string console_password)
       : name{std::move(console_name)}, password{std::move(console_password)}
   {
   }
 
-  TlsResource* parse(std::string_view hello) override
+  const TlsResource* get(global_resource::Type type,
+                         std::string_view res_name) override
   {
-    Dmsg1(10, "Cons->Dir: %s", std::string{hello}.c_str());
+    Dmsg1(10, "Cons->Dir: received %s:%s",
+          std::string{global_resource::GetNameFromType(type)}.c_str(),
+          std::string{res_name}.c_str());
+
+    // some tests use clients instead, so we should not check this
+    // if (type != global_resource::Type::Console) { return nullptr; }
+
+    // for some reason, the tests test some nonsensical stuff.
+    // E.g. they test that you _can_ login, even if you provide a different name
+    // As such we can not check this:
+    // if (res_name != name) { return nullptr; }
 
     res = *dir_cons_config;
     res.password_.value = password.data();
@@ -515,7 +527,8 @@ static void start_bareos_server(std::promise<bool>* promise,
   //                     for new-style connections
   console_res.tls_enable_ = false;
 
-  if (!BareosAccept(bs.get(), "myname", &console_res, nullptr, &auth)) {
+  if (!BareosAccept(bs.get(), global_resource::Type::Director, &console_res,
+                    &auth)) {
     Dmsg0(10, "Server: inbound auth failed\n");
   } else {
     bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,
@@ -592,22 +605,25 @@ static bool connect_to_server(std::string console_name,
     uint32_t response_id = kMessageIdUnknown;
     BStringList response_args;
 
-    std::string qualified_resource_name = global_resource::QualifiedName(
-        global_resource::Type::Console, console_name);
-
-    std::string cpy{console_name};
-    BashSpaces(cpy.data());
-    PoolMem hello_msg;
-    hello_msg.bsprintf("Hello %s calling version %s Version=\"%u.%u.%u\"\n",
-                       cpy.c_str(), kBareosVersionStrings.Full,
-                       kBareosVersion.Major, kBareosVersion.Minor,
-                       kBareosVersion.Patch);
-
     TlsResource custom = *cons_dir_config;
     custom.password_.value = console_password.data();
 
-    if (!BareosConnect(&jcr, UA_sock.get(), std::move(qualified_resource_name),
-                       &custom, hello_msg.c_str(), cleartext_auth)) {
+    bool auth_success = [&] {
+      if (!cleartext_auth) {
+        return BareosConnect<global_resource::Type::Console,
+                             global_resource::Type::Director>(
+            &jcr, UA_sock.get(), console_name, &custom, cleartext_auth);
+      } else {
+        /* old style tls is only supported for clients,
+         * so we need to connect as a client*/
+
+        return BareosConnect<global_resource::Type::Client,
+                             global_resource::Type::Director>(
+            &jcr, UA_sock.get(), console_name, &custom, cleartext_auth);
+      }
+    }();
+
+    if (!auth_success) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
       return false;
     }
@@ -800,6 +816,7 @@ TEST(bsock, auth_works_with_old_style_tls)
 
   cons_dir_config->tls_enable_ = true;
   dir_cons_config->tls_enable_ = true;
+  dir_cons_config->tls_require_ = false;
 
   auto ls = create_listening_socket();
   ASSERT_NE(ls, std::nullopt);

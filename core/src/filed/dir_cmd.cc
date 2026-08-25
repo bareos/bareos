@@ -46,6 +46,7 @@
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+#include "lib/hello.h"
 #include "lib/path_list.h"
 #include "lib/global_resource.h"
 #include "lib/thread_specific_data.h"
@@ -1445,9 +1446,6 @@ static bool StorageCmd(JobControlRecord* jcr)
   jcr->store_bsock = storage_daemon_socket;
 
   {
-    std::string qualified_resource_name
-        = global_resource::QualifiedName(global_resource::Type::Job, jcr->Job);
-
     TlsResource custom = *me;
     custom.password_.value = jcr->sd_auth_key;
     bool cleartext_auth = false;
@@ -1474,13 +1472,9 @@ static bool StorageCmd(JobControlRecord* jcr)
       } break;
     }
 
-    PoolMem hello;
-    hello.bsprintf("Hello Start Job %s Version=\"%u.%u.%u\"\n", jcr->Job,
-                   kBareosVersion.Major, kBareosVersion.Minor,
-                   kBareosVersion.Patch);
-
-    if (!BareosConnect(jcr, storage_daemon_socket, qualified_resource_name,
-                       &custom, hello.c_str(), cleartext_auth)) {
+    if (!BareosConnect<global_resource::Type::Client,
+                       global_resource::Type::Storage>(
+            jcr, storage_daemon_socket, jcr->Job, &custom, cleartext_auth)) {
       Jmsg(jcr, M_FATAL, 0,
            T_("Failed to authenticate with Storage daemon.\n"));
       goto bail_out;
@@ -1492,7 +1486,6 @@ static bool StorageCmd(JobControlRecord* jcr)
     Jmsg(jcr, M_INFO, 0, "%s\n",
          storage_daemon_socket->GetCipherMessageString().c_str());
   }
-
 
   // Send OK to Director
   return dir->fsend(OKstore);
@@ -2045,17 +2038,9 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
 
   director_socket->SetEnableKtls(me->enable_ktls);
 
-  std::string qualified_resource_name = global_resource::QualifiedName(
-      global_resource::Type::Client, me->resource_name_);
-
-  PoolMem hello;
-  hello.bsprintf(hello_client, me->resource_name_, FD_PROTOCOL_VERSION,
-                 kBareosVersion.Major, kBareosVersion.Minor,
-                 kBareosVersion.Patch);
-
-  if (!BareosConnect(jcr, director_socket.get(),
-                     std::move(qualified_resource_name), dir_res,
-                     hello.c_str())) {
+  if (!BareosConnect<global_resource::Type::Client,
+                     global_resource::Type::Director>(
+          jcr, director_socket.get(), me->resource_name_, dir_res)) {
     Dmsg0(100, "Could not connect to director\n");
     return nullptr;
   }
