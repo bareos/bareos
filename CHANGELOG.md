@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - logrotate: add minsize 100k [PR #2746]
 - cmake: fix alphabetic requirements when some tests are disabled [PR #2766]
+- new webui: Simplify configuration and improve robustness [PR #2776]
 
 ### Changed
 - cmake: fix add_alphabetic_requirements() no-op sort [PR #2758]
@@ -2346,4 +2347,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2766]: https://github.com/bareos/bareos/pull/2766
 [PR #2769]: https://github.com/bareos/bareos/pull/2769
 [PR #2773]: https://github.com/bareos/bareos/pull/2773
+[PR #2776]: https://github.com/bareos/bareos/pull/2776
 [unreleased]: https://github.com/bareos/bareos/tree/master
