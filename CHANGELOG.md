@@ -59,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Matrix: rename xUbuntu to Ubuntu [PR #2735]
 - cmake: fix add_alphabetic_requirements() no-op sort [PR #2756]
 - bpipe-fd: add safety check against using usesuffix option together with Accurate flag [PR #2745]
+- webui-vue: update nanoid to patched version [PR #2772]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2369,4 +2370,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2756]: https://github.com/bareos/bareos/pull/2756
 [PR #2762]: https://github.com/bareos/bareos/pull/2762
 [PR #2764]: https://github.com/bareos/bareos/pull/2764
+[PR #2772]: https://github.com/bareos/bareos/pull/2772
 [unreleased]: https://github.com/bareos/bareos/tree/master
