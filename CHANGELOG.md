@@ -91,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - logrotate: add minsize 100k [PR #2731]
 - libcloud plugin: fix error when backing up an empty bucket [PR #2717]
 - cmake: fix alphabetic requirements when some tests are disabled [PR #2762]
+- new webui: Simplify configuration and improve robustness [PR #2754]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2367,6 +2368,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2738]: https://github.com/bareos/bareos/pull/2738
 [PR #2745]: https://github.com/bareos/bareos/pull/2745
 [PR #2752]: https://github.com/bareos/bareos/pull/2752
+[PR #2754]: https://github.com/bareos/bareos/pull/2754
 [PR #2756]: https://github.com/bareos/bareos/pull/2756
 [PR #2762]: https://github.com/bareos/bareos/pull/2762
 [PR #2764]: https://github.com/bareos/bareos/pull/2764
