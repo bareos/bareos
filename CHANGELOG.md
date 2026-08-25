@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - cmake: fix add_alphabetic_requirements() no-op sort [PR #2758]
+- webui-vue: update nanoid to patched version [PR #2773]
 
 ## [25.1.0] - 2026-08-03
 
@@ -2344,4 +2345,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2758]: https://github.com/bareos/bareos/pull/2758
 [PR #2766]: https://github.com/bareos/bareos/pull/2766
 [PR #2769]: https://github.com/bareos/bareos/pull/2769
+[PR #2773]: https://github.com/bareos/bareos/pull/2773
 [unreleased]: https://github.com/bareos/bareos/tree/master
