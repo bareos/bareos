@@ -58,12 +58,13 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
+import ChartDataLabels from 'chartjs-plugin-datalabels'
 import { formatBytes } from '../../mock/index.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
-import { PIE_PALETTE } from '../piePalette.js'
+import { PIE_PALETTE, getContrastTextColor } from '../piePalette.js'
 import { CenterTextPlugin } from '../centerTextPlugin.js'
 
-ChartJS.register(ArcElement, Tooltip, Legend, CenterTextPlugin)
+ChartJS.register(ArcElement, Tooltip, Legend, CenterTextPlugin, ChartDataLabels)
 
 const { t } = useI18n()
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
@@ -156,6 +157,17 @@ const chartOptions = computed(() => ({
       lines: [formatBytes(summary.value.totalBytes ?? 0), t('Total')],
       fonts: ['600 15px sans-serif', '11px sans-serif'],
       colors: ['#333', '#888'],
+    },
+    datalabels: {
+      color: (context) => getContrastTextColor(
+        PIE_PALETTE[context.dataIndex % PIE_PALETTE.length]
+      ),
+      font: { weight: 'bold', size: 11 },
+      formatter: (value, context) => {
+        const total = context.dataset.data.reduce((a, b) => a + b, 0)
+        const percent = total > 0 ? (value / total) * 100 : 0
+        return percent >= 5 ? `${percent.toFixed(0)}%` : ''
+      },
     },
   },
 }))
