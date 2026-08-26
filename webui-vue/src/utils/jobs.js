@@ -22,9 +22,22 @@
 import { jobStatusMap } from '../mock/index.js'
 import { quoteDirectorString } from './directorStrings.js'
 import { resolveJobTypeCode } from './jobTypes.js'
+import { isErrorJobStatus, isWarningJobStatus, isOkJobStatus } from '../composables/useDirectorFetch.js'
 
 const JOB_LEVEL_FILTERS = new Set(['F', 'I', 'D', 'V', 'B'])
 const JOB_TYPE_FILTERS = new Set(['B', 'A', 'V', 'R', 'D', 'C', 'c', 'M', 'g', 'O', 'S', 'U', 'I'])
+
+// Resolve which part of a job's log should be jumped to, based on its
+// status: the first error/warning line, or the final termination summary
+// line for a successful job. Returns '' when there is no specific target
+// (e.g. Running/Waiting/Canceled), meaning the caller should fall back to
+// the default "scroll to bottom" behavior.
+export function resolveJobLogFocus(status) {
+  if (isErrorJobStatus(status)) return 'error'
+  if (isWarningJobStatus(status)) return 'warning'
+  if (isOkJobStatus(status)) return 'ok'
+  return ''
+}
 
 export function normaliseJobId(value) {
   if (typeof value === 'number') {
@@ -556,6 +569,7 @@ export function buildJobDetailsQuery({
   directorTab,
   directorTarget,
   dashboardOrigin,
+  logFocus,
 } = {}) {
   const query = {}
 
@@ -679,6 +693,10 @@ export function buildJobDetailsQuery({
 
   if (dashboardOrigin) {
     query.dashboardOrigin = '1'
+  }
+
+  if (logFocus === 'error' || logFocus === 'warning' || logFocus === 'ok') {
+    query.logFocus = logFocus
   }
 
   return query

@@ -65,12 +65,19 @@
                 <q-td :props="props">
                   <span
                     v-if="isWaitingJobStatus(displayJobStatus(props.row))"
-                    class="row items-center no-wrap q-gutter-x-xs"
+                    class="row items-center no-wrap q-gutter-x-xs cursor-pointer"
+                    :title="t('Jump to log')"
+                    @click="openJobLog(props.row)"
                   >
                     <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
                     <span class="text-orange-7 text-caption">{{ displayJobStatus(props.row) }}</span>
                   </span>
-                  <JobStatusBadge v-else :status="displayJobStatus(props.row)" />
+                  <JobStatusBadge
+                    v-else
+                    clickable
+                    :status="displayJobStatus(props.row)"
+                    @click="openJobLog(props.row)"
+                  />
                 </q-td>
               </template>
               <template #body-cell-starttime="props">
@@ -102,7 +109,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatBytes, timeAgo } from '../mock/index.js'
 import {
@@ -118,7 +125,7 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { buildJobDetailsQuery } from '../utils/jobs.js'
+import { buildJobDetailsQuery, resolveJobLogFocus } from '../utils/jobs.js'
 import {
   resolveClientDetailsDashboardOrigin,
   resolveClientDetailsJobsOrigin,
@@ -130,6 +137,7 @@ import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 
 const route         = useRoute()
+const router        = useRouter()
 const auth          = useAuthStore()
 const director      = useDirectorStore()
 const settings      = useSettingsStore()
@@ -163,7 +171,7 @@ const backLocation = computed(() => (
     )
 ))
 
-function buildClientJobDetailsQuery(job) {
+function buildClientJobDetailsQuery(job, logFocus) {
   return buildJobDetailsQuery({
     director: job?.director,
     clientName: typeof route.params.name === 'string' ? route.params.name : '',
@@ -180,6 +188,15 @@ function buildClientJobDetailsQuery(job) {
     clientJobsJob: typeof route.query.jobsJob === 'string' ? route.query.jobsJob : '',
     clientJobsClient: typeof route.query.jobsClient === 'string' ? route.query.jobsClient : '',
     clientJobsSearch: typeof route.query.jobsSearch === 'string' ? route.query.jobsSearch : '',
+    logFocus,
+  })
+}
+
+async function openJobLog(job) {
+  await router.push({
+    name: 'job-details',
+    params: { id: job.id },
+    query: buildClientJobDetailsQuery(job, resolveJobLogFocus(job.status)),
   })
 }
 
