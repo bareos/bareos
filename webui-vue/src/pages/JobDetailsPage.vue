@@ -535,7 +535,8 @@ const highlightedLines = computed(() => {
       return { text: line, type: 'normal' }
     }
     if (/error|fatal|failed/.test(l))               return { text: line, type: 'error'   }
-    if (/warning|warn/.test(l))                      return { text: line, type: 'warning' }
+    if (/warning|warn|could not stat|could not access|not saved|unknown file type/.test(l))
+                                                       return { text: line, type: 'warning' }
     if (/\bok\b|termination:.*ok|backup ok/.test(l)) return { text: line, type: 'ok'      }
     return { text: line, type: 'normal' }
   })
