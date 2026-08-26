@@ -106,6 +106,17 @@ const WIDGETS = [
     optionalProps: [],
   },
   {
+    type: 'trouble-view',
+    label: 'Trouble View',
+    description: 'Error and warning lines from job logs in the last 24 hours.',
+    icon: 'mdi-alert-circle-outline',
+    component: defineAsyncComponent(() => import('./widgets/TroubleViewWidget.vue')),
+    defaultTitle: 'Trouble View',
+    defaultLayout: { w: 6, h: 10 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
     type: 'database-status',
     label: 'Database Table Sizes',
     description: 'Database size and per-table size breakdown.',
