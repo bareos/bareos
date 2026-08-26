@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -131,6 +131,7 @@ std::string AvailableDevicesListing()
   for (BareosResource* resource = nullptr;
        (resource = my_config->GetNextRes(R_DEVICE, resource));) {
     DeviceResource* device = dynamic_cast<DeviceResource*>(resource);
+
     std::string device_str;
     device_str += " \"";
     device_str += device->resource_name_;
@@ -292,6 +293,14 @@ static DeviceResource* find_device_res(char* archive_device_string,
   foreach_res (device_resource, R_DEVICE) {
     Dmsg2(900, "Compare %s and %s\n", device_resource->archive_device_string,
           archive_device_string);
+
+    ASSERT(device_resource->resource_name_);
+
+    if (device_resource->resource_name_[0] == '$') {
+      // this is a dummy device, and is not to be used
+      continue;
+    }
+
     if (bstrcmp(device_resource->archive_device_string,
                 archive_device_string)) {
       found = true;
@@ -299,7 +308,8 @@ static DeviceResource* find_device_res(char* archive_device_string,
     }
   }
 
-  if (!found) {
+  // we cannot select devices starting with `$` as they are not real devices
+  if (!found && archive_device_string[0] != '$') {
     /* Search for name of Device resource rather than archive name */
     if (archive_device_string[0] == '"') {
       int len = strlen(archive_device_string);
@@ -310,6 +320,7 @@ static DeviceResource* find_device_res(char* archive_device_string,
     foreach_res (device_resource, R_DEVICE) {
       Dmsg2(900, "Compare %s and %s\n", device_resource->resource_name_,
             archive_device_string);
+
       if (bstrcmp(device_resource->resource_name_, archive_device_string)) {
         found = true;
         break;
