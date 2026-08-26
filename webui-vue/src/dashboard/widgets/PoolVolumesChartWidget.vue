@@ -29,10 +29,7 @@
     </div>
     <template v-else>
       <div style="position:relative; width:100%; flex:1; min-height:0">
-        <Pie :data="chartData" :options="chartOptions" />
-      </div>
-      <div class="q-mt-xs" style="font-size:0.72rem; color:#888; text-align:center">
-        {{ t('Total') }}: {{ totalVolumes }} {{ t('volumes') }}
+        <Doughnut :data="chartData" :options="chartOptions" />
       </div>
     </template>
   </div>
@@ -41,7 +38,7 @@
 <script setup>
 import { inject, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Pie } from 'vue-chartjs'
+import { Doughnut } from 'vue-chartjs'
 import {
   Chart as ChartJS,
   ArcElement,
@@ -50,8 +47,9 @@ import {
 } from 'chart.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
 import { PIE_PALETTE } from '../piePalette.js'
+import { CenterTextPlugin } from '../centerTextPlugin.js'
 
-ChartJS.register(ArcElement, Tooltip, Legend)
+ChartJS.register(ArcElement, Tooltip, Legend, CenterTextPlugin)
 
 const { t } = useI18n()
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
@@ -79,6 +77,7 @@ const chartData = computed(() => {
 const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
+  cutout: '65%',
   plugins: {
     legend: {
       position: 'bottom',
@@ -90,6 +89,11 @@ const chartOptions = computed(() => ({
           return ` ${ctx.label}: ${ctx.raw} volume${ctx.raw !== 1 ? 's' : ''}`
         },
       },
+    },
+    centerText: {
+      lines: [String(totalVolumes.value), t('volumes')],
+      fonts: ['600 15px sans-serif', '11px sans-serif'],
+      colors: ['#333', '#888'],
     },
   },
 }))
