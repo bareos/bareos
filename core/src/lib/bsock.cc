@@ -919,46 +919,44 @@ bool BareosConnect(JobControlRecord* jcr,
     return false;
   }
 
-  bool connection_tls;
-  switch (select_tls_status(remote_policy, local_policy)) {
-    default:
-      [[fallthrough]];
-    case TlsStatus::Error: {
-      Jmsg1(jcr, M_ERROR, 0,
-            T_("It was not possible to negotiate a shared tls policy with "
-               "%s.\n"),
-            socket->who());
-      return false;
-    } break;
-    case TlsStatus::Disabled: {
-      connection_tls = false;
-    } break;
-    case TlsStatus::Enabled: {
-      connection_tls = true;
-    } break;
-  }
-
-  /* only create the tls connection if it does not already exist
-   *
-   * one might argue that we should drop the tls connection if
-   * the resource we authenticated has tls disabled, or simply drop the
-   * connection, but that is not how it was done. */
-  if (!have_tls && connection_tls) {
-    auto tls = ParameterizeAndInitTlsConnectionAsAClient(
-        jcr, res, qualified_name.c_str(), res->password_.value);
-
-    if (!tls) {
-      Jmsg(jcr, M_FATAL, 0, "Could initialize secondary tls context for %s\n",
-           socket->who());
-      return false;
+  /* only create the tls connection if it does not already exist */
+  if (!have_tls) {
+    bool connection_tls = true;
+    switch (select_tls_status(remote_policy, local_policy)) {
+      default:
+        [[fallthrough]];
+      case TlsStatus::Error: {
+        Jmsg1(jcr, M_ERROR, 0,
+              T_("It was not possible to negotiate a shared tls policy with "
+                 "%s.\n"),
+              socket->who());
+        return false;
+      } break;
+      case TlsStatus::Disabled: {
+        connection_tls = false;
+      } break;
+      case TlsStatus::Enabled: {
+        connection_tls = true;
+      } break;
     }
 
-    if (!DoTlsHandshakeWithServer(jcr, socket, std::move(tls),
-                                  &res->tls_cert_)) {
-      return false;
-    }
+    if (connection_tls) {
+      auto tls = ParameterizeAndInitTlsConnectionAsAClient(
+          jcr, res, qualified_name.c_str(), res->password_.value);
 
-    if (res->authenticate_) { socket->CloseTlsConnectionAndFreeMemory(); }
+      if (!tls) {
+        Jmsg(jcr, M_FATAL, 0, "Could initialize secondary tls context for %s\n",
+             socket->who());
+        return false;
+      }
+
+      if (!DoTlsHandshakeWithServer(jcr, socket, std::move(tls),
+                                    &res->tls_cert_)) {
+        return false;
+      }
+
+      if (res->authenticate_) { socket->CloseTlsConnectionAndFreeMemory(); }
+    }
   }
 
   jcr->authenticated = true;
