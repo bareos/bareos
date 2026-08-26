@@ -48,12 +48,19 @@
         <q-td :props="props">
           <span
             v-if="isWaitingStatus(jobStatus(props.row))"
-            class="row items-center no-wrap q-gutter-x-xs"
+            class="row items-center no-wrap q-gutter-x-xs cursor-pointer"
+            :title="t('Jump to log')"
+            @click="openJobDetails(props.row, resolveJobLogFocus(props.row.status))"
           >
             <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
             <span class="text-orange-7 text-caption">{{ jobStatus(props.row) }}</span>
           </span>
-          <JobStatusBadge v-else :status="jobStatus(props.row)" />
+          <JobStatusBadge
+            v-else
+            clickable
+            :status="jobStatus(props.row)"
+            @click="openJobDetails(props.row, resolveJobLogFocus(props.row.status))"
+          />
         </q-td>
       </template>
       <template #body-cell-client="props">
@@ -132,7 +139,7 @@ import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { formatBytes, formatSpeed, parseDurationSecs, timeAgo } from '../../mock/index.js'
-import { buildJobDetailsQuery, withJobsStatusFilterQuery } from '../../utils/jobs.js'
+import { buildJobDetailsQuery, withJobsStatusFilterQuery, resolveJobLogFocus } from '../../utils/jobs.js'
 import { buildClientDetailsQuery } from '../../utils/clients.js'
 import { resolveDirectorColors } from '../../utils/directorColors.js'
 import { useSettingsStore } from '../../stores/settings.js'
@@ -237,13 +244,13 @@ function directorSwatchStyle(name, options) {
   }
 }
 
-async function openJobDetails(row) {
+async function openJobDetails(row, logFocus) {
   try {
     await switchActiveDirector(row.director)
     await router.push({
       name: 'job-details',
       params: { id: row.id ?? row.jobid },
-      query: buildJobDetailsQuery({ director: row.director, dashboardOrigin: true }),
+      query: buildJobDetailsQuery({ director: row.director, dashboardOrigin: true, logFocus }),
     })
   } catch (error) {
     $q.notify({ type: 'negative', message: error.message })
