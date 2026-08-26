@@ -52,6 +52,7 @@
         v-for="widget in dashboard.widgets"
         :key="widget.id"
         :title="widget.title || defaultTitle(widget.type)"
+        :icon="getWidgetDefinition(widget.type)?.icon ?? ''"
         :edit-mode="editMode"
         style="min-height:200px"
         @configure="openConfig(widget)"
@@ -95,6 +96,7 @@
       >
         <WidgetShell
           :title="widget.title || defaultTitle(widget.type)"
+          :icon="getWidgetDefinition(widget.type)?.icon ?? ''"
           :edit-mode="editMode"
           style="height:100%"
           @configure="openConfig(widget)"
