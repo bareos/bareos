@@ -34,6 +34,7 @@
       style="flex-shrink:0; cursor: default"
       :style="editMode ? 'cursor: grab' : ''"
     >
+      <q-icon v-if="icon" :name="icon" size="sm" class="q-mr-sm" />
       <span class="ellipsis" style="flex:1; min-width:0">{{ title }}</span>
       <q-space />
 
@@ -75,6 +76,7 @@ const { t } = useI18n()
 
 defineProps({
   title:    { type: String,  default: '' },
+  icon:     { type: String,  default: '' },
   editMode: { type: Boolean, default: false },
 })
 
