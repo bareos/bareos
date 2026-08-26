@@ -796,17 +796,12 @@ bool BareosAccept(BareosSocket* socket,
 
     if (received_clear_text_handshake && tls_resource->tls_require_
         && tls_resource->tls_enable_) {
-      // obviously this is not ok
-
       // checking for only tls_require is not enough:
       // Nobody sets tls_require to false, when tls_enable is false
 
+      Emsg1(M_ERROR, 0, T_("Received a cleartext hello from %s.\n"),
+            socket->who());
       return false;
-
-      // TODO: this is also not ok, if _only_ tls_enable_ is set,
-      // except for clients and old consoles
-      // but this should probably be done somewhere else
-      // i.e. set tls_require_ if tls_enable_ is set
     }
 
     if (!cram_md5_handshake(nullptr, socket, qualified_name.c_str(),
