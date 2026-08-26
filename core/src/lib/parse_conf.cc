@@ -66,6 +66,7 @@
 #include "lib/ascii_control_characters.h"
 #include "lib/messages_resource.h"
 #include "lib/resource_item.h"
+#include "lib/alist.h"
 #include "lib/berrno.h"
 #include "lib/util.h"
 
@@ -546,11 +547,10 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
 
   /* Remove resource from list.
    *
-   * Note: this is intended for removing a resource that has just been added,
-   * but proven to be incorrect (added by console command "configure add").
-   * For a general approach, a check if this resource is referenced by other
-   * resource_definitions must be added. If it is referenced, don't remove it.
-   */
+   * Callers that free a live resource (as opposed to rolling back one that
+   * was just added but proven invalid) are responsible for checking
+   * FindResourceReferences() first and refusing to remove a resource that is
+   * still referenced. */
   last = nullptr;
   for (BareosResource* res
        = loaded_configuration->configuration_resources_[rindex];
@@ -575,6 +575,62 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
 
   // Resource with this name not found
   return false;
+}
+
+std::vector<ResourceReference> ConfigurationParser::FindResourceReferences(
+    int rcode,
+    const BareosResource* target)
+{
+  std::vector<ResourceReference> references;
+
+  if (!target) { return references; }
+
+  for (int t = 0; t < r_num_; t++) {
+    const ResourceTable& table = resource_definitions_[t];
+    if (!table.items) { continue; }
+
+    for (BareosResource* res
+             = loaded_configuration->configuration_resources_[t];
+         res; res = res->next_) {
+      if (res == target) { continue; }
+
+      *table.allocated_resource_ = res;
+
+      for (int i = 0; table.items[i].name; i++) {
+        const ResourceItem& item = table.items[i];
+        if (item.code != rcode) { continue; }
+
+        switch (item.type) {
+          case CFG_TYPE_RES: {
+            BareosResource* referenced = GetItemVariable<BareosResource*>(item);
+            if (referenced == target) {
+              references.push_back(
+                  {static_cast<int>(table.rcode), res->resource_name_, item.name});
+            }
+            break;
+          }
+          case CFG_TYPE_ALIST_RES: {
+            alist<BareosResource*>* list
+                = GetItemVariable<alist<BareosResource*>*>(item);
+            if (list) {
+              for (auto* referenced : *list) {
+                if (referenced == target) {
+                  references.push_back(
+                      {static_cast<int>(table.rcode), res->resource_name_, item.name});
+                  break;
+                }
+              }
+            }
+            break;
+          }
+          default:
+            break;
+        }
+      }
+    }
+  }
+
+  return references;
 }
 
 bool ConfigurationParser::DumpResources(bool sendit(void* sock,

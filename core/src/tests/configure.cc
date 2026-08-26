@@ -25,6 +25,43 @@
 #include "include/jcr.h"
 #include "dird/ua_configure.cc"
 
+#include <filesystem>
+
+namespace {
+// Copies the configure_delete fixture into a fresh temporary directory, so
+// that each test gets its own on-disk copy and can safely unlink files
+// without affecting other tests or later runs of the same test.
+class TempConfigureDeleteConfig {
+ public:
+  TempConfigureDeleteConfig()
+  {
+    char tmpl[] = "/tmp/bareos-configure-delete-XXXXXX";
+    char* created = mkdtemp(tmpl);
+    if (created) {
+      path_ = created;
+      std::error_code ec;
+      std::filesystem::copy(
+          "configs/configure_delete", path_,
+          std::filesystem::copy_options::recursive, ec);
+      if (ec) { path_.clear(); }
+    }
+  }
+
+  ~TempConfigureDeleteConfig()
+  {
+    if (!path_.empty()) {
+      std::error_code ec;
+      std::filesystem::remove_all(path_, ec);
+    }
+  }
+
+  const std::string& path() const { return path_; }
+
+ private:
+  std::string path_;
+};
+}  // namespace
+
 TEST(ConfigureExport, ReturnsQuotedNameAndPassword)
 {
   InitDirGlobals();
@@ -46,4 +83,135 @@ TEST(ConfigureExport, ReturnsQuotedNameAndPassword)
   EXPECT_EQ(resource.c_str(), expected_output);
 
   FreeUaContext(ua);
+}
+
+TEST(ConfigureDelete, DeletesUnreferencedResource)
+{
+  InitDirGlobals();
+  TempConfigureDeleteConfig config;
+  ASSERT_FALSE(config.path().empty());
+  PConfigParser client_config(DirectorPrepareResources(config.path()));
+  if (!client_config) { return; }
+
+  JobControlRecord jcr{};
+  directordaemon::UaContext* ua = directordaemon::new_ua_context(&jcr);
+
+  const ResourceTable* res_table = directordaemon::my_config->GetResourceTable("client");
+  ASSERT_NE(res_table, nullptr);
+
+  PoolMem path(PM_FNAME);
+  ASSERT_TRUE(directordaemon::my_config->GetPathOfResource(path, NULL, res_table->name,
+                                           "unreferenced-fd", false));
+  EXPECT_TRUE(std::filesystem::exists(path.c_str()));
+
+  EXPECT_TRUE(ConfigureDeleteResource(ua, res_table, "unreferenced-fd"));
+
+  EXPECT_EQ(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT, "unreferenced-fd"), nullptr);
+  EXPECT_FALSE(std::filesystem::exists(path.c_str()));
+
+  FreeUaContext(ua);
+}
+
+TEST(ConfigureDelete, ErrorsOnUnknownResource)
+{
+  InitDirGlobals();
+  TempConfigureDeleteConfig config;
+  ASSERT_FALSE(config.path().empty());
+  PConfigParser client_config(DirectorPrepareResources(config.path()));
+  if (!client_config) { return; }
+
+  JobControlRecord jcr{};
+  directordaemon::UaContext* ua = directordaemon::new_ua_context(&jcr);
+
+  const ResourceTable* res_table = directordaemon::my_config->GetResourceTable("client");
+  ASSERT_NE(res_table, nullptr);
+
+  EXPECT_FALSE(ConfigureDeleteResource(ua, res_table, "does-not-exist"));
+
+  FreeUaContext(ua);
+}
+
+TEST(ConfigureDelete, RefusesToDeleteReferencedResource)
+{
+  // There is no override: deleting the config file while a reference
+  // remains would leave that reference dangling on the next reload/restart,
+  // so the caller must remove or update the referencing resource first.
+  InitDirGlobals();
+  TempConfigureDeleteConfig config;
+  ASSERT_FALSE(config.path().empty());
+  PConfigParser client_config(DirectorPrepareResources(config.path()));
+  if (!client_config) { return; }
+
+  JobControlRecord jcr{};
+  directordaemon::UaContext* ua = directordaemon::new_ua_context(&jcr);
+
+  const ResourceTable* res_table = directordaemon::my_config->GetResourceTable("client");
+  ASSERT_NE(res_table, nullptr);
+
+  EXPECT_FALSE(ConfigureDeleteResource(ua, res_table, "referenced-fd"));
+  EXPECT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT, "referenced-fd"), nullptr);
+
+  FreeUaContext(ua);
+}
+
+TEST(ConfigureDelete, DeletesResourceAfterReferenceRemoved)
+{
+  // Deleting the referencing Job resource first (exercising the same
+  // ConfigureDeleteResource() for a different resource type) clears the
+  // reference, after which the previously-blocked Client delete succeeds.
+  InitDirGlobals();
+  TempConfigureDeleteConfig config;
+  ASSERT_FALSE(config.path().empty());
+  PConfigParser client_config(DirectorPrepareResources(config.path()));
+  if (!client_config) { return; }
+
+  JobControlRecord jcr{};
+  directordaemon::UaContext* ua = directordaemon::new_ua_context(&jcr);
+
+  const ResourceTable* job_table = directordaemon::my_config->GetResourceTable("job");
+  ASSERT_NE(job_table, nullptr);
+  ASSERT_TRUE(ConfigureDeleteResource(ua, job_table, "testjob"));
+
+  const ResourceTable* res_table = directordaemon::my_config->GetResourceTable("client");
+  ASSERT_NE(res_table, nullptr);
+
+  PoolMem path(PM_FNAME);
+  ASSERT_TRUE(directordaemon::my_config->GetPathOfResource(
+      path, NULL, res_table->name, "referenced-fd", false));
+
+  EXPECT_TRUE(ConfigureDeleteResource(ua, res_table, "referenced-fd"));
+
+  EXPECT_FALSE(std::filesystem::exists(path.c_str()));
+  EXPECT_EQ(directordaemon::my_config->GetResWithName(
+                directordaemon::R_CLIENT, "referenced-fd"),
+            nullptr);
+
+  FreeUaContext(ua);
+}
+
+TEST(ConfigureDelete, FindsResourceReferences)
+{
+  InitDirGlobals();
+  TempConfigureDeleteConfig config;
+  ASSERT_FALSE(config.path().empty());
+  PConfigParser client_config(DirectorPrepareResources(config.path()));
+  if (!client_config) { return; }
+
+  BareosResource* referenced_client
+      = directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT, "referenced-fd");
+  ASSERT_NE(referenced_client, nullptr);
+
+  std::vector<ResourceReference> references
+      = directordaemon::my_config->FindResourceReferences(directordaemon::R_CLIENT, referenced_client);
+  ASSERT_EQ(references.size(), 1u);
+  EXPECT_EQ(references[0].rcode, directordaemon::R_JOB);
+  EXPECT_STREQ(references[0].resource_name.c_str(), "testjob");
+  EXPECT_STREQ(references[0].directive_name.c_str(), "Client");
+
+  BareosResource* unreferenced_client
+      = directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT, "unreferenced-fd");
+  ASSERT_NE(unreferenced_client, nullptr);
+  EXPECT_TRUE(
+      directordaemon::my_config->FindResourceReferences(directordaemon::R_CLIENT, unreferenced_client)
+          .empty());
 }

@@ -151,6 +151,90 @@ class PythonBareosJsonConfigTest(bareos_unittest.Json):
             priority,
         )
 
+    def test_configure_delete(self):
+        """
+        Verify "configure delete":
+        - deleting an unreferenced resource removes it.
+        - deleting an unknown resource fails.
+        - deleting a resource that is still referenced by another resource
+          (a Job's "Client" directive) is refused. There is no override:
+          the referencing resource must be removed or updated first.
+        - once the referencing resource is gone, the delete succeeds.
+        """
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=self.get_operator_username(),
+            password=self.get_operator_password(self.get_operator_username()),
+            **self.director_extra_options
+        )
+
+        unreferenced_client = "test-delete-unreferenced-fd"
+        referenced_client = "test-delete-referenced-fd"
+        referencing_job = "test-delete-job"
+
+        # deleting an unreferenced resource removes it right away.
+        self.configure_add(
+            director,
+            "clients",
+            unreferenced_client,
+            "client name={} address=127.0.0.1 password=secret".format(
+                unreferenced_client
+            ),
+        )
+        self.configure_delete(
+            director,
+            "clients",
+            unreferenced_client,
+            "client name={}".format(unreferenced_client),
+        )
+
+        # deleting an unknown resource fails.
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            director.call("configure delete client name=does-not-exist-fd")
+
+        # set up a client referenced by a job, to exercise the reference check.
+        self.configure_add(
+            director,
+            "clients",
+            referenced_client,
+            "client name={} address=127.0.0.1 password=secret".format(
+                referenced_client
+            ),
+        )
+        self.configure_add(
+            director,
+            "jobs",
+            referencing_job,
+            "job name={} jobdefs=DefaultJob client={}".format(
+                referencing_job, referenced_client
+            ),
+        )
+
+        # deleting the still-referenced client is refused, with no override.
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            director.call("configure delete client name={}".format(referenced_client))
+        self.assertTrue(self.check_resource(director, "clients", referenced_client))
+        self.assertTrue(
+            os.path.exists(
+                "etc/bareos/bareos-dir.d/client/{}.conf".format(referenced_client)
+            )
+        )
+
+        # once the referencing job is gone, the client can be removed.
+        self.configure_delete(
+            director,
+            "jobs",
+            referencing_job,
+            "job name={}".format(referencing_job),
+        )
+        self.configure_delete(
+            director,
+            "clients",
+            referenced_client,
+            "client name={}".format(referenced_client),
+        )
+
     def _test_configure_add_conole_with_where_acl(self, name, where_acl):
         username = self.get_operator_username()
         password = self.get_operator_password(username)

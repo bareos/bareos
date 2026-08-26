@@ -190,6 +190,14 @@ struct DatatypeName {
 
 class QualifiedResourceNameTypeConverter;
 
+// Describes a directive of one resource that points at another resource,
+// as found by ConfigurationParser::FindResourceReferences().
+struct ResourceReference {
+  int rcode{};
+  std::string resource_name;
+  std::string directive_name;
+};
+
 class ConfigurationParser {
   friend class ConfiguredTlsPolicyGetterPrivate;
   friend class ConfigParserStateMachine;
@@ -268,6 +276,9 @@ class ConfigurationParser {
                     std::function<void()> ResourceSpecificInitializer);
   bool AppendToResourcesChain(BareosResource* new_resource, int rcode);
   bool RemoveResource(int rcode, const char* name);
+  std::vector<ResourceReference> FindResourceReferences(
+      int rcode,
+      const BareosResource* target);
   bool DumpResources(sender* sendit,
                      void* sock,
                      const std::string& res_type_name,
