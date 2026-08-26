@@ -54,8 +54,13 @@
           <q-item-section>
             <q-item-label class="text-caption text-grey">
               {{ line.jobName }} (#{{ line.jobId }}) · {{ line.director }}
+              <span v-if="line.time">
+                · <span :title="settings.relativeTime ? line.time : timeAgo(line.time, settings.locale)">
+                  {{ settings.relativeTime ? timeAgo(line.time, settings.locale) : line.time }}
+                </span>
+              </span>
             </q-item-label>
-            <q-item-label class="log-line-text">{{ line.text }}</q-item-label>
+            <q-item-label class="log-line-text">{{ line.logtext }}</q-item-label>
           </q-item-section>
         </q-item>
       </q-list>
@@ -69,17 +74,23 @@ import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useDirectorStore } from '../../stores/director.js'
+import { useSettingsStore } from '../../stores/settings.js'
 import { switchActiveDirector } from '../../composables/useDirectorSession.js'
 import { buildJobDetailsQuery, classifyLogLine } from '../../utils/jobs.js'
+import { timeAgo } from '../../mock/index.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
 
+// Safety cap on the number of jobs whose logs are fetched, to avoid an
+// unbounded number of `list joblog` calls if an unusually large number of
+// jobs ran in the last 24 hours. The number of *lines* shown is not capped.
 const TROUBLE_STATUSES = new Set(['W', 'E', 'f', 'A'])
-const MAX_JOBS = 20
+const MAX_JOBS = 200
 
 const { t } = useI18n()
 const $q = useQuasar()
 const router = useRouter()
 const director = useDirectorStore()
+const settings = useSettingsStore()
 
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
 
@@ -105,11 +116,13 @@ async function loadTroubleLines() {
         const res = await director.call(`list joblog jobid=${job.id ?? job.jobid}`)
         const rows = Array.isArray(res?.joblog) ? res.joblog : []
         for (const row of rows) {
-          const text = `${(row.time ?? '').trim()} ${(row.logtext ?? '').trimEnd()}`.trim()
-          const type = classifyLogLine(text)
+          const time = (row.time ?? '').trim()
+          const logtext = (row.logtext ?? '').trimEnd()
+          const type = classifyLogLine(`${time} ${logtext}`.trim())
           if (type === 'error' || type === 'warning') {
             collected.push({
-              text,
+              time,
+              logtext,
               type,
               jobId: job.id ?? job.jobid,
               jobName: job.name,
