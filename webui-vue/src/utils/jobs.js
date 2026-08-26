@@ -43,13 +43,24 @@ export function resolveJobLogFocus(status) {
 // extracting error/warning lines (e.g. Trouble View widget, Job Details
 // log highlighting). Order matters: the "0 errors/warnings" summary guard
 // must run before the generic error/warning checks below it.
+//
+// The warning pattern covers Bareos' M_NOTSAVED file daemon messages
+// (backup.cc), which cause a job's Warning status without containing the
+// word "warning" itself (e.g. "Could not stat ...", "Cannot open ...").
+// "Security violation" (M_SECURITY) and tape "Alert: ..." (M_ALERT)
+// messages are also classified as warnings so they remain visible, even
+// though they don't increment the job's warning/error counters.
 export function classifyLogLine(line) {
   const l = line.toLowerCase()
   if (/\b(?:non-fatal\s+fd\s+errors|sd\s+errors|fd\s+errors|errors|warnings?)\s*:\s*0\b/.test(l)) {
     return 'normal'
   }
   if (/error|fatal|failed/.test(l)) return 'error'
-  if (/warning|warn|could not stat|could not access|not saved|unknown file type/.test(l)) {
+  if (
+    /warning|warn|could not stat|could not access|not saved|unknown file type/.test(l)
+    || /could not follow link|could not open directory|cannot open/.test(l)
+    || /security violation|\balert:/.test(l)
+  ) {
     return 'warning'
   }
   if (/\bok\b|termination:.*ok|backup ok/.test(l)) return 'ok'
