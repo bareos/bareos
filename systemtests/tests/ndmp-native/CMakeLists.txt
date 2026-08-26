@@ -98,14 +98,23 @@ if(ndmp_tape_and_robot_agent_address)
           string(APPEND ndmp_tapes_devices "Device = \"${device}\"\n")
         endforeach(device)
         create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-        get_property(ndmp_native_tests DIRECTORY PROPERTY TESTS)
+        get_property(
+          ndmp_native_tests
+          DIRECTORY
+          PROPERTY TESTS
+        )
+        string(MAKE_C_IDENTIFIER "${ndmp_tape_and_robot_agent_address}"
+                                 NDMP_TAPE_AND_ROBOT_AGENT_RESOURCE_LOCK
+        )
         set_tests_properties(
-          ${ndmp_native_tests} PROPERTIES RESOURCE_LOCK ndmp_systemtest
+          ${ndmp_native_tests}
+          PROPERTIES RESOURCE_LOCK
+                     ndmp_systemtest_${NDMP_TAPE_AND_ROBOT_AGENT_RESOURCE_LOCK}
         )
         if(NDMP_BAREOS_ENABLED)
           set_tests_properties(
-            system:ndmp-native:setup
-            PROPERTIES DEPENDS system:ndmp-bareos:cleanup
+            system:ndmp-native:setup PROPERTIES DEPENDS
+                                                system:ndmp-bareos:cleanup
           )
         endif()
         # needs exclusive access to an autochanger from the ndmp host by iscsi

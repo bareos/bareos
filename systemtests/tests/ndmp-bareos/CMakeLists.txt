@@ -77,9 +77,18 @@ if(ndmp_data_agent_address)
       endif()
 
       create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-      get_property(ndmp_bareos_tests DIRECTORY PROPERTY TESTS)
+      get_property(
+        ndmp_bareos_tests
+        DIRECTORY
+        PROPERTY TESTS
+      )
+      string(MAKE_C_IDENTIFIER "${ndmp_data_agent_address}"
+                               NDMP_DATA_AGENT_RESOURCE_LOCK
+      )
       set_tests_properties(
-        ${ndmp_bareos_tests} PROPERTIES RESOURCE_LOCK ndmp_systemtest
+        ${ndmp_bareos_tests}
+        PROPERTIES RESOURCE_LOCK
+                   ndmp_systemtest_${NDMP_DATA_AGENT_RESOURCE_LOCK}
       )
       set(NDMP_BAREOS_ENABLED
           ON
