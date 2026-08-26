@@ -50,10 +50,6 @@ static ThreadList thread_list;
 static std::atomic<bool> server_running = false;
 static pthread_t tcp_server_tid;
 
-// Sanity check for the lengths of the Hello messages.
-#define MIN_MSG_LEN 25
-#define MAX_MSG_LEN (int)sizeof(name) + 30
-
 /**
  * Connection request. We accept connections either from the
  * Director, Storage Daemon or a Client (File daemon).
