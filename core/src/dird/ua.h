@@ -42,6 +42,8 @@ struct tree_node;
 
 namespace directordaemon {
 
+std::string NormalizeAuditMessageText(const char* text);
+
 struct ua_cmdstruct;
 struct RestoreBootstrapRecord;
 
