@@ -151,23 +151,10 @@ struct UseConfigAndJcrs : UsePasswordsFromConfig {
 
     Dmsg1(200, "Searching for job %.*s to create a tls connection\n",
           (int)name.size(), name.data());
-    auto* jcr = get_jcr_by_full_name(name);
+    auto* jcr = get_jcr_for_authentication(name);
     if (!jcr) {
-      Dmsg1(100, "Login attempt via job %.*s, but no such job is known to me\n",
-            (int)name.size(), name.data());
-      return 0;
-    }
-    if (!jcr->sd_auth_key) {
-      Dmsg1(100, "Login attempt via job %.*s, but that job has no auth key\n",
-            (int)name.size(), name.data());
-      FreeJcr(jcr);
-      return 0;
-    }
-    if (strcmp(jcr->sd_auth_key, "dummy") == 0) {
-      Dmsg1(100,
-            "Login attempt via job %.*s, but that job has no real auth key\n",
-            (int)name.size(), name.data());
-      FreeJcr(jcr);
+      Dmsg1(100, "Login via job %.*s is not possible\n", (int)name.size(),
+            name.data());
       return 0;
     }
 
