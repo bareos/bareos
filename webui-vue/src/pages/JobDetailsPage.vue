@@ -111,13 +111,23 @@
             <q-card-section class="panel-header row items-center">
                 <span>{{ t('Job Log') }}</span>
               <q-space />
+              <template v-if="issueLineIndexes.length >= 2">
+                <span class="text-caption q-mr-sm">
+                  {{ t('Issue {current} of {total}', { current: currentIssueDisplay, total: issueLineIndexes.length }) }}
+                </span>
+                <q-btn flat round dense icon="arrow_upward" size="sm" color="white"
+                       :title="t('Previous issue')" @click="jumpToIssue(-1)" />
+                <q-btn flat round dense icon="arrow_downward" size="sm" color="white"
+                       :title="t('Next issue')" @click="jumpToIssue(1)" />
+              </template>
               <q-btn flat round dense icon="content_copy" size="sm" color="white"
                      :title="t('Copy log')" @click="copyLog" />
             </q-card-section>
             <q-card-section class="q-pa-none">
               <div v-if="highlightedLines.length" class="job-log q-pa-md" ref="logContainer">
                 <div v-for="(line, i) in highlightedLines" :key="i"
-                     :class="['log-line', `log-line--${line.type}`]">{{ line.text }}</div>
+                     :ref="el => setLineRef(el, i)"
+                     :class="['log-line', `log-line--${line.type}`, { 'log-line--focused': i === focusedLineIndex }]">{{ line.text }}</div>
               </div>
                <div v-else class="text-grey text-caption q-pa-md">{{ t('No log entries found.') }}</div>
             </q-card-section>
@@ -287,8 +297,95 @@ const volumesPagination = usePersistedTablePagination('job-details.volumes', {
   descending: false,
 })
 
-// Scroll the log panel to the bottom whenever new log content arrives.
+const logFocus = computed(() => {
+  const value = route.query.logFocus
+  return value === 'error' || value === 'warning' || value === 'ok' ? value : ''
+})
+const lineRefs = ref({})
+const focusedLineIndex = ref(-1)
+const focusedIssuePosition = ref(0)
+let autoFocusPending = true
+
+function setLineRef(el, index) {
+  if (el) lineRefs.value[index] = el
+  else delete lineRefs.value[index]
+}
+
+// Indexes of all error/warning lines, used for the prev/next issue navigation.
+const issueLineIndexes = computed(() => (
+  highlightedLines.value
+    .map((line, index) => ({ line, index }))
+    .filter(({ line }) => line.type === 'error' || line.type === 'warning')
+    .map(({ index }) => index)
+))
+
+const currentIssueDisplay = computed(() => {
+  const pos = issueLineIndexes.value.indexOf(focusedLineIndex.value)
+  return pos >= 0 ? pos + 1 : Math.min(focusedIssuePosition.value + 1, issueLineIndexes.value.length)
+})
+
+function scrollToLine(index) {
+  nextTick(() => {
+    const el = lineRefs.value[index]
+    if (el?.scrollIntoView) {
+      el.scrollIntoView({ block: 'center' })
+    }
+  })
+}
+
+function focusIssueAt(position) {
+  const indexes = issueLineIndexes.value
+  if (!indexes.length) return
+  const clamped = ((position % indexes.length) + indexes.length) % indexes.length
+  focusedIssuePosition.value = clamped
+  focusedLineIndex.value = indexes[clamped]
+  scrollToLine(focusedLineIndex.value)
+}
+
+function jumpToIssue(direction) {
+  focusIssueAt(focusedIssuePosition.value + direction)
+}
+
+// Find the log line to jump to for a given logFocus value:
+// - 'error'   → first error line (falls back to first warning line)
+// - 'warning' → first warning line (falls back to first error line)
+// - 'ok'      → last line classified as 'ok' (the termination summary)
+function findFocusTargetIndex(focus) {
+  const lines = highlightedLines.value
+  if (focus === 'error' || focus === 'warning') {
+    const preferredType = focus
+    const fallbackType = focus === 'error' ? 'warning' : 'error'
+    const preferredIndex = lines.findIndex(l => l.type === preferredType)
+    if (preferredIndex >= 0) return preferredIndex
+    return lines.findIndex(l => l.type === fallbackType)
+  }
+  if (focus === 'ok') {
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].type === 'ok') return i
+    }
+  }
+  return -1
+}
+
+// Scroll the log panel on first load: jump to and highlight the relevant
+// error/warning/termination line if logFocus was requested, otherwise fall
+// back to the default "scroll to bottom" behavior.
 watch(logLines, () => {
+  if (autoFocusPending && logFocus.value) {
+    autoFocusPending = false
+    nextTick(() => {
+      const targetIndex = findFocusTargetIndex(logFocus.value)
+      if (targetIndex >= 0) {
+        const issuePos = issueLineIndexes.value.indexOf(targetIndex)
+        focusedIssuePosition.value = issuePos >= 0 ? issuePos : 0
+        focusedLineIndex.value = targetIndex
+        scrollToLine(targetIndex)
+        return
+      }
+      if (logContainer.value) logContainer.value.scrollTop = logContainer.value.scrollHeight
+    })
+    return
+  }
   nextTick(() => {
     if (logContainer.value) logContainer.value.scrollTop = logContainer.value.scrollHeight
   })
@@ -589,4 +686,5 @@ function copyLog() {
 .log-line--ok      { color: #89d185; }
 .log-line--warning { color: #f2c037; }
 .log-line--error   { color: #f48771; font-weight: 600; background: rgba(244, 135, 113, 0.08); }
+.log-line--focused { outline: 2px solid currentColor; background: rgba(255, 255, 255, 0.12); }
 </style>
