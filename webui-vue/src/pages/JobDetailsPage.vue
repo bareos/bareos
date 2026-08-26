@@ -176,6 +176,7 @@ import {
   resolveJobDetailsVolumeOrigin,
   resolveJobsListQuery,
   mergeJobMediaByVolume,
+  classifyLogLine,
 } from '../utils/jobs.js'
 import { resolveJobTypeCode } from '../utils/jobTypes.js'
 import { buildVolumeDetailsQuery } from '../utils/volumes.js'
@@ -540,17 +541,7 @@ const jobLog = computed(() => logLines.value)
 
 const highlightedLines = computed(() => {
   if (!logLines.value) return []
-  return logLines.value.split('\n').map(line => {
-    const l = line.toLowerCase()
-    if (/\b(?:non-fatal\s+fd\s+errors|sd\s+errors|fd\s+errors|errors|warnings?)\s*:\s*0\b/.test(l)) {
-      return { text: line, type: 'normal' }
-    }
-    if (/error|fatal|failed/.test(l))               return { text: line, type: 'error'   }
-    if (/warning|warn|could not stat|could not access|not saved|unknown file type/.test(l))
-                                                       return { text: line, type: 'warning' }
-    if (/\bok\b|termination:.*ok|backup ok/.test(l)) return { text: line, type: 'ok'      }
-    return { text: line, type: 'normal' }
-  })
+  return logLines.value.split('\n').map(line => ({ text: line, type: classifyLogLine(line) }))
 })
 
 // ── auto-refresh for running jobs ─────────────────────────────────────────────
