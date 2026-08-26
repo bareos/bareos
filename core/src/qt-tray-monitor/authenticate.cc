@@ -54,7 +54,7 @@ inline constexpr const char SDOKhello[] = "3000 OK Hello";
 /* Response from FD */
 inline constexpr const char FDOKhello[] = "2000 OK Hello";
 /* Response from DIR */
-inline constexpr const char DIROKhello[] = "1000 OK Hello";
+inline constexpr const char DIROKhello[] = "1000\x1eOK";
 
 static std::map<AuthenticationResult, std::string>
     authentication_error_to_string_map{
