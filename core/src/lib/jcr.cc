@@ -624,7 +624,7 @@ JobControlRecord* get_jcr_for_authentication(std::string_view job_name)
   }
 
   if (!jcr->sd_auth_key || jcr->sd_auth_key[0] == 0
-      || strcmp(jcr->sd_auth_key, "dummy")) {
+      || strcmp(jcr->sd_auth_key, "dummy") == 0) {
     Jmsg2(jcr, M_FATAL, 0, T_("Hey!!!! JobId %u Job %s has bad auth key.\n"),
           (uint32_t)jcr->JobId, jcr->Job);
     Dmsg2(50, "Hey!!!! JobId %u Job %s has bad auth key.\n",
