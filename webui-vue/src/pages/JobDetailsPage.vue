@@ -325,12 +325,23 @@ const currentIssueDisplay = computed(() => {
 })
 
 function scrollToLine(index) {
-  nextTick(() => {
+  // The DOM element for a given log line may take a couple of render
+  // passes to appear (e.g. right after the "No log entries" placeholder is
+  // replaced by the actual list), so poll briefly for it instead of
+  // assuming a single nextTick/animation frame is enough.
+  let attempts = 0
+  const tryScroll = () => {
     const el = lineRefs.value[index]
     if (el?.scrollIntoView) {
       el.scrollIntoView({ block: 'center' })
+      return
     }
-  })
+    attempts += 1
+    if (attempts < 20) {
+      setTimeout(tryScroll, 25)
+    }
+  }
+  nextTick(tryScroll)
 }
 
 function focusIssueAt(position) {
