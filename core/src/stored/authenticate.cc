@@ -69,6 +69,10 @@ TlsResource* Auth::parse(std::string_view hello)
     remote_version = VERSION_HEX(major, minor, patch);
 
     auto* jcr = get_jcr_for_authentication(name);
+    if (!jcr) {
+      Dmsg1(50, "Authentication for job %s not possible\n", name);
+      return nullptr;
+    }
 
     auto& data = client.emplace();
     data.jcr = jcr;
@@ -93,6 +97,10 @@ TlsResource* Auth::parse(std::string_view hello)
     remote_version = VERSION_HEX(major, minor, patch);
 
     auto* jcr = get_jcr_for_authentication(name);
+    if (!jcr) {
+      Dmsg1(50, "Authentication for job %s not possible\n", name);
+      return nullptr;
+    }
 
     auto& data = storage.emplace();
     data.jcr = jcr;
