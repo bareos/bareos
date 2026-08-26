@@ -223,22 +223,29 @@
               </template>
               <template #body-cell-status="props">
                 <q-td :props="props" class="text-center">
-                  <a
-                    v-if="props.row.status"
-                    href="#"
-                    class="inline-job-filter justify-center"
-                    :title="`${t('Status')}: ${jobStatusLabel(props.row.status)}`"
-                    @click.prevent="applyStatusFilter(props.row.status)"
-                  >
+                  <span v-if="props.row.status" class="row items-center no-wrap q-gutter-x-xs justify-center">
                     <span
                       v-if="isWaitingStatus(displayJobStatus(props.row))"
-                      class="row items-center no-wrap q-gutter-x-xs justify-center"
+                      class="row items-center no-wrap q-gutter-x-xs justify-center cursor-pointer"
+                      :title="t('Jump to log')"
+                      @click="openJobDetails(props.row, resolveJobLogFocus(props.row.status))"
                     >
                       <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
                       <span class="text-orange-7 text-caption">{{ displayJobStatus(props.row) }}</span>
                     </span>
-                    <JobStatusBadge v-else :status="displayJobStatus(props.row)" />
-                  </a>
+                    <JobStatusBadge
+                      v-else
+                      clickable
+                      :status="displayJobStatus(props.row)"
+                      @click="openJobDetails(props.row, resolveJobLogFocus(props.row.status))"
+                    />
+                    <q-btn
+                      flat round dense size="sm"
+                      icon="filter_alt"
+                      :title="`${t('Filter by status')}: ${jobStatusLabel(props.row.status)}`"
+                      @click="applyStatusFilter(props.row.status)"
+                    />
+                  </span>
                   <span v-else>—</span>
                 </q-td>
               </template>
@@ -716,6 +723,7 @@ import {
   resolveJobsSearchQuery,
   resolveJobsStatusFilters,
   resolveJobsTypeFilters,
+  resolveJobLogFocus,
   withJobsClientQuery,
   withJobsJobQuery,
   withJobsSearchQuery,
@@ -1420,7 +1428,7 @@ async function switchToJobDirector(job) {
   await switchActiveDirector(job.director)
 }
 
-async function openJobDetails(job) {
+async function openJobDetails(job, logFocus) {
   await router.push({
     name: 'job-details',
     params: { id: job.id },
@@ -1433,6 +1441,7 @@ async function openJobDetails(job) {
       jobsJob: jobFilter.value,
       jobsClient: clientFilter.value,
       jobsSearch: search.value,
+      logFocus,
     }),
   })
 }
