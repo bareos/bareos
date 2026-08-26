@@ -259,6 +259,8 @@ bool guess_whether_cleartext(BareosSocket* socket, bool* is_cleartext)
     // give data some more time to arrive
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
+
+  return false;
 }
 
 }  // namespace
