@@ -68,34 +68,7 @@ TlsResource* Auth::parse(std::string_view hello)
     type = inbound_type::Client;
     remote_version = VERSION_HEX(major, minor, patch);
 
-    auto* jcr = get_jcr_by_full_name(name);
-    if (!jcr) {
-      Jmsg1(NULL, M_FATAL, 0, T_("SD connect failed: Job name not found: %s\n"),
-            name);
-      Dmsg1(3, "**** Job \"%s\" not found.\n", name);
-      return nullptr;
-    }
-
-    Dmsg1(50, "Found Job %s\n", name);
-
-    if (jcr->authenticated) {
-      Jmsg2(jcr, M_FATAL, 0,
-            T_("Hey!!!! JobId %u Job %s already authenticated.\n"),
-            (uint32_t)jcr->JobId, jcr->Job);
-      Dmsg2(50, "Hey!!!! JobId %u Job %s already authenticated.\n",
-            (uint32_t)jcr->JobId, jcr->Job);
-      FreeJcr(jcr);
-      return nullptr;
-    }
-
-    if (bstrcmp(jcr->sd_auth_key, "dummy")) {
-      Jmsg2(jcr, M_FATAL, 0, T_("Hey!!!! JobId %u Job %s has bad auth key.\n"),
-            (uint32_t)jcr->JobId, jcr->Job);
-      Dmsg2(50, "Hey!!!! JobId %u Job %s has bad auth key.\n",
-            (uint32_t)jcr->JobId, jcr->Job);
-      FreeJcr(jcr);
-      return nullptr;
-    }
+    auto* jcr = get_jcr_for_authentication(name);
 
     auto& data = client.emplace();
     data.jcr = jcr;
@@ -119,34 +92,7 @@ TlsResource* Auth::parse(std::string_view hello)
     type = inbound_type::Storage;
     remote_version = VERSION_HEX(major, minor, patch);
 
-    auto* jcr = get_jcr_by_full_name(name);
-    if (!jcr) {
-      Jmsg1(NULL, M_FATAL, 0, T_("SD connect failed: Job name not found: %s\n"),
-            name);
-      Dmsg1(3, "**** Job \"%s\" not found.\n", name);
-      return nullptr;
-    }
-
-    Dmsg1(50, "Found Job %s\n", name);
-
-    if (jcr->authenticated) {
-      Jmsg2(jcr, M_FATAL, 0,
-            T_("Hey!!!! JobId %u Job %s already authenticated.\n"),
-            (uint32_t)jcr->JobId, jcr->Job);
-      Dmsg2(50, "Hey!!!! JobId %u Job %s already authenticated.\n",
-            (uint32_t)jcr->JobId, jcr->Job);
-      FreeJcr(jcr);
-      return nullptr;
-    }
-
-    if (bstrcmp(jcr->sd_auth_key, "dummy")) {
-      Jmsg2(jcr, M_FATAL, 0, T_("Hey!!!! JobId %u Job %s has bad auth key.\n"),
-            (uint32_t)jcr->JobId, jcr->Job);
-      Dmsg2(50, "Hey!!!! JobId %u Job %s has bad auth key.\n",
-            (uint32_t)jcr->JobId, jcr->Job);
-      FreeJcr(jcr);
-      return nullptr;
-    }
+    auto* jcr = get_jcr_for_authentication(name);
 
     auto& data = storage.emplace();
     data.jcr = jcr;
