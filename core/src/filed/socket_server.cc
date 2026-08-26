@@ -66,14 +66,14 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 {
   BareosSocket* bs = (BareosSocket*)arg;
 
-  bs->SetEnableKtls(me->enable_ktls);
-
   auto config = parser->GetCurrentConfiguration();
 
   UseConfigAndJcrs tls_secret_provider{config, parser->resource_definitions_};
 
   auto* myself
       = dynamic_cast<ClientResource*>(config->GetNextRes(R_CLIENT, nullptr));
+
+  bs->SetEnableKtls(myself->enable_ktls);
 
   auto error_and_close = [](BareosSocket* socket) {
     Bmicrosleep(socket->sleep_time_after_authentication_error, 0);
