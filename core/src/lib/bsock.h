@@ -202,10 +202,10 @@ class BareosSocket {
   int port() { return port_; }
   JobControlRecord* jcr() { return jcr_; }
   JobControlRecord* get_jcr() { return jcr_; }
-  bool IsSpooling() { return spool_; }
-  bool IsTerminated() { return terminated_; }
-  bool IsTimedOut() { return timed_out_; }
-  bool IsStop() { return errors || IsTerminated(); }
+  bool IsSpooling() const { return spool_; }
+  bool IsTerminated() const { return terminated_; }
+  bool IsTimedOut() const { return timed_out_; }
+  bool IsStop() const { return errors || IsTerminated(); }
   bool IsError()
   {
     errno = b_errno;

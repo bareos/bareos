@@ -187,13 +187,23 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAClient(
 
 bool guess_whether_cleartext(BareosSocket* socket, bool* is_cleartext)
 {
+  /* we check that we are about to receive a bnet message starting
+   * with 'Hello ' as this means that this is actually an unencrypted
+   * client-hello message.
+   * Every bnet message starts with its 32bit length in big endian order, so
+   * we need to check 10 bytes.
+   */
   constexpr std::string_view hello_start = "Hello ";
-  // we check that we are about to receive a bnet message starting
-  // with 'Hello ' as this means that this is actually an unencrypted
-  // client-hello message.
   char peek_buffer[hello_start.size() + sizeof(uint32_t)];
 
-  for (;;) {
+  auto now = std::chrono::steady_clock::now;
+
+  static constexpr auto max_wait_time = std::chrono::seconds(5);
+
+  auto start = now();
+  while (now() - start < max_wait_time) {
+    if (socket->IsTimedOut()) { return false; }
+
     auto bytes_received = socket->peek(peek_buffer, sizeof(peek_buffer));
 
     if (bytes_received <= 0) {
@@ -537,6 +547,7 @@ void BareosSocket::SetKillable(bool killable)
 
 ssize_t BareosSocket::peek(char* buffer, size_t count) const
 {
+  if (errors || IsTerminated()) { return -1; }
   return ::recv(fd_, buffer, count, MSG_PEEK);
 }
 
