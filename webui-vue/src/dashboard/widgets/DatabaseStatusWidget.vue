@@ -42,10 +42,7 @@
     </div>
     <template v-else>
       <div style="position:relative; width:100%; flex:1; min-height:0">
-        <Pie :data="chartData" :options="chartOptions" />
-      </div>
-      <div class="q-mt-xs" style="font-size:0.72rem; color:#888; text-align:center">
-        {{ t('Total') }}: {{ formatBytes(summary.totalBytes ?? 0) }}
+        <Doughnut :data="chartData" :options="chartOptions" />
       </div>
     </template>
   </div>
@@ -54,7 +51,7 @@
 <script setup>
 import { inject, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Pie } from 'vue-chartjs'
+import { Doughnut } from 'vue-chartjs'
 import {
   Chart as ChartJS,
   ArcElement,
@@ -64,8 +61,9 @@ import {
 import { formatBytes } from '../../mock/index.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
 import { PIE_PALETTE } from '../piePalette.js'
+import { CenterTextPlugin } from '../centerTextPlugin.js'
 
-ChartJS.register(ArcElement, Tooltip, Legend)
+ChartJS.register(ArcElement, Tooltip, Legend, CenterTextPlugin)
 
 const { t } = useI18n()
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
@@ -138,6 +136,7 @@ const chartData = computed(() => ({
 const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
+  cutout: '65%',
   plugins: {
     legend: {
       position: 'bottom',
@@ -152,6 +151,11 @@ const chartOptions = computed(() => ({
           return ` ${context.label}: ${formatBytes(bytes)} (${percent.toFixed(1)}%)`
         },
       },
+    },
+    centerText: {
+      lines: [formatBytes(summary.value.totalBytes ?? 0), t('Total')],
+      fonts: ['600 15px sans-serif', '11px sans-serif'],
+      colors: ['#333', '#888'],
     },
   },
 }))

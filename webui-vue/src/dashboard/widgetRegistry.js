@@ -86,7 +86,7 @@ const WIDGETS = [
   {
     type: 'pool-bytes-chart',
     label: 'Pool Storage (Bytes)',
-    description: 'Pie chart showing bytes stored across pools.',
+    description: 'Doughnut chart showing bytes stored across pools.',
     icon: 'mdi-chart-pie',
     component: defineAsyncComponent(() => import('./widgets/PoolBytesChartWidget.vue')),
     defaultTitle: 'Pool Storage (Bytes)',
@@ -97,7 +97,7 @@ const WIDGETS = [
   {
     type: 'pool-volumes-chart',
     label: 'Pool Storage (Volumes)',
-    description: 'Pie chart showing volume count across pools.',
+    description: 'Doughnut chart showing volume count across pools.',
     icon: 'mdi-chart-pie',
     component: defineAsyncComponent(() => import('./widgets/PoolVolumesChartWidget.vue')),
     defaultTitle: 'Pool Storage (Volumes)',
