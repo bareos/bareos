@@ -71,6 +71,7 @@ import {
   withJobsSearchQuery,
   withJobsStatusFilterQuery,
   withJobsTypeFilterQuery,
+  classifyLogLine,
 } from '../../src/utils/jobs.js'
 
 describe('jobs filter helpers', () => {
@@ -624,5 +625,22 @@ describe('jobs filter helpers', () => {
     expect(resolveJobDetailsDashboardOrigin({ dashboardOrigin: '1' })).toBe(true)
     expect(resolveJobDetailsDashboardOrigin({ dashboardOrigin: '0' })).toBe(false)
     expect(resolveJobDetailsDashboardOrigin({})).toBe(false)
+  })
+
+  it('classifies log lines by severity', () => {
+    expect(classifyLogLine('Fatal error: something went wrong')).toBe('error')
+    expect(classifyLogLine('Backup Error: no such file')).toBe('error')
+    expect(classifyLogLine('Job failed')).toBe('error')
+    expect(classifyLogLine('Warning: something odd happened')).toBe('warning')
+    expect(classifyLogLine(
+      '  Could not stat "/nonexistent/path": ERR=No such file or directory',
+    )).toBe('warning')
+    expect(classifyLogLine('Could not access "/foo/bar"')).toBe('warning')
+    expect(classifyLogLine('Archive file not saved: /foo/bar')).toBe('warning')
+    expect(classifyLogLine('Unknown file type 12345')).toBe('warning')
+    expect(classifyLogLine('Termination:            Backup OK')).toBe('ok')
+    expect(classifyLogLine('  Non-fatal FD errors:    0')).toBe('normal')
+    expect(classifyLogLine('  Warnings:               0')).toBe('normal')
+    expect(classifyLogLine('Using Device "FileStorage"')).toBe('normal')
   })
 })

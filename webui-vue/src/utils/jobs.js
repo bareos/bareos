@@ -39,6 +39,23 @@ export function resolveJobLogFocus(status) {
   return ''
 }
 
+// Classify a single job log line by severity, for highlighting and for
+// extracting error/warning lines (e.g. Trouble View widget, Job Details
+// log highlighting). Order matters: the "0 errors/warnings" summary guard
+// must run before the generic error/warning checks below it.
+export function classifyLogLine(line) {
+  const l = line.toLowerCase()
+  if (/\b(?:non-fatal\s+fd\s+errors|sd\s+errors|fd\s+errors|errors|warnings?)\s*:\s*0\b/.test(l)) {
+    return 'normal'
+  }
+  if (/error|fatal|failed/.test(l)) return 'error'
+  if (/warning|warn|could not stat|could not access|not saved|unknown file type/.test(l)) {
+    return 'warning'
+  }
+  if (/\bok\b|termination:.*ok|backup ok/.test(l)) return 'ok'
+  return 'normal'
+}
+
 export function normaliseJobId(value) {
   if (typeof value === 'number') {
     return Number.isInteger(value) && value > 0 ? value : null
