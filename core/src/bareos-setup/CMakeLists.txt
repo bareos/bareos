@@ -16,47 +16,52 @@ find_package(Jansson REQUIRED)
 # Vue / npm build
 # ---------------------------------------------------------------------------
 set(SETUP_VUE_SRC "${CMAKE_SOURCE_DIR}/bareos-setup-vue")
-set(SETUP_VUE_DIST "${SETUP_VUE_SRC}/dist")
+set(SETUP_VUE_DIST "${CMAKE_CURRENT_BINARY_DIR}/dist")
 set(SETUP_VUE_DIST_INDEX "${SETUP_VUE_DIST}/index.html")
+set(SETUP_VUE_PACKAGE_JSON "${SETUP_VUE_SRC}/package.json")
+set(SETUP_VUE_PACKAGE_LOCK "${SETUP_VUE_SRC}/package-lock.json")
+set(SETUP_VUE_BUILD_SCRIPT "${SETUP_VUE_SRC}/build-dist.cmake")
+set(SETUP_VUE_BUILD_STAMP
+    "${CMAKE_CURRENT_BINARY_DIR}/bareos-setup-vue-build.stamp"
+)
+set(SETUP_VUE_NPM_MISSING_SCRIPT
+    "${CMAKE_CURRENT_BINARY_DIR}/bareos-setup-vue-npm-missing.cmake"
+)
 
 find_program(NPM_EXECUTABLE npm)
 
-if(NPM_EXECUTABLE)
-  # Collect Vue source files so CMake knows when to retrigger the build. Use
-  # GLOB_RECURSE only for src/ sub-trees; use plain GLOB for root-level files
-  # so that dist/index.html (which is a build OUTPUT) is not picked up
-  # recursively and does not create a dependency cycle in Ninja.
-  file(GLOB_RECURSE SETUP_VUE_SOURCES "${SETUP_VUE_SRC}/src/*.vue"
-       "${SETUP_VUE_SRC}/src/*.js" "${SETUP_VUE_SRC}/src/*.scss"
-  )
-  file(GLOB SETUP_VUE_SOURCES_ROOT "${SETUP_VUE_SRC}/index.html"
-       "${SETUP_VUE_SRC}/package.json" "${SETUP_VUE_SRC}/vite.config.js"
-  )
-  list(APPEND SETUP_VUE_SOURCES ${SETUP_VUE_SOURCES_ROOT})
+file(
+  GENERATE
+  OUTPUT "${SETUP_VUE_NPM_MISSING_SCRIPT}"
+  CONTENT
+    "message(FATAL_ERROR \"npm executable not found. Install npm and re-run CMake to build bareos-setup.\")\n"
+)
 
-  # Use dist/index.html as the build output so CMake's dependency tracking
-  # skips the npm build when the checked-in dist is already up-to-date. Run
-  # `npm run build` (not `npm ci`) so no network access is required; run
-  # `npm ci` manually once when updating dependencies.
+file(GLOB_RECURSE SETUP_VUE_BUILD_INPUTS CONFIGURE_DEPENDS
+     "${SETUP_VUE_SRC}/src/*" "${SETUP_VUE_SRC}/public/*"
+)
+list(APPEND SETUP_VUE_BUILD_INPUTS "${SETUP_VUE_SRC}/index.html"
+     "${SETUP_VUE_SRC}/vite.config.js" "${SETUP_VUE_BUILD_SCRIPT}"
+     "${SETUP_VUE_PACKAGE_JSON}" "${SETUP_VUE_PACKAGE_LOCK}"
+)
+
+if(NPM_EXECUTABLE)
   add_custom_command(
-    OUTPUT "${SETUP_VUE_DIST_INDEX}"
-    COMMAND "${NPM_EXECUTABLE}" run build
-    WORKING_DIRECTORY "${SETUP_VUE_SRC}"
-    DEPENDS ${SETUP_VUE_SOURCES}
-    COMMENT "Building bareos-setup-vue frontend"
+    OUTPUT "${SETUP_VUE_BUILD_STAMP}" "${SETUP_VUE_DIST_INDEX}"
+    COMMAND ${CMAKE_COMMAND} -DDIST_DIR=${SETUP_VUE_DIST} -P
+            "${SETUP_VUE_BUILD_SCRIPT}"
+    COMMAND ${CMAKE_COMMAND} -E touch "${SETUP_VUE_BUILD_STAMP}"
+    DEPENDS ${SETUP_VUE_BUILD_INPUTS}
+    COMMENT "Building bareos-setup-vue dist bundle"
+    USES_TERMINAL VERBATIM
+  )
+  add_custom_target(bareos-setup-vue-build DEPENDS "${SETUP_VUE_BUILD_STAMP}")
+else()
+  add_custom_target(
+    bareos-setup-vue-build
+    COMMAND ${CMAKE_COMMAND} -P "${SETUP_VUE_NPM_MISSING_SCRIPT}"
     VERBATIM
   )
-
-  add_custom_target(bareos-setup-vue-build DEPENDS "${SETUP_VUE_DIST_INDEX}")
-else()
-  # npm not found — use the committed dist/ as-is (same approach as
-  # webui-vue). To rebuild, run: cd bareos-setup-vue && npm install &&
-  # npm run build, then commit the updated dist/.
-  message(
-    STATUS
-    "npm not found — using committed bareos-setup-vue dist/ without rebuild"
-  )
-  add_custom_target(bareos-setup-vue-build)
 endif()
 
 # ---------------------------------------------------------------------------
@@ -68,7 +73,7 @@ add_custom_command(
   OUTPUT "${EMBEDDED_ASSETS_CC}"
   COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/embed_assets.py"
           "${SETUP_VUE_DIST}" "${EMBEDDED_ASSETS_CC}"
-  DEPENDS "${SETUP_VUE_DIST_INDEX}"
+  DEPENDS "${SETUP_VUE_BUILD_STAMP}"
           "${CMAKE_CURRENT_SOURCE_DIR}/embed_assets.py"
   COMMENT "Embedding bareos-setup-vue assets"
   VERBATIM
@@ -96,8 +101,7 @@ add_dependencies(bareos-setup bareos-setup-vue-build)
 
 target_compile_features(bareos-setup PRIVATE cxx_std_20)
 target_compile_options(
-  bareos-setup PRIVATE
-  $<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized>
+  bareos-setup PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized>
 )
 
 target_compile_definitions(
@@ -130,15 +134,15 @@ if(BUILD_TESTING AND GTest_FOUND)
   )
   target_compile_features(test_bareos_setup_steps PRIVATE cxx_std_20)
   target_compile_options(
-    test_bareos_setup_steps PRIVATE
-    $<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized>
+    test_bareos_setup_steps
+    PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized>
   )
   target_include_directories(
     test_bareos_setup_steps PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
   )
   target_link_libraries(
     test_bareos_setup_steps PRIVATE GTest::gtest_main Threads::Threads
-                                      OpenSSL::Crypto
+                                    OpenSSL::Crypto
   )
   gtest_discover_tests(test_bareos_setup_steps)
 endif()
