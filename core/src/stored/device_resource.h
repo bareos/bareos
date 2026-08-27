@@ -80,7 +80,7 @@ class DeviceResource : public BareosResource {
                                                                  direction */
   utime_t vol_poll_interval{
       300}; /**< Interval between polling volume during mount */
-  int64_t max_file_size{1000000000}; /**< Max file size in bytes */
+  int64_t max_file_size{100'000'000'000}; /**< Max file size in bytes */
   int64_t volume_capacity{0};        /**< Advisory capacity */
   int64_t max_spool_size{0};         /**< Max spool size for all jobs */
   int64_t max_job_spool_size{0};     /**< Max spool size for any single job */
