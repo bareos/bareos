@@ -73,8 +73,6 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
   auto* myself
       = dynamic_cast<ClientResource*>(config->GetNextRes(R_CLIENT, nullptr));
 
-  bs->SetEnableKtls(myself->enable_ktls);
-
   auto error_and_close = [](BareosSocket* socket) {
     Bmicrosleep(socket->sleep_time_after_authentication_error, 0);
     socket->signal(BNET_TERMINATE);
@@ -87,6 +85,8 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
     Emsg1(M_ERROR, 0, "Could not find myself during connection attempt.\n");
     return error_and_close(bs);
   }
+
+  bs->SetEnableKtls(myself->enable_ktls);
 
   Auth auth{config};
 
