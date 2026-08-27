@@ -57,7 +57,7 @@ enum class TlsStatus
   Enabled,
 };
 
-// Given two parties (left, right) with their respective TlsPolicys,
+// Given two parties (left, right) with their respective TlsPolicies,
 // this checks whether both parties will use or not use tls, or if no
 // common setting exists
 TlsStatus select_tls_status(TlsPolicy left, TlsPolicy right);
