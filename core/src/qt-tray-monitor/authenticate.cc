@@ -99,7 +99,9 @@ AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
     case R_DIRECTOR: {
       auto* sock = jcr->dir_bsock;
       auto* dir = static_cast<DirectorResource*>(item->resource());
-      hello.bsprintf(Dirhello, monitor->resource_name_, kBareosVersion.Major,
+      std::string bashed{monitor->resource_name_};
+      BashSpaces(bashed.data());
+      hello.bsprintf(Dirhello, bashed.c_str(), kBareosVersion.Major,
                      kBareosVersion.Minor, kBareosVersion.Patch);
 
       TlsResource custom = *dir;
@@ -136,7 +138,9 @@ AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
     case R_CLIENT: {
       auto* fd = jcr->file_bsock;
       auto* client = static_cast<ClientResource*>(item->resource());
-      hello.bsprintf(SDFDhello, monitor->resource_name_, kBareosVersion.Major,
+      std::string bashed{monitor->resource_name_};
+      BashSpaces(bashed.data());
+      hello.bsprintf(SDFDhello, bashed.data(), kBareosVersion.Major,
                      kBareosVersion.Minor, kBareosVersion.Patch);
 
       if (!BareosConnect(
@@ -169,7 +173,9 @@ AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
     case R_STORAGE: {
       auto* sd = jcr->store_bsock;
       auto* storage = static_cast<StorageResource*>(item->resource());
-      hello.bsprintf(SDFDhello, monitor->resource_name_, kBareosVersion.Major,
+      std::string bashed{monitor->resource_name_};
+      BashSpaces(bashed.data());
+      hello.bsprintf(SDFDhello, bashed.data(), kBareosVersion.Major,
                      kBareosVersion.Minor, kBareosVersion.Patch);
       if (!BareosConnect(
               jcr, sd,
