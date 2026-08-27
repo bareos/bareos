@@ -303,7 +303,6 @@ BareosSocket::BareosSocket()
     , bwlimit_(0)
     , nb_bytes_(0)
     , last_tick_{0}
-    , tls_established_(false)
 {
   Dmsg0(100, "Construct BareosSocket\n");
 }
@@ -350,7 +349,6 @@ BareosSocket::BareosSocket(const BareosSocket& other)
   bwlimit_ = other.bwlimit_;
   nb_bytes_ = other.nb_bytes_;
   last_tick_ = other.last_tick_;
-  tls_established_ = other.tls_established_;
 
   enable_ktls_ = other.enable_ktls_;
 }

@@ -89,29 +89,27 @@ class BareosSocket {
 
   struct sockaddr_storage client_addr; /* Client's IP address */
   struct sockaddr_storage peer_addr;   /* Peer's IP address */
-  void SetTlsEstablished() { tls_established_ = true; }
-  bool TlsEstablished() const { return tls_established_; }
+  bool TlsEstablished() const { return tls_conn != nullptr; }
   std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
 
  protected:
   JobControlRecord* jcr_; /* JobControlRecord or NULL for error msgs */
   std::shared_ptr<std::mutex> mutex_;
-  char* who_;            /* Name of daemon to which we are talking */
-  char* host_;           /* Host name/IP */
-  int port_;             /* Desired port */
-  btimer_t* tid_;        /* Timer id */
-  boffset_t data_end_;   /* Offset of last valid data written */
-  int32_t FileIndex_;    /* Last valid attr spool FI */
-  bool timed_out_;       /* Timed out in read/write */
-  bool terminated_;      /* Set when BNET_TERMINATE arrives */
-  bool cloned_;          /* Set if cloned BareosSocket */
-  bool spool_;           /* Set for spooling */
-  bool use_bursting_;    /* Set to use bandwidth bursting */
-  bool use_keepalive_;   /* Set to use keepalive on the socket */
-  int64_t bwlimit_;      /* Set to limit bandwidth */
-  int64_t nb_bytes_;     /* Bytes sent/recv since the last tick */
-  btime_t last_tick_;    /* Last tick used by bwlimit */
-  bool tls_established_; /* is true when tls connection is established */
+  char* who_;          /* Name of daemon to which we are talking */
+  char* host_;         /* Host name/IP */
+  int port_;           /* Desired port */
+  btimer_t* tid_;      /* Timer id */
+  boffset_t data_end_; /* Offset of last valid data written */
+  int32_t FileIndex_;  /* Last valid attr spool FI */
+  bool timed_out_;     /* Timed out in read/write */
+  bool terminated_;    /* Set when BNET_TERMINATE arrives */
+  bool cloned_;        /* Set if cloned BareosSocket */
+  bool spool_;         /* Set for spooling */
+  bool use_bursting_;  /* Set to use bandwidth bursting */
+  bool use_keepalive_; /* Set to use keepalive on the socket */
+  int64_t bwlimit_;    /* Set to limit bandwidth */
+  int64_t nb_bytes_;   /* Bytes sent/recv since the last tick */
+  btime_t last_tick_;  /* Last tick used by bwlimit */
   std::unique_ptr<BnetDump> bnet_dump_;
 
   virtual void FinInit(JobControlRecord* jcr,

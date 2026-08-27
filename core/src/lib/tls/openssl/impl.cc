@@ -287,7 +287,6 @@ bool TlsOpenSsl::OpensslBsockSessionStart(BareosSocket* bsock, bool server)
     LogSSLError(ssl_error);
     switch (ssl_error) {
       case SSL_ERROR_NONE:
-        bsock->SetTlsEstablished();
         status = true;
         goto cleanup;
       case SSL_ERROR_ZERO_RETURN:

@@ -79,7 +79,6 @@ TEST(bsock, bareossockettcp_standard_constructor_test)
   EXPECT_EQ(p->bwlimit_, 0);
   EXPECT_EQ(p->nb_bytes_, 0);
   EXPECT_EQ(p->last_tick_, 0);
-  EXPECT_EQ(p->tls_established_, false);
 }
 
 TEST(bsock, bareossockettcp_copy_constructor_test)
@@ -123,7 +122,6 @@ TEST(bsock, bareossockettcp_copy_constructor_test)
   p->bwlimit_ = rand();
   p->nb_bytes_ = rand();
   p->last_tick_ = rand();
-  p->tls_established_ = true;
 
   /* copy p --> q */
   std::shared_ptr<BareosSocketTCP> q = std::make_shared<BareosSocketTCP>(*p);
@@ -165,7 +163,6 @@ TEST(bsock, bareossockettcp_copy_constructor_test)
   EXPECT_EQ(p->bwlimit_, q->bwlimit_);
   EXPECT_EQ(p->nb_bytes_, q->nb_bytes_);
   EXPECT_EQ(p->last_tick_, q->last_tick_);
-  EXPECT_EQ(p->tls_established_, q->tls_established_);
 
   /* prevent invalid test-adresses from being freed */
   p->src_addr = nullptr;
