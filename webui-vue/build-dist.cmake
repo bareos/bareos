@@ -100,3 +100,17 @@ execute_process(
 if(NOT npm_build_result EQUAL 0)
   message(FATAL_ERROR "npm run build failed with exit code ${npm_build_result}")
 endif()
+
+set(SETUP_VUE_BUILD_SCRIPT "${REPO_ROOT_DIR}/bareos-setup-vue/build-dist.cmake")
+if(EXISTS "${SETUP_VUE_BUILD_SCRIPT}")
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -P "${SETUP_VUE_BUILD_SCRIPT}"
+    RESULT_VARIABLE setup_vue_build_result
+  )
+  if(NOT setup_vue_build_result EQUAL 0)
+    message(
+      FATAL_ERROR
+        "bareos-setup-vue dist build failed with exit code ${setup_vue_build_result}"
+    )
+  endif()
+endif()
