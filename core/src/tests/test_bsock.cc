@@ -481,7 +481,6 @@ struct dummy_auth : ::ClientHelloParser {
 
     res = *dir_cons_config;
     res.password_.value = password.data();
-    // res.tls_enable_ = true;
 
     return &res;
   }
