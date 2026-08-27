@@ -761,7 +761,7 @@ bool BareosAccept(BareosSocket* socket,
 
   bool received_clear_text_handshake = false;
   if (!guess_whether_cleartext(socket, &received_clear_text_handshake)) {
-    Emsg1(M_ERROR, 0, "Could check for cleartext handshake with %s\n",
+    Emsg1(M_ERROR, 0, "Could not check for cleartext handshake with %s\n",
           socket->who());
     return false;
   }
@@ -769,7 +769,7 @@ bool BareosAccept(BareosSocket* socket,
   if (initial_tls && !received_clear_text_handshake) {
     auto tls = ParameterizeAndInitTlsConnectionAsAServer(initial_tls, provider);
     if (!tls) {
-      Emsg1(M_ERROR, 0, "Could initialize initial tls context for %s\n",
+      Emsg1(M_ERROR, 0, "Could not initialize initial tls context for %s\n",
             socket->who());
       return false;
     }
