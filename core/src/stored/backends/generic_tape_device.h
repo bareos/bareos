@@ -58,7 +58,6 @@ class generic_tape_device : public Device {
   virtual void SetOsDeviceParameters(DeviceControlRecord* dcr) override;
   virtual int32_t GetOsTapeFile() override;
   virtual bool rewind(DeviceControlRecord* dcr) override;
-  virtual bool d_flush(DeviceControlRecord* dcr) override;
   virtual bool UpdatePos(DeviceControlRecord* dcr) override;
   virtual bool Reposition(DeviceControlRecord* dcr,
                           uint32_t rfile,

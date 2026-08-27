@@ -107,13 +107,4 @@ TEST(GenericTapeDevice, weof_uses_immediate_ioctl_when_supported)
   EXPECT_EQ(dev.GetBlockNum(), 0U);
 }
 
-TEST(GenericTapeDevice, tape_flush_issues_mtnop)
-{
-  TestTapeDevice dev{/*immediate_supported=*/true};
-
-  ASSERT_TRUE(dev.d_flush(nullptr));
-  ASSERT_EQ(dev.operations.size(), 1U);
-  EXPECT_EQ(dev.operations[0], MTNOP);
-}
-
 }  // namespace storagedaemon
