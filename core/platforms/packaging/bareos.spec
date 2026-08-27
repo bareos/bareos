@@ -318,6 +318,11 @@ Provides:      %{name}-libs
 Provides:      user(%{daemon_user})
 Provides:      group(%{daemon_group})
 
+%package       setup
+Summary:       Bareos setup wizard
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common = %{version}
+
 %package       database-common
 Summary:       Generic abstraction libs and files to connect to a database
 Group:         Productivity/Archiving/Backup
@@ -766,6 +771,11 @@ This package contains the File Daemon
 
 This package contains the shared libraries that are used by multiple daemons and tools.
 
+%description setup
+%{dscr}
+
+This package contains the Bareos setup wizard.
+
 %description database-common
 %{dscr}
 
@@ -1042,6 +1052,10 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{configtemplatedir}/bareos-webui-proxy.ini
 %{_unitdir}/bareos-webui-proxy.service
 %endif
+
+%files setup
+%defattr(-, root, root)
+%{_sbindir}/bareos-setup
 
 %files client
 %defattr(-, root, root)
@@ -1422,10 +1436,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-incus-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-incus.py*
-
-%files barri-cli
-%defattr(-, root, root)
-%{_bindir}/barri-cli
 %endif
 
 %files director-python3-plugin

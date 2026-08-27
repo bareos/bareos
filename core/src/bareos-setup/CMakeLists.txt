@@ -95,6 +95,10 @@ add_executable(bareos-setup ${SETUP_SOURCES})
 add_dependencies(bareos-setup bareos-setup-vue-build)
 
 target_compile_features(bareos-setup PRIVATE cxx_std_20)
+target_compile_options(
+  bareos-setup PRIVATE
+  $<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized>
+)
 
 target_compile_definitions(
   bareos-setup PRIVATE BAREOS_FULL_VERSION="${BAREOS_FULL_VERSION}"
@@ -125,6 +129,10 @@ if(BUILD_TESTING AND GTest_FOUND)
                             command_runner.cc
   )
   target_compile_features(test_bareos_setup_steps PRIVATE cxx_std_20)
+  target_compile_options(
+    test_bareos_setup_steps PRIVATE
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized>
+  )
   target_include_directories(
     test_bareos_setup_steps PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
   )
