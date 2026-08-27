@@ -58,6 +58,7 @@ struct DirectorAuth : ::ClientHelloParser {
     ConsoleConnectionLease lease;
 
     bool is_old{false};
+    bool is_root{false};
 
     TlsResource tls;
   };

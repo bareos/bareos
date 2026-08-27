@@ -45,6 +45,7 @@
  */
 
 #include "lib/bool_string.h"
+#include "lib/default_console.h"
 #include "lib/resource_item.h"
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
@@ -3608,12 +3609,9 @@ static bool AddResourceCopyToEndOfChain(int type,
   return my_config->AppendToResourcesChain(new_resource, type);
 }
 
-/*
- * Create a special Console named "*UserAgent*" with
- * root console password so that incoming console
- * connections can be handled in unique way
- *
- */
+/* Create a special Console resource for the root console with the
+ * root console password so that incoming console connections can be
+ * handled in unique way */
 static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& t_config)
 {
   DirectorResource* dir_resource
@@ -3624,7 +3622,7 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& t_config)
   c->password_.encoding = dir_resource->password_.encoding;
   c->password_.value = strdup(dir_resource->password_.value);
   c->tls_enable_ = true;
-  c->resource_name_ = strdup("*UserAgent*");
+  c->resource_name_ = strdup(DEFAULT_CONSOLE_NAME);
   c->description_ = strdup("root console definition");
   c->rcode_ = R_CONSOLE;
   c->rcode_str_ = "R_CONSOLE";

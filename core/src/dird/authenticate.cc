@@ -33,6 +33,7 @@
 #include "dird.h"
 #include "include/version_hex.h"
 #include "include/version_numbers.h"
+#include "lib/default_console.h"
 #include "lib/s_password.h"
 #include "dird/authenticate.h"
 #if defined(HAVE_PAM)
@@ -224,8 +225,11 @@ TlsResource* DirectorAuth::parse(std::string_view msg)
       auto& data = console.emplace();
       auto num_leases = ConsoleConnectionLease::get_num_leases();
 
+      bool is_default_console
+          = bstrcmp(res->resource_name_, DEFAULT_CONSOLE_NAME);
+
       if (num_leases > myself->MaxConsoleConnections) {
-        if (bstrcmp(name, "*UserAgent*")) {
+        if (is_default_console) {
           Emsg0(M_INFO, 0,
                 T_("Number of console connections exceeded "
                    "Maximum :%u, Current: %" PRIuz "\n"),
@@ -241,10 +245,12 @@ TlsResource* DirectorAuth::parse(std::string_view msg)
 
       data.res = res;
 
-      if (std::string_view{data.res->resource_name_} == "*UserAgent*") {
+      if (is_default_console) {
         data.tls = *myself;
+        data.is_root = true;
       } else {
         data.tls = *res;
+        data.is_root = false;
       }
 
       auto parsed_version = parse_version(version);

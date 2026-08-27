@@ -151,7 +151,7 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
       // need to do the authorization part
 
       std::unique_ptr<UserAcl> user_acl{};
-      if (!bstrcmp(auth.console->res->resource_name_, "*UserAgent*")) {
+      if (!auth.console->is_root) {
         user_acl = UserAcl::from_config(auth.console->res);
       }
 

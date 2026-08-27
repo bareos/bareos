@@ -29,6 +29,7 @@
 #include "lib/bstringlist.h"
 #include "lib/bsock_tcp.h"
 #include "lib/version.h"
+#include "lib/default_console.h"
 
 namespace console {
 BareosSocket* ConnectToDirector(JobControlRecord& jcr,
@@ -54,7 +55,7 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
     ASSERT(console_resource->password_.encoding == p_encoding_md5);
     local_tls_resource = console_resource;
   } else { /* default console */
-    name = "*UserAgent*";
+    name = DEFAULT_CONSOLE_NAME;
     ASSERT(director_resource->password_.encoding == p_encoding_md5);
     local_tls_resource = director_resource;
   }
