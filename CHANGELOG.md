@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bpipe-fd: add safety check against using usesuffix option together with Accurate flag [PR #2745]
 - webui-vue: update nanoid to patched version [PR #2772]
 - webui-vue: remove unneeded newlines in bareos-audit.log [PR #2761]
+- webui-proxy: fix not bashing console name [PR #2757]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2371,6 +2372,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2752]: https://github.com/bareos/bareos/pull/2752
 [PR #2754]: https://github.com/bareos/bareos/pull/2754
 [PR #2756]: https://github.com/bareos/bareos/pull/2756
+[PR #2757]: https://github.com/bareos/bareos/pull/2757
 [PR #2761]: https://github.com/bareos/bareos/pull/2761
 [PR #2762]: https://github.com/bareos/bareos/pull/2762
 [PR #2764]: https://github.com/bareos/bareos/pull/2764
