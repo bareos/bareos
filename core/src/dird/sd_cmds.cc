@@ -99,22 +99,6 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
 {
   if (jcr->store_bsock) { return true; /* already connected */ }
 
-  auto config = jcr->dir_impl->used_config_for_job;
-  if (!config) {
-    // cancel jobs do not have a configuration set
-    // in this case we just have to hope that `store` does not get deleted
-    // from under us
-    config = my_config->GetCurrentConfiguration();
-  }
-  auto* myself = dynamic_cast<DirectorResource*>(
-      config->GetNextRes(R_DIRECTOR, nullptr));
-
-  if (!myself) {
-    Dmsg0(200,
-          "ConnectToStorageDaemon: Director resource pointer is invalid\n");
-    return false;
-  }
-
   StorageResource* store;
   if (jcr->dir_impl->res.write_storage) {
     store = jcr->dir_impl->res.write_storage;
@@ -124,6 +108,21 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
 
   if (!store) {
     Dmsg0(200, "ConnectToStorageDaemon: Storage resource pointer is invalid\n");
+    return false;
+  }
+
+  auto config = jcr->dir_impl->used_config_for_job;
+  if (!config) {
+    // cancel jobs do not have a configuration set, but the cancel job itself
+    // will keep 'store' alive.
+    config = my_config->GetCurrentConfiguration();
+  }
+  auto* myself = dynamic_cast<DirectorResource*>(
+      config->GetNextRes(R_DIRECTOR, nullptr));
+
+  if (!myself) {
+    Dmsg0(200,
+          "ConnectToStorageDaemon: Director resource pointer is invalid\n");
     return false;
   }
 
