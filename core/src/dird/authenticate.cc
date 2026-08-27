@@ -33,6 +33,7 @@
 #include "dird.h"
 #include "include/version_hex.h"
 #include "include/version_numbers.h"
+#include "lib/default_console.h"
 #include "lib/s_password.h"
 #include "dird/authenticate.h"
 #if defined(HAVE_PAM)
@@ -224,8 +225,10 @@ TlsResource* DirectorAuth::parse(std::string_view msg)
       auto& data = console.emplace();
       auto num_leases = ConsoleConnectionLease::get_num_leases();
 
+      data.is_default = bstrcmp(res->resource_name_, DEFAULT_CONSOLE_NAME);
+
       if (num_leases > myself->MaxConsoleConnections) {
-        if (bstrcmp(name, "*UserAgent*")) {
+        if (data.is_default) {
           Emsg0(M_INFO, 0,
                 T_("Number of console connections exceeded "
                    "Maximum :%u, Current: %" PRIuz "\n"),
@@ -241,7 +244,12 @@ TlsResource* DirectorAuth::parse(std::string_view msg)
 
       data.res = res;
 
-      if (std::string_view{data.res->resource_name_} == "*UserAgent*") {
+      if (data.is_default) {
+        /* while the default console has a console resource, for some reason
+         * it does not have the correct tls settings; instead of using the
+         * directors tls settings, it is set up with some kind of default tls
+         * settings.  As such we need to use the tls settings of the director
+         * explicitly. */
         data.tls = *myself;
       } else {
         data.tls = *res;
