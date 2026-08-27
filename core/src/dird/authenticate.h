@@ -57,8 +57,12 @@ struct DirectorAuth : ::ClientHelloParser {
     ConsoleResource* res{};
     ConsoleConnectionLease lease;
 
+    // old means 'older than 18.2', as this is when pam + initial tls
+    // was introduced
     bool is_old{false};
-    bool is_root{false};
+
+    // the default console is allowed to do everything
+    bool is_default{false};
 
     TlsResource tls;
   };
