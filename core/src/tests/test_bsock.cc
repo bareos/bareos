@@ -23,6 +23,7 @@
 
 #include "bsock_test.h"
 #include "create_resource.h"
+#include "lib/s_password.h"
 #include "tests/bareos_test_sockets.h"
 #include "tests/init_openssl.h"
 #include <filesystem>
@@ -508,7 +509,13 @@ static void start_bareos_server(std::promise<bool>* promise,
 
   dummy_auth auth{console_name, console_password};
 
-  if (!BareosAccept(bs.get(), "myname", nullptr, nullptr, &auth)) {
+  TlsResource console_res = *dir_cons_config;
+  console_res.password_ = {p_encoding_md5, console_password.data()};
+  // tls_enable = false, actually means tls_require = false
+  //                     for new-style connections
+  console_res.tls_enable_ = false;
+
+  if (!BareosAccept(bs.get(), "myname", &console_res, nullptr, &auth)) {
     Dmsg0(10, "Server: inbound auth failed\n");
   } else {
     bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,
@@ -597,11 +604,8 @@ static bool connect_to_server(std::string console_name,
     TlsResource custom = *cons_dir_config;
     custom.password_.value = console_password.data();
 
-    // yes, you read this right
-    // all these tests use the auth path that is never taken by bareos anymore
-    // this is the pre 18.2 path ...
     if (!BareosConnect(&jcr, UA_sock.get(), std::move(qualified_resource_name),
-                       &custom, hello_msg.c_str(), true)) {
+                       &custom, hello_msg.c_str())) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
       return false;
     }
