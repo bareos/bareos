@@ -885,11 +885,14 @@ class MediaVault():
                     raise ValueError(msg)
 
                 ctime = datetime.datetime.fromtimestamp(
-                    f_stats.st_ctime,datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+                    f_stats.st_ctime,
+                    datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f%z')
                 atime = datetime.datetime.fromtimestamp(
-                    f_stats.st_atime,datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+                    f_stats.st_atime,
+                    datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f%z')
                 mtime = datetime.datetime.fromtimestamp(
-                    f_stats.st_mtime,datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+                    f_stats.st_mtime,
+                    datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f%z')
                 t_stat = (
                             f"{'----------' : <10} {' ' : <15}\n"
                             f"{'os stats ' : <10}{self.ftp_file : <15}\n"
