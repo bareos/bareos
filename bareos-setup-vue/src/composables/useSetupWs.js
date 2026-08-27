@@ -1,59 +1,41 @@
 import { ref, onUnmounted } from 'vue'
 
-let socket = null
-let listeners = []
+let socket
+const listeners = new Set()
 
-function getSocket() {
-  if (socket && socket.readyState <= WebSocket.OPEN) return socket
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-  socket = new WebSocket(`${proto}://${location.host}/ws`)
-  socket.onmessage = (ev) => {
-    let msg
-    try { msg = JSON.parse(ev.data) } catch { return }
-    listeners.forEach(fn => fn(msg))
+function connect() {
+  if (socket && socket.readyState < WebSocket.CLOSING) return socket
+  const token = new URLSearchParams(location.search).get('token') || ''
+  const scheme = location.protocol === 'https:' ? 'wss' : 'ws'
+  socket = new WebSocket(`${scheme}://${location.host}/ws?token=${encodeURIComponent(token)}`)
+  socket.onmessage = event => {
+    try { listeners.forEach(listener => listener(JSON.parse(event.data))) } catch {}
   }
   socket.onclose = () => {
-    socket = null
-    listeners.forEach(fn => fn({ type: 'ws_closed' }))
+    listeners.forEach(listener => listener({ type: 'ws_closed' }))
+    socket = undefined
   }
   return socket
 }
 
 export function useSetupWs() {
   const connected = ref(false)
-  const messages  = ref([])
-
-  function onMsg(msg) {
-    if (msg.type === 'ws_closed') {
-      connected.value = false
-    } else {
-      connected.value = true
-      messages.value.push(msg)
-    }
+  const messages = ref([])
+  const receive = message => {
+    connected.value = message.type !== 'ws_closed'
+    if (message.type !== 'ws_closed') messages.value.push(message)
   }
-
-  listeners.push(onMsg)
-
-  // Kick the connection
-  const ws = getSocket()
-  ws.addEventListener('open', () => { connected.value = true })
-
-  onUnmounted(() => {
-    listeners = listeners.filter(fn => fn !== onMsg)
-  })
-
+  listeners.add(receive)
+  const ws = connect()
+  ws.addEventListener('open', () => {
+    connected.value = true
+    ws.send(JSON.stringify({ action: 'state' }))
+  }, { once: true })
+  onUnmounted(() => listeners.delete(receive))
   function send(payload) {
-    const ws = getSocket()
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(payload))
-    } else {
-      ws.addEventListener('open', () => ws.send(JSON.stringify(payload)), { once: true })
-    }
+    const current = connect()
+    const sendNow = () => current.send(JSON.stringify(payload))
+    current.readyState === WebSocket.OPEN ? sendNow() : current.addEventListener('open', sendNow, { once: true })
   }
-
-  function clearMessages() {
-    messages.value = []
-  }
-
-  return { connected, messages, send, clearMessages }
+  return { connected, messages, send }
 }

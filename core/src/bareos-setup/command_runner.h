@@ -44,4 +44,10 @@ int RunCommand(const std::vector<std::string>& argv,
                bool use_sudo,
                OutputCallback cb);
 
+/** Run an argv command while supplying a bounded string on stdin. */
+int RunCommandWithInput(const std::vector<std::string>& argv,
+                        const std::string& input,
+                        bool use_sudo,
+                        OutputCallback cb);
+
 #endif  // BAREOS_BAREOS_SETUP_COMMAND_RUNNER_H_

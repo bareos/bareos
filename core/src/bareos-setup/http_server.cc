@@ -42,6 +42,7 @@
 #include <openssl/sha.h>
 
 #include "embedded_assets.h"
+#include "setup_steps.h"
 
 // ---- helpers ---------------------------------------------------------------
 
@@ -175,7 +176,9 @@ static void ServeStaticFile(int fd, const std::string& path)
 
 // ---- Main server loop -----------------------------------------------------
 
-void RunHttpServer(int port, WsHandler ws_handler)
+void RunHttpServer(int port,
+                   const std::string& setup_token,
+                   WsHandler ws_handler)
 {
   int srv = socket(AF_INET, SOCK_STREAM, 0);
   if (srv < 0) throw std::runtime_error("socket() failed");
@@ -200,7 +203,7 @@ void RunHttpServer(int port, WsHandler ws_handler)
     if (fd < 0) continue;
 
     // Handle each connection in its own thread
-    std::thread([fd, ws_handler]() {
+    std::thread([fd, port, setup_token, ws_handler]() {
       std::string headers = ReadHttpHeaders(fd);
       if (headers.empty()) {
         close(fd);
@@ -212,6 +215,32 @@ void RunHttpServer(int port, WsHandler ws_handler)
                     || upgrade.find("WebSocket") != std::string::npos);
 
       if (is_ws) {
+        const std::string origin = GetHeader(headers, "Origin");
+        const std::string path = GetRequestPath(headers);
+        const auto path_end = path.find('?');
+        const std::string request_path
+            = path_end == std::string::npos ? path : path.substr(0, path_end);
+        const auto query = path.find('?');
+        const std::string query_string
+            = query == std::string::npos ? "" : path.substr(query + 1);
+        bool token_valid = false;
+        std::istringstream query_stream(query_string);
+        std::string parameter;
+        while (std::getline(query_stream, parameter, '&')) {
+          if (parameter == "token=" + setup_token) {
+            token_valid = true;
+            break;
+          }
+        }
+        if (request_path != "/ws" || !IsValidSetupOrigin(origin, port)
+            || !token_valid) {
+          const char response[] =
+              "HTTP/1.1 403 Forbidden\r\nContent-Length: 10\r\n"
+              "Connection: close\r\n\r\nForbidden\n";
+          WriteAll(fd, response, sizeof(response) - 1);
+          close(fd);
+          return;
+        }
         // Send 101 Switching Protocols
         std::string key = GetHeader(headers, "Sec-WebSocket-Key");
         std::string accept = ComputeAcceptKey(key);

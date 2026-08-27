@@ -40,6 +40,6 @@ using WsHandler = std::function<void(int fd)>;
  * - WebSocket upgrade: calls ws_handler with the connected fd.
  * Runs until the process is killed.
  */
-void RunHttpServer(int port, WsHandler ws_handler);
+void RunHttpServer(int port, const std::string& setup_token, WsHandler ws_handler);
 
 #endif  // BAREOS_BAREOS_SETUP_HTTP_SERVER_H_

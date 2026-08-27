@@ -25,6 +25,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include <fcntl.h>
 #include <poll.h>
@@ -52,9 +53,10 @@ static void DrainFd(int fd,
   }
 }
 
-int RunCommand(const std::vector<std::string>& argv,
-               bool use_sudo,
-               OutputCallback cb)
+static int RunCommandImpl(const std::vector<std::string>& argv,
+                          const std::string* input,
+                          bool use_sudo,
+                          OutputCallback cb)
 {
   // Build final argv with optional sudo prefix
   std::vector<std::string> full_argv;
@@ -67,9 +69,10 @@ int RunCommand(const std::vector<std::string>& argv,
   for (const auto& s : full_argv) cargv.push_back(s.c_str());
   cargv.push_back(nullptr);
 
-  // Create stdout and stderr pipes
-  int pipe_out[2], pipe_err[2];
-  if (pipe(pipe_out) != 0 || pipe(pipe_err) != 0)
+  // Create stdout, stderr, and (when requested) stdin pipes.
+  int pipe_out[2], pipe_err[2], pipe_in[2] = {-1, -1};
+  if (pipe(pipe_out) != 0 || pipe(pipe_err) != 0
+      || (input != nullptr && pipe(pipe_in) != 0))
     throw std::runtime_error(std::string("pipe: ") + strerror(errno));
 
   pid_t pid = fork();
@@ -84,11 +87,18 @@ int RunCommand(const std::vector<std::string>& argv,
     dup2(pipe_err[1], STDERR_FILENO);
     close(pipe_out[1]);
     close(pipe_err[1]);
+    if (input != nullptr) {
+      close(pipe_in[1]);
+      dup2(pipe_in[0], STDIN_FILENO);
+      close(pipe_in[0]);
+    }
     // Redirect stdin from /dev/null so sudo doesn't hang asking for password
-    int devnull = open("/dev/null", O_RDONLY);
-    if (devnull >= 0) {
-      dup2(devnull, STDIN_FILENO);
-      close(devnull);
+    if (input == nullptr) {
+      int devnull = open("/dev/null", O_RDONLY);
+      if (devnull >= 0) {
+        dup2(devnull, STDIN_FILENO);
+        close(devnull);
+      }
     }
     execvp(cargv[0], const_cast<char* const*>(cargv.data()));
     // execvp failed — write error to stderr and exit
@@ -100,6 +110,17 @@ int RunCommand(const std::vector<std::string>& argv,
   // Parent
   close(pipe_out[1]);
   close(pipe_err[1]);
+  if (input != nullptr) {
+    close(pipe_in[0]);
+    size_t written = 0;
+    while (written < input->size()) {
+      const ssize_t n = write(pipe_in[1], input->data() + written,
+                              input->size() - written);
+      if (n <= 0) break;
+      written += static_cast<size_t>(n);
+    }
+    close(pipe_in[1]);
+  }
 
   // Make pipes non-blocking for poll loop
   fcntl(pipe_out[0], F_SETFL, O_NONBLOCK);
@@ -140,4 +161,19 @@ int RunCommand(const std::vector<std::string>& argv,
   int status = 0;
   waitpid(pid, &status, 0);
   return WIFEXITED(status) ? WEXITSTATUS(status) : 1;
+}
+
+int RunCommand(const std::vector<std::string>& argv,
+               bool use_sudo,
+               OutputCallback cb)
+{
+  return RunCommandImpl(argv, nullptr, use_sudo, std::move(cb));
+}
+
+int RunCommandWithInput(const std::vector<std::string>& argv,
+                        const std::string& input,
+                        bool use_sudo,
+                        OutputCallback cb)
+{
+  return RunCommandImpl(argv, &input, use_sudo, std::move(cb));
 }
