@@ -402,8 +402,7 @@ void BnetThreadServerTcp(
         SockaddrToAscii(&cli_addr, buf, sizeof(buf));
         unlock_mutex(mutex);
 
-        BareosSocket* bs;
-        bs = new BareosSocketTCP;
+        BareosSocket* bs = new BareosSocketTCP;
 
         bs->fd_ = newsockfd;
         bs->SetWho(strdup("client"));

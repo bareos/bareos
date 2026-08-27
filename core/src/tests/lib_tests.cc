@@ -18,13 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "include/bareos.h"
 
 #include "include/version_numbers.h"
 #define BAREOS_TEST_LIB
@@ -35,6 +31,7 @@
 #include "lib/try_tls_handshake_as_a_server.h"
 #include "stored/butil.h"
 #include "lib/util.h"
+#include "lib/version.h"
 
 namespace {
 constexpr bool PrintfCheckAcceptsValidFormats()
@@ -197,8 +194,6 @@ enum
   R_STORAGE,
   R_CONSOLE
 };
-
-#include "lib/qualified_resource_name_type_converter.h"
 
 static void do_get_name_from_hello_test(const char* client_string_fmt,
                                         const char* client_name,
@@ -375,4 +370,34 @@ TEST(StringManipulation, DelimitedString_PrintsCorrectMultipleCharacters)
   std::string result = CreateDelimitedStringForSqlQueries(jobtypes, ',');
 
   EXPECT_STREQ(result.c_str(), "'A','B','C','D','E','F'");
+}
+
+
+TEST(BareosVersion, try_parse)
+{
+#define BAD(Input) EXPECT_EQ(BareosVersion::try_parse(Input), std::nullopt)
+
+  BAD("");
+  BAD("1.2.3~");
+  BAD("1.2.3~pre");
+  BAD("1.2.3~34");
+  BAD("1.2.3abc");
+  BAD("1.2.3~abc");
+  BAD("hard");
+  BAD("1.2.E");
+  BAD("256.1.1");
+  BAD("1.256.1");
+  BAD("1.1.256");
+
+#define GOOD(Input, ...)                       \
+  EXPECT_THAT(BareosVersion::try_parse(Input), \
+              testing::Optional(BareosVersion __VA_ARGS__))
+
+  GOOD("1.2.3", {1, 2, 3});
+  GOOD("1.2.3~preversion", {1, 2, 3, "version"});
+  GOOD("255.255.255~preversion", {255, 255, 255, "version"});
+  GOOD("1.02.3", {1, 2, 3});
+
+#undef BAD
+#undef GOOD
 }

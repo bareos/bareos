@@ -59,11 +59,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Matrix: rename xUbuntu to Ubuntu [PR #2735]
 - cmake: fix add_alphabetic_requirements() no-op sort [PR #2756]
 - bpipe-fd: add safety check against using usesuffix option together with Accurate flag [PR #2745]
+- webui-vue: update nanoid to patched version [PR #2772]
+- webui-vue: remove unneeded newlines in bareos-audit.log [PR #2761]
+- webui-proxy: fix not bashing console name [PR #2757]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
 - Disable EL 10 ARM64 and ULC OpenSSL 1.1 builds [PR #2665]
 - dird: remove unused write verify list [PR #2720]
+- core: add machine readable version to client hello; deprecate TlsAuthenticate [PR #2752]
 
 ### Fixed
 - VMware Plugin: Fix NVRAM backup when datacenter is not in root folder [PR #2461]
@@ -88,6 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix proxmox plugin stalling virtual machines [PR #2733]
 - logrotate: add minsize 100k [PR #2731]
 - libcloud plugin: fix error when backing up an empty bucket [PR #2717]
+- cmake: fix alphabetic requirements when some tests are disabled [PR #2762]
+- new webui: Simplify configuration and improve robustness [PR #2754]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -107,6 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: promote eval subscription in release docs [PR #2712]
 - docs: update readme file and image [PR #2719]
 - docs: update volume add warning about delete rotate key [PR #2738]
+- docs: improve Plugin Names datatype [PR #2764]
 
 ## [25.0.0] - 2025-12-01
 
@@ -2362,5 +2369,12 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2737]: https://github.com/bareos/bareos/pull/2737
 [PR #2738]: https://github.com/bareos/bareos/pull/2738
 [PR #2745]: https://github.com/bareos/bareos/pull/2745
+[PR #2752]: https://github.com/bareos/bareos/pull/2752
+[PR #2754]: https://github.com/bareos/bareos/pull/2754
 [PR #2756]: https://github.com/bareos/bareos/pull/2756
+[PR #2757]: https://github.com/bareos/bareos/pull/2757
+[PR #2761]: https://github.com/bareos/bareos/pull/2761
+[PR #2762]: https://github.com/bareos/bareos/pull/2762
+[PR #2764]: https://github.com/bareos/bareos/pull/2764
+[PR #2772]: https://github.com/bareos/bareos/pull/2772
 [unreleased]: https://github.com/bareos/bareos/tree/master

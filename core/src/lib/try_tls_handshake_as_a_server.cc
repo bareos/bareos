@@ -25,7 +25,6 @@
 #include "lib/bsock_tcp.h"
 #include "lib/configured_tls_policy_getter.h"
 #include "lib/parse_conf.h"
-#include "lib/qualified_resource_name_type_converter.h"
 
 enum class ConnectionHandshakeMode
 {

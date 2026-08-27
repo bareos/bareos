@@ -287,6 +287,7 @@ bool CramMd5Handshake::DoHandshake(bool initiated_by_remote)
 {
   if (initiated_by_remote) {
     if (CramMd5Challenge()) {
+      // challenge never fetches an additional message
       if (CramMd5Response()) { return true; }
     }
   } else {

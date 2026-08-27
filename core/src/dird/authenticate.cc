@@ -39,7 +39,7 @@
 #include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
 #include "lib/bnet.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/bstringlist.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
@@ -55,7 +55,7 @@ static const int debuglevel = 50;
  * Commands sent to Storage daemon and File daemon and received from the User
  * Agent
  */
-static char hello[] = "Hello Director %s calling\n";
+static char hello[] = "Hello Director %s calling Version=\"%u.%u.%u\"\n";
 
 // Response from Storage daemon
 static char OKhello[] = "3000 OK Hello\n";
@@ -73,7 +73,8 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd,
   BashSpaces(dirname);
 
   sd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
-  if (!sd->fsend(hello, dirname)) {
+  if (!sd->fsend(hello, dirname, kBareosVersion.Major, kBareosVersion.Minor,
+                 kBareosVersion.Patch)) {
     Dmsg1(debuglevel, T_("Error sending Hello to Storage daemon. ERR=%s\n"),
           BnetStrerror(sd));
     Jmsg(jcr, M_FATAL, 0, T_("Error sending Hello to Storage daemon. ERR=%s\n"),
@@ -154,7 +155,8 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   BashSpaces(dirname);
 
   fd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
-  if (!fd->fsend(hello, dirname)) {
+  if (!fd->fsend(hello, dirname, kBareosVersion.Major, kBareosVersion.Minor,
+                 kBareosVersion.Patch)) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
          fd->host(), fd->port(), fd->bstrerror());

@@ -34,16 +34,18 @@
 #include "lib/tls_conf.h"
 #include "lib/bsock.h"
 #include "lib/bnet.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/bstringlist.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "lib/version.h"
 
 const int debuglevel = 50;
 
 /* Commands sent to Storage daemon and File daemon and received
  *  from the User Agent */
-inline constexpr const char SDFDhello[] = "Hello Director %s calling\n";
+inline constexpr const char SDFDhello[]
+    = "Hello Director %s calling Version=\"%u.%u.%u\"\n";
 
 /* Response from SD */
 inline constexpr const char SDOKhello[] = "3000 OK Hello\n";
@@ -140,7 +142,8 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
 
   sd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
 
-  if (!sd->fsend(SDFDhello, dirname)) {
+  if (!sd->fsend(SDFDhello, dirname, kBareosVersion.Major, kBareosVersion.Minor,
+                 kBareosVersion.Patch)) {
     Dmsg1(debuglevel, T_("Error sending Hello to Storage daemon. ERR=%s\n"),
           BnetStrerror(sd));
     Jmsg(jcr, M_FATAL, 0, T_("Error sending Hello to Storage daemon. ERR=%s\n"),
@@ -213,7 +216,8 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
 
   fd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
 
-  if (!fd->fsend(SDFDhello, dirname)) {
+  if (!fd->fsend(SDFDhello, dirname, kBareosVersion.Major, kBareosVersion.Minor,
+                 kBareosVersion.Patch)) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
          fd->host(), fd->port(), fd->bstrerror());

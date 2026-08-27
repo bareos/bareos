@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,16 @@
 #include "dird/dird_globals.h"
 
 namespace directordaemon {
+
+std::string NormalizeAuditMessageText(const char* text)
+{
+  std::string normalized{text ? text : ""};
+  while (!normalized.empty()
+         && (normalized.back() == '\n' || normalized.back() == '\r')) {
+    normalized.pop_back();
+  }
+  return normalized;
+}
 
 /* Forward referenced functions */
 
@@ -59,9 +69,7 @@ static inline void LogAuditEventAclMsg(UaContext* ua,
   const char* host;
   const char* acl_type_name;
 
-  user_name = (ua->user_acl)
-                  ? ua->user_acl->corresponding_resource->resource_name_
-                  : "default";
+  user_name = (ua->user_acl) ? ua->user_acl->name.c_str() : "default";
   host = (ua->UA_sock) ? ua->UA_sock->host() : "unknown";
 
   switch (acl) {
@@ -127,12 +135,12 @@ void UaContext::LogAuditEventCmdline()
 
   if (!me->auditing) { return; }
 
-  user_name
-      = user_acl ? user_acl->corresponding_resource->resource_name_ : "default";
+  user_name = user_acl ? user_acl->name.c_str() : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
+  const std::string normalized_cmdline = NormalizeAuditMessageText(cmd);
   Emsg3(M_AUDIT, 0, T_("Console [%s] from [%s] cmdline %s\n"), user_name, host,
-        cmd);
+        normalized_cmdline.c_str());
 }
 
 void UaContext::LogAuditEventInfoMsg(const char* fmt, ...)
@@ -148,12 +156,13 @@ void UaContext::LogAuditEventInfoMsg(const char* fmt, ...)
   message.Bvsprintf(fmt, arg_ptr);
   va_end(arg_ptr);
 
-  user_name
-      = user_acl ? user_acl->corresponding_resource->resource_name_ : "default";
+  user_name = user_acl ? user_acl->name.c_str() : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
+  const std::string normalized_message
+      = NormalizeAuditMessageText(message.c_str());
   Emsg3(M_AUDIT, 0, T_("Console [%s] from [%s] info message %s\n"), user_name,
-        host, message.c_str());
+        host, normalized_message.c_str());
 }
 
 } /* namespace directordaemon */

@@ -382,7 +382,8 @@ static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx)
     ua->SendMsg(T_("The restore will use the following job(s) as Base\n"));
     ua->db->FillQuery<BareosDb::SQL_QUERY::uar_print_jobs>(
         query, jobids.GetAsString().c_str());
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
+    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
+                         true);
   }
   PmStrcpy(rx->BaseJobIds, jobids.GetAsString().c_str());
 }
@@ -794,7 +795,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         }
         gui_save = ua->jcr->gui;
         ua->jcr->gui = true;
-        ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
+        ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
+                             true);
         ua->jcr->gui = gui_save;
         done = false;
       } break;
@@ -809,7 +811,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         free(fname);
         gui_save = ua->jcr->gui;
         ua->jcr->gui = true;
-        ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
+        ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send.get(), HORZ_LIST,
+                             true);
         ua->jcr->gui = gui_save;
         done = false;
         break;
@@ -827,7 +830,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!GetCmd(ua, T_("Enter SQL list command: "))) { return 0; }
         gui_save = ua->jcr->gui;
         ua->jcr->gui = true;
-        ua->db->ListSqlQuery(ua->jcr, ua->cmd, ua->send, HORZ_LIST, true);
+        ua->db->ListSqlQuery(ua->jcr, ua->cmd, ua->send.get(), HORZ_LIST, true);
         ua->jcr->gui = gui_save;
         done = false;
         break;
@@ -1639,7 +1642,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   if (rx->JobIds[0] != 0) {
     if (FindArg(ua, NT_("copies")) > 0) {
       // Display a list of all copies
-      ua->db->ListCopiesRecords(ua->jcr, "", rx->JobIds, ua->send, HORZ_LIST);
+      ua->db->ListCopiesRecords(ua->jcr, "", rx->JobIds, ua->send.get(),
+                                HORZ_LIST);
 
       if (FindArg(ua, NT_("yes")) > 0) {
         ua->pint32_val = 1;
@@ -1666,7 +1670,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     // Display a list of Jobs selected for this restore
     ua->db->FillQuery<BareosDb::SQL_QUERY::uar_list_jobs_by_idlist>(rx->query,
                                                                     rx->JobIds);
-    ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
+    ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send.get(), HORZ_LIST, true);
 
     ok = true;
   } else {

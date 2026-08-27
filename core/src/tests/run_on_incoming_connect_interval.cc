@@ -20,15 +20,9 @@
 */
 
 
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#  include "gmock/gmock.h"
-#else
-#  include "gtest/gtest.h"
-#  include "gmock/gmock.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "include/bareos.h"
 
 #include "cats/cats.h"
 #include "dird/dird_conf.h"

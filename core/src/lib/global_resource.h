@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_
-#define BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_
+#ifndef BAREOS_LIB_GLOBAL_RESOURCE_H_
+#define BAREOS_LIB_GLOBAL_RESOURCE_H_
 
 #include "lib/ascii_control_characters.h"
 #include <string_view>
@@ -140,4 +140,4 @@ static constexpr std::pair<Type, std::string_view> ParseQualifiedName(
 
 };  // namespace global_resource
 
-#endif  // BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_
+#endif  // BAREOS_LIB_GLOBAL_RESOURCE_H_

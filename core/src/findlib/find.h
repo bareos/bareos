@@ -40,7 +40,7 @@
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
 
 #include <sys/file.h>
-#if !defined(HAVE_WIN32) || defined(HAVE_MINGW)
+#if !defined(HAVE_WIN32)
 #  include <sys/param.h>
 #endif
 

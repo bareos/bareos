@@ -165,8 +165,7 @@ class ProfileResource : public BareosResource {
   alist<const char*>* ACL_lists[Num_ACL] = {0}; /**< Pointers to ACLs */
 };
 
-struct UserAcl {
-  BareosResource* corresponding_resource = nullptr;
+struct AclConfig {
   alist<const char*>* ACL_lists[Num_ACL] = {0}; /**< Pointers to ACLs */
   alist<ProfileResource*>* profiles
       = nullptr; /**< Pointers to profile resources */
@@ -186,7 +185,7 @@ class ConsoleResource
  public:
   ConsoleResource() = default;
   virtual ~ConsoleResource() = default;
-  UserAcl user_acl;
+  AclConfig user_acl;
   bool use_pam_authentication_ = false; /**< PAM Console */
 };
 
@@ -194,7 +193,7 @@ class UserResource : public BareosResource {
  public:
   UserResource() = default;
   virtual ~UserResource() = default;
-  UserAcl user_acl;
+  AclConfig user_acl;
 };
 
 // Catalog Resource

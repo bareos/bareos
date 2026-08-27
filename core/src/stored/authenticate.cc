@@ -33,6 +33,7 @@
 #include "lib/bsock.h"
 #include "lib/bnet_network_dump.h"
 #include "lib/util.h"
+#include "include/version_hex.h"
 
 namespace storagedaemon {
 
@@ -73,7 +74,14 @@ bool AuthenticateDirector(JobControlRecord* jcr)
   dirname = GetPoolMemory(PM_MESSAGE);
   dirname = CheckPoolMemorySize(dirname, dir->message_length);
 
-  if (bsscanf(dir->msg, "Hello Director %127s calling", dirname) != 1) {
+  unsigned major = 0, minor = 0, patch = 0;
+
+  if (bsscanf(dir->msg, "Hello Director %127s calling Version=\"%u.%u.%u\"",
+              dirname, &major, &minor, &patch)
+      == 4) {
+    dir->remote_version = VERSION_HEX(major, minor, patch);
+  } else if (bsscanf(dir->msg, "Hello Director %127s calling", dirname) == 1) {
+  } else {
     dir->msg[100] = 0;
     Dmsg2(debuglevel, "Bad Hello command from Director at %s: %s\n", dir->who(),
           dir->msg);

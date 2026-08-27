@@ -2168,6 +2168,7 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
   self->object = NULL;
   self->object_len = 0;
   self->object_index = 0;
+  self->statp = NULL;
 
   if (!PyArg_ParseTupleAndKeywords(
           args, kwds, "|OOiOpppsiiOOii", kwlist, &self->fname, &self->link,

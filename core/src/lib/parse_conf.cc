@@ -61,7 +61,7 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/parse_conf_state_machine.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/bstringlist.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/messages_resource.h"
@@ -590,7 +590,7 @@ std::vector<ResourceReference> ConfigurationParser::FindResourceReferences(
     if (!table.items) { continue; }
 
     for (BareosResource* res
-             = loaded_configuration->configuration_resources_[t];
+         = loaded_configuration->configuration_resources_[t];
          res; res = res->next_) {
       if (res == target) { continue; }
 
@@ -604,8 +604,8 @@ std::vector<ResourceReference> ConfigurationParser::FindResourceReferences(
           case CFG_TYPE_RES: {
             BareosResource* referenced = GetItemVariable<BareosResource*>(item);
             if (referenced == target) {
-              references.push_back(
-                  {static_cast<int>(table.rcode), res->resource_name_, item.name});
+              references.push_back({static_cast<int>(table.rcode),
+                                    res->resource_name_, item.name});
             }
             break;
           }
@@ -615,8 +615,8 @@ std::vector<ResourceReference> ConfigurationParser::FindResourceReferences(
             if (list) {
               for (auto* referenced : *list) {
                 if (referenced == target) {
-                  references.push_back(
-                      {static_cast<int>(table.rcode), res->resource_name_, item.name});
+                  references.push_back({static_cast<int>(table.rcode),
+                                        res->resource_name_, item.name});
                   break;
                 }
               }

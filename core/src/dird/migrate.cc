@@ -327,12 +327,11 @@ static inline void StartNewMigrationJob(JobControlRecord* jcr)
 {
   char ed1[50];
   JobId_t jobid;
-  UaContext* ua;
   PoolMem cmd(PM_MESSAGE);
 
-  ua = new_ua_context(jcr);
-  ua->batch = true;
-  Mmsg(ua->cmd, "run job=\"%s\" jobid=%s ignoreduplicatecheck=yes",
+  UaContext ua{jcr};
+  ua.batch = true;
+  Mmsg(ua.cmd, "run job=\"%s\" jobid=%s ignoreduplicatecheck=yes",
        jcr->dir_impl->res.job->resource_name_,
        edit_uint64(jcr->dir_impl->MigrateJobId, ed1));
 
@@ -341,7 +340,7 @@ static inline void StartNewMigrationJob(JobControlRecord* jcr)
     // See if there was actually a pool override.
     if (jcr->dir_impl->res.pool != jcr->dir_impl->res.job->pool) {
       Mmsg(cmd, " pool=\"%s\"", jcr->dir_impl->res.pool->resource_name_);
-      PmStrcat(ua->cmd, cmd.c_str());
+      PmStrcat(ua.cmd, cmd.c_str());
     }
 
     // See if there was actually a next pool override.
@@ -349,23 +348,21 @@ static inline void StartNewMigrationJob(JobControlRecord* jcr)
         && jcr->dir_impl->res.next_pool != jcr->dir_impl->res.pool->NextPool) {
       Mmsg(cmd, " nextpool=\"%s\"",
            jcr->dir_impl->res.next_pool->resource_name_);
-      PmStrcat(ua->cmd, cmd.c_str());
+      PmStrcat(ua.cmd, cmd.c_str());
     }
   }
 
   Dmsg2(dbglevel, "=============== %s cmd=%s\n", jcr->get_OperationName(),
-        ua->cmd);
-  ParseUaArgs(ua); /* parse command */
+        ua.cmd);
+  ParseUaArgs(&ua); /* parse command */
 
-  jobid = DoRunCmd(ua, ua->cmd);
+  jobid = DoRunCmd(&ua, ua.cmd);
   if (jobid == 0) {
     Jmsg(jcr, M_ERROR, 0, T_("Could not start migration job.\n"));
   } else {
     Jmsg(jcr, M_INFO, 0, T_("%s JobId %" PRIu32 " started.\n"),
          jcr->get_OperationName(), jobid);
   }
-
-  FreeUaContext(ua);
 }
 
 /**
@@ -1708,8 +1705,6 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
     jcr->db->SqlQuery(query.c_str());
 
     if (jcr->IsTerminatedOk()) {
-      UaContext* ua;
-
       switch (jcr->getJobType()) {
         case JT_MIGRATE:
           /* If we terminated a Migration Job successfully we should:
@@ -1743,16 +1738,16 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
               break;
           }
 
-          ua = new_ua_context(jcr);
-          if (jcr->dir_impl->res.job->PurgeMigrateJob) {
-            // Purge old Job record
-            PurgeJobsFromCatalog(ua, old_jobid);
-          } else {
-            // Purge all old file records, but leave Job record
-            PurgeFilesFromJobs(ua, old_jobid);
+          {
+            UaContext ua{jcr};
+            if (jcr->dir_impl->res.job->PurgeMigrateJob) {
+              // Purge old Job record
+              PurgeJobsFromCatalog(&ua, old_jobid);
+            } else {
+              // Purge all old file records, but leave Job record
+              PurgeFilesFromJobs(&ua, old_jobid);
+            }
           }
-
-          FreeUaContext(ua);
           break;
         case JT_COPY:
           /* If we terminated a Copy Job successfully we should:

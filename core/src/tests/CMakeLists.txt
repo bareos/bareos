@@ -260,7 +260,7 @@ if(NOT client-only)
     lib_tests
     ADDITIONAL_SOURCES
       alist_test.cc bareos_test_sockets.cc bsys_test.cc dlist_test.cc
-      htable_test.cc qualified_resource_name_type_converter_test.cc
+      htable_test.cc global_resource_test.cc
       ${PROJECT_SOURCE_DIR}/src/filed/evaluate_job_command.cc
     LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib GTest::gtest_main
   )
@@ -465,6 +465,13 @@ endif()
 bareos_add_test(test_is_name_valid LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 bareos_add_test(test_poolmem LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
+
+if(NOT client-only)
+  bareos_add_test(
+    test_ua_audit LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib
+                                 Bareos::SQL GTest::gtest_main
+  )
+endif()
 
 bareos_add_test(
   test_output_formatter LINK_LIBRARIES GTest::gtest_main Bareos::Lib

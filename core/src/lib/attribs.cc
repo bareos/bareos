@@ -71,17 +71,10 @@ void EncodeStat(char* buf,
   *p++ = ' ';
   p += ToBase64((int64_t)statp->st_size, p);
   *p++ = ' ';
-#ifndef HAVE_MINGW
   p += ToBase64((int64_t)statp->st_blksize, p);
   *p++ = ' ';
   p += ToBase64((int64_t)statp->st_blocks, p);
   *p++ = ' ';
-#else
-  p += ToBase64((int64_t)0, p); /* output place holder */
-  *p++ = ' ';
-  p += ToBase64((int64_t)0, p); /* output place holder */
-  *p++ = ' ';
-#endif
   p += ToBase64((int64_t)statp->st_atime, p);
   *p++ = ' ';
   p += ToBase64((int64_t)statp->st_mtime, p);
@@ -145,21 +138,12 @@ int DecodeStat(char* buf, struct stat* statp, int stat_size, int32_t* LinkFI)
   p += FromBase64(&val, p);
   plug(statp->st_size, val);
   p++;
-#ifndef HAVE_MINGW
   p += FromBase64(&val, p);
   plug(statp->st_blksize, val);
   p++;
   p += FromBase64(&val, p);
   plug(statp->st_blocks, val);
   p++;
-#else
-  p += FromBase64(&val, p);
-  //   plug(statp->st_blksize, val);
-  p++;
-  p += FromBase64(&val, p);
-  //   plug(statp->st_blocks, val);
-  p++;
-#endif
   p += FromBase64(&val, p);
   plug(statp->st_atime, val);
   p++;

@@ -765,8 +765,8 @@ bool DotJobstatusCmd(UaContext* ua, const char*)
                                                                 where.c_str());
 
   ua->send->ArrayStart("jobstatus");
-  retval = ua->db->ListSqlQuery(ua->jcr, select.c_str(), ua->send, HORZ_LIST,
-                                false);
+  retval = ua->db->ListSqlQuery(ua->jcr, select.c_str(), ua->send.get(),
+                                HORZ_LIST, false);
   ua->send->ArrayEnd("jobstatus");
 
   return retval;
@@ -1065,8 +1065,8 @@ bool DotSqlCmd(UaContext* ua, const char*)
       break;
     default:
       // General format
-      retval = ua->db->ListSqlQuery(ua->jcr, ua->argv[pos], ua->send, HORZ_LIST,
-                                    false);
+      retval = ua->db->ListSqlQuery(ua->jcr, ua->argv[pos], ua->send.get(),
+                                    HORZ_LIST, false);
       break;
   }
 

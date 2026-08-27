@@ -33,7 +33,7 @@
 #include "generic_res.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
-#include "qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/parse_conf.h"
 #include "lib/messages_resource.h"
 #include "lib/output_formatter_resource.h"

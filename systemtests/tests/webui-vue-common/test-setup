@@ -133,6 +133,11 @@ bin/bareos start
 bin/bareos status
 print_debug "$(bin/bconsole <<<"status dir")"
 
+# Emsg emits a 10 debug level
+bin/bconsole <<EOF
+setdebug dir level=10 trace=1
+EOF
+
 proxy_tls_psk_disable=no
 if [[ "${BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK}" = "1" ]]; then
   proxy_tls_psk_disable=yes
