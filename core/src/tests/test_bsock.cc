@@ -564,12 +564,14 @@ static void clone_a_client_socket(std::shared_ptr<BareosSocket> UA_sock)
 static int connect_to_server(std::string console_name,
                              std::string console_password,
                              std::string server_address,
-                             int server_port)
+                             int server_port,
+                             bool cleartext_auth = false)
 #else
 static bool connect_to_server(std::string console_name,
                               std::string console_password,
                               std::string server_address,
-                              int server_port)
+                              int server_port,
+                              bool cleartext_auth = false)
 #endif
 {
   utime_t heart_beat = 0;
@@ -605,7 +607,7 @@ static bool connect_to_server(std::string console_name,
     custom.password_.value = console_password.data();
 
     if (!BareosConnect(&jcr, UA_sock.get(), std::move(qualified_resource_name),
-                       &custom, hello_msg.c_str())) {
+                       &custom, hello_msg.c_str(), cleartext_auth)) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
       return false;
     }
@@ -776,6 +778,40 @@ TEST(bsock, auth_works_with_tls_cert)
   EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST,
                                 ls->port));
 #endif
+
+  server_thread.join();
+
+  EXPECT_TRUE(cipher_server == cipher_client);
+  EXPECT_TRUE(future.get());
+}
+
+TEST(bsock, auth_works_with_old_style_tls)
+{
+  std::promise<bool> promise;
+  std::future<bool> future = promise.get_future();
+
+  client_cons_name = "clientname";
+  client_cons_password = "verysecretpassword";
+
+  server_cons_name = client_cons_name;
+  server_cons_password = client_cons_password;
+
+  InitForTest();
+
+  cons_dir_config->tls_enable_ = true;
+  dir_cons_config->tls_enable_ = true;
+
+  auto ls = create_listening_socket();
+  ASSERT_NE(ls, std::nullopt);
+
+  Dmsg0(10, "starting listen thread...\n");
+  std::thread server_thread(start_bareos_server, &promise, server_cons_name,
+                            server_cons_password, HOST, std::ref(*ls));
+
+  Dmsg0(10, "connecting to server\n");
+
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST,
+                                ls->port, true));
 
   server_thread.join();
 
