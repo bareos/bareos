@@ -293,7 +293,27 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   BashSpaces(bashed_username);
   const std::string hello = "Hello " + bashed_username + " calling version "
                             + kBareosVersionStrings.Full + "\n";
-  SendFrame(hello);
+
+  {
+    /* workaround for a bug in the director, where it does only a single peek
+     * to detect cleartext.
+     * Sending size + content separatly as SendFrame does can cause the director
+     * to misunderstand that we are trying to use cleartext, and as such
+     * fail the connection.
+     * This is only an issue for exactly this situation, so we simply workaround
+     * this by doing this manually once */
+    std::vector<char> data;
+    data.resize(sizeof(int32_t) + hello.size());
+
+    memcpy(data.data() + sizeof(int32_t), hello.data(), hello.size());
+
+    int32_t size = hello.size();
+    int32_t hdr = htonl(size);
+
+    memcpy(data.data(), &hdr, sizeof(int32_t));
+
+    WriteAll(data.data(), data.size());
+  }
 
   // Step 2: receive director's challenge
   int32_t challenge_signal = 0;
