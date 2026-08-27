@@ -27,8 +27,12 @@ if(NOT DEFINED DIST_DIR)
   set(DIST_DIR "${SOURCE_DIST_DIR}")
 endif()
 
-if(EXISTS "${SOURCE_DIST_DIR}/index.html" AND NOT EXISTS
-                                              "${REPO_ROOT_DIR}/.git"
+if(NOT DEFINED NPM_EXECUTABLE)
+  find_program(NPM_EXECUTABLE npm)
+endif()
+
+if(EXISTS "${SOURCE_DIST_DIR}/index.html"
+   AND (NOT EXISTS "${REPO_ROOT_DIR}/.git" OR NOT NPM_EXECUTABLE)
 )
   message(STATUS "Using prebuilt bareos-setup-vue dist from ${SOURCE_DIST_DIR}")
   if(NOT DIST_DIR STREQUAL SOURCE_DIST_DIR)
@@ -37,10 +41,6 @@ if(EXISTS "${SOURCE_DIST_DIR}/index.html" AND NOT EXISTS
     file(COPY "${SOURCE_DIST_DIR}/" DESTINATION "${DIST_DIR}")
   endif()
   return()
-endif()
-
-if(NOT DEFINED NPM_EXECUTABLE)
-  find_program(NPM_EXECUTABLE npm)
 endif()
 
 if(NOT NPM_EXECUTABLE)
