@@ -382,38 +382,6 @@ bool generic_tape_device::weof(int num)
   return status == 0;
 }
 
-bool generic_tape_device::d_flush(DeviceControlRecord*)
-{
-  mtop mt_com{};
-
-  if (!IsOpen()) {
-    dev_errno = EBADF;
-    Mmsg1(errmsg, T_("Bad call to d_flush. Device %s not open\n"), prt_name);
-    return false;
-  }
-
-  mt_com.mt_op = MTNOP;
-  mt_com.mt_count = 1;
-  if (d_ioctl(fd, MTIOCTOP, (char*)&mt_com) < 0) {
-    BErrNo be;
-    clrerror(mt_com.mt_op);
-    Mmsg2(errmsg, T_("ioctl MTNOP error on %s. ERR=%s.\n"), prt_name,
-          be.bstrerror());
-    return false;
-  }
-
-#if !defined(HAVE_WIN32)
-  if (::fsync(fd) < 0 && errno != EINVAL && errno != ENOTSUP
-      && errno != ENOSYS) {
-    BErrNo be;
-    Mmsg2(errmsg, T_("fsync error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
-    return false;
-  }
-#endif
-
-  return true;
-}
-
 /**
  * Foward space a file
  *
