@@ -23,6 +23,7 @@ aarch64/bareos-filedaemon-percona-xtrabackup-python-plugin
 aarch64/bareos-filedaemon-postgresql-python-plugin
 aarch64/bareos-filedaemon-python-plugins-common
 aarch64/bareos-filedaemon-python3-plugin
+aarch64/bareos-setup
 aarch64/bareos-storage
 aarch64/bareos-storage-dedupable
 aarch64/bareos-storage-dplcompat
@@ -48,6 +49,7 @@ debug/aarch64/bareos-filedaemon-barri-plugin-debuginfo
 debug/aarch64/bareos-filedaemon-debuginfo
 debug/aarch64/bareos-filedaemon-grpc-python3-plugin-debuginfo
 debug/aarch64/bareos-filedaemon-python3-plugin-debuginfo
+debug/aarch64/bareos-setup-debuginfo
 debug/aarch64/bareos-storage-debuginfo
 debug/aarch64/bareos-storage-dedupable-debuginfo
 debug/aarch64/bareos-storage-dplcompat-debuginfo
