@@ -129,13 +129,6 @@ bool unix_tape_device::d_flush(DeviceControlRecord*)
     return false;
   }
 
-  if (::fsync(fd) < 0 && errno != EINVAL && errno != ENOTSUP
-      && errno != ENOSYS) {
-    BErrNo be;
-    Mmsg2(errmsg, T_("fsync error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
-    return false;
-  }
-
   return true;
 }
 
