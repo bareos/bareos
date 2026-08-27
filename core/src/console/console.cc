@@ -742,8 +742,8 @@ static bool SelectDirector(const char* director,
     delete UA_sock;
     {
       for (i = 0; i < item; i++) {
-        director_resource_tmp = (DirectorResource*)my_config->GetNextRes(
-            R_DIRECTOR, director_resource_tmp);
+        director_resource_tmp = dynamic_cast<DirectorResource*>(
+            my_config->GetNextRes(R_DIRECTOR, director_resource_tmp));
       }
     }
   }
