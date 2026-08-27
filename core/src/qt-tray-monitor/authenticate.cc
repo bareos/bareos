@@ -53,8 +53,6 @@ inline constexpr const char Dirhello[]
 inline constexpr const char SDOKhello[] = "3000 OK Hello";
 /* Response from FD */
 inline constexpr const char FDOKhello[] = "2000 OK Hello";
-/* Response from DIR */
-inline constexpr const char DIROKhello[] = "1000\x1eOK";
 
 static std::map<AuthenticationResult, std::string>
     authentication_error_to_string_map{
@@ -119,19 +117,22 @@ AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
         return AuthenticationResult::kCramMd5HandshakeFailed;
       }
 
-      if (sock->recv() <= 0) {
+      BStringList response_args{};
+      uint32_t response_id{};
+      if (!sock->ReceiveAndEvaluateResponseMessage(response_id,
+                                                   response_args)) {
         Jmsg3(jcr, M_FATAL, 0,
-              T_("console<dir: \"%s:%s\" bad response to Hello command: "
+              T_("console<dir: \"%s:%s\" could not receive response message: "
                  "ERR=%s\n"),
               sock->who(), sock->host(), sock->bstrerror());
         return AuthenticationResult::kDaemonResponseFailed;
       }
 
-      if (!bstrncmp(sock->msg, DIROKhello, sizeof(DIROKhello) - 1)) {
-        Dmsg0(debuglevel, T_("Director daemon rejected Hello command\n"));
-        Jmsg2(jcr, M_FATAL, 0,
-              T_("Director daemon at \"%s:%d\" rejected Hello command\n"),
-              sock->host(), sock->port());
+      if (response_id != ResponseId::kMessageIdOk) {
+        Jmsg3(jcr, M_FATAL, 0,
+              T_("console<dir: \"%s:%s\" received bad response id: %" PRIu32
+                 " ERR=%s\n"),
+              sock->who(), sock->host(), response_id, sock->bstrerror());
         return AuthenticationResult::kRejectedByDaemon;
       }
     } break;
