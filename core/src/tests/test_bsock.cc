@@ -23,6 +23,7 @@
 
 #include "bsock_test.h"
 #include "create_resource.h"
+#include "lib/s_password.h"
 #include "tests/bareos_test_sockets.h"
 #include "tests/init_openssl.h"
 #include <filesystem>
@@ -508,7 +509,13 @@ static void start_bareos_server(std::promise<bool>* promise,
 
   dummy_auth auth{console_name, console_password};
 
-  if (!BareosAccept(bs.get(), "myname", nullptr, nullptr, &auth)) {
+  TlsResource console_res = *dir_cons_config;
+  console_res.password_ = {p_encoding_md5, console_password.data()};
+  // tls_enable = false, actually means tls_require = false
+  //                     for new-style connections
+  console_res.tls_enable_ = false;
+
+  if (!BareosAccept(bs.get(), "myname", &console_res, nullptr, &auth)) {
     Dmsg0(10, "Server: inbound auth failed\n");
   } else {
     bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,
@@ -557,12 +564,14 @@ static void clone_a_client_socket(std::shared_ptr<BareosSocket> UA_sock)
 static int connect_to_server(std::string console_name,
                              std::string console_password,
                              std::string server_address,
-                             int server_port)
+                             int server_port,
+                             bool cleartext_auth = false)
 #else
 static bool connect_to_server(std::string console_name,
                               std::string console_password,
                               std::string server_address,
-                              int server_port)
+                              int server_port,
+                              bool cleartext_auth = false)
 #endif
 {
   utime_t heart_beat = 0;
@@ -597,11 +606,8 @@ static bool connect_to_server(std::string console_name,
     TlsResource custom = *cons_dir_config;
     custom.password_.value = console_password.data();
 
-    // yes, you read this right
-    // all these tests use the auth path that is never taken by bareos anymore
-    // this is the pre 18.2 path ...
     if (!BareosConnect(&jcr, UA_sock.get(), std::move(qualified_resource_name),
-                       &custom, hello_msg.c_str(), true)) {
+                       &custom, hello_msg.c_str(), cleartext_auth)) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
       return false;
     }
@@ -772,6 +778,40 @@ TEST(bsock, auth_works_with_tls_cert)
   EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST,
                                 ls->port));
 #endif
+
+  server_thread.join();
+
+  EXPECT_TRUE(cipher_server == cipher_client);
+  EXPECT_TRUE(future.get());
+}
+
+TEST(bsock, auth_works_with_old_style_tls)
+{
+  std::promise<bool> promise;
+  std::future<bool> future = promise.get_future();
+
+  client_cons_name = "clientname";
+  client_cons_password = "verysecretpassword";
+
+  server_cons_name = client_cons_name;
+  server_cons_password = client_cons_password;
+
+  InitForTest();
+
+  cons_dir_config->tls_enable_ = true;
+  dir_cons_config->tls_enable_ = true;
+
+  auto ls = create_listening_socket();
+  ASSERT_NE(ls, std::nullopt);
+
+  Dmsg0(10, "starting listen thread...\n");
+  std::thread server_thread(start_bareos_server, &promise, server_cons_name,
+                            server_cons_password, HOST, std::ref(*ls));
+
+  Dmsg0(10, "connecting to server\n");
+
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST,
+                                ls->port, true));
 
   server_thread.join();
 

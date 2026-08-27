@@ -753,6 +753,11 @@ bool BareosAccept(BareosSocket* socket,
     return false;
   }
 
+  if (!initial_tls) {
+    Emsg1(M_ERROR, 0, "initial_tls is NULL in BareosAccept.\n");
+    return false;
+  }
+
   auth_timer timer{socket};
 
   bool have_tls = false;
@@ -764,7 +769,7 @@ bool BareosAccept(BareosSocket* socket,
     return false;
   }
 
-  if (initial_tls && !received_clear_text_handshake) {
+  if (!received_clear_text_handshake) {
     auto tls = ParameterizeAndInitTlsConnectionAsAServer(initial_tls, provider);
     if (!tls) {
       Emsg1(M_ERROR, 0, "Could not initialize initial tls context for %s\n",
