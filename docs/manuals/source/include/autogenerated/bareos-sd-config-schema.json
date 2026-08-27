@@ -803,7 +803,7 @@
         "MaximumFileSize": {
           "datatype": "SIZE64",
           "code": 0,
-          "default_value": "1000000000",
+          "default_value": "100000000000",
           "equals": true
         },
         "VolumeCapacity": {
