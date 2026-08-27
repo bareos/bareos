@@ -1,0 +1,140 @@
+<template>
+  <q-layout view="hHh lpR fFf">
+    <q-header class="bg-primary"><q-toolbar>
+      <q-toolbar-title>Bareos single-host setup</q-toolbar-title>
+    </q-toolbar></q-header>
+    <q-page-container><q-page class="q-pa-lg wizard">
+      <q-linear-progress :value="progress" class="q-mb-lg" />
+      <h1 class="text-h5">{{ title }}</h1>
+      <p class="text-body1">{{ description }}</p>
+      <q-banner v-if="error" class="bg-negative text-white q-mb-md">
+        {{ error }}<template #action><q-btn flat label="Retry" @click="retry" /></template>
+      </q-banner>
+      <q-banner v-if="!connected" class="bg-warning q-mb-md">Waiting for the local setup service…</q-banner>
+
+      <q-card v-if="step === 'welcome'" flat bordered><q-card-section>
+        <p>This wizard installs Director, File Daemon, Storage Daemon, PostgreSQL
+          and the Vue WebUI on this host.</p>
+        <ul><li>Only supported Linux package managers are used.</li>
+          <li>Package defaults and generated TLS passwords are preserved.</li>
+          <li>Existing Bareos installations are not modified.</li></ul>
+      </q-card-section></q-card>
+      <q-card v-else-if="step === 'platform'" flat bordered><q-card-section>
+        <span v-if="store.state.distro">{{ store.state.distro }} {{ store.state.version }} · {{ store.state.package_manager }}</span>
+        <q-spinner v-else-if="!error" size="2em" />
+      </q-card-section></q-card>
+      <q-card v-else-if="step === 'repository'" flat bordered><q-card-section>
+        <q-option-group v-model="store.repository" :options="repoOptions" />
+        <q-input v-if="store.repository === 'subscription'" v-model="store.repositoryLogin"
+          label="Subscription login" autocomplete="off" />
+        <q-input v-if="store.repository === 'subscription'" v-model="store.repositoryPassword"
+          label="Subscription password" type="password" autocomplete="new-password" />
+      </q-card-section></q-card>
+      <q-card v-else-if="step === 'storage'" flat bordered><q-card-section>
+        <q-toggle v-model="store.customizeStorage" label="Customize disk storage path" />
+        <q-input v-if="store.customizeStorage" v-model="store.storagePath"
+          label="Disk storage path" hint="Absolute path on this host" />
+        <p v-else>Disk storage: <code>/var/lib/bareos/storage</code></p>
+        <p>Standard ports: WebUI 9100 · Director 9101 · FD 9102 · SD 9103 · proxy 9104</p>
+      </q-card-section></q-card>
+      <q-card v-else-if="step === 'progress'" flat bordered><q-card-section>
+        <q-list dense><q-item v-for="item in installSteps" :key="item.id">
+          <q-item-section avatar><q-icon :name="done(item.id) ? 'check' : 'radio_button_unchecked'" /></q-item-section>
+          <q-item-section>{{ item.label }}</q-item-section>
+        </q-item></q-list>
+        <pre v-if="output" class="output-console">{{ output }}</pre>
+      </q-card-section></q-card>
+      <q-card v-else flat bordered><q-card-section>
+        <q-icon name="check_circle" color="positive" size="3em" />
+        <p>Installation and backup/restore smoke test completed.</p>
+        <p v-if="store.admin">Save this initial WebUI password now:
+          <code>{{ store.admin.username }} / {{ store.admin.password }}</code></p>
+        <q-btn label="Download redacted script preview" icon="download" @click="downloadScript" />
+      </q-card-section></q-card>
+
+      <div class="row justify-between q-mt-lg">
+        <q-btn v-if="['welcome', 'progress', 'complete'].indexOf(step) < 0"
+          flat label="Back" @click="back" />
+        <q-space />
+        <q-btn v-if="step !== 'complete'" color="primary"
+          :disable="busy || !connected || !canContinue"
+          :label="step === 'progress' ? 'Start installation' : 'Continue'" @click="next" />
+        <q-btn v-if="step === 'progress' && failed" flat color="negative"
+          label="Rollback" @click="rollback" />
+      </div>
+    </q-page></q-page-container>
+  </q-layout>
+</template>
+
+<script setup>
+import { computed, onMounted, ref, watch } from 'vue'
+import { useSetupStore } from '../stores/setup.js'
+import { useSetupWs } from '../composables/useSetupWs.js'
+
+const store = useSetupStore()
+const { connected, messages, send } = useSetupWs()
+const step = ref('welcome')
+const busy = ref(false)
+const error = ref('')
+const output = ref('')
+const failed = ref(false)
+const repoOptions = [{ label: 'Bareos Community', value: 'community' },
+  { label: 'Bareos Subscription', value: 'subscription' }]
+const installSteps = [
+  { id: 'repository', label: 'Configure repository' }, { id: 'packages', label: 'Install packages' },
+  { id: 'storage', label: 'Apply optional disk storage path' },
+  { id: 'catalog', label: 'Initialize catalog when needed' }, { id: 'admin', label: 'Create initial admin account' },
+  { id: 'proxy', label: 'Enable loopback WebUI proxy' }, { id: 'smoke_test', label: 'Verify services and backup/restore' }]
+const title = computed(() => step.value === 'complete'
+  ? 'Setup complete' : ({ welcome: 'Welcome', platform: 'Platform', repository: 'Repository',
+    storage: 'Storage', progress: 'Installation progress' }[step.value]))
+const description = computed(() => step.value === 'progress'
+  ? 'Installation stops on failure. Retry the failed step or roll back wizard-owned changes.'
+  : 'All operations run locally with approved commands.')
+const progress = computed(() => step.value === 'complete' ? 1 :
+  ({ welcome: 0, platform: .2, repository: .35, storage: .5, progress: .7 }[step.value] || 0))
+const canContinue = computed(() => step.value !== 'repository' ||
+  store.repository === 'community' || (store.repositoryLogin && store.repositoryPassword))
+function done(id) { return store.state.completed.includes(id) }
+function next() {
+  if (step.value === 'welcome') { step.value = 'platform'; send({ action: 'state' }) }
+  else if (step.value === 'platform') step.value = 'repository'
+  else if (step.value === 'repository') step.value = 'storage'
+  else if (step.value === 'storage') step.value = 'progress'
+  else if (step.value === 'progress') start()
+}
+function back() { step.value = ({ platform: 'welcome', repository: 'platform', storage: 'repository' })[step.value] || step.value }
+function payload() {
+  return { repository: store.repository, repository_login: store.repositoryLogin,
+    repository_password: store.repositoryPassword, distro: store.state.distro, version: store.state.version,
+    storage_path: store.customizeStorage ? store.storagePath : '/var/lib/bareos/storage' }
+}
+function start() {
+  busy.value = true; error.value = ''; failed.value = false; output.value = ''
+  send({ action: 'run', step: 'repository', ...payload() })
+}
+function retry() { start() }
+function rollback() { send({ action: 'rollback' }); busy.value = false; failed.value = false }
+function downloadScript() { send({ action: 'script' }) }
+watch(messages, list => {
+  const message = list[list.length - 1]; if (!message) return
+  if (message.type === 'state') { Object.assign(store.state, message) }
+  if (message.type === 'output') output.value += `${message.line}\n`
+  if (message.type === 'error') { error.value = message.message; failed.value = true; busy.value = false }
+  if (message.type === 'admin_credentials') store.admin = message
+  if (message.type === 'rollback_complete') store.state.completed = []
+  if (message.type === 'script') {
+    const blob = new Blob([message.content], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob); const anchor = document.createElement('a')
+    anchor.href = url; anchor.download = 'bareos-setup-preview.sh'; anchor.click(); URL.revokeObjectURL(url)
+  }
+  if (message.type === 'done') {
+    if (message.exit_code) { failed.value = true; busy.value = false; return }
+    if (!store.state.completed.includes(message.step)) store.state.completed.push(message.step)
+    const nextStep = installSteps.find(item => !done(item.id))
+    if (nextStep) send({ action: 'run', step: nextStep.id, ...payload() })
+    else { busy.value = false; step.value = 'complete' }
+  }
+}, { deep: true })
+onMounted(() => send({ action: 'state' }))
+</script>

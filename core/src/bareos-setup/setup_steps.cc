@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -35,6 +36,7 @@
 #include <vector>
 
 #include <unistd.h>
+#include <openssl/rand.h>
 
 namespace {
 
@@ -531,13 +533,16 @@ std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
       = base + "/" + BuildRepoOsPath(distro, version)
         + "/add_bareos_repositories.sh";
 
-  std::string curl_auth;
+  std::vector<std::string> command = {"curl", "--fail", "--silent",
+                                      "--show-error", "--location"};
   if (repo_type == "subscription" && !login.empty()) {
-    curl_auth = " -u '" + login + ":" + password + "'";
+    // The caller must redact this argv entry from previews and logs.  Keeping
+    // it as one argv item avoids a shell and makes metacharacters inert.
+    command.emplace_back("--user");
+    command.emplace_back(login + ":" + password);
   }
-
-  return {"bash", "-c",
-          "curl -fsSL" + curl_auth + " " + script_url + " | bash"};
+  command.emplace_back(script_url);
+  return command;
 }
 
 std::vector<std::string> BuildInstallCmd(
@@ -569,30 +574,15 @@ std::vector<std::string> BuildInstallCmd(
 
 std::vector<std::string> BuildDbCmd()
 {
-  return {"bash", "-c",
-          "/usr/lib/bareos/scripts/create_bareos_database && "
-          "/usr/lib/bareos/scripts/make_bareos_tables && "
-          "/usr/lib/bareos/scripts/grant_bareos_privileges"};
+  return {"/usr/lib/bareos/scripts/create_bareos_database"};
 }
 
 std::vector<std::string> BuildAdminUserCmd(const std::string& username,
                                            const std::string& password)
 {
-  const std::string console_conf
-      = "/etc/bareos/bareos-dir.d/console/" + username + ".conf";
-  return {"bash",
-          "-c",
-          "cat > " + console_conf + " << 'BAREOS_EOF'\n"
-          "Console {\n"
-          "  Name = " + username + "\n"
-          "  Password = \"" + password + "\"\n"
-          "  Profile = \"webui-admin\"\n"
-          "  TLS Enable = No\n"
-          "}\n"
-          "BAREOS_EOF\n"
-          "chmod 640 " + console_conf + " && "
-          "chown root:bareos " + console_conf + " && "
-          "systemctl reload bareos-dir 2>/dev/null || true"};
+  // This is an argv-only helper invocation.  The setup session writes the
+  // resource through a privileged stdin pipe; no shell is involved.
+  return {"bareos-setup-admin", "--username", username, "--password", password};
 }
 
 std::string DescribeDeviceIdentifier(const DeviceIdentifier& identifier)
@@ -999,7 +989,11 @@ std::string BuildConfigureStorageScript(const DiskStorageConfig& disk,
 
 int RunGeneratedScript(const std::string& script, bool use_sudo, OutputCallback cb)
 {
-  char path_template[] = "/tmp/bareos-setup-storage-XXXXXX";
+  const char* runtime_dir = std::getenv("XDG_RUNTIME_DIR");
+  std::string directory = runtime_dir && *runtime_dir ? runtime_dir : ".";
+  char path_template[512];
+  std::snprintf(path_template, sizeof(path_template), "%s/bareos-setup-XXXXXX",
+                directory.c_str());
   const int fd = mkstemp(path_template);
   if (fd < 0) throw std::runtime_error("Failed to create temporary script file.");
 
@@ -1025,4 +1019,82 @@ int RunGeneratedScript(const std::string& script, bool use_sudo, OutputCallback 
     std::remove(script_path.c_str());
     throw;
   }
+}
+
+bool IsSupportedSetupPlatform(const std::string& distro,
+                              const std::string& package_manager)
+{
+  static const std::set<std::string> supported{
+      "almalinux", "centos", "debian", "fedora", "ol", "openela",
+      "oracle",    "rhel",   "rocky",  "sles",   "ubuntu", "opensuse",
+  };
+  return supported.contains(distro) && (package_manager == "apt"
+                                        || package_manager == "dnf"
+                                        || package_manager == "yum"
+                                        || package_manager == "zypper");
+}
+
+bool IsSafeSetupIdentifier(const std::string& value)
+{
+  if (value.empty() || value.size() > 64) return false;
+  return std::all_of(value.begin(), value.end(), [](unsigned char c) {
+    return std::isalnum(c) || c == '_' || c == '-' || c == '.';
+  });
+}
+
+bool IsSafeStoragePath(const std::string& value)
+{
+  if (value.empty() || value.front() != '/' || value.size() > 4096) {
+    return false;
+  }
+  if (value.find('\0') != std::string::npos
+      || value.find_first_of("\r\n") != std::string::npos) {
+    return false;
+  }
+  std::filesystem::path path(value);
+  for (const auto& component : path) {
+    if (component == "..") return false;
+  }
+  return true;
+}
+
+std::string GenerateSetupSecret(size_t length)
+{
+  static constexpr char alphabet[]
+      = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+  if (length == 0 || length > 256) {
+    throw std::invalid_argument("Invalid setup secret length");
+  }
+
+  std::vector<unsigned char> random(length);
+  if (RAND_bytes(random.data(), static_cast<int>(random.size())) != 1) {
+    throw std::runtime_error("Unable to obtain cryptographically secure random data");
+  }
+  std::string result;
+  result.reserve(length);
+  constexpr size_t alphabet_size = sizeof(alphabet) - 1;
+  for (const auto byte : random) result += alphabet[byte % alphabet_size];
+  return result;
+}
+
+std::string RedactSetupSecrets(std::string value,
+                               const std::vector<std::string>& secrets)
+{
+  for (const auto& secret : secrets) {
+    if (secret.empty()) continue;
+    size_t pos = 0;
+    while ((pos = value.find(secret, pos)) != std::string::npos) {
+      value.replace(pos, secret.size(), "[redacted]");
+      pos += sizeof("[redacted]") - 1;
+    }
+  }
+  return value;
+}
+
+bool IsValidSetupOrigin(const std::string& origin, int port)
+{
+  const std::string localhost = "http://localhost:" + std::to_string(port);
+  const std::string loopback = "http://127.0.0.1:" + std::to_string(port);
+  const std::string ipv6 = "http://[::1]:" + std::to_string(port);
+  return origin == localhost || origin == loopback || origin == ipv6;
 }

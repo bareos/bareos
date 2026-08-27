@@ -121,6 +121,34 @@ struct DirectorStorageDefaults {
   std::string port = "9103";
 };
 
+/** Ports reserved by a single-host Bareos installation. */
+struct StandardPorts {
+  int webui = 9100;
+  int director = 9101;
+  int file_daemon = 9102;
+  int storage_daemon = 9103;
+  int webui_proxy = 9104;
+};
+
+/** Return the ports used by the supported single-host installation. */
+constexpr StandardPorts GetStandardPorts() { return {}; }
+
+/** Validate the small set of values accepted from the wizard. */
+bool IsSupportedSetupPlatform(const std::string& distro,
+                              const std::string& package_manager);
+bool IsSafeSetupIdentifier(const std::string& value);
+bool IsSafeStoragePath(const std::string& value);
+
+/** Generate a cryptographically random secret for the initial admin account. */
+std::string GenerateSetupSecret(size_t length = 32);
+
+/** Remove credentials and bearer tokens from command output. */
+std::string RedactSetupSecrets(std::string value,
+                               const std::vector<std::string>& secrets);
+
+/** Accept only same-origin loopback requests for the setup endpoint. */
+bool IsValidSetupOrigin(const std::string& origin, int port);
+
 struct TapeStorageInventory {
   std::vector<TapeChangerInfo> changers;
   std::vector<TapeDriveInfo> drives;

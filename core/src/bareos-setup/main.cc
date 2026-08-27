@@ -34,11 +34,13 @@
 
 #include "http_server.h"
 #include "setup_session.h"
+#include "setup_steps.h"
 #include "tui_wizard.h"
 
-static void OpenBrowser(int port)
+static void OpenBrowser(int port, const std::string& token)
 {
-  std::string url = "http://localhost:" + std::to_string(port) + "/";
+  std::string url = "http://localhost:" + std::to_string(port)
+                    + "/?token=" + token;
   // Try common browser launchers in order
   for (const char* cmd : {"xdg-open", "open", "sensible-browser"}) {
     if (execlp(cmd, cmd, url.c_str(), nullptr) == 0) return;
@@ -78,6 +80,8 @@ int main(int argc, char* argv[])
   // TUI mode: run interactively in the terminal, no HTTP server.
   if (tui) return RunTuiWizard(dry_run);
 
+  const std::string setup_token = GenerateSetupSecret(32);
+
   // Fork before starting the server so the child opens the browser
   // after the parent has started listening.
   pid_t child = -1;
@@ -86,13 +90,14 @@ int main(int argc, char* argv[])
     if (child == 0) {
       // Child: wait briefly then open browser
       sleep(1);
-      OpenBrowser(port);
+      OpenBrowser(port, setup_token);
       _exit(0);
     }
   }
 
   try {
-    RunHttpServer(port, [dry_run](int fd) { RunSetupSession(fd, dry_run); });
+    RunHttpServer(port, setup_token,
+                  [dry_run](int fd) { RunSetupSession(fd, dry_run); });
   } catch (const std::exception& e) {
     std::cerr << "Fatal: " << e.what() << "\n";
     return 1;

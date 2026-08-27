@@ -130,6 +130,7 @@ if(BUILD_TESTING AND GTest_FOUND)
   )
   target_link_libraries(
     test_bareos_setup_steps PRIVATE GTest::gtest_main Threads::Threads
+                                      OpenSSL::Crypto
   )
   gtest_discover_tests(test_bareos_setup_steps)
 endif()
