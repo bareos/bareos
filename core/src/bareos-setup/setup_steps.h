@@ -209,6 +209,17 @@ std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
                                          const std::string& login,
                                          const std::string& password);
 
+/**
+ * Build a lightweight pre-flight reachability probe against the Bareos
+ * download server matching the given repository type (community ->
+ * download.bareos.org, subscription -> download.bareos.com), reusing the
+ * same base URL logic as BuildAddRepoCmd. Uses "curl --head" (no body
+ * download) with a short timeout so a firewalled/offline host fails fast
+ * with a clear error instead of the real repository script failing deep
+ * inside a longer-running command.
+ */
+std::vector<std::string> BuildNetworkCheckCmd(const std::string& repo_type);
+
 // Build the package install command for the detected package manager.
 std::vector<std::string> BuildInstallCmd(
     const std::string& pkg_mgr,

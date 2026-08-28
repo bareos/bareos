@@ -576,6 +576,17 @@ std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
   return command;
 }
 
+std::vector<std::string> BuildNetworkCheckCmd(const std::string& repo_type)
+{
+  const std::string base
+      = (repo_type == "subscription")
+            ? "https://download.bareos.com/bareos/release/latest"
+            : "https://download.bareos.org/current";
+
+  return {"curl",   "--fail",     "--silent", "--show-error",
+          "--head", "--max-time", "10",       base};
+}
+
 std::vector<std::string> BuildInstallCmd(
     const std::string& pkg_mgr,
     const std::vector<std::string>& packages)
