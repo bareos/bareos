@@ -40,6 +40,7 @@
 #include "setup_steps.h"
 #include "tui_wizard.h"
 #include "command_runner.h"
+#include "os_detector.h"
 
 /** Percent-encode a string for safe use as a URL query value. The setup
  * token alphabet includes characters (e.g. '#', '@') that are otherwise
@@ -100,6 +101,22 @@ int main(int argc, char* argv[])
   std::cout << "Bareos Setup Wizard " << BAREOS_FULL_VERSION;
   if (dry_run) std::cout << " [dry-run]";
   std::cout << "\n";
+
+  // Fail fast with a clear message if a required external tool (curl,
+  // systemctl, the detected package manager, ...) is missing, instead
+  // of surfacing a raw exec failure deep inside an install step later.
+  // Dry-run only previews commands and never executes anything, so the
+  // check is skipped in that mode.
+  if (!dry_run) {
+    const auto os = DetectOs();
+    const auto missing = MissingRequiredTools(os.pkg_mgr);
+    if (!missing.empty()) {
+      std::cerr << "Fatal: required tool(s) not found in PATH:";
+      for (const auto& tool : missing) std::cerr << " " << tool;
+      std::cerr << "\nInstall the missing tool(s) and try again.\n";
+      return 1;
+    }
+  }
 
   // Privileged steps (package install, service management, catalog
   // creation, ...) always execute as root. When not already root, obtain

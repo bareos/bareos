@@ -300,11 +300,12 @@ void Handle(WsCodec& ws, json_t* message)
       json_array_append_new(completed, json_string(step.c_str()));
     }
     Send(ws,
-         json_pack("{s:s,s:s,s:s,s:s,s:o,s:b,s:s}", "type", "state", "distro",
-                   os.distro.c_str(), "version", os.version.c_str(),
-                   "package_manager", os.pkg_mgr.c_str(), "completed",
-                   completed, "finished", Progress().finished, "setup_version",
-                   BAREOS_FULL_VERSION));
+         json_pack("{s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:o,s:b,s:s}", "type", "state",
+                   "distro", os.distro.c_str(), "version", os.version.c_str(),
+                   "package_manager", os.pkg_mgr.c_str(), "pretty_name",
+                   os.pretty_name.c_str(), "arch", os.arch.c_str(), "codename",
+                   os.codename.c_str(), "completed", completed, "finished",
+                   Progress().finished, "setup_version", BAREOS_FULL_VERSION));
     return;
   }
   if (action == "script") {

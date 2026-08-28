@@ -23,6 +23,7 @@
 #include <array>
 #include <chrono>
 #include <cstring>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -31,6 +32,7 @@
 
 #include <fcntl.h>
 #include <poll.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -227,4 +229,43 @@ int RunCommandWithInput(const std::vector<std::string>& argv,
                         OutputCallback cb)
 {
   return RunCommandImpl(argv, &input, use_sudo, std::move(cb));
+}
+
+bool IsToolInPath(const std::string& name)
+{
+  if (name.empty()) return false;
+  // An absolute or relative path is checked directly rather than
+  // searched for in PATH.
+  if (name.find('/') != std::string::npos) {
+    struct stat st{};
+    return stat(name.c_str(), &st) == 0 && (st.st_mode & S_IXUSR);
+  }
+  const char* path_env = getenv("PATH");
+  const std::string path = path_env != nullptr ? path_env : "/usr/bin:/bin";
+  std::istringstream stream(path);
+  std::string dir;
+  while (std::getline(stream, dir, ':')) {
+    if (dir.empty()) continue;
+    const std::string candidate = dir + "/" + name;
+    struct stat st{};
+    if (stat(candidate.c_str(), &st) == 0 && S_ISREG(st.st_mode)
+        && (st.st_mode & S_IXUSR)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::vector<std::string> MissingRequiredTools(const std::string& pkg_mgr)
+{
+  std::vector<std::string> required
+      = {"curl", "bash", "install", "chown", "systemctl"};
+  if (!pkg_mgr.empty() && pkg_mgr != "unknown") required.push_back(pkg_mgr);
+  if (pkg_mgr == "apt") required.push_back("apt-get");
+
+  std::vector<std::string> missing;
+  for (const auto& tool : required) {
+    if (!IsToolInPath(tool)) missing.push_back(tool);
+  }
+  return missing;
 }
