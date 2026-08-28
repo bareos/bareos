@@ -402,6 +402,15 @@ TEST(BareosSetupStepsShared, BuildsWebServerServiceNameForPackageManager)
   EXPECT_EQ(BuildWebServerServiceName("zypper"), "httpd");
 }
 
+TEST(BareosSetupStepsShared, BuildsPackageCacheUpdateForAptOnly)
+{
+  EXPECT_EQ(BuildPackageCacheUpdateCmd("apt"),
+            (std::vector<std::string>{"apt-get", "update"}));
+  EXPECT_TRUE(BuildPackageCacheUpdateCmd("dnf").empty());
+  EXPECT_TRUE(BuildPackageCacheUpdateCmd("yum").empty());
+  EXPECT_TRUE(BuildPackageCacheUpdateCmd("zypper").empty());
+}
+
 TEST(BareosSetupStepsShared, JoinsSimpleCommandForDisplayWithoutQuoting)
 {
   EXPECT_EQ(

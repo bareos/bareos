@@ -597,6 +597,12 @@ std::string BuildWebServerServiceName(const std::string& pkg_mgr)
   return pkg_mgr == "apt" ? "apache2" : "httpd";
 }
 
+std::vector<std::string> BuildPackageCacheUpdateCmd(const std::string& pkg_mgr)
+{
+  if (pkg_mgr == "apt") { return {"apt-get", "update"}; }
+  return {};
+}
+
 std::vector<std::string> BuildInstallCmd(
     const std::string& pkg_mgr,
     const std::vector<std::string>& packages)

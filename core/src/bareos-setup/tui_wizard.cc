@@ -108,6 +108,11 @@ int RunTuiWizard(bool dry_run)
     return 1;
   }
   if (!dry_run) std::filesystem::remove(repository_script);
+  const auto update_cmd = BuildPackageCacheUpdateCmd(os.pkg_mgr);
+  if (!update_cmd.empty()) {
+    std::cout << "Refreshing package metadata.\n";
+    if (!Run(update_cmd, dry_run)) return 1;
+  }
 
   std::cout << "Disk storage: /var/lib/bareos/storage\n";
   if (!Run(BuildInstallCmd(os.pkg_mgr, BuildDefaultPackageList(os.pkg_mgr)),

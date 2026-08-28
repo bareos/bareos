@@ -160,7 +160,13 @@ int InstallRepository(WsCodec& ws, json_t* message)
   Output(ws, "Installing the approved Bareos repository.");
   const int result = Run({"bash", script.string()}, ws, secrets);
   std::filesystem::remove(script);
-  return result;
+  if (result != 0) return result;
+  const auto update_cmd = BuildPackageCacheUpdateCmd(os.pkg_mgr);
+  if (!update_cmd.empty()) {
+    Output(ws, "Refreshing package metadata.");
+    return Run(update_cmd, ws);
+  }
+  return 0;
 }
 
 int InstallPackages(WsCodec& ws)
