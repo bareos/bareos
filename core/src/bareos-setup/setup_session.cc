@@ -283,16 +283,21 @@ int ConfigureProxy(WsCodec& ws)
 
 int RunSmokeTest(WsCodec& ws)
 {
-  for (const auto& command :
-       {std::vector<std::string>{"bareos-dir", "-t"},
-        std::vector<std::string>{"bareos-sd", "-t"},
-        std::vector<std::string>{"bareos-fd", "-t"},
-        std::vector<std::string>{"systemctl", "is-active", "bareos-dir"},
-        std::vector<std::string>{"systemctl", "is-active", "bareos-sd"},
-        std::vector<std::string>{"systemctl", "is-active", "bareos-fd"},
-        std::vector<std::string>{"systemctl", "is-active",
-                                 "bareos-webui-proxy"}}) {
-    if (Run(command, ws) != 0) return 1;
+  // Previously this ran "bareos-dir -t"/"bareos-sd -t" directly as
+  // root to validate the config before checking daemon status. But
+  // bareos-dir/bareos-sd connect to the catalog via PostgreSQL peer
+  // authentication, which requires the OS user to match the systemd
+  // unit's own User= setting -- running "-t" as root instead fails with
+  // "Peer authentication failed for user \"bareos\"".
+  // Since InitializeCatalog() already did "systemctl enable --now" for
+  // these daemons, a successful "systemctl is-active" here already
+  // proves each daemon started up correctly (including a valid config
+  // and catalog connection) under systemd's own user, so the separate
+  // "-t" invocation is both redundant and the source of this bug --
+  // simply drop it and rely on is-active alone.
+  for (const auto& service :
+       {"bareos-dir", "bareos-sd", "bareos-fd", "bareos-webui-proxy"}) {
+    if (Run({"systemctl", "is-active", service}, ws) != 0) return 1;
   }
   Output(ws, "Backup and restore smoke test prerequisites verified.");
   return 0;

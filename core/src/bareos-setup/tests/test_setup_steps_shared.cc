@@ -560,3 +560,29 @@ TEST(BareosSetupSessionOrchestration, InstallPackagesRunsThePackageManager)
                          }),
             commands.end());
 }
+
+TEST(BareosSetupSessionOrchestration,
+     SmokeTestOnlyChecksDaemonStatusNotConfigAsRoot)
+{
+  // Regression test: this step used to also run "bareos-dir -t"/
+  // "bareos-sd -t" directly (as root) to validate the config, which
+  // fails with "Peer authentication failed for user \"bareos\"" since
+  // these daemons connect to the catalog via PostgreSQL peer auth as
+  // their own systemd User= (not root). Since InitializeCatalog()
+  // already starts these daemons via "systemctl enable --now", a
+  // successful "systemctl is-active" already implies the config parsed
+  // and the daemon is running correctly -- so smoke_test must rely on
+  // is-active alone and never invoke the daemon binaries directly.
+  FakeToolPath fake_tools({"sudo", "systemctl"});
+  ASSERT_EQ(RunStepDiscardingOutput("smoke_test"), 0);
+  const auto commands = fake_tools.LoggedCommands();
+  for (const auto& service :
+       {"bareos-dir", "bareos-sd", "bareos-fd", "bareos-webui-proxy"}) {
+    const std::string expected = std::string("systemctl is-active ") + service;
+    EXPECT_NE(std::find_if(commands.begin(), commands.end(),
+                           [&expected](const auto& line) {
+                             return line.find(expected) != std::string::npos;
+                           }),
+              commands.end());
+  }
+}
