@@ -17,6 +17,7 @@ find_package(Jansson REQUIRED)
 # ---------------------------------------------------------------------------
 set(SETUP_VUE_SRC "${CMAKE_SOURCE_DIR}/bareos-setup-vue")
 set(SETUP_VUE_DIST "${CMAKE_CURRENT_BINARY_DIR}/dist")
+set(SETUP_VUE_SOURCE_DIST "${SETUP_VUE_SRC}/dist")
 set(SETUP_VUE_DIST_INDEX "${SETUP_VUE_DIST}/index.html")
 set(SETUP_VUE_PACKAGE_JSON "${SETUP_VUE_SRC}/package.json")
 set(SETUP_VUE_PACKAGE_LOCK "${SETUP_VUE_SRC}/package-lock.json")
@@ -24,6 +25,15 @@ set(SETUP_VUE_BUILD_SCRIPT "${SETUP_VUE_SRC}/build-dist.cmake")
 set(SETUP_VUE_BUILD_STAMP
     "${CMAKE_CURRENT_BINARY_DIR}/bareos-setup-vue-build.stamp"
 )
+
+find_program(NPM_EXECUTABLE npm)
+if(NOT NPM_EXECUTABLE AND NOT EXISTS "${SETUP_VUE_SOURCE_DIST}/index.html")
+  message(
+    STATUS
+      "Skipping bareos-setup: npm not found and no prepared bareos-setup-vue/dist exists"
+  )
+  return()
+endif()
 
 file(GLOB_RECURSE SETUP_VUE_BUILD_INPUTS CONFIGURE_DEPENDS
      "${SETUP_VUE_SRC}/src/*" "${SETUP_VUE_SRC}/public/*"
