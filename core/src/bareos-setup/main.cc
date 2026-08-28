@@ -162,15 +162,21 @@ int main(int argc, char* argv[])
   if (tui) return RunTuiWizard(dry_run);
 
   const std::string setup_token = GenerateSetupSecret(32);
-  // When listening on all interfaces, "0.0.0.0" itself is not a URL a
-  // browser can open -- use "localhost" for the displayed/opened URL,
-  // since the server also always accepts connections on loopback.
-  // Likewise, keep showing the familiar "localhost" for the default
-  // loopback-only setup, matching prior behavior.
+  // Use the literal 127.0.0.1 for the displayed/opened URL, never
+  // "localhost": the server only ever binds an IPv4 socket, but many
+  // systems resolve "localhost" to the IPv6 loopback address (::1)
+  // first. When the browser is separated from the server by a NAT/port
+  // -forwarding layer (e.g. a container's published port), an IPv6
+  // connection attempt can succeed at the TCP layer yet still get reset
+  // once traffic reaches the IPv4-only listener, since there is no
+  // matching IPv6 socket to hand it off to. "0.0.0.0" itself is not a
+  // URL a browser can open either, so it maps to 127.0.0.1 too --
+  // the server always accepts loopback connections regardless of
+  // --listen.
   const std::string display_host
       = (listen_all_interfaces || listen_address == "127.0.0.1")
-          ? "localhost"
-          : listen_address;
+            ? "127.0.0.1"
+            : listen_address;
   const std::string setup_url = "http://" + display_host + ":"
                                 + std::to_string(port)
                                 + "/?token=" + UrlEncode(setup_token);
