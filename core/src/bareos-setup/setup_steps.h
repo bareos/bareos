@@ -146,8 +146,10 @@ std::string GenerateSetupSecret(size_t length = 32);
 std::string RedactSetupSecrets(std::string value,
                                const std::vector<std::string>& secrets);
 
-/** Accept only same-origin loopback requests for the setup endpoint. */
-bool IsValidSetupOrigin(const std::string& origin, int port);
+/** Accept only requests whose Origin header matches the Host header of the
+ * same request (i.e. same-origin), regardless of which address/port the
+ * wizard is listening on. */
+bool IsValidSetupOrigin(const std::string& origin, const std::string& host);
 
 struct TapeStorageInventory {
   std::vector<TapeChangerInfo> changers;

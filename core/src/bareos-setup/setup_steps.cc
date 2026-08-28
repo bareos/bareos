@@ -1128,10 +1128,13 @@ std::string RedactSetupSecrets(std::string value,
   return value;
 }
 
-bool IsValidSetupOrigin(const std::string& origin, int port)
+bool IsValidSetupOrigin(const std::string& origin, const std::string& host)
 {
-  const std::string localhost = "http://localhost:" + std::to_string(port);
-  const std::string loopback = "http://127.0.0.1:" + std::to_string(port);
-  const std::string ipv6 = "http://[::1]:" + std::to_string(port);
-  return origin == localhost || origin == loopback || origin == ipv6;
+  // Same-origin check: the browser's Origin header must match the Host
+  // header of the very request it sent. This works no matter which
+  // interface/hostname the wizard is listening on (loopback-only by
+  // default, or an admin-chosen address via --listen), without needing a
+  // fixed allow-list of hostnames.
+  if (host.empty()) return false;
+  return origin == "http://" + host;
 }
