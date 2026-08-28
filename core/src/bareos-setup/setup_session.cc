@@ -115,6 +115,7 @@ int Run(const std::vector<std::string>& command,
         WsCodec& ws,
         const std::vector<std::string>& secrets = {})
 {
+  Output(ws, "$ " + JoinCommandForDisplay(command), secrets);
   return RunCommand(
       command, true,
       [&ws, &secrets](const std::string& line, const std::string&) {
@@ -231,8 +232,11 @@ int CreateAdmin(WsCodec& ws)
       "  TLS Enable = yes\n"
         "}\n";
   const std::string path = "/etc/bareos/bareos-dir.d/console/admin.conf";
+  const std::vector<std::string> write_argv
+      = {"install", "-D", "-m", "0640", "/dev/stdin", path};
+  Output(ws, "$ " + JoinCommandForDisplay(write_argv), {password});
   const int write_result = RunCommandWithInput(
-      {"install", "-D", "-m", "0640", "/dev/stdin", path}, resource, true,
+      write_argv, resource, true,
       [&ws, &password](const std::string& line, const std::string&) {
         Output(ws, line, {password});
       });
@@ -261,8 +265,10 @@ int ConfigureProxy(WsCodec& ws)
         "director_name = bareos-dir\n"
         "tls_psk_disable = no\n";
   const std::string path = "/etc/bareos-webui-proxy/bareos-webui-proxy.ini";
-  if (RunCommandWithInput({"install", "-D", "-m", "0640", "/dev/stdin", path},
-                          config, true,
+  const std::vector<std::string> write_argv
+      = {"install", "-D", "-m", "0640", "/dev/stdin", path};
+  Output(ws, "$ " + JoinCommandForDisplay(write_argv));
+  if (RunCommandWithInput(write_argv, config, true,
                           [&ws](const std::string& line, const std::string&) {
                             Output(ws, line);
                           })
@@ -387,6 +393,19 @@ void Handle(WsCodec& ws, json_t* message)
 }
 
 }  // namespace
+
+int RunSetupStepForTests(int fd,
+                         const std::string& step,
+                         const std::string& json_message)
+{
+  WsCodec ws(fd);
+  json_error_t error{};
+  json_t* message = json_loads(json_message.c_str(), 0, &error);
+  if (!message) message = json_object();
+  const int result = RunStep(ws, step, message);
+  json_decref(message);
+  return result;
+}
 
 void RunSetupSession(int fd, bool /*dry_run*/)
 {

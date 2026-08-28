@@ -146,6 +146,15 @@ std::string GenerateSetupSecret(size_t length = 32);
 std::string RedactSetupSecrets(std::string value,
                                const std::vector<std::string>& secrets);
 
+/**
+ * Render a command argv vector as a single, readable display string (e.g.
+ * for showing "$ <command>" in the install log before running it). Any
+ * argument containing whitespace or shell metacharacters is wrapped in
+ * single quotes. This is for display purposes only: the result is never
+ * re-parsed or executed.
+ */
+std::string JoinCommandForDisplay(const std::vector<std::string>& argv);
+
 /** Accept only requests whose Origin header matches the Host header of the
  * same request (i.e. same-origin), regardless of which address/port the
  * wizard is listening on. */
