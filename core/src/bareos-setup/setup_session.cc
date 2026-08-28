@@ -279,6 +279,10 @@ int ConfigureProxy(WsCodec& ws)
       != 0) {
     return 1;
   }
+  // bareos-webui-proxy.service runs as User=bareos/Group=bareos (not
+  // root), so the config file must be group-readable by "bareos" or the
+  // service fails to start with "cannot load" on every restart attempt.
+  if (Run({"chown", "root:bareos", path}, ws) != 0) return 1;
   if (Run({"systemctl", "enable", "--now", "bareos-webui-proxy"}, ws) != 0) {
     return 1;
   }
