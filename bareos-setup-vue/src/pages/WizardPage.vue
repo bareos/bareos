@@ -153,7 +153,10 @@
         <q-icon name="check_circle" color="positive" size="3em" />
         <p>Installation and backup/restore smoke test completed.</p>
         <p v-if="store.admin"><q-icon name="vpn_key" color="warning" class="q-mr-xs" />Save this initial WebUI password now:
-          <code>{{ store.admin.username }} / {{ store.admin.password }}</code></p>
+          <code>{{ store.admin.username }} / {{ store.admin.password }}</code>
+          <q-btn flat dense icon="content_copy" label="Copy password" class="q-ml-sm"
+            @click="copyAdminPassword" />
+        </p>
         <q-btn label="Download redacted script preview" icon="download" @click="downloadScript" />
       </q-card-section></q-card>
 
@@ -174,10 +177,12 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch, nextTick } from 'vue'
+import { useQuasar } from 'quasar'
 import { useSetupStore } from '../stores/setup.js'
 import { useSetupWs } from '../composables/useSetupWs.js'
 import { getDistroIcon, FALLBACK_ICON } from '../utils/distro-icons.js'
 
+const $q = useQuasar()
 const store = useSetupStore()
 const { connected, messages, send } = useSetupWs()
 const step = ref('welcome')
@@ -241,6 +246,15 @@ function start() {
 }
 function retry() { start() }
 function rollback() { send({ action: 'rollback' }); busy.value = false; failed.value = false; currentStepId.value = null }
+async function copyAdminPassword() {
+  if (!store.admin?.password) return
+  try {
+    await navigator.clipboard.writeText(store.admin.password)
+    $q.notify({ type: 'positive', message: 'Password copied to clipboard.' })
+  } catch (_) {
+    $q.notify({ type: 'negative', message: 'Could not copy password to clipboard.' })
+  }
+}
 function downloadScript() { send({ action: 'script' }) }
 watch(messages, list => {
   const message = list[list.length - 1]; if (!message) return
