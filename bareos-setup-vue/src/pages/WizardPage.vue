@@ -40,15 +40,50 @@
         <q-spinner v-else-if="!error" size="2em" />
       </q-card-section></q-card>
       <q-card v-else-if="step === 'repository'" flat bordered><q-card-section>
-        <q-option-group v-model="store.repository" :options="repoOptions" />
-        <q-input v-if="store.repository === 'subscription'" v-model="store.repositoryLogin"
-          label="Subscription login" autocomplete="off">
-          <template #prepend><q-icon name="person" /></template>
-        </q-input>
-        <q-input v-if="store.repository === 'subscription'" v-model="store.repositoryPassword"
-          label="Subscription password" type="password" autocomplete="new-password">
-          <template #prepend><q-icon name="key" /></template>
-        </q-input>
+        <q-card flat bordered class="q-mb-md cursor-pointer repo-card repo-card--subscription"
+          :class="{ 'repo-card--selected': store.repository === 'subscription' }"
+          @click="store.repository = 'subscription'">
+          <q-card-section>
+            <div class="row items-center no-wrap">
+              <q-radio v-model="store.repository" val="subscription" color="primary" />
+              <div class="col">
+                <div class="row items-center">
+                  <span class="text-weight-bold text-primary">Bareos Subscription</span>
+                  <q-chip dense color="primary" text-color="white" icon="star" class="q-ml-sm">Recommended</q-chip>
+                </div>
+                <div class="text-caption text-grey-8">Vendor-supported packages with priority updates and support.</div>
+              </div>
+            </div>
+            <q-banner dense class="bg-blue-1 text-primary q-mt-md" @click.stop>
+              <template #avatar><q-icon name="workspace_premium" color="primary" /></template>
+              New to Bareos Subscription? Request free evaluation access —
+              test new features, plugins, and integrations, with fast approval.
+              <template #action>
+                <q-btn flat dense color="primary" icon-right="open_in_new" label="Get evaluation access"
+                  type="a" href="https://www.bareos.com/try/" target="_blank" rel="noopener" />
+              </template>
+            </q-banner>
+            <template v-if="store.repository === 'subscription'">
+              <q-input v-model="store.repositoryLogin" label="Subscription login" autocomplete="off"
+                class="q-mt-md" @click.stop>
+                <template #prepend><q-icon name="person" /></template>
+              </q-input>
+              <q-input v-model="store.repositoryPassword" label="Subscription password" type="password"
+                autocomplete="new-password" @click.stop>
+                <template #prepend><q-icon name="key" /></template>
+              </q-input>
+            </template>
+          </q-card-section>
+        </q-card>
+        <q-card flat class="cursor-pointer repo-card repo-card--community"
+          @click="store.repository = 'community'">
+          <q-card-section>
+            <div class="row items-center no-wrap">
+              <q-radio v-model="store.repository" val="community" color="grey" dense />
+              <span class="text-caption text-grey-7">Bareos Community (unsupported, community-maintained packages)</span>
+            </div>
+          </q-card-section>
+        </q-card>
       </q-card-section></q-card>
       <q-card v-else-if="step === 'storage'" flat bordered><q-card-section>
         <q-toggle v-model="store.customizeStorage" label="Customize disk storage path" />
@@ -104,8 +139,6 @@ const error = ref('')
 const output = ref('')
 const failed = ref(false)
 const distroIcon = computed(() => getDistroIcon(store.state.distro))
-const repoOptions = [{ label: 'Bareos Community', value: 'community' },
-  { label: 'Bareos Subscription', value: 'subscription' }]
 const installSteps = [
   { id: 'repository', label: 'Configure repository' }, { id: 'packages', label: 'Install packages' },
   { id: 'storage', label: 'Apply optional disk storage path' },
@@ -166,3 +199,15 @@ watch(messages, list => {
 }, { deep: true })
 onMounted(() => send({ action: 'state' }))
 </script>
+
+<style scoped>
+.repo-card--subscription {
+  border-color: var(--q-primary);
+}
+.repo-card--selected {
+  box-shadow: 0 0 0 2px var(--q-primary);
+}
+.repo-card--community {
+  opacity: 0.85;
+}
+</style>
