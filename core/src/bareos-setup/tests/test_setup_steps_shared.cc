@@ -384,6 +384,14 @@ TEST(BareosSetupStepsShared, BuildsNetworkCheckCmdForSubscriptionRepo)
           "10", "https://download.bareos.com/bareos/release/latest"}));
 }
 
+TEST(BareosSetupStepsShared, BuildsWebServerServiceNameForPackageManager)
+{
+  EXPECT_EQ(BuildWebServerServiceName("apt"), "apache2");
+  EXPECT_EQ(BuildWebServerServiceName("dnf"), "httpd");
+  EXPECT_EQ(BuildWebServerServiceName("yum"), "httpd");
+  EXPECT_EQ(BuildWebServerServiceName("zypper"), "httpd");
+}
+
 TEST(BareosSetupStepsShared, JoinsSimpleCommandForDisplayWithoutQuoting)
 {
   EXPECT_EQ(
@@ -573,6 +581,7 @@ TEST(BareosSetupSessionOrchestration,
   // owned by root:root at mode 0640), the proxy process cannot read
   // its own config and crash-loops with "cannot load
   // '/etc/bareos-webui-proxy/bareos-webui-proxy.ini'" forever.
+  const auto os = DetectOs();
   FakeToolPath fake_tools({"sudo", "install", "chown", "systemctl"});
   ASSERT_EQ(RunStepDiscardingOutput("proxy"), 0);
   const auto commands = fake_tools.LoggedCommands();
@@ -592,6 +601,13 @@ TEST(BareosSetupSessionOrchestration,
   // The chown must happen before the daemon is (re)started, otherwise a
   // config-file read race could still hit the old ownership.
   EXPECT_LT(chown_it - commands.begin(), enable_it - commands.begin());
+  const std::string web_server
+      = "systemctl enable --now " + BuildWebServerServiceName(os.pkg_mgr);
+  EXPECT_NE(std::find_if(commands.begin(), commands.end(),
+                         [&web_server](const auto& line) {
+                           return line.find(web_server) != std::string::npos;
+                         }),
+            commands.end());
 }
 
 TEST(BareosSetupSessionOrchestration, InstallPackagesRunsThePackageManager)
@@ -702,4 +718,12 @@ TEST(BareosSetupSessionOrchestration,
                            }),
               commands.end());
   }
+  const auto os = DetectOs();
+  const std::string web_server
+      = "systemctl is-active " + BuildWebServerServiceName(os.pkg_mgr);
+  EXPECT_NE(std::find_if(commands.begin(), commands.end(),
+                         [&web_server](const auto& line) {
+                           return line.find(web_server) != std::string::npos;
+                         }),
+            commands.end());
 }

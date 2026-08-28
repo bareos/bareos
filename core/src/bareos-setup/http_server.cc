@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cctype>
 #include <cstring>
 #include <functional>
@@ -45,6 +46,13 @@
 #include "setup_steps.h"
 
 // ---- helpers ---------------------------------------------------------------
+
+namespace {
+
+std::atomic_bool g_shutdown_requested{false};
+std::atomic_int g_server_fd{-1};
+
+}  // namespace
 
 /** Read bytes from fd until we see "\r\n\r\n". Returns the full header block.
  */
@@ -203,8 +211,10 @@ void RunHttpServer(const std::string& bind_address,
                    const std::string& setup_token,
                    WsHandler ws_handler)
 {
+  g_shutdown_requested = false;
   int srv = socket(AF_INET, SOCK_STREAM, 0);
   if (srv < 0) throw std::runtime_error("socket() failed");
+  g_server_fd = srv;
 
   int opt = 1;
   setsockopt(srv, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
@@ -225,9 +235,12 @@ void RunHttpServer(const std::string& bind_address,
             << port << "/\n"
             << std::flush;
 
-  while (true) {
+  while (!g_shutdown_requested) {
     int fd = accept(srv, nullptr, nullptr);
-    if (fd < 0) continue;
+    if (fd < 0) {
+      if (g_shutdown_requested) break;
+      continue;
+    }
 
     // Handle each connection in its own thread
     std::thread([fd, setup_token, ws_handler]() {
@@ -295,5 +308,18 @@ void RunHttpServer(const std::string& bind_address,
       }
       close(fd);
     }).detach();
+  }
+
+  const int fd = g_server_fd.exchange(-1);
+  if (fd >= 0) close(fd);
+}
+
+void RequestHttpServerShutdown()
+{
+  g_shutdown_requested = true;
+  const int fd = g_server_fd.exchange(-1);
+  if (fd >= 0) {
+    shutdown(fd, SHUT_RDWR);
+    close(fd);
   }
 }
