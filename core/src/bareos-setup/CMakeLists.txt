@@ -104,10 +104,64 @@ target_include_directories(
           "${CMAKE_CURRENT_SOURCE_DIR}/../lib"
 )
 
-target_link_libraries(
-  bareos-setup PRIVATE OpenSSL::SSL OpenSSL::Crypto Jansson::Jansson
-                       Threads::Threads CLI11::CLI11
+# ---------------------------------------------------------------------------
+# Portable single-binary build
+#
+# bareos-setup uses no NSS-dependent libc functions (no getpwnam, gethostbyname,
+# getaddrinfo, ...) and performs all actual HTTPS traffic by shelling out to the
+# system "curl" instead of using OpenSSL for TLS in-process. This makes it safe
+# to link it fully statically, producing a single binary with no runtime library
+# dependencies at all, capable of running unmodified on any supported distro
+# regardless of its glibc/ OpenSSL/Jansson version. This is intended to be built
+# inside the musl/ Alpine container in devtools/bareos-setup-static-build/ (see
+# devtools/build-bareos-setup-static.sh), not as part of normal distro
+# packaging, which should keep linking dynamically against the distro's own
+# libraries.
+option(
+  BAREOS_SETUP_STATIC
+  "Link bareos-setup fully statically for a portable, distro-independent single binary"
+  OFF
 )
+if(BAREOS_SETUP_STATIC)
+  # -static requires actual .a archives: the OpenSSL::SSL/OpenSSL::Crypto/
+  # Jansson::Jansson imported targets normally resolve to shared objects, so
+  # look up their static archives explicitly instead of linking those imported
+  # targets. A static executable also can't be position-independent (-pie), so
+  # PIE is turned off for this target too.
+  set(_bareos_setup_saved_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+  find_library(BAREOS_SETUP_STATIC_SSL_LIBRARY NAMES ssl)
+  find_library(BAREOS_SETUP_STATIC_CRYPTO_LIBRARY NAMES crypto)
+  find_library(BAREOS_SETUP_STATIC_JANSSON_LIBRARY NAMES jansson)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${_bareos_setup_saved_lib_suffixes})
+  if(NOT BAREOS_SETUP_STATIC_SSL_LIBRARY
+     OR NOT BAREOS_SETUP_STATIC_CRYPTO_LIBRARY
+     OR NOT BAREOS_SETUP_STATIC_JANSSON_LIBRARY
+  )
+    message(
+      FATAL_ERROR
+        "BAREOS_SETUP_STATIC requires static .a archives for OpenSSL and Jansson"
+    )
+  endif()
+  target_link_options(bareos-setup PRIVATE -static -no-pie)
+  set_target_properties(bareos-setup PROPERTIES POSITION_INDEPENDENT_CODE OFF)
+endif()
+
+if(BAREOS_SETUP_STATIC)
+  target_link_libraries(
+    bareos-setup
+    PRIVATE ${BAREOS_SETUP_STATIC_SSL_LIBRARY}
+            ${BAREOS_SETUP_STATIC_CRYPTO_LIBRARY}
+            ${BAREOS_SETUP_STATIC_JANSSON_LIBRARY}
+            Threads::Threads
+            CLI11::CLI11
+  )
+else()
+  target_link_libraries(
+    bareos-setup PRIVATE OpenSSL::SSL OpenSSL::Crypto Jansson::Jansson
+                         Threads::Threads CLI11::CLI11
+  )
+endif()
 
 install(
   TARGETS bareos-setup
