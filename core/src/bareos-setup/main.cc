@@ -22,7 +22,8 @@
  * @file
  * bareos-setup: single-binary installation wizard.
  *
- * Usage: bareos-setup [--port PORT] [--no-browser] [--tui] [--dry]
+ * Usage: bareos-setup [--port PORT] [--listen ADDRESS] [--no-browser]
+ *                     [--tui] [--dry]
  */
 #include <cctype>
 #include <cstdlib>
@@ -61,9 +62,11 @@ static std::string UrlEncode(const std::string& value)
   return encoded.str();
 }
 
-static void OpenBrowser(int port, const std::string& token)
+static void OpenBrowser(const std::string& display_host,
+                        int port,
+                        const std::string& token)
 {
-  std::string url = "http://localhost:" + std::to_string(port)
+  std::string url = "http://" + display_host + ":" + std::to_string(port)
                     + "/?token=" + UrlEncode(token);
   // Try common browser launchers in order
   for (const char* cmd : {"xdg-open", "open", "sensible-browser"}) {
@@ -84,6 +87,16 @@ int main(int argc, char* argv[])
   app.add_option("--port,-p", port, "TCP port to listen on")
       ->default_val(19101);
 
+  std::string listen_address = "127.0.0.1";
+  app.add_option("--listen,-l", listen_address,
+                 "IPv4 address to listen on. Defaults to 127.0.0.1 "
+                 "(loopback only, the secure default). Use 0.0.0.0 to "
+                 "listen on all interfaces, or a specific interface "
+                 "address, so the wizard can be reached from other "
+                 "hosts -- only do this on a trusted network, since "
+                 "the wizard executes privileged commands.")
+      ->default_val("127.0.0.1");
+
   bool no_browser = false;
   app.add_flag("--no-browser", no_browser,
                "Do not open the browser automatically");
@@ -101,6 +114,16 @@ int main(int argc, char* argv[])
   std::cout << "Bareos Setup Wizard " << BAREOS_FULL_VERSION;
   if (dry_run) std::cout << " [dry-run]";
   std::cout << "\n";
+
+  const bool listen_all_interfaces = (listen_address == "0.0.0.0");
+  if (!tui && listen_address != "127.0.0.1" && listen_address != "localhost") {
+    std::cerr << "Warning: listening on " << listen_address
+              << " instead of the "
+              << "default 127.0.0.1. The setup wizard executes privileged "
+                 "commands as root; only do this on a trusted network. The "
+                 "setup token in the URL remains the only access control.\n";
+  }
+  if (listen_address == "localhost") listen_address = "127.0.0.1";
 
   // Fail fast with a clear message if a required external tool (curl,
   // systemctl, the detected package manager, ...) is missing, instead
@@ -139,7 +162,17 @@ int main(int argc, char* argv[])
   if (tui) return RunTuiWizard(dry_run);
 
   const std::string setup_token = GenerateSetupSecret(32);
-  const std::string setup_url = "http://localhost:" + std::to_string(port)
+  // When listening on all interfaces, "0.0.0.0" itself is not a URL a
+  // browser can open -- use "localhost" for the displayed/opened URL,
+  // since the server also always accepts connections on loopback.
+  // Likewise, keep showing the familiar "localhost" for the default
+  // loopback-only setup, matching prior behavior.
+  const std::string display_host
+      = (listen_all_interfaces || listen_address == "127.0.0.1")
+          ? "localhost"
+          : listen_address;
+  const std::string setup_url = "http://" + display_host + ":"
+                                + std::to_string(port)
                                 + "/?token=" + UrlEncode(setup_token);
 
   if (no_browser) {
@@ -154,13 +187,13 @@ int main(int argc, char* argv[])
     if (child == 0) {
       // Child: wait briefly then open browser
       sleep(1);
-      OpenBrowser(port, setup_token);
+      OpenBrowser(display_host, port, setup_token);
       _exit(0);
     }
   }
 
   try {
-    RunHttpServer(port, setup_token,
+    RunHttpServer(listen_address, port, setup_token,
                   [dry_run](int fd) { RunSetupSession(fd, dry_run); });
   } catch (const std::exception& e) {
     std::cerr << "Fatal: " << e.what() << "\n";

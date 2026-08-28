@@ -330,3 +330,24 @@ TEST(BareosSetupStepsShared, BuildsPostgresInitCmdConsistentlyWithToolLookup)
     EXPECT_TRUE(init_cmd.empty());
   }
 }
+
+TEST(BareosSetupStepsShared, AcceptsSameOriginRequests)
+{
+  EXPECT_TRUE(IsValidSetupOrigin("http://127.0.0.1:19101", "127.0.0.1:19101"));
+  EXPECT_TRUE(IsValidSetupOrigin("http://localhost:19101", "localhost:19101"));
+  EXPECT_TRUE(IsValidSetupOrigin("http://[::1]:19101", "[::1]:19101"));
+  // An admin-chosen --listen address/port is accepted too, as long as
+  // Origin and Host agree.
+  EXPECT_TRUE(
+      IsValidSetupOrigin("http://192.168.1.5:19101", "192.168.1.5:19101"));
+}
+
+TEST(BareosSetupStepsShared, RejectsCrossOriginOrMissingHeaders)
+{
+  EXPECT_FALSE(
+      IsValidSetupOrigin("http://evil.example:19101", "127.0.0.1:19101"));
+  EXPECT_FALSE(IsValidSetupOrigin("http://127.0.0.1:19101", ""));
+  EXPECT_FALSE(IsValidSetupOrigin("", "127.0.0.1:19101"));
+  // Port mismatch between Origin and Host must be rejected too.
+  EXPECT_FALSE(IsValidSetupOrigin("http://127.0.0.1:19102", "127.0.0.1:19101"));
+}

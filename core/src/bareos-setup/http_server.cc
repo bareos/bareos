@@ -198,7 +198,8 @@ static void ServeStaticFile(int fd, const std::string& path)
 
 // ---- Main server loop -----------------------------------------------------
 
-void RunHttpServer(int port,
+void RunHttpServer(const std::string& bind_address,
+                   int port,
                    const std::string& setup_token,
                    WsHandler ws_handler)
 {
@@ -211,13 +212,17 @@ void RunHttpServer(int port,
   sockaddr_in addr{};
   addr.sin_family = AF_INET;
   addr.sin_port = htons(static_cast<uint16_t>(port));
-  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);  // localhost only
+  if (inet_pton(AF_INET, bind_address.c_str(), &addr.sin_addr) != 1) {
+    throw std::runtime_error("Invalid listen address: " + bind_address);
+  }
 
   if (bind(srv, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0)
-    throw std::runtime_error("bind() failed on port " + std::to_string(port));
+    throw std::runtime_error("bind() failed on " + bind_address + ":"
+                             + std::to_string(port));
   if (listen(srv, 16) < 0) throw std::runtime_error("listen() failed");
 
-  std::cout << "bareos-setup listening on http://localhost:" << port << "/\n"
+  std::cout << "bareos-setup listening on http://" << bind_address << ":"
+            << port << "/\n"
             << std::flush;
 
   while (true) {
@@ -225,7 +230,7 @@ void RunHttpServer(int port,
     if (fd < 0) continue;
 
     // Handle each connection in its own thread
-    std::thread([fd, port, setup_token, ws_handler]() {
+    std::thread([fd, setup_token, ws_handler]() {
       std::string headers = ReadHttpHeaders(fd);
       if (headers.empty()) {
         close(fd);
@@ -238,6 +243,7 @@ void RunHttpServer(int port,
 
       if (is_ws) {
         const std::string origin = GetHeader(headers, "Origin");
+        const std::string host_header = GetHeader(headers, "Host");
         const std::string path = GetRequestPath(headers);
         const auto path_end = path.find('?');
         const std::string request_path
@@ -257,7 +263,7 @@ void RunHttpServer(int port,
             break;
           }
         }
-        if (request_path != "/ws" || !IsValidSetupOrigin(origin, port)
+        if (request_path != "/ws" || !IsValidSetupOrigin(origin, host_header)
             || !token_valid) {
           const char response[]
               = "HTTP/1.1 403 Forbidden\r\nContent-Length: 10\r\n"
