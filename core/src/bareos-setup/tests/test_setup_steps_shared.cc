@@ -86,6 +86,18 @@ TEST(BareosSetupStepsShared, BuildsPackageListWithoutPostgresServer)
                 "bareos-webui-proxy", "apache2-mod_ssl"}));
 }
 
+TEST(BareosSetupStepsShared, BuildsCatalogInitScriptsOnlyWhenNeeded)
+{
+  EXPECT_TRUE(BuildCatalogInitScripts("apt").empty());
+  EXPECT_EQ(BuildCatalogInitScripts("dnf"),
+            (std::vector<std::string>{
+                "/usr/lib/bareos/scripts/create_bareos_database",
+                "/usr/lib/bareos/scripts/make_bareos_tables",
+                "/usr/lib/bareos/scripts/grant_bareos_privileges"}));
+  EXPECT_EQ(BuildCatalogInitScripts("yum"), BuildCatalogInitScripts("dnf"));
+  EXPECT_EQ(BuildCatalogInitScripts("zypper"), BuildCatalogInitScripts("dnf"));
+}
+
 TEST(BareosSetupStepsShared, SuggestsSingleChangerAssignments)
 {
   const std::vector<TapeChangerInfo> changers = {

@@ -209,6 +209,7 @@ int ConfigureStorage(WsCodec& ws, json_t* message)
 
 int InitializeCatalog(WsCodec& ws)
 {
+  const auto os = DetectOs();
   // Package scripts are idempotent, but do not run them when the catalog
   // marker is already present.  The marker is created only by this wizard.
   const std::filesystem::path marker = "/var/lib/bareos/.catalog-initialized";
@@ -220,13 +221,9 @@ int InitializeCatalog(WsCodec& ws)
     const auto init_cmd = BuildPostgresInitCmd();
     if (!init_cmd.empty() && Run(init_cmd, ws) != 0) return 1;
     if (Run({"systemctl", "enable", "--now", "postgresql"}, ws) != 0) return 1;
-    // These scripts must run as the "postgres" OS user (per the official
-    // Bareos installation documentation), since they rely on PostgreSQL
-    // peer authentication as that user, not as root.
-    for (const auto& script :
-         {"/usr/lib/bareos/scripts/create_bareos_database",
-          "/usr/lib/bareos/scripts/make_bareos_tables",
-          "/usr/lib/bareos/scripts/grant_bareos_privileges"}) {
+    // Non-Debian packages need the manual catalog scripts. Debian/Ubuntu
+    // packages run dbconfig-common during package configuration instead.
+    for (const auto& script : BuildCatalogInitScripts(os.pkg_mgr)) {
       if (Run(BuildRunAsPostgresCmd(script), ws) != 0) return 1;
     }
     const int marker_result = Run(
