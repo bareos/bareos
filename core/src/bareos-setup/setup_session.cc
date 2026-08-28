@@ -350,7 +350,7 @@ int RunSmokeTest(WsCodec& ws)
       != 0) {
     return 1;
   }
-  Output(ws, "Backup and restore smoke test prerequisites verified.");
+  Output(ws, "Required Bareos services are active.");
   return 0;
 }
 

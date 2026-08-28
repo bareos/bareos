@@ -151,11 +151,15 @@
       </q-card-section></q-card>
       <q-card v-else flat bordered><q-card-section>
         <q-icon name="check_circle" color="positive" size="3em" />
-        <p>Installation and backup/restore smoke test completed.</p>
+        <p>Installation and service verification completed.</p>
         <p v-if="store.admin"><q-icon name="vpn_key" color="warning" class="q-mr-xs" />Save this initial WebUI password now:
           <code>{{ store.admin.username }} / {{ store.admin.password }}</code>
           <q-btn flat dense icon="content_copy" label="Copy password" class="q-ml-sm"
             @click="copyAdminPassword" />
+          <br>
+          Copy the password and store it somewhere safe. If it is lost, you can
+          find it on this host in
+          <code>/etc/bareos/bareos-dir.d/console/admin.conf</code>.
         </p>
         <p><q-icon name="open_in_browser" color="primary" class="q-mr-xs" />Log in to the Bareos WebUI at:
           <a :href="webuiUrl" target="_blank" rel="noopener noreferrer">{{ webuiUrl }}</a>
@@ -206,7 +210,7 @@ const installSteps = [
   { id: 'repository', label: 'Configure repository' }, { id: 'packages', label: 'Install packages' },
   { id: 'storage', label: 'Apply optional disk storage path' },
   { id: 'catalog', label: 'Initialize catalog when needed' }, { id: 'admin', label: 'Create initial admin account' },
-  { id: 'proxy', label: 'Enable loopback WebUI proxy' }, { id: 'smoke_test', label: 'Verify services and backup/restore' }]
+  { id: 'proxy', label: 'Enable loopback WebUI proxy' }, { id: 'smoke_test', label: 'Verify required services' }]
 const stepLogs = reactive(Object.fromEntries(installSteps.map(item => [item.id, ''])))
 const expandedSteps = reactive(Object.fromEntries(installSteps.map(item => [item.id, false])))
 const installedComponents = [
