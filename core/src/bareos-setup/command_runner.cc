@@ -261,11 +261,7 @@ std::vector<std::string> MissingRequiredTools(const std::string& pkg_mgr)
   std::vector<std::string> required
       = {"curl", "bash", "install", "chown", "systemctl", "su"};
   if (!pkg_mgr.empty() && pkg_mgr != "unknown") required.push_back(pkg_mgr);
-  if (pkg_mgr == "apt") {
-    required.push_back("apt-get");
-    required.push_back("a2enmod");
-    required.push_back("a2ensite");
-  }
+  if (pkg_mgr == "apt") required.push_back("apt-get");
 
   std::vector<std::string> missing;
   for (const auto& tool : required) {
