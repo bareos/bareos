@@ -101,6 +101,33 @@ int RunTuiWizard(bool dry_run)
         != 0) {
       return 1;
     }
+    if (!Run({"chown", "root:bareos",
+              "/etc/bareos/bareos-dir.d/console/admin.conf"},
+             false)) {
+      return 1;
+    }
+    const std::string proxy_config
+        = "[listen]\n"
+          "address = 127.0.0.1\n"
+          "port = 9104\n"
+          "\n"
+          "[bareos-dir]\n"
+          "address = 127.0.0.1\n"
+          "port = 9101\n"
+          "director_name = bareos-dir\n"
+          "tls_psk_disable = no\n";
+    const std::string proxy_path
+        = "/etc/bareos-webui-proxy/bareos-webui-proxy.ini";
+    if (RunCommandWithInput(
+            {"install", "-D", "-m", "0640", "/dev/stdin", proxy_path},
+            proxy_config, true, [](const std::string&, const std::string&) {})
+        != 0) {
+      return 1;
+    }
+    // bareos-webui-proxy.service runs as User=bareos/Group=bareos (not
+    // root), so the config file must be group-readable by "bareos" or
+    // the service fails to start with "cannot load" on every restart.
+    if (!Run({"chown", "root:bareos", proxy_path}, false)) return 1;
   }
   if (!Run({"systemctl", "enable", "--now", "bareos-dir", "bareos-sd",
             "bareos-fd", "bareos-webui-proxy"},

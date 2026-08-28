@@ -564,6 +564,36 @@ TEST(BareosSetupSessionOrchestration,
   EXPECT_LT(grant_it - commands.begin(), enable_it - commands.begin());
 }
 
+TEST(BareosSetupSessionOrchestration,
+     ProxyStepChownsConfigSoTheBareosUserCanReadIt)
+{
+  // Regression test: bareos-webui-proxy.service runs as
+  // User=bareos/Group=bareos (not root). Without chowning the config
+  // file to "root:bareos" after writing it (which install -D leaves
+  // owned by root:root at mode 0640), the proxy process cannot read
+  // its own config and crash-loops with "cannot load
+  // '/etc/bareos-webui-proxy/bareos-webui-proxy.ini'" forever.
+  FakeToolPath fake_tools({"sudo", "install", "chown", "systemctl"});
+  ASSERT_EQ(RunStepDiscardingOutput("proxy"), 0);
+  const auto commands = fake_tools.LoggedCommands();
+  ASSERT_FALSE(commands.empty());
+  const auto chown_it
+      = std::find_if(commands.begin(), commands.end(), [](const auto& line) {
+          return line.find("chown root:bareos") != std::string::npos
+                 && line.find("bareos-webui-proxy.ini") != std::string::npos;
+        });
+  ASSERT_NE(chown_it, commands.end());
+  const auto enable_it
+      = std::find_if(commands.begin(), commands.end(), [](const auto& line) {
+          return line.find("systemctl enable --now bareos-webui-proxy")
+                 != std::string::npos;
+        });
+  ASSERT_NE(enable_it, commands.end());
+  // The chown must happen before the daemon is (re)started, otherwise a
+  // config-file read race could still hit the old ownership.
+  EXPECT_LT(chown_it - commands.begin(), enable_it - commands.begin());
+}
+
 TEST(BareosSetupSessionOrchestration, InstallPackagesRunsThePackageManager)
 {
   const auto os = DetectOs();
