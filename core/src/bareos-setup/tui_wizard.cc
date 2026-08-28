@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,9 +35,10 @@ bool Run(const std::vector<std::string>& command, bool dry_run)
     std::cout << "[preview] " << command.front() << " (approved command)\n";
     return true;
   }
-  return RunCommand(command, true, [](const std::string& line, const std::string&) {
-           std::cout << line << "\n";
-         })
+  return RunCommand(command, true,
+                    [](const std::string& line, const std::string&) {
+                      std::cout << line << "\n";
+                    })
          == 0;
 }
 
@@ -53,7 +54,8 @@ int RunTuiWizard(bool dry_run)
   }
   std::cout << "Detected " << os.pretty_name << " (" << os.pkg_mgr << ")\n";
 
-  const auto repository = Prompt("Repository (community/subscription)", "community");
+  const auto repository
+      = Prompt("Repository (community/subscription)", "subscription");
   if (repository != "community" && repository != "subscription") {
     std::cerr << "Choose community or subscription.\n";
     return 1;
@@ -67,32 +69,33 @@ int RunTuiWizard(bool dry_run)
   }
 
   std::cout << "Disk storage: /var/lib/bareos/storage\n";
-  std::cout << "Ports: WebUI 9100, Director 9101, FD 9102, SD 9103, proxy 9104\n";
+  std::cout
+      << "Ports: WebUI 9100, Director 9101, FD 9102, SD 9103, proxy 9104\n";
   if (!Run(BuildInstallCmd(os.pkg_mgr, BuildDefaultPackageList()), dry_run)) {
     std::cerr << "Package installation failed.\n";
     return 1;
   }
   if (!dry_run) {
-    for (const auto& script : {
-             std::vector<std::string>{
-                 "/usr/lib/bareos/scripts/create_bareos_database"},
-             std::vector<std::string>{
-                 "/usr/lib/bareos/scripts/make_bareos_tables"},
-             std::vector<std::string>{
-                 "/usr/lib/bareos/scripts/grant_bareos_privileges"}}) {
+    for (const auto& script :
+         {std::vector<std::string>{
+              "/usr/lib/bareos/scripts/create_bareos_database"},
+          std::vector<std::string>{
+              "/usr/lib/bareos/scripts/make_bareos_tables"},
+          std::vector<std::string>{
+              "/usr/lib/bareos/scripts/grant_bareos_privileges"}}) {
       if (!Run(script, false)) return 1;
     }
   }
 
   const std::string admin_password = GenerateSetupSecret();
   if (!dry_run) {
-    const std::string resource =
-        "Console {\n  Name = admin\n  Password = \"" + admin_password
-        + "\"\n  Profile = \"webui-admin\"\n  TLS Enable = yes\n}\n";
-    if (RunCommandWithInput(
-            {"install", "-D", "-m", "0640", "/dev/stdin",
-             "/etc/bareos/bareos-dir.d/console/admin.conf"},
-            resource, true, [](const std::string&, const std::string&) {})
+    const std::string resource
+        = "Console {\n  Name = admin\n  Password = \"" + admin_password
+          + "\"\n  Profile = \"webui-admin\"\n  TLS Enable = yes\n}\n";
+    if (RunCommandWithInput({"install", "-D", "-m", "0640", "/dev/stdin",
+                             "/etc/bareos/bareos-dir.d/console/admin.conf"},
+                            resource, true,
+                            [](const std::string&, const std::string&) {})
         != 0) {
       return 1;
     }

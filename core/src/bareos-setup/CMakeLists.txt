@@ -145,6 +145,16 @@ if(BAREOS_SETUP_STATIC)
   endif()
   target_link_options(bareos-setup PRIVATE -static -no-pie)
   set_target_properties(bareos-setup PROPERTIES POSITION_INDEPENDENT_CODE OFF)
+
+  # Strip debug info at link time and drop unused code/data (each
+  # function/variable in its own section, so the linker's --gc-sections can
+  # discard ones that are never referenced). Debug symbols alone account for
+  # roughly 3/4 of the unstripped binary's size, and this static build is meant
+  # to be a distributed, portable artifact rather than a debug build.
+  target_compile_options(
+    bareos-setup PRIVATE -ffunction-sections -fdata-sections
+  )
+  target_link_options(bareos-setup PRIVATE -s -Wl,--gc-sections)
 endif()
 
 if(BAREOS_SETUP_STATIC)
