@@ -10,8 +10,13 @@
 */
 #include "tui_wizard.h"
 
+#include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <string>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <vector>
 
 #include "command_runner.h"
 #include "os_detector.h"
@@ -67,6 +72,42 @@ int RunTuiWizard(bool dry_run)
     password = Prompt("Subscription password");
     if (login.empty() || password.empty()) return 1;
   }
+
+  std::cout << "Checking connectivity to the Bareos download server...\n";
+  if (!Run(BuildNetworkCheckCmd(repository), dry_run)) return 1;
+
+  std::filesystem::path repository_script;
+  if (dry_run) {
+    repository_script = "/tmp/bareos-setup-repository.sh";
+  } else {
+    std::string pattern = (std::filesystem::temp_directory_path()
+                           / "bareos-setup-repository-XXXXXX")
+                              .string();
+    std::vector<char> name(pattern.begin(), pattern.end());
+    name.push_back('\0');
+    const int fd = ::mkstemp(name.data());
+    if (fd < 0) {
+      std::cerr << "Unable to create a private repository setup file.\n";
+      return 1;
+    }
+    ::close(fd);
+    ::chmod(name.data(), 0600);
+    repository_script = name.data();
+  }
+
+  auto add_repo_cmd
+      = BuildAddRepoCmd(os.distro, os.version, repository, login, password);
+  add_repo_cmd.insert(add_repo_cmd.end() - 1,
+                      {"--output", repository_script.string()});
+  if (!Run(add_repo_cmd, dry_run)) {
+    if (!dry_run) std::filesystem::remove(repository_script);
+    return 1;
+  }
+  if (!Run({"bash", repository_script.string()}, dry_run)) {
+    if (!dry_run) std::filesystem::remove(repository_script);
+    return 1;
+  }
+  if (!dry_run) std::filesystem::remove(repository_script);
 
   std::cout << "Disk storage: /var/lib/bareos/storage\n";
   if (!Run(BuildInstallCmd(os.pkg_mgr, BuildDefaultPackageList(os.pkg_mgr)),
@@ -133,6 +174,10 @@ int RunTuiWizard(bool dry_run)
             "bareos-fd", "bareos-webui-proxy"},
            dry_run)) {
     return 1;
+  }
+  for (const auto& service :
+       {"bareos-dir", "bareos-sd", "bareos-fd", "bareos-webui-proxy"}) {
+    if (!Run({"systemctl", "is-active", service}, dry_run)) return 1;
   }
   std::cout << "\nSetup complete. WebUI username: admin\n"
             << "Initial WebUI password: " << admin_password << "\n";
