@@ -39,8 +39,8 @@
 
 static void OpenBrowser(int port, const std::string& token)
 {
-  std::string url = "http://localhost:" + std::to_string(port)
-                    + "/?token=" + token;
+  std::string url
+      = "http://localhost:" + std::to_string(port) + "/?token=" + token;
   // Try common browser launchers in order
   for (const char* cmd : {"xdg-open", "open", "sensible-browser"}) {
     if (execlp(cmd, cmd, url.c_str(), nullptr) == 0) return;
@@ -81,6 +81,12 @@ int main(int argc, char* argv[])
   if (tui) return RunTuiWizard(dry_run);
 
   const std::string setup_token = GenerateSetupSecret(32);
+  const std::string setup_url
+      = "http://localhost:" + std::to_string(port) + "/?token=" + setup_token;
+
+  if (no_browser) {
+    std::cout << "Open this URL in your browser: " << setup_url << "\n";
+  }
 
   // Fork before starting the server so the child opens the browser
   // after the parent has started listening.

@@ -97,6 +97,28 @@ static std::string GetRequestPath(const std::string& headers)
   return first.substr(s1 + 1, s2 - s1 - 1);
 }
 
+/** Decode percent-encoded octets (and '+' as space) in a URL query
+ * component, as produced by JavaScript's encodeURIComponent(). */
+static std::string UrlDecode(const std::string& value)
+{
+  std::string result;
+  result.reserve(value.size());
+  for (size_t i = 0; i < value.size(); ++i) {
+    if (value[i] == '%' && i + 2 < value.size()
+        && std::isxdigit(static_cast<unsigned char>(value[i + 1]))
+        && std::isxdigit(static_cast<unsigned char>(value[i + 2]))) {
+      std::string hex = value.substr(i + 1, 2);
+      result += static_cast<char>(std::stoi(hex, nullptr, 16));
+      i += 2;
+    } else if (value[i] == '+') {
+      result += ' ';
+    } else {
+      result += value[i];
+    }
+  }
+  return result;
+}
+
 // ---- WebSocket upgrade key computation ------------------------------------
 
 static constexpr const char kWsMagic[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -227,16 +249,19 @@ void RunHttpServer(int port,
         std::istringstream query_stream(query_string);
         std::string parameter;
         while (std::getline(query_stream, parameter, '&')) {
-          if (parameter == "token=" + setup_token) {
+          constexpr const char kTokenPrefix[] = "token=";
+          constexpr size_t kTokenPrefixLen = sizeof(kTokenPrefix) - 1;
+          if (parameter.compare(0, kTokenPrefixLen, kTokenPrefix) == 0
+              && UrlDecode(parameter.substr(kTokenPrefixLen)) == setup_token) {
             token_valid = true;
             break;
           }
         }
         if (request_path != "/ws" || !IsValidSetupOrigin(origin, port)
             || !token_valid) {
-          const char response[] =
-              "HTTP/1.1 403 Forbidden\r\nContent-Length: 10\r\n"
-              "Connection: close\r\n\r\nForbidden\n";
+          const char response[]
+              = "HTTP/1.1 403 Forbidden\r\nContent-Length: 10\r\n"
+                "Connection: close\r\n\r\nForbidden\n";
           WriteAll(fd, response, sizeof(response) - 1);
           close(fd);
           return;
