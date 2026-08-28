@@ -34,6 +34,7 @@
 #  include "cats/bvfs.h"
 #  include "lib/edit.h"
 
+#  include <string>
 #  include <unordered_set>
 
 #  define dbglevel 10
@@ -479,10 +480,12 @@ void Bvfs::GetAllFileVersions(const char* path,
                               const char* client)
 {
   DBId_t pathid = 0;
-  char path_esc[MAX_ESCAPE_NAME_LENGTH];
+  std::string path_esc;
+  size_t path_len = strlen(path);
 
-  db->EscapeString(jcr, path_esc, path, strlen(path));
-  pathid = db->GetPathRecord(jcr, path_esc);
+  path_esc.resize(path_len * 2 + 1);
+  db->EscapeString(jcr, path_esc.data(), path, path_len);
+  pathid = db->GetPathRecord(jcr, path_esc.c_str());
   GetAllFileVersions(pathid, fname, client);
 }
 
@@ -495,10 +498,12 @@ void Bvfs::GetAllFileVersions(DBId_t pathid,
                               const char* client)
 {
   char ed1[50];
-  char fname_esc[MAX_ESCAPE_NAME_LENGTH];
-  char client_esc[MAX_ESCAPE_NAME_LENGTH];
+  std::string fname_esc;
+  std::string client_esc;
   PoolMem query(PM_MESSAGE);
   PoolMem filter(PM_MESSAGE);
+  size_t fname_len = strlen(fname);
+  size_t client_len = strlen(client);
 
   Dmsg3(dbglevel, "GetAllFileVersions(%lld, %s, %s)\n", (uint64_t)pathid, fname,
         client);
@@ -509,12 +514,14 @@ void Bvfs::GetAllFileVersions(DBId_t pathid,
     Mmsg(filter, " AND Job.Type IN ('B', 'A', 'a') ");
   }
 
-  db->EscapeString(jcr, fname_esc, fname, strlen(fname));
-  db->EscapeString(jcr, client_esc, client, strlen(client));
+  fname_esc.resize(fname_len * 2 + 1);
+  client_esc.resize(client_len * 2 + 1);
+  db->EscapeString(jcr, fname_esc.data(), fname, fname_len);
+  db->EscapeString(jcr, client_esc.data(), client, client_len);
 
-  db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_versions_6, fname_esc,
-                edit_uint64(pathid, ed1), client_esc, filter.c_str(), limit,
-                offset);
+  db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_versions_6, fname_esc.c_str(),
+                edit_uint64(pathid, ed1), client_esc.c_str(), filter.c_str(),
+                limit, offset);
   db->SqlQuery(query.c_str(), list_entries, user_data);
 }
 
