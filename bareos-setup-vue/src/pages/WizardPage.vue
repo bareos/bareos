@@ -3,6 +3,9 @@
     <q-header class="bg-primary"><q-toolbar>
       <q-icon name="settings_suggest" size="28px" class="q-mr-sm" />
       <q-toolbar-title>Bareos single-host setup</q-toolbar-title>
+      <div v-if="store.state.setup_version" class="text-caption">
+        v{{ store.state.setup_version }}
+      </div>
     </q-toolbar></q-header>
     <q-page-container><q-page class="q-pa-lg wizard">
       <q-linear-progress :value="progress" class="q-mb-lg" />

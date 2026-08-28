@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -106,18 +106,20 @@ std::vector<std::string> SecretsFor(json_t* message)
   if (!login.empty()) secrets.push_back(login);
   if (!password.empty()) secrets.push_back(password);
   std::lock_guard lock(Progress().mutex);
-  if (!Progress().admin_password.empty()) secrets.push_back(Progress().admin_password);
+  if (!Progress().admin_password.empty())
+    secrets.push_back(Progress().admin_password);
   return secrets;
 }
 
 int Run(const std::vector<std::string>& command,
-         WsCodec& ws,
-         const std::vector<std::string>& secrets = {})
+        WsCodec& ws,
+        const std::vector<std::string>& secrets = {})
 {
-  return RunCommand(command, true, [&ws, &secrets](const std::string& line,
-                                                    const std::string&) {
-    Output(ws, line, secrets);
-  });
+  return RunCommand(
+      command, true,
+      [&ws, &secrets](const std::string& line, const std::string&) {
+        Output(ws, line, secrets);
+      });
 }
 
 int InstallRepository(WsCodec& ws, json_t* message)
@@ -139,7 +141,8 @@ int InstallRepository(WsCodec& ws, json_t* message)
     throw std::runtime_error("Subscription credentials are required.");
   }
 
-  auto command = BuildAddRepoCmd(os.distro, os.version, repo_type, login, password);
+  auto command
+      = BuildAddRepoCmd(os.distro, os.version, repo_type, login, password);
   const auto script = RuntimeFile("repository");
   command.insert(command.end() - 1, {"--output", script.string()});
   const auto secrets = SecretsFor(message);
@@ -187,13 +190,12 @@ int InitializeCatalog(WsCodec& ws)
     Output(ws, "The Bareos catalog is already initialized.");
     return 0;
   }
-  for (const auto& command : {
-           std::vector<std::string>{
-               "/usr/lib/bareos/scripts/create_bareos_database"},
-           std::vector<std::string>{
-               "/usr/lib/bareos/scripts/make_bareos_tables"},
-           std::vector<std::string>{
-               "/usr/lib/bareos/scripts/grant_bareos_privileges"}}) {
+  for (const auto& command :
+       {std::vector<std::string>{
+            "/usr/lib/bareos/scripts/create_bareos_database"},
+        std::vector<std::string>{"/usr/lib/bareos/scripts/make_bareos_tables"},
+        std::vector<std::string>{
+            "/usr/lib/bareos/scripts/grant_bareos_privileges"}}) {
     if (Run(command, ws) != 0) return 1;
   }
   const int marker_result
@@ -233,18 +235,17 @@ int CreateAdmin(WsCodec& ws)
 
 int ConfigureProxy(WsCodec& ws)
 {
-  const std::string config =
-      "[listen]\n"
-      "address = 127.0.0.1\n"
-      "port = 9104\n"
-      "\n"
-      "[bareos-dir]\n"
-      "address = 127.0.0.1\n"
-      "port = 9101\n"
-      "director_name = bareos-dir\n"
-      "tls_psk_disable = no\n";
-  const std::string path
-      = "/etc/bareos-webui-proxy/bareos-webui-proxy.ini";
+  const std::string config
+      = "[listen]\n"
+        "address = 127.0.0.1\n"
+        "port = 9104\n"
+        "\n"
+        "[bareos-dir]\n"
+        "address = 127.0.0.1\n"
+        "port = 9101\n"
+        "director_name = bareos-dir\n"
+        "tls_psk_disable = no\n";
+  const std::string path = "/etc/bareos-webui-proxy/bareos-webui-proxy.ini";
   if (RunCommandWithInput({"install", "-D", "-m", "0640", "/dev/stdin", path},
                           config, true,
                           [&ws](const std::string& line, const std::string&) {
@@ -261,15 +262,15 @@ int ConfigureProxy(WsCodec& ws)
 
 int RunSmokeTest(WsCodec& ws)
 {
-  for (const auto& command : {
-           std::vector<std::string>{"bareos-dir", "-t"},
-           std::vector<std::string>{"bareos-sd", "-t"},
-           std::vector<std::string>{"bareos-fd", "-t"},
-           std::vector<std::string>{"systemctl", "is-active", "bareos-dir"},
-           std::vector<std::string>{"systemctl", "is-active", "bareos-sd"},
-           std::vector<std::string>{"systemctl", "is-active", "bareos-fd"},
-           std::vector<std::string>{"systemctl", "is-active",
-                                    "bareos-webui-proxy"}}) {
+  for (const auto& command :
+       {std::vector<std::string>{"bareos-dir", "-t"},
+        std::vector<std::string>{"bareos-sd", "-t"},
+        std::vector<std::string>{"bareos-fd", "-t"},
+        std::vector<std::string>{"systemctl", "is-active", "bareos-dir"},
+        std::vector<std::string>{"systemctl", "is-active", "bareos-sd"},
+        std::vector<std::string>{"systemctl", "is-active", "bareos-fd"},
+        std::vector<std::string>{"systemctl", "is-active",
+                                 "bareos-webui-proxy"}}) {
     if (Run(command, ws) != 0) return 1;
   }
   Output(ws, "Backup and restore smoke test prerequisites verified.");
@@ -298,21 +299,24 @@ void Handle(WsCodec& ws, json_t* message)
     for (const auto& step : Progress().completed) {
       json_array_append_new(completed, json_string(step.c_str()));
     }
-    Send(ws, json_pack("{s:s,s:s,s:s,s:s,s:o,s:b}", "type", "state",
-                       "distro", os.distro.c_str(), "version",
-                       os.version.c_str(), "package_manager", os.pkg_mgr.c_str(),
-                       "completed", completed, "finished", Progress().finished));
+    Send(ws,
+         json_pack("{s:s,s:s,s:s,s:s,s:o,s:b,s:s}", "type", "state", "distro",
+                   os.distro.c_str(), "version", os.version.c_str(),
+                   "package_manager", os.pkg_mgr.c_str(), "completed",
+                   completed, "finished", Progress().finished, "setup_version",
+                   BAREOS_FULL_VERSION));
     return;
   }
   if (action == "script") {
-    const std::string script =
-        "#!/bin/sh\nset -eu\n"
-        "# Preview only: credentials and subscription details are omitted.\n"
-        "# Use bareos-setup to execute approved package-manager commands.\n"
-        "install -d /var/lib/bareos/storage\n"
-        "systemctl enable --now bareos-dir bareos-sd bareos-fd "
-        "bareos-webui-proxy\n";
-    Send(ws, json_pack("{s:s,s:s}", "type", "script", "content", script.c_str()));
+    const std::string script
+        = "#!/bin/sh\nset -eu\n"
+          "# Preview only: credentials and subscription details are omitted.\n"
+          "# Use bareos-setup to execute approved package-manager commands.\n"
+          "install -d /var/lib/bareos/storage\n"
+          "systemctl enable --now bareos-dir bareos-sd bareos-fd "
+          "bareos-webui-proxy\n";
+    Send(ws,
+         json_pack("{s:s,s:s}", "type", "script", "content", script.c_str()));
     return;
   }
   if (action == "rollback") {
@@ -333,8 +337,8 @@ void Handle(WsCodec& ws, json_t* message)
 
   const auto step = StringField(message, "step");
   static const std::set<std::string> allowed{
-      "repository", "packages", "storage", "catalog", "admin", "proxy",
-      "smoke_test"};
+      "repository", "packages", "storage",   "catalog",
+      "admin",      "proxy",    "smoke_test"};
   if (!allowed.contains(step)) {
     Error(ws, step, "Unknown setup step.");
     return;

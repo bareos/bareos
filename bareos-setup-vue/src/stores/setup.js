@@ -6,6 +6,7 @@ export const useSetupStore = defineStore('setup', () => {
     distro: '',
     version: '',
     package_manager: '',
+    setup_version: '',
     completed: [],
     finished: false,
     failed: ''
