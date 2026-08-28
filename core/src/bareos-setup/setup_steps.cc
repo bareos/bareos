@@ -514,6 +514,11 @@ std::vector<std::string> BuildDefaultPackageList(const std::string& pkg_mgr)
                                        "bareos-tools",
                                        "bareos-webui-new",
                                        "bareos-webui-proxy"};
+  if (pkg_mgr == "dnf" || pkg_mgr == "yum") {
+    packages.push_back("mod_ssl");
+  } else if (pkg_mgr == "zypper") {
+    packages.push_back("apache2-mod_ssl");
+  }
   // The Bareos catalog packages do not pull in a local PostgreSQL server
   // (Bareos also supports remote catalogs), so the wizard has to add it
   // explicitly for a single-host setup. Package names/splits differ by

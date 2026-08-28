@@ -41,7 +41,7 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageListForDnf)
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
                 "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy", "postgresql-server"}));
+                "bareos-webui-proxy", "mod_ssl", "postgresql-server"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsDefaultPackageListForApt)
@@ -52,6 +52,16 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageListForApt)
                 "bareos-storage-tape", "bareos-storage-dedupable",
                 "bareos-database-tools", "bareos-tools", "bareos-webui-new",
                 "bareos-webui-proxy", "postgresql"}));
+}
+
+TEST(BareosSetupStepsShared, BuildsDefaultPackageListForZypper)
+{
+  EXPECT_EQ(BuildDefaultPackageList("zypper"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-tape", "bareos-storage-dedupable",
+                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
+                "bareos-webui-proxy", "apache2-mod_ssl", "postgresql-server"}));
 }
 
 TEST(BareosSetupStepsShared, SuggestsSingleChangerAssignments)
