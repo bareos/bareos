@@ -624,7 +624,33 @@ std::vector<std::vector<std::string>> BuildWebServerHttpsSetupCmds(
   if (pkg_mgr == "apt") {
     return {{"a2enmod", "ssl"}, {"a2ensite", "default-ssl"}};
   }
-  if (pkg_mgr == "zypper") { return {{"a2enmod", "ssl"}, {"a2enflag", "SSL"}}; }
+  if (pkg_mgr == "zypper") {
+    return {{"a2enmod", "ssl"},
+            {"a2enflag", "SSL"},
+            {"sh", "-c",
+             "install -d -m 0755 /etc/apache2/ssl.crt && "
+             "install -d -m 0700 /etc/apache2/ssl.key && "
+             "test -s /etc/apache2/ssl.crt/bareos-setup.crt || "
+             "openssl req -x509 -nodes -newkey rsa:2048 -days 397 "
+             "-subj /CN=localhost "
+             "-keyout /etc/apache2/ssl.key/bareos-setup.key "
+             "-out /etc/apache2/ssl.crt/bareos-setup.crt && "
+             "chmod 0600 /etc/apache2/ssl.key/bareos-setup.key && "
+             "cat >/etc/apache2/vhosts.d/bareos-setup-ssl.conf <<'EOF'\n"
+             "<IfDefine SSL>\n"
+             "<IfDefine !NOSSL>\n"
+             "<VirtualHost _default_:443>\n"
+             "  DocumentRoot \"/srv/www/htdocs\"\n"
+             "  ErrorLog /var/log/apache2/error_log\n"
+             "  TransferLog /var/log/apache2/access_log\n"
+             "  SSLEngine on\n"
+             "  SSLCertificateFile /etc/apache2/ssl.crt/bareos-setup.crt\n"
+             "  SSLCertificateKeyFile /etc/apache2/ssl.key/bareos-setup.key\n"
+             "</VirtualHost>\n"
+             "</IfDefine>\n"
+             "</IfDefine>\n"
+             "EOF"}};
+  }
   return {};
 }
 
