@@ -643,6 +643,9 @@ std::vector<std::string> BuildBareosDaemonServiceNames(
 std::vector<std::string> BuildPackageCacheUpdateCmd(const std::string& pkg_mgr)
 {
   if (pkg_mgr == "apt") { return {"apt-get", "update"}; }
+  if (pkg_mgr == "zypper") {
+    return {"zypper", "--non-interactive", "--gpg-auto-import-keys", "refresh"};
+  }
   return {};
 }
 
@@ -666,7 +669,8 @@ std::vector<std::string> BuildInstallCmd(
     cmd.insert(cmd.end(), selected_packages.begin(), selected_packages.end());
     return cmd;
   } else if (pkg_mgr == "zypper") {
-    std::vector<std::string> cmd = {"zypper", "--non-interactive", "install"};
+    std::vector<std::string> cmd
+        = {"zypper", "--non-interactive", "--gpg-auto-import-keys", "install"};
     cmd.insert(cmd.end(), selected_packages.begin(), selected_packages.end());
     return cmd;
   }

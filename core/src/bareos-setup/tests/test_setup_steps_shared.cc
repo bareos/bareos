@@ -472,13 +472,23 @@ TEST(BareosSetupStepsShared, BuildsBareosDaemonServicesForPackageManager)
             BuildBareosDaemonServiceNames("dnf"));
 }
 
-TEST(BareosSetupStepsShared, BuildsPackageCacheUpdateForAptOnly)
+TEST(BareosSetupStepsShared, BuildsPackageCacheUpdateForAptAndZypper)
 {
   EXPECT_EQ(BuildPackageCacheUpdateCmd("apt"),
             (std::vector<std::string>{"apt-get", "update"}));
+  EXPECT_EQ(BuildPackageCacheUpdateCmd("zypper"),
+            (std::vector<std::string>{"zypper", "--non-interactive",
+                                      "--gpg-auto-import-keys", "refresh"}));
   EXPECT_TRUE(BuildPackageCacheUpdateCmd("dnf").empty());
   EXPECT_TRUE(BuildPackageCacheUpdateCmd("yum").empty());
-  EXPECT_TRUE(BuildPackageCacheUpdateCmd("zypper").empty());
+}
+
+TEST(BareosSetupStepsShared, BuildsZypperInstallWithAutoKeyImport)
+{
+  EXPECT_EQ(BuildInstallCmd("zypper", {"bareos-director"}),
+            (std::vector<std::string>{"zypper", "--non-interactive",
+                                      "--gpg-auto-import-keys", "install",
+                                      "bareos-director"}));
 }
 
 TEST(BareosSetupStepsShared, JoinsSimpleCommandForDisplayWithoutQuoting)
