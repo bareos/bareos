@@ -582,6 +582,60 @@ TEST(BareosSetupSessionOrchestration,
   EXPECT_LT(grant_it - commands.begin(), enable_it - commands.begin());
 }
 
+TEST(BareosSetupSessionOrchestration, AdminStepWritesWebuiTlsPskConsole)
+{
+  const std::string dir_path = (std::filesystem::temp_directory_path()
+                                / "bareos-setup-test-admin-conf-XXXXXX")
+                                   .string();
+  std::vector<char> buffer(dir_path.begin(), dir_path.end());
+  buffer.push_back('\0');
+  ASSERT_NE(mkdtemp(buffer.data()), nullptr);
+  const std::filesystem::path fake_dir = buffer.data();
+  const std::filesystem::path log_path = fake_dir / "log.txt";
+  const std::filesystem::path resource_path = fake_dir / "admin.conf";
+
+  const auto write_shim
+      = [&](const std::string& name, const std::string& body) {
+          const std::filesystem::path shim = fake_dir / name;
+          std::ofstream out(shim);
+          out << "#!/bin/sh\n" << body;
+          out.close();
+          std::filesystem::permissions(
+              shim, std::filesystem::perms::owner_all
+                        | std::filesystem::perms::group_read
+                        | std::filesystem::perms::group_exec
+                        | std::filesystem::perms::others_read
+                        | std::filesystem::perms::others_exec);
+        };
+  write_shim("sudo", "exec \"$@\"\n");
+  write_shim("install",
+             "echo \"install $*\" >> '" + log_path.string() + "'\n"
+             "cat > '" + resource_path.string() + "'\n"
+             "exit 0\n");
+  write_shim("chown",
+             "echo \"chown $*\" >> '" + log_path.string() + "'\nexit 0\n");
+  write_shim("systemctl",
+             "echo \"systemctl $*\" >> '" + log_path.string() + "'\nexit 0\n");
+
+  const char* current_path = getenv("PATH");
+  const std::string old_path = current_path != nullptr ? current_path : "";
+  setenv("PATH", (fake_dir.string() + ":" + old_path).c_str(), 1);
+
+  const int result = RunStepDiscardingOutput("admin");
+
+  setenv("PATH", old_path.c_str(), 1);
+  std::ifstream resource(resource_path);
+  const std::string content((std::istreambuf_iterator<char>(resource)),
+                            std::istreambuf_iterator<char>());
+  std::error_code ec;
+  std::filesystem::remove_all(fake_dir, ec);
+
+  ASSERT_EQ(result, 0);
+  EXPECT_NE(content.find("Profile = \"webui-admin\""), std::string::npos);
+  EXPECT_NE(content.find("TLS Enable = No"), std::string::npos);
+  EXPECT_EQ(content.find("TLS Enable = yes"), std::string::npos);
+}
+
 TEST(BareosSetupSessionOrchestration,
      ProxyStepChownsConfigSoTheBareosUserCanReadIt)
 {
