@@ -31,7 +31,8 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageList)
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
-                "bareos-database-tools", "bareos-tools", "bareos-webui-vue"}));
+                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
+                "bareos-webui-proxy"}));
 }
 
 TEST(BareosSetupStepsShared, SuggestsSingleChangerAssignments)
