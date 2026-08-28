@@ -181,6 +181,13 @@ std::vector<std::string> BuildPackageListWithoutPostgresServer(
     const std::string& pkg_mgr);
 
 /**
+ * Return the Bareos catalog scripts that must be run manually. Debian/Ubuntu
+ * packages initialize the catalog through dbconfig-common during package
+ * configuration, so apt does not need the manual scripts.
+ */
+std::vector<std::string> BuildCatalogInitScripts(const std::string& pkg_mgr);
+
+/**
  * Build the command needed to initialize a fresh PostgreSQL data directory,
  * if the package manager's PostgreSQL package requires one (e.g. Red
  * Hat/SUSE family "postgresql-setup --initdb"). Returns an empty vector when

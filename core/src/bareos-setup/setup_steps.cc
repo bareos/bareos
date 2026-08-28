@@ -548,6 +548,14 @@ std::vector<std::string> BuildPackageListWithoutPostgresServer(
   return packages;
 }
 
+std::vector<std::string> BuildCatalogInitScripts(const std::string& pkg_mgr)
+{
+  if (pkg_mgr == "apt") return {};
+  return {"/usr/lib/bareos/scripts/create_bareos_database",
+          "/usr/lib/bareos/scripts/make_bareos_tables",
+          "/usr/lib/bareos/scripts/grant_bareos_privileges"};
+}
+
 std::vector<std::string> BuildPostgresInitCmd()
 {
   if (IsToolInPath("postgresql-setup")) {
