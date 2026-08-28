@@ -21,9 +21,11 @@
 #include "command_runner.h"
 
 #include <array>
+#include <chrono>
 #include <cstring>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <vector>
 #include <utility>
 
@@ -31,6 +33,53 @@
 #include <poll.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+bool IsRoot() { return geteuid() == 0; }
+
+bool PrimeSudoTicket()
+{
+  if (IsRoot()) return true;
+  // Run "sudo -v" with the controlling terminal inherited (unlike the
+  // /dev/null-redirected commands below), so the user can be prompted for
+  // their password interactively exactly once. A successful run caches a
+  // sudo timestamp ticket that later non-interactive "sudo" calls reuse.
+  const pid_t pid = fork();
+  if (pid < 0) return false;
+  if (pid == 0) {
+    execlp("sudo", "sudo", "-v", nullptr);
+    const char* msg = strerror(errno);
+    [[maybe_unused]] auto _ = write(STDERR_FILENO, msg, strlen(msg));
+    _exit(127);
+  }
+  int status = 0;
+  waitpid(pid, &status, 0);
+  return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+}
+
+void StartSudoKeepAlive()
+{
+  if (IsRoot()) return;
+  std::thread([] {
+    for (;;) {
+      std::this_thread::sleep_for(std::chrono::seconds(60));
+      const pid_t pid = fork();
+      if (pid < 0) continue;
+      if (pid == 0) {
+        const int devnull = open("/dev/null", O_RDWR);
+        if (devnull >= 0) {
+          dup2(devnull, STDIN_FILENO);
+          dup2(devnull, STDOUT_FILENO);
+          dup2(devnull, STDERR_FILENO);
+          close(devnull);
+        }
+        execlp("sudo", "sudo", "-v", nullptr);
+        _exit(127);
+      }
+      int status = 0;
+      waitpid(pid, &status, 0);
+    }
+  }).detach();
+}
 
 // Drain available bytes from fd into line buffer, calling cb on complete lines.
 static void DrainFd(int fd,
@@ -58,9 +107,11 @@ static int RunCommandImpl(const std::vector<std::string>& argv,
                           bool use_sudo,
                           OutputCallback cb)
 {
-  // Build final argv with optional sudo prefix
+  // Build final argv with optional sudo prefix. Already running as root
+  // makes sudo pointless (and would add an avoidable dependency on the
+  // sudo binary being installed), so it is skipped in that case.
   std::vector<std::string> full_argv;
-  if (use_sudo) full_argv.push_back("sudo");
+  if (use_sudo && !IsRoot()) full_argv.push_back("sudo");
   full_argv.insert(full_argv.end(), argv.begin(), argv.end());
 
   // Build C-style argv
@@ -114,8 +165,8 @@ static int RunCommandImpl(const std::vector<std::string>& argv,
     close(pipe_in[0]);
     size_t written = 0;
     while (written < input->size()) {
-      const ssize_t n = write(pipe_in[1], input->data() + written,
-                              input->size() - written);
+      const ssize_t n
+          = write(pipe_in[1], input->data() + written, input->size() - written);
       if (n <= 0) break;
       written += static_cast<size_t>(n);
     }
