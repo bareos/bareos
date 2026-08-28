@@ -1133,6 +1133,31 @@ std::string RedactSetupSecrets(std::string value,
   return value;
 }
 
+std::string JoinCommandForDisplay(const std::vector<std::string>& argv)
+{
+  constexpr std::string_view needs_quoting = " \t\n\"'\\$`|&;<>()[]{}*?~!#";
+  std::string result;
+  for (const auto& arg : argv) {
+    if (!result.empty()) result += ' ';
+    const bool must_quote
+        = arg.empty() || arg.find_first_of(needs_quoting) != std::string::npos;
+    if (!must_quote) {
+      result += arg;
+      continue;
+    }
+    result += '\'';
+    for (const char c : arg) {
+      // Close the quote, emit an escaped literal quote, then reopen it.
+      if (c == '\'')
+        result += "'\\''";
+      else
+        result += c;
+    }
+    result += '\'';
+  }
+  return result;
+}
+
 bool IsValidSetupOrigin(const std::string& origin, const std::string& host)
 {
   // Same-origin check: the browser's Origin header must match the Host

@@ -26,6 +26,8 @@
 #ifndef BAREOS_BAREOS_SETUP_SETUP_SESSION_H_
 #define BAREOS_BAREOS_SETUP_SETUP_SESSION_H_
 
+#include <string>
+
 /**
  * Handle one WebSocket connection (fd is already upgraded).
  * Reads JSON messages from the browser, executes actions, and sends
@@ -35,5 +37,18 @@
  * instead of being executed; exit_code is always reported as 0.
  */
 void RunSetupSession(int fd, bool dry_run = false);
+
+/**
+ * Test-only entry point: execute a single setup step (as identified by
+ * RunStep() internally) against an already-connected WebSocket fd,
+ * without going through the full session/action-dispatch loop. Exists
+ * so unit tests can exercise the real step-orchestration logic (which
+ * commands get run, and in what order) instead of only the pure
+ * command-builder helpers in setup_steps.h. json_message must be a
+ * valid JSON object string (e.g. "{}" if the step needs no fields).
+ */
+int RunSetupStepForTests(int fd,
+                         const std::string& step,
+                         const std::string& json_message);
 
 #endif  // BAREOS_BAREOS_SETUP_SETUP_SESSION_H_
