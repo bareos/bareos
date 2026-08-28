@@ -436,6 +436,19 @@ TEST(BareosSetupStepsShared, BuildsWebServerServiceNameForPackageManager)
   EXPECT_EQ(BuildWebServerServiceName("zypper"), "httpd");
 }
 
+TEST(BareosSetupStepsShared, BuildsBareosDaemonServicesForPackageManager)
+{
+  EXPECT_EQ(BuildBareosDaemonServiceNames("apt"),
+            (std::vector<std::string>{"bareos-director", "bareos-storage",
+                                      "bareos-filedaemon"}));
+  EXPECT_EQ(BuildBareosDaemonServiceNames("dnf"),
+            (std::vector<std::string>{"bareos-dir", "bareos-sd", "bareos-fd"}));
+  EXPECT_EQ(BuildBareosDaemonServiceNames("yum"),
+            BuildBareosDaemonServiceNames("dnf"));
+  EXPECT_EQ(BuildBareosDaemonServiceNames("zypper"),
+            BuildBareosDaemonServiceNames("dnf"));
+}
+
 TEST(BareosSetupStepsShared, BuildsPackageCacheUpdateForAptOnly)
 {
   EXPECT_EQ(BuildPackageCacheUpdateCmd("apt"),

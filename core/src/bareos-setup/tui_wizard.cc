@@ -180,18 +180,21 @@ int RunTuiWizard(bool dry_run)
     // the service fails to start with "cannot load" on every restart.
     if (!Run({"chown", "root:bareos", proxy_path}, false)) return 1;
   }
-  if (!Run({"systemctl", "enable", "--now", "bareos-dir", "bareos-sd",
-            "bareos-fd", "bareos-webui-proxy"},
-           dry_run)) {
-    return 1;
-  }
+  auto enable_services
+      = std::vector<std::string>{"systemctl", "enable", "--now"};
+  const auto daemon_services = BuildBareosDaemonServiceNames(os.pkg_mgr);
+  enable_services.insert(enable_services.end(), daemon_services.begin(),
+                         daemon_services.end());
+  enable_services.emplace_back("bareos-webui-proxy");
+  if (!Run(enable_services, dry_run)) { return 1; }
   if (!Run({"systemctl", "enable", "--now",
             BuildWebServerServiceName(os.pkg_mgr)},
            dry_run)) {
     return 1;
   }
-  for (const auto& service :
-       {"bareos-dir", "bareos-sd", "bareos-fd", "bareos-webui-proxy"}) {
+  auto services = BuildBareosDaemonServiceNames(os.pkg_mgr);
+  services.emplace_back("bareos-webui-proxy");
+  for (const auto& service : services) {
     if (!Run({"systemctl", "is-active", service}, dry_run)) return 1;
   }
   if (!Run({"systemctl", "is-active", BuildWebServerServiceName(os.pkg_mgr)},

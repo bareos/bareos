@@ -235,6 +235,10 @@ std::vector<std::string> BuildNetworkCheckCmd(const std::string& repo_type);
 /** Return the web server service name used by the distribution packages. */
 std::string BuildWebServerServiceName(const std::string& pkg_mgr);
 
+/** Return canonical Bareos daemon unit names for enable/start/status checks. */
+std::vector<std::string> BuildBareosDaemonServiceNames(
+    const std::string& pkg_mgr);
+
 /**
  * Build the command to refresh package metadata after adding the Bareos
  * repository. Debian/Ubuntu need this before packages from the new repo are
