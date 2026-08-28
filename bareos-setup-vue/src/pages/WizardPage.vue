@@ -31,7 +31,10 @@
       </q-card-section></q-card>
       <q-card v-else-if="step === 'platform'" flat bordered><q-card-section>
         <div v-if="store.state.distro" class="row items-center">
-          <q-icon name="computer" color="primary" size="1.5em" class="q-mr-sm" />
+          <q-icon v-if="distroIcon" size="1.75em" class="q-mr-sm" :style="{ color: '#' + distroIcon.hex }">
+            <svg viewBox="0 0 24 24"><path :d="distroIcon.path" fill="currentColor" /></svg>
+          </q-icon>
+          <q-icon v-else :name="FALLBACK_ICON" color="primary" size="1.5em" class="q-mr-sm" />
           <span>{{ store.state.distro }} {{ store.state.version }} · {{ store.state.package_manager }}</span>
         </div>
         <q-spinner v-else-if="!error" size="2em" />
@@ -91,6 +94,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useSetupStore } from '../stores/setup.js'
 import { useSetupWs } from '../composables/useSetupWs.js'
+import { getDistroIcon, FALLBACK_ICON } from '../utils/distro-icons.js'
 
 const store = useSetupStore()
 const { connected, messages, send } = useSetupWs()
@@ -99,6 +103,7 @@ const busy = ref(false)
 const error = ref('')
 const output = ref('')
 const failed = ref(false)
+const distroIcon = computed(() => getDistroIcon(store.state.distro))
 const repoOptions = [{ label: 'Bareos Community', value: 'community' },
   { label: 'Bareos Subscription', value: 'subscription' }]
 const installSteps = [
