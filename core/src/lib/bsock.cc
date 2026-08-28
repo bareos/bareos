@@ -33,6 +33,7 @@
 #include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/cram_md5.h"
+#include "lib/global_resource.h"
 #include "lib/hello_parser.h"
 #include "lib/s_password.h"
 #include "lib/tls.h"
@@ -43,6 +44,7 @@
 #include "lib/parse_conf.h"
 #include "lib/version.h"
 #include "lib/tls_psk_credentials.h"
+#include "lib/hello.h"
 
 #include <algorithm>
 #include <thread>
@@ -737,24 +739,24 @@ bool cram_md5_handshake(JobControlRecord* jcr,
   return auth_success;
 }
 
-Md5Authenticator::Md5Authenticator(std::string name, const TlsResource* res)
-    : my_name{std::move(name)}, target{res}
+Md5Authenticator::Md5Authenticator(std::string name)
+    : cram_identity{std::move(name)}
 {
-  BashSpaces(my_name.data());
+  BashSpaces(cram_identity.data());
 }
 
 bool Md5Authenticator::authenticate_outbound(OutboundArgs args)
 {
-  TlsPolicy local_policy = target->GetPolicy();
+  TlsPolicy local_policy = args.target->GetPolicy();
   if (!args.cleartext) { local_policy = kBnetTlsAuto; }
-  return cram_md5_handshake(args.jcr, args.socket, my_name.c_str(),
-                            target->password_.value, local_policy, false,
+  return cram_md5_handshake(args.jcr, args.socket, cram_identity.c_str(),
+                            args.target->password_.value, local_policy, false,
                             &remote_policy);
 }
 
 bool Md5Authenticator::authenticate_inbound(InboundArgs args)
 {
-  return !cram_md5_handshake(nullptr, args.socket, my_name.c_str(),
+  return !cram_md5_handshake(nullptr, args.socket, cram_identity.c_str(),
                              args.target->password_.value,
                              args.target->GetPolicy(), true, &remote_policy);
 }
@@ -818,6 +820,7 @@ bool BareosConnect(JobControlRecord* jcr,
           .jcr = jcr,
           .socket = socket,
           .cleartext = !have_tls,
+          .target = res,
       })) {
     Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());
     return false;
@@ -1020,7 +1023,7 @@ bool BareosConnect(JobControlRecord* jcr,
                    std::string_view hello_msg,
                    bool cleartext_authentication)
 {
-  Md5Authenticator auth{qualified_name, res};
+  Md5Authenticator auth{qualified_name};
   return BareosConnect(jcr, socket, qualified_name, res, hello_msg, &auth,
                        cleartext_authentication);
 }
@@ -1031,7 +1034,7 @@ bool BareosAccept(BareosSocket* socket,
                   TlsSecretProvider* provider,
                   ClientHelloParser* hello_parser)
 {
-  Md5Authenticator auth{qualified_name, nullptr};
+  Md5Authenticator auth{qualified_name};
   return BareosAccept(socket, initial_tls, provider, hello_parser, &auth);
 }
 
@@ -1059,34 +1062,33 @@ struct fmt::formatter<bashed_printer> : fmt::formatter<std::string_view> {
 
 using global_resource::Type;
 
-template <>
-std::string make_hello<Type::Director, Type::Storage>(std::string_view str)
+std::string hello_formatter<Type::Director, Type::Storage>::format(
+    std::string_view name)
 {
   auto& version = kBareosVersion;
   return fmt::format("Hello Director {} calling Version=\"{}.{}.{}\"\n",
-                     bashed_printer{str}, version.Major, version.Minor,
+                     bashed_printer{name}, version.Major, version.Minor,
                      version.Patch);
 }
-
-template <>
-std::string make_hello<Type::Director, Type::Client>(std::string_view str)
+std::string hello_formatter<Type::Director, Type::Client>::format(
+    std::string_view name)
 {
   auto& version = kBareosVersion;
   return fmt::format("Hello Director {} calling Version=\"{}.{}.{}\"\n",
-                     bashed_printer{str}, version.Major, version.Minor,
+                     bashed_printer{name}, version.Major, version.Minor,
                      version.Patch);
 }
 
-template <>
-std::string make_hello<Type::Storage, Type::Storage>(std::string_view name)
+std::string hello_formatter<Type::Storage, Type::Storage>::format(
+    std::string_view name)
 {
   auto& version = kBareosVersion;
   return fmt::format("Hello Start Storage Job {} Version=\"{}.{}.{}\"\n",
                      bashed_printer{name}, version.Major, version.Minor,
                      version.Patch);
 }
-template <>
-std::string make_hello<Type::Storage, Type::Client>(std::string_view name)
+std::string hello_formatter<Type::Storage, Type::Client>::format(
+    std::string_view name)
 {
   auto& version = kBareosVersion;
   return fmt::format(
@@ -1094,16 +1096,16 @@ std::string make_hello<Type::Storage, Type::Client>(std::string_view name)
       bashed_printer{name}, version.Major, version.Minor, version.Patch);
 }
 
-template <>
-std::string make_hello<Type::Client, Type::Storage>(std::string_view name)
+std::string hello_formatter<Type::Client, Type::Storage>::format(
+    std::string_view name)
 {
   auto& version = kBareosVersion;
   return fmt::format("Hello Start Job {} Version=\"{}.{}.{}\"\n",
                      bashed_printer{name}, version.Major, version.Minor,
                      version.Patch);
 }
-template <>
-std::string make_hello<Type::Client, Type::Director>(std::string_view name)
+std::string hello_formatter<Type::Client, Type::Director>::format(
+    std::string_view name)
 {
   auto& version = kBareosVersion;
   return fmt::format(
@@ -1111,8 +1113,8 @@ std::string make_hello<Type::Client, Type::Director>(std::string_view name)
       bashed_printer{name}, version.Major, version.Minor, version.Patch);
 }
 
-template <>
-std::string make_hello<Type::Console, Type::Director>(std::string_view name)
+std::string hello_formatter<Type::Console, Type::Director>::format(
+    std::string_view name)
 {
   auto& version = kBareosVersion;
   return fmt::format("Hello {} calling version {} Version=\"{}.{}.{}\"\n",

@@ -61,14 +61,9 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
     local_tls_resource = director_resource;
   }
 
-  std::string qualified_resource_name
-      = global_resource::QualifiedName(global_resource::Type::Console, name);
-
-  auto hello_msg = make_hello<global_resource::Type::Console,
-                              global_resource::Type::Director>(name);
-
-  if (!BareosConnect(&jcr, UA_sock, qualified_resource_name, local_tls_resource,
-                     hello_msg.c_str())) {
+  if (!BareosConnect<global_resource::Type::Console,
+                     global_resource::Type::Director>(&jcr, UA_sock, name,
+                                                      local_tls_resource)) {
     delete UA_sock;
     UA_sock = nullptr;
     jcr.dir_bsock = nullptr;

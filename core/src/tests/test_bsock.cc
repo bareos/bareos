@@ -24,6 +24,7 @@
 #include "bsock_test.h"
 #include "create_resource.h"
 #include "lib/s_password.h"
+#include "lib/global_resource.h"
 #include "tests/bareos_test_sockets.h"
 #include "tests/init_openssl.h"
 #include <filesystem>
@@ -592,22 +593,12 @@ static bool connect_to_server(std::string console_name,
     uint32_t response_id = kMessageIdUnknown;
     BStringList response_args;
 
-    std::string qualified_resource_name = global_resource::QualifiedName(
-        global_resource::Type::Console, console_name);
-
-    std::string cpy{console_name};
-    BashSpaces(cpy.data());
-    PoolMem hello_msg;
-    hello_msg.bsprintf("Hello %s calling version %s Version=\"%u.%u.%u\"\n",
-                       cpy.c_str(), kBareosVersionStrings.Full,
-                       kBareosVersion.Major, kBareosVersion.Minor,
-                       kBareosVersion.Patch);
-
     TlsResource custom = *cons_dir_config;
     custom.password_.value = console_password.data();
 
-    if (!BareosConnect(&jcr, UA_sock.get(), std::move(qualified_resource_name),
-                       &custom, hello_msg.c_str(), cleartext_auth)) {
+    if (!BareosConnect<global_resource::Type::Console,
+                       global_resource::Type::Director>(
+            &jcr, UA_sock.get(), console_name, &custom, cleartext_auth)) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
       return false;
     }

@@ -96,11 +96,8 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
     } break;
   }
 
-  auto hello_msg
-      = make_hello<Type::Director, Type::Client>(myself->resource_name_);
-
-  if (!BareosConnect(jcr, fd, qualified_resource_name, client,
-                     hello_msg.c_str(), old_style_tls)) {
+  if (!BareosConnect<Type::Director, Type::Client>(
+          jcr, fd, myself->resource_name_, client, old_style_tls)) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Error connecting to File daemon at \"%s:%d\". ERR=%s\n"),
          fd->host(), fd->port(), fd->bstrerror());

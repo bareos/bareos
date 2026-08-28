@@ -50,6 +50,7 @@
 #include "lib/tls_conf.h"
 #include "include/version_numbers.h"
 #include "lib/global_resource.h"
+#include "lib/hello.h"
 
 #include <mutex>
 #include <functional>
@@ -267,6 +268,7 @@ struct Authenticator {
     JobControlRecord* jcr;
     BareosSocket* socket;
     bool cleartext;
+    const TlsResource* target;
   };
 
   struct InboundArgs {
@@ -283,12 +285,11 @@ struct Authenticator {
 };
 
 struct Md5Authenticator : Authenticator {
-  Md5Authenticator(std::string name, const TlsResource* target);
+  Md5Authenticator(std::string name);
   bool authenticate_outbound(OutboundArgs args) override;
   bool authenticate_inbound(InboundArgs args) override;
 
-  std::string my_name;
-  const TlsResource* target;
+  std::string cram_identity;
 };
 
 bool BareosConnect(JobControlRecord* jcr,
@@ -299,12 +300,21 @@ bool BareosConnect(JobControlRecord* jcr,
                    Authenticator* auth,
                    bool cleartext_authentication = false);
 
+template <global_resource::Type type, global_resource::Type target_type>
 bool BareosConnect(JobControlRecord* jcr,
                    BareosSocket* socket,
-                   const std::string& qualified_name,
+                   std::string_view name,
                    const TlsResource* res,
-                   std::string_view hello_msg,
-                   bool cleartext_authentication = false);
+                   bool cleartext_authentication = false)
+{
+  using formatter = hello_formatter<type, target_type>;
+  auto qualified_name
+      = global_resource::QualifiedName(formatter::auth_type, name);
+  auto hello = formatter::format(name);
+  Md5Authenticator auth{std::string{name}};
+  return BareosConnect(jcr, socket, qualified_name, res, hello, &auth,
+                       cleartext_authentication);
+}
 
 bool BareosAccept(BareosSocket* socket,
                   const std::string& qualified_name,
