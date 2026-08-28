@@ -538,6 +538,11 @@ std::vector<std::string> BuildPostgresInitCmd()
   return {};
 }
 
+std::vector<std::string> BuildRunAsPostgresCmd(const std::string& script)
+{
+  return {"su", "postgres", "-c", script};
+}
+
 std::string BuildRepoOsPath(const std::string& distro,
                             const std::string& version)
 {

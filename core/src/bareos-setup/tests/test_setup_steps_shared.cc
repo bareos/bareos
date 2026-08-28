@@ -320,6 +320,15 @@ TEST(BareosSetupCommandRunner, ReportsMissingPackageManager)
             missing.end());
 }
 
+TEST(BareosSetupCommandRunner, RequiresSuForRunningCatalogScriptsAsPostgres)
+{
+  // "su" is required so the catalog scripts (which must run as the
+  // "postgres" OS user) can be started at all; verify it is part of the
+  // fixed required-tools set regardless of the detected package manager.
+  ASSERT_TRUE(IsToolInPath("su"));
+  EXPECT_TRUE(MissingRequiredTools("sh").empty());
+}
+
 TEST(BareosSetupStepsShared, BuildsPostgresInitCmdConsistentlyWithToolLookup)
 {
   const auto init_cmd = BuildPostgresInitCmd();
@@ -329,6 +338,24 @@ TEST(BareosSetupStepsShared, BuildsPostgresInitCmdConsistentlyWithToolLookup)
   } else {
     EXPECT_TRUE(init_cmd.empty());
   }
+}
+
+TEST(BareosSetupStepsShared, BuildsRunAsPostgresCmd)
+{
+  EXPECT_EQ(
+      BuildRunAsPostgresCmd("/usr/lib/bareos/scripts/create_bareos_database"),
+      (std::vector<std::string>{
+          "su", "postgres", "-c",
+          "/usr/lib/bareos/scripts/create_bareos_database"}));
+  EXPECT_EQ(
+      BuildRunAsPostgresCmd("/usr/lib/bareos/scripts/make_bareos_tables"),
+      (std::vector<std::string>{"su", "postgres", "-c",
+                                "/usr/lib/bareos/scripts/make_bareos_tables"}));
+  EXPECT_EQ(
+      BuildRunAsPostgresCmd("/usr/lib/bareos/scripts/grant_bareos_privileges"),
+      (std::vector<std::string>{
+          "su", "postgres", "-c",
+          "/usr/lib/bareos/scripts/grant_bareos_privileges"}));
 }
 
 TEST(BareosSetupStepsShared, AcceptsSameOriginRequests)
