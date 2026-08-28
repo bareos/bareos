@@ -1,7 +1,8 @@
 <template>
   <q-layout view="hHh lpR fFf">
     <q-header class="bg-primary"><q-toolbar>
-      <q-icon name="settings_suggest" size="28px" class="q-mr-sm" />
+      <img src="../../../core/src/images/bareos-logo.svg" alt="Bareos"
+        class="toolbar-logo q-mr-sm" />
       <q-toolbar-title>Bareos single-host setup</q-toolbar-title>
       <div v-if="store.state.setup_version" class="text-caption">
         v{{ store.state.setup_version }}
@@ -9,8 +10,14 @@
     </q-toolbar></q-header>
     <q-page-container><q-page class="q-pa-lg wizard">
       <q-linear-progress :value="progress" class="q-mb-lg" />
-      <h1 class="text-h5"><q-icon :name="stepIcon" size="28px" class="q-mr-sm" />{{ title }}</h1>
-      <p class="text-body1">{{ description }}</p>
+      <div class="row items-center q-mb-sm">
+        <img v-if="step !== 'welcome'" src="../../../core/src/images/boris.png"
+          alt="Boris the Bareos wizard" class="boris-mascot boris-mascot--inline q-mr-md" />
+        <div>
+          <h1 class="text-h5 q-my-none"><q-icon :name="stepIcon" size="28px" class="q-mr-sm" />{{ title }}</h1>
+          <p class="text-body1">{{ description }}</p>
+        </div>
+      </div>
       <q-banner v-if="error" class="bg-negative text-white q-mb-md">
         <template #avatar><q-icon name="error" /></template>
         {{ error }}<template #action><q-btn flat label="Retry" @click="retry" /></template>
@@ -21,8 +28,12 @@
       </q-banner>
 
       <q-card v-if="step === 'welcome'" flat bordered><q-card-section>
-        <p>This wizard installs Director, File Daemon, Storage Daemon, PostgreSQL
-          and the Vue WebUI on this host.</p>
+        <div class="row items-center q-mb-md">
+          <img src="../../../core/src/images/boris.png" alt="Boris the Bareos wizard"
+            class="boris-mascot boris-mascot--welcome q-mr-lg" />
+          <p class="q-mb-none">This wizard installs Director, File Daemon, Storage Daemon, PostgreSQL
+            and the Vue WebUI on this host.</p>
+        </div>
         <q-list dense>
           <q-item><q-item-section avatar><q-icon name="check_circle" color="positive" /></q-item-section>
             <q-item-section>Only supported Linux package managers are used.</q-item-section></q-item>
@@ -204,6 +215,21 @@ onMounted(() => send({ action: 'state' }))
 </script>
 
 <style scoped>
+.toolbar-logo {
+  width: 28px;
+  height: 28px;
+}
+.boris-mascot {
+  flex: 0 0 auto;
+}
+.boris-mascot--inline {
+  width: 80px;
+  height: 80px;
+}
+.boris-mascot--welcome {
+  width: 200px;
+  height: 200px;
+}
 .repo-card--subscription {
   border-color: var(--q-primary);
 }
