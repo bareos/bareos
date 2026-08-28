@@ -187,25 +187,35 @@ int InitializeCatalog(WsCodec& ws)
   // Package scripts are idempotent, but do not run them when the catalog
   // marker is already present.  The marker is created only by this wizard.
   const std::filesystem::path marker = "/var/lib/bareos/.catalog-initialized";
-  if (std::filesystem::exists(marker)) {
+  // Use the non-throwing overload: if existence can't be determined (e.g.
+  // a permission error), treat it the same as "not present" rather than
+  // letting a filesystem_error exception propagate out of this step.
+  std::error_code marker_error;
+  if (!std::filesystem::exists(marker, marker_error)) {
+    const auto init_cmd = BuildPostgresInitCmd();
+    if (!init_cmd.empty() && Run(init_cmd, ws) != 0) return 1;
+    if (Run({"systemctl", "enable", "--now", "postgresql"}, ws) != 0) return 1;
+    // These scripts must run as the "postgres" OS user (per the official
+    // Bareos installation documentation), since they rely on PostgreSQL
+    // peer authentication as that user, not as root.
+    for (const auto& script :
+         {"/usr/lib/bareos/scripts/create_bareos_database",
+          "/usr/lib/bareos/scripts/make_bareos_tables",
+          "/usr/lib/bareos/scripts/grant_bareos_privileges"}) {
+      if (Run(BuildRunAsPostgresCmd(script), ws) != 0) return 1;
+    }
+    const int marker_result = Run(
+        {"install", "-D", "-m", "0640", "/dev/null", marker.string()}, ws);
+    if (marker_result != 0) return marker_result;
+  } else {
     Output(ws, "The Bareos catalog is already initialized.");
-    return 0;
   }
-  const auto init_cmd = BuildPostgresInitCmd();
-  if (!init_cmd.empty() && Run(init_cmd, ws) != 0) return 1;
-  if (Run({"systemctl", "enable", "--now", "postgresql"}, ws) != 0) return 1;
-  // These scripts must run as the "postgres" OS user (per the official
-  // Bareos installation documentation), since they rely on PostgreSQL
-  // peer authentication as that user, not as root.
-  for (const auto& script :
-       {"/usr/lib/bareos/scripts/create_bareos_database",
-        "/usr/lib/bareos/scripts/make_bareos_tables",
-        "/usr/lib/bareos/scripts/grant_bareos_privileges"}) {
-    if (Run(BuildRunAsPostgresCmd(script), ws) != 0) return 1;
-  }
-  const int marker_result
-      = Run({"install", "-D", "-m", "0640", "/dev/null", marker.string()}, ws);
-  return marker_result;
+  // The daemons need a working, privilege-granted catalog before they can
+  // start successfully, so enable/start them here (idempotent) rather than
+  // right after package installation.
+  return Run(
+      {"systemctl", "enable", "--now", "bareos-dir", "bareos-sd", "bareos-fd"},
+      ws);
 }
 
 int CreateAdmin(WsCodec& ws)
