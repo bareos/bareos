@@ -39,6 +39,7 @@
 #include "setup_session.h"
 #include "setup_steps.h"
 #include "tui_wizard.h"
+#include "command_runner.h"
 
 /** Percent-encode a string for safe use as a URL query value. The setup
  * token alphabet includes characters (e.g. '#', '@') that are otherwise
@@ -99,6 +100,23 @@ int main(int argc, char* argv[])
   std::cout << "Bareos Setup Wizard " << BAREOS_FULL_VERSION;
   if (dry_run) std::cout << " [dry-run]";
   std::cout << "\n";
+
+  // Privileged steps (package install, service management, catalog
+  // creation, ...) always execute as root. When not already root, obtain
+  // a sudo ticket once here -- interactively, on the real terminal -- so
+  // the user is prompted for their password exactly once, instead of
+  // requiring sudoers configuration (e.g. NOPASSWD) up front. A background
+  // thread then keeps the ticket alive for the rest of the run.
+  if (!dry_run && !IsRoot()) {
+    std::cout << "Administrator privileges are required to continue.\n";
+    if (!PrimeSudoTicket()) {
+      std::cerr << "Fatal: could not obtain sudo privileges. Run "
+                   "bareos-setup as root, or as a user allowed to "
+                   "authenticate with sudo from this terminal.\n";
+      return 1;
+    }
+    StartSudoKeepAlive();
+  }
 
   // TUI mode: run interactively in the terminal, no HTTP server.
   if (tui) return RunTuiWizard(dry_run);

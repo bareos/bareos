@@ -50,4 +50,24 @@ int RunCommandWithInput(const std::vector<std::string>& argv,
                         bool use_sudo,
                         OutputCallback cb);
 
+/** True if this process is currently running as root (effective UID 0). */
+bool IsRoot();
+
+/**
+ * Ensure a sudo authentication ticket is cached for the current user,
+ * prompting for a password on the controlling terminal if necessary.
+ * Returns false if authentication failed (e.g. no controlling terminal,
+ * wrong password, or the user is not permitted to use sudo).
+ * Always returns true without prompting when already running as root.
+ */
+bool PrimeSudoTicket();
+
+/**
+ * Start a detached background thread that refreshes the sudo ticket
+ * every 60 seconds for the remainder of the process lifetime, so that
+ * long-running wizard sessions never run into an expired ticket
+ * mid-install. No-op when already running as root.
+ */
+void StartSudoKeepAlive();
+
 #endif  // BAREOS_BAREOS_SETUP_COMMAND_RUNNER_H_
