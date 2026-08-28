@@ -1,45 +1,65 @@
 <template>
   <q-layout view="hHh lpR fFf">
     <q-header class="bg-primary"><q-toolbar>
+      <q-icon name="settings_suggest" size="28px" class="q-mr-sm" />
       <q-toolbar-title>Bareos single-host setup</q-toolbar-title>
     </q-toolbar></q-header>
     <q-page-container><q-page class="q-pa-lg wizard">
       <q-linear-progress :value="progress" class="q-mb-lg" />
-      <h1 class="text-h5">{{ title }}</h1>
+      <h1 class="text-h5"><q-icon :name="stepIcon" size="28px" class="q-mr-sm" />{{ title }}</h1>
       <p class="text-body1">{{ description }}</p>
       <q-banner v-if="error" class="bg-negative text-white q-mb-md">
+        <template #avatar><q-icon name="error" /></template>
         {{ error }}<template #action><q-btn flat label="Retry" @click="retry" /></template>
       </q-banner>
-      <q-banner v-if="!connected" class="bg-warning q-mb-md">Waiting for the local setup service…</q-banner>
+      <q-banner v-if="!connected" class="bg-warning q-mb-md">
+        <template #avatar><q-icon name="sync_problem" /></template>
+        Waiting for the local setup service…
+      </q-banner>
 
       <q-card v-if="step === 'welcome'" flat bordered><q-card-section>
         <p>This wizard installs Director, File Daemon, Storage Daemon, PostgreSQL
           and the Vue WebUI on this host.</p>
-        <ul><li>Only supported Linux package managers are used.</li>
-          <li>Package defaults and generated TLS passwords are preserved.</li>
-          <li>Existing Bareos installations are not modified.</li></ul>
+        <q-list dense>
+          <q-item><q-item-section avatar><q-icon name="check_circle" color="positive" /></q-item-section>
+            <q-item-section>Only supported Linux package managers are used.</q-item-section></q-item>
+          <q-item><q-item-section avatar><q-icon name="check_circle" color="positive" /></q-item-section>
+            <q-item-section>Package defaults and generated TLS passwords are preserved.</q-item-section></q-item>
+          <q-item><q-item-section avatar><q-icon name="check_circle" color="positive" /></q-item-section>
+            <q-item-section>Existing Bareos installations are not modified.</q-item-section></q-item>
+        </q-list>
       </q-card-section></q-card>
       <q-card v-else-if="step === 'platform'" flat bordered><q-card-section>
-        <span v-if="store.state.distro">{{ store.state.distro }} {{ store.state.version }} · {{ store.state.package_manager }}</span>
+        <div v-if="store.state.distro" class="row items-center">
+          <q-icon name="computer" color="primary" size="1.5em" class="q-mr-sm" />
+          <span>{{ store.state.distro }} {{ store.state.version }} · {{ store.state.package_manager }}</span>
+        </div>
         <q-spinner v-else-if="!error" size="2em" />
       </q-card-section></q-card>
       <q-card v-else-if="step === 'repository'" flat bordered><q-card-section>
         <q-option-group v-model="store.repository" :options="repoOptions" />
         <q-input v-if="store.repository === 'subscription'" v-model="store.repositoryLogin"
-          label="Subscription login" autocomplete="off" />
+          label="Subscription login" autocomplete="off">
+          <template #prepend><q-icon name="person" /></template>
+        </q-input>
         <q-input v-if="store.repository === 'subscription'" v-model="store.repositoryPassword"
-          label="Subscription password" type="password" autocomplete="new-password" />
+          label="Subscription password" type="password" autocomplete="new-password">
+          <template #prepend><q-icon name="key" /></template>
+        </q-input>
       </q-card-section></q-card>
       <q-card v-else-if="step === 'storage'" flat bordered><q-card-section>
         <q-toggle v-model="store.customizeStorage" label="Customize disk storage path" />
         <q-input v-if="store.customizeStorage" v-model="store.storagePath"
-          label="Disk storage path" hint="Absolute path on this host" />
-        <p v-else>Disk storage: <code>/var/lib/bareos/storage</code></p>
-        <p>Standard ports: WebUI 9100 · Director 9101 · FD 9102 · SD 9103 · proxy 9104</p>
+          label="Disk storage path" hint="Absolute path on this host">
+          <template #prepend><q-icon name="folder" /></template>
+        </q-input>
+        <p v-else><q-icon name="storage" color="primary" class="q-mr-xs" />Disk storage: <code>/var/lib/bareos/storage</code></p>
+        <p><q-icon name="lan" color="primary" class="q-mr-xs" />Standard ports: WebUI 9100 · Director 9101 · FD 9102 · SD 9103 · proxy 9104</p>
       </q-card-section></q-card>
       <q-card v-else-if="step === 'progress'" flat bordered><q-card-section>
         <q-list dense><q-item v-for="item in installSteps" :key="item.id">
-          <q-item-section avatar><q-icon :name="done(item.id) ? 'check' : 'radio_button_unchecked'" /></q-item-section>
+          <q-item-section avatar><q-icon :name="done(item.id) ? 'check_circle' : 'radio_button_unchecked'"
+            :color="done(item.id) ? 'positive' : 'grey'" /></q-item-section>
           <q-item-section>{{ item.label }}</q-item-section>
         </q-item></q-list>
         <pre v-if="output" class="output-console">{{ output }}</pre>
@@ -47,20 +67,21 @@
       <q-card v-else flat bordered><q-card-section>
         <q-icon name="check_circle" color="positive" size="3em" />
         <p>Installation and backup/restore smoke test completed.</p>
-        <p v-if="store.admin">Save this initial WebUI password now:
+        <p v-if="store.admin"><q-icon name="vpn_key" color="warning" class="q-mr-xs" />Save this initial WebUI password now:
           <code>{{ store.admin.username }} / {{ store.admin.password }}</code></p>
         <q-btn label="Download redacted script preview" icon="download" @click="downloadScript" />
       </q-card-section></q-card>
 
       <div class="row justify-between q-mt-lg">
         <q-btn v-if="['welcome', 'progress', 'complete'].indexOf(step) < 0"
-          flat label="Back" @click="back" />
+          flat icon="arrow_back" label="Back" @click="back" />
         <q-space />
         <q-btn v-if="step !== 'complete'" color="primary"
           :disable="busy || !connected || !canContinue"
+          :icon-right="step === 'progress' ? 'play_arrow' : 'arrow_forward'"
           :label="step === 'progress' ? 'Start installation' : 'Continue'" @click="next" />
         <q-btn v-if="step === 'progress' && failed" flat color="negative"
-          label="Rollback" @click="rollback" />
+          icon="undo" label="Rollback" @click="rollback" />
       </div>
     </q-page></q-page-container>
   </q-layout>
@@ -88,6 +109,8 @@ const installSteps = [
 const title = computed(() => step.value === 'complete'
   ? 'Setup complete' : ({ welcome: 'Welcome', platform: 'Platform', repository: 'Repository',
     storage: 'Storage', progress: 'Installation progress' }[step.value]))
+const stepIcon = computed(() => ({ welcome: 'rocket_launch', platform: 'computer', repository: 'cloud_download',
+  storage: 'storage', progress: 'settings', complete: 'check_circle' }[step.value] || 'rocket_launch'))
 const description = computed(() => step.value === 'progress'
   ? 'Installation stops on failure. Retry the failed step or roll back wizard-owned changes.'
   : 'All operations run locally with approved commands.')
