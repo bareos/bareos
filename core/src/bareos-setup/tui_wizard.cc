@@ -187,9 +187,18 @@ int RunTuiWizard(bool dry_run)
                          daemon_services.end());
   enable_services.emplace_back("bareos-webui-proxy");
   if (!Run(enable_services, dry_run)) { return 1; }
+  const auto https_setup_cmds = BuildWebServerHttpsSetupCmds(os.pkg_mgr);
+  for (const auto& command : https_setup_cmds) {
+    if (!Run(command, dry_run)) return 1;
+  }
   if (!Run({"systemctl", "enable", "--now",
             BuildWebServerServiceName(os.pkg_mgr)},
            dry_run)) {
+    return 1;
+  }
+  if (!https_setup_cmds.empty()
+      && !Run({"systemctl", "restart", BuildWebServerServiceName(os.pkg_mgr)},
+              dry_run)) {
     return 1;
   }
   auto services = BuildBareosDaemonServiceNames(os.pkg_mgr);

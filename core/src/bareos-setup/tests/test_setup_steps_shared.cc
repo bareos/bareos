@@ -436,6 +436,16 @@ TEST(BareosSetupStepsShared, BuildsWebServerServiceNameForPackageManager)
   EXPECT_EQ(BuildWebServerServiceName("zypper"), "httpd");
 }
 
+TEST(BareosSetupStepsShared, BuildsWebServerHttpsSetupForAptOnly)
+{
+  EXPECT_EQ(BuildWebServerHttpsSetupCmds("apt"),
+            (std::vector<std::vector<std::string>>{
+                {"a2enmod", "ssl"}, {"a2ensite", "default-ssl"}}));
+  EXPECT_TRUE(BuildWebServerHttpsSetupCmds("dnf").empty());
+  EXPECT_TRUE(BuildWebServerHttpsSetupCmds("yum").empty());
+  EXPECT_TRUE(BuildWebServerHttpsSetupCmds("zypper").empty());
+}
+
 TEST(BareosSetupStepsShared, BuildsBareosDaemonServicesForPackageManager)
 {
   EXPECT_EQ(BuildBareosDaemonServiceNames("apt"),
