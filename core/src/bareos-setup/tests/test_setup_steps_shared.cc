@@ -449,14 +449,20 @@ TEST(BareosSetupStepsShared, BuildsWebServerServiceNameForPackageManager)
   EXPECT_EQ(BuildWebServerServiceName("zypper"), "apache2");
 }
 
-TEST(BareosSetupStepsShared, BuildsWebServerHttpsSetupForAptOnly)
+TEST(BareosSetupStepsShared, BuildsWebServerHttpsSetup)
 {
   EXPECT_EQ(BuildWebServerHttpsSetupCmds("apt"),
             (std::vector<std::vector<std::string>>{
                 {"a2enmod", "ssl"}, {"a2ensite", "default-ssl"}}));
-  EXPECT_EQ(BuildWebServerHttpsSetupCmds("zypper"),
-            (std::vector<std::vector<std::string>>{{"a2enmod", "ssl"},
-                                                   {"a2enflag", "SSL"}}));
+  const auto zypper_cmds = BuildWebServerHttpsSetupCmds("zypper");
+  ASSERT_EQ(zypper_cmds.size(), 3U);
+  EXPECT_EQ(zypper_cmds[0], (std::vector<std::string>{"a2enmod", "ssl"}));
+  EXPECT_EQ(zypper_cmds[1], (std::vector<std::string>{"a2enflag", "SSL"}));
+  ASSERT_EQ(zypper_cmds[2].size(), 3U);
+  EXPECT_EQ(zypper_cmds[2][0], "sh");
+  EXPECT_EQ(zypper_cmds[2][1], "-c");
+  EXPECT_NE(zypper_cmds[2][2].find("bareos-setup-ssl.conf"), std::string::npos);
+  EXPECT_NE(zypper_cmds[2][2].find("SSLEngine on"), std::string::npos);
   EXPECT_TRUE(BuildWebServerHttpsSetupCmds("dnf").empty());
   EXPECT_TRUE(BuildWebServerHttpsSetupCmds("yum").empty());
 }
