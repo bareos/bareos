@@ -70,4 +70,20 @@ bool PrimeSudoTicket();
  */
 void StartSudoKeepAlive();
 
+/**
+ * True if a program named "name" can be found in one of the directories
+ * listed in the PATH environment variable and is executable.
+ */
+bool IsToolInPath(const std::string& name);
+
+/**
+ * Verify that all external command-line tools bareos-setup depends on
+ * are installed and reachable via PATH. "pkg_mgr" is the package manager
+ * binary to additionally require (e.g. "dnf", "apt", "zypper" -- as
+ * detected for the current host; "apt" implies "apt-get" is also
+ * required since both are invoked depending on the operation).
+ * Returns the list of missing tool names (empty if none are missing).
+ */
+std::vector<std::string> MissingRequiredTools(const std::string& pkg_mgr);
+
 #endif  // BAREOS_BAREOS_SETUP_COMMAND_RUNNER_H_

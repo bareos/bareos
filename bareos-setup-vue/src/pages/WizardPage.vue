@@ -3,7 +3,7 @@
     <q-header class="bg-primary"><q-toolbar>
       <img src="../../../core/src/images/bareos-logo.svg" alt="Bareos"
         class="toolbar-logo q-mr-sm" />
-      <q-toolbar-title>Bareos single-host setup</q-toolbar-title>
+      <q-toolbar-title>Bareos Setup</q-toolbar-title>
       <div v-if="store.state.setup_version" class="text-caption">
         v{{ store.state.setup_version }}
       </div>
@@ -31,25 +31,43 @@
         <div class="row items-center q-mb-md">
           <img src="../../../core/src/images/boris.png" alt="Boris the Bareos wizard"
             class="boris-mascot boris-mascot--welcome q-mr-lg" />
-          <p class="q-mb-none">This wizard installs Director, File Daemon, Storage Daemon, PostgreSQL
-            and the Vue WebUI on this host.</p>
+          <q-list dense class="col">
+            <q-item v-for="component in installedComponents" :key="component.label">
+              <q-item-section avatar><q-icon :name="component.icon" color="primary" /></q-item-section>
+              <q-item-section>
+                <q-item-label>{{ component.label }}</q-item-label>
+                <q-item-label caption>{{ component.detail }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
         </div>
         <q-list dense>
-          <q-item><q-item-section avatar><q-icon name="check_circle" color="positive" /></q-item-section>
-            <q-item-section>Only supported Linux package managers are used.</q-item-section></q-item>
-          <q-item><q-item-section avatar><q-icon name="check_circle" color="positive" /></q-item-section>
-            <q-item-section>Package defaults and generated TLS passwords are preserved.</q-item-section></q-item>
-          <q-item><q-item-section avatar><q-icon name="check_circle" color="positive" /></q-item-section>
-            <q-item-section>Existing Bareos installations are not modified.</q-item-section></q-item>
+          <q-item><q-item-section avatar><q-icon name="rocket_launch" color="positive" /></q-item-section>
+            <q-item-section>Installs and configures Director, Storage Daemon, File Daemon, PostgreSQL, and the WebUI — all in one guided flow.</q-item-section></q-item>
+          <q-item><q-item-section avatar><q-icon name="cloud_download" color="positive" /></q-item-section>
+            <q-item-section>Adds the official Bareos repository and installs packages using your distribution's standard package manager.</q-item-section></q-item>
+          <q-item><q-item-section avatar><q-icon name="verified_user" color="positive" /></q-item-section>
+            <q-item-section>Secure by default: TLS and strong admin passwords are generated automatically.</q-item-section></q-item>
+          <q-item><q-item-section avatar><q-icon name="health_and_safety" color="positive" /></q-item-section>
+            <q-item-section>Safe to run: existing Bareos installations and configurations are never modified.</q-item-section></q-item>
+          <q-item><q-item-section avatar><q-icon name="admin_panel_settings" color="positive" /></q-item-section>
+            <q-item-section>Transparent privilege use: only standard, approved commands are ever executed as root or via sudo — nothing else.</q-item-section></q-item>
         </q-list>
       </q-card-section></q-card>
       <q-card v-else-if="step === 'platform'" flat bordered><q-card-section>
         <div v-if="store.state.distro" class="row items-center">
-          <q-icon v-if="distroIcon" size="1.75em" class="q-mr-sm" :style="{ color: '#' + distroIcon.hex }">
+          <q-icon v-if="distroIcon" size="3em" class="q-mr-md" :style="{ color: '#' + distroIcon.hex }">
             <svg viewBox="0 0 24 24"><path :d="distroIcon.path" fill="currentColor" /></svg>
           </q-icon>
-          <q-icon v-else :name="FALLBACK_ICON" color="primary" size="1.5em" class="q-mr-sm" />
-          <span>{{ store.state.distro }} {{ store.state.version }} · {{ store.state.package_manager }}</span>
+          <q-icon v-else :name="FALLBACK_ICON" color="primary" size="3em" class="q-mr-md" />
+          <div>
+            <div class="text-h6">{{ store.state.pretty_name || store.state.distro }}</div>
+            <div class="row q-gutter-xs q-mt-xs">
+              <q-chip dense icon="inventory_2" color="grey-3">{{ store.state.package_manager }}</q-chip>
+              <q-chip v-if="store.state.arch" dense icon="memory" color="grey-3">{{ store.state.arch }}</q-chip>
+              <q-chip v-if="store.state.codename" dense icon="label" color="grey-3">{{ store.state.codename }}</q-chip>
+            </div>
+          </div>
         </div>
         <q-spinner v-else-if="!error" size="2em" />
       </q-card-section></q-card>
@@ -158,14 +176,24 @@ const installSteps = [
   { id: 'storage', label: 'Apply optional disk storage path' },
   { id: 'catalog', label: 'Initialize catalog when needed' }, { id: 'admin', label: 'Create initial admin account' },
   { id: 'proxy', label: 'Enable loopback WebUI proxy' }, { id: 'smoke_test', label: 'Verify services and backup/restore' }]
+const installedComponents = [
+  { icon: 'hub', label: 'Director', detail: 'Job scheduling and catalog control' },
+  { icon: 'save', label: 'Storage Daemon', detail: 'Writes backup data' },
+  { icon: 'folder_copy', label: 'File Daemon', detail: "Backs up this host's files" },
+  { icon: 'storage', label: 'PostgreSQL', detail: 'Catalog database' },
+  { icon: 'web', label: 'WebUI', detail: 'Browser-based management interface' }]
 const title = computed(() => step.value === 'complete'
   ? 'Setup complete' : ({ welcome: 'Welcome', platform: 'Platform', repository: 'Repository',
     storage: 'Storage', progress: 'Installation progress' }[step.value]))
 const stepIcon = computed(() => ({ welcome: 'rocket_launch', platform: 'computer', repository: 'cloud_download',
   storage: 'storage', progress: 'settings', complete: 'check_circle' }[step.value] || 'rocket_launch'))
-const description = computed(() => step.value === 'progress'
-  ? 'Installation stops on failure. Retry the failed step or roll back wizard-owned changes.'
-  : 'All operations run locally with approved commands.')
+const description = computed(() => ({
+  welcome: 'Bareos Setup will guide you through the installation and setup of Bareos and required services on this computer.',
+  platform: 'Detecting your Linux distribution and package manager to select compatible packages.',
+  repository: 'Choose which Bareos package repository to install from.',
+  storage: 'Configure where Bareos should store backup data and which network ports it will use.',
+  progress: 'Installation stops on failure. Retry the failed step or roll back wizard-owned changes.',
+}[step.value] || ''))
 const progress = computed(() => step.value === 'complete' ? 1 :
   ({ welcome: 0, platform: .2, repository: .35, storage: .5, progress: .7 }[step.value] || 0))
 const canContinue = computed(() => step.value !== 'repository' ||

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,32 +20,56 @@
  */
 #include "setup_steps.h"
 
+#include <algorithm>
 #include <gtest/gtest.h>
+
+#include "command_runner.h"
 
 TEST(BareosSetupStepsShared, BuildsDefaultPackageList)
 {
   EXPECT_EQ(BuildDefaultPackageList(),
-            (std::vector<std::string>{"bareos-filedaemon",
-                                      "bareos-director",
-                                      "bareos-storage",
-                                      "bareos-storage-tape",
-                                      "bareos-storage-dedupable",
-                                      "bareos-database-tools",
-                                      "bareos-tools",
-                                      "bareos-webui-vue"}));
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-tape", "bareos-storage-dedupable",
+                "bareos-database-tools", "bareos-tools", "bareos-webui-vue"}));
 }
 
 TEST(BareosSetupStepsShared, SuggestsSingleChangerAssignments)
 {
   const std::vector<TapeChangerInfo> changers = {
-      {"/dev/tape/by-id/changer-0", "/dev/sg4", "Changer", "", "", "", "", "",
-       {}, {}, {}},
+      {"/dev/tape/by-id/changer-0",
+       "/dev/sg4",
+       "Changer",
+       "",
+       "",
+       "",
+       "",
+       "",
+       {},
+       {},
+       {}},
   };
   const std::vector<TapeDriveInfo> drives = {
-      {"/dev/tape/by-id/drive-0-nst", "/dev/nst0", "Drive0", "", "", "", "",
-       "", {}, {}},
-      {"/dev/tape/by-id/drive-1-nst", "/dev/nst1", "Drive1", "", "", "", "",
-       "", {}, {}},
+      {"/dev/tape/by-id/drive-0-nst",
+       "/dev/nst0",
+       "Drive0",
+       "",
+       "",
+       "",
+       "",
+       "",
+       {},
+       {}},
+      {"/dev/tape/by-id/drive-1-nst",
+       "/dev/nst1",
+       "Drive1",
+       "",
+       "",
+       "",
+       "",
+       "",
+       {},
+       {}},
   };
 
   const auto assignments = SuggestTapeAssignments(changers, drives);
@@ -60,16 +84,50 @@ TEST(BareosSetupStepsShared, SuggestsSingleChangerAssignments)
 TEST(BareosSetupStepsShared, SuggestsAllDrivesForEveryChangerWithoutMatches)
 {
   const std::vector<TapeChangerInfo> changers = {
-      {"/dev/tape/by-id/changer-0", "/dev/sg4", "Changer0", "", "", "", "", "",
-       {}, {}, {}},
-      {"/dev/tape/by-id/changer-1", "/dev/sg5", "Changer1", "", "", "", "", "",
-       {}, {}, {}},
+      {"/dev/tape/by-id/changer-0",
+       "/dev/sg4",
+       "Changer0",
+       "",
+       "",
+       "",
+       "",
+       "",
+       {},
+       {},
+       {}},
+      {"/dev/tape/by-id/changer-1",
+       "/dev/sg5",
+       "Changer1",
+       "",
+       "",
+       "",
+       "",
+       "",
+       {},
+       {},
+       {}},
   };
   const std::vector<TapeDriveInfo> drives = {
-      {"/dev/tape/by-id/drive-0-nst", "/dev/nst0", "Drive0", "", "", "", "", "",
-       {}, {}},
-      {"/dev/tape/by-id/drive-1-nst", "/dev/nst1", "Drive1", "", "", "", "", "",
-       {}, {}},
+      {"/dev/tape/by-id/drive-0-nst",
+       "/dev/nst0",
+       "Drive0",
+       "",
+       "",
+       "",
+       "",
+       "",
+       {},
+       {}},
+      {"/dev/tape/by-id/drive-1-nst",
+       "/dev/nst1",
+       "Drive1",
+       "",
+       "",
+       "",
+       "",
+       "",
+       {},
+       {}},
   };
 
   const auto assignments = SuggestTapeAssignments(changers, drives);
@@ -86,13 +144,13 @@ TEST(BareosSetupStepsShared, SuggestsAllDrivesForEveryChangerWithoutMatches)
 TEST(BareosSetupStepsShared, ParsesVpdPageDeviceIdentifiers)
 {
   const std::vector<uint8_t> page = {
-      0x01, 0x83, 0x00, 0x42, 0x02, 0x01, 0x00, 0x22, 0x48, 0x50, 0x45, 0x20,
-      0x20, 0x20, 0x20, 0x20, 0x55, 0x6c, 0x74, 0x72, 0x69, 0x75, 0x6d, 0x20,
-      0x39, 0x2d, 0x53, 0x43, 0x53, 0x49, 0x20, 0x20, 0x30, 0x31, 0x46, 0x41,
-      0x42, 0x31, 0x32, 0x38, 0x31, 0x32, 0x01, 0x03, 0x00, 0x08, 0x20, 0x30,
-      0x31, 0x46, 0x41, 0x32, 0x38, 0x32, 0x01, 0x94, 0x00, 0x04, 0x00, 0x00,
-      0x00, 0x01, 0x01, 0x93, 0x00, 0x08, 0x21, 0x30, 0x31, 0x46, 0x41, 0x32,
-      0x38, 0x32,
+      0x01, 0x83, 0x00, 0x42, 0x02, 0x01, 0x00, 0x22, 0x48, 0x50, 0x45,
+      0x20, 0x20, 0x20, 0x20, 0x20, 0x55, 0x6c, 0x74, 0x72, 0x69, 0x75,
+      0x6d, 0x20, 0x39, 0x2d, 0x53, 0x43, 0x53, 0x49, 0x20, 0x20, 0x30,
+      0x31, 0x46, 0x41, 0x42, 0x31, 0x32, 0x38, 0x31, 0x32, 0x01, 0x03,
+      0x00, 0x08, 0x20, 0x30, 0x31, 0x46, 0x41, 0x32, 0x38, 0x32, 0x01,
+      0x94, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x01, 0x93, 0x00, 0x08,
+      0x21, 0x30, 0x31, 0x46, 0x41, 0x32, 0x38, 0x32,
   };
 
   const auto identifiers = ParseDeviceIdentifiersVpdPage(page);
@@ -140,18 +198,18 @@ TEST(BareosSetupStepsShared, ParsesLibraryDriveIdentifiers)
 TEST(BareosSetupStepsShared, MatchesLibraryDrivesByIdentifier)
 {
   const auto drive_page = ParseDeviceIdentifiersVpdPage({
-      0x01, 0x83, 0x00, 0x2a, 0x02, 0x01, 0x00, 0x22, 0x48, 0x50, 0x45, 0x20,
-      0x20, 0x20, 0x20, 0x20, 0x55, 0x6c, 0x74, 0x72, 0x69, 0x75, 0x6d, 0x20,
-      0x39, 0x2d, 0x53, 0x43, 0x53, 0x49, 0x20, 0x20, 0x30, 0x31, 0x46, 0x41,
-      0x42, 0x31, 0x32, 0x38, 0x31, 0x32,
+      0x01, 0x83, 0x00, 0x2a, 0x02, 0x01, 0x00, 0x22, 0x48, 0x50, 0x45,
+      0x20, 0x20, 0x20, 0x20, 0x20, 0x55, 0x6c, 0x74, 0x72, 0x69, 0x75,
+      0x6d, 0x20, 0x39, 0x2d, 0x53, 0x43, 0x53, 0x49, 0x20, 0x20, 0x30,
+      0x31, 0x46, 0x41, 0x42, 0x31, 0x32, 0x38, 0x31, 0x32,
   });
   const auto library = ParseTapeLibraryDriveIdentifiers({
-      0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x3a, 0x04, 0x00, 0x00, 0x32,
-      0x00, 0x00, 0x00, 0x32, 0x01, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x02, 0x01, 0x00, 0x22, 0x48, 0x50, 0x45, 0x20,
-      0x20, 0x20, 0x20, 0x20, 0x55, 0x6c, 0x74, 0x72, 0x69, 0x75, 0x6d, 0x20,
-      0x39, 0x2d, 0x53, 0x43, 0x53, 0x49, 0x20, 0x20, 0x30, 0x31, 0x46, 0x41,
-      0x42, 0x31, 0x32, 0x38, 0x31, 0x32,
+      0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x3a, 0x04, 0x00, 0x00,
+      0x32, 0x00, 0x00, 0x00, 0x32, 0x01, 0x00, 0x08, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x01, 0x00, 0x22, 0x48,
+      0x50, 0x45, 0x20, 0x20, 0x20, 0x20, 0x20, 0x55, 0x6c, 0x74, 0x72,
+      0x69, 0x75, 0x6d, 0x20, 0x39, 0x2d, 0x53, 0x43, 0x53, 0x49, 0x20,
+      0x20, 0x30, 0x31, 0x46, 0x41, 0x42, 0x31, 0x32, 0x38, 0x31, 0x32,
   });
 
   ASSERT_EQ(drive_page.size(), 1U);
@@ -223,4 +281,30 @@ TEST(BareosSetupStepsShared, BuildsTapeStorageScript)
             std::string::npos);
   EXPECT_NE(script.find("ArchiveDevice = /dev/tape/by-id/drive-1-nst"),
             std::string::npos);
+}
+
+TEST(BareosSetupCommandRunner, FindsToolPresentInPath)
+{
+  // "sh" is guaranteed to exist on every supported Linux platform.
+  EXPECT_TRUE(IsToolInPath("sh"));
+}
+
+TEST(BareosSetupCommandRunner, DoesNotFindNonexistentTool)
+{
+  EXPECT_FALSE(IsToolInPath("definitely-not-a-real-tool-xyz"));
+}
+
+TEST(BareosSetupCommandRunner, ReportsNoMissingToolsWhenAllPresent)
+{
+  // "sh" is used here as a stand-in package manager name since it is
+  // always present, so this exercises the "all tools found" path.
+  EXPECT_TRUE(MissingRequiredTools("sh").empty());
+}
+
+TEST(BareosSetupCommandRunner, ReportsMissingPackageManager)
+{
+  const auto missing = MissingRequiredTools("definitely-not-a-real-tool-xyz");
+  EXPECT_NE(std::find(missing.begin(), missing.end(),
+                      "definitely-not-a-real-tool-xyz"),
+            missing.end());
 }

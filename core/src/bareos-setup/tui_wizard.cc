@@ -46,7 +46,7 @@ bool Run(const std::vector<std::string>& command, bool dry_run)
 
 int RunTuiWizard(bool dry_run)
 {
-  std::cout << "Bareos single-host setup\n\n";
+  std::cout << "Bareos Setup\n\n";
   const auto os = DetectOs();
   if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
     std::cerr << "This Linux distribution is not supported.\n";
