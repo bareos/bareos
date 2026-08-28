@@ -50,6 +50,7 @@ RUN apk add --no-cache \
     readline-dev \
     readline-static \
     postgresql16-dev \
+    upx \
     git
 
 WORKDIR /src

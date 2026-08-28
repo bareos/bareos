@@ -21,6 +21,8 @@
 # Builds a single, fully static bareos-setup binary inside the musl/Alpine
 # container defined in devtools/bareos-setup-static-build/Dockerfile, so
 # that it runs unmodified on every distro supported by the setup wizard.
+# The binary is stripped and, unless BAREOS_SETUP_NO_UPX is set, additionally
+# compressed with upx to further reduce its size for distribution.
 #
 # Usage: devtools/build-bareos-setup-static.sh [output-path]
 #   output-path defaults to ./bareos-setup (in the current directory).
@@ -45,10 +47,11 @@ mkdir -p "${output_dir}"
 version_file="${topdir}/cmake/BareosVersion.cmake"
 generated_version_file=0
 if [ ! -r "${version_file}" ]; then
-  ( cd "${topdir}" && cmake -P write_version_files.cmake >/dev/null )
+  (cd "${topdir}" && cmake -P write_version_files.cmake >/dev/null)
   generated_version_file=1
 fi
-cleanup() {
+cleanup()
+{
   if [ "${generated_version_file}" = 1 ]; then
     rm -f "${version_file}"
   fi
@@ -64,7 +67,7 @@ trap cleanup EXIT
 # is expected to be available, before the container-based native build.
 dist_index="${topdir}/bareos-setup-vue/dist/index.html"
 if [ ! -r "${dist_index}" ]; then
-  ( cd "${topdir}" && cmake -P bareos-setup-vue/build-dist.cmake )
+  (cd "${topdir}" && cmake -P bareos-setup-vue/build-dist.cmake)
 fi
 
 container_engine="${CONTAINER_ENGINE:-}"
@@ -88,6 +91,7 @@ fi
 # issues, and only the resulting binary is copied out to the host via the
 # /out bind mount.
 "${container_engine}" run --rm \
+  -e "BAREOS_SETUP_NO_UPX=${BAREOS_SETUP_NO_UPX:-}" \
   -v "${topdir}:/src:ro" \
   -v "${output_dir}:/out" \
   "${image_tag}" \
@@ -102,6 +106,9 @@ fi
       -Ddocs-build-json=OFF -Dtraymonitor=OFF -Dwebui-vue=OFF
     cmake --build /build --target bareos-setup --parallel \"\$(nproc)\"
     cp /build/core/src/bareos-setup/bareos-setup '/out/${output_name}'
+    if [ -z \"\${BAREOS_SETUP_NO_UPX:-}\" ]; then
+      upx --best --lzma '/out/${output_name}'
+    fi
   "
 
 echo "Built static bareos-setup binary: ${output_path}"
