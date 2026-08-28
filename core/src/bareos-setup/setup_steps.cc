@@ -615,7 +615,7 @@ std::vector<std::string> BuildNetworkCheckCmd(const std::string& repo_type)
 
 std::string BuildWebServerServiceName(const std::string& pkg_mgr)
 {
-  return pkg_mgr == "apt" ? "apache2" : "httpd";
+  return (pkg_mgr == "apt" || pkg_mgr == "zypper") ? "apache2" : "httpd";
 }
 
 std::vector<std::vector<std::string>> BuildWebServerHttpsSetupCmds(
@@ -624,6 +624,7 @@ std::vector<std::vector<std::string>> BuildWebServerHttpsSetupCmds(
   if (pkg_mgr == "apt") {
     return {{"a2enmod", "ssl"}, {"a2ensite", "default-ssl"}};
   }
+  if (pkg_mgr == "zypper") { return {{"a2enmod", "ssl"}, {"a2enflag", "SSL"}}; }
   return {};
 }
 
