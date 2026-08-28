@@ -235,9 +235,12 @@ int InitializeCatalog(WsCodec& ws)
   // The daemons need a working, privilege-granted catalog before they can
   // start successfully, so enable/start them here (idempotent) rather than
   // right after package installation.
-  return Run(
-      {"systemctl", "enable", "--now", "bareos-dir", "bareos-sd", "bareos-fd"},
-      ws);
+  auto enable_daemons
+      = std::vector<std::string>{"systemctl", "enable", "--now"};
+  const auto daemon_services = BuildBareosDaemonServiceNames(os.pkg_mgr);
+  enable_daemons.insert(enable_daemons.end(), daemon_services.begin(),
+                        daemon_services.end());
+  return Run(enable_daemons, ws);
 }
 
 int CreateAdmin(WsCodec& ws)
@@ -328,8 +331,9 @@ int RunSmokeTest(WsCodec& ws)
   // and catalog connection) under systemd's own user, so the separate
   // "-t" invocation is both redundant and the source of this bug --
   // simply drop it and rely on is-active alone.
-  for (const auto& service :
-       {"bareos-dir", "bareos-sd", "bareos-fd", "bareos-webui-proxy"}) {
+  auto services = BuildBareosDaemonServiceNames(os.pkg_mgr);
+  services.emplace_back("bareos-webui-proxy");
+  for (const auto& service : services) {
     if (Run({"systemctl", "is-active", service}, ws) != 0) return 1;
   }
   if (Run({"systemctl", "is-active", BuildWebServerServiceName(os.pkg_mgr)}, ws)

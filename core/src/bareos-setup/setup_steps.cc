@@ -618,6 +618,15 @@ std::string BuildWebServerServiceName(const std::string& pkg_mgr)
   return pkg_mgr == "apt" ? "apache2" : "httpd";
 }
 
+std::vector<std::string> BuildBareosDaemonServiceNames(
+    const std::string& pkg_mgr)
+{
+  if (pkg_mgr == "apt") {
+    return {"bareos-director", "bareos-storage", "bareos-filedaemon"};
+  }
+  return {"bareos-dir", "bareos-sd", "bareos-fd"};
+}
+
 std::vector<std::string> BuildPackageCacheUpdateCmd(const std::string& pkg_mgr)
 {
   if (pkg_mgr == "apt") { return {"apt-get", "update"}; }
