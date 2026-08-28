@@ -28,6 +28,7 @@
 #include <string_view>
 
 #include "command_runner.h"
+#include "http_server.h"
 #include "os_detector.h"
 #include "setup_steps.h"
 #include "ws_codec.h"
@@ -258,6 +259,7 @@ int CreateAdmin(WsCodec& ws)
 
 int ConfigureProxy(WsCodec& ws)
 {
+  const auto os = DetectOs();
   const std::string config
       = "[listen]\n"
         "address = 127.0.0.1\n"
@@ -286,11 +288,18 @@ int ConfigureProxy(WsCodec& ws)
   if (Run({"systemctl", "enable", "--now", "bareos-webui-proxy"}, ws) != 0) {
     return 1;
   }
+  if (Run({"systemctl", "enable", "--now",
+           BuildWebServerServiceName(os.pkg_mgr)},
+          ws)
+      != 0) {
+    return 1;
+  }
   return 0;
 }
 
 int RunSmokeTest(WsCodec& ws)
 {
+  const auto os = DetectOs();
   // Previously this ran "bareos-dir -t"/"bareos-sd -t" directly as
   // root to validate the config before checking daemon status. But
   // bareos-dir/bareos-sd connect to the catalog via PostgreSQL peer
@@ -306,6 +315,10 @@ int RunSmokeTest(WsCodec& ws)
   for (const auto& service :
        {"bareos-dir", "bareos-sd", "bareos-fd", "bareos-webui-proxy"}) {
     if (Run({"systemctl", "is-active", service}, ws) != 0) return 1;
+  }
+  if (Run({"systemctl", "is-active", BuildWebServerServiceName(os.pkg_mgr)}, ws)
+      != 0) {
+    return 1;
   }
   Output(ws, "Backup and restore smoke test prerequisites verified.");
   return 0;
@@ -342,16 +355,10 @@ void Handle(WsCodec& ws, json_t* message)
                    Progress().finished, "setup_version", BAREOS_FULL_VERSION));
     return;
   }
-  if (action == "script") {
-    const std::string script
-        = "#!/bin/sh\nset -eu\n"
-          "# Preview only: credentials and subscription details are omitted.\n"
-          "# Use bareos-setup to execute approved package-manager commands.\n"
-          "install -d /var/lib/bareos/storage\n"
-          "systemctl enable --now bareos-dir bareos-sd bareos-fd "
-          "bareos-webui-proxy\n";
-    Send(ws,
-         json_pack("{s:s,s:s}", "type", "script", "content", script.c_str()));
+  if (action == "close") {
+    Send(ws, json_pack("{s:s}", "type", "closed"));
+    ws.SendClose();
+    RequestHttpServerShutdown();
     return;
   }
   if (action == "rollback") {

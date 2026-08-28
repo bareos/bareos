@@ -220,6 +220,9 @@ std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
  */
 std::vector<std::string> BuildNetworkCheckCmd(const std::string& repo_type);
 
+/** Return the web server service name used by the distribution packages. */
+std::string BuildWebServerServiceName(const std::string& pkg_mgr);
+
 // Build the package install command for the detected package manager.
 std::vector<std::string> BuildInstallCmd(
     const std::string& pkg_mgr,

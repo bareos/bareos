@@ -157,7 +157,15 @@
           <q-btn flat dense icon="content_copy" label="Copy password" class="q-ml-sm"
             @click="copyAdminPassword" />
         </p>
-        <q-btn label="Download redacted script preview" icon="download" @click="downloadScript" />
+        <p><q-icon name="open_in_browser" color="primary" class="q-mr-xs" />Log in to the Bareos WebUI at:
+          <a :href="webuiUrl" target="_blank" rel="noopener noreferrer">{{ webuiUrl }}</a>
+        </p>
+        <q-banner v-if="setupClosed" class="bg-positive text-white q-mb-md" rounded>
+          <template #avatar><q-icon name="check_circle" /></template>
+          Setup wizard closed. You can close this browser tab now.
+        </q-banner>
+        <q-btn color="primary" label="Close setup wizard" icon="power_settings_new"
+          :disable="setupClosed" @click="closeSetup" />
       </q-card-section></q-card>
 
       <div class="row justify-between q-mt-lg">
@@ -191,6 +199,7 @@ const error = ref('')
 const failed = ref(false)
 const installStarted = ref(false)
 const currentStepId = ref(null)
+const setupClosed = ref(false)
 const logRefs = {}
 const distroIcon = computed(() => getDistroIcon(store.state.distro))
 const installSteps = [
@@ -222,6 +231,12 @@ const progress = computed(() => step.value === 'complete' ? 1 :
   ({ welcome: 0, platform: .2, repository: .35, storage: .5, progress: .7 }[step.value] || 0))
 const canContinue = computed(() => step.value !== 'repository' ||
   store.repository === 'community' || (store.repositoryLogin && store.repositoryPassword))
+const webuiUrl = computed(() => {
+  const host = window.location.hostname.includes(':')
+    ? `[${window.location.hostname}]`
+    : window.location.hostname
+  return `https://${host}/bareos-webui-new`
+})
 function done(id) { return store.state.completed.includes(id) }
 function next() {
   if (step.value === 'welcome') { step.value = 'platform'; send({ action: 'state' }) }
@@ -255,7 +270,7 @@ async function copyAdminPassword() {
     $q.notify({ type: 'negative', message: 'Could not copy password to clipboard.' })
   }
 }
-function downloadScript() { send({ action: 'script' }) }
+function closeSetup() { send({ action: 'close' }) }
 watch(messages, list => {
   const message = list[list.length - 1]; if (!message) return
   if (message.type === 'state') { Object.assign(store.state, message) }
@@ -263,11 +278,7 @@ watch(messages, list => {
   if (message.type === 'error') { error.value = message.message; failed.value = true; busy.value = false }
   if (message.type === 'admin_credentials') store.admin = message
   if (message.type === 'rollback_complete') store.state.completed = []
-  if (message.type === 'script') {
-    const blob = new Blob([message.content], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob); const anchor = document.createElement('a')
-    anchor.href = url; anchor.download = 'bareos-setup-preview.sh'; anchor.click(); URL.revokeObjectURL(url)
-  }
+  if (message.type === 'closed') setupClosed.value = true
   if (message.type === 'done') {
     if (message.exit_code) { failed.value = true; busy.value = false; return }
     if (!store.state.completed.includes(message.step)) store.state.completed.push(message.step)

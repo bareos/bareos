@@ -185,9 +185,10 @@ if(BUILD_TESTING AND GTest_FOUND)
   add_executable(
     test_bareos_setup_steps
     tests/test_setup_steps_shared.cc setup_steps.cc command_runner.cc
-    os_detector.cc setup_session.cc
-    "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc"
+    os_detector.cc setup_session.cc http_server.cc
+    "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc" "${EMBEDDED_ASSETS_CC}"
   )
+  add_dependencies(test_bareos_setup_steps bareos-setup-vue-build)
   target_compile_features(test_bareos_setup_steps PRIVATE cxx_std_20)
   target_compile_options(
     test_bareos_setup_steps
@@ -198,12 +199,14 @@ if(BUILD_TESTING AND GTest_FOUND)
     PRIVATE BAREOS_FULL_VERSION="${BAREOS_FULL_VERSION}"
   )
   target_include_directories(
-    test_bareos_setup_steps PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
-                                    "${CMAKE_CURRENT_SOURCE_DIR}/../lib"
+    test_bareos_setup_steps
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../lib"
   )
   target_link_libraries(
-    test_bareos_setup_steps PRIVATE GTest::gtest_main Threads::Threads
-                                    OpenSSL::Crypto Jansson::Jansson
+    test_bareos_setup_steps
+    PRIVATE GTest::gtest_main Threads::Threads OpenSSL::SSL OpenSSL::Crypto
+            Jansson::Jansson
   )
   gtest_discover_tests(test_bareos_setup_steps)
 endif()

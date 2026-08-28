@@ -175,9 +175,18 @@ int RunTuiWizard(bool dry_run)
            dry_run)) {
     return 1;
   }
+  if (!Run({"systemctl", "enable", "--now",
+            BuildWebServerServiceName(os.pkg_mgr)},
+           dry_run)) {
+    return 1;
+  }
   for (const auto& service :
        {"bareos-dir", "bareos-sd", "bareos-fd", "bareos-webui-proxy"}) {
     if (!Run({"systemctl", "is-active", service}, dry_run)) return 1;
+  }
+  if (!Run({"systemctl", "is-active", BuildWebServerServiceName(os.pkg_mgr)},
+           dry_run)) {
+    return 1;
   }
   std::cout << "\nSetup complete. WebUI username: admin\n"
             << "Initial WebUI password: " << admin_password << "\n";

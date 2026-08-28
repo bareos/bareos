@@ -587,6 +587,11 @@ std::vector<std::string> BuildNetworkCheckCmd(const std::string& repo_type)
           "--head", "--max-time", "10",       base};
 }
 
+std::string BuildWebServerServiceName(const std::string& pkg_mgr)
+{
+  return pkg_mgr == "apt" ? "apache2" : "httpd";
+}
+
 std::vector<std::string> BuildInstallCmd(
     const std::string& pkg_mgr,
     const std::vector<std::string>& packages)

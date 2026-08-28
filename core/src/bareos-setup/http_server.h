@@ -38,7 +38,7 @@ using WsHandler = std::function<void(int fd)>;
  * Listen on the given address/port and serve requests.
  * - HTTP GET: returns embedded asset (or index.html for unknown paths).
  * - WebSocket upgrade: calls ws_handler with the connected fd.
- * Runs until the process is killed.
+ * Runs until RequestHttpServerShutdown() is called or the process is killed.
  *
  * @param bind_address IPv4 address to bind to (e.g. "127.0.0.1" for
  *   loopback-only, the secure default, or "0.0.0.0" to listen on all
@@ -48,5 +48,9 @@ void RunHttpServer(const std::string& bind_address,
                    int port,
                    const std::string& setup_token,
                    WsHandler ws_handler);
+
+/** Request the currently running setup HTTP server to stop accepting requests.
+ */
+void RequestHttpServerShutdown();
 
 #endif  // BAREOS_BAREOS_SETUP_HTTP_SERVER_H_
