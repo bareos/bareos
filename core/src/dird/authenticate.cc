@@ -34,6 +34,7 @@
 #include "include/version_hex.h"
 #include "include/version_numbers.h"
 #include "lib/default_console.h"
+#include "lib/hello.h"
 #include "lib/s_password.h"
 #include "dird/authenticate.h"
 #if defined(HAVE_PAM)
@@ -56,12 +57,6 @@ namespace directordaemon {
 
 static const int debuglevel = 50;
 
-/*
- * Commands sent to Storage daemon and File daemon and received from the User
- * Agent
- */
-static char hello[] = "Hello Director %s calling Version=\"%u.%u.%u\"\n";
-
 // Response from Storage daemon
 static char FDOKhello[] = "2000 OK Hello\n";
 static char FDOKnewHello[] = "2000 OK Hello %d\n";
@@ -81,8 +76,10 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   auto* client = jcr->dir_impl->res.client;
   fd->SetEnableKtls(myself->enable_ktls);
 
-  std::string qualified_resource_name = global_resource::QualifiedName(
-      global_resource::Type::Director, myself->resource_name_);
+  using global_resource::Type;
+
+  std::string qualified_resource_name
+      = global_resource::QualifiedName(Type::Director, myself->resource_name_);
 
   bool old_style_tls{false};
 
@@ -99,11 +96,8 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
     } break;
   }
 
-  std::string cpy{myself->resource_name_};
-  BashSpaces(cpy.data());
-  PoolMem hello_msg;
-  hello_msg.bsprintf(hello, cpy.c_str(), kBareosVersion.Major,
-                     kBareosVersion.Minor, kBareosVersion.Patch);
+  auto hello_msg
+      = make_hello<Type::Director, Type::Client>(myself->resource_name_);
 
   if (!BareosConnect(jcr, fd, qualified_resource_name, client,
                      hello_msg.c_str(), old_style_tls)) {

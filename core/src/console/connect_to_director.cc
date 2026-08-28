@@ -28,6 +28,7 @@
 #include "lib/global_resource.h"
 #include "lib/bstringlist.h"
 #include "lib/bsock_tcp.h"
+#include "lib/hello.h"
 #include "lib/version.h"
 #include "lib/default_console.h"
 
@@ -63,13 +64,8 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
   std::string qualified_resource_name
       = global_resource::QualifiedName(global_resource::Type::Console, name);
 
-  std::string cpy{name};
-  BashSpaces(cpy.data());
-  PoolMem hello_msg;
-  hello_msg.bsprintf("Hello %s calling version %s Version=\"%u.%u.%u\"\n",
-                     cpy.c_str(), kBareosVersionStrings.Full,
-                     kBareosVersion.Major, kBareosVersion.Minor,
-                     kBareosVersion.Patch);
+  auto hello_msg = make_hello<global_resource::Type::Console,
+                              global_resource::Type::Director>(name);
 
   if (!BareosConnect(&jcr, UA_sock, qualified_resource_name, local_tls_resource,
                      hello_msg.c_str())) {

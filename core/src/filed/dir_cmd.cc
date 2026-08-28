@@ -46,6 +46,7 @@
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+#include "lib/hello.h"
 #include "lib/path_list.h"
 #include "lib/global_resource.h"
 #include "lib/thread_specific_data.h"
@@ -2048,10 +2049,8 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
   std::string qualified_resource_name = global_resource::QualifiedName(
       global_resource::Type::Client, me->resource_name_);
 
-  PoolMem hello;
-  hello.bsprintf(hello_client, me->resource_name_, FD_PROTOCOL_VERSION,
-                 kBareosVersion.Major, kBareosVersion.Minor,
-                 kBareosVersion.Patch);
+  auto hello = make_hello<global_resource::Type::Client,
+                          global_resource::Type::Director>(me->resource_name_);
 
   if (!BareosConnect(jcr, director_socket.get(),
                      std::move(qualified_resource_name), dir_res,

@@ -139,7 +139,7 @@ target_link_libraries(
   bareos
   PRIVATE version-obj Bareos::Fastlz OpenSSL::SSL ZLIB::ZLIB CLI11::CLI11
           xxHash::xxhash utf8cpp::utf8cpp ${CMAKE_DL_LIBS}
-  PUBLIC ${THREADS_THREADS}
+  PUBLIC ${THREADS_THREADS} fmt::fmt
 )
 
 if(TARGET Bareos::LowLevelScsi)

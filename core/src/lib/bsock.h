@@ -49,6 +49,7 @@
 #include "lib/s_password.h"
 #include "lib/tls_conf.h"
 #include "include/version_numbers.h"
+#include "lib/global_resource.h"
 
 #include <mutex>
 #include <functional>
@@ -316,6 +317,5 @@ bool BareosAccept(BareosSocket* socket,
                   TlsSecretProvider* provider,
                   ClientHelloParser* hello_parser,
                   Authenticator* auth);
-
 
 #endif  // BAREOS_LIB_BSOCK_H_

@@ -40,6 +40,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/hello.h"
 #include "stored/append.h"
 #include "stored/stored.h"
 #include "stored/acquire.h"
@@ -1656,10 +1657,8 @@ static bool ReplicateCmd(JobControlRecord* jcr)
 
   storage_daemon_socket->SetEnableKtls(me->enable_ktls);
 
-  PoolMem hello;
-  hello.bsprintf("Hello Start Storage Job %s Version=\"%u.%u.%u\"\n", JobName,
-                 kBareosVersion.Major, kBareosVersion.Minor,
-                 kBareosVersion.Patch);
+  auto hello = make_hello<global_resource::Type::Storage,
+                          global_resource::Type::Storage>(JobName);
 
   TlsResource custom = *me;
   custom.password_.value = jcr->sd_auth_key;
@@ -1763,10 +1762,8 @@ static bool PassiveCmd(JobControlRecord* jcr)
   fd->SetEnableKtls(me->enable_ktls);
 
   {
-    PoolMem hello;
-    hello.bsprintf("Hello Storage calling Start Job %s Version=\"%u.%u.%u\"\n",
-                   jcr->Job, kBareosVersion.Major, kBareosVersion.Minor,
-                   kBareosVersion.Patch);
+    auto hello = make_hello<global_resource::Type::Storage,
+                            global_resource::Type::Client>(jcr->Job);
 
     TlsResource custom = *me;
     custom.password_.value = jcr->sd_auth_key;

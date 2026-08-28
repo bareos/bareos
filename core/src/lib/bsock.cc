@@ -934,13 +934,13 @@ bool BareosAccept(BareosSocket* socket,
                            static_cast<size_t>(socket->message_length)};
 
 
-    auto connection_parser = parse_hello(my_type, hello);
-    if (!connection_parser) {
-      Emsg1(M_ERROR, 0, "Could not parse hello\n");
-      return false;
-    }
+    // auto connection_parser = parse_hello(my_type, hello);
+    // if (!connection_parser) {
+    //   Emsg1(M_ERROR, 0, "Could not parse hello\n");
+    //   return false;
+    // }
 
-    if (GetConnectionSettingsFor()) {}
+    // if (GetConnectionSettingsFor()) {}
 
     tls_resource = hello_parser->parse(hello);
     if (!tls_resource) {
@@ -1033,4 +1033,89 @@ bool BareosAccept(BareosSocket* socket,
 {
   Md5Authenticator auth{qualified_name, nullptr};
   return BareosAccept(socket, initial_tls, provider, hello_parser, &auth);
+}
+
+
+#include "lib/hello.h"
+#include <fmt/format.h>
+
+struct bashed_printer {
+  std::string_view to_print;
+};
+
+template <>
+struct fmt::formatter<bashed_printer> : fmt::formatter<std::string_view> {
+  constexpr auto parse(fmt::format_parse_context& ctx) { return ctx.begin(); }
+
+  auto format(const bashed_printer& s, fmt::format_context& ctx) const
+  {
+    auto out = ctx.out();
+
+    for (char c : s.to_print) { *out++ = c == ' ' ? 0x1 : c; }
+
+    return out;
+  }
+};
+
+using global_resource::Type;
+
+template <>
+std::string make_hello<Type::Director, Type::Storage>(std::string_view str)
+{
+  auto& version = kBareosVersion;
+  return fmt::format("Hello Director {} calling Version=\"{}.{}.{}\"\n",
+                     bashed_printer{str}, version.Major, version.Minor,
+                     version.Patch);
+}
+
+template <>
+std::string make_hello<Type::Director, Type::Client>(std::string_view str)
+{
+  auto& version = kBareosVersion;
+  return fmt::format("Hello Director {} calling Version=\"{}.{}.{}\"\n",
+                     bashed_printer{str}, version.Major, version.Minor,
+                     version.Patch);
+}
+
+template <>
+std::string make_hello<Type::Storage, Type::Storage>(std::string_view name)
+{
+  auto& version = kBareosVersion;
+  return fmt::format("Hello Start Storage Job {} Version=\"{}.{}.{}\"\n",
+                     bashed_printer{name}, version.Major, version.Minor,
+                     version.Patch);
+}
+template <>
+std::string make_hello<Type::Storage, Type::Client>(std::string_view name)
+{
+  auto& version = kBareosVersion;
+  return fmt::format(
+      "Hello Storage calling Start Job {} Version=\"{}.{}.{}\"\n",
+      bashed_printer{name}, version.Major, version.Minor, version.Patch);
+}
+
+template <>
+std::string make_hello<Type::Client, Type::Storage>(std::string_view name)
+{
+  auto& version = kBareosVersion;
+  return fmt::format("Hello Start Job {} Version=\"{}.{}.{}\"\n",
+                     bashed_printer{name}, version.Major, version.Minor,
+                     version.Patch);
+}
+template <>
+std::string make_hello<Type::Client, Type::Director>(std::string_view name)
+{
+  auto& version = kBareosVersion;
+  return fmt::format(
+      "Hello Client {} FdProtocolVersion=54 calling Version=\"{}.{}.{}\"\n",
+      bashed_printer{name}, version.Major, version.Minor, version.Patch);
+}
+
+template <>
+std::string make_hello<Type::Console, Type::Director>(std::string_view name)
+{
+  auto& version = kBareosVersion;
+  return fmt::format("Hello {} calling version {} Version=\"{}.{}.{}\"\n",
+                     bashed_printer{name}, kBareosVersionStrings.Full,
+                     version.Major, version.Minor, version.Patch);
 }
