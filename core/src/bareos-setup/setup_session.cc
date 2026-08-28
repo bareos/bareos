@@ -307,10 +307,20 @@ int ConfigureProxy(WsCodec& ws)
   if (Run({"systemctl", "enable", "--now", "bareos-webui-proxy"}, ws) != 0) {
     return 1;
   }
+  const auto https_setup_cmds = BuildWebServerHttpsSetupCmds(os.pkg_mgr);
+  for (const auto& command : https_setup_cmds) {
+    if (Run(command, ws) != 0) return 1;
+  }
   if (Run({"systemctl", "enable", "--now",
            BuildWebServerServiceName(os.pkg_mgr)},
           ws)
       != 0) {
+    return 1;
+  }
+  if (!https_setup_cmds.empty()
+      && Run({"systemctl", "restart", BuildWebServerServiceName(os.pkg_mgr)},
+             ws)
+             != 0) {
     return 1;
   }
   return 0;

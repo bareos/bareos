@@ -618,6 +618,15 @@ std::string BuildWebServerServiceName(const std::string& pkg_mgr)
   return pkg_mgr == "apt" ? "apache2" : "httpd";
 }
 
+std::vector<std::vector<std::string>> BuildWebServerHttpsSetupCmds(
+    const std::string& pkg_mgr)
+{
+  if (pkg_mgr == "apt") {
+    return {{"a2enmod", "ssl"}, {"a2ensite", "default-ssl"}};
+  }
+  return {};
+}
+
 std::vector<std::string> BuildBareosDaemonServiceNames(
     const std::string& pkg_mgr)
 {

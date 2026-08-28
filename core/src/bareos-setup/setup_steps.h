@@ -235,6 +235,10 @@ std::vector<std::string> BuildNetworkCheckCmd(const std::string& repo_type);
 /** Return the web server service name used by the distribution packages. */
 std::string BuildWebServerServiceName(const std::string& pkg_mgr);
 
+/** Return commands that activate HTTPS for the packaged WebUI web server. */
+std::vector<std::vector<std::string>> BuildWebServerHttpsSetupCmds(
+    const std::string& pkg_mgr);
+
 /** Return canonical Bareos daemon unit names for enable/start/status checks. */
 std::vector<std::string> BuildBareosDaemonServiceNames(
     const std::string& pkg_mgr);
