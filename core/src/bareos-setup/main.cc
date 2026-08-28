@@ -24,8 +24,11 @@
  *
  * Usage: bareos-setup [--port PORT] [--no-browser] [--tui] [--dry]
  */
+#include <cctype>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -37,10 +40,29 @@
 #include "setup_steps.h"
 #include "tui_wizard.h"
 
+/** Percent-encode a string for safe use as a URL query value. The setup
+ * token alphabet includes characters (e.g. '#', '@') that are otherwise
+ * reserved in URLs, so the raw token must never be embedded verbatim. */
+static std::string UrlEncode(const std::string& value)
+{
+  std::ostringstream encoded;
+  encoded.fill('0');
+  encoded << std::hex;
+  for (unsigned char c : value) {
+    if (std::isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+      encoded << c;
+    } else {
+      encoded << '%' << std::setw(2) << std::uppercase << int(c)
+              << std::nouppercase;
+    }
+  }
+  return encoded.str();
+}
+
 static void OpenBrowser(int port, const std::string& token)
 {
-  std::string url
-      = "http://localhost:" + std::to_string(port) + "/?token=" + token;
+  std::string url = "http://localhost:" + std::to_string(port)
+                    + "/?token=" + UrlEncode(token);
   // Try common browser launchers in order
   for (const char* cmd : {"xdg-open", "open", "sensible-browser"}) {
     if (execlp(cmd, cmd, url.c_str(), nullptr) == 0) return;
@@ -81,8 +103,8 @@ int main(int argc, char* argv[])
   if (tui) return RunTuiWizard(dry_run);
 
   const std::string setup_token = GenerateSetupSecret(32);
-  const std::string setup_url
-      = "http://localhost:" + std::to_string(port) + "/?token=" + setup_token;
+  const std::string setup_url = "http://localhost:" + std::to_string(port)
+                                + "/?token=" + UrlEncode(setup_token);
 
   if (no_browser) {
     std::cout << "Open this URL in your browser: " << setup_url << "\n";
