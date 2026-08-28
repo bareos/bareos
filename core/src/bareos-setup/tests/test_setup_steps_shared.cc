@@ -428,6 +428,19 @@ TEST(BareosSetupStepsShared, BuildsNetworkCheckCmdForSubscriptionRepo)
           "10", "https://download.bareos.com/bareos/release/latest"}));
 }
 
+TEST(BareosSetupStepsShared, BuildsOpenSuseRepositoryPath)
+{
+  EXPECT_EQ(BuildRepoOsPath("opensuse", "15.6"), "SUSE_15");
+  EXPECT_EQ(BuildRepoOsPath("opensuse-leap", "15.6"), "SUSE_15");
+  EXPECT_EQ(BuildRepoOsPath("opensuse-tumbleweed", "20260828"),
+            "SUSE_20260828");
+}
+
+TEST(BareosSetupStepsShared, SupportsOpenSuseLeapPlatform)
+{
+  EXPECT_TRUE(IsSupportedSetupPlatform("opensuse-leap", "zypper"));
+}
+
 TEST(BareosSetupStepsShared, BuildsWebServerServiceNameForPackageManager)
 {
   EXPECT_EQ(BuildWebServerServiceName("apt"), "apache2");

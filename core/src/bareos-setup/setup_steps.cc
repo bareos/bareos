@@ -573,6 +573,10 @@ std::string BuildRepoOsPath(const std::string& distro,
                             const std::string& version)
 {
   if (IsElDistro(distro)) return "EL_" + MajorVersion(version);
+  if (distro == "opensuse" || distro == "opensuse-leap"
+      || distro == "opensuse-tumbleweed") {
+    return "SUSE_" + MajorVersion(version);
+  }
   return CapFirst(distro) + "_" + version;
 }
 
@@ -1133,8 +1137,20 @@ bool IsSupportedSetupPlatform(const std::string& distro,
                               const std::string& package_manager)
 {
   static const std::set<std::string> supported{
-      "almalinux", "centos", "debian", "fedora", "ol",     "openela",
-      "oracle",    "rhel",   "rocky",  "sles",   "ubuntu", "opensuse",
+      "almalinux",
+      "centos",
+      "debian",
+      "fedora",
+      "ol",
+      "openela",
+      "oracle",
+      "rhel",
+      "rocky",
+      "sles",
+      "ubuntu",
+      "opensuse",
+      "opensuse-leap",
+      "opensuse-tumbleweed",
   };
   return supported.contains(distro)
          && (package_manager == "apt" || package_manager == "dnf"
