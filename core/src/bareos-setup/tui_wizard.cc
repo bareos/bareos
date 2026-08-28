@@ -157,6 +157,7 @@ int RunTuiWizard(bool dry_run)
              false)) {
       return 1;
     }
+    if (!Run({"systemctl", "restart", "bareos-dir"}, false)) return 1;
     const std::string proxy_config
         = "[listen]\n"
           "address = 127.0.0.1\n"

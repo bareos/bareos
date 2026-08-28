@@ -650,8 +650,8 @@ TEST(BareosSetupSessionOrchestration,
 {
   // Regression test: InstallPackages() alone never enabled/started the
   // bareos-dir/bareos-sd/bareos-fd services, so CreateAdmin()'s
-  // "systemctl reload bareos-dir" used to fail with "Unit cannot be
-  // reloaded because it is inactive." This asserts the catalog step's
+  // "systemctl restart bareos-dir" used to fail with "Unit cannot be
+  // restarted because it is inactive." This asserts the catalog step's
   // command sequence still ends with enabling all three daemons.
   // "sudo" is included as a fake shim too: every command Run() issues is
   // wrapped with "sudo" unless already root (see command_runner.cc's
@@ -724,6 +724,9 @@ TEST(BareosSetupSessionOrchestration, AdminStepWritesWebuiTlsPskConsole)
   std::ifstream resource(resource_path);
   const std::string content((std::istreambuf_iterator<char>(resource)),
                             std::istreambuf_iterator<char>());
+  std::ifstream log(log_path);
+  const std::string commands((std::istreambuf_iterator<char>(log)),
+                             std::istreambuf_iterator<char>());
   std::error_code ec;
   std::filesystem::remove_all(fake_dir, ec);
 
@@ -731,6 +734,7 @@ TEST(BareosSetupSessionOrchestration, AdminStepWritesWebuiTlsPskConsole)
   EXPECT_NE(content.find("Profile = \"webui-admin\""), std::string::npos);
   EXPECT_NE(content.find("TLS Enable = No"), std::string::npos);
   EXPECT_EQ(content.find("TLS Enable = yes"), std::string::npos);
+  EXPECT_NE(commands.find("systemctl restart bareos-dir"), std::string::npos);
 }
 
 TEST(BareosSetupSessionOrchestration,

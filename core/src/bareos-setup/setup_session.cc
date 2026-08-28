@@ -266,7 +266,9 @@ int CreateAdmin(WsCodec& ws)
       });
   if (write_result != 0) return write_result;
   if (Run({"chown", "root:bareos", path}, ws, {password}) != 0) return 1;
-  if (Run({"systemctl", "reload", "bareos-dir"}, ws, {password}) != 0) return 1;
+  if (Run({"systemctl", "restart", "bareos-dir"}, ws, {password}) != 0) {
+    return 1;
+  }
   {
     std::lock_guard lock(Progress().mutex);
     Progress().admin_password = password;
