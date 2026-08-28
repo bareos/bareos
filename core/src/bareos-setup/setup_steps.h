@@ -175,6 +175,11 @@ std::string Trim(std::string value);
 /** Build the fixed package list used by the setup wizard. */
 std::vector<std::string> BuildDefaultPackageList(const std::string& pkg_mgr);
 
+/** Build the Bareos package list without the local PostgreSQL server package.
+ */
+std::vector<std::string> BuildPackageListWithoutPostgresServer(
+    const std::string& pkg_mgr);
+
 /**
  * Build the command needed to initialize a fresh PostgreSQL data directory,
  * if the package manager's PostgreSQL package requires one (e.g. Red

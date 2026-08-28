@@ -535,6 +535,19 @@ std::vector<std::string> BuildDefaultPackageList(const std::string& pkg_mgr)
   return packages;
 }
 
+std::vector<std::string> BuildPackageListWithoutPostgresServer(
+    const std::string& pkg_mgr)
+{
+  auto packages = BuildDefaultPackageList(pkg_mgr);
+  packages.erase(std::remove_if(packages.begin(), packages.end(),
+                                [](const std::string& package) {
+                                  return package == "postgresql"
+                                         || package == "postgresql-server";
+                                }),
+                 packages.end());
+  return packages;
+}
+
 std::vector<std::string> BuildPostgresInitCmd()
 {
   if (IsToolInPath("postgresql-setup")) {
