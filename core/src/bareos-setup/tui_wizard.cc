@@ -69,8 +69,6 @@ int RunTuiWizard(bool dry_run)
   }
 
   std::cout << "Disk storage: /var/lib/bareos/storage\n";
-  std::cout
-      << "Ports: WebUI 9100, Director 9101, FD 9102, SD 9103, proxy 9104\n";
   if (!Run(BuildInstallCmd(os.pkg_mgr, BuildDefaultPackageList()), dry_run)) {
     std::cerr << "Package installation failed.\n";
     return 1;

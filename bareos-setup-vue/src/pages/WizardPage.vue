@@ -124,7 +124,6 @@
           <template #prepend><q-icon name="folder" /></template>
         </q-input>
         <p v-else><q-icon name="storage" color="primary" class="q-mr-xs" />Disk storage: <code>/var/lib/bareos/storage</code></p>
-        <p><q-icon name="lan" color="primary" class="q-mr-xs" />Standard ports: WebUI 9100 · Director 9101 · FD 9102 · SD 9103 · proxy 9104</p>
       </q-card-section></q-card>
       <q-card v-else-if="step === 'progress'" flat bordered><q-card-section>
         <q-list dense><q-item v-for="item in installSteps" :key="item.id">
@@ -143,7 +142,7 @@
       </q-card-section></q-card>
 
       <div class="row justify-between q-mt-lg">
-        <q-btn v-if="['welcome', 'progress', 'complete'].indexOf(step) < 0"
+        <q-btn v-if="step !== 'welcome' && step !== 'complete' && !(step === 'progress' && installStarted)"
           flat icon="arrow_back" label="Back" @click="back" />
         <q-space />
         <q-btn v-if="step !== 'complete'" color="primary"
@@ -170,6 +169,7 @@ const busy = ref(false)
 const error = ref('')
 const output = ref('')
 const failed = ref(false)
+const installStarted = ref(false)
 const distroIcon = computed(() => getDistroIcon(store.state.distro))
 const installSteps = [
   { id: 'repository', label: 'Configure repository' }, { id: 'packages', label: 'Install packages' },
@@ -191,7 +191,7 @@ const description = computed(() => ({
   welcome: 'Bareos Setup will guide you through the installation and setup of Bareos and required services on this computer.',
   platform: 'Detecting your Linux distribution and package manager to select compatible packages.',
   repository: 'Choose which Bareos package repository to install from.',
-  storage: 'Configure where Bareos should store backup data and which network ports it will use.',
+  storage: 'Configure where Bareos should store backup data on this host.',
   progress: 'Installation stops on failure. Retry the failed step or roll back wizard-owned changes.',
 }[step.value] || ''))
 const progress = computed(() => step.value === 'complete' ? 1 :
@@ -206,13 +206,14 @@ function next() {
   else if (step.value === 'storage') step.value = 'progress'
   else if (step.value === 'progress') start()
 }
-function back() { step.value = ({ platform: 'welcome', repository: 'platform', storage: 'repository' })[step.value] || step.value }
+function back() { step.value = ({ platform: 'welcome', repository: 'platform', storage: 'repository', progress: 'storage' })[step.value] || step.value }
 function payload() {
   return { repository: store.repository, repository_login: store.repositoryLogin,
     repository_password: store.repositoryPassword, distro: store.state.distro, version: store.state.version,
     storage_path: store.customizeStorage ? store.storagePath : '/var/lib/bareos/storage' }
 }
 function start() {
+  installStarted.value = true
   busy.value = true; error.value = ''; failed.value = false; output.value = ''
   send({ action: 'run', step: 'repository', ...payload() })
 }
