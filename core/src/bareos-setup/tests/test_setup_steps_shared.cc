@@ -64,6 +64,28 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageListForZypper)
                 "bareos-webui-proxy", "apache2-mod_ssl", "postgresql-server"}));
 }
 
+TEST(BareosSetupStepsShared, BuildsPackageListWithoutPostgresServer)
+{
+  EXPECT_EQ(BuildPackageListWithoutPostgresServer("apt"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-tape", "bareos-storage-dedupable",
+                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
+                "bareos-webui-proxy"}));
+  EXPECT_EQ(BuildPackageListWithoutPostgresServer("dnf"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-tape", "bareos-storage-dedupable",
+                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
+                "bareos-webui-proxy", "mod_ssl"}));
+  EXPECT_EQ(BuildPackageListWithoutPostgresServer("zypper"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-tape", "bareos-storage-dedupable",
+                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
+                "bareos-webui-proxy", "apache2-mod_ssl"}));
+}
+
 TEST(BareosSetupStepsShared, SuggestsSingleChangerAssignments)
 {
   const std::vector<TapeChangerInfo> changers = {

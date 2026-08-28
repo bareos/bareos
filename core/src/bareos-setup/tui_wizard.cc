@@ -115,8 +115,17 @@ int RunTuiWizard(bool dry_run)
   }
 
   std::cout << "Disk storage: /var/lib/bareos/storage\n";
-  if (!Run(BuildInstallCmd(os.pkg_mgr, BuildDefaultPackageList(os.pkg_mgr)),
-           dry_run)) {
+  if (os.pkg_mgr == "apt") {
+    std::cout << "Installing PostgreSQL package.\n";
+    if (!Run(BuildInstallCmd(os.pkg_mgr, {"postgresql"}), dry_run)) return 1;
+    if (!Run({"systemctl", "enable", "--now", "postgresql"}, dry_run)) {
+      return 1;
+    }
+  }
+  const auto packages = os.pkg_mgr == "apt"
+                            ? BuildPackageListWithoutPostgresServer(os.pkg_mgr)
+                            : BuildDefaultPackageList(os.pkg_mgr);
+  if (!Run(BuildInstallCmd(os.pkg_mgr, packages), dry_run)) {
     std::cerr << "Package installation failed.\n";
     return 1;
   }

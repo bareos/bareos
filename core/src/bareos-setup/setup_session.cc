@@ -176,6 +176,19 @@ int InstallPackages(WsCodec& ws)
     throw std::runtime_error("This Linux distribution is not supported.");
   }
 
+  if (os.pkg_mgr == "apt") {
+    Output(ws, "Installing PostgreSQL package.");
+    if (Run(BuildInstallCmd(os.pkg_mgr, {"postgresql"}), ws) != 0) return 1;
+    if (Run({"systemctl", "enable", "--now", "postgresql"}, ws) != 0) {
+      return 1;
+    }
+    Output(ws, "Installing the fixed Bareos package set.");
+    return Run(
+        BuildInstallCmd(os.pkg_mgr,
+                        BuildPackageListWithoutPostgresServer(os.pkg_mgr)),
+        ws);
+  }
+
   Output(ws, "Installing the fixed Bareos package set.");
   return Run(BuildInstallCmd(os.pkg_mgr, BuildDefaultPackageList(os.pkg_mgr)),
              ws);
