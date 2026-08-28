@@ -34,7 +34,6 @@
 #include "lib/bnet.h"
 #include "lib/cram_md5.h"
 #include "lib/global_resource.h"
-#include "lib/hello_parser.h"
 #include "lib/s_password.h"
 #include "lib/tls.h"
 #include "lib/tls_conf.h"
@@ -1014,18 +1013,6 @@ bool BareosAccept(BareosSocket* socket,
   }
 
   return true;
-}
-
-bool BareosConnect(JobControlRecord* jcr,
-                   BareosSocket* socket,
-                   const std::string& qualified_name,
-                   const TlsResource* res,
-                   std::string_view hello_msg,
-                   bool cleartext_authentication)
-{
-  Md5Authenticator auth{qualified_name};
-  return BareosConnect(jcr, socket, qualified_name, res, hello_msg, &auth,
-                       cleartext_authentication);
 }
 
 bool BareosAccept(BareosSocket* socket,
