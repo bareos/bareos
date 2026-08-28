@@ -10,7 +10,7 @@ export const useSetupStore = defineStore('setup', () => {
     finished: false,
     failed: ''
   })
-  const repository = ref('community')
+  const repository = ref('subscription')
   const repositoryLogin = ref('')
   const repositoryPassword = ref('')
   const storagePath = ref('/var/lib/bareos/storage')
