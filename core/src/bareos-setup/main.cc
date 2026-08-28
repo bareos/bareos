@@ -76,6 +76,7 @@ int main(int argc, char* argv[])
 {
   CLI::App app{"Bareos Setup Wizard", "bareos-setup"};
   app.set_version_flag("--version", BAREOS_FULL_VERSION);
+  app.footer(std::string("Version: ") + BAREOS_FULL_VERSION);
 
   int port = 19101;
   app.add_option("--port,-p", port, "TCP port to listen on")
