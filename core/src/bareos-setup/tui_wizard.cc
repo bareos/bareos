@@ -78,14 +78,14 @@ int RunTuiWizard(bool dry_run)
     const auto init_cmd = BuildPostgresInitCmd();
     if (!init_cmd.empty() && !Run(init_cmd, false)) return 1;
     if (!Run({"systemctl", "enable", "--now", "postgresql"}, false)) return 1;
+    // These scripts must run as the "postgres" OS user (per the official
+    // Bareos installation documentation), since they rely on PostgreSQL
+    // peer authentication as that user, not as root.
     for (const auto& script :
-         {std::vector<std::string>{
-              "/usr/lib/bareos/scripts/create_bareos_database"},
-          std::vector<std::string>{
-              "/usr/lib/bareos/scripts/make_bareos_tables"},
-          std::vector<std::string>{
-              "/usr/lib/bareos/scripts/grant_bareos_privileges"}}) {
-      if (!Run(script, false)) return 1;
+         {"/usr/lib/bareos/scripts/create_bareos_database",
+          "/usr/lib/bareos/scripts/make_bareos_tables",
+          "/usr/lib/bareos/scripts/grant_bareos_privileges"}) {
+      if (!Run(BuildRunAsPostgresCmd(script), false)) return 1;
     }
   }
 

@@ -194,13 +194,14 @@ int InitializeCatalog(WsCodec& ws)
   const auto init_cmd = BuildPostgresInitCmd();
   if (!init_cmd.empty() && Run(init_cmd, ws) != 0) return 1;
   if (Run({"systemctl", "enable", "--now", "postgresql"}, ws) != 0) return 1;
-  for (const auto& command :
-       {std::vector<std::string>{
-            "/usr/lib/bareos/scripts/create_bareos_database"},
-        std::vector<std::string>{"/usr/lib/bareos/scripts/make_bareos_tables"},
-        std::vector<std::string>{
-            "/usr/lib/bareos/scripts/grant_bareos_privileges"}}) {
-    if (Run(command, ws) != 0) return 1;
+  // These scripts must run as the "postgres" OS user (per the official
+  // Bareos installation documentation), since they rely on PostgreSQL
+  // peer authentication as that user, not as root.
+  for (const auto& script :
+       {"/usr/lib/bareos/scripts/create_bareos_database",
+        "/usr/lib/bareos/scripts/make_bareos_tables",
+        "/usr/lib/bareos/scripts/grant_bareos_privileges"}) {
+    if (Run(BuildRunAsPostgresCmd(script), ws) != 0) return 1;
   }
   const int marker_result
       = Run({"install", "-D", "-m", "0640", "/dev/null", marker.string()}, ws);

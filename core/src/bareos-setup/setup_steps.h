@@ -176,6 +176,16 @@ std::vector<std::string> BuildDefaultPackageList(const std::string& pkg_mgr);
  */
 std::vector<std::string> BuildPostgresInitCmd();
 
+/**
+ * Wrap a Bareos catalog script (create_bareos_database,
+ * make_bareos_tables, grant_bareos_privileges, ...) so it runs as the
+ * "postgres" OS user via "su postgres -c <script>", matching the
+ * official Bareos installation documentation. These scripts must run as
+ * the postgres user, not root, since they rely on PostgreSQL peer
+ * authentication as that OS user.
+ */
+std::vector<std::string> BuildRunAsPostgresCmd(const std::string& script);
+
 /** Build the repository OS path segment for the detected distribution. */
 std::string BuildRepoOsPath(const std::string& distro,
                             const std::string& version);
