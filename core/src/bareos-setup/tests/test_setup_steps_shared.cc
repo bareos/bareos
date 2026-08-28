@@ -367,6 +367,23 @@ TEST(BareosSetupStepsShared, BuildsRunAsPostgresCmd)
           "/usr/lib/bareos/scripts/grant_bareos_privileges"}));
 }
 
+TEST(BareosSetupStepsShared, BuildsNetworkCheckCmdForCommunityRepo)
+{
+  EXPECT_EQ(BuildNetworkCheckCmd("community"),
+            (std::vector<std::string>{
+                "curl", "--fail", "--silent", "--show-error", "--head",
+                "--max-time", "10", "https://download.bareos.org/current"}));
+}
+
+TEST(BareosSetupStepsShared, BuildsNetworkCheckCmdForSubscriptionRepo)
+{
+  EXPECT_EQ(
+      BuildNetworkCheckCmd("subscription"),
+      (std::vector<std::string>{
+          "curl", "--fail", "--silent", "--show-error", "--head", "--max-time",
+          "10", "https://download.bareos.com/bareos/release/latest"}));
+}
+
 TEST(BareosSetupStepsShared, JoinsSimpleCommandForDisplayWithoutQuoting)
 {
   EXPECT_EQ(
@@ -559,6 +576,76 @@ TEST(BareosSetupSessionOrchestration, InstallPackagesRunsThePackageManager)
                            return line.find(os.pkg_mgr) != std::string::npos;
                          }),
             commands.end());
+}
+
+TEST(BareosSetupSessionOrchestration,
+     RepositoryStepBlocksDownloadWhenNetworkCheckFails)
+{
+  // Regression test: the pre-flight reachability probe added to
+  // InstallRepository() must run before the real repository script
+  // download/run, and a failing probe must stop the step immediately.
+  // Unlike FakeToolPath's generic "sudo" shim (a no-op that always exits
+  // 0, used by the other orchestration tests that only care which
+  // commands were *attempted*), this test needs "sudo" to actually pass
+  // its arguments through to the fake tools below so that a failing
+  // "curl" shim's exit code genuinely propagates back to InstallRepository().
+  const auto os = DetectOs();
+  const std::string dir_path = (std::filesystem::temp_directory_path()
+                                / "bareos-setup-test-curl-fail-XXXXXX")
+                                   .string();
+  std::vector<char> buffer(dir_path.begin(), dir_path.end());
+  buffer.push_back('\0');
+  ASSERT_NE(mkdtemp(buffer.data()), nullptr);
+  const std::filesystem::path fake_dir = buffer.data();
+  const std::filesystem::path log_path = fake_dir / "log.txt";
+
+  const auto write_shim
+      = [&](const std::string& name, const std::string& body) {
+          const std::filesystem::path shim = fake_dir / name;
+          std::ofstream out(shim);
+          out << "#!/bin/sh\n" << body;
+          out.close();
+          std::filesystem::permissions(
+              shim, std::filesystem::perms::owner_all
+                        | std::filesystem::perms::group_read
+                        | std::filesystem::perms::group_exec
+                        | std::filesystem::perms::others_read
+                        | std::filesystem::perms::others_exec);
+        };
+  // "sudo" passes its argv straight through so the real (fake) subcommand's
+  // exit code is what InstallRepository() actually sees.
+  write_shim("sudo", "exec \"$@\"\n");
+  write_shim("curl",
+             "echo \"curl $*\" >> '" + log_path.string() + "'\nexit 1\n");
+  write_shim("bash",
+             "echo \"bash $*\" >> '" + log_path.string() + "'\nexit 0\n");
+
+  const char* current_path = getenv("PATH");
+  const std::string old_path = current_path != nullptr ? current_path : "";
+  setenv("PATH", (fake_dir.string() + ":" + old_path).c_str(), 1);
+
+  const std::string json_message = "{\"distro\":\"" + os.distro
+                                   + "\",\"version\":\"" + os.version
+                                   + "\",\"repository\":\"community\"}";
+  const int result = RunStepDiscardingOutput("repository", json_message);
+
+  setenv("PATH", old_path.c_str(), 1);
+  std::vector<std::string> commands;
+  {
+    std::ifstream in(log_path);
+    std::string line;
+    while (std::getline(in, line)) commands.push_back(line);
+  }
+  std::error_code ec;
+  std::filesystem::remove_all(fake_dir, ec);
+
+  EXPECT_NE(result, 0);
+  ASSERT_FALSE(commands.empty());
+  EXPECT_NE(commands[0].find("curl"), std::string::npos);
+  EXPECT_TRUE(
+      std::find_if(commands.begin(), commands.end(),
+                   [](const auto& line) { return line.rfind("bash ", 0) == 0; })
+      == commands.end());
 }
 
 TEST(BareosSetupSessionOrchestration,

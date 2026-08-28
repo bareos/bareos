@@ -142,11 +142,15 @@ int InstallRepository(WsCodec& ws, json_t* message)
     throw std::runtime_error("Subscription credentials are required.");
   }
 
+  const auto secrets = SecretsFor(message);
+  Output(ws, "Checking connectivity to the Bareos download server...");
+  const int reachable = Run(BuildNetworkCheckCmd(repo_type), ws, secrets);
+  if (reachable != 0) { return reachable; }
+
   auto command
       = BuildAddRepoCmd(os.distro, os.version, repo_type, login, password);
   const auto script = RuntimeFile("repository");
   command.insert(command.end() - 1, {"--output", script.string()});
-  const auto secrets = SecretsFor(message);
   const int download = Run(command, ws, secrets);
   if (download != 0) {
     std::filesystem::remove(script);
