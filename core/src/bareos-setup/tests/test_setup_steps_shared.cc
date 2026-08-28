@@ -61,7 +61,7 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageListForZypper)
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
                 "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy", "apache2-mod_ssl", "postgresql-server"}));
+                "bareos-webui-proxy", "postgresql-server"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsPackageListWithoutPostgresServer)
@@ -83,7 +83,7 @@ TEST(BareosSetupStepsShared, BuildsPackageListWithoutPostgresServer)
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
                 "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy", "apache2-mod_ssl"}));
+                "bareos-webui-proxy"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsCatalogInitScriptsOnlyWhenNeeded)
