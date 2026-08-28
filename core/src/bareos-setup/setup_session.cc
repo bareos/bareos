@@ -165,7 +165,8 @@ int InstallPackages(WsCodec& ws)
   }
 
   Output(ws, "Installing the fixed Bareos package set.");
-  return Run(BuildInstallCmd(os.pkg_mgr, BuildDefaultPackageList()), ws);
+  return Run(BuildInstallCmd(os.pkg_mgr, BuildDefaultPackageList(os.pkg_mgr)),
+             ws);
 }
 
 int ConfigureStorage(WsCodec& ws, json_t* message)
@@ -190,6 +191,9 @@ int InitializeCatalog(WsCodec& ws)
     Output(ws, "The Bareos catalog is already initialized.");
     return 0;
   }
+  const auto init_cmd = BuildPostgresInitCmd();
+  if (!init_cmd.empty() && Run(init_cmd, ws) != 0) return 1;
+  if (Run({"systemctl", "enable", "--now", "postgresql"}, ws) != 0) return 1;
   for (const auto& command :
        {std::vector<std::string>{
             "/usr/lib/bareos/scripts/create_bareos_database"},

@@ -25,14 +25,24 @@
 
 #include "command_runner.h"
 
-TEST(BareosSetupStepsShared, BuildsDefaultPackageList)
+TEST(BareosSetupStepsShared, BuildsDefaultPackageListForDnf)
 {
-  EXPECT_EQ(BuildDefaultPackageList(),
+  EXPECT_EQ(BuildDefaultPackageList("dnf"),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
                 "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy"}));
+                "bareos-webui-proxy", "postgresql-server"}));
+}
+
+TEST(BareosSetupStepsShared, BuildsDefaultPackageListForApt)
+{
+  EXPECT_EQ(BuildDefaultPackageList("apt"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-tape", "bareos-storage-dedupable",
+                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
+                "bareos-webui-proxy", "postgresql"}));
 }
 
 TEST(BareosSetupStepsShared, SuggestsSingleChangerAssignments)
@@ -308,4 +318,15 @@ TEST(BareosSetupCommandRunner, ReportsMissingPackageManager)
   EXPECT_NE(std::find(missing.begin(), missing.end(),
                       "definitely-not-a-real-tool-xyz"),
             missing.end());
+}
+
+TEST(BareosSetupStepsShared, BuildsPostgresInitCmdConsistentlyWithToolLookup)
+{
+  const auto init_cmd = BuildPostgresInitCmd();
+  if (IsToolInPath("postgresql-setup")) {
+    EXPECT_EQ(init_cmd,
+              (std::vector<std::string>{"postgresql-setup", "--initdb"}));
+  } else {
+    EXPECT_TRUE(init_cmd.empty());
+  }
 }
