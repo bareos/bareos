@@ -126,12 +126,28 @@
         <p v-else><q-icon name="storage" color="primary" class="q-mr-xs" />Disk storage: <code>/var/lib/bareos/storage</code></p>
       </q-card-section></q-card>
       <q-card v-else-if="step === 'progress'" flat bordered><q-card-section>
-        <q-list dense><q-item v-for="item in installSteps" :key="item.id">
-          <q-item-section avatar><q-icon :name="done(item.id) ? 'check_circle' : 'radio_button_unchecked'"
-            :color="done(item.id) ? 'positive' : 'grey'" /></q-item-section>
-          <q-item-section>{{ item.label }}</q-item-section>
-        </q-item></q-list>
-        <pre v-if="output" class="output-console">{{ output }}</pre>
+        <q-list dense bordered separator>
+          <q-expansion-item v-for="item in installSteps" :key="item.id"
+            v-model="expandedSteps[item.id]">
+            <template #header>
+              <q-item-section avatar>
+                <q-spinner v-if="item.id === currentStepId && !done(item.id)" color="primary" size="24px" />
+                <q-icon v-else :name="done(item.id) ? 'check_circle' : 'radio_button_unchecked'"
+                  :color="done(item.id) ? 'positive' : 'grey'" size="24px" />
+              </q-item-section>
+              <q-item-section :class="{ 'text-primary text-weight-bold': item.id === currentStepId && !done(item.id) }">
+                {{ item.label }}
+              </q-item-section>
+            </template>
+            <q-card>
+              <q-card-section>
+                <pre v-if="stepLogs[item.id]" class="output-console"
+                  :ref="el => { if (el) logRefs[item.id] = el }">{{ stepLogs[item.id] }}</pre>
+                <p v-else class="text-grey">No output yet.</p>
+              </q-card-section>
+            </q-card>
+          </q-expansion-item>
+        </q-list>
       </q-card-section></q-card>
       <q-card v-else flat bordered><q-card-section>
         <q-icon name="check_circle" color="positive" size="3em" />
@@ -157,7 +173,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch, nextTick } from 'vue'
 import { useSetupStore } from '../stores/setup.js'
 import { useSetupWs } from '../composables/useSetupWs.js'
 import { getDistroIcon, FALLBACK_ICON } from '../utils/distro-icons.js'
@@ -167,15 +183,18 @@ const { connected, messages, send } = useSetupWs()
 const step = ref('welcome')
 const busy = ref(false)
 const error = ref('')
-const output = ref('')
 const failed = ref(false)
 const installStarted = ref(false)
+const currentStepId = ref(null)
+const logRefs = {}
 const distroIcon = computed(() => getDistroIcon(store.state.distro))
 const installSteps = [
   { id: 'repository', label: 'Configure repository' }, { id: 'packages', label: 'Install packages' },
   { id: 'storage', label: 'Apply optional disk storage path' },
   { id: 'catalog', label: 'Initialize catalog when needed' }, { id: 'admin', label: 'Create initial admin account' },
   { id: 'proxy', label: 'Enable loopback WebUI proxy' }, { id: 'smoke_test', label: 'Verify services and backup/restore' }]
+const stepLogs = reactive(Object.fromEntries(installSteps.map(item => [item.id, ''])))
+const expandedSteps = reactive(Object.fromEntries(installSteps.map(item => [item.id, false])))
 const installedComponents = [
   { icon: 'hub', label: 'Director', detail: 'Job scheduling and catalog control' },
   { icon: 'save', label: 'Storage Daemon', detail: 'Writes backup data' },
@@ -214,16 +233,19 @@ function payload() {
 }
 function start() {
   installStarted.value = true
-  busy.value = true; error.value = ''; failed.value = false; output.value = ''
+  busy.value = true; error.value = ''; failed.value = false
+  installSteps.forEach(item => { stepLogs[item.id] = ''; expandedSteps[item.id] = false })
+  currentStepId.value = 'repository'
+  expandedSteps.repository = true
   send({ action: 'run', step: 'repository', ...payload() })
 }
 function retry() { start() }
-function rollback() { send({ action: 'rollback' }); busy.value = false; failed.value = false }
+function rollback() { send({ action: 'rollback' }); busy.value = false; failed.value = false; currentStepId.value = null }
 function downloadScript() { send({ action: 'script' }) }
 watch(messages, list => {
   const message = list[list.length - 1]; if (!message) return
   if (message.type === 'state') { Object.assign(store.state, message) }
-  if (message.type === 'output') output.value += `${message.line}\n`
+  if (message.type === 'output' && currentStepId.value) stepLogs[currentStepId.value] += `${message.line}\n`
   if (message.type === 'error') { error.value = message.message; failed.value = true; busy.value = false }
   if (message.type === 'admin_credentials') store.admin = message
   if (message.type === 'rollback_complete') store.state.completed = []
@@ -235,11 +257,21 @@ watch(messages, list => {
   if (message.type === 'done') {
     if (message.exit_code) { failed.value = true; busy.value = false; return }
     if (!store.state.completed.includes(message.step)) store.state.completed.push(message.step)
+    expandedSteps[message.step] = false
     const nextStep = installSteps.find(item => !done(item.id))
-    if (nextStep) send({ action: 'run', step: nextStep.id, ...payload() })
-    else { busy.value = false; step.value = 'complete' }
+    if (nextStep) {
+      currentStepId.value = nextStep.id
+      expandedSteps[nextStep.id] = true
+      send({ action: 'run', step: nextStep.id, ...payload() })
+    } else { busy.value = false; currentStepId.value = null; step.value = 'complete' }
   }
 }, { deep: true })
+watch(() => currentStepId.value && stepLogs[currentStepId.value], async () => {
+  const id = currentStepId.value; if (!id) return
+  await nextTick()
+  const el = logRefs[id]
+  if (el) el.scrollTop = el.scrollHeight
+})
 onMounted(() => send({ action: 'state' }))
 </script>
 
