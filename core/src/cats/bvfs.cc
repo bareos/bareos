@@ -518,9 +518,9 @@ void Bvfs::GetAllFileVersions(DBId_t pathid,
   db->EscapeString(jcr, fname_esc.data(), fname, fname_len);
   db->EscapeString(jcr, client_esc.data(), client, client_len);
 
-  db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_versions_6, fname_esc,
-                edit_uint64(pathid, ed1), client_esc, filter.c_str(), limit,
-                offset);
+  db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_versions_6, fname_esc.c_str(),
+                edit_uint64(pathid, ed1), client_esc.c_str(), filter.c_str(),
+                limit, offset);
   db->SqlQuery(query.c_str(), list_entries, user_data);
 }
 
