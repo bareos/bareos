@@ -69,11 +69,15 @@ int RunTuiWizard(bool dry_run)
   }
 
   std::cout << "Disk storage: /var/lib/bareos/storage\n";
-  if (!Run(BuildInstallCmd(os.pkg_mgr, BuildDefaultPackageList()), dry_run)) {
+  if (!Run(BuildInstallCmd(os.pkg_mgr, BuildDefaultPackageList(os.pkg_mgr)),
+           dry_run)) {
     std::cerr << "Package installation failed.\n";
     return 1;
   }
   if (!dry_run) {
+    const auto init_cmd = BuildPostgresInitCmd();
+    if (!init_cmd.empty() && !Run(init_cmd, false)) return 1;
+    if (!Run({"systemctl", "enable", "--now", "postgresql"}, false)) return 1;
     for (const auto& script :
          {std::vector<std::string>{
               "/usr/lib/bareos/scripts/create_bareos_database"},

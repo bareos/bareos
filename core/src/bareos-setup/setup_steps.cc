@@ -503,17 +503,39 @@ std::string Trim(std::string value)
   return value;
 }
 
-std::vector<std::string> BuildDefaultPackageList()
+std::vector<std::string> BuildDefaultPackageList(const std::string& pkg_mgr)
 {
-  return {"bareos-filedaemon",
-          "bareos-director",
-          "bareos-storage",
-          "bareos-storage-tape",
-          "bareos-storage-dedupable",
-          "bareos-database-tools",
-          "bareos-tools",
-          "bareos-webui-new",
-          "bareos-webui-proxy"};
+  std::vector<std::string> packages = {"bareos-filedaemon",
+                                       "bareos-director",
+                                       "bareos-storage",
+                                       "bareos-storage-tape",
+                                       "bareos-storage-dedupable",
+                                       "bareos-database-tools",
+                                       "bareos-tools",
+                                       "bareos-webui-new",
+                                       "bareos-webui-proxy"};
+  // The Bareos catalog packages do not pull in a local PostgreSQL server
+  // (Bareos also supports remote catalogs), so the wizard has to add it
+  // explicitly for a single-host setup. Package names/splits differ by
+  // distribution family.
+  if (pkg_mgr == "apt") {
+    // Debian/Ubuntu's "postgresql" metapackage includes both server and
+    // client (psql) and auto-initializes a default cluster on install.
+    packages.push_back("postgresql");
+  } else {
+    // Fedora/RHEL/openSUSE family: postgresql-server pulls in the
+    // postgresql client package (providing psql) as a dependency.
+    packages.push_back("postgresql-server");
+  }
+  return packages;
+}
+
+std::vector<std::string> BuildPostgresInitCmd()
+{
+  if (IsToolInPath("postgresql-setup")) {
+    return {"postgresql-setup", "--initdb"};
+  }
+  return {};
 }
 
 std::string BuildRepoOsPath(const std::string& distro,
@@ -554,7 +576,7 @@ std::vector<std::string> BuildInstallCmd(
     const std::vector<std::string>& packages)
 {
   const auto& selected_packages
-      = packages.empty() ? BuildDefaultPackageList() : packages;
+      = packages.empty() ? BuildDefaultPackageList(pkg_mgr) : packages;
 
   if (pkg_mgr == "apt") {
     std::vector<std::string> cmd = {"apt-get", "install", "-y"};

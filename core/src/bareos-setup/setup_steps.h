@@ -162,7 +162,17 @@ std::string CapFirst(std::string s);
 std::string Trim(std::string value);
 
 /** Build the fixed package list used by the setup wizard. */
-std::vector<std::string> BuildDefaultPackageList();
+std::vector<std::string> BuildDefaultPackageList(const std::string& pkg_mgr);
+
+/**
+ * Build the command needed to initialize a fresh PostgreSQL data directory,
+ * if the package manager's PostgreSQL package requires one (e.g. Red
+ * Hat/SUSE family "postgresql-setup --initdb"). Returns an empty vector when
+ * no separate initialization step is required (e.g. Debian/Ubuntu, whose
+ * postgresql package initializes a default cluster automatically on
+ * install).
+ */
+std::vector<std::string> BuildPostgresInitCmd();
 
 /** Build the repository OS path segment for the detected distribution. */
 std::string BuildRepoOsPath(const std::string& distro,
@@ -200,7 +210,8 @@ std::string DescribeDeviceIdentifier(const DeviceIdentifier& identifier);
 std::vector<DeviceIdentifier> ParseDeviceIdentifiersVpdPage(
     const std::vector<uint8_t>& page_data);
 
-/** Parse the changer's data transfer element identifiers from READ ELEMENT STATUS. */
+/** Parse the changer's data transfer element identifiers from READ ELEMENT
+ * STATUS. */
 std::vector<TapeChangerDriveIdentifier> ParseTapeLibraryDriveIdentifiers(
     const std::vector<uint8_t>& status_data);
 
@@ -225,10 +236,10 @@ bool ValidateStorageConfig(const DiskStorageConfig& disk,
 DirectorStorageDefaults ReadDirectorStorageDefaults();
 
 /** Build the shell script that applies the selected storage configuration. */
-std::string BuildConfigureStorageScript(
-    const DiskStorageConfig& disk,
-    const TapeStorageConfig& tape,
-    const DirectorStorageDefaults& defaults = {});
+std::string BuildConfigureStorageScript(const DiskStorageConfig& disk,
+                                        const TapeStorageConfig& tape,
+                                        const DirectorStorageDefaults& defaults
+                                        = {});
 
 /** Execute a generated shell script via a temporary file. */
 int RunGeneratedScript(const std::string& script,
