@@ -234,7 +234,7 @@ int CreateAdmin(WsCodec& ws)
       "  Password = \"" + password
       + "\"\n"
         "  Profile = \"webui-admin\"\n"
-      "  TLS Enable = yes\n"
+      "  TLS Enable = No\n"
         "}\n";
   const std::string path = "/etc/bareos/bareos-dir.d/console/admin.conf";
   const std::vector<std::string> write_argv

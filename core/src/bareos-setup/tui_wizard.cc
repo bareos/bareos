@@ -134,7 +134,7 @@ int RunTuiWizard(bool dry_run)
   if (!dry_run) {
     const std::string resource
         = "Console {\n  Name = admin\n  Password = \"" + admin_password
-          + "\"\n  Profile = \"webui-admin\"\n  TLS Enable = yes\n}\n";
+          + "\"\n  Profile = \"webui-admin\"\n  TLS Enable = No\n}\n";
     if (RunCommandWithInput({"install", "-D", "-m", "0640", "/dev/stdin",
                              "/etc/bareos/bareos-dir.d/console/admin.conf"},
                             resource, true,
