@@ -114,6 +114,77 @@ TEST(BareosSetupStepsShared, BuildsCatalogInitScriptsOnlyWhenNeeded)
   EXPECT_EQ(BuildCatalogInitScripts("zypper"), BuildCatalogInitScripts("dnf"));
 }
 
+namespace {
+
+// Prepends a temp directory of no-op shim executables (named after the
+// given tools) to PATH, so RunStep()'s real orchestration logic (which
+// commands to run, and in what order) can be exercised without touching
+// the real system. Each shim just appends its own invocation to a shared
+// log file and exits 0. The "sudo" shim is special: it passes through to
+// its argv so tests behave the same whether they run as root or not.
+class FakeToolPath {
+ public:
+  explicit FakeToolPath(const std::vector<std::string>& tools)
+  {
+    std::string pattern
+        = (std::filesystem::temp_directory_path() / "bareos-setup-test-XXXXXX")
+              .string();
+    std::vector<char> buffer(pattern.begin(), pattern.end());
+    buffer.push_back('\0');
+    if (mkdtemp(buffer.data()) == nullptr) {
+      throw std::runtime_error("mkdtemp failed");
+    }
+    dir_ = buffer.data();
+    log_path_ = dir_ / "log.txt";
+    for (const auto& tool : tools) {
+      const std::filesystem::path shim = dir_ / tool;
+      std::ofstream out(shim);
+      if (tool == "sudo") {
+        out << "#!/bin/sh\nexec \"$@\"\n";
+      } else {
+        out << "#!/bin/sh\necho \"" << tool << " $*\" >> '"
+            << log_path_.string() << "'\nexit 0\n";
+      }
+      out.close();
+      std::filesystem::permissions(shim,
+                                   std::filesystem::perms::owner_all
+                                       | std::filesystem::perms::group_read
+                                       | std::filesystem::perms::group_exec
+                                       | std::filesystem::perms::others_read
+                                       | std::filesystem::perms::others_exec);
+    }
+    const char* current = getenv("PATH");
+    old_path_ = current != nullptr ? current : "";
+    setenv("PATH", (dir_.string() + ":" + old_path_).c_str(), 1);
+  }
+
+  ~FakeToolPath()
+  {
+    setenv("PATH", old_path_.c_str(), 1);
+    std::error_code ec;
+    std::filesystem::remove_all(dir_, ec);
+  }
+
+  FakeToolPath(const FakeToolPath&) = delete;
+  FakeToolPath& operator=(const FakeToolPath&) = delete;
+
+  std::vector<std::string> LoggedCommands() const
+  {
+    std::vector<std::string> lines;
+    std::ifstream in(log_path_);
+    std::string line;
+    while (std::getline(in, line)) lines.push_back(line);
+    return lines;
+  }
+
+ private:
+  std::filesystem::path dir_;
+  std::filesystem::path log_path_;
+  std::string old_path_;
+};
+
+}  // namespace
+
 TEST(BareosSetupCommandRunner, FindsToolPresentInPath)
 {
   // "sh" is guaranteed to exist on every supported Linux platform.
@@ -129,6 +200,8 @@ TEST(BareosSetupCommandRunner, ReportsNoMissingToolsWhenAllPresent)
 {
   // "sh" is used here as a stand-in package manager name since it is
   // always present, so this exercises the "all tools found" path.
+  FakeToolPath fake_tools(
+      {"curl", "bash", "install", "chown", "systemctl", "su", "sh"});
   EXPECT_TRUE(MissingRequiredTools("sh").empty());
 }
 
@@ -145,6 +218,8 @@ TEST(BareosSetupCommandRunner, RequiresSuForRunningCatalogScriptsAsPostgres)
   // "su" is required so the catalog scripts (which must run as the
   // "postgres" OS user) can be started at all; verify it is part of the
   // fixed required-tools set regardless of the detected package manager.
+  FakeToolPath fake_tools(
+      {"curl", "bash", "install", "chown", "systemctl", "su", "sh"});
   ASSERT_TRUE(IsToolInPath("su"));
   EXPECT_TRUE(MissingRequiredTools("sh").empty());
 }
@@ -348,68 +423,6 @@ TEST(BareosSetupStepsShared, RejectsCrossOriginOrMissingHeaders)
 
 namespace {
 
-// Prepends a temp directory of no-op shim executables (named after the
-// given tools) to PATH, so RunStep()'s real orchestration logic (which
-// commands to run, and in what order) can be exercised without touching
-// the real system. Each shim just appends its own invocation to a shared
-// log file and exits 0.
-class FakeToolPath {
- public:
-  explicit FakeToolPath(const std::vector<std::string>& tools)
-  {
-    std::string pattern
-        = (std::filesystem::temp_directory_path() / "bareos-setup-test-XXXXXX")
-              .string();
-    std::vector<char> buffer(pattern.begin(), pattern.end());
-    buffer.push_back('\0');
-    if (mkdtemp(buffer.data()) == nullptr) {
-      throw std::runtime_error("mkdtemp failed");
-    }
-    dir_ = buffer.data();
-    log_path_ = dir_ / "log.txt";
-    for (const auto& tool : tools) {
-      const std::filesystem::path shim = dir_ / tool;
-      std::ofstream out(shim);
-      out << "#!/bin/sh\necho \"" << tool << " $*\" >> '" << log_path_.string()
-          << "'\nexit 0\n";
-      out.close();
-      std::filesystem::permissions(shim,
-                                   std::filesystem::perms::owner_all
-                                       | std::filesystem::perms::group_read
-                                       | std::filesystem::perms::group_exec
-                                       | std::filesystem::perms::others_read
-                                       | std::filesystem::perms::others_exec);
-    }
-    const char* current = getenv("PATH");
-    old_path_ = current != nullptr ? current : "";
-    setenv("PATH", (dir_.string() + ":" + old_path_).c_str(), 1);
-  }
-
-  ~FakeToolPath()
-  {
-    setenv("PATH", old_path_.c_str(), 1);
-    std::error_code ec;
-    std::filesystem::remove_all(dir_, ec);
-  }
-
-  FakeToolPath(const FakeToolPath&) = delete;
-  FakeToolPath& operator=(const FakeToolPath&) = delete;
-
-  std::vector<std::string> LoggedCommands() const
-  {
-    std::vector<std::string> lines;
-    std::ifstream in(log_path_);
-    std::string line;
-    while (std::getline(in, line)) lines.push_back(line);
-    return lines;
-  }
-
- private:
-  std::filesystem::path dir_;
-  std::filesystem::path log_path_;
-  std::string old_path_;
-};
-
 // Runs one setup step against a real (but unconnected-to-a-browser)
 // WsCodec so RunSetupStepForTests() has a valid fd to send "output"/"done"
 // messages to; the messages themselves are discarded since these tests
@@ -457,26 +470,43 @@ TEST(BareosSetupSessionOrchestration,
   // wrapped with "sudo" unless already root (see command_runner.cc's
   // IsRoot() check), so a real "sudo" would otherwise intercept these
   // commands before they ever reach the other fake shims.
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
+  }
   FakeToolPath fake_tools(
       {"sudo", "postgresql-setup", "systemctl", "su", "install"});
   ASSERT_EQ(RunStepDiscardingOutput("catalog"), 0);
   const auto commands = fake_tools.LoggedCommands();
   ASSERT_FALSE(commands.empty());
-  const auto enable_it
-      = std::find_if(commands.begin(), commands.end(), [](const auto& line) {
-          return line.find(
-                     "systemctl enable --now bareos-dir bareos-sd bareos-fd")
-                 != std::string::npos;
-        });
+  const auto daemon_services = BuildBareosDaemonServiceNames(os.pkg_mgr);
+  const auto enable_it = std::find_if(
+      commands.begin(), commands.end(), [&](const auto& line) {
+        return line.find("systemctl enable --now") != std::string::npos
+               && std::all_of(daemon_services.begin(), daemon_services.end(),
+                              [&](const auto& service) {
+                                return line.find(service) != std::string::npos;
+                              });
+      });
   ASSERT_NE(enable_it, commands.end());
   // The daemons must be enabled only after the catalog scripts have run,
   // not before.
-  const auto grant_it
-      = std::find_if(commands.begin(), commands.end(), [](const auto& line) {
-          return line.find("grant_bareos_privileges") != std::string::npos;
-        });
-  ASSERT_NE(grant_it, commands.end());
-  EXPECT_LT(grant_it - commands.begin(), enable_it - commands.begin());
+  if (BuildCatalogInitScripts(os.pkg_mgr).empty()) {
+    const auto marker_it
+        = std::find_if(commands.begin(), commands.end(), [](const auto& line) {
+            return line.find("/var/lib/bareos/.catalog-initialized")
+                   != std::string::npos;
+          });
+    ASSERT_NE(marker_it, commands.end());
+    EXPECT_LT(marker_it - commands.begin(), enable_it - commands.begin());
+  } else {
+    const auto grant_it
+        = std::find_if(commands.begin(), commands.end(), [](const auto& line) {
+            return line.find("grant_bareos_privileges") != std::string::npos;
+          });
+    ASSERT_NE(grant_it, commands.end());
+    EXPECT_LT(grant_it - commands.begin(), enable_it - commands.begin());
+  }
 }
 
 TEST(BareosSetupSessionOrchestration, AdminStepWritesWebuiTlsPskConsole)
@@ -578,6 +608,9 @@ TEST(BareosSetupSessionOrchestration,
 TEST(BareosSetupSessionOrchestration, InstallPackagesRunsThePackageManager)
 {
   const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
+  }
   FakeToolPath fake_tools({"sudo", os.pkg_mgr});
   RunStepDiscardingOutput("packages");
   const auto commands = fake_tools.LoggedCommands();
@@ -619,6 +652,9 @@ TEST(BareosSetupSessionOrchestration,
   // its arguments through to the fake tools below so that a failing
   // "curl" shim's exit code genuinely propagates back to InstallRepository().
   const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
+  }
   const std::string dir_path = (std::filesystem::temp_directory_path()
                                 / "bareos-setup-test-curl-fail-XXXXXX")
                                    .string();
@@ -689,11 +725,16 @@ TEST(BareosSetupSessionOrchestration,
   // successful "systemctl is-active" already implies the config parsed
   // and the daemon is running correctly -- so smoke_test must rely on
   // is-active alone and never invoke the daemon binaries directly.
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
+  }
   FakeToolPath fake_tools({"sudo", "systemctl"});
   ASSERT_EQ(RunStepDiscardingOutput("smoke_test"), 0);
   const auto commands = fake_tools.LoggedCommands();
-  for (const auto& service :
-       {"bareos-dir", "bareos-sd", "bareos-fd", "bareos-webui-proxy"}) {
+  auto services = BuildBareosDaemonServiceNames(os.pkg_mgr);
+  services.emplace_back("bareos-webui-proxy");
+  for (const auto& service : services) {
     const std::string expected = std::string("systemctl is-active ") + service;
     EXPECT_NE(std::find_if(commands.begin(), commands.end(),
                            [&expected](const auto& line) {
@@ -701,7 +742,6 @@ TEST(BareosSetupSessionOrchestration,
                            }),
               commands.end());
   }
-  const auto os = DetectOs();
   const std::string web_server
       = "systemctl is-active " + BuildWebServerServiceName(os.pkg_mgr);
   EXPECT_NE(std::find_if(commands.begin(), commands.end(),
