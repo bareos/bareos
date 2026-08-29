@@ -5,6 +5,10 @@ export const useSetupStore = defineStore('setup', () => {
   const state = reactive({
     distro: '',
     version: '',
+    pretty_name: '',
+    arch: '',
+    codename: '',
+    hostname: '',
     package_manager: '',
     setup_version: '',
     completed: [],
@@ -14,11 +18,8 @@ export const useSetupStore = defineStore('setup', () => {
   const repository = ref('subscription')
   const repositoryLogin = ref('')
   const repositoryPassword = ref('')
-  const storagePath = ref('/var/lib/bareos/storage')
-  const customizeStorage = ref(false)
   const admin = ref(null)
   return {
-    state, repository, repositoryLogin, repositoryPassword, storagePath,
-    customizeStorage, admin
+    state, repository, repositoryLogin, repositoryPassword, admin
   }
 })

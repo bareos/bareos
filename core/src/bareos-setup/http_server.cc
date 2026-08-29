@@ -52,6 +52,15 @@ namespace {
 std::atomic_bool g_shutdown_requested{false};
 std::atomic_int g_server_fd{-1};
 
+bool IsLoopbackPeer(const sockaddr_storage& peer)
+{
+  if (peer.ss_family == AF_INET) {
+    const auto* addr = reinterpret_cast<const sockaddr_in*>(&peer);
+    return (ntohl(addr->sin_addr.s_addr) & 0xff000000U) == 0x7f000000U;
+  }
+  return false;
+}
+
 }  // namespace
 
 /** Read bytes from fd until we see "\r\n\r\n". Returns the full header block.
@@ -236,14 +245,17 @@ void RunHttpServer(const std::string& bind_address,
             << std::flush;
 
   while (!g_shutdown_requested) {
-    int fd = accept(srv, nullptr, nullptr);
+    sockaddr_storage peer{};
+    socklen_t peer_len = sizeof(peer);
+    int fd = accept(srv, reinterpret_cast<sockaddr*>(&peer), &peer_len);
     if (fd < 0) {
       if (g_shutdown_requested) break;
       continue;
     }
 
     // Handle each connection in its own thread
-    std::thread([fd, setup_token, ws_handler]() {
+    const bool peer_is_loopback = IsLoopbackPeer(peer);
+    std::thread([fd, setup_token, ws_handler, peer_is_loopback]() {
       std::string headers = ReadHttpHeaders(fd);
       if (headers.empty()) {
         close(fd);
@@ -298,7 +310,7 @@ void RunHttpServer(const std::string& bind_address,
         WriteAll(fd, resp.data(), resp.size());
 
         // Delegate to WebSocket handler (blocks until connection closes)
-        ws_handler(fd);
+        ws_handler(fd, peer_is_loopback);
       } else {
         std::string path = GetRequestPath(headers);
         // Strip query string

@@ -11,6 +11,7 @@
 #include "setup_session.h"
 
 #include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -41,6 +42,10 @@ struct SetupProgress {
   std::string failed_step;
   bool finished = false;
   std::string admin_password;
+};
+
+struct SessionContext {
+  bool peer_is_loopback = true;
 };
 
 SetupProgress& Progress()
@@ -99,6 +104,14 @@ std::filesystem::path RuntimeFile(const std::string& prefix)
   return name.data();
 }
 
+std::string LocalHostname()
+{
+  std::array<char, 256> hostname{};
+  if (::gethostname(hostname.data(), hostname.size()) != 0) return {};
+  hostname.back() = '\0';
+  return hostname.data();
+}
+
 std::vector<std::string> SecretsFor(json_t* message)
 {
   std::vector<std::string> secrets;
@@ -124,7 +137,22 @@ int Run(const std::vector<std::string>& command,
       });
 }
 
-int InstallRepository(WsCodec& ws, json_t* message)
+int RunWithInput(const std::vector<std::string>& command,
+                 const std::string& input,
+                 WsCodec& ws,
+                 const std::vector<std::string>& secrets = {})
+{
+  Output(ws, "$ " + JoinCommandForDisplay(command), secrets);
+  return RunCommandWithInput(
+      command, input, true,
+      [&ws, &secrets](const std::string& line, const std::string&) {
+        Output(ws, line, secrets);
+      });
+}
+
+int InstallRepository(WsCodec& ws,
+                      json_t* message,
+                      const SessionContext& context)
 {
   const auto distro = StringField(message, "distro");
   const auto version = StringField(message, "version");
@@ -142,17 +170,28 @@ int InstallRepository(WsCodec& ws, json_t* message)
   if (repo_type == "subscription" && (login.empty() || password.empty())) {
     throw std::runtime_error("Subscription credentials are required.");
   }
+  if (repo_type == "subscription" && !context.peer_is_loopback) {
+    throw std::runtime_error(
+        "Subscription credentials can only be entered from a local loopback "
+        "browser session. Run the setup browser on this host, use TUI mode, or "
+        "choose the community repository.");
+  }
 
   const auto secrets = SecretsFor(message);
   Output(ws, "Checking connectivity to the Bareos download server...");
   const int reachable = Run(BuildNetworkCheckCmd(repo_type), ws, secrets);
   if (reachable != 0) { return reachable; }
 
+  const bool use_curl_config = repo_type == "subscription";
   auto command
-      = BuildAddRepoCmd(os.distro, os.version, repo_type, login, password);
+      = BuildAddRepoCmd(os.distro, os.version, repo_type, use_curl_config);
   const auto script = RuntimeFile("repository");
   command.insert(command.end() - 1, {"--output", script.string()});
-  const int download = Run(command, ws, secrets);
+  const int download
+      = use_curl_config
+            ? RunWithInput(command, BuildCurlUserConfig(login, password), ws,
+                           secrets)
+            : Run(command, ws, secrets);
   if (download != 0) {
     std::filesystem::remove(script);
     return download;
@@ -189,22 +228,19 @@ int InstallPackages(WsCodec& ws)
         ws);
   }
 
-  Output(ws, "Installing the fixed Bareos package set.");
-  return Run(BuildInstallCmd(os.pkg_mgr, BuildDefaultPackageList(os.pkg_mgr)),
-             ws);
-}
+  auto packages = BuildDefaultPackageList(os.pkg_mgr);
+  if (os.distro == "sles") {
+    Output(ws, "Checking whether the mtx package is available.");
+    if (Run(BuildMtxAvailabilityCheckCmd(), ws) != 0) {
+      Output(ws,
+             "Warning: mtx is not available from the configured SLES "
+             "repositories, so bareos-storage-tape cannot be installed.");
+      packages = BuildPackageListWithoutTapeStorage(os.pkg_mgr);
+    }
+  }
 
-int ConfigureStorage(WsCodec& ws, json_t* message)
-{
-  const auto path = StringField(message, "storage_path");
-  if (path.empty() || path == "/var/lib/bareos/storage") {
-    Output(ws, "Keeping package-provided disk storage defaults.");
-    return 0;
-  }
-  if (!IsSafeStoragePath(path)) {
-    throw std::runtime_error("Storage path must be an absolute safe path.");
-  }
-  return Run({"install", "-d", "-m", "0750", path}, ws);
+  Output(ws, "Installing the fixed Bareos package set.");
+  return Run(BuildInstallCmd(os.pkg_mgr, packages), ws);
 }
 
 int InitializeCatalog(WsCodec& ws)
@@ -243,7 +279,7 @@ int InitializeCatalog(WsCodec& ws)
   return Run(enable_daemons, ws);
 }
 
-int CreateAdmin(WsCodec& ws)
+int CreateAdmin(WsCodec& ws, const SessionContext& context)
 {
   constexpr std::string_view username = "admin";
   const std::string password = GenerateSetupSecret();
@@ -273,8 +309,16 @@ int CreateAdmin(WsCodec& ws)
     std::lock_guard lock(Progress().mutex);
     Progress().admin_password = password;
   }
-  Send(ws, json_pack("{s:s,s:s,s:s}", "type", "admin_credentials", "username",
-                     username.data(), "password", password.c_str()));
+  if (context.peer_is_loopback) {
+    Send(ws, json_pack("{s:s,s:s,s:s}", "type", "admin_credentials", "username",
+                       username.data(), "password", password.c_str()));
+  } else {
+    std::cerr << "\nBareos WebUI admin credentials:\n"
+              << "  Username: " << username << "\n"
+              << "  Password: " << password << "\n\n";
+    Send(ws, json_pack("{s:s,s:s,s:b}", "type", "admin_credentials", "username",
+                       username.data(), "password_printed_to_terminal", true));
+  }
   return 0;
 }
 
@@ -356,19 +400,21 @@ int RunSmokeTest(WsCodec& ws)
   return 0;
 }
 
-int RunStep(WsCodec& ws, const std::string& step, json_t* message)
+int RunStep(WsCodec& ws,
+            const std::string& step,
+            json_t* message,
+            const SessionContext& context = {})
 {
-  if (step == "repository") return InstallRepository(ws, message);
+  if (step == "repository") return InstallRepository(ws, message, context);
   if (step == "packages") return InstallPackages(ws);
-  if (step == "storage") return ConfigureStorage(ws, message);
   if (step == "catalog") return InitializeCatalog(ws);
-  if (step == "admin") return CreateAdmin(ws);
+  if (step == "admin") return CreateAdmin(ws, context);
   if (step == "proxy") return ConfigureProxy(ws);
   if (step == "smoke_test") return RunSmokeTest(ws);
   throw std::runtime_error("Unknown setup step.");
 }
 
-void Handle(WsCodec& ws, json_t* message)
+void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
 {
   const auto action = StringField(message, "action");
   if (action == "state") {
@@ -378,12 +424,14 @@ void Handle(WsCodec& ws, json_t* message)
     for (const auto& step : Progress().completed) {
       json_array_append_new(completed, json_string(step.c_str()));
     }
+    const auto hostname = LocalHostname();
     Send(ws,
-         json_pack("{s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:o,s:b,s:s}", "type", "state",
-                   "distro", os.distro.c_str(), "version", os.version.c_str(),
-                   "package_manager", os.pkg_mgr.c_str(), "pretty_name",
-                   os.pretty_name.c_str(), "arch", os.arch.c_str(), "codename",
-                   os.codename.c_str(), "completed", completed, "finished",
+         json_pack("{s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:o,s:b,s:s}", "type",
+                   "state", "distro", os.distro.c_str(), "version",
+                   os.version.c_str(), "package_manager", os.pkg_mgr.c_str(),
+                   "pretty_name", os.pretty_name.c_str(), "arch",
+                   os.arch.c_str(), "codename", os.codename.c_str(), "hostname",
+                   hostname.c_str(), "completed", completed, "finished",
                    Progress().finished, "setup_version", BAREOS_FULL_VERSION));
     return;
   }
@@ -411,8 +459,7 @@ void Handle(WsCodec& ws, json_t* message)
 
   const auto step = StringField(message, "step");
   static const std::set<std::string> allowed{
-      "repository", "packages", "storage",   "catalog",
-      "admin",      "proxy",    "smoke_test"};
+      "repository", "packages", "catalog", "admin", "proxy", "smoke_test"};
   if (!allowed.contains(step)) {
     Error(ws, step, "Unknown setup step.");
     return;
@@ -427,7 +474,7 @@ void Handle(WsCodec& ws, json_t* message)
   }
   int result = 1;
   try {
-    result = RunStep(ws, step, message);
+    result = RunStep(ws, step, message, context);
   } catch (const std::exception& error) {
     Error(ws, step, error.what());
     return;
@@ -448,20 +495,23 @@ void Handle(WsCodec& ws, json_t* message)
 
 int RunSetupStepForTests(int fd,
                          const std::string& step,
-                         const std::string& json_message)
+                         const std::string& json_message,
+                         bool peer_is_loopback)
 {
   WsCodec ws(fd);
+  const SessionContext context{peer_is_loopback};
   json_error_t error{};
   json_t* message = json_loads(json_message.c_str(), 0, &error);
   if (!message) message = json_object();
-  const int result = RunStep(ws, step, message);
+  const int result = RunStep(ws, step, message, context);
   json_decref(message);
   return result;
 }
 
-void RunSetupSession(int fd, bool /*dry_run*/)
+void RunSetupSession(int fd, bool /*dry_run*/, bool peer_is_loopback)
 {
   WsCodec ws(fd);
+  const SessionContext context{peer_is_loopback};
   try {
     while (!ws.IsClosed()) {
       const auto text = ws.RecvMessage();
@@ -473,7 +523,7 @@ void RunSetupSession(int fd, bool /*dry_run*/)
         Error(ws, "request", "Invalid JSON request.");
         continue;
       }
-      Handle(ws, message);
+      Handle(ws, message, context);
       json_decref(message);
     }
   } catch (const std::exception& error) {

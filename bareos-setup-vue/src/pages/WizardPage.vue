@@ -55,20 +55,14 @@
         </q-list>
       </q-card-section></q-card>
       <q-card v-else-if="step === 'platform'" flat bordered><q-card-section>
-        <div v-if="store.state.distro" class="row items-center">
-          <q-icon v-if="distroIcon" size="3em" class="q-mr-md" :style="{ color: '#' + distroIcon.hex }">
-            <svg viewBox="0 0 24 24"><path :d="distroIcon.path" fill="currentColor" /></svg>
-          </q-icon>
-          <q-icon v-else :name="FALLBACK_ICON" color="primary" size="3em" class="q-mr-md" />
-          <div>
-            <div class="text-h6">{{ store.state.pretty_name || store.state.distro }}</div>
-            <div class="row q-gutter-xs q-mt-xs">
-              <q-chip dense icon="inventory_2" color="grey-3">{{ store.state.package_manager }}</q-chip>
-              <q-chip v-if="store.state.arch" dense icon="memory" color="grey-3">{{ store.state.arch }}</q-chip>
-              <q-chip v-if="store.state.codename" dense icon="label" color="grey-3">{{ store.state.codename }}</q-chip>
-            </div>
-          </div>
-        </div>
+        <q-markup-table v-if="store.state.distro" flat bordered dense>
+          <tbody>
+            <tr v-for="row in platformRows" :key="row.label">
+              <th class="text-left platform-table__label">{{ row.label }}</th>
+              <td>{{ row.value }}</td>
+            </tr>
+          </tbody>
+        </q-markup-table>
         <q-spinner v-else-if="!error" size="2em" />
       </q-card-section></q-card>
       <q-card v-else-if="step === 'repository'" flat bordered><q-card-section>
@@ -112,18 +106,10 @@
           <q-card-section>
             <div class="row items-center no-wrap">
               <q-radio v-model="store.repository" val="community" color="grey" dense />
-              <span class="text-caption text-grey-7">Bareos Community (unsupported, community-maintained packages)</span>
+              <span class="text-caption text-grey-7 q-ml-sm">Bareos Community (unsupported, community-maintained packages)</span>
             </div>
           </q-card-section>
         </q-card>
-      </q-card-section></q-card>
-      <q-card v-else-if="step === 'storage'" flat bordered><q-card-section>
-        <q-toggle v-model="store.customizeStorage" label="Customize disk storage path" />
-        <q-input v-if="store.customizeStorage" v-model="store.storagePath"
-          label="Disk storage path" hint="Absolute path on this host">
-          <template #prepend><q-icon name="folder" /></template>
-        </q-input>
-        <p v-else><q-icon name="storage" color="primary" class="q-mr-xs" />Disk storage: <code>/var/lib/bareos/storage</code></p>
       </q-card-section></q-card>
       <q-card v-else-if="step === 'progress'" flat bordered><q-card-section>
         <q-list dense bordered separator>
@@ -152,7 +138,7 @@
       <q-card v-else flat bordered><q-card-section>
         <q-icon name="check_circle" color="positive" size="3em" />
         <p>Installation and service verification completed.</p>
-        <p v-if="store.admin"><q-icon name="vpn_key" color="warning" class="q-mr-xs" />Save this initial WebUI password now:
+        <p v-if="adminPasswordVisible"><q-icon name="vpn_key" color="warning" class="q-mr-xs" />Save this initial WebUI password now:
           <code>{{ store.admin.username }} / {{ store.admin.password }}</code>
           <q-btn flat dense icon="content_copy" label="Copy password" class="q-ml-sm"
             @click="copyAdminPassword" />
@@ -161,9 +147,36 @@
           find it on this host in
           <code>/etc/bareos/bareos-dir.d/console/admin.conf</code>.
         </p>
-        <p><q-icon name="open_in_browser" color="primary" class="q-mr-xs" />Log in to the Bareos WebUI at:
-          <a :href="webuiUrl" target="_blank" rel="noopener noreferrer">{{ webuiUrl }}</a>
-        </p>
+        <q-banner v-else-if="adminPasswordPrintedToTerminal" class="bg-info text-white q-mb-md" rounded>
+          <template #avatar><q-icon name="terminal" /></template>
+          The initial WebUI admin password was printed on the terminal where
+          <code>bareos-setup</code> is running. It is not shown here because
+          this browser connection is not local loopback.
+        </q-banner>
+        <p><q-icon name="open_in_browser" color="primary" class="q-mr-xs" />Log in to the Bareos WebUI at one of these URLs:</p>
+        <q-markup-table v-if="webuiUrls.length" flat bordered dense class="q-mb-md">
+          <tbody>
+            <tr v-for="url in webuiUrls" :key="url.href">
+              <th class="text-left webui-url-table__label">{{ url.label }}</th>
+              <td><a :href="url.href" target="_blank" rel="noopener noreferrer">{{ url.href }}</a></td>
+            </tr>
+          </tbody>
+        </q-markup-table>
+        <q-expansion-item v-if="hasInstallationLog" icon="article" label="Installation log"
+          caption="Redacted commands and output from this setup run" class="q-mb-md"
+          expand-separator>
+          <q-card>
+            <q-card-section>
+              <div class="row q-gutter-sm q-mb-sm">
+                <q-btn flat dense icon="content_copy" label="Copy log"
+                  @click="copyInstallationLog" />
+                <q-btn flat dense icon="download" label="Download log"
+                  @click="downloadInstallationLog" />
+              </div>
+              <pre class="output-console">{{ installationLog }}</pre>
+            </q-card-section>
+          </q-card>
+        </q-expansion-item>
         <q-banner v-if="setupClosed" class="bg-positive text-white q-mb-md" rounded>
           <template #avatar><q-icon name="check_circle" /></template>
           Setup wizard closed. You can close this browser tab now.
@@ -192,7 +205,6 @@ import { computed, onMounted, reactive, ref, watch, nextTick } from 'vue'
 import { useQuasar } from 'quasar'
 import { useSetupStore } from '../stores/setup.js'
 import { useSetupWs } from '../composables/useSetupWs.js'
-import { getDistroIcon, FALLBACK_ICON } from '../utils/distro-icons.js'
 
 const $q = useQuasar()
 const store = useSetupStore()
@@ -205,10 +217,17 @@ const installStarted = ref(false)
 const currentStepId = ref(null)
 const setupClosed = ref(false)
 const logRefs = {}
-const distroIcon = computed(() => getDistroIcon(store.state.distro))
+const platformRows = computed(() => [
+  { label: 'Distribution', value: store.state.pretty_name || store.state.distro },
+  { label: 'Distribution ID', value: store.state.distro },
+  { label: 'Version', value: store.state.version },
+  { label: 'Codename', value: store.state.codename },
+  { label: 'Architecture', value: store.state.arch },
+  { label: 'Package manager', value: store.state.package_manager },
+  { label: 'Setup version', value: store.state.setup_version },
+].filter(row => row.value))
 const installSteps = [
   { id: 'repository', label: 'Configure repository' }, { id: 'packages', label: 'Install packages' },
-  { id: 'storage', label: 'Apply optional disk storage path' },
   { id: 'catalog', label: 'Initialize catalog when needed' }, { id: 'admin', label: 'Create initial admin account' },
   { id: 'proxy', label: 'Enable loopback WebUI proxy' }, { id: 'smoke_test', label: 'Verify required services' }]
 const stepLogs = reactive(Object.fromEntries(installSteps.map(item => [item.id, ''])))
@@ -221,43 +240,89 @@ const installedComponents = [
   { icon: 'web', label: 'WebUI', detail: 'Browser-based management interface' }]
 const title = computed(() => step.value === 'complete'
   ? 'Setup complete' : ({ welcome: 'Welcome', platform: 'Platform', repository: 'Repository',
-    storage: 'Storage', progress: 'Installation progress' }[step.value]))
+    progress: 'Installation progress' }[step.value]))
 const stepIcon = computed(() => ({ welcome: 'rocket_launch', platform: 'computer', repository: 'cloud_download',
-  storage: 'storage', progress: 'settings', complete: 'check_circle' }[step.value] || 'rocket_launch'))
+  progress: 'settings', complete: 'check_circle' }[step.value] || 'rocket_launch'))
 const description = computed(() => ({
   welcome: 'Bareos Setup will guide you through the installation and setup of Bareos and required services on this computer.',
   platform: 'Detecting your Linux distribution and package manager to select compatible packages.',
   repository: 'Choose which Bareos package repository to install from.',
-  storage: 'Configure where Bareos should store backup data on this host.',
   progress: 'Installation stops on failure. Retry the failed step or roll back wizard-owned changes.',
 }[step.value] || ''))
 const progress = computed(() => step.value === 'complete' ? 1 :
-  ({ welcome: 0, platform: .2, repository: .35, storage: .5, progress: .7 }[step.value] || 0))
+  ({ welcome: 0, platform: .2, repository: .45, progress: .7 }[step.value] || 0))
 const canContinue = computed(() => step.value !== 'repository' ||
   store.repository === 'community' || (store.repositoryLogin && store.repositoryPassword))
-const webuiUrl = computed(() => {
-  const host = window.location.hostname.includes(':')
-    ? `[${window.location.hostname}]`
-    : window.location.hostname
-  return `https://${host}/bareos-webui-new`
+const adminPasswordVisible = computed(() => Boolean(store.admin?.password))
+const adminPasswordPrintedToTerminal = computed(() =>
+  Boolean(store.admin?.password_printed_to_terminal))
+function formatUrlHost(host) {
+  const value = host.trim()
+  if (!value) return ''
+  if (value.includes(':') && !(value.startsWith('[') && value.endsWith(']'))) {
+    return `[${value}]`
+  }
+  return value
+}
+const webuiUrls = computed(() => {
+  const candidates = [
+    { label: 'Loopback IPv4', host: '127.0.0.1' },
+    { label: 'Localhost', host: 'localhost' },
+    { label: 'Hostname', host: store.state.hostname },
+    { label: 'Current browser host', host: window.location.hostname },
+  ]
+  const seen = new Set()
+  return candidates.flatMap(candidate => {
+    const host = formatUrlHost(candidate.host || '')
+    if (!host) return []
+    const href = `https://${host}/bareos-webui-new`
+    const key = href.toLowerCase()
+    if (seen.has(key)) return []
+    seen.add(key)
+    return [{ label: candidate.label, href }]
+  })
 })
+const installationLog = computed(() => installSteps.map(item => {
+  const log = stepLogs[item.id].trimEnd()
+  if (!log) return ''
+  return `## ${item.label}\n${log}`
+}).filter(Boolean).join('\n\n'))
+const hasInstallationLog = computed(() => installationLog.value.length > 0)
+async function copyInstallationLog() {
+  if (!installationLog.value) return
+  try {
+    await navigator.clipboard.writeText(installationLog.value)
+    $q.notify({ type: 'positive', message: 'Installation log copied.' })
+  } catch (_) {
+    $q.notify({ type: 'negative', message: 'Could not copy installation log.' })
+  }
+}
+function downloadInstallationLog() {
+  if (!installationLog.value) return
+  const blob = new Blob([installationLog.value], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = 'bareos-setup-installation.log'
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
 function done(id) { return store.state.completed.includes(id) }
 function next() {
   if (step.value === 'welcome') { step.value = 'platform'; send({ action: 'state' }) }
   else if (step.value === 'platform') step.value = 'repository'
-  else if (step.value === 'repository') step.value = 'storage'
-  else if (step.value === 'storage') step.value = 'progress'
+  else if (step.value === 'repository') step.value = 'progress'
   else if (step.value === 'progress') start()
 }
-function back() { step.value = ({ platform: 'welcome', repository: 'platform', storage: 'repository', progress: 'storage' })[step.value] || step.value }
+function back() { step.value = ({ platform: 'welcome', repository: 'platform', progress: 'repository' })[step.value] || step.value }
 function payload() {
   return { repository: store.repository, repository_login: store.repositoryLogin,
-    repository_password: store.repositoryPassword, distro: store.state.distro, version: store.state.version,
-    storage_path: store.customizeStorage ? store.storagePath : '/var/lib/bareos/storage' }
+    repository_password: store.repositoryPassword, distro: store.state.distro, version: store.state.version }
 }
 function start() {
   installStarted.value = true
   busy.value = true; error.value = ''; failed.value = false
+  store.admin = null
   installSteps.forEach(item => { stepLogs[item.id] = ''; expandedSteps[item.id] = false })
   currentStepId.value = 'repository'
   expandedSteps.repository = true
@@ -282,7 +347,10 @@ watch(messages, list => {
   if (message.type === 'error') { error.value = message.message; failed.value = true; busy.value = false }
   if (message.type === 'admin_credentials') store.admin = message
   if (message.type === 'rollback_complete') store.state.completed = []
-  if (message.type === 'closed') setupClosed.value = true
+  if (message.type === 'closed') {
+    setupClosed.value = true
+    store.admin = null
+  }
   if (message.type === 'done') {
     if (message.exit_code) { failed.value = true; busy.value = false; return }
     if (!store.state.completed.includes(message.step)) store.state.completed.push(message.step)
@@ -292,7 +360,13 @@ watch(messages, list => {
       currentStepId.value = nextStep.id
       expandedSteps[nextStep.id] = true
       send({ action: 'run', step: nextStep.id, ...payload() })
-    } else { busy.value = false; currentStepId.value = null; step.value = 'complete' }
+    } else {
+      store.repositoryLogin = ''
+      store.repositoryPassword = ''
+      busy.value = false
+      currentStepId.value = null
+      step.value = 'complete'
+    }
   }
 }, { deep: true })
 watch(() => currentStepId.value && stepLogs[currentStepId.value], async () => {
@@ -328,5 +402,11 @@ onMounted(() => send({ action: 'state' }))
 }
 .repo-card--community {
   opacity: 0.85;
+}
+.platform-table__label {
+  width: 12rem;
+}
+.webui-url-table__label {
+  width: 12rem;
 }
 </style>
