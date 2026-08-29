@@ -59,7 +59,18 @@
           <tbody>
             <tr v-for="row in platformRows" :key="row.label">
               <th class="text-left platform-table__label">{{ row.label }}</th>
-              <td>{{ row.value }}</td>
+              <td>
+                <span v-if="row.icon" class="row items-center no-wrap">
+                  <svg v-if="platformDistroIcon" class="platform-distro-icon q-mr-sm"
+                    viewBox="0 0 24 24" role="img" :aria-label="platformIconLabel">
+                    <path :fill="`#${platformDistroIcon.hex}`" :d="platformDistroIcon.path" />
+                  </svg>
+                  <q-icon v-else :name="FALLBACK_ICON" size="24px" class="q-mr-sm"
+                    :aria-label="platformIconLabel" />
+                  {{ row.value }}
+                </span>
+                <template v-else>{{ row.value }}</template>
+              </td>
             </tr>
           </tbody>
         </q-markup-table>
@@ -80,15 +91,34 @@
                 <div class="text-caption text-grey-8">Vendor-supported packages with priority updates and support.</div>
               </div>
             </div>
-            <q-banner dense class="bg-blue-1 text-primary q-mt-md" @click.stop>
-              <template #avatar><q-icon name="workspace_premium" color="primary" /></template>
-              New to Bareos Subscription? Request free evaluation access —
-              test new features, plugins, and integrations, with fast approval.
-              <template #action>
-                <q-btn flat dense color="primary" icon-right="open_in_new" label="Get evaluation access"
-                  type="a" href="https://www.bareos.com/try/" target="_blank" rel="noopener" />
-              </template>
-            </q-banner>
+            <q-card flat bordered class="bg-blue-1 q-mt-md" @click.stop>
+              <q-card-section>
+                <div class="row items-center q-mb-sm">
+                  <q-icon name="workspace_premium" color="primary" size="28px" class="q-mr-sm" />
+                  <div>
+                    <div class="text-subtitle2 text-primary">Try Bareos Subscription features</div>
+                    <div class="text-caption text-grey-8">
+                      Evaluation access includes subscription packages and plugins.
+                    </div>
+                  </div>
+                </div>
+                <q-list dense class="q-mb-sm">
+                  <q-item v-for="feature in subscriptionHighlights" :key="feature.label">
+                    <q-item-section avatar>
+                      <q-icon :name="feature.icon" color="primary" />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label>{{ feature.label }}</q-item-label>
+                      <q-item-label caption>{{ feature.caption }}</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+                <q-btn unelevated dense color="primary" icon-right="open_in_new"
+                  label="Get evaluation access" type="a"
+                  href="https://www.bareos.com/try/" target="_blank"
+                  rel="noopener" />
+              </q-card-section>
+            </q-card>
             <template v-if="store.repository === 'subscription'">
               <q-input v-model="store.repositoryLogin" label="Subscription login" autocomplete="off"
                 class="q-mt-md" @click.stop>
@@ -118,8 +148,8 @@
             <template #header>
               <q-item-section avatar>
                 <q-spinner v-if="item.id === currentStepId && !done(item.id)" color="primary" size="24px" />
-                <q-icon v-else :name="done(item.id) ? 'check_circle' : 'radio_button_unchecked'"
-                  :color="done(item.id) ? 'positive' : 'grey'" size="24px" />
+                <q-icon v-else :name="done(item.id) ? 'check_circle' : item.icon"
+                  :color="done(item.id) ? 'positive' : 'grey-6'" size="24px" />
               </q-item-section>
               <q-item-section :class="{ 'text-primary text-weight-bold': item.id === currentStepId && !done(item.id) }">
                 {{ item.label }}
@@ -134,6 +164,15 @@
             </q-card>
           </q-expansion-item>
         </q-list>
+        <q-banner v-if="installFinished" class="bg-positive text-white q-mt-md" rounded>
+          <template #avatar><q-icon name="check_circle" /></template>
+          Installation steps completed. Review the setup summary for login
+          options and next steps.
+          <template #action>
+            <q-btn flat color="white" label="Show setup summary"
+              @click="step = 'complete'" />
+          </template>
+        </q-banner>
       </q-card-section></q-card>
       <q-card v-else flat bordered><q-card-section>
         <q-icon name="check_circle" color="positive" size="3em" />
@@ -162,6 +201,25 @@
             </tr>
           </tbody>
         </q-markup-table>
+        <p><q-icon name="terminal" color="primary" class="q-mr-xs" />You can
+          also manage this Bareos system locally with <code>bconsole</code>.</p>
+        <q-card flat bordered class="q-mb-md"><q-card-section>
+          <div class="text-subtitle1 q-mb-sm">Possible next steps</div>
+          <q-list dense>
+            <q-item v-for="item in nextStepLinks" :key="item.href"
+              clickable tag="a" :href="item.href" target="_blank"
+              rel="noopener noreferrer">
+              <q-item-section avatar>
+                <q-icon :name="item.icon" color="primary" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>{{ item.label }}</q-item-label>
+                <q-item-label caption>{{ item.caption }}</q-item-label>
+              </q-item-section>
+              <q-item-section side><q-icon name="open_in_new" /></q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section></q-card>
         <q-expansion-item v-if="hasInstallationLog" icon="article" label="Installation log"
           caption="Redacted commands and output from this setup run" class="q-mb-md"
           expand-separator>
@@ -191,8 +249,8 @@
         <q-space />
         <q-btn v-if="step !== 'complete'" color="primary"
           :disable="busy || !connected || !canContinue"
-          :icon-right="step === 'progress' ? 'play_arrow' : 'arrow_forward'"
-          :label="step === 'progress' ? 'Start installation' : 'Continue'" @click="next" />
+          :icon-right="primaryActionIcon"
+          :label="primaryActionLabel" @click="next" />
         <q-btn v-if="step === 'progress' && failed" flat color="negative"
           icon="undo" label="Rollback" @click="rollback" />
       </div>
@@ -205,6 +263,7 @@ import { computed, onMounted, reactive, ref, watch, nextTick } from 'vue'
 import { useQuasar } from 'quasar'
 import { useSetupStore } from '../stores/setup.js'
 import { useSetupWs } from '../composables/useSetupWs.js'
+import { FALLBACK_ICON, getDistroIcon } from '../utils/distro-icons.js'
 
 const $q = useQuasar()
 const store = useSetupStore()
@@ -214,11 +273,12 @@ const busy = ref(false)
 const error = ref('')
 const failed = ref(false)
 const installStarted = ref(false)
+const installFinished = ref(false)
 const currentStepId = ref(null)
 const setupClosed = ref(false)
 const logRefs = {}
 const platformRows = computed(() => [
-  { label: 'Distribution', value: store.state.pretty_name || store.state.distro },
+  { label: 'Distribution', value: store.state.pretty_name || store.state.distro, icon: true },
   { label: 'Distribution ID', value: store.state.distro },
   { label: 'Version', value: store.state.version },
   { label: 'Codename', value: store.state.codename },
@@ -227,9 +287,12 @@ const platformRows = computed(() => [
   { label: 'Setup version', value: store.state.setup_version },
 ].filter(row => row.value))
 const installSteps = [
-  { id: 'repository', label: 'Configure repository' }, { id: 'packages', label: 'Install packages' },
-  { id: 'catalog', label: 'Initialize catalog when needed' }, { id: 'admin', label: 'Create initial admin account' },
-  { id: 'proxy', label: 'Enable loopback WebUI proxy' }, { id: 'smoke_test', label: 'Verify required services' }]
+  { id: 'repository', label: 'Configure repository', icon: 'cloud_download' },
+  { id: 'packages', label: 'Install packages', icon: 'inventory_2' },
+  { id: 'catalog', label: 'Initialize catalog when needed', icon: 'storage' },
+  { id: 'admin', label: 'Create initial admin account', icon: 'admin_panel_settings' },
+  { id: 'proxy', label: 'Enable loopback WebUI proxy', icon: 'lan' },
+  { id: 'smoke_test', label: 'Verify required services', icon: 'verified' }]
 const stepLogs = reactive(Object.fromEntries(installSteps.map(item => [item.id, ''])))
 const expandedSteps = reactive(Object.fromEntries(installSteps.map(item => [item.id, false])))
 const installedComponents = [
@@ -238,9 +301,30 @@ const installedComponents = [
   { icon: 'folder_copy', label: 'File Daemon', detail: "Backs up this host's files" },
   { icon: 'storage', label: 'PostgreSQL', detail: 'Catalog database' },
   { icon: 'web', label: 'WebUI', detail: 'Browser-based management interface' }]
+const subscriptionHighlights = [
+  {
+    icon: 'developer_board',
+    label: 'Hyper-V plugin',
+    caption: 'Protect Microsoft Hyper-V virtualization workloads.',
+  },
+  {
+    icon: 'restore',
+    label: 'Windows disaster recovery with Bareos Barri',
+    caption: 'Evaluate Bareos-assisted Windows recovery workflows.',
+  },
+  {
+    icon: 'account_tree',
+    label: 'Proxmox plugin',
+    caption: 'Back up Proxmox virtualization environments.',
+  },
+]
 const title = computed(() => step.value === 'complete'
   ? 'Setup complete' : ({ welcome: 'Welcome', platform: 'Platform', repository: 'Repository',
     progress: 'Installation progress' }[step.value]))
+const platformDistroIcon = computed(() => step.value === 'platform'
+  ? getDistroIcon(store.state.distro) : null)
+const platformIconLabel = computed(() =>
+  `${store.state.pretty_name || store.state.distro || 'Detected platform'} icon`)
 const stepIcon = computed(() => ({ welcome: 'rocket_launch', platform: 'computer', repository: 'cloud_download',
   progress: 'settings', complete: 'check_circle' }[step.value] || 'rocket_launch'))
 const description = computed(() => ({
@@ -253,9 +337,53 @@ const progress = computed(() => step.value === 'complete' ? 1 :
   ({ welcome: 0, platform: .2, repository: .45, progress: .7 }[step.value] || 0))
 const canContinue = computed(() => step.value !== 'repository' ||
   store.repository === 'community' || (store.repositoryLogin && store.repositoryPassword))
+const primaryActionLabel = computed(() => {
+  if (step.value === 'progress') {
+    return installFinished.value ? 'Show setup summary' : 'Start installation'
+  }
+  return 'Continue'
+})
+const primaryActionIcon = computed(() => {
+  if (step.value === 'progress') {
+    return installFinished.value ? 'check_circle' : 'play_arrow'
+  }
+  return 'arrow_forward'
+})
 const adminPasswordVisible = computed(() => Boolean(store.admin?.password))
 const adminPasswordPrintedToTerminal = computed(() =>
   Boolean(store.admin?.password_printed_to_terminal))
+const nextStepLinks = computed(() => [
+  {
+    icon: 'menu_book',
+    label: 'Read the Bareos documentation',
+    caption: 'Learn how to configure jobs, schedules, clients, storage, and restores.',
+    href: 'https://docs.bareos.org/',
+  },
+  ...(store.repository === 'subscription' ? [] : [{
+    icon: 'workspace_premium',
+    label: 'Request Bareos trial access',
+    caption: 'Try subscription packages, plugins, and vendor-supported builds.',
+    href: 'https://www.bareos.com/try/',
+  }]),
+  {
+    icon: 'calculate',
+    label: 'Open the Bareos pricing calculator',
+    caption: 'Estimate subscription, support, and service options for your setup.',
+    href: 'https://www.bareos.com/pricing/',
+  },
+  {
+    icon: 'groups',
+    label: 'Join a Bareos Expert Circle',
+    caption: 'Meet Bareos experts and discuss backup topics, releases, and operations.',
+    href: 'https://www.bareos.com/meet/',
+  },
+  {
+    icon: 'support_agent',
+    label: 'Explore consulting, support, and funded development',
+    caption: 'Get expert help for setup review, migration, operations, and new features.',
+    href: 'https://www.bareos.com/services/',
+  },
+])
 function formatUrlHost(host) {
   const value = host.trim()
   if (!value) return ''
@@ -312,6 +440,7 @@ function next() {
   if (step.value === 'welcome') { step.value = 'platform'; send({ action: 'state' }) }
   else if (step.value === 'platform') step.value = 'repository'
   else if (step.value === 'repository') step.value = 'progress'
+  else if (step.value === 'progress' && installFinished.value) step.value = 'complete'
   else if (step.value === 'progress') start()
 }
 function back() { step.value = ({ platform: 'welcome', repository: 'platform', progress: 'repository' })[step.value] || step.value }
@@ -321,6 +450,7 @@ function payload() {
 }
 function start() {
   installStarted.value = true
+  installFinished.value = false
   busy.value = true; error.value = ''; failed.value = false
   store.admin = null
   installSteps.forEach(item => { stepLogs[item.id] = ''; expandedSteps[item.id] = false })
@@ -365,7 +495,7 @@ watch(messages, list => {
       store.repositoryPassword = ''
       busy.value = false
       currentStepId.value = null
-      step.value = 'complete'
+      installFinished.value = true
     }
   }
 }, { deep: true })
@@ -393,6 +523,11 @@ onMounted(() => send({ action: 'state' }))
 .boris-mascot--welcome {
   width: 200px;
   height: 200px;
+}
+.platform-distro-icon {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
 }
 .repo-card--subscription {
   border-color: var(--q-primary);
