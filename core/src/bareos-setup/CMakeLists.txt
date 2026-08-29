@@ -114,9 +114,8 @@ target_include_directories(
 # dependencies at all, capable of running unmodified on any supported distro
 # regardless of its glibc/ OpenSSL/Jansson version. This is intended to be built
 # inside the musl/ Alpine container in devtools/bareos-setup-static-build/ (see
-# devtools/build-bareos-setup-static.sh), not as part of normal distro
-# packaging, which should keep linking dynamically against the distro's own
-# libraries.
+# devtools/build-bareos-setup-static.sh), not installed through the normal
+# distro packages.
 option(
   BAREOS_SETUP_STATIC
   "Link bareos-setup fully statically for a portable, distro-independent single binary"
@@ -172,12 +171,6 @@ else()
                          Threads::Threads CLI11::CLI11
   )
 endif()
-
-install(
-  TARGETS bareos-setup
-  DESTINATION "${sbindir}"
-  COMPONENT setup
-)
 
 if(BUILD_TESTING AND GTest_FOUND)
   include(GoogleTest)

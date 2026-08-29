@@ -771,11 +771,6 @@ This package contains the File Daemon
 
 This package contains the shared libraries that are used by multiple daemons and tools.
 
-%description setup
-%{dscr}
-
-This package contains the Bareos setup wizard.
-
 %description database-common
 %{dscr}
 
@@ -1052,10 +1047,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{configtemplatedir}/bareos-webui-proxy.ini
 %{_unitdir}/bareos-webui-proxy.service
 %endif
-
-%files setup
-%defattr(-, root, root)
-%{_sbindir}/bareos-setup
 
 %files client
 %defattr(-, root, root)

@@ -11,7 +11,6 @@ debug/x86_64/bareos-director-python3-plugin-debuginfo
 debug/x86_64/bareos-filedaemon-debuginfo
 debug/x86_64/bareos-filedaemon-grpc-python3-plugin-debuginfo
 debug/x86_64/bareos-filedaemon-python3-plugin-debuginfo
-debug/x86_64/bareos-setup-debuginfo
 debug/x86_64/bareos-storage-debuginfo
 debug/x86_64/bareos-storage-dedupable-debuginfo
 debug/x86_64/bareos-storage-dplcompat-debuginfo
@@ -51,7 +50,6 @@ x86_64/bareos-filedaemon-percona-xtrabackup-python-plugin
 x86_64/bareos-filedaemon-postgresql-python-plugin
 x86_64/bareos-filedaemon-python-plugins-common
 x86_64/bareos-filedaemon-python3-plugin
-x86_64/bareos-setup
 x86_64/bareos-storage
 x86_64/bareos-storage-dedupable
 x86_64/bareos-storage-dplcompat
