@@ -216,7 +216,7 @@ Install on SUSE based Linux Distributions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 SUSE Linux Enterprise Server (SLES), openSUSE
-'''''''''''''''''''''''''''''''''''''''''
+'''''''''''''''''''''''''''''''''''''''''''''
 
 .. index::
    single: Platform; SLES
@@ -244,10 +244,10 @@ they are stored in the file :file:`/etc/zypp/credentials.d/bareos`.
 .. _section-univentioncorporateserver:
 
 Install on Debian based Linux Distributions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Debian / Ubuntu / Univention Corporate Server (UCS)
-'''''''''''''''''''''''''''''''''''''''''''
+'''''''''''''''''''''''''''''''''''''''''''''''''''
 
 .. index::
    single: Platform; Debian

@@ -318,11 +318,6 @@ Provides:      %{name}-libs
 Provides:      user(%{daemon_user})
 Provides:      group(%{daemon_group})
 
-%package       setup
-Summary:       Bareos setup wizard
-Group:         Productivity/Archiving/Backup
-Requires:      %{name}-common = %{version}
-
 %package       database-common
 Summary:       Generic abstraction libs and files to connect to a database
 Group:         Productivity/Archiving/Backup
