@@ -49,7 +49,7 @@
           <q-item><q-item-section avatar><q-icon name="verified_user" color="positive" /></q-item-section>
             <q-item-section>Secure by default: TLS and strong admin passwords are generated automatically.</q-item-section></q-item>
           <q-item><q-item-section avatar><q-icon name="health_and_safety" color="positive" /></q-item-section>
-            <q-item-section>Safe to run: existing Bareos installations and configurations are never modified.</q-item-section></q-item>
+            <q-item-section>Safe to run: existing Bareos admin or WebUI proxy configuration makes setup abort before either file is changed.</q-item-section></q-item>
           <q-item><q-item-section avatar><q-icon name="admin_panel_settings" color="positive" /></q-item-section>
             <q-item-section>Transparent privilege use: only standard, approved commands are ever executed as root or via sudo — nothing else.</q-item-section></q-item>
         </q-list>
@@ -119,7 +119,26 @@
                   rel="noopener" />
               </q-card-section>
             </q-card>
-            <template v-if="store.repository === 'subscription'">
+            <q-banner v-if="store.repository === 'subscription' && store.state.dry_run"
+              class="bg-info text-white q-mt-md" rounded>
+              <template #avatar><q-icon name="visibility_off" /></template>
+              Dry run only: no subscription credentials are requested because
+              no repository download is performed.
+            </q-banner>
+            <q-banner v-else-if="store.repository === 'subscription' && store.state.subscription_credentials_on_terminal"
+              class="bg-info text-white q-mt-md" rounded>
+              <template #avatar><q-icon name="terminal" /></template>
+              Remote browser session: subscription credentials are requested
+              securely on the terminal running <code>bareos-setup</code> when
+              installation starts. They are not shown or sent in this browser.
+            </q-banner>
+            <q-banner v-else-if="store.repository === 'subscription' && !subscriptionCredentialModeKnown"
+              class="bg-warning q-mt-md" rounded>
+              <template #avatar><q-icon name="sync" /></template>
+              Waiting for the setup service to report whether credentials may
+              be entered in this browser.
+            </q-banner>
+            <template v-else-if="store.repository === 'subscription'">
               <q-input v-model="store.repositoryLogin" label="Subscription login" autocomplete="off"
                 class="q-mt-md" @click.stop>
                 <template #prepend><q-icon name="person" /></template>
@@ -176,7 +195,11 @@
       </q-card-section></q-card>
       <q-card v-else flat bordered><q-card-section>
         <q-icon name="check_circle" color="positive" size="3em" />
-        <p>Installation and service verification completed.</p>
+        <p v-if="store.state.dry_run">
+          Dry run completed. No commands were executed, no files were changed,
+          and no credentials were generated.
+        </p>
+        <p v-else>Installation and service verification completed.</p>
         <p v-if="adminPasswordVisible"><q-icon name="vpn_key" color="warning" class="q-mr-xs" />Save this initial WebUI password now:
           <code>{{ store.admin.username }} / {{ store.admin.password }}</code>
           <q-btn flat dense icon="content_copy" label="Copy password" class="q-ml-sm"
@@ -192,8 +215,12 @@
           <code>bareos-setup</code> is running. It is not shown here because
           this browser connection is not local loopback.
         </q-banner>
-        <p><q-icon name="open_in_browser" color="primary" class="q-mr-xs" />Log in to the Bareos WebUI at one of these URLs:</p>
-        <q-markup-table v-if="webuiUrls.length" flat bordered dense class="q-mb-md">
+        <q-banner v-else-if="store.state.dry_run" class="bg-info text-white q-mb-md" rounded>
+          <template #avatar><q-icon name="visibility_off" /></template>
+          Dry run only: no initial WebUI admin password was generated.
+        </q-banner>
+        <p v-if="!store.state.dry_run"><q-icon name="open_in_browser" color="primary" class="q-mr-xs" />Log in to the Bareos WebUI at one of these URLs:</p>
+        <q-markup-table v-if="!store.state.dry_run && webuiUrls.length" flat bordered dense class="q-mb-md">
           <tbody>
             <tr v-for="url in webuiUrls" :key="url.href">
               <th class="text-left webui-url-table__label">{{ url.label }}</th>
@@ -201,7 +228,7 @@
             </tr>
           </tbody>
         </q-markup-table>
-        <p><q-icon name="terminal" color="primary" class="q-mr-xs" />You can
+        <p v-if="!store.state.dry_run"><q-icon name="terminal" color="primary" class="q-mr-xs" />You can
           also manage this Bareos system locally with <code>bconsole</code>.</p>
         <q-card flat bordered class="q-mb-md"><q-card-section>
           <div class="text-subtitle1 q-mb-sm">Possible next steps</div>
@@ -330,13 +357,24 @@ const stepIcon = computed(() => ({ welcome: 'rocket_launch', platform: 'computer
 const description = computed(() => ({
   welcome: 'Bareos Setup will guide you through the installation and setup of Bareos and required services on this computer.',
   platform: 'Detecting your Linux distribution and package manager to select compatible packages.',
-  repository: 'Choose which Bareos package repository to install from.',
+  repository: store.state.peer_is_loopback
+    ? 'Choose which Bareos package repository to install from.'
+    : 'Choose the repository. Subscription credentials, if needed, stay on the bareos-setup terminal and are never sent by this browser.',
   progress: 'Installation stops on failure. Retry the failed step or roll back wizard-owned changes.',
 }[step.value] || ''))
 const progress = computed(() => step.value === 'complete' ? 1 :
   ({ welcome: 0, platform: .2, repository: .45, progress: .7 }[step.value] || 0))
-const canContinue = computed(() => step.value !== 'repository' ||
-  store.repository === 'community' || (store.repositoryLogin && store.repositoryPassword))
+const canEnterSubscriptionCredentials = computed(() =>
+  Boolean(store.state.subscription_credentials_in_browser))
+const subscriptionCredentialModeKnown = computed(() =>
+  store.state.dry_run || store.state.subscription_credentials_in_browser ||
+  store.state.subscription_credentials_on_terminal)
+const canContinue = computed(() => {
+  if (step.value !== 'repository' || store.repository === 'community') return true
+  if (!subscriptionCredentialModeKnown.value) return false
+  return !canEnterSubscriptionCredentials.value ||
+    (store.repositoryLogin && store.repositoryPassword)
+})
 const primaryActionLabel = computed(() => {
   if (step.value === 'progress') {
     return installFinished.value ? 'Show setup summary' : 'Start installation'
@@ -445,8 +483,13 @@ function next() {
 }
 function back() { step.value = ({ platform: 'welcome', repository: 'platform', progress: 'repository' })[step.value] || step.value }
 function payload() {
-  return { repository: store.repository, repository_login: store.repositoryLogin,
-    repository_password: store.repositoryPassword, distro: store.state.distro, version: store.state.version }
+  return {
+    repository: store.repository,
+    repository_login: canEnterSubscriptionCredentials.value ? store.repositoryLogin : '',
+    repository_password: canEnterSubscriptionCredentials.value ? store.repositoryPassword : '',
+    distro: store.state.distro,
+    version: store.state.version,
+  }
 }
 function start() {
   installStarted.value = true
@@ -499,6 +542,11 @@ watch(messages, list => {
     }
   }
 }, { deep: true })
+watch(canEnterSubscriptionCredentials, allowed => {
+  if (allowed) return
+  store.repositoryLogin = ''
+  store.repositoryPassword = ''
+})
 watch(() => currentStepId.value && stepLogs[currentStepId.value], async () => {
   const id = currentStepId.value; if (!id) return
   await nextTick()

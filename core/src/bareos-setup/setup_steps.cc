@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <cctype>
+#include <filesystem>
 #include <fstream>
 #include <set>
 #include <sstream>
@@ -45,7 +46,8 @@ std::string MajorVersion(const std::string& version)
 bool IsElDistro(const std::string& distro)
 {
   return distro == "almalinux" || distro == "centos" || distro == "ol"
-         || distro == "openela" || distro == "oracle" || distro == "rocky";
+         || distro == "openela" || distro == "oracle" || distro == "rhel"
+         || distro == "rocky";
 }
 
 std::string CurlConfigQuote(const std::string& value)
@@ -213,13 +215,46 @@ std::string BuildCurlUserConfig(const std::string& login,
 
 std::vector<std::string> BuildNetworkCheckCmd(const std::string& repo_type)
 {
-  const std::string base
-      = (repo_type == "subscription")
-            ? "https://download.bareos.com/bareos/release/latest"
-            : "https://download.bareos.org/current";
+  if (repo_type != "community") return {};
+
+  const std::string base = "https://download.bareos.org/current";
 
   return {"curl",   "--fail",     "--silent", "--show-error",
           "--head", "--max-time", "10",       base};
+}
+
+std::string SetupAdminConfigPath()
+{
+  return "/etc/bareos/bareos-dir.d/console/admin.conf";
+}
+
+std::string SetupProxyConfigPath()
+{
+  return "/etc/bareos-webui-proxy/bareos-webui-proxy.ini";
+}
+
+std::vector<std::string> SetupOwnedConfigPaths()
+{
+  return {SetupAdminConfigPath(), SetupProxyConfigPath()};
+}
+
+std::vector<std::string> BuildFileAbsentCheckCmd(const std::string& path)
+{
+  // The wizard-owned configuration directories are usually root-only, so
+  // the check has to run through the privileged command runner instead of
+  // stat()ing the path directly.
+  return {"sh", "-c", "test ! -e \"$1\"", "bareos-setup", path};
+}
+
+std::string BuildExistingSetupConfigError(
+    const std::vector<std::string>& existing_paths)
+{
+  std::ostringstream message;
+  message << "Refusing to continue because existing Bareos setup "
+             "configuration would be overwritten:";
+  for (const auto& path : existing_paths) message << " " << path;
+  message << ". Move or back up the file(s) and rerun bareos-setup.";
+  return message.str();
 }
 
 std::vector<std::string> BuildMtxAvailabilityCheckCmd()

@@ -116,15 +116,34 @@ std::string BuildCurlUserConfig(const std::string& login,
                                 const std::string& password);
 
 /**
- * Build a lightweight pre-flight reachability probe against the Bareos
- * download server matching the given repository type (community ->
- * download.bareos.org, subscription -> download.bareos.com), reusing the
- * same base URL logic as BuildAddRepoCmd. Uses "curl --head" (no body
- * download) with a short timeout so a firewalled/offline host fails fast
- * with a clear error instead of the real repository script failing deep
- * inside a longer-running command.
+ * Build a lightweight pre-flight reachability probe for the public community
+ * download server. Subscription repositories intentionally return an empty
+ * command: their authenticated repository-script download is the only
+ * connectivity and credential check, avoiding an unauthenticated 401 probe.
  */
 std::vector<std::string> BuildNetworkCheckCmd(const std::string& repo_type);
+
+/** Path of the admin console resource created by setup. */
+std::string SetupAdminConfigPath();
+
+/** Path of the WebUI proxy configuration created by setup. */
+std::string SetupProxyConfigPath();
+
+/**
+ * Configuration files the wizard creates and therefore owns. Setup must
+ * never silently overwrite them when they already exist.
+ */
+std::vector<std::string> SetupOwnedConfigPaths();
+
+/**
+ * Build the privileged check that only succeeds when the given path does
+ * not exist yet.
+ */
+std::vector<std::string> BuildFileAbsentCheckCmd(const std::string& path);
+
+/** Build the user-facing error listing pre-existing configuration files. */
+std::string BuildExistingSetupConfigError(
+    const std::vector<std::string>& existing_paths);
 
 /** Build a zypper command that checks whether the mtx package is available. */
 std::vector<std::string> BuildMtxAvailabilityCheckCmd();

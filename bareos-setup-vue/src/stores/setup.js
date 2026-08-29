@@ -11,6 +11,10 @@ export const useSetupStore = defineStore('setup', () => {
     hostname: '',
     package_manager: '',
     setup_version: '',
+    peer_is_loopback: true,
+    dry_run: false,
+    subscription_credentials_in_browser: false,
+    subscription_credentials_on_terminal: false,
     completed: [],
     finished: false,
     failed: ''
