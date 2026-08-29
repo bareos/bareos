@@ -182,7 +182,8 @@ int main(int argc, char* argv[])
                                 + "/?token=" + UrlEncode(setup_token);
 
   if (no_browser) {
-    std::cout << "Open this URL in your browser: " << setup_url << "\n";
+    std::cout << "Open this URL in your browser: " << setup_url << "\n"
+              << std::flush;
   }
 
   // Fork before starting the server so the child opens the browser
@@ -200,7 +201,9 @@ int main(int argc, char* argv[])
 
   try {
     RunHttpServer(listen_address, port, setup_token,
-                  [dry_run](int fd) { RunSetupSession(fd, dry_run); });
+                  [dry_run](int fd, bool peer_is_loopback) {
+                    RunSetupSession(fd, dry_run, peer_is_loopback);
+                  });
   } catch (const std::exception& e) {
     std::cerr << "Fatal: " << e.what() << "\n";
     return 1;

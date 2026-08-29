@@ -36,7 +36,9 @@
  * When dry_run is true, commands are printed to the output stream
  * instead of being executed; exit_code is always reported as 0.
  */
-void RunSetupSession(int fd, bool dry_run = false);
+void RunSetupSession(int fd,
+                     bool dry_run = false,
+                     bool peer_is_loopback = true);
 
 /**
  * Test-only entry point: execute a single setup step (as identified by
@@ -49,6 +51,7 @@ void RunSetupSession(int fd, bool dry_run = false);
  */
 int RunSetupStepForTests(int fd,
                          const std::string& step,
-                         const std::string& json_message);
+                         const std::string& json_message,
+                         bool peer_is_loopback = true);
 
 #endif  // BAREOS_BAREOS_SETUP_SETUP_SESSION_H_

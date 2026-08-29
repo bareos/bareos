@@ -32,7 +32,7 @@
 #include <string>
 
 /** Called once per accepted WebSocket connection with the raw fd. */
-using WsHandler = std::function<void(int fd)>;
+using WsHandler = std::function<void(int fd, bool peer_is_loopback)>;
 
 /**
  * Listen on the given address/port and serve requests.

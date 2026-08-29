@@ -47,6 +47,21 @@ bool Run(const std::vector<std::string>& command, bool dry_run)
          == 0;
 }
 
+bool RunWithInput(const std::vector<std::string>& command,
+                  const std::string& input,
+                  bool dry_run)
+{
+  if (dry_run) {
+    std::cout << "[preview] " << command.front() << " (approved command)\n";
+    return true;
+  }
+  return RunCommandWithInput(command, input, true,
+                             [](const std::string& line, const std::string&) {
+                               std::cout << line << "\n";
+                             })
+         == 0;
+}
+
 }  // namespace
 
 int RunTuiWizard(bool dry_run)
@@ -95,11 +110,17 @@ int RunTuiWizard(bool dry_run)
     repository_script = name.data();
   }
 
+  const bool use_curl_config = repository == "subscription";
   auto add_repo_cmd
-      = BuildAddRepoCmd(os.distro, os.version, repository, login, password);
+      = BuildAddRepoCmd(os.distro, os.version, repository, use_curl_config);
   add_repo_cmd.insert(add_repo_cmd.end() - 1,
                       {"--output", repository_script.string()});
-  if (!Run(add_repo_cmd, dry_run)) {
+  const bool repo_downloaded
+      = use_curl_config
+            ? RunWithInput(add_repo_cmd, BuildCurlUserConfig(login, password),
+                           dry_run)
+            : Run(add_repo_cmd, dry_run);
+  if (!repo_downloaded) {
     if (!dry_run) std::filesystem::remove(repository_script);
     return 1;
   }
@@ -114,7 +135,6 @@ int RunTuiWizard(bool dry_run)
     if (!Run(update_cmd, dry_run)) return 1;
   }
 
-  std::cout << "Disk storage: /var/lib/bareos/storage\n";
   if (os.pkg_mgr == "apt") {
     std::cout << "Installing PostgreSQL package.\n";
     if (!Run(BuildInstallCmd(os.pkg_mgr, {"postgresql"}), dry_run)) return 1;
@@ -122,9 +142,18 @@ int RunTuiWizard(bool dry_run)
       return 1;
     }
   }
-  const auto packages = os.pkg_mgr == "apt"
-                            ? BuildPackageListWithoutPostgresServer(os.pkg_mgr)
-                            : BuildDefaultPackageList(os.pkg_mgr);
+  auto packages = os.pkg_mgr == "apt"
+                      ? BuildPackageListWithoutPostgresServer(os.pkg_mgr)
+                      : BuildDefaultPackageList(os.pkg_mgr);
+  if (os.distro == "sles") {
+    std::cout << "Checking whether the mtx package is available.\n";
+    if (!Run(BuildMtxAvailabilityCheckCmd(), dry_run)) {
+      std::cout << "Warning: mtx is not available from the configured SLES "
+                   "repositories, so bareos-storage-tape cannot be "
+                   "installed.\n";
+      packages = BuildPackageListWithoutTapeStorage(os.pkg_mgr);
+    }
+  }
   if (!Run(BuildInstallCmd(os.pkg_mgr, packages), dry_run)) {
     std::cerr << "Package installation failed.\n";
     return 1;
