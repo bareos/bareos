@@ -201,5 +201,7 @@ if(BUILD_TESTING AND GTest_FOUND)
     PRIVATE GTest::gtest_main Threads::Threads OpenSSL::SSL OpenSSL::Crypto
             Jansson::Jansson
   )
-  gtest_discover_tests(test_bareos_setup_steps)
+  gtest_discover_tests(
+    test_bareos_setup_steps TEST_PREFIX gtest: DISCOVERY_TIMEOUT 120
+  )
 endif()
