@@ -261,13 +261,9 @@ TEST(BareosSetupStepsShared, BuildsNetworkCheckCmdForCommunityRepo)
                 "--max-time", "10", "https://download.bareos.org/current"}));
 }
 
-TEST(BareosSetupStepsShared, BuildsNetworkCheckCmdForSubscriptionRepo)
+TEST(BareosSetupStepsShared, BuildsNoUnauthenticatedSubscriptionNetworkCheck)
 {
-  EXPECT_EQ(
-      BuildNetworkCheckCmd("subscription"),
-      (std::vector<std::string>{
-          "curl", "--fail", "--silent", "--show-error", "--head", "--max-time",
-          "10", "https://download.bareos.com/bareos/release/latest"}));
+  EXPECT_TRUE(BuildNetworkCheckCmd("subscription").empty());
 }
 
 TEST(BareosSetupStepsShared, BuildsMtxAvailabilityCheck)
@@ -288,6 +284,11 @@ TEST(BareosSetupStepsShared, BuildsOpenSuseRepositoryPath)
 TEST(BareosSetupStepsShared, BuildsSlesRepositoryPath)
 {
   EXPECT_EQ(BuildRepoOsPath("sles", "16.0"), "SUSE_16");
+}
+
+TEST(BareosSetupStepsShared, BuildsRhelRepositoryPath)
+{
+  EXPECT_EQ(BuildRepoOsPath("rhel", "9.6"), "EL_9");
 }
 
 TEST(BareosSetupStepsShared, BuildsUbuntuRepositoryPath)
@@ -400,6 +401,56 @@ TEST(BareosSetupStepsShared, BuildsCurlUserConfig)
             "user = \"login:quote\\\"slash\\\\\"\n");
 }
 
+TEST(BareosSetupStepsShared, RejectsExistingSetupConfigsBeforeOverwrite)
+{
+  const std::string dir_path = (std::filesystem::temp_directory_path()
+                                / "bareos-setup-test-existing-config-XXXXXX")
+                                   .string();
+  std::vector<char> buffer(dir_path.begin(), dir_path.end());
+  buffer.push_back('\0');
+  ASSERT_NE(mkdtemp(buffer.data()), nullptr);
+  const std::filesystem::path fake_dir = buffer.data();
+  const std::filesystem::path admin_path = fake_dir / "admin.conf";
+  const std::filesystem::path proxy_path = fake_dir / "bareos-webui-proxy.ini";
+  {
+    std::ofstream out(admin_path);
+    out << "preexisting\n";
+  }
+
+  // The check itself is a privileged shell command, because the wizard
+  // config directories are not readable for unprivileged users.
+  const auto existing_cmd = BuildFileAbsentCheckCmd(admin_path.string());
+  ASSERT_EQ(existing_cmd.size(), 5U);
+  EXPECT_EQ(existing_cmd[0], "sh");
+  EXPECT_EQ(existing_cmd[4], admin_path.string());
+  EXPECT_NE(RunCommand(existing_cmd, false,
+                       [](const std::string&, const std::string&) {}),
+            0);
+  EXPECT_EQ(RunCommand(BuildFileAbsentCheckCmd(proxy_path.string()), false,
+                       [](const std::string&, const std::string&) {}),
+            0);
+
+  const std::string message
+      = BuildExistingSetupConfigError({admin_path.string()});
+  EXPECT_NE(message.find(admin_path.string()), std::string::npos);
+  EXPECT_EQ(message.find(proxy_path.string()), std::string::npos);
+  EXPECT_NE(message.find("Refusing to continue"), std::string::npos);
+
+  std::error_code ec;
+  std::filesystem::remove_all(fake_dir, ec);
+}
+
+TEST(BareosSetupStepsShared, OwnsAdminAndProxyConfigPaths)
+{
+  EXPECT_EQ(SetupOwnedConfigPaths(),
+            (std::vector<std::string>{SetupAdminConfigPath(),
+                                      SetupProxyConfigPath()}));
+  EXPECT_EQ(SetupAdminConfigPath(),
+            "/etc/bareos/bareos-dir.d/console/admin.conf");
+  EXPECT_EQ(SetupProxyConfigPath(),
+            "/etc/bareos-webui-proxy/bareos-webui-proxy.ini");
+}
+
 TEST(BareosSetupStepsShared, AcceptsSameOriginRequests)
 {
   EXPECT_TRUE(IsValidSetupOrigin("http://127.0.0.1:19101", "127.0.0.1:19101"));
@@ -429,7 +480,8 @@ namespace {
 // only assert on which commands were executed.
 int RunStepDiscardingOutput(const std::string& step,
                             const std::string& json_message = "{}",
-                            bool peer_is_loopback = true)
+                            bool peer_is_loopback = true,
+                            bool dry_run = false)
 {
   int sockets[2];
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockets) != 0) {
@@ -445,7 +497,7 @@ int RunStepDiscardingOutput(const std::string& step,
   // std::thread destructing during stack unwinding calls std::terminate().
   try {
     const int result = RunSetupStepForTests(sockets[0], step, json_message,
-                                            peer_is_loopback);
+                                            peer_is_loopback, dry_run);
     close(sockets[0]);
     drain.join();
     return result;
@@ -568,6 +620,53 @@ TEST(BareosSetupSessionOrchestration, AdminStepWritesWebuiTlsPskConsole)
 }
 
 TEST(BareosSetupSessionOrchestration,
+     AdminStepAbortsBeforeOverwritingExistingConfig)
+{
+  const std::string dir_path = (std::filesystem::temp_directory_path()
+                                / "bareos-setup-test-existing-check-XXXXXX")
+                                   .string();
+  std::vector<char> buffer(dir_path.begin(), dir_path.end());
+  buffer.push_back('\0');
+  ASSERT_NE(mkdtemp(buffer.data()), nullptr);
+  const std::filesystem::path fake_dir = buffer.data();
+  const std::filesystem::path log_path = fake_dir / "log.txt";
+
+  const auto write_shim
+      = [&](const std::string& name, const std::string& body) {
+          const std::filesystem::path shim = fake_dir / name;
+          std::ofstream out(shim);
+          out << "#!/bin/sh\n" << body;
+          out.close();
+          std::filesystem::permissions(
+              shim, std::filesystem::perms::owner_all
+                        | std::filesystem::perms::group_read
+                        | std::filesystem::perms::group_exec
+                        | std::filesystem::perms::others_read
+                        | std::filesystem::perms::others_exec);
+        };
+  write_shim("sudo", "exec \"$@\"\n");
+  write_shim("sh", "echo \"sh $*\" >> '" + log_path.string() + "'\nexit 1\n");
+  write_shim("install",
+             "echo \"install $*\" >> '" + log_path.string() + "'\nexit 0\n");
+
+  const char* current_path = getenv("PATH");
+  const std::string old_path = current_path != nullptr ? current_path : "";
+  setenv("PATH", (fake_dir.string() + ":" + old_path).c_str(), 1);
+
+  EXPECT_THROW(RunStepDiscardingOutput("admin"), std::runtime_error);
+
+  setenv("PATH", old_path.c_str(), 1);
+  std::ifstream log(log_path);
+  const std::string commands((std::istreambuf_iterator<char>(log)),
+                             std::istreambuf_iterator<char>());
+  std::error_code ec;
+  std::filesystem::remove_all(fake_dir, ec);
+
+  EXPECT_NE(commands.find("sh -c test ! -e"), std::string::npos);
+  EXPECT_EQ(commands.find("install "), std::string::npos);
+}
+
+TEST(BareosSetupSessionOrchestration,
      ProxyStepChownsConfigSoTheBareosUserCanReadIt)
 {
   // Regression test: bareos-webui-proxy.service runs as
@@ -645,6 +744,23 @@ TEST(BareosSetupSessionOrchestration,
 
   EXPECT_THROW(RunStepDiscardingOutput("repository", json_message, false),
                std::runtime_error);
+}
+
+TEST(BareosSetupSessionOrchestration,
+     DryRunRepositoryStepDoesNotExecuteCommands)
+{
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
+  }
+  FakeToolPath fake_tools(
+      {"sudo", "curl", "bash", os.pkg_mgr, "apt-get", "zypper", "dnf", "yum"});
+  const std::string json_message = "{\"distro\":\"" + os.distro
+                                   + "\",\"version\":\"" + os.version
+                                   + "\",\"repository\":\"subscription\"}";
+  EXPECT_EQ(RunStepDiscardingOutput("repository", json_message, false, true),
+            0);
+  EXPECT_TRUE(fake_tools.LoggedCommands().empty());
 }
 
 TEST(BareosSetupSessionOrchestration,

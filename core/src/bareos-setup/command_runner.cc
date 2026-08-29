@@ -259,7 +259,7 @@ bool IsToolInPath(const std::string& name)
 std::vector<std::string> MissingRequiredTools(const std::string& pkg_mgr)
 {
   std::vector<std::string> required
-      = {"curl", "bash", "install", "chown", "systemctl", "su"};
+      = {"curl", "bash", "install", "chown", "systemctl", "su", "sh"};
   if (!pkg_mgr.empty() && pkg_mgr != "unknown") required.push_back(pkg_mgr);
   if (pkg_mgr == "apt") required.push_back("apt-get");
 

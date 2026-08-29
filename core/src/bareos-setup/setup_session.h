@@ -52,6 +52,7 @@ void RunSetupSession(int fd,
 int RunSetupStepForTests(int fd,
                          const std::string& step,
                          const std::string& json_message,
-                         bool peer_is_loopback = true);
+                         bool peer_is_loopback = true,
+                         bool dry_run = false);
 
 #endif  // BAREOS_BAREOS_SETUP_SETUP_SESSION_H_

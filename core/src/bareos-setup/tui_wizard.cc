@@ -15,6 +15,7 @@
 #include <iostream>
 #include <string>
 #include <sys/stat.h>
+#include <termios.h>
 #include <unistd.h>
 #include <vector>
 
@@ -34,31 +35,59 @@ std::string Prompt(const std::string& label, const std::string& fallback = {})
   return value;
 }
 
-bool Run(const std::vector<std::string>& command, bool dry_run)
+std::string PromptSecret(const std::string& label)
+{
+  std::cout << label << ": " << std::flush;
+  termios old_term{};
+  bool restore_term = false;
+  if (isatty(STDIN_FILENO) && tcgetattr(STDIN_FILENO, &old_term) == 0) {
+    termios new_term = old_term;
+    new_term.c_lflag &= ~static_cast<tcflag_t>(ECHO);
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &new_term) == 0) restore_term = true;
+  }
+
+  std::string value;
+  std::getline(std::cin, value);
+  if (restore_term) {
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &old_term);
+    std::cout << "\n";
+  }
+  return value;
+}
+
+bool Run(const std::vector<std::string>& command,
+         bool dry_run,
+         const std::vector<std::string>& secrets = {})
 {
   if (dry_run) {
-    std::cout << "[preview] " << command.front() << " (approved command)\n";
+    std::cout << "[preview] "
+              << RedactSetupSecrets(JoinCommandForDisplay(command), secrets)
+              << "\n";
     return true;
   }
   return RunCommand(command, true,
-                    [](const std::string& line, const std::string&) {
-                      std::cout << line << "\n";
+                    [&secrets](const std::string& line, const std::string&) {
+                      std::cout << RedactSetupSecrets(line, secrets) << "\n";
                     })
          == 0;
 }
 
 bool RunWithInput(const std::vector<std::string>& command,
                   const std::string& input,
-                  bool dry_run)
+                  bool dry_run,
+                  const std::vector<std::string>& secrets = {})
 {
   if (dry_run) {
-    std::cout << "[preview] " << command.front() << " (approved command)\n";
+    std::cout << "[preview] "
+              << RedactSetupSecrets(JoinCommandForDisplay(command), secrets)
+              << "\n";
     return true;
   }
-  return RunCommandWithInput(command, input, true,
-                             [](const std::string& line, const std::string&) {
-                               std::cout << line << "\n";
-                             })
+  return RunCommandWithInput(
+             command, input, true,
+             [&secrets](const std::string& line, const std::string&) {
+               std::cout << RedactSetupSecrets(line, secrets) << "\n";
+             })
          == 0;
 }
 
@@ -82,18 +111,26 @@ int RunTuiWizard(bool dry_run)
   }
   std::string login;
   std::string password;
-  if (repository == "subscription") {
+  if (repository == "subscription" && !dry_run) {
     login = Prompt("Subscription login");
-    password = Prompt("Subscription password");
+    password = PromptSecret("Subscription password");
     if (login.empty() || password.empty()) return 1;
   }
 
-  std::cout << "Checking connectivity to the Bareos download server...\n";
-  if (!Run(BuildNetworkCheckCmd(repository), dry_run)) return 1;
+  if (repository == "community") {
+    std::cout << "Checking connectivity to the Bareos download server...\n";
+    if (!Run(BuildNetworkCheckCmd(repository), dry_run)) return 1;
+  } else if (dry_run) {
+    std::cout << "Dry run: subscription credentials would be requested before "
+                 "the repository script download.\n";
+  } else {
+    std::cout << "Downloading the subscription repository script. This "
+                 "validates the credentials and download connectivity.\n";
+  }
 
   std::filesystem::path repository_script;
   if (dry_run) {
-    repository_script = "/tmp/bareos-setup-repository.sh";
+    repository_script = "bareos-setup-repository.sh";
   } else {
     std::string pattern = (std::filesystem::temp_directory_path()
                            / "bareos-setup-repository-XXXXXX")
@@ -117,8 +154,9 @@ int RunTuiWizard(bool dry_run)
                       {"--output", repository_script.string()});
   const bool repo_downloaded
       = use_curl_config
-            ? RunWithInput(add_repo_cmd, BuildCurlUserConfig(login, password),
-                           dry_run)
+            ? RunWithInput(add_repo_cmd,
+                           dry_run ? "" : BuildCurlUserConfig(login, password),
+                           dry_run, {login, password})
             : Run(add_repo_cmd, dry_run);
   if (!repo_downloaded) {
     if (!dry_run) std::filesystem::remove(repository_script);
@@ -158,6 +196,7 @@ int RunTuiWizard(bool dry_run)
     std::cerr << "Package installation failed.\n";
     return 1;
   }
+  std::string admin_password;
   if (!dry_run) {
     const auto init_cmd = BuildPostgresInitCmd();
     if (!init_cmd.empty() && !Run(init_cmd, false)) return 1;
@@ -169,8 +208,18 @@ int RunTuiWizard(bool dry_run)
     }
   }
 
-  const std::string admin_password = GenerateSetupSecret();
   if (!dry_run) {
+    std::vector<std::string> existing_configs;
+    for (const auto& path : SetupOwnedConfigPaths()) {
+      if (!Run(BuildFileAbsentCheckCmd(path), false)) {
+        existing_configs.push_back(path);
+      }
+    }
+    if (!existing_configs.empty()) {
+      std::cerr << BuildExistingSetupConfigError(existing_configs) << "\n";
+      return 1;
+    }
+    admin_password = GenerateSetupSecret();
     const std::string resource
         = "Console {\n  Name = admin\n  Password = \"" + admin_password
           + "\"\n  Profile = \"webui-admin\"\n  TLS Enable = No\n}\n";
@@ -209,6 +258,22 @@ int RunTuiWizard(bool dry_run)
     // root), so the config file must be group-readable by "bareos" or
     // the service fails to start with "cannot load" on every restart.
     if (!Run({"chown", "root:bareos", proxy_path}, false)) return 1;
+  } else {
+    const std::string admin_path
+        = "/etc/bareos/bareos-dir.d/console/admin.conf";
+    const std::string proxy_path
+        = "/etc/bareos-webui-proxy/bareos-webui-proxy.ini";
+    if (!Run({"install", "-D", "-m", "0640", "/dev/stdin", admin_path}, true)) {
+      return 1;
+    }
+    std::cout << "[preview] dry run: would create initial admin console "
+                 "configuration with a generated password.\n";
+    if (!Run({"chown", "root:bareos", admin_path}, true)) return 1;
+    if (!Run({"systemctl", "restart", "bareos-dir"}, true)) return 1;
+    if (!Run({"install", "-D", "-m", "0640", "/dev/stdin", proxy_path}, true)) {
+      return 1;
+    }
+    if (!Run({"chown", "root:bareos", proxy_path}, true)) return 1;
   }
   auto enable_services
       = std::vector<std::string>{"systemctl", "enable", "--now"};
@@ -240,7 +305,11 @@ int RunTuiWizard(bool dry_run)
            dry_run)) {
     return 1;
   }
-  std::cout << "\nSetup complete. WebUI username: admin\n"
-            << "Initial WebUI password: " << admin_password << "\n";
+  std::cout << "\nSetup complete. WebUI username: admin\n";
+  if (dry_run) {
+    std::cout << "Dry run only: no WebUI admin password was generated.\n";
+  } else {
+    std::cout << "Initial WebUI password: " << admin_password << "\n";
+  }
   return 0;
 }
