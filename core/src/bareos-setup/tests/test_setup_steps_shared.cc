@@ -577,7 +577,11 @@ TEST(BareosSetupSessionOrchestration,
   // its own config and crash-loops with "cannot load
   // '/etc/bareos-webui-proxy/bareos-webui-proxy.ini'" forever.
   const auto os = DetectOs();
-  FakeToolPath fake_tools({"sudo", "install", "chown", "systemctl"});
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
+  }
+  FakeToolPath fake_tools({"sudo", "install", "chown", "systemctl", "a2enmod",
+                           "a2ensite", "a2enflag", "sh"});
   ASSERT_EQ(RunStepDiscardingOutput("proxy"), 0);
   const auto commands = fake_tools.LoggedCommands();
   ASSERT_FALSE(commands.empty());
@@ -611,13 +615,16 @@ TEST(BareosSetupSessionOrchestration, InstallPackagesRunsThePackageManager)
   if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
     GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
   }
-  FakeToolPath fake_tools({"sudo", os.pkg_mgr});
+  const auto install_cmd = BuildInstallCmd(os.pkg_mgr, {"bareos-filedaemon"});
+  ASSERT_FALSE(install_cmd.empty());
+  FakeToolPath fake_tools({"sudo", install_cmd.front(), "systemctl", "zypper"});
   RunStepDiscardingOutput("packages");
   const auto commands = fake_tools.LoggedCommands();
   ASSERT_FALSE(commands.empty());
   EXPECT_NE(std::find_if(commands.begin(), commands.end(),
-                         [&os](const auto& line) {
-                           return line.find(os.pkg_mgr) != std::string::npos;
+                         [&install_cmd](const auto& line) {
+                           return line.find(install_cmd.front())
+                                  != std::string::npos;
                          }),
             commands.end());
 }
