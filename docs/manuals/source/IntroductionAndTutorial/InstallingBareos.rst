@@ -96,6 +96,41 @@ The TUI asks whether to use the Bareos Community or Bareos Subscription reposito
 
 At the end of a successful TUI installation, the generated WebUI administrator password is printed in the terminal. Store it safely.
 
+.. _section-bareos-setup-unknown-distribution:
+
+Unrecognized distributions
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Bareos publishes repositories for a fixed set of distributions. If :command:`bareos-setup` cannot identify the running distribution, for example on a derivative or a rebuild, it does not abort. Instead it offers a manual choice of the repository to install from, in both the web wizard and the TUI. A distribution that declares a compatible family through ``ID_LIKE`` in :file:`/etc/os-release` is used to preselect a matching suggestion.
+
+The following repositories can be selected:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Distribution family
+     - Repositories
+   * - RHEL and rebuilds
+     - ``EL_8``, ``EL_9``, ``EL_10``
+   * - Debian
+     - ``Debian_11``, ``Debian_12``, ``Debian_13``
+   * - Ubuntu
+     - ``xUbuntu_22.04``, ``xUbuntu_24.04``, ``xUbuntu_26.04``
+   * - Fedora
+     - ``Fedora_43``, ``Fedora_44``
+   * - SUSE
+     - ``SUSE_15``, ``SUSE_16``
+
+The selected repository is checked for availability before it is added, so a wrong choice fails immediately instead of part-way through the installation.
+
+.. warning::
+
+   Installing a Bareos repository that was built for a different distribution is neither tested nor supported. Only do this if you know that the selected repository is binary compatible with the running system.
+
+A manual choice is only offered when the distribution is not recognized. It is not possible to override the repository on a distribution that :command:`bareos-setup` detects, because that could only produce a mismatched installation.
+
+The package manager cannot be chosen manually. If none of :command:`apt`, :command:`dnf`, :command:`yum` or :command:`zypper` is present, :command:`bareos-setup` cannot install Bareos on that system and reports this instead of continuing.
+
 Second option: manual installation
 ----------------------------------
 

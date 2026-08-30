@@ -50,6 +50,13 @@ bool IsElDistro(const std::string& distro)
          || distro == "rocky";
 }
 
+std::string RepoBaseUrl(const std::string& repo_type)
+{
+  return (repo_type == "subscription")
+             ? "https://download.bareos.com/bareos/release/latest"
+             : "https://download.bareos.org/current";
+}
+
 std::string CurlConfigQuote(const std::string& value)
 {
   std::string quoted = "\"";
@@ -191,16 +198,108 @@ std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
                                          const std::string& repo_type,
                                          bool read_curl_config_from_stdin)
 {
-  const std::string base
-      = (repo_type == "subscription")
-            ? "https://download.bareos.com/bareos/release/latest"
-            : "https://download.bareos.org/current";
+  return BuildAddRepoCmdForPath(BuildRepoOsPath(distro, version), repo_type,
+                                read_curl_config_from_stdin);
+}
 
-  const std::string script_url = base + "/" + BuildRepoOsPath(distro, version)
+const std::vector<std::string>& KnownRepoOsPaths()
+{
+  static const std::vector<std::string> paths{
+      "EL_10",         "EL_9",      "EL_8",          "Debian_13",
+      "Debian_12",     "Debian_11", "xUbuntu_26.04", "xUbuntu_24.04",
+      "xUbuntu_22.04", "Fedora_44", "Fedora_43",     "SUSE_16",
+      "SUSE_15",
+  };
+  return paths;
+}
+
+bool IsValidRepoOsPath(const std::string& value)
+{
+  if (!IsSafeSetupIdentifier(value)) return false;
+  // IsSafeSetupIdentifier() permits '.', so ".." would pass and escape the
+  // release directory of the constructed download URL.
+  if (value.find("..") != std::string::npos) return false;
+  const auto is_edge_ok = [](char c) { return std::isalnum(c) != 0; };
+  return is_edge_ok(value.front()) && is_edge_ok(value.back());
+}
+
+bool IsSuseRepoOsPath(const std::string& repo_os_path)
+{
+  return repo_os_path.rfind("SUSE_", 0) == 0;
+}
+
+std::vector<std::string> SuggestRepoOsPaths(const OsInfo& info)
+{
+  // Determine the family from the ID first, then from ID_LIKE.
+  std::string prefix;
+  const auto family_of = [](const std::string& id) -> std::string {
+    if (IsElDistro(id) || id == "fedora") {
+      return id == "fedora" ? "Fedora_" : "EL_";
+    }
+    if (id == "sles" || id == "suse" || id == "opensuse"
+        || id == "opensuse-leap" || id == "opensuse-tumbleweed") {
+      return "SUSE_";
+    }
+    if (id == "ubuntu") return "xUbuntu_";
+    if (id == "debian") return "Debian_";
+    return {};
+  };
+
+  prefix = family_of(info.distro);
+  for (const auto& like : info.id_like) {
+    if (!prefix.empty()) break;
+    prefix = family_of(like);
+  }
+  if (prefix.empty()) return {};
+
+  // The version is only a guess: a derivative's VERSION_ID often does not
+  // match the version its family's repository is named after.
+  const std::string guess
+      = prefix
+        + (prefix == "xUbuntu_" ? info.version : MajorVersion(info.version));
+
+  std::vector<std::string> suggestions;
+  const auto& known = KnownRepoOsPaths();
+  if (std::find(known.begin(), known.end(), guess) != known.end()) {
+    suggestions.push_back(guess);
+  }
+  for (const auto& path : known) {
+    if (path.rfind(prefix, 0) != 0) continue;
+    if (std::find(suggestions.begin(), suggestions.end(), path)
+        != suggestions.end()) {
+      continue;
+    }
+    suggestions.push_back(path);
+  }
+  return suggestions;
+}
+
+std::vector<std::string> BuildAddRepoCmdForPath(
+    const std::string& repo_os_path,
+    const std::string& repo_type,
+    bool read_curl_config_from_stdin)
+{
+  const std::string script_url = RepoBaseUrl(repo_type) + "/" + repo_os_path
                                  + "/add_bareos_repositories.sh";
 
   std::vector<std::string> command
       = {"curl", "--fail", "--silent", "--show-error", "--location"};
+  if (read_curl_config_from_stdin)
+    command.insert(command.end(), {"--config", "-"});
+  command.emplace_back(script_url);
+  return command;
+}
+
+std::vector<std::string> BuildRepoPathProbeCmd(const std::string& repo_os_path,
+                                               const std::string& repo_type,
+                                               bool read_curl_config_from_stdin)
+{
+  const std::string script_url = RepoBaseUrl(repo_type) + "/" + repo_os_path
+                                 + "/add_bareos_repositories.sh";
+
+  std::vector<std::string> command
+      = {"curl",       "--fail", "--silent",   "--show-error",
+         "--location", "--head", "--max-time", "15"};
   if (read_curl_config_from_stdin)
     command.insert(command.end(), {"--config", "-"});
   command.emplace_back(script_url);
@@ -369,8 +468,13 @@ bool IsSupportedSetupPlatform(const std::string& distro,
       "opensuse-tumbleweed",
   };
   return supported.contains(distro)
-         && (package_manager == "apt" || package_manager == "dnf"
-             || package_manager == "yum" || package_manager == "zypper");
+         && IsSupportedPackageManager(package_manager);
+}
+
+bool IsSupportedPackageManager(const std::string& package_manager)
+{
+  return package_manager == "apt" || package_manager == "dnf"
+         || package_manager == "yum" || package_manager == "zypper";
 }
 
 bool IsSafeSetupIdentifier(const std::string& value)

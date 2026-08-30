@@ -15,6 +15,11 @@ export const useSetupStore = defineStore('setup', () => {
     dry_run: false,
     subscription_credentials_in_browser: false,
     subscription_credentials_on_terminal: false,
+    platform_supported: true,
+    package_manager_supported: true,
+    repo_os_path: '',
+    known_repo_os_paths: [],
+    suggested_repo_os_paths: [],
     completed: [],
     finished: false,
     failed: ''
@@ -22,8 +27,11 @@ export const useSetupStore = defineStore('setup', () => {
   const repository = ref('subscription')
   const repositoryLogin = ref('')
   const repositoryPassword = ref('')
+  const repoOsPath = ref('')
+  const repoOsPathAcknowledged = ref(false)
   const admin = ref(null)
   return {
-    state, repository, repositoryLogin, repositoryPassword, admin
+    state, repository, repositoryLogin, repositoryPassword,
+    repoOsPath, repoOsPathAcknowledged, admin
   }
 })

@@ -55,7 +55,7 @@
         </q-list>
       </q-card-section></q-card>
       <q-card v-else-if="step === 'platform'" flat bordered><q-card-section>
-        <q-markup-table v-if="store.state.distro" flat bordered dense>
+        <q-markup-table v-if="platformLoaded" flat bordered dense>
           <tbody>
             <tr v-for="row in platformRows" :key="row.label">
               <th class="text-left platform-table__label">{{ row.label }}</th>
@@ -74,7 +74,35 @@
             </tr>
           </tbody>
         </q-markup-table>
-        <q-spinner v-else-if="!error" size="2em" />
+        <q-banner v-if="platformLoaded && !store.state.package_manager_supported"
+          dense class="bg-red-1 text-red-10 q-mt-md">
+          <template #avatar><q-icon name="block" color="negative" /></template>
+          <div class="text-weight-medium">This system cannot be set up automatically</div>
+          <div class="text-caption">
+            No supported package manager (apt, dnf, yum or zypper) was found, so
+            bareos-setup cannot install the Bareos packages here. Follow the manual
+            installation instructions instead.
+          </div>
+        </q-banner>
+        <div v-else-if="platformLoaded && !store.state.platform_supported" class="q-mt-md">
+          <q-banner dense class="bg-orange-1 text-orange-10">
+            <template #avatar><q-icon name="warning" color="warning" /></template>
+            <div class="text-weight-medium">This distribution was not recognized</div>
+            <div class="text-caption">
+              Bareos does not publish a repository for this distribution. You can select a
+              repository built for a compatible distribution instead. This combination is
+              untested and unsupported.
+            </div>
+          </q-banner>
+          <q-select v-model="store.repoOsPath" class="q-mt-md" outlined dense use-input
+            new-value-mode="add-unique"
+            :options="repoOsPathOptions" label="Bareos repository"
+            hint="Choose a listed repository or type another repository name."
+            @new-value="onNewRepoOsPath" />
+          <q-checkbox v-model="store.repoOsPathAcknowledged" class="q-mt-sm"
+            label="I understand this combination is untested and unsupported." />
+        </div>
+        <q-spinner v-else-if="!platformLoaded && !error" size="2em" />
       </q-card-section></q-card>
       <q-card v-else-if="step === 'repository'" flat bordered><q-card-section>
         <q-card flat bordered class="q-mb-md cursor-pointer repo-card repo-card--subscription"
@@ -161,6 +189,10 @@
             </div>
           </q-card-section>
         </q-card>
+        <div v-if="effectiveRepoOsPath" class="text-caption text-grey-7 q-mt-sm">
+          Packages will be installed from the
+          <span class="text-weight-medium">{{ effectiveRepoOsPath }}</span> repository.
+        </div>
       </q-card-section></q-card>
       <q-card v-else-if="step === 'progress'" flat bordered><q-card-section>
         <q-list dense bordered separator>
@@ -306,13 +338,23 @@ const installFinished = ref(false)
 const currentStepId = ref(null)
 const setupClosed = ref(false)
 const logRefs = {}
+const platformLoaded = computed(() => Boolean(store.state.setup_version))
+const effectiveRepoOsPath = computed(() =>
+  store.state.platform_supported ? store.state.repo_os_path : store.repoOsPath)
+const repoOsPathOptions = computed(() => {
+  const suggested = store.state.suggested_repo_os_paths || []
+  const known = store.state.known_repo_os_paths || []
+  return [...suggested, ...known.filter(path => !suggested.includes(path))]
+})
+function onNewRepoOsPath(value, done) { done(value, 'add-unique') }
 const platformRows = computed(() => [
-  { label: 'Distribution', value: store.state.pretty_name || store.state.distro, icon: true },
+  { label: 'Distribution', value: store.state.pretty_name || store.state.distro || 'Not detected', icon: true },
   { label: 'Distribution ID', value: store.state.distro },
   { label: 'Version', value: store.state.version },
   { label: 'Codename', value: store.state.codename },
   { label: 'Architecture', value: store.state.arch },
   { label: 'Package manager', value: store.state.package_manager },
+  { label: 'Bareos repository', value: effectiveRepoOsPath.value },
   { label: 'Setup version', value: store.state.setup_version },
 ].filter(row => row.value))
 const installSteps = [
@@ -372,6 +414,12 @@ const subscriptionCredentialModeKnown = computed(() =>
   store.state.dry_run || store.state.subscription_credentials_in_browser ||
   store.state.subscription_credentials_on_terminal)
 const canContinue = computed(() => {
+  if (step.value === 'platform') {
+    if (!platformLoaded.value) return false
+    if (!store.state.package_manager_supported) return false
+    if (store.state.platform_supported) return true
+    return Boolean(store.repoOsPath) && store.repoOsPathAcknowledged
+  }
   if (step.value !== 'repository' || store.repository === 'community') return true
   if (!subscriptionCredentialModeKnown.value) return false
   return !canEnterSubscriptionCredentials.value ||
@@ -491,6 +539,7 @@ function payload() {
     repository_password: canEnterSubscriptionCredentials.value ? store.repositoryPassword : '',
     distro: store.state.distro,
     version: store.state.version,
+    repo_os_path: store.state.platform_supported ? '' : store.repoOsPath,
   }
 }
 function start() {
@@ -517,7 +566,12 @@ async function copyAdminPassword() {
 function closeSetup() { send({ action: 'close' }) }
 watch(messages, list => {
   const message = list[list.length - 1]; if (!message) return
-  if (message.type === 'state') { Object.assign(store.state, message) }
+  if (message.type === 'state') {
+    Object.assign(store.state, message)
+    if (!store.state.platform_supported && !store.repoOsPath) {
+      store.repoOsPath = (message.suggested_repo_os_paths || [])[0] || ''
+    }
+  }
   if (message.type === 'output' && currentStepId.value) stepLogs[currentStepId.value] += `${message.line}\n`
   if (message.type === 'error') { error.value = message.message; failed.value = true; busy.value = false }
   if (message.type === 'admin_credentials') store.admin = message

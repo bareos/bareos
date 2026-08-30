@@ -22,8 +22,9 @@
 
 #include <cstring>
 #include <fstream>
-#include <stdexcept>
+#include <sstream>
 #include <string>
+#include <vector>
 
 #include <sys/utsname.h>
 #include <unistd.h>
@@ -42,22 +43,30 @@ static std::string Unquote(std::string s)
   return s;
 }
 
-OsInfo DetectOs()
+/** Split a whitespace separated os-release value list into its entries. */
+static std::vector<std::string> SplitWords(const std::string& value)
+{
+  std::vector<std::string> words;
+  std::istringstream stream(value);
+  std::string word;
+  while (stream >> word) words.push_back(word);
+  return words;
+}
+
+OsInfo ParseOsRelease(const std::string& content)
 {
   OsInfo info;
-
-  // Parse /etc/os-release
-  std::ifstream f("/etc/os-release");
-  if (!f) throw std::runtime_error("Cannot open /etc/os-release");
-
+  std::istringstream stream(content);
   std::string line;
-  while (std::getline(f, line)) {
+  while (std::getline(stream, line)) {
     auto eq = line.find('=');
     if (eq == std::string::npos) continue;
-    auto key = line.substr(0, eq);
+    auto key = Unquote(line.substr(0, eq));
     auto val = Unquote(line.substr(eq + 1));
     if (key == "ID")
       info.distro = val;
+    else if (key == "ID_LIKE")
+      info.id_like = SplitWords(val);
     else if (key == "VERSION_ID")
       info.version = val;
     else if (key == "VERSION_CODENAME")
@@ -65,9 +74,21 @@ OsInfo DetectOs()
     else if (key == "PRETTY_NAME")
       info.pretty_name = val;
   }
+  return info;
+}
 
-  // Fallback: derive codename from PRETTY_NAME for Ubuntu-like ("24.04 LTS")
-  // Leave it empty if not found; the frontend handles that.
+OsInfo DetectOs()
+{
+  OsInfo info;
+
+  // A missing or unreadable os-release leaves the distribution fields empty
+  // instead of failing.  The wizard then offers a manual repository choice.
+  std::ifstream f("/etc/os-release");
+  if (f) {
+    std::ostringstream content;
+    content << f.rdbuf();
+    info = ParseOsRelease(content.str());
+  }
 
   // Architecture via uname
   struct utsname uts{};

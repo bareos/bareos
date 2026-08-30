@@ -26,6 +26,7 @@
 #define BAREOS_BAREOS_SETUP_OS_DETECTOR_H_
 
 #include <string>
+#include <vector>
 
 struct OsInfo {
   std::string distro;       // ID from os-release, e.g. "ubuntu"
@@ -34,9 +35,27 @@ struct OsInfo {
   std::string pretty_name;  // PRETTY_NAME
   std::string arch;         // uname machine, e.g. "x86_64"
   std::string pkg_mgr;      // "apt" | "dnf" | "yum" | "zypper" | "unknown"
+
+  // ID_LIKE from os-release, split on whitespace, e.g. {"rhel", "centos"}.
+  // Derivatives use this to declare the family they are compatible with.
+  std::vector<std::string> id_like;
 };
 
-/** Detect the host OS.  Returns populated OsInfo; throws on fatal errors. */
+/**
+ * Parse the contents of an os-release file.
+ *
+ * Only fills the os-release derived fields; the architecture and the package
+ * manager are probed separately by DetectOs().
+ */
+OsInfo ParseOsRelease(const std::string& content);
+
+/**
+ * Detect the host OS.
+ *
+ * A missing or unreadable /etc/os-release is not an error: the returned
+ * OsInfo simply has an empty distro.  The setup wizard needs to keep working
+ * on such systems so that it can offer a manual repository selection.
+ */
 OsInfo DetectOs();
 
 #endif  // BAREOS_BAREOS_SETUP_OS_DETECTOR_H_

@@ -48,6 +48,9 @@ struct SetupProgress {
   std::string admin_password;
   bool admin_config_created = false;
   bool proxy_config_created = false;
+  // Repository OS path resolved by the repository step; may be a manual
+  // choice on distributions the wizard does not recognise.
+  std::string repo_os_path;
 };
 
 struct SessionContext {
@@ -248,6 +251,54 @@ void EnsureNoExistingSetupConfigs(WsCodec& ws,
   throw std::runtime_error(BuildExistingSetupConfigError(existing));
 }
 
+/**
+ * Determine which Bareos repository path to install from.
+ *
+ * On a recognised distribution the path is derived from the detected ID and
+ * version and a manual choice is refused, so a supported system can never be
+ * pointed at a mismatched repository. On an unrecognised distribution the
+ * manual choice is required, because nothing else can supply the path.
+ */
+std::string ResolveRepoOsPath(const OsInfo& os, const std::string& requested)
+{
+  if (!IsSupportedPackageManager(os.pkg_mgr)) {
+    throw std::runtime_error(
+        "No supported package manager (apt, dnf, yum or zypper) was found. "
+        "Bareos cannot be installed on this system.");
+  }
+
+  if (IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    const auto detected = BuildRepoOsPath(os.distro, os.version);
+    if (!requested.empty() && requested != detected) {
+      throw std::runtime_error(
+          "This distribution was recognised, so its Bareos repository cannot "
+          "be selected manually.");
+    }
+    return detected;
+  }
+
+  if (requested.empty()) {
+    throw std::runtime_error(
+        "This Linux distribution was not recognised. Select a compatible "
+        "Bareos repository manually to continue.");
+  }
+  if (!IsValidRepoOsPath(requested)) {
+    throw std::runtime_error("Invalid Bareos repository selection.");
+  }
+  return requested;
+}
+
+/** The repository path resolved by the repository step, if it already ran. */
+std::string StoredRepoOsPath(const OsInfo& os)
+{
+  {
+    std::lock_guard lock(Progress().mutex);
+    if (!Progress().repo_os_path.empty()) return Progress().repo_os_path;
+  }
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) return {};
+  return BuildRepoOsPath(os.distro, os.version);
+}
+
 int InstallRepository(WsCodec& ws,
                       json_t* message,
                       const SessionContext& context)
@@ -255,13 +306,15 @@ int InstallRepository(WsCodec& ws,
   const auto distro = StringField(message, "distro");
   const auto version = StringField(message, "version");
   const auto repo_type = StringField(message, "repository");
+  const auto requested_repo_os_path = StringField(message, "repo_os_path");
   std::string login = StringField(message, "repository_login");
   std::string password = StringField(message, "repository_password");
   const auto os = DetectOs();
-  if (distro != os.distro || version != os.version
-      || !IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
-    throw std::runtime_error("This Linux distribution is not supported.");
+  if (distro != os.distro || version != os.version) {
+    throw std::runtime_error(
+        "The detected platform changed. Reload the setup wizard.");
   }
+  const auto repo_os_path = ResolveRepoOsPath(os, requested_repo_os_path);
   if (repo_type != "community" && repo_type != "subscription") {
     throw std::runtime_error("Select a supported Bareos repository.");
   }
@@ -305,8 +358,33 @@ int InstallRepository(WsCodec& ws,
   }
 
   const bool use_curl_config = repo_type == "subscription";
+  // Only a manually chosen repository can be wrong here; a detected one is
+  // validated implicitly by the download below.
+  const bool manual_repo_choice = !requested_repo_os_path.empty();
+  if (manual_repo_choice) {
+    Output(ws, "Verifying that the " + repo_os_path
+                   + " Bareos repository is available.");
+    const auto probe_cmd
+        = BuildRepoPathProbeCmd(repo_os_path, repo_type, use_curl_config);
+    const int probe
+        = use_curl_config
+              ? RunWithInput(
+                    probe_cmd,
+                    context.dry_run ? "" : BuildCurlUserConfig(login, password),
+                    ws, context, secrets)
+              : Run(probe_cmd, ws, context, secrets);
+    if (probe != 0) {
+      throw std::runtime_error(
+          "The Bareos repository \"" + repo_os_path
+          + "\" could not be reached. Select a repository that matches this "
+            "system"
+          + (use_curl_config ? " and check your subscription credentials."
+                             : "."));
+    }
+  }
+
   auto command
-      = BuildAddRepoCmd(os.distro, os.version, repo_type, use_curl_config);
+      = BuildAddRepoCmdForPath(repo_os_path, repo_type, use_curl_config);
   const std::filesystem::path script
       = context.dry_run ? std::filesystem::path{"bareos-setup-repository.sh"}
                         : RuntimeFile("repository");
@@ -326,6 +404,10 @@ int InstallRepository(WsCodec& ws,
   const int result = Run({"bash", script.string()}, ws, context, secrets);
   if (!context.dry_run) std::filesystem::remove(script);
   if (result != 0) return result;
+  {
+    std::lock_guard lock(Progress().mutex);
+    Progress().repo_os_path = repo_os_path;
+  }
   const auto update_cmd = BuildPackageCacheUpdateCmd(os.pkg_mgr);
   if (!update_cmd.empty()) {
     Output(ws, "Refreshing package metadata.");
@@ -337,8 +419,10 @@ int InstallRepository(WsCodec& ws,
 int InstallPackages(WsCodec& ws, const SessionContext& context)
 {
   const auto os = DetectOs();
-  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
-    throw std::runtime_error("This Linux distribution is not supported.");
+  if (!IsSupportedPackageManager(os.pkg_mgr)) {
+    throw std::runtime_error(
+        "No supported package manager (apt, dnf, yum or zypper) was found. "
+        "Bareos cannot be installed on this system.");
   }
 
   if (os.pkg_mgr == "apt") {
@@ -357,11 +441,13 @@ int InstallPackages(WsCodec& ws, const SessionContext& context)
   }
 
   auto packages = BuildDefaultPackageList(os.pkg_mgr);
-  if (os.distro == "sles") {
+  // Keyed on the repository family rather than the distribution ID so that a
+  // manually selected SUSE repository gets the same treatment.
+  if (IsSuseRepoOsPath(StoredRepoOsPath(os))) {
     Output(ws, "Checking whether the mtx package is available.");
     if (Run(BuildMtxAvailabilityCheckCmd(), ws, context) != 0) {
       Output(ws,
-             "Warning: mtx is not available from the configured SLES "
+             "Warning: mtx is not available from the configured SUSE "
              "repositories, so bareos-storage-tape cannot be installed.");
       packages = BuildPackageListWithoutTapeStorage(os.pkg_mgr);
     }
@@ -596,20 +682,40 @@ void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
       json_array_append_new(completed, json_string(step.c_str()));
     }
     const auto hostname = LocalHostname();
-    Send(ws,
-         json_pack(
-             "{s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:o,s:b,s:s,s:b,s:b,s:b,s:b}",
-             "type", "state", "distro", os.distro.c_str(), "version",
-             os.version.c_str(), "package_manager", os.pkg_mgr.c_str(),
-             "pretty_name", os.pretty_name.c_str(), "arch", os.arch.c_str(),
-             "codename", os.codename.c_str(), "hostname", hostname.c_str(),
-             "completed", completed, "finished", Progress().finished,
-             "setup_version", BAREOS_FULL_VERSION, "peer_is_loopback",
-             context.peer_is_loopback, "dry_run", context.dry_run,
-             "subscription_credentials_in_browser",
-             context.peer_is_loopback && !context.dry_run,
-             "subscription_credentials_on_terminal",
-             !context.peer_is_loopback && !context.dry_run));
+    const bool pkg_mgr_supported = IsSupportedPackageManager(os.pkg_mgr);
+    const bool platform_supported
+        = IsSupportedSetupPlatform(os.distro, os.pkg_mgr);
+    json_t* known_paths = json_array();
+    for (const auto& path : KnownRepoOsPaths()) {
+      json_array_append_new(known_paths, json_string(path.c_str()));
+    }
+    json_t* suggested_paths = json_array();
+    if (!platform_supported) {
+      for (const auto& path : SuggestRepoOsPaths(os)) {
+        json_array_append_new(suggested_paths, json_string(path.c_str()));
+      }
+    }
+    const std::string repo_os_path
+        = platform_supported ? BuildRepoOsPath(os.distro, os.version)
+                             : std::string{};
+    Send(ws, json_pack(
+                 "{s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:o,s:b,s:s,s:b,s:b,s:b,s:b,"
+                 "s:b,s:b,s:s,s:o,s:o}",
+                 "type", "state", "distro", os.distro.c_str(), "version",
+                 os.version.c_str(), "package_manager", os.pkg_mgr.c_str(),
+                 "pretty_name", os.pretty_name.c_str(), "arch", os.arch.c_str(),
+                 "codename", os.codename.c_str(), "hostname", hostname.c_str(),
+                 "completed", completed, "finished", Progress().finished,
+                 "setup_version", BAREOS_FULL_VERSION, "peer_is_loopback",
+                 context.peer_is_loopback, "dry_run", context.dry_run,
+                 "subscription_credentials_in_browser",
+                 context.peer_is_loopback && !context.dry_run,
+                 "subscription_credentials_on_terminal",
+                 !context.peer_is_loopback && !context.dry_run,
+                 "platform_supported", platform_supported,
+                 "package_manager_supported", pkg_mgr_supported, "repo_os_path",
+                 repo_os_path.c_str(), "known_repo_os_paths", known_paths,
+                 "suggested_repo_os_paths", suggested_paths));
     return;
   }
   if (action == "close") {
